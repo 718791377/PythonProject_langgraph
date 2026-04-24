@@ -1,0 +1,8 @@
+.omx/
+.tmp/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.idea/
+node_modules/

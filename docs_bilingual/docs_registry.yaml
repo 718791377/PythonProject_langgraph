@@ -1,0 +1,79 @@
+version: 1
+documents:
+  - doc_id: project_startup_summary
+    doc_class: startup_summary
+    status: active
+    canonical_path: docs_bilingual/project_startup_summary.md
+    zh_cn_path: docs_bilingual/project_startup_summary.zh-CN.md
+
+  - doc_id: mainline_sync_langgraph_capability_gap_after_migration_aware_live_primary_engine_compatibility_state_startup_summary
+    doc_class: startup_summary
+    status: active
+    canonical_path: docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md
+    zh_cn_path: docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md
+
+  - doc_id: codex_oh_my_codex_user_level_team_mode_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md
+
+  - doc_id: codex_langgraph_repository_split_migration_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_langgraph_repository_split_migration_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_langgraph_repository_split_migration_plan.zh-CN.md
+
+  - doc_id: codex_cli_personal_production_durable_team_plan
+    doc_class: implementation_plan
+    status: draft
+    canonical_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md
+
+  - doc_id: codex_user_level_cross_session_durable_state_isolation_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md
+
+  - doc_id: openspec_usage_convention
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/openspec_usage_convention.md
+    zh_cn_path: docs_bilingual/governance/openspec_usage_convention.zh-CN.md
+
+  - doc_id: openspec_opsx_project_usage_policy
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/openspec_opsx_project_usage_policy.md
+    zh_cn_path: docs_bilingual/governance/openspec_opsx_project_usage_policy.zh-CN.md
+
+  - doc_id: openspec_official_workflow_policy
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/openspec_official_workflow_policy.md
+    zh_cn_path: docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md
+
+  - doc_id: langgraph_user_level_runtime_policy
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/langgraph_user_level_runtime_policy.md
+    zh_cn_path: docs_bilingual/governance/langgraph_user_level_runtime_policy.zh-CN.md
+
+  - doc_id: user_level_launcher_payload_policy
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/user_level_launcher_payload_policy.md
+    zh_cn_path: docs_bilingual/governance/user_level_launcher_payload_policy.zh-CN.md
+
+  - doc_id: openspec_check_and_guard_json_output_policy
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/openspec_check_and_guard_json_output_policy.md
+    zh_cn_path: docs_bilingual/governance/openspec_check_and_guard_json_output_policy.zh-CN.md
+
+  - doc_id: solo_maintainable_production_persistent_team_research
+    doc_class: governance
+    status: draft
+    canonical_path: docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md
+    zh_cn_path: docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md
