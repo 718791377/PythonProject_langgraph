@@ -3,22 +3,17 @@ stages:
 
 openspec_guard:
   stage: verify
-  tags:
-    - openclaw-self-hosted
-  hooks:
-    pre_get_sources_script:
-      - git config --global --add safe.directory "$env:CI_PROJECT_DIR"
+  image: python:3.12-bookworm
   before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends nodejs npm
     - node --version
     - npm --version
     - python --version
     - npm install -g @fission-ai/openspec@latest
-    - $npmGlobalPrefix = npm prefix -g
-    - $env:PATH = "$npmGlobalPrefix;$env:PATH"
     - openspec --version
   script:
-    - python tools/run_openspec_guard.py --root . --tool codex --refresh-managed-files --require-clean-git --json | Tee-Object -FilePath openspec-guard-report.json
-    - if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    - python tools/run_openspec_guard.py --root . --tool codex --refresh-managed-files --require-clean-git --json | tee openspec-guard-report.json
   artifacts:
     when: always
     expire_in: 7 days
