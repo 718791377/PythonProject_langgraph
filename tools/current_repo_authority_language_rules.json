@@ -90,6 +90,14 @@
       {
         "label": "boundary_exclusion",
         "pattern": "do not resume new implementation for this line in `D:\\\\PythonProject_OpenClaw`"
+      },
+      {
+        "label": "cross_project_consumer_scope",
+        "pattern": "consumer project that may reuse user-level Codex orchestration policy"
+      },
+      {
+        "label": "cross_project_consumer_scope",
+        "pattern": "consumer project that may need browser or endpoint verification"
       }
     ],
     "docs_bilingual/project_startup_summary.zh-CN.md": [
@@ -108,6 +116,14 @@
       {
         "label": "boundary_exclusion",
         "pattern": "不要再回到 `D:\\\\PythonProject_OpenClaw`"
+      },
+      {
+        "label": "cross_project_consumer_scope",
+        "pattern": "Codex .*policy"
+      },
+      {
+        "label": "cross_project_consumer_scope",
+        "pattern": "endpoint .*"
       }
     ],
     "docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md": [
@@ -224,6 +240,26 @@
       {
         "label": "cross_project_profile_scope",
         "pattern": "(?i)cross-project"
+      }
+    ],
+    "docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.md": [
+      {
+        "label": "cross_project_template_scope",
+        "pattern": "changing real project repositories such as"
+      },
+      {
+        "label": "cross_project_template_scope",
+        "pattern": "browser automation profile preservation for projects such as"
+      }
+    ],
+    "docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.zh-CN.md": [
+      {
+        "label": "cross_project_template_scope",
+        "pattern": "D:\\\\PythonProject_langgraph"
+      },
+      {
+        "label": "cross_project_template_scope",
+        "pattern": "browser automation profile"
       }
     ]
   }

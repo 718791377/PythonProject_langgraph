@@ -35,6 +35,16 @@
 
 - `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state`
 
+## Current Implementation Boundary
+
+- Active implementation now follows these two implementation plans:
+  - `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md`: the active user-level team-mode plan for native Codex, oh-my-codex, native_omx, and LangGraph routing behavior.
+  - `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md`: the active durable-state isolation plan that keeps repo-local state from leaking across projects or sessions.
+- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md` is the long-term final-target draft for a personal production-grade persistent Codex CLI team; do not treat it as implemented runtime behavior.
+- `D:\PythonProject_OpenClaw`, `D:\PythonProject_CLIProxyAPI`, `D:\project`, and future projects are consumer projects for shared user-level runtime and policy only. Each project keeps its own OpenSpec artifacts, durable state, CI status, publication state, and repo-local facts.
+- Preserve browser automation capability for projects that need it, especially `D:\PythonProject_OpenClaw` and `D:\PythonProject_CLIProxyAPI`; do not disable Vercel or browser-related skills globally as a shortcut for reducing skill context.
+- Do not auto-launch a durable team during startup, boundary-freeze work, or read-only state inventory. Durable team launch requires a frozen plan plus at least two mostly independent execution slices.
+
 ## Current Sequencing Rule
 
 - The initial queued LangGraph-deepening mainlines from the previous roadmap are now closed.

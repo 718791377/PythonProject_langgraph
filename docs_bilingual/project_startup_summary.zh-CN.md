@@ -37,6 +37,26 @@ translation_of: docs_bilingual/project_startup_summary.md
   - 已经是真实可用的 additive durable backend
   - 但仍然属于“可用但偏 MVP”，还不是 fully realized 的 LangGraph-native runtime
 
+## 当前实施边界
+
+当前实施主线只限于两份 active 用户级编排方案：
+
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md`：当前正在实施的用户级团队模式方案，用来约束 native Codex、oh-my-codex、native_omx 与 LangGraph 的路由行为。
+- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md`：当前正在实施的 durable state 隔离方案，用来防止 repo-local state 跨项目或跨会话误泄漏。
+
+长期最终目标仍然只是 draft：
+
+- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md`：个人开发者生产级持久化 Codex CLI 团队的最终目标草案；不要把它当成已经实现的运行时能力。
+
+跨项目使用规则：
+
+- `D:\PythonProject_OpenClaw`：消费者项目，可以复用用户级 Codex 编排 policy 和浏览器自动化能力，但必须保留自己的 repo-local facts 与 `.omx/state/`。
+- `D:\PythonProject_CLIProxyAPI`：消费者项目，可能需要浏览器或 endpoint 验证，但必须保留自己的 repo-local facts 与 `.omx/state/`。
+- `D:\project`：通用项目根目录，默认先按 core profile 处理，只有项目证据需要时才增加 browser、web 或 orchestration 能力。
+- 后续新项目：只能消费共享的用户级 runtime 与 policy；每个项目仍然拥有自己的 OpenSpec artifacts、durable state、CI 状态和发布状态。
+
+不要在 startup 或边界冻结工作中自动启动 durable team。只有在计划已经冻结且存在至少两个基本独立的执行切片时，才允许启动 durable team。
+
 易漂移的执行细节已经下放到主线 memory 摘要，而不再放在这份仓库级入口摘要里。
 
 ## 冷启动阅读顺序
