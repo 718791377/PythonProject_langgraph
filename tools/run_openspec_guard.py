@@ -95,6 +95,7 @@ def main() -> int:
     governance_rules_script = root / "tools" / "check_document_governance_rules.py"
     implementation_plan_rules_script = root / "tools" / "check_implementation_plan_rules.py"
     skills_governance_script = root / "tools" / "check_codex_skills_governance.py"
+    name_clarity_rules_script = root / "tools" / "check_name_clarity_rules.py"
 
     if not verify_script.exists():
         raise SystemExit(f"Missing verification script: {verify_script}")
@@ -106,6 +107,8 @@ def main() -> int:
         raise SystemExit(f"Missing implementation plan rules check script: {implementation_plan_rules_script}")
     if not skills_governance_script.exists():
         raise SystemExit(f"Missing Codex skills governance check script: {skills_governance_script}")
+    if not name_clarity_rules_script.exists():
+        raise SystemExit(f"Missing name clarity rules check script: {name_clarity_rules_script}")
 
     openspec = shutil.which("openspec") or shutil.which("openspec.cmd")
     if args.json:
@@ -179,6 +182,11 @@ def main() -> int:
                 "check_implementation_plan_rules",
                 [str(python_exe), str(implementation_plan_rules_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during implementation plan rules verification.",
+            ),
+            (
+                "check_name_clarity_rules",
+                [str(python_exe), str(name_clarity_rules_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during name clarity rules verification.",
             ),
             (
                 "check_codex_skills_governance",
@@ -300,6 +308,12 @@ def main() -> int:
         [str(python_exe), str(implementation_plan_rules_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during implementation plan rules verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(name_clarity_rules_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during name clarity rules verification.",
     )
 
     run_checked(

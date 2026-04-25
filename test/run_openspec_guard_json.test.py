@@ -52,6 +52,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.write_file(root, "tools/check_current_repo_authority_language.py", self.make_json_script(True, {"ok": True, "check_name": "authority"}))
         self.write_file(root, "tools/check_document_governance_rules.py", self.make_json_script(True, {"ok": True, "check_name": "governance"}))
         self.write_file(root, "tools/check_implementation_plan_rules.py", self.make_json_script(True, {"ok": True, "check_name": "implementation_plan"}))
+        self.write_file(root, "tools/check_name_clarity_rules.py", self.make_json_script(True, {"ok": True, "check_name": "name_clarity_rules"}))
         self.write_file(root, "tools/check_codex_skills_governance.py", self.make_json_script(True, {"ok": True, "check_name": "codex_skills_governance"}))
 
         result = self.run_guard_json(root)
@@ -63,12 +64,13 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(Path(payload["root"]), root)
         self.assertTrue(payload["generated_at"])
         self.assertEqual(payload["tool"], "codex")
-        self.assertEqual(len(payload["steps"]), 5)
-        self.assertEqual(payload["counts"]["steps_total"], 5)
-        self.assertEqual(payload["counts"]["steps_passed"], 5)
+        self.assertEqual(len(payload["steps"]), 6)
+        self.assertEqual(payload["counts"]["steps_total"], 6)
+        self.assertEqual(payload["counts"]["steps_passed"], 6)
         self.assertEqual(payload["steps"][0]["step"], "verify_official_openspec")
         self.assertEqual(payload["steps"][1]["step"], "check_current_repo_authority_language")
-        self.assertEqual(payload["steps"][4]["step"], "check_codex_skills_governance")
+        self.assertEqual(payload["steps"][4]["step"], "check_name_clarity_rules")
+        self.assertEqual(payload["steps"][5]["step"], "check_codex_skills_governance")
 
     def test_guard_json_reports_failed_step(self) -> None:
         root = self.make_root("guard-json-fail")
@@ -76,6 +78,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.write_file(root, "tools/check_current_repo_authority_language.py", self.make_json_script(False, {"ok": False, "check_name": "authority", "errors": ["bad wording"]}))
         self.write_file(root, "tools/check_document_governance_rules.py", self.make_json_script(True, {"ok": True, "check_name": "governance"}))
         self.write_file(root, "tools/check_implementation_plan_rules.py", self.make_json_script(True, {"ok": True, "check_name": "implementation_plan"}))
+        self.write_file(root, "tools/check_name_clarity_rules.py", self.make_json_script(True, {"ok": True, "check_name": "name_clarity_rules"}))
         self.write_file(root, "tools/check_codex_skills_governance.py", self.make_json_script(True, {"ok": True, "check_name": "codex_skills_governance"}))
 
         result = self.run_guard_json(root)

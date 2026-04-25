@@ -25,6 +25,7 @@ This policy applies to:
 - `tools/check_current_repo_authority_language.py`
 - `tools/check_document_governance_rules.py`
 - `tools/check_implementation_plan_rules.py`
+- `tools/check_name_clarity_rules.py` - enforces the OPSX name clarity rule for `docs_bilingual/` and `openspec/` without mutating documents.
 - `tools/run_openspec_guard.py`
 - later repository checks that expose a `--json` output and participate in the same guard surface
 
