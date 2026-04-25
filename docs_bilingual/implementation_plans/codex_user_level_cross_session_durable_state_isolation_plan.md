@@ -1,0 +1,300 @@
+---
+doc_id: codex_user_level_cross_session_durable_state_isolation_plan
+lang: en
+canonical: docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md
+status: active
+doc_class: implementation_plan
+---
+
+# Codex User-Level Cross-Session Durable State Isolation Plan
+
+> Implementation status as of 2026-04-22: completed in repo source, validated in user-level mirrored helpers, and verified against the real `D:\PythonProject_OpenClaw` and `D:\PythonProject_langgraph` fixtures without mutating preserved legacy durable artifacts.
+
+## 1. Goal
+
+Eliminate unintended cross-session interference in repo-local durable state for the user-level Codex orchestration line without mutating, deleting, or rekeying any existing active or historical session artifacts.
+
+This plan is implementation-facing. Its purpose is to define how future sessions stop auto-inheriting stale repo-local durable selectors while existing sessions and historical records remain intact.
+
+It should now be read as a shared fix for two layers at once:
+
+- the user-level control surface and generated helper logic that many `PyCharm / Codex CLI` projects share on the same machine, user account, and Codex home
+- the project-level repo-local state and source contract that each repository must keep as its own durable truth
+
+This is therefore not only a user-level runtime fix. It is a shared plan for user-level activation logic plus project-level repo-local durable-state isolation.
+
+## 2. Problem Statement
+
+The current user-level runtime still treats the repository or worktree `.omx/state` root as the effective shared durable state scope.
+
+That behavior is acceptable for inspection, but it is too coarse for activation.
+
+The root problem is not only in helper routing. It sits at the boundary between:
+
+- user-level helper logic that is shared across repositories
+- project-level repo-local durable state that must remain authoritative inside each repository
+
+Today:
+
+- repo-local LangGraph `backend.json` can act as both an inspection summary and an implicit activation selector
+- repo-local native `auto-team-*` directory presence can still influence automatic routing even when those directories are empty
+- same-repo sessions can therefore inherit stale or unrelated durable state that was created by an earlier session
+
+The result is cross-session coupling that is stronger than the intended operator model.
+
+## 3. Repository-Grounded Failure Modes
+
+### 3.1 `D:\PythonProject_OpenClaw` legacy fixture
+
+Current observed state:
+
+- a tracked LangGraph backend record exists under `.omx/state/langgraph/backend.json`
+- that record points to a thread that is still in `freeze-plan`
+- the paired interrupt record is `waiting_for_approval`
+- the repository also contains many empty unmanaged native `auto-team-*` directories under `.omx/state/team`
+
+Practical effect:
+
+- automatic durable routing currently sees the tracked LangGraph thread first and treats it as the active durable lane
+- empty native residue remains a latent native-lane blocker even though it is safe cleanup material rather than meaningful live state
+
+### 3.2 `D:\PythonProject_langgraph`
+
+Current observed state:
+
+- no tracked LangGraph backend record is active
+- the repository still contains empty unmanaged native `auto-team-*` directories
+
+Practical effect:
+
+- automatic durable routing can still report unmanaged native durable residue even when those directories contain no files
+
+## 4. Non-Negotiable Safety Rules
+
+The permanent fix must preserve the following invariants:
+
+1. No existing file under either repository's legacy `.omx/state/` tree is edited, renamed, moved, or deleted during the immediate fix.
+2. No active or historical session is auto-adopted into a new control model.
+3. Existing historical LangGraph threads and native team artifacts remain inspectable.
+4. Cleanup remains preview-first and limited to classes that are already defined as safe.
+5. New activation logic must be additive and versioned.
+6. If the runtime cannot determine a safe scoped activation target, it must fail closed rather than falling back to legacy shared selectors.
+
+## 5. Target State Architecture
+
+The durable control surface should be split into three planes.
+
+Within that split, one additional boundary must stay explicit:
+
+- user-level control surfaces may inspect and route across many repositories on the same machine
+- project-level artifact and activation truth must stay repo-local
+- generated user-level mirrors may project or consume repo-local state, but they must not replace the repository as the source of truth
+
+### 5.1 Artifact Plane
+
+Keep the existing historical and runtime artifacts unchanged under:
+
+- `.omx/state/langgraph/{threads,checkpoints,history,interrupts,store}`
+- `.omx/state/team/*`
+
+These remain the recovery truth and the operator evidence store.
+
+They are not the activation truth for future sessions.
+
+### 5.2 Activation Plane
+
+Add a new scoped selector and lease layer, for example:
+
+- `.omx/state/selectors/active.json`
+- `.omx/state/selectors/leases/<session-scope-id>.json`
+
+Only this plane may declare that a durable thread or team is active for a future session.
+
+Minimum fields:
+
+- `backend_family`
+- `selector_id`
+- `repo_root`
+- `worktree_id`
+- `session_scope_id`
+- `leader_session_lineage`
+- `acquired_at`
+- `last_heartbeat_at`
+- `released_at`
+- `generation`
+- `routing_posture`
+
+### 5.3 Inspection Plane
+
+Keep legacy:
+
+- `.omx/state/langgraph/backend.json`
+- `.omx/state/team/codex-auto-managed-team.json`
+
+as read-only inspection and compatibility projections.
+
+They may expose inspect or explicit resume pointers, but they must no longer implicitly activate durable state for unrelated future sessions.
+
+## 6. Required Behavioral Changes
+
+### 6.1 Empty Unmanaged Native Residue
+
+Current behavior is too strict because any latest native team directory can be interpreted as unmanaged residue even when it is empty.
+
+Required change:
+
+- only non-empty unmanaged native team directories may force `manual-inspection-required`
+- empty unmanaged native directories remain safe cleanup candidates
+- empty directories must not block auto launch, reuse, or switch decisions
+
+### 6.2 Legacy LangGraph Selector Dominance
+
+Current behavior is too broad because any tracked `backend.json` with a `thread_id` can dominate future lane selection.
+
+Required change:
+
+- a legacy LangGraph backend record remains inspectable
+- it is only eligible for automatic routing if it is explicitly marked as active or resumable by the new activation plane
+- terminal, historical, or otherwise unscoped legacy records must not auto-route unrelated future sessions into LangGraph
+
+### 6.3 Dual-Read, Scoped-Write
+
+The new runtime model should behave as follows:
+
+- read legacy v1 artifacts for inspection and compatibility
+- write new activation state only through the scoped activation plane
+- keep backend-family selection task-sensitive
+- fail closed when scoped activation cannot be determined safely
+
+## 7. Implementation Workstreams
+
+The workstreams below must be read as a dual-layer rollout:
+
+- repository source and repository tests define the durable-state contract
+- user-level mirrors distribute that contract across shared entrypoints and helper surfaces
+
+### 7.1 PowerShell Routing And Status Helpers
+
+Update the user-level helper logic so that:
+
+- empty unmanaged native residue no longer becomes a routing blocker
+- legacy LangGraph backend records no longer count as active solely because `thread_id` exists
+- inspectable durable state output distinguishes between:
+  - legacy preserved artifacts
+  - active scoped selectors
+  - safe cleanup candidates
+  - protected manual residue
+
+### 7.2 LangGraph Durable Orchestrator Projection
+
+Update the LangGraph backend projection so that:
+
+- the backend record exposes a routing eligibility or routing posture bit
+- the runtime can distinguish:
+  - active resumable thread
+  - historical preserved thread
+  - terminal thread
+  - missing or stale selector
+
+### 7.3 Tests
+
+Add or update tests for:
+
+- empty unmanaged native directories do not trigger `manual-inspection-required`
+- legacy `backend.json` remains inspectable but does not auto-dominate unrelated future sessions
+- existing active sessions remain readable under dual-read mode
+- missing scoped selector causes fail-closed behavior rather than implicit legacy activation
+
+### 7.4 User-Level Generated Mirrors
+
+After source changes land, regenerate or refresh the mirrored user-level helper scripts under `C:\Users\lenovo\.codex\bin` so behavior remains consistent across:
+
+- routing policy
+- durable state status
+- durable state reconcile
+- `omx-team-auto`
+- compose-specific helper surfaces
+
+## 8. Rollout Plan
+
+### Phase 0: No-Touch Baseline
+
+Before any rollout:
+
+- capture read-only durable-state baselines for both repositories
+- freeze direct filesystem cleanup of `.omx/state`
+- classify all current residue as:
+  - preserved active
+  - preserved historical
+  - safe empty
+  - protected manual
+
+### Phase 1: Source Implementation In `D:\PythonProject_langgraph`
+
+Implement the additive scoped activation logic only in the source repository.
+
+No user-level helper install yet.
+
+This phase exists to keep project-level source and tests ahead of shared user-level mirrors.
+
+### Phase 2: Validation Against Legacy Fixtures
+
+Validate the new logic against preserved fixtures that represent:
+
+- `OpenClaw` legacy fixture: tracked LangGraph thread plus empty native residue
+- `langgraph` empty native residue only
+
+The validation target is no false activation and no data mutation.
+
+### Phase 3: User-Level Helper Rollout
+
+Roll the new helper logic into the user-level generated scripts only after the source logic and tests pass.
+
+This is the point where new sessions begin to observe the new behavior by default.
+
+At this phase, the user-level layer is distributing a repository-defined contract. It is not redefining the repo-local durable truth.
+
+Existing sessions also become capable of observing the new helper behavior once they re-enter routing, helper evaluation, or another configuration-read boundary.
+
+### Phase 4: New-Session Adoption
+
+New sessions may use the scoped activation plane immediately after rollout.
+
+Existing live sessions keep the decision state they already hold until they reach a safe evaluation boundary, but they remain retrofit-capable on reload, restart, explicit user routing directive, or tracked durable-state detection.
+
+### Phase 5: Later Cleanup Window
+
+Only after the new activation model is stable:
+
+- preview and optionally apply cleanup for empty unmanaged native residue
+- keep legacy LangGraph thread artifacts preserved unless an explicit operator action archives or retires them under a later approved policy
+
+## 9. Session Impact And Restart Policy
+
+This implementation plan is designed so that both existing sessions and new sessions use the latest user-level configuration as much as technically possible while preserving stability for work that is already in progress.
+
+Practical rule:
+
+- source-only changes in `D:\PythonProject_langgraph` are not retroactive by themselves
+- once a session re-enters routing, helper evaluation, or another configuration-read boundary, it should pick up the latest user-level behavior
+- a session adopts the latest activation logic when it re-enters those evaluation paths, including on reload, restart, explicit user routing directive, or tracked durable-state detection
+- reload, restart, or safe phase-boundary resume is only required when a live durable flow has already passed the point where its current decision state was resolved and cannot be switched safely in place
+
+Therefore:
+
+- new sessions should usually observe the latest activation logic immediately
+- existing sessions should also move onto the latest user-level configuration at the next safe evaluation point instead of being treated as permanently excluded from it
+- historical sessions remain preserved and inspectable
+- existing live durable flows should still be restarted only at a safe phase boundary when an in-place switch would be unsafe
+
+## 10. Success Criteria
+
+This plan is complete only when all of the following are true:
+
+1. A preserved legacy LangGraph backend record no longer auto-dominates unrelated future sessions.
+2. Empty unmanaged native residue no longer blocks automatic native durable routing.
+3. Existing active and historical artifacts remain readable and attributable.
+4. New session-scoped activation writes are additive and versioned.
+5. No direct mutation of legacy `.omx/state` is required to make the new model safe.
+6. Repository source and repository tests remain the authority for the activation contract, while user-level mirrors remain only the shared execution and control surface.
+7. Many `PyCharm / Codex CLI` projects on the same machine can reuse the same user-level helper layer without inheriting each other's canonical durable state.

@@ -1,0 +1,21 @@
+stages:
+  - verify
+
+openspec_guard:
+  stage: verify
+  image: python:3.12-bookworm
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends nodejs npm
+    - node --version
+    - npm --version
+    - python --version
+    - npm install -g @fission-ai/openspec@latest
+    - openspec --version
+  script:
+    - python tools/run_openspec_guard.py --root . --tool codex --refresh-managed-files --require-clean-git --json | tee openspec-guard-report.json
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - openspec-guard-report.json

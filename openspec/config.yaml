@@ -1,0 +1,195 @@
+schema: spec-driven
+
+context: |
+  Project: Codex user-level orchestration deployment, maintenance, and extension workspace.
+  Nature:
+    - This repository maintains the Codex user-level orchestration line rather than a single business application.
+    - The repository contains multiple evolving mainlines and supporting governance documents.
+    - Mainlines, governance docs, and reusable specs are expected to keep growing over time.
+  Current identified mainlines may include work such as:
+    - retention mechanism improvement with visual GUI
+    - backup mechanism improvement with visual GUI
+    - three-role and official sub-agent implementation
+    - security governance revision
+    - skills installation, management, update, and visual GUI
+    - agent workspace governance and visual GUI
+  The current set of mainlines is not final.
+  Mainlines may later be merged, split, replaced, re-scoped, or reclassified.
+  Current session focus may cover one mainline, one subproblem under a mainline, or a cross-mainline issue.
+  Core reusable methods:
+    - normalized judgment plus local light-model arbitration
+    - candidate selection and online correction
+  Current bilingual canonical documents may include:
+    - docs_bilingual/methodology/agent_architecture_mapping_draft_v1_2.md
+    - docs_bilingual/methodology/normalized_judgment_and_light_model_implementation.md
+    - docs_bilingual/methodology/candidate_selection_and_online_correction_implementation.md
+    - docs_bilingual/experience_ledgers/implementation_issues_and_lessons_ledger.md
+    - docs_bilingual/implementation_plans/wecom_group_to_orchestrator_three_role_plan.md
+    - docs_bilingual/implementation_plans/local_and_feixin_migration_plan.md
+    - docs_bilingual/governance/formal_security_authorization_policy.md
+    - docs_bilingual/governance/workspace_governor_addendum.md
+    - docs_bilingual/governance/openspec_usage_convention.md
+    - docs_bilingual/governance/openspec_official_workflow_policy.md
+    - docs_bilingual/governance/openspec_document_mapping_and_adaptation_plan.md
+    - docs_bilingual/governance/langgraph_user_level_runtime_policy.md
+    - docs_bilingual/project_startup_summary.md
+    - docs_bilingual/memory/session_dynamic_agent_wait_and_progressive_delivery.md
+    - tools/check_current_repo_authority_language.py
+    - tools/current_repo_authority_language_rules.json
+    - tools/check_document_governance_rules.py
+    - tools/check_implementation_plan_rules.py
+  Key governance sources currently include architecture, implementation, governance, operations, memory, and lessons documents in the repository.
+
+session_entry:
+  principles:
+    - Start from the problem or requirement first, then determine the mainline.
+    - A new session must begin with intake and classification instead of forcing an early mainline assignment.
+    - A session must have one owning mainline and may have multiple related mainlines.
+    - If no existing mainline fits and continued evolution is expected, create a new mainline candidate.
+
+  classification:
+    existing_mainline:
+      description: The session clearly continues an existing mainline.
+    subproblem_of_mainline:
+      description: The session belongs to a bounded subproblem under an existing mainline.
+    cross_mainline:
+      description: The session affects multiple mainlines but still has one owning mainline.
+    new_mainline_candidate:
+      description: The session does not fit existing mainlines and is expected to evolve.
+    temporary_runtime_issue:
+      description: The session is a one-off runtime issue and should not become a new mainline.
+
+  required_intake_fields:
+    - problem_statement
+    - expected_outcome
+    - initial_impact_scope
+    - whether_continuous_work_is_expected
+    - tentative_mainline
+    - related_mainlines
+
+  routing_rules:
+    - If the session clearly belongs to one existing mainline, continue under that mainline.
+    - If the session spans multiple mainlines, choose one owning mainline and record the others as related mainlines.
+    - If the session cannot be reasonably attached to any existing mainline and is expected to evolve, create a new mainline candidate.
+    - If the issue is temporary and one-off, keep it in implementation or runtime documents instead of creating a new mainline.
+
+mainline_reclassification:
+  principles:
+    - Mainline assignment is revisable when later evidence shows a better fit.
+    - Mainline structure itself is also revisable over time.
+    - Existing mainlines may later be merged, split, replaced, or re-scoped.
+    - Reclassification must be explicit, not silent.
+    - The previous assignment must be preserved as history.
+    - Execution should continue under the new mainline only after plan or document updates and user confirmation.
+
+  triggers:
+    - The user initially selected the wrong mainline.
+    - The problem expands and clearly fits another existing mainline better.
+    - Codex determines that the current mainline assignment will distort scope, design, or implementation.
+    - A cross-mainline issue develops a clearer owning mainline during exploration.
+    - The current mainline taxonomy becomes outdated and a merged, split, or replacement mainline is more accurate.
+
+  required_updates:
+    - previous_mainline
+    - new_mainline
+    - reason_for_reclassification
+    - affected_plan_files
+    - affected_spec_or_change_files
+    - related_mainlines_after_reclassification
+
+  execution_gate:
+    - Reclassify in documentation first.
+    - Confirm the updated classification with the user.
+    - Only then continue implementation under the new mainline.
+
+mainline_governance_assistance:
+  principles:
+    - Codex should continuously assess whether the current mainline structure still fits the evolving work.
+    - Codex may suggest creating, merging, splitting, replacing, or boundary-adjusting mainlines when a better structure becomes evident.
+    - Codex may also suggest reclassifying the owning mainline of a session when the current fit becomes weak.
+    - Codex must not silently change mainline structure or mainline ownership.
+    - Mainline structure changes require user confirmation and document updates before execution continues.
+
+  suggestion_triggers:
+    - A current mainline has become too broad and should be split.
+    - Multiple current mainlines now fit better as a merged mainline.
+    - A current mainline no longer matches the real work and should be replaced.
+    - The boundary between two mainlines has become ambiguous or distorted.
+    - A session is currently attached to a weaker-fitting mainline while a better-fitting mainline exists.
+
+  required_output:
+    - suggested_change_type
+    - current_mainline_structure
+    - proposed_mainline_structure
+    - reason_for_change
+    - affected_documents
+    - whether_user_confirmation_is_required
+
+  execution_gate:
+    - Present the suggestion explicitly.
+    - Wait for user confirmation.
+    - Update plans, governance documents, specs, or change documents as needed.
+    - Only then continue under the adjusted mainline structure.
+
+rules:
+  proposal:
+    - Every implementation must start from a plan file or an updated existing plan file.
+    - Before implementation, confirm the plan with the user.
+    - Proposal must define impact_scope, explicit_non_goals, rollout_sequence, rollback_plan, validation_path, and mainline_classification.
+    - Proposal must declare whether the work belongs to an existing mainline, a cross-mainline issue, or a new mainline candidate.
+
+  design:
+    - Preserve boundaries among channel agents, orchestrator, official sub-agents, governance layers, and runtime repair layers.
+    - Distinguish current state from target state.
+    - Identify the current bottleneck layer and avoid unnecessary scope expansion.
+    - Document observability, failure classification, and user-visible failure handling when relevant.
+
+  specs:
+    - Only reusable, cross-scenario, long-term rules belong in common specs.
+    - Do not move one-off runtime hotfixes or single-task debugging artifacts into reusable specs.
+    - Middle-layer correction logic may use either a full closed loop or a lightweight closed loop depending on layer criticality.
+
+  tasks:
+    - Every task must have a verifiable outcome.
+    - Prefer root scripts, config, tests, or initialization layers.
+    - Do not edit package, dist, or build artifacts.
+    - Keep implementation-plan documents and OpenSpec artifacts synchronized when both are affected.
+
+  governance:
+    - Governance documents may be revised according to OpenSpec standards without forcing all governance docs into openspec/specs.
+    - New governance or methodology rules may first appear in native governance or implementation documents during exploration, but project-level, cross-mainline, reusable, long-term rules should be promoted into OpenSpec.
+    - Startup summaries should remain stable entry documents rather than detailed running progress ledgers.
+    - Detailed branch progress, blockers, and next verification targets should live in docs_bilingual/memory or active implementation documents.
+    - Only rules that are reusable, cross-scenario, and long-term valuable should remain as common specs; one-off runtime notes should remain outside OpenSpec.
+
+  execution:
+    - Do not implement before a plan file exists and has been confirmed by the user.
+    - When the user asks to add or update a file, prepare the intended content first and confirm completeness before writing.
+    - Cross-mainline sessions must record one owning mainline and any related mainlines.
+    - Mainline reclassification must be explicit, documented, and confirmed before continued execution.
+
+  safety:
+    - Keep existing downstream application configuration values unchanged unless explicitly requested.
+    - Backup before repairing suspected encoding or corruption issues in important documents.
+    - Do not rewrite garbled files until read-method issues are ruled out.
+    - Prefer runtime objective evidence over parent self-report when validating sub-agent behavior.
+
+validation:
+  expectations:
+    - Use openspec status for active changes when tracking implementation progress.
+    - Use python .\tools\run_openspec_guard.py --root . before concluding that local enforcement is healthy.
+    - Use python .\tools\verify_official_openspec.py --root . after bootstrap or refresh and before treating the repository as fully initialized.
+    - Use openspec validate --all before considering structural OpenSpec work complete.
+    - Archive completed changes only after implementation, plan documents, and validation are all stable.
+
+maintenance:
+  principles:
+    - The repository is expected to accumulate more mainlines, governance docs, and reusable rules over time.
+    - Project-level OpenSpec configuration must remain extensible rather than assuming a fixed mainline set or a single roadmap.
+    - Bilingual canonical documents should be tracked through docs_bilingual/docs_registry.yaml.
+    - New bilingual documents may be registered through tools/register-bilingual-doc.mjs.
+    - OpenSpec reusable artifacts should follow a bilingual primary-secondary rule with English ASCII artifacts as primary and Chinese artifacts as companion translations.
+    - Governance artifacts under docs_bilingual and openspec should be maintained as paired English .md primaries and Chinese .zh-CN.md companions once that authority surface is bilingual.
+    - The English primary should remain ASCII in body text.
+    - Chinese governance companions should be saved as UTF-8.
+    - Chinese governance companions should be read through an explicit UTF-8 path first before any fallback diagnosis or repair logic is considered.

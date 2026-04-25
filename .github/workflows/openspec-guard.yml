@@ -1,0 +1,40 @@
+name: OpenSpec Guard
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  openspec-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install official OpenSpec CLI
+        run: npm install -g @fission-ai/openspec@latest
+
+      - name: Run OpenSpec guard
+        run: |
+          set -o pipefail
+          python tools/run_openspec_guard.py --root . --tool codex --refresh-managed-files --require-clean-git --json | tee openspec-guard-report.json
+
+      - name: Upload OpenSpec guard JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openspec-guard-report
+          path: openspec-guard-report.json

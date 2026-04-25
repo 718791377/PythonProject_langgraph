@@ -1,0 +1,194 @@
+{
+  "banned_patterns": [
+    {
+      "label": "old_repo_brand",
+      "pattern": "OpenClaw"
+    },
+    {
+      "label": "old_repo_path",
+      "pattern": "D:\\\\PythonProject_OpenClaw"
+    },
+    {
+      "label": "old_repo_path_link",
+      "pattern": "/D:/PythonProject_OpenClaw"
+    }
+  ],
+  "global_allowed_context_patterns": [
+    {
+      "label": "historical_external_reference",
+      "pattern": "(?i)historical external OpenClaw references"
+    },
+    {
+      "label": "historical_external_reference",
+      "pattern": "历史外部 OpenClaw 参考源"
+    },
+    {
+      "label": "historical_external_reference",
+      "pattern": "(?i)external product reference for OpenClaw itself"
+    },
+    {
+      "label": "historical_external_reference",
+      "pattern": "(?i)historical comparison against earlier OpenClaw product assumptions"
+    },
+    {
+      "label": "historical_external_reference",
+      "pattern": "OpenClaw 自身的外部官方"
+    },
+    {
+      "label": "historical_external_reference",
+      "pattern": "早期 OpenClaw 产品假设的历史对照"
+    },
+    {
+      "label": "legacy_fixture",
+      "pattern": "(?i)legacy fixture"
+    },
+    {
+      "label": "legacy_artifact",
+      "pattern": "(?i)legacy artifact"
+    },
+    {
+      "label": "legacy_artifact",
+      "pattern": "(?i)legacy artifacts"
+    },
+    {
+      "label": "migration_context",
+      "pattern": "(?i)migration-context inputs only"
+    },
+    {
+      "label": "migration_context",
+      "pattern": "(?i)migration-safety scope only"
+    },
+    {
+      "label": "authority_disclaimer",
+      "pattern": "(?i)active implementation authority"
+    }
+  ],
+  "allow_all_relative_paths": [
+    {
+      "path": "docs_bilingual/implementation_plans/codex_langgraph_repository_split_migration_plan.md",
+      "label": "migration_plan"
+    },
+    {
+      "path": "docs_bilingual/implementation_plans/codex_langgraph_repository_split_migration_plan.zh-CN.md",
+      "label": "migration_plan"
+    }
+  ],
+  "file_allowed_context_patterns": {
+    "docs_bilingual/project_startup_summary.md": [
+      {
+        "label": "boundary_exclusion",
+        "pattern": "OpenClaw application runtime work"
+      },
+      {
+        "label": "boundary_exclusion",
+        "pattern": "OpenClaw service orchestration"
+      },
+      {
+        "label": "boundary_exclusion",
+        "pattern": "OpenClaw repository-local WeCom and local-control mainlines"
+      },
+      {
+        "label": "boundary_exclusion",
+        "pattern": "do not resume new implementation for this line in `D:\\\\PythonProject_OpenClaw`"
+      }
+    ],
+    "docs_bilingual/project_startup_summary.zh-CN.md": [
+      {
+        "label": "boundary_exclusion",
+        "pattern": "OpenClaw 应用运行时工作"
+      },
+      {
+        "label": "boundary_exclusion",
+        "pattern": "OpenClaw 服务编排"
+      },
+      {
+        "label": "boundary_exclusion",
+        "pattern": "OpenClaw 仓库内部的 WeCom 与 local-control 主线"
+      },
+      {
+        "label": "boundary_exclusion",
+        "pattern": "不要再回到 `D:\\\\PythonProject_OpenClaw`"
+      }
+    ],
+    "docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md": [
+      {
+        "label": "legacy_fixture",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      },
+      {
+        "label": "legacy_fixture",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "legacy_fixture",
+        "pattern": "(?i)legacy fixture"
+      },
+      {
+        "label": "legacy_artifact",
+        "pattern": "(?i)legacy artifacts"
+      },
+      {
+        "label": "migration_context",
+        "pattern": "(?i)migration"
+      }
+    ],
+    "docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md": [
+      {
+        "label": "legacy_fixture",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      },
+      {
+        "label": "legacy_fixture",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "legacy_fixture",
+        "pattern": "(?i)legacy fixture"
+      },
+      {
+        "label": "legacy_artifact",
+        "pattern": "(?i)legacy artifacts"
+      },
+      {
+        "label": "historical_context",
+        "pattern": "历史"
+      },
+      {
+        "label": "migration_context",
+        "pattern": "迁移"
+      }
+    ],
+    "docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md": [
+      {
+        "label": "external_project_name",
+        "pattern": "`ClawTeam-OpenClaw`"
+      },
+      {
+        "label": "boundary_exclusion",
+        "pattern": "散落回 `D:\\\\PythonProject_OpenClaw`"
+      },
+      {
+        "label": "external_project_name",
+        "pattern": "`ClawTeam-OpenClaw`、`OpenViking`"
+      }
+    ],
+    "docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md": [
+      {
+        "label": "external_project_name",
+        "pattern": "`ClawTeam-OpenClaw`"
+      },
+      {
+        "label": "boundary_exclusion",
+        "pattern": "historical external OpenClaw reference only"
+      },
+      {
+        "label": "boundary_exclusion",
+        "pattern": "do not scatter future mainline implementation back into `D:\\\\PythonProject_OpenClaw`"
+      },
+      {
+        "label": "external_project_name",
+        "pattern": "`ClawTeam-OpenClaw`, `OpenViking`"
+      }
+    ]
+  }
+}
