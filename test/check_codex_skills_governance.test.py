@@ -135,6 +135,40 @@ class CodexSkillsGovernanceCheckTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertTrue(any("unknown profile `missing`" in error for error in payload["errors"]))
 
+    def test_reports_known_same_layer_exception_as_deferred_cleanup(self) -> None:
+        root = self.make_root("skills-gov-deferred")
+        self.write_minimal_docs(
+            root,
+            "version: 1\n"
+            "profiles:\n"
+            "  core:\n"
+            "    description: Core.\n"
+            "projects:\n"
+            "  D:\\sample:\n"
+            "    profiles: [core]\n"
+            "duplicate_skill_policy:\n"
+            "  known_same_layer_exceptions:\n"
+            "    - layer: repo\n"
+            "      name_pattern: openspec-*\n"
+            "      severity: warning\n"
+            "      reason: Requires clean-clone OpenSpec evidence before cleanup.\n",
+        )
+        self.write_skill(root, ".codex/skills/openspec-demo/SKILL.md", "openspec-demo", "Short repo")
+        self.write_skill(
+            root,
+            ".codex/skills/openspec-demo/openspec-demo/SKILL.md",
+            "openspec-demo",
+            "Short repo",
+        )
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["errors"], 0)
+        self.assertEqual(payload["counts"]["deferred"], 1)
+        self.assertTrue(any("openspec-demo" in item for item in payload["deferred"]))
+
 
 if __name__ == "__main__":
     unittest.main()
