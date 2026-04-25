@@ -280,6 +280,22 @@ When both layers are affected:
 - `docs_bilingual/` documents must remain route-correct and role-correct
 - neither layer should silently replace the other
 
+### 7.4 Name Clarity Rule
+
+When OPSX artifacts or OPSX-facing governance documents list a script, path, command, variable, profile, skill name, or other code-like name, the item must include a short purpose explanation.
+
+The goal is cold-start readability: a new session with no chat context should know what the named item is for without searching the whole repository first.
+
+Repository rule:
+
+- do not leave bare code-name lists when the name is not self-explanatory
+- add a brief phrase after the name that explains its role or when to use it
+- keep examples concise; the explanation should aid routing, not become a full manual
+
+Example pattern:
+
+- `tools/example-check.py` - validates one concrete repository invariant before CI accepts the change.
+
 ## 8. Repository Entry Rule
 
 For Codex work in this repository, the default OPSX entry should be:

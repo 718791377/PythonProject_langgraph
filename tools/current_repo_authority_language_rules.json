@@ -98,6 +98,10 @@
       {
         "label": "cross_project_consumer_scope",
         "pattern": "consumer project that may need browser or endpoint verification"
+      },
+      {
+        "label": "cross_project_inventory_scope",
+        "pattern": "read-only Phase 0 inventory"
       }
     ],
     "docs_bilingual/project_startup_summary.zh-CN.md": [
@@ -124,6 +128,10 @@
       {
         "label": "cross_project_consumer_scope",
         "pattern": "endpoint .*"
+      },
+      {
+        "label": "cross_project_inventory_scope",
+        "pattern": "只读 Phase 0 盘点"
       }
     ],
     "docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md": [
