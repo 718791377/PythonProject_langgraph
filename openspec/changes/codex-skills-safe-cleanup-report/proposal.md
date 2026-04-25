@@ -35,16 +35,16 @@ This change implements Phase 3 as a safe, evidence-producing cleanup report. It 
 ## Impact
 
 - Affected documentation and artifacts:
-  - `docs_bilingual/governance/codex_skills_safe_cleanup_report.json`
-  - `openspec/changes/codex-skills-safe-cleanup-report/`
+  - `docs_bilingual/governance/codex_skills_safe_cleanup_report.json` - records the generated safe-cleanup candidate inventory for governance review.
+  - `openspec/changes/codex-skills-safe-cleanup-report/` - stores the OpenSpec proposal, tasks, and design artifacts for this reporting change.
 - Affected tooling and tests:
-  - `tools/report_codex_skills_cleanup_candidates.py`
-  - `test/report_codex_skills_cleanup_candidates.test.py`
+  - `tools/report_codex_skills_cleanup_candidates.py` - generates the report-only safe-cleanup candidate artifact without changing skill files.
+  - `test/report_codex_skills_cleanup_candidates.test.py` - verifies the reporting tool keeps cleanup decisions evidence-based and non-destructive.
 - Affected policy inputs:
-  - `docs_bilingual/governance/codex_skills_profiles.registry.yaml`
-  - `docs_bilingual/governance/codex_skills_inventory_baseline.json`
-  - `tools/inventory_codex_skills.py`
-  - `tools/check_codex_skills_governance.py`
+  - `docs_bilingual/governance/codex_skills_profiles.registry.yaml` - defines profile ownership and preferred skill sources used by the report.
+  - `docs_bilingual/governance/codex_skills_inventory_baseline.json` - provides the current skill inventory baseline compared by the report.
+  - `tools/inventory_codex_skills.py` - collects installed skill metadata that feeds the governance inventory baseline.
+  - `tools/check_codex_skills_governance.py` - enforces skill-governance constraints that the cleanup report must not weaken.
 - No user-level skill directory, plugin cache file, Vercel plugin setting, or user-level Codex config file is modified.
 
 ## Impact Scope
