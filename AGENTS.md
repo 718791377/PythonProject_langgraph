@@ -24,6 +24,13 @@
 - Preserve the current main Codex CLI session as leader; do not redesign the system around a separate persistent leader pane.
 - Keep research and implementation in different roles when the task starts open-ended.
 
+## Publication Workflow
+
+- Treat GitLab as the authoritative review and merge surface for this repository.
+- For repository changes, create a feature branch, push it to `gitlab`, open or update a GitLab MR, wait for the GitLab pipeline to pass, and merge into GitLab `main`.
+- After GitLab `main` is merged and green, sync that exact `main` commit directly to GitHub.
+- Do not open GitHub PRs for this repository unless the user explicitly overrides this workflow; GitHub is the post-merge mirror/sync target by default.
+
 ## Current Mainline
 
 - `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state`

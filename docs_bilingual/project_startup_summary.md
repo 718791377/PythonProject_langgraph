@@ -26,6 +26,13 @@ Stable repository-entry posture:
 - this repository remains the primary repository for the user-level Codex orchestration line
 - the current named repository mainline is `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state`
 
+Stable publication posture:
+
+- GitLab is the authoritative review and merge surface for this repository.
+- Feature branches open or update GitLab MRs first; GitLab pipeline success gates the merge into GitLab `main`.
+- GitHub is the post-merge sync target: after GitLab `main` is merged and green, push the same `main` commit directly to GitHub.
+- Do not open GitHub PRs by default.
+
 Stable capability posture:
 
 - `subagent`

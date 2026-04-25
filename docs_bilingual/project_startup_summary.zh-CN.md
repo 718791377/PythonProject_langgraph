@@ -100,3 +100,10 @@ translation_of: docs_bilingual/project_startup_summary.md
 - 不要再回到 `D:\PythonProject_OpenClaw` 为这条线继续做新实现
 - OpenSpec 历史必须和代码一起迁移
 - 在开始新的大实施批次前，先更新 startup summary 与当前主线状态
+
+## 仓库发布流程
+
+- GitLab 是本仓库的权威 review / merge 面。
+- 所有变更先推送到 GitLab feature 分支并创建或更新 GitLab MR；只有 GitLab pipeline 通过后，才合并到 GitLab `main`。
+- GitLab `main` 合并并变绿后，再把同一个 `main` 提交直接同步推送到 GitHub。
+- 默认不为 GitHub 开 PR；除非用户明确要求，GitHub 只是合并后的同步目标。
