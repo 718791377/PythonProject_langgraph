@@ -1,0 +1,2400 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-04-25T15:13:40.855072+00:00",
+  "tool": "report_codex_skills_cleanup_candidates",
+  "root": "D:\\PythonProject_langgraph\\.worktrees\\skills-safe-cleanup-report",
+  "input_scan_roots": {
+    "user_skills": "C:\\Users\\lenovo\\.codex\\skills",
+    "repo_skills": "D:\\PythonProject_langgraph\\.worktrees\\skills-safe-cleanup-report\\.codex\\skills",
+    "plugin_cache": "C:\\Users\\lenovo\\.codex\\plugins\\cache"
+  },
+  "source_inventory_counts": {
+    "total_skills": 131,
+    "by_source_layer": {
+      "plugin": 51,
+      "repo": 20,
+      "user": 60
+    },
+    "by_suspected_profile": {
+      "browser": 21,
+      "core": 25,
+      "github": 11,
+      "openspec": 20,
+      "orchestration": 9,
+      "web": 45
+    },
+    "duplicate_name_groups": 12
+  },
+  "policy": {
+    "registry_path": "docs_bilingual/governance/codex_skills_profiles.registry.yaml",
+    "preferred_sources": {
+      "gh-address-comments": "plugin",
+      "gh-fix-ci": "plugin",
+      "openspec-apply-change": "repo",
+      "openspec-archive-change": "repo",
+      "openspec-continue-change": "repo",
+      "openspec-explore": "repo",
+      "openspec-ff-change": "repo",
+      "openspec-new-change": "repo",
+      "openspec-onboard": "repo",
+      "openspec-propose": "repo",
+      "openspec-sync-specs": "repo",
+      "openspec-verify-change": "repo"
+    },
+    "description_limits": {
+      "user": 180,
+      "repo": 220
+    },
+    "description_enforcement": {
+      "user": "warning",
+      "repo": "error",
+      "plugin": "report_only"
+    }
+  },
+  "summary": {
+    "cleanup_actions_performed": 0,
+    "candidate_count": 92,
+    "by_candidate_type": {
+      "cross_layer_user_plugin_duplicate": 2,
+      "openspec_nested_duplicate": 10,
+      "plugin_managed_skill": 51,
+      "user_long_description": 29
+    },
+    "by_disposition": {
+      "deferred_requires_clean_clone_evidence": 10,
+      "deferred_until_description_shortening_phase": 29,
+      "preferred_source_recorded_no_action": 2,
+      "report_only_plugin_managed": 51
+    }
+  },
+  "safety_constraints": [
+    "No user-level skills were deleted, moved, renamed, or edited.",
+    "No repository OpenSpec duplicate candidates were deleted.",
+    "No plugin cache files were edited.",
+    "No Vercel plugin capability was disabled.",
+    "No user-level Codex config.toml was mutated.",
+    "Browser and web verification capabilities remain preserved."
+  ],
+  "phase3_gate": {
+    "cleanup_allowed": false,
+    "reason": "Phase 3 is a proposal and evidence phase only.",
+    "required_before_cleanup": [
+      "clean-clone OpenSpec regeneration evidence",
+      "OpenSpec guard with --require-clean-git in a clean clone",
+      "candidate-specific review",
+      "explicit user approval"
+    ]
+  },
+  "validation_notes": [
+    "This report is generated from inventory and registry metadata.",
+    "Candidate records are review evidence, not cleanup instructions."
+  ],
+  "candidates": [
+    {
+      "candidate_id": "C0001",
+      "cleanup_action_performed": false,
+      "candidate_type": "openspec_nested_duplicate",
+      "name": "openspec-apply-change",
+      "disposition": "deferred_requires_clean_clone_evidence",
+      "source_layers": [
+        "repo"
+      ],
+      "skills": [
+        {
+          "name": "openspec-apply-change",
+          "source_layer": "repo",
+          "source_detail": "repo",
+          "file_path": ".codex/skills/openspec-apply-change/SKILL.md",
+          "description_length": 135,
+          "status_suggestion": "review_duplicate_preferred_source"
+        },
+        {
+          "name": "openspec-apply-change",
+          "source_layer": "repo",
+          "source_detail": "repo_nested",
+          "file_path": ".codex/skills/openspec-apply-change/openspec-apply-change/SKILL.md",
+          "description_length": 135,
+          "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+        }
+      ],
+      "required_evidence": [
+        "clean temporary clone",
+        "OpenSpec regeneration comparison",
+        "OpenSpec guard with clean working tree",
+        "explicit user approval before deletion"
+      ]
+    },
+    {
+      "candidate_id": "C0002",
+      "cleanup_action_performed": false,
+      "candidate_type": "openspec_nested_duplicate",
+      "name": "openspec-archive-change",
+      "disposition": "deferred_requires_clean_clone_evidence",
+      "source_layers": [
+        "repo"
+      ],
+      "skills": [
+        {
+          "name": "openspec-archive-change",
+          "source_layer": "repo",
+          "source_detail": "repo",
+          "file_path": ".codex/skills/openspec-archive-change/SKILL.md",
+          "description_length": 147,
+          "status_suggestion": "review_duplicate_preferred_source"
+        },
+        {
+          "name": "openspec-archive-change",
+          "source_layer": "repo",
+          "source_detail": "repo_nested",
+          "file_path": ".codex/skills/openspec-archive-change/openspec-archive-change/SKILL.md",
+          "description_length": 147,
+          "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+        }
+      ],
+      "required_evidence": [
+        "clean temporary clone",
+        "OpenSpec regeneration comparison",
+        "OpenSpec guard with clean working tree",
+        "explicit user approval before deletion"
+      ]
+    },
+    {
+      "candidate_id": "C0003",
+      "cleanup_action_performed": false,
+      "candidate_type": "openspec_nested_duplicate",
+      "name": "openspec-continue-change",
+      "disposition": "deferred_requires_clean_clone_evidence",
+      "source_layers": [
+        "repo"
+      ],
+      "skills": [
+        {
+          "name": "openspec-continue-change",
+          "source_layer": "repo",
+          "source_detail": "repo",
+          "file_path": ".codex/skills/openspec-continue-change/SKILL.md",
+          "description_length": 173,
+          "status_suggestion": "review_duplicate_preferred_source"
+        },
+        {
+          "name": "openspec-continue-change",
+          "source_layer": "repo",
+          "source_detail": "repo_nested",
+          "file_path": ".codex/skills/openspec-continue-change/openspec-continue-change/SKILL.md",
+          "description_length": 173,
+          "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+        }
+      ],
+      "required_evidence": [
+        "clean temporary clone",
+        "OpenSpec regeneration comparison",
+        "OpenSpec guard with clean working tree",
+        "explicit user approval before deletion"
+      ]
+    },
+    {
+      "candidate_id": "C0004",
+      "cleanup_action_performed": false,
+      "candidate_type": "openspec_nested_duplicate",
+      "name": "openspec-explore",
+      "disposition": "deferred_requires_clean_clone_evidence",
+      "source_layers": [
+        "repo"
+      ],
+      "skills": [
+        {
+          "name": "openspec-explore",
+          "source_layer": "repo",
+          "source_detail": "repo",
+          "file_path": ".codex/skills/openspec-explore/SKILL.md",
+          "description_length": 191,
+          "status_suggestion": "review_duplicate_preferred_source"
+        },
+        {
+          "name": "openspec-explore",
+          "source_layer": "repo",
+          "source_detail": "repo_nested",
+          "file_path": ".codex/skills/openspec-explore/openspec-explore/SKILL.md",
+          "description_length": 191,
+          "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+        }
+      ],
+      "required_evidence": [
+        "clean temporary clone",
+        "OpenSpec regeneration comparison",
+        "OpenSpec guard with clean working tree",
+        "explicit user approval before deletion"
+      ]
+    },
+    {
+      "candidate_id": "C0005",
+      "cleanup_action_performed": false,
+      "candidate_type": "openspec_nested_duplicate",
+      "name": "openspec-ff-change",
+      "disposition": "deferred_requires_clean_clone_evidence",
+      "source_layers": [
+        "repo"
+      ],
+      "skills": [
+        {
+          "name": "openspec-ff-change",
+          "source_layer": "repo",
+          "source_detail": "repo",
+          "file_path": ".codex/skills/openspec-ff-change/SKILL.md",
+          "description_length": 178,
+          "status_suggestion": "review_duplicate_preferred_source"
+        },
+        {
+          "name": "openspec-ff-change",
+          "source_layer": "repo",
+          "source_detail": "repo_nested",
+          "file_path": ".codex/skills/openspec-ff-change/openspec-ff-change/SKILL.md",
+          "description_length": 178,
+          "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+        }
+      ],
+      "required_evidence": [
+        "clean temporary clone",
+        "OpenSpec regeneration comparison",
+        "OpenSpec guard with clean working tree",
+        "explicit user approval before deletion"
+      ]
+    },
+    {
+      "candidate_id": "C0006",
+      "cleanup_action_performed": false,
+      "candidate_type": "openspec_nested_duplicate",
+      "name": "openspec-new-change",
+      "disposition": "deferred_requires_clean_clone_evidence",
+      "source_layers": [
+        "repo"
+      ],
+      "skills": [
+        {
+          "name": "openspec-new-change",
+          "source_layer": "repo",
+          "source_detail": "repo",
+          "file_path": ".codex/skills/openspec-new-change/SKILL.md",
+          "description_length": 180,
+          "status_suggestion": "review_duplicate_preferred_source"
+        },
+        {
+          "name": "openspec-new-change",
+          "source_layer": "repo",
+          "source_detail": "repo_nested",
+          "file_path": ".codex/skills/openspec-new-change/openspec-new-change/SKILL.md",
+          "description_length": 180,
+          "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+        }
+      ],
+      "required_evidence": [
+        "clean temporary clone",
+        "OpenSpec regeneration comparison",
+        "OpenSpec guard with clean working tree",
+        "explicit user approval before deletion"
+      ]
+    },
+    {
+      "candidate_id": "C0007",
+      "cleanup_action_performed": false,
+      "candidate_type": "openspec_nested_duplicate",
+      "name": "openspec-onboard",
+      "disposition": "deferred_requires_clean_clone_evidence",
+      "source_layers": [
+        "repo"
+      ],
+      "skills": [
+        {
+          "name": "openspec-onboard",
+          "source_layer": "repo",
+          "source_detail": "repo",
+          "file_path": ".codex/skills/openspec-onboard/SKILL.md",
+          "description_length": 110,
+          "status_suggestion": "review_duplicate_preferred_source"
+        },
+        {
+          "name": "openspec-onboard",
+          "source_layer": "repo",
+          "source_detail": "repo_nested",
+          "file_path": ".codex/skills/openspec-onboard/openspec-onboard/SKILL.md",
+          "description_length": 110,
+          "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+        }
+      ],
+      "required_evidence": [
+        "clean temporary clone",
+        "OpenSpec regeneration comparison",
+        "OpenSpec guard with clean working tree",
+        "explicit user approval before deletion"
+      ]
+    },
+    {
+      "candidate_id": "C0008",
+      "cleanup_action_performed": false,
+      "candidate_type": "openspec_nested_duplicate",
+      "name": "openspec-propose",
+      "disposition": "deferred_requires_clean_clone_evidence",
+      "source_layers": [
+        "repo"
+      ],
+      "skills": [
+        {
+          "name": "openspec-propose",
+          "source_layer": "repo",
+          "source_detail": "repo",
+          "file_path": ".codex/skills/openspec-propose/SKILL.md",
+          "description_length": 214,
+          "status_suggestion": "review_duplicate_preferred_source"
+        },
+        {
+          "name": "openspec-propose",
+          "source_layer": "repo",
+          "source_detail": "repo_nested",
+          "file_path": ".codex/skills/openspec-propose/openspec-propose/SKILL.md",
+          "description_length": 214,
+          "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+        }
+      ],
+      "required_evidence": [
+        "clean temporary clone",
+        "OpenSpec regeneration comparison",
+        "OpenSpec guard with clean working tree",
+        "explicit user approval before deletion"
+      ]
+    },
+    {
+      "candidate_id": "C0009",
+      "cleanup_action_performed": false,
+      "candidate_type": "openspec_nested_duplicate",
+      "name": "openspec-sync-specs",
+      "disposition": "deferred_requires_clean_clone_evidence",
+      "source_layers": [
+        "repo"
+      ],
+      "skills": [
+        {
+          "name": "openspec-sync-specs",
+          "source_layer": "repo",
+          "source_detail": "repo",
+          "file_path": ".codex/skills/openspec-sync-specs/SKILL.md",
+          "description_length": 152,
+          "status_suggestion": "review_duplicate_preferred_source"
+        },
+        {
+          "name": "openspec-sync-specs",
+          "source_layer": "repo",
+          "source_detail": "repo_nested",
+          "file_path": ".codex/skills/openspec-sync-specs/openspec-sync-specs/SKILL.md",
+          "description_length": 152,
+          "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+        }
+      ],
+      "required_evidence": [
+        "clean temporary clone",
+        "OpenSpec regeneration comparison",
+        "OpenSpec guard with clean working tree",
+        "explicit user approval before deletion"
+      ]
+    },
+    {
+      "candidate_id": "C0010",
+      "cleanup_action_performed": false,
+      "candidate_type": "openspec_nested_duplicate",
+      "name": "openspec-verify-change",
+      "disposition": "deferred_requires_clean_clone_evidence",
+      "source_layers": [
+        "repo"
+      ],
+      "skills": [
+        {
+          "name": "openspec-verify-change",
+          "source_layer": "repo",
+          "source_detail": "repo",
+          "file_path": ".codex/skills/openspec-verify-change/SKILL.md",
+          "description_length": 156,
+          "status_suggestion": "review_duplicate_preferred_source"
+        },
+        {
+          "name": "openspec-verify-change",
+          "source_layer": "repo",
+          "source_detail": "repo_nested",
+          "file_path": ".codex/skills/openspec-verify-change/openspec-verify-change/SKILL.md",
+          "description_length": 156,
+          "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+        }
+      ],
+      "required_evidence": [
+        "clean temporary clone",
+        "OpenSpec regeneration comparison",
+        "OpenSpec guard with clean working tree",
+        "explicit user approval before deletion"
+      ]
+    },
+    {
+      "candidate_id": "C0011",
+      "cleanup_action_performed": false,
+      "candidate_type": "cross_layer_user_plugin_duplicate",
+      "name": "gh-address-comments",
+      "disposition": "preferred_source_recorded_no_action",
+      "preferred_source": "plugin",
+      "source_layers": [
+        "plugin",
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "gh-address-comments",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:github",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\gh-address-comments\\SKILL.md",
+          "description_length": 387,
+          "status_suggestion": "report_only_plugin_skill"
+        },
+        {
+          "name": "gh-address-comments",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\gh-address-comments\\SKILL.md",
+          "description_length": 168,
+          "status_suggestion": "review_duplicate_preferred_source"
+        }
+      ],
+      "required_evidence": [
+        "explicit user approval before user-level cleanup",
+        "backup of affected user-level skill before mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0012",
+      "cleanup_action_performed": false,
+      "candidate_type": "cross_layer_user_plugin_duplicate",
+      "name": "gh-fix-ci",
+      "disposition": "preferred_source_recorded_no_action",
+      "preferred_source": "plugin",
+      "source_layers": [
+        "plugin",
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "gh-fix-ci",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:github",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\gh-fix-ci\\SKILL.md",
+          "description_length": 248,
+          "status_suggestion": "report_only_plugin_skill"
+        },
+        {
+          "name": "gh-fix-ci",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\gh-fix-ci\\SKILL.md",
+          "description_length": 313,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "explicit user approval before user-level cleanup",
+        "backup of affected user-level skill before mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0013",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "Excel",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "Excel",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\codex-primary-runtime\\spreadsheets\\SKILL.md",
+          "description_length": 201,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0014",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "PowerPoint",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "PowerPoint",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\codex-primary-runtime\\slides\\SKILL.md",
+          "description_length": 211,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0015",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "aspnet-core",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "aspnet-core",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\aspnet-core\\SKILL.md",
+          "description_length": 376,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0016",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "chatgpt-apps",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "chatgpt-apps",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\chatgpt-apps\\SKILL.md",
+          "description_length": 449,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0017",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "cloudflare-deploy",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "cloudflare-deploy",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\cloudflare-deploy\\SKILL.md",
+          "description_length": 189,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0018",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "develop-web-game",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "develop-web-game",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\develop-web-game\\SKILL.md",
+          "description_length": 298,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0019",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "doc",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "doc",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\doc\\SKILL.md",
+          "description_length": 212,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0020",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "figma",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "figma",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\figma\\SKILL.md",
+          "description_length": 269,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0021",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "figma-implement-design",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "figma-implement-design",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\figma-implement-design\\SKILL.md",
+          "description_length": 352,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0022",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "gh-fix-ci",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "gh-fix-ci",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\gh-fix-ci\\SKILL.md",
+          "description_length": 313,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0023",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "imagegen",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "imagegen",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\.system\\imagegen\\SKILL.md",
+          "description_length": 570,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0024",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "jupyter-notebook",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "jupyter-notebook",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\jupyter-notebook\\SKILL.md",
+          "description_length": 237,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0025",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "netlify-deploy",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "netlify-deploy",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\netlify-deploy\\SKILL.md",
+          "description_length": 192,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0026",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "openai-docs",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "openai-docs",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\.system\\openai-docs\\SKILL.md",
+          "description_length": 361,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0027",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "pdf",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "pdf",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\pdf\\SKILL.md",
+          "description_length": 248,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0028",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "playwright",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "playwright",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\playwright\\SKILL.md",
+          "description_length": 209,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0029",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "plugin-creator",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "plugin-creator",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\.system\\plugin-creator\\SKILL.md",
+          "description_length": 397,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0030",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "render-deploy",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "render-deploy",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\render-deploy\\SKILL.md",
+          "description_length": 229,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0031",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "screenshot",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "screenshot",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\screenshot\\SKILL.md",
+          "description_length": 220,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0032",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "security-best-practices",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "security-best-practices",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\security-best-practices\\SKILL.md",
+          "description_length": 385,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0033",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "security-ownership-map",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "security-ownership-map",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\security-ownership-map\\SKILL.md",
+          "description_length": 532,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0034",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "security-threat-model",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "security-threat-model",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\security-threat-model\\SKILL.md",
+          "description_length": 412,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0035",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "sentry",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "sentry",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\sentry\\SKILL.md",
+          "description_length": 230,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0036",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "skill-creator",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "skill-creator",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\.system\\skill-creator\\SKILL.md",
+          "description_length": 225,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0037",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "skill-installer",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "skill-installer",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\.system\\skill-installer\\SKILL.md",
+          "description_length": 225,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0038",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "slides",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "slides",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\slides\\SKILL.md",
+          "description_length": 404,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0039",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "transcribe",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "transcribe",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\transcribe\\SKILL.md",
+          "description_length": 216,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0040",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "vercel-deploy",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "vercel-deploy",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\vercel-deploy\\SKILL.md",
+          "description_length": 194,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0041",
+      "cleanup_action_performed": false,
+      "candidate_type": "user_long_description",
+      "name": "winui-app",
+      "disposition": "deferred_until_description_shortening_phase",
+      "source_layers": [
+        "user"
+      ],
+      "skills": [
+        {
+          "name": "winui-app",
+          "source_layer": "user",
+          "source_detail": "user",
+          "file_path": "C:\\Users\\lenovo\\.codex\\skills\\winui-app\\SKILL.md",
+          "description_length": 532,
+          "status_suggestion": "shorten_user_description_after_inventory"
+        }
+      ],
+      "required_evidence": [
+        "separate reviewable description-shortening change",
+        "no semantic loss in skill routing description",
+        "explicit approval before editing user-level skill"
+      ]
+    },
+    {
+      "candidate_id": "C0042",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "agent-browser",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "agent-browser",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\agent-browser\\SKILL.md",
+          "description_length": 304,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0043",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "agent-browser-verify",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "agent-browser-verify",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\agent-browser-verify\\SKILL.md",
+          "description_length": 248,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0044",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "ai-elements",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "ai-elements",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\ai-elements\\SKILL.md",
+          "description_length": 255,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0045",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "ai-gateway",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "ai-gateway",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\ai-gateway\\SKILL.md",
+          "description_length": 161,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0046",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "ai-generation-persistence",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "ai-generation-persistence",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\ai-generation-persistence\\SKILL.md",
+          "description_length": 127,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0047",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "ai-sdk",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "ai-sdk",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\ai-sdk\\SKILL.md",
+          "description_length": 248,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0048",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "auth",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "auth",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\auth\\SKILL.md",
+          "description_length": 252,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0049",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "bootstrap",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "bootstrap",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\bootstrap\\SKILL.md",
+          "description_length": 287,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0050",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "chat-sdk",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "chat-sdk",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\chat-sdk\\SKILL.md",
+          "description_length": 289,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0051",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "cms",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "cms",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\cms\\SKILL.md",
+          "description_length": 285,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0052",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "cron-jobs",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "cron-jobs",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\cron-jobs\\SKILL.md",
+          "description_length": 121,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0053",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "deployments-cicd",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "deployments-cicd",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\deployments-cicd\\SKILL.md",
+          "description_length": 184,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0054",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "email",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "email",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\email\\SKILL.md",
+          "description_length": 243,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0055",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "env-vars",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "env-vars",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\env-vars\\SKILL.md",
+          "description_length": 160,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0056",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "geist",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "geist",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\geist\\SKILL.md",
+          "description_length": 249,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0057",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "geistdocs",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "geistdocs",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\geistdocs\\SKILL.md",
+          "description_length": 281,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0058",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "gh-address-comments",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "gh-address-comments",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:github",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\gh-address-comments\\SKILL.md",
+          "description_length": 387,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0059",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "gh-fix-ci",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "gh-fix-ci",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:github",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\gh-fix-ci\\SKILL.md",
+          "description_length": 248,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0060",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "github",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "github",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:github",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\github\\SKILL.md",
+          "description_length": 253,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0061",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "investigation-mode",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "investigation-mode",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\investigation-mode\\SKILL.md",
+          "description_length": 220,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0062",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "json-render",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "json-render",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\json-render\\SKILL.md",
+          "description_length": 241,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0063",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "marketplace",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "marketplace",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\marketplace\\SKILL.md",
+          "description_length": 293,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0064",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "micro",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "micro",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\micro\\SKILL.md",
+          "description_length": 181,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0065",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "ncc",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "ncc",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\ncc\\SKILL.md",
+          "description_length": 229,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0066",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "next-forge",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "next-forge",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\next-forge\\SKILL.md",
+          "description_length": 209,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0067",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "nextjs",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "nextjs",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\nextjs\\SKILL.md",
+          "description_length": 256,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0068",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "observability",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "observability",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\observability\\SKILL.md",
+          "description_length": 310,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0069",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "payments",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "payments",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\payments\\SKILL.md",
+          "description_length": 225,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0070",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "react-best-practices",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "react-best-practices",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\react-best-practices\\SKILL.md",
+          "description_length": 224,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0071",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "routing-middleware",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "routing-middleware",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\routing-middleware\\SKILL.md",
+          "description_length": 231,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0072",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "runtime-cache",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "runtime-cache",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\runtime-cache\\SKILL.md",
+          "description_length": 231,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0073",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "satori",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "satori",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\satori\\SKILL.md",
+          "description_length": 158,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0074",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "shadcn",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "shadcn",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\shadcn\\SKILL.md",
+          "description_length": 323,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0075",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "sign-in-with-vercel",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "sign-in-with-vercel",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\sign-in-with-vercel\\SKILL.md",
+          "description_length": 179,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0076",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "swr",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "swr",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\swr\\SKILL.md",
+          "description_length": 199,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0077",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "turbopack",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "turbopack",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\turbopack\\SKILL.md",
+          "description_length": 163,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0078",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "turborepo",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "turborepo",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\turborepo\\SKILL.md",
+          "description_length": 182,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0079",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "v0-dev",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "v0-dev",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\v0-dev\\SKILL.md",
+          "description_length": 226,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0080",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "vercel-agent",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "vercel-agent",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-agent\\SKILL.md",
+          "description_length": 207,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0081",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "vercel-api",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "vercel-api",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-api\\SKILL.md",
+          "description_length": 211,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0082",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "vercel-cli",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "vercel-cli",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-cli\\SKILL.md",
+          "description_length": 192,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0083",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "vercel-firewall",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "vercel-firewall",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-firewall\\SKILL.md",
+          "description_length": 239,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0084",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "vercel-flags",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "vercel-flags",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-flags\\SKILL.md",
+          "description_length": 214,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0085",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "vercel-functions",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "vercel-functions",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-functions\\SKILL.md",
+          "description_length": 219,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0086",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "vercel-queues",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "vercel-queues",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-queues\\SKILL.md",
+          "description_length": 246,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0087",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "vercel-sandbox",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "vercel-sandbox",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-sandbox\\SKILL.md",
+          "description_length": 218,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0088",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "vercel-services",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "vercel-services",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-services\\SKILL.md",
+          "description_length": 191,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0089",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "vercel-storage",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "vercel-storage",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-storage\\SKILL.md",
+          "description_length": 187,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0090",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "verification",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "verification",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\verification\\SKILL.md",
+          "description_length": 203,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0091",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "workflow",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "workflow",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:vercel",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\workflow\\SKILL.md",
+          "description_length": 228,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    },
+    {
+      "candidate_id": "C0092",
+      "cleanup_action_performed": false,
+      "candidate_type": "plugin_managed_skill",
+      "name": "yeet",
+      "disposition": "report_only_plugin_managed",
+      "source_layers": [
+        "plugin"
+      ],
+      "skills": [
+        {
+          "name": "yeet",
+          "source_layer": "plugin",
+          "source_detail": "openai-curated:github",
+          "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\yeet\\SKILL.md",
+          "description_length": 238,
+          "status_suggestion": "report_only_plugin_skill"
+        }
+      ],
+      "required_evidence": [
+        "vendor or plugin-manager change required before plugin file mutation"
+      ]
+    }
+  ]
+}
