@@ -189,6 +189,42 @@
         "label": "external_project_name",
         "pattern": "`ClawTeam-OpenClaw`, `OpenViking`"
       }
+    ],
+    "docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.md": [
+      {
+        "label": "cross_project_profile_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      },
+      {
+        "label": "cross_project_profile_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "cross_project_profile_scope",
+        "pattern": "(?i)browser automation"
+      },
+      {
+        "label": "cross_project_profile_scope",
+        "pattern": "(?i)cross-project"
+      }
+    ],
+    "docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.zh-CN.md": [
+      {
+        "label": "cross_project_profile_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      },
+      {
+        "label": "cross_project_profile_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "cross_project_profile_scope",
+        "pattern": "(?i)browser automation"
+      },
+      {
+        "label": "cross_project_profile_scope",
+        "pattern": "(?i)cross-project"
+      }
     ]
   }
 }
