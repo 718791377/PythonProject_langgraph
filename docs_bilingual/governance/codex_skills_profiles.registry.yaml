@@ -74,3 +74,58 @@ plugin_rules:
 publication:
   review_surface: GitLab
   github_pr_default: false
+launcher_mapping:
+  status: documented_only
+  config_mutation: forbidden
+  installed_wrapper_mutation: forbidden
+  base_command: codex-ohmy
+  default_profile: core
+  future_aliases_installed: false
+  aliases:
+    core:
+      alias: codex-ohmy-core
+      lifecycle: future_optional
+      base_command: codex-ohmy
+      purpose: Reduced default profile for non-web Codex work.
+      profile_set: [core]
+      plugin_policy: no_vercel_required
+      reduced_default: true
+      default: true
+      broad_plugin_discovery: false
+    browser:
+      alias: codex-ohmy-browser
+      lifecycle: future_optional
+      base_command: codex-ohmy
+      purpose: Browser automation and visual verification profile.
+      profile_set: [core, browser, orchestration]
+      plugin_policy: preserve_vercel_bundle_until_fine_grained_filtering
+      preserve_plugin_skills: [agent-browser, agent-browser-verify, verification, investigation-mode]
+      default: false
+      broad_plugin_discovery: false
+    web:
+      alias: codex-ohmy-web
+      lifecycle: future_optional
+      base_command: codex-ohmy
+      purpose: Web, frontend, Vercel, Next.js, and deployment profile.
+      profile_set: [core, web]
+      plugin_policy: preserve_vercel_bundle_until_fine_grained_filtering
+      default: false
+      broad_plugin_discovery: false
+    github:
+      alias: codex-ohmy-github
+      lifecycle: future_optional
+      base_command: codex-ohmy
+      purpose: GitHub issue and PR workflow profile for active GitHub tasks.
+      profile_set: [core, github]
+      plugin_policy: enable_github_plugin_when_github_workflow_is_active
+      default: false
+      broad_plugin_discovery: false
+    full:
+      alias: codex-ohmy-full
+      lifecycle: temporary_troubleshooting
+      base_command: codex-ohmy
+      purpose: Temporary broad discovery profile.
+      profile_set: [core, browser, web, github, openspec, orchestration, full]
+      plugin_policy: broad_discovery_only
+      default: false
+      broad_plugin_discovery: true
