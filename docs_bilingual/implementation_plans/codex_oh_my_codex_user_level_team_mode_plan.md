@@ -8,6 +8,14 @@ doc_class: implementation_plan
 
 # Codex / oh-my-codex User-Level Team Mode Plan
 
+## Bilingual Alignment Status
+
+- Completeness baseline: this English ASCII file is the complete structural baseline for the plan.
+- Chinese companion: `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md`.
+- Companion mode: the Chinese file is a structured companion, not an equal-length line-by-line translation; it must preserve the complete major-section index plus Chinese implementation semantics.
+- Alignment rule: keep the Chinese companion structurally aligned to every major section and appendix in this file. When detailed wording diverges, use this English ASCII file as the implementation source of truth.
+- Current finding: before the 2026-04-25 alignment pass, this file was materially more complete than the Chinese companion; the Chinese companion was a summary plus Appendix C excerpt.
+
 ## 1. Goal
 
 This plan defines a reusable user-level durable team workflow for `Codex CLI + oh-my-codex`.
@@ -73,7 +81,7 @@ This plan is grounded in four fully read source artifacts:
 1. `long-running subagents/Effective harnesses for long-running agents _ Anthropic.html`
 2. `long-running subagents/How To Be A World-Class Agentic Engineer.html`
 3. `long-running subagents/<WeChat Chinese long-form article snapshot>.html`
-4. `oh-my-codex/Codex Multi‑Subagent Support and Open‑Source Multi‑Agent Tooling.md`
+4. `oh-my-codex/Codex Multi-Subagent Support and Open-Source Multi-Agent Tooling.md`
 
 Interpretation:
 
@@ -1550,54 +1558,54 @@ Companion executable template:
   - `-Stage test`
   - `-Stage all`
 - checkpoint continuity:
-  - `precheck` — the pre-update inventory stage, which creates a fresh checkpoint root by default
-  - `update / diff / replay / test` — the later maintenance stages, which automatically continue the latest checkpoint unless `-SnapshotRoot` is supplied explicitly
-  - current pointer file: `<repo>/.tmp/official-update-patch-replay-latest.json` — the latest-run locator file, which tells later stages which checkpoint root to continue
-  - current checkpoint manifest: `<snapshot-root>/checkpoint.json` — the per-run state record, which stores stage history and generated artifact paths
+  - `precheck`  -  the pre-update inventory stage, which creates a fresh checkpoint root by default
+  - `update / diff / replay / test`  -  the later maintenance stages, which automatically continue the latest checkpoint unless `-SnapshotRoot` is supplied explicitly
+  - current pointer file: `<repo>/.tmp/official-update-patch-replay-latest.json`  -  the latest-run locator file, which tells later stages which checkpoint root to continue
+  - current checkpoint manifest: `<snapshot-root>/checkpoint.json`  -  the per-run state record, which stores stage history and generated artifact paths
   - stage gates:
     - no recorded `precheck` -> `update / diff / replay / test` are blocked; `precheck` is the required baseline inventory stage
     - no recorded `diff` -> `replay / test` are blocked; `diff` is the review stage that refreshes the patch decision artifacts
     - no recorded `replay` -> `test` is blocked; `replay` is the patch-application stage that tests must follow
 - generated operator artifacts:
-  - `report.json` — the machine-readable run summary file for the current checkpoint
-  - `checklist.md` — the human-readable maintenance checklist for the current checkpoint
-  - `patch-decision-table.md` — the Markdown decision view for human reading and review
-  - `patch-decision-table.json` — the JSON decision table, which is the current machine-readable read-back file
-  - `patch-decision-table.csv` — the CSV decision export, which is a spreadsheet-friendly view rather than the canonical re-import file
+  - `report.json`  -  the machine-readable run summary file for the current checkpoint
+  - `checklist.md`  -  the human-readable maintenance checklist for the current checkpoint
+  - `patch-decision-table.md`  -  the Markdown decision view for human reading and review
+  - `patch-decision-table.json`  -  the JSON decision table, which is the current machine-readable read-back file
+  - `patch-decision-table.csv`  -  the CSV decision export, which is a spreadsheet-friendly view rather than the canonical re-import file
 - patch decision table behavior:
-  - `final_decision` — the selected disposition field, which is auto-prefilled with the default recommended action
-  - `decision_reason` — the decision explanation field, which is auto-prefilled with the default rationale
-  - `decision_status` — the machine-readable decision-state field, which records whether the row is still automatic or has been manually changed
-    - `auto_prefilled` — the default automatic state, meaning the row still uses the script-generated recommendation
-    - `manually_overridden` — the manual override state, meaning a human reviewer intentionally changed the generated decision
-    - `unresolved` — the unresolved review state, meaning the row still needs an explicit human decision
+  - `final_decision`  -  the selected disposition field, which is auto-prefilled with the default recommended action
+  - `decision_reason`  -  the decision explanation field, which is auto-prefilled with the default rationale
+  - `decision_status`  -  the machine-readable decision-state field, which records whether the row is still automatic or has been manually changed
+    - `auto_prefilled`  -  the default automatic state, meaning the row still uses the script-generated recommendation
+    - `manually_overridden`  -  the manual override state, meaning a human reviewer intentionally changed the generated decision
+    - `unresolved`  -  the unresolved review state, meaning the row still needs an explicit human decision
   - current default heuristics:
-    - `runtime.js` — the installed team runtime file -> `replay`, which means runtime patches stay on the default replay path
-    - `windows-worker-controller.js` — the Windows prompt-worker controller file -> `replay`, which means controller-side startup and IO patches stay on the default replay path
-    - `worker-bootstrap.js` — the worker instruction bootstrap file -> `replay`, which remains the operational default even though it is also a longer-term move-down candidate
-    - `user_level_surface` — the local wrapper / skill / prompt layer -> `move-down`, which means the preferred home is outside the official npm install
+    - `runtime.js`  -  the installed team runtime file -> `replay`, which means runtime patches stay on the default replay path
+    - `windows-worker-controller.js`  -  the Windows prompt-worker controller file -> `replay`, which means controller-side startup and IO patches stay on the default replay path
+    - `worker-bootstrap.js`  -  the worker instruction bootstrap file -> `replay`, which remains the operational default even though it is also a longer-term move-down candidate
+    - `user_level_surface`  -  the local wrapper / skill / prompt layer -> `move-down`, which means the preferred home is outside the official npm install
 - example replay lane:
-  - `.\tools\codex-official-update-patch-replay-template.ps1 -Stage replay` — the replay-stage command, which applies retained patches and regenerates the user-level layer
+  - `.\tools\codex-official-update-patch-replay-template.ps1 -Stage replay`  -  the replay-stage command, which applies retained patches and regenerates the user-level layer
 
 ### Appendix C. Implemented decision-lock and diff-approval additions
 
 The following items have now landed in `tools/codex-official-update-patch-replay-template.ps1` and should be treated as implemented operator-surface behavior.
 
 - patch decision rows now include:
-  - `decision_locked` — the decision lock flag, which tells the script not to overwrite a manually frozen row
-  - `decision_lock_reason` — the decision lock note, which explains why that row was intentionally frozen
+  - `decision_locked`  -  the decision lock flag, which tells the script not to overwrite a manually frozen row
+  - `decision_lock_reason`  -  the decision lock note, which explains why that row was intentionally frozen
 - lock semantics:
   - when `decision_locked = true`, regenerated decision rows preserve the manually frozen decision fields instead of re-autofilling them; `decision_locked` is the no-autorefresh switch for a reviewed row
 - decision-table authority order:
-  - `patch-decision-table.json` — the JSON decision master file, which is the read-back source of truth
-  - `patch-decision-table.csv` and `patch-decision-table.md` — the export views, which remain review-oriented outputs rather than the canonical re-import surface
+  - `patch-decision-table.json`  -  the JSON decision master file, which is the read-back source of truth
+  - `patch-decision-table.csv` and `patch-decision-table.md`  -  the export views, which remain review-oriented outputs rather than the canonical re-import surface
 - checkpoint manifest now includes an approval projection:
 
-  - `checkpoint manifest` — the checkpoint state file at `<snapshot-root>/checkpoint.json`, which now includes an approval block for diff review state
-  - `approvals.diff_review` — the diff-review approval block, which stores whether the diff stage has been explicitly approved
-  - `approved` — the approval boolean, which stores whether diff review has passed
-  - `approved_at` — the approval timestamp, which stores when diff review was approved
-  - `approval_note` — the approval note text, which stores a short reviewer comment
+  - `checkpoint manifest`  -  the checkpoint state file at `<snapshot-root>/checkpoint.json`, which now includes an approval block for diff review state
+  - `approvals.diff_review`  -  the diff-review approval block, which stores whether the diff stage has been explicitly approved
+  - `approved`  -  the approval boolean, which stores whether diff review has passed
+  - `approved_at`  -  the approval timestamp, which stores when diff review was approved
+  - `approval_note`  -  the approval note text, which stores a short reviewer comment
 
 ```json
 {
@@ -1612,9 +1620,9 @@ The following items have now landed in `tools/codex-official-update-patch-replay
 ```
 
 - operator control surface now includes:
-  - `-Stage diff -ApproveDiff` — the diff-approval command form, which will mark the diff stage as reviewed and approved
+  - `-Stage diff -ApproveDiff`  -  the diff-approval command form, which will mark the diff stage as reviewed and approved
 - replay gate is now strengthened:
-  - `replay` — the patch replay stage, which requires `precheck`; `precheck` is the baseline inventory stage that starts the checkpoint
+  - `replay`  -  the patch replay stage, which requires `precheck`; `precheck` is the baseline inventory stage that starts the checkpoint
   - `replay` requires `diff`; `diff` is the review stage that refreshes the decision artifacts before patch application
   - `replay` requires `approvals.diff_review.approved = true`; `approvals.diff_review.approved` is the manifest field that means the diff review has been explicitly approved
 
