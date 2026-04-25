@@ -1,0 +1,2874 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-04-25T12:08:50.682300+00:00",
+  "tool": "inventory_codex_skills",
+  "root": "D:\\PythonProject_langgraph",
+  "scan_roots": {
+    "user_skills": "C:\\Users\\lenovo\\.codex\\skills",
+    "repo_skills": "D:\\PythonProject_langgraph\\.codex\\skills",
+    "plugin_cache": "C:\\Users\\lenovo\\.codex\\plugins\\cache"
+  },
+  "counts": {
+    "total_skills": 131,
+    "by_source_layer": {
+      "plugin": 51,
+      "repo": 20,
+      "user": 60
+    },
+    "by_suspected_profile": {
+      "browser": 21,
+      "core": 25,
+      "github": 11,
+      "openspec": 20,
+      "orchestration": 9,
+      "web": 45
+    },
+    "duplicate_name_groups": 12
+  },
+  "duplicates": [
+    {
+      "name": "gh-address-comments",
+      "count": 2,
+      "source_layers": [
+        "plugin",
+        "user"
+      ],
+      "file_paths": [
+        "C:\\Users\\lenovo\\.codex\\skills\\gh-address-comments\\SKILL.md",
+        "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\gh-address-comments\\SKILL.md"
+      ]
+    },
+    {
+      "name": "gh-fix-ci",
+      "count": 2,
+      "source_layers": [
+        "plugin",
+        "user"
+      ],
+      "file_paths": [
+        "C:\\Users\\lenovo\\.codex\\skills\\gh-fix-ci\\SKILL.md",
+        "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\gh-fix-ci\\SKILL.md"
+      ]
+    },
+    {
+      "name": "openspec-apply-change",
+      "count": 2,
+      "source_layers": [
+        "repo"
+      ],
+      "file_paths": [
+        ".codex/skills/openspec-apply-change/openspec-apply-change/SKILL.md",
+        ".codex/skills/openspec-apply-change/SKILL.md"
+      ]
+    },
+    {
+      "name": "openspec-archive-change",
+      "count": 2,
+      "source_layers": [
+        "repo"
+      ],
+      "file_paths": [
+        ".codex/skills/openspec-archive-change/openspec-archive-change/SKILL.md",
+        ".codex/skills/openspec-archive-change/SKILL.md"
+      ]
+    },
+    {
+      "name": "openspec-continue-change",
+      "count": 2,
+      "source_layers": [
+        "repo"
+      ],
+      "file_paths": [
+        ".codex/skills/openspec-continue-change/openspec-continue-change/SKILL.md",
+        ".codex/skills/openspec-continue-change/SKILL.md"
+      ]
+    },
+    {
+      "name": "openspec-explore",
+      "count": 2,
+      "source_layers": [
+        "repo"
+      ],
+      "file_paths": [
+        ".codex/skills/openspec-explore/openspec-explore/SKILL.md",
+        ".codex/skills/openspec-explore/SKILL.md"
+      ]
+    },
+    {
+      "name": "openspec-ff-change",
+      "count": 2,
+      "source_layers": [
+        "repo"
+      ],
+      "file_paths": [
+        ".codex/skills/openspec-ff-change/openspec-ff-change/SKILL.md",
+        ".codex/skills/openspec-ff-change/SKILL.md"
+      ]
+    },
+    {
+      "name": "openspec-new-change",
+      "count": 2,
+      "source_layers": [
+        "repo"
+      ],
+      "file_paths": [
+        ".codex/skills/openspec-new-change/openspec-new-change/SKILL.md",
+        ".codex/skills/openspec-new-change/SKILL.md"
+      ]
+    },
+    {
+      "name": "openspec-onboard",
+      "count": 2,
+      "source_layers": [
+        "repo"
+      ],
+      "file_paths": [
+        ".codex/skills/openspec-onboard/openspec-onboard/SKILL.md",
+        ".codex/skills/openspec-onboard/SKILL.md"
+      ]
+    },
+    {
+      "name": "openspec-propose",
+      "count": 2,
+      "source_layers": [
+        "repo"
+      ],
+      "file_paths": [
+        ".codex/skills/openspec-propose/openspec-propose/SKILL.md",
+        ".codex/skills/openspec-propose/SKILL.md"
+      ]
+    },
+    {
+      "name": "openspec-sync-specs",
+      "count": 2,
+      "source_layers": [
+        "repo"
+      ],
+      "file_paths": [
+        ".codex/skills/openspec-sync-specs/openspec-sync-specs/SKILL.md",
+        ".codex/skills/openspec-sync-specs/SKILL.md"
+      ]
+    },
+    {
+      "name": "openspec-verify-change",
+      "count": 2,
+      "source_layers": [
+        "repo"
+      ],
+      "file_paths": [
+        ".codex/skills/openspec-verify-change/openspec-verify-change/SKILL.md",
+        ".codex/skills/openspec-verify-change/SKILL.md"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "name": "agent-browser",
+      "description": "Browser automation CLI for AI agents. Use when the user needs to interact with websites, verify dev server output, test web apps, navigate pages, fill forms, click buttons, take screenshots, extract data, or automate any browser task. Also triggers when a dev server starts so you can verify it visually.",
+      "description_length": 304,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\agent-browser\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "- '\\b127\\.0\\.0\\.1",
+        "- '\\blocalhost",
+        "- '\\bopen\\s+https?",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "agent-browser-verify",
+      "description": "Automated browser verification for dev servers. Triggers when a dev server starts to run a visual gut-check with agent-browser — verifies the page loads, checks for console errors, validates key UI elements, and reports pass/fail before continuing.",
+      "description_length": 248,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\agent-browser-verify\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "minScore",
+        "name",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "ai-elements",
+      "description": "AI Elements component library guidance — pre-built React components for AI interfaces built on shadcn/ui. Use when building chat UIs, message displays, tool call rendering, streaming responses, reasoning panels, or any AI-native interface with the AI SDK.",
+      "description_length": 255,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\ai-elements\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "ai-gateway",
+      "description": "Vercel AI Gateway expert guidance. Use when configuring model routing, provider failover, cost tracking, or managing multiple AI providers through a unified API.",
+      "description_length": 161,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\ai-gateway\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "ai-generation-persistence",
+      "description": "AI generation persistence patterns — unique IDs, addressable URLs, database storage, and cost tracking for every LLM generation",
+      "description_length": 127,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\ai-generation-persistence\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "ai-sdk",
+      "description": "Vercel AI SDK expert guidance. Use when building AI-powered features — chat interfaces, text generation, structured output, tool calling, agents, MCP integration, streaming, embeddings, reranking, image generation, or working with any LLM provider.",
+      "description_length": 248,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\ai-sdk\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "auth",
+      "description": "Authentication integration guidance — Clerk (native Vercel Marketplace), Descope, and Auth0 setup for Next.js applications. Covers middleware auth patterns, sign-in/sign-up flows, and Marketplace provisioning. Use when implementing user authentication.",
+      "description_length": 252,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\auth\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "bootstrap",
+      "description": "Project bootstrapping orchestrator for repos that depend on Vercel-linked resources (databases, auth, and managed integrations). Use when setting up or repairing a repository so linking, environment provisioning, env pulls, and first-run db/dev commands happen in the correct safe order.",
+      "description_length": 287,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\bootstrap\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "- '\\\\b(?",
+        "- '\\\\bcp\\\\s+\\\\.env\\\\.(?",
+        "- '\\\\bvercel\\\\s+integration\\\\s+(?",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "chat-sdk",
+      "description": "Vercel Chat SDK expert guidance. Use when building multi-platform chat bots — Slack, Telegram, Microsoft Teams, Discord, Google Chat, GitHub, Linear — with a single codebase. Covers the Chat class, adapters, threads, messages, cards, modals, streaming, state management, and webhook setup.",
+      "description_length": 289,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\chat-sdk\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "cms",
+      "description": "Headless CMS integration guidance — Sanity (native Vercel Marketplace), Contentful, DatoCMS, Storyblok, and Builder.io. Covers studio setup, content modeling, preview mode, revalidation webhooks, and Visual Editing. Use when building content-driven sites with a headless CMS on Vercel.",
+      "description_length": 285,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\cms\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "cron-jobs",
+      "description": "Vercel Cron Jobs configuration and best practices. Use when adding, editing, or debugging scheduled tasks in vercel.json.",
+      "description_length": 121,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\cron-jobs\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "deployments-cicd",
+      "description": "Vercel deployment and CI/CD expert guidance. Use when deploying, promoting, rolling back, inspecting deployments, building with --prebuilt, or configuring CI workflow files for Vercel.",
+      "description_length": 184,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\deployments-cicd\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "email",
+      "description": "Email sending integration guidance — Resend (native Vercel Marketplace) with React Email templates. Covers API setup, transactional emails, domain verification, and template patterns. Use when sending emails from a Vercel-deployed application.",
+      "description_length": 243,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\email\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "env-vars",
+      "description": "Vercel environment variable expert guidance. Use when working with .env files, vercel env commands, OIDC tokens, or managing environment-specific configuration.",
+      "description_length": 160,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\env-vars\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "geist",
+      "description": "Expert guidance for Geist, Vercel's default typography system and font family for precise Next.js interfaces. Use when configuring Geist Sans, Geist Mono, or Geist Pixel, setting up font imports, or applying Vercel typography and aesthetic guidance.",
+      "description_length": 249,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\geist\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "geistdocs",
+      "description": "Expert guidance for Geistdocs, Vercel's documentation template built with Next.js and Fumadocs — MDX authoring, configuration, AI chat, i18n, feedback, deployment. Use when creating documentation sites, configuring geistdocs, writing MDX content, or setting up docs infrastructure.",
+      "description_length": 281,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\geistdocs\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "gh-address-comments",
+      "description": "Address actionable GitHub pull request review feedback. Use when the user wants to inspect unresolved review threads, requested changes, or inline review comments on a PR, then implement selected fixes. Use the GitHub app for PR metadata and flat comment reads, and use the bundled GraphQL script via `gh` whenever thread-level state, resolution status, or inline review context matters.",
+      "description_length": 387,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:github",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\gh-address-comments\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": {
+        "name": "gh-address-comments",
+        "count": 2,
+        "source_layers": [
+          "plugin",
+          "user"
+        ]
+      },
+      "suspected_profile": "github",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "gh-fix-ci",
+      "description": "Use when a user asks to debug or fix failing GitHub PR checks that run in GitHub Actions. Use the GitHub app from this plugin for PR metadata and patch context, and use `gh` for Actions check and log inspection before implementing any approved fix.",
+      "description_length": 248,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:github",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\gh-fix-ci\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": {
+        "name": "gh-fix-ci",
+        "count": 2,
+        "source_layers": [
+          "plugin",
+          "user"
+        ]
+      },
+      "suspected_profile": "github",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "github",
+      "description": "Triage and orient GitHub repository, pull request, and issue work through the connected GitHub app. Use when the user asks for general GitHub help, wants PR or issue summaries, or needs repository context before choosing a more specific GitHub workflow.",
+      "description_length": 253,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:github",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\github\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "github",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "investigation-mode",
+      "description": "Orchestrated debugging coordinator. Triggers on frustration signals (stuck, hung, broken, waiting) and systematically triages: runtime logs → workflow status → browser verify → deploy/env. Reports findings at every step.",
+      "description_length": 220,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\investigation-mode\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "- \"overflow",
+        "- \"position",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "json-render",
+      "description": "AI chat response rendering guidance — handling UIMessage parts, tool call displays, streaming states, and structured data presentation. Use when building custom chat UIs, rendering tool results, or troubleshooting AI response display issues.",
+      "description_length": 241,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\json-render\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "marketplace",
+      "description": "Vercel Marketplace expert guidance — discovering, installing, and building integrations, auto-provisioned environment variables, unified billing, and the vercel integration CLI. Use when consuming third-party services, building custom integrations, or managing marketplace resources on Vercel.",
+      "description_length": 293,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\marketplace\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "micro",
+      "description": "Expert guidance for micro — asynchronous HTTP microservices framework by Vercel. Use when building lightweight HTTP servers, API endpoints, or microservices using the micro library.",
+      "description_length": 181,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\micro\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "ncc",
+      "description": "Expert guidance for @vercel/ncc — a simple CLI for compiling Node.js modules into a single file with all dependencies included. Use when bundling serverless functions, CLI tools, or any Node.js project into a self-contained file.",
+      "description_length": 229,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\ncc\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "next-forge",
+      "description": "next-forge expert guidance — production-grade Turborepo monorepo SaaS starter by Vercel. Use when working in a next-forge project, scaffolding with `npx next-forge init`, or editing @repo/* workspace packages.",
+      "description_length": 209,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\next-forge\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "nextjs",
+      "description": "Next.js App Router expert guidance. Use when building, debugging, or architecting Next.js applications — routing, Server Components, Server Actions, Cache Components, layouts, middleware/proxy, data fetching, rendering strategies, and deployment on Vercel.",
+      "description_length": 256,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\nextjs\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "observability",
+      "description": "Vercel Observability expert guidance — Drains (logs, traces, speed insights, web analytics), Web Analytics, Speed Insights, runtime logs, custom events, OpenTelemetry integration, and monitoring dashboards. Use when instrumenting, debugging, or optimizing application performance and user experience on Vercel.",
+      "description_length": 310,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\observability\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "minScore",
+        "name",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "payments",
+      "description": "Stripe payments integration guidance — native Vercel Marketplace setup, checkout sessions, webhook handling, subscription billing, and the Stripe SDK. Use when implementing payments, subscriptions, or processing transactions.",
+      "description_length": 225,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\payments\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "react-best-practices",
+      "description": "React best-practices reviewer for TSX files. Triggers after editing multiple TSX components to run a condensed quality checklist covering component structure, hooks usage, accessibility, performance, and TypeScript patterns.",
+      "description_length": 224,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\react-best-practices\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "routing-middleware",
+      "description": "Vercel Routing Middleware guidance — request interception before cache, rewrites, redirects, personalization. Works with any framework. Supports Edge, Node.js, and Bun runtimes. Use when intercepting requests at the platform level.",
+      "description_length": 231,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\routing-middleware\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "runtime-cache",
+      "description": "Vercel Runtime Cache API guidance — ephemeral per-region key-value cache with tag-based invalidation. Shared across Functions, Routing Middleware, and Builds. Use when implementing caching strategies beyond framework-level caching.",
+      "description_length": 231,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\runtime-cache\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "satori",
+      "description": "Expert guidance for Satori — Vercel's library that converts HTML and CSS to SVG, commonly used to generate dynamic OG images for Next.js and other frameworks.",
+      "description_length": 158,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\satori\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "shadcn",
+      "description": "shadcn/ui expert guidance — CLI, component installation, composition patterns, custom registries, theming, Tailwind CSS integration, and high-quality interface design. Use when initializing shadcn, adding components, composing product UI, building custom registries, configuring themes, or troubleshooting component issues.",
+      "description_length": 323,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\shadcn\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "sign-in-with-vercel",
+      "description": "Sign in with Vercel guidance — OAuth 2.0/OIDC identity provider for user authentication via Vercel accounts. Use when implementing user login with Vercel as the identity provider.",
+      "description_length": 179,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\sign-in-with-vercel\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "swr",
+      "description": "SWR data-fetching expert guidance. Use when building React apps with client-side data fetching, caching, revalidation, mutations, optimistic UI, pagination, or infinite loading using the SWR library.",
+      "description_length": 199,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\swr\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "turbopack",
+      "description": "Turbopack expert guidance. Use when configuring the Next.js bundler, optimizing HMR, debugging build issues, or understanding the Turbopack vs Webpack differences.",
+      "description_length": 163,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\turbopack\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "turborepo",
+      "description": "Turborepo expert guidance. Use when setting up or optimizing monorepo builds, configuring task caching, remote caching, parallel execution, or the --affected flag for incremental CI.",
+      "description_length": 182,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\turborepo\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "v0-dev",
+      "description": "v0 by Vercel expert guidance. Use when discussing AI code generation, generating UI components from prompts, v0 CLI usage, v0 SDK/API integration, or integrating v0 into development workflows with GitHub and Vercel deployment.",
+      "description_length": 226,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\v0-dev\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "vercel-agent",
+      "description": "Vercel Agent guidance — AI-powered code review, incident investigation, and SDK installation. Automates PR analysis and anomaly debugging. Use when configuring or understanding Vercel's AI development tools.",
+      "description_length": 207,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-agent\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "vercel-api",
+      "description": "Vercel app and REST API expert guidance. Use when the agent needs live access to Vercel projects, deployments, environment variables, domains, logs, or documentation through the connected Vercel app or REST API.",
+      "description_length": 211,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-api\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "vercel-cli",
+      "description": "Vercel CLI expert guidance. Use when deploying, managing environment variables, linking projects, viewing logs, managing domains, or interacting with the Vercel platform from the command line.",
+      "description_length": 192,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-cli\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "- '^\\s*vc(?",
+        "- '^\\s*vercel(?",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "vercel-firewall",
+      "description": "Vercel Firewall and security expert guidance. Use when configuring DDoS protection, WAF rules, rate limiting, bot filtering, IP allow/block lists, OWASP rulesets, Attack Challenge Mode, or any security configuration on the Vercel platform.",
+      "description_length": 239,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-firewall\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "minScore",
+        "name",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "vercel-flags",
+      "description": "Vercel Flags guidance — feature flags platform with unified dashboard, Flags Explorer, gradual rollouts, A/B testing, and provider adapters. Use when implementing feature flags, experimentation, or staged rollouts.",
+      "description_length": 214,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-flags\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "vercel-functions",
+      "description": "Vercel Functions expert guidance — Serverless Functions, Edge Functions, Fluid Compute, streaming, Cron Jobs, and runtime configuration. Use when configuring, debugging, or optimizing server-side code running on Vercel.",
+      "description_length": 219,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-functions\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "vercel-queues",
+      "description": "Vercel Queues guidance (public beta) — durable event streaming with topics, consumer groups, retries, and delayed delivery. $0.60/1M ops. Powers Workflow DevKit. Use when building async processing, fan-out patterns, or event-driven architectures.",
+      "description_length": 246,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-queues\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "vercel-sandbox",
+      "description": "Vercel Sandbox guidance — ephemeral Firecracker microVMs for running untrusted code safely. Supports AI agents, code generation, and experimentation. Use when executing user-generated or AI-generated code in isolation.",
+      "description_length": 218,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-sandbox\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "vercel-services",
+      "description": "Vercel Services — deploy multiple services within a single Vercel project. Use for monorepo layouts or when combining a backend (Python, Go) with a frontend (Next.js, Vite) in one deployment.",
+      "description_length": 191,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-services\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "vercel-storage",
+      "description": "Vercel storage expert guidance — Blob, Edge Config, and Marketplace storage (Neon Postgres, Upstash Redis). Use when choosing, configuring, or using data storage with Vercel applications.",
+      "description_length": 187,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\vercel-storage\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "name",
+        "pathPatterns",
+        "priority",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "verification",
+      "description": "Full-story verification — infers what the user is building, then verifies the complete flow end-to-end: browser → API → data → response. Triggers on dev server start and 'why isn't this working' signals.",
+      "description_length": 203,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\verification\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "workflow",
+      "description": "Vercel Workflow DevKit (WDK) expert guidance. Use when building durable workflows, long-running tasks, API routes or agents that need pause/resume, retries, step-based execution, or crash-safe orchestration with Vercel Workflow.",
+      "description_length": 228,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:vercel",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\vercel\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\workflow\\SKILL.md",
+      "frontmatter_keys": [
+        "- \"https",
+        "- '\\bbunx\\s+workflow(?",
+        "- '\\bnpx\\s+workflow(?",
+        "allOf",
+        "anyOf",
+        "bashPatterns",
+        "description",
+        "docs",
+        "importPatterns",
+        "metadata",
+        "minScore",
+        "name",
+        "noneOf",
+        "pathPatterns",
+        "phrases",
+        "priority",
+        "promptSignals",
+        "sitemap"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "yeet",
+      "description": "Publish local changes to GitHub by confirming scope, committing intentionally, pushing the branch, and opening a draft PR through the GitHub app from this plugin, with `gh` used only as a fallback where connector coverage is insufficient.",
+      "description_length": 238,
+      "source_layer": "plugin",
+      "source_detail": "openai-curated:github",
+      "file_path": "C:\\Users\\lenovo\\.codex\\plugins\\cache\\openai-curated\\github\\b7ed91c86dc6604b8217892f05c8866518c82852\\skills\\yeet\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "github",
+      "status_suggestion": "report_only_plugin_skill"
+    },
+    {
+      "name": "openspec-apply-change",
+      "description": "Implement tasks from an OpenSpec change. Use when the user wants to start implementing, continue implementation, or work through tasks.",
+      "description_length": 135,
+      "source_layer": "repo",
+      "source_detail": "repo",
+      "file_path": ".codex/skills/openspec-apply-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-apply-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "openspec-apply-change",
+      "description": "Implement tasks from an OpenSpec change. Use when the user wants to start implementing, continue implementation, or work through tasks.",
+      "description_length": 135,
+      "source_layer": "repo",
+      "source_detail": "repo_nested",
+      "file_path": ".codex/skills/openspec-apply-change/openspec-apply-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-apply-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+    },
+    {
+      "name": "openspec-archive-change",
+      "description": "Archive a completed change in the experimental workflow. Use when the user wants to finalize and archive a change after implementation is complete.",
+      "description_length": 147,
+      "source_layer": "repo",
+      "source_detail": "repo",
+      "file_path": ".codex/skills/openspec-archive-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-archive-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "openspec-archive-change",
+      "description": "Archive a completed change in the experimental workflow. Use when the user wants to finalize and archive a change after implementation is complete.",
+      "description_length": 147,
+      "source_layer": "repo",
+      "source_detail": "repo_nested",
+      "file_path": ".codex/skills/openspec-archive-change/openspec-archive-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-archive-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+    },
+    {
+      "name": "openspec-continue-change",
+      "description": "Continue working on an OpenSpec change by creating the next artifact. Use when the user wants to progress their change, create the next artifact, or continue their workflow.",
+      "description_length": 173,
+      "source_layer": "repo",
+      "source_detail": "repo",
+      "file_path": ".codex/skills/openspec-continue-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-continue-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "openspec-continue-change",
+      "description": "Continue working on an OpenSpec change by creating the next artifact. Use when the user wants to progress their change, create the next artifact, or continue their workflow.",
+      "description_length": 173,
+      "source_layer": "repo",
+      "source_detail": "repo_nested",
+      "file_path": ".codex/skills/openspec-continue-change/openspec-continue-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-continue-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+    },
+    {
+      "name": "openspec-explore",
+      "description": "Enter explore mode - a thinking partner for exploring ideas, investigating problems, and clarifying requirements. Use when the user wants to think through something before or during a change.",
+      "description_length": 191,
+      "source_layer": "repo",
+      "source_detail": "repo",
+      "file_path": ".codex/skills/openspec-explore/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-explore",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "openspec-explore",
+      "description": "Enter explore mode - a thinking partner for exploring ideas, investigating problems, and clarifying requirements. Use when the user wants to think through something before or during a change.",
+      "description_length": 191,
+      "source_layer": "repo",
+      "source_detail": "repo_nested",
+      "file_path": ".codex/skills/openspec-explore/openspec-explore/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-explore",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+    },
+    {
+      "name": "openspec-ff-change",
+      "description": "Fast-forward through OpenSpec artifact creation. Use when the user wants to quickly create all artifacts needed for implementation without stepping through each one individually.",
+      "description_length": 178,
+      "source_layer": "repo",
+      "source_detail": "repo",
+      "file_path": ".codex/skills/openspec-ff-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-ff-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "openspec-ff-change",
+      "description": "Fast-forward through OpenSpec artifact creation. Use when the user wants to quickly create all artifacts needed for implementation without stepping through each one individually.",
+      "description_length": 178,
+      "source_layer": "repo",
+      "source_detail": "repo_nested",
+      "file_path": ".codex/skills/openspec-ff-change/openspec-ff-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-ff-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+    },
+    {
+      "name": "openspec-new-change",
+      "description": "Start a new OpenSpec change using the experimental artifact workflow. Use when the user wants to create a new feature, fix, or modification with a structured step-by-step approach.",
+      "description_length": 180,
+      "source_layer": "repo",
+      "source_detail": "repo",
+      "file_path": ".codex/skills/openspec-new-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-new-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "openspec-new-change",
+      "description": "Start a new OpenSpec change using the experimental artifact workflow. Use when the user wants to create a new feature, fix, or modification with a structured step-by-step approach.",
+      "description_length": 180,
+      "source_layer": "repo",
+      "source_detail": "repo_nested",
+      "file_path": ".codex/skills/openspec-new-change/openspec-new-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-new-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+    },
+    {
+      "name": "openspec-onboard",
+      "description": "Guided onboarding for OpenSpec - walk through a complete workflow cycle with narration and real codebase work.",
+      "description_length": 110,
+      "source_layer": "repo",
+      "source_detail": "repo",
+      "file_path": ".codex/skills/openspec-onboard/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-onboard",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "openspec-onboard",
+      "description": "Guided onboarding for OpenSpec - walk through a complete workflow cycle with narration and real codebase work.",
+      "description_length": 110,
+      "source_layer": "repo",
+      "source_detail": "repo_nested",
+      "file_path": ".codex/skills/openspec-onboard/openspec-onboard/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-onboard",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+    },
+    {
+      "name": "openspec-propose",
+      "description": "Propose a new change with all artifacts generated in one step. Use when the user wants to quickly describe what they want to build and get a complete proposal with design, specs, and tasks ready for implementation.",
+      "description_length": 214,
+      "source_layer": "repo",
+      "source_detail": "repo",
+      "file_path": ".codex/skills/openspec-propose/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-propose",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "openspec-propose",
+      "description": "Propose a new change with all artifacts generated in one step. Use when the user wants to quickly describe what they want to build and get a complete proposal with design, specs, and tasks ready for implementation.",
+      "description_length": 214,
+      "source_layer": "repo",
+      "source_detail": "repo_nested",
+      "file_path": ".codex/skills/openspec-propose/openspec-propose/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-propose",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+    },
+    {
+      "name": "openspec-sync-specs",
+      "description": "Sync delta specs from a change to main specs. Use when the user wants to update main specs with changes from a delta spec, without archiving the change.",
+      "description_length": 152,
+      "source_layer": "repo",
+      "source_detail": "repo",
+      "file_path": ".codex/skills/openspec-sync-specs/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-sync-specs",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "openspec-sync-specs",
+      "description": "Sync delta specs from a change to main specs. Use when the user wants to update main specs with changes from a delta spec, without archiving the change.",
+      "description_length": 152,
+      "source_layer": "repo",
+      "source_detail": "repo_nested",
+      "file_path": ".codex/skills/openspec-sync-specs/openspec-sync-specs/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-sync-specs",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+    },
+    {
+      "name": "openspec-verify-change",
+      "description": "Verify implementation matches change artifacts. Use when the user wants to validate that implementation is complete, correct, and coherent before archiving.",
+      "description_length": 156,
+      "source_layer": "repo",
+      "source_detail": "repo",
+      "file_path": ".codex/skills/openspec-verify-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-verify-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "openspec-verify-change",
+      "description": "Verify implementation matches change artifacts. Use when the user wants to validate that implementation is complete, correct, and coherent before archiving.",
+      "description_length": 156,
+      "source_layer": "repo",
+      "source_detail": "repo_nested",
+      "file_path": ".codex/skills/openspec-verify-change/openspec-verify-change/SKILL.md",
+      "frontmatter_keys": [
+        "author",
+        "compatibility",
+        "description",
+        "generatedBy",
+        "license",
+        "metadata",
+        "name",
+        "version"
+      ],
+      "duplicate_name_group": {
+        "name": "openspec-verify-change",
+        "count": 2,
+        "source_layers": [
+          "repo"
+        ]
+      },
+      "suspected_profile": "openspec",
+      "status_suggestion": "investigate_openspec_nested_duplicate_before_cleanup"
+    },
+    {
+      "name": "Excel",
+      "description": "Use this skill when a user requests to create, modify, analyze, visualize, or work with spreadsheet files (`.xlsx`, `.xls`, `.csv`, `.tsv`) with formulas, formatting, charts, tables, and recalculation.",
+      "description_length": 201,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\codex-primary-runtime\\spreadsheets\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "PowerPoint",
+      "description": "Create, edit, render, verify, and export PowerPoint slide decks. Use when Codex needs to build or modify a deck, presentation deck, slide deck, slides, PowerPoint, PPT, or visually ambitious editable .pptx file.",
+      "description_length": 211,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\codex-primary-runtime\\slides\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "ai-slop-cleaner",
+      "description": "Run an anti-slop cleanup/refactor/deslop workflow",
+      "description_length": 49,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\ai-slop-cleaner\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "ask-claude",
+      "description": "Ask Claude via local CLI and capture a reusable artifact",
+      "description_length": 56,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\ask-claude\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "ask-gemini",
+      "description": "Ask Gemini via local CLI and capture a reusable artifact",
+      "description_length": 56,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\ask-gemini\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "aspnet-core",
+      "description": "Build, review, refactor, or architect ASP.NET Core web applications using current official guidance for .NET web development. Use when working on Blazor Web Apps, Razor Pages, MVC, Minimal APIs, controller-based Web APIs, SignalR, gRPC, middleware, dependency injection, configuration, authentication, authorization, testing, performance, deployment, or ASP.NET Core upgrades.",
+      "description_length": 376,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\aspnet-core\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "autopilot",
+      "description": "Full autonomous execution from idea to working code",
+      "description_length": 51,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\autopilot\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "orchestration",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "cancel",
+      "description": "Cancel any active OMX mode (autopilot, ralph, ultrawork, ecomode, ultraqa, swarm, ultrapilot, pipeline, team)",
+      "description_length": 109,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\cancel\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "orchestration",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "chatgpt-apps",
+      "description": "Build, scaffold, refactor, and troubleshoot ChatGPT Apps SDK applications that combine an MCP server and widget UI. Use when Codex needs to design tools, register UI resources, wire the MCP Apps bridge or ChatGPT compatibility APIs, apply Apps SDK metadata or CSP or domain settings, or produce a docs-aligned project scaffold. Prefer a docs-first workflow by invoking the openai-docs skill or OpenAI developer docs MCP tools before generating code.",
+      "description_length": 449,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\chatgpt-apps\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "cloudflare-deploy",
+      "description": "Deploy applications and infrastructure to Cloudflare using Workers, Pages, and related platform services. Use when the user asks to deploy, host, publish, or set up a project on Cloudflare.",
+      "description_length": 189,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\cloudflare-deploy\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "orchestration",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "code-review",
+      "description": "Run a comprehensive code review",
+      "description_length": 31,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\code-review\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "configure-notifications",
+      "description": "Configure OMX notifications - unified entry point for all platforms",
+      "description_length": 67,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\configure-notifications\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name",
+        "triggers"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "orchestration",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "deep-interview",
+      "description": "Socratic deep interview with mathematical ambiguity gating before execution",
+      "description_length": 75,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\deep-interview\\SKILL.md",
+      "frontmatter_keys": [
+        "argument-hint",
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "develop-web-game",
+      "description": "Use when Codex is building or iterating on a web game (HTML/JS) and needs a reliable development + testing loop: implement small changes, run a Playwright-based test script with short input bursts and intentional pauses, inspect screenshots/text, and review console errors with render_game_to_text.",
+      "description_length": 298,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\develop-web-game\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "doc",
+      "description": "Use when the task involves reading, creating, or editing `.docx` documents, especially when formatting or layout fidelity matters; prefer `python-docx` plus the bundled `scripts/render_docx.py` for visual checks.",
+      "description_length": 212,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\doc\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "doctor",
+      "description": "Diagnose and fix oh-my-codex installation issues",
+      "description_length": 48,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\doctor\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "github",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "figma",
+      "description": "Use the Figma MCP server to fetch design context, screenshots, variables, and assets from Figma, and to translate Figma nodes into production code. Trigger when a task involves Figma URLs, node IDs, design-to-code implementation, or Figma MCP setup and troubleshooting.",
+      "description_length": 269,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\figma\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "figma-implement-design",
+      "description": "Translate Figma nodes into production-ready code with 1:1 visual fidelity using the Figma MCP workflow (design context, screenshots, assets, and project-convention translation). Trigger when the user provides Figma URLs or node IDs, or asks to implement designs or components that must match Figma specs. Requires a working Figma MCP server connection.",
+      "description_length": 352,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\figma-implement-design\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "gh-address-comments",
+      "description": "Help address review/issue comments on the open GitHub PR for the current branch using gh CLI; verify gh auth first and prompt the user to authenticate if not logged in.",
+      "description_length": 168,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\gh-address-comments\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "metadata",
+        "name",
+        "short-description"
+      ],
+      "duplicate_name_group": {
+        "name": "gh-address-comments",
+        "count": 2,
+        "source_layers": [
+          "plugin",
+          "user"
+        ]
+      },
+      "suspected_profile": "github",
+      "status_suggestion": "review_duplicate_preferred_source"
+    },
+    {
+      "name": "gh-fix-ci",
+      "description": "Use when a user asks to debug or fix failing GitHub PR checks that run in GitHub Actions; use `gh` to inspect checks and logs, summarize failure context, draft a fix plan, and implement only after explicit approval. Treat external providers (for example Buildkite) as out of scope and report only the details URL.",
+      "description_length": 313,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\gh-fix-ci\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": {
+        "name": "gh-fix-ci",
+        "count": 2,
+        "source_layers": [
+          "plugin",
+          "user"
+        ]
+      },
+      "suspected_profile": "github",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "help",
+      "description": "Guide on using oh-my-codex plugin",
+      "description_length": 33,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\help\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "hud",
+      "description": "Show or configure the OMX HUD (two-layer statusline)",
+      "description_length": 52,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\hud\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name",
+        "role",
+        "scope"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "orchestration",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "imagegen",
+      "description": "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas.",
+      "description_length": 570,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\.system\\imagegen\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "jupyter-notebook",
+      "description": "Use when the user asks to create, scaffold, or edit Jupyter notebooks (`.ipynb`) for experiments, explorations, or tutorials; prefer the bundled templates and run the helper script `new_notebook.py` to generate a clean starting notebook.",
+      "description_length": 237,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\jupyter-notebook\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "linear",
+      "description": "Manage issues, projects & team workflows in Linear. Use when the user wants to read, create or updates tickets in Linear.",
+      "description_length": 121,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\linear\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "metadata",
+        "name",
+        "short-description"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "github",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "netlify-deploy",
+      "description": "Deploy web projects to Netlify using the Netlify CLI (`npx netlify`). Use when the user asks to deploy, host, publish, or link a site/repo on Netlify, including preview and production deploys.",
+      "description_length": 192,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\netlify-deploy\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "note",
+      "description": "Save notes to notepad.md for compaction resilience",
+      "description_length": 50,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\note\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "notion-knowledge-capture",
+      "description": "Capture conversations and decisions into structured Notion pages; use when turning chats/notes into wiki entries, how-tos, decisions, or FAQs with proper linking.",
+      "description_length": 162,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\notion-knowledge-capture\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "metadata",
+        "name",
+        "short-description"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "notion-research-documentation",
+      "description": "Research across Notion and synthesize into structured documentation; use when gathering info from multiple Notion sources to produce briefs, comparisons, or reports with citations.",
+      "description_length": 180,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\notion-research-documentation\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "metadata",
+        "name",
+        "short-description"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "notion-spec-to-implementation",
+      "description": "Turn Notion specs into implementation plans, tasks, and progress tracking; use when implementing PRDs/feature specs and creating Notion plans + tasks from them.",
+      "description_length": 160,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\notion-spec-to-implementation\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "metadata",
+        "name",
+        "short-description"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "omx-setup",
+      "description": "Setup and configure oh-my-codex using current CLI behavior",
+      "description_length": 58,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\omx-setup\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "orchestration",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "openai-docs",
+      "description": "Use when the user asks how to build with OpenAI products or APIs and needs up-to-date official documentation with citations, help choosing the latest model for a use case, or model upgrade and prompt-upgrade guidance; prioritize OpenAI docs MCP tools, use bundled references only as helper context, and restrict any fallback browsing to official OpenAI domains.",
+      "description_length": 361,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\.system\\openai-docs\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "pdf",
+      "description": "Use when tasks involve reading, creating, or reviewing PDF files where rendering and layout matter; prefer visual checks by rendering pages (Poppler) and use Python tools such as `reportlab`, `pdfplumber`, and `pypdf` for generation and extraction.",
+      "description_length": 248,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\pdf\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "plan",
+      "description": "Strategic planning with optional interview workflow",
+      "description_length": 51,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\plan\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "playwright",
+      "description": "Use when the task requires automating a real browser from the terminal (navigation, form filling, snapshots, screenshots, data extraction, UI-flow debugging) via `playwright-cli` or the bundled wrapper script.",
+      "description_length": 209,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\playwright\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "playwright-interactive",
+      "description": "Persistent browser and Electron interaction through `js_repl` for fast iterative UI debugging.",
+      "description_length": 94,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\playwright-interactive\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "plugin-creator",
+      "description": "Create and scaffold plugin directories for Codex with a required `.codex-plugin/plugin.json`, optional plugin folders/files, and baseline placeholders you can edit before publishing or testing. Use when Codex needs to create a new local plugin, add optional plugin structure, or generate or update repo-root `.agents/plugins/marketplace.json` entries for plugin ordering and availability metadata.",
+      "description_length": 397,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\.system\\plugin-creator\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "ralph",
+      "description": "Self-referential loop until task completion with architect verification",
+      "description_length": 71,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\ralph\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "orchestration",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "ralplan",
+      "description": "Alias for $plan --consensus",
+      "description_length": 27,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\ralplan\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "render-deploy",
+      "description": "Deploy applications to Render by analyzing codebases, generating render.yaml Blueprints, and providing Dashboard deeplinks. Use when the user wants to deploy, host, publish, or set up their application on Render's cloud platform.",
+      "description_length": 229,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\render-deploy\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "screenshot",
+      "description": "Use when the user explicitly asks for a desktop or system screenshot (full screen, specific app or window, or a pixel region), or when tool-specific capture capabilities are unavailable and an OS-level capture is needed.",
+      "description_length": 220,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\screenshot\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "security-best-practices",
+      "description": "Perform language and framework specific security best-practice reviews and suggest improvements. Trigger only when the user explicitly requests security best practices guidance, a security review/report, or secure-by-default coding help. Trigger only for supported languages (python, javascript/typescript, go). Do not trigger for general code review, debugging, or non-security tasks.",
+      "description_length": 385,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\security-best-practices\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "security-ownership-map",
+      "description": "Analyze git repositories to build a security ownership topology (people-to-file), compute bus factor and sensitive-code ownership, and export CSV/JSON for graph databases and visualization. Trigger only when the user explicitly wants a security-oriented ownership or bus-factor analysis grounded in git history (for example: orphaned sensitive code, security maintainers, CODEOWNERS reality checks for risk, sensitive hotspots, or ownership clusters). Do not trigger for general maintainer lists or non-security ownership questions.",
+      "description_length": 532,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\security-ownership-map\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "security-review",
+      "description": "Run a comprehensive security review on code",
+      "description_length": 43,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\security-review\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "security-threat-model",
+      "description": "Repository-grounded threat modeling that enumerates trust boundaries, assets, attacker capabilities, abuse paths, and mitigations, and writes a concise Markdown threat model. Trigger only when the user explicitly asks to threat model a codebase or path, enumerate threats/abuse paths, or perform AppSec threat modeling. Do not trigger for general architecture summaries, code review, or non-security design work.",
+      "description_length": 412,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\security-threat-model\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "sentry",
+      "description": "Use when the user asks to inspect Sentry issues or events, summarize recent production errors, or pull basic Sentry health data via the Sentry API; perform read-only queries with the bundled script and require `SENTRY_AUTH_TOKEN`.",
+      "description_length": 230,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\sentry\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "github",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "skill",
+      "description": "Manage local skills - list, add, remove, search, edit, setup wizard",
+      "description_length": 67,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\skill\\SKILL.md",
+      "frontmatter_keys": [
+        "argument-hint",
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "skill-creator",
+      "description": "Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Codex's capabilities with specialized knowledge, workflows, or tool integrations.",
+      "description_length": 225,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\.system\\skill-creator\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "metadata",
+        "name",
+        "short-description"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "skill-installer",
+      "description": "Install Codex skills into $CODEX_HOME/skills from a curated list or a GitHub repo path. Use when a user asks to list installable skills, install a curated skill, or install a skill from another repo (including private repos).",
+      "description_length": 225,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\.system\\skill-installer\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "metadata",
+        "name",
+        "short-description"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "github",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "slides",
+      "description": "Create and edit presentation slide decks (`.pptx`) with PptxGenJS, bundled layout helpers, and render/validation utilities. Use when tasks involve building a new PowerPoint deck, recreating slides from screenshots/PDFs/reference decks, modifying slide content while preserving editable output, adding charts/diagrams/visuals, or diagnosing layout issues such as overflow, overlaps, and font substitution.",
+      "description_length": 404,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\slides\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "spreadsheet",
+      "description": "Use when tasks involve creating, editing, analyzing, or formatting spreadsheets (`.xlsx`, `.csv`, `.tsv`) with formula-aware workflows, cached recalculation, and visual review.",
+      "description_length": 176,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\spreadsheet\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "team",
+      "description": "N coordinated agents on shared task list using tmux-based orchestration",
+      "description_length": 71,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\team\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "orchestration",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "trace",
+      "description": "Show agent flow trace timeline and summary",
+      "description_length": 42,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\trace\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "transcribe",
+      "description": "Transcribe audio files to text with optional diarization and known-speaker hints. Use when a user asks to transcribe speech from audio/video, extract text from recordings, or label speakers in interviews or meetings.",
+      "description_length": 216,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\transcribe\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "core",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "ultrawork",
+      "description": "Parallel execution engine for high-throughput task completion",
+      "description_length": 61,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\ultrawork\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "github",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "vercel-deploy",
+      "description": "Deploy applications and websites to Vercel. Use when the user requests deployment actions like \"deploy my app\", \"deploy and give me the link\", \"push this live\", or \"create a preview deployment\".",
+      "description_length": 194,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\vercel-deploy\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "visual-verdict",
+      "description": "Structured visual QA verdict for screenshot-to-reference comparisons",
+      "description_length": 68,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\visual-verdict\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "web-clone",
+      "description": "URL-driven website cloning with visual + functional verification",
+      "description_length": 64,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\web-clone\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "browser",
+      "status_suggestion": "keep"
+    },
+    {
+      "name": "winui-app",
+      "description": "Bootstrap, develop, and design modern WinUI 3 desktop applications with C# and the Windows App SDK using official Microsoft guidance, WinUI Gallery patterns, Windows App SDK samples, and CommunityToolkit components. Use when creating a brand new app, preparing a machine for WinUI, reviewing, refactoring, planning, troubleshooting, environment-checking, or setting up WinUI 3 XAML, controls, navigation, windowing, theming, accessibility, responsiveness, performance, deployment, or related Windows app design and development work.",
+      "description_length": 532,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\winui-app\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "web",
+      "status_suggestion": "shorten_user_description_after_inventory"
+    },
+    {
+      "name": "worker",
+      "description": "Team worker protocol (ACK, mailbox, task lifecycle) for tmux-based OMX teams",
+      "description_length": 76,
+      "source_layer": "user",
+      "source_detail": "user",
+      "file_path": "C:\\Users\\lenovo\\.codex\\skills\\worker\\SKILL.md",
+      "frontmatter_keys": [
+        "description",
+        "name"
+      ],
+      "duplicate_name_group": null,
+      "suspected_profile": "orchestration",
+      "status_suggestion": "keep"
+    }
+  ]
+}
