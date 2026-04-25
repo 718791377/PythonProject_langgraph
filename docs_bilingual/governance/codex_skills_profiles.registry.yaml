@@ -1,0 +1,76 @@
+version: 1
+metadata:
+  purpose: Declarative Codex skills profile registry. This file does not mutate user-level config.toml.
+  owner: D:\PythonProject_langgraph
+  config_mutation: forbidden
+  git_review_surface: GitLab
+settings:
+  description_limits:
+    user: 180
+    repo: 220
+    plugin: report_only
+  description_enforcement:
+    user: warning
+    repo: error
+    plugin: report_only
+profiles:
+  core:
+    description: Always-on cross-project Codex skills.
+  openspec:
+    description: OpenSpec workflow skills for repositories that use OpenSpec.
+  orchestration:
+    description: Codex subagent, OMX, durable-team, LangGraph, routing, state, and recovery skills.
+  browser:
+    description: Browser automation and visual verification skills.
+    preserve_plugin_skills: [agent-browser, agent-browser-verify, verification, investigation-mode]
+  web:
+    description: Vercel, Next.js, React, AI web app, and deployment skills.
+  github:
+    description: GitHub issue and PR workflow skills.
+  full:
+    description: Temporary broad discovery profile.
+projects:
+  D:\PythonProject_langgraph:
+    profiles: [core, openspec, orchestration]
+    notes: Source of truth for Codex orchestration governance and implementation plans.
+  D:\PythonProject_OpenClaw:
+    profiles: [core, browser, orchestration]
+    notes: Browser automation is expected; preserve browser verification capability.
+  D:\PythonProject_CLIProxyAPI:
+    profiles: [core, browser, orchestration]
+    notes: Browser or endpoint verification may be required; preserve browser verification capability.
+  D:\project:
+    profiles: [core]
+    notes: Add browser or web only after repository evidence requires it.
+  future_projects:
+    profiles: [core]
+    notes: Add browser, web, github, or full only when project evidence requires it.
+duplicate_skill_policy:
+  preferred_sources:
+    gh-address-comments: plugin
+    gh-fix-ci: plugin
+    openspec-apply-change: repo
+    openspec-archive-change: repo
+    openspec-continue-change: repo
+    openspec-explore: repo
+    openspec-ff-change: repo
+    openspec-new-change: repo
+    openspec-onboard: repo
+    openspec-propose: repo
+    openspec-sync-specs: repo
+    openspec-verify-change: repo
+  known_same_layer_exceptions:
+    - layer: repo
+      name_pattern: openspec-*
+      severity: warning
+      reason: Phase 3 must verify OpenSpec generated duplicates in a clean clone before cleanup.
+plugin_rules:
+  vercel:
+    handling: bundle_until_fine_grained_filtering_exists
+    preserve_for_profiles: [browser, web]
+    required_browser_skills: [agent-browser, agent-browser-verify, verification, investigation-mode]
+  github:
+    handling: enable_when_github_issue_or_pr_workflow_is_active
+publication:
+  review_surface: GitLab
+  github_pr_default: false

@@ -42,6 +42,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.zh-CN.md
 
+  - doc_id: codex_user_level_skills_governance_policy
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/codex_user_level_skills_governance_policy.md
+    zh_cn_path: docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md
+
   - doc_id: openspec_usage_convention
     doc_class: governance
     status: active
