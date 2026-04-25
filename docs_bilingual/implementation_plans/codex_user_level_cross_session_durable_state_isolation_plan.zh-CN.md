@@ -18,6 +18,57 @@ doc_class: implementation_plan
 
 > 截至 2026-04-22 的实施状态：仓库源代码已完成，用户级 mirrored helpers 已完成验证，并且已经针对真实 `D:\PythonProject_OpenClaw` 与 `D:\PythonProject_langgraph` fixture 做过复核；整个过程未改写任何被保留的 legacy durable artifact。
 
+> 截至 2026-04-26 的当前实施边界：保留 2026-04-22 的说明作为“源码和用户级 helper 已存在”的历史证据，但不要把它理解为当前小步 rollout 已经全部完成。MR 1 和 MR 2 已完成，MR 3 是下一步 active implementation slice。
+
+## 当前有界实施队列
+
+这条队列用于固化 Phase 0 durable-state 只读盘点后的决策：最终生产级持久化团队方案仍然只是北极星 draft，当前继续通过 GitLab-first 小步 MR 推进 active rollout。
+
+### 已完成切片
+
+- MR 1，当前实施边界冻结：已由 `afdbd34` 完成 - 该提交说明当前实施线只受用户级 team mode 方案和跨会话 durable-state 隔离方案约束。
+- MR 2，durable-state no-touch baseline：已由 `6f28c5f` 完成 - 该提交记录四个本地项目根目录的只读盘点，且不编辑、不移动、不删除、不激活任何 `.omx/state/` artifact。
+
+### 下一步切片：MR 3，状态检查入口补强
+
+MR 3 应把已经安装存在的 status surface 补强为冷启动安全的 operator entrypoint。它必须继续保持只读。
+
+必须覆盖的源码与 helper 表面：
+
+- `tools/install-codex-user-level-team-mode.ps1` - 仓库内用于生成用户级 helper 脚本的源脚本，保证已安装 helper 的行为可以从仓库源码复现。
+- `codex-durable-state-status.ps1` - 生成到用户级目录的只读状态脚本，用于汇总当前仓库或 worktree 的 durable backend 状态。
+- `tools/langgraph_durable_orchestrator/` - 仓库内 LangGraph compatibility projection 和 repo-local orchestration helper 的源码目录。
+- `.omx/state/langgraph/` - 仓库本地 LangGraph runtime-state 目录，必须保持项目本地化，不能移动到用户级共享 venv。
+
+MR 3 验收契约：
+
+- `installed` - 报告相关能力或 helper 是否物理存在，例如生成脚本或共享 LangGraph runtime 是否已经安装。
+- `enabled` - 报告用户级 policy 当前是否允许使用该能力。
+- `selected` - 报告当前仓库、任务或 selector 是否为当前 flow 选择了该 backend。
+- `ready` - 报告该能力在 installed、enabled、selected 之外，是否还满足 scoped state 和安全启动前置条件。
+
+MR 3 必须增加测试或 fixture，证明 checker 至少能区分这些情况：
+
+- `D:\PythonProject_langgraph` fixture - preserved legacy LangGraph record 可以 inspect，但在没有 scoped selector 时不能作为 active routing truth。
+- `D:\PythonProject_OpenClaw` fixture - active scoped LangGraph selector 强于 stale unscoped backend record，但它仍然只属于该仓库本地。
+- `D:\PythonProject_CLIProxyAPI` fixture - active native OMX team state 必须保留，不能被归类为 safe cleanup residue。
+- `D:\project` fixture - 普通 HUD、notification、leader-nudge 或 tmux hook state 不是 durable backend activation 证据。
+
+### MR 3 之后的后续切片
+
+- MR 4，activation selector 安全规则：实现测试和代码，防止空的 unmanaged native residue、陈旧 legacy LangGraph selector 或跨项目 artifact 自动激活未来会话。
+- MR 5，user-level mirrored helper 的 source-of-truth 规则：文档化并测试“用户级 helper 是安装产物”，而仓库源码和每个仓库自己的 `.omx/state/` 目录才是权威真相。
+- MR 6，自动 durable routing 接入：只有在 MR 3 到 MR 5 证明 status 与 selector 行为安全后，才把 `native_omx` 和 `langgraph` 的选择接入真实 task-flow 阈值。
+
+### 下一步切片的明确非目标
+
+- 不要把最终 `codex_cli_personal_production_durable_team_plan` draft 当成已经完成的能力来实施；它仍然只是北极星目标。
+- 不要修改 `C:\Users\lenovo\.codex\config.toml` - 这个用户级 Codex 配置文件不属于下一步 MR 的 source-of-truth 范围。
+- 不要删除 user-level skills、Vercel plugin skills、浏览器自动化 skills 或 repo-local `.omx/state/` artifacts。
+- 不要把 `D:\PythonProject_OpenClaw`、`D:\PythonProject_CLIProxyAPI` 或 `D:\project` 的 durable state 合并到本仓库。
+- 不要在 MR 3 启动 durable team；状态入口补强只做 inspect。
+
+
 ## 1. 目标
 
 在**不修改、不删除、不重写**任何现有活跃会话或历史会话 durable artifact 的前提下，消除 repo-local durable state 对后续无关会话的意外干扰。
