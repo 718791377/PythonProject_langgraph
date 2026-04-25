@@ -27,6 +27,7 @@ status: active
 - `tools/check_current_repo_authority_language.py`
 - `tools/check_document_governance_rules.py`
 - `tools/check_implementation_plan_rules.py`
+- `tools/check_name_clarity_rules.py`：对 `docs_bilingual/` 与 `openspec/` 执行 OPSX 名称解释规则，且不会修改文档。
 - `tools/run_openspec_guard.py`
 - 后续新增、且支持 `--json` 并进入同一 guard surface 的仓库检查脚本
 
