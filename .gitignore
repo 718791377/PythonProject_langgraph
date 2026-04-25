@@ -6,3 +6,4 @@ __pycache__/
 .venv/
 .idea/
 node_modules/
+openspec-guard-report.json
