@@ -43,6 +43,26 @@ Stable capability posture:
   - already a real additive durable backend
   - still usable but MVP-shaped rather than a fully realized LangGraph-native runtime
 
+## Current Implementation Boundary
+
+The current implementation lane is limited to the active user-level orchestration plans:
+
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - the active user-level team-mode plan for native Codex, oh-my-codex, native_omx, and LangGraph routing behavior.
+- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` - the active durable-state isolation plan that keeps repo-local state from leaking across projects or sessions.
+
+The long-term north-star plan remains draft-only:
+
+- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md` - the draft final target for a personal production-grade persistent Codex CLI team; do not treat this as implemented behavior yet.
+
+Cross-project usage rule:
+
+- `D:\PythonProject_OpenClaw` - a consumer project that may reuse user-level Codex orchestration policy and browser automation capability, while keeping its repo-local facts and `.omx/state/` separate.
+- `D:\PythonProject_CLIProxyAPI` - a consumer project that may need browser or endpoint verification, while keeping its repo-local facts and `.omx/state/` separate.
+- `D:\project` - a general project root that should start with the core profile and add browser, web, or orchestration capability only when project evidence requires it.
+- Future projects - consumers of shared user-level runtime and policy only; each project owns its own OpenSpec artifacts, durable state, CI status, and publication state.
+
+Do not auto-launch a durable team during startup or boundary-freeze work. Durable-team launch is allowed only after a plan is frozen and at least two mostly independent execution slices exist.
+
 Drift-prone execution detail now lives in the mainline memory summary rather than this repository-entry summary.
 
 ## Cold-Start Read Order
