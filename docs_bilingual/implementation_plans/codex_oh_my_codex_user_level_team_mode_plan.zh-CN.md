@@ -3,18 +3,51 @@ doc_id: codex_oh_my_codex_user_level_team_mode_plan
 lang: zh-CN
 canonical: docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md
 translation_of: docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md
-status: draft
+status: active
 doc_class: implementation_plan
 ---
 
-# Codex / oh-my-codex 用户级团队模式方案（中文摘要）
+# Codex / oh-my-codex 用户级团队模式方案（中文对照版）
 
 > 说明
 >
-> - 当前中文文件还是摘要型对照稿，不是与英文主版完全等长的完整对照版。
-> - 英文主版：`docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
+> - 英文 ASCII 主版：`docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
+> - 2026-04-25 完整度检查结论：英文 ASCII 主版更完整，中文文件原先是“中文摘要 + 附录 C 摘录”。
+> - 本文件现在作为中文对照版维护：所有实施判断以英文 ASCII 主版为完整基准；中文文件必须至少保持相同的主要章节与附录结构，并说明每个章节的实施语义。
 > - 在新的统一口径下，这份方案应理解为：**兼顾用户级共享控制面与项目级 repo-local 承接边界**的共享 implementation plan。
 > - 它服务于同一 machine / user / Codex home 下所有 `PyCharm / Codex CLI` 项目共用的 user-level team mode，同时要求每个仓库继续保留自己的 repo-local source、repo-local durable state、OpenSpec 与测试作为项目级权威面。
+
+## 双语对齐状态
+
+- 对齐基准：英文 ASCII 主版是完整结构基准与实施 source of truth。
+- 中文定位：本文是中文对照版，不再是仅供阅读的摘要稿。
+- 当前范围：本文保留既有中文实施摘录与附录 C 中文细节，同时补齐英文主版的完整结构索引，确保冷启动会话知道英文主版中每一部分都需要纳入实施判断。
+- 后续规则：任何新增英文章节必须同步更新本文件的中文结构索引；任何改变实施语义的英文段落必须同步补充中文说明。
+
+## 完整结构对照索引
+
+以下索引与英文 ASCII 主版的主要章节和附录对齐。冷启动模型实施时，应先按本索引确认范围，再回到英文 ASCII 主版读取完整细节。
+
+1. 目标：定义 user-level team mode 的目标、共享边界与生产级使用预期。
+2. 范围：区分用户级共享控制面、项目级 repo-local source、durable state 与测试权威面。
+3. 输入：以现有 OpenSpec、governance 文档、runtime helper 和已验证行为为输入。
+4. 角色分层：区分 persistent panes、leader-side native subagents、burst review roles、heterogeneous orchestration 与 automatic role routing。
+5. `team-executor` 与 `team-leader`：明确 persistent worker 与当前主 Codex CLI leader session 的边界。
+6. 推荐项目阶段：覆盖 define target、read context、freeze plan、execute parallel、integrate、stabilize、verify accept，以及 P0-P7 映射。
+7. 推荐调用节奏：覆盖早期、中期、后期、research-to-implementation handoff、hybrid orchestration、adversarial bug review、默认姿态和 restart matrix。
+8. 多 worktree 防冲突规则：一 worker 一 worktree 一分支，冻结 ownership，热点文件串行，leader 负责集成。
+9. 可复用团队模板：default development、high-throughput implementation、debug/stabilization、hybrid orchestration 与 opt-in mixed compose。
+10. Operator control surface、共享用户级资产与项目边界：明确 leader commands、runtime state、mailbox、worktree notes、installed assets、backup 与 rollback。
+11. Windows 前置条件：覆盖 Windows native backend 方向与 startup leader protocol 状态。
+12. 全局使用规则：覆盖 provider budget、何时不用/启动/switch `omx team`、native Codex base layer、research/implementation 分工、homogeneous persistent teams、heterogeneous orchestration、adversarial review、hard routing directives、retrofit-capable sessions、debugging mode、mixed compose 与 rollback。
+13. 实施顺序：按小步、可验证、可回滚的顺序推进 user-level team mode 能力。
+14. 验收标准：以可运行命令、状态可检查、跨项目边界不破坏为验收核心。
+15. 最终建议：保留当前主 Codex CLI session 为 leader，把持久化 worker/team 作为受控执行层。
+16. LangGraph 方向：把 LangGraph 作为 additive durable backend，明确术语与后续深化方向。
+17. Backend selection：区分 `native_omx` 与 `langgraph` backend family，定义 capability switches 和 long-running collaborative parallel execution。
+18. 附录 A：官方 LangGraph 能力差距，作为后续深化与能力 gap sync 的依据。
+19. 附录 B：稳定用户级命令名，确保 `codex-ohmy` / `codex-raw` 等入口语义稳定。
+20. 附录 C：官方更新、差异检查与本地补丁重放标准流程；本文件保留该附录的中文细化内容。
 
 ## 当前中文摘录
 

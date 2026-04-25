@@ -9,6 +9,13 @@ doc_class: implementation_plan
 
 # Codex 用户级跨会话 Durable State 隔离实施方案
 
+## 双语对齐状态
+
+- 完整度基准：英文 ASCII 主版与本中文对照版在主要章节结构上已经对齐。
+- 英文主版：`docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md`。
+- 对齐规则：两份文件保持 active 状态；如果实施语义发生变化，先以英文 ASCII 主版为 source of truth，再在同一变更中更新中文对照版。
+- 当前检查结论：两份文件已经拥有相同的主要 heading 结构；本轮只补充双语对齐元数据。
+
 > 截至 2026-04-22 的实施状态：仓库源代码已完成，用户级 mirrored helpers 已完成验证，并且已经针对真实 `D:\PythonProject_OpenClaw` 与 `D:\PythonProject_langgraph` fixture 做过复核；整个过程未改写任何被保留的 legacy durable artifact。
 
 ## 1. 目标

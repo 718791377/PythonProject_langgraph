@@ -8,6 +8,13 @@ doc_class: implementation_plan
 
 # Codex User-Level Cross-Session Durable State Isolation Plan
 
+## Bilingual Alignment Status
+
+- Completeness baseline: this English ASCII file and its Chinese companion are structurally aligned at the section-heading level.
+- Chinese companion: `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md`.
+- Alignment rule: keep both files active together. When wording diverges, use this English ASCII file as the implementation source of truth and update the Chinese companion in the same change.
+- Current finding: both files already carry the same major heading structure; only the status note and alignment metadata needed normalization.
+
 > Implementation status as of 2026-04-22: completed in repo source, validated in user-level mirrored helpers, and verified against the real `D:\PythonProject_OpenClaw` and `D:\PythonProject_langgraph` fixtures without mutating preserved legacy durable artifacts.
 
 ## 1. Goal
