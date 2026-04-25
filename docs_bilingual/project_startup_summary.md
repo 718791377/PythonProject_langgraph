@@ -63,6 +63,10 @@ Cross-project usage rule:
 
 Do not auto-launch a durable team during startup or boundary-freeze work. Durable-team launch is allowed only after a plan is frozen and at least two mostly independent execution slices exist.
 
+Current no-touch durable-state baseline:
+
+- `docs_bilingual/memory/cross_project_durable_state_read_only_inventory_2026-04-25.md` - read-only Phase 0 inventory for `D:\PythonProject_langgraph`, `D:\PythonProject_OpenClaw`, `D:\PythonProject_CLIProxyAPI`, and `D:\project`; use it as implementation evidence, not as permission to mutate `.omx/state`.
+
 Drift-prone execution detail now lives in the mainline memory summary rather than this repository-entry summary.
 
 ## Cold-Start Read Order

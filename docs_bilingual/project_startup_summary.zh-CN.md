@@ -57,6 +57,10 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 不要在 startup 或边界冻结工作中自动启动 durable team。只有在计划已经冻结且存在至少两个基本独立的执行切片时，才允许启动 durable team。
 
+当前 no-touch durable-state baseline：
+
+- `docs_bilingual/memory/cross_project_durable_state_read_only_inventory_2026-04-25.zh-CN.md`：面向 `D:\PythonProject_langgraph`、`D:\PythonProject_OpenClaw`、`D:\PythonProject_CLIProxyAPI` 与 `D:\project` 的只读 Phase 0 盘点；它只能作为实施证据，不能当成允许修改 `.omx/state` 的授权。
+
 易漂移的执行细节已经下放到主线 memory 摘要，而不再放在这份仓库级入口摘要里。
 
 ## 冷启动阅读顺序

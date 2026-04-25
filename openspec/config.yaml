@@ -154,10 +154,12 @@ rules:
     - Prefer root scripts, config, tests, or initialization layers.
     - Do not edit package, dist, or build artifacts.
     - Keep implementation-plan documents and OpenSpec artifacts synchronized when both are affected.
+    - When listing a script, path, command, variable, profile, skill name, or other code-like name, add a short purpose explanation so cold-start readers know what it is for.
 
   governance:
     - Governance documents may be revised according to OpenSpec standards without forcing all governance docs into openspec/specs.
     - New governance or methodology rules may first appear in native governance or implementation documents during exploration, but project-level, cross-mainline, reusable, long-term rules should be promoted into OpenSpec.
+    - OPSX-facing governance documents must apply the name clarity rule: named scripts, paths, commands, variables, profiles, and skill names need short purpose explanations instead of bare code-name lists.
     - Startup summaries should remain stable entry documents rather than detailed running progress ledgers.
     - Detailed branch progress, blockers, and next verification targets should live in docs_bilingual/memory or active implementation documents.
     - Only rules that are reusable, cross-scenario, and long-term valuable should remain as common specs; one-off runtime notes should remain outside OpenSpec.
