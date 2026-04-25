@@ -173,7 +173,13 @@ def validate_profile_registry(root: Path, errors: list[str]) -> dict[str, Any] |
     return parsed
 
 
-def validate_inventory(payload: dict[str, Any], parsed_registry: dict[str, Any] | None, errors: list[str], warnings: list[str]) -> None:
+def validate_inventory(
+    payload: dict[str, Any],
+    parsed_registry: dict[str, Any] | None,
+    errors: list[str],
+    warnings: list[str],
+    deferred: list[str],
+) -> None:
     exceptions = parsed_registry.get("known_same_layer_exceptions", []) if parsed_registry else []
     limits = parsed_registry.get("description_limits", {"user": 180, "repo": 220}) if parsed_registry else {"user": 180, "repo": 220}
     enforcement = parsed_registry.get("description_enforcement", {"user": "error", "repo": "error"}) if parsed_registry else {"user": "error", "repo": "error"}
@@ -197,7 +203,10 @@ def validate_inventory(payload: dict[str, Any], parsed_registry: dict[str, Any] 
         if len(rows) <= 1:
             continue
         if has_exception(name, layer, exceptions):
-            warnings.append(f"Known same-layer duplicate exception for {layer} skill `{name}`; keep for Phase 3 investigation.")
+            deferred.append(
+                f"Known same-layer duplicate cleanup candidate for {layer} skill `{name}`; "
+                "requires clean-clone OpenSpec evidence before removal."
+            )
         else:
             errors.append(f"Duplicate skill name `{name}` appears {len(rows)} times inside layer `{layer}`.")
     for name, rows in sorted(by_name.items()):
@@ -226,11 +235,12 @@ def main() -> int:
     plugin_root = Path(args.plugin_cache_root).resolve() if args.plugin_cache_root else user_profile / ".codex" / "plugins" / "cache"
     errors: list[str] = []
     warnings: list[str] = []
+    deferred: list[str] = []
     info: list[str] = []
     validate_policy_registry(root, errors)
     parsed = validate_profile_registry(root, errors)
     inventory = build_inventory(root, not args.no_plugins, user_root, plugin_root)
-    validate_inventory(inventory, parsed, errors, warnings)
+    validate_inventory(inventory, parsed, errors, warnings, deferred)
     info.append(f"Skills scanned: {inventory['counts']['total_skills']}")
     info.append(f"Duplicate name groups: {inventory['counts']['duplicate_name_groups']}")
     payload = {
@@ -240,11 +250,13 @@ def main() -> int:
         "ok": len(errors) == 0,
         "errors": errors,
         "warnings": warnings,
+        "deferred": deferred,
         "info": info,
         "root": str(root),
         "counts": {
             "errors": len(errors),
             "warnings": len(warnings),
+            "deferred": len(deferred),
             "skills_total": inventory["counts"]["total_skills"],
             "duplicate_name_groups": inventory["counts"]["duplicate_name_groups"],
             "by_source_layer": inventory["counts"].get("by_source_layer", {}),
@@ -260,6 +272,10 @@ def main() -> int:
             print("Warnings:")
             for warning in warnings:
                 print(f"  - {warning}")
+        if deferred:
+            print("Deferred cleanup:")
+            for item in deferred:
+                print(f"  - {item}")
         for item in info:
             print(f"  - {item}")
     return 0 if payload["ok"] else 1
