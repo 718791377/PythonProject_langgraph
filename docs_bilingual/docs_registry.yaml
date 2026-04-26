@@ -107,3 +107,9 @@ documents:
     status: active
     canonical_path: docs_bilingual/implementation_plans/main_worktree_gitlab_main_alignment_safety_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/main_worktree_gitlab_main_alignment_safety_plan.zh-CN.md
+
+  - doc_id: main_worktree_backup_reconciliation_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/main_worktree_backup_reconciliation_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/main_worktree_backup_reconciliation_plan.zh-CN.md
