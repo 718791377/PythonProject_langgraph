@@ -328,6 +328,28 @@ Recommended long-term handling:
 - `durable_team` goes into backend-specific execution state and is exposed through unified inspect summaries
 - `persistent team` stays as the top-level operating model organizing user-level targets and project-level handoff
 
+### 7.3 Safety controls must combine scripts and prompts
+
+The production-grade persistent team cannot depend on the model remembering a long prompt after context grows.
+
+Every system-level, user-level, or project-level safety boundary must therefore use both layers:
+
+- script control - executable checks, generated helper logic, guarded state transitions, or CI gates that fail closed for a cold-start model with no prior conversation context.
+- prompt reminder - startup-summary, AGENTS, and implementation-plan text that explains the rule, the reason for the script guard, and the recovery procedure when the reminder appears forgotten.
+
+Minimum production requirement:
+
+- `experts` routing must have script-visible thresholds or checker evidence before it is described as automatic.
+- `durable_team` launch must be guarded by frozen-plan and independent-slice checks rather than by prompt memory alone.
+- `persistent team` state must be scoped by repository and backend family in executable helpers, not only in prose.
+- publication, cleanup, state mutation, and cross-project activation must have a script gate or an explicit documented gap.
+
+The startup layer should also include a context-retention canary. The current canary convention is:
+
+- full assistant responses for this repository's orchestration work start with `指挥官` and end with `喵~`, unless a higher-priority system or developer instruction prevents it.
+- missing canary text after startup-summary reading is treated as possible context-loss evidence.
+- recovery is to rerun the cold-start read order from `docs_bilingual/project_startup_summary.md`, then reread only the files needed to continue safely.
+
 ## 8. State, Memory, And Artifact Persistence
 
 ### 8.1 Durable truth layering
@@ -646,6 +668,8 @@ Minimum acceptance:
 - the three lanes have stable responsibility boundaries
 - inspect / approval / recovery share one surface
 - high-risk actions have audit and guarded actions
+- safety-critical prompt reminders have matching script controls or an explicit tracked gap
+- startup context-retention canary behavior is documented with a cold-start reread recovery procedure
 - a regression gate exists
 - at least one cold-start recovery drill exists
 - at least one failure-branch redrive drill exists

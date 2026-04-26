@@ -51,6 +51,28 @@ doc_class: implementation_plan
 
 ## 当前中文摘录
 
+### 用户级安全边界：脚本控制 + 提示词提醒
+
+当前 `experts / durable_team / persistent team` 方案不得只依赖模型记住提示词。
+
+所有系统级、用户级、项目级安全边界都必须同时具备：
+
+- 脚本控制 - 可执行 checker、受保护 helper、CI gate 或生成式 launcher 逻辑；即使冷启动模型没有任何上一轮会话上下文，也必须默认 fail closed。
+- 提示词提醒 - startup summary、AGENTS 和 implementation plan 文本；它们负责解释脚本保护什么，以及模型疑似忘记规则时应该重读什么。
+
+这条规则对以下行为尤其重要：
+
+- `experts` 自动路由 - 必须由阈值、checker 或 routing trace 约束，不能只靠提示词判断。
+- `durable_team` 启动 - 必须由计划冻结和独立切片检查保护，不能只靠模型记忆。
+- `persistent team` 状态 - 必须由 repo-local `.omx/state/` scope 和 backend-family 规则保护，不能跨项目混用。
+- GitLab-first 发布、safe cleanup、state mutation 和 activation selector - 必须有脚本 gate 或明确记录为未落地 gap。
+
+启动摘要还必须携带上下文保留哨兵：
+
+- 除非更高优先级 system 或 developer 指令阻止，本仓库编排工作的完整模型回复应以 `指挥官` 开头，并以 `喵~` 结尾。
+- 如果模型在本应读取 startup summary 后没有输出该哨兵，则视为可能上下文丢失。
+- 恢复动作是按新会话冷启动方式重读 `docs_bilingual/project_startup_summary.md`，再按其 read order 补读继续当前会话必须需要的文件。
+
 已经实现：
 
 - 在 migration-aware live primary-engine compatibility-state rollout 已归档之后，这一节必须按**已验证的当前状态**来描述用户级 LangGraph surface，而不是继续把已经落地的能力写成未来计划。
