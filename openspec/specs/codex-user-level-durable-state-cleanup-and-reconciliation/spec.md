@@ -3,9 +3,7 @@
 ## Purpose
 
 Define a user-level contract for safely classifying, cleaning, and reconciling stale or unmanaged durable orchestration residue across repo-local backends.
-
 ## Requirements
-
 ### Requirement: The user-level workflow SHALL classify durable-state residue by cleanup safety
 The user-level durable-state cleanup and reconciliation workflow SHALL classify repo-local durable-state residue by cleanup safety rather than by backend name alone.
 
@@ -60,3 +58,22 @@ The cleanup and reconciliation workflow SHALL classify stale compose runtime res
 - **WHEN** tracked compose runtime state exists but the launched pane teams it references no longer exist
 - **THEN** the cleanup workflow SHALL classify that state as stale compose runtime residue
 - **AND** it SHALL not present it as a healthy active compose runtime
+
+### Requirement: Cleanup and reconciliation SHALL preserve legacy durable artifacts during scoped-activation rollout
+During the first rollout of session-scoped durable activation, cleanup and reconciliation SHALL preserve legacy durable artifacts unless they already belong to an explicitly safe cleanup class.
+
+Legacy preserved artifact state SHALL NOT be reclassified as safe cleanup only because it is no longer the activation truth for future sessions.
+
+#### Scenario: Preserved legacy LangGraph backend record exists without active scoped selector
+- **WHEN** a repository contains a preserved legacy LangGraph backend record
+- **AND** that record is not declared active by the scoped activation plane for the current future session
+- **THEN** cleanup and reconciliation SHALL preserve that record as legacy artifact state
+- **AND** it SHALL not classify that record as safe cleanup only because activation has moved elsewhere
+
+### Requirement: Cleanup and reconciliation SHALL keep empty unmanaged native residue safe but non-blocking
+Cleanup and reconciliation SHALL continue classifying empty unmanaged native residue as a safe cleanup candidate, but that classification SHALL remain distinct from active blocking residue.
+
+#### Scenario: Operator inspects empty unmanaged native residue during scoped-activation rollout
+- **WHEN** repo-local native durable-team residue is unmanaged and contains no files during the scoped-activation rollout
+- **THEN** cleanup and reconciliation SHALL continue to classify it as a safe cleanup candidate
+- **AND** it SHALL preserve that classification distinctly from protected or active durable state
