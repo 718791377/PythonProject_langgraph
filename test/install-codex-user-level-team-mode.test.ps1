@@ -1328,6 +1328,12 @@ Assert-Equal ([string]$routingPolicy.provider_proxy_upstream_pacing.orchestratio
 Assert-Equal ([string]$routingPolicy.inspectable_durable_state_surface.primary_operator_surface) 'codex-durable-state-status.ps1' 'Routing policy did not expose the canonical inspectable durable-state surface.'
 $inspectableStateFields = @($routingPolicy.inspectable_durable_state_surface.minimum_fields | ForEach-Object { [string]$_ })
 Assert-ArrayContains -Actual $inspectableStateFields -Expected 'tracked_identity' -Message 'Routing policy did not expose tracked_identity in the inspectable durable-state field set.'
+Assert-ArrayContains -Actual $inspectableStateFields -Expected 'capability_readiness' -Message 'Routing policy did not expose capability_readiness in the inspectable durable-state field set.'
+$durableReadinessFields = @($routingPolicy.inspectable_durable_state_surface.readiness_fields | ForEach-Object { [string]$_ })
+Assert-ArrayContains -Actual $durableReadinessFields -Expected 'installed' -Message 'Routing policy did not expose durable capability installed readiness field.'
+Assert-ArrayContains -Actual $durableReadinessFields -Expected 'enabled' -Message 'Routing policy did not expose durable capability enabled readiness field.'
+Assert-ArrayContains -Actual $durableReadinessFields -Expected 'selected' -Message 'Routing policy did not expose durable capability selected readiness field.'
+Assert-ArrayContains -Actual $durableReadinessFields -Expected 'ready' -Message 'Routing policy did not expose durable capability ready readiness field.'
 $inspectableStateClasses = @($routingPolicy.inspectable_durable_state_surface.state_classes | ForEach-Object { [string]$_ })
 Assert-ArrayContains -Actual $inspectableStateClasses -Expected 'tracked_native_team' -Message 'Routing policy did not expose tracked_native_team as an inspectable durable-state class.'
 Assert-ArrayContains -Actual $inspectableStateClasses -Expected 'tracked_langgraph_thread' -Message 'Routing policy did not expose tracked_langgraph_thread as an inspectable durable-state class.'
@@ -1542,6 +1548,17 @@ $durableStateNone = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 
 )
 Assert-Equal $durableStateNone.state_class 'no_durable_state' 'Durable-state status did not classify the no-state case correctly.'
 Assert-Equal $durableStateNone.backend_family '' 'Durable-state status should not report a backend family when no state exists.'
+Assert-Equal $durableStateNone.selected_backend 'native_omx' 'Durable-state status should expose the default selected backend for a cold no-state repo.'
+Assert-True ($durableStateNone.capability_readiness.native_omx.installed -eq $true) 'Durable-state status should report generated native_omx helpers as installed.'
+Assert-True ($durableStateNone.capability_readiness.native_omx.enabled -eq $false) 'Durable-state status should keep native_omx disabled while oh_my_codex is off.'
+Assert-True ($durableStateNone.capability_readiness.native_omx.selected -eq $true) 'Durable-state status should report native_omx as the default selected backend.'
+Assert-True ($durableStateNone.capability_readiness.native_omx.ready -eq $false) 'Durable-state status should not report native_omx ready before it is enabled.'
+Assert-True ($durableStateNone.capability_readiness.langgraph.installed -eq $false) 'Durable-state status should report LangGraph shared runtime as not installed in the isolated test home.'
+Assert-True ($durableStateNone.capability_readiness.langgraph.enabled -eq $false) 'Durable-state status should report LangGraph disabled by default.'
+Assert-True ($durableStateNone.capability_readiness.langgraph.selected -eq $false) 'Durable-state status should not report LangGraph selected by default.'
+Assert-True ($durableStateNone.capability_readiness.langgraph.ready -eq $false) 'Durable-state status should not report LangGraph ready by default.'
+Assert-ArrayContains -Actual @($durableStateNone.capability_readiness.readiness_fields | ForEach-Object { [string]$_ }) -Expected 'ready' -Message 'Durable-state status did not publish readiness field names.'
+Assert-True (-not (Test-Path -LiteralPath (Join-Path $NoStateRepoRoot '.omx'))) 'Read-only durable-state status should not create repo-local .omx state in a no-state repo.'
 Assert-True ($durableStateNone.read_only_by_default -eq $true) 'Durable-state status did not preserve read-only posture.'
 
 $cleanupPreviewNone = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-reconcile.ps1') -Arguments @(
@@ -1603,6 +1620,20 @@ Assert-True ($langGraphSwitchStatus.langgraph_enabled -eq $true) 'LangGraph stat
 Assert-True ($langGraphSwitchStatus.langgraph_selected -eq $true) 'LangGraph status script did not expose selected state.'
 Assert-True ($langGraphSwitchStatus.langgraph_ready -eq $false) 'LangGraph status script should not report ready before the shared venv exists.'
 Assert-Equal $langGraphSwitchStatus.langgraph_runtime.shared_venv_path (Join-Path $CodexHome 'venvs\langgraph-py312') 'LangGraph status script did not expose the shared venv path.'
+
+$durableStateLangGraphSelected = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-status.ps1') -Arguments @(
+  '-RepoRoot', $NoStateRepoRoot,
+  '-Json'
+)
+Assert-Equal $durableStateLangGraphSelected.selected_backend 'langgraph' 'Durable-state status should expose the selected LangGraph backend after switching.'
+Assert-True ($durableStateLangGraphSelected.capability_readiness.native_omx.enabled -eq $true) 'Durable-state status should keep native_omx enabled when oh_my_codex is on.'
+Assert-True ($durableStateLangGraphSelected.capability_readiness.native_omx.selected -eq $false) 'Durable-state status should distinguish native_omx as not selected when LangGraph is selected and no repo state exists.'
+Assert-True ($durableStateLangGraphSelected.capability_readiness.native_omx.ready -eq $false) 'Durable-state status should not report native_omx ready when it is not selected.'
+Assert-True ($durableStateLangGraphSelected.capability_readiness.langgraph.enabled -eq $true) 'Durable-state status should report LangGraph enabled after switching.'
+Assert-True ($durableStateLangGraphSelected.capability_readiness.langgraph.selected -eq $true) 'Durable-state status should report LangGraph selected after switching.'
+Assert-True ($durableStateLangGraphSelected.capability_readiness.langgraph.ready -eq $false) 'Durable-state status should not report LangGraph ready before the shared runtime is installed.'
+Assert-ArrayContains -Actual @($durableStateLangGraphSelected.capability_readiness.langgraph.blockers | ForEach-Object { [string]$_ }) -Expected 'langgraph_shared_runtime_not_installed' -Message 'Durable-state status did not explain the LangGraph not-ready blocker.'
+Assert-True (-not (Test-Path -LiteralPath (Join-Path $NoStateRepoRoot '.omx'))) 'Durable-state status after LangGraph selection should remain read-only for repo-local state.'
 $langGraphBackendStatus = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-backend-status.ps1') -Arguments @(
   '-Json'
 )
@@ -1735,6 +1766,12 @@ Assert-Equal $durableStateTrackedNative.tracked_identity $trackedRecord.team_nam
 Assert-Equal $durableStateTrackedNative.worker_shape.worker_role 'team-executor' 'Durable-state status did not report the tracked native worker role.'
 Assert-Equal ([int]$durableStateTrackedNative.worker_shape.worker_count) 2 'Durable-state status did not report the tracked native worker count.'
 Assert-Equal $durableStateTrackedNative.inspect_pointer.script 'omx-team-ops.ps1' 'Durable-state status did not point native inspection to omx-team-ops.ps1.'
+Assert-Equal $durableStateTrackedNative.selected_backend 'langgraph' 'Durable-state status should preserve the user-level selected backend even when repo state is native_omx.'
+Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.user_level_selected -eq $false) 'Durable-state status should distinguish native_omx as not selected by the user-level backend switch.'
+Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.repo_state_selected -eq $true) 'Durable-state status should distinguish native_omx as selected by tracked repo-local state.'
+Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.ready -eq $true) 'Durable-state status should report tracked native_omx state ready when helpers are installed and oh_my_codex is enabled.'
+Assert-True ($durableStateTrackedNative.capability_readiness.langgraph.user_level_selected -eq $true) 'Durable-state status should preserve the user-level LangGraph selection alongside tracked native state.'
+Assert-True ($durableStateTrackedNative.capability_readiness.langgraph.ready -eq $false) 'Durable-state status should keep LangGraph not ready when the shared runtime is missing.'
 
 $autoReuse = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
   '-Task', 'follow-up implementation slice',

@@ -46,6 +46,16 @@ MR 3 验收契约：
 - `enabled` - 报告用户级 policy 当前是否允许使用该能力。
 - `selected` - 报告当前仓库、任务或 selector 是否为当前 flow 选择了该 backend。
 - `ready` - 报告该能力在 installed、enabled、selected 之外，是否还满足 scoped state 和安全启动前置条件。
+- `selected_backend` - 报告用户级 backend selector，让冷启动读者能看出全局 durable lane 当前指向 `native_omx` 还是 `langgraph`。
+- `capability_readiness` - 按 backend 报告 `native_omx` 和 `langgraph` 的 readiness，并包含 `user_level_selected` 与 `repo_state_selected`，避免把全局 policy 选择和 repo-local tracked durable state 混在一起。
+
+MR 3 实施补丁范围：
+
+- `codex-durable-state-status.ps1` - 继续保持只读；这个生成的状态脚本可以 inspect repo-local durable state，但不得创建、编辑、删除或激活 `.omx/state/` artifact。
+- `native_omx` - 基于生成 OMX helpers 的 worker-centric durable backend；MR 3 为它增加 readiness projection。
+- `langgraph` - 基于共享 LangGraph runtime 与 repo-local state 的 graph-shaped durable backend；MR 3 为它增加 readiness projection。
+- 测试覆盖 cold no-state、LangGraph-selected no-state，以及“用户级 selector 仍指向 LangGraph 但仓库已有 tracked native state”的情况。
+
 
 MR 3 必须增加测试或 fixture，证明 checker 至少能区分这些情况：
 
