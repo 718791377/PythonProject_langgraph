@@ -67,11 +67,21 @@ doc_class: implementation_plan
 - `persistent team` 状态 - 必须由 repo-local `.omx/state/` scope 和 backend-family 规则保护，不能跨项目混用。
 - GitLab-first 发布、safe cleanup、state mutation 和 activation selector - 必须有脚本 gate 或明确记录为未落地 gap。
 
-启动摘要还必须携带上下文保留哨兵：
+下一步实施切片应把这条规则提升为用户级 safety-boundary registry 和总 checker：
+
+- `tools/check_safety_boundary_controls.py` - 仓库源码中的总检查脚本，用来验证每条已登记安全边界都有脚本控制、提示词提醒，或者明确登记为未落地 gap。
+- `codex-safety-boundary-controls.ps1` - 未来用户级 mirrored helper，用于在任意项目中运行总安全边界检查。
+- `safety_boundary_controls.yaml` - 未来安全边界登记表，用来记录每条边界的 owner layer、提示词位置、可执行控制和当前实施状态。
+
+总 checker 属于用户级能力，因为它要保护跨项目复用的 Codex / OMX / LangGraph 行为。提示词提醒文本仍属于项目级，因为每个仓库拥有自己的 `AGENTS.md`、startup summary、durable truth 和恢复阅读顺序。
+
+启动摘要还必须携带上下文保留哨兵。哨兵提示词文本必须保留在项目级启动面，不进入用户级启动摘要，也不进入 wrapper payload：
 
 - 除非更高优先级 system 或 developer 指令阻止，本仓库编排工作的完整模型回复应以 `指挥官` 开头，并以 `喵~` 结尾。
 - 如果模型在本应读取 startup summary 后没有输出该哨兵，则视为可能上下文丢失。
 - 恢复动作是按新会话冷启动方式重读 `docs_bilingual/project_startup_summary.md`，再按其 read order 补读继续当前会话必须需要的文件。
+
+未来用户级 canary checker 不负责把哨兵提示词注入 wrapper payload。它只在收到 transcript 或 response text 时检查回复是否以 `指挥官` 开头、以 `喵~` 结尾；如果不满足，就输出冷启动恢复指令，要求重读 `AGENTS.md` 和 `docs_bilingual/project_startup_summary.*`。
 
 已经实现：
 

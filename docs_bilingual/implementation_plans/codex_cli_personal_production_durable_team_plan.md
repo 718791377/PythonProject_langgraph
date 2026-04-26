@@ -343,12 +343,15 @@ Minimum production requirement:
 - `durable_team` launch must be guarded by frozen-plan and independent-slice checks rather than by prompt memory alone.
 - `persistent team` state must be scoped by repository and backend family in executable helpers, not only in prose.
 - publication, cleanup, state mutation, and cross-project activation must have a script gate or an explicit documented gap.
+- a user-level aggregate safety-boundary checker must verify that every registered safety rule has a script control, a prompt reminder, and an implementation status, or else report it as a tracked gap.
 
-The startup layer should also include a context-retention canary. The current canary convention is:
+The startup layer should also include a context-retention canary, but the canary prompt text is project-level. It belongs in each repository's `AGENTS.md` and `project_startup_summary.*`, not in user-level startup summaries and not in wrapper payloads. The current canary convention is:
 
 - full assistant responses for this repository's orchestration work start with `指挥官` and end with `喵~`, unless a higher-priority system or developer instruction prevents it.
 - missing canary text after startup-summary reading is treated as possible context-loss evidence.
-- recovery is to rerun the cold-start read order from `docs_bilingual/project_startup_summary.md`, then reread only the files needed to continue safely.
+- recovery is to rerun the cold-start read order from `AGENTS.md` and `docs_bilingual/project_startup_summary.*`, then reread only the files needed to continue safely.
+
+The user-level canary capability should be a checker, not a prompt injector. When it receives transcript or response text, it should verify the `指挥官` prefix and `喵~` suffix and emit the recovery instruction above when the canary is absent. Without transcript or response input, it should only verify that the current project declares the canary in `AGENTS.md` and `project_startup_summary.*`.
 
 ## 8. State, Memory, And Artifact Persistence
 
@@ -668,8 +671,8 @@ Minimum acceptance:
 - the three lanes have stable responsibility boundaries
 - inspect / approval / recovery share one surface
 - high-risk actions have audit and guarded actions
-- safety-critical prompt reminders have matching script controls or an explicit tracked gap
-- startup context-retention canary behavior is documented with a cold-start reread recovery procedure
+- safety-critical prompt reminders have matching script controls or an explicit tracked gap, verified by a user-level aggregate safety-boundary checker
+- startup context-retention canary behavior is documented in project-level `AGENTS.md` and `project_startup_summary.*`, and a user-level canary checker can report the cold-start reread recovery procedure when transcript evidence is available
 - a regression gate exists
 - at least one cold-start recovery drill exists
 - at least one failure-branch redrive drill exists
