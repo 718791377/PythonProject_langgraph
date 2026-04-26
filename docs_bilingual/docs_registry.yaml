@@ -48,6 +48,12 @@ documents:
     canonical_path: docs_bilingual/governance/codex_user_level_skills_governance_policy.md
     zh_cn_path: docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md
 
+  - doc_id: codex_skills_profile_launcher_mapping
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/codex_skills_profile_launcher_mapping.md
+    zh_cn_path: docs_bilingual/governance/codex_skills_profile_launcher_mapping.zh-CN.md
+
   - doc_id: openspec_usage_convention
     doc_class: governance
     status: active
