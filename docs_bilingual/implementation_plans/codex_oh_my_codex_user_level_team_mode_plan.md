@@ -1245,11 +1245,21 @@ This means:
 - a cold-start model following only the repository read order and the documented commands must not be able to accidentally merge project-local durable truth across repositories, auto-adopt stale selectors, or launch a durable team before the routing thresholds are met.
 - future changes that add or alter safety boundaries must include either a checker, a fixture, a guarded script path, or an explicit reason why no executable control is possible yet.
 
-Startup summaries should also carry a lightweight context-retention canary. The current canary convention is:
+The next implementation slice should promote this into a user-level safety-boundary registry and aggregate checker:
+
+- `tools/check_safety_boundary_controls.py` - repository source for a checker that verifies every registered safety boundary has a script control, a prompt reminder, or an explicit tracked gap.
+- `codex-safety-boundary-controls.ps1` - future user-level mirrored helper that runs the aggregate safety-boundary checker from any project.
+- `safety_boundary_controls.yaml` - future registry that lists each safety boundary, its owner layer, prompt reminder location, executable control, and current implementation status.
+
+The checker is user-level because it must protect shared Codex / OMX / LangGraph behavior across projects. The prompt reminder text remains project-level because each repository owns its own `AGENTS.md`, startup summary, durable truth, and recovery read order.
+
+Startup summaries should also carry a lightweight context-retention canary. The canary prompt text must stay in project-level startup surfaces, not in user-level startup summaries and not in wrapper payloads. The current canary convention is:
 
 - full assistant responses for this orchestration repository should start with `指挥官` and end with `喵~` unless a higher-priority system or developer instruction prevents it.
 - if the canary is missing from a complete response after the startup summary was supposed to be read, treat that as possible context-loss evidence.
 - the recovery action is to re-enter cold-start mode: reread `docs_bilingual/project_startup_summary.md`, follow its read order, and then reread only the files required to continue the current task.
+
+The future user-level canary checker should not inject the canary prompt into wrapper payloads. It should only verify, when a transcript or response text is provided, whether the response starts with `指挥官` and ends with `喵~`; if not, it should report a cold-start recovery instruction to reread `AGENTS.md` and `docs_bilingual/project_startup_summary.*`.
 
 ## 13. Implementation Order
 

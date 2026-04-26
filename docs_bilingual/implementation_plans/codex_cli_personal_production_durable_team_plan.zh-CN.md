@@ -334,12 +334,15 @@ status: draft
 - `durable_team` 启动必须由计划已冻结和独立切片检查保护，不能只靠提示词提醒。
 - `persistent team` 状态必须由可执行 helper 按仓库和 backend family 进行 scope，而不能只写在文档里。
 - 发布、清理、状态修改和跨项目激活必须有脚本 gate，或者明确登记为尚未落地的 gap。
+- 用户级总安全边界 checker 必须验证每条已登记安全规则都有脚本控制、提示词提醒和实施状态；否则必须报告为 tracked gap。
 
-启动层还应加入上下文保留哨兵。当前哨兵约定是：
+启动层还应加入上下文保留哨兵，但哨兵提示词文本属于项目级。它应放在每个仓库自己的 `AGENTS.md` 和 `project_startup_summary.*`，不进入用户级启动摘要，也不进入 wrapper payload。当前哨兵约定是：
 
 - 除非更高优先级 system 或 developer 指令阻止，本仓库编排工作的完整模型回复以 `指挥官` 开头，并以 `喵~` 结尾。
 - 如果 startup summary 本应已读取，但完整回复缺少哨兵文本，则视为可能的上下文丢失信号。
-- 恢复方式是从 `docs_bilingual/project_startup_summary.md` 重新执行冷启动阅读顺序，然后只补读继续当前任务必须需要的文件。
+- 恢复方式是从 `AGENTS.md` 和 `docs_bilingual/project_startup_summary.*` 重新执行冷启动阅读顺序，然后只补读继续当前任务必须需要的文件。
+
+用户级 canary 能力应是 checker，而不是提示词注入器。它在收到 transcript 或 response text 时检查 `指挥官` 前缀和 `喵~` 后缀；如果缺失，就输出上面的冷启动恢复指令。没有 transcript 或 response 输入时，它只检查当前项目是否在 `AGENTS.md` 和 `project_startup_summary.*` 中声明该哨兵。
 
 ## 8. 状态、记忆与工件持久化
 
@@ -675,8 +678,8 @@ status: draft
 - 三条 lane 的职责分层稳定
 - inspect / approval / recovery 具备统一 surface
 - 关键高风险动作有审计和 guarded action
-- 安全关键提示词提醒都有对应脚本控制，或者明确登记为尚未落地的 gap
-- startup 上下文保留哨兵已经文档化，并配套冷启动重读恢复流程
+- 安全关键提示词提醒都有对应脚本控制，或者明确登记为尚未落地的 gap，并由用户级总安全边界 checker 验证
+- startup 上下文保留哨兵已经文档化在项目级 `AGENTS.md` 和 `project_startup_summary.*`，并且用户级 canary checker 在有 transcript 证据时可以报告冷启动重读恢复流程
 - regression gate 已经存在
 - 至少有 cold-start recovery drill
 - 至少有一套失败分支 redrive drill
