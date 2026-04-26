@@ -18,7 +18,7 @@ doc_class: implementation_plan
 
 > 截至 2026-04-22 的实施状态：仓库源代码已完成，用户级 mirrored helpers 已完成验证，并且已经针对真实 `D:\PythonProject_OpenClaw` 与 `D:\PythonProject_langgraph` fixture 做过复核；整个过程未改写任何被保留的 legacy durable artifact。
 
-> 截至 2026-04-26 的当前实施边界：保留 2026-04-22 的说明作为“源码和用户级 helper 已存在”的历史证据，但不要把它理解为当前小步 rollout 已经全部完成。MR 1 和 MR 2 已完成，MR 3 是下一步 active implementation slice。
+> 截至 2026-04-26 的当前实施边界：保留 2026-04-22 的说明作为“源码和用户级 helper 已存在”的历史证据，但不要把它理解为当前小步 rollout 已经全部完成。MR 1 到 MR 3 已完成，MR 4 是下一步 active implementation slice。
 
 ## 当前有界实施队列
 
@@ -28,8 +28,20 @@ doc_class: implementation_plan
 
 - MR 1，当前实施边界冻结：已由 `afdbd34` 完成 - 该提交说明当前实施线只受用户级 team mode 方案和跨会话 durable-state 隔离方案约束。
 - MR 2，durable-state no-touch baseline：已由 `6f28c5f` 完成 - 该提交记录四个本地项目根目录的只读盘点，且不编辑、不移动、不删除、不激活任何 `.omx/state/` artifact。
+- MR 3，状态检查入口补强：已由 `6a99d7d` 完成 - 该提交增加 `capability_readiness`，也就是按 backend 区分 `native_omx` 与 `langgraph` 的 installed、enabled、selected、ready 状态投影。
 
-### 下一步切片：MR 3，状态检查入口补强
+### 下一步切片：MR 4，activation selector 安全规则
+
+MR 4 补强 `.omx/state/selectors/active.json` - 这个 repo-local active selector 文件用于判断未来会话是否可以把某个 durable backend 当作 active。selector 必须属于同一个 repository 或 worktree，不能是 released 状态，并且必须带有 session identity，才允许驱动 automatic activation。
+
+MR 4 验收契约：
+
+- Cross-repo selector rejection - 从其他仓库复制来的 active selector 可以 inspect，但不得在当前仓库激活 LangGraph 或 native OMX。
+- Released selector rejection - 即使 `routing_eligible` 仍为 true，只要 selector 已设置 `released_at`，就不能继续当成 active。
+- Backend-record dual-read only - `backend.json` 和 `codex-auto-managed-team.json` 仍然是 inspection compatibility records，但除非 scoped selector 合法，否则不能自动路由未来会话。
+- Scoped-write preservation - helper 只能把 activation 写入当前仓库自己的 `.omx/state/selectors/` 目录。
+
+### 已完成切片细节：MR 3，状态检查入口补强
 
 MR 3 应把已经安装存在的 status surface 补强为冷启动安全的 operator entrypoint。它必须继续保持只读。
 
@@ -64,9 +76,8 @@ MR 3 必须增加测试或 fixture，证明 checker 至少能区分这些情况�
 - `D:\PythonProject_CLIProxyAPI` fixture - active native OMX team state 必须保留，不能被归类为 safe cleanup residue。
 - `D:\project` fixture - 普通 HUD、notification、leader-nudge 或 tmux hook state 不是 durable backend activation 证据。
 
-### MR 3 之后的后续切片
+### MR 4 之后的后续切片
 
-- MR 4，activation selector 安全规则：实现测试和代码，防止空的 unmanaged native residue、陈旧 legacy LangGraph selector 或跨项目 artifact 自动激活未来会话。
 - MR 5，user-level mirrored helper 的 source-of-truth 规则：文档化并测试“用户级 helper 是安装产物”，而仓库源码和每个仓库自己的 `.omx/state/` 目录才是权威真相。
 - MR 6，自动 durable routing 接入：只有在 MR 3 到 MR 5 证明 status 与 selector 行为安全后，才把 `native_omx` 和 `langgraph` 的选择接入真实 task-flow 阈值。
 

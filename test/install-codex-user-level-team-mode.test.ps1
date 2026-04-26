@@ -18,6 +18,8 @@ $AutoRepoRoot = Join-Path $TempRoot 'auto-repo'
 $UnmanagedAutoRepoRoot = Join-Path $TempRoot 'auto-repo-unmanaged'
 $CleanupRepoRoot = Join-Path $TempRoot 'cleanup-repo'
 $LegacySelectorRepoRoot = Join-Path $TempRoot 'legacy-selector-repo'
+$CrossRepoSelectorRepoRoot = Join-Path $TempRoot 'cross-repo-selector-repo'
+$ReleasedSelectorRepoRoot = Join-Path $TempRoot 'released-selector-repo'
 $EmptyResidueRepoRoot = Join-Path $TempRoot 'empty-residue-repo'
 $ProfilePath = Join-Path $TempRoot 'profile\Microsoft.PowerShell_profile.ps1'
 $LegacyProfilePath = Join-Path $TempRoot 'legacy-profile\Microsoft.PowerShell_profile.ps1'
@@ -179,6 +181,8 @@ Ensure-Directory -Path (Join-Path $AutoRepoRoot '.omx\state\team')
 Ensure-Directory -Path (Join-Path $UnmanagedAutoRepoRoot '.omx\state\team')
 Ensure-Directory -Path (Join-Path $CleanupRepoRoot '.omx\state\team')
 Ensure-Directory -Path $LegacySelectorRepoRoot
+Ensure-Directory -Path $CrossRepoSelectorRepoRoot
+Ensure-Directory -Path $ReleasedSelectorRepoRoot
 Ensure-Directory -Path (Join-Path $EmptyResidueRepoRoot '.omx\state\team')
 
 $nativeCodexCmdPath = Join-Path $CodexHome 'bin\codex.cmd'
@@ -1709,6 +1713,134 @@ $legacySelectorCleanup = Invoke-PowerShellScriptJson -FilePath (Join-Path $Codex
 Assert-True ($legacySelectorCleanup.safe_cleanup_available -eq $false) 'Durable-state reconcile should preserve legacy LangGraph selector artifacts instead of classifying them as safe cleanup.'
 Assert-True ($legacySelectorCleanup.manual_reconciliation_required -eq $false) 'Durable-state reconcile should not require manual reconciliation for a preserved legacy LangGraph selector by itself.'
 
+Ensure-Directory -Path (Join-Path $CrossRepoSelectorRepoRoot '.omx\state\selectors')
+Ensure-Directory -Path (Join-Path $CrossRepoSelectorRepoRoot '.omx\state\langgraph\threads')
+$crossRepoSelectorThreadId = 'cross-repo-selector:default:thread-1'
+$crossRepoSelectorThreadFileKey = $crossRepoSelectorThreadId.Replace(':', '__')
+$crossRepoSelectorActivePath = Join-Path $CrossRepoSelectorRepoRoot '.omx\state\selectors\active.json'
+$crossRepoSelectorBackendPath = Join-Path $CrossRepoSelectorRepoRoot '.omx\state\langgraph\backend.json'
+$crossRepoSelectorThreadPath = Join-Path $CrossRepoSelectorRepoRoot ('.omx\state\langgraph\threads\' + $crossRepoSelectorThreadFileKey + '.json')
+Set-Content -LiteralPath $crossRepoSelectorActivePath -Encoding ASCII -NoNewline -Value @"
+{
+  "backend_family": "langgraph",
+  "selector_id": "selector-cross-repo",
+  "repo_root": "$($LegacySelectorRepoRoot.Replace('\', '\\'))",
+  "worktree_id": "legacy-selector-repo",
+  "thread_id": "$crossRepoSelectorThreadId",
+  "team_name": "",
+  "session_scope_id": "cross-repo-session",
+  "leader_session_lineage": "cross-repo-session",
+  "acquired_at": "2026-04-26T00:00:00Z",
+  "last_heartbeat_at": "2026-04-26T00:00:00Z",
+  "released_at": "",
+  "generation": 1,
+  "phase": "execute-parallel",
+  "routing_posture": "copied_cross_repo_selector",
+  "routing_eligible": true
+}
+"@
+Set-Content -LiteralPath $crossRepoSelectorBackendPath -Encoding ASCII -NoNewline -Value @"
+{
+  "backend": "langgraph",
+  "thread_id": "$crossRepoSelectorThreadId",
+  "phase": "execute-parallel",
+  "status": "resumed",
+  "updated_at": "2026-04-26T00:00:00Z",
+  "routing_eligible": true,
+  "auto_route_eligible": true,
+  "routing_posture": "active_scoped_selector"
+}
+"@
+Set-Content -LiteralPath $crossRepoSelectorThreadPath -Encoding ASCII -NoNewline -Value @"
+{
+  "thread_id": "$crossRepoSelectorThreadId",
+  "phase": "execute-parallel",
+  "status": "resumed",
+  "updated_at": "2026-04-26T00:00:00Z"
+}
+"@
+
+$crossRepoSelectorDurableState = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-status.ps1') -Arguments @(
+  '-RepoRoot', $CrossRepoSelectorRepoRoot,
+  '-Json'
+)
+Assert-Equal $crossRepoSelectorDurableState.state_class 'preserved_legacy_langgraph_artifact' 'Durable-state status should reject a copied cross-repo active selector and keep the LangGraph record inspect-only.'
+
+$crossRepoSelectorPlan = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
+  '-Task', 'parallel feature work',
+  '-Phase', 'execute-parallel',
+  '-ParallelSlices', '2',
+  '-RepoRoot', $CrossRepoSelectorRepoRoot,
+  '-Json'
+)
+Assert-Equal $crossRepoSelectorPlan.effective_lane 'native_omx' 'Automatic team helper should fail closed to native_omx when an active selector belongs to another repo root.'
+Assert-Equal $crossRepoSelectorPlan.decision 'launch' 'Automatic team helper should not auto-resume LangGraph from a copied cross-repo selector.'
+Assert-Equal $crossRepoSelectorPlan.desired_durable_team.backend 'native_omx' 'Automatic team helper should keep the desired durable backend on native_omx for a copied cross-repo selector.'
+
+Ensure-Directory -Path (Join-Path $ReleasedSelectorRepoRoot '.omx\state\selectors')
+Ensure-Directory -Path (Join-Path $ReleasedSelectorRepoRoot '.omx\state\langgraph\threads')
+$releasedSelectorThreadId = 'released-selector:default:thread-1'
+$releasedSelectorThreadFileKey = $releasedSelectorThreadId.Replace(':', '__')
+$releasedSelectorActivePath = Join-Path $ReleasedSelectorRepoRoot '.omx\state\selectors\active.json'
+$releasedSelectorBackendPath = Join-Path $ReleasedSelectorRepoRoot '.omx\state\langgraph\backend.json'
+$releasedSelectorThreadPath = Join-Path $ReleasedSelectorRepoRoot ('.omx\state\langgraph\threads\' + $releasedSelectorThreadFileKey + '.json')
+Set-Content -LiteralPath $releasedSelectorActivePath -Encoding ASCII -NoNewline -Value @"
+{
+  "backend_family": "langgraph",
+  "selector_id": "selector-released",
+  "repo_root": "$($ReleasedSelectorRepoRoot.Replace('\', '\\'))",
+  "worktree_id": "$(Split-Path -Leaf $ReleasedSelectorRepoRoot)",
+  "thread_id": "$releasedSelectorThreadId",
+  "team_name": "",
+  "session_scope_id": "released-selector-session",
+  "leader_session_lineage": "released-selector-session",
+  "acquired_at": "2026-04-26T00:00:00Z",
+  "last_heartbeat_at": "2026-04-26T00:00:00Z",
+  "released_at": "2026-04-26T00:30:00Z",
+  "generation": 1,
+  "phase": "execute-parallel",
+  "routing_posture": "released_selector",
+  "routing_eligible": true
+}
+"@
+Set-Content -LiteralPath $releasedSelectorBackendPath -Encoding ASCII -NoNewline -Value @"
+{
+  "backend": "langgraph",
+  "thread_id": "$releasedSelectorThreadId",
+  "phase": "execute-parallel",
+  "status": "resumed",
+  "updated_at": "2026-04-26T00:00:00Z",
+  "routing_eligible": true,
+  "auto_route_eligible": true,
+  "routing_posture": "active_scoped_selector"
+}
+"@
+Set-Content -LiteralPath $releasedSelectorThreadPath -Encoding ASCII -NoNewline -Value @"
+{
+  "thread_id": "$releasedSelectorThreadId",
+  "phase": "execute-parallel",
+  "status": "resumed",
+  "updated_at": "2026-04-26T00:00:00Z"
+}
+"@
+
+$releasedSelectorDurableState = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-status.ps1') -Arguments @(
+  '-RepoRoot', $ReleasedSelectorRepoRoot,
+  '-Json'
+)
+Assert-Equal $releasedSelectorDurableState.state_class 'preserved_legacy_langgraph_artifact' 'Durable-state status should reject a released active selector and keep the LangGraph record inspect-only.'
+
+$releasedSelectorPlan = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
+  '-Task', 'parallel feature work',
+  '-Phase', 'execute-parallel',
+  '-ParallelSlices', '2',
+  '-RepoRoot', $ReleasedSelectorRepoRoot,
+  '-Json'
+)
+Assert-Equal $releasedSelectorPlan.effective_lane 'native_omx' 'Automatic team helper should fail closed to native_omx when an active selector has been released.'
+Assert-Equal $releasedSelectorPlan.decision 'launch' 'Automatic team helper should not auto-resume LangGraph from a released selector.'
+Assert-Equal $releasedSelectorPlan.desired_durable_team.backend 'native_omx' 'Automatic team helper should keep the desired durable backend on native_omx for a released selector.'
+
 Ensure-Directory -Path (Join-Path $EmptyResidueRepoRoot '.omx\state\team\auto-team-empty')
 
 $emptyResiduePlan = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
@@ -2596,6 +2728,8 @@ Assert-Equal $durableStateCommandLangGraph.backend_specific.langgraph.command_aw
 Assert-Equal $durableStateCommandLangGraph.backend_specific.langgraph.command_aware_live_primary_engine_projection.helper_pointer.script 'omx-langgraph-command-engine.ps1' 'Durable-state status did not expose the LangGraph command-engine helper pointer.'
 Assert-ArrayContains -Actual @($durableStateCommandLangGraph.backend_specific.langgraph.command_aware_live_primary_engine_projection.resume_payload_keys | ForEach-Object { [string]$_ }) -Expected 'approved' -Message 'Durable-state status did not expose command-engine resume payload keys.'
 
+Get-ChildItem -LiteralPath (Join-Path $FakeRepoRoot '.omx\state\team') -Recurse -Force -File -ErrorAction SilentlyContinue |
+  Remove-Item -Force
 $durableStateUnmanaged = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-status.ps1') -Arguments @(
   '-RepoRoot', $FakeRepoRoot,
   '-Json'

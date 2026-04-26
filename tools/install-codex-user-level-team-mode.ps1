@@ -3395,6 +3395,8 @@ function Read-CodexUserLevelActiveDurableSelector {
       exists = $false
       path = $path
       backend_family = ''
+      repo_root = ''
+      worktree_id = ''
       selector_id = ''
       session_scope_id = ''
       leader_session_lineage = ''
@@ -3414,6 +3416,8 @@ function Read-CodexUserLevelActiveDurableSelector {
     exists = $true
     path = $path
     backend_family = if ($null -ne $record.PSObject.Properties['backend_family']) { [string]$record.backend_family } else { '' }
+    repo_root = if ($null -ne $record.PSObject.Properties['repo_root']) { [string]$record.repo_root } else { '' }
+    worktree_id = if ($null -ne $record.PSObject.Properties['worktree_id']) { [string]$record.worktree_id } else { '' }
     selector_id = if ($null -ne $record.PSObject.Properties['selector_id']) { [string]$record.selector_id } else { '' }
     session_scope_id = if ($null -ne $record.PSObject.Properties['session_scope_id']) { [string]$record.session_scope_id } else { '' }
     leader_session_lineage = if ($null -ne $record.PSObject.Properties['leader_session_lineage']) { [string]$record.leader_session_lineage } else { '' }
@@ -3428,11 +3432,28 @@ function Read-CodexUserLevelActiveDurableSelector {
   }
 }
 
-function Test-CodexUserLevelActiveDurableSelectorTargetsBackend {
+function ConvertTo-CodexUserLevelComparablePath {
+  param(
+    [AllowEmptyString()]
+    [string]$Path
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Path)) {
+    return ''
+  }
+
+  try {
+    return ([System.IO.Path]::GetFullPath($Path).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar))
+  } catch {
+    return ''
+  }
+}
+
+function Test-CodexUserLevelActiveDurableSelectorScoped {
   param(
     $Selector,
-    [Parameter(Mandatory)]
-    [string]$BackendFamily
+    [AllowEmptyString()]
+    [string]$RepoRoot = ''
   )
 
   if ($null -eq $Selector) {
@@ -3444,6 +3465,44 @@ function Test-CodexUserLevelActiveDurableSelectorTargetsBackend {
   }
 
   if (-not [bool]$Selector.routing_eligible) {
+    return $false
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace([string]$Selector.released_at)) {
+    return $false
+  }
+
+  if ([string]::IsNullOrWhiteSpace([string]$Selector.selector_id) -or [string]::IsNullOrWhiteSpace([string]$Selector.session_scope_id)) {
+    return $false
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $resolvedRoot = Resolve-CodexUserLevelRepoRoot -OverridePath $RepoRoot
+    $expectedRoot = ConvertTo-CodexUserLevelComparablePath -Path $resolvedRoot
+    $selectorRoot = ConvertTo-CodexUserLevelComparablePath -Path ([string]$Selector.repo_root)
+    if ([string]::IsNullOrWhiteSpace($selectorRoot) -or -not [string]::Equals($selectorRoot, $expectedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+      return $false
+    }
+
+    $expectedWorktreeId = Split-Path -Leaf $resolvedRoot
+    if ([string]::IsNullOrWhiteSpace([string]$Selector.worktree_id) -or -not [string]::Equals([string]$Selector.worktree_id, $expectedWorktreeId, [System.StringComparison]::OrdinalIgnoreCase)) {
+      return $false
+    }
+  }
+
+  return $true
+}
+
+function Test-CodexUserLevelActiveDurableSelectorTargetsBackend {
+  param(
+    $Selector,
+    [Parameter(Mandatory)]
+    [string]$BackendFamily,
+    [AllowEmptyString()]
+    [string]$RepoRoot = ''
+  )
+
+  if (-not (Test-CodexUserLevelActiveDurableSelectorScoped -Selector $Selector -RepoRoot $RepoRoot)) {
     return $false
   }
 
@@ -8909,8 +8968,8 @@ function Get-CodexUserLevelInspectableDurableState {
 
   $resolvedRepoRoot = Resolve-CodexUserLevelRepoRoot -OverridePath $RepoRoot
   $activeSelector = Read-CodexUserLevelActiveDurableSelector -RepoRoot $resolvedRepoRoot
-  $activeLangGraphSelector = Test-CodexUserLevelActiveDurableSelectorTargetsBackend -Selector $activeSelector -BackendFamily 'langgraph'
-  $activeNativeSelector = Test-CodexUserLevelActiveDurableSelectorTargetsBackend -Selector $activeSelector -BackendFamily 'native_omx'
+  $activeLangGraphSelector = Test-CodexUserLevelActiveDurableSelectorTargetsBackend -Selector $activeSelector -BackendFamily 'langgraph' -RepoRoot $resolvedRepoRoot
+  $activeNativeSelector = Test-CodexUserLevelActiveDurableSelectorTargetsBackend -Selector $activeSelector -BackendFamily 'native_omx' -RepoRoot $resolvedRepoRoot
   $trackedRecord = Read-CodexUserLevelTrackedTeamRecord -RepoRoot $resolvedRepoRoot
   $latestTeam = Get-CodexUserLevelLatestTeamDirectoryMetadata -RepoRoot $resolvedRepoRoot
   $nativeTeamDirectories = @(Get-CodexUserLevelNativeTeamDirectoriesMetadata -RepoRoot $resolvedRepoRoot)
@@ -9611,7 +9670,8 @@ function Get-CodexUserLevelEffectiveDurableLane {
     [switch]$NeedsFrozenBrief,
     [switch]$NeedsSurvivorQueue,
     [string]$Task = '',
-    $LangGraphRecord
+    $LangGraphRecord,
+    [bool]$ActiveLangGraphSelector = $false
   )
 
   if (-not [bool]$Status.durable_team_features_available) {
@@ -9622,7 +9682,7 @@ function Get-CodexUserLevelEffectiveDurableLane {
     return 'native_omx'
   }
 
-  if (Test-CodexUserLevelLangGraphBackendRecordAutoRouteEligible -Record $LangGraphRecord) {
+  if ($ActiveLangGraphSelector -and (Test-CodexUserLevelLangGraphBackendRecordAutoRouteEligible -Record $LangGraphRecord)) {
     return 'langgraph'
   }
 
@@ -9779,8 +9839,8 @@ function Get-CodexUserLevelAutomaticTeamPlan {
   $resolvedRepoRoot = Resolve-CodexUserLevelRepoRoot -OverridePath $RepoRoot
   $teamStateRoot = Get-CodexUserLevelTeamStateRoot -RepoRoot $resolvedRepoRoot
   $activeSelector = Read-CodexUserLevelActiveDurableSelector -RepoRoot $resolvedRepoRoot
-  $activeLangGraphSelector = Test-CodexUserLevelActiveDurableSelectorTargetsBackend -Selector $activeSelector -BackendFamily 'langgraph'
-  $activeNativeSelector = Test-CodexUserLevelActiveDurableSelectorTargetsBackend -Selector $activeSelector -BackendFamily 'native_omx'
+  $activeLangGraphSelector = Test-CodexUserLevelActiveDurableSelectorTargetsBackend -Selector $activeSelector -BackendFamily 'langgraph' -RepoRoot $resolvedRepoRoot
+  $activeNativeSelector = Test-CodexUserLevelActiveDurableSelectorTargetsBackend -Selector $activeSelector -BackendFamily 'native_omx' -RepoRoot $resolvedRepoRoot
   $phaseDefinition = @(
     Get-CodexUserLevelAutomaticTeamPhaseDefinitions |
       Where-Object { [string]$_.phase -eq $Phase } |
@@ -9788,7 +9848,7 @@ function Get-CodexUserLevelAutomaticTeamPlan {
   )[0]
   $trackedRecord = Read-CodexUserLevelTrackedTeamRecord -RepoRoot $resolvedRepoRoot
   $langGraphRecord = Read-CodexUserLevelLangGraphBackendRecord -RepoRoot $resolvedRepoRoot
-  $effectiveLane = Get-CodexUserLevelEffectiveDurableLane -Status $status -Phase $Phase -NeedsGraphPhases:$NeedsGraphPhases -NeedsCheckpointGates:$NeedsCheckpointGates -NeedsFrozenBrief:$NeedsFrozenBrief -NeedsSurvivorQueue:$NeedsSurvivorQueue -Task $Task -LangGraphRecord $langGraphRecord
+  $effectiveLane = Get-CodexUserLevelEffectiveDurableLane -Status $status -Phase $Phase -NeedsGraphPhases:$NeedsGraphPhases -NeedsCheckpointGates:$NeedsCheckpointGates -NeedsFrozenBrief:$NeedsFrozenBrief -NeedsSurvivorQueue:$NeedsSurvivorQueue -Task $Task -LangGraphRecord $langGraphRecord -ActiveLangGraphSelector $activeLangGraphSelector
   $nativeTeamDirectories = @(Get-CodexUserLevelNativeTeamDirectoriesMetadata -RepoRoot $resolvedRepoRoot)
   $nonEmptyUnmanagedNativeTeamDirectories = @($nativeTeamDirectories | Where-Object { (-not [bool]$_.empty) -and ([string]$_.team_name -ne [string]$trackedRecord.team_name) })
   $latestDetectedTeamName = ''
