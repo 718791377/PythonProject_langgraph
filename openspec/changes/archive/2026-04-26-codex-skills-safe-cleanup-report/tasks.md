@@ -34,7 +34,7 @@
 
 ## 5. Publication
 
-- [ ] 5.1 Commit only the OpenSpec change, report generator, tests, and generated report artifact.
-- [ ] 5.2 Push the feature branch to GitLab and create a GitLab MR.
-- [ ] 5.3 Wait for the GitLab pipeline to pass before merging.
-- [ ] 5.4 After GitLab main is merged and green, sync the exact GitLab main commit to GitHub main without creating a GitHub PR.
+- [x] 5.1 Commit only the OpenSpec change, report generator, tests, and generated report artifact.
+- [x] 5.2 Push the feature branch to GitLab and create a GitLab MR.
+- [x] 5.3 Wait for the GitLab pipeline to pass before merging.
+- [x] 5.4 After GitLab main is merged and green, sync the exact GitLab main commit to GitHub main without creating a GitHub PR.
