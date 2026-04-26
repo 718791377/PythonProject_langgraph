@@ -25,10 +25,10 @@ In practice, a preserved LangGraph `backend.json` can still dominate automatic d
 ## Impact
 
 - impact_scope:
-  - `tools/install-codex-user-level-team-mode.ps1`
-  - `tools/langgraph_durable_orchestrator/cli.py`
+  - `tools/install-codex-user-level-team-mode.ps1` - installer/helper source that projects scoped activation behavior into user-level team-mode scripts.
+  - `tools/langgraph_durable_orchestrator/cli.py` - repo-local LangGraph durable-state CLI source for routing eligibility and inspection output.
   - generated helper mirrors under `C:\Users\lenovo\.codex\bin`
-  - `test/install-codex-user-level-team-mode.test.ps1`
+  - `test/install-codex-user-level-team-mode.test.ps1` - regression test coverage for generated team-mode helper behavior.
   - relevant bilingual implementation and governance docs after behavior lands
 - explicit_non_goals:
   - do not delete, rename, or rewrite existing legacy durable artifacts under repository `.omx/state/`
@@ -46,8 +46,8 @@ In practice, a preserved LangGraph `backend.json` can still dominate automatic d
   - fall back to the current legacy activation behavior if the scoped activation plane proves unsafe
 - validation_path:
   - targeted tests for empty unmanaged native residue and legacy LangGraph selector behavior
-  - `openspec validate --all`
-  - `python .\\tools\\run_openspec_guard.py --root .`
+  - `openspec validate --all` - official OpenSpec validation command for all specs and active changes.
+  - `python .\\tools\\run_openspec_guard.py --root .` - repository guard that aggregates OpenSpec and governance checks.
 - mainline_classification:
   - new mainline candidate for additive user-level durable-state isolation and session-scoped activation
 
