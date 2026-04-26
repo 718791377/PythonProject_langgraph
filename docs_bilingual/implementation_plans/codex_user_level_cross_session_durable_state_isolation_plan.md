@@ -45,6 +45,14 @@ MR 3 acceptance contract:
 - `enabled` - reports whether user-level policy currently allows that capability to be used.
 - `selected` - reports whether the current repository, task, or selector chooses that backend for the current flow.
 - `ready` - reports whether the installed, enabled, and selected capability also has the scoped state and prerequisites needed to start safely.
+- `selected_backend` - reports the user-level backend selector, so a cold-start reader can see whether the global durable lane points at `native_omx` or `langgraph`.
+- `capability_readiness` - reports per-backend readiness for `native_omx` and `langgraph`, including `user_level_selected` and `repo_state_selected` so global policy selection is not confused with repo-local tracked durable state.
+
+MR 3 implementation patch scope:
+
+- Keep `codex-durable-state-status.ps1` read-only; this generated status script may inspect repo-local durable state, but it must not create, edit, delete, or activate `.omx/state/` artifacts.
+- Add readiness projection for `native_omx` and `langgraph`; `native_omx` is the worker-centric durable backend using generated OMX helpers, and `langgraph` is the graph-shaped durable backend using the shared LangGraph runtime plus repo-local state.
+- Add tests for cold no-state, LangGraph-selected no-state, and tracked native state while the user-level selector still points at LangGraph.
 
 MR 3 must add tests or fixtures that prove the checker can distinguish at least these cases:
 

@@ -2108,6 +2108,127 @@ function Get-CodexUserLevelVenvsDirectory {
   return (Join-Path (Get-CodexUserLevelCodexHome) 'venvs')
 }
 
+function Test-CodexUserLevelHelperScriptsInstalled {
+  param(
+    [Parameter(Mandatory)]
+    [string[]]$ScriptNames
+  )
+
+  $binDirectory = Get-CodexUserLevelBinDirectory
+  foreach ($scriptName in $ScriptNames) {
+    $scriptPath = Join-Path $binDirectory $scriptName
+    if (-not (Test-Path -LiteralPath $scriptPath)) {
+      return $false
+    }
+  }
+
+  return $true
+}
+
+function New-CodexUserLevelDurableCapabilityReadinessRecord {
+  param(
+    [Parameter(Mandatory)]
+    [string]$Name,
+    [Parameter(Mandatory)]
+    [bool]$Installed,
+    [Parameter(Mandatory)]
+    [bool]$Enabled,
+    [Parameter(Mandatory)]
+    [bool]$Selected,
+    [Parameter(Mandatory)]
+    [bool]$UserLevelSelected,
+    [Parameter(Mandatory)]
+    [bool]$RepoStateSelected,
+    [string]$InstallState = '',
+    [string[]]$RequiredHelpers = @(),
+    [string[]]$Blockers = @()
+  )
+
+  if ([string]::IsNullOrWhiteSpace($InstallState)) {
+    $InstallState = if ($Installed) { 'installed' } else { 'not_installed' }
+  }
+
+  $ready = ($Installed -and $Enabled -and $Selected)
+  $dedupedBlockers = @()
+  foreach ($blocker in @($Blockers)) {
+    if (-not [string]::IsNullOrWhiteSpace([string]$blocker) -and [string]$blocker -notin $dedupedBlockers) {
+      $dedupedBlockers += [string]$blocker
+    }
+  }
+
+  return [ordered]@{
+    name = $Name
+    installed = $Installed
+    install_state = $InstallState
+    enabled = $Enabled
+    selected = $Selected
+    ready = $ready
+    user_level_selected = $UserLevelSelected
+    repo_state_selected = $RepoStateSelected
+    required_helpers = @($RequiredHelpers)
+    blockers = @($dedupedBlockers)
+  }
+}
+
+function Get-CodexUserLevelDurableCapabilityReadiness {
+  param(
+    [Parameter(Mandatory)]
+    $Status,
+    [AllowEmptyString()]
+    [string]$RepoStateBackendFamily = '',
+    [bool]$RepoStateNativeSelected = $false,
+    [bool]$RepoStateLangGraphSelected = $false
+  )
+
+  $selectedBackend = [string]$Status.durable_orchestration_backend
+  $nativeHelpers = @('omx-team-auto.ps1', 'omx-team-ops.ps1', 'codex-durable-state-status.ps1')
+  $nativeInstalled = Test-CodexUserLevelHelperScriptsInstalled -ScriptNames $nativeHelpers
+  $nativeEnabled = [bool]$Status.native_omx_available
+  $nativeUserLevelSelected = ($selectedBackend -eq 'native_omx')
+  $nativeSelected = ($nativeUserLevelSelected -or $RepoStateNativeSelected -or [string]$RepoStateBackendFamily -eq 'native_omx')
+  $nativeBlockers = @()
+  if (-not $nativeInstalled) { $nativeBlockers += 'native_omx_helpers_not_installed' }
+  if (-not $nativeEnabled) { $nativeBlockers += 'oh_my_codex_disabled' }
+  if (-not $nativeSelected) { $nativeBlockers += 'native_omx_not_selected' }
+
+  $langGraphRuntime = $Status.langgraph_runtime
+  $langGraphInstalled = ([string]$Status.langgraph_install_state -eq 'installed')
+  $langGraphEnabled = [bool]$Status.langgraph_enabled
+  $langGraphUserLevelSelected = [bool]$Status.langgraph_selected
+  $langGraphSelected = ($langGraphUserLevelSelected -or $RepoStateLangGraphSelected -or [string]$RepoStateBackendFamily -eq 'langgraph')
+  $langGraphBlockers = @()
+  if (-not $langGraphInstalled) { $langGraphBlockers += 'langgraph_shared_runtime_not_installed' }
+  if (-not $langGraphEnabled) { $langGraphBlockers += 'langgraph_disabled' }
+  if (-not $langGraphSelected) { $langGraphBlockers += 'langgraph_not_selected' }
+
+  return [ordered]@{
+    selected_backend = $selectedBackend
+    selected_backend_source = 'user_level_capability_state'
+    repo_state_backend_family = [string]$RepoStateBackendFamily
+    readiness_fields = @('installed', 'enabled', 'selected', 'ready')
+    native_omx = (New-CodexUserLevelDurableCapabilityReadinessRecord `
+      -Name 'native_omx' `
+      -Installed $nativeInstalled `
+      -Enabled $nativeEnabled `
+      -Selected $nativeSelected `
+      -UserLevelSelected $nativeUserLevelSelected `
+      -RepoStateSelected ($RepoStateNativeSelected -or [string]$RepoStateBackendFamily -eq 'native_omx') `
+      -RequiredHelpers $nativeHelpers `
+      -Blockers $nativeBlockers)
+    langgraph = (New-CodexUserLevelDurableCapabilityReadinessRecord `
+      -Name 'langgraph' `
+      -Installed $langGraphInstalled `
+      -Enabled $langGraphEnabled `
+      -Selected $langGraphSelected `
+      -UserLevelSelected $langGraphUserLevelSelected `
+      -RepoStateSelected ($RepoStateLangGraphSelected -or [string]$RepoStateBackendFamily -eq 'langgraph') `
+      -InstallState ([string]$Status.langgraph_install_state) `
+      -RequiredHelpers @('omx-langgraph-inspect.ps1', 'omx-langgraph-resume.ps1', 'codex-durable-state-status.ps1') `
+      -Blockers $langGraphBlockers)
+    langgraph_runtime = $langGraphRuntime
+  }
+}
+
 function Get-CodexUserLevelLangGraphSharedVenvName {
   return 'langgraph-py312'
 }
@@ -7676,6 +7797,14 @@ function Get-CodexUserLevelInspectableDurableStateSurfaceContract {
       'resume_pointer'
       'state_sources'
       'updated_at'
+      'selected_backend'
+      'capability_readiness'
+    )
+    readiness_fields = @(
+      'installed'
+      'enabled'
+      'selected'
+      'ready'
     )
     langgraph_projection_fields = @(
       'active_loop'
@@ -9369,6 +9498,11 @@ function Get-CodexUserLevelInspectableDurableState {
     }
   }
 
+  $status = Get-CodexUserLevelTeamModeStatus
+  $repoStateNativeSelected = ($activeNativeSelector -or [string]$backendFamily -eq 'native_omx')
+  $repoStateLangGraphSelected = ($activeLangGraphSelector -or [string]$backendFamily -eq 'langgraph')
+  $capabilityReadiness = Get-CodexUserLevelDurableCapabilityReadiness -Status $status -RepoStateBackendFamily ([string]$backendFamily) -RepoStateNativeSelected $repoStateNativeSelected -RepoStateLangGraphSelected $repoStateLangGraphSelected
+
   return [ordered]@{
     backend_family = $backendFamily
     state_class = $stateClass
@@ -9382,6 +9516,8 @@ function Get-CodexUserLevelInspectableDurableState {
     resume_pointer = $resumePointer
     state_sources = $stateSources
     updated_at = $updatedAt
+    selected_backend = [string]$status.durable_orchestration_backend
+    capability_readiness = $capabilityReadiness
     read_only_by_default = $true
     cleanup_reconciliation = $cleanupPlan
     contract = $contract
@@ -9929,7 +10065,7 @@ if (`$Json) {
   return
 }
 
-foreach (`$key in @('backend_family', 'state_class', 'repo_root', 'tracked_identity', 'current_phase', 'next_step', 'updated_at')) {
+foreach (`$key in @('backend_family', 'state_class', 'repo_root', 'tracked_identity', 'current_phase', 'next_step', 'updated_at', 'selected_backend', 'capability_readiness')) {
   `$value = `$summary[`$key]
   if (`$null -eq `$value) {
     `$display = ''
