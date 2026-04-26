@@ -1229,6 +1229,28 @@ Required rule:
 - keep the backup snapshot metadata after rollback for diagnosis and manual recovery
 - treat missing backup-and-rollback coverage as a release blocker for user-level installers
 
+### 12.19 Script-control plus prompt-reminder safety rule
+
+Safety boundaries for `experts / durable_team / persistent team` must not rely on prompt memory alone.
+
+For every system-level, user-level, or project-level rule that can cause data loss, cross-project state leakage, unwanted durable activation, or unsafe publication, the required control pattern is:
+
+- script control - executable checks or guarded helper logic that fail closed even when a new cold-start model has no prior conversation context.
+- prompt reminder - startup-summary and plan text that tells the model what the script is protecting and what recovery step to take when the reminder appears forgotten.
+
+This means:
+
+- high-risk state transitions must be encoded in scripts, tests, guards, or generated helper logic before they are treated as implemented behavior.
+- prompt-only reminders may describe the desired operator behavior, but they do not count as enforcement.
+- a cold-start model following only the repository read order and the documented commands must not be able to accidentally merge project-local durable truth across repositories, auto-adopt stale selectors, or launch a durable team before the routing thresholds are met.
+- future changes that add or alter safety boundaries must include either a checker, a fixture, a guarded script path, or an explicit reason why no executable control is possible yet.
+
+Startup summaries should also carry a lightweight context-retention canary. The current canary convention is:
+
+- full assistant responses for this orchestration repository should start with `指挥官` and end with `喵~` unless a higher-priority system or developer instruction prevents it.
+- if the canary is missing from a complete response after the startup summary was supposed to be read, treat that as possible context-loss evidence.
+- the recovery action is to re-enter cold-start mode: reread `docs_bilingual/project_startup_summary.md`, follow its read order, and then reread only the files required to continue the current task.
+
 ## 13. Implementation Order
 
 When this plan is later executed, the order should be:

@@ -23,6 +23,8 @@
 - Run `python .\tools\verify_official_openspec.py --root .` after bootstrap or refresh.
 - Preserve the current main Codex CLI session as leader; do not redesign the system around a separate persistent leader pane.
 - Keep research and implementation in different roles when the task starts open-ended.
+- Do not rely on prompt reminders alone for system-level, user-level, or project-level safety boundaries; pair them with script controls such as checkers, guarded helpers, CI gates, or generated launcher logic.
+- Use the startup-summary canary for context-loss detection: complete assistant responses for this repository's orchestration work should start with `指挥官` and end with `喵~` unless a higher-priority system or developer instruction prevents it; if the canary is missing, reread `docs_bilingual/project_startup_summary.md` and follow its cold-start read order before continuing.
 
 ## Publication Workflow
 

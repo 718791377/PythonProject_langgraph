@@ -17,6 +17,57 @@ doc_class: implementation_plan
 
 > Implementation status as of 2026-04-22: completed in repo source, validated in user-level mirrored helpers, and verified against the real `D:\PythonProject_OpenClaw` and `D:\PythonProject_langgraph` fixtures without mutating preserved legacy durable artifacts.
 
+> Current implementation boundary as of 2026-04-26: keep the 2026-04-22 note as historical evidence that source and mirrored helpers exist, but do not treat it as proof that the current small-step rollout is finished. MR 1 and MR 2 are complete. MR 3 is the next active implementation slice.
+
+## Current Bounded Implementation Queue
+
+This queue preserves the decision made after the Phase 0 durable-state inventory: keep the final production persistent team plan as a north-star draft, and continue the active rollout through small GitLab-first MRs.
+
+### Completed slices
+
+- MR 1, active implementation boundary freeze: completed by `afdbd34` - documents that the active implementation line is limited to the user-level team mode plan and the cross-session durable-state isolation plan.
+- MR 2, no-touch durable-state baseline: completed by `6f28c5f` - records a read-only inventory across the four local project roots without editing, moving, deleting, or activating any `.omx/state/` artifact.
+
+### Next slice: MR 3, status entrypoint hardening
+
+MR 3 should turn the already installed status surface into a cold-start-safe operator entrypoint. It must remain read-only.
+
+Required source and helper surfaces:
+
+- `tools/install-codex-user-level-team-mode.ps1` - the repository source script that generates user-level helper scripts and keeps installed helper behavior reproducible.
+- `codex-durable-state-status.ps1` - the generated user-level read-only status script that summarizes the durable backend state for the current repository or worktree.
+- `tools/langgraph_durable_orchestrator/` - the repository source directory for LangGraph compatibility projections and repo-local orchestration helpers.
+- `.omx/state/langgraph/` - the repo-local LangGraph runtime-state directory that must remain project-local and must not be moved into the user-level shared venv.
+
+MR 3 acceptance contract:
+
+- `installed` - reports whether the relevant capability or helper is physically present, such as a generated script or shared LangGraph runtime.
+- `enabled` - reports whether user-level policy currently allows that capability to be used.
+- `selected` - reports whether the current repository, task, or selector chooses that backend for the current flow.
+- `ready` - reports whether the installed, enabled, and selected capability also has the scoped state and prerequisites needed to start safely.
+
+MR 3 must add tests or fixtures that prove the checker can distinguish at least these cases:
+
+- `D:\PythonProject_langgraph` fixture - preserved legacy LangGraph records are inspectable but not active routing truth when no scoped selector exists.
+- `D:\PythonProject_OpenClaw` fixture - an active scoped LangGraph selector is stronger than a stale unscoped backend record, but it remains local to that repository.
+- `D:\PythonProject_CLIProxyAPI` fixture - an active native OMX team state must be preserved and must not be classified as safe cleanup residue.
+- `D:\project` fixture - ordinary HUD, notification, leader-nudge, or tmux hook state is not durable backend activation evidence.
+
+### Later slices after MR 3
+
+- MR 4, activation selector safety rules: implement tests and code that prevent empty unmanaged native residue, stale legacy LangGraph selectors, or cross-project artifacts from auto-activating a future session.
+- MR 5, user-level mirrored helper source-of-truth rule: document and test that generated user-level helpers are install artifacts, while repository source and each repository's `.omx/state/` directory remain the authoritative truth.
+- MR 6, automatic durable routing hookup: connect `native_omx` and `langgraph` selection to real task-flow thresholds only after MR 3 through MR 5 prove safe status and selector behavior.
+
+### Explicit non-goals for the next slice
+
+- Do not implement the final `codex_cli_personal_production_durable_team_plan` draft as if it were already complete; that document remains the north-star target.
+- Do not modify `C:\Users\lenovo\.codex\config.toml` - this user-level Codex config file is outside the next MR's source-of-truth scope.
+- Do not delete user-level skills, Vercel plugin skills, browser automation skills, or repo-local `.omx/state/` artifacts.
+- Do not merge durable state from `D:\PythonProject_OpenClaw`, `D:\PythonProject_CLIProxyAPI`, or `D:\project` into this repository.
+- Do not start a durable team from MR 3; status hardening is inspection-only.
+
+
 ## 1. Goal
 
 Eliminate unintended cross-session interference in repo-local durable state for the user-level Codex orchestration line without mutating, deleting, or rekeying any existing active or historical session artifacts.

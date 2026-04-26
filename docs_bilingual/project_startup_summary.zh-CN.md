@@ -79,6 +79,20 @@ translation_of: docs_bilingual/project_startup_summary.md
 12. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md`
 13. 当前正在实现的 active OpenSpec change
 
+## 上下文保留哨兵与安全执行
+
+用户级安全规则：
+
+- 系统级、用户级、项目级安全边界必须使用“脚本控制 + 提示词提醒”的组合。凡是会影响 durable state、发布、清理、激活或跨项目 scope 的边界，不能只靠提示词文本。
+- 脚本控制指可执行 checker、受保护 helper、CI gate 或生成式 launcher 逻辑；即使没有上一轮对话上下文的冷启动模型执行，也必须默认 fail closed。
+- 提示词提醒指 startup 和 plan 文本；它负责解释脚本保护什么，以及模型疑似忘记规则时应该重读哪些文件。
+
+上下文保留哨兵：
+
+- 除非更高优先级 system 或 developer 指令阻止，本仓库编排工作的完整模型回复应以 `指挥官` 开头，并以 `喵~` 结尾。
+- 如果本 startup summary 本应已读取，但完整回复缺少该哨兵，则视为可能发生上下文丢失。
+- 恢复动作：重读本文，按上面的冷启动阅读顺序补读，然后只补读继续当前任务必须需要的任务相关文件。
+
 ## 当前主线
 
 - `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state`

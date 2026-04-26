@@ -319,6 +319,28 @@ status: draft
 - `durable_team` 进入 backend-specific execution state，并通过统一 inspect summary 暴露
 - `persistent team` 保持为上位操作模型，用来组织用户级目标态和项目级承接
 
+### 7.3 安全控制必须组合脚本与提示词
+
+生产级持久化团队不能依赖模型在上下文变长后仍然记得一大段提示词。
+
+所有系统级、用户级、项目级安全边界都必须同时使用两层控制：
+
+- 脚本控制 - 可执行 checker、生成式 helper 逻辑、受保护状态转移或 CI gate；即使是没有历史上下文的冷启动模型执行，也必须默认 fail closed。
+- 提示词提醒 - startup summary、AGENTS 和 implementation plan 文本；它们负责解释规则、脚本保护的原因，以及模型疑似忘记提示词时的恢复步骤。
+
+最低生产要求：
+
+- `experts` routing 在被宣称为自动行为前，必须有脚本可见的阈值或 checker 证据。
+- `durable_team` 启动必须由计划已冻结和独立切片检查保护，不能只靠提示词提醒。
+- `persistent team` 状态必须由可执行 helper 按仓库和 backend family 进行 scope，而不能只写在文档里。
+- 发布、清理、状态修改和跨项目激活必须有脚本 gate，或者明确登记为尚未落地的 gap。
+
+启动层还应加入上下文保留哨兵。当前哨兵约定是：
+
+- 除非更高优先级 system 或 developer 指令阻止，本仓库编排工作的完整模型回复以 `指挥官` 开头，并以 `喵~` 结尾。
+- 如果 startup summary 本应已读取，但完整回复缺少哨兵文本，则视为可能的上下文丢失信号。
+- 恢复方式是从 `docs_bilingual/project_startup_summary.md` 重新执行冷启动阅读顺序，然后只补读继续当前任务必须需要的文件。
+
 ## 8. 状态、记忆与工件持久化
 
 ### 8.1 Durable Truth 的分层
@@ -653,6 +675,8 @@ status: draft
 - 三条 lane 的职责分层稳定
 - inspect / approval / recovery 具备统一 surface
 - 关键高风险动作有审计和 guarded action
+- 安全关键提示词提醒都有对应脚本控制，或者明确登记为尚未落地的 gap
+- startup 上下文保留哨兵已经文档化，并配套冷启动重读恢复流程
 - regression gate 已经存在
 - 至少有 cold-start recovery drill
 - 至少有一套失败分支 redrive drill

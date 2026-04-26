@@ -85,6 +85,20 @@ Drift-prone execution detail now lives in the mainline memory summary rather tha
 12. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md`
 13. the active OpenSpec change being implemented
 
+## Context Retention Canary And Safety Enforcement
+
+User-level safety rule:
+
+- System-level, user-level, and project-level safety boundaries must use script control plus prompt reminders. Prompt text alone is not sufficient for boundaries that affect durable state, publication, cleanup, activation, or cross-project scope.
+- Script control means executable checkers, guarded helpers, CI gates, or generated launcher logic that fail closed for a cold-start model with no previous conversation context.
+- Prompt reminder means startup and plan text that explains what the script protects and what the model should reread when it appears to have forgotten the rule.
+
+Context-retention canary:
+
+- Complete assistant responses for this repository's orchestration work should start with `指挥官` and end with `喵~`, unless a higher-priority system or developer instruction prevents it.
+- If a complete response misses that canary after this startup summary should have been read, treat it as possible context loss.
+- Recovery action: reread this file, follow the cold-start read order above, then reread only the task-specific files needed to continue safely.
+
 ## Current Mainline
 
 - `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state`
