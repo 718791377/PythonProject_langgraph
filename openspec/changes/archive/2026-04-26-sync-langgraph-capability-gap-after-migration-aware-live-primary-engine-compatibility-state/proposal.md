@@ -24,17 +24,17 @@ The next justified step is therefore a new capability-gap sync pass. The goal is
 ## Impact
 
 - impact_scope:
-  - `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
-  - `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md`
-  - `docs_bilingual/project_startup_summary.md`
-  - `docs_bilingual/project_startup_summary.zh-CN.md`
-  - `README.md`
-  - `AGENTS.md`
-  - `openspec/specs/codex-user-level-team-mode-plan-status-sync/spec.md`
+  - `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - English active implementation plan carrying the LangGraph capability-gap appendix.
+  - `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - Chinese companion for the active team-mode implementation plan.
+  - `docs_bilingual/project_startup_summary.md` - English cold-start summary that names the current repository mainline.
+  - `docs_bilingual/project_startup_summary.zh-CN.md` - Chinese cold-start companion for the repository startup summary.
+  - `README.md` - repository landing page that should not point at stale implementation state.
+  - `AGENTS.md` - Codex instruction surface that records current mainline and routing boundaries.
+  - `openspec/specs/codex-user-level-team-mode-plan-status-sync/spec.md` - stable spec receiving the plan-status-sync requirement.
 - explicit_non_goals:
   - this change does not add new LangGraph runtime capabilities
   - this change does not modify backend-selection policy or operator command surfaces
   - this change does not re-open the archived migration-aware implementation mainline
 - validation_path:
-  - `openspec validate --all`
-  - `python .\\tools\\run_openspec_guard.py --root .`
+  - `openspec validate --all` - official OpenSpec validation command for all specs and active changes.
+  - `python .\\tools\\run_openspec_guard.py --root .` - repository guard that aggregates OpenSpec and governance checks.
