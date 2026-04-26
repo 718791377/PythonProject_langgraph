@@ -26,17 +26,17 @@ The Codex user-level skills governance work already has Phase 0 and Phase 1 chan
 ## Impact
 
 - Affected documentation and artifacts:
-  - `docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.md`
-  - `docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.zh-CN.md`
-  - `docs_bilingual/governance/codex_user_level_skills_governance_policy.md`
-  - `docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md`
-  - `docs_bilingual/governance/codex_skills_profiles.registry.yaml`
-  - `docs_bilingual/governance/codex_skills_inventory_baseline.json`
-  - `docs_bilingual/docs_registry.yaml`
+  - `docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.md` - English implementation plan for the skills governance rollout.
+  - `docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.zh-CN.md` - Chinese companion for the skills governance rollout plan.
+  - `docs_bilingual/governance/codex_user_level_skills_governance_policy.md` - English governance policy for user-level skills lifecycle rules.
+  - `docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md` - Chinese governance policy companion for user-level skills lifecycle rules.
+  - `docs_bilingual/governance/codex_skills_profiles.registry.yaml` - declarative profile registry that records skill profile assignments.
+  - `docs_bilingual/governance/codex_skills_inventory_baseline.json` - Phase 0 inventory baseline snapshot for audit evidence.
+  - `docs_bilingual/docs_registry.yaml` - documentation registry used by governance checks.
 - Affected tooling and tests:
-  - `tools/inventory_codex_skills.py`
-  - `tools/check_codex_skills_governance.py`
-  - `test/check_codex_skills_governance.test.py`
+  - `tools/inventory_codex_skills.py` - read-only inventory command for Codex skills baseline reporting.
+  - `tools/check_codex_skills_governance.py` - skills governance checker that classifies errors, warnings, and deferred cleanup.
+  - `test/check_codex_skills_governance.test.py` - regression test for the skills governance checker.
   - possible future guarded integration through `tools/run_openspec_guard.py`, `.gitlab-ci.yml`, or `.github/workflows/openspec-guard.yml`
 - No user-level skill directory is to be edited by this change.
 - `C:\Users\lenovo\.codex\config.toml` is out of scope and must not be modified.

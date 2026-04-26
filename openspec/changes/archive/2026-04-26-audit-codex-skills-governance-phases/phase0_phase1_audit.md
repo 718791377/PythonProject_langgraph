@@ -48,13 +48,13 @@ The committed baseline reports the same high-level counts as the current run:
 
 The current output and baseline both include the required row fields:
 
-- `name`
-- `description_length`
-- `source_layer`
-- `file_path`
-- `duplicate_name_group`
-- `suspected_profile`
-- `status_suggestion`
+- `name` - skill identifier captured from each scanned `SKILL.md` file.
+- `description_length` - character count used to flag long skill descriptions.
+- `source_layer` - inventory classification for repo, user, system, or plugin skill origin.
+- `file_path` - concrete location of the scanned skill file.
+- `duplicate_name_group` - grouping key for skills that share the same name.
+- `suspected_profile` - inferred launcher profile bucket for routing analysis.
+- `status_suggestion` - non-mutating recommendation such as report-only, investigate, or keep.
 
 ### Phase 0 verdict
 
@@ -79,16 +79,16 @@ Known findings remain visible rather than cleaned up:
 
 Required profiles are present:
 
-- `core`
-- `browser`
-- `web`
-- `github`
-- `full`
+- `core` - minimal default profile for routine repository work.
+- `browser` - profile that preserves browser automation and Vercel-backed verification capability.
+- `web` - profile for web application and deployment-oriented skill access.
+- `github` - profile for GitHub-specific review and publication tooling.
+- `full` - broad profile that keeps the complete installed skill surface visible.
 
 Additional lifecycle profiles are present:
 
-- `openspec`
-- `orchestration`
+- `openspec` - lifecycle profile for OpenSpec artifact and governance work.
+- `orchestration` - profile for native subagent, OMX, and LangGraph orchestration work.
 
 Browser-capable project defaults are present:
 
@@ -101,8 +101,8 @@ The registry declares `config_mutation: forbidden` and describes itself as not m
 
 `docs_bilingual/docs_registry.yaml` registers:
 
-- `codex_user_level_skills_governance_and_profiles_plan`
-- `codex_user_level_skills_governance_policy`
+- `codex_user_level_skills_governance_and_profiles_plan` - implementation-plan registry entry for the skills governance rollout.
+- `codex_user_level_skills_governance_policy` - governance-policy registry entry for skills lifecycle rules.
 
 The current document governance checker treats `docs_registry.yaml` as a registry for bilingual Markdown governance documents. It does not currently require non-Markdown YAML data artifacts such as `codex_skills_profiles.registry.yaml` to be listed as standalone registry entries.
 

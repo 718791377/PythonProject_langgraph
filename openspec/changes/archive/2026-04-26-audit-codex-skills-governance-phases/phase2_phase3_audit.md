@@ -44,16 +44,16 @@ Summary:
 
 Deferred cleanup candidates:
 
-- `openspec-apply-change`
-- `openspec-archive-change`
-- `openspec-continue-change`
-- `openspec-explore`
-- `openspec-ff-change`
-- `openspec-new-change`
-- `openspec-onboard`
-- `openspec-propose`
-- `openspec-sync-specs`
-- `openspec-verify-change`
+- `openspec-apply-change` - nested generated OpenSpec apply skill candidate deferred for clean-clone verification.
+- `openspec-archive-change` - nested generated OpenSpec archive skill candidate deferred for clean-clone verification.
+- `openspec-continue-change` - nested generated OpenSpec continue skill candidate deferred for clean-clone verification.
+- `openspec-explore` - nested generated OpenSpec explore skill candidate deferred for clean-clone verification.
+- `openspec-ff-change` - nested generated OpenSpec fast-forward skill candidate deferred for clean-clone verification.
+- `openspec-new-change` - nested generated OpenSpec new-change skill candidate deferred for clean-clone verification.
+- `openspec-onboard` - nested generated OpenSpec onboarding skill candidate deferred for clean-clone verification.
+- `openspec-propose` - nested generated OpenSpec proposal skill candidate deferred for clean-clone verification.
+- `openspec-sync-specs` - nested generated OpenSpec spec-sync skill candidate deferred for clean-clone verification.
+- `openspec-verify-change` - nested generated OpenSpec verification skill candidate deferred for clean-clone verification.
 
 The warnings remain non-blocking user-level description and plugin bundle findings. No plugin file or user-level skill file was edited.
 
