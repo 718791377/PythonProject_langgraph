@@ -1545,6 +1545,9 @@ Assert-ArrayContains -Actual $installedBurstRoleNames -Expected 'bug-rebutter' -
 Assert-ArrayContains -Actual $installedBurstRoleNames -Expected 'bug-judge' -Message 'Routing policy did not mark bug-judge as installed.'
 $adversarialInstalledNames = @($routingPolicy.adversarial_review.installed_role_names | ForEach-Object { [string]$_ })
 Assert-ArrayContains -Actual $adversarialInstalledNames -Expected 'bug-judge' -Message 'Routing policy adversarial-review metadata did not expose installed burst-review roles.'
+Assert-Equal $routingPolicy.helper_mirror_source_of_truth.helper_copy_kind 'generated_user_level_install_artifact' 'Routing policy did not classify user-level helper mirrors as generated install artifacts.'
+Assert-Equal $routingPolicy.helper_mirror_source_of_truth.repository_source_script 'tools/install-codex-user-level-team-mode.ps1' 'Routing policy did not point helper mirror provenance back to the installer source script.'
+Assert-True ([string]$routingPolicy.helper_mirror_source_of_truth.non_global_state_root_rule).Contains('not a global durable-state root') 'Routing policy did not prevent treating the repository as a global durable-state root.'
 
 $durableStateNone = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-status.ps1') -Arguments @(
   '-RepoRoot', $NoStateRepoRoot,
@@ -1564,6 +1567,11 @@ Assert-True ($durableStateNone.capability_readiness.langgraph.ready -eq $false) 
 Assert-ArrayContains -Actual @($durableStateNone.capability_readiness.readiness_fields | ForEach-Object { [string]$_ }) -Expected 'ready' -Message 'Durable-state status did not publish readiness field names.'
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $NoStateRepoRoot '.omx'))) 'Read-only durable-state status should not create repo-local .omx state in a no-state repo.'
 Assert-True ($durableStateNone.read_only_by_default -eq $true) 'Durable-state status did not preserve read-only posture.'
+Assert-Equal $durableStateNone.helper_mirror_source_of_truth.helper_copy_kind 'generated_user_level_install_artifact' 'Durable-state status did not expose generated helper install-artifact provenance.'
+Assert-Equal $durableStateNone.helper_mirror_source_of_truth.repository_source_script 'tools/install-codex-user-level-team-mode.ps1' 'Durable-state status did not identify the repository source script.'
+Assert-Equal $durableStateNone.helper_mirror_source_of_truth.durable_truth_scope 'target repository repo-local .omx/state tree' 'Durable-state status did not keep durable truth scoped to the target repository.'
+Assert-ArrayContains -Actual @($durableStateNone.helper_mirror_source_of_truth.consumer_project_examples | ForEach-Object { [string]$_ }) -Expected 'D:\PythonProject_CLIProxyAPI' -Message 'Durable-state status did not preserve consumer project isolation examples.'
+Assert-True ([string]$durableStateNone.helper_mirror_source_of_truth.non_global_state_root_rule).Contains('not a global durable-state root') 'Durable-state status did not reject global durable-state-root interpretation.'
 
 $cleanupPreviewNone = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-reconcile.ps1') -Arguments @(
   '-RepoRoot', $NoStateRepoRoot,
