@@ -12,4 +12,4 @@
 
 - [x] 3.1 Update `test/install-codex-user-level-team-mode.test.ps1` - the installer regression test that verifies generated helper behavior.
 - [x] 3.2 Run targeted installer and OpenSpec checks.
-- [ ] 3.3 Publish through GitLab-first MR and sync GitHub after GitLab main is green.
+- [x] 3.3 Publish through GitLab-first MR and sync GitHub after GitLab main is green.
