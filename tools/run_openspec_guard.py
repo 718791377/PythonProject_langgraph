@@ -97,6 +97,7 @@ def main() -> int:
     skills_governance_script = root / "tools" / "check_codex_skills_governance.py"
     name_clarity_rules_script = root / "tools" / "check_name_clarity_rules.py"
     canary_surface_script = root / "tools" / "check_context_retention_canary_surface.py"
+    safety_rule_script_backing_script = root / "tools" / "check_safety_rule_script_backing.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
 
     if not verify_script.exists():
@@ -113,6 +114,8 @@ def main() -> int:
         raise SystemExit(f"Missing name clarity rules check script: {name_clarity_rules_script}")
     if not canary_surface_script.exists():
         raise SystemExit(f"Missing context-retention canary surface check script: {canary_surface_script}")
+    if not safety_rule_script_backing_script.exists():
+        raise SystemExit(f"Missing safety rule script-backing check script: {safety_rule_script_backing_script}")
     if not worktree_hygiene_script.exists():
         raise SystemExit(f"Missing worktree session hygiene check script: {worktree_hygiene_script}")
 
@@ -198,6 +201,11 @@ def main() -> int:
                 "check_context_retention_canary_surface",
                 [str(python_exe), str(canary_surface_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during context-retention canary surface verification.",
+            ),
+            (
+                "check_safety_rule_script_backing",
+                [str(python_exe), str(safety_rule_script_backing_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during safety rule script-backing verification.",
             ),
             (
                 "check_worktree_session_hygiene",
@@ -336,6 +344,12 @@ def main() -> int:
         [str(python_exe), str(canary_surface_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during context-retention canary surface verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(safety_rule_script_backing_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during safety rule script-backing verification.",
     )
 
     run_checked(

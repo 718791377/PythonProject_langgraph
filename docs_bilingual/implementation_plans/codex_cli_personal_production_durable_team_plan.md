@@ -335,7 +335,7 @@ The production-grade persistent team cannot depend on the model remembering a lo
 Every system-level, user-level, or project-level safety boundary must therefore use both layers:
 
 - script control - executable checks, generated helper logic, guarded state transitions, or CI gates that fail closed for a cold-start model with no prior conversation context.
-- prompt reminder - startup-summary, AGENTS, and implementation-plan text that explains the rule, the reason for the script guard, and the recovery procedure when the reminder appears forgotten.
+- prompt reminder - startup-summary and implementation-plan text that explains the rule, the reason for the script guard, and the recovery procedure when the reminder appears forgotten; `AGENTS.md` is a recovery reread target, not the literal canary prompt source.
 
 Minimum production requirement:
 
@@ -672,7 +672,7 @@ Minimum acceptance:
 - inspect / approval / recovery share one surface
 - high-risk actions have audit and guarded actions
 - safety-critical prompt reminders have matching script controls or an explicit tracked gap, verified by a user-level aggregate safety-boundary checker
-- startup context-retention canary behavior is documented in project-level `AGENTS.md` and `project_startup_summary.*`, and a user-level canary checker can report the cold-start reread recovery procedure when transcript evidence is available
+- startup context-retention canary behavior is documented in project-level `project_startup_summary.*`; `AGENTS.md` remains a recovery reread target and must not contain the literal canary prompt, while a user-level canary checker can report the cold-start reread recovery procedure when transcript evidence is available
 - a regression gate exists
 - at least one cold-start recovery drill exists
 - at least one failure-branch redrive drill exists

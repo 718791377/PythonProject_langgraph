@@ -93,7 +93,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 - 哨兵的字面提示词只维护在这对 startup summary 文件中：`docs_bilingual/project_startup_summary.md` 与 `docs_bilingual/project_startup_summary.zh-CN.md`。其他 active instruction surface 可以指向这里，但不得重复字面开头/结尾短语。
 - 除非更高优先级 system 或 developer 指令阻止，本仓库编排工作的完整模型回复应以 `指挥官` 开头，并以 `喵~` 结尾。
 - 如果本 startup summary 本应已读取，但完整回复缺少该哨兵，则视为可能发生上下文丢失。
-- 恢复动作：重读本文，按上面的冷启动阅读顺序补读，然后只补读继续当前任务必须需要的任务相关文件。
+- 恢复动作：重读 `AGENTS.md`，重读这对 startup summary 文件，按上面的冷启动阅读顺序补读，然后只补读继续当前任务必须需要的任务相关文件。
 
 ## 当前主线
 

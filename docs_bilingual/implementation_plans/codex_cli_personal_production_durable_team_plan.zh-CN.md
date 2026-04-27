@@ -326,7 +326,7 @@ status: draft
 所有系统级、用户级、项目级安全边界都必须同时使用两层控制：
 
 - 脚本控制 - 可执行 checker、生成式 helper 逻辑、受保护状态转移或 CI gate；即使是没有历史上下文的冷启动模型执行，也必须默认 fail closed。
-- 提示词提醒 - startup summary、AGENTS 和 implementation plan 文本；它们负责解释规则、脚本保护的原因，以及模型疑似忘记提示词时的恢复步骤。
+- prompt reminder - startup summary and implementation plan text; `AGENTS.md` is only a recovery reread target, not the literal canary prompt source.
 
 最低生产要求：
 
@@ -679,7 +679,7 @@ status: draft
 - inspect / approval / recovery 具备统一 surface
 - 关键高风险动作有审计和 guarded action
 - 安全关键提示词提醒都有对应脚本控制，或者明确登记为尚未落地的 gap，并由用户级总安全边界 checker 验证
-- startup 上下文保留哨兵已经文档化在项目级 `AGENTS.md` 和 `project_startup_summary.*`，并且用户级 canary checker 在有 transcript 证据时可以报告冷启动重读恢复流程
+- startup context-retention canary behavior is documented in project-level `project_startup_summary.*`; `AGENTS.md` is only a recovery reread target and must not contain the literal canary prompt, while the canary checker can report the cold-start recovery procedure when transcript evidence is available
 - regression gate 已经存在
 - 至少有 cold-start recovery drill
 - 至少有一套失败分支 redrive drill

@@ -169,6 +169,8 @@ MR 3 必须增加测试或 fixture，证明 checker 至少能区分这些情况�
 5. 新 activation 逻辑必须是 additive 且 versioned。
 6. 当运行时无法安全确定 scoped activation target 时，必须 fail closed，而不是退回到 legacy shared selector。
 
+安全规则 enforcement 不能只靠提示词。凡是会影响 activation、cleanup、scoped writes、cross-project reads 或 publication 的 durable-state isolation 规则，都必须登记到 `tools/safety_rule_script_backing_registry.json`，并且必须有 executable script control，或者明确登记为 tracked gap。总 checker 是 `tools/check_safety_rule_script_backing.py`，并由 `tools/run_openspec_guard.py` 纳入仓库 guard。
+
 ## 5. 目标态架构
 
 目标态应把 durable 控制面拆成三层。

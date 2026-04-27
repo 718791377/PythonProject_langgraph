@@ -51,6 +51,13 @@ SKIP_FILE_NAMES = {
     "openspec-guard-report.json",
 }
 
+AGENTS_PATH = Path("AGENTS.md")
+
+RECOVERY_ANCHORS = (
+    "Recovery action:",
+    "恢复动作：",
+)
+
 
 def normalize_relative_path(path: Path) -> Path:
     return Path(*path.parts)
@@ -108,6 +115,15 @@ def find_line_numbers(text: str, needle: str) -> list[int]:
     ]
 
 
+def recovery_mentions_agents(text: str) -> bool:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if any(anchor in line for anchor in RECOVERY_ANCHORS):
+            window = "\n".join(lines[index : index + 3])
+            return "AGENTS.md" in window
+    return False
+
+
 def run_check(root: Path) -> dict:
     root = root.resolve()
     errors: list[str] = []
@@ -131,6 +147,19 @@ def run_check(root: Path) -> dict:
                 f"{relative_path.as_posix()} is missing the startup-summary canary "
                 f"{', '.join(missing_parts)}."
             )
+        if not recovery_mentions_agents(text):
+            errors.append(
+                f"{relative_path.as_posix()} must state that canary recovery rereads AGENTS.md "
+                "as part of cold-start recovery."
+            )
+
+    agents_text = read_text(root / AGENTS_PATH)
+    if agents_text is None:
+        errors.append("Missing or unreadable AGENTS.md recovery authority surface.")
+    elif START_CANARY in agents_text or END_CANARY in agents_text:
+        errors.append(
+            "AGENTS.md must remain a recovery reread target but must not duplicate the literal canary prompt."
+        )
 
     for path in iter_candidate_files(root):
         relative_path = normalize_relative_path(path.relative_to(root))

@@ -58,7 +58,7 @@ doc_class: implementation_plan
 所有系统级、用户级、项目级安全边界都必须同时具备：
 
 - 脚本控制 - 可执行 checker、受保护 helper、CI gate 或生成式 launcher 逻辑；即使冷启动模型没有任何上一轮会话上下文，也必须默认 fail closed。
-- 提示词提醒 - startup summary、AGENTS 和 implementation plan 文本；它们负责解释脚本保护什么，以及模型疑似忘记规则时应该重读什么。
+- prompt reminder - `project_startup_summary.*` and implementation plan text; `AGENTS.md` is only a recovery reread target, not the literal canary prompt source.
 
 这条规则对以下行为尤其重要：
 
@@ -69,9 +69,9 @@ doc_class: implementation_plan
 
 下一步实施切片应把这条规则提升为用户级 safety-boundary registry 和总 checker：
 
-- `tools/check_safety_boundary_controls.py` - 仓库源码中的总检查脚本，用来验证每条已登记安全边界都有脚本控制、提示词提醒，或者明确登记为未落地 gap。
-- `codex-safety-boundary-controls.ps1` - 未来用户级 mirrored helper，用于在任意项目中运行总安全边界检查。
-- `safety_boundary_controls.yaml` - 未来安全边界登记表，用来记录每条边界的 owner layer、提示词位置、可执行控制和当前实施状态。
+- `tools/check_safety_rule_script_backing.py` - aggregate checker for registered safety rules, script controls, prompt reminders, guard steps, and tracked gaps.
+- `tools/safety_rule_script_backing_registry.json` - registry for each safety rule owner layer, prompt reminder location, executable control, guard step, and implementation status.
+- `codex-safety-rule-script-backing.ps1` - future optional user-level mirrored helper for running the aggregate checker from consumer projects without making user-level state the source of truth.
 
 总 checker 属于用户级能力，因为它要保护跨项目复用的 Codex / OMX / LangGraph 行为。一般提示词提醒文本仍属于项目级，因为每个仓库拥有自己的 `AGENTS.md`、startup summary、durable truth 和恢复阅读顺序。上下文保留哨兵更窄：它的字面提示词只能放在 `docs_bilingual/project_startup_summary.md` 与 `docs_bilingual/project_startup_summary.zh-CN.md`。
 
@@ -81,7 +81,7 @@ doc_class: implementation_plan
 
 - startup summary 定义本编排仓库完整模型回复的字面提示词，除非更高优先级 system 或 developer 指令阻止。
 - 如果模型在本应读取 startup summary 后没有输出该哨兵，则视为可能上下文丢失。
-- 恢复动作是按新会话冷启动方式重读 `docs_bilingual/project_startup_summary.md`，再按其 read order 补读继续当前会话必须需要的文件。
+- Recovery action: reread `AGENTS.md`, reread `docs_bilingual/project_startup_summary.*`, follow the startup read order, and then reread only the files required for the current task.
 
 未来用户级 canary checker 不负责把哨兵提示词注入 wrapper payload。它只在收到 transcript 或 response text 时检查回复是否满足 startup-summary-defined canary；如果不满足，就输出冷启动恢复指令，要求重读 `AGENTS.md` 和 `docs_bilingual/project_startup_summary.*`。
 
