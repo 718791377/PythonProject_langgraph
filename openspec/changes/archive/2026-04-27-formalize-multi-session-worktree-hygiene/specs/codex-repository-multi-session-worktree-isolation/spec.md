@@ -63,3 +63,14 @@ The repository OpenSpec guard SHALL run the worktree hygiene checker.
 - **WHEN** `tools/run_openspec_guard.py` runs locally
 - **THEN** it SHALL call `tools/check_worktree_session_hygiene.py` with `--allow-current-dirty`
 - **AND** it SHALL still fail when dirty `main` or duplicate dirty path risks are detected
+
+### Requirement: Completed worktree-isolation changes SHALL be archived
+
+Completed OpenSpec changes that add or modify repository multi-session worktree isolation behavior SHALL be archived after implementation and validation so their delta requirements become stable specs.
+
+#### Scenario: Worktree-isolation change is complete
+
+- **WHEN** the governance policy, checker, tests, and guard integration are implemented
+- **AND** the change tasks are complete
+- **THEN** the change SHALL be archived before the repository treats the work as closed
+- **AND** the stable spec SHALL exist under `openspec/specs/`

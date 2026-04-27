@@ -11,6 +11,7 @@ This change is needed because the repository now uses many dedicated Git worktre
 - Add startup and AGENTS references so cold-start sessions know when to read the policy.
 - Add `tools/check_worktree_session_hygiene.py`, a read-only checker for dirty `main`, dirty worktrees, duplicate dirty paths, and local `main` alignment.
 - Add unit coverage for the checker and include it in `tools/run_openspec_guard.py`.
+- Close the OpenSpec lifecycle by archiving this completed change into stable specs after validation.
 
 ## Capabilities
 
@@ -34,8 +35,9 @@ rollout_sequence:
 2. Add the read-only checker and tests.
 3. Add the checker to the OpenSpec guard sequence.
 4. Validate with repository checkers and GitLab CI.
+5. Archive the completed OpenSpec change so the worktree-isolation delta spec becomes stable repository contract.
 
-rollback_plan: Revert this change if the policy or checker semantics are replaced. No local state mutation is performed by this change.
+rollback_plan: Revert this change if the policy or checker semantics are replaced. If the archive step itself is wrong, revert the archive commit or reopen an explicit replacement change. No local state mutation is performed by this change.
 
 validation_path: Run `test/check_worktree_session_hygiene.test.py`, `test/run_openspec_guard_json.test.py`, `tools/check_document_governance_rules.py`, `tools/check_name_clarity_rules.py`, `tools/check_worktree_session_hygiene.py`, and `tools/run_openspec_guard.py`.
 
