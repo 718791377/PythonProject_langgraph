@@ -37,10 +37,10 @@ durable-team runtime SHALL 支持一个不依赖 WSL2 或 Unix `tmux` 的原生 
 
 原生 Windows backend SHALL 支持：
 
-- `status`
-- `await`
-- `resume`
-- `shutdown`
+- `status` - lifecycle action for reading team or backend state.
+- `await` - lifecycle action for waiting until team work reaches a terminal state.
+- `resume` - lifecycle action for continuing a paused or resumable team run.
+- `shutdown` - lifecycle action for stopping a team safely.
 
 #### Scenario: 在原生 Windows 上有序关闭 team
 

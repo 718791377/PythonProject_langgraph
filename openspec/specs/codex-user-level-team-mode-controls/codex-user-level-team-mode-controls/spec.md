@@ -9,16 +9,16 @@ The repository SHALL provide an installer or generator that renders user-level C
 
 The generated asset set SHALL include at least:
 
-- `agents/team-leader.toml`
-- `bin/_codex-user-level-team-mode.ps1`
-- `bin/codex-omx-on.ps1`
-- `bin/codex-omx-off.ps1`
-- `bin/codex-omx-status.ps1`
-- `bin/codex-subagents-auto.ps1`
-- `bin/codex-subagents-manual.ps1`
-- `bin/codex-subagents-off.ps1`
-- `bin/codex-routing-status.ps1`
-- `state/user-level-team-mode.json`
+- `agents/team-leader.toml` - user-level native-agent profile for the current main Codex CLI leader role.
+- `bin/_codex-user-level-team-mode.ps1` - shared PowerShell helper used by generated team-mode control wrappers.
+- `bin/codex-omx-on.ps1` - user-level script that enables the oh-my-codex workflow layer.
+- `bin/codex-omx-off.ps1` - user-level script that disables the oh-my-codex workflow layer.
+- `bin/codex-omx-status.ps1` - user-level script that reports the oh-my-codex workflow-layer state.
+- `bin/codex-subagents-auto.ps1` - user-level script that sets expert routing to automatic mode.
+- `bin/codex-subagents-manual.ps1` - user-level script that sets expert routing to manual mode.
+- `bin/codex-subagents-off.ps1` - user-level script that disables expert routing.
+- `bin/codex-routing-status.ps1` - user-level script that reports current routing posture and switches.
+- `state/user-level-team-mode.json` - user-level state file storing layered team-mode capability switches.
 
 #### Scenario: Generate the P0 control layer into a temporary Codex home
 
@@ -30,9 +30,9 @@ The generated asset set SHALL include at least:
 
 The installer SHALL NOT create, replace, or modify the native base entrypoint names:
 
-- `codex`
-- `codex.cmd`
-- `codex.ps1`
+- `codex` - bare Codex entrypoint name checked for command shadowing and compatibility.
+- `codex.cmd` - Windows command-shim form of the Codex CLI entrypoint.
+- `codex.ps1` - PowerShell wrapper form of the Codex CLI entrypoint.
 
 This safety boundary applies even when the user-level team-mode assets are generated repeatedly.
 
@@ -53,8 +53,8 @@ The generated controls SHALL support at least these values:
 
 The default generated state SHALL be:
 
-- `oh_my_codex = off`
-- `subagent_routing = auto`
+- `oh_my_codex = off` - default switch value that disables the oh-my-codex workflow layer.
+- `subagent_routing = auto` - default switch value that enables automatic expert routing.
 
 #### Scenario: Fresh install creates the default native-routed state
 
@@ -139,8 +139,8 @@ The generated user-level control surface SHALL persist the durable orchestration
 
 At minimum the selector SHALL support:
 
-- `native_omx`
-- `langgraph`
+- `native_omx` - durable backend family for worker-centric oh-my-codex execution.
+- `langgraph` - durable backend family for graph-shaped checkpointed execution.
 
 The default durable orchestration backend SHALL remain the current native path until LangGraph is explicitly selected.
 

@@ -11,13 +11,13 @@ The generated wrappers SHALL remain usable on native Windows and SHALL NOT assum
 
 The generated asset set SHALL include at least:
 
-- `bin/omx-team-dev.ps1`
-- `bin/omx-team-debug.ps1`
-- `bin/omx-team-verify.ps1`
-- `bin/omx-team-ops.ps1`
-- `bin/omx-team-hybrid.ps1`
-- `bin/omx-team-auto.ps1`
-- `docs/team-mode-playbook.md`
+- `bin/omx-team-dev.ps1` - user-level launcher for the default development durable team.
+- `bin/omx-team-debug.ps1` - user-level launcher for a debugger-focused durable team.
+- `bin/omx-team-verify.ps1` - user-level wrapper that emits a leader-side verification plan.
+- `bin/omx-team-ops.ps1` - user-level wrapper for team lifecycle and safe read-only API operations.
+- `bin/omx-team-hybrid.ps1` - user-level bridge from heterogeneous staffing requests to leader-side experts plus one worker team.
+- `bin/omx-team-auto.ps1` - user-level launcher for threshold-gated automatic durable-team routing.
+- `docs/team-mode-playbook.md` - generated playbook that documents team-mode usage and operating rules.
 
 #### Scenario: Generate the P2 plus P5 entrypoint layer into a temporary Codex home
 
@@ -74,17 +74,17 @@ At minimum:
 
 `omx-team-ops.ps1` SHALL wrap the supported lifecycle commands:
 
-- `status`
-- `await`
-- `resume`
-- `shutdown`
+- `status` - lifecycle action for reading team state.
+- `await` - lifecycle action for waiting until team work reaches a terminal state.
+- `resume` - lifecycle action for continuing a paused or resumable team run.
+- `shutdown` - lifecycle action for stopping a team safely.
 
 It SHALL also support safe read-only team API operations such as:
 
-- `list-tasks`
-- `mailbox-list`
-- `get-summary`
-- `read-manifest`
+- `list-tasks` - read-only API operation for listing team tasks.
+- `mailbox-list` - read-only API operation for listing worker mailbox messages.
+- `get-summary` - read-only API operation for retrieving the team summary.
+- `read-manifest` - read-only API operation for reading the team manifest.
 
 #### Scenario: Ops wrapper shows team status
 
@@ -123,10 +123,10 @@ It SHALL NOT claim that every requested role becomes a persistent pane by defaul
 
 At minimum it SHALL be able to plan use of:
 
-- `verifier`
-- `test-engineer`
-- `security-reviewer`
-- `writer`
+- `verifier` - leader-side role for final acceptance and evidence validation.
+- `test-engineer` - leader-side role for test strategy and regression-risk validation.
+- `security-reviewer` - leader-side role for security and trust-boundary review.
+- `writer` - leader-side role for documentation and operator-guidance review.
 
 #### Scenario: Verification wrapper plans final sign-off without launching a verifier pane
 

@@ -14,13 +14,13 @@ TBD - 本文件由归档变更 `implement-codex-user-level-team-mode-p2-team-ent
 
 生成资产集合至少 SHALL 包含：
 
-- `bin/omx-team-dev.ps1`
-- `bin/omx-team-debug.ps1`
-- `bin/omx-team-verify.ps1`
-- `bin/omx-team-ops.ps1`
-- `bin/omx-team-hybrid.ps1`
-- `bin/omx-team-auto.ps1`
-- `docs/team-mode-playbook.md`
+- `bin/omx-team-dev.ps1` - 默认开发 durable team 的用户级 launcher。
+- `bin/omx-team-debug.ps1` - debugger-focused durable team 的用户级 launcher。
+- `bin/omx-team-verify.ps1` - 输出 leader-side verification plan 的用户级 wrapper。
+- `bin/omx-team-ops.ps1` - 面向 team lifecycle 和安全只读 API 操作的用户级 wrapper。
+- `bin/omx-team-hybrid.ps1` - 把 heterogeneous staffing request 转接到 leader-side experts 加一个 worker team 的用户级 bridge。
+- `bin/omx-team-auto.ps1` - 执行 threshold-gated automatic durable-team routing 的用户级 launcher。
+- `docs/team-mode-playbook.md` - 记录 team-mode 用法和操作规则的生成 playbook。
 
 #### Scenario: 在临时 Codex home 中生成 P2 与 P5 entrypoint 层
 
@@ -77,17 +77,17 @@ TBD - 本文件由归档变更 `implement-codex-user-level-team-mode-p2-team-ent
 
 `omx-team-ops.ps1` SHALL 包装以下受支持的 lifecycle commands：
 
-- `status`
-- `await`
-- `resume`
-- `shutdown`
+- `status` - 读取 team state 的 lifecycle action。
+- `await` - 等待 team work 到达终止状态的 lifecycle action。
+- `resume` - 继续 paused 或 resumable team run 的 lifecycle action。
+- `shutdown` - 安全停止 team 的 lifecycle action。
 
 它也 SHALL 支持安全只读的 team API 操作，例如：
 
-- `list-tasks`
-- `mailbox-list`
-- `get-summary`
-- `read-manifest`
+- `list-tasks` - 读取 team tasks 的只读 API operation。
+- `mailbox-list` - 读取 worker mailbox messages 的只读 API operation。
+- `get-summary` - 读取 team summary 的只读 API operation。
+- `read-manifest` - 读取 team manifest 的只读 API operation。
 
 #### Scenario: ops wrapper 显示 team status
 
@@ -126,10 +126,10 @@ TBD - 本文件由归档变更 `implement-codex-user-level-team-mode-p2-team-ent
 
 至少它 SHALL 能规划使用：
 
-- `verifier`
-- `test-engineer`
-- `security-reviewer`
-- `writer`
+- `verifier` - 用于 final acceptance 和 evidence validation 的 leader-side role。
+- `test-engineer` - 用于 test strategy 和 regression-risk validation 的 leader-side role。
+- `security-reviewer` - 用于 security 和 trust-boundary review 的 leader-side role。
+- `writer` - 用于 documentation 和 operator-guidance review 的 leader-side role。
 
 #### Scenario: verification wrapper 在不启动 verifier pane 的情况下规划最终验收
 

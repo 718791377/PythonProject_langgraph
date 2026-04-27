@@ -27,9 +27,9 @@ The workflow SHALL preserve two layered custom-agent locations:
 
 Every standalone custom-agent TOML used by this workflow SHALL define at least:
 
-- `name`
-- `description`
-- `developer_instructions`
+- `name` - required native-agent TOML field for the agent role name.
+- `description` - required native-agent TOML field for the role summary.
+- `developer_instructions` - required native-agent TOML field for role-specific behavior instructions.
 
 #### Scenario: Maintainer checks role placement rules
 

@@ -12,7 +12,7 @@ The installer SHALL generate an additive user-level routing-policy inspection sc
 
 The generated asset set SHALL include:
 
-- `bin/codex-routing-policy.ps1`
+- `bin/codex-routing-policy.ps1` - user-level script for inspecting or changing routing policy.
 
 The inspection output SHALL be read-only and SHALL reflect the same routing-policy model used by wrapped `codex` startup.
 
