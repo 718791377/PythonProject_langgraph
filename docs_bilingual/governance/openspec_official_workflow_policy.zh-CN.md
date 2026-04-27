@@ -60,13 +60,16 @@ status: active
 - `python .\tools\run_openspec_guard.py --root .` 是统一的本地强制入口
 - 在把本仓库视为“已完成官方 OpenSpec 工作流接入”之前，必须通过 `python .\tools\verify_official_openspec.py --root .`
 - 在把结构性 OpenSpec 工作视为完成之前，必须通过 `openspec validate --all`
+- `tools/check_name_clarity_rules.py` 是本地 strict 名称解释检查器；当它通过 `python .\tools\run_openspec_guard.py --root .` 运行时，会阻断裸 script、path、command、variable 或 profile 列表项。
+- `--no-baseline` 是 guard 使用的 strict 检查模式；它会关闭 compatibility allowance，使当前和后续发现项都阻断本地 enforcement。
+- `openspec validate --all` 仍是官方 OpenSpec CLI 原生 validation command；它本身不会自动执行这条仓库本地名称解释规则。
 - 执行 `git init` 或克隆已有仓库后，应运行 `powershell -ExecutionPolicy Bypass -File .\tools\install-git-hooks.ps1` 安装 `.githooks/pre-commit`
 - 仓库内必须保留至少一个受支持的 CI 守卫面，例如 `.github/workflows/openspec-guard.yml` 或 `.gitlab-ci.yml`
 - 如果托管平台支持 required status checks，应把 OpenSpec guard job 设为 required，避免合并仍然只依赖维护者自律
 
 仓库检查脚本与聚合 guard 报告的 JSON 输出契约定义在：
 
-- `docs_bilingual/governance/openspec_check_and_guard_json_output_policy.md`
+- `docs_bilingual/governance/openspec_check_and_guard_json_output_policy.md` - 定义仓库检查脚本与聚合 guard 报告 JSON 输出契约的治理文档。
 
 ## 7A. 治理文件的双语与编码规则
 

@@ -155,7 +155,7 @@ The project-wide feature validation workflow remains a separate execution-layer 
 
 Use:
 
-- `docs_bilingual/operations/feature_validation_workflow.md`
+- `docs_bilingual/operations/feature_validation_workflow.md` - operations guide for feature-slice validation and structured validation reporting.
 
 when work needs:
 
@@ -189,9 +189,9 @@ Do not create a new parallel governance explanation when an existing OpenSpec ar
 This rule applies especially to:
 
 - OpenSpec change/design/spec/task artifacts
-- `docs_bilingual/governance/*`
-- `docs_bilingual/methodology/*`
-- `docs_bilingual/experience_ledgers/*`
+- `docs_bilingual/governance/*` - governance document directory for repository policy and authority rules.
+- `docs_bilingual/methodology/*` - methodology document directory for reusable working methods.
+- `docs_bilingual/experience_ledgers/*` - experience-ledger directory for reusable lessons and incident records.
 
 The goal is to keep authority layered, deduplicated, and easier to keep synchronized across later repository updates.
 
@@ -212,8 +212,8 @@ For future repository work, one governance rule is now mandatory:
 
 Those patterns are:
 
-- `candidate pool + normalization + bounded light-model gray-zone arbitration`
-- `candidate pool + normalization + bounded light-model gray-zone arbitration + online correction + experience accumulation`
+- `candidate pool + normalization + bounded light-model gray-zone arbitration` - governed closed-loop pattern for bounded gray-zone selection or arbitration.
+- `candidate pool + normalization + bounded light-model gray-zone arbitration + online correction + experience accumulation` - governed closed-loop pattern for repeated drift, later correction, and reusable sample accumulation.
 
 The shorter pattern must be used first for bounded gray-zone selection or arbitration.
 
@@ -317,9 +317,9 @@ All child sub-agents introduced into the repository should follow a common promp
 
 This includes:
 
-- `Research child run`
-- `Judge child run`
-- `Implement child run`
+- `Research child run` - child sub-agent run dedicated to research and evidence gathering.
+- `Judge child run` - child sub-agent run dedicated to evidence, readiness, and risk review.
+- `Implement child run` - child sub-agent run dedicated to applying implementation tasks.
 - future custom child roles
 
 The governance boundary is:
@@ -354,15 +354,15 @@ When governance documents, implementation plans, or experience records describe 
 
 Do not create overlapping ad hoc terms when one of the following already applies:
 
-- `self_leakage`
-- `cross_talk`
-- `inter_agent_cross_talk`
-- `cross_message_cross_talk`
-- `cross_conversation_cross_talk`
-- `misrouted_return`
-- `state_contamination`
-- `template_misapplication`
-- `overflow_induced_leakage`
+- `self_leakage` - leakage from an agent's own hidden context, instructions, or intermediate state.
+- `cross_talk` - umbrella term for unwanted information mixing across boundaries.
+- `inter_agent_cross_talk` - cross-talk between distinct agents or child runs.
+- `cross_message_cross_talk` - cross-talk between separate messages in a workflow.
+- `cross_conversation_cross_talk` - cross-talk between separate conversations or sessions.
+- `misrouted_return` - result or reply delivered to the wrong recipient or route.
+- `state_contamination` - runtime or durable state polluted by unrelated context.
+- `template_misapplication` - wrong prompt, document, or workflow template applied to a task.
+- `overflow_induced_leakage` - leakage caused by context overflow, truncation, or compression.
 
 If a new subtype is genuinely needed, first decide whether it is:
 
@@ -382,18 +382,18 @@ All `user -> orchestrator -> sub-agent` chains in this repository must satisfy t
 
 Anti-cross-talk must at minimum cover:
 
-- `inter_agent_cross_talk`
-- `cross_message_cross_talk`
-- `cross_conversation_cross_talk`
-- `misrouted_return`
-- `state_contamination`
-- `template_misapplication`
+- `inter_agent_cross_talk` - cross-talk between distinct agents or child runs.
+- `cross_message_cross_talk` - cross-talk between separate messages in a workflow.
+- `cross_conversation_cross_talk` - cross-talk between separate conversations or sessions.
+- `misrouted_return` - result or reply delivered to the wrong recipient or route.
+- `state_contamination` - runtime or durable state polluted by unrelated context.
+- `template_misapplication` - wrong prompt, document, or workflow template applied to a task.
 
 Anti-leakage must at minimum cover:
 
-- `self_leakage`
+- `self_leakage` - leakage from an agent's own hidden context, instructions, or intermediate state.
 - leakage across agent, message, or conversation boundaries
-- `overflow_induced_leakage`
+- `overflow_induced_leakage` - leakage caused by context overflow, truncation, or compression.
 
 A chain is not accepted merely because it runs or produces one successful reply.
 
@@ -409,7 +409,7 @@ Runtime-state directories should use a stable, ASCII-only naming convention befo
 
 The standard format is:
 
-- `channel__agent_identity__runtime_role`
+- `channel__agent_identity__runtime_role` - runtime-state directory naming pattern that combines channel, stable agent identity, and runtime role.
 
 This rule exists to prevent long-term ambiguity once the repository contains multiple agents under one channel.
 
@@ -426,8 +426,8 @@ Current generic names may continue temporarily as migration sources, but future 
 
 The following links may still be used as historical external OpenClaw references when maintainers need migration or product-context comparison:
 
-- `https://github.com/openclaw/openclaw`
-- `https://docs.openclaw.ai/start/getting-started`
+- `https://github.com/openclaw/openclaw` - historical external OpenClaw repository reference for migration and product-context comparison.
+- `https://docs.openclaw.ai/start/getting-started` - historical external OpenClaw references entry for the getting-started documentation URL.
 
 They are not the authoritative source for this repository's current orchestration line.
 
@@ -450,9 +450,9 @@ Branch-specific implementation plans may quote these links, but they must not re
 The following should be treated as the project-level OpenSpec sources:
 
 - official upstream baseline:
-  - `https://github.com/Fission-AI/OpenSpec`
+- `https://github.com/Fission-AI/OpenSpec` - official upstream OpenSpec repository used as the baseline for project-level OpenSpec alignment.
 - project-local companion source:
-  - `D:\PythonProject_langgraph`
+- `D:\PythonProject_langgraph` - local companion repository and source of truth for this project's OpenSpec governance.
 
 When the repository needs to align OpenSpec usage, terminology, change structure, or later OpenSpec update work, the upstream repository should be treated as the authoritative upstream baseline before branch-local notes or temporary conventions.
 
@@ -497,10 +497,10 @@ In this repository, actual write work should remain with separate execution path
 
 The following sources should be treated as project-level official skills sources:
 
-- `https://github.com/openclaw/clawhub`
-- `https://clawhub.ai/skills?sort=downloads&nonSuspicious=true`
+- `https://github.com/openclaw/clawhub` - official Clawhub source repository for skills discovery context.
+- `https://clawhub.ai/skills?sort=downloads&nonSuspicious=true` - official Clawhub skills catalog page filtered to downloadable non-suspicious skills.
 - Skillhub store installation source:
-  - `https://skillhub-1388575217.cos.ap-guangzhou.myqcloud.com/install/skillhub.md`
+- `https://skillhub-1388575217.cos.ap-guangzhou.myqcloud.com/install/skillhub.md` - Skillhub installer markdown source used for project-level skills installation reference.
 
 When the repository needs to align skills discovery, installation, onboarding, or later skills update work, these sources should be treated as the official baseline before branch-local notes or temporary conventions.
 
@@ -553,7 +553,7 @@ This rule applies to:
 
 - `openspec/changes/*` Chinese companions
 - `openspec/specs/*` Chinese companions
-- `docs_bilingual/*`
+- `docs_bilingual/*` - bilingual documentation tree covered by the explicit UTF-8 authority-read rule.
 - other repository authority artifacts whose primary or companion text is Chinese
 
 For governance artifacts specifically, the read order is mandatory:

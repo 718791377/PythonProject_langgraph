@@ -42,36 +42,36 @@ translation_of: docs_bilingual/implementation_plans/codex_langgraph_repository_s
 
 主要代码：
 
-- `tools/install-codex-user-level-team-mode.ps1`
-- `tools/langgraph_durable_orchestrator/`
-- `tools/openclaw-omx-windows-bootstrap-fix.mjs`
+- `tools/install-codex-user-level-team-mode.ps1` - 安装 user-level team-mode launchers 与支撑工件的脚本。
+- `tools/langgraph_durable_orchestrator/` - LangGraph durable orchestrator 兼容代码的仓库本地源码目录。
+- `tools/openclaw-omx-windows-bootstrap-fix.mjs` - legacy OpenClaw/OMX setup compatibility 的 Windows bootstrap fix 脚本。
 
 主要测试：
 
-- `test/install-codex-user-level-team-mode.test.ps1`
-- `test/run-install-codex-user-level-team-mode-test.cmd`
-- `test/langgraph_durable_orchestrator_*.test.py`
-- `test/openclaw-omx-windows-bootstrap-fix.test.mjs`
+- `test/install-codex-user-level-team-mode.test.ps1` - user-level team-mode installer 的 PowerShell 测试。
+- `test/run-install-codex-user-level-team-mode-test.cmd` - 运行 installer test suite 的 Windows command wrapper。
+- `test/langgraph_durable_orchestrator_*.test.py` - LangGraph durable orchestrator 模块的 Python 测试。
+- `test/openclaw-omx-windows-bootstrap-fix.test.mjs` - Windows bootstrap fix 脚本的 Node.js 测试。
 
 主要双语方案：
 
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md`
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - user-level Codex team-mode 行为的英文 active plan。
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - user-level team-mode plan 的中文对照文件。
 
 主要 OpenSpec specs：
 
-- `openspec/specs/codex-user-level-*`
-- `openspec/specs/langgraph-durable-orchestration-backend/`
+- `openspec/specs/codex-user-level-*` - user-level Codex orchestration capabilities 的稳定 OpenSpec specs。
+- `openspec/specs/langgraph-durable-orchestration-backend/` - LangGraph durable orchestration backend 的稳定 OpenSpec spec。
 
 主要 OpenSpec changes：
 
 - active：
-  - `openspec/changes/implement-langgraph-reusable-subgraph-library/`
+- `openspec/changes/implement-langgraph-reusable-subgraph-library/` - reusable LangGraph subgraph library 的 active change。
 - 已归档的用户级编排历史：
-  - `openspec/changes/archive/*codex-user-level*`
-  - `openspec/changes/archive/*langgraph*`
-  - `openspec/changes/archive/*omx*`
-  - `openspec/changes/archive/*team-mode*`
+- `openspec/changes/archive/*codex-user-level*` - user-level Codex capabilities 相关 archived changes。
+- `openspec/changes/archive/*langgraph*` - LangGraph capabilities 相关 archived changes。
+- `openspec/changes/archive/*omx*` - OMX durable workflow capabilities 相关 archived changes。
+- `openspec/changes/archive/*team-mode*` - team-mode behavior 相关 archived changes。
 
 ## 防跑偏控制
 
@@ -103,8 +103,8 @@ translation_of: docs_bilingual/implementation_plans/codex_langgraph_repository_s
 
 新仓库至少要通过：
 
-- `openspec validate --all`
-- `python .\tools\run_openspec_guard.py --root .`
+- `openspec validate --all` - 验证全部 specs 与 changes 的官方 OpenSpec CLI validation command。
+- `python .\tools\run_openspec_guard.py --root .` - 聚合 OpenSpec 与 governance checks 的仓库 guard command。
 - Python LangGraph durable orchestrator 测试
 - PowerShell 安装器集成测试
 
@@ -112,6 +112,6 @@ translation_of: docs_bilingual/implementation_plans/codex_langgraph_repository_s
 
 迁移后必须继续推进的当前主线是：
 
-- `implement-langgraph-reusable-subgraph-library`
+- `implement-langgraph-reusable-subgraph-library` - reusable LangGraph subgraph library 的 active OpenSpec change id。
 
 这条主线应被视为迁移完成后的第一个正式实现目标。

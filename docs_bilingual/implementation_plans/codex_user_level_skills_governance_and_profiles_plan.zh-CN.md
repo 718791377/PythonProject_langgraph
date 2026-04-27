@@ -21,10 +21,10 @@ created_at: 2026-04-25
 
 为同一台机器、同一个用户级 Codex 安装建立一套可维护的 skills 治理与 profile 体系，覆盖：
 
-- `D:\PythonProject_langgraph`
-- `D:\PythonProject_OpenClaw`
-- `D:\PythonProject_CLIProxyAPI`
-- `D:\project`
+- `D:\PythonProject_langgraph` - Codex 编排治理与实施计划的主仓库。
+- `D:\PythonProject_OpenClaw` - 可能需要浏览器自动化与 profile 保留的消费项目。
+- `D:\PythonProject_CLIProxyAPI` - 可能需要浏览器或 endpoint 验证的消费项目。
+- `D:\project` - 轻量消费项目，默认应只从 core profile 起步。
 - 后续通过 `codex-ohmy` 打开的更多项目
 
 目标不是简单删除 skills，而是在不丢失浏览器自动化、OpenSpec、Codex 编排治理、durable team、LangGraph 等跨项目能力的前提下，降低 skills context budget 压力。
@@ -86,10 +86,10 @@ Loaded skill descriptions were truncated.
 
 但是事实与状态必须保持仓库隔离：
 
-- `openspec/changes/`
-- `openspec/specs/`
-- `.omx/state/`
-- `.omx/state/langgraph/`
+- `openspec/changes/` - 存放 active 与 proposed OpenSpec changes 的仓库本地目录。
+- `openspec/specs/` - 存放稳定 OpenSpec specifications 的仓库本地目录。
+- `.omx/state/` - OMX workflow 使用的仓库本地 durable state 目录。
+- `.omx/state/langgraph/` - LangGraph workflow 使用的仓库本地 durable state 目录。
 - 仓库任务队列
 - 仓库 memory summary
 - 仓库 CI 与发布状态
@@ -124,16 +124,16 @@ Loaded skill descriptions were truncated.
 
 需要浏览器自动化项目的默认附加 profile，包括：
 
-- `D:\PythonProject_OpenClaw`
-- `D:\PythonProject_CLIProxyAPI`
+- `D:\PythonProject_OpenClaw` - 偏浏览器的消费项目，应保留 browser automation skills。
+- `D:\PythonProject_CLIProxyAPI` - endpoint 与浏览器验证消费项目，应保留 browser skills。
 - 任何需要浏览器 UI 验证、browser MCP、Playwright、Web 控制台测试的项目
 
 当 Vercel 插件可用时，必须保留以下浏览器相关能力：
 
-- `agent-browser`
-- `agent-browser-verify`
-- `verification`
-- `investigation-mode`
+- `agent-browser` - Vercel plugin 中用于 agent 驱动浏览器自动化会话的 skill。
+- `agent-browser-verify` - Vercel plugin 中用于浏览器行为验证的 skill。
+- `verification` - Vercel plugin 中用于完整故事验收与行为检查的 skill。
+- `investigation-mode` - Vercel plugin 中用于结构化浏览器或应用调试的 skill。
 
 如果 Vercel 插件不能部分加载，则对 browser profile 项目保留该插件，不要为了减负而全局禁用它。
 
@@ -143,18 +143,18 @@ Loaded skill descriptions were truncated.
 
 可以包含：
 
-- `nextjs`
-- `react-best-practices`
-- `shadcn`
-- `ai-sdk`
-- `ai-gateway`
-- `vercel-cli`
-- `vercel-api`
-- `deployments-cicd`
-- `env-vars`
-- `observability`
-- `vercel-functions`
-- `vercel-storage`
+- `nextjs` - 用于 App Router 等 Next.js framework 工作的 guidance skill。
+- `react-best-practices` - 用于 TSX best-practice 检查的 React review skill。
+- `shadcn` - 用于 shadcn/ui 组件安装与使用指导的 skill。
+- `ai-sdk` - 用于 AI app 开发的 Vercel AI SDK guidance skill。
+- `ai-gateway` - 用于 Vercel AI Gateway 配置与路由指导的 skill。
+- `vercel-cli` - 用于 Vercel 部署与项目管理的 CLI guidance skill。
+- `vercel-api` - 用于 Vercel app 与 REST API 的 guidance skill。
+- `deployments-cicd` - 用于 Vercel deployment 与 CI/CD 的 guidance skill。
+- `env-vars` - 用于 Vercel environment variables 配置的 guidance skill。
+- `observability` - 用于 logs、drains 与 monitoring 的 Vercel observability guidance skill。
+- `vercel-functions` - 用于 serverless runtime 行为的 Vercel Functions guidance skill。
+- `vercel-storage` - 用于 Blob、Edge Config 等存储能力的 Vercel storage guidance skill。
 
 ### 5.4 `github`
 
@@ -190,8 +190,8 @@ Loaded skill descriptions were truncated.
 
 创建：
 
-- `docs_bilingual/governance/codex_user_level_skills_governance_policy.md`
-- `docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md`
+- `docs_bilingual/governance/codex_user_level_skills_governance_policy.md` - 定义用户级 skills、profiles 与 authority boundaries 的英文治理政策。
+- `docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md` - 用户级 skills 治理政策的中文对照文件。
 
 政策必须定义：
 
@@ -211,7 +211,7 @@ Loaded skill descriptions were truncated.
 
 创建：
 
-- `tools/inventory_codex_skills.py`
+- `tools/inventory_codex_skills.py` - 报告 user、repository 与 plugin Codex skills 的 inventory 脚本。
 
 工具必须：
 
@@ -238,8 +238,8 @@ python tools/inventory_codex_skills.py --root . --json
 
 创建：
 
-- `tools/check_codex_skills_governance.py`
-- `test/check_codex_skills_governance.test.py`
+- `tools/check_codex_skills_governance.py` - 检查 duplicate skills、description limits 与 registry consistency 的治理脚本。
+- `test/check_codex_skills_governance.test.py` - skills governance 检查脚本的测试覆盖文件。
 
 检查必须在以下情况失败：
 
@@ -265,7 +265,7 @@ python tools/check_codex_skills_governance.py --root . --json
 
 创建：
 
-- `docs_bilingual/governance/codex_skills_profiles.registry.yaml`
+- `docs_bilingual/governance/codex_skills_profiles.registry.yaml` - 声明 supported skills profiles 与 project defaults 的 YAML registry。
 
 最低 schema：
 

@@ -154,7 +154,7 @@ Memory 文档用于衔接会话，但不替代 OpenSpec 权威层。
 
 当工作需要以下能力时，应使用：
 
-- `docs_bilingual/operations/feature_validation_workflow.zh-CN.md`
+- `docs_bilingual/operations/feature_validation_workflow.zh-CN.md` - 功能切片验证与结构化验证报告的中文运维指南。
 
 包括：
 
@@ -190,8 +190,8 @@ OpenSpec 与 OPSX 负责定义结构性工作如何提出、实施、验证与�
 
 这两条方案是：
 
-- `candidate pool + 归一化 + 有界轻量模型灰区判定`
-- `candidate pool + 归一化 + 有界轻量模型灰区判定 + 在线纠偏 + 样本沉淀`
+- `candidate pool + 归一化 + 有界轻量模型灰区判定` - 用于有界灰区选择或仲裁的受治理闭环模式。
+- `candidate pool + 归一化 + 有界轻量模型灰区判定 + 在线纠偏 + 样本沉淀` - 用于重复漂移、后续纠偏和可复用样本沉淀的受治理闭环模式。
 
 对有界灰区选择或仲裁，必须先用较短方案。
 
@@ -231,9 +231,9 @@ OpenSpec 与 OPSX 负责定义结构性工作如何提出、实施、验证与�
 
 这包括：
 
-- `Research child run`
-- `Judge child run`
-- `Implement child run`
+- `Research child run` - 负责研究和证据收集的 child sub-agent 运行。
+- `Judge child run` - 负责证据、就绪度和风险评审的 child sub-agent 运行。
+- `Implement child run` - 负责执行实现任务的 child sub-agent 运行。
 - 后续新增的定制化 child 角色
 
 治理边界必须明确：
@@ -268,15 +268,15 @@ OpenSpec 与 OPSX 负责定义结构性工作如何提出、实施、验证与�
 
 不要再临时创造彼此重叠的说法；如果已有术语适用，应优先使用：
 
-- `self_leakage`
-- `cross_talk`
-- `inter_agent_cross_talk`
-- `cross_message_cross_talk`
-- `cross_conversation_cross_talk`
-- `misrouted_return`
-- `state_contamination`
-- `template_misapplication`
-- `overflow_induced_leakage`
+- `self_leakage` - agent 自身隐藏上下文、指令或中间状态发生泄漏。
+- `cross_talk` - 跨边界发生非预期信息混入的总称。
+- `inter_agent_cross_talk` - 不同 agent 或 child run 之间发生串台。
+- `cross_message_cross_talk` - 同一工作流中不同 message 之间发生串台。
+- `cross_conversation_cross_talk` - 不同 conversation 或 session 之间发生串台。
+- `misrouted_return` - 结果或回复被送到错误 recipient 或 route。
+- `state_contamination` - runtime state 或 durable state 被无关上下文污染。
+- `template_misapplication` - 错误 prompt、document 或 workflow template 被套用到任务上。
+- `overflow_induced_leakage` - context overflow、截断或压缩导致的泄漏。
 
 如果后续确实需要新增子类，应先判断它属于：
 
@@ -296,18 +296,18 @@ OpenSpec 与 OPSX 负责定义结构性工作如何提出、实施、验证与�
 
 防串台至少覆盖：
 
-- `inter_agent_cross_talk`
-- `cross_message_cross_talk`
-- `cross_conversation_cross_talk`
-- `misrouted_return`
-- `state_contamination`
-- `template_misapplication`
+- `inter_agent_cross_talk` - 不同 agent 或 child run 之间发生串台。
+- `cross_message_cross_talk` - 同一工作流中不同 message 之间发生串台。
+- `cross_conversation_cross_talk` - 不同 conversation 或 session 之间发生串台。
+- `misrouted_return` - 结果或回复被送到错误 recipient 或 route。
+- `state_contamination` - runtime state 或 durable state 被无关上下文污染。
+- `template_misapplication` - 错误 prompt、document 或 workflow template 被套用到任务上。
 
 防泄露至少覆盖：
 
-- `self_leakage`
+- `self_leakage` - agent 自身隐藏上下文、指令或中间状态发生泄漏。
 - agent 间、消息间、会话间的内容误泄
-- `overflow_induced_leakage`
+- `overflow_induced_leakage` - context overflow、截断或压缩导致的泄漏。
 
 以后验收不能只看“是否跑通”或“是否单次回复成功”。还必须看：
 
@@ -321,7 +321,7 @@ OpenSpec 与 OPSX 负责定义结构性工作如何提出、实施、验证与�
 
 统一格式为：
 
-- `channel__agent_identity__runtime_role`
+- `channel__agent_identity__runtime_role` - 组合 channel、稳定 agent 身份与 runtime role 的 runtime-state 目录命名模式。
 
 这条规则的目的是避免后续在同一渠道下出现多个 agent 时继续混淆。
 
@@ -338,8 +338,8 @@ OpenSpec 与 OPSX 负责定义结构性工作如何提出、实施、验证与�
 
 以下链接仍可作为历史外部 OpenClaw 参考源，在需要做迁移说明或产品上下文对照时使用：
 
-- `https://github.com/openclaw/openclaw`
-- `https://docs.openclaw.ai/start/getting-started`
+- `https://github.com/openclaw/openclaw` - 用于迁移和产品上下文对照的历史外部 OpenClaw 仓库参考。
+- `https://docs.openclaw.ai/start/getting-started` - historical external OpenClaw references：getting-started 文档 URL，用于迁移和产品上下文对照。
 
 但它们不再是本仓库当前编排主线的权威源。
 
@@ -361,9 +361,9 @@ OpenSpec 与 OPSX 负责定义结构性工作如何提出、实施、验证与�
 以下对象应视为整个项目的 OpenSpec sources：
 
 - 官方 upstream baseline：
-  - `https://github.com/Fission-AI/OpenSpec`
+- `https://github.com/Fission-AI/OpenSpec` - 用作项目级 OpenSpec 对齐基线的官方 upstream OpenSpec 仓库。
 - 项目本地 companion source：
-  - `D:\PythonProject_langgraph`
+- `D:\PythonProject_langgraph` - 本项目 OpenSpec 治理的本地 companion 仓库与事实来源。
 
 后续涉及 OpenSpec 使用方式、术语对齐、change 结构、规范更新与升级判断时，应优先以上游官方仓库作为 authoritative baseline，而不是以分支级说明、局部方案或临时备注代替。
 
@@ -408,10 +408,10 @@ OpenSpec 与 OPSX 负责定义结构性工作如何提出、实施、验证与�
 
 以下来源应视为整个项目的官方 skills 源：
 
-- `https://github.com/openclaw/clawhub`
-- `https://clawhub.ai/skills?sort=downloads&nonSuspicious=true`
+- `https://github.com/openclaw/clawhub` - 用于 skills 发现上下文的官方 Clawhub 源仓库。
+- `https://clawhub.ai/skills?sort=downloads&nonSuspicious=true` - 过滤为可下载 non-suspicious skills 的官方 Clawhub skills 目录页。
 - Skillhub 商店安装源：
-  - `https://skillhub-1388575217.cos.ap-guangzhou.myqcloud.com/install/skillhub.md`
+- `https://skillhub-1388575217.cos.ap-guangzhou.myqcloud.com/install/skillhub.md` - 用作项目级 skills 安装参考的 Skillhub installer markdown 来源。
 
 这些来源不改变现有治理规则：
 
@@ -455,7 +455,7 @@ OpenSpec 与 OPSX 负责定义结构性工作如何提出、实施、验证与�
 
 - `openspec/changes/*` 下的中文 companion
 - `openspec/specs/*` 下的中文 companion
-- `docs_bilingual/*`
+- `docs_bilingual/*` - 受显式 UTF-8 authority-read 规则覆盖的双语文档树。
 - 其他主文本或 companion 文本为中文的仓库 authority 工件
 
 在维护者断定某个中文或双语工件已经损坏、乱码或不可读之前，必须先：

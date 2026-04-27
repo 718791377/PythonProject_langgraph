@@ -109,10 +109,10 @@ Do not disable an entire plugin only to reduce context pressure when an active p
 
 For the Vercel plugin, browser projects must preserve access to these browser-oriented skills when available:
 
-- `agent-browser`
-- `agent-browser-verify`
-- `verification`
-- `investigation-mode`
+- `agent-browser` - Vercel plugin browser automation skill for agent-driven browser sessions.
+- `agent-browser-verify` - Vercel plugin browser verification skill for checking browser behavior.
+- `verification` - Vercel plugin full-story verification skill for acceptance and behavior checks.
+- `investigation-mode` - Vercel plugin structured debugging workflow skill for browser or app investigations.
 
 If partial plugin skill loading is not supported, keep the Vercel plugin available for `browser` and `web` profile projects instead of globally disabling it.
 
