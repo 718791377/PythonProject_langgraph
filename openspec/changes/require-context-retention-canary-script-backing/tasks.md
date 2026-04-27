@@ -18,4 +18,4 @@
 ## 4. Validation And Publication
 
 - [x] 4.1 Run targeted checker, OpenSpec, and guard validation.
-- [ ] 4.2 Publish through GitLab-first MR and sync GitHub after GitLab main is green.
+- [x] 4.2 Publish through GitLab-first MR and sync GitHub after GitLab main is green.
