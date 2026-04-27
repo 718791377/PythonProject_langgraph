@@ -17,7 +17,7 @@ doc_class: implementation_plan
 
 > Implementation status as of 2026-04-22: completed in repo source, validated in user-level mirrored helpers, and verified against the real `D:\PythonProject_OpenClaw` and `D:\PythonProject_langgraph` fixtures without mutating preserved legacy durable artifacts.
 
-> Current implementation boundary as of 2026-04-26: keep the 2026-04-22 note as historical evidence that source and mirrored helpers exist, but do not treat it as proof that the current small-step rollout is finished. MR 1 through MR 3 are complete. MR 4 is the next active implementation slice.
+> Current implementation boundary as of 2026-04-27: keep the 2026-04-22 note as historical evidence that source and mirrored helpers exist, but do not treat it as proof that the current small-step rollout is finished. MR 1 through MR 4 are complete. MR 5 is the next active implementation slice.
 
 ## Current Bounded Implementation Queue
 
@@ -28,17 +28,29 @@ This queue preserves the decision made after the Phase 0 durable-state inventory
 - MR 1, active implementation boundary freeze: completed by `afdbd34` - documents that the active implementation line is limited to the user-level team mode plan and the cross-session durable-state isolation plan.
 - MR 2, no-touch durable-state baseline: completed by `6f28c5f` - records a read-only inventory across the four local project roots without editing, moving, deleting, or activating any `.omx/state/` artifact.
 - MR 3, status entrypoint hardening: completed by `6a99d7d` - adds `capability_readiness`, a per-backend status projection that distinguishes installed, enabled, selected, and ready for `native_omx` and `langgraph`.
+- MR 4, activation selector safety rules: completed by `b303000` - hardens scoped selector validation so stale or cross-repository durable records remain inspectable but cannot drive automatic activation.
 
-### Next slice: MR 4, activation selector safety rules
+### Completed slice detail: MR 4, activation selector safety rules
 
 MR 4 hardens `.omx/state/selectors/active.json` - the repo-local active selector file that decides whether a future session may treat a durable backend as active. The selector must be scoped to the same repository or worktree, must not be released, and must carry a session identity before it can drive automatic activation.
 
-MR 4 acceptance contract:
+MR 4 acceptance contract that is now part of the implemented baseline:
 
 - Cross-repo selector rejection - an active selector copied from another repository must remain inspectable but must not activate LangGraph or native OMX in the current repository.
 - Released selector rejection - a selector with `released_at` set must not remain active even if `routing_eligible` is still true.
 - Backend-record dual-read only - `backend.json` and `codex-auto-managed-team.json` remain compatibility records for inspection, but they must not auto-route a future session unless the scoped selector is valid.
 - Scoped-write preservation - helpers may write activation only under the current repository's own `.omx/state/selectors/` directory.
+
+### Next slice: MR 5, user-level mirrored helper source-of-truth rule
+
+MR 5 should document and test that user-level mirrored helpers are generated install artifacts, not the authoritative source of durable truth. Repository source remains under this repository, and each consumer repository keeps its own `.omx/state/` directory as its local durable truth.
+
+MR 5 acceptance contract:
+
+- Helper mirror provenance - generated user-level helpers must expose enough metadata or documentation for a cold-start reader to trace behavior back to repository source.
+- Repo-local truth preservation - generated helpers may inspect the current repository, but they must not treat `D:\PythonProject_langgraph` as a global durable state root for other projects.
+- Consumer-project isolation - `D:\PythonProject_OpenClaw`, `D:\PythonProject_CLIProxyAPI`, `D:\project`, and future projects may reuse user-level runtime and policy, but their repo-local `.omx/state/` directories remain independent.
+- Install-artifact wording - docs and generated helper surfaces must call the user-level copy an install artifact, not the primary source of truth.
 
 ### Completed slice detail: MR 3, status entrypoint hardening
 
@@ -73,10 +85,9 @@ MR 3 must add tests or fixtures that prove the checker can distinguish at least 
 - `D:\PythonProject_CLIProxyAPI` fixture - an active native OMX team state must be preserved and must not be classified as safe cleanup residue.
 - `D:\project` fixture - ordinary HUD, notification, leader-nudge, or tmux hook state is not durable backend activation evidence.
 
-### Later slices after MR 4
+### Later slices after MR 5
 
-- MR 5, user-level mirrored helper source-of-truth rule: document and test that generated user-level helpers are install artifacts, while repository source and each repository's `.omx/state/` directory remain the authoritative truth.
-- MR 6, automatic durable routing hookup: connect `native_omx` and `langgraph` selection to real task-flow thresholds only after MR 3 through MR 5 prove safe status and selector behavior.
+- MR 6, automatic durable routing hookup: connect `native_omx` and `langgraph` selection to real task-flow thresholds only after MR 3 through MR 5 prove safe status, selector behavior, and helper mirror boundaries.
 
 ### Explicit non-goals for the next slice
 
@@ -84,7 +95,7 @@ MR 3 must add tests or fixtures that prove the checker can distinguish at least 
 - Do not modify `C:\Users\lenovo\.codex\config.toml` - this user-level Codex config file is outside the next MR's source-of-truth scope.
 - Do not delete user-level skills, Vercel plugin skills, browser automation skills, or repo-local `.omx/state/` artifacts.
 - Do not merge durable state from `D:\PythonProject_OpenClaw`, `D:\PythonProject_CLIProxyAPI`, or `D:\project` into this repository.
-- Do not start a durable team from MR 3; status hardening is inspection-only.
+- Do not start a durable team from MR 5; helper mirror source-of-truth hardening is documentation, generation, and inspection-boundary work only.
 
 
 ## 1. Goal
