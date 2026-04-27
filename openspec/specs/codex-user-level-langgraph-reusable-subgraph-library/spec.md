@@ -10,11 +10,11 @@ Define the reusable, inspectable LangGraph subgraph library for the user-level C
 
 The user-level LangGraph durable lane SHALL expose a reusable subgraph library for the persistent agent-team role families:
 
-- `research`
-- `planning`
-- `execution`
-- `verification`
-- `adversarial-review`
+- `research` - reusable subgraph family for external or open-ended research work.
+- `planning` - reusable subgraph family for plan freezing and slice preparation.
+- `execution` - reusable subgraph family for implementation or worker execution.
+- `verification` - reusable subgraph family for acceptance and evidence validation.
+- `adversarial-review` - reusable subgraph family for bug-finder, rebutter, and judge review loops.
 
 Each subgraph SHALL have a stable subgraph identity and SHALL remain additive under the existing Codex CLI leader model.
 

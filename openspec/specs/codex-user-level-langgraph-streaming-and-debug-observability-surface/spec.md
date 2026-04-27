@@ -24,10 +24,10 @@ The user-level LangGraph streaming and debug observability capability SHALL supp
 
 At minimum the first rollout SHALL support:
 
-- `updates`
-- `checkpoints`
-- `tasks`
-- `debug`
+- `updates` - LangGraph stream mode for progress updates.
+- `checkpoints` - LangGraph stream mode for checkpoint activity.
+- `tasks` - LangGraph stream mode for task execution events.
+- `debug` - LangGraph stream mode for detailed debugging events.
 
 #### Scenario: Operator requests debug and checkpoint observability for a tracked thread
 

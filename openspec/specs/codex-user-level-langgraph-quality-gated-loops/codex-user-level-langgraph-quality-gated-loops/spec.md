@@ -22,8 +22,8 @@ The user-level LangGraph lane SHALL support bounded iterative loops for selected
 
 At minimum the first rollout SHALL support:
 
-- `draft -> review -> revise -> review -> accept`
-- `execute -> verify -> revise -> execute`
+- `draft -> review -> revise -> review -> accept` - quality-gated loop pattern for iterative drafting and review.
+- `execute -> verify -> revise -> execute` - quality-gated loop pattern for execution, verification, and revision.
 
 #### Scenario: Verification failure triggers another execution iteration
 

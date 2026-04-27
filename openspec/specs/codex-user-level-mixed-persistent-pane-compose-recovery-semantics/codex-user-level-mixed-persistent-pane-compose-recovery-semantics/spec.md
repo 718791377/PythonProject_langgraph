@@ -12,9 +12,9 @@ Tracked compose runtime SHALL expose explicit multi-pane recovery posture rather
 
 At minimum the first rollout SHALL distinguish:
 
-- `resumable`
-- `degraded_recoverable`
-- `manual_intervention_required`
+- `resumable` - compose-recovery state meaning the pane or run can continue safely.
+- `degraded_recoverable` - compose-recovery state meaning recovery is possible with degraded context or capability.
+- `manual_intervention_required` - compose-recovery state meaning operator action is required before continuing.
 
 #### Scenario: Operator inspects a partially surviving compose runtime
 
