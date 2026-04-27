@@ -48,10 +48,10 @@ At minimum it SHALL preserve:
 
 The native Windows backend SHALL support:
 
-- `status`
-- `await`
-- `resume`
-- `shutdown`
+- `status` - lifecycle action for reading team or backend state.
+- `await` - lifecycle action for waiting until team work reaches a terminal state.
+- `resume` - lifecycle action for continuing a paused or resumable team run.
+- `shutdown` - lifecycle action for stopping a team safely.
 
 #### Scenario: Shut down a native Windows team cleanly
 

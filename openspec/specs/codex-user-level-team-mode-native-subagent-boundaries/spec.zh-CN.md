@@ -27,9 +27,9 @@
 
 这套工作流所使用的每个独立 custom-agent TOML 至少必须定义：
 
-- `name`
-- `description`
-- `developer_instructions`
+- `name` - required native-agent TOML field for the agent role name.
+- `description` - required native-agent TOML field for the role summary.
+- `developer_instructions` - required native-agent TOML field for role-specific behavior instructions.
 
 #### Scenario: 维护者检查角色放置规则
 

@@ -9,9 +9,9 @@ The installer SHALL generate additive user-level agent profiles into the target 
 
 The generated asset set SHALL include:
 
-- `agents/bug-finder.toml`
-- `agents/bug-rebutter.toml`
-- `agents/bug-judge.toml`
+- `agents/bug-finder.toml` - user-level native-agent TOML for overinclusive candidate bug discovery.
+- `agents/bug-rebutter.toml` - user-level native-agent TOML for challenging weak bug claims.
+- `agents/bug-judge.toml` - user-level native-agent TOML for arbitrating evidence-backed bug survivors.
 
 The installer SHALL NOT replace unmanaged files at those paths unless explicitly forced.
 

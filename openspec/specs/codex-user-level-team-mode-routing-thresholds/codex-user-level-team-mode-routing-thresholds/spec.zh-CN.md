@@ -14,7 +14,7 @@
 
 生成资产集合 SHALL 包含：
 
-- `bin/codex-routing-policy.ps1`
+- `bin/codex-routing-policy.ps1` - user-level script for inspecting or changing routing policy.
 
 inspection 输出 SHALL 是只读的，并且 SHALL 反映包装后 `codex` 启动所使用的同一套 routing-policy model。
 
