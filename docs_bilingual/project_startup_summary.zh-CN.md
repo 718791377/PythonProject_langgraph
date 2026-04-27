@@ -70,14 +70,15 @@ translation_of: docs_bilingual/project_startup_summary.md
 3. `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md` - 当前主线的中文 memory summary。
 4. `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md` - 当前主线的英文 memory summary。
 5. `AGENTS.md` - 仓库与用户级 Codex instruction surface。
-6. `docs_bilingual/governance/langgraph_user_level_runtime_policy.zh-CN.md` - 用户级 LangGraph runtime layout 与 usage 的治理政策。
-7. `docs_bilingual/governance/user_level_launcher_payload_policy.zh-CN.md` - Windows-safe launcher payload 处理的治理政策。
-8. `docs_bilingual/governance/openspec_usage_convention.zh-CN.md` - 本仓库 OpenSpec 使用方式的治理政策。
-9. `docs_bilingual/governance/openspec_opsx_project_usage_policy.zh-CN.md` - 本仓库 OPSX workflow usage 的治理政策。
-10. `docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md` - 官方 OpenSpec workflow authority 与 enforcement 的治理政策。
-11. `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - 用户级 team mode 与 orchestration routing 的 active implementation plan。
-12. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md` - cross-session durable-state isolation 的 active implementation plan。
-13. 当前正在实现的 active OpenSpec change
+6. `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md` - 多会话 Git worktree 隔离、脏文件处理和 mainline sync safety 的治理政策。
+7. `docs_bilingual/governance/langgraph_user_level_runtime_policy.zh-CN.md` - 用户级 LangGraph runtime layout 与 usage 的治理政策。
+8. `docs_bilingual/governance/user_level_launcher_payload_policy.zh-CN.md` - Windows-safe launcher payload 处理的治理政策。
+9. `docs_bilingual/governance/openspec_usage_convention.zh-CN.md` - 本仓库 OpenSpec 使用方式的治理政策。
+10. `docs_bilingual/governance/openspec_opsx_project_usage_policy.zh-CN.md` - 本仓库 OPSX workflow usage 的治理政策。
+11. `docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md` - 官方 OpenSpec workflow authority 与 enforcement 的治理政策。
+12. `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - 用户级 team mode 与 orchestration routing 的 active implementation plan。
+13. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md` - cross-session durable-state isolation 的 active implementation plan。
+14. 当前正在实现的 active OpenSpec change
 
 ## 上下文保留哨兵与安全执行
 

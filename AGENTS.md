@@ -8,6 +8,7 @@
 - Use `docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md` or `.md` when the question is official OpenSpec workflow authority order, bootstrap, refresh, or repository enforcement.
 - Use `docs_bilingual/governance/langgraph_user_level_runtime_policy.zh-CN.md` or `.md` when the question is where official `langgraph` should be installed, how the user-level shared LangGraph venv is laid out, how repo-local compat code is separated from the official package, how the Aliyun pip mirror should be used for LangGraph installs, or how the UTF-8-safe official LangGraph CLI wrapper should be used on Windows.
 - Use `docs_bilingual/governance/user_level_launcher_payload_policy.zh-CN.md` or `.md` when the question is how user-level Codex or OMX launchers should avoid Windows command-line length failures, how large startup instructions should be passed, or where launcher payload rules belong.
+- Use `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md` or `.md` when the question involves multiple Codex sessions, dirty files, Git worktrees, feature branches, local `main`, `gitlab/main`, or GitHub sync safety.
 - Keep native Codex as the base layer and treat oh-my-codex as an additive workflow layer around it.
 - Keep `native_omx` and `langgraph` as distinct durable backend families.
 - Keep the official `langgraph` package and optional `langgraph-cli[inmem]` in the user-level shared LangGraph venv by default, not in this repository tree and not in the global Python site-packages as the long-term repository rule.
