@@ -78,10 +78,10 @@ This plan does not cover:
 
 This plan is grounded in four fully read source artifacts:
 
-1. `long-running subagents/Effective harnesses for long-running agents _ Anthropic.html`
-2. `long-running subagents/How To Be A World-Class Agentic Engineer.html`
-3. `long-running subagents/<WeChat Chinese long-form article snapshot>.html`
-4. `oh-my-codex/Codex Multi-Subagent Support and Open-Source Multi-Agent Tooling.md`
+1. `long-running subagents/Effective harnesses for long-running agents _ Anthropic.html` - local source artifact for long-running agent harness and checkpointing guidance.
+2. `long-running subagents/How To Be A World-Class Agentic Engineer.html` - local source artifact for agentic engineering methodology.
+3. `long-running subagents/<WeChat Chinese long-form article snapshot>.html` - local Chinese source snapshot for the same long-running-agent methodology.
+4. `oh-my-codex/Codex Multi-Subagent Support and Open-Source Multi-Agent Tooling.md` - local research note on Codex/OMX multi-agent tooling constraints.
 
 Interpretation:
 
@@ -105,25 +105,25 @@ Interpretation:
 
 The default persistent-pane pool should stay as narrow and homogeneous as practical:
 
-- `team-executor`
-- `executor`
-- `debugger`
+- `team-executor` - conservative persistent worker role for normal durable delivery.
+- `executor` - more aggressive implementation worker role for clear execution paths.
+- `debugger` - repair and stabilization worker role for regressions or runtime failures.
 
 Recommended order:
 
-1. `team-executor`
-2. `executor`
-3. `debugger`
+1. `team-executor` - first-choice conservative worker role for persistent panes.
+2. `executor` - second-choice implementation worker role when the path is clear.
+3. `debugger` - fallback worker role when the task is mostly repair or stabilization.
 
 Meaning:
 
-- `team-executor`
+- `team-executor` - persistent worker role for local implementation and verification handoff.
   - conservative worker for normal `omx team` delivery
   - good default for most approved implementation plans
 - `executor`
   - more aggressive implementation worker
   - use when the implementation path is already clear
-- `debugger`
+- `debugger` - repair role threshold for blocking failures, regressions, or reproducible runtime defects.
   - use for regressions, runtime repair, and stabilization
 
 Persistent teams should stay same-type within one durable execution wave whenever possible.
@@ -132,14 +132,14 @@ Persistent teams should stay same-type within one durable execution wave wheneve
 
 These should default to leader-side native Codex subagents, not long-lived panes:
 
-- `analyst`
-- `architect`
-- `planner`
-- `researcher`
-- `verifier`
-- `test-engineer`
-- `security-reviewer`
-- `writer`
+- `analyst` - requirements and ambiguity clarification specialist role.
+- `architect` - system design and interface-boundary specialist role.
+- `planner` - task sequencing and execution-slice specialist role.
+- `researcher` - external documentation and version-sensitive fact specialist role.
+- `verifier` - final acceptance and evidence validation specialist role.
+- `test-engineer` - test strategy and regression-risk specialist role.
+- `security-reviewer` - security, trust-boundary, and permission-review specialist role.
+- `writer` - documentation, migration-note, and operator-guidance specialist role.
 
 Reason:
 
@@ -153,19 +153,19 @@ Reason:
 
 These are also leader-side native subagents or prompt aliases:
 
-- `bug-finder`
+- `bug-finder` - recall-oriented burst role for generating an intentionally overinclusive candidate-bug set.
   - purpose: generate an intentionally overinclusive candidate-bug set
   - input: target scope, change summary, relevant tests, and stated constraints
   - output: numbered bug claims with severity, evidence, repro hint, and confidence
   - default scoring: low-impact claim `+1`, medium-impact claim `+5`, severe claim `+10`
   - operating bias: optimize recall, not precision
-- `bug-rebutter`
+- `bug-rebutter` - skepticism-oriented burst role for disproving weak bug claims from `bug-finder`.
   - purpose: disprove weak bug claims from `bug-finder`
   - input: the bug-finder report plus the same code and test scope
   - output: one rebuttal result per claim: disproved, unresolved, or likely valid, with evidence
   - default scoring: gain the claim's score for a successful disproof and lose double that score for a failed rebuttal
   - operating bias: optimize skeptical falsification, not broad enumeration
-- `bug-judge`
+- `bug-judge` - arbitration burst role for choosing evidence-backed survivors from finder and rebutter reports.
   - purpose: arbitrate between finder and rebutter
   - input: both reports, code evidence, and any local test results
   - output: a final survivor list ordered by evidence strength and implementation priority
@@ -179,10 +179,10 @@ Only judged survivors may be promoted into `debugger`, `executor`, or other exec
 
 If the user wants a staffing shape such as:
 
-- `a x architect`
-- `b x planner`
-- `c x executor`
-- `d x verifier`
+- `a x architect` - requested architect count in a heterogeneous staffing shape.
+- `b x planner` - requested planner count in a heterogeneous staffing shape.
+- `c x executor` - requested executor count in a heterogeneous staffing shape.
+- `d x verifier` - requested verifier count in a heterogeneous staffing shape.
 
 the default implementation is:
 
@@ -211,11 +211,11 @@ Definition:
 
 Example mixed-pane roster:
 
-- `architect-1`
-- `planner-1`
-- `executor-1`
-- `executor-2`
-- `verifier-1`
+- `architect-1` - example architect pane identity in a mixed roster.
+- `planner-1` - example planner pane identity in a mixed roster.
+- `executor-1` - first example executor pane identity in a mixed roster.
+- `executor-2` - second example executor pane identity in a mixed roster.
+- `verifier-1` - example verifier pane identity in a mixed roster.
 
 Even in this mode, expert panes should remain read-mostly unless the manifest explicitly grants them a write slice.
 
@@ -230,14 +230,14 @@ Default rule:
 
 This applies mainly to bursty expert roles such as:
 
-- `analyst`
-- `architect`
-- `planner`
-- `researcher`
-- `verifier`
-- `test-engineer`
-- `security-reviewer`
-- `writer`
+- `analyst` - burst role for requirements and ambiguity clarification.
+- `architect` - burst role for design and interface-boundary review.
+- `planner` - burst role for sequencing and task-slice planning.
+- `researcher` - burst role for external documentation and version-sensitive checks.
+- `verifier` - leader-side role for final evidence and acceptance validation.
+- `test-engineer` - leader-side role for test adequacy and regression-risk review.
+- `security-reviewer` - leader-side role for security and trust-boundary review.
+- `writer` - leader-side role for user-facing documentation and operator guidance.
 
 Manual role forcing remains an optional override, not the default operating posture.
 
@@ -256,48 +256,48 @@ General principles:
 
 Default thresholds:
 
-- `analyst`
+- `analyst` - role threshold for unclear outcomes, non-goals, or acceptance targets.
   - invoke when the outcome, non-goals, or acceptance target is unclear
   - invoke when at least two major ambiguities remain
-- `researcher`
+- `researcher` - role threshold for external docs, dependency behavior, version-sensitive facts, or official-source verification.
   - invoke when external docs, dependency behavior, version-sensitive facts, or official-source verification are needed
   - invoke whenever external uncertainty is above a low confidence threshold
-- `architect`
+- `architect` - role threshold for cross-module design, trust boundaries, or shared interfaces.
   - invoke when the change crosses two or more modules, trust boundaries, or shared interfaces
   - invoke for migrations, shared contracts, or non-local design decisions
-- `planner`
+- `planner` - role threshold for multi-slice work, ordering, and dependency planning.
   - invoke when the work can be split into two or more execution slices
   - invoke when there are serial hotspots, rollout ordering, or explicit dependency chains
-- `team-executor` or `executor`
+- `team-executor` or `executor` - execution worker role threshold after the plan is frozen.
   - launch only after the plan is frozen
   - launch only when there are at least two mostly independent execution slices
 - `debugger`
   - invoke when there is at least one blocking failure, regression, or reproducible runtime defect
   - prefer it when implementation has shifted into repair and stabilization
-- `verifier`
+- `verifier` - final acceptance role threshold for behavior-changing or multi-file work.
   - invoke before final acceptance for any behavior-changing or multi-file work
   - always invoke after multi-worker integration
-- `test-engineer`
+- `test-engineer` - test strategy role threshold for critical-path changes, missing tests, flakiness, or broad regression risk.
   - invoke when critical-path behavior changed, tests are missing, flaky, or broad regression risk exists
-- `security-reviewer`
+- `security-reviewer` - security role threshold for auth, secrets, permissions, untrusted input, code execution, trust boundaries, or payments.
   - invoke whenever the scope touches auth, secrets, permissions, untrusted input, code execution, external network trust boundaries, or payments
-- `writer`
+- `writer` - documentation role threshold for user-facing behavior, setup, migration, or operator workflow changes.
   - invoke when user-facing behavior, setup, migration, or operator workflow changed
-- `bug-finder / bug-rebutter / bug-judge`
+- `bug-finder / bug-rebutter / bug-judge` - burst-review triad threshold for contested, noisy, or high-volume bug triage.
   - invoke when bug triage is contested, noisy, or high-volume
   - preferred threshold: after one normal verification pass still leaves disagreement or a broad candidate bug set
 
 Routing state matrix:
 
-- `oh_my_codex=on`, `subagent_routing=auto`
+- `oh_my_codex=on`, `subagent_routing=auto` - enhanced auto-routing state with oh-my-codex enabled.
   - full enhanced mode
   - automatic role routing is enabled
   - durable team and pane orchestration are available
-- `oh_my_codex=off`, `subagent_routing=auto`
+- `oh_my_codex=off`, `subagent_routing=auto` - native routed state with oh-my-codex durable features disabled.
   - native routed mode
   - automatic role routing is enabled through native Codex subagents
   - no oh-my-codex durable team features
-- `oh_my_codex=off`, `subagent_routing=off`
+- `oh_my_codex=off`, `subagent_routing=off` - plain single-agent debugging state with routing disabled.
   - pure debugging mode
   - no role orchestration, no expert routing, no specialist role pool in use
   - any globally installed role definitions or orchestration assets are treated as inactive and unavailable in this mode
@@ -321,7 +321,7 @@ Correct direction:
 
 Suggested split:
 
-- `team-leader`
+- `team-leader` - leader prompt/profile bound to the current main Codex CLI session.
   - current main Codex CLI session
   - decomposition
   - ownership assignment
@@ -355,7 +355,7 @@ Goal:
 
 Primary role:
 
-- `analyst`
+- `analyst` - primary role for defining target, non-goals, and completion standard.
 
 No `omx team` yet.
 
@@ -371,9 +371,9 @@ Goal:
 
 Primary roles:
 
-- `researcher`
-- `architect`
-- `planner`
+- `researcher` - primary role for external and dependency context gathering.
+- `architect` - primary role for design boundaries and hotspot identification.
+- `planner` - primary role for safe parallel-boundary planning.
 
 Still no `omx team`.
 
@@ -388,8 +388,8 @@ Goal:
 
 Primary roles:
 
-- `planner`
-- `architect`
+- `planner` - primary role for freezing task slicing and ordering.
+- `architect` - primary role for freezing interface and ownership boundaries.
 
 Minimum output:
 
@@ -433,7 +433,7 @@ The team may still stay alive, but the leader often needs more serial control he
 
 When the center of gravity moves from feature work to regressions and failure repair, switch modes:
 
-- `2:debugger`
+- `2:debugger` - durable-team staffing shorthand for two debugger workers.
 - optionally call native `test-engineer`
 
 ### 6.7 Verify and accept
@@ -442,10 +442,10 @@ Do not let persistent execution panes own the final judgment.
 
 Use leader-side native subagents:
 
-- `verifier`
-- `test-engineer`
-- `security-reviewer`
-- `writer`
+- `verifier` - final sign-off role for evidence and acceptance checks.
+- `test-engineer` - final sign-off role for test adequacy and regression risk.
+- `security-reviewer` - final sign-off role for security and trust-boundary risk.
+- `writer` - final sign-off role for documentation and operator guidance.
 
 ### 6.8 P0-P7 to seven-phase mapping
 
@@ -485,9 +485,9 @@ Practical reading rule:
 
 Recommended default order when the leader auto-router decides they are needed:
 
-1. `analyst`
-2. `planner`
-3. `architect`
+1. `analyst` - first early-stage role for clarifying target and acceptance.
+2. `planner` - second early-stage role for sequencing and slice boundaries.
+3. `architect` - third early-stage role for design and interface boundaries.
 4. `researcher` when needed
 
 ### 7.2 Middle stage
@@ -504,7 +504,7 @@ Use `executor` only when you want a more aggressive implementation lane.
 
 If the work becomes mostly troubleshooting:
 
-- `omx team 2:debugger "..."`
+- `omx team 2:debugger "..."` - durable-team command shape for launching two debugger workers.
 
 For final sign-off:
 
@@ -531,10 +531,10 @@ Required handoff:
 
 Use this when the user wants mixed staffing such as:
 
-- `1 x architect`
-- `1 x planner`
-- `2 x executor`
-- `1 x verifier`
+- `1 x architect` - heterogeneous staffing request for one architect.
+- `1 x planner` - heterogeneous staffing request for one planner.
+- `2 x executor` - heterogeneous staffing request for two executors.
+- `1 x verifier` - heterogeneous staffing request for one verifier.
 
 Recommended mapping:
 
@@ -640,7 +640,7 @@ Before team launch, define:
 
 Treat these as default hotspots:
 
-- `package.json`
+- `package.json` - root package manifest and default hotspot file.
 - lockfiles
 - root config
 - central routing registration
@@ -788,11 +788,11 @@ Shape:
 
 Example roster:
 
-- `architect-1`
-- `planner-1`
-- `executor-1`
-- `executor-2`
-- `verifier-1`
+- `architect-1` - example architect pane identity in the hybrid roster.
+- `planner-1` - example planner pane identity in the hybrid roster.
+- `executor-1` - first example executor pane identity in the hybrid roster.
+- `executor-2` - second example executor pane identity in the hybrid roster.
+- `verifier-1` - example verifier pane identity in the hybrid roster.
 
 Operating rule:
 
@@ -880,34 +880,34 @@ Advanced operator note:
 
 Installed now:
 
-1. `C:\Users\lenovo\.codex\agents\team-leader.toml`
+1. `C:\Users\lenovo\.codex\agents\team-leader.toml` - user-level native-agent TOML for the leader prompt/profile.
    - leader prompt/profile bound to the current main Codex CLI session
    - not a separate persistent worker pane
-2. `C:\Users\lenovo\.codex\agents\bug-finder.toml`, `bug-rebutter.toml`, `bug-judge.toml`
+2. `C:\Users\lenovo\.codex\agents\bug-finder.toml`, `bug-rebutter.toml`, `bug-judge.toml` - user-level native-agent TOMLs for the burst-review triad.
    - leader-side burst-review roles
    - keep them read-only by default
-3. `C:\Users\lenovo\.codex\docs\team-mode-playbook.md`
+3. `C:\Users\lenovo\.codex\docs\team-mode-playbook.md` - operator-facing team-mode playbook document.
    - operator-facing playbook for modes, routing, backends, lifecycle, and thresholds
-4. `C:\Users\lenovo\.codex\state\user-level-team-mode.json`
+4. `C:\Users\lenovo\.codex\state\user-level-team-mode.json` - user-level state file for layered capability switches.
    - persists `oh_my_codex`, `subagent_routing`, `langgraph`, and the compatibility backend view `durable_orchestration_backend`
    - this is already part of the current implemented layered capability model rather than a placeholder for later work
-5. `C:\Users\lenovo\.codex\state\native-subagent-limits.json`
+5. `C:\Users\lenovo\.codex\state\native-subagent-limits.json` - user-level state file for managed native subagent limits.
    - persists managed defaults for `agents.max_threads` and `agents.max_depth`
-6. `C:\Users\lenovo\.codex\bin\codex-omx-on.ps1`, `codex-omx-off.ps1`, `codex-omx-status.ps1`
+6. `C:\Users\lenovo\.codex\bin\codex-omx-on.ps1`, `codex-omx-off.ps1`, `codex-omx-status.ps1` - user-level scripts for toggling or inspecting oh-my-codex state.
    - toggle or inspect the global oh-my-codex state
-7. `C:\Users\lenovo\.codex\bin\codex-subagents-auto.ps1`, `codex-subagents-manual.ps1`, `codex-subagents-off.ps1`
+7. `C:\Users\lenovo\.codex\bin\codex-subagents-auto.ps1`, `codex-subagents-manual.ps1`, `codex-subagents-off.ps1` - user-level scripts for controlling automatic expert routing posture.
    - control automatic expert routing posture
-8. `C:\Users\lenovo\.codex\bin\codex-routing-status.ps1`, `codex-routing-policy.ps1`
+8. `C:\Users\lenovo\.codex\bin\codex-routing-status.ps1`, `codex-routing-policy.ps1` - user-level scripts for inspecting routing status and policy.
    - inspect current routing posture, startup semantics, thresholds, and durable-team policy
-9. `C:\Users\lenovo\.codex\bin\codex-subagent-limits.ps1`
+9. `C:\Users\lenovo\.codex\bin\codex-subagent-limits.ps1` - user-level script for inspecting or updating native subagent limits.
    - inspects, and where supported updates, managed defaults for `agents.max_threads` and `agents.max_depth`
-10. `C:\Users\lenovo\.codex\bin\codex-durable-backend-status.ps1`, `codex-durable-backend-native-omx.ps1`, `codex-durable-backend-langgraph.ps1`
+10. `C:\Users\lenovo\.codex\bin\codex-durable-backend-status.ps1`, `codex-durable-backend-native-omx.ps1`, `codex-durable-backend-langgraph.ps1` - user-level scripts for inspecting or switching durable backend selection.
     - inspect or switch the selected durable orchestration backend
-11. `C:\Users\lenovo\.codex\bin\omx-team-dev.ps1`, `omx-team-debug.ps1`, `omx-team-verify.ps1`, `omx-team-ops.ps1`, `omx-team-auto.ps1`, `omx-team-hybrid.ps1`
+11. `C:\Users\lenovo\.codex\bin\omx-team-dev.ps1`, `omx-team-debug.ps1`, `omx-team-verify.ps1`, `omx-team-ops.ps1`, `omx-team-auto.ps1`, `omx-team-hybrid.ps1` - user-level durable-team launcher scripts for common staffing modes.
     - durable-team entrypoints, operations, automatic routing helper, and hybrid staffing helper
-12. `C:\Users\lenovo\.codex\bin\omx-langgraph-run.ps1`, `omx-langgraph-status.ps1`, `omx-langgraph-resume.ps1`, `omx-langgraph-inspect.ps1`
+12. `C:\Users\lenovo\.codex\bin\omx-langgraph-run.ps1`, `omx-langgraph-status.ps1`, `omx-langgraph-resume.ps1`, `omx-langgraph-inspect.ps1` - user-level LangGraph durable-thread control scripts.
     - LangGraph durable-thread control and inspection surfaces
-13. `C:\Users\lenovo\.codex\backups\codex-user-level-team-mode\`
+13. `C:\Users\lenovo\.codex\backups\codex-user-level-team-mode\` - backup directory for generated user-level team-mode assets.
     - stores timestamped pre-change snapshots for generated user-level assets
     - exists to support install-time rollback and later operator inspection
 
@@ -1438,9 +1438,9 @@ Recommended durable backend policy:
 
 The current implemented user-level model uses layered capability switches together with a compatibility backend view:
 
-- `subagent_routing = auto | manual | off`
-- `oh_my_codex = on | off`
-- `langgraph = on | off`
+- `subagent_routing = auto | manual | off` - layered capability switch for expert routing posture.
+- `oh_my_codex = on | off` - layered capability switch for the oh-my-codex workflow layer.
+- `langgraph = on | off` - layered capability switch for LangGraph availability.
 - `durable_orchestration_backend` remains as an operator-facing compatibility view derived from the layered state
 
 Current behavior:
@@ -1555,13 +1555,13 @@ The practical interpretation is:
 
 The current installed user-level command surface now has three layers:
 
-- `codex`
+- `codex` - legacy or environment-dependent entry name.
   - a legacy or environment-dependent entry name
   - may still be shadowed by project-local `.venv` command directories or shell startup behavior
-- `codex-ohmy`
+- `codex-ohmy` - preferred stable wrapped command for daily multi-project use.
   - the preferred stable wrapped command for multi-project daily use
   - enters the user-level oh-my-codex launcher without relying on a PowerShell profile binding
-- `codex-raw`
+- `codex-raw` - preferred stable native bypass command for raw Codex use.
   - the preferred stable native bypass command for multi-project daily use
   - enters raw native Codex without relying on a PowerShell profile binding
 
@@ -1579,16 +1579,16 @@ Use this as the default maintenance sequence whenever the global npm-installed O
 
 Companion executable template:
 
-- `tools/codex-official-update-patch-replay-template.ps1`
+- `tools/codex-official-update-patch-replay-template.ps1` - repository maintenance template for official update, diff, replay, and test stages.
 - read-only inventory preview:
-  - `.\tools\codex-official-update-patch-replay-template.ps1 -Stage precheck -Json`
+- `.\tools\codex-official-update-patch-replay-template.ps1 -Stage precheck -Json` - read-only inventory command that emits the precheck report as JSON.
 - stage-based execution:
-  - `-Stage precheck`
-  - `-Stage update`
-  - `-Stage diff`
-  - `-Stage replay`
-  - `-Stage test`
-  - `-Stage all`
+- `-Stage precheck` - stage flag for collecting pre-update inventory and checkpoint state.
+- `-Stage update` - stage flag for refreshing the official npm-installed OMX package.
+- `-Stage diff` - stage flag for comparing upstream files and local patch decisions.
+- `-Stage replay` - stage flag for replaying retained local patches and regenerating wrappers.
+- `-Stage test` - stage flag for running post-replay validation.
+- `-Stage all` - stage flag for running the full maintenance sequence.
 - checkpoint continuity:
   - `precheck`  -  the pre-update inventory stage, which creates a fresh checkpoint root by default
   - `update / diff / replay / test`  -  the later maintenance stages, which automatically continue the latest checkpoint unless `-SnapshotRoot` is supplied explicitly
@@ -1612,9 +1612,9 @@ Companion executable template:
     - `manually_overridden`  -  the manual override state, meaning a human reviewer intentionally changed the generated decision
     - `unresolved`  -  the unresolved review state, meaning the row still needs an explicit human decision
   - current default heuristics:
-    - `runtime.js`  -  the installed team runtime file -> `replay`, which means runtime patches stay on the default replay path
-    - `windows-worker-controller.js`  -  the Windows prompt-worker controller file -> `replay`, which means controller-side startup and IO patches stay on the default replay path
-    - `worker-bootstrap.js`  -  the worker instruction bootstrap file -> `replay`, which remains the operational default even though it is also a longer-term move-down candidate
+- `runtime.js` - team runtime file that receives the default move-down heuristic.
+- `windows-worker-controller.js` - Windows worker controller file that receives the default move-down heuristic.
+- `worker-bootstrap.js` - worker bootstrap file that receives the default move-down heuristic.
     - `user_level_surface`  -  the local wrapper / skill / prompt layer -> `move-down`, which means the preferred home is outside the official npm install
 - example replay lane:
   - `.\tools\codex-official-update-patch-replay-template.ps1 -Stage replay`  -  the replay-stage command, which applies retained patches and regenerates the user-level layer
@@ -1670,13 +1670,13 @@ Treat the local stack as four different layers and do not collapse them into one
    - generated from `tools/install-codex-user-level-team-mode.ps1`
 3. **User-level prompts / skills / playbooks**
    - current example paths:
-     - `C:\Users\lenovo\.codex\skills\worker\SKILL.md`
-     - `C:\Users\lenovo\.codex\state\user-level-team-mode-model-instructions.md`
+- `C:\Users\lenovo\.codex\skills\worker\SKILL.md` - user-level worker skill instructions generated or maintained outside the npm package.
+- `C:\Users\lenovo\.codex\state\user-level-team-mode-model-instructions.md` - user-level model-instructions payload for team-mode workers.
 4. **Repository source-of-truth patch and test layer**
    - current example paths:
-     - `tools/openclaw-omx-*.mjs`
-     - `tools/install-codex-user-level-team-mode.ps1`
-     - `test/install-codex-user-level-team-mode.test.ps1`
+- `tools/openclaw-omx-*.mjs` - repository patch scripts for legacy OMX compatibility fixes.
+- `tools/install-codex-user-level-team-mode.ps1` - installer script that regenerates user-level wrappers and team-mode artifacts.
+- `test/install-codex-user-level-team-mode.test.ps1` - PowerShell test suite for the team-mode installer.
 
 The maintenance goal is:
 
@@ -1709,9 +1709,9 @@ git -C D:\PythonProject_langgraph rev-parse HEAD
 
 At minimum, snapshot the current contents of:
 
-- `dist/team/runtime.js`
-- `dist/team/windows-worker-controller.js`
-- `dist/team/worker-bootstrap.js`
+- `dist/team/runtime.js` - upstream team runtime file to snapshot before update.
+- `dist/team/windows-worker-controller.js` - upstream Windows worker controller file to snapshot before update.
+- `dist/team/worker-bootstrap.js` - upstream worker bootstrap file to snapshot before update.
 
 Also capture a marker inventory:
 
@@ -1729,13 +1729,13 @@ This pre-update inventory is the baseline for deciding which local patches survi
 
 Read-only verify the generated Windows-safe surfaces before update:
 
-- `C:\Users\lenovo\.codex\bin\omx-team-send-message.ps1`
-- `C:\Users\lenovo\.codex\bin\omx-team-claim-task.ps1`
-- `C:\Users\lenovo\.codex\bin\omx-team-transition-task-status.ps1`
-- `C:\Users\lenovo\.codex\bin\omx-team-release-task-claim.ps1`
-- `C:\Users\lenovo\.codex\bin\omx-team-report-progress.ps1`
-- `C:\Users\lenovo\.codex\bin\omx-team-complete-task.ps1`
-- `C:\Users\lenovo\.codex\bin\omx-team-fail-task.ps1`
+- `C:\Users\lenovo\.codex\bin\omx-team-send-message.ps1` - user-level wrapper for sending worker mailbox messages safely on Windows.
+- `C:\Users\lenovo\.codex\bin\omx-team-claim-task.ps1` - user-level wrapper for claiming a team task.
+- `C:\Users\lenovo\.codex\bin\omx-team-transition-task-status.ps1` - user-level wrapper for changing task lifecycle status.
+- `C:\Users\lenovo\.codex\bin\omx-team-release-task-claim.ps1` - user-level wrapper for releasing a task claim.
+- `C:\Users\lenovo\.codex\bin\omx-team-report-progress.ps1` - user-level wrapper for reporting worker progress.
+- `C:\Users\lenovo\.codex\bin\omx-team-complete-task.ps1` - user-level wrapper for marking a task complete.
+- `C:\Users\lenovo\.codex\bin\omx-team-fail-task.ps1` - user-level wrapper for marking a task failed.
 
 If these are already missing or stale before the official update, fix the generator layer first; do not blame the upcoming upstream refresh for a pre-existing local install problem.
 
@@ -1777,9 +1777,9 @@ Immediately after the official update, compare in this order.
 
 Check whether the upstream update changed any of these:
 
-- `dist/team/runtime.js`
-- `dist/team/windows-worker-controller.js`
-- `dist/team/worker-bootstrap.js`
+- `dist/team/runtime.js` - upstream team runtime file checked for file and API shape drift.
+- `dist/team/windows-worker-controller.js` - upstream Windows worker controller file checked for file and API shape drift.
+- `dist/team/worker-bootstrap.js` - upstream worker bootstrap file checked for file and API shape drift.
 - exported helper names used by the local patch scripts
 - CLI behavior assumed by the wrapper scripts
 
@@ -1820,15 +1820,15 @@ These are the first candidates to keep out of the upstream install whenever poss
 
 Keep these generated and owned locally:
 
-- `omx-team-send-message.ps1`
-- `omx-team-mailbox-list.ps1`
-- `omx-team-mailbox-mark-delivered.ps1`
-- `omx-team-claim-task.ps1`
-- `omx-team-transition-task-status.ps1`
-- `omx-team-release-task-claim.ps1`
-- `omx-team-report-progress.ps1`
-- `omx-team-complete-task.ps1`
-- `omx-team-fail-task.ps1`
+- `omx-team-send-message.ps1` - local wrapper for sending worker mailbox messages.
+- `omx-team-mailbox-list.ps1` - local wrapper for listing worker mailbox messages.
+- `omx-team-mailbox-mark-delivered.ps1` - local wrapper for marking mailbox messages delivered.
+- `omx-team-claim-task.ps1` - local wrapper for claiming a team task.
+- `omx-team-transition-task-status.ps1` - local wrapper for changing task lifecycle status.
+- `omx-team-release-task-claim.ps1` - local wrapper for releasing a task claim.
+- `omx-team-report-progress.ps1` - local wrapper for reporting worker progress.
+- `omx-team-complete-task.ps1` - local wrapper for marking a task complete.
+- `omx-team-fail-task.ps1` - local wrapper for marking a task failed.
 
 These are exactly the kind of Windows-safety and JSON-shaping logic that should live in user-level wrappers, not in upstream package internals.
 
@@ -1905,10 +1905,10 @@ Practical rule:
 For the current Windows durable-team line, replay in this priority order after each official update:
 
 1. **Critical runtime patches**
-   - `runtime.js`
-   - `windows-worker-controller.js`
+   - `runtime.js` - upstream team runtime file that owns core worker launch, IO, and task lifecycle semantics.
+   - `windows-worker-controller.js` - upstream Windows worker controller file that owns process startup, status seeding, and worker supervision semantics.
 2. **Worker bootstrap safety patches**
-   - `worker-bootstrap.js`
+   - `worker-bootstrap.js` - upstream worker bootstrap file that emits built-in worker instructions and safety examples.
 3. **Regenerate the local wrapper layer**
    - rerun `tools/install-codex-user-level-team-mode.ps1`
 4. **Run local tests**

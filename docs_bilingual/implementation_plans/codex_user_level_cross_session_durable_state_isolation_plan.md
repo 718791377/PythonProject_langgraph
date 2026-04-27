@@ -171,8 +171,8 @@ Within that split, one additional boundary must stay explicit:
 
 Keep the existing historical and runtime artifacts unchanged under:
 
-- `.omx/state/langgraph/{threads,checkpoints,history,interrupts,store}`
-- `.omx/state/team/*`
+- `.omx/state/langgraph/{threads,checkpoints,history,interrupts,store}` - repo-local LangGraph durable-state subdirectories for thread, checkpoint, history, interrupt, and store data.
+- `.omx/state/team/*` - repo-local native OMX team-state directory tree.
 
 These remain the recovery truth and the operator evidence store.
 
@@ -182,31 +182,31 @@ They are not the activation truth for future sessions.
 
 Add a new scoped selector and lease layer, for example:
 
-- `.omx/state/selectors/active.json`
-- `.omx/state/selectors/leases/<session-scope-id>.json`
+- `.omx/state/selectors/active.json` - repo-local selector file that records the currently selected durable backend family.
+- `.omx/state/selectors/leases/<session-scope-id>.json` - per-session selector lease file that prevents cross-session state confusion.
 
 Only this plane may declare that a durable thread or team is active for a future session.
 
 Minimum fields:
 
-- `backend_family`
-- `selector_id`
-- `repo_root`
-- `worktree_id`
-- `session_scope_id`
-- `leader_session_lineage`
-- `acquired_at`
-- `last_heartbeat_at`
-- `released_at`
-- `generation`
-- `routing_posture`
+- `backend_family` - selector field naming the durable backend family, such as native_omx or langgraph.
+- `selector_id` - selector field that gives the active selection record a stable identifier.
+- `repo_root` - selector field that binds the selection to one repository root.
+- `worktree_id` - selector field that distinguishes one worktree from another.
+- `session_scope_id` - selector field that scopes the lease to one live session.
+- `leader_session_lineage` - selector field that records the main leader session lineage.
+- `acquired_at` - selector timestamp for when the lease was acquired.
+- `last_heartbeat_at` - selector timestamp for the most recent lease heartbeat.
+- `released_at` - selector timestamp for when the lease was released.
+- `generation` - selector counter used to detect stale or superseded records.
+- `routing_posture` - selector field that records the current routing posture for durable execution.
 
 ### 5.3 Inspection Plane
 
 Keep legacy:
 
-- `.omx/state/langgraph/backend.json`
-- `.omx/state/team/codex-auto-managed-team.json`
+- `.omx/state/langgraph/backend.json` - LangGraph compatibility record for backend state inspection.
+- `.omx/state/team/codex-auto-managed-team.json` - native OMX compatibility record for auto-managed team state inspection.
 
 as read-only inspection and compatibility projections.
 
@@ -289,7 +289,7 @@ After source changes land, regenerate or refresh the mirrored user-level helper 
 - routing policy
 - durable state status
 - durable state reconcile
-- `omx-team-auto`
+- `omx-team-auto` - automatic durable-team launcher that reads the repo-local active selector before starting workers.
 - compose-specific helper surfaces
 
 ## 8. Rollout Plan

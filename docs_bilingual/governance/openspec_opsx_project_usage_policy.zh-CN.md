@@ -50,19 +50,19 @@ status: active
 
 OpenSpec 已经在仓库的工件层生效：
 
-- `openspec/config.yaml`
-- `openspec/changes/...`
-- `openspec/specs/...`
+- `openspec/config.yaml` - 本仓库的 OpenSpec 配置文件。
+- `openspec/changes/...` - active 与 proposed OpenSpec change 工件目录树。
+- `openspec/specs/...` - 稳定 OpenSpec capability spec 目录树。
 
 仓库也已经物化了官方 Codex OpenSpec 指令面和所需的强制面：
 
 - `.codex/skills/` 下的官方 Codex OpenSpec skills
-- `tools/bootstrap-official-openspec.ps1`
-- `tools/verify_official_openspec.py`
-- `tools/run_openspec_guard.py`
-- `.githooks/pre-commit`
-- `.github/workflows/openspec-guard.yml`
-- `.gitlab-ci.yml`
+- `tools/bootstrap-official-openspec.ps1` - 物化或刷新官方 Codex OpenSpec 指令面的 PowerShell 脚本。
+- `tools/verify_official_openspec.py` - 检查官方 OpenSpec bootstrap 与生成工件的验证脚本。
+- `tools/run_openspec_guard.py` - 聚合运行仓库 OpenSpec 检查的 guard 脚本。
+- `.githooks/pre-commit` - 提交前运行仓库检查的本地 Git hook。
+- `.github/workflows/openspec-guard.yml` - 运行 OpenSpec guard 的 GitHub Actions workflow。
+- `.gitlab-ci.yml` - 配置仓库 guard job 的 GitLab CI pipeline 文件。
 
 因此：
 
@@ -74,16 +74,16 @@ OpenSpec 已经在仓库的工件层生效：
 
 根据当前已安装 OpenSpec 包及其工作流模板，仓库应对齐以下 OPSX 命令集：
 
-- `/opsx:onboard`
-- `/opsx:new`
-- `/opsx:continue`
-- `/opsx:ff`
-- `/opsx:propose`
-- `/opsx:explore`
-- `/opsx:apply`
-- `/opsx:verify`
-- `/opsx:sync`
-- `/opsx:archive`
+- `/opsx:onboard` - 用于读取启动上下文与当前 OpenSpec 状态的项目级工作流路由。
+- `/opsx:new` - 用于启动新的 OpenSpec-backed change 的项目级工作流路由。
+- `/opsx:continue` - 用于恢复 active OpenSpec change 的项目级工作流路由。
+- `/opsx:ff` - 用于快速补齐缺失 OpenSpec 工件的项目级工作流路由。
+- `/opsx:propose` - 用于创建 proposal、design 与 task 工件的项目级工作流路由。
+- `/opsx:explore` - 用于变更前探索和范围澄清的项目级工作流路由。
+- `/opsx:apply` - 用于实现 active change 中任务的项目级工作流路由。
+- `/opsx:verify` - 用于检查结构就绪度与 validation 的项目级工作流路由。
+- `/opsx:sync` - 用于把已批准 delta 同步进稳定 specs 的项目级工作流路由。
+- `/opsx:archive` - 用于归档 completed change 的项目级工作流路由。
 
 仓库应通过项目级工作流指导来暴露这些命令语义，并由官方 CLI、仓库 bootstrap 或 refresh、校验脚本、hooks 和 CI guard 共同支撑。如果后续官方 CLI 命令面发生变化，应重新执行仓库 refresh 路径，而不是继续保留过时表述。
 
@@ -105,8 +105,8 @@ OpenSpec 已经在仓库的工件层生效：
 
 最低 CLI 基线：
 
-- `openspec list --json`
-- `openspec status`
+- `openspec list --json` - 官方 OpenSpec CLI 中以机器可读形式列出 OpenSpec 状态的命令。
+- `openspec status` - 官方 OpenSpec CLI 中显示当前仓库 OpenSpec 状态的命令。
 - 仓库启动摘要文档
 
 ### 5.2 `/opsx:new`
@@ -118,8 +118,8 @@ OpenSpec 已经在仓库的工件层生效：
 
 最低 CLI 基线：
 
-- `openspec new change "<name>"`
-- `openspec status --change "<name>" --json`
+- `openspec new change "<name>"` - 官方 OpenSpec CLI 中创建具名 change 的命令。
+- `openspec status --change "<name>" --json` - 官方 OpenSpec CLI 中以 JSON 读取具名 change 状态的命令。
 
 ### 5.3 `/opsx:continue`
 
@@ -130,8 +130,8 @@ OpenSpec 已经在仓库的工件层生效：
 
 最低 CLI 基线：
 
-- `openspec list --json`
-- `openspec status --change "<name>"`
+- `openspec list --json` - 官方 OpenSpec CLI 中以机器可读形式列出 OpenSpec 状态的命令。
+- `openspec status --change "<name>"` - 官方 OpenSpec CLI 中读取具名 change 状态的命令。
 
 ### 5.4 `/opsx:ff`
 
@@ -153,9 +153,9 @@ OpenSpec 已经在仓库的工件层生效：
 
 最低 CLI 基线：
 
-- `openspec new change "<name>"`
-- `openspec status --change "<name>" --json`
-- `openspec instructions <artifact> --change "<name>" --json`
+- `openspec new change "<name>"` - 官方 OpenSpec CLI 中创建具名 change 的命令。
+- `openspec status --change "<name>" --json` - 官方 OpenSpec CLI 中以 JSON 读取具名 change 状态的命令。
+- `openspec instructions <artifact> --change "<name>" --json` - 官方 OpenSpec CLI 中为具名 artifact 生成 instructions 的命令。
 
 ### 5.6 `/opsx:explore`
 
@@ -177,8 +177,8 @@ OpenSpec 已经在仓库的工件层生效：
 
 最低 CLI 基线：
 
-- `openspec status --change "<name>" --json`
-- `openspec instructions apply --change "<name>" --json`
+- `openspec status --change "<name>" --json` - 官方 OpenSpec CLI 中以 JSON 读取具名 change 状态的命令。
+- `openspec instructions apply --change "<name>" --json` - 官方 OpenSpec CLI 中为具名 change 生成 apply instructions 的命令。
 
 ### 5.8 `/opsx:verify`
 
@@ -188,8 +188,8 @@ OpenSpec 已经在仓库的工件层生效：
 
 最低 CLI 基线：
 
-- `openspec status`
-- `openspec validate --all`
+- `openspec status` - 官方 OpenSpec CLI 中显示当前仓库 OpenSpec 状态的命令。
+- `openspec validate --all` - 官方 OpenSpec CLI 中验证全部 specs 与 changes 的命令。
 - 与该 change 相关的仓库测试
 
 ### 5.9 `/opsx:sync`
@@ -211,7 +211,7 @@ OpenSpec 已经在仓库的工件层生效：
 
 最低 CLI 基线：
 
-- `openspec status --change "<name>"`
+- `openspec status --change "<name>"` - 官方 OpenSpec CLI 中读取具名 change 状态的命令。
 - `openspec archive <name>` 或等价归档流程
 
 ## 6. 本仓库何时必须走 OPSX

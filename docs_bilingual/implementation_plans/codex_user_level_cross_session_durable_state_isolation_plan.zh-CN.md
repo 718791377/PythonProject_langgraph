@@ -172,8 +172,8 @@ MR 3 必须增加测试或 fixture，证明 checker 至少能区分这些情况�
 
 保留现有历史与运行态 artifact，不改变其落点：
 
-- `.omx/state/langgraph/{threads,checkpoints,history,interrupts,store}`
-- `.omx/state/team/*`
+- `.omx/state/langgraph/{threads,checkpoints,history,interrupts,store}` - 保存 thread、checkpoint、history、interrupt 与 store 数据的 repo-local LangGraph durable-state 子目录。
+- `.omx/state/team/*` - repo-local native OMX team-state 目录树。
 
 这部分继续作为 recovery truth 和 operator evidence store。
 
@@ -183,31 +183,31 @@ MR 3 必须增加测试或 fixture，证明 checker 至少能区分这些情况�
 
 新增 scoped selector / lease 层，例如：
 
-- `.omx/state/selectors/active.json`
-- `.omx/state/selectors/leases/<session-scope-id>.json`
+- `.omx/state/selectors/active.json` - 记录当前 selected durable backend family 的 repo-local selector 文件。
+- `.omx/state/selectors/leases/<session-scope-id>.json` - 防止 cross-session state confusion 的每会话 selector lease 文件。
 
 只有这一层可以声明某个 durable thread 或 team 对未来会话是 active 的。
 
 最少字段应包括：
 
-- `backend_family`
-- `selector_id`
-- `repo_root`
-- `worktree_id`
-- `session_scope_id`
-- `leader_session_lineage`
-- `acquired_at`
-- `last_heartbeat_at`
-- `released_at`
-- `generation`
-- `routing_posture`
+- `backend_family` - 标记 native_omx 或 langgraph 等 durable backend family 的 selector 字段。
+- `selector_id` - 给 active selection record 提供稳定标识的 selector 字段。
+- `repo_root` - 把 selection 绑定到单一 repository root 的 selector 字段。
+- `worktree_id` - 区分不同 worktree 的 selector 字段。
+- `session_scope_id` - 把 lease 约束到单一 live session 的 selector 字段。
+- `leader_session_lineage` - 记录 main leader session lineage 的 selector 字段。
+- `acquired_at` - 记录 lease 获取时间的 selector timestamp。
+- `last_heartbeat_at` - 记录最近一次 lease heartbeat 的 selector timestamp。
+- `released_at` - 记录 lease 释放时间的 selector timestamp。
+- `generation` - 用于发现 stale 或 superseded records 的 selector counter。
+- `routing_posture` - 记录 durable execution 当前 routing posture 的 selector 字段。
 
 ### 5.3 Inspection Plane
 
 保留 legacy：
 
-- `.omx/state/langgraph/backend.json`
-- `.omx/state/team/codex-auto-managed-team.json`
+- `.omx/state/langgraph/backend.json` - 用于 backend state inspection 的 LangGraph compatibility record。
+- `.omx/state/team/codex-auto-managed-team.json` - 用于 auto-managed team state inspection 的 native OMX compatibility record。
 
 但仅作为只读 inspection / compatibility projection。
 
@@ -290,7 +290,7 @@ MR 3 必须增加测试或 fixture，证明 checker 至少能区分这些情况�
 - routing policy
 - durable state status
 - durable state reconcile
-- `omx-team-auto`
+- `omx-team-auto` - 启动 workers 前读取 repo-local active selector 的 automatic durable-team launcher。
 - compose 相关 helper
 
 ## 8. Rollout 计划
