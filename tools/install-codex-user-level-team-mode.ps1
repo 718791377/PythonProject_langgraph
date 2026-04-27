@@ -2909,6 +2909,29 @@ function Get-CodexUserLevelBackendSelectionPolicy {
   }
 }
 
+function Get-CodexUserLevelHelperMirrorSourceOfTruthContract {
+  return [ordered]@{
+    helper_copy_kind = 'generated_user_level_install_artifact'
+    install_artifact = $true
+    repository_source_script = 'tools/install-codex-user-level-team-mode.ps1'
+    repository_source_authority = 'repository source and repository tests define generated helper behavior'
+    user_level_helper_scope = 'shared operator surface for the current Windows user and Codex home'
+    durable_truth_scope = 'target repository repo-local .omx/state tree'
+    consumer_project_rule = 'each consumer project keeps its own repo-local durable state and publication truth'
+    non_global_state_root_rule = 'D:\PythonProject_langgraph is repository source for this orchestration line, not a global durable-state root for consumer projects'
+    generated_helper_examples = @(
+      'codex-durable-state-status.ps1'
+      'omx-team-auto.ps1'
+      'omx-langgraph-run.ps1'
+    )
+    consumer_project_examples = @(
+      'D:\PythonProject_OpenClaw'
+      'D:\PythonProject_CLIProxyAPI'
+      'D:\project'
+    )
+  }
+}
+
 function Get-CodexUserLevelOrchestrationActivationPolicy {
   param(
     $Status
@@ -3017,6 +3040,7 @@ function Get-CodexUserLevelRoutingPolicy {
       'prefer read-heavy fan-out and gate write-heavy parallel execution behind explicit ownership isolation and leader-owned integration'
     )
     provider_proxy_upstream_pacing = (Get-CodexUserLevelProviderProxyUpstreamPacingPolicy)
+    helper_mirror_source_of_truth = (Get-CodexUserLevelHelperMirrorSourceOfTruthContract)
     inspectable_durable_state_surface = (Get-CodexUserLevelInspectableDurableStateSurfaceContract)
     durable_state_cleanup_reconciliation = (Get-CodexUserLevelDurableStateCleanupReconciliationContract)
     advanced_compose_mode = (Get-CodexUserLevelMixedPersistentComposeContract)
@@ -9577,6 +9601,7 @@ function Get-CodexUserLevelInspectableDurableState {
     updated_at = $updatedAt
     selected_backend = [string]$status.durable_orchestration_backend
     capability_readiness = $capabilityReadiness
+    helper_mirror_source_of_truth = (Get-CodexUserLevelHelperMirrorSourceOfTruthContract)
     read_only_by_default = $true
     cleanup_reconciliation = $cleanupPlan
     contract = $contract
@@ -10125,7 +10150,7 @@ if (`$Json) {
   return
 }
 
-foreach (`$key in @('backend_family', 'state_class', 'repo_root', 'tracked_identity', 'current_phase', 'next_step', 'updated_at', 'selected_backend', 'capability_readiness')) {
+foreach (`$key in @('backend_family', 'state_class', 'repo_root', 'tracked_identity', 'current_phase', 'next_step', 'updated_at', 'selected_backend', 'capability_readiness', 'helper_mirror_source_of_truth')) {
   `$value = `$summary[`$key]
   if (`$null -eq `$value) {
     `$display = ''
