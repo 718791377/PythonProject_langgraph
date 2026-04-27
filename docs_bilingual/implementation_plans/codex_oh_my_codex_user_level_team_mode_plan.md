@@ -1245,11 +1245,11 @@ This means:
 - a cold-start model following only the repository read order and the documented commands must not be able to accidentally merge project-local durable truth across repositories, auto-adopt stale selectors, or launch a durable team before the routing thresholds are met.
 - future changes that add or alter safety boundaries must include either a checker, a fixture, a guarded script path, or an explicit reason why no executable control is possible yet.
 
-The next implementation slice should promote this into a user-level safety-boundary registry and aggregate checker:
+This implementation slice promotes the prompt-only safety warning into a user-level safety-rule registry and aggregate checker:
 
-- `tools/check_safety_boundary_controls.py` - repository source for a checker that verifies every registered safety boundary has a script control, a prompt reminder, or an explicit tracked gap.
-- `codex-safety-boundary-controls.ps1` - future user-level mirrored helper that runs the aggregate safety-boundary checker from any project.
-- `safety_boundary_controls.yaml` - future registry that lists each safety boundary, its owner layer, prompt reminder location, executable control, and current implementation status.
+- `tools/check_safety_rule_script_backing.py` - repository source for the aggregate checker that verifies every registered safety rule has a script control, a prompt reminder, and guard linkage or an explicit tracked gap.
+- `tools/safety_rule_script_backing_registry.json` - repository registry that lists each registered safety rule, owner layer, prompt reminder location, executable control, guard step, and implementation status.
+- `codex-safety-rule-script-backing.ps1` - future optional user-level mirrored helper that can run the aggregate checker from a consumer project without making user-level state the source of truth.
 
 The checker is user-level because it must protect shared Codex / OMX / LangGraph behavior across projects. General prompt reminder text remains project-level because each repository owns its own `AGENTS.md`, startup summary, durable truth, and recovery read order. The context-retention canary prompt is narrower: its literal prompt text must live only in `docs_bilingual/project_startup_summary.md` and `docs_bilingual/project_startup_summary.zh-CN.md`.
 
@@ -1259,7 +1259,7 @@ The canary convention is:
 
 - startup summaries define the literal prompt for complete assistant responses in this orchestration repository, unless a higher-priority system or developer instruction prevents it.
 - if the canary is missing from a complete response after the startup summary was supposed to be read, treat that as possible context-loss evidence.
-- the recovery action is to re-enter cold-start mode: reread `docs_bilingual/project_startup_summary.md`, follow its read order, and then reread only the files required to continue the current task.
+- the recovery action is to re-enter cold-start mode: reread `AGENTS.md`, reread the `docs_bilingual/project_startup_summary.*` pair, follow the startup-summary read order, and then reread only the files required to continue the current task.
 
 The future user-level canary checker should not inject the canary prompt into wrapper payloads. It should only verify, when a transcript or response text is provided, whether the response satisfies the startup-summary-defined canary; if not, it should report a cold-start recovery instruction to reread `AGENTS.md` and `docs_bilingual/project_startup_summary.*`.
 

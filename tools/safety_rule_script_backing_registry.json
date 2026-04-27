@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "rules": [
+    {
+      "id": "context-retention-canary-surface",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/project_startup_summary.md",
+        "docs_bilingual/project_startup_summary.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_context_retention_canary_surface.py"
+      ],
+      "guard_steps": [
+        "check_context_retention_canary_surface"
+      ],
+      "description": "Keeps the startup-summary canary project-owned, prevents duplicate literal prompt placement, and requires cold-start recovery to reread AGENTS.md."
+    },
+    {
+      "id": "multi-session-worktree-isolation",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_worktree_session_hygiene.py"
+      ],
+      "guard_steps": [
+        "check_worktree_session_hygiene"
+      ],
+      "description": "Prevents multi-session dirty worktree collisions and mainline alignment drift."
+    },
+    {
+      "id": "openspec-official-guard",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/openspec_official_workflow_policy.md",
+        "docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/verify_official_openspec.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "verify_official_openspec"
+      ],
+      "description": "Keeps official OpenSpec bootstrap, refresh, validation, and CI guard behavior executable."
+    },
+    {
+      "id": "codex-skills-governance",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_user_level_skills_governance_policy.md",
+        "docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.md",
+        "docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_codex_skills_governance.py"
+      ],
+      "guard_steps": [
+        "check_codex_skills_governance"
+      ],
+      "description": "Keeps skill profile governance, cleanup safety, and browser-capability preservation backed by executable checks."
+    },
+    {
+      "id": "name-clarity-rule",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.md",
+        "docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_name_clarity_rules.py"
+      ],
+      "guard_steps": [
+        "check_name_clarity_rules"
+      ],
+      "description": "Requires paths, commands, scripts, variables, and profile names to include a short explanation when listed."
+    }
+  ]
+}

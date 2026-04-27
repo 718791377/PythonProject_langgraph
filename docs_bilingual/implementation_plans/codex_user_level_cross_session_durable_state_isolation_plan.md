@@ -168,6 +168,8 @@ The permanent fix must preserve the following invariants:
 5. New activation logic must be additive and versioned.
 6. If the runtime cannot determine a safe scoped activation target, it must fail closed rather than falling back to legacy shared selectors.
 
+Safety-rule enforcement is not prompt-only. Every durable-state isolation rule that can affect activation, cleanup, scoped writes, cross-project reads, or publication must be registered in `tools/safety_rule_script_backing_registry.json` and must have either an executable script control or an explicit tracked gap. The aggregate checker is `tools/check_safety_rule_script_backing.py`, and `tools/run_openspec_guard.py` runs it as part of the repository guard.
+
 ## 5. Target State Architecture
 
 The durable control surface should be split into three planes.
