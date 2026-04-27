@@ -115,4 +115,10 @@ python .\tools\check_worktree_session_hygiene.py --root . --allow-current-dirty 
 4. 在实现完成后 archive 该 OpenSpec change，使 delta spec 进入 stable spec。
 5. 通过 GitLab-first 流程发布 archive 和 stable spec。
 
+归档隔离规则：
+
+- 如果 change 会影响代码、可执行检查、CI、stable specs、startup instructions、仓库指令面或结构性治理规则，必须先在专用 archive worktree 中完成归档，再合回主工作区。专用 archive worktree 是只用于 archive branch 及其 stable-spec 更新的独立 Git worktree。
+- archive worktree 必须先通过相关验证命令，之后才能提交 archive branch。archive branch 合入主工作区后，主工作区必须再次通过验证。
+- 纯说明性文本改动如果不改变可执行的仓库行为，可以使用轻量归档流程；无法判断时应使用专用 archive worktree 流程。
+
 如果 worktree 隔离相关 OpenSpec change 已经实现并合并到 `main`，就不要继续让它保持 active。即使 tasks 全部勾选，完成后仍然 active 也是生命周期缺口。

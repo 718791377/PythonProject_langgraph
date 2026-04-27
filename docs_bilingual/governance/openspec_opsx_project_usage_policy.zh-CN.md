@@ -212,7 +212,23 @@ OpenSpec 已经在仓库的工件层生效：
 最低 CLI 基线：
 
 - `openspec status --change "<name>"` - 官方 OpenSpec CLI 中读取具名 change 状态的命令。
-- `openspec archive <name>` 或等价归档流程
+- `openspec archive <name>` - 官方 OpenSpec CLI 中把已完成 change 移入 archive history，并把 delta specs 提升为 stable specs 的命令；或采用能保留同等仓库本地结果的等价归档流程。
+
+仓库归档门槛：
+
+- 不得归档自身 artifact 仍有明确 archive blocker 的 change。
+- 不得归档仍缺少 `proposal.md`、`design.md` 或 `tasks.md` 等核心 artifacts 的 change；这些文件分别是 OpenSpec change 的提案、设计说明和任务清单。
+- 不得把 metadata-only 或 smoke-test 占位目录当成正常 completed change 归档；metadata-only 或 smoke-test 占位目录只是元数据或冒烟测试占位，不代表真实完成。
+- 如果后续仍需要新工作但原归档快照本身有效，应优先新建 forward follow-up change，而不是静默把无效归档状态继续正常化；forward follow-up change 是在原归档之后继续推进的新 OpenSpec change。
+
+仓库归档隔离流程：
+
+- 如果 change 会修改 source code、scripts、tests、CI、checkers、runtime behavior、stable specs、startup instructions、作为仓库指令面的 `AGENTS.md`，或结构性治理规则，必须使用本流程。纯说明性文本改动如果不改变可执行行为，可以使用轻量归档流程；不确定时按专用 archive worktree 流程处理。
+- 在专用 archive worktree 中执行 completed change 的归档操作。专用 archive worktree 是只服务于 archive branch 的独立 Git worktree，用来避免归档产生的文件移动混入主工作区。
+- 在该 archive worktree 内先完成验证。worktree-local verification 必须包含该 change 要求的仓库 guard 命令，确保归档生成的 stable specs 在集成前已经被检查。
+- worktree 内验证通过后，提交 archive branch。archive branch 是承载归档结果与 stable-spec 更新的 Git 分支。
+- 通过正常 GitLab-first 流程把 archive branch 合回主工作区。主工作区是会话 leader 用来承接集成后分支状态的仓库 checkout。
+- 合入后必须在主工作区再次验证。核心规则是：先在 archive worktree 验证，再在 archive branch 合入主工作区后复验。
 
 ## 6. 本仓库何时必须走 OPSX
 
