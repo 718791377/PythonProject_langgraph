@@ -316,10 +316,10 @@ The user-level LangGraph backend SHALL expose additive streaming and debug obser
 
 The first rollout SHALL support at minimum these operator-facing event modes:
 
-- `updates`
-- `checkpoints`
-- `tasks`
-- `debug`
+- `updates` - LangGraph stream mode for progress updates.
+- `checkpoints` - LangGraph stream mode for checkpoint activity.
+- `tasks` - LangGraph stream mode for task execution events.
+- `debug` - LangGraph stream mode for detailed debugging events.
 
 #### Scenario: Operator streams task and checkpoint observability for a tracked thread
 
