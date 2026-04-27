@@ -20,10 +20,10 @@ created_at: 2026-04-25
 
 Create a maintainable skills governance and profile system for a single user-level Codex installation that supports multiple projects on the same machine:
 
-- `D:\PythonProject_langgraph`
-- `D:\PythonProject_OpenClaw`
-- `D:\PythonProject_CLIProxyAPI`
-- `D:\project`
+- `D:\PythonProject_langgraph` - primary repository for Codex orchestration governance and implementation plans.
+- `D:\PythonProject_OpenClaw` - consumer project that may need browser automation and profile preservation.
+- `D:\PythonProject_CLIProxyAPI` - consumer project that may need browser or endpoint verification.
+- `D:\project` - lightweight consumer project that should start with the core profile only.
 - future repositories opened through `codex-ohmy`
 
 The system must reduce skills context-budget pressure without removing useful cross-project capabilities such as browser automation, OpenSpec workflows, Codex orchestration governance, durable-team routing, and LangGraph workflow support.
@@ -85,10 +85,10 @@ The following are not exclusive to `D:\PythonProject_langgraph`:
 
 However, facts and state remain repository-local:
 
-- `openspec/changes/`
-- `openspec/specs/`
-- `.omx/state/`
-- `.omx/state/langgraph/`
+- `openspec/changes/` - repository-local directory for active and proposed OpenSpec changes.
+- `openspec/specs/` - repository-local directory for stable OpenSpec specifications.
+- `.omx/state/` - repository-local durable state directory for OMX workflows.
+- `.omx/state/langgraph/` - repository-local durable state directory for LangGraph workflows.
 - repository task queues
 - repository memory summaries
 - repository CI and release state
@@ -123,16 +123,16 @@ Must not require Vercel/Next.js-specific skills.
 
 Default add-on for projects that need browser automation, including:
 
-- `D:\PythonProject_OpenClaw`
-- `D:\PythonProject_CLIProxyAPI`
+- `D:\PythonProject_OpenClaw` - browser-oriented consumer project that should keep browser automation skills available.
+- `D:\PythonProject_CLIProxyAPI` - endpoint and browser verification consumer project that should keep browser skills available.
 - any project with browser UI verification, browser MCP, Playwright, or web-console testing
 
 Must preserve access to browser-oriented Vercel plugin skills when available:
 
-- `agent-browser`
-- `agent-browser-verify`
-- `verification`
-- `investigation-mode`
+- `agent-browser` - Vercel plugin skill for agent-driven browser automation sessions.
+- `agent-browser-verify` - Vercel plugin skill for browser behavior verification.
+- `verification` - Vercel plugin skill for full-story acceptance and behavior checks.
+- `investigation-mode` - Vercel plugin skill for structured browser or app debugging.
 
 If the Vercel plugin cannot be partially loaded, keep the plugin available for browser profile projects rather than globally disabling it.
 
@@ -142,18 +142,18 @@ Add-on for Vercel, Next.js, React, AI web app, frontend, or deployment work.
 
 May include:
 
-- `nextjs`
-- `react-best-practices`
-- `shadcn`
-- `ai-sdk`
-- `ai-gateway`
-- `vercel-cli`
-- `vercel-api`
-- `deployments-cicd`
-- `env-vars`
-- `observability`
-- `vercel-functions`
-- `vercel-storage`
+- `nextjs` - Next.js framework guidance skill for App Router and related web work.
+- `react-best-practices` - React review skill for TSX best-practice checks.
+- `shadcn` - shadcn/ui component installation and usage guidance skill.
+- `ai-sdk` - Vercel AI SDK guidance skill for AI application development.
+- `ai-gateway` - Vercel AI Gateway configuration and routing guidance skill.
+- `vercel-cli` - Vercel CLI guidance skill for deployment and project management.
+- `vercel-api` - Vercel app and REST API guidance skill.
+- `deployments-cicd` - Vercel deployment and CI/CD guidance skill.
+- `env-vars` - Vercel environment variable configuration guidance skill.
+- `observability` - Vercel observability guidance skill for logs, drains, and monitoring.
+- `vercel-functions` - Vercel Functions guidance skill for serverless runtime behavior.
+- `vercel-storage` - Vercel storage guidance skill for Blob, Edge Config, and related storage.
 
 ### 5.4 `github`
 
@@ -189,8 +189,8 @@ Implement this plan through small GitLab MRs. Do not make one large unreviewable
 
 Create:
 
-- `docs_bilingual/governance/codex_user_level_skills_governance_policy.md`
-- `docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md`
+- `docs_bilingual/governance/codex_user_level_skills_governance_policy.md` - English governance policy for user-level skills, profiles, and authority boundaries.
+- `docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md` - Chinese companion for the user-level skills governance policy.
 
 The policy must define:
 
@@ -210,7 +210,7 @@ Register both files in `docs_bilingual/docs_registry.yaml`.
 
 Create:
 
-- `tools/inventory_codex_skills.py`
+- `tools/inventory_codex_skills.py` - inventory script that reports user, repository, and plugin Codex skills.
 
 The tool must:
 
@@ -237,8 +237,8 @@ python tools/inventory_codex_skills.py --root . --json
 
 Create:
 
-- `tools/check_codex_skills_governance.py`
-- `test/check_codex_skills_governance.test.py`
+- `tools/check_codex_skills_governance.py` - governance check script for duplicate skills, description limits, and registry consistency.
+- `test/check_codex_skills_governance.test.py` - test coverage for the skills governance check script.
 
 The check must fail on:
 
@@ -264,7 +264,7 @@ python tools/check_codex_skills_governance.py --root . --json
 
 Create:
 
-- `docs_bilingual/governance/codex_skills_profiles.registry.yaml`
+- `docs_bilingual/governance/codex_skills_profiles.registry.yaml` - YAML registry that declares supported skills profiles and project defaults.
 
 Minimum schema:
 

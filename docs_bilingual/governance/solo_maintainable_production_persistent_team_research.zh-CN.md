@@ -159,26 +159,16 @@ codex-ohmy
 
 推荐将“生产级持久化团队”拆成十层：
 
-1. `持久化内核`
-   负责状态、检查点、事件历史、执行位置、恢复语义。
-2. `交互与执行层`
-   负责命令、事件、任务、执行器、本地与远端运行。
-3. `团队编排层`
-   负责角色分工、任务调度、并行切片、冲突收敛、人工介入。
-4. `长期记忆层`
-   负责跨会话、跨任务保存事实、经验、规则和工件摘要。
-5. `上下文增强层`
-   负责检索、过滤、重排、压缩、注入、上下文预算治理。
-6. `向量数据库与检索存储层`
-   负责向量索引、租户隔离、过滤、备份恢复、生命周期策略。
-7. `质量保障层`
-   负责运行时约束、输出校验、工具校验、审批门、验收门。
-8. `评测与回归层`
-   负责基准集、实验对比、在线评测、回归门禁、版本比较。
-9. `安全与持久化增强层`
-   负责权限、审计、密钥、分类分级、加密、防篡改、恢复安全。
-10. `本地 GUI 控制中心`
-    负责让维护者在不直接读源码的情况下查看状态、审批、回放、干预与恢复。
+1. `持久化内核` - 负责状态、检查点、事件历史、执行位置、恢复语义。
+2. `交互与执行层` - 负责命令、事件、任务、执行器、本地与远端运行。
+3. `团队编排层` - 负责角色分工、任务调度、并行切片、冲突收敛、人工介入。
+4. `长期记忆层` - 负责跨会话、跨任务保存事实、经验、规则和工件摘要。
+5. `上下文增强层` - 负责检索、过滤、重排、压缩、注入、上下文预算治理。
+6. `向量数据库与检索存储层` - 负责向量索引、租户隔离、过滤、备份恢复、生命周期策略。
+7. `质量保障层` - 负责运行时约束、输出校验、工具校验、审批门、验收门。
+8. `评测与回归层` - 负责基准集、实验对比、在线评测、回归门禁、版本比较。
+9. `安全与持久化增强层` - 负责权限、审计、密钥、分类分级、加密、防篡改、恢复安全。
+10. `本地 GUI 控制中心` - 负责让维护者在不直接读源码的情况下查看状态、审批、回放、干预与恢复。
 
 归纳：
 
@@ -203,7 +193,7 @@ Agent 状态持久化回答的是：
 
 一个可恢复的 Agent 状态，至少应持久化：
 
-- `run_id / thread_id / instance_id`
+- `run_id / thread_id / instance_id` - durable identity fields for correlating a recoverable run, thread, or instance.
 - 当前执行阶段
 - 当前节点或当前步骤
 - 最新状态快照或事件历史指针
@@ -313,14 +303,14 @@ Agent 状态持久化回答的是：
 
 一个生产级持久化团队至少要有：
 
-- `pause`
-- `resume`
-- `suspend`
-- `external event wait`
-- `approval`
-- `override`
-- `redrive`
-- `manual takeover`
+- `pause` - control semantic for temporarily stopping execution while preserving durable state.
+- `resume` - control semantic for continuing from a preserved state or checkpoint.
+- `suspend` - control semantic for long-running hold or administrative stop.
+- `external event wait` - wait-state semantic for blocking until a durable outside event arrives.
+- `approval` - human gate semantic that records pending and completed decisions durably.
+- `override` - control semantic for authorized human replacement of the default path.
+- `redrive` - recovery semantic for retrying a failed branch or step from durable state.
+- `manual takeover` - operator intervention semantic for taking control of an in-flight run.
 
 #### 7.3.2 官方实现差异
 
@@ -367,7 +357,7 @@ Agent 状态持久化回答的是：
 
 #### 7.4.2 官方差异
 
-- `Temporal`
+- `Temporal` - Task Queue 动态创建
   - Task Queue 动态创建
   - worker 同步轮询
   - Workflow / Activity task 会持久化留在队列里
@@ -377,14 +367,14 @@ Agent 状态持久化回答的是：
   <https://docs.temporal.io/workers>
   <https://docs.temporal.io/sticky-execution>
 
-- `Azure Durable`
+- `Azure Durable` - start、terminate、suspend 本身也是排队操作
   - start、terminate、suspend 本身也是排队操作
   - Azure Storage 后端使用 queues、tables、blobs / leases  
   来源：
   <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-instance-management>
   <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-storage-providers>
 
-- `AWS Step Functions`
+- `AWS Step Functions` - Standard = exactly-once
   - Standard = exactly-once
   - Async Express = at-least-once
   - Sync Express = at-most-once
@@ -394,14 +384,14 @@ Agent 状态持久化回答的是：
   <https://docs.aws.amazon.com/step-functions/latest/dg/concepts-activities.html>
   <https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetActivityTask.html>
 
-- `Prefect`
+- `Prefect` - worker 默认轮询 work pool
   - worker 默认轮询 work pool
   - work queue 支持优先级和并发限制  
   来源：
   <https://docs.prefect.io/v3/concepts/workers>
   <https://docs.prefect.io/v3/concepts/work-pools>
 
-- `LangGraph`
+- `LangGraph` - 官方重点不在任务队列，而在 `thread + super-step + checkpoint + replay`
   - 官方重点不在任务队列，而在 `thread + super-step + checkpoint + replay`
   - 队列、优先级、分区语义不是其核心官方能力  
   来源：
@@ -427,13 +417,13 @@ Agent 状态持久化回答的是：
 
 建议最少包含以下抽象：
 
-- `Intent`
-- `Command`
-- `Event`
-- `Task`
-- `Executor`
-- `Approval`
-- `Artifact`
+- `Intent` - abstraction for the human or upstream goal before translation into executable work.
+- `Command` - abstraction for an explicit action request derived from intent.
+- `Event` - abstraction for durable occurrences that can advance or alter execution.
+- `Task` - abstraction for an executable unit assigned to an executor or worker.
+- `Executor` - abstraction for a local or remote runtime that performs tasks.
+- `Approval` - abstraction for a human decision gate in the execution layer.
+- `Artifact` - abstraction for persisted outputs and references produced by execution.
 
 建议执行层必须支持：
 
@@ -465,14 +455,14 @@ Agent 状态持久化回答的是：
 
 一个生产级团队编排层至少要显式处理：
 
-- `role assignment`
-- `ownership`
-- `parallel slice planning`
-- `convergence`
-- `conflict detection`
-- `human escalation`
-- `task mailbox or queue`
-- `worker lifecycle`
+- `role assignment` - orchestration concern for choosing which role owns a slice of work.
+- `ownership` - orchestration concern for making file, task, or decision authority explicit.
+- `parallel slice planning` - orchestration concern for splitting work into safe concurrent slices.
+- `convergence` - orchestration concern for integrating parallel outputs into one final state.
+- `conflict detection` - orchestration concern for identifying incompatible parallel edits or decisions.
+- `human escalation` - orchestration concern for raising risky or blocked work to the maintainer.
+- `task mailbox or queue` - orchestration concern for delivering work and messages durably to workers.
+- `worker lifecycle` - orchestration concern for starting, monitoring, retiring, and recovering workers.
 
 归纳：
 
@@ -531,18 +521,12 @@ Agent 状态持久化回答的是：
 
 建议至少包含六类面板：
 
-1. `Run 面板`
-   显示活跃 run、阻塞 run、失败 run。
-2. `流程图面板`
-   显示任务图、当前节点、依赖关系、失败分支。
-3. `审批面板`
-   显示待审批项、审批对象、审批版本、审批历史。
-4. `工件与记忆面板`
-   显示 checkpoint、summary、长期记忆、引用文档、输出工件。
-5. `观测面板`
-   显示日志、trace、耗时、成本、错误分类。
-6. `策略与安全面板`
-   显示权限、密钥状态、覆盖操作、break-glass、审计事件。
+1. `Run 面板` - 显示活跃 run、阻塞 run、失败 run。
+2. `流程图面板` - 显示任务图、当前节点、依赖关系、失败分支。
+3. `审批面板` - 显示待审批项、审批对象、审批版本、审批历史。
+4. `工件与记忆面板` - 显示 checkpoint、summary、长期记忆、引用文档、输出工件。
+5. `观测面板` - 显示日志、trace、耗时、成本、错误分类。
+6. `策略与安全面板` - 显示权限、密钥状态、覆盖操作、break-glass、审计事件。
 
 #### 8.4.3 本地 GUI 的安全要求
 
@@ -578,16 +562,11 @@ Agent 状态持久化回答的是：
 
 基于 LangGraph / LangChain 官方记忆概念，建议至少区分五层：
 
-1. `程序性记忆`
-   system prompt、策略、规则、技能。
-2. `短期线程记忆`
-   thread state、message history、checkpoint。
-3. `语义长期记忆`
-   用户画像、偏好、组织规则、事实。
-4. `情节记忆`
-   成功案例、过往行动轨迹、few-shot 样本。
-5. `文档知识库`
-   面向 RAG 的检索索引。
+1. `程序性记忆` - system prompt、策略、规则、技能。
+2. `短期线程记忆` - thread state、message history、checkpoint。
+3. `语义长期记忆` - 用户画像、偏好、组织规则、事实。
+4. `情节记忆` - 成功案例、过往行动轨迹、few-shot 样本。
+5. `文档知识库` - 面向 RAG 的检索索引。
 
 代表性来源：
 
@@ -700,12 +679,12 @@ LangChain 官方把 RAG 方案至少分成：
 
 建议把选型维度压成六项：
 
-1. `dense / sparse / hybrid`
-2. `metadata filtering`
-3. `tenant isolation`
-4. `compression / quantization`
-5. `backup / snapshot / restore`
-6. `lifecycle deletion / TTL / archival`
+1. `dense / sparse / hybrid` - vector-search choice for retrieval mode and index strategy.
+2. `metadata filtering` - vector-search capability for narrowing retrieval by structured fields.
+3. `tenant isolation` - storage capability for separating projects, users, or organizations.
+4. `compression / quantization` - storage optimization capability for reducing vector cost or footprint.
+5. `backup / snapshot / restore` - durability capability for recovering retrieval storage.
+6. `lifecycle deletion / TTL / archival` - governance capability for retention and removal.
 
 #### Pinecone
 
@@ -1018,21 +997,21 @@ LangChain 官方把 RAG 方案至少分成：
 
 推荐参考架构如下：
 
-- `L0 操作面`
+- `L0 操作面` - CLI、GUI、API
   - CLI、GUI、API
-- `L1 控制面`
+- `L1 控制面` - 路由、权限、审批、策略、任务入口
   - 路由、权限、审批、策略、任务入口
-- `L2 持久化内核`
+- `L2 持久化内核` - checkpoint、event history、state machine history、resume pointer
   - checkpoint、event history、state machine history、resume pointer
-- `L3 执行面`
+- `L3 执行面` - executor、worker、tool runtime、remote runner
   - executor、worker、tool runtime、remote runner
-- `L4 编排面`
+- `L4 编排面` - role assignment、queue、ownership、converge、redrive
   - role assignment、queue、ownership、converge、redrive
-- `L5 记忆与增强面`
+- `L5 记忆与增强面` - long-term memory、RAG、vector store、context compression
   - long-term memory、RAG、vector store、context compression
-- `L6 质量与治理面`
+- `L6 质量与治理面` - validation、evaluation、regression、audit、security hardening
   - validation、evaluation、regression、audit、security hardening
-- `L7 观测面`
+- `L7 观测面` - logs、metrics、traces、cost、approval history
   - logs、metrics、traces、cost、approval history
 
 设计原则：
@@ -1145,6 +1124,6 @@ LangChain 官方把 RAG 方案至少分成：
 
 只有当这些条件同时满足时，一套系统才适合被称为：
 
-- `生产试运行`
-- `生产级`
+- `生产试运行` - maturity label for a bounded production trial under governance.
+- `生产级` - maturity label for a system suitable for sustained governed production use.
 - 进一步地，`个人开发者可长期维护`

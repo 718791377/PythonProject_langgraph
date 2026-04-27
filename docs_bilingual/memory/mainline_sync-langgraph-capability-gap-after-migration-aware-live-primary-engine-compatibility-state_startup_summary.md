@@ -29,9 +29,9 @@ Use this front card first when a new session needs to take over implementation q
 
 ### Edit these files
 
-- `tools/codex-official-update-patch-replay-template.ps1`
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md`
+- `tools/codex-official-update-patch-replay-template.ps1` - PowerShell replay-template script being extended by this increment.
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - English active implementation plan that records the user-level team-mode behavior.
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - Chinese companion for the active user-level team-mode implementation plan.
 - update the bilingual Appendix C text from “planned” to “implemented” only after the code lands
 
 ### Run these verifications
@@ -48,9 +48,9 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result — `precheck` succeeds, `diff -ApproveDiff` writes approval state, and `replay` is no longer blocked by the diff-approval gate
 - failure triage pointer — inspect:
-  - `tools/codex-official-update-patch-replay-template.ps1`
-  - `$root\checkpoint.json`
-  - `$root\patch-decision-table.json`
+- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when stage-gate or approval behavior fails.
+- `$root\checkpoint.json` - snapshot checkpoint file that records completed stages and approvals.
+- `$root\patch-decision-table.json` - JSON decision table that records patch decisions and manual overrides.
 
 Verification card 2 — replay blocked without `precheck`
 
@@ -60,7 +60,7 @@ Verification card 2 — replay blocked without `precheck`
 
 - expected result — the command stops with an error saying `precheck` is required
 - failure triage pointer — inspect:
-  - `tools/codex-official-update-patch-replay-template.ps1`
+- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when replay incorrectly skips the precheck gate.
   - the stage-gate logic in `<snapshot-root>\checkpoint.json` if the root already exists
 
 Verification card 3 — replay blocked without `diff`
@@ -74,8 +74,8 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result — `replay` stops with an error saying `diff` is required
 - failure triage pointer — inspect:
-  - `tools/codex-official-update-patch-replay-template.ps1`
-  - `$root\checkpoint.json`
+- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when replay incorrectly skips the diff gate.
+- `$root\checkpoint.json` - snapshot checkpoint file that should record whether the diff stage completed.
 
 Verification card 4 — replay blocked without approved diff
 
@@ -89,8 +89,8 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result — `replay` stops with an error saying `approvals.diff_review.approved = true` is required
 - failure triage pointer — inspect:
-  - `tools/codex-official-update-patch-replay-template.ps1`
-  - `$root\checkpoint.json`
+- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when replay incorrectly skips diff approval.
+- `$root\checkpoint.json` - snapshot checkpoint file that should record diff approval state.
 
 Verification card 5 — `test` blocked without `replay`
 
@@ -104,8 +104,8 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result — `test` stops with an error saying `replay` is required
 - failure triage pointer — inspect:
-  - `tools/codex-official-update-patch-replay-template.ps1`
-  - `$root\checkpoint.json`
+- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when the test stage incorrectly skips replay.
+- `$root\checkpoint.json` - snapshot checkpoint file that should record whether replay completed.
 
 Verification card 6 — decision-row overrides survive reruns
 
@@ -120,9 +120,9 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result — manual JSON overrides remain preserved across the second `diff` run
 - failure triage pointer — inspect:
-  - `$root\patch-decision-table.json`
-  - `$root\patch-decision-table.csv`
-  - `tools/codex-official-update-patch-replay-template.ps1`
+- `$root\patch-decision-table.json` - JSON decision table that should preserve manual decision overrides.
+- `$root\patch-decision-table.csv` - CSV companion decision table generated for reviewer-friendly inspection.
+- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when decision table reruns overwrite manual choices.
 
 Verification card 7 — locked rows stay preserved once `decision_locked` lands
 
@@ -137,8 +137,8 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result — rows marked with `decision_locked = true` remain preserved after the rerun
 - failure triage pointer — inspect:
-  - `$root\patch-decision-table.json`
-  - `tools/codex-official-update-patch-replay-template.ps1`
+- `$root\patch-decision-table.json` - JSON decision table that should preserve locked rows after reruns.
+- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when locked decision rows are not preserved.
 
 ### Do not touch
 
@@ -288,7 +288,7 @@ If a new session continues this lane, do this next:
 3. inspect or extend the implemented decision-lock plus diff-approval behavior in `tools/codex-official-update-patch-replay-template.ps1` if more follow-up is needed
 4. keep the bilingual Appendix C text in implemented-state wording
 5. rerun smoke checks for:
-   - `precheck -> diff`
+- `precheck -> diff` - smoke-check stage sequence for validating precheck-to-diff progression.
    - replay blocking without required prior stages
    - test blocking without replay
    - JSON decision-row override preservation across reruns

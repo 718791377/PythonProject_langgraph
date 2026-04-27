@@ -60,13 +60,16 @@ Authority order:
 - `python .\tools\run_openspec_guard.py --root .` is the reusable local enforcement entry point
 - `python .\tools\verify_official_openspec.py --root .` must pass before this repository is treated as fully initialized for official OpenSpec workflow enforcement
 - `openspec validate --all` must pass before structural OpenSpec work is treated as complete
+- `tools/check_name_clarity_rules.py` is the local strict name-clarity checker; it blocks bare script, path, command, variable, or profile list items when run through `python .\tools\run_openspec_guard.py --root .`
+- `--no-baseline` is the strict checker mode used by the guard; it disables compatibility allowances so current and future findings block local enforcement.
+- `openspec validate --all` remains the official OpenSpec CLI validation command; it does not enforce this repository-local name-clarity rule by itself
 - Install `.githooks/pre-commit` with `powershell -ExecutionPolicy Bypass -File .\tools\install-git-hooks.ps1` after `git init` or after cloning an existing repository into real git history
 - Keep at least one supported CI guard surface in the repository, such as `.github/workflows/openspec-guard.yml` or `.gitlab-ci.yml`
 - If the hosting provider supports required-status checks, mark the OpenSpec guard job as required so merges do not depend only on local self-discipline
 
 The JSON contract for repository check scripts and the aggregated guard report is defined in:
 
-- `docs_bilingual/governance/openspec_check_and_guard_json_output_policy.md`
+- `docs_bilingual/governance/openspec_check_and_guard_json_output_policy.md` - governance document that defines JSON output contracts for repository checks and the aggregated guard report.
 
 ## 7A. Governance Bilingual And Encoding Rule
 

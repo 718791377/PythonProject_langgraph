@@ -41,36 +41,36 @@ Keep in `D:\PythonProject_OpenClaw`:
 
 Primary code:
 
-- `tools/install-codex-user-level-team-mode.ps1`
-- `tools/langgraph_durable_orchestrator/`
-- `tools/openclaw-omx-windows-bootstrap-fix.mjs`
+- `tools/install-codex-user-level-team-mode.ps1` - installer script for user-level team-mode launchers and support artifacts.
+- `tools/langgraph_durable_orchestrator/` - repo-local source tree for LangGraph durable orchestrator compatibility code.
+- `tools/openclaw-omx-windows-bootstrap-fix.mjs` - Windows bootstrap fix script for legacy OpenClaw/OMX setup compatibility.
 
 Primary tests:
 
-- `test/install-codex-user-level-team-mode.test.ps1`
-- `test/run-install-codex-user-level-team-mode-test.cmd`
-- `test/langgraph_durable_orchestrator_*.test.py`
-- `test/openclaw-omx-windows-bootstrap-fix.test.mjs`
+- `test/install-codex-user-level-team-mode.test.ps1` - PowerShell tests for the user-level team-mode installer.
+- `test/run-install-codex-user-level-team-mode-test.cmd` - Windows command wrapper that runs the installer test suite.
+- `test/langgraph_durable_orchestrator_*.test.py` - Python tests for LangGraph durable orchestrator modules.
+- `test/openclaw-omx-windows-bootstrap-fix.test.mjs` - Node.js test for the Windows bootstrap fix script.
 
 Primary bilingual plans:
 
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md`
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - English active plan for user-level Codex team-mode behavior.
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - Chinese companion for the user-level team-mode plan.
 
 Primary OpenSpec specs:
 
-- `openspec/specs/codex-user-level-*`
-- `openspec/specs/langgraph-durable-orchestration-backend/`
+- `openspec/specs/codex-user-level-*` - stable OpenSpec specs for user-level Codex orchestration capabilities.
+- `openspec/specs/langgraph-durable-orchestration-backend/` - stable OpenSpec spec for the LangGraph durable orchestration backend.
 
 Primary OpenSpec changes:
 
 - active:
-  - `openspec/changes/implement-langgraph-reusable-subgraph-library/`
+- `openspec/changes/implement-langgraph-reusable-subgraph-library/` - active change for the reusable LangGraph subgraph library.
 - archived user-level orchestration history:
-  - `openspec/changes/archive/*codex-user-level*`
-  - `openspec/changes/archive/*langgraph*`
-  - `openspec/changes/archive/*omx*`
-  - `openspec/changes/archive/*team-mode*`
+- `openspec/changes/archive/*codex-user-level*` - archived changes related to user-level Codex capabilities.
+- `openspec/changes/archive/*langgraph*` - archived changes related to LangGraph capabilities.
+- `openspec/changes/archive/*omx*` - archived changes related to OMX durable workflow capabilities.
+- `openspec/changes/archive/*team-mode*` - archived changes related to team-mode behavior.
 
 ## Anti-Drift Controls
 
@@ -102,8 +102,8 @@ Primary OpenSpec changes:
 
 The new repository must pass at least:
 
-- `openspec validate --all`
-- `python .\tools\run_openspec_guard.py --root .`
+- `openspec validate --all` - official OpenSpec CLI validation command for all specs and changes.
+- `python .\tools\run_openspec_guard.py --root .` - repository guard command that aggregates OpenSpec and governance checks.
 - Python LangGraph durable orchestrator tests
 - PowerShell installer integration tests
 
@@ -111,6 +111,6 @@ The new repository must pass at least:
 
 The current mainline that must continue in the new repository is:
 
-- `implement-langgraph-reusable-subgraph-library`
+- `implement-langgraph-reusable-subgraph-library` - active OpenSpec change id for the reusable LangGraph subgraph library.
 
 This mainline must be treated as the first post-migration implementation target.

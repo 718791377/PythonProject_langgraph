@@ -162,26 +162,16 @@ To avoid turning the white paper into a feature catalog, this document uses a ca
 
 The recommended model decomposes a production-grade persistent team into ten layers:
 
-1. `Persistence Core`
-   Owns state, checkpoints, event history, execution position, and recovery semantics.
-2. `Interaction and Execution Layer`
-   Owns commands, events, tasks, executors, and local/remote execution.
-3. `Team Orchestration Layer`
-   Owns role assignment, task scheduling, parallel slicing, conflict convergence, and human intervention.
-4. `Long-Term Memory Layer`
-   Owns cross-session and cross-task storage of facts, experience, rules, and artifact summaries.
-5. `Context Enhancement Layer`
-   Owns retrieval, filtering, reranking, compression, injection, and context-budget governance.
-6. `Vector Database and Retrieval Storage Layer`
-   Owns vector indexing, tenant isolation, filtering, backup/restore, and lifecycle strategy.
-7. `Quality Assurance Layer`
-   Owns runtime constraints, output validation, tool validation, approval gates, and acceptance gates.
-8. `Evaluation and Regression Layer`
-   Owns benchmark sets, experiment comparison, online evaluation, regression gates, and version comparison.
-9. `Security and Persistence Hardening Layer`
-   Owns authorization, audit, secrets, data classification, encryption, tamper resistance, and recovery safety.
-10. `Local GUI Control Center`
-    Allows the maintainer to inspect state, approve actions, replay, intervene, and recover without reading source code directly.
+1. `Persistence Core` - Owns state, checkpoints, event history, execution position, and recovery semantics.
+2. `Interaction and Execution Layer` - Owns commands, events, tasks, executors, and local/remote execution.
+3. `Team Orchestration Layer` - Owns role assignment, task scheduling, parallel slicing, conflict convergence, and human intervention.
+4. `Long-Term Memory Layer` - Owns cross-session and cross-task storage of facts, experience, rules, and artifact summaries.
+5. `Context Enhancement Layer` - Owns retrieval, filtering, reranking, compression, injection, and context-budget governance.
+6. `Vector Database and Retrieval Storage Layer` - Owns vector indexing, tenant isolation, filtering, backup/restore, and lifecycle strategy.
+7. `Quality Assurance Layer` - Owns runtime constraints, output validation, tool validation, approval gates, and acceptance gates.
+8. `Evaluation and Regression Layer` - Owns benchmark sets, experiment comparison, online evaluation, regression gates, and version comparison.
+9. `Security and Persistence Hardening Layer` - Owns authorization, audit, secrets, data classification, encryption, tamper resistance, and recovery safety.
+10. `Local GUI Control Center` - Allows the maintainer to inspect state, approve actions, replay, intervene, and recover without reading source code directly.
 
 Derived judgment:
 
@@ -206,7 +196,7 @@ Agent state persistence answers:
 
 A recoverable agent state should persist at least:
 
-- `run_id / thread_id / instance_id`
+- `run_id / thread_id / instance_id` - durable identity fields for correlating a recoverable run, thread, or instance.
 - current execution phase
 - current node or current step
 - latest state snapshot or pointer to event history
@@ -316,14 +306,14 @@ Derived judgment:
 
 A production-grade persistent team should have explicit semantics for:
 
-- `pause`
-- `resume`
-- `suspend`
-- `external event wait`
-- `approval`
-- `override`
-- `redrive`
-- `manual takeover`
+- `pause` - control semantic for temporarily stopping execution while preserving durable state.
+- `resume` - control semantic for continuing from a preserved state or checkpoint.
+- `suspend` - control semantic for long-running hold or administrative stop.
+- `external event wait` - wait-state semantic for blocking until a durable outside event arrives.
+- `approval` - human gate semantic that records pending and completed decisions durably.
+- `override` - control semantic for authorized human replacement of the default path.
+- `redrive` - recovery semantic for retrying a failed branch or step from durable state.
+- `manual takeover` - operator intervention semantic for taking control of an in-flight run.
 
 #### 7.3.2 Differences Across Official Systems
 
@@ -370,7 +360,7 @@ Many systems equate "parallelism" with orchestration, but what often decides mai
 
 #### 7.4.2 Differences Across Official Systems
 
-- `Temporal`
+- `Temporal` - Task Queues are dynamic and lightweight.
   - Task Queues are dynamic and lightweight.
   - Workers poll them synchronously.
   - Workflow and activity tasks remain durable in the queue.
@@ -380,14 +370,14 @@ Many systems equate "parallelism" with orchestration, but what often decides mai
   <https://docs.temporal.io/workers>  
   <https://docs.temporal.io/sticky-execution>
 
-- `Azure Durable`
+- `Azure Durable` - Control-plane operations such as start, terminate, and suspend are also queued.
   - Control-plane operations such as start, terminate, and suspend are also queued.
   - The Azure Storage backend uses queues, tables, and blobs or leases.  
   Sources:  
   <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-instance-management>  
   <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-storage-providers>
 
-- `AWS Step Functions`
+- `AWS Step Functions` - Standard = exactly-once
   - Standard = exactly-once
   - Async Express = at-least-once
   - Sync Express = at-most-once
@@ -397,14 +387,14 @@ Many systems equate "parallelism" with orchestration, but what often decides mai
   <https://docs.aws.amazon.com/step-functions/latest/dg/concepts-activities.html>  
   <https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetActivityTask.html>
 
-- `Prefect`
+- `Prefect` - Workers poll work pools by default.
   - Workers poll work pools by default.
   - Work queues support priority and concurrency limits.  
   Sources:  
   <https://docs.prefect.io/v3/concepts/workers>  
   <https://docs.prefect.io/v3/concepts/work-pools>
 
-- `LangGraph`
+- `LangGraph` - Officially, the center of gravity is not queue semantics but `thread + super-step + checkpoint + replay`.
   - Officially, the center of gravity is not queue semantics but `thread + super-step + checkpoint + replay`.
   - Queue priority, partitioning, and polling semantics are not first-class official concerns.  
   Sources:  
@@ -430,13 +420,13 @@ The interaction and execution layer answers:
 
 At minimum, this layer should include these abstractions:
 
-- `Intent`
-- `Command`
-- `Event`
-- `Task`
-- `Executor`
-- `Approval`
-- `Artifact`
+- `Intent` - abstraction for the human or upstream goal before translation into executable work.
+- `Command` - abstraction for an explicit action request derived from intent.
+- `Event` - abstraction for durable occurrences that can advance or alter execution.
+- `Task` - abstraction for an executable unit assigned to an executor or worker.
+- `Executor` - abstraction for a local or remote runtime that performs tasks.
+- `Approval` - abstraction for a human decision gate in the execution layer.
+- `Artifact` - abstraction for persisted outputs and references produced by execution.
 
 The execution layer should support at least:
 
@@ -468,14 +458,14 @@ It is not just "run more workers." It must answer:
 
 A production-grade orchestration layer should explicitly handle:
 
-- `role assignment`
-- `ownership`
-- `parallel slice planning`
-- `convergence`
-- `conflict detection`
-- `human escalation`
-- `task mailbox or queue`
-- `worker lifecycle`
+- `role assignment` - orchestration concern for choosing which role owns a slice of work.
+- `ownership` - orchestration concern for making file, task, or decision authority explicit.
+- `parallel slice planning` - orchestration concern for splitting work into safe concurrent slices.
+- `convergence` - orchestration concern for integrating parallel outputs into one final state.
+- `conflict detection` - orchestration concern for identifying incompatible parallel edits or decisions.
+- `human escalation` - orchestration concern for raising risky or blocked work to the maintainer.
+- `task mailbox or queue` - orchestration concern for delivering work and messages durably to workers.
+- `worker lifecycle` - orchestration concern for starting, monitoring, retiring, and recovering workers.
 
 Derived judgment:
 
@@ -534,18 +524,12 @@ It is one of the main mechanisms for lowering maintenance cost. A capable local 
 
 At minimum, it should provide:
 
-1. `Run panel`
-   For active, blocked, and failed runs.
-2. `Flow graph panel`
-   For task graphs, current node, dependencies, and failure branches.
-3. `Approval panel`
-   For pending approvals, targets, versions, and approval history.
-4. `Artifact and memory panel`
-   For checkpoints, summaries, long-term memory, cited documents, and output artifacts.
-5. `Observability panel`
-   For logs, traces, duration, cost, and error classes.
-6. `Policy and security panel`
-   For permissions, secret state, override actions, break-glass operations, and audit events.
+1. `Run panel` - For active, blocked, and failed runs.
+2. `Flow graph panel` - For task graphs, current node, dependencies, and failure branches.
+3. `Approval panel` - For pending approvals, targets, versions, and approval history.
+4. `Artifact and memory panel` - For checkpoints, summaries, long-term memory, cited documents, and output artifacts.
+5. `Observability panel` - For logs, traces, duration, cost, and error classes.
+6. `Policy and security panel` - For permissions, secret state, override actions, break-glass operations, and audit events.
 
 #### 8.4.3 Security Requirements For The Local GUI
 
@@ -581,16 +565,11 @@ A long-maintainable system cannot dump every kind of "memory" into a single vect
 
 Based on LangGraph and LangChain concepts, at least five layers should be separated:
 
-1. `Procedural memory`
-   System prompts, policies, rules, and skills.
-2. `Short-term thread memory`
-   Thread state, message history, and checkpoints.
-3. `Semantic long-term memory`
-   User profiles, preferences, organizational rules, and facts.
-4. `Episodic memory`
-   Successful examples, past trajectories, and few-shot samples.
-5. `Document knowledge base`
-   Retrieval indexes used for RAG.
+1. `Procedural memory` - System prompts, policies, rules, and skills.
+2. `Short-term thread memory` - Thread state, message history, and checkpoints.
+3. `Semantic long-term memory` - User profiles, preferences, organizational rules, and facts.
+4. `Episodic memory` - Successful examples, past trajectories, and few-shot samples.
+5. `Document knowledge base` - Retrieval indexes used for RAG.
 
 Representative sources:
 
@@ -705,12 +684,12 @@ It should be driven by which capabilities are required for long-term maintainabl
 
 The selection dimensions should be compressed into six questions:
 
-1. `dense / sparse / hybrid`
-2. `metadata filtering`
-3. `tenant isolation`
-4. `compression / quantization`
-5. `backup / snapshot / restore`
-6. `lifecycle deletion / TTL / archival`
+1. `dense / sparse / hybrid` - vector-search choice for retrieval mode and index strategy.
+2. `metadata filtering` - vector-search capability for narrowing retrieval by structured fields.
+3. `tenant isolation` - storage capability for separating projects, users, or organizations.
+4. `compression / quantization` - storage optimization capability for reducing vector cost or footprint.
+5. `backup / snapshot / restore` - durability capability for recovering retrieval storage.
+6. `lifecycle deletion / TTL / archival` - governance capability for retention and removal.
 
 #### Pinecone
 
@@ -1025,21 +1004,21 @@ If a system cannot answer "yes" to most of the following questions, it should no
 
 The recommended reference architecture is:
 
-- `L0 Operator Surface`
+- `L0 Operator Surface` - CLI, GUI, and API
   - CLI, GUI, and API
-- `L1 Control Plane`
+- `L1 Control Plane` - routing, authorization, approvals, policies, and task entrypoints
   - routing, authorization, approvals, policies, and task entrypoints
-- `L2 Persistence Core`
+- `L2 Persistence Core` - checkpoints, event history, state-machine history, and resume pointers
   - checkpoints, event history, state-machine history, and resume pointers
-- `L3 Execution Plane`
+- `L3 Execution Plane` - executors, workers, tool runtimes, and remote runners
   - executors, workers, tool runtimes, and remote runners
-- `L4 Orchestration Plane`
+- `L4 Orchestration Plane` - role assignment, queues, ownership, convergence, and redrive
   - role assignment, queues, ownership, convergence, and redrive
-- `L5 Memory And Enhancement Plane`
+- `L5 Memory And Enhancement Plane` - long-term memory, RAG, vector stores, and context compression
   - long-term memory, RAG, vector stores, and context compression
-- `L6 Quality And Governance Plane`
+- `L6 Quality And Governance Plane` - validation, evaluation, regression, audit, and security hardening
   - validation, evaluation, regression, audit, and security hardening
-- `L7 Observability Plane`
+- `L7 Observability Plane` - logs, metrics, traces, cost, and approval history
   - logs, metrics, traces, cost, and approval history
 
 Design principles:
@@ -1156,6 +1135,6 @@ It should be judged by:
 
 Only when these conditions are satisfied together should a system be considered suitable to call:
 
-- `production pilot`
-- `production-grade`
+- `production pilot` - maturity label for a bounded production trial under governance.
+- `production-grade` - maturity label for a system suitable for sustained governed production use.
 - and further, `solo-maintainable over the long term`

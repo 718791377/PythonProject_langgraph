@@ -30,9 +30,9 @@ translation_of: docs_bilingual/memory/mainline_sync-langgraph-capability-gap-aft
 
 ### Edit these files（改这些文件）
 
-- `tools/codex-official-update-patch-replay-template.ps1`
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md`
+- `tools/codex-official-update-patch-replay-template.ps1` - 本轮增量正在扩展的 PowerShell replay-template 脚本。
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - 记录 user-level team-mode 行为的英文 active implementation plan。
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - active user-level team-mode implementation plan 的中文对照文件。
 - 只有代码真正落地后，才把双语 Appendix C（附录 C） 文本从“planned（计划中）”改成“implemented（已实现）”
 
 ### Run these verifications（跑这些验证）
@@ -49,9 +49,9 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result（预期结果）—— `precheck` 正常完成，`diff -ApproveDiff` 会写入审批状态，`replay` 不再因为 diff 审批门禁而被阻止
 - failure triage pointer（失败排查指针）—— 先看：
-  - `tools/codex-official-update-patch-replay-template.ps1`
-  - `$root\checkpoint.json`
-  - `$root\patch-decision-table.json`
+- `tools/codex-official-update-patch-replay-template.ps1` - stage-gate 或 approval 行为失败时需要检查的脚本。
+- `$root\checkpoint.json` - 记录已完成 stages 与 approvals 的 snapshot checkpoint 文件。
+- `$root\patch-decision-table.json` - 记录 patch decisions 与人工 overrides 的 JSON decision table。
 
 验证卡片 2 —— 缺少 `precheck` 时 replay 被阻止
 
@@ -61,7 +61,7 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result（预期结果）—— 命令直接报错，提示必须先有 `precheck`
 - failure triage pointer（失败排查指针）—— 先看：
-  - `tools/codex-official-update-patch-replay-template.ps1`
+- `tools/codex-official-update-patch-replay-template.ps1` - replay 错误跳过 precheck gate 时需要检查的脚本。
   - 如果该 root 已存在，再看 `<snapshot-root>\checkpoint.json`
 
 验证卡片 3 —— 缺少 `diff` 时 replay 被阻止
@@ -75,8 +75,8 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result（预期结果）—— `replay` 直接报错，提示必须先有 `diff`
 - failure triage pointer（失败排查指针）—— 先看：
-  - `tools/codex-official-update-patch-replay-template.ps1`
-  - `$root\checkpoint.json`
+- `tools/codex-official-update-patch-replay-template.ps1` - replay 错误跳过 diff gate 时需要检查的脚本。
+- `$root\checkpoint.json` - 应记录 diff stage 是否完成的 snapshot checkpoint 文件。
 
 验证卡片 4 —— diff 未审批时 replay 被阻止
 
@@ -90,8 +90,8 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result（预期结果）—— `replay` 直接报错，提示必须满足 `approvals.diff_review.approved = true`
 - failure triage pointer（失败排查指针）—— 先看：
-  - `tools/codex-official-update-patch-replay-template.ps1`
-  - `$root\checkpoint.json`
+- `tools/codex-official-update-patch-replay-template.ps1` - replay 错误跳过 diff approval 时需要检查的脚本。
+- `$root\checkpoint.json` - 应记录 diff approval state 的 snapshot checkpoint 文件。
 
 验证卡片 5 —— 缺少 `replay` 时 test 被阻止
 
@@ -105,8 +105,8 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result（预期结果）—— `test` 直接报错，提示必须先有 `replay`
 - failure triage pointer（失败排查指针）—— 先看：
-  - `tools/codex-official-update-patch-replay-template.ps1`
-  - `$root\checkpoint.json`
+- `tools/codex-official-update-patch-replay-template.ps1` - test stage 错误跳过 replay 时需要检查的脚本。
+- `$root\checkpoint.json` - 应记录 replay 是否完成的 snapshot checkpoint 文件。
 
 验证卡片 6 —— 决策行 override 跨 rerun 保留
 
@@ -121,9 +121,9 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result（预期结果）—— 第二次跑 `diff` 之后，JSON 里的人工 override 仍然保留
 - failure triage pointer（失败排查指针）—— 先看：
-  - `$root\patch-decision-table.json`
-  - `$root\patch-decision-table.csv`
-  - `tools/codex-official-update-patch-replay-template.ps1`
+- `$root\patch-decision-table.json` - 应保留人工 decision overrides 的 JSON decision table。
+- `$root\patch-decision-table.csv` - 生成给 reviewer 友好检查用的 CSV companion decision table。
+- `tools/codex-official-update-patch-replay-template.ps1` - decision table rerun 覆盖人工选择时需要检查的脚本。
 
 验证卡片 7 —— `decision_locked` 落地后锁定行跨 rerun 保留
 
@@ -138,8 +138,8 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 
 - expected result（预期结果）—— 设置了 `decision_locked = true` 的行在 rerun 后仍被保留
 - failure triage pointer（失败排查指针）—— 先看：
-  - `$root\patch-decision-table.json`
-  - `tools/codex-official-update-patch-replay-template.ps1`
+- `$root\patch-decision-table.json` - rerun 后仍应保留 locked rows 的 JSON decision table。
+- `tools/codex-official-update-patch-replay-template.ps1` - locked decision rows 未被保留时需要检查的脚本。
 
 ### Do not touch（不要顺手改）
 
@@ -289,7 +289,7 @@ if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -For
 3. 如果还需要后续工作，先检查 `tools/codex-official-update-patch-replay-template.ps1` 中已落地的 decision-lock + diff-approval 行为
 4. 保持双语 Appendix C 文本为 implemented（已实现）口径
 5. 重新跑 smoke check（冒烟检查）：
-   - `precheck -> diff`
+- `precheck -> diff` - 用于验证 precheck-to-diff progression 的 smoke-check stage sequence。
    - 缺少前置阶段时 replay 的阻止逻辑
    - 缺少 replay 时 test 的阻止逻辑
    - JSON 决策行跨轮 rerun（重复运行）时的人工覆盖保留逻辑
