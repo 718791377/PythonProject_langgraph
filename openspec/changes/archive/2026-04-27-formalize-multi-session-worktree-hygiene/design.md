@@ -28,6 +28,12 @@ The checker reports:
 
 `tools/run_openspec_guard.py` runs the checker with `--allow-current-dirty` so normal local validation can run before a feature-branch commit while still catching dirty `main` and cross-worktree collision risks.
 
+### OpenSpec lifecycle
+
+After the governance files, checker, tests, and guard integration have merged, this change must be archived. Archiving is part of the implementation because it creates the stable `codex-repository-multi-session-worktree-isolation` spec that future sessions can validate against.
+
+The archive step does not mutate local worktrees or discard dirty files. It only moves the completed OpenSpec change to archive history and syncs the delta requirements into `openspec/specs/`.
+
 ### Non-destructive behavior
 
 No checker path deletes files, resets branches, or writes state. The checker only reports and exits non-zero for unsafe states.

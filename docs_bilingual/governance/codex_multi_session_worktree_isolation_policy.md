@@ -103,3 +103,16 @@ All repository changes still follow the GitLab-first publication workflow:
 
 GitHub PRs are not the default workflow for this repository.
 
+## 8. OpenSpec Lifecycle
+
+Changes that create or alter this policy are structural repository-governance changes and must follow the repository OpenSpec lifecycle.
+
+Required lifecycle:
+
+1. Create or update an OpenSpec change before implementation.
+2. Keep the governance policy, checker behavior, and guard integration aligned with that change.
+3. Run the repository validation commands before publication.
+4. Archive the completed OpenSpec change so its delta spec becomes a stable spec.
+5. Publish the archive and stable spec through the GitLab-first workflow.
+
+Do not leave a completed worktree-isolation OpenSpec change active after the implementation has already merged to `main`. A completed active change is a lifecycle gap, even when its tasks are all checked.

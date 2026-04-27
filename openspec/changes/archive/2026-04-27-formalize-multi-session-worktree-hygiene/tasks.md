@@ -28,3 +28,13 @@
 - [x] 4.4 Run `python .\tools\check_worktree_session_hygiene.py --root . --allow-current-dirty --json` - read-only multi-session worktree hygiene checker.
 - [x] 4.5 Run `python .\tools\run_openspec_guard.py --root . --tool codex --json` - repository OpenSpec guard sequence.
 - [x] 4.6 Run `git diff --check` - whitespace validation for the pending patch.
+
+## 5. OpenSpec lifecycle closeout
+
+- [x] 5.1 Update the governance policy and OpenSpec artifacts to state that completed worktree-isolation changes must be archived into stable specs.
+- [x] 5.2 Run `openspec validate formalize-multi-session-worktree-hygiene` - validates this active change before archive.
+- [x] 5.3 Run `python .\tools\check_document_governance_rules.py --root . --json` - verifies the updated governance policy remains registered.
+- [x] 5.4 Run `python .\tools\check_name_clarity_rules.py --root . --json` - verifies updated artifacts explain command and path names.
+- [x] 5.5 Run `python .\tools\check_worktree_session_hygiene.py --root . --allow-current-dirty --json` - verifies the worktree hygiene checker before archive.
+- [x] 5.6 Run `python .\tools\run_openspec_guard.py --root . --tool codex --json` - verifies the aggregate guard before archive.
+- [x] 5.7 Archive this completed OpenSpec change so `codex-repository-multi-session-worktree-isolation` becomes a stable spec.

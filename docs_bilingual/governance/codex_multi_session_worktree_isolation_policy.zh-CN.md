@@ -103,3 +103,16 @@ python .\tools\check_worktree_session_hygiene.py --root . --allow-current-dirty 
 
 本仓库默认不使用 GitHub PR。
 
+## 8. OpenSpec 生命周期
+
+任何创建或修改本策略的变更都属于结构性仓库治理变更，必须遵守本仓库 OpenSpec 生命周期。
+
+必需生命周期：
+
+1. 实施前先创建或更新 OpenSpec change。
+2. 让治理策略、checker 行为和 guard 集成与该 change 保持一致。
+3. 发布前运行仓库验证命令。
+4. 在实现完成后 archive 该 OpenSpec change，使 delta spec 进入 stable spec。
+5. 通过 GitLab-first 流程发布 archive 和 stable spec。
+
+如果 worktree 隔离相关 OpenSpec change 已经实现并合并到 `main`，就不要继续让它保持 active。即使 tasks 全部勾选，完成后仍然 active 也是生命周期缺口。
