@@ -70,3 +70,15 @@ The installer SHALL include the PowerShell profile path and startup-binding laun
 - **AND** it SHALL restore or remove startup-binding assets to their pre-install state
 - **AND** it SHALL preserve backup metadata for diagnostics
 
+### Requirement: Startup-binding surfaces SHALL avoid duplicating project canary prompts
+
+Startup-binding, launcher, and repository instruction surfaces SHALL NOT duplicate a project-level context-retention canary prompt outside the project startup summary pair.
+
+They MAY point to the project startup summary as the source of truth and MAY describe the cold-start recovery path.
+
+#### Scenario: Launcher or instruction text refers to context-loss recovery
+
+- **WHEN** startup-binding or repository instruction text documents context-loss recovery
+- **THEN** it SHALL refer readers to the project startup summary for the canary prompt
+- **AND** it SHALL NOT embed the literal canary prompt text in launcher payloads, generated wrappers, or `AGENTS.md`
+
