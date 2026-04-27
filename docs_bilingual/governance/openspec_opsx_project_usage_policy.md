@@ -50,19 +50,19 @@ This means:
 
 OpenSpec is already active in the repository at the artifact layer:
 
-- `openspec/config.yaml`
-- `openspec/changes/...`
-- `openspec/specs/...`
+- `openspec/config.yaml` - repository OpenSpec configuration file.
+- `openspec/changes/...` - directory tree for active and proposed OpenSpec change artifacts.
+- `openspec/specs/...` - directory tree for stable OpenSpec capability specifications.
 
 The repository also already materializes the official Codex OpenSpec instruction surface and the required enforcement surfaces:
 
 - official Codex OpenSpec skills under `.codex/skills/`
-- `tools/bootstrap-official-openspec.ps1`
-- `tools/verify_official_openspec.py`
-- `tools/run_openspec_guard.py`
-- `.githooks/pre-commit`
-- `.github/workflows/openspec-guard.yml`
-- `.gitlab-ci.yml`
+- `tools/bootstrap-official-openspec.ps1` - PowerShell script that materializes or refreshes the official Codex OpenSpec instruction surface.
+- `tools/verify_official_openspec.py` - verification script that checks the official OpenSpec bootstrap and generated artifacts.
+- `tools/run_openspec_guard.py` - aggregate guard script that runs repository OpenSpec checks.
+- `.githooks/pre-commit` - local Git hook that runs repository checks before commits.
+- `.github/workflows/openspec-guard.yml` - GitHub Actions workflow for the OpenSpec guard.
+- `.gitlab-ci.yml` - GitLab CI pipeline configuration for repository guard jobs.
 
 Therefore:
 
@@ -74,16 +74,16 @@ Therefore:
 
 Based on the currently installed OpenSpec package and its workflow templates, the repository should align to the following OPSX command set:
 
-- `/opsx:onboard`
-- `/opsx:new`
-- `/opsx:continue`
-- `/opsx:ff`
-- `/opsx:propose`
-- `/opsx:explore`
-- `/opsx:apply`
-- `/opsx:verify`
-- `/opsx:sync`
-- `/opsx:archive`
+- `/opsx:onboard` - project-level workflow route for reading startup context and current OpenSpec state.
+- `/opsx:new` - project-level workflow route for starting a new OpenSpec-backed change.
+- `/opsx:continue` - project-level workflow route for resuming an active OpenSpec change.
+- `/opsx:ff` - project-level workflow route for fast-forwarding missing OpenSpec artifacts.
+- `/opsx:propose` - project-level workflow route for creating proposal, design, and task artifacts.
+- `/opsx:explore` - project-level workflow route for pre-change exploration and scope clarification.
+- `/opsx:apply` - project-level workflow route for implementing tasks from an active change.
+- `/opsx:verify` - project-level workflow route for checking structural readiness and validation.
+- `/opsx:sync` - project-level workflow route for syncing approved deltas into stable specs.
+- `/opsx:archive` - project-level workflow route for archiving a completed change.
 
 The repository should expose these through project-level workflow guidance backed by the official CLI, repository bootstrap or refresh, verification, hooks, and CI guard surfaces. If the official CLI surface changes later, rerun the repository refresh path instead of preserving stale repository wording.
 
@@ -105,8 +105,8 @@ Expected behavior:
 
 Minimum CLI baseline:
 
-- `openspec list --json`
-- `openspec status`
+- `openspec list --json` - official OpenSpec CLI command for listing OpenSpec state in machine-readable form.
+- `openspec status` - official OpenSpec CLI command for showing the current repository OpenSpec status.
 - repository startup documents
 
 ### 5.2 `/opsx:new`
@@ -118,8 +118,8 @@ Use for:
 
 Minimum CLI baseline:
 
-- `openspec new change "<name>"`
-- `openspec status --change "<name>" --json`
+- `openspec new change "<name>"` - official OpenSpec CLI command for creating a named change.
+- `openspec status --change "<name>" --json` - official OpenSpec CLI command for reading a named change status as JSON.
 
 ### 5.3 `/opsx:continue`
 
@@ -130,8 +130,8 @@ Use for:
 
 Minimum CLI baseline:
 
-- `openspec list --json`
-- `openspec status --change "<name>"`
+- `openspec list --json` - official OpenSpec CLI command for listing OpenSpec state in machine-readable form.
+- `openspec status --change "<name>"` - official OpenSpec CLI command for reading a named change status.
 
 ### 5.4 `/opsx:ff`
 
@@ -153,9 +153,9 @@ Use for:
 
 Minimum CLI baseline:
 
-- `openspec new change "<name>"`
-- `openspec status --change "<name>" --json`
-- `openspec instructions <artifact> --change "<name>" --json`
+- `openspec new change "<name>"` - official OpenSpec CLI command for creating a named change.
+- `openspec status --change "<name>" --json` - official OpenSpec CLI command for reading a named change status as JSON.
+- `openspec instructions <artifact> --change "<name>" --json` - official OpenSpec CLI command for generating instructions for a named artifact.
 
 ### 5.6 `/opsx:explore`
 
@@ -177,8 +177,8 @@ Use for:
 
 Minimum CLI baseline:
 
-- `openspec status --change "<name>" --json`
-- `openspec instructions apply --change "<name>" --json`
+- `openspec status --change "<name>" --json` - official OpenSpec CLI command for reading a named change status as JSON.
+- `openspec instructions apply --change "<name>" --json` - official OpenSpec CLI command for generating apply instructions for a named change.
 
 ### 5.8 `/opsx:verify`
 
@@ -188,8 +188,8 @@ Use for:
 
 Minimum CLI baseline:
 
-- `openspec status`
-- `openspec validate --all`
+- `openspec status` - official OpenSpec CLI command for showing the current repository OpenSpec status.
+- `openspec validate --all` - official OpenSpec CLI command for validating all specs and changes.
 - repository tests relevant to the change
 
 ### 5.9 `/opsx:sync`
@@ -211,7 +211,7 @@ Use for:
 
 Minimum CLI baseline:
 
-- `openspec status --change "<name>"`
+- `openspec status --change "<name>"` - official OpenSpec CLI command for reading a named change status.
 - `openspec archive <name>` or equivalent archive flow
 
 Repository archive gate:

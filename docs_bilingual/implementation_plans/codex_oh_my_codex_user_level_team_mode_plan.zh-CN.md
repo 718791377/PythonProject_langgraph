@@ -157,16 +157,16 @@ doc_class: implementation_plan
 
 配套可执行模板：
 
-- `tools/codex-official-update-patch-replay-template.ps1`
+- `tools/codex-official-update-patch-replay-template.ps1` - 用于官方 update、diff、replay 与 test stages 的仓库维护模板。
 - 只读预览：
-  - `.\tools\codex-official-update-patch-replay-template.ps1 -Stage precheck -Json`
+- `.\tools\codex-official-update-patch-replay-template.ps1 -Stage precheck -Json` - 以 JSON 输出 precheck report 的只读盘点命令。
 - 分阶段执行：
-  - `-Stage precheck`
-  - `-Stage update`
-  - `-Stage diff`
-  - `-Stage replay`
-  - `-Stage test`
-  - `-Stage all`
+- `-Stage precheck` - 收集 pre-update inventory 与 checkpoint state 的 stage flag。
+- `-Stage update` - 刷新官方 npm-installed OMX package 的 stage flag。
+- `-Stage diff` - 对比 upstream files 与 local patch decisions 的 stage flag。
+- `-Stage replay` - 重放保留的 local patches 并重新生成 wrappers 的 stage flag。
+- `-Stage test` - 运行 post-replay validation 的 stage flag。
+- `-Stage all` - 运行完整维护 sequence 的 stage flag。
 - checkpoint 串接：
   - `precheck` —— 预更新盘点阶段，默认会新建一份 checkpoint 根目录
   - `update / diff / replay / test` —— 后续维护阶段，默认会自动续接最近一次 checkpoint，除非显式传入 `-SnapshotRoot`
@@ -244,13 +244,13 @@ doc_class: implementation_plan
    - 例：`C:\Users\lenovo\.codex\bin\`
 3. **用户级提示 / skill / playbook 层**
    - 例：
-     - `C:\Users\lenovo\.codex\skills\worker\SKILL.md`
-     - `C:\Users\lenovo\.codex\state\user-level-team-mode-model-instructions.md`
+- `C:\Users\lenovo\.codex\skills\worker\SKILL.md` - 在 npm package 外生成或维护的 user-level worker skill instructions。
+- `C:\Users\lenovo\.codex\state\user-level-team-mode-model-instructions.md` - team-mode workers 使用的 user-level model-instructions payload。
 4. **仓库内 source-of-truth 层**
    - 例：
-     - `tools/install-codex-user-level-team-mode.ps1`
-     - `tools/openclaw-omx-*.mjs`
-     - `test/install-codex-user-level-team-mode.test.ps1`
+- `tools/install-codex-user-level-team-mode.ps1` - 重新生成 user-level wrappers 与 team-mode artifacts 的 installer script。
+- `tools/openclaw-omx-*.mjs` - legacy OMX compatibility fixes 的仓库 patch scripts。
+- `test/install-codex-user-level-team-mode.test.ps1` - team-mode installer 的 PowerShell test suite。
 
 后面的所有判断都按这四层来做。
 
@@ -277,9 +277,9 @@ git -C D:\PythonProject_langgraph rev-parse HEAD
 
 最少要留存：
 
-- `dist/team/runtime.js`
-- `dist/team/windows-worker-controller.js`
-- `dist/team/worker-bootstrap.js`
+- `dist/team/runtime.js` - update 前需要 snapshot 的 upstream team runtime file。
+- `dist/team/windows-worker-controller.js` - update 前需要 snapshot 的 upstream Windows worker controller file。
+- `dist/team/worker-bootstrap.js` - update 前需要 snapshot 的 upstream worker bootstrap file。
 
 并且先做一次 marker 盘点：
 
@@ -297,13 +297,13 @@ Get-ChildItem (Join-Path $omxRoot 'dist\\team') -Recurse -File |
 
 至少只读检查这些是否已经存在：
 
-- `omx-team-send-message.ps1`
-- `omx-team-claim-task.ps1`
-- `omx-team-transition-task-status.ps1`
-- `omx-team-release-task-claim.ps1`
-- `omx-team-report-progress.ps1`
-- `omx-team-complete-task.ps1`
-- `omx-team-fail-task.ps1`
+- `omx-team-send-message.ps1` - 用于安全发送 worker mailbox messages 的 local wrapper。
+- `omx-team-claim-task.ps1` - 用于 claim team task 的 local wrapper。
+- `omx-team-transition-task-status.ps1` - 用于改变 task lifecycle status 的 local wrapper。
+- `omx-team-release-task-claim.ps1` - 用于释放 task claim 的 local wrapper。
+- `omx-team-report-progress.ps1` - 用于报告 worker progress 的 local wrapper。
+- `omx-team-complete-task.ps1` - 用于标记 task complete 的 local wrapper。
+- `omx-team-fail-task.ps1` - 用于标记 task failed 的 local wrapper。
 
 如果这些在更新前就已经缺失或过旧，先修本地生成层，再做官方更新；不要把“更新前已有问题”误判成“上游更新带来的问题”。
 
@@ -344,9 +344,9 @@ omx update
 
 先确认这几个目标还在不在、有没有改名、有没有大改结构：
 
-- `dist/team/runtime.js`
-- `dist/team/windows-worker-controller.js`
-- `dist/team/worker-bootstrap.js`
+- `dist/team/runtime.js` - 用于检查 file 与 API shape drift 的 upstream team runtime file。
+- `dist/team/windows-worker-controller.js` - 用于检查 file 与 API shape drift 的 upstream Windows worker controller file。
+- `dist/team/worker-bootstrap.js` - 用于检查 file 与 API shape drift 的 upstream worker bootstrap file。
 - 本地 patch 脚本依赖的导出名 / 片段锚点
 
 如果文件位置或关键锚点已经变了，先修 replay 脚本，不要直接盲打补丁。
@@ -386,15 +386,15 @@ omx update
 
 这些应长期保留在本地生成层，而不是重打进官方源码：
 
-- `omx-team-send-message.ps1`
-- `omx-team-mailbox-list.ps1`
-- `omx-team-mailbox-mark-delivered.ps1`
-- `omx-team-claim-task.ps1`
-- `omx-team-transition-task-status.ps1`
-- `omx-team-release-task-claim.ps1`
-- `omx-team-report-progress.ps1`
-- `omx-team-complete-task.ps1`
-- `omx-team-fail-task.ps1`
+- `omx-team-send-message.ps1` - 用于发送 worker mailbox messages 的 local wrapper。
+- `omx-team-mailbox-list.ps1` - 用于列出 worker mailbox messages 的 local wrapper。
+- `omx-team-mailbox-mark-delivered.ps1` - 用于标记 mailbox messages delivered 的 local wrapper。
+- `omx-team-claim-task.ps1` - 用于 claim team task 的 local wrapper。
+- `omx-team-transition-task-status.ps1` - 用于改变 task lifecycle status 的 local wrapper。
+- `omx-team-release-task-claim.ps1` - 用于释放 task claim 的 local wrapper。
+- `omx-team-report-progress.ps1` - 用于报告 worker progress 的 local wrapper。
+- `omx-team-complete-task.ps1` - 用于标记 task complete 的 local wrapper。
+- `omx-team-fail-task.ps1` - 用于标记 task failed 的 local wrapper。
 
 #### 2）提示词 / playbook / wait 策略
 
@@ -466,10 +466,10 @@ omx update
 每次官方更新后，按下面顺序处理：
 
 1. **先重放关键运行时 patch**
-   - `runtime.js`
-   - `windows-worker-controller.js`
+- `runtime.js` - 当前建议优先重放的关键 runtime patch target。
+- `windows-worker-controller.js` - 当前建议优先重放的 Windows worker controller patch target。
 2. **再重放 worker bootstrap 安全 patch**
-   - `worker-bootstrap.js`
+- `worker-bootstrap.js` - worker bootstrap 安全 patch 的 replay target。
 3. **再重生成本地用户级包装层**
    - 重新运行 `tools/install-codex-user-level-team-mode.ps1`
 4. **再跑本地测试**

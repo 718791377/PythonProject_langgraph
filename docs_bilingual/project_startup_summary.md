@@ -35,11 +35,11 @@ Stable publication posture:
 
 Stable capability posture:
 
-- `subagent`
+- `subagent` - native Codex leader-side specialist agent capability.
   - already production-usable at the leader layer
-- `native_omx`
+- `native_omx` - oh-my-codex worker-centric durable execution lane.
   - already production-usable as the worker-centric durable lane on native Windows
-- `langgraph`
+- `langgraph` - LangGraph-backed additive durable orchestration backend.
   - already a real additive durable backend
   - still usable but MVP-shaped rather than a fully realized LangGraph-native runtime
 
@@ -47,8 +47,8 @@ Stable capability posture:
 
 The current implementation lane is limited to the active user-level orchestration plans:
 
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - the active user-level team-mode plan for native Codex, oh-my-codex, native_omx, and LangGraph routing behavior.
-- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` - the active durable-state isolation plan that keeps repo-local state from leaking across projects or sessions.
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - active plan that governs user-level team mode and routing behavior.
+- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` - active plan that governs repo-local durable-state isolation.
 
 The long-term north-star plan remains draft-only:
 
@@ -72,17 +72,17 @@ Drift-prone execution detail now lives in the mainline memory summary rather tha
 ## Cold-Start Read Order
 
 1. this file
-2. `docs_bilingual/project_startup_summary.zh-CN.md`
-3. `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md`
-4. `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md`
-5. `AGENTS.md`
-6. `docs_bilingual/governance/langgraph_user_level_runtime_policy.md`
-7. `docs_bilingual/governance/user_level_launcher_payload_policy.md`
-8. `docs_bilingual/governance/openspec_usage_convention.md`
-9. `docs_bilingual/governance/openspec_opsx_project_usage_policy.md`
-10. `docs_bilingual/governance/openspec_official_workflow_policy.md`
-11. `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
-12. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md`
+2. `docs_bilingual/project_startup_summary.zh-CN.md` - Chinese companion for this startup summary.
+3. `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md` - English memory summary for the current mainline.
+4. `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md` - Chinese memory summary for the current mainline.
+5. `AGENTS.md` - repository and user-level Codex instruction surface.
+6. `docs_bilingual/governance/langgraph_user_level_runtime_policy.md` - governance policy for user-level LangGraph runtime layout and usage.
+7. `docs_bilingual/governance/user_level_launcher_payload_policy.md` - governance policy for Windows-safe launcher payload handling.
+8. `docs_bilingual/governance/openspec_usage_convention.md` - governance policy for how this repository uses OpenSpec.
+9. `docs_bilingual/governance/openspec_opsx_project_usage_policy.md` - governance policy for repository OPSX workflow usage.
+10. `docs_bilingual/governance/openspec_official_workflow_policy.md` - governance policy for official OpenSpec workflow authority and enforcement.
+11. `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - active implementation plan for user-level team mode and orchestration routing.
+12. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` - active implementation plan for cross-session durable-state isolation.
 13. the active OpenSpec change being implemented
 
 ## Context Retention Canary And Safety Enforcement
@@ -101,14 +101,14 @@ Context-retention canary:
 
 ## Current Mainline
 
-- `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state`
+- `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state` - current mainline identifier for the LangGraph capability-gap synchronization pass.
 
 ## Active Detail Location
 
 For drift-prone execution detail, read:
 
-- `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md`
-- `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md`
+- `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md` - English memory summary carrying drift-prone details for the current mainline.
+- `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md` - Chinese memory summary carrying drift-prone details for the current mainline.
 
 That mainline memory summary carries:
 
@@ -119,8 +119,8 @@ That mainline memory summary carries:
 
 For the detailed post-mainline LangGraph queue, read:
 
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
-- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md`
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - the bilingual documentation path for repository governance or planning guidance
+- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` - the bilingual documentation path for repository governance or planning guidance
 
 That detailed queue belongs in the implementation plan layer, not in this startup summary.
 

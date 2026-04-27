@@ -60,11 +60,11 @@ status: draft
 
 本方案的设计驱动固定为五条：
 
-1. `恢复优先于自动化`
-2. `控制面清晰优先于执行面复杂`
+1. `恢复优先于自动化` - design principle that recovery must be reliable before more automation is added.
+2. `控制面清晰优先于执行面复杂` - design principle that operator control must stay clear before execution becomes richer.
 3. `additive-only 优先于替代式重构`：新能力只能做增量扩展，不能重写既有 lane 语义
 4. `manual-first 优先于黑箱自动推进`：高风险动作默认先人工控制，再谈自动化
-5. `单人长期维护优先于平台级复杂度`
+5. `单人长期维护优先于平台级复杂度` - design principle that solo maintainability wins over platform-scale complexity.
 
 ## 3. 目标能力与非目标
 
@@ -156,51 +156,51 @@ status: draft
 
 #### 强烈推荐
 
-- `SQLite`
+- `SQLite` - 适配层：持久化内核层
   - 适配层：持久化内核层
   - 用途：`run index`、`thread index`、`event ledger`、`approval ledger`、`audit ledger`、`artifact index`
 
-- `promptfoo`
+- `promptfoo` - 适配层：评测与回归层
   - 适配层：评测与回归层
   - 用途：offline eval、CI regression、red team、版本比较
 
-- `QMD`
+- `QMD` - 适配层：上下文增强层
   - 适配层：上下文增强层
   - 用途：本地 authority/spec/docs 的 first local lookup sidecar
 
 #### 条件推荐
 
-- `jina-embeddings`
+- `jina-embeddings` - 适配层：上下文增强层 / 向量检索层
   - 适配层：上下文增强层 / 向量检索层
   - 用途：`optional embedding provider`，即可插拔 embedding 提供者
   - 约束：必须通过 `provider adapter` 接入，不得绑定为唯一模型路线
 
-- `PySide6`
+- `PySide6` - 适配层：本地 GUI 控制中心
   - 适配层：本地 GUI 控制中心
   - 用途：observer-first / guarded-actions desktop control center
 
-- `Redis`
+- `Redis` - 适配层：交互与执行层 / 团队编排层
   - 适配层：交互与执行层 / 团队编排层
   - 用途：presence、短期队列、锁、Pub/Sub
   - 约束：不得作为唯一 durable truth
 
 #### 仅借鉴设计，不建议纳入主线
 
-- `ClawTeam-OpenClaw`
+- `ClawTeam-OpenClaw` - 只借 swarm/worktree/mailbox/product model
   - 只借 swarm/worktree/mailbox/product model
 
-- `OpenViking`
+- `OpenViking` - 只借 context database / session archiving / memory extraction 的边界模型
   - 只借 context database / session archiving / memory extraction 的边界模型
 
-- `lossless-claw-enhanced`
+- `lossless-claw-enhanced` - 只借 context compaction / CJK-aware summarization 思路
   - 只借 context compaction / CJK-aware summarization 思路
 
 #### 不纳入主线
 
-- `Light Judge`
+- `Light Judge` - 只保留轻量 judge 策略思路，不纳入外部依赖
   - 只保留轻量 judge 策略思路，不纳入外部依赖
 
-- `memory-lancedb-pro-skill`
+- `memory-lancedb-pro-skill` - 作为知识包参考，不作为生产基础设施
   - 作为知识包参考，不作为生产基础设施
 
 ## 6. 面向 Codex CLI 的控制面
@@ -291,17 +291,17 @@ status: draft
 
 在本方案下，这三个词必须分层，不再混用：
 
-- `experts`
+- `experts` - 指 leader-side burst experts
   - 指 leader-side burst experts
   - 本质是角色与调用方式，而不是持久 worker
   - 例如 `analyst / architect / planner / writer / verifier`
 
-- `durable_team`
+- `durable_team` - 指 durable backend family 下的执行对象
   - 指 durable backend family 下的执行对象
   - 在 `native_omx` 下更接近 tracked worker team / durable execution swarm
   - 在 `langgraph` 下更接近 tracked durable thread / graph execution posture
 
-- `persistent team`
+- `persistent team` - 指产品化总模型
   - 指产品化总模型
   - 它不是第三种 backend，也不是第三套 state root
   - 它表示的是：`leader session + burst experts + durable lane + 统一的 inspect / approval / recovery contract`
@@ -599,24 +599,24 @@ status: draft
 建议实现落点保持如下：
 
 - 用户级共享层
-  - `C:\Users\lenovo\.codex\`
+- `C:\Users\lenovo\.codex\` - 用于承接共享 launcher、共享 support scripts、共享 role catalog、共享 helper 安装产物、共享运行时与共享状态开关
   - 用于承接共享 launcher、共享 support scripts、共享 role catalog、共享 helper 安装产物、共享运行时与共享状态开关
 
 - 跨项目共享运行时层
   - 用户级 shared venv、用户级共享 helper、副本产物与可复用模板
   - 这些内容可以跨项目复用，但不能承载任何单项目的 canonical durable state
 
-- `docs_bilingual/governance/`
+- `docs_bilingual/governance/` - 保持总方法论与治理边界
   - 保持总方法论与治理边界
-- `docs_bilingual/implementation_plans/`
+- `docs_bilingual/implementation_plans/` - 记录面向当前目标态的实施方案
   - 记录面向当前目标态的实施方案
-- `openspec/`
+- `openspec/` - 放 proposal / design / spec / tasks
   - 放 proposal / design / spec / tasks
-- `.omx/state/`
+- `.omx/state/` - repo-local durable state
   - repo-local durable state
-- `.omx/plans/`
+- `.omx/plans/` - 辅助计划、收敛产物、协作结果
   - 辅助计划、收敛产物、协作结果
-- `tools/`
+- `tools/` - 各种 adapter、control helpers、eval helpers、GUI launchers
   - 各种 adapter、control helpers、eval helpers、GUI launchers
 
 作为历史外部 OpenClaw 参考源，不应把未来实现继续散落回 `D:\PythonProject_OpenClaw` 做主线实现。
@@ -871,12 +871,12 @@ status: draft
 
 在该目标假设基线下，建议的后续主线切分为：
 
-1. `sync-langgraph-production-grade-narrative-and-status`
-2. `stabilize-langgraph-runtime-contracts-for-solo-production-operations`
-3. `unify-operator-control-surfaces-for-inspect-approval-recovery`
-4. `add-runtime-quality-regression-and-security-gates`
-5. `extend-memory-and-context-governance-after-core-stabilizes`
-6. `add-minimal-local-gui-control-center-after-operator-surface-stabilizes`
+1. `sync-langgraph-production-grade-narrative-and-status` - proposed follow-up mainline for aligning narrative and status with production-grade goals.
+2. `stabilize-langgraph-runtime-contracts-for-solo-production-operations` - proposed follow-up mainline for hardening runtime contracts for solo operation.
+3. `unify-operator-control-surfaces-for-inspect-approval-recovery` - proposed follow-up mainline for one inspect, approval, and recovery surface.
+4. `add-runtime-quality-regression-and-security-gates` - proposed follow-up mainline for quality, regression, and security gates.
+5. `extend-memory-and-context-governance-after-core-stabilizes` - proposed follow-up mainline for adding governed memory and context after core stability.
+6. `add-minimal-local-gui-control-center-after-operator-surface-stabilizes` - proposed follow-up mainline for a minimal local GUI after operator surfaces stabilize.
 
 优先级判断：
 

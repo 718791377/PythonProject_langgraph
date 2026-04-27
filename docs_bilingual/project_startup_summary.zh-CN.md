@@ -29,11 +29,11 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 稳定的能力状态：
 
-- `subagent`
+- `subagent` - native Codex 的 leader-side specialist agent 能力。
   - 已经达到 leader 层个人生产可用
-- `native_omx`
+- `native_omx` - oh-my-codex 的 worker-centric durable execution lane。
   - 已经达到原生 Windows 上 worker-centric durable lane 的个人生产可用
-- `langgraph`
+- `langgraph` - 基于 LangGraph 的 additive durable orchestration backend。
   - 已经是真实可用的 additive durable backend
   - 但仍然属于“可用但偏 MVP”，还不是 fully realized 的 LangGraph-native runtime
 
@@ -66,17 +66,17 @@ translation_of: docs_bilingual/project_startup_summary.md
 ## 冷启动阅读顺序
 
 1. 本文
-2. `docs_bilingual/project_startup_summary.md`
-3. `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md`
-4. `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md`
-5. `AGENTS.md`
-6. `docs_bilingual/governance/langgraph_user_level_runtime_policy.zh-CN.md`
-7. `docs_bilingual/governance/user_level_launcher_payload_policy.zh-CN.md`
-8. `docs_bilingual/governance/openspec_usage_convention.zh-CN.md`
-9. `docs_bilingual/governance/openspec_opsx_project_usage_policy.zh-CN.md`
-10. `docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md`
-11. `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md`
-12. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md`
+2. `docs_bilingual/project_startup_summary.md` - 本启动摘要的英文主文件。
+3. `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md` - 当前主线的中文 memory summary。
+4. `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md` - 当前主线的英文 memory summary。
+5. `AGENTS.md` - 仓库与用户级 Codex instruction surface。
+6. `docs_bilingual/governance/langgraph_user_level_runtime_policy.zh-CN.md` - 用户级 LangGraph runtime layout 与 usage 的治理政策。
+7. `docs_bilingual/governance/user_level_launcher_payload_policy.zh-CN.md` - Windows-safe launcher payload 处理的治理政策。
+8. `docs_bilingual/governance/openspec_usage_convention.zh-CN.md` - 本仓库 OpenSpec 使用方式的治理政策。
+9. `docs_bilingual/governance/openspec_opsx_project_usage_policy.zh-CN.md` - 本仓库 OPSX workflow usage 的治理政策。
+10. `docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md` - 官方 OpenSpec workflow authority 与 enforcement 的治理政策。
+11. `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - 用户级 team mode 与 orchestration routing 的 active implementation plan。
+12. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md` - cross-session durable-state isolation 的 active implementation plan。
 13. 当前正在实现的 active OpenSpec change
 
 ## 上下文保留哨兵与安全执行
@@ -95,14 +95,14 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 ## 当前主线
 
-- `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state`
+- `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state` - 当前 LangGraph capability-gap synchronization pass 的主线标识。
 
 ## 当前活动细节位置
 
 如果需要读取易漂移的执行细节，请转到：
 
-- `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md`
-- `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md`
+- `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md` - 承载当前主线易漂移执行细节的中文 memory summary。
+- `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md` - 承载当前主线易漂移执行细节的英文 memory summary。
 
 那份主线 memory 摘要承载：
 
@@ -113,8 +113,8 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 更详细的 LangGraph 后续 change 队列，应阅读：
 
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md`
-- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md`
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - 用户级 team mode 与 orchestration routing 的详细 implementation plan。
+- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md` - cross-session durable-state isolation 的详细 implementation plan。
 
 这类详细队列应放在 implementation plan 层，而不是放大到 startup summary。
 

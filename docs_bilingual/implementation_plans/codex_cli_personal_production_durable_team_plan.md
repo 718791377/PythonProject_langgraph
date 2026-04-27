@@ -156,51 +156,51 @@ External tool reuse is allowed only when:
 
 #### Strongly recommended
 
-- `SQLite`
+- `SQLite` - layer: persistence kernel
   - layer: persistence kernel
   - use: `run index`, `thread index`, `event ledger`, `approval ledger`, `audit ledger`, `artifact index`
 
-- `promptfoo`
+- `promptfoo` - layer: evaluation and regression
   - layer: evaluation and regression
   - use: offline eval, CI regression, red team, version comparison
 
-- `QMD`
+- `QMD` - layer: context enhancement
   - layer: context enhancement
   - use: local authority or spec or docs first-lookup sidecar
 
 #### Conditionally recommended
 
-- `jina-embeddings`
+- `jina-embeddings` - layer: context enhancement / vector retrieval
   - layer: context enhancement / vector retrieval
   - use: optional embedding provider
   - constraint: must remain behind a provider adapter
 
-- `PySide6`
+- `PySide6` - layer: local GUI control center
   - layer: local GUI control center
   - use: observer-first / guarded-actions desktop control center
 
-- `Redis`
+- `Redis` - layer: interaction / execution / team orchestration
   - layer: interaction / execution / team orchestration
   - use: presence, short-lived queues, locks, Pub/Sub
   - constraint: must not become the only durable truth
 
 #### Design inspiration only, not mainline dependencies
 
-- `ClawTeam-OpenClaw`
+- `ClawTeam-OpenClaw` - borrow swarm, worktree, mailbox, and product-model ideas only
   - borrow swarm, worktree, mailbox, and product-model ideas only
 
-- `OpenViking`
+- `OpenViking` - borrow context database, session archiving, and memory-extraction boundaries only
   - borrow context database, session archiving, and memory-extraction boundaries only
 
-- `lossless-claw-enhanced`
+- `lossless-claw-enhanced` - borrow context compaction and CJK-aware summarization ideas only
   - borrow context compaction and CJK-aware summarization ideas only
 
 #### Not part of the mainline
 
-- `Light Judge`
+- `Light Judge` - keep only the light-judge strategy idea, not the external dependency
   - keep only the light-judge strategy idea, not the external dependency
 
-- `memory-lancedb-pro-skill`
+- `memory-lancedb-pro-skill` - treat as reference material, not production infrastructure
   - treat as reference material, not production infrastructure
 
 ## 6. Control Surface For Codex CLI
@@ -217,9 +217,9 @@ Recommended minimum control surface:
 
 - CLI-first unified entry
 - loopback control API
-- `inspect summary`
-- `approval surface`
-- `recovery surface`
+- `inspect summary` - operator surface for viewing the current durable run and state summary.
+- `approval surface` - operator surface for pending approvals and recorded approval decisions.
+- `recovery surface` - operator surface for resume, replay, redrive, and manual recovery actions.
 - replay / time-travel entry
 - a small cost / concurrency / backlog board
 
@@ -235,14 +235,14 @@ In this plan, a production durable team is not "more always-on agents". It is:
 
 The model must define:
 
-- `role assignment`
-- `ownership`
-- `parallel slice planning`
-- `convergence`
-- `conflict detection`
-- `approval wait`
-- `manual takeover`
-- `failure branch recovery`
+- `role assignment` - team-model concern for mapping work to explicit roles.
+- `ownership` - team-model concern for making file, task, and decision authority explicit.
+- `parallel slice planning` - team-model concern for splitting work into safe concurrent execution slices.
+- `convergence` - team-model concern for merging parallel outputs into one coherent state.
+- `conflict detection` - team-model concern for finding incompatible edits or task outcomes early.
+- `approval wait` - team-model concern for durable human gates that can survive interruption.
+- `manual takeover` - team-model concern for operator intervention in an in-flight durable task.
+- `failure branch recovery` - team-model concern for retrying or redriving only the failed path.
 
 Recommended default:
 
@@ -300,17 +300,17 @@ Permanent rules:
 
 These three terms must stay layered:
 
-- `experts`
+- `experts` - leader-side burst experts
   - leader-side burst experts
   - a staffing and invocation concept, not persistent workers
   - examples: `analyst / architect / planner / writer / verifier`
 
-- `durable_team`
+- `durable_team` - execution objects within a durable backend family
   - execution objects within a durable backend family
   - in `native_omx`, closer to a tracked worker swarm
   - in `langgraph`, closer to a tracked durable thread or graph execution posture
 
-- `persistent team`
+- `persistent team` - the product-level operating model
   - the product-level operating model
   - not a third backend and not a third state root
   - means: `leader session + burst experts + durable lane + unified inspect / approval / recovery contract`
@@ -359,11 +359,11 @@ The user-level canary capability should be a checker, not a prompt injector. Whe
 
 Required layers:
 
-- `canonical durable state`
-- `artifact state`
-- `memory state`
-- `retrieval substrate`
-- `derived inspect projection`
+- `canonical durable state` - primary repo-local truth for durable task progress and recovery.
+- `artifact state` - persistent record of generated outputs, references, and artifact identities.
+- `memory state` - persistent record of short-term and long-term memory used by orchestration.
+- `retrieval substrate` - storage and indexing layer that supports governed retrieval and context enhancement.
+- `derived inspect projection` - read-only status view derived from canonical state, artifacts, and memory.
 
 These must not be collapsed into one vague "memory" or one dashboard feed.
 
@@ -416,11 +416,11 @@ Continue to store:
 
 Explicit categories:
 
-- `procedural memory`
-- `short-term thread memory`
-- `semantic long-term memory`
-- `episodic memory`
-- `document knowledge base`
+- `procedural memory` - memory category for prompts, policies, rules, and skills.
+- `short-term thread memory` - memory category for active thread state, message history, and checkpoints.
+- `semantic long-term memory` - memory category for durable facts, preferences, and organizational rules.
+- `episodic memory` - memory category for examples, trajectories, and reusable experience.
+- `document knowledge base` - memory category for indexed documents used by retrieval and RAG.
 
 Hard rules:
 
@@ -592,24 +592,24 @@ Recommended order:
 Recommended structure:
 
 - user-level shared layer
-  - `C:\Users\lenovo\.codex\`
+- `C:\Users\lenovo\.codex\` - shared launchers, support scripts, role catalogs, helper artifacts, shared runtime, and shared switches
   - shared launchers, support scripts, role catalogs, helper artifacts, shared runtime, and shared switches
 
 - cross-project shared runtime layer
   - shared venvs, shared helper mirrors, reusable templates
   - may be shared across projects, but must not host any single project's canonical durable state
 
-- `docs_bilingual/governance/`
+- `docs_bilingual/governance/` - long-term method and governance boundaries
   - long-term method and governance boundaries
-- `docs_bilingual/implementation_plans/`
+- `docs_bilingual/implementation_plans/` - target-state implementation plans
   - target-state implementation plans
-- `openspec/`
+- `openspec/` - proposal / design / spec / tasks
   - proposal / design / spec / tasks
-- `.omx/state/`
+- `.omx/state/` - repo-local durable state
   - repo-local durable state
-- `.omx/plans/`
+- `.omx/plans/` - support plans, convergence artifacts, coordination results
   - support plans, convergence artifacts, coordination results
-- `tools/`
+- `tools/` - adapters, control helpers, eval helpers, GUI launchers
   - adapters, control helpers, eval helpers, GUI launchers
 
 As a historical external OpenClaw reference only, do not scatter future mainline implementation back into `D:\PythonProject_OpenClaw`.
@@ -633,12 +633,12 @@ These boundaries must remain stable:
 
 Backward-compatible objects:
 
-- `inspect/status/run surface`
-- `shared durable-state summary contract`
-- `artifact identity`
-- `approval identity`
-- `recovery pointer identity`
-- `backend-family selection semantics`
+- `inspect/status/run surface` - compatibility object for the operator-facing run status view.
+- `shared durable-state summary contract` - compatibility object for a common summary schema across backend families.
+- `artifact identity` - compatibility object for stable artifact references across backends.
+- `approval identity` - compatibility object for stable approval references across backends.
+- `recovery pointer identity` - compatibility object for stable resume, replay, or redrive pointers.
+- `backend-family selection semantics` - compatibility object for preserving explicit native_omx versus langgraph selection.
 
 ## 12. Failure Recovery, Observability, And Troubleshooting
 
@@ -864,12 +864,12 @@ Any multi-file change that touches the following should enter an OpenSpec mainli
 
 Recommended next mainlines under this baseline:
 
-1. `sync-langgraph-production-grade-narrative-and-status`
-2. `stabilize-langgraph-runtime-contracts-for-solo-production-operations`
-3. `unify-operator-control-surfaces-for-inspect-approval-recovery`
-4. `add-runtime-quality-regression-and-security-gates`
-5. `extend-memory-and-context-governance-after-core-stabilizes`
-6. `add-minimal-local-gui-control-center-after-operator-surface-stabilizes`
+1. `sync-langgraph-production-grade-narrative-and-status` - proposed follow-up mainline for aligning narrative and status with production-grade goals.
+2. `stabilize-langgraph-runtime-contracts-for-solo-production-operations` - proposed follow-up mainline for hardening runtime contracts for solo operation.
+3. `unify-operator-control-surfaces-for-inspect-approval-recovery` - proposed follow-up mainline for one inspect, approval, and recovery surface.
+4. `add-runtime-quality-regression-and-security-gates` - proposed follow-up mainline for quality, regression, and security gates.
+5. `extend-memory-and-context-governance-after-core-stabilizes` - proposed follow-up mainline for adding governed memory and context after core stability.
+6. `add-minimal-local-gui-control-center-after-operator-surface-stabilizes` - proposed follow-up mainline for a minimal local GUI after operator surfaces stabilize.
 
 Priority judgment:
 
