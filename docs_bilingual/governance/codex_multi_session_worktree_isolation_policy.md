@@ -115,4 +115,10 @@ Required lifecycle:
 4. Archive the completed OpenSpec change so its delta spec becomes a stable spec.
 5. Publish the archive and stable spec through the GitLab-first workflow.
 
+Archive isolation rule:
+
+- For changes that affect code, executable checks, CI, stable specs, startup instructions, repository instruction surfaces, or structural governance rules, perform the archive in a dedicated archive worktree before it is merged back. A dedicated archive worktree is a separate Git worktree used only for the archive branch and its generated stable-spec updates.
+- The archive worktree must pass the relevant validation commands before the archive branch is committed. After the archive branch is integrated into the main workspace, the main workspace must pass validation again.
+- Purely explanatory text edits may use a lighter archive flow when they do not change enforceable repository behavior, but unclear cases should use the dedicated archive worktree flow.
+
 Do not leave a completed worktree-isolation OpenSpec change active after the implementation has already merged to `main`. A completed active change is a lifecycle gap, even when its tasks are all checked.

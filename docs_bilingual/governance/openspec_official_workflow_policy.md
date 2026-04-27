@@ -44,6 +44,7 @@ Authority order:
 - Inspect active work with `openspec list --json`, `openspec status`, `openspec show`, and `openspec validate`
 - Implement only after the required change artifacts are ready
 - Archive completed changes with `openspec archive <change> --yes` only after implementation, specs, and validation are stable
+- For this repository, archives that affect code, executable checks, CI, stable specs, startup instructions, repository instruction surfaces, or structural governance rules additionally follow the local archive-worktree isolation flow in `docs_bilingual/governance/openspec_opsx_project_usage_policy.md` - governance policy for repository OPSX routes and archive workflow gates. This local flow does not change the official semantics of `openspec archive <change> --yes`, the official OpenSpec CLI command that archives a completed change.
 - Do not invent repository-local aliases that override official OpenSpec command semantics
 - When a structural change affects repo-local source, repo-local durable-state contracts, or the project-level handoff from shared user-level surfaces into this repository, treat that change as OpenSpec work in this repository
 

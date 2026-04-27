@@ -212,7 +212,7 @@ Use for:
 Minimum CLI baseline:
 
 - `openspec status --change "<name>"` - official OpenSpec CLI command for reading a named change status.
-- `openspec archive <name>` or equivalent archive flow
+- `openspec archive <name>` - official OpenSpec CLI command for moving a completed change into archive history and promoting its delta specs into stable specs, or an equivalent archive flow that preserves the same repository-local result.
 
 Repository archive gate:
 
@@ -220,6 +220,15 @@ Repository archive gate:
 - do not archive a change that still lacks core artifacts such as `proposal.md`, `design.md`, or `tasks.md`
 - do not archive a metadata-only or smoke-test placeholder directory as if it were a normal completed change
 - if later work is still needed but the original archive was valid, prefer a forward follow-up change rather than silently normalizing an invalid archive
+
+Repository archive isolation flow:
+
+- Use this flow for changes that alter source code, scripts, tests, CI, checkers, runtime behavior, stable specs, startup instructions, `AGENTS.md` as the repository instruction surface, or structural governance rules. Purely explanatory text edits may use the lighter archive flow when they do not change enforceable behavior, but uncertain cases should use the dedicated archive worktree flow.
+- In a dedicated archive worktree, run the archive operation for the completed change. A dedicated archive worktree is a separate Git worktree created only for the archive branch so archive-generated file moves do not mix with the main workspace.
+- Verify inside that archive worktree before publication. Worktree-local verification must include the repository guard commands required by the change so archive-generated specs are checked before integration.
+- Commit the archive branch after worktree-local verification passes. The archive branch is the Git branch that carries the archive result and its stable-spec updates.
+- Merge the archive branch back into the main workspace through the normal GitLab-first flow. The main workspace is the repository checkout used by the session leader after the branch is integrated.
+- Verify again in the main workspace after integration. The core rule is: verify first in the archive worktree, then verify again after the archive branch is integrated into the main workspace.
 
 ## 6. When OPSX Is Required In This Repository
 

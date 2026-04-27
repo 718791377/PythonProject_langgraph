@@ -44,6 +44,7 @@ status: active
 - 用 `openspec list --json`、`openspec status`、`openspec show`、`openspec validate` 做检查与评审
 - 只有在必需 artifacts 已经就绪后才进入实施
 - 当实现、specs 和验证都稳定后，才用 `openspec archive <change> --yes` 归档
+- 对本仓库而言，凡是会影响代码、可执行检查、CI、stable specs、startup instructions、仓库指令面或结构性治理规则的归档，还必须遵守 `docs_bilingual/governance/openspec_opsx_project_usage_policy.zh-CN.md` 中的本地 archive-worktree 隔离流程；该文件是定义仓库 OPSX 路由与归档工作流门槛的治理政策。这个本地流程不改变 `openspec archive <change> --yes` 的官方语义；该命令是官方 OpenSpec CLI 中归档 completed change 的命令。
 - 不要发明会覆盖官方 OpenSpec 语义的仓库私有别名命令
 - 只要结构性改动会影响 repo-local source、repo-local durable-state contract，或用户级共享表面进入本仓库的项目级承接边界，就应把这类改动视为本仓库的 OpenSpec 工作
 
