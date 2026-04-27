@@ -223,11 +223,13 @@ def main() -> int:
             print(f"  - {finding.relative_path}:{finding.line}: {finding.text}")
             print(f"    {finding.suggestion}")
         print(f"Checked files: {checked_files}")
+        print("Compatibility baseline: " + ("disabled" if args.no_baseline else str(baseline_path)))
         print(f"Baseline allowed findings: {len(allowed)}")
         return 1
 
     print("Name clarity rules check passed.")
     print(f"Checked files: {checked_files}")
+    print("Compatibility baseline: " + ("disabled" if args.no_baseline else str(baseline_path)))
     print(f"Baseline allowed findings: {len(allowed)}")
     return 0
 

@@ -35,6 +35,16 @@ class NameClarityRulesCheckTest(unittest.TestCase):
             cwd=REPO_ROOT,
         )
 
+    def run_check_text(self, root: Path, *extra_args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(SCRIPT_PATH), "--root", str(root), *extra_args],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=REPO_ROOT,
+        )
+
     def test_fails_for_new_bare_code_names_in_docs_and_openspec(self) -> None:
         root = self.make_root("name-clarity-fail")
         self.write_file(root, "docs_bilingual/guide.md", "# Guide\n\n- `tools/example.py`\n")
@@ -96,6 +106,19 @@ class NameClarityRulesCheckTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["baseline_allowed"], 1)
         self.assertEqual(payload["counts"]["violations"], 1)
         self.assertIn("tools/new.py", payload["errors"][0])
+
+    def test_text_output_reports_baseline_mode(self) -> None:
+        root = self.make_root("name-clarity-text")
+        self.write_file(
+            root,
+            "docs_bilingual/guide.md",
+            "# Guide\n\n- `tools/example.py` - validates one repository invariant before CI accepts a change.\n",
+        )
+
+        result = self.run_check_text(root, "--no-baseline")
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        self.assertIn("Compatibility baseline: disabled", result.stdout)
+        self.assertIn("Baseline allowed findings: 0", result.stdout)
 
 
 if __name__ == "__main__":
