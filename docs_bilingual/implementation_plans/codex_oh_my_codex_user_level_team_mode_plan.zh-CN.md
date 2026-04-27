@@ -73,15 +73,17 @@ doc_class: implementation_plan
 - `codex-safety-boundary-controls.ps1` - 未来用户级 mirrored helper，用于在任意项目中运行总安全边界检查。
 - `safety_boundary_controls.yaml` - 未来安全边界登记表，用来记录每条边界的 owner layer、提示词位置、可执行控制和当前实施状态。
 
-总 checker 属于用户级能力，因为它要保护跨项目复用的 Codex / OMX / LangGraph 行为。提示词提醒文本仍属于项目级，因为每个仓库拥有自己的 `AGENTS.md`、startup summary、durable truth 和恢复阅读顺序。
+总 checker 属于用户级能力，因为它要保护跨项目复用的 Codex / OMX / LangGraph 行为。一般提示词提醒文本仍属于项目级，因为每个仓库拥有自己的 `AGENTS.md`、startup summary、durable truth 和恢复阅读顺序。上下文保留哨兵更窄：它的字面提示词只能放在 `docs_bilingual/project_startup_summary.md` 与 `docs_bilingual/project_startup_summary.zh-CN.md`。
 
-启动摘要还必须携带上下文保留哨兵。哨兵提示词文本必须保留在项目级启动面，不进入用户级启动摘要，也不进入 wrapper payload：
+启动摘要还必须携带上下文保留哨兵。其他 active instruction surface，包括 `AGENTS.md`、用户级 startup summary、implementation plan、生成式 wrapper 和 launcher payload，可以指向 startup summary 的哨兵来源，但不得重复字面开头/结尾短语。
 
-- 除非更高优先级 system 或 developer 指令阻止，本仓库编排工作的完整模型回复应以 `指挥官` 开头，并以 `喵~` 结尾。
+哨兵约定是：
+
+- startup summary 定义本编排仓库完整模型回复的字面提示词，除非更高优先级 system 或 developer 指令阻止。
 - 如果模型在本应读取 startup summary 后没有输出该哨兵，则视为可能上下文丢失。
 - 恢复动作是按新会话冷启动方式重读 `docs_bilingual/project_startup_summary.md`，再按其 read order 补读继续当前会话必须需要的文件。
 
-未来用户级 canary checker 不负责把哨兵提示词注入 wrapper payload。它只在收到 transcript 或 response text 时检查回复是否以 `指挥官` 开头、以 `喵~` 结尾；如果不满足，就输出冷启动恢复指令，要求重读 `AGENTS.md` 和 `docs_bilingual/project_startup_summary.*`。
+未来用户级 canary checker 不负责把哨兵提示词注入 wrapper payload。它只在收到 transcript 或 response text 时检查回复是否满足 startup-summary-defined canary；如果不满足，就输出冷启动恢复指令，要求重读 `AGENTS.md` 和 `docs_bilingual/project_startup_summary.*`。
 
 已经实现：
 

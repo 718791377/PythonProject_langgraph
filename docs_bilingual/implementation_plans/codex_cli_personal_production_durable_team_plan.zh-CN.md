@@ -336,13 +336,13 @@ status: draft
 - 发布、清理、状态修改和跨项目激活必须有脚本 gate，或者明确登记为尚未落地的 gap。
 - 用户级总安全边界 checker 必须验证每条已登记安全规则都有脚本控制、提示词提醒和实施状态；否则必须报告为 tracked gap。
 
-启动层还应加入上下文保留哨兵，但哨兵提示词文本属于项目级。它应放在每个仓库自己的 `AGENTS.md` 和 `project_startup_summary.*`，不进入用户级启动摘要，也不进入 wrapper payload。当前哨兵约定是：
+启动层还应加入上下文保留哨兵，但哨兵字面提示词属于项目级并由 startup summary 持有。它只能放在每个仓库自己的 `project_startup_summary.*` 文件对中，不进入 `AGENTS.md`、用户级启动摘要、implementation plan、生成式 wrapper 或 launcher payload。当前哨兵约定是：
 
-- 除非更高优先级 system 或 developer 指令阻止，本仓库编排工作的完整模型回复以 `指挥官` 开头，并以 `喵~` 结尾。
+- startup summary 定义本仓库完整模型回复的字面提示词，除非更高优先级 system 或 developer 指令阻止。
 - 如果 startup summary 本应已读取，但完整回复缺少哨兵文本，则视为可能的上下文丢失信号。
 - 恢复方式是从 `AGENTS.md` 和 `docs_bilingual/project_startup_summary.*` 重新执行冷启动阅读顺序，然后只补读继续当前任务必须需要的文件。
 
-用户级 canary 能力应是 checker，而不是提示词注入器。它在收到 transcript 或 response text 时检查 `指挥官` 前缀和 `喵~` 后缀；如果缺失，就输出上面的冷启动恢复指令。没有 transcript 或 response 输入时，它只检查当前项目是否在 `AGENTS.md` 和 `project_startup_summary.*` 中声明该哨兵。
+用户级 canary 能力应是 checker，而不是提示词注入器。它在收到 transcript 或 response text 时检查 startup-summary-defined canary；如果缺失，就输出上面的冷启动恢复指令。没有 transcript 或 response 输入时，它只检查当前项目是否在 `project_startup_summary.*` 中声明该哨兵，并且没有在其他 active instruction surface 重复字面提示词。
 
 ## 8. 状态、记忆与工件持久化
 

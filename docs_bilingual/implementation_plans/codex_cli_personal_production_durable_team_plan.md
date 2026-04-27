@@ -345,13 +345,13 @@ Minimum production requirement:
 - publication, cleanup, state mutation, and cross-project activation must have a script gate or an explicit documented gap.
 - a user-level aggregate safety-boundary checker must verify that every registered safety rule has a script control, a prompt reminder, and an implementation status, or else report it as a tracked gap.
 
-The startup layer should also include a context-retention canary, but the canary prompt text is project-level. It belongs in each repository's `AGENTS.md` and `project_startup_summary.*`, not in user-level startup summaries and not in wrapper payloads. The current canary convention is:
+The startup layer should also include a context-retention canary, but the literal canary prompt text is project-level and startup-summary-owned. It belongs only in each repository's `project_startup_summary.*` pair, not in `AGENTS.md`, user-level startup summaries, implementation plans, generated wrappers, or launcher payloads. The current canary convention is:
 
-- full assistant responses for this repository's orchestration work start with `指挥官` and end with `喵~`, unless a higher-priority system or developer instruction prevents it.
+- startup summaries define the literal prompt for full assistant responses in their repository, unless a higher-priority system or developer instruction prevents it.
 - missing canary text after startup-summary reading is treated as possible context-loss evidence.
 - recovery is to rerun the cold-start read order from `AGENTS.md` and `docs_bilingual/project_startup_summary.*`, then reread only the files needed to continue safely.
 
-The user-level canary capability should be a checker, not a prompt injector. When it receives transcript or response text, it should verify the `指挥官` prefix and `喵~` suffix and emit the recovery instruction above when the canary is absent. Without transcript or response input, it should only verify that the current project declares the canary in `AGENTS.md` and `project_startup_summary.*`.
+The user-level canary capability should be a checker, not a prompt injector. When it receives transcript or response text, it should verify the startup-summary-defined canary and emit the recovery instruction above when the canary is absent. Without transcript or response input, it should only verify that the current project declares the canary in `project_startup_summary.*` and does not duplicate the literal prompt in other active instruction surfaces.
 
 ## 8. State, Memory, And Artifact Persistence
 
