@@ -23,7 +23,7 @@ This change is needed now because the repository already has an explicit user-le
 ## Impact
 
 - affected user-level routing policy and generated leader instructions
-- `tools/install-codex-user-level-team-mode.ps1`
+- `tools/install-codex-user-level-team-mode.ps1` - installer source script that generates user-level team-mode routing assets
 - generated `team-leader.toml` and routing-policy surfaces
 - related user-level team-mode documentation and implementation plans
 - tests that verify routing-policy wording and generated asset behavior

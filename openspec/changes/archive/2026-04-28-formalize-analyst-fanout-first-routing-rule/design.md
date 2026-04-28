@@ -8,10 +8,10 @@ The current user-level routing model already has strong role descriptions, phase
 
 Without an explicit rule, the router and the operator can drift into a mixed first round such as:
 
-- `analyst`
-- `architect`
-- `planner`
-- `writer`
+- `analyst` - leader-side role for definition, ambiguity reduction, scoping, and bounded research fan-out
+- `architect` - leader-side role for architecture design after analyst fan-in clarifies the design problem
+- `planner` - leader-side role for execution ordering after analyst fan-in clarifies implementation slices
+- `writer` - leader-side role for final documentation after analyst fan-in and downstream decisions are complete
 
 That mixed first round is costly because it mixes four abstraction levels:
 
@@ -114,9 +114,9 @@ Rejected because:
 
 This change must not reinterpret:
 
-- `architect`
-- `planner`
-- `writer`
+- `architect` - leader-side role for architecture decisions, not a generic research worker
+- `planner` - leader-side role for execution sequencing, not a first-round research substitute
+- `writer` - leader-side role for final documentation, not an initial scoping role
 - durable worker lanes
 
 It changes the sequencing rule for one task class, not the meaning of the roles themselves.
