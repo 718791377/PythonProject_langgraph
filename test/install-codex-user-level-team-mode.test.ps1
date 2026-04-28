@@ -517,6 +517,8 @@ Assert-True ($leaderProfile.Contains('Mixed persistent pane compose remains an a
 Assert-True ($leaderProfile.Contains('omx-team-compose.ps1')) 'team-leader.toml does not mention the compose entrypoint.'
 Assert-True ($leaderProfile.Contains('Mixed persistent pane compose remains an advanced opt-in mode')) 'team-leader.toml does not preserve the advanced opt-in compose boundary.'
 Assert-True ($leaderProfile.Contains('omx-team-compose.ps1')) 'team-leader.toml does not mention the compose entrypoint.'
+Assert-True ($leaderProfile.Contains('first fan out into homogeneous `analyst` calls')) 'team-leader.toml does not describe analyst-fanout-first bounded research routing.'
+Assert-True ($leaderProfile.Contains('Do not mix `architect`, `planner`, or `writer` into that first bounded research round by default')) 'team-leader.toml does not keep architect/planner/writer out of the default first bounded research round.'
 $verifierProfile = Get-Content -LiteralPath (Join-Path $CodexHome 'agents\verifier.toml') -Raw
 Assert-True ($verifierProfile.Contains('name = "verifier"')) 'verifier.toml was not generated with the expected role name.'
 Assert-True ($verifierProfile.Contains('model = "gpt-5.4"')) 'verifier.toml did not promote the model to gpt-5.4.'
@@ -722,9 +724,14 @@ Assert-True ($playbookContent.Contains('omx-team-compose-shutdown.ps1')) 'Genera
 Assert-True ($playbookContent.Contains('omx-team-compose-reconcile.ps1')) 'Generated playbook does not mention the compose reconcile helper.'
 Assert-True ($playbookContent.Contains('partial compose runtime state is explicit')) 'Generated playbook does not describe explicit partial compose state semantics.'
 Assert-True ($playbookContent.Contains('compose recovery posture is explicit')) 'Generated playbook does not describe explicit compose recovery posture semantics.'
+Assert-True ($playbookContent.Contains('## Analyst fan-out first for bounded research')) 'Generated playbook does not expose the analyst-fanout-first bounded research section.'
+Assert-True ($playbookContent.Contains('homogeneous `analyst` fan-out is the default first research round')) 'Generated playbook does not describe homogeneous analyst fan-out as the first bounded research round.'
+Assert-True ($playbookContent.Contains('`architect`, `planner`, and `writer` are not default first-round roles')) 'Generated playbook does not describe architect/planner/writer as post-fan-in bounded research roles.'
 
 $quickReferenceContent = Get-Content -LiteralPath (Join-Path $CodexHome 'docs\team-mode-quick-reference.md') -Raw
 Assert-True ($quickReferenceContent.Contains('# Team Mode Quick Reference')) 'Generated quick-reference card has the wrong title.'
+Assert-True ($quickReferenceContent.Contains('## Analyst Fan-out First')) 'Generated quick-reference card does not expose analyst-fanout-first guidance.'
+Assert-True ($quickReferenceContent.Contains('bounded multi-face research first uses homogeneous `analyst` fan-out')) 'Generated quick-reference card does not describe homogeneous analyst fan-out first.'
 Assert-True ($quickReferenceContent.Contains('## 10 Common Commands')) 'Generated quick-reference card does not expose the common-commands section.'
 Assert-True ($quickReferenceContent.Contains('codex.openclaw --version')) 'Generated quick-reference card does not include the explicit non-profile wrapped codex command.'
 Assert-True ($quickReferenceContent.Contains('codex-ohmy --version')) 'Generated quick-reference card does not include the stable user-level wrapped codex command.'
@@ -1225,6 +1232,8 @@ Assert-True ($modelInstructionsContent.Contains('single `wait_agent` call')) 'Wr
 Assert-True ($modelInstructionsContent.Contains('progress/liveness updates about every 30s')) 'Wrapped native-mode launch did not require periodic native-subagent progress updates.'
 Assert-True ($modelInstructionsContent.Contains('current step, completed work, next step, and blockers')) 'Wrapped native-mode launch did not require progress updates to include useful liveness detail.'
 Assert-True ($modelInstructionsContent.Contains('analyst: unclear outcome')) 'Wrapped native-mode launch did not include analyst routing thresholds.'
+Assert-True ($modelInstructionsContent.Contains('Analyst-fanout-first task class: bounded_multi_face_research')) 'Wrapped native-mode launch did not describe analyst-fanout-first task class.'
+Assert-True ($modelInstructionsContent.Contains('do not include `architect`, `planner`, or `writer` as default first-round research roles')) 'Wrapped native-mode launch did not delay architect/planner/writer until after analyst fan-in.'
 Assert-True ($modelInstructionsContent.Contains('bug-finder / bug-rebutter / bug-judge')) 'Wrapped native-mode launch did not include adversarial bug-review thresholds.'
 Assert-True ($modelInstructionsContent.Contains('Installed burst-review roles: bug-finder, bug-rebutter, bug-judge')) 'Wrapped native-mode launch did not mention the installed burst-review roles.'
 
@@ -1373,6 +1382,20 @@ Assert-True ($routingPolicy.advanced_compose_mode.enabled_by_default -eq $false)
 Assert-True ($routingPolicy.advanced_compose_mode.leader_outside_pane_roster -eq $true) 'Routing policy did not preserve the leader-outside-pane-roster rule for compose mode.'
 $composeManifestFields = @($routingPolicy.advanced_compose_mode.manifest_fields | ForEach-Object { [string]$_ })
 Assert-ArrayContains -Actual $composeManifestFields -Expected 'mailbox routing' -Message 'Routing policy did not expose compose manifest field expectations.'
+Assert-Equal ([string]$routingPolicy.analyst_fanout_first_task_class.name) 'bounded_multi_face_research' 'Routing policy did not expose the bounded analyst-fanout-first task class.'
+Assert-Equal ([string]$routingPolicy.analyst_fanout_first_task_class.first_round_preference) 'homogeneous_analyst_fanout' 'Routing policy did not prefer homogeneous analyst fan-out for bounded multi-face research.'
+$analystFirstRoundRoles = @($routingPolicy.analyst_fanout_first_task_class.first_round_roles | ForEach-Object { [string]$_ })
+Assert-ArrayContains -Actual $analystFirstRoundRoles -Expected 'analyst' -Message 'Routing policy did not select analyst for first-round bounded research fan-out.'
+$delayedBoundedResearchRoles = @($routingPolicy.analyst_fanout_first_task_class.default_first_round_not_roles | ForEach-Object { [string]$_ })
+Assert-ArrayContains -Actual $delayedBoundedResearchRoles -Expected 'architect' -Message 'Routing policy did not delay architect until after analyst fan-in for bounded research.'
+Assert-ArrayContains -Actual $delayedBoundedResearchRoles -Expected 'planner' -Message 'Routing policy did not delay planner until after analyst fan-in for bounded research.'
+Assert-ArrayContains -Actual $delayedBoundedResearchRoles -Expected 'writer' -Message 'Routing policy did not delay writer until after analyst fan-in for bounded research.'
+$architectThreshold = @($routingPolicy.routing_thresholds | Where-Object { [string]$_.name -eq 'architect' } | Select-Object -First 1)[0]
+$plannerThreshold = @($routingPolicy.routing_thresholds | Where-Object { [string]$_.name -eq 'planner' } | Select-Object -First 1)[0]
+$writerThreshold = @($routingPolicy.routing_thresholds | Where-Object { [string]$_.name -eq 'writer' } | Select-Object -First 1)[0]
+Assert-True ($architectThreshold.first_round_default_for_bounded_multi_face_research -eq $false) 'Routing policy incorrectly treats architect as a default first-round bounded research role.'
+Assert-True ($plannerThreshold.first_round_default_for_bounded_multi_face_research -eq $false) 'Routing policy incorrectly treats planner as a default first-round bounded research role.'
+Assert-True ($writerThreshold.first_round_default_for_bounded_multi_face_research -eq $false) 'Routing policy incorrectly treats writer as a default first-round bounded research role.'
 Assert-True ($routingPolicy.native_subagent_contract.official_native_capability -eq $true) 'Routing policy did not mark native subagents as an official native capability.'
 Assert-True ($routingPolicy.native_subagent_contract.raw_codex_auto_spawns_specialists_by_default -eq $false) 'Routing policy did not clarify that raw Codex does not auto-spawn specialist roles by default.'
 Assert-Equal ([int]$routingPolicy.native_subagent_contract.limits.max_threads) 4 'Routing policy did not expose the managed max_threads value.'

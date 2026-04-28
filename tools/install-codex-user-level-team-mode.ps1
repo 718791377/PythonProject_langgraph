@@ -819,6 +819,9 @@ You are Team Leader. The current main Codex CLI session is the leader lane. Do n
   - emit a short routing trace that explains the decision
 - Re-run the same activation check when the task phase changes, when work expands to two or more execution slices, when tracked `.omx` durable state is detected, or when the user explicitly requests `omx`, `LangGraph`, resume, continue, or parallel execution.
 - Route expert work to native subagents when routing is enabled.
+- For bounded multi-face research that is still in definition, classification, scoping, or repository-grounded comparison, first fan out into homogeneous `analyst` calls.
+- Do not mix `architect`, `planner`, or `writer` into that first bounded research round by default.
+- After the leader absorbs the analyst fan-in, escalate to `architect`, `planner`, or `writer` only if the task has clearly moved into architecture design, execution ordering, or document-finalization work.
 - Start durable panes only after the plan is frozen.
 - Keep persistent panes homogeneous by default: team-executor, executor, or debugger.
 - Keep research and implementation as separate roles when the task started open-ended.
@@ -867,15 +870,15 @@ You are Team Leader. The current main Codex CLI session is the leader lane. Do n
 - Keep the current main Codex CLI session as leader outside the compose pane roster.
 - Treat `omx-team-compose.ps1` as a manifest-driven advanced surface, not as a replacement for the default hybrid model.
 - Use these routing thresholds:
-  - analyst: unclear outcome, non-goals, or acceptance target; or 2+ major ambiguities remain
+  - analyst: unclear outcome, non-goals, or acceptance target; 2+ major ambiguities remain; or bounded multi-face research needs homogeneous first-round fan-out
   - researcher: external docs, dependency behavior, version-sensitive facts, or official-source verification
-  - architect: 2+ modules, trust boundaries, shared interfaces, migrations, or non-local design decisions
-  - planner: 2+ execution slices, serial hotspots, rollout ordering, or dependency chains
+  - architect: 2+ modules, trust boundaries, shared interfaces, migrations, or non-local design decisions; for bounded multi-face research, use after analyst fan-in shows an architecture layer
+  - planner: 2+ execution slices, serial hotspots, rollout ordering, or dependency chains; for bounded multi-face research, use after analyst fan-in shows an execution-ordering layer
   - debugger: blocking failure, regression, reproducible runtime defect, or stabilization-heavy work
   - verifier: before final acceptance for behavior-changing or multi-file work; always after multi-worker integration
   - test-engineer: critical-path behavior changed, tests are missing, flaky, or broad regression risk exists
   - security-reviewer: auth, secrets, permissions, untrusted input, code execution, external trust boundaries, or payments
-  - writer: user-facing behavior, setup, migration, or operator workflow changed
+  - writer: user-facing behavior, setup, migration, or operator workflow changed; for bounded multi-face research, use after analyst fan-in shows a document-finalization layer
   - bug-finder / bug-rebutter / bug-judge: contested or noisy bug triage after one normal verification still leaves disagreement or a broad candidate bug set
 - Launch durable teams only when the plan is frozen and at least 2 mostly independent execution slices exist.
 - Durable-team phase map:
@@ -2631,9 +2634,12 @@ function Get-CodexUserLevelRoutingThresholdDefinitions {
     [ordered]@{
       name = 'analyst'
       lane = 'leader-native-subagent'
+      first_round_preference = 'homogeneous_analyst_fanout_for_bounded_multi_face_research'
       invoke_when = @(
         'outcome, non-goals, or acceptance target is unclear'
         'two or more major ambiguities remain'
+        'bounded multi-face research is still in definition, classification, scoping, or repository-grounded comparison'
+        'multiple bounded research faces need a homogeneous first fan-out before design, planning, or writing escalation'
       )
     }
     [ordered]@{
@@ -2647,17 +2653,23 @@ function Get-CodexUserLevelRoutingThresholdDefinitions {
     [ordered]@{
       name = 'architect'
       lane = 'leader-native-subagent'
+      first_round_default_for_bounded_multi_face_research = $false
+      escalation_after_analyst_fan_in = 'use after analyst fan-in shows the next question is architectural'
       invoke_when = @(
         'the change crosses two or more modules, trust boundaries, or shared interfaces'
         'migrations, shared contracts, or non-local design decisions are involved'
+        'for bounded multi-face research, after first analyst fan-in shows an architecture layer'
       )
     }
     [ordered]@{
       name = 'planner'
       lane = 'leader-native-subagent'
+      first_round_default_for_bounded_multi_face_research = $false
+      escalation_after_analyst_fan_in = 'use after analyst fan-in shows the next question is execution ordering or rollout planning'
       invoke_when = @(
         'the work can be split into two or more execution slices'
         'serial hotspots, rollout ordering, or explicit dependency chains exist'
+        'for bounded multi-face research, after first analyst fan-in shows an execution-ordering layer'
       )
     }
     [ordered]@{
@@ -2703,9 +2715,12 @@ function Get-CodexUserLevelRoutingThresholdDefinitions {
     [ordered]@{
       name = 'writer'
       lane = 'leader-native-subagent'
+      first_round_default_for_bounded_multi_face_research = $false
+      escalation_after_analyst_fan_in = 'use after analyst fan-in shows the next question is final documentation or operator-facing writing'
       invoke_when = @(
         'user-facing behavior changed'
         'setup, migration, or operator workflow changed'
+        'for bounded multi-face research, after first analyst fan-in shows a document-finalization layer'
       )
     }
     [ordered]@{
@@ -2717,6 +2732,31 @@ function Get-CodexUserLevelRoutingThresholdDefinitions {
       )
     }
   )
+}
+
+function Get-CodexUserLevelAnalystFanoutFirstTaskClass {
+  return [ordered]@{
+    name = 'bounded_multi_face_research'
+    summary = 'definition, classification, scoping, or repository-grounded comparison with multiple bounded research faces'
+    first_round_preference = 'homogeneous_analyst_fanout'
+    first_round_roles = @('analyst')
+    default_first_round_not_roles = @('architect', 'planner', 'writer')
+    applies_when = @(
+      'the task is still primarily bounded research rather than design, rollout ordering, or final writing'
+      'the task has multiple independent research faces that can be compared after fan-in'
+      'the leader needs fast recall and clean fan-in before selecting a higher abstraction role'
+    )
+    escalation_after_fan_in = [ordered]@{
+      architect = 'after analyst fan-in shows that the next question is architecture design'
+      planner = 'after analyst fan-in shows that the next question is execution ordering or rollout planning'
+      writer = 'after analyst fan-in shows that the next question is final document-production or operator-facing writing'
+    }
+    operator_guidance = @(
+      'fan out to multiple analyst calls first for bounded multi-face research'
+      'do not mix architect, planner, and writer into the default first research round'
+      'leader fan-in decides whether later escalation is architecture, planning, or writing'
+    )
+  }
 }
 
 function Get-CodexUserLevelBurstReviewRoleDefinitions {
@@ -2992,6 +3032,7 @@ function Get-CodexUserLevelRoutingPolicy {
   $agentsDirectory = Get-CodexUserLevelAgentsDirectory
   $backendSelectionPolicy = Get-CodexUserLevelBackendSelectionPolicy -Status $Status
   $orchestrationActivationPolicy = Get-CodexUserLevelOrchestrationActivationPolicy -Status $Status
+  $analystFanoutFirstTaskClass = Get-CodexUserLevelAnalystFanoutFirstTaskClass
 
   return [ordered]@{
     oh_my_codex = $Status.oh_my_codex
@@ -3037,6 +3078,7 @@ function Get-CodexUserLevelRoutingPolicy {
       'oh-my-codex adds durable team features but does not create role routing from scratch'
       'turning on oh-my-codex does not auto-launch a durable team on codex startup'
       'automatic expert routing in this workflow is a leader-side overlay over explicit native Codex subagent spawning'
+      'bounded multi-face research first fans out into homogeneous analyst calls before architect, planner, or writer escalation'
       'prefer read-heavy fan-out and gate write-heavy parallel execution behind explicit ownership isolation and leader-owned integration'
     )
     provider_proxy_upstream_pacing = (Get-CodexUserLevelProviderProxyUpstreamPacingPolicy)
@@ -3078,6 +3120,7 @@ function Get-CodexUserLevelRoutingPolicy {
       }
     }
     routing_thresholds = Get-CodexUserLevelRoutingThresholdDefinitions
+    analyst_fanout_first_task_class = $analystFanoutFirstTaskClass
     automatic_durable_team_routing = (Get-CodexUserLevelAutomaticTeamRoutingPolicy -Status $Status)
     durable_orchestration = [ordered]@{
       summary = [string]$backendSelectionPolicy.summary
@@ -3115,8 +3158,14 @@ function Get-CodexUserLevelRoutingPolicy {
     research_to_implementation_handoff = [ordered]@{
       research_roles = @('analyst', 'architect', 'planner', 'researcher')
       implementation_roles = @('executor', 'debugger')
+      bounded_multi_face_research_first_round = [ordered]@{
+        task_class = [string]$analystFanoutFirstTaskClass.name
+        preferred_roles = @($analystFanoutFirstTaskClass.first_round_roles)
+        delayed_roles = @($analystFanoutFirstTaskClass.default_first_round_not_roles)
+      }
       rules = @(
         'keep open-ended research and final implementation in different roles'
+        'for bounded multi-face research, fan out to homogeneous analyst calls before crossing into architect, planner, or writer roles'
         'freeze an implementation brief before durable execution begins'
         'start implementation in a fresh context after the brief exists'
       )
@@ -3187,9 +3236,13 @@ function Get-CodexUserLevelDeveloperInstructions {
     $lines += '- Route the smallest sufficient expert role set automatically.'
   }
 
+  $analystFanoutFirstTaskClass = Get-CodexUserLevelAnalystFanoutFirstTaskClass
   $limits = Get-CodexUserLevelNativeSubagentLimits
   $completedSubagentLifecycle = Get-CodexUserLevelCompletedSubagentLifecyclePolicy -Status $Status
   $lines += '- Native Codex subagents are an official native capability. Treat specialist role use as explicit leader-side spawning with leader-owned fan-in.'
+  $lines += ('- Analyst-fanout-first task class: {0}; when a task is bounded multi-face research, first fan out into homogeneous `analyst` calls.' -f [string]$analystFanoutFirstTaskClass.name)
+  $lines += '- For bounded multi-face research, do not include `architect`, `planner`, or `writer` as default first-round research roles.'
+  $lines += '- After the leader absorbs analyst fan-in, escalate to `architect`, `planner`, or `writer` only when the task has clearly moved into architecture design, execution ordering, or document-finalization work.'
   $lines += ('- Completed subagent retention policy: {0}.' -f [string]$Status.completed_subagent_retention)
   $lines += ('- {0}' -f [string]$completedSubagentLifecycle.completion_guidance)
   $lines += ('- {0}' -f [string]$completedSubagentLifecycle.preserve_override_rule)
@@ -3263,15 +3316,15 @@ function Get-CodexUserLevelDeveloperInstructions {
 
   $lines += '- Keep research and implementation in different roles when the task started open-ended.'
   $lines += '- Launch durable teams only after the plan is frozen and at least two mostly independent execution slices exist.'
-  $lines += '- analyst: unclear outcome, non-goals, or acceptance target; or two or more major ambiguities remain.'
+  $lines += '- analyst: unclear outcome, non-goals, or acceptance target; two or more major ambiguities remain; or bounded multi-face research needs homogeneous first-round fan-out.'
   $lines += '- researcher: external docs, dependency behavior, version-sensitive facts, or official-source verification.'
-  $lines += '- architect: two or more modules, trust boundaries, shared interfaces, migrations, or non-local design decisions.'
-  $lines += '- planner: two or more execution slices, serial hotspots, rollout ordering, or dependency chains.'
+  $lines += '- architect: two or more modules, trust boundaries, shared interfaces, migrations, or non-local design decisions; for bounded multi-face research, use only after analyst fan-in shows an architecture layer.'
+  $lines += '- planner: two or more execution slices, serial hotspots, rollout ordering, or dependency chains; for bounded multi-face research, use only after analyst fan-in shows an execution-ordering layer.'
   $lines += '- debugger: blocking failure, regression, reproducible defect, or stabilization-heavy repair work.'
   $lines += '- verifier: before final acceptance for behavior-changing or multi-file work; always after multi-worker integration.'
   $lines += '- test-engineer: critical-path behavior changed, tests are missing, flaky, or broad regression risk exists.'
   $lines += '- security-reviewer: auth, secrets, permissions, untrusted input, code execution, external trust boundaries, or payments.'
-  $lines += '- writer: user-facing behavior, setup, migration, or operator workflow changes.'
+  $lines += '- writer: user-facing behavior, setup, migration, or operator workflow changes; for bounded multi-face research, use only after analyst fan-in shows a document-finalization layer.'
   $lines += '- bug-finder / bug-rebutter / bug-judge: contested, noisy, or high-volume bug triage after one normal verification still leaves disagreement or a broad candidate bug set.'
   $lines += '- Startup routing trace format should stay concise, e.g. `Routing trace: phase=..., experts_now=..., durable_team=..., why=...`.'
 
@@ -12374,6 +12427,15 @@ Selection rules:
 - Prefer read-heavy or otherwise tightly bounded fan-out.
 - Allow write-heavy parallel execution only when ownership isolation, hotspot serialization, and leader-owned final integration are explicit.
 
+## Analyst fan-out first for bounded research
+
+- bounded multi-face research means a task is still in definition, classification, scoping, or repository-grounded comparison and has multiple independent research faces
+- for that class, homogeneous `analyst` fan-out is the default first research round
+- `architect`, `planner`, and `writer` are not default first-round roles for bounded multi-face research
+- after leader fan-in from the analysts, escalate to `architect` only when the next layer is architecture design
+- after leader fan-in from the analysts, escalate to `planner` only when the next layer is execution ordering or rollout planning
+- after leader fan-in from the analysts, escalate to `writer` only when the next layer is final document-production or operator-facing writing
+
 ## Wrapper entrypoints
 
 - `codex-routing-policy.ps1`
@@ -12631,12 +12693,15 @@ Selection rules:
 - `analyst`
   - unclear outcome, non-goals, or acceptance target
   - two or more major ambiguities remain
+  - bounded multi-face research needs homogeneous first-round fan-out
 - `researcher`
   - external docs, dependency behavior, version-sensitive facts, or official-source verification
 - `architect`
   - two or more modules, trust boundaries, shared interfaces, migrations, or non-local design decisions
+  - for bounded multi-face research, use after analyst fan-in shows an architecture layer
 - `planner`
   - two or more execution slices, serial hotspots, rollout ordering, or dependency chains
+  - for bounded multi-face research, use after analyst fan-in shows an execution-ordering layer
 - `executor` or `team-executor`
   - only after plan freeze
   - only with at least two mostly independent execution slices
@@ -12651,6 +12716,7 @@ Selection rules:
   - auth, secrets, permissions, untrusted input, code execution, external trust boundaries, or payments
 - `writer`
   - user-facing behavior, setup, migration, or operator workflow changes
+  - for bounded multi-face research, use after analyst fan-in shows a document-finalization layer
 
 ## Automatic durable-team routing
 
@@ -12693,6 +12759,12 @@ function Get-TeamQuickReferenceContent {
 This card is the short companion to `team-mode-playbook.md`.
 
 Use the full playbook when you need policy detail, lifecycle semantics, or backend-selection reasoning.
+
+## Analyst Fan-out First
+
+- bounded multi-face research first uses homogeneous `analyst` fan-out
+- `architect`, `planner`, and `writer` enter after analyst fan-in only when the task has moved into architecture, rollout planning, or final writing
+- inspect the full routing model with `codex-routing-policy.ps1 -Json`
 
 ## 10 Common Commands
 
