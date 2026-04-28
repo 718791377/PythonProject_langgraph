@@ -99,6 +99,7 @@ def main() -> int:
     canary_surface_script = root / "tools" / "check_context_retention_canary_surface.py"
     safety_rule_script_backing_script = root / "tools" / "check_safety_rule_script_backing.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
+    session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
 
     if not verify_script.exists():
         raise SystemExit(f"Missing verification script: {verify_script}")
@@ -118,6 +119,8 @@ def main() -> int:
         raise SystemExit(f"Missing safety rule script-backing check script: {safety_rule_script_backing_script}")
     if not worktree_hygiene_script.exists():
         raise SystemExit(f"Missing worktree session hygiene check script: {worktree_hygiene_script}")
+    if not session_ownership_claims_script.exists():
+        raise SystemExit(f"Missing session ownership claims check script: {session_ownership_claims_script}")
 
     openspec = shutil.which("openspec") or shutil.which("openspec.cmd")
     if args.json:
@@ -211,6 +214,11 @@ def main() -> int:
                 "check_worktree_session_hygiene",
                 [str(python_exe), str(worktree_hygiene_script), "--root", str(root), "--allow-current-dirty", "--json"],
                 "OpenSpec guard failed during multi-session worktree hygiene verification.",
+            ),
+            (
+                "check_session_ownership_claims",
+                [str(python_exe), str(session_ownership_claims_script), "--root", str(root), "--allow-current-dirty", "--json"],
+                "OpenSpec guard failed during session ownership claim verification.",
             ),
             (
                 "check_codex_skills_governance",
@@ -356,6 +364,12 @@ def main() -> int:
         [str(python_exe), str(worktree_hygiene_script), "--root", str(root), "--allow-current-dirty"],
         cwd=root,
         failure_message="OpenSpec guard failed during multi-session worktree hygiene verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(session_ownership_claims_script), "--root", str(root), "--allow-current-dirty"],
+        cwd=root,
+        failure_message="OpenSpec guard failed during session ownership claim verification.",
     )
 
     run_checked(

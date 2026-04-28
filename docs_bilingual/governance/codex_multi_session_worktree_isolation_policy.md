@@ -51,6 +51,8 @@ Required rules:
 - Do not manually delete `.worktrees/`; use Git worktree commands after preservation checks.
 - Do not assume a dirty file belongs to the current session.
 - Do not reset, checkout, clean, move, or delete unknown dirty files until their owning session or backup branch is identified.
+- Before a writable session dirties a feature worktree, create an active `.omx/session-claims/<session>.json` claim file. `.omx/session-claims/` is the ignored local coordination directory for declaring the OpenSpec change or path scope owned by the current session.
+- Do not let two live sessions claim the same OpenSpec change or overlapping hotspot path scope unless the current leader explicitly serializes the handoff.
 - After a GitLab MR merges, fast-forward the local `main` branch reference to the exact GitLab main commit, then sync that exact commit to GitHub.
 
 ## 5. Dirty File Classification
@@ -72,6 +74,7 @@ Prompt reminders are not sufficient for this safety boundary.
 The repository provides:
 
 - `tools/check_worktree_session_hygiene.py` - read-only checker that inspects registered Git worktrees, dirty states, duplicate dirty paths, and `main` alignment risk.
+- `tools/check_session_ownership_claims.py` - read-only checker that inspects local `.omx/session-claims/*.json` claim files and fails on duplicate OpenSpec-change or overlapping path ownership.
 
 Expected usage:
 
@@ -88,6 +91,35 @@ python .\tools\check_worktree_session_hygiene.py --root . --allow-current-dirty 
 ```
 
 The `--allow-current-dirty` option allows the current non-main worktree to be dirty while still flagging dirty `main` and cross-worktree collision risks.
+
+Before a feature worktree becomes dirty, create a local claim such as:
+
+```json
+{
+  "schema_version": 1,
+  "session_id": "session-ownership-claims",
+  "status": "active",
+  "branch": "feature/session-ownership-claims",
+  "worktree": "D:\\PythonProject_langgraph\\.worktrees\\session-ownership-claims",
+  "task_type": "implementation",
+  "openspec_changes": ["formalize-session-ownership-claims"],
+  "paths": [
+    "tools/check_session_ownership_claims.py",
+    "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
+    "openspec/changes/formalize-session-ownership-claims"
+  ]
+}
+```
+
+`session_id` is the local operator-readable owner name, `openspec_changes` lists the OpenSpec changes owned by the session, and `paths` lists repository-relative hotspot scopes owned by the session.
+
+Then run:
+
+```powershell
+python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty --json
+```
+
+The command above runs the read-only claim checker and emits a JSON report showing active local claims and collisions.
 
 ## 7. GitLab-First Integration
 

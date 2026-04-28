@@ -89,6 +89,45 @@ python .\tools\check_worktree_session_hygiene.py --root . --allow-current-dirty 
 
 `--allow-current-dirty` 选项允许当前非 main worktree 处于 dirty 状态，但仍会检查 dirty `main` 和跨 worktree 冲突风险。
 
+
+
+### 6.1 会话认领规则
+
+在任何会把 feature worktree 变成 dirty 状态的写入任务开始前，当前会话必须先创建本地会话认领文件。
+
+- `.omx/session-claims/` - 本地忽略的会话认领目录，用来声明当前会话拥有哪个 OpenSpec change 或路径范围；它不是 `.omx/state/` durable truth。
+- `.omx/session-claims/<session>.json` - 单个会话认领文件，用 JSON 记录会话 ID、分支、worktree、任务类型、OpenSpec change 和路径范围。
+- `tools/check_session_ownership_claims.py` - 只读 checker，用来扫描所有已注册 Git worktree 的本地 claim 文件，并在重复认领同一个 OpenSpec change 或重叠路径范围时失败。
+
+示例 claim 文件：
+
+```json
+{
+  "schema_version": 1,
+  "session_id": "session-ownership-claims",
+  "status": "active",
+  "branch": "feature/session-ownership-claims",
+  "worktree": "D:\\PythonProject_langgraph\\.worktrees\\session-ownership-claims",
+  "task_type": "implementation",
+  "openspec_changes": ["formalize-session-ownership-claims"],
+  "paths": [
+    "tools/check_session_ownership_claims.py",
+    "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md",
+    "openspec/changes/formalize-session-ownership-claims"
+  ]
+}
+```
+
+`session_id` 是本地操作者可读的会话名称，`openspec_changes` 是当前会话认领的 OpenSpec change 列表，`paths` 是当前会话认领的仓库相对热点路径范围。
+
+推荐检查命令：
+
+```powershell
+python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty --json
+```
+
+上面的命令会运行只读会话认领 checker，并输出 JSON 报告，供冷启动会话或本地发布前检查使用。
+
 ## 7. GitLab-First 集成
 
 所有仓库变更仍然遵守 GitLab-first 发布流程：
