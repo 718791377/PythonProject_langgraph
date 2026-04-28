@@ -1,7 +1,7 @@
 # codex-user-level-context-retention-canary-surface Specification
 
 ## Purpose
-TBD - created by archiving change formalize-startup-only-canary-prompt. Update Purpose after archive.
+Define where the context-retention canary prompt is allowed to live and require executable checks that detect prompt-placement drift before cold-start sessions rely on stale or duplicated instructions.
 ## Requirements
 ### Requirement: Canary prompt text SHALL live only in the startup summary pair
 
@@ -20,20 +20,29 @@ Other active instruction surfaces MAY refer to the startup-summary canary and MA
 
 ### Requirement: Canary placement SHALL have executable enforcement
 
-The repository SHALL provide an executable checker that validates active canary placement without relying on model memory alone.
+The repository SHALL provide an executable checker that validates active canary placement and recovery wording without relying on model memory alone.
 
 The checker SHALL fail closed when:
 
 - either startup summary is missing the literal canary prompt
+- either startup summary omits `AGENTS.md` from its canary recovery action
+- `AGENTS.md` contains the literal canary prompt
 - an active non-startup-summary file duplicates the literal canary prompt text
 
 The checker MAY ignore immutable historical archives, external worktrees, caches, runtime state, and binary files.
 
-#### Scenario: Active file duplicates the literal prompt
+#### Scenario: Startup recovery omits repository instructions
 
-- **WHEN** an active file outside the startup summary pair contains the literal canary prompt text
+- **WHEN** either startup summary describes canary recovery
+- **AND** the recovery action does not mention `AGENTS.md`
 - **THEN** the checker SHALL return a non-zero exit code
-- **AND** the checker SHALL report the offending file path
+- **AND** it SHALL report the startup summary path
+
+#### Scenario: Repository instructions duplicate the literal prompt
+
+- **WHEN** `AGENTS.md` contains the literal canary prompt text
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report that `AGENTS.md` must remain a recovery reread target rather than a literal prompt source
 
 ### Requirement: OpenSpec guard SHALL run the canary placement checker
 
@@ -44,4 +53,3 @@ The repository OpenSpec guard SHALL run the canary placement checker as part of 
 - **WHEN** `python tools/run_openspec_guard.py --root . --json` runs in a repository clone
 - **THEN** the aggregated guard output SHALL include a `check_context_retention_canary_surface` step
 - **AND** the guard SHALL fail if the checker reports canary placement errors
-
