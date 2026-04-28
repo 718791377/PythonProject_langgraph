@@ -34,6 +34,22 @@
       "description": "Prevents multi-session dirty worktree collisions and mainline alignment drift."
     },
     {
+      "id": "session-ownership-claims",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_session_ownership_claims.py"
+      ],
+      "guard_steps": [
+        "check_session_ownership_claims"
+      ],
+      "description": "Prevents concurrent sessions from claiming the same OpenSpec change or overlapping hotspot path scopes."
+    },
+    {
       "id": "openspec-official-guard",
       "owner_level": "project",
       "status": "implemented",
