@@ -136,6 +136,64 @@ class SessionOwnershipClaimsCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("Path scope overlap" in error for error in payload["errors"]))
 
+    def test_task_precheck_reports_clean_matching_branch(self) -> None:
+        root = self.make_repo("precheck-clean-branch")
+        subprocess.run(
+            ["git", "branch", "feature/existing-task"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        result = self.run_check(root, "--precheck-term", "existing-task")
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        precheck = payload["task_ownership_precheck"]
+        self.assertEqual(precheck["state"], "claimed-not-started")
+        self.assertTrue(any(signal["kind"] == "local_branch" for signal in precheck["signals"]))
+
+    def test_task_precheck_reports_matching_active_claim(self) -> None:
+        root = self.make_repo("precheck-active-claim")
+        self.write_claim(
+            root,
+            session_id="owner",
+            branch="main",
+            openspec_changes=["target-change"],
+            paths=["openspec/changes/target-change"],
+        )
+
+        result = self.run_check(root, "--openspec-change", "target-change")
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        precheck = payload["task_ownership_precheck"]
+        self.assertEqual(precheck["state"], "in-progress")
+        self.assertTrue(any(signal["kind"] == "active_session_claim" for signal in precheck["signals"]))
+
+    def test_task_precheck_reports_ignored_guard_file(self) -> None:
+        root = self.make_repo("precheck-ignored-file")
+        (root / ".gitignore").write_text("docs_bilingual/ignored.md\n", encoding="utf-8")
+        subprocess.run(["git", "add", ".gitignore"], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-m", "ignore docs file"], cwd=root, check=True, capture_output=True, text=True)
+        ignored = root / "docs_bilingual" / "ignored.md"
+        ignored.parent.mkdir(parents=True, exist_ok=True)
+        ignored.write_text("local\n", encoding="utf-8")
+
+        result = self.run_check(root, "--target-path", "docs_bilingual/ignored.md")
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        precheck = payload["task_ownership_precheck"]
+        self.assertEqual(precheck["state"], "claimed-not-started")
+        self.assertTrue(any(signal["kind"] == "ignored_or_local_guard_file" for signal in precheck["signals"]))
+
+    def test_task_precheck_fails_when_required_gitlab_mr_check_unavailable(self) -> None:
+        root = self.make_repo("precheck-gitlab-required")
+
+        result = self.run_check(root, "--precheck-term", "no-match", "--check-gitlab-mrs", "--require-gitlab-mrs")
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertTrue(any("could not inspect open GitLab MRs" in error for error in payload["errors"]))
+
 
 if __name__ == "__main__":
     unittest.main()
