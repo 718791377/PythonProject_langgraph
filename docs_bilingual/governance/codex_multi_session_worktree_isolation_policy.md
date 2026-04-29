@@ -52,6 +52,11 @@ Required rules:
 - Do not assume a dirty file belongs to the current session.
 - Do not reset, checkout, clean, move, or delete unknown dirty files until their owning session or backup branch is identified.
 - Before a writable session dirties a feature worktree, create an active `.omx/session-claims/<session>.json` claim file. `.omx/session-claims/` is the ignored local coordination directory for declaring the OpenSpec change or path scope owned by the current session.
+- Before creating a new task worktree, editing files, fixing guard failures, or taking over OpenSpec or governance artifacts, run a task ownership precheck. A task ownership precheck is a read-only scan for semantic ownership signals before any new write scope is created.
+- The task ownership precheck must inspect registered Git worktrees, local branches, remote-tracking branches, open GitLab MRs, active OpenSpec changes, local `.omx/session-claims/*.json` claim files, and target paths including ignored files.
+- A semantic match in a worktree name, branch name, MR title, MR source branch, OpenSpec change id, claim path, or target file path is an ownership signal even when the matched worktree is clean and has no commits beyond `main`.
+- If a matching ownership signal exists, treat the task as claimed until the leader explicitly serializes a handoff, continues the existing worktree, or classifies the signal as completed stale residue.
+- Ignored or local-only files inside guard-scanned directories are still task objects when they affect repository checks. Classify their intended ownership before fixing, moving, excluding, or deleting them.
 - Do not let two live sessions claim the same OpenSpec change or overlapping hotspot path scope unless the current leader explicitly serializes the handoff.
 - After a GitLab MR merges, fast-forward the local `main` branch reference to the exact GitLab main commit, then sync that exact commit to GitHub.
 
@@ -66,6 +71,13 @@ Dirty files must be classified before action:
 - stale residue - abandoned worktree or generated output that needs a preservation-first cleanup plan.
 
 If ownership is unknown, keep the file and report it. Do not delete it as a shortcut.
+
+Task ownership states must be classified before takeover:
+
+- unclaimed - no semantic match exists in worktrees, branches, MRs, OpenSpec changes, claim files, or target paths.
+- claimed-not-started - a matching worktree, branch, MR, OpenSpec change, claim file, or ignored target path exists, but there is no dirty diff, extra commit, or open MR progress yet.
+- in-progress - a matching worktree has dirty files, ahead commits, an open MR, an active OpenSpec change, or an active claim with overlapping paths.
+- completed-stale - a matching branch or claim belongs to work already merged or archived; the leader may reuse it only after explicitly treating the handoff as serialized and preservation-safe.
 
 ## 6. Script Control
 
@@ -120,6 +132,8 @@ python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty 
 ```
 
 The command above runs the read-only claim checker and emits a JSON report showing active local claims and collisions.
+
+The current claim checker verifies explicit `.omx/session-claims/*.json` collisions. Until semantic branch, worktree, MR, and ignored-file ownership checks are automated, sessions must perform that precheck manually and record the result before writing.
 
 ## 7. GitLab-First Integration
 

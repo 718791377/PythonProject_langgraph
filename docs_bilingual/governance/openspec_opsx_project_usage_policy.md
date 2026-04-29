@@ -87,6 +87,19 @@ Based on the currently installed OpenSpec package and its workflow templates, th
 
 The repository should expose these through project-level workflow guidance backed by the official CLI, repository bootstrap or refresh, verification, hooks, and CI guard surfaces. If the official CLI surface changes later, rerun the repository refresh path instead of preserving stale repository wording.
 
+## 4A. Task Ownership Precheck Gate
+
+Before `/opsx:apply`, `/opsx:verify`, `/opsx:archive`, guard-failure repair, governance-document repair, or any equivalent repository workflow starts writing, the session must run the task ownership precheck defined in `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md` - governance policy for multi-session Git worktree isolation, dirty-file handling, and task ownership claims.
+
+This gate applies even when the suspected prior owner has no dirty diff. A matching branch, worktree, MR, OpenSpec change, claim file, or ignored guard-scanned target path means the task is at least claimed-not-started until the leader serializes the handoff.
+
+If the precheck finds an ownership signal:
+
+- continue the existing worktree when that is the safest single-writer path
+- ask the leader to release or classify a stale claim before creating a new write scope
+- avoid fixing the same guard failure from `main` or from a second feature worktree unless the leader explicitly serializes the handoff
+- treat ignored files under `docs_bilingual/` or `openspec/` as guard-affecting task objects until their repository status is decided
+
 ## 5. Command Mapping Model
 
 ### 5.1 `/opsx:onboard`
