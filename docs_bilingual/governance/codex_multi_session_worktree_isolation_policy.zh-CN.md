@@ -51,6 +51,11 @@ status: active
 - 不要手动删除 `.worktrees/`；需要清理时，先做保存检查，再使用 Git worktree 命令。
 - 不要假设某个脏文件一定属于当前会话。
 - 在确认归属前，不要 reset、checkout、clean、move 或 delete 未知脏文件。
+- 在创建新的任务 worktree、编辑文件、修复 guard 失败项，或接手 OpenSpec / governance artifacts 之前，必须先执行任务认领预检。任务认领预检是一种只读扫描，用来在创建新写入范围前识别语义上的归属信号。
+- 任务认领预检必须检查已登记 Git worktrees、本地分支、远端跟踪分支、打开中的 GitLab MRs、active OpenSpec changes、本地 `.omx/session-claims/*.json` 认领文件，以及目标路径，包括 ignored files。
+- 只要 worktree 名称、branch 名称、MR 标题、MR source branch、OpenSpec change id、claim path 或目标文件路径出现语义匹配，就应视为 ownership signal（归属信号）；即使对应 worktree 是干净的、也没有领先 `main` 的提交，也仍然算作认领信号。
+- 如果发现匹配的 ownership signal，在 leader 明确串行化 handoff、继续使用已有 worktree，或把该信号归类为 completed stale residue 之前，都必须把该任务视为已认领。
+- 位于 guard 扫描目录中的 ignored 或 local-only 文件，只要会影响仓库检查结果，就仍然是 task object（任务对象）。在修复、移动、排除或删除它们之前，必须先判断其预期归属。
 - GitLab MR 合并后，先把本地 `main` 分支引用快进到同一个 GitLab main commit，再把该 exact commit 同步到 GitHub。
 
 ## 5. 脏文件分类
@@ -64,6 +69,13 @@ status: active
 - stale residue（陈旧残留） - 废弃 worktree 或生成输出，需要 preservation-first cleanup plan（先保存再清理的计划）。
 
 如果归属未知，保留该文件并报告，不要为了图省事直接删除。
+
+接管任务前必须先分类任务认领状态：
+
+- unclaimed（未认领） - worktrees、branches、MRs、OpenSpec changes、claim files 或目标路径中都不存在语义匹配。
+- claimed-not-started（已认领但未开始） - 存在匹配 worktree、branch、MR、OpenSpec change、claim file 或 ignored target path，但还没有 dirty diff、额外提交或打开中的 MR 进展。
+- in-progress（处理中） - 匹配 worktree 已经有 dirty files、领先提交、open MR、active OpenSpec change，或带有重叠路径的 active claim。
+- completed-stale（已完成但残留） - 匹配 branch 或 claim 属于已经合并或归档的工作；只有 leader 明确把 handoff 串行化并确认 preservation-safe 后，才可以复用。
 
 ## 6. 脚本控制
 
@@ -127,6 +139,8 @@ python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty 
 ```
 
 上面的命令会运行只读会话认领 checker，并输出 JSON 报告，供冷启动会话或本地发布前检查使用。
+
+当前认领 checker 会验证显式 `.omx/session-claims/*.json` 的冲突。直到 branch、worktree、MR 和 ignored-file 的语义归属检查被自动化之前，会话必须手动执行这部分预检，并在写入前记录结论。
 
 ## 7. GitLab-First 集成
 

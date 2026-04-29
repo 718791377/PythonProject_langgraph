@@ -87,6 +87,19 @@ OpenSpec 已经在仓库的工件层生效：
 
 仓库应通过项目级工作流指导来暴露这些命令语义，并由官方 CLI、仓库 bootstrap 或 refresh、校验脚本、hooks 和 CI guard 共同支撑。如果后续官方 CLI 命令面发生变化，应重新执行仓库 refresh 路径，而不是继续保留过时表述。
 
+## 4A. 任务认领预检门槛
+
+在 `/opsx:apply`、`/opsx:verify`、`/opsx:archive`、guard 失败修复、治理文件修复，或任何等价仓库工作流开始写入之前，当前会话必须先执行 `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md` 中定义的任务认领预检；该文件是多会话 Git worktree 隔离、脏文件处理和任务认领的治理政策。
+
+即使疑似先前 owner 没有 dirty diff，这个门槛也仍然生效。只要存在匹配 branch、worktree、MR、OpenSpec change、claim file，或被 guard 扫描的 ignored target path，该任务就至少属于 claimed-not-started 状态，直到 leader 串行化 handoff。
+
+如果预检发现 ownership signal：
+
+- 当已有 worktree 是最安全的 single-writer path 时，继续使用该 worktree。
+- 创建新写入范围前，先让 leader 释放或分类 stale claim。
+- 除非 leader 明确串行化 handoff，否则不要从 `main` 或第二个 feature worktree 修同一个 guard failure。
+- 对 `docs_bilingual/` 或 `openspec/` 下的 ignored files，在其仓库归属确定前，一律视为会影响 guard 的 task objects。
+
 ## 5. 命令映射模型
 
 ### 5.1 `/opsx:onboard`
