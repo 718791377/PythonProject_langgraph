@@ -18,6 +18,22 @@ translation_of: docs_bilingual/memory/mainline_sync-langgraph-capability-gap-aft
 
 如果新会话要继续 updater / replay / gated checkpoint（更新器 / 重放 / 带门禁的检查点） 这一条维护线，而不是回到更宽泛的 LangGraph 历史 rollout，请先读这份摘要。
 
+## 当前交接快照
+
+决定下一步前，先读这一节，再读后面的旧 implementation command card。
+
+- `automate-task-ownership-precheck-checker` —— 当前维护支线最近归档的 OpenSpec change，用来落地 checker-backed task ownership precheck 行为。
+- `tools/check_session_ownership_claims.py` —— session ownership checker，现在已经支持仓库写入前的 task ownership precheck signals。
+- `openspec status` —— 当前 active-change 检查命令；本次交接刷新时，它在 `main` 上显示没有 active changes。
+- `main`、`gitlab/main` 与 `github/main` —— 仓库发布引用；本次交接刷新时，本地 clone 中三者都指向同一个提交 `460f813`。
+
+当前判断：
+
+- decision-lock plus diff-approval replay 增量已经实现
+- task ownership precheck checker 增量也已经实现并归档
+- 新会话不需要重新打开这两项设计讨论，除非出现新证据
+- 下一步安全候选是选择一个新的小步 OpenSpec change、自动化剩余 replay smoke checks，或继续 durable-state status hardening
+
 ## 实施命令卡片
 
 如果新会话要快速接手，先看这一张卡片。
