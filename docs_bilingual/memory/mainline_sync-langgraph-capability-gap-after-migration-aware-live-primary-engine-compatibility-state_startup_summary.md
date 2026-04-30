@@ -17,6 +17,22 @@ This summary covers the current maintenance lane inside the repository mainline:
 
 Use this file when a new session needs to continue the updater / replay / gated-checkpoint work rather than the broader archived LangGraph rollout history.
 
+## Current Handoff Snapshot
+
+Use this snapshot before the older implementation command card when deciding what to do next.
+
+- `automate-task-ownership-precheck-checker` - latest archived OpenSpec change in this mainline-adjacent maintenance lane; it landed checker-backed task ownership precheck behavior.
+- `tools/check_session_ownership_claims.py` - session ownership checker that now supports task ownership precheck signals before repository writes.
+- `openspec status` - current active-change check command; it currently reports no active changes on `main`.
+- `main`, `gitlab/main`, and `github/main` - repository publication refs that currently point at the same commit `460f813` in the local clone checked during this handoff refresh.
+
+Current interpretation:
+
+- the decision-lock plus diff-approval replay increment is already implemented
+- the task ownership precheck checker increment is also already implemented and archived
+- a new session does not need to reopen either design unless new evidence appears
+- the next safe actions are to choose a fresh small OpenSpec change, automate remaining replay smoke checks, or continue durable-state status hardening
+
 ## Implementation Command Card
 
 Use this front card first when a new session needs to take over implementation quickly.
