@@ -133,7 +133,18 @@ python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty 
 
 The command above runs the read-only claim checker and emits a JSON report showing active local claims and collisions.
 
-The current claim checker verifies explicit `.omx/session-claims/*.json` collisions. Until semantic branch, worktree, MR, and ignored-file ownership checks are automated, sessions must perform that precheck manually and record the result before writing.
+The checker now has two read-only modes:
+
+- Default claim mode verifies explicit `.omx/session-claims/*.json` collisions. `.omx/session-claims/*.json` means local ignored JSON claim files that declare which session owns an OpenSpec change or path scope.
+- Task precheck mode scans worktrees, branches, remote-tracking branches, active OpenSpec changes, active claim files, target paths, and ignored or local-only guard-scanned files before a new write scope is created. Task precheck mode is the checker-backed form of the manual precheck rule above.
+
+Recommended task precheck command before creating a new task worktree or fixing a guard failure:
+
+```powershell
+python .\tools\check_session_ownership_claims.py --root . --precheck-task "<task-slug-or-description>" --target-path "<repo-relative-path>" --openspec-change "<change-id>" --json
+```
+
+The command above runs the checker in task precheck mode. `--precheck-task` names the intended task, `--target-path` names a repository-relative hotspot path, `--openspec-change` names the OpenSpec change id being considered, and `--json` emits machine-readable output for cold-start review. Use `--check-gitlab-mrs` to include open GitLab MR inspection when a token is available; use `--require-gitlab-mrs` only when the workflow must fail closed if GitLab MRs cannot be inspected.
 
 ## 7. GitLab-First Integration
 
