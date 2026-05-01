@@ -48,6 +48,13 @@ documents:
     canonical_path: docs_bilingual/governance/codex_user_level_skills_governance_policy.md
     zh_cn_path: docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md
 
+
+  - doc_id: codex_user_level_mcp_scope_policy
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/codex_user_level_mcp_scope_policy.md
+    zh_cn_path: docs_bilingual/governance/codex_user_level_mcp_scope_policy.zh-CN.md
+
   - doc_id: codex_skills_profile_launcher_mapping
     doc_class: governance
     status: active

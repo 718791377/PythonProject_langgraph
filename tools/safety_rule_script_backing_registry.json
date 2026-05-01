@@ -99,6 +99,22 @@
         "check_name_clarity_rules"
       ],
       "description": "Requires paths, commands, scripts, variables, and profile names to include a short explanation when listed."
+    },
+    {
+      "id": "mcp-router-scope-policy",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_user_level_mcp_scope_policy.md",
+        "docs_bilingual/governance/codex_user_level_mcp_scope_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_mcp_router_scope_policy.py"
+      ],
+      "guard_steps": [
+        "check_mcp_router_scope_policy"
+      ],
+      "description": "Keeps Codex-dedicated MCP servers direct and reports MCP Router drift for dedicated or self-referential server entries."
     }
   ]
 }
