@@ -9,308 +9,76 @@ doc_class: startup_summary
 
 ## Scope
 
-This summary covers the current maintenance lane inside the repository mainline:
+This summary carries drift-prone handoff detail for the current named repository mainline:
 
-- official update compatibility for `oh-my-codex`
-- local patch replay workflow standardization
-- Windows-safe durable-team operator workflow continuity
+- `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state` - current named mainline for post-migration LangGraph capability-gap synchronization and adjacent operator-surface maintenance.
+- `docs_bilingual/project_startup_summary.md` - stable repository-entry startup summary that points here for fast-changing execution state.
+- `AGENTS.md` - repository instruction surface that remains authoritative for routing and safety reminders.
 
-Use this file when a new session needs to continue the updater / replay / gated-checkpoint work rather than the broader archived LangGraph rollout history.
+Use this file when a new session needs to know where the current mainline really stands before opening or continuing an OpenSpec change.
 
 ## Current Handoff Snapshot
 
-Use this snapshot before the older implementation command card when deciding what to do next.
+Use this snapshot before older implementation notes or archived change history.
 
-- `automate-task-ownership-precheck-checker` - latest archived OpenSpec change in this mainline-adjacent maintenance lane; it landed checker-backed task ownership precheck behavior.
-- `tools/check_session_ownership_claims.py` - session ownership checker that now supports task ownership precheck signals before repository writes.
-- `openspec status` - current active-change check command; it currently reports no active changes on `main`.
-- `main`, `gitlab/main`, and `github/main` - repository publication refs that currently point at the same commit `460f813` in the local clone checked during this handoff refresh.
+Latest landed increments:
+
+- `formalize-mcp-router-scope-policy` - archived OpenSpec change that established which MCP servers belong in Codex direct configuration and which may be managed through MCP Router.
+- `codex-user-level-mcp-scope-policy` - stable OpenSpec capability that records MCP Router scope requirements and self-management exclusions.
+- `docs_bilingual/governance/codex_user_level_mcp_scope_policy.md` - English governance policy for MCP Router shared management versus Codex-dedicated direct MCP entries.
+- `docs_bilingual/governance/codex_user_level_mcp_scope_policy.zh-CN.md` - Chinese companion for the MCP scope governance policy.
+- `tools/check_mcp_router_scope_policy.py` - checker that verifies repository policy and can optionally perform strict local MCP Router state checks.
+- `refresh-mainline-memory-after-task-ownership-precheck` - archived OpenSpec change that introduced the stable mainline memory handoff requirement.
+- `openspec/specs/codex-user-level-mainline-memory-handoff/spec.md` - stable spec requiring current mainline memory handoffs to identify the latest landed increment before listing next actions.
+
+Publication and active-change state at the start of this refresh:
+
+- `main`, `gitlab/main`, and `github/main` - repository publication refs that pointed at commit `f6cc0f6` in the local clone checked before this refresh branch was created.
+- `openspec list --json` - active-change inventory command; it reported an empty `changes` array before `refresh-mainline-memory-after-mcp-scope-policy` was opened.
+- `refresh-mainline-memory-after-mcp-scope-policy` - the current OpenSpec change for refreshing this handoff; after it is merged and archived, a future session should again expect no active changes unless a newer change exists.
 
 Current interpretation:
 
-- the decision-lock plus diff-approval replay increment is already implemented
-- the task ownership precheck checker increment is also already implemented and archived
-- a new session does not need to reopen either design unless new evidence appears
-- the next safe actions are to choose a fresh small OpenSpec change, automate remaining replay smoke checks, or continue durable-state status hardening
+- The MCP Router scope policy is implemented, archived, and mirrored to GitHub.
+- The mainline memory handoff requirement is implemented and archived.
+- A new session should not reopen the MCP Router scope design unless new evidence appears.
+- A new session should not treat old replay, diff-approval, or task-ownership precheck work as the current required implementation target.
 
-## Implementation Command Card
+## MCP Scope Routing Reminder
 
-Use this front card first when a new session needs to take over implementation quickly.
+When a question involves MCP server placement, use this routing:
 
-### Do now
+- `omx_state` - Codex-dedicated MCP server for oh-my-codex state surfaces; keep it as a direct Codex MCP entry, not under MCP Router shared management.
+- `omx_memory` - Codex-dedicated MCP server for oh-my-codex memory surfaces; keep it as a direct Codex MCP entry, not under MCP Router shared management.
+- `omx_code_intel` - Codex-dedicated MCP server for oh-my-codex code-intelligence surfaces; keep it as a direct Codex MCP entry, not under MCP Router shared management.
+- `omx_trace` - Codex-dedicated MCP server for oh-my-codex trace surfaces; keep it as a direct Codex MCP entry, not under MCP Router shared management.
+- `mcp_router` - Codex-side bridge entry for reaching MCP Router; Codex may keep this direct entry, but MCP Router must not manage itself as a child server.
+- `chrome-devtools` - shared browser/devtools MCP server candidate that may be managed by MCP Router when other IDEs also need it.
+- `pencil` - shared MCP server candidate that may be managed by MCP Router when multiple clients need it.
 
-- continue the frozen next-change increment in `tools/codex-official-update-patch-replay-template.ps1`
-- implement the decision-lock plus diff-approval additions that are already frozen in the bilingual docs
-- treat the current script as already usable and extend it rather than redesigning the workflow
-
-### Edit these files
-
-- `tools/codex-official-update-patch-replay-template.ps1` - PowerShell replay-template script being extended by this increment.
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - English active implementation plan that records the user-level team-mode behavior.
-- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - Chinese companion for the active user-level team-mode implementation plan.
-- update the bilingual Appendix C text from “planned” to “implemented” only after the code lands
-
-### Run these verifications
-
-Verification card 1 — happy path
-
-```powershell
-$root = 'D:\PythonProject_langgraph\.tmp\verify-decision-lock-happy'
-if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage precheck -SnapshotRoot $root
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage diff -SnapshotRoot $root -ApproveDiff
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage replay -SnapshotRoot $root -WhatIf
-```
-
-- expected result — `precheck` succeeds, `diff -ApproveDiff` writes approval state, and `replay` is no longer blocked by the diff-approval gate
-- failure triage pointer — inspect:
-- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when stage-gate or approval behavior fails.
-- `$root\checkpoint.json` - snapshot checkpoint file that records completed stages and approvals.
-- `$root\patch-decision-table.json` - JSON decision table that records patch decisions and manual overrides.
-
-Verification card 2 — replay blocked without `precheck`
-
-```powershell
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage replay -SnapshotRoot 'D:\PythonProject_langgraph\.tmp\verify-missing-precheck' -WhatIf
-```
-
-- expected result — the command stops with an error saying `precheck` is required
-- failure triage pointer — inspect:
-- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when replay incorrectly skips the precheck gate.
-  - the stage-gate logic in `<snapshot-root>\checkpoint.json` if the root already exists
-
-Verification card 3 — replay blocked without `diff`
-
-```powershell
-$root = 'D:\PythonProject_langgraph\.tmp\verify-missing-diff'
-if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage precheck -SnapshotRoot $root
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage replay -SnapshotRoot $root -WhatIf
-```
-
-- expected result — `replay` stops with an error saying `diff` is required
-- failure triage pointer — inspect:
-- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when replay incorrectly skips the diff gate.
-- `$root\checkpoint.json` - snapshot checkpoint file that should record whether the diff stage completed.
-
-Verification card 4 — replay blocked without approved diff
-
-```powershell
-$root = 'D:\PythonProject_langgraph\.tmp\verify-unapproved-diff'
-if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage precheck -SnapshotRoot $root
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage diff -SnapshotRoot $root
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage replay -SnapshotRoot $root -WhatIf
-```
-
-- expected result — `replay` stops with an error saying `approvals.diff_review.approved = true` is required
-- failure triage pointer — inspect:
-- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when replay incorrectly skips diff approval.
-- `$root\checkpoint.json` - snapshot checkpoint file that should record diff approval state.
-
-Verification card 5 — `test` blocked without `replay`
-
-```powershell
-$root = 'D:\PythonProject_langgraph\.tmp\verify-missing-replay'
-if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage precheck -SnapshotRoot $root
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage diff -SnapshotRoot $root -ApproveDiff
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage test -SnapshotRoot $root -WhatIf
-```
-
-- expected result — `test` stops with an error saying `replay` is required
-- failure triage pointer — inspect:
-- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when the test stage incorrectly skips replay.
-- `$root\checkpoint.json` - snapshot checkpoint file that should record whether replay completed.
-
-Verification card 6 — decision-row overrides survive reruns
-
-```powershell
-$root = 'D:\PythonProject_langgraph\.tmp\verify-decision-row-rerun'
-if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage precheck -SnapshotRoot $root
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage diff -SnapshotRoot $root
-# manually edit $root\patch-decision-table.json here
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage diff -SnapshotRoot $root
-```
-
-- expected result — manual JSON overrides remain preserved across the second `diff` run
-- failure triage pointer — inspect:
-- `$root\patch-decision-table.json` - JSON decision table that should preserve manual decision overrides.
-- `$root\patch-decision-table.csv` - CSV companion decision table generated for reviewer-friendly inspection.
-- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when decision table reruns overwrite manual choices.
-
-Verification card 7 — locked rows stay preserved once `decision_locked` lands
-
-```powershell
-$root = 'D:\PythonProject_langgraph\.tmp\verify-decision-lock-rerun'
-if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage precheck -SnapshotRoot $root
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage diff -SnapshotRoot $root
-# manually set decision_locked=true in $root\patch-decision-table.json here
-.\tools\codex-official-update-patch-replay-template.ps1 -Stage diff -SnapshotRoot $root
-```
-
-- expected result — rows marked with `decision_locked = true` remain preserved after the rerun
-- failure triage pointer — inspect:
-- `$root\patch-decision-table.json` - JSON decision table that should preserve locked rows after reruns.
-- `tools/codex-official-update-patch-replay-template.ps1` - script to inspect when locked decision rows are not preserved.
-
-### Do not touch
-
-- do not modify the official npm-installed `oh-my-codex` runtime files as part of this increment
-- do not move this work out of the repo-local lane unless a specific upstream-install patch is intentionally required
-- do not rewrite the frozen contract surface before implementing it
-
-## Immediate Implementation Handoff
-
-If a new session needs more context after reading the command card, continue here.
-
-### Where the lane currently stands
-
-- the operator-surface maintenance lane is already active and usable
-- `tools/codex-official-update-patch-replay-template.ps1` is already implemented
-- the script already supports:
-  - staged execution
-  - checkpoint continuity
-  - decision-table exports
-  - hard stage gates
-- the frozen decision-lock plus diff-approval increment is now implemented in `tools/codex-official-update-patch-replay-template.ps1`
-
-### What the latest increment implemented
-
-The frozen decision-lock plus diff-approval increment is now implemented in `tools/codex-official-update-patch-replay-template.ps1`.
-
-Implemented items:
-
-- `decision_locked` — the lock flag that stops the script from overwriting a manually frozen decision row
-- `decision_lock_reason` — the short note that explains why the row was intentionally locked
-- `approvals.diff_review` — the checkpoint approval block that stores explicit diff-review approval state
-- `approved` — the boolean that means diff review passed
-- `approved_at` — the timestamp that records when diff review passed
-- `approval_note` — the short reviewer note
-- `-Stage diff -ApproveDiff` — the command form that writes diff approval into the checkpoint manifest
-- `replay requires approvals.diff_review.approved = true` — the stronger replay gate
-
-## Drift-prone repository context moved down from the project startup summary
-
-Current working-stage snapshot for this mainline:
-
-- the initial LangGraph deepening queue is already closed
-- the earlier capability-gap sync pass is also already closed
-- the current active named repository mainline remains `sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state`
-- the current active maintenance lane inside that mainline is the operator-surface update / diff / replay / gate work
-
-Archived rollout context retained here for cold starts:
-
-- the bounded graph-kernel rollout is closed
-- the bounded primary-runtime engine rollout is closed
-- the bounded compiled-invocation rollout is closed
-- the bounded live-execution rollout is closed
-- the generalized live-routing rollout is closed
-- the subgraph persistence and state-inspection rollout is closed
-- the fuller live primary-execution-engine rollout is closed
-- the richer automatic runtime-policy rollout is closed
-- the broader automatic runtime-policy rollout is closed
-- the deeper live primary-engine rollout is closed
-- the superstep live primary-engine rollout is closed
-- the stateful live primary-engine rollout is closed
-- the graph-resident live primary-engine boundary-state rollout is closed
-- the subgraph-aware live primary-engine handoff-state rollout is closed
-- the approval-aware live primary-engine resume-state rollout is closed
-- the post-approval-aware-resume-state capability-gap sync pass is closed
-- the recovery-aware live primary-engine provenance-state rollout is closed
-- the durable-artifact-aware live primary-engine state rollout is closed
-- the post-durable-artifact-aware capability-gap sync pass is closed
-- the reducer-aware live primary-engine merge-state rollout is closed
-- the post-reducer-aware capability-gap sync pass is closed
-- the command-aware live primary-engine control-state rollout is closed
-- the post-command-aware capability-gap sync pass is closed
-- the runtime-aware live primary-engine context-store-state rollout is closed
-- the post-runtime-aware capability-gap sync pass is closed
-- the memory-aware live primary-engine semantic-state rollout is closed
-- the post-memory-aware capability-gap sync pass is closed
-- the migration-aware live primary-engine compatibility-state rollout is closed
-
-Current execution priority inherited from the former project startup summary:
-
-1. sync the bilingual LangGraph capability-gap appendix with the validated post-migration-aware state
-2. keep startup-facing repository summaries aligned with the archived migration-aware work and the current operator-surface maintenance lane
-3. keep future-work narrative limited to the real post-migration-aware gaps only
-4. close the current sync pass with OpenSpec validation before opening any later LangGraph-deepening candidate
-
-## Implementation Background From This Session
-
-This session completed the following repository-local cold-start surfaces:
-
-- standardized a documented **official update + diff check + local patch replay** workflow in `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
-- implemented `tools/codex-official-update-patch-replay-template.ps1`
-- added stage-based execution to that script:
-  - `precheck` — the pre-update inventory stage
-  - `update` — the official update stage
-  - `diff` — the post-update review stage
-  - `replay` — the patch reapplication stage
-  - `test` — the regression verification stage
-  - `all` — the end-to-end convenience lane
-- added checkpoint continuity:
-  - latest pointer file: `.tmp/official-update-patch-replay-latest.json`
-  - per-run checkpoint manifest: `<snapshot-root>/checkpoint.json`
-- added generated cold-start artifacts:
-  - `report.json` — machine-readable run summary
-  - `checklist.md` — human-readable operator checklist
-  - `patch-decision-table.md` — Markdown review view
-  - `patch-decision-table.json` — JSON read-back source of truth
-  - `patch-decision-table.csv` — spreadsheet-oriented export view
-- added machine-readable decision rows with `decision_status`:
-  - `auto_prefilled` — script-generated default decision
-  - `manually_overridden` — human-changed decision
-  - `unresolved` — still awaiting explicit human decision
-- added hard stage gates already implemented in code:
-  - no `precheck` -> `update / diff / replay / test` blocked
-  - no `diff` -> `replay / test` blocked
-  - no `replay` -> `test` blocked
-- updated the bilingual Appendix C text so critical terms and variable names now include brief explanations instead of being left as bare identifiers
-
-## Detailed Frozen Next-Change Contract Ready For Implementation
-
-The following next-change items were frozen in the bilingual docs and are now implemented in the script:
-
-- `decision_locked` — a lock flag that stops the script from overwriting a manually frozen row
-- `decision_lock_reason` — a short explanation for why the row was intentionally locked
-- `approvals.diff_review` — the checkpoint approval block that stores explicit diff-review approval state
-- `approved` — the boolean that means diff review passed
-- `approved_at` — the timestamp that records when diff review passed
-- `approval_note` — the short reviewer note
-- `-Stage diff -ApproveDiff` — the command form that writes diff approval into the checkpoint manifest
-- `replay requires approvals.diff_review.approved = true` — the stronger replay gate
+Repository code and MRs must not mutate user-level MCP configuration or MCP Router database state unless the user explicitly asks for that operation.
 
 ## Current Change-Readiness Verdict
 
-The implementation side has now landed the frozen increment; the documentation side remains aligned with the shipped behavior:
+The repository is ready for the next small, explicitly named OpenSpec change after this handoff refresh is merged or archived:
 
-- scope is frozen
-- English and Chinese startup summaries are aligned
-- critical terms and variables are briefly explained
-- the latest implementation target has landed
+- current startup surfaces have a dedicated MCP scope policy pointer
+- active-change state must be checked with `openspec list --json` before writing files
+- durable team launch is still not allowed for single-slice documentation or checker refresh work
+- GitLab remains the authoritative MR and merge surface; GitHub remains the post-merge mirror
 
-That means a new session does **not** need to reopen the design question for this increment.
+## Safe Next Actions For A New Session
 
-## Next Action For A New Session
+After this refresh lands, choose one of these next actions explicitly before writing files:
 
-If a new session continues this lane, do this next:
-
-1. read this file
-2. read `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md`
-3. inspect or extend the implemented decision-lock plus diff-approval behavior in `tools/codex-official-update-patch-replay-template.ps1` if more follow-up is needed
-4. keep the bilingual Appendix C text in implemented-state wording
-5. rerun smoke checks for:
-- `precheck -> diff` - smoke-check stage sequence for validating precheck-to-diff progression.
-   - replay blocking without required prior stages
-   - test blocking without replay
-   - JSON decision-row override preservation across reruns
+1. `strict MCP Router audit` - run `python tools/check_mcp_router_scope_policy.py --root . --strict-router-state --json` to inspect local MCP Router drift, then report manual cleanup guidance without editing the database.
+2. `durable-state status hardening` - continue the active durable-state isolation plan by improving read-only status reporting, without launching a durable team.
+3. `general template follow-up` - continue the local Git plus OpenSpec plus native subagent template work only in its own project or a dedicated branch.
+4. `new OpenSpec change` - create a fresh change only after confirming there are no active changes or after explicitly taking ownership of the existing active change.
 
 ## Important Non-Drift Notes
 
-- this session did **not** modify the official npm-installed `oh-my-codex` runtime files
-- this session focused on repo-local tooling and startup-facing documentation only
-- PowerShell console mojibake on the Chinese docs is an output-encoding issue, not evidence of source-file corruption
+- This repository owns the Codex orchestration line; do not resume new implementation for this line in `D:\PythonProject_OpenClaw`.
+- `D:\PythonProject_OpenClaw`, `D:\PythonProject_CLIProxyAPI`, and `D:\project` are consumer projects that keep their own repo-local facts and durable state.
+- Browser automation capability remains available for projects that need it; do not remove browser or Vercel-related skills just to reduce startup context.
+- PowerShell console mojibake on Chinese docs is an output-encoding issue unless Python UTF-8 reads confirm source corruption.
