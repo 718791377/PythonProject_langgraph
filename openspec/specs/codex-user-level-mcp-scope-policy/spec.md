@@ -1,8 +1,10 @@
 # codex-user-level-mcp-scope-policy Specification
 
 ## Purpose
-TBD - created by archiving change formalize-mcp-router-scope-policy. Update Purpose after archive.
+Define the user-level MCP server boundary between Codex-dedicated direct MCP servers and cross-client utility MCP servers managed through MCP Router.
+
 ## Requirements
+
 ### Requirement: Codex-dedicated MCP servers SHALL remain direct Codex servers
 
 Codex-dedicated MCP servers SHALL remain configured directly for Codex and SHALL NOT be managed through MCP Router as shared server entries.
@@ -52,4 +54,3 @@ The MCP scope policy SHALL be backed by an executable checker that can validate 
 - **WHEN** the operator runs the checker with strict Router-state validation
 - **THEN** active MCP Router records for Codex-dedicated servers SHALL be blocking errors
 - **AND** active Router self-reference records SHALL be blocking errors
-
