@@ -12,4 +12,4 @@
 ## 3. Validation and Publication
 
 - [x] 3.1 Run validation commands - `openspec validate --all`, `python tools/run_openspec_guard.py --root . --json`, `python tools/check_implementation_plan_rules.py --root . --json`, `python tools/check_name_clarity_rules.py --root . --json`, and `git diff --check`.
-- [ ] 3.2 Publish through GitLab-first workflow - push the branch to GitLab, open a merge request, wait for pipeline success, merge to GitLab `main`, then sync that exact `main` commit to GitHub.
+- [x] 3.2 Publish through GitLab-first workflow - push the branch to GitLab, open a merge request, wait for pipeline success, merge to GitLab `main`, then sync that exact `main` commit to GitHub.
