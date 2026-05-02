@@ -17,7 +17,7 @@ doc_class: implementation_plan
 
 > Implementation status as of 2026-04-22: completed in repo source, validated in user-level mirrored helpers, and verified against the real `D:\PythonProject_OpenClaw` and `D:\PythonProject_langgraph` fixtures without mutating preserved legacy durable artifacts.
 
-> Current implementation boundary as of 2026-04-27: keep the 2026-04-22 note as historical evidence that source and mirrored helpers exist, but do not treat it as proof that the current small-step rollout is finished. MR 1 through MR 4 are complete. MR 5 is the next active implementation slice.
+> Current implementation boundary as of 2026-05-02: keep the 2026-04-22 note as historical evidence that source and mirrored helpers exist, but do not treat it as proof that the current small-step rollout is finished. MR 1 through MR 5 are complete. MR 5 landed as `formalize-helper-mirror-source-truth` and was archived on 2026-04-28; the next decision point is MR 6 readiness review or automatic durable routing hookup.
 
 ## Current Bounded Implementation Queue
 
@@ -29,6 +29,7 @@ This queue preserves the decision made after the Phase 0 durable-state inventory
 - MR 2, no-touch durable-state baseline: completed by `6f28c5f` - records a read-only inventory across the four local project roots without editing, moving, deleting, or activating any `.omx/state/` artifact.
 - MR 3, status entrypoint hardening: completed by `6a99d7d` - adds `capability_readiness`, a per-backend status projection that distinguishes installed, enabled, selected, and ready for `native_omx` and `langgraph`.
 - MR 4, activation selector safety rules: completed by `b303000` - hardens scoped selector validation so stale or cross-repository durable records remain inspectable but cannot drive automatic activation.
+- MR 5, helper mirror source-of-truth rule: completed by `e1b3544` with publication closeout `e39fb21` - documents and tests that generated user-level helper mirrors are install artifacts, while repository source and each consumer repository's `.omx/state/` tree remain authoritative.
 
 ### Completed slice detail: MR 4, activation selector safety rules
 
@@ -41,11 +42,11 @@ MR 4 acceptance contract that is now part of the implemented baseline:
 - Backend-record dual-read only - `backend.json` and `codex-auto-managed-team.json` remain compatibility records for inspection, but they must not auto-route a future session unless the scoped selector is valid.
 - Scoped-write preservation - helpers may write activation only under the current repository's own `.omx/state/selectors/` directory.
 
-### Next slice: MR 5, user-level mirrored helper source-of-truth rule
+### Completed slice detail: MR 5, user-level mirrored helper source-of-truth rule
 
-MR 5 should document and test that user-level mirrored helpers are generated install artifacts, not the authoritative source of durable truth. Repository source remains under this repository, and each consumer repository keeps its own `.omx/state/` directory as its local durable truth.
+MR 5 documents and tests that user-level mirrored helpers are generated install artifacts, not the authoritative source of durable truth. Repository source remains under this repository, and each consumer repository keeps its own `.omx/state/` directory as its local durable truth.
 
-MR 5 acceptance contract:
+MR 5 acceptance contract that is now part of the implemented baseline:
 
 - Helper mirror provenance - generated user-level helpers must expose enough metadata or documentation for a cold-start reader to trace behavior back to repository source.
 - Repo-local truth preservation - generated helpers may inspect the current repository, but they must not treat `D:\PythonProject_langgraph` as a global durable state root for other projects.
@@ -85,17 +86,17 @@ MR 3 must add tests or fixtures that prove the checker can distinguish at least 
 - `D:\PythonProject_CLIProxyAPI` fixture - an active native OMX team state must be preserved and must not be classified as safe cleanup residue.
 - `D:\project` fixture - ordinary HUD, notification, leader-nudge, or tmux hook state is not durable backend activation evidence.
 
-### Later slices after MR 5
+### Next decision point after MR 5
 
-- MR 6, automatic durable routing hookup: connect `native_omx` and `langgraph` selection to real task-flow thresholds only after MR 3 through MR 5 prove safe status, selector behavior, and helper mirror boundaries.
+- MR 6, automatic durable routing hookup or readiness review: connect `native_omx` and `langgraph` selection to real task-flow thresholds only after confirming the already-landed MR 3 through MR 5 surfaces still prove safe status, selector behavior, and helper mirror boundaries.
 
-### Explicit non-goals for the next slice
+### Explicit non-goals for the next decision point
 
 - Do not implement the final `codex_cli_personal_production_durable_team_plan` draft as if it were already complete; that document remains the north-star target.
 - Do not modify `C:\Users\lenovo\.codex\config.toml` - this user-level Codex config file is outside the next MR's source-of-truth scope.
 - Do not delete user-level skills, Vercel plugin skills, browser automation skills, or repo-local `.omx/state/` artifacts.
 - Do not merge durable state from `D:\PythonProject_OpenClaw`, `D:\PythonProject_CLIProxyAPI`, or `D:\project` into this repository.
-- Do not start a durable team from MR 5; helper mirror source-of-truth hardening is documentation, generation, and inspection-boundary work only.
+- Do not start a durable team during this status-sync or MR 6 readiness-review step; automatic durable routing must remain gated by a separate reviewed change.
 
 
 ## 1. Goal
