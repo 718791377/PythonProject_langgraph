@@ -13,10 +13,12 @@ from typing import Any
 
 
 CHECK_NAME = "mcp_router_scope_policy"
-CODEX_DEDICATED = ("omx_state", "omx_memory", "omx_code_intel", "omx_trace")
-ROUTER_SHARED = ("chrome-devtools", "pencil")
+CODEX_PRIVATE = ("omx_state", "omx_memory", "omx_code_intel", "omx_trace")
+CODEX_DIRECT_UTILITY = ("chrome-devtools", "pencil")
+CODEX_DIRECT_REQUIRED = CODEX_PRIVATE + CODEX_DIRECT_UTILITY
 ROUTER_BRIDGE = "mcp_router"
-ROUTER_FORBIDDEN = {"omx_state", "omx_memory", "omx_code_intel", "omx_trace", "mcp-router", "mcp_router"}
+ROUTER_SELF_REFERENCE = {"mcp-router", "mcp_router"}
+ROUTER_FORBIDDEN = set(CODEX_PRIVATE) | ROUTER_SELF_REFERENCE
 DEFAULT_EXCEPTIONS_PATH = Path("tools/mcp_router_scope_policy_exceptions.json")
 MCP_ROUTER_DISABLED_EXCEPTION_SCOPE = "codex_mcp_router_bridge_disabled"
 
@@ -149,18 +151,22 @@ def check_codex_config(
                 "command": value.get("command"),
             }
 
-    for name in CODEX_DEDICATED:
+    for name in CODEX_DIRECT_REQUIRED:
         cfg = servers.get(name)
         if not isinstance(cfg, dict):
-            errors.append(f"Codex-dedicated MCP server `{name}` is missing from Codex config `{path}`.")
+            errors.append(f"Codex direct MCP server `{name}` is missing from Codex config `{path}`.")
         elif not mcp_enabled(cfg):
-            errors.append(f"Codex-dedicated MCP server `{name}` must be enabled directly in Codex config `{path}`.")
+            errors.append(f"Codex direct MCP server `{name}` must be enabled directly in Codex config `{path}`.")
 
     router_cfg = servers.get(ROUTER_BRIDGE)
     router_enabled = isinstance(router_cfg, dict) and mcp_enabled(router_cfg)
-    if not isinstance(router_cfg, dict):
-        errors.append(f"Codex MCP Router bridge `{ROUTER_BRIDGE}` is missing from Codex config `{path}`.")
-    elif not router_enabled:
+    if isinstance(router_cfg, dict) and router_enabled:
+        errors.append(
+            f"Codex MCP Router bridge `{ROUTER_BRIDGE}` must remain disabled; "
+            "Codex uses direct MCP entries for browser, design, and orchestration tools."
+        )
+    elif isinstance(router_cfg, dict):
+        result["mcp_router_disabled_by_policy"] = True
         exception = active_mcp_router_disabled_exception(exceptions)
         if exception:
             result["mcp_router_disabled_exception"] = {
@@ -168,23 +174,15 @@ def check_codex_config(
                 "reason": exception.get("reason"),
                 "recovery_condition": exception.get("recovery_condition"),
             }
-            warnings.append(
-                f"Codex MCP Router bridge `{ROUTER_BRIDGE}` is temporarily disabled under declared exception "
-                f"`{exception.get('id')}`; keep `/resume` stable until the recovery condition is met."
+            info.append(
+                f"Codex MCP Router bridge `{ROUTER_BRIDGE}` is disabled by policy; "
+                f"legacy exception `{exception.get('id')}` is present for audit history."
             )
-        else:
-            errors.append(f"Codex MCP Router bridge `{ROUTER_BRIDGE}` must remain enabled in Codex config `{path}` or have a declared active stability exception.")
+    else:
+        info.append(f"Codex MCP Router bridge `{ROUTER_BRIDGE}` is absent; this is acceptable because Codex does not use MCP Router by default.")
 
     if isinstance(servers.get("mcp-router"), dict):
         errors.append("Codex config contains `mcp-router`; use `mcp_router` as the Codex-side bridge name instead.")
-
-    if router_enabled:
-        for name in ROUTER_SHARED:
-            cfg = servers.get(name)
-            if isinstance(cfg, dict) and mcp_enabled(cfg):
-                errors.append(
-                    f"Shared MCP server `{name}` should be disabled or absent as a direct Codex server when MCP Router is enabled."
-                )
 
     return result
 
@@ -278,7 +276,7 @@ def check_router_state(
         if is_disabled(row):
             warnings.append(f"MCP Router contains disabled migration residue for forbidden server `{name}`.")
             continue
-        message = f"MCP Router contains active forbidden server `{name}`; keep Codex-dedicated or Router self-reference servers out of MCP Router."
+        message = f"MCP Router contains active forbidden server `{name}`; keep Codex-private or Router self-reference servers out of MCP Router."
         if strict_router_state:
             errors.append(message)
         else:
@@ -329,8 +327,9 @@ def run_check(
         "mcp_router": router,
         "exceptions": exceptions,
         "policy": {
-            "codex_dedicated": list(CODEX_DEDICATED),
-            "router_shared": list(ROUTER_SHARED),
+            "codex_private": list(CODEX_PRIVATE),
+            "codex_direct_utility": list(CODEX_DIRECT_UTILITY),
+            "codex_direct_required": list(CODEX_DIRECT_REQUIRED),
             "router_bridge": ROUTER_BRIDGE,
             "router_forbidden": sorted(ROUTER_FORBIDDEN),
         },

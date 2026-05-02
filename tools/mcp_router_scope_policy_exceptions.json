@@ -3,11 +3,12 @@
   "exceptions": [
     {
       "id": "mcp-router-disabled-for-resume-stability",
-      "status": "active",
+      "status": "resolved",
       "scope": "codex_mcp_router_bridge_disabled",
-      "reason": "Codex /resume lost visible prior sessions when mcp_router was enabled; disabling the bridge restores resume stability while MCP-safe wrapper work is pending.",
-      "recovery_condition": "Re-enable the Codex mcp_router bridge only after a byte-transparent MCP-safe wrapper or direct bridge path passes initialize, tools/list, large-output, and resume-startup compatibility checks.",
+      "reason": "Codex /resume lost visible prior sessions when mcp_router was enabled; the temporary exception is resolved because Codex now keeps MCP Router disabled by policy and uses direct MCP entries for browser and design tools.",
+      "recovery_condition": "Do not re-enable the Codex mcp_router bridge without a future approved governance change that defines a bounded Codex-specific Router profile and validates tools/list size, resume startup, and direct-MCP fallback behavior.",
       "created_at": "2026-05-02",
+      "resolved_at": "2026-05-02",
       "owner": "operator"
     }
   ]

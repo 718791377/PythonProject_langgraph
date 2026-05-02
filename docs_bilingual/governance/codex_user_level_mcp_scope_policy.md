@@ -9,11 +9,11 @@ status: active
 
 ## 1. Purpose
 
-This policy defines which MCP servers are Codex-dedicated and which MCP servers may be managed through MCP Router for cross-client use.
+This policy defines which MCP servers Codex uses directly and which MCP servers may remain in MCP Router for non-Codex clients.
 
 `MCP` means Model Context Protocol, the tool-server protocol used by Codex and other clients.
 
-`MCP Router` is the shared router application that can expose selected MCP servers to multiple clients such as Codex, Trae, VS Code, and PyCharm.
+`MCP Router` is the shared router application that may expose selected MCP servers to Trae, VS Code, PyCharm, or other non-Codex clients.
 
 `Codex` is the OpenAI coding agent client used as the leader for this repository's orchestration workflow.
 
@@ -22,15 +22,17 @@ This policy defines which MCP servers are Codex-dedicated and which MCP servers 
 Use this boundary rule:
 
 ```text
-Codex orchestration truth stays Codex-dedicated.
-Cross-client utility tools may go through MCP Router.
+Codex direct tools stay direct.
+MCP Router stays disabled for Codex by default.
 ```
 
-Codex-dedicated MCP servers MUST remain configured directly for Codex and MUST NOT be managed as shared MCP Router servers.
+This means Codex must not use the `mcp_router` bridge as its default path to browser, design, or orchestration tools.
 
-MCP Router SHOULD manage only cross-client utility MCP servers that do not own Codex session state, durable orchestration state, repository-local truth, or approval-sensitive write authority.
+`mcp_router` is the Codex-side MCP server entry that would let Codex connect to MCP Router.
 
-## 3. Codex-Dedicated MCP Servers
+MCP Router may still serve non-Codex clients. Its server list does not define Codex capability unless Codex explicitly enables the `mcp_router` bridge, which this policy forbids by default.
+
+## 3. Codex-Private Direct MCP Servers
 
 `omx_state` is the oh-my-codex state MCP server used to read and write Codex mode state.
 
@@ -40,65 +42,75 @@ MCP Router SHOULD manage only cross-client utility MCP servers that do not own C
 
 `omx_trace` is the oh-my-codex trace MCP server used to inspect Codex agent-flow trace data.
 
-These Codex-dedicated MCP servers MUST be enabled in Codex user-level configuration when the oh-my-codex layer is enabled.
+These Codex-private MCP servers must be enabled directly in Codex user-level configuration when the oh-my-codex layer is enabled.
 
-These Codex-dedicated MCP servers MUST NOT be exposed through MCP Router as shared server entries for other clients.
+These Codex-private MCP servers must not be exposed through MCP Router as shared server entries for other clients.
 
-## 4. MCP Router Shared Utility Servers
+## 4. Codex Direct Utility MCP Servers
 
 `chrome-devtools` is the browser debugging MCP server used for browser pages, DOM snapshots, screenshots, console data, and network inspection.
 
 `pencil` is the design MCP server used for Pencil design documents, visual variables, node reads, and exports.
 
-These shared utility MCP servers MAY be managed by MCP Router when multiple clients need the same browser or design capability.
-
-When `chrome-devtools` or `pencil` is managed by MCP Router, the corresponding direct Codex server entry SHOULD be disabled or absent in `C:\Users\lenovo\.codex\config.toml`.
+Codex must use `chrome-devtools` and `pencil` through direct Codex MCP entries, not through the `mcp_router` bridge.
 
 `C:\Users\lenovo\.codex\config.toml` is the user-level Codex configuration file that controls direct MCP server entries for Codex on this Windows machine.
 
-## 5. Router Self-Reference Rule
+Direct Codex entries for `chrome-devtools` and `pencil` should remain enabled when the operator wants Codex browser or design capability.
 
-`mcp_router` is the Codex-side MCP server entry that lets Codex connect to MCP Router.
+If MCP Router also contains `chrome-devtools` or `pencil` for Trae, VS Code, PyCharm, or another non-Codex client, that Router state is external client state and does not count as Codex access.
 
-`mcp-router` is the MCP Router application or package name and MUST NOT be registered as a server managed by MCP Router itself.
+## 5. MCP Router Bridge Rule for Codex
 
-MCP Router MUST NOT manage a server entry that points back to MCP Router, because that creates self-reference and can cause recursive routing, duplicate startup, or confusing tool exposure.
+The Codex-side `mcp_router` bridge must remain disabled or absent by default.
 
-## 6. High-Risk Shared Server Rules
+Codex must not load MCP Router's full tool catalog during normal startup, because MCP Router may aggregate large cross-client tool lists that increase startup cost, tool-choice noise, and `/resume` risk.
 
-`windows-cli` is a Windows shell MCP server and MUST NOT be exposed broadly through MCP Router without explicit operator approval and strong approval gates.
+`tools/list` is the MCP method that returns the tool names, descriptions, and input schemas for an MCP server. A large `tools/list` payload can consume startup budget even when each tool is valid.
 
-SSH management MCP servers are tools that can create, update, or delete SSH connection records and SHOULD NOT be exposed to Codex by default unless the task requires them.
+Re-enabling the Codex-side `mcp_router` bridge requires a future approved governance change that defines a bounded Codex-specific Router profile and validates `tools/list` size, resume startup, and direct-MCP fallback behavior.
 
-Deployment MCP servers are tools that can publish or mutate remote infrastructure and SHOULD be read-only or approval-gated when shared through MCP Router.
+## 6. Router Self-Reference Rule
 
-## 7. Required Checker Behavior
+`mcp-router` is the MCP Router application or package name and must not be registered as a server managed by MCP Router itself.
+
+MCP Router must not manage a server entry that points back to MCP Router, because that creates self-reference and can cause recursive routing, duplicate startup, or confusing tool exposure.
+
+## 7. High-Risk Shared Server Rules
+
+`windows-cli` is a Windows shell MCP server and must not be exposed to Codex through MCP Router.
+
+SSH management MCP servers are tools that can create, update, or delete SSH connection records and must not be exposed to Codex through MCP Router by default.
+
+Deployment MCP servers are tools that can publish or mutate remote infrastructure and must not be exposed to Codex through MCP Router without task-specific approval gates.
+
+These tools may exist in MCP Router for other clients only when the operator accepts that external client risk.
+
+## 8. Required Checker Behavior
 
 `tools/check_mcp_router_scope_policy.py` is the repository checker that validates the Codex MCP scope split and reports MCP Router drift.
 
-The checker MUST verify, when local user-level files are present, that Codex keeps `omx_state`, `omx_memory`, `omx_code_intel`, and `omx_trace` enabled directly.
+The checker must verify, when local user-level files are present, that Codex keeps `omx_state`, `omx_memory`, `omx_code_intel`, `omx_trace`, `chrome-devtools`, and `pencil` enabled directly.
 
-The checker MUST verify, when local user-level files are present, that direct Codex entries for `chrome-devtools` and `pencil` are disabled or absent when MCP Router is enabled.
+The checker must verify that the Codex-side `mcp_router` bridge is disabled or absent by default.
 
-The checker MUST report MCP Router server records for `omx_state`, `omx_memory`, `omx_code_intel`, `omx_trace`, or `mcp-router` as drift.
+The checker must report MCP Router server records for `omx_state`, `omx_memory`, `omx_code_intel`, `omx_trace`, `mcp-router`, or `mcp_router` as drift.
 
-The default guard path MAY report MCP Router database drift as warnings because MCP Router is external user-level application state. A strict local run MAY fail on that drift when the operator wants to audit the live machine.
+The checker does not need to fail only because MCP Router contains `chrome-devtools` or `pencil` for non-Codex clients; Codex access is controlled by direct Codex entries and the disabled `mcp_router` bridge.
 
-## 8. Temporary Codex Bridge Disable Exception
+The default guard path may report MCP Router database drift as warnings because MCP Router is external user-level application state. A strict local run may fail on that drift when the operator wants to audit the live machine.
+
+## 9. Historical Bridge Exception
 
 `tools/mcp_router_scope_policy_exceptions.json` is the repository-owned MCP scope exception registry used by the checker.
 
-The Codex-side `mcp_router` bridge MAY be temporarily disabled only when `/resume` or cold-start stability is broken while the bridge is enabled.
+The earlier `mcp-router-disabled-for-resume-stability` exception recorded that `/resume` was unstable when the Codex-side `mcp_router` bridge was enabled.
 
-That exception MUST be declared in `tools/mcp_router_scope_policy_exceptions.json` with an `id`, `reason`, and `recovery_condition`. The `id` is the stable exception name, the `reason` explains why the exception exists, and the `recovery_condition` explains what must pass before the bridge is re-enabled.
+That exception is now resolved because this policy makes the disabled bridge the default Codex rule.
 
-When this exception is active, MCP Router MAY continue to serve other clients such as Trae, VS Code, and PyCharm. Codex simply does not load the `mcp_router` bridge by default.
+The exception must not be reactivated unless a future approved governance change explicitly reverses the default and supplies bounded Router-profile validation.
 
-This exception MUST NOT weaken the direct-Codex requirement for `omx_state`, `omx_memory`, `omx_code_intel`, or `omx_trace`. These names are oh-my-codex MCP servers for state, memory, code intelligence, and trace data.
-
-The exception SHOULD be removed after a byte-transparent MCP-safe wrapper or direct bridge path passes initialize, tools/list, large-output, and resume-startup compatibility checks.
-
-## 9. Validation Commands
+## 10. Validation Commands
 
 Run these commands after changing this policy or the checker:
 
