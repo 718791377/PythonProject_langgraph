@@ -54,3 +54,18 @@ The MCP scope policy SHALL be backed by an executable checker that can validate 
 - **WHEN** the operator runs the checker with strict Router-state validation
 - **THEN** active MCP Router records for Codex-dedicated servers SHALL be blocking errors
 - **AND** active Router self-reference records SHALL be blocking errors
+#### Scenario: Resume-stability exception is active
+- **WHEN** the Codex `mcp_router` bridge is disabled
+- **AND** `tools/mcp_router_scope_policy_exceptions.json` contains an active `codex_mcp_router_bridge_disabled` exception with a reason and recovery condition
+- **THEN** the checker SHALL report a warning rather than a blocking error
+- **AND** the checker output SHALL include the exception identifier
+
+#### Scenario: Disabled bridge has no declared exception
+- **WHEN** the Codex `mcp_router` bridge is disabled
+- **AND** no active `codex_mcp_router_bridge_disabled` exception is declared
+- **THEN** the checker SHALL fail
+
+#### Scenario: Codex-dedicated MCP server is disabled during a bridge exception
+- **WHEN** a resume-stability exception exists for the Codex `mcp_router` bridge
+- **AND** `omx_state`, `omx_memory`, `omx_code_intel`, or `omx_trace` is missing or disabled
+- **THEN** the checker SHALL fail
