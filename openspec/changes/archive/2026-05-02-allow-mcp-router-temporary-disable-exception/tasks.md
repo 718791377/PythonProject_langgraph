@@ -6,4 +6,4 @@
 - [x] 4. Update `test/check_mcp_router_scope_policy.test.py` - these tests cover disabled bridge behavior with and without the exception.
 - [x] 5. Update MCP scope governance docs - these docs explain why MCP Router can remain available to other clients while Codex temporarily disables its bridge.
 - [x] 6. Run validation commands - checker tests, strict local MCP scope check, `openspec validate --all`, `python tools/run_openspec_guard.py --root . --json`, and `git diff --check`.
-- [ ] 7. Publish by GitLab-first workflow - push the feature branch to GitLab, open a merge request, wait for pipeline success, merge to GitLab `main`, then sync that exact `main` commit to GitHub.
+- [x] 7. Publish by GitLab-first workflow - push the feature branch to GitLab, open a merge request, wait for pipeline success, merge to GitLab `main`, then sync that exact `main` commit to GitHub.
