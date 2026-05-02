@@ -84,7 +84,21 @@ The checker MUST report MCP Router server records for `omx_state`, `omx_memory`,
 
 The default guard path MAY report MCP Router database drift as warnings because MCP Router is external user-level application state. A strict local run MAY fail on that drift when the operator wants to audit the live machine.
 
-## 8. Validation Commands
+## 8. Temporary Codex Bridge Disable Exception
+
+`tools/mcp_router_scope_policy_exceptions.json` is the repository-owned MCP scope exception registry used by the checker.
+
+The Codex-side `mcp_router` bridge MAY be temporarily disabled only when `/resume` or cold-start stability is broken while the bridge is enabled.
+
+That exception MUST be declared in `tools/mcp_router_scope_policy_exceptions.json` with an `id`, `reason`, and `recovery_condition`. The `id` is the stable exception name, the `reason` explains why the exception exists, and the `recovery_condition` explains what must pass before the bridge is re-enabled.
+
+When this exception is active, MCP Router MAY continue to serve other clients such as Trae, VS Code, and PyCharm. Codex simply does not load the `mcp_router` bridge by default.
+
+This exception MUST NOT weaken the direct-Codex requirement for `omx_state`, `omx_memory`, `omx_code_intel`, or `omx_trace`. These names are oh-my-codex MCP servers for state, memory, code intelligence, and trace data.
+
+The exception SHOULD be removed after a byte-transparent MCP-safe wrapper or direct bridge path passes initialize, tools/list, large-output, and resume-startup compatibility checks.
+
+## 9. Validation Commands
 
 Run these commands after changing this policy or the checker:
 

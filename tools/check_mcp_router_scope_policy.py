@@ -17,6 +17,8 @@ CODEX_DEDICATED = ("omx_state", "omx_memory", "omx_code_intel", "omx_trace")
 ROUTER_SHARED = ("chrome-devtools", "pencil")
 ROUTER_BRIDGE = "mcp_router"
 ROUTER_FORBIDDEN = {"omx_state", "omx_memory", "omx_code_intel", "omx_trace", "mcp-router", "mcp_router"}
+DEFAULT_EXCEPTIONS_PATH = Path("tools/mcp_router_scope_policy_exceptions.json")
+MCP_ROUTER_DISABLED_EXCEPTION_SCOPE = "codex_mcp_router_bridge_disabled"
 
 
 def default_codex_config() -> Path | None:
@@ -46,6 +48,55 @@ def read_json(path: Path) -> Any | None:
         return None
 
 
+def load_exceptions(root: Path, exceptions_path: Path | None, errors: list[str], warnings: list[str]) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "path": str(exceptions_path) if exceptions_path else None,
+        "present": False,
+        "active": [],
+        "invalid": [],
+    }
+    if exceptions_path is None:
+        return result
+    path = exceptions_path if exceptions_path.is_absolute() else root / exceptions_path
+    result["path"] = str(path)
+    if not path.exists():
+        return result
+    result["present"] = True
+    data = read_json(path)
+    if not isinstance(data, dict):
+        errors.append(f"MCP scope policy exception file `{path}` must be a JSON object.")
+        return result
+    if data.get("schema_version") != 1:
+        errors.append(f"MCP scope policy exception file `{path}` must declare `schema_version` 1.")
+    exceptions = data.get("exceptions", [])
+    if not isinstance(exceptions, list):
+        errors.append(f"MCP scope policy exception file `{path}` must contain an `exceptions` list.")
+        return result
+    required = ("id", "status", "scope", "reason", "recovery_condition")
+    for item in exceptions:
+        if not isinstance(item, dict):
+            result["invalid"].append(item)
+            errors.append(f"MCP scope policy exception file `{path}` contains a non-object exception entry.")
+            continue
+        missing = [key for key in required if not isinstance(item.get(key), str) or not item.get(key, "").strip()]
+        if missing:
+            result["invalid"].append(item)
+            errors.append(f"MCP scope policy exception `{item.get('id', '<missing id>')}` is missing required fields: {', '.join(missing)}.")
+            continue
+        if item.get("status") == "active":
+            result["active"].append(item)
+        elif item.get("status") not in {"inactive", "resolved"}:
+            warnings.append(f"MCP scope policy exception `{item.get('id')}` has unknown status `{item.get('status')}`.")
+    return result
+
+
+def active_mcp_router_disabled_exception(exceptions: dict[str, Any]) -> dict[str, Any] | None:
+    for item in exceptions.get("active", []):
+        if isinstance(item, dict) and item.get("scope") == MCP_ROUTER_DISABLED_EXCEPTION_SCOPE:
+            return item
+    return None
+
+
 def mcp_enabled(config: dict[str, Any]) -> bool:
     value = config.get("enabled", True)
     return value is not False
@@ -61,7 +112,13 @@ def load_codex_config(path: Path, errors: list[str]) -> dict[str, Any] | None:
     return None
 
 
-def check_codex_config(path: Path | None, errors: list[str], warnings: list[str], info: list[str]) -> dict[str, Any]:
+def check_codex_config(
+    path: Path | None,
+    errors: list[str],
+    warnings: list[str],
+    info: list[str],
+    exceptions: dict[str, Any],
+) -> dict[str, Any]:
     result: dict[str, Any] = {
         "path": str(path) if path else None,
         "present": False,
@@ -100,20 +157,34 @@ def check_codex_config(path: Path | None, errors: list[str], warnings: list[str]
             errors.append(f"Codex-dedicated MCP server `{name}` must be enabled directly in Codex config `{path}`.")
 
     router_cfg = servers.get(ROUTER_BRIDGE)
+    router_enabled = isinstance(router_cfg, dict) and mcp_enabled(router_cfg)
     if not isinstance(router_cfg, dict):
         errors.append(f"Codex MCP Router bridge `{ROUTER_BRIDGE}` is missing from Codex config `{path}`.")
-    elif not mcp_enabled(router_cfg):
-        errors.append(f"Codex MCP Router bridge `{ROUTER_BRIDGE}` must remain enabled in Codex config `{path}`.")
+    elif not router_enabled:
+        exception = active_mcp_router_disabled_exception(exceptions)
+        if exception:
+            result["mcp_router_disabled_exception"] = {
+                "id": exception.get("id"),
+                "reason": exception.get("reason"),
+                "recovery_condition": exception.get("recovery_condition"),
+            }
+            warnings.append(
+                f"Codex MCP Router bridge `{ROUTER_BRIDGE}` is temporarily disabled under declared exception "
+                f"`{exception.get('id')}`; keep `/resume` stable until the recovery condition is met."
+            )
+        else:
+            errors.append(f"Codex MCP Router bridge `{ROUTER_BRIDGE}` must remain enabled in Codex config `{path}` or have a declared active stability exception.")
 
     if isinstance(servers.get("mcp-router"), dict):
         errors.append("Codex config contains `mcp-router`; use `mcp_router` as the Codex-side bridge name instead.")
 
-    for name in ROUTER_SHARED:
-        cfg = servers.get(name)
-        if isinstance(cfg, dict) and mcp_enabled(cfg):
-            errors.append(
-                f"Shared MCP server `{name}` should be disabled or absent as a direct Codex server when MCP Router is enabled."
-            )
+    if router_enabled:
+        for name in ROUTER_SHARED:
+            cfg = servers.get(name)
+            if isinstance(cfg, dict) and mcp_enabled(cfg):
+                errors.append(
+                    f"Shared MCP server `{name}` should be disabled or absent as a direct Codex server when MCP Router is enabled."
+                )
 
     return result
 
@@ -230,13 +301,20 @@ def check_router_state(
     return result
 
 
-def run_check(root: Path, codex_config: Path | None, router_db: Path | None, strict_router_state: bool) -> dict[str, Any]:
-    del root  # The checker is local-runtime oriented but keeps --root for guard consistency.
+def run_check(
+    root: Path,
+    codex_config: Path | None,
+    router_db: Path | None,
+    strict_router_state: bool,
+    exceptions_path: Path | None,
+) -> dict[str, Any]:
+    root = root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
     info: list[str] = []
 
-    codex = check_codex_config(codex_config, errors, warnings, info)
+    exceptions = load_exceptions(root, exceptions_path, errors, warnings)
+    codex = check_codex_config(codex_config, errors, warnings, info, exceptions)
     router = check_router_state(router_db, strict_router_state, errors, warnings, info)
 
     return {
@@ -249,6 +327,7 @@ def run_check(root: Path, codex_config: Path | None, router_db: Path | None, str
         "info": info,
         "codex_config": codex,
         "mcp_router": router,
+        "exceptions": exceptions,
         "policy": {
             "codex_dedicated": list(CODEX_DEDICATED),
             "router_shared": list(ROUTER_SHARED),
@@ -260,6 +339,7 @@ def run_check(root: Path, codex_config: Path | None, router_db: Path | None, str
             "warnings": len(warnings),
             "router_forbidden_records": len(router.get("forbidden_records", [])),
             "router_forbidden_access": len(router.get("forbidden_access", [])),
+            "active_exceptions": len(exceptions.get("active", [])),
         },
     }
 
@@ -269,6 +349,11 @@ def main() -> int:
     parser.add_argument("--root", default=".", help="Repository root; retained for guard consistency.")
     parser.add_argument("--codex-config", help="Explicit Codex config.toml path.")
     parser.add_argument("--mcp-router-db", help="Explicit MCP Router mcprouter.db path.")
+    parser.add_argument(
+        "--exceptions-path",
+        default=DEFAULT_EXCEPTIONS_PATH.as_posix(),
+        help="Repository-relative or absolute JSON file declaring temporary MCP scope exceptions.",
+    )
     parser.add_argument(
         "--strict-router-state",
         action="store_true",
@@ -280,7 +365,8 @@ def main() -> int:
     root = Path(args.root).resolve()
     codex_config = Path(args.codex_config).resolve() if args.codex_config else default_codex_config()
     router_db = Path(args.mcp_router_db).resolve() if args.mcp_router_db else default_router_db()
-    payload = run_check(root, codex_config, router_db, args.strict_router_state)
+    exceptions_path = Path(args.exceptions_path).resolve() if Path(args.exceptions_path).is_absolute() else Path(args.exceptions_path)
+    payload = run_check(root, codex_config, router_db, args.strict_router_state, exceptions_path)
 
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
