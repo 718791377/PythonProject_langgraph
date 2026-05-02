@@ -1,8 +1,8 @@
-"""Run MCP Router while hiding benign non-protocol logs from the main session.
+"""Run MCP Router with MCP-safe stdout forwarding and quiet stderr logs.
 
-The wrapper is opt-in. It preserves JSON-RPC-like stdout for MCP protocol use,
-stores every raw child line in a timestamped local log file, and forwards only
-actionable errors to stderr.
+The wrapper is opt-in. It copies child stdout byte-for-byte because stdout is
+MCP protocol transport. It stores raw stdout/stderr data in timestamped local
+logs and forwards only actionable stderr errors to wrapper stderr.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import re
 import subprocess
 import sys
 import threading
-from typing import Iterable
+from typing import BinaryIO, Iterable
 
 
 DEFAULT_COMMAND = r"C:\Program Files\nodejs\npx.cmd"
@@ -76,21 +76,8 @@ def matches_any(line: str, patterns: Iterable[re.Pattern[str]]) -> bool:
     return any(pattern.search(line) for pattern in patterns)
 
 
-def protocol_like_stdout(line: str) -> bool:
-    if line == "":
-        return True
-    if line.startswith("Content-Length:") or line.startswith("Content-Type:"):
-        return True
-    stripped = line.lstrip()
-    if not (stripped.startswith("{") or stripped.startswith("[")):
-        return False
-    try:
-        value = json.loads(line)
-    except json.JSONDecodeError:
-        return False
-    if isinstance(value, dict):
-        return any(key in value for key in ("jsonrpc", "method", "id", "result", "error"))
-    return False
+def decode_for_log(data: bytes) -> str:
+    return data.decode("utf-8", errors="backslashreplace")
 
 
 def main() -> int:
@@ -108,32 +95,14 @@ def main() -> int:
     log_path = log_root / f"{stamp}.log"
     log_lock = threading.Lock()
 
-    benign_patterns = [re.compile(pattern) for pattern in BENIGN_PATTERNS]
     error_patterns = [re.compile(pattern, re.IGNORECASE) for pattern in ERROR_PATTERNS]
 
-    def write_log(stream: str, line: str) -> None:
-        entry = f"{_dt.datetime.now(_dt.UTC).isoformat()}\t{stream}\t{line}\n"
+    def write_log(stream: str, data: bytes | str) -> None:
+        text = decode_for_log(data) if isinstance(data, bytes) else data
+        entry = f"{_dt.datetime.now(_dt.UTC).isoformat()}\t{stream}\t{text}\n"
         with log_lock:
             with log_path.open("a", encoding="utf-8", newline="") as handle:
                 handle.write(entry)
-
-    def handle_stdout(line: str) -> None:
-        write_log("stdout", line)
-        if protocol_like_stdout(line):
-            sys.stdout.write(line + "\n")
-            sys.stdout.flush()
-        elif matches_any(line, error_patterns):
-            sys.stderr.write(line + "\n")
-            sys.stderr.flush()
-        else:
-            # Benign and unknown non-protocol stdout are log-only by design.
-            return
-
-    def handle_stderr(line: str) -> None:
-        write_log("stderr", line)
-        if matches_any(line, error_patterns):
-            sys.stderr.write(line + "\n")
-            sys.stderr.flush()
 
     write_log("wrapper", "starting: " + " ".join([command_path, *command_args]))
 
@@ -142,42 +111,83 @@ def main() -> int:
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        bufsize=1,
+        bufsize=0,
         env=os.environ.copy(),
     )
 
-    def read_stream(stream, handler) -> None:
+    def copy_stdin() -> None:
         try:
-            for raw_line in stream:
-                handler(raw_line.rstrip("\r\n"))
+            source = sys.stdin.buffer
+            target = process.stdin
+            if target is None:
+                return
+            while True:
+                chunk = source.read(65536)
+                if not chunk:
+                    break
+                target.write(chunk)
+                target.flush()
+        except (BrokenPipeError, OSError):
+            pass
+        finally:
+            if process.stdin is not None:
+                try:
+                    process.stdin.close()
+                except OSError:
+                    pass
+
+    def copy_stdout() -> None:
+        stream: BinaryIO | None = process.stdout
+        if stream is None:
+            return
+        try:
+            while True:
+                chunk = stream.read(65536)
+                if not chunk:
+                    break
+                write_log("stdout", chunk)
+                sys.stdout.buffer.write(chunk)
+                sys.stdout.buffer.flush()
         finally:
             stream.close()
 
-    stdout_thread = threading.Thread(target=read_stream, args=(process.stdout, handle_stdout), daemon=True)
-    stderr_thread = threading.Thread(target=read_stream, args=(process.stderr, handle_stderr), daemon=True)
+    def copy_stderr() -> None:
+        stream: BinaryIO | None = process.stderr
+        if stream is None:
+            return
+        pending = b""
+        try:
+            while True:
+                chunk = stream.read(4096)
+                if not chunk:
+                    break
+                write_log("stderr", chunk)
+                pending += chunk
+                while b"\n" in pending:
+                    line, pending = pending.split(b"\n", 1)
+                    handle_stderr_line(line.rstrip(b"\r"), error_patterns)
+            if pending:
+                handle_stderr_line(pending.rstrip(b"\r"), error_patterns)
+        finally:
+            stream.close()
+
+    def handle_stderr_line(raw_line: bytes, error_patterns: list[re.Pattern[str]]) -> None:
+        line = raw_line.decode("utf-8", errors="replace")
+        if matches_any(line, error_patterns):
+            sys.stderr.write(line + "\n")
+            sys.stderr.flush()
+
+    stdin_thread = threading.Thread(target=copy_stdin, daemon=True)
+    stdout_thread = threading.Thread(target=copy_stdout, daemon=True)
+    stderr_thread = threading.Thread(target=copy_stderr, daemon=True)
+    stdin_thread.start()
     stdout_thread.start()
     stderr_thread.start()
-
-    try:
-        if sys.stdin is not None and not sys.stdin.isatty():
-            for input_line in sys.stdin:
-                if process.stdin is None:
-                    break
-                process.stdin.write(input_line)
-                process.stdin.flush()
-    finally:
-        if process.stdin is not None:
-            try:
-                process.stdin.close()
-            except OSError:
-                pass
 
     exit_code = process.wait()
     stdout_thread.join(timeout=5)
     stderr_thread.join(timeout=5)
+    stdin_thread.join(timeout=1)
     write_log("wrapper", f"exit_code: {exit_code}")
 
     if exit_code != 0:
