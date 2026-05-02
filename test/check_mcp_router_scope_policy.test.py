@@ -43,6 +43,28 @@ class McpRouterScopePolicyCheckTest(unittest.TestCase):
             connection.close()
         return path
 
+    def write_exception_file(self, root: Path) -> Path:
+        path = root / "tools" / "mcp_router_scope_policy_exceptions.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "exceptions": [
+                        {
+                            "id": "mcp-router-disabled-for-resume-stability",
+                            "status": "active",
+                            "scope": "codex_mcp_router_bridge_disabled",
+                            "reason": "resume stability regression",
+                            "recovery_condition": "validated MCP-safe wrapper",
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return path
+
     def run_check(self, root: Path, codex_config: Path, router_db: Path, *extra: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [
@@ -117,6 +139,43 @@ command = "npx"
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
         self.assertTrue(any("chrome-devtools" in error for error in payload["errors"]))
+
+    def test_fails_when_mcp_router_bridge_is_disabled_without_exception(self) -> None:
+        root = self.make_root("mcp-scope-router-disabled-fail")
+        disabled_config = self.good_config().replace(
+            "[mcp_servers.mcp_router]\nenabled = true",
+            "[mcp_servers.mcp_router]\nenabled = false",
+        )
+        codex_config = self.write_codex_config(root, disabled_config)
+        router_db = self.write_router_db(root, [("id1", "chrome-devtools", 1, 0)])
+
+        result = self.run_check(root, codex_config, router_db, "--strict-router-state")
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("mcp_router" in error for error in payload["errors"]))
+
+    def test_allows_mcp_router_bridge_disabled_with_declared_stability_exception(self) -> None:
+        root = self.make_root("mcp-scope-router-disabled-exception")
+        self.write_exception_file(root)
+        disabled_config = self.good_config().replace(
+            "[mcp_servers.mcp_router]\nenabled = true",
+            "[mcp_servers.mcp_router]\nenabled = false",
+        )
+        codex_config = self.write_codex_config(root, disabled_config)
+        router_db = self.write_router_db(root, [("id1", "chrome-devtools", 1, 0)])
+
+        result = self.run_check(root, codex_config, router_db, "--strict-router-state")
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["errors"], 0)
+        self.assertEqual(payload["counts"]["active_exceptions"], 1)
+        self.assertTrue(any("temporarily disabled" in warning for warning in payload["warnings"]))
+        self.assertEqual(
+            payload["codex_config"]["mcp_router_disabled_exception"]["id"],
+            "mcp-router-disabled-for-resume-stability",
+        )
 
     def test_strict_router_state_fails_for_forbidden_router_server(self) -> None:
         root = self.make_root("mcp-scope-router-fail")
