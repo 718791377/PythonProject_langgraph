@@ -12,4 +12,4 @@
 ## 3. Validation and Publication / 验证与发布
 
 - [x] 3.1 运行验证命令：`openspec validate --all`、`python tools/run_openspec_guard.py --root . --json`、`python tools/check_implementation_plan_rules.py --root . --json`、`python tools/check_name_clarity_rules.py --root . --json` 和 `git diff --check`。
-- [ ] 3.2 按 GitLab-first workflow 发布：推送分支到 GitLab，创建 merge request，等待 pipeline 通过，合并到 GitLab `main`，再把同一个 `main` commit 同步到 GitHub。
+- [x] 3.2 按 GitLab-first workflow 发布：推送分支到 GitLab，创建 merge request，等待 pipeline 通过，合并到 GitLab `main`，再把同一个 `main` commit 同步到 GitHub。
