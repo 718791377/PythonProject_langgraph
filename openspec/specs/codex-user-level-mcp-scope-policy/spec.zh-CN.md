@@ -1,81 +1,98 @@
 # codex-user-level-mcp-scope-policy 规范
 
-## 目的
+## Purpose / 目的
 
-定义用户级 MCP server 边界：哪些服务是 Codex 专属直连 MCP server，哪些服务是通过 MCP Router 管理的跨客户端通用 MCP server。
+定义用户级 MCP server 边界：哪些 MCP server 由 Codex 直连使用，哪些 MCP Router server 只供非 Codex 客户端使用。
 
-## Requirements
+## Requirements / 需求
 
-### Requirement: Codex 专属 MCP server 必须保持 Codex 直连
+### Requirement: Codex-private MCP servers SHALL remain direct Codex servers / Codex 私有 MCP server 必须保持 Codex 直连
 
-Codex 专属 MCP server 必须继续直接配置给 Codex，且不能通过 MCP Router 作为共享 server entry 管理。
+Codex 私有 MCP server 必须直接配置给 Codex，不能作为共享 server entry 通过 MCP Router 管理。
 
-Codex 专属 MCP server 包括 `omx_state`、`omx_memory`、`omx_code_intel` 和 `omx_trace`；它们分别用于 Codex 状态、记忆、代码智能和 trace 数据。
+Codex 私有 MCP server 包括 `omx_state`、`omx_memory`、`omx_code_intel` 和 `omx_trace`。
 
-#### Scenario: Codex 启动时启用了 oh-my-codex
+#### Scenario: Codex starts with oh-my-codex enabled / Codex 启动且启用 oh-my-codex
 
-- **WHEN** Codex 启动并启用 oh-my-codex 层
+- **WHEN** Codex 启动且 oh-my-codex 层已启用
 - **THEN** `omx_state`、`omx_memory`、`omx_code_intel` 和 `omx_trace` 必须作为 Codex 直连 MCP server 可用
-- **AND** 这些 server 不能被要求必须经过 MCP Router
+- **AND** 这些 server 不得要求通过 MCP Router
 
-#### Scenario: 审计 MCP Router
+#### Scenario: MCP Router is audited / 审计 MCP Router
 
-- **WHEN** 审计 MCP Router 管理的 server 记录
-- **THEN** `omx_state`、`omx_memory`、`omx_code_intel` 或 `omx_trace` 的 active 记录必须被报告为 drift
-- **AND** 操作者必须被提示将这些 server 保持为 Codex 专属
+- **WHEN** 审计 MCP Router managed server records
+- **THEN** `omx_state`、`omx_memory`、`omx_code_intel` 或 `omx_trace` 的 active records 必须报告为 drift
+- **AND** 操作者必须被引导将这些 server 保持为 Codex 私有
 
-### Requirement: 共享通用 MCP server 可以由 MCP Router 管理
+### Requirement: Browser and design MCP servers SHALL remain direct Codex utility servers / 浏览器和设计 MCP server 必须保持 Codex 直连
 
-当多个客户端需要同一能力，且该 server 不拥有 Codex 编排状态时，跨客户端通用 MCP server 可以由 MCP Router 管理。
+Codex 必须通过 Codex 直连 MCP entry 使用浏览器和设计 MCP 能力，而不是通过 Codex 侧 `mcp_router` bridge。
 
-共享通用 MCP server 包括 `chrome-devtools` 和 `pencil`；它们分别用于浏览器调试和设计资料访问。
+Codex 直连通用 MCP server 包括 `chrome-devtools` 和 `pencil`。
 
-#### Scenario: 浏览器与设计 MCP server 被共享
+`chrome-devtools` 是浏览器调试 MCP server，用于浏览器页面、DOM 快照、截图、控制台数据和网络检查。
 
-- **WHEN** `chrome-devtools` 或 `pencil` 由 MCP Router 管理
-- **THEN** 对应的 Codex 直连 server entry 必须禁用或不存在
-- **AND** Codex 必须通过 MCP Router bridge 访问该能力
+`pencil` 是设计 MCP server，用于 Pencil 设计文档、视觉变量、节点读取和导出。
 
-### Requirement: MCP Router 不能管理自己
+#### Scenario: Codex browser and design tools are configured / 配置 Codex 浏览器和设计工具
+
+- **WHEN** 审计本地 Codex 配置
+- **THEN** `chrome-devtools` 和 `pencil` 必须作为 Codex 直连 MCP server 启用
+- **AND** Codex 不得要求 MCP Router 才能访问这些能力
+
+#### Scenario: MCP Router also serves non-Codex clients / MCP Router 同时服务非 Codex 客户端
+
+- **WHEN** MCP Router 为 Trae、VS Code、PyCharm 或其他非 Codex 客户端包含 `chrome-devtools` 或 `pencil`
+- **THEN** 该 Router 状态不算作 Codex 访问路径
+- **AND** Codex 必须继续使用对应的 Codex 直连 MCP entry
+
+### Requirement: Codex SHALL keep the MCP Router bridge disabled by default / Codex 必须默认禁用 MCP Router bridge
+
+Codex 侧 `mcp_router` bridge 默认必须禁用或不存在。
+
+Codex 正常启动时不得加载 MCP Router 的全量工具目录。
+
+重新启用 Codex 侧 `mcp_router` bridge 必须经过未来另一个已批准的治理变更；该变更必须定义有边界的 Codex 专用 Router profile，并验证 `tools/list` 大小、resume 启动和直连 MCP fallback 行为。
+
+#### Scenario: Codex configuration is audited / 审计 Codex 配置
+
+- **WHEN** Codex `mcp_router` bridge 已禁用或不存在
+- **THEN** checker 必须通过该 bridge 状态
+- **AND** checker 不得要求为禁用 bridge 声明临时 exception
+
+#### Scenario: Codex MCP Router bridge is enabled / Codex MCP Router bridge 被启用
+
+- **WHEN** Codex `mcp_router` bridge 已启用
+- **THEN** checker 必须失败
+- **AND** 操作者必须被引导使用 Codex 直连 MCP entry
+
+### Requirement: MCP Router SHALL NOT manage itself / MCP Router 不得管理自身
 
 MCP Router 不能包含 `mcp-router`、`mcp_router` 或其他 Router 自引用 managed server entry。
 
-#### Scenario: 检测到 Router 自引用
+#### Scenario: Router self-reference is detected / 检测到 Router 自引用
 
-- **WHEN** MCP Router 管理的 server 记录包含 `mcp-router` 或 `mcp_router`
+- **WHEN** MCP Router managed server records 包含 `mcp-router` 或 `mcp_router`
 - **THEN** checker 必须报告 self-reference drift
-- **AND** 操作者必须移除或禁用该自引用 Router server entry
+- **AND** 操作者必须删除或禁用该自引用 Router server entry
 
-### Requirement: MCP 范围策略必须有脚本验证支撑
+### Requirement: MCP scope policy SHALL have script-backed validation / MCP 范围策略必须有脚本校验
 
 MCP 范围策略必须由可执行 checker 支撑，该 checker 能验证本地 Codex 配置并报告 MCP Router drift。
 
-#### Scenario: 仓库 guard 在没有用户级 runtime 文件时运行
+#### Scenario: Repository guard runs without user-level runtime files / 仓库 guard 在没有用户级 runtime 文件的环境中运行
 
-- **WHEN** 仓库 guard 在 CI 或其他没有用户级 Codex / MCP Router 文件的环境中运行
-- **THEN** checker 必须用 informational output 跳过本地 runtime 验证
-- **AND** guard 必须继续验证仓库拥有的策略工件
+- **WHEN** 仓库 guard 在 CI 或其他没有用户级 Codex 或 MCP Router 文件的环境中运行
+- **THEN** checker 必须用 informational output 跳过本地 runtime validation
+- **AND** guard 必须继续验证仓库拥有的 policy artifacts
 
-#### Scenario: 请求 strict 本地审计
+#### Scenario: Strict local audit is requested / 请求 strict 本地审计
 
-- **WHEN** 操作者使用 strict Router-state 验证运行 checker
-- **THEN** Codex 专属 server 的 active MCP Router 记录必须成为阻塞错误
-- **AND** active Router 自引用记录也必须成为阻塞错误
-#### Scenario: resume ??????? active ??
+- **WHEN** 操作者使用 strict Router-state validation 运行 checker
+- **THEN** Codex 私有 server 的 active MCP Router records 必须成为 blocking errors
+- **AND** active Router self-reference records 必须成为 blocking errors
 
-- **WHEN** Codex `mcp_router` bridge ???
-- **AND** `tools/mcp_router_scope_policy_exceptions.json` ?? active ? `codex_mcp_router_bridge_disabled` ?????????? reason ? recovery condition
-- **THEN** checker ???? warning????????
-- **AND** checker ?????? exception identifier?exception identifier ??????????????
+#### Scenario: Codex direct MCP server is disabled / Codex 直连 MCP server 被禁用
 
-#### Scenario: ?? bridge ???????
-
-- **WHEN** Codex `mcp_router` bridge ???
-- **AND** ?? active ? `codex_mcp_router_bridge_disabled` ??
-- **THEN** checker ????
-
-#### Scenario: bridge ???? Codex ?? MCP server ???
-
-- **WHEN** Codex `mcp_router` bridge ?? resume ?????
-- **AND** `omx_state`?`omx_memory`?`omx_code_intel` ? `omx_trace` ??????
-- **THEN** checker ????
+- **WHEN** 本地 Codex 配置中缺失或禁用了 `omx_state`、`omx_memory`、`omx_code_intel`、`omx_trace`、`chrome-devtools` 或 `pencil`
+- **THEN** checker 必须失败
