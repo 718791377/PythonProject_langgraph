@@ -17,7 +17,7 @@ doc_class: implementation_plan
 
 > Implementation status as of 2026-04-22: completed in repo source, validated in user-level mirrored helpers, and verified against the real `D:\PythonProject_OpenClaw` and `D:\PythonProject_langgraph` fixtures without mutating preserved legacy durable artifacts.
 
-> Current implementation boundary as of 2026-05-02: keep the 2026-04-22 note as historical evidence that source and mirrored helpers exist, but do not treat it as proof that the current small-step rollout is finished. MR 1 through MR 5 are complete. MR 5 landed as `formalize-helper-mirror-source-truth` and was archived on 2026-04-28; the next decision point is MR 6 readiness review or automatic durable routing hookup.
+> Current implementation boundary as of 2026-05-02: keep the 2026-04-22 note as historical evidence that source and mirrored helpers exist, but do not treat it as proof that the final production-grade persistent team draft is complete. MR 1 through MR 5 are complete. MR 6 readiness review is now complete as a status-reconciliation slice: the automatic durable routing hookup already exists in the earlier P5 team-mode surfaces, so this queue must not open duplicate runtime implementation work.
 
 ## Current Bounded Implementation Queue
 
@@ -30,6 +30,7 @@ This queue preserves the decision made after the Phase 0 durable-state inventory
 - MR 3, status entrypoint hardening: completed by `6a99d7d` - adds `capability_readiness`, a per-backend status projection that distinguishes installed, enabled, selected, and ready for `native_omx` and `langgraph`.
 - MR 4, activation selector safety rules: completed by `b303000` - hardens scoped selector validation so stale or cross-repository durable records remain inspectable but cannot drive automatic activation.
 - MR 5, helper mirror source-of-truth rule: completed by `e1b3544` with publication closeout `e39fb21` - documents and tests that generated user-level helper mirrors are install artifacts, while repository source and each consumer repository's `.omx/state/` tree remain authoritative.
+- MR 6, automatic durable routing readiness review: completed by this status-reconciliation slice - verifies that `codex-user-level-team-mode-automatic-team-routing` is the stable automatic-routing spec, `omx-team-auto.ps1` is the generated user-level automatic durable-team helper, and `test/install-codex-user-level-team-mode.test.ps1` is the test suite covering effective lane selection, selector safety, empty residue handling, and native_omx / LangGraph routing evidence.
 
 ### Completed slice detail: MR 4, activation selector safety rules
 
@@ -86,9 +87,26 @@ MR 3 must add tests or fixtures that prove the checker can distinguish at least 
 - `D:\PythonProject_CLIProxyAPI` fixture - an active native OMX team state must be preserved and must not be classified as safe cleanup residue.
 - `D:\project` fixture - ordinary HUD, notification, leader-nudge, or tmux hook state is not durable backend activation evidence.
 
-### Next decision point after MR 5
+### Completed slice detail: MR 6, automatic durable routing readiness review
 
-- MR 6, automatic durable routing hookup or readiness review: connect `native_omx` and `langgraph` selection to real task-flow thresholds only after confirming the already-landed MR 3 through MR 5 surfaces still prove safe status, selector behavior, and helper mirror boundaries.
+MR 6 is a readiness-review closeout for this bounded durable-state queue, not a new runtime patch. The review confirms that the actual automatic durable routing hookup already exists in the team-mode implementation line:
+
+- `openspec/specs/codex-user-level-team-mode-automatic-team-routing/spec.md` - the stable OpenSpec requirement file for automatic durable-team routing behavior.
+- `tools/install-codex-user-level-team-mode.ps1` - the repository source script that generates user-level helper scripts, including `omx-team-auto.ps1`.
+- `omx-team-auto.ps1` - the generated user-level helper that plans and, only with `-Apply`, executes native_omx or LangGraph durable routing actions.
+- `test/install-codex-user-level-team-mode.test.ps1` - the PowerShell regression suite that verifies effective lane selection, selector rejection, empty residue handling, native_omx launch/reuse/switch/shutdown, and LangGraph graph-signal selection.
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - the active team-mode plan that already marks P5 automatic durable-team routing as implemented current state.
+
+MR 6 acceptance contract that is now part of the implemented baseline:
+
+- No duplicate hookup - this queue must not open another runtime implementation only to recreate the existing `omx-team-auto.ps1` helper behavior.
+- Readiness before runtime exercise - any future live use must first name the target repository, phase, task, and operator consent boundary.
+- No startup launch - even with automatic durable routing available, startup classification must not auto-launch a durable team.
+- Backend-family clarity - worker-centric flows remain native_omx by default, while graph-shaped checkpoint, approval-gate, frozen-brief, or survivor-queue flows may select LangGraph.
+
+### Next decision point after MR 6 readiness review
+
+- Future live smoke or adoption gate: only if the user explicitly asks to exercise runtime behavior, open a separate reviewed change that runs `omx-team-auto.ps1` in a controlled target repository and records evidence without conflating that smoke with the final production-grade persistent team draft.
 
 ### Explicit non-goals for the next decision point
 
@@ -96,7 +114,7 @@ MR 3 must add tests or fixtures that prove the checker can distinguish at least 
 - Do not modify `C:\Users\lenovo\.codex\config.toml` - this user-level Codex config file is outside the next MR's source-of-truth scope.
 - Do not delete user-level skills, Vercel plugin skills, browser automation skills, or repo-local `.omx/state/` artifacts.
 - Do not merge durable state from `D:\PythonProject_OpenClaw`, `D:\PythonProject_CLIProxyAPI`, or `D:\project` into this repository.
-- Do not start a durable team during this status-sync or MR 6 readiness-review step; automatic durable routing must remain gated by a separate reviewed change.
+- Do not start a durable team during this MR 6 readiness-review closeout; live durable-team exercise requires a separate explicit smoke or adoption-gate change.
 
 
 ## 1. Goal

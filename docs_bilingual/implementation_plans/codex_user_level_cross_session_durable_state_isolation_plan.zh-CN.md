@@ -1,4 +1,4 @@
----
+﻿---
 doc_id: codex_user_level_cross_session_durable_state_isolation_plan
 lang: zh-CN
 canonical: docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md
@@ -18,7 +18,7 @@ doc_class: implementation_plan
 
 > 截至 2026-04-22 的实施状态：仓库源代码已完成，用户级 mirrored helpers 已完成验证，并且已经针对真实 `D:\PythonProject_OpenClaw` 与 `D:\PythonProject_langgraph` fixture 做过复核；整个过程未改写任何被保留的 legacy durable artifact。
 
-> 截至 2026-05-02 的当前实施边界：保留 2026-04-22 的说明作为“源码和用户级 helper 已存在”的历史证据，但不要把它理解为当前小步 rollout 已经全部完成。MR 1 到 MR 5 已完成。MR 5 已作为 `formalize-helper-mirror-source-truth` 落地，并已在 2026-04-28 归档；下一步 decision point 是 MR 6 readiness review 或 automatic durable routing hookup。
+> 截至 2026-05-02 的当前实施边界：保留 2026-04-22 的说明作为“源码和用户级 helper 已存在”的历史证据，但不要把它理解为最终 production-grade persistent team draft 已完成。MR 1 到 MR 5 已完成。MR 6 readiness review 现在作为 status-reconciliation slice 完成：automatic durable routing hookup 已经存在于更早的 P5 team-mode surfaces 中，所以本队列不得再开启重复 runtime implementation work。
 
 ## 当前有界实施队列
 
@@ -31,6 +31,7 @@ doc_class: implementation_plan
 - MR 3，状态检查入口补强：已由 `6a99d7d` 完成 - 该提交增加 `capability_readiness`，也就是按 backend 区分 `native_omx` 与 `langgraph` 的 installed、enabled、selected、ready 状态投影。
 - MR 4，activation selector 安全规则：已由 `b303000` 完成 - 该提交补强 scoped selector 校验，让 stale 或跨仓库 durable records 仍可 inspect，但不能驱动 automatic activation。
 - MR 5，helper mirror source-of-truth 规则：已由 `e1b3544` 完成，并由 `e39fb21` 做 publication closeout - 该切片文档化并测试 generated user-level helper mirrors 是安装产物，而仓库源码以及每个消费项目自己的 `.omx/state/` 树仍然是权威来源。
+- MR 6，automatic durable routing readiness review：由本次 status-reconciliation slice 完成 - 该复核确认 `codex-user-level-team-mode-automatic-team-routing` 是稳定的 automatic-routing spec，`omx-team-auto.ps1` 是生成的 user-level automatic durable-team helper，`test/install-codex-user-level-team-mode.test.ps1` 是覆盖 effective lane selection、selector safety、empty residue handling，以及 native_omx / LangGraph routing evidence 的测试套件。
 
 ### 已完成切片细节：MR 4，activation selector 安全规则
 
@@ -89,9 +90,26 @@ MR 3 必须增加测试或 fixture，证明 checker 至少能区分这些情况�
 - `D:\PythonProject_CLIProxyAPI` fixture - active native OMX team state 必须保留，不能被归类为 safe cleanup residue。
 - `D:\project` fixture - 普通 HUD、notification、leader-nudge 或 tmux hook state 不是 durable backend activation 证据。
 
-### MR 5 之后的下一步 decision point
+### 已完成切片细节：MR 6，automatic durable routing readiness review
 
-- MR 6，automatic durable routing hookup 或 readiness review：只有先确认已落地的 MR 3 到 MR 5 surfaces 仍然证明 status、selector 行为和 helper mirror 边界安全后，才把 `native_omx` 和 `langgraph` 的选择接入真实 task-flow 阈值。
+MR 6 是本有界 durable-state queue 的 readiness-review closeout，不是新的 runtime patch。复核确认真正的 automatic durable routing hookup 已经存在于 team-mode implementation line：
+
+- `openspec/specs/codex-user-level-team-mode-automatic-team-routing/spec.md` - automatic durable-team routing 行为的稳定 OpenSpec requirement 文件。
+- `tools/install-codex-user-level-team-mode.ps1` - 生成 user-level helper scripts 的仓库源码脚本，其中包括 `omx-team-auto.ps1`。
+- `omx-team-auto.ps1` - 生成的 user-level helper；它会规划 native_omx 或 LangGraph durable routing actions，并且只有带 `-Apply` 时才执行。
+- `test/install-codex-user-level-team-mode.test.ps1` - PowerShell regression suite；它验证 effective lane selection、selector rejection、empty residue handling、native_omx launch/reuse/switch/shutdown，以及 LangGraph graph-signal selection。
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - active team-mode plan，已经把 P5 automatic durable-team routing 标成 implemented current state。
+
+MR 6 验收契约现在已经纳入已实现 baseline：
+
+- No duplicate hookup - 本队列不得再开启另一个 runtime implementation 来重复实现已有的 `omx-team-auto.ps1` helper 行为。
+- Readiness before runtime exercise - 任何未来 live use 都必须先明确 target repository、phase、task 和 operator consent boundary。
+- No startup launch - 即使 automatic durable routing 可用，startup classification 也不得自动启动 durable team。
+- Backend-family clarity - worker-centric flows 默认仍是 native_omx；graph-shaped checkpoint、approval-gate、frozen-brief 或 survivor-queue flows 才可以选择 LangGraph。
+
+### MR 6 readiness review 之后的下一步 decision point
+
+- Future live smoke 或 adoption gate：只有当用户明确要求 exercise runtime behavior 时，才另开一个 reviewed change，在受控 target repository 中运行 `omx-team-auto.ps1` 并记录证据；不要把这个 smoke 与最终 production-grade persistent team draft 混为一谈。
 
 ### 下一步 decision point 的明确非目标
 
@@ -99,9 +117,7 @@ MR 3 必须增加测试或 fixture，证明 checker 至少能区分这些情况�
 - 不要修改 `C:\Users\lenovo\.codex\config.toml` - 这个用户级 Codex 配置文件不属于下一步 MR 的 source-of-truth 范围。
 - 不要删除 user-level skills、Vercel plugin skills、浏览器自动化 skills 或 repo-local `.omx/state/` artifacts。
 - 不要把 `D:\PythonProject_OpenClaw`、`D:\PythonProject_CLIProxyAPI` 或 `D:\project` 的 durable state 合并到本仓库。
-- 不要在本次 status sync 或 MR 6 readiness-review 步骤中启动 durable team；automatic durable routing 必须继续通过单独 reviewed change 受控接入。
-
-
+- 不要在本次 MR 6 readiness-review closeout 中启动 durable team；live durable-team exercise 需要单独显式的 smoke 或 adoption-gate change。
 ## 1. 目标
 
 在**不修改、不删除、不重写**任何现有活跃会话或历史会话 durable artifact 的前提下，消除 repo-local durable state 对后续无关会话的意外干扰。
