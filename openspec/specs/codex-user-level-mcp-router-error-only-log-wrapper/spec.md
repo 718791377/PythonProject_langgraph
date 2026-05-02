@@ -2,32 +2,48 @@
 
 ## Purpose
 
-Define an opt-in repository-local wrapper for running MCP Router bridge commands with error-only visible logs while preserving protocol output and retaining full raw diagnostics.
+Define an opt-in repository-local wrapper for running MCP Router bridge commands with error-only visible diagnostics while preserving MCP protocol bytes and retaining full raw logs.
 
 ## Requirements
 
 ### Requirement: MCP Router log wrapper SHALL preserve protocol output while suppressing benign noise
 
-The repository SHALL provide an opt-in wrapper for MCP Router bridge execution that preserves protocol-like stdout and suppresses known benign non-protocol noise from the main Codex session.
+The repository SHALL provide an opt-in wrapper for MCP Router bridge execution.
 
-The wrapper SHALL:
+The wrapper SHALL preserve child stdout byte-for-byte because stdout is the MCP protocol channel.
 
-- forward JSON-RPC-like stdout without modification
-- suppress known benign non-protocol lines from stdout and stderr
-- write every raw stdout and stderr line to a timestamped local log file
-- forward actionable error lines to stderr
-- report non-zero child process exit codes to stderr
+The wrapper SHALL copy wrapper stdin to child stdin byte-for-byte because stdin carries MCP protocol requests.
 
-#### Scenario: Benign MCP Router lifecycle noise appears during a normal run
+The wrapper SHALL filter visible child stderr by forwarding actionable error lines and writing benign stderr noise only to the local log file.
 
-- **WHEN** the wrapped child command emits benign updater, workflow fallback, PNG, or process-cleanup lines
+The wrapper SHALL write raw stdout and stderr chunks to a timestamped local log file.
+
+The wrapper SHALL report non-zero child process exit codes to stderr and return the same exit code.
+
+#### Scenario: JSON-RPC stdout has no trailing newline
+
+- **WHEN** the wrapped child command emits JSON-RPC stdout without a trailing newline
+- **THEN** the wrapper SHALL forward the exact stdout bytes without appending a newline
+
+#### Scenario: Content-Length framed stdout is emitted
+
+- **WHEN** the wrapped child command emits `Content-Length` framed stdout
+- **THEN** the wrapper SHALL forward the exact stdout bytes without rewriting headers or body bytes
+
+#### Scenario: Large tools/list stdout is emitted
+
+- **WHEN** the wrapped child command emits a large `tools/list`-like JSON-RPC response
+- **THEN** the wrapper SHALL forward the complete stdout payload unchanged
+
+#### Scenario: Benign MCP Router diagnostic noise appears on stderr
+
+- **WHEN** the wrapped child command emits benign updater, workflow fallback, PNG, or process-cleanup lines on stderr
 - **THEN** those lines SHALL be written to the log file
 - **AND** they SHALL NOT be shown in the main session
-- **AND** normal protocol-looking stdout SHALL still be forwarded
 
-#### Scenario: The child command emits an actionable error
+#### Scenario: The child command emits an actionable stderr error
 
-- **WHEN** the wrapped child command emits a line matching an actionable error pattern
+- **WHEN** the wrapped child command emits a line matching an actionable error pattern on stderr
 - **THEN** that line SHALL be written to the log file
 - **AND** that line SHALL be forwarded to stderr
 
