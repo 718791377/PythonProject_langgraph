@@ -1,4 +1,4 @@
-﻿﻿# 设计
+# 设计
 
 这个 guard 故意采用 diff-based 方式。它不替代 `openspec archive`；它是在 archive change 周围增加仓库 CI gate。
 
@@ -12,7 +12,8 @@
 证据规则：
 
 - Code evidence 指 `docs_bilingual/` 和 `openspec/` 之外发生变更的 source、executable script、test file、executable check、Git hook 或 CI file。
-- 代码类 archive 可以在 `.openspec.yaml` 声明 `x_code_evidence_paths`；如果声明了，至少一个列出的 path 必须在同一分支变更。
+- 代码类 archive 可以在 `.openspec.yaml` 声明 `x_code_evidence_paths`；如果声明了，至少一个列出的 path 必须在同一分支变更，或已经作为当前仓库中的 source、test、CI、hook 或 executable evidence 存在。
+- 已存在的声明式证据用于单独 closeout 分支：implementation code 已经落在 `main`，archive MR 只移动 OpenSpec artifacts。
 - 聚合 guard 会在 worktree cleanliness enforcement 之前运行该 checker，这样它可以检查本地 dirty archive work 和 MR branch diff。
 
 这样既保留官方 OpenSpec CLI 语义，又增加仓库自己的安全门禁。

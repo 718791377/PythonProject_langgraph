@@ -186,6 +186,15 @@ def code_evidence(path: str) -> bool:
     return Path(path).suffix.lower() in CODE_SUFFIXES
 
 
+def existing_declared_code_evidence(root: Path, declared: list[str]) -> list[str]:
+    paths: list[str] = []
+    for path in declared:
+        normalized = norm(path)
+        if code_evidence(normalized) and (root / normalized).is_file():
+            paths.append(normalized)
+    return sorted(set(paths))
+
+
 def read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8-sig", errors="replace")
@@ -259,7 +268,7 @@ def check(root: Path) -> dict:
     root = root.resolve()
     entries, notes = collect_entries(root)
     archive_dirs = sorted({directory for entry in entries for path in entry.paths if (directory := archive_dir(path)) and not entry.status.startswith("D")})
-    evidence_paths = sorted({path for entry in entries for path in entry.paths if code_evidence(path)})
+    changed_evidence_paths = sorted({path for entry in entries for path in entry.paths if code_evidence(path)})
     payload = {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -270,11 +279,15 @@ def check(root: Path) -> dict:
         "warnings": [],
         "info": notes,
         "archives": [],
-        "code_evidence_paths": evidence_paths,
+        "code_evidence_paths": changed_evidence_paths,
+        "changed_code_evidence_paths": changed_evidence_paths,
+        "declared_existing_code_evidence_paths": [],
         "counts": {
             "archive_dirs": len(archive_dirs),
             "code_required": 0,
-            "code_evidence_paths": len(evidence_paths),
+            "code_evidence_paths": len(changed_evidence_paths),
+            "changed_code_evidence_paths": len(changed_evidence_paths),
+            "declared_existing_code_evidence_paths": 0,
             "errors": 0,
             "warnings": 0,
         },
@@ -288,12 +301,19 @@ def check(root: Path) -> dict:
         text = archive_text(root, directory)
         declared = yaml_list(yaml_text, "x_code_evidence_paths")
         required, reasons = code_required(yaml_text, text)
-        matching = sorted(set(declared or evidence_paths).intersection(evidence_paths))
+        changed_matching = sorted(set(declared or changed_evidence_paths).intersection(changed_evidence_paths))
+        existing_declared = existing_declared_code_evidence(root, declared)
+        matching = sorted(set(changed_matching + existing_declared))
+        payload["declared_existing_code_evidence_paths"] = sorted(
+            set(payload["declared_existing_code_evidence_paths"] + existing_declared)
+        )
         record = {
             "archive_dir": directory,
             "code_required": required,
             "reasons": reasons,
             "declared_code_evidence_paths": declared,
+            "changed_matching_code_evidence_paths": changed_matching,
+            "existing_declared_code_evidence_paths": existing_declared,
             "matching_code_evidence_paths": matching,
             "ok": True,
         }
@@ -302,16 +322,21 @@ def check(root: Path) -> dict:
             if not matching:
                 record["ok"] = False
                 if declared:
-                    payload["errors"].append(f"{directory}: declared x_code_evidence_paths did not change in this branch.")
+                    payload["errors"].append(
+                        f"{directory}: declared x_code_evidence_paths did not change in this branch "
+                        "and do not exist as source/test/CI evidence paths in the current repository."
+                    )
                 else:
                     payload["errors"].append(
                         f"{directory}: code-class OpenSpec archive has no code/test evidence in the current branch diff. "
-                        "Land source or test changes before archiving, or mark the change as x_change_class: docs when it is truly docs-only."
+                        "Land source or test changes before archiving, declare x_code_evidence_paths for code that already landed, "
+                        "or mark the change as x_change_class: docs when it is truly docs-only."
                     )
         payload["archives"].append(record)
 
     payload["counts"]["errors"] = len(payload["errors"])
     payload["counts"]["warnings"] = len(payload["warnings"])
+    payload["counts"]["declared_existing_code_evidence_paths"] = len(payload["declared_existing_code_evidence_paths"])
     payload["ok"] = not payload["errors"]
     if payload["ok"]:
         payload["info"].append("OpenSpec archive code evidence check passed.")

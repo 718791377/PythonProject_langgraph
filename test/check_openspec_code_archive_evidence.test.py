@@ -21,6 +21,7 @@ class OpenSpecCodeArchiveEvidenceTest(unittest.TestCase):
         subprocess.run(["git", "init"], cwd=root, check=True, capture_output=True, text=True)
         subprocess.run(["git", "config", "user.name", "test"], cwd=root, check=True)
         subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=root, check=True)
+        subprocess.run(["git", "branch", "-M", "main"], cwd=root, check=True)
         self.write(
             root,
             "README.md",
@@ -104,6 +105,51 @@ class OpenSpecCodeArchiveEvidenceTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["archive_dirs"], 1)
         self.assertEqual(payload["counts"]["code_required"], 1)
         self.assertIn("tools/runtime_helper.py", payload["code_evidence_paths"])
+
+    def test_code_class_archive_with_declared_existing_code_evidence_passes(self) -> None:
+        root = self.make_repo("archive-code-declared-existing-evidence")
+        self.make_active_change(
+            root,
+            "add-runtime-helper",
+            "x_change_class: code\nx_code_evidence_paths:\n  - tools/runtime_helper.py\n",
+            "Implement runtime helper script behavior.",
+        )
+        self.write(root, "tools/runtime_helper.py", "def main():\n    return 0\n")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-m", "implement runtime helper"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "switch", "-c", "archive-add-runtime-helper"], cwd=root, check=True, capture_output=True, text=True)
+        self.archive_change(root, "add-runtime-helper")
+
+        result = self.run_check(root)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["archive_dirs"], 1)
+        self.assertEqual(payload["counts"]["code_required"], 1)
+        self.assertEqual(payload["counts"]["changed_code_evidence_paths"], 0)
+        self.assertIn("tools/runtime_helper.py", payload["declared_existing_code_evidence_paths"])
+        self.assertIn("tools/runtime_helper.py", payload["archives"][0]["existing_declared_code_evidence_paths"])
+
+    def test_code_class_archive_with_missing_declared_code_evidence_fails(self) -> None:
+        root = self.make_repo("archive-code-missing-declared-evidence")
+        self.make_active_change(
+            root,
+            "add-runtime-helper",
+            "x_change_class: code\nx_code_evidence_paths:\n  - tools/runtime_helper.py\n",
+            "Implement runtime helper script behavior.",
+        )
+        subprocess.run(["git", "switch", "-c", "archive-add-runtime-helper"], cwd=root, check=True, capture_output=True, text=True)
+        self.archive_change(root, "add-runtime-helper")
+
+        result = self.run_check(root)
+
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["counts"]["archive_dirs"], 1)
+        self.assertEqual(payload["counts"]["code_required"], 1)
+        self.assertIn("do not exist", payload["errors"][0])
 
     def test_docs_class_archive_without_code_evidence_passes(self) -> None:
         root = self.make_repo("archive-docs-no-evidence")
