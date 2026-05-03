@@ -16,4 +16,4 @@
 
 ## 3. 发布
 
-- [ ] 3.1 按 GitLab-first workflow 发布：推送分支、创建 MR、等待 pipeline 通过、合并到 GitLab `main`，再把同一个 GitLab `main` 同步到 GitHub。
+- [x] 3.1 按 GitLab-first workflow 发布：推送分支、创建 MR、等待 pipeline 通过、合并到 GitLab `main`，再把同一个 GitLab `main` 同步到 GitHub。
