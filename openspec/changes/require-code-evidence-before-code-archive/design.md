@@ -12,7 +12,8 @@ Detection rules:
 Evidence rules:
 
 - Code evidence is a changed source, executable script, test file, executable check, Git hook, or CI file outside `docs_bilingual/` and `openspec/`.
-- A code-class archive can optionally declare `x_code_evidence_paths` in `.openspec.yaml`; if declared, at least one listed path must be changed in the same branch.
+- A code-class archive can optionally declare `x_code_evidence_paths` in `.openspec.yaml`; if declared, at least one listed path must either be changed in the same branch or already exist in the current repository as source, test, CI, hook, or executable evidence.
+- Existing declared evidence is necessary for separate closeout branches where implementation code has already landed on `main` and the archive MR only moves OpenSpec artifacts.
 - The aggregate guard runs this checker before worktree cleanliness enforcement so it can evaluate dirty local archive work and MR branch diffs.
 
 This keeps the official OpenSpec CLI semantics intact while adding a repository-specific safety gate.

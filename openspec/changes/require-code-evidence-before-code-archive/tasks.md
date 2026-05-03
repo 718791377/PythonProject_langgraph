@@ -6,6 +6,8 @@
 - [x] 1.4 Update `test/run_openspec_guard_json.test.py` - aggregate JSON contract test for the new guard step.
 - [x] 1.5 Update `tools/safety_rule_script_backing_registry.json` - safety registry entry for script-backed enforcement.
 - [x] 1.6 Update OpenSpec workflow governance docs - prompt reminder paired with script control.
+- [x] 1.7 Allow declared existing `x_code_evidence_paths` - explicit metadata for archive-only closeout after implementation already landed on `main`.
+- [x] 1.8 Add archive-only branch regression tests - tests that declared existing evidence passes and missing declared evidence fails.
 
 ## 2. Validation
 
