@@ -16,4 +16,4 @@
 
 ## 3. Publication
 
-- [ ] 3.1 Publish through GitLab-first workflow: push branch, open MR, wait for pipeline success, merge to GitLab `main`, then sync exact GitLab `main` to GitHub.
+- [x] 3.1 Publish through GitLab-first workflow: push branch, open MR, wait for pipeline success, merge to GitLab `main`, then sync exact GitLab `main` to GitHub.
