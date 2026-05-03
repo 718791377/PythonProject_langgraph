@@ -98,6 +98,7 @@ def main() -> int:
     name_clarity_rules_script = root / "tools" / "check_name_clarity_rules.py"
     canary_surface_script = root / "tools" / "check_context_retention_canary_surface.py"
     safety_rule_script_backing_script = root / "tools" / "check_safety_rule_script_backing.py"
+    openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
@@ -118,6 +119,8 @@ def main() -> int:
         raise SystemExit(f"Missing context-retention canary surface check script: {canary_surface_script}")
     if not safety_rule_script_backing_script.exists():
         raise SystemExit(f"Missing safety rule script-backing check script: {safety_rule_script_backing_script}")
+    if not openspec_code_archive_evidence_script.exists():
+        raise SystemExit(f"Missing OpenSpec code archive evidence check script: {openspec_code_archive_evidence_script}")
     if not mcp_router_scope_policy_script.exists():
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
     if not worktree_hygiene_script.exists():
@@ -212,6 +215,11 @@ def main() -> int:
                 "check_safety_rule_script_backing",
                 [str(python_exe), str(safety_rule_script_backing_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during safety rule script-backing verification.",
+            ),
+            (
+                "check_openspec_code_archive_evidence",
+                [str(python_exe), str(openspec_code_archive_evidence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during OpenSpec code archive evidence verification.",
             ),
             (
                 "check_mcp_router_scope_policy",
@@ -366,6 +374,11 @@ def main() -> int:
         [str(python_exe), str(safety_rule_script_backing_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during safety rule script-backing verification.",
+    )
+    run_checked(
+        [str(python_exe), str(openspec_code_archive_evidence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during OpenSpec code archive evidence verification.",
     )
     run_checked(
         [str(python_exe), str(mcp_router_scope_policy_script), "--root", str(root)],

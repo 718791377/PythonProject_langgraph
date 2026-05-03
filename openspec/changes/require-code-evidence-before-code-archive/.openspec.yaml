@@ -1,0 +1,9 @@
+schema: spec-driven
+created: 2026-05-03
+x_change_class: code
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/check_openspec_code_archive_evidence.py
+  - tools/run_openspec_guard.py
+  - test/check_openspec_code_archive_evidence.test.py
+  - test/run_openspec_guard_json.test.py

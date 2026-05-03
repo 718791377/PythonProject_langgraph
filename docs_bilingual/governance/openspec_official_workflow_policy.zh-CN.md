@@ -44,6 +44,7 @@ status: active
 - 用 `openspec list --json`、`openspec status`、`openspec show`、`openspec validate` 做检查与评审
 - 只有在必需 artifacts 已经就绪后才进入实施
 - 当实现、specs 和验证都稳定后，才用 `openspec archive <change> --yes` 归档
+- 不要把代码类 change 当成纯文档 closeout 直接归档。代码类 change 指显式标记为 `x_change_class: code`、`runtime`、`mixed`、`tooling` 或 `ci` 的 change，也包括归档 artifacts 描述 runtime、scripts、helpers、tests、checkers、guards、CI 或 code behavior 的 change；这类 change 在归档前必须在同一分支落下 source、executable check、CI 或 test evidence。
 - 对本仓库而言，凡是会影响代码、可执行检查、CI、stable specs、startup instructions、仓库指令面或结构性治理规则的归档，还必须遵守 `docs_bilingual/governance/openspec_opsx_project_usage_policy.zh-CN.md` 中的本地 archive-worktree 隔离流程；该文件是定义仓库 OPSX 路由与归档工作流门槛的治理政策。这个本地流程不改变 `openspec archive <change> --yes` 的官方语义；该命令是官方 OpenSpec CLI 中归档 completed change 的命令。
 - 不要发明会覆盖官方 OpenSpec 语义的仓库私有别名命令
 - 只要结构性改动会影响 repo-local source、repo-local durable-state contract，或用户级共享表面进入本仓库的项目级承接边界，就应把这类改动视为本仓库的 OpenSpec 工作
@@ -63,6 +64,7 @@ status: active
 - 在把结构性 OpenSpec 工作视为完成之前，必须通过 `openspec validate --all`
 - `tools/check_name_clarity_rules.py` 是本地 strict 名称解释检查器；当它通过 `python .\tools\run_openspec_guard.py --root .` 运行时，会阻断裸 script、path、command、variable 或 profile 列表项。
 - `--no-baseline` 是 guard 使用的 strict 检查模式；它会关闭 compatibility allowance，使当前和后续发现项都阻断本地 enforcement。
+- `tools/check_openspec_code_archive_evidence.py` 是本地 code-archive evidence checker；它会阻断当前分支 diff 中没有 source、executable check、CI 或 test evidence 的代码类 OpenSpec archive。
 - `openspec validate --all` 仍是官方 OpenSpec CLI 原生 validation command；它本身不会自动执行这条仓库本地名称解释规则。
 - 执行 `git init` 或克隆已有仓库后，应运行 `powershell -ExecutionPolicy Bypass -File .\tools\install-git-hooks.ps1` 安装 `.githooks/pre-commit`
 - 仓库内必须保留至少一个受支持的 CI 守卫面，例如 `.github/workflows/openspec-guard.yml` 或 `.gitlab-ci.yml`

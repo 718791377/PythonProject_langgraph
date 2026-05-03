@@ -115,6 +115,23 @@
         "check_mcp_router_scope_policy"
       ],
       "description": "Keeps Codex-dedicated MCP servers direct and reports MCP Router drift for dedicated or self-referential server entries."
+    },
+    {
+      "id": "openspec-code-archive-evidence",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/openspec_official_workflow_policy.md",
+        "docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_openspec_code_archive_evidence.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_openspec_code_archive_evidence"
+      ],
+      "description": "Prevents code-class OpenSpec changes from being archived in a branch that has no source, executable check, CI, or test evidence."
     }
   ]
 }
