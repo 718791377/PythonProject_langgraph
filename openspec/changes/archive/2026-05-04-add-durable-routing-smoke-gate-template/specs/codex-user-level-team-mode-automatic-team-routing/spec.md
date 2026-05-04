@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Durable routing smoke gates SHALL use a script-backed template before runtime exercise
 

@@ -1,0 +1,7 @@
+schema: spec-driven
+created: 2026-05-04
+x_change_class: code
+x_code_evidence_paths:
+  - tools/check_durable_routing_smoke_gate_template.py
+  - tools/durable_routing_smoke_gate_template.json
+  - tools/run_openspec_guard.py
