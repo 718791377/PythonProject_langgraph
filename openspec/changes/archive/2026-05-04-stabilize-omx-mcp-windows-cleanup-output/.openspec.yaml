@@ -1,0 +1,10 @@
+schema: spec-driven
+created: 2026-05-04
+x_change_class: code
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/install-codex-user-level-team-mode.ps1
+  - tools/check_windows_cleanup_output_control.py
+  - tools/run_openspec_guard.py
+  - test/install-codex-user-level-team-mode.test.ps1
+  - test/check_windows_cleanup_output_control.test.py
