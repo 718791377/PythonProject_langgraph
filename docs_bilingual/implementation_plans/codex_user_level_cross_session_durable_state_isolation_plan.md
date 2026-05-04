@@ -108,6 +108,26 @@ MR 6 acceptance contract that is now part of the implemented baseline:
 
 - Future live smoke or adoption gate: only if the user explicitly asks to exercise runtime behavior, open a separate reviewed change that runs `omx-team-auto.ps1` in a controlled target repository and records evidence without conflating that smoke with the final production-grade persistent team draft.
 
+### Release 0.6 durable routing smoke/adoption gate
+
+After MR 6 readiness review, the next active release slice is `R0.6 Durable Routing Smoke Gate`.
+
+`R0.6 Durable Routing Smoke Gate` is a documentation and validation gate for future runtime exercise. It must not be treated as direct permission to start a durable team.
+
+A future smoke or adoption-gate change must declare:
+
+- `target_repository` - the repository root whose repo-local durable truth is being evaluated.
+- `phase` - the project phase used by automatic routing thresholds.
+- `task` - the concrete validation question or work item.
+- `operator_consent_boundary` - the explicit authorization boundary for `-Apply`, `.omx/state/` writes, durable-team launch, shutdown, or other mutating actions.
+
+Default boundary for this release slice:
+
+- use read-only status and planning surfaces first
+- do not modify `.omx/state/`; `.omx/state/` is the repo-local durable-state directory
+- do not run `omx-team-auto.ps1 -Apply`; `-Apply` is the helper switch that executes the planned durable action
+- do not promote the draft production durable-team plan into active implementation
+
 ### Explicit non-goals for the next decision point
 
 - Do not implement the final `codex_cli_personal_production_durable_team_plan` draft as if it were already complete; that document remains the north-star target.

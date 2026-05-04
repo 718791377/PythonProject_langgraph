@@ -479,6 +479,36 @@ Practical reading rule:
 - `P6` completed the native Windows durable-team backend so real durable-team execution now works on native Windows without depending on WSL2 or a Unix `tmux` runtime
 - `P7` now makes every new wrapped session behave like a leader-first routed session and emit a first-turn routing trace before deep execution
 
+### 6.9 Release train overlay after P0-P7
+
+The P0-P7 implementation batches are already implemented baseline work. Future work should therefore use small release slices instead of reopening completed P batches.
+
+Current release interpretation:
+
+- `R0 Governance Baseline` - release label for startup, OpenSpec guard, worktree isolation, session ownership, MCP scope, and safety-rule script backing.
+- `R0.5 Inspectable Durable State` - release label for read-only status surfaces such as `codex-durable-state-status.ps1`, the generated helper that reports durable backend status.
+- `R0.6 Durable Routing Smoke Gate` - next release label for dry-run or read-only automatic routing validation before runtime exercise.
+- `R0.7 Native OMX Adoption MVP` - future release label for controlled `native_omx` adoption in one low-risk worker-centric task.
+- `R0.8 LangGraph Adoption MVP` - future release label for controlled `langgraph` adoption in a graph-shaped task with checkpoint, approval, frozen brief, or survivor-queue signals.
+- `R1.0 Personal Durable Team MVP` - future release label for the first multi-project usable personal durable-team MVP.
+- `R2.0 Production Durable Team` - future release label for the full production target, including stronger memory, recovery, GUI, and graph-native orchestration surfaces.
+
+Release 0.6 is the only next release slice implied by the completed MR 1 through MR 6 queue. It is a gate definition and validation slice, not permission to mutate state.
+
+Every future Release 0.6 smoke or adoption-gate change must declare:
+
+- `target_repository` - the repository root whose source, OpenSpec artifacts, and repo-local durable state are being evaluated.
+- `phase` - the project phase that drives routing thresholds.
+- `task` - the concrete validation question or work item being evaluated.
+- `operator_consent_boundary` - the explicit line between read-only planning and mutating actions such as `-Apply`, `.omx/state/` writes, or durable-team launch.
+
+Default Release 0.6 boundary:
+
+- dry-run or read-only inspection only
+- no `omx-team-auto.ps1 -Apply`; `-Apply` is the helper switch that executes a planned durable action
+- no `.omx/state/` writes; `.omx/state/` is the repo-local durable-state directory
+- no `omx team` launch or shutdown; `omx team` is the durable worker-team runtime command
+
 ## 7. Recommended Invocation Rhythm
 
 ### 7.1 Early stage
@@ -1283,6 +1313,10 @@ When this plan is later executed, the order should be:
 14. validate hybrid staffing counts in one test repository
 15. validate the same workflow in two different repositories
 16. whenever one behavior change touches both repository source logic and generated user-level mirrors, update repository source and repository tests first, then regenerate and validate the user-level mirrors
+17. before any live durable-routing smoke or adoption gate, define Release 0.6 fields: `target_repository`, `phase`, `task`, and `operator_consent_boundary`
+18. keep Release 0.6 read-only by default until the operator explicitly permits `-Apply` or another mutating action
+19. use a separate reviewed OpenSpec change for any controlled `native_omx` or `langgraph` adoption exercise
+20. keep the production durable-team draft out of active implementation until a specific release slice is reviewed and accepted
 
 ## 14. Acceptance Criteria
 
