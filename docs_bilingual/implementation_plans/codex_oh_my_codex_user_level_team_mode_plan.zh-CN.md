@@ -149,6 +149,36 @@ doc_class: implementation_plan
 - 但它还不是 fully realized 的 LangGraph-native orchestration runtime
 - 文档应把它描述为“implemented surface 已经比较宽、但仍未 fully realized”的 additive durable backend，而不是继续把已经落地的能力写成未来计划
 
+### Release train overlay after P0-P7 / P0-P7 之后的小版本发布轨道
+
+P0-P7 implementation batches 已经是 implemented baseline。后续不要重开已完成的 P batches，而应使用更小的 release slices。
+
+当前 release interpretation：
+
+- `R0 Governance Baseline` —— 治理底座 release label，覆盖 startup、OpenSpec guard、worktree isolation、session ownership、MCP scope 和 safety-rule script backing。
+- `R0.5 Inspectable Durable State` —— 可检查 durable state release label，覆盖 `codex-durable-state-status.ps1` 这类只读状态 helper。
+- `R0.6 Durable Routing Smoke Gate` —— 下一小版本，用于 automatic routing 的 dry-run 或 read-only validation，不直接 exercise runtime mutation。
+- `R0.7 Native OMX Adoption MVP` —— 未来小版本，用于在一个低风险 worker-centric task 中受控采用 `native_omx`。
+- `R0.8 LangGraph Adoption MVP` —— 未来小版本，用于在带 checkpoint、approval、frozen brief 或 survivor queue 信号的 graph-shaped task 中受控采用 `langgraph`。
+- `R1.0 Personal Durable Team MVP` —— 未来小版本，用于第一个可多项目复用的个人 durable-team MVP。
+- `R2.0 Production Durable Team` —— 未来完整目标，包含更强 memory、recovery、GUI 和 graph-native orchestration surfaces。
+
+Release 0.6 是 MR 1 到 MR 6 完成后的唯一默认下一步。它只是 gate definition 和 validation slice，不是写状态授权。
+
+未来每个 Release 0.6 smoke 或 adoption-gate change 都必须声明：
+
+- `target_repository` —— 目标仓库根目录，说明本次评估的 source、OpenSpec artifacts 和 repo-local durable state 属于哪里。
+- `phase` —— 项目阶段，用来驱动 routing thresholds。
+- `task` —— 具体 validation question 或 work item。
+- `operator_consent_boundary` —— 操作员授权边界，用来区分 read-only planning 与 `-Apply`、`.omx/state/` 写入或 durable-team launch 等变更动作。
+
+Release 0.6 默认边界：
+
+- 只允许 dry-run 或 read-only inspection。
+- 不执行 `omx-team-auto.ps1 -Apply`；`-Apply` 是执行 planned durable action 的 helper 开关。
+- 不写 `.omx/state/`；`.omx/state/` 是 repo-local durable-state 目录。
+- 不启动或关闭 `omx team`；`omx team` 是 durable worker-team runtime 命令。
+
 ## 附录 C：`官方更新 + 差异检查 + 本地补丁重放` 标准流程
 
 这一节给出当前仓库建议采用的标准维护顺序。目标不是长期 fork 官方安装产物，而是：

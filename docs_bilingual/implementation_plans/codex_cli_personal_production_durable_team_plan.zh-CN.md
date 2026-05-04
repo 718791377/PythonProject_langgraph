@@ -692,6 +692,30 @@ status: draft
 
 ## 14. 分阶段实施顺序
 
+### 14.0 Release train overlay for smaller delivery slices / 面向小版本交付的 release 轨道
+
+这份 draft 必须通过更小的 release slices 交付，不能一次性拉成长实施波次。
+
+推荐 release train：
+
+| Release | 含义 | 实施姿态 |
+| --- | --- | --- |
+| `R0 Governance Baseline` | startup、OpenSpec、worktree、session ownership、MCP scope 和 safety-rule script backing。 | 基本已是 implemented baseline。 |
+| `R0.5 Inspectable Durable State` | 只读 durable state status、selector safety 和 helper mirror source-of-truth。 | 基本已是 implemented baseline。 |
+| `R0.6 Durable Routing Smoke Gate` | 未来 automatic durable routing exercise 的 dry-run 或 read-only gate。 | 下一条 active release slice。 |
+| `R0.7 Native OMX Adoption MVP` | 在一个低风险 worker-centric task 中受控采用 `native_omx`。 | 未来 reviewed release slice。 |
+| `R0.8 LangGraph Adoption MVP` | 在一个带 checkpoint、approval、frozen brief 或 survivor queue 信号的 graph-shaped task 中受控采用 `langgraph`。 | 未来 reviewed release slice。 |
+| `R1.0 Personal Durable Team MVP` | 第一个可多项目使用的 personal durable-team MVP，具备可检查 lane 和 guarded actions。 | 未来 MVP，不是当前实施。 |
+| `R1.1 Multi-project Consumer Rollout` | 跨项目 consumer rollout，同时保持 repo-local durable truth。 | 未来 rollout。 |
+| `R2.0 Production Durable Team` | 完整生产目标，包含更强 memory、recovery、GUI 和 graph-native orchestration。 | 北极星目标，不是当前实施。 |
+
+Release rules：
+
+- 本 draft 保持 `status: draft`，直到某个具体 release slice 通过 OpenSpec 被提升。
+- 每个 release slice 都必须有自己的 target repository、phase、task scope、validation path、rollback path 和 operator consent boundary。
+- 某个 release slice 可以更新本 draft，但不得宣称整个 production durable-team target 已经实现。
+- runtime exercises 从 `R0.6 Durable Routing Smoke Gate` 开始，而且该 release 默认 read-only。
+
 ### 14.1 Stage 0：叙事与治理对齐
 
 目标：

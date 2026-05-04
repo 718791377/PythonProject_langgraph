@@ -111,6 +111,26 @@ MR 6 验收契约现在已经纳入已实现 baseline：
 
 - Future live smoke 或 adoption gate：只有当用户明确要求 exercise runtime behavior 时，才另开一个 reviewed change，在受控 target repository 中运行 `omx-team-auto.ps1` 并记录证据；不要把这个 smoke 与最终 production-grade persistent team draft 混为一谈。
 
+### Release 0.6 durable routing smoke/adoption gate
+
+MR 6 readiness review 之后，下一条 active release slice 是 `R0.6 Durable Routing Smoke Gate`。
+
+`R0.6 Durable Routing Smoke Gate` 是给未来 runtime exercise 使用的文档和验证 gate。它不能被理解成直接启动 durable team 的授权。
+
+未来 smoke 或 adoption-gate change 必须声明：
+
+- `target_repository` —— 目标仓库根目录，用来说明本次评估哪个仓库的 repo-local durable truth。
+- `phase` —— 项目阶段，用来驱动 automatic routing thresholds。
+- `task` —— 具体 validation question 或 work item。
+- `operator_consent_boundary` —— 操作员授权边界，用来约束 `-Apply`、`.omx/state/` 写入、durable-team launch、shutdown 或其他 mutating actions。
+
+这个 release slice 的默认边界：
+
+- 先使用 read-only status 和 planning surfaces。
+- 不修改 `.omx/state/`；`.omx/state/` 是 repo-local durable-state 目录。
+- 不执行 `omx-team-auto.ps1 -Apply`；`-Apply` 是执行 planned durable action 的 helper 开关。
+- 不把 draft production durable-team plan 提升为 active implementation。
+
 ### 下一步 decision point 的明确非目标
 
 - 不要把最终 `codex_cli_personal_production_durable_team_plan` draft 当成已经完成的能力来实施；它仍然只是北极星目标。

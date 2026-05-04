@@ -685,6 +685,30 @@ Recommended tooling:
 
 ## 14. Phased Delivery Order
 
+### 14.0 Release train overlay for smaller delivery slices
+
+This draft must be delivered through smaller release slices instead of one long implementation wave.
+
+Recommended release train:
+
+| Release | Meaning | Implementation posture |
+| --- | --- | --- |
+| `R0 Governance Baseline` | Startup, OpenSpec, worktree, session-ownership, MCP scope, and safety-rule script backing. | Mostly implemented baseline. |
+| `R0.5 Inspectable Durable State` | Read-only durable state status, selector safety, and helper mirror source-of-truth. | Mostly implemented baseline. |
+| `R0.6 Durable Routing Smoke Gate` | Dry-run or read-only gate for future automatic durable routing exercise. | Next active release slice. |
+| `R0.7 Native OMX Adoption MVP` | Controlled adoption of `native_omx` for one low-risk worker-centric task. | Future reviewed release slice. |
+| `R0.8 LangGraph Adoption MVP` | Controlled adoption of `langgraph` for one graph-shaped task with checkpoint, approval, frozen brief, or survivor queue signals. | Future reviewed release slice. |
+| `R1.0 Personal Durable Team MVP` | First multi-project usable personal durable-team MVP with inspected lanes and guarded actions. | Future MVP, not current implementation. |
+| `R1.1 Multi-project Consumer Rollout` | Consumer rollout across projects while preserving repo-local durable truth. | Future rollout. |
+| `R2.0 Production Durable Team` | Full production target with richer memory, recovery, GUI, and graph-native orchestration. | North-star target, not current implementation. |
+
+Release rules:
+
+- This draft stays `status: draft` until a specific release slice is promoted through OpenSpec.
+- Each release slice must have its own target repository, phase, task scope, validation path, rollback path, and operator consent boundary.
+- A release slice may update this draft, but it must not claim the whole production durable-team target is implemented.
+- Runtime exercises begin at `R0.6 Durable Routing Smoke Gate`, and that release is read-only by default.
+
 ### 14.1 Stage 0: Narrative And Governance Alignment
 
 Goal:
