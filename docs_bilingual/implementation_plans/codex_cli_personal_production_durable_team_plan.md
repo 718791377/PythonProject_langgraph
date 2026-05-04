@@ -178,8 +178,33 @@ External tool reuse is allowed only when:
 - the external tool attaches to the existing orchestration line rather than redefining it
 - every reuse passes through a bounded adapter with explicit input, output, and side-effect boundaries
 
-### 5.2 Recommended tool reuse
+### 5.2 Shared dependency and runtime ownership
 
+`D:\PythonProject_langgraph` - the current orchestration repository and source-of-truth for shared Codex CLI durable-team tooling, adapters, checkers, and installer logic.
+
+This repository may centrally manage dependency declarations, installation scripts, wrappers, and adapter contracts for the Codex CLI durable-team control surface. The actual third-party runtime outputs should stay in ignored local runtime directories such as `.runtime/`, `.venv-tools/`, or `.toolchains/`; those directories are machine-local dependency caches or virtual environments, not source-of-truth project files.
+
+Default rule:
+
+- Third-party dependencies for evaluation, GUI control, queues, embeddings, vector retrieval, dashboarding, and recovery tooling are for each development project's Codex CLI durable-team runtime only.
+- These dependencies must not be mixed into concrete business runtime dependencies by default.
+- A concrete business project that needs the same library name must declare, install, test, package, and release its own business dependency in that project's repository.
+- Shared durable-team wrappers may call into a business repository only through explicit adapters, profiles, and release gates.
+
+Narrow model-service exception:
+
+- A local Llama deployment is a local model service that may be shared by both the Codex CLI durable-team runtime and concrete business runtimes.
+- The shared local model service must be reached through provider adapters and provider profiles.
+- Provider adapters must separate policy, logging, permissions, prompts, secrets, customer data, business state, and durable-team state.
+- The local model service must not become durable truth for either side.
+
+`PySide6` boundary:
+
+- `PySide6` in this plan means the Codex CLI durable-team local GUI control center. It is an operator tool for inspecting runs, approvals, recovery candidates, regression results, helper state, and template state.
+- A concrete business project may also use `PySide6`, but that is a separate business GUI. Its dependencies, packaging, state, user interface, and release rules belong to the business project, not to this durable-team control center.
+- The two GUI surfaces must not share runtime state, approval state, customer data, or release artifacts.
+
+### 5.3 Recommended tool reuse
 #### Strongly recommended
 
 - `SQLite` - layer: persistence kernel
@@ -229,6 +254,26 @@ External tool reuse is allowed only when:
 - `memory-lancedb-pro-skill` - treat as reference material, not production infrastructure
   - treat as reference material, not production infrastructure
 
+### 5.4 Abstract business capability profiles
+
+Business capability profiles are horizontal workload classifications over the ten-layer framework. They are not an eleventh layer and they are not concrete business names. A new workload should map to one or more profiles before implementation starts.
+
+| Capability profile | Universal purpose | Main ten-layer demand |
+| --- | --- | --- |
+| Interactive frontend product delivery | Deliver user-facing frontend, mini-app, web, or app surfaces with testable release boundaries. | Layers 2, 3, 7, 8, and 9. |
+| Generated media asset pipeline | Manage generated images, video, audio, prompts, parameters, asset selection, and downstream approval. | Layers 1, 4, 5, 7, and 9. |
+| Platform content operations | Govern content generation, scheduling, publication, receipt capture, retry, and audit. | Layers 1, 2, 7, 8, 9, and optional layer 10. |
+| Customer message automation with human handoff | Govern automated customer replies, sensitive-content handling, human takeover, and audit. | Layers 1, 4, 5, 7, 9, and optional layer 10. |
+| External domain-agent runtime governance | Govern domain-agent profiles, knowledge updates, regression tests, release gates, logs, and recovery when the final user-facing agent runtime lives outside Codex CLI. | Layers 1, 3, 4, 5, 7, 8, and 9. |
+| Knowledge retrieval and citation workflows | Govern retrieval, citation, evidence chains, summary quality, and hallucination checks. | Layers 4, 5, 6, 7, and 8. |
+| Professional tool teaching and guided operation | Govern step-by-step operation help, screenshots, case libraries, error recovery, and risk notices. | Layers 2, 4, 5, 7, and optional layer 10. |
+| Solo business operations management | Govern projects, customers, sales, delivery, cost summaries, and review cycles for a solo operator. | Layers 1, 3, 4, 7, and optional layer 10. |
+| High-risk decision support | Govern decisions that require simulation, approval, audit, rollback, or stop-loss behavior before execution. | Layers 1, 7, 8, 9, and optional layer 10. |
+| Layout-sensitive document transformation | Govern extraction, replacement, rendering, human review, and layout regression for formatted documents. | Layers 1, 2, 5, 7, and 8. |
+| Structured proposal and compliance document delivery | Govern template libraries, source collection, section generation, citations, compliance checks, approvals, and delivery records. | Layers 1, 4, 5, 7, 8, and 9. |
+| Template and project bootstrap lifecycle | Govern new-computer bootstrap, project template initialization, existing-project update, backups, and checker verification. | Layers 1, 2, 7, and 9. |
+
+Concrete workload examples belong in `docs_bilingual/implementation_plans/codex_business_capability_profiles.md`, which is a reference table for mapping examples to abstract profiles. The production durable-team plan should stay abstract so future business names do not rewrite the architecture.
 ## 6. Control Surface For Codex CLI
 
 The minimum operator control surface for a solo developer must answer:

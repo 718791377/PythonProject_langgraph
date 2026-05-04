@@ -177,8 +177,33 @@ status: draft
 - 外部工具只能挂接到既有 orchestration line
 - 所有复用都必须经过 `bounded adapter`，即能力范围、输入输出和副作用边界都被显式限制的适配层，而不是直接把外部项目的运行时范式并入主栈
 
-### 5.2 推荐复用的工具
+### 5.2 共享依赖与运行时归属
 
+`D:\PythonProject_langgraph` - 当前 orchestration repository，即共享 Codex CLI durable-team 工具、adapter、checker 和 installer logic 的源码真相源。
+
+本仓库可以统一管理 Codex CLI durable-team 控制面所需的 dependency declarations、installation scripts、wrappers 和 adapter contracts。实际第三方 runtime 产物应保留在 ignored local runtime directories，例如 `.runtime/`、`.venv-tools/` 或 `.toolchains/`；这些目录是机器本地依赖缓存或虚拟环境，不是源码真相文件。
+
+默认规则：
+
+- 用于 evaluation、GUI control、queues、embeddings、vector retrieval、dashboarding 和 recovery tooling 的第三方依赖，原则上只服务各开发项目的 Codex CLI durable-team runtime。
+- 这些依赖默认不得和具体 business runtime dependencies 混用。
+- 如果具体业务项目也需要同名 library，必须在该业务项目仓库里自行声明、安装、测试、打包和发布业务依赖。
+- 共享 durable-team wrappers 只能通过显式 adapters、profiles 和 release gates 调用业务仓库。
+
+窄模型服务例外：
+
+- 本地 Llama 部署是一种 local model service，可以同时被 Codex CLI durable-team runtime 和具体 business runtimes 调用。
+- 共享本地模型服务必须通过 provider adapters 和 provider profiles 访问。
+- provider adapters 必须隔离 policy、logging、permissions、prompts、secrets、customer data、business state 和 durable-team state。
+- 本地模型服务不能成为任何一侧的 durable truth。
+
+`PySide6` 边界：
+
+- 本方案中的 `PySide6` 指 Codex CLI durable-team local GUI control center，即用于 inspect runs、approvals、recovery candidates、regression results、helper state 和 template state 的操作员工具。
+- 具体业务项目也可以使用 `PySide6`，但那是独立的 business GUI。它的 dependencies、packaging、state、user interface 和 release rules 属于业务项目，不属于本 durable-team 控制中心。
+- 两个 GUI surface 不得共享 runtime state、approval state、customer data 或 release artifacts。
+
+### 5.3 推荐复用的工具
 #### 强烈推荐
 
 - `SQLite` - 适配层：持久化内核层
@@ -228,6 +253,26 @@ status: draft
 - `memory-lancedb-pro-skill` - 作为知识包参考，不作为生产基础设施
   - 作为知识包参考，不作为生产基础设施
 
+### 5.4 抽象业务能力 Profiles
+
+Business capability profiles 是覆盖十层框架的横向 workload classification，不是第十一层，也不是具体业务名称。任何新增 workload 在实施前，都应先映射到一个或多个 profile。
+
+| Capability profile | 通用目的 | 主要十层需求 |
+| --- | --- | --- |
+| Interactive frontend product delivery | 交付可测试、可发布的用户前端、小程序、Web 或 app surface。 | 第 2、3、7、8、9 层。 |
+| Generated media asset pipeline | 管理生成式图片、视频、音频、prompts、parameters、asset selection 和 downstream approval。 | 第 1、4、5、7、9 层。 |
+| Platform content operations | 治理内容生成、排期、发布、回执记录、失败重试和 audit。 | 第 1、2、7、8、9 层，以及可选第 10 层。 |
+| Customer message automation with human handoff | 治理客户自动回复、敏感内容处理、人工接管和 audit。 | 第 1、4、5、7、9 层，以及可选第 10 层。 |
+| External domain-agent runtime governance | 当最终用户面对的 agent runtime 位于 Codex CLI 之外时，治理 domain-agent profiles、knowledge updates、regression tests、release gates、logs 和 recovery。 | 第 1、3、4、5、7、8、9 层。 |
+| Knowledge retrieval and citation workflows | 治理 retrieval、citation、evidence chains、summary quality 和 hallucination checks。 | 第 4、5、6、7、8 层。 |
+| Professional tool teaching and guided operation | 治理 step-by-step operation help、screenshots、case libraries、error recovery 和 risk notices。 | 第 2、4、5、7 层，以及可选第 10 层。 |
+| Solo business operations management | 治理 solo operator 的 projects、customers、sales、delivery、cost summaries 和 review cycles。 | 第 1、3、4、7 层，以及可选第 10 层。 |
+| High-risk decision support | 治理需要 simulation、approval、audit、rollback 或 stop-loss behavior 的高风险决策。 | 第 1、7、8、9 层，以及可选第 10 层。 |
+| Layout-sensitive document transformation | 治理 formatted documents 的 extraction、replacement、rendering、human review 和 layout regression。 | 第 1、2、5、7、8 层。 |
+| Structured proposal and compliance document delivery | 治理 template libraries、source collection、section generation、citations、compliance checks、approvals 和 delivery records。 | 第 1、4、5、7、8、9 层。 |
+| Template and project bootstrap lifecycle | 治理 new-computer bootstrap、project template initialization、existing-project update、backups 和 checker verification。 | 第 1、2、7、9 层。 |
+
+具体 workload examples 应放在 `docs_bilingual/implementation_plans/codex_business_capability_profiles.zh-CN.md` 这个参考对照表中。生产级持久化团队总方案应保持抽象，避免未来业务名称反向改写架构。
 ## 6. 面向 Codex CLI 的控制面
 
 个人开发者的最小 `control surface`，即用来观察、批准、恢复、回放、切换与排障的统一控制面，必须回答五个问题：
