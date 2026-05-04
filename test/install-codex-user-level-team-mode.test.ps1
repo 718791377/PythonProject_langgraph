@@ -197,6 +197,8 @@ param(
 
 [ordered]@{
   args = $Arguments
+  path = [string]$env:Path
+  pathext = [string]$env:PATHEXT
 } | ConvertTo-Json -Depth 4
 '@
 Set-Content -LiteralPath $FakeOmxPath -Encoding ASCII -NoNewline -Value @'
@@ -325,6 +327,9 @@ $expectedManagedFiles = @(
   (Join-Path $CodexHome 'agents\bug-judge.toml')
   (Join-Path $CodexHome 'bin\_codex-user-level-team-mode.ps1')
   (Join-Path $CodexHome 'bin\_codex-user-level-team-mode-launcher.ps1')
+  (Join-Path $CodexHome 'bin\win-shims\taskkill.cmd')
+  (Join-Path $CodexHome 'bin\win-shims\taskkill.ps1')
+  (Join-Path $CodexHome 'bin\win-shims\taskkill-shim-source.cs')
   $ExplicitWrappedCodexPs1Path
   $ExplicitWrappedCodexCmdPath
   $ExplicitNativeBypassPs1Path
@@ -469,6 +474,9 @@ Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\omx-langg
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\omx-langgraph-stream.ps1')) 'Backup snapshot manifest did not include the LangGraph stream wrapper path.'
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\omx-langgraph-replay.ps1')) 'Backup snapshot manifest did not include the LangGraph replay wrapper path.'
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\omx-langgraph-recover.ps1')) 'Backup snapshot manifest did not include the LangGraph recover wrapper path.'
+Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\win-shims\taskkill.cmd')) 'Backup snapshot manifest did not include the Windows taskkill CMD shim path.'
+Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\win-shims\taskkill.ps1')) 'Backup snapshot manifest did not include the Windows taskkill PowerShell shim path.'
+Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\win-shims\taskkill-shim-source.cs')) 'Backup snapshot manifest did not include the Windows taskkill C# shim source path.'
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'python\langgraph_durable_orchestrator\cli.py')) 'Backup snapshot manifest did not include the LangGraph CLI template path.'
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'state\native-subagent-limits.json')) 'Backup snapshot manifest did not include the native subagent limits state path.'
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\omx-team-auto.ps1')) 'Backup snapshot manifest did not include the automatic team helper path.'
@@ -556,6 +564,11 @@ $startupBinding = $manifest.startup_binding
 Assert-Equal $startupBinding.powershell_profile_path $ProfilePath 'Installer reported the wrong PowerShell profile path.'
 Assert-Equal $startupBinding.native_codex_command_path $FakeNativeCodexPath 'Installer reported the wrong native Codex command path.'
 Assert-Equal $startupBinding.native_command_directory $TempRoot 'Installer reported the wrong native command directory.'
+Assert-Equal $startupBinding.cleanup_output_control.win_shims_directory (Join-Path $CodexHome 'bin\win-shims') 'Installer reported the wrong cleanup-output win-shims directory.'
+Assert-Equal $startupBinding.cleanup_output_control.taskkill_cmd_path (Join-Path $CodexHome 'bin\win-shims\taskkill.cmd') 'Installer reported the wrong taskkill CMD shim path.'
+Assert-Equal $startupBinding.cleanup_output_control.taskkill_ps1_path (Join-Path $CodexHome 'bin\win-shims\taskkill.ps1') 'Installer reported the wrong taskkill PowerShell shim path.'
+Assert-Equal $startupBinding.cleanup_output_control.taskkill_shim_source_path (Join-Path $CodexHome 'bin\win-shims\taskkill-shim-source.cs') 'Installer reported the wrong taskkill C# shim source path.'
+Assert-True ($startupBinding.cleanup_output_control.scoped_to_wrapped_launch -eq $true) 'Installer did not report cleanup-output control as scoped to wrapped launches.'
 Assert-Equal $startupBinding.non_profile_launchers.wrapped_ps1_path $ExplicitWrappedCodexPs1Path 'Installer reported the wrong explicit wrapped codex PowerShell launcher path.'
 Assert-Equal $startupBinding.non_profile_launchers.wrapped_cmd_path $ExplicitWrappedCodexCmdPath 'Installer reported the wrong explicit wrapped codex cmd launcher path.'
 Assert-Equal $startupBinding.non_profile_launchers.native_bypass_ps1_path $ExplicitNativeBypassPs1Path 'Installer reported the wrong explicit native bypass PowerShell launcher path.'
@@ -2824,11 +2837,23 @@ $wrappedManual = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-Po
 $wrappedManualArgs = @($wrappedManual.args | ForEach-Object { [string]$_ })
 Assert-ArrayContains -Actual $wrappedManualArgs -Expected 'manual-task' -Message 'Wrapped manual launch did not forward the user argument.'
 Assert-True ('--disable' -notin $wrappedManualArgs) 'Manual routing should keep multi_agent available.'
+$wrappedManualPathSegments = @(([string]$wrappedManual.path).Split(';') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+Assert-True ($wrappedManualPathSegments.Count -gt 0) 'Wrapped manual launch did not expose the child PATH.'
+Assert-Equal ([System.IO.Path]::GetFullPath($wrappedManualPathSegments[0])) (Join-Path $CodexHome 'bin\win-shims') 'Wrapped manual launch did not prepend win-shims to child PATH.'
+Assert-True (([string]$wrappedManual.pathext).StartsWith('.CMD', [System.StringComparison]::OrdinalIgnoreCase)) 'Wrapped manual launch did not prioritize .CMD in PATHEXT for taskkill.cmd shimming.'
 $manualModelInstructionsArg = @($wrappedManualArgs | Where-Object { $_ -like 'model_instructions_file=*' } | Select-Object -First 1)[0]
 $manualModelInstructionsPath = $manualModelInstructionsArg.Substring('model_instructions_file='.Length).Trim('"').Replace('\\', '\')
 $manualModelInstructionsContent = Get-Content -LiteralPath $manualModelInstructionsPath -Raw
 Assert-True ($manualModelInstructionsContent.Contains('manual expert routing')) 'Wrapped manual launch did not describe manual routing mode.'
 Assert-True ($manualModelInstructionsContent.Contains('Do not proactively route unless the user explicitly asks')) 'Wrapped manual launch did not preserve the manual-routing restriction.'
+
+$rawManual = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-PowerShellLiteral -Value $ExplicitNativeBypassPs1Path) + " 'raw-task' }")
+$rawManualArgs = @($rawManual.args | ForEach-Object { [string]$_ })
+Assert-ArrayContains -Actual $rawManualArgs -Expected 'raw-task' -Message 'Native bypass launch did not forward the user argument.'
+$rawManualPathSegments = @(([string]$rawManual.path).Split(';') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+if ($rawManualPathSegments.Count -gt 0) {
+  Assert-True ([System.IO.Path]::GetFullPath($rawManualPathSegments[0]) -ne (Join-Path $CodexHome 'bin\win-shims')) 'Native bypass launch unexpectedly prepended win-shims to child PATH.'
+}
 
 $omxOff = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-omx-off.ps1') -Arguments @(
   '-Json'
