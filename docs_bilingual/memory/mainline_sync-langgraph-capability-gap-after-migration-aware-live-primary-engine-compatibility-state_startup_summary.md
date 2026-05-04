@@ -23,29 +23,28 @@ Use this snapshot before older implementation notes or archived change history.
 
 Latest landed increments:
 
-- `codex-direct-browser-design-mcp-policy` - landed policy change that keeps browser/design MCP capability available and prevents MCP-scope cleanup from disabling required browser or design automation surfaces.
-- `archive/codex-direct-browser-design-mcp-policy` - archived OpenSpec closeout merged through GitLab; the archive is present under `openspec/changes/archive/2026-05-02-codex-direct-browser-design-mcp-policy/`.
-- `sync-durable-rollout-plan-status` - landed OpenSpec change that updates the cross-session durable-state isolation plan so MR 5 helper mirror source-of-truth work is no longer described as the next active durable-state slice.
-- `docs/fix-status-sync-chinese-text` - landed follow-up that replaced corrupted question-mark placeholder text in Chinese status-sync artifacts with readable UTF-8 Chinese.
-- `archive/sync-durable-rollout-plan-status` - archived OpenSpec closeout merged through GitLab; the archive is present under `openspec/changes/archive/2026-05-02-sync-durable-rollout-plan-status/`.
-- `openspec/specs/codex-user-level-team-mode-plan-status-sync/spec.md` and `.zh-CN.md` - stable specs now require durable-state rollout queues not to point at already archived slices as next active work.
-- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` and `.zh-CN.md` - canonical durable-state isolation plans now mark MR 5 as completed and reframe MR 6 or an MR 6 readiness review as the next decision point.
-- `codex-user-level-mcp-scope-policy` and `docs_bilingual/governance/codex_user_level_mcp_scope_policy.md` / `.zh-CN.md` - stable MCP scope policy remains the routing authority for Codex-direct versus MCP Router-managed MCP entries.
+- `archive/mr6-automatic-routing-readiness` - landed readiness-review closeout confirming that automatic durable routing hookup already exists in the earlier team-mode implementation line; do not reopen MR 6 as new runtime implementation work.
+- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` and `.zh-CN.md` - canonical durable-state isolation plans now state that MR 1 through MR 6 are complete and that any future live smoke or adoption gate must be a separate reviewed change.
+- `fix/omx-mcp-windows-cleanup-output` - landed code change that keeps direct `omx_state`, `omx_memory`, `omx_code_intel`, and `omx_trace` MCP entries enabled while suppressing benign Windows `taskkill` success output during wrapped `codex-ohmy` `/resume` cleanup.
+- `archive/stabilize-omx-mcp-windows-cleanup-output` - archived OpenSpec closeout merged through GitLab MR `!74`; the archive is present under `openspec/changes/archive/2026-05-04-stabilize-omx-mcp-windows-cleanup-output/`.
+- `openspec/specs/codex-user-level-windows-cleanup-output-control/spec.md` and `.zh-CN.md` - stable specs now require scoped cleanup-output control, PATH restoration, direct `omx_*` MCP preservation, and checker-backed validation.
 - `openspec/specs/codex-user-level-mainline-memory-handoff/spec.md` - stable spec requiring current mainline memory handoffs to identify the latest landed increment before listing next actions.
 
 Publication and active-change state at the start of this refresh:
 
-- `main`, `gitlab/main`, and `github/main` - all pointed at commit `b8223434bf873d93c22ab82ac26ec095e99e0576` in the local clone checked before `refresh-mainline-memory-after-durable-rollout-status-sync` was opened.
-- GitLab main pipeline `#2495016689` passed for `b8223434bf873d93c22ab82ac26ec095e99e0576`.
-- `openspec list --json` reported an empty `changes` array before this refresh change was opened in an isolated worktree.
-- `refresh-mainline-memory-after-durable-rollout-status-sync` is the current handoff-refresh OpenSpec change. It refreshes memory only; archive should be serialized later if another live session still owns broad `openspec/specs` scope.
+- `main`, `gitlab/main`, and `github/main` - all pointed at commit `fccaf73ef45a9c9fb12a1e0f6da1bcfcf4dc11b3` after GitLab MR `!74` merged and GitHub was synchronized.
+- GitLab main pipeline `#2497474485` passed for `fccaf73ef45a9c9fb12a1e0f6da1bcfcf4dc11b3`.
+- `openspec list` reported no active changes before `refresh-mainline-memory-after-cleanup-output-closeout` was opened in an isolated worktree.
+- Local archive worktrees for `archive/stabilize-omx-mcp-windows-cleanup-output` and `archive/mainline-memory-refresh` were removed after confirming they were clean and merged.
+- `python tools/check_worktree_session_hygiene.py --root . --json` and `python tools/check_session_ownership_claims.py --root . --json` passed from `main` before this refresh branch was opened.
 
 Current interpretation:
 
-- The Codex direct browser/design MCP policy is implemented, archived, merged to GitLab `main`, and mirrored to GitHub.
-- The durable rollout plan status-sync work is implemented, Chinese text repaired, archived, merged to GitLab `main`, and mirrored to GitHub.
-- A new session should not reopen MR 5 helper mirror source-of-truth work; it is completed and part of the implemented baseline.
-- A new session should not treat old replay, diff-approval, task-ownership precheck, MCP-scope, or durable-rollout MR 5 work as the current required implementation target.
+- MR 1 through MR 6 in the bounded durable-state rollout queue are complete.
+- The automatic durable routing helper exists as generated user-level surface; future work must not duplicate the existing `omx-team-auto.ps1` behavior just to claim MR 6 is implemented.
+- The Windows cleanup-output fix is implemented, installed, manually verified by `/resume`, archived, merged to GitLab `main`, and mirrored to GitHub.
+- `omx_state`, `omx_memory`, `omx_code_intel`, and `omx_trace` remain Codex-direct MCP entries; MCP Router remains outside those Codex-dedicated tools.
+- A new session should not treat old MCP-scope, MR 5 helper mirror, MR 6 readiness, or Windows cleanup-output work as the current required implementation target.
 
 ## MCP Scope Routing Reminder
 
@@ -55,7 +54,7 @@ When a question involves MCP server placement, use this routing:
 - `omx_memory` - Codex-dedicated MCP server for oh-my-codex memory surfaces; keep it as a direct Codex MCP entry, not under MCP Router shared management.
 - `omx_code_intel` - Codex-dedicated MCP server for oh-my-codex code-intelligence surfaces; keep it as a direct Codex MCP entry, not under MCP Router shared management.
 - `omx_trace` - Codex-dedicated MCP server for oh-my-codex trace surfaces; keep it as a direct Codex MCP entry, not under MCP Router shared management.
-- `mcp_router` - Codex-side bridge entry for reaching MCP Router; Codex may keep this direct entry, but MCP Router must not manage itself as a child server.
+- `mcp_router` - Codex-side bridge entry for reaching MCP Router; keep it disabled for Codex unless the operator explicitly re-enables it for a controlled test.
 - `chrome-devtools` - browser/devtools MCP capability that must remain available for projects that need browser automation.
 - `pencil` - design/canvas MCP capability that must remain available for design tasks that need it.
 
@@ -65,9 +64,9 @@ Repository code and MRs must not mutate user-level MCP configuration or MCP Rout
 
 The repository is ready for the next small, explicitly named OpenSpec change after this handoff refresh is merged, while respecting any live local ownership claims:
 
-- current startup surfaces have dedicated pointers for MCP scope, worktree isolation, and durable-state status-sync boundaries
 - active-change state must be checked with `openspec list --json` before writing files
 - local task ownership must be checked with `python tools/check_session_ownership_claims.py --root . --precheck-task ... --json` before creating a new write scope
+- stale branch or remote-branch signals must be classified as completed-stale residue before a new write scope proceeds
 - durable team launch is still not allowed for single-slice documentation, checker refresh, or readiness-review work
 - GitLab remains the authoritative MR and merge surface; GitHub remains the post-merge mirror
 
@@ -75,11 +74,10 @@ The repository is ready for the next small, explicitly named OpenSpec change aft
 
 After this refresh lands, choose one of these next actions explicitly before writing files:
 
-1. `MR 6 readiness review` - create or continue a separately named OpenSpec change that reviews whether MR 3 through MR 5 evidence is still sufficient before automatic durable routing hookup.
-2. `automatic durable routing hookup` - only after MR 6 readiness is accepted, connect real task-flow thresholds to `native_omx` / `langgraph` selection through a separate reviewed change.
-3. `strict MCP Router audit` - run `python tools/check_mcp_router_scope_policy.py --root . --strict-router-state --json` to inspect local MCP Router drift, then report manual cleanup guidance without editing the database.
-4. `archive this memory refresh` - only if no active session owns overlapping `openspec/specs` scope; perform the archive in a serialized archive worktree.
-5. `new OpenSpec change` - create a fresh change only after confirming there are no active changes or after explicitly taking ownership of an existing active change.
+1. `durable routing smoke/adoption gate` - only if the user explicitly names the target repository, phase, task, and operator consent boundary; open a separate reviewed OpenSpec change and start with dry-run or read-only evidence before any `-Apply` action.
+2. `strict MCP Router audit` - run `python tools/check_mcp_router_scope_policy.py --root . --strict-router-state --json` to inspect local MCP Router drift, then report manual cleanup guidance without editing the database.
+3. `skills context budget follow-up` - open a separate user-level skills governance change if the operator wants to reduce skill-description warnings without deleting browser, Vercel, or design capabilities.
+4. `new active implementation slice` - create a fresh OpenSpec change only after confirming there are no active changes or after explicitly taking ownership of an existing active change.
 
 ## Important Non-Drift Notes
 
