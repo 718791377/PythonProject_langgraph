@@ -93,6 +93,32 @@ This plan does not:
 - make GUI the primary runtime too early
 - rewrite existing durable truth in order to add memory or vector retrieval
 
+### 3.3 Restored Ten-Layer Framework Landing Map
+
+The white paper's ten-layer framework is a required organizing model for this draft. It must remain visible in this plan so a cold-start maintainer can see how the production target decomposes before reading the deeper governance paper.
+
+Restored ten-layer model:
+
+| Layer | Production meaning | Landing rule in this plan |
+| --- | --- | --- |
+| 1. Persistence Core | Owns state, checkpoints, event history, execution position, and recovery semantics. | `.omx/state/` is the repo-local durable-state directory; it stores each repository's canonical durable truth and must not be shared as a user-level global state directory. |
+| 2. Interaction and Execution Layer | Owns commands, events, tasks, executors, and local or remote execution. | `codex-ohmy` is the normal wrapped Codex launcher; `codex-raw` is the raw Codex bypass launcher; both must stay thin entrypoints over guarded scripts and documented commands. |
+| 3. Team Orchestration Layer | Owns role assignment, task scheduling, parallel slicing, conflict convergence, and human intervention. | `subagent` is the leader-side burst expert lane; `native_omx` is the worker-centric durable execution lane; `langgraph` is the graph-shaped checkpoint and resume orchestration lane. |
+| 4. Long-Term Memory Layer | Owns cross-session and cross-task facts, experience, rules, and artifact summaries. | Memory can enhance execution, but it must not become workflow truth, approval truth, or the only recovery source. |
+| 5. Context Enhancement Layer | Owns retrieval, filtering, reranking, compression, injection, and context-budget governance. | Startup summaries, governance docs, OpenSpec artifacts, and bounded retrieval can improve context, but they must remain inspectable and budget-controlled. |
+| 6. Vector Database and Retrieval Storage Layer | Owns vector indexing, tenant isolation, filtering, backup and restore, and lifecycle strategy. | Vector storage is optional and adapter-backed; it must not replace repo-local durable state or authoritative documents. |
+| 7. Quality Assurance Layer | Owns runtime constraints, output validation, tool validation, approval gates, and acceptance gates. | Script controls, checkers, CI gates, and approval prompts must back important safety rules instead of relying only on prompt reminders. |
+| 8. Evaluation and Regression Layer | Owns benchmark sets, experiment comparison, online evaluation, regression gates, and version comparison. | Regression fixtures and evaluation reports should be added after the durable core has observable status and rollback evidence. |
+| 9. Security and Persistence Hardening Layer | Owns authorization, audit, secrets, data classification, encryption, tamper resistance, and recovery safety. | MCP scope, secret handling, permission boundaries, and state write scopes must fail closed when a cold-start session has no prior context. |
+| 10. Local GUI Control Center | Lets the maintainer inspect state, approve actions, replay, intervene, and recover without reading source code directly. | GUI or dashboard work is observer-first and must come after read-only state inspection, recovery surfaces, and guarded action semantics. |
+
+Derived release rule:
+
+- R0 and R0.5 cover layers 1, 7, and 9 only at the minimum governance and read-only inspection level.
+- R0.6 through R0.8 exercise layers 1 through 3 in small smoke/adoption gates without claiming the whole production target.
+- R1.0 through R1.2 make layers 1 through 3 usable across projects while keeping layers 4 through 10 mostly guarded, optional, or observer-first.
+- R2.0 slices complete the production target by adding durable memory, recovery hardening, graph-native orchestration, security hardening, performance tests, operator dashboard, maintenance strategy, and rollback evidence.
+
 ## 4. Layered Responsibilities Of The Three Lanes
 
 ### 4.1 `subagent`

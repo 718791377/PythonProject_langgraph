@@ -93,6 +93,31 @@ status: draft
 - 不把 GUI 提前做成主运行时
 - 不为了记忆或向量检索，重写已有 durable truth
 
+### 3.3 恢复的十层框架落地映射
+
+白皮书中的十层框架是本 draft 的必备组织模型。它必须保留在本方案中，确保冷启动维护者不用先读完整治理白皮书，也能看到“生产级持久化团队”目标态如何拆解。
+
+恢复后的十层模型如下：
+
+| 层级 | 生产含义 | 本方案中的落地规则 |
+| --- | --- | --- |
+| 1. 持久化内核 | 负责状态、checkpoint、event history、执行位置与恢复语义。 | `.omx/state/` 是仓库本地 durable-state 目录；它保存每个仓库自己的 canonical durable truth，不能被共享成用户级全局状态目录。 |
+| 2. 交互与执行层 | 负责 command、event、task、executor、本地或远端执行。 | `codex-ohmy` 是日常使用的 Codex wrapper 启动器；`codex-raw` 是绕过 wrapper 的原生 Codex 启动器；两者都应保持为薄入口，真正约束放在脚本与文档化命令里。 |
+| 3. 团队编排层 | 负责角色分工、任务调度、并行切片、冲突收敛与人工介入。 | `subagent` 是 leader-side burst expert lane，即主会话短时调用专家的通道；`native_omx` 是 worker-centric durable execution lane，即以 worker 生命周期为中心的持久执行通道；`langgraph` 是 graph-shaped checkpoint/resume orchestration lane，即图式 checkpoint 与恢复编排通道。 |
+| 4. 长期记忆层 | 负责跨会话、跨任务保存事实、经验、规则和 artifact 摘要。 | memory 可以增强执行，但不能成为 workflow truth、approval truth 或唯一恢复来源。 |
+| 5. 上下文增强层 | 负责 retrieval、filtering、reranking、compression、injection 与 context-budget governance。 | startup summary、governance docs、OpenSpec artifacts 和受控检索可以增强上下文，但必须可检查、可预算控制。 |
+| 6. 向量数据库与检索存储层 | 负责 vector indexing、tenant isolation、filtering、backup/restore 与 lifecycle strategy。 | vector storage 是可选能力，必须放在 provider adapter 后面；它不能替代 repo-local durable state 或权威文档。 |
+| 7. 质量保障层 | 负责运行时约束、输出校验、工具校验、approval gate 与 acceptance gate。 | 重要安全规则必须由 script controls、checkers、CI gates 和 approval prompts 共同支撑，不能只靠 prompt reminders。 |
+| 8. 评测与回归层 | 负责 benchmark sets、experiment comparison、online evaluation、regression gates 与 version comparison。 | regression fixtures 和 evaluation reports 应在 durable core 已具备可观测状态与 rollback evidence 后逐步加入。 |
+| 9. 安全与持久化增强层 | 负责 authorization、audit、secrets、data classification、encryption、tamper resistance 与 recovery safety。 | MCP scope、secret handling、permission boundaries 与 state write scopes 必须在冷启动会话没有历史上下文时也能 fail closed。 |
+| 10. 本地 GUI 控制中心 | 让维护者无需直接读源码，也能 inspect state、approve actions、replay、intervene 和 recover。 | GUI 或 dashboard 必须 observer-first，并且必须在 read-only state inspection、recovery surfaces 和 guarded action semantics 之后再推进。 |
+
+由此得到的 release 规则是：
+
+- R0 和 R0.5 只在最小 governance 与 read-only inspection 层面覆盖第 1、7、9 层。
+- R0.6 到 R0.8 通过小型 smoke/adoption gate 演练第 1 到第 3 层，不宣称完整生产目标已经实现。
+- R1.0 到 R1.2 让第 1 到第 3 层在多项目中可用，同时把第 4 到第 10 层保持为受控、可选或 observer-first。
+- R2.0 各切片再补齐 durable memory、recovery hardening、graph-native orchestration、security hardening、performance tests、operator dashboard、maintenance strategy 与 rollback evidence。
 ## 4. 三条 Lane 的职责分层
 
 ### 4.1 `subagent`
