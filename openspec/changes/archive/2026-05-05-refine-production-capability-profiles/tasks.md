@@ -11,5 +11,5 @@
 
 ## 3. Validate And Publish
 
-- [ ] 3.1 Run OpenSpec and repository documentation checkers.
-- [ ] 3.2 Publish through GitLab-first review, wait for the GitLab pipeline, merge, and sync GitHub main.
+- [x] 3.1 Run OpenSpec and repository documentation checkers.
+- [x] 3.2 Publish through GitLab-first review, wait for the GitLab pipeline, merge, and sync GitHub main.
