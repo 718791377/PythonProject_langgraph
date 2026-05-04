@@ -24,29 +24,28 @@ translation_of: docs_bilingual/memory/mainline_sync-langgraph-capability-gap-aft
 
 最新落地增量：
 
-- `codex-direct-browser-design-mcp-policy` - 已落地的 policy change，用于保留 browser/design MCP capability，并防止 MCP-scope cleanup 禁用必要的浏览器或设计自动化表面。
-- `archive/codex-direct-browser-design-mcp-policy` - 已通过 GitLab 合并的 OpenSpec archive closeout；归档位于 `openspec/changes/archive/2026-05-02-codex-direct-browser-design-mcp-policy/`。
-- `sync-durable-rollout-plan-status` - 已落地的 OpenSpec change，更新 cross-session durable-state isolation plan，使 MR 5 helper mirror source-of-truth 工作不再被描述为下一步 active durable-state slice。
-- `docs/fix-status-sync-chinese-text` - 已落地的 follow-up，用可读 UTF-8 中文替换中文 status-sync artifacts 中损坏的问号占位文本。
-- `archive/sync-durable-rollout-plan-status` - 已通过 GitLab 合并的 OpenSpec archive closeout；归档位于 `openspec/changes/archive/2026-05-02-sync-durable-rollout-plan-status/`。
-- `openspec/specs/codex-user-level-team-mode-plan-status-sync/spec.md` 与 `.zh-CN.md` - 稳定 specs 现在要求 durable-state rollout queues 不得把已归档切片列为下一步 active work。
-- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` 与 `.zh-CN.md` - canonical durable-state isolation plans 现在把 MR 5 标记为已完成，并把 MR 6 或 MR 6 readiness review 重述为下一步 decision point。
-- `codex-user-level-mcp-scope-policy` 以及 `docs_bilingual/governance/codex_user_level_mcp_scope_policy.md` / `.zh-CN.md` - 稳定 MCP scope policy 仍是 Codex-direct 与 MCP Router-managed MCP entries 的路由权威。
-- `openspec/specs/codex-user-level-mainline-memory-handoff/spec.md` - 稳定 spec，要求当前 mainline memory handoff 在列出下一步前先识别最新落地增量。
+- `archive/mr6-automatic-routing-readiness` - 已落地的 readiness-review closeout，确认 automatic durable routing hookup 已经存在于较早的 team-mode implementation line；不要把 MR 6 重新打开成新的 runtime implementation work。
+- `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` 与 `.zh-CN.md` - canonical durable-state isolation plans 现在说明 MR 1 到 MR 6 都已完成；任何未来 live smoke 或 adoption gate 都必须是单独 reviewed change。
+- `fix/omx-mcp-windows-cleanup-output` - 已落地的代码变更，在保留 direct `omx_state`、`omx_memory`、`omx_code_intel` 和 `omx_trace` MCP entries 的同时，抑制 wrapped `codex-ohmy` `/resume` cleanup 中正常的 Windows `taskkill` 成功输出。
+- `archive/stabilize-omx-mcp-windows-cleanup-output` - 已通过 GitLab MR `!74` 合并的 OpenSpec archive closeout；归档位于 `openspec/changes/archive/2026-05-04-stabilize-omx-mcp-windows-cleanup-output/`。
+- `openspec/specs/codex-user-level-windows-cleanup-output-control/spec.md` 与 `.zh-CN.md` - stable specs 现在要求 scoped cleanup-output control、PATH 恢复、direct `omx_*` MCP 保留和 checker-backed validation。
+- `openspec/specs/codex-user-level-mainline-memory-handoff/spec.md` - stable spec，要求当前 mainline memory handoff 在列出下一步前先识别最新落地增量。
 
 本次刷新开始时的发布与 active-change 状态：
 
-- `main`、`gitlab/main` 与 `github/main` - 在打开 `refresh-mainline-memory-after-durable-rollout-status-sync` 前，本地 clone 中三者都指向提交 `b8223434bf873d93c22ab82ac26ec095e99e0576`。
-- GitLab main pipeline `#2495016689` 已通过，目标提交为 `b8223434bf873d93c22ab82ac26ec095e99e0576`。
-- `openspec list --json` 在本刷新 change 于隔离 worktree 中打开前返回空的 `changes` 数组。
-- `refresh-mainline-memory-after-durable-rollout-status-sync` 是当前 handoff-refresh OpenSpec change。它只刷新 memory；如果另一个 live session 仍拥有 broad `openspec/specs` 范围，则 archive 应稍后串行执行。
+- `main`、`gitlab/main` 与 `github/main` - 在 GitLab MR `!74` 合并并同步 GitHub 后，三者都指向提交 `fccaf73ef45a9c9fb12a1e0f6da1bcfcf4dc11b3`。
+- GitLab main pipeline `#2497474485` 已通过，目标提交为 `fccaf73ef45a9c9fb12a1e0f6da1bcfcf4dc11b3`。
+- `openspec list` 在 `refresh-mainline-memory-after-cleanup-output-closeout` 于隔离 worktree 中打开前显示没有 active changes。
+- `archive/stabilize-omx-mcp-windows-cleanup-output` 和 `archive/mainline-memory-refresh` 的本地 archive worktrees 已在确认干净且已合并后移除。
+- 打开本刷新分支前，`python tools/check_worktree_session_hygiene.py --root . --json` 与 `python tools/check_session_ownership_claims.py --root . --json` 已在 `main` 通过。
 
 当前判断：
 
-- Codex direct browser/design MCP policy 已经实现、归档、合并到 GitLab `main`，并同步到 GitHub。
-- durable rollout plan status-sync 工作已经实现、中文文本已修复、已归档、合并到 GitLab `main`，并同步到 GitHub。
-- 新会话不应重新打开 MR 5 helper mirror source-of-truth 工作；它已经完成并纳入已实现 baseline。
-- 新会话不应再把旧 replay、diff-approval、task-ownership precheck、MCP-scope 或 durable-rollout MR 5 工作当成当前必须实施目标。
+- bounded durable-state rollout queue 中的 MR 1 到 MR 6 都已完成。
+- automatic durable routing helper 已经作为 generated user-level surface 存在；未来工作不得为了宣称 MR 6 已实现而重复实现现有 `omx-team-auto.ps1` 行为。
+- Windows cleanup-output 修复已经实现、安装、通过 `/resume` 人工验证、归档、合并到 GitLab `main`，并同步到 GitHub。
+- `omx_state`、`omx_memory`、`omx_code_intel` 和 `omx_trace` 仍是 Codex-direct MCP entries；MCP Router 不托管这些 Codex 专属工具。
+- 新会话不应再把旧 MCP-scope、MR 5 helper mirror、MR 6 readiness 或 Windows cleanup-output 工作当成当前必须实施目标。
 
 ## MCP Scope Routing Reminder（MCP 范围路由提醒）
 
@@ -56,7 +55,7 @@ translation_of: docs_bilingual/memory/mainline_sync-langgraph-capability-gap-aft
 - `omx_memory` - oh-my-codex memory surfaces（记忆表面）的 Codex 专属 MCP server；保留为 Codex 直连 MCP，不交给 MCP Router 共享管理。
 - `omx_code_intel` - oh-my-codex code-intelligence surfaces（代码智能表面）的 Codex 专属 MCP server；保留为 Codex 直连 MCP，不交给 MCP Router 共享管理。
 - `omx_trace` - oh-my-codex trace surfaces（追踪表面）的 Codex 专属 MCP server；保留为 Codex 直连 MCP，不交给 MCP Router 共享管理。
-- `mcp_router` - Codex 侧 bridge entry（桥接入口），用来连接 MCP Router；Codex 可以保留这个直连入口，但 MCP Router 不得把自己作为子 server 管理。
+- `mcp_router` - Codex 侧 bridge entry（桥接入口），用来连接 MCP Router；除非操作者为了受控测试明确重新启用，否则 Codex 侧保持禁用。
 - `chrome-devtools` - browser/devtools MCP capability，必须为需要浏览器自动化的项目保持可用。
 - `pencil` - design/canvas MCP capability，必须为需要设计任务的场景保持可用。
 
@@ -66,9 +65,9 @@ translation_of: docs_bilingual/memory/mainline_sync-langgraph-capability-gap-aft
 
 本次 handoff refresh 合并后，仓库可以进入下一轮明确命名的小步 OpenSpec change，但必须尊重任何 live local ownership claims：
 
-- 当前 startup surfaces 已经有 MCP scope、worktree isolation 与 durable-state status-sync boundaries 的专门指针。
 - 写文件前必须用 `openspec list --json` 检查 active-change 状态。
 - 创建新写入范围前，必须用 `python tools/check_session_ownership_claims.py --root . --precheck-task ... --json` 检查本地 task ownership。
+- stale branch 或 remote-branch 信号必须先分类为 completed-stale residue，新的写入范围才能继续。
 - 对单切片文档、checker refresh 或 readiness-review 工作，仍然不允许启动 durable team。
 - GitLab 仍是权威 MR 与合并表面；GitHub 仍是合并后的镜像目标。
 
@@ -76,11 +75,10 @@ translation_of: docs_bilingual/memory/mainline_sync-langgraph-capability-gap-aft
 
 本次刷新落地后，写文件前先明确选择以下动作之一：
 
-1. `MR 6 readiness review` - 创建或继续单独命名的 OpenSpec change，复核 MR 3 到 MR 5 的证据是否仍足以支撑 automatic durable routing hookup。
-2. `automatic durable routing hookup` - 只有 MR 6 readiness 被接受后，才能通过单独 reviewed change 把真实 task-flow thresholds 接入 `native_omx` / `langgraph` 选择。
-3. `strict MCP Router audit` - 运行 `python tools/check_mcp_router_scope_policy.py --root . --strict-router-state --json` 检查本地 MCP Router drift（漂移），然后只报告手动清理建议，不编辑数据库。
-4. `archive this memory refresh` - 只有在没有 active session 拥有重叠的 `openspec/specs` 范围时才执行；必须在串行 archive worktree 中归档。
-5. `new OpenSpec change` - 只有在确认没有 active changes，或明确接管现有 active change 后，才创建新的 change。
+1. `durable routing smoke/adoption gate` - 只有用户明确指定 target repository、phase、task 和 operator consent boundary 时才执行；必须打开单独 reviewed OpenSpec change，并且在任何 `-Apply` 动作前先从 dry-run 或只读证据开始。
+2. `strict MCP Router audit` - 运行 `python tools/check_mcp_router_scope_policy.py --root . --strict-router-state --json` 检查本地 MCP Router drift（漂移），然后只报告手动清理建议，不编辑数据库。
+3. `skills context budget follow-up` - 如果操作者希望减少 skill-description warnings，可打开单独 user-level skills governance change；不得删除 browser、Vercel 或 design 能力作为捷径。
+4. `new active implementation slice` - 只有在确认没有 active changes，或明确接管现有 active change 后，才创建新的 OpenSpec change。
 
 ## 重要防漂移说明
 
