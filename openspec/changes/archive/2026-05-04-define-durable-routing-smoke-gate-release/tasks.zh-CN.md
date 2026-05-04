@@ -8,4 +8,4 @@
 ## 2. 验证与发布
 
 - [x] 2.1 运行 OpenSpec 和仓库文档 checkers。
-- [ ] 2.2 按 GitLab-first review 发布，等待 GitLab pipeline，通过后合并，并同步 GitHub main。
+- [x] 2.2 按 GitLab-first review 发布，等待 GitLab pipeline，通过后合并，并同步 GitHub main。
