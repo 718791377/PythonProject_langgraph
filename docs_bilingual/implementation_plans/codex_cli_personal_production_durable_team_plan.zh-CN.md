@@ -716,6 +716,42 @@ Release rules：
 - 某个 release slice 可以更新本 draft，但不得宣称整个 production durable-team target 已经实现。
 - runtime exercises 从 `R0.6 Durable Routing Smoke Gate` 开始，而且该 release 默认 read-only。
 
+更细 release ladder：
+
+| Release | 含义 | 实施姿态 |
+| --- | --- | --- |
+| `R0.6.0 Gate Template` | future smoke/adoption gate changes 及其 required fields 的模板。 | 下一条安全 planning slice。 |
+| `R0.6.1 Gate Field Checker` | required gate fields 的 checker-backed enforcement。 | 下一条安全 script-backed slice。 |
+| `R0.6.2 Read-Only State Sampling` | 对一个 target repository 进行 status-only sampling。 | future read-only slice。 |
+| `R0.6.3 Dry-Run Routing Decision` | 不进入 apply mode，只解释 no-team、native_omx 或 langgraph decision。 | future dry-run slice。 |
+| `R0.6.4 Expected-Result Fixture` | 预期 dry-run decision 的 regression fixture。 | future test slice。 |
+| `R0.6.5 Cross-Project Read-Only Review` | consumer-project review，用来证明 repo-local truth 不泄漏。 | future cross-project slice。 |
+| `R0.7.0 Low-Risk Target Selection` | 第一个 native_omx target repository 和 task selection。 | future reviewed slice。 |
+| `R0.7.1 Native OMX Dry-Run Stability` | apply mode 之前的稳定 native_omx plan。 | future dry-run slice。 |
+| `R0.7.2 Explicit Apply Consent` | `-Apply` 前的精确 consent record。 | future consent slice。 |
+| `R0.7.3 Lifecycle Record Check` | launch、reuse、shutdown 和 tracked-record evidence。 | future lifecycle slice。 |
+| `R0.7.4 Restart Recovery Check` | native_omx state 的冷启动 inspection。 | future recovery slice。 |
+| `R0.7.5 Native OMX Closeout Archive` | native_omx adoption 的 evidence archive 和 residue cleanup。 | future closeout slice。 |
+| `R0.8.0 Graph-Shaped Task Selection` | 带 checkpoint、approval、frozen brief 或 survivor-queue signal 的 LangGraph target task。 | future reviewed slice。 |
+| `R0.8.1 Checkpoint Smoke` | langgraph state 的保存与恢复 evidence。 | future smoke slice。 |
+| `R0.8.2 Approval Gate Smoke` | operator decisions 的 pause 和 approval evidence。 | future smoke slice。 |
+| `R0.8.3 Frozen Brief Smoke` | research-to-implementation frozen brief evidence。 | future handoff slice。 |
+| `R0.8.4 Survivor Queue Smoke` | bug-review survivor queue evidence。 | future triage slice。 |
+| `R0.8.5 LangGraph Closeout Archive` | 归档 evidence，但不把 langgraph 变成无关任务默认 lane。 | future closeout slice。 |
+| `R0.9 Lane Arbitration` | native_omx、langgraph 和 no durable team 的 conflict rules。 | future arbitration release。 |
+| `R1.0 Personal Durable Team MVP` | 第一个单用户、多项目可用 MVP。 | future MVP。 |
+| `R1.1 Multi-Project Consumer Rollout` | 推广到 consumer repositories，同时保持 repo-local durable truth。 | future rollout。 |
+| `R1.2 Operational Hardening` | logging、MCP scope、config sentinel、helper mirror、cleanup 和 rollback hardening。 | future hardening release。 |
+| `R2.0.0 Production Readiness Standard` | production acceptance criteria 和 release gates。 | future production slice。 |
+| `R2.0.1 Durable Memory Model` | memory boundaries、retention 和 replay policy。 | future production slice。 |
+| `R2.0.2 Crash Recovery` | interruption 之后的 safe inspection 和 resume。 | future production slice。 |
+| `R2.0.3 Graph-Native Orchestration` | 在 graph-shaped execution 确实合理时启用 graph-native orchestration。 | future production slice。 |
+| `R2.0.4 Security And Secrets Boundary` | credentials、permissions 和 untrusted-input protection。 | future production slice。 |
+| `R2.0.5 Performance And Concurrency Test` | worker count、provider pacing 和 long-running stability tests。 | future production slice。 |
+| `R2.0.6 Operator Dashboard` | 清晰的 operator-facing status 和 control surface。 | future production slice。 |
+| `R2.0.7 Multi-Project Maintenance Strategy` | repositories 之间的长期维护策略。 | future production slice。 |
+| `R2.0.8 Production Release And Rollback` | 只有 rollback evidence 存在后才正式 release。 | final production slice。 |
+
 ### 14.1 Stage 0：叙事与治理对齐
 
 目标：

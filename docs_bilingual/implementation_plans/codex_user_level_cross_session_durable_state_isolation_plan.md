@@ -108,20 +108,33 @@ MR 6 acceptance contract that is now part of the implemented baseline:
 
 - Future live smoke or adoption gate: only if the user explicitly asks to exercise runtime behavior, open a separate reviewed change that runs `omx-team-auto.ps1` in a controlled target repository and records evidence without conflating that smoke with the final production-grade persistent team draft.
 
-### Release 0.6 durable routing smoke/adoption gate
+### Release 0.6 through R2.0 staged next-decision path
 
-After MR 6 readiness review, the next active release slice is `R0.6 Durable Routing Smoke Gate`.
+After MR 6 readiness review and the R0.6 gate definition, the next active work must stay smaller than a full durable-team runtime exercise.
 
-`R0.6 Durable Routing Smoke Gate` is a documentation and validation gate for future runtime exercise. It must not be treated as direct permission to start a durable team.
+Immediate next slices:
 
-A future smoke or adoption-gate change must declare:
+- `R0.6.0 Gate Template` - create the reusable smoke/adoption gate template before any command is run.
+- `R0.6.1 Gate Field Checker` - add checker-backed enforcement that future gates declare `target_repository`, `phase`, `task`, and `operator_consent_boundary`.
 
-- `target_repository` - the repository root whose repo-local durable truth is being evaluated.
-- `phase` - the project phase used by automatic routing thresholds.
-- `task` - the concrete validation question or work item.
-- `operator_consent_boundary` - the explicit authorization boundary for `-Apply`, `.omx/state/` writes, durable-team launch, shutdown, or other mutating actions.
+Only after those two slices are landed should the roadmap proceed to:
 
-Default boundary for this release slice:
+- `R0.6.2 Read-Only State Sampling` - inspect one repository with read-only state surfaces.
+- `R0.6.3 Dry-Run Routing Decision` - explain the routing decision without `-Apply`.
+- `R0.6.4 Expected-Result Fixture` - capture the expected decision as a regression fixture.
+- `R0.6.5 Cross-Project Read-Only Review` - repeat the read-only review on a consumer repository.
+
+Later slices remain future work:
+
+- `R0.7 Native OMX Adoption MVP` - future controlled native_omx adoption after R0.6 evidence exists.
+- `R0.8 LangGraph Adoption MVP` - future controlled langgraph adoption for graph-shaped tasks.
+- `R0.9 Lane Arbitration` - future conflict and selection rules for multiple enabled durable lanes.
+- `R1.0 Personal Durable Team MVP` - future single-user, multi-project MVP.
+- `R1.1 Multi-Project Consumer Rollout` - future rollout to consumer repositories without shared durable truth.
+- `R1.2 Operational Hardening` - future cleanup, logging, MCP, config sentinel, and rollback hardening.
+- `R2.0 Production Durable Team` - future production target, not current implementation.
+
+Default boundary for all R0.6 slices:
 
 - use read-only status and planning surfaces first
 - do not modify `.omx/state/`; `.omx/state/` is the repo-local durable-state directory
