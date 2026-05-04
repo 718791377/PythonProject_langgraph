@@ -29,6 +29,11 @@ documents:
     status: draft
     canonical_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md
+  - doc_id: codex_business_capability_profiles
+    doc_class: implementation_reference
+    status: draft
+    canonical_path: docs_bilingual/implementation_plans/codex_business_capability_profiles.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_business_capability_profiles.zh-CN.md
 
   - doc_id: codex_user_level_cross_session_durable_state_isolation_plan
     doc_class: implementation_plan
