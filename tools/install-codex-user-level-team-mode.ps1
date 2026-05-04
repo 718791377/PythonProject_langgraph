@@ -578,6 +578,123 @@ function ConvertTo-TomlLiteralString {
   return ('"' + $normalized + '"')
 }
 
+function Get-WindowsTaskkillCmdShimContent {
+  return @"
+@REM $Script:ManagedMarker
+@ECHO OFF
+SETLOCAL
+SET "REAL_TASKKILL=%SystemRoot%\System32\taskkill.exe"
+IF NOT EXIST "%REAL_TASKKILL%" SET "REAL_TASKKILL=C:\Windows\System32\taskkill.exe"
+SET "ERR_FILE=%TEMP%\codex-taskkill-shim-%RANDOM%-%RANDOM%.err"
+"%REAL_TASKKILL%" %* >NUL 2>"%ERR_FILE%"
+SET "EXIT_CODE=%ERRORLEVEL%"
+IF "%EXIT_CODE%"=="0" (
+  DEL "%ERR_FILE%" >NUL 2>NUL
+  EXIT /B 0
+)
+IF EXIST "%ERR_FILE%" TYPE "%ERR_FILE%" 1>&2
+DEL "%ERR_FILE%" >NUL 2>NUL
+ECHO taskkill shim failed with exit code %EXIT_CODE%. 1>&2
+EXIT /B %EXIT_CODE%
+"@
+}
+
+function Get-WindowsTaskkillPowerShellShimContent {
+  return @"
+# $Script:ManagedMarker
+[CmdletBinding()]
+param(
+  [Parameter(ValueFromRemainingArguments = `$true)]
+  [string[]]`$Arguments
+)
+
+`$realTaskkill = Join-Path `$env:SystemRoot 'System32\taskkill.exe'
+if (-not (Test-Path -LiteralPath `$realTaskkill)) {
+  `$realTaskkill = 'C:\Windows\System32\taskkill.exe'
+}
+
+`$stdout = [System.IO.Path]::GetTempFileName()
+`$stderr = [System.IO.Path]::GetTempFileName()
+try {
+  `$process = Start-Process -FilePath `$realTaskkill -ArgumentList `$Arguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput `$stdout -RedirectStandardError `$stderr
+  if (`$process.ExitCode -eq 0) {
+    exit 0
+  }
+
+  Get-Content -LiteralPath `$stdout -ErrorAction SilentlyContinue | ForEach-Object { [Console]::Error.WriteLine(`$_) }
+  Get-Content -LiteralPath `$stderr -ErrorAction SilentlyContinue | ForEach-Object { [Console]::Error.WriteLine(`$_) }
+  [Console]::Error.WriteLine("taskkill shim failed with exit code {0}." -f `$process.ExitCode)
+  exit `$process.ExitCode
+}
+finally {
+  Remove-Item -LiteralPath `$stdout, `$stderr -Force -ErrorAction SilentlyContinue
+}
+"@
+}
+
+function Get-WindowsTaskkillCSharpShimSourceContent {
+  return @"
+// $Script:ManagedMarker
+using System;
+using System.Diagnostics;
+using System.IO;
+
+public static class Program
+{
+    public static int Main(string[] args)
+    {
+        string systemRoot = Environment.GetEnvironmentVariable("SystemRoot");
+        if (String.IsNullOrWhiteSpace(systemRoot))
+        {
+            systemRoot = "C:\\Windows";
+        }
+
+        string realTaskkill = Path.Combine(systemRoot, "System32", "taskkill.exe");
+        if (!File.Exists(realTaskkill))
+        {
+            realTaskkill = "C:\\Windows\\System32\\taskkill.exe";
+        }
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = realTaskkill,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+
+        foreach (string arg in args)
+        {
+            startInfo.ArgumentList.Add(arg);
+        }
+
+        using (var process = Process.Start(startInfo))
+        {
+            string stdout = process.StandardOutput.ReadToEnd();
+            string stderr = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            if (process.ExitCode == 0)
+            {
+                return 0;
+            }
+
+            if (!String.IsNullOrEmpty(stdout))
+            {
+                Console.Error.Write(stdout);
+            }
+            if (!String.IsNullOrEmpty(stderr))
+            {
+                Console.Error.Write(stderr);
+            }
+            Console.Error.WriteLine("taskkill shim failed with exit code {0}.", process.ExitCode);
+            return process.ExitCode;
+        }
+    }
+}
+"@
+}
+
 function Get-StartupLauncherContent {
   param(
     [Parameter(Mandatory)]
@@ -597,10 +714,30 @@ $runtimeContent
 `$status = Get-CodexUserLevelTeamModeStatus
 `$instructions = Get-CodexUserLevelDeveloperInstructions -Status `$status
 `$startupArgs = Get-CodexUserLevelTeamModeStartupArgs -Status `$status -DeveloperInstructions `$instructions
-& `$nativeCodexCommandPath @startupArgs @Arguments
-`$exitCode = 0
-if (Test-Path -LiteralPath variable:LASTEXITCODE) {
-  `$exitCode = [int]`$LASTEXITCODE
+`$previousPath = [string]`$env:Path
+`$previousPathExt = [string]`$env:PATHEXT
+`$cleanupShimDirectory = Join-Path `$PSScriptRoot 'win-shims'
+try {
+  if (Test-Path -LiteralPath `$cleanupShimDirectory) {
+    if ([string]::IsNullOrWhiteSpace(`$env:Path)) {
+      `$env:Path = `$cleanupShimDirectory
+    } else {
+      `$env:Path = `$cleanupShimDirectory + ';' + `$env:Path
+    }
+    if (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.CMD;*') {
+      `$env:PATHEXT = '.CMD;' + `$env:PATHEXT
+    }
+  }
+
+  & `$nativeCodexCommandPath @startupArgs @Arguments
+  `$exitCode = 0
+  if (Test-Path -LiteralPath variable:LASTEXITCODE) {
+    `$exitCode = [int]`$LASTEXITCODE
+  }
+}
+finally {
+  `$env:Path = `$previousPath
+  `$env:PATHEXT = `$previousPathExt
 }
 exit `$exitCode
 "@
@@ -14385,6 +14522,7 @@ $resolvedNativeCodexCommandPath = Resolve-NativeCodexCommandPath
 $resolvedOmxCommandPath = Resolve-OmxCommandPath
 $resolvedPythonCommandPath = Resolve-PythonCommandPath
 $binDirectory = Join-Path $targetCodexHome 'bin'
+$winShimsDirectory = Join-Path $binDirectory 'win-shims'
 $agentsDirectory = Join-Path $targetCodexHome 'agents'
 $docsDirectory = Join-Path $targetCodexHome 'docs'
 $teamsDirectory = Join-Path $targetCodexHome 'teams'
@@ -14411,6 +14549,7 @@ $managedProfileBlock = Get-ManagedProfileBlockContent -LauncherPath $launcherPat
 
 Ensure-Directory -Path $targetCodexHome
 Ensure-Directory -Path $binDirectory
+Ensure-Directory -Path $winShimsDirectory
 Ensure-Directory -Path $agentsDirectory
 Ensure-Directory -Path $docsDirectory
 Ensure-Directory -Path $teamsDirectory
@@ -14431,6 +14570,9 @@ $assets = @(
   [ordered]@{ Path = (Join-Path $agentsDirectory 'bug-judge.toml'); Content = (Get-BugJudgeTomlContent) }
   [ordered]@{ Path = (Join-Path $binDirectory '_codex-user-level-team-mode.ps1'); Content = (Get-SupportScriptContent) }
   [ordered]@{ Path = $launcherPath; Content = (Get-StartupLauncherContent -NativeCommandPath $resolvedNativeCodexCommandPath) }
+  [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill.cmd'); Content = (Get-WindowsTaskkillCmdShimContent) }
+  [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill.ps1'); Content = (Get-WindowsTaskkillPowerShellShimContent) }
+  [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill-shim-source.cs'); Content = (Get-WindowsTaskkillCSharpShimSourceContent) }
   [ordered]@{ Path = $explicitWrappedCodexPs1Path; Content = (Get-ExplicitWrappedCodexPs1Content -LauncherPath $launcherPath) }
   [ordered]@{ Path = $explicitWrappedCodexCmdPath; Content = (Get-ExplicitLauncherCmdContent -TargetPs1Path $explicitWrappedCodexPs1Path) }
   [ordered]@{ Path = $explicitNativeBypassPs1Path; Content = (Get-ExplicitNativeBypassPs1Content -NativeCommandPath $resolvedNativeCodexCommandPath) }
@@ -14627,6 +14769,13 @@ $manifest = [ordered]@{
   generated_files = $generatedFiles
   startup_binding = [ordered]@{
     launcher_path = $launcherPath
+    cleanup_output_control = [ordered]@{
+      win_shims_directory = $winShimsDirectory
+      taskkill_cmd_path = (Join-Path $winShimsDirectory 'taskkill.cmd')
+      taskkill_ps1_path = (Join-Path $winShimsDirectory 'taskkill.ps1')
+      taskkill_shim_source_path = (Join-Path $winShimsDirectory 'taskkill-shim-source.cs')
+      scoped_to_wrapped_launch = $true
+    }
     powershell_profile_path = $resolvedPowerShellProfilePath
     powershell_profile_status = $profileStatus
     native_codex_command_path = $resolvedNativeCodexCommandPath

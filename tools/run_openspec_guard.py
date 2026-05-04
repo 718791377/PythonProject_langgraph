@@ -100,6 +100,7 @@ def main() -> int:
     safety_rule_script_backing_script = root / "tools" / "check_safety_rule_script_backing.py"
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
+    windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
 
@@ -123,6 +124,8 @@ def main() -> int:
         raise SystemExit(f"Missing OpenSpec code archive evidence check script: {openspec_code_archive_evidence_script}")
     if not mcp_router_scope_policy_script.exists():
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
+    if not windows_cleanup_output_control_script.exists():
+        raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
     if not worktree_hygiene_script.exists():
         raise SystemExit(f"Missing worktree session hygiene check script: {worktree_hygiene_script}")
     if not session_ownership_claims_script.exists():
@@ -225,6 +228,11 @@ def main() -> int:
                 "check_mcp_router_scope_policy",
                 [str(python_exe), str(mcp_router_scope_policy_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during MCP Router scope policy verification.",
+            ),
+            (
+                "check_windows_cleanup_output_control",
+                [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Windows cleanup-output control verification.",
             ),
             (
                 "check_worktree_session_hygiene",
@@ -384,6 +392,11 @@ def main() -> int:
         [str(python_exe), str(mcp_router_scope_policy_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during MCP Router scope policy verification.",
+    )
+    run_checked(
+        [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Windows cleanup-output control verification.",
     )
 
     run_checked(
