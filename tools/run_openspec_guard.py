@@ -101,6 +101,7 @@ def main() -> int:
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
+    durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
 
@@ -126,6 +127,8 @@ def main() -> int:
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
     if not windows_cleanup_output_control_script.exists():
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
+    if not durable_routing_smoke_gate_template_script.exists():
+        raise SystemExit(f"Missing durable routing smoke gate template check script: {durable_routing_smoke_gate_template_script}")
     if not worktree_hygiene_script.exists():
         raise SystemExit(f"Missing worktree session hygiene check script: {worktree_hygiene_script}")
     if not session_ownership_claims_script.exists():
@@ -233,6 +236,11 @@ def main() -> int:
                 "check_windows_cleanup_output_control",
                 [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Windows cleanup-output control verification.",
+            ),
+            (
+                "check_durable_routing_smoke_gate_template",
+                [str(python_exe), str(durable_routing_smoke_gate_template_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during durable routing smoke gate template verification.",
             ),
             (
                 "check_worktree_session_hygiene",
@@ -397,6 +405,12 @@ def main() -> int:
         [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Windows cleanup-output control verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(durable_routing_smoke_gate_template_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during durable routing smoke gate template verification.",
     )
 
     run_checked(
