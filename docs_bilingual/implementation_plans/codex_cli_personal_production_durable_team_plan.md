@@ -689,25 +689,51 @@ Recommended tooling:
 
 This draft must be delivered through smaller release slices instead of one long implementation wave.
 
-Recommended release train:
-
-| Release | Meaning | Implementation posture |
-| --- | --- | --- |
-| `R0 Governance Baseline` | Startup, OpenSpec, worktree, session-ownership, MCP scope, and safety-rule script backing. | Mostly implemented baseline. |
-| `R0.5 Inspectable Durable State` | Read-only durable state status, selector safety, and helper mirror source-of-truth. | Mostly implemented baseline. |
-| `R0.6 Durable Routing Smoke Gate` | Dry-run or read-only gate for future automatic durable routing exercise. | Next active release slice. |
-| `R0.7 Native OMX Adoption MVP` | Controlled adoption of `native_omx` for one low-risk worker-centric task. | Future reviewed release slice. |
-| `R0.8 LangGraph Adoption MVP` | Controlled adoption of `langgraph` for one graph-shaped task with checkpoint, approval, frozen brief, or survivor queue signals. | Future reviewed release slice. |
-| `R1.0 Personal Durable Team MVP` | First multi-project usable personal durable-team MVP with inspected lanes and guarded actions. | Future MVP, not current implementation. |
-| `R1.1 Multi-project Consumer Rollout` | Consumer rollout across projects while preserving repo-local durable truth. | Future rollout. |
-| `R2.0 Production Durable Team` | Full production target with richer memory, recovery, GUI, and graph-native orchestration. | North-star target, not current implementation. |
-
 Release rules:
 
 - This draft stays `status: draft` until a specific release slice is promoted through OpenSpec.
 - Each release slice must have its own target repository, phase, task scope, validation path, rollback path, and operator consent boundary.
 - A release slice may update this draft, but it must not claim the whole production durable-team target is implemented.
-- Runtime exercises begin at `R0.6 Durable Routing Smoke Gate`, and that release is read-only by default.
+- One subrelease should normally map to one OpenSpec change and one GitLab MR.
+- Runtime exercises begin only after the R0.6 template and checker slices are in place.
+
+Detailed release ladder:
+
+| Release | Meaning | Implementation posture |
+| --- | --- | --- |
+| `R0 Governance Baseline` | Startup, OpenSpec, worktree, session ownership, MCP scope, and safety-rule script backing. | Mostly implemented baseline. |
+| `R0.5 Inspectable Durable State` | Read-only durable state status, selector safety, and helper mirror source-of-truth. | Mostly implemented baseline. |
+| `R0.6.0 Gate Template` | Template for future smoke/adoption gate changes and their required fields. | Next safe planning slice. |
+| `R0.6.1 Gate Field Checker` | Checker-backed enforcement for required gate fields. | Next safe script-backed slice. |
+| `R0.6.2 Read-Only State Sampling` | Status-only sampling for one target repository. | Future read-only slice. |
+| `R0.6.3 Dry-Run Routing Decision` | No-team, native_omx, or langgraph decision explanation without apply mode. | Future dry-run slice. |
+| `R0.6.4 Expected-Result Fixture` | Regression fixture for the expected dry-run decision. | Future test slice. |
+| `R0.6.5 Cross-Project Read-Only Review` | Consumer-project review that proves repo-local truth does not leak. | Future cross-project slice. |
+| `R0.7.0 Low-Risk Target Selection` | First native_omx target repository and task selection. | Future reviewed slice. |
+| `R0.7.1 Native OMX Dry-Run Stability` | Stable native_omx plan before apply mode. | Future dry-run slice. |
+| `R0.7.2 Explicit Apply Consent` | Exact consent record before `-Apply`. | Future consent slice. |
+| `R0.7.3 Lifecycle Record Check` | Launch, reuse, shutdown, and tracked-record evidence. | Future lifecycle slice. |
+| `R0.7.4 Restart Recovery Check` | Cold-start inspection of native_omx state. | Future recovery slice. |
+| `R0.7.5 Native OMX Closeout Archive` | Evidence archive and residue cleanup for native_omx adoption. | Future closeout slice. |
+| `R0.8.0 Graph-Shaped Task Selection` | LangGraph target task with checkpoint, approval, frozen brief, or survivor-queue signal. | Future reviewed slice. |
+| `R0.8.1 Checkpoint Smoke` | Save and resume evidence for langgraph state. | Future smoke slice. |
+| `R0.8.2 Approval Gate Smoke` | Pause and approval evidence for operator decisions. | Future smoke slice. |
+| `R0.8.3 Frozen Brief Smoke` | Research-to-implementation frozen brief evidence. | Future handoff slice. |
+| `R0.8.4 Survivor Queue Smoke` | Bug-review survivor queue evidence. | Future triage slice. |
+| `R0.8.5 LangGraph Closeout Archive` | Evidence archive without making langgraph default for unrelated tasks. | Future closeout slice. |
+| `R0.9 Lane Arbitration` | Conflict rules for native_omx, langgraph, and no durable team. | Future arbitration release. |
+| `R1.0 Personal Durable Team MVP` | First single-user, multi-project usable MVP. | Future MVP. |
+| `R1.1 Multi-Project Consumer Rollout` | Rollout to consumer repositories while preserving repo-local durable truth. | Future rollout. |
+| `R1.2 Operational Hardening` | Logging, MCP scope, config sentinel, helper mirror, cleanup, and rollback hardening. | Future hardening release. |
+| `R2.0.0 Production Readiness Standard` | Production acceptance criteria and release gates. | Future production slice. |
+| `R2.0.1 Durable Memory Model` | Memory boundaries, retention, and replay policy. | Future production slice. |
+| `R2.0.2 Crash Recovery` | Safe inspection and resume after interruption. | Future production slice. |
+| `R2.0.3 Graph-Native Orchestration` | Graph-native orchestration where graph-shaped execution is warranted. | Future production slice. |
+| `R2.0.4 Security And Secrets Boundary` | Credentials, permissions, and untrusted-input protection. | Future production slice. |
+| `R2.0.5 Performance And Concurrency Test` | Worker count, provider pacing, and long-running stability tests. | Future production slice. |
+| `R2.0.6 Operator Dashboard` | Clear operator-facing status and control surface. | Future production slice. |
+| `R2.0.7 Multi-Project Maintenance Strategy` | Long-term maintenance across repositories. | Future production slice. |
+| `R2.0.8 Production Release And Rollback` | Formal release only after rollback evidence exists. | Final production slice. |
 
 ### 14.1 Stage 0: Narrative And Governance Alignment
 

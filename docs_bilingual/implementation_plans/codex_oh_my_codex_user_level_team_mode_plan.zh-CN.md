@@ -179,6 +179,40 @@ Release 0.6 默认边界：
 - 不写 `.omx/state/`；`.omx/state/` 是 repo-local durable-state 目录。
 - 不启动或关闭 `omx team`；`omx team` 是 durable worker-team runtime 命令。
 
+更细 release ladder：
+
+- `R0.6.0 Gate Template` —— 模板切片，用来定义 smoke/adoption gate 文档形状和必填字段。
+- `R0.6.1 Gate Field Checker` —— checker 切片，用来在 future gate change 缺少必填字段时失败。
+- `R0.6.2 Read-Only State Sampling` —— 只读采样切片，用来对一个 target repository 运行 status-only durable-state sampling。
+- `R0.6.3 Dry-Run Routing Decision` —— dry-run 判断切片，用来解释 no-team、native_omx 或 langgraph decision，但不 apply。
+- `R0.6.4 Expected-Result Fixture` —— fixture 切片，用来把预期 dry-run decisions 固化为 regression evidence。
+- `R0.6.5 Cross-Project Read-Only Review` —— 跨项目只读复核切片，用来证明 consumer repositories 不会继承本仓库 durable truth。
+- `R0.7.0 Low-Risk Target Selection` —— 选择切片，用来指定一个足够安全的 repository 和 task。
+- `R0.7.1 Native OMX Dry-Run Stability` —— dry-run 稳定性切片，用来在 apply mode 之前证明 native_omx selection 稳定。
+- `R0.7.2 Explicit Apply Consent` —— 授权切片，用来记录 `-Apply` 前必须具备的精确 operator approval。
+- `R0.7.3 Lifecycle Record Check` —— 生命周期切片，用来验证 launch、reuse、shutdown 和 tracked-record reporting。
+- `R0.7.4 Restart Recovery Check` —— 重启恢复切片，用来确认冷启动会话能安全 inspect native_omx state。
+- `R0.7.5 Native OMX Closeout Archive` —— 收尾归档切片，用来归档 evidence 并避免留下 unmanaged active team residue。
+- `R0.8.0 Graph-Shaped Task Selection` —— 选择切片，要求 checkpoint、approval gate、frozen brief、survivor queue 或等价 graph signal。
+- `R0.8.1 Checkpoint Smoke` —— checkpoint 切片，用来证明 state 可以保存和恢复。
+- `R0.8.2 Approval Gate Smoke` —— approval 切片，用来证明 execution 可以暂停等待 operator decision。
+- `R0.8.3 Frozen Brief Smoke` —— handoff 切片，用来证明 research 可以冻结成 implementation brief。
+- `R0.8.4 Survivor Queue Smoke` —— triage 切片，用来证明 reviewed bug survivors 可以进入 debugger-lane work。
+- `R0.8.5 LangGraph Closeout Archive` —— 收尾归档切片，用来归档 evidence，同时不把 langgraph 变成无关 future tasks 的默认选择。
+- `R0.9 Lane Arbitration` —— 决策层切片，用来在多 lane 同时 enabled 时选择 native_omx、langgraph 或 no durable team。
+- `R1.0 Personal Durable Team MVP` —— MVP 切片，用来形成第一个单用户、多项目可用版本。
+- `R1.1 Multi-Project Consumer Rollout` —— consumer rollout 切片，用来推广到其他项目，同时保持 repo-local durable truth。
+- `R1.2 Operational Hardening` —— hardening 切片，用来处理 logging、MCP scope、config sentinel、helper mirror、cleanup 和 rollback。
+- `R2.0.0 Production Readiness Standard` —— 准入切片，用来冻结 production acceptance criteria。
+- `R2.0.1 Durable Memory Model` —— memory 切片，用来定义 durable memory boundaries 和 retention rules。
+- `R2.0.2 Crash Recovery` —— recovery 切片，用来证明 interrupted work 可以安全 inspect 和 resume。
+- `R2.0.3 Graph-Native Orchestration` —— graph 切片，只在有充分理由时提升 graph-shaped orchestration。
+- `R2.0.4 Security And Secrets Boundary` —— security 切片，用来保护 credentials、permissions 和 untrusted inputs。
+- `R2.0.5 Performance And Concurrency Test` —— scale 切片，用来测试 worker count、provider pacing 和 long-running stability。
+- `R2.0.6 Operator Dashboard` —— observability 切片，用来给 operator 一个清晰 status surface。
+- `R2.0.7 Multi-Project Maintenance Strategy` —— maintenance 切片，用来定义跨 repositories 的长期维护策略。
+- `R2.0.8 Production Release And Rollback` —— release 切片，只在 rollback evidence 存在后标记 production release。
+
 ## 附录 C：`官方更新 + 差异检查 + 本地补丁重放` 标准流程
 
 这一节给出当前仓库建议采用的标准维护顺序。目标不是长期 fork 官方安装产物，而是：

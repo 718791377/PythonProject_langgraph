@@ -481,33 +481,111 @@ Practical reading rule:
 
 ### 6.9 Release train overlay after P0-P7
 
-The P0-P7 implementation batches are already implemented baseline work. Future work should therefore use small release slices instead of reopening completed P batches.
+The P0-P7 implementation batches are already implemented baseline work. Future work should use small release slices instead of reopening completed P batches or jumping into the full production draft.
 
-Current release interpretation:
+Release-slice rule:
 
-- `R0 Governance Baseline` - release label for startup, OpenSpec guard, worktree isolation, session ownership, MCP scope, and safety-rule script backing.
-- `R0.5 Inspectable Durable State` - release label for read-only status surfaces such as `codex-durable-state-status.ps1`, the generated helper that reports durable backend status.
-- `R0.6 Durable Routing Smoke Gate` - next release label for dry-run or read-only automatic routing validation before runtime exercise.
-- `R0.7 Native OMX Adoption MVP` - future release label for controlled `native_omx` adoption in one low-risk worker-centric task.
-- `R0.8 LangGraph Adoption MVP` - future release label for controlled `langgraph` adoption in a graph-shaped task with checkpoint, approval, frozen brief, or survivor-queue signals.
-- `R1.0 Personal Durable Team MVP` - future release label for the first multi-project usable personal durable-team MVP.
-- `R2.0 Production Durable Team` - future release label for the full production target, including stronger memory, recovery, GUI, and graph-native orchestration surfaces.
+- one subrelease should normally map to one OpenSpec change and one GitLab MR
+- every subrelease must state its target repository, phase, task scope, validation path, rollback path, and operator consent boundary
+- runtime mutation remains disabled until a reviewed change and the operator explicitly authorize it
+- the draft production durable-team plan remains north-star material until one reviewed release slice promotes a bounded part of it
 
-Release 0.6 is the only next release slice implied by the completed MR 1 through MR 6 queue. It is a gate definition and validation slice, not permission to mutate state.
+Detailed release train:
 
-Every future Release 0.6 smoke or adoption-gate change must declare:
+#### R0.6 Durable Routing Smoke Gate
 
-- `target_repository` - the repository root whose source, OpenSpec artifacts, and repo-local durable state are being evaluated.
-- `phase` - the project phase that drives routing thresholds.
-- `task` - the concrete validation question or work item being evaluated.
-- `operator_consent_boundary` - the explicit line between read-only planning and mutating actions such as `-Apply`, `.omx/state/` writes, or durable-team launch.
+`R0.6 Durable Routing Smoke Gate` is the read-first gate for future automatic durable routing exercise.
 
-Default Release 0.6 boundary:
+- `R0.6.0 Gate Template` - template slice that defines the smoke/adoption gate document shape and required fields.
+- `R0.6.1 Gate Field Checker` - checker slice that fails a future gate change when required fields are missing.
+- `R0.6.2 Read-Only State Sampling` - inspection slice that runs status-only durable-state sampling against one target repository.
+- `R0.6.3 Dry-Run Routing Decision` - planning slice that explains the no-team, native_omx, or langgraph decision without applying it.
+- `R0.6.4 Expected-Result Fixture` - fixture slice that captures expected dry-run decisions as regression evidence.
+- `R0.6.5 Cross-Project Read-Only Review` - cross-project slice that proves consumer repositories do not inherit this repository's durable truth.
+
+Default R0.6 boundary:
 
 - dry-run or read-only inspection only
 - no `omx-team-auto.ps1 -Apply`; `-Apply` is the helper switch that executes a planned durable action
 - no `.omx/state/` writes; `.omx/state/` is the repo-local durable-state directory
 - no `omx team` launch or shutdown; `omx team` is the durable worker-team runtime command
+
+#### R0.7 Native OMX Adoption MVP
+
+`R0.7 Native OMX Adoption MVP` is the first controlled native_omx adoption lane for a low-risk worker-centric task.
+
+- `R0.7.0 Low-Risk Target Selection` - selection slice that names one repository and one task safe enough for native_omx adoption.
+- `R0.7.1 Native OMX Dry-Run Stability` - planning slice that proves native_omx selection is stable before apply mode.
+- `R0.7.2 Explicit Apply Consent` - consent slice that records the exact operator approval required before `-Apply`.
+- `R0.7.3 Lifecycle Record Check` - lifecycle slice that validates launch, reuse, shutdown, and tracked-record reporting.
+- `R0.7.4 Restart Recovery Check` - recovery slice that confirms a cold-start session can inspect the native_omx state safely.
+- `R0.7.5 Native OMX Closeout Archive` - closeout slice that archives evidence and leaves no unmanaged active team residue.
+
+#### R0.8 LangGraph Adoption MVP
+
+`R0.8 LangGraph Adoption MVP` is the first controlled langgraph adoption lane for a graph-shaped task.
+
+- `R0.8.0 Graph-Shaped Task Selection` - selection slice that requires checkpoint, approval gate, frozen brief, survivor queue, or equivalent graph signal.
+- `R0.8.1 Checkpoint Smoke` - checkpoint slice that proves state can be saved and resumed.
+- `R0.8.2 Approval Gate Smoke` - approval slice that proves execution can pause for explicit operator decision.
+- `R0.8.3 Frozen Brief Smoke` - handoff slice that proves research can be frozen into an implementation brief.
+- `R0.8.4 Survivor Queue Smoke` - triage slice that proves reviewed bug survivors can become debugger-lane work.
+- `R0.8.5 LangGraph Closeout Archive` - closeout slice that archives evidence without making langgraph the default for unrelated future tasks.
+
+#### R0.9 Lane Arbitration
+
+`R0.9 Lane Arbitration` is the decision layer for choosing native_omx, langgraph, or no durable team when multiple lanes are enabled.
+
+- `R0.9.0 Lane Rule Fixture` - fixture slice that covers worker-centric, graph-shaped, verify-only, and stabilize phases.
+- `R0.9.1 Legacy State Non-Activation` - safety slice that proves legacy selectors or thread IDs do not dominate unrelated future sessions.
+- `R0.9.2 Scoped Activation Selector` - selector slice that binds durable activation to the current repository and current task flow.
+- `R0.9.3 Operator Report` - reporting slice that always distinguishes installed, enabled, selected, and ready.
+- `R0.9.4 Cross-Lane Conflict Regression` - regression slice that checks native_omx and langgraph conflict cases.
+
+#### R1.0 Personal Durable Team MVP
+
+`R1.0 Personal Durable Team MVP` is the first single-user, multi-project usable MVP.
+
+- `R1.0.0 Cold-Start Summary Stability` - startup slice that proves a new session can recover required context from startup summaries.
+- `R1.0.1 Single-Repository End-to-End` - end-to-end slice that runs one repository through plan, execute, verify, and archive.
+- `R1.0.2 Worker Write-Set Isolation` - isolation slice that proves workers only edit their assigned paths.
+- `R1.0.3 Leader Fan-In Discipline` - fan-in slice that keeps final integration and acceptance in the leader session.
+- `R1.0.4 Failure Recovery` - recovery slice that handles stalled workers, failed workers, and stale local residue.
+- `R1.0.5 Script-Backed Safety Closure` - safety slice that proves critical boundaries have checker or guard backing.
+
+#### R1.1 Multi-Project Consumer Rollout
+
+`R1.1 Multi-Project Consumer Rollout` extends the MVP to consumer repositories without sharing repo-local durable truth.
+
+- `R1.1.0 First Consumer Read-Only Onboarding` - onboarding slice for the first legacy consumer repository selected by an explicit future change.
+- `R1.1.1 CLIProxyAPI Read-Only Onboarding` - onboarding slice for `D:\PythonProject_CLIProxyAPI`, the CLIProxyAPI consumer repository.
+- `R1.1.2 Unknown Project Onboarding` - onboarding slice for `D:\project`, the generic unknown-project directory.
+- `R1.1.3 Browser Capability Preservation` - capability slice that keeps browser automation available for projects that need it.
+- `R1.1.4 Repo-Local Truth Separation` - isolation slice that proves each project keeps separate OpenSpec, `.omx/state/`, CI, and publication truth.
+
+#### R1.2 Operational Hardening
+
+`R1.2 Operational Hardening` reduces noise, accidental configuration drift, and unsafe cleanup.
+
+- `R1.2.0 Wrapper Error-Only Logging` - logging slice that keeps wrapper noise out of normal conversations.
+- `R1.2.1 MCP Scope Regression` - MCP slice that keeps Codex-dedicated omx_* MCP tools direct and shared MCP Router tools separate.
+- `R1.2.2 Config Rewrite Sentinel` - sentinel slice that detects unwanted edits to `config.toml`, the user-level Codex config file.
+- `R1.2.3 Helper Mirror Verification` - mirror slice that proves user-level helper copies are install artifacts, not source of truth.
+- `R1.2.4 Cleanup And Rollback Scripts` - cleanup slice that provides safe rollback and residue cleanup helpers.
+
+#### R2.0 Production Durable Team
+
+`R2.0 Production Durable Team` is the north-star production track, not current implementation.
+
+- `R2.0.0 Production Readiness Standard` - readiness slice that freezes production acceptance criteria.
+- `R2.0.1 Durable Memory Model` - memory slice that defines durable memory boundaries and retention rules.
+- `R2.0.2 Crash Recovery` - recovery slice that proves interrupted work can be inspected and resumed safely.
+- `R2.0.3 Graph-Native Orchestration` - graph slice that promotes graph-shaped orchestration only when it is warranted.
+- `R2.0.4 Security And Secrets Boundary` - security slice that protects credentials, permissions, and untrusted inputs.
+- `R2.0.5 Performance And Concurrency Test` - scale slice that tests worker count, provider pacing, and long-running stability.
+- `R2.0.6 Operator Dashboard` - observability slice that gives the operator a clear status surface.
+- `R2.0.7 Multi-Project Maintenance Strategy` - maintenance slice that defines long-term support across repositories.
+- `R2.0.8 Production Release And Rollback` - release slice that marks production release only after rollback evidence exists.
 
 ## 7. Recommended Invocation Rhythm
 

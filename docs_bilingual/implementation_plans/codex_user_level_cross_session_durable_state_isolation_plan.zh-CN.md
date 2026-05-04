@@ -131,6 +131,22 @@ MR 6 readiness review 之后，下一条 active release slice 是 `R0.6 Durable 
 - 不执行 `omx-team-auto.ps1 -Apply`；`-Apply` 是执行 planned durable action 的 helper 开关。
 - 不把 draft production durable-team plan 提升为 active implementation。
 
+更细的 staged next-decision path：
+
+- `R0.6.0 Gate Template` —— 立即下一步，创建 reusable smoke/adoption gate template，在它落地前不运行任何 routing 命令。
+- `R0.6.1 Gate Field Checker` —— 立即下一步，增加 checker-backed enforcement，要求 future gates 声明 `target_repository`、`phase`、`task` 和 `operator_consent_boundary`。
+- `R0.6.2 Read-Only State Sampling` —— 后续只读切片，用 read-only state surfaces 检查一个 repository。
+- `R0.6.3 Dry-Run Routing Decision` —— 后续 dry-run 切片，解释 routing decision，但不执行 `-Apply`。
+- `R0.6.4 Expected-Result Fixture` —— 后续 fixture 切片，把预期 decision 固化成 regression fixture。
+- `R0.6.5 Cross-Project Read-Only Review` —— 后续跨项目切片，在 consumer repository 上重复只读复核。
+- `R0.7 Native OMX Adoption MVP` —— future controlled native_omx adoption，必须等 R0.6 evidence 存在后再进入。
+- `R0.8 LangGraph Adoption MVP` —— future controlled langgraph adoption，只面向 graph-shaped tasks。
+- `R0.9 Lane Arbitration` —— future conflict 和 selection rules，用于多个 durable lanes 同时 enabled 的场景。
+- `R1.0 Personal Durable Team MVP` —— future 单用户、多项目 MVP。
+- `R1.1 Multi-Project Consumer Rollout` —— future consumer repositories rollout，但不共享 durable truth。
+- `R1.2 Operational Hardening` —— future cleanup、logging、MCP、config sentinel 和 rollback hardening。
+- `R2.0 Production Durable Team` —— future production target，不是当前实现。
+
 ### 下一步 decision point 的明确非目标
 
 - 不要把最终 `codex_cli_personal_production_durable_team_plan` draft 当成已经完成的能力来实施；它仍然只是北极星目标。
