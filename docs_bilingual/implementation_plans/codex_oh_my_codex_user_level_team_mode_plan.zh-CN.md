@@ -182,11 +182,21 @@ Release 0.6 默认边界：
 更细 release ladder：
 
 - `R0.6.0 Gate Template` —— 模板切片，用来定义 smoke/adoption gate 文档形状和必填字段。
-- `R0.6.1 Gate Field Checker` —— checker 切片，用来在 future gate change 缺少必填字段时失败。
+- `R0.6.1 Gate Field Checker And Codex Native Rollback Gate` —— checker 切片，用来在 future gate change 缺少必填字段时失败，并在 native Codex 或 rollback evidence 缺失时阻止 production marking。
 - `R0.6.2 Read-Only State Sampling` —— 只读采样切片，用来对一个 target repository 运行 status-only durable-state sampling。
 - `R0.6.3 Dry-Run Routing Decision` —— dry-run 判断切片，用来解释 no-team、native_omx 或 langgraph decision，但不 apply。
 - `R0.6.4 Expected-Result Fixture` —— fixture 切片，用来把预期 dry-run decisions 固化为 regression evidence。
 - `R0.6.5 Cross-Project Read-Only Review` —— 跨项目只读复核切片，用来证明 consumer repositories 不会继承本仓库 durable truth。
+
+R0.6.1 Codex native rollback gate evidence：
+
+- `codex --version` —— 本地 smoke command，用来证明 native Codex entrypoint 仍可启动。
+- `codex-raw --version` —— 本地 smoke command，用来证明 stable raw bypass 仍可用。
+- `codex-ohmy --version` 或 `codex-ohmy --help` —— 本地 smoke command，用来证明 wrapped launcher 不会立即失败。
+- `test/install-codex-user-level-team-mode.test.ps1` —— PowerShell regression test，用来在临时目录证明 backup snapshot 和 rollback-on-error behavior。
+- `tools/codex_native_rollback_release_gate_template.json` —— JSON template，用来记录 production marking 前必需的 release evidence。
+- `tools/check_codex_native_rollback_release_gate_template.py` —— 静态 checker，用来验证 template 和 source evidence，且不修改 user-level Codex assets。
+
 - `R0.7.0 Low-Risk Target Selection` —— 选择切片，用来指定一个足够安全的 repository 和 task。
 - `R0.7.1 Native OMX Dry-Run Stability` —— dry-run 稳定性切片，用来在 apply mode 之前证明 native_omx selection 稳定。
 - `R0.7.2 Explicit Apply Consent` —— 授权切片，用来记录 `-Apply` 前必须具备的精确 operator approval。

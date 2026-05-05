@@ -102,6 +102,7 @@ def main() -> int:
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
+    codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
 
@@ -129,6 +130,8 @@ def main() -> int:
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
     if not durable_routing_smoke_gate_template_script.exists():
         raise SystemExit(f"Missing durable routing smoke gate template check script: {durable_routing_smoke_gate_template_script}")
+    if not codex_native_rollback_release_gate_template_script.exists():
+        raise SystemExit(f"Missing Codex native rollback release gate template check script: {codex_native_rollback_release_gate_template_script}")
     if not worktree_hygiene_script.exists():
         raise SystemExit(f"Missing worktree session hygiene check script: {worktree_hygiene_script}")
     if not session_ownership_claims_script.exists():
@@ -241,6 +244,11 @@ def main() -> int:
                 "check_durable_routing_smoke_gate_template",
                 [str(python_exe), str(durable_routing_smoke_gate_template_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during durable routing smoke gate template verification.",
+            ),
+            (
+                "check_codex_native_rollback_release_gate_template",
+                [str(python_exe), str(codex_native_rollback_release_gate_template_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Codex native rollback release gate template verification.",
             ),
             (
                 "check_worktree_session_hygiene",
@@ -411,6 +419,12 @@ def main() -> int:
         [str(python_exe), str(durable_routing_smoke_gate_template_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during durable routing smoke gate template verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(codex_native_rollback_release_gate_template_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Codex native rollback release gate template verification.",
     )
 
     run_checked(

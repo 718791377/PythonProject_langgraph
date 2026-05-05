@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "template_id": "codex-native-rollback-release-gate-template",
+  "release_floor": "R0.6.1",
+  "purpose": "Read-only template for proving native Codex preservation, raw bypass availability, wrapper smoke evidence, and rollback evidence before production marking.",
+  "defaults": {
+    "mutation_allowed": false,
+    "release_marking_allowed": false
+  },
+  "required_fields": [
+    "gate_id",
+    "target_repository",
+    "release_version",
+    "operator_consent_boundary",
+    "native_codex_entrypoint",
+    "raw_bypass_entrypoint",
+    "wrapped_entrypoint",
+    "installer_rollback_test",
+    "openspec_guard",
+    "config_toml_sentinel",
+    "manual_rollback_path",
+    "publication_rollback_path"
+  ],
+  "field_descriptions": {
+    "gate_id": "Stable identifier for a concrete release-gate evidence record.",
+    "target_repository": "Repository root that owns the source, OpenSpec artifacts, and release evidence.",
+    "release_version": "Release slice or version label being evaluated, such as R0.6.1.",
+    "operator_consent_boundary": "Boundary between read-only checks and any explicit operator-approved user-level mutation.",
+    "native_codex_entrypoint": "Evidence that native Codex still launches through codex --version.",
+    "raw_bypass_entrypoint": "Evidence that codex-raw still launches the native Codex bypass path.",
+    "wrapped_entrypoint": "Evidence that codex-ohmy wrapper starts or shows help without breaking daily use.",
+    "installer_rollback_test": "Repository test evidence for backup snapshots and rollback-on-error behavior.",
+    "openspec_guard": "Aggregate repository guard evidence, including OpenSpec validation and policy checkers.",
+    "config_toml_sentinel": "Evidence that config.toml rewrite detection or backup sentinel is checked before release.",
+    "manual_rollback_path": "Operator-visible restore path or backup snapshot evidence for manual version rollback.",
+    "publication_rollback_path": "GitLab/GitHub publication rollback path if a post-merge mirror or release tag must be reverted."
+  },
+  "protected_native_entrypoints": [
+    "codex",
+    "codex.cmd",
+    "codex.ps1"
+  ],
+  "allowed_check_types": [
+    "local_smoke",
+    "repository_test",
+    "repository_guard",
+    "sentinel",
+    "manual_rollback",
+    "publication_rollback"
+  ],
+  "required_release_checks": [
+    {
+      "id": "native_codex_entrypoint",
+      "check_type": "local_smoke",
+      "command_or_path": "codex --version",
+      "description": "Local smoke command proving the native Codex entrypoint still launches.",
+      "evidence_required": true,
+      "ci_required": false
+    },
+    {
+      "id": "raw_bypass_entrypoint",
+      "check_type": "local_smoke",
+      "command_or_path": "codex-raw --version",
+      "description": "Local smoke command proving the stable raw Codex bypass still launches.",
+      "evidence_required": true,
+      "ci_required": false
+    },
+    {
+      "id": "wrapped_entrypoint",
+      "check_type": "local_smoke",
+      "command_or_path": "codex-ohmy --version or codex-ohmy --help",
+      "description": "Local smoke command proving the stable wrapped Codex launcher does not fail immediately.",
+      "evidence_required": true,
+      "ci_required": false
+    },
+    {
+      "id": "installer_rollback_test",
+      "check_type": "repository_test",
+      "command_or_path": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\test\\install-codex-user-level-team-mode.test.ps1",
+      "description": "Repository test validating backup snapshots, unmanaged collision protection, native preservation, and rollback-on-error behavior.",
+      "evidence_required": true,
+      "ci_required": true
+    },
+    {
+      "id": "openspec_guard",
+      "check_type": "repository_guard",
+      "command_or_path": "python .\\tools\\run_openspec_guard.py --root . --tool codex --json",
+      "description": "Aggregate repository guard covering OpenSpec validation and policy checkers.",
+      "evidence_required": true,
+      "ci_required": true
+    },
+    {
+      "id": "config_toml_sentinel",
+      "check_type": "sentinel",
+      "command_or_path": "Check C:\\Users\\lenovo\\.codex\\config.toml backup or rewrite sentinel before production marking.",
+      "description": "Operator evidence that Codex user config rewrite detection is checked before release.",
+      "evidence_required": true,
+      "ci_required": false
+    },
+    {
+      "id": "manual_rollback_path",
+      "check_type": "manual_rollback",
+      "command_or_path": "C:\\Users\\lenovo\\.codex\\backups\\codex-user-level-team-mode\\<snapshot>\\manifest.json",
+      "description": "Operator-visible backup snapshot or documented restore path for manual version rollback.",
+      "evidence_required": true,
+      "ci_required": false
+    },
+    {
+      "id": "publication_rollback_path",
+      "check_type": "publication_rollback",
+      "command_or_path": "GitLab main revert plus GitHub mirror resync if a published release must be rolled back.",
+      "description": "Publication rollback path for reverting a merged GitLab-first release and resyncing the GitHub mirror.",
+      "evidence_required": true,
+      "ci_required": false
+    }
+  ],
+  "non_mutation_guards": [
+    "Do not modify codex, codex.cmd, or codex.ps1 from this release gate.",
+    "Do not write C:\\Users\\lenovo\\.codex\\config.toml from this release gate.",
+    "Do not install into the real user Codex home without a separate reviewed change and explicit operator consent.",
+    "Do not launch durable teams, native_omx, or LangGraph runtime from this release gate."
+  ],
+  "release_blockers": [
+    "Missing native Codex smoke evidence.",
+    "Missing raw bypass smoke evidence.",
+    "Missing wrapped launcher smoke evidence.",
+    "Missing installer rollback test evidence.",
+    "Missing config.toml sentinel evidence.",
+    "Missing manual rollback path evidence."
+  ]
+}

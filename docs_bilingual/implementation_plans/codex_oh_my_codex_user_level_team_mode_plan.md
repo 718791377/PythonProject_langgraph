@@ -497,7 +497,7 @@ Detailed release train:
 `R0.6 Durable Routing Smoke Gate` is the read-first gate for future automatic durable routing exercise.
 
 - `R0.6.0 Gate Template` - template slice that defines the smoke/adoption gate document shape and required fields.
-- `R0.6.1 Gate Field Checker` - checker slice that fails a future gate change when required fields are missing.
+- `R0.6.1 Gate Field Checker And Codex Native Rollback Gate` - checker slice that fails a future gate change when required fields are missing and blocks production marking when native Codex or rollback evidence is missing.
 - `R0.6.2 Read-Only State Sampling` - inspection slice that runs status-only durable-state sampling against one target repository.
 - `R0.6.3 Dry-Run Routing Decision` - planning slice that explains the no-team, native_omx, or langgraph decision without applying it.
 - `R0.6.4 Expected-Result Fixture` - fixture slice that captures expected dry-run decisions as regression evidence.
@@ -509,6 +509,15 @@ Default R0.6 boundary:
 - no `omx-team-auto.ps1 -Apply`; `-Apply` is the helper switch that executes a planned durable action
 - no `.omx/state/` writes; `.omx/state/` is the repo-local durable-state directory
 - no `omx team` launch or shutdown; `omx team` is the durable worker-team runtime command
+
+R0.6.1 Codex native rollback gate evidence:
+
+- `codex --version` - local smoke command proving the native Codex entrypoint still launches.
+- `codex-raw --version` - local smoke command proving the stable raw bypass remains available.
+- `codex-ohmy --version` or `codex-ohmy --help` - local smoke command proving the wrapped launcher does not fail immediately.
+- `test/install-codex-user-level-team-mode.test.ps1` - PowerShell regression test proving backup snapshot and rollback-on-error behavior in temporary directories.
+- `tools/codex_native_rollback_release_gate_template.json` - JSON template that records required release evidence before production marking.
+- `tools/check_codex_native_rollback_release_gate_template.py` - static checker that validates the template and source evidence without mutating user-level Codex assets.
 
 #### R0.7 Native OMX Adoption MVP
 
