@@ -440,3 +440,13 @@ This plan is complete only when all of the following are true:
 5. No direct mutation of legacy `.omx/state` is required to make the new model safe.
 6. Repository source and repository tests remain the authority for the activation contract, while user-level mirrors remain only the shared execution and control surface.
 7. Many `PyCharm / Codex CLI` projects on the same machine can reuse the same user-level helper layer without inheriting each other's canonical durable state.
+
+## 11. Shared Model Services Do Not Share Durable State
+
+A shared local model service is allowed only as a provider service. It does not change durable-state isolation.
+
+`D:\PythonProject_langgraph\.local\models\` is an ignored local model asset directory for shared llama or GGUF files. It is not a repo-local durable-state directory.
+
+`CODEX_LOCAL_MODEL_ROOT` is the environment variable for the shared model root. It may help consumer repositories discover model files or endpoints, but it must not point to `.omx/state/` and must not become activation truth.
+
+Consumer repositories may call provider profiles such as `local-judge-qwen` or `local-embed-jina`, but each repository still owns its own `.omx/state/`, OpenSpec artifacts, approval state, recovery evidence, business state, and logs.

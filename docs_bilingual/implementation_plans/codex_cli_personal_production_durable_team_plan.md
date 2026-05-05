@@ -1013,3 +1013,20 @@ Fixed decisions at this stage:
 - `Redis` and `jina-embeddings` are introduced only when clearly needed
 - `ClawTeam-OpenClaw`, `OpenViking`, and `lossless-claw-enhanced` remain design references only
 - `Light Judge` and `memory-lancedb-pro-skill` do not enter mainline dependencies
+
+## 20. Release Playbook And Shared Local Model Providers
+
+This draft remains the north-star target. Concrete implementation MUST use the smaller playbook and migration documents below instead of claiming this full draft is already implemented.
+
+- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_playbook.md` - release-slice playbook that turns the draft target into cold-start executable slices with scope, evidence, validation, and rollback.
+- `docs_bilingual/implementation_plans/codex_shared_local_model_assets_migration_plan.md` - migration plan for centrally managing ignored local llama and GGUF assets under the orchestration repository without creating dirty Git work.
+- `docs_bilingual/governance/codex_local_model_provider_policy.md` - governance policy for treating local model services as providers rather than durable truth, approval authority, or backend selectors.
+
+Local model provider profiles are advisory service profiles only:
+
+- `local-judge-qwen` - provider profile for low-cost judgement, summary compression, candidate bug triage, and inspect-summary hints using `Qwen3.5-9B-Q4_K_M-GGUF`.
+- `local-embed-jina` - provider profile for local embeddings and retrieval over documents, OpenSpec artifacts, implementation plans, reports, and evidence using `jina-embeddings-v5-text-small-retrieval-GGUF`.
+
+`Light Judge` remains a strategy. It MAY help generate survivor queues or triage candidate findings, but it MUST NOT approve work, own durable state, choose backend families, or replace verifier evidence.
+
+`CODEX_LOCAL_MODEL_ROOT` is the environment variable for the shared local model root. It should point to an ignored local path such as `D:\PythonProject_langgraph\.local\models` and must not be used as a durable-state root.

@@ -7,3 +7,7 @@ __pycache__/
 .idea/
 node_modules/
 openspec-guard-report.json
+.local/
+.runtime/
+*.gguf
+*.GGUF

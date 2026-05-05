@@ -2056,3 +2056,25 @@ An official update is not considered complete until all of the following are tru
 That is the repository-standard meaning of:
 
 - **official update + diff check + local patch replay**
+
+## 24. Expert Fan-Out And Stalled Subagent Handling
+
+For bounded multi-face research, first use homogeneous analyst fan-out. `analyst` is the first-round role for independent research faces, ambiguity discovery, and acceptance-target clarification.
+
+Do not start with mixed `analyst / architect / planner` fan-out unless the task has already moved past research into design or execution ordering. Escalate after analyst fan-in:
+
+- `architect` - use after analyst fan-in shows cross-module design, shared interfaces, trust boundaries, migrations, or non-local architecture decisions.
+- `planner` - use after analyst fan-in shows two or more execution slices, serial hotspots, rollout ordering, or dependency chains.
+- `writer` - use after analyst fan-in shows document-finalization work rather than research.
+
+Unfinished subagents must be diagnosed before the leader skips or closes them. The leader must record:
+
+- `role` - the subagent role that was assigned.
+- `prompt_scope` - the bounded prompt or file scope given to the subagent.
+- `wait_windows` - the wait windows already used and their durations.
+- `last_signal` - the last observable progress, result, or silence from the subagent.
+- `suspected_cause` - whether the subagent appears still working, startup-blocked, tool-blocked, provider-blocked, or stalled.
+- `action_taken` - wait longer, narrow and respawn, close with cause, or continue locally with the limitation disclosed.
+- `result_used` - whether the final answer used, excluded, or replaced the subagent result.
+
+The leader MUST NOT conclude that local reading plus partial fan-in is enough until this diagnostic step is complete for every critical-path subagent. If a subagent is closed while still running, the closeout note must state why continuing without that result is safe or what limitation remains.

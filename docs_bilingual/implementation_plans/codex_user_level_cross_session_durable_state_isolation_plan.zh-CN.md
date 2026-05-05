@@ -445,3 +445,13 @@ rollout 后，新会话可以立即采用 scoped activation plane。
 5. 不需要直接修改 legacy `.omx/state`，也能使未来模型安全运行。
 6. 仓库源码与仓库测试继续作为 activation contract 的权威面，而 user-level mirrors 只作为共享执行面和共享控制面。
 7. 同一台机器上的多个 `PyCharm / Codex CLI` 项目可以共用同一套用户级 helper layer，但不会互相继承 canonical durable state。
+
+## 11. 共享模型服务不共享 Durable State
+
+共享本地模型服务只允许作为 provider service 使用。它不改变 durable-state isolation。
+
+`D:\PythonProject_langgraph\.local\models\` 是用于共享 llama 或 GGUF 文件的被忽略本地模型资产目录。它不是 repo-local durable-state directory。
+
+`CODEX_LOCAL_MODEL_ROOT` 是共享模型根目录环境变量。它可以帮助消费方仓库发现模型文件或 endpoints，但不得指向 `.omx/state/`，也不得成为 activation truth。
+
+消费方仓库可以调用 `local-judge-qwen` 或 `local-embed-jina` 这类 provider profiles，但每个仓库仍然拥有自己的 `.omx/state/`、OpenSpec artifacts、approval state、recovery evidence、business state 与 logs。
