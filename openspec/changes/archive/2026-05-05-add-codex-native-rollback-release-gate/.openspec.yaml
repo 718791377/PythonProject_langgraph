@@ -1,0 +1,8 @@
+schema: spec-driven
+created: 2026-05-04
+x_change_class: tooling
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/check_codex_native_rollback_release_gate_template.py
+  - tools/run_openspec_guard.py
+  - test/install-codex-user-level-team-mode.test.ps1
