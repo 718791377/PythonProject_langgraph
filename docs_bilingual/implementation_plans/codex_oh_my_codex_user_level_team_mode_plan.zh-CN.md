@@ -570,3 +570,25 @@ omx update
 这才叫：
 
 - **官方更新 + 差异检查 + 本地补丁重放**
+
+## 24. Expert Fan-Out 与 Stalled Subagent 处理
+
+有界多面研究必须先使用同质 analyst fan-out。`analyst` 是第一轮用于独立研究面、歧义发现和 acceptance target 澄清的角色。
+
+除非任务已经越过研究阶段，明确进入设计或执行排序，否则不要一开始就混用 `analyst / architect / planner` fan-out。应在 analyst fan-in 后再升级：
+
+- `architect` - 当 analyst fan-in 显示存在跨模块设计、共享接口、信任边界、迁移或非局部架构决策时使用。
+- `planner` - 当 analyst fan-in 显示存在两个以上执行切片、串行热点、rollout ordering 或 dependency chains 时使用。
+- `writer` - 当 analyst fan-in 显示工作已经进入文档定稿，而不是研究本身时使用。
+
+未完成的 subagent 必须先诊断，再决定跳过或关闭。Leader 必须记录：
+
+- `role` - 被分配的 subagent 角色。
+- `prompt_scope` - 给 subagent 的有界 prompt 或文件范围。
+- `wait_windows` - 已经使用过的等待窗口及持续时间。
+- `last_signal` - subagent 最后可观察到的 progress、result 或 silence。
+- `suspected_cause` - 判断 subagent 是仍在工作、startup-blocked、tool-blocked、provider-blocked，还是 stalled。
+- `action_taken` - 继续等待、缩小范围并重启、带原因关闭，或披露限制后由本地继续。
+- `result_used` - 最终答复是否使用、排除或替换了该 subagent 的结果。
+
+Leader MUST NOT 在未完成这个诊断步骤前，就默认“本地读取 + 部分 fan-in 已足够”。如果关闭仍在运行的 subagent，closeout note 必须说明为什么没有该结果也安全，或者还剩什么限制。

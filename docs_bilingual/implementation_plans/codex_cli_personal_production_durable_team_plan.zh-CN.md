@@ -1029,3 +1029,20 @@ Release rules：
 - `Redis`、`jina-embeddings` 仅在明确需要时引入
 - `ClawTeam-OpenClaw`、`OpenViking`、`lossless-claw-enhanced` 仅借鉴设计，不直接并入主线
 - `Light Judge`、`memory-lancedb-pro-skill` 不进入主线依赖
+
+## 20. Release Playbook 与共享本地模型 Provider
+
+本 draft 仍然只是北极星目标。具体实施 MUST 使用下面这些更小的 playbook 和 migration documents，而不是宣称整份 draft 已经实现。
+
+- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_playbook.md` - release-slice playbook，用于把 draft 目标拆成冷启动可执行的切片，并写清 scope、evidence、validation 与 rollback。
+- `docs_bilingual/implementation_plans/codex_shared_local_model_assets_migration_plan.md` - 本地 llama 与 GGUF 资产迁移方案，用于把被 Git 忽略的模型资产集中管理在编排仓库下，同时避免产生 dirty Git work。
+- `docs_bilingual/governance/codex_local_model_provider_policy.md` - 本地模型 provider 治理 policy，用于声明本地模型服务只是 provider，不是 durable truth、approval authority 或 backend selector。
+
+本地模型 provider profiles 只是 advisory service profiles：
+
+- `local-judge-qwen` - 使用 `Qwen3.5-9B-Q4_K_M-GGUF` 的 provider profile，可用于低成本 judgement、summary compression、candidate bug triage 与 inspect-summary hints。
+- `local-embed-jina` - 使用 `jina-embeddings-v5-text-small-retrieval-GGUF` 的 provider profile，可用于 documents、OpenSpec artifacts、implementation plans、reports 与 evidence 的本地 embeddings 和 retrieval。
+
+`Light Judge` 仍然是策略。它 MAY 帮助生成 survivor queues 或 triage candidate findings，但 MUST NOT 审批工作、拥有 durable state、选择 backend families 或替代 verifier evidence。
+
+`CODEX_LOCAL_MODEL_ROOT` 是共享本地模型根目录的环境变量。它应指向 `D:\PythonProject_langgraph\.local\models` 这类被 Git 忽略的本地路径，且不得被用作 durable-state root。

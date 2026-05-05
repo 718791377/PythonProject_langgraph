@@ -269,6 +269,126 @@
         "label": "cross_project_template_scope",
         "pattern": "browser automation profile"
       }
+    ],
+    "docs_bilingual/governance/codex_local_model_provider_policy.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "docs_bilingual/governance/codex_local_model_provider_policy.zh-CN.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_playbook.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_playbook.zh-CN.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "docs_bilingual/implementation_plans/codex_shared_local_model_assets_migration_plan.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "docs_bilingual/implementation_plans/codex_shared_local_model_assets_migration_plan.zh-CN.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "openspec/changes/formalize-shared-local-model-assets-migration/design.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "openspec/changes/formalize-shared-local-model-assets-migration/design.zh-CN.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "openspec/changes/formalize-shared-local-model-assets-migration/proposal.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "openspec/changes/formalize-shared-local-model-assets-migration/proposal.zh-CN.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "openspec/changes/formalize-shared-local-model-assets-migration/specs/codex-cli-personal-production-durable-team-plan/spec.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "openspec/changes/formalize-shared-local-model-assets-migration/specs/codex-cli-personal-production-durable-team-plan/spec.zh-CN.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
     ]
   }
 }
