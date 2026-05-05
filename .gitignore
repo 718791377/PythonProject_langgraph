@@ -11,3 +11,4 @@ openspec-guard-report.json
 .runtime/
 *.gguf
 *.GGUF
+/PMP/

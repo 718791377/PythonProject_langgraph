@@ -12,6 +12,18 @@ The platform-build lifecycle covers reusable user-level and repository-level orc
 - `OpenSpec` is the repository governance workflow; it records durable proposals, designs, tasks, stable specs, and archives.
 - `D:\PythonProject_General_2` is the local project template directory; it initializes later projects without turning them into platform implementation locations.
 
+## PMI Tailoring Overlay
+
+`docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` is the ASCII PMI mapping reference; it explains how PMI project-management ideas are tailored into this repository without reproducing PMI book content.
+
+The platform uses the PMI overlay in three ways:
+
+- PMBOK value and principles guidance informs value delivery, tailoring depth, governance boundaries, success criteria, and quality gates.
+- Process Groups guidance informs OpenSpec and GitLab-first delivery gates: proposal-like initiation, design and task planning, execution, checker-backed monitoring, and archive-based closing.
+- Agile guidance informs exploratory, MVP, feedback-driven, and hybrid work before a plan is frozen.
+
+This overlay is not a new lifecycle layer. It is a governance lens applied across the 0-8 platform-build lifecycle.
+
 ## 0. Cognitive Narrative Layer
 
 Question: Why should a personal developer have a production-grade durable team?
