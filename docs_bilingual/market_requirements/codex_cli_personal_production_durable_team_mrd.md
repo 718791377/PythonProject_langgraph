@@ -1,13 +1,49 @@
-﻿---
-doc_id: codex_business_capability_profiles
+---
+doc_id: codex_cli_personal_production_durable_team_mrd
 lang: en
-canonical: docs_bilingual/implementation_plans/codex_business_capability_profiles.md
+canonical: docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md
 translation_of: null
-doc_class: implementation_reference
+doc_class: market_requirements
 status: draft
 ---
 
-# Codex Business Capability Profiles
+# MRD: Codex CLI Personal Production Durable Team
+
+## Purpose
+
+This MRD identifies target users, project types, usage scenarios, capability profiles, runtime-owner classes, and universal controls for the Codex CLI personal production durable-team platform.
+
+It replaces the former standalone `docs_bilingual/implementation_plans/codex_business_capability_profiles.md` reference; that file was a capability-profile lookup table and is now merged into Appendix A of this MRD.
+
+## Target Users And Project Types
+
+- Solo maintainer: the primary operator who uses Codex CLI across multiple repositories.
+- Consumer project: a downstream repository that consumes user-level runtime, templates, policies, and native subagent profiles while keeping its own source, OpenSpec artifacts, tests, and durable state.
+- Domain-agent platform project: a project that configures user-facing domain agents outside Codex CLI while Codex CLI supports development, governance, checks, and releases.
+- Document or content workflow project: a project that creates, transforms, reviews, publishes, or audits artifacts.
+
+## User Problems
+
+- Cold-start sessions need safe resume without repeated manual context explanation.
+- Multiple sessions need file ownership boundaries to avoid dirty-worktree collision.
+- Projects need browser, document, GUI, model-provider, and publication support without mixing business runtime truth into this platform repository.
+- High-risk actions need human approval, audit records, rollback notes, and project-local evidence.
+
+## Market Requirements
+
+- Preserve native Codex behavior and rollback.
+- Support local Git plus OpenSpec governance for later projects.
+- Keep Codex CLI durable-team dependencies separate from downstream business runtime dependencies.
+- Classify new workloads into abstract capability profiles before implementation starts.
+- Preserve browser automation and document-processing capabilities for projects that need them.
+
+## Prioritization Signals
+
+- P0 protects native Codex compatibility, session isolation, repo-local durable truth, OpenSpec guards, and rollback.
+- P1 improves inspected durable routing, project templates, local model-provider adapters, and repeatable release slices.
+- P2 improves local GUI control, advanced memory, richer evaluation, and broader adoption reporting.
+
+## Appendix A: Capability Profiles Merged From The Former Reference
 
 This reference maps concrete workload examples to abstract capability profiles for the Codex CLI personal production durable-team plan. It is a lookup table, not a runtime contract and not a claim that any workload is already implemented.
 

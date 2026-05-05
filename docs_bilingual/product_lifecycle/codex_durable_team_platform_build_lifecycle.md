@@ -48,8 +48,8 @@ Question: Why should a personal developer have a production-grade durable team?
 
 - Narrative framing separates production infrastructure from a prompt collection.
 - Failure-pattern analysis turns repeated session, context, and release failures into durable platform requirements.
-- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` is the future ASCII white paper; it should explain why single-session chat is not enough for production work.
-- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.zh-CN.md` is the future UTF-8 Chinese companion; it should carry the same argument for Chinese maintainers.
+- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` is the canonical ASCII white paper; it explains why single-session chat is not enough for production work.
+- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.zh-CN.md` is the UTF-8 Chinese companion; it carries the same argument for Chinese maintainers.
 
 ### Outputs
 

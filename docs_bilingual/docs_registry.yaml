@@ -30,6 +30,19 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md
 
+
+  - doc_id: codex_cli_personal_production_durable_team_whitepaper
+    doc_class: whitepaper
+    status: draft
+    canonical_path: docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md
+    zh_cn_path: docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.zh-CN.md
+
+  - doc_id: codex_cli_personal_production_durable_team_mrd
+    doc_class: market_requirements
+    status: draft
+    canonical_path: docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md
+    zh_cn_path: docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.zh-CN.md
+
   - doc_id: codex_cli_personal_production_durable_team_playbook
     doc_class: implementation_plan
     status: draft
@@ -41,11 +54,6 @@ documents:
     status: draft
     canonical_path: docs_bilingual/implementation_plans/codex_shared_local_model_assets_migration_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_shared_local_model_assets_migration_plan.zh-CN.md
-  - doc_id: codex_business_capability_profiles
-    doc_class: implementation_reference
-    status: draft
-    canonical_path: docs_bilingual/implementation_plans/codex_business_capability_profiles.md
-    zh_cn_path: docs_bilingual/implementation_plans/codex_business_capability_profiles.zh-CN.md
 
   - doc_id: codex_user_level_cross_session_durable_state_isolation_plan
     doc_class: implementation_plan

@@ -48,6 +48,15 @@ status: draft
 - 说明已有 `experts / durable_team / persistent team` 如何纳入统一管理，而不抹平三者差异
 - 给出在不破坏现有行为的前提下的分阶段 rollout 路线
 
+## 1.1 生命周期对齐
+
+本 draft 是战略层的北极星与实施桥接计划。它消费白皮书和 MRD：
+
+- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` 是白皮书英文主版；它解释为什么这个方向存在。
+- `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md` 是 MRD 英文主版；它定义目标项目类型、能力画像、运行归属边界和风险控制。
+
+本方案向后续 PRD、architecture、test、release、rollback、adoption 和 retrospective 文档输出阶段目标、lane 边界、release slices、指标和非目标。PRD 是产品需求文档，architecture 是架构设计文档，test 是测试计划，release 是发布计划，rollback 是回滚计划，adoption 是采用报告，retrospective 是复盘文档。
+
 ## 2. 问题陈述与设计驱动
 
 在该目标假设基线下，真正的问题已经不再是“LangGraph 能不能用”，而是：
@@ -272,7 +281,7 @@ Business capability profiles 是覆盖十层框架的横向 workload classificat
 | Structured proposal and compliance document delivery | 治理 template libraries、source collection、section generation、citations、compliance checks、approvals 和 delivery records。 | 第 1、4、5、7、8、9 层。 |
 | Template and project bootstrap lifecycle | 治理 new-computer bootstrap、project template initialization、existing-project update、backups 和 checker verification。 | 第 1、2、7、9 层。 |
 
-具体 workload examples 应放在 `docs_bilingual/implementation_plans/codex_business_capability_profiles.zh-CN.md` 这个参考对照表中。生产级持久化团队总方案应保持抽象，避免未来业务名称反向改写架构。
+具体 workload examples 应放在 `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.zh-CN.md` 的附录 A 中；该 MRD 中文对照版用于把具体例子映射到抽象 profiles。生产级持久化团队总方案应保持抽象，避免未来业务名称反向改写架构。
 ## 6. 面向 Codex CLI 的控制面
 
 个人开发者的最小 `control surface`，即用来观察、批准、恢复、回放、切换与排障的统一控制面，必须回答五个问题：

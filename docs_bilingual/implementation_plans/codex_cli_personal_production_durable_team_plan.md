@@ -48,6 +48,15 @@ This plan exists to:
 - explain how existing `experts / durable_team / persistent team` concepts fit into one unified control model without collapsing their differences
 - provide a phased rollout path that does not break existing behavior
 
+## 1.1 Lifecycle Alignment
+
+This draft is the North Star and implementation-bridge plan for the strategy layer. It consumes the white paper and MRD:
+
+- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` is the white paper; it explains why the direction exists.
+- `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md` is the MRD; it defines target project types, capability profiles, runtime-owner boundaries, and risk controls.
+
+This plan outputs staged targets, lane boundaries, release slices, metrics, and non-goals for later PRD, architecture, test, release, rollback, adoption, and retrospective documents.
+
 ## 2. Problem Statement And Design Drivers
 
 Under this baseline, the real problem is no longer "can LangGraph be used?", but:
@@ -273,7 +282,7 @@ Business capability profiles are horizontal workload classifications over the te
 | Structured proposal and compliance document delivery | Govern template libraries, source collection, section generation, citations, compliance checks, approvals, and delivery records. | Layers 1, 4, 5, 7, 8, and 9. |
 | Template and project bootstrap lifecycle | Govern new-computer bootstrap, project template initialization, existing-project update, backups, and checker verification. | Layers 1, 2, 7, and 9. |
 
-Concrete workload examples belong in `docs_bilingual/implementation_plans/codex_business_capability_profiles.md`, which is a reference table for mapping examples to abstract profiles. The production durable-team plan should stay abstract so future business names do not rewrite the architecture.
+Concrete workload examples belong in Appendix A of `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md`, which is the MRD that maps examples to abstract profiles. The production durable-team plan should stay abstract so future business names do not rewrite the architecture.
 ## 6. Control Surface For Codex CLI
 
 The minimum operator control surface for a solo developer must answer:
