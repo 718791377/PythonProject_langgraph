@@ -389,6 +389,26 @@
         "label": "shared_model_consumer_scope",
         "pattern": "D:\\\\PythonProject_OpenClaw"
       }
+    ],
+    "openspec/specs/codex-cli-personal-production-durable-team-plan/spec.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
+    ],
+    "openspec/specs/codex-cli-personal-production-durable-team-plan/spec.zh-CN.md": [
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "OpenClaw"
+      },
+      {
+        "label": "shared_model_consumer_scope",
+        "pattern": "D:\\\\PythonProject_OpenClaw"
+      }
     ]
   }
 }
