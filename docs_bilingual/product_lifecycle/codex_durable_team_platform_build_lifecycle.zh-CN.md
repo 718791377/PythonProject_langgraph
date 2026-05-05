@@ -48,8 +48,8 @@
 
 - 叙事框架：把生产基础设施和 prompt collection 区分开。
 - 失败模式分析：把反复出现的会话、上下文和发布问题转化为持久化平台需求。
-- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` 是未来 ASCII 白皮书；它应该解释为什么单次 chat session 不足以支撑生产工作。
-- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.zh-CN.md` 是未来 UTF-8 中文对照版；它为中文维护者承载同一论证。
+- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` 是 canonical ASCII 白皮书；它解释为什么单次 chat session 不足以支撑生产工作。canonical ASCII 白皮书是英文主版白皮书。
+- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.zh-CN.md` 是 UTF-8 中文对照版；它为中文维护者承载同一论证。
 
 ### 输出
 

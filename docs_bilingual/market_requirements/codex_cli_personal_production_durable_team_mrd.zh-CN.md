@@ -1,13 +1,49 @@
-﻿---
-doc_id: codex_business_capability_profiles
+---
+doc_id: codex_cli_personal_production_durable_team_mrd
 lang: zh-CN
-canonical: docs_bilingual/implementation_plans/codex_business_capability_profiles.md
-translation_of: docs_bilingual/implementation_plans/codex_business_capability_profiles.md
-doc_class: implementation_reference
+canonical: docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md
+translation_of: docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md
+doc_class: market_requirements
 status: draft
 ---
 
-# Codex 业务能力 Profiles 对照表
+# MRD：Codex CLI 个人开发者生产级持久化团队
+
+## 目的
+
+本文是 Codex CLI 个人开发者生产级持久化团队平台的 MRD。MRD 是市场需求文档，用来识别目标用户、项目类型、使用场景、能力画像、运行归属类型和通用控制要求。
+
+本文替代原独立文件 `docs_bilingual/implementation_plans/codex_business_capability_profiles.zh-CN.md`；该文件原本是能力画像查询表，现在合并到本文附录 A。能力画像查询表是把具体 workload 映射到抽象 capability profile 的表格。
+
+## 目标用户与项目类型
+
+- solo maintainer：单人维护者，是跨多个仓库使用 `Codex CLI` 的主要操作者。
+- consumer project：消费项目，是复用 user-level runtime、templates、policies 和 native subagent profiles 的下游仓库，同时保留自己的源码、OpenSpec artifacts、测试和 durable state。
+- domain-agent platform project：领域 Agent 平台项目，是在 Codex CLI 外部承载最终用户领域 Agent 的项目，Codex CLI 负责辅助开发、治理、检查和发布。
+- document or content workflow project：文档或内容工作流项目，是创建、转换、审查、发布或审计 artifacts 的项目。
+
+## 用户问题
+
+- cold-start sessions 需要安全接续，而不是反复要求用户手工解释上下文。cold-start sessions 是没有旧上下文的新会话。
+- 多个会话需要文件归属边界，避免 dirty-worktree collision。dirty-worktree collision 是多个会话同时污染同一个 Git 工作区。
+- 项目需要 browser、document、GUI、model-provider 和 publication support，同时不能把业务运行真相混进 Codex 平台仓库。browser 是浏览器自动化能力，document 是文档处理能力，GUI 是图形界面能力，model-provider 是模型服务能力，publication support 是发布辅助能力。
+- 高风险动作需要 human approval、audit records、rollback notes 和 project-local evidence。human approval 是人工审批，audit records 是审计记录，rollback notes 是回滚说明，project-local evidence 是项目本地证据。
+
+## 市场需求
+
+- 平台必须保留 native Codex 功能并保持可回退。native Codex 是原生 Codex CLI 能力。
+- 平台必须支持后续项目使用 local Git 加 OpenSpec governance。local Git 是本地 Git 仓库，OpenSpec governance 是 OpenSpec 治理流程。
+- 平台必须隔离 Codex CLI durable-team dependencies 和 downstream business runtime dependencies。Codex CLI durable-team dependencies 是编排团队自身依赖，downstream business runtime dependencies 是下游业务运行依赖。
+- 平台必须在 implementation work 开始前，把新 workload 分类到 abstract capability profiles。implementation work 是实施工作，abstract capability profiles 是抽象能力画像。
+- 平台必须为需要的项目保留 browser automation 和 document-processing capabilities。browser automation 是浏览器自动化，document-processing capabilities 是文档处理能力。
+
+## 优先级信号
+
+- P0 requirements 保护 native Codex compatibility、session isolation、repo-local durable truth、OpenSpec guards 和 rollback。P0 requirements 是最高优先级需求。
+- P1 requirements 改进 inspected durable routing、project templates、local model-provider adapters 和 repeatable release slices。P1 requirements 是下一优先级需求。
+- P2 requirements 改进 local GUI control、advanced memory、richer evaluation 和 broader adoption reporting。P2 requirements 是较后优先级需求。
+
+## 附录 A：从原参考文件合并来的能力画像
 
 本参考文件用于把具体 workload example 映射到 Codex CLI 个人开发者生产级持久化团队方案中的抽象 capability profiles。它是查询表，不是 runtime contract，也不表示这些 workload 已经实现。
 
