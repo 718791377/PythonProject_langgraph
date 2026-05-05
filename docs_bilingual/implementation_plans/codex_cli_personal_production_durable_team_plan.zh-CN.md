@@ -785,13 +785,14 @@ Release rules：
 - 每个 release slice 都必须有自己的 target repository、phase、task scope、validation path、rollback path 和 operator consent boundary。
 - 某个 release slice 可以更新本 draft，但不得宣称整个 production durable-team target 已经实现。
 - runtime exercises 从 `R0.6 Durable Routing Smoke Gate` 开始，而且该 release 默认 read-only。
+- launcher 或 installer slice 要标记 production，还必须通过 R0.6.1 Codex native rollback gate，用来证明 native Codex、raw bypass、wrapper smoke、config sentinel 和 rollback evidence。
 
 更细 release ladder：
 
 | Release | 含义 | 实施姿态 |
 | --- | --- | --- |
 | `R0.6.0 Gate Template` | future smoke/adoption gate changes 及其 required fields 的模板。 | 下一条安全 planning slice。 |
-| `R0.6.1 Gate Field Checker` | required gate fields 的 checker-backed enforcement。 | 下一条安全 script-backed slice。 |
+| `R0.6.1 Gate Field Checker And Codex Native Rollback Gate` | required gate fields 的 checker-backed enforcement，并要求 native Codex、raw bypass、wrapper、config sentinel 和 rollback evidence。 | 当前安全 script-backed slice。 |
 | `R0.6.2 Read-Only State Sampling` | 对一个 target repository 进行 status-only sampling。 | future read-only slice。 |
 | `R0.6.3 Dry-Run Routing Decision` | 不进入 apply mode，只解释 no-team、native_omx 或 langgraph decision。 | future dry-run slice。 |
 | `R0.6.4 Expected-Result Fixture` | 预期 dry-run decision 的 regression fixture。 | future test slice。 |

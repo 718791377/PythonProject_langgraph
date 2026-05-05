@@ -767,6 +767,7 @@ Release rules:
 - A release slice may update this draft, but it must not claim the whole production durable-team target is implemented.
 - One subrelease should normally map to one OpenSpec change and one GitLab MR.
 - Runtime exercises begin only after the R0.6 template and checker slices are in place.
+- Production marking for launcher or installer slices also requires the R0.6.1 Codex native rollback gate, which proves native Codex, raw bypass, wrapper smoke, config sentinel, and rollback evidence before release.
 
 Detailed release ladder:
 
@@ -775,7 +776,7 @@ Detailed release ladder:
 | `R0 Governance Baseline` | Startup, OpenSpec, worktree, session ownership, MCP scope, and safety-rule script backing. | Mostly implemented baseline. |
 | `R0.5 Inspectable Durable State` | Read-only durable state status, selector safety, and helper mirror source-of-truth. | Mostly implemented baseline. |
 | `R0.6.0 Gate Template` | Template for future smoke/adoption gate changes and their required fields. | Next safe planning slice. |
-| `R0.6.1 Gate Field Checker` | Checker-backed enforcement for required gate fields. | Next safe script-backed slice. |
+| `R0.6.1 Gate Field Checker And Codex Native Rollback Gate` | Checker-backed enforcement for required gate fields plus native Codex, raw bypass, wrapper, config sentinel, and rollback evidence. | Current safe script-backed slice. |
 | `R0.6.2 Read-Only State Sampling` | Status-only sampling for one target repository. | Future read-only slice. |
 | `R0.6.3 Dry-Run Routing Decision` | No-team, native_omx, or langgraph decision explanation without apply mode. | Future dry-run slice. |
 | `R0.6.4 Expected-Result Fixture` | Regression fixture for the expected dry-run decision. | Future test slice. |
