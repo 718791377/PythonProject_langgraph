@@ -30,6 +30,7 @@ Stable publication posture:
 
 - GitLab is the authoritative review and merge surface for this repository.
 - Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the remote CI quota consumed by GitLab pipelines, so do local commits, local checks, and local cleanup before the first push.
+- Keep local `main` current with `gitlab/main` before new writable work, release-timing judgment, push, MR creation, or local alignment claims. Local-first batching is not permission to work from a stale remote base.
 - Feature branches open or update GitLab MRs only after local validation passes, unless the user explicitly requests an early remote pipeline check.
 - Batch related small changes into one MR when they share the same topic and rollback boundary; do not combine unrelated topics just to save runner minutes.
 - Before remote publication, the active session's model judges whether the local batch is ready and recommends publish or wait to the user. The user remains the release decision authority.

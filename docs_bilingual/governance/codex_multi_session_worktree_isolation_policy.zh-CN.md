@@ -160,6 +160,7 @@ python .\tools\check_session_ownership_claims.py --root . --precheck-task "<task
 Runner 配额规则：
 
 - 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的有限远端 CI 配额。
+- 本地仓库不得落后于权威远端。新建可写任务、判断发布时机、push、创建 MR 或声明本地 `main` 已对齐之前，必须刷新 `gitlab/main`；如果本地 `main` 落后，就先 fast-forward（快进）本地 `main` 再继续。如果 feature branch 基于陈旧远端基线准备，发布前必须 rebase（变基）或 merge（合并）到刷新后的基线，除非用户明确接受 stale-base risk（陈旧基线风险）。
 - 首次推送前，先在本地完成 commits、checker runs、rework 和 cleanup。commits 是本地 Git 提交，checker runs 是本地检查命令执行，rework 是本地返工，cleanup 是提交前清理。
 - 只有在主题、验证面和 rollback boundary（回退边界）相同的情况下，才把相关小变更合并进一个 MR。rollback boundary 是可以安全回退而不混入无关工作的最小单位。
 - 不要为了减少 runner 使用量而把无关主题合并到同一个 MR；可评审性和回退安全优先。
@@ -168,15 +169,17 @@ Runner 配额规则：
 
 默认本地优先流程：
 
-1. 从最新 `gitlab/main` 创建 feature branch。
-2. 为该分支使用专用 `.worktrees/<task>` worktree。
-3. 在本地 commit 和 validate，直到分支适合远端 review。
-4. 由当前会话模型建议 publish 或 wait，然后请用户确认发布决策。
-5. 推送到 GitLab 并创建或更新 GitLab MR。
-6. 等待 GitLab pipeline 通过。
-7. 合并到 GitLab `main`。
-8. 把 exact GitLab main commit 同步到 GitHub。
-9. 快进本地 `main` 分支引用。
+1. 刷新 `gitlab/main`，并确认本地 `main` 没有落后。
+2. 从最新 `gitlab/main` 创建 feature branch。
+3. 为该分支使用专用 `.worktrees/<task>` worktree。
+4. 在本地 commit 和 validate，直到分支适合远端 review。
+5. 再次刷新 `gitlab/main`，并确认 feature branch 没有基于陈旧远端状态。
+6. 由当前会话模型建议 publish 或 wait，然后请用户确认发布决策。
+7. 推送到 GitLab 并创建或更新 GitLab MR。
+8. 等待 GitLab pipeline 通过。
+9. 合并到 GitLab `main`。
+10. 把 exact GitLab main commit 同步到 GitHub。
+11. 快进本地 `main` 分支引用。
 
 本仓库默认不使用 GitHub PR。
 

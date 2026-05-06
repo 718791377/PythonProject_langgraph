@@ -146,6 +146,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 - GitLab 是本仓库的权威 review / merge 面。
 - 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的远端 CI 配额，所以首次推送前应先完成本地 commit、本地 checker 和本地清理。
+- 新建可写任务、判断发布时机、push、创建 MR 或声明本地已对齐之前，必须保持本地 `main` 不落后于 `gitlab/main`。local-first batching（本地优先批量发布）不是允许基于陈旧远端基线继续工作的理由。
 - feature branch 只有在本地验证通过后，才推送到 GitLab 并创建或更新 GitLab MR；除非用户明确要求提前跑远端 pipeline。
 - 主题相同且 rollback boundary（回退边界）相同的小变更可以合并到一个 MR；不要为了节省 runner minutes 把无关主题硬塞进同一个 MR。
 - 远端发布前，当前会话的模型必须判断本地批次是否适合发布，并向用户提出 publish（发布）或 wait（继续等待）的建议；用户仍然是 release decision authority（发布决策权威）。

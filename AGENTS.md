@@ -32,6 +32,7 @@
 
 - Treat GitLab as the authoritative review and merge surface for this repository.
 - Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the remote CI quota consumed by GitLab pipelines, so related local commits should be validated together before the first push.
+- Keep the local repository from falling behind the authoritative remote. Before new writable work, release-timing judgment, push, MR creation, or local `main` alignment claims, refresh `gitlab/main` and fast-forward local `main` when it is behind; never hide a stale local base behind local-first batching.
 - For repository changes, create a feature branch and do local commits, local checker runs, and local cleanup before pushing to `gitlab`. The `gitlab` remote is the authoritative GitLab repository remote used only when the local branch is ready for MR validation.
 - Batch related small changes into one GitLab MR when they share the same topic and rollback boundary; do not combine unrelated topics just to save runner minutes.
 - Before remote publication, the active session's model must judge whether the local batch is ready to publish and present a recommendation to the user. The user remains the release decision authority.
