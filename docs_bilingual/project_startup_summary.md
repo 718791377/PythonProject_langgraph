@@ -29,7 +29,10 @@ Stable repository-entry posture:
 Stable publication posture:
 
 - GitLab is the authoritative review and merge surface for this repository.
-- Feature branches open or update GitLab MRs first; GitLab pipeline success gates the merge into GitLab `main`.
+- Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the remote CI quota consumed by GitLab pipelines, so do local commits, local checks, and local cleanup before the first push.
+- Feature branches open or update GitLab MRs only after local validation passes, unless the user explicitly requests an early remote pipeline check.
+- Batch related small changes into one MR when they share the same topic and rollback boundary; do not combine unrelated topics just to save runner minutes.
+- GitLab pipeline success gates the merge into GitLab `main`.
 - GitHub is the post-merge sync target: after GitLab `main` is merged and green, push the same `main` commit directly to GitHub.
 - Do not open GitHub PRs by default.
 

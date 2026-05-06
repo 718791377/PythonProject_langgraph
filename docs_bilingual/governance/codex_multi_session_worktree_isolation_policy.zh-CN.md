@@ -140,30 +140,41 @@ python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty 
 
 上面的命令会运行只读会话认领 checker，并输出 JSON 报告，供冷启动会话或本地发布前检查使用。
 
-?? checker ????????
+任务认领 checker 的补充要求：
 
-- ?? claim ??????? `.omx/session-claims/*.json` ????`.omx/session-claims/*.json` ??? ignored JSON ????????????????? OpenSpec change ??????
-- ?????????????????? worktrees?branches?remote-tracking branches?active OpenSpec changes?active claim files?target paths??? ignored ? local-only ? guard-scanned files????????????????? checker-backed ???
+- 每个 active claim（活跃认领文件）都必须写入 `.omx/session-claims/*.json`。`.omx/session-claims/*.json` 是 ignored JSON 文件，用来声明当前会话认领的 OpenSpec change 或路径范围。
+- 任务认领预检必须覆盖 worktrees、branches、remote-tracking branches、active OpenSpec changes、active claim files、target paths，以及 ignored 或 local-only 的 guard-scanned files，避免新会话绕过 checker-backed ownership（脚本支撑的归属判断）。
 
-?????? worktree ??? guard ??????????????????
+推荐在创建 worktree 或修复 guard 问题前运行：
 
 ```powershell
 python .\tools\check_session_ownership_claims.py --root . --precheck-task "<task-slug-or-description>" --target-path "<repo-relative-path>" --openspec-change "<change-id>" --json
 ```
 
-??????????????? checker?`--precheck-task` ???????????`--target-path` ??????????`--openspec-change` ???????? OpenSpec change id?`--json` ???????????????????????? token???? `--check-gitlab-mrs` ????? GitLab MRs ????????????????? GitLab MRs ??? fail closed ???????? `--require-gitlab-mrs`?
+上面的命令会运行任务预检 checker。`--precheck-task` 用来说明准备处理的任务，`--target-path` 用来说明仓库相对热点路径，`--openspec-change` 用来说明准备处理的 OpenSpec change id，`--json` 用来输出机器可读报告。token 可用时，可以加 `--check-gitlab-mrs` 读取打开中的 GitLab MRs；必须在无法检查 GitLab MRs 时 fail closed（失败关闭）时，才加 `--require-gitlab-mrs`。
 
 ## 7. GitLab-First 集成
 
-所有仓库变更仍然遵守 GitLab-first 发布流程：
+所有仓库变更仍然遵守 GitLab-first 发布流程。GitLab-first 是最终 review 与 merge 权威，不表示每个本地 checkpoint commit（检查点提交）都必须推送到远端服务器。
+
+Runner 配额规则：
+
+- 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的有限远端 CI 配额。
+- 首次推送前，先在本地完成 commits、checker runs、rework 和 cleanup。commits 是本地 Git 提交，checker runs 是本地检查命令执行，rework 是本地返工，cleanup 是提交前清理。
+- 只有在主题、验证面和 rollback boundary（回退边界）相同的情况下，才把相关小变更合并进一个 MR。rollback boundary 是可以安全回退而不混入无关工作的最小单位。
+- 不要为了减少 runner 使用量而把无关主题合并到同一个 MR；可评审性和回退安全优先。
+- 只有本地验证通过后，才推送到 GitLab；除非用户明确要求提前跑远端 pipeline。
+
+默认本地优先流程：
 
 1. 从最新 `gitlab/main` 创建 feature branch。
 2. 为该分支使用专用 `.worktrees/<task>` worktree。
-3. 推送到 GitLab 并创建 GitLab MR。
-4. 等待 GitLab pipeline 通过。
-5. 合并到 GitLab `main`。
-6. 把 exact GitLab main commit 同步到 GitHub。
-7. 快进本地 `main` 分支引用。
+3. 在本地 commit 和 validate，直到分支适合远端 review。
+4. 推送到 GitLab 并创建或更新 GitLab MR。
+5. 等待 GitLab pipeline 通过。
+6. 合并到 GitLab `main`。
+7. 把 exact GitLab main commit 同步到 GitHub。
+8. 快进本地 `main` 分支引用。
 
 本仓库默认不使用 GitHub PR。
 

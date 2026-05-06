@@ -145,6 +145,9 @@ translation_of: docs_bilingual/project_startup_summary.md
 ## 仓库发布流程
 
 - GitLab 是本仓库的权威 review / merge 面。
-- 所有变更先推送到 GitLab feature 分支并创建或更新 GitLab MR；只有 GitLab pipeline 通过后，才合并到 GitLab `main`。
+- 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的远端 CI 配额，所以首次推送前应先完成本地 commit、本地 checker 和本地清理。
+- feature branch 只有在本地验证通过后，才推送到 GitLab 并创建或更新 GitLab MR；除非用户明确要求提前跑远端 pipeline。
+- 主题相同且 rollback boundary（回退边界）相同的小变更可以合并到一个 MR；不要为了节省 runner minutes 把无关主题硬塞进同一个 MR。
+- 只有 GitLab pipeline 通过后，才合并到 GitLab `main`。
 - GitLab `main` 合并并变绿后，再把同一个 `main` 提交直接同步推送到 GitHub。
 - 默认不为 GitHub 开 PR；除非用户明确要求，GitHub 只是合并后的同步目标。

@@ -148,15 +148,26 @@ The command above runs the checker in task precheck mode. `--precheck-task` name
 
 ## 7. GitLab-First Integration
 
-All repository changes still follow the GitLab-first publication workflow:
+All repository changes still follow the GitLab-first publication workflow. GitLab-first is the final review and merge authority; it is not a requirement to push every local checkpoint commit to the remote server.
+
+Runner-budget rule:
+
+- Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the finite remote CI quota consumed by GitLab pipelines.
+- Do local commits, local checker runs, local rework, and local cleanup before the first push.
+- Batch related small changes into one MR only when they share the same topic, validation surface, and rollback boundary. A rollback boundary is the smallest unit that can be reverted safely without mixing unrelated work.
+- Do not combine unrelated topics just to reduce runner usage; reviewability and rollback safety still take priority.
+- Push to GitLab only when local validation passes, unless the user explicitly asks for an early remote pipeline check.
+
+Default local-first sequence:
 
 1. Create a feature branch from the latest `gitlab/main`.
 2. Use a dedicated `.worktrees/<task>` worktree for that branch.
-3. Push to GitLab and open a GitLab MR.
-4. Wait for the GitLab pipeline to pass.
-5. Merge into GitLab `main`.
-6. Sync the exact GitLab main commit to GitHub.
-7. Fast-forward the local `main` branch reference.
+3. Commit and validate locally until the branch is ready for remote review.
+4. Push to GitLab and open or update a GitLab MR.
+5. Wait for the GitLab pipeline to pass.
+6. Merge into GitLab `main`.
+7. Sync the exact GitLab main commit to GitHub.
+8. Fast-forward the local `main` branch reference.
 
 GitHub PRs are not the default workflow for this repository.
 

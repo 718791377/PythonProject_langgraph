@@ -31,7 +31,11 @@
 ## Publication Workflow
 
 - Treat GitLab as the authoritative review and merge surface for this repository.
-- For repository changes, create a feature branch, push it to `gitlab`, open or update a GitLab MR, wait for the GitLab pipeline to pass, and merge into GitLab `main`.
+- Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the remote CI quota consumed by GitLab pipelines, so related local commits should be validated together before the first push.
+- For repository changes, create a feature branch and do local commits, local checker runs, and local cleanup before pushing to `gitlab`. The `gitlab` remote is the authoritative GitLab repository remote used only when the local branch is ready for MR validation.
+- Batch related small changes into one GitLab MR when they share the same topic and rollback boundary; do not combine unrelated topics just to save runner minutes.
+- Push to GitLab and open or update a GitLab MR only after local validation passes, unless the user explicitly requests an early remote pipeline check.
+- Wait for the GitLab pipeline to pass, then merge into GitLab `main`.
 - After GitLab `main` is merged and green, sync that exact `main` commit directly to GitHub.
 - Do not open GitHub PRs for this repository unless the user explicitly overrides this workflow; GitHub is the post-merge mirror/sync target by default.
 
