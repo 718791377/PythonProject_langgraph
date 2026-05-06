@@ -26,6 +26,29 @@ Use these depth levels in downstream projects:
 
 A downstream project may be lightweight, but it must stay repo-local: its OpenSpec artifacts, `.omx/state/` state directory, release facts, and lessons learned belong to that project.
 
+## Downstream Adoption Canvas
+
+A downstream project may use `adoption_canvas.md` as a lightweight adoption canvas before it deeply adopts platform capabilities. The adoption canvas explains why the project wants platform help and how success will be measured.
+
+Recommended fields:
+
+- local project purpose and current friction;
+- platform capability being adopted;
+- expected value outcome, such as less startup friction, less context loss, safer release flow, or better browser verification;
+- repo-local boundaries that must not be moved into the platform repository;
+- validation path and rollback path;
+- feedback that should return to the platform as upstream improvement candidates.
+
+## Consumer Value Feedback
+
+Downstream success is not only successful installation or template copying. A downstream project should record whether platform adoption improved its own delivery outcome while preserving repo-local truth.
+
+Feedback should be classified before upstreaming:
+
+- Local-only lesson: stays in the downstream repository.
+- Reusable platform lesson: becomes upstream feedback and may enter this platform through a platform OpenSpec change.
+- Runtime defect: becomes a bug or hardening candidate for the platform only when it is reproducible outside one downstream project.
+
 ## 0. Cognitive Narrative Layer
 
 Question: Why does this downstream project exist, and why should it use the platform?

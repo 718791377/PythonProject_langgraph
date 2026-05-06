@@ -10,6 +10,46 @@ This document uses a process-group style structure. Each layer is written as Inp
 
 These rules are a general governance overlay. They do not replace white papers, BRDs, MRDs, North Star plans, PRDs, technical designs, implementation plans, OpenSpec artifacts, or repository checkers; they help those documents keep consistent inputs, processing, and outputs across the lifecycle.
 
+## Value-Delivery Overlay
+
+The document stack is not valuable because every file exists. It is valuable only when it helps the project identify value, align stakeholders, deliver usable outcomes, verify whether the outcomes worked, and feed learning into the next cycle.
+
+Use value checks across all layers:
+
+- Value identification asks what user, business, operational, trust, or learning value may exist.
+- Value alignment asks whether stakeholders agree on purpose, boundaries, success criteria, and trade-offs.
+- Value delivery asks which increment will become usable or inspectable.
+- Value verification asks what evidence will prove the increment helped.
+- Value learning asks what should be continued, stopped, expanded, or retired.
+
+## Lightweight Project Canvas
+
+A `project_canvas.md` file is a lightweight project canvas. It is optional for very small local changes, but recommended before writing a full BRD, MRD, PRD, or implementation plan for uncertain or cross-role work.
+
+The canvas should fit on one page where possible and cover:
+
+- purpose and value hypothesis;
+- target users, operators, or stakeholders;
+- success criteria and non-goals;
+- scope boundary and constraints;
+- main risks, assumptions, and dependencies;
+- delivery style: predictive, adaptive, or hybrid;
+- first value increment and feedback point;
+- validation, rollback, and learning evidence.
+
+## Governance-System Tailoring
+
+Tailoring is not only choosing fewer documents. It is choosing the right governance system for the risk and uncertainty level.
+
+Tailor these dimensions together:
+
+- Governance depth: who approves, who reviews, and which gates are mandatory.
+- Document depth: whether a short canvas is enough or whether BRD, MRD, PRD, design, test, release, rollback, and retrospective files must be explicit.
+- Role-collaboration depth: whether one maintainer, native `subagent` bursts, durable workers, or graph-shaped orchestration are justified.
+- Validation depth: whether local checks, browser verification, CI, red-team review, or production smoke evidence is required.
+- Release depth: whether the change is local-only, MR-gated, staged rollout, or rollback-backed release.
+- Learning depth: whether a brief note is enough or a full retrospective and governance update are required.
+
 ## Quick Difference: White Paper vs North Star Plan
 
 | Document | Core question | Main effect | Typical reader | Execution role |

@@ -26,6 +26,29 @@
 
 下游项目可以轻量，但必须保持 repo-local：它的 OpenSpec artifacts、`.omx/state/` 状态目录、release facts 和 lessons learned 都属于该项目。
 
+## 下游采用画布
+
+下游项目可以先使用 `adoption_canvas.md` 作为轻量 adoption canvas，然后再深入采用平台能力。adoption canvas 用来说明项目为什么需要平台帮助，以及如何衡量成功。
+
+推荐字段：
+
+- local project purpose 和 current friction；
+- 正在采用的 platform capability；
+- expected value outcome，例如减少 startup friction、减少 context loss、更安全 release flow 或更好的 browser verification；
+- 不得移动到平台仓库的 repo-local boundaries；
+- validation path 和 rollback path；
+- 应作为 upstream improvement candidates 回传给平台的 feedback。
+
+## 消费项目价值反馈
+
+下游成功不只是安装成功或复制模板成功。下游项目应记录平台 adoption 是否改善了自己的交付结果，同时是否保留 repo-local truth。
+
+反馈在 upstream 前应先分类：
+
+- Local-only lesson：留在下游仓库。
+- Reusable platform lesson：成为 upstream feedback，并且只有通过平台 OpenSpec change 才能进入本平台。
+- Runtime defect：只有能在单一下游项目之外复现时，才成为平台 bug 或 hardening candidate。
+
 ## 0. 认知叙事层
 
 问题：这个下游项目为什么存在，为什么要使用平台能力？

@@ -57,6 +57,15 @@ status: draft
 
 本方案向后续 PRD、architecture、test、release、rollback、adoption 和 retrospective 文档输出阶段目标、lane 边界、release slices、指标和非目标。PRD 是产品需求文档，architecture 是架构设计文档，test 是测试计划，release 是发布计划，rollback 是回滚计划，adoption 是采用报告，retrospective 是复盘文档。
 
+本 draft 的 PMBOK8 value-delivery overlay：
+
+- PMBOK 第8版作为 value delivery、project canvas、performance-domain thinking、AI-era project governance、hybrid delivery 和 tailoring 的主要叠加层。
+- PMBOK 第6版和 Process Groups 只作为 inputs、tools and techniques、outputs 和 closeout gates 的执行支撑。
+- PMBOK 第7版作为 principles、value-delivery、performance-domain 和 tailoring 的桥接层。
+- Agile guidance 用于 adaptive discovery、MVP slices、feedback loops 和 small reversible releases。
+
+这意味着每个未来 release slice 不只要描述 task list，还要描述 value increment、feedback point、validation path、rollback boundary 和 operator consent boundary。
+
 ## 2. 问题陈述与设计驱动
 
 在该目标假设基线下，真正的问题已经不再是“LangGraph 能不能用”，而是：
@@ -790,6 +799,7 @@ Business capability profiles 是覆盖十层框架的横向 workload classificat
 
 Release rules：
 
+- 每个 release slice 必须说明它交付的 value increment、用于证明该 increment 是否有效的 feedback point，以及保护 native Codex 和既有项目的 rollback boundary。
 - 本 draft 保持 `status: draft`，直到某个具体 release slice 通过 OpenSpec 被提升。
 - 每个 release slice 都必须有自己的 target repository、phase、task scope、validation path、rollback path 和 operator consent boundary。
 - 某个 release slice 可以更新本 draft，但不得宣称整个 production durable-team target 已经实现。
