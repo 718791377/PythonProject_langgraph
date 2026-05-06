@@ -51,6 +51,10 @@ Required rules:
 - Do not manually delete `.worktrees/`; use Git worktree commands after preservation checks.
 - Do not assume a dirty file belongs to the current session.
 - Do not reset, checkout, clean, move, or delete unknown dirty files until their owning session or backup branch is identified.
+
+- Treat legacy resumed sessions as compatibility-scoped sessions. A legacy resumed session is an older Codex `/resume` thread that may keep stale context, stale MCP assumptions, or stale launcher behavior.
+- Do not let a legacy resumed session claim new governance implementation, dirty-file ownership, or release authority unless the current session explicitly revalidates the repository startup summary, OpenSpec state, Git state, and session-ownership claims.
+- If an old resumed session disagrees with current repository files, current repository files and current local Git state win until an operator-approved reconciliation plan says otherwise.
 - Before a writable session dirties a feature worktree, create an active `.omx/session-claims/<session>.json` claim file. `.omx/session-claims/` is the ignored local coordination directory for declaring the OpenSpec change or path scope owned by the current session.
 - Before creating a new task worktree, editing files, fixing guard failures, or taking over OpenSpec or governance artifacts, run a task ownership precheck. A task ownership precheck is a read-only scan for semantic ownership signals before any new write scope is created.
 - The task ownership precheck must inspect registered Git worktrees, local branches, remote-tracking branches, open GitLab MRs, active OpenSpec changes, local `.omx/session-claims/*.json` claim files, and target paths including ignored files.

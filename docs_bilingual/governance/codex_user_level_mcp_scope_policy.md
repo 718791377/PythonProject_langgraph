@@ -110,7 +110,27 @@ That exception is now resolved because this policy makes the disabled bridge the
 
 The exception must not be reactivated unless a future approved governance change explicitly reverses the default and supplies bounded Router-profile validation.
 
-## 10. Validation Commands
+
+## 10. Legacy Resume Compatibility
+
+Existing Codex `/resume` threads may continue during a compatibility period, but they remain compatibility-scoped.
+
+A legacy resumed session is an older Codex thread that may carry stale runtime overrides, stale MCP assumptions, or old launcher behavior from before the current MCP scope policy.
+
+Rules:
+
+- Use current repository policy and current local Git state as truth; do not let a legacy resumed session redefine MCP ownership or publication safety.
+- If a specific legacy resumed session fails because one direct MCP server has stale startup state, use a per-invocation override for that session only. For example, `-c "mcp_servers.omx_code_intel.enabled=false"` is a one-launch Codex config override that disables only `omx_code_intel` for that old thread.
+- Do not permanently remove or globally disable `omx_state`, `omx_memory`, `omx_code_intel`, `omx_trace`, `chrome-devtools`, or `pencil` to work around one legacy resumed session.
+- Do not edit `C:\Users\lenovo\.codex\config.toml` only because one old thread fails. That path is the user-level Codex configuration file and remains operator-controlled.
+- New sessions and normal wrapped launches must continue to follow this direct-MCP policy.
+
+Script backing:
+
+- `tools/check_mcp_router_scope_policy.py` is the checker that confirms Codex-private MCP servers remain direct and that the Codex-side `mcp_router` bridge remains disabled or absent by default.
+- `tools/check_windows_cleanup_output_control.py` is the checker that confirms wrapped launch cleanup output control does not require disabling direct `omx_*` MCP servers.
+
+## 11. Validation Commands
 
 Run these commands after changing this policy or the checker:
 

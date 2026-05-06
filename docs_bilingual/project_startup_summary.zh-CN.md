@@ -37,6 +37,14 @@ translation_of: docs_bilingual/project_startup_summary.md
   - 已经是真实可用的 additive durable backend
   - 但仍然属于“可用但偏 MVP”，还不是 fully realized 的 LangGraph-native runtime
 
+稳定的旧会话兼容状态：
+
+- 旧会话是通过 Codex `/resume` 恢复的历史 thread，可能仍然携带最新治理更新前的 runtime、MCP 或 launcher 假设。
+- 旧会话可以临时继续用于跟进讨论，但新的治理实施、脏文件归属和发布决策必须以当前仓库文档和当前本地 Git 状态为准。
+- 优先先启动 `codex-ohmy`，再从临时会话里进入 `/resume`。`codex-ohmy` 是日常用户级编排工作的稳定包装 Codex 入口。
+- 如果某个旧 thread 出现 MCP 启动问题，只对该旧 thread 使用一次性覆盖，例如 `-c "mcp_servers.omx_code_intel.enabled=false"`。这个 `-c` 参数是单次启动的 Codex 配置覆盖，不能变成永久用户级配置修改。
+- 不要因为某个旧会话失败就全局禁用 `omx_state`、`omx_memory`、`omx_code_intel`、`omx_trace`、`chrome-devtools` 或 `pencil`。这些名称是 Codex 直连 MCP server，分别提供编排状态、记忆、代码智能、trace 检查、浏览器调试和设计访问能力。
+
 ## 当前实施边界
 
 当前实施主线只限于两份 active 用户级编排方案：

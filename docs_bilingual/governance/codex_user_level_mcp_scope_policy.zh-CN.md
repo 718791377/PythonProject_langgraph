@@ -110,7 +110,26 @@ checker 不需要仅因为 MCP Router 为非 Codex 客户端包含 `chrome-devto
 
 除非未来另一个已批准的治理变更明确反转默认规则，并提供有边界的 Router profile 验证，否则不能重新激活该 exception。
 
-## 10. 验证命令
+## 10. 旧会话 Resume 兼容
+
+现有 Codex `/resume` thread 可以在兼容期内继续使用，但必须保持在兼容范围内。
+
+旧会话是较早创建的 Codex thread，可能携带当前 MCP scope policy 之前的 stale runtime overrides、stale MCP assumptions 或旧 launcher 行为。
+
+规则：
+
+- 以当前仓库策略和当前本地 Git 状态作为事实来源；不要让旧会话重新定义 MCP 归属或发布安全边界。
+- 如果某个具体旧会话因为某个直连 MCP server 的 stale startup state 失败，只对该会话使用 per-invocation override（单次启动覆盖）。例如 `-c "mcp_servers.omx_code_intel.enabled=false"` 是一次性的 Codex 配置覆盖，只在该旧 thread 中禁用 `omx_code_intel`。
+- 不要为了绕过一个旧会话问题而永久删除或全局禁用 `omx_state`、`omx_memory`、`omx_code_intel`、`omx_trace`、`chrome-devtools` 或 `pencil`。
+- 不要只因为一个旧 thread 失败就编辑 `C:\Users\lenovo\.codex\config.toml`。该路径是用户级 Codex 配置文件，继续由操作者控制。
+- 新会话和正常 wrapped launch 必须继续遵守本直连 MCP 策略。
+
+脚本支撑：
+
+- `tools/check_mcp_router_scope_policy.py` 是 MCP scope checker，用来确认 Codex 私有 MCP server 保持直连，并确认 Codex 侧 `mcp_router` bridge 默认禁用或不存在。
+- `tools/check_windows_cleanup_output_control.py` 是 cleanup output checker，用来确认 wrapped launch 的清理输出控制不需要禁用直连 `omx_*` MCP server。
+
+## 11. 验证命令
 
 修改本策略或 checker 后，运行以下命令：
 

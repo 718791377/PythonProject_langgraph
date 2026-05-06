@@ -48,6 +48,15 @@ Stable capability posture:
   - already a real additive durable backend
   - still usable but MVP-shaped rather than a fully realized LangGraph-native runtime
 
+
+Stable legacy-session compatibility posture:
+
+- A legacy resumed session is an older Codex `/resume` thread that may still carry stale runtime, MCP, or launcher assumptions from before the latest governance updates.
+- Legacy resumed sessions may continue temporarily for follow-up discussion, but new governance implementation, dirty-file ownership, and release decisions must use the current repository documents and current local Git state.
+- Start `codex-ohmy` first when possible, then enter `/resume` from that temporary session. `codex-ohmy` is the stable wrapped Codex entrypoint for normal user-level orchestration work.
+- If one old thread has an MCP startup problem, use a per-invocation override such as `-c "mcp_servers.omx_code_intel.enabled=false"` only for that old thread. The override is a one-launch config value and must not become a permanent user-level config edit.
+- Do not globally disable `omx_state`, `omx_memory`, `omx_code_intel`, `omx_trace`, `chrome-devtools`, or `pencil` just because a legacy resumed session fails. These names are direct Codex MCP servers that provide orchestration state, memory, code intelligence, trace inspection, browser debugging, and design access.
+
 ## Current Implementation Boundary
 
 The current implementation lane is limited to the active user-level orchestration plans:

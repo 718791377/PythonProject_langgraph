@@ -28,6 +28,9 @@
 - Do not rely on prompt reminders alone for system-level, user-level, or project-level safety boundaries; pair them with script controls such as checkers, guarded helpers, CI gates, or generated launcher logic.
 - Do not duplicate the context-retention canary prompt in `AGENTS.md`; its literal prompt text lives only in `docs_bilingual/project_startup_summary.md` and `docs_bilingual/project_startup_summary.zh-CN.md`. If startup-summary context-loss detection triggers, reread `docs_bilingual/project_startup_summary.md` and follow its cold-start read order before continuing.
 
+- Treat resumed legacy Codex sessions as compatibility-scoped sessions. A resumed legacy Codex session is an older `/resume` thread that may still carry stale runtime or MCP startup assumptions; it may continue for follow-up discussion but must not override current repository governance.
+- For legacy-session MCP failures, prefer per-invocation overrides such as `-c "mcp_servers.omx_code_intel.enabled=false"`. This `-c` argument is a one-launch Codex config override for a single old thread, not a permanent edit to `C:\Users\lenovo\.codex\config.toml`, which is the user-level Codex configuration file.
+
 ## Publication Workflow
 
 - Treat GitLab as the authoritative review and merge surface for this repository.

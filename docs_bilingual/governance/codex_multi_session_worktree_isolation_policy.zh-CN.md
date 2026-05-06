@@ -51,6 +51,9 @@ status: active
 - 不要手动删除 `.worktrees/`；需要清理时，先做保存检查，再使用 Git worktree 命令。
 - 不要假设某个脏文件一定属于当前会话。
 - 在确认归属前，不要 reset、checkout、clean、move 或 delete 未知脏文件。
+- 将旧会话视为 compatibility-scoped sessions（兼容范围会话）。旧会话是较早的 Codex `/resume` thread，可能保留 stale context（陈旧上下文）、stale MCP assumptions（陈旧 MCP 假设）或 stale launcher behavior（陈旧启动器行为）。
+- 除非当前会话重新验证仓库 startup summary、OpenSpec state、Git state 和 session-ownership claims，否则不要让旧会话认领新的治理实施、脏文件归属或发布权威。
+- 如果旧会话与当前仓库文件不一致，在没有操作者批准的 reconciliation plan（对账计划）前，以当前仓库文件和当前本地 Git 状态为准。
 - 在创建新的任务 worktree、编辑文件、修复 guard 失败项，或接手 OpenSpec / governance artifacts 之前，必须先执行任务认领预检。任务认领预检是一种只读扫描，用来在创建新写入范围前识别语义上的归属信号。
 - 任务认领预检必须检查已登记 Git worktrees、本地分支、远端跟踪分支、打开中的 GitLab MRs、active OpenSpec changes、本地 `.omx/session-claims/*.json` 认领文件，以及目标路径，包括 ignored files。
 - 只要 worktree 名称、branch 名称、MR 标题、MR source branch、OpenSpec change id、claim path 或目标文件路径出现语义匹配，就应视为 ownership signal（归属信号）；即使对应 worktree 是干净的、也没有领先 `main` 的提交，也仍然算作认领信号。
