@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -78,6 +79,10 @@ def resolve_ref(root: Path, ref: str) -> str | None:
     return result.stdout.strip()
 
 
+def is_gitlab_ci_detached_checkout() -> bool:
+    return bool(os.environ.get("GITLAB_CI") and os.environ.get("CI_COMMIT_SHA"))
+
+
 def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirty: bool) -> dict[str, object]:
     root = root.resolve()
     errors: list[str] = []
@@ -87,7 +92,7 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
     top_result = run_git(root, ["rev-parse", "--show-toplevel"])
     if top_result.returncode != 0:
         errors.append(f"Not a Git worktree: {root}")
-        return payload(root, main_branch, main_ref, allow_current_dirty, [], [], errors, warnings, info)
+        return payload(root, main_branch, main_ref, allow_current_dirty, [], [], {}, errors, warnings, info)
 
     current_root = Path(top_result.stdout.strip()).resolve()
     list_result = run_git(current_root, ["worktree", "list", "--porcelain"])
@@ -95,11 +100,56 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
         errors.append("Unable to list Git worktrees.")
         if list_result.stderr.strip():
             errors.append(list_result.stderr.strip())
-        return payload(root, main_branch, main_ref, allow_current_dirty, [], [], errors, warnings, info)
+        return payload(root, main_branch, main_ref, allow_current_dirty, [], [], {}, errors, warnings, info)
 
     worktrees = parse_worktree_list(list_result.stdout)
     dirty_worktrees: list[dict[str, object]] = []
     path_to_worktrees: dict[str, list[str]] = defaultdict(list)
+    main_commit = resolve_ref(current_root, main_branch)
+    primary_worktree_alignment: dict[str, object] = {
+        "ok": False,
+        "path": None,
+        "branch": None,
+        "head": None,
+        "expected_branch": main_branch,
+        "expected_head": main_commit,
+    }
+
+    if worktrees:
+        primary_worktree = worktrees[0]
+        primary_path = Path(primary_worktree["worktree"]).resolve()
+        primary_branch = branch_name(primary_worktree)
+        primary_head = primary_worktree.get("HEAD")
+        primary_worktree_alignment.update(
+            {
+                "path": str(primary_path),
+                "branch": primary_branch,
+                "head": primary_head,
+            }
+        )
+        if primary_branch != main_branch:
+            if primary_branch is None and is_gitlab_ci_detached_checkout():
+                primary_worktree_alignment["ok"] = True
+                info.append(
+                    f"Primary repository directory is a GitLab CI detached checkout at {primary_path}; local primary-directory branch alignment is skipped for this ephemeral CI workspace."
+                )
+            else:
+                errors.append(
+                    f"Primary repository directory is on {primary_branch or '<detached>'}, expected local {main_branch}: {primary_path}. Check out local main in the primary directory before continuing; use .worktrees/ for feature branches."
+                )
+        elif not main_commit:
+            warnings.append(
+                f"Could not resolve local {main_branch}; primary directory alignment with the local Git branch is informational only."
+            )
+        elif primary_head != main_commit:
+            errors.append(
+                f"Primary repository directory HEAD does not match local {main_branch}: {primary_head or '<unknown>'} != {main_commit}. Align the primary directory with the local main branch before continuing."
+            )
+        else:
+            primary_worktree_alignment["ok"] = True
+            info.append(f"Primary repository directory is aligned with local {main_branch}: {primary_path}.")
+    else:
+        errors.append("No registered Git worktrees were found.")
 
     for worktree in worktrees:
         worktree_path = Path(worktree["worktree"]).resolve()
@@ -143,7 +193,6 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
                 f"Dirty path appears in multiple worktrees: {dirty_path} in {', '.join(unique_owners)}. Serialize ownership before continuing."
             )
 
-    main_commit = resolve_ref(current_root, main_branch)
     target_commit = resolve_ref(current_root, main_ref)
     if main_commit and target_commit:
         if main_commit != target_commit:
@@ -160,7 +209,18 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
     if not dirty_worktrees:
         info.append("No dirty registered Git worktrees were detected.")
 
-    return payload(root, main_branch, main_ref, allow_current_dirty, worktrees, dirty_worktrees, errors, warnings, info)
+    return payload(
+        root,
+        main_branch,
+        main_ref,
+        allow_current_dirty,
+        worktrees,
+        dirty_worktrees,
+        primary_worktree_alignment,
+        errors,
+        warnings,
+        info,
+    )
 
 
 def payload(
@@ -170,6 +230,7 @@ def payload(
     allow_current_dirty: bool,
     worktrees: list[dict[str, str]],
     dirty_worktrees: list[dict[str, object]],
+    primary_worktree_alignment: dict[str, object] | None,
     errors: list[str],
     warnings: list[str],
     info: list[str],
@@ -193,6 +254,7 @@ def payload(
         "allow_current_dirty": allow_current_dirty,
         "worktrees": summarized_worktrees,
         "dirty_worktrees": dirty_worktrees,
+        "primary_worktree_alignment": primary_worktree_alignment or {},
         "errors": errors,
         "warnings": warnings,
         "info": info,

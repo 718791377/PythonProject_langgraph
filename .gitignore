@@ -12,3 +12,4 @@ openspec-guard-report.json
 *.gguf
 *.GGUF
 /PMP/
+.vscode/settings.json

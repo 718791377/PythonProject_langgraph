@@ -31,7 +31,7 @@
       "guard_steps": [
         "check_worktree_session_hygiene"
       ],
-      "description": "Prevents multi-session dirty worktree collisions and mainline alignment drift."
+      "description": "Prevents multi-session dirty worktree collisions, keeps the primary directory aligned with local main, and reports mainline alignment drift."
     },
     {
       "id": "session-ownership-claims",

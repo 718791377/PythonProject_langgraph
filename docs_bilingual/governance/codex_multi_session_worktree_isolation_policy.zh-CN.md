@@ -19,6 +19,8 @@ status: active
 
 仓库根目录 `D:\PythonProject_langgraph` 是协调区和 mainline 镜像区；它不能变成多个会话共享的临时写入目录。
 
+主目录对齐规则是强制规则：`D:\PythonProject_langgraph` 必须保持 checkout（检出）在本地 `main` 上，并且在 feature-branch work（功能分支工作）、MR merge（合并请求合并）、cleanup（清理）或 release sync（发布同步）之后，它的 HEAD 必须等于本地 `main` 分支引用。`D:\PythonProject_langgraph` 是 primary directory（主目录），用于协调和本地 mainline 镜像，不是 feature-task workspace（功能任务工作区）。
+
 ## 2. 权威边界
 
 本策略属于仓库级治理。它适用于所有会修改本仓库的 Codex 会话，包括普通 Codex、oh-my-codex 包装会话、native subagents、durable-team workers，以及后续 LangGraph 驱动的执行上下文。
@@ -48,6 +50,7 @@ status: active
 - 不要让两个会话写同一个 worktree。
 - 不要让两个会话同时编辑同一批热点文件，除非由 leader 串行整合。
 - 不要直接在 `main` 上写文件。
+- 保持主目录 `D:\PythonProject_langgraph` 与本地 `main` 对齐；可写 feature branch 应使用 `.worktrees/`，不要让主目录停留在旧分支。
 - 不要手动删除 `.worktrees/`；需要清理时，先做保存检查，再使用 Git worktree 命令。
 - 不要假设某个脏文件一定属于当前会话。
 - 在确认归属前，不要 reset、checkout、clean、move 或 delete 未知脏文件。
@@ -164,6 +167,7 @@ Runner 配额规则：
 
 - 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的有限远端 CI 配额。
 - 本地仓库不得落后于权威远端。新建可写任务、判断发布时机、push、创建 MR 或声明本地 `main` 已对齐之前，必须刷新 `gitlab/main`；如果本地 `main` 落后，就先 fast-forward（快进）本地 `main` 再继续。如果 feature branch 基于陈旧远端基线准备，发布前必须 rebase（变基）或 merge（合并）到刷新后的基线，除非用户明确接受 stale-base risk（陈旧基线风险）。
+- 保持主目录与本地 Git 仓库对齐。`D:\PythonProject_langgraph` 是 primary directory（主目录）；它必须位于本地 `main`，HEAD 必须匹配本地 `main` 分支引用，并且 `tools/check_worktree_session_hygiene.py` 必须在这种本地对齐被破坏时失败。
 - 首次推送前，先在本地完成 commits、checker runs、rework 和 cleanup。commits 是本地 Git 提交，checker runs 是本地检查命令执行，rework 是本地返工，cleanup 是提交前清理。
 - 只有在主题、验证面和 rollback boundary（回退边界）相同的情况下，才把相关小变更合并进一个 MR。rollback boundary 是可以安全回退而不混入无关工作的最小单位。
 - 不要为了减少 runner 使用量而把无关主题合并到同一个 MR；可评审性和回退安全优先。
@@ -183,6 +187,7 @@ Runner 配额规则：
 9. 合并到 GitLab `main`。
 10. 把 exact GitLab main commit 同步到 GitHub。
 11. 快进本地 `main` 分支引用。
+12. 在 `D:\PythonProject_langgraph` 检出本地 `main`，并确认 HEAD 匹配本地 `main` 分支引用。
 
 本仓库默认不使用 GitHub PR。
 
