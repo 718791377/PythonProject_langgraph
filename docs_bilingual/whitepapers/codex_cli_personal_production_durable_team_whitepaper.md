@@ -23,6 +23,8 @@ The structural failures are prompt-only safety rules, dirty worktrees, unclear h
 
 The target is a layered Codex CLI production system:
 
+This is an AI-era value-delivery system, not only a toolchain. The platform exists to help a solo maintainer keep value judgment, risk trade-offs, approvals, release responsibility, and learning loops inspectable while AI accelerates research, drafting, planning, and verification support.
+
 - Native Codex remains the base layer.
 - Native subagents remain leader-side expert bursts.
 - `native_omx` is the worker-centric durable backend lane used after plan freeze and independent execution slices.

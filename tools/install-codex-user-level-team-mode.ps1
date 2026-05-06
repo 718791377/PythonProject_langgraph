@@ -5,6 +5,7 @@ param(
   [string]$NativeCodexCommandPath,
   [string]$OmxCommandPath,
   [string]$PythonCommandPath,
+  [switch]$InstallTaskkillExeShim,
   [switch]$Force,
   [string]$TestFailPoint = 'none'
 )
@@ -638,9 +639,57 @@ function Get-WindowsTaskkillCSharpShimSourceContent {
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 
 public static class Program
 {
+    private static string QuoteArgument(string argument)
+    {
+        if (argument == null)
+        {
+            return "\"\"";
+        }
+
+        if (argument.Length == 0)
+        {
+            return "\"\"";
+        }
+
+        bool needsQuotes = argument.IndexOfAny(new char[] { ' ', '\t', '\n', '\v', '"' }) >= 0;
+        if (!needsQuotes)
+        {
+            return argument;
+        }
+
+        var result = new StringBuilder();
+        result.Append('"');
+        int backslashes = 0;
+        foreach (char c in argument)
+        {
+            if (c == '\\')
+            {
+                backslashes++;
+                continue;
+            }
+
+            if (c == '"')
+            {
+                result.Append('\\', backslashes * 2 + 1);
+                result.Append('"');
+                backslashes = 0;
+                continue;
+            }
+
+            result.Append('\\', backslashes);
+            backslashes = 0;
+            result.Append(c);
+        }
+
+        result.Append('\\', backslashes * 2);
+        result.Append('"');
+        return result.ToString();
+    }
+
     public static int Main(string[] args)
     {
         string systemRoot = Environment.GetEnvironmentVariable("SystemRoot");
@@ -664,10 +713,16 @@ public static class Program
             CreateNoWindow = true,
         };
 
+        var arguments = new StringBuilder();
         foreach (string arg in args)
         {
-            startInfo.ArgumentList.Add(arg);
+            if (arguments.Length > 0)
+            {
+                arguments.Append(' ');
+            }
+            arguments.Append(QuoteArgument(arg));
         }
+        startInfo.Arguments = arguments.ToString();
 
         using (var process = Process.Start(startInfo))
         {
@@ -695,14 +750,93 @@ public static class Program
 "@
 }
 
+function Try-CompileWindowsTaskkillExeShim {
+  param(
+    [Parameter(Mandatory)]
+    [string]$SourcePath,
+    [Parameter(Mandatory)]
+    [string]$OutputPath
+  )
+
+  $csc = Get-Command 'csc.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+  $compilerPath = ''
+  if ($null -ne $csc) {
+    foreach ($propertyName in @('Source', 'Path', 'Definition', 'FullName')) {
+      $property = $csc.PSObject.Properties[$propertyName]
+      if ($null -ne $property -and -not [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+        $compilerPath = [string]$property.Value
+        break
+      }
+    }
+  }
+
+  if ([string]::IsNullOrWhiteSpace($compilerPath)) {
+    $frameworkRoot = Join-Path $env:WINDIR 'Microsoft.NET\Framework64'
+    if (Test-Path -LiteralPath $frameworkRoot) {
+      $csc = Get-ChildItem -LiteralPath $frameworkRoot -Recurse -Filter 'csc.exe' -ErrorAction SilentlyContinue |
+        Sort-Object FullName -Descending |
+        Select-Object -First 1
+      if ($null -ne $csc -and -not [string]::IsNullOrWhiteSpace([string]$csc.FullName)) {
+        $compilerPath = [string]$csc.FullName
+      }
+    }
+  }
+
+  if ([string]::IsNullOrWhiteSpace($compilerPath)) {
+    return [ordered]@{
+      attempted = $true
+      compiled = $false
+      output_path = $OutputPath
+      compiler_path = ''
+      reason = 'csc.exe was not found'
+    }
+  }
+
+  $stdout = [System.IO.Path]::GetTempFileName()
+  $stderr = [System.IO.Path]::GetTempFileName()
+  try {
+    $arguments = @('/nologo', '/target:exe', ("/out:$OutputPath"), $SourcePath)
+    $process = Start-Process -FilePath $compilerPath -ArgumentList $arguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($process.ExitCode -eq 0 -and (Test-Path -LiteralPath $OutputPath)) {
+      return [ordered]@{
+        attempted = $true
+        compiled = $true
+        output_path = $OutputPath
+        compiler_path = $compilerPath
+        reason = ''
+      }
+    }
+
+    $diagnostic = ''
+    if (Test-Path -LiteralPath $stderr) {
+      $diagnostic = (Get-Content -LiteralPath $stderr -Raw -ErrorAction SilentlyContinue)
+    }
+    if ([string]::IsNullOrWhiteSpace($diagnostic) -and (Test-Path -LiteralPath $stdout)) {
+      $diagnostic = (Get-Content -LiteralPath $stdout -Raw -ErrorAction SilentlyContinue)
+    }
+    return [ordered]@{
+      attempted = $true
+      compiled = $false
+      output_path = $OutputPath
+      compiler_path = $compilerPath
+      reason = ("csc.exe exited with code {0}. {1}" -f $process.ExitCode, $diagnostic).Trim()
+    }
+  }
+  finally {
+    Remove-Item -LiteralPath $stdout, $stderr -Force -ErrorAction SilentlyContinue
+  }
+}
+
 function Get-StartupLauncherContent {
   param(
     [Parameter(Mandatory)]
-    [string]$NativeCommandPath
+    [string]$NativeCommandPath,
+    [bool]$InstallTaskkillExeShim = $false
   )
 
   $runtimeContent = Get-CommandRuntimeContent
   $escapedNativeCommandPath = $NativeCommandPath.Replace("'", "''")
+  $taskkillExeShimEnabledLiteral = if ($InstallTaskkillExeShim) { '$true' } else { '$false' }
 
   return @"
 # $Script:ManagedMarker
@@ -717,6 +851,7 @@ $runtimeContent
 `$previousPath = [string]`$env:Path
 `$previousPathExt = [string]`$env:PATHEXT
 `$cleanupShimDirectory = Join-Path `$PSScriptRoot 'win-shims'
+`$taskkillExeShimEnabled = $taskkillExeShimEnabledLiteral
 try {
   if (Test-Path -LiteralPath `$cleanupShimDirectory) {
     if ([string]::IsNullOrWhiteSpace(`$env:Path)) {
@@ -726,6 +861,9 @@ try {
     }
     if (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.CMD;*') {
       `$env:PATHEXT = '.CMD;' + `$env:PATHEXT
+    }
+    if (`$taskkillExeShimEnabled -and -not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.EXE;*') {
+      `$env:PATHEXT = '.EXE;' + `$env:PATHEXT
     }
   }
 
@@ -14569,7 +14707,7 @@ $assets = @(
   [ordered]@{ Path = (Join-Path $agentsDirectory 'bug-rebutter.toml'); Content = (Get-BugRebutterTomlContent) }
   [ordered]@{ Path = (Join-Path $agentsDirectory 'bug-judge.toml'); Content = (Get-BugJudgeTomlContent) }
   [ordered]@{ Path = (Join-Path $binDirectory '_codex-user-level-team-mode.ps1'); Content = (Get-SupportScriptContent) }
-  [ordered]@{ Path = $launcherPath; Content = (Get-StartupLauncherContent -NativeCommandPath $resolvedNativeCodexCommandPath) }
+  [ordered]@{ Path = $launcherPath; Content = (Get-StartupLauncherContent -NativeCommandPath $resolvedNativeCodexCommandPath -InstallTaskkillExeShim ([bool]$InstallTaskkillExeShim)) }
   [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill.cmd'); Content = (Get-WindowsTaskkillCmdShimContent) }
   [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill.ps1'); Content = (Get-WindowsTaskkillPowerShellShimContent) }
   [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill-shim-source.cs'); Content = (Get-WindowsTaskkillCSharpShimSourceContent) }
@@ -14667,6 +14805,10 @@ $assets = @(
   [ordered]@{ Path = (Join-Path $langGraphPythonDirectory 'cli.py'); Content = (Get-RepoTemplateText -RelativePath 'langgraph_durable_orchestrator\cli.py') }
 )
 
+if ($InstallTaskkillExeShim) {
+  $assets += [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill.exe'); Content = '' }
+}
+
 foreach ($asset in $assets) {
   $fileName = (Split-Path -Leaf $asset.Path).ToLowerInvariant()
   if ($Script:NativeCodexNames -contains $fileName) {
@@ -14689,10 +14831,31 @@ try {
   Invoke-TestFailPoint -Name 'after_backup'
 
   foreach ($asset in $assets) {
+    if ((Split-Path -Leaf $asset.Path).ToLowerInvariant() -eq 'taskkill.exe') {
+      continue
+    }
     $writeResult = Write-ManagedTextFile -Path $asset.Path -Content $asset.Content -ForceWrite:$Force
     $generatedFiles += [ordered]@{
       path = $asset.Path
       status = $writeResult
+    }
+  }
+
+  $taskkillExeShimCompile = [ordered]@{
+    attempted = [bool]$InstallTaskkillExeShim
+    compiled = $false
+    output_path = (Join-Path $winShimsDirectory 'taskkill.exe')
+    compiler_path = ''
+    reason = ''
+  }
+  if ($InstallTaskkillExeShim) {
+    $taskkillExeShimCompile = Try-CompileWindowsTaskkillExeShim -SourcePath (Join-Path $winShimsDirectory 'taskkill-shim-source.cs') -OutputPath (Join-Path $winShimsDirectory 'taskkill.exe')
+    if (-not [bool]$taskkillExeShimCompile.compiled) {
+      throw ("Unable to compile optional taskkill.exe shim: {0}" -f [string]$taskkillExeShimCompile.reason)
+    }
+    $generatedFiles += [ordered]@{
+      path = (Join-Path $winShimsDirectory 'taskkill.exe')
+      status = 'written'
     }
   }
 
@@ -14774,6 +14937,9 @@ $manifest = [ordered]@{
       taskkill_cmd_path = (Join-Path $winShimsDirectory 'taskkill.cmd')
       taskkill_ps1_path = (Join-Path $winShimsDirectory 'taskkill.ps1')
       taskkill_shim_source_path = (Join-Path $winShimsDirectory 'taskkill-shim-source.cs')
+      taskkill_exe_shim_path = (Join-Path $winShimsDirectory 'taskkill.exe')
+      taskkill_exe_shim_enabled = [bool]$InstallTaskkillExeShim
+      taskkill_exe_shim_compile = $taskkillExeShimCompile
       scoped_to_wrapped_launch = $true
     }
     powershell_profile_path = $resolvedPowerShellProfilePath

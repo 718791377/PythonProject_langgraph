@@ -57,6 +57,15 @@ This draft is the North Star and implementation-bridge plan for the strategy lay
 
 This plan outputs staged targets, lane boundaries, release slices, metrics, and non-goals for later PRD, architecture, test, release, rollback, adoption, and retrospective documents.
 
+PMBOK8 value-delivery overlay for this draft:
+
+- PMBOK 8th Edition is used as the primary overlay for value delivery, project canvas, performance-domain thinking, AI-era project governance, hybrid delivery, and tailoring.
+- PMBOK 6th Edition and Process Groups are used only as execution support for inputs, tools and techniques, outputs, and closeout gates.
+- PMBOK 7th Edition is used as the principles, value-delivery, performance-domain, and tailoring bridge.
+- Agile guidance is used for adaptive discovery, MVP slices, feedback loops, and small reversible releases.
+
+This means each future release slice must describe not only the task list, but also the value increment, feedback point, validation path, rollback boundary, and operator consent boundary.
+
 ## 2. Problem Statement And Design Drivers
 
 Under this baseline, the real problem is no longer "can LangGraph be used?", but:
@@ -771,6 +780,7 @@ This draft must be delivered through smaller release slices instead of one long 
 
 Release rules:
 
+- Each release slice must identify the value increment it delivers, the feedback point that will prove whether the increment helped, and the rollback boundary that keeps native Codex and existing projects safe.
 - This draft stays `status: draft` until a specific release slice is promoted through OpenSpec.
 - Each release slice must have its own target repository, phase, task scope, validation path, rollback path, and operator consent boundary.
 - A release slice may update this draft, but it must not claim the whole production durable-team target is implemented.

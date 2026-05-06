@@ -568,6 +568,9 @@ Assert-Equal $startupBinding.cleanup_output_control.win_shims_directory (Join-Pa
 Assert-Equal $startupBinding.cleanup_output_control.taskkill_cmd_path (Join-Path $CodexHome 'bin\win-shims\taskkill.cmd') 'Installer reported the wrong taskkill CMD shim path.'
 Assert-Equal $startupBinding.cleanup_output_control.taskkill_ps1_path (Join-Path $CodexHome 'bin\win-shims\taskkill.ps1') 'Installer reported the wrong taskkill PowerShell shim path.'
 Assert-Equal $startupBinding.cleanup_output_control.taskkill_shim_source_path (Join-Path $CodexHome 'bin\win-shims\taskkill-shim-source.cs') 'Installer reported the wrong taskkill C# shim source path.'
+Assert-Equal $startupBinding.cleanup_output_control.taskkill_exe_shim_path (Join-Path $CodexHome 'bin\win-shims\taskkill.exe') 'Installer reported the wrong optional taskkill EXE shim path.'
+Assert-True ($startupBinding.cleanup_output_control.taskkill_exe_shim_enabled -eq $false) 'Installer enabled the optional taskkill EXE shim by default.'
+Assert-True ($startupBinding.cleanup_output_control.taskkill_exe_shim_compile.attempted -eq $false) 'Installer attempted optional taskkill EXE compilation without an explicit switch.'
 Assert-True ($startupBinding.cleanup_output_control.scoped_to_wrapped_launch -eq $true) 'Installer did not report cleanup-output control as scoped to wrapped launches.'
 Assert-Equal $startupBinding.non_profile_launchers.wrapped_ps1_path $ExplicitWrappedCodexPs1Path 'Installer reported the wrong explicit wrapped codex PowerShell launcher path.'
 Assert-Equal $startupBinding.non_profile_launchers.wrapped_cmd_path $ExplicitWrappedCodexCmdPath 'Installer reported the wrong explicit wrapped codex cmd launcher path.'
@@ -2841,6 +2844,7 @@ $wrappedManualPathSegments = @(([string]$wrappedManual.path).Split(';') | Where-
 Assert-True ($wrappedManualPathSegments.Count -gt 0) 'Wrapped manual launch did not expose the child PATH.'
 Assert-Equal ([System.IO.Path]::GetFullPath($wrappedManualPathSegments[0])) (Join-Path $CodexHome 'bin\win-shims') 'Wrapped manual launch did not prepend win-shims to child PATH.'
 Assert-True (([string]$wrappedManual.pathext).StartsWith('.CMD', [System.StringComparison]::OrdinalIgnoreCase)) 'Wrapped manual launch did not prioritize .CMD in PATHEXT for taskkill.cmd shimming.'
+Assert-True (-not ([string]$wrappedManual.pathext).StartsWith('.EXE', [System.StringComparison]::OrdinalIgnoreCase)) 'Wrapped manual launch prioritized optional .EXE shimming without an explicit opt-in.'
 $manualModelInstructionsArg = @($wrappedManualArgs | Where-Object { $_ -like 'model_instructions_file=*' } | Select-Object -First 1)[0]
 $manualModelInstructionsPath = $manualModelInstructionsArg.Substring('model_instructions_file='.Length).Trim('"').Replace('\\', '\')
 $manualModelInstructionsContent = Get-Content -LiteralPath $manualModelInstructionsPath -Raw
@@ -2854,6 +2858,24 @@ $rawManualPathSegments = @(([string]$rawManual.path).Split(';') | Where-Object {
 if ($rawManualPathSegments.Count -gt 0) {
   Assert-True ([System.IO.Path]::GetFullPath($rawManualPathSegments[0]) -ne (Join-Path $CodexHome 'bin\win-shims')) 'Native bypass launch unexpectedly prepended win-shims to child PATH.'
 }
+
+$ExeShimHome = Join-Path $TempRoot 'exe-shim-home'
+$ExeShimProfilePath = Join-Path $TempRoot 'exe-shim-profile\Microsoft.PowerShell_profile.ps1'
+Ensure-Directory -Path (Split-Path -Parent $ExeShimProfilePath)
+$exeShimInstallArgs = @(
+  '-CodexHome', $ExeShimHome,
+  '-PowerShellProfilePath', $ExeShimProfilePath,
+  '-NativeCodexCommandPath', $FakeNativeCodexPath,
+  '-OmxCommandPath', $FakeOmxPath,
+  '-PythonCommandPath', $ResolvedPythonPath,
+  '-InstallTaskkillExeShim'
+)
+$exeShimInstall = Invoke-PowerShellScriptJson -FilePath $InstallerPath -Arguments $exeShimInstallArgs
+Assert-True ($exeShimInstall.startup_binding.cleanup_output_control.taskkill_exe_shim_enabled -eq $true) 'Explicit EXE shim install did not report taskkill_exe_shim_enabled=true.'
+Assert-True ($exeShimInstall.startup_binding.cleanup_output_control.taskkill_exe_shim_compile.attempted -eq $true) 'Explicit EXE shim install did not attempt compilation.'
+Assert-True (Test-Path -LiteralPath (Join-Path $ExeShimHome 'bin\win-shims\taskkill.exe')) 'Explicit EXE shim install did not create taskkill.exe.'
+$exeShimWrapped = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-PowerShellLiteral -Value (Join-Path $ExeShimHome 'bin\_codex-user-level-team-mode-launcher.ps1')) + " 'exe-shim-task' }")
+Assert-True (([string]$exeShimWrapped.pathext).StartsWith('.EXE', [System.StringComparison]::OrdinalIgnoreCase)) 'Explicit EXE shim launch did not prioritize .EXE in PATHEXT.'
 
 $omxOff = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-omx-off.ps1') -Arguments @(
   '-Json'

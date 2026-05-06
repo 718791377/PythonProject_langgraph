@@ -23,6 +23,8 @@ status: draft
 
 目标是一套分层的 `Codex CLI` 生产系统：
 
+这是一套 AI 时代 value-delivery system，而不只是工具链。平台存在的目的，是帮助个人维护者在 AI 加速 research、drafting、planning 和 verification support 的同时，仍然让 value judgment、risk trade-offs、approvals、release responsibility 和 learning loops 保持可检查。
+
 - native Codex 保持基础层；native Codex 是原生 Codex CLI 能力。
 - native subagents 保持 leader-side expert bursts；native subagents 是原生专家子代理，leader-side expert bursts 是主会话按需短时调用的专家任务。
 - `native_omx` 是 worker-centric durable backend lane；它只在计划冻结并且存在独立执行切片后使用。

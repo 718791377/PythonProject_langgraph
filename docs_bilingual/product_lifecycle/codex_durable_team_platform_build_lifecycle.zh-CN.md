@@ -24,6 +24,25 @@
 
 这条叠加规则不是新的生命周期层级。它是应用在 0-8 平台建设生命周期上的治理视角。
 
+## 平台价值结果
+
+平台工作必须跟踪 value outcomes，而不只是交付文件。平台真正成功，是在保持 native Codex compatibility 和 repo-local truth 的同时，降低 operator friction。
+
+平台 release slices 应使用以下 outcome checks：
+
+- Operator friction reduction：operator 能比以前更快理解 status、next action 和 rollback path。
+- Cold-start continuation success：新会话可以从 startup summaries、OpenSpec 和 project files 恢复必要上下文。
+- Cross-session coordination quality：并发会话能识别 ownership 并避免 path collisions。
+- Repo-local state safety：每个项目保留自己的 durable truth 和 release facts。
+- Native Codex compatibility：原生 Codex raw path 仍可用、可恢复。
+- Rollback evidence：影响 launchers、wrappers 或 runtime behavior 的 release slices 必须有已知安全回滚路径。
+
+## AI 时代角色边界
+
+AI 可以加速 research、draft generation、candidate planning、state summarization 和 verification support。AI 不得变成隐藏 approval authority。
+
+human operator 和 current main Codex leader session 继续负责 value judgment、risk trade-offs、approval gates、release timing 和 rollback decisions。durable lanes 和 automation 是执行辅助，必须保持 inspectable 且受 consent boundary 约束。
+
 ## 平台生命周期深度规则
 
 规划平台变更时使用以下深度：

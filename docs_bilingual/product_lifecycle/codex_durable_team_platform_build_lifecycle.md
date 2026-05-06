@@ -24,6 +24,25 @@ Platform-build work uses three delivery styles:
 
 This overlay is not a new lifecycle layer. It is a governance lens applied across the 0-8 platform-build lifecycle.
 
+## Platform Value Outcomes
+
+Platform work must track value outcomes, not only delivered files. The platform is successful when it reduces operator friction while preserving native Codex compatibility and repo-local truth.
+
+Use these outcome checks across platform release slices:
+
+- Operator friction reduction: the operator can understand status, next action, and rollback path faster than before.
+- Cold-start continuation success: a new session can recover the required context from startup summaries, OpenSpec, and project files.
+- Cross-session coordination quality: concurrent sessions can identify ownership and avoid path collisions.
+- Repo-local state safety: each project keeps its own durable truth and release facts.
+- Native Codex compatibility: raw native Codex remains available and recoverable.
+- Rollback evidence: release slices that affect launchers, wrappers, or runtime behavior have a known safe rollback path.
+
+## AI-Era Role Boundary
+
+AI may accelerate research, draft generation, candidate planning, state summarization, and verification support. AI must not become the hidden approval authority.
+
+The human operator and the current main Codex leader session keep responsibility for value judgment, risk trade-offs, approval gates, release timing, and rollback decisions. Durable lanes and automation are execution aids that must remain inspectable and consent-bounded.
+
 ## Platform Lifecycle Depth Rule
 
 Use these depth levels when planning platform changes:

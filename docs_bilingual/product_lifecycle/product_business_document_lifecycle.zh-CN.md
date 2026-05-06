@@ -10,6 +10,46 @@
 
 这些规则是通用治理叠加层。它们不替代白皮书、BRD、MRD、北极星 Plan、PRD、技术设计、implementation plans、OpenSpec 或仓库 checker，而是帮助这些文档按生命周期保持输入、处理和输出一致。
 
+## 价值交付叠加层
+
+文档栈的价值不在于每个文件都存在。只有当它帮助项目识别价值、对齐干系人、交付可用结果、验证结果是否有效，并把学习反馈到下一轮时，文档栈才有价值。
+
+所有层级都应使用以下价值检查：
+
+- Value identification：判断可能存在什么用户价值、商业价值、运营价值、信任价值或学习价值。
+- Value alignment：判断 stakeholders 是否同意 purpose、boundaries、success criteria 和 trade-offs。
+- Value delivery：判断哪个 increment 会变成可用或可检查结果。
+- Value verification：判断什么 evidence 能证明该 increment 有帮助。
+- Value learning：判断下一轮应该继续、停止、扩大或废弃什么。
+
+## 轻量项目画布
+
+`project_canvas.md` 是轻量项目画布文件。很小的本地变更可以不写，但需求不确定或涉及跨角色协同时，建议先写项目画布，再展开完整 BRD、MRD、PRD 或 implementation plan。
+
+画布应尽量控制在一页，覆盖：
+
+- purpose 和 value hypothesis；
+- target users、operators 或 stakeholders；
+- success criteria 和 non-goals；
+- scope boundary 和 constraints；
+- main risks、assumptions 和 dependencies；
+- delivery style：predictive、adaptive 或 hybrid；
+- first value increment 和 feedback point；
+- validation、rollback 和 learning evidence。
+
+## 治理系统裁剪
+
+裁剪不只是少写文档，而是按风险和不确定性选择合适的治理系统。
+
+应一起裁剪以下维度：
+
+- Governance depth：谁审批、谁审查、哪些 gates 必须存在。
+- Document depth：短 canvas 是否足够，还是必须显式写 BRD、MRD、PRD、design、test、release、rollback 和 retrospective 文件。
+- Role-collaboration depth：一个 maintainer、原生 `subagent` bursts、durable workers 或 graph-shaped orchestration 是否合理。
+- Validation depth：需要 local checks、browser verification、CI、red-team review 还是 production smoke evidence。
+- Release depth：变更是 local-only、MR-gated、staged rollout，还是 rollback-backed release。
+- Learning depth：简短 note 是否足够，还是需要完整 retrospective 和 governance update。
+
 ## 快速区别：白皮书 vs 北极星 Plan
 
 | 文档 | 核心问题 | 主要作用 | 典型读者 | 执行角色 |

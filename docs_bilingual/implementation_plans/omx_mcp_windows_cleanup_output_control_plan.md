@@ -4,7 +4,7 @@
 
 - Phase: active follow-up implementation.
 - Mainline: Codex user-level orchestration maintenance.
-- OpenSpec change: `stabilize-omx-mcp-windows-cleanup-output`, the change that keeps direct `omx_*` MCP tools while suppressing benign Windows cleanup output.
+- OpenSpec change: `harden-windows-cleanup-output-control`, the change that hardens the direct `omx_*` MCP workflow by suppressing benign Windows cleanup output across wrapped launch and subagent cleanup paths.
 
 ## Problem
 
@@ -33,11 +33,13 @@ The noise is not a functional failure, but it pollutes the session and can confu
 
 1. Add OpenSpec artifacts for the cleanup-output control contract.
 2. Add `win-shims` generation to `tools/install-codex-user-level-team-mode.ps1`, the user-level installer that writes managed launchers and helper scripts.
-3. Generate `taskkill.cmd`, `taskkill.ps1`, and `taskkill-shim-source.cs`; keep compiled `taskkill.exe` as an optional follow-up if evidence shows callers invoke `taskkill.exe` explicitly.
-4. Update the generated startup launcher so it prepends `win-shims` to PATH only while invoking native Codex, then restores PATH in `finally`.
-5. Add `tools/check_windows_cleanup_output_control.py`, a checker that validates source evidence for shim generation, PATH restoration, and preserved `omx_*` MCP startup overrides.
-6. Add tests for installer and checker behavior.
-7. Run validation and publish by GitLab-first MR.
+3. Generate `taskkill.cmd`, `taskkill.ps1`, and `taskkill-shim-source.cs`; these files are the CMD shim, PowerShell shim, and optional C# shim source used to call the real `taskkill.exe` while suppressing success output.
+4. Add an opt-in `InstallTaskkillExeShim` installer switch; this switch compiles and installs `taskkill.exe` only when evidence shows a caller bypasses PATHEXT and invokes an `.exe` path directly.
+5. Keep the default path conservative: by default, wrapped launch only prioritizes `taskkill.cmd`; with the explicit opt-in, wrapped launch also prioritizes `taskkill.exe`.
+6. Update the generated startup launcher so it prepends `win-shims` to PATH only while invoking native Codex, then restores PATH in `finally`.
+7. Add `tools/check_windows_cleanup_output_control.py`, a checker that validates source evidence for shim generation, optional EXE control, PATH restoration, and preserved `omx_*` MCP startup overrides.
+8. Add tests for installer and checker behavior, including default non-EXE mode and explicit EXE opt-in.
+9. Run validation and publish by GitLab-first MR.
 
 ## Validation
 

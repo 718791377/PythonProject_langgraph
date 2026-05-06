@@ -11,6 +11,19 @@ This document maps PMI project-management references to this repository's lifecy
 
 These references are an overlay. They do not replace white papers, BRD, MRD, North Star plans, PRD, technical design, implementation plans, OpenSpec, or repository checkers.
 
+## PMBOK 8 Primary Overlay
+
+Use PMBOK 8th Edition as the primary project-management overlay for this repository. The primary overlay means the reference used to frame value delivery, project-canvas alignment, performance domains, AI-era project governance, hybrid delivery, and tailoring. It does not replace the repository's own document stack.
+
+Supplemental overlays have narrower roles:
+
+- `PMBOK 6th Edition` is the process and knowledge-area supplement; it helps translate lifecycle layers into inputs, tools and techniques, outputs, and control gates.
+- `Process Groups: A Practice Guide` is the delivery-gate supplement; it maps initiating, planning, executing, monitoring and controlling, and closing to OpenSpec and GitLab-first work.
+- `PMBOK 7th Edition` is the principles and value-delivery supplement; it bridges principles, performance domains, system thinking, and tailoring.
+- `Agile Practice Guide` is the adaptive and hybrid delivery supplement; it informs MVP slices, feedback loops, iteration, and reversible releases.
+
+The repository should use these sources as structure, not as copied text. The local reading audit may record which local files were readable, but lifecycle documents should contain repository-specific mappings only.
+
 ## Relationship To The 0-8 Lifecycle
 
 | 0-8 layer | Product/business purpose | PMI overlay |
@@ -24,6 +37,22 @@ These references are an overlay. They do not replace white papers, BRD, MRD, Nor
 | 6 Execution | Deliver the work | Process Groups map directly to OpenSpec and GitLab-first delivery |
 | 7 Growth | Expand adoption and usefulness | Agile inspection and adaptation support iterative adoption |
 | 8 Retrospective | Learn and improve | Process closing and lessons learned become archive and governance updates |
+
+## Project Canvas And Performance-Domain Mapping
+
+A `project_canvas.md` file is a lightweight project canvas. It aligns purpose, value, stakeholders, boundaries, risks, delivery style, and outcome checks before a team expands the full lifecycle stack.
+
+For this repository, PMBOK 8th Edition performance-domain thinking maps to these governance concerns:
+
+| Performance concern | Repository mapping |
+| --- | --- |
+| Governance | User authority, OpenSpec changes, GitLab-first review, release consent, and checker-backed safety rules |
+| Scope | Platform repository boundaries, downstream project boundaries, and non-goals |
+| Schedule | Release slices, current mainline, phase gates, and closeout timing |
+| Finance | GitLab runner minutes, provider pacing budget, local model cost, operator attention, and maintenance time |
+| Stakeholders | User/operator, main Codex leader session, subagents, durable workers, downstream project maintainers, and reviewers |
+| Resources | Worktrees, wrappers, user-level helpers, local models, MCP tools, and repo-local state directories |
+| Risk | Cross-session collision, stale main, state leakage, lane mis-selection, hidden automation, and rollback failure |
 
 ## Process Groups To OpenSpec And GitLab Gates
 

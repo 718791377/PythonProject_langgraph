@@ -70,6 +70,20 @@ class WindowsCleanupOutputControlCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("omx_trace_enabled" in error for error in payload["errors"]))
 
+    def test_fails_when_optional_taskkill_exe_control_is_removed(self) -> None:
+        root = self.make_root("windows-cleanup-missing-taskkill-exe-control")
+        source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
+            "[switch]$InstallTaskkillExeShim",
+            "[switch]$RemovedTaskkillExeShim",
+        )
+        self.write_installer_copy(root, source)
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("optional_taskkill_exe_switch" in error for error in payload["errors"]))
+
 
 if __name__ == "__main__":
     unittest.main()

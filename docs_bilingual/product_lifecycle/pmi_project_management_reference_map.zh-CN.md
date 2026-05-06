@@ -11,6 +11,19 @@
 
 这些参考资料是叠加层。它们不替代白皮书、BRD、MRD、北极星 Plan、PRD、技术设计、implementation plans、OpenSpec 或仓库 checker。
 
+## PMBOK 第8版主要叠加层
+
+本仓库将 PMBOK 第8版作为主要项目管理叠加层。主要叠加层是用于 framing value delivery、project-canvas alignment、performance domains、AI-era project governance、hybrid delivery 和 tailoring 的参考。它不替代仓库自己的文档栈。
+
+补充叠加层的职责更窄：
+
+- `PMBOK 第6版` 是过程和知识领域补充；它帮助把 lifecycle layers 转成 inputs、tools and techniques、outputs 和 control gates。
+- `Process Groups: A Practice Guide` 是 delivery-gate supplement；它把 initiating、planning、executing、monitoring and controlling、closing 映射到 OpenSpec 和 GitLab-first work。
+- `PMBOK 第7版` 是 principles 和 value-delivery supplement；它桥接 principles、performance domains、system thinking 和 tailoring。
+- `Agile Practice Guide` 是 adaptive 和 hybrid delivery supplement；它指导 MVP slices、feedback loops、iteration 和 reversible releases。
+
+仓库只使用这些来源的结构，不复制正文。本地读取审计可以记录哪些本地文件可读，但 lifecycle documents 只写 repository-specific mappings。
+
 ## Relationship To The 0-8 Lifecycle
 
 | 0-8 层级 | 产品/商业目的 | PMI 叠加层 |
@@ -24,6 +37,22 @@
 | 6 执行 | 交付工作 | Process Groups 直接映射 OpenSpec 和 GitLab-first delivery |
 | 7 增长 | 扩大采用和效用 | Agile inspection and adaptation 支持迭代采用 |
 | 8 复盘 | 学习并改进 | process closing 和 lessons learned 变成 archive 和 governance updates |
+
+## 项目画布与绩效域映射
+
+`project_canvas.md` 是轻量项目画布文件；它在团队展开完整 lifecycle stack 之前，对齐 purpose、value、stakeholders、boundaries、risks、delivery style 和 outcome checks。
+
+对本仓库来说，PMBOK 第8版的 performance-domain thinking 映射到以下治理关注点：
+
+| 绩效关注点 | 仓库映射 |
+| --- | --- |
+| Governance | 用户权威、OpenSpec changes、GitLab-first review、release consent 和 checker-backed safety rules |
+| Scope | 平台仓库边界、下游项目边界和 non-goals |
+| Schedule | Release slices、current mainline、phase gates 和 closeout timing |
+| Finance | GitLab runner minutes、provider pacing budget、本地模型成本、operator attention 和 maintenance time |
+| Stakeholders | user/operator、main Codex leader session、subagents、durable workers、downstream project maintainers 和 reviewers |
+| Resources | worktrees、wrappers、user-level helpers、本地模型、MCP tools 和 repo-local state directories |
+| Risk | cross-session collision、stale main、state leakage、lane mis-selection、hidden automation 和 rollback failure |
 
 ## Process Groups To OpenSpec And GitLab Gates
 
