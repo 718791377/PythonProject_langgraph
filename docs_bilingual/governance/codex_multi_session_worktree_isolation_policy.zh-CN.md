@@ -163,6 +163,7 @@ Runner 配额规则：
 - 首次推送前，先在本地完成 commits、checker runs、rework 和 cleanup。commits 是本地 Git 提交，checker runs 是本地检查命令执行，rework 是本地返工，cleanup 是提交前清理。
 - 只有在主题、验证面和 rollback boundary（回退边界）相同的情况下，才把相关小变更合并进一个 MR。rollback boundary 是可以安全回退而不混入无关工作的最小单位。
 - 不要为了减少 runner 使用量而把无关主题合并到同一个 MR；可评审性和回退安全优先。
+- 远端发布前，当前会话的模型必须根据 local validation state（本地验证状态）、active-change state（active change 状态）、review scope（评审范围）、rollback boundary（回退边界）和 runner-budget value（runner 配额价值）判断发布时机，然后向用户建议 publish（发布）或 wait（继续等待）。用户仍然是 release decision authority（发布决策权威）。
 - 只有本地验证通过后，才推送到 GitLab；除非用户明确要求提前跑远端 pipeline。
 
 默认本地优先流程：
@@ -170,11 +171,12 @@ Runner 配额规则：
 1. 从最新 `gitlab/main` 创建 feature branch。
 2. 为该分支使用专用 `.worktrees/<task>` worktree。
 3. 在本地 commit 和 validate，直到分支适合远端 review。
-4. 推送到 GitLab 并创建或更新 GitLab MR。
-5. 等待 GitLab pipeline 通过。
-6. 合并到 GitLab `main`。
-7. 把 exact GitLab main commit 同步到 GitHub。
-8. 快进本地 `main` 分支引用。
+4. 由当前会话模型建议 publish 或 wait，然后请用户确认发布决策。
+5. 推送到 GitLab 并创建或更新 GitLab MR。
+6. 等待 GitLab pipeline 通过。
+7. 合并到 GitLab `main`。
+8. 把 exact GitLab main commit 同步到 GitHub。
+9. 快进本地 `main` 分支引用。
 
 本仓库默认不使用 GitHub PR。
 
