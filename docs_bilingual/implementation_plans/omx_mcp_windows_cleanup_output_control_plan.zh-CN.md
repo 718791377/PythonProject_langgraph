@@ -4,7 +4,7 @@
 
 - 阶段：active follow-up implementation，表示这是当前可实施的后续修复任务。
 - 主线：Codex user-level orchestration maintenance，表示这是用户级 Codex 编排维护工作。
-- OpenSpec change：`stabilize-omx-mcp-windows-cleanup-output`，这是用于保留 direct `omx_*` MCP 工具并抑制正常 Windows cleanup 输出的变更。
+- OpenSpec change：`harden-windows-cleanup-output-control`，这是用于硬化 direct `omx_*` MCP 工作流，并在 wrapped launch 与 subagent cleanup 路径中抑制正常 Windows cleanup 输出的变更。
 
 ## 问题
 
@@ -33,11 +33,13 @@
 
 1. 添加 OpenSpec artifacts；OpenSpec artifacts 是 proposal、design、tasks 和 delta spec，用来定义 cleanup-output control 合同。
 2. 在 `tools/install-codex-user-level-team-mode.ps1` 中添加 `win-shims` 生成逻辑；该脚本是用户级安装器，用来写入托管 launcher 和 helper 脚本。
-3. 生成 `taskkill.cmd`、`taskkill.ps1` 和 `taskkill-shim-source.cs`；这些文件分别是 CMD shim、PowerShell shim 和可选 C# shim 源码，用来调用真实 `taskkill.exe` 并抑制成功输出。编译后的 `taskkill.exe` 先保留为可选 follow-up，只有证据显示调用方显式执行 `taskkill.exe` 时再补。
-4. 更新生成的 startup launcher；startup launcher 是 `codex-ohmy` 间接调用 native Codex 的托管脚本，它只在调用 native Codex 期间把 `win-shims` 放到 PATH 前面，并在 `finally` 中恢复 PATH 和 PATHEXT。
-5. 添加 `tools/check_windows_cleanup_output_control.py`；这是仓库 checker，用来验证 shim 生成、PATH 恢复和 `omx_*` MCP 启用覆盖没有被破坏。
-6. 添加安装器测试和 checker 测试；测试应覆盖生成文件、manifest 输出、wrapped launch PATH 作用域以及 native bypass 不受影响。
-7. 运行验证并通过 GitLab-first MR 发布；GitLab-first MR 是本仓库默认的评审和合并流程。
+3. 生成 `taskkill.cmd`、`taskkill.ps1` 和 `taskkill-shim-source.cs`；这些文件分别是 CMD shim、PowerShell shim 和可选 C# shim 源码，用来调用真实 `taskkill.exe` 并抑制成功输出。
+4. 添加 `InstallTaskkillExeShim` 安装器开关；该开关只在证据显示调用方绕过 PATHEXT 并直接执行 `.exe` 路径时，才编译并安装 `taskkill.exe` shim。
+5. 保持默认路径保守；默认 wrapped launch 只优先使用 `taskkill.cmd`，只有显式 opt-in 后 wrapped launch 才同时优先使用 `taskkill.exe`。
+6. 更新生成的 startup launcher；startup launcher 是 `codex-ohmy` 间接调用 native Codex 的托管脚本，它只在调用 native Codex 期间把 `win-shims` 放到 PATH 前面，并在 `finally` 中恢复 PATH 和 PATHEXT。
+7. 添加 `tools/check_windows_cleanup_output_control.py`；这是仓库 checker，用来验证 shim 生成、可选 EXE 控制、PATH 恢复和 `omx_*` MCP 启用覆盖没有被破坏。
+8. 添加安装器测试和 checker 测试；测试应覆盖默认非 EXE 模式、显式 EXE opt-in、生成文件、manifest 输出、wrapped launch PATH 作用域以及 native bypass 不受影响。
+9. 运行验证并通过 GitLab-first MR 发布；GitLab-first MR 是本仓库默认的评审和合并流程。
 
 ## 验证
 
