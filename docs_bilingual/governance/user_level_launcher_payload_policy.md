@@ -95,3 +95,15 @@ For this repository, the required prevention rule is:
 - do not pass the generated user-level orchestration instructions inline as `developer_instructions`
 - write them to `user-level-team-mode-model-instructions.md` under the user-level state directory
 - pass the short `model_instructions_file` reference instead
+
+
+## 10. Legacy Resume Launcher Compatibility
+
+Legacy `/resume` use must not force global launcher rewrites or direct MCP removal.
+
+Rules:
+
+- Start `codex-ohmy` normally and enter `/resume` from the temporary session when that path is stable. `codex-ohmy` is the stable wrapped entrypoint for daily Codex orchestration.
+- If an old thread requires a temporary startup workaround, use a scoped one-launch override instead of editing installed wrapper files.
+- Do not hand-edit `C:\Users\lenovo\.codex\bin\codex-ohmy.ps1` as the primary fix. That file is an installed wrapper artifact, not the source of truth for launcher behavior.
+- Long-term fixes must remain in repository-owned source or installer generation logic, with checker coverage before publication.

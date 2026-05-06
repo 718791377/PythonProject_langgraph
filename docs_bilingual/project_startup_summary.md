@@ -29,7 +29,12 @@ Stable repository-entry posture:
 Stable publication posture:
 
 - GitLab is the authoritative review and merge surface for this repository.
-- Feature branches open or update GitLab MRs first; GitLab pipeline success gates the merge into GitLab `main`.
+- Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the remote CI quota consumed by GitLab pipelines, so do local commits, local checks, and local cleanup before the first push.
+- Keep local `main` current with `gitlab/main` before new writable work, release-timing judgment, push, MR creation, or local alignment claims. Local-first batching is not permission to work from a stale remote base.
+- Feature branches open or update GitLab MRs only after local validation passes, unless the user explicitly requests an early remote pipeline check.
+- Batch related small changes into one MR when they share the same topic and rollback boundary; do not combine unrelated topics just to save runner minutes.
+- Before remote publication, the active session's model judges whether the local batch is ready and recommends publish or wait to the user. The user remains the release decision authority.
+- GitLab pipeline success gates the merge into GitLab `main`.
 - GitHub is the post-merge sync target: after GitLab `main` is merged and green, push the same `main` commit directly to GitHub.
 - Do not open GitHub PRs by default.
 
@@ -42,6 +47,15 @@ Stable capability posture:
 - `langgraph` - LangGraph-backed additive durable orchestration backend.
   - already a real additive durable backend
   - still usable but MVP-shaped rather than a fully realized LangGraph-native runtime
+
+
+Stable legacy-session compatibility posture:
+
+- A legacy resumed session is an older Codex `/resume` thread that may still carry stale runtime, MCP, or launcher assumptions from before the latest governance updates.
+- Legacy resumed sessions may continue temporarily for follow-up discussion, but new governance implementation, dirty-file ownership, and release decisions must use the current repository documents and current local Git state.
+- Start `codex-ohmy` first when possible, then enter `/resume` from that temporary session. `codex-ohmy` is the stable wrapped Codex entrypoint for normal user-level orchestration work.
+- If one old thread has an MCP startup problem, use a per-invocation override such as `-c "mcp_servers.omx_code_intel.enabled=false"` only for that old thread. The override is a one-launch config value and must not become a permanent user-level config edit.
+- Do not globally disable `omx_state`, `omx_memory`, `omx_code_intel`, `omx_trace`, `chrome-devtools`, or `pencil` just because a legacy resumed session fails. These names are direct Codex MCP servers that provide orchestration state, memory, code intelligence, trace inspection, browser debugging, and design access.
 
 ## Current Implementation Boundary
 

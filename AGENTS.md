@@ -28,10 +28,19 @@
 - Do not rely on prompt reminders alone for system-level, user-level, or project-level safety boundaries; pair them with script controls such as checkers, guarded helpers, CI gates, or generated launcher logic.
 - Do not duplicate the context-retention canary prompt in `AGENTS.md`; its literal prompt text lives only in `docs_bilingual/project_startup_summary.md` and `docs_bilingual/project_startup_summary.zh-CN.md`. If startup-summary context-loss detection triggers, reread `docs_bilingual/project_startup_summary.md` and follow its cold-start read order before continuing.
 
+- Treat resumed legacy Codex sessions as compatibility-scoped sessions. A resumed legacy Codex session is an older `/resume` thread that may still carry stale runtime or MCP startup assumptions; it may continue for follow-up discussion but must not override current repository governance.
+- For legacy-session MCP failures, prefer per-invocation overrides such as `-c "mcp_servers.omx_code_intel.enabled=false"`. This `-c` argument is a one-launch Codex config override for a single old thread, not a permanent edit to `C:\Users\lenovo\.codex\config.toml`, which is the user-level Codex configuration file.
+
 ## Publication Workflow
 
 - Treat GitLab as the authoritative review and merge surface for this repository.
-- For repository changes, create a feature branch, push it to `gitlab`, open or update a GitLab MR, wait for the GitLab pipeline to pass, and merge into GitLab `main`.
+- Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the remote CI quota consumed by GitLab pipelines, so related local commits should be validated together before the first push.
+- Keep the local repository from falling behind the authoritative remote. Before new writable work, release-timing judgment, push, MR creation, or local `main` alignment claims, refresh `gitlab/main` and fast-forward local `main` when it is behind; never hide a stale local base behind local-first batching.
+- For repository changes, create a feature branch and do local commits, local checker runs, and local cleanup before pushing to `gitlab`. The `gitlab` remote is the authoritative GitLab repository remote used only when the local branch is ready for MR validation.
+- Batch related small changes into one GitLab MR when they share the same topic and rollback boundary; do not combine unrelated topics just to save runner minutes.
+- Before remote publication, the active session's model must judge whether the local batch is ready to publish and present a recommendation to the user. The user remains the release decision authority.
+- Push to GitLab and open or update a GitLab MR only after local validation passes, unless the user explicitly requests an early remote pipeline check.
+- Wait for the GitLab pipeline to pass, then merge into GitLab `main`.
 - After GitLab `main` is merged and green, sync that exact `main` commit directly to GitHub.
 - Do not open GitHub PRs for this repository unless the user explicitly overrides this workflow; GitHub is the post-merge mirror/sync target by default.
 

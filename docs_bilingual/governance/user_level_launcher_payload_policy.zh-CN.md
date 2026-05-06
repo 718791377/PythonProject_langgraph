@@ -95,3 +95,15 @@ status: active
 - 不再把生成后的用户级编排指令以内联 `developer_instructions` 方式传递
 - 把它写入用户级 state 目录下的 `user-level-team-mode-model-instructions.md`
 - 启动时只传短的 `model_instructions_file` 引用
+
+
+## 10. 旧会话 Resume 启动兼容
+
+旧会话 `/resume` 的继续使用不能迫使全局重写 launcher，也不能迫使移除 Codex 直连 MCP。
+
+规则：
+
+- 路径稳定时，先正常启动 `codex-ohmy`，再从临时会话进入 `/resume`。`codex-ohmy` 是日常 Codex 编排工作的稳定包装入口。
+- 如果某个旧 thread 需要临时启动 workaround（绕过方案），使用 scoped one-launch override（单次启动覆盖），不要直接编辑 installed wrapper 文件。
+- 不要把手工编辑 `C:\Users\lenovo\.codex\bin\codex-ohmy.ps1` 当成主要修复方式。该文件是已安装 wrapper 产物，不是 launcher 行为的源码真相。
+- 长期修复必须保留在仓库拥有的源码或 installer generation logic 中，并在发布前有 checker 覆盖。

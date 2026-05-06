@@ -51,6 +51,9 @@ status: active
 - 不要手动删除 `.worktrees/`；需要清理时，先做保存检查，再使用 Git worktree 命令。
 - 不要假设某个脏文件一定属于当前会话。
 - 在确认归属前，不要 reset、checkout、clean、move 或 delete 未知脏文件。
+- 将旧会话视为 compatibility-scoped sessions（兼容范围会话）。旧会话是较早的 Codex `/resume` thread，可能保留 stale context（陈旧上下文）、stale MCP assumptions（陈旧 MCP 假设）或 stale launcher behavior（陈旧启动器行为）。
+- 除非当前会话重新验证仓库 startup summary、OpenSpec state、Git state 和 session-ownership claims，否则不要让旧会话认领新的治理实施、脏文件归属或发布权威。
+- 如果旧会话与当前仓库文件不一致，在没有操作者批准的 reconciliation plan（对账计划）前，以当前仓库文件和当前本地 Git 状态为准。
 - 在创建新的任务 worktree、编辑文件、修复 guard 失败项，或接手 OpenSpec / governance artifacts 之前，必须先执行任务认领预检。任务认领预检是一种只读扫描，用来在创建新写入范围前识别语义上的归属信号。
 - 任务认领预检必须检查已登记 Git worktrees、本地分支、远端跟踪分支、打开中的 GitLab MRs、active OpenSpec changes、本地 `.omx/session-claims/*.json` 认领文件，以及目标路径，包括 ignored files。
 - 只要 worktree 名称、branch 名称、MR 标题、MR source branch、OpenSpec change id、claim path 或目标文件路径出现语义匹配，就应视为 ownership signal（归属信号）；即使对应 worktree 是干净的、也没有领先 `main` 的提交，也仍然算作认领信号。
@@ -140,30 +143,46 @@ python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty 
 
 上面的命令会运行只读会话认领 checker，并输出 JSON 报告，供冷启动会话或本地发布前检查使用。
 
-?? checker ????????
+任务认领 checker 的补充要求：
 
-- ?? claim ??????? `.omx/session-claims/*.json` ????`.omx/session-claims/*.json` ??? ignored JSON ????????????????? OpenSpec change ??????
-- ?????????????????? worktrees?branches?remote-tracking branches?active OpenSpec changes?active claim files?target paths??? ignored ? local-only ? guard-scanned files????????????????? checker-backed ???
+- 每个 active claim（活跃认领文件）都必须写入 `.omx/session-claims/*.json`。`.omx/session-claims/*.json` 是 ignored JSON 文件，用来声明当前会话认领的 OpenSpec change 或路径范围。
+- 任务认领预检必须覆盖 worktrees、branches、remote-tracking branches、active OpenSpec changes、active claim files、target paths，以及 ignored 或 local-only 的 guard-scanned files，避免新会话绕过 checker-backed ownership（脚本支撑的归属判断）。
 
-?????? worktree ??? guard ??????????????????
+推荐在创建 worktree 或修复 guard 问题前运行：
 
 ```powershell
 python .\tools\check_session_ownership_claims.py --root . --precheck-task "<task-slug-or-description>" --target-path "<repo-relative-path>" --openspec-change "<change-id>" --json
 ```
 
-??????????????? checker?`--precheck-task` ???????????`--target-path` ??????????`--openspec-change` ???????? OpenSpec change id?`--json` ???????????????????????? token???? `--check-gitlab-mrs` ????? GitLab MRs ????????????????? GitLab MRs ??? fail closed ???????? `--require-gitlab-mrs`?
+上面的命令会运行任务预检 checker。`--precheck-task` 用来说明准备处理的任务，`--target-path` 用来说明仓库相对热点路径，`--openspec-change` 用来说明准备处理的 OpenSpec change id，`--json` 用来输出机器可读报告。token 可用时，可以加 `--check-gitlab-mrs` 读取打开中的 GitLab MRs；必须在无法检查 GitLab MRs 时 fail closed（失败关闭）时，才加 `--require-gitlab-mrs`。
 
 ## 7. GitLab-First 集成
 
-所有仓库变更仍然遵守 GitLab-first 发布流程：
+所有仓库变更仍然遵守 GitLab-first 发布流程。GitLab-first 是最终 review 与 merge 权威，不表示每个本地 checkpoint commit（检查点提交）都必须推送到远端服务器。
 
-1. 从最新 `gitlab/main` 创建 feature branch。
-2. 为该分支使用专用 `.worktrees/<task>` worktree。
-3. 推送到 GitLab 并创建 GitLab MR。
-4. 等待 GitLab pipeline 通过。
-5. 合并到 GitLab `main`。
-6. 把 exact GitLab main commit 同步到 GitHub。
-7. 快进本地 `main` 分支引用。
+Runner 配额规则：
+
+- 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的有限远端 CI 配额。
+- 本地仓库不得落后于权威远端。新建可写任务、判断发布时机、push、创建 MR 或声明本地 `main` 已对齐之前，必须刷新 `gitlab/main`；如果本地 `main` 落后，就先 fast-forward（快进）本地 `main` 再继续。如果 feature branch 基于陈旧远端基线准备，发布前必须 rebase（变基）或 merge（合并）到刷新后的基线，除非用户明确接受 stale-base risk（陈旧基线风险）。
+- 首次推送前，先在本地完成 commits、checker runs、rework 和 cleanup。commits 是本地 Git 提交，checker runs 是本地检查命令执行，rework 是本地返工，cleanup 是提交前清理。
+- 只有在主题、验证面和 rollback boundary（回退边界）相同的情况下，才把相关小变更合并进一个 MR。rollback boundary 是可以安全回退而不混入无关工作的最小单位。
+- 不要为了减少 runner 使用量而把无关主题合并到同一个 MR；可评审性和回退安全优先。
+- 远端发布前，当前会话的模型必须根据 local validation state（本地验证状态）、active-change state（active change 状态）、review scope（评审范围）、rollback boundary（回退边界）和 runner-budget value（runner 配额价值）判断发布时机，然后向用户建议 publish（发布）或 wait（继续等待）。用户仍然是 release decision authority（发布决策权威）。
+- 只有本地验证通过后，才推送到 GitLab；除非用户明确要求提前跑远端 pipeline。
+
+默认本地优先流程：
+
+1. 刷新 `gitlab/main`，并确认本地 `main` 没有落后。
+2. 从最新 `gitlab/main` 创建 feature branch。
+3. 为该分支使用专用 `.worktrees/<task>` worktree。
+4. 在本地 commit 和 validate，直到分支适合远端 review。
+5. 再次刷新 `gitlab/main`，并确认 feature branch 没有基于陈旧远端状态。
+6. 由当前会话模型建议 publish 或 wait，然后请用户确认发布决策。
+7. 推送到 GitLab 并创建或更新 GitLab MR。
+8. 等待 GitLab pipeline 通过。
+9. 合并到 GitLab `main`。
+10. 把 exact GitLab main commit 同步到 GitHub。
+11. 快进本地 `main` 分支引用。
 
 本仓库默认不使用 GitHub PR。
 

@@ -154,3 +154,111 @@ The task ownership precheck SHALL offer an explicit GitLab MR inspection option 
 - **AND** the checker cannot inspect open GitLab MRs because token or remote metadata is unavailable
 - **THEN** it SHALL fail with an operator-facing error
 - **AND** it SHALL leave the repository unchanged
+
+### Requirement: Repository Publication SHALL Prefer Local-First Runner Budgeting
+
+The repository publication workflow SHALL conserve GitLab runner minutes by defaulting to local-first validation and batching before remote push.
+
+#### Scenario: Related local changes are ready for review
+
+- **GIVEN** a maintainer has related changes on one feature branch
+- **AND** the changes share one topic, validation surface, and rollback boundary
+- **WHEN** local validation passes
+- **THEN** the maintainer MAY push the branch once and open or update one GitLab MR
+- **AND** the GitLab pipeline remains the merge gate before GitLab `main`
+
+#### Scenario: Unrelated changes would be batched only to save runner minutes
+
+- **GIVEN** two changes have different review topics or rollback boundaries
+- **WHEN** a maintainer considers batching them only to reduce GitLab runner-minute usage
+- **THEN** the workflow SHALL require separate branches or separate MRs
+- **AND** reviewability and rollback safety SHALL take priority over CI quota savings
+
+#### Scenario: Early remote pipeline is explicitly requested
+
+- **GIVEN** local validation is not yet complete
+- **WHEN** the user explicitly requests an early GitLab pipeline check
+- **THEN** the maintainer MAY push early
+- **AND** the exception SHALL not become the default workflow for routine checkpoints
+
+### Requirement: Release Timing SHALL Be Recommended By The Active Session Before Remote Publication
+
+Before a local batch is pushed to GitLab, the active session's model SHALL judge whether the batch is ready for remote publication and present a publish-or-wait recommendation to the user.
+
+The user SHALL remain the release decision authority.
+
+#### Scenario: Local batch is ready to publish
+
+- **GIVEN** local validation has passed
+- **AND** the active changes are complete or archived
+- **AND** the review scope and rollback boundary are coherent
+- **WHEN** the active session evaluates release timing
+- **THEN** it SHALL recommend publishing to the user
+- **AND** it SHALL explain why the runner-minute cost is justified
+
+#### Scenario: Local batch should wait
+
+- **GIVEN** local validation has not passed
+- **OR** same-topic work is expected immediately
+- **OR** the review scope or rollback boundary is unclear
+- **WHEN** the active session evaluates release timing
+- **THEN** it SHALL recommend waiting
+- **AND** it SHALL identify what local work should finish before remote publication
+
+#### Scenario: User confirms the release decision
+
+- **GIVEN** the active session has presented a publish-or-wait recommendation
+- **WHEN** the user confirms publishing
+- **THEN** the session MAY push to GitLab and open or update the MR
+- **AND** the GitLab pipeline remains the merge gate
+
+### Requirement: Local Repository SHALL Not Lag The Authoritative Remote Before Work Or Publication
+
+The repository workflow SHALL keep local `main` from lagging behind `gitlab/main` before new writable work, release-timing judgment, push, MR creation, or local alignment claims.
+
+Local-first batching SHALL NOT be used as permission to continue from a stale remote base.
+
+#### Scenario: Local main is behind before writable work
+
+- **GIVEN** `gitlab/main` has advanced
+- **AND** local `main` is behind it
+- **WHEN** a session prepares to create a new writable task branch
+- **THEN** the session SHALL fast-forward local `main` before continuing
+- **AND** it SHALL not reset or discard dirty work as part of this freshness check
+
+#### Scenario: Feature branch was prepared on a stale base
+
+- **GIVEN** a local feature branch is ready for release timing judgment
+- **AND** refreshed `gitlab/main` shows the feature branch was prepared on a stale base
+- **WHEN** the session evaluates publication readiness
+- **THEN** it SHALL recommend rebasing or merging onto the refreshed base before publication
+- **AND** it MAY proceed from the stale base only if the user explicitly accepts the risk
+
+#### Scenario: Local repository is current
+
+- **GIVEN** refreshed `gitlab/main` matches local `main`
+- **WHEN** local validation and release-timing checks pass
+- **THEN** the session MAY recommend remote publication
+- **AND** GitLab pipeline success remains the merge gate
+
+### Requirement: Legacy Resumed Sessions SHALL Remain Compatibility-Scoped
+
+The repository workflow SHALL treat legacy resumed Codex sessions as compatibility-scoped sessions.
+
+A legacy resumed session is an older Codex `/resume` thread that may retain stale context, stale MCP assumptions, or stale launcher behavior from before the current governance state.
+
+Legacy resumed sessions MAY continue temporarily, but they SHALL NOT override current repository files, current local Git state, active OpenSpec state, or session-ownership claims.
+
+#### Scenario: Old resumed session disagrees with current repository state
+
+- **GIVEN** a legacy resumed session contains stale instructions or stale MCP assumptions
+- **WHEN** the session is used for follow-up discussion
+- **THEN** the current repository files and current local Git state SHALL be treated as authoritative
+- **AND** the old session SHALL NOT claim new governance implementation without revalidating startup summaries, OpenSpec state, Git state, and session-ownership claims
+
+#### Scenario: Old resumed session needs a scoped workaround
+
+- **GIVEN** a legacy resumed session cannot start because of stale runtime or MCP state
+- **WHEN** the operator wants to continue that old thread
+- **THEN** the session MAY use a per-invocation compatibility override
+- **AND** that override SHALL NOT become a permanent global configuration change unless a future approved governance change says so

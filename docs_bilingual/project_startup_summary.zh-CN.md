@@ -37,6 +37,14 @@ translation_of: docs_bilingual/project_startup_summary.md
   - 已经是真实可用的 additive durable backend
   - 但仍然属于“可用但偏 MVP”，还不是 fully realized 的 LangGraph-native runtime
 
+稳定的旧会话兼容状态：
+
+- 旧会话是通过 Codex `/resume` 恢复的历史 thread，可能仍然携带最新治理更新前的 runtime、MCP 或 launcher 假设。
+- 旧会话可以临时继续用于跟进讨论，但新的治理实施、脏文件归属和发布决策必须以当前仓库文档和当前本地 Git 状态为准。
+- 优先先启动 `codex-ohmy`，再从临时会话里进入 `/resume`。`codex-ohmy` 是日常用户级编排工作的稳定包装 Codex 入口。
+- 如果某个旧 thread 出现 MCP 启动问题，只对该旧 thread 使用一次性覆盖，例如 `-c "mcp_servers.omx_code_intel.enabled=false"`。这个 `-c` 参数是单次启动的 Codex 配置覆盖，不能变成永久用户级配置修改。
+- 不要因为某个旧会话失败就全局禁用 `omx_state`、`omx_memory`、`omx_code_intel`、`omx_trace`、`chrome-devtools` 或 `pencil`。这些名称是 Codex 直连 MCP server，分别提供编排状态、记忆、代码智能、trace 检查、浏览器调试和设计访问能力。
+
 ## 当前实施边界
 
 当前实施主线只限于两份 active 用户级编排方案：
@@ -145,6 +153,11 @@ translation_of: docs_bilingual/project_startup_summary.md
 ## 仓库发布流程
 
 - GitLab 是本仓库的权威 review / merge 面。
-- 所有变更先推送到 GitLab feature 分支并创建或更新 GitLab MR；只有 GitLab pipeline 通过后，才合并到 GitLab `main`。
+- 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的远端 CI 配额，所以首次推送前应先完成本地 commit、本地 checker 和本地清理。
+- 新建可写任务、判断发布时机、push、创建 MR 或声明本地已对齐之前，必须保持本地 `main` 不落后于 `gitlab/main`。local-first batching（本地优先批量发布）不是允许基于陈旧远端基线继续工作的理由。
+- feature branch 只有在本地验证通过后，才推送到 GitLab 并创建或更新 GitLab MR；除非用户明确要求提前跑远端 pipeline。
+- 主题相同且 rollback boundary（回退边界）相同的小变更可以合并到一个 MR；不要为了节省 runner minutes 把无关主题硬塞进同一个 MR。
+- 远端发布前，当前会话的模型必须判断本地批次是否适合发布，并向用户提出 publish（发布）或 wait（继续等待）的建议；用户仍然是 release decision authority（发布决策权威）。
+- 只有 GitLab pipeline 通过后，才合并到 GitLab `main`。
 - GitLab `main` 合并并变绿后，再把同一个 `main` 提交直接同步推送到 GitHub。
 - 默认不为 GitHub 开 PR；除非用户明确要求，GitHub 只是合并后的同步目标。

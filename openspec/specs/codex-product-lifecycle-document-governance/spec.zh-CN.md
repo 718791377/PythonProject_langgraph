@@ -76,3 +76,15 @@ Codex 平台仓库可以定义可复用 governance、templates、checkers、role
 - **WHEN** leader 选择执行方式
 - **THEN** 工作先从小型 exploration、spike 或 MVP slice 开始
 - **AND** 在计划冻结且存在独立执行切片之前，不启动 durable team
+
+### Requirement: Platform White Paper And MRD Are First-Class Lifecycle Documents
+
+仓库 SHALL 维护 Codex CLI personal production durable-team platform 的第一类双语 white paper 和 MRD 文档，然后才能把下游 implementation plans 视为完整 lifecycle coverage。
+
+#### Scenario: A maintainer follows the lifecycle stack
+
+- **GIVEN** 维护者阅读 platform lifecycle documentation（平台生命周期文档）
+- **WHEN** 维护者需要 cognitive narrative（认知叙事）和 market requirements（市场需求）
+- **THEN** 维护者可以在 `docs_bilingual/whitepapers/` 找到 canonical white paper；`docs_bilingual/whitepapers/` 是白皮书目录，用来保存认知叙事文档
+- **AND** 维护者可以在 `docs_bilingual/market_requirements/` 找到 MRD；`docs_bilingual/market_requirements/` 是市场需求目录，用来保存 market-requirements documents
+- **AND** concrete workload-to-profile mappings（具体工作负载到 profile 的映射）位于 MRD appendix，而不是单独的 implementation-plan reference

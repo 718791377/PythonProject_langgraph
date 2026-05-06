@@ -132,6 +132,32 @@
         "check_openspec_code_archive_evidence"
       ],
       "description": "Prevents code-class OpenSpec changes from being archived in a branch that has no source, executable check, CI, or test evidence."
+    },
+    {
+      "id": "legacy-session-compatibility",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/project_startup_summary.md",
+        "docs_bilingual/project_startup_summary.zh-CN.md",
+        "docs_bilingual/governance/codex_user_level_mcp_scope_policy.md",
+        "docs_bilingual/governance/codex_user_level_mcp_scope_policy.zh-CN.md",
+        "docs_bilingual/governance/user_level_launcher_payload_policy.md",
+        "docs_bilingual/governance/user_level_launcher_payload_policy.zh-CN.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_mcp_router_scope_policy.py",
+        "tools/check_windows_cleanup_output_control.py",
+        "tools/check_session_ownership_claims.py"
+      ],
+      "guard_steps": [
+        "check_mcp_router_scope_policy",
+        "check_windows_cleanup_output_control",
+        "check_session_ownership_claims"
+      ],
+      "description": "Keeps legacy resumed sessions compatibility-scoped, preserves direct Codex MCP servers, and requires current session ownership checks before old sessions affect new governance work."
     }
   ]
 }

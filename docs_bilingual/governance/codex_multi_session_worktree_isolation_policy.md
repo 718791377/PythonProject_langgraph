@@ -51,6 +51,10 @@ Required rules:
 - Do not manually delete `.worktrees/`; use Git worktree commands after preservation checks.
 - Do not assume a dirty file belongs to the current session.
 - Do not reset, checkout, clean, move, or delete unknown dirty files until their owning session or backup branch is identified.
+
+- Treat legacy resumed sessions as compatibility-scoped sessions. A legacy resumed session is an older Codex `/resume` thread that may keep stale context, stale MCP assumptions, or stale launcher behavior.
+- Do not let a legacy resumed session claim new governance implementation, dirty-file ownership, or release authority unless the current session explicitly revalidates the repository startup summary, OpenSpec state, Git state, and session-ownership claims.
+- If an old resumed session disagrees with current repository files, current repository files and current local Git state win until an operator-approved reconciliation plan says otherwise.
 - Before a writable session dirties a feature worktree, create an active `.omx/session-claims/<session>.json` claim file. `.omx/session-claims/` is the ignored local coordination directory for declaring the OpenSpec change or path scope owned by the current session.
 - Before creating a new task worktree, editing files, fixing guard failures, or taking over OpenSpec or governance artifacts, run a task ownership precheck. A task ownership precheck is a read-only scan for semantic ownership signals before any new write scope is created.
 - The task ownership precheck must inspect registered Git worktrees, local branches, remote-tracking branches, open GitLab MRs, active OpenSpec changes, local `.omx/session-claims/*.json` claim files, and target paths including ignored files.
@@ -148,15 +152,31 @@ The command above runs the checker in task precheck mode. `--precheck-task` name
 
 ## 7. GitLab-First Integration
 
-All repository changes still follow the GitLab-first publication workflow:
+All repository changes still follow the GitLab-first publication workflow. GitLab-first is the final review and merge authority; it is not a requirement to push every local checkpoint commit to the remote server.
 
-1. Create a feature branch from the latest `gitlab/main`.
-2. Use a dedicated `.worktrees/<task>` worktree for that branch.
-3. Push to GitLab and open a GitLab MR.
-4. Wait for the GitLab pipeline to pass.
-5. Merge into GitLab `main`.
-6. Sync the exact GitLab main commit to GitHub.
-7. Fast-forward the local `main` branch reference.
+Runner-budget rule:
+
+- Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the finite remote CI quota consumed by GitLab pipelines.
+- Keep the local repository from falling behind the authoritative remote. Before new writable work, release-timing judgment, push, MR creation, or local `main` alignment claims, refresh `gitlab/main`; if local `main` is behind, fast-forward it before continuing. If a feature branch was prepared on a stale base, rebase or merge it onto the refreshed base before publication unless the user explicitly accepts the stale-base risk.
+- Do local commits, local checker runs, local rework, and local cleanup before the first push.
+- Batch related small changes into one MR only when they share the same topic, validation surface, and rollback boundary. A rollback boundary is the smallest unit that can be reverted safely without mixing unrelated work.
+- Do not combine unrelated topics just to reduce runner usage; reviewability and rollback safety still take priority.
+- Before remote publication, the active session's model must judge release timing from local validation state, active-change state, review scope, rollback boundary, and runner-budget value, then recommend publish or wait to the user. The user remains the release decision authority.
+- Push to GitLab only when local validation passes, unless the user explicitly asks for an early remote pipeline check.
+
+Default local-first sequence:
+
+1. Refresh `gitlab/main` and confirm local `main` is not behind it.
+2. Create a feature branch from the latest `gitlab/main`.
+3. Use a dedicated `.worktrees/<task>` worktree for that branch.
+4. Commit and validate locally until the branch is ready for remote review.
+5. Refresh `gitlab/main` again and confirm the feature branch is not based on stale remote state.
+6. Have the active session's model recommend publish or wait, then ask the user to confirm the release decision.
+7. Push to GitLab and open or update a GitLab MR.
+8. Wait for the GitLab pipeline to pass.
+9. Merge into GitLab `main`.
+10. Sync the exact GitLab main commit to GitHub.
+11. Fast-forward the local `main` branch reference.
 
 GitHub PRs are not the default workflow for this repository.
 
