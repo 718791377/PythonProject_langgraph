@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -78,6 +79,10 @@ def resolve_ref(root: Path, ref: str) -> str | None:
     return result.stdout.strip()
 
 
+def is_gitlab_ci_detached_checkout() -> bool:
+    return bool(os.environ.get("GITLAB_CI") and os.environ.get("CI_COMMIT_SHA"))
+
+
 def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirty: bool) -> dict[str, object]:
     root = root.resolve()
     errors: list[str] = []
@@ -123,9 +128,15 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
             }
         )
         if primary_branch != main_branch:
-            errors.append(
-                f"Primary repository directory is on {primary_branch or '<detached>'}, expected local {main_branch}: {primary_path}. Check out local main in the primary directory before continuing; use .worktrees/ for feature branches."
-            )
+            if primary_branch is None and is_gitlab_ci_detached_checkout():
+                primary_worktree_alignment["ok"] = True
+                info.append(
+                    f"Primary repository directory is a GitLab CI detached checkout at {primary_path}; local primary-directory branch alignment is skipped for this ephemeral CI workspace."
+                )
+            else:
+                errors.append(
+                    f"Primary repository directory is on {primary_branch or '<detached>'}, expected local {main_branch}: {primary_path}. Check out local main in the primary directory before continuing; use .worktrees/ for feature branches."
+                )
         elif not main_commit:
             warnings.append(
                 f"Could not resolve local {main_branch}; primary directory alignment with the local Git branch is informational only."

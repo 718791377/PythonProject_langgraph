@@ -48,11 +48,22 @@ Why:
 
 - Cold-start sessions and CI logs need an explicit machine-readable field instead of inferring alignment from generic worktree lists.
 
+### Decision 4: Treat GitLab CI detached checkouts as ephemeral CI workspaces
+
+The checker will allow a detached primary worktree only when GitLab CI environment variables identify the workspace as an ephemeral GitLab CI checkout.
+
+Why:
+
+- GitLab CI checks out merge-request commits in detached HEAD mode by default.
+- The local safety rule targets the operator's persistent primary directory, not a throwaway CI clone.
+- Local detached HEAD and old-branch primary directories must still fail outside GitLab CI.
+
 ## Risks / Trade-offs
 
 - Risk: Running the checker from a feature worktree could be confused with primary directory alignment. Mitigation: the checker inspects registered worktrees and checks the primary registered worktree, not just the current working directory.
 - Risk: A nonstandard repository layout could make the first worktree unexpected. Mitigation: this repository's governance defines the primary directory as `D:\PythonProject_langgraph`; nonstandard layouts can pass `--root` to the intended repository and inspect the emitted path.
 - Risk: Local-ahead-of-remote batching could be mistaken as a failure. Mitigation: this change keeps local primary-directory alignment distinct from remote freshness.
+- Risk: CI detached checkout tolerance could hide local operator drift. Mitigation: the tolerance is gated on GitLab CI environment variables and does not apply to normal local sessions.
 
 ## Migration Plan
 

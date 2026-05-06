@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -35,6 +36,19 @@ class WorktreeSessionHygieneCheckTest(unittest.TestCase):
             text=True,
             encoding="utf-8",
             cwd=REPO_ROOT,
+        )
+
+    def run_check_with_env(self, root: Path, env: dict[str, str], *extra: str) -> subprocess.CompletedProcess[str]:
+        merged_env = os.environ.copy()
+        merged_env.update(env)
+        return subprocess.run(
+            [sys.executable, str(SCRIPT_PATH), "--root", str(root), "--main-ref", "gitlab/main", "--json", *extra],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=REPO_ROOT,
+            env=merged_env,
         )
 
     def make_feature_worktree(self, root: Path, branch: str = "feature/test") -> Path:
@@ -103,6 +117,16 @@ class WorktreeSessionHygieneCheckTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertFalse(payload["primary_worktree_alignment"]["ok"])
         self.assertTrue(any("Primary repository directory is on feature/test" in error for error in payload["errors"]))
+
+    def test_allows_gitlab_ci_detached_checkout(self) -> None:
+        root = self.make_repo("worktree-ci-detached")
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+        subprocess.run(["git", "checkout", "--detach", head], cwd=root, check=True, capture_output=True, text=True)
+        result = self.run_check_with_env(root, {"GITLAB_CI": "true", "CI_COMMIT_SHA": head})
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["primary_worktree_alignment"]["ok"])
+        self.assertTrue(any("GitLab CI detached checkout" in item for item in payload["info"]))
 
 
 if __name__ == "__main__":

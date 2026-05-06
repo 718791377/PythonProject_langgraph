@@ -16,6 +16,7 @@
 - [x] 3.2 Make `tools/check_worktree_session_hygiene.py` fail when the primary registered worktree is not on local `main`.
 - [x] 3.3 Make `tools/check_worktree_session_hygiene.py` fail when the primary registered worktree HEAD does not match the local `main` branch reference.
 - [x] 3.4 Update `test/check_worktree_session_hygiene.test.py`, the checker unit test file, with coverage for primary-directory alignment.
+- [x] 3.5 Make `tools/check_worktree_session_hygiene.py` allow GitLab CI detached checkouts as ephemeral CI workspaces while preserving local-session failures.
 
 ## 4. Validation
 

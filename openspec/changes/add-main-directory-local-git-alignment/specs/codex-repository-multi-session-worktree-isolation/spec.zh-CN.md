@@ -37,6 +37,14 @@ The checker SHALL inspect registered Git worktrees and report at least:
 - **THEN** the checker SHALL fail
 - **AND** the failure SHALL explain that the primary directory HEAD must match local `main`
 
+#### Scenario: GitLab CI uses a detached checkout
+
+- **GIVEN** the worktree hygiene checker runs inside GitLab CI
+- **AND** the primary registered worktree is a detached HEAD checkout of the CI commit
+- **WHEN** the worktree hygiene checker runs
+- **THEN** it SHALL allow the detached checkout as an ephemeral CI workspace
+- **AND** it SHALL not extend that tolerance to normal local sessions
+
 ### Requirement: Repository SHALL document primary directory alignment governance
 
 The repository SHALL document that `D:\PythonProject_langgraph` is the primary directory for coordination and local mainline mirroring.
