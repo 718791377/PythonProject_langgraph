@@ -2,7 +2,7 @@
 
 ### Requirement: Local Repository SHALL Not Lag The Authoritative Remote Before Work Or Publication
 
-仓库流程必须在新建可写任务、发布时机判断、push、创建/更新 MR 或声明主线状态之前，保持本地 `main` 不落后于 `gitlab/main`。
+仓库流程必须在新建可写任务、发布时机判断、push、创建或更新 MR、声明主线状态之前，保持本地 `main` 不落后于 `gitlab/main`。
 
 主目录 `D:\PythonProject_langgraph` 必须作为 primary main worktree（主 main 工作区）。它必须检出本地 `main`，不得落后于本地 `main` 分支引用，正常情况下应该与本地 `main` 分支引用完全一致。
 

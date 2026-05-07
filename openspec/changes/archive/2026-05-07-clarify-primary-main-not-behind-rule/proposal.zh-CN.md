@@ -2,7 +2,7 @@
 
 ## 摘要
 
-澄清 `D:\PythonProject_langgraph` 是 primary main worktree（主 main 工作区），必须检出本地 `main`，并且不得落后于本地 `main`。本地 `main` 在开始写入工作、发布判断、push、创建/更新 MR 或声明主线状态前，不得落后于最新拉取的 `gitlab/main`。
+澄清 `D:\PythonProject_langgraph` 是 primary main worktree（主 main 工作区），必须检出本地 `main`，并且不得落后于本地 `main`。本地 `main` 在开始写入工作、发布时机判断、push、创建或更新 MR、声明主线状态之前，不得落后于最新拉取的 `gitlab/main`。
 
 ## 动机
 

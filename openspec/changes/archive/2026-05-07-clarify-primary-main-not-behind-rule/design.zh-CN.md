@@ -14,9 +14,9 @@
 
 `tools/check_worktree_session_hygiene.py` 保留现有主工作区检查，并把本地 `main` 与远端 `gitlab/main` 的比较从“只看是否相等”改为“基于祖先关系判断是否落后”：
 
-- 本地 `main` 等于 `gitlab/main`：通过，并输出匹配信息；
-- 本地 `main` 落后于 `gitlab/main`：失败，并要求在写入工作或发布前先快进；
-- 本地 `main` 领先于 `gitlab/main`：按“不落后”通过，同时提醒操作者不要把主目录 `main` 当作功能工作区；
+- 本地 `main` 等于 `gitlab/main`：通过，并输出匹配信息。
+- 本地 `main` 落后于 `gitlab/main`：失败，并要求在写入工作或发布前先快进。
+- 本地 `main` 领先于 `gitlab/main`：按“不落后”通过，同时提醒操作者不要把主目录 `main` 当作功能工作区。
 - 本地 `main` 与 `gitlab/main` 分叉：失败，并要求先处理主线对账。
 
 ## 回退
