@@ -221,6 +221,7 @@ OpenSpec 已经在仓库的工件层生效：
 适用场景：
 
 - 在工件、实现、验证都稳定后归档 change
+- 为小型 completed change 在打开 GitLab MR 前构建默认 single-MR publication package（单 MR 发布包）
 
 最低 CLI 基线：
 
@@ -234,14 +235,20 @@ OpenSpec 已经在仓库的工件层生效：
 - 不得把 metadata-only 或 smoke-test 占位目录当成正常 completed change 归档；metadata-only 或 smoke-test 占位目录只是元数据或冒烟测试占位，不代表真实完成。
 - 如果后续仍需要新工作但原归档快照本身有效，应优先新建 forward follow-up change，而不是静默把无效归档状态继续正常化；forward follow-up change 是在原归档之后继续推进的新 OpenSpec change。
 
+默认发布前归档包：
+
+- 对已经本地完成、准备发布的 OpenSpec change，除非用户明确要求 implementation-only MR，或存在合理 two-MR exception，否则应在同一个 feature branch 内先 archive，再打开 GitLab MR。
+- 该 MR 应同时包含实现或文档更新、归档后的 change 目录，以及 archive 产生的 stable spec 更新。
+- 这个默认流程适用于本地验证已经证明完成的小型 governance（治理）、documentation（文档）、checker（检查脚本）和 test（测试）类变更。
+- 对大型或高风险实现、需要先远端评审确认的工作，或会产生大量 stable-spec 冲突的归档提升，使用 two-MR flow（双 MR 流程）。
+
 仓库归档隔离流程：
 
 - 如果 change 会修改 source code、scripts、tests、CI、checkers、runtime behavior、stable specs、startup instructions、作为仓库指令面的 `AGENTS.md`，或结构性治理规则，必须使用本流程。纯说明性文本改动如果不改变可执行行为，可以使用轻量归档流程；不确定时按专用 archive worktree 流程处理。
-- 在专用 archive worktree 中执行 completed change 的归档操作。专用 archive worktree 是只服务于 archive branch 的独立 Git worktree，用来避免归档产生的文件移动混入主工作区。
-- 在该 archive worktree 内先完成验证。worktree-local verification 必须包含该 change 要求的仓库 guard 命令，确保归档生成的 stable specs 在集成前已经被检查。
-- worktree 内验证通过后，提交 archive branch。archive branch 是承载归档结果与 stable-spec 更新的 Git 分支。
-- 通过正常 GitLab-first 流程把 archive branch 合回主工作区。主工作区是会话 leader 用来承接集成后分支状态的仓库 checkout。
-- 合入后必须在主工作区再次验证。核心规则是：先在 archive worktree 验证，再在 archive branch 合入主工作区后复验。
+- 在 single-MR path 中，先完成实现验证，再在同一个隔离 feature worktree 内执行归档，然后再发布。如果单独 archive worktree 更安全，必须先把该 archive 结果合回同一个发布分支，再打开 MR。
+- archive 前验证一次，archive 提升后再次验证。worktree-local verification 必须包含该 change 要求的仓库 guard 命令，确保归档生成的 stable specs 在集成前已经被检查。
+- 只有 post-archive validation（归档后验证）通过后，才能提交发布分支。
+- 通过正常 GitLab-first 流程发布。核心规则是：先实现验证，再 archive 与 stable-spec 提升，然后归档后复验；除非存在已说明的 two-MR exception，否则只提交一个 MR。
 
 ## 6. 本仓库何时必须走 OPSX
 

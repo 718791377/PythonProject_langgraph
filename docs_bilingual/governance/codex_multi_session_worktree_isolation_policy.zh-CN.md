@@ -163,15 +163,18 @@ python .\tools\check_session_ownership_claims.py --root . --precheck-task "<task
 
 所有仓库变更仍然遵守 GitLab-first 发布流程。GitLab-first 是最终 review 与 merge 权威，不表示每个本地 checkpoint commit（检查点提交）都必须推送到远端服务器。
 
-Runner 配额规则：
+Runner 配额与发布包规则：
 
 - 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的有限远端 CI 配额。
 - 本地 `main` 不得落后于权威远端。新建可写任务、判断发布时机、push、创建/更新 MR 或声明主线状态之前，必须刷新 `gitlab/main`；如果本地 `main` 落后，就先 fast-forward（快进）本地 `main` 再继续。如果 feature branch 基于陈旧远端基线准备，发布前必须 rebase（变基）或 merge（合并）到刷新后的基线，除非用户明确接受 stale-base risk（陈旧基线风险）。
 - 主目录 `D:\PythonProject_langgraph` 是 primary main worktree（主 main 工作区），必须检出本地 `main`，其 HEAD 不得落后于本地 `main`，正常应与本地 `main` 完全一致。若本地 `main` 落后于 `gitlab/main`，应先 fast-forward；若主目录有脏文件或不在 `main`，必须先停止写入并处理 hygiene 问题。功能实现仍不得直接落在主目录 `main`，应落在 feature worktree / feature branch。`tools/check_worktree_session_hygiene.py` 必须在主目录脏、主目录不在 `main`、主目录落后于本地 `main` 或本地 `main` 落后于 `gitlab/main` 时失败。
 - 首次推送前，先在本地完成 commits、checker runs、rework 和 cleanup。commits 是本地 Git 提交，checker runs 是本地检查命令执行，rework 是本地返工，cleanup 是提交前清理。
+- 对已经本地完成、准备发布的 OpenSpec change，默认采用 single-MR archive package（单 MR 归档发布包）。single-MR archive package 是指同一个 feature branch 同时包含实现或文档变更、`openspec/changes/archive/` 下的归档结果，以及 `openspec/specs/` 下被提升后的 stable spec。
+- 小型 governance（治理）、documentation（文档）、checker（检查脚本）和 test（测试）类变更，只要本地验证已经证明完成且 review scope（评审范围）共享同一个 rollback boundary（回退边界），就应采用 single-MR archive package。
+- 只有在实现规模大或风险高、需要先让远端 CI 或 MR review 确认实现、归档提升会产生大量 stable-spec 冲突，或用户明确要求 implementation-only MR（只发实现 MR）时，才使用 two-MR flow（双 MR 流程）。two-MR flow 必须记录 archive follow-up（归档跟进），不得把 completed active change 视为已经关闭。
 - 只有在主题、验证面和 rollback boundary（回退边界）相同的情况下，才把相关小变更合并进一个 MR。rollback boundary 是可以安全回退而不混入无关工作的最小单位。
 - 不要为了减少 runner 使用量而把无关主题合并到同一个 MR；可评审性和回退安全优先。
-- 远端发布前，当前会话的模型必须根据 local validation state（本地验证状态）、active-change state（active change 状态）、review scope（评审范围）、rollback boundary（回退边界）和 runner-budget value（runner 配额价值）判断发布时机，然后向用户建议 publish（发布）或 wait（继续等待）。用户仍然是 release decision authority（发布决策权威）。
+- 远端发布前，当前会话的模型必须根据 local validation state（本地验证状态）、active-change state（active change 状态）、archive-package state（归档发布包状态）、review scope（评审范围）、rollback boundary（回退边界）和 runner-budget value（runner 配额价值）判断发布时机，然后向用户建议 publish（发布）或 wait（继续等待）。用户仍然是 release decision authority（发布决策权威）。
 - 只有本地验证通过后，才推送到 GitLab；除非用户明确要求提前跑远端 pipeline。
 
 默认本地优先流程：
@@ -179,15 +182,17 @@ Runner 配额规则：
 1. 刷新 `gitlab/main`；如果本地 `main` 落后则先快进，并确认主目录 `D:\PythonProject_langgraph` 干净、检出本地 `main` 且没有落后于本地 `main`。
 2. 从已对 `gitlab/main` 做过新鲜度检查的最新本地 `main` 创建 feature branch。
 3. 为该分支使用专用 `.worktrees/<task>` worktree。
-4. 在本地 commit 和 validate，直到分支适合远端 review。
-5. 再次刷新 `gitlab/main`，并确认 feature branch 没有基于陈旧远端状态。
-6. 由当前会话模型建议 publish 或 wait，然后请用户确认发布决策。
-7. 推送到 GitLab 并创建或更新 GitLab MR。
-8. 等待 GitLab pipeline 通过。
-9. 合并到 GitLab `main`。
-10. 把 exact GitLab main commit 同步到 GitHub。
-11. 把本地 `main` 分支引用快进到 GitLab `main`。
-12. 在 `D:\PythonProject_langgraph` 检出本地 `main`，确认主目录干净，并确认 HEAD 没有落后于本地 `main` 分支引用；正常状态是完全一致。
+4. 实施 OpenSpec change，并在该 change 仍处于 active 状态时先运行本地实现验证。
+5. 如果 completed change 适合 single-MR path（单 MR 路径），就在同一个 feature branch 内 archive 它，把可复用 delta specs 提升进 stable specs，并重新运行本地验证命令。
+6. 如果 completed change 需要 two-MR path（双 MR 路径），必须说明例外原因，保持 active change 或 follow-up archive task 可见，并在发布 implementation-only MR 前请求用户确认。
+7. 再次刷新 `gitlab/main`，并确认 feature branch 没有基于陈旧远端状态。
+8. 由当前会话模型建议 publish 或 wait，并说明采用 single-MR 还是 two-MR 归档决策，然后请用户确认发布决策。
+9. 推送到 GitLab 并创建或更新 GitLab MR。
+10. 等待 GitLab pipeline 通过。
+11. 合并到 GitLab `main`。
+12. 把 exact GitLab main commit 同步到 GitHub。
+13. 把本地 `main` 分支引用快进到 GitLab `main`。
+14. 在 `D:\PythonProject_langgraph` 检出本地 `main`，确认主目录干净，并确认 HEAD 没有落后于本地 `main` 分支引用；正常状态是完全一致。
 
 本仓库默认不使用 GitHub PR。
 
@@ -199,14 +204,15 @@ Runner 配额规则：
 
 1. 实施前先创建或更新 OpenSpec change。
 2. 让治理策略、checker 行为和 guard 集成与该 change 保持一致。
-3. 发布前运行仓库验证命令。
-4. 在实现完成后 archive 该 OpenSpec change，使 delta spec 进入 stable spec。
-5. 通过 GitLab-first 流程发布 archive 和 stable spec。
+3. 实现后、change 仍为 active 状态时，先运行仓库验证命令。
+4. 对已经完成且准备发布的本地 change，默认在同一个 feature branch 内 archive 该 OpenSpec change，使 delta spec 在打开 GitLab MR 之前进入 stable spec。
+5. archive 提升后再次运行仓库验证命令。
+6. 除非明确选择 two-MR exception（双 MR 例外），否则通过一个 GitLab-first MR 同时发布实现、归档移动和 stable spec。
 
 归档隔离规则：
 
-- 如果 change 会影响代码、可执行检查、CI、stable specs、startup instructions、仓库指令面或结构性治理规则，必须先在专用 archive worktree 中完成归档，再合回主工作区。专用 archive worktree 是只用于 archive branch 及其 stable-spec 更新的独立 Git worktree。
-- archive worktree 必须先通过相关验证命令，之后才能提交 archive branch。archive branch 合入主工作区后，主工作区必须再次通过验证。
-- 纯说明性文本改动如果不改变可执行的仓库行为，可以使用轻量归档流程；无法判断时应使用专用 archive worktree 流程。
-
-如果 worktree 隔离相关 OpenSpec change 已经实现并合并到 `main`，就不要继续让它保持 active。即使 tasks 全部勾选，完成后仍然 active 也是生命周期缺口。
+- 如果 change 会影响代码、可执行检查、CI、stable specs、startup instructions、仓库指令面或结构性治理规则，并且适合 single-MR path，应在同一个隔离 feature worktree 中完成归档。若单独 archive worktree 更安全，也必须先合回同一个发布分支，再打开 MR。
+- archive worktree 或 feature worktree 必须先通过相关验证命令，之后才能提交 archive 结果。archive 结果合入发布分支后，该分支必须再次通过验证。
+- 纯说明性文本改动如果不改变可执行的仓库行为，可以使用轻量归档流程；无法判断时应使用 archive-before-publication package flow（发布前归档包流程）。
+- 不要留下实现已经合并到 `main`、但 OpenSpec change 仍 active 的 worktree-isolation change。completed active change（已完成但仍 active 的 change）是生命周期缺口，即使 tasks 全部打勾也一样。
+- 如果使用 two-MR exception，implementation MR 必须说明为什么推迟 archive，并留下可见的 follow-up archive path（后续归档路径）；不得宣称 OpenSpec 生命周期已经关闭。

@@ -157,15 +157,18 @@ The command above runs the checker in task precheck mode. `--precheck-task` name
 
 All repository changes still follow the GitLab-first publication workflow. GitLab-first is the final review and merge authority; it is not a requirement to push every local checkpoint commit to the remote server.
 
-Runner-budget rule:
+Runner-budget and publication-package rules:
 
 - Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the finite remote CI quota consumed by GitLab pipelines.
 - Keep local `main` from falling behind the authoritative remote. Before new writable work, release-timing judgment, push, MR creation/update, or mainline-state claims, refresh `gitlab/main`; if local `main` is behind, fast-forward it before continuing. If a feature branch was prepared on a stale base, rebase or merge it onto the refreshed base before publication unless the user explicitly accepts the stale-base risk.
 - Keep the primary main worktree from falling behind local `main`. `D:\PythonProject_langgraph` is the primary directory; it must be on local `main`, its HEAD must not lag behind the local `main` branch reference, and in normal operation its HEAD should exactly match local `main`. `tools/check_worktree_session_hygiene.py` must fail if the primary directory is dirty, not on `main`, behind local `main`, or if local `main` is behind `gitlab/main`.
 - Do local commits, local checker runs, local rework, and local cleanup before the first push.
+- For a locally completed OpenSpec change that is ready for publication, prefer a single-MR archive package. A single-MR archive package means the same feature branch contains the implementation or documentation change, the archived OpenSpec change under `openspec/changes/archive/`, and the promoted stable spec under `openspec/specs/`.
+- Use the single-MR archive package for small governance, documentation, checker, and test changes when local validation already proves completion and the review scope shares one rollback boundary.
+- Use a two-MR flow only when the implementation is large or risky, remote CI or MR review should confirm the implementation before archive, archive promotion would create heavy stable-spec conflicts, or the user explicitly requests an implementation-only MR. A two-MR flow must record the archive follow-up instead of treating the completed active change as closed.
 - Batch related small changes into one MR only when they share the same topic, validation surface, and rollback boundary. A rollback boundary is the smallest unit that can be reverted safely without mixing unrelated work.
 - Do not combine unrelated topics just to reduce runner usage; reviewability and rollback safety still take priority.
-- Before remote publication, the active session's model must judge release timing from local validation state, active-change state, review scope, rollback boundary, and runner-budget value, then recommend publish or wait to the user. The user remains the release decision authority.
+- Before remote publication, the active session's model must judge release timing from local validation state, active-change state, archive-package state, review scope, rollback boundary, and runner-budget value, then recommend publish or wait to the user. The user remains the release decision authority.
 - Push to GitLab only when local validation passes, unless the user explicitly asks for an early remote pipeline check.
 
 Default local-first sequence:
@@ -173,15 +176,17 @@ Default local-first sequence:
 1. Refresh `gitlab/main`, fast-forward local `main` if it is behind, and confirm the primary directory `D:\PythonProject_langgraph` is clean, on local `main`, and not behind local `main`.
 2. Create a feature branch from the latest local `main` after it has been checked against `gitlab/main`.
 3. Use a dedicated `.worktrees/<task>` worktree for that branch.
-4. Commit and validate locally until the branch is ready for remote review.
-5. Refresh `gitlab/main` again and confirm the feature branch is not based on stale remote state.
-6. Have the active session's model recommend publish or wait, then ask the user to confirm the release decision.
-7. Push to GitLab and open or update a GitLab MR.
-8. Wait for the GitLab pipeline to pass.
-9. Merge into GitLab `main`.
-10. Sync the exact GitLab main commit to GitHub.
-11. Fast-forward the local `main` branch reference to GitLab `main`.
-12. Check out local `main` in `D:\PythonProject_langgraph`, verify it is clean, and verify its HEAD is not behind the local `main` branch reference; normal state is exact equality.
+4. Implement the OpenSpec change and run the local implementation validation while the change is still active.
+5. If the completed change fits the single-MR path, archive it on the same feature branch, promote reusable delta specs into stable specs, and re-run the local validation commands.
+6. If the completed change needs the two-MR path, state the exception reason, keep the active change or follow-up archive task visible, and ask the user before publishing an implementation-only MR.
+7. Refresh `gitlab/main` again and confirm the feature branch is not based on stale remote state.
+8. Have the active session's model recommend publish or wait, including the single-MR or two-MR archive decision, then ask the user to confirm the release decision.
+9. Push to GitLab and open or update a GitLab MR.
+10. Wait for the GitLab pipeline to pass.
+11. Merge into GitLab `main`.
+12. Sync the exact GitLab main commit to GitHub.
+13. Fast-forward the local `main` branch reference to GitLab `main`.
+14. Check out local `main` in `D:\PythonProject_langgraph`, verify it is clean, and verify its HEAD is not behind the local `main` branch reference; normal state is exact equality.
 
 GitHub PRs are not the default workflow for this repository.
 
@@ -193,14 +198,15 @@ Required lifecycle:
 
 1. Create or update an OpenSpec change before implementation.
 2. Keep the governance policy, checker behavior, and guard integration aligned with that change.
-3. Run the repository validation commands before publication.
-4. Archive the completed OpenSpec change so its delta spec becomes a stable spec.
-5. Publish the archive and stable spec through the GitLab-first workflow.
+3. Run the repository validation commands after implementation while the change is still active.
+4. For completed local changes that are ready for publication, archive the OpenSpec change on the same feature branch by default so its delta spec becomes a stable spec before the GitLab MR is opened.
+5. Re-run the repository validation commands after archive promotion.
+6. Publish the implementation, archive movement, and stable spec through one GitLab-first MR unless a two-MR exception is explicitly chosen.
 
 Archive isolation rule:
 
-- For changes that affect code, executable checks, CI, stable specs, startup instructions, repository instruction surfaces, or structural governance rules, perform the archive in a dedicated archive worktree before it is merged back. A dedicated archive worktree is a separate Git worktree used only for the archive branch and its generated stable-spec updates.
-- The archive worktree must pass the relevant validation commands before the archive branch is committed. After the archive branch is integrated into the main workspace, the main workspace must pass validation again.
-- Purely explanatory text edits may use a lighter archive flow when they do not change enforceable repository behavior, but unclear cases should use the dedicated archive worktree flow.
-
-Do not leave a completed worktree-isolation OpenSpec change active after the implementation has already merged to `main`. A completed active change is a lifecycle gap, even when its tasks are all checked.
+- For changes that affect code, executable checks, CI, stable specs, startup instructions, repository instruction surfaces, or structural governance rules, perform the archive in the same isolated feature worktree when the single-MR path applies. If a separate archive worktree is safer, it must still be integrated back into the same publication branch before the MR is opened.
+- The archive worktree or feature worktree must pass the relevant validation commands before the archive result is committed. After the archive result is integrated into the publication branch, that branch must pass validation again.
+- Purely explanatory text edits may use a lighter archive flow when they do not change enforceable repository behavior, but unclear cases should use the archive-before-publication package flow.
+- Do not leave a completed worktree-isolation OpenSpec change active after the implementation has already merged to `main`. A completed active change is a lifecycle gap, even when its tasks are all checked.
+- If a two-MR exception is used, the implementation MR must say why archive is deferred and must leave a visible follow-up archive path; it must not claim the OpenSpec lifecycle is closed.
