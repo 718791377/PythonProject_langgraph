@@ -70,7 +70,7 @@ class WindowsCleanupOutputControlCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("omx_trace_enabled" in error for error in payload["errors"]))
 
-    def test_fails_when_optional_taskkill_exe_control_is_removed(self) -> None:
+    def test_fails_when_taskkill_exe_compat_switch_is_removed(self) -> None:
         root = self.make_root("windows-cleanup-missing-taskkill-exe-control")
         source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
             "[switch]$InstallTaskkillExeShim",
@@ -82,7 +82,21 @@ class WindowsCleanupOutputControlCheckTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
-        self.assertTrue(any("optional_taskkill_exe_switch" in error for error in payload["errors"]))
+        self.assertTrue(any("taskkill_exe_compat_switch" in error for error in payload["errors"]))
+
+    def test_fails_when_taskkill_exe_runtime_presence_check_is_removed(self) -> None:
+        root = self.make_root("windows-cleanup-missing-taskkill-exe-runtime-check")
+        source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
+            "Test-Path -LiteralPath `$taskkillExeShimPath",
+            "Test-Path -LiteralPath `$removedTaskkillExeShimPath",
+        )
+        self.write_installer_copy(root, source)
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("taskkill_exe_runtime_presence_check" in error for error in payload["errors"]))
 
 
 if __name__ == "__main__":
