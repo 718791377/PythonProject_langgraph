@@ -86,6 +86,23 @@ Task ownership states must be classified before takeover:
 - in-progress - a matching worktree has dirty files, ahead commits, an open MR, an active OpenSpec change, or an active claim with overlapping paths.
 - completed-stale - a matching branch or claim belongs to work already merged or archived; the leader may reuse it only after explicitly treating the handoff as serialized and preservation-safe.
 
+
+## 5.1 Feature Worktree Release And Branch Cleanup
+
+A feature worktree is a temporary execution surface. After local validation passes, all intended tracked changes are committed, `git status` is clean, and no unhandled `.local/`, untracked, evidence, cache, OCR-output, private, copyrighted, or large files remain, the feature worktree may be released before GitLab publication finishes. Releasing the worktree means removing the local filesystem worktree with Git worktree commands; it does not delete the feature branch.
+
+A feature branch is the publication carrier. Keep the local and remote feature branches until the GitLab MR has merged, local `main` has fast-forwarded to the GitLab main commit, and GitHub `main` has synced to the same commit. Only after that publication closure may the local and remote feature branches be deleted.
+
+File-class tasks must be handled before worktree release:
+
+- Tracked files: commit them before releasing the worktree.
+- Untracked files that belong in the repository: add and commit them before releasing the worktree.
+- `.local/`, extraction evidence, caches, OCR output, and other local generated files: do not commit them by default; move them to an explicit local evidence location or generate a tracked run summary when they are still needed.
+- Private, copyrighted, or large files: do not commit the raw payload; commit only a manifest, summary, path, hash, quality metric, or provenance record when repository evidence is needed.
+- Unclear files: do not delete them with the worktree; ask the operator to choose keep, commit, move, summarize, or discard.
+
+The safe summary is: the feature worktree can be cleaned up as soon as it is clean and its files are classified, but the feature branch stays until the remote publication loop is closed.
+
 ## 6. Script Control
 
 Prompt reminders are not sufficient for this safety boundary.
@@ -140,6 +157,8 @@ python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty 
 
 The command above runs the read-only claim checker and emits a JSON report showing active local claims and collisions.
 
+The hygiene checker also reports `worktree_release_candidates` in JSON output. `worktree_release_candidates` is a read-only status list that separates `worktree_release_ready`, which means the feature worktree is clean enough to remove after local validation and file classification, from `branch_cleanup_ready`, which means the feature branch is merged and both GitLab and GitHub mainline refs are aligned.
+
 The checker now has two read-only modes:
 
 - Default claim mode verifies explicit `.omx/session-claims/*.json` collisions. `.omx/session-claims/*.json` means local ignored JSON claim files that declare which session owns an OpenSpec change or path scope.
@@ -178,15 +197,16 @@ Default local-first sequence:
 3. Use a dedicated `.worktrees/<task>` worktree for that branch.
 4. Implement the OpenSpec change and run the local implementation validation while the change is still active.
 5. If the completed change fits the single-MR path, archive it on the same feature branch, promote reusable delta specs into stable specs, and re-run the local validation commands.
-6. If the completed change needs the two-MR path, state the exception reason, keep the active change or follow-up archive task visible, and ask the user before publishing an implementation-only MR.
-7. Refresh `gitlab/main` again and confirm the feature branch is not based on stale remote state.
-8. Have the active session's model recommend publish or wait, including the single-MR or two-MR archive decision, then ask the user to confirm the release decision.
-9. Push to GitLab and open or update a GitLab MR.
-10. Wait for the GitLab pipeline to pass.
-11. Merge into GitLab `main`.
-12. Sync the exact GitLab main commit to GitHub.
-13. Fast-forward the local `main` branch reference to GitLab `main`.
-14. Check out local `main` in `D:\PythonProject_langgraph`, verify it is clean, and verify its HEAD is not behind the local `main` branch reference; normal state is exact equality.
+6. After local validation passes and all files are committed, moved, summarized, or explicitly discarded, the feature worktree may be released while keeping the feature branch as the publication carrier.
+7. If the completed change needs the two-MR path, state the exception reason, keep the active change or follow-up archive task visible, and ask the user before publishing an implementation-only MR.
+8. Refresh `gitlab/main` again and confirm the feature branch is not based on stale remote state.
+9. Have the active session's model recommend publish or wait, including the single-MR or two-MR archive decision, then ask the user to confirm the release decision.
+10. Push to GitLab and open or update a GitLab MR.
+11. Wait for the GitLab pipeline to pass.
+12. Merge into GitLab `main`.
+13. Sync the exact GitLab main commit to GitHub.
+14. Fast-forward the local `main` branch reference to GitLab `main`.
+15. Check out local `main` in `D:\PythonProject_langgraph`, verify it is clean, and verify its HEAD is not behind the local `main` branch reference; normal state is exact equality.
 
 GitHub PRs are not the default workflow for this repository.
 

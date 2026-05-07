@@ -83,6 +83,21 @@ status: active
 - in-progress（处理中） - 匹配 worktree 已经有 dirty files、领先提交、open MR、active OpenSpec change，或带有重叠路径的 active claim。
 - completed-stale（已完成但残留） - 匹配 branch 或 claim 属于已经合并或归档的工作；只有 leader 明确把 handoff 串行化并确认 preservation-safe 后，才可以复用。
 
+## 5.1 Feature Worktree 释放与 Branch 清理
+
+Feature worktree 是临时执行面。本地验证通过、所有计划保留的已跟踪改动已经提交、`git status` 干净，并且没有未处理的 `.local/`、未跟踪文件、证据文件、缓存、OCR 输出、私有文件、版权文件或大文件之后，feature worktree 可以在 GitLab 发布完成前释放。释放 worktree 是指用 Git worktree 命令删除本地文件系统 worktree；它不会删除 feature branch。
+
+Feature branch 是发布载体。本地和远端 feature branch 必须保留到 GitLab MR 已合并、本地 `main` 已快进到 GitLab main commit，并且 GitHub `main` 已同步到同一 commit。只有在这个发布闭环结束之后，才可以删除本地和远端 feature branch。
+
+释放 worktree 前必须先处理文件分类：
+
+- 已跟踪文件：释放 worktree 前必须先提交。
+- 应进入仓库的未跟踪文件：释放 worktree 前必须先 `git add` 并提交。
+- `.local/`、抽取证据、缓存、OCR 输出和其他本地生成文件：默认不提交；如果后续还需要使用，先移动到明确的本地证据目录，或生成可提交的 run summary（运行摘要）。
+- 私有文件、版权文件或大文件：不提交原始 payload；仓库需要证据时，只提交 manifest（清单）、summary（摘要）、path（路径）、hash（哈希）、quality metric（质量指标）或 provenance record（来源记录）。
+- 无法判断的文件：不能跟随 worktree 一起删除；必须先让操作者选择保留、提交、移动、摘要记录或丢弃。
+
+安全总结是：feature worktree 只要已经干净且文件完成分类，就可以更早清理；feature branch 必须保留到远端发布闭环结束。
 ## 6. 脚本控制
 
 这个安全边界不能只靠提示词提醒。
@@ -142,6 +157,7 @@ python .\tools\check_worktree_session_hygiene.py --root . --allow-current-dirty 
 
 ```powershell
 python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty --json
+Hygiene checker（工作区卫生检查器）还会在 JSON 输出中报告 `worktree_release_candidates`。`worktree_release_candidates` 是只读状态列表，用来区分 `worktree_release_ready` 和 `branch_cleanup_ready`：前者表示 feature worktree 在本地验证和文件分类后已经干净到可以删除，后者表示 feature branch 已合并且 GitLab / GitHub mainline refs 已对齐。
 ```
 
 上面的命令会运行只读会话认领 checker，并输出 JSON 报告，供冷启动会话或本地发布前检查使用。
@@ -184,15 +200,16 @@ Runner 配额与发布包规则：
 3. 为该分支使用专用 `.worktrees/<task>` worktree。
 4. 实施 OpenSpec change，并在该 change 仍处于 active 状态时先运行本地实现验证。
 5. 如果 completed change 适合 single-MR path（单 MR 路径），就在同一个 feature branch 内 archive 它，把可复用 delta specs 提升进 stable specs，并重新运行本地验证命令。
-6. 如果 completed change 需要 two-MR path（双 MR 路径），必须说明例外原因，保持 active change 或 follow-up archive task 可见，并在发布 implementation-only MR 前请求用户确认。
-7. 再次刷新 `gitlab/main`，并确认 feature branch 没有基于陈旧远端状态。
-8. 由当前会话模型建议 publish 或 wait，并说明采用 single-MR 还是 two-MR 归档决策，然后请用户确认发布决策。
-9. 推送到 GitLab 并创建或更新 GitLab MR。
-10. 等待 GitLab pipeline 通过。
-11. 合并到 GitLab `main`。
-12. 把 exact GitLab main commit 同步到 GitHub。
-13. 把本地 `main` 分支引用快进到 GitLab `main`。
-14. 在 `D:\PythonProject_langgraph` 检出本地 `main`，确认主目录干净，并确认 HEAD 没有落后于本地 `main` 分支引用；正常状态是完全一致。
+6. 本地验证通过，且所有文件已经提交、移动、摘要记录或明确丢弃后，可以释放 feature worktree，但必须保留 feature branch 作为发布载体。
+7. 如果 completed change 需要 two-MR path（双 MR 路径），必须说明例外原因，保持 active change 或 follow-up archive task 可见，并在发布 implementation-only MR 前请求用户确认。
+8. 再次刷新 `gitlab/main`，并确认 feature branch 没有基于陈旧远端状态。
+9. 由当前会话模型建议 publish 或 wait，并说明采用 single-MR 还是 two-MR 归档决策，然后请用户确认发布决策。
+10. 推送到 GitLab 并创建或更新 GitLab MR。
+11. 等 GitLab pipeline 通过。
+12. 合并到 GitLab `main`。
+13. 将同一个 GitLab main commit 同步到 GitHub。
+14. 将本地 `main` 分支引用快进到 GitLab `main`。
+15. 确认主目录 `D:\PythonProject_langgraph` 检出本地 `main`、状态干净，并且 HEAD 没有落后于本地 `main` 分支引用；正常状态是完全相等。
 
 本仓库默认不使用 GitHub PR。
 
