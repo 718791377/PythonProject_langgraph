@@ -19,7 +19,7 @@ one writable task equals one Git worktree plus one feature branch
 
 The repository root `D:\PythonProject_langgraph` is the coordination and mainline mirror location. It must not become an informal shared scratch workspace for multiple sessions.
 
-The primary directory alignment rule is mandatory: `D:\PythonProject_langgraph` must stay checked out on local `main`, and its HEAD must equal the local `main` branch reference after feature-branch work, MR merge, cleanup, or release sync. `D:\PythonProject_langgraph` is the primary directory for coordination and local mainline mirroring, not a feature-task workspace.
+The primary main worktree freshness rule is mandatory: `D:\PythonProject_langgraph` is the primary main worktree, must stay checked out on local `main`, and its HEAD must not lag behind the local `main` branch reference. In normal operation, its HEAD should exactly equal local `main`. Local `main` must not lag behind the latest fetched `gitlab/main` before new writable work, release-timing judgment, push, MR creation or update, or mainline-state claims. If local `main` is behind `gitlab/main`, fast-forward local `main` before continuing. If the primary directory is dirty or not on `main`, stop writable work and resolve the hygiene issue first. `D:\PythonProject_langgraph` is the primary directory for coordination and local mainline mirroring, not a feature-task workspace.
 
 ## 2. Authority Boundary
 
@@ -50,7 +50,7 @@ Required rules:
 - Do not let two sessions write to the same worktree.
 - Do not let two sessions edit the same hotspot files without leader-owned serialization.
 - Do not write directly on `main`.
-- Keep the primary directory `D:\PythonProject_langgraph` aligned with local `main`; use `.worktrees/` for writable feature branches instead of leaving the primary directory on an old branch.
+- Keep the primary directory `D:\PythonProject_langgraph` checked out on local `main`; its HEAD must not lag behind local `main`, and normally should equal local `main`. Use `.worktrees/` for writable feature branches instead of leaving the primary directory on an old branch.
 - Do not manually delete `.worktrees/`; use Git worktree commands after preservation checks.
 - Do not assume a dirty file belongs to the current session.
 - Do not reset, checkout, clean, move, or delete unknown dirty files until their owning session or backup branch is identified.
@@ -65,7 +65,7 @@ Required rules:
 - If a matching ownership signal exists, treat the task as claimed until the leader explicitly serializes a handoff, continues the existing worktree, or classifies the signal as completed stale residue.
 - Ignored or local-only files inside guard-scanned directories are still task objects when they affect repository checks. Classify their intended ownership before fixing, moving, excluding, or deleting them.
 - Do not let two live sessions claim the same OpenSpec change or overlapping hotspot path scope unless the current leader explicitly serializes the handoff.
-- After a GitLab MR merges, fast-forward the local `main` branch reference to the exact GitLab main commit, then sync that exact commit to GitHub.
+- After a GitLab MR merges, fast-forward local `main` to the exact GitLab main commit, confirm the primary directory `D:\PythonProject_langgraph` is on local `main` at that commit, then sync that exact commit to GitHub.
 
 ## 5. Dirty File Classification
 
@@ -160,8 +160,8 @@ All repository changes still follow the GitLab-first publication workflow. GitLa
 Runner-budget rule:
 
 - Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the finite remote CI quota consumed by GitLab pipelines.
-- Keep the local repository from falling behind the authoritative remote. Before new writable work, release-timing judgment, push, MR creation, or local `main` alignment claims, refresh `gitlab/main`; if local `main` is behind, fast-forward it before continuing. If a feature branch was prepared on a stale base, rebase or merge it onto the refreshed base before publication unless the user explicitly accepts the stale-base risk.
-- Keep the primary directory aligned with the local Git repository. `D:\PythonProject_langgraph` is the primary directory; it must be on local `main`, its HEAD must match the local `main` branch reference, and `tools/check_worktree_session_hygiene.py` must fail if this local alignment is broken.
+- Keep local `main` from falling behind the authoritative remote. Before new writable work, release-timing judgment, push, MR creation/update, or mainline-state claims, refresh `gitlab/main`; if local `main` is behind, fast-forward it before continuing. If a feature branch was prepared on a stale base, rebase or merge it onto the refreshed base before publication unless the user explicitly accepts the stale-base risk.
+- Keep the primary main worktree from falling behind local `main`. `D:\PythonProject_langgraph` is the primary directory; it must be on local `main`, its HEAD must not lag behind the local `main` branch reference, and in normal operation its HEAD should exactly match local `main`. `tools/check_worktree_session_hygiene.py` must fail if the primary directory is dirty, not on `main`, behind local `main`, or if local `main` is behind `gitlab/main`.
 - Do local commits, local checker runs, local rework, and local cleanup before the first push.
 - Batch related small changes into one MR only when they share the same topic, validation surface, and rollback boundary. A rollback boundary is the smallest unit that can be reverted safely without mixing unrelated work.
 - Do not combine unrelated topics just to reduce runner usage; reviewability and rollback safety still take priority.
@@ -170,8 +170,8 @@ Runner-budget rule:
 
 Default local-first sequence:
 
-1. Refresh `gitlab/main` and confirm local `main` is not behind it.
-2. Create a feature branch from the latest `gitlab/main`.
+1. Refresh `gitlab/main`, fast-forward local `main` if it is behind, and confirm the primary directory `D:\PythonProject_langgraph` is clean, on local `main`, and not behind local `main`.
+2. Create a feature branch from the latest local `main` after it has been checked against `gitlab/main`.
 3. Use a dedicated `.worktrees/<task>` worktree for that branch.
 4. Commit and validate locally until the branch is ready for remote review.
 5. Refresh `gitlab/main` again and confirm the feature branch is not based on stale remote state.
@@ -180,8 +180,8 @@ Default local-first sequence:
 8. Wait for the GitLab pipeline to pass.
 9. Merge into GitLab `main`.
 10. Sync the exact GitLab main commit to GitHub.
-11. Fast-forward the local `main` branch reference.
-12. Check out local `main` in `D:\PythonProject_langgraph` and verify its HEAD matches the local `main` branch reference.
+11. Fast-forward the local `main` branch reference to GitLab `main`.
+12. Check out local `main` in `D:\PythonProject_langgraph`, verify it is clean, and verify its HEAD is not behind the local `main` branch reference; normal state is exact equality.
 
 GitHub PRs are not the default workflow for this repository.
 

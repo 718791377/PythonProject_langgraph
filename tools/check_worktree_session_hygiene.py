@@ -79,6 +79,15 @@ def resolve_ref(root: Path, ref: str) -> str | None:
     return result.stdout.strip()
 
 
+def is_ancestor(root: Path, ancestor: str, descendant: str) -> bool | None:
+    result = run_git(root, ["merge-base", "--is-ancestor", ancestor, descendant])
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    return None
+
+
 def is_gitlab_ci_detached_checkout() -> bool:
     return bool(os.environ.get("GITLAB_CI") and os.environ.get("CI_COMMIT_SHA"))
 
@@ -143,11 +152,11 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
             )
         elif primary_head != main_commit:
             errors.append(
-                f"Primary repository directory HEAD does not match local {main_branch}: {primary_head or '<unknown>'} != {main_commit}. Align the primary directory with the local main branch before continuing."
+                f"Primary repository directory HEAD is behind or different from local {main_branch}: {primary_head or '<unknown>'} != {main_commit}. Check out and fast-forward the primary directory to local main before continuing."
             )
         else:
             primary_worktree_alignment["ok"] = True
-            info.append(f"Primary repository directory is aligned with local {main_branch}: {primary_path}.")
+            info.append(f"Primary repository directory is on local {main_branch} and is not behind local {main_branch}: {primary_path}.")
     else:
         errors.append("No registered Git worktrees were found.")
 
@@ -195,15 +204,30 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
 
     target_commit = resolve_ref(current_root, main_ref)
     if main_commit and target_commit:
-        if main_commit != target_commit:
-            warnings.append(
-                f"Local {main_branch} is not equal to {main_ref}: {main_commit} != {target_commit}. Fast-forward local main after reviewed GitLab main is ready."
-            )
-        else:
+        if main_commit == target_commit:
             info.append(f"Local {main_branch} matches {main_ref}.")
+        else:
+            main_is_ancestor = is_ancestor(current_root, main_commit, target_commit)
+            target_is_ancestor = is_ancestor(current_root, target_commit, main_commit)
+            if main_is_ancestor is True:
+                errors.append(
+                    f"Local {main_branch} is behind {main_ref}: {main_commit} < {target_commit}. Fast-forward local main before writable work, release judgment, push, MR creation/update, or mainline-state claims."
+                )
+            elif target_is_ancestor is True:
+                info.append(
+                    f"Local {main_branch} is not behind {main_ref}: {main_commit} is ahead of {target_commit}. Verify this is intentional and do not use primary main for feature work."
+                )
+            elif main_is_ancestor is None or target_is_ancestor is None:
+                warnings.append(
+                    f"Could not compare ancestry between local {main_branch} and {main_ref}; main freshness check is informational only."
+                )
+            else:
+                errors.append(
+                    f"Local {main_branch} has diverged from {main_ref}: {main_commit} != {target_commit}. Reconcile mainline state before continuing."
+                )
     else:
         warnings.append(
-            f"Could not resolve both {main_branch} and {main_ref}; main alignment check is informational only."
+            f"Could not resolve both {main_branch} and {main_ref}; main freshness check is informational only."
         )
 
     if not dirty_worktrees:
