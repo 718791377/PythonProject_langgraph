@@ -221,6 +221,7 @@ Repository rule:
 Use for:
 
 - archiving a completed change after artifacts, implementation, and validation are stable
+- building the default single-MR publication package for small completed changes before the GitLab MR is opened
 
 Minimum CLI baseline:
 
@@ -234,14 +235,20 @@ Repository archive gate:
 - do not archive a metadata-only or smoke-test placeholder directory as if it were a normal completed change
 - if later work is still needed but the original archive was valid, prefer a forward follow-up change rather than silently normalizing an invalid archive
 
+Default archive-before-publication package:
+
+- For a locally completed OpenSpec change that is ready to publish, archive in the same feature branch before opening the GitLab MR unless the user explicitly requests an implementation-only MR or a two-MR exception is justified.
+- The MR should contain the implementation or documentation update, the archived change directory, and the stable spec updates produced by the archive.
+- This default is intended for small governance, documentation, checker, and test changes whose local validation has already proven completion.
+- Use a two-MR flow for large or risky implementation, remote-review-first work, or archive promotions that would create heavy stable-spec conflicts.
+
 Repository archive isolation flow:
 
 - Use this flow for changes that alter source code, scripts, tests, CI, checkers, runtime behavior, stable specs, startup instructions, `AGENTS.md` as the repository instruction surface, or structural governance rules. Purely explanatory text edits may use the lighter archive flow when they do not change enforceable behavior, but uncertain cases should use the dedicated archive worktree flow.
-- In a dedicated archive worktree, run the archive operation for the completed change. A dedicated archive worktree is a separate Git worktree created only for the archive branch so archive-generated file moves do not mix with the main workspace.
-- Verify inside that archive worktree before publication. Worktree-local verification must include the repository guard commands required by the change so archive-generated specs are checked before integration.
-- Commit the archive branch after worktree-local verification passes. The archive branch is the Git branch that carries the archive result and its stable-spec updates.
-- Merge the archive branch back into the main workspace through the normal GitLab-first flow. The main workspace is the repository checkout used by the session leader after the branch is integrated.
-- Verify again in the main workspace after integration. The core rule is: verify first in the archive worktree, then verify again after the archive branch is integrated into the main workspace.
+- In the single-MR path, run the archive operation in the same isolated feature worktree after implementation validation and before publication. If a separate archive worktree is safer, merge that archive result back into the same publication branch before opening the MR.
+- Verify before archive and verify again after archive promotion. Worktree-local verification must include the repository guard commands required by the change so archive-generated specs are checked before integration.
+- Commit the publication branch only after the post-archive validation passes.
+- Publish through the normal GitLab-first flow. The core rule is: implementation validation first, archive and stable-spec promotion second, post-archive validation third, then one MR unless a documented two-MR exception applies.
 
 ## 6. When OPSX Is Required In This Repository
 
