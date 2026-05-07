@@ -5,7 +5,7 @@
 - [x] 1.1 更新 `AGENTS.md`，改用主 main 工作区新鲜度表述。
 - [x] 1.2 更新 `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md` 的英文规则。
 - [x] 1.3 更新 `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md` 的中文规则。
-- [x] 1.4 ?? `design.md`????????? checker ???
+- [x] 1.4 增加 `design.md`，记录 OpenSpec 设计和新鲜度 checker 行为。
 
 ## 2. 脚本控制
 
