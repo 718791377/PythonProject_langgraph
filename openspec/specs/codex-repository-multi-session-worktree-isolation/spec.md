@@ -298,3 +298,27 @@ Two-MR publication is allowed only when the implementation is large or risky, re
 - **WHEN** the repository evaluates OpenSpec lifecycle health
 - **THEN** it SHALL treat that state as a lifecycle gap
 - **AND** it SHALL prefer an archive follow-up before opening unrelated publication work
+
+### Requirement: Feature Worktree Release SHALL Be Separate From Branch Cleanup
+
+The repository SHALL treat a feature worktree as a temporary execution surface and a feature branch as the publication carrier.
+
+A feature worktree MAY be released after local validation passes, all intended tracked changes are committed, `git status` is clean, and untracked or local-only artifacts have been classified. Releasing the worktree SHALL NOT authorize deleting the feature branch.
+
+A feature branch SHALL remain until the GitLab MR has merged, local `main` has fast-forwarded to the GitLab main commit, and GitHub `main` has synced to the same commit.
+
+#### Scenario: Clean validated worktree is released before remote publication closes
+
+- **GIVEN** a feature worktree is clean
+- **AND** local validation has passed
+- **AND** tracked, untracked, local evidence, cache, OCR-output, private, copyrighted, and large-file artifacts have been classified
+- **WHEN** the operator removes the feature worktree
+- **THEN** the repository SHALL keep the feature branch for publication
+- **AND** branch deletion SHALL wait for the GitLab and GitHub publication closure
+
+#### Scenario: Hygiene checker reports release and cleanup readiness separately
+
+- **WHEN** the worktree hygiene checker runs
+- **THEN** it SHALL report clean feature worktree release candidates
+- **AND** it SHALL report branch cleanup readiness separately
+- **AND** it SHALL remain read-only

@@ -92,7 +92,14 @@ def is_gitlab_ci_detached_checkout() -> bool:
     return bool(os.environ.get("GITLAB_CI") and os.environ.get("CI_COMMIT_SHA"))
 
 
-def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirty: bool) -> dict[str, object]:
+def run_check(
+    root: Path,
+    *,
+    main_branch: str,
+    main_ref: str,
+    github_ref: str,
+    allow_current_dirty: bool,
+) -> dict[str, object]:
     root = root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
@@ -101,7 +108,7 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
     top_result = run_git(root, ["rev-parse", "--show-toplevel"])
     if top_result.returncode != 0:
         errors.append(f"Not a Git worktree: {root}")
-        return payload(root, main_branch, main_ref, allow_current_dirty, [], [], {}, errors, warnings, info)
+        return payload(root, main_branch, main_ref, github_ref, allow_current_dirty, [], [], {}, [], errors, warnings, info)
 
     current_root = Path(top_result.stdout.strip()).resolve()
     list_result = run_git(current_root, ["worktree", "list", "--porcelain"])
@@ -109,12 +116,15 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
         errors.append("Unable to list Git worktrees.")
         if list_result.stderr.strip():
             errors.append(list_result.stderr.strip())
-        return payload(root, main_branch, main_ref, allow_current_dirty, [], [], {}, errors, warnings, info)
+        return payload(root, main_branch, main_ref, github_ref, allow_current_dirty, [], [], {}, [], errors, warnings, info)
 
     worktrees = parse_worktree_list(list_result.stdout)
     dirty_worktrees: list[dict[str, object]] = []
+    worktree_release_candidates: list[dict[str, object]] = []
     path_to_worktrees: dict[str, list[str]] = defaultdict(list)
     main_commit = resolve_ref(current_root, main_branch)
+    target_commit = resolve_ref(current_root, main_ref)
+    github_commit = resolve_ref(current_root, github_ref)
     primary_worktree_alignment: dict[str, object] = {
         "ok": False,
         "path": None,
@@ -160,6 +170,7 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
     else:
         errors.append("No registered Git worktrees were found.")
 
+    worktree_status_by_path: dict[str, list[dict[str, str]]] = {}
     for worktree in worktrees:
         worktree_path = Path(worktree["worktree"]).resolve()
         branch = branch_name(worktree)
@@ -168,6 +179,7 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
             warnings.append(f"Could not read status for worktree {worktree_path}.")
             continue
         dirty_records = parse_status_porcelain(status_result.stdout)
+        worktree_status_by_path[str(worktree_path)] = dirty_records
         is_current = worktree_path == current_root
         record = {
             "path": str(worktree_path),
@@ -195,6 +207,55 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
                     f"Non-current worktree has uncommitted changes: {worktree_path} on branch {branch or '<detached>'}."
                 )
 
+    for worktree in worktrees:
+        worktree_path = Path(worktree["worktree"]).resolve()
+        branch = branch_name(worktree)
+        if not branch or branch == main_branch:
+            continue
+        head = worktree.get("HEAD")
+        dirty_records = worktree_status_by_path.get(str(worktree_path), [])
+        is_clean = not dirty_records
+        branch_merged_to_main = is_ancestor(current_root, branch, main_branch) if main_commit else None
+        local_main_matches_remote = bool(main_commit and target_commit and main_commit == target_commit)
+        github_matches_main = bool(main_commit and github_commit and github_commit == main_commit)
+        worktree_release_ready = is_clean
+        branch_cleanup_ready = bool(worktree_release_ready and branch_merged_to_main is True and local_main_matches_remote and github_matches_main)
+        blockers: list[str] = []
+        if not is_clean:
+            blockers.append(
+                "worktree has tracked, untracked, or local-only dirty files; classify and commit, move, summarize, or explicitly discard them before releasing the worktree"
+            )
+        if branch_merged_to_main is not True:
+            blockers.append("feature branch is not merged into local main; keep the branch after any worktree release")
+        if not local_main_matches_remote:
+            blockers.append(f"local {main_branch} does not match {main_ref}; do not delete the feature branch yet")
+        if not github_matches_main:
+            blockers.append(f"{github_ref} is absent or not synced to local {main_branch}; do not delete the feature branch yet")
+        worktree_release_candidates.append(
+            {
+                "path": str(worktree_path),
+                "branch": branch,
+                "head": head,
+                "is_clean": is_clean,
+                "worktree_release_ready": worktree_release_ready,
+                "branch_merged_to_main": branch_merged_to_main,
+                "local_main_matches_remote": local_main_matches_remote,
+                "github_matches_main": github_matches_main,
+                "branch_cleanup_ready": branch_cleanup_ready,
+                "branch_cleanup_blockers": blockers,
+                "operator_confirmations_required": [
+                    "local validation passed",
+                    "tracked files committed",
+                    "untracked files classified",
+                    "local evidence, caches, OCR output, private files, and large files were moved, summarized, or explicitly discarded",
+                ],
+            }
+        )
+    if worktree_release_candidates:
+        info.append(
+            "Feature worktree release candidates are reported separately from branch cleanup readiness; releasing a clean worktree does not authorize deleting its feature branch."
+        )
+
     for dirty_path, owners in sorted(path_to_worktrees.items()):
         unique_owners = sorted(set(owners))
         if len(unique_owners) > 1:
@@ -202,7 +263,6 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
                 f"Dirty path appears in multiple worktrees: {dirty_path} in {', '.join(unique_owners)}. Serialize ownership before continuing."
             )
 
-    target_commit = resolve_ref(current_root, main_ref)
     if main_commit and target_commit:
         if main_commit == target_commit:
             info.append(f"Local {main_branch} matches {main_ref}.")
@@ -237,10 +297,12 @@ def run_check(root: Path, *, main_branch: str, main_ref: str, allow_current_dirt
         root,
         main_branch,
         main_ref,
+        github_ref,
         allow_current_dirty,
         worktrees,
         dirty_worktrees,
         primary_worktree_alignment,
+        worktree_release_candidates,
         errors,
         warnings,
         info,
@@ -251,10 +313,12 @@ def payload(
     root: Path,
     main_branch: str,
     main_ref: str,
+    github_ref: str,
     allow_current_dirty: bool,
     worktrees: list[dict[str, str]],
     dirty_worktrees: list[dict[str, object]],
     primary_worktree_alignment: dict[str, object] | None,
+    worktree_release_candidates: list[dict[str, object]],
     errors: list[str],
     warnings: list[str],
     info: list[str],
@@ -275,16 +339,21 @@ def payload(
         "root": str(root),
         "main_branch": main_branch,
         "main_ref": main_ref,
+        "github_ref": github_ref,
         "allow_current_dirty": allow_current_dirty,
         "worktrees": summarized_worktrees,
         "dirty_worktrees": dirty_worktrees,
         "primary_worktree_alignment": primary_worktree_alignment or {},
+        "worktree_release_candidates": worktree_release_candidates,
         "errors": errors,
         "warnings": warnings,
         "info": info,
         "counts": {
             "worktrees": len(worktrees),
             "dirty_worktrees": len(dirty_worktrees),
+            "worktree_release_candidates": len(worktree_release_candidates),
+            "worktree_release_ready": sum(1 for item in worktree_release_candidates if item.get("worktree_release_ready")),
+            "branch_cleanup_ready": sum(1 for item in worktree_release_candidates if item.get("branch_cleanup_ready")),
             "errors": len(errors),
             "warnings": len(warnings),
         },
@@ -296,6 +365,7 @@ def main() -> int:
     parser.add_argument("--root", default=".", help="Repository or worktree root to inspect.")
     parser.add_argument("--main-branch", default="main", help="Local branch that should mirror the reviewed mainline.")
     parser.add_argument("--main-ref", default="gitlab/main", help="Remote-tracking ref used as the authoritative mainline target.")
+    parser.add_argument("--github-ref", default="github/main", help="Post-merge mirror ref used to confirm branch cleanup readiness.")
     parser.add_argument("--allow-current-dirty", action="store_true", help="Allow the current non-main feature worktree to be dirty.")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON output.")
     args = parser.parse_args()
@@ -304,6 +374,7 @@ def main() -> int:
         Path(args.root),
         main_branch=args.main_branch,
         main_ref=args.main_ref,
+        github_ref=args.github_ref,
         allow_current_dirty=args.allow_current_dirty,
     )
 
