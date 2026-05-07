@@ -118,6 +118,34 @@ class WorktreeSessionHygieneCheckTest(unittest.TestCase):
         self.assertFalse(payload["primary_worktree_alignment"]["ok"])
         self.assertTrue(any("Primary repository directory is on feature/test" in error for error in payload["errors"]))
 
+    def test_fails_when_local_main_is_behind_gitlab_main(self) -> None:
+        root = self.make_repo("worktree-local-main-behind")
+        subprocess.run(["git", "checkout", "gitlab/main"], cwd=root, check=True, capture_output=True, text=True)
+        (root / "remote.txt").write_text("remote advance\n", encoding="utf-8")
+        subprocess.run(["git", "add", "remote.txt"], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-m", "advance gitlab main"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "main"], cwd=root, check=True, capture_output=True, text=True)
+
+        result = self.run_check(root)
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("Local main is behind gitlab/main" in error for error in payload["errors"]))
+
+    def test_allows_local_main_ahead_of_gitlab_main_without_lagging(self) -> None:
+        root = self.make_repo("worktree-local-main-ahead")
+        (root / "local.txt").write_text("local advance\n", encoding="utf-8")
+        subprocess.run(["git", "add", "local.txt"], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-m", "advance local main"], cwd=root, check=True, capture_output=True, text=True)
+
+        result = self.run_check(root)
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertTrue(any("Local main is not behind gitlab/main" in item for item in payload["info"]))
+
     def test_allows_gitlab_ci_detached_checkout(self) -> None:
         root = self.make_repo("worktree-ci-detached")
         head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
