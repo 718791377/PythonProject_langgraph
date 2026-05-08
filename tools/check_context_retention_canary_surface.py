@@ -48,6 +48,7 @@ TEXT_SUFFIXES = {
 }
 
 SKIP_FILE_NAMES = {
+    "local-gate-report.json",
     "openspec-guard-report.json",
 }
 

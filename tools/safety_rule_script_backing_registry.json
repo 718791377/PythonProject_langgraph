@@ -158,6 +158,27 @@
         "check_session_ownership_claims"
       ],
       "description": "Keeps legacy resumed sessions compatibility-scoped, preserves direct Codex MCP servers, and requires current session ownership checks before old sessions affect new governance work."
+    },
+    {
+      "id": "local-mirrored-ci-mr-gate",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "AGENTS.md",
+        "docs_bilingual/project_startup_summary.md",
+        "docs_bilingual/project_startup_summary.zh-CN.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/ci/local_gate.ps1",
+        "tools/ci/local_mr_review.ps1",
+        "tools/check_local_mirrored_ci_gate.py"
+      ],
+      "guard_steps": [
+        "check_local_mirrored_ci_gate"
+      ],
+      "description": "Keeps repository publication local-first while requiring local and remote CI to share one gate script and requiring local MR review before remote MR publication."
     }
   ]
 }

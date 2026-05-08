@@ -3,19 +3,21 @@ stages:
 
 openspec_guard:
   stage: verify
-  image: python:3.12-bookworm
+  image: mcr.microsoft.com/powershell:7.4-debian-12
   before_script:
     - apt-get update
-    - apt-get install -y --no-install-recommends nodejs npm
+    - apt-get install -y --no-install-recommends git python3 python-is-python3 nodejs npm
+    - pwsh --version
     - node --version
     - npm --version
     - python --version
     - npm install -g @fission-ai/openspec@latest
     - openspec --version
   script:
-    - python tools/run_openspec_guard.py --root . --tool codex --refresh-managed-files --require-clean-git --json | tee openspec-guard-report.json
+    - pwsh -NoProfile -ExecutionPolicy Bypass -File tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json | tee local-gate-report.json
   artifacts:
     when: always
     expire_in: 7 days
     paths:
+      - local-gate-report.json
       - openspec-guard-report.json

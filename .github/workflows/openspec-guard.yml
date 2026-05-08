@@ -27,14 +27,19 @@ jobs:
       - name: Install official OpenSpec CLI
         run: npm install -g @fission-ai/openspec@latest
 
-      - name: Run OpenSpec guard
-        run: |
-          set -o pipefail
-          python tools/run_openspec_guard.py --root . --tool codex --refresh-managed-files --require-clean-git --json | tee openspec-guard-report.json
+      - name: Set up PowerShell
+        shell: bash
+        run: pwsh --version
 
-      - name: Upload OpenSpec guard JSON
+      - name: Run shared local gate
+        shell: pwsh
+        run: ./tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json | Tee-Object -FilePath local-gate-report.json
+
+      - name: Upload local gate JSON
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: openspec-guard-report
-          path: openspec-guard-report.json
+          name: local-gate-report
+          path: |
+            local-gate-report.json
+            openspec-guard-report.json

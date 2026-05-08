@@ -1,0 +1,8 @@
+schema: spec-driven
+created: 2026-05-08
+x_change_class: code
+x_code_evidence_paths:
+  - tools/ci/local_gate.ps1
+  - tools/ci/local_mr_review.ps1
+  - .gitlab-ci.yml
+  - .github/workflows/openspec-guard.yml

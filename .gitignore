@@ -13,3 +13,4 @@ openspec-guard-report.json
 *.GGUF
 /PMP/
 .vscode/settings.json
+local-gate-report.json

@@ -172,23 +172,29 @@ python .\tools\check_session_ownership_claims.py --root . --precheck-task "<task
 
 The command above runs the checker in task precheck mode. `--precheck-task` names the intended task, `--target-path` names a repository-relative hotspot path, `--openspec-change` names the OpenSpec change id being considered, and `--json` emits machine-readable output for cold-start review. Use `--check-gitlab-mrs` to include open GitLab MR inspection when a token is available; use `--require-gitlab-mrs` only when the workflow must fail closed if GitLab MRs cannot be inspected.
 
-## 7. GitLab-First Integration
+## 7. Local-First Mirrored CI/MR Integration
 
-All repository changes still follow the GitLab-first publication workflow. GitLab-first is the final review and merge authority; it is not a requirement to push every local checkpoint commit to the remote server.
+All repository changes use a local-first plus mirrored CI/MR gate. GitLab remains the authoritative remote review and merge surface, but remote CI/MR is the confirmation and audit-record layer after local gates have already run. This is not a requirement to push every local checkpoint commit to the remote server.
 
 Runner-budget and publication-package rules:
 
 - Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the finite remote CI quota consumed by GitLab pipelines.
+- Local CI is the primary check logic. Run `tools/ci/local_gate.ps1` before remote publication; `tools/ci/local_gate.ps1` is the shared repository CI gate that runs OpenSpec guard checks, repository checker or guard scripts, optional local tests, and whitespace diff checks.
+- CI-managed tests must be registered in `tools/ci/ci_test_manifest.json`; `tools/ci/ci_test_manifest.json` is the stable test manifest that prevents local or remote CI from accidentally running historical, environment-specific, or experimental tests that are not part of the publication gate.
+- Local MR review is the pre-remote review surface. Run `tools/ci/local_mr_review.ps1` after all intended changes are committed and the feature worktree is clean, before remote publication; `tools/ci/local_mr_review.ps1` summarizes the feature branch diff, commit log, diff stat, and merge simulation against the selected base branch, and fails closed when `git status --porcelain` reports dirty worktree entries.
+- Remote CI must mirror the local CI gate. GitLab CI and GitHub mirror workflows may install required tools and invoke `tools/ci/local_gate.ps1`, but must not carry a separate checker sequence that can drift from local CI.
+- Remote MR review and remote CI remain as the clean-environment confirmation, permission, merge-state, and audit-record layer.
+- If local gate results and remote CI results disagree, fix the shared script, environment setup, or CI configuration drift. Do not bypass either the local gate or the remote gate.
 - Keep local `main` from falling behind the authoritative remote. Before new writable work, release-timing judgment, push, MR creation/update, or mainline-state claims, refresh `gitlab/main`; if local `main` is behind, fast-forward it before continuing. If a feature branch was prepared on a stale base, rebase or merge it onto the refreshed base before publication unless the user explicitly accepts the stale-base risk.
 - Keep the primary main worktree from falling behind local `main`. `D:\PythonProject_langgraph` is the primary directory; it must be on local `main`, its HEAD must not lag behind the local `main` branch reference, and in normal operation its HEAD should exactly match local `main`. `tools/check_worktree_session_hygiene.py` must fail if the primary directory is dirty, not on `main`, behind local `main`, or if local `main` is behind `gitlab/main`.
-- Do local commits, local checker runs, local rework, and local cleanup before the first push.
+- Do local commits, local checker runs, local MR review, local rework, and local cleanup before the first push.
 - For a locally completed OpenSpec change that is ready for publication, prefer a single-MR archive package. A single-MR archive package means the same feature branch contains the implementation or documentation change, the archived OpenSpec change under `openspec/changes/archive/`, and the promoted stable spec under `openspec/specs/`.
 - Use the single-MR archive package for small governance, documentation, checker, and test changes when local validation already proves completion and the review scope shares one rollback boundary.
 - Use a two-MR flow only when the implementation is large or risky, remote CI or MR review should confirm the implementation before archive, archive promotion would create heavy stable-spec conflicts, or the user explicitly requests an implementation-only MR. A two-MR flow must record the archive follow-up instead of treating the completed active change as closed.
 - Batch related small changes into one MR only when they share the same topic, validation surface, and rollback boundary. A rollback boundary is the smallest unit that can be reverted safely without mixing unrelated work.
 - Do not combine unrelated topics just to reduce runner usage; reviewability and rollback safety still take priority.
 - Before remote publication, the active session's model must judge release timing from local validation state, active-change state, archive-package state, review scope, rollback boundary, and runner-budget value, then recommend publish or wait to the user. The user remains the release decision authority.
-- Push to GitLab only when local validation passes, unless the user explicitly asks for an early remote pipeline check.
+- Push to GitLab only when local CI and local MR review pass, unless the user explicitly asks for an early remote pipeline check.
 
 Default local-first sequence:
 
@@ -197,16 +203,19 @@ Default local-first sequence:
 3. Use a dedicated `.worktrees/<task>` worktree for that branch.
 4. Implement the OpenSpec change and run the local implementation validation while the change is still active.
 5. If the completed change fits the single-MR path, archive it on the same feature branch, promote reusable delta specs into stable specs, and re-run the local validation commands.
-6. After local validation passes and all files are committed, moved, summarized, or explicitly discarded, the feature worktree may be released while keeping the feature branch as the publication carrier.
-7. If the completed change needs the two-MR path, state the exception reason, keep the active change or follow-up archive task visible, and ask the user before publishing an implementation-only MR.
-8. Refresh `gitlab/main` again and confirm the feature branch is not based on stale remote state.
-9. Have the active session's model recommend publish or wait, including the single-MR or two-MR archive decision, then ask the user to confirm the release decision.
-10. Push to GitLab and open or update a GitLab MR.
-11. Wait for the GitLab pipeline to pass.
-12. Merge into GitLab `main`.
-13. Sync the exact GitLab main commit to GitHub.
-14. Fast-forward the local `main` branch reference to GitLab `main`.
-15. Check out local `main` in `D:\PythonProject_langgraph`, verify it is clean, and verify its HEAD is not behind the local `main` branch reference; normal state is exact equality.
+6. Commit all intended tracked changes and classify every untracked, ignored, local evidence, cache, OCR-output, private, copyrighted, or large-file artifact before release review.
+7. Run `tools/ci/local_gate.ps1` from the clean feature worktree. This script is the local CI gate and the remote CI mirror entrypoint.
+8. Run `tools/ci/local_mr_review.ps1` against the selected base branch to inspect what the remote MR will show; the script must fail if the feature worktree is dirty.
+9. If the completed change needs the two-MR path, state the exception reason, keep the active change or follow-up archive task visible, and ask the user before publishing an implementation-only MR.
+10. After local CI and local MR review pass and all files are committed, moved, summarized, or explicitly discarded, the feature worktree may be released while keeping the feature branch as the publication carrier.
+11. Refresh `gitlab/main` again and confirm the feature branch is not based on stale remote state.
+12. Have the active session's model recommend publish or wait, including the single-MR or two-MR archive decision and the local gate results, then ask the user to confirm the release decision.
+13. Push to GitLab and open or update a GitLab MR.
+14. Wait for the GitLab pipeline to pass. The pipeline must invoke the same `tools/ci/local_gate.ps1` script.
+15. Merge into GitLab `main`.
+16. Sync the exact GitLab main commit to GitHub.
+17. Fast-forward the local `main` branch reference to GitLab `main`.
+18. Check out local `main` in `D:\PythonProject_langgraph`, verify it is clean, and verify its HEAD is not behind the local `main` branch reference; normal state is exact equality.
 
 GitHub PRs are not the default workflow for this repository.
 

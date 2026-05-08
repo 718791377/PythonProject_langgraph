@@ -175,23 +175,29 @@ python .\tools\check_session_ownership_claims.py --root . --precheck-task "<task
 
 上面的命令会运行任务预检 checker。`--precheck-task` 用来说明准备处理的任务，`--target-path` 用来说明仓库相对热点路径，`--openspec-change` 用来说明准备处理的 OpenSpec change id，`--json` 用来输出机器可读报告。token 可用时，可以加 `--check-gitlab-mrs` 读取打开中的 GitLab MRs；必须在无法检查 GitLab MRs 时 fail closed（失败关闭）时，才加 `--require-gitlab-mrs`。
 
-## 7. GitLab-First 集成
+## 7. Local-First Mirrored CI/MR 集成
 
-所有仓库变更仍然遵守 GitLab-first 发布流程。GitLab-first 是最终 review 与 merge 权威，不表示每个本地 checkpoint commit（检查点提交）都必须推送到远端服务器。
+所有仓库变更采用 local-first + mirrored CI/MR gate（本地优先且本地/远端镜像复用的 CI/MR 闸门）。GitLab 仍然是权威远端 review 与 merge 面，但远端 CI/MR 是本地 gate 已经运行之后的确认层和审查留痕层；这不表示每个本地 checkpoint commit（检查点提交）都必须推送到远端服务器。
 
 Runner 配额与发布包规则：
 
 - 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的有限远端 CI 配额。
+- Local CI（本地持续集成）是主要检查逻辑。远端发布前必须运行 `tools/ci/local_gate.ps1`；`tools/ci/local_gate.ps1` 是仓库共享 CI gate（持续集成闸门）脚本，用来运行 OpenSpec guard、仓库 checker / guard、可选本地测试和 whitespace diff check（空白差异检查）。
+- 进入 CI 管理的测试必须登记在 `tools/ci/ci_test_manifest.json`。`tools/ci/ci_test_manifest.json` 是稳定测试清单，用来防止本地或远端 CI 意外运行历史测试、环境依赖测试或尚未纳入发布 gate 的实验测试。
+- Local MR review（本地合并请求审查）是推远端前的审查面。必须在所有计划保留的改动已提交、feature worktree 干净之后，远端发布之前运行 `tools/ci/local_mr_review.ps1`；`tools/ci/local_mr_review.ps1` 会汇总 feature branch 相对 base branch 的 diff、commit log、diff stat 和 merge simulation（合并模拟），并且在 `git status --porcelain` 报告 dirty worktree entries（脏工作区条目）时默认失败。
+- Remote CI（远端持续集成）必须镜像复用本地 CI gate。GitLab CI 和 GitHub mirror workflow 可以安装必要工具并调用 `tools/ci/local_gate.ps1`，但不得维护一套会与本地 CI 漂移的独立 checker sequence（检查序列）。
+- Remote MR review（远端合并请求审查）和 remote CI 保留为干净环境确认、权限、合并状态和审查留痕层。
+- 如果本地 gate 与远端 CI 结果不一致，必须修复共享脚本、环境安装或 CI 配置漂移；不得绕过本地或远端任一 gate。
 - 本地 `main` 不得落后于权威远端。新建可写任务、判断发布时机、push、创建/更新 MR 或声明主线状态之前，必须刷新 `gitlab/main`；如果本地 `main` 落后，就先 fast-forward（快进）本地 `main` 再继续。如果 feature branch 基于陈旧远端基线准备，发布前必须 rebase（变基）或 merge（合并）到刷新后的基线，除非用户明确接受 stale-base risk（陈旧基线风险）。
 - 主目录 `D:\PythonProject_langgraph` 是 primary main worktree（主 main 工作区），必须检出本地 `main`，其 HEAD 不得落后于本地 `main`，正常应与本地 `main` 完全一致。若本地 `main` 落后于 `gitlab/main`，应先 fast-forward；若主目录有脏文件或不在 `main`，必须先停止写入并处理 hygiene 问题。功能实现仍不得直接落在主目录 `main`，应落在 feature worktree / feature branch。`tools/check_worktree_session_hygiene.py` 必须在主目录脏、主目录不在 `main`、主目录落后于本地 `main` 或本地 `main` 落后于 `gitlab/main` 时失败。
-- 首次推送前，先在本地完成 commits、checker runs、rework 和 cleanup。commits 是本地 Git 提交，checker runs 是本地检查命令执行，rework 是本地返工，cleanup 是提交前清理。
+- 首次推送前，先在本地完成 commits、checker runs、local MR review、rework 和 cleanup。commits 是本地 Git 提交，checker runs 是本地检查命令执行，local MR review 是本地合并请求审查，rework 是本地返工，cleanup 是提交前清理。
 - 对已经本地完成、准备发布的 OpenSpec change，默认采用 single-MR archive package（单 MR 归档发布包）。single-MR archive package 是指同一个 feature branch 同时包含实现或文档变更、`openspec/changes/archive/` 下的归档结果，以及 `openspec/specs/` 下被提升后的 stable spec。
 - 小型 governance（治理）、documentation（文档）、checker（检查脚本）和 test（测试）类变更，只要本地验证已经证明完成且 review scope（评审范围）共享同一个 rollback boundary（回退边界），就应采用 single-MR archive package。
 - 只有在实现规模大或风险高、需要先让远端 CI 或 MR review 确认实现、归档提升会产生大量 stable-spec 冲突，或用户明确要求 implementation-only MR（只发实现 MR）时，才使用 two-MR flow（双 MR 流程）。two-MR flow 必须记录 archive follow-up（归档跟进），不得把 completed active change 视为已经关闭。
 - 只有在主题、验证面和 rollback boundary（回退边界）相同的情况下，才把相关小变更合并进一个 MR。rollback boundary 是可以安全回退而不混入无关工作的最小单位。
 - 不要为了减少 runner 使用量而把无关主题合并到同一个 MR；可评审性和回退安全优先。
 - 远端发布前，当前会话的模型必须根据 local validation state（本地验证状态）、active-change state（active change 状态）、archive-package state（归档发布包状态）、review scope（评审范围）、rollback boundary（回退边界）和 runner-budget value（runner 配额价值）判断发布时机，然后向用户建议 publish（发布）或 wait（继续等待）。用户仍然是 release decision authority（发布决策权威）。
-- 只有本地验证通过后，才推送到 GitLab；除非用户明确要求提前跑远端 pipeline。
+- 只有 local CI 和 local MR review 都通过后，才推送到 GitLab；除非用户明确要求提前跑远端 pipeline。
 
 默认本地优先流程：
 
@@ -200,16 +206,19 @@ Runner 配额与发布包规则：
 3. 为该分支使用专用 `.worktrees/<task>` worktree。
 4. 实施 OpenSpec change，并在该 change 仍处于 active 状态时先运行本地实现验证。
 5. 如果 completed change 适合 single-MR path（单 MR 路径），就在同一个 feature branch 内 archive 它，把可复用 delta specs 提升进 stable specs，并重新运行本地验证命令。
-6. 本地验证通过，且所有文件已经提交、移动、摘要记录或明确丢弃后，可以释放 feature worktree，但必须保留 feature branch 作为发布载体。
-7. 如果 completed change 需要 two-MR path（双 MR 路径），必须说明例外原因，保持 active change 或 follow-up archive task 可见，并在发布 implementation-only MR 前请求用户确认。
-8. 再次刷新 `gitlab/main`，并确认 feature branch 没有基于陈旧远端状态。
-9. 由当前会话模型建议 publish 或 wait，并说明采用 single-MR 还是 two-MR 归档决策，然后请用户确认发布决策。
-10. 推送到 GitLab 并创建或更新 GitLab MR。
-11. 等 GitLab pipeline 通过。
-12. 合并到 GitLab `main`。
-13. 将同一个 GitLab main commit 同步到 GitHub。
-14. 将本地 `main` 分支引用快进到 GitLab `main`。
-15. 确认主目录 `D:\PythonProject_langgraph` 检出本地 `main`、状态干净，并且 HEAD 没有落后于本地 `main` 分支引用；正常状态是完全相等。
+6. 提交所有计划保留的 tracked changes，并在发布审查前分类每个 untracked、ignored、本地证据、缓存、OCR 输出、私有、版权或大文件 artifact。
+7. 在干净的 feature worktree 运行 `tools/ci/local_gate.ps1`。该脚本是 local CI gate，也是 remote CI mirror entrypoint。
+8. 针对选定 base branch 运行 `tools/ci/local_mr_review.ps1`，先在本地查看远端 MR 会展示的内容；如果 feature worktree 仍是 dirty，该脚本必须失败。
+9. 如果 completed change 需要 two-MR path（双 MR 路径），必须说明例外原因，保持 active change 或 follow-up archive task 可见，并在发布 implementation-only MR 前请求用户确认。
+10. Local CI 和 local MR review 通过，且所有文件都已提交、移动、摘要记录或明确丢弃后，可以释放 feature worktree，但必须保留 feature branch 作为发布载体。
+11. 再次刷新 `gitlab/main`，并确认 feature branch 没有基于陈旧远端状态。
+12. 由当前会话模型建议 publish 或 wait，并说明采用 single-MR 还是 two-MR 归档决策以及本地 gate 结果，然后请用户确认发布决策。
+13. 推送到 GitLab 并创建或更新 GitLab MR。
+14. 等 GitLab pipeline 通过。该 pipeline 必须调用同一个 `tools/ci/local_gate.ps1` 脚本。
+15. 合并到 GitLab `main`。
+16. 将同一个 GitLab main commit 同步到 GitHub。
+17. 将本地 `main` 分支引用快进到 GitLab `main`。
+18. 确认主目录 `D:\PythonProject_langgraph` 检出本地 `main`、状态干净，并且 HEAD 没有落后于本地 `main` 分支引用；正常状态是完全相等。
 
 本仓库默认不使用 GitHub PR。
 
