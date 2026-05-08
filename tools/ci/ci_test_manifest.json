@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "python_unittest": [
+    "check_context_retention_canary_surface.test.py",
+    "check_local_mirrored_ci_gate.test.py"
+  ],
+  "node_mjs": [],
+  "powershell_ps1": []
+}

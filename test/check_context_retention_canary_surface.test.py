@@ -28,7 +28,12 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         path.write_text(content, encoding="utf-8")
 
     def write_startup_pair(self, root: Path, include_canary: bool = True) -> None:
-        canary_sentence = f"Start `{START_CANARY}` and end `{END_CANARY}`.\n" if include_canary else ""
+        canary_sentence = (
+            f"Start `{START_CANARY}` and end `{END_CANARY}`.\n"
+            "Recovery action: reread AGENTS.md before continuing.\n"
+            if include_canary
+            else "Recovery action: reread AGENTS.md before continuing.\n"
+        )
         self.write_file(
             root,
             "docs_bilingual/project_startup_summary.md",
@@ -85,10 +90,24 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
     def test_ignores_archived_openspec_history(self) -> None:
         root = self.make_root("canary-archive")
         self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
         self.write_file(
             root,
             "openspec/changes/archive/2026-04-01-old-change/proposal.md",
             f"Historical prompt `{START_CANARY}` and `{END_CANARY}`.\n",
+        )
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+
+    def test_ignores_generated_gate_report_files(self) -> None:
+        root = self.make_root("canary-report")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+        self.write_file(
+            root,
+            "local-gate-report.json",
+            json.dumps({"stdout": f"Generated report mentions `{START_CANARY}` and `{END_CANARY}`."}),
         )
 
         result = self.run_check(root)

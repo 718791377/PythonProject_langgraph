@@ -100,6 +100,7 @@ def main() -> int:
     safety_rule_script_backing_script = root / "tools" / "check_safety_rule_script_backing.py"
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
+    local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
@@ -126,6 +127,8 @@ def main() -> int:
         raise SystemExit(f"Missing OpenSpec code archive evidence check script: {openspec_code_archive_evidence_script}")
     if not mcp_router_scope_policy_script.exists():
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
+    if not local_mirrored_ci_gate_script.exists():
+        raise SystemExit(f"Missing local mirrored CI/MR gate check script: {local_mirrored_ci_gate_script}")
     if not windows_cleanup_output_control_script.exists():
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
     if not durable_routing_smoke_gate_template_script.exists():
@@ -234,6 +237,11 @@ def main() -> int:
                 "check_mcp_router_scope_policy",
                 [str(python_exe), str(mcp_router_scope_policy_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during MCP Router scope policy verification.",
+            ),
+            (
+                "check_local_mirrored_ci_gate",
+                [str(python_exe), str(local_mirrored_ci_gate_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during local mirrored CI/MR gate verification.",
             ),
             (
                 "check_windows_cleanup_output_control",
@@ -408,6 +416,11 @@ def main() -> int:
         [str(python_exe), str(mcp_router_scope_policy_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during MCP Router scope policy verification.",
+    )
+    run_checked(
+        [str(python_exe), str(local_mirrored_ci_gate_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during local mirrored CI/MR gate verification.",
     )
     run_checked(
         [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root)],

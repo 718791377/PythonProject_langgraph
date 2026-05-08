@@ -30,8 +30,11 @@ Stable publication posture:
 
 - GitLab is the authoritative review and merge surface for this repository.
 - Use local-first batching to conserve GitLab runner minutes. GitLab runner minutes are the remote CI quota consumed by GitLab pipelines, so do local commits, local checks, and local cleanup before the first push.
+- Publication uses a local-first plus mirrored CI/MR gate. Local CI is the primary check logic; local MR review is the pre-remote review surface; GitLab CI and GitLab MR stay as the clean-environment confirmation and audit-record layer.
+- Local CI and remote CI must reuse `tools/ci/local_gate.ps1`; remote CI configuration should install required tools and invoke that shared script rather than duplicating checker commands. CI-managed tests are listed in `tools/ci/ci_test_manifest.json` to keep the gate stable. Local MR review uses `tools/ci/local_mr_review.ps1` after all intended changes are committed and the feature worktree is clean, before remote publication.
 - Keep local `main` current with `gitlab/main` before new writable work, release-timing judgment, push, MR creation, or local alignment claims. Local-first batching is not permission to work from a stale remote base.
-- Feature branches open or update GitLab MRs only after local validation passes, unless the user explicitly requests an early remote pipeline check.
+- Feature branches open or update GitLab MRs only after local CI and local MR review pass, unless the user explicitly requests an early remote pipeline check.
+- If local and remote CI results differ, fix the shared scripts, environment setup, or configuration drift instead of bypassing either gate.
 - Batch related small changes into one MR when they share the same topic and rollback boundary; do not combine unrelated topics just to save runner minutes.
 - Before remote publication, the active session's model judges whether the local batch is ready and recommends publish or wait to the user. The user remains the release decision authority.
 - GitLab pipeline success gates the merge into GitLab `main`.

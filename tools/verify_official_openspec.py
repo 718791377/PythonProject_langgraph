@@ -252,8 +252,8 @@ def main() -> int:
             ci_text = read_text(root / relative)
             require_text(
                 ci_text,
-                "tools/run_openspec_guard.py",
-                f"{relative} does not invoke `tools/run_openspec_guard.py`.",
+                "tools/ci/local_gate.ps1",
+                f"{relative} does not invoke shared CI gate `tools/ci/local_gate.ps1`.",
                 errors,
             )
             require_text(
