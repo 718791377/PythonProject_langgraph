@@ -2,7 +2,9 @@
   "schema_version": 1,
   "python_unittest": [
     "check_context_retention_canary_surface.test.py",
-    "check_local_mirrored_ci_gate.test.py"
+    "check_local_mirrored_ci_gate.test.py",
+    "evidence_intake_pipeline.test.py",
+    "evidence_adapters.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []
