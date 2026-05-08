@@ -6,6 +6,7 @@ param(
   [string]$OmxCommandPath,
   [string]$PythonCommandPath,
   [switch]$InstallTaskkillExeShim,
+  [switch]$SkipTaskkillExeShim,
   [switch]$Force,
   [string]$TestFailPoint = 'none'
 )
@@ -15,6 +16,10 @@ $ErrorActionPreference = 'Stop'
 
 if ($TestFailPoint -notin @('none', 'after_backup', 'after_assets', 'after_state', 'after_profile')) {
   throw "Invalid TestFailPoint value: $TestFailPoint"
+}
+
+if ($InstallTaskkillExeShim -and $SkipTaskkillExeShim) {
+  throw 'InstallTaskkillExeShim and SkipTaskkillExeShim cannot both be set.'
 }
 
 $Script:ManagedMarker = 'OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED'
@@ -831,12 +836,12 @@ function Get-StartupLauncherContent {
   param(
     [Parameter(Mandatory)]
     [string]$NativeCommandPath,
-    [bool]$InstallTaskkillExeShim = $false
+    [bool]$TaskkillExeShimRequested = $true
   )
 
   $runtimeContent = Get-CommandRuntimeContent
   $escapedNativeCommandPath = $NativeCommandPath.Replace("'", "''")
-  $taskkillExeShimEnabledLiteral = if ($InstallTaskkillExeShim) { '$true' } else { '$false' }
+  $taskkillExeShimRequestedLiteral = if ($TaskkillExeShimRequested) { '$true' } else { '$false' }
 
   return @"
 # $Script:ManagedMarker
@@ -851,7 +856,9 @@ $runtimeContent
 `$previousPath = [string]`$env:Path
 `$previousPathExt = [string]`$env:PATHEXT
 `$cleanupShimDirectory = Join-Path `$PSScriptRoot 'win-shims'
-`$taskkillExeShimEnabled = $taskkillExeShimEnabledLiteral
+`$taskkillExeShimPath = Join-Path `$cleanupShimDirectory 'taskkill.exe'
+`$taskkillExeShimRequested = $taskkillExeShimRequestedLiteral
+`$taskkillExeShimEnabled = `$taskkillExeShimRequested -and (Test-Path -LiteralPath `$taskkillExeShimPath)
 try {
   if (Test-Path -LiteralPath `$cleanupShimDirectory) {
     if ([string]::IsNullOrWhiteSpace(`$env:Path)) {
@@ -14684,6 +14691,7 @@ $teamPlaybookPath = Join-Path $docsDirectory 'team-mode-playbook.md'
 $teamQuickReferencePath = Join-Path $docsDirectory 'team-mode-quick-reference.md'
 $composeManifestSchemaPath = Join-Path $teamsDirectory 'compose-manifest.schema.json'
 $managedProfileBlock = Get-ManagedProfileBlockContent -LauncherPath $launcherPath -NativeCommandPath $resolvedNativeCodexCommandPath
+$taskkillExeShimRequested = -not [bool]$SkipTaskkillExeShim
 
 Ensure-Directory -Path $targetCodexHome
 Ensure-Directory -Path $binDirectory
@@ -14707,7 +14715,7 @@ $assets = @(
   [ordered]@{ Path = (Join-Path $agentsDirectory 'bug-rebutter.toml'); Content = (Get-BugRebutterTomlContent) }
   [ordered]@{ Path = (Join-Path $agentsDirectory 'bug-judge.toml'); Content = (Get-BugJudgeTomlContent) }
   [ordered]@{ Path = (Join-Path $binDirectory '_codex-user-level-team-mode.ps1'); Content = (Get-SupportScriptContent) }
-  [ordered]@{ Path = $launcherPath; Content = (Get-StartupLauncherContent -NativeCommandPath $resolvedNativeCodexCommandPath -InstallTaskkillExeShim ([bool]$InstallTaskkillExeShim)) }
+  [ordered]@{ Path = $launcherPath; Content = (Get-StartupLauncherContent -NativeCommandPath $resolvedNativeCodexCommandPath -TaskkillExeShimRequested ([bool]$taskkillExeShimRequested)) }
   [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill.cmd'); Content = (Get-WindowsTaskkillCmdShimContent) }
   [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill.ps1'); Content = (Get-WindowsTaskkillPowerShellShimContent) }
   [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill-shim-source.cs'); Content = (Get-WindowsTaskkillCSharpShimSourceContent) }
@@ -14805,7 +14813,7 @@ $assets = @(
   [ordered]@{ Path = (Join-Path $langGraphPythonDirectory 'cli.py'); Content = (Get-RepoTemplateText -RelativePath 'langgraph_durable_orchestrator\cli.py') }
 )
 
-if ($InstallTaskkillExeShim) {
+if ($taskkillExeShimRequested) {
   $assets += [ordered]@{ Path = (Join-Path $winShimsDirectory 'taskkill.exe'); Content = '' }
 }
 
@@ -14842,20 +14850,22 @@ try {
   }
 
   $taskkillExeShimCompile = [ordered]@{
-    attempted = [bool]$InstallTaskkillExeShim
+    attempted = [bool]$taskkillExeShimRequested
     compiled = $false
     output_path = (Join-Path $winShimsDirectory 'taskkill.exe')
     compiler_path = ''
-    reason = ''
+    reason = if ($taskkillExeShimRequested) { '' } else { 'taskkill.exe shim disabled by SkipTaskkillExeShim' }
   }
-  if ($InstallTaskkillExeShim) {
+  if ($taskkillExeShimRequested) {
     $taskkillExeShimCompile = Try-CompileWindowsTaskkillExeShim -SourcePath (Join-Path $winShimsDirectory 'taskkill-shim-source.cs') -OutputPath (Join-Path $winShimsDirectory 'taskkill.exe')
-    if (-not [bool]$taskkillExeShimCompile.compiled) {
+    if ($InstallTaskkillExeShim -and -not [bool]$taskkillExeShimCompile.compiled) {
       throw ("Unable to compile optional taskkill.exe shim: {0}" -f [string]$taskkillExeShimCompile.reason)
     }
-    $generatedFiles += [ordered]@{
-      path = (Join-Path $winShimsDirectory 'taskkill.exe')
-      status = 'written'
+    if ([bool]$taskkillExeShimCompile.compiled) {
+      $generatedFiles += [ordered]@{
+        path = (Join-Path $winShimsDirectory 'taskkill.exe')
+        status = 'written'
+      }
     }
   }
 
@@ -14938,7 +14948,8 @@ $manifest = [ordered]@{
       taskkill_ps1_path = (Join-Path $winShimsDirectory 'taskkill.ps1')
       taskkill_shim_source_path = (Join-Path $winShimsDirectory 'taskkill-shim-source.cs')
       taskkill_exe_shim_path = (Join-Path $winShimsDirectory 'taskkill.exe')
-      taskkill_exe_shim_enabled = [bool]$InstallTaskkillExeShim
+      taskkill_exe_shim_requested = [bool]$taskkillExeShimRequested
+      taskkill_exe_shim_enabled = [bool]$taskkillExeShimCompile.compiled
       taskkill_exe_shim_compile = $taskkillExeShimCompile
       scoped_to_wrapped_launch = $true
     }
