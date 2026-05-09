@@ -69,19 +69,29 @@ class CodexSkillsGovernanceCheckTest(unittest.TestCase):
     def write_skill(self, root: Path, relative_path: str, name: str, description: str) -> None:
         self.write_file(root, relative_path, f"---\nname: {name}\ndescription: {description}\n---\n\nBody\n")
 
-    def run_check(self, root: Path, user_skills_root: Path | None = None) -> subprocess.CompletedProcess[str]:
+    def run_check(
+        self,
+        root: Path,
+        user_skills_root: Path | None = None,
+        include_plugins: bool = False,
+        plugin_cache_root: Path | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         user_root = user_skills_root or (root / "user-skills")
+        command = [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--root",
+            str(root),
+            "--json",
+            "--user-skills-root",
+            str(user_root),
+        ]
+        if include_plugins:
+            command.extend(["--plugin-cache-root", str(plugin_cache_root or (root / "plugin-cache"))])
+        else:
+            command.append("--no-plugins")
         return subprocess.run(
-            [
-                sys.executable,
-                str(SCRIPT_PATH),
-                "--root",
-                str(root),
-                "--json",
-                "--no-plugins",
-                "--user-skills-root",
-                str(user_root),
-            ],
+            command,
             check=False,
             capture_output=True,
             text=True,
@@ -168,6 +178,30 @@ class CodexSkillsGovernanceCheckTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["errors"], 0)
         self.assertEqual(payload["counts"]["deferred"], 1)
         self.assertTrue(any("openspec-demo" in item for item in payload["deferred"]))
+
+    def test_reports_plugin_same_layer_duplicate_as_warning(self) -> None:
+        root = self.make_root("skills-gov-plugin-duplicate")
+        self.write_minimal_docs(root)
+        plugin_root = root / "plugin-cache"
+        self.write_skill(
+            plugin_root,
+            "openai-bundled/chrome/0.1.7/skills/chrome/SKILL.md",
+            "Chrome",
+            "Browser automation for Chrome.",
+        )
+        self.write_skill(
+            plugin_root,
+            "openai-bundled/chrome/0.1.7-copy/skills/chrome/SKILL.md",
+            "Chrome",
+            "Browser automation for Chrome.",
+        )
+
+        result = self.run_check(root, include_plugins=True, plugin_cache_root=plugin_root)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["errors"], 0)
+        self.assertTrue(any("Plugin duplicate skill name `Chrome`" in item for item in payload["warnings"]))
 
 
 if __name__ == "__main__":
