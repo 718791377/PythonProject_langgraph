@@ -202,7 +202,12 @@ def validate_inventory(
     for (layer, name), rows in sorted(by_layer_name.items()):
         if len(rows) <= 1:
             continue
-        if has_exception(name, layer, exceptions):
+        if layer == "plugin":
+            warnings.append(
+                f"Plugin duplicate skill name `{name}` appears {len(rows)} times inside layer `plugin`; "
+                "plugin skills are bundle-managed and report-only until fine-grained plugin filtering exists."
+            )
+        elif has_exception(name, layer, exceptions):
             deferred.append(
                 f"Known same-layer duplicate cleanup candidate for {layer} skill `{name}`; "
                 "requires clean-clone OpenSpec evidence before removal."
