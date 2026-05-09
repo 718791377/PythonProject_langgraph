@@ -13,6 +13,8 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
+from evidence_adapters import poppler_adapter, tesseract_adapter
+
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -417,11 +419,13 @@ def extract_pdf_file(
     ocr_pages: bool = False,
     ocr_languages: str = DEFAULT_OCR_LANGUAGES,
     render_dpi: int = DEFAULT_RENDER_DPI,
+    poppler_bin_dir: str | None = None,
 ) -> dict[str, Any]:
-    pdftotext = command_path("pdftotext", "pdftotext.exe")
-    pdfinfo_cmd = command_path("pdfinfo", "pdfinfo.exe")
-    pdftoppm = command_path("pdftoppm", "pdftoppm.exe")
-    tesseract = command_path("tesseract", "tesseract.exe")
+    poppler_tools = poppler_adapter.discover_poppler(poppler_bin_dir)
+    pdftotext = poppler_tools.pdftotext
+    pdfinfo_cmd = poppler_tools.pdfinfo
+    pdftoppm = poppler_tools.pdftoppm
+    tesseract = tesseract_adapter.discover_tesseract()
     record: dict[str, Any] = {
         "type": "pdf",
         "source_path": rel(path, source_root),
@@ -433,8 +437,9 @@ def extract_pdf_file(
         "render_requested": render_pages,
         "ocr_requested": ocr_pages,
         "ocr_languages": ocr_languages if ocr_pages else None,
+        "poppler_bin_dir": poppler_tools.bin_dir,
     }
-    pages = pdf_page_count(pdfinfo_cmd, path) if pdfinfo_cmd else None
+    pages = poppler_adapter.pdf_page_count(pdfinfo_cmd, path) if pdfinfo_cmd else None
     total_pages = pages
     record["page_count"] = pages
     if not pdftotext:
@@ -453,13 +458,13 @@ def extract_pdf_file(
     ocr_completed = 0
     page_texts: dict[int, tuple[str, str | None]] | None = None
     if not render_pages and not ocr_pages:
-        page_texts = extract_pdf_pages_whole_doc(pdftotext, path, output_dir, pdf_slug, limit)
+        page_texts = poppler_adapter.extract_pdf_pages_whole_doc(pdftotext, path, output_dir / "pdf_pages" / pdf_slug, limit)
     for page in range(1, limit + 1):
         out_path = output_dir / "pdf_pages" / pdf_slug / f"page-{page:04d}.txt"
         if page_texts is not None:
             text, error = page_texts.get(page, ("", f"missing extracted page {page}"))
         else:
-            text, error = extract_pdf_page(pdftotext, path, page, out_path)
+            text, error = poppler_adapter.extract_pdf_page(pdftotext, path, page, out_path)
         metrics = text_metrics(text)
         page_record = {
             "page_number": page,
@@ -471,7 +476,7 @@ def extract_pdf_file(
         image_path = output_dir / "pdf_images" / pdf_slug / f"page-{page:04d}.png"
         if render_pages or ocr_pages:
             if pdftoppm:
-                render_error = render_pdf_page(pdftoppm, path, page, image_path, render_dpi)
+                render_error = poppler_adapter.render_pdf_page(pdftoppm, path, page, image_path, render_dpi)
                 if render_error:
                     page_record["render_error"] = render_error
                     page_record["needs_review"] = True
@@ -490,7 +495,7 @@ def extract_pdf_file(
                 page_record["ocr_error"] = "tesseract not found; OCR text and confidence were not produced."
             else:
                 ocr_path = output_dir / "pdf_ocr" / pdf_slug / f"page-{page:04d}.ocr.txt"
-                ocr_record = ocr_image_page(tesseract, image_path, ocr_path, ocr_languages)
+                ocr_record = tesseract_adapter.ocr_image_page(tesseract, image_path, ocr_path, ocr_languages)
                 if "ocr_output_path" in ocr_record:
                     ocr_completed += 1
                     ocr_record["ocr_output_path"] = rel(ocr_record["ocr_output_path"], output_dir)
@@ -519,6 +524,7 @@ def extract_references(
     ocr_pages: bool = False,
     ocr_languages: str = DEFAULT_OCR_LANGUAGES,
     render_dpi: int = DEFAULT_RENDER_DPI,
+    poppler_bin_dir: str | None = None,
 ) -> dict[str, Any]:
     source_root = (root / source if not source.is_absolute() else source).resolve()
     output = output.resolve()
@@ -529,10 +535,10 @@ def extract_references(
         "output_root": str(output),
         "records": [],
         "tools": {
-            "pdftotext": command_path("pdftotext", "pdftotext.exe"),
-            "pdfinfo": command_path("pdfinfo", "pdfinfo.exe"),
-            "pdftoppm": command_path("pdftoppm", "pdftoppm.exe"),
-            "tesseract": command_path("tesseract", "tesseract.exe"),
+            "pdftotext": poppler_adapter.discover_poppler(poppler_bin_dir).pdftotext,
+            "pdfinfo": poppler_adapter.discover_poppler(poppler_bin_dir).pdfinfo,
+            "pdftoppm": poppler_adapter.discover_poppler(poppler_bin_dir).pdftoppm,
+            "tesseract": tesseract_adapter.discover_tesseract(),
         },
         "warnings": [],
         "errors": [],
@@ -563,6 +569,7 @@ def extract_references(
                 ocr_pages=ocr_pages,
                 ocr_languages=ocr_languages,
                 render_dpi=render_dpi,
+                poppler_bin_dir=poppler_bin_dir,
             )
         )
         flush_manifest(output, manifest)
@@ -723,6 +730,217 @@ def inventory_tools(root: Path, output: Path, limit: int = 500) -> dict[str, Any
     return payload
 
 
+
+def parse_page_spec(value: str, max_page: int | None = None) -> list[int]:
+    pages: set[int] = set()
+    if not value.strip():
+        return []
+    for part in value.split(','):
+        part = part.strip()
+        if not part:
+            continue
+        if '-' in part:
+            left, right = part.split('-', 1)
+            start = int(left.strip())
+            end = int(right.strip())
+            if end < start:
+                raise ValueError(f"Invalid page range: {part}")
+            pages.update(range(start, end + 1))
+        else:
+            pages.add(int(part))
+    result = sorted(pages)
+    if any(page < 1 for page in result):
+        raise ValueError("Pages are 1-based and must be positive")
+    if max_page is not None and any(page > max_page for page in result):
+        raise ValueError(f"Page spec exceeds page count {max_page}")
+    return result
+
+
+def select_ocr_pages(
+    pdf_path: Path,
+    output: Path,
+    pdf_slug: str,
+    poppler_tools: poppler_adapter.PopplerTools,
+    page_count: int,
+    scope: str,
+    pages_spec: str | None,
+    short_threshold: int,
+) -> tuple[list[int], list[dict[str, Any]]]:
+    warnings: list[dict[str, Any]] = []
+    if scope == "all":
+        return list(range(1, page_count + 1)), warnings
+    if scope == "pages":
+        if not pages_spec:
+            raise ValueError("--pages is required when --scope pages is used")
+        return parse_page_spec(pages_spec, page_count), warnings
+    if not poppler_tools.pdftotext:
+        warnings.append({"type": "missing-tool", "tool": "pdftotext", "message": "Cannot select pages from text metrics without pdftotext."})
+        return [], warnings
+    text_dir = output / "pdf_pages" / pdf_slug
+    page_texts = poppler_adapter.extract_pdf_pages_whole_doc(poppler_tools.pdftotext, pdf_path, text_dir, page_count)
+    selected: list[int] = []
+    for page in range(1, page_count + 1):
+        text, error = page_texts.get(page, ("", "missing page text"))
+        metrics = text_metrics(text)
+        if error:
+            warnings.append({"type": "text-extraction-error", "page": page, "message": error})
+        if scope == "text-low-quality" and metrics["needs_review"]:
+            selected.append(page)
+        elif scope == "text-short" and metrics["chars"] < short_threshold:
+            selected.append(page)
+    return selected, warnings
+
+
+def write_ocr_run_summary(path: Path, manifest: dict[str, Any]) -> None:
+    counts = manifest.get("counts", {})
+    lines = [
+        "# Page-Level OCR Evidence Run Summary",
+        "",
+        f"Generated: {manifest.get('generated_at')}",
+        f"PDF: `{manifest.get('pdf')}`",
+        f"Scope: `{manifest.get('scope')}`",
+        "",
+        "## Counts",
+        "",
+    ]
+    for key, value in counts.items():
+        lines.append(f"- `{key}`: {value}")
+    lines.extend(["", "## Tool Status", ""])
+    for key, value in manifest.get("tools", {}).items():
+        lines.append(f"- `{key}`: {value or 'not found'}")
+    lines.extend(["", "## Completion", ""])
+    if manifest.get("ocr_complete"):
+        lines.append("OCR evidence is complete for the requested page set.")
+    else:
+        lines.append("OCR evidence is not complete for the requested page set. See manifest page records for blocked or failed pages.")
+    if manifest.get("warnings"):
+        lines.extend(["", "## Warnings", ""])
+        for warning in manifest["warnings"]:
+            lines.append(f"- {warning}")
+    write_text(path, "\n".join(lines) + "\n")
+
+
+def run_page_level_ocr(
+    root: Path,
+    pdf: Path,
+    output: Path,
+    scope: str,
+    pages_spec: str | None,
+    short_threshold: int,
+    ocr_languages: str,
+    render_dpi: int,
+    poppler_bin_dir: str | None = None,
+    max_pages: int | None = None,
+) -> dict[str, Any]:
+    pdf_path = pdf if pdf.is_absolute() else root / pdf
+    pdf_path = pdf_path.resolve()
+    output = output.resolve()
+    poppler_tools = poppler_adapter.discover_poppler(poppler_bin_dir)
+    tesseract = tesseract_adapter.discover_tesseract()
+    page_count = poppler_adapter.pdf_page_count(poppler_tools.pdfinfo, pdf_path) if poppler_tools.pdfinfo else None
+    manifest: dict[str, Any] = {
+        "schema_version": 1,
+        "generated_at": utc_now(),
+        "run_type": "page-level-ocr-evidence",
+        "pdf": str(pdf_path),
+        "output_root": str(output),
+        "scope": scope,
+        "pages_spec": pages_spec,
+        "short_threshold": short_threshold,
+        "ocr_languages": ocr_languages,
+        "render_dpi": render_dpi,
+        "page_count": page_count,
+        "tools": {
+            "pdfinfo": poppler_tools.pdfinfo,
+            "pdftotext": poppler_tools.pdftotext,
+            "pdftoppm": poppler_tools.pdftoppm,
+            "tesseract": tesseract,
+        },
+        "pages": [],
+        "warnings": [],
+        "errors": [],
+    }
+    if not pdf_path.exists():
+        manifest["errors"].append(f"PDF does not exist: {pdf_path}")
+        manifest["counts"] = {"requested_pages": 0, "rendered_pages": 0, "ocr_completed_pages": 0, "blocked_pages": 0, "failed_pages": 0}
+        manifest["ocr_complete"] = False
+        write_json(output / "manifest.json", manifest)
+        write_ocr_run_summary(output / "summary.md", manifest)
+        return manifest
+    if page_count is None:
+        manifest["errors"].append("pdfinfo not found or page count unavailable; OCR page scope cannot be resolved.")
+        manifest["counts"] = {"requested_pages": 0, "rendered_pages": 0, "ocr_completed_pages": 0, "blocked_pages": 0, "failed_pages": 0}
+        manifest["ocr_complete"] = False
+        write_json(output / "manifest.json", manifest)
+        write_ocr_run_summary(output / "summary.md", manifest)
+        return manifest
+    if max_pages is not None:
+        page_count = min(page_count, max_pages)
+        manifest["limited_page_count"] = page_count
+    pdf_slug = safe_slug(pdf_path.stem)
+    requested, selection_warnings = select_ocr_pages(pdf_path, output, pdf_slug, poppler_tools, page_count, scope, pages_spec, short_threshold)
+    manifest["requested_pages"] = requested
+    manifest["warnings"].extend([json.dumps(item, ensure_ascii=False) for item in selection_warnings])
+    rendered_pages = 0
+    ocr_completed = 0
+    blocked_pages = 0
+    failed_pages = 0
+    for page in requested:
+        image_path = output / "pdf_images" / pdf_slug / f"page-{page:04d}.png"
+        ocr_path = output / "pdf_ocr" / pdf_slug / f"page-{page:04d}.ocr.txt"
+        record: dict[str, Any] = {
+            "page_number": page,
+            "render_output_path": rel(image_path, output),
+            "ocr_output_path": rel(ocr_path, output),
+            "render_status": "pending",
+            "ocr_status": "pending",
+        }
+        if not poppler_tools.pdftoppm:
+            record["render_status"] = "blocked"
+            record["render_error"] = "pdftoppm not found; page image was not rendered."
+            record["ocr_status"] = "blocked"
+            record["ocr_error"] = "OCR requires a rendered page image."
+            blocked_pages += 1
+        else:
+            render_error = poppler_adapter.render_pdf_page(poppler_tools.pdftoppm, pdf_path, page, image_path, render_dpi)
+            if render_error:
+                record["render_status"] = "failed"
+                record["render_error"] = render_error
+                record["ocr_status"] = "blocked"
+                record["ocr_error"] = "OCR requires a rendered page image."
+                failed_pages += 1
+            else:
+                rendered_pages += 1
+                record["render_status"] = "ok"
+                if not tesseract:
+                    record["ocr_status"] = "blocked"
+                    record["ocr_error"] = "tesseract not found; OCR text and confidence were not produced."
+                    blocked_pages += 1
+                else:
+                    ocr_record = tesseract_adapter.ocr_image_page(tesseract, image_path, ocr_path, ocr_languages)
+                    if "ocr_output_path" in ocr_record:
+                        ocr_completed += 1
+                        record["ocr_status"] = "ok"
+                        ocr_record["ocr_output_path"] = rel(ocr_record["ocr_output_path"], output)
+                    else:
+                        failed_pages += 1
+                        record["ocr_status"] = "failed"
+                    record.update(ocr_record)
+        record["needs_review"] = record.get("ocr_status") != "ok" or (record.get("ocr_metrics") or {}).get("needs_review", False)
+        manifest["pages"].append(record)
+    manifest["counts"] = {
+        "requested_pages": len(requested),
+        "rendered_pages": rendered_pages,
+        "ocr_completed_pages": ocr_completed,
+        "blocked_pages": blocked_pages,
+        "failed_pages": failed_pages,
+        "needs_review_pages": sum(1 for page in manifest["pages"] if page.get("needs_review")),
+    }
+    manifest["ocr_complete"] = bool(requested) and ocr_completed == len(requested) and failed_pages == 0 and blocked_pages == 0
+    write_json(output / "manifest.json", manifest)
+    write_ocr_run_summary(output / "summary.md", manifest)
+    return manifest
+
 def check_output(output: Path) -> dict[str, Any]:
     output = output.resolve()
     errors: list[str] = []
@@ -770,7 +988,21 @@ def main() -> int:
     extract.add_argument("--ocr-pages", action="store_true", help="Run OCR for rendered PDF pages when tesseract is available.")
     extract.add_argument("--ocr-languages", default=DEFAULT_OCR_LANGUAGES, help="Tesseract OCR language list, for example eng+chi_sim.")
     extract.add_argument("--render-dpi", type=int, default=DEFAULT_RENDER_DPI, help="DPI for optional PDF page PNG rendering.")
+    extract.add_argument("--poppler-bin-dir", default=None, help="Optional Poppler bin directory used before PATH discovery.")
     extract.add_argument("--json", action="store_true", help="Print JSON payload.")
+
+    ocr = sub.add_parser("ocr-run", help="Create page-level OCR evidence for a local PDF.")
+    ocr.add_argument("--root", default=".", help="Repository root.")
+    ocr.add_argument("--pdf", required=True, help="PDF path, relative to root unless absolute.")
+    ocr.add_argument("--output", default=".local/evidence/ocr_run", help="Ignored local OCR evidence output directory.")
+    ocr.add_argument("--scope", choices=["all", "pages", "text-short", "text-low-quality"], default="text-low-quality", help="OCR page selection mode.")
+    ocr.add_argument("--pages", default=None, help="Comma-separated 1-based pages and ranges, for example 1,3-5.")
+    ocr.add_argument("--short-threshold", type=int, default=100, help="Extracted text character threshold for text-short scope.")
+    ocr.add_argument("--ocr-languages", default=DEFAULT_OCR_LANGUAGES, help="Tesseract OCR language list, for example eng+chi_sim.")
+    ocr.add_argument("--render-dpi", type=int, default=DEFAULT_RENDER_DPI, help="DPI for PDF page PNG rendering.")
+    ocr.add_argument("--poppler-bin-dir", default=None, help="Optional Poppler bin directory used before PATH discovery.")
+    ocr.add_argument("--max-pages", type=int, default=None, help="Optional page limit for smoke runs.")
+    ocr.add_argument("--json", action="store_true", help="Print JSON payload.")
 
     inv = sub.add_parser("inventory-tools", help="Inventory external local tool candidates without copying.")
     inv.add_argument("--root", required=True, help="External project root to inspect.")
@@ -796,11 +1028,37 @@ def main() -> int:
             ocr_pages=args.ocr_pages,
             ocr_languages=args.ocr_languages,
             render_dpi=args.render_dpi,
+            poppler_bin_dir=args.poppler_bin_dir,
         )
         if args.json:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
             print(f"Extracted {payload.get('counts', {}).get('records', 0)} reference records to {payload.get('output_root')}.")
+        exit_code = 0 if not payload.get("errors") else 1
+    elif args.command == "ocr-run":
+        root = Path(args.root).resolve()
+        output = root / args.output if not Path(args.output).is_absolute() else Path(args.output)
+        try:
+            payload = run_page_level_ocr(
+                root=root,
+                pdf=Path(args.pdf),
+                output=output,
+                scope=args.scope,
+                pages_spec=args.pages,
+                short_threshold=args.short_threshold,
+                ocr_languages=args.ocr_languages,
+                render_dpi=args.render_dpi,
+                poppler_bin_dir=args.poppler_bin_dir,
+                max_pages=args.max_pages,
+            )
+        except ValueError as exc:
+            payload = {"schema_version": 1, "generated_at": utc_now(), "ok": False, "errors": [str(exc)]}
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"OCR evidence run wrote manifest to {output}.")
+            if not payload.get("ocr_complete"):
+                print("OCR evidence is incomplete or blocked; inspect summary.md and manifest.json.")
         exit_code = 0 if not payload.get("errors") else 1
     elif args.command == "inventory-tools":
         payload = inventory_tools(Path(args.root), Path(args.output), limit=args.limit)

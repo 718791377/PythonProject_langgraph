@@ -11,40 +11,89 @@ status: draft
 
 ## Run Scope
 
-This summary records a local evidence run for the evidence intake pipeline. It does not reproduce source PDF pages or saved web-page bodies.
+This summary records local evidence runs for the evidence intake pipeline. It does not reproduce source PDF pages, OCR full text, rendered images, or saved web-page bodies.
 
-The local private reference root used for this run is ignored by Git. It contains PDF files and saved HTML pages used as local references.
+The local private reference roots used for these runs are ignored by Git. They contain source PDFs, saved HTML pages, rendered page images, OCR text files, and machine-readable manifests.
 
-`.local/evidence/local_reference/` is the ignored local evidence directory. It contains the full manifest, page text files, extracted HTML text files, and tool inventory JSON generated during the final text-only run.
+## Text-Only Reference Extraction Result
 
-## Extraction Result
-
-The pipeline scanned 7 PDF files and 12 top-level saved HTML pages.
+The first full text-only run scanned 7 PDF files and 12 top-level saved HTML pages.
 
 PDF text extraction completed for 2,753 pages by using Poppler `pdftotext`. `pdftotext` is the Poppler command-line tool that extracts text from PDF files.
 
-The run marked 284 PDF pages as low quality or needing review. These pages require OCR, second-pass extraction, or human review before a strong page-level reading claim is made.
-
-The run did not complete OCR because `tesseract` was not available. `tesseract` is the optional OCR command-line tool used to convert rendered page images into OCR text and confidence data.
-
-The run did not render every PDF page to image in the final full run because full rendering was slow and because the committed summary should remain a text-extraction evidence summary. A separate smoke run proved that `pdftoppm` can render pages. `pdftoppm` is the Poppler command-line tool that renders PDF pages into images.
+The text-only run marked 284 PDF pages as low quality or needing review. Those pages required OCR, second-pass extraction, or human review before a strong page-level reading claim could be made.
 
 HTML extraction produced 12 visible-text records by using the Python standard-library HTML parser. The records are extracted text, not verified article bodies until reviewed.
 
+## PMBOK Sixth Edition Page-Level OCR Result
+
+A later page-level OCR evidence run processed the local PMBOK Sixth Edition Chinese PDF. The PDF itself is local reference material and is not committed.
+
+Local ignored output root: `.local/evidence/pmbok6_ocr/`.
+
+Run parameters:
+
+- Scope: `all`.
+- Page count: 812.
+- Render DPI: 144.
+- OCR language list used for this source PDF: `eng+chi_sim`.
+- Rationale for OCR language selection: the source PDF is mainly Simplified Chinese with English acronyms. Other installed language packs are available for future sources but were not included in this run to avoid unnecessary slowdown and recognition noise.
+
+Counts:
+
+- Requested pages: 812.
+- Rendered pages: 812.
+- OCR completed pages: 812.
+- Blocked pages: 0.
+- Failed pages: 0.
+- Pages needing review: 16.
+
+Confidence metrics:
+
+- Pages with confidence metrics: 812.
+- Average confidence: 90.503.
+- Minimum confidence: 44.374.
+- Maximum confidence: 95.421.
+- Pages below confidence 60: 2 pages, page 74 and page 540.
+- Pages marked for review: pages 6, 36, 38, 74, 88, 210, 432, 576, 578, 598, 650, 674, 676, 710, 810, and 811.
+
+The OCR run completed for the requested page set. Low-confidence and review-flagged pages still require second-pass OCR or human review before making strong semantic claims about those pages.
+
+## OCR Tool Installation Result
+
+Tesseract OCR is available at `C:\Program Files\Tesseract-OCR\tesseract.exe`. The current Windows user `Path` includes `C:\Program Files\Tesseract-OCR`, so new user terminals can run `tesseract` directly.
+
+Installed or verified Tesseract language data:
+
+- `eng`: generic English, used for both en-GB and en-US needs.
+- `chi_sim`: Simplified Chinese.
+- `chi_tra`: Traditional Chinese, used for zh-HK and zh-TW needs.
+- `fra`: French.
+- `deu`: German.
+- `jpn`: Japanese.
+- `kor`: Korean.
+- `lat`: Latin. It can also help with Latin-script text such as Hanyu Pinyin, while Chinese-to-Pinyin conversion still requires a separate transliteration tool.
+- `rus`: Russian.
+- `ara`: Arabic.
+- `osd`: orientation and script detection.
+
+Tesseract standard traineddata packages do not split English into separate en-GB and en-US packages, do not split Traditional Chinese into separate zh-HK and zh-TW packages, and do not provide a dedicated Hanyu Pinyin OCR language package. The generic language/script packages are the practical Tesseract mapping.
+
 ## Local Evidence Location
 
-The complete local manifest is `.local/evidence/local_reference/manifest.json`. This JSON file records source paths, page counts, extraction methods, quality metrics, and review flags.
+The text-only extraction manifest is `.local/evidence/local_reference/manifest.json`.
 
-The human-readable local summary is `.local/evidence/local_reference/summary.md`. This Markdown file summarizes counts and review notes without being committed.
+The text-only human-readable summary is `.local/evidence/local_reference/summary.md`.
 
-The external tool inventory is `.local/evidence/local_reference/tool_inventory.json`. This JSON file records the external project read-only candidate scan.
+The external tool inventory is `.local/evidence/local_reference/tool_inventory.json`.
 
-## Tool Availability
+The PMBOK OCR manifest is `.local/evidence/pmbok6_ocr/manifest.json`.
 
-- `pdftotext`: available; it is the Poppler PDF text extraction command.
-- `pdfinfo`: available; it is the Poppler PDF metadata command used to count pages.
-- `pdftoppm`: available; it is the Poppler PDF page rendering command.
-- `tesseract`: not available; it is the optional OCR command and must be installed before OCR confidence evidence can be produced.
+The PMBOK OCR human-readable local summary is `.local/evidence/pmbok6_ocr/summary.md`.
+
+The PMBOK OCR page text files are under `.local/evidence/pmbok6_ocr/pdf_ocr/` and remain ignored.
+
+The PMBOK rendered page images are under `.local/evidence/pmbok6_ocr/pdf_images/` and remain ignored.
 
 ## External Project Inventory Result
 
@@ -57,10 +106,10 @@ Useful candidates found:
 - `tools/poppler-25.07.0-0/poppler-25.07.0/Library/bin/pdftotext.exe`: a third-party Poppler binary; it should be treated as an installed local tool, not committed as repository source.
 - `intermediate/.../extract_sources.py`: project-specific extraction scripts; they can inform patterns but should not be copied as source truth.
 
-The inventory conclusion is: do not copy external project files in this change. If reuse is needed, open a separate OpenSpec change for adapter design and migration.
+The adapter migration is implemented in this repository under `tools/evidence_adapters/`. Third-party binaries remain local install dependencies.
 
 ## Reading Claim Boundary
 
-This run proves that extraction evidence exists for the local files. It does not prove semantic understanding of every page or article.
+This run proves that extraction and OCR evidence exists for the local files. It does not prove semantic understanding of every page or article.
 
-Future lifecycle, white paper, market-requirements, or implementation-plan updates may cite this run only as extraction evidence. Strong claims about low-quality pages still require OCR or human review.
+Future lifecycle, white paper, market-requirements, or implementation-plan updates may cite this run only as extraction and OCR evidence. Strong claims about low-confidence or review-flagged pages still require second-pass OCR or human review.
