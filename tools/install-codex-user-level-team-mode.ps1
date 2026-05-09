@@ -776,13 +776,20 @@ function Try-CompileWindowsTaskkillExeShim {
   }
 
   if ([string]::IsNullOrWhiteSpace($compilerPath)) {
-    $frameworkRoot = Join-Path $env:WINDIR 'Microsoft.NET\Framework64'
-    if (Test-Path -LiteralPath $frameworkRoot) {
+    $frameworkRoots = @(
+      (Join-Path $env:WINDIR 'Microsoft.NET\Framework64'),
+      (Join-Path $env:WINDIR 'Microsoft.NET\Framework')
+    )
+    foreach ($frameworkRoot in $frameworkRoots) {
+      if (-not (Test-Path -LiteralPath $frameworkRoot)) {
+        continue
+      }
       $csc = Get-ChildItem -LiteralPath $frameworkRoot -Recurse -Filter 'csc.exe' -ErrorAction SilentlyContinue |
         Sort-Object FullName -Descending |
         Select-Object -First 1
       if ($null -ne $csc -and -not [string]::IsNullOrWhiteSpace([string]$csc.FullName)) {
         $compilerPath = [string]$csc.FullName
+        break
       }
     }
   }
@@ -797,8 +804,17 @@ function Try-CompileWindowsTaskkillExeShim {
     }
   }
 
-  $stdout = [System.IO.Path]::GetTempFileName()
-  $stderr = [System.IO.Path]::GetTempFileName()
+  $compileTempDirectory = Split-Path -Parent $OutputPath
+  if ([string]::IsNullOrWhiteSpace($compileTempDirectory)) {
+    $compileTempDirectory = Split-Path -Parent $SourcePath
+  }
+  if ([string]::IsNullOrWhiteSpace($compileTempDirectory)) {
+    $compileTempDirectory = [System.IO.Path]::GetTempPath()
+  }
+  Ensure-Directory -Path $compileTempDirectory
+  $compileTempId = [guid]::NewGuid().ToString('N')
+  $stdout = Join-Path $compileTempDirectory ("taskkill-shim-compile-{0}.out" -f $compileTempId)
+  $stderr = Join-Path $compileTempDirectory ("taskkill-shim-compile-{0}.err" -f $compileTempId)
   try {
     $arguments = @('/nologo', '/target:exe', ("/out:$OutputPath"), $SourcePath)
     $process = Start-Process -FilePath $compilerPath -ArgumentList $arguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
