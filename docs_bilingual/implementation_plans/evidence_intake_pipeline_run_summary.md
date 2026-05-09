@@ -59,6 +59,35 @@ Confidence metrics:
 
 The OCR run completed for the requested page set. Low-confidence and review-flagged pages still require second-pass OCR or human review before making strong semantic claims about those pages.
 
+### 2026-05-09 flagged page review
+
+A post-publication review inspected the local rendered page images, an enhanced contact sheet, OCR text, and `pdftotext` output for every flagged page. The reviewed set includes low-confidence pages 74 and 540 plus all pages marked for review: pages 6, 36, 38, 74, 88, 210, 432, 576, 578, 598, 650, 674, 676, 710, 810, and 811.
+
+Review conclusion: the flags are dominated by blank or near-blank pages, copyright-watermark pages, divider/back-side pages, footer-only pages, or Tesseract/`pdftotext` noise from watermarks and footers. No source PDF pages, OCR full text, rendered images, or third-party binaries need to be committed. Low-confidence pages 74 and 540 should not be treated as reliable body-text semantic recognition; in this summary they are classified as human-reviewed non-body/noise-dominated pages.
+
+Per-page record:
+
+| Page | Trigger | Review conclusion |
+| --- | --- | --- |
+| 6 | Needs review | Copyright-watermark page; OCR is empty, and visual review shows watermark text rather than body content. |
+| 36 | Needs review | Copyright-watermark/footer page; OCR only recognized `XXX`; not body semantic content. |
+| 38 | Needs review | Copyright-watermark page; OCR is empty; not body semantic content. |
+| 74 | Low confidence and needs review | Near-blank/footer page; OCR produced only a few noise characters; not body semantic content. |
+| 88 | Needs review | Near-blank/footer page; visual review found no reliable body content. |
+| 210 | Needs review | Near-blank/footer page; OCR produced only a few noise characters. |
+| 432 | Needs review | Near-blank/footer page; OCR is empty. |
+| 540 | Low confidence | Near-blank/footer page; OCR is mainly noise and page-number/footer fragments. |
+| 576 | Needs review | Near-blank/footer page; OCR is empty. |
+| 578 | Needs review | Near-blank/footer page; visual review found no reliable body content. |
+| 598 | Needs review | Divider/footer page; OCR only captured footer/divider text similar to `Part 2 - Standard`. |
+| 650 | Needs review | Divider/footer page; OCR only captured page number and footer text similar to `Part 2 - Standard`. |
+| 674 | Needs review | Near-blank/footer page; OCR is empty. |
+| 676 | Needs review | Near-blank/faint-watermark page; OCR is empty. |
+| 710 | Needs review | Near-blank/footer page; OCR is empty. |
+| 810 | Needs review | Copyright-watermark page; OCR is empty; not body semantic content. |
+| 811 | Needs review | Blank/inside-back-cover-like page; OCR is empty. |
+
+
 ## OCR Tool Installation Result
 
 Tesseract OCR is available at `C:\Program Files\Tesseract-OCR\tesseract.exe`. The current Windows user `Path` includes `C:\Program Files\Tesseract-OCR`, so new user terminals can run `tesseract` directly.
