@@ -98,6 +98,48 @@ class WindowsCleanupOutputControlCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("taskkill_exe_runtime_presence_check" in error for error in payload["errors"]))
 
+    def test_fails_when_framework_compiler_fallback_is_removed(self) -> None:
+        root = self.make_root("windows-cleanup-missing-framework-csc-fallback")
+        source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
+            "(Join-Path $env:WINDIR 'Microsoft.NET\\Framework64'),\n"
+            "      (Join-Path $env:WINDIR 'Microsoft.NET\\Framework')",
+            "(Join-Path $env:WINDIR 'Missing.NET\\Framework64'),\n"
+            "      (Join-Path $env:WINDIR 'Missing.NET\\Framework')",
+        )
+        self.write_installer_copy(root, source)
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("taskkill_exe_framework64_compiler_fallback" in error for error in payload["errors"]))
+        self.assertTrue(any("taskkill_exe_framework32_compiler_fallback" in error for error in payload["errors"]))
+
+    def test_requires_taskkill_exe_success_output_suppression_before_forwarding(self) -> None:
+        root = self.make_root("windows-cleanup-missing-success-suppression")
+        source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
+            "if (process.ExitCode == 0)",
+            "if (false && process.ExitCode == 0)",
+        )
+        self.write_installer_copy(root, source)
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("taskkill_exe_success_exit_suppresses_output" in error for error in payload["errors"]))
+
+    def test_chinese_taskkill_success_line_is_benign_when_exit_code_is_zero(self) -> None:
+        # The generated EXE shim suppresses *all* stdout/stderr when taskkill exits 0,
+        # so localized success lines such as this Chinese Windows output never reach
+        # the resumed Codex session.
+        chinese_success = "成功: 已终止 PID 32992 (属于 PID 16312 子进程)的进程。"
+        source = INSTALLER_PATH.read_text(encoding="utf-8")
+        self.assertIn("if (process.ExitCode == 0)", source)
+        self.assertIn("return 0;", source)
+        self.assertLess(source.index("if (process.ExitCode == 0)"), source.index("Console.Error.Write(stdout);"))
+        self.assertTrue(chinese_success.startswith("成功: 已终止 PID "))
+
 
 if __name__ == "__main__":
     unittest.main()
