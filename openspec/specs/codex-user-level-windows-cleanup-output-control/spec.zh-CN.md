@@ -30,7 +30,7 @@
 
 startup launcher 应只在 wrapped launch 的 native Codex 子进程树中暴露 cleanup-output control。
 
-launcher 应在 native Codex 命令退出后恢复之前的 PATH。
+launcher 应在 native Codex 命令退出后恢复之前的 PATH、PATHEXT 与 cleanup-shim 环境桥接状态。
 
 仓库实现不得通过修改 `C:\Users\lenovo\.codex\config.toml` 来启用该 control。
 
@@ -38,7 +38,16 @@ launcher 应在 native Codex 命令退出后恢复之前的 PATH。
 
 - **WHEN** `codex-ohmy` 调用 native Codex 命令
 - **THEN** 生成的 `win-shims` 目录应为该子进程树前置到 PATH
-- **AND** native 命令返回后应恢复原始 PATH
+- **AND** launcher 应通过 scoped process environment bridge 向后代 login shell 暴露该目录
+- **AND** native 命令返回后应恢复原始 PATH、PATHEXT 与环境桥接状态
+
+#### Scenario: Spawned login shell resets PATH
+
+- **WHEN** wrapped launch 下生成的 PowerShell login shell 从 Machine/User environment 重置 PATH
+- **AND** wrapped launcher 已通过 scoped environment bridge 暴露 cleanup shim directory
+- **THEN** managed profile block 应在重置后重新前置生成的 `win-shims` 目录
+- **AND** 如果 executable shim 存在，`taskkill.exe` 应解析到生成的 shim
+- **AND** native bypass session 不应要求该 profile bridge
 
 #### Scenario: Native bypass starts
 

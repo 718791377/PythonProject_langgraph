@@ -199,6 +199,7 @@ param(
   args = $Arguments
   path = [string]$env:Path
   pathext = [string]$env:PATHEXT
+  cleanup_shim_directory = [string]$env:CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY
 } | ConvertTo-Json -Depth 4
 '@
 Set-Content -LiteralPath $FakeOmxPath -Encoding ASCII -NoNewline -Value @'
@@ -654,7 +655,17 @@ Assert-True (Test-Path -LiteralPath $ProfilePath) 'Installer did not create the 
 $profileContent = Get-Content -LiteralPath $ProfilePath -Raw
 Assert-True ($profileContent.Contains('OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-STARTUP:START')) 'Managed startup profile block was not installed.'
 Assert-True ($profileContent.Contains('$codexUserLevelBinDirectory')) 'Managed startup profile block did not add the user-level bin directory to PATH.'
+Assert-True ($profileContent.Contains('CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY')) 'Managed startup profile block did not bridge the wrapped cleanup shim directory into login shells.'
 Assert-True ($profileContent.Contains('function global:codex-native')) 'Managed startup profile block did not add codex-native.'
+
+$profileShimProbe = Invoke-PowerShellCommandJson -CommandText ("& { `$env:CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY = " + (Quote-PowerShellLiteral -Value (Join-Path $CodexHome 'bin\win-shims')) + "; `$env:Path = 'C:\Windows\system32;C:\Windows'; `$env:PATHEXT = '.EXE;.CMD;.COM'; & " + (Quote-PowerShellLiteral -Value $ProfilePath) + "; [ordered]@{ path = [string]`$env:Path; pathext = [string]`$env:PATHEXT; taskkill_exe = (Get-Command 'taskkill.exe' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source) } | ConvertTo-Json -Depth 4 }")
+$profileShimPathSegments = @(([string]$profileShimProbe.path).Split(';') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+Assert-True ($profileShimPathSegments.Count -gt 0) 'Managed startup profile probe did not expose PATH entries.'
+Assert-Equal ([System.IO.Path]::GetFullPath($profileShimPathSegments[0])) (Join-Path $CodexHome 'bin\win-shims') 'Managed startup profile did not restore win-shims after a login-shell PATH reset.'
+if ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_enabled -eq $true) {
+  Assert-Equal ([System.IO.Path]::GetFullPath([string]$profileShimProbe.taskkill_exe)) (Join-Path (Join-Path $CodexHome 'bin\win-shims') 'taskkill.exe') 'Managed startup profile did not make taskkill.exe resolve to the cleanup shim.'
+  Assert-True (([string]$profileShimProbe.pathext).StartsWith('.EXE', [System.StringComparison]::OrdinalIgnoreCase)) 'Managed startup profile did not keep .EXE prioritized for taskkill.exe cleanup-output shimming.'
+}
 
 $resolvedInstallHelper = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-PowerShellLiteral -Value $ProfilePath) + "; Get-Command 'omx-langgraph-install.ps1' | Select-Object Name,Source,CommandType | ConvertTo-Json -Depth 4 }")
 Assert-Equal $resolvedInstallHelper.Name 'omx-langgraph-install.ps1' 'Managed startup profile block did not expose omx-langgraph-install.ps1 on PATH.'
@@ -2849,6 +2860,8 @@ Assert-True ('--disable' -notin $wrappedManualArgs) 'Manual routing should keep 
 $wrappedManualPathSegments = @(([string]$wrappedManual.path).Split(';') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 Assert-True ($wrappedManualPathSegments.Count -gt 0) 'Wrapped manual launch did not expose the child PATH.'
 Assert-Equal ([System.IO.Path]::GetFullPath($wrappedManualPathSegments[0])) (Join-Path $CodexHome 'bin\win-shims') 'Wrapped manual launch did not prepend win-shims to child PATH.'
+Assert-Equal ([System.IO.Path]::GetFullPath([string]$wrappedManual.cleanup_shim_directory)) (Join-Path $CodexHome 'bin\win-shims') 'Wrapped manual launch did not expose the cleanup shim directory bridge to child login shells.'
+Assert-Equal $manifest.startup_binding.cleanup_output_control.login_profile_env_bridge 'CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY' 'Installer did not report the cleanup shim login-profile environment bridge.'
 if ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_enabled -eq $true) {
   Assert-True (([string]$wrappedManual.pathext).StartsWith('.EXE', [System.StringComparison]::OrdinalIgnoreCase)) 'Wrapped manual launch did not prioritize taskkill.exe cleanup-output shimming when the EXE shim is installed.'
 } else {
