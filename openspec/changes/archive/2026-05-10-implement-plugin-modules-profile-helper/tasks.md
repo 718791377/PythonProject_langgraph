@@ -1,0 +1,7 @@
+- [x] Create the repository-source `plugin-modules` skill and module registry.
+- [x] Implement `list_module.ps1`, `load_module.ps1`, and `set_plugin_profile.ps1`.
+- [x] Add explicit user-level installer for `C:\Users\lenovo\.codex\skills\plugin-modules`.
+- [x] Add script-backed validation and unit tests.
+- [x] Wire the validation into local guard/CI surfaces.
+- [x] Add OpenSpec requirements and sync them into stable specs before archive.
+- [x] Run local validation and install the user-level skill after repository checks pass.

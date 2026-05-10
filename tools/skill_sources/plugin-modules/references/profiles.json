@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "name": "plugin-modules",
+  "description": "Task-scoped Codex plugin module profiles for soft-load guidance and hard-load startup profile switching.",
+  "known_plugins": [
+    "BioRender",
+    "Browser",
+    "Canva",
+    "CB Insights",
+    "ChatGPT Apps",
+    "Cloudflare",
+    "Cloudinary",
+    "CodeRabbit",
+    "Codex Security",
+    "Documents",
+    "Dow Jones Factiva",
+    "Expo",
+    "Figma",
+    "Fireflies",
+    "GitHub",
+    "Gmail",
+    "Google Calendar",
+    "Google Drive",
+    "HubSpot",
+    "Hugging Face",
+    "HyperFrames by HeyGen",
+    "Linear",
+    "Notion",
+    "OpenAI Developers",
+    "PitchBook",
+    "Presentations",
+    "Readwise",
+    "Remotion",
+    "Sentry",
+    "Slack",
+    "Spreadsheets",
+    "Stripe",
+    "Supabase",
+    "Temporal",
+    "Twilio Developer Kit",
+    "Vercel",
+    "Zotero"
+  ],
+  "safety": {
+    "soft_load_mutates_config": false,
+    "hard_load_requires_apply": true,
+    "backup_before_config_write": true,
+    "config_scope": "Only [plugins.\"...\"] enabled keys may be changed.",
+    "restart_required_for_hard_load": true,
+    "do_not_edit_plugin_cache": true
+  },
+  "modules": {
+    "core-dev": {
+      "description": "Daily developer profile for repository work, code review, security checks, OpenAI development, browser verification, and document artifacts.",
+      "plugins": ["Browser", "GitHub", "CodeRabbit", "Codex Security", "OpenAI Developers", "Documents", "Spreadsheets", "Presentations"],
+      "soft_load": {
+        "use_for": ["general code work", "GitHub/GitLab-adjacent review", "security review", "OpenAI API/Agents guidance", "document/spreadsheet/presentation artifacts"],
+        "skill_doc_hints": [
+          "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
+          "plugins/cache/openai-curated/github/*/skills/github/SKILL.md",
+          "plugins/cache/openai-curated/github/*/skills/gh-fix-ci/SKILL.md",
+          "plugins/cache/openai-curated/coderabbit/*/skills/coderabbit-review/SKILL.md",
+          "plugins/cache/openai-curated/codex-security/*/skills/security-scan/SKILL.md",
+          "plugins/cache/openai-curated/codex-security/*/skills/threat-model/SKILL.md",
+          "plugins/cache/openai-curated/openai-developers/*/skills/agents-sdk/SKILL.md",
+          "plugins/cache/openai-curated/openai-developers/*/skills/openai-api-troubleshooting/SKILL.md",
+          "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+          "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
+          "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
+        ],
+        "notes": ["Prefer this module as the daily reduced profile for developer work."]
+      },
+      "hard_load": {
+        "enable_plugins": ["Browser", "GitHub", "CodeRabbit", "Codex Security", "OpenAI Developers", "Documents", "Spreadsheets", "Presentations"],
+        "disable_other_known_plugins": true
+      }
+    },
+    "web-saas": {
+      "description": "Web/SaaS build and deploy profile for Vercel, Cloudflare, Supabase, Sentry, Stripe, Figma, browser checks, and GitHub workflows.",
+      "plugins": ["Vercel", "Cloudflare", "Supabase", "Sentry", "Stripe", "Figma", "Browser", "GitHub"],
+      "soft_load": {
+        "use_for": ["frontend", "deployment", "payments", "database", "observability", "design implementation"],
+        "skill_doc_hints": [
+          "plugins/cache/openai-curated/vercel/*/skills/nextjs/SKILL.md",
+          "plugins/cache/openai-curated/vercel/*/skills/vercel-api/SKILL.md",
+          "plugins/cache/openai-curated/vercel/*/skills/deployments-cicd/SKILL.md",
+          "plugins/cache/openai-curated/cloudflare/*/skills/workers-best-practices/SKILL.md",
+          "plugins/cache/openai-curated/cloudflare/*/skills/wrangler/SKILL.md",
+          "plugins/cache/openai-curated/supabase/*/skills/supabase/SKILL.md",
+          "plugins/cache/openai-curated/stripe/*/skills/stripe-best-practices/SKILL.md",
+          "plugins/cache/openai-curated/figma/*/skills/figma-implement-design/SKILL.md",
+          "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md"
+        ],
+        "notes": ["Preserve Vercel/browser capabilities for projects that need visual or web verification."]
+      },
+      "hard_load": {
+        "enable_plugins": ["Vercel", "Cloudflare", "Supabase", "Sentry", "Stripe", "Figma", "Browser", "GitHub"],
+        "disable_other_known_plugins": true
+      }
+    },
+    "company-ops": {
+      "description": "One-person-company operations profile for mail, calendar, drive/docs, Slack, Notion, CRM, and office artifacts.",
+      "plugins": ["Gmail", "Google Calendar", "Google Drive", "Slack", "Notion", "HubSpot", "Documents", "Spreadsheets", "Presentations"],
+      "soft_load": {
+        "use_for": ["inbox triage", "scheduling", "knowledge capture", "meeting prep", "docs/sheets/slides", "CRM notes"],
+        "skill_doc_hints": [
+          "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md",
+          "plugins/cache/openai-curated/google-calendar/*/skills/google-calendar/SKILL.md",
+          "plugins/cache/openai-curated/google-drive/*/skills/google-drive/SKILL.md",
+          "plugins/cache/openai-curated/google-drive/*/skills/google-docs/SKILL.md",
+          "plugins/cache/openai-curated/google-drive/*/skills/google-sheets/SKILL.md",
+          "plugins/cache/openai-curated/slack/*/skills/slack/SKILL.md",
+          "plugins/cache/openai-curated/notion/*/skills/notion-knowledge-capture/SKILL.md",
+          "plugins/cache/openai-curated/notion/*/skills/notion-research-documentation/SKILL.md",
+          "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+          "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md"
+        ],
+        "notes": ["Use hard-load only when live app connectors are needed after restart."]
+      },
+      "hard_load": {
+        "enable_plugins": ["Gmail", "Google Calendar", "Google Drive", "Slack", "Notion", "HubSpot", "Documents", "Spreadsheets", "Presentations"],
+        "disable_other_known_plugins": true
+      }
+    },
+    "market-research": {
+      "description": "Market, company, investment, news, library, and model/dataset research profile.",
+      "plugins": ["PitchBook", "CB Insights", "Dow Jones Factiva", "Readwise", "Zotero", "Hugging Face", "Documents", "Spreadsheets"],
+      "soft_load": {
+        "use_for": ["private markets", "company research", "news archive", "citation/library work", "model and dataset inspection"],
+        "skill_doc_hints": [
+          "plugins/cache/openai-curated/hugging-face/*/skills/papers/SKILL.md",
+          "plugins/cache/openai-curated/hugging-face/*/skills/datasets/SKILL.md",
+          "plugins/cache/openai-curated/hugging-face/*/skills/cli/SKILL.md",
+          "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+          "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md"
+        ],
+        "notes": ["Some research plugins expose app/MCP tools rather than local SKILL.md files; use hard-load plus restart when those connectors are needed."]
+      },
+      "hard_load": {
+        "enable_plugins": ["PitchBook", "CB Insights", "Dow Jones Factiva", "Readwise", "Zotero", "Hugging Face", "Documents", "Spreadsheets"],
+        "disable_other_known_plugins": true
+      }
+    },
+    "customer-comms": {
+      "description": "Customer communications profile for Twilio, SendGrid, Slack, Gmail, and Stripe-adjacent customer/payment messaging.",
+      "plugins": ["Twilio Developer Kit", "Slack", "Gmail", "Stripe", "Documents"],
+      "soft_load": {
+        "use_for": ["SMS", "voice", "WhatsApp", "SendGrid email", "customer support", "communication compliance"],
+        "skill_doc_hints": [
+          "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-messaging-overview/SKILL.md",
+          "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-send-message/SKILL.md",
+          "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-voice-outbound-calls/SKILL.md",
+          "plugins/cache/openai-curated/twilio-developer-kit/*/skills/sendgrid/twilio-sendgrid-email-send/SKILL.md",
+          "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-security-api-auth/SKILL.md",
+          "plugins/cache/openai-curated/slack/*/skills/slack/SKILL.md",
+          "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md",
+          "plugins/cache/openai-curated/stripe/*/skills/stripe-best-practices/SKILL.md"
+        ],
+        "notes": ["Load only the channel-specific Twilio/SendGrid files needed for the current task."]
+      },
+      "hard_load": {
+        "enable_plugins": ["Twilio Developer Kit", "Slack", "Gmail", "Stripe", "Documents"],
+        "disable_other_known_plugins": true
+      }
+    },
+    "creative-content": {
+      "description": "Creative production profile for Canva, Figma, Remotion, HyperFrames, presentations, and document deliverables.",
+      "plugins": ["Canva", "Figma", "Remotion", "HyperFrames by HeyGen", "Presentations", "Documents"],
+      "soft_load": {
+        "use_for": ["design generation", "design implementation", "slide decks", "video rendering", "brand assets"],
+        "skill_doc_hints": [
+          "plugins/cache/openai-curated/canva/*/skills/canva-branded-presentation/SKILL.md",
+          "plugins/cache/openai-curated/figma/*/skills/figma-generate-design/SKILL.md",
+          "plugins/cache/openai-curated/figma/*/skills/figma-implement-design/SKILL.md",
+          "plugins/cache/openai-curated/remotion/*/skills/remotion/SKILL.md",
+          "plugins/cache/openai-curated/hyperframes/*/skills/hyperframes/SKILL.md",
+          "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md",
+          "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+        ],
+        "notes": ["Use tool-specific plugin capabilities only after hard-load/restart if current session lacks them."]
+      },
+      "hard_load": {
+        "enable_plugins": ["Canva", "Figma", "Remotion", "HyperFrames by HeyGen", "Presentations", "Documents"],
+        "disable_other_known_plugins": true
+      }
+    },
+    "full": {
+      "description": "Troubleshooting profile that enables every known installed plugin family.",
+      "plugins": "all_known_plugins",
+      "soft_load": {
+        "use_for": ["temporary broad discovery", "diagnosing missing plugin capability"],
+        "skill_doc_hints": [],
+        "notes": ["Do not use as a long-term default; it can exceed the skills context budget."]
+      },
+      "hard_load": {
+        "enable_plugins": "all_known_plugins",
+        "disable_other_known_plugins": false
+      }
+    }
+  }
+}

@@ -102,6 +102,7 @@ def main() -> int:
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
+    plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
@@ -131,6 +132,8 @@ def main() -> int:
         raise SystemExit(f"Missing local mirrored CI/MR gate check script: {local_mirrored_ci_gate_script}")
     if not windows_cleanup_output_control_script.exists():
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
+    if not plugin_modules_skill_script.exists():
+        raise SystemExit(f"Missing plugin-modules skill check script: {plugin_modules_skill_script}")
     if not durable_routing_smoke_gate_template_script.exists():
         raise SystemExit(f"Missing durable routing smoke gate template check script: {durable_routing_smoke_gate_template_script}")
     if not codex_native_rollback_release_gate_template_script.exists():
@@ -247,6 +250,11 @@ def main() -> int:
                 "check_windows_cleanup_output_control",
                 [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Windows cleanup-output control verification.",
+            ),
+            (
+                "check_plugin_modules_skill",
+                [str(python_exe), str(plugin_modules_skill_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during plugin-modules skill verification.",
             ),
             (
                 "check_durable_routing_smoke_gate_template",
@@ -426,6 +434,12 @@ def main() -> int:
         [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Windows cleanup-output control verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(plugin_modules_skill_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during plugin-modules skill verification.",
     )
 
     run_checked(
