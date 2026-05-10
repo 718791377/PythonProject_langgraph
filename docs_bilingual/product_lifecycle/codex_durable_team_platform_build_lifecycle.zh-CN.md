@@ -2,9 +2,9 @@
 
 本文适用于在 `D:\PythonProject_langgraph` 中建设 Codex CLI 个人开发者生产级持久化团队平台；这是 Codex 编排源码仓库。本文不描述下游业务项目如何管理自己的产品工作。
 
-完整 0-8 生命周期会保留为平台建设地图。单个 MR、MVP 切片和 OpenSpec change 应按风险裁剪该地图的深度，而不是默认展开每一层。
+完整 0-11 / 12 层生命周期是权威平台地图：认知、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营、复盘。单个 MR、MVP 切片和 OpenSpec change 应按风险裁剪该地图的深度，而不是默认展开每一层。
 
-本平台生命周期使用 `business_management_source_synthesis.zh-CN.md` 作为源库叠加层。它强化 Codex 平台是一套一人 operating system：先诊断再构建、让机制保持小、执行前先塑形、衡量结果、保护架构和信任边界，并把重复经验转化为 checker 或模板。
+本平台生命周期使用 `business_management_source_synthesis.zh-CN.md` 作为源库叠加层。它强化 Codex 平台是一套一人 operating system：先诊断再构建、让机制保持小、执行前先塑形、衡量结果、保护架构和信任边界、显式定义人和 Agent 的 ownership、保持运营可支持，并把重复经验转化为 checker 或模板。
 
 ## Scope
 
@@ -22,9 +22,9 @@
 
 - 预测式门禁适合需求清晰、回滚风险较高、checker 行为变化、launcher 或 runtime entrypoint 变化，或者需要显式 release evidence 的工作。
 - 适应式切片适合需求不清楚，需要 discovery、spike、MVP、operator feedback 或 documentation experiment 后才能冻结设计的工作。
-- 混合式交付适合仍需要探索，但最终必须通过 OpenSpec、checker、GitLab pipeline、release、rollback 和 retrospective 门禁的工作。
+- 混合式交付适合仍需要探索，但最终必须通过 OpenSpec、checker、local-main-first publication、release、rollback 和 retrospective 门禁的工作。
 
-这条叠加规则不是新的生命周期层级。它是应用在 0-8 平台建设生命周期上的治理视角。
+这条叠加规则不是新的生命周期层级。它是应用在 0-11 平台建设生命周期上的治理视角。
 
 ## 平台价值结果
 
@@ -49,11 +49,11 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 
 规划平台变更时使用以下深度：
 
-- 完整 0-8 生命周期：用于北极星更新、大版本 release train 定义、backend-family 决策、persistent-team 架构、原生 Codex 兼容性变化，或者可能影响多个项目的用户级编排策略变化。
-- MVP 或 release 切片：保留 0-8 全部层级可见，但只摘要 0、1、2、7 层；重点展开 3、4、5、6、8 层，因为它们定义战略、产品行为、技术契约、交付门禁和学习沉淀。
-- 普通 OpenSpec change 或 MR：不重写完整 0-8 文档栈。只记录被修改控制面的输入、工具与技术、输出证据。代码类变更在归档前必须包含技术层和执行层证据。发布类变更必须包含验证、发布、回滚和复盘证据。
+- 完整 0-11 生命周期：用于 white paper 或 thesis 更新、business-model 决策、MRD 更新、战略变化、指标契约、PRD/control-surface 变化、架构决策、组织或 Agent 治理变化、交付系统变化、采用/模板变化、支持/运营变化，或者可能影响多个项目的复盘驱动治理更新。
+- MVP 或 release 切片：保留 12 层全部可见，但只展开风险触达的层级。代码类平台切片通常展开战略、指标、产品、技术、组织、执行、运营和复盘证据；模板或采用切片还要展开增长证据。
+- 普通 OpenSpec change 或 MR：不重写完整 12 层文档栈。只记录被修改控制面的输入、工具与技术、输出证据。代码类变更在归档前必须包含技术层、组织层、执行层、运营层和复盘证据。发布类变更必须包含验证、发布、回滚、支持和学习证据。
 
-平台不应把完整 0-8 文档当作官僚化默认流程。平台应使用完整地图来防止遗漏商业价值、用户影响、原生 Codex 兼容性、发布安全、回滚和长期治理反馈。
+平台不应把完整生命周期文档当作官僚化默认流程。平台应使用完整地图来防止遗漏商业价值、用户影响、可衡量结果、原生 Codex 兼容性、ownership 边界、发布安全、运营可支持性、回滚和长期治理反馈。
 
 ## 0. 认知叙事层
 
@@ -123,35 +123,61 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 ### 输出
 
 - 稳定的抽象 capability profiles，而不是一次性业务名称列表。
-- 传递给北极星 plan 的用户假设和采用假设。
-- 传递给产品层和技术层的能力缺口。
+- 输出给战略层和指标层的用户与采用假设。
+- 输出给战略、指标、产品、技术、组织和运营层的能力缺口。
 
-## 3. 战略与北极星层
+## 3. 战略层
 
-问题：长期目标是什么，如何衡量进展？
+问题：长期目标是什么，哪些事情要明确拒绝？
 
 ### 输入
 
-- 商业层的维护价值判断和成本边界。
-- 市场层的工作流分层和 capability profiles。
-- 来自原生 Codex 兼容性、用户级 helper、repo-local durable state 和本地模板的技术约束。
+- 商业层输出的平台维护价值和成本边界。
+- 市场层输出的工作流分群和能力 profile。
+- 来自 native Codex 兼容性、user-level helpers、repo-local durable state 和本地模板的技术约束。
+- 真实平台事故带来的运营和复盘反馈。
 
 ### 工具与技术
 
-- 北极星指标设计：聚焦跨会话、跨项目的安全冷启动接续。
-- release train 规划：区分 MVP、release 切片和长期 persistent-team 目标。
-- backend-family 选择：保持 `subagent`、`native_omx` 和 `langgraph` 为不同控制面。
-- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md` 是 ASCII 北极星 plan；它定义十层框架、release train 和长期 durable-team 目标。
-- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md` 是 UTF-8 中文对照版，也是当前同一北极星 plan 的主要讨论面。
+- Strategy kernel 分析：记录平台诊断、指导方针、连贯行动和明确非目标。
+- Release train planning：区分 MVP、release slice 和长期 persistent-team 目标。
+- Backend-family selection：保持 `subagent`、`native_omx` 和 `langgraph` 是彼此不同的控制面。
+- Kill criteria 设计：定义 helper、template、skill profile、durable lane 或 automation path 何时暂停或退役。
+- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md` 是 ASCII 北极星草案；它是长期目标，不是运行时已实现证明。
+- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md` 是该草案的 UTF-8 中文伴随文档和当前主要讨论表面。
 
 ### 输出
 
-- 平台投入具有可衡量方向。
-- 候选北极星指标：冷启动接续成功率；它表示新 Codex 会话在最少重复用户解释下安全接续项目任务的比例。
-- 输入指标：OpenSpec guard 通过率、merge request pipeline 通过率、context-retention reload 事件数、multi-session collision 事件数、rollback 成功率和用户手动重复补充上下文次数。
-- 传递给产品层、技术层和执行层的发布范围与优先级约束。
+- 面向 durable team 投资的平台战略方向。
+- 明确取舍、非目标和 backend-family selection 规则。
+- 输出给指标、产品、技术、组织、执行、增长、运营和复盘层的 release 范围与优先级约束。
 
-## 4. 产品层
+## 4. 指标层
+
+问题：如何衡量平台进展？
+
+### 输入
+
+- 战略层输出的目标、非目标和发布优先级。
+- 商业层输出的成本与收益假设。
+- 市场层输出的采用假设和能力缺口。
+- 之前 release 的执行、运营和复盘证据。
+
+### 工具与技术
+
+- 北极星指标设计：聚焦跨会话、跨项目的安全冷启动续接。
+- OKR 与输入指标设计：跟踪摩擦降低、恢复成功、发布安全和回滚信心。
+- 护栏指标设计：保护 native Codex 兼容性、repo-local durable truth、provider pacing budget、operator attention 和 CI minutes。
+- Tracking plan 设计：定义 local gate、MR review、release evidence、incident 和 context-retention reload 的计数方式。
+
+### 输出
+
+- 候选北极星指标：cold-start continuation success rate，即新 Codex 会话能以最少重复解释安全恢复项目任务的比例。
+- 输入指标：OpenSpec guard 通过率、local gate 通过率、local MR review 通过率、需要时的 remote pipeline 通过率、context-retention reload incident、多会话冲突 incident、rollback success rate 和 manual context-restatement count。
+- 成本、skill-context 噪声、状态泄漏、native Codex 回归、hidden automation 和未授权 durable-lane launch 的护栏。
+- 可触发继续、暂停、细化、回滚或退役决策的阈值。
+
+## 5. 产品层
 
 问题：平台应该暴露哪些控制面？
 
@@ -177,7 +203,7 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 - 原生 Codex 兼容性和增量编排的产品级边界。
 - 传递给技术层和执行层的输入。
 
-## 5. 技术层
+## 6. 技术层
 
 问题：如何在不破坏原生 Codex 的前提下实现平台？
 
@@ -185,6 +211,7 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 
 - 产品层的控制面和验收标准。
 - 战略层对 native subagents、native_omx 和 LangGraph 的 backend-family 边界。
+- 组织层输出的 ownership 和 approval constraints。
 - 来自 Windows shells、MCP servers、官方 LangGraph runtime、本地模型服务和 Git 仓库的外部约束。
 
 ### 工具与技术
@@ -205,7 +232,33 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 - user-level helpers、repo-local source 和 repo-local durable truth 的 source-of-truth 决策。
 - 传递给 OpenSpec changes 和 local-main-first delivery 的实施约束。
 
-## 6. 执行层
+
+## 7. 组织层
+
+问题：平台里的每项责任、决策和批准由谁或什么机制承担？
+
+### 输入
+
+- 战略、指标、产品范围、技术边界和运营约束。
+- human operator authority、current main Codex leader responsibility、native subagent roles、可选 durable-worker roles 和外部工具边界。
+- Session ownership claims、worktree isolation evidence 和 approval requirements。
+
+### 工具与技术
+
+- Role-map design：区分 human operator、当前主 Codex leader session、native expert subagents、durable workers 和 external reviewers。
+- Agent-governance design：定义哪些 agent 可以读取、写入、提议、审查、测试、部署，或必须请求批准。
+- Durable-team threshold design：防止计划未冻结、独立执行切片不足时自动启动 durable team。
+- Responsibility matrix：把 release decision、rollback decision、state mutation、remote publication 和 mirror sync 映射到明确 owner。
+- Session-ownership checks：防止多个会话在未协调时写同一路径。
+
+### 输出
+
+- Agent governance、role map、responsibility matrix、launch thresholds 和 approval boundaries。
+- 输出给执行、运营和复盘层的 ownership 约束。
+- 明确 decision rights，避免 automation 变成 hidden authority。
+
+
+## 8. 执行层
 
 问题：平台变更如何安全交付？
 
@@ -232,13 +285,14 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 - 已完成或已归档的 OpenSpec changes，并在需要时同步 stable specs。
 - 平台影响类变更的 release、rollback 和 verification evidence。
 
-## 7. 增长与采用层
+## 9. 增长层
 
 问题：平台如何扩展到多个项目，同时不共享 repo-local truth？
 
 ### 输入
 
 - 执行层输出的 releases、templates、helper scripts 和 operator guidance。
+- 指标层输出的 adoption 和 friction signals。
 - 下游项目对本地 Git、OpenSpec、原生 subagents、浏览器能力和不共享 repo-local truth 的需求。
 - 已初始化项目返回的模板反馈。
 
@@ -255,10 +309,36 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 ### 输出
 
 - 下游项目可以采用平台，但不会变成平台实现仓库。
-- 模板更新规则和 adoption reports。
-- 当采用摩擦出现时，向战略层、产品层和技术层反馈。
+- Template update rules、onboarding notes、adoption reports 和 profile-selection guidance。
+- 当采用摩擦出现时，向战略、指标、产品、技术、组织和运营层反馈。
 
-## 8. 复盘与学习层
+
+## 10. 运营层
+
+问题：平台发布后如何保持可用、可支持、可恢复？
+
+### 输入
+
+- 执行层输出的已发布 helpers、templates、specs、startup summaries 和 checker behavior。
+- 增长层输出的 adoption reports、operator questions、skill-profile feedback、support friction 和 incident signals。
+- 技术约束、ownership boundaries 和 rollback paths。
+
+### 工具与技术
+
+- Support playbook 设计：定义 wrapper failure、cleanup-output noise、skill-context budget warning、MCP startup issue 和 CI drift 的 triage 路径。
+- Health-check 与 status-surface review：保持 read-only status helpers 在启动任何 durable lane 前可用。
+- 文档运营：把重复 operator questions 转化为 startup summary、governance、template 或 FAQ 更新。
+- Changelog 与 release-note discipline：记录用户可见控制面变化。
+- Runner-minute 与 provider-pacing review：让发布和 agent fan-out 成本保持可见。
+
+### 输出
+
+- Support notes、troubleshooting guidance、FAQ updates、changelog entries 和 health-check expectations。
+- 证明已发布平台工作仍可理解、可恢复、可支持的运营证据。
+- 输出给产品、技术、组织、增长和复盘层的反馈。
+
+
+## 11. 复盘层
 
 问题：哪些平台经验应该变成规则、checker 或模板？
 
@@ -266,6 +346,7 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 
 - 执行层的 validation results、release outcomes、rollback outcomes 和 incidents。
 - 增长层的 adoption reports 和 downstream feedback。
+- 运营层的 support records、startup noise、skill-profile issues 和 toolchain failures。
 - 真实工作中观察到的 session-collision、context-loss、MCP noise、wrapper 和 toolchain failures。
 
 ### 工具与技术
@@ -283,6 +364,7 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 - 重复失败被沉淀为脚本、policy、OpenSpec specs 或模板更新。
 - 面向未来 release slicing 和 routing policy 的 lessons learned。
 - 必要时更新 startup summaries、governance documents 和 checkers。
+- 向认知、商业、市场、战略、指标、产品、技术、组织、执行、增长和运营层反馈可复用经验。
 
 ## Release Slicing Rule
 

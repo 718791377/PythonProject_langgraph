@@ -57,19 +57,24 @@
 8. **为采用和信任而设计。** 定位、滩头市场、whole-product 支持、文档和支持循环都是产品生命周期的一部分，不是事后补丁。
 9. **闭环。** retrospective、postmortem、lessons learned 和 upstream feedback 必须更新模板、checker、文档或未来战略。
 
-## 0-8 生命周期映射
+## 0-11 / 12 层生命周期映射
+
+两份本地架构源笔记把当前权威主干定义为十二层：认知、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营、复盘。任何早期压缩生命周期说法都只作为历史简表，不再是权威主干。
 
 | 层级 | 源库强调点 | 仓库规则 |
 | --- | --- | --- |
-| 0 认知叙事 | 一人公司目的、平台叙事、类别框架和客户倒推故事 | 先解释方向为什么存在，再定义功能或团队 |
-| 1 商业 | 单位经济、协作成本、有意保持小、风险降低和运营杠杆 | 判断维护成本和机会成本是否值得 |
-| 2 市场与用户 | 访谈、持续发现、采用分层、定位和客户证据 | 先识别目标用户和滩头用例，再扩大范围 |
-| 3 战略与北极星 | 诊断、指导方针、OKR、OMTM、产品战略和 critical path | 选择狭窄获胜条件，以及会改变决策的指标 |
-| 4 产品 | PR/FAQ、product kata、机会映射、产品运营、MVP 和 usability/value/viability/feasibility 风险 | 在构建前定义用户可见行为、非目标和验收证据 |
-| 5 技术 | 清晰边界、数据系统质量、安全不变量、team API、staff engineer 判断和交付能力 | 记录架构边界、数据契约、信任边界和回滚路径 |
-| 6 执行 | shaping、appetite、betting、implementation slices、local-main-first gates 和交付指标 | 用小而可检查的切片执行，并保留验证、回滚和 circuit-breaker 证据 |
-| 7 增长与采用 | traction channel tests、跨越鸿沟、定位、文档、信任和支持循环 | 把采用、onboarding、文档和支持纳入 release plan |
-| 8 复盘与学习 | postmortem、SOP、运营节奏、产品运营学习和模板/checker 更新 | 把重复经验转化为持久文档、checker、模板或 OpenSpec spec |
+| 0 认知层 | 一人公司目的、平台叙事、类别框架和客户倒推故事 | 先解释方向为什么存在，再定义功能或团队 |
+| 1 商业层 | 单位经济、协作成本、有意保持小、风险降低和运营杠杆 | 判断维护成本和机会成本是否值得 |
+| 2 市场层 | 访谈、持续发现、采用分层、定位和客户证据 | 先识别目标用户和滩头用例，再扩大范围 |
+| 3 战略层 | 诊断、指导方针、连贯行动、产品战略和 critical path | 选择狭窄获胜条件、战略取舍和明确非目标 |
+| 4 指标层 | 北极星指标、OKR、OMTM、阶段指标、护栏指标和数据定义 | 定义会改变决策的指标和阈值 |
+| 5 产品层 | PR/FAQ、product kata、机会映射、产品运营、MVP 和 usability/value/viability/feasibility 风险 | 在构建前定义用户可见行为、非目标和验收证据 |
+| 6 技术层 | 清晰边界、数据系统质量、安全不变量、组件边界和 staff engineer 判断 | 记录架构边界、数据契约、信任边界和回滚路径 |
+| 7 组织层 | 一人公司角色分离、Agent 治理、team API、认知负载、ownership 和责任边界 | 定义谁或哪个 Agent 可以读取、写入、决策、审查、批准和恢复工作 |
+| 8 执行层 | shaping、appetite、betting、implementation slices、local-main-first gates 和交付指标 | 用小而可检查的切片执行，并保留验证、回滚和 circuit-breaker 证据 |
+| 9 增长层 | traction channel tests、跨越鸿沟、定位、获客、激活、留存和信任故事 | 把渠道、onboarding、采用和 whole-product 支持纳入生命周期设计 |
+| 10 运营层 | support、FAQ、customer success、bug triage、运营节奏、文档和反馈 intake | 让已发布工作可用、可支持、可衡量，并持续连接用户反馈 |
+| 11 复盘层 | postmortem、SOP、月度复盘、产品运营学习和模板/checker 更新 | 把重复经验转化为持久文档、checker、模板或 OpenSpec spec |
 
 ## Codex 平台解释
 

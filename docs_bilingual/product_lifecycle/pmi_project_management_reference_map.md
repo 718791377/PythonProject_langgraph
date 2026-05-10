@@ -24,19 +24,22 @@ Supplemental overlays have narrower roles:
 
 The repository should use these sources as structure, not as copied text. The local reading audit may record which local files were readable, but lifecycle documents should contain repository-specific mappings only.
 
-## Relationship To The 0-8 Lifecycle
+## Relationship To The 0-11 / 12-Layer Lifecycle
 
-| 0-8 layer | Product/business purpose | PMI overlay |
+| 0-11 layer | Product/business purpose | PMI overlay |
 | --- | --- | --- |
 | 0 Cognitive narrative | Explain why the direction exists | PMBOK value orientation helps keep the narrative tied to outcomes |
-| 1 Business | Decide whether the work is worth doing | PMBOK success criteria and benefits thinking help define value |
+| 1 Business | Decide whether the work is worth doing | Success criteria and benefits thinking help define value |
 | 2 Market | Identify users and needs | Agile discovery and feedback loops help reduce uncertainty |
-| 3 Strategy | Define the North Star and levers | PMBOK tailoring helps choose governance depth by risk |
-| 4 Product | Define product scope and behavior | Agile lifecycle selection helps decide predictive, adaptive, or hybrid planning |
-| 5 Technical | Define implementation architecture | PMBOK quality, risk, and procurement ideas inform technical gates |
-| 6 Execution | Deliver the work | Process Groups map directly to OpenSpec and local-main-first delivery |
-| 7 Growth | Expand adoption and usefulness | Agile inspection and adaptation support iterative adoption |
-| 8 Retrospective | Learn and improve | Process closing and lessons learned become archive and governance updates |
+| 3 Strategy | Define how to win and what to refuse | Tailoring helps choose governance depth by risk |
+| 4 Metrics | Define evidence and decision thresholds | Measurement and performance-domain thinking keep progress inspectable |
+| 5 Product | Define product scope and behavior | Agile lifecycle selection helps decide predictive, adaptive, or hybrid planning |
+| 6 Technical | Define implementation architecture | Quality, risk, procurement, and stakeholder constraints inform technical gates |
+| 7 Organization | Define owners, roles, and approvals | Stakeholder, resource, and governance domains clarify responsibility |
+| 8 Execution | Deliver the work | Process Groups map directly to OpenSpec and local-main-first delivery |
+| 9 Growth | Expand adoption and usefulness | Agile inspection and adaptation support iterative adoption |
+| 10 Operations | Keep released work supportable | Quality, risk, issue, and change-control practices support live operation |
+| 11 Retrospective | Learn and improve | Process closing and lessons learned become archive and governance updates |
 
 ## Project Canvas And Performance-Domain Mapping
 
@@ -54,14 +57,14 @@ For this repository, PMBOK 8th Edition performance-domain thinking maps to these
 | Resources | Worktrees, wrappers, user-level helpers, local models, MCP tools, and repo-local state directories |
 | Risk | Cross-session collision, stale main, state leakage, lane mis-selection, hidden automation, and rollback failure |
 
-## Process Groups To OpenSpec And GitLab Gates
+## Process Groups To OpenSpec And Local-Main-First Gates
 
 | PMI process group | Codex platform delivery gate | Repository files and actions |
 | --- | --- | --- |
 | Initiating | Decide whether to open a change | `openspec/changes/<change-id>/proposal.md` is the OpenSpec proposal that states why a change is needed |
 | Planning | Freeze design and execution scope | `openspec/changes/<change-id>/design.md` is the OpenSpec design; `tasks.md` is the task list used to track execution |
 | Executing | Implement the planned work | Source, documentation, templates, or checker files are modified according to the accepted tasks |
-| Monitoring and controlling | Verify and control change | `tools/run_openspec_guard.py` is the OpenSpec guard script; GitLab pipeline is the review-time CI gate |
+| Monitoring and controlling | Verify and control change | `tools/run_openspec_guard.py` is the OpenSpec guard script; `tools/ci/local_gate.ps1` and `tools/ci/local_mr_review.ps1` are the local review gates; GitLab pipeline is later clean-environment confirmation when used |
 | Closing | Archive and learn | `openspec archive` is the archive command that moves completed changes into `openspec/changes/archive/` and syncs stable specs |
 
 ## Predictive, Adaptive, And Hybrid Use
@@ -80,7 +83,7 @@ Use an adaptive-style slice when:
 
 Use a hybrid approach when:
 
-- Discovery is still needed, but delivery must still pass OpenSpec, checker, and GitLab gates.
+- Discovery is still needed, but delivery must still pass OpenSpec, checker, and local-main-first gates.
 - A small spike should happen first, then a predictive delivery plan should be frozen.
 
 ## Codex Execution Mode Mapping

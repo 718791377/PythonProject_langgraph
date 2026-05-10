@@ -6,15 +6,20 @@ The local reference files are read into temporary ignored extraction artifacts. 
 
 ## Synthesis Axes
 
-The library is mapped to these lifecycle concerns:
+The library is mapped to the authoritative 0-11 / 12-layer lifecycle trunk:
 
-1. Strategy and scope discipline: strategy diagnosis, deliberate positioning, category design, and company-of-one constraints.
-2. Product discovery and market proof: customer interviews, continuous discovery, PR/FAQ, MVP learning, and product operations.
-3. Metrics and operating cadence: OKRs, North Star inputs, Lean Analytics stage metrics, high-output management cadence, and evidence-based delivery metrics.
-4. Architecture and engineering governance: clean boundaries, data-intensive system qualities, team topology analogs, secure-by-design defaults, and software delivery capabilities.
-5. Execution and release control: Shape Up appetite/betting, OpenSpec gates, rollback evidence, and local-main-first publication.
-6. Growth and adoption: chasm crossing, traction-channel testing, positioning, trust, teachable documentation, and support loops.
-7. Retrospective and systemization: E-Myth SOPs, Scaling People operating artifacts, staff-engineer judgment, and upstream platform feedback.
+0. Cognitive narrative: company-of-one purpose, platform narrative, category framing, and customer-backward story.
+1. Business: unit economics, cost of coordination, intentional smallness, risk reduction, and operating leverage.
+2. Market: customer interviews, continuous discovery, adoption segments, positioning, and evidence of demand.
+3. Strategy: diagnosis, guiding policy, coherent action, product strategy, critical path, and explicit non-goals.
+4. Metrics: OKRs, North Star inputs, one metric that matters, stage metrics, delivery metrics, and guardrails.
+5. Product: PR/FAQ, opportunity mapping, product kata, MVP learning, and product operations.
+6. Technical: clean boundaries, data-intensive system qualities, team topology analogs, secure-by-design defaults, and software delivery capabilities.
+7. Organization: role separation, agent governance, team APIs, cognitive-load limits, approval boundaries, and responsibility maps.
+8. Execution: Shape Up appetite/betting, OpenSpec gates, implementation slices, rollback evidence, and local-main-first publication.
+9. Growth: chasm crossing, traction-channel testing, onboarding, positioning, trust, and adoption loops.
+10. Operations: support, FAQ, customer success, bug triage, documentation operations, and feedback intake.
+11. Retrospective: E-Myth SOPs, Scaling People operating artifacts, postmortems, staff-engineer judgment, and upstream platform feedback.
 
 ## Documentation Boundary
 

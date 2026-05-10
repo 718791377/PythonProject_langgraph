@@ -3,22 +3,22 @@
 ## Purpose
 Define the product and business document lifecycle map for this repository, and keep Codex platform-build documentation separate from downstream project-consumption documentation.
 ## Requirements
-### Requirement: Product Lifecycle Reference Defines The 0-8 Document Stack
+### Requirement: Product Lifecycle Reference Defines The 0-11 / 12-Layer Document Stack
 
-The repository SHALL maintain a bilingual product lifecycle reference that defines the cognitive narrative, business, market, strategy, product, technical, execution, growth, and retrospective layers. The reference SHALL also summarize repository-specific lessons synthesized from the local `Business Management/` source library without reproducing long source passages.
+The repository SHALL maintain a bilingual product lifecycle reference that defines the cognitive narrative, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, and retrospective layers. The reference SHALL also summarize repository-specific lessons synthesized from the local `Business Management/` source library without reproducing long source passages.
 
 #### Scenario: A maintainer asks how a white paper differs from a North Star plan
 
 - **GIVEN** the maintainer reads the product lifecycle reference
 - **WHEN** the maintainer compares document types
 - **THEN** the reference explains that a white paper changes cognition and frames why the direction exists
-- **AND** the reference explains that a North Star plan turns strategy into measurable direction, metrics, levers, and staged execution
+- **AND** the reference explains that a North Star plan belongs in the metrics layer and turns strategy into measurable direction, input metrics, guardrails, and staged decision thresholds
 
 #### Scenario: A maintainer applies the Business Management source library
 
 - **GIVEN** the maintainer reads the product lifecycle reference
 - **WHEN** the maintainer needs source-backed lifecycle guidance
-- **THEN** the reference maps the local Business Management library themes to strategy, discovery, metrics, architecture, execution, growth, and learning loops
+- **THEN** the reference maps the local Business Management library themes to cognition, business, market discovery, strategy, metrics, product, technical architecture, organization, execution, growth, operations, and learning loops
 - **AND** it expresses the guidance as repository-specific operating rules rather than source-book excerpts
 
 ### Requirement: Platform Build And Project Consumption Stay Separate

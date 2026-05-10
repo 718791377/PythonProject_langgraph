@@ -57,19 +57,24 @@ The source directory was read with page-level or spine-item-level extraction bef
 8. **Design for adoption and trust.** Positioning, beachhead choice, whole-product support, documentation, and support loops are part of product lifecycle, not afterthoughts.
 9. **Close the loop.** Retrospectives, postmortems, lessons learned, and upstream feedback must update templates, checkers, docs, or future strategy.
 
-## 0-8 Lifecycle Mapping
+## 0-11 / 12-Layer Lifecycle Mapping
+
+The two local architecture source notes define the current authoritative trunk as twelve layers: cognition, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, and retrospective. Any earlier compressed lifecycle wording is historical shorthand only.
 
 | Layer | Source-backed emphasis | Repository rule |
 | --- | --- | --- |
 | 0 Cognitive narrative | Company-of-one purpose, platform narrative, category framing, and customer-backward story | Explain why the direction should exist before defining features or teams |
 | 1 Business | Unit economics, cost of coordination, intentional smallness, risk reduction, and operating leverage | Decide whether maintenance cost and opportunity cost are justified |
 | 2 Market and users | Interviews, discovery habits, adoption segments, positioning, and customer evidence | Identify target users and beachhead use cases before expanding scope |
-| 3 Strategy and North Star | Diagnosis, guiding policy, OKRs, one metric that matters, product strategy, and critical path | Select a narrow win condition and the metrics that will change decisions |
-| 4 Product | PR/FAQ, product kata, opportunity mapping, product operations, MVP, and usability/value/viability/feasibility risk | Define user-visible behavior, non-goals, and acceptance evidence before building |
-| 5 Technical | Clean boundaries, data-system qualities, security invariants, team APIs, staff-engineer judgment, and delivery capabilities | Record architecture boundaries, data contracts, trust boundaries, and rollback paths |
-| 6 Execution | Shaping, appetite, betting, implementation slices, local-main-first gates, and delivery metrics | Execute in small inspectable slices with validation, rollback, and circuit-breaker evidence |
-| 7 Growth and adoption | Traction channel tests, chasm crossing, positioning, documentation, trust, and support loops | Treat adoption, onboarding, docs, and support as part of the release plan |
-| 8 Retrospective and learning | Postmortems, SOPs, operating cadence, product-ops learning, and template/checker updates | Convert repeated lessons into durable docs, checkers, templates, or OpenSpec specs |
+| 3 Strategy | Diagnosis, guiding policy, coherent action, product strategy, and critical path | Select a narrow win condition, strategic trade-offs, and explicit non-goals |
+| 4 Metrics | North Star metric, OKRs, OMTM, stage metrics, guardrails, and data definitions | Define the measures and thresholds that will change decisions |
+| 5 Product | PR/FAQ, product kata, opportunity mapping, product operations, MVP, and usability/value/viability/feasibility risk | Define user-visible behavior, non-goals, and acceptance evidence before building |
+| 6 Technical | Clean boundaries, data-system qualities, security invariants, component boundaries, and staff-engineer judgment | Record architecture boundaries, data contracts, trust boundaries, and rollback paths |
+| 7 Organization | Company-of-one role separation, agent governance, team APIs, cognitive load, ownership, and responsibility boundaries | Define who or which agent can read, write, decide, review, approve, and recover work |
+| 8 Execution | Shaping, appetite, betting, implementation slices, local-main-first gates, and delivery metrics | Execute in small inspectable slices with validation, rollback, and circuit-breaker evidence |
+| 9 Growth | Traction channel tests, chasm crossing, positioning, acquisition, activation, retention, and trust story | Treat channels, onboarding, adoption, and whole-product support as part of lifecycle design |
+| 10 Operations | Support, FAQ, customer success, bug triage, operating cadence, documentation, and feedback intake | Keep released work usable, supportable, measurable, and connected to user feedback |
+| 11 Retrospective | Postmortems, SOPs, monthly reviews, product-ops learning, and template/checker updates | Convert repeated lessons into durable docs, checkers, templates, or OpenSpec specs |
 
 ## Codex Platform Interpretation
 

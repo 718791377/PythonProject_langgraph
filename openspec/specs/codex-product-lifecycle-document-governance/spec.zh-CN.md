@@ -6,16 +6,23 @@
 
 ## Requirements
 
-### Requirement: Product Lifecycle Reference Defines The 0-8 Document Stack
+### Requirement: Product Lifecycle Reference Defines The 0-11 / 12-Layer Document Stack
 
-仓库必须维护一份双语产品生命周期参考，定义认知叙事、商业、市场、战略、产品、技术、执行、增长和复盘层。
+仓库必须维护一份双语产品生命周期参考，定义认知叙事、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营和复盘层。该参考还必须总结从本地 `Business Management/` 源库综合出的仓库特定经验，且不得复制长篇源书正文。
 
 #### Scenario: A maintainer asks how a white paper differs from a North Star plan
 
 - **GIVEN** 维护者阅读产品生命周期参考
 - **WHEN** 维护者比较文档类型
 - **THEN** 该参考说明白皮书用于改变认知，并解释为什么该方向存在
-- **AND** 该参考说明北极星 Plan 用于把战略转化为可衡量方向、指标、杠杆和分阶段执行
+- **AND** 该参考说明北极星 Plan 属于指标层，用于把战略转化为可衡量方向、输入指标、护栏指标和分阶段决策阈值
+
+#### Scenario: A maintainer applies the Business Management source library
+
+- **GIVEN** 维护者阅读产品生命周期参考
+- **WHEN** 维护者需要有源库支撑的生命周期指导
+- **THEN** 该参考把本地 Business Management 源库主题映射到认知、商业、市场发现、战略、指标、产品、架构、组织、执行、增长、运营和学习循环
+- **AND** 它把指导表达为仓库特定运营规则，而不是源书摘录
 
 ### Requirement: Platform Build And Project Consumption Stay Separate
 

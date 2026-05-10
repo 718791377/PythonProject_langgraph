@@ -10,7 +10,7 @@
 
 ## 下游生命周期裁剪叠加规则
 
-下游项目应把通用 0-8 生命周期当作地图，而不是每个变更都必须填写的强制表格。
+下游项目应把通用 0-11 / 12 层生命周期当作地图，而不是每个变更都必须填写的强制表格。
 
 - 预测式门禁适合范围清楚、存在发布风险、影响金钱/用户/信任、涉及合规，或需要显式 rollback 的下游工作。
 - 适应式切片适合需要探索、原型、浏览器验证、用户反馈或小型 MVP 后才能冻结设计的下游工作。
@@ -20,8 +20,8 @@
 
 下游项目使用以下深度：
 
-- 完整 0-8 生命周期：用于新产品、重大业务转向、用户可见发布、合规敏感变更、支付或信任影响工作，或者长期平台化的下游系统。
-- 项目 MVP 或 release 切片：保留 0-8 全部层级可见；风险较低时摘要 0、1、2、7 层，重点展开 3、4、5、6、8 层，用于战略、产品行为、技术安全、交付和学习。
+- 完整 0-11 生命周期：用于新产品、重大业务转向、用户可见发布、合规敏感变更、支付或信任影响工作，或者长期平台化的下游系统。
+- 项目 MVP 或 release 切片：保留 12 层全部可见；风险较低时摘要认知、商业、市场、组织、增长、运营和复盘语境，重点展开战略、指标、产品、技术和执行证据。如果切片影响采用、支持或面向客户的运营，也要展开增长和运营。
 - 普通本地变更：不重写完整文档栈。只记录被修改范围的输入、工具与技术、输出证据。代码类变更需要技术层和执行层证据。发布类变更需要验证、发布、回滚和复盘证据。
 
 下游项目可以轻量，但必须保持 repo-local：它的 OpenSpec artifacts、`.omx/state/` 状态目录、release facts 和 lessons learned 都属于该项目。
@@ -123,31 +123,59 @@
 - 面向产品需求和战略的用户证据。
 - 关于平台模板是否缺少可复用能力的反馈。
 
-## 3. 战略与北极星层
+## 3. 战略层
 
-问题：下游项目如何定义成功？
+问题：下游项目如何获胜，且明确拒绝什么？
 
 ### 输入
 
-- 商业层的成功标准和成本边界。
-- 市场层的用户分层、场景和需求证据。
-- 平台边界：把项目本地事实和共享平台 runtime 分开。
+- 商业层输出的 success criteria 和 cost boundaries。
+- 市场层输出的 user segments、scenarios 和 demand evidence。
+- 区分 project-local truth 与 shared platform runtime 的平台边界。
+- 技术可行性与运营约束。
 
 ### 工具与技术
 
-- 北极星指标设计：定义项目的主成功指标。
-- 输入指标拆解：识别驱动项目北极星指标的前置指标。
-- 交付深度裁剪：决定项目当前阶段需要完整 0-8、MVP/release 深度，还是小型本地变更路径。
-- `docs_bilingual/north_star_plan.md` 是项目北极星 Plan；它定义该项目的主成功指标、输入指标和杠杆。
-- `docs_bilingual/north_star_plan.zh-CN.md` 是同一计划的 UTF-8 中文对照版。
+- Strategy kernel 分析：记录本地项目的 diagnosis、guiding policy 和 coherent action。
+- Positioning 和 beachhead 分析：决定先聚焦哪里。
+- Trade-off 与 non-goal 设计：防止项目变成平台 catch-all。
+- 交付深度裁剪：决定项目当前阶段需要完整 12 层、MVP/release 深度，还是小型本地变更路径。
+- `docs_bilingual/strategy.md` 是项目战略文件；它记录 diagnosis、guiding policy、coherent action、trade-offs 和 non-goals。
 
 ### 输出
 
-- 项目北极星 Plan、输入指标、杠杆和非目标。
-- 当前项目阶段的交付深度决策。
-- 传递给产品层、技术层和执行层的优先级约束。
+- 项目战略、取舍、非目标和交付深度决策。
+- 输出给指标、产品、技术、组织、执行、增长和运营层的优先级约束。
+- 聚焦、暂停、转向或继续研究的决策。
 
-## 4. 产品层
+## 4. 指标层
+
+问题：哪些证据说明下游项目是否有效？
+
+### 输入
+
+- 战略层输出的目标、取舍和非目标。
+- 商业层输出的价值假设和成本边界。
+- 市场层输出的用户证据和采用障碍。
+- 产品、技术、增长、运营和复盘信号。
+
+### 工具与技术
+
+- 北极星指标设计：定义项目主要成功衡量方式。
+- 输入指标拆解：识别驱动项目北极星指标的 leading indicators。
+- 护栏指标设计：保护质量、成本、信任、安全、可靠性和 operator attention。
+- Tracking plan 设计：记录决策所需的 event、log、survey、support 或 release evidence。
+- `docs_bilingual/north_star_plan.md` 是项目 North Star plan；它定义 main success metric、input metrics 和 levers。
+- `docs_bilingual/north_star_plan.zh-CN.md` 是该计划的 UTF-8 中文伴随文档。
+- `docs_bilingual/metrics.md` 是指标文档；它定义项目成功和质量指标。
+
+### 输出
+
+- 项目 North Star plan、输入指标、护栏指标、阈值和 review cadence。
+- 输出给产品、技术、执行、增长、运营和复盘工作的证据要求。
+- 用于继续、停止、扩大、转向、重构或退役的决策阈值。
+
+## 5. 产品层
 
 问题：下游项目应该构建或修改什么？
 
@@ -173,7 +201,7 @@
 - 面向技术设计和执行计划的产品证据。
 - 当期望范围超过所选交付深度时，向战略层反馈。
 
-## 5. 技术层
+## 6. 技术层
 
 问题：如何安全实现下游项目，同时不混淆平台 tooling 和业务 runtime？
 
@@ -203,7 +231,34 @@
 - 证明平台 tooling 没有污染业务 runtime dependencies 的证据。
 - 面向本地 OpenSpec changes 和 Codex subagent tasks 的实施约束。
 
-## 6. 执行层
+
+## 7. 组织层
+
+问题：项目责任和批准由谁或什么机制承担？
+
+### 输入
+
+- 战略、指标、产品范围、技术边界和运营约束。
+- human owner capacity、agent capabilities、vendor 或 external support、permission boundaries 和 approval requirements。
+- 平台提供的 role guidance，以及项目本地安全或合规要求。
+
+### 工具与技术
+
+- Role-map design：区分 founder、owner、maintainer、reviewer、operator、agent、vendor 和 customer-support responsibilities。
+- Agent-governance design：定义哪些 AI agents 可以读取、写入、提议、审查、测试、部署，或必须请求批准。
+- Responsibility matrix：映射 decisions、owners、reviewers 和 escalation rules。
+- Durable-lane threshold review：防止项目计划未冻结、独立执行切片不足时启动 project-local durable automation。
+- `docs_bilingual/role-map.md` 是项目角色图。
+- `docs_bilingual/agent-governance.md` 是项目在单一主会话任务之外使用 AI agents 时的 agent-governance 文件。
+
+### 输出
+
+- Role map、agent governance、responsibility matrix、escalation rules 和 approval boundaries。
+- 输出给执行、运营和复盘工作的 ownership 与 capacity 约束。
+- 明确 project-local authority 与 platform-provided mechanisms 的边界。
+
+
+## 8. 执行层
 
 问题：下游项目如何安全交付变更？
 
@@ -233,36 +288,66 @@
 - 本地 OpenSpec evidence、test evidence 和 Git evidence。
 - 可发布产物，或者明确说明停止、修订或回滚的理由。
 
-## 7. 发布、增长与采用层
+## 9. 增长层
 
-问题：下游项目如何发布、被采用并持续改进？
+问题：下游项目如何获客、激活、留存并扩展正确用户？
 
 ### 输入
 
-- 执行层的可发布产物、验证证据和已知风险。
-- 战略层的成功指标和增长杠杆。
-- 用户反馈、采用摩擦和部署约束。
+- 战略层输出的 positioning、target segment 和 growth levers。
+- 指标层输出的 activation、retention、quality 和 value thresholds。
+- 产品层输出的 offer、user journey 和 onboarding assumptions。
+- 执行层输出的 release-ready artifacts 和 known limits。
+- 市场层输出的 channel evidence 和 adoption barriers。
 
 ### 工具与技术
 
-- 发布计划：定义 rollout、release gates、沟通和 rollback readiness。
-- 指标追踪：衡量项目成功和质量。
-- 变更日志和采用报告：记录用户可见或 operator 可见的变化。
-- `docs_bilingual/release_plan.md` 是发布计划；它定义 rollout、release gates 和沟通方式。
-- `docs_bilingual/release_plan.zh-CN.md` 是发布计划的 UTF-8 中文对照版。
-- `docs_bilingual/rollback_plan.md` 是回滚计划；它定义如何回到安全版本。
-- `docs_bilingual/rollback_plan.zh-CN.md` 是回滚计划的 UTF-8 中文对照版。
-- `CHANGELOG.md` 是项目变更日志；它记录用户可见和 operator 可见的变化。
-- `docs_bilingual/metrics.md` 是指标文档；它定义项目成功和质量指标。
-- `docs_bilingual/metrics.zh-CN.md` 是指标文档的 UTF-8 中文对照版。
+- Channel testing：判断哪些获客或采用路径值得投入。
+- Positioning review：检查用户是否理解项目相对替代方案的差异。
+- Onboarding 和 activation 分析：识别用户或 operator 卡住的位置。
+- Retention 和 referral 分析：检查价值是否能超过首次使用。
+- `docs_bilingual/growth-model.md` 是增长模型；它定义 channels、activation、retention 和 expansion assumptions。
+- `docs_bilingual/positioning.md` 记录外部定位和替代方案。
 
 ### 输出
 
-- 已发布项目版本、changelog、rollback evidence 和 metrics evidence。
-- 面向下一轮项目迭代的采用或增长发现。
-- 当用户可见行为变化时，向产品层和战略层反馈。
+- Growth model、channel findings、onboarding improvements 和 adoption evidence。
+- 当采用或留存出现摩擦时，向产品、指标、运营和战略层反馈。
+- 明确区分项目增长事实和 upstream platform adoption feedback。
 
-## 8. 复盘与上游反馈层
+## 10. 运营层
+
+问题：下游项目发布后如何被支持并保持可用？
+
+### 输入
+
+- 执行层输出的 released project version、changelog、rollback evidence 和 known limits。
+- 增长层输出的 adoption、channel 和 user-friction evidence。
+- 组织层输出的 ownership、escalation、support 和 agent-governance boundaries。
+- 技术层输出的 observability、reliability、security、cost 和 recovery constraints。
+
+### 工具与技术
+
+- Release planning：定义 rollout、communication、support readiness 和 rollback readiness。
+- Support playbook 设计：定义 response paths、issue categories、service boundaries 和 escalation rules。
+- Customer success 或 operator success 分析：跟踪 onboarding、activation、support outcomes 和 trust recovery。
+- Bug triage 设计：分类 defects、incidents、regressions、feature requests 和 user education gaps。
+- FAQ 和文档运营：把重复问题转成可维护知识资产。
+- `docs_bilingual/release_plan.md` 是 release plan；它定义 rollout、release gates 和 communication。
+- `docs_bilingual/release_plan.zh-CN.md` 是 release plan 的 UTF-8 中文伴随文档。
+- `docs_bilingual/rollback_plan.md` 是 rollback plan；它定义如何回到安全版本。
+- `docs_bilingual/rollback_plan.zh-CN.md` 是 rollback plan 的 UTF-8 中文伴随文档。
+- `CHANGELOG.md` 是项目 changelog；它记录 user-visible 和 operator-visible changes。
+- `docs_bilingual/support-playbook.md` 是支持手册。
+- `docs_bilingual/faq.md` 是项目 FAQ。
+
+### 输出
+
+- Released project version、changelog、rollback evidence、support records、FAQ updates 和 operations evidence。
+- 输出给产品、技术、增长和复盘层的采用、支持、可靠性、信任和可用性反馈。
+- 证明已发布工作仍可用、可支持、可恢复的证据。
+
+## 11. 复盘与上游反馈层
 
 问题：下游项目学到了什么，哪些经验应该反馈给上游平台？
 

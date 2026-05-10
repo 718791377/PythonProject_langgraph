@@ -24,19 +24,22 @@
 
 仓库只使用这些来源的结构，不复制正文。本地读取审计可以记录哪些本地文件可读，但 lifecycle documents 只写 repository-specific mappings。
 
-## Relationship To The 0-8 Lifecycle
+## Relationship To The 0-11 / 12 层生命周期
 
-| 0-8 层级 | 产品/商业目的 | PMI 叠加层 |
+| 0-11 层级 | 产品/商业目的 | PMI 叠加层 |
 | --- | --- | --- |
-| 0 认知叙事 | 解释方向为什么存在 | PMBOK 的 value orientation 帮助叙事绑定 outcomes |
-| 1 商业 | 判断是否值得做 | PMBOK 的 success criteria 和 benefits thinking 帮助定义价值 |
-| 2 市场 | 识别用户和需求 | Agile discovery 和 feedback loops 帮助降低不确定性 |
-| 3 战略 | 定义北极星和杠杆 | PMBOK tailoring 帮助按风险选择治理深度 |
-| 4 产品 | 定义产品范围和行为 | Agile lifecycle selection 帮助选择 predictive、adaptive 或 hybrid planning |
-| 5 技术 | 定义实现架构 | PMBOK quality、risk 和 procurement 思想用于技术门禁 |
-| 6 执行 | 交付工作 | Process Groups 直接映射 OpenSpec 和 local-main-first delivery |
-| 7 增长 | 扩大采用和效用 | Agile inspection and adaptation 支持迭代采用 |
-| 8 复盘 | 学习并改进 | process closing 和 lessons learned 变成 archive 和 governance updates |
+| 0 认知层 | 解释方向为什么存在 | PMBOK 价值导向帮助叙事连接 outcome |
+| 1 商业层 | 判断是否值得做 | 成功标准和收益思维帮助定义价值 |
+| 2 市场层 | 识别用户和需求 | Agile discovery 和 feedback loops 帮助降低不确定性 |
+| 3 战略层 | 定义如何获胜以及拒绝什么 | tailoring 帮助按风险选择治理深度 |
+| 4 指标层 | 定义证据和决策阈值 | measurement 和 performance-domain 思维让进展可检查 |
+| 5 产品层 | 定义产品范围和行为 | Agile lifecycle selection 帮助决定预测式、适应式或混合式规划 |
+| 6 技术层 | 定义实现架构 | quality、risk、procurement 和 stakeholder constraints 支撑技术门禁 |
+| 7 组织层 | 定义 owner、角色和批准 | stakeholder、resource 和 governance domains 澄清责任 |
+| 8 执行层 | 交付工作 | Process Groups 直接映射到 OpenSpec 和 local-main-first delivery |
+| 9 增长层 | 扩大采用和有用性 | Agile inspection and adaptation 支持迭代采用 |
+| 10 运营层 | 保持已发布工作可支持 | quality、risk、issue 和 change-control practices 支持运行期运营 |
+| 11 复盘层 | 学习和改进 | process closing 和 lessons learned 变成 archive 与治理更新 |
 
 ## 项目画布与绩效域映射
 
@@ -54,7 +57,7 @@
 | Resources | worktrees、wrappers、user-level helpers、本地模型、MCP tools 和 repo-local state directories |
 | Risk | cross-session collision、stale main、state leakage、lane mis-selection、hidden automation 和 rollback failure |
 
-## Process Groups To OpenSpec And GitLab Gates
+## Process Groups To OpenSpec And Local-Main-First Gates
 
 | PMI 过程组 | Codex 平台交付门 | 仓库文件和动作 |
 | --- | --- | --- |
@@ -80,7 +83,7 @@
 
 适合 hybrid approach 的情况：
 
-- 仍需要 discovery，但交付仍必须通过 OpenSpec、checker 和 GitLab gates。
+- 仍需要 discovery，但交付仍必须通过 OpenSpec、checker 和 local-main-first gates。
 - 先做小型 spike，然后再冻结 predictive delivery plan。
 
 ## Codex Execution Mode Mapping
