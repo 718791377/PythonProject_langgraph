@@ -152,15 +152,14 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 ## 仓库发布流程
 
-- GitLab 是本仓库的权威 review / merge 面。
-- 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的远端 CI 配额，所以首次推送前应先完成本地 commit、本地 checker 和本地清理。
-- 发布流程采用 local-first + mirrored CI/MR gate（本地优先且本地/远端镜像复用的 CI/MR 闸门）。Local CI（本地持续集成）是主要检查逻辑，local MR review（本地合并请求审查）是推远端前的审查面，GitLab CI 和 GitLab MR 保留为干净环境确认层与审查留痕层。
-- 本地 CI 与远端 CI 必须复用 `tools/ci/local_gate.ps1`。`tools/ci/local_gate.ps1` 是仓库共享 CI 闸门脚本；远端 CI 配置只应安装必要工具并调用这个脚本，不得另写一套 checker 命令。CI 管理的测试登记在 `tools/ci/ci_test_manifest.json`，以保持 gate 稳定。本地 MR review 必须在所有计划保留的改动已提交、feature worktree 干净之后，远端发布之前使用 `tools/ci/local_mr_review.ps1`；它会汇总 feature branch 相对 base branch 的 diff、commit log 和 merge simulation（合并模拟）。
-- 新建可写任务、判断发布时机、push、创建 MR 或声明本地已对齐之前，必须保持本地 `main` 不落后于 `gitlab/main`。local-first batching（本地优先批量发布）不是允许基于陈旧远端基线继续工作的理由。
+- 发布流程改为 local-main-first（本地 main 优先）：local CI、local MR review、干净 feature worktree 和用户明确批准都满足后，本地 `main` 是第一集成面。
+- GitLab 不再是本地 `main` 集成前的默认权威闸门。GitLab 保留为远端发布、干净环境确认、备份和审查留痕面；GitHub 默认是 mirror / sync target（镜像/同步目标），除非用户明确覆盖。
+- 使用 local-first batching（本地优先批量发布）节省 GitLab runner minutes。GitLab runner minutes 是 GitLab pipeline 消耗的远端 CI 配额，所以首次远端推送前应先完成本地 commit、本地检查、本地 MR review 和本地清理。
+- 本地 CI 与远端 CI 必须复用 `tools/ci/local_gate.ps1`。远端 CI 配置只应安装必要工具并调用该脚本，不得另写一套 checker 命令。CI 管理的测试登记在 `tools/ci/ci_test_manifest.json`。本地 MR review 在所有计划保留的改动已提交、feature worktree 干净之后、集成本地 `main` 或远端发布之前使用 `tools/ci/local_mr_review.ps1`。
+- 新建可写任务、判断发布时机、远端 push、创建 MR 或声明本地已对齐之前，必须保持本地 `main` 不落后于 `gitlab/main`。local-first batching 不是允许基于陈旧远端基线继续工作的理由。
+- 经批准本地集成后，本地 `main` 可以有意领先 `gitlab/main` 和 `github/main`；必须在状态报告中明确说明这种远端滞后，直到 GitLab/GitHub 发布或镜像同步追上。
 - feature branch 只有在 local CI 和 local MR review 都通过后，才推送到 GitLab 并创建或更新 GitLab MR；除非用户明确要求提前跑远端 pipeline。
-- 如果本地 gate 和远端 CI 的结果不一致，必须优先修复共享脚本、环境安装或配置漂移，不得绕过本地或远端任一 gate。
-- 主题相同且 rollback boundary（回退边界）相同的小变更可以合并到一个 MR；不要为了节省 runner minutes 把无关主题硬塞进同一个 MR。
-- 远端发布前，当前会话的模型必须判断本地批次是否适合发布，并向用户提出 publish（发布）或 wait（继续等待）的建议；用户仍然是 release decision authority（发布决策权威）。
-- 只有 GitLab pipeline 通过后，才合并到 GitLab `main`。
-- GitLab `main` 合并并变绿后，再把同一个 `main` 提交直接同步推送到 GitHub。
-- 默认不为 GitHub 开 PR；除非用户明确要求，GitHub 只是合并后的同步目标。
+- 如果本地 gate 和远端 CI 的结果不一致，必须修复共享脚本、环境安装或配置漂移，不得绕过任一证据层。
+- 主题相同且 rollback boundary（回退边界）相同的小变更可以合并到一个本地集成包；不要为了节省 runner minutes 把无关主题硬塞进同一个包。
+- 本地集成或远端发布前，当前会话的模型必须判断本地批次是否适合 integrate / publish 或 wait（继续等待），并向用户提出建议；用户仍然是 release decision authority（发布决策权威）。
+- 默认不为 GitHub 开 PR。

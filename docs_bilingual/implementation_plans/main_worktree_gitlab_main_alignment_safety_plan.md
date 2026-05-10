@@ -2,11 +2,11 @@
 
 ## Status
 
-This plan is active for the current repository maintenance task. It defines how to preserve local work before aligning the primary worktree with `gitlab/main` - the GitLab remote-tracking branch that represents the authoritative reviewed mainline.
+This plan is active for the current repository maintenance task. It defines how to preserve local work before aligning the primary worktree with `gitlab/main` - the GitLab remote-tracking branch used as the upstream freshness baseline.
 
 ## Background
 
-The primary worktree at `D:\PythonProject_langgraph` - the normal local checkout directory for this repository - is not currently aligned with `gitlab/main` - the GitLab main branch reference used as the review-authoritative source of truth.
+The primary worktree at `D:\PythonProject_langgraph` - the normal local checkout directory for this repository - is not currently aligned with `gitlab/main` - the GitLab main branch reference used as the upstream freshness baseline.
 
 The current primary worktree also has tracked modifications and untracked files. Some of those files may be useful local work from another session, while others may be stale refresh output or scratch notes. Therefore the alignment operation MUST be treated as a preservation-first maintenance task, not a cleanup shortcut.
 
@@ -22,7 +22,7 @@ The current primary worktree also has tracked modifications and untracked files.
 
 - This plan does not decide that local changes are worthless.
 - This plan does not delete `.worktrees/` - the local container for registered secondary worktrees.
-- This plan does not bypass the GitLab-first publication workflow.
+- This plan does not bypass the local-main-first publication workflow.
 - This plan does not merge local scratch notes into documentation automatically.
 - This plan does not push backup branches unless the operator explicitly asks for a remote backup.
 
@@ -195,12 +195,12 @@ git checkout backup/mainworktree-dirty-before-main-align-<timestamp> -- <path>
 
 This command restores one selected path from the backup branch into a clean feature branch.
 
-Any restored change must use the GitLab-first workflow:
+Any restored change must use the local-main-first workflow:
 
 - Create a feature branch from `gitlab/main` - the latest reviewed mainline.
 - Restore only the selected path or logical slice - the minimal change set being reviewed.
 - Run repository checkers - the validation scripts that protect OpenSpec and documentation rules.
-- Open a GitLab merge request - the authoritative review surface for this repository.
+- Open a GitLab merge request - the remote review and confirmation surface for this repository.
 - Sync GitHub only after GitLab main is merged and green - the mirror step for the GitHub repository.
 
 ## Rollback
@@ -222,4 +222,4 @@ This plan is valid when:
 - the backup branch exists before any `git reset --hard` command is run;
 - `.worktrees/` is excluded from commits and not manually deleted;
 - local `main` and `gitlab/main` resolve to the same commit after alignment;
-- any local-only or both-changed content is migrated only through a new GitLab-first branch and merge request.
+- any local-only or both-changed content is migrated only through a new local-main-first branch and merge request.

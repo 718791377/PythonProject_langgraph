@@ -18,7 +18,7 @@ Use PMBOK 8th Edition as the primary project-management overlay for this reposit
 Supplemental overlays have narrower roles:
 
 - `PMBOK 6th Edition` is the process and knowledge-area supplement; it helps translate lifecycle layers into inputs, tools and techniques, outputs, and control gates.
-- `Process Groups: A Practice Guide` is the delivery-gate supplement; it maps initiating, planning, executing, monitoring and controlling, and closing to OpenSpec and GitLab-first work.
+- `Process Groups: A Practice Guide` is the delivery-gate supplement; it maps initiating, planning, executing, monitoring and controlling, and closing to OpenSpec and local-main-first work.
 - `PMBOK 7th Edition` is the principles and value-delivery supplement; it bridges principles, performance domains, system thinking, and tailoring.
 - `Agile Practice Guide` is the adaptive and hybrid delivery supplement; it informs MVP slices, feedback loops, iteration, and reversible releases.
 
@@ -34,7 +34,7 @@ The repository should use these sources as structure, not as copied text. The lo
 | 3 Strategy | Define the North Star and levers | PMBOK tailoring helps choose governance depth by risk |
 | 4 Product | Define product scope and behavior | Agile lifecycle selection helps decide predictive, adaptive, or hybrid planning |
 | 5 Technical | Define implementation architecture | PMBOK quality, risk, and procurement ideas inform technical gates |
-| 6 Execution | Deliver the work | Process Groups map directly to OpenSpec and GitLab-first delivery |
+| 6 Execution | Deliver the work | Process Groups map directly to OpenSpec and local-main-first delivery |
 | 7 Growth | Expand adoption and usefulness | Agile inspection and adaptation support iterative adoption |
 | 8 Retrospective | Learn and improve | Process closing and lessons learned become archive and governance updates |
 
@@ -46,7 +46,7 @@ For this repository, PMBOK 8th Edition performance-domain thinking maps to these
 
 | Performance concern | Repository mapping |
 | --- | --- |
-| Governance | User authority, OpenSpec changes, GitLab-first review, release consent, and checker-backed safety rules |
+| Governance | User authority, OpenSpec changes, local-main-first review, release consent, and checker-backed safety rules |
 | Scope | Platform repository boundaries, downstream project boundaries, and non-goals |
 | Schedule | Release slices, current mainline, phase gates, and closeout timing |
 | Finance | GitLab runner minutes, provider pacing budget, local model cost, operator attention, and maintenance time |

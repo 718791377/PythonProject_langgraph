@@ -201,7 +201,7 @@ Question: How should the platform be implemented without breaking native Codex?
 
 - Technical contracts and checker-backed boundaries.
 - Source-of-truth decisions for user-level helpers, repo-local source, and repo-local durable truth.
-- Implementation constraints for OpenSpec changes and GitLab-first delivery.
+- Implementation constraints for OpenSpec changes and local-main-first delivery.
 
 ## 6. Execution Layer
 
@@ -211,12 +211,12 @@ Question: How are platform changes delivered safely?
 
 - Product-layer acceptance criteria and technical-layer contracts.
 - OpenSpec proposals, designs, tasks, stable specs, and archive status.
-- GitLab-first publication rules and current session ownership claims.
+- local-main-first publication rules and current session ownership claims.
 
 ### Tools And Techniques
 
 - OpenSpec change control records proposal, design, tasks, specs, and archive evidence.
-- GitLab-first delivery uses feature branches, merge requests, pipelines, and post-merge GitHub sync.
+- local-main-first delivery uses feature branches, merge requests, pipelines, and post-merge GitHub sync.
 - Repository checkers validate bilingual documents, name clarity, session claims, safety rule backing, and OpenSpec health.
 - `openspec/changes/<change-id>/proposal.md` is an ASCII OpenSpec proposal; it explains why a specific platform change is needed.
 - `openspec/changes/<change-id>/design.md` is an ASCII OpenSpec design; it explains how the platform change will be implemented.
@@ -226,7 +226,7 @@ Question: How are platform changes delivered safely?
 
 ### Outputs
 
-- Small GitLab-first MRs with explicit validation evidence.
+- Small local-main-first integration packages with explicit validation evidence.
 - Completed or archived OpenSpec changes with stable-spec updates when required.
 - Release, rollback, and verification evidence for platform-affecting changes.
 

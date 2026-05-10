@@ -36,14 +36,14 @@ The alignment workflow SHALL treat `.worktrees/` as a local container for Git-ma
 - **AND** the workflow SHALL NOT commit it as ordinary repository content
 - **AND** the workflow SHALL require `git worktree list` or equivalent inspection before any worktree removal
 
-### Requirement: Local-only recovery SHALL use a later GitLab-first branch
+### Requirement: Local-only recovery SHALL use a later local-main-first feature branch
 
-After the local `main` branch is aligned to `gitlab/main`, restored local-only or both-changed content SHALL be migrated through a separate feature branch and GitLab merge request.
+After the local `main` branch is aligned to the selected upstream baseline, restored local-only or both-changed content SHALL be migrated through a separate feature branch with local validation and local-main-first integration approval.
 
 #### Scenario: Operator wants to keep a local-only file after alignment
 
 - **WHEN** a path preserved in the backup branch is selected for retention
-- **THEN** the workflow SHALL restore only the selected path or logical slice into a clean branch based on `gitlab/main`
-- **AND** the workflow SHALL validate that branch before opening a GitLab merge request
-- **AND** the workflow SHALL NOT commit the restored content directly to local `main`
+- **THEN** the workflow SHALL restore only the selected path or logical slice into a clean feature branch based on the selected baseline
+- **AND** the workflow SHALL validate that branch before local `main` integration or remote publication
+- **AND** the workflow SHALL NOT commit the restored content directly to local `main` without the local-main-first gate
 

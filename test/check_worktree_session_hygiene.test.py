@@ -182,7 +182,7 @@ class WorktreeSessionHygieneCheckTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
         payload = json.loads(result.stdout)
         self.assertTrue(payload["ok"])
-        self.assertTrue(any("Local main is not behind gitlab/main" in item for item in payload["info"]))
+        self.assertTrue(any("Local main intentionally leads gitlab/main" in item for item in payload["info"]))
 
     def test_allows_gitlab_ci_detached_checkout(self) -> None:
         root = self.make_repo("worktree-ci-detached")

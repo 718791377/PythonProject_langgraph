@@ -248,7 +248,7 @@ OpenSpec 已经在仓库的工件层生效：
 - 在 single-MR path 中，先完成实现验证，再在同一个隔离 feature worktree 内执行归档，然后再发布。如果单独 archive worktree 更安全，必须先把该 archive 结果合回同一个发布分支，再打开 MR。
 - archive 前验证一次，archive 提升后再次验证。worktree-local verification 必须包含该 change 要求的仓库 guard 命令，确保归档生成的 stable specs 在集成前已经被检查。
 - 只有 post-archive validation（归档后验证）通过后，才能提交发布分支。
-- 通过正常 GitLab-first 流程发布。核心规则是：先实现验证，再 archive 与 stable-spec 提升，然后归档后复验；除非存在已说明的 two-MR exception，否则只提交一个 MR。
+- 通过正常 local-main-first 流程发布。核心规则是：先实现验证，再 archive 与 stable-spec 提升，然后归档后复验；除非存在已说明的 two-step exception，否则只形成一个本地集成包。
 
 ## 6. 本仓库何时必须走 OPSX
 

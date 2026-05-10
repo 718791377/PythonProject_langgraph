@@ -203,7 +203,7 @@ Loaded skill descriptions were truncated.
 - description 长度限制
 - 插件处理规则
 - user-level 与 repo-local 权威边界
-- GitLab-first 发布流程
+- local-main-first 发布流程
 
 并在 `docs_bilingual/docs_registry.yaml` 中注册。
 

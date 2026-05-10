@@ -22,7 +22,7 @@ Current mainline memory summary 在列出候选下一步动作前，SHALL 先识
 - 适用时列出受影响的 script、checker 或 documentation path；这些路径说明本次增量落在哪些文件上。
 - 当前 active-change 状态；active-change 是尚未归档的 OpenSpec change。
 - 下一会话应重新打开设计，还是从已实现行为继续。
-- 当仓库采用 GitLab-first plus GitHub mirror workflow（GitLab 优先并镜像到 GitHub 的流程）时，列出当前 publication-ref alignment（发布引用对齐状态）。
+- 当仓库采用 local-main-first plus GitHub mirror workflow（GitLab 优先并镜像到 GitHub 的流程）时，列出当前 publication-ref alignment（发布引用对齐状态）。
 - 当最新落地增量新增 governance surface（治理入口）时，列出 policy routing pointer（策略路由指针）。
 
 #### Scenario: A new cold-start session resumes after a checker-backed increment landed

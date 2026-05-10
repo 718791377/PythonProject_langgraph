@@ -2,11 +2,11 @@
 
 ## 状态
 
-本方案是当前仓库维护任务的 active 方案。它规定在把主工作区对齐到 `gitlab/main` 之前，如何先保护本地改动。`gitlab/main` 是 GitLab 远端 main 分支的本地跟踪引用，也是本仓库经过评审后的权威主线。
+本方案是当前仓库维护任务的 active 方案。它规定在把主工作区对齐到 `gitlab/main` 之前，如何先保护本地改动。`gitlab/main` 是 GitLab 远端 main 分支的本地跟踪引用，也是本仓库的上游新鲜度基线。
 
 ## 背景
 
-`D:\PythonProject_langgraph` 是本仓库通常打开的主本地工作区，目前没有对齐 `gitlab/main`。`gitlab/main` 是 GitLab main 分支的远端跟踪引用，用来代表 GitLab-first 流程下的权威主线。
+`D:\PythonProject_langgraph` 是本仓库通常打开的主本地工作区，目前没有对齐 `gitlab/main`。`gitlab/main` 是 GitLab main 分支的远端跟踪引用，用作 local-main-first 流程下的上游新鲜度基线。
 
 当前主工作区还有 tracked 修改和 untracked 文件。这些文件里可能有其他会话留下的真实更新，也可能有过期的 OpenSpec refresh 输出或临时草稿。因此，对齐操作必须是“先保全，再对齐”的维护任务，不能当成简单清理。
 
@@ -22,14 +22,14 @@
 
 - 本方案不判断本地改动没有价值。
 - 本方案不删除 `.worktrees/`。`.worktrees/` 是本地 secondary worktree 容器。
-- 本方案不绕过 GitLab-first 发布流程。
+- 本方案不绕过 local-main-first 发布流程。
 - 本方案不自动把本地临时笔记并入正式文档。
 - 本方案不默认推送备份分支，除非操作者明确要求远端备份。
 
 ## 关键名称
 
 - `D:\PythonProject_langgraph`：本仓库的主本地工作区，也是操作者通常打开的目录。
-- `gitlab/main`：GitLab main 分支的远端跟踪引用，是经过评审后的权威主线。
+- `gitlab/main`：GitLab main 分支的远端跟踪引用，是上游新鲜度基线。
 - `main`：本地 main 分支，对齐完成后应当和 `gitlab/main` 指向同一个提交。
 - `HEAD`：当前工作区检出的提交，用来判断当前从哪里开始漂移。
 - `merge-base`：当前 `HEAD` 和 `gitlab/main` 的共同祖先，用来区分本地漂移和线上推进。
@@ -195,13 +195,13 @@ git checkout backup/mainworktree-dirty-before-main-align-<timestamp> -- <path>
 
 这条命令把备份分支里的单个路径恢复到新的干净功能分支。
 
-任何恢复出来的改动都必须走 GitLab-first 流程：
+任何恢复出来的改动都必须走 local-main-first 流程：
 
 - 从 `gitlab/main` 创建 feature branch：feature branch 是承载单组改动的评审分支。
 - 只恢复一个选定路径或一个逻辑切片：逻辑切片是本次 MR 要评审的最小改动集合。
 - 运行 repository checkers：repository checkers 是保护 OpenSpec 和文档规则的验证脚本。
-- 打开 GitLab merge request：GitLab merge request 是本仓库的权威评审入口。
-- GitLab main 合并并绿灯后再同步 GitHub：GitHub 是 post-merge 镜像目标。
+- 需要远端确认时打开 GitLab merge request：GitLab merge request 是本仓库的远端评审与确认入口。
+- GitLab 远端确认变绿后，或用户明确要求 direct mirror 时，再同步 GitHub：GitHub 是 mirror / sync 目标。
 
 ## 回滚
 
@@ -222,4 +222,4 @@ git switch backup/mainworktree-dirty-before-main-align-<timestamp>
 - 运行任何 `git reset --hard` 之前，备份分支已经存在。
 - `.worktrees/` 被排除在提交之外，并且没有被手动删除。
 - 对齐后，本地 `main` 和 `gitlab/main` 指向同一个提交。
-- local-only 或 both-changed 内容后续只能通过新的 GitLab-first 分支和 merge request 迁移。
+- local-only 或 both-changed 内容后续只能通过新的 local-main-first 分支和 merge request 迁移。

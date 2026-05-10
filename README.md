@@ -25,8 +25,6 @@ Next recommended action:
 
 ## Publication workflow
 
-- GitLab is the authoritative review and merge surface.
-- Push repository changes to a GitLab feature branch and open or update a GitLab MR first.
-- Merge only after the GitLab pipeline passes.
-- After GitLab `main` is merged and green, sync the same `main` commit directly to GitHub.
-- Do not open a GitHub PR unless explicitly requested; GitHub is the post-merge sync target.
+- Local `main` is the primary integration surface after local validation, local MR review, a clean feature worktree, and explicit user approval.
+- GitLab is the remote publication, clean-environment confirmation, backup, and audit surface; it is not the default gate before local `main` integration.
+- GitHub is the mirror/sync target. Do not open a GitHub PR unless explicitly requested.

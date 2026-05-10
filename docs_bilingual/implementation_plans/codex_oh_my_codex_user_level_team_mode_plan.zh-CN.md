@@ -65,7 +65,7 @@ doc_class: implementation_plan
 - `experts` 自动路由 - 必须由阈值、checker 或 routing trace 约束，不能只靠提示词判断。
 - `durable_team` 启动 - 必须由计划冻结和独立切片检查保护，不能只靠模型记忆。
 - `persistent team` 状态 - 必须由 repo-local `.omx/state/` scope 和 backend-family 规则保护，不能跨项目混用。
-- GitLab-first 发布、safe cleanup、state mutation 和 activation selector - 必须有脚本 gate 或明确记录为未落地 gap。
+- local-main-first 发布、safe cleanup、state mutation 和 activation selector - 必须有脚本 gate 或明确记录为未落地 gap。
 
 下一步实施切片应把这条规则提升为用户级 safety-boundary registry 和总 checker：
 

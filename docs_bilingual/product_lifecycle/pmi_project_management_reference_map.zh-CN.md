@@ -18,7 +18,7 @@
 补充叠加层的职责更窄：
 
 - `PMBOK 第6版` 是过程和知识领域补充；它帮助把 lifecycle layers 转成 inputs、tools and techniques、outputs 和 control gates。
-- `Process Groups: A Practice Guide` 是 delivery-gate supplement；它把 initiating、planning、executing、monitoring and controlling、closing 映射到 OpenSpec 和 GitLab-first work。
+- `Process Groups: A Practice Guide` 是 delivery-gate supplement；它把 initiating、planning、executing、monitoring and controlling、closing 映射到 OpenSpec 和 local-main-first work。
 - `PMBOK 第7版` 是 principles 和 value-delivery supplement；它桥接 principles、performance domains、system thinking 和 tailoring。
 - `Agile Practice Guide` 是 adaptive 和 hybrid delivery supplement；它指导 MVP slices、feedback loops、iteration 和 reversible releases。
 
@@ -34,7 +34,7 @@
 | 3 战略 | 定义北极星和杠杆 | PMBOK tailoring 帮助按风险选择治理深度 |
 | 4 产品 | 定义产品范围和行为 | Agile lifecycle selection 帮助选择 predictive、adaptive 或 hybrid planning |
 | 5 技术 | 定义实现架构 | PMBOK quality、risk 和 procurement 思想用于技术门禁 |
-| 6 执行 | 交付工作 | Process Groups 直接映射 OpenSpec 和 GitLab-first delivery |
+| 6 执行 | 交付工作 | Process Groups 直接映射 OpenSpec 和 local-main-first delivery |
 | 7 增长 | 扩大采用和效用 | Agile inspection and adaptation 支持迭代采用 |
 | 8 复盘 | 学习并改进 | process closing 和 lessons learned 变成 archive 和 governance updates |
 
@@ -46,7 +46,7 @@
 
 | 绩效关注点 | 仓库映射 |
 | --- | --- |
-| Governance | 用户权威、OpenSpec changes、GitLab-first review、release consent 和 checker-backed safety rules |
+| Governance | 用户权威、OpenSpec changes、local-main-first review、release consent 和 checker-backed safety rules |
 | Scope | 平台仓库边界、下游项目边界和 non-goals |
 | Schedule | Release slices、current mainline、phase gates 和 closeout timing |
 | Finance | GitLab runner minutes、provider pacing budget、本地模型成本、operator attention 和 maintenance time |

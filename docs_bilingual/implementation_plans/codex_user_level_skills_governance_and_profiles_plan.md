@@ -202,7 +202,7 @@ The policy must define:
 - description-length limits
 - plugin handling rules
 - user-level versus repo-local authority
-- GitLab-first publication workflow
+- local-main-first publication workflow
 
 Register both files in `docs_bilingual/docs_registry.yaml`.
 

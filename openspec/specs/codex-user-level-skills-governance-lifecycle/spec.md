@@ -1,7 +1,7 @@
 # codex-user-level-skills-governance-lifecycle Specification
 
 ## Purpose
-Define the phase-gated lifecycle for Codex user-level skills governance, including inventory, policy, governance checks, cleanup deferral, validation evidence, and GitLab-first publication constraints.
+Define the phase-gated lifecycle for Codex user-level skills governance, including inventory, policy, governance checks, cleanup deferral, validation evidence, and local-main-first publication constraints.
 ## Requirements
 ### Requirement: Skills governance lifecycle phases SHALL be explicit and gated
 
@@ -127,18 +127,21 @@ If a validation requires `--require-clean-git`, it MUST be run in a clean tempor
 - **THEN** the report SHALL list the commands run and their outcomes
 - **AND** it SHALL identify any skipped clean-clone guard separately from passing local checks
 
-### Requirement: Publication SHALL follow explicit approval and GitLab-first workflow
+### Requirement: Publication SHALL follow explicit approval and local-main-first workflow
 
-Repository publication for this lifecycle SHALL require explicit user approval before commit, push, MR update, MR creation, merge, or GitHub sync.
+Repository publication for this lifecycle SHALL require explicit user approval before commit, local `main` integration, push, MR update, MR creation, merge, or GitHub sync.
 
-When publication is approved, the repository SHALL use the GitLab-first workflow: create a feature branch, push to GitLab, create or update a GitLab MR, wait for GitLab pipeline success, merge GitLab `main`, and only then sync the exact `main` commit to GitHub. GitHub PRs MUST NOT be created by default.
+When local integration is approved, the repository SHALL use the local-main-first workflow: create a feature branch, run local CI and local MR review, keep the feature worktree clean, integrate the approved result into local `main`, and report any intentional remote lag. GitLab remote publication and GitHub sync SHALL remain later confirmation, backup, and mirror steps unless the user explicitly chooses a remote gate before local integration. GitHub PRs MUST NOT be created by default.
 
 #### Scenario: Local OpenSpec artifacts are drafted
+
 - **WHEN** OpenSpec artifacts are created locally for this lifecycle
-- **THEN** the work SHALL remain uncommitted and unpublished unless the user explicitly requests publication
-- **AND** existing MR !6 SHALL remain untouched unless the user explicitly requests an action on it
+- **THEN** the work SHALL remain uncommitted and unpublished unless the user explicitly requests commit, local integration, or remote publication
+- **AND** existing remote MR candidates SHALL remain untouched unless the user explicitly requests an action on them
 
 #### Scenario: Publication is explicitly approved
+
 - **WHEN** the user explicitly approves publishing repository changes
-- **THEN** the workflow SHALL use GitLab as the authoritative review and merge surface
-- **AND** GitHub SHALL be used only as the post-merge sync target unless the user explicitly overrides that rule
+- **THEN** the workflow SHALL use local `main` as the primary integration surface after local validation and local review pass
+- **AND** GitLab SHALL be used as a remote publication and clean-environment confirmation surface
+- **AND** GitHub SHALL be used only as the mirror/sync target unless the user explicitly overrides that rule

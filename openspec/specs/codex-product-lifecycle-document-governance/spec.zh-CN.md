@@ -54,7 +54,7 @@ Codex 平台仓库可以定义可复用 governance、templates、checkers、role
 
 ### Requirement: Process Groups Map To OpenSpec Delivery Gates
 
-仓库必须把 PMI process group model 映射到 OpenSpec 和 GitLab-first delivery gates。OpenSpec 是仓库治理工作流；GitLab-first delivery gates 是以 GitLab MR 和 pipeline 为权威评审门的交付流程。
+仓库必须把 PMI process group model 映射到 OpenSpec 和 local-main-first delivery gates。OpenSpec 是仓库治理工作流；local-main-first delivery gates 是以本地 main 集成为先，并保留 GitLab/GitHub 远端确认与镜像的交付流程。
 
 #### Scenario: A platform change moves from idea to archive
 

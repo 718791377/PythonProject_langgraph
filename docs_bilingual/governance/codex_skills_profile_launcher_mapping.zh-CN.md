@@ -20,7 +20,7 @@ translation_of: docs_bilingual/governance/codex_skills_profile_launcher_mapping.
 
 - profile 定义：`docs_bilingual/governance/codex_skills_profiles.registry.yaml`
 - launcher payload 安全规则：`docs_bilingual/governance/user_level_launcher_payload_policy.md`
-- 发布流程：本仓库 GitLab-first 流程
+- 发布流程：本仓库 local-main-first 流程
 
 用户级已安装 wrapper 是部署产物，不由本文直接修改。
 

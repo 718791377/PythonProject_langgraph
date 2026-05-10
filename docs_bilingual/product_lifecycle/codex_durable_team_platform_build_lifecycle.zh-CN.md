@@ -201,7 +201,7 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 
 - 技术契约和 checker-backed boundaries。
 - user-level helpers、repo-local source 和 repo-local durable truth 的 source-of-truth 决策。
-- 传递给 OpenSpec changes 和 GitLab-first delivery 的实施约束。
+- 传递给 OpenSpec changes 和 local-main-first delivery 的实施约束。
 
 ## 6. 执行层
 
@@ -211,12 +211,12 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 
 - 产品层的 acceptance criteria 和技术层的技术契约。
 - OpenSpec proposal、design、tasks、stable specs 和 archive 状态。
-- GitLab-first 发布规则和当前 session ownership claims。
+- local-main-first 发布规则和当前 session ownership claims。
 
 ### 工具与技术
 
 - OpenSpec change control：记录 proposal、design、tasks、specs 和 archive evidence。
-- GitLab-first delivery：使用 feature branches、merge requests、pipelines 和 post-merge GitHub sync。
+- local-main-first delivery：使用 feature branches、merge requests、pipelines 和 post-merge GitHub sync。
 - 仓库 checker：验证双语文档、名称解释、session claims、安全规则脚本背书和 OpenSpec health。
 - `openspec/changes/<change-id>/proposal.md` 是 ASCII OpenSpec 提案；它解释为什么需要某个具体平台变更。
 - `openspec/changes/<change-id>/design.md` 是 ASCII OpenSpec 设计；它解释该平台变更如何实现。
@@ -226,7 +226,7 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 
 ### 输出
 
-- 带显式验证证据的小步 GitLab-first MR。
+- 带显式验证证据的小步 local-main-first integration package。
 - 已完成或已归档的 OpenSpec changes，并在需要时同步 stable specs。
 - 平台影响类变更的 release、rollback 和 verification evidence。
 

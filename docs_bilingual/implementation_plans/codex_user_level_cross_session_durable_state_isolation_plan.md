@@ -21,7 +21,7 @@ doc_class: implementation_plan
 
 ## Current Bounded Implementation Queue
 
-This queue preserves the decision made after the Phase 0 durable-state inventory: keep the final production persistent team plan as a north-star draft, and continue the active rollout through small GitLab-first MRs.
+This queue preserves the decision made after the Phase 0 durable-state inventory: keep the final production persistent team plan as a north-star draft, and continue the active rollout through small local-main-first integration packages.
 
 ### Completed slices
 

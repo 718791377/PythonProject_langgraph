@@ -68,7 +68,7 @@ The repository is ready for the next small, explicitly named OpenSpec change aft
 - local task ownership must be checked with `python tools/check_session_ownership_claims.py --root . --precheck-task ... --json` before creating a new write scope
 - stale branch or remote-branch signals must be classified as completed-stale residue before a new write scope proceeds
 - durable team launch is still not allowed for single-slice documentation, checker refresh, or readiness-review work
-- GitLab remains the authoritative MR and merge surface; GitHub remains the post-merge mirror
+- Local `main` is the primary integration surface; GitLab and GitHub remain remote publication and mirror surfaces
 
 ## Safe Next Actions For A New Session
 
