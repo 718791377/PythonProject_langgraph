@@ -4,6 +4,8 @@ This document applies to building the Codex CLI personal production durable-team
 
 The full 0-8 lifecycle is kept as a platform map. Individual MRs, MVP slices, and OpenSpec changes should tailor the depth of that map instead of expanding every layer by default.
 
+Use `business_management_source_synthesis.md` as the source-library overlay for this platform lifecycle. It reinforces that the Codex platform is a one-person operating system: diagnose before building, keep mechanisms small, shape work before execution, measure outcomes, protect architecture and trust boundaries, and turn repeated lessons into checkers or templates.
+
 ## Scope
 
 The platform-build lifecycle covers reusable user-level and repository-level orchestration capabilities:
@@ -137,6 +139,7 @@ Question: What is the long-term target, and how is progress measured?
 ### Tools And Techniques
 
 - North Star metric design focuses on safe cold-start continuation across sessions and projects.
+- OKR and input-metric design track friction reduction, successful recovery, release safety, and rollback confidence.
 - Release-train planning separates MVP, release slices, and long-term persistent-team targets.
 - Backend-family selection keeps `subagent`, `native_omx`, and `langgraph` as distinct control surfaces.
 - `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md` is the ASCII North Star plan; it defines the ten-layer framework, release train, and long-term durable-team target.
@@ -162,6 +165,7 @@ Question: What control surfaces should the platform expose?
 ### Tools And Techniques
 
 - Control-surface design turns strategy into commands, startup behavior, role routing, state inspection, and template flows.
+- PR/FAQ-style narrative checks keep new helpers tied to an operator outcome rather than implementation enthusiasm.
 - Acceptance-criteria design converts operator workflows into checkable behavior.
 - `docs_bilingual/product/codex_cli_durable_team_prd.md` is the future ASCII PRD; it should define user-facing commands, startup behavior, role routing, state inspection, release gates, and template update flows.
 - `docs_bilingual/product/codex_cli_durable_team_prd.zh-CN.md` is the future UTF-8 Chinese companion for the PRD.
@@ -189,6 +193,8 @@ Question: How should the platform be implemented without breaking native Codex?
 
 - Architecture boundary design separates user-level runtime, repo-local source, repo-local durable state, and downstream project state.
 - Compatibility design preserves native Codex behavior before adding wrappers or helper layers.
+- Data and state-contract design treats `.omx/state/`, OpenSpec archives, Git refs, and helper install artifacts as separate consistency domains.
+- Secure-by-design review makes cleanup, launcher, MCP, and credential behavior fail closed and keep useful errors visible.
 - Checker-backed governance turns safety rules into scripts instead of prompt-only reminders.
 - `docs_bilingual/governance/codex_user_level_mcp_scope_policy.md` is the ASCII MCP scope policy; it decides which MCP servers belong in Codex direct config, MCP Router, or neither.
 - `docs_bilingual/governance/codex_user_level_mcp_scope_policy.zh-CN.md` is the UTF-8 Chinese MCP scope policy companion.
@@ -216,6 +222,7 @@ Question: How are platform changes delivered safely?
 ### Tools And Techniques
 
 - OpenSpec change control records proposal, design, tasks, specs, and archive evidence.
+- Shaping records appetite, boundaries, rabbit holes, and circuit-breaker conditions before broad implementation.
 - local-main-first delivery uses feature branches, merge requests, pipelines, and post-merge GitHub sync.
 - Repository checkers validate bilingual documents, name clarity, session claims, safety rule backing, and OpenSpec health.
 - `openspec/changes/<change-id>/proposal.md` is an ASCII OpenSpec proposal; it explains why a specific platform change is needed.
@@ -244,6 +251,7 @@ Question: How does the platform expand across projects without sharing repo-loca
 
 - Template packaging separates new-PC bootstrap files, reusable project files, and project-local generated state.
 - Adoption analysis tracks which capabilities are reused across projects without merging durable state.
+- Positioning and onboarding review ensure commands, profiles, and docs explain when to use raw Codex, wrapped Codex, native subagents, native_omx, or LangGraph.
 - Template update policy defines how initialized projects receive later improvements.
 - `D:\PythonProject_General_2\START_HERE.cmd` is the Windows double-click template launcher; it initializes or checks local projects.
 - `D:\PythonProject_General_2\TEMPLATE_MANIFEST.md` is the template manifest; it explains which files belong to the local project template.
@@ -270,6 +278,7 @@ Question: What platform lessons should become rules, checkers, or templates?
 
 - Retrospective analysis turns repeated failures into governance rules.
 - Checker design turns rules into script controls so new sessions do not depend only on prompt memory.
+- Operating-cadence review decides whether repeated manual work should become a template, checker, wrapper change, or documented non-goal.
 - Archive and memory updates capture durable context after major changes.
 - `docs_bilingual/memory/mainline_memory_summary.md` is the ASCII mainline memory summary; it captures durable context after major changes.
 - `docs_bilingual/memory/mainline_memory_summary.zh-CN.md` is the UTF-8 Chinese memory summary companion.

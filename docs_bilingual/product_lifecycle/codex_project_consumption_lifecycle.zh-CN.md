@@ -26,6 +26,8 @@
 
 下游项目可以轻量，但必须保持 repo-local：它的 OpenSpec artifacts、`.omx/state/` 状态目录、release facts 和 lessons learned 都属于该项目。
 
+下游项目可以参考 `business_management_source_synthesis.zh-CN.md` 做生命周期裁剪。该综合用于选择最小充分的商业、发现、产品、技术、发布和学习工件，但不得把下游 customer evidence、metrics 或 durable truth 移入本平台仓库。
+
 ## 下游采用画布
 
 下游项目可以先使用 `adoption_canvas.md` 作为轻量 adoption canvas，然后再深入采用平台能力。adoption canvas 用来说明项目为什么需要平台帮助，以及如何衡量成功。

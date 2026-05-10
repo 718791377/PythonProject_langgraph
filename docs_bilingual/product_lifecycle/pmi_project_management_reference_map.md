@@ -9,7 +9,7 @@ This document maps PMI project-management references to this repository's lifecy
 - `Process Groups: A Practice Guide` is used as a delivery-gate reference for initiating, planning, executing, monitoring and controlling, and closing.
 - `Agile Practice Guide` is used as an adaptive delivery reference for uncertainty, MVP slices, feedback loops, and hybrid work.
 
-These references are an overlay. They do not replace white papers, BRD, MRD, North Star plans, PRD, technical design, implementation plans, OpenSpec, or repository checkers.
+These references are an overlay. They do not replace white papers, BRD, MRD, North Star plans, PRD, technical design, implementation plans, OpenSpec, or repository checkers. The same boundary applies to the `Business Management/` source library: product and management sources inform repository-specific lifecycle tailoring, but the repository records synthesized operating rules only.
 
 ## PMBOK 8 Primary Overlay
 

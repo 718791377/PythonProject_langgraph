@@ -10,6 +10,8 @@
 
 这些规则是通用治理叠加层。它们不替代白皮书、BRD、MRD、北极星 Plan、PRD、技术设计、implementation plans、OpenSpec 或仓库 checker，而是帮助这些文档按生命周期保持输入、处理和输出一致。
 
+本地源库综合位于 `business_management_source_synthesis.zh-CN.md`。它总结被 Git 忽略的 `Business Management/` 源库逐页和 EPUB spine item 级读取结果，并把来源转译为仓库特定生命周期规则，而不是复制原书正文。
+
 ## 价值交付叠加层
 
 文档栈的价值不在于每个文件都存在。只有当它帮助项目识别价值、对齐干系人、交付可用结果、验证结果是否有效，并把学习反馈到下一轮时，文档栈才有价值。

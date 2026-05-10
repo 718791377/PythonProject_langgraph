@@ -10,6 +10,8 @@ This document uses a process-group style structure. Each layer is written as Inp
 
 These rules are a general governance overlay. They do not replace white papers, BRDs, MRDs, North Star plans, PRDs, technical designs, implementation plans, OpenSpec artifacts, or repository checkers; they help those documents keep consistent inputs, processing, and outputs across the lifecycle.
 
+The local source-library synthesis lives in `business_management_source_synthesis.md`. It summarizes page-level and spine-item-level reading of the ignored `Business Management/` library and translates the sources into repository-specific lifecycle rules rather than source-book excerpts.
+
 ## Value-Delivery Overlay
 
 The document stack is not valuable because every file exists. It is valuable only when it helps the project identify value, align stakeholders, deliver usable outcomes, verify whether the outcomes worked, and feed learning into the next cycle.
@@ -82,6 +84,7 @@ Core question: Why does this thing exist?
 - Trend analysis turns external changes into likely multi-year directions.
 - Problem modeling reduces surface requests into structural tensions, constraints, and opportunities.
 - Narrative reasoning explains why existing solutions are insufficient and why a new paradigm may work.
+- Category and positioning analysis clarifies what mental frame the audience should use before they compare alternatives.
 - `whitepaper.md` is the white paper file; it explains industry trends, structural pain, why existing solutions fail, and the new paradigm.
 
 ### Outputs
@@ -104,6 +107,7 @@ Core question: Is this worth doing?
 
 - Business-model analysis determines how value converts into revenue, saved cost, efficiency gain, or risk reduction.
 - Benefit and cost estimation compares development, operation, model, maintenance, compliance, acquisition, and migration costs.
+- Company-of-one constraint analysis decides where staying small improves focus, quality, and resilience.
 - Market sizing estimates TAM, SAM, and SOM; TAM is total market, SAM is serviceable market, and SOM is reachable market.
 - Unit economics models CAC, LTV, and ROI; CAC is customer acquisition cost, LTV is lifetime value, and ROI is return on investment.
 - `brd.md` is the business requirements document; it explains business goals, revenue logic, cost structure, and return on investment.
@@ -128,8 +132,10 @@ Core question: What do users actually need?
 
 - User segmentation identifies target users, influencers, payers, and operators.
 - Scenario analysis describes when, why, and under what constraints users need the solution.
+- Customer interview analysis uses past behavior, switching triggers, and functional/social/emotional context instead of asking only for opinions.
 - Pain-point analysis extracts real user problems behind feature requests.
 - Competitor analysis compares alternatives, differentiation opportunities, and entry barriers.
+- Adoption-segment analysis separates early enthusiasts, beachhead users, early majority buyers, and late adopters.
 - Feedback loops reduce uncertainty through small-sample validation, prototype feedback, or MVP feedback.
 - `mrd.md` is the market requirements document; it turns market evidence and user needs into product direction.
 
@@ -152,8 +158,10 @@ Core question: How do we win?
 
 ### Tools And Techniques
 
+- Strategy-kernel analysis records diagnosis, guiding policy, and coherent action before roadmap expansion.
 - North Star metric design selects the one metric that best represents user value and long-term progress.
 - Input metric decomposition defines leading indicators that drive the North Star metric.
+- OKR and stage-metric design translates strategy into focus, alignment, tracking, and decision thresholds.
 - Lever identification finds product, technology, process, distribution, or operating mechanisms that most change outcomes.
 - Stage tailoring chooses predictive, adaptive, or hybrid delivery based on risk and uncertainty.
 - `north_star_plan.md` is the North Star plan; it defines the core metric, input metrics, growth or capability levers, and staged path.
@@ -180,6 +188,8 @@ Core question: What should the product be?
 
 - User-flow design splits user goals into entry, action, feedback, and completion paths.
 - Information architecture organizes content, screens, objects, and actions.
+- PR/FAQ and narrative planning describe the customer-backward outcome before implementation details.
+- Opportunity mapping and product kata connect user problems, assumptions, experiments, and success metrics.
 - Prototype validation uses low-fidelity or high-fidelity prototypes to test interaction and layout clarity.
 - Prioritization sorts work by value, risk, cost, and dependencies into P0, P1, and P2 groups.
 - Acceptance-criteria design turns functional needs into testable and reviewable results.
@@ -208,6 +218,9 @@ Core question: How can it be implemented safely?
 ### Tools And Techniques
 
 - Architecture design decomposes modules, interfaces, data flows, state boundaries, and trust boundaries.
+- Dependency and component-boundary design protects long-term changeability and prevents accidental coupling.
+- Data-system design checks reliability, scalability, maintainability, consistency, and derived-data responsibilities.
+- Security-by-design analysis turns domain invariants, input constraints, and failure modes into default-safe behavior.
 - Risk analysis identifies security, privacy, availability, cost, maintainability, and migration risks.
 - Quality gates define testing, review, rollback, observability, and compatibility requirements.
 - Build-or-buy judgment decides whether to build, reuse, buy, integrate, or delay.
@@ -238,6 +251,7 @@ Core question: How do we deliver it?
 ### Tools And Techniques
 
 - Work decomposition splits scope into small slices that are verifiable, reversible, and reviewable.
+- Shaping defines appetite, boundaries, rabbit holes, and the circuit breaker before a team or agent starts broad execution.
 - Plan freeze locks key design, task list, acceptance criteria, and risk boundaries before implementation.
 - Change control uses OpenSpec, code review, CI, testing, and release gates to control scope drift.
 - Monitoring and controlling tracks progress, risk, defects, dependencies, and acceptance status during execution.
@@ -268,6 +282,8 @@ Core question: How does it become larger, more useful, or more adopted?
 
 - Roadmap planning orders later versions by user value, business value, technical dependencies, and risk.
 - Growth experiments test acquisition, activation, retention, revenue, or adoption mechanisms in small batches.
+- Traction-channel testing compares candidate channels against a defined traction goal and critical path.
+- Positioning and whole-product review ensure users understand the category, alternatives, value, onboarding, support, and trust story.
 - Metrics system defines DAU, MAU, retention, conversion, CAC, LTV, quality, or adoption metrics; DAU means daily active users and MAU means monthly active users.
 - Adoption analysis records where the system is used, why it is used, and what friction remains.
 - `roadmap.md` is the product roadmap; it defines future versions and priority order.
@@ -297,6 +313,7 @@ Core question: Did it work, and what should change?
 - Retrospective analysis identifies what happened, why it happened, impact scope, fixes, and prevention actions.
 - Experiment analysis compares variant outcomes and decides whether to continue, stop, or expand.
 - Learning capture turns incidents, delivery, and feedback into reusable rules, templates, checklist items, or follow-up tasks.
+- Operating-system refinement turns repeated work into SOPs, templates, metrics, ownership rules, or automation only when they reduce future friction.
 - Closing gates confirm that deliverables, documentation, release state, rollback evidence, and lessons learned are archived.
 - `post_mortem.md` is the incident or project retrospective; it records what happened, why it happened, impact, fix, and prevention.
 - `ab_test_report.md` is the A/B test report; it compares variants and explains which one performed better.

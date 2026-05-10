@@ -4,6 +4,8 @@
 
 完整 0-8 生命周期会保留为平台建设地图。单个 MR、MVP 切片和 OpenSpec change 应按风险裁剪该地图的深度，而不是默认展开每一层。
 
+本平台生命周期使用 `business_management_source_synthesis.zh-CN.md` 作为源库叠加层。它强化 Codex 平台是一套一人 operating system：先诊断再构建、让机制保持小、执行前先塑形、衡量结果、保护架构和信任边界，并把重复经验转化为 checker 或模板。
+
 ## Scope
 
 平台建设生命周期覆盖可复用的用户级和仓库级编排能力：

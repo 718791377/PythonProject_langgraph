@@ -26,6 +26,8 @@ Use these depth levels in downstream projects:
 
 A downstream project may be lightweight, but it must stay repo-local: its OpenSpec artifacts, `.omx/state/` state directory, release facts, and lessons learned belong to that project.
 
+Downstream projects may consult `business_management_source_synthesis.md` for lifecycle tailoring. The synthesis should help choose the minimum sufficient business, discovery, product, technical, release, and learning artifacts, but it must not move downstream customer evidence, metrics, or durable truth into this platform repository.
+
 ## Downstream Adoption Canvas
 
 A downstream project may use `adoption_canvas.md` as a lightweight adoption canvas before it deeply adopts platform capabilities. The adoption canvas explains why the project wants platform help and how success will be measured.
@@ -62,6 +64,7 @@ Question: Why does this downstream project exist, and why should it use the plat
 ### Tools And Techniques
 
 - Project narrative framing explains the project purpose without turning it into platform implementation work.
+- Customer-backward narrative checks explain which local user or operator problem the project solves.
 - Cold-start summary design helps a new Codex session recover local project context.
 - `README.md` is the project overview; it explains what the project is and how to start.
 - `docs_bilingual/project_startup_summary.md` is the ASCII cold-start summary; it helps a new Codex session understand the project.
@@ -86,6 +89,7 @@ Question: Is this downstream project worth doing or continuing?
 ### Tools And Techniques
 
 - Business value analysis estimates revenue, saved cost, productivity gain, or risk reduction.
+- Company-of-one constraint analysis asks whether a smaller, more focused project would create more value than broader scope.
 - Scope-cost tradeoff analysis decides whether platform capability should be used lightly or deeply.
 - `docs_bilingual/business/brd.md` is the project BRD; it explains the project's business value, cost, user value, and expected return.
 - `docs_bilingual/business/brd.zh-CN.md` is the UTF-8 Chinese companion for the project BRD.
@@ -110,6 +114,7 @@ Question: Who needs this project, and in which scenarios?
 
 - User segmentation separates target users, operators, maintainers, payers, and stakeholders.
 - Scenario analysis maps user tasks, constraints, and pain points.
+- Interview and discovery analysis uses customer/support evidence before large implementation commitments.
 - Feedback loops use prototypes, browser checks, or small MVPs to reduce uncertainty.
 - `docs_bilingual/market/mrd.md` is the project MRD; it explains target users, usage scenes, pain points, and alternatives.
 - `docs_bilingual/market/mrd.zh-CN.md` is the UTF-8 Chinese companion for the project MRD.
@@ -134,6 +139,7 @@ Question: How does the downstream project define success?
 ### Tools And Techniques
 
 - North Star metric design defines the main success measure for the project.
+- Strategy-kernel analysis records diagnosis, guiding policy, and coherent action for the local project.
 - Input metric decomposition identifies leading indicators that drive the project North Star metric.
 - Delivery-depth tailoring decides whether the project needs full 0-8, MVP/release depth, or a small local change path.
 - `docs_bilingual/north_star_plan.md` is the project North Star plan; it defines the main success metric, input metrics, and levers.
@@ -158,6 +164,7 @@ Question: What should the downstream project build or change?
 ### Tools And Techniques
 
 - PRD writing converts strategy and user evidence into scope, workflows, priorities, and acceptance criteria.
+- PR/FAQ, opportunity mapping, or MVP framing may be used when the product problem is still uncertain.
 - User journey mapping describes the end-to-end experience.
 - Prototype and browser validation check whether the intended behavior is understandable.
 - `docs_bilingual/prd.md` is the project PRD; it defines user stories, features, priorities, flows, and acceptance criteria.
@@ -186,6 +193,7 @@ Question: How can the downstream project be implemented safely without confusing
 - Technical design separates project business runtime from Codex platform tooling.
 - Dependency classification decides whether a package belongs to the project business runtime or only to Codex tooling.
 - Architecture and API design define modules, data, interfaces, trust boundaries, and compatibility.
+- Data and security review defines state ownership, invariants, failure modes, and rollback boundaries.
 - `docs_bilingual/technical/trd.md` is the project technical design; it explains technical choices, architecture, and tradeoffs.
 - `docs_bilingual/technical/trd.zh-CN.md` is the UTF-8 Chinese companion for the technical design.
 - `docs_bilingual/technical/api_spec.md` is the project API specification; when APIs exist, it defines interface inputs, outputs, errors, and permissions.
@@ -214,6 +222,7 @@ Question: How does the downstream project deliver changes safely?
 ### Tools And Techniques
 
 - Local OpenSpec change control records why a project change is needed, how it is designed, and which tasks complete it.
+- Shaping defines appetite, scope boundaries, and stop conditions before broad work starts.
 - Native Codex subagents handle bounded expert work within the current Codex session.
 - Optional durable lanes are selected only when project conditions meet thresholds.
 - `openspec/config.yaml` is the project OpenSpec configuration; it binds the OpenSpec workflow to this repository.
@@ -244,6 +253,7 @@ Question: How is the downstream project released, adopted, and improved?
 ### Tools And Techniques
 
 - Release planning defines rollout, release gates, communication, and rollback readiness.
+- Positioning and channel review define who the first users are, how they find the project, and what whole-product support they need.
 - Metrics tracking measures project success and quality.
 - Changelog and adoption reporting record user-visible or operator-visible changes.
 - `docs_bilingual/release_plan.md` is the release plan; it defines rollout, release gates, and communication.
@@ -273,6 +283,7 @@ Question: What did the downstream project learn, and what should be fed back ups
 ### Tools And Techniques
 
 - Retrospective analysis turns project experience into reusable local lessons.
+- SOP and template review decides which repeated local work should become a project-local process.
 - Upstream feedback separates platform improvement ideas from project-local facts.
 - Archive discipline keeps project OpenSpec, durable state, and release state local to the project.
 - `docs_bilingual/lessons_learned.md` is the project lessons-learned document; it records locally reusable experience.

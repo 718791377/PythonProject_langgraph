@@ -9,7 +9,7 @@
 - `Process Groups: A Practice Guide` 用作 delivery-gate 参考，覆盖 initiating、planning、executing、monitoring and controlling 和 closing。
 - `Agile Practice Guide` 用作 adaptive delivery 参考，覆盖 uncertainty、MVP slices、feedback loops 和 hybrid work。
 
-这些参考资料是叠加层。它们不替代白皮书、BRD、MRD、北极星 Plan、PRD、技术设计、implementation plans、OpenSpec 或仓库 checker。
+这些参考资料是叠加层。它们不替代白皮书、BRD、MRD、北极星 Plan、PRD、技术设计、implementation plans、OpenSpec 或仓库 checker。同一边界也适用于 `Business Management/` 源库：产品和管理来源用于启发生命周期裁剪，但仓库只记录综合后的 operating rules。
 
 ## PMBOK 第8版主要叠加层
 
