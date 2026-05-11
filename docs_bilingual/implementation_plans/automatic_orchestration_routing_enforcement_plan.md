@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.10
+version: 0.11
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -132,7 +132,36 @@ Use ASCII `analystxN` in the canonical English file; localized documents may ren
 | Security, permissions, secrets, payments, untrusted input | security-reviewer | candidate | only after trust boundaries are mapped | leader blocks release until reviewed |
 | Key-path expert timeout | respawn narrower expert or alternate role | selected when LangGraph-ready checkpointed handoff is useful | only if preflight passes | main session takes over and states evidence source |
 
-## 5. Durable-team threshold map
+## 5. Hard routing directives and smallest-sufficient role selection
+
+Explicit routing directives are hard inputs to the activation check, not soft preferences.
+
+Directive rules:
+
+- user requests for `omx`, `LangGraph`, `resume`, `continue`, `parallel`, `experts`, `durable_team`, or `persistent team` must trigger an activation check;
+- explicit `omx` or `LangGraph` requests must be treated as hard routing directives for the current task flow;
+- when the capability chain, preflight, and task threshold are satisfied, the session must actually adopt the selected lane (`selected` or `running`) instead of staying in explanation-only mode;
+- when the requested lane is not adopted, the trace must state the concrete blocker or unmet threshold in `why`, such as `blocked:backend_not_ready`, `blocked:platform_subagent_invocation_constraint`, or `threshold_not_met:no_frozen_plan`;
+- `resume` and `continue` trigger retrofit and state re-read; they do not by themselves force a durable team launch unless thresholds are met.
+
+Smallest-sufficient expert role selection:
+
+| Role | Select when | Default boundary |
+| --- | --- | --- |
+| `analyst` | outcome, non-goals, or acceptance target is unclear; two or more major ambiguities remain; bounded multi-face research needs first-round fan-out | analyst-only first round for bounded multi-face research |
+| `researcher` | external docs, dependency behavior, version-sensitive facts, or official-source verification are needed | separate from implementation when the task starts open-ended |
+| `architect` | two or more modules, trust boundaries, shared interfaces, migrations, or non-local design decisions are involved | after analyst fan-in for bounded multi-face research |
+| `planner` | two or more execution slices, serial hotspots, rollout ordering, or dependency chains exist | after architecture/context is clear |
+| `debugger` | blocking failure, regression, reproducible defect, or stabilization-heavy repair exists | stabilization lane; do not use as a generic executor |
+| `verifier` | final acceptance, behavior-changing work, multi-file integration, or multi-worker integration needs validation | always after multi-worker integration |
+| `test-engineer` | critical-path behavior changed, tests are missing, flaky, or broad regression risk exists | test strategy and evidence, not product ownership |
+| `security-reviewer` | auth, secrets, permissions, untrusted input, code execution, external trust boundaries, or payments are touched | blocks release until reviewed |
+| `writer` | user-facing behavior, setup, migration, operator workflow, or document-finalization work is needed | after analyst fan-in for bounded multi-face research |
+| `bug-finder` / `bug-rebutter` / `bug-judge` | contested, noisy, or high-volume bug triage remains after normal verification | burst, read-only, leader-side; persist survivors instead of workers |
+
+Use the smallest sufficient expert set. Do not add roles because they are available; add them only when the trigger is present and the output will materially advance the current phase.
+
+## 6. Durable-team threshold map
 
 Durable team launch is threshold-gated. The presence of `backend_default=langgraph` and `backend_ready=true` means the durable backend is available; it does not mean a persistent team must be running.
 
@@ -157,7 +186,7 @@ First-turn reporting rule:
 
 Bounded multi-face research remains analyst-fanout-first: first round uses homogeneous `analystxN`; do not include `architect`, `planner`, or `writer` in the default first round. Escalate to those roles only after analyst fan-in shows an architecture, execution-ordering, or document-finalization layer.
 
-## 6. Expert lifecycle, bounded wait, and provider backpressure
+## 7. Expert lifecycle, bounded wait, and provider backpressure
 
 Expert and subagent use must be leader-owned from launch through fan-in and cleanup.
 
@@ -183,7 +212,7 @@ Provider pacing and backpressure rules:
 - prefer local-first phases, deterministic local checks, and bounded fan-out when many agent steps may hit the provider;
 - if pacing materially affects execution, report it as `backpressure:upstream_pacing` or an equivalent named condition, not as missing user intent.
 
-## 7. Fan-out bounds, write ownership, and backend-family boundary
+## 8. Fan-out bounds, write ownership, and backend-family boundary
 
 Native expert use is explicit leader-side spawning and leader-owned fan-in. Do not imply that raw Codex automatically spawns specialist roles by default.
 
@@ -205,7 +234,7 @@ Backend-family boundary:
 
 Open-ended work keeps research and implementation separate: use analyst/research roles for discovery and only move to executor/team execution after the plan, ownership, and acceptance evidence are frozen.
 
-## 8. Handoff, adversarial review, and adjacent-runtime boundaries
+## 9. Handoff, adversarial review, and adjacent-runtime boundaries
 
 Open-ended research and contested bug review need explicit handoff boundaries so that temporary expert lanes do not become unmanaged persistent workers.
 
@@ -232,7 +261,7 @@ Durable-state and adjacent-runtime boundaries:
 - treat LangGraph, AutoGen, and CrewAI as general programmable orchestration runtimes, not as native Codex-subagent equivalents;
 - a LangGraph graph may coordinate phases, checkpoints, approvals, and survivor queues, but native Codex experts still require explicit leader-side spawning and fan-in.
 
-## 9. Backend, workflow, and team semantics
+## 10. Backend, workflow, and team semantics
 
 These terms must not be collapsed:
 
@@ -243,7 +272,7 @@ These terms must not be collapsed:
 
 When LangGraph is ready, it is the default backend. A small task may still have `durable_workflow=not_needed` and `persistent_team=not_needed`. That means the task does not need those execution surfaces; it does not mean LangGraph is off.
 
-## 10. Current local inspection result
+## 11. Current local inspection result
 
 Read-only inspection on 2026-05-11 showed:
 
@@ -270,7 +299,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 Interpretation: the user-level LangGraph backend is available and should be treated as the default backend. A missing repo-local active selector is a state-refresh or reporting gap; it must not be interpreted as LangGraph backend unavailability.
 
-## 11. Active selector handling
+## 12. Active selector handling
 
 When `.omx/state/selectors/active.json` is missing but the user-level capability state says `durable_orchestration_backend=langgraph` and `langgraph_ready=true`, the session must not silently downgrade to `native_omx` or `none`.
 
@@ -281,7 +310,7 @@ Required behavior:
 3. refresh or create the selector through the approved helper when implementation work requires a tracked durable thread;
 4. if no helper exists yet, record the missing helper as an implementation gap, not as backend unavailability.
 
-## 12. Low-risk iteration and local integration boundary
+## 13. Low-risk iteration and local integration boundary
 
 For repeated low-risk refinements inside an already confirmed scope, the main session may proceed without asking for per-iteration approval when all of the following are true:
 
@@ -305,7 +334,7 @@ Explicit user approval is still required for:
 
 This local-merge permission does not weaken the publication workflow. It only defines the local execution boundary for simple, already-authorized iterations. Remote publication remains a separate decision.
 
-## 13. Higher-authority and runtime-surface blockers
+## 14. Higher-authority and runtime-surface blockers
 
 Automatic orchestration is the default policy, but live execution must still obey higher-authority instructions, the current tool contract, and actual runtime-surface availability. If a task would normally select an expert, durable workflow, or persistent team but the surface cannot be invoked, the trace must report a named blocker rather than rephrasing the decision as user preference.
 
@@ -330,7 +359,7 @@ The canonical activation trace therefore permits expert blockers:
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ```
 
-## 14. Implementation phases
+## 15. Implementation phases
 
 ### Phase 0 - Record and protect the plan
 
@@ -354,6 +383,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Add checker coverage for completed-agent closure, bounded wait windows, liveness/stall handling, and upstream pacing labels.
 - Add checker coverage for fan-out bounds, write ownership isolation, leader-side spawning language, and one-backend-family durable tasks.
 - Add checker coverage for frozen research handoff briefs, adversarial-review survivor queues, and adjacent-runtime terminology boundaries.
+- Add checker coverage for hard routing directives, actual adoption versus explanation-only mode, and smallest-sufficient role selection.
 - Add or update selector refresh/status helper behavior.
 
 ### Phase 3 - Runtime integration
@@ -362,7 +392,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Ensure existing sessions re-run activation checks on session reload, Codex restart, phase change, resume, continue, `.omx` state detection, and expert timeout.
 - Ensure LangGraph-ready sessions use LangGraph as the default durable backend.
 
-## 15. Proposed implementation scope
+## 16. Proposed implementation scope
 
 After this plan is confirmed, implement it through OpenSpec change `enforce-automatic-orchestration-routing`:
 
@@ -385,10 +415,13 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
    - one durable task mixing `native_omx` and LangGraph state without an explicit handoff;
    - implementation starting from open-ended research without a frozen implementation brief;
    - bug triad roles kept alive as persistent workers instead of persisting survivors to debugger-lane queue;
-   - treating AutoGen, CrewAI, or LangGraph as native Codex-subagent equivalents.
+   - treating AutoGen, CrewAI, or LangGraph as native Codex-subagent equivalents;
+   - explicit `omx` or `LangGraph` directives being handled as optional preferences;
+   - thresholds being met while the session stays in explanation-only mode;
+   - roles being added without a smallest-sufficient trigger.
 6. Evaluate and fix the refresh/reporting rule for missing repo-local `.omx/state/selectors/active.json`.
 
-## 16. Evidence and test mapping
+## 17. Evidence and test mapping
 
 | Rule | Minimum evidence | Candidate test/check |
 | --- | --- | --- |
@@ -411,8 +444,11 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 | Research handoff is frozen | implementation starts from a frozen brief with scope, non-goals, acceptance evidence, ownership, and risks | frozen-brief checker |
 | Bug triad does not persist | bug-finder/rebutter/judge results are absorbed and survivors are queued for debugger lane | adversarial survivor queue checker |
 | Adjacent runtime terminology is correct | OpenHands is used; AutoGen/CrewAI/LangGraph are not described as native Codex-subagent equivalents | terminology checker |
+| Hard routing directives are honored | explicit `omx`/`LangGraph` directives lead to selected/running lane or named blocker | directive adoption checker |
+| Explanation-only mode is blocked when thresholds are met | trace shows actual adoption when chain, preflight, and threshold pass | adoption trace checker |
+| Role set is smallest sufficient | selected roles map to trigger table and no default extra roles are present | role-minimality checker |
 
-## 17. Risks and rollback
+## 18. Risks and rollback
 
 - Risk: automatically launching too many workers for small tasks. Mitigation: keep backend-on separate from workflow/team launch thresholds.
 - Risk: hiding real canary leakage by ignoring too much. Mitigation: only root `.gitignore` patterns are honored by the canary guard, and startup summary sources remain explicitly checked.
@@ -424,9 +460,11 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Risk: research conclusions drift during implementation. Mitigation: require a frozen implementation brief before execution.
 - Risk: adversarial review lanes become unmanaged workers. Mitigation: close burst roles after fan-in and persist only survivor queues for debugger-lane follow-up.
 - Risk: adjacent orchestration runtimes are confused with native Codex subagents. Mitigation: enforce terminology and role-boundary checks.
+- Risk: explicit routing directives are treated as optional preferences. Mitigation: require selected/running state or a named blocker.
+- Risk: too many experts are launched by default. Mitigation: enforce smallest-sufficient role selection.
 - Rollback: revert checker/runtime enforcement while keeping this plan as a record if implementation causes excessive false positives.
 
-## 18. Non-goals
+## 19. Non-goals
 
 - Do not force every small task into multi-worker execution.
 - Do not install the official LangGraph package into the repository `.venv`; the repository rule remains to use the user-level shared LangGraph venv.
@@ -434,7 +472,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Do not pretend pane-style persistent team was launched when tmux is unavailable.
 - Do not use this plan as proof that runtime enforcement is already complete.
 
-## 19. Acceptance criteria
+## 20. Acceptance criteria
 
 - New sessions, session reloads, Codex restarts, and resumed sessions report capability chain and backend default.
 - When LangGraph is ready, default backend is reported as `langgraph`.
@@ -454,8 +492,11 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Open-ended research hands off through a frozen implementation brief before execution starts.
 - Bug triad roles are burst, read-only, leader-side roles; unresolved survivors are queued for debugger-lane follow-up.
 - Adjacent runtime terminology stays correct: OpenHands is preferred, and AutoGen/CrewAI/LangGraph are not described as native Codex-subagent equivalents.
+- Explicit `omx` or `LangGraph` directives result in actual lane adoption or a named blocker/unmet threshold.
+- When thresholds are met, the session does not remain in explanation-only mode.
+- Expert roles are selected from the smallest-sufficient trigger table.
 
-## 20. Scope and authority boundary
+## 21. Scope and authority boundary
 
 This plan is an implementation-plan record. It is not the final runtime contract until the follow-up OpenSpec change updates policy surfaces, helper scripts, and checks.
 
@@ -468,7 +509,7 @@ Authority order:
 
 If this plan conflicts with a current higher-authority surface, the implementation change must update that surface rather than relying on this plan alone.
 
-## 21. State vocabulary
+## 22. State vocabulary
 
 Use these terms consistently:
 
@@ -482,7 +523,7 @@ Use these terms consistently:
 
 `ready` does not mean `running`, and `not_needed` does not mean disabled.
 
-## 22. Existing-session retrofit rule
+## 23. Existing-session retrofit rule
 
 Existing sessions must adopt this policy when any retrofit trigger occurs:
 
