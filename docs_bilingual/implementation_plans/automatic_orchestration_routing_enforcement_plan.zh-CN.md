@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.3
+version: 0.4
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -180,7 +180,31 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 3. 当实现工作需要 tracked durable thread 时，通过已批准 helper 刷新或创建 selector；
 4. 如果 helper 尚不存在，将其记录为实现缺口，而不是解释成 backend 不可用。
 
-## 8. 实施阶段
+## 8. 低风险迭代与本地合入边界
+
+对于已经确认范围内的重复低风险完善，主会话在同时满足以下条件时，可以不再逐次请求用户授权：
+
+- 变更仅限于文档、治理文本、本地检查元数据或等价的非 runtime surface；
+- 受影响文件仍在已经同意的主题边界内；
+- activation check 能够说明 `experts=none`、`durable_workflow=not_needed`、`persistent_team=not_needed`；
+- 目标提交后的 local gate 与 local MR review 均通过；
+- feature worktree 干净，且本地 `main` 不落后于 `gitlab/main`。
+
+在这种情况下，会话可以在同一个低风险循环中提交变更，并 fast-forward 或合并到本地 `main`。这样可以避免用户对同一类简单迭代反复授权，包括反复检查和完善本计划文件的请求。
+
+以下动作仍然必须获得用户明确授权：
+
+1. 推送到 GitLab 或 GitHub；
+2. 创建、为发布更新、或合并 GitLab MR；
+3. 从 GitLab 或本地 `main` 同步 GitHub；
+4. hard reset、force push、大范围删除、或清理约定工作区以外内容等破坏性操作；
+5. 范围扩展到 runtime 代码、启动器行为、CI wiring、安全边界或大范围多文件实现；
+6. local gate 或 local MR review 失败后仍要集成；
+7. 存在所有权冲突风险的写入型并行执行。
+
+这个本地合入许可不会削弱发布流程。它只定义已经授权的简单迭代在本地执行时的边界；远端发布仍然是单独决策。
+
+## 9. 实施阶段
 
 ### Phase 0 - 记录并保护计划
 
@@ -208,7 +232,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 - 确保已有会话在 phase change、resume、continue、`.omx` state detection、expert timeout 时重新做 activation check。
 - 确保 LangGraph-ready 会话使用 LangGraph 作为默认 durable backend。
 
-## 9. 拟实施范围
+## 10. 拟实施范围
 
 本计划确认后，以 OpenSpec change `enforce-automatic-orchestration-routing` 落地：
 
@@ -223,7 +247,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
    - routing trace 不区分 backend 常开与 persistent team 启动阈值。
 6. 评估并修复 repo-local `.omx/state/selectors/active.json` 缺失时的刷新/报告规则。
 
-## 10. 证据与测试映射
+## 11. 证据与测试映射
 
 | 规则 | 最小证据 | 候选测试/检查 |
 | --- | --- | --- |
@@ -234,14 +258,14 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 | ignored local logs 不破坏 canary guard | 含 canary marker 的 ignored transcript 通过 guard | context-retention canary 测试 |
 | active selector 缺失是 refresh gap | status 报告 selector missing 但不 downgrade backend | selector status helper 测试 |
 
-## 11. 风险与回滚
+## 12. 风险与回滚
 
 - 风险：小任务自动启动过多 workers。缓解：严格区分 backend-on 与 workflow/team launch thresholds。
 - 风险：忽略范围过大导致真正 canary 泄漏被隐藏。缓解：canary guard 只尊重 root `.gitignore` 模式，并继续显式检查 startup summary 来源。
 - 风险：final report 过度声称 expert evidence。缓解：强制 evidence source 标签。
 - 回滚：如果 enforcement 造成过多误报，可回滚 checker/runtime enforcement，同时保留本计划作为记录。
 
-## 12. 非目标
+## 13. 非目标
 
 - 不把每个小任务都强制变成 multi-worker execution。
 - 不把 LangGraph official package 安装进仓库 `.venv`；仓库规则仍优先使用 user-level shared LangGraph venv。
@@ -249,7 +273,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 - 不在 tmux 不可用时假装启动 pane-style persistent team。
 - 不把本计划当成 runtime enforcement 已完成的证明。
 
-## 13. 验收标准
+## 14. 验收标准
 
 - 新会话和已有会话 resume 都能看到 capability chain 与 backend default。
 - LangGraph ready 时默认 backend 报告为 `langgraph`。
@@ -258,7 +282,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 - checker 或测试能覆盖上述至少三个关键回归。
 - repo-local active selector 缺失会被报告为 selector refresh gap，而不是 LangGraph backend 不可用。
 
-## 14. 适用范围与权威边界
+## 15. 适用范围与权威边界
 
 本计划是 implementation-plan 记录。只有在后续 OpenSpec change 更新 policy surfaces、helper scripts 和 checks 后，它才会变成完整 runtime contract。
 
@@ -271,7 +295,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 如果本计划与当前更高权威 surface 冲突，实施变更必须更新对应 surface，而不是只依赖本计划。
 
-## 15. 状态词定义
+## 16. 状态词定义
 
 以下术语必须一致使用：
 
@@ -285,7 +309,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 `ready` 不等于 `running`，`not_needed` 也不等于 disabled。
 
-## 16. 已有会话 retrofit 规则
+## 17. 已有会话 retrofit 规则
 
 已有会话在以下任一触发条件出现时，必须采用本策略：
 

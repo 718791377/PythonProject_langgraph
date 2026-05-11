@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.3
+version: 0.4
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -180,7 +180,31 @@ Required behavior:
 3. refresh or create the selector through the approved helper when implementation work requires a tracked durable thread;
 4. if no helper exists yet, record the missing helper as an implementation gap, not as backend unavailability.
 
-## 8. Implementation phases
+## 8. Low-risk iteration and local integration boundary
+
+For repeated low-risk refinements inside an already confirmed scope, the main session may proceed without asking for per-iteration approval when all of the following are true:
+
+- the change is limited to documentation, governance text, local check metadata, or equivalent non-runtime surfaces;
+- the affected files are already inside the agreed topic boundary;
+- `experts=none`, `durable_workflow=not_needed`, and `persistent_team=not_needed` are justified by the activation check;
+- local gate and local MR review pass after the intended commit;
+- the feature worktree is clean and local `main` is not behind `gitlab/main`.
+
+In that case, the session may commit the refinement and fast-forward or merge it into local `main` as part of the same low-risk loop. This avoids forcing the user to approve the same simple iteration repeatedly, including repeated review/update requests against this plan.
+
+Explicit user approval is still required for:
+
+1. pushing to GitLab or GitHub;
+2. creating, updating for publication, or merging a GitLab MR;
+3. syncing GitHub from GitLab or local `main`;
+4. destructive actions such as hard reset, force push, broad deletion, or cleanup outside the agreed workspace;
+5. scope expansion into runtime code, launcher behavior, CI wiring, security boundaries, or broad multi-file implementation;
+6. integrating when local gate or local MR review failed;
+7. write-heavy parallel execution with potential ownership conflicts.
+
+This local-merge permission does not weaken the publication workflow. It only defines the local execution boundary for simple, already-authorized iterations. Remote publication remains a separate decision.
+
+## 9. Implementation phases
 
 ### Phase 0 - Record and protect the plan
 
@@ -208,7 +232,7 @@ Required behavior:
 - Ensure existing sessions re-run activation checks on phase change, resume, continue, `.omx` state detection, and expert timeout.
 - Ensure LangGraph-ready sessions use LangGraph as the default durable backend.
 
-## 9. Proposed implementation scope
+## 10. Proposed implementation scope
 
 After this plan is confirmed, implement it through OpenSpec change `enforce-automatic-orchestration-routing`:
 
@@ -223,7 +247,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
    - routing trace failing to distinguish backend-on from persistent-team launch thresholds.
 6. Evaluate and fix the refresh/reporting rule for missing repo-local `.omx/state/selectors/active.json`.
 
-## 10. Evidence and test mapping
+## 11. Evidence and test mapping
 
 | Rule | Minimum evidence | Candidate test/check |
 | --- | --- | --- |
@@ -234,14 +258,14 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 | Ignored local logs do not break canary guard | ignored transcript with canary markers passes guard | context-retention canary test |
 | Missing active selector is a refresh gap | status reports selector missing without backend downgrade | selector status helper test |
 
-## 11. Risks and rollback
+## 12. Risks and rollback
 
 - Risk: automatically launching too many workers for small tasks. Mitigation: keep backend-on separate from workflow/team launch thresholds.
 - Risk: hiding real canary leakage by ignoring too much. Mitigation: only root `.gitignore` patterns are honored by the canary guard, and startup summary sources remain explicitly checked.
 - Risk: final reports overclaim expert evidence. Mitigation: require explicit evidence source labels.
 - Rollback: revert checker/runtime enforcement while keeping this plan as a record if implementation causes excessive false positives.
 
-## 12. Non-goals
+## 13. Non-goals
 
 - Do not force every small task into multi-worker execution.
 - Do not install the official LangGraph package into the repository `.venv`; the repository rule remains to use the user-level shared LangGraph venv.
@@ -249,7 +273,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Do not pretend pane-style persistent team was launched when tmux is unavailable.
 - Do not use this plan as proof that runtime enforcement is already complete.
 
-## 13. Acceptance criteria
+## 14. Acceptance criteria
 
 - New sessions and resumed sessions report capability chain and backend default.
 - When LangGraph is ready, default backend is reported as `langgraph`.
@@ -258,7 +282,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Checker or tests cover at least three of the key regressions above.
 - Missing repo-local active selector is reported as a selector refresh gap, not LangGraph backend unavailability.
 
-## 14. Scope and authority boundary
+## 15. Scope and authority boundary
 
 This plan is an implementation-plan record. It is not the final runtime contract until the follow-up OpenSpec change updates policy surfaces, helper scripts, and checks.
 
@@ -271,7 +295,7 @@ Authority order:
 
 If this plan conflicts with a current higher-authority surface, the implementation change must update that surface rather than relying on this plan alone.
 
-## 15. State vocabulary
+## 16. State vocabulary
 
 Use these terms consistently:
 
@@ -285,7 +309,7 @@ Use these terms consistently:
 
 `ready` does not mean `running`, and `not_needed` does not mean disabled.
 
-## 16. Existing-session retrofit rule
+## 17. Existing-session retrofit rule
 
 Existing sessions must adopt this policy when any retrofit trigger occurs:
 
