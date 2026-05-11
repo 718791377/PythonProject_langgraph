@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import os
 from datetime import datetime, timezone
@@ -72,8 +73,46 @@ def is_archived_openspec_path(relative_path: Path) -> bool:
     return False
 
 
+def load_root_gitignore_patterns(root: Path) -> list[str]:
+    gitignore_path = root / ".gitignore"
+    text = read_text(gitignore_path)
+    if text is None:
+        return []
+    patterns: list[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or line.startswith("!"):
+            continue
+        patterns.append(line.replace("\\", "/"))
+    return patterns
+
+
+def matches_root_gitignore(relative_path: Path, patterns: list[str]) -> bool:
+    path_text = relative_path.as_posix()
+    path_parts = relative_path.parts
+    for pattern in patterns:
+        directory_only = pattern.endswith("/")
+        normalized = pattern.strip("/") if pattern.startswith("/") else pattern.rstrip("/")
+        if not normalized:
+            continue
+        if directory_only:
+            if path_text == normalized or path_text.startswith(normalized + "/"):
+                return True
+            if not pattern.startswith("/") and normalized in path_parts:
+                return True
+            continue
+        if pattern.startswith("/"):
+            if fnmatch.fnmatchcase(path_text, normalized):
+                return True
+            continue
+        if fnmatch.fnmatchcase(path_text, normalized) or fnmatch.fnmatchcase(relative_path.name, normalized):
+            return True
+    return False
+
+
 def iter_candidate_files(root: Path) -> list[Path]:
     files: list[Path] = []
+    root_gitignore_patterns = load_root_gitignore_patterns(root)
     for current_root, dirnames, filenames in os.walk(root):
         dirnames[:] = [
             dirname
@@ -90,6 +129,8 @@ def iter_candidate_files(root: Path) -> list[Path]:
             except ValueError:
                 continue
             if is_archived_openspec_path(relative_path):
+                continue
+            if matches_root_gitignore(relative_path, root_gitignore_patterns):
                 continue
             if path.suffix.lower() not in TEXT_SUFFIXES:
                 continue

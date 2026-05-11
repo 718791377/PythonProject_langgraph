@@ -113,6 +113,20 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         result = self.run_check(root)
         self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
 
+    def test_ignores_root_gitignored_local_log_files(self) -> None:
+        root = self.make_root("canary-gitignored-log")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+        self.write_file(root, ".gitignore", "log202605111306.md\n")
+        self.write_file(
+            root,
+            "log202605111306.md",
+            f"Local ignored transcript mentions `{START_CANARY}` and `{END_CANARY}`.\n",
+        )
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
