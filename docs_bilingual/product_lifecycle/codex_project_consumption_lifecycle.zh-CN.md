@@ -28,6 +28,23 @@
 
 下游项目可以参考 `business_management_source_synthesis.zh-CN.md` 做生命周期裁剪。该综合用于选择最小充分的商业、发现、产品、技术、发布和学习工件，但不得把下游 customer evidence、metrics 或 durable truth 移入本平台仓库。
 
+## 一人公司经营系统清单规则
+
+对于真实的一人公司下游业务工作，使用以下固定目标：
+
+- 12 层主干：认知叙事、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营、复盘。
+- 5 个虚拟部门：Strategy Office；Product & Market Office；Revenue & Growth Office；Operations Office；Governance Office。
+- 30 个责任域：Founder/CEO、Chief of Staff、商业模式、财务、风险、市场情报、客户研究、定位、产品战略、offer、PRD、UX/服务设计、分析、增长、销售、定价、内容、品牌/信任、合作、客户成功、支持、交付、社区、知识、自动化、安全/隐私、法务/合规、数据治理、IP/资产、Agent 治理。
+- 20 个横切模块：财务、运营、工程管理、组织设计、法务合规、安全、知识管理、风险管理、个人产能、AI Agent 治理、数据治理、品牌信任、工具链治理、SLA 治理、资产/IP 治理、用户研究治理、渠道治理、退出治理、供应商治理、税务/行政治理。
+- 60 个核心文档：覆盖公司战略、商业/财务、市场/用户、产品/服务、指标/数据、增长/销售、运营/客户成功、技术/自动化、治理/风险、Agent/知识。
+- 15 个受治理 AI Agent：Strategy、Research、Product、UX/Copy、Engineering、QA、Data、Growth、Sales、Customer Success、Support、Finance、Legal/Risk、Knowledge、Chief of Staff。
+- 15 本推荐书籍：Scaling People、Working Backwards、High Output Management、INSPIRED、Product Operations、Measure What Matters、Lean Analytics、The Lean Startup、Obviously Awesome、Traction、Deploy Empathy、Shape Up、Team Topologies、Company of One、The E-Myth Revisited。
+
+最小启动集刻意只有 12 个文档：`company-thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.yaml`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。
+
+不要一开始就为下游一人公司创建全部 60 个文档。先用 12 个最小文档启动；只有当风险、客户证据、收入、合规、交付或运营要求更深覆盖时，再逐步扩展。
+
+
 ## 下游采用画布
 
 下游项目可以先使用 `adoption_canvas.md` 作为轻量 adoption canvas，然后再深入采用平台能力。adoption canvas 用来说明项目为什么需要平台帮助，以及如何衡量成功。

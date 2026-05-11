@@ -66,6 +66,25 @@ PMBOK8 value-delivery overlay for this draft:
 
 This means each future release slice must describe not only the task list, but also the value increment, feedback point, validation path, rollback boundary, and operator consent boundary.
 
+### 1.2 12-Layer Architecture Inventory Alignment
+
+The older ten-layer runtime map in this plan is a historical decomposition for execution lanes. It is not the full document-governance model. The full product/business lifecycle model is now the 12-layer trunk: cognitive narrative, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, and retrospective.
+
+The Codex CLI personal production durable-team target uses this inventory: 12 trunk layers, 4 virtual departments, 24 responsibility domains, 18 cross-cutting modules, 48 core documents, 12 governed AI agents, and 12 recommended books. This is the platform target for reusable Codex orchestration mechanisms.
+
+The downstream personal production one-person-company target uses this larger inventory: 12 trunk layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. This is a downstream business operating-system model and must not be treated as platform repo-local truth.
+
+### 1.3 Process-Group Execution Contract
+
+Execution-facing plan sections use a PMI process-group style:
+
+- Inputs: source documents, current state, constraints, risks, approvals, and upstream layer outputs.
+- Tools and Techniques: OpenSpec, local-main-first gates, worktree isolation, native subagents, `native_omx`, LangGraph, checkers, reviews, tests, release and rollback planning.
+- Outputs: approved plans, changed files, validation evidence, release evidence, archive evidence, lessons learned, and next-cycle inputs.
+
+This contract applies before a durable team or graph lane is launched. A durable lane still requires a frozen plan plus at least two mostly independent execution slices.
+
+
 ## 2. Problem Statement And Design Drivers
 
 Under this baseline, the real problem is no longer "can LangGraph be used?", but:

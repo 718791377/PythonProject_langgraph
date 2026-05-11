@@ -95,3 +95,38 @@ Codex 平台仓库可以定义可复用 governance、templates、checkers、role
 - **THEN** 维护者可以在 `docs_bilingual/whitepapers/` 找到 canonical white paper；`docs_bilingual/whitepapers/` 是白皮书目录，用来保存认知叙事文档
 - **AND** 维护者可以在 `docs_bilingual/market_requirements/` 找到 MRD；`docs_bilingual/market_requirements/` 是市场需求目录，用来保存 market-requirements documents
 - **AND** concrete workload-to-profile mappings（具体工作负载到 profile 的映射）位于 MRD appendix，而不是单独的 implementation-plan reference
+
+### Requirement: 生命周期治理定义两个 12 层目标架构
+
+仓库必须基于本地 Business Management 与 PMP 源库定义两个明确的 12 层架构目标：Codex CLI 个人开发者生产级持久化团队目标，以及个人级生产级一人公司经营系统目标。
+
+#### Scenario: 维护者比较两个目标
+
+- **GIVEN** 维护者阅读产品生命周期文档
+- **WHEN** 维护者比较 Codex 平台目标与一人公司目标
+- **THEN** Codex 平台目标列出 12 层主干、4 个虚拟部门、24 个责任域、18 个横切模块、48 个核心文档、12 个受治理 AI Agent 和 12 本推荐书籍
+- **AND** 一人公司目标列出 12 层主干、5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍和 12 个最小启动文档
+
+### Requirement: 面向执行的生命周期指导使用过程组式写法
+
+任何影响执行的生命周期指导，都必须用过程组式写法表达，并为每个层级或交付门区分输入、工具与技术、输出。
+
+#### Scenario: 维护者规划一个生命周期驱动的变更
+
+- **GIVEN** 维护者使用生命周期文档进行执行规划
+- **WHEN** 维护者检查某个生命周期层或交付门
+- **THEN** 指导说明启动工作的输入
+- **AND** 指导说明用于分析、决策、执行、监控或收尾的工具与技术
+- **AND** 指导说明会成为交付物、证据或其他层级输入的输出
+
+### Requirement: 本地参考覆盖只能摘要，不能复制源文本
+
+仓库必须按文件、格式、页数、spine item 数与读取方式摘要本地 Business Management 与 PMP 参考覆盖，不得提交抽取源文本，也不得复现长篇版权内容。
+
+#### Scenario: 维护者审计来源支撑的生命周期更新
+
+- **GIVEN** 维护者阅读来源综合文档
+- **WHEN** 维护者检查参考库如何被使用
+- **THEN** 文档说明 PDF 按页读取、EPUB 按 spine item 读取、Markdown 按全文读取
+- **AND** 文档只总结仓库特定治理映射
+- **AND** 被忽略的抽取工件仍位于 Git 跟踪文件之外

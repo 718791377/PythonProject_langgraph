@@ -11,6 +11,38 @@ This document maps PMI project-management references to this repository's lifecy
 
 These references are an overlay. They do not replace white papers, BRD, MRD, North Star plans, PRD, technical design, implementation plans, OpenSpec, or repository checkers. The same boundary applies to the `Business Management/` source library: product and management sources inform repository-specific lifecycle tailoring, but the repository records synthesized operating rules only.
 
+## Local PMP Source Coverage
+
+The local `PMP/` directory was read from local files only. No internet lookup is required for this refresh. The tracked repository records the following coverage summary and synthesized governance mapping only.
+
+| Local reference | Format | Coverage | Primary governance use |
+| --- | --- | ---: | --- |
+| `PMBOK Guide 8th Edition .pdf` | PDF | 401 pages | Primary value, performance-domain, AI-era, tailoring, and governance overlay |
+| `PMBOK 7th Edition` Chinese PDF | PDF | 369 pages | Principles, value delivery, systems thinking, tailoring, and performance domains |
+| `PMBOK 6th Edition` Chinese PDF | PDF | 812 pages plus low-text-page review | Inputs / Tools and Techniques / Outputs vocabulary and knowledge-area supplement |
+| `Process groups _ a practice guide.pdf` | PDF | 390 pages | Initiating, Planning, Executing, Monitoring and Controlling, Closing delivery gate model |
+| Chinese `ProcessGroupsPracticeGuide` PDF | PDF | 409 pages plus low-text-page review | Chinese companion for process-group delivery gates |
+| `The Agile practice guide.pdf` | PDF | 188 pages | Adaptive, MVP, feedback-loop, and hybrid delivery guidance |
+| Chinese Agile Practice Guide PDF | PDF | 184 pages plus low-text-page review | Chinese companion for adaptive and hybrid delivery |
+| `The Standard for Program Management - Fifth Edition.epub` | EPUB | 16 spine items | Program-level alignment across multiple related initiatives |
+| `The Standard for Portfolio Management-Fourth Edition.pdf` | PDF | 140 pages | Portfolio selection, prioritization, capacity, and value-balance overlay |
+| Chinese portfolio-management standard PDF | PDF | 142 pages plus low-text-page review | Chinese companion for portfolio governance |
+| `Project Management Offices a Practice Guide.epub` | EPUB | 42 spine items | PMO function, governance service, enablement, and oversight pattern |
+| `PMP_MD/*.md` | Markdown | 12 local articles | PMBOK 8 and AI-era interpretation notes for local synthesis |
+
+## Process-Group Operating Overlay For Every Layer
+
+When a lifecycle layer affects execution, write it in the same process-group discipline:
+
+| Process group | Lifecycle use | Expected evidence |
+| --- | --- | --- |
+| Initiating | Decide whether the layer or change should exist | Purpose, value hypothesis, authorization, stakeholders, scope boundary, and initial risks |
+| Planning | Decide how the layer or change will be performed | Inputs, tailored governance depth, acceptance criteria, risk response, validation, release, rollback, owner map, and communications |
+| Executing | Produce the layer deliverable or delivery increment | Drafts, code, tests, templates, docs, agent work, review comments, and controlled implementation artifacts |
+| Monitoring and Controlling | Inspect and control the work while it is in flight | Metric checks, quality checks, issue log, change-control decisions, local gate evidence, CI evidence, and acceptance deltas |
+| Closing | Finish, archive, learn, or deliberately stop | Final artifact, OpenSpec archive or project closeout, stable-spec/doc sync, lessons learned, and next-cycle inputs |
+
+
 ## PMBOK 8 Primary Overlay
 
 Use PMBOK 8th Edition as the primary project-management overlay for this repository. The primary overlay means the reference used to frame value delivery, project-canvas alignment, performance domains, AI-era project governance, hybrid delivery, and tailoring. It does not replace the repository's own document stack.

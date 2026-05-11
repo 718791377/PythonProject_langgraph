@@ -28,6 +28,23 @@ A downstream project may be lightweight, but it must stay repo-local: its OpenSp
 
 Downstream projects may consult `business_management_source_synthesis.md` for lifecycle tailoring. The synthesis should help choose the minimum sufficient business, discovery, product, technical, release, and learning artifacts, but it must not move downstream customer evidence, metrics, or durable truth into this platform repository.
 
+## One-Person-Company Operating-System Inventory Rule
+
+For downstream business work that is a real one-person-company operating system, use this fixed target:
+
+- 12 trunk layers: cognitive narrative, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, retrospective.
+- 5 virtual departments: Strategy Office; Product & Market Office; Revenue & Growth Office; Operations Office; Governance Office.
+- 30 responsibility domains: founder/CEO, chief of staff, business model, finance, risk, market intelligence, customer research, positioning, product strategy, offer, PRD, UX/service design, analytics, growth, sales, pricing, content, brand/trust, partnerships, customer success, support, delivery, community, knowledge, automation, security/privacy, legal/compliance, data governance, IP/assets, agent governance.
+- 20 cross-cutting modules: finance, operations, engineering management, organization design, legal/compliance, security, knowledge management, risk management, personal productivity, AI agent governance, data governance, brand trust, toolchain governance, SLA governance, asset/IP governance, user-research governance, channel governance, exit governance, vendor governance, tax/administration governance.
+- 60 core documents across company strategy, business/finance, market/user, product/service, metrics/data, growth/sales, operations/customer success, technology/automation, governance/risk, and agent/knowledge.
+- 15 governed AI agents: Strategy, Research, Product, UX/Copy, Engineering, QA, Data, Growth, Sales, Customer Success, Support, Finance, Legal/Risk, Knowledge, and Chief of Staff.
+- 15 recommended books: Scaling People; Working Backwards; High Output Management; INSPIRED; Product Operations; Measure What Matters; Lean Analytics; The Lean Startup; Obviously Awesome; Traction; Deploy Empathy; Shape Up; Team Topologies; Company of One; The E-Myth Revisited.
+
+The minimum startup set is deliberately only 12 documents: `company-thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.yaml`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`.
+
+Do not start a downstream one-person company by creating all 60 documents. Start with the 12 minimal documents, then expand only when risk, customer evidence, revenue, compliance, delivery, or operations requires deeper coverage.
+
+
 ## Downstream Adoption Canvas
 
 A downstream project may use `adoption_canvas.md` as a lightweight adoption canvas before it deeply adopts platform capabilities. The adoption canvas explains why the project wants platform help and how success will be measured.

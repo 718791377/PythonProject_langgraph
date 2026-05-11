@@ -12,6 +12,28 @@ These rules are a general governance overlay. They do not replace white papers, 
 
 The local source-library synthesis lives in `business_management_source_synthesis.md`. It summarizes page-level and spine-item-level reading of the ignored `Business Management/` library and translates the sources into repository-specific lifecycle rules rather than source-book excerpts.
 
+## Two Target Architecture Modes
+
+This lifecycle now has two explicit operating modes.
+
+| Mode | Inventory rule | Use it when |
+| --- | --- | --- |
+| Codex CLI durable-team platform | 12 layers + 4 virtual departments + 24 responsibility domains + 18 cross-cutting modules + 48 core documents + 12 governed AI agents + 12 recommended books | The work changes Codex orchestration, native subagent routing, `native_omx`, LangGraph, worktree safety, OpenSpec governance, local-main-first publication, templates, skill/profile governance, or reusable developer tooling |
+| One-person-company operating system | 12 layers + 5 virtual departments + 30 responsibility domains + 20 cross-cutting modules + 60 core documents + 15 governed AI agents + 15 recommended books + 12 minimal startup documents | The work belongs to a downstream business, product, offer, customer, revenue, operations, finance, risk, or learning system |
+
+The two modes share the same 12-layer trunk, but they do not share authority. The Codex platform may provide governance mechanisms and templates. A downstream one-person company owns its own customer evidence, revenue facts, financial evidence, product commitments, legal risk, release state, durable state, and lessons learned.
+
+## Execution-Facing Process-Group Rule
+
+For any layer that drives work, use the PMI process-group style as the execution grammar:
+
+- Inputs: source evidence, upstream layer outputs, constraints, risks, approvals, and current state.
+- Tools and Techniques: analysis methods, templates, checkers, reviews, experiments, agent roles, gates, and control techniques.
+- Outputs: approved documents, decisions, evidence, release artifacts, archive artifacts, or inputs to another layer.
+
+This rule applies to every lifecycle layer, every delivery gate, and every release slice. It prevents a layer from becoming a loose essay with no start condition, no control technique, and no deliverable output.
+
+
 ## Value-Delivery Overlay
 
 The document stack is not valuable because every file exists. It is valuable only when it helps the project identify value, align stakeholders, deliver usable outcomes, verify whether the outcomes worked, and feed learning into the next cycle.

@@ -55,6 +55,21 @@ Use these depth levels when planning platform changes:
 
 The platform should not use full lifecycle documentation as a bureaucratic default. It should use the full map to prevent missing business value, user impact, measurable outcomes, native Codex compatibility, ownership boundaries, release safety, operations supportability, rollback, or long-term governance feedback.
 
+## Codex Target Inventory Rule
+
+The Codex CLI platform target is fixed as:
+
+- 12 trunk layers: cognitive narrative, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, retrospective.
+- 4 virtual departments: Strategy & Product Office; Engineering & Platform Office; Agent Governance Office; Growth & Knowledge Office.
+- 24 responsibility domains: CEO/strategy, chief of staff, business model, finance, market intelligence, customer research, product strategy, PM/PRD, CLI/UX, metrics, architecture, engineering management, code quality, DevOps, platform/toolchain, security, privacy/data protection, data governance, agent governance, agent evaluation, docs, support, brand/trust, knowledge/review.
+- 18 cross-cutting modules: finance, operations, engineering management, organization design, legal/compliance, security, knowledge management, risk management, personal productivity, AI agent governance, data governance, brand trust, toolchain governance, SLA governance, asset/IP governance, user-research governance, channel governance, exit governance.
+- 48 core documents across strategy/business, market/product, metrics/data, engineering/platform, security/risk, agent governance, growth/operations, and retrospective/knowledge.
+- 12 governed AI agents: Research, PM, Architect, Code, Review, Test, Security, DevOps, Data, Docs, Ops, and Risk.
+- 12 recommended books: Scaling People; Working Backwards; High Output Management; INSPIRED; Product Operations; Team Topologies; Accelerate; Shape Up; Lean Analytics; Designing Data-Intensive Applications; Secure by Design; The Staff Engineer's Path.
+
+Every non-trivial platform release slice must state which layer, department, responsibility domain, cross-cutting module, core document, and governed-agent boundary it changes. When a slice changes execution behavior, it must also state Inputs, Tools and Techniques, and Outputs for the affected gate.
+
+
 ## 0. Cognitive Narrative Layer
 
 Question: Why should a personal developer have a production-grade durable team?

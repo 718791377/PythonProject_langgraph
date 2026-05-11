@@ -32,6 +32,23 @@ This is an AI-era value-delivery system, not only a toolchain. The platform exis
 - OpenSpec remains the repository governance and change-control surface.
 - Repo-local durable state remains inside each project.
 
+## 12-Layer Target Architecture
+
+The white-paper target is not a generic multi-agent story. It is a governed Codex CLI platform architecture:
+
+- 12 trunk layers keep the platform connected from narrative to retrospective learning.
+- 4 virtual departments keep platform strategy/product, engineering/platform, agent governance, and growth/knowledge responsibilities separate.
+- 24 responsibility domains, 18 cross-cutting modules, and 48 core documents define the minimum serious operating surface for a production-grade personal developer platform.
+- 12 governed AI agents expand execution and review capacity, but the human operator and current main Codex leader session keep final authority.
+- 12 recommended books provide the local management, product, engineering, organization, security, and learning reference base.
+
+This inventory is intentionally smaller than the downstream one-person-company operating-system inventory. The Codex platform should build developer orchestration mechanisms; it should not absorb downstream customer, revenue, finance, legal, or operations truth.
+
+## PMI Delivery Discipline
+
+The platform narrative becomes actionable only when delivery follows a process-group discipline. Every release slice should identify Inputs, Tools and Techniques, and Outputs, then move through initiating, planning, executing, monitoring and controlling, and closing. This keeps AI-assisted delivery inspectable and prevents hidden automation from becoming approval authority.
+
+
 ## Key Assumptions
 
 - Recovery, inspection, and rollback are more important than hidden automation.

@@ -37,6 +37,27 @@ It replaces the former standalone `docs_bilingual/implementation_plans/codex_bus
 - Classify new workloads into abstract capability profiles before implementation starts.
 - Preserve browser automation and document-processing capabilities for projects that need them.
 
+## Target Architecture Inventory Requirements
+
+Market requirements must now be traced to the Codex platform inventory:
+
+- 4 virtual departments translate market pain into platform ownership: Strategy & Product, Engineering & Platform, Agent Governance, and Growth & Knowledge.
+- 24 responsibility domains prevent market needs from becoming vague requests; each need must map to a domain such as CLI/UX, metrics, security, data governance, support, trust, or knowledge/review.
+- 18 cross-cutting modules identify risks that cross product, engineering, operations, and governance boundaries.
+- 48 core documents are the maximum serious platform document surface, not the default for every change.
+- 12 governed agents are capability profiles with explicit read/write/review boundaries, not autonomous business decision makers.
+
+For downstream one-person-company work, the MRD belongs in the downstream repository. That MRD owns local customer evidence, market segmentation, pricing signals, channel evidence, finance assumptions, product commitments, and support expectations.
+
+## Process-Group Evidence For Market Requirements
+
+Execution-facing MRD items must state:
+
+- Inputs: customer evidence, market signals, support feedback, local constraints, and source lifecycle layer inputs.
+- Tools and Techniques: segmentation, positioning, interview synthesis, competitor analysis, adoption-friction analysis, prioritization, and risk review.
+- Outputs: target segment, priority problem, value proposition, acceptance evidence, and decision thresholds for continue, stop, pivot, or research more.
+
+
 ## Prioritization Signals
 
 - P0 protects native Codex compatibility, session isolation, repo-local durable truth, OpenSpec guards, and rollback.

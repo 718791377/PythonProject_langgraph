@@ -55,6 +55,21 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 
 平台不应把完整生命周期文档当作官僚化默认流程。平台应使用完整地图来防止遗漏商业价值、用户影响、可衡量结果、原生 Codex 兼容性、ownership 边界、发布安全、运营可支持性、回滚和长期治理反馈。
 
+## Codex 目标清单规则
+
+Codex CLI 平台目标固定为：
+
+- 12 层主干：认知叙事、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营、复盘。
+- 4 个虚拟部门：Strategy & Product Office；Engineering & Platform Office；Agent Governance Office；Growth & Knowledge Office。
+- 24 个责任域：CEO/战略、Chief of Staff、商业模式、财务、市场情报、客户研究、产品战略、PM/PRD、CLI/UX、指标、架构、工程管理、代码质量、DevOps、平台/工具链、安全、隐私/数据保护、数据治理、Agent 治理、Agent 评估、文档、支持、品牌/信任、知识/复盘。
+- 18 个横切模块：财务、运营、工程管理、组织设计、法务合规、安全、知识管理、风险管理、个人产能、AI Agent 治理、数据治理、品牌信任、工具链治理、SLA 治理、资产/IP 治理、用户研究治理、渠道治理、退出治理。
+- 48 个核心文档：覆盖战略/商业、市场/产品、指标/数据、工程/平台、安全/风险、Agent 治理、增长/运营、复盘/知识。
+- 12 个受治理 AI Agent：Research、PM、Architect、Code、Review、Test、Security、DevOps、Data、Docs、Ops、Risk。
+- 12 本推荐书籍：Scaling People、Working Backwards、High Output Management、INSPIRED、Product Operations、Team Topologies、Accelerate、Shape Up、Lean Analytics、Designing Data-Intensive Applications、Secure by Design、The Staff Engineer's Path。
+
+任何非平凡的平台发布切片，都必须说明它触及哪一层、哪个虚拟部门、哪个责任域、哪个横切模块、哪个核心文档以及哪个受治理 Agent 边界。若切片改变执行行为，还必须为受影响 gate 写明输入、工具与技术、输出。
+
+
 ## 0. 认知叙事层
 
 问题：为什么个人开发者需要生产级持久化团队？

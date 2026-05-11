@@ -11,6 +11,38 @@
 
 这些参考资料是叠加层。它们不替代白皮书、BRD、MRD、北极星 Plan、PRD、技术设计、implementation plans、OpenSpec 或仓库 checker。同一边界也适用于 `Business Management/` 源库：产品和管理来源用于启发生命周期裁剪，但仓库只记录综合后的 operating rules。
 
+## 本地 PMP 来源覆盖
+
+本次刷新只读取本地 `PMP/` 文件；不需要联网检索。仓库只记录以下覆盖摘要与治理映射综合。
+
+| 本地参考资料 | 格式 | 覆盖量 | 主要治理用途 |
+| --- | --- | ---: | --- |
+| `PMBOK Guide 8th Edition .pdf` | PDF | 401 页 | 主要价值、绩效域、AI 时代、裁剪与治理叠加层 |
+| PMBOK 第 7 版中文 PDF | PDF | 369 页 | 原则、价值交付、系统思维、裁剪与绩效域 |
+| PMBOK 第 6 版中文 PDF | PDF | 812 页并复核低文本页 | 输入 / 工具与技术 / 输出词汇与知识领域补充 |
+| `Process groups _ a practice guide.pdf` | PDF | 390 页 | 启动、规划、执行、监控与控制、收尾交付门模型 |
+| 中文 `ProcessGroupsPracticeGuide` PDF | PDF | 409 页并复核低文本页 | 过程组交付门中文伴随来源 |
+| `The Agile practice guide.pdf` | PDF | 188 页 | 自适应、MVP、反馈循环与混合交付指导 |
+| 中文敏捷实践指南 PDF | PDF | 184 页并复核低文本页 | 自适应与混合交付中文伴随来源 |
+| `The Standard for Program Management - Fifth Edition.epub` | EPUB | 16 个 spine item | 多个相关倡议的项目集级对齐 |
+| `The Standard for Portfolio Management-Fourth Edition.pdf` | PDF | 140 页 | 组合选择、优先级、容量与价值平衡叠加层 |
+| 中文项目组合管理标准 PDF | PDF | 142 页并复核低文本页 | 项目组合治理中文伴随来源 |
+| `Project Management Offices a Practice Guide.epub` | EPUB | 42 个 spine item | PMO 职能、治理服务、赋能与监督模式 |
+| `PMP_MD/*.md` | Markdown | 12 篇本地文章 | PMBOK 8 与 AI 时代项目管理解读笔记 |
+
+## 面向每一层的过程组式运行叠加层
+
+当某个生命周期层会影响执行时，应采用相同的过程组纪律编写：
+
+| 过程组 | 生命周期用途 | 期望证据 |
+| --- | --- | --- |
+| 启动 | 判断该层或该变更是否应该存在 | 目的、价值假设、授权、干系人、范围边界与初始风险 |
+| 规划 | 判断如何完成该层或该变更 | 输入、裁剪后的治理深度、验收标准、风险应对、验证、发布、回滚、owner 映射与沟通 |
+| 执行 | 产出该层交付物或交付增量 | 草稿、代码、测试、模板、文档、Agent 工作、评审意见与受控实现工件 |
+| 监控与控制 | 在工作进行中检查并控制 | 指标检查、质量检查、问题日志、变更控制决策、本地 gate 证据、CI 证据与验收差异 |
+| 收尾 | 完成、归档、学习或有意识停止 | 最终工件、OpenSpec 归档或项目收尾、稳定规格/文档同步、经验教训与下一轮输入 |
+
+
 ## PMBOK 第8版主要叠加层
 
 本仓库将 PMBOK 第8版作为主要项目管理叠加层。主要叠加层是用于 framing value delivery、project-canvas alignment、performance domains、AI-era project governance、hybrid delivery 和 tailoring 的参考。它不替代仓库自己的文档栈。

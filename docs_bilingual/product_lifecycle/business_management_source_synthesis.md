@@ -45,6 +45,41 @@ The source directory was read with page-level or spine-item-level extraction bef
 | `Architecture note 1: Codex CLI personal durable team.md` | Markdown | 167 lines | Codex durable-team architecture source note |
 | `Architecture note 2: one-person company operating system.md` | Markdown | 448 lines | One-person-company operating-system source note |
 
+## Integrated Source Coverage And Reading Method
+
+This refresh used the ignored local extraction evidence under `.local/reference_extraction/` only as a private reading aid. The tracked repository records coverage and governance synthesis; it does not commit raw book text, extracted pages, OCR output, or long copyrighted excerpts.
+
+| Intake class | Coverage recorded | Reading method | Repository use |
+| --- | ---: | --- | --- |
+| Business Management and PMP PDFs | 31 PDFs / 9,288 pages | Per-page text extraction, page metrics, and low-text-page review | Source-backed lifecycle, architecture, delivery, risk, governance, and operations synthesis |
+| Business Management and PMP EPUBs | 9 EPUBs / 363 spine items | OPF spine order, one text pass per spine item | Source-backed operating-system, team-topology, secure-design, product-ops, program, and PMO synthesis |
+| Architecture and PMP Markdown notes | 14 Markdown files / 93,632 characters | Full UTF-8 text read plus heading inventory | Exact architecture inventories, PMI/AI-era commentary, and repository-specific document rules |
+| Low-text PDF pages | 1,066 pages reviewed; 0 failed; 462 still low-text after review | OCR / image-heavy-page review where extractable text was low | Covers, blank pages, diagrams, scans, or figure-heavy pages were accounted for without copying source content |
+
+The two architecture Markdown notes are the controlling local source for the requested inventory counts. They define the Codex CLI durable-team target and the one-person-company operating-system target. Book sources then inform the operating principles behind those inventories.
+
+## Target Architecture Inventory Synthesis
+
+| Target | Fixed inventory | Interpretation for this repository |
+| --- | --- | --- |
+| Codex CLI personal production durable team | 12 trunk layers, 4 virtual departments, 24 responsibility domains, 18 cross-cutting modules, 48 core documents, 12 governed AI agents, 12 recommended books | Platform-building model for `D:/PythonProject_langgraph`; it governs Codex orchestration, user-level wrappers, worktree safety, OpenSpec, local-main-first publication, and reusable project templates |
+| Personal production one-person company | 12 trunk layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, 12 minimal startup documents | Downstream business operating-system model; it governs company strategy, customer evidence, product, revenue, operations, finance, risk, and learning without moving repo-local truth into the Codex platform repository |
+
+Codex virtual departments are `Strategy & Product Office`, `Engineering & Platform Office`, `Agent Governance Office`, and `Growth & Knowledge Office`. Their responsibility domains cover strategy, business model, finance, market intelligence, customer research, product strategy, PRD ownership, CLI/UX, metrics, architecture, engineering management, code quality, DevOps, toolchain, security, privacy, data governance, agent governance, agent evaluation, docs, support, trust, knowledge, and review.
+
+One-person-company virtual departments are `Strategy Office`, `Product & Market Office`, `Revenue & Growth Office`, `Operations Office`, and `Governance Office`. Their 30 domains cover founder strategy, operating cadence, business model, finance, risk, market intelligence, customer research, positioning, product strategy, offer, PRD, service design, analytics, growth, sales, pricing, content, brand/trust, partnerships, customer success, support, delivery, community, knowledge, automation, security/privacy, legal/compliance, data governance, IP/assets, and agent governance.
+
+## PMI Delivery Overlay
+
+The lifecycle uses PMI process groups as execution discipline, not as a replacement for product thinking:
+
+- Initiating confirms value, scope, stakeholders, authorization, and whether a full lifecycle artifact is justified.
+- Planning freezes requirements, tailoring depth, risk, validation, release, rollback, communications, and owner boundaries.
+- Executing produces the selected increment through human, native subagent, durable-team, or graph-backed work only when the launch threshold is met.
+- Monitoring and Controlling inspects metrics, risk, quality, issue state, change requests, budget, provider pacing, CI evidence, and acceptance evidence.
+- Closing archives the OpenSpec or project evidence, updates stable docs/specs, captures lessons learned, and returns reusable learning into the next lifecycle pass.
+
+
 ## Cross-Source Operating Principles
 
 1. **Start from diagnosis, not activity.** Strategy work must name the real constraint, target customer, adoption barrier, and guiding policy before it becomes a roadmap or task list.
