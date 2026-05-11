@@ -1,12 +1,16 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
 version: 0.16
-status: draft
+status: active
 owner: codex-orchestration
 date: 2026-05-11
 ---
 
 # 自动协同路由强制化实施计划
+
+## Active 状态说明
+
+本文档是 active implementation plan。active 表示它是当前已采用的后续 enforcement 实施计划；不表示本文档中的每一项 runtime enforcement 都已经完成。
 
 ## 1. 背景
 

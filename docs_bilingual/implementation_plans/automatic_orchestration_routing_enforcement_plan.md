@@ -1,12 +1,16 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
 version: 0.16
-status: draft
+status: active
 owner: codex-orchestration
 date: 2026-05-11
 ---
 
 # Automatic Orchestration Routing Enforcement Plan
+
+## Active status note
+
+This document is an active implementation plan. Active means it is the current adopted plan for follow-up enforcement work; it does not mean every runtime-enforcement item in this plan is already complete.
 
 ## 1. Background
 
