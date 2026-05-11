@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.13
+version: 0.14
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -205,7 +205,27 @@ Leader-session 规则：
 
 Trace 要求：当会话在 startup 或首次 activation 中没有采用 durable workflow 或 persistent team 时，trace 必须说明哪个阈值未满足，而不是暗示 startup 完全不能使用 orchestration。
 
-## 8. Durable-team 阈值映射
+## 8. Base layer、wrapper layer 与 effective lane 选择
+
+Native Codex 仍是 base layer。oh-my-codex、native OMX、skills、profile helpers 与 LangGraph 是围绕 Codex 增加 workflow 与 durable-state 行为的层；它们不是 Codex replacement。
+
+Layer 与 switch 规则：
+
+- user-level capability switches 必须按链式状态读取：当前预期状态为 `subagent_routing=auto`、`oh_my_codex=on`、`langgraph=on`；
+- `langgraph=on` 要求 `oh_my_codex=on` 且 routing 可用；
+- `oh_my_codex=off` 会禁用 LangGraph availability；
+- `subagent_routing=off` 会禁用更高 orchestration layers；
+- 当 `durable_orchestration_backend=langgraph` 且 `langgraph_ready=true` 时，LangGraph 是默认 durable backend state。
+
+Effective lane 规则：
+
+- default backend state 不会消除 task-level lane choice；
+- worker-centric durable execution、worktree isolation、mailbox flow 与 direct worker lifecycle control 优先使用 `native_omx`；
+- graph-shaped multi-phase execution、checkpoint-driven recovery、interrupt/resume approval gates、frozen briefs 与 persisted survivor queues 优先使用 LangGraph；
+- effective lane choice 可以随 task flow 改变，但一个 durable task 同一时间仍只能使用一个 backend family；
+- backend-family switching 仍必须显式化，并记录为 close/handoff，而不是隐藏成静默 lane change。
+
+## 9. Durable-team 阈值映射
 
 Durable team 启动必须受阈值约束。`backend_default=langgraph` 与 `backend_ready=true` 表示 durable backend 可用；它不表示 persistent team 必须已经运行。
 
@@ -230,7 +250,7 @@ Durable team 启动必须受阈值约束。`backend_default=langgraph` 与 `back
 
 Bounded multi-face research 仍然是 analyst-fanout-first：第一轮使用同质 `analystxN`；默认第一轮不得混入 `architect`、`planner` 或 `writer`。只有在 analyst fan-in 显示 architecture、execution-ordering 或 document-finalization layer 后，才升级到这些角色。
 
-## 9. Expert 生命周期、bounded wait 与 provider backpressure
+## 10. Expert 生命周期、bounded wait 与 provider backpressure
 
 Expert 与 subagent 的使用必须由 leader 从启动、fan-in 到清理全程负责。
 
@@ -256,7 +276,7 @@ Provider pacing 与 backpressure 规则：
 - 当多个 agent step 可能命中 provider 时，优先 local-first phases、deterministic local checks 与 bounded fan-out；
 - 如果 pacing 对执行产生实质影响，报告为 `backpressure:upstream_pacing` 或等价具名条件，而不是解释成用户意图缺失。
 
-## 10. Fan-out 上限、写入所有权与 backend-family 边界
+## 11. Fan-out 上限、写入所有权与 backend-family 边界
 
 Native expert 的使用是 leader 显式启动并由 leader 负责 fan-in。不得暗示 raw Codex 默认会自动生成 specialist roles。
 
@@ -278,7 +298,7 @@ Backend-family 边界：
 
 开放式任务必须保持 research 与 implementation 分离：先用 analyst/research roles 做 discovery，只有在 plan、ownership 与 acceptance evidence 冻结后，才进入 executor/team execution。
 
-## 11. Handoff、对抗复核与相邻 runtime 边界
+## 12. Handoff、对抗复核与相邻 runtime 边界
 
 开放式 research 与有争议的 bug review 必须有明确 handoff 边界，避免临时 expert lane 变成 unmanaged persistent workers。
 
@@ -305,7 +325,7 @@ Durable-state 与相邻 runtime 边界：
 - LangGraph、AutoGen、CrewAI 是通用 programmable orchestration runtimes，不等同于 native Codex-subagent equivalents；
 - LangGraph graph 可以协调 phases、checkpoints、approvals 与 survivor queues，但 native Codex experts 仍必须由 leader 显式 spawn 并负责 fan-in。
 
-## 12. Backend、workflow 与 team 语义边界
+## 13. Backend、workflow 与 team 语义边界
 
 以下概念不得混用：
 
@@ -316,7 +336,7 @@ Durable-state 与相邻 runtime 边界：
 
 当 LangGraph ready 时，它就是默认 backend。小任务仍然可以是 `durable_workflow=not_needed` 且 `persistent_team=not_needed`。这表示任务不需要这些执行面，不表示 LangGraph 关闭。
 
-## 13. 当前本地检查结论
+## 14. 当前本地检查结论
 
 2026-05-11 本地只读检查显示：
 
@@ -343,7 +363,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 解释：user-level LangGraph backend 已可用且应视为默认常开；repo-local active selector 缺失是需要治理/辅助脚本修复的状态刷新问题，不能被解释成 LangGraph backend 不可用。
 
-## 14. Active selector 处理规则
+## 15. Active selector 处理规则
 
 当 `.omx/state/selectors/active.json` 缺失，但 user-level capability state 显示 `durable_orchestration_backend=langgraph` 且 `langgraph_ready=true` 时，会话不得静默降级到 `native_omx` 或 `none`。
 
@@ -354,7 +374,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 3. 当实现工作需要 tracked durable thread 时，通过已批准 helper 刷新或创建 selector；
 4. 如果 helper 尚不存在，将其记录为实现缺口，而不是解释成 backend 不可用。
 
-## 15. 低风险迭代与本地合入边界
+## 16. 低风险迭代与本地合入边界
 
 对于已经确认范围内的重复低风险完善，主会话在同时满足以下条件时，可以不再逐次请求用户授权：
 
@@ -378,7 +398,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 这个本地合入许可不会削弱发布流程。它只定义已经授权的简单迭代在本地执行时的边界；远端发布仍然是单独决策。
 
-## 16. 更高权威与 runtime surface 阻塞边界
+## 17. 更高权威与 runtime surface 阻塞边界
 
 自动协同是默认策略，但 live execution 仍必须服从更高优先级指令、当前工具契约以及实际 runtime surface 可用性。如果某个任务按策略本应选择 expert、durable workflow 或 persistent team，但对应 surface 不能被调用，trace 必须报告具名 blocker，而不能把决策重新表述成用户偏好。
 
@@ -403,7 +423,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ```
 
-## 17. 实施阶段
+## 18. 实施阶段
 
 ### Phase 0 - 记录并保护计划
 
@@ -430,6 +450,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 增加 hard routing directives、actual adoption versus explanation-only mode 与 smallest-sufficient role selection 的 checker 覆盖。
 - 增加 native-agent versus skill/profile/plugin boundaries、custom agent TOML fields、fresh follow-up agent use 与 selector-source handling 的 checker 覆盖。
 - 增加 main-session leader ownership、no separate persistent leader pane、startup non-autolaunch、task-flow scoped adoption 与 legacy-session compatibility boundaries 的 checker 覆盖。
+- 增加 native Codex as base layer、oh-my-codex as wrapper/workflow layer、capability-switch chain values 与 `native_omx` / LangGraph effective lane choice 的 checker 覆盖。
 - 新增或更新 selector refresh/status helper 行为。
 
 ### Phase 3 - Runtime integration
@@ -438,7 +459,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 确保已有会话在 session reload、Codex restart、phase change、resume、continue、`.omx` state detection、expert timeout 时重新做 activation check。
 - 确保 LangGraph-ready 会话使用 LangGraph 作为默认 durable backend。
 
-## 18. 拟实施范围
+## 19. 拟实施范围
 
 本计划确认后，以 OpenSpec change `enforce-automatic-orchestration-routing` 落地：
 
@@ -472,10 +493,14 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
    - orchestration decision 依赖仓库是否 newly created，而不是当前 task flow；
    - Codex startup 被当成自动 durable-team launch；
    - separate persistent leader pane 替代 main Codex session；
-   - resumed legacy sessions 覆盖当前 repository governance。
+   - resumed legacy sessions 覆盖当前 repository governance；
+   - oh-my-codex 或 LangGraph 被描述为 Codex replacement，而不是 additive layer；
+   - capability switches 没有按 dependency chain 读取；
+   - worker-centric durable execution 未考虑 `native_omx` lane fit 而默认进入 LangGraph；
+   - graph-shaped checkpoint work 未考虑 LangGraph lane fit 而默认进入 `native_omx`。
 6. 评估并修复 repo-local `.omx/state/selectors/active.json` 缺失时的刷新/报告规则。
 
-## 19. 证据与测试映射
+## 20. 证据与测试映射
 
 | 规则 | 最小证据 | 候选测试/检查 |
 | --- | --- | --- |
@@ -509,8 +534,11 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 | startup 不自动拉团队 | startup trace 显示阈值满足/未满足，而不是自动 durable-team launch | startup-team-threshold checker |
 | adoption 以 task-flow 为范围 | routing decision 基于当前 task phase 与 thresholds，不基于 repo 新旧 | task-flow-scope checker |
 | legacy resume 仅兼容范围 | legacy sessions 不能覆盖当前 governance 或 capability-chain policy | legacy-session boundary checker |
+| Native Codex 保持 base layer | 文档把 oh-my-codex/LangGraph 描述为 additive workflow layers，而不是 replacement | base-layer terminology checker |
+| capability switches 链式一致 | state 使用 subagent_routing -> oh_my_codex -> langgraph 依赖顺序 | capability-switch chain checker |
+| effective lane choice 基于 task fit | native_omx 与 LangGraph 选择映射到 worker-centric 或 graph-shaped criteria | lane-fit checker |
 
-## 20. 风险与回滚
+## 21. 风险与回滚
 
 - 风险：小任务自动启动过多 workers。缓解：严格区分 backend-on 与 workflow/team launch thresholds。
 - 风险：忽略范围过大导致真正 canary 泄漏被隐藏。缓解：canary guard 只尊重 root `.gitignore` 模式，并继续显式检查 startup summary 来源。
@@ -530,9 +558,11 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 风险：separate leader pane 分裂责任。缓解：保持 main session 为 leader，workers 只是 execution surfaces。
 - 风险：startup 被误认为 durable-team launch。缓解：任何 team launch 前必须有 threshold evidence。
 - 风险：legacy resume 携带 stale assumptions。缓解：legacy sessions 仅作为 compatibility-scoped，并重新应用当前 governance。
+- 风险：wrapper layers 被描述为 Codex replacements。缓解：执行 base-layer terminology。
+- 风险：effective lane choice 忽略 task fit。缓解：durable adoption 前检查 native_omx worker-centric criteria 与 LangGraph graph-shaped criteria。
 - 回滚：如果 enforcement 造成过多误报，可回滚 checker/runtime enforcement，同时保留本计划作为记录。
 
-## 21. 非目标
+## 22. 非目标
 
 - 不把每个小任务都强制变成 multi-worker execution。
 - 不把 LangGraph official package 安装进仓库 `.venv`；仓库规则仍优先使用 user-level shared LangGraph venv。
@@ -540,7 +570,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 不在 tmux 不可用时假装启动 pane-style persistent team。
 - 不把本计划当成 runtime enforcement 已完成的证明。
 
-## 22. 验收标准
+## 23. 验收标准
 
 - 新会话、session reload、Codex restart 和已有会话 resume 都能看到 capability chain 与 backend default。
 - LangGraph ready 时默认 backend 报告为 `langgraph`。
@@ -569,8 +599,10 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 当前 main Codex CLI session 仍是 leader；不得用 separate persistent leader pane 替代它。
 - Startup 与首次 activation 不自动启动 durable teams；它们报告阈值满足/未满足，并仅在条件满足时采用。
 - Orchestration adoption 以当前 task flow 为范围，包括 existing projects 与 live-session retrofit，而不是仓库年龄。
+- Native Codex 保持 base layer；oh-my-codex 与 LangGraph 是 additive workflow/durable-state layers，不是 replacements。
+- Effective lane choice 区分 worker-centric `native_omx` fit 与 graph-shaped LangGraph fit，同时保持每个 durable task 一个 backend family。
 
-## 23. 适用范围与权威边界
+## 24. 适用范围与权威边界
 
 本计划是 implementation-plan 记录。只有在后续 OpenSpec change 更新 policy surfaces、helper scripts 和 checks 后，它才会变成完整 runtime contract。
 
@@ -583,7 +615,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 如果本计划与当前更高权威 surface 冲突，实施变更必须更新对应 surface，而不是只依赖本计划。
 
-## 24. 状态词定义
+## 25. 状态词定义
 
 以下术语必须一致使用：
 
@@ -597,7 +629,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 `ready` 不等于 `running`，`not_needed` 也不等于 disabled。
 
-## 25. 已有会话 retrofit 规则
+## 26. 已有会话 retrofit 规则
 
 已有会话在以下任一触发条件出现时，必须采用本策略：
 
