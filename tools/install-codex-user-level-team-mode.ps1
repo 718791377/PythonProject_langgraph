@@ -3913,6 +3913,55 @@ function Test-CodexUserLevelActiveDurableSelectorTargetsBackend {
   return ([string]$Selector.backend_family -eq $BackendFamily)
 }
 
+function Get-CodexUserLevelActiveDurableSelectorStatusProjection {
+  param(
+    $Selector,
+    [AllowEmptyString()]
+    [string]$RepoRoot = '',
+    [AllowEmptyString()]
+    [string]$BackendDefault = '',
+    [bool]$BackendReady = $false
+  )
+
+  $resolvedRoot = Resolve-CodexUserLevelRepoRoot -OverridePath $RepoRoot
+  $selectorStatus = 'missing'
+
+  if ($null -ne $Selector -and [bool]$Selector.exists) {
+    if (-not [string]::IsNullOrWhiteSpace([string]$Selector.released_at)) {
+      $selectorStatus = 'released'
+    } elseif (Test-CodexUserLevelActiveDurableSelectorScoped -Selector $Selector -RepoRoot $resolvedRoot) {
+      $selectorStatus = 'active_scoped'
+    } else {
+      $expectedRoot = ConvertTo-CodexUserLevelComparablePath -Path $resolvedRoot
+      $selectorRoot = ConvertTo-CodexUserLevelComparablePath -Path ([string]$Selector.repo_root)
+      $expectedWorktreeId = Split-Path -Leaf $resolvedRoot
+      $selectorBelongsToAnotherScope = (
+        [string]::IsNullOrWhiteSpace($selectorRoot) -or
+        -not [string]::Equals($selectorRoot, $expectedRoot, [System.StringComparison]::OrdinalIgnoreCase) -or
+        [string]::IsNullOrWhiteSpace([string]$Selector.worktree_id) -or
+        -not [string]::Equals([string]$Selector.worktree_id, $expectedWorktreeId, [System.StringComparison]::OrdinalIgnoreCase)
+      )
+
+      if ($selectorBelongsToAnotherScope) {
+        $selectorStatus = 'cross_repo'
+      } else {
+        $selectorStatus = 'unscoped_or_invalid'
+      }
+    }
+  }
+
+  $selectorRefreshGap = ([string]$BackendDefault -eq 'langgraph' -and $BackendReady -and $selectorStatus -eq 'missing')
+
+  return [ordered]@{
+    selector_authority = '.omx/state/selectors/active.json'
+    selector_authority_path = Get-CodexUserLevelActiveDurableSelectorPath -RepoRoot $resolvedRoot
+    active_selector_status = $selectorStatus
+    active_selector = $Selector
+    selector_refresh_gap = $selectorRefreshGap
+    selector_refresh_gap_reason = if ($selectorRefreshGap) { 'active_selector_missing_for_ready_default_backend' } else { '' }
+  }
+}
+
 function New-CodexUserLevelDurableSelectorId {
   return ('selector-{0}' -f ([guid]::NewGuid().ToString('N').Substring(0, 12)))
 }
@@ -9965,6 +10014,14 @@ function Get-CodexUserLevelInspectableDurableState {
   $repoStateNativeSelected = ($activeNativeSelector -or [string]$backendFamily -eq 'native_omx')
   $repoStateLangGraphSelected = ($activeLangGraphSelector -or [string]$backendFamily -eq 'langgraph')
   $capabilityReadiness = Get-CodexUserLevelDurableCapabilityReadiness -Status $status -RepoStateBackendFamily ([string]$backendFamily) -RepoStateNativeSelected $repoStateNativeSelected -RepoStateLangGraphSelected $repoStateLangGraphSelected
+  $backendDefault = [string]$status.durable_orchestration_backend
+  $backendReady = $false
+  if ($backendDefault -eq 'native_omx') {
+    $backendReady = [bool]$capabilityReadiness.native_omx.ready
+  } elseif ($backendDefault -eq 'langgraph') {
+    $backendReady = [bool]$capabilityReadiness.langgraph.ready
+  }
+  $activeSelectorProjection = Get-CodexUserLevelActiveDurableSelectorStatusProjection -Selector $activeSelector -RepoRoot $resolvedRepoRoot -BackendDefault $backendDefault -BackendReady $backendReady
 
   return [ordered]@{
     backend_family = $backendFamily
@@ -9980,6 +10037,14 @@ function Get-CodexUserLevelInspectableDurableState {
     state_sources = $stateSources
     updated_at = $updatedAt
     selected_backend = [string]$status.durable_orchestration_backend
+    backend_default = $backendDefault
+    backend_ready = $backendReady
+    selector_authority = [string]$activeSelectorProjection.selector_authority
+    selector_authority_path = [string]$activeSelectorProjection.selector_authority_path
+    active_selector_status = [string]$activeSelectorProjection.active_selector_status
+    active_selector = $activeSelectorProjection.active_selector
+    selector_refresh_gap = [bool]$activeSelectorProjection.selector_refresh_gap
+    selector_refresh_gap_reason = [string]$activeSelectorProjection.selector_refresh_gap_reason
     capability_readiness = $capabilityReadiness
     helper_mirror_source_of_truth = (Get-CodexUserLevelHelperMirrorSourceOfTruthContract)
     read_only_by_default = $true
@@ -10530,7 +10595,7 @@ if (`$Json) {
   return
 }
 
-foreach (`$key in @('backend_family', 'state_class', 'repo_root', 'tracked_identity', 'current_phase', 'next_step', 'updated_at', 'selected_backend', 'capability_readiness', 'helper_mirror_source_of_truth')) {
+foreach (`$key in @('backend_family', 'state_class', 'repo_root', 'tracked_identity', 'current_phase', 'next_step', 'updated_at', 'selected_backend', 'backend_default', 'backend_ready', 'selector_authority', 'active_selector_status', 'selector_refresh_gap', 'selector_refresh_gap_reason', 'capability_readiness', 'helper_mirror_source_of_truth')) {
   `$value = `$summary[`$key]
   if (`$null -eq `$value) {
     `$display = ''

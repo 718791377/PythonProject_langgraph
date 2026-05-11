@@ -35,7 +35,17 @@ $StableWrappedCodexCmdPath = Join-Path $TempRoot 'codex-ohmy.cmd'
 $StableNativeBypassPs1Path = Join-Path $TempRoot 'codex-raw.ps1'
 $StableNativeBypassCmdPath = Join-Path $TempRoot 'codex-raw.cmd'
 $FakeOmxPath = Join-Path $TempRoot 'fake-omx.ps1'
-$ResolvedPythonPath = [System.IO.Path]::GetFullPath((Get-Command 'python' -ErrorAction Stop).Source)
+$PrimaryRepoRoot = if ((Split-Path -Leaf (Split-Path -Parent $Root)) -eq '.worktrees') {
+  Split-Path -Parent (Split-Path -Parent $Root)
+} else {
+  $Root
+}
+$RepoVenvPythonPath = Join-Path $PrimaryRepoRoot '.venv\Scripts\python.exe'
+$ResolvedPythonPath = if (Test-Path -LiteralPath $RepoVenvPythonPath) {
+  [System.IO.Path]::GetFullPath($RepoVenvPythonPath)
+} else {
+  [System.IO.Path]::GetFullPath((Get-Command 'python' -ErrorAction Stop).Source)
+}
 
 function Assert-Equal {
   param(
@@ -1702,6 +1712,24 @@ Assert-True ($durableStateLangGraphSelected.capability_readiness.langgraph.selec
 Assert-True ($durableStateLangGraphSelected.capability_readiness.langgraph.ready -eq $false) 'Durable-state status should not report LangGraph ready before the shared runtime is installed.'
 Assert-ArrayContains -Actual @($durableStateLangGraphSelected.capability_readiness.langgraph.blockers | ForEach-Object { [string]$_ }) -Expected 'langgraph_shared_runtime_not_installed' -Message 'Durable-state status did not explain the LangGraph not-ready blocker.'
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $NoStateRepoRoot '.omx'))) 'Durable-state status after LangGraph selection should remain read-only for repo-local state.'
+
+$fakeSharedLangGraphPythonPath = Join-Path $CodexHome 'venvs\langgraph-py312\Scripts\python.exe'
+Ensure-Directory -Path (Split-Path -Parent $fakeSharedLangGraphPythonPath)
+Set-Content -LiteralPath $fakeSharedLangGraphPythonPath -Encoding ASCII -NoNewline -Value ''
+$durableStateLangGraphReadyMissingSelector = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-status.ps1') -Arguments @(
+  '-RepoRoot', $NoStateRepoRoot,
+  '-Json'
+)
+Assert-Equal $durableStateLangGraphReadyMissingSelector.selected_backend 'langgraph' 'Durable-state status should preserve the selected LangGraph backend when the active selector is missing.'
+Assert-Equal $durableStateLangGraphReadyMissingSelector.backend_default 'langgraph' 'Durable-state status should report LangGraph as the backend default when selected and ready.'
+Assert-True ($durableStateLangGraphReadyMissingSelector.backend_ready -eq $true) 'Durable-state status should report the selected LangGraph backend as ready after the shared runtime exists.'
+Assert-True ($durableStateLangGraphReadyMissingSelector.capability_readiness.langgraph.ready -eq $true) 'Durable-state status should report LangGraph capability readiness after the shared runtime exists.'
+Assert-Equal $durableStateLangGraphReadyMissingSelector.selector_authority '.omx/state/selectors/active.json' 'Durable-state status should expose the canonical active selector authority.'
+Assert-Equal $durableStateLangGraphReadyMissingSelector.active_selector_status 'missing' 'Durable-state status should report a missing active selector explicitly.'
+Assert-True ($durableStateLangGraphReadyMissingSelector.selector_refresh_gap -eq $true) 'Durable-state status should classify a ready LangGraph backend with no active selector as a selector refresh gap.'
+Assert-Equal $durableStateLangGraphReadyMissingSelector.selector_refresh_gap_reason 'active_selector_missing_for_ready_default_backend' 'Durable-state status should expose a stable selector refresh gap reason.'
+Assert-True (-not (Test-Path -LiteralPath (Join-Path $NoStateRepoRoot '.omx'))) 'Durable-state status for a missing selector should remain read-only and not create repo-local .omx state.'
+Remove-Item -LiteralPath $fakeSharedLangGraphPythonPath -Force
 $langGraphBackendStatus = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-backend-status.ps1') -Arguments @(
   '-Json'
 )
