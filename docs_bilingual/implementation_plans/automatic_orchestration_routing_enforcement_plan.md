@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.12
+version: 0.13
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -184,7 +184,28 @@ Selector source rule:
 - automatic durable-team routing reads `.omx/state/selectors/active.json` as the shared repo-local activation selector;
 - compatibility records may be inspected for context, but they do not authorize unmanaged team adoption by themselves.
 
-## 7. Durable-team threshold map
+## 7. Leader session and adoption-scope boundaries
+
+The current main Codex CLI session remains the leader for the task flow. The orchestration design must not create or require a separate persistent leader pane to replace the current main session.
+
+Leader-session rules:
+
+- the main session owns activation checks, role selection, worker brief quality, fan-in, evidence labeling, final integration, and final user reporting;
+- subagents, durable workers, skills, plugin profiles, and LangGraph nodes are execution surfaces under leader control, not independent release authorities;
+- local mainline or publication decisions remain user-authorized release decisions, not automatic worker decisions;
+- if multiple workers are used, the leader owns conflict resolution, evidence sufficiency, and final acceptance claims.
+
+Adoption-scope rules:
+
+- the orchestration decision target is the current task flow, not whether the repository is newly created;
+- existing projects with new sessions should follow the current user-level orchestration policy;
+- existing live sessions must retrofit on reload, restart, resume, continue, phase change, durable-state detection, or capability-state change;
+- Codex startup itself does not auto-launch a durable team; durable launch remains a threshold-gated later action inside the session;
+- resumed legacy Codex sessions are compatibility-scoped: they may continue follow-up discussion but must not override current repository governance or current capability-chain policy.
+
+Trace requirement: when a session chooses not to adopt durable workflow or persistent team during startup or first activation, the trace must say which threshold was not met rather than implying that startup cannot use orchestration at all.
+
+## 8. Durable-team threshold map
 
 Durable team launch is threshold-gated. The presence of `backend_default=langgraph` and `backend_ready=true` means the durable backend is available; it does not mean a persistent team must be running.
 
@@ -209,7 +230,7 @@ First-turn reporting rule:
 
 Bounded multi-face research remains analyst-fanout-first: first round uses homogeneous `analystxN`; do not include `architect`, `planner`, or `writer` in the default first round. Escalate to those roles only after analyst fan-in shows an architecture, execution-ordering, or document-finalization layer.
 
-## 8. Expert lifecycle, bounded wait, and provider backpressure
+## 9. Expert lifecycle, bounded wait, and provider backpressure
 
 Expert and subagent use must be leader-owned from launch through fan-in and cleanup.
 
@@ -235,7 +256,7 @@ Provider pacing and backpressure rules:
 - prefer local-first phases, deterministic local checks, and bounded fan-out when many agent steps may hit the provider;
 - if pacing materially affects execution, report it as `backpressure:upstream_pacing` or an equivalent named condition, not as missing user intent.
 
-## 9. Fan-out bounds, write ownership, and backend-family boundary
+## 10. Fan-out bounds, write ownership, and backend-family boundary
 
 Native expert use is explicit leader-side spawning and leader-owned fan-in. Do not imply that raw Codex automatically spawns specialist roles by default.
 
@@ -257,7 +278,7 @@ Backend-family boundary:
 
 Open-ended work keeps research and implementation separate: use analyst/research roles for discovery and only move to executor/team execution after the plan, ownership, and acceptance evidence are frozen.
 
-## 10. Handoff, adversarial review, and adjacent-runtime boundaries
+## 11. Handoff, adversarial review, and adjacent-runtime boundaries
 
 Open-ended research and contested bug review need explicit handoff boundaries so that temporary expert lanes do not become unmanaged persistent workers.
 
@@ -284,7 +305,7 @@ Durable-state and adjacent-runtime boundaries:
 - treat LangGraph, AutoGen, and CrewAI as general programmable orchestration runtimes, not as native Codex-subagent equivalents;
 - a LangGraph graph may coordinate phases, checkpoints, approvals, and survivor queues, but native Codex experts still require explicit leader-side spawning and fan-in.
 
-## 11. Backend, workflow, and team semantics
+## 12. Backend, workflow, and team semantics
 
 These terms must not be collapsed:
 
@@ -295,7 +316,7 @@ These terms must not be collapsed:
 
 When LangGraph is ready, it is the default backend. A small task may still have `durable_workflow=not_needed` and `persistent_team=not_needed`. That means the task does not need those execution surfaces; it does not mean LangGraph is off.
 
-## 12. Current local inspection result
+## 13. Current local inspection result
 
 Read-only inspection on 2026-05-11 showed:
 
@@ -322,7 +343,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 Interpretation: the user-level LangGraph backend is available and should be treated as the default backend. A missing repo-local active selector is a state-refresh or reporting gap; it must not be interpreted as LangGraph backend unavailability.
 
-## 13. Active selector handling
+## 14. Active selector handling
 
 When `.omx/state/selectors/active.json` is missing but the user-level capability state says `durable_orchestration_backend=langgraph` and `langgraph_ready=true`, the session must not silently downgrade to `native_omx` or `none`.
 
@@ -333,7 +354,7 @@ Required behavior:
 3. refresh or create the selector through the approved helper when implementation work requires a tracked durable thread;
 4. if no helper exists yet, record the missing helper as an implementation gap, not as backend unavailability.
 
-## 14. Low-risk iteration and local integration boundary
+## 15. Low-risk iteration and local integration boundary
 
 For repeated low-risk refinements inside an already confirmed scope, the main session may proceed without asking for per-iteration approval when all of the following are true:
 
@@ -357,7 +378,7 @@ Explicit user approval is still required for:
 
 This local-merge permission does not weaken the publication workflow. It only defines the local execution boundary for simple, already-authorized iterations. Remote publication remains a separate decision.
 
-## 15. Higher-authority and runtime-surface blockers
+## 16. Higher-authority and runtime-surface blockers
 
 Automatic orchestration is the default policy, but live execution must still obey higher-authority instructions, the current tool contract, and actual runtime-surface availability. If a task would normally select an expert, durable workflow, or persistent team but the surface cannot be invoked, the trace must report a named blocker rather than rephrasing the decision as user preference.
 
@@ -382,7 +403,7 @@ The canonical activation trace therefore permits expert blockers:
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ```
 
-## 16. Implementation phases
+## 17. Implementation phases
 
 ### Phase 0 - Record and protect the plan
 
@@ -408,6 +429,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Add checker coverage for frozen research handoff briefs, adversarial-review survivor queues, and adjacent-runtime terminology boundaries.
 - Add checker coverage for hard routing directives, actual adoption versus explanation-only mode, and smallest-sufficient role selection.
 - Add checker coverage for native-agent versus skill/profile/plugin boundaries, custom agent TOML fields, fresh follow-up agent use, and selector-source handling.
+- Add checker coverage for main-session leader ownership, no separate persistent leader pane, startup non-autolaunch, task-flow scoped adoption, and legacy-session compatibility boundaries.
 - Add or update selector refresh/status helper behavior.
 
 ### Phase 3 - Runtime integration
@@ -416,7 +438,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Ensure existing sessions re-run activation checks on session reload, Codex restart, phase change, resume, continue, `.omx` state detection, and expert timeout.
 - Ensure LangGraph-ready sessions use LangGraph as the default durable backend.
 
-## 17. Proposed implementation scope
+## 18. Proposed implementation scope
 
 After this plan is confirmed, implement it through OpenSpec change `enforce-automatic-orchestration-routing`:
 
@@ -446,10 +468,14 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
    - skills or plugin profiles being treated as native subagents or expert evidence;
    - custom agent TOMLs missing `name`, `description`, or `developer_instructions`;
    - follow-up work reusing a closed/completed expert thread without an explicit preservation reason;
-   - unmanaged team adoption based only on compatibility records rather than `.omx/state/selectors/active.json`.
+   - unmanaged team adoption based only on compatibility records rather than `.omx/state/selectors/active.json`;
+   - orchestration decisions depending on whether a repository is newly created rather than the current task flow;
+   - Codex startup being treated as an automatic durable-team launch;
+   - a separate persistent leader pane replacing the main Codex session;
+   - resumed legacy sessions overriding current repository governance.
 6. Evaluate and fix the refresh/reporting rule for missing repo-local `.omx/state/selectors/active.json`.
 
-## 18. Evidence and test mapping
+## 19. Evidence and test mapping
 
 | Rule | Minimum evidence | Candidate test/check |
 | --- | --- | --- |
@@ -479,8 +505,12 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 | Custom agent TOMLs are minimally valid | TOMLs include `name`, `description`, and `developer_instructions` | agent-toml schema checker |
 | Follow-up uses fresh agent unless preserved | later work spawns fresh agent or cites explicit preserved-thread reason | follow-up-thread checker |
 | Selector source is authoritative | automatic durable routing reads `.omx/state/selectors/active.json`; compatibility records are context only | selector-source checker |
+| Main session remains leader | trace and final report show leader-owned fan-in, evidence labeling, and integration | leader-ownership checker |
+| Startup does not auto-launch teams | startup trace shows threshold met/unmet rather than automatic durable-team launch | startup-team-threshold checker |
+| Adoption is task-flow scoped | routing decisions are based on current task phase and thresholds, not repo newness | task-flow-scope checker |
+| Legacy resume is compatibility-scoped | legacy sessions cannot override current governance or capability-chain policy | legacy-session boundary checker |
 
-## 19. Risks and rollback
+## 20. Risks and rollback
 
 - Risk: automatically launching too many workers for small tasks. Mitigation: keep backend-on separate from workflow/team launch thresholds.
 - Risk: hiding real canary leakage by ignoring too much. Mitigation: only root `.gitignore` patterns are honored by the canary guard, and startup summary sources remain explicitly checked.
@@ -497,9 +527,12 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Risk: skills or profile helpers are mistaken for subagent evidence. Mitigation: enforce agent/skill/profile surface separation.
 - Risk: follow-up work reuses stale context. Mitigation: spawn fresh agents unless the thread was explicitly preserved.
 - Risk: unmanaged durable teams are adopted accidentally. Mitigation: use the active selector as the authority and treat compatibility records as context only.
+- Risk: a separate leader pane fragments accountability. Mitigation: keep the main session as leader and workers as execution surfaces.
+- Risk: startup is mistaken for durable-team launch. Mitigation: require threshold evidence before any team launch.
+- Risk: legacy resume carries stale assumptions. Mitigation: treat legacy sessions as compatibility-scoped and reapply current governance.
 - Rollback: revert checker/runtime enforcement while keeping this plan as a record if implementation causes excessive false positives.
 
-## 20. Non-goals
+## 21. Non-goals
 
 - Do not force every small task into multi-worker execution.
 - Do not install the official LangGraph package into the repository `.venv`; the repository rule remains to use the user-level shared LangGraph venv.
@@ -507,7 +540,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Do not pretend pane-style persistent team was launched when tmux is unavailable.
 - Do not use this plan as proof that runtime enforcement is already complete.
 
-## 21. Acceptance criteria
+## 22. Acceptance criteria
 
 - New sessions, session reloads, Codex restarts, and resumed sessions report capability chain and backend default.
 - When LangGraph is ready, default backend is reported as `langgraph`.
@@ -533,8 +566,11 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Native agents, skills, plugin profiles, and profile helpers are not collapsed into one surface.
 - Follow-up work uses a fresh agent unless an explicit preserved-thread reason exists.
 - Automatic durable-team routing treats `.omx/state/selectors/active.json` as the selector source and does not auto-adopt unmanaged teams from compatibility records alone.
+- The current main Codex CLI session remains the leader; no separate persistent leader pane replaces it.
+- Startup and first activation do not auto-launch durable teams; they report threshold met/unmet and adopt only when conditions are satisfied.
+- Orchestration adoption is scoped to the current task flow, including existing projects and live-session retrofit, not to repository age.
 
-## 22. Scope and authority boundary
+## 23. Scope and authority boundary
 
 This plan is an implementation-plan record. It is not the final runtime contract until the follow-up OpenSpec change updates policy surfaces, helper scripts, and checks.
 
@@ -547,7 +583,7 @@ Authority order:
 
 If this plan conflicts with a current higher-authority surface, the implementation change must update that surface rather than relying on this plan alone.
 
-## 23. State vocabulary
+## 24. State vocabulary
 
 Use these terms consistently:
 
@@ -561,7 +597,7 @@ Use these terms consistently:
 
 `ready` does not mean `running`, and `not_needed` does not mean disabled.
 
-## 24. Existing-session retrofit rule
+## 25. Existing-session retrofit rule
 
 Existing sessions must adopt this policy when any retrofit trigger occurs:
 
