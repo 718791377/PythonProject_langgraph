@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.6
+version: 0.7
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -132,7 +132,32 @@ Use ASCII `analystxN` in the canonical English file; localized documents may ren
 | Security, permissions, secrets, payments, untrusted input | security-reviewer | candidate | only after trust boundaries are mapped | leader blocks release until reviewed |
 | Key-path expert timeout | respawn narrower expert or alternate role | selected when LangGraph-ready checkpointed handoff is useful | only if preflight passes | main session takes over and states evidence source |
 
-## 5. Backend, workflow, and team semantics
+## 5. Durable-team threshold map
+
+Durable team launch is threshold-gated. The presence of `backend_default=langgraph` and `backend_ready=true` means the durable backend is available; it does not mean a persistent team must be running.
+
+Phase map:
+
+| Phase | Durable team decision | Worker shape | Required trace reason |
+| --- | --- | --- | --- |
+| define-target | `persistent_team=not_needed` | none | target and acceptance boundary are still being defined |
+| read-context | `persistent_team=not_needed` | none | context gathering is still leader-owned or analyst-only |
+| freeze-plan | `persistent_team=not_needed` | none | plan is not frozen yet |
+| verify-accept | `persistent_team=not_needed` by default | verifier/test-engineer experts as needed | acceptance verification is not itself a multi-worker execution slice |
+| execute-parallel | `persistent_team=selected` when the plan is frozen and there are 2+ independent execution slices | 2 `team-executor` workers; scale to 3 workers at 3+ slices | the named slice count and ownership boundaries triggered team launch |
+| integrate-converge | `persistent_team=selected` when there are 2+ independent integration/convergence slices | 2 `team-executor` workers; leader owns final integration | the named convergence slices are independent enough to parallelize |
+| stabilize | `persistent_team=selected` when there is at least 1 blocking failure, regression, or stabilization issue | 2 `debugger` workers by default | the named blocking issue triggered debugger-lane stabilization |
+
+First-turn reporting rule:
+
+- if `omx team` / durable team is not selected on the first activation check, the trace must state which threshold was not met;
+- if it is selected, the trace must state which threshold triggered it;
+- use the approved automatic durable-team launcher, such as `omx-team-auto.ps1`, instead of raw `omx team` when the threshold is met and no blocker exists;
+- do not auto-adopt unmanaged existing teams; report them as existing state requiring explicit adoption or cleanup.
+
+Bounded multi-face research remains analyst-fanout-first: first round uses homogeneous `analystxN`; do not include `architect`, `planner`, or `writer` in the default first round. Escalate to those roles only after analyst fan-in shows an architecture, execution-ordering, or document-finalization layer.
+
+## 6. Backend, workflow, and team semantics
 
 These terms must not be collapsed:
 
@@ -143,7 +168,7 @@ These terms must not be collapsed:
 
 When LangGraph is ready, it is the default backend. A small task may still have `durable_workflow=not_needed` and `persistent_team=not_needed`. That means the task does not need those execution surfaces; it does not mean LangGraph is off.
 
-## 6. Current local inspection result
+## 7. Current local inspection result
 
 Read-only inspection on 2026-05-11 showed:
 
@@ -170,7 +195,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 Interpretation: the user-level LangGraph backend is available and should be treated as the default backend. A missing repo-local active selector is a state-refresh or reporting gap; it must not be interpreted as LangGraph backend unavailability.
 
-## 7. Active selector handling
+## 8. Active selector handling
 
 When `.omx/state/selectors/active.json` is missing but the user-level capability state says `durable_orchestration_backend=langgraph` and `langgraph_ready=true`, the session must not silently downgrade to `native_omx` or `none`.
 
@@ -181,7 +206,7 @@ Required behavior:
 3. refresh or create the selector through the approved helper when implementation work requires a tracked durable thread;
 4. if no helper exists yet, record the missing helper as an implementation gap, not as backend unavailability.
 
-## 8. Low-risk iteration and local integration boundary
+## 9. Low-risk iteration and local integration boundary
 
 For repeated low-risk refinements inside an already confirmed scope, the main session may proceed without asking for per-iteration approval when all of the following are true:
 
@@ -205,7 +230,7 @@ Explicit user approval is still required for:
 
 This local-merge permission does not weaken the publication workflow. It only defines the local execution boundary for simple, already-authorized iterations. Remote publication remains a separate decision.
 
-## 9. Higher-authority and runtime-surface blockers
+## 10. Higher-authority and runtime-surface blockers
 
 Automatic orchestration is the default policy, but live execution must still obey higher-authority instructions, the current tool contract, and actual runtime-surface availability. If a task would normally select an expert, durable workflow, or persistent team but the surface cannot be invoked, the trace must report a named blocker rather than rephrasing the decision as user preference.
 
@@ -230,7 +255,7 @@ The canonical activation trace therefore permits expert blockers:
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ```
 
-## 10. Implementation phases
+## 11. Implementation phases
 
 ### Phase 0 - Record and protect the plan
 
@@ -248,17 +273,18 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ### Phase 2 - Script-backed enforcement
 
 - Add checker coverage for forbidden routing reasons.
+- Add checker coverage for durable-team phase thresholds and first-turn threshold explanations.
 - Add checker coverage for capability-chain consistency.
 - Add checker coverage for expert-timeout evidence claims.
 - Add or update selector refresh/status helper behavior.
 
 ### Phase 3 - Runtime integration
 
-- Ensure new sessions and resumed sessions print the required trace fields.
-- Ensure existing sessions re-run activation checks on phase change, resume, continue, `.omx` state detection, and expert timeout.
+- Ensure new sessions, session reloads, Codex restarts, and resumed sessions print the required trace fields.
+- Ensure existing sessions re-run activation checks on session reload, Codex restart, phase change, resume, continue, `.omx` state detection, and expert timeout.
 - Ensure LangGraph-ready sessions use LangGraph as the default durable backend.
 
-## 11. Proposed implementation scope
+## 12. Proposed implementation scope
 
 After this plan is confirmed, implement it through OpenSpec change `enforce-automatic-orchestration-routing`:
 
@@ -271,10 +297,12 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
    - treating LangGraph as optional or unavailable when it is ready;
    - treating expert timeout as verification evidence;
    - routing trace failing to distinguish backend-on from persistent-team launch thresholds;
-   - tool/runtime blockers being misreported as user preference or as `not_needed`.
+   - tool/runtime blockers being misreported as user preference or as `not_needed`;
+   - durable team selected without a frozen plan, independent slices, or a named stabilization blocker;
+   - bounded multi-face research skipping analyst-only first fan-out.
 6. Evaluate and fix the refresh/reporting rule for missing repo-local `.omx/state/selectors/active.json`.
 
-## 12. Evidence and test mapping
+## 13. Evidence and test mapping
 
 | Rule | Minimum evidence | Candidate test/check |
 | --- | --- | --- |
@@ -286,15 +314,17 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 | Missing active selector is a refresh gap | status reports selector missing without backend downgrade | selector status helper test |
 | Tool/runtime blocker is explicit | trace reports `blocked:<reason>` instead of a user-reminder reason | activation trace blocker test |
 | Reload and restart trigger activation | reload/restart transcript includes capability chain and backend default | startup/reload trace smoke test |
+| Durable-team threshold map is enforced | trace explains threshold met or unmet on first activation | durable-team threshold checker |
+| Bounded multi-face research is analyst-first | first fan-out is `analystxN` without default architect/planner/writer | role-routing golden test |
 
-## 13. Risks and rollback
+## 14. Risks and rollback
 
 - Risk: automatically launching too many workers for small tasks. Mitigation: keep backend-on separate from workflow/team launch thresholds.
 - Risk: hiding real canary leakage by ignoring too much. Mitigation: only root `.gitignore` patterns are honored by the canary guard, and startup summary sources remain explicitly checked.
 - Risk: final reports overclaim expert evidence. Mitigation: require explicit evidence source labels.
 - Rollback: revert checker/runtime enforcement while keeping this plan as a record if implementation causes excessive false positives.
 
-## 14. Non-goals
+## 15. Non-goals
 
 - Do not force every small task into multi-worker execution.
 - Do not install the official LangGraph package into the repository `.venv`; the repository rule remains to use the user-level shared LangGraph venv.
@@ -302,7 +332,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Do not pretend pane-style persistent team was launched when tmux is unavailable.
 - Do not use this plan as proof that runtime enforcement is already complete.
 
-## 15. Acceptance criteria
+## 16. Acceptance criteria
 
 - New sessions, session reloads, Codex restarts, and resumed sessions report capability chain and backend default.
 - When LangGraph is ready, default backend is reported as `langgraph`.
@@ -311,8 +341,10 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Checker or tests cover at least three of the key regressions above.
 - Missing repo-local active selector is reported as a selector refresh gap, not LangGraph backend unavailability.
 - Tool or higher-authority blockers are reported as `blocked:<reason>`, not as missing user instruction.
+- First activation explains why durable team was selected or which durable-team threshold was not met.
+- Bounded multi-face research starts with analyst-only fan-out unless a later fan-in justifies escalation.
 
-## 16. Scope and authority boundary
+## 17. Scope and authority boundary
 
 This plan is an implementation-plan record. It is not the final runtime contract until the follow-up OpenSpec change updates policy surfaces, helper scripts, and checks.
 
@@ -325,7 +357,7 @@ Authority order:
 
 If this plan conflicts with a current higher-authority surface, the implementation change must update that surface rather than relying on this plan alone.
 
-## 17. State vocabulary
+## 18. State vocabulary
 
 Use these terms consistently:
 
@@ -339,7 +371,7 @@ Use these terms consistently:
 
 `ready` does not mean `running`, and `not_needed` does not mean disabled.
 
-## 18. Existing-session retrofit rule
+## 19. Existing-session retrofit rule
 
 Existing sessions must adopt this policy when any retrofit trigger occurs:
 

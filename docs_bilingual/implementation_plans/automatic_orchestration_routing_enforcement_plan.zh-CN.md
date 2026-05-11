@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.6
+version: 0.7
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -132,7 +132,32 @@ why=<concrete reason>
 | 安全、权限、密钥、支付、不可信输入 | security-reviewer | 候选 | trust boundary 映射后才可考虑 | 未复核前阻断发布 |
 | 关键路径 expert 超时 | respawn 更窄 expert 或替代角色 | LangGraph-ready 且适合 checkpoint handoff 时选择 | preflight 通过才启动 | 主会话接管并声明证据来源 |
 
-## 5. Backend、workflow 与 team 语义边界
+## 5. Durable-team 阈值映射
+
+Durable team 启动必须受阈值约束。`backend_default=langgraph` 与 `backend_ready=true` 表示 durable backend 可用；它不表示 persistent team 必须已经运行。
+
+阶段映射：
+
+| 阶段 | Durable team 决策 | Worker 形态 | 必须写入 trace 的理由 |
+| --- | --- | --- | --- |
+| define-target | `persistent_team=not_needed` | 无 | target 与 acceptance boundary 仍在定义 |
+| read-context | `persistent_team=not_needed` | 无 | context gathering 仍由 leader 或 analyst-only 完成 |
+| freeze-plan | `persistent_team=not_needed` | 无 | plan 尚未冻结 |
+| verify-accept | 默认 `persistent_team=not_needed` | 按需使用 verifier/test-engineer experts | acceptance verification 本身不是 multi-worker execution slice |
+| execute-parallel | plan 已冻结且存在 2+ 独立 execution slices 时 `persistent_team=selected` | 2 个 `team-executor` workers；3+ slices 时扩展到 3 workers | 具名 slice 数量与所有权边界触发 team launch |
+| integrate-converge | 存在 2+ 独立 integration/convergence slices 时 `persistent_team=selected` | 2 个 `team-executor` workers；leader 负责最终集成 | 具名 convergence slices 足够独立，可并行 |
+| stabilize | 存在至少 1 个 blocking failure、regression 或 stabilization issue 时 `persistent_team=selected` | 默认 2 个 `debugger` workers | 具名 blocking issue 触发 debugger-lane stabilization |
+
+首轮报告规则：
+
+- 如果第一次 activation check 没有选择 `omx team` / durable team，trace 必须说明哪个阈值未满足；
+- 如果选择了 durable team，trace 必须说明哪个阈值触发了它；
+- 当阈值满足且没有 blocker 时，使用已批准的自动 durable-team launcher，例如 `omx-team-auto.ps1`，而不是 raw `omx team`；
+- 不自动接管 unmanaged existing teams；必须把它们报告为需要显式 adopt 或 cleanup 的既有状态。
+
+Bounded multi-face research 仍然是 analyst-fanout-first：第一轮使用同质 `analystxN`；默认第一轮不得混入 `architect`、`planner` 或 `writer`。只有在 analyst fan-in 显示 architecture、execution-ordering 或 document-finalization layer 后，才升级到这些角色。
+
+## 6. Backend、workflow 与 team 语义边界
 
 以下概念不得混用：
 
@@ -143,7 +168,7 @@ why=<concrete reason>
 
 当 LangGraph ready 时，它就是默认 backend。小任务仍然可以是 `durable_workflow=not_needed` 且 `persistent_team=not_needed`。这表示任务不需要这些执行面，不表示 LangGraph 关闭。
 
-## 6. 当前本地检查结论
+## 7. 当前本地检查结论
 
 2026-05-11 本地只读检查显示：
 
@@ -170,7 +195,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 解释：user-level LangGraph backend 已可用且应视为默认常开；repo-local active selector 缺失是需要治理/辅助脚本修复的状态刷新问题，不能被解释成 LangGraph backend 不可用。
 
-## 7. Active selector 处理规则
+## 8. Active selector 处理规则
 
 当 `.omx/state/selectors/active.json` 缺失，但 user-level capability state 显示 `durable_orchestration_backend=langgraph` 且 `langgraph_ready=true` 时，会话不得静默降级到 `native_omx` 或 `none`。
 
@@ -181,7 +206,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 3. 当实现工作需要 tracked durable thread 时，通过已批准 helper 刷新或创建 selector；
 4. 如果 helper 尚不存在，将其记录为实现缺口，而不是解释成 backend 不可用。
 
-## 8. 低风险迭代与本地合入边界
+## 9. 低风险迭代与本地合入边界
 
 对于已经确认范围内的重复低风险完善，主会话在同时满足以下条件时，可以不再逐次请求用户授权：
 
@@ -205,7 +230,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 这个本地合入许可不会削弱发布流程。它只定义已经授权的简单迭代在本地执行时的边界；远端发布仍然是单独决策。
 
-## 9. 更高权威与 runtime surface 阻塞边界
+## 10. 更高权威与 runtime surface 阻塞边界
 
 自动协同是默认策略，但 live execution 仍必须服从更高优先级指令、当前工具契约以及实际 runtime surface 可用性。如果某个任务按策略本应选择 expert、durable workflow 或 persistent team，但对应 surface 不能被调用，trace 必须报告具名 blocker，而不能把决策重新表述成用户偏好。
 
@@ -230,7 +255,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ```
 
-## 10. 实施阶段
+## 11. 实施阶段
 
 ### Phase 0 - 记录并保护计划
 
@@ -248,17 +273,18 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ### Phase 2 - Script-backed enforcement
 
 - 增加 forbidden routing reason 的 checker 覆盖。
+- 增加 durable-team phase thresholds 与首轮阈值解释的 checker 覆盖。
 - 增加 capability-chain consistency 的 checker 覆盖。
 - 增加 expert-timeout evidence claims 的 checker 覆盖。
 - 新增或更新 selector refresh/status helper 行为。
 
 ### Phase 3 - Runtime integration
 
-- 确保新会话和 resume 会话输出必填 trace 字段。
-- 确保已有会话在 phase change、resume、continue、`.omx` state detection、expert timeout 时重新做 activation check。
+- 确保新会话、session reload、Codex restart 和 resume 会话输出必填 trace 字段。
+- 确保已有会话在 session reload、Codex restart、phase change、resume、continue、`.omx` state detection、expert timeout 时重新做 activation check。
 - 确保 LangGraph-ready 会话使用 LangGraph 作为默认 durable backend。
 
-## 11. 拟实施范围
+## 12. 拟实施范围
 
 本计划确认后，以 OpenSpec change `enforce-automatic-orchestration-routing` 落地：
 
@@ -271,10 +297,12 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
    - LangGraph ready 时仍把 backend 当成可选或不可用；
    - expert timeout 后把未返回结果当作验证证据；
    - routing trace 不区分 backend 常开与 persistent team 启动阈值；
-   - tool/runtime blocker 被误报成用户偏好或 `not_needed`。
+   - tool/runtime blocker 被误报成用户偏好或 `not_needed`；
+   - 没有 frozen plan、独立切片或具名 stabilization blocker 时选择 durable team；
+   - bounded multi-face research 跳过 analyst-only 首轮 fan-out。
 6. 评估并修复 repo-local `.omx/state/selectors/active.json` 缺失时的刷新/报告规则。
 
-## 12. 证据与测试映射
+## 13. 证据与测试映射
 
 | 规则 | 最小证据 | 候选测试/检查 |
 | --- | --- | --- |
@@ -286,15 +314,17 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 | active selector 缺失是 refresh gap | status 报告 selector missing 但不 downgrade backend | selector status helper 测试 |
 | tool/runtime blocker 被显式报告 | trace 报告 `blocked:<reason>`，而不是用户提醒缺失 | activation trace blocker 测试 |
 | reload 与 restart 触发 activation | reload/restart transcript 包含 capability chain 与 backend default | startup/reload trace smoke test |
+| durable-team 阈值映射被执行 | 首次 activation trace 解释阈值满足或未满足 | durable-team threshold checker |
+| bounded multi-face research analyst-first | 首轮 fan-out 是 `analystxN`，默认不含 architect/planner/writer | role-routing golden test |
 
-## 13. 风险与回滚
+## 14. 风险与回滚
 
 - 风险：小任务自动启动过多 workers。缓解：严格区分 backend-on 与 workflow/team launch thresholds。
 - 风险：忽略范围过大导致真正 canary 泄漏被隐藏。缓解：canary guard 只尊重 root `.gitignore` 模式，并继续显式检查 startup summary 来源。
 - 风险：final report 过度声称 expert evidence。缓解：强制 evidence source 标签。
 - 回滚：如果 enforcement 造成过多误报，可回滚 checker/runtime enforcement，同时保留本计划作为记录。
 
-## 14. 非目标
+## 15. 非目标
 
 - 不把每个小任务都强制变成 multi-worker execution。
 - 不把 LangGraph official package 安装进仓库 `.venv`；仓库规则仍优先使用 user-level shared LangGraph venv。
@@ -302,7 +332,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 不在 tmux 不可用时假装启动 pane-style persistent team。
 - 不把本计划当成 runtime enforcement 已完成的证明。
 
-## 15. 验收标准
+## 16. 验收标准
 
 - 新会话、session reload、Codex restart 和已有会话 resume 都能看到 capability chain 与 backend default。
 - LangGraph ready 时默认 backend 报告为 `langgraph`。
@@ -311,8 +341,10 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - checker 或测试能覆盖上述至少三个关键回归。
 - repo-local active selector 缺失会被报告为 selector refresh gap，而不是 LangGraph backend 不可用。
 - 工具或更高权威 blocker 会被报告为 `blocked:<reason>`，而不是用户指令缺失。
+- 第一次 activation 会解释 durable team 被选择的触发阈值，或说明哪个 durable-team 阈值未满足。
+- Bounded multi-face research 先使用 analyst-only fan-out，除非后续 fan-in 证明需要升级。
 
-## 16. 适用范围与权威边界
+## 17. 适用范围与权威边界
 
 本计划是 implementation-plan 记录。只有在后续 OpenSpec change 更新 policy surfaces、helper scripts 和 checks 后，它才会变成完整 runtime contract。
 
@@ -325,7 +357,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 如果本计划与当前更高权威 surface 冲突，实施变更必须更新对应 surface，而不是只依赖本计划。
 
-## 17. 状态词定义
+## 18. 状态词定义
 
 以下术语必须一致使用：
 
@@ -339,7 +371,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 `ready` 不等于 `running`，`not_needed` 也不等于 disabled。
 
-## 18. 已有会话 retrofit 规则
+## 19. 已有会话 retrofit 规则
 
 已有会话在以下任一触发条件出现时，必须采用本策略：
 
