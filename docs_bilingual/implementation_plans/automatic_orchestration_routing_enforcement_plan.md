@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.8
+version: 0.9
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -183,7 +183,29 @@ Provider pacing and backpressure rules:
 - prefer local-first phases, deterministic local checks, and bounded fan-out when many agent steps may hit the provider;
 - if pacing materially affects execution, report it as `backpressure:upstream_pacing` or an equivalent named condition, not as missing user intent.
 
-## 7. Backend, workflow, and team semantics
+## 7. Fan-out bounds, write ownership, and backend-family boundary
+
+Native expert use is explicit leader-side spawning and leader-owned fan-in. Do not imply that raw Codex automatically spawns specialist roles by default.
+
+Fan-out bounds:
+
+- keep native subagent fan-out bounded; managed defaults are `agents.max_threads=6` and `agents.max_depth=1`;
+- prefer parallel fan-out for read-heavy, bounded, independent work;
+- keep implementation local when the next critical-path step depends on the result;
+- for write-heavy parallel execution, require explicit file/module ownership, disjoint write sets, hotspot serialization, and leader-owned final integration;
+- workers must be told they are not alone in the codebase and must not revert or overwrite other active owners' changes.
+
+Backend-family boundary:
+
+- one durable task uses one backend family at a time;
+- backend-family switching must be explicit and recorded in trace or handoff notes;
+- when LangGraph is ready and selected as default, using `native_omx` for a durable lane requires a named reason, such as worker-centric durable execution, worktree isolation, mailbox flow, or direct worker lifecycle control;
+- prefer LangGraph for graph-shaped multi-phase execution, checkpoint-driven recovery, interrupt/resume approval gates, frozen briefs, and persisted survivor queues;
+- do not mix `native_omx` worker lifecycle and LangGraph checkpoint state inside the same durable task without closing or explicitly handing off the previous backend family.
+
+Open-ended work keeps research and implementation separate: use analyst/research roles for discovery and only move to executor/team execution after the plan, ownership, and acceptance evidence are frozen.
+
+## 8. Backend, workflow, and team semantics
 
 These terms must not be collapsed:
 
@@ -194,7 +216,7 @@ These terms must not be collapsed:
 
 When LangGraph is ready, it is the default backend. A small task may still have `durable_workflow=not_needed` and `persistent_team=not_needed`. That means the task does not need those execution surfaces; it does not mean LangGraph is off.
 
-## 8. Current local inspection result
+## 9. Current local inspection result
 
 Read-only inspection on 2026-05-11 showed:
 
@@ -221,7 +243,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 Interpretation: the user-level LangGraph backend is available and should be treated as the default backend. A missing repo-local active selector is a state-refresh or reporting gap; it must not be interpreted as LangGraph backend unavailability.
 
-## 9. Active selector handling
+## 10. Active selector handling
 
 When `.omx/state/selectors/active.json` is missing but the user-level capability state says `durable_orchestration_backend=langgraph` and `langgraph_ready=true`, the session must not silently downgrade to `native_omx` or `none`.
 
@@ -232,7 +254,7 @@ Required behavior:
 3. refresh or create the selector through the approved helper when implementation work requires a tracked durable thread;
 4. if no helper exists yet, record the missing helper as an implementation gap, not as backend unavailability.
 
-## 10. Low-risk iteration and local integration boundary
+## 11. Low-risk iteration and local integration boundary
 
 For repeated low-risk refinements inside an already confirmed scope, the main session may proceed without asking for per-iteration approval when all of the following are true:
 
@@ -256,7 +278,7 @@ Explicit user approval is still required for:
 
 This local-merge permission does not weaken the publication workflow. It only defines the local execution boundary for simple, already-authorized iterations. Remote publication remains a separate decision.
 
-## 11. Higher-authority and runtime-surface blockers
+## 12. Higher-authority and runtime-surface blockers
 
 Automatic orchestration is the default policy, but live execution must still obey higher-authority instructions, the current tool contract, and actual runtime-surface availability. If a task would normally select an expert, durable workflow, or persistent team but the surface cannot be invoked, the trace must report a named blocker rather than rephrasing the decision as user preference.
 
@@ -281,7 +303,7 @@ The canonical activation trace therefore permits expert blockers:
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ```
 
-## 12. Implementation phases
+## 13. Implementation phases
 
 ### Phase 0 - Record and protect the plan
 
@@ -303,6 +325,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Add checker coverage for capability-chain consistency.
 - Add checker coverage for expert-timeout evidence claims.
 - Add checker coverage for completed-agent closure, bounded wait windows, liveness/stall handling, and upstream pacing labels.
+- Add checker coverage for fan-out bounds, write ownership isolation, leader-side spawning language, and one-backend-family durable tasks.
 - Add or update selector refresh/status helper behavior.
 
 ### Phase 3 - Runtime integration
@@ -311,7 +334,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Ensure existing sessions re-run activation checks on session reload, Codex restart, phase change, resume, continue, `.omx` state detection, and expert timeout.
 - Ensure LangGraph-ready sessions use LangGraph as the default durable backend.
 
-## 13. Proposed implementation scope
+## 14. Proposed implementation scope
 
 After this plan is confirmed, implement it through OpenSpec change `enforce-automatic-orchestration-routing`:
 
@@ -328,10 +351,13 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
    - durable team selected without a frozen plan, independent slices, or a named stabilization blocker;
    - bounded multi-face research skipping analyst-only first fan-out;
    - completed expert threads left open after fan-in without explicit preservation request;
-   - provider upstream pacing reported as a reason to disable orchestration.
+   - provider upstream pacing reported as a reason to disable orchestration;
+   - fan-out exceeding `agents.max_threads=6` or `agents.max_depth=1` without explicit override;
+   - write-heavy parallel work without disjoint ownership and leader-owned final integration;
+   - one durable task mixing `native_omx` and LangGraph state without an explicit handoff.
 6. Evaluate and fix the refresh/reporting rule for missing repo-local `.omx/state/selectors/active.json`.
 
-## 14. Evidence and test mapping
+## 15. Evidence and test mapping
 
 | Rule | Minimum evidence | Candidate test/check |
 | --- | --- | --- |
@@ -348,17 +374,22 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 | Completed experts are closed | completed agent is closed after result absorption unless explicitly preserved | agent lifecycle checker |
 | Expert waits are bounded | wait transcript shows 30s/60s/120s windows and about 180s total bound | wait/liveness trace checker |
 | Provider backpressure does not disable orchestration | pacing is reported as named backpressure, not as a skip reason | upstream pacing trace checker |
+| Fan-out bounds are enforced | trace and worker briefs stay within max_threads/max_depth unless explicitly overridden | fan-out bounds checker |
+| Write ownership is isolated | worker briefs declare disjoint file/module ownership and hotspot serialization | ownership isolation checker |
+| Durable backend family is single per task | handoff notes show one backend family or explicit close/handoff before switching | backend-family consistency checker |
 
-## 15. Risks and rollback
+## 16. Risks and rollback
 
 - Risk: automatically launching too many workers for small tasks. Mitigation: keep backend-on separate from workflow/team launch thresholds.
 - Risk: hiding real canary leakage by ignoring too much. Mitigation: only root `.gitignore` patterns are honored by the canary guard, and startup summary sources remain explicitly checked.
 - Risk: final reports overclaim expert evidence. Mitigation: require explicit evidence source labels.
 - Risk: completed expert threads remain open and leak context or attention. Mitigation: close completed agents after absorption by default.
 - Risk: upstream pacing is misread as orchestration unavailability. Mitigation: report named backpressure and prefer local-first bounded fan-out.
+- Risk: parallel workers overwrite each other. Mitigation: require disjoint ownership, hotspot serialization, and leader-owned integration.
+- Risk: backend-family state is mixed. Mitigation: enforce one durable backend family per task unless an explicit handoff is recorded.
 - Rollback: revert checker/runtime enforcement while keeping this plan as a record if implementation causes excessive false positives.
 
-## 16. Non-goals
+## 17. Non-goals
 
 - Do not force every small task into multi-worker execution.
 - Do not install the official LangGraph package into the repository `.venv`; the repository rule remains to use the user-level shared LangGraph venv.
@@ -366,7 +397,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Do not pretend pane-style persistent team was launched when tmux is unavailable.
 - Do not use this plan as proof that runtime enforcement is already complete.
 
-## 17. Acceptance criteria
+## 18. Acceptance criteria
 
 - New sessions, session reloads, Codex restarts, and resumed sessions report capability chain and backend default.
 - When LangGraph is ready, default backend is reported as `langgraph`.
@@ -380,8 +411,11 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Completed experts are closed after absorption unless the user explicitly asks to preserve the thread.
 - Expert wait behavior is bounded and liveness/stall handling is visible in trace or final report.
 - Provider upstream pacing is treated as backpressure, not as a reason to disable orchestration.
+- Fan-out stays within managed bounds unless an explicit override is recorded.
+- Write-heavy parallel execution declares disjoint ownership and leader-owned final integration.
+- Each durable task uses one backend family at a time, or records an explicit close/handoff before switching.
 
-## 18. Scope and authority boundary
+## 19. Scope and authority boundary
 
 This plan is an implementation-plan record. It is not the final runtime contract until the follow-up OpenSpec change updates policy surfaces, helper scripts, and checks.
 
@@ -394,7 +428,7 @@ Authority order:
 
 If this plan conflicts with a current higher-authority surface, the implementation change must update that surface rather than relying on this plan alone.
 
-## 19. State vocabulary
+## 20. State vocabulary
 
 Use these terms consistently:
 
@@ -408,7 +442,7 @@ Use these terms consistently:
 
 `ready` does not mean `running`, and `not_needed` does not mean disabled.
 
-## 20. Existing-session retrofit rule
+## 21. Existing-session retrofit rule
 
 Existing sessions must adopt this policy when any retrofit trigger occurs:
 
