@@ -65,6 +65,8 @@ The canvas should fit on one page where possible and cover:
 
 Tailoring is not only choosing fewer documents. It is choosing the right governance system for the risk and uncertainty level.
 
+The explicit tailoring authority for full versus lightweight use is `lifecycle_tailoring_rules.md`. Use it to decide whether the full architecture applies to the whole project, only the affected phase, only a bounded module, or only a release slice.
+
 Tailor these dimensions together:
 
 - Governance depth: who approves, who reviews, and which gates are mandatory.
@@ -90,6 +92,12 @@ Different projects should not write every document by default. Choose the minimu
 - Predictive gates fit work with clear requirements, higher risk, and explicit release evidence or rollback evidence needs.
 - Adaptive slices fit work with unclear requirements, user-feedback needs, spike work, MVP work, or small experiments.
 - Hybrid delivery fits work that still needs discovery but must eventually pass review, test, release, and retrospective gates.
+
+Use full architecture for the affected scope when work touches money, external users, customer commitments, trust, compliance, security, privacy, data ownership, durable state, runtime entrypoints, cross-project templates, shared interfaces, release gates, rollback safety, or long-lived platform behavior.
+
+Use whole-project lightweight architecture only for early ideas, private spikes, local learning exercises, or small internal tools with no external users, no money or trust boundary, no sensitive data, no shared runtime entrypoint, and a reversible or disposable result.
+
+Use phase-local or module-level lightweight architecture when the project overall needs stronger governance but one phase or module is bounded, low-risk, reversible, and has explicit escalation triggers. If risk, coupling, adoption, support, compliance, or rollback impact grows, expand the affected layer or module first and expand the whole project only when coupling becomes systemic.
 
 ## 0. Cognitive Narrative Layer
 

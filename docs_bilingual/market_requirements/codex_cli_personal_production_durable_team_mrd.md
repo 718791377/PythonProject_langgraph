@@ -49,6 +49,15 @@ Market requirements must now be traced to the Codex platform inventory:
 
 For downstream one-person-company work, the MRD belongs in the downstream repository. That MRD owns local customer evidence, market segmentation, pricing signals, channel evidence, finance assumptions, product commitments, and support expectations.
 
+## Tailoring Requirements
+
+Market requirements must not force every project to create the maximum document stack. Use `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md` to choose the minimum sufficient architecture depth.
+
+- Full Codex platform scope is required when a requirement affects reusable orchestration, native subagent routing, `native_omx`, LangGraph, worktree safety, OpenSpec governance, user-level launcher policy, skill/profile governance, local-main-first publication, shared templates, durable state, release safety, or cross-project adoption.
+- Whole-project lightweight scope is allowed only for private spikes, early ideas, local learning, or low-risk internal tools without external users, money, trust boundaries, sensitive data, shared runtime entrypoints, or release commitments.
+- Phase-local or module-level lightweight scope is allowed when a bounded part of a larger effort is low-risk, reversible, and has explicit escalation triggers.
+- Hybrid scope is required when market or product uncertainty is high but the eventual delivery may affect users, trust, revenue, compliance, runtime behavior, or release safety.
+
 ## Process-Group Evidence For Market Requirements
 
 Execution-facing MRD items must state:

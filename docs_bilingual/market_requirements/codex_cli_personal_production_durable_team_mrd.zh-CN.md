@@ -49,6 +49,15 @@ status: draft
 
 对于下游一人公司工作，MRD 属于下游仓库。该 MRD 拥有本地客户证据、市场分层、定价信号、渠道证据、财务假设、产品承诺与支持预期。
 
+## 裁剪需求
+
+市场需求不得强制每个项目创建最大文档栈。使用 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 选择最小充分架构深度。
+
+- 当需求影响可复用编排、原生 subagent 路由、`native_omx`、LangGraph、worktree safety、OpenSpec governance、user-level launcher policy、skill/profile governance、local-main-first publication、shared templates、durable state、release safety 或跨项目采用时，必须使用完整 Codex 平台范围。
+- 只有私有 spike、早期想法、本地学习或低风险内部工具，且没有外部用户、金钱、信任边界、敏感数据、共享 runtime entrypoints 或发布承诺时，才允许整个项目轻量。
+- 当较大工作中的有边界部分低风险、可逆，并有明确升级触发条件时，可以采用阶段局部或模块级轻量。
+- 当市场或产品不确定性高，但最终交付可能影响用户、信任、收入、合规、runtime behavior 或 release safety 时，必须采用混合范围。
+
 ## 市场需求的过程组式证据
 
 面向执行的 MRD 条目必须说明：

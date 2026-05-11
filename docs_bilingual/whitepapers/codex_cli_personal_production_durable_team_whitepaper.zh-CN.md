@@ -48,6 +48,12 @@ status: draft
 
 平台叙事只有落到过程组式交付纪律中才可执行。每个发布切片都应识别输入、工具与技术、输出，然后经过启动、规划、执行、监控与控制、收尾。这让 AI 辅助交付保持可检查，并防止隐藏自动化变成审批权威。
 
+## 架构裁剪规则
+
+当工作改变可复用编排行为、原生 subagent 路由、`native_omx`、LangGraph、worktree safety、OpenSpec governance、user-level launchers、skill/profile governance、local-main-first publication、shared templates、durable state、release safety 或跨项目采用时，受影响范围使用完整平台架构。
+
+只有边界清晰、低风险、可逆，并且不改变 runtime entrypoints、secrets、durable state、CI gates、release gates 或下游项目依赖的阶段或模块，才允许轻量处理。决策规则位于 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md`。
+
 
 ## 核心假设
 

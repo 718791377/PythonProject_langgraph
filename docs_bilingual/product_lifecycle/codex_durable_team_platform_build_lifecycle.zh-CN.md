@@ -55,6 +55,8 @@ human operator 和 current main Codex leader session 继续负责 value judgment
 
 平台不应把完整生命周期文档当作官僚化默认流程。平台应使用完整地图来防止遗漏商业价值、用户影响、可衡量结果、原生 Codex 兼容性、ownership 边界、发布安全、运营可支持性、回滚和长期治理反馈。
 
+在把平台变更分类为轻量之前，先使用 `lifecycle_tailoring_rules.zh-CN.md`。对本仓库而言，凡是影响可复用编排行为、原生 subagent 路由、`native_omx`、LangGraph、worktree safety、OpenSpec governance、user-level launcher policy、skill/profile governance、local-main-first publication 或 shared templates 的变更，都需要对受影响范围采用完整架构。只有不改变 runtime entrypoints、durable state、secrets、CI gates、release gates 或下游项目依赖的有边界纯文档 appendix 或本地 helper，才可以作为模块级轻量处理。
+
 ## Codex 目标清单规则
 
 Codex CLI 平台目标固定为：

@@ -118,6 +118,10 @@ Use a hybrid approach when:
 - Discovery is still needed, but delivery must still pass OpenSpec, checker, and local-main-first gates.
 - A small spike should happen first, then a predictive delivery plan should be frozen.
 
+Use `lifecycle_tailoring_rules.md` as the decision record for whether predictive, adaptive, or hybrid work uses the full architecture, whole-project lightweight architecture, phase-local lightweight architecture, or module-level lightweight architecture. The tailoring decision itself should state Inputs, Tools and Techniques, and Outputs before execution starts.
+
+Program, portfolio, and PMO-style oversight become relevant when multiple related initiatives, shared capacity, cross-project value trade-offs, or governance services are involved. In that case, do not mark the entire project lightweight; keep the program or portfolio decision surface explicit and lighten only bounded modules or phases when their risk permits.
+
 ## Codex Execution Mode Mapping
 
 | Work condition | Recommended Codex mode | Why |

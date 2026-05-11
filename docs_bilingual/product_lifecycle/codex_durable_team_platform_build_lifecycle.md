@@ -55,6 +55,8 @@ Use these depth levels when planning platform changes:
 
 The platform should not use full lifecycle documentation as a bureaucratic default. It should use the full map to prevent missing business value, user impact, measurable outcomes, native Codex compatibility, ownership boundaries, release safety, operations supportability, rollback, or long-term governance feedback.
 
+Use `lifecycle_tailoring_rules.md` before classifying a platform change as lightweight. For this repository, changes that affect reusable orchestration behavior, native subagent routing, `native_omx`, LangGraph, worktree safety, OpenSpec governance, user-level launcher policy, skill/profile governance, local-main-first publication, or shared templates require full architecture coverage for the affected scope. A bounded documentation-only appendix or local helper may be module-level lightweight only when it does not change runtime entrypoints, durable state, secrets, CI gates, release gates, or downstream project dependencies.
+
 ## Codex Target Inventory Rule
 
 The Codex CLI platform target is fixed as:

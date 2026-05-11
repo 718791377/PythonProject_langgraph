@@ -48,6 +48,12 @@ This inventory is intentionally smaller than the downstream one-person-company o
 
 The platform narrative becomes actionable only when delivery follows a process-group discipline. Every release slice should identify Inputs, Tools and Techniques, and Outputs, then move through initiating, planning, executing, monitoring and controlling, and closing. This keeps AI-assisted delivery inspectable and prevents hidden automation from becoming approval authority.
 
+## Architecture Tailoring Rule
+
+The full platform architecture is used for the affected scope when work changes reusable orchestration behavior, native subagent routing, `native_omx`, LangGraph, worktree safety, OpenSpec governance, user-level launchers, skill/profile governance, local-main-first publication, shared templates, durable state, release safety, or cross-project adoption.
+
+Lightweight treatment is allowed only for bounded low-risk phases or modules that are reversible and do not change runtime entrypoints, secrets, durable state, CI gates, release gates, or downstream project dependencies. The decision rule lives in `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md`.
+
 
 ## Key Assumptions
 

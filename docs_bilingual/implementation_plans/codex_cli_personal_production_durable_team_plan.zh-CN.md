@@ -84,6 +84,14 @@ Codex CLI 个人开发者生产级持久化团队目标采用以下清单：12 �
 
 该契约适用于启动持久化团队或 graph lane 之前。持久化 lane 仍然要求计划已经冻结，并且存在至少两个基本独立的执行切片。
 
+### 1.4 裁剪契约
+
+`docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 定义本北极星何时使用完整架构覆盖，何时允许有边界阶段或模块保持轻量。
+
+对本方案而言，凡是改变可复用编排行为、原生 subagent 路由、`native_omx`、LangGraph、worktree safety、OpenSpec governance、user-level launcher policy、skill/profile governance、local-main-first publication、shared templates、durable state、release safety 或跨项目采用的受影响范围，都必须使用完整架构覆盖。
+
+只有不改变 runtime entrypoints、durable state、secrets、CI gates、release gates 或下游项目依赖的有边界文档、研究、本地 helper 或 spike 模块，才允许轻量处理。如果轻量模块变成共享基础设施或生产行为，必须先扩展受影响层级，再发布。
+
 
 ## 2. 问题陈述与设计驱动
 

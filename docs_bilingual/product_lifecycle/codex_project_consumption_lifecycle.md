@@ -28,6 +28,8 @@ A downstream project may be lightweight, but it must stay repo-local: its OpenSp
 
 Downstream projects may consult `business_management_source_synthesis.md` for lifecycle tailoring. The synthesis should help choose the minimum sufficient business, discovery, product, technical, release, and learning artifacts, but it must not move downstream customer evidence, metrics, or durable truth into this platform repository.
 
+Use `lifecycle_tailoring_rules.md` to decide whether the downstream project is whole-project lightweight, phase-local lightweight, module-level lightweight, hybrid, or full architecture. A downstream business may start lightweight, but customer commitments, revenue, payment flows, sensitive data, compliance exposure, support obligations, repeatable delivery, or agent automation beyond low-risk support require expansion of the affected layers. Expand the whole project only when coupling becomes systemic; otherwise keep lightening local to the low-risk phase or module.
+
 ## One-Person-Company Operating-System Inventory Rule
 
 For downstream business work that is a real one-person-company operating system, use this fixed target:

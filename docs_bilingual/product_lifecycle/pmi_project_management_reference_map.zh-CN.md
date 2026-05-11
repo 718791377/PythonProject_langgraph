@@ -118,6 +118,10 @@
 - 仍需要 discovery，但交付仍必须通过 OpenSpec、checker 和 local-main-first gates。
 - 先做小型 spike，然后再冻结 predictive delivery plan。
 
+使用 `lifecycle_tailoring_rules.zh-CN.md` 记录 predictive、adaptive 或 hybrid 工作究竟采用完整架构、整个项目轻量、阶段局部轻量，还是模块级轻量。裁剪决策本身应在执行前写明输入、工具与技术、输出。
+
+当多个相关倡议、共享容量、跨项目价值取舍或治理服务出现时，项目集、项目组合和 PMO 式 oversight 开始相关。此时不要把整个项目判定为轻量；应保持项目集或组合级决策面显式存在，并只在风险允许时对有边界模块或阶段做轻量化。
+
 ## Codex Execution Mode Mapping
 
 | 工作条件 | 推荐 Codex 模式 | 原因 |

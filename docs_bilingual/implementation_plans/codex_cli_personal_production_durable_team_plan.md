@@ -84,6 +84,14 @@ Execution-facing plan sections use a PMI process-group style:
 
 This contract applies before a durable team or graph lane is launched. A durable lane still requires a frozen plan plus at least two mostly independent execution slices.
 
+### 1.4 Tailoring Contract
+
+`docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md` defines when this North Star uses full architecture coverage and when a bounded phase or module may stay lightweight.
+
+For this plan, full architecture coverage is required for affected scopes that change reusable orchestration behavior, native subagent routing, `native_omx`, LangGraph, worktree safety, OpenSpec governance, user-level launcher policy, skill/profile governance, local-main-first publication, shared templates, durable state, release safety, or cross-project adoption.
+
+Lightweight treatment is permitted only for bounded documentation, research, local helper, or spike modules that do not change runtime entrypoints, durable state, secrets, CI gates, release gates, or downstream project dependencies. If a lightweight module becomes shared infrastructure or production behavior, the affected layer must be expanded before release.
+
 
 ## 2. Problem Statement And Design Drivers
 
