@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.9
+version: 0.10
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -205,7 +205,34 @@ Backend-family boundary:
 
 Open-ended work keeps research and implementation separate: use analyst/research roles for discovery and only move to executor/team execution after the plan, ownership, and acceptance evidence are frozen.
 
-## 8. Backend, workflow, and team semantics
+## 8. Handoff, adversarial review, and adjacent-runtime boundaries
+
+Open-ended research and contested bug review need explicit handoff boundaries so that temporary expert lanes do not become unmanaged persistent workers.
+
+Research handoff rules:
+
+- keep research and implementation in different roles when the task starts open-ended;
+- after research fan-in, persist the result as a frozen implementation brief before implementation starts;
+- continue implementation in a fresh execution context or clearly marked execution phase, using the frozen brief as the contract;
+- the brief must include scope, non-goals, acceptance evidence, ownership boundaries, and unresolved risks.
+
+Adversarial review rules:
+
+- `bug-finder`, `bug-rebutter`, and `bug-judge` are burst-review roles, leader-side and read-only by default;
+- use them for contested, noisy, or high-volume bug triage only after normal verification still leaves disagreement or a broad candidate bug set;
+- do not keep the bug triad alive as persistent workers;
+- persist remaining candidate issues as an adversarial-review survivor queue and route them to a debugger lane when repair work is needed;
+- final reports must distinguish confirmed bugs, rebutted candidates, unresolved survivors, and debugger-lane follow-up.
+
+Durable-state and adjacent-runtime boundaries:
+
+- use `codex-durable-state-status.ps1` as the canonical read-only cross-backend durable-state summary for this repository or worktree;
+- do not treat compatibility records alone as permission to auto-adopt unmanaged teams;
+- prefer the term OpenHands over archived OpenDevin terminology;
+- treat LangGraph, AutoGen, and CrewAI as general programmable orchestration runtimes, not as native Codex-subagent equivalents;
+- a LangGraph graph may coordinate phases, checkpoints, approvals, and survivor queues, but native Codex experts still require explicit leader-side spawning and fan-in.
+
+## 9. Backend, workflow, and team semantics
 
 These terms must not be collapsed:
 
@@ -216,7 +243,7 @@ These terms must not be collapsed:
 
 When LangGraph is ready, it is the default backend. A small task may still have `durable_workflow=not_needed` and `persistent_team=not_needed`. That means the task does not need those execution surfaces; it does not mean LangGraph is off.
 
-## 9. Current local inspection result
+## 10. Current local inspection result
 
 Read-only inspection on 2026-05-11 showed:
 
@@ -243,7 +270,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 Interpretation: the user-level LangGraph backend is available and should be treated as the default backend. A missing repo-local active selector is a state-refresh or reporting gap; it must not be interpreted as LangGraph backend unavailability.
 
-## 10. Active selector handling
+## 11. Active selector handling
 
 When `.omx/state/selectors/active.json` is missing but the user-level capability state says `durable_orchestration_backend=langgraph` and `langgraph_ready=true`, the session must not silently downgrade to `native_omx` or `none`.
 
@@ -254,7 +281,7 @@ Required behavior:
 3. refresh or create the selector through the approved helper when implementation work requires a tracked durable thread;
 4. if no helper exists yet, record the missing helper as an implementation gap, not as backend unavailability.
 
-## 11. Low-risk iteration and local integration boundary
+## 12. Low-risk iteration and local integration boundary
 
 For repeated low-risk refinements inside an already confirmed scope, the main session may proceed without asking for per-iteration approval when all of the following are true:
 
@@ -278,7 +305,7 @@ Explicit user approval is still required for:
 
 This local-merge permission does not weaken the publication workflow. It only defines the local execution boundary for simple, already-authorized iterations. Remote publication remains a separate decision.
 
-## 12. Higher-authority and runtime-surface blockers
+## 13. Higher-authority and runtime-surface blockers
 
 Automatic orchestration is the default policy, but live execution must still obey higher-authority instructions, the current tool contract, and actual runtime-surface availability. If a task would normally select an expert, durable workflow, or persistent team but the surface cannot be invoked, the trace must report a named blocker rather than rephrasing the decision as user preference.
 
@@ -303,7 +330,7 @@ The canonical activation trace therefore permits expert blockers:
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ```
 
-## 13. Implementation phases
+## 14. Implementation phases
 
 ### Phase 0 - Record and protect the plan
 
@@ -326,6 +353,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Add checker coverage for expert-timeout evidence claims.
 - Add checker coverage for completed-agent closure, bounded wait windows, liveness/stall handling, and upstream pacing labels.
 - Add checker coverage for fan-out bounds, write ownership isolation, leader-side spawning language, and one-backend-family durable tasks.
+- Add checker coverage for frozen research handoff briefs, adversarial-review survivor queues, and adjacent-runtime terminology boundaries.
 - Add or update selector refresh/status helper behavior.
 
 ### Phase 3 - Runtime integration
@@ -334,7 +362,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Ensure existing sessions re-run activation checks on session reload, Codex restart, phase change, resume, continue, `.omx` state detection, and expert timeout.
 - Ensure LangGraph-ready sessions use LangGraph as the default durable backend.
 
-## 14. Proposed implementation scope
+## 15. Proposed implementation scope
 
 After this plan is confirmed, implement it through OpenSpec change `enforce-automatic-orchestration-routing`:
 
@@ -354,10 +382,13 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
    - provider upstream pacing reported as a reason to disable orchestration;
    - fan-out exceeding `agents.max_threads=6` or `agents.max_depth=1` without explicit override;
    - write-heavy parallel work without disjoint ownership and leader-owned final integration;
-   - one durable task mixing `native_omx` and LangGraph state without an explicit handoff.
+   - one durable task mixing `native_omx` and LangGraph state without an explicit handoff;
+   - implementation starting from open-ended research without a frozen implementation brief;
+   - bug triad roles kept alive as persistent workers instead of persisting survivors to debugger-lane queue;
+   - treating AutoGen, CrewAI, or LangGraph as native Codex-subagent equivalents.
 6. Evaluate and fix the refresh/reporting rule for missing repo-local `.omx/state/selectors/active.json`.
 
-## 15. Evidence and test mapping
+## 16. Evidence and test mapping
 
 | Rule | Minimum evidence | Candidate test/check |
 | --- | --- | --- |
@@ -377,8 +408,11 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 | Fan-out bounds are enforced | trace and worker briefs stay within max_threads/max_depth unless explicitly overridden | fan-out bounds checker |
 | Write ownership is isolated | worker briefs declare disjoint file/module ownership and hotspot serialization | ownership isolation checker |
 | Durable backend family is single per task | handoff notes show one backend family or explicit close/handoff before switching | backend-family consistency checker |
+| Research handoff is frozen | implementation starts from a frozen brief with scope, non-goals, acceptance evidence, ownership, and risks | frozen-brief checker |
+| Bug triad does not persist | bug-finder/rebutter/judge results are absorbed and survivors are queued for debugger lane | adversarial survivor queue checker |
+| Adjacent runtime terminology is correct | OpenHands is used; AutoGen/CrewAI/LangGraph are not described as native Codex-subagent equivalents | terminology checker |
 
-## 16. Risks and rollback
+## 17. Risks and rollback
 
 - Risk: automatically launching too many workers for small tasks. Mitigation: keep backend-on separate from workflow/team launch thresholds.
 - Risk: hiding real canary leakage by ignoring too much. Mitigation: only root `.gitignore` patterns are honored by the canary guard, and startup summary sources remain explicitly checked.
@@ -387,9 +421,12 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Risk: upstream pacing is misread as orchestration unavailability. Mitigation: report named backpressure and prefer local-first bounded fan-out.
 - Risk: parallel workers overwrite each other. Mitigation: require disjoint ownership, hotspot serialization, and leader-owned integration.
 - Risk: backend-family state is mixed. Mitigation: enforce one durable backend family per task unless an explicit handoff is recorded.
+- Risk: research conclusions drift during implementation. Mitigation: require a frozen implementation brief before execution.
+- Risk: adversarial review lanes become unmanaged workers. Mitigation: close burst roles after fan-in and persist only survivor queues for debugger-lane follow-up.
+- Risk: adjacent orchestration runtimes are confused with native Codex subagents. Mitigation: enforce terminology and role-boundary checks.
 - Rollback: revert checker/runtime enforcement while keeping this plan as a record if implementation causes excessive false positives.
 
-## 17. Non-goals
+## 18. Non-goals
 
 - Do not force every small task into multi-worker execution.
 - Do not install the official LangGraph package into the repository `.venv`; the repository rule remains to use the user-level shared LangGraph venv.
@@ -397,7 +434,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Do not pretend pane-style persistent team was launched when tmux is unavailable.
 - Do not use this plan as proof that runtime enforcement is already complete.
 
-## 18. Acceptance criteria
+## 19. Acceptance criteria
 
 - New sessions, session reloads, Codex restarts, and resumed sessions report capability chain and backend default.
 - When LangGraph is ready, default backend is reported as `langgraph`.
@@ -414,8 +451,11 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Fan-out stays within managed bounds unless an explicit override is recorded.
 - Write-heavy parallel execution declares disjoint ownership and leader-owned final integration.
 - Each durable task uses one backend family at a time, or records an explicit close/handoff before switching.
+- Open-ended research hands off through a frozen implementation brief before execution starts.
+- Bug triad roles are burst, read-only, leader-side roles; unresolved survivors are queued for debugger-lane follow-up.
+- Adjacent runtime terminology stays correct: OpenHands is preferred, and AutoGen/CrewAI/LangGraph are not described as native Codex-subagent equivalents.
 
-## 19. Scope and authority boundary
+## 20. Scope and authority boundary
 
 This plan is an implementation-plan record. It is not the final runtime contract until the follow-up OpenSpec change updates policy surfaces, helper scripts, and checks.
 
@@ -428,7 +468,7 @@ Authority order:
 
 If this plan conflicts with a current higher-authority surface, the implementation change must update that surface rather than relying on this plan alone.
 
-## 20. State vocabulary
+## 21. State vocabulary
 
 Use these terms consistently:
 
@@ -442,7 +482,7 @@ Use these terms consistently:
 
 `ready` does not mean `running`, and `not_needed` does not mean disabled.
 
-## 21. Existing-session retrofit rule
+## 22. Existing-session retrofit rule
 
 Existing sessions must adopt this policy when any retrofit trigger occurs:
 
