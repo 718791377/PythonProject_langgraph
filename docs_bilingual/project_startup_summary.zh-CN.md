@@ -81,14 +81,22 @@ translation_of: docs_bilingual/project_startup_summary.md
 6. `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md` - 多会话 Git worktree 隔离、脏文件处理和 mainline sync safety 的治理政策。
 7. `docs_bilingual/governance/langgraph_user_level_runtime_policy.zh-CN.md` - 用户级 LangGraph runtime layout 与 usage 的治理政策。
 8. `docs_bilingual/governance/user_level_launcher_payload_policy.zh-CN.md` - Windows-safe launcher payload 处理的治理政策。
-9. `docs_bilingual/governance/openspec_usage_convention.zh-CN.md` - 本仓库 OpenSpec 使用方式的治理政策。
-10. `docs_bilingual/governance/codex_user_level_mcp_scope_policy.zh-CN.md` - Codex 直连 MCP 与 MCP Router 共享管理边界的治理政策。
-11. `docs_bilingual/governance/openspec_opsx_project_usage_policy.zh-CN.md` - 本仓库 OPSX workflow usage 的治理政策。
-12. `docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md` - 官方 OpenSpec workflow authority 与 enforcement 的治理政策。
-13. `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - 用户级 team mode 与 orchestration routing 的 active implementation plan。
-14. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md` - cross-session durable-state isolation 的 active implementation plan。
-15. 当前正在实现的 active OpenSpec change；如果 `openspec list --json` 显示没有 changes，则先停在这里，明确选择下一轮小步 change 后再写文件。
+9. `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md` - automatic orchestration activation trace、能力链、硬路由指令、timeout evidence、durable-team 阈值与已有会话 retrofit 的治理政策。
+10. `docs_bilingual/governance/openspec_usage_convention.zh-CN.md` - 本仓库 OpenSpec 使用方式的治理政策。
+11. `docs_bilingual/governance/codex_user_level_mcp_scope_policy.zh-CN.md` - Codex 直连 MCP 与 MCP Router 共享管理边界的治理政策。
+12. `docs_bilingual/governance/openspec_opsx_project_usage_policy.zh-CN.md` - 本仓库 OPSX workflow usage 的治理政策。
+13. `docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md` - 官方 OpenSpec workflow authority 与 enforcement 的治理政策。
+14. `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md` - 用户级 team mode 与 orchestration routing 的 active implementation plan。
+15. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md` - cross-session durable-state isolation 的 active implementation plan。
+16. 当前正在实现的 active OpenSpec change；如果 `openspec list --json` 显示没有 changes，则先停在这里，明确选择下一轮小步 change 后再写文件。
 
+
+自动 orchestration activation 提醒：
+
+- 在首次实质性任务、reload/restart/resume/continue、阶段变化、发现 `.omx` durable state、expert timeout/stall、capability state 变化或扩展到 2+ execution slices 时重新 activation。
+- Trace 必须包含 `phase`、`capability_chain`、`backend_default`、`backend_ready`、`experts`、`durable_workflow`、`persistent_team` 和 `why`。
+- 不得用“用户没有要求并行/子代理”作为跳过理由；必须引用阈值、blocker、范围或主会话接管。
+- LangGraph ready 时报告默认 ready durable backend，但 team launch 仍受阈值约束。
 ## 上下文保留哨兵与安全执行
 
 用户级安全规则：
