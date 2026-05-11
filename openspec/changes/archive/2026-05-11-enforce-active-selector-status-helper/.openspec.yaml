@@ -1,2 +1,8 @@
 schema: spec-driven
 created: 2026-05-11
+x_change_class: code
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/install-codex-user-level-team-mode.ps1
+  - tools/check_orchestration_activation_policy.py
+  - test/install-codex-user-level-team-mode.test.ps1
