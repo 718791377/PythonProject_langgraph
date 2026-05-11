@@ -6,16 +6,23 @@
 
 ## Requirements
 
-### Requirement: Product Lifecycle Reference Defines The 0-8 Document Stack
+### Requirement: Product Lifecycle Reference Defines The 0-11 / 12-Layer Document Stack
 
-仓库必须维护一份双语产品生命周期参考，定义认知叙事、商业、市场、战略、产品、技术、执行、增长和复盘层。
+仓库必须维护一份双语产品生命周期参考，定义认知叙事、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营和复盘层。该参考还必须总结从本地 `Business Management/` 源库综合出的仓库特定经验，且不得复制长篇源书正文。
 
 #### Scenario: A maintainer asks how a white paper differs from a North Star plan
 
 - **GIVEN** 维护者阅读产品生命周期参考
 - **WHEN** 维护者比较文档类型
 - **THEN** 该参考说明白皮书用于改变认知，并解释为什么该方向存在
-- **AND** 该参考说明北极星 Plan 用于把战略转化为可衡量方向、指标、杠杆和分阶段执行
+- **AND** 该参考说明北极星 Plan 属于指标层，用于把战略转化为可衡量方向、输入指标、护栏指标和分阶段决策阈值
+
+#### Scenario: A maintainer applies the Business Management source library
+
+- **GIVEN** 维护者阅读产品生命周期参考
+- **WHEN** 维护者需要有源库支撑的生命周期指导
+- **THEN** 该参考把本地 Business Management 源库主题映射到认知、商业、市场发现、战略、指标、产品、架构、组织、执行、增长、运营和学习循环
+- **AND** 它把指导表达为仓库特定运营规则，而不是源书摘录
 
 ### Requirement: Platform Build And Project Consumption Stay Separate
 
@@ -54,7 +61,7 @@ Codex 平台仓库可以定义可复用 governance、templates、checkers、role
 
 ### Requirement: Process Groups Map To OpenSpec Delivery Gates
 
-仓库必须把 PMI process group model 映射到 OpenSpec 和 GitLab-first delivery gates。OpenSpec 是仓库治理工作流；GitLab-first delivery gates 是以 GitLab MR 和 pipeline 为权威评审门的交付流程。
+仓库必须把 PMI process group model 映射到 OpenSpec 和 local-main-first delivery gates。OpenSpec 是仓库治理工作流；local-main-first delivery gates 是以本地 main 集成为先，并保留 GitLab/GitHub 远端确认与镜像的交付流程。
 
 #### Scenario: A platform change moves from idea to archive
 
@@ -88,3 +95,57 @@ Codex 平台仓库可以定义可复用 governance、templates、checkers、role
 - **THEN** 维护者可以在 `docs_bilingual/whitepapers/` 找到 canonical white paper；`docs_bilingual/whitepapers/` 是白皮书目录，用来保存认知叙事文档
 - **AND** 维护者可以在 `docs_bilingual/market_requirements/` 找到 MRD；`docs_bilingual/market_requirements/` 是市场需求目录，用来保存 market-requirements documents
 - **AND** concrete workload-to-profile mappings（具体工作负载到 profile 的映射）位于 MRD appendix，而不是单独的 implementation-plan reference
+
+### Requirement: 生命周期治理定义两个 12 层目标架构
+
+仓库必须基于本地 Business Management 与 PMP 源库定义两个明确的 12 层架构目标：Codex CLI 个人开发者生产级持久化团队目标，以及个人级生产级一人公司经营系统目标。
+
+#### Scenario: 维护者比较两个目标
+
+- **GIVEN** 维护者阅读产品生命周期文档
+- **WHEN** 维护者比较 Codex 平台目标与一人公司目标
+- **THEN** Codex 平台目标列出 12 层主干、4 个虚拟部门、24 个责任域、18 个横切模块、48 个核心文档、12 个受治理 AI Agent 和 12 本推荐书籍
+- **AND** 一人公司目标列出 12 层主干、5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍和 12 个最小启动文档
+
+### Requirement: 面向执行的生命周期指导使用过程组式写法
+
+任何影响执行的生命周期指导，都必须用过程组式写法表达，并为每个层级或交付门区分输入、工具与技术、输出。
+
+#### Scenario: 维护者规划一个生命周期驱动的变更
+
+- **GIVEN** 维护者使用生命周期文档进行执行规划
+- **WHEN** 维护者检查某个生命周期层或交付门
+- **THEN** 指导说明启动工作的输入
+- **AND** 指导说明用于分析、决策、执行、监控或收尾的工具与技术
+- **AND** 指导说明会成为交付物、证据或其他层级输入的输出
+
+### Requirement: 本地参考覆盖只能摘要，不能复制源文本
+
+仓库必须按文件、格式、页数、spine item 数与读取方式摘要本地 Business Management 与 PMP 参考覆盖，不得提交抽取源文本，也不得复现长篇版权内容。
+
+#### Scenario: 维护者审计来源支撑的生命周期更新
+
+- **GIVEN** 维护者阅读来源综合文档
+- **WHEN** 维护者检查参考库如何被使用
+- **THEN** 文档说明 PDF 按页读取、EPUB 按 spine item 读取、Markdown 按全文读取
+- **AND** 文档只总结仓库特定治理映射
+- **AND** 被忽略的抽取工件仍位于 Git 跟踪文件之外
+
+### Requirement: 生命周期裁剪规则定义完整架构与轻量架构的使用
+
+仓库必须定义明确的生命周期裁剪规则，用于判断什么时候使用完整 12 层目标架构，什么时候使用轻量架构。这些规则必须区分整个项目轻量、阶段局部轻量、模块级轻量，以及重新升级到更完整治理的条件。
+
+#### Scenario: 维护者为生命周期驱动变更选择治理深度
+
+- **GIVEN** 维护者阅读产品生命周期裁剪指导
+- **WHEN** 工作影响金钱、用户、信任、合规、安全、数据、runtime entrypoints、release safety、跨项目模板、durable state、共享接口或长期平台行为
+- **THEN** 指导要求对受影响范围采用完整架构路径
+- **AND** 当低风险阶段或模块的边界与回滚证据明确时，指导仍可允许未受影响的低风险阶段或模块保持轻量
+
+#### Scenario: 维护者安全使用轻量路径
+
+- **GIVEN** 请求的工作是小型本地 note、低风险内部工具、一次性 spike、可逆文档实验，或没有外部用户、金钱、信任边界、合规影响或 durable-state 变更的早期想法
+- **WHEN** 维护者选择轻量路径
+- **THEN** 指导说明轻量化适用于整个项目、本地阶段，还是某个模块
+- **AND** 它为裁剪决策记录输入、工具与技术、输出
+- **AND** 它定义当风险、不确定性、耦合、采用、发布影响或干系人影响增长时的升级触发条件

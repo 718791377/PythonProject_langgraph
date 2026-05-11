@@ -1,0 +1,3 @@
+display_name: Plugin Modules
+short_description: Load Codex plugin modules by profile.
+default_prompt: Use plugin-modules to list, soft-load, or apply a Codex plugin profile.

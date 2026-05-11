@@ -248,7 +248,7 @@ Repository archive isolation flow:
 - In the single-MR path, run the archive operation in the same isolated feature worktree after implementation validation and before publication. If a separate archive worktree is safer, merge that archive result back into the same publication branch before opening the MR.
 - Verify before archive and verify again after archive promotion. Worktree-local verification must include the repository guard commands required by the change so archive-generated specs are checked before integration.
 - Commit the publication branch only after the post-archive validation passes.
-- Publish through the normal GitLab-first flow. The core rule is: implementation validation first, archive and stable-spec promotion second, post-archive validation third, then one MR unless a documented two-MR exception applies.
+- Publish through the normal local-main-first flow. The core rule is: implementation validation first, archive and stable-spec promotion second, post-archive validation third, then one local integration package unless a documented two-step exception applies.
 
 ## 6. When OPSX Is Required In This Repository
 

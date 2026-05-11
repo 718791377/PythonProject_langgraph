@@ -66,6 +66,33 @@ status: draft
 
 这意味着每个未来 release slice 不只要描述 task list，还要描述 value increment、feedback point、validation path、rollback boundary 和 operator consent boundary。
 
+### 1.2 12 层架构清单对齐
+
+本方案中较早的十层运行时地图，是面向执行 lane 的历史分解，不是完整文档治理模型。完整产品/商业生命周期模型现在是 12 层主干：认知叙事、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营、复盘。
+
+Codex CLI 个人开发者生产级持久化团队目标采用以下清单：12 层主干、4 个虚拟部门、24 个责任域、18 个横切模块、48 个核心文档、12 个受治理 AI Agent、12 本推荐书籍。这是可复用 Codex 编排机制的平台目标。
+
+下游个人级生产级一人公司目标采用更大的清单：12 层主干、5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍、12 个最小启动文档。这是下游业务经营系统模型，不能被当作平台 repo-local truth。
+
+### 1.3 过程组式执行契约
+
+面向执行的方案章节使用 PMI 过程组式写法：
+
+- 输入：来源文档、当前状态、约束、风险、审批与上游层级输出。
+- 工具与技术：OpenSpec、本地 main 优先 gate、worktree 隔离、原生 subagent、`native_omx`、LangGraph、检查器、评审、测试、发布与回滚规划。
+- 输出：已批准方案、已变更文件、验证证据、发布证据、归档证据、经验教训与下一轮输入。
+
+该契约适用于启动持久化团队或 graph lane 之前。持久化 lane 仍然要求计划已经冻结，并且存在至少两个基本独立的执行切片。
+
+### 1.4 裁剪契约
+
+`docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 定义本北极星何时使用完整架构覆盖，何时允许有边界阶段或模块保持轻量。
+
+对本方案而言，凡是改变可复用编排行为、原生 subagent 路由、`native_omx`、LangGraph、worktree safety、OpenSpec governance、user-level launcher policy、skill/profile governance、local-main-first publication、shared templates、durable state、release safety 或跨项目采用的受影响范围，都必须使用完整架构覆盖。
+
+只有不改变 runtime entrypoints、durable state、secrets、CI gates、release gates 或下游项目依赖的有边界文档、研究、本地 helper 或 spike 模块，才允许轻量处理。如果轻量模块变成共享基础设施或生产行为，必须先扩展受影响层级，再发布。
+
+
 ## 2. 问题陈述与设计驱动
 
 在该目标假设基线下，真正的问题已经不再是“LangGraph 能不能用”，而是：

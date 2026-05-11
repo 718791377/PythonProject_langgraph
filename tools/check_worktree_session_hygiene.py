@@ -275,7 +275,7 @@ def run_check(
                 )
             elif target_is_ancestor is True:
                 info.append(
-                    f"Local {main_branch} is not behind {main_ref}: {main_commit} is ahead of {target_commit}. Verify this is intentional and do not use primary main for feature work."
+                    f"Local {main_branch} intentionally leads {main_ref}: {main_commit} is ahead of {target_commit}. Remote publication lag is allowed when intentional; do not use primary main for feature work."
                 )
             elif main_is_ancestor is None or target_is_ancestor is None:
                 warnings.append(
@@ -364,7 +364,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Check multi-session Git worktree hygiene without modifying the repository.")
     parser.add_argument("--root", default=".", help="Repository or worktree root to inspect.")
     parser.add_argument("--main-branch", default="main", help="Local branch that should mirror the reviewed mainline.")
-    parser.add_argument("--main-ref", default="gitlab/main", help="Remote-tracking ref used as the authoritative mainline target.")
+    parser.add_argument("--main-ref", default="gitlab/main", help="Remote-tracking ref used as the upstream freshness baseline and GitLab publication target.")
     parser.add_argument("--github-ref", default="github/main", help="Post-merge mirror ref used to confirm branch cleanup readiness.")
     parser.add_argument("--allow-current-dirty", action="store_true", help="Allow the current non-main feature worktree to be dirty.")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON output.")

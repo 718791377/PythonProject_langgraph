@@ -39,7 +39,7 @@
 6. 更新生成的 startup launcher；startup launcher 是 `codex-ohmy` 间接调用 native Codex 的托管脚本，它只在调用 native Codex 期间把 `win-shims` 放到 PATH 前面，并在 `finally` 中恢复 PATH 和 PATHEXT。
 7. 添加 `tools/check_windows_cleanup_output_control.py`；这是仓库 checker，用来验证 shim 生成、可选 EXE 控制、PATH 恢复和 `omx_*` MCP 启用覆盖没有被破坏。
 8. 添加安装器测试和 checker 测试；测试应覆盖默认非 EXE 模式、显式 EXE opt-in、生成文件、manifest 输出、wrapped launch PATH 作用域以及 native bypass 不受影响。
-9. 运行验证并通过 GitLab-first MR 发布；GitLab-first MR 是本仓库默认的评审和合并流程。
+9. 运行验证并通过 local-main-first integration package 发布；local-main-first integration package 是本仓库默认的评审和合并流程。
 
 ## 验证
 

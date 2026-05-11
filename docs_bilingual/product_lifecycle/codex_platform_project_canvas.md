@@ -1,6 +1,6 @@
 # Codex Platform Project Canvas
 
-This canvas is a lightweight alignment artifact for the Codex CLI personal production durable-team platform. It is not a replacement for the white paper, MRD, implementation plan, OpenSpec, or release evidence.
+This canvas is a lightweight alignment artifact for the Codex CLI personal production durable-team platform. It is not a replacement for the white paper, MRD, implementation plan, OpenSpec, or release evidence. It follows the `Business Management/` synthesis by keeping the platform intentionally small, mechanism-driven, outcome-measured, and repo-local.
 
 ## Purpose
 

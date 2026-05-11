@@ -9,7 +9,39 @@ This document maps PMI project-management references to this repository's lifecy
 - `Process Groups: A Practice Guide` is used as a delivery-gate reference for initiating, planning, executing, monitoring and controlling, and closing.
 - `Agile Practice Guide` is used as an adaptive delivery reference for uncertainty, MVP slices, feedback loops, and hybrid work.
 
-These references are an overlay. They do not replace white papers, BRD, MRD, North Star plans, PRD, technical design, implementation plans, OpenSpec, or repository checkers.
+These references are an overlay. They do not replace white papers, BRD, MRD, North Star plans, PRD, technical design, implementation plans, OpenSpec, or repository checkers. The same boundary applies to the `Business Management/` source library: product and management sources inform repository-specific lifecycle tailoring, but the repository records synthesized operating rules only.
+
+## Local PMP Source Coverage
+
+The local `PMP/` directory was read from local files only. No internet lookup is required for this refresh. The tracked repository records the following coverage summary and synthesized governance mapping only.
+
+| Local reference | Format | Coverage | Primary governance use |
+| --- | --- | ---: | --- |
+| `PMBOK Guide 8th Edition .pdf` | PDF | 401 pages | Primary value, performance-domain, AI-era, tailoring, and governance overlay |
+| `PMBOK 7th Edition` Chinese PDF | PDF | 369 pages | Principles, value delivery, systems thinking, tailoring, and performance domains |
+| `PMBOK 6th Edition` Chinese PDF | PDF | 812 pages plus low-text-page review | Inputs / Tools and Techniques / Outputs vocabulary and knowledge-area supplement |
+| `Process groups _ a practice guide.pdf` | PDF | 390 pages | Initiating, Planning, Executing, Monitoring and Controlling, Closing delivery gate model |
+| Chinese `ProcessGroupsPracticeGuide` PDF | PDF | 409 pages plus low-text-page review | Chinese companion for process-group delivery gates |
+| `The Agile practice guide.pdf` | PDF | 188 pages | Adaptive, MVP, feedback-loop, and hybrid delivery guidance |
+| Chinese Agile Practice Guide PDF | PDF | 184 pages plus low-text-page review | Chinese companion for adaptive and hybrid delivery |
+| `The Standard for Program Management - Fifth Edition.epub` | EPUB | 16 spine items | Program-level alignment across multiple related initiatives |
+| `The Standard for Portfolio Management-Fourth Edition.pdf` | PDF | 140 pages | Portfolio selection, prioritization, capacity, and value-balance overlay |
+| Chinese portfolio-management standard PDF | PDF | 142 pages plus low-text-page review | Chinese companion for portfolio governance |
+| `Project Management Offices a Practice Guide.epub` | EPUB | 42 spine items | PMO function, governance service, enablement, and oversight pattern |
+| `PMP_MD/*.md` | Markdown | 12 local articles | PMBOK 8 and AI-era interpretation notes for local synthesis |
+
+## Process-Group Operating Overlay For Every Layer
+
+When a lifecycle layer affects execution, write it in the same process-group discipline:
+
+| Process group | Lifecycle use | Expected evidence |
+| --- | --- | --- |
+| Initiating | Decide whether the layer or change should exist | Purpose, value hypothesis, authorization, stakeholders, scope boundary, and initial risks |
+| Planning | Decide how the layer or change will be performed | Inputs, tailored governance depth, acceptance criteria, risk response, validation, release, rollback, owner map, and communications |
+| Executing | Produce the layer deliverable or delivery increment | Drafts, code, tests, templates, docs, agent work, review comments, and controlled implementation artifacts |
+| Monitoring and Controlling | Inspect and control the work while it is in flight | Metric checks, quality checks, issue log, change-control decisions, local gate evidence, CI evidence, and acceptance deltas |
+| Closing | Finish, archive, learn, or deliberately stop | Final artifact, OpenSpec archive or project closeout, stable-spec/doc sync, lessons learned, and next-cycle inputs |
+
 
 ## PMBOK 8 Primary Overlay
 
@@ -18,25 +50,28 @@ Use PMBOK 8th Edition as the primary project-management overlay for this reposit
 Supplemental overlays have narrower roles:
 
 - `PMBOK 6th Edition` is the process and knowledge-area supplement; it helps translate lifecycle layers into inputs, tools and techniques, outputs, and control gates.
-- `Process Groups: A Practice Guide` is the delivery-gate supplement; it maps initiating, planning, executing, monitoring and controlling, and closing to OpenSpec and GitLab-first work.
+- `Process Groups: A Practice Guide` is the delivery-gate supplement; it maps initiating, planning, executing, monitoring and controlling, and closing to OpenSpec and local-main-first work.
 - `PMBOK 7th Edition` is the principles and value-delivery supplement; it bridges principles, performance domains, system thinking, and tailoring.
 - `Agile Practice Guide` is the adaptive and hybrid delivery supplement; it informs MVP slices, feedback loops, iteration, and reversible releases.
 
 The repository should use these sources as structure, not as copied text. The local reading audit may record which local files were readable, but lifecycle documents should contain repository-specific mappings only.
 
-## Relationship To The 0-8 Lifecycle
+## Relationship To The 0-11 / 12-Layer Lifecycle
 
-| 0-8 layer | Product/business purpose | PMI overlay |
+| 0-11 layer | Product/business purpose | PMI overlay |
 | --- | --- | --- |
 | 0 Cognitive narrative | Explain why the direction exists | PMBOK value orientation helps keep the narrative tied to outcomes |
-| 1 Business | Decide whether the work is worth doing | PMBOK success criteria and benefits thinking help define value |
+| 1 Business | Decide whether the work is worth doing | Success criteria and benefits thinking help define value |
 | 2 Market | Identify users and needs | Agile discovery and feedback loops help reduce uncertainty |
-| 3 Strategy | Define the North Star and levers | PMBOK tailoring helps choose governance depth by risk |
-| 4 Product | Define product scope and behavior | Agile lifecycle selection helps decide predictive, adaptive, or hybrid planning |
-| 5 Technical | Define implementation architecture | PMBOK quality, risk, and procurement ideas inform technical gates |
-| 6 Execution | Deliver the work | Process Groups map directly to OpenSpec and GitLab-first delivery |
-| 7 Growth | Expand adoption and usefulness | Agile inspection and adaptation support iterative adoption |
-| 8 Retrospective | Learn and improve | Process closing and lessons learned become archive and governance updates |
+| 3 Strategy | Define how to win and what to refuse | Tailoring helps choose governance depth by risk |
+| 4 Metrics | Define evidence and decision thresholds | Measurement and performance-domain thinking keep progress inspectable |
+| 5 Product | Define product scope and behavior | Agile lifecycle selection helps decide predictive, adaptive, or hybrid planning |
+| 6 Technical | Define implementation architecture | Quality, risk, procurement, and stakeholder constraints inform technical gates |
+| 7 Organization | Define owners, roles, and approvals | Stakeholder, resource, and governance domains clarify responsibility |
+| 8 Execution | Deliver the work | Process Groups map directly to OpenSpec and local-main-first delivery |
+| 9 Growth | Expand adoption and usefulness | Agile inspection and adaptation support iterative adoption |
+| 10 Operations | Keep released work supportable | Quality, risk, issue, and change-control practices support live operation |
+| 11 Retrospective | Learn and improve | Process closing and lessons learned become archive and governance updates |
 
 ## Project Canvas And Performance-Domain Mapping
 
@@ -46,7 +81,7 @@ For this repository, PMBOK 8th Edition performance-domain thinking maps to these
 
 | Performance concern | Repository mapping |
 | --- | --- |
-| Governance | User authority, OpenSpec changes, GitLab-first review, release consent, and checker-backed safety rules |
+| Governance | User authority, OpenSpec changes, local-main-first review, release consent, and checker-backed safety rules |
 | Scope | Platform repository boundaries, downstream project boundaries, and non-goals |
 | Schedule | Release slices, current mainline, phase gates, and closeout timing |
 | Finance | GitLab runner minutes, provider pacing budget, local model cost, operator attention, and maintenance time |
@@ -54,14 +89,14 @@ For this repository, PMBOK 8th Edition performance-domain thinking maps to these
 | Resources | Worktrees, wrappers, user-level helpers, local models, MCP tools, and repo-local state directories |
 | Risk | Cross-session collision, stale main, state leakage, lane mis-selection, hidden automation, and rollback failure |
 
-## Process Groups To OpenSpec And GitLab Gates
+## Process Groups To OpenSpec And Local-Main-First Gates
 
 | PMI process group | Codex platform delivery gate | Repository files and actions |
 | --- | --- | --- |
 | Initiating | Decide whether to open a change | `openspec/changes/<change-id>/proposal.md` is the OpenSpec proposal that states why a change is needed |
 | Planning | Freeze design and execution scope | `openspec/changes/<change-id>/design.md` is the OpenSpec design; `tasks.md` is the task list used to track execution |
 | Executing | Implement the planned work | Source, documentation, templates, or checker files are modified according to the accepted tasks |
-| Monitoring and controlling | Verify and control change | `tools/run_openspec_guard.py` is the OpenSpec guard script; GitLab pipeline is the review-time CI gate |
+| Monitoring and controlling | Verify and control change | `tools/run_openspec_guard.py` is the OpenSpec guard script; `tools/ci/local_gate.ps1` and `tools/ci/local_mr_review.ps1` are the local review gates; GitLab pipeline is later clean-environment confirmation when used |
 | Closing | Archive and learn | `openspec archive` is the archive command that moves completed changes into `openspec/changes/archive/` and syncs stable specs |
 
 ## Predictive, Adaptive, And Hybrid Use
@@ -80,8 +115,12 @@ Use an adaptive-style slice when:
 
 Use a hybrid approach when:
 
-- Discovery is still needed, but delivery must still pass OpenSpec, checker, and GitLab gates.
+- Discovery is still needed, but delivery must still pass OpenSpec, checker, and local-main-first gates.
 - A small spike should happen first, then a predictive delivery plan should be frozen.
+
+Use `lifecycle_tailoring_rules.md` as the decision record for whether predictive, adaptive, or hybrid work uses the full architecture, whole-project lightweight architecture, phase-local lightweight architecture, or module-level lightweight architecture. The tailoring decision itself should state Inputs, Tools and Techniques, and Outputs before execution starts.
+
+Program, portfolio, and PMO-style oversight become relevant when multiple related initiatives, shared capacity, cross-project value trade-offs, or governance services are involved. In that case, do not mark the entire project lightweight; keep the program or portfolio decision surface explicit and lighten only bounded modules or phases when their risk permits.
 
 ## Codex Execution Mode Mapping
 

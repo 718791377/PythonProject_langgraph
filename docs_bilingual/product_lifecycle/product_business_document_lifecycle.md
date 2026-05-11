@@ -1,6 +1,6 @@
 # Product And Business Document Lifecycle
 
-This document defines the general 0-8 document stack for commercial, internet, product, platform, and tooling work. It is product neutral and not bound to any single project-management source. It explains what each stage answers, which inputs it receives, which tools and techniques it uses, and which deliverable outputs it produces.
+This document defines the general 0-11 / 12-layer document stack for commercial, internet, product, platform, and tooling work. It is product neutral and not bound to any single project-management source. It explains what each stage answers, which inputs it receives, which tools and techniques it uses, and which deliverable outputs it produces.
 
 This document uses a process-group style structure. Each layer is written as Inputs, Tools And Techniques, and Outputs.
 
@@ -9,6 +9,30 @@ This document uses a process-group style structure. Each layer is written as Inp
 - Outputs are final deliverables that can be published externally or passed to other lifecycle layers.
 
 These rules are a general governance overlay. They do not replace white papers, BRDs, MRDs, North Star plans, PRDs, technical designs, implementation plans, OpenSpec artifacts, or repository checkers; they help those documents keep consistent inputs, processing, and outputs across the lifecycle.
+
+The local source-library synthesis lives in `business_management_source_synthesis.md`. It summarizes page-level and spine-item-level reading of the ignored `Business Management/` library and translates the sources into repository-specific lifecycle rules rather than source-book excerpts.
+
+## Two Target Architecture Modes
+
+This lifecycle now has two explicit operating modes.
+
+| Mode | Inventory rule | Use it when |
+| --- | --- | --- |
+| Codex CLI durable-team platform | 12 layers + 4 virtual departments + 24 responsibility domains + 18 cross-cutting modules + 48 core documents + 12 governed AI agents + 12 recommended books | The work changes Codex orchestration, native subagent routing, `native_omx`, LangGraph, worktree safety, OpenSpec governance, local-main-first publication, templates, skill/profile governance, or reusable developer tooling |
+| One-person-company operating system | 12 layers + 5 virtual departments + 30 responsibility domains + 20 cross-cutting modules + 60 core documents + 15 governed AI agents + 15 recommended books + 12 minimal startup documents | The work belongs to a downstream business, product, offer, customer, revenue, operations, finance, risk, or learning system |
+
+The two modes share the same 12-layer trunk, but they do not share authority. The Codex platform may provide governance mechanisms and templates. A downstream one-person company owns its own customer evidence, revenue facts, financial evidence, product commitments, legal risk, release state, durable state, and lessons learned.
+
+## Execution-Facing Process-Group Rule
+
+For any layer that drives work, use the PMI process-group style as the execution grammar:
+
+- Inputs: source evidence, upstream layer outputs, constraints, risks, approvals, and current state.
+- Tools and Techniques: analysis methods, templates, checkers, reviews, experiments, agent roles, gates, and control techniques.
+- Outputs: approved documents, decisions, evidence, release artifacts, archive artifacts, or inputs to another layer.
+
+This rule applies to every lifecycle layer, every delivery gate, and every release slice. It prevents a layer from becoming a loose essay with no start condition, no control technique, and no deliverable output.
+
 
 ## Value-Delivery Overlay
 
@@ -41,6 +65,8 @@ The canvas should fit on one page where possible and cover:
 
 Tailoring is not only choosing fewer documents. It is choosing the right governance system for the risk and uncertainty level.
 
+The explicit tailoring authority for full versus lightweight use is `lifecycle_tailoring_rules.md`. Use it to decide whether the full architecture applies to the whole project, only the affected phase, only a bounded module, or only a release slice.
+
 Tailor these dimensions together:
 
 - Governance depth: who approves, who reviews, and which gates are mandatory.
@@ -57,7 +83,7 @@ Tailor these dimensions together:
 | White paper | Why does this direction make sense? | Changes cognition and frames a new narrative | Decision makers, collaborators, future maintainers | It justifies the direction but is not a task plan |
 | North Star plan | How do we win and measure progress? | Converts strategy into a measurable system | Builders, maintainers, operators | It guides staged planning but is still above implementation tasks |
 
-A white paper argues that a new direction is real and valuable. A North Star plan defines the long-term target, the key metric, input metrics, levers, and staged paths toward the target.
+A white paper argues that a new direction is real and valuable. A strategy plan defines diagnosis, guiding policy, coherent action, and trade-offs. A North Star or metrics plan defines the key metric, input metrics, guardrails, and thresholds that show whether the strategy is working.
 
 ## General Lifecycle Tailoring Rules
 
@@ -66,6 +92,12 @@ Different projects should not write every document by default. Choose the minimu
 - Predictive gates fit work with clear requirements, higher risk, and explicit release evidence or rollback evidence needs.
 - Adaptive slices fit work with unclear requirements, user-feedback needs, spike work, MVP work, or small experiments.
 - Hybrid delivery fits work that still needs discovery but must eventually pass review, test, release, and retrospective gates.
+
+Use full architecture for the affected scope when work touches money, external users, customer commitments, trust, compliance, security, privacy, data ownership, durable state, runtime entrypoints, cross-project templates, shared interfaces, release gates, rollback safety, or long-lived platform behavior.
+
+Use whole-project lightweight architecture only for early ideas, private spikes, local learning exercises, or small internal tools with no external users, no money or trust boundary, no sensitive data, no shared runtime entrypoint, and a reversible or disposable result.
+
+Use phase-local or module-level lightweight architecture when the project overall needs stronger governance but one phase or module is bounded, low-risk, reversible, and has explicit escalation triggers. If risk, coupling, adoption, support, compliance, or rollback impact grows, expand the affected layer or module first and expand the whole project only when coupling becomes systemic.
 
 ## 0. Cognitive Narrative Layer
 
@@ -82,6 +114,7 @@ Core question: Why does this thing exist?
 - Trend analysis turns external changes into likely multi-year directions.
 - Problem modeling reduces surface requests into structural tensions, constraints, and opportunities.
 - Narrative reasoning explains why existing solutions are insufficient and why a new paradigm may work.
+- Category and positioning analysis clarifies what mental frame the audience should use before they compare alternatives.
 - `whitepaper.md` is the white paper file; it explains industry trends, structural pain, why existing solutions fail, and the new paradigm.
 
 ### Outputs
@@ -104,6 +137,7 @@ Core question: Is this worth doing?
 
 - Business-model analysis determines how value converts into revenue, saved cost, efficiency gain, or risk reduction.
 - Benefit and cost estimation compares development, operation, model, maintenance, compliance, acquisition, and migration costs.
+- Company-of-one constraint analysis decides where staying small improves focus, quality, and resilience.
 - Market sizing estimates TAM, SAM, and SOM; TAM is total market, SAM is serviceable market, and SOM is reachable market.
 - Unit economics models CAC, LTV, and ROI; CAC is customer acquisition cost, LTV is lifetime value, and ROI is return on investment.
 - `brd.md` is the business requirements document; it explains business goals, revenue logic, cost structure, and return on investment.
@@ -128,8 +162,10 @@ Core question: What do users actually need?
 
 - User segmentation identifies target users, influencers, payers, and operators.
 - Scenario analysis describes when, why, and under what constraints users need the solution.
+- Customer interview analysis uses past behavior, switching triggers, and functional/social/emotional context instead of asking only for opinions.
 - Pain-point analysis extracts real user problems behind feature requests.
 - Competitor analysis compares alternatives, differentiation opportunities, and entry barriers.
+- Adoption-segment analysis separates early enthusiasts, beachhead users, early majority buyers, and late adopters.
 - Feedback loops reduce uncertainty through small-sample validation, prototype feedback, or MVP feedback.
 - `mrd.md` is the market requirements document; it turns market evidence and user needs into product direction.
 
@@ -139,9 +175,9 @@ Core question: What do users actually need?
 - User-problem list, priority signals, and entry strategy.
 - Market opportunity for the strategy layer; user scenarios and demand evidence for the product layer.
 
-## 3. Strategy And North Star Layer
+## 3. Strategy Layer
 
-Core question: How do we win?
+Core question: How do we win, and what do we deliberately refuse?
 
 ### Inputs
 
@@ -152,62 +188,100 @@ Core question: How do we win?
 
 ### Tools And Techniques
 
-- North Star metric design selects the one metric that best represents user value and long-term progress.
-- Input metric decomposition defines leading indicators that drive the North Star metric.
-- Lever identification finds product, technology, process, distribution, or operating mechanisms that most change outcomes.
+- Strategy-kernel analysis records diagnosis, guiding policy, and coherent action before roadmap expansion.
+- Beachhead and positioning analysis selects where to win first and which alternatives to frame against.
+- Product-strategy analysis decides which offers, workflows, or capabilities belong in scope and which must be refused.
+- Critical-path analysis identifies the constraint that most limits the next stage of progress.
 - Stage tailoring chooses predictive, adaptive, or hybrid delivery based on risk and uncertainty.
-- `north_star_plan.md` is the North Star plan; it defines the core metric, input metrics, growth or capability levers, and staged path.
+- `strategy.md` is the strategy file; it records diagnosis, guiding policy, coherent action, trade-offs, and explicit non-goals.
+- `product_strategy.md` is the product strategy file; it translates strategic choices into product or offer direction.
 
 ### Outputs
 
-- North Star plan, staged path, prioritization logic, and non-goal boundary.
-- MVP definition; MVP means minimum viable product or minimum viable capability for testing key assumptions.
-- Release train definition; release train is a fixed-cadence version delivery plan.
-- Scope priorities for the product layer; stage gates and roadmap constraints for the execution layer.
+- Strategy, guiding policy, coherent action set, trade-offs, and non-goal boundary.
+- Strategic priorities for the metrics, product, organization, execution, and growth layers.
+- Decision to focus, pause, pivot, or run more discovery before scaling work.
 
-## 4. Product Layer
+## 4. Metrics Layer
+
+Core question: What evidence tells us whether the strategy is working?
+
+### Inputs
+
+- Strategy, trade-offs, and desired outcomes from the strategy layer.
+- Business goals, cost limits, and value assumptions from the business layer.
+- Market, user, product, technical, growth, operations, and retrospective signals.
+- Data availability, data quality, privacy, and instrumentation constraints from the technical layer.
+
+### Tools And Techniques
+
+- North Star metric design selects the measure that best represents durable user or operator value.
+- Input metric decomposition identifies leading indicators that drive the North Star metric.
+- OKR design translates strategy into focus, alignment, tracking, and review cadence.
+- OMTM analysis selects the one metric that matters most for the current stage.
+- Guardrail metric design protects quality, cost, trust, security, reliability, and operator attention.
+- Tracking-plan and data-dictionary design define event names, dimensions, owners, and metric definitions.
+- `metrics.yaml` is the machine-readable metrics contract; it defines North Star, input, guardrail, and stage metrics.
+- `tracking_plan.md` is the tracking plan; it defines events, sources, owners, and quality checks.
+- `data_dictionary.md` is the data dictionary; it defines metric terms and data ownership.
+
+### Outputs
+
+- Metrics contract, OKRs, OMTM, guardrails, thresholds, and review cadence.
+- Evidence requirements for product, technical, execution, growth, operations, and retrospective work.
+- Decision thresholds for continue, stop, expand, pivot, refactor, or retire.
+
+## 5. Product Layer
 
 Core question: What should the product be?
 
 ### Inputs
 
-- North Star metric, staged path, prioritization logic, and non-goal boundary from the strategy layer.
+- Strategic priorities, trade-offs, and non-goals from the strategy layer.
+- Metrics, thresholds, and evidence requirements from the metrics layer.
 - User segments, scenarios, pain points, and demand evidence from the market layer.
 - Feasibility boundaries, interface constraints, security constraints, and cost constraints from the technical layer.
-- Adoption friction, feedback summaries, and experiment results returned by the growth or retrospective layers.
+- Adoption friction, feedback summaries, and experiment results returned by the growth, operations, or retrospective layers.
 
 ### Tools And Techniques
 
 - User-flow design splits user goals into entry, action, feedback, and completion paths.
 - Information architecture organizes content, screens, objects, and actions.
+- PR/FAQ and narrative planning describe the customer-backward outcome before implementation details.
+- Opportunity mapping and product kata connect user problems, assumptions, experiments, and success metrics.
 - Prototype validation uses low-fidelity or high-fidelity prototypes to test interaction and layout clarity.
 - Prioritization sorts work by value, risk, cost, and dependencies into P0, P1, and P2 groups.
 - Acceptance-criteria design turns functional needs into testable and reviewable results.
 - `prd.md` is the product requirements document; it translates strategy into user-facing functions, flows, priorities, and acceptance criteria.
+- `offer.md` is the offer document; it defines what is sold or delivered and the promise boundary.
 - `user_journey.md` describes the end-to-end user journey; it shows what a user experiences before, during, and after using the product.
 - `information_architecture.md` describes the information architecture; it shows how content, screens, and actions are organized.
 - `prototype.fig` or another prototype file is the design prototype; it shows the intended interaction and layout in a design tool.
 
 ### Outputs
 
-- PRD, user journey, information architecture, prototype, and acceptance criteria.
+- PRD, offer definition, user journey, information architecture, prototype, and acceptance criteria.
 - What is in scope for the product, what is out of scope, and which needs move to later stages.
-- System-requirement sources for the technical layer; feature scope that can be decomposed by the execution layer.
+- System-requirement sources for the technical layer; feature scope and acceptance evidence for the execution layer.
 
-## 5. Technical Layer
+## 6. Technical Layer
 
 Core question: How can it be implemented safely?
 
 ### Inputs
 
 - PRD, user flows, acceptance criteria, and scope boundaries from the product layer.
-- Stage constraints, long-term evolution direction, and non-goal boundary from the strategy layer.
+- Strategy, metrics, long-term evolution direction, and non-goal boundary.
+- Organization constraints, owner boundaries, and approval constraints from the organization layer.
 - External technical constraints, including security, privacy, performance, cost, compatibility, deployment environment, and supply-chain limits.
-- Defects, performance bottlenecks, operations friction, and technical debt returned by the execution, growth, or retrospective layers.
+- Defects, performance bottlenecks, operations friction, and technical debt returned by the execution, operations, or retrospective layers.
 
 ### Tools And Techniques
 
 - Architecture design decomposes modules, interfaces, data flows, state boundaries, and trust boundaries.
+- Dependency and component-boundary design protects long-term changeability and prevents accidental coupling.
+- Data-system design checks reliability, scalability, maintainability, consistency, and derived-data responsibilities.
+- Security-by-design analysis turns domain invariants, input constraints, and failure modes into default-safe behavior.
 - Risk analysis identifies security, privacy, availability, cost, maintainability, and migration risks.
 - Quality gates define testing, review, rollback, observability, and compatibility requirements.
 - Build-or-buy judgment decides whether to build, reuse, buy, integrate, or delay.
@@ -222,9 +296,37 @@ Core question: How can it be implemented safely?
 
 - SRS, TRD, HLD, LLD, API specification, data model, and risk-control notes.
 - Technical evidence that the system can be built, tested, operated, reviewed, and rolled back.
-- Implementation boundaries, dependencies, test requirements, and release risks for the execution layer.
+- Implementation boundaries, dependencies, test requirements, and release risks for the organization and execution layers.
 
-## 6. Execution Layer
+## 7. Organization Layer
+
+Core question: Who or what owns each responsibility, decision, and approval?
+
+### Inputs
+
+- Strategy, metrics, product scope, technical boundaries, and operating constraints.
+- Human capacity, agent capabilities, vendor or external support, permission boundaries, and approval requirements.
+- Cognitive load, team or agent interaction modes, and support expectations from operations.
+
+### Tools And Techniques
+
+- Role-map design separates founder, owner, reviewer, operator, agent, vendor, and customer-success responsibilities.
+- Agent-governance design defines which AI agents may read, write, propose, review, test, deploy, or require approval.
+- RACI-style responsibility mapping defines who is responsible, accountable, consulted, and informed for key decisions.
+- Team API and cognitive-load analysis define collaboration boundaries, handoff expectations, and platform responsibilities.
+- Escalation and approval design defines which decisions need human confirmation.
+- `role-map.md` is the role map; it defines human, agent, vendor, and reviewer responsibilities.
+- `agent-governance.md` is the agent governance file; it defines agent permissions, approval gates, and rollback boundaries.
+- `responsibility_matrix.md` is the responsibility matrix; it maps decisions, owners, reviewers, and escalation rules.
+- `operating_model.md` is the operating model; it defines cadence, ownership, communication, and review loops.
+
+### Outputs
+
+- Role map, agent governance, responsibility matrix, operating model, and approval boundaries.
+- Ownership and capacity constraints for execution, operations, and retrospective work.
+- Explicit decision rights so automation does not become hidden authority.
+
+## 8. Execution Layer
 
 Core question: How do we deliver it?
 
@@ -232,12 +334,14 @@ Core question: How do we deliver it?
 
 - Scope, priorities, acceptance criteria, and non-goal boundary from the product layer.
 - Design, interfaces, dependencies, risk controls, and test requirements from the technical layer.
-- Staged path, release cadence, and success criteria from the strategy layer.
-- External inputs, including team capacity, time window, release limits, approval limits, and operating windows.
+- Metrics, thresholds, release cadence, and success criteria from the metrics layer.
+- Ownership, approval, capacity, and agent-governance constraints from the organization layer.
+- External inputs, including time window, release limits, approval limits, and operating windows.
 
 ### Tools And Techniques
 
 - Work decomposition splits scope into small slices that are verifiable, reversible, and reviewable.
+- Shaping defines appetite, boundaries, rabbit holes, and the circuit breaker before a team or agent starts broad execution.
 - Plan freeze locks key design, task list, acceptance criteria, and risk boundaries before implementation.
 - Change control uses OpenSpec, code review, CI, testing, and release gates to control scope drift.
 - Monitoring and controlling tracks progress, risk, defects, dependencies, and acceptance status during execution.
@@ -251,45 +355,77 @@ Core question: How do we deliver it?
 
 - Executable tasks, test plan, release plan, rollback plan, and delivery evidence.
 - Implemented, verified, released, or release-ready work results.
-- Adoptable capabilities for the growth layer; delivery records, issue records, and learning material for the retrospective layer.
+- Adoptable capabilities for the growth and operations layers; delivery records, issue records, and learning material for the retrospective layer.
 
-## 7. Growth And Adoption Layer
+## 9. Growth Layer
 
-Core question: How does it become larger, more useful, or more adopted?
+Core question: How does it reach, activate, retain, and monetize the right audience?
 
 ### Inputs
 
-- Released capabilities, release records, known limits, and adoption entry points from the execution layer.
-- North Star metric, input metrics, and growth levers from the strategy layer.
-- User segments and channel signals from the market layer.
-- Lessons learned, feedback summaries, and experiment results from the retrospective layer.
+- Released or release-ready capabilities, known limits, and adoption entry points from the execution layer.
+- Strategy, metrics, input metrics, growth levers, and guardrails.
+- User segments, positioning, channel signals, and market evidence.
+- Operations feedback, support friction, trust signals, and customer-success findings.
 
 ### Tools And Techniques
 
 - Roadmap planning orders later versions by user value, business value, technical dependencies, and risk.
 - Growth experiments test acquisition, activation, retention, revenue, or adoption mechanisms in small batches.
+- Traction-channel testing compares candidate channels against a defined traction goal and critical path.
+- Positioning and whole-product review ensure users understand the category, alternatives, value, onboarding, support, and trust story.
 - Metrics system defines DAU, MAU, retention, conversion, CAC, LTV, quality, or adoption metrics; DAU means daily active users and MAU means monthly active users.
 - Adoption analysis records where the system is used, why it is used, and what friction remains.
 - `roadmap.md` is the product roadmap; it defines future versions and priority order.
 - `growth_plan.md` is the growth plan; it defines acquisition, activation, retention, revenue, or adoption mechanisms.
-- `metrics.md` is the metrics document; it defines DAU, MAU, retention, conversion, CAC, LTV, quality, or adoption metrics as appropriate.
+- `channel_tests.md` records channel hypotheses, tests, and results.
 - `adoption_report.md` is the adoption report; it records where the system is used and what friction remains.
 
 ### Outputs
 
-- Roadmap, growth plan, metrics system, adoption report, and later-version candidates.
+- Roadmap, growth plan, channel tests, adoption report, and later-version candidates.
 - Path for the system to expand, be adopted, improve, or commercialize.
-- Metric progress for the strategy layer; demand changes for the product layer; experiment and adoption evidence for the retrospective layer.
+- Metric progress for the metrics and strategy layers; demand changes for the product layer; adoption evidence for the operations and retrospective layers.
 
-## 8. Retrospective And Learning Layer
+## 10. Operations Layer
 
-Core question: Did it work, and what should change?
+Core question: How does the system keep serving users after release?
+
+### Inputs
+
+- Released capabilities, changelog, rollback evidence, and known limits from execution.
+- Adoption, channel, and user-friction evidence from growth.
+- Ownership, escalation, support, and agent-governance boundaries from organization.
+- Quality, reliability, cost, security, support, and customer-success signals.
+
+### Tools And Techniques
+
+- Support-playbook design defines response paths, issue categories, service boundaries, and escalation rules.
+- Customer-success analysis tracks onboarding, activation, renewals, support outcomes, and trust recovery.
+- Bug-triage design classifies defects, incidents, regressions, feature requests, and user education gaps.
+- FAQ and documentation operations turn recurring questions into maintained knowledge assets.
+- Operating-cadence review keeps weekly, monthly, quarterly, or release reviews lightweight and evidence-based.
+- `ops-playbook.md` is the operations playbook; it defines support, issue handling, cadence, and escalation.
+- `support-playbook.md` is the support playbook; it defines support categories, response rules, and handoff paths.
+- `faq.md` is the FAQ; it turns repeated questions into maintained answers.
+- `customer-success.md` records customer-success or operator-success practices.
+- `issue_log.md` records active blockers, incidents, and support issues.
+
+### Outputs
+
+- Operations playbook, support records, FAQ updates, customer-success notes, and issue-log evidence.
+- Support, reliability, trust, and usability feedback for the product, technical, growth, and retrospective layers.
+- Operating evidence that released work remains usable, supportable, and recoverable.
+
+## 11. Retrospective Layer
+
+Core question: Did it work, what changed, and what should compound?
 
 ### Inputs
 
 - Delivery records, test results, release results, defect records, and incident records from the execution layer.
-- Metric results, adoption reports, experiment results, and user feedback from the growth layer.
-- Repeated problems, unmet needs, and technical debt returned by the market, product, and technical layers.
+- Metric results, adoption reports, experiment results, support evidence, and user feedback from growth and operations.
+- Repeated problems, unmet needs, and technical debt returned by the market, product, technical, organization, execution, and operations layers.
 - External inputs, including customer feedback, audit findings, compliance changes, and operating events.
 
 ### Tools And Techniques
@@ -297,20 +433,22 @@ Core question: Did it work, and what should change?
 - Retrospective analysis identifies what happened, why it happened, impact scope, fixes, and prevention actions.
 - Experiment analysis compares variant outcomes and decides whether to continue, stop, or expand.
 - Learning capture turns incidents, delivery, and feedback into reusable rules, templates, checklist items, or follow-up tasks.
+- Operating-system refinement turns repeated work into SOPs, templates, metrics, ownership rules, or automation only when they reduce future friction.
 - Closing gates confirm that deliverables, documentation, release state, rollback evidence, and lessons learned are archived.
 - `post_mortem.md` is the incident or project retrospective; it records what happened, why it happened, impact, fix, and prevention.
+- `monthly-review.md` is the monthly review; it consolidates strategy, metrics, operations, and learning decisions.
 - `ab_test_report.md` is the A/B test report; it compares variants and explains which one performed better.
 - `feedback_summary.md` is the user feedback summary; it captures recurring user reactions and requests.
 - `lessons_learned.md` is the lessons-learned document; it converts experience into reusable rules or future tasks.
 
 ### Outputs
 
-- Retrospective report, experiment report, feedback summary, lessons learned, and governance-update recommendations.
-- Clear judgment about what to continue, stop, expand, refactor, or retire in the next cycle.
-- Reusable learning returned to the cognitive narrative, business, market, strategy, product, technical, and execution layers.
+- Retrospective report, monthly review, experiment report, feedback summary, lessons learned, and governance-update recommendations.
+- Clear judgment about what to continue, stop, expand, refactor, automate, delegate, or retire in the next cycle.
+- Reusable learning returned to the cognitive narrative, business, market, strategy, metrics, product, technical, organization, execution, growth, and operations layers.
 
 ## Minimum File Set By Project Size
 
-Small internal tooling work usually needs a short North Star note, PRD, technical design, implementation plan, test plan, and retrospective. An implementation plan splits a chosen stage into executable work; a test plan defines validation; a retrospective captures learning. A public product, commercial product, or long-lived platform should add white paper, BRD, MRD, roadmap, metrics, and release governance. A roadmap orders later versions; metrics define measurement; release governance defines rollout gates and rollback requirements.
+Small internal tooling work usually needs a short strategy or North Star note, metrics note, PRD, technical design, owner or role note, implementation plan, test plan, operations note, and retrospective. An implementation plan splits a chosen stage into executable work; a test plan defines validation; a retrospective captures learning. A public product, commercial product, or long-lived platform should add white paper, BRD, MRD, roadmap, metrics, and release governance. A roadmap orders later versions; metrics define measurement; release governance defines rollout gates and rollback requirements.
 
 The more a project affects money, users, trust, compliance, or long-term platform behavior, the more of this stack should be explicit.

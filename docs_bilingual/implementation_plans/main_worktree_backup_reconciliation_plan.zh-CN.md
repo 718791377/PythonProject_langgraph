@@ -15,7 +15,7 @@
 - 保持 `main` 和 `gitlab/main` 对齐。`main` 是本地镜像 GitLab main 的分支。
 - 保留 `backup/mainworktree-dirty-before-main-align-20260426-234655`。这是保存对齐前脏工作区内容的本地备份分支。
 - 把备份内容分成 local-only、target-only、both-changed-different、both-changed-same 四类。
-- 通过小步 GitLab-first merge request 迁移有价值的 local-only 和 both-changed-different 内容。
+- 通过小步 local-main-first integration package 迁移有价值的 local-only 和 both-changed-different 内容。
 - 防止把整个备份分支直接合进 `main`。
 - 在操作者明确选择文档目标前，不把临时草稿并入 main。
 

@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+CHECK_NAME = "plugin_modules_skill"
+SKILL_RELATIVE = Path("tools/skill_sources/plugin-modules")
+REQUIRED_MODULES = [
+    "core-dev",
+    "web-saas",
+    "company-ops",
+    "market-research",
+    "customer-comms",
+    "creative-content",
+    "full",
+]
+REQUIRED_FILES = [
+    "SKILL.md",
+    "references/profiles.json",
+    "scripts/list_module.ps1",
+    "scripts/load_module.ps1",
+    "scripts/set_plugin_profile.ps1",
+    "agents/openai.yaml",
+]
+REQUIRED_SCRIPT_MARKERS = {
+    "apply_gate": "[switch]$Apply",
+    "restore_gate": "[switch]$RestoreLatest",
+    "backup_function": "Backup-CodexPluginModulesConfig",
+    "plugin_enabled_scope": "[plugins.`\"$escaped`\"]",
+    "no_plugin_cache_edit_report": "plugin_cache_edited = $false",
+    "restart_instructions": "restart_instructions",
+}
+
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
+def parse_frontmatter(text: str) -> dict[str, str]:
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    data: dict[str, str] = {}
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        data[key.strip()] = value.strip().strip('"').strip("'")
+    return data
+
+
+def validate(root: Path) -> dict[str, Any]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    info: list[str] = []
+    skill_root = root / SKILL_RELATIVE
+
+    for relative in REQUIRED_FILES:
+        path = skill_root / relative
+        if not path.exists():
+            errors.append(f"Missing plugin-modules skill file: {SKILL_RELATIVE / relative}")
+
+    installer = root / "tools" / "install-plugin-modules-skill.ps1"
+    if not installer.exists():
+        errors.append("Missing user-level installer: tools/install-plugin-modules-skill.ps1")
+
+    skill_md = skill_root / "SKILL.md"
+    if skill_md.exists():
+        metadata = parse_frontmatter(read_text(skill_md))
+        if metadata.get("name") != "plugin-modules":
+            errors.append("plugin-modules SKILL.md frontmatter name must be `plugin-modules`.")
+        description = metadata.get("description", "")
+        if not description:
+            errors.append("plugin-modules SKILL.md must include a description.")
+        if len(description) > 220:
+            errors.append(f"plugin-modules description length {len(description)} exceeds repo limit 220.")
+        body = read_text(skill_md)
+        for phrase in ["soft-load", "hard-load", "config.toml", "Do not delete plugin cache"]:
+            if phrase not in body:
+                errors.append(f"plugin-modules SKILL.md missing required instruction phrase: {phrase}")
+
+    profiles_path = skill_root / "references" / "profiles.json"
+    profiles: dict[str, Any] | None = None
+    if profiles_path.exists():
+        try:
+            profiles = json.loads(read_text(profiles_path))
+        except json.JSONDecodeError as exc:
+            errors.append(f"profiles.json is not valid JSON: {exc}")
+        if profiles is not None:
+            if profiles.get("schema_version") != 1:
+                errors.append("profiles.json schema_version must be 1.")
+            modules = profiles.get("modules", {})
+            for module in REQUIRED_MODULES:
+                entry = modules.get(module)
+                if not isinstance(entry, dict):
+                    errors.append(f"profiles.json missing required module `{module}`.")
+                    continue
+                if not entry.get("description"):
+                    errors.append(f"Module `{module}` is missing description.")
+                hard_load = entry.get("hard_load", {})
+                if "enable_plugins" not in hard_load:
+                    errors.append(f"Module `{module}` is missing hard_load.enable_plugins.")
+                soft_load = entry.get("soft_load", {})
+                if "skill_doc_hints" not in soft_load:
+                    errors.append(f"Module `{module}` is missing soft_load.skill_doc_hints.")
+            safety = profiles.get("safety", {})
+            if safety.get("backup_before_config_write") is not True:
+                errors.append("profiles.json safety.backup_before_config_write must be true.")
+            if safety.get("do_not_edit_plugin_cache") is not True:
+                errors.append("profiles.json safety.do_not_edit_plugin_cache must be true.")
+
+    set_script = skill_root / "scripts" / "set_plugin_profile.ps1"
+    if set_script.exists():
+        text = read_text(set_script)
+        for name, marker in REQUIRED_SCRIPT_MARKERS.items():
+            if marker not in text:
+                errors.append(f"set_plugin_profile.ps1 missing marker `{name}`.")
+        if re.search(r"Remove-Item\s+.*plugin", text, flags=re.IGNORECASE):
+            warnings.append("set_plugin_profile.ps1 contains Remove-Item near plugin text; confirm it never targets plugin cache.")
+
+    if installer.exists():
+        text = read_text(installer)
+        for phrase in ["tools\\skill_sources\\plugin-modules", "backups\\plugin-modules-skill", "Restart codex-ohmy"]:
+            if phrase not in text:
+                errors.append(f"install-plugin-modules-skill.ps1 missing required phrase: {phrase}")
+
+    info.append("plugin-modules source skill is repository-local and installs to user-level Codex skills via explicit installer.")
+    return {
+        "schema_version": 1,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "check_name": CHECK_NAME,
+        "ok": not errors,
+        "root": str(root),
+        "skill_root": str(skill_root),
+        "errors": errors,
+        "warnings": warnings,
+        "info": info,
+        "counts": {"errors": len(errors), "warnings": len(warnings), "required_modules": len(REQUIRED_MODULES)},
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Check the plugin-modules user-level skill source and profile helper contract.")
+    parser.add_argument("--root", default=".", help="Repository root.")
+    parser.add_argument("--json", action="store_true", help="Emit JSON output.")
+    args = parser.parse_args()
+    payload = validate(Path(args.root).resolve())
+    if args.json:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        print("Plugin modules skill check passed." if payload["ok"] else "Plugin modules skill check failed:")
+        for error in payload["errors"]:
+            print(f"  - {error}")
+        if payload["warnings"]:
+            print("Warnings:")
+            for warning in payload["warnings"]:
+                print(f"  - {warning}")
+    return 0 if payload["ok"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

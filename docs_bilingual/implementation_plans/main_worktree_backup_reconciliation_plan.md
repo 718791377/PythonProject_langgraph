@@ -15,7 +15,7 @@ The repository must keep local `main` equal to `gitlab/main`, but it must not lo
 - Keep `main` - the local branch that mirrors GitLab main - aligned with `gitlab/main`.
 - Preserve `backup/mainworktree-dirty-before-main-align-20260426-234655` - the local backup branch that stores the pre-alignment dirty worktree.
 - Classify backup content into local-only, target-only, both-changed-different, and both-changed-same groups.
-- Migrate useful local-only and both-changed-different content through small GitLab-first merge requests.
+- Migrate useful local-only and both-changed-different content through small local-main-first integration packages.
 - Prevent direct merge of the full backup branch into `main`.
 - Keep scratch notes out of main until the operator explicitly chooses a documentation destination.
 
@@ -30,7 +30,7 @@ The repository must keep local `main` equal to `gitlab/main`, but it must not lo
 ## Reconciliation Source and Target
 
 - `backup/mainworktree-dirty-before-main-align-20260426-234655` - local backup branch containing the preserved dirty worktree content.
-- `gitlab/main` - GitLab remote-tracking branch and authoritative reviewed target.
+- `gitlab/main` - GitLab remote-tracking branch and upstream freshness baseline.
 - `e0e0acb8c4d70d891a1b91c9628b38f567966dc3` - current GitLab main commit at the start of this plan.
 - `81de0bbc2605915fb996446ac0fc15b3043092b3` - current local backup commit at the start of this plan.
 - `afdbd34cc7ee71f3d7acf8000e030c571fa71be7` - shared comparison base used to classify backup and target changes.

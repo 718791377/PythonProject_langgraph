@@ -37,6 +37,36 @@ status: draft
 - 平台必须在 implementation work 开始前，把新 workload 分类到 abstract capability profiles。implementation work 是实施工作，abstract capability profiles 是抽象能力画像。
 - 平台必须为需要的项目保留 browser automation 和 document-processing capabilities。browser automation 是浏览器自动化，document-processing capabilities 是文档处理能力。
 
+## 目标架构清单需求
+
+市场需求现在必须可追溯到 Codex 平台清单：
+
+- 4 个虚拟部门把市场痛点转换成平台所有权：Strategy & Product、Engineering & Platform、Agent Governance、Growth & Knowledge。
+- 24 个责任域防止市场需求变成模糊请求；每个需求必须映射到 CLI/UX、指标、安全、数据治理、支持、信任、知识/复盘等责任域。
+- 18 个横切模块识别跨产品、工程、运营和治理边界的风险。
+- 48 个核心文档是严肃平台的最大文档面，不是每个变更的默认要求。
+- 12 个受治理 Agent 是带读/写/评审边界的能力画像，不是自治业务决策者。
+
+对于下游一人公司工作，MRD 属于下游仓库。该 MRD 拥有本地客户证据、市场分层、定价信号、渠道证据、财务假设、产品承诺与支持预期。
+
+## 裁剪需求
+
+市场需求不得强制每个项目创建最大文档栈。使用 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 选择最小充分架构深度。
+
+- 当需求影响可复用编排、原生 subagent 路由、`native_omx`、LangGraph、worktree safety、OpenSpec governance、user-level launcher policy、skill/profile governance、local-main-first publication、shared templates、durable state、release safety 或跨项目采用时，必须使用完整 Codex 平台范围。
+- 只有私有 spike、早期想法、本地学习或低风险内部工具，且没有外部用户、金钱、信任边界、敏感数据、共享 runtime entrypoints 或发布承诺时，才允许整个项目轻量。
+- 当较大工作中的有边界部分低风险、可逆，并有明确升级触发条件时，可以采用阶段局部或模块级轻量。
+- 当市场或产品不确定性高，但最终交付可能影响用户、信任、收入、合规、runtime behavior 或 release safety 时，必须采用混合范围。
+
+## 市场需求的过程组式证据
+
+面向执行的 MRD 条目必须说明：
+
+- 输入：客户证据、市场信号、支持反馈、本地约束与来源生命周期层输入。
+- 工具与技术：分层、定位、访谈综合、竞品分析、采用摩擦分析、优先级排序与风险评审。
+- 输出：目标细分、优先问题、价值主张、验收证据，以及继续、停止、转向或继续研究的决策阈值。
+
+
 ## 优先级信号
 
 - P0 requirements 保护 native Codex compatibility、session isolation、repo-local durable truth、OpenSpec guards 和 rollback。P0 requirements 是最高优先级需求。

@@ -871,12 +871,16 @@ $runtimeContent
 `$startupArgs = Get-CodexUserLevelTeamModeStartupArgs -Status `$status -DeveloperInstructions `$instructions
 `$previousPath = [string]`$env:Path
 `$previousPathExt = [string]`$env:PATHEXT
+`$cleanupShimDirectoryEnvName = 'CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY'
+`$previousCleanupShimDirectory = [Environment]::GetEnvironmentVariable(`$cleanupShimDirectoryEnvName, 'Process')
+`$hadPreviousCleanupShimDirectory = `$null -ne `$previousCleanupShimDirectory
 `$cleanupShimDirectory = Join-Path `$PSScriptRoot 'win-shims'
 `$taskkillExeShimPath = Join-Path `$cleanupShimDirectory 'taskkill.exe'
 `$taskkillExeShimRequested = $taskkillExeShimRequestedLiteral
 `$taskkillExeShimEnabled = `$taskkillExeShimRequested -and (Test-Path -LiteralPath `$taskkillExeShimPath)
 try {
   if (Test-Path -LiteralPath `$cleanupShimDirectory) {
+    [Environment]::SetEnvironmentVariable(`$cleanupShimDirectoryEnvName, `$cleanupShimDirectory, 'Process')
     if ([string]::IsNullOrWhiteSpace(`$env:Path)) {
       `$env:Path = `$cleanupShimDirectory
     } else {
@@ -899,6 +903,11 @@ try {
 finally {
   `$env:Path = `$previousPath
   `$env:PATHEXT = `$previousPathExt
+  if (`$hadPreviousCleanupShimDirectory) {
+    [Environment]::SetEnvironmentVariable(`$cleanupShimDirectoryEnvName, `$previousCleanupShimDirectory, 'Process')
+  } else {
+    [Environment]::SetEnvironmentVariable(`$cleanupShimDirectoryEnvName, `$null, 'Process')
+  }
 }
 exit `$exitCode
 "@
@@ -974,18 +983,38 @@ function Get-ManagedProfileBlockContent {
 
   return @"
 $Script:StartupProfileStartMarker
-`$codexUserLevelBinDirectory = '$escapedLauncherDirectory'
-if (-not [string]::IsNullOrWhiteSpace(`$codexUserLevelBinDirectory)) {
+function Add-CodexUserLevelPathEntry {
+  param(
+    [AllowEmptyString()]
+    [string]`$PathEntry
+  )
+
+  if ([string]::IsNullOrWhiteSpace(`$PathEntry)) {
+    return
+  }
+
   `$pathEntries = @()
   if (-not [string]::IsNullOrWhiteSpace([string]`$env:Path)) {
-    `$pathEntries = @([string]`$env:Path -split ';' | Where-Object { -not [string]::IsNullOrWhiteSpace([string]`$_) })
+    `$pathEntries = @([string]`$env:Path -split ';' | Where-Object {
+      -not [string]::IsNullOrWhiteSpace([string]`$_) -and [string]`$_ -ne `$PathEntry
+    })
   }
-  if (`$codexUserLevelBinDirectory -notin `$pathEntries) {
-    if (`$pathEntries.Count -gt 0) {
-      `$env:Path = (`$codexUserLevelBinDirectory + ';' + [string]`$env:Path)
-    } else {
-      `$env:Path = `$codexUserLevelBinDirectory
+  `$env:Path = (@(`$PathEntry) + `$pathEntries) -join ';'
+}
+
+`$codexUserLevelBinDirectory = '$escapedLauncherDirectory'
+Add-CodexUserLevelPathEntry -PathEntry `$codexUserLevelBinDirectory
+
+`$codexUserLevelCleanupShimDirectory = [string]`$env:CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY
+if (-not [string]::IsNullOrWhiteSpace(`$codexUserLevelCleanupShimDirectory) -and (Test-Path -LiteralPath `$codexUserLevelCleanupShimDirectory)) {
+  Add-CodexUserLevelPathEntry -PathEntry `$codexUserLevelCleanupShimDirectory
+  `$codexUserLevelTaskkillExeShimPath = Join-Path `$codexUserLevelCleanupShimDirectory 'taskkill.exe'
+  if (Test-Path -LiteralPath `$codexUserLevelTaskkillExeShimPath) {
+    if (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.EXE;*') {
+      `$env:PATHEXT = '.EXE;' + `$env:PATHEXT
     }
+  } elseif (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.CMD;*') {
+    `$env:PATHEXT = '.CMD;' + `$env:PATHEXT
   }
 }
 
@@ -14967,6 +14996,7 @@ $manifest = [ordered]@{
       taskkill_exe_shim_requested = [bool]$taskkillExeShimRequested
       taskkill_exe_shim_enabled = [bool]$taskkillExeShimCompile.compiled
       taskkill_exe_shim_compile = $taskkillExeShimCompile
+      login_profile_env_bridge = 'CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY'
       scoped_to_wrapped_launch = $true
     }
     powershell_profile_path = $resolvedPowerShellProfilePath

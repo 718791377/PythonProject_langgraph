@@ -126,15 +126,17 @@ If partial plugin skill loading is not supported, keep the Vercel plugin availab
 
 ## 11. Publication Workflow
 
-This repository uses GitLab as the authoritative review and merge surface:
+This repository uses local-main-first publication for skills-governance work:
 
-1. Create a feature branch.
-2. Push the feature branch to GitLab.
-3. Open or update a GitLab MR.
-4. Wait for the GitLab pipeline to pass.
-5. Merge into GitLab `main`.
-6. Sync that exact GitLab `main` commit directly to GitHub `main`.
-7. Do not open GitHub PRs unless the user explicitly overrides this workflow.
+1. Create a feature branch and dedicated feature worktree.
+2. Commit intended changes after local checks pass.
+3. Run local CI and local MR review from the clean feature worktree.
+4. Ask the user to approve local integration or remote publication.
+5. Integrate the approved result into local `main` first.
+6. Report any intentional lag where local `main` leads `gitlab/main` or `github/main`.
+7. Use GitLab for remote publication and clean-environment confirmation when approved or required.
+8. Sync the exact intended local `main` commit to GitHub `main` after remote confirmation or explicit direct-mirror approval.
+9. Do not open GitHub PRs unless the user explicitly overrides this workflow.
 
 ## 12. Required Checks
 

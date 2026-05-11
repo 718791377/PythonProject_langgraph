@@ -22,7 +22,7 @@ doc_class: implementation_plan
 
 ## 当前有界实施队列
 
-这条队列用于固化 Phase 0 durable-state 只读盘点后的决策：最终生产级持久化团队方案仍然只是北极星 draft，当前继续通过 GitLab-first 小步 MR 推进 active rollout。
+这条队列用于固化 Phase 0 durable-state 只读盘点后的决策：最终生产级持久化团队方案仍然只是北极星 draft，当前继续通过 local-main-first 小步 integration package 推进 active rollout。
 
 ### 已完成切片
 

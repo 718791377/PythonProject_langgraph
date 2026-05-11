@@ -10,7 +10,7 @@ A downstream project owns its own product scope, business artifacts, OpenSpec tr
 
 ## Downstream Lifecycle Tailoring Overlay
 
-Downstream projects should use the general 0-8 lifecycle as a map, not as mandatory paperwork for every change.
+Downstream projects should use the general 0-11 / 12-layer lifecycle as a map, not as mandatory paperwork for every change.
 
 - Predictive gates fit downstream work with clear scope, release risk, money/user/trust impact, compliance impact, or explicit rollback needs.
 - Adaptive slices fit downstream work that needs exploration, prototypes, browser validation, user feedback, or small MVPs before design is frozen.
@@ -20,11 +20,32 @@ Downstream projects should use the general 0-8 lifecycle as a map, not as mandat
 
 Use these depth levels in downstream projects:
 
-- Full 0-8 lifecycle: use for new products, major business pivots, user-facing releases, compliance-sensitive changes, payment or trust-impacting work, or long-lived platform-like downstream systems.
-- Project MVP or release slice: keep all 0-8 layers visible, summarize layers 0, 1, 2, and 7 when risk is low, and expand layers 3, 4, 5, 6, and 8 for strategy, product behavior, technical safety, delivery, and learning.
+- Full 0-11 lifecycle: use for new products, major business pivots, user-facing releases, compliance-sensitive changes, payment or trust-impacting work, or long-lived platform-like downstream systems.
+- Project MVP or release slice: keep all 12 layers visible. When risk is low, summarize cognitive, business, market, organization, growth, operations, and retrospective context; expand strategy, metrics, product, technical, and execution evidence. If the slice affects adoption, support, or customer-facing operation, expand growth and operations too.
 - Ordinary local change: do not rewrite the full stack. Record the input, tools and techniques, and output evidence for the changed scope. Code-bearing changes need technical and execution evidence. Release-bearing changes need validation, release, rollback, and retrospective evidence.
 
 A downstream project may be lightweight, but it must stay repo-local: its OpenSpec artifacts, `.omx/state/` state directory, release facts, and lessons learned belong to that project.
+
+Downstream projects may consult `business_management_source_synthesis.md` for lifecycle tailoring. The synthesis should help choose the minimum sufficient business, discovery, product, technical, release, and learning artifacts, but it must not move downstream customer evidence, metrics, or durable truth into this platform repository.
+
+Use `lifecycle_tailoring_rules.md` to decide whether the downstream project is whole-project lightweight, phase-local lightweight, module-level lightweight, hybrid, or full architecture. A downstream business may start lightweight, but customer commitments, revenue, payment flows, sensitive data, compliance exposure, support obligations, repeatable delivery, or agent automation beyond low-risk support require expansion of the affected layers. Expand the whole project only when coupling becomes systemic; otherwise keep lightening local to the low-risk phase or module.
+
+## One-Person-Company Operating-System Inventory Rule
+
+For downstream business work that is a real one-person-company operating system, use this fixed target:
+
+- 12 trunk layers: cognitive narrative, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, retrospective.
+- 5 virtual departments: Strategy Office; Product & Market Office; Revenue & Growth Office; Operations Office; Governance Office.
+- 30 responsibility domains: founder/CEO, chief of staff, business model, finance, risk, market intelligence, customer research, positioning, product strategy, offer, PRD, UX/service design, analytics, growth, sales, pricing, content, brand/trust, partnerships, customer success, support, delivery, community, knowledge, automation, security/privacy, legal/compliance, data governance, IP/assets, agent governance.
+- 20 cross-cutting modules: finance, operations, engineering management, organization design, legal/compliance, security, knowledge management, risk management, personal productivity, AI agent governance, data governance, brand trust, toolchain governance, SLA governance, asset/IP governance, user-research governance, channel governance, exit governance, vendor governance, tax/administration governance.
+- 60 core documents across company strategy, business/finance, market/user, product/service, metrics/data, growth/sales, operations/customer success, technology/automation, governance/risk, and agent/knowledge.
+- 15 governed AI agents: Strategy, Research, Product, UX/Copy, Engineering, QA, Data, Growth, Sales, Customer Success, Support, Finance, Legal/Risk, Knowledge, and Chief of Staff.
+- 15 recommended books: Scaling People; Working Backwards; High Output Management; INSPIRED; Product Operations; Measure What Matters; Lean Analytics; The Lean Startup; Obviously Awesome; Traction; Deploy Empathy; Shape Up; Team Topologies; Company of One; The E-Myth Revisited.
+
+The minimum startup set is deliberately only 12 documents: `company-thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.yaml`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`.
+
+Do not start a downstream one-person company by creating all 60 documents. Start with the 12 minimal documents, then expand only when risk, customer evidence, revenue, compliance, delivery, or operations requires deeper coverage.
+
 
 ## Downstream Adoption Canvas
 
@@ -62,6 +83,7 @@ Question: Why does this downstream project exist, and why should it use the plat
 ### Tools And Techniques
 
 - Project narrative framing explains the project purpose without turning it into platform implementation work.
+- Customer-backward narrative checks explain which local user or operator problem the project solves.
 - Cold-start summary design helps a new Codex session recover local project context.
 - `README.md` is the project overview; it explains what the project is and how to start.
 - `docs_bilingual/project_startup_summary.md` is the ASCII cold-start summary; it helps a new Codex session understand the project.
@@ -86,6 +108,7 @@ Question: Is this downstream project worth doing or continuing?
 ### Tools And Techniques
 
 - Business value analysis estimates revenue, saved cost, productivity gain, or risk reduction.
+- Company-of-one constraint analysis asks whether a smaller, more focused project would create more value than broader scope.
 - Scope-cost tradeoff analysis decides whether platform capability should be used lightly or deeply.
 - `docs_bilingual/business/brd.md` is the project BRD; it explains the project's business value, cost, user value, and expected return.
 - `docs_bilingual/business/brd.zh-CN.md` is the UTF-8 Chinese companion for the project BRD.
@@ -110,6 +133,7 @@ Question: Who needs this project, and in which scenarios?
 
 - User segmentation separates target users, operators, maintainers, payers, and stakeholders.
 - Scenario analysis maps user tasks, constraints, and pain points.
+- Interview and discovery analysis uses customer/support evidence before large implementation commitments.
 - Feedback loops use prototypes, browser checks, or small MVPs to reduce uncertainty.
 - `docs_bilingual/market/mrd.md` is the project MRD; it explains target users, usage scenes, pain points, and alternatives.
 - `docs_bilingual/market/mrd.zh-CN.md` is the UTF-8 Chinese companion for the project MRD.
@@ -121,43 +145,73 @@ Question: Who needs this project, and in which scenarios?
 - User evidence for product requirements and strategy.
 - Feedback on whether the platform template lacks a reusable capability.
 
-## 3. Strategy And North Star Layer
+## 3. Strategy Layer
 
-Question: How does the downstream project define success?
+Question: How does the downstream project win, and what will it refuse?
 
 ### Inputs
 
 - Business-layer success criteria and cost boundaries.
 - Market-layer user segments, scenarios, and demand evidence.
 - Platform boundaries that separate project-local truth from shared platform runtime.
+- Technical feasibility and operations constraints.
+
+### Tools And Techniques
+
+- Strategy-kernel analysis records diagnosis, guiding policy, and coherent action for the local project.
+- Positioning and beachhead analysis decide where to focus first.
+- Trade-off and non-goal design prevent the project from becoming a platform catch-all.
+- Delivery-depth tailoring decides whether the project needs full 12-layer depth, MVP/release depth, or a small local change path.
+- `docs_bilingual/strategy.md` is the project strategy file; it records diagnosis, guiding policy, coherent action, trade-offs, and non-goals.
+
+### Outputs
+
+- Project strategy, trade-offs, non-goals, and delivery-depth decision.
+- Prioritization constraints for metrics, product, technical, organization, execution, growth, and operations layers.
+- Decision to focus, pause, pivot, or research more.
+
+## 4. Metrics Layer
+
+Question: What evidence tells the downstream project whether it is working?
+
+### Inputs
+
+- Strategy-layer goals, trade-offs, and non-goals.
+- Business-layer value assumptions and cost boundaries.
+- Market-layer user evidence and adoption barriers.
+- Product, technical, growth, operations, and retrospective signals.
 
 ### Tools And Techniques
 
 - North Star metric design defines the main success measure for the project.
 - Input metric decomposition identifies leading indicators that drive the project North Star metric.
-- Delivery-depth tailoring decides whether the project needs full 0-8, MVP/release depth, or a small local change path.
+- Guardrail metric design protects quality, cost, trust, security, reliability, and operator attention.
+- Tracking-plan design records event, log, survey, support, or release evidence needed for decisions.
 - `docs_bilingual/north_star_plan.md` is the project North Star plan; it defines the main success metric, input metrics, and levers.
 - `docs_bilingual/north_star_plan.zh-CN.md` is the UTF-8 Chinese companion for the same plan.
+- `docs_bilingual/metrics.md` is the metrics document; it defines project success and quality metrics.
 
 ### Outputs
 
-- Project North Star plan, input metrics, levers, and non-goals.
-- Delivery-depth decision for the current project phase.
-- Prioritization constraints for product, technical, and execution layers.
+- Project North Star plan, input metrics, guardrails, thresholds, and review cadence.
+- Evidence requirements for product, technical, execution, growth, operations, and retrospective work.
+- Decision thresholds for continue, stop, expand, pivot, refactor, or retire.
 
-## 4. Product Layer
+## 5. Product Layer
 
 Question: What should the downstream project build or change?
 
 ### Inputs
 
-- Strategy-layer priorities, North Star metric, non-goals, and phase boundary.
+- Strategy-layer priorities and non-goals.
+- Metrics-layer success measures, thresholds, and guardrails.
 - Market-layer user scenarios and pain points.
 - Technical-layer feasibility, dependency, and safety constraints.
 
 ### Tools And Techniques
 
 - PRD writing converts strategy and user evidence into scope, workflows, priorities, and acceptance criteria.
+- PR/FAQ, opportunity mapping, or MVP framing may be used when the product problem is still uncertain.
 - User journey mapping describes the end-to-end experience.
 - Prototype and browser validation check whether the intended behavior is understandable.
 - `docs_bilingual/prd.md` is the project PRD; it defines user stories, features, priorities, flows, and acceptance criteria.
@@ -171,13 +225,15 @@ Question: What should the downstream project build or change?
 - Product evidence for technical design and execution planning.
 - Feedback to strategy when the desired scope is too large for the selected delivery depth.
 
-## 5. Technical Layer
+## 6. Technical Layer
 
 Question: How can the downstream project be implemented safely without confusing platform tooling with business runtime?
 
 ### Inputs
 
 - Product-layer scope, acceptance criteria, and user flows.
+- Metrics-layer quality, security, cost, and reliability guardrails.
+- Organization-layer ownership and approval constraints.
 - Project-local source code, tests, dependencies, deployment constraints, and data constraints.
 - Platform-provided guidance for native Codex subagents, OpenSpec, optional durable lanes, and local template checks.
 
@@ -186,6 +242,7 @@ Question: How can the downstream project be implemented safely without confusing
 - Technical design separates project business runtime from Codex platform tooling.
 - Dependency classification decides whether a package belongs to the project business runtime or only to Codex tooling.
 - Architecture and API design define modules, data, interfaces, trust boundaries, and compatibility.
+- Data and security review defines state ownership, invariants, failure modes, and rollback boundaries.
 - `docs_bilingual/technical/trd.md` is the project technical design; it explains technical choices, architecture, and tradeoffs.
 - `docs_bilingual/technical/trd.zh-CN.md` is the UTF-8 Chinese companion for the technical design.
 - `docs_bilingual/technical/api_spec.md` is the project API specification; when APIs exist, it defines interface inputs, outputs, errors, and permissions.
@@ -197,11 +254,38 @@ Question: How can the downstream project be implemented safely without confusing
 
 ### Outputs
 
-- Project technical design, API specification, dependency classification, and test boundary.
+- Project technical design, API specification, dependency classification, data boundary, and test boundary.
 - Evidence that platform tooling does not pollute business runtime dependencies.
-- Implementation constraints for local OpenSpec changes and Codex subagent tasks.
+- Implementation constraints for organization, execution, operations, and Codex subagent tasks.
 
-## 6. Execution Layer
+
+## 7. Organization Layer
+
+Question: Who or what owns project responsibilities and approvals?
+
+### Inputs
+
+- Strategy, metrics, product scope, technical boundaries, and operating constraints.
+- Human owner capacity, agent capabilities, vendor or external support, permission boundaries, and approval requirements.
+- Platform-provided role guidance and project-local security or compliance requirements.
+
+### Tools And Techniques
+
+- Role-map design separates founder, owner, maintainer, reviewer, operator, agent, vendor, and customer-support responsibilities.
+- Agent-governance design defines which AI agents may read, write, propose, review, test, deploy, or require approval.
+- Responsibility-matrix design maps decisions, owners, reviewers, and escalation rules.
+- Durable-lane threshold review prevents project-local durable automation from launching before the project has a frozen plan and independent execution slices.
+- `docs_bilingual/role-map.md` is the project role map.
+- `docs_bilingual/agent-governance.md` is the project agent-governance file when AI agents are used beyond a single main-session task.
+
+### Outputs
+
+- Role map, agent governance, responsibility matrix, escalation rules, and approval boundaries.
+- Ownership and capacity constraints for execution, operations, and retrospective work.
+- Clear separation between project-local authority and platform-provided mechanisms.
+
+
+## 8. Execution Layer
 
 Question: How does the downstream project deliver changes safely?
 
@@ -209,11 +293,13 @@ Question: How does the downstream project deliver changes safely?
 
 - Product-layer scope and acceptance criteria.
 - Technical-layer design, dependency classification, and test requirements.
+- Organization-layer ownership, approval, and optional durable-lane constraints.
 - Project-local OpenSpec tree, Git state, branch policy, and release expectations.
 
 ### Tools And Techniques
 
 - Local OpenSpec change control records why a project change is needed, how it is designed, and which tasks complete it.
+- Shaping defines appetite, scope boundaries, and stop conditions before broad work starts.
 - Native Codex subagents handle bounded expert work within the current Codex session.
 - Optional durable lanes are selected only when project conditions meet thresholds.
 - `openspec/config.yaml` is the project OpenSpec configuration; it binds the OpenSpec workflow to this repository.
@@ -228,51 +314,84 @@ Question: How does the downstream project deliver changes safely?
 ### Outputs
 
 - Implemented and verified project changes.
-- Local OpenSpec evidence, test evidence, and Git evidence.
+- Local OpenSpec evidence, test evidence, Git evidence, and owner approval evidence.
 - Release-ready artifacts or a clear reason to stop, revise, or roll back.
 
-## 7. Release, Growth, And Adoption Layer
+## 9. Growth Layer
 
-Question: How is the downstream project released, adopted, and improved?
+Question: How does the downstream project acquire, activate, retain, and expand the right users?
 
 ### Inputs
 
-- Execution-layer release-ready artifacts, validation evidence, and known risks.
-- Strategy-layer success metrics and growth levers.
-- User feedback, adoption friction, and deployment constraints.
+- Strategy-layer positioning, target segment, and growth levers.
+- Metrics-layer activation, retention, quality, and value thresholds.
+- Product-layer offer, user journey, and onboarding assumptions.
+- Execution-layer release-ready artifacts and known limits.
+- Market-layer channel evidence and adoption barriers.
 
 ### Tools And Techniques
 
-- Release planning defines rollout, release gates, communication, and rollback readiness.
-- Metrics tracking measures project success and quality.
-- Changelog and adoption reporting record user-visible or operator-visible changes.
+- Channel testing decides which acquisition or adoption paths deserve investment.
+- Positioning review checks whether users understand why the project is different from alternatives.
+- Onboarding and activation analysis identifies where users or operators get stuck.
+- Retention and referral analysis checks whether value persists beyond first use.
+- `docs_bilingual/growth-model.md` is the growth model; it defines channels, activation, retention, and expansion assumptions.
+- `docs_bilingual/positioning.md` records external positioning and alternatives.
+
+### Outputs
+
+- Growth model, channel findings, onboarding improvements, and adoption evidence.
+- Feedback to product, metrics, operations, and strategy when adoption or retention friction appears.
+- Clear distinction between project growth facts and upstream platform adoption feedback.
+
+## 10. Operations Layer
+
+Question: How is the downstream project supported and kept usable after release?
+
+### Inputs
+
+- Released project version, changelog, rollback evidence, and known limits from execution.
+- Growth-layer adoption, channel, and user-friction evidence.
+- Organization-layer ownership, escalation, support, and agent-governance boundaries.
+- Technical-layer observability, reliability, security, cost, and recovery constraints.
+
+### Tools And Techniques
+
+- Release planning defines rollout, communication, support readiness, and rollback readiness.
+- Support-playbook design defines response paths, issue categories, service boundaries, and escalation rules.
+- Customer-success or operator-success analysis tracks onboarding, activation, support outcomes, and trust recovery.
+- Bug-triage design classifies defects, incidents, regressions, feature requests, and user education gaps.
+- FAQ and documentation operations turn recurring questions into maintained knowledge assets.
 - `docs_bilingual/release_plan.md` is the release plan; it defines rollout, release gates, and communication.
 - `docs_bilingual/release_plan.zh-CN.md` is the UTF-8 Chinese companion for the release plan.
 - `docs_bilingual/rollback_plan.md` is the rollback plan; it defines how to return to a safe version.
 - `docs_bilingual/rollback_plan.zh-CN.md` is the UTF-8 Chinese companion for the rollback plan.
 - `CHANGELOG.md` is the project changelog; it records user-visible and operator-visible changes.
-- `docs_bilingual/metrics.md` is the metrics document; it defines project success and quality metrics.
-- `docs_bilingual/metrics.zh-CN.md` is the UTF-8 Chinese companion for the metrics document.
+- `docs_bilingual/support-playbook.md` is the support playbook.
+- `docs_bilingual/faq.md` is the project FAQ.
 
 ### Outputs
 
-- Released project version, changelog, rollback evidence, and metrics evidence.
-- Adoption or growth findings for the next project iteration.
-- Feedback to product and strategy layers when user-visible behavior changes.
+- Released project version, changelog, rollback evidence, support records, FAQ updates, and operations evidence.
+- Adoption, support, reliability, trust, and usability feedback for product, technical, growth, and retrospective layers.
+- Evidence that released work remains usable, supportable, and recoverable.
 
-## 8. Retrospective And Upstream Feedback Layer
+## 11. Retrospective And Upstream Feedback Layer
 
 Question: What did the downstream project learn, and what should be fed back upstream?
 
 ### Inputs
 
 - Execution-layer delivery records, test results, defects, and release outcomes.
-- Release-layer metrics, adoption reports, rollback results, and user feedback.
+- Growth-layer adoption findings and experiment results.
+- Operations-layer release results, rollback results, support evidence, and user feedback.
 - Observed gaps in templates, startup summaries, Codex subagent use, or optional durable-lane rules.
 
 ### Tools And Techniques
 
 - Retrospective analysis turns project experience into reusable local lessons.
+- Experiment analysis decides whether to continue, stop, pivot, or expand.
+- SOP and template review decides which repeated local work should become a project-local process.
 - Upstream feedback separates platform improvement ideas from project-local facts.
 - Archive discipline keeps project OpenSpec, durable state, and release state local to the project.
 - `docs_bilingual/lessons_learned.md` is the project lessons-learned document; it records locally reusable experience.
@@ -282,9 +401,10 @@ Question: What did the downstream project learn, and what should be fed back ups
 
 ### Outputs
 
-- Local lessons learned, upstream feedback candidates, and follow-up tasks.
+- Local lessons learned, experiment conclusions, upstream feedback candidates, and follow-up tasks.
 - Clear separation between project-local truth and platform improvement requests.
 - Inputs for future template updates, governance updates, or project iterations.
+- Reusable learning returned to the cognitive, business, market, strategy, metrics, product, technical, organization, execution, growth, and operations layers.
 
 ## Minimal Downstream Project Checklist
 

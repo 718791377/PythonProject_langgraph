@@ -1,6 +1,6 @@
 # Codex 平台项目画布
 
-本文是 Codex CLI 个人开发者生产级持久化团队平台的轻量对齐工件。它不替代白皮书、MRD、implementation plan、OpenSpec 或 release evidence。
+本文是 Codex CLI 个人开发者生产级持久化团队平台的轻量对齐工件。它不替代白皮书、MRD、implementation plan、OpenSpec 或 release evidence。它遵循 `Business Management/` 综合：让平台有意保持小、以机制驱动、用 outcome 衡量，并保持 repo-local。
 
 ## 目的
 

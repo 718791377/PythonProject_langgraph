@@ -39,7 +39,7 @@ The noise is not a functional failure, but it pollutes the session and can confu
 6. Update the generated startup launcher so it prepends `win-shims` to PATH only while invoking native Codex, then restores PATH in `finally`.
 7. Add `tools/check_windows_cleanup_output_control.py`, a checker that validates source evidence for shim generation, optional EXE control, PATH restoration, and preserved `omx_*` MCP startup overrides.
 8. Add tests for installer and checker behavior, including default non-EXE mode and explicit EXE opt-in.
-9. Run validation and publish by GitLab-first MR.
+9. Run validation and publish by local-main-first integration package.
 
 ## Validation
 

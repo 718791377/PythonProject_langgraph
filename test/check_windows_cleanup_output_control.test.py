@@ -98,6 +98,21 @@ class WindowsCleanupOutputControlCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("taskkill_exe_runtime_presence_check" in error for error in payload["errors"]))
 
+    def test_fails_when_login_profile_cleanup_shim_bridge_is_removed(self) -> None:
+        root = self.make_root("windows-cleanup-missing-login-profile-bridge")
+        source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
+            "CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY",
+            "CODEX_USER_LEVEL_REMOVED_CLEANUP_SHIM_DIRECTORY",
+        )
+        self.write_installer_copy(root, source)
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("cleanup_shim_env_name" in error for error in payload["errors"]))
+        self.assertTrue(any("profile_cleanup_shim_bridge" in error for error in payload["errors"]))
+
     def test_fails_when_framework_compiler_fallback_is_removed(self) -> None:
         root = self.make_root("windows-cleanup-missing-framework-csc-fallback")
         source = INSTALLER_PATH.read_text(encoding="utf-8").replace(

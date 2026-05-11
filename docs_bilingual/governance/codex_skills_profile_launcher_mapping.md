@@ -19,7 +19,7 @@ The source of truth is:
 
 - profile definitions: `docs_bilingual/governance/codex_skills_profiles.registry.yaml`
 - launcher payload safety: `docs_bilingual/governance/user_level_launcher_payload_policy.md`
-- publication workflow: GitLab-first repository workflow
+- publication workflow: local-main-first repository workflow
 
 Installed user-level wrappers are deployment artifacts. They are not changed by this mapping document.
 

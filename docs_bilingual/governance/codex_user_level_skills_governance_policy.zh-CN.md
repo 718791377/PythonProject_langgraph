@@ -126,15 +126,17 @@ Duplicate skill names 按 scope 和 authority 处理：
 
 ## 11. 发布工作流
 
-本仓库使用 GitLab 作为权威 review 与 merge surface：
+本仓库的 skills governance 工作采用 local-main-first 发布流程：
 
-1. 创建 feature branch。
-2. 将 feature branch 推送到 GitLab。
-3. 打开或更新 GitLab MR。
-4. 等待 GitLab pipeline 通过。
-5. 合并到 GitLab `main`。
-6. 将该 GitLab `main` commit 精确同步到 GitHub `main`。
-7. 除非用户明确覆盖此 workflow，否则不要打开 GitHub PR。
+1. 创建 feature branch 和专用 feature worktree。
+2. 本地检查通过后提交计划保留的改动。
+3. 在干净 feature worktree 中运行 local CI 和 local MR review。
+4. 请求用户批准本地集成或远端发布。
+5. 先把获批结果集成到本地 `main`。
+6. 如果本地 `main` 领先 `gitlab/main` 或 `github/main`，必须报告 intentional remote lag。
+7. 在用户批准或需要时使用 GitLab 做远端发布和干净环境确认。
+8. 远端确认后，或用户明确批准 direct mirror 后，把预期本地 `main` commit 精确同步到 GitHub `main`。
+9. 除非用户明确覆盖此 workflow，否则不要打开 GitHub PR。
 
 ## 12. 必需检查
 

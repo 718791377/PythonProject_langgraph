@@ -69,7 +69,7 @@ translation_of: docs_bilingual/memory/mainline_sync-langgraph-capability-gap-aft
 - 创建新写入范围前，必须用 `python tools/check_session_ownership_claims.py --root . --precheck-task ... --json` 检查本地 task ownership。
 - stale branch 或 remote-branch 信号必须先分类为 completed-stale residue，新的写入范围才能继续。
 - 对单切片文档、checker refresh 或 readiness-review 工作，仍然不允许启动 durable team。
-- GitLab 仍是权威 MR 与合并表面；GitHub 仍是合并后的镜像目标。
+- 本地 `main` 是第一集成面；GitLab 和 GitHub 保留为远端发布与镜像面。
 
 ## 新会话安全下一步
 

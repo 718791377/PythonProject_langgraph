@@ -32,6 +32,29 @@ status: draft
 - OpenSpec 保持仓库治理和变更控制面；OpenSpec 是 proposal、design、tasks、stable specs 和 archive 的治理工作流。
 - repo-local durable state 保留在每个项目内部；repo-local durable state 是每个仓库自己的持久化状态。
 
+## 12 层目标架构
+
+白皮书目标不是泛泛的多 Agent 故事，而是一套受治理的 Codex CLI 平台架构：
+
+- 12 层主干让平台从叙事一直连接到复盘学习。
+- 4 个虚拟部门把平台战略/产品、工程/平台、Agent 治理、增长/知识职责分开。
+- 24 个责任域、18 个横切模块、48 个核心文档定义个人开发者生产级平台的最低严肃运行面。
+- 12 个受治理 AI Agent 放大执行和评审能力，但最终权威仍属于人类操作者与当前主 Codex leader 会话。
+- 12 本推荐书籍提供本地管理、产品、工程、组织、安全和学习参考基础。
+
+该清单有意小于下游一人公司经营系统清单。Codex 平台应建设开发者编排机制，而不是吸收下游客户、收入、财务、法律或运营 truth。
+
+## PMI 交付纪律
+
+平台叙事只有落到过程组式交付纪律中才可执行。每个发布切片都应识别输入、工具与技术、输出，然后经过启动、规划、执行、监控与控制、收尾。这让 AI 辅助交付保持可检查，并防止隐藏自动化变成审批权威。
+
+## 架构裁剪规则
+
+当工作改变可复用编排行为、原生 subagent 路由、`native_omx`、LangGraph、worktree safety、OpenSpec governance、user-level launchers、skill/profile governance、local-main-first publication、shared templates、durable state、release safety 或跨项目采用时，受影响范围使用完整平台架构。
+
+只有边界清晰、低风险、可逆，并且不改变 runtime entrypoints、secrets、durable state、CI gates、release gates 或下游项目依赖的阶段或模块，才允许轻量处理。决策规则位于 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md`。
+
+
 ## 核心假设
 
 - recovery、inspection 和 rollback 比隐藏式自动化更重要。recovery 是恢复，inspection 是检查，rollback 是回滚。
