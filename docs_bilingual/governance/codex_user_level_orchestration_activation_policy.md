@@ -83,3 +83,7 @@ Native Codex subagents, workflow skills, plugin-provided skills, profile helpers
 ## Script control
 
 This policy is backed by `tools/check_orchestration_activation_policy.py` and registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
+
+## Active selector refresh reporting
+
+The repo-local selector authority for automatic durable adoption is `.omx/state/selectors/active.json`. Compatibility records such as `.omx/state/langgraph/backend.json` and `.omx/state/team/codex-auto-managed-team.json` are inspection context only. When LangGraph is selected and ready but the active selector is missing, status helpers must report a selector refresh gap instead of treating LangGraph as unavailable or silently downgrading to `native_omx`.

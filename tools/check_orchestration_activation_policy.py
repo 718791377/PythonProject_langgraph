@@ -47,6 +47,8 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "expert timed out; not used as evidence",
         "main session took over verification",
         "tools/check_orchestration_activation_policy.py",
+        ".omx/state/selectors/active.json",
+        "selector refresh gap",
     ],
     "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md": [
         "subagent_routing != off",
@@ -58,6 +60,8 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "expert timed out; not used as evidence",
         "main session took over verification",
         "tools/check_orchestration_activation_policy.py",
+        ".omx/state/selectors/active.json",
+        "selector refresh gap",
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.md": [
         "orchestration-activation policy",
@@ -67,6 +71,12 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "Missing user reminders SHALL NOT be a routing reason",
         "Expert timeout SHALL NOT be accepted as verification evidence",
         "Existing sessions SHALL retrofit activation policy",
+    ],
+    "openspec/specs/codex-user-level-team-mode-automatic-team-routing/spec.md": [
+        ".omx/state/selectors/active.json",
+        "selector refresh gap",
+        "SHALL NOT downgrade the backend to unavailable",
+        "SHALL NOT auto-adopt unmanaged compatibility records",
     ],
 }
 
