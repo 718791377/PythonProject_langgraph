@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.4
+version: 0.5
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -80,6 +80,7 @@ Correct decision inputs are:
 - whether there are two or more independent execution slices;
 - whether the plan is frozen;
 - whether backend and preflight are ready;
+- whether a higher-authority or runtime-surface blocker exists;
 - whether the main session can safely take over locally.
 
 ### 2.4 Expert timeout handling
@@ -111,7 +112,7 @@ phase=<phase>
 capability_chain=subagent:<auto|manual|off> > omx:<on|off> > langgraph:<on|off>
 backend_default=<langgraph|native_omx|none>
 backend_ready=<true|false>
-experts=<none|analystxN|architect|writer|verifier|...>
+experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 durable_workflow=<not_needed|candidate|selected|blocked|running>
 persistent_team=<not_needed|candidate|selected|blocked|running>
 why=<concrete reason>
@@ -204,7 +205,32 @@ Explicit user approval is still required for:
 
 This local-merge permission does not weaken the publication workflow. It only defines the local execution boundary for simple, already-authorized iterations. Remote publication remains a separate decision.
 
-## 9. Implementation phases
+## 9. Higher-authority and runtime-surface blockers
+
+Automatic orchestration is the default policy, but live execution must still obey higher-authority instructions, the current tool contract, and actual runtime-surface availability. If a task would normally select an expert, durable workflow, or persistent team but the surface cannot be invoked, the trace must report a named blocker rather than rephrasing the decision as user preference.
+
+Valid blocker examples include:
+
+- `blocked:platform_subagent_invocation_constraint` - the live tool contract does not allow the session to spawn native subagents for this turn;
+- `blocked:helper_missing` - the approved durable or selector helper has not been implemented or installed;
+- `blocked:preflight_failed` - the lane was selected but a concrete preflight check failed;
+- `blocked:write_ownership_conflict` - write-heavy parallel execution would overlap with another active owner;
+- `blocked:backend_not_ready` - the required backend is not installed, enabled, selected, or ready.
+
+Required fallback behavior:
+
+1. if the execution surface is genuinely not needed, report `not_needed` and keep the task local;
+2. if the surface is needed but blocked, report `blocked:<reason>` and choose respawn through an available surface, durable handoff, or explicit main-session takeover;
+3. never turn a platform or helper blocker into the forbidden reason "the user did not request subagents/parallelism";
+4. final reports must separate `not_needed`, `selected/running`, `blocked`, and `main_session_takeover` evidence.
+
+The canonical activation trace therefore permits expert blockers:
+
+```text
+experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
+```
+
+## 10. Implementation phases
 
 ### Phase 0 - Record and protect the plan
 
@@ -232,7 +258,7 @@ This local-merge permission does not weaken the publication workflow. It only de
 - Ensure existing sessions re-run activation checks on phase change, resume, continue, `.omx` state detection, and expert timeout.
 - Ensure LangGraph-ready sessions use LangGraph as the default durable backend.
 
-## 10. Proposed implementation scope
+## 11. Proposed implementation scope
 
 After this plan is confirmed, implement it through OpenSpec change `enforce-automatic-orchestration-routing`:
 
@@ -244,10 +270,11 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
    - using "the user did not request parallelism/subagents" as a reason not to start experts;
    - treating LangGraph as optional or unavailable when it is ready;
    - treating expert timeout as verification evidence;
-   - routing trace failing to distinguish backend-on from persistent-team launch thresholds.
+   - routing trace failing to distinguish backend-on from persistent-team launch thresholds;
+   - tool/runtime blockers being misreported as user preference or as `not_needed`.
 6. Evaluate and fix the refresh/reporting rule for missing repo-local `.omx/state/selectors/active.json`.
 
-## 11. Evidence and test mapping
+## 12. Evidence and test mapping
 
 | Rule | Minimum evidence | Candidate test/check |
 | --- | --- | --- |
@@ -257,15 +284,16 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 | Expert timeout is not evidence | final report separates timeout from absorbed result | log/report pattern checker |
 | Ignored local logs do not break canary guard | ignored transcript with canary markers passes guard | context-retention canary test |
 | Missing active selector is a refresh gap | status reports selector missing without backend downgrade | selector status helper test |
+| Tool/runtime blocker is explicit | trace reports `blocked:<reason>` instead of a user-reminder reason | activation trace blocker test |
 
-## 12. Risks and rollback
+## 13. Risks and rollback
 
 - Risk: automatically launching too many workers for small tasks. Mitigation: keep backend-on separate from workflow/team launch thresholds.
 - Risk: hiding real canary leakage by ignoring too much. Mitigation: only root `.gitignore` patterns are honored by the canary guard, and startup summary sources remain explicitly checked.
 - Risk: final reports overclaim expert evidence. Mitigation: require explicit evidence source labels.
 - Rollback: revert checker/runtime enforcement while keeping this plan as a record if implementation causes excessive false positives.
 
-## 13. Non-goals
+## 14. Non-goals
 
 - Do not force every small task into multi-worker execution.
 - Do not install the official LangGraph package into the repository `.venv`; the repository rule remains to use the user-level shared LangGraph venv.
@@ -273,7 +301,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Do not pretend pane-style persistent team was launched when tmux is unavailable.
 - Do not use this plan as proof that runtime enforcement is already complete.
 
-## 14. Acceptance criteria
+## 15. Acceptance criteria
 
 - New sessions and resumed sessions report capability chain and backend default.
 - When LangGraph is ready, default backend is reported as `langgraph`.
@@ -281,8 +309,9 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Final reports do not claim expert verification when the expert timed out and did not return evidence.
 - Checker or tests cover at least three of the key regressions above.
 - Missing repo-local active selector is reported as a selector refresh gap, not LangGraph backend unavailability.
+- Tool or higher-authority blockers are reported as `blocked:<reason>`, not as missing user instruction.
 
-## 15. Scope and authority boundary
+## 16. Scope and authority boundary
 
 This plan is an implementation-plan record. It is not the final runtime contract until the follow-up OpenSpec change updates policy surfaces, helper scripts, and checks.
 
@@ -295,7 +324,7 @@ Authority order:
 
 If this plan conflicts with a current higher-authority surface, the implementation change must update that surface rather than relying on this plan alone.
 
-## 16. State vocabulary
+## 17. State vocabulary
 
 Use these terms consistently:
 
@@ -309,7 +338,7 @@ Use these terms consistently:
 
 `ready` does not mean `running`, and `not_needed` does not mean disabled.
 
-## 17. Existing-session retrofit rule
+## 18. Existing-session retrofit rule
 
 Existing sessions must adopt this policy when any retrofit trigger occurs:
 

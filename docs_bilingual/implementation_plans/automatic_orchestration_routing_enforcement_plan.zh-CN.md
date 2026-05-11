@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.4
+version: 0.5
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -80,6 +80,7 @@ langgraph_ready = true
 - 是否存在 2+ 独立执行切片；
 - 计划是否已冻结；
 - backend / preflight 是否 ready；
+- 是否存在更高权威或 runtime surface blocker；
 - 当前会话是否能安全本地接管。
 
 ### 2.4 expert 超时处理
@@ -111,7 +112,7 @@ phase=<phase>
 capability_chain=subagent:<auto|manual|off> > omx:<on|off> > langgraph:<on|off>
 backend_default=<langgraph|native_omx|none>
 backend_ready=<true|false>
-experts=<none|analystxN|architect|writer|verifier|...>
+experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 durable_workflow=<not_needed|candidate|selected|blocked|running>
 persistent_team=<not_needed|candidate|selected|blocked|running>
 why=<concrete reason>
@@ -204,7 +205,32 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 这个本地合入许可不会削弱发布流程。它只定义已经授权的简单迭代在本地执行时的边界；远端发布仍然是单独决策。
 
-## 9. 实施阶段
+## 9. 更高权威与 runtime surface 阻塞边界
+
+自动协同是默认策略，但 live execution 仍必须服从更高优先级指令、当前工具契约以及实际 runtime surface 可用性。如果某个任务按策略本应选择 expert、durable workflow 或 persistent team，但对应 surface 不能被调用，trace 必须报告具名 blocker，而不能把决策重新表述成用户偏好。
+
+合法 blocker 示例包括：
+
+- `blocked:platform_subagent_invocation_constraint` - 当前 live tool contract 不允许本轮会话启动 native subagent；
+- `blocked:helper_missing` - 已批准的 durable 或 selector helper 尚未实现或安装；
+- `blocked:preflight_failed` - lane 已被选中，但具体 preflight 检查失败；
+- `blocked:write_ownership_conflict` - 写入型并行执行会与另一个 active owner 重叠；
+- `blocked:backend_not_ready` - 所需 backend 尚未 installed、enabled、selected 或 ready。
+
+必须采用的 fallback 行为：
+
+1. 如果该 execution surface 确实不需要，报告 `not_needed` 并保持本地执行；
+2. 如果该 surface 需要但被阻塞，报告 `blocked:<reason>`，并选择通过可用 surface respawn、durable handoff，或由主会话明确接管；
+3. 绝不能把 platform 或 helper blocker 改写成被禁止的“用户没有要求 subagents/parallelism”；
+4. final report 必须区分 `not_needed`、`selected/running`、`blocked` 和 `main_session_takeover` 证据。
+
+因此，规范 activation trace 允许 expert blocker：
+
+```text
+experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
+```
+
+## 10. 实施阶段
 
 ### Phase 0 - 记录并保护计划
 
@@ -232,7 +258,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 - 确保已有会话在 phase change、resume、continue、`.omx` state detection、expert timeout 时重新做 activation check。
 - 确保 LangGraph-ready 会话使用 LangGraph 作为默认 durable backend。
 
-## 10. 拟实施范围
+## 11. 拟实施范围
 
 本计划确认后，以 OpenSpec change `enforce-automatic-orchestration-routing` 落地：
 
@@ -244,10 +270,11 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
    - 用“用户没有要求并行/子代理”解释不启动 experts；
    - LangGraph ready 时仍把 backend 当成可选或不可用；
    - expert timeout 后把未返回结果当作验证证据；
-   - routing trace 不区分 backend 常开与 persistent team 启动阈值。
+   - routing trace 不区分 backend 常开与 persistent team 启动阈值；
+   - tool/runtime blocker 被误报成用户偏好或 `not_needed`。
 6. 评估并修复 repo-local `.omx/state/selectors/active.json` 缺失时的刷新/报告规则。
 
-## 11. 证据与测试映射
+## 12. 证据与测试映射
 
 | 规则 | 最小证据 | 候选测试/检查 |
 | --- | --- | --- |
@@ -257,15 +284,16 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 | expert timeout 不是证据 | final report 区分 timeout 与 absorbed result | log/report pattern checker |
 | ignored local logs 不破坏 canary guard | 含 canary marker 的 ignored transcript 通过 guard | context-retention canary 测试 |
 | active selector 缺失是 refresh gap | status 报告 selector missing 但不 downgrade backend | selector status helper 测试 |
+| tool/runtime blocker 被显式报告 | trace 报告 `blocked:<reason>`，而不是用户提醒缺失 | activation trace blocker 测试 |
 
-## 12. 风险与回滚
+## 13. 风险与回滚
 
 - 风险：小任务自动启动过多 workers。缓解：严格区分 backend-on 与 workflow/team launch thresholds。
 - 风险：忽略范围过大导致真正 canary 泄漏被隐藏。缓解：canary guard 只尊重 root `.gitignore` 模式，并继续显式检查 startup summary 来源。
 - 风险：final report 过度声称 expert evidence。缓解：强制 evidence source 标签。
 - 回滚：如果 enforcement 造成过多误报，可回滚 checker/runtime enforcement，同时保留本计划作为记录。
 
-## 13. 非目标
+## 14. 非目标
 
 - 不把每个小任务都强制变成 multi-worker execution。
 - 不把 LangGraph official package 安装进仓库 `.venv`；仓库规则仍优先使用 user-level shared LangGraph venv。
@@ -273,7 +301,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 - 不在 tmux 不可用时假装启动 pane-style persistent team。
 - 不把本计划当成 runtime enforcement 已完成的证明。
 
-## 14. 验收标准
+## 15. 验收标准
 
 - 新会话和已有会话 resume 都能看到 capability chain 与 backend default。
 - LangGraph ready 时默认 backend 报告为 `langgraph`。
@@ -281,8 +309,9 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 - expert 超时后 final report 不会声称获得了该 expert 的验证结果。
 - checker 或测试能覆盖上述至少三个关键回归。
 - repo-local active selector 缺失会被报告为 selector refresh gap，而不是 LangGraph backend 不可用。
+- 工具或更高权威 blocker 会被报告为 `blocked:<reason>`，而不是用户指令缺失。
 
-## 15. 适用范围与权威边界
+## 16. 适用范围与权威边界
 
 本计划是 implementation-plan 记录。只有在后续 OpenSpec change 更新 policy surfaces、helper scripts 和 checks 后，它才会变成完整 runtime contract。
 
@@ -295,7 +324,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 如果本计划与当前更高权威 surface 冲突，实施变更必须更新对应 surface，而不是只依赖本计划。
 
-## 16. 状态词定义
+## 17. 状态词定义
 
 以下术语必须一致使用：
 
@@ -309,7 +338,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 `ready` 不等于 `running`，`not_needed` 也不等于 disabled。
 
-## 17. 已有会话 retrofit 规则
+## 18. 已有会话 retrofit 规则
 
 已有会话在以下任一触发条件出现时，必须采用本策略：
 
