@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.15
+version: 0.16
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -276,7 +276,27 @@ Delegation 必须缩短获得正确结果的路径；它不能变成反射式后
 - 要求 workers 在 final answer 中列出 changed paths；
 - delegated write sets 必须保持 disjoint，除非 leader 对 hotspot 做 serializes。
 
-## 11. Expert 生命周期、bounded wait 与 provider backpressure
+## 11. Codebase exploration、code-change delegation 与 durable state surfaces
+
+Read-only exploration、code-changing worker execution 与 durable-state persistence 具有不同的证据和所有权规则。
+
+Exploration 与代码委派规则：
+
+- `explorer` 风格 codebase search 用于 specific、well-scoped 的 read-only questions、symbol mapping 或 file discovery；
+- 当 bounded code change 已清楚且可以安全委派时，不得用 read-only exploration 替代 implementation worker；
+- 对 coding tasks，如果 worker 能在隔离 ownership area 中完成 bounded patch，优先委派 concrete code-change worker subtasks，而不是只做 read-only explorer analysis；
+- 当 leader 对 critical path 已有足够本地上下文时，应本地推进，而不是委派一个会阻塞的 read-only exploration task；
+- explorer results 可以用于 routing 和 briefs，但最终 implementation evidence 仍需要 local verification、tests 或经 review 的 worker patches。
+
+LangGraph entrypoint 与 repo-local state 规则：
+
+- 当任务需要 graph phases、checkpoint gates、frozen briefs、survivor queues 或 tracked LangGraph thread state 时，使用 LangGraph entrypoints 与 repo-local `.omx/state/langgraph/` runtime state；
+- repo-local `.omx/state/langgraph/backend.json` 可作为 backend context 检查；
+- `.omx/state/team/codex-auto-managed-team.json` 可作为 compatibility context 检查；
+- `.omx/state/selectors/active.json` 仍是自动 durable-team adoption 的 active selector authority；
+- durable artifacts、frozen briefs 与 persisted survivor queues 必须写入 repo-local state 或已记录 artifact paths，不得只保存在 transient chat context。
+
+## 12. Expert 生命周期、bounded wait 与 provider backpressure
 
 Expert 与 subagent 的使用必须由 leader 从启动、fan-in 到清理全程负责。
 
@@ -302,7 +322,7 @@ Provider pacing 与 backpressure 规则：
 - 当多个 agent step 可能命中 provider 时，优先 local-first phases、deterministic local checks 与 bounded fan-out；
 - 如果 pacing 对执行产生实质影响，报告为 `backpressure:upstream_pacing` 或等价具名条件，而不是解释成用户意图缺失。
 
-## 12. Fan-out 上限、写入所有权与 backend-family 边界
+## 13. Fan-out 上限、写入所有权与 backend-family 边界
 
 Native expert 的使用是 leader 显式启动并由 leader 负责 fan-in。不得暗示 raw Codex 默认会自动生成 specialist roles。
 
@@ -324,7 +344,7 @@ Backend-family 边界：
 
 开放式任务必须保持 research 与 implementation 分离：先用 analyst/research roles 做 discovery，只有在 plan、ownership 与 acceptance evidence 冻结后，才进入 executor/team execution。
 
-## 13. Handoff、对抗复核与相邻 runtime 边界
+## 14. Handoff、对抗复核与相邻 runtime 边界
 
 开放式 research 与有争议的 bug review 必须有明确 handoff 边界，避免临时 expert lane 变成 unmanaged persistent workers。
 
@@ -351,7 +371,7 @@ Durable-state 与相邻 runtime 边界：
 - LangGraph、AutoGen、CrewAI 是通用 programmable orchestration runtimes，不等同于 native Codex-subagent equivalents；
 - LangGraph graph 可以协调 phases、checkpoints、approvals 与 survivor queues，但 native Codex experts 仍必须由 leader 显式 spawn 并负责 fan-in。
 
-## 14. Backend、workflow 与 team 语义边界
+## 15. Backend、workflow 与 team 语义边界
 
 以下概念不得混用：
 
@@ -362,7 +382,7 @@ Durable-state 与相邻 runtime 边界：
 
 当 LangGraph ready 时，它就是默认 backend。小任务仍然可以是 `durable_workflow=not_needed` 且 `persistent_team=not_needed`。这表示任务不需要这些执行面，不表示 LangGraph 关闭。
 
-## 15. 当前本地检查结论
+## 16. 当前本地检查结论
 
 2026-05-11 本地只读检查显示：
 
@@ -389,7 +409,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 解释：user-level LangGraph backend 已可用且应视为默认常开；repo-local active selector 缺失是需要治理/辅助脚本修复的状态刷新问题，不能被解释成 LangGraph backend 不可用。
 
-## 16. Active selector 处理规则
+## 17. Active selector 处理规则
 
 当 `.omx/state/selectors/active.json` 缺失，但 user-level capability state 显示 `durable_orchestration_backend=langgraph` 且 `langgraph_ready=true` 时，会话不得静默降级到 `native_omx` 或 `none`。
 
@@ -400,7 +420,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 3. 当实现工作需要 tracked durable thread 时，通过已批准 helper 刷新或创建 selector；
 4. 如果 helper 尚不存在，将其记录为实现缺口，而不是解释成 backend 不可用。
 
-## 17. 低风险迭代与本地合入边界
+## 18. 低风险迭代与本地合入边界
 
 对于已经确认范围内的重复低风险完善，主会话在同时满足以下条件时，可以不再逐次请求用户授权：
 
@@ -424,7 +444,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 这个本地合入许可不会削弱发布流程。它只定义已经授权的简单迭代在本地执行时的边界；远端发布仍然是单独决策。
 
-## 18. 更高权威与 runtime surface 阻塞边界
+## 19. 更高权威与 runtime surface 阻塞边界
 
 自动协同是默认策略，但 live execution 仍必须服从更高优先级指令、当前工具契约以及实际 runtime surface 可用性。如果某个任务按策略本应选择 expert、durable workflow 或 persistent team，但对应 surface 不能被调用，trace 必须报告具名 blocker，而不能把决策重新表述成用户偏好。
 
@@ -449,7 +469,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ```
 
-## 19. 实施阶段
+## 20. 实施阶段
 
 ### Phase 0 - 记录并保护计划
 
@@ -478,6 +498,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 增加 main-session leader ownership、no separate persistent leader pane、startup non-autolaunch、task-flow scoped adoption 与 legacy-session compatibility boundaries 的 checker 覆盖。
 - 增加 native Codex as base layer、oh-my-codex as wrapper/workflow layer、capability-switch chain values 与 `native_omx` / LangGraph effective lane choice 的 checker 覆盖。
 - 增加 delegation design quality、critical-path local work、等待期间 non-overlapping leader work、duplicate-work prevention 与 sparse `wait_agent` use 的 checker 覆盖。
+- 增加 explorer versus code-change worker boundaries、LangGraph entrypoints、repo-local `.omx/state/langgraph/` state、compatibility record usage 与 durable artifact persistence 的 checker 覆盖。
 - 新增或更新 selector refresh/status helper 行为。
 
 ### Phase 3 - Runtime integration
@@ -486,7 +507,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 确保已有会话在 session reload、Codex restart、phase change、resume、continue、`.omx` state detection、expert timeout 时重新做 activation check。
 - 确保 LangGraph-ready 会话使用 LangGraph 作为默认 durable backend。
 
-## 20. 拟实施范围
+## 21. 拟实施范围
 
 本计划确认后，以 OpenSpec change `enforce-automatic-orchestration-routing` 落地：
 
@@ -527,10 +548,13 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
    - graph-shaped checkpoint work 未考虑 LangGraph lane fit 而默认进入 `native_omx`；
    - leader 应本地处理的 blocking critical-path work 被委派出去；
    - leader/expert 或 expert/expert 之间 duplicate work；
-   - leader 在没有尝试 non-overlapping local work 时静默等待。
+   - leader 在没有尝试 non-overlapping local work 时静默等待；
+   - read-only explorer work 替代了清楚的 bounded code-change worker task；
+   - LangGraph checkpoint work 没有使用 LangGraph entrypoints 或 repo-local `.omx/state/langgraph/` state；
+   - durable artifacts、frozen briefs 或 survivor queues 只存在于 transient chat context。
 6. 评估并修复 repo-local `.omx/state/selectors/active.json` 缺失时的刷新/报告规则。
 
-## 21. 证据与测试映射
+## 22. 证据与测试映射
 
 | 规则 | 最小证据 | 候选测试/检查 |
 | --- | --- | --- |
@@ -570,8 +594,11 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 | delegation 具体且不重复 | delegated tasks 是 bounded、self-contained、materially advancing 且不重复 | delegation-design checker |
 | leader 在 experts 运行时继续工作 | trace 显示 non-overlapping leader work，或等待前写明 blocker | leader-wait discipline checker |
 | critical-path blocking work 保持本地 | leader 不委派 immediate blocking step，除非显式说明 handoff 理由 | critical-path delegation checker |
+| explorer 与 code-change worker 边界被保留 | read-only explorer work 限于 specific mapping questions；bounded patches 使用 workers | explorer-worker-boundary checker |
+| LangGraph state surfaces 被使用 | graph/checkpoint tasks 使用 LangGraph entrypoints 与 `.omx/state/langgraph/` state | langgraph-state-surface checker |
+| durable artifacts 被持久化 | frozen briefs、survivor queues 与 durable artifacts 具有 repo-local state 或 documented paths | durable-artifact-persistence checker |
 
-## 22. 风险与回滚
+## 23. 风险与回滚
 
 - 风险：小任务自动启动过多 workers。缓解：严格区分 backend-on 与 workflow/team launch thresholds。
 - 风险：忽略范围过大导致真正 canary 泄漏被隐藏。缓解：canary guard 只尊重 root `.gitignore` 模式，并继续显式检查 startup summary 来源。
@@ -595,9 +622,11 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 风险：effective lane choice 忽略 task fit。缓解：durable adoption 前检查 native_omx worker-centric criteria 与 LangGraph graph-shaped criteria。
 - 风险：delegation 变成被动等待。缓解：要求先做 leader-side critical-path planning，并在 experts 运行时继续 non-overlapping work。
 - 风险：重复工作浪费上下文并产生冲突证据。缓解：要求 non-duplicative bounded sidecar tasks 与 explicit takeover records。
+- 风险：read-only exploration 延迟明显的 bounded implementation。缓解：隔离 patch 优先 code-change workers，blocking reads 保持本地。
+- 风险：durable decisions 丢在 chat context 中。缓解：把 LangGraph state、frozen briefs、survivor queues 与 durable artifacts 持久化到 repo-local paths。
 - 回滚：如果 enforcement 造成过多误报，可回滚 checker/runtime enforcement，同时保留本计划作为记录。
 
-## 23. 非目标
+## 24. 非目标
 
 - 不把每个小任务都强制变成 multi-worker execution。
 - 不把 LangGraph official package 安装进仓库 `.venv`；仓库规则仍优先使用 user-level shared LangGraph venv。
@@ -605,7 +634,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 不在 tmux 不可用时假装启动 pane-style persistent team。
 - 不把本计划当成 runtime enforcement 已完成的证明。
 
-## 24. 验收标准
+## 25. 验收标准
 
 - 新会话、session reload、Codex restart 和已有会话 resume 都能看到 capability chain 与 backend default。
 - LangGraph ready 时默认 backend 报告为 `langgraph`。
@@ -638,8 +667,11 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Effective lane choice 区分 worker-centric `native_omx` fit 与 graph-shaped LangGraph fit，同时保持每个 durable task 一个 backend family。
 - Delegated work 必须 concrete、bounded、self-contained、non-duplicative，并能 materially advance 当前阶段。
 - Leader 在 experts 运行时继续 non-overlapping work，只有下一步 critical-path step 被结果阻塞时才使用 `wait_agent`。
+- Read-only explorer work 用于 specific mapping questions；bounded implementation changes 优先使用具备 isolated ownership 的 code-change workers。
+- LangGraph graph/checkpoint work 使用 LangGraph entrypoints 与 repo-local `.omx/state/langgraph/` state，compatibility records 仍仅作为 context。
+- Durable artifacts、frozen briefs 与 survivor queues 必须持久化到 repo-local state 或 documented artifact paths。
 
-## 25. 适用范围与权威边界
+## 26. 适用范围与权威边界
 
 本计划是 implementation-plan 记录。只有在后续 OpenSpec change 更新 policy surfaces、helper scripts 和 checks 后，它才会变成完整 runtime contract。
 
@@ -652,7 +684,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 如果本计划与当前更高权威 surface 冲突，实施变更必须更新对应 surface，而不是只依赖本计划。
 
-## 26. 状态词定义
+## 27. 状态词定义
 
 以下术语必须一致使用：
 
@@ -666,7 +698,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 `ready` 不等于 `running`，`not_needed` 也不等于 disabled。
 
-## 27. 已有会话 retrofit 规则
+## 28. 已有会话 retrofit 规则
 
 已有会话在以下任一触发条件出现时，必须采用本策略：
 
