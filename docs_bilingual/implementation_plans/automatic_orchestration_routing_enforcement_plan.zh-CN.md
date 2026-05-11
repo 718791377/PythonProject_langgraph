@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.5
+version: 0.6
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -102,7 +102,7 @@ final report 必须区分：
 
 ## 3. Activation trace 新格式
 
-每个新会话、resume、阶段变化、“继续”、expert 超时、发现 `.omx` durable state、或任务扩展到 2+ execution slices 时，必须重新做 activation check。
+每个新会话、session reload、Codex restart、resume、阶段变化、“继续”、expert 超时、发现 `.omx` durable state、或任务扩展到 2+ execution slices 时，必须重新做 activation check。
 
 必填 trace 字段：
 
@@ -285,6 +285,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 | ignored local logs 不破坏 canary guard | 含 canary marker 的 ignored transcript 通过 guard | context-retention canary 测试 |
 | active selector 缺失是 refresh gap | status 报告 selector missing 但不 downgrade backend | selector status helper 测试 |
 | tool/runtime blocker 被显式报告 | trace 报告 `blocked:<reason>`，而不是用户提醒缺失 | activation trace blocker 测试 |
+| reload 与 restart 触发 activation | reload/restart transcript 包含 capability chain 与 backend default | startup/reload trace smoke test |
 
 ## 13. 风险与回滚
 
@@ -303,7 +304,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 ## 15. 验收标准
 
-- 新会话和已有会话 resume 都能看到 capability chain 与 backend default。
+- 新会话、session reload、Codex restart 和已有会话 resume 都能看到 capability chain 与 backend default。
 - LangGraph ready 时默认 backend 报告为 `langgraph`。
 - 不再出现“用户没有要求并行/子代理，所以不启动”的 trace。
 - expert 超时后 final report 不会声称获得了该 expert 的验证结果。
@@ -342,6 +343,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 已有会话在以下任一触发条件出现时，必须采用本策略：
 
+- session reload 或 Codex restart；
 - 用户说“继续”或要求 resume；
 - 任务阶段变化；
 - 任务扩展到 2+ execution slices；
@@ -350,4 +352,4 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - user-level capability state 变化；
 - 会话输出 orchestration trace。
 
-retrofit 时，会话必须重新读取 user-level capability state 和 repo-local backend/selector state，然后才能声明 backend 或 team 状态。
+retrofit 时，包括 reload 或 restart，会话必须重新读取 user-level capability state 和 repo-local backend/selector state，然后才能声明 backend 或 team 状态。上一进程缓存或旧 routing 假设不能作为充分证据。

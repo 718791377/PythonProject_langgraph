@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.5
+version: 0.6
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -102,7 +102,7 @@ The final report must distinguish:
 
 ## 3. Activation trace format
 
-Activation check must re-run on new session, resume, phase change, user "continue", expert timeout, `.omx` durable-state detection, or expansion to two or more execution slices.
+Activation check must re-run on new session, session reload, Codex restart, resume, phase change, user "continue", expert timeout, `.omx` durable-state detection, or expansion to two or more execution slices.
 
 Required trace fields:
 
@@ -285,6 +285,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 | Ignored local logs do not break canary guard | ignored transcript with canary markers passes guard | context-retention canary test |
 | Missing active selector is a refresh gap | status reports selector missing without backend downgrade | selector status helper test |
 | Tool/runtime blocker is explicit | trace reports `blocked:<reason>` instead of a user-reminder reason | activation trace blocker test |
+| Reload and restart trigger activation | reload/restart transcript includes capability chain and backend default | startup/reload trace smoke test |
 
 ## 13. Risks and rollback
 
@@ -303,7 +304,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 
 ## 15. Acceptance criteria
 
-- New sessions and resumed sessions report capability chain and backend default.
+- New sessions, session reloads, Codex restarts, and resumed sessions report capability chain and backend default.
 - When LangGraph is ready, default backend is reported as `langgraph`.
 - No routing trace uses "the user did not request parallelism/subagents" as the reason for not using experts.
 - Final reports do not claim expert verification when the expert timed out and did not return evidence.
@@ -342,6 +343,7 @@ Use these terms consistently:
 
 Existing sessions must adopt this policy when any retrofit trigger occurs:
 
+- the session reloads or Codex restarts;
 - the user says continue or asks to resume;
 - the task phase changes;
 - the task expands to two or more execution slices;
@@ -350,4 +352,4 @@ Existing sessions must adopt this policy when any retrofit trigger occurs:
 - user-level capability state changes;
 - the session emits an orchestration trace.
 
-On retrofit, the session must re-read user-level capability state and repo-local backend/selector state before making backend or team claims.
+On retrofit, including reload or restart, the session must re-read user-level capability state and repo-local backend/selector state before making backend or team claims. Cached or stale routing assumptions from the previous process are not sufficient evidence.
