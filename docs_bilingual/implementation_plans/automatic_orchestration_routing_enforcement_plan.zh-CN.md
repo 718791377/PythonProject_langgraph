@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.11
+version: 0.12
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -161,7 +161,30 @@ Directive 规则：
 
 使用最小充分 expert 集合。不得因为角色可用就添加角色；只有触发条件存在且输出能实质推进当前阶段时才添加。
 
-## 6. Durable-team 阈值映射
+## 6. Native agents、skills、profiles 与 follow-up thread 边界
+
+Native Codex subagents、workflow skills、plugin-provided skills 与 profile helpers 是不同 surface，不得混为一谈。
+
+Registry 与加载规则：
+
+- native reusable role definitions 位于 user-level agents directory 或 repo-local `.codex/agents/`；
+- 每个 standalone custom agent TOML 至少必须定义 `name`、`description` 与 `developer_instructions`；
+- skills 从已安装的 `SKILL.md` 文件加载，并通过 `$name` 或 AGENTS.md routing 调用；skills 不是 native subagents；
+- plugin modules 与 profile helper 的 hard-load/soft-load 只改变哪些 procedural instructions 可见，本身不启动 durable workers，也不满足 persistent-team thresholds；
+- launcher 或 profile surface 需要长 generated instructions 时，优先使用 `model_instructions_file` 等 file-backed reference，而不是很长的 inline `-c developer_instructions=...` payload。
+
+Follow-up thread 规则：
+
+- completed expert 被吸收并关闭后，如果后续仍需要 follow-up work，应 spawn fresh agent 并传入必要 context；
+- 只有用户明确要求 preserve thread，或计划记录了 intentional preserved-thread reason 时，才复用 preserved thread；
+- 不得把 skill invocation、plugin profile 或 preserved transcript 当成 expert result returned 的证据；证据必须来自显式 expert result、durable checkpoint、本地 verification 或 cited source。
+
+Selector source 规则：
+
+- 自动 durable-team routing 读取 `.omx/state/selectors/active.json` 作为 shared repo-local activation selector；
+- compatibility records 可以作为上下文检查，但不能单独授权自动接管 unmanaged teams。
+
+## 7. Durable-team 阈值映射
 
 Durable team 启动必须受阈值约束。`backend_default=langgraph` 与 `backend_ready=true` 表示 durable backend 可用；它不表示 persistent team 必须已经运行。
 
@@ -186,7 +209,7 @@ Durable team 启动必须受阈值约束。`backend_default=langgraph` 与 `back
 
 Bounded multi-face research 仍然是 analyst-fanout-first：第一轮使用同质 `analystxN`；默认第一轮不得混入 `architect`、`planner` 或 `writer`。只有在 analyst fan-in 显示 architecture、execution-ordering 或 document-finalization layer 后，才升级到这些角色。
 
-## 7. Expert 生命周期、bounded wait 与 provider backpressure
+## 8. Expert 生命周期、bounded wait 与 provider backpressure
 
 Expert 与 subagent 的使用必须由 leader 从启动、fan-in 到清理全程负责。
 
@@ -212,7 +235,7 @@ Provider pacing 与 backpressure 规则：
 - 当多个 agent step 可能命中 provider 时，优先 local-first phases、deterministic local checks 与 bounded fan-out；
 - 如果 pacing 对执行产生实质影响，报告为 `backpressure:upstream_pacing` 或等价具名条件，而不是解释成用户意图缺失。
 
-## 8. Fan-out 上限、写入所有权与 backend-family 边界
+## 9. Fan-out 上限、写入所有权与 backend-family 边界
 
 Native expert 的使用是 leader 显式启动并由 leader 负责 fan-in。不得暗示 raw Codex 默认会自动生成 specialist roles。
 
@@ -234,7 +257,7 @@ Backend-family 边界：
 
 开放式任务必须保持 research 与 implementation 分离：先用 analyst/research roles 做 discovery，只有在 plan、ownership 与 acceptance evidence 冻结后，才进入 executor/team execution。
 
-## 9. Handoff、对抗复核与相邻 runtime 边界
+## 10. Handoff、对抗复核与相邻 runtime 边界
 
 开放式 research 与有争议的 bug review 必须有明确 handoff 边界，避免临时 expert lane 变成 unmanaged persistent workers。
 
@@ -261,7 +284,7 @@ Durable-state 与相邻 runtime 边界：
 - LangGraph、AutoGen、CrewAI 是通用 programmable orchestration runtimes，不等同于 native Codex-subagent equivalents；
 - LangGraph graph 可以协调 phases、checkpoints、approvals 与 survivor queues，但 native Codex experts 仍必须由 leader 显式 spawn 并负责 fan-in。
 
-## 10. Backend、workflow 与 team 语义边界
+## 11. Backend、workflow 与 team 语义边界
 
 以下概念不得混用：
 
@@ -272,7 +295,7 @@ Durable-state 与相邻 runtime 边界：
 
 当 LangGraph ready 时，它就是默认 backend。小任务仍然可以是 `durable_workflow=not_needed` 且 `persistent_team=not_needed`。这表示任务不需要这些执行面，不表示 LangGraph 关闭。
 
-## 11. 当前本地检查结论
+## 12. 当前本地检查结论
 
 2026-05-11 本地只读检查显示：
 
@@ -299,7 +322,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 解释：user-level LangGraph backend 已可用且应视为默认常开；repo-local active selector 缺失是需要治理/辅助脚本修复的状态刷新问题，不能被解释成 LangGraph backend 不可用。
 
-## 12. Active selector 处理规则
+## 13. Active selector 处理规则
 
 当 `.omx/state/selectors/active.json` 缺失，但 user-level capability state 显示 `durable_orchestration_backend=langgraph` 且 `langgraph_ready=true` 时，会话不得静默降级到 `native_omx` 或 `none`。
 
@@ -310,7 +333,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 3. 当实现工作需要 tracked durable thread 时，通过已批准 helper 刷新或创建 selector；
 4. 如果 helper 尚不存在，将其记录为实现缺口，而不是解释成 backend 不可用。
 
-## 13. 低风险迭代与本地合入边界
+## 14. 低风险迭代与本地合入边界
 
 对于已经确认范围内的重复低风险完善，主会话在同时满足以下条件时，可以不再逐次请求用户授权：
 
@@ -334,7 +357,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 这个本地合入许可不会削弱发布流程。它只定义已经授权的简单迭代在本地执行时的边界；远端发布仍然是单独决策。
 
-## 14. 更高权威与 runtime surface 阻塞边界
+## 15. 更高权威与 runtime surface 阻塞边界
 
 自动协同是默认策略，但 live execution 仍必须服从更高优先级指令、当前工具契约以及实际 runtime surface 可用性。如果某个任务按策略本应选择 expert、durable workflow 或 persistent team，但对应 surface 不能被调用，trace 必须报告具名 blocker，而不能把决策重新表述成用户偏好。
 
@@ -359,7 +382,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ```
 
-## 15. 实施阶段
+## 16. 实施阶段
 
 ### Phase 0 - 记录并保护计划
 
@@ -384,6 +407,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 增加 fan-out bounds、写入所有权隔离、leader-side spawning 表述与 one-backend-family durable task 的 checker 覆盖。
 - 增加 frozen research handoff briefs、adversarial-review survivor queues 与 adjacent-runtime terminology boundaries 的 checker 覆盖。
 - 增加 hard routing directives、actual adoption versus explanation-only mode 与 smallest-sufficient role selection 的 checker 覆盖。
+- 增加 native-agent versus skill/profile/plugin boundaries、custom agent TOML fields、fresh follow-up agent use 与 selector-source handling 的 checker 覆盖。
 - 新增或更新 selector refresh/status helper 行为。
 
 ### Phase 3 - Runtime integration
@@ -392,7 +416,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 确保已有会话在 session reload、Codex restart、phase change、resume、continue、`.omx` state detection、expert timeout 时重新做 activation check。
 - 确保 LangGraph-ready 会话使用 LangGraph 作为默认 durable backend。
 
-## 16. 拟实施范围
+## 17. 拟实施范围
 
 本计划确认后，以 OpenSpec change `enforce-automatic-orchestration-routing` 落地：
 
@@ -418,10 +442,14 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
    - 把 AutoGen、CrewAI 或 LangGraph 说成 native Codex-subagent equivalents；
    - 显式 `omx` 或 `LangGraph` directive 被当成 optional preference；
    - thresholds 已满足但会话停留在 explanation-only mode；
-   - 没有 smallest-sufficient trigger 却添加角色。
+   - 没有 smallest-sufficient trigger 却添加角色；
+   - skills 或 plugin profiles 被当成 native subagents 或 expert evidence；
+   - custom agent TOMLs 缺少 `name`、`description` 或 `developer_instructions`；
+   - follow-up work 在没有 explicit preservation reason 时复用已关闭/已完成 expert thread；
+   - 仅凭 compatibility records 自动接管 unmanaged team，而不是读取 `.omx/state/selectors/active.json`。
 6. 评估并修复 repo-local `.omx/state/selectors/active.json` 缺失时的刷新/报告规则。
 
-## 17. 证据与测试映射
+## 18. 证据与测试映射
 
 | 规则 | 最小证据 | 候选测试/检查 |
 | --- | --- | --- |
@@ -447,8 +475,12 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 | hard routing directives 被执行 | 显式 `omx`/`LangGraph` directive 导致 selected/running lane 或具名 blocker | directive adoption checker |
 | thresholds 满足时禁止 explanation-only mode | chain、preflight 与 threshold 通过时 trace 显示实际采用 | adoption trace checker |
 | role set 最小充分 | 所选角色能映射到触发表，且没有默认额外角色 | role-minimality checker |
+| agent 与 skill surface 保持区分 | native agents 位于 agents directories；skills 从 `SKILL.md` 加载；profiles 不代表 workers | agent-skill-boundary checker |
+| custom agent TOMLs 最小有效 | TOMLs 包含 `name`、`description` 与 `developer_instructions` | agent-toml schema checker |
+| follow-up 默认 fresh agent | 后续工作 spawn fresh agent，或给出 explicit preserved-thread reason | follow-up-thread checker |
+| selector source 具权威性 | 自动 durable routing 读取 `.omx/state/selectors/active.json`；compatibility records 仅作上下文 | selector-source checker |
 
-## 18. 风险与回滚
+## 19. 风险与回滚
 
 - 风险：小任务自动启动过多 workers。缓解：严格区分 backend-on 与 workflow/team launch thresholds。
 - 风险：忽略范围过大导致真正 canary 泄漏被隐藏。缓解：canary guard 只尊重 root `.gitignore` 模式，并继续显式检查 startup summary 来源。
@@ -462,9 +494,12 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 风险：相邻 orchestration runtimes 被误认为 native Codex subagents。缓解：执行术语与角色边界检查。
 - 风险：显式 routing directive 被当成 optional preference。缓解：要求 selected/running state 或具名 blocker。
 - 风险：默认启动过多 experts。缓解：执行 smallest-sufficient role selection。
+- 风险：skills 或 profile helpers 被误认为 subagent evidence。缓解：强制 agent/skill/profile surface separation。
+- 风险：follow-up work 复用陈旧上下文。缓解：除非 thread 被显式 preserved，否则 spawn fresh agents。
+- 风险：unmanaged durable teams 被意外接管。缓解：以 active selector 为权威，compatibility records 仅作上下文。
 - 回滚：如果 enforcement 造成过多误报，可回滚 checker/runtime enforcement，同时保留本计划作为记录。
 
-## 19. 非目标
+## 20. 非目标
 
 - 不把每个小任务都强制变成 multi-worker execution。
 - 不把 LangGraph official package 安装进仓库 `.venv`；仓库规则仍优先使用 user-level shared LangGraph venv。
@@ -472,7 +507,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 不在 tmux 不可用时假装启动 pane-style persistent team。
 - 不把本计划当成 runtime enforcement 已完成的证明。
 
-## 20. 验收标准
+## 21. 验收标准
 
 - 新会话、session reload、Codex restart 和已有会话 resume 都能看到 capability chain 与 backend default。
 - LangGraph ready 时默认 backend 报告为 `langgraph`。
@@ -495,8 +530,11 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 显式 `omx` 或 `LangGraph` directive 会导致实际 lane adoption，或报告具名 blocker/未满足阈值。
 - 当 thresholds 满足时，会话不得停留在 explanation-only mode。
 - Expert roles 从最小充分触发表中选择。
+- Native agents、skills、plugin profiles 与 profile helpers 不得被合并成同一种 surface。
+- Follow-up work 默认使用 fresh agent，除非存在 explicit preserved-thread reason。
+- 自动 durable-team routing 以 `.omx/state/selectors/active.json` 为 selector source，不仅凭 compatibility records 自动接管 unmanaged teams。
 
-## 21. 适用范围与权威边界
+## 22. 适用范围与权威边界
 
 本计划是 implementation-plan 记录。只有在后续 OpenSpec change 更新 policy surfaces、helper scripts 和 checks 后，它才会变成完整 runtime contract。
 
@@ -509,7 +547,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 如果本计划与当前更高权威 surface 冲突，实施变更必须更新对应 surface，而不是只依赖本计划。
 
-## 22. 状态词定义
+## 23. 状态词定义
 
 以下术语必须一致使用：
 
@@ -523,7 +561,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 `ready` 不等于 `running`，`not_needed` 也不等于 disabled。
 
-## 23. 已有会话 retrofit 规则
+## 24. 已有会话 retrofit 规则
 
 已有会话在以下任一触发条件出现时，必须采用本策略：
 

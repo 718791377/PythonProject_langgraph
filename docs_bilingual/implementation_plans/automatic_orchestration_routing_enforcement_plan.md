@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.11
+version: 0.12
 status: draft
 owner: codex-orchestration
 date: 2026-05-11
@@ -161,7 +161,30 @@ Smallest-sufficient expert role selection:
 
 Use the smallest sufficient expert set. Do not add roles because they are available; add them only when the trigger is present and the output will materially advance the current phase.
 
-## 6. Durable-team threshold map
+## 6. Native agents, skills, profiles, and follow-up thread boundaries
+
+Native Codex subagents, workflow skills, plugin-provided skills, and profile helpers are different surfaces and must not be collapsed.
+
+Registry and loading rules:
+
+- native reusable role definitions live under the user-level agents directory or repo-local `.codex/agents/`;
+- every standalone custom agent TOML must define at least `name`, `description`, and `developer_instructions`;
+- skills load from installed `SKILL.md` files and are invoked through `$name` or AGENTS.md routing; skills are not native subagents;
+- plugin modules and profile helper hard-load/soft-load change which procedural instructions are visible, but they do not by themselves start durable workers or satisfy persistent-team thresholds;
+- when long generated instructions are needed for launcher or profile surfaces, prefer file-backed references such as `model_instructions_file` rather than long inline `-c developer_instructions=...` payloads.
+
+Follow-up thread rules:
+
+- if later follow-up work is needed after a completed expert was absorbed and closed, spawn a fresh agent and pass the needed context;
+- reuse a preserved thread only when the user explicitly asked to preserve that thread or when the plan records an intentional preserved-thread reason;
+- do not treat a skill invocation, plugin profile, or preserved transcript as evidence that an expert result was returned; evidence must come from an explicit expert result, durable checkpoint, local verification, or cited source.
+
+Selector source rule:
+
+- automatic durable-team routing reads `.omx/state/selectors/active.json` as the shared repo-local activation selector;
+- compatibility records may be inspected for context, but they do not authorize unmanaged team adoption by themselves.
+
+## 7. Durable-team threshold map
 
 Durable team launch is threshold-gated. The presence of `backend_default=langgraph` and `backend_ready=true` means the durable backend is available; it does not mean a persistent team must be running.
 
@@ -186,7 +209,7 @@ First-turn reporting rule:
 
 Bounded multi-face research remains analyst-fanout-first: first round uses homogeneous `analystxN`; do not include `architect`, `planner`, or `writer` in the default first round. Escalate to those roles only after analyst fan-in shows an architecture, execution-ordering, or document-finalization layer.
 
-## 7. Expert lifecycle, bounded wait, and provider backpressure
+## 8. Expert lifecycle, bounded wait, and provider backpressure
 
 Expert and subagent use must be leader-owned from launch through fan-in and cleanup.
 
@@ -212,7 +235,7 @@ Provider pacing and backpressure rules:
 - prefer local-first phases, deterministic local checks, and bounded fan-out when many agent steps may hit the provider;
 - if pacing materially affects execution, report it as `backpressure:upstream_pacing` or an equivalent named condition, not as missing user intent.
 
-## 8. Fan-out bounds, write ownership, and backend-family boundary
+## 9. Fan-out bounds, write ownership, and backend-family boundary
 
 Native expert use is explicit leader-side spawning and leader-owned fan-in. Do not imply that raw Codex automatically spawns specialist roles by default.
 
@@ -234,7 +257,7 @@ Backend-family boundary:
 
 Open-ended work keeps research and implementation separate: use analyst/research roles for discovery and only move to executor/team execution after the plan, ownership, and acceptance evidence are frozen.
 
-## 9. Handoff, adversarial review, and adjacent-runtime boundaries
+## 10. Handoff, adversarial review, and adjacent-runtime boundaries
 
 Open-ended research and contested bug review need explicit handoff boundaries so that temporary expert lanes do not become unmanaged persistent workers.
 
@@ -261,7 +284,7 @@ Durable-state and adjacent-runtime boundaries:
 - treat LangGraph, AutoGen, and CrewAI as general programmable orchestration runtimes, not as native Codex-subagent equivalents;
 - a LangGraph graph may coordinate phases, checkpoints, approvals, and survivor queues, but native Codex experts still require explicit leader-side spawning and fan-in.
 
-## 10. Backend, workflow, and team semantics
+## 11. Backend, workflow, and team semantics
 
 These terms must not be collapsed:
 
@@ -272,7 +295,7 @@ These terms must not be collapsed:
 
 When LangGraph is ready, it is the default backend. A small task may still have `durable_workflow=not_needed` and `persistent_team=not_needed`. That means the task does not need those execution surfaces; it does not mean LangGraph is off.
 
-## 11. Current local inspection result
+## 12. Current local inspection result
 
 Read-only inspection on 2026-05-11 showed:
 
@@ -299,7 +322,7 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
 
 Interpretation: the user-level LangGraph backend is available and should be treated as the default backend. A missing repo-local active selector is a state-refresh or reporting gap; it must not be interpreted as LangGraph backend unavailability.
 
-## 12. Active selector handling
+## 13. Active selector handling
 
 When `.omx/state/selectors/active.json` is missing but the user-level capability state says `durable_orchestration_backend=langgraph` and `langgraph_ready=true`, the session must not silently downgrade to `native_omx` or `none`.
 
@@ -310,7 +333,7 @@ Required behavior:
 3. refresh or create the selector through the approved helper when implementation work requires a tracked durable thread;
 4. if no helper exists yet, record the missing helper as an implementation gap, not as backend unavailability.
 
-## 13. Low-risk iteration and local integration boundary
+## 14. Low-risk iteration and local integration boundary
 
 For repeated low-risk refinements inside an already confirmed scope, the main session may proceed without asking for per-iteration approval when all of the following are true:
 
@@ -334,7 +357,7 @@ Explicit user approval is still required for:
 
 This local-merge permission does not weaken the publication workflow. It only defines the local execution boundary for simple, already-authorized iterations. Remote publication remains a separate decision.
 
-## 14. Higher-authority and runtime-surface blockers
+## 15. Higher-authority and runtime-surface blockers
 
 Automatic orchestration is the default policy, but live execution must still obey higher-authority instructions, the current tool contract, and actual runtime-surface availability. If a task would normally select an expert, durable workflow, or persistent team but the surface cannot be invoked, the trace must report a named blocker rather than rephrasing the decision as user preference.
 
@@ -359,7 +382,7 @@ The canonical activation trace therefore permits expert blockers:
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ```
 
-## 15. Implementation phases
+## 16. Implementation phases
 
 ### Phase 0 - Record and protect the plan
 
@@ -384,6 +407,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Add checker coverage for fan-out bounds, write ownership isolation, leader-side spawning language, and one-backend-family durable tasks.
 - Add checker coverage for frozen research handoff briefs, adversarial-review survivor queues, and adjacent-runtime terminology boundaries.
 - Add checker coverage for hard routing directives, actual adoption versus explanation-only mode, and smallest-sufficient role selection.
+- Add checker coverage for native-agent versus skill/profile/plugin boundaries, custom agent TOML fields, fresh follow-up agent use, and selector-source handling.
 - Add or update selector refresh/status helper behavior.
 
 ### Phase 3 - Runtime integration
@@ -392,7 +416,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Ensure existing sessions re-run activation checks on session reload, Codex restart, phase change, resume, continue, `.omx` state detection, and expert timeout.
 - Ensure LangGraph-ready sessions use LangGraph as the default durable backend.
 
-## 16. Proposed implementation scope
+## 17. Proposed implementation scope
 
 After this plan is confirmed, implement it through OpenSpec change `enforce-automatic-orchestration-routing`:
 
@@ -418,10 +442,14 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
    - treating AutoGen, CrewAI, or LangGraph as native Codex-subagent equivalents;
    - explicit `omx` or `LangGraph` directives being handled as optional preferences;
    - thresholds being met while the session stays in explanation-only mode;
-   - roles being added without a smallest-sufficient trigger.
+   - roles being added without a smallest-sufficient trigger;
+   - skills or plugin profiles being treated as native subagents or expert evidence;
+   - custom agent TOMLs missing `name`, `description`, or `developer_instructions`;
+   - follow-up work reusing a closed/completed expert thread without an explicit preservation reason;
+   - unmanaged team adoption based only on compatibility records rather than `.omx/state/selectors/active.json`.
 6. Evaluate and fix the refresh/reporting rule for missing repo-local `.omx/state/selectors/active.json`.
 
-## 17. Evidence and test mapping
+## 18. Evidence and test mapping
 
 | Rule | Minimum evidence | Candidate test/check |
 | --- | --- | --- |
@@ -447,8 +475,12 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 | Hard routing directives are honored | explicit `omx`/`LangGraph` directives lead to selected/running lane or named blocker | directive adoption checker |
 | Explanation-only mode is blocked when thresholds are met | trace shows actual adoption when chain, preflight, and threshold pass | adoption trace checker |
 | Role set is smallest sufficient | selected roles map to trigger table and no default extra roles are present | role-minimality checker |
+| Agent and skill surfaces stay distinct | native agents live in agents directories; skills load from `SKILL.md`; profiles do not imply workers | agent-skill-boundary checker |
+| Custom agent TOMLs are minimally valid | TOMLs include `name`, `description`, and `developer_instructions` | agent-toml schema checker |
+| Follow-up uses fresh agent unless preserved | later work spawns fresh agent or cites explicit preserved-thread reason | follow-up-thread checker |
+| Selector source is authoritative | automatic durable routing reads `.omx/state/selectors/active.json`; compatibility records are context only | selector-source checker |
 
-## 18. Risks and rollback
+## 19. Risks and rollback
 
 - Risk: automatically launching too many workers for small tasks. Mitigation: keep backend-on separate from workflow/team launch thresholds.
 - Risk: hiding real canary leakage by ignoring too much. Mitigation: only root `.gitignore` patterns are honored by the canary guard, and startup summary sources remain explicitly checked.
@@ -462,9 +494,12 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Risk: adjacent orchestration runtimes are confused with native Codex subagents. Mitigation: enforce terminology and role-boundary checks.
 - Risk: explicit routing directives are treated as optional preferences. Mitigation: require selected/running state or a named blocker.
 - Risk: too many experts are launched by default. Mitigation: enforce smallest-sufficient role selection.
+- Risk: skills or profile helpers are mistaken for subagent evidence. Mitigation: enforce agent/skill/profile surface separation.
+- Risk: follow-up work reuses stale context. Mitigation: spawn fresh agents unless the thread was explicitly preserved.
+- Risk: unmanaged durable teams are adopted accidentally. Mitigation: use the active selector as the authority and treat compatibility records as context only.
 - Rollback: revert checker/runtime enforcement while keeping this plan as a record if implementation causes excessive false positives.
 
-## 19. Non-goals
+## 20. Non-goals
 
 - Do not force every small task into multi-worker execution.
 - Do not install the official LangGraph package into the repository `.venv`; the repository rule remains to use the user-level shared LangGraph venv.
@@ -472,7 +507,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Do not pretend pane-style persistent team was launched when tmux is unavailable.
 - Do not use this plan as proof that runtime enforcement is already complete.
 
-## 20. Acceptance criteria
+## 21. Acceptance criteria
 
 - New sessions, session reloads, Codex restarts, and resumed sessions report capability chain and backend default.
 - When LangGraph is ready, default backend is reported as `langgraph`.
@@ -495,8 +530,11 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Explicit `omx` or `LangGraph` directives result in actual lane adoption or a named blocker/unmet threshold.
 - When thresholds are met, the session does not remain in explanation-only mode.
 - Expert roles are selected from the smallest-sufficient trigger table.
+- Native agents, skills, plugin profiles, and profile helpers are not collapsed into one surface.
+- Follow-up work uses a fresh agent unless an explicit preserved-thread reason exists.
+- Automatic durable-team routing treats `.omx/state/selectors/active.json` as the selector source and does not auto-adopt unmanaged teams from compatibility records alone.
 
-## 21. Scope and authority boundary
+## 22. Scope and authority boundary
 
 This plan is an implementation-plan record. It is not the final runtime contract until the follow-up OpenSpec change updates policy surfaces, helper scripts, and checks.
 
@@ -509,7 +547,7 @@ Authority order:
 
 If this plan conflicts with a current higher-authority surface, the implementation change must update that surface rather than relying on this plan alone.
 
-## 22. State vocabulary
+## 23. State vocabulary
 
 Use these terms consistently:
 
@@ -523,7 +561,7 @@ Use these terms consistently:
 
 `ready` does not mean `running`, and `not_needed` does not mean disabled.
 
-## 23. Existing-session retrofit rule
+## 24. Existing-session retrofit rule
 
 Existing sessions must adopt this policy when any retrofit trigger occurs:
 
