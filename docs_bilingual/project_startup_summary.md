@@ -95,14 +95,22 @@ Drift-prone execution detail now lives in the mainline memory summary rather tha
 6. `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md` - governance policy for multi-session Git worktree isolation, dirty-file handling, and mainline sync safety.
 7. `docs_bilingual/governance/langgraph_user_level_runtime_policy.md` - governance policy for user-level LangGraph runtime layout and usage.
 8. `docs_bilingual/governance/user_level_launcher_payload_policy.md` - governance policy for Windows-safe launcher payload handling.
-9. `docs_bilingual/governance/openspec_usage_convention.md` - governance policy for how this repository uses OpenSpec.
-10. `docs_bilingual/governance/codex_user_level_mcp_scope_policy.md` - governance policy for Codex-direct MCP entries versus MCP Router shared management boundaries.
-11. `docs_bilingual/governance/openspec_opsx_project_usage_policy.md` - governance policy for repository OPSX workflow usage.
-12. `docs_bilingual/governance/openspec_official_workflow_policy.md` - governance policy for official OpenSpec workflow authority and enforcement.
-13. `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - active implementation plan for user-level team mode and orchestration routing.
-14. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` - active implementation plan for cross-session durable-state isolation.
-15. the active OpenSpec change being implemented, if one exists; if `openspec list --json` reports no changes, stop here and choose the next small change explicitly before writing files.
+9. `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md` - governance policy for automatic orchestration activation traces, capability-chain state, hard routing directives, timeout evidence, durable-team thresholds, and existing-session retrofit.
+10. `docs_bilingual/governance/openspec_usage_convention.md` - governance policy for how this repository uses OpenSpec.
+11. `docs_bilingual/governance/codex_user_level_mcp_scope_policy.md` - governance policy for Codex-direct MCP entries versus MCP Router shared management boundaries.
+12. `docs_bilingual/governance/openspec_opsx_project_usage_policy.md` - governance policy for repository OPSX workflow usage.
+13. `docs_bilingual/governance/openspec_official_workflow_policy.md` - governance policy for official OpenSpec workflow authority and enforcement.
+14. `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` - active implementation plan for user-level team mode and orchestration routing.
+15. `docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md` - active implementation plan for cross-session durable-state isolation.
+16. the active OpenSpec change being implemented, if one exists; if `openspec list --json` reports no changes, stop here and choose the next small change explicitly before writing files.
 
+
+Automatic orchestration activation reminders:
+
+- Re-run activation on first substantive work, reload/restart/resume/continue, phase change, `.omx` durable-state detection, expert timeout/stall, capability-state change, or expansion to 2+ execution slices.
+- Trace `phase`, `capability_chain`, `backend_default`, `backend_ready`, `experts`, `durable_workflow`, `persistent_team`, and `why`.
+- Do not use missing user reminders as a skip reason; cite thresholds, blockers, scope, or main-session takeover.
+- If LangGraph is ready, report it as the default ready durable backend while keeping team launch threshold-gated.
 ## Context Retention Canary And Safety Enforcement
 
 User-level safety rule:

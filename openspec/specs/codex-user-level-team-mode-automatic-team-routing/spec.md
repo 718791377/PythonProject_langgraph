@@ -206,3 +206,16 @@ The template SHALL be checked by an executable repository checker and by the Ope
 - **WHEN** a future R0.6.x smoke gate copies or references the reviewed template
 - **THEN** the future gate SHALL declare `target_repository`, `phase`, `task`, `operator_consent_boundary`, `routing_mode`, `mutation_allowed`, `validation_path`, and `rollback_path`
 - **AND** `mutation_allowed` SHALL remain false unless a reviewed change and the operator explicitly authorize mutation
+
+### Requirement: Automatic team routing SHALL keep selector source and compatibility records separate
+
+Automatic durable-team routing SHALL treat `.omx/state/selectors/active.json` as the authority for automatic adoption of existing durable state.
+
+Compatibility records such as `.omx/state/langgraph/backend.json` and `.omx/state/team/codex-auto-managed-team.json` MAY be used as inspection context, but SHALL NOT alone authorize adopting unmanaged or unscoped existing teams or threads.
+
+#### Scenario: Active selector is missing while LangGraph is ready
+
+- **WHEN** LangGraph is the default ready durable backend but `.omx/state/selectors/active.json` is missing
+- **THEN** status output SHALL report a selector refresh gap
+- **AND** it SHALL NOT downgrade the backend to unavailable
+- **AND** it SHALL NOT auto-adopt unmanaged compatibility records as active selectors

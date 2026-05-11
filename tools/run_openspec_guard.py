@@ -10,6 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def run(command: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         command,
@@ -107,6 +112,7 @@ def main() -> int:
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
+    orchestration_activation_policy_script = root / "tools" / "check_orchestration_activation_policy.py"
 
     if not verify_script.exists():
         raise SystemExit(f"Missing verification script: {verify_script}")
@@ -142,6 +148,8 @@ def main() -> int:
         raise SystemExit(f"Missing worktree session hygiene check script: {worktree_hygiene_script}")
     if not session_ownership_claims_script.exists():
         raise SystemExit(f"Missing session ownership claims check script: {session_ownership_claims_script}")
+    if not orchestration_activation_policy_script.exists():
+        raise SystemExit(f"Missing orchestration activation policy check script: {orchestration_activation_policy_script}")
 
     openspec = shutil.which("openspec") or shutil.which("openspec.cmd")
     if args.json:
@@ -275,6 +283,11 @@ def main() -> int:
                 "check_session_ownership_claims",
                 [str(python_exe), str(session_ownership_claims_script), "--root", str(root), "--allow-current-dirty", "--json"],
                 "OpenSpec guard failed during session ownership claim verification.",
+            ),
+            (
+                "check_orchestration_activation_policy",
+                [str(python_exe), str(orchestration_activation_policy_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during orchestration activation policy verification.",
             ),
             (
                 "check_codex_skills_governance",
@@ -464,6 +477,12 @@ def main() -> int:
         [str(python_exe), str(session_ownership_claims_script), "--root", str(root), "--allow-current-dirty"],
         cwd=root,
         failure_message="OpenSpec guard failed during session ownership claim verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(orchestration_activation_policy_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during orchestration activation policy verification.",
     )
 
     run_checked(
