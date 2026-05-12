@@ -113,3 +113,4 @@ When the capability chain, preflight, and task thresholds are satisfied, the ses
 - **AND** the requested lane cannot be adopted
 - **THEN** the activation trace SHALL report `blocked:<reason>` or `threshold_not_met:<reason>`
 - **AND** it SHALL NOT describe the directive as an optional preference
+
