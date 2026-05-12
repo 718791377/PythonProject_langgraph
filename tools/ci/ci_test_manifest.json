@@ -3,6 +3,7 @@
   "python_unittest": [
     "check_context_retention_canary_surface.test.py",
     "check_local_mirrored_ci_gate.test.py",
+    "check_remote_publication_approval_policy.test.py",
     "check_plugin_modules_skill.test.py",
     "evidence_intake_pipeline.test.py",
     "evidence_adapters.test.py"

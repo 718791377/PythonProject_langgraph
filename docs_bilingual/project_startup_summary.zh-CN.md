@@ -166,6 +166,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 - 本地 CI 与远端 CI 必须复用 `tools/ci/local_gate.ps1`。远端 CI 配置只应安装必要工具并调用该脚本，不得另写一套 checker 命令。CI 管理的测试登记在 `tools/ci/ci_test_manifest.json`。本地 MR review 在所有计划保留的改动已提交、feature worktree 干净之后、集成本地 `main` 或远端发布之前使用 `tools/ci/local_mr_review.ps1`。
 - 新建可写任务、判断发布时机、远端 push、创建 MR 或声明本地已对齐之前，必须保持本地 `main` 不落后于 `gitlab/main`。local-first batching 不是允许基于陈旧远端基线继续工作的理由。
 - 经批准本地集成后，本地 `main` 可以有意领先 `gitlab/main` 和 `github/main`；必须在状态报告中明确说明这种远端滞后，直到 GitLab/GitHub 发布或镜像同步追上。
+- 本地集成批准不等于远端发布批准。本地 `main` 集成后必须停在 remote-publication approval gate：除非当前用户消息明确批准该远端动作，否则不得推送 GitLab、创建/更新/合并 GitLab MR、同步 GitHub、删除远端发布分支或修改任何远端 ref。泛化的 `continue` / `继续` 不足以授权远端发布，除非它明确点名对应远端发布动作。
 - feature branch 只有在 local CI 和 local MR review 都通过后，才推送到 GitLab 并创建或更新 GitLab MR；除非用户明确要求提前跑远端 pipeline。
 - 如果本地 gate 和远端 CI 的结果不一致，必须修复共享脚本、环境安装或配置漂移，不得绕过任一证据层。
 - 主题相同且 rollback boundary（回退边界）相同的小变更可以合并到一个本地集成包；不要为了节省 runner minutes 把无关主题硬塞进同一个包。

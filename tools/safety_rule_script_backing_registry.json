@@ -181,6 +181,25 @@
       "description": "Keeps repository publication local-first while requiring local and remote CI to share one gate script and requiring local MR review before remote MR publication."
     },
     {
+      "id": "remote-publication-approval-gate",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "AGENTS.md",
+        "docs_bilingual/project_startup_summary.md",
+        "docs_bilingual/project_startup_summary.zh-CN.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_remote_publication_approval_policy.py"
+      ],
+      "guard_steps": [
+        "check_remote_publication_approval_policy"
+      ],
+      "description": "Keeps local integration approval separate from remote publication approval and prevents generic continue wording from authorizing GitLab/GitHub mutations."
+    },
+    {
       "id": "orchestration-activation-policy",
       "owner_level": "user",
       "status": "implemented",

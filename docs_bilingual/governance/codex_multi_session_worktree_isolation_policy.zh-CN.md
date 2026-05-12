@@ -190,6 +190,7 @@ Runner 配额与发布包规则：
 - 如果本地 gate 与远端 CI 结果不一致，必须修复共享脚本、环境安装或 CI 配置漂移；不得绕过任一证据层。
 - 本地 `main` 不得从陈旧远端基线继续。新建可写任务、判断发布时机、远端 push、创建/更新 MR 或声明主线状态之前，必须刷新 `gitlab/main`；如果本地 `main` 落后，就先 fast-forward 本地 `main` 再继续，除非用户明确接受 stale-base risk。如果 feature branch 基于陈旧远端基线准备，本地集成或发布前必须 rebase 或 merge 到刷新后的基线，除非用户明确接受风险。
 - 经批准本地集成后允许 intentional remote lag（有意远端滞后）。本地 `main` 可以领先 `gitlab/main` 和 `github/main`；会话必须明确报告该状态，直到远端发布或镜像同步追上。
+- 本地集成批准和远端发布批准是两个独立 release decisions。本地 `main` 集成后，会话必须停在 remote-publication approval gate；除非当前用户消息或 approved release record 明确授权该远端发布动作，否则不得推送 GitLab、创建/更新/合并 GitLab MR、同步 GitHub、删除远端发布分支或修改远端 refs。泛化的 `continue`、`继续`、`go on` 或 `proceed` 不是远端发布批准，除非它明确点名该远端动作。
 - 主目录 `D:\PythonProject_langgraph` 是 primary main worktree，必须检出本地 `main`，其 HEAD 不得落后于本地 `main`，正常应与本地 `main` 完全一致。`tools/check_worktree_session_hygiene.py` 必须在主目录脏、主目录不在 `main`、主目录落后于本地 `main`，或本地 `main` 未经明确风险接受却落后于 `gitlab/main` 时失败。
 - 本地 `main` 集成或首次远端推送前，先在本地完成 commits、checker runs、local MR review、rework 和 cleanup。
 - 对已经本地完成、准备集成的 OpenSpec change，默认采用 single integration package（单本地集成包）。该包是指同一个 feature branch 同时包含实现或文档变更、`openspec/changes/archive/` 下的归档结果，以及 `openspec/specs/` 下被提升后的 stable spec。
@@ -215,7 +216,7 @@ Runner 配额与发布包规则：
 11. 用户批准后，先把已验证 feature branch 集成进本地 `main`，线性分支优先使用 fast-forward。
 12. 验证主目录 `D:\PythonProject_langgraph` 检出本地 `main`、状态干净，并位于预期本地 `main` commit。
 13. 如果本地 `main` 领先 `gitlab/main` 或 `github/main`，报告 intentional remote lag 并保留 publication carrier branch。
-14. 远端发布被批准或需要时，推送到 GitLab 并创建或更新 GitLab MR。
+14. 当本地 `main` 领先 GitLab 或 GitHub 时，先请求明确的远端发布批准；不得把泛化的继续指令当作批准。只有当前用户消息或 approved release record 明确授权后，才推送到 GitLab 并创建或更新 GitLab MR。
 15. 使用 GitLab 远端确认时等待 GitLab pipeline 通过；该 pipeline 必须调用同一个 `tools/ci/local_gate.ps1` 脚本。
 16. 远端 CI 若与本地结果不一致，修复本地/共享 gate 或环境漂移，不得绕过证据。
 17. GitLab 远端确认变绿后，或用户明确选择 direct mirroring 时，把预期本地 `main` commit 精确同步到 GitHub。

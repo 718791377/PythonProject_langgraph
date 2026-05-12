@@ -106,6 +106,7 @@ def main() -> int:
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
+    remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
@@ -137,6 +138,8 @@ def main() -> int:
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
     if not local_mirrored_ci_gate_script.exists():
         raise SystemExit(f"Missing local mirrored CI/MR gate check script: {local_mirrored_ci_gate_script}")
+    if not remote_publication_approval_policy_script.exists():
+        raise SystemExit(f"Missing remote publication approval policy check script: {remote_publication_approval_policy_script}")
     if not windows_cleanup_output_control_script.exists():
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
     if not plugin_modules_skill_script.exists():
@@ -256,6 +259,11 @@ def main() -> int:
                 "check_local_mirrored_ci_gate",
                 [str(python_exe), str(local_mirrored_ci_gate_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during local mirrored CI/MR gate verification.",
+            ),
+            (
+                "check_remote_publication_approval_policy",
+                [str(python_exe), str(remote_publication_approval_policy_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during remote publication approval policy verification.",
             ),
             (
                 "check_windows_cleanup_output_control",
@@ -450,6 +458,11 @@ def main() -> int:
         [str(python_exe), str(local_mirrored_ci_gate_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during local mirrored CI/MR gate verification.",
+    )
+    run_checked(
+        [str(python_exe), str(remote_publication_approval_policy_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during remote publication approval policy verification.",
     )
     run_checked(
         [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root)],
