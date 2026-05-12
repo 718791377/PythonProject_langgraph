@@ -58,6 +58,8 @@ why=<concrete reason>
 
 Do not use missing-reminder reasons such as "the user did not request parallelism" or "the user did not request subagents". Use task phase, scope, thresholds, blockers, or main-session takeover as the reason.
 
+Explicit `omx` and `LangGraph` requests are hard routing directives for the current task flow. If the capability chain, preflight, and task thresholds are satisfied, the trace must report the selected lane as `selected` or `running` and must not remain in explanation-only mode. If the requested lane is not adopted, the trace must report a named blocker or unmet threshold such as `blocked:backend_not_ready`, `blocked:preflight_failed`, `blocked:helper_missing`, `blocked:write_ownership_conflict`, or `threshold_not_met:no_frozen_plan`. The trace must not describe an explicit directive as an optional preference.
+
 ## Expert and durable evidence rules
 
 Expert timeout, stalled workers, upstream pacing, or abandoned lanes are not verification evidence.
