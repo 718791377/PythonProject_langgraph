@@ -82,7 +82,7 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "Existing sessions SHALL retrofit activation policy",
         "threshold_not_met:no_frozen_plan",
         "threshold_not_met:single_execution_slice",
-        "First activation reports unmet durable-team threshold",
+        "First activation does not select a durable team",
     ],
     "openspec/specs/codex-user-level-team-mode-automatic-team-routing/spec.md": [
         ".omx/state/selectors/active.json",

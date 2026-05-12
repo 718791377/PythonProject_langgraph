@@ -42,28 +42,11 @@ The user-level orchestration activation policy SHALL require activation traces t
 
 The trace vocabulary SHALL distinguish `not_needed`, `candidate`, `selected`, `blocked`, and `running`.
 
-Startup and first activation traces SHALL include durable-team threshold evidence. When a durable team is not selected, `why` SHALL cite the concrete unmet threshold, such as `threshold_not_met:no_frozen_plan`, `threshold_not_met:single_execution_slice`, or an equivalent phase/scope threshold. When a durable team is selected, `why` SHALL cite the concrete trigger, such as a frozen plan with two or more independent execution slices or a stabilization phase with named blocking issues.
-
 #### Scenario: Startup or continue emits an activation trace
 
 - **WHEN** a Codex session starts, reloads, resumes, receives `continue`, changes task phase, detects durable state, or expands to two or more execution slices
 - **THEN** the activation trace SHALL include `capability_chain`, `backend_default`, `backend_ready`, `experts`, `durable_workflow`, `persistent_team`, and `why`
 - **AND** the trace SHALL explain the concrete threshold or blocker instead of citing missing user requests
-
-#### Scenario: First activation reports unmet durable-team threshold
-
-- **WHEN** a session emits its first activation trace for startup, resume, or continue
-- **AND** durable-team thresholds are not met
-- **THEN** the trace SHALL report `persistent_team=not_needed` or `persistent_team=blocked`
-- **AND** the trace SHALL identify the unmet durable-team threshold in `why`
-- **AND** it SHALL NOT imply that missing user reminders caused the no-team decision
-
-#### Scenario: First activation reports durable-team trigger
-
-- **WHEN** a session emits its first activation trace
-- **AND** the plan is frozen with two or more independent execution slices or the stabilization threshold is met
-- **THEN** the trace SHALL report the durable-team lane as `selected` or `running`
-- **AND** the trace SHALL identify the concrete threshold trigger in `why`
 
 ### Requirement: Missing user reminders SHALL NOT be a routing reason
 
@@ -95,3 +78,21 @@ Existing live sessions SHALL re-run activation checks after reload, restart, res
 - **WHEN** a legacy resumed session continues work in this repository
 - **THEN** it SHALL treat current repository governance and capability-chain policy as authoritative
 - **AND** it SHALL not allow stale runtime assumptions to override current policy
+
+### Requirement: First activation traces SHALL report durable-team threshold evidence
+Startup and first activation traces SHALL include durable-team threshold evidence.
+
+When a durable team is not selected, the trace SHALL cite the concrete unmet threshold, such as `threshold_not_met:no_frozen_plan`, `threshold_not_met:single_execution_slice`, or an equivalent phase/scope threshold. When a durable team is selected, the trace SHALL cite the concrete trigger, such as a frozen plan with two or more independent execution slices or a stabilization phase with named blocking issues.
+
+#### Scenario: First activation does not select a durable team
+- **WHEN** a session emits its first activation trace for startup, resume, or continue
+- **AND** durable-team thresholds are not met
+- **THEN** the trace SHALL report `persistent_team=not_needed` or `persistent_team=blocked`
+- **AND** the trace SHALL identify the unmet durable-team threshold in `why`
+- **AND** it SHALL NOT imply that missing user reminders caused the no-team decision
+
+#### Scenario: First activation selects a durable team
+- **WHEN** a session emits its first activation trace
+- **AND** the plan is frozen with two or more independent execution slices or the stabilization threshold is met
+- **THEN** the trace SHALL report the durable-team lane as `selected` or `running`
+- **AND** the trace SHALL identify the concrete threshold trigger in `why`
