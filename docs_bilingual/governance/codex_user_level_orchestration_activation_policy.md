@@ -76,6 +76,8 @@ Do not auto-launch durable teams during startup, read-only inventory, or plan-fr
 
 Durable team selection requires a frozen plan plus at least two mostly independent execution slices, or a stabilization phase with named blocking issues. If selected, use the approved automatic helper such as `omx-team-auto.ps1`; do not adopt unmanaged teams from compatibility records alone.
 
+On startup or first activation, the trace must say which durable-team threshold was not met, such as `threshold_not_met:no_frozen_plan` or `threshold_not_met:single_execution_slice`. If a durable team is selected, the trace must say which concrete threshold triggered it, such as a frozen plan with two or more independent slices or a stabilization phase with named blocking issues.
+
 ## Surface boundaries
 
 Native Codex subagents, workflow skills, plugin-provided skills, profile helpers, durable workers, and LangGraph nodes are distinct execution surfaces. The current main Codex CLI session remains the leader and owns activation checks, role selection, fan-in, evidence labeling, final integration, and release recommendations.

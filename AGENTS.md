@@ -28,6 +28,7 @@
 - Do not cite missing user reminders such as "the user did not request parallelism/subagents" as the reason for not using experts or durable teams. Use task phase, scope, thresholds, concrete blockers, or main-session takeover.
 - Treat expert timeout/stall/upstream pacing as non-evidence. Continue bounded wait, respawn a narrower expert, hand off to an eligible durable lane, or record main-session takeover.
 - When `subagent_routing!=off`, `oh_my_codex=on`, `langgraph=on`, and `langgraph_ready=true`, report LangGraph as `backend_default=langgraph` and `backend_ready=true`; this does not mean a persistent team is running.
+- On startup or first activation, if a durable team is not selected, state the unmet durable-team threshold such as `threshold_not_met:no_frozen_plan` or `threshold_not_met:single_execution_slice`; if selected, state the concrete threshold trigger.
 - Preserve the current main Codex CLI session as leader; do not redesign the system around a separate persistent leader pane.
 - Keep research and implementation in different roles when the task starts open-ended.
 - Do not rely on prompt reminders alone for system-level, user-level, or project-level safety boundaries; pair them with script controls such as checkers, guarded helpers, CI gates, or generated launcher logic.

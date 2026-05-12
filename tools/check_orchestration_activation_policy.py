@@ -18,6 +18,9 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "expert timeout/stall/upstream pacing as non-evidence",
         "backend_default=langgraph",
         "persistent team is running",
+        "threshold_not_met:no_frozen_plan",
+        "threshold_not_met:single_execution_slice",
+        "concrete threshold trigger",
     ],
     "docs_bilingual/project_startup_summary.md": [
         "codex_user_level_orchestration_activation_policy.md",
@@ -49,6 +52,9 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "tools/check_orchestration_activation_policy.py",
         ".omx/state/selectors/active.json",
         "selector refresh gap",
+        "threshold_not_met:no_frozen_plan",
+        "threshold_not_met:single_execution_slice",
+        "concrete threshold triggered",
     ],
     "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md": [
         "subagent_routing != off",
@@ -62,6 +68,9 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "tools/check_orchestration_activation_policy.py",
         ".omx/state/selectors/active.json",
         "selector refresh gap",
+        "threshold_not_met:no_frozen_plan",
+        "threshold_not_met:single_execution_slice",
+        "triggered_threshold",
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.md": [
         "orchestration-activation policy",
@@ -71,6 +80,9 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "Missing user reminders SHALL NOT be a routing reason",
         "Expert timeout SHALL NOT be accepted as verification evidence",
         "Existing sessions SHALL retrofit activation policy",
+        "threshold_not_met:no_frozen_plan",
+        "threshold_not_met:single_execution_slice",
+        "First activation does not select a durable team",
     ],
     "openspec/specs/codex-user-level-team-mode-automatic-team-routing/spec.md": [
         ".omx/state/selectors/active.json",

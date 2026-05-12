@@ -77,6 +77,8 @@ Final report 必须显式标注证据来源，例如：
 
 Durable team selection 需要 frozen plan 加至少两个基本独立的 execution slices，或 stabilize 阶段存在具名 blocking issues。若选择 team，使用 `omx-team-auto.ps1` 等已批准自动 helper；不得只凭 compatibility records 自动接管 unmanaged teams。
 
+在 startup 或 first activation 时，trace 必须说明哪个 durable-team 阈值未满足，例如 `threshold_not_met:no_frozen_plan` 或 `threshold_not_met:single_execution_slice`。若 durable team 被选择，trace 必须说明触发选择的具体阈值，并使用稳定 ASCII token `triggered_threshold` 表示该选择来自 frozen plan 加两个或更多独立 execution slices，或 stabilize 阶段存在具名 blocking issues。
+
 ## Surface 边界
 
 Native Codex subagents、workflow skills、plugin-provided skills、profile helpers、durable workers 与 LangGraph nodes 是不同 execution surfaces。当前 main Codex CLI session 仍是 leader，负责 activation checks、role selection、fan-in、evidence labeling、final integration 与 release recommendations。
