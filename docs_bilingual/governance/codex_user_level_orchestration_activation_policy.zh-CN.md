@@ -59,6 +59,8 @@ why=<concrete reason>
 
 不得使用“用户没有要求并行”或“用户没有要求子代理”这类缺少提醒的理由。必须用任务阶段、范围、阈值、blocker 或主会话接管来解释。
 
+显式 `omx` 与 `LangGraph` 请求是当前 task flow 的 hard routing directives。若 capability chain、preflight 与 task thresholds 均满足，trace 必须把请求 lane 报告为 `selected` 或 `running`，不得停留在 explanation-only mode。若请求 lane 未被采用，trace 必须报告具名 blocker 或未满足阈值，例如 `blocked:backend_not_ready`、`blocked:preflight_failed`、`blocked:helper_missing`、`blocked:write_ownership_conflict` 或 `threshold_not_met:no_frozen_plan`。trace 不得把显式 directive 描述为 optional preference。
+
 ## Expert 与 durable 证据规则
 
 Expert timeout、worker stall、upstream pacing 或 abandoned lane 都不是验证证据。
