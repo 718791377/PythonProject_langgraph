@@ -12,7 +12,7 @@ translation_of: docs_bilingual/governance/codex_user_level_orchestration_activat
 
 本政策把自动 orchestration routing 固化为可执行的用户级行为，而不是要求操作者在每个提示词里重复提醒。
 
-它适用于 native Codex expert routing、oh-my-codex / OMX durable workflow，以及本仓库和消费项目复用的 LangGraph durable orchestration。
+它适用于 native Codex expert routing、oh-my-codex / OMX durable workflow，以及本仓库和复用此用户级 runtime 的消费项目中的 LangGraph durable orchestration。
 
 ## 能力链
 
@@ -25,20 +25,22 @@ subagent_routing != off
       -> langgraph_ready 可以让 LangGraph 成为默认 durable backend
 ```
 
-如果 `subagent_routing=off`，更高 orchestration layers 不可用。如果 `oh_my_codex=off`，LangGraph availability 被禁用。如果 `langgraph=on`，routing 不能为 off，且 oh-my-codex 必须为 on。
+如果 `subagent_routing=off`，更高 orchestration layers 不可用。以可执行规则表达，`subagent_routing=off` requires `oh_my_codex=off` and `langgraph=off`。如果 `oh_my_codex=off`，LangGraph availability 被禁用，并且 `oh_my_codex=off` requires `langgraph=off`。如果 `langgraph=on`，routing 不能为 off，且 oh-my-codex 必须为 on。
+
+如果 `durable_orchestration_backend=langgraph`，则 `langgraph=on`、`oh_my_codex=on` 与 `subagent_routing!=off` 必须同时成立。该 dependency chain 由 `tools/check_capability_switch_chain.py` 检查；checker 会读取 user-level capability state，并可选读取 repo-local `.omx/state/langgraph/backend.json` 上下文。
 
 当 `subagent_routing!=off`、`oh_my_codex=on`、`langgraph=on`、`langgraph_ready=true` 时，必须报告 `backend_default=langgraph` 与 `backend_ready=true`。Backend ready 不表示 durable workflow 或 persistent team 已经运行。
 
 ## Activation 触发条件
 
-以下情况必须重新做 activation check：
+以下情况必须运行 activation check：
 
 - 新会话首次实质性任务；
 - session reload、Codex restart、resume 或 continue；
 - 任务阶段变化；
-- 任务从一个切片扩展为两个或更多 execution slices；
-- 发现 `.omx` durable state；
-- user-level capability state 变化；
+- 任务从一个 slice 扩展为两个或更多 execution slices；
+- 发现 `.omx` durable-state；
+- user-level capability-state 变化；
 - 关键路径 expert timeout 或 stall；
 - 用户显式请求 `omx`、`LangGraph`、`parallel`、`experts`、`durable_team` 或 `persistent team`。
 
@@ -57,13 +59,13 @@ persistent_team=<not_needed|candidate|selected|blocked|running>
 why=<concrete reason>
 ```
 
-不得使用“用户没有要求并行”或“用户没有要求子代理”这类缺少提醒的理由。必须用任务阶段、范围、阈值、blocker 或主会话接管来解释。
+不得使用“用户没有要求并行”或“用户没有要求子代理”等 missing-reminder reasons。必须用任务阶段、范围、阈值、blocker 或 main-session takeover 作为原因。
 
-显式 `omx` 与 `LangGraph` 请求是当前 task flow 的 hard routing directives。若 capability chain、preflight 与 task thresholds 均满足，trace 必须把请求 lane 报告为 `selected` 或 `running`，不得停留在 explanation-only mode。若请求 lane 未被采用，trace 必须报告具名 blocker 或未满足阈值，例如 `blocked:backend_not_ready`、`blocked:preflight_failed`、`blocked:helper_missing`、`blocked:write_ownership_conflict` 或 `threshold_not_met:no_frozen_plan`。trace 不得把显式 directive 描述为 optional preference。
+显式 `omx` 与 `LangGraph` 请求是当前 task flow 的 hard routing directives。若 capability chain、preflight 与 task thresholds 均满足，trace 必须把所选 lane 报告为 `selected` 或 `running`，不得停留在 explanation-only mode。若请求 lane 未被采用，trace 必须报告具名 blocker 或未满足阈值，例如 `blocked:backend_not_ready`、`blocked:preflight_failed`、`blocked:helper_missing`、`blocked:write_ownership_conflict` 或 `threshold_not_met:no_frozen_plan`。trace 不得把显式 directive 描述为 optional preference。
 
 ## Expert 与 durable 证据规则
 
-Expert timeout、worker stall、upstream pacing 或 abandoned lane 都不是验证证据。
+Expert timeout、stalled workers、upstream pacing 或 abandoned lanes 都不是 verification evidence。
 
 Final report 必须显式标注证据来源，例如：
 
@@ -73,49 +75,42 @@ Final report 必须显式标注证据来源，例如：
 - `durable_team blocked by <reason>`；
 - `backend_default=langgraph, backend_ready=true` - 记录默认 durable backend 与 ready 证据。
 
-保存的 activation trace 证据可用 `tools/check_orchestration_trace_evidence.py` 检查。接受本地 transcript 片段、run summary 或其他保存的 trace 证据前，应先运行该 checker。
+保存的 activation trace evidence 可用 `tools/check_orchestration_trace_evidence.py` 检查。该 checker 校验必填 trace 字段、capability-chain dependency 一致性、backend readiness 语义、durable workflow 与 persistent-team 词汇、禁止的 missing-reminder reasons，以及 expert timeout 标签。接受本地 transcript 片段、run summary 或其他保存版 trace evidence 前，应先运行该 checker。
 
 ## Team 阈值规则
 
-不要在 startup、只读 inventory 或 plan-freeze 工作中自动启动 durable team。
+不要在 startup、read-only inventory 或 plan-freeze 工作中自动启动 durable teams。
 
-Durable team selection 需要 frozen plan 加至少两个基本独立的 execution slices，或 stabilize 阶段存在具名 blocking issues。若选择 team，使用 `omx-team-auto.ps1` 等已批准自动 helper；不得只凭 compatibility records 自动接管 unmanaged teams。
+Durable team selection 需要 frozen plan 加至少两个 mostly independent execution slices，或 stabilize 阶段存在具名 blocking issues。若选择 team，使用 `omx-team-auto.ps1` 等已批准 automatic helper；不得只凭 compatibility records 自动接管 unmanaged teams。
 
-在 startup 或 first activation 时，trace 必须说明哪个 durable-team 阈值未满足，例如 `threshold_not_met:no_frozen_plan` 或 `threshold_not_met:single_execution_slice`。若 durable team 被选择，trace 必须说明触发选择的具体阈值，并使用稳定 ASCII token `triggered_threshold` 表示该选择来自 frozen plan 加两个或更多独立 execution slices，或 stabilize 阶段存在具名 blocking issues。
+在 startup 或 first activation 时，trace 必须说明哪个 durable-team threshold 未满足，例如 `threshold_not_met:no_frozen_plan` 或 `threshold_not_met:single_execution_slice`。若 durable team 被选择，trace 必须说明 concrete threshold triggered，例如 frozen plan 加两个或更多独立 slices，或 stabilize 阶段存在具名 blocking issues；保存证据中也可以使用稳定 ASCII token `triggered_threshold` 表示该触发原因。
 
 ## Surface 边界
 
 Native Codex subagents、workflow skills、plugin-provided skills、profile helpers、durable workers 与 LangGraph nodes 是不同 execution surfaces。当前 main Codex CLI session 仍是 leader，负责 activation checks、role selection、fan-in、evidence labeling、final integration 与 release recommendations。
 
-## 脚本控制
+## Advanced routing enforcement boundaries
 
-本政策由 `tools/check_orchestration_activation_policy.py` 与保存版 trace 证据 validator `tools/check_orchestration_trace_evidence.py` 支撑，并登记在 `tools/safety_rule_script_backing_registry.json`。仅靠提示词提醒不足以保护这个边界。
+Smallest-sufficient role selection 是强制规则。只有触发条件存在且输出能实质推进当前阶段时，才添加 expert role。bounded multi-face research 仍采用 analyst-fanout-first，首轮使用同质 `analystxN`；只有在 analyst fan-in 显示 architecture、execution-ordering 或 document-finalization work 后，才升级到 `architect`、`planner` 或 `writer`。
 
+Native Codex subagents、workflow skills、plugin-provided skills、profile helpers、durable workers 与 LangGraph nodes 是 separate surfaces。skills 不是 native subagents：skills 从 `SKILL.md` 文件加载并路由 procedural instructions，但它们本身不算 expert evidence。Profile helper 的 hard-load 或 soft-load 只改变可见 instructions；它不会启动 durable workers，也不满足 persistent-team thresholds。Completed expert 被吸收并关闭后，如需 follow-up work，默认 spawn fresh agent，除非用户显式要求保留线程，或计划记录了 preserved-thread reason。
 
-## Advanced routing enforcement boundaries??????????
+Standalone native-agent TOMLs 与 user-level agents directory 或 repo-local `.codex/agents/` 中的每个 custom agent TOML 必须通过 `tools/check_custom_agent_toml_schema.py`：每个存在的 TOML 必须可解析，并定义非空 top-level `name`、`description` 与 `developer_instructions`。Native-agent TOML schema is checked separately from skill `SKILL.md` validation，以保持 native agents、skills 与 plugin profiles 的 surface 边界。
 
-Smallest-sufficient role selection ??????????????????????????????? expert role?bounded multi-face research ?? analyst-fanout-first??????? `analystxN`???? analyst fan-in ?? architecture?execution-ordering ? document-finalization work ?????? `architect`?`planner` ? `writer`?
+current main Codex CLI session remains the leader。它负责 activation checks、role selection、worker brief quality、fan-in、evidence labeling、final integration 与 release recommendations。不得用 separate persistent leader pane 替代它。Orchestration adoption 的作用域是当前 task flow，而不是仓库新旧。
 
-Native Codex subagents?workflow skills?plugin-provided skills?profile helpers?durable workers ? LangGraph nodes ??? surface?skills ?? native subagents?skills ? `SKILL.md` ????? procedural instructions???????? expert evidence?profile helper ? hard-load ? soft-load ????? instructions????? durable workers????? persistent-team thresholds?completed expert ?????????? follow-up work?? spawn fresh agent??????????? thread?????? preserved-thread reason?
+Native Codex remains the base layer。oh-my-codex、native_omx、skills、profile helpers 与 LangGraph 是 additive workflow 或 durable-state layers，不是 Codex replacements。Effective lane choice 基于 task fit：worker-centric durable execution、worktree isolation、mailbox flow 或 direct worker lifecycle control 优先使用 `native_omx`；graph-shaped multi-phase execution、checkpoint-driven recovery、interrupt/resume approval gates、frozen briefs 或 persisted survivor queues 优先使用 LangGraph。每个 durable task 同一时间只使用 one backend family，backend-family switching 需要显式 close 或 handoff。
 
-current main Codex CLI session ?? leader??? activation checks?role selection?worker brief quality?fan-in?evidence labeling?final integration ? release recommendations???? separate persistent leader pane ??????orchestration adoption ???? task flow?????????
+Delegation 必须是 concrete、bounded、self-contained sidecar work，并且 materially advances 主任务。leader 必须在委派前识别 immediate critical-path local work；当下一步 leader action 依赖结果时，不要把 urgent blocking work 委派出去；避免 duplicate work；experts 运行时继续 meaningful non-overlapping leader work；并且 sparingly 使用 `wait_agent`。
 
-Native Codex ? base layer?oh-my-codex?native_omx?skills?profile helpers ? LangGraph ? additive workflow ? durable-state layers??? Codex replacement?effective lane choice ? task fit ???worker-centric durable execution?worktree isolation?mailbox flow ? direct worker lifecycle control ?? `native_omx`?graph-shaped multi-phase execution?checkpoint-driven recovery?interrupt/resume approval gates?frozen briefs ? persisted survivor queues ?? LangGraph??? durable task ????? one backend family?backend-family switching ???? close ? handoff?
+read-only exploration 只用于 specific codebase questions、symbol mapping 与 file discovery。当 implementation patch 清晰且安全时，它不得替代 bounded code-changing worker task。需要 graph phases、checkpoint gates、frozen briefs、survivor queues 或 tracked LangGraph thread state 时，必须使用 LangGraph entrypoints 与 repo-local `.omx/state/langgraph/` state。durable artifacts、frozen briefs 与 survivor queues 必须写入 repo-local state 或 documented artifact paths，不能只存在于 transient chat context。
 
-Delegation ??? concrete?bounded?self-contained sidecar work??? materially advances ????leader ??????? immediate critical-path local work????? leader action ????????? urgent blocking work ????????? duplicate work?experts ????? meaningful non-overlapping leader work??? sparingly ?? `wait_agent`?
+Open-ended work 必须保持 research 与 implementation 角色分离。Research fan-in 必须先冻结为 frozen implementation brief，包含 scope、non-goals、acceptance evidence、ownership boundaries 与 unresolved risks，然后才能开始 implementation。`bug-finder`、`bug-rebutter` 与 `bug-judge` 是 burst、read-only、leader-side roles；剩余候选必须持久化为 adversarial-review survivor queue，交给 debugger-lane follow-up，而不是让 bug triad 成为 persistent workers。LangGraph、AutoGen 与 CrewAI 是 general programmable orchestration runtimes，不是 native Codex-subagent equivalents。
 
-read-only exploration ?? specific codebase questions?symbol mapping ? file discovery?? bounded code-changing worker task ?????????? read-only exploration ?? implementation patch????? graph phases?checkpoint gates?frozen briefs?survivor queues ? tracked LangGraph thread state ?????? LangGraph entrypoints ? repo-local `.omx/state/langgraph/` state?durable artifacts?frozen briefs ? survivor queues ???? repo-local state ? documented artifact paths?????? transient chat context?
+## Script control
 
-????????? research ? implementation ???research fan-in ??????? frozen implementation brief??? scope?non-goals?acceptance evidence?ownership boundaries ? unresolved risks???? implementation?`bug-finder`?`bug-rebutter` ? `bug-judge` ? burst?read-only?leader-side roles?remaining candidates ???? adversarial-review survivor queue ???? debugger-lane follow-up????? bug triad ?? persistent workers?LangGraph?AutoGen ? CrewAI ? general programmable orchestration runtimes??? native Codex-subagent equivalents?
+本政策由 `tools/check_orchestration_activation_policy.py`、`tools/check_capability_switch_chain.py`、保存版 trace evidence validator `tools/check_orchestration_trace_evidence.py` 与 native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py` 支撑，并登记在 `tools/safety_rule_script_backing_registry.json`。仅靠提示词提醒不足以保护这个边界。
 
 ## Active selector refresh reporting
 
 自动 durable adoption 的 repo-local selector authority 是 `.omx/state/selectors/active.json`。`.omx/state/langgraph/backend.json` 与 `.omx/state/team/codex-auto-managed-team.json` 等 compatibility records 只能作为 inspection context。若 LangGraph 已 selected 且 ready，但 active selector 缺失，status helpers 必须报告 selector refresh gap，而不是把 LangGraph 当作 unavailable，也不能静默 downgrade 到 `native_omx`。
-
-## Custom agent TOML schema enforcement
-
-Standalone native-agent TOMLs / custom agent TOML ?? user-level agents directory ? repo-local `.codex/agents/`??????? standalone custom agent TOML ???? TOML ????????????? `name`?`description` ? `developer_instructions` ??????
-
-???? `tools/check_custom_agent_toml_schema.py` ?????? skill `SKILL.md` ?????native agents?skills ? plugin profiles ??????????? skill/profile ???? native expert evidence?
-
-Native-agent TOML schema is checked separately from skills.

@@ -24,7 +24,9 @@ subagent_routing != off
       -> langgraph_ready may make LangGraph the default durable backend
 ```
 
-If `subagent_routing=off`, higher orchestration layers are unavailable. If `oh_my_codex=off`, LangGraph availability is disabled. If `langgraph=on`, routing must not be off and oh-my-codex must be on.
+If `subagent_routing=off`, higher orchestration layers are unavailable. In executable terms, `subagent_routing=off` requires `oh_my_codex=off` and `langgraph=off`. If `oh_my_codex=off`, LangGraph availability is disabled and `oh_my_codex=off` requires `langgraph=off`. If `langgraph=on`, routing must not be off and oh-my-codex must be on.
+
+If `durable_orchestration_backend=langgraph`, then `langgraph=on`, `oh_my_codex=on`, and `subagent_routing!=off` must all hold. The dependency chain is checked by `tools/check_capability_switch_chain.py`, which reads the user-level capability state and optional repo-local `.omx/state/langgraph/backend.json` context.
 
 When `subagent_routing!=off`, `oh_my_codex=on`, `langgraph=on`, and `langgraph_ready=true`, report `backend_default=langgraph` and `backend_ready=true`. Backend readiness does not mean a durable workflow or persistent team is already running.
 
@@ -107,7 +109,7 @@ Open-ended work must keep research and implementation in different roles. Resear
 
 ## Script control
 
-This policy is backed by `tools/check_orchestration_activation_policy.py`, the saved-trace evidence validator `tools/check_orchestration_trace_evidence.py`, and the native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py`; the policy boundary is registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
+This policy is backed by `tools/check_orchestration_activation_policy.py`, `tools/check_capability_switch_chain.py`, the saved-trace evidence validator `tools/check_orchestration_trace_evidence.py`, and the native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py`; the policy boundary is registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
 
 ## Active selector refresh reporting
 

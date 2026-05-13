@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,6 +32,11 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "custom agent TOML",
         "tools/check_custom_agent_toml_schema.py",
         "developer_instructions",
+        "subagent_routing=off",
+        "oh_my_codex=off",
+        "langgraph=on",
+        "durable_orchestration_backend=langgraph",
+        "tools/check_capability_switch_chain.py",
     ],
     "docs_bilingual/project_startup_summary.md": [
         "codex_user_level_orchestration_activation_policy.md",
@@ -54,6 +60,10 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "subagent_routing != off",
         "backend_default=langgraph",
         "backend_ready=true",
+        "`subagent_routing=off` requires `oh_my_codex=off`",
+        "`oh_my_codex=off` requires `langgraph=off`",
+        "`durable_orchestration_backend=langgraph`, then `langgraph=on`",
+        "tools/check_capability_switch_chain.py",
         "Activation triggers",
         "Required trace fields",
         "the user did not request parallelism",
@@ -121,24 +131,25 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "developer_instructions",
         "Smallest-sufficient role selection",
         "bounded multi-face research",
-        "skills ?? native subagents",
         "spawn fresh agent",
         "current main Codex CLI session",
-        "Native Codex ? base layer",
+        "Native Codex remains the base layer",
         "one backend family",
-        "concrete?bounded?self-contained sidecar work",
         "meaningful non-overlapping leader work",
         "read-only exploration",
         "LangGraph entrypoints",
         "frozen implementation brief",
         "adversarial-review survivor queue",
-        "AutoGen ? CrewAI",
         "Standalone native-agent TOMLs",
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.md": [
         "orchestration-activation policy",
         "hard routing directive",
         "retrofit rules",
+        "Capability switch chains SHALL be executable-policy checked",
+        "tools/check_capability_switch_chain.py",
+        "subagent_routing=off",
+        "durable_orchestration_backend=langgraph",
         "Activation traces SHALL expose full orchestration state",
         "trace-evidence validator",
         "Missing user reminders SHALL NOT be a routing reason",
@@ -184,6 +195,27 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "developer_instructions",
         "Custom agent TOML schema checker runs",
     ],
+
+    "openspec/specs/codex-user-level-capability-switches/spec.md": [
+        "Capability switches SHALL be read as a dependency chain",
+        "subagent_routing",
+        "oh_my_codex",
+        "langgraph",
+        "durable_orchestration_backend=langgraph",
+        "tools/check_capability_switch_chain.py",
+        "langgraph_ready=true",
+        "persistent team is already running",
+    ],
+    "openspec/specs/codex-user-level-capability-switches/spec.zh-CN.md": [
+        "Capability switches",
+        "subagent_routing",
+        "oh_my_codex",
+        "langgraph",
+        "durable_orchestration_backend=langgraph",
+        "tools/check_capability_switch_chain.py",
+        "langgraph_ready=true",
+        "persistent team",
+    ],
     "openspec/specs/codex-user-level-team-mode-automatic-team-routing/spec.md": [
         ".omx/state/selectors/active.json",
         "selector refresh gap",
@@ -209,6 +241,25 @@ def read_text(path: Path) -> str | None:
     except OSError:
         return None
 
+
+
+def run_capability_switch_chain_subcheck(root: Path, errors: list[str], warnings: list[str]) -> None:
+    checker_path = root / "tools" / "check_capability_switch_chain.py"
+    if not checker_path.exists():
+        errors.append("Missing capability switch chain checker: tools/check_capability_switch_chain.py")
+        return
+    spec = importlib.util.spec_from_file_location("check_capability_switch_chain", checker_path)
+    if spec is None or spec.loader is None:
+        errors.append("Unable to load capability switch chain checker: tools/check_capability_switch_chain.py")
+        return
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    payload = module.run_check(root, require_state=False, require_backend=False)
+    for warning in payload.get("warnings", []):
+        warnings.append(f"capability_switch_chain: {warning}")
+    if not payload.get("ok", False):
+        for error in payload.get("errors", []):
+            errors.append(f"capability_switch_chain: {error}")
 
 def run_check(root: Path) -> dict[str, Any]:
     root = root.resolve()
@@ -238,6 +289,8 @@ def run_check(root: Path) -> dict[str, Any]:
     guard_text = read_text(root / "tools/run_openspec_guard.py") or ""
     if GUARD_STEP not in guard_text:
         errors.append(f"tools/run_openspec_guard.py must run {GUARD_STEP}")
+
+    run_capability_switch_chain_subcheck(root, errors, warnings)
 
     registry_text = read_text(root / "tools/safety_rule_script_backing_registry.json")
     if registry_text is None:
