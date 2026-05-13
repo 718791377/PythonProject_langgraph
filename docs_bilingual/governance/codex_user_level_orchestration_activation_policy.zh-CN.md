@@ -75,7 +75,7 @@ Final report 必须显式标注证据来源，例如：
 - `durable_team blocked by <reason>`；
 - `backend_default=langgraph, backend_ready=true` - 记录默认 durable backend 与 ready 证据。
 
-保存的 activation trace evidence 可用 `tools/check_orchestration_trace_evidence.py` 检查。该 checker 校验必填 trace 字段、capability-chain dependency 一致性、backend readiness 语义、durable workflow 与 persistent-team 词汇、禁止的 missing-reminder reasons，以及 expert timeout 标签。接受本地 transcript 片段、run summary 或其他保存版 trace evidence 前，应先运行该 checker。
+保存的 activation trace evidence 可用 `tools/check_orchestration_trace_evidence.py` 检查。该 checker 校验必填 trace 字段、capability-chain dependency 一致性、backend readiness 语义、durable workflow 与 persistent-team 词汇、禁止的 missing-reminder reasons、expert timeout 标签，以及 `why` 中的 durable-team threshold evidence。接受本地 transcript 片段、run summary 或其他保存版 trace evidence 前，应先运行该 checker。
 
 ## Team 阈值规则
 
@@ -83,7 +83,7 @@ Final report 必须显式标注证据来源，例如：
 
 Durable team selection 需要 frozen plan 加至少两个 mostly independent execution slices，或 stabilize 阶段存在具名 blocking issues。若选择 team，使用 `omx-team-auto.ps1` 等已批准 automatic helper；不得只凭 compatibility records 自动接管 unmanaged teams。
 
-在 startup 或 first activation 时，trace 必须说明哪个 durable-team threshold 未满足，例如 `threshold_not_met:no_frozen_plan` 或 `threshold_not_met:single_execution_slice`。若 durable team 被选择，trace 必须说明 concrete threshold triggered，例如 frozen plan 加两个或更多独立 slices，或 stabilize 阶段存在具名 blocking issues；保存证据中也可以使用稳定 ASCII token `triggered_threshold` 表示该触发原因。
+在 startup 或 first activation 时，trace 必须说明哪个 durable-team threshold 未满足，例如 `threshold_not_met:no_frozen_plan` 或 `threshold_not_met:single_execution_slice`。若 durable lane 被 blocked，trace 必须说明具名 blocker 或未满足阈值。若 durable team 被 selected 或 running，trace 必须说明 concrete threshold triggered，建议使用稳定 ASCII token，例如 `triggered_threshold:frozen_plan_with_2+_independent_slices`，或使用等价的 frozen-plan / stabilize blocking-issues 语言。保存版 trace-evidence validator 会在 `why` 字段强制检查这些标签，避免 “small task” 或 “using team now” 这类模糊理由通过。
 
 ## Surface 边界
 

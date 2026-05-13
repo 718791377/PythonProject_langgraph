@@ -40,6 +40,57 @@ BACKEND_DEFAULT_VALUES = {"langgraph", "native_omx", "none"}
 BOOLEAN_VALUES = {"true", "false"}
 LANE_STATE_VALUES = {"not_needed", "candidate", "selected", "blocked", "running"}
 
+UNMET_THRESHOLD_MARKERS = (
+    "threshold_not_met:",
+    "threshold not met",
+    "unmet threshold",
+    "no_frozen_plan",
+    "single_execution_slice",
+    "single execution slice",
+    "read-context",
+    "freeze-plan",
+    "verify-accept",
+    "未满足阈值",
+    "阈值未满足",
+    "无冻结计划",
+    "单切片",
+)
+
+BLOCKER_MARKERS = (
+    "blocked:",
+    "blocked by",
+    "blocker",
+    "backend_not_ready",
+    "preflight_failed",
+    "helper_missing",
+    "write_ownership_conflict",
+    "被阻塞",
+    "阻塞",
+)
+
+TRIGGERED_THRESHOLD_MARKERS = (
+    "triggered_threshold:",
+    "threshold_triggered:",
+    "threshold_met:",
+    "triggered threshold",
+    "threshold triggered",
+    "threshold met",
+    "frozen plan",
+    "2+ independent execution slices",
+    "two or more independent execution slices",
+    "parallel slices",
+    "execute-parallel",
+    "integrate-converge",
+    "stabilize",
+    "blocking issues",
+    "触发阈值",
+    "阈值已满足",
+    "已冻结计划",
+    "两个以上独立执行切片",
+    "2+ 独立执行切片",
+    "阻塞问题",
+)
+
 FORBIDDEN_MISSING_REMINDER_REASONS = (
     "the user did not request parallelism",
     "the user did not request subagents",
@@ -204,6 +255,24 @@ def validate_fields(fields: dict[str, str], full_text: str) -> tuple[list[str], 
         errors.append(
             "Activation trace must not cite missing user reminders such as not requesting parallelism or subagents."
         )
+
+    for field in ("durable_workflow", "persistent_team"):
+        value = fields[field].lower()
+        if value == "not_needed" and not contains_any(why, UNMET_THRESHOLD_MARKERS):
+            errors.append(
+                f"{field}=not_needed must cite a concrete unmet threshold such as "
+                "`threshold_not_met:no_frozen_plan` or `threshold_not_met:single_execution_slice`."
+            )
+        elif value == "blocked" and not contains_any(why, UNMET_THRESHOLD_MARKERS + BLOCKER_MARKERS):
+            errors.append(
+                f"{field}=blocked must cite a named blocker or unmet threshold such as "
+                "`blocked:preflight_failed` or `threshold_not_met:no_frozen_plan`."
+            )
+        elif value in {"selected", "running"} and not contains_any(why, TRIGGERED_THRESHOLD_MARKERS):
+            errors.append(
+                f"{field}={value} must cite the concrete triggered threshold such as "
+                "`triggered_threshold:frozen_plan_with_2+_independent_slices` or a stabilization blocker trigger."
+            )
 
     if contains_any(full_text, TIMEOUT_TRIGGERS) and not contains_any(full_text, TIMEOUT_ALLOWED_LABELS):
         errors.append(

@@ -74,7 +74,7 @@ Final reports must label evidence sources explicitly, for example:
 - `durable_team blocked by <reason>`;
 - `backend_default=langgraph, backend_ready=true` - records the default durable backend and its readiness evidence.
 
-Saved activation trace evidence can be checked with `tools/check_orchestration_trace_evidence.py`. The checker validates required trace fields, capability-chain dependency consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, and expert timeout labels. Use it for local transcript snippets, run summaries, or other saved trace evidence before treating an activation trace as accepted evidence.
+Saved activation trace evidence can be checked with `tools/check_orchestration_trace_evidence.py`. The checker validates required trace fields, capability-chain dependency consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert timeout labels, and durable-team threshold evidence in `why`. Use it for local transcript snippets, run summaries, or other saved trace evidence before treating an activation trace as accepted evidence.
 
 ## Team threshold rules
 
@@ -82,7 +82,7 @@ Do not auto-launch durable teams during startup, read-only inventory, or plan-fr
 
 Durable team selection requires a frozen plan plus at least two mostly independent execution slices, or a stabilization phase with named blocking issues. If selected, use the approved automatic helper such as `omx-team-auto.ps1`; do not adopt unmanaged teams from compatibility records alone.
 
-On startup or first activation, the trace must say which durable-team threshold was not met, such as `threshold_not_met:no_frozen_plan` or `threshold_not_met:single_execution_slice`. If a durable team is selected, the trace must say which concrete threshold triggered it, such as a frozen plan with two or more independent slices or a stabilization phase with named blocking issues.
+On startup or first activation, the trace must say which durable-team threshold was not met, such as `threshold_not_met:no_frozen_plan` or `threshold_not_met:single_execution_slice`. If a durable lane is blocked, the trace must say the named blocker or unmet threshold. If a durable team is selected or running, the trace must say which concrete threshold triggered it, preferably with a stable token such as `triggered_threshold:frozen_plan_with_2+_independent_slices`, or with equivalent frozen-plan / stabilization blocking-issue language. The saved trace-evidence validator enforces these labels in `why` so vague explanations such as "small task" or "using team now" do not pass as threshold evidence.
 
 ## Surface boundaries
 

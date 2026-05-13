@@ -30,6 +30,17 @@ persistent_team=not_needed
 why=single validated checker slice; threshold_not_met:single_execution_slice.
 """
 
+SELECTED_TRACE = """Routing trace:
+phase=execute-parallel
+capability_chain=subagent:auto > omx:on > langgraph:on
+backend_default=langgraph
+backend_ready=true
+experts=verifier
+durable_workflow=selected
+persistent_team=running
+why=triggered_threshold:frozen_plan_with_2+_independent_slices for execute-parallel.
+"""
+
 
 class OrchestrationTraceEvidenceCheckTest(unittest.TestCase):
     maxDiff = None
@@ -145,6 +156,59 @@ class OrchestrationTraceEvidenceCheckTest(unittest.TestCase):
     def test_timeout_with_non_evidence_label_passes(self) -> None:
         root = self.make_root("trace-timeout-labeled")
         path = self.write_trace(root, VALID_TRACE + "\nexpert timed out; not used as evidence. main session took over verification.\n")
+
+        payload = module.run_check(path)
+
+        self.assertTrue(payload["ok"], payload["errors"])
+
+    def test_not_needed_without_unmet_threshold_fails(self) -> None:
+        root = self.make_root("trace-no-threshold")
+        path = self.write_trace(
+            root,
+            VALID_TRACE.replace(
+                "why=single validated checker slice; threshold_not_met:single_execution_slice.",
+                "why=small checker slice.",
+            ),
+        )
+
+        payload = module.run_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("threshold_not_met" in error for error in payload["errors"]), payload["errors"])
+
+    def test_blocked_requires_named_blocker_or_threshold(self) -> None:
+        root = self.make_root("trace-blocked-threshold")
+        path = self.write_trace(
+            root,
+            VALID_TRACE.replace("persistent_team=not_needed", "persistent_team=blocked").replace(
+                "why=single validated checker slice; threshold_not_met:single_execution_slice.",
+                "why=team cannot start yet.",
+            ),
+        )
+
+        payload = module.run_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("blocked" in error or "threshold" in error for error in payload["errors"]), payload["errors"])
+
+    def test_selected_or_running_requires_triggered_threshold(self) -> None:
+        root = self.make_root("trace-selected-no-trigger")
+        path = self.write_trace(
+            root,
+            SELECTED_TRACE.replace(
+                "why=triggered_threshold:frozen_plan_with_2+_independent_slices for execute-parallel.",
+                "why=using durable team now.",
+            ),
+        )
+
+        payload = module.run_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("triggered threshold" in error for error in payload["errors"]), payload["errors"])
+
+    def test_selected_or_running_with_triggered_threshold_passes(self) -> None:
+        root = self.make_root("trace-selected-trigger")
+        path = self.write_trace(root, SELECTED_TRACE)
 
         payload = module.run_check(path)
 
