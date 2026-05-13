@@ -72,6 +72,8 @@ Final reports must label evidence sources explicitly, for example:
 - `durable_team blocked by <reason>`;
 - `backend_default=langgraph, backend_ready=true` - records the default durable backend and its readiness evidence.
 
+Saved activation trace evidence can be checked with `tools/check_orchestration_trace_evidence.py`. The checker validates required trace fields, capability-chain dependency consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, and expert timeout labels. Use it for local transcript snippets, run summaries, or other saved trace evidence before treating an activation trace as accepted evidence.
+
 ## Team threshold rules
 
 Do not auto-launch durable teams during startup, read-only inventory, or plan-freeze work.
@@ -103,7 +105,7 @@ Open-ended work must keep research and implementation in different roles. Resear
 
 ## Script control
 
-This policy is backed by `tools/check_orchestration_activation_policy.py` and registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
+This policy is backed by `tools/check_orchestration_activation_policy.py` and by the saved-trace evidence validator `tools/check_orchestration_trace_evidence.py`; the policy boundary is registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
 
 ## Active selector refresh reporting
 

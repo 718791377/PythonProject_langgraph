@@ -73,6 +73,8 @@ Final report 必须显式标注证据来源，例如：
 - `durable_team blocked by <reason>`；
 - `backend_default=langgraph, backend_ready=true` - 记录默认 durable backend 与 ready 证据。
 
+保存的 activation trace 证据可用 `tools/check_orchestration_trace_evidence.py` 检查。接受本地 transcript 片段、run summary 或其他保存的 trace 证据前，应先运行该 checker。
+
 ## Team 阈值规则
 
 不要在 startup、只读 inventory 或 plan-freeze 工作中自动启动 durable team。
@@ -87,7 +89,7 @@ Native Codex subagents、workflow skills、plugin-provided skills、profile help
 
 ## 脚本控制
 
-本政策由 `tools/check_orchestration_activation_policy.py` 支撑，并登记在 `tools/safety_rule_script_backing_registry.json`。仅靠提示词提醒不足以保护这个边界。
+本政策由 `tools/check_orchestration_activation_policy.py` 与保存版 trace 证据 validator `tools/check_orchestration_trace_evidence.py` 支撑，并登记在 `tools/safety_rule_script_backing_registry.json`。仅靠提示词提醒不足以保护这个边界。
 
 
 ## Advanced routing enforcement boundaries??????????
