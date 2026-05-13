@@ -154,5 +154,70 @@ class OrchestrationActivationPolicyCheckerTests(unittest.TestCase):
         self.assertTrue(any("optional preference" in item for item in payload["errors"]), payload["errors"])
 
 
+    def test_missing_advanced_routing_boundary_wording_fails(self) -> None:
+        advanced_snippets = {
+            "Smallest-sufficient role selection",
+            "bounded multi-face research",
+            "Bounded multi-face research",
+            "skills are not native subagents",
+            "Skills are not native subagents",
+            "spawn a fresh agent",
+            "current main Codex CLI session remains the leader",
+            "Native Codex remains the base layer",
+            "one backend family at a time",
+            "concrete, bounded, self-contained sidecar work",
+            "meaningful non-overlapping leader work",
+            "read-only exploration",
+            "Read-only exploration",
+            "LangGraph entrypoints",
+            "frozen implementation brief",
+            "adversarial-review survivor queue",
+            "AutoGen and CrewAI",
+            "Smallest-sufficient role selection SHALL stay trigger-based",
+            "Agent, skill, profile, and follow-up surfaces SHALL stay distinct",
+            "The main Codex CLI session SHALL remain the leader",
+            "Native Codex SHALL remain the base layer",
+            "Delegation SHALL preserve critical-path leader work",
+            "Exploration, code-change delegation, and durable artifact persistence SHALL stay distinct",
+            "Research handoff and adversarial review SHALL persist bounded handoffs",
+            "fresh agent",
+            "one backend family",
+            ".omx/state/langgraph/",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                filtered = [snippet for snippet in snippets if snippet not in advanced_snippets]
+                path.write_text("\n".join(filtered), encoding="utf-8")
+            (root / "tools").mkdir(exist_ok=True)
+            (root / "tools" / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (root / "tools" / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": ["tools/check_orchestration_activation_policy.py"],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("Smallest-sufficient role selection" in item for item in payload["errors"]), payload["errors"])
+        self.assertTrue(any("skills are not native subagents" in item for item in payload["errors"]), payload["errors"])
+        self.assertTrue(any("Native Codex SHALL remain the base layer" in item for item in payload["errors"]), payload["errors"])
+        self.assertTrue(any(".omx/state/langgraph/" in item for item in payload["errors"]), payload["errors"])
+
+
 if __name__ == "__main__":
     unittest.main()

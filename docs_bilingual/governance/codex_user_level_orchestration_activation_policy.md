@@ -84,6 +84,23 @@ On startup or first activation, the trace must say which durable-team threshold 
 
 Native Codex subagents, workflow skills, plugin-provided skills, profile helpers, durable workers, and LangGraph nodes are distinct execution surfaces. The current main Codex CLI session remains the leader and owns activation checks, role selection, fan-in, evidence labeling, final integration, and release recommendations.
 
+
+## Advanced routing enforcement boundaries
+
+Smallest-sufficient role selection is mandatory. Add expert roles only when the trigger is present and the output materially advances the current phase. Bounded multi-face research remains analyst-fanout-first with homogeneous `analystxN`; escalate to `architect`, `planner`, or `writer` only after analyst fan-in shows architecture, execution-ordering, or document-finalization work.
+
+Native Codex subagents, workflow skills, plugin-provided skills, profile helpers, durable workers, and LangGraph nodes are separate surfaces. Skills are not native subagents: they load from `SKILL.md` files and route procedural instructions, but they do not count as expert evidence by themselves. Profile helper hard-load or soft-load changes visible instructions; it does not start durable workers or satisfy persistent-team thresholds. If follow-up is needed after a completed expert was absorbed and closed, spawn a fresh agent unless the user explicitly requested preservation or the plan records a preserved-thread reason.
+
+The current main Codex CLI session remains the leader. It owns activation checks, role selection, worker brief quality, fan-in, evidence labeling, final integration, and release recommendations. Do not replace it with a separate persistent leader pane. Orchestration adoption is scoped to the current task flow, not to whether a repository is new or old.
+
+Native Codex remains the base layer. oh-my-codex, native_omx, skills, profile helpers, and LangGraph are additive workflow or durable-state layers, not Codex replacements. Effective lane choice is task-fit based: use `native_omx` for worker-centric durable execution, worktree isolation, mailbox flow, or direct worker lifecycle control; use LangGraph for graph-shaped multi-phase execution, checkpoint-driven recovery, interrupt/resume approval gates, frozen briefs, or persisted survivor queues. One durable task uses one backend family at a time, and backend-family switching requires explicit close or handoff.
+
+Delegation must be concrete, bounded, self-contained sidecar work that materially advances the main task. The leader must identify the immediate critical-path local work before delegating, avoid delegating urgent blocking work when the next leader action depends on the result, avoid duplicate work, continue meaningful non-overlapping leader work while experts run, and use `wait_agent` sparingly.
+
+Read-only exploration is for specific codebase questions, symbol mapping, and file discovery. It must not replace a bounded code-changing worker task when the implementation patch is clear and safe. When graph phases, checkpoint gates, frozen briefs, survivor queues, or tracked LangGraph thread state are required, use LangGraph entrypoints and repo-local `.omx/state/langgraph/` state. Durable artifacts, frozen briefs, and survivor queues must be written to repo-local state or documented artifact paths, not only transient chat context.
+
+Open-ended work must keep research and implementation in different roles. Research fan-in must become a frozen implementation brief with scope, non-goals, acceptance evidence, ownership boundaries, and unresolved risks before implementation starts. `bug-finder`, `bug-rebutter`, and `bug-judge` are burst, read-only, leader-side roles; persist remaining candidates as an adversarial-review survivor queue for debugger-lane follow-up instead of keeping the bug triad alive as persistent workers. Treat LangGraph, AutoGen and CrewAI as general programmable orchestration runtimes, not native Codex-subagent equivalents.
+
 ## Script control
 
 This policy is backed by `tools/check_orchestration_activation_policy.py` and registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
