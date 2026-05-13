@@ -64,7 +64,9 @@ The orchestration activation policy SHALL forbid using "the user did not request
 
 ### Requirement: Expert timeout SHALL NOT be accepted as verification evidence
 
-The orchestration activation policy SHALL require final reports to separate returned expert evidence from timed-out, stalled, abandoned, or main-session-taken-over verification. Provider pacing SHALL be labeled as backpressure and SHALL NOT be used as a reason to disable orchestration.
+The orchestration activation policy SHALL require final reports to separate returned expert evidence from timed-out, stalled, abandoned, or main-session-taken-over verification.
+
+The repository SHALL provide an executable expert lifecycle/wait/pacing evidence checker that can inspect saved run-summary or transcript evidence for completed-expert closure, preserved-thread exceptions, bounded wait windows, liveness/stall actions, and provider backpressure labels.
 
 #### Scenario: A key-path expert times out
 
@@ -74,12 +76,11 @@ The orchestration activation policy SHALL require final reports to separate retu
 
 #### Scenario: Saved expert lifecycle and wait evidence is checked
 
-- **WHEN** saved expert lifecycle, wait, liveness, or provider pacing evidence is passed to `tools/check_expert_lifecycle_wait_pacing_evidence.py`
-- **THEN** the checker SHALL fail completed expert evidence that omits completed-agent closure or an explicit preserved-thread reason
-- **AND** it SHALL fail follow-up evidence that omits fresh-agent use or explicit preservation
-- **AND** it SHALL fail wait evidence that omits bounded wait windows or a total wait bound
-- **AND** it SHALL fail liveness or stall evidence that omits inspect, redirect, respawn, durable handoff, or main-session takeover
-- **AND** it SHALL fail provider pacing language that disables orchestration rather than labeling backpressure
+- **WHEN** saved expert lifecycle or wait evidence is passed to the expert lifecycle/wait/pacing evidence checker
+- **THEN** the checker SHALL fail completed expert claims that omit closure evidence or a preserved-thread reason
+- **AND** it SHALL fail wait claims that omit bounded wait windows or a total wait bound
+- **AND** it SHALL fail liveness or stall claims that omit inspect, redirect, respawn, durable-handoff, or main-session-takeover action
+- **AND** it SHALL fail provider pacing claims that treat upstream pacing as a reason to disable orchestration instead of labeled backpressure
 
 ### Requirement: Existing sessions SHALL retrofit activation policy at safe boundaries
 
@@ -141,6 +142,7 @@ The orchestration activation policy SHALL select the smallest sufficient expert 
 - **AND** it SHALL NOT include architect, planner, or writer by default before analyst fan-in
 
 ### Requirement: Agent, skill, profile, and follow-up surfaces SHALL stay distinct
+
 The orchestration activation policy SHALL keep native Codex subagents, workflow skills, plugin-provided skills, profile helpers, durable workers, and LangGraph nodes as distinct execution surfaces. Skills SHALL load from `SKILL.md` files and skills are not native subagents. Profile hard-load or soft-load SHALL NOT by itself start durable workers or satisfy persistent-team thresholds. Follow-up work after a completed and absorbed expert SHALL spawn a fresh agent unless the user explicitly asks to preserve the thread or a plan records a preserved-thread reason.
 
 Standalone native-agent TOMLs SHALL remain separately checker-backed: present user-level and repo-local agent TOMLs SHALL pass `tools/check_custom_agent_toml_schema.py` by defining non-empty top-level `name`, `description`, and `developer_instructions` fields. Completed expert lifecycle evidence SHALL be checker-backed by `tools/check_expert_lifecycle_wait_pacing_evidence.py`, which requires completed experts to be closed after absorption unless a preserved-thread reason is explicit.
@@ -154,6 +156,11 @@ Standalone native-agent TOMLs SHALL remain separately checker-backed: present us
 - **WHEN** the activation policy guard runs custom agent TOML schema validation
 - **THEN** native-agent TOML validity SHALL be evaluated separately from skill `SKILL.md` validity
 - **AND** missing or empty `name`, `description`, or `developer_instructions` fields SHALL fail the checker for any present standalone agent TOML
+
+#### Scenario: Completed expert evidence requires closure or preservation
+- **WHEN** a run summary says an expert returned and was absorbed
+- **THEN** the saved evidence SHALL also show completed-agent closure or an explicit preserved-thread reason
+- **AND** a later follow-up SHALL spawn a fresh agent unless preservation is explicit
 
 ### Requirement: The main Codex CLI session SHALL remain the leader
 The current main Codex CLI session SHALL remain the leader for activation checks, role selection, worker briefs, fan-in, evidence labeling, final integration, and release recommendations. Orchestration SHALL NOT require a separate persistent leader pane, and workers, skills, plugin profiles, and LangGraph nodes SHALL NOT become independent release authorities. Adoption decisions SHALL be scoped to the current task flow rather than whether the repository is newly created.
@@ -172,12 +179,20 @@ Native Codex SHALL remain the base layer. oh-my-codex, native_omx, skills, profi
 - **AND** it SHALL NOT mix `native_omx` worker lifecycle with LangGraph checkpoint state without explicit close or handoff
 
 ### Requirement: Delegation SHALL preserve critical-path leader work
-Delegation SHALL be concrete, bounded, self-contained, and materially advancing. The leader SHALL identify immediate critical-path work before delegating, SHALL NOT delegate urgent blocking work when the next leader action depends on the result, SHALL avoid duplicate leader/expert or expert/expert work, SHALL continue meaningful non-overlapping leader work while delegated work runs, and SHALL use `wait_agent` sparingly with bounded wait windows, visible liveness checks, stall actions, and a total wait bound.
+Delegation SHALL be concrete, bounded, self-contained, and materially advancing. The leader SHALL identify immediate critical-path work before delegating, SHALL NOT delegate urgent blocking work when the next leader action depends on the result, SHALL avoid duplicate leader/expert or expert/expert work, SHALL continue meaningful non-overlapping leader work while delegated work runs, and SHALL use `wait_agent` sparingly.
+
+`wait_agent` use SHALL remain bounded with visible wait windows, liveness/progress checks, stall actions, and upstream provider pacing labels. Provider upstream pacing SHALL be reported as backpressure and SHALL NOT be used as a reason to disable LangGraph, OMX durable execution, or native subagents.
 
 #### Scenario: A sidecar expert is running
 - **WHEN** delegated sidecar work is in progress
 - **THEN** the leader SHALL continue non-overlapping local work or record why it is blocked
 - **AND** it SHALL not claim the delegated result as accepted without review and evidence labeling
+
+#### Scenario: Wait and pacing evidence is checked
+- **WHEN** saved evidence mentions `wait_agent`, liveness checks, stalled experts, or provider pacing
+- **THEN** the expert lifecycle/wait/pacing checker SHALL require bounded wait windows and total bound evidence
+- **AND** it SHALL require liveness/stall handling such as inspect, redirect, respawn, durable handoff, or main-session takeover
+- **AND** it SHALL reject provider pacing language that disables orchestration rather than labeling backpressure
 
 ### Requirement: Exploration, code-change delegation, and durable artifact persistence SHALL stay distinct
 Read-only exploration SHALL be used for specific codebase questions, symbol mapping, or file discovery. It SHALL NOT replace a bounded code-changing worker task when a safe implementation patch is clear. LangGraph entrypoints and repo-local `.omx/state/langgraph/` state SHALL be used when graph phases, checkpoint gates, frozen briefs, survivor queues, or tracked LangGraph thread state are required. Durable artifacts, frozen briefs, and survivor queues SHALL be written to repo-local state or documented artifact paths rather than only transient chat context.

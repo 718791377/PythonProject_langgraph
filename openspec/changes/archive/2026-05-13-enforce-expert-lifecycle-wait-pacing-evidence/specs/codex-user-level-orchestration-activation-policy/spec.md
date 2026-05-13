@@ -12,7 +12,7 @@ The repository SHALL provide an executable expert lifecycle/wait/pacing evidence
 - **THEN** the session SHALL not use that lane as evidence
 - **AND** it SHALL continue bounded wait, respawn a narrower expert, hand off to an eligible durable lane, or explicitly record main-session takeover
 
-#### Scenario: Saved lifecycle evidence is checked
+#### Scenario: Saved expert lifecycle and wait evidence is checked
 
 - **WHEN** saved expert lifecycle or wait evidence is passed to the expert lifecycle/wait/pacing evidence checker
 - **THEN** the checker SHALL fail completed expert claims that omit closure evidence or a preserved-thread reason
