@@ -37,21 +37,13 @@ The user-level orchestration policy SHALL support retrofit for:
 - **AND** if it does not adopt the orchestration path, it SHALL explain the concrete blocker
 
 ### Requirement: Activation traces SHALL expose full orchestration state
-
 The user-level orchestration activation policy SHALL require activation traces to report task phase, capability-chain state, default durable backend, backend readiness, expert selection, durable workflow state, persistent-team state, and a concrete reason.
 
 The trace vocabulary SHALL distinguish `not_needed`, `candidate`, `selected`, `blocked`, and `running`.
 
-The repository SHALL provide an executable trace-evidence validator that can inspect saved activation trace text for required fields, capability-chain consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert-timeout evidence labels, and durable-team threshold evidence.
-
-#### Scenario: Startup or continue emits an activation trace
-
-- **WHEN** a Codex session starts, reloads, resumes, receives `continue`, changes task phase, detects durable state, or expands to two or more execution slices
-- **THEN** the activation trace SHALL include `capability_chain`, `backend_default`, `backend_ready`, `experts`, `durable_workflow`, `persistent_team`, and `why`
-- **AND** the trace SHALL explain the concrete threshold or blocker instead of citing missing user requests
+The repository SHALL provide an executable trace-evidence validator that can inspect saved activation trace text for required fields, capability-chain consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert-timeout evidence labels, and durable-team threshold evidence in the `why` field.
 
 #### Scenario: Saved trace evidence is checked
-
 - **WHEN** a saved activation trace is passed to the repository trace-evidence validator
 - **THEN** the validator SHALL fail if any required trace field is missing
 - **AND** it SHALL fail if capability-chain dependency states are inconsistent
@@ -201,3 +193,4 @@ The orchestration activation policy SHALL treat capability switches as a strict 
 - **WHEN** the orchestration activation policy guard runs
 - **THEN** it SHALL invoke or embed the capability-switch dependency checker
 - **AND** invalid present state combinations SHALL fail as capability-chain violations
+
