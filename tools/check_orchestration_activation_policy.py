@@ -71,6 +71,10 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "main session took over verification",
         "tools/check_orchestration_activation_policy.py",
         "tools/check_orchestration_trace_evidence.py",
+        "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+        "Provider pacing is backpressure",
+        "bounded wait windows",
+        "completed-agent closure",
         "durable-team threshold evidence in `why`",
         ".omx/state/selectors/active.json",
         "selector refresh gap",
@@ -116,6 +120,10 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "main session took over verification",
         "tools/check_orchestration_activation_policy.py",
         "tools/check_orchestration_trace_evidence.py",
+        "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+        "Provider pacing",
+        "bounded wait windows",
+        "completed-agent closure",
         "durable-team threshold evidence",
         ".omx/state/selectors/active.json",
         "selector refresh gap",
@@ -156,6 +164,11 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "durable_orchestration_backend=langgraph",
         "Activation traces SHALL expose full orchestration state",
         "trace-evidence validator",
+        "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+        "Saved expert lifecycle and wait evidence is checked",
+        "completed-agent closure",
+        "bounded wait windows",
+        "provider pacing",
         "durable-team threshold evidence",
         "Missing user reminders SHALL NOT be a routing reason",
         "Expert timeout SHALL NOT be accepted as verification evidence",
@@ -298,6 +311,27 @@ def run_check(root: Path) -> dict[str, Any]:
 
     run_capability_switch_chain_subcheck(root, errors, warnings)
 
+    expert_lifecycle_checker = root / "tools" / "check_expert_lifecycle_wait_pacing_evidence.py"
+    if not expert_lifecycle_checker.exists():
+        errors.append("Missing expert lifecycle/wait/pacing evidence checker: tools/check_expert_lifecycle_wait_pacing_evidence.py")
+    else:
+        spec = importlib.util.spec_from_file_location(
+            "check_expert_lifecycle_wait_pacing_evidence", expert_lifecycle_checker
+        )
+        if spec is None or spec.loader is None:
+            errors.append(
+                "Unable to load expert lifecycle/wait/pacing evidence checker: "
+                "tools/check_expert_lifecycle_wait_pacing_evidence.py"
+            )
+        else:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            if not hasattr(module, "run_check"):
+                errors.append(
+                    "Expert lifecycle/wait/pacing evidence checker must expose run_check: "
+                    "tools/check_expert_lifecycle_wait_pacing_evidence.py"
+                )
+
     registry_text = read_text(root / "tools/safety_rule_script_backing_registry.json")
     if registry_text is None:
         errors.append("Missing safety rule registry")
@@ -321,6 +355,12 @@ def run_check(root: Path) -> dict[str, Any]:
                     values = rule.get(field, [])
                     if expected not in values:
                         errors.append(f"Safety rule {REGISTRY_RULE_ID} missing {field} entry: {expected}")
+                script_controls = rule.get("script_controls", [])
+                expected_lifecycle_checker = "tools/check_expert_lifecycle_wait_pacing_evidence.py"
+                if expected_lifecycle_checker not in script_controls:
+                    errors.append(
+                        f"Safety rule {REGISTRY_RULE_ID} missing script_controls entry: {expected_lifecycle_checker}"
+                    )
 
     return {
         "schema_version": 1,

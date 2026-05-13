@@ -41,7 +41,7 @@ The user-level orchestration activation policy SHALL require activation traces t
 
 The trace vocabulary SHALL distinguish `not_needed`, `candidate`, `selected`, `blocked`, and `running`.
 
-The repository SHALL provide an executable trace-evidence validator that can inspect saved activation trace text for required fields, capability-chain consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert-timeout evidence labels, and durable-team threshold evidence in the `why` field.
+The repository SHALL provide an executable trace-evidence validator that can inspect saved activation trace text for required fields, capability-chain consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert-timeout evidence labels, and durable-team threshold evidence in the `why` field. It SHALL also provide `tools/check_expert_lifecycle_wait_pacing_evidence.py` for saved run-summary evidence covering completed-expert closure, preserved-thread exceptions, bounded wait windows, liveness/stall actions, and provider pacing as backpressure.
 
 #### Scenario: Saved trace evidence is checked
 - **WHEN** a saved activation trace is passed to the repository trace-evidence validator
@@ -64,13 +64,22 @@ The orchestration activation policy SHALL forbid using "the user did not request
 
 ### Requirement: Expert timeout SHALL NOT be accepted as verification evidence
 
-The orchestration activation policy SHALL require final reports to separate returned expert evidence from timed-out, stalled, abandoned, or main-session-taken-over verification.
+The orchestration activation policy SHALL require final reports to separate returned expert evidence from timed-out, stalled, abandoned, or main-session-taken-over verification. Provider pacing SHALL be labeled as backpressure and SHALL NOT be used as a reason to disable orchestration.
 
 #### Scenario: A key-path expert times out
 
 - **WHEN** a key-path expert or subagent times out or stalls
 - **THEN** the session SHALL not use that lane as evidence
 - **AND** it SHALL continue bounded wait, respawn a narrower expert, hand off to an eligible durable lane, or explicitly record main-session takeover
+
+#### Scenario: Saved expert lifecycle and wait evidence is checked
+
+- **WHEN** saved expert lifecycle, wait, liveness, or provider pacing evidence is passed to `tools/check_expert_lifecycle_wait_pacing_evidence.py`
+- **THEN** the checker SHALL fail completed expert evidence that omits completed-agent closure or an explicit preserved-thread reason
+- **AND** it SHALL fail follow-up evidence that omits fresh-agent use or explicit preservation
+- **AND** it SHALL fail wait evidence that omits bounded wait windows or a total wait bound
+- **AND** it SHALL fail liveness or stall evidence that omits inspect, redirect, respawn, durable handoff, or main-session takeover
+- **AND** it SHALL fail provider pacing language that disables orchestration rather than labeling backpressure
 
 ### Requirement: Existing sessions SHALL retrofit activation policy at safe boundaries
 
@@ -134,7 +143,7 @@ The orchestration activation policy SHALL select the smallest sufficient expert 
 ### Requirement: Agent, skill, profile, and follow-up surfaces SHALL stay distinct
 The orchestration activation policy SHALL keep native Codex subagents, workflow skills, plugin-provided skills, profile helpers, durable workers, and LangGraph nodes as distinct execution surfaces. Skills SHALL load from `SKILL.md` files and skills are not native subagents. Profile hard-load or soft-load SHALL NOT by itself start durable workers or satisfy persistent-team thresholds. Follow-up work after a completed and absorbed expert SHALL spawn a fresh agent unless the user explicitly asks to preserve the thread or a plan records a preserved-thread reason.
 
-Standalone native-agent TOMLs SHALL remain separately checker-backed: present user-level and repo-local agent TOMLs SHALL pass `tools/check_custom_agent_toml_schema.py` by defining non-empty top-level `name`, `description`, and `developer_instructions` fields.
+Standalone native-agent TOMLs SHALL remain separately checker-backed: present user-level and repo-local agent TOMLs SHALL pass `tools/check_custom_agent_toml_schema.py` by defining non-empty top-level `name`, `description`, and `developer_instructions` fields. Completed expert lifecycle evidence SHALL be checker-backed by `tools/check_expert_lifecycle_wait_pacing_evidence.py`, which requires completed experts to be closed after absorption unless a preserved-thread reason is explicit.
 
 #### Scenario: A skill is invoked during an activation flow
 - **WHEN** a workflow skill or plugin profile is used
@@ -163,7 +172,7 @@ Native Codex SHALL remain the base layer. oh-my-codex, native_omx, skills, profi
 - **AND** it SHALL NOT mix `native_omx` worker lifecycle with LangGraph checkpoint state without explicit close or handoff
 
 ### Requirement: Delegation SHALL preserve critical-path leader work
-Delegation SHALL be concrete, bounded, self-contained, and materially advancing. The leader SHALL identify immediate critical-path work before delegating, SHALL NOT delegate urgent blocking work when the next leader action depends on the result, SHALL avoid duplicate leader/expert or expert/expert work, SHALL continue meaningful non-overlapping leader work while delegated work runs, and SHALL use `wait_agent` sparingly.
+Delegation SHALL be concrete, bounded, self-contained, and materially advancing. The leader SHALL identify immediate critical-path work before delegating, SHALL NOT delegate urgent blocking work when the next leader action depends on the result, SHALL avoid duplicate leader/expert or expert/expert work, SHALL continue meaningful non-overlapping leader work while delegated work runs, and SHALL use `wait_agent` sparingly with bounded wait windows, visible liveness checks, stall actions, and a total wait bound.
 
 #### Scenario: A sidecar expert is running
 - **WHEN** delegated sidecar work is in progress

@@ -64,7 +64,7 @@ Explicit `omx` and `LangGraph` requests are hard routing directives for the curr
 
 ## Expert and durable evidence rules
 
-Expert timeout, stalled workers, upstream pacing, or abandoned lanes are not verification evidence.
+Expert timeout, stalled workers, upstream pacing, or abandoned lanes are not verification evidence. Provider pacing is backpressure, not a reason to disable orchestration. Completed experts must be closed after their result is absorbed unless the user explicitly asks to preserve the thread or a plan records a preserved-thread reason. Waits must use bounded windows and a visible total bound; stalled or quiet experts require inspect, redirect, respawn, durable handoff, or main-session takeover.
 
 Final reports must label evidence sources explicitly, for example:
 
@@ -74,7 +74,7 @@ Final reports must label evidence sources explicitly, for example:
 - `durable_team blocked by <reason>`;
 - `backend_default=langgraph, backend_ready=true` - records the default durable backend and its readiness evidence.
 
-Saved activation trace evidence can be checked with `tools/check_orchestration_trace_evidence.py`. The checker validates required trace fields, capability-chain dependency consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert timeout labels, and durable-team threshold evidence in `why`. Use it for local transcript snippets, run summaries, or other saved trace evidence before treating an activation trace as accepted evidence.
+Saved activation trace evidence can be checked with `tools/check_orchestration_trace_evidence.py`. The checker validates required trace fields, capability-chain dependency consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert timeout labels, and durable-team threshold evidence in `why`. Use it for local transcript snippets, run summaries, or other saved trace evidence before treating an activation trace as accepted evidence. Expert lifecycle, wait, liveness, and provider pacing evidence can be checked with `tools/check_expert_lifecycle_wait_pacing_evidence.py`; this checker enforces completed-agent closure or explicit preservation, fresh-agent follow-up, bounded wait windows, stall handling actions, and upstream pacing as backpressure rather than an orchestration disablement reason.
 
 ## Team threshold rules
 
@@ -93,7 +93,7 @@ Native Codex subagents, workflow skills, plugin-provided skills, profile helpers
 
 Smallest-sufficient role selection is mandatory. Add expert roles only when the trigger is present and the output materially advances the current phase. Bounded multi-face research remains analyst-fanout-first with homogeneous `analystxN`; escalate to `architect`, `planner`, or `writer` only after analyst fan-in shows architecture, execution-ordering, or document-finalization work.
 
-Native Codex subagents, workflow skills, plugin-provided skills, profile helpers, durable workers, and LangGraph nodes are separate surfaces. Skills are not native subagents: they load from `SKILL.md` files and route procedural instructions, but they do not count as expert evidence by themselves. Profile helper hard-load or soft-load changes visible instructions; it does not start durable workers or satisfy persistent-team thresholds. If follow-up is needed after a completed expert was absorbed and closed, spawn a fresh agent unless the user explicitly requested preservation or the plan records a preserved-thread reason.
+Native Codex subagents, workflow skills, plugin-provided skills, profile helpers, durable workers, and LangGraph nodes are separate surfaces. Skills are not native subagents: they load from `SKILL.md` files and route procedural instructions, but they do not count as expert evidence by themselves. Profile helper hard-load or soft-load changes visible instructions; it does not start durable workers or satisfy persistent-team thresholds. If follow-up is needed after a completed expert was absorbed and closed, spawn a fresh agent unless the user explicitly requested preservation or the plan records a preserved-thread reason. Saved evidence for this boundary is checker-backed by `tools/check_expert_lifecycle_wait_pacing_evidence.py`.
 
 Standalone native-agent TOMLs and every custom agent TOML in the user-level agents directory or repo-local `.codex/agents/` must pass `tools/check_custom_agent_toml_schema.py`: each present TOML must parse and define non-empty top-level `name`, `description`, and `developer_instructions`. Native-agent TOML schema is checked separately from skill `SKILL.md` validation so native agents, skills, and plugin profiles remain distinct surfaces.
 
@@ -109,7 +109,7 @@ Open-ended work must keep research and implementation in different roles. Resear
 
 ## Script control
 
-This policy is backed by `tools/check_orchestration_activation_policy.py`, `tools/check_capability_switch_chain.py`, the saved-trace evidence validator `tools/check_orchestration_trace_evidence.py`, and the native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py`; the policy boundary is registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
+This policy is backed by `tools/check_orchestration_activation_policy.py`, `tools/check_capability_switch_chain.py`, the saved-trace evidence validator `tools/check_orchestration_trace_evidence.py`, the expert lifecycle/wait/pacing evidence checker `tools/check_expert_lifecycle_wait_pacing_evidence.py`, and the native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py`; the policy boundary is registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
 
 ## Active selector refresh reporting
 

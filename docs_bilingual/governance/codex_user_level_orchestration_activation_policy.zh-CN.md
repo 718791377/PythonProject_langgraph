@@ -65,7 +65,7 @@ why=<concrete reason>
 
 ## Expert 与 durable 证据规则
 
-Expert timeout、stalled workers、upstream pacing 或 abandoned lanes 都不是 verification evidence。
+Expert timeout、stalled workers、upstream pacing 或 abandoned lanes 都不是 verification evidence。Provider pacing 是 backpressure，不是禁用 orchestration 的理由。Completed experts 在结果被吸收后必须关闭，除非用户显式要求保留线程，或计划记录了 preserved-thread reason。Waits 必须使用 bounded windows 和可见 total bound；stalled 或 quiet experts 必须 inspect、redirect、respawn、durable handoff，或由 main-session takeover。
 
 Final report 必须显式标注证据来源，例如：
 
@@ -75,7 +75,7 @@ Final report 必须显式标注证据来源，例如：
 - `durable_team blocked by <reason>`；
 - `backend_default=langgraph, backend_ready=true` - 记录默认 durable backend 与 ready 证据。
 
-保存的 activation trace evidence 可用 `tools/check_orchestration_trace_evidence.py` 检查。该 checker 校验必填 trace 字段、capability-chain dependency 一致性、backend readiness 语义、durable workflow 与 persistent-team 词汇、禁止的 missing-reminder reasons、expert timeout 标签，以及 `why` 中的 durable-team threshold evidence。接受本地 transcript 片段、run summary 或其他保存版 trace evidence 前，应先运行该 checker。
+保存的 activation trace evidence 可用 `tools/check_orchestration_trace_evidence.py` 检查。该 checker 校验必填 trace 字段、capability-chain dependency 一致性、backend readiness 语义、durable workflow 与 persistent-team 词汇、禁止的 missing-reminder reasons、expert timeout 标签，以及 `why` 中的 durable-team threshold evidence。接受本地 transcript 片段、run summary 或其他保存版 trace evidence 前，应先运行该 checker。Expert lifecycle、wait、liveness 与 provider pacing evidence 可用 `tools/check_expert_lifecycle_wait_pacing_evidence.py` 检查；该 checker 强制 completed-agent closure 或 explicit preservation、fresh-agent follow-up、bounded wait windows、stall handling actions，以及 upstream pacing 只能作为 backpressure，不能作为禁用 orchestration 的理由。
 
 ## Team 阈值规则
 
@@ -93,7 +93,7 @@ Native Codex subagents、workflow skills、plugin-provided skills、profile help
 
 Smallest-sufficient role selection 是强制规则。只有触发条件存在且输出能实质推进当前阶段时，才添加 expert role。bounded multi-face research 仍采用 analyst-fanout-first，首轮使用同质 `analystxN`；只有在 analyst fan-in 显示 architecture、execution-ordering 或 document-finalization work 后，才升级到 `architect`、`planner` 或 `writer`。
 
-Native Codex subagents、workflow skills、plugin-provided skills、profile helpers、durable workers 与 LangGraph nodes 是 separate surfaces。skills 不是 native subagents：skills 从 `SKILL.md` 文件加载并路由 procedural instructions，但它们本身不算 expert evidence。Profile helper 的 hard-load 或 soft-load 只改变可见 instructions；它不会启动 durable workers，也不满足 persistent-team thresholds。Completed expert 被吸收并关闭后，如需 follow-up work，默认 spawn fresh agent，除非用户显式要求保留线程，或计划记录了 preserved-thread reason。
+Native Codex subagents、workflow skills、plugin-provided skills、profile helpers、durable workers 与 LangGraph nodes 是 separate surfaces。skills 不是 native subagents：skills 从 `SKILL.md` 文件加载并路由 procedural instructions，但它们本身不算 expert evidence。Profile helper 的 hard-load 或 soft-load 只改变可见 instructions；它不会启动 durable workers，也不满足 persistent-team thresholds。Completed expert 被吸收并关闭后，如需 follow-up work，默认 spawn fresh agent，除非用户显式要求保留线程，或计划记录了 preserved-thread reason。该边界的保存版 evidence 由 `tools/check_expert_lifecycle_wait_pacing_evidence.py` 进行 checker-backed 校验。
 
 Standalone native-agent TOMLs 与 user-level agents directory 或 repo-local `.codex/agents/` 中的每个 custom agent TOML 必须通过 `tools/check_custom_agent_toml_schema.py`：每个存在的 TOML 必须可解析，并定义非空 top-level `name`、`description` 与 `developer_instructions`。Native-agent TOML schema is checked separately from skill `SKILL.md` validation，以保持 native agents、skills 与 plugin profiles 的 surface 边界。
 
@@ -109,7 +109,7 @@ Open-ended work 必须保持 research 与 implementation 角色分离。Research
 
 ## Script control
 
-本政策由 `tools/check_orchestration_activation_policy.py`、`tools/check_capability_switch_chain.py`、保存版 trace evidence validator `tools/check_orchestration_trace_evidence.py` 与 native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py` 支撑，并登记在 `tools/safety_rule_script_backing_registry.json`。仅靠提示词提醒不足以保护这个边界。
+本政策由 `tools/check_orchestration_activation_policy.py`、`tools/check_capability_switch_chain.py`、保存版 trace evidence validator `tools/check_orchestration_trace_evidence.py`、expert lifecycle/wait/pacing evidence checker `tools/check_expert_lifecycle_wait_pacing_evidence.py` 与 native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py` 支撑，并登记在 `tools/safety_rule_script_backing_registry.json`。仅靠提示词提醒不足以保护这个边界。
 
 ## Active selector refresh reporting
 

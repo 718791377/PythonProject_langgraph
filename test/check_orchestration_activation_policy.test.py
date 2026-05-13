@@ -302,6 +302,153 @@ class OrchestrationActivationPolicyCheckerTests(unittest.TestCase):
         self.assertTrue(any("developer_instructions" in item for item in payload["errors"]), payload["errors"])
         self.assertTrue(any("Custom agent TOML schema checker runs" in item for item in payload["errors"]), payload["errors"])
 
+    def test_missing_expert_lifecycle_wait_pacing_wording_fails(self) -> None:
+        lifecycle_snippets = {
+            "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+            "Provider pacing is backpressure",
+            "Provider pacing",
+            "bounded wait windows",
+            "completed-agent closure",
+            "Saved expert lifecycle and wait evidence is checked",
+            "provider pacing",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                filtered = [snippet for snippet in snippets if snippet not in lifecycle_snippets]
+                path.write_text("\n".join(filtered), encoding="utf-8")
+            tools_dir = root / "tools"
+            tools_dir.mkdir(exist_ok=True)
+            (tools_dir / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (tools_dir / "check_capability_switch_chain.py").write_text(
+                'def run_check(root, require_state=False, require_backend=False):\n'
+                '    return {"ok": True, "errors": [], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "check_expert_lifecycle_wait_pacing_evidence.py").write_text(
+                'def run_check(evidence_path):\n'
+                '    return {"ok": True, "errors": [], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": [
+                                    "tools/check_orchestration_activation_policy.py",
+                                    "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+                                ],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("tools/check_expert_lifecycle_wait_pacing_evidence.py" in item for item in payload["errors"]),
+            payload["errors"],
+        )
+        self.assertTrue(any("bounded wait windows" in item for item in payload["errors"]), payload["errors"])
+
+    def test_missing_expert_lifecycle_checker_file_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("\n".join(snippets), encoding="utf-8")
+            tools_dir = root / "tools"
+            tools_dir.mkdir(exist_ok=True)
+            (tools_dir / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (tools_dir / "check_capability_switch_chain.py").write_text(
+                'def run_check(root, require_state=False, require_backend=False):\n'
+                '    return {"ok": True, "errors": [], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": [
+                                    "tools/check_orchestration_activation_policy.py",
+                                    "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+                                ],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("Missing expert lifecycle/wait/pacing evidence checker" in item for item in payload["errors"]),
+            payload["errors"],
+        )
+
+    def test_missing_expert_lifecycle_registry_entry_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("\n".join(snippets), encoding="utf-8")
+            tools_dir = root / "tools"
+            tools_dir.mkdir(exist_ok=True)
+            (tools_dir / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (tools_dir / "check_capability_switch_chain.py").write_text(
+                'def run_check(root, require_state=False, require_backend=False):\n'
+                '    return {"ok": True, "errors": [], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "check_expert_lifecycle_wait_pacing_evidence.py").write_text(
+                'def run_check(evidence_path):\n'
+                '    return {"ok": True, "errors": [], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": ["tools/check_orchestration_activation_policy.py"],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("check_expert_lifecycle_wait_pacing_evidence.py" in item for item in payload["errors"]),
+            payload["errors"],
+        )
+
 
     def test_invalid_capability_switch_chain_subcheck_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
