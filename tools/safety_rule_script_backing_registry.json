@@ -200,6 +200,24 @@
         "check_orchestration_activation_policy"
       ],
       "description": "Requires automatic orchestration activation traces, capability-chain state, timeout evidence labels, blocker reporting, durable-team thresholds, and existing-session retrofit to be backed by checker-enforced policy surfaces."
+    },
+    {
+      "id": "custom-agent-toml-schema",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "AGENTS.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_custom_agent_toml_schema.py"
+      ],
+      "guard_steps": [
+        "check_custom_agent_toml_schema"
+      ],
+      "description": "Requires user-level and repo-local standalone native Codex custom-agent TOMLs to parse and define non-empty name, description, and developer_instructions fields."
     }
   ]
 }

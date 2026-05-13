@@ -111,3 +111,11 @@ read-only exploration ?? specific codebase questions?symbol mapping ? file disco
 ## Active selector refresh reporting
 
 自动 durable adoption 的 repo-local selector authority 是 `.omx/state/selectors/active.json`。`.omx/state/langgraph/backend.json` 与 `.omx/state/team/codex-auto-managed-team.json` 等 compatibility records 只能作为 inspection context。若 LangGraph 已 selected 且 ready，但 active selector 缺失，status helpers 必须报告 selector refresh gap，而不是把 LangGraph 当作 unavailable，也不能静默 downgrade 到 `native_omx`。
+
+## Custom agent TOML schema enforcement
+
+Standalone native-agent TOMLs / custom agent TOML ?? user-level agents directory ? repo-local `.codex/agents/`??????? standalone custom agent TOML ???? TOML ????????????? `name`?`description` ? `developer_instructions` ??????
+
+???? `tools/check_custom_agent_toml_schema.py` ?????? skill `SKILL.md` ?????native agents?skills ? plugin profiles ??????????? skill/profile ???? native expert evidence?
+
+Native-agent TOML schema is checked separately from skills.

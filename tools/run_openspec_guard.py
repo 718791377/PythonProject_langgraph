@@ -113,6 +113,7 @@ def main() -> int:
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
     orchestration_activation_policy_script = root / "tools" / "check_orchestration_activation_policy.py"
+    custom_agent_toml_schema_script = root / "tools" / "check_custom_agent_toml_schema.py"
 
     if not verify_script.exists():
         raise SystemExit(f"Missing verification script: {verify_script}")
@@ -150,6 +151,8 @@ def main() -> int:
         raise SystemExit(f"Missing session ownership claims check script: {session_ownership_claims_script}")
     if not orchestration_activation_policy_script.exists():
         raise SystemExit(f"Missing orchestration activation policy check script: {orchestration_activation_policy_script}")
+    if not custom_agent_toml_schema_script.exists():
+        raise SystemExit(f"Missing custom agent TOML schema check script: {custom_agent_toml_schema_script}")
 
     openspec = shutil.which("openspec") or shutil.which("openspec.cmd")
     if args.json:
@@ -293,6 +296,11 @@ def main() -> int:
                 "check_codex_skills_governance",
                 [str(python_exe), str(skills_governance_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Codex skills governance verification.",
+            ),
+            (
+                "check_custom_agent_toml_schema",
+                [str(python_exe), str(custom_agent_toml_schema_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during custom agent TOML schema verification.",
             ),
         ]:
             step_payload = run_json_command(command, cwd=root, step_name=step_name)
@@ -489,6 +497,12 @@ def main() -> int:
         [str(python_exe), str(skills_governance_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Codex skills governance verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(custom_agent_toml_schema_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during custom agent TOML schema verification.",
     )
 
     if args.require_clean_git:

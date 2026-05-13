@@ -20,6 +20,7 @@
 - Prefer `omx-langgraph-cli.ps1` over direct `langgraph.exe` help or `dev` calls on Windows terminals that are not already UTF-8 clean.
 - Keep user-level launcher payloads short on Windows. Do not pass long generated orchestration instructions inline as `-c developer_instructions=...`; prefer file-backed `model_instructions_file` or another short reference path.
 - Keep launcher logic thin, support-script payload assembly centralized, and installer logic generation-only; do not spread payload-length workarounds across installed wrappers.
+- Standalone custom agent TOML / custom native-agent TOMLs in the user-level agents directory or `<repo>/.codex/agents/` must define non-empty top-level `name`, `description`, and `developer_instructions`; run `tools/check_custom_agent_toml_schema.py` when validating agent surface changes.
 - Use OpenSpec for durable orchestration architecture, user-level control-surface, and multi-file implementation changes.
 - Run `python .\tools\run_openspec_guard.py --root .` before concluding that repository-local OpenSpec enforcement is healthy.
 - Run `python .\tools\verify_official_openspec.py --root .` after bootstrap or refresh.

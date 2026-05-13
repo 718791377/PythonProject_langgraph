@@ -93,6 +93,8 @@ Smallest-sufficient role selection is mandatory. Add expert roles only when the 
 
 Native Codex subagents, workflow skills, plugin-provided skills, profile helpers, durable workers, and LangGraph nodes are separate surfaces. Skills are not native subagents: they load from `SKILL.md` files and route procedural instructions, but they do not count as expert evidence by themselves. Profile helper hard-load or soft-load changes visible instructions; it does not start durable workers or satisfy persistent-team thresholds. If follow-up is needed after a completed expert was absorbed and closed, spawn a fresh agent unless the user explicitly requested preservation or the plan records a preserved-thread reason.
 
+Standalone native-agent TOMLs and every custom agent TOML in the user-level agents directory or repo-local `.codex/agents/` must pass `tools/check_custom_agent_toml_schema.py`: each present TOML must parse and define non-empty top-level `name`, `description`, and `developer_instructions`. Native-agent TOML schema is checked separately from skill `SKILL.md` validation so native agents, skills, and plugin profiles remain distinct surfaces.
+
 The current main Codex CLI session remains the leader. It owns activation checks, role selection, worker brief quality, fan-in, evidence labeling, final integration, and release recommendations. Do not replace it with a separate persistent leader pane. Orchestration adoption is scoped to the current task flow, not to whether a repository is new or old.
 
 Native Codex remains the base layer. oh-my-codex, native_omx, skills, profile helpers, and LangGraph are additive workflow or durable-state layers, not Codex replacements. Effective lane choice is task-fit based: use `native_omx` for worker-centric durable execution, worktree isolation, mailbox flow, or direct worker lifecycle control; use LangGraph for graph-shaped multi-phase execution, checkpoint-driven recovery, interrupt/resume approval gates, frozen briefs, or persisted survivor queues. One durable task uses one backend family at a time, and backend-family switching requires explicit close or handoff.
@@ -105,7 +107,7 @@ Open-ended work must keep research and implementation in different roles. Resear
 
 ## Script control
 
-This policy is backed by `tools/check_orchestration_activation_policy.py` and by the saved-trace evidence validator `tools/check_orchestration_trace_evidence.py`; the policy boundary is registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
+This policy is backed by `tools/check_orchestration_activation_policy.py`, the saved-trace evidence validator `tools/check_orchestration_trace_evidence.py`, and the native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py`; the policy boundary is registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
 
 ## Active selector refresh reporting
 
