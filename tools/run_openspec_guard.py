@@ -121,6 +121,7 @@ def main() -> int:
     orchestration_activation_policy_script = root / "tools" / "check_orchestration_activation_policy.py"
     custom_agent_toml_schema_script = root / "tools" / "check_custom_agent_toml_schema.py"
     agent_skill_profile_surface_boundaries_script = root / "tools" / "check_agent_skill_profile_surface_boundaries.py"
+    effective_lane_fit_evidence_script = root / "tools" / "check_effective_lane_fit_evidence.py"
 
     if not verify_script.exists():
         raise SystemExit(f"Missing verification script: {verify_script}")
@@ -174,6 +175,8 @@ def main() -> int:
         raise SystemExit(f"Missing custom agent TOML schema check script: {custom_agent_toml_schema_script}")
     if not agent_skill_profile_surface_boundaries_script.exists():
         raise SystemExit(f"Missing agent/skill/profile surface boundary check script: {agent_skill_profile_surface_boundaries_script}")
+    if not effective_lane_fit_evidence_script.exists():
+        raise SystemExit(f"Missing effective lane-fit evidence check script: {effective_lane_fit_evidence_script}")
 
     openspec = shutil.which("openspec") or shutil.which("openspec.cmd")
     if args.json:
@@ -357,6 +360,11 @@ def main() -> int:
                 "check_agent_skill_profile_surface_boundaries",
                 [str(python_exe), str(agent_skill_profile_surface_boundaries_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during agent/skill/profile surface boundary verification.",
+            ),
+            (
+                "check_effective_lane_fit_evidence",
+                [str(python_exe), str(effective_lane_fit_evidence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during effective lane-fit evidence verification.",
             ),
         ]:
             step_payload = run_json_command(command, cwd=root, step_name=step_name)
@@ -592,6 +600,12 @@ def main() -> int:
         [str(python_exe), str(agent_skill_profile_surface_boundaries_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during agent/skill/profile surface boundary verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(effective_lane_fit_evidence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during effective lane-fit evidence verification.",
     )
 
     if args.require_clean_git:

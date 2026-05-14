@@ -38,6 +38,7 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "durable_orchestration_backend=langgraph",
         "tools/check_capability_switch_chain.py",
         "tools/check_delegation_wait_discipline_evidence.py",
+        "tools/check_effective_lane_fit_evidence.py",
     ],
     "docs_bilingual/project_startup_summary.md": [
         "codex_user_level_orchestration_activation_policy.md",
@@ -103,6 +104,8 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "current main Codex CLI session remains the leader",
         "Native Codex remains the base layer",
         "one backend family at a time",
+        "tools/check_effective_lane_fit_evidence.py",
+        "default-backend-not-enough",
         "concrete, bounded, self-contained sidecar work",
         "meaningful non-overlapping leader work",
         "Read-only exploration",
@@ -154,6 +157,8 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "current main Codex CLI session",
         "Native Codex remains the base layer",
         "one backend family",
+        "tools/check_effective_lane_fit_evidence.py",
+        "default-backend-not-enough",
         "meaningful non-overlapping leader work",
         "read-only exploration",
         "LangGraph entrypoints",
@@ -200,6 +205,10 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "Agent, skill, profile, and follow-up surfaces SHALL stay distinct",
         "The main Codex CLI session SHALL remain the leader",
         "Native Codex SHALL remain the base layer",
+        "tools/check_effective_lane_fit_evidence.py",
+        "default-backend-not-enough",
+        "native_omx worker-centric fit",
+        "LangGraph graph-shaped fit",
         "Delegation SHALL preserve critical-path leader work",
         "Exploration, code-change delegation, and durable artifact persistence SHALL stay script-checkable",
         "Research handoff and adversarial review SHALL persist bounded handoffs",
@@ -363,11 +372,14 @@ def run_check(root: Path) -> dict[str, Any]:
                     if expected not in values:
                         errors.append(f"Safety rule {REGISTRY_RULE_ID} missing {field} entry: {expected}")
                 script_controls = rule.get("script_controls", [])
-                expected_lifecycle_checker = "tools/check_expert_lifecycle_wait_pacing_evidence.py"
-                if expected_lifecycle_checker not in script_controls:
-                    errors.append(
-                        f"Safety rule {REGISTRY_RULE_ID} missing script_controls entry: {expected_lifecycle_checker}"
-                    )
+                for expected_checker in (
+                    "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+                    "tools/check_effective_lane_fit_evidence.py",
+                ):
+                    if expected_checker not in script_controls:
+                        errors.append(
+                            f"Safety rule {REGISTRY_RULE_ID} missing script_controls entry: {expected_checker}"
+                        )
 
     return {
         "schema_version": 1,

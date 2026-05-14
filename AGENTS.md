@@ -12,6 +12,7 @@
 - Use `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md` or `.md` when the question involves multiple Codex sessions, dirty files, Git worktrees, feature branches, local `main`, `gitlab/main`, or GitHub sync safety.
 - Keep native Codex as the base layer and treat oh-my-codex as an additive workflow layer around it.
 - Keep `native_omx` and `langgraph` as distinct durable backend families.
+- effective lane choice is task-fit based and checker-backed by `tools/check_effective_lane_fit_evidence.py`: prefer `native_omx` for worker-centric durable execution, worktree isolation, mailbox flow, or direct worker lifecycle control; prefer LangGraph for graph-shaped multi-phase execution, checkpoint recovery, approval gates, frozen briefs, or survivor queues; use one backend family at a time and require explicit close or handoff before switching.
 - Keep the official `langgraph` package and optional `langgraph-cli[inmem]` in the user-level shared LangGraph venv by default, not in this repository tree and not in the global Python site-packages as the long-term repository rule.
 - Keep repo-local LangGraph compatibility and orchestration source under `tools/langgraph_durable_orchestrator/` as the source of truth; any user-level installed helper copy is an install artifact, not the primary source.
 - Keep repo-local LangGraph durable state under `.omx/state/langgraph/`; do not move repository durable state into the user-level shared venv or other shared runtime directories.
