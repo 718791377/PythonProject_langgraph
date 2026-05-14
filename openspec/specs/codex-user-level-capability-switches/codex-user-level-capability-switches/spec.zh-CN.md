@@ -38,3 +38,20 @@
 - **WHEN** operator 或 runtime 试图在 prerequisite durable layer 被关闭时启用 `langgraph`
 - **THEN** 用户级模型必须拒绝或归一化该状态
 - **AND** 归一化后的结果仍必须显式且可检查
+
+### Requirement: Capability switches 必须按依赖链进行可执行检查
+用户级 capability switch policy 必须由可执行 checker 支撑依赖链一致性。checker 必须验证：`subagent_routing=off` 会禁用更高 orchestration layers，`oh_my_codex=off` 会禁用 LangGraph，`langgraph=on` 要求 routing 可用且 oh-my-codex 为 on，`durable_orchestration_backend=langgraph` 要求 `langgraph=on`。
+
+仓库必须提供 `tools/check_capability_switch_chain.py`，用于验证用户级 capability state JSON，并可结合 repo-local `.omx/state/langgraph/backend.json` 上下文。在干净 CI 且未要求必须存在 state 时，checker 可以把缺失用户级 state 报告为 warning；但只要存在无效状态组合，就必须失败。`langgraph_ready=true` 表示 backend ready，不表示 persistent team 已经运行。
+
+#### Scenario: Capability chain checker 拒绝无效状态
+
+- **WHEN** capability state 中出现 `subagent_routing=off` 但 `oh_my_codex=on` 或 `langgraph=on`
+- **THEN** checker 必须失败并报告 capability-chain violation
+- **AND** 它必须指出无效依赖关系，而不是在报告里静默归一化
+
+#### Scenario: LangGraph backend selection 被检查
+
+- **WHEN** capability state 中出现 `durable_orchestration_backend=langgraph`
+- **THEN** checker 必须要求 `langgraph=on`、`oh_my_codex=on` 和 `subagent_routing!=off`
+- **AND** 如果存在 `langgraph_ready=true`，则必须要求 LangGraph 是已选择的 durable backend

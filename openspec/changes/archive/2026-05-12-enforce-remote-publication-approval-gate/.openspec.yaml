@@ -1,0 +1,9 @@
+schema: spec-driven
+created: 2026-05-12
+x_change_class: code
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/check_remote_publication_approval_policy.py
+  - test/check_remote_publication_approval_policy.test.py
+  - tools/run_openspec_guard.py
+  - tools/safety_rule_script_backing_registry.json

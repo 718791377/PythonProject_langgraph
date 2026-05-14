@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-05-14
+x_code_evidence_paths:
+  - tools/check_leader_session_scope_evidence.py
+  - test/check_leader_session_scope_evidence.test.py

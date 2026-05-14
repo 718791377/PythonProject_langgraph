@@ -106,6 +106,12 @@ def main() -> int:
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
+    remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
+    role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
+    delegation_wait_discipline_evidence_script = root / "tools" / "check_delegation_wait_discipline_evidence.py"
+    durable_artifact_state_surfaces_script = root / "tools" / "check_durable_artifact_state_surfaces.py"
+    leader_session_scope_evidence_script = root / "tools" / "check_leader_session_scope_evidence.py"
+    capability_switch_chain_script = root / "tools" / "check_capability_switch_chain.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
@@ -113,6 +119,10 @@ def main() -> int:
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
     orchestration_activation_policy_script = root / "tools" / "check_orchestration_activation_policy.py"
+    custom_agent_toml_schema_script = root / "tools" / "check_custom_agent_toml_schema.py"
+    agent_skill_profile_surface_boundaries_script = root / "tools" / "check_agent_skill_profile_surface_boundaries.py"
+    effective_lane_fit_evidence_script = root / "tools" / "check_effective_lane_fit_evidence.py"
+    fanout_write_ownership_evidence_script = root / "tools" / "check_fanout_write_ownership_evidence.py"
 
     if not verify_script.exists():
         raise SystemExit(f"Missing verification script: {verify_script}")
@@ -136,6 +146,18 @@ def main() -> int:
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
     if not local_mirrored_ci_gate_script.exists():
         raise SystemExit(f"Missing local mirrored CI/MR gate check script: {local_mirrored_ci_gate_script}")
+    if not remote_publication_approval_policy_script.exists():
+        raise SystemExit(f"Missing remote publication approval policy check script: {remote_publication_approval_policy_script}")
+    if not role_routing_directive_evidence_script.exists():
+        raise SystemExit(f"Missing role/directive evidence check script: {role_routing_directive_evidence_script}")
+    if not delegation_wait_discipline_evidence_script.exists():
+        raise SystemExit(f"Missing delegation/wait discipline evidence check script: {delegation_wait_discipline_evidence_script}")
+    if not durable_artifact_state_surfaces_script.exists():
+        raise SystemExit(f"Missing durable artifact/state-surface evidence check script: {durable_artifact_state_surfaces_script}")
+    if not leader_session_scope_evidence_script.exists():
+        raise SystemExit(f"Missing leader/session scope evidence check script: {leader_session_scope_evidence_script}")
+    if not capability_switch_chain_script.exists():
+        raise SystemExit(f"Missing capability-switch chain check script: {capability_switch_chain_script}")
     if not windows_cleanup_output_control_script.exists():
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
     if not plugin_modules_skill_script.exists():
@@ -150,6 +172,14 @@ def main() -> int:
         raise SystemExit(f"Missing session ownership claims check script: {session_ownership_claims_script}")
     if not orchestration_activation_policy_script.exists():
         raise SystemExit(f"Missing orchestration activation policy check script: {orchestration_activation_policy_script}")
+    if not custom_agent_toml_schema_script.exists():
+        raise SystemExit(f"Missing custom agent TOML schema check script: {custom_agent_toml_schema_script}")
+    if not agent_skill_profile_surface_boundaries_script.exists():
+        raise SystemExit(f"Missing agent/skill/profile surface boundary check script: {agent_skill_profile_surface_boundaries_script}")
+    if not effective_lane_fit_evidence_script.exists():
+        raise SystemExit(f"Missing effective lane-fit evidence check script: {effective_lane_fit_evidence_script}")
+    if not fanout_write_ownership_evidence_script.exists():
+        raise SystemExit(f"Missing fan-out/write-ownership evidence check script: {fanout_write_ownership_evidence_script}")
 
     openspec = shutil.which("openspec") or shutil.which("openspec.cmd")
     if args.json:
@@ -255,6 +285,36 @@ def main() -> int:
                 "OpenSpec guard failed during local mirrored CI/MR gate verification.",
             ),
             (
+                "check_remote_publication_approval_policy",
+                [str(python_exe), str(remote_publication_approval_policy_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during remote publication approval policy verification.",
+            ),
+            (
+                "check_role_routing_directive_evidence",
+                [str(python_exe), str(role_routing_directive_evidence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during role/directive evidence verification.",
+            ),
+            (
+                "check_delegation_wait_discipline_evidence",
+                [str(python_exe), str(delegation_wait_discipline_evidence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during delegation/wait discipline evidence verification.",
+            ),
+            (
+                "check_durable_artifact_state_surfaces",
+                [str(python_exe), str(durable_artifact_state_surfaces_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during durable artifact/state-surface evidence verification.",
+            ),
+            (
+                "check_leader_session_scope_evidence",
+                [str(python_exe), str(leader_session_scope_evidence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during leader/session scope evidence verification.",
+            ),
+            (
+                "check_capability_switch_chain",
+                [str(python_exe), str(capability_switch_chain_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during capability-switch chain verification.",
+            ),
+            (
                 "check_windows_cleanup_output_control",
                 [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Windows cleanup-output control verification.",
@@ -293,6 +353,26 @@ def main() -> int:
                 "check_codex_skills_governance",
                 [str(python_exe), str(skills_governance_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Codex skills governance verification.",
+            ),
+            (
+                "check_custom_agent_toml_schema",
+                [str(python_exe), str(custom_agent_toml_schema_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during custom agent TOML schema verification.",
+            ),
+            (
+                "check_agent_skill_profile_surface_boundaries",
+                [str(python_exe), str(agent_skill_profile_surface_boundaries_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during agent/skill/profile surface boundary verification.",
+            ),
+            (
+                "check_effective_lane_fit_evidence",
+                [str(python_exe), str(effective_lane_fit_evidence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during effective lane-fit evidence verification.",
+            ),
+            (
+                "check_fanout_write_ownership_evidence",
+                [str(python_exe), str(fanout_write_ownership_evidence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during fan-out/write-ownership evidence verification.",
             ),
         ]:
             step_payload = run_json_command(command, cwd=root, step_name=step_name)
@@ -444,6 +524,33 @@ def main() -> int:
         failure_message="OpenSpec guard failed during local mirrored CI/MR gate verification.",
     )
     run_checked(
+        [str(python_exe), str(remote_publication_approval_policy_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during remote publication approval policy verification.",
+    )
+    run_checked(
+        [str(python_exe), str(role_routing_directive_evidence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during role/directive evidence verification.",
+    )
+    run_checked(
+        [str(python_exe), str(delegation_wait_discipline_evidence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during delegation/wait discipline evidence verification.",
+    )
+    run_checked(
+        [str(python_exe), str(durable_artifact_state_surfaces_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during durable artifact/state-surface evidence verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(leader_session_scope_evidence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during leader/session scope evidence verification.",
+    )
+
+    run_checked(
         [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Windows cleanup-output control verification.",
@@ -489,6 +596,30 @@ def main() -> int:
         [str(python_exe), str(skills_governance_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Codex skills governance verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(custom_agent_toml_schema_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during custom agent TOML schema verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(agent_skill_profile_surface_boundaries_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during agent/skill/profile surface boundary verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(effective_lane_fit_evidence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during effective lane-fit evidence verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(fanout_write_ownership_evidence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during fan-out/write-ownership evidence verification.",
     )
 
     if args.require_clean_git:

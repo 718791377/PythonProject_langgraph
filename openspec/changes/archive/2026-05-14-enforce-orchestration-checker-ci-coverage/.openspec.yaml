@@ -1,0 +1,12 @@
+schema: spec-driven
+created: 2026-05-14
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/verify_official_openspec.py
+  - tools/run_openspec_guard.py
+  - tools/ci/ci_test_manifest.json
+  - tools/safety_rule_script_backing_registry.json
+  - test/check_capability_switch_chain.test.py
+  - test/check_orchestration_trace_evidence.test.py
+  - test/check_expert_lifecycle_wait_pacing_evidence.test.py
+  - test/check_custom_agent_toml_schema.test.py

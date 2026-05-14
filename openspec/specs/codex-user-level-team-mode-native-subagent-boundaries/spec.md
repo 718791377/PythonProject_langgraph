@@ -3,9 +3,7 @@
 ## Purpose
 
 Define the reusable native Codex subagent contract for the user-level Codex / oh-my-codex workflow, including explicit leader-side spawning semantics, custom-agent placement rules, bounded fan-out, write-heavy parallelism gating, and OMX terminology boundaries.
-
 ## Requirements
-
 ### Requirement: Native Codex subagents SHALL remain an explicit leader-orchestrated capability
 
 The reusable user-level team-mode workflow SHALL describe native Codex subagents as an official native capability that is explicitly spawned by the leader lane and returned through leader-owned fan-in.
@@ -19,7 +17,6 @@ Generated routing policy, leader profile, and operator guidance SHALL NOT descri
 - **AND** it SHALL distinguish that behavior from both durable `omx team` workers and raw unwrapped Codex defaults
 
 ### Requirement: Custom native-subagent TOMLs SHALL use layered locations and a minimum standalone schema
-
 The workflow SHALL preserve two layered custom-agent locations:
 
 - user-level reusable roles under the Codex home agent directory
@@ -31,11 +28,18 @@ Every standalone custom-agent TOML used by this workflow SHALL define at least:
 - `description` - required native-agent TOML field for the role summary.
 - `developer_instructions` - required native-agent TOML field for role-specific behavior instructions.
 
-#### Scenario: Maintainer checks role placement rules
+The repository SHALL provide an executable custom agent TOML schema checker that validates present user-level and repo-local standalone agent TOMLs for parseability and non-empty top-level `name`, `description`, and `developer_instructions` string fields. Missing agent directories SHALL be reported as warnings, not failures.
 
+#### Scenario: Maintainer checks role placement rules
 - **WHEN** a maintainer reads the generated guidance for reusable and repository-scoped roles
 - **THEN** it SHALL distinguish user-level reusable agent TOMLs from repository-scoped agent TOMLs
 - **AND** it SHALL state the minimum standalone custom-agent fields
+
+#### Scenario: Custom agent TOML schema checker runs
+- **WHEN** `python tools/check_custom_agent_toml_schema.py --root . --json` runs
+- **THEN** every present standalone custom-agent TOML under the configured user-level and repo-local agent directories SHALL parse as TOML
+- **AND** each checked TOML SHALL contain non-empty top-level `name`, `description`, and `developer_instructions` string fields
+- **AND** a missing agent directory SHALL produce a warning rather than failing the check
 
 ### Requirement: Native-subagent fan-out SHALL remain bounded and inspectable
 

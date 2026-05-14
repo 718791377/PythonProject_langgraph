@@ -107,6 +107,44 @@ class OrchestrationActivationPolicyCheckerTests(unittest.TestCase):
             payload["errors"],
         )
 
+    def test_missing_threshold_trace_validator_wording_fails(self) -> None:
+        threshold_checker_snippets = {
+            "durable-team threshold evidence in `why`",
+            "durable-team threshold evidence",
+            "triggered_threshold:frozen_plan_with_2+_independent_slices",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                filtered = [snippet for snippet in snippets if snippet not in threshold_checker_snippets]
+                path.write_text("\n".join(filtered), encoding="utf-8")
+            (root / "tools").mkdir(exist_ok=True)
+            (root / "tools" / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (root / "tools" / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": ["tools/check_orchestration_activation_policy.py"],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("durable-team threshold evidence" in item for item in payload["errors"]), payload["errors"])
+        self.assertTrue(any("triggered_threshold:frozen_plan_with_2+_independent_slices" in item for item in payload["errors"]), payload["errors"])
+
     def test_missing_hard_routing_directive_adoption_wording_fails(self) -> None:
         directive_snippets = {
             "hard routing directives",
@@ -152,6 +190,302 @@ class OrchestrationActivationPolicyCheckerTests(unittest.TestCase):
         self.assertTrue(any("explanation-only mode" in item for item in payload["errors"]), payload["errors"])
         self.assertTrue(any("blocked:backend_not_ready" in item for item in payload["errors"]), payload["errors"])
         self.assertTrue(any("optional preference" in item for item in payload["errors"]), payload["errors"])
+
+
+    def test_missing_advanced_routing_boundary_wording_fails(self) -> None:
+        advanced_snippets = {
+            "Smallest-sufficient role selection",
+            "bounded multi-face research",
+            "Bounded multi-face research",
+            "skills are not native subagents",
+                "Skills are not native subagents",
+            "spawn a fresh agent",
+            "current main Codex CLI session remains the leader",
+            "Native Codex remains the base layer",
+            "Native Codex remains the base layer",
+            "one backend family at a time",
+            "concrete, bounded, self-contained sidecar work",
+                "meaningful non-overlapping leader work",
+            "read-only exploration",
+            "Read-only exploration",
+            "LangGraph entrypoints",
+            "frozen implementation brief",
+            "adversarial-review survivor queue",
+            "AutoGen and CrewAI",
+                "Smallest-sufficient role selection SHALL stay trigger-based",
+            "Agent, skill, profile, and follow-up surfaces SHALL stay distinct",
+            "The main Codex CLI session SHALL remain the leader",
+            "Native Codex SHALL remain the base layer",
+            "Delegation SHALL preserve critical-path leader work",
+            "Exploration, code-change delegation, and durable artifact persistence SHALL stay distinct",
+            "Research handoff and adversarial review SHALL persist bounded handoffs",
+            "fresh agent",
+            "one backend family",
+            ".omx/state/langgraph/",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                filtered = [snippet for snippet in snippets if snippet not in advanced_snippets]
+                path.write_text("\n".join(filtered), encoding="utf-8")
+            (root / "tools").mkdir(exist_ok=True)
+            (root / "tools" / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (root / "tools" / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": ["tools/check_orchestration_activation_policy.py"],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("Smallest-sufficient role selection" in item for item in payload["errors"]), payload["errors"])
+        self.assertTrue(any("skills are not native subagents" in item for item in payload["errors"]), payload["errors"])
+        self.assertTrue(any("Native Codex SHALL remain the base layer" in item for item in payload["errors"]), payload["errors"])
+        self.assertTrue(any(".omx/state/langgraph/" in item for item in payload["errors"]), payload["errors"])
+
+
+    def test_missing_custom_agent_toml_schema_wording_fails(self) -> None:
+        custom_agent_snippets = {
+            "custom agent TOML",
+            "tools/check_custom_agent_toml_schema.py",
+            "developer_instructions",
+            "native-agent TOMLs",
+            "Standalone native-agent TOMLs",
+            "Native-agent TOML schema is checked",
+            "Custom native-subagent TOMLs SHALL use layered locations and a minimum standalone schema",
+            "Custom agent TOML schema checker runs",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                filtered = [snippet for snippet in snippets if snippet not in custom_agent_snippets]
+                path.write_text("\n".join(filtered), encoding="utf-8")
+            (root / "tools").mkdir(exist_ok=True)
+            (root / "tools" / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (root / "tools" / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": ["tools/check_orchestration_activation_policy.py"],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("tools/check_custom_agent_toml_schema.py" in item for item in payload["errors"]), payload["errors"])
+        self.assertTrue(any("developer_instructions" in item for item in payload["errors"]), payload["errors"])
+        self.assertTrue(any("Custom agent TOML schema checker runs" in item for item in payload["errors"]), payload["errors"])
+
+    def test_missing_expert_lifecycle_wait_pacing_wording_fails(self) -> None:
+        lifecycle_snippets = {
+            "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+            "Provider pacing is backpressure",
+            "Provider pacing",
+            "bounded wait windows",
+            "completed-agent closure",
+            "Saved expert lifecycle and wait evidence is checked",
+            "provider pacing",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                filtered = [snippet for snippet in snippets if snippet not in lifecycle_snippets]
+                path.write_text("\n".join(filtered), encoding="utf-8")
+            tools_dir = root / "tools"
+            tools_dir.mkdir(exist_ok=True)
+            (tools_dir / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (tools_dir / "check_capability_switch_chain.py").write_text(
+                'def run_check(root, require_state=False, require_backend=False):\n'
+                '    return {"ok": True, "errors": [], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "check_expert_lifecycle_wait_pacing_evidence.py").write_text(
+                'def run_check(evidence_path):\n'
+                '    return {"ok": True, "errors": [], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": [
+                                    "tools/check_orchestration_activation_policy.py",
+                                    "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+                                ],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("tools/check_expert_lifecycle_wait_pacing_evidence.py" in item for item in payload["errors"]),
+            payload["errors"],
+        )
+        self.assertTrue(any("bounded wait windows" in item for item in payload["errors"]), payload["errors"])
+
+    def test_missing_expert_lifecycle_checker_file_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("\n".join(snippets), encoding="utf-8")
+            tools_dir = root / "tools"
+            tools_dir.mkdir(exist_ok=True)
+            (tools_dir / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (tools_dir / "check_capability_switch_chain.py").write_text(
+                'def run_check(root, require_state=False, require_backend=False):\n'
+                '    return {"ok": True, "errors": [], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": [
+                                    "tools/check_orchestration_activation_policy.py",
+                                    "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+                                ],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("Missing expert lifecycle/wait/pacing evidence checker" in item for item in payload["errors"]),
+            payload["errors"],
+        )
+
+    def test_missing_expert_lifecycle_registry_entry_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("\n".join(snippets), encoding="utf-8")
+            tools_dir = root / "tools"
+            tools_dir.mkdir(exist_ok=True)
+            (tools_dir / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (tools_dir / "check_capability_switch_chain.py").write_text(
+                'def run_check(root, require_state=False, require_backend=False):\n'
+                '    return {"ok": True, "errors": [], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "check_expert_lifecycle_wait_pacing_evidence.py").write_text(
+                'def run_check(evidence_path):\n'
+                '    return {"ok": True, "errors": [], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": ["tools/check_orchestration_activation_policy.py"],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("check_expert_lifecycle_wait_pacing_evidence.py" in item for item in payload["errors"]),
+            payload["errors"],
+        )
+
+
+    def test_invalid_capability_switch_chain_subcheck_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("\n".join(snippets), encoding="utf-8")
+            tools_dir = root / "tools"
+            tools_dir.mkdir(exist_ok=True)
+            (tools_dir / "run_openspec_guard.py").write_text(module.GUARD_STEP, encoding="utf-8")
+            (tools_dir / "check_capability_switch_chain.py").write_text(
+                'def run_check(root, require_state=False, require_backend=False):\n'
+                '    return {"ok": False, "errors": ["synthetic chain failure"], "warnings": []}\n',
+                encoding="utf-8",
+            )
+            (tools_dir / "safety_rule_script_backing_registry.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "rules": [
+                            {
+                                "id": module.REGISTRY_RULE_ID,
+                                "prompt_reminders": [
+                                    "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md"
+                                ],
+                                "script_controls": ["tools/check_orchestration_activation_policy.py"],
+                                "guard_steps": [module.GUARD_STEP],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("synthetic chain failure" in item for item in payload["errors"]), payload["errors"])
 
 
 if __name__ == "__main__":

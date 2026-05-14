@@ -97,6 +97,13 @@ translation_of: docs_bilingual/project_startup_summary.md
 - Trace 必须包含 `phase`、`capability_chain`、`backend_default`、`backend_ready`、`experts`、`durable_workflow`、`persistent_team` 和 `why`。
 - 不得用“用户没有要求并行/子代理”作为跳过理由；必须引用阈值、blocker、范围或主会话接管。
 - LangGraph ready 时报告默认 ready durable backend，但 team launch 仍受阈值约束。
+- Hard directive/role-routing discipline 必须继续由 `tools/check_role_routing_directive_evidence.py` 脚本化检查：显式 `omx` 或 `LangGraph` directive 必须导致 selected or running adoption，或报告具名 blocker/未满足阈值；不得写成 optional preference。expert routing 使用 smallest-sufficient role set，bounded multi-face research 先 analyst-only。
+- Delegation/wait discipline 必须继续由 `tools/check_delegation_wait_discipline_evidence.py` 脚本化检查：委派前识别 immediate critical-path local work，委派工作保持 non-duplicative，并在使用 `wait_agent` 前继续 non-overlapping leader work 或说明 critical-path blocker。
+- Durable artifact/state-surface discipline 必须继续由 `tools/check_durable_artifact_state_surfaces.py` 脚本化检查：exploration 保持 read-only 且 specific，graph/checkpoint state 写入 `.omx/state/langgraph/`，adoption 引用 `.omx/state/selectors/active.json`，并把每个 frozen implementation brief 或 survivor queue 保存到 repo-local state 或 documented artifact paths。
+- Current main-session scope evidence 必须继续由 `tools/check_leader_session_scope_evidence.py` 脚本化检查：the current main Codex CLI session remains the leader；separate persistent leader pane 不得替代它；startup or first activation 必须报告 durable-team threshold evidence，而不是自动拉起团队；task-flow scoped adoption 必须基于 current task flow 而不是仓库新旧；legacy resumed sessions are compatibility-scoped，并受当前 repository governance 与 capability-chain policy 约束。
+- Native agents, skills, and profiles remain distinct: native agents come from user-level or repo-local agent TOMLs; skills load from `SKILL.md`; profile helpers only change visible procedural context; skill or profile invocation is not expert evidence. Validate with `tools/check_agent_skill_profile_surface_boundaries.py`.
+- Effective lane-fit discipline 必须继续由 `tools/check_effective_lane_fit_evidence.py` 脚本化检查：worker-centric `native_omx` 用于 worker lifecycle、worktree isolation 或 mailbox flow；graph-shaped LangGraph 用于 graph phases、checkpoints、approval gates、frozen briefs 或 survivor queues；每个 durable task 保持 one backend family，除非记录 explicit close or handoff。
+- Fan-out/write-ownership discipline must remain script-checkable with `tools/check_fanout_write_ownership_evidence.py`: use leader-side spawning with leader-owned fan-in, keep native subagent fan-out within `agents.max_threads=6` and `agents.max_depth=1` unless explicit override is recorded, raw Codex does not auto-spawn specialist roles, prefer read-heavy, bounded, independent fan-out, and require write-heavy parallel execution to declare file/module ownership, disjoint write sets, hotspot serialization, leader-owned final integration, not alone in the codebase instructions, must not revert or overwrite instructions, and changed-path reporting.
 ## 上下文保留哨兵与安全执行
 
 用户级安全规则：
@@ -166,6 +173,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 - 本地 CI 与远端 CI 必须复用 `tools/ci/local_gate.ps1`。远端 CI 配置只应安装必要工具并调用该脚本，不得另写一套 checker 命令。CI 管理的测试登记在 `tools/ci/ci_test_manifest.json`。本地 MR review 在所有计划保留的改动已提交、feature worktree 干净之后、集成本地 `main` 或远端发布之前使用 `tools/ci/local_mr_review.ps1`。
 - 新建可写任务、判断发布时机、远端 push、创建 MR 或声明本地已对齐之前，必须保持本地 `main` 不落后于 `gitlab/main`。local-first batching 不是允许基于陈旧远端基线继续工作的理由。
 - 经批准本地集成后，本地 `main` 可以有意领先 `gitlab/main` 和 `github/main`；必须在状态报告中明确说明这种远端滞后，直到 GitLab/GitHub 发布或镜像同步追上。
+- 本地集成批准不等于远端发布批准。本地 `main` 集成后必须停在 remote-publication approval gate：除非当前用户消息明确批准该远端动作，否则不得推送 GitLab、创建/更新/合并 GitLab MR、同步 GitHub、删除远端发布分支或修改任何远端 ref。泛化的 `continue` / `继续` 不足以授权远端发布，除非它明确点名对应远端发布动作。
 - feature branch 只有在 local CI 和 local MR review 都通过后，才推送到 GitLab 并创建或更新 GitLab MR；除非用户明确要求提前跑远端 pipeline。
 - 如果本地 gate 和远端 CI 的结果不一致，必须修复共享脚本、环境安装或配置漂移，不得绕过任一证据层。
 - 主题相同且 rollback boundary（回退边界）相同的小变更可以合并到一个本地集成包；不要为了节省 runner minutes 把无关主题硬塞进同一个包。

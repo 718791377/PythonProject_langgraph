@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,6 +29,21 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "blocked:helper_missing",
         "blocked:write_ownership_conflict",
         "optional preference",
+        "custom agent TOML",
+        "tools/check_custom_agent_toml_schema.py",
+        "developer_instructions",
+        "subagent_routing=off",
+        "oh_my_codex=off",
+        "langgraph=on",
+        "durable_orchestration_backend=langgraph",
+        "tools/check_capability_switch_chain.py",
+        "tools/check_delegation_wait_discipline_evidence.py",
+        "tools/check_effective_lane_fit_evidence.py",
+        "tools/check_fanout_write_ownership_evidence.py",
+        "agents.max_threads=6",
+        "agents.max_depth=1",
+        "leader-side spawning",
+        "leader-owned fan-in",
     ],
     "docs_bilingual/project_startup_summary.md": [
         "codex_user_level_orchestration_activation_policy.md",
@@ -51,16 +67,30 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "subagent_routing != off",
         "backend_default=langgraph",
         "backend_ready=true",
+        "`subagent_routing=off` requires `oh_my_codex=off`",
+        "`oh_my_codex=off` requires `langgraph=off`",
+        "`durable_orchestration_backend=langgraph`, then `langgraph=on`",
+        "tools/check_capability_switch_chain.py",
         "Activation triggers",
         "Required trace fields",
         "the user did not request parallelism",
         "expert timed out; not used as evidence",
         "main session took over verification",
         "tools/check_orchestration_activation_policy.py",
+        "tools/check_orchestration_trace_evidence.py",
+        "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+        "tools/check_delegation_wait_discipline_evidence.py",
+        "not alone in the codebase",
+        "changed paths",
+        "Provider pacing is backpressure",
+        "bounded wait windows",
+        "completed-agent closure",
+        "durable-team threshold evidence in `why`",
         ".omx/state/selectors/active.json",
         "selector refresh gap",
         "threshold_not_met:no_frozen_plan",
         "threshold_not_met:single_execution_slice",
+        "triggered_threshold:frozen_plan_with_2+_independent_slices",
         "concrete threshold triggered",
         "hard routing directives",
         "explanation-only mode",
@@ -69,6 +99,38 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "blocked:helper_missing",
         "blocked:write_ownership_conflict",
         "optional preference",
+        "custom agent TOML",
+        "tools/check_custom_agent_toml_schema.py",
+        "developer_instructions",
+        "Smallest-sufficient role selection",
+        "Bounded multi-face research",
+        "Skills are not native subagents",
+        "spawn a fresh agent",
+        "current main Codex CLI session remains the leader",
+        "Native Codex remains the base layer",
+        "one backend family at a time",
+        "tools/check_effective_lane_fit_evidence.py",
+        "default-backend-not-enough",
+        "tools/check_fanout_write_ownership_evidence.py",
+        "Fan-out and write-heavy parallel execution are bounded and ownership-isolated",
+        "agents.max_threads=6",
+        "agents.max_depth=1",
+        "leader-side spawning",
+        "leader-owned fan-in",
+        "Raw Codex",
+        "does not auto-spawn specialist roles",
+        "write-heavy parallel execution",
+        "hotspot serialization",
+        "leader-owned final integration",
+        "concrete, bounded, self-contained sidecar work",
+        "meaningful non-overlapping leader work",
+        "Read-only exploration",
+        "LangGraph entrypoints",
+        "frozen implementation brief",
+        "adversarial-review survivor queue",
+        "AutoGen and CrewAI",
+        "Native-agent TOML schema is checked",
+        "native-agent TOMLs",
     ],
     "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md": [
         "subagent_routing != off",
@@ -80,10 +142,20 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "expert timed out; not used as evidence",
         "main session took over verification",
         "tools/check_orchestration_activation_policy.py",
+        "tools/check_orchestration_trace_evidence.py",
+        "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+        "tools/check_delegation_wait_discipline_evidence.py",
+        "不是代码库中唯一执行者",
+        "changed paths",
+        "Provider pacing",
+        "bounded wait windows",
+        "completed-agent closure",
+        "durable-team threshold evidence",
         ".omx/state/selectors/active.json",
         "selector refresh gap",
         "threshold_not_met:no_frozen_plan",
         "threshold_not_met:single_execution_slice",
+        "triggered_threshold:frozen_plan_with_2+_independent_slices",
         "triggered_threshold",
         "hard routing directives",
         "explanation-only mode",
@@ -92,17 +164,46 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "blocked:helper_missing",
         "blocked:write_ownership_conflict",
         "optional preference",
+        "custom agent TOML",
+        "tools/check_custom_agent_toml_schema.py",
+        "developer_instructions",
+        "Smallest-sufficient role selection",
+        "bounded multi-face research",
+        "spawn fresh agent",
+        "current main Codex CLI session",
+        "Native Codex remains the base layer",
+        "one backend family",
+        "tools/check_effective_lane_fit_evidence.py",
+        "default-backend-not-enough",
+        "meaningful non-overlapping leader work",
+        "read-only exploration",
+        "LangGraph entrypoints",
+        "frozen implementation brief",
+        "adversarial-review survivor queue",
+        "Standalone native-agent TOMLs",
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.md": [
         "orchestration-activation policy",
         "hard routing directive",
         "retrofit rules",
+        "Capability switch chains SHALL be executable-policy checked",
+        "tools/check_capability_switch_chain.py",
+        "subagent_routing=off",
+        "durable_orchestration_backend=langgraph",
         "Activation traces SHALL expose full orchestration state",
+        "trace-evidence validator",
+        "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+        "Saved expert lifecycle and wait evidence is checked",
+        "completed-agent closure",
+        "bounded wait windows",
+        "provider pacing",
+        "durable-team threshold evidence",
         "Missing user reminders SHALL NOT be a routing reason",
         "Expert timeout SHALL NOT be accepted as verification evidence",
         "Existing sessions SHALL retrofit activation policy",
         "threshold_not_met:no_frozen_plan",
         "threshold_not_met:single_execution_slice",
+        "triggered_threshold:frozen_plan_with_2+_independent_slices",
         "First activation does not select a durable team",
         "Hard routing directives SHALL require adoption or named blockers",
         "Explicit directive is adopted",
@@ -113,6 +214,68 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "blocked:helper_missing",
         "blocked:write_ownership_conflict",
         "optional preference",
+        "custom agent TOML",
+        "tools/check_custom_agent_toml_schema.py",
+        "developer_instructions",
+        "Smallest-sufficient role selection SHALL stay trigger-based",
+        "Agent, skill, profile, and follow-up surfaces SHALL stay distinct",
+        "The main Codex CLI session SHALL remain the leader",
+        "Native Codex SHALL remain the base layer",
+        "tools/check_effective_lane_fit_evidence.py",
+        "tools/check_fanout_write_ownership_evidence.py",
+        "Fan-out and write-heavy parallel execution SHALL be bounded and ownership-isolated",
+        "agents.max_threads=6",
+        "agents.max_depth=1",
+        "leader-side spawning",
+        "leader-owned fan-in",
+        "Raw Codex SHALL NOT be described as auto-spawning specialist roles",
+        "Write-heavy parallel execution SHALL declare file/module ownership",
+        "hotspot serialization",
+        "leader-owned final integration",
+        "default-backend-not-enough",
+        "native_omx worker-centric fit",
+        "LangGraph graph-shaped fit",
+        "Delegation SHALL preserve critical-path leader work",
+        "Exploration, code-change delegation, and durable artifact persistence SHALL stay script-checkable",
+        "Research handoff and adversarial review SHALL persist bounded handoffs",
+        "analystxN",
+        "skills are not native subagents",
+        "fresh agent",
+        "one backend family",
+        "meaningful non-overlapping leader work",
+        ".omx/state/langgraph/",
+        "AutoGen and CrewAI",
+        "Native-agent TOML schema is checked",
+        "native-agent TOMLs",
+    ],
+    "openspec/specs/codex-user-level-team-mode-native-subagent-boundaries/spec.md": [
+        "Custom native-subagent TOMLs SHALL use layered locations and a minimum standalone schema",
+        "tools/check_custom_agent_toml_schema.py",
+        "name",
+        "description",
+        "developer_instructions",
+        "Custom agent TOML schema checker runs",
+    ],
+
+    "openspec/specs/codex-user-level-capability-switches/spec.md": [
+        "Capability switches SHALL be read as a dependency chain",
+        "subagent_routing",
+        "oh_my_codex",
+        "langgraph",
+        "durable_orchestration_backend=langgraph",
+        "tools/check_capability_switch_chain.py",
+        "langgraph_ready=true",
+        "persistent team is already running",
+    ],
+    "openspec/specs/codex-user-level-capability-switches/spec.zh-CN.md": [
+        "Capability switches",
+        "subagent_routing",
+        "oh_my_codex",
+        "langgraph",
+        "durable_orchestration_backend=langgraph",
+        "tools/check_capability_switch_chain.py",
+        "langgraph_ready=true",
+        "persistent team",
     ],
     "openspec/specs/codex-user-level-team-mode-automatic-team-routing/spec.md": [
         ".omx/state/selectors/active.json",
@@ -139,6 +302,25 @@ def read_text(path: Path) -> str | None:
     except OSError:
         return None
 
+
+
+def run_capability_switch_chain_subcheck(root: Path, errors: list[str], warnings: list[str]) -> None:
+    checker_path = root / "tools" / "check_capability_switch_chain.py"
+    if not checker_path.exists():
+        errors.append("Missing capability switch chain checker: tools/check_capability_switch_chain.py")
+        return
+    spec = importlib.util.spec_from_file_location("check_capability_switch_chain", checker_path)
+    if spec is None or spec.loader is None:
+        errors.append("Unable to load capability switch chain checker: tools/check_capability_switch_chain.py")
+        return
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    payload = module.run_check(root, require_state=False, require_backend=False)
+    for warning in payload.get("warnings", []):
+        warnings.append(f"capability_switch_chain: {warning}")
+    if not payload.get("ok", False):
+        for error in payload.get("errors", []):
+            errors.append(f"capability_switch_chain: {error}")
 
 def run_check(root: Path) -> dict[str, Any]:
     root = root.resolve()
@@ -169,6 +351,29 @@ def run_check(root: Path) -> dict[str, Any]:
     if GUARD_STEP not in guard_text:
         errors.append(f"tools/run_openspec_guard.py must run {GUARD_STEP}")
 
+    run_capability_switch_chain_subcheck(root, errors, warnings)
+
+    expert_lifecycle_checker = root / "tools" / "check_expert_lifecycle_wait_pacing_evidence.py"
+    if not expert_lifecycle_checker.exists():
+        errors.append("Missing expert lifecycle/wait/pacing evidence checker: tools/check_expert_lifecycle_wait_pacing_evidence.py")
+    else:
+        spec = importlib.util.spec_from_file_location(
+            "check_expert_lifecycle_wait_pacing_evidence", expert_lifecycle_checker
+        )
+        if spec is None or spec.loader is None:
+            errors.append(
+                "Unable to load expert lifecycle/wait/pacing evidence checker: "
+                "tools/check_expert_lifecycle_wait_pacing_evidence.py"
+            )
+        else:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            if not hasattr(module, "run_check"):
+                errors.append(
+                    "Expert lifecycle/wait/pacing evidence checker must expose run_check: "
+                    "tools/check_expert_lifecycle_wait_pacing_evidence.py"
+                )
+
     registry_text = read_text(root / "tools/safety_rule_script_backing_registry.json")
     if registry_text is None:
         errors.append("Missing safety rule registry")
@@ -192,6 +397,16 @@ def run_check(root: Path) -> dict[str, Any]:
                     values = rule.get(field, [])
                     if expected not in values:
                         errors.append(f"Safety rule {REGISTRY_RULE_ID} missing {field} entry: {expected}")
+                script_controls = rule.get("script_controls", [])
+                for expected_checker in (
+                    "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+                    "tools/check_effective_lane_fit_evidence.py",
+                    "tools/check_fanout_write_ownership_evidence.py",
+                ):
+                    if expected_checker not in script_controls:
+                        errors.append(
+                            f"Safety rule {REGISTRY_RULE_ID} missing script_controls entry: {expected_checker}"
+                        )
 
     return {
         "schema_version": 1,

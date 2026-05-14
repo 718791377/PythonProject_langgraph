@@ -1,0 +1,102 @@
+from __future__ import annotations
+
+import importlib.util
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "tools" / "check_capability_switch_chain.py"
+
+spec = importlib.util.spec_from_file_location("check_capability_switch_chain", SCRIPT)
+module = importlib.util.module_from_spec(spec)
+assert spec and spec.loader
+spec.loader.exec_module(module)
+
+
+VALID_STATE = {
+    "schema_version": 3,
+    "subagent_routing": "auto",
+    "oh_my_codex": "on",
+    "langgraph": "on",
+    "durable_orchestration_backend": "langgraph",
+}
+
+VALID_BACKEND = {
+    "backend": "langgraph",
+    "status": "running",
+    "phase": "define-target",
+}
+
+
+class CapabilitySwitchChainCheckerTests(unittest.TestCase):
+    def run_with(self, state: dict | None, backend: dict | None = VALID_BACKEND, *, require_state: bool = True) -> dict:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "repo"
+            root.mkdir()
+            state_path = Path(temp_dir) / "state.json"
+            backend_path = root / ".omx" / "state" / "langgraph" / "backend.json"
+            if state is not None:
+                state_path.write_text(json.dumps(state), encoding="utf-8")
+            if backend is not None:
+                backend_path.parent.mkdir(parents=True)
+                backend_path.write_text(json.dumps(backend), encoding="utf-8")
+            return module.run_check(root, state_path, backend_path, require_state=require_state)
+
+    def test_valid_langgraph_default_chain_passes(self) -> None:
+        payload = self.run_with(VALID_STATE)
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertEqual(payload["state"]["effective_backend_default"], "langgraph")
+
+    def test_subagent_off_disables_higher_layers(self) -> None:
+        state = dict(VALID_STATE, subagent_routing="off", oh_my_codex="on", langgraph="on")
+        payload = self.run_with(state)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("subagent_routing=off requires oh_my_codex=off" in item for item in payload["errors"]), payload["errors"])
+        self.assertTrue(any("subagent_routing=off requires langgraph=off" in item for item in payload["errors"]), payload["errors"])
+
+    def test_oh_my_codex_off_disables_langgraph(self) -> None:
+        state = dict(VALID_STATE, oh_my_codex="off", langgraph="on")
+        payload = self.run_with(state)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("oh_my_codex=off requires langgraph=off" in item for item in payload["errors"]), payload["errors"])
+
+    def test_langgraph_backend_requires_langgraph_on(self) -> None:
+        state = dict(VALID_STATE, langgraph="off", durable_orchestration_backend="langgraph")
+        payload = self.run_with(state)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("durable_orchestration_backend=langgraph requires langgraph=on" in item for item in payload["errors"]), payload["errors"])
+
+    def test_invalid_switch_value_fails(self) -> None:
+        state = dict(VALID_STATE, subagent_routing="maybe")
+        payload = self.run_with(state)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("Invalid `subagent_routing`" in item for item in payload["errors"]), payload["errors"])
+
+    def test_missing_state_warns_without_require_state(self) -> None:
+        payload = self.run_with(None, require_state=False)
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertGreaterEqual(payload["counts"]["warnings"], 1)
+
+    def test_missing_state_fails_when_required(self) -> None:
+        payload = self.run_with(None, require_state=True)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("capability state" in item for item in payload["errors"]), payload["errors"])
+
+    def test_unready_langgraph_backend_fails_when_selected(self) -> None:
+        backend = dict(VALID_BACKEND, status="unavailable")
+        payload = self.run_with(VALID_STATE, backend)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("backend status is not ready" in item for item in payload["errors"]), payload["errors"])
+
+    def test_current_user_state_passes_when_available(self) -> None:
+        state_path = module.default_state_file()
+        if not state_path.exists():
+            self.skipTest(f"user-level capability state is not present: {state_path}")
+        payload = module.run_check(ROOT, state_path, module.default_backend_file(ROOT))
+        self.assertTrue(payload["ok"], payload["errors"])
+
+
+if __name__ == "__main__":
+    unittest.main()

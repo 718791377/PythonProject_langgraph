@@ -1,0 +1,9 @@
+---
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/check_agent_skill_profile_surface_boundaries.py
+  - test/check_agent_skill_profile_surface_boundaries.test.py
+  - tools/run_openspec_guard.py
+  - tools/safety_rule_script_backing_registry.json
+  - tools/ci/ci_test_manifest.json
+---
