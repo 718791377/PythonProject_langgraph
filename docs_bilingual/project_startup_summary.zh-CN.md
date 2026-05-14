@@ -101,6 +101,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 - Delegation/wait discipline 必须继续由 `tools/check_delegation_wait_discipline_evidence.py` 脚本化检查：委派前识别 immediate critical-path local work，委派工作保持 non-duplicative，并在使用 `wait_agent` 前继续 non-overlapping leader work 或说明 critical-path blocker。
 - Durable artifact/state-surface discipline 必须继续由 `tools/check_durable_artifact_state_surfaces.py` 脚本化检查：exploration 保持 read-only 且 specific，graph/checkpoint state 写入 `.omx/state/langgraph/`，adoption 引用 `.omx/state/selectors/active.json`，并把每个 frozen implementation brief 或 survivor queue 保存到 repo-local state 或 documented artifact paths。
 - Current main-session scope evidence 必须继续由 `tools/check_leader_session_scope_evidence.py` 脚本化检查：the current main Codex CLI session remains the leader；separate persistent leader pane 不得替代它；startup or first activation 必须报告 durable-team threshold evidence，而不是自动拉起团队；task-flow scoped adoption 必须基于 current task flow 而不是仓库新旧；legacy resumed sessions are compatibility-scoped，并受当前 repository governance 与 capability-chain policy 约束。
+- Native agents, skills, and profiles remain distinct: native agents come from user-level or repo-local agent TOMLs; skills load from `SKILL.md`; profile helpers only change visible procedural context; skill or profile invocation is not expert evidence. Validate with `tools/check_agent_skill_profile_surface_boundaries.py`.
 ## 上下文保留哨兵与安全执行
 
 用户级安全规则：

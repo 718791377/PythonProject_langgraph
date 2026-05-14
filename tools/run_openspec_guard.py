@@ -120,6 +120,7 @@ def main() -> int:
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
     orchestration_activation_policy_script = root / "tools" / "check_orchestration_activation_policy.py"
     custom_agent_toml_schema_script = root / "tools" / "check_custom_agent_toml_schema.py"
+    agent_skill_profile_surface_boundaries_script = root / "tools" / "check_agent_skill_profile_surface_boundaries.py"
 
     if not verify_script.exists():
         raise SystemExit(f"Missing verification script: {verify_script}")
@@ -171,6 +172,8 @@ def main() -> int:
         raise SystemExit(f"Missing orchestration activation policy check script: {orchestration_activation_policy_script}")
     if not custom_agent_toml_schema_script.exists():
         raise SystemExit(f"Missing custom agent TOML schema check script: {custom_agent_toml_schema_script}")
+    if not agent_skill_profile_surface_boundaries_script.exists():
+        raise SystemExit(f"Missing agent/skill/profile surface boundary check script: {agent_skill_profile_surface_boundaries_script}")
 
     openspec = shutil.which("openspec") or shutil.which("openspec.cmd")
     if args.json:
@@ -349,6 +352,11 @@ def main() -> int:
                 "check_custom_agent_toml_schema",
                 [str(python_exe), str(custom_agent_toml_schema_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during custom agent TOML schema verification.",
+            ),
+            (
+                "check_agent_skill_profile_surface_boundaries",
+                [str(python_exe), str(agent_skill_profile_surface_boundaries_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during agent/skill/profile surface boundary verification.",
             ),
         ]:
             step_payload = run_json_command(command, cwd=root, step_name=step_name)
@@ -578,6 +586,12 @@ def main() -> int:
         [str(python_exe), str(custom_agent_toml_schema_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during custom agent TOML schema verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(agent_skill_profile_surface_boundaries_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during agent/skill/profile surface boundary verification.",
     )
 
     if args.require_clean_git:

@@ -21,6 +21,7 @@
 - Keep user-level launcher payloads short on Windows. Do not pass long generated orchestration instructions inline as `-c developer_instructions=...`; prefer file-backed `model_instructions_file` or another short reference path.
 - Keep launcher logic thin, support-script payload assembly centralized, and installer logic generation-only; do not spread payload-length workarounds across installed wrappers.
 - Standalone custom agent TOML / custom native-agent TOMLs in the user-level agents directory or `<repo>/.codex/agents/` must define non-empty top-level `name`, `description`, and `developer_instructions`; run `tools/check_custom_agent_toml_schema.py` when validating agent surface changes.
+- Native reusable role definitions live in user-level or repo-local agents directories; skills from installed SKILL.md files are workflow instruction surfaces, not native subagents; plugin modules and profile helpers only change visible procedural context. Skill or profile invocation is not expert evidence; do not treat skills or plugin profiles as native subagents. Validate this boundary with `tools/check_agent_skill_profile_surface_boundaries.py`.
 - Use OpenSpec for durable orchestration architecture, user-level control-surface, and multi-file implementation changes.
 - Run `python .\tools\run_openspec_guard.py --root .` before concluding that repository-local OpenSpec enforcement is healthy.
 - Run `python .\tools\verify_official_openspec.py --root .` after bootstrap or refresh.

@@ -216,13 +216,15 @@
         "tools/check_orchestration_activation_policy.py",
         "tools/check_capability_switch_chain.py",
         "tools/check_orchestration_trace_evidence.py",
-        "tools/check_expert_lifecycle_wait_pacing_evidence.py"
+        "tools/check_expert_lifecycle_wait_pacing_evidence.py",
+        "tools/check_agent_skill_profile_surface_boundaries.py"
       ],
       "guard_steps": [
         "check_orchestration_activation_policy",
-        "check_capability_switch_chain"
+        "check_capability_switch_chain",
+        "check_agent_skill_profile_surface_boundaries"
       ],
-      "description": "Requires automatic orchestration activation traces, capability-chain state, timeout evidence labels, blocker reporting, durable-team thresholds, and existing-session retrofit to be backed by checker-enforced policy surfaces. It also checker-backs completed expert closure, bounded wait/liveness evidence, and provider pacing as backpressure."
+      "description": "Requires automatic orchestration activation traces, capability-chain state, timeout evidence labels, blocker reporting, durable-team thresholds, and existing-session retrofit to be backed by checker-enforced policy surfaces. It also checker-backs completed expert closure, bounded wait/liveness evidence, and provider pacing as backpressure, plus agent/skill/profile surface boundaries."
     },
     {
       "id": "delegation-wait-discipline-evidence",
