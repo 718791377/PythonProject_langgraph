@@ -1,0 +1,10 @@
+﻿schema: spec-driven
+created: 2026-05-14
+x_change_class: code
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/check_role_routing_directive_evidence.py
+  - test/check_role_routing_directive_evidence.test.py
+  - tools/run_openspec_guard.py
+  - tools/safety_rule_script_backing_registry.json
+  - tools/ci/ci_test_manifest.json
