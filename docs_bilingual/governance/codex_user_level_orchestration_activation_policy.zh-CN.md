@@ -101,7 +101,7 @@ current main Codex CLI session remains the leader。它负责 activation checks�
 
 Native Codex remains the base layer。oh-my-codex、native_omx、skills、profile helpers 与 LangGraph 是 additive workflow 或 durable-state layers，不是 Codex replacements。Effective lane choice 基于 task fit：worker-centric durable execution、worktree isolation、mailbox flow 或 direct worker lifecycle control 优先使用 `native_omx`；graph-shaped multi-phase execution、checkpoint-driven recovery、interrupt/resume approval gates、frozen briefs 或 persisted survivor queues 优先使用 LangGraph。每个 durable task 同一时间只使用 one backend family，backend-family switching 需要显式 close 或 handoff。
 
-Delegation 必须是 concrete、bounded、self-contained sidecar work，并且 materially advances 主任务。leader 必须在委派前识别 immediate critical-path local work；当下一步 leader action 依赖结果时，不要把 urgent blocking work 委派出去；避免 duplicate work；experts 运行时继续 meaningful non-overlapping leader work；并且 sparingly 使用 `wait_agent`。
+Delegation 必须是 concrete、bounded、self-contained sidecar work，并且 materially advances 主任务。leader 必须在委派前识别 immediate critical-path local work；当下一步 leader action 依赖结果时，不要把 urgent blocking work 委派出去；避免 duplicate work；experts 运行时继续 meaningful non-overlapping leader work；并且 sparingly 使用 `wait_agent`。代码修改 worker brief 必须包含 file/module ownership 或 disjoint write sets，告知 worker 他们不是代码库中唯一执行者、不得 revert 其他 edits，并要求 final answer 列出 changed paths。已保存的 delegation 与 wait evidence 由 `tools/check_delegation_wait_discipline_evidence.py` 检查。
 
 read-only exploration 只用于 specific codebase questions、symbol mapping 与 file discovery。当 implementation patch 清晰且安全时，它不得替代 bounded code-changing worker task。需要 graph phases、checkpoint gates、frozen briefs、survivor queues 或 tracked LangGraph thread state 时，必须使用 LangGraph entrypoints 与 repo-local `.omx/state/langgraph/` state。durable artifacts、frozen briefs 与 survivor queues 必须写入 repo-local state 或 documented artifact paths，不能只存在于 transient chat context。
 
@@ -109,7 +109,7 @@ Open-ended work 必须保持 research 与 implementation 角色分离。Research
 
 ## Script control
 
-本政策由 `tools/check_orchestration_activation_policy.py`、`tools/check_capability_switch_chain.py`、保存版 trace evidence validator `tools/check_orchestration_trace_evidence.py`、expert lifecycle/wait/pacing evidence checker `tools/check_expert_lifecycle_wait_pacing_evidence.py` 与 native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py` 支撑，并登记在 `tools/safety_rule_script_backing_registry.json`。仅靠提示词提醒不足以保护这个边界。
+本政策由 `tools/check_orchestration_activation_policy.py`、`tools/check_capability_switch_chain.py`、保存版 trace evidence validator `tools/check_orchestration_trace_evidence.py`、expert lifecycle/wait/pacing evidence checker `tools/check_expert_lifecycle_wait_pacing_evidence.py`、delegation/wait discipline evidence checker `tools/check_delegation_wait_discipline_evidence.py` 与 native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py` 支撑，并登记在 `tools/safety_rule_script_backing_registry.json`。仅靠提示词提醒不足以保护这个边界。
 
 ## Active selector refresh reporting
 

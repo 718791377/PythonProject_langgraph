@@ -107,6 +107,7 @@ def main() -> int:
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
+    delegation_wait_discipline_evidence_script = root / "tools" / "check_delegation_wait_discipline_evidence.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
@@ -140,6 +141,8 @@ def main() -> int:
         raise SystemExit(f"Missing local mirrored CI/MR gate check script: {local_mirrored_ci_gate_script}")
     if not remote_publication_approval_policy_script.exists():
         raise SystemExit(f"Missing remote publication approval policy check script: {remote_publication_approval_policy_script}")
+    if not delegation_wait_discipline_evidence_script.exists():
+        raise SystemExit(f"Missing delegation/wait discipline evidence check script: {delegation_wait_discipline_evidence_script}")
     if not windows_cleanup_output_control_script.exists():
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
     if not plugin_modules_skill_script.exists():
@@ -264,6 +267,11 @@ def main() -> int:
                 "check_remote_publication_approval_policy",
                 [str(python_exe), str(remote_publication_approval_policy_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during remote publication approval policy verification.",
+            ),
+            (
+                "check_delegation_wait_discipline_evidence",
+                [str(python_exe), str(delegation_wait_discipline_evidence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during delegation/wait discipline evidence verification.",
             ),
             (
                 "check_windows_cleanup_output_control",
@@ -463,6 +471,11 @@ def main() -> int:
         [str(python_exe), str(remote_publication_approval_policy_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during remote publication approval policy verification.",
+    )
+    run_checked(
+        [str(python_exe), str(delegation_wait_discipline_evidence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during delegation/wait discipline evidence verification.",
     )
     run_checked(
         [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root)],

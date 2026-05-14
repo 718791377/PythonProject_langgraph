@@ -112,6 +112,7 @@ Automatic orchestration activation reminders:
 - Trace `phase`, `capability_chain`, `backend_default`, `backend_ready`, `experts`, `durable_workflow`, `persistent_team`, and `why`.
 - Do not use missing user reminders as a skip reason; cite thresholds, blockers, scope, or main-session takeover.
 - If LangGraph is ready, report it as the default ready durable backend while keeping team launch threshold-gated.
+- Delegation/wait discipline must remain script-checkable with `tools/check_delegation_wait_discipline_evidence.py`: identify immediate critical-path local work, keep delegated work non-duplicative, and either continue non-overlapping leader work or name the critical-path blocker before using `wait_agent`.
 ## Context Retention Canary And Safety Enforcement
 
 User-level safety rule:

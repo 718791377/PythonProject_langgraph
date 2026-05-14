@@ -222,6 +222,24 @@
       "description": "Requires automatic orchestration activation traces, capability-chain state, timeout evidence labels, blocker reporting, durable-team thresholds, and existing-session retrofit to be backed by checker-enforced policy surfaces. It also checker-backs completed expert closure, bounded wait/liveness evidence, and provider pacing as backpressure."
     },
     {
+      "id": "delegation-wait-discipline-evidence",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_delegation_wait_discipline_evidence.py"
+      ],
+      "guard_steps": [
+        "check_delegation_wait_discipline_evidence"
+      ],
+      "description": "Requires delegated expert/worker work to be concrete, bounded, self-contained, non-duplicative, and paired with leader critical-path planning and wait discipline evidence."
+    },
+    {
       "id": "custom-agent-toml-schema",
       "owner_level": "user",
       "status": "implemented",

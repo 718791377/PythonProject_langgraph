@@ -97,6 +97,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 - Trace 必须包含 `phase`、`capability_chain`、`backend_default`、`backend_ready`、`experts`、`durable_workflow`、`persistent_team` 和 `why`。
 - 不得用“用户没有要求并行/子代理”作为跳过理由；必须引用阈值、blocker、范围或主会话接管。
 - LangGraph ready 时报告默认 ready durable backend，但 team launch 仍受阈值约束。
+- Delegation/wait discipline 必须继续由 `tools/check_delegation_wait_discipline_evidence.py` 脚本化检查：委派前识别 immediate critical-path local work，委派工作保持 non-duplicative，并在使用 `wait_agent` 前继续 non-overlapping leader work 或说明 critical-path blocker。
 ## 上下文保留哨兵与安全执行
 
 用户级安全规则：
