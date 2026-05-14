@@ -100,6 +100,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 - Hard directive/role-routing discipline 必须继续由 `tools/check_role_routing_directive_evidence.py` 脚本化检查：显式 `omx` 或 `LangGraph` directive 必须导致 selected or running adoption，或报告具名 blocker/未满足阈值；不得写成 optional preference。expert routing 使用 smallest-sufficient role set，bounded multi-face research 先 analyst-only。
 - Delegation/wait discipline 必须继续由 `tools/check_delegation_wait_discipline_evidence.py` 脚本化检查：委派前识别 immediate critical-path local work，委派工作保持 non-duplicative，并在使用 `wait_agent` 前继续 non-overlapping leader work 或说明 critical-path blocker。
 - Durable artifact/state-surface discipline 必须继续由 `tools/check_durable_artifact_state_surfaces.py` 脚本化检查：exploration 保持 read-only 且 specific，graph/checkpoint state 写入 `.omx/state/langgraph/`，adoption 引用 `.omx/state/selectors/active.json`，并把每个 frozen implementation brief 或 survivor queue 保存到 repo-local state 或 documented artifact paths。
+- Current main-session scope evidence 必须继续由 `tools/check_leader_session_scope_evidence.py` 脚本化检查：the current main Codex CLI session remains the leader；separate persistent leader pane 不得替代它；startup or first activation 必须报告 durable-team threshold evidence，而不是自动拉起团队；task-flow scoped adoption 必须基于 current task flow 而不是仓库新旧；legacy resumed sessions are compatibility-scoped，并受当前 repository governance 与 capability-chain policy 约束。
 ## 上下文保留哨兵与安全执行
 
 用户级安全规则：

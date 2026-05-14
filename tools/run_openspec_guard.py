@@ -110,6 +110,7 @@ def main() -> int:
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
     delegation_wait_discipline_evidence_script = root / "tools" / "check_delegation_wait_discipline_evidence.py"
     durable_artifact_state_surfaces_script = root / "tools" / "check_durable_artifact_state_surfaces.py"
+    leader_session_scope_evidence_script = root / "tools" / "check_leader_session_scope_evidence.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
@@ -149,6 +150,8 @@ def main() -> int:
         raise SystemExit(f"Missing delegation/wait discipline evidence check script: {delegation_wait_discipline_evidence_script}")
     if not durable_artifact_state_surfaces_script.exists():
         raise SystemExit(f"Missing durable artifact/state-surface evidence check script: {durable_artifact_state_surfaces_script}")
+    if not leader_session_scope_evidence_script.exists():
+        raise SystemExit(f"Missing leader/session scope evidence check script: {leader_session_scope_evidence_script}")
     if not windows_cleanup_output_control_script.exists():
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
     if not plugin_modules_skill_script.exists():
@@ -288,6 +291,11 @@ def main() -> int:
                 "check_durable_artifact_state_surfaces",
                 [str(python_exe), str(durable_artifact_state_surfaces_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during durable artifact/state-surface evidence verification.",
+            ),
+            (
+                "check_leader_session_scope_evidence",
+                [str(python_exe), str(leader_session_scope_evidence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during leader/session scope evidence verification.",
             ),
             (
                 "check_windows_cleanup_output_control",
@@ -503,6 +511,13 @@ def main() -> int:
         cwd=root,
         failure_message="OpenSpec guard failed during durable artifact/state-surface evidence verification.",
     )
+
+    run_checked(
+        [str(python_exe), str(leader_session_scope_evidence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during leader/session scope evidence verification.",
+    )
+
     run_checked(
         [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root)],
         cwd=root,

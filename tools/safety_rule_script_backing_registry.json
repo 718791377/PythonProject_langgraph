@@ -292,6 +292,27 @@
         "check_role_routing_directive_evidence"
       ],
       "description": "Requires explicit omx/LangGraph directives to adopt selected/running lanes or report named blockers, and requires smallest-sufficient role selection with analyst-first bounded multi-face research."
+    },
+    {
+      "id": "leader-session-scope-evidence",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "AGENTS.md",
+        "docs_bilingual/project_startup_summary.md",
+        "docs_bilingual/project_startup_summary.zh-CN.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_leader_session_scope_evidence.py"
+      ],
+      "guard_steps": [
+        "check_leader_session_scope_evidence"
+      ],
+      "description": "Requires the current main Codex CLI session to remain leader, rejects separate persistent leader-pane replacement, requires startup durable-team threshold evidence, task-flow scoped adoption, and compatibility-scoped legacy resumes."
     }
   ]
 }
