@@ -259,7 +259,6 @@ The repository SHALL provide `tools/check_delegation_wait_discipline_evidence.py
 - **THEN** it SHALL fail if the wait is indefinite, silent, or reflexive
 - **AND** it SHALL require either meaningful non-overlapping leader work during the wait or a clear critical-path blocker explaining why the leader is blocked until the delegated result returns
 
-
 ### Requirement: Fan-out and write-heavy parallel execution SHALL be bounded and ownership-isolated
 
 Native Codex subagent use SHALL remain leader-side spawning with leader-owned fan-in. Raw Codex SHALL NOT be described as auto-spawning specialist roles by default. Managed fan-out SHALL stay within `agents.max_threads=6` and `agents.max_depth=1` unless an explicit override, reason, and approval are recorded.
