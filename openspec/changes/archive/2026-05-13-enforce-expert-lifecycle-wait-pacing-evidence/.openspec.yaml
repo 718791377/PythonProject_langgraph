@@ -1,2 +1,9 @@
 schema: spec-driven
 created: 2026-05-14
+x_change_class: code
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/check_expert_lifecycle_wait_pacing_evidence.py
+  - test/check_expert_lifecycle_wait_pacing_evidence.test.py
+  - tools/check_orchestration_activation_policy.py
+  - test/check_orchestration_activation_policy.test.py
