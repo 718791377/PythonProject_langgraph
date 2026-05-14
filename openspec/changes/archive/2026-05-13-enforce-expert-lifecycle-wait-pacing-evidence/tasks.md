@@ -17,8 +17,8 @@
 - [x] 2.4 Run `openspec validate enforce-expert-lifecycle-wait-pacing-evidence --json`.
 - [x] 2.5 Run `openspec validate --all --json`.
 - [x] 2.6 Run `D:\PythonProject_langgraph\.venv\Scripts\python.exe tools\run_openspec_guard.py --root . --tool codex --json`.
-- [ ] 2.7 Run local CI gate.
-- [ ] 2.8 Run local MR review after the branch is clean.
+- [x] 2.7 Run local CI gate.
+- [x] 2.8 Run local MR review after the branch is clean.
 
 ## 3. Evidence
 
@@ -29,5 +29,5 @@
 - `openspec validate --all --json`: passed before archive and after archive.
 - `tools\run_openspec_guard.py --root . --tool codex --json`: passed.
 - `git diff --check`: passed.
-- `tools\ci\local_gate.ps1 -Root . -Json`: pending before local main integration.
-- `tools\ci\local_mr_review.ps1 -Root . -Json`: pending after the archive commit leaves the branch clean and before local main integration.
+- `tools\ci\local_gate.ps1 -Root . -Json -StepTimeoutSeconds 180`: passed with `ok=true`, 5/5 steps passed, including 19/19 OpenSpec guard steps, 23 manifest Python tests, empty node/powershell manifests, and `git diff --check`.
+- `tools\ci\local_mr_review.ps1 -Root . -Json`: passed with `ok=true`; branch was clean, 2 commits over `main`, 13 changed files, and merge-tree conflict count was 0.
