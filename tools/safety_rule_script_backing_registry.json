@@ -218,15 +218,17 @@
         "tools/check_orchestration_trace_evidence.py",
         "tools/check_expert_lifecycle_wait_pacing_evidence.py",
         "tools/check_agent_skill_profile_surface_boundaries.py",
-        "tools/check_effective_lane_fit_evidence.py"
+        "tools/check_effective_lane_fit_evidence.py",
+        "tools/check_fanout_write_ownership_evidence.py"
       ],
       "guard_steps": [
         "check_orchestration_activation_policy",
         "check_capability_switch_chain",
         "check_agent_skill_profile_surface_boundaries",
-        "check_effective_lane_fit_evidence"
+        "check_effective_lane_fit_evidence",
+        "check_fanout_write_ownership_evidence"
       ],
-      "description": "Requires automatic orchestration activation traces, capability-chain state, timeout evidence labels, blocker reporting, durable-team thresholds, and existing-session retrofit to be backed by checker-enforced policy surfaces. It also checker-backs completed expert closure, bounded wait/liveness evidence, and provider pacing as backpressure, plus agent/skill/profile surface boundaries."
+      "description": "Requires automatic orchestration activation traces, capability-chain state, timeout evidence labels, blocker reporting, durable-team thresholds, and existing-session retrofit to be backed by checker-enforced policy surfaces. It also checker-backs completed expert closure, bounded wait/liveness evidence, and provider pacing as backpressure, plus agent/skill/profile surface boundaries. It also checker-backs fan-out/write-ownership evidence: managed bounds, leader-side spawning, raw-Codex terminology, and write-heavy ownership isolation."
     },
     {
       "id": "delegation-wait-discipline-evidence",
@@ -341,6 +343,27 @@
         "check_effective_lane_fit_evidence"
       ],
       "description": "Requires effective durable lane choices to map to native_omx worker-centric fit or LangGraph graph-shaped fit, and requires explicit close/handoff before backend-family switching."
+    },
+    {
+      "id": "fanout-write-ownership-evidence",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "AGENTS.md",
+        "docs_bilingual/project_startup_summary.md",
+        "docs_bilingual/project_startup_summary.zh-CN.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_fanout_write_ownership_evidence.py"
+      ],
+      "guard_steps": [
+        "check_fanout_write_ownership_evidence"
+      ],
+      "description": "Requires native subagent fan-out to stay within managed bounds, remain leader-side spawned with leader-owned fan-in, reject raw Codex auto-spawn claims, and require write-heavy parallel ownership isolation, hotspot serialization, leader-owned final integration, and changed-path reporting."
     }
   ]
 }

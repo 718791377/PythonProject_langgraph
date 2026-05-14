@@ -122,6 +122,7 @@ def main() -> int:
     custom_agent_toml_schema_script = root / "tools" / "check_custom_agent_toml_schema.py"
     agent_skill_profile_surface_boundaries_script = root / "tools" / "check_agent_skill_profile_surface_boundaries.py"
     effective_lane_fit_evidence_script = root / "tools" / "check_effective_lane_fit_evidence.py"
+    fanout_write_ownership_evidence_script = root / "tools" / "check_fanout_write_ownership_evidence.py"
 
     if not verify_script.exists():
         raise SystemExit(f"Missing verification script: {verify_script}")
@@ -177,6 +178,8 @@ def main() -> int:
         raise SystemExit(f"Missing agent/skill/profile surface boundary check script: {agent_skill_profile_surface_boundaries_script}")
     if not effective_lane_fit_evidence_script.exists():
         raise SystemExit(f"Missing effective lane-fit evidence check script: {effective_lane_fit_evidence_script}")
+    if not fanout_write_ownership_evidence_script.exists():
+        raise SystemExit(f"Missing fan-out/write-ownership evidence check script: {fanout_write_ownership_evidence_script}")
 
     openspec = shutil.which("openspec") or shutil.which("openspec.cmd")
     if args.json:
@@ -365,6 +368,11 @@ def main() -> int:
                 "check_effective_lane_fit_evidence",
                 [str(python_exe), str(effective_lane_fit_evidence_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during effective lane-fit evidence verification.",
+            ),
+            (
+                "check_fanout_write_ownership_evidence",
+                [str(python_exe), str(fanout_write_ownership_evidence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during fan-out/write-ownership evidence verification.",
             ),
         ]:
             step_payload = run_json_command(command, cwd=root, step_name=step_name)
@@ -606,6 +614,12 @@ def main() -> int:
         [str(python_exe), str(effective_lane_fit_evidence_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during effective lane-fit evidence verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(fanout_write_ownership_evidence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during fan-out/write-ownership evidence verification.",
     )
 
     if args.require_clean_git:

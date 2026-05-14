@@ -14,6 +14,7 @@
     "check_custom_agent_toml_schema.test.py",
     "check_agent_skill_profile_surface_boundaries.test.py",
     "check_effective_lane_fit_evidence.test.py",
+    "check_fanout_write_ownership_evidence.test.py",
     "check_plugin_modules_skill.test.py",
     "evidence_intake_pipeline.test.py",
     "evidence_adapters.test.py"
