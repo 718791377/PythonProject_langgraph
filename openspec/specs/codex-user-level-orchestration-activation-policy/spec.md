@@ -218,13 +218,14 @@ The repository SHALL provide `tools/check_delegation_wait_discipline_evidence.py
 - **THEN** it SHALL fail if the wait is indefinite, silent, or reflexive
 - **AND** it SHALL require either meaningful non-overlapping leader work during the wait or a clear critical-path blocker explaining why the leader is blocked until the delegated result returns
 
-### Requirement: Exploration, code-change delegation, and durable artifact persistence SHALL stay distinct
-Read-only exploration SHALL be used for specific codebase questions, symbol mapping, or file discovery. It SHALL NOT replace a bounded code-changing worker task when a safe implementation patch is clear. LangGraph entrypoints and repo-local `.omx/state/langgraph/` state SHALL be used when graph phases, checkpoint gates, frozen briefs, survivor queues, or tracked LangGraph thread state are required. Durable artifacts, frozen briefs, and survivor queues SHALL be written to repo-local state or documented artifact paths rather than only transient chat context.
+### Requirement: Exploration, code-change delegation, and durable artifact persistence SHALL stay script-checkable
+Read-only exploration SHALL be used for specific codebase questions, symbol mapping, or file discovery. It SHALL NOT replace a bounded code-changing worker task when a safe implementation patch is clear. LangGraph entrypoints and repo-local `.omx/state/langgraph/` state SHALL be used when graph phases, checkpoint gates, frozen briefs, survivor queues, or tracked LangGraph thread state are required. `.omx/state/selectors/active.json` SHALL remain the active selector authority for automatic durable-team adoption; compatibility records SHALL be context only. Durable artifacts, frozen briefs, and survivor queues SHALL be written to repo-local state or documented artifact paths rather than only transient chat context. The repository SHALL provide `tools/check_durable_artifact_state_surfaces.py` to validate repository policy surfaces and saved run-summary, worker-brief, or durable handoff evidence for these boundaries.
 
 #### Scenario: Graph-shaped checkpoint work is selected
 - **WHEN** the task requires checkpoint gates, frozen briefs, or survivor queues
 - **THEN** the durable workflow SHALL use LangGraph entrypoints and repo-local `.omx/state/langgraph/` state
 - **AND** the durable artifacts SHALL have documented artifact paths or repo-local state locations
+- **AND** automatic durable-team adoption SHALL cite `.omx/state/selectors/active.json` rather than compatibility records alone
 
 ### Requirement: Research handoff and adversarial review SHALL persist bounded handoffs
 Open-ended work SHALL keep research and implementation in different roles. After research fan-in, the result SHALL be persisted as a frozen implementation brief with scope, non-goals, acceptance evidence, ownership boundaries, and unresolved risks before implementation starts. `bug-finder`, `bug-rebutter`, and `bug-judge` SHALL remain burst, read-only, leader-side roles. Their survivors SHALL be persisted as an adversarial-review survivor queue for debugger-lane follow-up instead of keeping the bug triad alive as persistent workers. LangGraph, AutoGen and CrewAI SHALL be treated as general programmable orchestration runtimes, not native Codex-subagent equivalents.

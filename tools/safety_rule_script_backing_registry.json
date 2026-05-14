@@ -240,6 +240,24 @@
       "description": "Requires delegated expert/worker work to be concrete, bounded, self-contained, non-duplicative, and paired with leader critical-path planning and wait discipline evidence."
     },
     {
+      "id": "durable-artifact-state-surfaces",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_durable_artifact_state_surfaces.py"
+      ],
+      "guard_steps": [
+        "check_durable_artifact_state_surfaces"
+      ],
+      "description": "Requires explorer/worker boundaries, LangGraph state surfaces, active selector authority, frozen briefs, survivor queues, and durable artifacts to be persisted outside transient chat context."
+    },
+    {
       "id": "custom-agent-toml-schema",
       "owner_level": "user",
       "status": "implemented",

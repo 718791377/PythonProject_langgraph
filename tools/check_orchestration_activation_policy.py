@@ -201,7 +201,7 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "The main Codex CLI session SHALL remain the leader",
         "Native Codex SHALL remain the base layer",
         "Delegation SHALL preserve critical-path leader work",
-        "Exploration, code-change delegation, and durable artifact persistence SHALL stay distinct",
+        "Exploration, code-change delegation, and durable artifact persistence SHALL stay script-checkable",
         "Research handoff and adversarial review SHALL persist bounded handoffs",
         "analystxN",
         "skills are not native subagents",

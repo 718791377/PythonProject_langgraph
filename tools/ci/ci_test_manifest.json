@@ -5,6 +5,7 @@
     "check_local_mirrored_ci_gate.test.py",
     "check_remote_publication_approval_policy.test.py",
     "check_delegation_wait_discipline_evidence.test.py",
+    "check_durable_artifact_state_surfaces.test.py",
     "check_plugin_modules_skill.test.py",
     "evidence_intake_pipeline.test.py",
     "evidence_adapters.test.py"
