@@ -60,7 +60,7 @@ why=<concrete reason>
 
 Do not use missing-reminder reasons such as "the user did not request parallelism" or "the user did not request subagents". Use task phase, scope, thresholds, blockers, or main-session takeover as the reason.
 
-Explicit `omx` and `LangGraph` requests are hard routing directives for the current task flow. If the capability chain, preflight, and task thresholds are satisfied, the trace must report the selected lane as `selected` or `running` and must not remain in explanation-only mode. If the requested lane is not adopted, the trace must report a named blocker or unmet threshold such as `blocked:backend_not_ready`, `blocked:preflight_failed`, `blocked:helper_missing`, `blocked:write_ownership_conflict`, or `threshold_not_met:no_frozen_plan`. The trace must not describe an explicit directive as an optional preference.
+Explicit `omx` and `LangGraph` requests are hard routing directives for the current task flow. If the capability chain, preflight, and task thresholds are satisfied, the trace must report the selected lane as `selected` or `running` and must not remain in explanation-only mode. If the requested lane is not adopted, the trace must report a named blocker or unmet threshold such as `blocked:backend_not_ready`, `blocked:preflight_failed`, `blocked:helper_missing`, `blocked:write_ownership_conflict`, or `threshold_not_met:no_frozen_plan`. The trace must not describe an explicit directive as an optional preference. Saved hard-directive adoption evidence is checked by `tools/check_role_routing_directive_evidence.py`.
 
 ## Expert and durable evidence rules
 
@@ -91,7 +91,7 @@ Native Codex subagents, workflow skills, plugin-provided skills, profile helpers
 
 ## Advanced routing enforcement boundaries
 
-Smallest-sufficient role selection is mandatory. Add expert roles only when the trigger is present and the output materially advances the current phase. Bounded multi-face research remains analyst-fanout-first with homogeneous `analystxN`; escalate to `architect`, `planner`, or `writer` only after analyst fan-in shows architecture, execution-ordering, or document-finalization work.
+Smallest-sufficient role selection is mandatory. Add expert roles only when the trigger is present and the output materially advances the current phase. Bounded multi-face research remains analyst-fanout-first with homogeneous `analystxN`; escalate to `architect`, `planner`, or `writer` only after analyst fan-in shows architecture, execution-ordering, or document-finalization work. Saved role-routing evidence is checked by `tools/check_role_routing_directive_evidence.py`.
 
 Native Codex subagents, workflow skills, plugin-provided skills, profile helpers, durable workers, and LangGraph nodes are separate surfaces. Skills are not native subagents: they load from `SKILL.md` files and route procedural instructions, but they do not count as expert evidence by themselves. Profile helper hard-load or soft-load changes visible instructions; it does not start durable workers or satisfy persistent-team thresholds. If follow-up is needed after a completed expert was absorbed and closed, spawn a fresh agent unless the user explicitly requested preservation or the plan records a preserved-thread reason. Saved evidence for this boundary is checker-backed by `tools/check_expert_lifecycle_wait_pacing_evidence.py`.
 
@@ -109,7 +109,7 @@ Open-ended work must keep research and implementation in different roles. Resear
 
 ## Script control
 
-This policy is backed by `tools/check_orchestration_activation_policy.py`, `tools/check_capability_switch_chain.py`, the saved-trace evidence validator `tools/check_orchestration_trace_evidence.py`, the expert lifecycle/wait/pacing evidence checker `tools/check_expert_lifecycle_wait_pacing_evidence.py`, the delegation/wait discipline evidence checker `tools/check_delegation_wait_discipline_evidence.py`, the durable artifact/state-surface evidence checker `tools/check_durable_artifact_state_surfaces.py`, and the native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py`; the policy boundary is registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
+This policy is backed by `tools/check_orchestration_activation_policy.py`, `tools/check_capability_switch_chain.py`, the saved-trace evidence validator `tools/check_orchestration_trace_evidence.py`, the role/directive evidence checker `tools/check_role_routing_directive_evidence.py`, the expert lifecycle/wait/pacing evidence checker `tools/check_expert_lifecycle_wait_pacing_evidence.py`, the delegation/wait discipline evidence checker `tools/check_delegation_wait_discipline_evidence.py`, the durable artifact/state-surface evidence checker `tools/check_durable_artifact_state_surfaces.py`, and the native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py`; the policy boundary is registered in `tools/safety_rule_script_backing_registry.json`. Prompt reminders alone are not sufficient for this boundary.
 
 ## Active selector refresh reporting
 

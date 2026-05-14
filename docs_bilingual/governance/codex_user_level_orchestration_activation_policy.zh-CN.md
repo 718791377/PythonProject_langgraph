@@ -61,7 +61,7 @@ why=<concrete reason>
 
 不得使用“用户没有要求并行”或“用户没有要求子代理”等 missing-reminder reasons。必须用任务阶段、范围、阈值、blocker 或 main-session takeover 作为原因。
 
-显式 `omx` 与 `LangGraph` 请求是当前 task flow 的 hard routing directives。若 capability chain、preflight 与 task thresholds 均满足，trace 必须把所选 lane 报告为 `selected` 或 `running`，不得停留在 explanation-only mode。若请求 lane 未被采用，trace 必须报告具名 blocker 或未满足阈值，例如 `blocked:backend_not_ready`、`blocked:preflight_failed`、`blocked:helper_missing`、`blocked:write_ownership_conflict` 或 `threshold_not_met:no_frozen_plan`。trace 不得把显式 directive 描述为 optional preference。
+显式 `omx` 与 `LangGraph` 请求是当前 task flow 的 hard routing directives。若 capability chain、preflight 与 task thresholds 均满足，trace 必须把所选 lane 报告为 `selected` 或 `running`，不得停留在 explanation-only mode。若请求 lane 未被采用，trace 必须报告具名 blocker 或未满足阈值，例如 `blocked:backend_not_ready`、`blocked:preflight_failed`、`blocked:helper_missing`、`blocked:write_ownership_conflict` 或 `threshold_not_met:no_frozen_plan`。trace 不得把显式 directive 描述为 optional preference。已保存的 hard-directive adoption evidence 由 `tools/check_role_routing_directive_evidence.py` 检查。
 
 ## Expert 与 durable 证据规则
 
@@ -91,7 +91,7 @@ Native Codex subagents、workflow skills、plugin-provided skills、profile help
 
 ## Advanced routing enforcement boundaries
 
-Smallest-sufficient role selection 是强制规则。只有触发条件存在且输出能实质推进当前阶段时，才添加 expert role。bounded multi-face research 仍采用 analyst-fanout-first，首轮使用同质 `analystxN`；只有在 analyst fan-in 显示 architecture、execution-ordering 或 document-finalization work 后，才升级到 `architect`、`planner` 或 `writer`。
+Smallest-sufficient role selection 是强制规则。只有触发条件存在且输出能实质推进当前阶段时，才添加 expert role。bounded multi-face research 仍采用 analyst-fanout-first，首轮使用同质 `analystxN`；只有在 analyst fan-in 显示 architecture、execution-ordering 或 document-finalization work 后，才升级到 `architect`、`planner` 或 `writer`。已保存的 role-routing evidence 由 `tools/check_role_routing_directive_evidence.py` 检查。
 
 Native Codex subagents、workflow skills、plugin-provided skills、profile helpers、durable workers 与 LangGraph nodes 是 separate surfaces。skills 不是 native subagents：skills 从 `SKILL.md` 文件加载并路由 procedural instructions，但它们本身不算 expert evidence。Profile helper 的 hard-load 或 soft-load 只改变可见 instructions；它不会启动 durable workers，也不满足 persistent-team thresholds。Completed expert 被吸收并关闭后，如需 follow-up work，默认 spawn fresh agent，除非用户显式要求保留线程，或计划记录了 preserved-thread reason。该边界的保存版 evidence 由 `tools/check_expert_lifecycle_wait_pacing_evidence.py` 进行 checker-backed 校验。
 
@@ -109,7 +109,7 @@ Open-ended work 必须保持 research 与 implementation 角色分离。Research
 
 ## Script control
 
-本政策由 `tools/check_orchestration_activation_policy.py`、`tools/check_capability_switch_chain.py`、保存版 trace evidence validator `tools/check_orchestration_trace_evidence.py`、expert lifecycle/wait/pacing evidence checker `tools/check_expert_lifecycle_wait_pacing_evidence.py`、delegation/wait discipline evidence checker `tools/check_delegation_wait_discipline_evidence.py`、durable artifact/state-surface evidence checker `tools/check_durable_artifact_state_surfaces.py` 与 native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py` 支撑，并登记在 `tools/safety_rule_script_backing_registry.json`。仅靠提示词提醒不足以保护这个边界。
+本政策由 `tools/check_orchestration_activation_policy.py`、`tools/check_capability_switch_chain.py`、保存版 trace evidence validator `tools/check_orchestration_trace_evidence.py`、role/directive evidence checker `tools/check_role_routing_directive_evidence.py`、expert lifecycle/wait/pacing evidence checker `tools/check_expert_lifecycle_wait_pacing_evidence.py`、delegation/wait discipline evidence checker `tools/check_delegation_wait_discipline_evidence.py`、durable artifact/state-surface evidence checker `tools/check_durable_artifact_state_surfaces.py` 与 native custom-agent TOML schema checker `tools/check_custom_agent_toml_schema.py` 支撑，并登记在 `tools/safety_rule_script_backing_registry.json`。仅靠提示词提醒不足以保护这个边界。
 
 ## Active selector refresh reporting
 

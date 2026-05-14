@@ -274,6 +274,24 @@
         "check_custom_agent_toml_schema"
       ],
       "description": "Requires user-level and repo-local standalone native Codex custom-agent TOMLs to parse and define non-empty name, description, and developer_instructions fields."
+    },
+    {
+      "id": "role-routing-directive-evidence",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md",
+        "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_role_routing_directive_evidence.py"
+      ],
+      "guard_steps": [
+        "check_role_routing_directive_evidence"
+      ],
+      "description": "Requires explicit omx/LangGraph directives to adopt selected/running lanes or report named blockers, and requires smallest-sufficient role selection with analyst-first bounded multi-face research."
     }
   ]
 }
