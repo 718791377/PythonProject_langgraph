@@ -8,6 +8,10 @@
     "check_delegation_wait_discipline_evidence.test.py",
     "check_durable_artifact_state_surfaces.test.py",
     "check_leader_session_scope_evidence.test.py",
+    "check_capability_switch_chain.test.py",
+    "check_orchestration_trace_evidence.test.py",
+    "check_expert_lifecycle_wait_pacing_evidence.test.py",
+    "check_custom_agent_toml_schema.test.py",
     "check_plugin_modules_skill.test.py",
     "evidence_intake_pipeline.test.py",
     "evidence_adapters.test.py"

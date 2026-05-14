@@ -111,6 +111,7 @@ def main() -> int:
     delegation_wait_discipline_evidence_script = root / "tools" / "check_delegation_wait_discipline_evidence.py"
     durable_artifact_state_surfaces_script = root / "tools" / "check_durable_artifact_state_surfaces.py"
     leader_session_scope_evidence_script = root / "tools" / "check_leader_session_scope_evidence.py"
+    capability_switch_chain_script = root / "tools" / "check_capability_switch_chain.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
@@ -152,6 +153,8 @@ def main() -> int:
         raise SystemExit(f"Missing durable artifact/state-surface evidence check script: {durable_artifact_state_surfaces_script}")
     if not leader_session_scope_evidence_script.exists():
         raise SystemExit(f"Missing leader/session scope evidence check script: {leader_session_scope_evidence_script}")
+    if not capability_switch_chain_script.exists():
+        raise SystemExit(f"Missing capability-switch chain check script: {capability_switch_chain_script}")
     if not windows_cleanup_output_control_script.exists():
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
     if not plugin_modules_skill_script.exists():
@@ -296,6 +299,11 @@ def main() -> int:
                 "check_leader_session_scope_evidence",
                 [str(python_exe), str(leader_session_scope_evidence_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during leader/session scope evidence verification.",
+            ),
+            (
+                "check_capability_switch_chain",
+                [str(python_exe), str(capability_switch_chain_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during capability-switch chain verification.",
             ),
             (
                 "check_windows_cleanup_output_control",
