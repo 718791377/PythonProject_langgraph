@@ -1,0 +1,11 @@
+﻿schema: spec-driven
+created: 2026-05-14
+x_change_class: code
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/check_delegation_wait_discipline_evidence.py
+  - test/check_delegation_wait_discipline_evidence.test.py
+  - tools/check_orchestration_activation_policy.py
+  - tools/run_openspec_guard.py
+  - tools/safety_rule_script_backing_registry.json
+  - tools/ci/ci_test_manifest.json
