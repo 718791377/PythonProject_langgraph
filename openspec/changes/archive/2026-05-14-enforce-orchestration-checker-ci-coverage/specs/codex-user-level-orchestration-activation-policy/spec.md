@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Orchestration enforcement checkers are wired into shared CI
 
@@ -15,3 +15,4 @@ The repository SHALL run existing automatic-orchestration enforcement checker te
 - **GIVEN** `tools/run_openspec_guard.py --root . --json` is run
 - **WHEN** user-level capability state and repo-local backend context are available or absent
 - **THEN** `check_capability_switch_chain.py` is invoked as an OpenSpec guard step and reports violations or warnings through the guard payload.
+
