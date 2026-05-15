@@ -1,16 +1,55 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.16
+version: 0.17
 status: active
 owner: codex-orchestration
-date: 2026-05-11
+date: 2026-05-15
 ---
 
 # 自动协同路由强制化实施计划
 
 ## Active 状态说明
 
-本文档是 active implementation plan。active 表示它是当前已采用的后续 enforcement 实施计划；不表示本文档中的每一项 runtime enforcement 都已经完成。
+本文档是自动协同路由强制化的 active baseline。`status: active` 表示它仍然是当前与未来会话采用的规则和验收清单；它本身不是完成声明。
+
+截至 2026-05-15，本文档最初规划的 enforcement 实施包已经在本地通过下方第 0 节列出的 OpenSpec changes 完成并归档。未来如果发现新的回归或缺口，应基于这个 active baseline 新开一个有边界的小步 change，而不是重新打开已经归档的实施切片。
+
+## 0. 2026-05-15 完成状态快照
+
+当前本地结论：本计划在已确认的仓库 source-of-truth surfaces、生成式用户级模板、脚本化 policy guards 与回归测试层面已经完成。本文档继续保持 active，是因为它仍然定义默认行为和后续工作必须保持的验收标准。
+
+当前完成证据包括：
+
+- active OpenSpec changes：无（本次复核时 `openspec list --json` 返回空 change 列表）；
+- 稳定 policy 与 startup surfaces：已更新 `AGENTS.md`、`docs_bilingual/project_startup_summary.*`、`docs_bilingual/governance/codex_user_level_orchestration_activation_policy.*` 以及相关 OpenSpec stable specs；
+- 脚本化 enforcement：已由 `tools/check_orchestration_activation_policy.py`、`tools/check_orchestration_trace_evidence.py`、`tools/check_capability_switch_chain.py`、`tools/check_expert_lifecycle_wait_pacing_evidence.py`、`tools/check_role_routing_directive_evidence.py`、`tools/check_agent_skill_profile_surface_boundaries.py`、`tools/check_custom_agent_toml_schema.py`、`tools/check_leader_session_scope_evidence.py`、`tools/check_delegation_wait_discipline_evidence.py`、`tools/check_durable_artifact_state_surfaces.py`、`tools/check_effective_lane_fit_evidence.py`、`tools/check_fanout_write_ownership_evidence.py` 与 OpenSpec guard wiring 覆盖；
+- 生成式用户级 source templates：已在 `tools/install-codex-user-level-team-mode.ps1` 中固化，并由 `test/install-codex-user-level-team-mode.test.ps1` 覆盖；
+- 已归档实施切片：
+  - `openspec/changes/archive/2026-05-11-enforce-automatic-orchestration-routing/`；
+  - `openspec/changes/archive/2026-05-11-enforce-active-selector-status-helper/`；
+  - `openspec/changes/archive/2026-05-12-enforce-hard-routing-directive-adoption/`；
+  - `openspec/changes/archive/2026-05-13-enforce-capability-switch-chain/`；
+  - `openspec/changes/archive/2026-05-13-enforce-custom-agent-toml-schema/`；
+  - `openspec/changes/archive/2026-05-13-enforce-expert-lifecycle-wait-pacing-evidence/`；
+  - `openspec/changes/archive/2026-05-13-enforce-orchestration-trace-evidence-validator/`；
+  - `openspec/changes/archive/2026-05-13-extend-orchestration-activation-checker-coverage/`；
+  - `openspec/changes/archive/2026-05-14-enforce-agent-skill-profile-surface-boundaries/`；
+  - `openspec/changes/archive/2026-05-14-enforce-delegation-wait-discipline/`；
+  - `openspec/changes/archive/2026-05-14-enforce-durable-artifact-state-surfaces/`；
+  - `openspec/changes/archive/2026-05-14-enforce-effective-lane-fit-evidence/`；
+  - `openspec/changes/archive/2026-05-14-enforce-fanout-write-ownership-evidence/`；
+  - `openspec/changes/archive/2026-05-14-enforce-leader-session-scope-evidence/`；
+  - `openspec/changes/archive/2026-05-14-enforce-orchestration-checker-ci-coverage/`；
+  - `openspec/changes/archive/2026-05-14-enforce-role-directive-routing-evidence/`；
+  - `openspec/changes/archive/2026-05-15-harden-global-automatic-collaboration-default/`；
+- 远端发布：与本地计划完成度分离，仍必须获得明确 GitLab/GitHub 发布授权。
+
+完成后仍然成立的剩余边界：
+
+1. native `spawn_agent` 仍受 live platform/tool contract 约束；被阻塞时 trace 必须写 `experts=blocked:platform_subagent_invocation_constraint`，然后使用合格 durable lane 或主会话接管；
+2. LangGraph 是 ready default backend 不等于 persistent team 正在运行；durable workflow 与 team launch 仍受阈值约束；
+3. 用户级 Codex 目录下的生成文件仍可能需要执行 installer refresh 才能同步 source-template 变化，仓库模板仍是 source of truth；
+4. 未来每个具体任务的 orchestration decision 仍需要 activation trace、threshold evidence，以及适用时的 checker-backed evidence。
 
 ## 1. 背景
 
@@ -475,51 +514,61 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 ## 20. 实施阶段
 
-### Phase 0 - 记录并保护计划
+### Phase 0 - 记录并保护计划 - status: complete
 
-- 新增本双语计划。
+已完成结果：
+
+- 新增并注册本双语 active implementation plan。
 - 忽略 `log202605111306.md` 之类的本地 transcript 日志。
-- 确保 canary guard 忽略 root `.gitignore` 已忽略的本地日志，避免 ignored transcript 破坏 local gate。
+- 保持 canary guard 与 root `.gitignore` 的本地日志忽略规则一致，避免 ignored transcript 破坏 local gate。
 
-### Phase 1 - Policy surfaces
+### Phase 1 - Policy surfaces - status: complete
+
+已完成结果：
 
 - 更新 `AGENTS.md`。
 - 更新 `docs_bilingual/project_startup_summary.*`。
-- 新增或更新 orchestration activation policy 文档。
-- 更新 team-mode 和 LangGraph runtime policy surfaces。
+- 新增并迭代 bilingual orchestration activation policy 文档。
+- 按需更新 team-mode、quick-reference 与 LangGraph 相关 policy surfaces。
+- 将全局自动协同默认规则写入生成式用户级 team-mode source templates，确保后续 installer refresh 不会丢失。
 
-### Phase 2 - Script-backed enforcement
+### Phase 2 - Script-backed enforcement - status: complete for planned baseline
 
-- 增加 forbidden routing reason 的 checker 覆盖。
-- 增加 durable-team phase thresholds 与首轮阈值解释的 checker 覆盖。
-- 增加 capability-chain consistency 的 checker 覆盖。
-- 增加 expert-timeout evidence claims 的 checker 覆盖。
-- 增加 completed-agent closure、bounded wait windows、liveness/stall handling 与 upstream pacing labels 的 checker 覆盖。
-- 增加 fan-out bounds、写入所有权隔离、leader-side spawning 表述与 one-backend-family durable task 的 checker 覆盖。
-- 增加 frozen research handoff briefs、adversarial-review survivor queues 与 adjacent-runtime terminology boundaries 的 checker 覆盖。
-- 增加 hard routing directives、actual adoption versus explanation-only mode 与 smallest-sufficient role selection 的 checker 覆盖。
-- 增加 native-agent versus skill/profile/plugin boundaries、custom agent TOML fields、fresh follow-up agent use 与 selector-source handling 的 checker 覆盖。
-- 增加 main-session leader ownership、no separate persistent leader pane、startup non-autolaunch、task-flow scoped adoption 与 legacy-session compatibility boundaries 的 checker 覆盖。
-- 增加 native Codex as base layer、oh-my-codex as wrapper/workflow layer、capability-switch chain values 与 `native_omx` / LangGraph effective lane choice 的 checker 覆盖。
-- 增加 delegation design quality、critical-path local work、等待期间 non-overlapping leader work、duplicate-work prevention 与 sparse `wait_agent` use 的 checker 覆盖。
-- 增加 explorer versus code-change worker boundaries、LangGraph entrypoints、repo-local `.omx/state/langgraph/` state、compatibility record usage 与 durable artifact persistence 的 checker 覆盖。
-- 新增或更新 selector refresh/status helper 行为。
+已完成的 checker 或 test 覆盖包括：
 
-### Phase 3 - Runtime integration
+- forbidden missing-reminder routing reasons；
+- durable-team phase thresholds 与 first-activation threshold explanations；
+- capability-chain consistency；
+- expert-timeout evidence claims、completed-agent closure、bounded wait windows、liveness/stall handling 与 upstream pacing labels；
+- fan-out bounds、write ownership isolation、leader-side spawning language 与 one-backend-family durable tasks；
+- frozen research handoff briefs、adversarial-review survivor queues、adjacent-runtime terminology boundaries 与 durable artifact/state surfaces；
+- hard routing directives、actual adoption versus explanation-only mode 与 smallest-sufficient role selection；
+- native-agent versus skill/profile/plugin boundaries、custom agent TOML fields、fresh follow-up agent use 与 selector-source handling；
+- main-session leader ownership、no separate persistent leader pane、startup non-autolaunch、task-flow scoped adoption 与 legacy-session compatibility boundaries；
+- native Codex as base layer、oh-my-codex as wrapper/workflow layer、capability-switch chain values 与 `native_omx` / LangGraph effective lane choice；
+- delegation design quality、critical-path local work、等待期间 non-overlapping leader work、duplicate-work prevention 与 sparse `wait_agent` use；
+- explorer versus code-change worker boundaries、LangGraph entrypoints、repo-local `.omx/state/langgraph/` state、compatibility record usage 与 durable artifact persistence；
+- repo-local `.omx/state/selectors/active.json` 缺失时的 selector refresh/status reporting。
 
-- 确保新会话、session reload、Codex restart 和 resume 会话输出必填 trace 字段。
-- 确保已有会话在 session reload、Codex restart、phase change、resume、continue、`.omx` state detection、expert timeout 时重新做 activation check。
-- 确保 LangGraph-ready 会话使用 LangGraph 作为默认 durable backend。
+### Phase 3 - Runtime integration - status: implemented as source-of-truth and generated-template enforcement
 
-## 21. 拟实施范围
+已完成结果：
 
-本计划确认后，以 OpenSpec change `enforce-automatic-orchestration-routing` 落地：
+- Startup 与 governance surfaces 要求新会话、session reload、Codex restart、resume、phase change、`continue`、`.omx` state detection、expert timeout/stall 时输出 activation trace。
+- LangGraph-ready 会话必须把 LangGraph 报告为默认 durable backend。
+- 受管理的用户级 team-mode 模板已经携带全局自动协同默认规则。
 
-1. 更新 `AGENTS.md` 的 orchestration activation 规则。
-2. 更新 `docs_bilingual/project_startup_summary.*` 的冷启动提醒。
-3. 更新 team-mode / LangGraph runtime 相关 governance 或 implementation plan。
-4. 新增或更新 orchestration activation policy 文档。
-5. 增加 checker / 测试，防止以下回归：
+运行边界说明：live platform constraint 仍可能阻塞 native expert spawning，durable/persistent-team launch 仍需要任务阈值。本实施完成的是报告、fallback 与生成模板 enforcement；它不会绕过工具契约，也不会强制每个任务都进 team。
+
+## 21. 已实施范围与收口证据
+
+原 OpenSpec change `enforce-automatic-orchestration-routing` 已经实施、归档，并由后续 enforcement slices 扩展。当前已落地范围如下：
+
+1. `AGENTS.md` 的 orchestration activation 规则已更新。
+2. `docs_bilingual/project_startup_summary.*` 的冷启动提醒已更新。
+3. Team-mode、quick-reference、LangGraph 与 orchestration activation governance surfaces 已更新。
+4. 生成式用户级 team-mode source templates 已固化全局自动协同默认规则。
+5. checker / test 已覆盖以下回归：
    - 用“用户没有要求并行/子代理”解释不启动 experts；
    - LangGraph ready 时仍把 backend 当成可选或不可用；
    - expert timeout 后把未返回结果当作验证证据；
@@ -556,7 +605,9 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
    - read-only explorer work 替代了清楚的 bounded code-change worker task；
    - LangGraph checkpoint work 没有使用 LangGraph entrypoints 或 repo-local `.omx/state/langgraph/` state；
    - durable artifacts、frozen briefs 或 survivor queues 只存在于 transient chat context。
-6. 评估并修复 repo-local `.omx/state/selectors/active.json` 缺失时的刷新/报告规则。
+6. repo-local `.omx/state/selectors/active.json` 缺失会被当成 selector refresh/reporting gap，而不是 LangGraph 不可用证据。
+
+未来如果复核发现新的缺口，应新开 bounded OpenSpec change。不要仅因为本文档仍是 active baseline，就把已经完成的实施包重新解释为未完成。
 
 ## 22. 证据与测试映射
 
@@ -636,7 +687,7 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - 不把 LangGraph official package 安装进仓库 `.venv`；仓库规则仍优先使用 user-level shared LangGraph venv。
 - 不绕过 OpenSpec / local gate / local MR review。
 - 不在 tmux 不可用时假装启动 pane-style persistent team。
-- 不把本计划当成 runtime enforcement 已完成的证明。
+- 不把 `status: active` 单独当成完成证明；完成声明必须引用本文档中的归档 change 列表、stable policy surfaces 与 checker/test evidence。
 
 ## 25. 验收标准
 
@@ -674,10 +725,11 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - Read-only explorer work 用于 specific mapping questions；bounded implementation changes 优先使用具备 isolated ownership 的 code-change workers。
 - LangGraph graph/checkpoint work 使用 LangGraph entrypoints 与 repo-local `.omx/state/langgraph/` state，compatibility records 仍仅作为 context。
 - Durable artifacts、frozen briefs 与 survivor queues 必须持久化到 repo-local state 或 documented artifact paths。
+- 计划完成声明必须引用已归档 OpenSpec changes 与当前 checker/test evidence，而不是只引用 `status: active`。
 
 ## 26. 适用范围与权威边界
 
-本计划是 implementation-plan 记录。只有在后续 OpenSpec change 更新 policy surfaces、helper scripts 和 checks 后，它才会变成完整 runtime contract。
+本计划是 active implementation-plan 记录，也是未来 enforcement 复核的 baseline。原后续 OpenSpec implementation package 已经更新 policy surfaces、helper scripts、生成式 source templates 与 checks；这些更高权威 surfaces 才是 runtime contract。本文档继续作为该 contract 的验收清单与变更历史索引。
 
 权威顺序：
 
