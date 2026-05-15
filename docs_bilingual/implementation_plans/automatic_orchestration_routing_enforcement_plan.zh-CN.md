@@ -425,9 +425,9 @@ Durable-state 与相邻 runtime 边界：
 
 当 LangGraph ready 时，它就是默认 backend。小任务仍然可以是 `durable_workflow=not_needed` 且 `persistent_team=not_needed`。这表示任务不需要这些执行面，不表示 LangGraph 关闭。
 
-## 16. 当前本地检查结论
+## 16. 检查基线与当前复核结论
 
-2026-05-11 本地只读检查显示：
+2026-05-11 本地只读检查建立了最初的能力基线：
 
 ```text
 C:\Users\lenovo\.codex\state\user-level-team-mode.json:
@@ -450,7 +450,18 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
   missing at inspection time
 ```
 
-解释：user-level LangGraph backend 已可用且应视为默认常开；repo-local active selector 缺失是需要治理/辅助脚本修复的状态刷新问题，不能被解释成 LangGraph backend 不可用。
+解释：user-level LangGraph backend 当时已经可用，并应视为默认 backend。repo-local active selector 缺失是状态刷新或报告缺口，不能被解释成 LangGraph backend 不可用。
+
+2026-05-15 当前复核结论：
+
+- 本 implementation plan frontmatter 为 `version: 0.17`、`status: active`、`date: 2026-05-15`。
+- 第 0 节记录了计划完成状态快照，并列出已归档实施切片。
+- 第 20 节把已规划实施阶段标记为当前约定 baseline 下完成。
+- 第 21 节记录已实施范围与收口证据。
+- `tools/check_implementation_plan_rules.py --root . --json` 已通过双语 implementation-plan registry 检查。
+- 2026-05-15 将 version 0.17 合入本地 main 后，`tools/run_openspec_guard.py --root . --tool codex --json` 与 `tools/check_worktree_session_hygiene.py --root . --json` 均已通过。
+
+结论：本方案在当前已约定 baseline 下已经完善并完成；它继续保持 active，是作为持续治理与验收 surface。未来发现新缺口时，应新开有边界的小步 change 处理。
 
 ## 17. Active selector 处理规则
 

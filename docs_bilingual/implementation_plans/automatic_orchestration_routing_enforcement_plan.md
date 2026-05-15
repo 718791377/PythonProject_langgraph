@@ -425,9 +425,9 @@ These terms must not be collapsed:
 
 When LangGraph is ready, it is the default backend. A small task may still have `durable_workflow=not_needed` and `persistent_team=not_needed`. That means the task does not need those execution surfaces; it does not mean LangGraph is off.
 
-## 16. Current local inspection result
+## 16. Inspection baseline and current review result
 
-Read-only inspection on 2026-05-11 showed:
+Read-only inspection on 2026-05-11 established the original capability baseline:
 
 ```text
 C:\Users\lenovo\.codex\state\user-level-team-mode.json:
@@ -450,7 +450,18 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
   missing at inspection time
 ```
 
-Interpretation: the user-level LangGraph backend is available and should be treated as the default backend. A missing repo-local active selector is a state-refresh or reporting gap; it must not be interpreted as LangGraph backend unavailability.
+Interpretation: the user-level LangGraph backend was available and should be treated as the default backend. A missing repo-local active selector is a state-refresh or reporting gap; it must not be interpreted as LangGraph backend unavailability.
+
+Current 2026-05-15 review result:
+
+- The implementation-plan frontmatter is `version: 0.17`, `status: active`, and `date: 2026-05-15`.
+- Section 0 records the plan-completion snapshot and lists the archived implementation slices.
+- Section 20 marks the planned implementation phases as complete for the agreed baseline.
+- Section 21 records the implemented scope and closure evidence.
+- `tools/check_implementation_plan_rules.py --root . --json` passes for the bilingual implementation-plan registry.
+- `tools/run_openspec_guard.py --root . --tool codex --json` and `tools/check_worktree_session_hygiene.py --root . --json` passed after the 2026-05-15 local-main integration of version 0.17.
+
+Conclusion: this plan is complete for the currently agreed baseline. It remains active as a living governance and acceptance surface; future gaps should be handled through new bounded changes.
 
 ## 17. Active selector handling
 
