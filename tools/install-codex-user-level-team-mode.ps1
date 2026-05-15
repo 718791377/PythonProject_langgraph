@@ -1139,6 +1139,9 @@ You are Team Leader. The current main Codex CLI session is the leader lane. Do n
 - Do not describe raw Codex as auto-spawning specialist roles by default.
 - Wrapped `codex` startup reads user-level global state before forwarding into native Codex.
 - `codex-native` is the explicit bypass path for direct native Codex startup.
+- Automatic collaboration is the default for all projects and all user-level Codex sessions. The user does not need to repeat phrases such as `use experts`, `use durable_team`, `use persistent team`, `parallel`, or `subagents`.
+- Do not cite missing user reminders such as `the user did not request parallelism/subagents/experts` as the reason to skip orchestration.
+- If native `spawn_agent` invocation is blocked by the current platform/tool contract, report `experts=blocked:platform_subagent_invocation_constraint` and continue with an eligible durable lane, a narrower available expert path, or explicit main-session takeover.
 - On the first substantive turn of a new wrapped session, and on every session reload or Codex restart, run an orchestration activation check before deep execution resumes:
   - classify the task phase
   - decide whether expert native subagents are needed now
@@ -3542,6 +3545,10 @@ function Get-CodexUserLevelDeveloperInstructions {
   }
 
   $lines += '- Treat the current main Codex CLI session as the team leader.'
+  $lines += '- Automatic collaboration is the default for all projects and all user-level Codex sessions.'
+  $lines += '- The user does not need to repeat phrases such as `use experts`, `use durable_team`, `use persistent team`, `parallel`, or `subagents` for routing to evaluate collaboration.'
+  $lines += '- Do not cite missing user reminders such as `the user did not request parallelism/subagents/experts` as the reason to skip orchestration.'
+  $lines += '- If native `spawn_agent` invocation is blocked by the current platform/tool contract, report `experts=blocked:platform_subagent_invocation_constraint` and continue with an eligible durable lane, a narrower available expert path, or explicit main-session takeover.'
   $lines += '- On the first substantive turn of a new wrapped session, and on every session reload or Codex restart, run an orchestration activation check before deep execution resumes.'
   $lines += '- Orchestration activation check requirements:'
   $lines += '  - classify the task phase'
@@ -12669,6 +12676,18 @@ function Get-TeamPlaybookContent {
 
 For the minimal high-frequency command card, see `team-mode-quick-reference.md`.
 
+## Global automatic collaboration default
+
+- Automatic collaboration is the default behavior for all projects and all user-level Codex sessions.
+- The user does not need to repeat phrases such as "use experts", "use durable_team", "use persistent team", "parallel", or "subagents" for automatic routing to apply.
+- On each activation event, classify the task phase and evaluate whether the smallest sufficient collaboration surface should include native experts, `native_omx`, LangGraph durable workflow, or a persistent team.
+- Qualifying signals include broad scope, high risk, multi-document updates, multi-stage execution, bounded multi-face research, independent execution slices, cross-module design, stabilization-heavy defects, or verification-heavy acceptance.
+- Do not cite "the user did not request parallelism/subagents/experts" as a reason to skip orchestration. Valid reasons are task phase, no frozen plan, insufficient execution slices, backend not ready, concrete preflight failure, write-ownership conflict, explicit user disablement, or main-session takeover.
+- If native `spawn_agent` invocation is blocked by the current platform/tool contract, report `experts=blocked:platform_subagent_invocation_constraint`; then continue with an eligible durable backend, a narrower available expert path, or explicit main-session takeover.
+- If `subagent_routing!=off`, `oh_my_codex=on`, `langgraph=on`, and LangGraph readiness is true, report `backend_default=langgraph` for graph-shaped durable work. This readiness does not imply that a persistent team is already running.
+- Durable/persistent team selection is threshold-gated: normally `frozen_plan=true` plus 2+ mostly independent execution slices for `execute-parallel` or `integrate-converge`; 1+ blocking issues for debugger lanes during `stabilize`.
+- Expert timeout, stall, or upstream pacing is non-evidence. Continue bounded waits, request progress, respawn a narrower expert, hand off to an eligible durable lane, or record main-session takeover. Never treat timeout as successful fan-in.
+
 ## Mode states
 
 - `oh_my_codex=on`, `subagent_routing=auto`
@@ -13151,6 +13170,15 @@ function Get-TeamQuickReferenceContent {
 This card is the short companion to `team-mode-playbook.md`.
 
 Use the full playbook when you need policy detail, lifecycle semantics, or backend-selection reasoning.
+
+## Global Automatic Collaboration Default
+
+- Automatic collaboration is on by default for all projects and all user-level Codex sessions.
+- Do not wait for the user to repeat "use experts", "parallel", "durable_team", or "persistent team".
+- For qualifying tasks, automatically evaluate the smallest sufficient collaboration surface: native experts, `native_omx`, LangGraph durable workflow, and persistent team.
+- Never use "the user did not request subagents/parallelism" as the reason to skip orchestration.
+- If native `spawn_agent` is blocked by a platform/tool constraint, report `experts=blocked:platform_subagent_invocation_constraint` and continue through an eligible durable lane or main-session takeover.
+- Persistent/durable team selection still requires thresholds such as `frozen_plan=true` plus 2+ independent execution slices, or stabilization with blocking issues.
 
 ## Analyst Fan-out First
 
