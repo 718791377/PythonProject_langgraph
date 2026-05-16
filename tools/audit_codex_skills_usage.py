@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sqlite3
+import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -26,6 +27,20 @@ BACKTICK_PATTERN = re.compile(r"`([^`]+)`")
 SKILL_PATH_PATTERN = re.compile(r"([A-Z]:\\[^\s\"']*?SKILL\.md)", re.IGNORECASE)
 BUDGET_WARNING_PATTERN = re.compile(r"Exceeded skills context budget of 2%", re.IGNORECASE)
 OMITTED_PATTERN = re.compile(r"(\d+)\s+additional skills", re.IGNORECASE)
+
+
+def emit_stdout(text: str) -> None:
+    """Write text to stdout safely on non-UTF-8 Windows consoles."""
+    try:
+        sys.stdout.write(text)
+        if not text.endswith("\n"):
+            sys.stdout.write("\n")
+    except UnicodeEncodeError:
+        encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+        safe = text.encode(encoding, errors="backslashreplace").decode(encoding, errors="replace")
+        sys.stdout.write(safe)
+        if not safe.endswith("\n"):
+            sys.stdout.write("\n")
 
 
 def now_utc() -> datetime:
@@ -420,7 +435,7 @@ def main() -> int:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     if args.json:
-        print(json.dumps(report, ensure_ascii=False, indent=2))
+        emit_stdout(json.dumps(report, ensure_ascii=False, indent=2))
     else:
         print_human(report)
     return 0
