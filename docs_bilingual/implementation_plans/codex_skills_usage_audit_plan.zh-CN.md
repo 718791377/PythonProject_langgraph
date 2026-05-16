@@ -112,6 +112,18 @@ created_at: 2026-05-16
 .\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json
 ```
 
+### 5.5 Windows stdout 与回归测试
+
+脚本必须在 Windows 非 UTF-8 控制台下仍能输出 `--json`。如果 stdout 无法编码 `⚠` 等字符，stdout 可以退化为 JSON 合法的反斜杠转义形式；但 `--output` 写入的报告文件仍必须保持 UTF-8 原文。
+
+相关回归测试必须覆盖：
+
+- `⚠ Exceeded skills context budget of 2%` 的 stdout fallback；
+- 中文 `使用技能：` 与英文 `Using skill:` 的显式 skill announcement 识别；
+- `logs_2.sqlite` 中 budget warning 的 `omitted_additional_skills` 与 `all_descriptions_removed` 提取；
+- `full` profile 中 `plugins: "all_known_plugins"` 不能被拆成单个字符；
+- 脚本在缺少用户级 plugin-modules profile 时，必须回退读取仓库内 `tools/skill_sources/plugin-modules/references/profiles.json`。
+
 ## 6. 决策规则
 
 30 天后按以下规则决策：
@@ -138,6 +150,8 @@ created_at: 2026-05-16
 - profile helper 调用计数；
 - 按 plugin/module 聚合的 evidence；
 - apply 建议，但不自动 apply。
+- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、中文 announcement、repo profile fallback 与 `all_known_plugins` 展开。
+- `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 
 ## 8. 与 soft-load 的关系
 

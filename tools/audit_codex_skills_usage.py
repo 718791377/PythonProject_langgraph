@@ -22,6 +22,10 @@ from typing import Any
 SKILL_ANNOUNCE_PATTERNS = [
     re.compile(r"使用技能[:：]\s*([^\n\r]+)"),
     re.compile(r"Using skill[s]?[:：]\s*([^\n\r]+)", re.IGNORECASE),
+    # Compatibility for older session logs whose Chinese prompt was mojibake in
+    # the terminal/log transport. Keep this broad and secondary; extraction still
+    # only counts explicit backticked skill names.
+    re.compile(r"浣跨敤[^\n\r]{0,40}\s*([^\n\r]+)"),
 ]
 BACKTICK_PATTERN = re.compile(r"`([^`]+)`")
 SKILL_PATH_PATTERN = re.compile(r"([A-Z]:\\[^\s\"']*?SKILL\.md)", re.IGNORECASE)
@@ -158,7 +162,17 @@ def texts_from_jsonl_payload(obj: dict[str, Any]) -> list[str]:
                 texts.append(str(payload[key]))
     elif typ == "event_msg":
         as_text = json.dumps(payload, ensure_ascii=False)
-        if any(token in as_text for token in ("SKILL.md", "Using skill", "使用技能", "load_module.ps1", "set_plugin_profile.ps1")):
+        if any(
+            token in as_text
+            for token in (
+                "SKILL.md",
+                "Using skill",
+                "使用技能",
+                "浣跨敤",
+                "load_module.ps1",
+                "set_plugin_profile.ps1",
+            )
+        ):
             texts.append(as_text[:60000])
     return texts
 
@@ -179,7 +193,7 @@ def scan_sessions(codex_home: Path, repo_root: Path, cutoff: datetime, modules: 
     tool_call_names: Counter[str] = Counter()
     files_scanned = 0
     lines_scanned = 0
-    known_plugins = load_known_plugins(codex_home)
+    known_plugins = load_known_plugins(codex_home, repo_root)
 
     if not sessions_root.exists():
         return {
@@ -251,13 +265,19 @@ def scan_sessions(codex_home: Path, repo_root: Path, cutoff: datetime, modules: 
     }
 
 
-def load_profiles(codex_home: Path) -> dict[str, Any]:
-    path = codex_home / "skills" / "plugin-modules" / "references" / "profiles.json"
-    return read_json(path)
+def load_profiles(codex_home: Path, repo_root: Path | None = None) -> dict[str, Any]:
+    user_path = codex_home / "skills" / "plugin-modules" / "references" / "profiles.json"
+    if user_path.exists():
+        return read_json(user_path)
+    if repo_root is not None:
+        repo_path = repo_root / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        if repo_path.exists():
+            return read_json(repo_path)
+    return {}
 
 
-def load_known_plugins(codex_home: Path) -> list[str]:
-    profiles = load_profiles(codex_home)
+def load_known_plugins(codex_home: Path, repo_root: Path | None = None) -> list[str]:
+    profiles = load_profiles(codex_home, repo_root)
     known = profiles.get("known_plugins")
     if isinstance(known, list):
         return [str(item) for item in known]
@@ -305,6 +325,16 @@ def scan_logs(codex_home: Path, cutoff: datetime) -> dict[str, Any]:
     }
 
 
+def module_plugins(profiles: dict[str, Any], module: dict[str, Any]) -> list[str]:
+    raw_plugins = module.get("plugins", [])
+    if raw_plugins == "all_known_plugins":
+        known = profiles.get("known_plugins", [])
+        return [str(item) for item in known] if isinstance(known, list) else []
+    if isinstance(raw_plugins, list):
+        return [str(item) for item in raw_plugins]
+    return []
+
+
 def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]) -> list[dict[str, Any]]:
     modules = profiles.get("modules") if isinstance(profiles.get("modules"), dict) else {}
     helper_counts = Counter(session_data.get("profile_helper_calls", {}))
@@ -312,7 +342,7 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
     weak_mentions = Counter(session_data.get("weak_plugin_mentions", {}))
     rows: list[dict[str, Any]] = []
     for module_name, module in modules.items():
-        plugins = [str(item) for item in module.get("plugins", [])] if isinstance(module, dict) else []
+        plugins = module_plugins(profiles, module) if isinstance(module, dict) else []
         weak = sum(weak_mentions.get(plugin, 0) for plugin in plugins)
         # Strong plugin evidence is approximated by plugin skill path reads containing a normalized plugin slug.
         strong_path = 0
@@ -354,7 +384,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         cutoff = datetime.fromisoformat(args.since).replace(tzinfo=timezone.utc)
     else:
         cutoff = generated_at - timedelta(days=max(args.days, 0))
-    profiles = load_profiles(codex_home)
+    profiles = load_profiles(codex_home, root)
     modules = set((profiles.get("modules") or {}).keys()) if isinstance(profiles.get("modules"), dict) else set()
     plugins_config = parse_plugin_config(codex_home / "config.toml")
     enabled_plugins = sorted([name for name, enabled in plugins_config.items() if enabled is True])

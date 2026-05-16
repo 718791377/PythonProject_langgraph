@@ -112,6 +112,18 @@ The baseline records enabled plugins, profile modules, warning counters, and inv
 .\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json
 ```
 
+### 5.5 Windows stdout and regression tests
+
+The script must still support `--json` on non-UTF-8 Windows consoles. If stdout cannot encode characters such as `⚠`, stdout may fall back to JSON-safe backslash escapes; the `--output` report file must still preserve the original UTF-8 text.
+
+Regression tests must cover:
+
+- stdout fallback for `⚠ Exceeded skills context budget of 2%`;
+- explicit skill-announcement detection for Chinese `使用技能：` and English `Using skill:`;
+- extraction of `omitted_additional_skills` and `all_descriptions_removed` from `logs_2.sqlite` budget warnings;
+- `plugins: "all_known_plugins"` in the `full` profile must not be split into individual characters;
+- the script must fall back to `tools/skill_sources/plugin-modules/references/profiles.json` when the user-level plugin-modules profile is absent.
+
 ## 6. Decision rules
 
 | Evidence | Decision |
@@ -136,6 +148,8 @@ Each audit run must report:
 - profile helper invocation counts;
 - plugin/module aggregated evidence;
 - recommendations, without applying them automatically.
+- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, Chinese announcements, repo profile fallback, and `all_known_plugins` expansion.
+- `tools/ci/ci_test_manifest.json` must include that regression test so local and remote CI reuse the same check.
 
 ## 8. Relationship to soft-load
 
