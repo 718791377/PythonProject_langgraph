@@ -457,6 +457,29 @@ def build_warning_severity(logs_data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def build_audit_state(args: argparse.Namespace) -> dict[str, Any]:
+    if args.baseline:
+        return {
+            "state": "running",
+            "reason": "baseline_generated",
+            "next_action": "continue_weekly_reports_warning_triage_and_manual_notes",
+            "profile_apply_allowed": False,
+        }
+    if args.days >= 30:
+        return {
+            "state": "ready-for-summary",
+            "reason": "audit_window_at_least_30_days",
+            "next_action": "generate_sanitized_30_day_markdown_summary_before_profile_apply_candidate",
+            "profile_apply_allowed": False,
+        }
+    return {
+        "state": "running",
+        "reason": "audit_window_shorter_than_30_days",
+        "next_action": "continue_audit_collection_without_profile_apply",
+        "profile_apply_allowed": False,
+    }
+
+
 def module_plugins(profiles: dict[str, Any], module: dict[str, Any]) -> list[str]:
     raw_plugins = module.get("plugins", [])
     if raw_plugins == "all_known_plugins":
@@ -560,11 +583,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     module_evidence = build_module_evidence(profiles, session_data)
     noise_review = build_noise_review(session_data)
     warning_severity = build_warning_severity(logs_data)
+    audit_state = build_audit_state(args)
     report = {
         "schema_version": 1,
         "generated_at": generated_at.isoformat(),
         "check_name": "codex_skills_usage_audit",
         "mode": "baseline" if args.baseline else "usage_audit",
+        "audit_state": audit_state,
         "audit_window": {
             "since": cutoff.isoformat(),
             "until": generated_at.isoformat(),

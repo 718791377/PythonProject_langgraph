@@ -349,6 +349,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         required_top_level = {
             "schema_version",
             "generated_at",
+            "audit_state",
             "audit_window",
             "safety",
             "config_summary",
@@ -361,6 +362,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "recommendations",
         }
         self.assertLessEqual(required_top_level, set(report))
+        self.assertIn("state", report["audit_state"])
         self.assertEqual(report["audit_window"]["days"], 30)
         self.assertTrue(report["safety"]["audit_only"])
         self.assertFalse(report["safety"]["mutates_config"])
@@ -395,6 +397,44 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertEqual(report["audit_window"]["since"], "2026-05-16T00:00:00+00:00")
         self.assertEqual(report["audit_window"]["days"], 30)
+
+    def test_report_includes_audit_state_machine_boundary(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-state")
+        baseline_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=0,
+            since=None,
+            baseline=True,
+        )
+        weekly_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=7,
+            since=None,
+            baseline=False,
+        )
+        summary_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+        )
+
+        baseline = audit.build_report(baseline_args)
+        weekly = audit.build_report(weekly_args)
+        summary = audit.build_report(summary_args)
+
+        self.assertEqual(baseline["audit_state"]["state"], "running")
+        self.assertEqual(baseline["audit_state"]["reason"], "baseline_generated")
+        self.assertFalse(baseline["audit_state"]["profile_apply_allowed"])
+        self.assertEqual(weekly["audit_state"]["state"], "running")
+        self.assertEqual(weekly["audit_state"]["reason"], "audit_window_shorter_than_30_days")
+        self.assertFalse(weekly["audit_state"]["profile_apply_allowed"])
+        self.assertEqual(summary["audit_state"]["state"], "ready-for-summary")
+        self.assertEqual(summary["audit_state"]["reason"], "audit_window_at_least_30_days")
+        self.assertFalse(summary["audit_state"]["profile_apply_allowed"])
 
 
 if __name__ == "__main__":
