@@ -114,13 +114,13 @@ The baseline records enabled plugins, profile modules, warning counters, and inv
 
 `--summary-output` writes the sanitized Markdown decision summary. It is review evidence only and must not mutate `config.toml`, plugin cache, or hard-load profiles.
 
-To prepare a later reversible candidate without applying it, add `--target-profile`, `--candidate-output`, and optionally `--candidate-summary-output`:
+To prepare a later reversible candidate without applying it, add `--target-profile`, `--candidate-output`, `--summary-reviewed`, and optionally `--candidate-summary-output`:
 
 ```powershell
-.\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json --summary-output .\.tmp\skills-usage-audit-30d-summary.md --target-profile core-dev --candidate-output .\.tmp\skills-profile-candidate.json --candidate-summary-output .\.tmp\skills-profile-candidate.md
+.\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json --summary-output .\.tmp\skills-usage-audit-30d-summary.md --summary-reviewed --target-profile core-dev --candidate-output .\.tmp\skills-profile-candidate.json --candidate-summary-output .\.tmp\skills-profile-candidate.md
 ```
 
-Candidate output is always `approval_state=preview-only` and must not modify `config.toml`, plugin cache, or hard-load profiles.
+Candidate output is always `approval_state=preview-only` and must not modify `config.toml`, plugin cache, or hard-load profiles. Without `--summary-reviewed` and a 30-day audit window, the candidate generation gate is recorded as blocked.
 
 ### 5.5 Windows stdout and regression tests
 
@@ -236,6 +236,7 @@ The candidate record must include at least:
 Gate rules:
 
 - the audit script may generate candidate JSON/Markdown via `--candidate-output` and `--candidate-summary-output`, but those outputs are preview records only;
+- candidate generation must record a gate result that requires a 30-day audit window and `--summary-reviewed`;
 - `approval_state=preview-only` may run preview only and must not modify `config.toml`;
 - `approved-to-apply` requires explicit user authorization and cannot be inferred from “continue” or generic confirmation;
 - after apply, save sanitized before/after diff summaries;
@@ -348,7 +349,7 @@ Each audit run must report:
 - profile helper invocation counts;
 - plugin/module aggregated evidence;
 - recommendations, without applying them automatically.
-- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized manual-note ingestion, invalid manual-note validation, preview-only candidate generation, candidate rollback/validation fields, and candidate Markdown non-action text.
+- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized manual-note ingestion, invalid manual-note validation, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
 - `tools/ci/ci_test_manifest.json` must include that regression test so local and remote CI reuse the same check.
 
 Each human report review must also check false-positive noise:

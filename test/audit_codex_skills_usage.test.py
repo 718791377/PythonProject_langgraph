@@ -118,6 +118,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             manual_notes=[],
             output=None,
             summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
         )
 
         report = audit.build_report(args)
@@ -263,6 +266,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             manual_notes=[],
             output=None,
             summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
         )
 
         report = audit.build_report(args)
@@ -372,6 +378,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             manual_notes=[],
             output=None,
             summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
         )
 
         report = audit.build_report(args)
@@ -393,6 +402,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             manual_notes=[],
             output=None,
             summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
         )
 
         report = audit.build_report(args)
@@ -471,6 +483,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             manual_notes=[str(notes_path)],
             output=None,
             summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
         )
 
         report = audit.build_report(args)
@@ -506,6 +521,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             manual_notes=[],
             output=None,
             summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
         )
 
         report = audit.build_report(args)
@@ -526,6 +544,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             manual_notes=[],
             output=None,
             summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
         )
         weekly_args = argparse.Namespace(
             root=str(REPO_ROOT),
@@ -538,6 +559,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             manual_notes=[],
             output=None,
             summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
         )
         summary_args = argparse.Namespace(
             root=str(REPO_ROOT),
@@ -550,6 +574,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             manual_notes=[],
             output=None,
             summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
         )
 
         baseline = audit.build_report(baseline_args)
@@ -565,6 +592,54 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(summary["audit_state"]["state"], "ready-for-summary")
         self.assertEqual(summary["audit_state"]["reason"], "audit_window_at_least_30_days")
         self.assertFalse(summary["audit_state"]["profile_apply_allowed"])
+
+    def test_candidate_generation_gate_requires_30_day_summary_review(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-candidate-gate")
+        short_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=7,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output="candidate.json",
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        reviewed_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output="candidate.json",
+            candidate_summary_output=None,
+            summary_reviewed=True,
+        )
+
+        blocked_gate = audit.build_candidate_generation_gate(audit.build_report(short_args), summary_reviewed=False)
+        allowed_report = audit.build_report(reviewed_args)
+        allowed_gate = audit.build_candidate_generation_gate(allowed_report, summary_reviewed=True)
+
+        self.assertFalse(blocked_gate["allowed"])
+        self.assertEqual(blocked_gate["status"], "blocked")
+        self.assertIn("audit_window_shorter_than_30_days", blocked_gate["blockers"])
+        self.assertIn("summary_not_marked_reviewed", blocked_gate["blockers"])
+        self.assertTrue(blocked_gate["ordinary_continue_or_generic_confirmation_is_not_apply_authorization"])
+        self.assertTrue(allowed_gate["allowed"])
+        self.assertEqual(allowed_gate["status"], "allowed")
+        self.assertEqual(allowed_gate["blockers"], [])
+        self.assertEqual(allowed_report["audit_state"]["state"], "apply-candidate")
+        self.assertFalse(allowed_report["audit_state"]["profile_apply_allowed"])
 
     def test_build_profile_apply_candidate_is_preview_only_and_reversible(self) -> None:
         report = {
@@ -611,6 +686,13 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 r"D:\private\skills-usage-summary.md",
                 [r"D:\private\manual-notes.md"],
             ),
+            candidate_gate={
+                "status": "allowed",
+                "allowed": True,
+                "blockers": [],
+                "summary_reviewed": True,
+                "audit_window_at_least_30_days": True,
+            },
         )
 
         self.assertEqual(candidate["candidate_id"], "skills-profile-test")
@@ -626,6 +708,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Legacy Plugin", candidate["plugin_diff"]["unknown_current_enabled_entries_requiring_manual_review"])
         self.assertEqual(candidate["evidence_basis"]["target_module_evidence"]["strong_total"], 10)
         self.assertEqual(candidate["rollback_path"]["restore_command"], "set_plugin_profile.ps1 -RestoreLatest -Apply")
+        self.assertTrue(candidate["candidate_generation_gate"]["allowed"])
         self.assertTrue(candidate["validation_plan"])
         self.assertIn("[REDACTED_PATH]", json.dumps(candidate["source_reports"], ensure_ascii=False))
         self.assertNotIn(r"D:\private", json.dumps(candidate, ensure_ascii=False))
@@ -651,12 +734,21 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "module_evidence": [],
             },
             target_profile="core-dev",
+            candidate_gate={
+                "status": "blocked",
+                "allowed": False,
+                "blockers": ["summary_not_marked_reviewed"],
+                "summary_reviewed": False,
+                "audit_window_at_least_30_days": True,
+            },
         )
 
         summary = audit.render_candidate_markdown(candidate)
 
         self.assertIn("# Codex Skills Profile Apply Candidate", summary)
         self.assertIn("Approval state: `preview-only`", summary)
+        self.assertIn("Gate status: `blocked`", summary)
+        self.assertIn("Blockers: `summary_not_marked_reviewed`", summary)
         self.assertIn("Did not modify user-level `config.toml`.", summary)
         self.assertIn("Did not infer approval from generic continue/confirmation.", summary)
 
@@ -673,6 +765,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             manual_notes=[],
             output=None,
             summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
         )
 
         summary = audit.render_markdown_summary(audit.build_report(args))

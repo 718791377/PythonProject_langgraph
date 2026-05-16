@@ -573,7 +573,28 @@ def build_warning_severity(logs_data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_audit_state(args: argparse.Namespace) -> dict[str, Any]:
+def audit_window_elapsed_days(cutoff: datetime, generated_at: datetime) -> float:
+    return max((generated_at - cutoff).total_seconds() / 86400, 0.0)
+
+
+def candidate_output_requested(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "candidate_output", None) or getattr(args, "candidate_summary_output", None))
+
+
+def build_audit_state(
+    args: argparse.Namespace,
+    cutoff: datetime | None = None,
+    generated_at: datetime | None = None,
+) -> dict[str, Any]:
+    elapsed_days = audit_window_elapsed_days(cutoff, generated_at) if cutoff and generated_at else float(args.days)
+    window_at_least_30_days = args.days >= 30 or elapsed_days >= 30
+    if candidate_output_requested(args) and getattr(args, "summary_reviewed", False) and window_at_least_30_days:
+        return {
+            "state": "apply-candidate",
+            "reason": "profile_apply_candidate_preview_requested_after_summary_review",
+            "next_action": "review_preview_candidate_and_request_explicit_apply_authorization_if_accepted",
+            "profile_apply_allowed": False,
+        }
     if args.baseline:
         return {
             "state": "running",
@@ -581,7 +602,7 @@ def build_audit_state(args: argparse.Namespace) -> dict[str, Any]:
             "next_action": "continue_weekly_reports_warning_triage_and_manual_notes",
             "profile_apply_allowed": False,
         }
-    if args.days >= 30:
+    if window_at_least_30_days:
         return {
             "state": "ready-for-summary",
             "reason": "audit_window_at_least_30_days",
@@ -593,6 +614,35 @@ def build_audit_state(args: argparse.Namespace) -> dict[str, Any]:
         "reason": "audit_window_shorter_than_30_days",
         "next_action": "continue_audit_collection_without_profile_apply",
         "profile_apply_allowed": False,
+    }
+
+
+def build_candidate_generation_gate(report: dict[str, Any], summary_reviewed: bool) -> dict[str, Any]:
+    audit_window = report.get("audit_window", {})
+    try:
+        configured_days = int(audit_window.get("days") or 0)
+    except (TypeError, ValueError):
+        configured_days = 0
+    since = parse_ts(audit_window.get("since"))
+    until = parse_ts(audit_window.get("until"))
+    elapsed_days = audit_window_elapsed_days(since, until) if since and until else float(configured_days)
+    audit_window_at_least_30_days = configured_days >= 30 or elapsed_days >= 30
+    blockers: list[str] = []
+    if not audit_window_at_least_30_days:
+        blockers.append("audit_window_shorter_than_30_days")
+    if not summary_reviewed:
+        blockers.append("summary_not_marked_reviewed")
+    allowed = not blockers
+    return {
+        "status": "allowed" if allowed else "blocked",
+        "allowed": allowed,
+        "blockers": blockers,
+        "summary_reviewed": bool(summary_reviewed),
+        "requires_30_day_summary": True,
+        "audit_window_days": configured_days,
+        "audit_window_elapsed_days": round(elapsed_days, 4),
+        "audit_window_at_least_30_days": audit_window_at_least_30_days,
+        "ordinary_continue_or_generic_confirmation_is_not_apply_authorization": True,
     }
 
 
@@ -793,6 +843,7 @@ def build_profile_apply_candidate(
     candidate_id: str | None = None,
     target_profile: str | None = None,
     source_reports: dict[str, Any] | None = None,
+    candidate_gate: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a preview-only profile apply candidate record.
 
@@ -801,6 +852,7 @@ def build_profile_apply_candidate(
     """
     if not target_profile:
         raise ValueError("target_profile is required for a profile apply candidate")
+    candidate_gate = candidate_gate or build_candidate_generation_gate(report, summary_reviewed=False)
 
     generated_at = str(report.get("generated_at") or now_utc().isoformat())
     generated_day = generated_at[:10] if len(generated_at) >= 10 else now_utc().date().isoformat()
@@ -846,6 +898,7 @@ def build_profile_apply_candidate(
         "candidate_id": candidate_id,
         "generated_at": generated_at,
         "source_reports": source_reports or build_source_reports(),
+        "candidate_generation_gate": candidate_gate,
         "current_profile": {
             "inferred_profile": current_profile.get("inferred_profile"),
             "source": current_profile.get("source"),
@@ -929,7 +982,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     module_evidence = build_module_evidence(profiles, session_data)
     noise_review = build_noise_review(session_data)
     warning_severity = build_warning_severity(logs_data)
-    audit_state = build_audit_state(args)
+    audit_state = build_audit_state(args, cutoff, generated_at)
     current_profile = build_current_profile_summary(profiles, enabled_plugins)
     manual_notes = collect_manual_notes(getattr(args, "manual_notes", []) or [])
     report = {
@@ -1086,6 +1139,7 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
     evidence = candidate.get("evidence_basis", {})
     target_evidence = evidence.get("target_module_evidence", {}) if isinstance(evidence, dict) else {}
     source_reports = candidate.get("source_reports", {})
+    gate = candidate.get("candidate_generation_gate", {})
     lines = [
         "# Codex Skills Profile Apply Candidate",
         "",
@@ -1109,6 +1163,14 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
         f"- JSON report: `{source_reports.get('json_report')}`",
         f"- Markdown summary: `{source_reports.get('markdown_summary')}`",
         f"- Manual notes: `{len(source_reports.get('manual_notes') or [])}`",
+        "",
+        "## Candidate generation gate",
+        "",
+        f"- Gate status: `{gate.get('status')}`",
+        f"- Gate allowed: `{gate.get('allowed')}`",
+        f"- Blockers: `{', '.join(gate.get('blockers') or []) or 'none'}`",
+        f"- Summary reviewed: `{gate.get('summary_reviewed')}`",
+        f"- Audit window at least 30 days: `{gate.get('audit_window_at_least_30_days')}`",
         "",
         "## Current and target profile",
         "",
@@ -1222,16 +1284,23 @@ def main() -> int:
         default=None,
         help="Target profile/module name for --candidate-output, for example core-dev or web-saas.",
     )
+    parser.add_argument(
+        "--summary-reviewed",
+        action="store_true",
+        help="Mark the sanitized 30-day Markdown summary as human-reviewed before generating a candidate.",
+    )
     args = parser.parse_args()
 
     report = build_report(args)
     candidate = None
     if args.candidate_output or args.candidate_summary_output:
+        candidate_gate = build_candidate_generation_gate(report, summary_reviewed=args.summary_reviewed)
         candidate = build_profile_apply_candidate(
             report,
             candidate_id=args.candidate_id,
             target_profile=args.target_profile,
             source_reports=build_source_reports(args.output, args.summary_output, args.manual_notes),
+            candidate_gate=candidate_gate,
         )
     if args.output:
         output = Path(args.output)
