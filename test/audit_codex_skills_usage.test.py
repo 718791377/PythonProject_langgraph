@@ -116,6 +116,43 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Browser", full_rows[0]["plugins"])
         self.assertNotIn("a", full_rows[0]["plugins"])
 
+    def test_report_includes_profile_decision_field_contract(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+        )
+
+        report = audit.build_report(args)
+
+        required_top_level = {
+            "schema_version",
+            "generated_at",
+            "audit_window",
+            "safety",
+            "config_summary",
+            "inventory_summary",
+            "log_evidence",
+            "session_evidence",
+            "module_evidence",
+            "recommendations",
+        }
+        self.assertLessEqual(required_top_level, set(report))
+        self.assertEqual(report["audit_window"]["days"], 30)
+        self.assertTrue(report["safety"]["audit_only"])
+        self.assertFalse(report["safety"]["mutates_config"])
+        self.assertFalse(report["safety"]["edits_plugin_cache"])
+        self.assertFalse(report["safety"]["hard_load_apply_performed"])
+        self.assertIn("enabled_plugins", report["config_summary"])
+        self.assertIn("total_skills", report["inventory_summary"])
+        self.assertIn("budget_warning_count", report["log_evidence"])
+        self.assertIn("explicit_skills", report["session_evidence"])
+        self.assertIsInstance(report["module_evidence"], list)
+        self.assertIsInstance(report["recommendations"], list)
+
 
 if __name__ == "__main__":
     unittest.main()
