@@ -246,6 +246,111 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(medium["level"], "medium")
         self.assertEqual(none["level"], "none")
 
+    def test_warning_triage_marker_requires_narrow_window(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-warning-triage-window")
+        broad_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=7,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+            warning_triage=True,
+        )
+        narrow_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+            warning_triage=True,
+        )
+        since_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since="2026-05-16T08:00:00+08:00",
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+            warning_triage=True,
+        )
+
+        broad = audit.build_report(broad_args)
+        narrow = audit.build_report(narrow_args)
+        since_based = audit.build_report(since_args)
+
+        self.assertEqual(broad["audit_state"]["reason"], "warning_triage_window_too_broad")
+        self.assertEqual(broad["warning_triage"]["status"], "blocked")
+        self.assertFalse(broad["warning_triage"]["window_ok"])
+        self.assertIn("warning_triage_window_not_narrow", broad["warning_triage"]["blockers"])
+        self.assertTrue(narrow["warning_triage"]["requested"])
+        self.assertTrue(narrow["warning_triage"]["window_ok"])
+        self.assertEqual(narrow["warning_triage"]["days"], 1)
+        self.assertTrue(since_based["warning_triage"]["window_ok"])
+        self.assertTrue(since_based["warning_triage"]["uses_since_override"])
+
+    def test_warning_triage_report_captures_recent_budget_warning(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-warning-triage-found")
+        db = codex_home / "logs_2.sqlite"
+        with sqlite3.connect(db) as con:
+            con.execute("create table logs(ts integer, level text, target text, feedback_log_body text)")
+            con.execute(
+                "insert into logs values (?, ?, ?, ?)",
+                (
+                    int(time.time()),
+                    "WARN",
+                    "codex_client::transport",
+                    "Exceeded skills context budget of 2%. "
+                    "All skill descriptions were removed and 16 additional skills were not included.",
+                ),
+            )
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+            warning_triage=True,
+        )
+
+        report = audit.build_report(args)
+
+        self.assertEqual(report["warning_triage"]["status"], "warning_found")
+        self.assertEqual(report["warning_triage"]["budget_warning_count"], 1)
+        self.assertEqual(report["warning_triage"]["all_descriptions_removed_count"], 1)
+        self.assertEqual(report["warning_triage"]["max_omitted_additional_skills"], 16)
+        self.assertEqual(report["field_contract"]["status"], "passed")
+
     def test_report_uses_repo_profile_fallback_and_expands_full_module(self) -> None:
         codex_home = self.make_codex_home("skills-audit-profile")
         (codex_home / "config.toml").write_text(
@@ -420,6 +525,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "inventory_summary",
             "log_evidence",
             "warning_severity",
+            "warning_triage",
             "session_evidence",
             "module_evidence",
             "noise_review",
@@ -439,6 +545,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("total_skills", report["inventory_summary"])
         self.assertIn("budget_warning_count", report["log_evidence"])
         self.assertIn("level", report["warning_severity"])
+        self.assertIn("requested", report["warning_triage"])
+        self.assertIn("status", report["warning_triage"])
         self.assertIn("explicit_skills", report["session_evidence"])
         self.assertIsInstance(report["module_evidence"], list)
         self.assertIn("status", report["noise_review"])
@@ -504,6 +612,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "config_summary": {"current_profile": {}},
             "inventory_summary": {},
             "log_evidence": {"budget_warning_count": 0, "last_7d_budget_warning_count": 0},
+            "warning_triage": {"requested": False, "status": "not_requested"},
             "session_evidence": {},
             "manual_evidence": {"valid_note_count": 0},
             "module_evidence": [],
@@ -988,6 +1097,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Field contract: `passed`", summary)
         self.assertIn("## Current configuration surface", summary)
         self.assertIn("## Warning conclusion", summary)
+        self.assertIn("## Warning triage", summary)
+        self.assertIn("Window policy:", summary)
         self.assertIn("## Module evidence", summary)
         self.assertIn("## Noise review", summary)
         self.assertIn("## Manual evidence", summary)

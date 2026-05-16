@@ -80,6 +80,7 @@ REQUIRED_REPORT_FIELDS = {
     "config_summary",
     "inventory_summary",
     "log_evidence",
+    "warning_triage",
     "session_evidence",
     "manual_evidence",
     "module_evidence",
@@ -92,6 +93,7 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "config_summary": dict,
     "inventory_summary": dict,
     "log_evidence": dict,
+    "warning_triage": dict,
     "session_evidence": dict,
     "manual_evidence": dict,
     "module_evidence": list,
@@ -613,6 +615,14 @@ def source_report_paths_ready(args: argparse.Namespace) -> bool:
     )
 
 
+def warning_triage_requested(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "warning_triage", False))
+
+
+def warning_triage_window_ok(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "since", None)) or int(getattr(args, "days", 30) or 0) == 1
+
+
 def build_audit_state(
     args: argparse.Namespace,
     cutoff: datetime | None = None,
@@ -624,6 +634,14 @@ def build_audit_state(
     source_paths_ready = source_report_paths_ready(args)
     candidate_requested = candidate_output_requested(args)
     close_audit = getattr(args, "close_audit", None)
+    if warning_triage_requested(args) and not warning_triage_window_ok(args):
+        return {
+            "state": "running",
+            "reason": "warning_triage_window_too_broad",
+            "next_action": "rerun_warning_triage_with_days_1_or_since",
+            "profile_apply_allowed": False,
+            "warning_triage_blockers": ["warning_triage_window_not_narrow"],
+        }
     if close_audit:
         close_blockers: list[str] = []
         if not window_at_least_30_days:
@@ -697,6 +715,52 @@ def build_audit_state(
     }
 
 
+def build_warning_triage(
+    args: argparse.Namespace,
+    logs_data: dict[str, Any],
+    cutoff: datetime,
+    generated_at: datetime,
+) -> dict[str, Any]:
+    requested = warning_triage_requested(args)
+    window_ok = warning_triage_window_ok(args)
+    blockers = ["warning_triage_window_not_narrow"] if requested and not window_ok else []
+    warning_count = int(logs_data.get("budget_warning_count") or 0)
+    available = bool(logs_data.get("available"))
+    if not requested:
+        status = "not_requested"
+        recommended_action = "run_with_warning_triage_after_a_live_session_budget_warning"
+    elif blockers:
+        status = "blocked"
+        recommended_action = "rerun_with_days_1_or_since_covering_the_warning_time"
+    elif not available:
+        status = "log_source_unavailable"
+        recommended_action = "use_session_transcripts_only_as_supporting_evidence_do_not_treat_zero_logs_as_no_warning"
+    else:
+        status = "warning_found" if warning_count else "no_warning_found_in_triage_window"
+        recommended_action = (
+            "review_recent_budget_warning_samples_and_record_turn_context"
+            if warning_count
+            else "record_no_matching_warning_in_this_window_without_ending_the_audit"
+        )
+    return {
+        "requested": requested,
+        "status": status,
+        "blockers": blockers,
+        "window_policy": "use_days_1_or_since_for_warning_triage",
+        "window_ok": window_ok,
+        "since": cutoff.isoformat(),
+        "until": generated_at.isoformat(),
+        "days": int(getattr(args, "days", 30) or 0),
+        "uses_since_override": bool(getattr(args, "since", None)),
+        "log_evidence_available": available,
+        "budget_warning_count": warning_count,
+        "all_descriptions_removed_count": logs_data.get("all_descriptions_removed_count", 0),
+        "max_omitted_additional_skills": logs_data.get("max_omitted_additional_skills", 0),
+        "recent_budget_warning_samples": len(logs_data.get("recent_budget_warnings") or []),
+        "recommended_action": recommended_action,
+    }
+
+
 def validate_report_field_contract(report: dict[str, Any], *, require_embedded: bool = False) -> dict[str, Any]:
     required_fields = set(REQUIRED_REPORT_FIELDS)
     type_expectations = dict(REQUIRED_REPORT_FIELD_TYPES)
@@ -732,6 +796,12 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
     for field in ("budget_warning_count", "last_7d_budget_warning_count"):
         if field not in log_evidence:
             log_violations.append(f"{field}_missing")
+    warning_triage = report.get("warning_triage") if isinstance(report.get("warning_triage"), dict) else {}
+    warning_triage_violations = []
+    if "requested" not in warning_triage:
+        warning_triage_violations.append("requested_missing")
+    if "status" not in warning_triage:
+        warning_triage_violations.append("status_missing")
     manual_evidence = report.get("manual_evidence") if isinstance(report.get("manual_evidence"), dict) else {}
     manual_violations = []
     if "valid_note_count" not in manual_evidence:
@@ -742,6 +812,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"safety:{field}" for field in safety_violations]
         + [f"config_summary:{field}" for field in config_violations]
         + [f"log_evidence:{field}" for field in log_violations]
+        + [f"warning_triage:{field}" for field in warning_triage_violations]
         + [f"manual_evidence:{field}" for field in manual_violations]
     )
     embedded_violations: list[str] = []
@@ -776,6 +847,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "safety_violations": safety_violations,
         "config_summary_violations": config_violations,
         "log_evidence_violations": log_violations,
+        "warning_triage_violations": warning_triage_violations,
         "manual_evidence_violations": manual_violations,
         "embedded_field_contract_violations": embedded_violations,
     }
@@ -1165,6 +1237,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     module_evidence = build_module_evidence(profiles, session_data)
     noise_review = build_noise_review(session_data)
     warning_severity = build_warning_severity(logs_data)
+    warning_triage = build_warning_triage(args, logs_data, cutoff, generated_at)
     audit_state = build_audit_state(args, cutoff, generated_at)
     current_profile = build_current_profile_summary(profiles, enabled_plugins)
     manual_notes = collect_manual_notes(getattr(args, "manual_notes", []) or [])
@@ -1203,6 +1276,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "inventory_summary": inventory_counts,
         "log_evidence": logs_data,
         "warning_severity": warning_severity,
+        "warning_triage": warning_triage,
         "session_evidence": session_data,
         "module_evidence": module_evidence,
         "noise_review": noise_review,
@@ -1223,6 +1297,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     config = report.get("config_summary", {})
     warnings = report.get("log_evidence", {})
     warning_severity = report.get("warning_severity", {})
+    warning_triage = report.get("warning_triage", {})
     noise_review = report.get("noise_review", {})
     manual_evidence = report.get("manual_evidence", {})
     audit_state = report.get("audit_state", {})
@@ -1256,6 +1331,15 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Skipped loading count: `{warnings.get('skipped_loading_count')}`",
         f"- Highest severity: `{warning_severity.get('level')}`",
         f"- Severity reason: `{warning_severity.get('reason')}`",
+        "",
+        "## Warning triage",
+        "",
+        f"- Requested: `{warning_triage.get('requested')}`",
+        f"- Status: `{warning_triage.get('status')}`",
+        f"- Window policy: `{warning_triage.get('window_policy')}`",
+        f"- Window OK: `{warning_triage.get('window_ok')}`",
+        f"- Budget warnings in triage window: `{warning_triage.get('budget_warning_count')}`",
+        f"- Recommended action: `{warning_triage.get('recommended_action')}`",
         "",
         "## Module evidence",
         "",
@@ -1440,6 +1524,11 @@ def main() -> int:
     parser.add_argument("--output", default=None, help="Optional path to write JSON report.")
     parser.add_argument("--summary-output", default=None, help="Optional path to write sanitized Markdown summary.")
     parser.add_argument("--late-run", action="store_true", help="Mark this run as a late cadence recovery run.")
+    parser.add_argument(
+        "--warning-triage",
+        action="store_true",
+        help="Mark this run as a post-warning triage run. Use with --days 1 or --since covering the warning time.",
+    )
     parser.add_argument(
         "--missed-weekly-runs",
         type=int,

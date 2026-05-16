@@ -147,6 +147,7 @@ created_at: 2026-05-16
 | `config_summary` | enabled / disabled / unknown plugins，以及 `current_profile` 推断 | 判断当前 profile 面是否过大，以及是否精确匹配已知 module |
 | `inventory_summary` | user/repo/plugin skills 数量 | 判断 2% budget 压力来源 |
 | `log_evidence` | budget warning、7 天 warning 数、`All skill descriptions were removed`、最大 omitted skills 数和 skipped loading 证据 | 判断 warning 是否仍在会话中出现，以及严重度是否越过方案阈值 |
+| `warning_triage` | warning 后复核标记、窄窗口门禁、triage 窗口内 warning 计数和后续动作建议 | 防止把周报/月报误当成 turn 级 warning triage 证据 |
 | `session_evidence` | explicit skills、SKILL.md reads、helper calls、tool calls | 作为强/中/弱证据输入 |
 | `manual_evidence` | 脱敏人工记录计数、无效记录校验以及中证据/例外/噪声摘要 | 保留人工复核证据，同时不留存原始 transcript |
 | `module_evidence` | 按 profile module 汇总的强证据、中证据说明、弱证据和跨项目复核字段 | 生成 profile 决策候选，同时避免把中证据当作强证据 |
@@ -165,9 +166,11 @@ created_at: 2026-05-16
 | 每周 | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | 发现会话中新增 warning 与模块使用趋势 |
 | 漏跑周报补跑 | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | 保留明确的节奏偏离标记，而不是伪造漏跑报告 |
 | 第 30 天 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | 形成是否调整默认 profile 的证据包 |
-| 出现 warning 后 | `--days 1` 或 `--since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | 定位 warning 是否来自当前会话重打包 |
+| 出现 warning 后 | `--warning-triage --days 1` 或 `--warning-triage --since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | 定位 warning 是否来自当前会话重打包 |
 
 `.tmp/` 报告默认不入 Git；如果需要长期留证，只提交经过脱敏和摘要化的 Markdown 结论，不提交完整 session transcript、token、私有路径或 vendor cache 内容。
+
+`--warning-triage` 是 warning 出现后的 audit-only 复核标记，必须搭配窄窗口：使用 `--days 1`，或使用显式 `--since` 覆盖 warning 时间点。如果 `--warning-triage` 搭配 `--days 7`、`--days 30` 等过宽窗口，报告必须写入 `warning_triage.status=blocked`、`warning_triage_window_not_narrow`，并保持 `audit_state.reason=warning_triage_window_too_broad`。该标记不得修改 `config.toml`、plugin cache 或 hard-load profile。
 
 ### 5.8 偏离控制与异常恢复
 
@@ -354,12 +357,13 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 审计窗口；
 - enabled plugins summary；
 - budget warning 次数与最近样本；
+- warning triage 状态、窄窗口策略和 warning 后续动作建议；
 - explicit skill 使用计数；
 - SKILL.md 读取计数；
 - profile helper 调用计数；
 - 按 plugin/module 聚合的 evidence；
 - apply 建议，但不自动 apply。
-- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、审计 closure-state 门禁、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
+- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、审计 closure-state 门禁、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
 - `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 
 每次人工复核报告时，还必须检查误报噪声：
@@ -373,7 +377,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 
 | 现象 | 判断 | 处理动作 |
 | --- | --- | --- |
-| 启动时无 warning，但会话中出现 warning | soft-load 仍可能有效；runtime 在 turn 级重建 model-visible skills surface | 运行 1 天窗口 triage 报告，记录发生 turn，不立即 hard-load apply |
+| 启动时无 warning，但会话中出现 warning | soft-load 仍可能有效；runtime 在 turn 级重建 model-visible skills surface | 运行 `--warning-triage --days 1` 或 `--warning-triage --since ...`，记录发生 turn，不立即 hard-load apply |
 | `All skill descriptions were removed` | 当前 skills surface 已严重超预算 | 下轮启动避免 `full`，使用 `core-dev` 或任务 profile；审计结束前仍不删除 plugin cache |
 | `additional skills were not included` 数量持续升高 | 自动可见列表仍过大 | 根据 30 天强证据缩小默认 profile，保留 dormant 恢复路径 |
 | `Skipped loading` 指向无效 SKILL.md | 单个 skill 元数据错误或 vendor cache 问题 | 优先记录来源；除非用户授权，不批量改 vendor cache |
@@ -394,6 +398,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 区分 soft-load、hard-load/profile apply、plugin cache 修改三类动作；
 - 明确 strong / medium / weak evidence 的边界；
 - 明确 7 天、30 天、warning triage 的运行节奏；
+- 要求 `--warning-triage` 只能搭配 `--days 1` 或 `--since`，输出顶层 `warning_triage` 字段，并阻断过宽窗口 triage 报告；
 - 明确 JSON 报告字段契约，并要求脚本输出 `field_contract` 且在候选生成时阻断不完整、缺少契约或契约过期的报告；
 - 明确漏跑、warning 延迟 triage、日志不可读、隐私脱敏和紧急例外的恢复规则；
 - 明确 30 天最终决策摘要模板；
