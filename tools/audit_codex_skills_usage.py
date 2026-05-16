@@ -641,6 +641,14 @@ def warning_triage_window_ok(args: argparse.Namespace) -> bool:
     return bool(getattr(args, "since", None)) or int(getattr(args, "days", 30) or 0) == 1
 
 
+def pause_audit_reason(args: argparse.Namespace) -> str | None:
+    raw_reason = getattr(args, "pause_audit", None)
+    if raw_reason is None:
+        return None
+    reason = str(raw_reason).strip()
+    return reason or None
+
+
 def build_audit_state(
     args: argparse.Namespace,
     cutoff: datetime | None = None,
@@ -652,6 +660,16 @@ def build_audit_state(
     source_paths_ready = source_report_paths_ready(args)
     candidate_requested = candidate_output_requested(args)
     close_audit = getattr(args, "close_audit", None)
+    pause_reason = pause_audit_reason(args)
+    if pause_reason:
+        return {
+            "state": "paused",
+            "reason": f"audit_paused_{pause_reason}",
+            "next_action": "resolve_pause_reason_fix_data_source_or_privacy_or_script_defect_then_rerun_report",
+            "profile_apply_allowed": False,
+            "pause_reason": pause_reason,
+            "pause_blockers": [pause_reason],
+        }
     if warning_triage_requested(args) and not warning_triage_window_ok(args):
         return {
             "state": "running",
@@ -895,6 +913,9 @@ def build_candidate_generation_gate(
         blockers.append("audit_window_shorter_than_30_days")
     if not summary_reviewed:
         blockers.append("summary_not_marked_reviewed")
+    audit_state = report.get("audit_state") if isinstance(report.get("audit_state"), dict) else {}
+    if audit_state.get("state") == "paused":
+        blockers.append("audit_state_paused")
     json_report_present = bool(str(json_report_path or "").strip())
     markdown_summary_present = bool(str(markdown_summary_path or "").strip())
     if require_source_reports and not json_report_present:
@@ -1548,6 +1569,12 @@ def main() -> int:
         "--warning-triage",
         action="store_true",
         help="Mark this run as a post-warning triage run. Use with --days 1 or --since covering the warning time.",
+    )
+    parser.add_argument(
+        "--pause-audit",
+        choices=("data-source-missing", "privacy-review", "script-defect"),
+        default=None,
+        help="Record an audit-only paused state for missing data, privacy review, or script defects without profile apply.",
     )
     parser.add_argument(
         "--missed-weekly-runs",

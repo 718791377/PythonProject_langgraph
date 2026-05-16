@@ -316,6 +316,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 
 脚本必须能记录 closure 状态，但不能因此执行任何 profile apply：
 
+- `--pause-audit data-source-missing|privacy-review|script-defect` 用于记录 `paused`，并以 `audit_state_paused` 阻断 profile-apply 候选生成。它只能把数据源缺失、隐私复核或脚本缺陷导致的审计中断显式化；后续必须先修复原因并重跑报告。
 - `--close-audit no-change` 只能在 30 天窗口已满足、存在 `--summary-reviewed`，并且同时存在 `--output` 与 `--summary-output` source-report 路径时，记录 `closed-no-change`。
 - `--close-audit with-candidate` 只能在同样证据门禁通过，并且已请求 candidate output 路径时，记录 `closed-with-candidate`。
 - 如果这些门禁未满足，报告必须保持 `running` 或 `ready-for-summary`，并列出 closure blockers，例如 `audit_window_shorter_than_30_days`、`summary_not_marked_reviewed`、`source_report_paths_missing` 或 `candidate_output_missing`。
@@ -409,6 +410,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 明确 audit 数据源的数据最小化、脱敏、留存和禁止外发边界；
 - 明确 audit 脚本的能力边界、已知限制和触发脚本增强的条件；
 - 明确审计运行状态机、停止条件，以及审计结束后与 profile apply 候选变更的分界；
+- 通过 audit-only 脚本参数暴露 paused-state 记录，并在暂停期间阻断 profile-apply 候选生成；
 - 通过明确的 audit-only 脚本参数暴露 closure-state 记录，并在无法关闭时报告 blocked closure reasons，而不是静默关闭；
 - 明确高频/低频/无强证据的阈值；
 - 明确 explicit skill 误报噪声不得进入强证据；
