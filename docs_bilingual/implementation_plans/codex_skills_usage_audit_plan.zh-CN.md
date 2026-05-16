@@ -153,7 +153,7 @@ created_at: 2026-05-16
 | `cadence_review` | late-run 与漏跑周报标记 | 防止 30 天决策摘要隐藏审计节奏偏离 |
 | `recommendations` | 审计建议 | 只能作为建议，不能自动 apply |
 
-审计脚本必须为每份生成报告计算 `field_contract` 结果。该结果记录 `status`、`passed`、必需字段、缺失字段、字段类型错误、audit-only 安全标志违规，以及会影响决策的嵌套字段违规。只要 `field_contract.status != passed`，该报告就是不完整证据；必须先修脚本或重跑报告，才能进入 profile 决策。
+审计脚本必须为每份生成报告计算 `field_contract` 结果。该结果记录 `status`、`passed`、必需字段、缺失字段、字段类型错误、audit-only 安全标志违规，以及会影响决策的嵌套字段违规。只要 `field_contract.status != passed`，该报告就是不完整证据；必须先修脚本或重跑报告，才能进入 profile 决策。候选生成必须要求报告内嵌 `field_contract`；来自旧脚本或人工改写后缺少/过期内嵌契约的报告，必须阻断并要求重新生成。
 
 ### 5.7 审计节奏、留存与报告命名
 
@@ -239,7 +239,7 @@ created_at: 2026-05-16
 
 - 审计脚本可以通过 `--candidate-output` 与 `--candidate-summary-output` 生成候选 JSON/Markdown，但这些输出只能作为 preview 记录；
 - 候选生成必须记录门禁结果，且门禁要求 30 天审计窗口与 `--summary-reviewed`；
-- 候选生成还必须校验报告字段契约；当必需顶层字段、audit-only 安全标志或决策关键嵌套字段缺失/类型错误时，必须以 `field_contract:<reason>` 阻断；
+- 候选生成还必须校验报告字段契约；当必需顶层字段、audit-only 安全标志、决策关键嵌套字段或内嵌 `field_contract` 本身缺失、过期或类型错误时，必须以 `field_contract:<reason>` 阻断；
 - `approval_state=preview-only` 只能运行 preview，不得修改 `config.toml`；
 - `approved-to-apply` 必须来自用户明确授权，不能由“继续”或普通确认替代；
 - apply 后必须保存 apply 前后的脱敏 diff 摘要；
@@ -352,7 +352,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - profile helper 调用计数；
 - 按 plugin/module 聚合的 evidence；
 - apply 建议，但不自动 apply。
-- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、报告字段契约校验、字段契约候选门禁阻断、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
+- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
 - `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 
 每次人工复核报告时，还必须检查误报噪声：
@@ -387,7 +387,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 区分 soft-load、hard-load/profile apply、plugin cache 修改三类动作；
 - 明确 strong / medium / weak evidence 的边界；
 - 明确 7 天、30 天、warning triage 的运行节奏；
-- 明确 JSON 报告字段契约，并要求脚本输出 `field_contract` 且在候选生成时阻断不完整报告；
+- 明确 JSON 报告字段契约，并要求脚本输出 `field_contract` 且在候选生成时阻断不完整、缺少契约或契约过期的报告；
 - 明确漏跑、warning 延迟 triage、日志不可读、隐私脱敏和紧急例外的恢复规则；
 - 明确 30 天最终决策摘要模板；
 - 明确中证据、紧急例外和误报剔除的人工记录格式；

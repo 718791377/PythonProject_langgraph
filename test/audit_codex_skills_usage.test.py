@@ -447,6 +447,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("field_contract", report)
         self.assertTrue(report["field_contract"]["passed"])
         self.assertEqual(report["field_contract"]["status"], "passed")
+        self.assertEqual(
+            audit.validate_report_field_contract(report, require_embedded=True)["status"],
+            "passed",
+        )
         self.assertIsInstance(report["recommendations"], list)
 
     def test_field_contract_failure_blocks_candidate_gate(self) -> None:
@@ -481,6 +485,42 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertFalse(gate["allowed"])
         self.assertIn("field_contract:missing_field:manual_evidence", gate["blockers"])
         self.assertEqual(gate["field_contract"]["status"], "failed")
+
+    def test_embedded_field_contract_staleness_blocks_candidate_gate(self) -> None:
+        report = {
+            "schema_version": 1,
+            "generated_at": "2026-05-16T00:00:00+00:00",
+            "audit_window": {
+                "since": "2026-04-16T00:00:00+00:00",
+                "until": "2026-05-16T00:00:00+00:00",
+                "days": 30,
+            },
+            "safety": {
+                "mutates_config": False,
+                "edits_plugin_cache": False,
+                "hard_load_apply_performed": False,
+                "audit_only": True,
+            },
+            "config_summary": {"current_profile": {}},
+            "inventory_summary": {},
+            "log_evidence": {"budget_warning_count": 0, "last_7d_budget_warning_count": 0},
+            "session_evidence": {},
+            "manual_evidence": {"valid_note_count": 0},
+            "module_evidence": [],
+            "cadence_review": {},
+            "recommendations": [],
+            "field_contract": {"status": "failed", "passed": False, "blockers": ["stale"]},
+        }
+
+        contract = audit.validate_report_field_contract(report, require_embedded=True)
+        gate = audit.build_candidate_generation_gate(report, summary_reviewed=True)
+
+        self.assertFalse(contract["passed"])
+        self.assertIn("embedded_field_contract:status_stale", contract["blockers"])
+        self.assertIn("embedded_field_contract:passed_stale", contract["blockers"])
+        self.assertIn("embedded_field_contract:blockers_stale", contract["blockers"])
+        self.assertFalse(gate["allowed"])
+        self.assertIn("field_contract:embedded_field_contract:status_stale", gate["blockers"])
 
     def test_manual_notes_are_sanitized_and_validated(self) -> None:
         codex_home = self.make_codex_home("skills-audit-manual-notes")

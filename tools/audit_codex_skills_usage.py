@@ -643,11 +643,16 @@ def build_audit_state(
     }
 
 
-def validate_report_field_contract(report: dict[str, Any]) -> dict[str, Any]:
-    missing_fields = sorted(REQUIRED_REPORT_FIELDS - set(report))
+def validate_report_field_contract(report: dict[str, Any], *, require_embedded: bool = False) -> dict[str, Any]:
+    required_fields = set(REQUIRED_REPORT_FIELDS)
+    type_expectations = dict(REQUIRED_REPORT_FIELD_TYPES)
+    if require_embedded:
+        required_fields.add("field_contract")
+        type_expectations["field_contract"] = dict
+    missing_fields = sorted(required_fields - set(report))
     invalid_type_fields = sorted(
         field
-        for field, expected_type in REQUIRED_REPORT_FIELD_TYPES.items()
+        for field, expected_type in type_expectations.items()
         if field in report and not isinstance(report.get(field), expected_type)
     )
     safety = report.get("safety") if isinstance(report.get("safety"), dict) else {}
@@ -685,17 +690,40 @@ def validate_report_field_contract(report: dict[str, Any]) -> dict[str, Any]:
         + [f"log_evidence:{field}" for field in log_violations]
         + [f"manual_evidence:{field}" for field in manual_violations]
     )
+    embedded_violations: list[str] = []
+    if require_embedded and "field_contract" in report:
+        embedded = report.get("field_contract")
+        if not isinstance(embedded, dict):
+            embedded_violations.append("not_dict")
+        else:
+            expected_status = "passed" if not blockers else "failed"
+            expected_passed = not blockers
+            embedded_blockers = embedded.get("blockers")
+            if embedded.get("status") != expected_status:
+                embedded_violations.append("status_stale")
+            if embedded.get("passed") is not expected_passed:
+                embedded_violations.append("passed_stale")
+            if not isinstance(embedded_blockers, list):
+                embedded_violations.append("blockers_not_list")
+            else:
+                normalized_embedded = sorted(str(item) for item in embedded_blockers)
+                normalized_expected = sorted(blockers)
+                if normalized_embedded != normalized_expected:
+                    embedded_violations.append("blockers_stale")
+    blockers = blockers + [f"embedded_field_contract:{field}" for field in embedded_violations]
     return {
         "status": "passed" if not blockers else "failed",
         "passed": not blockers,
         "blockers": blockers,
-        "required_fields": sorted(REQUIRED_REPORT_FIELDS),
+        "required_fields": sorted(required_fields),
+        "requires_embedded_field_contract": require_embedded,
         "missing_fields": missing_fields,
         "invalid_type_fields": invalid_type_fields,
         "safety_violations": safety_violations,
         "config_summary_violations": config_violations,
         "log_evidence_violations": log_violations,
         "manual_evidence_violations": manual_violations,
+        "embedded_field_contract_violations": embedded_violations,
     }
 
 
@@ -714,7 +742,7 @@ def build_candidate_generation_gate(report: dict[str, Any], summary_reviewed: bo
         blockers.append("audit_window_shorter_than_30_days")
     if not summary_reviewed:
         blockers.append("summary_not_marked_reviewed")
-    field_contract = validate_report_field_contract(report)
+    field_contract = validate_report_field_contract(report, require_embedded=True)
     blockers.extend(f"field_contract:{blocker}" for blocker in field_contract["blockers"])
     allowed = not blockers
     return {
