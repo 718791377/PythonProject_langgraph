@@ -626,6 +626,78 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     return report
 
 
+def render_markdown_summary(report: dict[str, Any]) -> str:
+    audit_window = report.get("audit_window", {})
+    config = report.get("config_summary", {})
+    warnings = report.get("log_evidence", {})
+    warning_severity = report.get("warning_severity", {})
+    noise_review = report.get("noise_review", {})
+    audit_state = report.get("audit_state", {})
+    lines = [
+        "# Codex Skills Usage Audit Summary",
+        "",
+        "## Audit window",
+        "",
+        f"- Since: `{audit_window.get('since')}`",
+        f"- Until: `{audit_window.get('until')}`",
+        f"- Days: `{audit_window.get('days')}`",
+        f"- Audit state: `{audit_state.get('state')}` ({audit_state.get('reason')})",
+        "",
+        "## Current configuration surface",
+        "",
+        f"- Enabled plugins: `{len(config.get('enabled_plugins', []))}`",
+        f"- Disabled plugins: `{len(config.get('disabled_plugins', []))}`",
+        f"- Unknown plugin states: `{len(config.get('unknown_enabled_state_plugins', []))}`",
+        "",
+        "## Warning conclusion",
+        "",
+        f"- Budget warning count: `{warnings.get('budget_warning_count')}`",
+        f"- Skipped loading count: `{warnings.get('skipped_loading_count')}`",
+        f"- Highest severity: `{warning_severity.get('level')}`",
+        f"- Severity reason: `{warning_severity.get('reason')}`",
+        "",
+        "## Module evidence",
+        "",
+        "| Module | Strong total | Weak mentions | Tool-call medium evidence | Recommendation |",
+        "| --- | ---: | ---: | ---: | --- |",
+    ]
+    for row in report.get("module_evidence", [])[:20]:
+        lines.append(
+            "| {module} | {strong} | {weak} | {tools} | {recommendation} |".format(
+                module=row.get("module"),
+                strong=row.get("strong_total"),
+                weak=row.get("weak_plugin_mentions"),
+                tools=row.get("mapped_tool_call_mentions"),
+                recommendation=row.get("recommendation"),
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Noise review",
+            "",
+            f"- Status: `{noise_review.get('status')}`",
+            f"- Removed explicit-skill noise tokens: `{len(noise_review.get('explicit_skill_noise_removed', {}))}`",
+            f"- Strong evidence policy: `{noise_review.get('strong_evidence_policy')}`",
+            "",
+            "## Decision recommendation",
+            "",
+            "- This sanitized summary is review evidence only.",
+            "- It does not modify `config.toml`, plugin cache, or hard-load profiles.",
+            "- Create a separate profile apply candidate record before any apply action.",
+            "",
+            "## Non-action list",
+            "",
+            "- Did not modify user-level `config.toml`.",
+            "- Did not edit plugin/vendor cache.",
+            "- Did not perform hard-load/profile apply.",
+            "- Did not include raw session transcripts or raw log databases.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def print_human(report: dict[str, Any]) -> None:
     print(f"Codex skills usage audit ({report['mode']})")
     print(f"Window: {report['audit_window']['since']} -> {report['audit_window']['until']}")
@@ -651,6 +723,7 @@ def main() -> int:
     parser.add_argument("--baseline", action="store_true", help="Label the report as a baseline snapshot.")
     parser.add_argument("--json", action="store_true", help="Emit JSON to stdout.")
     parser.add_argument("--output", default=None, help="Optional path to write JSON report.")
+    parser.add_argument("--summary-output", default=None, help="Optional path to write sanitized Markdown summary.")
     args = parser.parse_args()
 
     report = build_report(args)
@@ -658,6 +731,10 @@ def main() -> int:
         output = Path(args.output)
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    if args.summary_output:
+        summary_output = Path(args.summary_output)
+        summary_output.parent.mkdir(parents=True, exist_ok=True)
+        summary_output.write_text(render_markdown_summary(report), encoding="utf-8")
     if args.json:
         emit_stdout(json.dumps(report, ensure_ascii=False, indent=2))
     else:

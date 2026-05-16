@@ -436,6 +436,31 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(summary["audit_state"]["reason"], "audit_window_at_least_30_days")
         self.assertFalse(summary["audit_state"]["profile_apply_allowed"])
 
+    def test_render_markdown_summary_is_sanitized_and_non_mutating(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-summary")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+        )
+
+        summary = audit.render_markdown_summary(audit.build_report(args))
+
+        self.assertIn("# Codex Skills Usage Audit Summary", summary)
+        self.assertIn("## Audit window", summary)
+        self.assertIn("## Current configuration surface", summary)
+        self.assertIn("## Warning conclusion", summary)
+        self.assertIn("## Module evidence", summary)
+        self.assertIn("## Noise review", summary)
+        self.assertIn("## Decision recommendation", summary)
+        self.assertIn("## Non-action list", summary)
+        self.assertIn("Did not modify user-level `config.toml`.", summary)
+        self.assertIn("Did not perform hard-load/profile apply.", summary)
+        self.assertNotIn("sk-", summary)
+        self.assertNotIn("access_token=", summary)
+
 
 if __name__ == "__main__":
     unittest.main()
