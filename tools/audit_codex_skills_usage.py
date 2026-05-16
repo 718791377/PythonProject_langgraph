@@ -31,6 +31,8 @@ BACKTICK_PATTERN = re.compile(r"`([^`]+)`")
 SKILL_PATH_PATTERN = re.compile(r"([A-Z]:\\[^\s\"']*?SKILL\.md)", re.IGNORECASE)
 BUDGET_WARNING_PATTERN = re.compile(r"Exceeded skills context budget of 2%", re.IGNORECASE)
 OMITTED_PATTERN = re.compile(r"(\d+)\s+additional skills", re.IGNORECASE)
+WINDOWS_PATH_PATTERN = re.compile(r"[A-Za-z]:\\[^\s\"'<>|]+")
+ACCESS_TOKEN_PATTERN = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie)\s*[:=]\s*([^\s,;]+)")
 GENERIC_EXPLICIT_SKILL_NOISE = {
     "a",
     "an",
@@ -80,6 +82,12 @@ def parse_ts(value: str | None) -> datetime | None:
 
 def default_codex_home() -> Path:
     return Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
+
+
+def sanitize_log_excerpt(text: str, limit: int = 500) -> str:
+    sanitized = WINDOWS_PATH_PATTERN.sub("[REDACTED_PATH]", text)
+    sanitized = ACCESS_TOKEN_PATTERN.sub(lambda m: m.group(0).replace(m.group(1), "[REDACTED_SECRET]"), sanitized)
+    return sanitized[:limit]
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -357,7 +365,7 @@ def scan_logs(codex_home: Path, cutoff: datetime) -> dict[str, Any]:
                 "target": target,
                 "omitted_additional_skills": int(omitted_match.group(1)) if omitted_match else None,
                 "all_descriptions_removed": "All skill descriptions were removed" in body_text,
-                "message_excerpt": body_text[:500],
+                "message_excerpt": sanitize_log_excerpt(body_text),
             }
             if BUDGET_WARNING_PATTERN.search(body_text):
                 warnings.append(row)

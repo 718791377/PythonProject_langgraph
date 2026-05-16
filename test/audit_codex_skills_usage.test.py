@@ -114,6 +114,33 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertTrue(warning["all_descriptions_removed"])
         self.assertEqual(warning["omitted_additional_skills"], 16)
 
+    def test_scan_logs_sanitizes_warning_message_excerpt(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-log-sanitize")
+        db = codex_home / "logs_2.sqlite"
+        with sqlite3.connect(db) as con:
+            con.execute("create table logs(ts integer, level text, target text, feedback_log_body text)")
+            con.execute(
+                "insert into logs values (?, ?, ?, ?)",
+                (
+                    int(time.time()),
+                    "WARN",
+                    "codex_client::transport",
+                    "Exceeded skills context budget of 2%. "
+                    r"Path C:\Users\lenovo\.codex\sessions\secret.jsonl "
+                    "api_key=sk-test-secret cookie=session-secret",
+                ),
+            )
+
+        report = audit.scan_logs(codex_home, audit.now_utc() - timedelta(days=1))
+        excerpt = report["recent_budget_warnings"][0]["message_excerpt"]
+
+        self.assertIn("[REDACTED_PATH]", excerpt)
+        self.assertIn("api_key=[REDACTED_SECRET]", excerpt)
+        self.assertIn("cookie=[REDACTED_SECRET]", excerpt)
+        self.assertNotIn("sk-test-secret", excerpt)
+        self.assertNotIn("session-secret", excerpt)
+        self.assertNotIn(r"C:\Users\lenovo", excerpt)
+
     def test_report_uses_repo_profile_fallback_and_expands_full_module(self) -> None:
         codex_home = self.make_codex_home("skills-audit-profile")
         (codex_home / "config.toml").write_text(
