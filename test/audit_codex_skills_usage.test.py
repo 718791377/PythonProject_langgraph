@@ -183,6 +183,30 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Browser", full_rows[0]["plugins"])
         self.assertNotIn("a", full_rows[0]["plugins"])
 
+    def test_report_preserves_unknown_plugin_enabled_state(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-unknown-plugin")
+        (codex_home / "config.toml").write_text(
+            '[plugins."Browser"]\n'
+            "enabled = true\n"
+            '[plugins."Vercel"]\n'
+            "enabled = false\n"
+            '[plugins."Twilio Developer Kit"]\n',
+            encoding="utf-8",
+        )
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=0,
+            since=None,
+            baseline=True,
+        )
+
+        report = audit.build_report(args)
+
+        self.assertEqual(report["config_summary"]["enabled_plugins"], ["Browser"])
+        self.assertEqual(report["config_summary"]["disabled_plugins"], ["Vercel"])
+        self.assertEqual(report["config_summary"]["unknown_enabled_state_plugins"], ["Twilio Developer Kit"])
+
     def test_report_includes_profile_decision_field_contract(self) -> None:
         codex_home = self.make_codex_home("skills-audit-contract")
         args = argparse.Namespace(
