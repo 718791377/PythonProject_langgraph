@@ -89,6 +89,40 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         report = audit.scan_sessions(codex_home, REPO_ROOT, audit.now_utc() - timedelta(days=1), {"plugin-modules"})
 
         self.assertEqual(report["explicit_skills"], {"plugin-modules": 1})
+        self.assertEqual(
+            report["explicit_skill_noise_removed"],
+            {"and": 1, "from": 1, "draft": 1, "unknown-skill": 1},
+        )
+
+    def test_report_includes_noise_review_for_removed_explicit_skill_tokens(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-noise-review")
+        skill_dir = codex_home / "skills" / "plugin-modules"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("---\nname: plugin-modules\ndescription: Test skill.\n---\n", encoding="utf-8")
+        sessions_dir = codex_home / "sessions"
+        sessions_dir.mkdir(parents=True)
+        payload = {
+            "timestamp": audit.now_utc().isoformat(),
+            "type": "event_msg",
+            "payload": {"message": "Using skills: `plugin-modules`, `and`, `unknown-skill`"},
+        }
+        (sessions_dir / "session.jsonl").write_text(json.dumps(payload, ensure_ascii=False) + "\n", encoding="utf-8")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+        )
+
+        report = audit.build_report(args)
+
+        self.assertEqual(report["noise_review"]["status"], "review_required")
+        self.assertEqual(report["noise_review"]["explicit_skill_noise_removed"], {"and": 1, "unknown-skill": 1})
+        self.assertEqual(
+            report["noise_review"]["strong_evidence_policy"],
+            "removed_noise_tokens_are_not_counted_as_strong_evidence",
+        )
 
     def test_scan_logs_captures_budget_warning_shape(self) -> None:
         codex_home = self.make_codex_home("skills-audit-logs")
@@ -229,6 +263,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "log_evidence",
             "session_evidence",
             "module_evidence",
+            "noise_review",
             "recommendations",
         }
         self.assertLessEqual(required_top_level, set(report))
@@ -242,6 +277,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("budget_warning_count", report["log_evidence"])
         self.assertIn("explicit_skills", report["session_evidence"])
         self.assertIsInstance(report["module_evidence"], list)
+        self.assertIn("status", report["noise_review"])
         self.assertIsInstance(report["recommendations"], list)
 
     def test_since_with_timezone_is_converted_to_utc_without_replacing_offset(self) -> None:

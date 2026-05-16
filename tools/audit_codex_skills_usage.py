@@ -230,6 +230,28 @@ def extract_skill_names(segment: str, allowed_names: set[str] | None = None) -> 
     return filtered
 
 
+def classify_explicit_skill_names(
+    segment: str, allowed_names: set[str] | None = None
+) -> tuple[list[str], list[str], list[str]]:
+    names = [name.strip() for name in BACKTICK_PATTERN.findall(segment) if name.strip()]
+    accepted: list[str] = []
+    generic_noise: list[str] = []
+    unknown_noise: list[str] = []
+    for name in names:
+        lowered = name.lower()
+        if not re.match(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{1,79}$", name):
+            unknown_noise.append(name)
+            continue
+        if lowered in GENERIC_EXPLICIT_SKILL_NOISE:
+            generic_noise.append(name)
+            continue
+        if allowed_names is not None and lowered not in allowed_names:
+            unknown_noise.append(name)
+            continue
+        accepted.append(name)
+    return accepted, generic_noise, unknown_noise
+
+
 def known_skill_names(codex_home: Path, repo_root: Path, modules: set[str], known_plugins: list[str]) -> set[str]:
     names = {module.lower() for module in modules}
     names.update(plugin.lower() for plugin in known_plugins)
@@ -253,6 +275,7 @@ def known_skill_names(codex_home: Path, repo_root: Path, modules: set[str], know
 def scan_sessions(codex_home: Path, repo_root: Path, cutoff: datetime, modules: set[str]) -> dict[str, Any]:
     sessions_root = codex_home / "sessions"
     explicit_skills: Counter[str] = Counter()
+    explicit_skill_noise: Counter[str] = Counter()
     skill_paths: Counter[str] = Counter()
     profile_helper_calls: Counter[str] = Counter()
     weak_plugin_mentions: Counter[str] = Counter()
@@ -267,6 +290,7 @@ def scan_sessions(codex_home: Path, repo_root: Path, cutoff: datetime, modules: 
             "files_scanned": 0,
             "lines_scanned": 0,
             "explicit_skills": {},
+            "explicit_skill_noise_removed": {},
             "skill_paths": {},
             "profile_helper_calls": {},
             "tool_call_names": {},
@@ -302,8 +326,13 @@ def scan_sessions(codex_home: Path, repo_root: Path, cutoff: datetime, modules: 
             for text in texts:
                 for pattern in SKILL_ANNOUNCE_PATTERNS:
                     for match in pattern.finditer(text):
-                        for name in extract_skill_names(match.group(1)[:300], allowed_explicit_skill_names):
+                        accepted, generic_noise, unknown_noise = classify_explicit_skill_names(
+                            match.group(1)[:300], allowed_explicit_skill_names
+                        )
+                        for name in accepted:
                             explicit_skills[name] += 1
+                        for name in generic_noise + unknown_noise:
+                            explicit_skill_noise[name] += 1
                 for match in SKILL_PATH_PATTERN.finditer(text):
                     skill_paths[normalize_skill_path(match.group(1), codex_home, repo_root)] += 1
                 for match in module_command_re.finditer(text):
@@ -325,6 +354,7 @@ def scan_sessions(codex_home: Path, repo_root: Path, cutoff: datetime, modules: 
         "files_scanned": files_scanned,
         "lines_scanned": lines_scanned,
         "explicit_skills": dict(explicit_skills.most_common()),
+        "explicit_skill_noise_removed": dict(explicit_skill_noise.most_common()),
         "skill_paths": dict(skill_paths.most_common()),
         "profile_helper_calls": dict(profile_helper_calls.most_common()),
         "tool_call_names": dict(tool_call_names.most_common()),
@@ -449,6 +479,15 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
     return rows
 
 
+def build_noise_review(session_data: dict[str, Any]) -> dict[str, Any]:
+    removed = dict(session_data.get("explicit_skill_noise_removed", {}))
+    return {
+        "status": "review_required" if removed else "no_obvious_false_positives_found",
+        "explicit_skill_noise_removed": removed,
+        "strong_evidence_policy": "removed_noise_tokens_are_not_counted_as_strong_evidence",
+    }
+
+
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     root = Path(args.root).resolve()
     codex_home = Path(args.codex_home).resolve() if args.codex_home else default_codex_home().resolve()
@@ -466,6 +505,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     logs_data = scan_logs(codex_home, cutoff)
     inventory_counts = collect_inventory_counts(codex_home, root)
     module_evidence = build_module_evidence(profiles, session_data)
+    noise_review = build_noise_review(session_data)
     report = {
         "schema_version": 1,
         "generated_at": generated_at.isoformat(),
@@ -495,6 +535,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "log_evidence": logs_data,
         "session_evidence": session_data,
         "module_evidence": module_evidence,
+        "noise_review": noise_review,
         "recommendations": [
             "Do not treat another 2% budget warning as soft-load failure; soft-load is outside the model-visible skills budget surface.",
             "Continue audit-only mode until the agreed window closes unless a concrete task requires a profile preview or explicitly approved hard-load apply.",
