@@ -286,6 +286,30 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(high["default_candidate_threshold"], 10)
         self.assertEqual(high["recommendation"], "candidate_for_project_or_default_profile_review")
 
+    def test_mapped_tool_calls_are_medium_evidence_only(self) -> None:
+        profiles = {
+            "modules": {
+                "web-saas": {
+                    "plugins": ["Vercel"],
+                }
+            }
+        }
+
+        row = audit.build_module_evidence(
+            profiles,
+            {
+                "profile_helper_calls": {},
+                "skill_paths": {},
+                "tool_call_names": {"mcp__vercel__deploy": 4, "web_saas_preview": 2},
+                "weak_plugin_mentions": {},
+            },
+        )[0]
+
+        self.assertEqual(row["mapped_tool_call_mentions"], 6)
+        self.assertEqual(row["mapped_tool_call_policy"], "medium_evidence_only_not_counted_as_strong_evidence")
+        self.assertEqual(row["strong_total"], 0)
+        self.assertEqual(row["recommendation"], "no_recent_evidence_keep_dormant_not_deleted")
+
     def test_report_preserves_unknown_plugin_enabled_state(self) -> None:
         codex_home = self.make_codex_home("skills-audit-unknown-plugin")
         (codex_home / "config.toml").write_text(

@@ -467,11 +467,30 @@ def module_plugins(profiles: dict[str, Any], module: dict[str, Any]) -> list[str
     return []
 
 
+def normalize_name_for_match(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", value.lower())
+
+
+def mapped_tool_call_count(tool_call_counts: Counter[str], module_name: str, plugins: list[str]) -> int:
+    module_key = normalize_name_for_match(module_name)
+    plugin_keys = [normalize_name_for_match(plugin) for plugin in plugins]
+    total = 0
+    for tool_name, count in tool_call_counts.items():
+        tool_key = normalize_name_for_match(tool_name)
+        if module_key and module_key in tool_key:
+            total += count
+            continue
+        if any(plugin_key and plugin_key in tool_key for plugin_key in plugin_keys):
+            total += count
+    return total
+
+
 def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]) -> list[dict[str, Any]]:
     modules = profiles.get("modules") if isinstance(profiles.get("modules"), dict) else {}
     helper_counts = Counter(session_data.get("profile_helper_calls", {}))
     skill_path_counts = Counter(session_data.get("skill_paths", {}))
     weak_mentions = Counter(session_data.get("weak_plugin_mentions", {}))
+    tool_call_counts = Counter(session_data.get("tool_call_names", {}))
     rows: list[dict[str, Any]] = []
     for module_name, module in modules.items():
         plugins = module_plugins(profiles, module) if isinstance(module, dict) else []
@@ -486,6 +505,7 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
                     strong_path += count
                     break
         helper = helper_counts.get(module_name, 0)
+        mapped_tools = mapped_tool_call_count(tool_call_counts, module_name, plugins)
         strong_total = helper + strong_path
         if strong_total >= 10:
             recommendation = "candidate_for_project_or_default_profile_review"
@@ -503,6 +523,8 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
                 "strong_skill_path_reads": strong_path,
                 "strong_total": strong_total,
                 "default_candidate_threshold": 10,
+                "mapped_tool_call_mentions": mapped_tools,
+                "mapped_tool_call_policy": "medium_evidence_only_not_counted_as_strong_evidence",
                 "weak_plugin_mentions": weak,
                 "recommendation": recommendation,
             }
