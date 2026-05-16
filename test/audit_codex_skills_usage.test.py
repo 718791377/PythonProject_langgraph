@@ -113,6 +113,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             days=1,
             since=None,
             baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
         )
 
         report = audit.build_report(args)
@@ -144,6 +146,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertTrue(report["available"])
         self.assertEqual(report["budget_warning_count"], 1)
+        self.assertEqual(report["last_7d_budget_warning_count"], 1)
+        self.assertEqual(report["all_descriptions_removed_count"], 1)
+        self.assertEqual(report["last_7d_all_descriptions_removed_count"], 1)
+        self.assertEqual(report["max_omitted_additional_skills"], 16)
         warning = report["recent_budget_warnings"][0]
         self.assertTrue(warning["all_descriptions_removed"])
         self.assertEqual(warning["omitted_additional_skills"], 16)
@@ -185,6 +191,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             {
                 "available": False,
                 "budget_warning_count": 0,
+                "last_7d_budget_warning_count": 0,
+                "all_descriptions_removed_count": 0,
+                "last_7d_all_descriptions_removed_count": 0,
+                "max_omitted_additional_skills": 0,
                 "recent_budget_warnings": [],
                 "skipped_loading_count": 0,
                 "recent_skipped_loading": [],
@@ -197,6 +207,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             {
                 "available": True,
                 "budget_warning_count": 3,
+                "last_7d_budget_warning_count": 3,
                 "recent_budget_warnings": [],
             }
         )
@@ -204,6 +215,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             {
                 "available": True,
                 "budget_warning_count": 1,
+                "all_descriptions_removed_count": 1,
                 "recent_budget_warnings": [{"all_descriptions_removed": True}],
             }
         )
@@ -243,6 +255,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             days=0,
             since=None,
             baseline=True,
+            late_run=False,
+            missed_weekly_runs=None,
         )
 
         report = audit.build_report(args)
@@ -250,9 +264,28 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertEqual(report["safety"]["audit_only"], True)
         self.assertEqual(report["config_summary"]["enabled_plugins"], ["Browser"])
+        current_profile = report["config_summary"]["current_profile"]
+        self.assertEqual(current_profile["inferred_profile"], "custom_or_unmatched")
+        self.assertTrue(current_profile["manual_review_required"])
         self.assertEqual(len(full_rows), 1)
         self.assertIn("Browser", full_rows[0]["plugins"])
         self.assertNotIn("a", full_rows[0]["plugins"])
+
+    def test_current_profile_summary_detects_exact_module_match(self) -> None:
+        profiles = {
+            "known_plugins": ["Browser", "GitHub", "Vercel"],
+            "modules": {
+                "daily": {"plugins": ["Browser", "GitHub"]},
+                "web": {"plugins": ["Browser", "GitHub", "Vercel"]},
+            },
+        }
+
+        summary = audit.build_current_profile_summary(profiles, ["browser-use@openai-bundled", "github@openai-curated"])
+
+        self.assertEqual(summary["inferred_profile"], "daily")
+        self.assertEqual(summary["exact_profile_matches"], ["daily"])
+        self.assertEqual(summary["matched_enabled_known_plugins"], ["Browser", "GitHub"])
+        self.assertFalse(summary["manual_review_required"])
 
     def test_module_evidence_recommendation_uses_plan_threshold(self) -> None:
         profiles = {
@@ -307,6 +340,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertEqual(row["mapped_tool_call_mentions"], 6)
         self.assertEqual(row["mapped_tool_call_policy"], "medium_evidence_only_not_counted_as_strong_evidence")
+        self.assertEqual(row["medium_evidence_rationale"], "mapped_tool_calls_present_manual_review_required")
+        self.assertEqual(row["cross_project_utility"], "manual_review_required")
         self.assertEqual(row["strong_total"], 0)
         self.assertEqual(row["recommendation"], "no_recent_evidence_keep_dormant_not_deleted")
 
@@ -326,6 +361,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             days=0,
             since=None,
             baseline=True,
+            late_run=False,
+            missed_weekly_runs=None,
         )
 
         report = audit.build_report(args)
@@ -342,6 +379,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             days=30,
             since=None,
             baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
         )
 
         report = audit.build_report(args)
@@ -353,6 +392,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "audit_window",
             "safety",
             "config_summary",
+            "cadence_review",
             "inventory_summary",
             "log_evidence",
             "warning_severity",
@@ -369,6 +409,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertFalse(report["safety"]["edits_plugin_cache"])
         self.assertFalse(report["safety"]["hard_load_apply_performed"])
         self.assertIn("enabled_plugins", report["config_summary"])
+        self.assertIn("current_profile", report["config_summary"])
+        self.assertEqual(report["cadence_review"]["weekly_report_review"], "manual_review_required")
+        self.assertIn("last_7d_budget_warning_count", report["log_evidence"])
         self.assertIn("total_skills", report["inventory_summary"])
         self.assertIn("budget_warning_count", report["log_evidence"])
         self.assertIn("level", report["warning_severity"])
@@ -391,6 +434,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             days=30,
             since="2026-05-16T08:00:00+08:00",
             baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
         )
 
         report = audit.build_report(args)
@@ -406,6 +451,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             days=0,
             since=None,
             baseline=True,
+            late_run=False,
+            missed_weekly_runs=None,
         )
         weekly_args = argparse.Namespace(
             root=str(REPO_ROOT),
@@ -413,6 +460,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             days=7,
             since=None,
             baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
         )
         summary_args = argparse.Namespace(
             root=str(REPO_ROOT),
@@ -420,6 +469,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             days=30,
             since=None,
             baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
         )
 
         baseline = audit.build_report(baseline_args)
@@ -444,6 +495,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             days=30,
             since=None,
             baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
         )
 
         summary = audit.render_markdown_summary(audit.build_report(args))
@@ -455,6 +508,11 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("## Module evidence", summary)
         self.assertIn("## Noise review", summary)
         self.assertIn("## Decision recommendation", summary)
+        self.assertIn("## Risks and restore path", summary)
+        self.assertIn("Inferred current profile:", summary)
+        self.assertIn("Last 7d budget warning count:", summary)
+        self.assertIn("Cross-project utility", summary)
+        self.assertIn("set_plugin_profile.ps1 -RestoreLatest -Apply", summary)
         self.assertIn("## Non-action list", summary)
         self.assertIn("Did not modify user-level `config.toml`.", summary)
         self.assertIn("Did not perform hard-load/profile apply.", summary)

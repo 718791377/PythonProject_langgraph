@@ -109,8 +109,10 @@ created_at: 2026-05-16
 ### 5.4 30 天决策报告
 
 ```powershell
-.\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json
+.\.venv\Scripts\python.exe .	oolsudit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json --summary-output .\.tmp\skills-usage-audit-30d-summary.md
 ```
+
+`--summary-output` 写入脱敏 Markdown 决策摘要。它只作为复核证据，不得修改 `config.toml`、plugin cache 或 hard-load profile。
 
 ### 5.5 Windows stdout 与回归测试
 
@@ -134,11 +136,12 @@ created_at: 2026-05-16
 | `generated_at` | 报告生成时间 | 判断报告是否过期 |
 | `audit_window` | `since` / `until` / `days` | 防止用错误窗口做 30 天决策 |
 | `safety` | 是否修改配置、plugin cache、hard-load apply | 必须全部证明 audit-only |
-| `config_summary` | enabled / disabled / unknown plugins | 判断当前 profile 面是否过大 |
+| `config_summary` | enabled / disabled / unknown plugins，以及 `current_profile` 推断 | 判断当前 profile 面是否过大，以及是否精确匹配已知 module |
 | `inventory_summary` | user/repo/plugin skills 数量 | 判断 2% budget 压力来源 |
-| `log_evidence` | budget warning 与 skipped loading 证据 | 判断 warning 是否仍在会话中出现 |
+| `log_evidence` | budget warning、7 天 warning 数、`All skill descriptions were removed`、最大 omitted skills 数和 skipped loading 证据 | 判断 warning 是否仍在会话中出现，以及严重度是否越过方案阈值 |
 | `session_evidence` | explicit skills、SKILL.md reads、helper calls、tool calls | 作为强/中/弱证据输入 |
-| `module_evidence` | 按 profile module 汇总的强/弱证据 | 生成 profile 决策候选 |
+| `module_evidence` | 按 profile module 汇总的强证据、中证据说明、弱证据和跨项目复核字段 | 生成 profile 决策候选，同时避免把中证据当作强证据 |
+| `cadence_review` | late-run 与漏跑周报标记 | 防止 30 天决策摘要隐藏审计节奏偏离 |
 | `recommendations` | 审计建议 | 只能作为建议，不能自动 apply |
 
 ### 5.7 审计节奏、留存与报告命名
@@ -149,6 +152,7 @@ created_at: 2026-05-16
 | --- | --- | --- | --- |
 | 第 0 天 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | 冻结初始 enabled plugins、inventory 和 warning 状态 |
 | 每周 | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | 发现会话中新增 warning 与模块使用趋势 |
+| 漏跑周报补跑 | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | 保留明确的节奏偏离标记，而不是伪造漏跑报告 |
 | 第 30 天 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | 形成是否调整默认 profile 的证据包 |
 | 出现 warning 后 | `--days 1` 或 `--since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | 定位 warning 是否来自当前会话重打包 |
 
@@ -172,12 +176,12 @@ created_at: 2026-05-16
 第 30 天不能只提交原始 JSON。必须形成一份可人工复核的脱敏 Markdown 摘要，至少包含：
 
 1. 审计窗口：起止时间、是否漏跑周报、是否有 late run。
-2. 当前配置面：enabled/disabled/unknown plugin 数量，以及当前默认 profile。
+2. 当前配置面：enabled/disabled/unknown plugin 数量、`current_profile.inferred_profile`、精确 module 匹配，以及是否需要人工复核。
 3. Warning 结论：30 天 warning 总数、7 天 warning 总数、最高严重度、是否出现 `All skill descriptions were removed`。
-4. 证据表：按 module 列出强证据次数、中证据说明、弱证据次数、是否跨项目通用。
+4. 证据表：按 module 列出强证据次数、`medium_evidence_rationale`、弱证据次数、`cross_project_utility` 和 recommendation。
 5. 噪声复核：列出被剔除的明显误报 token，例如 `and`、`from`、`draft`；说明它们未计入强证据。
 6. 决策建议：常驻默认、项目 profile、按需 soft-load、保留 dormant、或仅留在 `full` 排障 profile。
-7. 风险与恢复路径：如果禁用或移出默认 profile，写明如何恢复、使用哪个 helper、是否需要重启/新会话。
+7. 风险与恢复路径：如果禁用或移出默认 profile，写明如何恢复、使用哪个 helper（例如 `set_plugin_profile.ps1 -RestoreLatest -Apply`）、是否需要通过 `codex-ohmy` 重启/新会话。
 8. 不执行清单：明确哪些动作本报告没有执行，例如未修改 `config.toml`、未编辑 plugin cache、未 hard-load apply。
 
 只有这份摘要与 JSON 报告字段契约同时满足，才允许进入后续 hard-load/profile apply 讨论。

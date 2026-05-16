@@ -381,14 +381,24 @@ def load_known_plugins(codex_home: Path, repo_root: Path | None = None) -> list[
     return []
 
 
-def scan_logs(codex_home: Path, cutoff: datetime) -> dict[str, Any]:
+def scan_logs(codex_home: Path, cutoff: datetime, until: datetime | None = None) -> dict[str, Any]:
     db = codex_home / "logs_2.sqlite"
     warnings: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
+    until = until or now_utc()
+    seven_day_cutoff_epoch = int((until - timedelta(days=7)).timestamp())
+    last_7d_budget_warning_count = 0
+    all_descriptions_removed_count = 0
+    last_7d_all_descriptions_removed_count = 0
+    max_omitted_additional_skills = 0
     if not db.exists():
         return {
             "available": False,
             "budget_warning_count": 0,
+            "last_7d_budget_warning_count": 0,
+            "all_descriptions_removed_count": 0,
+            "last_7d_all_descriptions_removed_count": 0,
+            "max_omitted_additional_skills": 0,
             "recent_budget_warnings": [],
             "skipped_loading_count": 0,
             "recent_skipped_loading": [],
@@ -402,19 +412,30 @@ def scan_logs(codex_home: Path, cutoff: datetime) -> dict[str, Any]:
             (cutoff_epoch, "%Exceeded skills context budget%", "%Skipped loading%"),
         )
         for ts, level, target, body in cur.fetchall():
-            dt = datetime.fromtimestamp(int(ts), timezone.utc).astimezone().isoformat()
+            ts_int = int(ts)
+            dt = datetime.fromtimestamp(ts_int, timezone.utc).astimezone().isoformat()
             body_text = str(body or "")
             omitted_match = OMITTED_PATTERN.search(body_text)
+            omitted_count = int(omitted_match.group(1)) if omitted_match else None
+            all_removed = "All skill descriptions were removed" in body_text
             row = {
                 "time": dt,
                 "level": level,
                 "target": target,
-                "omitted_additional_skills": int(omitted_match.group(1)) if omitted_match else None,
-                "all_descriptions_removed": "All skill descriptions were removed" in body_text,
+                "omitted_additional_skills": omitted_count,
+                "all_descriptions_removed": all_removed,
                 "message_excerpt": sanitize_log_excerpt(body_text),
             }
             if BUDGET_WARNING_PATTERN.search(body_text):
                 warnings.append(row)
+                if ts_int >= seven_day_cutoff_epoch:
+                    last_7d_budget_warning_count += 1
+                if all_removed:
+                    all_descriptions_removed_count += 1
+                    if ts_int >= seven_day_cutoff_epoch:
+                        last_7d_all_descriptions_removed_count += 1
+                if omitted_count is not None:
+                    max_omitted_additional_skills = max(max_omitted_additional_skills, omitted_count)
             if "Skipped loading" in body_text:
                 skipped.append(row)
     finally:
@@ -422,6 +443,10 @@ def scan_logs(codex_home: Path, cutoff: datetime) -> dict[str, Any]:
     return {
         "available": True,
         "budget_warning_count": len(warnings),
+        "last_7d_budget_warning_count": last_7d_budget_warning_count,
+        "all_descriptions_removed_count": all_descriptions_removed_count,
+        "last_7d_all_descriptions_removed_count": last_7d_all_descriptions_removed_count,
+        "max_omitted_additional_skills": max_omitted_additional_skills,
         "recent_budget_warnings": warnings[:20],
         "skipped_loading_count": len(skipped),
         "recent_skipped_loading": skipped[:20],
@@ -436,12 +461,15 @@ def build_warning_severity(logs_data: dict[str, Any]) -> dict[str, Any]:
             "recommended_action": "keep_log_evidence_available_false_and_do_not_treat_zero_as_no_warning",
         }
     warning_count = int(logs_data.get("budget_warning_count") or 0)
+    last_7d_warning_count = int(logs_data.get("last_7d_budget_warning_count") or 0)
     recent_warnings = logs_data.get("recent_budget_warnings") or []
-    all_descriptions_removed = any(row.get("all_descriptions_removed") for row in recent_warnings if isinstance(row, dict))
-    if all_descriptions_removed or warning_count >= 3:
+    all_descriptions_removed = bool(logs_data.get("all_descriptions_removed_count")) or any(
+        row.get("all_descriptions_removed") for row in recent_warnings if isinstance(row, dict)
+    )
+    if all_descriptions_removed or last_7d_warning_count >= 3:
         return {
             "level": "high",
-            "reason": "all_descriptions_removed_or_budget_warning_count_at_least_3",
+            "reason": "all_descriptions_removed_or_last_7d_budget_warning_count_at_least_3",
             "recommended_action": "avoid_full_profile_and_prefer_smaller_default_or_task_profile_during_audit",
         }
     if warning_count > 0:
@@ -494,6 +522,79 @@ def normalize_name_for_match(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", value.lower())
 
 
+def match_enabled_known_plugins(enabled_plugins: list[str], known_plugins: list[str]) -> tuple[list[str], list[str]]:
+    """Map config plugin entries to registry plugin names without exposing config contents."""
+    matched: set[str] = set()
+    unmatched: list[str] = []
+    known_pairs = [(plugin, normalize_name_for_match(plugin)) for plugin in known_plugins]
+    for entry in enabled_plugins:
+        entry_base = entry.split("@", 1)[0]
+        entry_keys = {
+            normalize_name_for_match(entry),
+            normalize_name_for_match(entry_base),
+        }
+        entry_matches = [
+            plugin
+            for plugin, plugin_key in known_pairs
+            if plugin_key and any(plugin_key in entry_key or entry_key in plugin_key for entry_key in entry_keys if entry_key)
+        ]
+        if entry_matches:
+            matched.update(entry_matches)
+        else:
+            unmatched.append(entry)
+    return sorted(matched), sorted(unmatched)
+
+
+def build_current_profile_summary(profiles: dict[str, Any], enabled_plugins: list[str]) -> dict[str, Any]:
+    known_plugins = [str(item) for item in profiles.get("known_plugins", []) if isinstance(item, str)]
+    matched_enabled, unmatched_enabled = match_enabled_known_plugins(enabled_plugins, known_plugins)
+    enabled_known = set(matched_enabled)
+    modules = profiles.get("modules") if isinstance(profiles.get("modules"), dict) else {}
+    matches: list[dict[str, Any]] = []
+    for module_name, module in modules.items():
+        if not isinstance(module, dict):
+            continue
+        expected = set(module_plugins(profiles, module))
+        if not expected:
+            continue
+        overlap = expected & enabled_known
+        missing = expected - enabled_known
+        extra = enabled_known - expected
+        matches.append(
+            {
+                "module": module_name,
+                "expected_plugins": len(expected),
+                "enabled_overlap": len(overlap),
+                "missing_expected_plugins": len(missing),
+                "extra_enabled_known_plugins": len(extra),
+                "coverage_ratio": round(len(overlap) / len(expected), 4) if expected else 0.0,
+            }
+        )
+    matches.sort(
+        key=lambda row: (
+            row["missing_expected_plugins"] == 0 and row["extra_enabled_known_plugins"] == 0,
+            row["coverage_ratio"],
+            -row["extra_enabled_known_plugins"],
+        ),
+        reverse=True,
+    )
+    exact_matches = [
+        row["module"]
+        for row in matches
+        if row["missing_expected_plugins"] == 0 and row["extra_enabled_known_plugins"] == 0
+    ]
+    inferred = exact_matches[0] if exact_matches else "custom_or_unmatched"
+    return {
+        "source": "inferred_from_enabled_plugin_entries",
+        "inferred_profile": inferred,
+        "exact_profile_matches": exact_matches,
+        "closest_profile_matches": matches[:3],
+        "matched_enabled_known_plugins": matched_enabled,
+        "unmatched_enabled_plugin_entries": unmatched_enabled,
+        "manual_review_required": inferred == "custom_or_unmatched" or bool(unmatched_enabled),
+    }
+
+
 def mapped_tool_call_count(tool_call_counts: Counter[str], module_name: str, plugins: list[str]) -> int:
     module_key = normalize_name_for_match(module_name)
     plugin_keys = [normalize_name_for_match(plugin) for plugin in plugins]
@@ -530,6 +631,9 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
         helper = helper_counts.get(module_name, 0)
         mapped_tools = mapped_tool_call_count(tool_call_counts, module_name, plugins)
         strong_total = helper + strong_path
+        medium_rationale = (
+            "mapped_tool_calls_present_manual_review_required" if mapped_tools else "no_mapped_tool_call_medium_evidence"
+        )
         if strong_total >= 10:
             recommendation = "candidate_for_project_or_default_profile_review"
         elif strong_total > 0:
@@ -548,7 +652,9 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
                 "default_candidate_threshold": 10,
                 "mapped_tool_call_mentions": mapped_tools,
                 "mapped_tool_call_policy": "medium_evidence_only_not_counted_as_strong_evidence",
+                "medium_evidence_rationale": medium_rationale,
                 "weak_plugin_mentions": weak,
+                "cross_project_utility": "manual_review_required",
                 "recommendation": recommendation,
             }
         )
@@ -578,12 +684,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     enabled_plugins = sorted([name for name, enabled in plugins_config.items() if enabled is True])
     disabled_plugins = sorted([name for name, enabled in plugins_config.items() if enabled is False])
     session_data = scan_sessions(codex_home, root, cutoff, modules)
-    logs_data = scan_logs(codex_home, cutoff)
+    logs_data = scan_logs(codex_home, cutoff, generated_at)
     inventory_counts = collect_inventory_counts(codex_home, root)
     module_evidence = build_module_evidence(profiles, session_data)
     noise_review = build_noise_review(session_data)
     warning_severity = build_warning_severity(logs_data)
     audit_state = build_audit_state(args)
+    current_profile = build_current_profile_summary(profiles, enabled_plugins)
     report = {
         "schema_version": 1,
         "generated_at": generated_at.isoformat(),
@@ -609,6 +716,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "enabled_plugins": enabled_plugins,
             "disabled_plugins": disabled_plugins,
             "unknown_enabled_state_plugins": sorted([name for name, enabled in plugins_config.items() if enabled is None]),
+            "current_profile": current_profile,
+        },
+        "cadence_review": {
+            "late_run": bool(getattr(args, "late_run", False)),
+            "missed_weekly_runs": getattr(args, "missed_weekly_runs", None),
+            "weekly_report_review": "manual_review_required",
         },
         "inventory_summary": inventory_counts,
         "log_evidence": logs_data,
@@ -648,26 +761,33 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Enabled plugins: `{len(config.get('enabled_plugins', []))}`",
         f"- Disabled plugins: `{len(config.get('disabled_plugins', []))}`",
         f"- Unknown plugin states: `{len(config.get('unknown_enabled_state_plugins', []))}`",
+        f"- Inferred current profile: `{config.get('current_profile', {}).get('inferred_profile')}`",
+        f"- Current profile source: `{config.get('current_profile', {}).get('source')}`",
+        f"- Current profile manual review required: `{config.get('current_profile', {}).get('manual_review_required')}`",
         "",
         "## Warning conclusion",
         "",
         f"- Budget warning count: `{warnings.get('budget_warning_count')}`",
+        f"- Last 7d budget warning count: `{warnings.get('last_7d_budget_warning_count')}`",
+        f"- All descriptions removed count: `{warnings.get('all_descriptions_removed_count')}`",
+        f"- Max omitted additional skills: `{warnings.get('max_omitted_additional_skills')}`",
         f"- Skipped loading count: `{warnings.get('skipped_loading_count')}`",
         f"- Highest severity: `{warning_severity.get('level')}`",
         f"- Severity reason: `{warning_severity.get('reason')}`",
         "",
         "## Module evidence",
         "",
-        "| Module | Strong total | Weak mentions | Tool-call medium evidence | Recommendation |",
-        "| --- | ---: | ---: | ---: | --- |",
+        "| Module | Strong total | Medium rationale | Weak mentions | Cross-project utility | Recommendation |",
+        "| --- | ---: | --- | ---: | --- | --- |",
     ]
     for row in report.get("module_evidence", [])[:20]:
         lines.append(
-            "| {module} | {strong} | {weak} | {tools} | {recommendation} |".format(
+            "| {module} | {strong} | {medium} | {weak} | {cross_project} | {recommendation} |".format(
                 module=row.get("module"),
                 strong=row.get("strong_total"),
+                medium=row.get("medium_evidence_rationale"),
                 weak=row.get("weak_plugin_mentions"),
-                tools=row.get("mapped_tool_call_mentions"),
+                cross_project=row.get("cross_project_utility"),
                 recommendation=row.get("recommendation"),
             )
         )
@@ -685,6 +805,13 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             "- This sanitized summary is review evidence only.",
             "- It does not modify `config.toml`, plugin cache, or hard-load profiles.",
             "- Create a separate profile apply candidate record before any apply action.",
+            "- Review `medium_evidence_rationale` and `cross_project_utility` manually before any default-profile decision.",
+            "",
+            "## Risks and restore path",
+            "",
+            "- If a plugin is removed from the default profile later, restore through `set_plugin_profile.ps1 -RestoreLatest -Apply` or apply the prior approved profile.",
+            "- Restart Codex through `codex-ohmy` after any future hard-load/profile apply.",
+            "- Keep this audit summary separate from any future apply-candidate record.",
             "",
             "## Non-action list",
             "",
@@ -724,6 +851,13 @@ def main() -> int:
     parser.add_argument("--json", action="store_true", help="Emit JSON to stdout.")
     parser.add_argument("--output", default=None, help="Optional path to write JSON report.")
     parser.add_argument("--summary-output", default=None, help="Optional path to write sanitized Markdown summary.")
+    parser.add_argument("--late-run", action="store_true", help="Mark this run as a late cadence recovery run.")
+    parser.add_argument(
+        "--missed-weekly-runs",
+        type=int,
+        default=None,
+        help="Optional manual count of missed weekly audit runs for the summary.",
+    )
     args = parser.parse_args()
 
     report = build_report(args)
