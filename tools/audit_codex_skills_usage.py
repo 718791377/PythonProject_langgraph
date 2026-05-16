@@ -458,7 +458,7 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
                     break
         helper = helper_counts.get(module_name, 0)
         strong_total = helper + strong_path
-        if strong_total >= 5:
+        if strong_total >= 10:
             recommendation = "candidate_for_project_or_default_profile_review"
         elif strong_total > 0:
             recommendation = "keep_module_on_demand_and_continue_audit"
@@ -472,6 +472,8 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
                 "plugins": plugins,
                 "strong_helper_calls": helper,
                 "strong_skill_path_reads": strong_path,
+                "strong_total": strong_total,
+                "default_candidate_threshold": 10,
                 "weak_plugin_mentions": weak,
                 "recommendation": recommendation,
             }

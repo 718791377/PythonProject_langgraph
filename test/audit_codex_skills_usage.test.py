@@ -217,6 +217,38 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Browser", full_rows[0]["plugins"])
         self.assertNotIn("a", full_rows[0]["plugins"])
 
+    def test_module_evidence_recommendation_uses_plan_threshold(self) -> None:
+        profiles = {
+            "modules": {
+                "web-saas": {
+                    "plugins": ["Vercel"],
+                }
+            }
+        }
+        low = audit.build_module_evidence(
+            profiles,
+            {
+                "profile_helper_calls": {"web-saas": 9},
+                "skill_paths": {},
+                "weak_plugin_mentions": {},
+            },
+        )[0]
+        high = audit.build_module_evidence(
+            profiles,
+            {
+                "profile_helper_calls": {"web-saas": 10},
+                "skill_paths": {},
+                "weak_plugin_mentions": {},
+            },
+        )[0]
+
+        self.assertEqual(low["strong_total"], 9)
+        self.assertEqual(low["default_candidate_threshold"], 10)
+        self.assertEqual(low["recommendation"], "keep_module_on_demand_and_continue_audit")
+        self.assertEqual(high["strong_total"], 10)
+        self.assertEqual(high["default_candidate_threshold"], 10)
+        self.assertEqual(high["recommendation"], "candidate_for_project_or_default_profile_review")
+
     def test_report_preserves_unknown_plugin_enabled_state(self) -> None:
         codex_home = self.make_codex_home("skills-audit-unknown-plugin")
         (codex_home / "config.toml").write_text(
