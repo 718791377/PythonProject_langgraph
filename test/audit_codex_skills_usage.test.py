@@ -141,6 +141,22 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertNotIn("session-secret", excerpt)
         self.assertNotIn(r"C:\Users\lenovo", excerpt)
 
+    def test_scan_logs_missing_database_keeps_log_evidence_shape(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-missing-logs")
+
+        report = audit.scan_logs(codex_home, audit.now_utc() - timedelta(days=1))
+
+        self.assertEqual(
+            report,
+            {
+                "available": False,
+                "budget_warning_count": 0,
+                "recent_budget_warnings": [],
+                "skipped_loading_count": 0,
+                "recent_skipped_loading": [],
+            },
+        )
+
     def test_report_uses_repo_profile_fallback_and_expands_full_module(self) -> None:
         codex_home = self.make_codex_home("skills-audit-profile")
         (codex_home / "config.toml").write_text(

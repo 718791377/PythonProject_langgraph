@@ -346,7 +346,13 @@ def scan_logs(codex_home: Path, cutoff: datetime) -> dict[str, Any]:
     warnings: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
     if not db.exists():
-        return {"available": False, "budget_warning_count": 0, "recent_budget_warnings": [], "skipped_loading_count": 0}
+        return {
+            "available": False,
+            "budget_warning_count": 0,
+            "recent_budget_warnings": [],
+            "skipped_loading_count": 0,
+            "recent_skipped_loading": [],
+        }
     cutoff_epoch = int(cutoff.timestamp())
     con = sqlite3.connect(str(db))
     try:
