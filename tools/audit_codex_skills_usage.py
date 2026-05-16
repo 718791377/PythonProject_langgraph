@@ -31,6 +31,24 @@ BACKTICK_PATTERN = re.compile(r"`([^`]+)`")
 SKILL_PATH_PATTERN = re.compile(r"([A-Z]:\\[^\s\"']*?SKILL\.md)", re.IGNORECASE)
 BUDGET_WARNING_PATTERN = re.compile(r"Exceeded skills context budget of 2%", re.IGNORECASE)
 OMITTED_PATTERN = re.compile(r"(\d+)\s+additional skills", re.IGNORECASE)
+GENERIC_EXPLICIT_SKILL_NOISE = {
+    "a",
+    "an",
+    "and",
+    "as",
+    "by",
+    "draft",
+    "for",
+    "from",
+    "in",
+    "into",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "with",
+}
 
 
 def emit_stdout(text: str) -> None:
@@ -177,11 +195,41 @@ def texts_from_jsonl_payload(obj: dict[str, Any]) -> list[str]:
     return texts
 
 
-def extract_skill_names(segment: str) -> list[str]:
+def extract_skill_names(segment: str, allowed_names: set[str] | None = None) -> list[str]:
     # Count only explicit backticked skill names. This avoids treating policy
     # prose such as "使用技能：xxx" or bullet text as actual usage evidence.
     names = [name.strip() for name in BACKTICK_PATTERN.findall(segment) if name.strip()]
-    return [name for name in names if re.match(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{1,79}$", name)]
+    filtered: list[str] = []
+    for name in names:
+        lowered = name.lower()
+        if not re.match(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{1,79}$", name):
+            continue
+        if lowered in GENERIC_EXPLICIT_SKILL_NOISE:
+            continue
+        if allowed_names is not None and lowered not in allowed_names:
+            continue
+        filtered.append(name)
+    return filtered
+
+
+def known_skill_names(codex_home: Path, repo_root: Path, modules: set[str], known_plugins: list[str]) -> set[str]:
+    names = {module.lower() for module in modules}
+    names.update(plugin.lower() for plugin in known_plugins)
+    for skills_root in (codex_home / "skills", repo_root / ".codex" / "skills"):
+        if skills_root.exists():
+            for skill_md in skills_root.rglob("SKILL.md"):
+                try:
+                    names.add(skill_md.parent.name.lower())
+                except OSError:
+                    continue
+    plugin_cache = codex_home / "plugins" / "cache"
+    if plugin_cache.exists():
+        for skill_md in plugin_cache.rglob("SKILL.md"):
+            try:
+                names.add(skill_md.parent.name.lower())
+            except OSError:
+                continue
+    return names
 
 
 def scan_sessions(codex_home: Path, repo_root: Path, cutoff: datetime, modules: set[str]) -> dict[str, Any]:
@@ -194,6 +242,7 @@ def scan_sessions(codex_home: Path, repo_root: Path, cutoff: datetime, modules: 
     files_scanned = 0
     lines_scanned = 0
     known_plugins = load_known_plugins(codex_home, repo_root)
+    allowed_explicit_skill_names = known_skill_names(codex_home, repo_root, modules, known_plugins)
 
     if not sessions_root.exists():
         return {
@@ -235,7 +284,7 @@ def scan_sessions(codex_home: Path, repo_root: Path, cutoff: datetime, modules: 
             for text in texts:
                 for pattern in SKILL_ANNOUNCE_PATTERNS:
                     for match in pattern.finditer(text):
-                        for name in extract_skill_names(match.group(1)[:300]):
+                        for name in extract_skill_names(match.group(1)[:300], allowed_explicit_skill_names):
                             explicit_skills[name] += 1
                 for match in SKILL_PATH_PATTERN.finditer(text):
                     skill_paths[normalize_skill_path(match.group(1), codex_home, repo_root)] += 1

@@ -66,6 +66,30 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertIn("plugin-modules", names)
 
+    def test_extract_skill_names_filters_generic_noise_and_unknown_names(self) -> None:
+        segment = "`plugin-modules`, `and`, `from`, `draft`, `unknown-skill`"
+
+        names = audit.extract_skill_names(segment, {"plugin-modules"})
+
+        self.assertEqual(names, ["plugin-modules"])
+
+    def test_scan_sessions_does_not_count_generic_explicit_skill_noise(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-noise")
+        sessions_dir = codex_home / "sessions"
+        sessions_dir.mkdir(parents=True)
+        payload = {
+            "timestamp": audit.now_utc().isoformat(),
+            "type": "event_msg",
+            "payload": {
+                "message": "Using skills: `plugin-modules`, `and`, `from`, `draft`, `unknown-skill`"
+            },
+        }
+        (sessions_dir / "session.jsonl").write_text(json.dumps(payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+        report = audit.scan_sessions(codex_home, REPO_ROOT, audit.now_utc() - timedelta(days=1), {"plugin-modules"})
+
+        self.assertEqual(report["explicit_skills"], {"plugin-modules": 1})
+
     def test_scan_logs_captures_budget_warning_shape(self) -> None:
         codex_home = self.make_codex_home("skills-audit-logs")
         db = codex_home / "logs_2.sqlite"
