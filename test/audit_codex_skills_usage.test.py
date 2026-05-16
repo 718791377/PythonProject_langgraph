@@ -7,7 +7,7 @@ import sqlite3
 import time
 import unittest
 import uuid
-from datetime import timedelta
+from datetime import timedelta, timezone
 from pathlib import Path
 
 
@@ -243,6 +243,27 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("explicit_skills", report["session_evidence"])
         self.assertIsInstance(report["module_evidence"], list)
         self.assertIsInstance(report["recommendations"], list)
+
+    def test_since_with_timezone_is_converted_to_utc_without_replacing_offset(self) -> None:
+        parsed = audit.parse_since("2026-05-16T08:00:00+08:00")
+
+        self.assertEqual(parsed.isoformat(), "2026-05-16T00:00:00+00:00")
+        self.assertEqual(parsed.tzinfo, timezone.utc)
+
+    def test_report_audit_window_uses_timezone_aware_since(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-since")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since="2026-05-16T08:00:00+08:00",
+            baseline=False,
+        )
+
+        report = audit.build_report(args)
+
+        self.assertEqual(report["audit_window"]["since"], "2026-05-16T00:00:00+00:00")
+        self.assertEqual(report["audit_window"]["days"], 30)
 
 
 if __name__ == "__main__":

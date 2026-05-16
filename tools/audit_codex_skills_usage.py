@@ -75,9 +75,19 @@ def parse_ts(value: str | None) -> datetime | None:
     if not value:
         return None
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
     except ValueError:
         return None
+
+
+def parse_since(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def default_codex_home() -> Path:
@@ -444,7 +454,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     codex_home = Path(args.codex_home).resolve() if args.codex_home else default_codex_home().resolve()
     generated_at = now_utc()
     if args.since:
-        cutoff = datetime.fromisoformat(args.since).replace(tzinfo=timezone.utc)
+        cutoff = parse_since(args.since)
     else:
         cutoff = generated_at - timedelta(days=max(args.days, 0))
     profiles = load_profiles(codex_home, root)
