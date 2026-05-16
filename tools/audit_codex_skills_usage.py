@@ -727,7 +727,14 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
     }
 
 
-def build_candidate_generation_gate(report: dict[str, Any], summary_reviewed: bool) -> dict[str, Any]:
+def build_candidate_generation_gate(
+    report: dict[str, Any],
+    summary_reviewed: bool,
+    *,
+    json_report_path: str | None = None,
+    markdown_summary_path: str | None = None,
+    require_source_reports: bool = False,
+) -> dict[str, Any]:
     audit_window = report.get("audit_window", {})
     try:
         configured_days = int(audit_window.get("days") or 0)
@@ -742,6 +749,12 @@ def build_candidate_generation_gate(report: dict[str, Any], summary_reviewed: bo
         blockers.append("audit_window_shorter_than_30_days")
     if not summary_reviewed:
         blockers.append("summary_not_marked_reviewed")
+    json_report_present = bool(str(json_report_path or "").strip())
+    markdown_summary_present = bool(str(markdown_summary_path or "").strip())
+    if require_source_reports and not json_report_present:
+        blockers.append("source_report_json_missing")
+    if require_source_reports and not markdown_summary_present:
+        blockers.append("source_report_markdown_summary_missing")
     field_contract = validate_report_field_contract(report, require_embedded=True)
     blockers.extend(f"field_contract:{blocker}" for blocker in field_contract["blockers"])
     allowed = not blockers
@@ -754,6 +767,9 @@ def build_candidate_generation_gate(report: dict[str, Any], summary_reviewed: bo
         "audit_window_days": configured_days,
         "audit_window_elapsed_days": round(elapsed_days, 4),
         "audit_window_at_least_30_days": audit_window_at_least_30_days,
+        "source_reports_required": bool(require_source_reports),
+        "json_report_present": json_report_present,
+        "markdown_summary_present": markdown_summary_present,
         "field_contract": field_contract,
         "ordinary_continue_or_generic_confirmation_is_not_apply_authorization": True,
     }
@@ -1412,7 +1428,13 @@ def main() -> int:
     report = build_report(args)
     candidate = None
     if args.candidate_output or args.candidate_summary_output:
-        candidate_gate = build_candidate_generation_gate(report, summary_reviewed=args.summary_reviewed)
+        candidate_gate = build_candidate_generation_gate(
+            report,
+            summary_reviewed=args.summary_reviewed,
+            json_report_path=args.output,
+            markdown_summary_path=args.summary_output,
+            require_source_reports=True,
+        )
         candidate = build_profile_apply_candidate(
             report,
             candidate_id=args.candidate_id,

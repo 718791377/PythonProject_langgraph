@@ -120,7 +120,7 @@ created_at: 2026-05-16
 .\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json --summary-output .\.tmp\skills-usage-audit-30d-summary.md --summary-reviewed --target-profile core-dev --candidate-output .\.tmp\skills-profile-candidate.json --candidate-summary-output .\.tmp\skills-profile-candidate.md
 ```
 
-候选输出永远是 `approval_state=preview-only`，不得修改 `config.toml`、plugin cache 或 hard-load profile。缺少 `--summary-reviewed` 或 30 天审计窗口时，候选生成门禁必须记录为 blocked。
+候选输出永远是 `approval_state=preview-only`，不得修改 `config.toml`、plugin cache 或 hard-load profile。缺少 `--summary-reviewed`、30 天审计窗口、`--output` 或 `--summary-output` 时，候选生成门禁必须记录为 blocked。
 
 ### 5.5 Windows stdout 与回归测试
 
@@ -239,6 +239,7 @@ created_at: 2026-05-16
 
 - 审计脚本可以通过 `--candidate-output` 与 `--candidate-summary-output` 生成候选 JSON/Markdown，但这些输出只能作为 preview 记录；
 - 候选生成必须记录门禁结果，且门禁要求 30 天审计窗口与 `--summary-reviewed`；
+- 候选生成必须要求 30 天 JSON 报告与脱敏 Markdown 摘要的 source-report 路径，避免已复核候选与复核证据脱钩；
 - 候选生成还必须校验报告字段契约；当必需顶层字段、audit-only 安全标志、决策关键嵌套字段或内嵌 `field_contract` 本身缺失、过期或类型错误时，必须以 `field_contract:<reason>` 阻断；
 - `approval_state=preview-only` 只能运行 preview，不得修改 `config.toml`；
 - `approved-to-apply` 必须来自用户明确授权，不能由“继续”或普通确认替代；
@@ -352,7 +353,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - profile helper 调用计数；
 - 按 plugin/module 聚合的 evidence；
 - apply 建议，但不自动 apply。
-- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
+- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
 - `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 
 每次人工复核报告时，还必须检查误报噪声：
@@ -392,6 +393,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 明确 30 天最终决策摘要模板；
 - 明确中证据、紧急例外和误报剔除的人工记录格式；
 - 明确 30 天审计后进入 hard-load/profile apply 前的候选变更门禁与回滚路径；
+- 要求候选生成必须绑定 JSON 报告路径与脱敏 Markdown 摘要路径；
 - 明确 audit 数据源的数据最小化、脱敏、留存和禁止外发边界；
 - 明确 audit 脚本的能力边界、已知限制和触发脚本增强的条件；
 - 明确审计运行状态机、停止条件，以及审计结束后与 profile apply 候选变更的分界；

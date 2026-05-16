@@ -718,6 +718,48 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(allowed_report["audit_state"]["state"], "apply-candidate")
         self.assertFalse(allowed_report["audit_state"]["profile_apply_allowed"])
 
+    def test_candidate_generation_gate_requires_source_report_paths_when_requested(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-candidate-source-gate")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output="candidate.json",
+            candidate_summary_output=None,
+            summary_reviewed=True,
+        )
+        report = audit.build_report(args)
+
+        blocked_gate = audit.build_candidate_generation_gate(
+            report,
+            summary_reviewed=True,
+            require_source_reports=True,
+        )
+        allowed_gate = audit.build_candidate_generation_gate(
+            report,
+            summary_reviewed=True,
+            json_report_path=".tmp/skills-usage-audit-30d.json",
+            markdown_summary_path=".tmp/skills-usage-audit-30d-summary.md",
+            require_source_reports=True,
+        )
+
+        self.assertFalse(blocked_gate["allowed"])
+        self.assertIn("source_report_json_missing", blocked_gate["blockers"])
+        self.assertIn("source_report_markdown_summary_missing", blocked_gate["blockers"])
+        self.assertTrue(blocked_gate["source_reports_required"])
+        self.assertFalse(blocked_gate["json_report_present"])
+        self.assertFalse(blocked_gate["markdown_summary_present"])
+        self.assertTrue(allowed_gate["allowed"])
+        self.assertTrue(allowed_gate["json_report_present"])
+        self.assertTrue(allowed_gate["markdown_summary_present"])
+
     def test_build_profile_apply_candidate_is_preview_only_and_reversible(self) -> None:
         report = {
             "generated_at": "2026-05-16T00:00:00+00:00",
