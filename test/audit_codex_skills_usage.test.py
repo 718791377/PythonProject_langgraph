@@ -116,6 +116,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             late_run=False,
             missed_weekly_runs=None,
             manual_notes=[],
+            output=None,
+            summary_output=None,
         )
 
         report = audit.build_report(args)
@@ -259,6 +261,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             late_run=False,
             missed_weekly_runs=None,
             manual_notes=[],
+            output=None,
+            summary_output=None,
         )
 
         report = audit.build_report(args)
@@ -366,6 +370,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             late_run=False,
             missed_weekly_runs=None,
             manual_notes=[],
+            output=None,
+            summary_output=None,
         )
 
         report = audit.build_report(args)
@@ -385,6 +391,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             late_run=False,
             missed_weekly_runs=None,
             manual_notes=[],
+            output=None,
+            summary_output=None,
         )
 
         report = audit.build_report(args)
@@ -461,6 +469,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             late_run=False,
             missed_weekly_runs=None,
             manual_notes=[str(notes_path)],
+            output=None,
+            summary_output=None,
         )
 
         report = audit.build_report(args)
@@ -494,6 +504,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             late_run=False,
             missed_weekly_runs=None,
             manual_notes=[],
+            output=None,
+            summary_output=None,
         )
 
         report = audit.build_report(args)
@@ -512,6 +524,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             late_run=False,
             missed_weekly_runs=None,
             manual_notes=[],
+            output=None,
+            summary_output=None,
         )
         weekly_args = argparse.Namespace(
             root=str(REPO_ROOT),
@@ -522,6 +536,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             late_run=False,
             missed_weekly_runs=None,
             manual_notes=[],
+            output=None,
+            summary_output=None,
         )
         summary_args = argparse.Namespace(
             root=str(REPO_ROOT),
@@ -532,6 +548,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             late_run=False,
             missed_weekly_runs=None,
             manual_notes=[],
+            output=None,
+            summary_output=None,
         )
 
         baseline = audit.build_report(baseline_args)
@@ -548,6 +566,100 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(summary["audit_state"]["reason"], "audit_window_at_least_30_days")
         self.assertFalse(summary["audit_state"]["profile_apply_allowed"])
 
+    def test_build_profile_apply_candidate_is_preview_only_and_reversible(self) -> None:
+        report = {
+            "generated_at": "2026-05-16T00:00:00+00:00",
+            "config_summary": {
+                "enabled_plugins": ["browser-use@openai-bundled", "github@openai-curated", "Legacy Plugin"],
+                "disabled_plugins": ["Vercel"],
+                "unknown_enabled_state_plugins": [],
+                "current_profile": {
+                    "source": "inferred_from_enabled_plugin_entries",
+                    "inferred_profile": "custom_or_unmatched",
+                    "manual_review_required": True,
+                    "matched_enabled_known_plugins": ["Browser", "GitHub"],
+                    "unmatched_enabled_plugin_entries": ["Legacy Plugin"],
+                },
+            },
+            "warning_severity": {"level": "high", "reason": "all_descriptions_removed_or_last_7d_budget_warning_count_at_least_3"},
+            "manual_evidence": {
+                "valid_note_count": 1,
+                "counts_by_evidence_level": {"medium": 1},
+                "counts_by_action": {"preview": 1},
+            },
+            "module_evidence": [
+                {
+                    "module": "web-saas",
+                    "plugins": ["Browser", "GitHub", "Vercel", "Cloudflare"],
+                    "strong_total": 10,
+                    "strong_helper_calls": 6,
+                    "strong_skill_path_reads": 4,
+                    "medium_evidence_rationale": "mapped_tool_calls_present_manual_review_required",
+                    "weak_plugin_mentions": 2,
+                    "cross_project_utility": "manual_review_required",
+                    "recommendation": "candidate_for_project_or_default_profile_review",
+                }
+            ],
+        }
+
+        candidate = audit.build_profile_apply_candidate(
+            report,
+            candidate_id="skills-profile-test",
+            target_profile="web-saas",
+            source_reports=audit.build_source_reports(
+                r"D:\private\skills-usage-audit-30d.json",
+                r"D:\private\skills-usage-summary.md",
+                [r"D:\private\manual-notes.md"],
+            ),
+        )
+
+        self.assertEqual(candidate["candidate_id"], "skills-profile-test")
+        self.assertEqual(candidate["approval_state"], "preview-only")
+        self.assertFalse(candidate["mutates_config"])
+        self.assertFalse(candidate["edits_plugin_cache"])
+        self.assertFalse(candidate["hard_load_apply_performed"])
+        self.assertTrue(candidate["explicit_authorization_required_for_apply"])
+        self.assertTrue(candidate["ordinary_continue_or_generic_confirmation_is_not_apply_authorization"])
+        self.assertEqual(candidate["target_profile"]["name"], "web-saas")
+        self.assertEqual(candidate["plugin_diff"]["add_to_default"], ["Cloudflare", "Vercel"])
+        self.assertEqual(candidate["plugin_diff"]["keep_enabled"], ["Browser", "GitHub"])
+        self.assertIn("Legacy Plugin", candidate["plugin_diff"]["unknown_current_enabled_entries_requiring_manual_review"])
+        self.assertEqual(candidate["evidence_basis"]["target_module_evidence"]["strong_total"], 10)
+        self.assertEqual(candidate["rollback_path"]["restore_command"], "set_plugin_profile.ps1 -RestoreLatest -Apply")
+        self.assertTrue(candidate["validation_plan"])
+        self.assertIn("[REDACTED_PATH]", json.dumps(candidate["source_reports"], ensure_ascii=False))
+        self.assertNotIn(r"D:\private", json.dumps(candidate, ensure_ascii=False))
+
+    def test_render_profile_apply_candidate_markdown_is_non_mutating(self) -> None:
+        candidate = audit.build_profile_apply_candidate(
+            {
+                "generated_at": "2026-05-16T00:00:00+00:00",
+                "config_summary": {
+                    "enabled_plugins": [],
+                    "disabled_plugins": [],
+                    "unknown_enabled_state_plugins": [],
+                    "current_profile": {
+                        "inferred_profile": "core-dev",
+                        "source": "inferred_from_enabled_plugin_entries",
+                        "manual_review_required": False,
+                        "matched_enabled_known_plugins": [],
+                        "unmatched_enabled_plugin_entries": [],
+                    },
+                },
+                "warning_severity": {"level": "none"},
+                "manual_evidence": {},
+                "module_evidence": [],
+            },
+            target_profile="core-dev",
+        )
+
+        summary = audit.render_candidate_markdown(candidate)
+
+        self.assertIn("# Codex Skills Profile Apply Candidate", summary)
+        self.assertIn("Approval state: `preview-only`", summary)
+        self.assertIn("Did not modify user-level `config.toml`.", summary)
+        self.assertIn("Did not infer approval from generic continue/confirmation.", summary)
+
     def test_render_markdown_summary_is_sanitized_and_non_mutating(self) -> None:
         codex_home = self.make_codex_home("skills-audit-summary")
         args = argparse.Namespace(
@@ -559,6 +671,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             late_run=False,
             missed_weekly_runs=None,
             manual_notes=[],
+            output=None,
+            summary_output=None,
         )
 
         summary = audit.render_markdown_summary(audit.build_report(args))

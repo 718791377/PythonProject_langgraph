@@ -114,6 +114,14 @@ created_at: 2026-05-16
 
 `--summary-output` 写入脱敏 Markdown 决策摘要。它只作为复核证据，不得修改 `config.toml`、plugin cache 或 hard-load profile。
 
+如需为后续可回滚调整预生成候选记录，应增加 `--target-profile`、`--candidate-output`，并可选增加 `--candidate-summary-output`：
+
+```powershell
+.\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json --summary-output .\.tmp\skills-usage-audit-30d-summary.md --target-profile core-dev --candidate-output .\.tmp\skills-profile-candidate.json --candidate-summary-output .\.tmp\skills-profile-candidate.md
+```
+
+候选输出永远是 `approval_state=preview-only`，不得修改 `config.toml`、plugin cache 或 hard-load profile。
+
 ### 5.5 Windows stdout 与回归测试
 
 脚本必须在 Windows 非 UTF-8 控制台下仍能输出 `--json`。如果 stdout 无法编码 `⚠` 等字符，stdout 可以退化为 JSON 合法的反斜杠转义形式；但 `--output` 写入的报告文件仍必须保持 UTF-8 原文。
@@ -140,7 +148,7 @@ created_at: 2026-05-16
 | `inventory_summary` | user/repo/plugin skills 数量 | 判断 2% budget 压力来源 |
 | `log_evidence` | budget warning、7 天 warning 数、`All skill descriptions were removed`、最大 omitted skills 数和 skipped loading 证据 | 判断 warning 是否仍在会话中出现，以及严重度是否越过方案阈值 |
 | `session_evidence` | explicit skills、SKILL.md reads、helper calls、tool calls | 作为强/中/弱证据输入 |
-| `manual_evidence` | ????????????????????/??/???? | ???????????????? transcript |
+| `manual_evidence` | 脱敏人工记录计数、无效记录校验以及中证据/例外/噪声摘要 | 保留人工复核证据，同时不留存原始 transcript |
 | `module_evidence` | 按 profile module 汇总的强证据、中证据说明、弱证据和跨项目复核字段 | 生成 profile 决策候选，同时避免把中证据当作强证据 |
 | `cadence_review` | late-run 与漏跑周报标记 | 防止 30 天决策摘要隐藏审计节奏偏离 |
 | `recommendations` | 审计建议 | 只能作为建议，不能自动 apply |
@@ -227,6 +235,7 @@ created_at: 2026-05-16
 
 门禁规则：
 
+- 审计脚本可以通过 `--candidate-output` 与 `--candidate-summary-output` 生成候选 JSON/Markdown，但这些输出只能作为 preview 记录；
 - `approval_state=preview-only` 只能运行 preview，不得修改 `config.toml`；
 - `approved-to-apply` 必须来自用户明确授权，不能由“继续”或普通确认替代；
 - apply 后必须保存 apply 前后的脱敏 diff 摘要；
@@ -339,7 +348,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - profile helper 调用计数；
 - 按 plugin/module 聚合的 evidence；
 - apply 建议，但不自动 apply。
-- `test/audit_codex_skills_usage.test.py` ???? stdout ???warning ????? announcement?repo profile fallback?`all_known_plugins` ??????????????????????
+- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、preview-only 候选记录生成、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
 - `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 
 每次人工复核报告时，还必须检查误报噪声：

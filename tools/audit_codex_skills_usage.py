@@ -758,6 +758,158 @@ def build_noise_review(session_data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def slugify_candidate_part(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or "profile"
+
+
+def sanitize_source_report_path(value: str | None) -> str | None:
+    if not value:
+        return None
+    return sanitize_log_excerpt(str(value), limit=300)
+
+
+def build_source_reports(
+    json_report: str | None = None,
+    markdown_summary: str | None = None,
+    manual_notes: list[str] | None = None,
+) -> dict[str, Any]:
+    return {
+        "json_report": sanitize_source_report_path(json_report),
+        "markdown_summary": sanitize_source_report_path(markdown_summary),
+        "manual_notes": [sanitize_source_report_path(path) for path in (manual_notes or [])],
+    }
+
+
+def find_module_evidence_row(report: dict[str, Any], module_name: str) -> dict[str, Any] | None:
+    for row in report.get("module_evidence", []):
+        if isinstance(row, dict) and row.get("module") == module_name:
+            return row
+    return None
+
+
+def build_profile_apply_candidate(
+    report: dict[str, Any],
+    candidate_id: str | None = None,
+    target_profile: str | None = None,
+    source_reports: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a preview-only profile apply candidate record.
+
+    The candidate translates audit evidence into a reversible review record. It
+    deliberately does not mutate config.toml, plugin cache, or hard-load state.
+    """
+    if not target_profile:
+        raise ValueError("target_profile is required for a profile apply candidate")
+
+    generated_at = str(report.get("generated_at") or now_utc().isoformat())
+    generated_day = generated_at[:10] if len(generated_at) >= 10 else now_utc().date().isoformat()
+    candidate_id = candidate_id or f"skills-profile-{generated_day}-{slugify_candidate_part(target_profile)}"
+
+    config = report.get("config_summary", {})
+    current_profile = config.get("current_profile", {}) if isinstance(config, dict) else {}
+    enabled_known = sorted(current_profile.get("matched_enabled_known_plugins") or [])
+    enabled_known_set = set(enabled_known)
+    target_row = find_module_evidence_row(report, target_profile)
+    target_plugins = sorted(target_row.get("plugins", [])) if target_row else []
+    target_plugin_set = set(target_plugins)
+
+    add_to_default = sorted(target_plugin_set - enabled_known_set)
+    remove_from_default = sorted(enabled_known_set - target_plugin_set)
+    keep_enabled = sorted(target_plugin_set & enabled_known_set)
+    unknown_enabled = list(current_profile.get("unmatched_enabled_plugin_entries") or [])
+
+    evidence_basis = {
+        "target_profile": target_profile,
+        "target_profile_found_in_registry": target_row is not None,
+        "target_module_evidence": {
+            "strong_total": target_row.get("strong_total") if target_row else 0,
+            "strong_helper_calls": target_row.get("strong_helper_calls") if target_row else 0,
+            "strong_skill_path_reads": target_row.get("strong_skill_path_reads") if target_row else 0,
+            "medium_evidence_rationale": target_row.get("medium_evidence_rationale") if target_row else "target_profile_not_found_manual_review_required",
+            "weak_plugin_mentions": target_row.get("weak_plugin_mentions") if target_row else 0,
+            "cross_project_utility": target_row.get("cross_project_utility") if target_row else "manual_review_required",
+            "recommendation": target_row.get("recommendation") if target_row else "target_profile_not_found_do_not_apply",
+        },
+        "warning_pressure": report.get("warning_severity", {}),
+        "manual_evidence_counts": {
+            "valid_note_count": report.get("manual_evidence", {}).get("valid_note_count", 0),
+            "counts_by_evidence_level": report.get("manual_evidence", {}).get("counts_by_evidence_level", {}),
+            "counts_by_action": report.get("manual_evidence", {}).get("counts_by_action", {}),
+        },
+        "policy": "strong_evidence_prefers_profile_candidates_medium_evidence_requires_human_review",
+    }
+
+    candidate = {
+        "schema_version": 1,
+        "record_type": "codex_skills_profile_apply_candidate",
+        "candidate_id": candidate_id,
+        "generated_at": generated_at,
+        "source_reports": source_reports or build_source_reports(),
+        "current_profile": {
+            "inferred_profile": current_profile.get("inferred_profile"),
+            "source": current_profile.get("source"),
+            "manual_review_required": current_profile.get("manual_review_required"),
+            "enabled_plugins_count": len(config.get("enabled_plugins", [])),
+            "disabled_plugins_count": len(config.get("disabled_plugins", [])),
+            "unknown_enabled_state_plugins": config.get("unknown_enabled_state_plugins", []),
+            "matched_enabled_known_plugins": enabled_known,
+            "unmatched_enabled_plugin_entries": unknown_enabled,
+        },
+        "target_profile": {
+            "name": target_profile,
+            "known_profile": target_row is not None,
+            "target_plugins": target_plugins,
+        },
+        "plugin_diff": {
+            "add_to_default": add_to_default,
+            "remove_from_default": remove_from_default,
+            "keep_enabled": keep_enabled,
+            "unknown_current_enabled_entries_requiring_manual_review": unknown_enabled,
+            "keep_dormant_or_on_demand_policy": "non_target_modules_remain_dormant_or_soft_load_until_a_separate_candidate_is_approved",
+        },
+        "evidence_basis": evidence_basis,
+        "risk_review": {
+            "risk_level": "manual_review_required" if remove_from_default or unknown_enabled or target_row is None else "low",
+            "possibly_disabled_capabilities": remove_from_default,
+            "affected_projects": "manual_review_required_before_apply",
+            "restore_cost": "restart_or_resume_after_set_plugin_profile_restore_latest_apply",
+            "generic_continue_is_not_authorization": True,
+        },
+        "rollback_path": {
+            "restore_command": "set_plugin_profile.ps1 -RestoreLatest -Apply",
+            "restart_required": True,
+            "restart_entrypoint": "codex-ohmy",
+            "rollback_first_policy": "if_budget_warnings_continue_or_capabilities_are_missing_restore_before_stacking_more_profile_changes",
+        },
+        "validation_plan": [
+            {
+                "step": "preview_candidate_record",
+                "required_evidence": "review_candidate_json_and_sanitized_30_day_summary",
+            },
+            {
+                "step": "local_checks",
+                "command": "python .\\test\\audit_codex_skills_usage.test.py && powershell -NoProfile -ExecutionPolicy Bypass -File .\\tools\\ci\\local_gate.ps1",
+            },
+            {
+                "step": "startup_validation",
+                "command": "restart_with_codex-ohmy_after_explicit_apply_authorization_only",
+            },
+            {
+                "step": "warning_retest",
+                "command": "python .\\tools\\audit_codex_skills_usage.py --root . --days 1 --json --output .\\.tmp\\skills-usage-warning-retest.json",
+            },
+        ],
+        "approval_state": "preview-only",
+        "mutates_config": False,
+        "edits_plugin_cache": False,
+        "hard_load_apply_performed": False,
+        "explicit_authorization_required_for_apply": True,
+        "ordinary_continue_or_generic_confirmation_is_not_apply_authorization": True,
+    }
+    return candidate
+
+
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     root = Path(args.root).resolve()
     codex_home = Path(args.codex_home).resolve() if args.codex_home else default_codex_home().resolve()
@@ -925,6 +1077,92 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def render_candidate_markdown(candidate: dict[str, Any]) -> str:
+    current = candidate.get("current_profile", {})
+    target = candidate.get("target_profile", {})
+    diff = candidate.get("plugin_diff", {})
+    risk = candidate.get("risk_review", {})
+    rollback = candidate.get("rollback_path", {})
+    evidence = candidate.get("evidence_basis", {})
+    target_evidence = evidence.get("target_module_evidence", {}) if isinstance(evidence, dict) else {}
+    source_reports = candidate.get("source_reports", {})
+    lines = [
+        "# Codex Skills Profile Apply Candidate",
+        "",
+        "## Candidate identity",
+        "",
+        f"- Candidate ID: `{candidate.get('candidate_id')}`",
+        f"- Approval state: `{candidate.get('approval_state')}`",
+        f"- Generated at: `{candidate.get('generated_at')}`",
+        f"- Record type: `{candidate.get('record_type')}`",
+        "",
+        "## Safety",
+        "",
+        f"- Mutates config: `{candidate.get('mutates_config')}`",
+        f"- Edits plugin cache: `{candidate.get('edits_plugin_cache')}`",
+        f"- Hard-load apply performed: `{candidate.get('hard_load_apply_performed')}`",
+        f"- Explicit authorization required for apply: `{candidate.get('explicit_authorization_required_for_apply')}`",
+        f"- Generic continue is not apply authorization: `{candidate.get('ordinary_continue_or_generic_confirmation_is_not_apply_authorization')}`",
+        "",
+        "## Source reports",
+        "",
+        f"- JSON report: `{source_reports.get('json_report')}`",
+        f"- Markdown summary: `{source_reports.get('markdown_summary')}`",
+        f"- Manual notes: `{len(source_reports.get('manual_notes') or [])}`",
+        "",
+        "## Current and target profile",
+        "",
+        f"- Current inferred profile: `{current.get('inferred_profile')}`",
+        f"- Current enabled plugins: `{current.get('enabled_plugins_count')}`",
+        f"- Current manual review required: `{current.get('manual_review_required')}`",
+        f"- Target profile: `{target.get('name')}`",
+        f"- Target profile found in registry: `{target.get('known_profile')}`",
+        f"- Target plugins: `{len(target.get('target_plugins') or [])}`",
+        "",
+        "## Plugin diff",
+        "",
+        f"- Add to default: `{', '.join(diff.get('add_to_default') or []) or 'none'}`",
+        f"- Remove from default: `{', '.join(diff.get('remove_from_default') or []) or 'none'}`",
+        f"- Keep enabled: `{', '.join(diff.get('keep_enabled') or []) or 'none'}`",
+        f"- Unknown current enabled entries requiring review: `{len(diff.get('unknown_current_enabled_entries_requiring_manual_review') or [])}`",
+        "",
+        "## Evidence basis",
+        "",
+        f"- Strong total: `{target_evidence.get('strong_total')}`",
+        f"- Strong helper calls: `{target_evidence.get('strong_helper_calls')}`",
+        f"- Strong skill path reads: `{target_evidence.get('strong_skill_path_reads')}`",
+        f"- Medium evidence rationale: `{target_evidence.get('medium_evidence_rationale')}`",
+        f"- Weak plugin mentions: `{target_evidence.get('weak_plugin_mentions')}`",
+        f"- Recommendation: `{target_evidence.get('recommendation')}`",
+        f"- Warning severity: `{(evidence.get('warning_pressure') or {}).get('level') if isinstance(evidence, dict) else None}`",
+        "",
+        "## Risk review and rollback",
+        "",
+        f"- Risk level: `{risk.get('risk_level')}`",
+        f"- Possibly disabled capabilities: `{', '.join(risk.get('possibly_disabled_capabilities') or []) or 'none'}`",
+        f"- Restore command: `{rollback.get('restore_command')}`",
+        f"- Restart required: `{rollback.get('restart_required')}`",
+        "",
+        "## Validation plan",
+        "",
+    ]
+    for item in candidate.get("validation_plan", []):
+        lines.append(f"- `{item.get('step')}`: {item.get('command') or item.get('required_evidence')}")
+    lines.extend(
+        [
+            "",
+            "## Non-action list",
+            "",
+            "- Did not modify user-level `config.toml`.",
+            "- Did not edit plugin/vendor cache.",
+            "- Did not perform hard-load/profile apply.",
+            "- Did not infer approval from generic continue/confirmation.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def print_human(report: dict[str, Any]) -> None:
     print(f"Codex skills usage audit ({report['mode']})")
     print(f"Window: {report['audit_window']['since']} -> {report['audit_window']['until']}")
@@ -964,9 +1202,37 @@ def main() -> int:
         default=[],
         help="Optional sanitized Markdown manual-evidence note file. May be passed multiple times.",
     )
+    parser.add_argument(
+        "--candidate-output",
+        default=None,
+        help="Optional path to write a preview-only profile apply candidate JSON record.",
+    )
+    parser.add_argument(
+        "--candidate-summary-output",
+        default=None,
+        help="Optional path to write a sanitized Markdown summary for the preview-only candidate record.",
+    )
+    parser.add_argument(
+        "--candidate-id",
+        default=None,
+        help="Optional candidate change ID. Defaults to skills-profile-YYYY-MM-DD-<target-profile>.",
+    )
+    parser.add_argument(
+        "--target-profile",
+        default=None,
+        help="Target profile/module name for --candidate-output, for example core-dev or web-saas.",
+    )
     args = parser.parse_args()
 
     report = build_report(args)
+    candidate = None
+    if args.candidate_output or args.candidate_summary_output:
+        candidate = build_profile_apply_candidate(
+            report,
+            candidate_id=args.candidate_id,
+            target_profile=args.target_profile,
+            source_reports=build_source_reports(args.output, args.summary_output, args.manual_notes),
+        )
     if args.output:
         output = Path(args.output)
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -975,6 +1241,14 @@ def main() -> int:
         summary_output = Path(args.summary_output)
         summary_output.parent.mkdir(parents=True, exist_ok=True)
         summary_output.write_text(render_markdown_summary(report), encoding="utf-8")
+    if args.candidate_output and candidate is not None:
+        candidate_output = Path(args.candidate_output)
+        candidate_output.parent.mkdir(parents=True, exist_ok=True)
+        candidate_output.write_text(json.dumps(candidate, ensure_ascii=False, indent=2), encoding="utf-8")
+    if args.candidate_summary_output and candidate is not None:
+        candidate_summary_output = Path(args.candidate_summary_output)
+        candidate_summary_output.parent.mkdir(parents=True, exist_ok=True)
+        candidate_summary_output.write_text(render_candidate_markdown(candidate), encoding="utf-8")
     if args.json:
         emit_stdout(json.dumps(report, ensure_ascii=False, indent=2))
     else:
