@@ -317,6 +317,7 @@ To prevent month-long audit drift, the audit itself must have explicit state. Th
 The script must be able to record closure states without applying any profile change:
 
 - `--pause-audit data-source-missing|privacy-review|script-defect` records `paused` and blocks profile-apply candidate generation with `audit_state_paused`. Use it only to make an audit interruption explicit while the data source, privacy review, or script defect is fixed and the report is rerun.
+- `--summary-reviewed` with an elapsed 30-day window plus both `--output` and `--summary-output` source-report paths records `summary-reviewed` when no candidate or closure flag is requested. If the source-report paths are missing, the report stays `ready-for-summary` and records `source_report_paths_missing`.
 - `--close-audit no-change` may record `closed-no-change` only when the 30-day window has elapsed, `--summary-reviewed` is present, and both `--output` and `--summary-output` source-report paths are present.
 - `--close-audit with-candidate` may record `closed-with-candidate` only when the same evidence gates pass and a candidate output path is requested.
 - If these gates are not met, the report must remain `running` or `ready-for-summary` and list closure blockers such as `audit_window_shorter_than_30_days`, `summary_not_marked_reviewed`, `source_report_paths_missing`, or `candidate_output_missing`.
@@ -411,6 +412,7 @@ This plan is granular enough only when all of the following are true:
 - it defines the audit script capability boundaries, known limitations, and conditions that trigger script enhancement;
 - it defines the audit run state machine, stop conditions, and the boundary between audit closure and profile apply candidate changes;
 - it exposes paused-state recording through an audit-only script flag and blocks profile-apply candidates while paused;
+- it exposes `summary-reviewed` as a script state only when the reviewed 30-day summary remains attached to JSON and Markdown source-report paths;
 - it exposes closure-state recording through explicit audit-only script flags and reports blocked closure reasons instead of silently closing;
 - it defines thresholds for frequent, low-frequency, and no-strong-evidence cases;
 - it states that explicit-skill false-positive noise must not enter strong evidence;

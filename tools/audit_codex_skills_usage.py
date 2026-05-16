@@ -729,6 +729,23 @@ def build_audit_state(
             "profile_apply_allowed": False,
             "candidate_blockers": ["source_report_paths_missing"],
         }
+    if summary_reviewed and window_at_least_30_days and source_paths_ready:
+        return {
+            "state": "summary-reviewed",
+            "reason": "summary_reviewed_and_source_reports_ready",
+            "next_action": "create_profile_apply_candidate_or_close_audit_round_without_profile_apply",
+            "profile_apply_allowed": False,
+            "summary_reviewed": True,
+        }
+    if summary_reviewed and window_at_least_30_days and not source_paths_ready:
+        return {
+            "state": "ready-for-summary",
+            "reason": "summary_reviewed_source_report_paths_missing",
+            "next_action": "regenerate_with_output_and_summary_output_before_candidate_or_closure",
+            "profile_apply_allowed": False,
+            "summary_reviewed": True,
+            "summary_review_blockers": ["source_report_paths_missing"],
+        }
     if args.baseline:
         return {
             "state": "running",

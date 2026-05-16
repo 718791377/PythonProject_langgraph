@@ -805,6 +805,36 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             candidate_summary_output=None,
             summary_reviewed=False,
         )
+        reviewed_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=".tmp/skills-usage-audit-30d.json",
+            summary_output=".tmp/skills-usage-audit-30d-summary.md",
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=True,
+        )
+        reviewed_missing_source_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=True,
+        )
         paused_args = argparse.Namespace(
             root=str(REPO_ROOT),
             codex_home=str(codex_home),
@@ -825,6 +855,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         baseline = audit.build_report(baseline_args)
         weekly = audit.build_report(weekly_args)
         summary = audit.build_report(summary_args)
+        reviewed = audit.build_report(reviewed_args)
+        reviewed_missing_source = audit.build_report(reviewed_missing_source_args)
         paused = audit.build_report(paused_args)
 
         self.assertEqual(baseline["audit_state"]["state"], "running")
@@ -836,6 +868,12 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(summary["audit_state"]["state"], "ready-for-summary")
         self.assertEqual(summary["audit_state"]["reason"], "audit_window_at_least_30_days")
         self.assertFalse(summary["audit_state"]["profile_apply_allowed"])
+        self.assertEqual(reviewed["audit_state"]["state"], "summary-reviewed")
+        self.assertEqual(reviewed["audit_state"]["reason"], "summary_reviewed_and_source_reports_ready")
+        self.assertFalse(reviewed["audit_state"]["profile_apply_allowed"])
+        self.assertEqual(reviewed_missing_source["audit_state"]["state"], "ready-for-summary")
+        self.assertEqual(reviewed_missing_source["audit_state"]["reason"], "summary_reviewed_source_report_paths_missing")
+        self.assertEqual(reviewed_missing_source["audit_state"]["summary_review_blockers"], ["source_report_paths_missing"])
         self.assertEqual(paused["audit_state"]["state"], "paused")
         self.assertEqual(paused["audit_state"]["reason"], "audit_paused_data-source-missing")
         self.assertEqual(paused["audit_state"]["pause_blockers"], ["data-source-missing"])
