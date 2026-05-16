@@ -547,6 +547,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("level", report["warning_severity"])
         self.assertIn("requested", report["warning_triage"])
         self.assertIn("status", report["warning_triage"])
+        self.assertIn("window_policy", report["warning_triage"])
+        self.assertIn("window_ok", report["warning_triage"])
+        self.assertIn("blockers", report["warning_triage"])
+        self.assertIn("recommended_action", report["warning_triage"])
         self.assertIn("explicit_skills", report["session_evidence"])
         self.assertIsInstance(report["module_evidence"], list)
         self.assertIn("status", report["noise_review"])
@@ -560,6 +564,36 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "passed",
         )
         self.assertIsInstance(report["recommendations"], list)
+
+    def test_warning_triage_contract_requires_decision_fields(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-warning-triage-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        report["warning_triage"].pop("window_policy")
+        report["warning_triage"]["blockers"] = "warning_triage_window_not_narrow"
+
+        contract = audit.validate_report_field_contract(report)
+        gate = audit.build_candidate_generation_gate(report, summary_reviewed=True)
+
+        self.assertFalse(contract["passed"])
+        self.assertIn("warning_triage:window_policy_missing", contract["blockers"])
+        self.assertIn("warning_triage:blockers_invalid_type", contract["blockers"])
+        self.assertFalse(gate["allowed"])
+        self.assertIn("field_contract:warning_triage:window_policy_missing", gate["blockers"])
 
     def test_field_contract_failure_blocks_candidate_gate(self) -> None:
         report = {
@@ -612,7 +646,15 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "config_summary": {"current_profile": {}},
             "inventory_summary": {},
             "log_evidence": {"budget_warning_count": 0, "last_7d_budget_warning_count": 0},
-            "warning_triage": {"requested": False, "status": "not_requested"},
+            "warning_triage": {
+                "requested": False,
+                "status": "not_requested",
+                "blockers": [],
+                "window_policy": "use_days_1_or_since_for_warning_triage",
+                "window_ok": False,
+                "budget_warning_count": 0,
+                "recommended_action": "run_with_warning_triage_after_a_live_session_budget_warning",
+            },
             "session_evidence": {},
             "manual_evidence": {"valid_note_count": 0},
             "module_evidence": [],

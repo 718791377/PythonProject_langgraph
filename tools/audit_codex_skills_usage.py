@@ -100,6 +100,24 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "cadence_review": dict,
     "recommendations": list,
 }
+REQUIRED_WARNING_TRIAGE_FIELDS = {
+    "requested",
+    "status",
+    "blockers",
+    "window_policy",
+    "window_ok",
+    "budget_warning_count",
+    "recommended_action",
+}
+REQUIRED_WARNING_TRIAGE_FIELD_TYPES = {
+    "requested": bool,
+    "status": str,
+    "blockers": list,
+    "window_policy": str,
+    "window_ok": bool,
+    "budget_warning_count": int,
+    "recommended_action": str,
+}
 
 
 def emit_stdout(text: str) -> None:
@@ -798,10 +816,12 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
             log_violations.append(f"{field}_missing")
     warning_triage = report.get("warning_triage") if isinstance(report.get("warning_triage"), dict) else {}
     warning_triage_violations = []
-    if "requested" not in warning_triage:
-        warning_triage_violations.append("requested_missing")
-    if "status" not in warning_triage:
-        warning_triage_violations.append("status_missing")
+    for field in sorted(REQUIRED_WARNING_TRIAGE_FIELDS):
+        if field not in warning_triage:
+            warning_triage_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_WARNING_TRIAGE_FIELD_TYPES.items()):
+        if field in warning_triage and not isinstance(warning_triage.get(field), expected_type):
+            warning_triage_violations.append(f"{field}_invalid_type")
     manual_evidence = report.get("manual_evidence") if isinstance(report.get("manual_evidence"), dict) else {}
     manual_violations = []
     if "valid_note_count" not in manual_evidence:
