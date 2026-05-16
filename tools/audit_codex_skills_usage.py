@@ -51,6 +51,27 @@ GENERIC_EXPLICIT_SKILL_NOISE = {
     "to",
     "with",
 }
+MANUAL_NOTE_FIELDS = {
+    "time",
+    "project",
+    "task_type",
+    "requested_capability",
+    "evidence_level",
+    "reason",
+    "action_taken",
+    "restore_or_followup",
+}
+REQUIRED_MANUAL_NOTE_FIELDS = {
+    "time",
+    "project",
+    "task_type",
+    "requested_capability",
+    "evidence_level",
+    "reason",
+    "action_taken",
+}
+VALID_MANUAL_EVIDENCE_LEVELS = {"medium", "exception", "noise_removed"}
+VALID_MANUAL_ACTIONS = {"none", "soft-load", "preview", "approved hard-load exception"}
 
 
 def emit_stdout(text: str) -> None:
@@ -100,10 +121,77 @@ def sanitize_log_excerpt(text: str, limit: int = 500) -> str:
     return sanitized[:limit]
 
 
+def sanitize_manual_value(value: str, limit: int = 300) -> str:
+    return sanitize_log_excerpt(value.strip(), limit=limit)
+
+
 def read_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     return json.loads(path.read_text(encoding="utf-8", errors="replace"))
+
+
+def parse_manual_note_blocks(text: str) -> list[dict[str, str]]:
+    """Parse sanitized Markdown manual-note blocks made of `field: value` lines."""
+    notes: list[dict[str, str]] = []
+    current: dict[str, str] = {}
+    field_re = re.compile(r"^\s*[-*]?\s*`?([A-Za-z_]+)`?\s*:\s*(.*?)\s*$")
+    for raw in text.splitlines() + [""]:
+        match = field_re.match(raw)
+        if not match:
+            if current:
+                notes.append(current)
+                current = {}
+            continue
+        key = match.group(1)
+        if key not in MANUAL_NOTE_FIELDS:
+            continue
+        current[key] = sanitize_manual_value(match.group(2))
+    return notes
+
+
+def collect_manual_notes(paths: list[str]) -> dict[str, Any]:
+    notes: list[dict[str, str]] = []
+    invalid: list[dict[str, Any]] = []
+    files_read = 0
+    for raw_path in paths:
+        path = Path(raw_path)
+        if not path.exists():
+            invalid.append({"path": raw_path, "reason": "missing_file"})
+            continue
+        files_read += 1
+        parsed = parse_manual_note_blocks(path.read_text(encoding="utf-8", errors="replace"))
+        for index, note in enumerate(parsed, start=1):
+            missing = sorted(REQUIRED_MANUAL_NOTE_FIELDS - set(note))
+            invalid_values: list[str] = []
+            if note.get("evidence_level") and note["evidence_level"] not in VALID_MANUAL_EVIDENCE_LEVELS:
+                invalid_values.append("evidence_level")
+            if note.get("action_taken") and note["action_taken"] not in VALID_MANUAL_ACTIONS:
+                invalid_values.append("action_taken")
+            if missing or invalid_values:
+                invalid.append(
+                    {
+                        "path": str(path),
+                        "note_index": index,
+                        "missing_fields": missing,
+                        "invalid_fields": invalid_values,
+                    }
+                )
+                continue
+            notes.append(note)
+    counts_by_level = Counter(note["evidence_level"] for note in notes)
+    counts_by_action = Counter(note["action_taken"] for note in notes)
+    return {
+        "files_requested": len(paths),
+        "files_read": files_read,
+        "notes": notes,
+        "valid_note_count": len(notes),
+        "invalid_notes": invalid,
+        "counts_by_evidence_level": dict(counts_by_level),
+        "counts_by_action": dict(counts_by_action),
+        "raw_notes_retained": False,
+        "privacy_policy": "manual_notes_are_sanitized_markdown_fields_only_no_raw_transcripts",
+    }
 
 
 def parse_plugin_config(config_path: Path) -> dict[str, bool | None]:
@@ -691,6 +779,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     warning_severity = build_warning_severity(logs_data)
     audit_state = build_audit_state(args)
     current_profile = build_current_profile_summary(profiles, enabled_plugins)
+    manual_notes = collect_manual_notes(getattr(args, "manual_notes", []) or [])
     report = {
         "schema_version": 1,
         "generated_at": generated_at.isoformat(),
@@ -729,6 +818,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "session_evidence": session_data,
         "module_evidence": module_evidence,
         "noise_review": noise_review,
+        "manual_evidence": manual_notes,
         "recommendations": [
             "Do not treat another 2% budget warning as soft-load failure; soft-load is outside the model-visible skills budget surface.",
             "Continue audit-only mode until the agreed window closes unless a concrete task requires a profile preview or explicitly approved hard-load apply.",
@@ -745,6 +835,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     warnings = report.get("log_evidence", {})
     warning_severity = report.get("warning_severity", {})
     noise_review = report.get("noise_review", {})
+    manual_evidence = report.get("manual_evidence", {})
     audit_state = report.get("audit_state", {})
     lines = [
         "# Codex Skills Usage Audit Summary",
@@ -799,6 +890,15 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             f"- Status: `{noise_review.get('status')}`",
             f"- Removed explicit-skill noise tokens: `{len(noise_review.get('explicit_skill_noise_removed', {}))}`",
             f"- Strong evidence policy: `{noise_review.get('strong_evidence_policy')}`",
+            "",
+            "## Manual evidence",
+            "",
+            f"- Files requested: `{manual_evidence.get('files_requested', 0)}`",
+            f"- Files read: `{manual_evidence.get('files_read', 0)}`",
+            f"- Valid notes: `{manual_evidence.get('valid_note_count', 0)}`",
+            f"- Invalid notes: `{len(manual_evidence.get('invalid_notes', []))}`",
+            f"- Raw notes retained: `{manual_evidence.get('raw_notes_retained', False)}`",
+            f"- Privacy policy: `{manual_evidence.get('privacy_policy')}`",
             "",
             "## Decision recommendation",
             "",
@@ -857,6 +957,12 @@ def main() -> int:
         type=int,
         default=None,
         help="Optional manual count of missed weekly audit runs for the summary.",
+    )
+    parser.add_argument(
+        "--manual-notes",
+        action="append",
+        default=[],
+        help="Optional sanitized Markdown manual-evidence note file. May be passed multiple times.",
     )
     args = parser.parse_args()
 

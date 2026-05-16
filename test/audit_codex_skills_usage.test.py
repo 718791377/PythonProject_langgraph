@@ -115,6 +115,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             baseline=False,
             late_run=False,
             missed_weekly_runs=None,
+            manual_notes=[],
         )
 
         report = audit.build_report(args)
@@ -257,6 +258,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             baseline=True,
             late_run=False,
             missed_weekly_runs=None,
+            manual_notes=[],
         )
 
         report = audit.build_report(args)
@@ -363,6 +365,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             baseline=True,
             late_run=False,
             missed_weekly_runs=None,
+            manual_notes=[],
         )
 
         report = audit.build_report(args)
@@ -381,6 +384,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             baseline=False,
             late_run=False,
             missed_weekly_runs=None,
+            manual_notes=[],
         )
 
         report = audit.build_report(args)
@@ -418,7 +422,60 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("explicit_skills", report["session_evidence"])
         self.assertIsInstance(report["module_evidence"], list)
         self.assertIn("status", report["noise_review"])
+        self.assertIn("manual_evidence", report)
+        self.assertEqual(report["manual_evidence"]["valid_note_count"], 0)
         self.assertIsInstance(report["recommendations"], list)
+
+    def test_manual_notes_are_sanitized_and_validated(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-manual-notes")
+        notes_path = codex_home / "manual-notes.md"
+        notes_path.write_text(
+            "\n".join(
+                [
+                    "time: 2026-05-16T00:00:00Z",
+                    "project: D:\\PythonProject_langgraph",
+                    "task_type: web-saas",
+                    "requested_capability: browser api_key=sk-test-secret",
+                    "evidence_level: medium",
+                    "reason: User asked for browser verification access_token=secret-token",
+                    "action_taken: soft-load",
+                    "restore_or_followup: keep on-demand",
+                    "",
+                    "time: 2026-05-16T00:00:00Z",
+                    "project: test",
+                    "task_type: web-saas",
+                    "requested_capability: browser",
+                    "evidence_level: invalid",
+                    "reason: invalid evidence level",
+                    "action_taken: none",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[str(notes_path)],
+        )
+
+        report = audit.build_report(args)
+        manual = report["manual_evidence"]
+
+        self.assertEqual(manual["files_read"], 1)
+        self.assertEqual(manual["valid_note_count"], 1)
+        self.assertEqual(len(manual["invalid_notes"]), 1)
+        self.assertEqual(manual["counts_by_evidence_level"], {"medium": 1})
+        note = manual["notes"][0]
+        self.assertIn("[REDACTED_PATH]", note["project"])
+        self.assertIn("[REDACTED_SECRET]", note["requested_capability"])
+        self.assertIn("[REDACTED_SECRET]", note["reason"])
+        self.assertNotIn("sk-test-secret", json.dumps(manual, ensure_ascii=False))
+        self.assertFalse(manual["raw_notes_retained"])
 
     def test_since_with_timezone_is_converted_to_utc_without_replacing_offset(self) -> None:
         parsed = audit.parse_since("2026-05-16T08:00:00+08:00")
@@ -436,6 +493,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             baseline=False,
             late_run=False,
             missed_weekly_runs=None,
+            manual_notes=[],
         )
 
         report = audit.build_report(args)
@@ -453,6 +511,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             baseline=True,
             late_run=False,
             missed_weekly_runs=None,
+            manual_notes=[],
         )
         weekly_args = argparse.Namespace(
             root=str(REPO_ROOT),
@@ -462,6 +521,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             baseline=False,
             late_run=False,
             missed_weekly_runs=None,
+            manual_notes=[],
         )
         summary_args = argparse.Namespace(
             root=str(REPO_ROOT),
@@ -471,6 +531,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             baseline=False,
             late_run=False,
             missed_weekly_runs=None,
+            manual_notes=[],
         )
 
         baseline = audit.build_report(baseline_args)
@@ -497,6 +558,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             baseline=False,
             late_run=False,
             missed_weekly_runs=None,
+            manual_notes=[],
         )
 
         summary = audit.render_markdown_summary(audit.build_report(args))
@@ -507,6 +569,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("## Warning conclusion", summary)
         self.assertIn("## Module evidence", summary)
         self.assertIn("## Noise review", summary)
+        self.assertIn("## Manual evidence", summary)
         self.assertIn("## Decision recommendation", summary)
         self.assertIn("## Risks and restore path", summary)
         self.assertIn("Inferred current profile:", summary)
