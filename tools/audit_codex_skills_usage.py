@@ -607,6 +607,12 @@ def candidate_output_requested(args: argparse.Namespace) -> bool:
     return bool(getattr(args, "candidate_output", None) or getattr(args, "candidate_summary_output", None))
 
 
+def source_report_paths_ready(args: argparse.Namespace) -> bool:
+    return bool(str(getattr(args, "output", "") or "").strip()) and bool(
+        str(getattr(args, "summary_output", "") or "").strip()
+    )
+
+
 def build_audit_state(
     args: argparse.Namespace,
     cutoff: datetime | None = None,
@@ -614,12 +620,60 @@ def build_audit_state(
 ) -> dict[str, Any]:
     elapsed_days = audit_window_elapsed_days(cutoff, generated_at) if cutoff and generated_at else float(args.days)
     window_at_least_30_days = args.days >= 30 or elapsed_days >= 30
-    if candidate_output_requested(args) and getattr(args, "summary_reviewed", False) and window_at_least_30_days:
+    summary_reviewed = bool(getattr(args, "summary_reviewed", False))
+    source_paths_ready = source_report_paths_ready(args)
+    candidate_requested = candidate_output_requested(args)
+    close_audit = getattr(args, "close_audit", None)
+    if close_audit:
+        close_blockers: list[str] = []
+        if not window_at_least_30_days:
+            close_blockers.append("audit_window_shorter_than_30_days")
+        if not summary_reviewed:
+            close_blockers.append("summary_not_marked_reviewed")
+        if not source_paths_ready:
+            close_blockers.append("source_report_paths_missing")
+        if close_audit == "with-candidate" and not candidate_requested:
+            close_blockers.append("candidate_output_missing")
+        if not close_blockers:
+            if close_audit == "no-change":
+                return {
+                    "state": "closed-no-change",
+                    "reason": "summary_reviewed_and_no_profile_change_candidate_requested",
+                    "next_action": "close_this_audit_round_and_keep_dormant_or_soft_load_paths",
+                    "profile_apply_allowed": False,
+                    "close_audit_requested": close_audit,
+                    "close_blockers": [],
+                }
+            return {
+                "state": "closed-with-candidate",
+                "reason": "summary_reviewed_and_profile_apply_candidate_record_requested",
+                "next_action": "move_follow_up_to_the_separate_profile_apply_candidate_change",
+                "profile_apply_allowed": False,
+                "close_audit_requested": close_audit,
+                "close_blockers": [],
+            }
+        return {
+            "state": "ready-for-summary" if window_at_least_30_days else "running",
+            "reason": f"audit_closure_{close_audit}_blocked",
+            "next_action": "resolve_closure_blockers_without_profile_apply",
+            "profile_apply_allowed": False,
+            "close_audit_requested": close_audit,
+            "close_blockers": close_blockers,
+        }
+    if candidate_requested and summary_reviewed and window_at_least_30_days and source_paths_ready:
         return {
             "state": "apply-candidate",
             "reason": "profile_apply_candidate_preview_requested_after_summary_review",
             "next_action": "review_preview_candidate_and_request_explicit_apply_authorization_if_accepted",
             "profile_apply_allowed": False,
+        }
+    if candidate_requested and summary_reviewed and window_at_least_30_days and not source_paths_ready:
+        return {
+            "state": "ready-for-summary",
+            "reason": "profile_apply_candidate_source_report_paths_missing",
+            "next_action": "regenerate_with_output_and_summary_output_before_candidate_review",
+            "profile_apply_allowed": False,
+            "candidate_blockers": ["source_report_paths_missing"],
         }
     if args.baseline:
         return {
@@ -1422,6 +1476,12 @@ def main() -> int:
         "--summary-reviewed",
         action="store_true",
         help="Mark the sanitized 30-day Markdown summary as human-reviewed before generating a candidate.",
+    )
+    parser.add_argument(
+        "--close-audit",
+        choices=("no-change", "with-candidate"),
+        default=None,
+        help="Record a preview-only audit closure state after the 30-day summary is reviewed.",
     )
     args = parser.parse_args()
 

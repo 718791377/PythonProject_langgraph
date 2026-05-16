@@ -311,6 +311,12 @@ To prevent month-long audit drift, the audit itself must have explicit state. Th
 | `closed-no-change` | 30-day evidence does not support changing the default profile | Keep dormant/soft-load paths and close this audit round | Extend the same audit round just to force a result |
 | `closed-with-candidate` | This audit round is closed and produced an approval-pending candidate | Move to a separate profile apply change | Execute configuration changes inside the audit plan file |
 
+The script must be able to record closure states without applying any profile change:
+
+- `--close-audit no-change` may record `closed-no-change` only when the 30-day window has elapsed, `--summary-reviewed` is present, and both `--output` and `--summary-output` source-report paths are present.
+- `--close-audit with-candidate` may record `closed-with-candidate` only when the same evidence gates pass and a candidate output path is requested.
+- If these gates are not met, the report must remain `running` or `ready-for-summary` and list closure blockers such as `audit_window_shorter_than_30_days`, `summary_not_marked_reviewed`, `source_report_paths_missing`, or `candidate_output_missing`.
+
 Stop conditions:
 
 - after `closed-no-change`, the next step is only a new audit round if needed or continued soft-load usage; do not keep appending to this round;
@@ -353,7 +359,7 @@ Each audit run must report:
 - profile helper invocation counts;
 - plugin/module aggregated evidence;
 - recommendations, without applying them automatically.
-- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized manual-note ingestion, invalid manual-note validation, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
+- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized manual-note ingestion, invalid manual-note validation, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, audit closure-state gates, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
 - `tools/ci/ci_test_manifest.json` must include that regression test so local and remote CI reuse the same check.
 
 Each human report review must also check false-positive noise:
@@ -397,6 +403,7 @@ This plan is granular enough only when all of the following are true:
 - it defines data minimization, sanitization, retention, and no-externalization boundaries for audit data sources;
 - it defines the audit script capability boundaries, known limitations, and conditions that trigger script enhancement;
 - it defines the audit run state machine, stop conditions, and the boundary between audit closure and profile apply candidate changes;
+- it exposes closure-state recording through explicit audit-only script flags and reports blocked closure reasons instead of silently closing;
 - it defines thresholds for frequent, low-frequency, and no-strong-evidence cases;
 - it states that explicit-skill false-positive noise must not enter strong evidence;
 - it defines warning severity and handling actions;

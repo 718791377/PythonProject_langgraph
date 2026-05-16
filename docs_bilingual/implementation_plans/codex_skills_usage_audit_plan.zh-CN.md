@@ -311,6 +311,12 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 | `closed-no-change` | 30 天证据不足以调整默认 profile | 保留 dormant/soft-load 路径，关闭本轮审计 | 继续为了“凑结果”延长同一轮审计 |
 | `closed-with-candidate` | 本轮审计结束，并产生待批准候选变更 | 进入单独 profile apply change | 在审计计划文件中直接执行配置变更 |
 
+脚本必须能记录 closure 状态，但不能因此执行任何 profile apply：
+
+- `--close-audit no-change` 只能在 30 天窗口已满足、存在 `--summary-reviewed`，并且同时存在 `--output` 与 `--summary-output` source-report 路径时，记录 `closed-no-change`。
+- `--close-audit with-candidate` 只能在同样证据门禁通过，并且已请求 candidate output 路径时，记录 `closed-with-candidate`。
+- 如果这些门禁未满足，报告必须保持 `running` 或 `ready-for-summary`，并列出 closure blockers，例如 `audit_window_shorter_than_30_days`、`summary_not_marked_reviewed`、`source_report_paths_missing` 或 `candidate_output_missing`。
+
 停止条件：
 
 - 如果达到 `closed-no-change`，下一步只能按需重新开新一轮 audit 或保留 soft-load，不继续追加本轮结论；
@@ -353,7 +359,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - profile helper 调用计数；
 - 按 plugin/module 聚合的 evidence；
 - apply 建议，但不自动 apply。
-- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
+- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、审计 closure-state 门禁、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
 - `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 
 每次人工复核报告时，还必须检查误报噪声：
@@ -397,6 +403,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 明确 audit 数据源的数据最小化、脱敏、留存和禁止外发边界；
 - 明确 audit 脚本的能力边界、已知限制和触发脚本增强的条件；
 - 明确审计运行状态机、停止条件，以及审计结束后与 profile apply 候选变更的分界；
+- 通过明确的 audit-only 脚本参数暴露 closure-state 记录，并在无法关闭时报告 blocked closure reasons，而不是静默关闭；
 - 明确高频/低频/无强证据的阈值；
 - 明确 explicit skill 误报噪声不得进入强证据；
 - 明确 warning 分级和处理动作；
