@@ -428,6 +428,35 @@ def scan_logs(codex_home: Path, cutoff: datetime) -> dict[str, Any]:
     }
 
 
+def build_warning_severity(logs_data: dict[str, Any]) -> dict[str, Any]:
+    if not logs_data.get("available"):
+        return {
+            "level": "unknown",
+            "reason": "logs_unavailable",
+            "recommended_action": "keep_log_evidence_available_false_and_do_not_treat_zero_as_no_warning",
+        }
+    warning_count = int(logs_data.get("budget_warning_count") or 0)
+    recent_warnings = logs_data.get("recent_budget_warnings") or []
+    all_descriptions_removed = any(row.get("all_descriptions_removed") for row in recent_warnings if isinstance(row, dict))
+    if all_descriptions_removed or warning_count >= 3:
+        return {
+            "level": "high",
+            "reason": "all_descriptions_removed_or_budget_warning_count_at_least_3",
+            "recommended_action": "avoid_full_profile_and_prefer_smaller_default_or_task_profile_during_audit",
+        }
+    if warning_count > 0:
+        return {
+            "level": "medium",
+            "reason": "budget_warnings_present_below_high_threshold",
+            "recommended_action": "continue_audit_and_triage_with_task_context",
+        }
+    return {
+        "level": "none",
+        "reason": "no_budget_warnings_in_window",
+        "recommended_action": "continue_scheduled_audit_without_profile_apply",
+    }
+
+
 def module_plugins(profiles: dict[str, Any], module: dict[str, Any]) -> list[str]:
     raw_plugins = module.get("plugins", [])
     if raw_plugins == "all_known_plugins":
@@ -508,6 +537,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     inventory_counts = collect_inventory_counts(codex_home, root)
     module_evidence = build_module_evidence(profiles, session_data)
     noise_review = build_noise_review(session_data)
+    warning_severity = build_warning_severity(logs_data)
     report = {
         "schema_version": 1,
         "generated_at": generated_at.isoformat(),
@@ -535,6 +565,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         },
         "inventory_summary": inventory_counts,
         "log_evidence": logs_data,
+        "warning_severity": warning_severity,
         "session_evidence": session_data,
         "module_evidence": module_evidence,
         "noise_review": noise_review,

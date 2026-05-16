@@ -191,6 +191,43 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             },
         )
 
+    def test_warning_severity_follows_plan_thresholds(self) -> None:
+        unavailable = audit.build_warning_severity({"available": False})
+        high_by_count = audit.build_warning_severity(
+            {
+                "available": True,
+                "budget_warning_count": 3,
+                "recent_budget_warnings": [],
+            }
+        )
+        high_by_removed_descriptions = audit.build_warning_severity(
+            {
+                "available": True,
+                "budget_warning_count": 1,
+                "recent_budget_warnings": [{"all_descriptions_removed": True}],
+            }
+        )
+        medium = audit.build_warning_severity(
+            {
+                "available": True,
+                "budget_warning_count": 1,
+                "recent_budget_warnings": [{"all_descriptions_removed": False}],
+            }
+        )
+        none = audit.build_warning_severity(
+            {
+                "available": True,
+                "budget_warning_count": 0,
+                "recent_budget_warnings": [],
+            }
+        )
+
+        self.assertEqual(unavailable["level"], "unknown")
+        self.assertEqual(high_by_count["level"], "high")
+        self.assertEqual(high_by_removed_descriptions["level"], "high")
+        self.assertEqual(medium["level"], "medium")
+        self.assertEqual(none["level"], "none")
+
     def test_report_uses_repo_profile_fallback_and_expands_full_module(self) -> None:
         codex_home = self.make_codex_home("skills-audit-profile")
         (codex_home / "config.toml").write_text(
@@ -293,6 +330,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "config_summary",
             "inventory_summary",
             "log_evidence",
+            "warning_severity",
             "session_evidence",
             "module_evidence",
             "noise_review",
@@ -307,6 +345,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("enabled_plugins", report["config_summary"])
         self.assertIn("total_skills", report["inventory_summary"])
         self.assertIn("budget_warning_count", report["log_evidence"])
+        self.assertIn("level", report["warning_severity"])
         self.assertIn("explicit_skills", report["session_evidence"])
         self.assertIsInstance(report["module_evidence"], list)
         self.assertIn("status", report["noise_review"])
