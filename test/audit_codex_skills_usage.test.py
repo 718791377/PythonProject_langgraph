@@ -444,7 +444,43 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("status", report["noise_review"])
         self.assertIn("manual_evidence", report)
         self.assertEqual(report["manual_evidence"]["valid_note_count"], 0)
+        self.assertIn("field_contract", report)
+        self.assertTrue(report["field_contract"]["passed"])
+        self.assertEqual(report["field_contract"]["status"], "passed")
         self.assertIsInstance(report["recommendations"], list)
+
+    def test_field_contract_failure_blocks_candidate_gate(self) -> None:
+        report = {
+            "schema_version": 1,
+            "generated_at": "2026-05-16T00:00:00+00:00",
+            "audit_window": {
+                "since": "2026-04-16T00:00:00+00:00",
+                "until": "2026-05-16T00:00:00+00:00",
+                "days": 30,
+            },
+            "safety": {
+                "mutates_config": False,
+                "edits_plugin_cache": False,
+                "hard_load_apply_performed": False,
+                "audit_only": True,
+            },
+            "config_summary": {"current_profile": {}},
+            "inventory_summary": {},
+            "log_evidence": {"budget_warning_count": 0, "last_7d_budget_warning_count": 0},
+            "session_evidence": {},
+            "module_evidence": [],
+            "cadence_review": {},
+            "recommendations": [],
+        }
+
+        contract = audit.validate_report_field_contract(report)
+        gate = audit.build_candidate_generation_gate(report, summary_reviewed=True)
+
+        self.assertFalse(contract["passed"])
+        self.assertIn("missing_field:manual_evidence", contract["blockers"])
+        self.assertFalse(gate["allowed"])
+        self.assertIn("field_contract:missing_field:manual_evidence", gate["blockers"])
+        self.assertEqual(gate["field_contract"]["status"], "failed")
 
     def test_manual_notes_are_sanitized_and_validated(self) -> None:
         codex_home = self.make_codex_home("skills-audit-manual-notes")
@@ -638,6 +674,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertTrue(allowed_gate["allowed"])
         self.assertEqual(allowed_gate["status"], "allowed")
         self.assertEqual(allowed_gate["blockers"], [])
+        self.assertEqual(allowed_gate["field_contract"]["status"], "passed")
         self.assertEqual(allowed_report["audit_state"]["state"], "apply-candidate")
         self.assertFalse(allowed_report["audit_state"]["profile_apply_allowed"])
 
@@ -740,6 +777,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "blockers": ["summary_not_marked_reviewed"],
                 "summary_reviewed": False,
                 "audit_window_at_least_30_days": True,
+                "field_contract": {"status": "failed"},
             },
         )
 
@@ -749,6 +787,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Approval state: `preview-only`", summary)
         self.assertIn("Gate status: `blocked`", summary)
         self.assertIn("Blockers: `summary_not_marked_reviewed`", summary)
+        self.assertIn("Field contract: `failed`", summary)
         self.assertIn("Did not modify user-level `config.toml`.", summary)
         self.assertIn("Did not infer approval from generic continue/confirmation.", summary)
 
@@ -774,12 +813,14 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertIn("# Codex Skills Usage Audit Summary", summary)
         self.assertIn("## Audit window", summary)
+        self.assertIn("Field contract: `passed`", summary)
         self.assertIn("## Current configuration surface", summary)
         self.assertIn("## Warning conclusion", summary)
         self.assertIn("## Module evidence", summary)
         self.assertIn("## Noise review", summary)
         self.assertIn("## Manual evidence", summary)
         self.assertIn("## Decision recommendation", summary)
+        self.assertIn("Reports with failed field contracts must be rerun or fixed before profile decisions.", summary)
         self.assertIn("## Risks and restore path", summary)
         self.assertIn("Inferred current profile:", summary)
         self.assertIn("Last 7d budget warning count:", summary)

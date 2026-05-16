@@ -72,6 +72,32 @@ REQUIRED_MANUAL_NOTE_FIELDS = {
 }
 VALID_MANUAL_EVIDENCE_LEVELS = {"medium", "exception", "noise_removed"}
 VALID_MANUAL_ACTIONS = {"none", "soft-load", "preview", "approved hard-load exception"}
+REQUIRED_REPORT_FIELDS = {
+    "schema_version",
+    "generated_at",
+    "audit_window",
+    "safety",
+    "config_summary",
+    "inventory_summary",
+    "log_evidence",
+    "session_evidence",
+    "manual_evidence",
+    "module_evidence",
+    "cadence_review",
+    "recommendations",
+}
+REQUIRED_REPORT_FIELD_TYPES = {
+    "audit_window": dict,
+    "safety": dict,
+    "config_summary": dict,
+    "inventory_summary": dict,
+    "log_evidence": dict,
+    "session_evidence": dict,
+    "manual_evidence": dict,
+    "module_evidence": list,
+    "cadence_review": dict,
+    "recommendations": list,
+}
 
 
 def emit_stdout(text: str) -> None:
@@ -617,6 +643,62 @@ def build_audit_state(
     }
 
 
+def validate_report_field_contract(report: dict[str, Any]) -> dict[str, Any]:
+    missing_fields = sorted(REQUIRED_REPORT_FIELDS - set(report))
+    invalid_type_fields = sorted(
+        field
+        for field, expected_type in REQUIRED_REPORT_FIELD_TYPES.items()
+        if field in report and not isinstance(report.get(field), expected_type)
+    )
+    safety = report.get("safety") if isinstance(report.get("safety"), dict) else {}
+    safety_violations = sorted(
+        field
+        for field in ("mutates_config", "edits_plugin_cache", "hard_load_apply_performed", "audit_only")
+        if field not in safety
+    )
+    if safety.get("mutates_config") is not False:
+        safety_violations.append("mutates_config_not_false")
+    if safety.get("edits_plugin_cache") is not False:
+        safety_violations.append("edits_plugin_cache_not_false")
+    if safety.get("hard_load_apply_performed") is not False:
+        safety_violations.append("hard_load_apply_performed_not_false")
+    if safety.get("audit_only") is not True:
+        safety_violations.append("audit_only_not_true")
+    config = report.get("config_summary") if isinstance(report.get("config_summary"), dict) else {}
+    config_violations = []
+    if "current_profile" not in config:
+        config_violations.append("current_profile_missing")
+    log_evidence = report.get("log_evidence") if isinstance(report.get("log_evidence"), dict) else {}
+    log_violations = []
+    for field in ("budget_warning_count", "last_7d_budget_warning_count"):
+        if field not in log_evidence:
+            log_violations.append(f"{field}_missing")
+    manual_evidence = report.get("manual_evidence") if isinstance(report.get("manual_evidence"), dict) else {}
+    manual_violations = []
+    if "valid_note_count" not in manual_evidence:
+        manual_violations.append("valid_note_count_missing")
+    blockers = (
+        [f"missing_field:{field}" for field in missing_fields]
+        + [f"invalid_type:{field}" for field in invalid_type_fields]
+        + [f"safety:{field}" for field in safety_violations]
+        + [f"config_summary:{field}" for field in config_violations]
+        + [f"log_evidence:{field}" for field in log_violations]
+        + [f"manual_evidence:{field}" for field in manual_violations]
+    )
+    return {
+        "status": "passed" if not blockers else "failed",
+        "passed": not blockers,
+        "blockers": blockers,
+        "required_fields": sorted(REQUIRED_REPORT_FIELDS),
+        "missing_fields": missing_fields,
+        "invalid_type_fields": invalid_type_fields,
+        "safety_violations": safety_violations,
+        "config_summary_violations": config_violations,
+        "log_evidence_violations": log_violations,
+        "manual_evidence_violations": manual_violations,
+    }
+
+
 def build_candidate_generation_gate(report: dict[str, Any], summary_reviewed: bool) -> dict[str, Any]:
     audit_window = report.get("audit_window", {})
     try:
@@ -632,6 +714,8 @@ def build_candidate_generation_gate(report: dict[str, Any], summary_reviewed: bo
         blockers.append("audit_window_shorter_than_30_days")
     if not summary_reviewed:
         blockers.append("summary_not_marked_reviewed")
+    field_contract = validate_report_field_contract(report)
+    blockers.extend(f"field_contract:{blocker}" for blocker in field_contract["blockers"])
     allowed = not blockers
     return {
         "status": "allowed" if allowed else "blocked",
@@ -642,6 +726,7 @@ def build_candidate_generation_gate(report: dict[str, Any], summary_reviewed: bo
         "audit_window_days": configured_days,
         "audit_window_elapsed_days": round(elapsed_days, 4),
         "audit_window_at_least_30_days": audit_window_at_least_30_days,
+        "field_contract": field_contract,
         "ordinary_continue_or_generic_confirmation_is_not_apply_authorization": True,
     }
 
@@ -1031,6 +1116,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "Keep disabled plugins restorable; do not delete plugin cache or vendor SKILL.md files.",
         ],
     }
+    report["field_contract"] = validate_report_field_contract(report)
     return report
 
 
@@ -1042,6 +1128,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     noise_review = report.get("noise_review", {})
     manual_evidence = report.get("manual_evidence", {})
     audit_state = report.get("audit_state", {})
+    field_contract = report.get("field_contract", {})
     lines = [
         "# Codex Skills Usage Audit Summary",
         "",
@@ -1051,6 +1138,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Until: `{audit_window.get('until')}`",
         f"- Days: `{audit_window.get('days')}`",
         f"- Audit state: `{audit_state.get('state')}` ({audit_state.get('reason')})",
+        f"- Field contract: `{field_contract.get('status')}`",
         "",
         "## Current configuration surface",
         "",
@@ -1108,6 +1196,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             "## Decision recommendation",
             "",
             "- This sanitized summary is review evidence only.",
+            "- Reports with failed field contracts must be rerun or fixed before profile decisions.",
             "- It does not modify `config.toml`, plugin cache, or hard-load profiles.",
             "- Create a separate profile apply candidate record before any apply action.",
             "- Review `medium_evidence_rationale` and `cross_project_utility` manually before any default-profile decision.",
@@ -1171,6 +1260,7 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
         f"- Blockers: `{', '.join(gate.get('blockers') or []) or 'none'}`",
         f"- Summary reviewed: `{gate.get('summary_reviewed')}`",
         f"- Audit window at least 30 days: `{gate.get('audit_window_at_least_30_days')}`",
+        f"- Field contract: `{(gate.get('field_contract') or {}).get('status')}`",
         "",
         "## Current and target profile",
         "",
