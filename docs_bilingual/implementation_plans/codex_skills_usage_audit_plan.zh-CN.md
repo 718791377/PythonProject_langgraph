@@ -124,9 +124,193 @@ created_at: 2026-05-16
 - `full` profile 中 `plugins: "all_known_plugins"` 不能被拆成单个字符；
 - 脚本在缺少用户级 plugin-modules profile 时，必须回退读取仓库内 `tools/skill_sources/plugin-modules/references/profiles.json`。
 
+### 5.6 报告字段契约
+
+`--json` 与 `--output` 生成的报告必须至少包含以下顶层字段。字段缺失时，该报告不得用于 profile 决策。
+
+| 字段 | 用途 | 决策影响 |
+| --- | --- | --- |
+| `schema_version` | 报告结构版本 | 后续脚本按版本兼容解析 |
+| `generated_at` | 报告生成时间 | 判断报告是否过期 |
+| `audit_window` | `since` / `until` / `days` | 防止用错误窗口做 30 天决策 |
+| `safety` | 是否修改配置、plugin cache、hard-load apply | 必须全部证明 audit-only |
+| `config_summary` | enabled / disabled / unknown plugins | 判断当前 profile 面是否过大 |
+| `inventory_summary` | user/repo/plugin skills 数量 | 判断 2% budget 压力来源 |
+| `log_evidence` | budget warning 与 skipped loading 证据 | 判断 warning 是否仍在会话中出现 |
+| `session_evidence` | explicit skills、SKILL.md reads、helper calls、tool calls | 作为强/中/弱证据输入 |
+| `module_evidence` | 按 profile module 汇总的强/弱证据 | 生成 profile 决策候选 |
+| `recommendations` | 审计建议 | 只能作为建议，不能自动 apply |
+
+### 5.7 审计节奏、留存与报告命名
+
+为避免一个月 audit 过程中偏离，使用固定节奏。
+
+| 时间点 | 命令 | 输出文件 | 用途 |
+| --- | --- | --- | --- |
+| 第 0 天 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | 冻结初始 enabled plugins、inventory 和 warning 状态 |
+| 每周 | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | 发现会话中新增 warning 与模块使用趋势 |
+| 第 30 天 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | 形成是否调整默认 profile 的证据包 |
+| 出现 warning 后 | `--days 1` 或 `--since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | 定位 warning 是否来自当前会话重打包 |
+
+`.tmp/` 报告默认不入 Git；如果需要长期留证，只提交经过脱敏和摘要化的 Markdown 结论，不提交完整 session transcript、token、私有路径或 vendor cache 内容。
+
+### 5.8 偏离控制与异常恢复
+
+一个月 audit 期间，如果执行节奏或数据源异常，按下表处理，避免把不完整数据误当成最终结论。
+
+| 偏离或异常 | 恢复动作 | 不允许的动作 |
+| --- | --- | --- |
+| 漏跑一周汇总 | 立即补跑 `--days 7`，并在报告摘要中标记 `late_run: true` | 为补齐节奏而伪造历史报告 |
+| warning 出现后未及时 triage | 补跑 `--days 1`；如已超过 24 小时，再补跑覆盖 warning 时间点的 `--since` | 只凭记忆判断 soft-load 是否失效 |
+| `logs_2.sqlite` 不可读或缺失 | 报告中保留 `log_evidence.available=false`，改用 session transcript 做辅助说明 | 把 0 个 warning 当成“没有发生 warning” |
+| session transcript 不完整或包含隐私内容 | 只提交聚合字段和脱敏摘要；必要时保留本地 `.tmp/` 原始 JSON | 提交完整会话记录、token 或私有路径 |
+| 报告缺少字段契约中的关键字段 | 先修脚本或重跑报告，再进入 profile 决策 | 用缺字段报告决定 hard-load/profile apply |
+| 审计期中确有紧急任务需要某 plugin | 允许对该任务 soft-load 或 preview；如必须 hard-load，单独取得明确授权并记录例外 | 借紧急任务提前结束 30 天审计 |
+
+### 5.9 30 天决策摘要模板
+
+第 30 天不能只提交原始 JSON。必须形成一份可人工复核的脱敏 Markdown 摘要，至少包含：
+
+1. 审计窗口：起止时间、是否漏跑周报、是否有 late run。
+2. 当前配置面：enabled/disabled/unknown plugin 数量，以及当前默认 profile。
+3. Warning 结论：30 天 warning 总数、7 天 warning 总数、最高严重度、是否出现 `All skill descriptions were removed`。
+4. 证据表：按 module 列出强证据次数、中证据说明、弱证据次数、是否跨项目通用。
+5. 噪声复核：列出被剔除的明显误报 token，例如 `and`、`from`、`draft`；说明它们未计入强证据。
+6. 决策建议：常驻默认、项目 profile、按需 soft-load、保留 dormant、或仅留在 `full` 排障 profile。
+7. 风险与恢复路径：如果禁用或移出默认 profile，写明如何恢复、使用哪个 helper、是否需要重启/新会话。
+8. 不执行清单：明确哪些动作本报告没有执行，例如未修改 `config.toml`、未编辑 plugin cache、未 hard-load apply。
+
+只有这份摘要与 JSON 报告字段契约同时满足，才允许进入后续 hard-load/profile apply 讨论。
+
+### 5.10 人工证据与例外记录格式
+
+脚本主要采集强证据和日志证据；中证据、业务关键性、项目特定性与紧急例外需要人工补充。人工记录必须使用脱敏 Markdown，建议存放在 `.tmp/skills-usage-audit-notes-YYYY-MM-DD.md`，默认不提交 Git。若需要进入长期证据包，只摘录脱敏摘要。
+
+每条人工记录至少包含：
+
+| 字段 | 必填 | 说明 |
+| --- | --- | --- |
+| `time` | 是 | 记录时间或任务发生时间 |
+| `project` | 是 | 项目名或仓库名；不能写入敏感客户信息 |
+| `task_type` | 是 | 例如 `web-saas`、`company-ops`、`customer-comms`、`creative-content` |
+| `requested_capability` | 是 | 用户明确要求或任务明显需要的能力 |
+| `evidence_level` | 是 | `medium`、`exception` 或 `noise_removed` |
+| `reason` | 是 | 为什么该能力有业务意义，或为什么某 token 被判定为误报 |
+| `action_taken` | 是 | `none`、`soft-load`、`preview`、`approved hard-load exception` |
+| `restore_or_followup` | 否 | 后续如何恢复、复核或补脚本过滤 |
+
+人工记录不能覆盖脚本证据：如果人工判断与 JSON 报告冲突，30 天摘要必须同时列出冲突和处理结论。
+
+### 5.11 Profile apply 候选变更门禁
+
+30 天审计结束后，即使证据支持调整默认 profile，也不能直接 apply。必须先形成一份候选变更门禁记录，用来把“审计结论”转换为“可回滚的配置变更”。
+
+候选变更记录至少包含：
+
+| 字段 | 说明 |
+| --- | --- |
+| `candidate_id` | 候选变更编号，例如 `skills-profile-2026-06-core-dev-plus-browser` |
+| `source_reports` | 30 天 JSON 报告、脱敏 Markdown 摘要、人工记录摘要路径 |
+| `current_profile` | 当前默认 profile 与 enabled plugins 摘要 |
+| `target_profile` | 候选目标 profile，或需要新增/修改的 profile 名称 |
+| `plugin_diff` | 将新增、移出默认、保持 dormant 的 plugin/module 列表 |
+| `evidence_basis` | 每个变更项对应的强证据、中证据、战略保留或 warning 压力 |
+| `risk_review` | 可能误禁用的能力、受影响项目、恢复成本 |
+| `rollback_path` | 恢复旧 profile 的 helper 命令、所需重启/新会话说明 |
+| `validation_plan` | preview、local check、启动验证和 warning 复测步骤 |
+| `approval_state` | `preview-only`、`approved-to-apply`、`applied`、`rolled-back` |
+
+门禁规则：
+
+- `approval_state=preview-only` 只能运行 preview，不得修改 `config.toml`；
+- `approved-to-apply` 必须来自用户明确授权，不能由“继续”或普通确认替代；
+- apply 后必须保存 apply 前后的脱敏 diff 摘要；
+- 如果 apply 后 warning 仍出现或关键能力缺失，优先按 `rollback_path` 恢复，不在同一轮中连续叠加多个 profile 改动。
+
+### 5.12 数据最小化、脱敏与留存边界
+
+usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必须把“可读数据”和“可留存数据”分开管理。
+
+| 数据源 | 可读取目的 | 可留存内容 | 禁止留存或外发内容 |
+| --- | --- | --- | --- |
+| `sessions/**/*.jsonl` | 识别显式 skill 声明、`SKILL.md` 读取和 helper 调用 | 聚合计数、脱敏任务类型、脱敏项目名 | 完整 transcript、用户私密输入、token、密钥、客户信息 |
+| `logs_2.sqlite` | 统计 budget warning、skipped loading、warning 时间点 | warning 计数、时间窗口、脱敏 message excerpt | 完整日志库、含路径/账号/密钥的原始消息 |
+| `config.toml` | 读取 plugin enabled/disabled/unknown 状态 | plugin 状态摘要、profile 名称 | 完整用户级配置、认证信息、非本任务相关设置 |
+| plugin/vendor cache | 统计 `SKILL.md` inventory 或定位 invalid skill | skill 数量、路径类别、invalid skill 摘要 | vendor 文件全文、批量复制的 SKILL.md 内容 |
+| `.tmp/` audit report | 本地临时复核 | 本地 JSON、脱敏 Markdown 摘要 | 未脱敏报告提交 Git 或发送远端 |
+
+留存规则：
+
+- `.tmp/*.json` 默认只作为本地临时证据，不提交 Git；
+- 需要长期留证时，只提交脱敏 Markdown 摘要；
+- 任何报告进入 Git 前，必须确认不含 API key、access token、cookie、私有客户名、完整本地用户目录清单；
+- remote publication 不得把原始 audit JSON 当成附件上传；
+- 如果发现已生成的报告含敏感内容，先删除该本地报告并重跑脱敏摘要，不在同一报告上手工涂改后继续使用。
+
+### 5.13 脚本能力边界与增强触发条件
+
+`tools/audit_codex_skills_usage.py` 是审计辅助脚本，不是全知事实源。30 天报告必须同时说明“脚本已经可靠覆盖什么”和“仍需人工复核什么”。
+
+当前脚本能力边界：
+
+- 可以统计 `config.toml` 中 plugin enabled/disabled/unknown 状态；
+- 可以统计 user/repo/plugin `SKILL.md` inventory 数量；
+- 可以从 session transcript 中提取显式 skill announcement、`SKILL.md` 路径读取、profile helper 调用和 tool call 名称；
+- 可以从 `logs_2.sqlite` 中提取 skills budget warning、`All skill descriptions were removed`、`additional skills` 数量与 skipped loading 样本；
+- 可以按 profile module 聚合 helper 调用和 plugin skill path 读取，形成初步建议。
+
+当前已知限制：
+
+- `weak_plugin_mentions` 只能说明文本趋势，不能证明真实调用；
+- `explicit_skills` 可能出现自然语言或示例 token 误报，必须经过噪声复核；
+- `tool_call_names` 目前不等同于 plugin/module 使用，除非能映射到明确能力面；
+- 日志库不可读、日志轮转或旧会话缺失时，warning 统计可能低估；
+- profile module 聚合依赖 registry，registry 缺失或过期时，报告只能作为不完整证据。
+
+触发脚本增强而不是人工绕过的条件：
+
+- 同一类误报在两次 weekly report 中重复出现；
+- 30 天摘要需要依赖某类证据，但脚本只给出 weak mention；
+- `tool_call_names` 中出现可映射到 plugin/module 的稳定模式，但脚本未聚合；
+- warning 发生在会话中但 `logs_2.sqlite` 无法定位，需要新增可复核的数据源；
+- profile registry 与实际 enabled plugin 面不一致，导致 module evidence 明显错配。
+
+增强脚本时必须同步更新回归测试和本计划；未补测试前，不得把新解析规则作为 30 天最终决策依据。
+
+### 5.14 审计运行状态机与停止条件
+
+为了避免一个月 audit 执行过程中反复漂移，审计本身必须有明确状态。状态只描述 audit 流程，不等同于 plugin/profile 已 apply。
+
+| 状态 | 含义 | 允许动作 | 禁止动作 |
+| --- | --- | --- | --- |
+| `planned` | 方案已写好，但 Day 0 baseline 还未生成 | 复核方案、运行 baseline preview | 宣称已有 30 天证据 |
+| `running` | Day 0 baseline 已生成，正在收集 30 天证据 | 周报、warning triage、manual notes、脚本修复 | hard-load apply，除非单独明确授权 |
+| `paused` | 数据源缺失、隐私问题或脚本缺陷导致审计暂停 | 修复数据源、补测试、重跑报告 | 用暂停期间缺失数据做最终决策 |
+| `ready-for-summary` | 已到第 30 天且字段契约、周报、triage、manual notes 基本齐全 | 生成 30 天脱敏 Markdown 摘要 | 直接修改默认 profile |
+| `summary-reviewed` | 30 天摘要已人工复核并处理噪声/冲突 | 创建 profile apply 候选变更门禁 | 跳过 rollback/validation 计划 |
+| `apply-candidate` | 已形成候选变更记录，仍处于 preview-only 或等待批准 | preview、风险复核、请求明确授权 | 把普通“继续”解释为 apply 授权 |
+| `closed-no-change` | 30 天证据不足以调整默认 profile | 保留 dormant/soft-load 路径，关闭本轮审计 | 继续为了“凑结果”延长同一轮审计 |
+| `closed-with-candidate` | 本轮审计结束，并产生待批准候选变更 | 进入单独 profile apply change | 在审计计划文件中直接执行配置变更 |
+
+停止条件：
+
+- 如果达到 `closed-no-change`，下一步只能按需重新开新一轮 audit 或保留 soft-load，不继续追加本轮结论；
+- 如果达到 `closed-with-candidate`，后续工作必须转入 profile apply 候选变更，不再把审计计划本身当成执行面；
+- 如果连续两次复核只增加解释性文本、没有新增可验证规则、字段、状态或测试要求，应停止继续扩写方案，改为提交当前完善结果；
+- 审计状态变化必须记录在 30 天摘要或候选变更记录中，而不是只留在聊天上下文。
+
 ## 6. 决策规则
 
-30 天后按以下规则决策：
+30 天后按以下规则决策。所有阈值都以强证据为主，弱证据只能做辅助解释。
+
+| 量化项 | 默认阈值 | 说明 |
+| --- | --- | --- |
+| 高频强证据 | 30 天内 `strong_helper_calls + strong_skill_path_reads >= 10`，或连续两周每周 >= 3 | 可进入默认 profile 候选，但仍需确认是否跨项目通用 |
+| 低频强证据 | 30 天内 1-9 次强证据 | 保留 soft-load / hard-load profile，不默认常驻 |
+| 项目特定强证据 | 强证据集中在单一项目、单一目录或单一任务类型 | 放入项目 profile 或任务 profile，不扩大到全局默认 |
+| warning 严重度高 | 7 天内 `budget_warning_count >= 3`，或出现 `All skill descriptions were removed` | 优先调整默认 profile 或避免 full profile 常驻 |
+| warning 严重度中 | 30 天内有 warning，但 7 天内少于 3 次 | 保持审计，结合当时任务判断是否需要 hard-load profile |
+| 无强证据 | 30 天内 0 次强证据 | 不删除，只从默认候选中移除并保留恢复路径 |
 
 | 证据 | 决策 |
 | --- | --- |
@@ -153,10 +337,49 @@ created_at: 2026-05-16
 - `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、中文 announcement、repo profile fallback 与 `all_known_plugins` 展开。
 - `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 
-## 8. 与 soft-load 的关系
+每次人工复核报告时，还必须检查误报噪声：
+
+- `explicit_skills` 中如果出现 `and`、`from`、`draft` 等明显不是 skill/profile/plugin 的通用词，不得把它们计入强证据；
+- 对无法映射到当前 available skills、profile module、plugin 名称或实际 `SKILL.md` 路径的 token，只能按弱证据或待清洗噪声处理；
+- 如果同类误报连续出现，应优先补脚本过滤规则和回归测试，再用该报告做 30 天 profile 决策；
+- 30 天最终报告必须包含“噪声/误报复核结论”，哪怕结论是“未发现明显误报”。
+
+## 8. Warning 分级与处理动作
+
+| 现象 | 判断 | 处理动作 |
+| --- | --- | --- |
+| 启动时无 warning，但会话中出现 warning | soft-load 仍可能有效；runtime 在 turn 级重建 model-visible skills surface | 运行 1 天窗口 triage 报告，记录发生 turn，不立即 hard-load apply |
+| `All skill descriptions were removed` | 当前 skills surface 已严重超预算 | 下轮启动避免 `full`，使用 `core-dev` 或任务 profile；审计结束前仍不删除 plugin cache |
+| `additional skills were not included` 数量持续升高 | 自动可见列表仍过大 | 根据 30 天强证据缩小默认 profile，保留 dormant 恢复路径 |
+| `Skipped loading` 指向无效 SKILL.md | 单个 skill 元数据错误或 vendor cache 问题 | 优先记录来源；除非用户授权，不批量改 vendor cache |
+
+## 9. 与 soft-load 的关系
 
 如果会话中再次出现 `2% skills context budget` warning，不能说明 soft-load 失败。正确解释是：runtime 仍在为当前 turn 构造 model-visible skills surface，而 soft-load 不参与这个预算面。soft-load 只解决“当前任务需要的知识如何按需读取”，不解决“全局自动可见列表过大”。
 
-## 9. 后续动作
+## 10. 后续动作
 
 审计结束前，只允许生成报告和 preview profile。审计结束后，如证据支持，再新开 bounded change 或使用已批准的 profile helper 执行 hard-load apply。远端发布仍按本仓库 local-main-first 与 GitLab/GitHub 授权规则执行。
+
+## 11. 颗粒度完成检查清单
+
+本方案被视为“颗粒度足够”必须同时满足：
+
+- 说明 warning 为什么可能在会话中而非启动时出现；
+- 区分 soft-load、hard-load/profile apply、plugin cache 修改三类动作；
+- 明确 strong / medium / weak evidence 的边界；
+- 明确 7 天、30 天、warning triage 的运行节奏；
+- 明确 JSON 报告字段契约；
+- 明确漏跑、warning 延迟 triage、日志不可读、隐私脱敏和紧急例外的恢复规则；
+- 明确 30 天最终决策摘要模板；
+- 明确中证据、紧急例外和误报剔除的人工记录格式；
+- 明确 30 天审计后进入 hard-load/profile apply 前的候选变更门禁与回滚路径；
+- 明确 audit 数据源的数据最小化、脱敏、留存和禁止外发边界；
+- 明确 audit 脚本的能力边界、已知限制和触发脚本增强的条件；
+- 明确审计运行状态机、停止条件，以及审计结束后与 profile apply 候选变更的分界；
+- 明确高频/低频/无强证据的阈值；
+- 明确 explicit skill 误报噪声不得进入强证据；
+- 明确 warning 分级和处理动作；
+- 明确输出文件默认不入 Git，长期留证必须脱敏摘要；
+- 明确回归测试和 CI manifest 要求；
+- 明确远端发布仍受 GitLab/GitHub 授权门控制。
