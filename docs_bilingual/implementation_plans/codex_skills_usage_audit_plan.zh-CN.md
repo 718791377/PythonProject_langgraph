@@ -197,7 +197,7 @@ created_at: 2026-05-16
 2. 当前配置面：enabled/disabled/unknown plugin 数量、`current_profile.inferred_profile`、精确 module 匹配，以及是否需要人工复核。
 3. Warning 结论：30 天 warning 总数、7 天 warning 总数、最高严重度、是否出现 `All skill descriptions were removed`。
 4. 证据表：按 module 列出强证据次数、`medium_evidence_rationale`、弱证据次数、`cross_project_utility` 和 recommendation。
-5. 噪声复核：列出被剔除的明显误报 token，例如 `and`、`from`、`draft`；说明它们未计入强证据。
+5. 噪声复核：列出被剔除的明显误报 token，例如 `and`、`from`、`draft`；说明它们未计入强证据；同时展示 `raw_noise_tokens_retained`、`max_noise_token_length` 与 `token_privacy_policy`，让人工复核者不打开原始 JSON 也能确认噪声 token 隐私门禁。
 6. 决策建议：常驻默认、项目 profile、按需 soft-load、保留 dormant、或仅留在 `full` 排障 profile。
 7. 风险与恢复路径：如果禁用或移出默认 profile，写明如何恢复、使用哪个 helper（例如 `set_plugin_profile.ps1 -RestoreLatest -Apply`）、是否需要通过 `codex-ohmy` 重启/新会话。
 8. 不执行清单：明确哪些动作本报告没有执行，例如未修改 `config.toml`、未编辑 plugin cache、未 hard-load apply。
@@ -223,7 +223,7 @@ created_at: 2026-05-16
 
 人工记录不能覆盖脚本证据：如果人工判断与 JSON 报告冲突，30 天摘要必须同时列出冲突和处理结论。
 
-人工记录来源路径只允许用于本地审计执行，不能作为原始证据留存。写入 `manual_evidence.invalid_notes` 或候选 source 引用前，必须先对路径做脱敏和长度限制；如果 manual evidence 仍包含原始私有路径、secret 赋值、独立 token，或标记为保留了原始来源路径，字段契约必须失败。
+人工记录来源路径只允许用于本地审计执行，不能作为原始证据留存。写入 `manual_evidence.invalid_notes` 或候选 source 引用前，必须先对路径做脱敏和长度限制；如果 manual evidence 仍包含原始私有路径、secret 赋值、独立 token，或标记为保留了原始来源路径，字段契约必须失败。脱敏 Markdown 摘要也必须展示 `source_paths_retained`、`max_path_length` 与 `path_privacy_policy`，让人工复核者不打开原始 JSON 也能确认人工记录来源路径隐私门禁。
 
 ### 5.11 Profile apply 候选变更门禁
 
@@ -252,6 +252,7 @@ created_at: 2026-05-16
 - 候选生成必须要求 30 天 JSON 报告与脱敏 Markdown 摘要的 source-report 路径，避免已复核候选与复核证据脱钩；
 - candidate `source_reports` 写入 JSON 或 Markdown 候选记录前必须先脱敏；原始 Windows 路径、POSIX home 路径、UNC 共享路径、API key、access token、cookie 与独立 secret token 都必须被替换；
 - 候选记录必须包含 `source_reports_privacy.status=passed`；如果 privacy contract 失败，候选必须保持 blocked，直到重新生成 report 路径或修复脱敏器；
+- 候选 Markdown 摘要必须渲染 source-report privacy 状态与 violations/blockers；没有违规时写入 `none`，保证 preview 记录可复核且不暴露原始 source 路径；
 - 候选生成还必须校验报告字段契约；当必需顶层字段、audit-only 安全标志、决策关键嵌套字段或内嵌 `field_contract` 本身缺失、过期或类型错误时，必须以 `field_contract:<reason>` 阻断；
 - `approval_state=preview-only` 只能运行 preview，不得修改 `config.toml`；
 - `approved-to-apply` 必须来自用户明确授权，不能由“继续”或普通确认替代；

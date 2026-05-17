@@ -197,7 +197,7 @@ Day 30 must not ship only raw JSON. It must produce a sanitized Markdown summary
 2. Current configuration surface: enabled/disabled/unknown plugin counts, `current_profile.inferred_profile`, exact module matches, and whether manual review is required.
 3. Warning conclusion: 30-day warning count, 7-day warning count, highest severity, and whether `All skill descriptions were removed` appeared.
 4. Evidence table: per-module strong evidence count, `medium_evidence_rationale`, weak-evidence count, `cross_project_utility`, and the recommendation.
-5. Noise review: list obvious false-positive tokens removed from evidence, such as `and`, `from`, or `draft`, and state they were not counted as strong evidence.
+5. Noise review: list obvious false-positive tokens removed from evidence, such as `and`, `from`, or `draft`, state they were not counted as strong evidence, and show the retained-token privacy fields: `raw_noise_tokens_retained`, `max_noise_token_length`, and `token_privacy_policy`.
 6. Decision recommendation: default-always-on, project profile, on-demand soft-load, dormant but restorable, or `full` troubleshooting profile only.
 7. Risks and restore path: if a plugin is disabled or removed from the default profile, document how to restore it, which helper to use such as `set_plugin_profile.ps1 -RestoreLatest -Apply`, and whether a `codex-ohmy` restart/new session is required.
 8. Non-action list: explicitly state what the report did not do, such as not modifying `config.toml`, not editing plugin cache, and not performing hard-load apply.
@@ -223,7 +223,7 @@ Each manual note must include at least:
 
 Manual notes cannot override script evidence. If manual judgment conflicts with the JSON report, the 30-day summary must list both the conflict and the disposition.
 
-Manual note source paths are readable for local audit execution but are not retainable as raw evidence. Any path stored in `manual_evidence.invalid_notes` or candidate source references must be redacted and bounded before report retention, and the field contract must fail if manual evidence still contains raw private paths, secret assignments, standalone tokens, or a marker that source paths were retained.
+Manual note source paths are readable for local audit execution but are not retainable as raw evidence. Any path stored in `manual_evidence.invalid_notes` or candidate source references must be redacted and bounded before report retention, and the field contract must fail if manual evidence still contains raw private paths, secret assignments, standalone tokens, or a marker that source paths were retained. Sanitized Markdown summaries must also show `source_paths_retained`, `max_path_length`, and `path_privacy_policy` so human reviewers can verify the source-path privacy gate without opening raw JSON.
 
 ### 5.11 Profile apply candidate change gate
 
@@ -252,6 +252,7 @@ Gate rules:
 - candidate generation must require source-report paths for the 30-day JSON report and sanitized Markdown summary, so a reviewed candidate cannot be detached from its review evidence;
 - candidate `source_reports` must be sanitized before JSON or Markdown candidate records are written; raw Windows paths, POSIX home paths, UNC shares, API keys, access tokens, cookies, and standalone secret tokens must be redacted;
 - a candidate record must include `source_reports_privacy.status=passed`; if the privacy contract fails, the candidate must stay blocked until the report paths are regenerated or the sanitizer is fixed;
+- candidate Markdown summaries must render the source-report privacy status and privacy violations/blockers, using `none` when there are no violations, so the preview record is self-reviewable without exposing raw source paths;
 - candidate generation must also validate the report field contract and block with `field_contract:<reason>` when required top-level fields, audit-only safety flags, decision-critical nested fields, or the embedded `field_contract` itself are missing, stale, or invalid;
 - `approval_state=preview-only` may run preview only and must not modify `config.toml`;
 - `approved-to-apply` requires explicit user authorization and cannot be inferred from “continue” or generic confirmation;
