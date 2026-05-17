@@ -165,6 +165,15 @@ REQUIRED_WARNING_TRIAGE_FIELD_TYPES = {
     "budget_warning_count": int,
     "recommended_action": str,
 }
+REQUIRED_CADENCE_REVIEW_FIELDS = {
+    "late_run",
+    "missed_weekly_runs",
+    "weekly_report_review",
+}
+REQUIRED_CADENCE_REVIEW_FIELD_TYPES = {
+    "late_run": bool,
+    "weekly_report_review": str,
+}
 REQUIRED_MANUAL_EVIDENCE_FIELDS = {
     "valid_note_count",
     "raw_notes_retained",
@@ -992,6 +1001,22 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
     for field, expected_type in sorted(REQUIRED_WARNING_TRIAGE_FIELD_TYPES.items()):
         if field in warning_triage and not isinstance(warning_triage.get(field), expected_type):
             warning_triage_violations.append(f"{field}_invalid_type")
+    cadence_review = report.get("cadence_review") if isinstance(report.get("cadence_review"), dict) else {}
+    cadence_review_violations = []
+    for field in sorted(REQUIRED_CADENCE_REVIEW_FIELDS):
+        if field not in cadence_review:
+            cadence_review_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_CADENCE_REVIEW_FIELD_TYPES.items()):
+        if field in cadence_review and not isinstance(cadence_review.get(field), expected_type):
+            cadence_review_violations.append(f"{field}_invalid_type")
+    if "missed_weekly_runs" in cadence_review:
+        missed_runs = cadence_review.get("missed_weekly_runs")
+        if missed_runs is not None and (
+            not isinstance(missed_runs, int) or isinstance(missed_runs, bool) or missed_runs < 0
+        ):
+            cadence_review_violations.append("missed_weekly_runs_invalid_type")
+    if cadence_review.get("late_run") is True and cadence_review.get("missed_weekly_runs") is None:
+        cadence_review_violations.append("late_run_missing_missed_weekly_runs")
     manual_evidence = report.get("manual_evidence") if isinstance(report.get("manual_evidence"), dict) else {}
     manual_violations = []
     for field in sorted(REQUIRED_MANUAL_EVIDENCE_FIELDS):
@@ -1069,6 +1094,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"config_summary:{field}" for field in config_violations]
         + [f"log_evidence:{field}" for field in log_violations]
         + [f"warning_triage:{field}" for field in warning_triage_violations]
+        + [f"cadence_review:{field}" for field in cadence_review_violations]
         + [f"manual_evidence:{field}" for field in manual_violations]
         + [f"noise_review:{field}" for field in noise_violations]
         + [f"script_capability_boundaries:{field}" for field in script_capability_violations]
@@ -1107,6 +1133,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "config_summary_violations": config_violations,
         "log_evidence_violations": log_violations,
         "warning_triage_violations": warning_triage_violations,
+        "cadence_review_violations": cadence_review_violations,
         "manual_evidence_violations": manual_violations,
         "noise_review_violations": noise_violations,
         "script_capability_boundary_violations": script_capability_violations,
@@ -1641,6 +1668,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     script_capabilities = report.get("script_capability_boundaries", {})
     audit_state = report.get("audit_state", {})
     field_contract = report.get("field_contract", {})
+    cadence_review = report.get("cadence_review", {})
     lines = [
         "# Codex Skills Usage Audit Summary",
         "",
@@ -1651,6 +1679,9 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Days: `{audit_window.get('days')}`",
         f"- Audit state: `{audit_state.get('state')}` ({audit_state.get('reason')})",
         f"- Field contract: `{field_contract.get('status')}`",
+        f"- Late run: `{cadence_review.get('late_run')}`",
+        f"- Missed weekly runs: `{cadence_review.get('missed_weekly_runs')}`",
+        f"- Weekly report review: `{cadence_review.get('weekly_report_review')}`",
         "",
         "## Current configuration surface",
         "",

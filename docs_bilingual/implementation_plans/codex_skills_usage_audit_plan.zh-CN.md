@@ -160,6 +160,7 @@ created_at: 2026-05-16
 审计脚本必须为每份生成报告计算 `field_contract` 结果。该结果记录 `status`、`passed`、必需字段、缺失字段、字段类型错误、audit-only 安全标志违规，以及会影响决策的嵌套字段违规。`audit_state` 契约必须要求 `state`、`reason`、`next_action` 与 `profile_apply_allowed`，防止报告丢失状态机上下文。`warning_triage` 契约必须要求 `requested`、`status`、`blockers`、`window_policy`、`window_ok`、`budget_warning_count` 与 `recommended_action`，防止 warning 复核报告遗漏 triage 状态、窄窗口策略或后续动作。只要 `field_contract.status != passed`，该报告就是不完整证据；必须先修脚本或重跑报告，才能进入 profile 决策。候选生成必须要求报告内嵌 `field_contract`；来自旧脚本或人工改写后缺少/过期内嵌契约的报告，必须阻断并要求重新生成。
 `noise_review` 契约必须要求 `raw_noise_tokens_retained=false`、`max_noise_token_length`、`token_privacy_policy` 与脱敏后的 `explicit_skill_noise_removed`。噪声 token 在进入报告前必须先替换私有路径、secret、cookie 或 token，并截断到固定长度；如果仍检测到原始私有路径、secret 或过长 token，字段契约必须失败。
 `script_capability_boundaries` 契约必须要求 `policy`、`reliable_coverage`、`human_review_required_for` 和 `enhancement_triggers`。这些列表必须存在且非空，避免报告暗示 audit helper 是全知事实源。
+`cadence_review` 契约必须要求 `late_run`、`missed_weekly_runs` 与 `weekly_report_review`；`missed_weekly_runs` 必须是 `null` 或非负整数，且 `late_run=true` 时必须显式记录漏跑次数。脱敏 Markdown 摘要必须在审计窗口部分渲染这些节奏字段，让 30 天复核者无需打开原始 JSON 也能看到审计节奏是否偏离。
 
 
 ### 5.7 审计节奏、留存与报告命名
@@ -387,7 +388,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 按 plugin/module 聚合的 evidence；
 - 脚本能力边界：可靠覆盖项、人工复核需求与增强触发条件；
 - apply 建议，但不自动 apply。
-- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
+- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、cadence-review 字段契约与 Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
 - 回归测试还必须覆盖 explicit skill 误报 token 的路径/secret 脱敏、长度截断，以及 `noise_review` 字段契约阻断未脱敏或缺少隐私字段的报告，并覆盖 `script_capability_boundaries` 字段契约阻断缺失或空边界列表的报告。
 - `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 
@@ -427,6 +428,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 明确 JSON 报告字段契约，并要求脚本输出 `field_contract` 且在候选生成时阻断不完整、缺少契约或契约过期的报告；
 - 校验决策关键的 `audit_state` 嵌套字段，包括状态、原因、下一步动作与 profile apply 许可标志；
 - 校验决策关键的 `warning_triage` 嵌套字段，包括状态、blockers、窄窗口策略、warning 计数与后续动作建议；
+- 校验决策关键的 `cadence_review` 嵌套字段，并在脱敏 Markdown 摘要中渲染 late-run 与漏跑周报状态；
 - 明确漏跑、warning 延迟 triage、日志不可读、隐私脱敏和紧急例外的恢复规则；
 - 明确 30 天最终决策摘要模板；
 - 明确中证据、紧急例外和误报剔除的人工记录格式；

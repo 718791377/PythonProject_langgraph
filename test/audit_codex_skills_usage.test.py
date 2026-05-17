@@ -696,6 +696,42 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             audit.build_candidate_generation_gate(broken, summary_reviewed=True)["blockers"],
         )
 
+    def test_cadence_review_contract_and_summary_are_explicit(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-cadence-review")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=7,
+            since=None,
+            baseline=False,
+            late_run=True,
+            missed_weekly_runs=2,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        summary = audit.render_markdown_summary(report)
+        broken = json.loads(json.dumps(report))
+        del broken["cadence_review"]["weekly_report_review"]
+        broken["cadence_review"]["missed_weekly_runs"] = -1
+        broken["field_contract"] = audit.validate_report_field_contract(broken)
+
+        self.assertEqual(report["field_contract"]["status"], "passed")
+        self.assertIn("Late run: `True`", summary)
+        self.assertIn("Missed weekly runs: `2`", summary)
+        self.assertIn("Weekly report review: `manual_review_required`", summary)
+        self.assertIn("cadence_review:weekly_report_review_missing", broken["field_contract"]["blockers"])
+        self.assertIn("cadence_review:missed_weekly_runs_invalid_type", broken["field_contract"]["blockers"])
+        self.assertIn(
+            "field_contract:cadence_review:weekly_report_review_missing",
+            audit.build_candidate_generation_gate(broken, summary_reviewed=True)["blockers"],
+        )
+
     def test_warning_triage_contract_requires_decision_fields(self) -> None:
         codex_home = self.make_codex_home("skills-audit-warning-triage-contract")
         args = argparse.Namespace(
@@ -846,7 +882,11 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             },
             "script_capability_boundaries": audit.build_script_capability_boundaries(),
             "module_evidence": [],
-            "cadence_review": {},
+            "cadence_review": {
+                "late_run": False,
+                "missed_weekly_runs": None,
+                "weekly_report_review": "manual_review_required",
+            },
             "recommendations": [],
             "field_contract": {"status": "failed", "passed": False, "blockers": ["stale"]},
         }
