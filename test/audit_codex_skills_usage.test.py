@@ -617,6 +617,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "session_evidence",
             "module_evidence",
             "noise_review",
+            "script_capability_boundaries",
             "recommendations",
         }
         self.assertLessEqual(required_top_level, set(report))
@@ -645,6 +646,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("explicit_skills", report["session_evidence"])
         self.assertIsInstance(report["module_evidence"], list)
         self.assertIn("status", report["noise_review"])
+        self.assertIn("reliable_coverage", report["script_capability_boundaries"])
+        self.assertIn("human_review_required_for", report["script_capability_boundaries"])
+        self.assertIn("enhancement_triggers", report["script_capability_boundaries"])
         self.assertIn("manual_evidence", report)
         self.assertEqual(report["manual_evidence"]["valid_note_count"], 0)
         self.assertIn("field_contract", report)
@@ -655,6 +659,42 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "passed",
         )
         self.assertIsInstance(report["recommendations"], list)
+
+    def test_script_capability_boundaries_are_in_report_contract_and_summary(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-script-boundaries")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        summary = audit.render_markdown_summary(report)
+        broken = json.loads(json.dumps(report))
+        broken["script_capability_boundaries"]["human_review_required_for"] = []
+        broken["field_contract"] = audit.validate_report_field_contract(broken)
+
+        self.assertEqual(report["field_contract"]["status"], "passed")
+        self.assertIn("## Script coverage and human review boundaries", summary)
+        self.assertIn("weak_plugin_mentions_are_text_trends_not_real_invocation_evidence", summary)
+        self.assertIn(
+            "script_capability_boundaries:human_review_required_for_empty",
+            broken["field_contract"]["blockers"],
+        )
+        self.assertIn(
+            "field_contract:script_capability_boundaries:human_review_required_for_empty",
+            audit.build_candidate_generation_gate(broken, summary_reviewed=True)["blockers"],
+        )
 
     def test_warning_triage_contract_requires_decision_fields(self) -> None:
         codex_home = self.make_codex_home("skills-audit-warning-triage-contract")
@@ -804,6 +844,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "max_noise_token_length": audit.EXPLICIT_SKILL_NOISE_TOKEN_LIMIT,
                 "token_privacy_policy": "explicit_skill_noise_tokens_are_sanitized_path_secret_redacted_and_truncated",
             },
+            "script_capability_boundaries": audit.build_script_capability_boundaries(),
             "module_evidence": [],
             "cadence_review": {},
             "recommendations": [],

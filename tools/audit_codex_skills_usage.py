@@ -98,6 +98,7 @@ REQUIRED_REPORT_FIELDS = {
     "session_evidence",
     "manual_evidence",
     "noise_review",
+    "script_capability_boundaries",
     "module_evidence",
     "cadence_review",
     "recommendations",
@@ -113,6 +114,7 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "session_evidence": dict,
     "manual_evidence": dict,
     "noise_review": dict,
+    "script_capability_boundaries": dict,
     "module_evidence": list,
     "cadence_review": dict,
     "recommendations": list,
@@ -176,6 +178,18 @@ REQUIRED_MANUAL_EVIDENCE_FIELD_TYPES = {
     "source_paths_retained": bool,
     "max_path_length": int,
     "path_privacy_policy": str,
+}
+REQUIRED_SCRIPT_CAPABILITY_FIELDS = {
+    "policy",
+    "reliable_coverage",
+    "human_review_required_for",
+    "enhancement_triggers",
+}
+REQUIRED_SCRIPT_CAPABILITY_FIELD_TYPES = {
+    "policy": str,
+    "reliable_coverage": list,
+    "human_review_required_for": list,
+    "enhancement_triggers": list,
 }
 
 
@@ -1029,6 +1043,24 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
             if ACCESS_TOKEN_PATTERN.search(raw_token) or STANDALONE_TOKEN_PATTERN.search(raw_token):
                 noise_violations.append("explicit_skill_noise_token_contains_secret")
                 break
+    script_capabilities = (
+        report.get("script_capability_boundaries")
+        if isinstance(report.get("script_capability_boundaries"), dict)
+        else {}
+    )
+    script_capability_violations = []
+    for field in sorted(REQUIRED_SCRIPT_CAPABILITY_FIELDS):
+        if field not in script_capabilities:
+            script_capability_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_SCRIPT_CAPABILITY_FIELD_TYPES.items()):
+        if field in script_capabilities and not isinstance(script_capabilities.get(field), expected_type):
+            script_capability_violations.append(f"{field}_invalid_type")
+    if not script_capabilities.get("reliable_coverage"):
+        script_capability_violations.append("reliable_coverage_empty")
+    if not script_capabilities.get("human_review_required_for"):
+        script_capability_violations.append("human_review_required_for_empty")
+    if not script_capabilities.get("enhancement_triggers"):
+        script_capability_violations.append("enhancement_triggers_empty")
     blockers = (
         [f"missing_field:{field}" for field in missing_fields]
         + [f"invalid_type:{field}" for field in invalid_type_fields]
@@ -1039,6 +1071,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"warning_triage:{field}" for field in warning_triage_violations]
         + [f"manual_evidence:{field}" for field in manual_violations]
         + [f"noise_review:{field}" for field in noise_violations]
+        + [f"script_capability_boundaries:{field}" for field in script_capability_violations]
     )
     embedded_violations: list[str] = []
     if require_embedded and "field_contract" in report:
@@ -1076,6 +1109,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "warning_triage_violations": warning_triage_violations,
         "manual_evidence_violations": manual_violations,
         "noise_review_violations": noise_violations,
+        "script_capability_boundary_violations": script_capability_violations,
         "embedded_field_contract_violations": embedded_violations,
     }
 
@@ -1301,6 +1335,34 @@ def build_noise_review(session_data: dict[str, Any]) -> dict[str, Any]:
         "raw_noise_tokens_retained": False,
         "max_noise_token_length": EXPLICIT_SKILL_NOISE_TOKEN_LIMIT,
         "token_privacy_policy": "explicit_skill_noise_tokens_are_sanitized_path_secret_redacted_and_truncated",
+    }
+
+
+def build_script_capability_boundaries() -> dict[str, Any]:
+    """Describe what the audit helper can prove and what still needs review."""
+    return {
+        "policy": "audit_helper_reports_evidence_boundaries_and_is_not_an_omniscient_source_of_truth",
+        "reliable_coverage": [
+            "plugin_enabled_disabled_unknown_state_from_config_toml",
+            "user_repo_plugin_skill_inventory_counts",
+            "session_explicit_skill_announcements_skill_path_reads_helper_calls_and_tool_call_names",
+            "logs_2_sqlite_budget_warnings_all_descriptions_removed_omitted_skills_and_skipped_loading_samples",
+            "profile_module_aggregation_from_helper_calls_and_plugin_skill_path_reads",
+        ],
+        "human_review_required_for": [
+            "weak_plugin_mentions_are_text_trends_not_real_invocation_evidence",
+            "explicit_skills_can_contain_natural_language_or_example_token_false_positives",
+            "tool_call_names_are_not_plugin_usage_without_a_concrete_capability_mapping",
+            "unreadable_rotated_or_missing_logs_can_underreport_warning_counts",
+            "missing_or_stale_profile_registry_data_can_make_module_evidence_incomplete",
+        ],
+        "enhancement_triggers": [
+            "same_false_positive_pattern_repeats_in_two_weekly_reports",
+            "thirty_day_summary_needs_evidence_that_is_only_reported_as_weak_mentions",
+            "stable_tool_call_pattern_maps_to_a_plugin_or_module_but_is_not_aggregated",
+            "live_session_warning_cannot_be_localized_from_logs_2_sqlite",
+            "profile_registry_and_enabled_plugin_surface_diverge_enough_to_mislead_module_evidence",
+        ],
     }
 
 
@@ -1556,6 +1618,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "module_evidence": module_evidence,
         "noise_review": noise_review,
         "manual_evidence": manual_notes,
+        "script_capability_boundaries": build_script_capability_boundaries(),
         "recommendations": [
             "Do not treat another 2% budget warning as soft-load failure; soft-load is outside the model-visible skills budget surface.",
             "Continue audit-only mode until the agreed window closes unless a concrete task requires a profile preview or explicitly approved hard-load apply.",
@@ -1575,6 +1638,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     warning_triage = report.get("warning_triage", {})
     noise_review = report.get("noise_review", {})
     manual_evidence = report.get("manual_evidence", {})
+    script_capabilities = report.get("script_capability_boundaries", {})
     audit_state = report.get("audit_state", {})
     field_contract = report.get("field_contract", {})
     lines = [
@@ -1655,6 +1719,40 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             f"- Max source path length: `{manual_evidence.get('max_path_length')}`",
             f"- Privacy policy: `{manual_evidence.get('privacy_policy')}`",
             f"- Source path privacy policy: `{manual_evidence.get('path_privacy_policy')}`",
+            "",
+            "## Script coverage and human review boundaries",
+            "",
+            f"- Policy: `{script_capabilities.get('policy')}`",
+            f"- Reliable coverage items: `{len(script_capabilities.get('reliable_coverage') or [])}`",
+            f"- Human-review items: `{len(script_capabilities.get('human_review_required_for') or [])}`",
+            f"- Enhancement triggers: `{len(script_capabilities.get('enhancement_triggers') or [])}`",
+            "",
+            "### Reliable coverage",
+            "",
+        ]
+    )
+    for item in (script_capabilities.get("reliable_coverage") or [])[:8]:
+        lines.append(f"- `{item}`")
+    lines.extend(
+        [
+            "",
+            "### Human review required for",
+            "",
+        ]
+    )
+    for item in (script_capabilities.get("human_review_required_for") or [])[:8]:
+        lines.append(f"- `{item}`")
+    lines.extend(
+        [
+            "",
+            "### Enhancement triggers",
+            "",
+        ]
+    )
+    for item in (script_capabilities.get("enhancement_triggers") or [])[:8]:
+        lines.append(f"- `{item}`")
+    lines.extend(
+        [
             "",
             "## Decision recommendation",
             "",
