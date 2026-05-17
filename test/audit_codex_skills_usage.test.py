@@ -810,6 +810,62 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("module_evidence:row_0:recommendation_invalid_value", broken_contract["blockers"])
         self.assertIn("module_evidence:row_1:invalid_type", broken_contract["blockers"])
 
+    def test_field_contract_requires_module_evidence_recommendation_threshold_consistency(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-recommendation-threshold-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        report["module_evidence"] = [
+            {
+                "module": "core-dev",
+                "plugins": ["GitHub"],
+                "strong_helper_calls": 7,
+                "strong_skill_path_reads": 3,
+                "strong_total": 10,
+                "default_candidate_threshold": 10,
+                "mapped_tool_call_mentions": 0,
+                "mapped_tool_call_policy": audit.MODULE_EVIDENCE_MAPPED_TOOL_POLICY,
+                "medium_evidence_rationale": "no_mapped_tool_call_medium_evidence",
+                "weak_plugin_mentions": 0,
+                "cross_project_utility": "manual_review_required",
+                "recommendation": "keep_module_on_demand_and_continue_audit",
+            },
+            {
+                "module": "docs",
+                "plugins": ["Documents"],
+                "strong_helper_calls": 0,
+                "strong_skill_path_reads": 0,
+                "strong_total": 0,
+                "default_candidate_threshold": 10,
+                "mapped_tool_call_mentions": 0,
+                "mapped_tool_call_policy": audit.MODULE_EVIDENCE_MAPPED_TOOL_POLICY,
+                "medium_evidence_rationale": "no_mapped_tool_call_medium_evidence",
+                "weak_plugin_mentions": 2,
+                "cross_project_utility": "manual_review_required",
+                "recommendation": "no_recent_evidence_keep_dormant_not_deleted",
+            },
+        ]
+
+        contract = audit.validate_report_field_contract(report)
+
+        self.assertEqual(contract["status"], "failed")
+        self.assertIn("module_evidence:row_0:recommendation_threshold_mismatch", contract["blockers"])
+        self.assertIn("module_evidence:row_1:recommendation_threshold_mismatch", contract["blockers"])
+
     def test_script_capability_boundaries_are_in_report_contract_and_summary(self) -> None:
         codex_home = self.make_codex_home("skills-audit-script-boundaries")
         args = argparse.Namespace(

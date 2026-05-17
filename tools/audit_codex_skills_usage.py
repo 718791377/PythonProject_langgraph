@@ -1288,6 +1288,22 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
             module_evidence_violations.append(f"{row_prefix}:cross_project_utility_not_manual_review_required")
         if row.get("recommendation") not in VALID_MODULE_EVIDENCE_RECOMMENDATIONS:
             module_evidence_violations.append(f"{row_prefix}:recommendation_invalid_value")
+        weak_mentions = row.get("weak_plugin_mentions")
+        recommendation = row.get("recommendation")
+        if (
+            isinstance(strong_total, int)
+            and not isinstance(strong_total, bool)
+            and isinstance(weak_mentions, int)
+            and not isinstance(weak_mentions, bool)
+            and isinstance(threshold, int)
+            and not isinstance(threshold, bool)
+            and threshold > 0
+            and weak_mentions >= 0
+            and strong_total >= 0
+            and recommendation in VALID_MODULE_EVIDENCE_RECOMMENDATIONS
+            and recommendation != expected_module_evidence_recommendation(strong_total, weak_mentions, threshold)
+        ):
+            module_evidence_violations.append(f"{row_prefix}:recommendation_threshold_mismatch")
     decision_recommendation = (
         report.get("decision_recommendation")
         if isinstance(report.get("decision_recommendation"), dict)
@@ -1546,6 +1562,16 @@ def mapped_tool_call_count(tool_call_counts: Counter[str], module_name: str, plu
     return total
 
 
+def expected_module_evidence_recommendation(strong_total: int, weak_mentions: int, threshold: int) -> str:
+    if strong_total >= threshold:
+        return "candidate_for_project_or_default_profile_review"
+    if strong_total > 0:
+        return "keep_module_on_demand_and_continue_audit"
+    if weak_mentions > 0:
+        return "mentioned_only_do_not_apply_without_strong_evidence"
+    return "no_recent_evidence_keep_dormant_not_deleted"
+
+
 def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]) -> list[dict[str, Any]]:
     modules = profiles.get("modules") if isinstance(profiles.get("modules"), dict) else {}
     helper_counts = Counter(session_data.get("profile_helper_calls", {}))
@@ -1571,14 +1597,8 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
         medium_rationale = (
             "mapped_tool_calls_present_manual_review_required" if mapped_tools else "no_mapped_tool_call_medium_evidence"
         )
-        if strong_total >= 10:
-            recommendation = "candidate_for_project_or_default_profile_review"
-        elif strong_total > 0:
-            recommendation = "keep_module_on_demand_and_continue_audit"
-        elif weak > 0:
-            recommendation = "mentioned_only_do_not_apply_without_strong_evidence"
-        else:
-            recommendation = "no_recent_evidence_keep_dormant_not_deleted"
+        default_candidate_threshold = 10
+        recommendation = expected_module_evidence_recommendation(strong_total, weak, default_candidate_threshold)
         rows.append(
             {
                 "module": module_name,
@@ -1586,7 +1606,7 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
                 "strong_helper_calls": helper,
                 "strong_skill_path_reads": strong_path,
                 "strong_total": strong_total,
-                "default_candidate_threshold": 10,
+                "default_candidate_threshold": default_candidate_threshold,
                 "mapped_tool_call_mentions": mapped_tools,
                 "mapped_tool_call_policy": MODULE_EVIDENCE_MAPPED_TOOL_POLICY,
                 "medium_evidence_rationale": medium_rationale,
