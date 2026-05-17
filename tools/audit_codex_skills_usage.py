@@ -142,6 +142,52 @@ REQUIRED_DECISION_BUCKET_NAMES = (
     "manual_review_medium_or_weak",
     "dormant_restorable",
 )
+REQUIRED_MODULE_EVIDENCE_FIELDS = {
+    "module",
+    "plugins",
+    "strong_helper_calls",
+    "strong_skill_path_reads",
+    "strong_total",
+    "default_candidate_threshold",
+    "mapped_tool_call_mentions",
+    "mapped_tool_call_policy",
+    "medium_evidence_rationale",
+    "weak_plugin_mentions",
+    "cross_project_utility",
+    "recommendation",
+}
+REQUIRED_MODULE_EVIDENCE_FIELD_TYPES = {
+    "module": str,
+    "plugins": list,
+    "strong_helper_calls": int,
+    "strong_skill_path_reads": int,
+    "strong_total": int,
+    "default_candidate_threshold": int,
+    "mapped_tool_call_mentions": int,
+    "mapped_tool_call_policy": str,
+    "medium_evidence_rationale": str,
+    "weak_plugin_mentions": int,
+    "cross_project_utility": str,
+    "recommendation": str,
+}
+MODULE_EVIDENCE_NONNEGATIVE_INT_FIELDS = (
+    "strong_helper_calls",
+    "strong_skill_path_reads",
+    "strong_total",
+    "mapped_tool_call_mentions",
+    "weak_plugin_mentions",
+)
+VALID_MODULE_EVIDENCE_RECOMMENDATIONS = {
+    "candidate_for_project_or_default_profile_review",
+    "keep_module_on_demand_and_continue_audit",
+    "mentioned_only_do_not_apply_without_strong_evidence",
+    "no_recent_evidence_keep_dormant_not_deleted",
+}
+VALID_MEDIUM_EVIDENCE_RATIONALES = {
+    "mapped_tool_calls_present_manual_review_required",
+    "no_mapped_tool_call_medium_evidence",
+}
+MODULE_EVIDENCE_MAPPED_TOOL_POLICY = "medium_evidence_only_not_counted_as_strong_evidence"
 REQUIRED_NOISE_REVIEW_FIELDS = {
     "status",
     "explicit_skill_noise_removed",
@@ -1192,6 +1238,56 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         script_capability_violations.append("human_review_required_for_empty")
     if not script_capabilities.get("enhancement_triggers"):
         script_capability_violations.append("enhancement_triggers_empty")
+    module_evidence = report.get("module_evidence") if isinstance(report.get("module_evidence"), list) else []
+    module_evidence_violations = []
+    for index, row in enumerate(module_evidence):
+        row_prefix = f"row_{index}"
+        if not isinstance(row, dict):
+            module_evidence_violations.append(f"{row_prefix}:invalid_type")
+            continue
+        for field in sorted(REQUIRED_MODULE_EVIDENCE_FIELDS):
+            if field not in row:
+                module_evidence_violations.append(f"{row_prefix}:{field}_missing")
+        for field, expected_type in sorted(REQUIRED_MODULE_EVIDENCE_FIELD_TYPES.items()):
+            if field not in row:
+                continue
+            value = row.get(field)
+            if expected_type is int:
+                if not isinstance(value, int) or isinstance(value, bool):
+                    module_evidence_violations.append(f"{row_prefix}:{field}_invalid_type")
+            elif not isinstance(value, expected_type):
+                module_evidence_violations.append(f"{row_prefix}:{field}_invalid_type")
+        plugins = row.get("plugins")
+        if isinstance(plugins, list) and any(not isinstance(plugin, str) for plugin in plugins):
+            module_evidence_violations.append(f"{row_prefix}:plugins_contains_non_string")
+        for field in MODULE_EVIDENCE_NONNEGATIVE_INT_FIELDS:
+            value = row.get(field)
+            if isinstance(value, int) and not isinstance(value, bool) and value < 0:
+                module_evidence_violations.append(f"{row_prefix}:{field}_negative")
+        threshold = row.get("default_candidate_threshold")
+        if isinstance(threshold, int) and not isinstance(threshold, bool) and threshold <= 0:
+            module_evidence_violations.append(f"{row_prefix}:default_candidate_threshold_not_positive")
+        helper_calls = row.get("strong_helper_calls")
+        path_reads = row.get("strong_skill_path_reads")
+        strong_total = row.get("strong_total")
+        if (
+            isinstance(helper_calls, int)
+            and not isinstance(helper_calls, bool)
+            and isinstance(path_reads, int)
+            and not isinstance(path_reads, bool)
+            and isinstance(strong_total, int)
+            and not isinstance(strong_total, bool)
+            and strong_total != helper_calls + path_reads
+        ):
+            module_evidence_violations.append(f"{row_prefix}:strong_total_mismatch")
+        if row.get("mapped_tool_call_policy") != MODULE_EVIDENCE_MAPPED_TOOL_POLICY:
+            module_evidence_violations.append(f"{row_prefix}:mapped_tool_call_policy_invalid_value")
+        if row.get("medium_evidence_rationale") not in VALID_MEDIUM_EVIDENCE_RATIONALES:
+            module_evidence_violations.append(f"{row_prefix}:medium_evidence_rationale_invalid_value")
+        if row.get("cross_project_utility") != "manual_review_required":
+            module_evidence_violations.append(f"{row_prefix}:cross_project_utility_not_manual_review_required")
+        if row.get("recommendation") not in VALID_MODULE_EVIDENCE_RECOMMENDATIONS:
+            module_evidence_violations.append(f"{row_prefix}:recommendation_invalid_value")
     decision_recommendation = (
         report.get("decision_recommendation")
         if isinstance(report.get("decision_recommendation"), dict)
@@ -1245,6 +1341,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"manual_evidence:{field}" for field in manual_violations]
         + [f"noise_review:{field}" for field in noise_violations]
         + [f"script_capability_boundaries:{field}" for field in script_capability_violations]
+        + [f"module_evidence:{field}" for field in module_evidence_violations]
         + [f"decision_recommendation:{field}" for field in decision_violations]
     )
     embedded_violations: list[str] = []
@@ -1491,7 +1588,7 @@ def build_module_evidence(profiles: dict[str, Any], session_data: dict[str, Any]
                 "strong_total": strong_total,
                 "default_candidate_threshold": 10,
                 "mapped_tool_call_mentions": mapped_tools,
-                "mapped_tool_call_policy": "medium_evidence_only_not_counted_as_strong_evidence",
+                "mapped_tool_call_policy": MODULE_EVIDENCE_MAPPED_TOOL_POLICY,
                 "medium_evidence_rationale": medium_rationale,
                 "weak_plugin_mentions": weak,
                 "cross_project_utility": "manual_review_required",

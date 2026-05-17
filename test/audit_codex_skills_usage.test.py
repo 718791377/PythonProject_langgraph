@@ -743,6 +743,73 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             broken_contract["blockers"],
         )
 
+    def test_field_contract_requires_module_evidence_row_contract(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-module-evidence-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        broken = json.loads(json.dumps(report))
+        broken["module_evidence"] = [
+            {
+                "module": 123,
+                "plugins": ["Vercel", 42],
+                "strong_helper_calls": -1,
+                "strong_skill_path_reads": 2,
+                "strong_total": 99,
+                "default_candidate_threshold": 0,
+                "mapped_tool_call_mentions": -2,
+                "mapped_tool_call_policy": "mapped_tool_calls_count_as_strong",
+                "medium_evidence_rationale": "auto_apply_without_review",
+                "weak_plugin_mentions": "many",
+                "cross_project_utility": "auto_default_profile",
+                "recommendation": "apply_now",
+            },
+            "not-a-row",
+        ]
+
+        ok_contract = audit.validate_report_field_contract(report)
+        broken_contract = audit.validate_report_field_contract(broken)
+
+        self.assertEqual(ok_contract["status"], "passed")
+        self.assertEqual(broken_contract["status"], "failed")
+        self.assertIn("module_evidence:row_0:module_invalid_type", broken_contract["blockers"])
+        self.assertIn("module_evidence:row_0:plugins_contains_non_string", broken_contract["blockers"])
+        self.assertIn("module_evidence:row_0:strong_helper_calls_negative", broken_contract["blockers"])
+        self.assertIn("module_evidence:row_0:strong_total_mismatch", broken_contract["blockers"])
+        self.assertIn(
+            "module_evidence:row_0:default_candidate_threshold_not_positive",
+            broken_contract["blockers"],
+        )
+        self.assertIn("module_evidence:row_0:mapped_tool_call_mentions_negative", broken_contract["blockers"])
+        self.assertIn(
+            "module_evidence:row_0:mapped_tool_call_policy_invalid_value",
+            broken_contract["blockers"],
+        )
+        self.assertIn(
+            "module_evidence:row_0:medium_evidence_rationale_invalid_value",
+            broken_contract["blockers"],
+        )
+        self.assertIn(
+            "module_evidence:row_0:cross_project_utility_not_manual_review_required",
+            broken_contract["blockers"],
+        )
+        self.assertIn("module_evidence:row_0:recommendation_invalid_value", broken_contract["blockers"])
+        self.assertIn("module_evidence:row_1:invalid_type", broken_contract["blockers"])
+
     def test_script_capability_boundaries_are_in_report_contract_and_summary(self) -> None:
         codex_home = self.make_codex_home("skills-audit-script-boundaries")
         args = argparse.Namespace(

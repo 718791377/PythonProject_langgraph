@@ -162,6 +162,7 @@ created_at: 2026-05-16
 `noise_review` 契约必须要求 `raw_noise_tokens_retained=false`、`max_noise_token_length`、`token_privacy_policy` 与脱敏后的 `explicit_skill_noise_removed`。噪声 token 在进入报告前必须先替换私有路径、secret、cookie 或 token，并截断到固定长度；如果仍检测到原始私有路径、secret 或过长 token，字段契约必须失败。
 `script_capability_boundaries` 契约必须要求 `policy`、`reliable_coverage`、`human_review_required_for` 和 `enhancement_triggers`。这些列表必须存在且非空，避免报告暗示 audit helper 是全知事实源。
 `cadence_review` 契约必须要求 `late_run`、`missed_weekly_runs` 与 `weekly_report_review`；`missed_weekly_runs` 必须是 `null` 或非负整数，且 `late_run=true` 时必须显式记录漏跑次数。脱敏 Markdown 摘要必须在审计窗口部分渲染这些节奏字段，让 30 天复核者无需打开原始 JSON 也能看到审计节奏是否偏离。
+`module_evidence` 契约必须在其进入 `decision_recommendation` 或候选生成前校验每一行。每行必须包含 module 名称、plugin 列表、strong helper 计数、strong skill-path 计数、strong total、默认候选阈值、mapped-tool 中证据计数与策略、中证据说明、弱提及、跨项目效用和 recommendation。数值计数必须是非负整数，`strong_total` 必须等于 helper calls 加 skill-path reads，plugin 元素必须是字符串，mapped tool calls 必须保持为中证据，跨项目效用必须要求人工复核，recommendation 只能使用已批准的 advisory 取值。
 `decision_recommendation` 契约必须要求 advisory-only 状态、非 apply 策略、`profile_apply_allowed=false`、四个分桶列表（`profile_review_candidates`、`on_demand_soft_load`、`manual_review_medium_or_weak`、`dormant_restorable`）以及一致的 `bucket_counts`。如果分桶缺失、类型错误、包含非字符串 module 名称、允许 profile apply，或 `bucket_counts` 与实际分桶长度不一致，字段契约必须失败，不能进入 profile 决策或候选生成。
 
 
@@ -393,6 +394,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、cadence-review 字段契约与 Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁与 Markdown blocker 输出、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
 - 回归测试还必须覆盖 explicit skill 误报 token 的路径/secret 脱敏、长度截断，以及 `noise_review` 字段契约阻断未脱敏或缺少隐私字段的报告，并覆盖 `script_capability_boundaries` 字段契约阻断缺失或空边界列表的报告。
 - 回归测试还必须覆盖 `decision_recommendation` 字段契约阻断缺失或非 advisory 状态、允许 profile apply、分桶不完整、分桶元素非字符串以及 `bucket_counts` 过期的报告。
+- 回归测试还必须覆盖 `module_evidence` 行契约阻断字段缺失/类型错误、plugin 元素非字符串、strong 计数为负或过期、mapped-tool 证据被计为强证据、跨项目效用未要求人工复核以及 recommendation 不在允许列表中的报告。
 - `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 
 每次人工复核报告时，还必须检查误报噪声：
@@ -433,6 +435,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 在脱敏 Markdown 摘要中渲染 audit-state 下一步动作、profile apply 许可标志与 blocker 列表；
 - 校验决策关键的 `warning_triage` 嵌套字段，包括状态、blockers、窄窗口策略、warning 计数与后续动作建议；
 - 校验决策关键的 `cadence_review` 嵌套字段，并在脱敏 Markdown 摘要中渲染 late-run 与漏跑周报状态；
+- 校验决策关键的 `module_evidence` 行字段，包括字符串 plugin 列表、非负 strong/weak 计数、strong-total 一致性、mapped-tool 中证据策略、跨项目人工复核以及允许的 advisory recommendation；
 - 校验决策关键的 `decision_recommendation` 嵌套字段，包括 advisory-only 状态、profile apply 禁止标志、必需分桶名称、分桶元素只能是字符串以及分桶计数一致性；
 - 明确漏跑、warning 延迟 triage、日志不可读、隐私脱敏和紧急例外的恢复规则；
 - 明确 30 天最终决策摘要模板；
