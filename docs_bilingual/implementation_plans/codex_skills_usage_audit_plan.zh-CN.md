@@ -278,6 +278,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - `.tmp/*.json` 默认只作为本地临时证据，不提交 Git；
 - 需要长期留证时，只提交脱敏 Markdown 摘要；
 - 任何报告进入 Git 前，必须确认不含 API key、access token、cookie、私有客户名、完整本地用户目录清单；
+- 脱敏后的日志 `message_excerpt` 截断时必须保留完整 `[REDACTED_PATH]` 与 `[REDACTED_SECRET]` 标记，不得只留 `[RE`、`[REDACTED_` 等含义不明的局部标记碎片；
 - 任何候选记录写入或渲染前，必须确认 `source_reports_privacy.status=passed`；若出现 `raw_private_path`、`raw_secret_assignment` 或 `raw_standalone_token`，按脚本缺陷处理；
 - remote publication 不得把原始 audit JSON 当成附件上传；
 - 如果发现已生成的报告含敏感内容，先删除该本地报告并重跑脱敏摘要，不在同一报告上手工涂改后继续使用。
@@ -379,7 +380,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - profile helper 调用计数；
 - 按 plugin/module 聚合的 evidence；
 - apply 建议，但不自动 apply。
-- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
+- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
 - 回归测试还必须覆盖 explicit skill 误报 token 的路径/secret 脱敏、长度截断，以及 `noise_review` 字段契约阻断未脱敏或缺少隐私字段的报告。
 - `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 

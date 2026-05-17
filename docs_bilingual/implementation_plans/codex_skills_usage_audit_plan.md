@@ -278,6 +278,7 @@ Retention rules:
 - `.tmp/*.json` is local temporary evidence by default and is not committed to Git;
 - long-term evidence must be a sanitized Markdown summary only;
 - before any report enters Git, verify it contains no API keys, access tokens, cookies, private customer names, or full local user-directory inventories;
+- sanitized log `message_excerpt` values must preserve complete `[REDACTED_PATH]` and `[REDACTED_SECRET]` markers when truncated, instead of retaining ambiguous partial marker fragments;
 - before any candidate record is written or rendered, verify `source_reports_privacy.status=passed` and treat any `raw_private_path`, `raw_secret_assignment`, or `raw_standalone_token` violation as a script defect;
 - remote publication must not upload raw audit JSON as an attachment;
 - if a generated report contains sensitive content, delete that local report and regenerate a sanitized summary instead of manually redacting the same report in place and continuing to use it.
@@ -379,7 +380,7 @@ Each audit run must report:
 - profile helper invocation counts;
 - plugin/module aggregated evidence;
 - recommendations, without applying them automatically.
-- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
+- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized log-excerpt redaction marker integrity, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
 - Regression tests must also cover explicit-skill false-positive token path/secret redaction, length truncation, and `noise_review` field-contract blocking for unsanitized or missing privacy fields.
 - `tools/ci/ci_test_manifest.json` must include that regression test so local and remote CI reuse the same check.
 

@@ -257,6 +257,24 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertNotIn("session-secret", excerpt)
         self.assertNotIn(r"C:\Users\lenovo", excerpt)
 
+    def test_sanitize_log_excerpt_preserves_redaction_markers_when_truncated(self) -> None:
+        private_path = r"C:\Users\lenovo\.codex\sessions\secret.jsonl"
+        secret = "api_key=sk-test-secret"
+
+        path_excerpt = audit.sanitize_log_excerpt("x" * 490 + private_path + " tail", limit=500)
+        secret_excerpt = audit.sanitize_log_excerpt("x" * 480 + secret + " tail", limit=500)
+
+        self.assertIn("[REDACTED_PATH]", path_excerpt)
+        self.assertIn("[REDACTED_SECRET]", secret_excerpt)
+        self.assertIn("[truncated]", path_excerpt)
+        self.assertIn("[truncated]", secret_excerpt)
+        self.assertNotIn(r"C:\Users\lenovo", path_excerpt)
+        self.assertNotIn("sk-test-secret", secret_excerpt)
+        for marker in audit.REDACTION_MARKERS:
+            for prefix_length in range(1, len(marker)):
+                self.assertFalse(path_excerpt.endswith(marker[:prefix_length]))
+                self.assertFalse(secret_excerpt.endswith(marker[:prefix_length]))
+
     def test_scan_logs_missing_database_keeps_log_evidence_shape(self) -> None:
         codex_home = self.make_codex_home("skills-audit-missing-logs")
 

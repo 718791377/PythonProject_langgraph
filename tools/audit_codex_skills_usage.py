@@ -43,6 +43,7 @@ PRIVATE_PATH_PATTERNS = (
 )
 ACCESS_TOKEN_PATTERN = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie)\s*[:=]\s*([^\s,;\"']+)")
 STANDALONE_TOKEN_PATTERN = re.compile(r"(?i)\b(?:sk-[a-z0-9_-]{6,}|xox[baprs]-[a-z0-9_-]{6,})\b")
+REDACTION_MARKERS = ("[REDACTED_PATH]", "[REDACTED_SECRET]")
 GENERIC_EXPLICIT_SKILL_NOISE = {
     "a",
     "an",
@@ -219,13 +220,28 @@ def default_codex_home() -> Path:
     return Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
 
 
+def truncate_preserving_redaction_markers(text: str, limit: int) -> str:
+    """Truncate text without leaving an incomplete redaction marker fragment."""
+    if len(text) <= limit:
+        return text
+    truncated = text[:limit]
+    for marker in REDACTION_MARKERS:
+        for prefix_length in range(1, len(marker)):
+            prefix = marker[:prefix_length]
+            suffix = marker[prefix_length:]
+            if truncated.endswith(prefix) and text[limit : limit + len(suffix)] == suffix:
+                truncated = truncated[: -prefix_length] + marker
+                break
+    return truncated.rstrip() + "[truncated]"
+
+
 def sanitize_log_excerpt(text: str, limit: int = 500) -> str:
     sanitized = str(text)
     for pattern in PRIVATE_PATH_PATTERNS:
         sanitized = pattern.sub("[REDACTED_PATH]", sanitized)
     sanitized = ACCESS_TOKEN_PATTERN.sub(lambda m: m.group(0).replace(m.group(1), "[REDACTED_SECRET]"), sanitized)
     sanitized = STANDALONE_TOKEN_PATTERN.sub("[REDACTED_SECRET]", sanitized)
-    return sanitized[:limit]
+    return truncate_preserving_redaction_markers(sanitized, limit)
 
 
 def sanitize_manual_value(value: str, limit: int = 300) -> str:
