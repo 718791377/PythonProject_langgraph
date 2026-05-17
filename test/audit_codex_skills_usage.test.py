@@ -94,6 +94,40 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             {"and": 1, "from": 1, "draft": 1, "unknown-skill": 1},
         )
 
+    def test_scan_sessions_sanitizes_explicit_skill_noise_tokens(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-noise-privacy")
+        sessions_dir = codex_home / "sessions"
+        sessions_dir.mkdir(parents=True)
+        private_token = (
+            r"C:\Users\lenovo\.codex\sessions\secret.jsonl?api_key=sk-test-secret-1234567890"
+            + "-very-long" * 10
+        )
+        long_noise_token = "unknown-" + ("x" * 180)
+        payload_long = {
+            "timestamp": audit.now_utc().isoformat(),
+            "type": "event_msg",
+            "payload": {"message": f"Using skills: `{long_noise_token}`, `{private_token}`"},
+        }
+        payload_private = {
+            "timestamp": audit.now_utc().isoformat(),
+            "type": "event_msg",
+            "payload": {"message": f"Using skills: `{private_token}`"},
+        }
+        (sessions_dir / "session.jsonl").write_text(
+            json.dumps(payload_long, ensure_ascii=False) + "\n" + json.dumps(payload_private, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
+        report = audit.scan_sessions(codex_home, REPO_ROOT, audit.now_utc() - timedelta(days=1), {"plugin-modules"})
+        serialized_noise = json.dumps(report["explicit_skill_noise_removed"], ensure_ascii=False)
+        token = next(iter(report["explicit_skill_noise_removed"]))
+
+        self.assertIn("[REDACTED_PATH]", serialized_noise)
+        self.assertIn("[truncated]", serialized_noise)
+        self.assertLessEqual(len(token), audit.EXPLICIT_SKILL_NOISE_TOKEN_LIMIT + len("[truncated]"))
+        self.assertNotIn(r"C:\Users\lenovo", serialized_noise)
+        self.assertNotIn("sk-test-secret", serialized_noise)
+
     def test_report_includes_noise_review_for_removed_explicit_skill_tokens(self) -> None:
         codex_home = self.make_codex_home("skills-audit-noise-review")
         skill_dir = codex_home / "skills" / "plugin-modules"
@@ -131,6 +165,42 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             report["noise_review"]["strong_evidence_policy"],
             "removed_noise_tokens_are_not_counted_as_strong_evidence",
         )
+        self.assertFalse(report["noise_review"]["raw_noise_tokens_retained"])
+        self.assertEqual(report["noise_review"]["max_noise_token_length"], audit.EXPLICIT_SKILL_NOISE_TOKEN_LIMIT)
+        self.assertIn("sanitized", report["noise_review"]["token_privacy_policy"])
+
+    def test_field_contract_requires_noise_review_privacy_fields(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-noise-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        broken = dict(report)
+        broken["noise_review"] = {
+            "status": "review_required",
+            "explicit_skill_noise_removed": {r"C:\Users\lenovo\secret.txt": 1},
+            "strong_evidence_policy": "removed_noise_tokens_are_not_counted_as_strong_evidence",
+        }
+
+        ok_contract = audit.validate_report_field_contract(report)
+        broken_contract = audit.validate_report_field_contract(broken)
+
+        self.assertEqual(ok_contract["status"], "passed")
+        self.assertEqual(broken_contract["status"], "failed")
+        self.assertIn("noise_review:raw_noise_tokens_retained_missing", broken_contract["blockers"])
+        self.assertIn("noise_review:explicit_skill_noise_token_contains_private_path", broken_contract["blockers"])
 
     def test_scan_logs_captures_budget_warning_shape(self) -> None:
         codex_home = self.make_codex_home("skills-audit-logs")
@@ -702,6 +772,14 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             },
             "session_evidence": {},
             "manual_evidence": {"valid_note_count": 0},
+            "noise_review": {
+                "status": "no_obvious_false_positives_found",
+                "explicit_skill_noise_removed": {},
+                "strong_evidence_policy": "removed_noise_tokens_are_not_counted_as_strong_evidence",
+                "raw_noise_tokens_retained": False,
+                "max_noise_token_length": audit.EXPLICIT_SKILL_NOISE_TOKEN_LIMIT,
+                "token_privacy_policy": "explicit_skill_noise_tokens_are_sanitized_path_secret_redacted_and_truncated",
+            },
             "module_evidence": [],
             "cadence_review": {},
             "recommendations": [],

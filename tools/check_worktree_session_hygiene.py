@@ -11,6 +11,27 @@ from pathlib import Path
 
 
 CHECK_NAME = "worktree_session_hygiene"
+GIT_LOCAL_ENV_KEYS = {
+    # Git exposes local repository/worktree variables to hooks.  When this
+    # checker inspects sibling worktrees from a pre-commit hook, carrying the
+    # caller's temporary index into `git -C <other-worktree> status` makes every
+    # other worktree look dirty.  The checker always passes an explicit -C
+    # target, so local repository env vars should not be inherited.
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    "GIT_COMMON_DIR",
+    "GIT_DIR",
+    "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_PREFIX",
+    "GIT_WORK_TREE",
+}
+
+
+def git_subprocess_env() -> dict[str, str]:
+    env = os.environ.copy()
+    for key in GIT_LOCAL_ENV_KEYS:
+        env.pop(key, None)
+    return env
 
 
 def run_git(root: Path, args: list[str], *, check: bool = False) -> subprocess.CompletedProcess[str]:
@@ -21,6 +42,7 @@ def run_git(root: Path, args: list[str], *, check: bool = False) -> subprocess.C
         text=True,
         encoding="utf-8",
         errors="replace",
+        env=git_subprocess_env(),
     )
 
 

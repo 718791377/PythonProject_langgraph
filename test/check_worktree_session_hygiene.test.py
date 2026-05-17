@@ -100,6 +100,31 @@ class WorktreeSessionHygieneCheckTest(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["counts"]["dirty_worktrees"], 1)
 
+    def test_ignores_hook_index_env_when_inspecting_sibling_worktrees(self) -> None:
+        root = self.make_repo("worktree-hook-index-env")
+        feature_worktree = self.make_feature_worktree(root)
+        (feature_worktree / "feature.txt").write_text("dirty\n", encoding="utf-8")
+        subprocess.run(["git", "add", "feature.txt"], cwd=feature_worktree, check=True)
+        index_path = subprocess.run(
+            ["git", "rev-parse", "--git-path", "index"],
+            cwd=feature_worktree,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+        result = self.run_check_with_env(
+            feature_worktree,
+            {"GIT_INDEX_FILE": index_path},
+            "--allow-current-dirty",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["dirty_worktrees"], 1)
+        self.assertFalse(any("Main branch worktree is dirty" in error for error in payload["errors"]))
+
     def test_reports_clean_feature_worktree_as_releasable_without_branch_cleanup(self) -> None:
         root = self.make_repo("worktree-feature-release")
         feature_worktree = self.make_feature_worktree(root)

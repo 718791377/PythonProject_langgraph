@@ -61,6 +61,7 @@ GENERIC_EXPLICIT_SKILL_NOISE = {
     "to",
     "with",
 }
+EXPLICIT_SKILL_NOISE_TOKEN_LIMIT = 120
 MANUAL_NOTE_FIELDS = {
     "time",
     "project",
@@ -94,6 +95,7 @@ REQUIRED_REPORT_FIELDS = {
     "warning_triage",
     "session_evidence",
     "manual_evidence",
+    "noise_review",
     "module_evidence",
     "cadence_review",
     "recommendations",
@@ -108,9 +110,26 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "warning_triage": dict,
     "session_evidence": dict,
     "manual_evidence": dict,
+    "noise_review": dict,
     "module_evidence": list,
     "cadence_review": dict,
     "recommendations": list,
+}
+REQUIRED_NOISE_REVIEW_FIELDS = {
+    "status",
+    "explicit_skill_noise_removed",
+    "strong_evidence_policy",
+    "raw_noise_tokens_retained",
+    "max_noise_token_length",
+    "token_privacy_policy",
+}
+REQUIRED_NOISE_REVIEW_FIELD_TYPES = {
+    "status": str,
+    "explicit_skill_noise_removed": dict,
+    "strong_evidence_policy": str,
+    "raw_noise_tokens_retained": bool,
+    "max_noise_token_length": int,
+    "token_privacy_policy": str,
 }
 REQUIRED_AUDIT_STATE_FIELDS = {
     "state",
@@ -196,6 +215,21 @@ def sanitize_log_excerpt(text: str, limit: int = 500) -> str:
 
 def sanitize_manual_value(value: str, limit: int = 300) -> str:
     return sanitize_log_excerpt(value.strip(), limit=limit)
+
+
+def sanitize_explicit_skill_noise_token(value: str) -> str:
+    """Sanitize and bound rejected explicit-skill tokens before report retention."""
+    sanitized = sanitize_log_excerpt(str(value), limit=EXPLICIT_SKILL_NOISE_TOKEN_LIMIT * 4)
+    sanitized = (
+        sanitized.replace("\\r", " ")
+        .replace("\\n", " ")
+        .replace("\r", " ")
+        .replace("\n", " ")
+    )
+    sanitized = re.sub(r"\s+", " ", sanitized).strip()
+    if len(sanitized) > EXPLICIT_SKILL_NOISE_TOKEN_LIMIT:
+        sanitized = sanitized[:EXPLICIT_SKILL_NOISE_TOKEN_LIMIT].rstrip() + "[truncated]"
+    return sanitized or "[EMPTY_NOISE_TOKEN]"
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -493,7 +527,7 @@ def scan_sessions(codex_home: Path, repo_root: Path, cutoff: datetime, modules: 
                         for name in accepted:
                             explicit_skills[name] += 1
                         for name in generic_noise + unknown_noise:
-                            explicit_skill_noise[name] += 1
+                            explicit_skill_noise[sanitize_explicit_skill_noise_token(name)] += 1
                 for match in SKILL_PATH_PATTERN.finditer(text):
                     skill_paths[normalize_skill_path(match.group(1), codex_home, repo_root)] += 1
                 for match in module_command_re.finditer(text):
@@ -908,6 +942,34 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
     manual_violations = []
     if "valid_note_count" not in manual_evidence:
         manual_violations.append("valid_note_count_missing")
+    noise_review = report.get("noise_review") if isinstance(report.get("noise_review"), dict) else {}
+    noise_violations = []
+    for field in sorted(REQUIRED_NOISE_REVIEW_FIELDS):
+        if field not in noise_review:
+            noise_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_NOISE_REVIEW_FIELD_TYPES.items()):
+        if field in noise_review and not isinstance(noise_review.get(field), expected_type):
+            noise_violations.append(f"{field}_invalid_type")
+    if noise_review.get("raw_noise_tokens_retained") is not False:
+        noise_violations.append("raw_noise_tokens_retained_not_false")
+    if isinstance(noise_review.get("max_noise_token_length"), int) and noise_review["max_noise_token_length"] > 120:
+        noise_violations.append("max_noise_token_length_exceeds_120")
+    removed_noise = noise_review.get("explicit_skill_noise_removed")
+    if isinstance(removed_noise, dict):
+        for token in removed_noise:
+            if len(str(token)) > int(noise_review.get("max_noise_token_length") or EXPLICIT_SKILL_NOISE_TOKEN_LIMIT) + len(
+                "[truncated]"
+            ):
+                noise_violations.append("explicit_skill_noise_token_too_long")
+                break
+            serialized_token = json.dumps(token, ensure_ascii=False)
+            raw_token = str(token)
+            if any(pattern.search(raw_token) for pattern in PRIVATE_PATH_PATTERNS):
+                noise_violations.append("explicit_skill_noise_token_contains_private_path")
+                break
+            if ACCESS_TOKEN_PATTERN.search(raw_token) or STANDALONE_TOKEN_PATTERN.search(raw_token):
+                noise_violations.append("explicit_skill_noise_token_contains_secret")
+                break
     blockers = (
         [f"missing_field:{field}" for field in missing_fields]
         + [f"invalid_type:{field}" for field in invalid_type_fields]
@@ -917,6 +979,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"log_evidence:{field}" for field in log_violations]
         + [f"warning_triage:{field}" for field in warning_triage_violations]
         + [f"manual_evidence:{field}" for field in manual_violations]
+        + [f"noise_review:{field}" for field in noise_violations]
     )
     embedded_violations: list[str] = []
     if require_embedded and "field_contract" in report:
@@ -953,6 +1016,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "log_evidence_violations": log_violations,
         "warning_triage_violations": warning_triage_violations,
         "manual_evidence_violations": manual_violations,
+        "noise_review_violations": noise_violations,
         "embedded_field_contract_violations": embedded_violations,
     }
 
@@ -1175,6 +1239,9 @@ def build_noise_review(session_data: dict[str, Any]) -> dict[str, Any]:
         "status": "review_required" if removed else "no_obvious_false_positives_found",
         "explicit_skill_noise_removed": removed,
         "strong_evidence_policy": "removed_noise_tokens_are_not_counted_as_strong_evidence",
+        "raw_noise_tokens_retained": False,
+        "max_noise_token_length": EXPLICIT_SKILL_NOISE_TOKEN_LIMIT,
+        "token_privacy_policy": "explicit_skill_noise_tokens_are_sanitized_path_secret_redacted_and_truncated",
     }
 
 
