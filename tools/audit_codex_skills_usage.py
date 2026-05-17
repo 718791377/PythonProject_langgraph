@@ -1669,6 +1669,19 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     audit_state = report.get("audit_state", {})
     field_contract = report.get("field_contract", {})
     cadence_review = report.get("cadence_review", {})
+    audit_state_blocker_fields = [
+        "close_blockers",
+        "candidate_blockers",
+        "summary_review_blockers",
+        "pause_blockers",
+        "warning_triage_blockers",
+    ]
+    audit_state_blockers = [
+        str(blocker)
+        for field in audit_state_blocker_fields
+        for blocker in (audit_state.get(field) or [])
+        if blocker is not None
+    ]
     lines = [
         "# Codex Skills Usage Audit Summary",
         "",
@@ -1678,6 +1691,9 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Until: `{audit_window.get('until')}`",
         f"- Days: `{audit_window.get('days')}`",
         f"- Audit state: `{audit_state.get('state')}` ({audit_state.get('reason')})",
+        f"- Audit next action: `{audit_state.get('next_action')}`",
+        f"- Profile apply allowed: `{audit_state.get('profile_apply_allowed')}`",
+        f"- Audit state blockers: `{', '.join(audit_state_blockers) if audit_state_blockers else 'none'}`",
         f"- Field contract: `{field_contract.get('status')}`",
         f"- Late run: `{cadence_review.get('late_run')}`",
         f"- Missed weekly runs: `{cadence_review.get('missed_weekly_runs')}`",

@@ -1272,15 +1272,24 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         blocked = audit.build_report(blocked_args)
         closed_no_change = audit.build_report(closed_no_change_args)
         closed_with_candidate = audit.build_report(closed_with_candidate_args)
+        blocked_summary = audit.render_markdown_summary(blocked)
+        closed_summary = audit.render_markdown_summary(closed_no_change)
 
         self.assertEqual(blocked["audit_state"]["state"], "running")
         self.assertEqual(blocked["audit_state"]["reason"], "audit_closure_no-change_blocked")
         self.assertIn("audit_window_shorter_than_30_days", blocked["audit_state"]["close_blockers"])
         self.assertIn("summary_not_marked_reviewed", blocked["audit_state"]["close_blockers"])
         self.assertIn("source_report_paths_missing", blocked["audit_state"]["close_blockers"])
+        self.assertIn("Audit next action: `resolve_closure_blockers_without_profile_apply`", blocked_summary)
+        self.assertIn("Profile apply allowed: `False`", blocked_summary)
+        self.assertIn(
+            "Audit state blockers: `audit_window_shorter_than_30_days, summary_not_marked_reviewed, source_report_paths_missing`",
+            blocked_summary,
+        )
         self.assertEqual(closed_no_change["audit_state"]["state"], "closed-no-change")
         self.assertEqual(closed_no_change["audit_state"]["close_blockers"], [])
         self.assertFalse(closed_no_change["audit_state"]["profile_apply_allowed"])
+        self.assertIn("Audit state blockers: `none`", closed_summary)
         self.assertEqual(closed_with_candidate["audit_state"]["state"], "closed-with-candidate")
         self.assertFalse(closed_with_candidate["audit_state"]["profile_apply_allowed"])
 
