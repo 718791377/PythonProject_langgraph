@@ -138,7 +138,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         payload = {
             "timestamp": audit.now_utc().isoformat(),
             "type": "event_msg",
-            "payload": {"message": "Using skills: `plugin-modules`, `and`, `unknown-skill`"},
+            "payload": {"message": "Using skills: `plugin-modules`, `and`, `from`, `draft`, `unknown-skill`"},
         }
         (sessions_dir / "session.jsonl").write_text(json.dumps(payload, ensure_ascii=False) + "\n", encoding="utf-8")
         args = argparse.Namespace(
@@ -160,7 +160,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         report = audit.build_report(args)
 
         self.assertEqual(report["noise_review"]["status"], "review_required")
-        self.assertEqual(report["noise_review"]["explicit_skill_noise_removed"], {"and": 1, "unknown-skill": 1})
+        self.assertEqual(
+            report["noise_review"]["explicit_skill_noise_removed"],
+            {"and": 1, "from": 1, "draft": 1, "unknown-skill": 1},
+        )
         self.assertEqual(
             report["noise_review"]["strong_evidence_policy"],
             "removed_noise_tokens_are_not_counted_as_strong_evidence",
@@ -168,6 +171,14 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertFalse(report["noise_review"]["raw_noise_tokens_retained"])
         self.assertEqual(report["noise_review"]["max_noise_token_length"], audit.EXPLICIT_SKILL_NOISE_TOKEN_LIMIT)
         self.assertIn("sanitized", report["noise_review"]["token_privacy_policy"])
+
+        summary = audit.render_markdown_summary(report)
+        self.assertIn("Removed explicit-skill noise token samples:", summary)
+        self.assertIn("`and`", summary)
+        self.assertIn("`from`", summary)
+        self.assertIn("`draft`", summary)
+        self.assertIn("`unknown-skill`", summary)
+        self.assertNotIn("and |", summary)
 
     def test_field_contract_requires_noise_review_privacy_fields(self) -> None:
         codex_home = self.make_codex_home("skills-audit-noise-contract")
@@ -1627,6 +1638,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("## Module evidence", summary)
         self.assertIn("## Noise review", summary)
         self.assertIn("Raw noise tokens retained:", summary)
+        self.assertIn("Removed explicit-skill noise token samples: `none`", summary)
         self.assertIn("Max noise token length:", summary)
         self.assertIn("Token privacy policy:", summary)
         self.assertIn("## Manual evidence", summary)

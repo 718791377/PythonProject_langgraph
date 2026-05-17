@@ -63,6 +63,7 @@ GENERIC_EXPLICIT_SKILL_NOISE = {
     "with",
 }
 EXPLICIT_SKILL_NOISE_TOKEN_LIMIT = 120
+EXPLICIT_SKILL_NOISE_SUMMARY_SAMPLE_LIMIT = 10
 MANUAL_NOTE_PATH_LIMIT = 300
 MANUAL_NOTE_FIELDS = {
     "time",
@@ -290,6 +291,36 @@ def sanitize_explicit_skill_noise_token(value: str) -> str:
     if len(sanitized) > EXPLICIT_SKILL_NOISE_TOKEN_LIMIT:
         sanitized = sanitized[:EXPLICIT_SKILL_NOISE_TOKEN_LIMIT].rstrip() + "[truncated]"
     return sanitized or "[EMPTY_NOISE_TOKEN]"
+
+
+def inline_code(value: str) -> str:
+    """Render short sanitized values as Markdown inline code without leaking raw backticks."""
+    return f"`{str(value).replace('`', "'")}`"
+
+
+def format_noise_token_samples(removed_noise: Any) -> str:
+    """Return a bounded sanitized sample list for removed explicit-skill noise tokens."""
+    if not isinstance(removed_noise, dict) or not removed_noise:
+        return inline_code("none")
+
+    def sortable_count(value: Any) -> int:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return 0
+
+    sorted_items = sorted(
+        removed_noise.items(),
+        key=lambda item: (-sortable_count(item[1]), sanitize_explicit_skill_noise_token(str(item[0])).lower()),
+    )
+    samples = [
+        inline_code(sanitize_explicit_skill_noise_token(str(token)))
+        for token, _count in sorted_items[:EXPLICIT_SKILL_NOISE_SUMMARY_SAMPLE_LIMIT]
+    ]
+    if len(sorted_items) > EXPLICIT_SKILL_NOISE_SUMMARY_SAMPLE_LIMIT:
+        remaining = len(sorted_items) - EXPLICIT_SKILL_NOISE_SUMMARY_SAMPLE_LIMIT
+        samples.append(inline_code(f"+{remaining} more"))
+    return ", ".join(samples)
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -1750,6 +1781,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             "",
             f"- Status: `{noise_review.get('status')}`",
             f"- Removed explicit-skill noise tokens: `{len(noise_review.get('explicit_skill_noise_removed', {}))}`",
+            f"- Removed explicit-skill noise token samples: {format_noise_token_samples(noise_review.get('explicit_skill_noise_removed'))}",
             f"- Strong evidence policy: `{noise_review.get('strong_evidence_policy')}`",
             f"- Raw noise tokens retained: `{noise_review.get('raw_noise_tokens_retained')}`",
             f"- Max noise token length: `{noise_review.get('max_noise_token_length')}`",

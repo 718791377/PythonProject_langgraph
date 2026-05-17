@@ -196,6 +196,7 @@ The audit Markdown summary MUST show explicit-skill noise-token privacy state an
 
 - **WHEN** the audit script renders `--summary-output`
 - **THEN** the Markdown SHALL show whether raw explicit-skill noise tokens were retained
+- **AND** it SHALL show a bounded sanitized sample list of removed explicit-skill noise tokens, or `none` when no token was removed
 - **AND** it SHALL show the noise-token privacy policy and maximum retained token length
 - **AND** it SHALL show whether manual-note source paths were retained
 - **AND** it SHALL show the manual-note source-path privacy policy and maximum retained source-path length
