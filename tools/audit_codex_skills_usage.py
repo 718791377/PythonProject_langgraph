@@ -101,6 +101,7 @@ REQUIRED_REPORT_FIELDS = {
     "noise_review",
     "script_capability_boundaries",
     "module_evidence",
+    "decision_recommendation",
     "cadence_review",
     "recommendations",
 }
@@ -117,6 +118,7 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "noise_review": dict,
     "script_capability_boundaries": dict,
     "module_evidence": list,
+    "decision_recommendation": dict,
     "cadence_review": dict,
     "recommendations": list,
 }
@@ -321,6 +323,59 @@ def format_noise_token_samples(removed_noise: Any) -> str:
         remaining = len(sorted_items) - EXPLICIT_SKILL_NOISE_SUMMARY_SAMPLE_LIMIT
         samples.append(inline_code(f"+{remaining} more"))
     return ", ".join(samples)
+
+
+def bounded_inline_list(values: list[str], *, limit: int = 12) -> str:
+    """Render bounded Markdown inline-code lists for human review summaries."""
+    cleaned = [str(value) for value in values if value]
+    if not cleaned:
+        return inline_code("none")
+    samples = [inline_code(value) for value in cleaned[:limit]]
+    if len(cleaned) > limit:
+        samples.append(inline_code(f"+{len(cleaned) - limit} more"))
+    return ", ".join(samples)
+
+
+def build_decision_recommendation(
+    module_evidence: list[dict[str, Any]],
+    warning_severity: dict[str, Any],
+    audit_state: dict[str, Any],
+) -> dict[str, Any]:
+    """Build advisory, non-mutating decision buckets from module evidence."""
+    buckets: dict[str, list[str]] = {
+        "profile_review_candidates": [],
+        "on_demand_soft_load": [],
+        "manual_review_medium_or_weak": [],
+        "dormant_restorable": [],
+    }
+    for row in module_evidence:
+        module = str(row.get("module") or "").strip()
+        if not module:
+            continue
+        recommendation = str(row.get("recommendation") or "")
+        if recommendation == "candidate_for_project_or_default_profile_review":
+            buckets["profile_review_candidates"].append(module)
+        elif recommendation == "keep_module_on_demand_and_continue_audit":
+            buckets["on_demand_soft_load"].append(module)
+        elif (
+            recommendation == "mentioned_only_do_not_apply_without_strong_evidence"
+            or int(row.get("mapped_tool_call_mentions") or 0) > 0
+        ):
+            buckets["manual_review_medium_or_weak"].append(module)
+        else:
+            buckets["dormant_restorable"].append(module)
+    for modules in buckets.values():
+        modules.sort()
+    return {
+        "status": "advisory_only_no_profile_apply",
+        "policy": "decision_buckets_are_review_inputs_and_never_apply_profiles",
+        "warning_pressure": warning_severity.get("level"),
+        "audit_state": audit_state.get("state"),
+        "next_action": audit_state.get("next_action"),
+        "profile_apply_allowed": False,
+        "buckets": buckets,
+        "bucket_counts": {name: len(modules) for name, modules in buckets.items()},
+    }
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -1636,6 +1691,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     audit_state = build_audit_state(args, cutoff, generated_at)
     current_profile = build_current_profile_summary(profiles, enabled_plugins)
     manual_notes = collect_manual_notes(getattr(args, "manual_notes", []) or [])
+    decision_recommendation = build_decision_recommendation(module_evidence, warning_severity, audit_state)
     report = {
         "schema_version": 1,
         "generated_at": generated_at.isoformat(),
@@ -1674,6 +1730,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "warning_triage": warning_triage,
         "session_evidence": session_data,
         "module_evidence": module_evidence,
+        "decision_recommendation": decision_recommendation,
         "noise_review": noise_review,
         "manual_evidence": manual_notes,
         "script_capability_boundaries": build_script_capability_boundaries(),
@@ -1700,6 +1757,8 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     audit_state = report.get("audit_state", {})
     field_contract = report.get("field_contract", {})
     cadence_review = report.get("cadence_review", {})
+    decision_recommendation = report.get("decision_recommendation", {})
+    decision_buckets = decision_recommendation.get("buckets", {}) if isinstance(decision_recommendation, dict) else {}
     audit_state_blocker_fields = [
         "close_blockers",
         "candidate_blockers",
@@ -1835,6 +1894,14 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             "",
             "## Decision recommendation",
             "",
+            f"- Decision status: `{decision_recommendation.get('status')}`",
+            f"- Decision policy: `{decision_recommendation.get('policy')}`",
+            f"- Warning pressure: `{decision_recommendation.get('warning_pressure')}`",
+            f"- Profile apply allowed by summary: `{decision_recommendation.get('profile_apply_allowed')}`",
+            f"- Profile review candidates: {bounded_inline_list(decision_buckets.get('profile_review_candidates') or [])}",
+            f"- On-demand soft-load modules: {bounded_inline_list(decision_buckets.get('on_demand_soft_load') or [])}",
+            f"- Manual-review medium/weak modules: {bounded_inline_list(decision_buckets.get('manual_review_medium_or_weak') or [])}",
+            f"- Dormant/restorable modules: {bounded_inline_list(decision_buckets.get('dormant_restorable') or [])}",
             "- This sanitized summary is review evidence only.",
             "- Reports with failed field contracts must be rerun or fixed before profile decisions.",
             "- It does not modify `config.toml`, plugin cache, or hard-load profiles.",

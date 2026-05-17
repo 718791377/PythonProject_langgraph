@@ -627,6 +627,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "warning_triage",
             "session_evidence",
             "module_evidence",
+            "decision_recommendation",
             "noise_review",
             "script_capability_boundaries",
             "recommendations",
@@ -656,6 +657,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("recommended_action", report["warning_triage"])
         self.assertIn("explicit_skills", report["session_evidence"])
         self.assertIsInstance(report["module_evidence"], list)
+        self.assertEqual(report["decision_recommendation"]["status"], "advisory_only_no_profile_apply")
+        self.assertFalse(report["decision_recommendation"]["profile_apply_allowed"])
+        self.assertIn("bucket_counts", report["decision_recommendation"])
         self.assertIn("status", report["noise_review"])
         self.assertIn("reliable_coverage", report["script_capability_boundaries"])
         self.assertIn("human_review_required_for", report["script_capability_boundaries"])
@@ -893,6 +897,13 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             },
             "script_capability_boundaries": audit.build_script_capability_boundaries(),
             "module_evidence": [],
+            "decision_recommendation": {
+                "status": "advisory_only_no_profile_apply",
+                "policy": "decision_buckets_are_review_inputs_and_never_apply_profiles",
+                "profile_apply_allowed": False,
+                "buckets": {},
+                "bucket_counts": {},
+            },
             "cadence_review": {
                 "late_run": False,
                 "missed_weekly_runs": None,
@@ -1608,6 +1619,53 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Did not modify user-level `config.toml`.", summary)
         self.assertIn("Did not infer approval from generic continue/confirmation.", summary)
 
+    def test_decision_recommendation_buckets_are_advisory_and_rendered(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-decision-buckets")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        module_evidence = [
+            {"module": "core-dev", "recommendation": "candidate_for_project_or_default_profile_review"},
+            {"module": "pdf", "recommendation": "keep_module_on_demand_and_continue_audit"},
+            {"module": "ops", "recommendation": "mentioned_only_do_not_apply_without_strong_evidence"},
+            {"module": "twilio", "recommendation": "no_recent_evidence_keep_dormant_not_deleted"},
+        ]
+        decision = audit.build_decision_recommendation(
+            module_evidence,
+            {"level": "high"},
+            {"state": "summary-reviewed", "next_action": "create_profile_apply_candidate"},
+        )
+
+        self.assertEqual(decision["buckets"]["profile_review_candidates"], ["core-dev"])
+        self.assertEqual(decision["buckets"]["on_demand_soft_load"], ["pdf"])
+        self.assertEqual(decision["buckets"]["manual_review_medium_or_weak"], ["ops"])
+        self.assertEqual(decision["buckets"]["dormant_restorable"], ["twilio"])
+        self.assertFalse(decision["profile_apply_allowed"])
+
+        report = audit.build_report(args)
+        report["decision_recommendation"] = decision
+        summary = audit.render_markdown_summary(report)
+
+        self.assertIn("Decision status: `advisory_only_no_profile_apply`", summary)
+        self.assertIn("Warning pressure: `high`", summary)
+        self.assertIn("Profile apply allowed by summary: `False`", summary)
+        self.assertIn("Profile review candidates: `core-dev`", summary)
+        self.assertIn("On-demand soft-load modules: `pdf`", summary)
+        self.assertIn("Manual-review medium/weak modules: `ops`", summary)
+        self.assertIn("Dormant/restorable modules: `twilio`", summary)
+
     def test_render_markdown_summary_is_sanitized_and_non_mutating(self) -> None:
         codex_home = self.make_codex_home("skills-audit-summary")
         args = argparse.Namespace(
@@ -1646,6 +1704,11 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Max source path length:", summary)
         self.assertIn("Source path privacy policy:", summary)
         self.assertIn("## Decision recommendation", summary)
+        self.assertIn("Decision status: `advisory_only_no_profile_apply`", summary)
+        self.assertIn("Profile review candidates:", summary)
+        self.assertIn("On-demand soft-load modules:", summary)
+        self.assertIn("Manual-review medium/weak modules:", summary)
+        self.assertIn("Dormant/restorable modules:", summary)
         self.assertIn("Reports with failed field contracts must be rerun or fixed before profile decisions.", summary)
         self.assertIn("## Risks and restore path", summary)
         self.assertIn("Inferred current profile:", summary)

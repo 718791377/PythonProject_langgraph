@@ -154,6 +154,7 @@ created_at: 2026-05-16
 | `noise_review` | explicit skill 噪声 token 的脱敏、截断、误报计数和强证据排除策略 | 防止误报 token、路径碎片或 mojibake 文本进入强证据或长期留存 |
 | `script_capability_boundaries` | 脚本可靠覆盖项、仍需人工复核的边界、已知限制与脚本增强触发条件 | 防止把 audit helper 误当作全知事实源 |
 | `module_evidence` | 按 profile module 汇总的强证据、中证据说明、弱证据和跨项目复核字段 | 生成 profile 决策候选，同时避免把中证据当作强证据 |
+| `decision_recommendation` | ? module evidence ????????? | ?????? profile ????????????? dormant ??????? profile apply |
 | `cadence_review` | late-run 与漏跑周报标记 | 防止 30 天决策摘要隐藏审计节奏偏离 |
 | `recommendations` | 审计建议 | 只能作为建议，不能自动 apply |
 
@@ -202,7 +203,7 @@ created_at: 2026-05-16
 3. Warning 结论：30 天 warning 总数、7 天 warning 总数、最高严重度、是否出现 `All skill descriptions were removed`。
 4. 证据表：按 module 列出强证据次数、`medium_evidence_rationale`、弱证据次数、`cross_project_utility` 和 recommendation。
 5. 噪声复核：列出被剔除的明显误报 token，例如 `and`、`from`、`draft`；说明它们未计入强证据；同时展示 `raw_noise_tokens_retained`、`max_noise_token_length` 与 `token_privacy_policy`，让人工复核者不打开原始 JSON 也能确认噪声 token 隐私门禁。 Markdown 摘要必须渲染一组有上限的脱敏样本列表；如果没有被剔除 token，必须显示 `none`。
-6. 决策建议：常驻默认、项目 profile、按需 soft-load、保留 dormant、或仅留在 `full` 排障 profile。
+6. 决策建议：渲染只用于复核的分桶，包括默认/项目 profile 复核候选、按需 soft-load 模块、中证据/弱证据人工复核模块、保留 dormant 但可恢复模块，或仅留在 `full` 排障 profile；这些分桶只是 review input，不得执行 profile apply。
 7. 风险与恢复路径：如果禁用或移出默认 profile，写明如何恢复、使用哪个 helper（例如 `set_plugin_profile.ps1 -RestoreLatest -Apply`）、是否需要通过 `codex-ohmy` 重启/新会话。
 8. 不执行清单：明确哪些动作本报告没有执行，例如未修改 `config.toml`、未编辑 plugin cache、未 hard-load apply。
 
