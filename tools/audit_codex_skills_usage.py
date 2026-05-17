@@ -62,6 +62,7 @@ GENERIC_EXPLICIT_SKILL_NOISE = {
     "with",
 }
 EXPLICIT_SKILL_NOISE_TOKEN_LIMIT = 120
+MANUAL_NOTE_PATH_LIMIT = 300
 MANUAL_NOTE_FIELDS = {
     "time",
     "project",
@@ -161,6 +162,20 @@ REQUIRED_WARNING_TRIAGE_FIELD_TYPES = {
     "budget_warning_count": int,
     "recommended_action": str,
 }
+REQUIRED_MANUAL_EVIDENCE_FIELDS = {
+    "valid_note_count",
+    "raw_notes_retained",
+    "source_paths_retained",
+    "max_path_length",
+    "path_privacy_policy",
+}
+REQUIRED_MANUAL_EVIDENCE_FIELD_TYPES = {
+    "valid_note_count": int,
+    "raw_notes_retained": bool,
+    "source_paths_retained": bool,
+    "max_path_length": int,
+    "path_privacy_policy": str,
+}
 
 
 def emit_stdout(text: str) -> None:
@@ -217,6 +232,12 @@ def sanitize_manual_value(value: str, limit: int = 300) -> str:
     return sanitize_log_excerpt(value.strip(), limit=limit)
 
 
+def sanitize_retained_path(value: str | None, limit: int = MANUAL_NOTE_PATH_LIMIT) -> str | None:
+    if not value:
+        return None
+    return sanitize_log_excerpt(str(value), limit=limit)
+
+
 def sanitize_explicit_skill_noise_token(value: str) -> str:
     """Sanitize and bound rejected explicit-skill tokens before report retention."""
     sanitized = sanitize_log_excerpt(str(value), limit=EXPLICIT_SKILL_NOISE_TOKEN_LIMIT * 4)
@@ -264,7 +285,7 @@ def collect_manual_notes(paths: list[str]) -> dict[str, Any]:
     for raw_path in paths:
         path = Path(raw_path)
         if not path.exists():
-            invalid.append({"path": raw_path, "reason": "missing_file"})
+            invalid.append({"path": sanitize_retained_path(raw_path), "reason": "missing_file"})
             continue
         files_read += 1
         parsed = parse_manual_note_blocks(path.read_text(encoding="utf-8", errors="replace"))
@@ -278,7 +299,7 @@ def collect_manual_notes(paths: list[str]) -> dict[str, Any]:
             if missing or invalid_values:
                 invalid.append(
                     {
-                        "path": str(path),
+                        "path": sanitize_retained_path(str(path)),
                         "note_index": index,
                         "missing_fields": missing,
                         "invalid_fields": invalid_values,
@@ -297,7 +318,10 @@ def collect_manual_notes(paths: list[str]) -> dict[str, Any]:
         "counts_by_evidence_level": dict(counts_by_level),
         "counts_by_action": dict(counts_by_action),
         "raw_notes_retained": False,
+        "source_paths_retained": False,
+        "max_path_length": MANUAL_NOTE_PATH_LIMIT,
         "privacy_policy": "manual_notes_are_sanitized_markdown_fields_only_no_raw_transcripts",
+        "path_privacy_policy": "manual_note_source_paths_are_redacted_and_bounded_before_report_retention",
     }
 
 
@@ -940,8 +964,27 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
             warning_triage_violations.append(f"{field}_invalid_type")
     manual_evidence = report.get("manual_evidence") if isinstance(report.get("manual_evidence"), dict) else {}
     manual_violations = []
-    if "valid_note_count" not in manual_evidence:
-        manual_violations.append("valid_note_count_missing")
+    for field in sorted(REQUIRED_MANUAL_EVIDENCE_FIELDS):
+        if field not in manual_evidence:
+            manual_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_MANUAL_EVIDENCE_FIELD_TYPES.items()):
+        if field in manual_evidence and not isinstance(manual_evidence.get(field), expected_type):
+            manual_violations.append(f"{field}_invalid_type")
+    if manual_evidence.get("raw_notes_retained") is not False:
+        manual_violations.append("raw_notes_retained_not_false")
+    if manual_evidence.get("source_paths_retained") is not False:
+        manual_violations.append("source_paths_retained_not_false")
+    if isinstance(manual_evidence.get("max_path_length"), int) and manual_evidence["max_path_length"] > MANUAL_NOTE_PATH_LIMIT:
+        manual_violations.append("max_path_length_exceeds_limit")
+    serialized_manual = json.dumps(manual_evidence, ensure_ascii=False)
+    if any(pattern.search(serialized_manual) for pattern in PRIVATE_PATH_PATTERNS):
+        manual_violations.append("manual_evidence_contains_private_path")
+    for match in ACCESS_TOKEN_PATTERN.finditer(serialized_manual):
+        if match.group(1) != "[REDACTED_SECRET]":
+            manual_violations.append("manual_evidence_contains_raw_secret_assignment")
+            break
+    if STANDALONE_TOKEN_PATTERN.search(serialized_manual):
+        manual_violations.append("manual_evidence_contains_standalone_token")
     noise_review = report.get("noise_review") if isinstance(report.get("noise_review"), dict) else {}
     noise_violations = []
     for field in sorted(REQUIRED_NOISE_REVIEW_FIELDS):
@@ -1251,9 +1294,7 @@ def slugify_candidate_part(value: str) -> str:
 
 
 def sanitize_source_report_path(value: str | None) -> str | None:
-    if not value:
-        return None
-    return sanitize_log_excerpt(str(value), limit=300)
+    return sanitize_retained_path(value)
 
 
 def sanitize_source_reports(source_reports: dict[str, Any] | None) -> dict[str, Any]:

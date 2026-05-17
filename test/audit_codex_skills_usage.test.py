@@ -771,7 +771,13 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "recommended_action": "run_with_warning_triage_after_a_live_session_budget_warning",
             },
             "session_evidence": {},
-            "manual_evidence": {"valid_note_count": 0},
+            "manual_evidence": {
+                "valid_note_count": 0,
+                "raw_notes_retained": False,
+                "source_paths_retained": False,
+                "max_path_length": audit.MANUAL_NOTE_PATH_LIMIT,
+                "path_privacy_policy": "manual_note_source_paths_are_redacted_and_bounded_before_report_retention",
+            },
             "noise_review": {
                 "status": "no_obvious_false_positives_found",
                 "explicit_skill_noise_removed": {},
@@ -830,7 +836,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             baseline=False,
             late_run=False,
             missed_weekly_runs=None,
-            manual_notes=[str(notes_path)],
+            manual_notes=[str(notes_path), r"C:\Users\lenovo\.codex\manual-notes-secret.md"],
             output=None,
             summary_output=None,
             candidate_output=None,
@@ -843,14 +849,56 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertEqual(manual["files_read"], 1)
         self.assertEqual(manual["valid_note_count"], 1)
-        self.assertEqual(len(manual["invalid_notes"]), 1)
+        self.assertEqual(len(manual["invalid_notes"]), 2)
         self.assertEqual(manual["counts_by_evidence_level"], {"medium": 1})
         note = manual["notes"][0]
         self.assertIn("[REDACTED_PATH]", note["project"])
         self.assertIn("[REDACTED_SECRET]", note["requested_capability"])
         self.assertIn("[REDACTED_SECRET]", note["reason"])
         self.assertNotIn("sk-test-secret", json.dumps(manual, ensure_ascii=False))
+        serialized_manual = json.dumps(manual, ensure_ascii=False)
+        self.assertIn("[REDACTED_PATH]", serialized_manual)
+        self.assertNotIn(r"C:\Users\lenovo", serialized_manual)
+        self.assertNotIn(str(notes_path), serialized_manual)
         self.assertFalse(manual["raw_notes_retained"])
+        self.assertFalse(manual["source_paths_retained"])
+        self.assertEqual(manual["max_path_length"], audit.MANUAL_NOTE_PATH_LIMIT)
+        self.assertIn("redacted", manual["path_privacy_policy"])
+        self.assertEqual(report["field_contract"]["status"], "passed")
+
+    def test_field_contract_rejects_raw_manual_evidence_paths(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-manual-path-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        broken = json.loads(json.dumps(report))
+        broken["manual_evidence"]["source_paths_retained"] = True
+        broken["manual_evidence"]["invalid_notes"] = [
+            {
+                "path": r"C:\Users\lenovo\.codex\manual-notes.md?api_key=sk-test-secret-123456",
+                "reason": "missing_file",
+            }
+        ]
+
+        contract = audit.validate_report_field_contract(broken)
+
+        self.assertFalse(contract["passed"])
+        self.assertIn("manual_evidence:source_paths_retained_not_false", contract["blockers"])
+        self.assertIn("manual_evidence:manual_evidence_contains_private_path", contract["blockers"])
+        self.assertIn("manual_evidence:manual_evidence_contains_raw_secret_assignment", contract["blockers"])
 
     def test_since_with_timezone_is_converted_to_utc_without_replacing_offset(self) -> None:
         parsed = audit.parse_since("2026-05-16T08:00:00+08:00")

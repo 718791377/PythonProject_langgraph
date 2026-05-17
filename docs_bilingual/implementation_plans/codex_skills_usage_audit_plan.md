@@ -223,6 +223,8 @@ Each manual note must include at least:
 
 Manual notes cannot override script evidence. If manual judgment conflicts with the JSON report, the 30-day summary must list both the conflict and the disposition.
 
+Manual note source paths are readable for local audit execution but are not retainable as raw evidence. Any path stored in `manual_evidence.invalid_notes` or candidate source references must be redacted and bounded before report retention, and the field contract must fail if manual evidence still contains raw private paths, secret assignments, standalone tokens, or a marker that source paths were retained.
+
 ### 5.11 Profile apply candidate change gate
 
 After the 30-day audit, evidence that supports changing the default profile still must not be applied directly. First create a candidate change-gate record that turns the audit conclusion into a reversible configuration change.
@@ -265,6 +267,7 @@ The usage audit reads user-level Codex sessions, logs, and configuration state, 
 | `sessions/**/*.jsonl` | Identify explicit skill announcements, `SKILL.md` reads, and helper calls | Aggregate counts, sanitized task type, sanitized project name | Full transcripts, private user input, tokens, secrets, customer information |
 | `logs_2.sqlite` | Count budget warnings, skipped loading, and warning time windows | Warning counts, time windows, sanitized message excerpts | Full log database, raw messages containing paths/accounts/secrets |
 | `config.toml` | Read plugin enabled/disabled/unknown state | Plugin-state summary and profile names | Full user-level configuration, credentials, unrelated settings |
+| manual note files | Read sanitized human medium evidence, exceptions, and noise-removal notes | Parsed note fields, aggregate counts, redacted/bounded invalid-note source placeholders | Raw local note paths, raw manual-note files, secrets, customer information, raw transcripts |
 | plugin/vendor cache | Count `SKILL.md` inventory or locate invalid skills | Skill counts, path categories, invalid-skill summary | Full vendor files or bulk-copied `SKILL.md` content |
 | `.tmp/` audit report | Local temporary review | Local JSON and sanitized Markdown summary | Unsanitized reports committed to Git or sent to remotes |
 | profile candidate records | Preview a reversible profile change after summary review | Candidate ID, sanitized source-report references, plugin diff, rollback path, validation plan | Raw absolute user paths, UNC shares, tokens, cookies, raw manual notes, raw transcripts |
@@ -375,7 +378,7 @@ Each audit run must report:
 - profile helper invocation counts;
 - plugin/module aggregated evidence;
 - recommendations, without applying them automatically.
-- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized manual-note ingestion, invalid manual-note validation, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
+- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
 - Regression tests must also cover explicit-skill false-positive token path/secret redaction, length truncation, and `noise_review` field-contract blocking for unsanitized or missing privacy fields.
 - `tools/ci/ci_test_manifest.json` must include that regression test so local and remote CI reuse the same check.
 
