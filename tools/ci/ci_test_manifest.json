@@ -3,6 +3,7 @@
   "python_unittest": [
     "audit_codex_skills_usage.test.py",
     "check_context_retention_canary_surface.test.py",
+    "check_precommit_update_archive.test.py",
     "check_local_mirrored_ci_gate.test.py",
     "check_remote_publication_approval_policy.test.py",
     "check_role_routing_directive_evidence.test.py",

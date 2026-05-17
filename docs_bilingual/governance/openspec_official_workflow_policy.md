@@ -64,6 +64,7 @@ Authority order:
 - `openspec validate --all` must pass before structural OpenSpec work is treated as complete
 - `tools/check_name_clarity_rules.py` is the local strict name-clarity checker; it blocks bare script, path, command, variable, or profile list items when run through `python .\tools\run_openspec_guard.py --root .`
 - `--no-baseline` is the strict checker mode used by the guard; it disables compatibility allowances so current and future findings block local enforcement.
+- `tools/check_precommit_update_archive.py` is the local pre-commit update/archive checker; it blocks local commits when completed active OpenSpec changes were not archived or explicitly deferred, when new tests are missing from the CI manifest, or when new checker scripts are not registered before commit.
 - `tools/check_openspec_code_archive_evidence.py` is the local code-archive evidence checker; it blocks code-class OpenSpec archives when neither the current branch diff nor declared existing `x_code_evidence_paths` contain source, executable check, CI, or test evidence.
 - `openspec validate --all` remains the official OpenSpec CLI validation command; it does not enforce this repository-local name-clarity rule by itself
 - Install `.githooks/pre-commit` with `powershell -ExecutionPolicy Bypass -File .\tools\install-git-hooks.ps1` after `git init` or after cloning an existing repository into real git history

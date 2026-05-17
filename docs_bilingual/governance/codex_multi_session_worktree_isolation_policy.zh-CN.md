@@ -192,6 +192,7 @@ Runner 配额与发布包规则：
 - 经批准本地集成后允许 intentional remote lag（有意远端滞后）。本地 `main` 可以领先 `gitlab/main` 和 `github/main`；会话必须明确报告该状态，直到远端发布或镜像同步追上。
 - 本地集成批准和远端发布批准是两个独立 release decisions。本地 `main` 集成后，会话必须停在 remote-publication approval gate；除非当前用户消息或 approved release record 明确授权该远端发布动作，否则不得推送 GitLab、创建/更新/合并 GitLab MR、同步 GitHub、删除远端发布分支或修改远端 refs。泛化的 `continue`、`继续`、`go on` 或 `proceed` 不是远端发布批准，除非它明确点名该远端动作。
 - 主目录 `D:\PythonProject_langgraph` 是 primary main worktree，必须检出本地 `main`，其 HEAD 不得落后于本地 `main`，正常应与本地 `main` 完全一致。`tools/check_worktree_session_hygiene.py` 必须在主目录脏、主目录不在 `main`、主目录落后于本地 `main`，或本地 `main` 未经明确风险接受却落后于 `gitlab/main` 时失败。
+- 每次提交本地仓库 commit 前，必须运行 `tools/check_precommit_update_archive.py --root . --json`，或依赖已安装的 `.githooks/pre-commit` hook 间接调用 `tools/run_openspec_guard.py`。该提交前复核必须检查 existing governance、CI manifest、checker registration 或 OpenSpec lifecycle 文件是否需要同步更新或 archive movement；必要更新与 completed OpenSpec archives 必须先处理完才能 `git commit`。如果走 two-step exception，必须同时记录 `x_archive_deferred_reason` 与 `x_archive_follow_up`。
 - 本地 `main` 集成或首次远端推送前，先在本地完成 commits、checker runs、local MR review、rework 和 cleanup。
 - 对已经本地完成、准备集成的 OpenSpec change，默认采用 single integration package（单本地集成包）。该包是指同一个 feature branch 同时包含实现或文档变更、`openspec/changes/archive/` 下的归档结果，以及 `openspec/specs/` 下被提升后的 stable spec。
 - 小型 governance、documentation、checker 和 test 类变更，只要本地验证已经证明完成且 review scope 共享同一个 rollback boundary，就应采用 single integration package。
@@ -208,7 +209,7 @@ Runner 配额与发布包规则：
 3. 为该分支使用专用 `.worktrees/<task>` worktree。
 4. 实施 OpenSpec change，并在该 change 仍处于 active 状态时先运行本地实现验证。
 5. 如果 completed change 适合 single-package path，就在同一个 feature branch 内 archive 它，把可复用 delta specs 提升进 stable specs，并重新运行本地验证命令。
-6. 提交所有计划保留的 tracked changes，并在集成审查前分类每个 untracked、ignored、本地证据、缓存、OCR 输出、私有、版权或大文件 artifact。
+6. 每次本地 commit 前先运行 pre-commit update/archive checker，并处理所有 required existing-file update、CI manifest registration、checker registration 或 completed-change archive；之后再提交所有计划保留的 tracked changes，并在集成审查前分类每个 untracked、ignored、本地证据、缓存、OCR 输出、私有、版权或大文件 artifact。
 7. 在干净的 feature worktree 运行 `tools/ci/local_gate.ps1`。该脚本是 local CI gate，也是 remote CI mirror entrypoint。
 8. 针对选定 base branch 运行 `tools/ci/local_mr_review.ps1`，先在本地查看本地集成和后续远端 MR 会展示的内容；如果 feature worktree 仍是 dirty，该脚本必须失败。
 9. 如果 completed change 需要 two-step path，必须说明例外原因，保持 active change 或 follow-up archive task 可见，并在 implementation-only publication 前请求用户确认。

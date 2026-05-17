@@ -64,6 +64,7 @@ status: active
 - 在把结构性 OpenSpec 工作视为完成之前，必须通过 `openspec validate --all`
 - `tools/check_name_clarity_rules.py` 是本地 strict 名称解释检查器；当它通过 `python .\tools\run_openspec_guard.py --root .` 运行时，会阻断裸 script、path、command、variable 或 profile 列表项。
 - `--no-baseline` 是 guard 使用的 strict 检查模式；它会关闭 compatibility allowance，使当前和后续发现项都阻断本地 enforcement。
+- `tools/check_precommit_update_archive.py` 是本地提交前 update/archive 检查器；当 completed active OpenSpec change 未归档或未显式延期、new tests 未加入 CI manifest、或 new checker scripts 未在提交前登记时，它会阻断本地 commit。
 - `tools/check_openspec_code_archive_evidence.py` 是本地 code-archive evidence checker；它会阻断当前分支 diff 中没有 source、executable check、CI 或 test evidence 的代码类 OpenSpec archive。
 - `openspec validate --all` 仍是官方 OpenSpec CLI 原生 validation command；它本身不会自动执行这条仓库本地名称解释规则。
 - 执行 `git init` 或克隆已有仓库后，应运行 `powershell -ExecutionPolicy Bypass -File .\tools\install-git-hooks.ps1` 安装 `.githooks/pre-commit`
