@@ -229,7 +229,8 @@ The candidate record must include at least:
 | Field | Description |
 | --- | --- |
 | `candidate_id` | Candidate change ID, for example `skills-profile-2026-06-core-dev-plus-browser` |
-| `source_reports` | Paths to the 30-day JSON report, sanitized Markdown summary, and manual-note summary |
+| `source_reports` | Sanitized references to the 30-day JSON report, sanitized Markdown summary, and manual-note summary |
+| `source_reports_privacy` | Contract result proving the candidate record no longer contains raw private paths or secrets |
 | `current_profile` | Current default profile and enabled-plugin summary |
 | `target_profile` | Candidate target profile, or the profile name to create/update |
 | `plugin_diff` | Plugins/modules to add, remove from default, or keep dormant |
@@ -244,6 +245,8 @@ Gate rules:
 - the audit script may generate candidate JSON/Markdown via `--candidate-output` and `--candidate-summary-output`, but those outputs are preview records only;
 - candidate generation must record a gate result that requires a 30-day audit window and `--summary-reviewed`;
 - candidate generation must require source-report paths for the 30-day JSON report and sanitized Markdown summary, so a reviewed candidate cannot be detached from its review evidence;
+- candidate `source_reports` must be sanitized before JSON or Markdown candidate records are written; raw Windows paths, POSIX home paths, UNC shares, API keys, access tokens, cookies, and standalone secret tokens must be redacted;
+- a candidate record must include `source_reports_privacy.status=passed`; if the privacy contract fails, the candidate must stay blocked until the report paths are regenerated or the sanitizer is fixed;
 - candidate generation must also validate the report field contract and block with `field_contract:<reason>` when required top-level fields, audit-only safety flags, decision-critical nested fields, or the embedded `field_contract` itself are missing, stale, or invalid;
 - `approval_state=preview-only` may run preview only and must not modify `config.toml`;
 - `approved-to-apply` requires explicit user authorization and cannot be inferred from “continue” or generic confirmation;
@@ -261,12 +264,14 @@ The usage audit reads user-level Codex sessions, logs, and configuration state, 
 | `config.toml` | Read plugin enabled/disabled/unknown state | Plugin-state summary and profile names | Full user-level configuration, credentials, unrelated settings |
 | plugin/vendor cache | Count `SKILL.md` inventory or locate invalid skills | Skill counts, path categories, invalid-skill summary | Full vendor files or bulk-copied `SKILL.md` content |
 | `.tmp/` audit report | Local temporary review | Local JSON and sanitized Markdown summary | Unsanitized reports committed to Git or sent to remotes |
+| profile candidate records | Preview a reversible profile change after summary review | Candidate ID, sanitized source-report references, plugin diff, rollback path, validation plan | Raw absolute user paths, UNC shares, tokens, cookies, raw manual notes, raw transcripts |
 
 Retention rules:
 
 - `.tmp/*.json` is local temporary evidence by default and is not committed to Git;
 - long-term evidence must be a sanitized Markdown summary only;
 - before any report enters Git, verify it contains no API keys, access tokens, cookies, private customer names, or full local user-directory inventories;
+- before any candidate record is written or rendered, verify `source_reports_privacy.status=passed` and treat any `raw_private_path`, `raw_secret_assignment`, or `raw_standalone_token` violation as a script defect;
 - remote publication must not upload raw audit JSON as an attachment;
 - if a generated report contains sensitive content, delete that local report and regenerate a sanitized summary instead of manually redacting the same report in place and continuing to use it.
 
@@ -367,7 +372,7 @@ Each audit run must report:
 - profile helper invocation counts;
 - plugin/module aggregated evidence;
 - recommendations, without applying them automatically.
-- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized manual-note ingestion, invalid manual-note validation, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, audit closure-state gates, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
+- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized manual-note ingestion, invalid manual-note validation, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
 - `tools/ci/ci_test_manifest.json` must include that regression test so local and remote CI reuse the same check.
 
 Each human report review must also check false-positive noise:
@@ -411,6 +416,7 @@ This plan is granular enough only when all of the following are true:
 - it defines the manual note format for medium evidence, urgent exceptions, and removed false positives;
 - it defines the candidate change gate and rollback path before any post-audit hard-load/profile apply;
 - it requires candidate generation to stay attached to a JSON report path and sanitized Markdown summary path;
+- it requires candidate `source_reports` to pass a privacy contract before candidate JSON or Markdown is written;
 - it defines data minimization, sanitization, retention, and no-externalization boundaries for audit data sources;
 - it defines the audit script capability boundaries, known limitations, and conditions that trigger script enhancement;
 - it defines the audit run state machine, stop conditions, and the boundary between audit closure and profile apply candidate changes;

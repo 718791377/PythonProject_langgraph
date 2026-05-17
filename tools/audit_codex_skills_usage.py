@@ -32,7 +32,17 @@ SKILL_PATH_PATTERN = re.compile(r"([A-Z]:\\[^\s\"']*?SKILL\.md)", re.IGNORECASE)
 BUDGET_WARNING_PATTERN = re.compile(r"Exceeded skills context budget of 2%", re.IGNORECASE)
 OMITTED_PATTERN = re.compile(r"(\d+)\s+additional skills", re.IGNORECASE)
 WINDOWS_PATH_PATTERN = re.compile(r"[A-Za-z]:\\[^\s\"'<>|]+")
-ACCESS_TOKEN_PATTERN = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie)\s*[:=]\s*([^\s,;]+)")
+WINDOWS_FORWARD_PATH_PATTERN = re.compile(r"[A-Za-z]:/[^\s\"'<>|]+")
+UNC_PATH_PATTERN = re.compile(r"\\\\[^\s\"'<>|]+(?:\\[^\s\"'<>|]+)+")
+POSIX_PRIVATE_PATH_PATTERN = re.compile(r"(?<![\w.-])/(?:Users|home|private|var|tmp|mnt|Volumes)/[^\s\"'<>|]+")
+PRIVATE_PATH_PATTERNS = (
+    UNC_PATH_PATTERN,
+    WINDOWS_PATH_PATTERN,
+    WINDOWS_FORWARD_PATH_PATTERN,
+    POSIX_PRIVATE_PATH_PATTERN,
+)
+ACCESS_TOKEN_PATTERN = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie)\s*[:=]\s*([^\s,;\"']+)")
+STANDALONE_TOKEN_PATTERN = re.compile(r"(?i)\b(?:sk-[a-z0-9_-]{6,}|xox[baprs]-[a-z0-9_-]{6,})\b")
 GENERIC_EXPLICIT_SKILL_NOISE = {
     "a",
     "an",
@@ -176,8 +186,11 @@ def default_codex_home() -> Path:
 
 
 def sanitize_log_excerpt(text: str, limit: int = 500) -> str:
-    sanitized = WINDOWS_PATH_PATTERN.sub("[REDACTED_PATH]", text)
+    sanitized = str(text)
+    for pattern in PRIVATE_PATH_PATTERNS:
+        sanitized = pattern.sub("[REDACTED_PATH]", sanitized)
     sanitized = ACCESS_TOKEN_PATTERN.sub(lambda m: m.group(0).replace(m.group(1), "[REDACTED_SECRET]"), sanitized)
+    sanitized = STANDALONE_TOKEN_PATTERN.sub("[REDACTED_SECRET]", sanitized)
     return sanitized[:limit]
 
 
@@ -977,6 +990,11 @@ def build_candidate_generation_gate(
         blockers.append("source_report_json_missing")
     if require_source_reports and not markdown_summary_present:
         blockers.append("source_report_markdown_summary_missing")
+    source_reports_privacy = source_report_privacy_contract(
+        build_source_reports(json_report_path, markdown_summary_path)
+    )
+    if require_source_reports and not source_reports_privacy["passed"]:
+        blockers.extend(f"source_report_privacy:{violation}" for violation in source_reports_privacy["violations"])
     field_contract = validate_report_field_contract(report, require_embedded=True)
     blockers.extend(f"field_contract:{blocker}" for blocker in field_contract["blockers"])
     allowed = not blockers
@@ -992,6 +1010,7 @@ def build_candidate_generation_gate(
         "source_reports_required": bool(require_source_reports),
         "json_report_present": json_report_present,
         "markdown_summary_present": markdown_summary_present,
+        "source_reports_privacy": source_reports_privacy,
         "field_contract": field_contract,
         "ordinary_continue_or_generic_confirmation_is_not_apply_authorization": True,
     }
@@ -1170,6 +1189,39 @@ def sanitize_source_report_path(value: str | None) -> str | None:
     return sanitize_log_excerpt(str(value), limit=300)
 
 
+def sanitize_source_reports(source_reports: dict[str, Any] | None) -> dict[str, Any]:
+    if not source_reports:
+        return build_source_reports()
+    return {
+        "json_report": sanitize_source_report_path(source_reports.get("json_report")),
+        "markdown_summary": sanitize_source_report_path(source_reports.get("markdown_summary")),
+        "manual_notes": [
+            sanitize_source_report_path(str(path)) for path in (source_reports.get("manual_notes") or [])
+        ],
+    }
+
+
+def source_report_privacy_contract(source_reports: dict[str, Any] | None) -> dict[str, Any]:
+    serialized = json.dumps(source_reports or {}, ensure_ascii=False)
+    violations: list[str] = []
+    if any(pattern.search(serialized) for pattern in PRIVATE_PATH_PATTERNS):
+        violations.append("raw_private_path")
+    for match in ACCESS_TOKEN_PATTERN.finditer(serialized):
+        if match.group(1) != "[REDACTED_SECRET]":
+            violations.append("raw_secret_assignment")
+            break
+    if STANDALONE_TOKEN_PATTERN.search(serialized):
+        violations.append("raw_standalone_token")
+    return {
+        "status": "passed" if not violations else "failed",
+        "passed": not violations,
+        "violations": violations,
+        "policy": "candidate_source_reports_must_be_sanitized_before_recording_or_rendering",
+        "redacted_path_count": serialized.count("[REDACTED_PATH]"),
+        "redacted_secret_count": serialized.count("[REDACTED_SECRET]"),
+    }
+
+
 def build_source_reports(
     json_report: str | None = None,
     markdown_summary: str | None = None,
@@ -1204,6 +1256,8 @@ def build_profile_apply_candidate(
     if not target_profile:
         raise ValueError("target_profile is required for a profile apply candidate")
     candidate_gate = candidate_gate or build_candidate_generation_gate(report, summary_reviewed=False)
+    sanitized_source_reports = sanitize_source_reports(source_reports)
+    source_reports_privacy = source_report_privacy_contract(sanitized_source_reports)
 
     generated_at = str(report.get("generated_at") or now_utc().isoformat())
     generated_day = generated_at[:10] if len(generated_at) >= 10 else now_utc().date().isoformat()
@@ -1248,7 +1302,8 @@ def build_profile_apply_candidate(
         "record_type": "codex_skills_profile_apply_candidate",
         "candidate_id": candidate_id,
         "generated_at": generated_at,
-        "source_reports": source_reports or build_source_reports(),
+        "source_reports": sanitized_source_reports,
+        "source_reports_privacy": source_reports_privacy,
         "candidate_generation_gate": candidate_gate,
         "current_profile": {
             "inferred_profile": current_profile.get("inferred_profile"),
@@ -1506,6 +1561,7 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
     evidence = candidate.get("evidence_basis", {})
     target_evidence = evidence.get("target_module_evidence", {}) if isinstance(evidence, dict) else {}
     source_reports = candidate.get("source_reports", {})
+    source_reports_privacy = candidate.get("source_reports_privacy", {})
     gate = candidate.get("candidate_generation_gate", {})
     lines = [
         "# Codex Skills Profile Apply Candidate",
@@ -1530,6 +1586,7 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
         f"- JSON report: `{source_reports.get('json_report')}`",
         f"- Markdown summary: `{source_reports.get('markdown_summary')}`",
         f"- Manual notes: `{len(source_reports.get('manual_notes') or [])}`",
+        f"- Privacy contract: `{source_reports_privacy.get('status')}`",
         "",
         "## Candidate generation gate",
         "",

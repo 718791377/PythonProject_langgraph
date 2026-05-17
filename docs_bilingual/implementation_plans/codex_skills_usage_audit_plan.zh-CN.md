@@ -229,7 +229,8 @@ created_at: 2026-05-16
 | 字段 | 说明 |
 | --- | --- |
 | `candidate_id` | 候选变更编号，例如 `skills-profile-2026-06-core-dev-plus-browser` |
-| `source_reports` | 30 天 JSON 报告、脱敏 Markdown 摘要、人工记录摘要路径 |
+| `source_reports` | 30 天 JSON 报告、脱敏 Markdown 摘要、人工记录摘要的脱敏引用 |
+| `source_reports_privacy` | 证明候选记录不再包含原始私有路径或密钥的契约结果 |
 | `current_profile` | 当前默认 profile 与 enabled plugins 摘要 |
 | `target_profile` | 候选目标 profile，或需要新增/修改的 profile 名称 |
 | `plugin_diff` | 将新增、移出默认、保持 dormant 的 plugin/module 列表 |
@@ -244,6 +245,8 @@ created_at: 2026-05-16
 - 审计脚本可以通过 `--candidate-output` 与 `--candidate-summary-output` 生成候选 JSON/Markdown，但这些输出只能作为 preview 记录；
 - 候选生成必须记录门禁结果，且门禁要求 30 天审计窗口与 `--summary-reviewed`；
 - 候选生成必须要求 30 天 JSON 报告与脱敏 Markdown 摘要的 source-report 路径，避免已复核候选与复核证据脱钩；
+- candidate `source_reports` 写入 JSON 或 Markdown 候选记录前必须先脱敏；原始 Windows 路径、POSIX home 路径、UNC 共享路径、API key、access token、cookie 与独立 secret token 都必须被替换；
+- 候选记录必须包含 `source_reports_privacy.status=passed`；如果 privacy contract 失败，候选必须保持 blocked，直到重新生成 report 路径或修复脱敏器；
 - 候选生成还必须校验报告字段契约；当必需顶层字段、audit-only 安全标志、决策关键嵌套字段或内嵌 `field_contract` 本身缺失、过期或类型错误时，必须以 `field_contract:<reason>` 阻断；
 - `approval_state=preview-only` 只能运行 preview，不得修改 `config.toml`；
 - `approved-to-apply` 必须来自用户明确授权，不能由“继续”或普通确认替代；
@@ -261,12 +264,14 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 | `config.toml` | 读取 plugin enabled/disabled/unknown 状态 | plugin 状态摘要、profile 名称 | 完整用户级配置、认证信息、非本任务相关设置 |
 | plugin/vendor cache | 统计 `SKILL.md` inventory 或定位 invalid skill | skill 数量、路径类别、invalid skill 摘要 | vendor 文件全文、批量复制的 SKILL.md 内容 |
 | `.tmp/` audit report | 本地临时复核 | 本地 JSON、脱敏 Markdown 摘要 | 未脱敏报告提交 Git 或发送远端 |
+| profile candidate 记录 | 30 天摘要复核后 preview 可回滚 profile 变更 | 候选 ID、脱敏 source-report 引用、plugin diff、rollback path、validation plan | 原始绝对用户路径、UNC 共享路径、token、cookie、原始人工记录、原始 transcript |
 
 留存规则：
 
 - `.tmp/*.json` 默认只作为本地临时证据，不提交 Git；
 - 需要长期留证时，只提交脱敏 Markdown 摘要；
 - 任何报告进入 Git 前，必须确认不含 API key、access token、cookie、私有客户名、完整本地用户目录清单；
+- 任何候选记录写入或渲染前，必须确认 `source_reports_privacy.status=passed`；若出现 `raw_private_path`、`raw_secret_assignment` 或 `raw_standalone_token`，按脚本缺陷处理；
 - remote publication 不得把原始 audit JSON 当成附件上传；
 - 如果发现已生成的报告含敏感内容，先删除该本地报告并重跑脱敏摘要，不在同一报告上手工涂改后继续使用。
 
@@ -367,7 +372,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - profile helper 调用计数；
 - 按 plugin/module 聚合的 evidence；
 - apply 建议，但不自动 apply。
-- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、审计 closure-state 门禁、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
+- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏人工记录摄取、无效人工记录校验、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
 - `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
 
 每次人工复核报告时，还必须检查误报噪声：
@@ -411,6 +416,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 明确中证据、紧急例外和误报剔除的人工记录格式；
 - 明确 30 天审计后进入 hard-load/profile apply 前的候选变更门禁与回滚路径；
 - 要求候选生成必须绑定 JSON 报告路径与脱敏 Markdown 摘要路径；
+- 要求 candidate `source_reports` 在写入候选 JSON 或 Markdown 前必须通过隐私契约；
 - 明确 audit 数据源的数据最小化、脱敏、留存和禁止外发边界；
 - 明确 audit 脚本的能力边界、已知限制和触发脚本增强的条件；
 - 明确审计运行状态机、停止条件，以及审计结束后与 profile apply 候选变更的分界；

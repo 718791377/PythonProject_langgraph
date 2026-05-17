@@ -1184,6 +1184,69 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertFalse(gate["allowed"])
         self.assertIn("audit_state_paused", gate["blockers"])
 
+    def test_source_reports_sanitize_private_paths_and_tokens(self) -> None:
+        source_reports = audit.build_source_reports(
+            r"C:/Users/lenovo/.codex/sessions/audit.json",
+            ".tmp/skills-usage-summary.md?access_token=sk-test-secret",
+            [
+                "/Users/lenovo/private/skills-usage-summary.md",
+                r"\\server\share\client\manual-notes.md",
+                r"D:\private\manual-notes.md?cookie=session-secret",
+            ],
+        )
+        serialized = json.dumps(source_reports, ensure_ascii=False)
+
+        self.assertIn("[REDACTED_PATH]", serialized)
+        self.assertIn("[REDACTED_SECRET]", serialized)
+        self.assertNotIn("C:/Users/lenovo", serialized)
+        self.assertNotIn("/Users/lenovo", serialized)
+        self.assertNotIn(r"\\server\share", serialized)
+        self.assertNotIn(r"D:\private", serialized)
+        self.assertNotIn("sk-test-secret", serialized)
+        self.assertNotIn("session-secret", serialized)
+        privacy = audit.source_report_privacy_contract(source_reports)
+        self.assertEqual(privacy["status"], "passed")
+        self.assertTrue(privacy["passed"])
+
+    def test_candidate_sanitizes_caller_provided_source_reports(self) -> None:
+        report = {
+            "generated_at": "2026-05-16T00:00:00+00:00",
+            "config_summary": {
+                "enabled_plugins": [],
+                "disabled_plugins": [],
+                "unknown_enabled_state_plugins": [],
+                "current_profile": {
+                    "source": "inferred_from_enabled_plugin_entries",
+                    "inferred_profile": "core-dev",
+                    "manual_review_required": False,
+                    "matched_enabled_known_plugins": [],
+                    "unmatched_enabled_plugin_entries": [],
+                },
+            },
+            "warning_severity": {"level": "none"},
+            "manual_evidence": {"valid_note_count": 0, "counts_by_evidence_level": {}, "counts_by_action": {}},
+            "module_evidence": [],
+        }
+
+        candidate = audit.build_profile_apply_candidate(
+            report,
+            target_profile="core-dev",
+            source_reports={
+                "json_report": r"C:\Users\lenovo\.codex\sessions\raw.json",
+                "markdown_summary": "/home/lenovo/private/raw-summary.md",
+                "manual_notes": [r"D:\private\notes.md", ".tmp/notes.md?api_key=sk-test-secret"],
+            },
+        )
+        serialized = json.dumps(candidate, ensure_ascii=False)
+
+        self.assertEqual(candidate["source_reports_privacy"]["status"], "passed")
+        self.assertIn("[REDACTED_PATH]", serialized)
+        self.assertIn("[REDACTED_SECRET]", serialized)
+        self.assertNotIn(r"C:\Users\lenovo", serialized)
+        self.assertNotIn("/home/lenovo", serialized)
+        self.assertNotIn(r"D:\private", serialized)
+        self.assertNotIn("sk-test-secret", serialized)
+
     def test_build_profile_apply_candidate_is_preview_only_and_reversible(self) -> None:
         report = {
             "generated_at": "2026-05-16T00:00:00+00:00",
@@ -1253,6 +1316,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(candidate["rollback_path"]["restore_command"], "set_plugin_profile.ps1 -RestoreLatest -Apply")
         self.assertTrue(candidate["candidate_generation_gate"]["allowed"])
         self.assertTrue(candidate["validation_plan"])
+        self.assertEqual(candidate["source_reports_privacy"]["status"], "passed")
         self.assertIn("[REDACTED_PATH]", json.dumps(candidate["source_reports"], ensure_ascii=False))
         self.assertNotIn(r"D:\private", json.dumps(candidate, ensure_ascii=False))
 
@@ -1292,6 +1356,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("# Codex Skills Profile Apply Candidate", summary)
         self.assertIn("Approval state: `preview-only`", summary)
         self.assertIn("Gate status: `blocked`", summary)
+        self.assertIn("Privacy contract: `passed`", summary)
         self.assertIn("Blockers: `summary_not_marked_reviewed`", summary)
         self.assertIn("Field contract: `failed`", summary)
         self.assertIn("Did not modify user-level `config.toml`.", summary)
