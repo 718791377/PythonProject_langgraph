@@ -142,6 +142,7 @@ created_at: 2026-05-16
 | --- | --- | --- |
 | `schema_version` | 报告结构版本 | 后续脚本按版本兼容解析 |
 | `generated_at` | 报告生成时间 | 判断报告是否过期 |
+| `audit_state` | 审计状态机状态、原因、下一步动作和 profile apply 许可标志 | 防止不完整或暂停中的审计状态进入 profile 决策 |
 | `audit_window` | `since` / `until` / `days` | 防止用错误窗口做 30 天决策 |
 | `safety` | 是否修改配置、plugin cache、hard-load apply | 必须全部证明 audit-only |
 | `config_summary` | enabled / disabled / unknown plugins，以及 `current_profile` 推断 | 判断当前 profile 面是否过大，以及是否精确匹配已知 module |
@@ -154,7 +155,7 @@ created_at: 2026-05-16
 | `cadence_review` | late-run 与漏跑周报标记 | 防止 30 天决策摘要隐藏审计节奏偏离 |
 | `recommendations` | 审计建议 | 只能作为建议，不能自动 apply |
 
-审计脚本必须为每份生成报告计算 `field_contract` 结果。该结果记录 `status`、`passed`、必需字段、缺失字段、字段类型错误、audit-only 安全标志违规，以及会影响决策的嵌套字段违规。`warning_triage` 契约必须要求 `requested`、`status`、`blockers`、`window_policy`、`window_ok`、`budget_warning_count` 与 `recommended_action`，防止 warning 复核报告遗漏 triage 状态、窄窗口策略或后续动作。只要 `field_contract.status != passed`，该报告就是不完整证据；必须先修脚本或重跑报告，才能进入 profile 决策。候选生成必须要求报告内嵌 `field_contract`；来自旧脚本或人工改写后缺少/过期内嵌契约的报告，必须阻断并要求重新生成。
+审计脚本必须为每份生成报告计算 `field_contract` 结果。该结果记录 `status`、`passed`、必需字段、缺失字段、字段类型错误、audit-only 安全标志违规，以及会影响决策的嵌套字段违规。`audit_state` 契约必须要求 `state`、`reason`、`next_action` 与 `profile_apply_allowed`，防止报告丢失状态机上下文。`warning_triage` 契约必须要求 `requested`、`status`、`blockers`、`window_policy`、`window_ok`、`budget_warning_count` 与 `recommended_action`，防止 warning 复核报告遗漏 triage 状态、窄窗口策略或后续动作。只要 `field_contract.status != passed`，该报告就是不完整证据；必须先修脚本或重跑报告，才能进入 profile 决策。候选生成必须要求报告内嵌 `field_contract`；来自旧脚本或人工改写后缺少/过期内嵌契约的报告，必须阻断并要求重新生成。
 
 ### 5.7 审计节奏、留存与报告命名
 
@@ -402,6 +403,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 明确 7 天、30 天、warning triage 的运行节奏；
 - 要求 `--warning-triage` 只能搭配 `--days 1` 或 `--since`，输出顶层 `warning_triage` 字段，并阻断过宽窗口 triage 报告；
 - 明确 JSON 报告字段契约，并要求脚本输出 `field_contract` 且在候选生成时阻断不完整、缺少契约或契约过期的报告；
+- 校验决策关键的 `audit_state` 嵌套字段，包括状态、原因、下一步动作与 profile apply 许可标志；
 - 校验决策关键的 `warning_triage` 嵌套字段，包括状态、blockers、窄窗口策略、warning 计数与后续动作建议；
 - 明确漏跑、warning 延迟 triage、日志不可读、隐私脱敏和紧急例外的恢复规则；
 - 明确 30 天最终决策摘要模板；

@@ -533,6 +533,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         }
         self.assertLessEqual(required_top_level, set(report))
         self.assertIn("state", report["audit_state"])
+        self.assertIn("reason", report["audit_state"])
+        self.assertIn("next_action", report["audit_state"])
+        self.assertIn("profile_apply_allowed", report["audit_state"])
         self.assertEqual(report["audit_window"]["days"], 30)
         self.assertTrue(report["safety"]["audit_only"])
         self.assertFalse(report["safety"]["mutates_config"])
@@ -595,6 +598,36 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertFalse(gate["allowed"])
         self.assertIn("field_contract:warning_triage:window_policy_missing", gate["blockers"])
 
+    def test_audit_state_contract_requires_decision_fields(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-state-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        report["audit_state"].pop("next_action")
+        report["audit_state"]["profile_apply_allowed"] = "false"
+
+        contract = audit.validate_report_field_contract(report)
+        gate = audit.build_candidate_generation_gate(report, summary_reviewed=True)
+
+        self.assertFalse(contract["passed"])
+        self.assertIn("audit_state:next_action_missing", contract["blockers"])
+        self.assertIn("audit_state:profile_apply_allowed_invalid_type", contract["blockers"])
+        self.assertFalse(gate["allowed"])
+        self.assertIn("field_contract:audit_state:next_action_missing", gate["blockers"])
+
     def test_field_contract_failure_blocks_candidate_gate(self) -> None:
         report = {
             "schema_version": 1,
@@ -609,6 +642,12 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "edits_plugin_cache": False,
                 "hard_load_apply_performed": False,
                 "audit_only": True,
+            },
+            "audit_state": {
+                "state": "ready-for-summary",
+                "reason": "audit_window_at_least_30_days",
+                "next_action": "generate_sanitized_30_day_markdown_summary_before_profile_apply_candidate",
+                "profile_apply_allowed": False,
             },
             "config_summary": {"current_profile": {}},
             "inventory_summary": {},
@@ -642,6 +681,12 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "edits_plugin_cache": False,
                 "hard_load_apply_performed": False,
                 "audit_only": True,
+            },
+            "audit_state": {
+                "state": "ready-for-summary",
+                "reason": "audit_window_at_least_30_days",
+                "next_action": "generate_sanitized_30_day_markdown_summary_before_profile_apply_candidate",
+                "profile_apply_allowed": False,
             },
             "config_summary": {"current_profile": {}},
             "inventory_summary": {},

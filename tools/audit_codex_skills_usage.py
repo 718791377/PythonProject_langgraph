@@ -75,6 +75,7 @@ VALID_MANUAL_ACTIONS = {"none", "soft-load", "preview", "approved hard-load exce
 REQUIRED_REPORT_FIELDS = {
     "schema_version",
     "generated_at",
+    "audit_state",
     "audit_window",
     "safety",
     "config_summary",
@@ -88,6 +89,7 @@ REQUIRED_REPORT_FIELDS = {
     "recommendations",
 }
 REQUIRED_REPORT_FIELD_TYPES = {
+    "audit_state": dict,
     "audit_window": dict,
     "safety": dict,
     "config_summary": dict,
@@ -99,6 +101,18 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "module_evidence": list,
     "cadence_review": dict,
     "recommendations": list,
+}
+REQUIRED_AUDIT_STATE_FIELDS = {
+    "state",
+    "reason",
+    "next_action",
+    "profile_apply_allowed",
+}
+REQUIRED_AUDIT_STATE_FIELD_TYPES = {
+    "state": str,
+    "reason": str,
+    "next_action": str,
+    "profile_apply_allowed": bool,
 }
 REQUIRED_WARNING_TRIAGE_FIELDS = {
     "requested",
@@ -840,6 +854,14 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         safety_violations.append("hard_load_apply_performed_not_false")
     if safety.get("audit_only") is not True:
         safety_violations.append("audit_only_not_true")
+    audit_state = report.get("audit_state") if isinstance(report.get("audit_state"), dict) else {}
+    audit_state_violations = []
+    for field in sorted(REQUIRED_AUDIT_STATE_FIELDS):
+        if field not in audit_state:
+            audit_state_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_AUDIT_STATE_FIELD_TYPES.items()):
+        if field in audit_state and not isinstance(audit_state.get(field), expected_type):
+            audit_state_violations.append(f"{field}_invalid_type")
     config = report.get("config_summary") if isinstance(report.get("config_summary"), dict) else {}
     config_violations = []
     if "current_profile" not in config:
@@ -865,6 +887,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         [f"missing_field:{field}" for field in missing_fields]
         + [f"invalid_type:{field}" for field in invalid_type_fields]
         + [f"safety:{field}" for field in safety_violations]
+        + [f"audit_state:{field}" for field in audit_state_violations]
         + [f"config_summary:{field}" for field in config_violations]
         + [f"log_evidence:{field}" for field in log_violations]
         + [f"warning_triage:{field}" for field in warning_triage_violations]
@@ -900,6 +923,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "missing_fields": missing_fields,
         "invalid_type_fields": invalid_type_fields,
         "safety_violations": safety_violations,
+        "audit_state_violations": audit_state_violations,
         "config_summary_violations": config_violations,
         "log_evidence_violations": log_violations,
         "warning_triage_violations": warning_triage_violations,
