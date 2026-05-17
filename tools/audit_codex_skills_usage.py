@@ -655,6 +655,10 @@ def warning_triage_window_ok(args: argparse.Namespace) -> bool:
     return bool(getattr(args, "since", None)) or int(getattr(args, "days", 30) or 0) == 1
 
 
+def planned_audit_requested(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "planned_audit", False))
+
+
 def pause_audit_reason(args: argparse.Namespace) -> str | None:
     raw_reason = getattr(args, "pause_audit", None)
     if raw_reason is None:
@@ -683,6 +687,14 @@ def build_audit_state(
             "profile_apply_allowed": False,
             "pause_reason": pause_reason,
             "pause_blockers": [pause_reason],
+        }
+    if planned_audit_requested(args):
+        return {
+            "state": "planned",
+            "reason": "audit_plan_recorded_baseline_not_generated",
+            "next_action": "run_day_0_baseline_preview_without_profile_apply",
+            "profile_apply_allowed": False,
+            "planned_audit": True,
         }
     if warning_triage_requested(args) and not warning_triage_window_ok(args):
         return {
@@ -955,6 +967,8 @@ def build_candidate_generation_gate(
     if not summary_reviewed:
         blockers.append("summary_not_marked_reviewed")
     audit_state = report.get("audit_state") if isinstance(report.get("audit_state"), dict) else {}
+    if audit_state.get("state") == "planned":
+        blockers.append("audit_state_planned")
     if audit_state.get("state") == "paused":
         blockers.append("audit_state_paused")
     json_report_present = bool(str(json_report_path or "").strip())
@@ -1610,6 +1624,11 @@ def main() -> int:
         "--warning-triage",
         action="store_true",
         help="Mark this run as a post-warning triage run. Use with --days 1 or --since covering the warning time.",
+    )
+    parser.add_argument(
+        "--planned-audit",
+        action="store_true",
+        help="Record an audit-only planned state before the Day 0 baseline is generated.",
     )
     parser.add_argument(
         "--pause-audit",

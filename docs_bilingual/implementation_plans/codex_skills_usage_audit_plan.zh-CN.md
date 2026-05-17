@@ -317,6 +317,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 
 脚本必须能记录 closure 状态，但不能因此执行任何 profile apply：
 
+- `--planned-audit` 用于在 Day 0 baseline 尚未生成前记录 `planned`，并以 `audit_state_planned` 阻断 profile-apply 候选生成。它只用于把 baseline 前的计划状态显式化。
 - `--pause-audit data-source-missing|privacy-review|script-defect` 用于记录 `paused`，并以 `audit_state_paused` 阻断 profile-apply 候选生成。它只能把数据源缺失、隐私复核或脚本缺陷导致的审计中断显式化；后续必须先修复原因并重跑报告。
 - `--summary-reviewed` 在 30 天窗口满足且同时存在 `--output` 与 `--summary-output` source-report 路径时，如果没有请求 candidate 或 closure，记录 `summary-reviewed`。如果 source-report 路径缺失，报告保持 `ready-for-summary` 并记录 `source_report_paths_missing`。
 - `--close-audit no-change` 只能在 30 天窗口已满足、存在 `--summary-reviewed`，并且同时存在 `--output` 与 `--summary-output` source-report 路径时，记录 `closed-no-change`。
@@ -413,6 +414,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 明确 audit 数据源的数据最小化、脱敏、留存和禁止外发边界；
 - 明确 audit 脚本的能力边界、已知限制和触发脚本增强的条件；
 - 明确审计运行状态机、停止条件，以及审计结束后与 profile apply 候选变更的分界；
+- 通过 audit-only 脚本参数暴露 planned-state 记录，并在 Day 0 baseline 之前阻断 profile-apply 候选生成；
 - 通过 audit-only 脚本参数暴露 paused-state 记录，并在暂停期间阻断 profile-apply 候选生成；
 - 只有在已复核 30 天摘要仍绑定 JSON 与 Markdown source-report 路径时，才通过脚本状态暴露 `summary-reviewed`；
 - 通过明确的 audit-only 脚本参数暴露 closure-state 记录，并在无法关闭时报告 blocked closure reasons，而不是静默关闭；

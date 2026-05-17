@@ -805,6 +805,22 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
     def test_report_includes_audit_state_machine_boundary(self) -> None:
         codex_home = self.make_codex_home("skills-audit-state")
+        planned_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=0,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+            planned_audit=True,
+        )
         baseline_args = argparse.Namespace(
             root=str(REPO_ROOT),
             codex_home=str(codex_home),
@@ -897,6 +913,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             pause_audit="data-source-missing",
         )
 
+        planned = audit.build_report(planned_args)
         baseline = audit.build_report(baseline_args)
         weekly = audit.build_report(weekly_args)
         summary = audit.build_report(summary_args)
@@ -904,6 +921,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         reviewed_missing_source = audit.build_report(reviewed_missing_source_args)
         paused = audit.build_report(paused_args)
 
+        self.assertEqual(planned["audit_state"]["state"], "planned")
+        self.assertEqual(planned["audit_state"]["reason"], "audit_plan_recorded_baseline_not_generated")
+        self.assertFalse(planned["audit_state"]["profile_apply_allowed"])
         self.assertEqual(baseline["audit_state"]["state"], "running")
         self.assertEqual(baseline["audit_state"]["reason"], "baseline_generated")
         self.assertFalse(baseline["audit_state"]["profile_apply_allowed"])
@@ -1105,8 +1125,24 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertTrue(allowed_gate["json_report_present"])
         self.assertTrue(allowed_gate["markdown_summary_present"])
 
-    def test_candidate_generation_gate_blocks_paused_audit_state(self) -> None:
-        codex_home = self.make_codex_home("skills-audit-paused-candidate-gate")
+    def test_candidate_generation_gate_blocks_planned_or_paused_audit_state(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-not-ready-candidate-gate")
+        planned_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=".tmp/skills-usage-audit-30d.json",
+            summary_output=".tmp/skills-usage-audit-30d-summary.md",
+            candidate_output=".tmp/skills-profile-candidate.json",
+            candidate_summary_output=None,
+            summary_reviewed=True,
+            planned_audit=True,
+        )
         args = argparse.Namespace(
             root=str(REPO_ROOT),
             codex_home=str(codex_home),
@@ -1123,8 +1159,16 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             summary_reviewed=True,
             pause_audit="script-defect",
         )
+        planned_report = audit.build_report(planned_args)
         report = audit.build_report(args)
 
+        planned_gate = audit.build_candidate_generation_gate(
+            planned_report,
+            summary_reviewed=True,
+            json_report_path=planned_args.output,
+            markdown_summary_path=planned_args.summary_output,
+            require_source_reports=True,
+        )
         gate = audit.build_candidate_generation_gate(
             report,
             summary_reviewed=True,
@@ -1133,6 +1177,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             require_source_reports=True,
         )
 
+        self.assertEqual(planned_report["audit_state"]["state"], "planned")
+        self.assertFalse(planned_gate["allowed"])
+        self.assertIn("audit_state_planned", planned_gate["blockers"])
         self.assertEqual(report["audit_state"]["state"], "paused")
         self.assertFalse(gate["allowed"])
         self.assertIn("audit_state_paused", gate["blockers"])
