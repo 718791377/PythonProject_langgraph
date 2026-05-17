@@ -162,6 +162,7 @@ The audit script must compute a `field_contract` result for every generated repo
 The `noise_review` contract must require `raw_noise_tokens_retained=false`, `max_noise_token_length`, `token_privacy_policy`, and sanitized `explicit_skill_noise_removed`. Noise tokens must redact private paths, secrets, cookies, and tokens before entering reports, then be truncated to a fixed length; if raw private paths, secrets, or overlong tokens remain, the field contract must fail.
 The `script_capability_boundaries` contract must require `policy`, `reliable_coverage`, `human_review_required_for`, and `enhancement_triggers`. These lists must be present and non-empty so a report cannot imply that the audit helper is an omniscient source of truth.
 The `cadence_review` contract must require `late_run`, `missed_weekly_runs`, and `weekly_report_review`; `missed_weekly_runs` must be either `null` or a non-negative integer, and `late_run=true` must include an explicit missed-run count. The sanitized Markdown summary must render these cadence fields in the audit-window section so a 30-day reviewer can see cadence drift without opening raw JSON.
+The `decision_recommendation` contract must require advisory-only status, the non-apply policy, `profile_apply_allowed=false`, the four bucket lists (`profile_review_candidates`, `on_demand_soft_load`, `manual_review_medium_or_weak`, and `dormant_restorable`), and matching `bucket_counts`. If the buckets are missing, wrong-typed, contain non-string module names, mark profile apply as allowed, or have stale counts, the field contract must fail before any profile decision or candidate generation.
 
 ### 5.7 Audit cadence, retention, and report naming
 
@@ -389,6 +390,7 @@ Each audit run must report:
 - recommendations, without applying them automatically.
 - `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, cadence-review field-contract and Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized log-excerpt redaction marker integrity, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates and Markdown blocker output, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
 - Regression tests must also cover explicit-skill false-positive token path/secret redaction, length truncation, `noise_review` field-contract blocking for unsanitized or missing privacy fields, and `script_capability_boundaries` field-contract blocking for missing or empty boundary lists.
+- Regression tests must cover `decision_recommendation` field-contract blocking for missing or non-advisory status, profile-apply allowance, incomplete bucket lists, non-string bucket entries, and stale `bucket_counts`.
 - `tools/ci/ci_test_manifest.json` must include that regression test so local and remote CI reuse the same check.
 
 Each human report review must also check false-positive noise:
@@ -429,6 +431,7 @@ This plan is granular enough only when all of the following are true:
 - it renders audit-state next action, profile-apply allowance, and blocker lists in the sanitized Markdown summary;
 - it validates decision-critical `warning_triage` nested fields, including state, blockers, narrow-window policy, warning count, and recommended action;
 - it validates decision-critical `cadence_review` nested fields and renders late-run plus missed-weekly-run status in the sanitized Markdown summary;
+- it validates decision-critical `decision_recommendation` nested fields, including advisory-only status, profile-apply denial, required bucket names, string-only bucket entries, and bucket-count consistency;
 - it defines recovery rules for missed runs, delayed warning triage, unreadable logs, privacy sanitization, and urgent exceptions;
 - it defines the final 30-day decision summary template;
 - it defines the manual note format for medium evidence, urgent exceptions, and removed false positives;

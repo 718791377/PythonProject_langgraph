@@ -122,6 +122,26 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "cadence_review": dict,
     "recommendations": list,
 }
+REQUIRED_DECISION_RECOMMENDATION_FIELDS = {
+    "status",
+    "policy",
+    "profile_apply_allowed",
+    "buckets",
+    "bucket_counts",
+}
+REQUIRED_DECISION_RECOMMENDATION_FIELD_TYPES = {
+    "status": str,
+    "policy": str,
+    "profile_apply_allowed": bool,
+    "buckets": dict,
+    "bucket_counts": dict,
+}
+REQUIRED_DECISION_BUCKET_NAMES = (
+    "profile_review_candidates",
+    "on_demand_soft_load",
+    "manual_review_medium_or_weak",
+    "dormant_restorable",
+)
 REQUIRED_NOISE_REVIEW_FIELDS = {
     "status",
     "explicit_skill_noise_removed",
@@ -1172,6 +1192,47 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         script_capability_violations.append("human_review_required_for_empty")
     if not script_capabilities.get("enhancement_triggers"):
         script_capability_violations.append("enhancement_triggers_empty")
+    decision_recommendation = (
+        report.get("decision_recommendation")
+        if isinstance(report.get("decision_recommendation"), dict)
+        else {}
+    )
+    decision_violations = []
+    for field in sorted(REQUIRED_DECISION_RECOMMENDATION_FIELDS):
+        if field not in decision_recommendation:
+            decision_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_DECISION_RECOMMENDATION_FIELD_TYPES.items()):
+        if field in decision_recommendation and not isinstance(decision_recommendation.get(field), expected_type):
+            decision_violations.append(f"{field}_invalid_type")
+    if decision_recommendation.get("status") != "advisory_only_no_profile_apply":
+        decision_violations.append("status_not_advisory_only_no_profile_apply")
+    if decision_recommendation.get("profile_apply_allowed") is not False:
+        decision_violations.append("profile_apply_allowed_not_false")
+    decision_buckets = decision_recommendation.get("buckets") if isinstance(decision_recommendation.get("buckets"), dict) else {}
+    decision_bucket_counts = (
+        decision_recommendation.get("bucket_counts")
+        if isinstance(decision_recommendation.get("bucket_counts"), dict)
+        else {}
+    )
+    for bucket_name in REQUIRED_DECISION_BUCKET_NAMES:
+        bucket_values = decision_buckets.get(bucket_name)
+        if bucket_name not in decision_buckets:
+            decision_violations.append(f"buckets:{bucket_name}_missing")
+            continue
+        if not isinstance(bucket_values, list):
+            decision_violations.append(f"buckets:{bucket_name}_invalid_type")
+            continue
+        if any(not isinstance(value, str) for value in bucket_values):
+            decision_violations.append(f"buckets:{bucket_name}_contains_non_string")
+        bucket_count = decision_bucket_counts.get(bucket_name)
+        if bucket_name not in decision_bucket_counts:
+            decision_violations.append(f"bucket_counts:{bucket_name}_missing")
+            continue
+        if not isinstance(bucket_count, int) or isinstance(bucket_count, bool):
+            decision_violations.append(f"bucket_counts:{bucket_name}_invalid_type")
+            continue
+        if bucket_count != len(bucket_values):
+            decision_violations.append(f"bucket_counts:{bucket_name}_stale")
     blockers = (
         [f"missing_field:{field}" for field in missing_fields]
         + [f"invalid_type:{field}" for field in invalid_type_fields]
@@ -1184,6 +1245,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"manual_evidence:{field}" for field in manual_violations]
         + [f"noise_review:{field}" for field in noise_violations]
         + [f"script_capability_boundaries:{field}" for field in script_capability_violations]
+        + [f"decision_recommendation:{field}" for field in decision_violations]
     )
     embedded_violations: list[str] = []
     if require_embedded and "field_contract" in report:

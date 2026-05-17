@@ -660,6 +660,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(report["decision_recommendation"]["status"], "advisory_only_no_profile_apply")
         self.assertFalse(report["decision_recommendation"]["profile_apply_allowed"])
         self.assertIn("bucket_counts", report["decision_recommendation"])
+        self.assertEqual(
+            set(report["decision_recommendation"]["buckets"]),
+            set(audit.REQUIRED_DECISION_BUCKET_NAMES),
+        )
         self.assertIn("status", report["noise_review"])
         self.assertIn("reliable_coverage", report["script_capability_boundaries"])
         self.assertIn("human_review_required_for", report["script_capability_boundaries"])
@@ -674,6 +678,70 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "passed",
         )
         self.assertIsInstance(report["recommendations"], list)
+
+    def test_field_contract_requires_decision_recommendation_fields(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-decision-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        broken = json.loads(json.dumps(report))
+        broken["decision_recommendation"] = {
+            "status": "approved-to-apply",
+            "policy": "decision_buckets_are_review_inputs_and_never_apply_profiles",
+            "profile_apply_allowed": True,
+            "buckets": {
+                "profile_review_candidates": ["core-dev"],
+                "on_demand_soft_load": ["pdf"],
+                "manual_review_medium_or_weak": ["ops"],
+                "dormant_restorable": ["twilio", 123],
+            },
+            "bucket_counts": {
+                "profile_review_candidates": 2,
+                "on_demand_soft_load": 1,
+                "manual_review_medium_or_weak": "one",
+            },
+        }
+
+        ok_contract = audit.validate_report_field_contract(report)
+        broken_contract = audit.validate_report_field_contract(broken)
+
+        self.assertEqual(ok_contract["status"], "passed")
+        self.assertEqual(broken_contract["status"], "failed")
+        self.assertIn(
+            "decision_recommendation:status_not_advisory_only_no_profile_apply",
+            broken_contract["blockers"],
+        )
+        self.assertIn("decision_recommendation:profile_apply_allowed_not_false", broken_contract["blockers"])
+        self.assertIn(
+            "decision_recommendation:buckets:dormant_restorable_contains_non_string",
+            broken_contract["blockers"],
+        )
+        self.assertIn(
+            "decision_recommendation:bucket_counts:profile_review_candidates_stale",
+            broken_contract["blockers"],
+        )
+        self.assertIn(
+            "decision_recommendation:bucket_counts:manual_review_medium_or_weak_invalid_type",
+            broken_contract["blockers"],
+        )
+        self.assertIn(
+            "decision_recommendation:bucket_counts:dormant_restorable_missing",
+            broken_contract["blockers"],
+        )
 
     def test_script_capability_boundaries_are_in_report_contract_and_summary(self) -> None:
         codex_home = self.make_codex_home("skills-audit-script-boundaries")
@@ -901,8 +969,18 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "status": "advisory_only_no_profile_apply",
                 "policy": "decision_buckets_are_review_inputs_and_never_apply_profiles",
                 "profile_apply_allowed": False,
-                "buckets": {},
-                "bucket_counts": {},
+                "buckets": {
+                    "profile_review_candidates": [],
+                    "on_demand_soft_load": [],
+                    "manual_review_medium_or_weak": [],
+                    "dormant_restorable": [],
+                },
+                "bucket_counts": {
+                    "profile_review_candidates": 0,
+                    "on_demand_soft_load": 0,
+                    "manual_review_medium_or_weak": 0,
+                    "dormant_restorable": 0,
+                },
             },
             "cadence_review": {
                 "late_run": False,
