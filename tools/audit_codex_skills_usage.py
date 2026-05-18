@@ -605,7 +605,7 @@ def sanitize_explicit_skill_noise_token(value: str) -> str:
 
 def inline_code(value: str) -> str:
     """Render short sanitized values as Markdown inline code without leaking raw backticks."""
-    return f"`{str(value).replace('`', "'")}`"
+    return "`" + str(value).replace("`", "'") + "`"
 
 
 def format_noise_token_samples(removed_noise: Any) -> str:
