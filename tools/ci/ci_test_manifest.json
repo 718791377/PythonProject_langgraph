@@ -4,6 +4,7 @@
     "audit_codex_skills_usage.test.py",
     "check_context_retention_canary_surface.test.py",
     "check_precommit_update_archive.test.py",
+    "cleanup_integrated_worktree.test.py",
     "check_skills_audit_output_retention.test.py",
     "run_openspec_guard_json.test.py",
     "check_local_mirrored_ci_gate.test.py",

@@ -142,15 +142,19 @@ class WorktreeSessionHygieneCheckTest(unittest.TestCase):
         self.assertFalse(candidate["branch_cleanup_ready"])
         self.assertTrue(any("not merged into local main" in item for item in candidate["branch_cleanup_blockers"]))
 
-    def test_reports_branch_cleanup_ready_after_main_and_github_sync(self) -> None:
+    def test_reports_branch_cleanup_ready_after_main_merge_and_backup_ref(self) -> None:
         root = self.make_repo("worktree-feature-cleanup")
-        feature_worktree = self.make_feature_worktree(root)
+        branch = "feature-cleanup-test"
+        feature_worktree = self.make_feature_worktree(root, branch=branch)
         (feature_worktree / "feature.txt").write_text("feature\n", encoding="utf-8")
         subprocess.run(["git", "add", "feature.txt"], cwd=feature_worktree, check=True)
         subprocess.run(["git", "commit", "-m", "feature"], cwd=feature_worktree, check=True, capture_output=True, text=True)
-        subprocess.run(["git", "merge", "--no-ff", "feature/test", "-m", "merge feature"], cwd=root, check=True, capture_output=True, text=True)
-        subprocess.run(["git", "branch", "-f", "gitlab/main", "main"], cwd=root, check=True)
-        subprocess.run(["git", "branch", "-f", "github/main", "main"], cwd=root, check=True)
+        subprocess.run(["git", "merge", "--no-ff", branch, "-m", "merge feature"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(
+            ["git", "update-ref", f"refs/backup/local-main/test-before-{branch}", "main"],
+            cwd=root,
+            check=True,
+        )
 
         result = self.run_check(root)
 
@@ -159,9 +163,31 @@ class WorktreeSessionHygieneCheckTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["branch_cleanup_ready"], 1)
         candidate = payload["worktree_release_candidates"][0]
         self.assertTrue(candidate["branch_merged_to_main"])
-        self.assertTrue(candidate["local_main_matches_remote"])
-        self.assertTrue(candidate["github_matches_main"])
+        self.assertFalse(candidate["local_main_matches_remote"])
+        self.assertFalse(candidate["github_matches_main"])
+        self.assertTrue(candidate["rollback_backup_ref_present"])
+        self.assertEqual(candidate["rollback_backup_refs"], [f"refs/backup/local-main/test-before-{branch}"])
         self.assertTrue(candidate["branch_cleanup_ready"])
+
+    def test_blocks_branch_cleanup_when_backup_ref_is_missing(self) -> None:
+        root = self.make_repo("worktree-feature-cleanup-no-backup")
+        branch = "feature-cleanup-no-backup"
+        feature_worktree = self.make_feature_worktree(root, branch=branch)
+        (feature_worktree / "feature.txt").write_text("feature\n", encoding="utf-8")
+        subprocess.run(["git", "add", "feature.txt"], cwd=feature_worktree, check=True)
+        subprocess.run(["git", "commit", "-m", "feature"], cwd=feature_worktree, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "merge", "--no-ff", branch, "-m", "merge feature"], cwd=root, check=True, capture_output=True, text=True)
+
+        result = self.run_check(root)
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["counts"]["branch_cleanup_ready"], 0)
+        candidate = payload["worktree_release_candidates"][0]
+        self.assertTrue(candidate["branch_merged_to_main"])
+        self.assertFalse(candidate["rollback_backup_ref_present"])
+        self.assertFalse(candidate["branch_cleanup_ready"])
+        self.assertTrue(any("no rollback backup ref" in item for item in candidate["branch_cleanup_blockers"]))
 
     def test_fails_for_current_dirty_feature_worktree_without_override(self) -> None:
         root = self.make_repo("worktree-feature-dirty-fail")

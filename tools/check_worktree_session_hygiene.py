@@ -110,6 +110,14 @@ def is_ancestor(root: Path, ancestor: str, descendant: str) -> bool | None:
     return None
 
 
+def backup_refs_for_branch(root: Path, branch: str) -> list[str]:
+    result = run_git(root, ["for-each-ref", "--format=%(refname)", "refs/backup/local-main"])
+    if result.returncode != 0:
+        return []
+    suffix = f"-before-{branch}"
+    return sorted(ref.strip() for ref in result.stdout.splitlines() if ref.strip().endswith(suffix))
+
+
 def is_gitlab_ci_detached_checkout() -> bool:
     return bool(os.environ.get("GITLAB_CI") and os.environ.get("CI_COMMIT_SHA"))
 
@@ -240,8 +248,12 @@ def run_check(
         branch_merged_to_main = is_ancestor(current_root, branch, main_branch) if main_commit else None
         local_main_matches_remote = bool(main_commit and target_commit and main_commit == target_commit)
         github_matches_main = bool(main_commit and github_commit and github_commit == main_commit)
+        rollback_backup_refs = backup_refs_for_branch(current_root, branch)
+        rollback_backup_ref_present = bool(rollback_backup_refs)
         worktree_release_ready = is_clean
-        branch_cleanup_ready = bool(worktree_release_ready and branch_merged_to_main is True and local_main_matches_remote and github_matches_main)
+        branch_cleanup_ready = bool(
+            worktree_release_ready and branch_merged_to_main is True and rollback_backup_ref_present
+        )
         blockers: list[str] = []
         if not is_clean:
             blockers.append(
@@ -249,10 +261,10 @@ def run_check(
             )
         if branch_merged_to_main is not True:
             blockers.append("feature branch is not merged into local main; keep the branch after any worktree release")
-        if not local_main_matches_remote:
-            blockers.append(f"local {main_branch} does not match {main_ref}; do not delete the feature branch yet")
-        if not github_matches_main:
-            blockers.append(f"{github_ref} is absent or not synced to local {main_branch}; do not delete the feature branch yet")
+        if not rollback_backup_ref_present:
+            blockers.append(
+                f"no rollback backup ref found under refs/backup/local-main/*-before-{branch}; create a local rollback marker before deleting the local feature branch"
+            )
         worktree_release_candidates.append(
             {
                 "path": str(worktree_path),
@@ -263,6 +275,8 @@ def run_check(
                 "branch_merged_to_main": branch_merged_to_main,
                 "local_main_matches_remote": local_main_matches_remote,
                 "github_matches_main": github_matches_main,
+                "rollback_backup_ref_present": rollback_backup_ref_present,
+                "rollback_backup_refs": rollback_backup_refs,
                 "branch_cleanup_ready": branch_cleanup_ready,
                 "branch_cleanup_blockers": blockers,
                 "operator_confirmations_required": [
@@ -275,7 +289,7 @@ def run_check(
         )
     if worktree_release_candidates:
         info.append(
-            "Feature worktree release candidates are reported separately from branch cleanup readiness; releasing a clean worktree does not authorize deleting its feature branch."
+            "Feature worktree and local feature branch cleanup readiness is local-only: it requires a clean worktree, local main containment, and a rollback backup ref; it does not delete remote refs or backup refs."
         )
 
     for dirty_path, owners in sorted(path_to_worktrees.items()):

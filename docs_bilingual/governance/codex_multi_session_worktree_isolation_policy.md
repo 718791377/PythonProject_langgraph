@@ -25,7 +25,7 @@ The primary main worktree freshness rule is mandatory: `D:\PythonProject_langgra
 
 This policy is repository governance. It applies to all Codex sessions that edit this repository, including normal Codex, oh-my-codex wrapped sessions, native subagents, durable-team workers, and future LangGraph-driven execution contexts.
 
-It does not authorize deleting worktrees, resetting branches, or discarding local edits. Any destructive cleanup still needs an explicit preservation-first plan and operator confirmation.
+It authorizes only checker-backed cleanup of already-integrated local feature worktrees and local feature branches when the cleanup helper proves that the worktree is clean, the branch is contained in local `main`, a completed local claim is preserved, and a local rollback backup ref exists. It does not authorize reset, force deletion, remote ref deletion, backup-ref deletion, or discarding local edits; those destructive actions still need an explicit preservation-first plan and operator confirmation.
 
 ## 3. Required Worktree Model
 
@@ -89,9 +89,9 @@ Task ownership states must be classified before takeover:
 
 ## 5.1 Feature Worktree Release And Branch Cleanup
 
-A feature worktree is a temporary execution surface. After local validation passes, all intended tracked changes are committed, `git status` is clean, and no unhandled `.local/`, untracked, evidence, cache, OCR-output, private, copyrighted, or large files remain, the feature worktree may be released before GitLab publication finishes. Releasing the worktree means removing the local filesystem worktree with Git worktree commands; it does not delete the feature branch.
+A feature worktree is a temporary execution surface. After local validation passes, all intended tracked changes are committed, `git status` is clean, no unhandled `.local/`, untracked, evidence, cache, OCR-output, private, copyrighted, or large files remain, local `main` contains the branch result, a rollback backup ref exists, and the completed claim has been preserved into the primary directory, the local feature worktree may be released before GitLab publication finishes. Releasing the worktree means removing the local filesystem worktree with Git worktree commands.
 
-A feature branch is the publication carrier. Keep the local feature branch until local `main` contains the intended result, and keep any remote publication branch until GitLab/GitHub publication or mirror closure has synced the intended local `main` commit. Only after that closure may the local and remote feature branches be deleted.
+A local feature branch is also temporary after local `main` contains the intended result and a rollback backup ref exists. The local branch may be deleted with `git branch -d` after `tools/cleanup_integrated_worktree.py` passes and preserves the completed claim. Remote publication branches, remote refs, and backup refs remain protected: they must not be deleted by local cleanup, and remote publication still requires explicit user approval.
 
 File-class tasks must be handled before worktree release:
 
@@ -101,7 +101,7 @@ File-class tasks must be handled before worktree release:
 - Private, copyrighted, or large files: do not commit the raw payload; commit only a manifest, summary, path, hash, quality metric, or provenance record when repository evidence is needed.
 - Unclear files: do not delete them with the worktree; ask the operator to choose keep, commit, move, summarize, or discard.
 
-The safe summary is: the feature worktree can be cleaned up as soon as it is clean and its files are classified, but the feature branch stays until the remote publication loop is closed.
+The safe summary is: after local `main` integration, a clean `.worktrees/` feature worktree and its merged local feature branch can be cleaned automatically by the guarded cleanup helper; remote refs and backup refs are not cleaned automatically.
 
 ## 6. Script Control
 
@@ -109,7 +109,8 @@ Prompt reminders are not sufficient for this safety boundary.
 
 The repository provides:
 
-- `tools/check_worktree_session_hygiene.py` - read-only checker that inspects registered Git worktrees, dirty states, duplicate dirty paths, and `main` alignment risk.
+- `tools/check_worktree_session_hygiene.py` - read-only checker that inspects registered Git worktrees, dirty states, duplicate dirty paths, branch cleanup readiness, rollback backup ref presence, and `main` alignment risk.
+- `tools/cleanup_integrated_worktree.py` - guarded local-only cleanup helper that removes a clean, already-integrated `.worktrees/` feature worktree and deletes its merged local feature branch with `git branch -d` only after preserving the completed claim and confirming a rollback backup ref.
 - `tools/check_session_ownership_claims.py` - read-only checker that inspects local `.omx/session-claims/*.json` claim files and fails on duplicate OpenSpec-change or overlapping path ownership.
 
 Expected usage:
@@ -157,7 +158,7 @@ python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty 
 
 The command above runs the read-only claim checker and emits a JSON report showing active local claims and collisions.
 
-The hygiene checker also reports `worktree_release_candidates` in JSON output. `worktree_release_candidates` is a read-only status list that separates `worktree_release_ready`, which means the feature worktree is clean enough to remove after local validation and file classification, from `branch_cleanup_ready`, which means the feature branch is merged and both GitLab and GitHub mainline refs are aligned.
+The hygiene checker also reports `worktree_release_candidates` in JSON output. `worktree_release_candidates` is a read-only status list that separates `worktree_release_ready`, which means the feature worktree is clean enough to remove after local validation and file classification, from `branch_cleanup_ready`, which means the feature branch is merged into local `main` and a rollback backup ref exists. Remote GitLab/GitHub alignment is reported separately as publication state; it is no longer a blocker for local-only branch cleanup.
 
 The checker now has two read-only modes:
 
@@ -213,12 +214,13 @@ Default local-main-first sequence:
 10. Have the active session's model recommend integrate/publish or wait, including the single-package or two-step archive decision and the local gate results, then ask the user to confirm the release decision.
 11. After user approval, integrate the validated feature branch into local `main` first, preferably by fast-forward when the branch is linear from local `main`.
 12. Verify the primary directory `D:\PythonProject_langgraph` is on local `main`, clean, and at the intended local `main` commit.
-13. If local `main` now leads `gitlab/main` or `github/main`, report intentional remote lag and keep the publication carrier branch.
-14. Ask for explicit remote-publication approval when local `main` leads GitLab or GitHub; do not treat generic continuation as approval. Push to GitLab and open or update a GitLab MR only after that explicit approval or an approved release record authorizes the remote action.
-15. Wait for the GitLab pipeline to pass when using GitLab remote confirmation. The pipeline must invoke the same `tools/ci/local_gate.ps1` script.
-16. Reconcile any remote CI discrepancy by fixing the local/shared gate or environment drift, not by bypassing evidence.
-17. Sync the exact intended local `main` commit to GitHub after GitLab remote confirmation is green or when the user explicitly chooses direct mirroring.
-18. Only delete feature branches after local `main`, GitLab publication state, and GitHub mirror state have the intended closure.
+13. Create or verify the local rollback backup ref for the pre-merge local `main` state, then use `tools/cleanup_integrated_worktree.py --execute` to preserve the completed claim, remove the clean integrated feature worktree, and delete the merged local feature branch with `git branch -d`.
+14. If local `main` now leads `gitlab/main` or `github/main`, report intentional remote lag. Recreate a publication branch from local `main` later only when explicit remote publication approval is given.
+15. Ask for explicit remote-publication approval when local `main` leads GitLab or GitHub; do not treat generic continuation as approval. Push to GitLab and open or update a GitLab MR only after that explicit approval or an approved release record authorizes the remote action.
+16. Wait for the GitLab pipeline to pass when using GitLab remote confirmation. The pipeline must invoke the same `tools/ci/local_gate.ps1` script.
+17. Reconcile any remote CI discrepancy by fixing the local/shared gate or environment drift, not by bypassing evidence.
+18. Sync the exact intended local `main` commit to GitHub after GitLab remote confirmation is green or when the user explicitly chooses direct mirroring.
+19. Keep remote publication branches, remote refs, and backup refs protected until a separate explicit cleanup approval is given.
 
 GitHub PRs are not the default workflow for this repository.
 

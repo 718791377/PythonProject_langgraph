@@ -25,7 +25,7 @@ status: active
 
 本策略属于仓库级治理。它适用于所有会修改本仓库的 Codex 会话，包括普通 Codex、oh-my-codex 包装会话、native subagents、durable-team workers，以及后续 LangGraph 驱动的执行上下文。
 
-本策略不授权删除 worktree、重置分支或丢弃本地编辑。任何破坏性清理仍然必须先有 preservation-first plan（先保存再清理的计划）和操作者确认。
+本策略只授权经过脚本门禁的本地清理：当 helper 证明 feature worktree 已干净、feature branch 已被本地 `main` 包含、completed claim 已被保留、且本地 rollback backup ref 存在时，可以清理已合入的本地 feature worktree 与本地 feature branch。它不授权 reset、强制删除、删除远端 ref、删除 backup ref 或丢弃本地编辑；这些破坏性动作仍然必须先有 preservation-first plan（先保存再清理的计划）和操作者确认。
 
 ## 3. 必需 Worktree 模型
 
@@ -85,9 +85,9 @@ status: active
 
 ## 5.1 Feature Worktree 释放与 Branch 清理
 
-Feature worktree 是临时执行面。本地验证通过、所有计划保留的已跟踪改动已经提交、`git status` 干净，并且没有未处理的 `.local/`、未跟踪文件、证据文件、缓存、OCR 输出、私有文件、版权文件或大文件之后，feature worktree 可以在 GitLab 发布完成前释放。释放 worktree 是指用 Git worktree 命令删除本地文件系统 worktree；它不会删除 feature branch。
+Feature worktree 是临时执行面。本地验证通过、所有计划保留的已跟踪改动已经提交、`git status` 干净、没有未处理的 `.local/`、未跟踪文件、证据文件、缓存、OCR 输出、私有文件、版权文件或大文件、本地 `main` 已包含该 branch 结果、rollback backup ref 已存在、completed claim 已保留到主目录之后，feature worktree 可以在 GitLab 发布完成前释放。释放 worktree 是指用 Git worktree 命令删除本地文件系统 worktree。
 
-Feature branch 是发布载体。本地 feature branch 必须保留到本地 `main` 已包含预期结果；如果存在远端发布分支，则必须保留到 GitLab/GitHub 发布或镜像闭环已对齐预期本地 `main` commit。只有在这个闭环结束之后，才可以删除本地和远端 feature branch。
+本地 feature branch 在本地 `main` 已包含预期结果且存在 rollback backup ref 之后，也属于可清理的临时本地执行面。`tools/cleanup_integrated_worktree.py` 通过门禁后，可以先保留 completed claim，再删除 `.worktrees/` 下的 feature worktree，并用 `git branch -d` 删除已合入的本地 feature branch。远端发布分支、远端 refs 和 backup refs 仍受保护：本地清理不得删除它们，远端发布仍必须由用户明确授权。
 
 释放 worktree 前必须先处理文件分类：
 
@@ -97,14 +97,15 @@ Feature branch 是发布载体。本地 feature branch 必须保留到本地 `ma
 - 私有文件、版权文件或大文件：不提交原始 payload；仓库需要证据时，只提交 manifest（清单）、summary（摘要）、path（路径）、hash（哈希）、quality metric（质量指标）或 provenance record（来源记录）。
 - 无法判断的文件：不能跟随 worktree 一起删除；必须先让操作者选择保留、提交、移动、摘要记录或丢弃。
 
-安全总结是：feature worktree 只要已经干净且文件完成分类，就可以更早清理；feature branch 必须保留到远端发布闭环结束。
+安全总结是：本地 `main` 集成后，干净的 `.worktrees/` feature worktree 与已合入的本地 feature branch 可以由受保护 helper 自动清理；远端 refs 和 backup refs 不自动清理。
 ## 6. 脚本控制
 
 这个安全边界不能只靠提示词提醒。
 
 仓库提供：
 
-- `tools/check_worktree_session_hygiene.py` - 只读 checker，用来检查已登记 Git worktrees、脏状态、重复脏路径和 `main` 对齐风险。
+- `tools/check_worktree_session_hygiene.py` - 只读 checker，用来检查已登记 Git worktrees、脏状态、重复脏路径、branch cleanup readiness、rollback backup ref 是否存在，以及 `main` 对齐风险。
+- `tools/cleanup_integrated_worktree.py` - 本地-only 的受保护清理 helper；只有在 completed claim 已保留、rollback backup ref 已确认、feature worktree 干净、branch 已合入 local `main` 时，才删除 `.worktrees/` 下的 worktree，并用 `git branch -d` 删除本地 feature branch。
 
 推荐用法：
 
@@ -157,10 +158,11 @@ python .\tools\check_worktree_session_hygiene.py --root . --allow-current-dirty 
 
 ```powershell
 python .\tools\check_session_ownership_claims.py --root . --allow-current-dirty --json
-Hygiene checker（工作区卫生检查器）还会在 JSON 输出中报告 `worktree_release_candidates`。`worktree_release_candidates` 是只读状态列表，用来区分 `worktree_release_ready` 和 `branch_cleanup_ready`：前者表示 feature worktree 在本地验证和文件分类后已经干净到可以删除，后者表示 feature branch 已合并且 GitLab / GitHub mainline refs 已对齐。
 ```
 
 上面的命令会运行只读会话认领 checker，并输出 JSON 报告，供冷启动会话或本地发布前检查使用。
+
+Hygiene checker（工作区卫生检查器）还会在 JSON 输出中报告 `worktree_release_candidates`。`worktree_release_candidates` 是只读状态列表，用来区分 `worktree_release_ready` 和 `branch_cleanup_ready`：前者表示 feature worktree 在本地验证和文件分类后已经干净到可以删除，后者表示 feature branch 已合入本地 `main` 且存在 rollback backup ref。GitLab/GitHub 对齐状态只作为发布状态单独报告，不再阻断本地-only branch cleanup。
 
 任务认领 checker 的补充要求：
 
@@ -216,12 +218,13 @@ Runner 配额与发布包规则：
 10. 由当前会话模型建议 integrate / publish 或 wait，并说明采用 single-package 还是 two-step 归档决策以及本地 gate 结果，然后请用户确认发布决策。
 11. 用户批准后，先把已验证 feature branch 集成进本地 `main`，线性分支优先使用 fast-forward。
 12. 验证主目录 `D:\PythonProject_langgraph` 检出本地 `main`、状态干净，并位于预期本地 `main` commit。
-13. 如果本地 `main` 领先 `gitlab/main` 或 `github/main`，报告 intentional remote lag 并保留 publication carrier branch。
-14. 当本地 `main` 领先 GitLab 或 GitHub 时，先请求明确的远端发布批准；不得把泛化的继续指令当作批准。只有当前用户消息或 approved release record 明确授权后，才推送到 GitLab 并创建或更新 GitLab MR。
-15. 使用 GitLab 远端确认时等待 GitLab pipeline 通过；该 pipeline 必须调用同一个 `tools/ci/local_gate.ps1` 脚本。
-16. 远端 CI 若与本地结果不一致，修复本地/共享 gate 或环境漂移，不得绕过证据。
-17. GitLab 远端确认变绿后，或用户明确选择 direct mirroring 时，把预期本地 `main` commit 精确同步到 GitHub。
-18. 只有当本地 `main`、GitLab 发布状态和 GitHub 镜像状态都达到预期闭环后，才删除 feature branch。
+13. 创建或确认合入前 local `main` 的 rollback backup ref，然后使用 `tools/cleanup_integrated_worktree.py --execute` 保留 completed claim、删除干净且已合入的 feature worktree，并用 `git branch -d` 删除已合入的本地 feature branch。
+14. 如果本地 `main` 现在领先 `gitlab/main` 或 `github/main`，报告 intentional remote lag。只有在用户明确授权远端发布时，才按需要从本地 `main` 重新创建 publication branch。
+15. 当本地 `main` 领先 GitLab 或 GitHub 时，先请求明确的远端发布批准；不得把泛化的继续指令当作批准。只有当前用户消息或 approved release record 明确授权后，才推送到 GitLab 并创建或更新 GitLab MR。
+16. 使用 GitLab 远端确认时等待 GitLab pipeline 通过；该 pipeline 必须调用同一个 `tools/ci/local_gate.ps1` 脚本。
+17. 远端 CI 若与本地结果不一致，修复本地/共享 gate 或环境漂移，不得绕过证据。
+18. GitLab 远端确认变绿后，或用户明确选择 direct mirroring 时，把预期本地 `main` commit 精确同步到 GitHub。
+19. 远端 publication branches、remote refs 与 backup refs 的清理仍需要单独明确授权。
 
 本仓库默认不使用 GitHub PR。
 
