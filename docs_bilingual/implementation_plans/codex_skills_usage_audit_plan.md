@@ -264,6 +264,7 @@ Gate rules:
 - candidate generation must record a gate result that requires a 30-day audit window and `--summary-reviewed`;
 - candidate generation must require source-report paths for the 30-day JSON report and sanitized Markdown summary, so a reviewed candidate cannot be detached from its review evidence;
 - candidate generation must require an explicit `--target-profile`; if it is missing, the audit state stays `ready-for-summary`, records `target_profile_missing`, and any candidate preview must stay blocked rather than raising an unstructured exception or implying a usable target;
+- candidate generation must require the report `audit_state.state` to be candidate-ready: `summary-reviewed`, `apply-candidate`, or `closed-with-candidate`; `planned`, `paused`, `running`, `ready-for-summary`, and `closed-no-change` must block candidate generation so ordinary summary flags or a no-change closure cannot be mistaken for profile-apply candidate authorization;
 - candidate `source_reports` must be sanitized before JSON or Markdown candidate records are written; raw Windows paths, POSIX home paths, UNC shares, API keys, access tokens, cookies, and standalone secret tokens must be redacted;
 - a candidate record must include `source_reports_privacy.status=passed`; if the privacy contract fails, the candidate must stay blocked until the report paths are regenerated or the sanitizer is fixed;
 - candidate Markdown summaries must render the source-report privacy status and privacy violations/blockers, using `none` when there are no violations, so the preview record is self-reviewable without exposing raw source paths;
@@ -469,6 +470,7 @@ This plan is granular enough only when all of the following are true:
 - it defines the manual note format for medium evidence, urgent exceptions, and removed false positives;
 - it defines the candidate change gate and rollback path before any post-audit hard-load/profile apply;
 - it requires candidate generation to stay attached to a JSON report path and sanitized Markdown summary path;
+- it requires candidate generation to accept only `summary-reviewed`, `apply-candidate`, or `closed-with-candidate` audit states and block not-ready or `closed-no-change` states;
 - it requires candidate `source_reports` to pass a privacy contract before candidate JSON or Markdown is written;
 - it defines data minimization, sanitization, retention, and no-externalization boundaries for audit data sources;
 - it defines the audit script capability boundaries, known limitations, and conditions that trigger script enhancement;

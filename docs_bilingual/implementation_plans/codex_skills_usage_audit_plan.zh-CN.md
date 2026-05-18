@@ -265,6 +265,7 @@ created_at: 2026-05-16
 - 候选生成必须记录门禁结果，且门禁要求 30 天审计窗口与 `--summary-reviewed`；
 - 候选生成必须要求 30 天 JSON 报告与脱敏 Markdown 摘要的 source-report 路径，避免已复核候选与复核证据脱钩；
 - 候选生成必须要求显式 `--target-profile`；如果缺失，audit state 保持 `ready-for-summary`，记录 `target_profile_missing`，并且任何候选 preview 都必须保持 blocked，不得抛出无结构异常或暗示存在可用目标；
+- 候选生成必须要求报告 `audit_state.state` 已进入候选就绪状态：`summary-reviewed`、`apply-candidate` 或 `closed-with-candidate`；`planned`、`paused`、`running`、`ready-for-summary` 与 `closed-no-change` 都必须阻断候选生成，避免普通 summary 参数或已关闭无变更审计被误解释为 profile apply 候选授权；
 - candidate `source_reports` 写入 JSON 或 Markdown 候选记录前必须先脱敏；原始 Windows 路径、POSIX home 路径、UNC 共享路径、API key、access token、cookie 与独立 secret token 都必须被替换；
 - 候选记录必须包含 `source_reports_privacy.status=passed`；如果 privacy contract 失败，候选必须保持 blocked，直到重新生成 report 路径或修复脱敏器；
 - 候选 Markdown 摘要必须渲染 source-report privacy 状态与 violations/blockers；没有违规时写入 `none`，保证 preview 记录可复核且不暴露原始 source 路径；
@@ -472,6 +473,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 明确中证据、紧急例外和误报剔除的人工记录格式；
 - 明确 30 天审计后进入 hard-load/profile apply 前的候选变更门禁与回滚路径；
 - 要求候选生成必须绑定 JSON 报告路径与脱敏 Markdown 摘要路径；
+- 要求候选生成只接受 `summary-reviewed`、`apply-candidate` 或 `closed-with-candidate` 审计状态，阻断未就绪或已 `closed-no-change` 的审计状态；
 - 要求 candidate `source_reports` 在写入候选 JSON 或 Markdown 前必须通过隐私契约；
 - 明确 audit 数据源的数据最小化、脱敏、留存和禁止外发边界；
 - 明确 audit 脚本的能力边界、已知限制和触发脚本增强的条件；

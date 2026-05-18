@@ -1925,6 +1925,23 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             summary_reviewed=True,
         )
         report = audit.build_report(args)
+        allowed_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=".tmp/skills-usage-audit-30d.json",
+            summary_output=".tmp/skills-usage-audit-30d-summary.md",
+            candidate_output="candidate.json",
+            candidate_summary_output=None,
+            target_profile="core-dev",
+            summary_reviewed=True,
+        )
+        allowed_report = audit.build_report(allowed_args)
 
         blocked_gate = audit.build_candidate_generation_gate(
             report,
@@ -1932,10 +1949,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             require_source_reports=True,
         )
         allowed_gate = audit.build_candidate_generation_gate(
-            report,
+            allowed_report,
             summary_reviewed=True,
-            json_report_path=".tmp/skills-usage-audit-30d.json",
-            markdown_summary_path=".tmp/skills-usage-audit-30d-summary.md",
+            json_report_path=allowed_args.output,
+            markdown_summary_path=allowed_args.summary_output,
             require_source_reports=True,
             target_profile="core-dev",
             require_target_profile=True,
@@ -1947,6 +1964,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertTrue(blocked_gate["source_reports_required"])
         self.assertFalse(blocked_gate["json_report_present"])
         self.assertFalse(blocked_gate["markdown_summary_present"])
+        self.assertIn("audit_state_not_candidate_ready:ready-for-summary", blocked_gate["blockers"])
+        self.assertEqual(allowed_report["audit_state"]["state"], "apply-candidate")
         self.assertTrue(allowed_gate["allowed"])
         self.assertTrue(allowed_gate["json_report_present"])
         self.assertTrue(allowed_gate["markdown_summary_present"])
@@ -2090,6 +2109,100 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(report["audit_state"]["state"], "paused")
         self.assertFalse(gate["allowed"])
         self.assertIn("audit_state_paused", gate["blockers"])
+
+    def test_candidate_generation_gate_requires_candidate_ready_audit_state(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-candidate-ready-state")
+        running_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=".tmp/skills-usage-audit-30d.json",
+            summary_output=".tmp/skills-usage-audit-30d-summary.md",
+            candidate_output=None,
+            candidate_summary_output=None,
+            target_profile="core-dev",
+            summary_reviewed=False,
+        )
+        closed_no_change_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=".tmp/skills-usage-audit-30d.json",
+            summary_output=".tmp/skills-usage-audit-30d-summary.md",
+            candidate_output=None,
+            candidate_summary_output=None,
+            target_profile="core-dev",
+            summary_reviewed=True,
+            close_audit="no-change",
+        )
+        closed_with_candidate_args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=".tmp/skills-usage-audit-30d.json",
+            summary_output=".tmp/skills-usage-audit-30d-summary.md",
+            candidate_output=".tmp/skills-profile-candidate.json",
+            candidate_summary_output=None,
+            target_profile="core-dev",
+            summary_reviewed=True,
+            close_audit="with-candidate",
+        )
+        running_report = audit.build_report(running_args)
+        closed_no_change_report = audit.build_report(closed_no_change_args)
+        closed_with_candidate_report = audit.build_report(closed_with_candidate_args)
+
+        running_gate = audit.build_candidate_generation_gate(
+            running_report,
+            summary_reviewed=True,
+            json_report_path=running_args.output,
+            markdown_summary_path=running_args.summary_output,
+            require_source_reports=True,
+            target_profile=running_args.target_profile,
+            require_target_profile=True,
+        )
+        closed_no_change_gate = audit.build_candidate_generation_gate(
+            closed_no_change_report,
+            summary_reviewed=True,
+            json_report_path=closed_no_change_args.output,
+            markdown_summary_path=closed_no_change_args.summary_output,
+            require_source_reports=True,
+            target_profile=closed_no_change_args.target_profile,
+            require_target_profile=True,
+        )
+        closed_with_candidate_gate = audit.build_candidate_generation_gate(
+            closed_with_candidate_report,
+            summary_reviewed=True,
+            json_report_path=closed_with_candidate_args.output,
+            markdown_summary_path=closed_with_candidate_args.summary_output,
+            require_source_reports=True,
+            target_profile=closed_with_candidate_args.target_profile,
+            require_target_profile=True,
+        )
+
+        self.assertEqual(running_report["audit_state"]["state"], "ready-for-summary")
+        self.assertFalse(running_gate["allowed"])
+        self.assertIn("audit_state_not_candidate_ready:ready-for-summary", running_gate["blockers"])
+        self.assertEqual(closed_no_change_report["audit_state"]["state"], "closed-no-change")
+        self.assertFalse(closed_no_change_gate["allowed"])
+        self.assertIn("audit_state_not_candidate_ready:closed-no-change", closed_no_change_gate["blockers"])
+        self.assertEqual(closed_with_candidate_report["audit_state"]["state"], "closed-with-candidate")
+        self.assertTrue(closed_with_candidate_gate["allowed"])
+        self.assertIn("closed-with-candidate", closed_with_candidate_gate["candidate_ready_audit_states"])
 
     def test_source_reports_sanitize_private_paths_and_tokens(self) -> None:
         source_reports = audit.build_source_reports(

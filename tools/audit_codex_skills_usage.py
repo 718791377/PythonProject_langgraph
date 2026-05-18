@@ -231,6 +231,11 @@ VALID_AUDIT_STATES = {
     "closed-no-change",
     "closed-with-candidate",
 }
+CANDIDATE_READY_AUDIT_STATES = {
+    "summary-reviewed",
+    "apply-candidate",
+    "closed-with-candidate",
+}
 AUDIT_STATE_BLOCKER_FIELDS = (
     "close_blockers",
     "candidate_blockers",
@@ -1770,10 +1775,13 @@ def build_candidate_generation_gate(
     if not summary_reviewed:
         blockers.append("summary_not_marked_reviewed")
     audit_state = report.get("audit_state") if isinstance(report.get("audit_state"), dict) else {}
-    if audit_state.get("state") == "planned":
+    audit_state_value = audit_state.get("state")
+    if audit_state_value == "planned":
         blockers.append("audit_state_planned")
-    if audit_state.get("state") == "paused":
+    elif audit_state_value == "paused":
         blockers.append("audit_state_paused")
+    elif audit_state_value not in CANDIDATE_READY_AUDIT_STATES:
+        blockers.append(f"audit_state_not_candidate_ready:{audit_state_value or 'missing'}")
     json_report_present = bool(str(json_report_path or "").strip())
     markdown_summary_present = bool(str(markdown_summary_path or "").strip())
     if require_source_reports and not json_report_present:
@@ -1805,6 +1813,7 @@ def build_candidate_generation_gate(
         "markdown_summary_present": markdown_summary_present,
         "target_profile_required": bool(require_target_profile),
         "target_profile_present": target_profile_present,
+        "candidate_ready_audit_states": sorted(CANDIDATE_READY_AUDIT_STATES),
         "source_reports_privacy": source_reports_privacy,
         "field_contract": field_contract,
         "ordinary_continue_or_generic_confirmation_is_not_apply_authorization": True,
