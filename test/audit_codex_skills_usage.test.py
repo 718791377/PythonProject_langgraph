@@ -286,6 +286,81 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("output_retention:raw_audit_json_local_only_missing", contract["blockers"])
         self.assertIn("output_retention:long_term_evidence_format_missing", contract["blockers"])
 
+    def test_report_redacts_runtime_paths_and_exposes_path_privacy(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-runtime-paths")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        summary = audit.render_markdown_summary(report)
+        serialized = json.dumps(report, ensure_ascii=False)
+
+        self.assertEqual(report["root"], "[REPO_ROOT]")
+        self.assertEqual(report["codex_home"], "[CODEX_HOME]")
+        self.assertEqual(report["config_summary"]["config_path"], "[CODEX_HOME]/config.toml")
+        self.assertEqual(report["runtime_paths"]["config_path"], "[CODEX_HOME]/config.toml")
+        self.assertFalse(report["runtime_paths"]["raw_paths_retained"])
+        self.assertEqual(report["field_contract"]["status"], "passed")
+        self.assertNotIn(str(REPO_ROOT), serialized)
+        self.assertNotIn(str(codex_home), serialized)
+        self.assertIn("Runtime path raw values retained: `False`", summary)
+        self.assertIn("Runtime path privacy policy: `runtime_paths_are_kind_labels_and_placeholders_no_raw_user_paths`", summary)
+
+    def test_field_contract_blocks_raw_runtime_paths(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-runtime-paths-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        broken = json.loads(json.dumps(report))
+        broken["root"] = r"C:\Users\lenovo\private\repo"
+        broken["codex_home"] = r"C:\Users\lenovo\.codex"
+        broken["config_summary"]["config_path"] = r"C:\Users\lenovo\.codex\config.toml"
+        broken["runtime_paths"]["root"] = r"C:\Users\lenovo\private\repo"
+        broken["runtime_paths"]["raw_paths_retained"] = True
+
+        contract = audit.validate_report_field_contract(broken)
+
+        self.assertEqual(contract["status"], "failed")
+        self.assertIn("runtime_paths:top_level_root_raw_private_path", contract["blockers"])
+        self.assertIn("runtime_paths:top_level_codex_home_raw_private_path", contract["blockers"])
+        self.assertIn("runtime_paths:config_summary_config_path_raw_private_path", contract["blockers"])
+        self.assertIn("runtime_paths:root_raw_private_path", contract["blockers"])
+        self.assertIn("runtime_paths:raw_paths_retained_not_false", contract["blockers"])
+
     def test_scan_logs_captures_budget_warning_shape(self) -> None:
         codex_home = self.make_codex_home("skills-audit-logs")
         db = codex_home / "logs_2.sqlite"
@@ -703,6 +778,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "decision_recommendation",
             "noise_review",
             "script_capability_boundaries",
+            "runtime_paths",
             "recommendations",
         }
         self.assertLessEqual(required_top_level, set(report))
@@ -741,6 +817,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("reliable_coverage", report["script_capability_boundaries"])
         self.assertIn("human_review_required_for", report["script_capability_boundaries"])
         self.assertIn("enhancement_triggers", report["script_capability_boundaries"])
+        self.assertFalse(report["runtime_paths"]["raw_paths_retained"])
+        self.assertEqual(report["config_summary"]["config_path"], "[CODEX_HOME]/config.toml")
         self.assertIn("manual_evidence", report)
         self.assertEqual(report["manual_evidence"]["valid_note_count"], 0)
         self.assertIn("field_contract", report)
@@ -1191,6 +1269,16 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "raw_audit_json_local_only": True,
                 "long_term_evidence_format": "sanitized_markdown_summary",
                 "violation_count": 0,
+            },
+            "runtime_paths": {
+                "root": "[REPO_ROOT]",
+                "codex_home": "[CODEX_HOME]",
+                "config_path": "[CODEX_HOME]/config.toml",
+                "root_kind": "repo_root",
+                "codex_home_kind": "user_codex_home",
+                "config_path_kind": "user_codex_config",
+                "raw_paths_retained": False,
+                "privacy_policy": "runtime_paths_are_kind_labels_and_placeholders_no_raw_user_paths",
             },
             "recommendations": [],
             "field_contract": {"status": "failed", "passed": False, "blockers": ["stale"]},

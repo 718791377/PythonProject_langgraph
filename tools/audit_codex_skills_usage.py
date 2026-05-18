@@ -105,6 +105,7 @@ REQUIRED_REPORT_FIELDS = {
     "decision_recommendation",
     "cadence_review",
     "output_retention",
+    "runtime_paths",
     "recommendations",
 }
 REQUIRED_REPORT_FIELD_TYPES = {
@@ -123,6 +124,7 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "decision_recommendation": dict,
     "cadence_review": dict,
     "output_retention": dict,
+    "runtime_paths": dict,
     "recommendations": list,
 }
 REQUIRED_DECISION_RECOMMENDATION_FIELDS = {
@@ -290,6 +292,26 @@ REQUIRED_OUTPUT_RETENTION_FIELD_TYPES = {
     "long_term_evidence_format": str,
     "violation_count": int,
 }
+REQUIRED_RUNTIME_PATH_FIELDS = {
+    "root",
+    "codex_home",
+    "config_path",
+    "root_kind",
+    "codex_home_kind",
+    "config_path_kind",
+    "raw_paths_retained",
+    "privacy_policy",
+}
+REQUIRED_RUNTIME_PATH_FIELD_TYPES = {
+    "root": str,
+    "codex_home": str,
+    "config_path": str,
+    "root_kind": str,
+    "codex_home_kind": str,
+    "config_path_kind": str,
+    "raw_paths_retained": bool,
+    "privacy_policy": str,
+}
 
 
 def emit_stdout(text: str) -> None:
@@ -419,6 +441,42 @@ def sanitize_retained_path(value: str | None, limit: int = MANUAL_NOTE_PATH_LIMI
     if not value:
         return None
     return sanitize_log_excerpt(str(value), limit=limit)
+
+
+def sanitize_runtime_path(path: Path, *, repo_root: Path, codex_home: Path) -> str:
+    """Return a stable placeholder for runtime paths retained in audit reports."""
+    try:
+        resolved = path.resolve()
+    except OSError:
+        resolved = path
+    try:
+        relative = resolved.relative_to(codex_home.resolve())
+        tail = relative.as_posix()
+        return "[CODEX_HOME]" if not tail or tail == "." else f"[CODEX_HOME]/{tail}"
+    except Exception:
+        pass
+    try:
+        relative = resolved.relative_to(repo_root.resolve())
+        tail = relative.as_posix()
+        return "[REPO_ROOT]" if not tail or tail == "." else f"[REPO_ROOT]/{tail}"
+    except Exception:
+        pass
+    return sanitize_retained_path(str(path)) or "[REDACTED_PATH]"
+
+
+def build_runtime_paths(root: Path, codex_home: Path) -> dict[str, Any]:
+    """Expose runtime path categories without retaining private absolute paths."""
+    config_path = codex_home / "config.toml"
+    return {
+        "root": sanitize_runtime_path(root, repo_root=root, codex_home=codex_home),
+        "codex_home": sanitize_runtime_path(codex_home, repo_root=root, codex_home=codex_home),
+        "config_path": sanitize_runtime_path(config_path, repo_root=root, codex_home=codex_home),
+        "root_kind": "repo_root",
+        "codex_home_kind": "user_codex_home",
+        "config_path_kind": "user_codex_config",
+        "raw_paths_retained": False,
+        "privacy_policy": "runtime_paths_are_kind_labels_and_placeholders_no_raw_user_paths",
+    }
 
 
 def sanitize_explicit_skill_noise_token(value: str) -> str:
@@ -1338,6 +1396,32 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         output_retention_violations.append("violation_count_negative")
     if output_retention.get("status") != "passed":
         output_retention_violations.append("status_not_passed")
+    runtime_paths = report.get("runtime_paths") if isinstance(report.get("runtime_paths"), dict) else {}
+    runtime_path_violations: list[str] = []
+    for field in sorted(REQUIRED_RUNTIME_PATH_FIELDS):
+        if field not in runtime_paths:
+            runtime_path_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_RUNTIME_PATH_FIELD_TYPES.items()):
+        if field in runtime_paths and not isinstance(runtime_paths.get(field), expected_type):
+            runtime_path_violations.append(f"{field}_invalid_type")
+    if runtime_paths.get("raw_paths_retained") is not False:
+        runtime_path_violations.append("raw_paths_retained_not_false")
+    if runtime_paths.get("privacy_policy") != "runtime_paths_are_kind_labels_and_placeholders_no_raw_user_paths":
+        runtime_path_violations.append("privacy_policy_invalid")
+    for field in ("root", "codex_home", "config_path"):
+        value = runtime_paths.get(field)
+        if isinstance(value, str) and any(pattern.search(value) for pattern in PRIVATE_PATH_PATTERNS):
+            runtime_path_violations.append(f"{field}_raw_private_path")
+    report_root = report.get("root")
+    if isinstance(report_root, str) and any(pattern.search(report_root) for pattern in PRIVATE_PATH_PATTERNS):
+        runtime_path_violations.append("top_level_root_raw_private_path")
+    report_codex_home = report.get("codex_home")
+    if isinstance(report_codex_home, str) and any(pattern.search(report_codex_home) for pattern in PRIVATE_PATH_PATTERNS):
+        runtime_path_violations.append("top_level_codex_home_raw_private_path")
+    config_summary = report.get("config_summary") if isinstance(report.get("config_summary"), dict) else {}
+    config_path = config_summary.get("config_path")
+    if isinstance(config_path, str) and any(pattern.search(config_path) for pattern in PRIVATE_PATH_PATTERNS):
+        runtime_path_violations.append("config_summary_config_path_raw_private_path")
     module_evidence = report.get("module_evidence") if isinstance(report.get("module_evidence"), list) else []
     module_evidence_violations = []
     for index, row in enumerate(module_evidence):
@@ -1458,6 +1542,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"noise_review:{field}" for field in noise_violations]
         + [f"script_capability_boundaries:{field}" for field in script_capability_violations]
         + [f"output_retention:{field}" for field in output_retention_violations]
+        + [f"runtime_paths:{field}" for field in runtime_path_violations]
         + [f"module_evidence:{field}" for field in module_evidence_violations]
         + [f"decision_recommendation:{field}" for field in decision_violations]
     )
@@ -1974,6 +2059,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     manual_notes = collect_manual_notes(getattr(args, "manual_notes", []) or [])
     decision_recommendation = build_decision_recommendation(module_evidence, warning_severity, audit_state)
     output_retention = build_output_retention_status(root)
+    runtime_paths = build_runtime_paths(root, codex_home)
     report = {
         "schema_version": 1,
         "generated_at": generated_at.isoformat(),
@@ -1985,8 +2071,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "until": generated_at.isoformat(),
             "days": args.days,
         },
-        "root": str(root),
-        "codex_home": str(codex_home),
+        "root": runtime_paths["root"],
+        "codex_home": runtime_paths["codex_home"],
+        "runtime_paths": runtime_paths,
         "safety": {
             "mutates_config": False,
             "edits_plugin_cache": False,
@@ -1994,7 +2081,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "audit_only": True,
         },
         "config_summary": {
-            "config_path": str(codex_home / "config.toml"),
+            "config_path": runtime_paths["config_path"],
             "plugins_total_in_config": len(plugins_config),
             "enabled_plugins": enabled_plugins,
             "disabled_plugins": disabled_plugins,
@@ -2038,6 +2125,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     manual_evidence = report.get("manual_evidence", {})
     script_capabilities = report.get("script_capability_boundaries", {})
     output_retention = report.get("output_retention", {})
+    runtime_paths = report.get("runtime_paths", {})
     audit_state = report.get("audit_state", {})
     field_contract = report.get("field_contract", {})
     cadence_review = report.get("cadence_review", {})
@@ -2153,6 +2241,8 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             f"- Audit output long-term evidence format: `{output_retention.get('long_term_evidence_format')}`",
             f"- `.tmp/` outputs local only: `{output_retention.get('tmp_outputs_local_only')}`",
             f"- Raw audit JSON local only: `{output_retention.get('raw_audit_json_local_only')}`",
+            f"- Runtime path raw values retained: `{runtime_paths.get('raw_paths_retained')}`",
+            f"- Runtime path privacy policy: `{runtime_paths.get('privacy_policy')}`",
             "",
             "### Reliable coverage",
             "",

@@ -154,10 +154,13 @@ created_at: 2026-05-16
 | `noise_review` | explicit skill 噪声 token 的脱敏、截断、误报计数和强证据排除策略 | 防止误报 token、路径碎片或 mojibake 文本进入强证据或长期留存 |
 | `script_capability_boundaries` | 脚本可靠覆盖项、仍需人工复核的边界、已知限制与脚本增强触发条件 | 防止把 audit helper 误当作全知事实源 |
 | `output_retention` | 来自 `tools/check_skills_audit_output_retention.py` 的留存状态，包括 `.tmp/` 本地-only 策略、原始 JSON 本地-only 策略、长期证据格式和违规数量 | 防止报告隐藏原始 audit artifact 是否被误保留进 Git |
+| `runtime_paths` | repo root、Codex home 和 `config.toml` 的脱敏运行路径占位符、路径类别标签，并保持 `raw_paths_retained=false` | 防止 JSON 和 Markdown 报告长期留存原始本地用户路径，同时仍说明本次审计扫描了哪些运行输入 |
 | `module_evidence` | 按 profile module 汇总的强证据、中证据说明、弱证据和跨项目复核字段 | 生成 profile 决策候选，同时避免把中证据当作强证据 |
 | `decision_recommendation` | 从 `module_evidence` 派生的只读决策分桶 | 让复核者看到 profile 复核、按需加载、人工复核和 dormant 模块，但不允许 profile apply |
 | `cadence_review` | late-run 与漏跑周报标记 | 防止 30 天决策摘要隐藏审计节奏偏离 |
 | `recommendations` | 审计建议 | 只能作为建议，不能自动 apply |
+
+审计脚本还必须校验运行路径隐私：顶层 `root`、顶层 `codex_home`、`config_summary.config_path` 以及 `runtime_paths.root/codex_home/config_path` 都不得包含原始 Windows、POSIX home、UNC、token、cookie 或 secret 路径。报告必须用 `[REPO_ROOT]`、`[CODEX_HOME]`、`[CODEX_HOME]/config.toml` 等占位符替代原始绝对路径，并且 `runtime_paths.raw_paths_retained` 必须保持 `false`。
 
 审计脚本必须为每份生成报告计算 `field_contract` 结果。该结果记录 `status`、`passed`、必需字段、缺失字段、字段类型错误、audit-only 安全标志违规，以及会影响决策的嵌套字段违规。`audit_state` 契约必须要求 `state`、`reason`、`next_action` 与 `profile_apply_allowed`，防止报告丢失状态机上下文。脱敏 Markdown 摘要还必须渲染 audit state 的 next action、profile apply 许可标志，以及 `close_blockers`、`candidate_blockers`、`summary_review_blockers`、`pause_blockers` 或 `warning_triage_blockers`；没有 blocker 时写入 `none`。`warning_triage` 契约必须要求 `requested`、`status`、`blockers`、`window_policy`、`window_ok`、`budget_warning_count` 与 `recommended_action`，防止 warning 复核报告遗漏 triage 状态、窄窗口策略或后续动作。只要 `field_contract.status != passed`，该报告就是不完整证据；必须先修脚本或重跑报告，才能进入 profile 决策。候选生成必须要求报告内嵌 `field_contract`；来自旧脚本或人工改写后缺少/过期内嵌契约的报告，必须阻断并要求重新生成。
 `noise_review` 契约必须要求 `raw_noise_tokens_retained=false`、`max_noise_token_length`、`token_privacy_policy` 与脱敏后的 `explicit_skill_noise_removed`。噪声 token 在进入报告前必须先替换私有路径、secret、cookie 或 token，并截断到固定长度；如果仍检测到原始私有路径、secret 或过长 token，字段契约必须失败。
@@ -280,10 +283,12 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 | 人工记录文件 | 读取脱敏后的中证据、例外与误报剔除记录 | 解析后的字段、聚合计数、脱敏且限长的 invalid-note 来源占位符 | 原始本地记录路径、原始人工记录文件、secret、客户信息、原始 transcript |
 | plugin/vendor cache | 统计 `SKILL.md` inventory 或定位 invalid skill | skill 数量、路径类别、invalid skill 摘要 | vendor 文件全文、批量复制的 SKILL.md 内容 |
 | `.tmp/` audit report | 本地临时复核 | 本地 JSON、脱敏 Markdown 摘要 | 未脱敏报告提交 Git 或发送远端 |
+| 运行路径（`root`、`codex_home`、`config_path`） | 脚本执行期间定位审计输入 | `[REPO_ROOT]`、`[CODEX_HOME]` 等占位符和路径类别字段 | 原始本地用户目录、UNC 共享、home 路径或完整 user-level config 路径 |
 | profile candidate 记录 | 30 天摘要复核后 preview 可回滚 profile 变更 | 候选 ID、脱敏 source-report 引用、plugin diff、rollback path、validation plan | 原始绝对用户路径、UNC 共享路径、token、cookie、原始人工记录、原始 transcript |
 
 留存规则：
 
+- 任何报告中留存的运行路径必须只使用占位符和类别标签；原始仓库路径、用户 home、Codex home 或 user-level `config.toml` 路径不得进入 JSON、Markdown 或候选记录；
 - `.tmp/*.json` 默认只作为本地临时证据，不提交 Git；
 - 需要长期留证时，只提交脱敏 Markdown 摘要；
 - 任何报告进入 Git 前，必须确认不含 API key、access token、cookie、私有客户名、完整本地用户目录清单；
