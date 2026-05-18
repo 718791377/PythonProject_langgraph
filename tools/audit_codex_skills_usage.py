@@ -262,6 +262,26 @@ REQUIRED_WARNING_TRIAGE_FIELD_TYPES = {
     "skipped_loading_review": str,
     "recommended_action": str,
 }
+VALID_WARNING_TRIAGE_STATUSES = {
+    "not_requested",
+    "blocked",
+    "log_source_unavailable",
+    "warning_found",
+    "no_warning_found_in_triage_window",
+}
+WARNING_TRIAGE_WINDOW_POLICY = "use_days_1_or_since_for_warning_triage"
+VALID_WARNING_TRIAGE_SKIPPED_LOADING_REVIEWS = {
+    "record_source_and_do_not_edit_vendor_cache_without_authorization",
+    "none",
+}
+VALID_WARNING_TRIAGE_BLOCKERS = {
+    "warning_triage_window_not_narrow",
+}
+WARNING_TRIAGE_NON_NEGATIVE_INTEGER_FIELDS = (
+    "budget_warning_count",
+    "skipped_loading_count",
+    "recent_skipped_loading_samples",
+)
 REQUIRED_CADENCE_REVIEW_FIELDS = {
     "late_run",
     "missed_weekly_runs",
@@ -1304,7 +1324,7 @@ def build_warning_triage(
         "requested": requested,
         "status": status,
         "blockers": blockers,
-        "window_policy": "use_days_1_or_since_for_warning_triage",
+        "window_policy": WARNING_TRIAGE_WINDOW_POLICY,
         "window_ok": window_ok,
         "since": cutoff.isoformat(),
         "until": generated_at.isoformat(),
@@ -1386,6 +1406,31 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
     for field, expected_type in sorted(REQUIRED_WARNING_TRIAGE_FIELD_TYPES.items()):
         if field in warning_triage and not isinstance(warning_triage.get(field), expected_type):
             warning_triage_violations.append(f"{field}_invalid_type")
+    if warning_triage.get("status") not in (None, *VALID_WARNING_TRIAGE_STATUSES):
+        warning_triage_violations.append("status_invalid_value")
+    if warning_triage.get("window_policy") not in (None, WARNING_TRIAGE_WINDOW_POLICY):
+        warning_triage_violations.append("window_policy_invalid_value")
+    if warning_triage.get("skipped_loading_review") not in (None, *VALID_WARNING_TRIAGE_SKIPPED_LOADING_REVIEWS):
+        warning_triage_violations.append("skipped_loading_review_invalid_value")
+    triage_blockers = warning_triage.get("blockers")
+    if isinstance(triage_blockers, list):
+        for blocker in triage_blockers:
+            if not isinstance(blocker, str):
+                warning_triage_violations.append("blockers_item_invalid_type")
+            elif blocker not in VALID_WARNING_TRIAGE_BLOCKERS:
+                warning_triage_violations.append(f"blockers_invalid_value:{blocker}")
+        if warning_triage.get("status") == "blocked" and not triage_blockers:
+            warning_triage_violations.append("blocked_status_missing_blockers")
+        if triage_blockers and warning_triage.get("status") != "blocked":
+            warning_triage_violations.append("blockers_require_blocked_status")
+    for field in WARNING_TRIAGE_NON_NEGATIVE_INTEGER_FIELDS:
+        if field in warning_triage:
+            value = warning_triage.get(field)
+            if isinstance(value, bool) or not isinstance(value, int):
+                if f"{field}_invalid_type" not in warning_triage_violations:
+                    warning_triage_violations.append(f"{field}_invalid_type")
+            elif value < 0:
+                warning_triage_violations.append(f"{field}_negative")
     cadence_review = report.get("cadence_review") if isinstance(report.get("cadence_review"), dict) else {}
     cadence_review_violations = []
     for field in sorted(REQUIRED_CADENCE_REVIEW_FIELDS):

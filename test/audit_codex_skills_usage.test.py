@@ -1160,6 +1160,43 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertFalse(gate["allowed"])
         self.assertIn("field_contract:warning_triage:window_policy_missing", gate["blockers"])
 
+        invalid_values = audit.build_report(args)
+        invalid_values["warning_triage"].update(
+            {
+                "status": "unknown-triage-state",
+                "window_policy": "use_weekly_report_as_warning_triage",
+                "skipped_loading_review": "bulk_edit_vendor_cache",
+                "blockers": [123, "unexpected_warning_blocker"],
+                "budget_warning_count": -1,
+                "skipped_loading_count": -2,
+                "recent_skipped_loading_samples": -3,
+            }
+        )
+
+        value_contract = audit.validate_report_field_contract(invalid_values)
+
+        self.assertFalse(value_contract["passed"])
+        self.assertIn("warning_triage:status_invalid_value", value_contract["blockers"])
+        self.assertIn("warning_triage:window_policy_invalid_value", value_contract["blockers"])
+        self.assertIn("warning_triage:skipped_loading_review_invalid_value", value_contract["blockers"])
+        self.assertIn("warning_triage:blockers_item_invalid_type", value_contract["blockers"])
+        self.assertIn(
+            "warning_triage:blockers_invalid_value:unexpected_warning_blocker",
+            value_contract["blockers"],
+        )
+        self.assertIn("warning_triage:blockers_require_blocked_status", value_contract["blockers"])
+        self.assertIn("warning_triage:budget_warning_count_negative", value_contract["blockers"])
+        self.assertIn("warning_triage:skipped_loading_count_negative", value_contract["blockers"])
+        self.assertIn("warning_triage:recent_skipped_loading_samples_negative", value_contract["blockers"])
+
+        blocked_without_reason = audit.build_report(args)
+        blocked_without_reason["warning_triage"].update({"status": "blocked", "blockers": []})
+
+        blocked_contract = audit.validate_report_field_contract(blocked_without_reason)
+
+        self.assertFalse(blocked_contract["passed"])
+        self.assertIn("warning_triage:blocked_status_missing_blockers", blocked_contract["blockers"])
+
     def test_audit_state_contract_requires_decision_fields(self) -> None:
         codex_home = self.make_codex_home("skills-audit-state-contract")
         args = argparse.Namespace(
