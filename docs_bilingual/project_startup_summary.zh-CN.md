@@ -93,9 +93,11 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 自动 orchestration activation 提醒：
 
+- 自动协同是所有项目、所有通过用户级 workflow 启动的 Codex 会话的默认行为；用户不需要重复提醒 “use experts / durable_team / persistent team”。
 - 在首次实质性任务、reload/restart/resume/continue、阶段变化、发现 `.omx` durable state、expert timeout/stall、capability state 变化或扩展到 2+ execution slices 时重新 activation。
 - Trace 必须包含 `phase`、`capability_chain`、`backend_default`、`backend_ready`、`experts`、`durable_workflow`、`persistent_team` 和 `why`。
 - 不得用“用户没有要求并行/子代理”作为跳过理由；必须引用阈值、blocker、范围或主会话接管。
+- 如果 native `spawn_agent` 调用被当前 platform/tool contract 阻止，必须报告 `experts=blocked:platform_subagent_invocation_constraint`，并继续使用合格 durable lane 或主会话接管。
 - LangGraph ready 时报告默认 ready durable backend，但 team launch 仍受阈值约束。
 - Hard directive/role-routing discipline 必须继续由 `tools/check_role_routing_directive_evidence.py` 脚本化检查：显式 `omx` 或 `LangGraph` directive 必须导致 selected or running adoption，或报告具名 blocker/未满足阈值；不得写成 optional preference。expert routing 使用 smallest-sufficient role set，bounded multi-face research 先 analyst-only。
 - Delegation/wait discipline 必须继续由 `tools/check_delegation_wait_discipline_evidence.py` 脚本化检查：委派前识别 immediate critical-path local work，委派工作保持 non-duplicative，并在使用 `wait_agent` 前继续 non-overlapping leader work 或说明 critical-path blocker。

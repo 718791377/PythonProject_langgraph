@@ -103,6 +103,8 @@ def main() -> int:
     name_clarity_rules_script = root / "tools" / "check_name_clarity_rules.py"
     canary_surface_script = root / "tools" / "check_context_retention_canary_surface.py"
     safety_rule_script_backing_script = root / "tools" / "check_safety_rule_script_backing.py"
+    precommit_update_archive_script = root / "tools" / "check_precommit_update_archive.py"
+    skills_audit_output_retention_script = root / "tools" / "check_skills_audit_output_retention.py"
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
@@ -140,6 +142,10 @@ def main() -> int:
         raise SystemExit(f"Missing context-retention canary surface check script: {canary_surface_script}")
     if not safety_rule_script_backing_script.exists():
         raise SystemExit(f"Missing safety rule script-backing check script: {safety_rule_script_backing_script}")
+    if not precommit_update_archive_script.exists():
+        raise SystemExit(f"Missing pre-commit update/archive check script: {precommit_update_archive_script}")
+    if not skills_audit_output_retention_script.exists():
+        raise SystemExit(f"Missing Skills audit output retention check script: {skills_audit_output_retention_script}")
     if not openspec_code_archive_evidence_script.exists():
         raise SystemExit(f"Missing OpenSpec code archive evidence check script: {openspec_code_archive_evidence_script}")
     if not mcp_router_scope_policy_script.exists():
@@ -268,6 +274,16 @@ def main() -> int:
                 "check_safety_rule_script_backing",
                 [str(python_exe), str(safety_rule_script_backing_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during safety rule script-backing verification.",
+            ),
+            (
+                "check_precommit_update_archive",
+                [str(python_exe), str(precommit_update_archive_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during pre-commit update/archive verification.",
+            ),
+            (
+                "check_skills_audit_output_retention",
+                [str(python_exe), str(skills_audit_output_retention_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Skills audit output retention verification.",
             ),
             (
                 "check_openspec_code_archive_evidence",
@@ -507,6 +523,16 @@ def main() -> int:
         [str(python_exe), str(safety_rule_script_backing_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during safety rule script-backing verification.",
+    )
+    run_checked(
+        [str(python_exe), str(precommit_update_archive_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during pre-commit update/archive verification.",
+    )
+    run_checked(
+        [str(python_exe), str(skills_audit_output_retention_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Skills audit output retention verification.",
     )
     run_checked(
         [str(python_exe), str(openspec_code_archive_evidence_script), "--root", str(root)],

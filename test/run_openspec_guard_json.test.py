@@ -10,6 +10,39 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "run_openspec_guard.py"
 
+GUARD_STEPS = [
+    ("verify_official_openspec", "verify_official_openspec.py", "verify"),
+    ("check_current_repo_authority_language", "check_current_repo_authority_language.py", "authority"),
+    ("check_document_governance_rules", "check_document_governance_rules.py", "governance"),
+    ("check_implementation_plan_rules", "check_implementation_plan_rules.py", "implementation_plan"),
+    ("check_name_clarity_rules", "check_name_clarity_rules.py", "name_clarity_rules"),
+    ("check_context_retention_canary_surface", "check_context_retention_canary_surface.py", "context_retention_canary_surface"),
+    ("check_safety_rule_script_backing", "check_safety_rule_script_backing.py", "safety_rule_script_backing"),
+    ("check_precommit_update_archive", "check_precommit_update_archive.py", "precommit_update_archive"),
+    ("check_skills_audit_output_retention", "check_skills_audit_output_retention.py", "skills_audit_output_retention"),
+    ("check_openspec_code_archive_evidence", "check_openspec_code_archive_evidence.py", "openspec_code_archive_evidence"),
+    ("check_mcp_router_scope_policy", "check_mcp_router_scope_policy.py", "mcp_router_scope_policy"),
+    ("check_local_mirrored_ci_gate", "check_local_mirrored_ci_gate.py", "local_mirrored_ci_gate"),
+    ("check_remote_publication_approval_policy", "check_remote_publication_approval_policy.py", "remote_publication_approval_policy"),
+    ("check_role_routing_directive_evidence", "check_role_routing_directive_evidence.py", "role_routing_directive_evidence"),
+    ("check_delegation_wait_discipline_evidence", "check_delegation_wait_discipline_evidence.py", "delegation_wait_discipline_evidence"),
+    ("check_durable_artifact_state_surfaces", "check_durable_artifact_state_surfaces.py", "durable_artifact_state_surfaces"),
+    ("check_leader_session_scope_evidence", "check_leader_session_scope_evidence.py", "leader_session_scope_evidence"),
+    ("check_capability_switch_chain", "check_capability_switch_chain.py", "capability_switch_chain"),
+    ("check_windows_cleanup_output_control", "check_windows_cleanup_output_control.py", "windows_cleanup_output_control"),
+    ("check_plugin_modules_skill", "check_plugin_modules_skill.py", "plugin_modules_skill"),
+    ("check_durable_routing_smoke_gate_template", "check_durable_routing_smoke_gate_template.py", "durable_routing_smoke_gate_template"),
+    ("check_codex_native_rollback_release_gate_template", "check_codex_native_rollback_release_gate_template.py", "codex_native_rollback_release_gate_template"),
+    ("check_worktree_session_hygiene", "check_worktree_session_hygiene.py", "worktree_session_hygiene"),
+    ("check_session_ownership_claims", "check_session_ownership_claims.py", "session_ownership_claims"),
+    ("check_orchestration_activation_policy", "check_orchestration_activation_policy.py", "orchestration_activation_policy"),
+    ("check_codex_skills_governance", "check_codex_skills_governance.py", "codex_skills_governance"),
+    ("check_custom_agent_toml_schema", "check_custom_agent_toml_schema.py", "custom_agent_toml_schema"),
+    ("check_agent_skill_profile_surface_boundaries", "check_agent_skill_profile_surface_boundaries.py", "agent_skill_profile_surface_boundaries"),
+    ("check_effective_lane_fit_evidence", "check_effective_lane_fit_evidence.py", "effective_lane_fit_evidence"),
+    ("check_fanout_write_ownership_evidence", "check_fanout_write_ownership_evidence.py", "fanout_write_ownership_evidence"),
+]
+
 
 class RunOpenSpecGuardJsonTest(unittest.TestCase):
     maxDiff = None
@@ -46,20 +79,19 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         ]
         return "\n".join(code) + "\n"
 
+    def write_guard_scripts(self, root: Path, failures: dict[str, dict] | None = None) -> None:
+        failures = failures or {}
+        for _step_name, script_name, check_name in GUARD_STEPS:
+            failure = failures.get(script_name)
+            ok = failure is None
+            payload = {"ok": ok, "check_name": check_name}
+            if failure:
+                payload.update(failure)
+            self.write_file(root, f"tools/{script_name}", self.make_json_script(ok, payload))
+
     def test_guard_json_passes_and_aggregates_steps(self) -> None:
         root = self.make_root("guard-json-pass")
-        self.write_file(root, "tools/verify_official_openspec.py", self.make_json_script(True, {"ok": True, "check_name": "verify"}))
-        self.write_file(root, "tools/check_current_repo_authority_language.py", self.make_json_script(True, {"ok": True, "check_name": "authority"}))
-        self.write_file(root, "tools/check_document_governance_rules.py", self.make_json_script(True, {"ok": True, "check_name": "governance"}))
-        self.write_file(root, "tools/check_implementation_plan_rules.py", self.make_json_script(True, {"ok": True, "check_name": "implementation_plan"}))
-        self.write_file(root, "tools/check_name_clarity_rules.py", self.make_json_script(True, {"ok": True, "check_name": "name_clarity_rules"}))
-        self.write_file(root, "tools/check_context_retention_canary_surface.py", self.make_json_script(True, {"ok": True, "check_name": "context_retention_canary_surface"}))
-        self.write_file(root, "tools/check_safety_rule_script_backing.py", self.make_json_script(True, {"ok": True, "check_name": "safety_rule_script_backing"}))
-        self.write_file(root, "tools/check_openspec_code_archive_evidence.py", self.make_json_script(True, {"ok": True, "check_name": "openspec_code_archive_evidence"}))
-        self.write_file(root, "tools/check_mcp_router_scope_policy.py", self.make_json_script(True, {"ok": True, "check_name": "mcp_router_scope_policy"}))
-        self.write_file(root, "tools/check_worktree_session_hygiene.py", self.make_json_script(True, {"ok": True, "check_name": "worktree_session_hygiene"}))
-        self.write_file(root, "tools/check_session_ownership_claims.py", self.make_json_script(True, {"ok": True, "check_name": "session_ownership_claims"}))
-        self.write_file(root, "tools/check_codex_skills_governance.py", self.make_json_script(True, {"ok": True, "check_name": "codex_skills_governance"}))
+        self.write_guard_scripts(root)
 
         result = self.run_guard_json(root)
         self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
@@ -70,34 +102,24 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(Path(payload["root"]), root)
         self.assertTrue(payload["generated_at"])
         self.assertEqual(payload["tool"], "codex")
-        self.assertEqual(len(payload["steps"]), 12)
-        self.assertEqual(payload["counts"]["steps_total"], 12)
-        self.assertEqual(payload["counts"]["steps_passed"], 12)
-        self.assertEqual(payload["steps"][0]["step"], "verify_official_openspec")
-        self.assertEqual(payload["steps"][1]["step"], "check_current_repo_authority_language")
-        self.assertEqual(payload["steps"][4]["step"], "check_name_clarity_rules")
-        self.assertEqual(payload["steps"][5]["step"], "check_context_retention_canary_surface")
-        self.assertEqual(payload["steps"][6]["step"], "check_safety_rule_script_backing")
-        self.assertEqual(payload["steps"][7]["step"], "check_openspec_code_archive_evidence")
-        self.assertEqual(payload["steps"][8]["step"], "check_mcp_router_scope_policy")
-        self.assertEqual(payload["steps"][9]["step"], "check_worktree_session_hygiene")
-        self.assertEqual(payload["steps"][10]["step"], "check_session_ownership_claims")
-        self.assertEqual(payload["steps"][11]["step"], "check_codex_skills_governance")
+        self.assertEqual(len(payload["steps"]), len(GUARD_STEPS))
+        self.assertEqual(payload["counts"]["steps_total"], len(GUARD_STEPS))
+        self.assertEqual(payload["counts"]["steps_passed"], len(GUARD_STEPS))
+        self.assertEqual([step["step"] for step in payload["steps"]], [step_name for step_name, _script, _check in GUARD_STEPS])
+        self.assertEqual(payload["steps"][7]["step"], "check_precommit_update_archive")
+        self.assertEqual(payload["steps"][8]["step"], "check_skills_audit_output_retention")
+        self.assertEqual(payload["steps"][9]["step"], "check_openspec_code_archive_evidence")
 
     def test_guard_json_reports_failed_step(self) -> None:
         root = self.make_root("guard-json-fail")
-        self.write_file(root, "tools/verify_official_openspec.py", self.make_json_script(True, {"ok": True, "check_name": "verify"}))
-        self.write_file(root, "tools/check_current_repo_authority_language.py", self.make_json_script(False, {"ok": False, "check_name": "authority", "errors": ["bad wording"]}))
-        self.write_file(root, "tools/check_document_governance_rules.py", self.make_json_script(True, {"ok": True, "check_name": "governance"}))
-        self.write_file(root, "tools/check_implementation_plan_rules.py", self.make_json_script(True, {"ok": True, "check_name": "implementation_plan"}))
-        self.write_file(root, "tools/check_name_clarity_rules.py", self.make_json_script(True, {"ok": True, "check_name": "name_clarity_rules"}))
-        self.write_file(root, "tools/check_context_retention_canary_surface.py", self.make_json_script(True, {"ok": True, "check_name": "context_retention_canary_surface"}))
-        self.write_file(root, "tools/check_safety_rule_script_backing.py", self.make_json_script(True, {"ok": True, "check_name": "safety_rule_script_backing"}))
-        self.write_file(root, "tools/check_openspec_code_archive_evidence.py", self.make_json_script(True, {"ok": True, "check_name": "openspec_code_archive_evidence"}))
-        self.write_file(root, "tools/check_mcp_router_scope_policy.py", self.make_json_script(True, {"ok": True, "check_name": "mcp_router_scope_policy"}))
-        self.write_file(root, "tools/check_worktree_session_hygiene.py", self.make_json_script(True, {"ok": True, "check_name": "worktree_session_hygiene"}))
-        self.write_file(root, "tools/check_session_ownership_claims.py", self.make_json_script(True, {"ok": True, "check_name": "session_ownership_claims"}))
-        self.write_file(root, "tools/check_codex_skills_governance.py", self.make_json_script(True, {"ok": True, "check_name": "codex_skills_governance"}))
+        self.write_guard_scripts(
+            root,
+            failures={
+                "check_current_repo_authority_language.py": {
+                    "errors": ["bad wording"],
+                }
+            },
+        )
 
         result = self.run_guard_json(root)
         self.assertNotEqual(result.returncode, 0)

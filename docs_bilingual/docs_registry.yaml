@@ -73,6 +73,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.zh-CN.md
 
+  - doc_id: codex_skills_usage_audit_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md
+
   - doc_id: codex_user_level_skills_governance_policy
     doc_class: governance
     status: active

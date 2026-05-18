@@ -85,6 +85,22 @@
       "description": "Keeps skill profile governance, cleanup safety, and browser-capability preservation backed by executable checks."
     },
     {
+      "id": "skills-audit-output-retention",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_output_retention.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_output_retention"
+      ],
+      "description": "Prevents local-only Skills usage audit JSON and .tmp artifacts from being retained in Git; long-term evidence must be sanitized Markdown."
+    },
+    {
       "id": "name-clarity-rule",
       "owner_level": "project",
       "status": "implemented",
@@ -132,6 +148,27 @@
         "check_openspec_code_archive_evidence"
       ],
       "description": "Prevents code-class OpenSpec changes from being archived in a branch that has no source, executable check, CI, or test evidence."
+    },
+    {
+      "id": "precommit-update-archive-gate",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "AGENTS.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md",
+        "docs_bilingual/governance/openspec_official_workflow_policy.md",
+        "docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_precommit_update_archive.py",
+        "tools/run_openspec_guard.py",
+        ".githooks/pre-commit"
+      ],
+      "guard_steps": [
+        "check_precommit_update_archive"
+      ],
+      "description": "Requires a local pre-commit update/archive review before repository commits: completed OpenSpec changes must be archived or explicitly deferred, new tests must be added to the CI manifest, and new checkers must be registered before commit."
     },
     {
       "id": "legacy-session-compatibility",

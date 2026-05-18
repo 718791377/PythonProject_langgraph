@@ -108,9 +108,11 @@ Drift-prone execution detail now lives in the mainline memory summary rather tha
 
 Automatic orchestration activation reminders:
 
+- Automatic collaboration is the user-level default for all projects and all Codex sessions launched through the user-level workflow; the user does not need to repeat "use experts / durable_team / persistent team".
 - Re-run activation on first substantive work, reload/restart/resume/continue, phase change, `.omx` durable-state detection, expert timeout/stall, capability-state change, or expansion to 2+ execution slices.
 - Trace `phase`, `capability_chain`, `backend_default`, `backend_ready`, `experts`, `durable_workflow`, `persistent_team`, and `why`.
 - Do not use missing user reminders as a skip reason; cite thresholds, blockers, scope, or main-session takeover.
+- If native `spawn_agent` invocation is blocked by the current platform/tool contract, report `experts=blocked:platform_subagent_invocation_constraint` and continue with an eligible durable lane or main-session takeover.
 - If LangGraph is ready, report it as the default ready durable backend while keeping team launch threshold-gated.
 - Hard directive/role-routing discipline must remain script-checkable with `tools/check_role_routing_directive_evidence.py`: explicit `omx` or `LangGraph` directives require selected or running adoption, or a named blocker/unmet threshold; they are never an optional preference. Expert routing uses the smallest-sufficient role set, and bounded multi-face research starts analyst-only.
 - Delegation/wait discipline must remain script-checkable with `tools/check_delegation_wait_discipline_evidence.py`: identify immediate critical-path local work, keep delegated work non-duplicative, and either continue non-overlapping leader work or name the critical-path blocker before using `wait_agent`.

@@ -1,16 +1,55 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.16
+version: 0.17
 status: active
 owner: codex-orchestration
-date: 2026-05-11
+date: 2026-05-15
 ---
 
 # Automatic Orchestration Routing Enforcement Plan
 
 ## Active status note
 
-This document is an active implementation plan. Active means it is the current adopted plan for follow-up enforcement work; it does not mean every runtime-enforcement item in this plan is already complete.
+This document is the active baseline for automatic orchestration-routing enforcement. `status: active` means the plan remains the adopted rule and verification checklist for current and future sessions. It is not, by itself, a completion claim.
+
+As of 2026-05-15, the originally planned enforcement package has been implemented and archived locally across the OpenSpec changes listed in Section 0. Future regressions or newly discovered gaps should open a new bounded change against this active baseline rather than reopening the already archived implementation slices.
+
+## 0. 2026-05-15 completion-status snapshot
+
+Current local conclusion: this plan is complete for the agreed repository source-of-truth surfaces, generated user-level templates, checker-backed policy guards, and regression tests. The plan remains active because it defines the default behavior and acceptance criteria that later work must preserve.
+
+Completion evidence currently consists of:
+
+- active OpenSpec changes: none (`openspec list --json` returned an empty change list during this review);
+- stable policy and startup surfaces: updated in `AGENTS.md`, `docs_bilingual/project_startup_summary.*`, `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.*`, and related OpenSpec stable specs;
+- script-backed enforcement: covered by `tools/check_orchestration_activation_policy.py`, `tools/check_orchestration_trace_evidence.py`, `tools/check_capability_switch_chain.py`, `tools/check_expert_lifecycle_wait_pacing_evidence.py`, `tools/check_role_routing_directive_evidence.py`, `tools/check_agent_skill_profile_surface_boundaries.py`, `tools/check_custom_agent_toml_schema.py`, `tools/check_leader_session_scope_evidence.py`, `tools/check_delegation_wait_discipline_evidence.py`, `tools/check_durable_artifact_state_surfaces.py`, `tools/check_effective_lane_fit_evidence.py`, `tools/check_fanout_write_ownership_evidence.py`, and the OpenSpec guard wiring;
+- generated user-level source templates: hardened in `tools/install-codex-user-level-team-mode.ps1`, with regression coverage in `test/install-codex-user-level-team-mode.test.ps1`;
+- archived implementation slices:
+  - `openspec/changes/archive/2026-05-11-enforce-automatic-orchestration-routing/`;
+  - `openspec/changes/archive/2026-05-11-enforce-active-selector-status-helper/`;
+  - `openspec/changes/archive/2026-05-12-enforce-hard-routing-directive-adoption/`;
+  - `openspec/changes/archive/2026-05-13-enforce-capability-switch-chain/`;
+  - `openspec/changes/archive/2026-05-13-enforce-custom-agent-toml-schema/`;
+  - `openspec/changes/archive/2026-05-13-enforce-expert-lifecycle-wait-pacing-evidence/`;
+  - `openspec/changes/archive/2026-05-13-enforce-orchestration-trace-evidence-validator/`;
+  - `openspec/changes/archive/2026-05-13-extend-orchestration-activation-checker-coverage/`;
+  - `openspec/changes/archive/2026-05-14-enforce-agent-skill-profile-surface-boundaries/`;
+  - `openspec/changes/archive/2026-05-14-enforce-delegation-wait-discipline/`;
+  - `openspec/changes/archive/2026-05-14-enforce-durable-artifact-state-surfaces/`;
+  - `openspec/changes/archive/2026-05-14-enforce-effective-lane-fit-evidence/`;
+  - `openspec/changes/archive/2026-05-14-enforce-fanout-write-ownership-evidence/`;
+  - `openspec/changes/archive/2026-05-14-enforce-leader-session-scope-evidence/`;
+  - `openspec/changes/archive/2026-05-14-enforce-orchestration-checker-ci-coverage/`;
+  - `openspec/changes/archive/2026-05-14-enforce-role-directive-routing-evidence/`;
+  - `openspec/changes/archive/2026-05-15-harden-global-automatic-collaboration-default/`;
+- remote publication: separate from local plan completeness and still subject to explicit GitLab/GitHub publication authorization.
+
+Residual boundaries that remain true after completion:
+
+1. native `spawn_agent` is still subject to the live platform/tool contract; when blocked, the trace must say `experts=blocked:platform_subagent_invocation_constraint` and then use a valid durable lane or main-session takeover;
+2. LangGraph being the ready default backend does not mean a persistent team is running; durable workflow and team launch remain threshold-gated;
+3. generated files under the user-level Codex directory can still require an installer refresh to pick up source-template changes, and repository templates remain the source of truth;
+4. future task-specific orchestration decisions still need activation traces, threshold evidence, and checker-backed evidence where applicable.
 
 ## 1. Background
 
@@ -386,9 +425,9 @@ These terms must not be collapsed:
 
 When LangGraph is ready, it is the default backend. A small task may still have `durable_workflow=not_needed` and `persistent_team=not_needed`. That means the task does not need those execution surfaces; it does not mean LangGraph is off.
 
-## 16. Current local inspection result
+## 16. Inspection baseline and current review result
 
-Read-only inspection on 2026-05-11 showed:
+Read-only inspection on 2026-05-11 established the original capability baseline:
 
 ```text
 C:\Users\lenovo\.codex\state\user-level-team-mode.json:
@@ -411,7 +450,18 @@ D:\PythonProject_langgraph\.omx\state\selectors\active.json:
   missing at inspection time
 ```
 
-Interpretation: the user-level LangGraph backend is available and should be treated as the default backend. A missing repo-local active selector is a state-refresh or reporting gap; it must not be interpreted as LangGraph backend unavailability.
+Interpretation: the user-level LangGraph backend was available and should be treated as the default backend. A missing repo-local active selector is a state-refresh or reporting gap; it must not be interpreted as LangGraph backend unavailability.
+
+Current 2026-05-15 review result:
+
+- The implementation-plan frontmatter is `version: 0.17`, `status: active`, and `date: 2026-05-15`.
+- Section 0 records the plan-completion snapshot and lists the archived implementation slices.
+- Section 20 marks the planned implementation phases as complete for the agreed baseline.
+- Section 21 records the implemented scope and closure evidence.
+- `tools/check_implementation_plan_rules.py --root . --json` passes for the bilingual implementation-plan registry.
+- `tools/run_openspec_guard.py --root . --tool codex --json` and `tools/check_worktree_session_hygiene.py --root . --json` passed after the 2026-05-15 local-main integration of version 0.17.
+
+Conclusion: this plan is complete for the currently agreed baseline. It remains active as a living governance and acceptance surface; future gaps should be handled through new bounded changes.
 
 ## 17. Active selector handling
 
@@ -475,65 +525,75 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 ## 20. Implementation phases
 
-### Phase 0 - Record and protect the plan
+### Phase 0 - Record and protect the plan - status: complete
 
-- Add this bilingual plan.
-- Ignore local transcript logs such as `log202605111306.md`.
-- Ensure canary guard ignores root `.gitignore` local logs so ignored transcripts do not break local gate.
+Completed outcomes:
 
-### Phase 1 - Policy surfaces
+- Added this bilingual plan and registered it as an active implementation plan.
+- Ignored local transcript logs such as `log202605111306.md`.
+- Kept the canary guard aligned with root `.gitignore` local-log exclusions so ignored transcripts do not break local gate.
 
-- Update `AGENTS.md`.
-- Update `docs_bilingual/project_startup_summary.*`.
-- Add or update an orchestration activation policy document.
-- Update team-mode and LangGraph runtime policy surfaces.
+### Phase 1 - Policy surfaces - status: complete
 
-### Phase 2 - Script-backed enforcement
+Completed outcomes:
 
-- Add checker coverage for forbidden routing reasons.
-- Add checker coverage for durable-team phase thresholds and first-turn threshold explanations.
-- Add checker coverage for capability-chain consistency.
-- Add checker coverage for expert-timeout evidence claims.
-- Add checker coverage for completed-agent closure, bounded wait windows, liveness/stall handling, and upstream pacing labels.
-- Add checker coverage for fan-out bounds, write ownership isolation, leader-side spawning language, and one-backend-family durable tasks.
-- Add checker coverage for frozen research handoff briefs, adversarial-review survivor queues, and adjacent-runtime terminology boundaries.
-- Add checker coverage for hard routing directives, actual adoption versus explanation-only mode, and smallest-sufficient role selection.
-- Add checker coverage for native-agent versus skill/profile/plugin boundaries, custom agent TOML fields, fresh follow-up agent use, and selector-source handling.
-- Add checker coverage for main-session leader ownership, no separate persistent leader pane, startup non-autolaunch, task-flow scoped adoption, and legacy-session compatibility boundaries.
-- Add checker coverage for native Codex as base layer, oh-my-codex as wrapper/workflow layer, capability-switch chain values, and effective lane choice between `native_omx` and LangGraph.
-- Add checker coverage for delegation design quality, critical-path local work, non-overlapping leader work while waiting, duplicate-work prevention, and sparse `wait_agent` use.
-- Add checker coverage for explorer versus code-change worker boundaries, LangGraph entrypoints, repo-local `.omx/state/langgraph/` state, compatibility record usage, and durable artifact persistence.
-- Add or update selector refresh/status helper behavior.
+- Updated `AGENTS.md`.
+- Updated `docs_bilingual/project_startup_summary.*`.
+- Added and iterated bilingual orchestration activation policy documents.
+- Updated team-mode, quick-reference, and LangGraph-related policy surfaces where needed.
+- Added the global automatic-collaboration default to generated user-level team-mode source templates so future installer refreshes preserve it.
 
-### Phase 3 - Runtime integration
+### Phase 2 - Script-backed enforcement - status: complete for the planned baseline
 
-- Ensure new sessions, session reloads, Codex restarts, and resumed sessions print the required trace fields.
-- Ensure existing sessions re-run activation checks on session reload, Codex restart, phase change, resume, continue, `.omx` state detection, and expert timeout.
-- Ensure LangGraph-ready sessions use LangGraph as the default durable backend.
+Completed outcomes include checker or test coverage for:
 
-## 21. Proposed implementation scope
+- forbidden missing-reminder routing reasons;
+- durable-team phase thresholds and first-activation threshold explanations;
+- capability-chain consistency;
+- expert-timeout evidence claims, completed-agent closure, bounded wait windows, liveness/stall handling, and upstream pacing labels;
+- fan-out bounds, write ownership isolation, leader-side spawning language, and one-backend-family durable tasks;
+- frozen research handoff briefs, adversarial-review survivor queues, adjacent-runtime terminology boundaries, and durable artifact/state surfaces;
+- hard routing directives, actual adoption versus explanation-only mode, and smallest-sufficient role selection;
+- native-agent versus skill/profile/plugin boundaries, custom agent TOML fields, fresh follow-up agent use, and selector-source handling;
+- main-session leader ownership, no separate persistent leader pane, startup non-autolaunch, task-flow scoped adoption, and legacy-session compatibility boundaries;
+- native Codex as base layer, oh-my-codex as wrapper/workflow layer, capability-switch chain values, and effective lane choice between `native_omx` and LangGraph;
+- delegation design quality, critical-path local work, non-overlapping leader work while waiting, duplicate-work prevention, and sparse `wait_agent` use;
+- explorer versus code-change worker boundaries, LangGraph entrypoints, repo-local `.omx/state/langgraph/` state, compatibility record usage, and durable artifact persistence;
+- selector refresh/status reporting when repo-local `.omx/state/selectors/active.json` is missing.
 
-After this plan is confirmed, implement it through OpenSpec change `enforce-automatic-orchestration-routing`:
+### Phase 3 - Runtime integration - status: implemented as source-of-truth and generated-template enforcement
 
-1. Update `AGENTS.md` orchestration activation rules.
-2. Update `docs_bilingual/project_startup_summary.*` cold-start reminders.
-3. Update team-mode and LangGraph runtime governance or implementation-plan documents.
-4. Add or update an orchestration activation policy document.
-5. Add checker/test coverage to prevent these regressions:
-   - using "the user did not request parallelism/subagents" as a reason not to start experts;
+Completed outcomes:
+
+- Startup and governance surfaces require activation traces on new sessions, session reloads, Codex restarts, resumed sessions, phase changes, `continue`, `.omx` state detection, and expert timeout/stall events.
+- LangGraph-ready sessions must report LangGraph as the default durable backend.
+- Managed user-level team-mode templates now carry the global automatic-collaboration default.
+
+Operational caveat: live platform constraints can still block native expert spawning, and durable/persistent-team launch still requires task thresholds. The completed implementation enforces reporting and fallback behavior; it does not bypass tool contracts or force every task into a team.
+
+## 21. Implemented scope and closure evidence
+
+The original OpenSpec change `enforce-automatic-orchestration-routing` has been implemented, archived, and extended by follow-up enforcement slices. The implemented scope is now:
+
+1. `AGENTS.md` orchestration activation rules are updated.
+2. `docs_bilingual/project_startup_summary.*` cold-start reminders are updated.
+3. Team-mode, quick-reference, LangGraph, and orchestration activation governance surfaces are updated.
+4. Generated user-level team-mode source templates preserve the global automatic-collaboration default.
+5. Checker/test coverage prevents regressions for:
+   - using a missing user reminder as the reason not to start experts;
    - treating LangGraph as optional or unavailable when it is ready;
    - treating expert timeout as verification evidence;
-   - routing trace failing to distinguish backend-on from persistent-team launch thresholds;
+   - routing traces that fail to distinguish backend-on from persistent-team launch thresholds;
    - tool/runtime blockers being misreported as user preference or as `not_needed`;
-   - durable team selected without a frozen plan, independent slices, or a named stabilization blocker;
+   - durable team selection without a frozen plan, independent slices, or a named stabilization blocker;
    - bounded multi-face research skipping analyst-only first fan-out;
    - completed expert threads left open after fan-in without explicit preservation request;
-   - provider upstream pacing reported as a reason to disable orchestration;
+   - provider upstream pacing being reported as a reason to disable orchestration;
    - fan-out exceeding `agents.max_threads=6` or `agents.max_depth=1` without explicit override;
    - write-heavy parallel work without disjoint ownership and leader-owned final integration;
    - one durable task mixing `native_omx` and LangGraph state without an explicit handoff;
    - implementation starting from open-ended research without a frozen implementation brief;
-   - bug triad roles kept alive as persistent workers instead of persisting survivors to debugger-lane queue;
+   - bug triad roles being kept alive as persistent workers instead of persisting survivors to a debugger-lane queue;
    - treating AutoGen, CrewAI, or LangGraph as native Codex-subagent equivalents;
    - explicit `omx` or `LangGraph` directives being handled as optional preferences;
    - thresholds being met while the session stays in explanation-only mode;
@@ -542,7 +602,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
    - custom agent TOMLs missing `name`, `description`, or `developer_instructions`;
    - follow-up work reusing a closed/completed expert thread without an explicit preservation reason;
    - unmanaged team adoption based only on compatibility records rather than `.omx/state/selectors/active.json`;
-   - orchestration decisions depending on whether a repository is newly created rather than the current task flow;
+   - orchestration decisions depending on repository age rather than current task flow;
    - Codex startup being treated as an automatic durable-team launch;
    - a separate persistent leader pane replacing the main Codex session;
    - resumed legacy sessions overriding current repository governance;
@@ -556,7 +616,9 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
    - read-only explorer work replacing a clear bounded code-change worker task;
    - LangGraph checkpoint work not using LangGraph entrypoints or repo-local `.omx/state/langgraph/` state;
    - durable artifacts, frozen briefs, or survivor queues existing only in transient chat context.
-6. Evaluate and fix the refresh/reporting rule for missing repo-local `.omx/state/selectors/active.json`.
+6. Missing repo-local `.omx/state/selectors/active.json` is treated as a selector refresh/reporting gap, not as proof that LangGraph is unavailable.
+
+If a future review finds a new gap, open a new bounded OpenSpec change. Do not reinterpret this active plan as unfinished merely because it remains the active baseline.
 
 ## 22. Evidence and test mapping
 
@@ -636,7 +698,7 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Do not install the official LangGraph package into the repository `.venv`; the repository rule remains to use the user-level shared LangGraph venv.
 - Do not bypass OpenSpec, local gate, or local MR review.
 - Do not pretend pane-style persistent team was launched when tmux is unavailable.
-- Do not use this plan as proof that runtime enforcement is already complete.
+- Do not use `status: active` alone as proof of completion; use the archived-change list, stable policy surfaces, and checker/test evidence in this document.
 
 ## 25. Acceptance criteria
 
@@ -674,10 +736,11 @@ After this plan is confirmed, implement it through OpenSpec change `enforce-auto
 - Read-only explorer work is used for specific mapping questions; bounded implementation changes prefer code-change workers with isolated ownership.
 - LangGraph graph/checkpoint work uses LangGraph entrypoints and repo-local `.omx/state/langgraph/` state, while compatibility records remain context only.
 - Durable artifacts, frozen briefs, and survivor queues are persisted to repo-local state or documented artifact paths.
+- Plan-completion claims cite archived OpenSpec changes plus current checker/test evidence, not `status: active` alone.
 
 ## 26. Scope and authority boundary
 
-This plan is an implementation-plan record. It is not the final runtime contract until the follow-up OpenSpec change updates policy surfaces, helper scripts, and checks.
+This plan is an active implementation-plan record and the baseline for future enforcement reviews. The original follow-up OpenSpec implementation package has now updated policy surfaces, helper scripts, generated source templates, and checks; those higher-authority surfaces are the runtime contract. This plan remains the acceptance checklist and change-history index for that contract.
 
 Authority order:
 

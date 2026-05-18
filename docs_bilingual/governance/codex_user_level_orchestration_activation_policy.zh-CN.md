@@ -14,6 +14,14 @@ translation_of: docs_bilingual/governance/codex_user_level_orchestration_activat
 
 它适用于 native Codex expert routing、oh-my-codex / OMX durable workflow，以及本仓库和复用此用户级 runtime 的消费项目中的 LangGraph durable orchestration。
 
+## 全局默认规则
+
+自动协同是所有项目、所有通过用户级 workflow 启动的 Codex 会话的默认行为。操作者不需要在每个请求里重复“use experts”、“use durable_team”、“use persistent team”、“parallel” 或 “subagents”等提醒，orchestration routing 也必须生效。
+
+对任何因范围、风险、多文档工作、多阶段 workflow、独立执行切片或 stabilization 需求而满足协同阈值的任务，会话必须自动评估并采用最小充分协同面：native experts、`native_omx`、LangGraph durable workflow 或 persistent team。
+
+如果 native `spawn_agent` 调用被当前 platform/tool contract 阻止，必须报告 `experts=blocked:platform_subagent_invocation_constraint`，并继续使用合格 durable lane、可用时重开更窄 expert，或明确记录 main-session takeover。不得把该 blocker 改写成“用户没有要求 subagents”或任何 missing-reminder reason。
+
 ## 能力链
 
 能力链是硬依赖：

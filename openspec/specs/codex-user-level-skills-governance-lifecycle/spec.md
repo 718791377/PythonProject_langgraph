@@ -145,3 +145,379 @@ When local integration is approved, the repository SHALL use the local-main-firs
 - **THEN** the workflow SHALL use local `main` as the primary integration surface after local validation and local review pass
 - **AND** GitLab SHALL be used as a remote publication and clean-environment confirmation surface
 - **AND** GitHub SHALL be used only as the mirror/sync target unless the user explicitly overrides that rule
+
+### Requirement: Skills usage audit reports SHALL sanitize explicit-skill noise tokens
+
+The skills usage audit report SHALL sanitize and bound tokens that were rejected from explicit skill evidence before retaining them in `session_evidence.explicit_skill_noise_removed` or `noise_review.explicit_skill_noise_removed`.
+
+Rejected explicit-skill noise tokens SHALL NOT be counted as strong evidence. They SHALL redact private paths, access tokens, API keys, cookies, standalone secrets, and similar sensitive substrings before report retention. They SHALL be truncated to a fixed maximum length.
+
+#### Scenario: Noise token contains a private path or secret
+
+- **WHEN** a session transcript contains an explicit-skill announcement candidate that is rejected as generic or unknown noise
+- **AND** that rejected token contains a private path, token, cookie, or secret-like value
+- **THEN** the audit report SHALL retain only a redacted and bounded noise token
+- **AND** the raw private path, token, cookie, or secret-like value SHALL NOT appear in report JSON or sanitized Markdown summaries
+
+#### Scenario: Noise review contract is incomplete or unsanitized
+
+- **WHEN** the report field contract validates a generated or candidate-source audit report
+- **AND** `noise_review` omits its privacy fields, retains raw noise tokens, contains raw private paths or secrets, or permits overlong noise tokens
+- **THEN** the field contract SHALL fail
+- **AND** the report SHALL be treated as incomplete evidence until regenerated or the script is fixed
+
+### Requirement: Skills usage audit reports SHALL sanitize manual-note source paths
+
+The skills usage audit report SHALL sanitize and bound manual-note source paths before retaining them in `manual_evidence.invalid_notes`, candidate source references, or sanitized Markdown summaries.
+
+Manual-note source paths SHALL NOT be treated as retained raw evidence. They SHALL redact private Windows paths, POSIX home paths, UNC shares, access tokens, API keys, cookies, standalone secrets, and similar sensitive substrings before report retention.
+
+#### Scenario: Manual note path contains a private path or secret
+
+- **WHEN** a manual-note file path is missing, invalid, or otherwise included in invalid-note metadata
+- **AND** that path contains a private path, token, cookie, or secret-like value
+- **THEN** the audit report SHALL retain only a redacted and bounded path placeholder
+- **AND** the raw private path, token, cookie, or secret-like value SHALL NOT appear in report JSON or sanitized Markdown summaries
+
+#### Scenario: Manual evidence contract is incomplete or unsanitized
+
+- **WHEN** the report field contract validates a generated or candidate-source audit report
+- **AND** `manual_evidence` omits source-path privacy fields, marks source paths as retained, contains raw private paths or secrets, or permits overlong retained path values
+- **THEN** the field contract SHALL fail
+- **AND** the report SHALL be treated as incomplete evidence until regenerated or the script is fixed
+
+### Requirement: Skills usage audit Markdown summaries SHALL expose evidence privacy gates
+
+The skills usage audit sanitized Markdown summaries SHALL expose the same evidence-retention privacy gates that are used by the JSON report field contract and profile-candidate gate.
+
+The audit Markdown summary MUST show explicit-skill noise-token privacy state and manual-note source-path privacy state. The profile-candidate Markdown summary MUST show source-report privacy status and any source-report privacy violations or blockers. These summaries MUST remain sanitized and MUST NOT include raw transcripts, raw local paths, tokens, cookies, or user-level configuration contents.
+
+#### Scenario: Reviewer reads a sanitized audit summary
+
+- **WHEN** the audit script renders `--summary-output`
+- **THEN** the Markdown SHALL show whether raw explicit-skill noise tokens were retained
+- **AND** it SHALL show a bounded sanitized sample list of removed explicit-skill noise tokens, or `none` when no token was removed
+- **AND** it SHALL show the noise-token privacy policy and maximum retained token length
+- **AND** it SHALL show whether manual-note source paths were retained
+- **AND** it SHALL show the manual-note source-path privacy policy and maximum retained source-path length
+
+#### Scenario: Reviewer reads a profile-candidate summary
+
+- **WHEN** the audit script renders `--candidate-summary-output`
+- **THEN** the Markdown SHALL show source-report privacy status
+- **AND** it SHALL show source-report privacy violations or `none`
+- **AND** it SHALL remain non-mutating and preview-only unless a later separate explicit apply authorization is given
+
+### Requirement: Skills usage audit log excerpts SHALL preserve redaction marker integrity
+
+The skills usage audit report SHALL preserve complete redaction markers when sanitized log excerpts are truncated for retention.
+
+Sanitized log excerpts MUST redact private paths, access tokens, API keys, cookies, standalone secrets, and similar sensitive substrings before truncation. If truncation reaches the middle of a redaction marker, the retained excerpt MUST include a complete redaction marker and MUST NOT retain a partial marker such as `[RE`, `[REDACTED_`, or `[REDACTED_SE` as the only privacy indication.
+
+#### Scenario: Log excerpt truncates across a redacted private path
+
+- **WHEN** a budget-warning log message contains a private path near the excerpt limit
+- **THEN** the retained `message_excerpt` SHALL include either no path marker or a complete `[REDACTED_PATH]` marker
+- **AND** it SHALL NOT include the raw private path
+- **AND** it SHALL NOT end with a partial redaction marker fragment
+
+#### Scenario: Log excerpt truncates across a redacted secret
+
+- **WHEN** a budget-warning log message contains a secret-like value near the excerpt limit
+- **THEN** the retained `message_excerpt` SHALL include either no secret marker or a complete `[REDACTED_SECRET]` marker
+- **AND** it SHALL NOT include the raw secret value
+- **AND** it SHALL NOT end with a partial redaction marker fragment
+
+### Requirement: Skills usage audit reports SHALL expose script capability boundaries
+
+The skills usage audit report SHALL expose what the audit helper can reliably cover and what still requires human review.
+
+The JSON report MUST include `script_capability_boundaries` with non-empty `policy`, `reliable_coverage`, `human_review_required_for`, and `enhancement_triggers` fields. The field contract MUST fail when those fields are missing, wrong-typed, or empty. The sanitized Markdown summary MUST render the same boundary so reviewers do not treat the audit helper as an omniscient source of truth.
+
+#### Scenario: Reviewer reads script capability boundaries in a generated report
+
+- **WHEN** the audit script generates JSON and Markdown summary output
+- **THEN** the JSON SHALL include non-empty script capability boundary lists
+- **AND** the Markdown summary SHALL show reliable coverage, human-review needs, and enhancement triggers
+- **AND** the field contract SHALL pass only when those boundary fields are present and non-empty
+
+#### Scenario: Candidate gate receives a report without script boundaries
+
+- **WHEN** profile-candidate generation validates an audit report
+- **AND** `script_capability_boundaries` is missing, wrong-typed, or contains empty boundary lists
+- **THEN** the field contract SHALL fail
+- **AND** candidate generation SHALL remain blocked until the report is regenerated or the script is fixed
+
+### Requirement: Skills usage audit reports SHALL expose cadence-review drift
+
+The skills usage audit report SHALL expose whether the audit run is on cadence, late, or recovering missed weekly reports.
+
+The JSON report MUST include `cadence_review` with `late_run`, `missed_weekly_runs`, and `weekly_report_review`. The field contract MUST fail when those fields are missing or wrong-typed, when `missed_weekly_runs` is not `null` or a non-negative integer, or when `late_run=true` omits an explicit missed-run count. The sanitized Markdown summary MUST render the cadence fields in the audit-window section.
+
+#### Scenario: Reviewer reads cadence state in a generated summary
+
+- **WHEN** the audit script generates JSON and Markdown summary output
+- **THEN** the JSON SHALL include the cadence-review fields
+- **AND** the Markdown summary SHALL show late-run status, missed weekly runs, and weekly-report review status
+- **AND** the field contract SHALL pass only when the cadence-review fields are present and valid
+
+#### Scenario: Candidate gate receives a report with invalid cadence state
+
+- **WHEN** profile-candidate generation validates an audit report
+- **AND** `cadence_review` is missing, wrong-typed, has a negative missed-run count, or marks `late_run=true` without a missed-run count
+- **THEN** the field contract SHALL fail
+- **AND** candidate generation SHALL remain blocked until the report is regenerated or the script is fixed
+
+### Requirement: Skills usage audit Markdown summaries SHALL expose audit-state blockers
+
+The skills usage audit sanitized Markdown summary SHALL expose the audit-state next action, profile-apply allowance, and any state-machine blockers that explain why the report cannot advance.
+
+The Markdown summary MUST render blockers from `close_blockers`, `candidate_blockers`, `summary_review_blockers`, `pause_blockers`, and `warning_triage_blockers`. When no audit-state blocker exists, the summary MUST render `none`.
+
+#### Scenario: Reviewer reads a blocked closure summary
+
+- **WHEN** the audit script generates a sanitized Markdown summary for a report whose closure is blocked
+- **THEN** the Markdown SHALL show the audit state's next action
+- **AND** it SHALL show that profile apply is not allowed
+- **AND** it SHALL list the concrete closure blockers without requiring the reviewer to open raw JSON
+
+#### Scenario: Reviewer reads a closed or unblocked summary
+
+- **WHEN** the audit script generates a sanitized Markdown summary for a report with no audit-state blockers
+- **THEN** the Markdown SHALL show `none` for audit-state blockers
+
+### Requirement: Skills usage audit field contracts SHALL validate audit-state values
+
+The Skills usage audit report field contract SHALL validate that `audit_state` stays within the audit-only state machine and cannot be used as profile-apply authorization.
+
+`audit_state.state` MUST be one of `planned`, `running`, `paused`, `ready-for-summary`, `summary-reviewed`, `apply-candidate`, `closed-no-change`, or `closed-with-candidate`. `audit_state.profile_apply_allowed` MUST be `false`. When present, `close_blockers`, `candidate_blockers`, `summary_review_blockers`, `pause_blockers`, and `warning_triage_blockers` MUST be lists of strings.
+
+#### Scenario: Candidate gate receives an invalid audit state
+
+- **WHEN** profile-candidate generation validates an audit report
+- **AND** `audit_state.state` is unknown, `profile_apply_allowed` is not false, or an audit-state blocker field is not a string list
+- **THEN** the field contract SHALL fail
+- **AND** candidate generation SHALL remain blocked until the report is regenerated or the script is fixed
+
+### Requirement: Skills usage audit Markdown summaries SHALL expose advisory decision buckets
+
+The skills usage audit sanitized Markdown summary SHALL expose advisory decision buckets derived from module evidence so reviewers can distinguish default/project profile review candidates from on-demand, manual-review, and dormant modules without opening raw JSON.
+
+Decision buckets MUST remain non-mutating review inputs. They MUST NOT mark profile apply as allowed and MUST NOT replace a later profile apply candidate record or explicit apply authorization.
+
+#### Scenario: Reviewer reads advisory decision buckets
+
+- **WHEN** the audit script generates JSON and Markdown summary output
+- **THEN** the report SHALL include advisory decision buckets for profile-review candidates, on-demand soft-load modules, manual-review medium/weak modules, and dormant/restorable modules
+- **AND** the Markdown summary SHALL render those buckets in the decision recommendation section
+- **AND** the summary SHALL state that profile apply is not allowed by the summary itself
+
+### Requirement: Skills usage audit field contracts SHALL validate advisory decision recommendations
+
+The skills usage audit report field contract SHALL validate that `decision_recommendation` remains an advisory-only, non-mutating review input.
+
+The JSON report MUST include `decision_recommendation.status=advisory_only_no_profile_apply`, a non-empty policy string, `profile_apply_allowed=false`, the four required bucket lists (`profile_review_candidates`, `on_demand_soft_load`, `manual_review_medium_or_weak`, and `dormant_restorable`), and `bucket_counts` values that exactly match those bucket lengths. The field contract MUST fail when those fields are missing, wrong-typed, non-advisory, allow profile apply, contain non-string bucket entries, or carry stale bucket counts.
+
+#### Scenario: Candidate gate receives a report with invalid decision recommendations
+
+- **WHEN** profile-candidate generation validates an audit report
+- **AND** `decision_recommendation` is missing, non-advisory, marks profile apply as allowed, omits a required bucket, includes a non-string bucket entry, or has a stale `bucket_counts` value
+- **THEN** the field contract SHALL fail
+- **AND** candidate generation SHALL remain blocked until the report is regenerated or the script is fixed
+
+### Requirement: Skills usage audit field contracts SHALL validate module evidence rows
+
+The skills usage audit report field contract SHALL validate every `module_evidence` row before that evidence can drive advisory decision buckets or profile-candidate generation.
+
+Each module evidence row MUST include the module name, plugin list, strong helper-call count, strong skill-path-read count, strong total, default-candidate threshold, mapped-tool-call medium-evidence count and policy, medium-evidence rationale, weak plugin mentions, cross-project utility, and advisory recommendation. Numeric counts MUST be non-negative integers, `strong_total` MUST equal strong helper calls plus strong skill-path reads, plugin entries MUST be strings, mapped tool-call evidence MUST remain medium evidence only, cross-project utility MUST require manual review, and recommendations MUST remain within the approved advisory recommendation set.
+
+The row recommendation MUST match the threshold rule for that row: `strong_total >= default_candidate_threshold` is a profile-review candidate, `0 < strong_total < default_candidate_threshold` stays on-demand, `strong_total == 0` with weak mentions is mentioned-only, and no strong or weak evidence stays dormant/restorable.
+
+#### Scenario: Candidate gate receives a report with invalid module evidence
+
+- **WHEN** profile-candidate generation validates an audit report
+- **AND** any `module_evidence` row is missing required fields, has wrong-typed values, contains non-string plugin entries, has negative counts, has a stale `strong_total`, treats mapped tool calls as strong evidence, skips manual cross-project review, or uses an unsupported recommendation
+- **THEN** the field contract SHALL fail
+- **AND** candidate generation SHALL remain blocked until the report is regenerated or the script is fixed
+
+#### Scenario: Candidate gate receives a report with stale recommendation thresholds
+
+- **WHEN** profile-candidate generation validates an audit report
+- **AND** a `module_evidence` row recommendation contradicts its `strong_total`, `weak_plugin_mentions`, or `default_candidate_threshold`
+- **THEN** the field contract SHALL fail
+- **AND** candidate generation SHALL remain blocked until the report is regenerated or the script is fixed
+
+### Requirement: Skills usage audit output retention gates SHALL block local-only raw audit artifacts
+
+The skills usage audit lifecycle SHALL keep raw audit outputs local-only unless they have been converted into an explicitly reviewed sanitized long-term evidence document.
+
+The repository guard MUST run a Skills audit output-retention check that fails when any `.tmp/` artifact is tracked, staged, changed, or commit-visible untracked. The same check MUST fail when raw Skills usage audit JSON reports with names beginning `skills-usage-audit`, `skills-usage-baseline`, `skills-usage-warning`, or `skills-usage-report` are retained outside `.tmp/`.
+
+Sanitized Markdown summaries MAY be retained as long-term evidence after privacy review. Raw session transcripts, raw JSON audit reports, private paths, tokens, and vendor-cache contents MUST NOT be retained as durable Git evidence for this audit.
+
+#### Scenario: Forced `.tmp` raw audit report is staged
+
+- **WHEN** `.tmp/skills-usage-audit-30d.json` is forced into Git or otherwise becomes tracked, staged, changed, or commit-visible untracked
+- **THEN** the output-retention check SHALL fail
+- **AND** it SHALL report both the `.tmp/` artifact retention violation and the raw audit JSON retention violation when both apply
+
+#### Scenario: Raw audit JSON is retained outside `.tmp`
+
+- **WHEN** `reports/skills-usage-baseline-2026-05-18.json` or another raw `skills-usage-*.json` audit report is tracked, staged, changed, or commit-visible untracked outside `.tmp/`
+- **THEN** the output-retention check SHALL fail
+- **AND** the reviewer SHALL regenerate or retain only a sanitized Markdown summary for long-term evidence
+
+#### Scenario: Sanitized Markdown evidence is retained
+
+- **WHEN** a reviewed `skills-usage-audit-30d-summary.md` or equivalent sanitized Markdown summary is retained
+- **THEN** the output-retention check SHALL pass for that summary
+- **AND** the summary SHALL remain subject to the audit privacy and data-minimization requirements
+
+### Requirement: Skills usage audit reports SHALL expose output-retention status
+
+Every Skills usage audit JSON report SHALL include the current output-retention gate status so reviewers can see whether local-only raw audit outputs are being kept out of Git without running a separate checker first.
+
+The `output_retention` field MUST identify the checker, state whether the checker passed, state that `.tmp/` outputs and raw audit JSON reports are local-only, identify `sanitized_markdown_summary` as the long-term evidence format, and report the current violation count. The report field contract MUST fail if this status is missing, malformed, non-passing, or inconsistent with the local-only retention policy. Sanitized Markdown summaries MUST render the output-retention status and long-term evidence format.
+
+#### Scenario: Reviewer reads an audit report
+
+- **WHEN** the audit script generates a JSON report
+- **THEN** the report SHALL include `output_retention.status`, `output_retention.ok`, `output_retention.checker`, `.tmp` local-only policy, raw JSON local-only policy, long-term evidence format, and violation count
+- **AND** the field contract SHALL pass only when the output-retention gate is passing
+
+#### Scenario: Reviewer reads a sanitized summary
+
+- **WHEN** the audit script renders `--summary-output`
+- **THEN** the Markdown SHALL show the output-retention gate status
+- **AND** it SHALL show that long-term evidence must be `sanitized_markdown_summary`
+
+#### Scenario: Candidate gate receives a report without retention status
+
+- **WHEN** profile-candidate generation validates an audit report
+- **AND** `output_retention` is missing, malformed, not passed, or does not preserve the local-only raw-output policy
+- **THEN** the field contract SHALL fail
+- **AND** candidate generation SHALL remain blocked until the report is regenerated or the checker issue is fixed
+
+### Requirement: Skills usage audit reports SHALL redact runtime paths
+
+Every Skills usage audit JSON report and sanitized Markdown summary SHALL avoid retaining raw local runtime paths for the repository root, Codex home, and user-level `config.toml` path.
+
+The report MUST retain path-kind evidence through `runtime_paths` placeholders such as `[REPO_ROOT]`, `[CODEX_HOME]`, and `[CODEX_HOME]/config.toml` instead of raw Windows, POSIX home, or UNC paths. `runtime_paths.raw_paths_retained` MUST be `false`. The field contract MUST fail when top-level `root`, top-level `codex_home`, `config_summary.config_path`, or `runtime_paths.root/codex_home/config_path` contains a raw private path or when the runtime-path privacy policy is missing or malformed.
+
+#### Scenario: Reviewer reads runtime path evidence
+
+- **WHEN** the audit script generates a JSON report
+- **THEN** the report SHALL include sanitized `runtime_paths` placeholders and path-kind labels
+- **AND** top-level compatibility fields `root`, `codex_home`, and `config_summary.config_path` SHALL use the same sanitized placeholders
+- **AND** the serialized report SHALL NOT contain the raw repository path, raw user Codex home path, or raw user-level config path
+
+#### Scenario: Runtime path privacy is broken
+
+- **WHEN** the report field contract validates a generated or candidate-source audit report
+- **AND** any runtime path field retains a raw private path or sets `raw_paths_retained=true`
+- **THEN** the field contract SHALL fail
+- **AND** the report SHALL be treated as incomplete evidence until regenerated or the script is fixed
+
+### Requirement: Skills usage audit profile candidates SHALL require explicit target profiles
+
+The Skills usage audit profile-candidate gate SHALL require an explicit target profile before candidate JSON or Markdown can be treated as a usable preview.
+
+`--candidate-output`, `--candidate-summary-output`, and `--close-audit with-candidate` MUST require `--target-profile`. The audit helper MUST NOT infer the target profile from the current enabled profile, candidate filename, or generic continuation. When the target profile is missing, the report or candidate gate MUST remain blocked with `target_profile_missing`, keep profile apply disallowed, and avoid mutating `config.toml`, plugin cache, or hard-load state.
+
+#### Scenario: Candidate output is requested without a target profile
+
+- **WHEN** the audit script is asked to generate a profile candidate with `--candidate-output` or `--candidate-summary-output`
+- **AND** `--target-profile` is missing or blank
+- **THEN** the audit state or candidate generation gate SHALL report `target_profile_missing`
+- **AND** the candidate SHALL remain `preview-only`, blocked, non-mutating, and not usable as apply approval evidence
+
+#### Scenario: Audit closure with candidate lacks a target profile
+
+- **WHEN** `--close-audit with-candidate` is requested
+- **AND** the target profile is missing or blank
+- **THEN** the closure SHALL be blocked with `target_profile_missing`
+- **AND** the report SHALL remain non-mutating until a reviewed candidate is regenerated with an explicit target profile
+
+### Requirement: Skills usage audit profile-candidate gates SHALL require candidate-ready audit states
+
+The Skills usage audit profile-candidate gate SHALL only allow candidate preview records from audit states that are ready for candidate review.
+
+Candidate-ready audit states MUST be limited to `summary-reviewed`, `apply-candidate`, and `closed-with-candidate`. `planned`, `paused`, `running`, `ready-for-summary`, and `closed-no-change` MUST block candidate generation even when the caller supplies source-report paths, `--summary-reviewed`, and a target profile.
+
+#### Scenario: Candidate gate receives a not-ready audit state
+
+- **WHEN** profile-candidate generation validates an audit report
+- **AND** `audit_state.state` is not one of `summary-reviewed`, `apply-candidate`, or `closed-with-candidate`
+- **THEN** the candidate generation gate SHALL remain blocked with an audit-state readiness blocker
+- **AND** the candidate SHALL remain preview-only, non-mutating, and not usable as apply authorization evidence
+
+### Requirement: Skills usage audit profile candidates SHALL validate retained candidate records
+
+The Skills usage audit helper SHALL attach a candidate-record contract to every generated profile apply candidate preview so retained JSON and Markdown artifacts cannot be mistaken for approval, applied state, or an unsafe configuration mutation.
+
+The candidate-record contract MUST require the candidate's core fields, `approval_state=preview-only`, `mutates_config=false`, `edits_plugin_cache=false`, `hard_load_apply_performed=false`, explicit-authorization flags, `source_reports_privacy.status=passed`, a structured `candidate_generation_gate.allowed/blockers`, `rollback_path.restore_command`, `rollback_path.restart_required`, and a non-empty validation plan. If any of those fields are missing, malformed, unsafe, or retain raw private paths or secrets, the contract MUST fail and the candidate MUST NOT be treated as apply-ready evidence.
+
+#### Scenario: Candidate preview carries a valid self-contract
+
+- **WHEN** the audit script generates a profile apply candidate preview
+- **THEN** the candidate SHALL include `candidate_record_contract.status=passed`
+- **AND** the Markdown candidate summary SHALL render the candidate-record contract status and blockers
+- **AND** the candidate SHALL remain preview-only, non-mutating, and not usable as apply authorization evidence
+
+#### Scenario: Candidate preview record is malformed or unsafe
+
+- **WHEN** a candidate record is missing required fields, uses `approval_state` other than `preview-only`, marks config/plugin/hard-load mutation as performed, has failed source-report privacy, has malformed gate blockers, lacks rollback restore information, or lacks validation steps
+- **THEN** the candidate-record contract SHALL fail with blockers identifying the broken field
+- **AND** the candidate SHALL remain blocked until regenerated or the script is fixed
+
+### Requirement: Skills usage audit manual evidence SHALL expose conflict review state
+
+The Skills usage audit report SHALL expose whether manual evidence includes exceptions, approved hard-load exceptions, or other manual judgments that require disposition before a profile decision.
+
+`manual_evidence.conflict_review` MUST include status, policy, conflict/exception count, disposition-required flag, and disposition text. Manual notes MUST NOT override script evidence. If any manual note has `evidence_level=exception` or `action_taken=approved hard-load exception`, the conflict review status MUST require manual disposition and sanitized Markdown summaries MUST render that state.
+
+#### Scenario: Manual exception note is present
+
+- **WHEN** a sanitized manual evidence note records an exception or approved hard-load exception
+- **THEN** the audit report SHALL set `manual_evidence.conflict_review.status=manual_conflict_or_exception_review_required`
+- **AND** it SHALL render the conflict/exception count, non-override policy, and disposition requirement in the sanitized Markdown summary
+
+#### Scenario: Manual conflict review fields are missing
+
+- **WHEN** the report field contract validates manual evidence
+- **AND** `manual_evidence.conflict_review` is missing, malformed, or carries an invalid policy or count
+- **THEN** the field contract SHALL fail
+- **AND** the report SHALL be treated as incomplete evidence until regenerated or the script is fixed
+
+### Requirement: Skills usage audit warning triage SHALL expose skipped-loading source review
+
+The Skills usage audit warning-triage report SHALL expose skipped-loading warning counts and the review policy for invalid or skipped skills.
+
+`warning_triage` MUST include `skipped_loading_count`, `recent_skipped_loading_samples`, and `skipped_loading_review`. Skipped-loading samples retained in `log_evidence.recent_skipped_loading` MUST remain sanitized. The review policy MUST direct the operator to record the source first and avoid vendor-cache bulk edits unless explicitly authorized.
+
+#### Scenario: Skipped-loading warning is present during triage
+
+- **WHEN** `--warning-triage` scans logs containing `Skipped loading` warnings
+- **THEN** the report SHALL include skipped-loading counts and sample counts in `warning_triage`
+- **AND** sanitized Markdown summaries SHALL render the skipped-loading triage state
+- **AND** raw private paths or secrets from skipped-loading log messages SHALL NOT appear in retained report evidence
+
+#### Scenario: Skipped-loading triage fields are missing
+
+- **WHEN** the report field contract validates warning triage
+- **AND** skipped-loading count, sample count, or review policy fields are missing or malformed
+- **THEN** the field contract SHALL fail
+- **AND** profile-candidate generation SHALL remain blocked until the report is regenerated or the script is fixed
+
+### Requirement: Skills usage audit warning triage field contract SHALL enforce value-level semantics
+
+The Skills usage audit warning-triage field contract SHALL validate the allowed values and cross-field semantics needed for profile decisions.
+
+`warning_triage.status` MUST be one of `not_requested`, `blocked`, `log_source_unavailable`, `warning_found`, or `no_warning_found_in_triage_window`. `warning_triage.window_policy` MUST equal `use_days_1_or_since_for_warning_triage`. `warning_triage.skipped_loading_review` MUST be either `none` or `record_source_and_do_not_edit_vendor_cache_without_authorization`. `warning_triage.blockers` MUST be a list of known string blockers, currently only `warning_triage_window_not_narrow`. A blocked triage status MUST include at least one blocker, a non-blocked status MUST NOT retain blockers, and warning / skipped-loading count fields MUST be non-negative integers.
+
+#### Scenario: Warning triage contains an invalid decision value
+
+- **WHEN** the report field contract validates `warning_triage`
+- **AND** the status, window policy, skipped-loading review, blocker list, blocker/status pairing, or warning/skipped-loading count value violates the allowed-value contract
+- **THEN** the field contract SHALL fail with a `warning_triage:*` blocker
+- **AND** profile-candidate generation SHALL remain blocked until the report is regenerated or the script is fixed

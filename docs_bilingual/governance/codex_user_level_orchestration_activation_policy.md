@@ -13,6 +13,14 @@ This policy makes automatic orchestration routing an enforceable user-level beha
 
 It applies to native Codex expert routing, oh-my-codex / OMX durable workflow, and LangGraph durable orchestration for this repository and consumer projects that reuse this user-level runtime.
 
+## Global default rule
+
+Automatic collaboration is the default for all projects and all Codex sessions launched through the user-level workflow. The operator does not need to repeat phrases such as "use experts", "use durable_team", "use persistent team", "parallel", or "subagents" for orchestration routing to apply.
+
+For any task that qualifies by scope, risk, multi-document work, multi-stage workflow, independent execution slices, or stabilization need, the session must automatically evaluate and adopt the smallest sufficient collaboration surface among native experts, `native_omx`, LangGraph durable workflow, and persistent team.
+
+If native `spawn_agent` invocation is blocked by the current platform/tool contract, report `experts=blocked:platform_subagent_invocation_constraint` and continue with an eligible durable lane, a narrower respawn path if available, or explicit main-session takeover. Do not recast that blocker as "the user did not request subagents" or any other missing-reminder reason.
+
 ## Capability chain
 
 The capability chain is strict:

@@ -1,0 +1,492 @@
+---
+doc_id: codex_skills_usage_audit_plan
+lang: en
+canonical: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md
+translation_of: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md
+status: active
+doc_class: implementation_plan
+created_at: 2026-05-16
+---
+
+# Codex Skills Usage Audit Plan
+
+## 1. Background
+
+The `Exceeded skills context budget of 2%` warning is not guaranteed to appear only when the Codex process starts. In live sessions, the runtime may rebuild the model-visible skills surface when preparing a turn, resuming a thread, repacking context, or applying context truncation. A clean startup therefore does not prove that later turns cannot emit the warning.
+
+`soft-load` does not mutate the startup-visible skills list and does not restore skills that were omitted from the model-visible list by the 2% budget. It only reads task-relevant SKILL.md or reference files into normal conversation context. Therefore:
+
+- soft-load is a current-session remediation and on-demand knowledge loading path;
+- hard-load/profile apply changes the plugin/skills surface for the next launch or resume;
+- the default profile should not be reduced to `core-dev` without usage evidence;
+- `company-ops`, `market-research`, `web-saas`, `customer-comms`, and `creative-content` should be observed for one month before deciding whether they are always-on, project-scoped, or on-demand only.
+
+## 2. Audit goal
+
+This plan defines a 30-day audit-only process so later profile decisions are evidence-based and do not accidentally make useful plugin skills dormant.
+
+The audit answers four questions:
+
+1. Which skills/plugins have strong usage evidence in the last 30 days?
+2. Which modules were only mentioned but not actually read or invoked?
+3. When and where did the `2% skills context budget` warnings occur?
+4. Which capabilities should be always-on, project hard-load, soft-load on demand, or kept only in the `full` troubleshooting profile?
+
+## 3. Evidence levels
+
+### 3.1 Strong evidence
+
+Strong evidence can support keeping or profile-gating a capability:
+
+- the assistant explicitly announced `Using skill: xxx` or `使用技能：xxx`;
+- a session read a `SKILL.md` file;
+- a plugin helper such as `load_module.ps1 <module>` or `set_plugin_profile.ps1 <module>` was invoked;
+- a plugin/MCP/tool surface was invoked;
+- logs contain a concrete budget warning that can be tied to a session or turn.
+
+### 3.2 Medium evidence
+
+Medium evidence means a capability may be needed but is not enough by itself to make it always-on:
+
+- the user explicitly requested a plugin family such as Gmail, Slack, Twilio, Figma, Vercel, Cloudflare, or Notion;
+- the task clearly belongs to a module such as `web-saas`, `company-ops`, `market-research`, `customer-comms`, or `creative-content`;
+- project history says browser/web capabilities must be preserved.
+
+### 3.3 Weak evidence
+
+Weak evidence is only trend context:
+
+- a plugin name appears in docs or logs;
+- the model discussed a plugin without reading, invoking, or announcing it;
+- a static registry lists the plugin.
+
+## 4. Audit-only rules
+
+During the 30-day audit, do not run `set_plugin_profile.ps1 <module> -Apply` by default. Allowed actions:
+
+- `load_module.ps1 <module> -Json` soft-load;
+- `set_plugin_profile.ps1 <module> -Json` preview;
+- read inventory and session/log data;
+- generate local audit reports.
+
+Forbidden actions:
+
+- deleting plugin cache to reduce warnings;
+- bulk-editing vendor/plugin `SKILL.md` files;
+- applying hard-load without explicit approval;
+- treating capabilities with no 30-day strong evidence as useless;
+- treating disabled plugins as deleted. Disabled means dormant and restorable.
+
+## 5. Required scripts
+
+### 5.1 Collection script
+
+```powershell
+.\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-latest.json
+```
+
+Default sources:
+
+- `C:\Users\lenovo\.codex\sessions/**/*.jsonl` - session transcripts used to detect explicit skill announcements and SKILL.md reads.
+- `C:\Users\lenovo\.codex\logs_2.sqlite` - runtime log database used to count skills-budget warnings.
+- `C:\Users\lenovo\.codex\config.toml` - user-level plugin enabled-state source for audit-only reporting.
+- `C:\Users\lenovo\.codex\skills\plugin-modules\references\profiles.json` - module registry used to aggregate plugin evidence by profile.
+
+### 5.2 Baseline snapshot
+
+```powershell
+.\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 0 --baseline --json --output .\.tmp\skills-usage-baseline-2026-05-16.json
+```
+
+The baseline records enabled plugins, profile modules, warning counters, and inventory summary. It does not mutate `config.toml`.
+
+### 5.3 Weekly summary
+
+```powershell
+.\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 7 --json --output .\.tmp\skills-usage-audit-7d.json
+```
+
+### 5.4 30-day decision report
+
+```powershell
+.\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json --summary-output .\.tmp\skills-usage-audit-30d-summary.md --manual-notes .\.tmp\skills-usage-audit-notes-YYYY-MM-DD.md
+```
+
+`--summary-output` writes the sanitized Markdown decision summary. It is review evidence only and must not mutate `config.toml`, plugin cache, or hard-load profiles.
+
+To prepare a later reversible candidate without applying it, add `--target-profile`, `--candidate-output`, `--summary-reviewed`, and optionally `--candidate-summary-output`:
+
+```powershell
+.\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json --summary-output .\.tmp\skills-usage-audit-30d-summary.md --summary-reviewed --target-profile core-dev --candidate-output .\.tmp\skills-profile-candidate.json --candidate-summary-output .\.tmp\skills-profile-candidate.md
+```
+
+Candidate output is always `approval_state=preview-only` and must not modify `config.toml`, plugin cache, or hard-load profiles. `--candidate-output` or `--candidate-summary-output` must be paired with an explicit `--target-profile`; the script must not infer a target profile from the current profile, filename, or generic continuation. Without `--summary-reviewed`, a 30-day audit window, `--output`, `--summary-output`, or `--target-profile`, the candidate generation gate is recorded as blocked.
+
+### 5.5 Windows stdout and regression tests
+
+The script must still support `--json` on non-UTF-8 Windows consoles. If stdout cannot encode characters such as `⚠`, stdout may fall back to JSON-safe backslash escapes; the `--output` report file must still preserve the original UTF-8 text.
+
+Regression tests must cover:
+
+- stdout fallback for `⚠ Exceeded skills context budget of 2%`;
+- explicit skill-announcement detection for Chinese `使用技能：` and English `Using skill:`;
+- extraction of `omitted_additional_skills` and `all_descriptions_removed` from `logs_2.sqlite` budget warnings;
+- `plugins: "all_known_plugins"` in the `full` profile must not be split into individual characters;
+- the script must fall back to `tools/skill_sources/plugin-modules/references/profiles.json` when the user-level plugin-modules profile is absent.
+
+### 5.6 Report field contract
+
+The report generated by `--json` and `--output` must include at least these top-level fields. If any field is missing, the report must not be used for profile decisions.
+
+| Field | Purpose | Decision impact |
+| --- | --- | --- |
+| `schema_version` | Report structure version | Allows later scripts to parse compatibly |
+| `generated_at` | Report generation time | Shows whether the report is stale |
+| `audit_state` | Audit state-machine state, reason, next action, and profile-apply allowance | Prevents incomplete or paused audit state from entering profile decisions |
+| `audit_window` | `since` / `until` / `days` | Prevents 30-day decisions from using the wrong window |
+| `safety` | Config mutation, plugin cache edit, and hard-load apply flags | Must prove audit-only behavior |
+| `config_summary` | enabled / disabled / unknown plugins plus `current_profile` inference | Shows whether the current profile surface is too large and whether it exactly matches a known module |
+| `inventory_summary` | user/repo/plugin skill counts | Helps locate 2% budget pressure |
+| `log_evidence` | budget warning, 7-day warning count, `All skill descriptions were removed`, omitted-skill maximum, and skipped-loading evidence | Shows whether warnings still occur during live turns and whether severity crosses the plan threshold |
+| `warning_triage` | Post-warning triage marker, narrow-window gate, warning counts in the triage window, and recommended follow-up | Prevents broad weekly/monthly reports from being mistaken for a turn-level warning triage |
+| `session_evidence` | explicit skills, SKILL.md reads, helper calls, tool calls | Feeds strong/medium/weak evidence classification |
+| `manual_evidence` | sanitized manual-note counts, invalid-note validation, and medium/exception/noise summaries | Preserves human review evidence without retaining raw transcripts |
+| `noise_review` | sanitized, truncated explicit-skill noise tokens, false-positive counts, and strong-evidence exclusion policy | Prevents false-positive tokens, path fragments, or mojibake text from becoming strong evidence or retained raw evidence |
+| `script_capability_boundaries` | reliable coverage, human-review boundaries, known limitations, and script-enhancement triggers | Prevents the audit helper from being treated as an omniscient source of truth |
+| `output_retention` | status from `tools/check_skills_audit_output_retention.py`, including `.tmp/` local-only policy, raw JSON local-only policy, long-term evidence format, and violation count | Prevents a report from hiding whether raw audit artifacts are accidentally retained in Git |
+| `runtime_paths` | sanitized runtime path placeholders and path-kind labels for repo root, Codex home, and `config.toml`, with `raw_paths_retained=false` | Prevents JSON and Markdown reports from retaining raw local user paths while still showing which runtime inputs were scanned |
+| `module_evidence` | profile-module-level strong, medium-rationale, weak, and cross-project review fields | Produces profile decision candidates without treating medium evidence as strong evidence |
+| `decision_recommendation` | advisory decision buckets derived from module evidence | Lets reviewers see profile-review, on-demand, manual-review, and dormant modules without allowing profile apply |
+| `cadence_review` | late-run and missed-weekly-run markers | Prevents cadence drift from being hidden in a 30-day decision summary |
+| `recommendations` | Audit recommendations | Advisory only; never auto-apply |
+
+The audit script must also validate runtime path privacy: top-level `root`, top-level `codex_home`, `config_summary.config_path`, and `runtime_paths.root/codex_home/config_path` MUST NOT contain raw Windows, POSIX home, UNC, token, cookie, or secret-bearing paths. Reports MUST retain placeholders such as `[REPO_ROOT]`, `[CODEX_HOME]`, and `[CODEX_HOME]/config.toml` instead of raw absolute paths, and `runtime_paths.raw_paths_retained` MUST remain `false`.
+
+The audit script must compute a `field_contract` result for every generated report. The result records `status`, `passed`, required fields, missing fields, invalid field types, safety violations, and decision-critical nested-field violations. The `audit_state` contract must require `state`, `reason`, `next_action`, and `profile_apply_allowed` so reports cannot lose state-machine context. It must also reject unknown audit states, reject `profile_apply_allowed=true` or non-false values, and require any state blocker field (`close_blockers`, `candidate_blockers`, `summary_review_blockers`, `pause_blockers`, or `warning_triage_blockers`) to be a list of strings when present. Sanitized Markdown summaries must also render the audit state's next action, profile-apply allowance, and any blockers from those fields, using `none` when no blocker is present. The `warning_triage` contract must require `requested`, `status`, `blockers`, `window_policy`, `window_ok`, `budget_warning_count`, `skipped_loading_count`, `recent_skipped_loading_samples`, `skipped_loading_review`, and `recommended_action` so a warning follow-up report cannot omit its triage state, narrow-window policy, skipped-loading source review, or next action. Its value-level contract must also reject unknown `status` values, any `window_policy` other than `use_days_1_or_since_for_warning_triage`, any `skipped_loading_review` outside `none` / `record_source_and_do_not_edit_vendor_cache_without_authorization`, non-string or unknown blockers, `status=blocked` without blockers, blockers on a non-`blocked` status, and negative warning or skipped-loading count fields. A report with `field_contract.status != passed` is incomplete evidence: it must be fixed or regenerated before any profile decision. Candidate generation must require the report's embedded `field_contract`; reports from older scripts or manually edited reports with a missing or stale embedded contract must be blocked until regenerated.
+The `noise_review` contract must require `raw_noise_tokens_retained=false`, `max_noise_token_length`, `token_privacy_policy`, and sanitized `explicit_skill_noise_removed`. Noise tokens must redact private paths, secrets, cookies, and tokens before entering reports, then be truncated to a fixed length; if raw private paths, secrets, or overlong tokens remain, the field contract must fail.
+The `script_capability_boundaries` contract must require `policy`, `reliable_coverage`, `human_review_required_for`, and `enhancement_triggers`. These lists must be present and non-empty so a report cannot imply that the audit helper is an omniscient source of truth.
+The `output_retention` contract must require `status`, `ok`, `checker`, `tmp_outputs_local_only`, `raw_audit_json_local_only`, `long_term_evidence_format`, and `violation_count`. It must pass only when the retention checker itself passes, `.tmp/` outputs and raw audit JSON are marked local-only, and the long-term evidence format is `sanitized_markdown_summary`.
+The `cadence_review` contract must require `late_run`, `missed_weekly_runs`, and `weekly_report_review`; `missed_weekly_runs` must be either `null` or a non-negative integer, and `late_run=true` must include an explicit missed-run count. The sanitized Markdown summary must render these cadence fields in the audit-window section so a 30-day reviewer can see cadence drift without opening raw JSON.
+The `module_evidence` contract must validate every row before it can feed `decision_recommendation` or candidate generation. Each row must include module name, plugin list, strong-helper counts, strong skill-path counts, strong total, default-candidate threshold, mapped-tool medium-evidence count and policy, medium-evidence rationale, weak mentions, cross-project utility, and recommendation. Numeric counts must be non-negative integers, `strong_total` must equal helper calls plus skill-path reads, plugin entries must be strings, mapped tool calls must remain medium evidence, cross-project utility must require manual review, and recommendations must stay within the approved advisory values. The recommendation must also match the threshold rule: `strong_total >= default_candidate_threshold` is a profile-review candidate, `0 < strong_total < threshold` stays on-demand, `strong_total == 0` with weak mentions is mentioned-only, and no strong or weak evidence stays dormant/restorable.
+The `decision_recommendation` contract must require advisory-only status, the non-apply policy, `profile_apply_allowed=false`, the four bucket lists (`profile_review_candidates`, `on_demand_soft_load`, `manual_review_medium_or_weak`, and `dormant_restorable`), and matching `bucket_counts`. If the buckets are missing, wrong-typed, contain non-string module names, mark profile apply as allowed, or have stale counts, the field contract must fail before any profile decision or candidate generation.
+The `manual_evidence.conflict_review` contract must require status, policy, conflict/exception count, disposition-required flag, and disposition text. Manual exception notes and approved hard-load exception notes must be surfaced as `manual_conflict_or_exception_review_required` so a 30-day reviewer cannot miss manual evidence that conflicts with or exceeds script evidence.
+
+### 5.7 Audit cadence, retention, and report naming
+
+Use a fixed cadence so the one-month audit does not drift.
+
+| Time | Command | Output file | Purpose |
+| --- | --- | --- | --- |
+| Day 0 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | Freeze initial enabled plugins, inventory, and warning state |
+| Weekly | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | Detect new live-session warnings and module trends |
+| Late weekly recovery | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | Preserve an explicit cadence-drift marker instead of fabricating the missed run |
+| Day 30 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | Build the evidence package for default-profile decisions |
+| After a warning | `--warning-triage --days 1` or `--warning-triage --since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | Locate whether the warning came from current-session repacking |
+
+Reports under `.tmp/` are not committed by default. If long-term evidence is needed, commit only a sanitized Markdown summary, not full session transcripts, tokens, private paths, or vendor cache content.
+
+`--warning-triage` is an audit-only marker for a post-warning follow-up run. It must use a narrow window: either `--days 1` or an explicit `--since` value that covers the warning time. If `--warning-triage` is used with a broad window such as `--days 7` or `--days 30`, the generated report must set `warning_triage.status=blocked`, add `warning_triage_window_not_narrow`, and keep `audit_state.reason=warning_triage_window_too_broad`. The triage report must also summarize `Skipped loading` warning counts and record a review policy to capture the source first without bulk-editing vendor cache. `warning_triage.status` may only be `not_requested`, `blocked`, `log_source_unavailable`, `warning_found`, or `no_warning_found_in_triage_window`; `blockers` may only contain known string blockers, currently `warning_triage_window_not_narrow`. This marker must not edit `config.toml`, plugin cache, or hard-load profiles.
+
+### 5.8 Drift control and exception recovery
+
+During the one-month audit, handle cadence drift or data-source failures with the table below so incomplete evidence is not treated as a final decision package.
+
+| Drift or exception | Recovery action | Disallowed action |
+| --- | --- | --- |
+| A weekly summary was missed | Run `--days 7` immediately and mark `late_run: true` in the summary | Fabricate historical reports to fill the cadence |
+| A warning was not triaged promptly | Run `--days 1`; if more than 24 hours passed, also run `--since` across the warning time | Decide from memory whether soft-load failed |
+| `logs_2.sqlite` is missing or unreadable | Keep `log_evidence.available=false` in the report and use session transcripts only as supporting evidence | Treat zero logged warnings as proof that no warning happened |
+| Session transcripts are incomplete or privacy-sensitive | Commit only aggregate fields and a sanitized summary; keep raw JSON local under `.tmp/` if needed | Commit full transcripts, tokens, or private paths |
+| A report misses required contract fields | Fix the script or rerun the report before profile decisions | Use an incomplete report for hard-load/profile apply decisions |
+| Explicit-skill false-positive noise contains path fragments, secrets, or long mojibake text | Fix the script to redact and truncate, add regression tests, and rerun until the `noise_review` contract passes | Retain raw noise tokens in long-term reports or count them as strong evidence |
+| An urgent task genuinely needs a plugin during the audit | Allow task-scoped soft-load or preview; require explicit approval and an exception note for hard-load | Use the urgent task as a reason to end the 30-day audit early |
+
+### 5.9 30-day decision summary template
+
+Day 30 must not ship only raw JSON. It must produce a sanitized Markdown summary that is reviewable by a human and includes at least:
+
+1. Audit window: start/end time, missed weekly runs, and late-run status.
+2. Current configuration surface: enabled/disabled/unknown plugin counts, `current_profile.inferred_profile`, exact module matches, and whether manual review is required.
+3. Warning conclusion: 30-day warning count, 7-day warning count, highest severity, and whether `All skill descriptions were removed` appeared.
+4. Evidence table: per-module strong evidence count, `medium_evidence_rationale`, weak-evidence count, `cross_project_utility`, and the recommendation.
+5. Noise review: list obvious false-positive tokens removed from evidence, such as `and`, `from`, or `draft`, state they were not counted as strong evidence, and show the retained-token privacy fields: `raw_noise_tokens_retained`, `max_noise_token_length`, and `token_privacy_policy`. The Markdown summary must render a bounded sanitized sample list and must render `none` when no tokens were removed.
+6. Decision recommendation: render advisory buckets for default/project profile review candidates, on-demand soft-load modules, manual-review medium/weak modules, dormant-but-restorable modules, or `full` troubleshooting profile only. These buckets are review inputs only and must not apply a profile.
+7. Manual conflict review: render whether manual notes contain exceptions or approved hard-load exceptions, the conflict/exception count, the non-override policy, and the required disposition before any profile decision.
+8. Risks and restore path: if a plugin is disabled or removed from the default profile, document how to restore it, which helper to use such as `set_plugin_profile.ps1 -RestoreLatest -Apply`, and whether a `codex-ohmy` restart/new session is required.
+9. Non-action list: explicitly state what the report did not do, such as not modifying `config.toml`, not editing plugin cache, and not performing hard-load apply.
+
+Only when this summary and the JSON field contract both pass may the work move into hard-load/profile apply discussion.
+
+### 5.10 Manual evidence and exception note format
+
+The script primarily captures strong evidence and log evidence. Medium evidence, business criticality, project specificity, and urgent exceptions need manual notes. Manual notes must be sanitized Markdown, preferably `.tmp/skills-usage-audit-notes-YYYY-MM-DD.md`, and are not committed by default. If long-term evidence is needed, commit only a sanitized summary excerpt.
+
+Each manual note must include at least:
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `time` | Yes | Note time or task time |
+| `project` | Yes | Project or repository name; do not include sensitive customer details |
+| `task_type` | Yes | For example `web-saas`, `company-ops`, `customer-comms`, or `creative-content` |
+| `requested_capability` | Yes | Capability explicitly requested by the user or clearly required by the task |
+| `evidence_level` | Yes | `medium`, `exception`, or `noise_removed` |
+| `reason` | Yes | Why the capability matters, or why a token was treated as a false positive |
+| `action_taken` | Yes | `none`, `soft-load`, `preview`, or `approved hard-load exception` |
+| `restore_or_followup` | No | How to restore, re-review, or add script filtering later |
+
+Manual notes cannot override script evidence. If manual judgment conflicts with the JSON report, or if the note records an `exception` / `approved hard-load exception`, the JSON report must set `manual_evidence.conflict_review.status=manual_conflict_or_exception_review_required` and the 30-day summary must list the conflict/exception count, non-override policy, and required disposition.
+
+Manual note source paths are readable for local audit execution but are not retainable as raw evidence. Any path stored in `manual_evidence.invalid_notes` or candidate source references must be redacted and bounded before report retention, and the field contract must fail if manual evidence still contains raw private paths, secret assignments, standalone tokens, or a marker that source paths were retained. Sanitized Markdown summaries must also show `source_paths_retained`, `max_path_length`, and `path_privacy_policy` so human reviewers can verify the source-path privacy gate without opening raw JSON.
+
+### 5.11 Profile apply candidate change gate
+
+After the 30-day audit, evidence that supports changing the default profile still must not be applied directly. First create a candidate change-gate record that turns the audit conclusion into a reversible configuration change.
+
+The candidate record must include at least:
+
+| Field | Description |
+| --- | --- |
+| `candidate_id` | Candidate change ID, for example `skills-profile-2026-06-core-dev-plus-browser` |
+| `source_reports` | Sanitized references to the 30-day JSON report, sanitized Markdown summary, and manual-note summary |
+| `source_reports_privacy` | Contract result proving the candidate record no longer contains raw private paths or secrets |
+| `current_profile` | Current default profile and enabled-plugin summary |
+| `target_profile` | Candidate target profile, or the profile name to create/update |
+| `plugin_diff` | Plugins/modules to add, remove from default, or keep dormant |
+| `evidence_basis` | Strong evidence, medium evidence, strategic retention, or warning pressure for each change item |
+| `risk_review` | Capabilities that might be mistakenly disabled, affected projects, and restore cost |
+| `rollback_path` | Helper command to restore the old profile and restart/new-session requirements |
+| `validation_plan` | Preview, local check, startup validation, and warning retest steps |
+| `approval_state` | `preview-only`, `approved-to-apply`, `applied`, or `rolled-back` |
+| `candidate_record_contract` | Self-validation result for the retained candidate record shape, preview-only safety flags, privacy contract, rollback path, validation plan, and candidate gate structure |
+
+Gate rules:
+
+- the audit script may generate candidate JSON/Markdown via `--candidate-output` and `--candidate-summary-output`, but those outputs are preview records only;
+- candidate generation must record a gate result that requires a 30-day audit window and `--summary-reviewed`;
+- candidate generation must require source-report paths for the 30-day JSON report and sanitized Markdown summary, so a reviewed candidate cannot be detached from its review evidence;
+- candidate generation must require an explicit `--target-profile`; if it is missing, the audit state stays `ready-for-summary`, records `target_profile_missing`, and any candidate preview must stay blocked rather than raising an unstructured exception or implying a usable target;
+- candidate generation must require the report `audit_state.state` to be candidate-ready: `summary-reviewed`, `apply-candidate`, or `closed-with-candidate`; `planned`, `paused`, `running`, `ready-for-summary`, and `closed-no-change` must block candidate generation so ordinary summary flags or a no-change closure cannot be mistaken for profile-apply candidate authorization;
+- candidate `source_reports` must be sanitized before JSON or Markdown candidate records are written; raw Windows paths, POSIX home paths, UNC shares, API keys, access tokens, cookies, and standalone secret tokens must be redacted;
+- a candidate record must include `source_reports_privacy.status=passed`; if the privacy contract fails, the candidate must stay blocked until the report paths are regenerated or the sanitizer is fixed;
+- candidate Markdown summaries must render the source-report privacy status and privacy violations/blockers, using `none` when there are no violations, so the preview record is self-reviewable without exposing raw source paths;
+- candidate generation must also validate the report field contract and block with `field_contract:<reason>` when required top-level fields, audit-only safety flags, decision-critical nested fields, or the embedded `field_contract` itself are missing, stale, or invalid;
+- candidate generation must also attach and render a `candidate_record_contract`; if required candidate fields, preview-only safety flags, `source_reports_privacy.status=passed`, `candidate_generation_gate.allowed/blockers`, `rollback_path.restore_command` / `restart_required`, or a non-empty `validation_plan` are missing or invalid, the contract must fail and the candidate must not be treated as apply-ready evidence;
+- `approval_state=preview-only` may run preview only and must not modify `config.toml`;
+- `approved-to-apply` requires explicit user authorization and cannot be inferred from “continue” or generic confirmation;
+- after apply, save sanitized before/after diff summaries;
+- if warnings continue or key capabilities are missing after apply, restore through `rollback_path` first instead of stacking multiple profile changes in the same round.
+
+### 5.12 Data minimization, sanitization, and retention boundaries
+
+The usage audit reads user-level Codex sessions, logs, and configuration state, so “readable data” and “retainable data” must be managed separately.
+
+| Data source | Allowed read purpose | Retainable content | Forbidden retained or external content |
+| --- | --- | --- | --- |
+| `sessions/**/*.jsonl` | Identify explicit skill announcements, `SKILL.md` reads, and helper calls | Aggregate counts, sanitized task type, sanitized project name | Full transcripts, private user input, tokens, secrets, customer information |
+| `logs_2.sqlite` | Count budget warnings, skipped loading, and warning time windows | Warning counts, time windows, sanitized message excerpts | Full log database, raw messages containing paths/accounts/secrets |
+| `config.toml` | Read plugin enabled/disabled/unknown state | Plugin-state summary and profile names | Full user-level configuration, credentials, unrelated settings |
+| manual note files | Read sanitized human medium evidence, exceptions, and noise-removal notes | Parsed note fields, aggregate counts, redacted/bounded invalid-note source placeholders | Raw local note paths, raw manual-note files, secrets, customer information, raw transcripts |
+| plugin/vendor cache | Count `SKILL.md` inventory or locate invalid skills | Skill counts, path categories, invalid-skill summary | Full vendor files or bulk-copied `SKILL.md` content |
+| `.tmp/` audit report | Local temporary review | Local JSON and sanitized Markdown summary | Unsanitized reports committed to Git or sent to remotes |
+| profile candidate records | Preview a reversible profile change after summary review | Candidate ID, sanitized source-report references, plugin diff, rollback path, validation plan | Raw absolute user paths, UNC shares, tokens, cookies, raw manual notes, raw transcripts |
+
+Retention rules:
+
+- Runtime paths retained in any report must use placeholders and kind labels only; raw repository, user home, Codex home, or user-level `config.toml` paths must not be retained in JSON, Markdown, or candidate records;
+- `.tmp/*.json` is local temporary evidence by default and is not committed to Git;
+- long-term evidence must be a sanitized Markdown summary only;
+- before any report enters Git, verify it contains no API keys, access tokens, cookies, private customer names, or full local user-directory inventories;
+- sanitized log `message_excerpt` values must preserve complete `[REDACTED_PATH]` and `[REDACTED_SECRET]` markers when truncated, instead of retaining ambiguous partial marker fragments;
+- before any candidate record is written or rendered, verify `source_reports_privacy.status=passed` and treat any `raw_private_path`, `raw_secret_assignment`, or `raw_standalone_token` violation as a script defect;
+- remote publication must not upload raw audit JSON as an attachment;
+- if a generated report contains sensitive content, delete that local report and regenerate a sanitized summary instead of manually redacting the same report in place and continuing to use it.
+
+### 5.13 Script capability boundaries and enhancement triggers
+
+`tools/audit_codex_skills_usage.py` is an audit helper, not an omniscient source of truth. The 30-day report must state both “what the script reliably covers” and “what still needs human review.”
+
+The JSON report and sanitized Markdown summary must expose this boundary through `script_capability_boundaries`. The field contract must fail if `policy`, `reliable_coverage`, `human_review_required_for`, or `enhancement_triggers` are missing, wrong-typed, or empty.
+
+Current script capability boundaries:
+
+- it can count plugin enabled/disabled/unknown state in `config.toml`;
+- it can count user/repo/plugin `SKILL.md` inventory;
+- it can extract explicit skill announcements, `SKILL.md` path reads, profile helper calls, and tool-call names from session transcripts;
+- it can extract skills budget warnings, `All skill descriptions were removed`, `additional skills` counts, and skipped-loading samples from `logs_2.sqlite`;
+- it can aggregate helper calls and plugin skill-path reads by profile module to produce preliminary recommendations.
+
+Known limitations:
+
+- `weak_plugin_mentions` shows text trends only and does not prove real invocation;
+- `explicit_skills` can include natural-language or example-token false positives and must go through noise review;
+- `tool_call_names` is not the same as plugin/module usage unless it can be mapped to a concrete capability surface;
+- if the log database is unreadable, rotated, or missing old sessions, warning counts may be underreported;
+- profile-module aggregation depends on the registry, so missing or stale registry data makes the report incomplete evidence.
+
+Prefer script enhancement over manual workaround when:
+
+- the same false-positive pattern appears in two weekly reports;
+- the 30-day summary needs a class of evidence but the script only reports weak mentions;
+- `tool_call_names` shows a stable pattern that maps to a plugin/module but the script does not aggregate it;
+- warnings occur during a session but `logs_2.sqlite` cannot localize them, requiring another reviewable data source;
+- the profile registry and actual enabled-plugin surface diverge enough to make module evidence visibly wrong.
+
+When the script is enhanced, update regression tests and this plan together. Until tests are added, new parsing rules must not be used as final 30-day decision evidence.
+
+### 5.14 Audit run state machine and stop conditions
+
+To prevent month-long audit drift, the audit itself must have explicit state. The state describes the audit workflow only; it does not mean a plugin/profile has been applied.
+
+| State | Meaning | Allowed actions | Forbidden actions |
+| --- | --- | --- | --- |
+| `planned` | The plan exists, but the Day 0 baseline has not been generated | Review the plan and run baseline preview | Claim 30-day evidence already exists |
+| `running` | Day 0 baseline exists and 30-day evidence is being collected | Weekly reports, warning triage, manual notes, script fixes | Hard-load apply unless separately and explicitly approved |
+| `paused` | Missing data source, privacy issue, or script defect paused the audit | Fix data sources, add tests, rerun reports | Use missing paused-period data for final decisions |
+| `ready-for-summary` | Day 30 has arrived and field contract, weekly reports, triage, and manual notes are mostly complete | Generate the sanitized 30-day Markdown summary | Directly modify the default profile |
+| `summary-reviewed` | The 30-day summary has been human-reviewed and noise/conflicts are dispositioned | Create a profile apply candidate change gate | Skip rollback or validation planning |
+| `apply-candidate` | A candidate change record exists and is still preview-only or awaiting approval | Preview, risk review, request explicit authorization | Treat generic “continue” as apply authorization |
+| `closed-no-change` | 30-day evidence does not support changing the default profile | Keep dormant/soft-load paths and close this audit round | Extend the same audit round just to force a result |
+| `closed-with-candidate` | This audit round is closed and produced an approval-pending candidate | Move to a separate profile apply change | Execute configuration changes inside the audit plan file |
+
+The script must be able to record closure states without applying any profile change:
+
+- `--planned-audit` records `planned` before the Day 0 baseline is generated and blocks profile-apply candidate generation with `audit_state_planned`. It exists only to make the pre-baseline plan state explicit.
+- `--pause-audit data-source-missing|privacy-review|script-defect` records `paused` and blocks profile-apply candidate generation with `audit_state_paused`. Use it only to make an audit interruption explicit while the data source, privacy review, or script defect is fixed and the report is rerun.
+- `--summary-reviewed` with an elapsed 30-day window plus both `--output` and `--summary-output` source-report paths records `summary-reviewed` when no candidate or closure flag is requested. If the source-report paths are missing, the report stays `ready-for-summary` and records `source_report_paths_missing`.
+- `--close-audit no-change` may record `closed-no-change` only when the 30-day window has elapsed, `--summary-reviewed` is present, and both `--output` and `--summary-output` source-report paths are present.
+- `--close-audit with-candidate` may record `closed-with-candidate` only when the same evidence gates pass, a candidate output path is requested, and `--target-profile` is present.
+- If these gates are not met, the report must remain `running` or `ready-for-summary` and list closure blockers such as `audit_window_shorter_than_30_days`, `summary_not_marked_reviewed`, `source_report_paths_missing`, `candidate_output_missing`, or `target_profile_missing`.
+
+Stop conditions:
+
+- after `closed-no-change`, the next step is only a new audit round if needed or continued soft-load usage; do not keep appending to this round;
+- after `closed-with-candidate`, follow-up work must move into the profile apply candidate change and must not treat this audit plan as the execution surface;
+- if two consecutive reviews add only explanatory prose and no verifiable rule, field, state, or test requirement, stop expanding the plan and commit the current refined result;
+- audit state changes must be recorded in the 30-day summary or candidate change record, not only in chat context.
+
+### 5.15 Output retention gate
+
+Audit output retention is now script-backed by `tools/check_skills_audit_output_retention.py` and is part of `tools/run_openspec_guard.py` as `check_skills_audit_output_retention`.
+
+The retention gate MUST fail before commit, local integration, or publication when either of these paths is tracked, staged, changed, or untracked in a commit-visible location:
+
+- any `.tmp/` artifact, including `.tmp/skills-usage-audit-30d.json` even if it was forced into Git;
+- raw Skills usage audit JSON whose filename starts with `skills-usage-audit`, `skills-usage-baseline`, `skills-usage-warning`, or `skills-usage-report`, even when it is outside `.tmp/`.
+
+Long-term evidence MUST be a sanitized Markdown summary or another explicitly reviewed sanitized document. Raw JSON reports remain local working files for reproduction and review only. If a reviewer needs durable evidence, regenerate the Markdown summary from the raw JSON, review it for privacy, and commit the sanitized summary instead of the raw report.
+
+Regression coverage lives in `test/check_skills_audit_output_retention.test.py` and MUST stay registered in `tools/ci/ci_test_manifest.json`. The guard JSON aggregation test also MUST include `check_skills_audit_output_retention` so the CI-visible guard order cannot silently drop the retention gate.
+
+## 6. Decision rules
+
+After 30 days, decide using the following rules. All thresholds are based primarily on strong evidence; weak evidence can only explain trends.
+
+| Measurement | Default threshold | Meaning |
+| --- | --- | --- |
+| Frequent strong evidence | 30-day `strong_helper_calls + strong_skill_path_reads >= 10`, or >= 3 per week for two consecutive weeks | Candidate for the default profile, after confirming cross-project utility |
+| Low-frequency strong evidence | 1-9 strong-evidence events in 30 days | Keep soft-load / hard-load profile, but not always-on |
+| Project-specific strong evidence | Evidence is concentrated in one project, directory, or task type | Use a project or task profile, not the global default |
+| High warning severity | 7-day `budget_warning_count >= 3`, or `All skill descriptions were removed` appears | Prefer a smaller default profile and avoid keeping `full` always-on |
+| Medium warning severity | Any 30-day warning, but fewer than 3 in the last 7 days | Continue audit and interpret with task context |
+| No strong evidence | 0 strong-evidence events in 30 days | Remove from default candidates, but keep a restore path |
+
+| Evidence | Decision |
+| --- | --- |
+| Frequent strong evidence and cross-project utility | Keep in the default profile |
+| Low-frequency strong evidence but business-critical | Keep as soft-load and hard-load profile, not always-on |
+| Project-specific strong evidence | Use a project profile such as `browser`, `web-saas`, or `company-ops` |
+| Medium evidence only | Keep the module, but do not make it always-on |
+| Weak evidence only | Do not use as apply evidence |
+| No 30-day strong evidence but strategic | Dormant, not deleted, with restore path |
+| No 30-day strong evidence and non-strategic | Remove from default profile only through profile preview/apply |
+
+## 7. Acceptance criteria
+
+Each audit run must report:
+
+- audit window;
+- enabled plugins summary;
+- budget warning count and recent samples;
+- warning triage status, narrow-window policy, and post-warning recommended action;
+- explicit skill usage counts;
+- SKILL.md read counts;
+- profile helper invocation counts;
+- plugin/module aggregated evidence;
+- script capability boundaries, including reliable coverage, human-review needs, and enhancement triggers;
+- recommendations, without applying them automatically.
+- output retention status from `tools/check_skills_audit_output_retention.py`, proving `.tmp/` artifacts and raw Skills usage JSON are not retained in Git.
+- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, cadence-review field-contract and Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized log-excerpt redaction marker integrity, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates and Markdown blocker output, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, candidate-record contract failures for unsafe or incomplete candidate records, and candidate Markdown non-action text.
+- Regression tests must also cover explicit-skill false-positive token path/secret redaction, length truncation, `noise_review` field-contract blocking for unsanitized or missing privacy fields, and `script_capability_boundaries` field-contract blocking for missing or empty boundary lists.
+- Regression tests must cover `decision_recommendation` field-contract blocking for missing or non-advisory status, profile-apply allowance, incomplete bucket lists, non-string bucket entries, and stale `bucket_counts`.
+- Regression tests must cover `module_evidence` row-contract blocking for missing/wrong-typed fields, non-string plugin entries, negative or stale strong counts, mapped-tool evidence being counted as strong, non-manual cross-project utility, and unsupported recommendations.
+- Regression tests must cover `module_evidence` recommendation-threshold mismatches so stale rows cannot claim an on-demand, dormant, or candidate recommendation that contradicts their strong/weak evidence counts.
+- Regression tests must cover output-retention blocking for forced `.tmp/` raw reports, raw `skills-usage-*.json` reports outside `.tmp/`, and allowed sanitized Markdown summaries.
+- Regression tests must cover `output_retention` field-contract blocking for missing or non-passing retention status, and the sanitized Markdown summary must render the output-retention status and long-term evidence format.
+- Regression tests must cover `manual_evidence.conflict_review` field-contract blocking plus sanitized Markdown rendering for manual exception / approved hard-load exception notes.
+- Regression tests must cover skipped-loading warning triage counts, sanitized skipped-loading samples, field-contract blocking for missing skipped-loading triage fields, value-contract blocking for `warning_triage` status / window_policy / skipped_loading_review / blockers / non-negative counts, and Markdown rendering.
+- `tools/ci/ci_test_manifest.json` must include those regression tests so local and remote CI reuse the same checks.
+
+Each human report review must also check false-positive noise:
+
+- if `explicit_skills` contains obvious non-skill generic words such as `and`, `from`, or `draft`, those tokens must not count as strong evidence;
+- tokens that cannot be mapped to the current available skills, profile modules, plugin names, or concrete `SKILL.md` paths are treated only as weak evidence or pending-cleanup noise;
+- if the same false-positive pattern repeats, fix the script filter and regression tests before using the report for 30-day profile decisions;
+- the final 30-day report must include a noise/false-positive review conclusion, even when the conclusion is “no obvious false positives found.”
+
+## 8. Warning severity and handling actions
+
+| Symptom | Interpretation | Handling action |
+| --- | --- | --- |
+| No startup warning, but a live-session warning appears | soft-load may still be working; the runtime rebuilt the model-visible skills surface for a turn | Run `--warning-triage --days 1` or `--warning-triage --since ...` and record the turn; do not immediately hard-load apply |
+| `All skill descriptions were removed` | The current skills surface is severely over budget | Avoid `full` on the next launch; use `core-dev` or a task profile; still do not delete plugin cache during the audit |
+| `additional skills were not included` keeps rising | The automatic visible list is still too large | Shrink the default profile based on 30-day strong evidence and keep dormant restore paths |
+| `Skipped loading` points to invalid SKILL.md | A specific skill metadata or vendor cache issue exists | Record the source through `warning_triage.skipped_loading_*` fields first; do not bulk-edit vendor cache without explicit user approval |
+
+## 9. Relationship to soft-load
+
+If a session emits another `2% skills context budget` warning, that does not mean soft-load failed. The runtime is still constructing the model-visible skills surface for the turn, while soft-load is outside that budget surface. Soft-load answers “how do we read needed task knowledge now,” not “how do we shrink the global automatic visible list.”
+
+## 10. Next actions
+
+Before the audit ends, only generate reports and preview profiles. After the audit, if evidence supports a change, open a bounded change or use the approved profile helper for hard-load apply. Remote publication still follows this repository's local-main-first and GitLab/GitHub authorization workflow.
+
+## 11. Granularity completion checklist
+
+This plan is granular enough only when all of the following are true:
+
+- it explains why warnings may appear during live turns rather than only at startup;
+- it distinguishes soft-load, hard-load/profile apply, and plugin cache edits;
+- it defines strong / medium / weak evidence boundaries;
+- it defines 7-day, 30-day, and warning-triage cadence;
+- it requires `--warning-triage` to use `--days 1` or `--since`, records a top-level `warning_triage` field, and blocks broad-window triage reports;
+- it defines the JSON report field contract and requires the script to expose `field_contract` plus block incomplete, missing-contract, or stale-contract reports at candidate-generation time;
+- it validates decision-critical `audit_state` nested fields, including allowed state values, reason, next action, profile-apply denial, and blocker-list shape;
+- it renders audit-state next action, profile-apply allowance, and blocker lists in the sanitized Markdown summary;
+- it validates decision-critical `warning_triage` nested fields, including allowed states, string-only known blocker values, blocked/blocker consistency, fixed narrow-window policy, non-negative warning/skipped-loading counts, skipped-loading source-review values, and recommended action;
+- it validates decision-critical `cadence_review` nested fields and renders late-run plus missed-weekly-run status in the sanitized Markdown summary;
+- it validates decision-critical `module_evidence` row fields, including string plugin lists, non-negative strong/weak counts, strong-total consistency, mapped-tool medium-evidence policy, manual cross-project review, allowed advisory recommendations, and recommendation-threshold consistency;
+- it validates decision-critical `decision_recommendation` nested fields, including advisory-only status, profile-apply denial, required bucket names, string-only bucket entries, and bucket-count consistency;
+- it validates decision-critical `output_retention` nested fields, including checker identity, `.tmp/` local-only policy, raw audit JSON local-only policy, sanitized Markdown long-term evidence format, and violation count;
+- it defines recovery rules for missed runs, delayed warning triage, unreadable logs, privacy sanitization, and urgent exceptions;
+- it defines the final 30-day decision summary template;
+- it defines the manual note format for medium evidence, urgent exceptions, and removed false positives;
+- it defines the candidate change gate and rollback path before any post-audit hard-load/profile apply;
+- it requires candidate generation to stay attached to a JSON report path and sanitized Markdown summary path;
+- it requires candidate generation to accept only `summary-reviewed`, `apply-candidate`, or `closed-with-candidate` audit states and block not-ready or `closed-no-change` states;
+- it requires candidate `source_reports` to pass a privacy contract before candidate JSON or Markdown is written;
+- it requires generated candidate JSON and Markdown to expose a passing `candidate_record_contract` covering preview-only safety flags, gate shape, rollback path, and validation-plan completeness;
+- it defines data minimization, sanitization, retention, and no-externalization boundaries for audit data sources;
+- it defines the audit script capability boundaries, known limitations, and conditions that trigger script enhancement;
+- it exposes those script capability boundaries in JSON field contracts and sanitized Markdown summaries;
+- it defines the audit run state machine, stop conditions, and the boundary between audit closure and profile apply candidate changes;
+- it exposes planned-state recording through an audit-only script flag and blocks profile-apply candidates before the Day 0 baseline exists;
+- it exposes paused-state recording through an audit-only script flag and blocks profile-apply candidates while paused;
+- it exposes `summary-reviewed` as a script state only when the reviewed 30-day summary remains attached to JSON and Markdown source-report paths;
+- it exposes closure-state recording through explicit audit-only script flags and reports blocked closure reasons instead of silently closing;
+- it defines thresholds for frequent, low-frequency, and no-strong-evidence cases;
+- it states that explicit-skill false-positive noise must not enter strong evidence;
+- it defines warning severity and handling actions;
+- it states that `.tmp/` output is not committed by default and long-term evidence must be sanitized;
+- it requires `tools/check_skills_audit_output_retention.py` to block `.tmp/` artifacts and raw `skills-usage-*.json` reports from Git while allowing sanitized Markdown summaries;
+- it states regression-test, OpenSpec guard, and CI manifest requirements;
+- it states that remote publication still requires GitLab/GitHub authorization gates.

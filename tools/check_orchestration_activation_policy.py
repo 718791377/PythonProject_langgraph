@@ -13,9 +13,11 @@ CHECK_NAME = "orchestration_activation_policy"
 REQUIRED_SNIPPETS: dict[str, list[str]] = {
     "AGENTS.md": [
         "codex_user_level_orchestration_activation_policy",
+        "Automatic collaboration is the user-level default",
         "Run an orchestration activation check",
         "phase, capability chain, backend default/readiness, experts, durable workflow, persistent team",
         "Do not cite missing user reminders",
+        "platform_subagent_invocation_constraint",
         "expert timeout/stall/upstream pacing as non-evidence",
         "backend_default=langgraph",
         "persistent team is running",
@@ -48,22 +50,30 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
     "docs_bilingual/project_startup_summary.md": [
         "codex_user_level_orchestration_activation_policy.md",
         "Automatic orchestration activation reminders",
+        "Automatic collaboration is the user-level default",
         "capability_chain",
         "durable_workflow",
         "persistent_team",
         "missing user reminders",
+        "platform_subagent_invocation_constraint",
         "LangGraph is ready",
     ],
     "docs_bilingual/project_startup_summary.zh-CN.md": [
         "codex_user_level_orchestration_activation_policy.zh-CN.md",
         "自动 orchestration activation 提醒",
+        "自动协同是所有项目",
         "capability_chain",
         "durable_workflow",
         "persistent_team",
         "用户没有要求并行/子代理",
+        "platform_subagent_invocation_constraint",
         "LangGraph ready",
     ],
     "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md": [
+        "Automatic collaboration is the default",
+        "all projects and all Codex sessions",
+        "operator does not need to repeat",
+        "platform_subagent_invocation_constraint",
         "subagent_routing != off",
         "backend_default=langgraph",
         "backend_ready=true",
@@ -133,6 +143,9 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "native-agent TOMLs",
     ],
     "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md": [
+        "自动协同是所有项目",
+        "操作者不需要",
+        "platform_subagent_invocation_constraint",
         "subagent_routing != off",
         "backend_default=langgraph",
         "backend_ready=true",
@@ -183,6 +196,9 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "Standalone native-agent TOMLs",
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.md": [
+        "Automatic collaboration SHALL be the user-level default",
+        "platform_subagent_invocation_constraint",
+        "Generated startup instructions SHALL preserve the automatic collaboration default",
         "orchestration-activation policy",
         "hard routing directive",
         "retrofit rules",
@@ -282,6 +298,18 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "selector refresh gap",
         "SHALL NOT downgrade the backend to unavailable",
         "SHALL NOT auto-adopt unmanaged compatibility records",
+    ],
+    "openspec/specs/codex-user-level-team-mode-quick-reference-card/spec.md": [
+        "quick-reference card SHALL preserve the automatic collaboration default",
+        "platform_subagent_invocation_constraint",
+    ],
+    "tools/install-codex-user-level-team-mode.ps1": [
+        "Automatic collaboration is the default for all projects",
+        "The user does not need to repeat phrases",
+        "the user did not request parallelism/subagents/experts",
+        "platform_subagent_invocation_constraint",
+        "Global automatic collaboration default",
+        "Global Automatic Collaboration Default",
     ],
 }
 
