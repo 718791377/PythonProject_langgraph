@@ -254,6 +254,7 @@ REQUIRED_MANUAL_EVIDENCE_FIELDS = {
     "source_paths_retained",
     "max_path_length",
     "path_privacy_policy",
+    "conflict_review",
 }
 REQUIRED_MANUAL_EVIDENCE_FIELD_TYPES = {
     "valid_note_count": int,
@@ -261,6 +262,21 @@ REQUIRED_MANUAL_EVIDENCE_FIELD_TYPES = {
     "source_paths_retained": bool,
     "max_path_length": int,
     "path_privacy_policy": str,
+    "conflict_review": dict,
+}
+REQUIRED_MANUAL_CONFLICT_REVIEW_FIELDS = {
+    "status",
+    "policy",
+    "conflict_or_exception_count",
+    "disposition_required",
+    "disposition",
+}
+REQUIRED_MANUAL_CONFLICT_REVIEW_FIELD_TYPES = {
+    "status": str,
+    "policy": str,
+    "conflict_or_exception_count": int,
+    "disposition_required": bool,
+    "disposition": str,
 }
 REQUIRED_SCRIPT_CAPABILITY_FIELDS = {
     "policy",
@@ -602,6 +618,30 @@ def parse_manual_note_blocks(text: str) -> list[dict[str, str]]:
     return notes
 
 
+def build_manual_conflict_review(notes: list[dict[str, str]]) -> dict[str, Any]:
+    conflict_or_exception_notes = [
+        note
+        for note in notes
+        if note.get("evidence_level") == "exception" or note.get("action_taken") == "approved hard-load exception"
+    ]
+    conflict_or_exception_count = len(conflict_or_exception_notes)
+    return {
+        "status": (
+            "manual_conflict_or_exception_review_required"
+            if conflict_or_exception_count
+            else "no_manual_conflict_or_exception_notes"
+        ),
+        "policy": "manual_notes_do_not_override_script_evidence",
+        "conflict_or_exception_count": conflict_or_exception_count,
+        "disposition_required": bool(conflict_or_exception_count),
+        "disposition": (
+            "list_conflict_and_disposition_in_30_day_summary_before_profile_decision"
+            if conflict_or_exception_count
+            else "none"
+        ),
+    }
+
+
 def collect_manual_notes(paths: list[str]) -> dict[str, Any]:
     notes: list[dict[str, str]] = []
     invalid: list[dict[str, Any]] = []
@@ -633,6 +673,7 @@ def collect_manual_notes(paths: list[str]) -> dict[str, Any]:
             notes.append(note)
     counts_by_level = Counter(note["evidence_level"] for note in notes)
     counts_by_action = Counter(note["action_taken"] for note in notes)
+    conflict_review = build_manual_conflict_review(notes)
     return {
         "files_requested": len(paths),
         "files_read": files_read,
@@ -646,6 +687,7 @@ def collect_manual_notes(paths: list[str]) -> dict[str, Any]:
         "max_path_length": MANUAL_NOTE_PATH_LIMIT,
         "privacy_policy": "manual_notes_are_sanitized_markdown_fields_only_no_raw_transcripts",
         "path_privacy_policy": "manual_note_source_paths_are_redacted_and_bounded_before_report_retention",
+        "conflict_review": conflict_review,
     }
 
 
@@ -1326,6 +1368,17 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         manual_violations.append("raw_notes_retained_not_false")
     if manual_evidence.get("source_paths_retained") is not False:
         manual_violations.append("source_paths_retained_not_false")
+    conflict_review = manual_evidence.get("conflict_review") if isinstance(manual_evidence.get("conflict_review"), dict) else {}
+    for field in sorted(REQUIRED_MANUAL_CONFLICT_REVIEW_FIELDS):
+        if field not in conflict_review:
+            manual_violations.append(f"conflict_review:{field}_missing")
+    for field, expected_type in sorted(REQUIRED_MANUAL_CONFLICT_REVIEW_FIELD_TYPES.items()):
+        if field in conflict_review and not isinstance(conflict_review.get(field), expected_type):
+            manual_violations.append(f"conflict_review:{field}_invalid_type")
+    if conflict_review.get("policy") not in (None, "manual_notes_do_not_override_script_evidence"):
+        manual_violations.append("conflict_review:policy_invalid_value")
+    if isinstance(conflict_review.get("conflict_or_exception_count"), int) and conflict_review["conflict_or_exception_count"] < 0:
+        manual_violations.append("conflict_review:conflict_or_exception_count_invalid_type")
     if isinstance(manual_evidence.get("max_path_length"), int) and manual_evidence["max_path_length"] > MANUAL_NOTE_PATH_LIMIT:
         manual_violations.append("max_path_length_exceeds_limit")
     serialized_manual = json.dumps(manual_evidence, ensure_ascii=False)
@@ -2257,6 +2310,11 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             f"- Max source path length: `{manual_evidence.get('max_path_length')}`",
             f"- Privacy policy: `{manual_evidence.get('privacy_policy')}`",
             f"- Source path privacy policy: `{manual_evidence.get('path_privacy_policy')}`",
+            f"- Conflict review status: `{manual_evidence.get('conflict_review', {}).get('status')}`",
+            f"- Conflict/exception count: `{manual_evidence.get('conflict_review', {}).get('conflict_or_exception_count')}`",
+            f"- Conflict disposition required: `{manual_evidence.get('conflict_review', {}).get('disposition_required')}`",
+            f"- Conflict policy: `{manual_evidence.get('conflict_review', {}).get('policy')}`",
+            f"- Conflict disposition: `{manual_evidence.get('conflict_review', {}).get('disposition')}`",
             "",
             "## Script coverage and human review boundaries",
             "",

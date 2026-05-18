@@ -169,6 +169,7 @@ The `output_retention` contract must require `status`, `ok`, `checker`, `tmp_out
 The `cadence_review` contract must require `late_run`, `missed_weekly_runs`, and `weekly_report_review`; `missed_weekly_runs` must be either `null` or a non-negative integer, and `late_run=true` must include an explicit missed-run count. The sanitized Markdown summary must render these cadence fields in the audit-window section so a 30-day reviewer can see cadence drift without opening raw JSON.
 The `module_evidence` contract must validate every row before it can feed `decision_recommendation` or candidate generation. Each row must include module name, plugin list, strong-helper counts, strong skill-path counts, strong total, default-candidate threshold, mapped-tool medium-evidence count and policy, medium-evidence rationale, weak mentions, cross-project utility, and recommendation. Numeric counts must be non-negative integers, `strong_total` must equal helper calls plus skill-path reads, plugin entries must be strings, mapped tool calls must remain medium evidence, cross-project utility must require manual review, and recommendations must stay within the approved advisory values. The recommendation must also match the threshold rule: `strong_total >= default_candidate_threshold` is a profile-review candidate, `0 < strong_total < threshold` stays on-demand, `strong_total == 0` with weak mentions is mentioned-only, and no strong or weak evidence stays dormant/restorable.
 The `decision_recommendation` contract must require advisory-only status, the non-apply policy, `profile_apply_allowed=false`, the four bucket lists (`profile_review_candidates`, `on_demand_soft_load`, `manual_review_medium_or_weak`, and `dormant_restorable`), and matching `bucket_counts`. If the buckets are missing, wrong-typed, contain non-string module names, mark profile apply as allowed, or have stale counts, the field contract must fail before any profile decision or candidate generation.
+The `manual_evidence.conflict_review` contract must require status, policy, conflict/exception count, disposition-required flag, and disposition text. Manual exception notes and approved hard-load exception notes must be surfaced as `manual_conflict_or_exception_review_required` so a 30-day reviewer cannot miss manual evidence that conflicts with or exceeds script evidence.
 
 ### 5.7 Audit cadence, retention, and report naming
 
@@ -210,8 +211,9 @@ Day 30 must not ship only raw JSON. It must produce a sanitized Markdown summary
 4. Evidence table: per-module strong evidence count, `medium_evidence_rationale`, weak-evidence count, `cross_project_utility`, and the recommendation.
 5. Noise review: list obvious false-positive tokens removed from evidence, such as `and`, `from`, or `draft`, state they were not counted as strong evidence, and show the retained-token privacy fields: `raw_noise_tokens_retained`, `max_noise_token_length`, and `token_privacy_policy`. The Markdown summary must render a bounded sanitized sample list and must render `none` when no tokens were removed.
 6. Decision recommendation: render advisory buckets for default/project profile review candidates, on-demand soft-load modules, manual-review medium/weak modules, dormant-but-restorable modules, or `full` troubleshooting profile only. These buckets are review inputs only and must not apply a profile.
-7. Risks and restore path: if a plugin is disabled or removed from the default profile, document how to restore it, which helper to use such as `set_plugin_profile.ps1 -RestoreLatest -Apply`, and whether a `codex-ohmy` restart/new session is required.
-8. Non-action list: explicitly state what the report did not do, such as not modifying `config.toml`, not editing plugin cache, and not performing hard-load apply.
+7. Manual conflict review: render whether manual notes contain exceptions or approved hard-load exceptions, the conflict/exception count, the non-override policy, and the required disposition before any profile decision.
+8. Risks and restore path: if a plugin is disabled or removed from the default profile, document how to restore it, which helper to use such as `set_plugin_profile.ps1 -RestoreLatest -Apply`, and whether a `codex-ohmy` restart/new session is required.
+9. Non-action list: explicitly state what the report did not do, such as not modifying `config.toml`, not editing plugin cache, and not performing hard-load apply.
 
 Only when this summary and the JSON field contract both pass may the work move into hard-load/profile apply discussion.
 
@@ -232,7 +234,7 @@ Each manual note must include at least:
 | `action_taken` | Yes | `none`, `soft-load`, `preview`, or `approved hard-load exception` |
 | `restore_or_followup` | No | How to restore, re-review, or add script filtering later |
 
-Manual notes cannot override script evidence. If manual judgment conflicts with the JSON report, the 30-day summary must list both the conflict and the disposition.
+Manual notes cannot override script evidence. If manual judgment conflicts with the JSON report, or if the note records an `exception` / `approved hard-load exception`, the JSON report must set `manual_evidence.conflict_review.status=manual_conflict_or_exception_review_required` and the 30-day summary must list the conflict/exception count, non-override policy, and required disposition.
 
 Manual note source paths are readable for local audit execution but are not retainable as raw evidence. Any path stored in `manual_evidence.invalid_notes` or candidate source references must be redacted and bounded before report retention, and the field contract must fail if manual evidence still contains raw private paths, secret assignments, standalone tokens, or a marker that source paths were retained. Sanitized Markdown summaries must also show `source_paths_retained`, `max_path_length`, and `path_privacy_policy` so human reviewers can verify the source-path privacy gate without opening raw JSON.
 
@@ -417,6 +419,7 @@ Each audit run must report:
 - Regression tests must cover `module_evidence` recommendation-threshold mismatches so stale rows cannot claim an on-demand, dormant, or candidate recommendation that contradicts their strong/weak evidence counts.
 - Regression tests must cover output-retention blocking for forced `.tmp/` raw reports, raw `skills-usage-*.json` reports outside `.tmp/`, and allowed sanitized Markdown summaries.
 - Regression tests must cover `output_retention` field-contract blocking for missing or non-passing retention status, and the sanitized Markdown summary must render the output-retention status and long-term evidence format.
+- Regression tests must cover `manual_evidence.conflict_review` field-contract blocking plus sanitized Markdown rendering for manual exception / approved hard-load exception notes.
 - `tools/ci/ci_test_manifest.json` must include those regression tests so local and remote CI reuse the same checks.
 
 Each human report review must also check false-positive noise:

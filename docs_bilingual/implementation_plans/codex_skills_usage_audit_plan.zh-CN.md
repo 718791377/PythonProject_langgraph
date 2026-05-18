@@ -169,6 +169,7 @@ created_at: 2026-05-16
 `cadence_review` 契约必须要求 `late_run`、`missed_weekly_runs` 与 `weekly_report_review`；`missed_weekly_runs` 必须是 `null` 或非负整数，且 `late_run=true` 时必须显式记录漏跑次数。脱敏 Markdown 摘要必须在审计窗口部分渲染这些节奏字段，让 30 天复核者无需打开原始 JSON 也能看到审计节奏是否偏离。
 `module_evidence` 契约必须在其进入 `decision_recommendation` 或候选生成前校验每一行。每行必须包含 module 名称、plugin 列表、strong helper 计数、strong skill-path 计数、strong total、默认候选阈值、mapped-tool 中证据计数与策略、中证据说明、弱提及、跨项目效用和 recommendation。数值计数必须是非负整数，`strong_total` 必须等于 helper calls 加 skill-path reads，plugin 元素必须是字符串，mapped tool calls 必须保持为中证据，跨项目效用必须要求人工复核，recommendation 只能使用已批准的 advisory 取值。recommendation 还必须匹配阈值规则：`strong_total >= default_candidate_threshold` 才是 profile 复核候选，`0 < strong_total < threshold` 保持按需加载，`strong_total == 0` 且存在弱提及时只能是 mentioned-only，没有强证据也没有弱提及时保持 dormant/restorable。
 `decision_recommendation` 契约必须要求 advisory-only 状态、非 apply 策略、`profile_apply_allowed=false`、四个分桶列表（`profile_review_candidates`、`on_demand_soft_load`、`manual_review_medium_or_weak`、`dormant_restorable`）以及一致的 `bucket_counts`。如果分桶缺失、类型错误、包含非字符串 module 名称、允许 profile apply，或 `bucket_counts` 与实际分桶长度不一致，字段契约必须失败，不能进入 profile 决策或候选生成。
+`manual_evidence.conflict_review` 契约必须要求状态、策略、冲突/例外计数、是否需要处置以及处置说明。人工 `exception` 记录和 `approved hard-load exception` 记录必须暴露为 `manual_conflict_or_exception_review_required`，避免 30 天复核者漏看与脚本证据冲突或超出脚本证据的人工判断。
 
 
 ### 5.7 审计节奏、留存与报告命名
@@ -211,8 +212,9 @@ created_at: 2026-05-16
 4. 证据表：按 module 列出强证据次数、`medium_evidence_rationale`、弱证据次数、`cross_project_utility` 和 recommendation。
 5. 噪声复核：列出被剔除的明显误报 token，例如 `and`、`from`、`draft`；说明它们未计入强证据；同时展示 `raw_noise_tokens_retained`、`max_noise_token_length` 与 `token_privacy_policy`，让人工复核者不打开原始 JSON 也能确认噪声 token 隐私门禁。 Markdown 摘要必须渲染一组有上限的脱敏样本列表；如果没有被剔除 token，必须显示 `none`。
 6. 决策建议：渲染只用于复核的分桶，包括默认/项目 profile 复核候选、按需 soft-load 模块、中证据/弱证据人工复核模块、保留 dormant 但可恢复模块，或仅留在 `full` 排障 profile；这些分桶只是 review input，不得执行 profile apply。
-7. 风险与恢复路径：如果禁用或移出默认 profile，写明如何恢复、使用哪个 helper（例如 `set_plugin_profile.ps1 -RestoreLatest -Apply`）、是否需要通过 `codex-ohmy` 重启/新会话。
-8. 不执行清单：明确哪些动作本报告没有执行，例如未修改 `config.toml`、未编辑 plugin cache、未 hard-load apply。
+7. 人工冲突复核：渲染人工记录是否包含例外或已批准 hard-load 例外、冲突/例外数量、人工记录不能覆盖脚本证据的策略，以及进入 profile 决策前必须完成的处置。
+8. 风险与恢复路径：如果禁用或移出默认 profile，写明如何恢复、使用哪个 helper（例如 `set_plugin_profile.ps1 -RestoreLatest -Apply`）、是否需要通过 `codex-ohmy` 重启/新会话。
+9. 不执行清单：明确哪些动作本报告没有执行，例如未修改 `config.toml`、未编辑 plugin cache、未 hard-load apply。
 
 只有这份摘要与 JSON 报告字段契约同时满足，才允许进入后续 hard-load/profile apply 讨论。
 
@@ -233,7 +235,7 @@ created_at: 2026-05-16
 | `action_taken` | 是 | `none`、`soft-load`、`preview`、`approved hard-load exception` |
 | `restore_or_followup` | 否 | 后续如何恢复、复核或补脚本过滤 |
 
-人工记录不能覆盖脚本证据：如果人工判断与 JSON 报告冲突，30 天摘要必须同时列出冲突和处理结论。
+人工记录不能覆盖脚本证据：如果人工判断与 JSON 报告冲突，或记录了 `exception` / `approved hard-load exception`，JSON 报告必须设置 `manual_evidence.conflict_review.status=manual_conflict_or_exception_review_required`，30 天摘要必须列出冲突/例外数量、非覆盖策略和需要完成的处置。
 
 人工记录来源路径只允许用于本地审计执行，不能作为原始证据留存。写入 `manual_evidence.invalid_notes` 或候选 source 引用前，必须先对路径做脱敏和长度限制；如果 manual evidence 仍包含原始私有路径、secret 赋值、独立 token，或标记为保留了原始来源路径，字段契约必须失败。脱敏 Markdown 摘要也必须展示 `source_paths_retained`、`max_path_length` 与 `path_privacy_policy`，让人工复核者不打开原始 JSON 也能确认人工记录来源路径隐私门禁。
 
@@ -420,6 +422,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 回归测试还必须覆盖 `module_evidence` recommendation 与阈值不一致的报告，防止旧行把与强/弱证据计数矛盾的按需、dormant 或候选建议带入决策。
 - 回归测试还必须覆盖输出留存门禁：强制加入 Git 的 `.tmp/` 原始报告、位于 `.tmp/` 之外的原始 `skills-usage-*.json` 报告必须被阻断，脱敏 Markdown 摘要必须允许。
 - 回归测试还必须覆盖 `output_retention` 字段契约阻断缺失或未通过的留存状态，并要求脱敏 Markdown 摘要渲染输出留存状态与长期证据格式。
+- 回归测试还必须覆盖 `manual_evidence.conflict_review` 字段契约阻断，以及人工例外 / 已批准 hard-load 例外记录在脱敏 Markdown 摘要中的渲染。
 - `tools/ci/ci_test_manifest.json` 必须纳入这些回归测试，保证 local/remote CI 复用同一检查。
 
 每次人工复核报告时，还必须检查误报噪声：

@@ -1228,6 +1228,13 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "source_paths_retained": False,
                 "max_path_length": audit.MANUAL_NOTE_PATH_LIMIT,
                 "path_privacy_policy": "manual_note_source_paths_are_redacted_and_bounded_before_report_retention",
+                "conflict_review": {
+                    "status": "no_manual_conflict_or_exception_notes",
+                    "policy": "manual_notes_do_not_override_script_evidence",
+                    "conflict_or_exception_count": 0,
+                    "disposition_required": False,
+                    "disposition": "none",
+                },
             },
             "noise_review": {
                 "status": "no_obvious_false_positives_found",
@@ -1356,6 +1363,63 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertFalse(manual["source_paths_retained"])
         self.assertEqual(manual["max_path_length"], audit.MANUAL_NOTE_PATH_LIMIT)
         self.assertIn("redacted", manual["path_privacy_policy"])
+        self.assertEqual(manual["conflict_review"]["status"], "no_manual_conflict_or_exception_notes")
+        self.assertFalse(manual["conflict_review"]["disposition_required"])
+        self.assertEqual(report["field_contract"]["status"], "passed")
+
+    def test_manual_exception_notes_require_conflict_disposition_in_summary(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-manual-conflict-review")
+        notes_path = codex_home / "manual-conflict-notes.md"
+        notes_path.write_text(
+            "\n".join(
+                [
+                    "time: 2026-05-16T00:00:00Z",
+                    "project: test",
+                    "task_type: customer-comms",
+                    "requested_capability: twilio",
+                    "evidence_level: exception",
+                    "reason: urgent customer communications exception",
+                    "action_taken: approved hard-load exception",
+                    "restore_or_followup: rollback after incident",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[str(notes_path)],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        manual = report["manual_evidence"]
+        summary = audit.render_markdown_summary(report)
+
+        self.assertEqual(manual["counts_by_evidence_level"], {"exception": 1})
+        self.assertEqual(manual["counts_by_action"], {"approved hard-load exception": 1})
+        self.assertEqual(
+            manual["conflict_review"]["status"],
+            "manual_conflict_or_exception_review_required",
+        )
+        self.assertEqual(manual["conflict_review"]["conflict_or_exception_count"], 1)
+        self.assertTrue(manual["conflict_review"]["disposition_required"])
+        self.assertEqual(
+            manual["conflict_review"]["policy"],
+            "manual_notes_do_not_override_script_evidence",
+        )
+        self.assertIn("Conflict review status: `manual_conflict_or_exception_review_required`", summary)
+        self.assertIn("Conflict/exception count: `1`", summary)
+        self.assertIn("Conflict disposition required: `True`", summary)
         self.assertEqual(report["field_contract"]["status"], "passed")
 
     def test_field_contract_rejects_raw_manual_evidence_paths(self) -> None:
@@ -1391,6 +1455,48 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("manual_evidence:source_paths_retained_not_false", contract["blockers"])
         self.assertIn("manual_evidence:manual_evidence_contains_private_path", contract["blockers"])
         self.assertIn("manual_evidence:manual_evidence_contains_raw_secret_assignment", contract["blockers"])
+
+    def test_field_contract_requires_manual_conflict_review(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-manual-conflict-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        missing = json.loads(json.dumps(report))
+        missing["manual_evidence"].pop("conflict_review")
+        invalid = json.loads(json.dumps(report))
+        invalid["manual_evidence"]["conflict_review"] = {
+            "status": "manual_conflict_or_exception_review_required",
+            "policy": "manual_notes_override_script_evidence",
+            "conflict_or_exception_count": -1,
+            "disposition_required": "yes",
+        }
+
+        missing_contract = audit.validate_report_field_contract(missing)
+        invalid_contract = audit.validate_report_field_contract(invalid)
+
+        self.assertFalse(missing_contract["passed"])
+        self.assertIn("manual_evidence:conflict_review_missing", missing_contract["blockers"])
+        self.assertFalse(invalid_contract["passed"])
+        self.assertIn("manual_evidence:conflict_review:disposition_missing", invalid_contract["blockers"])
+        self.assertIn("manual_evidence:conflict_review:disposition_required_invalid_type", invalid_contract["blockers"])
+        self.assertIn("manual_evidence:conflict_review:policy_invalid_value", invalid_contract["blockers"])
+        self.assertIn(
+            "manual_evidence:conflict_review:conflict_or_exception_count_invalid_type",
+            invalid_contract["blockers"],
+        )
 
     def test_since_with_timezone_is_converted_to_utc_without_replacing_offset(self) -> None:
         parsed = audit.parse_since("2026-05-16T08:00:00+08:00")
