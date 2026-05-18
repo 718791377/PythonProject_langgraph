@@ -228,6 +228,9 @@ REQUIRED_WARNING_TRIAGE_FIELDS = {
     "window_policy",
     "window_ok",
     "budget_warning_count",
+    "skipped_loading_count",
+    "recent_skipped_loading_samples",
+    "skipped_loading_review",
     "recommended_action",
 }
 REQUIRED_WARNING_TRIAGE_FIELD_TYPES = {
@@ -237,6 +240,9 @@ REQUIRED_WARNING_TRIAGE_FIELD_TYPES = {
     "window_policy": str,
     "window_ok": bool,
     "budget_warning_count": int,
+    "skipped_loading_count": int,
+    "recent_skipped_loading_samples": int,
+    "skipped_loading_review": str,
     "recommended_action": str,
 }
 REQUIRED_CADENCE_REVIEW_FIELDS = {
@@ -1253,6 +1259,13 @@ def build_warning_triage(
     window_ok = warning_triage_window_ok(args)
     blockers = ["warning_triage_window_not_narrow"] if requested and not window_ok else []
     warning_count = int(logs_data.get("budget_warning_count") or 0)
+    skipped_loading_count = int(logs_data.get("skipped_loading_count") or 0)
+    recent_skipped_loading_samples = len(logs_data.get("recent_skipped_loading") or [])
+    skipped_loading_review = (
+        "record_source_and_do_not_edit_vendor_cache_without_authorization"
+        if skipped_loading_count
+        else "none"
+    )
     available = bool(logs_data.get("available"))
     if not requested:
         status = "not_requested"
@@ -1282,6 +1295,9 @@ def build_warning_triage(
         "uses_since_override": bool(getattr(args, "since", None)),
         "log_evidence_available": available,
         "budget_warning_count": warning_count,
+        "skipped_loading_count": skipped_loading_count,
+        "recent_skipped_loading_samples": recent_skipped_loading_samples,
+        "skipped_loading_review": skipped_loading_review,
         "all_descriptions_removed_count": logs_data.get("all_descriptions_removed_count", 0),
         "max_omitted_additional_skills": logs_data.get("max_omitted_additional_skills", 0),
         "recent_budget_warning_samples": len(logs_data.get("recent_budget_warnings") or []),
@@ -2268,6 +2284,9 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Window policy: `{warning_triage.get('window_policy')}`",
         f"- Window OK: `{warning_triage.get('window_ok')}`",
         f"- Budget warnings in triage window: `{warning_triage.get('budget_warning_count')}`",
+        f"- Skipped loading in triage window: `{warning_triage.get('skipped_loading_count')}`",
+        f"- Recent skipped-loading samples: `{warning_triage.get('recent_skipped_loading_samples')}`",
+        f"- Skipped-loading review: `{warning_triage.get('skipped_loading_review')}`",
         f"- Recommended action: `{warning_triage.get('recommended_action')}`",
         "",
         "## Module evidence",

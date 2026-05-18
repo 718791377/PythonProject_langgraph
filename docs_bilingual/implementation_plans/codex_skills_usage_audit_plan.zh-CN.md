@@ -162,7 +162,7 @@ created_at: 2026-05-16
 
 审计脚本还必须校验运行路径隐私：顶层 `root`、顶层 `codex_home`、`config_summary.config_path` 以及 `runtime_paths.root/codex_home/config_path` 都不得包含原始 Windows、POSIX home、UNC、token、cookie 或 secret 路径。报告必须用 `[REPO_ROOT]`、`[CODEX_HOME]`、`[CODEX_HOME]/config.toml` 等占位符替代原始绝对路径，并且 `runtime_paths.raw_paths_retained` 必须保持 `false`。
 
-审计脚本必须为每份生成报告计算 `field_contract` 结果。该结果记录 `status`、`passed`、必需字段、缺失字段、字段类型错误、audit-only 安全标志违规，以及会影响决策的嵌套字段违规。`audit_state` 契约必须要求 `state`、`reason`、`next_action` 与 `profile_apply_allowed`，防止报告丢失状态机上下文。脱敏 Markdown 摘要还必须渲染 audit state 的 next action、profile apply 许可标志，以及 `close_blockers`、`candidate_blockers`、`summary_review_blockers`、`pause_blockers` 或 `warning_triage_blockers`；没有 blocker 时写入 `none`。`warning_triage` 契约必须要求 `requested`、`status`、`blockers`、`window_policy`、`window_ok`、`budget_warning_count` 与 `recommended_action`，防止 warning 复核报告遗漏 triage 状态、窄窗口策略或后续动作。只要 `field_contract.status != passed`，该报告就是不完整证据；必须先修脚本或重跑报告，才能进入 profile 决策。候选生成必须要求报告内嵌 `field_contract`；来自旧脚本或人工改写后缺少/过期内嵌契约的报告，必须阻断并要求重新生成。
+审计脚本必须为每份生成报告计算 `field_contract` 结果。该结果记录 `status`、`passed`、必需字段、缺失字段、字段类型错误、audit-only 安全标志违规，以及会影响决策的嵌套字段违规。`audit_state` 契约必须要求 `state`、`reason`、`next_action` 与 `profile_apply_allowed`，防止报告丢失状态机上下文。脱敏 Markdown 摘要还必须渲染 audit state 的 next action、profile apply 许可标志，以及 `close_blockers`、`candidate_blockers`、`summary_review_blockers`、`pause_blockers` 或 `warning_triage_blockers`；没有 blocker 时写入 `none`。`warning_triage` 契约必须要求 `requested`、`status`、`blockers`、`window_policy`、`window_ok`、`budget_warning_count`、`skipped_loading_count`、`recent_skipped_loading_samples`、`skipped_loading_review` 与 `recommended_action`，防止 warning 复核报告遗漏 triage 状态、窄窗口策略、skipped-loading 来源复核或后续动作。只要 `field_contract.status != passed`，该报告就是不完整证据；必须先修脚本或重跑报告，才能进入 profile 决策。候选生成必须要求报告内嵌 `field_contract`；来自旧脚本或人工改写后缺少/过期内嵌契约的报告，必须阻断并要求重新生成。
 `noise_review` 契约必须要求 `raw_noise_tokens_retained=false`、`max_noise_token_length`、`token_privacy_policy` 与脱敏后的 `explicit_skill_noise_removed`。噪声 token 在进入报告前必须先替换私有路径、secret、cookie 或 token，并截断到固定长度；如果仍检测到原始私有路径、secret 或过长 token，字段契约必须失败。
 `script_capability_boundaries` 契约必须要求 `policy`、`reliable_coverage`、`human_review_required_for` 和 `enhancement_triggers`。这些列表必须存在且非空，避免报告暗示 audit helper 是全知事实源。
 `output_retention` 契约必须要求 `status`、`ok`、`checker`、`tmp_outputs_local_only`、`raw_audit_json_local_only`、`long_term_evidence_format` 和 `violation_count`。只有留存 checker 自身通过、`.tmp/` 输出与原始 audit JSON 都标记为本地-only，且长期证据格式为 `sanitized_markdown_summary` 时，该契约才能通过。
@@ -186,7 +186,7 @@ created_at: 2026-05-16
 
 `.tmp/` 报告默认不入 Git；如果需要长期留证，只提交经过脱敏和摘要化的 Markdown 结论，不提交完整 session transcript、token、私有路径或 vendor cache 内容。
 
-`--warning-triage` 是 warning 出现后的 audit-only 复核标记，必须搭配窄窗口：使用 `--days 1`，或使用显式 `--since` 覆盖 warning 时间点。如果 `--warning-triage` 搭配 `--days 7`、`--days 30` 等过宽窗口，报告必须写入 `warning_triage.status=blocked`、`warning_triage_window_not_narrow`，并保持 `audit_state.reason=warning_triage_window_too_broad`。该标记不得修改 `config.toml`、plugin cache 或 hard-load profile。
+`--warning-triage` 是 warning 出现后的 audit-only 复核标记，必须搭配窄窗口：使用 `--days 1`，或使用显式 `--since` 覆盖 warning 时间点。如果 `--warning-triage` 搭配 `--days 7`、`--days 30` 等过宽窗口，报告必须写入 `warning_triage.status=blocked`、`warning_triage_window_not_narrow`，并保持 `audit_state.reason=warning_triage_window_too_broad`。triage 报告还必须汇总 `Skipped loading` warning 数量，并记录“先记录来源、不批量改 vendor cache”的复核策略。该标记不得修改 `config.toml`、plugin cache 或 hard-load profile。
 
 ### 5.8 偏离控制与异常恢复
 
@@ -423,6 +423,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 回归测试还必须覆盖输出留存门禁：强制加入 Git 的 `.tmp/` 原始报告、位于 `.tmp/` 之外的原始 `skills-usage-*.json` 报告必须被阻断，脱敏 Markdown 摘要必须允许。
 - 回归测试还必须覆盖 `output_retention` 字段契约阻断缺失或未通过的留存状态，并要求脱敏 Markdown 摘要渲染输出留存状态与长期证据格式。
 - 回归测试还必须覆盖 `manual_evidence.conflict_review` 字段契约阻断，以及人工例外 / 已批准 hard-load 例外记录在脱敏 Markdown 摘要中的渲染。
+- 回归测试还必须覆盖 skipped-loading warning triage 计数、脱敏 skipped-loading 样本、缺少 skipped-loading triage 字段时的字段契约阻断以及 Markdown 渲染。
 - `tools/ci/ci_test_manifest.json` 必须纳入这些回归测试，保证 local/remote CI 复用同一检查。
 
 每次人工复核报告时，还必须检查误报噪声：
@@ -439,7 +440,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 | 启动时无 warning，但会话中出现 warning | soft-load 仍可能有效；runtime 在 turn 级重建 model-visible skills surface | 运行 `--warning-triage --days 1` 或 `--warning-triage --since ...`，记录发生 turn，不立即 hard-load apply |
 | `All skill descriptions were removed` | 当前 skills surface 已严重超预算 | 下轮启动避免 `full`，使用 `core-dev` 或任务 profile；审计结束前仍不删除 plugin cache |
 | `additional skills were not included` 数量持续升高 | 自动可见列表仍过大 | 根据 30 天强证据缩小默认 profile，保留 dormant 恢复路径 |
-| `Skipped loading` 指向无效 SKILL.md | 单个 skill 元数据错误或 vendor cache 问题 | 优先记录来源；除非用户授权，不批量改 vendor cache |
+| `Skipped loading` 指向无效 SKILL.md | 单个 skill 元数据错误或 vendor cache 问题 | 先通过 `warning_triage.skipped_loading_*` 字段记录来源；除非用户授权，不批量改 vendor cache |
 
 ## 9. 与 soft-load 的关系
 
@@ -461,7 +462,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 明确 JSON 报告字段契约，并要求脚本输出 `field_contract` 且在候选生成时阻断不完整、缺少契约或契约过期的报告；
 - 校验决策关键的 `audit_state` 嵌套字段，包括状态、原因、下一步动作与 profile apply 许可标志；
 - 在脱敏 Markdown 摘要中渲染 audit-state 下一步动作、profile apply 许可标志与 blocker 列表；
-- 校验决策关键的 `warning_triage` 嵌套字段，包括状态、blockers、窄窗口策略、warning 计数与后续动作建议；
+- 校验决策关键的 `warning_triage` 嵌套字段，包括状态、blockers、窄窗口策略、warning 计数、skipped-loading 来源复核与后续动作建议；
 - 校验决策关键的 `cadence_review` 嵌套字段，并在脱敏 Markdown 摘要中渲染 late-run 与漏跑周报状态；
 - 校验决策关键的 `module_evidence` 行字段，包括字符串 plugin 列表、非负 strong/weak 计数、strong-total 一致性、mapped-tool 中证据策略、跨项目人工复核、允许的 advisory recommendation 以及 recommendation 与阈值一致性；
 - 校验决策关键的 `decision_recommendation` 嵌套字段，包括 advisory-only 状态、profile apply 禁止标志、必需分桶名称、分桶元素只能是字符串以及分桶计数一致性；

@@ -376,6 +376,16 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                     "All skill descriptions were removed and 16 additional skills were not included.",
                 ),
             )
+            con.execute(
+                "insert into logs values (?, ?, ?, ?)",
+                (
+                    int(time.time()),
+                    "WARN",
+                    "codex_skill_loader",
+                    r"Skipped loading 2 skill(s) due to invalid SKILL.md files. "
+                    r"C:\Users\lenovo\.codex\plugins\cache\vendor\SKILL.md api_key=sk-test-secret",
+                ),
+            )
 
         report = audit.scan_logs(codex_home, audit.now_utc() - timedelta(days=1))
 
@@ -573,6 +583,16 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                     "All skill descriptions were removed and 16 additional skills were not included.",
                 ),
             )
+            con.execute(
+                "insert into logs values (?, ?, ?, ?)",
+                (
+                    int(time.time()),
+                    "WARN",
+                    "codex_skill_loader",
+                    r"Skipped loading 2 skill(s) due to invalid SKILL.md files. "
+                    r"C:\Users\lenovo\.codex\plugins\cache\vendor\SKILL.md api_key=sk-test-secret",
+                ),
+            )
         args = argparse.Namespace(
             root=str(REPO_ROOT),
             codex_home=str(codex_home),
@@ -594,8 +614,25 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertEqual(report["warning_triage"]["status"], "warning_found")
         self.assertEqual(report["warning_triage"]["budget_warning_count"], 1)
+        self.assertEqual(report["warning_triage"]["skipped_loading_count"], 1)
+        self.assertEqual(report["warning_triage"]["recent_skipped_loading_samples"], 1)
+        self.assertEqual(
+            report["warning_triage"]["skipped_loading_review"],
+            "record_source_and_do_not_edit_vendor_cache_without_authorization",
+        )
         self.assertEqual(report["warning_triage"]["all_descriptions_removed_count"], 1)
         self.assertEqual(report["warning_triage"]["max_omitted_additional_skills"], 16)
+        skipped_excerpt = report["log_evidence"]["recent_skipped_loading"][0]["message_excerpt"]
+        self.assertIn("[REDACTED_PATH]", skipped_excerpt)
+        self.assertIn("[REDACTED_SECRET]", skipped_excerpt)
+        self.assertNotIn(r"C:\Users\lenovo", json.dumps(report, ensure_ascii=False))
+        summary = audit.render_markdown_summary(report)
+        self.assertIn("Skipped loading in triage window: `1`", summary)
+        self.assertIn("Recent skipped-loading samples: `1`", summary)
+        self.assertIn(
+            "Skipped-loading review: `record_source_and_do_not_edit_vendor_cache_without_authorization`",
+            summary,
+        )
         self.assertEqual(report["field_contract"]["status"], "passed")
 
     def test_report_uses_repo_profile_fallback_and_expands_full_module(self) -> None:
@@ -1108,14 +1145,18 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         )
         report = audit.build_report(args)
         report["warning_triage"].pop("window_policy")
+        report["warning_triage"].pop("skipped_loading_review")
         report["warning_triage"]["blockers"] = "warning_triage_window_not_narrow"
+        report["warning_triage"]["skipped_loading_count"] = "one"
 
         contract = audit.validate_report_field_contract(report)
         gate = audit.build_candidate_generation_gate(report, summary_reviewed=True)
 
         self.assertFalse(contract["passed"])
         self.assertIn("warning_triage:window_policy_missing", contract["blockers"])
+        self.assertIn("warning_triage:skipped_loading_review_missing", contract["blockers"])
         self.assertIn("warning_triage:blockers_invalid_type", contract["blockers"])
+        self.assertIn("warning_triage:skipped_loading_count_invalid_type", contract["blockers"])
         self.assertFalse(gate["allowed"])
         self.assertIn("field_contract:warning_triage:window_policy_missing", gate["blockers"])
 
@@ -1219,6 +1260,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "window_policy": "use_days_1_or_since_for_warning_triage",
                 "window_ok": False,
                 "budget_warning_count": 0,
+                "skipped_loading_count": 0,
+                "recent_skipped_loading_samples": 0,
+                "skipped_loading_review": "none",
                 "recommended_action": "run_with_warning_triage_after_a_live_session_budget_warning",
             },
             "session_evidence": {},
