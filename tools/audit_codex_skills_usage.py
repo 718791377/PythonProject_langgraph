@@ -35,7 +35,8 @@ OMITTED_PATTERN = re.compile(r"(\d+)\s+additional skills", re.IGNORECASE)
 WINDOWS_PATH_PATTERN = re.compile(r"[A-Za-z]:\\[^\s\"'<>|]+")
 WINDOWS_FORWARD_PATH_PATTERN = re.compile(r"[A-Za-z]:/[^\s\"'<>|]+")
 UNC_PATH_PATTERN = re.compile(r"\\\\[^\s\"'<>|]+(?:\\[^\s\"'<>|]+)+")
-POSIX_PRIVATE_PATH_PATTERN = re.compile(r"(?<![\w.-])/(?:Users|home|private|var|tmp|mnt|Volumes)/[^\s\"'<>|]+")
+POSIX_PRIVATE_PATH_PATTERN = re.compile(r"(?<![\w.-])/(?:Users|home|private|var|tmp|mnt|Volumes|builds)/[^\s\"'<>|]+")
+POSIX_ABSOLUTE_PATH_PATTERN = re.compile(r"(?<![\w.:/-])/(?!/)[^\s\"'<>|]+")
 PRIVATE_PATH_PATTERNS = (
     UNC_PATH_PATTERN,
     WINDOWS_PATH_PATTERN,
@@ -549,7 +550,13 @@ def sanitize_manual_value(value: str, limit: int = 300) -> str:
 def sanitize_retained_path(value: str | None, limit: int = MANUAL_NOTE_PATH_LIMIT) -> str | None:
     if not value:
         return None
-    return sanitize_log_excerpt(str(value), limit=limit)
+    raw_value = str(value)
+    sanitized = sanitize_log_excerpt(raw_value, limit=limit)
+    if "[REDACTED_PATH]" in sanitized:
+        return sanitized
+    if POSIX_ABSOLUTE_PATH_PATTERN.search(raw_value):
+        return "[REDACTED_PATH]"
+    return sanitized
 
 
 def sanitize_runtime_path(path: Path, *, repo_root: Path, codex_home: Path) -> str:
