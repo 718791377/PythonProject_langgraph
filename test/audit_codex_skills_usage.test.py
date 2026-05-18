@@ -213,6 +213,79 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("noise_review:raw_noise_tokens_retained_missing", broken_contract["blockers"])
         self.assertIn("noise_review:explicit_skill_noise_token_contains_private_path", broken_contract["blockers"])
 
+    def test_report_includes_output_retention_gate_status(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-output-retention")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        output_retention = report["output_retention"]
+        summary = audit.render_markdown_summary(report)
+
+        self.assertEqual(output_retention["status"], "passed")
+        self.assertTrue(output_retention["ok"])
+        self.assertEqual(output_retention["checker"], "tools/check_skills_audit_output_retention.py")
+        self.assertTrue(output_retention["tmp_outputs_local_only"])
+        self.assertTrue(output_retention["raw_audit_json_local_only"])
+        self.assertEqual(output_retention["long_term_evidence_format"], "sanitized_markdown_summary")
+        self.assertEqual(output_retention["violation_count"], 0)
+        self.assertEqual(report["field_contract"]["status"], "passed")
+        self.assertIn("Output retention gate: `passed`", summary)
+        self.assertIn("Audit output long-term evidence format: `sanitized_markdown_summary`", summary)
+
+    def test_field_contract_requires_output_retention_gate_status(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-output-retention-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        broken = dict(report)
+        broken["output_retention"] = {
+            "status": "passed",
+            "ok": True,
+            "checker": "tools/check_skills_audit_output_retention.py",
+        }
+
+        contract = audit.validate_report_field_contract(broken)
+
+        self.assertEqual(contract["status"], "failed")
+        self.assertIn("output_retention:tmp_outputs_local_only_missing", contract["blockers"])
+        self.assertIn("output_retention:raw_audit_json_local_only_missing", contract["blockers"])
+        self.assertIn("output_retention:long_term_evidence_format_missing", contract["blockers"])
+
     def test_scan_logs_captures_budget_warning_shape(self) -> None:
         codex_home = self.make_codex_home("skills-audit-logs")
         db = codex_home / "logs_2.sqlite"
@@ -1109,6 +1182,15 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "late_run": False,
                 "missed_weekly_runs": None,
                 "weekly_report_review": "manual_review_required",
+            },
+            "output_retention": {
+                "status": "passed",
+                "ok": True,
+                "checker": "tools/check_skills_audit_output_retention.py",
+                "tmp_outputs_local_only": True,
+                "raw_audit_json_local_only": True,
+                "long_term_evidence_format": "sanitized_markdown_summary",
+                "violation_count": 0,
             },
             "recommendations": [],
             "field_contract": {"status": "failed", "passed": False, "blockers": ["stale"]},

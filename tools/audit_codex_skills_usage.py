@@ -8,6 +8,7 @@ weak text mentions. It never edits config.toml or plugin cache files.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import re
@@ -103,6 +104,7 @@ REQUIRED_REPORT_FIELDS = {
     "module_evidence",
     "decision_recommendation",
     "cadence_review",
+    "output_retention",
     "recommendations",
 }
 REQUIRED_REPORT_FIELD_TYPES = {
@@ -120,6 +122,7 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "module_evidence": list,
     "decision_recommendation": dict,
     "cadence_review": dict,
+    "output_retention": dict,
     "recommendations": list,
 }
 REQUIRED_DECISION_RECOMMENDATION_FIELDS = {
@@ -269,6 +272,24 @@ REQUIRED_SCRIPT_CAPABILITY_FIELD_TYPES = {
     "human_review_required_for": list,
     "enhancement_triggers": list,
 }
+REQUIRED_OUTPUT_RETENTION_FIELDS = {
+    "status",
+    "ok",
+    "checker",
+    "tmp_outputs_local_only",
+    "raw_audit_json_local_only",
+    "long_term_evidence_format",
+    "violation_count",
+}
+REQUIRED_OUTPUT_RETENTION_FIELD_TYPES = {
+    "status": str,
+    "ok": bool,
+    "checker": str,
+    "tmp_outputs_local_only": bool,
+    "raw_audit_json_local_only": bool,
+    "long_term_evidence_format": str,
+    "violation_count": int,
+}
 
 
 def emit_stdout(text: str) -> None:
@@ -310,6 +331,60 @@ def parse_since(value: str) -> datetime:
 
 def default_codex_home() -> Path:
     return Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
+
+
+def build_output_retention_status(root: Path) -> dict[str, Any]:
+    """Expose the repository audit-output retention gate in each audit report."""
+    checker = root / "tools" / "check_skills_audit_output_retention.py"
+    relative_checker = "tools/check_skills_audit_output_retention.py"
+    if not checker.exists():
+        return {
+            "status": "unavailable",
+            "ok": False,
+            "checker": relative_checker,
+            "tmp_outputs_local_only": False,
+            "raw_audit_json_local_only": False,
+            "long_term_evidence_format": "unknown",
+            "violation_count": 0,
+            "blockers": ["checker_missing"],
+        }
+    try:
+        spec = importlib.util.spec_from_file_location("check_skills_audit_output_retention", checker)
+        if spec is None or spec.loader is None:
+            raise RuntimeError("checker_import_spec_unavailable")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        raw_report = module.build_report(root)
+    except Exception as exc:  # pragma: no cover - defensive guard for checker import/runtime drift.
+        return {
+            "status": "unavailable",
+            "ok": False,
+            "checker": relative_checker,
+            "tmp_outputs_local_only": False,
+            "raw_audit_json_local_only": False,
+            "long_term_evidence_format": "unknown",
+            "violation_count": 0,
+            "blockers": [f"checker_unavailable:{type(exc).__name__}"],
+        }
+    policy = raw_report.get("policy", {}) if isinstance(raw_report, dict) else {}
+    violations = raw_report.get("violations", []) if isinstance(raw_report, dict) else []
+    ok = bool(raw_report.get("ok")) if isinstance(raw_report, dict) else False
+    return {
+        "status": "passed" if ok else "failed",
+        "ok": ok,
+        "checker": relative_checker,
+        "tmp_outputs_local_only": policy.get("tmp_outputs_local_only") is True,
+        "raw_audit_json_local_only": policy.get("raw_audit_json_local_only") is True,
+        "long_term_evidence_format": str(policy.get("long_term_evidence_format") or "unknown"),
+        "violation_count": len(violations) if isinstance(violations, list) else 0,
+        "violation_reasons": sorted(
+            {
+                str(item.get("reason"))
+                for item in violations
+                if isinstance(item, dict) and item.get("reason")
+            }
+        ),
+    }
 
 
 def truncate_preserving_redaction_markers(text: str, limit: int) -> str:
@@ -1238,6 +1313,31 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         script_capability_violations.append("human_review_required_for_empty")
     if not script_capabilities.get("enhancement_triggers"):
         script_capability_violations.append("enhancement_triggers_empty")
+    output_retention = report.get("output_retention") if isinstance(report.get("output_retention"), dict) else {}
+    output_retention_violations = []
+    for field in sorted(REQUIRED_OUTPUT_RETENTION_FIELDS):
+        if field not in output_retention:
+            output_retention_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_OUTPUT_RETENTION_FIELD_TYPES.items()):
+        if field in output_retention and not isinstance(output_retention.get(field), expected_type):
+            output_retention_violations.append(f"{field}_invalid_type")
+    if output_retention.get("status") not in {"passed", "failed", "unavailable"}:
+        output_retention_violations.append("status_invalid_value")
+    if output_retention.get("status") == "passed" and output_retention.get("ok") is not True:
+        output_retention_violations.append("passed_status_without_ok_true")
+    if output_retention.get("status") in {"failed", "unavailable"} and output_retention.get("ok") is not False:
+        output_retention_violations.append("nonpassing_status_without_ok_false")
+    if output_retention.get("tmp_outputs_local_only") is not True:
+        output_retention_violations.append("tmp_outputs_local_only_not_true")
+    if output_retention.get("raw_audit_json_local_only") is not True:
+        output_retention_violations.append("raw_audit_json_local_only_not_true")
+    if output_retention.get("long_term_evidence_format") != "sanitized_markdown_summary":
+        output_retention_violations.append("long_term_evidence_format_not_sanitized_markdown_summary")
+    violation_count = output_retention.get("violation_count")
+    if isinstance(violation_count, int) and not isinstance(violation_count, bool) and violation_count < 0:
+        output_retention_violations.append("violation_count_negative")
+    if output_retention.get("status") != "passed":
+        output_retention_violations.append("status_not_passed")
     module_evidence = report.get("module_evidence") if isinstance(report.get("module_evidence"), list) else []
     module_evidence_violations = []
     for index, row in enumerate(module_evidence):
@@ -1357,6 +1457,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"manual_evidence:{field}" for field in manual_violations]
         + [f"noise_review:{field}" for field in noise_violations]
         + [f"script_capability_boundaries:{field}" for field in script_capability_violations]
+        + [f"output_retention:{field}" for field in output_retention_violations]
         + [f"module_evidence:{field}" for field in module_evidence_violations]
         + [f"decision_recommendation:{field}" for field in decision_violations]
     )
@@ -1398,6 +1499,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "manual_evidence_violations": manual_violations,
         "noise_review_violations": noise_violations,
         "script_capability_boundary_violations": script_capability_violations,
+        "output_retention_violations": output_retention_violations,
         "embedded_field_contract_violations": embedded_violations,
     }
 
@@ -1871,6 +1973,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     current_profile = build_current_profile_summary(profiles, enabled_plugins)
     manual_notes = collect_manual_notes(getattr(args, "manual_notes", []) or [])
     decision_recommendation = build_decision_recommendation(module_evidence, warning_severity, audit_state)
+    output_retention = build_output_retention_status(root)
     report = {
         "schema_version": 1,
         "generated_at": generated_at.isoformat(),
@@ -1913,6 +2016,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "noise_review": noise_review,
         "manual_evidence": manual_notes,
         "script_capability_boundaries": build_script_capability_boundaries(),
+        "output_retention": output_retention,
         "recommendations": [
             "Do not treat another 2% budget warning as soft-load failure; soft-load is outside the model-visible skills budget surface.",
             "Continue audit-only mode until the agreed window closes unless a concrete task requires a profile preview or explicitly approved hard-load apply.",
@@ -1933,6 +2037,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     noise_review = report.get("noise_review", {})
     manual_evidence = report.get("manual_evidence", {})
     script_capabilities = report.get("script_capability_boundaries", {})
+    output_retention = report.get("output_retention", {})
     audit_state = report.get("audit_state", {})
     field_contract = report.get("field_contract", {})
     cadence_review = report.get("cadence_review", {})
@@ -1963,8 +2068,10 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Audit next action: `{audit_state.get('next_action')}`",
         f"- Profile apply allowed: `{audit_state.get('profile_apply_allowed')}`",
         f"- Audit state blockers: `{', '.join(audit_state_blockers) if audit_state_blockers else 'none'}`",
-        f"- Field contract: `{field_contract.get('status')}`",
-        f"- Late run: `{cadence_review.get('late_run')}`",
+            f"- Field contract: `{field_contract.get('status')}`",
+            f"- Output retention gate: `{output_retention.get('status')}` via `{output_retention.get('checker')}`",
+            f"- Output retention violations: `{output_retention.get('violation_count')}`",
+            f"- Late run: `{cadence_review.get('late_run')}`",
         f"- Missed weekly runs: `{cadence_review.get('missed_weekly_runs')}`",
         f"- Weekly report review: `{cadence_review.get('weekly_report_review')}`",
         "",
@@ -2043,6 +2150,9 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             f"- Reliable coverage items: `{len(script_capabilities.get('reliable_coverage') or [])}`",
             f"- Human-review items: `{len(script_capabilities.get('human_review_required_for') or [])}`",
             f"- Enhancement triggers: `{len(script_capabilities.get('enhancement_triggers') or [])}`",
+            f"- Audit output long-term evidence format: `{output_retention.get('long_term_evidence_format')}`",
+            f"- `.tmp/` outputs local only: `{output_retention.get('tmp_outputs_local_only')}`",
+            f"- Raw audit JSON local only: `{output_retention.get('raw_audit_json_local_only')}`",
             "",
             "### Reliable coverage",
             "",
