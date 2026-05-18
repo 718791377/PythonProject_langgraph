@@ -286,6 +286,19 @@ The Markdown summary MUST render blockers from `close_blockers`, `candidate_bloc
 - **WHEN** the audit script generates a sanitized Markdown summary for a report with no audit-state blockers
 - **THEN** the Markdown SHALL show `none` for audit-state blockers
 
+### Requirement: Skills usage audit field contracts SHALL validate audit-state values
+
+The Skills usage audit report field contract SHALL validate that `audit_state` stays within the audit-only state machine and cannot be used as profile-apply authorization.
+
+`audit_state.state` MUST be one of `planned`, `running`, `paused`, `ready-for-summary`, `summary-reviewed`, `apply-candidate`, `closed-no-change`, or `closed-with-candidate`. `audit_state.profile_apply_allowed` MUST be `false`. When present, `close_blockers`, `candidate_blockers`, `summary_review_blockers`, `pause_blockers`, and `warning_triage_blockers` MUST be lists of strings.
+
+#### Scenario: Candidate gate receives an invalid audit state
+
+- **WHEN** profile-candidate generation validates an audit report
+- **AND** `audit_state.state` is unknown, `profile_apply_allowed` is not false, or an audit-state blocker field is not a string list
+- **THEN** the field contract SHALL fail
+- **AND** candidate generation SHALL remain blocked until the report is regenerated or the script is fixed
+
 ### Requirement: Skills usage audit Markdown summaries SHALL expose advisory decision buckets
 
 The skills usage audit sanitized Markdown summary SHALL expose advisory decision buckets derived from module evidence so reviewers can distinguish default/project profile review candidates from on-demand, manual-review, and dormant modules without opening raw JSON.

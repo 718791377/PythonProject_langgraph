@@ -162,7 +162,7 @@ created_at: 2026-05-16
 
 审计脚本还必须校验运行路径隐私：顶层 `root`、顶层 `codex_home`、`config_summary.config_path` 以及 `runtime_paths.root/codex_home/config_path` 都不得包含原始 Windows、POSIX home、UNC、token、cookie 或 secret 路径。报告必须用 `[REPO_ROOT]`、`[CODEX_HOME]`、`[CODEX_HOME]/config.toml` 等占位符替代原始绝对路径，并且 `runtime_paths.raw_paths_retained` 必须保持 `false`。
 
-审计脚本必须为每份生成报告计算 `field_contract` 结果。该结果记录 `status`、`passed`、必需字段、缺失字段、字段类型错误、audit-only 安全标志违规，以及会影响决策的嵌套字段违规。`audit_state` 契约必须要求 `state`、`reason`、`next_action` 与 `profile_apply_allowed`，防止报告丢失状态机上下文。脱敏 Markdown 摘要还必须渲染 audit state 的 next action、profile apply 许可标志，以及 `close_blockers`、`candidate_blockers`、`summary_review_blockers`、`pause_blockers` 或 `warning_triage_blockers`；没有 blocker 时写入 `none`。`warning_triage` 契约必须要求 `requested`、`status`、`blockers`、`window_policy`、`window_ok`、`budget_warning_count`、`skipped_loading_count`、`recent_skipped_loading_samples`、`skipped_loading_review` 与 `recommended_action`，防止 warning 复核报告遗漏 triage 状态、窄窗口策略、skipped-loading 来源复核或后续动作。只要 `field_contract.status != passed`，该报告就是不完整证据；必须先修脚本或重跑报告，才能进入 profile 决策。候选生成必须要求报告内嵌 `field_contract`；来自旧脚本或人工改写后缺少/过期内嵌契约的报告，必须阻断并要求重新生成。
+审计脚本必须为每份生成报告计算 `field_contract` 结果。该结果记录 `status`、`passed`、必需字段、缺失字段、字段类型错误、audit-only 安全标志违规，以及会影响决策的嵌套字段违规。`audit_state` 契约必须要求 `state`、`reason`、`next_action` 与 `profile_apply_allowed`，防止报告丢失状态机上下文。它还必须拒绝未知 audit state，拒绝 `profile_apply_allowed=true` 或其他非 false 值，并要求出现的状态 blocker 字段（`close_blockers`、`candidate_blockers`、`summary_review_blockers`、`pause_blockers` 或 `warning_triage_blockers`）必须是字符串列表。脱敏 Markdown 摘要还必须渲染 audit state 的 next action、profile apply 许可标志，以及这些字段中的 blockers；没有 blocker 时写入 `none`。`warning_triage` 契约必须要求 `requested`、`status`、`blockers`、`window_policy`、`window_ok`、`budget_warning_count`、`skipped_loading_count`、`recent_skipped_loading_samples`、`skipped_loading_review` 与 `recommended_action`，防止 warning 复核报告遗漏 triage 状态、窄窗口策略、skipped-loading 来源复核或后续动作。只要 `field_contract.status != passed`，该报告就是不完整证据；必须先修脚本或重跑报告，才能进入 profile 决策。候选生成必须要求报告内嵌 `field_contract`；来自旧脚本或人工改写后缺少/过期内嵌契约的报告，必须阻断并要求重新生成。
 `noise_review` 契约必须要求 `raw_noise_tokens_retained=false`、`max_noise_token_length`、`token_privacy_policy` 与脱敏后的 `explicit_skill_noise_removed`。噪声 token 在进入报告前必须先替换私有路径、secret、cookie 或 token，并截断到固定长度；如果仍检测到原始私有路径、secret 或过长 token，字段契约必须失败。
 `script_capability_boundaries` 契约必须要求 `policy`、`reliable_coverage`、`human_review_required_for` 和 `enhancement_triggers`。这些列表必须存在且非空，避免报告暗示 audit helper 是全知事实源。
 `output_retention` 契约必须要求 `status`、`ok`、`checker`、`tmp_outputs_local_only`、`raw_audit_json_local_only`、`long_term_evidence_format` 和 `violation_count`。只有留存 checker 自身通过、`.tmp/` 输出与原始 audit JSON 都标记为本地-only，且长期证据格式为 `sanitized_markdown_summary` 时，该契约才能通过。
@@ -460,7 +460,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 明确 7 天、30 天、warning triage 的运行节奏；
 - 要求 `--warning-triage` 只能搭配 `--days 1` 或 `--since`，输出顶层 `warning_triage` 字段，并阻断过宽窗口 triage 报告；
 - 明确 JSON 报告字段契约，并要求脚本输出 `field_contract` 且在候选生成时阻断不完整、缺少契约或契约过期的报告；
-- 校验决策关键的 `audit_state` 嵌套字段，包括状态、原因、下一步动作与 profile apply 许可标志；
+- 校验决策关键的 `audit_state` 嵌套字段，包括允许的状态值、原因、下一步动作、profile apply 禁止标志与 blocker 列表形状；
 - 在脱敏 Markdown 摘要中渲染 audit-state 下一步动作、profile apply 许可标志与 blocker 列表；
 - 校验决策关键的 `warning_triage` 嵌套字段，包括状态、blockers、窄窗口策略、warning 计数、skipped-loading 来源复核与后续动作建议；
 - 校验决策关键的 `cadence_review` 嵌套字段，并在脱敏 Markdown 摘要中渲染 late-run 与漏跑周报状态；

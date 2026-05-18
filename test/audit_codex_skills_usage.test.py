@@ -1179,14 +1179,19 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         )
         report = audit.build_report(args)
         report["audit_state"].pop("next_action")
+        report["audit_state"]["state"] = "applied"
         report["audit_state"]["profile_apply_allowed"] = "false"
+        report["audit_state"]["close_blockers"] = "not-a-list"
 
         contract = audit.validate_report_field_contract(report)
         gate = audit.build_candidate_generation_gate(report, summary_reviewed=True)
 
         self.assertFalse(contract["passed"])
         self.assertIn("audit_state:next_action_missing", contract["blockers"])
+        self.assertIn("audit_state:state_invalid_value", contract["blockers"])
         self.assertIn("audit_state:profile_apply_allowed_invalid_type", contract["blockers"])
+        self.assertIn("audit_state:profile_apply_allowed_not_false", contract["blockers"])
+        self.assertIn("audit_state:close_blockers_invalid_type", contract["blockers"])
         self.assertFalse(gate["allowed"])
         self.assertIn("field_contract:audit_state:next_action_missing", gate["blockers"])
 

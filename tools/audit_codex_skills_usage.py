@@ -221,6 +221,23 @@ REQUIRED_AUDIT_STATE_FIELD_TYPES = {
     "next_action": str,
     "profile_apply_allowed": bool,
 }
+VALID_AUDIT_STATES = {
+    "planned",
+    "running",
+    "paused",
+    "ready-for-summary",
+    "summary-reviewed",
+    "apply-candidate",
+    "closed-no-change",
+    "closed-with-candidate",
+}
+AUDIT_STATE_BLOCKER_FIELDS = (
+    "close_blockers",
+    "candidate_blockers",
+    "summary_review_blockers",
+    "pause_blockers",
+    "warning_triage_blockers",
+)
 REQUIRED_WARNING_TRIAGE_FIELDS = {
     "requested",
     "status",
@@ -1339,6 +1356,19 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
     for field, expected_type in sorted(REQUIRED_AUDIT_STATE_FIELD_TYPES.items()):
         if field in audit_state and not isinstance(audit_state.get(field), expected_type):
             audit_state_violations.append(f"{field}_invalid_type")
+    if isinstance(audit_state.get("state"), str) and audit_state.get("state") not in VALID_AUDIT_STATES:
+        audit_state_violations.append("state_invalid_value")
+    if audit_state.get("profile_apply_allowed") is not False:
+        audit_state_violations.append("profile_apply_allowed_not_false")
+    for field in AUDIT_STATE_BLOCKER_FIELDS:
+        if field not in audit_state:
+            continue
+        blockers = audit_state.get(field)
+        if not isinstance(blockers, list):
+            audit_state_violations.append(f"{field}_invalid_type")
+            continue
+        if any(not isinstance(blocker, str) for blocker in blockers):
+            audit_state_violations.append(f"{field}_contains_non_string")
     config = report.get("config_summary") if isinstance(report.get("config_summary"), dict) else {}
     config_violations = []
     if "current_profile" not in config:
