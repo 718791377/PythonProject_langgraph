@@ -354,6 +354,19 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 如果连续两次复核只增加解释性文本、没有新增可验证规则、字段、状态或测试要求，应停止继续扩写方案，改为提交当前完善结果；
 - 审计状态变化必须记录在 30 天摘要或候选变更记录中，而不是只留在聊天上下文。
 
+### 5.15 输出留存门禁
+
+审计输出留存现在由 `tools/check_skills_audit_output_retention.py` 提供脚本化保护，并以 `check_skills_audit_output_retention` 步骤接入 `tools/run_openspec_guard.py`。
+
+当以下路径处于 tracked、staged、changed 或 commit-visible untracked 状态时，留存门禁必须在提交、本地集成或发布前失败：
+
+- 任何 `.tmp/` artifact，包括即使用 `git add -f` 强制加入 Git 的 `.tmp/skills-usage-audit-30d.json`；
+- 文件名以 `skills-usage-audit`、`skills-usage-baseline`、`skills-usage-warning` 或 `skills-usage-report` 开头的原始 Skills usage audit JSON，即使该文件不在 `.tmp/` 下。
+
+长期留证必须是脱敏 Markdown 摘要，或另一种已经明确复核过的脱敏文档。原始 JSON 报告只能作为本地复现与复核工作文件。如果复核者需要持久证据，应从原始 JSON 重新生成 Markdown 摘要，完成隐私复核后提交脱敏摘要，而不是提交原始报告。
+
+回归覆盖位于 `test/check_skills_audit_output_retention.test.py`，且必须登记到 `tools/ci/ci_test_manifest.json`。Guard JSON 聚合测试也必须包含 `check_skills_audit_output_retention`，避免 CI 可见的 guard 顺序静默丢失留存门禁。
+
 ## 6. 决策规则
 
 30 天后按以下规则决策。所有阈值都以强证据为主，弱证据只能做辅助解释。
@@ -391,12 +404,14 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 按 plugin/module 聚合的 evidence；
 - 脚本能力边界：可靠覆盖项、人工复核需求与增强触发条件；
 - apply 建议，但不自动 apply。
+- `tools/check_skills_audit_output_retention.py` 的输出留存状态，证明 `.tmp/` artifact 与原始 Skills usage JSON 没有被保留进 Git。
 - `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、cadence-review 字段契约与 Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁与 Markdown blocker 输出、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
 - 回归测试还必须覆盖 explicit skill 误报 token 的路径/secret 脱敏、长度截断，以及 `noise_review` 字段契约阻断未脱敏或缺少隐私字段的报告，并覆盖 `script_capability_boundaries` 字段契约阻断缺失或空边界列表的报告。
 - 回归测试还必须覆盖 `decision_recommendation` 字段契约阻断缺失或非 advisory 状态、允许 profile apply、分桶不完整、分桶元素非字符串以及 `bucket_counts` 过期的报告。
 - 回归测试还必须覆盖 `module_evidence` 行契约阻断字段缺失/类型错误、plugin 元素非字符串、strong 计数为负或过期、mapped-tool 证据被计为强证据、跨项目效用未要求人工复核以及 recommendation 不在允许列表中的报告。
 - 回归测试还必须覆盖 `module_evidence` recommendation 与阈值不一致的报告，防止旧行把与强/弱证据计数矛盾的按需、dormant 或候选建议带入决策。
-- `tools/ci/ci_test_manifest.json` 必须纳入该回归测试，保证 local/remote CI 复用同一检查。
+- 回归测试还必须覆盖输出留存门禁：强制加入 Git 的 `.tmp/` 原始报告、位于 `.tmp/` 之外的原始 `skills-usage-*.json` 报告必须被阻断，脱敏 Markdown 摘要必须允许。
+- `tools/ci/ci_test_manifest.json` 必须纳入这些回归测试，保证 local/remote CI 复用同一检查。
 
 每次人工复核报告时，还必须检查误报噪声：
 
@@ -455,6 +470,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 明确 explicit skill 误报噪声不得进入强证据；
 - 明确 warning 分级和处理动作；
 - 明确输出文件默认不入 Git，长期留证必须脱敏摘要；
-- 明确回归测试和 CI manifest 要求；
+- 要求 `tools/check_skills_audit_output_retention.py` 阻断 `.tmp/` artifact 与原始 `skills-usage-*.json` 报告进入 Git，同时允许脱敏 Markdown 摘要；
+- 明确回归测试、OpenSpec guard 和 CI manifest 要求；
 - 在 JSON 字段契约和脱敏 Markdown 摘要中暴露脚本能力边界；
 - 明确远端发布仍受 GitLab/GitHub 授权门控制。

@@ -352,6 +352,19 @@ Stop conditions:
 - if two consecutive reviews add only explanatory prose and no verifiable rule, field, state, or test requirement, stop expanding the plan and commit the current refined result;
 - audit state changes must be recorded in the 30-day summary or candidate change record, not only in chat context.
 
+### 5.15 Output retention gate
+
+Audit output retention is now script-backed by `tools/check_skills_audit_output_retention.py` and is part of `tools/run_openspec_guard.py` as `check_skills_audit_output_retention`.
+
+The retention gate MUST fail before commit, local integration, or publication when either of these paths is tracked, staged, changed, or untracked in a commit-visible location:
+
+- any `.tmp/` artifact, including `.tmp/skills-usage-audit-30d.json` even if it was forced into Git;
+- raw Skills usage audit JSON whose filename starts with `skills-usage-audit`, `skills-usage-baseline`, `skills-usage-warning`, or `skills-usage-report`, even when it is outside `.tmp/`.
+
+Long-term evidence MUST be a sanitized Markdown summary or another explicitly reviewed sanitized document. Raw JSON reports remain local working files for reproduction and review only. If a reviewer needs durable evidence, regenerate the Markdown summary from the raw JSON, review it for privacy, and commit the sanitized summary instead of the raw report.
+
+Regression coverage lives in `test/check_skills_audit_output_retention.test.py` and MUST stay registered in `tools/ci/ci_test_manifest.json`. The guard JSON aggregation test also MUST include `check_skills_audit_output_retention` so the CI-visible guard order cannot silently drop the retention gate.
+
 ## 6. Decision rules
 
 After 30 days, decide using the following rules. All thresholds are based primarily on strong evidence; weak evidence can only explain trends.
@@ -389,12 +402,14 @@ Each audit run must report:
 - plugin/module aggregated evidence;
 - script capability boundaries, including reliable coverage, human-review needs, and enhancement triggers;
 - recommendations, without applying them automatically.
+- output retention status from `tools/check_skills_audit_output_retention.py`, proving `.tmp/` artifacts and raw Skills usage JSON are not retained in Git.
 - `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, cadence-review field-contract and Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized log-excerpt redaction marker integrity, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates and Markdown blocker output, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
 - Regression tests must also cover explicit-skill false-positive token path/secret redaction, length truncation, `noise_review` field-contract blocking for unsanitized or missing privacy fields, and `script_capability_boundaries` field-contract blocking for missing or empty boundary lists.
 - Regression tests must cover `decision_recommendation` field-contract blocking for missing or non-advisory status, profile-apply allowance, incomplete bucket lists, non-string bucket entries, and stale `bucket_counts`.
 - Regression tests must cover `module_evidence` row-contract blocking for missing/wrong-typed fields, non-string plugin entries, negative or stale strong counts, mapped-tool evidence being counted as strong, non-manual cross-project utility, and unsupported recommendations.
 - Regression tests must cover `module_evidence` recommendation-threshold mismatches so stale rows cannot claim an on-demand, dormant, or candidate recommendation that contradicts their strong/weak evidence counts.
-- `tools/ci/ci_test_manifest.json` must include that regression test so local and remote CI reuse the same check.
+- Regression tests must cover output-retention blocking for forced `.tmp/` raw reports, raw `skills-usage-*.json` reports outside `.tmp/`, and allowed sanitized Markdown summaries.
+- `tools/ci/ci_test_manifest.json` must include those regression tests so local and remote CI reuse the same checks.
 
 Each human report review must also check false-positive noise:
 
@@ -454,5 +469,6 @@ This plan is granular enough only when all of the following are true:
 - it states that explicit-skill false-positive noise must not enter strong evidence;
 - it defines warning severity and handling actions;
 - it states that `.tmp/` output is not committed by default and long-term evidence must be sanitized;
-- it states regression-test and CI manifest requirements;
+- it requires `tools/check_skills_audit_output_retention.py` to block `.tmp/` artifacts and raw `skills-usage-*.json` reports from Git while allowing sanitized Markdown summaries;
+- it states regression-test, OpenSpec guard, and CI manifest requirements;
 - it states that remote publication still requires GitLab/GitHub authorization gates.
