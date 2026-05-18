@@ -120,7 +120,7 @@ To prepare a later reversible candidate without applying it, add `--target-profi
 .\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json --summary-output .\.tmp\skills-usage-audit-30d-summary.md --summary-reviewed --target-profile core-dev --candidate-output .\.tmp\skills-profile-candidate.json --candidate-summary-output .\.tmp\skills-profile-candidate.md
 ```
 
-Candidate output is always `approval_state=preview-only` and must not modify `config.toml`, plugin cache, or hard-load profiles. Without `--summary-reviewed`, a 30-day audit window, `--output`, and `--summary-output`, the candidate generation gate is recorded as blocked.
+Candidate output is always `approval_state=preview-only` and must not modify `config.toml`, plugin cache, or hard-load profiles. `--candidate-output` or `--candidate-summary-output` must be paired with an explicit `--target-profile`; the script must not infer a target profile from the current profile, filename, or generic continuation. Without `--summary-reviewed`, a 30-day audit window, `--output`, `--summary-output`, or `--target-profile`, the candidate generation gate is recorded as blocked.
 
 ### 5.5 Windows stdout and regression tests
 
@@ -261,6 +261,7 @@ Gate rules:
 - the audit script may generate candidate JSON/Markdown via `--candidate-output` and `--candidate-summary-output`, but those outputs are preview records only;
 - candidate generation must record a gate result that requires a 30-day audit window and `--summary-reviewed`;
 - candidate generation must require source-report paths for the 30-day JSON report and sanitized Markdown summary, so a reviewed candidate cannot be detached from its review evidence;
+- candidate generation must require an explicit `--target-profile`; if it is missing, the audit state stays `ready-for-summary`, records `target_profile_missing`, and any candidate preview must stay blocked rather than raising an unstructured exception or implying a usable target;
 - candidate `source_reports` must be sanitized before JSON or Markdown candidate records are written; raw Windows paths, POSIX home paths, UNC shares, API keys, access tokens, cookies, and standalone secret tokens must be redacted;
 - a candidate record must include `source_reports_privacy.status=passed`; if the privacy contract fails, the candidate must stay blocked until the report paths are regenerated or the sanitizer is fixed;
 - candidate Markdown summaries must render the source-report privacy status and privacy violations/blockers, using `none` when there are no violations, so the preview record is self-reviewable without exposing raw source paths;
@@ -348,8 +349,8 @@ The script must be able to record closure states without applying any profile ch
 - `--pause-audit data-source-missing|privacy-review|script-defect` records `paused` and blocks profile-apply candidate generation with `audit_state_paused`. Use it only to make an audit interruption explicit while the data source, privacy review, or script defect is fixed and the report is rerun.
 - `--summary-reviewed` with an elapsed 30-day window plus both `--output` and `--summary-output` source-report paths records `summary-reviewed` when no candidate or closure flag is requested. If the source-report paths are missing, the report stays `ready-for-summary` and records `source_report_paths_missing`.
 - `--close-audit no-change` may record `closed-no-change` only when the 30-day window has elapsed, `--summary-reviewed` is present, and both `--output` and `--summary-output` source-report paths are present.
-- `--close-audit with-candidate` may record `closed-with-candidate` only when the same evidence gates pass and a candidate output path is requested.
-- If these gates are not met, the report must remain `running` or `ready-for-summary` and list closure blockers such as `audit_window_shorter_than_30_days`, `summary_not_marked_reviewed`, `source_report_paths_missing`, or `candidate_output_missing`.
+- `--close-audit with-candidate` may record `closed-with-candidate` only when the same evidence gates pass, a candidate output path is requested, and `--target-profile` is present.
+- If these gates are not met, the report must remain `running` or `ready-for-summary` and list closure blockers such as `audit_window_shorter_than_30_days`, `summary_not_marked_reviewed`, `source_report_paths_missing`, `candidate_output_missing`, or `target_profile_missing`.
 
 Stop conditions:
 

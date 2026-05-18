@@ -120,7 +120,7 @@ created_at: 2026-05-16
 .\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 30 --json --output .\.tmp\skills-usage-audit-30d.json --summary-output .\.tmp\skills-usage-audit-30d-summary.md --summary-reviewed --target-profile core-dev --candidate-output .\.tmp\skills-profile-candidate.json --candidate-summary-output .\.tmp\skills-profile-candidate.md
 ```
 
-候选输出永远是 `approval_state=preview-only`，不得修改 `config.toml`、plugin cache 或 hard-load profile。缺少 `--summary-reviewed`、30 天审计窗口、`--output` 或 `--summary-output` 时，候选生成门禁必须记录为 blocked。
+候选输出永远是 `approval_state=preview-only`，不得修改 `config.toml`、plugin cache 或 hard-load profile。`--candidate-output` 或 `--candidate-summary-output` 必须搭配显式 `--target-profile`；脚本不得从当前 profile、文件名或普通“继续”中推断目标 profile。缺少 `--summary-reviewed`、30 天审计窗口、`--output`、`--summary-output` 或 `--target-profile` 时，候选生成门禁必须记录为 blocked。
 
 ### 5.5 Windows stdout 与回归测试
 
@@ -262,6 +262,7 @@ created_at: 2026-05-16
 - 审计脚本可以通过 `--candidate-output` 与 `--candidate-summary-output` 生成候选 JSON/Markdown，但这些输出只能作为 preview 记录；
 - 候选生成必须记录门禁结果，且门禁要求 30 天审计窗口与 `--summary-reviewed`；
 - 候选生成必须要求 30 天 JSON 报告与脱敏 Markdown 摘要的 source-report 路径，避免已复核候选与复核证据脱钩；
+- 候选生成必须要求显式 `--target-profile`；如果缺失，audit state 保持 `ready-for-summary`，记录 `target_profile_missing`，并且任何候选 preview 都必须保持 blocked，不得抛出无结构异常或暗示存在可用目标；
 - candidate `source_reports` 写入 JSON 或 Markdown 候选记录前必须先脱敏；原始 Windows 路径、POSIX home 路径、UNC 共享路径、API key、access token、cookie 与独立 secret token 都必须被替换；
 - 候选记录必须包含 `source_reports_privacy.status=passed`；如果 privacy contract 失败，候选必须保持 blocked，直到重新生成 report 路径或修复脱敏器；
 - 候选 Markdown 摘要必须渲染 source-report privacy 状态与 violations/blockers；没有违规时写入 `none`，保证 preview 记录可复核且不暴露原始 source 路径；
@@ -351,8 +352,8 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - `--pause-audit data-source-missing|privacy-review|script-defect` 用于记录 `paused`，并以 `audit_state_paused` 阻断 profile-apply 候选生成。它只能把数据源缺失、隐私复核或脚本缺陷导致的审计中断显式化；后续必须先修复原因并重跑报告。
 - `--summary-reviewed` 在 30 天窗口满足且同时存在 `--output` 与 `--summary-output` source-report 路径时，如果没有请求 candidate 或 closure，记录 `summary-reviewed`。如果 source-report 路径缺失，报告保持 `ready-for-summary` 并记录 `source_report_paths_missing`。
 - `--close-audit no-change` 只能在 30 天窗口已满足、存在 `--summary-reviewed`，并且同时存在 `--output` 与 `--summary-output` source-report 路径时，记录 `closed-no-change`。
-- `--close-audit with-candidate` 只能在同样证据门禁通过，并且已请求 candidate output 路径时，记录 `closed-with-candidate`。
-- 如果这些门禁未满足，报告必须保持 `running` 或 `ready-for-summary`，并列出 closure blockers，例如 `audit_window_shorter_than_30_days`、`summary_not_marked_reviewed`、`source_report_paths_missing` 或 `candidate_output_missing`。
+- `--close-audit with-candidate` 只能在同样证据门禁通过、已请求 candidate output 路径，并且存在 `--target-profile` 时，记录 `closed-with-candidate`。
+- 如果这些门禁未满足，报告必须保持 `running` 或 `ready-for-summary`，并列出 closure blockers，例如 `audit_window_shorter_than_30_days`、`summary_not_marked_reviewed`、`source_report_paths_missing`、`candidate_output_missing` 或 `target_profile_missing`。
 
 停止条件：
 

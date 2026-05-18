@@ -1577,6 +1577,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             summary_output=None,
             candidate_output="candidate.json",
             candidate_summary_output=None,
+            target_profile="core-dev",
             summary_reviewed=False,
         )
         reviewed_args = argparse.Namespace(
@@ -1592,6 +1593,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             summary_output=".tmp/skills-usage-audit-30d-summary.md",
             candidate_output="candidate.json",
             candidate_summary_output=None,
+            target_profile="core-dev",
             summary_reviewed=True,
         )
 
@@ -1658,6 +1660,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             summary_output=".tmp/skills-usage-audit-30d-summary.md",
             candidate_output=".tmp/skills-profile-candidate.json",
             candidate_summary_output=None,
+            target_profile="core-dev",
             summary_reviewed=True,
             close_audit="with-candidate",
         )
@@ -1701,13 +1704,14 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             summary_output=None,
             candidate_output="candidate.json",
             candidate_summary_output=None,
+            target_profile="core-dev",
             summary_reviewed=True,
         )
 
         report = audit.build_report(args)
 
         self.assertEqual(report["audit_state"]["state"], "ready-for-summary")
-        self.assertEqual(report["audit_state"]["reason"], "profile_apply_candidate_source_report_paths_missing")
+        self.assertEqual(report["audit_state"]["reason"], "profile_apply_candidate_gate_blocked")
         self.assertEqual(report["audit_state"]["candidate_blockers"], ["source_report_paths_missing"])
 
     def test_candidate_generation_gate_requires_source_report_paths_when_requested(self) -> None:
@@ -1725,6 +1729,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             summary_output=None,
             candidate_output="candidate.json",
             candidate_summary_output=None,
+            target_profile="core-dev",
             summary_reviewed=True,
         )
         report = audit.build_report(args)
@@ -1740,6 +1745,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             json_report_path=".tmp/skills-usage-audit-30d.json",
             markdown_summary_path=".tmp/skills-usage-audit-30d-summary.md",
             require_source_reports=True,
+            target_profile="core-dev",
+            require_target_profile=True,
         )
 
         self.assertFalse(blocked_gate["allowed"])
@@ -1751,6 +1758,81 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertTrue(allowed_gate["allowed"])
         self.assertTrue(allowed_gate["json_report_present"])
         self.assertTrue(allowed_gate["markdown_summary_present"])
+        self.assertTrue(allowed_gate["target_profile_present"])
+
+    def test_candidate_generation_gate_requires_target_profile_when_requested(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-candidate-target-profile-gate")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=".tmp/skills-usage-audit-30d.json",
+            summary_output=".tmp/skills-usage-audit-30d-summary.md",
+            candidate_output=None,
+            candidate_summary_output=None,
+            target_profile=None,
+            summary_reviewed=True,
+        )
+        report = audit.build_report(args)
+
+        missing_gate = audit.build_candidate_generation_gate(
+            report,
+            summary_reviewed=True,
+            json_report_path=args.output,
+            markdown_summary_path=args.summary_output,
+            require_source_reports=True,
+            target_profile=None,
+            require_target_profile=True,
+        )
+        allowed_gate = audit.build_candidate_generation_gate(
+            report,
+            summary_reviewed=True,
+            json_report_path=args.output,
+            markdown_summary_path=args.summary_output,
+            require_source_reports=True,
+            target_profile="core-dev",
+            require_target_profile=True,
+        )
+
+        self.assertFalse(missing_gate["allowed"])
+        self.assertEqual(missing_gate["status"], "blocked")
+        self.assertTrue(missing_gate["target_profile_required"])
+        self.assertFalse(missing_gate["target_profile_present"])
+        self.assertIn("target_profile_missing", missing_gate["blockers"])
+        self.assertTrue(allowed_gate["allowed"])
+        self.assertTrue(allowed_gate["target_profile_required"])
+        self.assertTrue(allowed_gate["target_profile_present"])
+        self.assertNotIn("target_profile_missing", allowed_gate["blockers"])
+
+    def test_candidate_audit_state_blocks_missing_target_profile(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-candidate-state-target-profile")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=".tmp/skills-usage-audit-30d.json",
+            summary_output=".tmp/skills-usage-audit-30d-summary.md",
+            candidate_output="candidate.json",
+            candidate_summary_output=None,
+            target_profile=None,
+            summary_reviewed=True,
+        )
+
+        report = audit.build_report(args)
+
+        self.assertEqual(report["audit_state"]["state"], "ready-for-summary")
+        self.assertEqual(report["audit_state"]["reason"], "profile_apply_candidate_gate_blocked")
+        self.assertEqual(report["audit_state"]["candidate_blockers"], ["target_profile_missing"])
 
     def test_candidate_generation_gate_blocks_planned_or_paused_audit_state(self) -> None:
         codex_home = self.make_codex_home("skills-audit-not-ready-candidate-gate")
@@ -1767,6 +1849,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             summary_output=".tmp/skills-usage-audit-30d-summary.md",
             candidate_output=".tmp/skills-profile-candidate.json",
             candidate_summary_output=None,
+            target_profile="core-dev",
             summary_reviewed=True,
             planned_audit=True,
         )
@@ -1783,6 +1866,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             summary_output=".tmp/skills-usage-audit-30d-summary.md",
             candidate_output=".tmp/skills-profile-candidate.json",
             candidate_summary_output=None,
+            target_profile="core-dev",
             summary_reviewed=True,
             pause_audit="script-defect",
         )
@@ -1795,6 +1879,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             json_report_path=planned_args.output,
             markdown_summary_path=planned_args.summary_output,
             require_source_reports=True,
+            target_profile=planned_args.target_profile,
+            require_target_profile=True,
         )
         gate = audit.build_candidate_generation_gate(
             report,
@@ -1802,6 +1888,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             json_report_path=args.output,
             markdown_summary_path=args.summary_output,
             require_source_reports=True,
+            target_profile=args.target_profile,
+            require_target_profile=True,
         )
 
         self.assertEqual(planned_report["audit_state"]["state"], "planned")
@@ -1873,6 +1961,38 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertNotIn("/home/lenovo", serialized)
         self.assertNotIn(r"D:\private", serialized)
         self.assertNotIn("sk-test-secret", serialized)
+
+    def test_build_profile_apply_candidate_without_target_is_blocked_preview(self) -> None:
+        report = {
+            "generated_at": "2026-05-16T00:00:00+00:00",
+            "config_summary": {
+                "enabled_plugins": [],
+                "disabled_plugins": [],
+                "unknown_enabled_state_plugins": [],
+                "current_profile": {
+                    "source": "inferred_from_enabled_plugin_entries",
+                    "inferred_profile": "core-dev",
+                    "manual_review_required": False,
+                    "matched_enabled_known_plugins": [],
+                    "unmatched_enabled_plugin_entries": [],
+                },
+            },
+            "warning_severity": {"level": "none"},
+            "manual_evidence": {"valid_note_count": 0, "counts_by_evidence_level": {}, "counts_by_action": {}},
+            "module_evidence": [],
+        }
+
+        candidate = audit.build_profile_apply_candidate(report, target_profile=None)
+        summary = audit.render_candidate_markdown(candidate)
+
+        self.assertEqual(candidate["candidate_id"], "skills-profile-2026-05-16-missing-target-profile")
+        self.assertIsNone(candidate["target_profile"]["name"])
+        self.assertFalse(candidate["target_profile"]["target_profile_present"])
+        self.assertIsNone(candidate["evidence_basis"]["target_profile"])
+        self.assertFalse(candidate["evidence_basis"]["target_profile_present"])
+        self.assertFalse(candidate["candidate_generation_gate"]["allowed"])
+        self.assertIn("target_profile_missing", candidate["candidate_generation_gate"]["blockers"])
+        self.assertIn("Target profile provided: `False`", summary)
 
     def test_build_profile_apply_candidate_is_preview_only_and_reversible(self) -> None:
         report = {

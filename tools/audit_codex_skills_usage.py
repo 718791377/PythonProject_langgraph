@@ -1036,6 +1036,10 @@ def candidate_output_requested(args: argparse.Namespace) -> bool:
     return bool(getattr(args, "candidate_output", None) or getattr(args, "candidate_summary_output", None))
 
 
+def target_profile_ready(args: argparse.Namespace) -> bool:
+    return bool(str(getattr(args, "target_profile", "") or "").strip())
+
+
 def source_report_paths_ready(args: argparse.Namespace) -> bool:
     return bool(str(getattr(args, "output", "") or "").strip()) and bool(
         str(getattr(args, "summary_output", "") or "").strip()
@@ -1072,6 +1076,7 @@ def build_audit_state(
     summary_reviewed = bool(getattr(args, "summary_reviewed", False))
     source_paths_ready = source_report_paths_ready(args)
     candidate_requested = candidate_output_requested(args)
+    target_profile_available = target_profile_ready(args)
     close_audit = getattr(args, "close_audit", None)
     pause_reason = pause_audit_reason(args)
     if pause_reason:
@@ -1109,6 +1114,8 @@ def build_audit_state(
             close_blockers.append("source_report_paths_missing")
         if close_audit == "with-candidate" and not candidate_requested:
             close_blockers.append("candidate_output_missing")
+        if close_audit == "with-candidate" and not target_profile_available:
+            close_blockers.append("target_profile_missing")
         if not close_blockers:
             if close_audit == "no-change":
                 return {
@@ -1135,20 +1142,25 @@ def build_audit_state(
             "close_audit_requested": close_audit,
             "close_blockers": close_blockers,
         }
-    if candidate_requested and summary_reviewed and window_at_least_30_days and source_paths_ready:
+    if candidate_requested and summary_reviewed and window_at_least_30_days and source_paths_ready and target_profile_available:
         return {
             "state": "apply-candidate",
             "reason": "profile_apply_candidate_preview_requested_after_summary_review",
             "next_action": "review_preview_candidate_and_request_explicit_apply_authorization_if_accepted",
             "profile_apply_allowed": False,
         }
-    if candidate_requested and summary_reviewed and window_at_least_30_days and not source_paths_ready:
+    if candidate_requested and summary_reviewed and window_at_least_30_days and (not source_paths_ready or not target_profile_available):
+        candidate_blockers = []
+        if not source_paths_ready:
+            candidate_blockers.append("source_report_paths_missing")
+        if not target_profile_available:
+            candidate_blockers.append("target_profile_missing")
         return {
             "state": "ready-for-summary",
-            "reason": "profile_apply_candidate_source_report_paths_missing",
-            "next_action": "regenerate_with_output_and_summary_output_before_candidate_review",
+            "reason": "profile_apply_candidate_gate_blocked",
+            "next_action": "resolve_candidate_blockers_before_candidate_review",
             "profile_apply_allowed": False,
-            "candidate_blockers": ["source_report_paths_missing"],
+            "candidate_blockers": candidate_blockers,
         }
     if summary_reviewed and window_at_least_30_days and source_paths_ready:
         return {
@@ -1596,6 +1608,8 @@ def build_candidate_generation_gate(
     json_report_path: str | None = None,
     markdown_summary_path: str | None = None,
     require_source_reports: bool = False,
+    target_profile: str | None = None,
+    require_target_profile: bool = False,
 ) -> dict[str, Any]:
     audit_window = report.get("audit_window", {})
     try:
@@ -1622,6 +1636,9 @@ def build_candidate_generation_gate(
         blockers.append("source_report_json_missing")
     if require_source_reports and not markdown_summary_present:
         blockers.append("source_report_markdown_summary_missing")
+    target_profile_present = bool(str(target_profile or "").strip())
+    if require_target_profile and not target_profile_present:
+        blockers.append("target_profile_missing")
     source_reports_privacy = source_report_privacy_contract(
         build_source_reports(json_report_path, markdown_summary_path)
     )
@@ -1642,6 +1659,8 @@ def build_candidate_generation_gate(
         "source_reports_required": bool(require_source_reports),
         "json_report_present": json_report_present,
         "markdown_summary_present": markdown_summary_present,
+        "target_profile_required": bool(require_target_profile),
+        "target_profile_present": target_profile_present,
         "source_reports_privacy": source_reports_privacy,
         "field_contract": field_contract,
         "ordinary_continue_or_generic_confirmation_is_not_apply_authorization": True,
@@ -1918,21 +1937,26 @@ def build_profile_apply_candidate(
     The candidate translates audit evidence into a reversible review record. It
     deliberately does not mutate config.toml, plugin cache, or hard-load state.
     """
-    if not target_profile:
-        raise ValueError("target_profile is required for a profile apply candidate")
-    candidate_gate = candidate_gate or build_candidate_generation_gate(report, summary_reviewed=False)
+    target_profile_value = str(target_profile or "").strip()
+    target_profile_name = target_profile_value or "missing-target-profile"
+    candidate_gate = candidate_gate or build_candidate_generation_gate(
+        report,
+        summary_reviewed=False,
+        target_profile=target_profile_value,
+        require_target_profile=True,
+    )
     sanitized_source_reports = sanitize_source_reports(source_reports)
     source_reports_privacy = source_report_privacy_contract(sanitized_source_reports)
 
     generated_at = str(report.get("generated_at") or now_utc().isoformat())
     generated_day = generated_at[:10] if len(generated_at) >= 10 else now_utc().date().isoformat()
-    candidate_id = candidate_id or f"skills-profile-{generated_day}-{slugify_candidate_part(target_profile)}"
+    candidate_id = candidate_id or f"skills-profile-{generated_day}-{slugify_candidate_part(target_profile_name)}"
 
     config = report.get("config_summary", {})
     current_profile = config.get("current_profile", {}) if isinstance(config, dict) else {}
     enabled_known = sorted(current_profile.get("matched_enabled_known_plugins") or [])
     enabled_known_set = set(enabled_known)
-    target_row = find_module_evidence_row(report, target_profile)
+    target_row = find_module_evidence_row(report, target_profile_value) if target_profile_value else None
     target_plugins = sorted(target_row.get("plugins", [])) if target_row else []
     target_plugin_set = set(target_plugins)
 
@@ -1942,7 +1966,8 @@ def build_profile_apply_candidate(
     unknown_enabled = list(current_profile.get("unmatched_enabled_plugin_entries") or [])
 
     evidence_basis = {
-        "target_profile": target_profile,
+        "target_profile": target_profile_value or None,
+        "target_profile_present": bool(target_profile_value),
         "target_profile_found_in_registry": target_row is not None,
         "target_module_evidence": {
             "strong_total": target_row.get("strong_total") if target_row else 0,
@@ -1981,7 +2006,8 @@ def build_profile_apply_candidate(
             "unmatched_enabled_plugin_entries": unknown_enabled,
         },
         "target_profile": {
-            "name": target_profile,
+            "name": target_profile_value or None,
+            "target_profile_present": bool(target_profile_value),
             "known_profile": target_row is not None,
             "target_plugins": target_plugins,
         },
@@ -2357,6 +2383,7 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
         f"- Current enabled plugins: `{current.get('enabled_plugins_count')}`",
         f"- Current manual review required: `{current.get('manual_review_required')}`",
         f"- Target profile: `{target.get('name')}`",
+        f"- Target profile provided: `{target.get('target_profile_present')}`",
         f"- Target profile found in registry: `{target.get('known_profile')}`",
         f"- Target plugins: `{len(target.get('target_plugins') or [])}`",
         "",
@@ -2501,6 +2528,8 @@ def main() -> int:
             json_report_path=args.output,
             markdown_summary_path=args.summary_output,
             require_source_reports=True,
+            target_profile=args.target_profile,
+            require_target_profile=True,
         )
         candidate = build_profile_apply_candidate(
             report,
