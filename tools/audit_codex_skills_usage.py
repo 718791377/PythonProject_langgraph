@@ -236,6 +236,51 @@ CANDIDATE_READY_AUDIT_STATES = {
     "apply-candidate",
     "closed-with-candidate",
 }
+REQUIRED_PROFILE_APPLY_CANDIDATE_FIELDS = {
+    "schema_version",
+    "record_type",
+    "candidate_id",
+    "generated_at",
+    "source_reports",
+    "source_reports_privacy",
+    "candidate_generation_gate",
+    "current_profile",
+    "target_profile",
+    "plugin_diff",
+    "evidence_basis",
+    "risk_review",
+    "rollback_path",
+    "validation_plan",
+    "approval_state",
+    "mutates_config",
+    "edits_plugin_cache",
+    "hard_load_apply_performed",
+    "explicit_authorization_required_for_apply",
+    "ordinary_continue_or_generic_confirmation_is_not_apply_authorization",
+}
+REQUIRED_PROFILE_APPLY_CANDIDATE_FIELD_TYPES = {
+    "schema_version": int,
+    "record_type": str,
+    "candidate_id": str,
+    "generated_at": str,
+    "source_reports": dict,
+    "source_reports_privacy": dict,
+    "candidate_generation_gate": dict,
+    "current_profile": dict,
+    "target_profile": dict,
+    "plugin_diff": dict,
+    "evidence_basis": dict,
+    "risk_review": dict,
+    "rollback_path": dict,
+    "validation_plan": list,
+    "approval_state": str,
+    "mutates_config": bool,
+    "edits_plugin_cache": bool,
+    "hard_load_apply_performed": bool,
+    "explicit_authorization_required_for_apply": bool,
+    "ordinary_continue_or_generic_confirmation_is_not_apply_authorization": bool,
+}
+PROFILE_APPLY_CANDIDATE_PREVIEW_APPROVAL_STATE = "preview-only"
 AUDIT_STATE_BLOCKER_FIELDS = (
     "close_blockers",
     "candidate_blockers",
@@ -2059,6 +2104,141 @@ def source_report_privacy_contract(source_reports: dict[str, Any] | None) -> dic
     }
 
 
+def iter_string_values(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        strings: list[str] = []
+        for nested in value.values():
+            strings.extend(iter_string_values(nested))
+        return strings
+    if isinstance(value, list):
+        strings = []
+        for nested in value:
+            strings.extend(iter_string_values(nested))
+        return strings
+    return []
+
+
+def validate_profile_apply_candidate_contract(candidate: dict[str, Any]) -> dict[str, Any]:
+    """Validate the self-contained, preview-only candidate record shape.
+
+    This contract is separate from the upstream report field contract. It
+    protects the retained candidate JSON/Markdown artifact from being mistaken
+    for approval or an already-applied profile change.
+    """
+
+    missing_fields = sorted(REQUIRED_PROFILE_APPLY_CANDIDATE_FIELDS - set(candidate))
+    invalid_type_fields = sorted(
+        field
+        for field, expected_type in REQUIRED_PROFILE_APPLY_CANDIDATE_FIELD_TYPES.items()
+        if field in candidate and not isinstance(candidate.get(field), expected_type)
+    )
+
+    blockers: list[str] = []
+    blockers.extend(f"missing:{field}" for field in missing_fields)
+    blockers.extend(f"invalid_type:{field}" for field in invalid_type_fields)
+
+    if candidate.get("schema_version") != 1:
+        blockers.append("schema_version_not_1")
+    if candidate.get("record_type") != "codex_skills_profile_apply_candidate":
+        blockers.append("record_type_invalid")
+    if not str(candidate.get("candidate_id") or "").strip():
+        blockers.append("candidate_id_missing")
+    if not str(candidate.get("generated_at") or "").strip():
+        blockers.append("generated_at_missing")
+
+    if candidate.get("approval_state") != PROFILE_APPLY_CANDIDATE_PREVIEW_APPROVAL_STATE:
+        blockers.append("approval_state_not_preview_only")
+    if candidate.get("mutates_config") is not False:
+        blockers.append("mutates_config_not_false")
+    if candidate.get("edits_plugin_cache") is not False:
+        blockers.append("edits_plugin_cache_not_false")
+    if candidate.get("hard_load_apply_performed") is not False:
+        blockers.append("hard_load_apply_performed_not_false")
+    if candidate.get("explicit_authorization_required_for_apply") is not True:
+        blockers.append("explicit_authorization_required_for_apply_not_true")
+    if candidate.get("ordinary_continue_or_generic_confirmation_is_not_apply_authorization") is not True:
+        blockers.append("ordinary_continue_or_generic_confirmation_is_not_apply_authorization_not_true")
+
+    source_reports_privacy = (
+        candidate.get("source_reports_privacy") if isinstance(candidate.get("source_reports_privacy"), dict) else {}
+    )
+    if source_reports_privacy.get("status") != "passed" or source_reports_privacy.get("passed") is not True:
+        blockers.append("source_reports_privacy_not_passed")
+    privacy_violations = source_reports_privacy.get("violations")
+    if privacy_violations not in (None, []):
+        blockers.append("source_reports_privacy_has_violations")
+
+    gate = candidate.get("candidate_generation_gate") if isinstance(candidate.get("candidate_generation_gate"), dict) else {}
+    if "allowed" not in gate:
+        blockers.append("candidate_generation_gate:allowed_missing")
+    elif not isinstance(gate.get("allowed"), bool):
+        blockers.append("candidate_generation_gate:allowed_invalid_type")
+    if "blockers" not in gate:
+        blockers.append("candidate_generation_gate:blockers_missing")
+    elif not isinstance(gate.get("blockers"), list):
+        blockers.append("candidate_generation_gate:blockers_invalid_type")
+    elif any(not isinstance(blocker, str) for blocker in gate.get("blockers") or []):
+        blockers.append("candidate_generation_gate:blockers_contains_non_string")
+    if gate.get("status") not in (None, "allowed", "blocked"):
+        blockers.append("candidate_generation_gate:status_invalid_value")
+    if gate.get("status") == "allowed" and gate.get("allowed") is not True:
+        blockers.append("candidate_generation_gate:allowed_status_without_allowed_true")
+    if gate.get("status") == "blocked" and gate.get("allowed") is not False:
+        blockers.append("candidate_generation_gate:blocked_status_without_allowed_false")
+
+    rollback = candidate.get("rollback_path") if isinstance(candidate.get("rollback_path"), dict) else {}
+    if not str(rollback.get("restore_command") or "").strip():
+        blockers.append("rollback_path:restore_command_missing")
+    if "restart_required" not in rollback:
+        blockers.append("rollback_path:restart_required_missing")
+    elif not isinstance(rollback.get("restart_required"), bool):
+        blockers.append("rollback_path:restart_required_invalid_type")
+
+    validation_plan = candidate.get("validation_plan")
+    if isinstance(validation_plan, list):
+        if not validation_plan:
+            blockers.append("validation_plan_empty")
+        for index, step in enumerate(validation_plan):
+            if not isinstance(step, dict):
+                blockers.append(f"validation_plan:{index}:invalid_type")
+                continue
+            if not str(step.get("step") or "").strip():
+                blockers.append(f"validation_plan:{index}:step_missing")
+            if not (str(step.get("command") or "").strip() or str(step.get("required_evidence") or "").strip()):
+                blockers.append(f"validation_plan:{index}:evidence_or_command_missing")
+
+    candidate_without_contract = {
+        key: value for key, value in candidate.items() if key != "candidate_record_contract"
+    }
+    for value in iter_string_values(candidate_without_contract):
+        if any(pattern.search(value) for pattern in PRIVATE_PATH_PATTERNS):
+            blockers.append("candidate_contains_raw_private_path")
+            break
+    for value in iter_string_values(candidate_without_contract):
+        raw_secret = False
+        for match in ACCESS_TOKEN_PATTERN.finditer(value):
+            if match.group(1) != "[REDACTED_SECRET]":
+                blockers.append("candidate_contains_raw_secret_assignment")
+                raw_secret = True
+                break
+        if raw_secret:
+            break
+    if any(STANDALONE_TOKEN_PATTERN.search(value) for value in iter_string_values(candidate_without_contract)):
+        blockers.append("candidate_contains_standalone_token")
+
+    return {
+        "status": "passed" if not blockers else "failed",
+        "passed": not blockers,
+        "blockers": blockers,
+        "required_fields": sorted(REQUIRED_PROFILE_APPLY_CANDIDATE_FIELDS),
+        "missing_fields": missing_fields,
+        "invalid_type_fields": invalid_type_fields,
+        "approval_state_policy": "candidate_outputs_from_this_script_must_remain_preview_only_until_a_separate_explicit_apply_change",
+    }
+
+
 def build_source_reports(
     json_report: str | None = None,
     markdown_summary: str | None = None,
@@ -2210,6 +2390,7 @@ def build_profile_apply_candidate(
         "explicit_authorization_required_for_apply": True,
         "ordinary_continue_or_generic_confirmation_is_not_apply_authorization": True,
     }
+    candidate["candidate_record_contract"] = validate_profile_apply_candidate_contract(candidate)
     return candidate
 
 
@@ -2503,6 +2684,11 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
     source_reports = candidate.get("source_reports", {})
     source_reports_privacy = candidate.get("source_reports_privacy", {})
     gate = candidate.get("candidate_generation_gate", {})
+    candidate_contract = (
+        candidate.get("candidate_record_contract")
+        if isinstance(candidate.get("candidate_record_contract"), dict)
+        else validate_profile_apply_candidate_contract(candidate)
+    )
     lines = [
         "# Codex Skills Profile Apply Candidate",
         "",
@@ -2520,6 +2706,8 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
         f"- Hard-load apply performed: `{candidate.get('hard_load_apply_performed')}`",
         f"- Explicit authorization required for apply: `{candidate.get('explicit_authorization_required_for_apply')}`",
         f"- Generic continue is not apply authorization: `{candidate.get('ordinary_continue_or_generic_confirmation_is_not_apply_authorization')}`",
+        f"- Candidate record contract: `{candidate_contract.get('status')}`",
+        f"- Candidate record blockers: `{', '.join(candidate_contract.get('blockers') or []) or 'none'}`",
         "",
         "## Source reports",
         "",

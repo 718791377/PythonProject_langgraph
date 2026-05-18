@@ -258,6 +258,7 @@ created_at: 2026-05-16
 | `rollback_path` | 恢复旧 profile 的 helper 命令、所需重启/新会话说明 |
 | `validation_plan` | preview、local check、启动验证和 warning 复测步骤 |
 | `approval_state` | `preview-only`、`approved-to-apply`、`applied`、`rolled-back` |
+| `candidate_record_contract` | 候选记录自身形状、preview-only 安全标志、隐私契约、回滚路径、验证计划与候选门禁结构的自校验结果 |
 
 门禁规则：
 
@@ -270,6 +271,7 @@ created_at: 2026-05-16
 - 候选记录必须包含 `source_reports_privacy.status=passed`；如果 privacy contract 失败，候选必须保持 blocked，直到重新生成 report 路径或修复脱敏器；
 - 候选 Markdown 摘要必须渲染 source-report privacy 状态与 violations/blockers；没有违规时写入 `none`，保证 preview 记录可复核且不暴露原始 source 路径；
 - 候选生成还必须校验报告字段契约；当必需顶层字段、audit-only 安全标志、决策关键嵌套字段或内嵌 `field_contract` 本身缺失、过期或类型错误时，必须以 `field_contract:<reason>` 阻断；
+- 候选生成还必须附加并渲染 `candidate_record_contract`；当候选必需字段、preview-only 安全标志、`source_reports_privacy.status=passed`、`candidate_generation_gate.allowed/blockers`、`rollback_path.restore_command` / `restart_required` 或非空 `validation_plan` 缺失或无效时，该契约必须失败，且该候选不得被当成可 apply 证据；
 - `approval_state=preview-only` 只能运行 preview，不得修改 `config.toml`；
 - `approved-to-apply` 必须来自用户明确授权，不能由“继续”或普通确认替代；
 - apply 后必须保存 apply 前后的脱敏 diff 摘要；
@@ -416,7 +418,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 脚本能力边界：可靠覆盖项、人工复核需求与增强触发条件；
 - apply 建议，但不自动 apply。
 - `tools/check_skills_audit_output_retention.py` 的输出留存状态，证明 `.tmp/` artifact 与原始 Skills usage JSON 没有被保留进 Git。
-- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、cadence-review 字段契约与 Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁与 Markdown blocker 输出、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段以及候选 Markdown 不执行清单。
+- `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、cadence-review 字段契约与 Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁与 Markdown blocker 输出、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段、不安全或不完整候选记录的 `candidate_record_contract` 阻断，以及候选 Markdown 不执行清单。
 - 回归测试还必须覆盖 explicit skill 误报 token 的路径/secret 脱敏、长度截断，以及 `noise_review` 字段契约阻断未脱敏或缺少隐私字段的报告，并覆盖 `script_capability_boundaries` 字段契约阻断缺失或空边界列表的报告。
 - 回归测试还必须覆盖 `decision_recommendation` 字段契约阻断缺失或非 advisory 状态、允许 profile apply、分桶不完整、分桶元素非字符串以及 `bucket_counts` 过期的报告。
 - 回归测试还必须覆盖 `module_evidence` 行契约阻断字段缺失/类型错误、plugin 元素非字符串、strong 计数为负或过期、mapped-tool 证据被计为强证据、跨项目效用未要求人工复核以及 recommendation 不在允许列表中的报告。
@@ -475,6 +477,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 要求候选生成必须绑定 JSON 报告路径与脱敏 Markdown 摘要路径；
 - 要求候选生成只接受 `summary-reviewed`、`apply-candidate` 或 `closed-with-candidate` 审计状态，阻断未就绪或已 `closed-no-change` 的审计状态；
 - 要求 candidate `source_reports` 在写入候选 JSON 或 Markdown 前必须通过隐私契约；
+- 要求生成的候选 JSON 和 Markdown 暴露通过的 `candidate_record_contract`，覆盖 preview-only 安全标志、门禁形状、回滚路径与验证计划完整性；
 - 明确 audit 数据源的数据最小化、脱敏、留存和禁止外发边界；
 - 明确 audit 脚本的能力边界、已知限制和触发脚本增强的条件；
 - 明确审计运行状态机、停止条件，以及审计结束后与 profile apply 候选变更的分界；

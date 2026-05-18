@@ -257,6 +257,7 @@ The candidate record must include at least:
 | `rollback_path` | Helper command to restore the old profile and restart/new-session requirements |
 | `validation_plan` | Preview, local check, startup validation, and warning retest steps |
 | `approval_state` | `preview-only`, `approved-to-apply`, `applied`, or `rolled-back` |
+| `candidate_record_contract` | Self-validation result for the retained candidate record shape, preview-only safety flags, privacy contract, rollback path, validation plan, and candidate gate structure |
 
 Gate rules:
 
@@ -269,6 +270,7 @@ Gate rules:
 - a candidate record must include `source_reports_privacy.status=passed`; if the privacy contract fails, the candidate must stay blocked until the report paths are regenerated or the sanitizer is fixed;
 - candidate Markdown summaries must render the source-report privacy status and privacy violations/blockers, using `none` when there are no violations, so the preview record is self-reviewable without exposing raw source paths;
 - candidate generation must also validate the report field contract and block with `field_contract:<reason>` when required top-level fields, audit-only safety flags, decision-critical nested fields, or the embedded `field_contract` itself are missing, stale, or invalid;
+- candidate generation must also attach and render a `candidate_record_contract`; if required candidate fields, preview-only safety flags, `source_reports_privacy.status=passed`, `candidate_generation_gate.allowed/blockers`, `rollback_path.restore_command` / `restart_required`, or a non-empty `validation_plan` are missing or invalid, the contract must fail and the candidate must not be treated as apply-ready evidence;
 - `approval_state=preview-only` may run preview only and must not modify `config.toml`;
 - `approved-to-apply` requires explicit user authorization and cannot be inferred from “continue” or generic confirmation;
 - after apply, save sanitized before/after diff summaries;
@@ -413,7 +415,7 @@ Each audit run must report:
 - script capability boundaries, including reliable coverage, human-review needs, and enhancement triggers;
 - recommendations, without applying them automatically.
 - output retention status from `tools/check_skills_audit_output_retention.py`, proving `.tmp/` artifacts and raw Skills usage JSON are not retained in Git.
-- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, cadence-review field-contract and Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized log-excerpt redaction marker integrity, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates and Markdown blocker output, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, and candidate Markdown non-action text.
+- `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, cadence-review field-contract and Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized log-excerpt redaction marker integrity, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates and Markdown blocker output, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, candidate-record contract failures for unsafe or incomplete candidate records, and candidate Markdown non-action text.
 - Regression tests must also cover explicit-skill false-positive token path/secret redaction, length truncation, `noise_review` field-contract blocking for unsanitized or missing privacy fields, and `script_capability_boundaries` field-contract blocking for missing or empty boundary lists.
 - Regression tests must cover `decision_recommendation` field-contract blocking for missing or non-advisory status, profile-apply allowance, incomplete bucket lists, non-string bucket entries, and stale `bucket_counts`.
 - Regression tests must cover `module_evidence` row-contract blocking for missing/wrong-typed fields, non-string plugin entries, negative or stale strong counts, mapped-tool evidence being counted as strong, non-manual cross-project utility, and unsupported recommendations.
@@ -472,6 +474,7 @@ This plan is granular enough only when all of the following are true:
 - it requires candidate generation to stay attached to a JSON report path and sanitized Markdown summary path;
 - it requires candidate generation to accept only `summary-reviewed`, `apply-candidate`, or `closed-with-candidate` audit states and block not-ready or `closed-no-change` states;
 - it requires candidate `source_reports` to pass a privacy contract before candidate JSON or Markdown is written;
+- it requires generated candidate JSON and Markdown to expose a passing `candidate_record_contract` covering preview-only safety flags, gate shape, rollback path, and validation-plan completeness;
 - it defines data minimization, sanitization, retention, and no-externalization boundaries for audit data sources;
 - it defines the audit script capability boundaries, known limitations, and conditions that trigger script enhancement;
 - it exposes those script capability boundaries in JSON field contracts and sanitized Markdown summaries;

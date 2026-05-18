@@ -2369,8 +2369,69 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertTrue(candidate["candidate_generation_gate"]["allowed"])
         self.assertTrue(candidate["validation_plan"])
         self.assertEqual(candidate["source_reports_privacy"]["status"], "passed")
+        self.assertEqual(candidate["candidate_record_contract"]["status"], "passed")
+        self.assertTrue(candidate["candidate_record_contract"]["passed"])
         self.assertIn("[REDACTED_PATH]", json.dumps(candidate["source_reports"], ensure_ascii=False))
         self.assertNotIn(r"D:\private", json.dumps(candidate, ensure_ascii=False))
+
+    def test_candidate_record_contract_blocks_unsafe_or_incomplete_candidate(self) -> None:
+        candidate = audit.build_profile_apply_candidate(
+            {
+                "generated_at": "2026-05-16T00:00:00+00:00",
+                "config_summary": {
+                    "enabled_plugins": [],
+                    "disabled_plugins": [],
+                    "unknown_enabled_state_plugins": [],
+                    "current_profile": {
+                        "inferred_profile": "core-dev",
+                        "source": "inferred_from_enabled_plugin_entries",
+                        "manual_review_required": False,
+                        "matched_enabled_known_plugins": [],
+                        "unmatched_enabled_plugin_entries": [],
+                    },
+                },
+                "warning_severity": {"level": "none"},
+                "manual_evidence": {"valid_note_count": 0, "counts_by_evidence_level": {}, "counts_by_action": {}},
+                "module_evidence": [],
+            },
+            target_profile="core-dev",
+            candidate_gate={
+                "status": "blocked",
+                "allowed": False,
+                "blockers": ["summary_not_marked_reviewed"],
+                "summary_reviewed": False,
+                "audit_window_at_least_30_days": True,
+            },
+        )
+
+        cases = {
+            "approval_state": ({"approval_state": "approved-to-apply"}, "approval_state_not_preview_only"),
+            "mutates_config": ({"mutates_config": True}, "mutates_config_not_false"),
+            "source_privacy": (
+                {
+                    "source_reports_privacy": {
+                        "status": "failed",
+                        "passed": False,
+                        "violations": ["raw_private_path"],
+                    }
+                },
+                "source_reports_privacy_not_passed",
+            ),
+            "validation_plan": ({"validation_plan": []}, "validation_plan_empty"),
+            "rollback_path": ({"rollback_path": {"restart_required": True}}, "rollback_path:restore_command_missing"),
+            "candidate_gate_blockers": (
+                {"candidate_generation_gate": {"status": "blocked", "allowed": False, "blockers": [123]}},
+                "candidate_generation_gate:blockers_contains_non_string",
+            ),
+        }
+        for name, (patch, expected_blocker) in cases.items():
+            with self.subTest(name=name):
+                broken = json.loads(json.dumps(candidate))
+                broken.update(patch)
+                broken.pop("candidate_record_contract", None)
+                contract = audit.validate_profile_apply_candidate_contract(broken)
+                self.assertEqual(contract["status"], "failed")
+                self.assertIn(expected_blocker, contract["blockers"])
 
     def test_render_profile_apply_candidate_markdown_is_non_mutating(self) -> None:
         candidate = audit.build_profile_apply_candidate(
@@ -2407,6 +2468,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertIn("# Codex Skills Profile Apply Candidate", summary)
         self.assertIn("Approval state: `preview-only`", summary)
+        self.assertIn("Candidate record contract: `passed`", summary)
+        self.assertIn("Candidate record blockers: `none`", summary)
         self.assertIn("Gate status: `blocked`", summary)
         self.assertIn("Privacy contract: `passed`", summary)
         self.assertIn("Privacy violations: `none`", summary)
