@@ -50,6 +50,22 @@
       "description": "Prevents concurrent sessions from claiming the same OpenSpec change or overlapping hotspot path scopes."
     },
     {
+      "id": "worktree-task-receipt-lifecycle",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_worktree_task_receipt.py"
+      ],
+      "guard_steps": [
+        "check_worktree_task_receipt"
+      ],
+      "description": "Requires feature worktrees to carry task receipts, lifecycle labels, branch-matching claims, next-action metadata, and completion receipts so residual worktrees are classified instead of forgotten."
+    },
+    {
       "id": "openspec-official-guard",
       "owner_level": "project",
       "status": "implemented",

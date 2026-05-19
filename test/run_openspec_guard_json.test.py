@@ -34,6 +34,7 @@ GUARD_STEPS = [
     ("check_durable_routing_smoke_gate_template", "check_durable_routing_smoke_gate_template.py", "durable_routing_smoke_gate_template"),
     ("check_codex_native_rollback_release_gate_template", "check_codex_native_rollback_release_gate_template.py", "codex_native_rollback_release_gate_template"),
     ("check_worktree_session_hygiene", "check_worktree_session_hygiene.py", "worktree_session_hygiene"),
+    ("check_worktree_task_receipt", "check_worktree_task_receipt.py", "worktree_task_receipt"),
     ("check_session_ownership_claims", "check_session_ownership_claims.py", "session_ownership_claims"),
     ("check_orchestration_activation_policy", "check_orchestration_activation_policy.py", "orchestration_activation_policy"),
     ("check_codex_skills_governance", "check_codex_skills_governance.py", "codex_skills_governance"),

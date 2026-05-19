@@ -98,6 +98,21 @@ Feature worktree 是临时执行面。本地验证通过、所有计划保留的
 - 无法判断的文件：不能跟随 worktree 一起删除；必须先让操作者选择保留、提交、移动、摘要记录或丢弃。
 
 安全总结是：本地 `main` 集成后，干净的 `.worktrees/` feature worktree 与已合入的本地 feature branch 可以由受保护 helper 自动清理；远端 refs 和 backup refs 不自动清理。
+## 5.2 Worktree 任务 Receipt 与生命周期状态
+
+每个新建 feature worktree 在开始可写工作前，必须携带 durable task metadata（持久任务元数据）。元数据有两个 local-only surface（仅本地表面）：
+
+1. `.omx/session-claims/<session>.json` 声明 session ownership，用于冲突检查。
+2. `.omx/worktree-task-receipt.json` 放在 worktree 内部，作为简短 receipt，让任何恢复会话都能第一眼知道这个 worktree 为什么存在。
+
+两个 surface 至少必须记录：任务名、任务摘要、worktree 路径、branch、创建或接管会话、创建时间、是否只是文档计划、是否还需要后续代码实现、涉及路径、下一步动作、是否需要合入本地 `main`、是否需要远端同步，以及预计 merge-or-pause 时间点。
+
+允许的生命周期标签是：`active`、`paused`、`ready-to-merge`、`merged-local-main`、`cleaned`、`remote-sync-needed`、`completed`、`superseded`。如果 worktree 暂时不能合入，必须留下其中一个明确标签和具体下一步动作。只写计划文档的 worktree 默认不长期保留：写完计划，运行本地验证，合入本地 `main`，创建 rollback ref，保留 completed receipt，然后清理 worktree 和本地 feature branch。
+
+每次本地 `main` 合入或远端发布/同步后，操作者流程必须扫描 `git worktree list --porcelain`、active session claims 和残留 worktree 分类。后续回答“接下来做什么”时，必须把残留 worktree 单独列出，不允许混在大任务 backlog 里被遗忘。completed receipt 必须保存 rollback ref、合入后的 local-main commit、已清理 worktree、已删除 branch，以及远端同步状态。
+
+`tools/check_worktree_task_receipt.py` 是这个生命周期的脚本控制。普通 guard 模式下，为兼容历史 worktree，缺少 receipt 会报告 warning；当前工作流新建的 worktree 必须立即写入 receipt。严格模式（`--require-all-feature-worktrees`）可用于迁移或审计所有残留 worktree。
+
 ## 6. 脚本控制
 
 这个安全边界不能只靠提示词提醒。
@@ -106,6 +121,7 @@ Feature worktree 是临时执行面。本地验证通过、所有计划保留的
 
 - `tools/check_worktree_session_hygiene.py` - 只读 checker，用来检查已登记 Git worktrees、脏状态、重复脏路径、branch cleanup readiness、rollback backup ref 是否存在，以及 `main` 对齐风险。
 - `tools/cleanup_integrated_worktree.py` - 本地-only 的受保护清理 helper；只有在 completed claim 已保留、rollback backup ref 已确认、feature worktree 干净、branch 已合入 local `main` 时，才删除 `.worktrees/` 下的 worktree，并用 `git branch -d` 删除本地 feature branch。
+- `tools/check_worktree_task_receipt.py` - 只读 checker，用来检查 feature worktree 的 task receipt、生命周期标签、branch-matching claim、只写计划文档的清理意图，以及 completed receipt 字段。
 
 推荐用法：
 

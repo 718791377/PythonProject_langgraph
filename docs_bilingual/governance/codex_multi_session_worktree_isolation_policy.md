@@ -103,6 +103,21 @@ File-class tasks must be handled before worktree release:
 
 The safe summary is: after local `main` integration, a clean `.worktrees/` feature worktree and its merged local feature branch can be cleaned automatically by the guarded cleanup helper; remote refs and backup refs are not cleaned automatically.
 
+## 5.2 Worktree Task Receipts and Lifecycle States
+
+Every newly created feature worktree must carry durable task metadata before writable work begins. The metadata has two local-only surfaces:
+
+1. `.omx/session-claims/<session>.json` declares session ownership for conflict checks.
+2. `.omx/worktree-task-receipt.json` is a short receipt inside the worktree so any resumed session can immediately see why the worktree exists.
+
+Both surfaces must record at least: task name, task summary, worktree path, branch, creating or taking-over session, creation time, whether the work is document-plan-only, whether later code implementation is required, touched paths, next action, whether local `main` integration is required, whether remote sync is required, and the expected merge-or-pause point.
+
+Allowed lifecycle labels are: `active`, `paused`, `ready-to-merge`, `merged-local-main`, `cleaned`, `remote-sync-needed`, `completed`, and `superseded`. A worktree that cannot be merged immediately must be left with one of these explicit lifecycle labels and a concrete next action. Document-plan-only worktrees should not be kept long term: write the plan, run local validation, merge to local `main`, create a rollback ref, preserve a completed receipt, and clean the worktree plus local feature branch.
+
+After each local `main` merge or remote publication/sync, the operator workflow must scan `git worktree list --porcelain`, active session claims, and residual worktree classifications. Future "what next" reports must list residual worktrees separately from the main task instead of letting them disappear inside a broad backlog. Completed receipts must preserve rollback ref, merged local-main commit, cleaned worktree path, deleted branch, and remote-sync status.
+
+The checker `tools/check_worktree_task_receipt.py` is the script-backed control for this lifecycle. In normal guard mode it reports missing receipts as warnings for legacy worktrees, while new worktrees created by the current workflow must write the receipt immediately. In strict mode (`--require-all-feature-worktrees`) it can be used to migrate or audit all residual worktrees.
+
 ## 6. Script Control
 
 Prompt reminders are not sufficient for this safety boundary.
@@ -112,6 +127,7 @@ The repository provides:
 - `tools/check_worktree_session_hygiene.py` - read-only checker that inspects registered Git worktrees, dirty states, duplicate dirty paths, branch cleanup readiness, rollback backup ref presence, and `main` alignment risk.
 - `tools/cleanup_integrated_worktree.py` - guarded local-only cleanup helper that removes a clean, already-integrated `.worktrees/` feature worktree and deletes its merged local feature branch with `git branch -d` only after preserving the completed claim and confirming a rollback backup ref.
 - `tools/check_session_ownership_claims.py` - read-only checker that inspects local `.omx/session-claims/*.json` claim files and fails on duplicate OpenSpec-change or overlapping path ownership.
+- `tools/check_worktree_task_receipt.py` - read-only checker for feature worktree task receipts, lifecycle labels, branch-matching claims, document-plan-only cleanup intent, and completed receipt fields.
 
 Expected usage:
 
