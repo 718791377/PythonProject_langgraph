@@ -188,3 +188,9 @@ documents:
     status: active
     canonical_path: docs_bilingual/implementation_plans/main_worktree_backup_reconciliation_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/main_worktree_backup_reconciliation_plan.zh-CN.md
+
+  - doc_id: chrome_devtools_mcp_multi_session_isolation_plan
+    doc_class: implementation_plan
+    status: draft
+    canonical_path: docs_bilingual/implementation_plans/chrome_devtools_mcp_multi_session_isolation_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/chrome_devtools_mcp_multi_session_isolation_plan.zh-CN.md
