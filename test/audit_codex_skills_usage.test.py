@@ -321,6 +321,14 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertIn("Audit state: running", output)
         self.assertIn("Warning triage: not_requested requested=False window_ok=True", output)
+        self.assertIn("Warning triage policy: use_days_1_or_since_for_warning_triage", output)
+        self.assertIn("Warning triage warnings: budget=0 skipped_loading=0 recent_skipped_samples=0", output)
+        self.assertIn("Warning triage skipped-loading review: none", output)
+        self.assertIn(
+            "Warning triage recommended action: run_with_warning_triage_after_a_live_session_budget_warning",
+            output,
+        )
+        self.assertIn("Warning triage blockers: none", output)
         self.assertIn("Skill path reads: 0", output)
         self.assertIn("Profile helper calls: 0", output)
         self.assertIn("Script capability boundaries: reliable=", output)

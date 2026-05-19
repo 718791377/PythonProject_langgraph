@@ -3080,6 +3080,20 @@ def print_human(report: dict[str, Any]) -> None:
         f"requested={warning_triage.get('requested')} "
         f"window_ok={warning_triage.get('window_ok')}"
     )
+    print(f"Warning triage policy: {warning_triage.get('window_policy')}")
+    print(
+        "Warning triage warnings: "
+        f"budget={warning_triage.get('budget_warning_count')} "
+        f"skipped_loading={warning_triage.get('skipped_loading_count')} "
+        f"recent_skipped_samples={warning_triage.get('recent_skipped_loading_samples')}"
+    )
+    print(f"Warning triage skipped-loading review: {warning_triage.get('skipped_loading_review')}")
+    print(f"Warning triage recommended action: {warning_triage.get('recommended_action')}")
+    warning_triage_blockers = warning_triage.get("blockers") if isinstance(warning_triage.get("blockers"), list) else []
+    print(
+        "Warning triage blockers: "
+        f"{', '.join(str(blocker) for blocker in warning_triage_blockers) if warning_triage_blockers else 'none'}"
+    )
     print(f"Skill path reads: {sum((session_evidence.get('skill_paths') or {}).values())}")
     print(f"Profile helper calls: {sum((session_evidence.get('profile_helper_calls') or {}).values())}")
     print(
