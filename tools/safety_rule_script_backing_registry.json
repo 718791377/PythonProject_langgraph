@@ -250,7 +250,7 @@
       "guard_steps": [
         "check_remote_publication_approval_policy"
       ],
-      "description": "Keeps local integration approval separate from remote publication approval and prevents generic continue wording from authorizing GitLab/GitHub mutations."
+      "description": "Keeps local integration approval separate from remote publication approval, prevents generic continue wording from authorizing GitLab/GitHub mutations, and treats explicit remote-publication wording as one approval for the normal GitLab MR/CI/merge plus GitHub sync green path while requiring new approval for exceptional remote operations."
     },
     {
       "id": "orchestration-activation-policy",
