@@ -314,12 +314,13 @@ Current script capability boundaries:
 - it can extract explicit skill announcements, `SKILL.md` path reads, profile helper calls, and tool-call names from session transcripts;
 - it can extract skills budget warnings, `All skill descriptions were removed`, `additional skills` counts, and skipped-loading samples from `logs_2.sqlite`;
 - it can aggregate helper calls and plugin skill-path reads by profile module to produce preliminary recommendations.
+- it can aggregate a small explicit registry of stable local tool-call aliases as medium evidence only, for example browser/CDP surfaces for `Browser`, Cloudflare API surfaces for `Cloudflare`, and Pencil design/canvas surfaces for `creative-content`; these aliases never increase `strong_total`.
 
 Known limitations:
 
 - `weak_plugin_mentions` shows text trends only and does not prove real invocation;
 - `explicit_skills` can include natural-language or example-token false positives and must go through noise review;
-- `tool_call_names` is not the same as plugin/module usage unless it can be mapped to a concrete capability surface;
+- `tool_call_names`, including explicitly mapped stable aliases, are still medium evidence and manual-review signals; they are not plugin/default-profile apply evidence by themselves;
 - if the log database is unreadable, rotated, or missing old sessions, warning counts may be underreported;
 - profile-module aggregation depends on the registry, so missing or stale registry data makes the report incomplete evidence.
 
@@ -327,7 +328,7 @@ Prefer script enhancement over manual workaround when:
 
 - the same false-positive pattern appears in two weekly reports;
 - the 30-day summary needs a class of evidence but the script only reports weak mentions;
-- `tool_call_names` shows a stable pattern that maps to a plugin/module but the script does not aggregate it;
+- `tool_call_names` shows a stable pattern that maps to a plugin/module but is not in the explicit alias registry;
 - warnings occur during a session but `logs_2.sqlite` cannot localize them, requiring another reviewable data source;
 - the profile registry and actual enabled-plugin surface diverge enough to make module evidence visibly wrong.
 

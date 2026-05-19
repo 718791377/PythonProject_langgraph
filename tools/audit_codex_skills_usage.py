@@ -194,6 +194,26 @@ VALID_MEDIUM_EVIDENCE_RATIONALES = {
     "no_mapped_tool_call_medium_evidence",
 }
 MODULE_EVIDENCE_MAPPED_TOOL_POLICY = "medium_evidence_only_not_counted_as_strong_evidence"
+TOOL_CALL_PLUGIN_ALIASES = {
+    # These are stable local tool surfaces whose invocation name does not
+    # always include the plugin display name. They remain medium evidence only:
+    # a tool call can prove task affinity, not default-profile eligibility.
+    "Browser": (
+        "mcp__chrome_devtools__",
+        "mcp__cdp_bridge__",
+    ),
+    "Cloudflare": (
+        "mcp__cloudflare_api__",
+    ),
+}
+TOOL_CALL_MODULE_ALIASES = {
+    # Pencil is a design/canvas surface rather than a native plugin skill, so
+    # map it to the creative module for human review instead of claiming Canva
+    # or Figma plugin usage.
+    "creative-content": (
+        "mcp__pencil__",
+    ),
+}
 REQUIRED_NOISE_REVIEW_FIELDS = {
     "status",
     "explicit_skill_noise_removed",
@@ -1886,6 +1906,20 @@ def normalize_name_for_match(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", value.lower())
 
 
+def tool_call_matches_stable_alias(tool_name: str, aliases: tuple[str, ...]) -> bool:
+    """Match known tool-call prefixes without turning them into strong evidence."""
+    tool_lower = tool_name.lower()
+    tool_key = normalize_name_for_match(tool_name)
+    for alias in aliases:
+        alias_lower = alias.lower()
+        alias_key = normalize_name_for_match(alias)
+        if alias_lower.endswith("__") and tool_lower.startswith(alias_lower):
+            return True
+        if alias_key and alias_key in tool_key:
+            return True
+    return False
+
+
 def match_enabled_known_plugins(enabled_plugins: list[str], known_plugins: list[str]) -> tuple[list[str], list[str]]:
     """Map config plugin entries to registry plugin names without exposing config contents."""
     matched: set[str] = set()
@@ -1962,6 +1996,12 @@ def build_current_profile_summary(profiles: dict[str, Any], enabled_plugins: lis
 def mapped_tool_call_count(tool_call_counts: Counter[str], module_name: str, plugins: list[str]) -> int:
     module_key = normalize_name_for_match(module_name)
     plugin_keys = [normalize_name_for_match(plugin) for plugin in plugins]
+    module_aliases = TOOL_CALL_MODULE_ALIASES.get(module_name, ())
+    plugin_aliases = tuple(
+        alias
+        for plugin in plugins
+        for alias in TOOL_CALL_PLUGIN_ALIASES.get(plugin, ())
+    )
     total = 0
     for tool_name, count in tool_call_counts.items():
         tool_key = normalize_name_for_match(tool_name)
@@ -1969,6 +2009,11 @@ def mapped_tool_call_count(tool_call_counts: Counter[str], module_name: str, plu
             total += count
             continue
         if any(plugin_key and plugin_key in tool_key for plugin_key in plugin_keys):
+            total += count
+            continue
+        if tool_call_matches_stable_alias(tool_name, module_aliases) or tool_call_matches_stable_alias(
+            tool_name, plugin_aliases
+        ):
             total += count
     return total
 
@@ -2051,18 +2096,19 @@ def build_script_capability_boundaries() -> dict[str, Any]:
             "session_explicit_skill_announcements_skill_path_reads_helper_calls_and_tool_call_names",
             "logs_2_sqlite_budget_warnings_all_descriptions_removed_omitted_skills_and_skipped_loading_samples",
             "profile_module_aggregation_from_helper_calls_and_plugin_skill_path_reads",
+            "stable_tool_call_aliases_for_medium_evidence_only_module_review",
         ],
         "human_review_required_for": [
             "weak_plugin_mentions_are_text_trends_not_real_invocation_evidence",
             "explicit_skills_can_contain_natural_language_or_example_token_false_positives",
-            "tool_call_names_are_not_plugin_usage_without_a_concrete_capability_mapping",
+            "tool_call_names_and_stable_aliases_are_medium_evidence_not_plugin_or_profile_apply_evidence",
             "unreadable_rotated_or_missing_logs_can_underreport_warning_counts",
             "missing_or_stale_profile_registry_data_can_make_module_evidence_incomplete",
         ],
         "enhancement_triggers": [
             "same_false_positive_pattern_repeats_in_two_weekly_reports",
             "thirty_day_summary_needs_evidence_that_is_only_reported_as_weak_mentions",
-            "stable_tool_call_pattern_maps_to_a_plugin_or_module_but_is_not_aggregated",
+            "stable_tool_call_pattern_maps_to_a_plugin_or_module_but_is_not_in_the_alias_registry",
             "live_session_warning_cannot_be_localized_from_logs_2_sqlite",
             "profile_registry_and_enabled_plugin_surface_diverge_enough_to_mislead_module_evidence",
         ],

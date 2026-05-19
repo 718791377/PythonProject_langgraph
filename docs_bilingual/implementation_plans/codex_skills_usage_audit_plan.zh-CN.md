@@ -317,12 +317,13 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 可以从 session transcript 中提取显式 skill announcement、`SKILL.md` 路径读取、profile helper 调用和 tool call 名称；
 - 可以从 `logs_2.sqlite` 中提取 skills budget warning、`All skill descriptions were removed`、`additional skills` 数量与 skipped loading 样本；
 - 可以按 profile module 聚合 helper 调用和 plugin skill path 读取，形成初步建议。
+- 可以把少量明确登记的稳定本地 tool-call alias 聚合为中证据，例如 Browser 的 browser/CDP 表面、Cloudflare API 表面，以及映射到 creative-content 的 Pencil 设计/画布表面；这些 alias 永远不能增加 strong_total。
 
 当前已知限制：
 
 - `weak_plugin_mentions` 只能说明文本趋势，不能证明真实调用；
 - `explicit_skills` 可能出现自然语言或示例 token 误报，必须经过噪声复核；
-- `tool_call_names` 目前不等同于 plugin/module 使用，除非能映射到明确能力面；
+- `tool_call_names` 即使通过显式 alias 映射到明确能力面，也仍然只是中证据和人工复核信号；不能单独作为 plugin/default-profile apply 证据；
 - 日志库不可读、日志轮转或旧会话缺失时，warning 统计可能低估；
 - profile module 聚合依赖 registry，registry 缺失或过期时，报告只能作为不完整证据。
 
@@ -330,7 +331,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 
 - 同一类误报在两次 weekly report 中重复出现；
 - 30 天摘要需要依赖某类证据，但脚本只给出 weak mention；
-- `tool_call_names` 中出现可映射到 plugin/module 的稳定模式，但脚本未聚合；
+- `tool_call_names` 中出现可映射到 plugin/module 的稳定模式，但尚未进入显式 alias registry；
 - warning 发生在会话中但 `logs_2.sqlite` 无法定位，需要新增可复核的数据源；
 - profile registry 与实际 enabled plugin 面不一致，导致 module evidence 明显错配。
 

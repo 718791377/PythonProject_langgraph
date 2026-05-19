@@ -724,7 +724,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         profiles = {
             "modules": {
                 "web-saas": {
-                    "plugins": ["Vercel"],
+                    "plugins": ["Vercel", "Browser", "Cloudflare"],
                 }
             }
         }
@@ -734,15 +734,51 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             {
                 "profile_helper_calls": {},
                 "skill_paths": {},
-                "tool_call_names": {"mcp__vercel__deploy": 4, "web_saas_preview": 2},
+                "tool_call_names": {
+                    "mcp__vercel__deploy": 4,
+                    "web_saas_preview": 2,
+                    "mcp__chrome_devtools__take_snapshot": 3,
+                    "mcp__cdp_bridge__browser_scan": 2,
+                    "mcp__cloudflare_api__execute": 1,
+                    "mcp__pencil__batch_design": 5,
+                },
+                "weak_plugin_mentions": {},
+            },
+        )[0]
+
+        self.assertEqual(row["mapped_tool_call_mentions"], 12)
+        self.assertEqual(row["mapped_tool_call_policy"], "medium_evidence_only_not_counted_as_strong_evidence")
+        self.assertEqual(row["medium_evidence_rationale"], "mapped_tool_calls_present_manual_review_required")
+        self.assertEqual(row["cross_project_utility"], "manual_review_required")
+        self.assertEqual(row["strong_total"], 0)
+        self.assertEqual(row["recommendation"], "no_recent_evidence_keep_dormant_not_deleted")
+
+    def test_stable_tool_call_aliases_map_to_module_medium_evidence(self) -> None:
+        profiles = {
+            "modules": {
+                "creative-content": {
+                    "plugins": ["Canva", "Figma"],
+                }
+            }
+        }
+
+        row = audit.build_module_evidence(
+            profiles,
+            {
+                "profile_helper_calls": {},
+                "skill_paths": {},
+                "tool_call_names": {
+                    "mcp__pencil__batch_design": 3,
+                    "mcp__pencil__export_nodes": 2,
+                    "canva_export": 1,
+                },
                 "weak_plugin_mentions": {},
             },
         )[0]
 
         self.assertEqual(row["mapped_tool_call_mentions"], 6)
-        self.assertEqual(row["mapped_tool_call_policy"], "medium_evidence_only_not_counted_as_strong_evidence")
+        self.assertEqual(row["mapped_tool_call_policy"], audit.MODULE_EVIDENCE_MAPPED_TOOL_POLICY)
         self.assertEqual(row["medium_evidence_rationale"], "mapped_tool_calls_present_manual_review_required")
-        self.assertEqual(row["cross_project_utility"], "manual_review_required")
         self.assertEqual(row["strong_total"], 0)
         self.assertEqual(row["recommendation"], "no_recent_evidence_keep_dormant_not_deleted")
 
