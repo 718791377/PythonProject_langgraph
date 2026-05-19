@@ -106,5 +106,39 @@ class ImplementationPlanRulesCheckTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["warnings"], 2)
 
 
+    def test_fails_for_mojibake_or_replacement_markers_in_plan_pair(self) -> None:
+        root = self.make_root("impl-plan-mojibake")
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.md", "# Sample\nASCII only.\n")
+        self.write_file(
+            root,
+            "docs_bilingual/implementation_plans/sample_plan.zh-CN.md",
+            "# ??\n?????`field` ?????\nReplacement: \ufffd\n",
+        )
+        self.write_file(
+            root,
+            "docs_bilingual/docs_registry.yaml",
+            "version: 1\n"
+            "documents:\n"
+            "  - doc_id: sample_plan\n"
+            "    doc_class: implementation_plan\n"
+            "    status: active\n"
+            "    canonical_path: docs_bilingual/implementation_plans/sample_plan.md\n"
+            "    zh_cn_path: docs_bilingual/implementation_plans/sample_plan.zh-CN.md\n",
+        )
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("contains mojibake or replacement-character marker", result.stdout)
+
+        json_result = self.run_check_json(root)
+        self.assertNotEqual(json_result.returncode, 0)
+        payload = json.loads(json_result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("contains mojibake or replacement-character marker" in error for error in payload["errors"])
+        )
+        self.assertGreaterEqual(payload["counts"]["errors"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

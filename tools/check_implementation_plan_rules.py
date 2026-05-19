@@ -7,6 +7,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+MOJIBAKE_MARKERS = ("????", "\ufffd")
+
+
 def read_text_utf8(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
@@ -37,6 +40,15 @@ def parse_docs_registry(path: Path) -> list[dict[str, str]]:
         entries.append(current)
 
     return entries
+
+
+def validate_text_health(path: Path, root: Path, errors: list[str]) -> None:
+    text = read_text_utf8(path)
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        if any(marker in line for marker in MOJIBAKE_MARKERS):
+            errors.append(
+                f"{path.relative_to(root).as_posix()}:{line_number}: contains mojibake or replacement-character marker."
+            )
 
 
 def main() -> int:
@@ -79,8 +91,12 @@ def main() -> int:
 
         if not canonical_file.exists():
             errors.append(f"Implementation plan `{doc_id}` canonical_path does not exist: {canonical_path}")
+        else:
+            validate_text_health(canonical_file, root, errors)
         if not zh_file.exists():
             errors.append(f"Implementation plan `{doc_id}` zh_cn_path does not exist: {zh_cn_path}")
+        elif zh_file != canonical_file:
+            validate_text_health(zh_file, root, errors)
 
         canonical_is_chinese = canonical_path.endswith(".zh-CN.md")
         zh_is_chinese = zh_cn_path.endswith(".zh-CN.md")
