@@ -154,6 +154,7 @@ created_at: 2026-05-16
 | `noise_review` | explicit skill 噪声 token 的脱敏、截断、误报计数和强证据排除策略 | 防止误报 token、路径碎片或 mojibake 文本进入强证据或长期留存 |
 | `script_capability_boundaries` | 脚本可靠覆盖项、仍需人工复核的边界、已知限制与脚本增强触发条件 | 防止把 audit helper 误当作全知事实源 |
 | `output_retention` | 来自 `tools/check_skills_audit_output_retention.py` 的留存状态，包括 `.tmp/` 本地-only 策略、原始 JSON 本地-only 策略、长期证据格式和违规数量 | 防止报告隐藏原始 audit artifact 是否被误保留进 Git |
+| `precommit_update_archive` | 来自 `tools/check_precommit_update_archive.py` 的提交前更新/归档门禁状态，包括既有文件更新复核、已完成 OpenSpec 归档、错误数、warning 数、变更路径数和 active change 复核数 | 防止审计报告脱离提交前必须先检查已有文件是否需要更新或归档的仓库规则 |
 | `runtime_paths` | repo root、Codex home 和 `config.toml` 的脱敏运行路径占位符、路径类别标签，并保持 `raw_paths_retained=false` | 防止 JSON 和 Markdown 报告长期留存原始本地用户路径，同时仍说明本次审计扫描了哪些运行输入 |
 | `module_evidence` | 按 profile module 汇总的强证据、中证据说明、弱证据和跨项目复核字段 | 生成 profile 决策候选，同时避免把中证据当作强证据 |
 | `decision_recommendation` | 从 `module_evidence` 派生的只读决策分桶 | 让复核者看到 profile 复核、按需加载、人工复核和 dormant 模块，但不允许 profile apply |
@@ -166,6 +167,8 @@ created_at: 2026-05-16
 `noise_review` 契约必须要求 `raw_noise_tokens_retained=false`、`max_noise_token_length`、`token_privacy_policy` 与脱敏后的 `explicit_skill_noise_removed`。噪声 token 在进入报告前必须先替换私有路径、secret、cookie 或 token，并截断到固定长度；如果仍检测到原始私有路径、secret 或过长 token，字段契约必须失败。
 `script_capability_boundaries` 契约必须要求 `policy`、`reliable_coverage`、`human_review_required_for` 和 `enhancement_triggers`。这些列表必须存在且非空，避免报告暗示 audit helper 是全知事实源。
 `output_retention` 契约必须要求 `status`、`ok`、`checker`、`tmp_outputs_local_only`、`raw_audit_json_local_only`、`long_term_evidence_format` 和 `violation_count`。只有留存 checker 自身通过、`.tmp/` 输出与原始 audit JSON 都标记为本地-only，且长期证据格式为 `sanitized_markdown_summary` 时，该契约才能通过。
+
+`precommit_update_archive` 契约必须要求 `status`、`ok`、`checker`、`before_local_git_commit`、`review_existing_files_for_required_updates`、`archive_completed_openspec_changes_before_commit`、`error_count`、`warning_count`、`changed_path_count` 和 `active_change_review_count`。只有提交前更新/归档 checker 自身通过，且报告明确既有文件更新复核和已完成 OpenSpec 归档门禁均启用时，该契约才能通过；checker 失败或不可用时，本轮 audit 报告不得作为可提交证据。
 `cadence_review` 契约必须要求 `late_run`、`missed_weekly_runs` 与 `weekly_report_review`；`missed_weekly_runs` 必须是 `null` 或非负整数，且 `late_run=true` 时必须显式记录漏跑次数。脱敏 Markdown 摘要必须在审计窗口部分渲染这些节奏字段，让 30 天复核者无需打开原始 JSON 也能看到审计节奏是否偏离。
 `module_evidence` 契约必须在其进入 `decision_recommendation` 或候选生成前校验每一行。每行必须包含 module 名称、plugin 列表、strong helper 计数、strong skill-path 计数、strong total、默认候选阈值、mapped-tool 中证据计数与策略、中证据说明、弱提及、跨项目效用和 recommendation。数值计数必须是非负整数，`strong_total` 必须等于 helper calls 加 skill-path reads，plugin 元素必须是字符串，mapped tool calls 必须保持为中证据，跨项目效用必须要求人工复核，recommendation 只能使用已批准的 advisory 取值。recommendation 还必须匹配阈值规则：`strong_total >= default_candidate_threshold` 才是 profile 复核候选，`0 < strong_total < threshold` 保持按需加载，`strong_total == 0` 且存在弱提及时只能是 mentioned-only，没有强证据也没有弱提及时保持 dormant/restorable。
 `decision_recommendation` 契约必须要求 advisory-only 状态、非 apply 策略、`profile_apply_allowed=false`、四个分桶列表（`profile_review_candidates`、`on_demand_soft_load`、`manual_review_medium_or_weak`、`dormant_restorable`）以及一致的 `bucket_counts`。如果分桶缺失、类型错误、包含非字符串 module 名称、允许 profile apply，或 `bucket_counts` 与实际分桶长度不一致，字段契约必须失败，不能进入 profile 决策或候选生成。
@@ -314,6 +317,8 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 
 `tools/audit_codex_skills_usage.py` 是审计辅助脚本，不是全知事实源。30 天报告必须同时说明“脚本已经可靠覆盖什么”和“仍需人工复核什么”。
 
+每次把 audit 增量提交本地 Git 仓库前，还必须让审计报告暴露提交前更新/归档门禁状态：既要确认已有文件是否需要同步更新，也要确认已完成的 OpenSpec change 是否已经归档或带有明确延期归档标记。
+
 当前脚本能力边界：
 
 - 可以统计 `config.toml` 中 plugin enabled/disabled/unknown 状态；
@@ -322,6 +327,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 可以从 `logs_2.sqlite` 中提取 skills budget warning、`All skill descriptions were removed`、`additional skills` 数量与 skipped loading 样本；
 - 可以按 profile module 聚合 helper 调用和 plugin skill path 读取，形成初步建议。
 - 可以把少量明确登记的稳定本地 tool-call alias 聚合为中证据，例如 Browser 的 browser/CDP 表面、Cloudflare API 表面，以及映射到 creative-content 的 Pencil 设计/画布表面；这些 alias 永远不能增加 strong_total。
+- 可以把 `tools/check_precommit_update_archive.py` 的提交前更新/归档门禁状态嵌入报告，证明本轮本地提交前已经检查既有文件更新和已完成 OpenSpec 归档要求；
 
 当前已知限制：
 
@@ -372,7 +378,32 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 如果连续两次复核只增加解释性文本、没有新增可验证规则、字段、状态或测试要求，应停止继续扩写方案，改为提交当前完善结果；
 - 审计状态变化必须记录在 30 天摘要或候选变更记录中，而不是只留在聊天上下文。
 
-### 5.15 输出留存门禁
+### 5.15 提交前更新/归档门禁
+
+每次 `docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md` 相关实现准备提交本地 Git 仓库前，必须先运行并在审计报告中暴露 `tools/check_precommit_update_archive.py` 的结果。该门禁用于把“先检查已有文件是否需要更新和 archive，更新和 archive 之后才能提交本地 git 仓库”变成脚本可见证据，而不是只留在聊天上下文。
+
+报告字段要求：
+
+- 顶层必须包含 `precommit_update_archive`；
+- `precommit_update_archive.status` 只能是 `passed`、`failed` 或 `unavailable`；
+- `before_local_git_commit` 必须为 `true`，表示该检查属于提交前门禁；
+- `review_existing_files_for_required_updates` 必须为 `true`，表示提交前已检查既有文件是否需要同步更新；
+- `archive_completed_openspec_changes_before_commit` 必须为 `true`，表示已完成 OpenSpec change 必须先归档或记录明确延期归档；
+- `error_count`、`warning_count`、`changed_path_count` 和 `active_change_review_count` 必须是非负整数；
+- 如果 checker 失败或不可用，`field_contract` 必须失败，并阻断把该 audit 报告当作本地提交证据。
+
+脱敏 Markdown 摘要必须渲染：
+
+- 提交前更新/归档门禁状态；
+- checker 路径；
+- 错误数；
+- 既有文件更新复核是否启用；
+- OpenSpec 归档门禁是否启用；
+- 变更路径数与 active change 复核数。
+
+该门禁不自动修改文件、不自动 archive，也不替代人工判断；它只负责在提交前 fail closed，提示本轮必须先完成更新、归档或记录合规延期理由。
+
+### 5.16 输出留存门禁
 
 审计输出留存现在由 `tools/check_skills_audit_output_retention.py` 提供脚本化保护，并以 `check_skills_audit_output_retention` 步骤接入 `tools/run_openspec_guard.py`。
 
@@ -423,12 +454,14 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 脚本能力边界：可靠覆盖项、人工复核需求与增强触发条件；
 - apply 建议，但不自动 apply。
 - `tools/check_skills_audit_output_retention.py` 的输出留存状态，证明 `.tmp/` artifact 与原始 Skills usage JSON 没有被保留进 Git。
+- `tools/check_precommit_update_archive.py` 的提交前更新/归档状态，证明本轮提交前既有文件更新复核与 OpenSpec 归档门禁已经通过。
 - `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、cadence-review 字段契约与 Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁与 Markdown blocker 输出、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段、不安全或不完整候选记录的 `candidate_record_contract` 阻断，以及候选 Markdown 不执行清单。
 - 回归测试还必须覆盖 explicit skill 误报 token 的路径/secret 脱敏、长度截断，以及 `noise_review` 字段契约阻断未脱敏或缺少隐私字段的报告，并覆盖 `script_capability_boundaries` 字段契约阻断缺失或空边界列表的报告。
 - 回归测试还必须覆盖 `decision_recommendation` 字段契约阻断缺失或非 advisory 状态、允许 profile apply、分桶不完整、分桶元素非字符串以及 `bucket_counts` 过期的报告。
 - 回归测试还必须覆盖 `module_evidence` 行契约阻断字段缺失/类型错误、plugin 元素非字符串、strong 计数为负或过期、mapped-tool 证据被计为强证据、跨项目效用未要求人工复核以及 recommendation 不在允许列表中的报告。
 - 回归测试还必须覆盖 `module_evidence` recommendation 与阈值不一致的报告，防止旧行把与强/弱证据计数矛盾的按需、dormant 或候选建议带入决策。
 - 回归测试还必须覆盖输出留存门禁：强制加入 Git 的 `.tmp/` 原始报告、位于 `.tmp/` 之外的原始 `skills-usage-*.json` 报告必须被阻断，脱敏 Markdown 摘要必须允许。
+- 回归测试还必须覆盖提交前更新/归档门禁：报告必须嵌入 `precommit_update_archive` 状态，字段契约必须阻断缺失、未通过或未启用既有文件更新复核 / OpenSpec 归档门禁的报告，脱敏 Markdown 摘要必须渲染该门禁状态。
 - 回归测试还必须覆盖 `output_retention` 字段契约阻断缺失或未通过的留存状态，并要求脱敏 Markdown 摘要渲染输出留存状态与长期证据格式。
 - 回归测试还必须覆盖 `manual_evidence.conflict_review` 字段契约阻断，以及人工例外 / 已批准 hard-load 例外记录在脱敏 Markdown 摘要中的渲染。
 - 回归测试还必须覆盖 skipped-loading warning triage 计数、脱敏 skipped-loading 样本、缺少 skipped-loading triage 字段时的字段契约阻断、`warning_triage` status / window_policy / skipped_loading_review / blockers / 非负计数的值级契约阻断以及 Markdown 渲染。
@@ -475,6 +508,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 校验决策关键的 `module_evidence` 行字段，包括字符串 plugin 列表、非负 strong/weak 计数、strong-total 一致性、mapped-tool 中证据策略、跨项目人工复核、允许的 advisory recommendation 以及 recommendation 与阈值一致性；
 - 校验决策关键的 `decision_recommendation` 嵌套字段，包括 advisory-only 状态、profile apply 禁止标志、必需分桶名称、分桶元素只能是字符串以及分桶计数一致性；
 - 校验决策关键的 `output_retention` 嵌套字段，包括 checker 身份、`.tmp/` 本地-only 策略、原始 audit JSON 本地-only 策略、脱敏 Markdown 长期证据格式和违规数量；
+- 校验决策关键的 `precommit_update_archive` 嵌套字段，包括 checker 身份、提交前门禁标志、既有文件更新复核、已完成 OpenSpec 归档门禁、错误数、warning 数、变更路径数和 active change 复核数；
 - 明确漏跑、warning 延迟 triage、日志不可读、隐私脱敏和紧急例外的恢复规则；
 - 明确 30 天最终决策摘要模板；
 - 明确中证据、紧急例外和误报剔除的人工记录格式；
@@ -495,6 +529,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 明确 warning 分级和处理动作；
 - 明确输出文件默认不入 Git，长期留证必须脱敏摘要；
 - 要求 `tools/check_skills_audit_output_retention.py` 阻断 `.tmp/` artifact 与原始 `skills-usage-*.json` 报告进入 Git，同时允许脱敏 Markdown 摘要；
+- 要求 `tools/check_precommit_update_archive.py` 的状态进入 audit JSON 字段契约和 Markdown 摘要，阻断提交前未检查既有文件更新或已完成 OpenSpec 未归档的报告；
 - 明确回归测试、OpenSpec guard 和 CI manifest 要求；
 - 在 JSON 字段契约和脱敏 Markdown 摘要中暴露脚本能力边界；
 - 明确远端发布仍受 GitLab/GitHub 授权门控制。

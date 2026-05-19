@@ -106,6 +106,7 @@ REQUIRED_REPORT_FIELDS = {
     "decision_recommendation",
     "cadence_review",
     "output_retention",
+    "precommit_update_archive",
     "runtime_paths",
     "recommendations",
 }
@@ -125,6 +126,7 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "decision_recommendation": dict,
     "cadence_review": dict,
     "output_retention": dict,
+    "precommit_update_archive": dict,
     "runtime_paths": dict,
     "recommendations": list,
 }
@@ -449,6 +451,30 @@ REQUIRED_OUTPUT_RETENTION_FIELD_TYPES = {
     "long_term_evidence_format": str,
     "violation_count": int,
 }
+REQUIRED_PRECOMMIT_UPDATE_ARCHIVE_FIELDS = {
+    "status",
+    "ok",
+    "checker",
+    "before_local_git_commit",
+    "review_existing_files_for_required_updates",
+    "archive_completed_openspec_changes_before_commit",
+    "error_count",
+    "warning_count",
+    "changed_path_count",
+    "active_change_review_count",
+}
+REQUIRED_PRECOMMIT_UPDATE_ARCHIVE_FIELD_TYPES = {
+    "status": str,
+    "ok": bool,
+    "checker": str,
+    "before_local_git_commit": bool,
+    "review_existing_files_for_required_updates": bool,
+    "archive_completed_openspec_changes_before_commit": bool,
+    "error_count": int,
+    "warning_count": int,
+    "changed_path_count": int,
+    "active_change_review_count": int,
+}
 REQUIRED_RUNTIME_PATH_FIELDS = {
     "root",
     "codex_home",
@@ -532,6 +558,7 @@ def build_output_retention_status(root: Path) -> dict[str, Any]:
         if spec is None or spec.loader is None:
             raise RuntimeError("checker_import_spec_unavailable")
         module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
         spec.loader.exec_module(module)
         raw_report = module.build_report(root)
     except Exception as exc:  # pragma: no cover - defensive guard for checker import/runtime drift.
@@ -563,6 +590,68 @@ def build_output_retention_status(root: Path) -> dict[str, Any]:
                 if isinstance(item, dict) and item.get("reason")
             }
         ),
+    }
+
+
+def build_precommit_update_archive_status(root: Path) -> dict[str, Any]:
+    """Expose the pre-commit existing-file update/archive gate in each audit report."""
+    checker = root / "tools" / "check_precommit_update_archive.py"
+    relative_checker = "tools/check_precommit_update_archive.py"
+    if not checker.exists():
+        return {
+            "status": "unavailable",
+            "ok": False,
+            "checker": relative_checker,
+            "before_local_git_commit": False,
+            "review_existing_files_for_required_updates": False,
+            "archive_completed_openspec_changes_before_commit": False,
+            "error_count": 0,
+            "warning_count": 0,
+            "changed_path_count": 0,
+            "active_change_review_count": 0,
+            "blockers": ["checker_missing"],
+        }
+    try:
+        spec = importlib.util.spec_from_file_location("check_precommit_update_archive", checker)
+        if spec is None or spec.loader is None:
+            raise RuntimeError("checker_import_spec_unavailable")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        raw_report = module.check(root)
+    except Exception as exc:  # pragma: no cover - defensive guard for checker import/runtime drift.
+        return {
+            "status": "unavailable",
+            "ok": False,
+            "checker": relative_checker,
+            "before_local_git_commit": False,
+            "review_existing_files_for_required_updates": False,
+            "archive_completed_openspec_changes_before_commit": False,
+            "error_count": 0,
+            "warning_count": 0,
+            "changed_path_count": 0,
+            "active_change_review_count": 0,
+            "blockers": [f"checker_unavailable:{type(exc).__name__}"],
+        }
+    policy = raw_report.get("policy", {}) if isinstance(raw_report, dict) else {}
+    counts = raw_report.get("counts", {}) if isinstance(raw_report, dict) else {}
+    errors = raw_report.get("errors", []) if isinstance(raw_report, dict) else []
+    warnings = raw_report.get("warnings", []) if isinstance(raw_report, dict) else []
+    ok = bool(raw_report.get("ok")) if isinstance(raw_report, dict) else False
+    return {
+        "status": "passed" if ok else "failed",
+        "ok": ok,
+        "checker": relative_checker,
+        "before_local_git_commit": policy.get("before_local_git_commit") is True,
+        "review_existing_files_for_required_updates": policy.get("review_existing_files_for_required_updates") is True,
+        "archive_completed_openspec_changes_before_commit": (
+            policy.get("archive_completed_openspec_changes_before_commit") is True
+        ),
+        "error_count": len(errors) if isinstance(errors, list) else int(counts.get("errors") or 0),
+        "warning_count": len(warnings) if isinstance(warnings, list) else int(counts.get("warnings") or 0),
+        "changed_path_count": int(counts.get("changed_paths") or 0),
+        "active_change_review_count": int(counts.get("active_change_reviews") or 0),
+        "error_reasons": [str(error)[:240] for error in errors[:10]] if isinstance(errors, list) else [],
     }
 
 
@@ -1688,6 +1777,36 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         output_retention_violations.append("violation_count_negative")
     if output_retention.get("status") != "passed":
         output_retention_violations.append("status_not_passed")
+    precommit_update_archive = (
+        report.get("precommit_update_archive")
+        if isinstance(report.get("precommit_update_archive"), dict)
+        else {}
+    )
+    precommit_update_archive_violations = []
+    for field in sorted(REQUIRED_PRECOMMIT_UPDATE_ARCHIVE_FIELDS):
+        if field not in precommit_update_archive:
+            precommit_update_archive_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_PRECOMMIT_UPDATE_ARCHIVE_FIELD_TYPES.items()):
+        if field in precommit_update_archive and not isinstance(precommit_update_archive.get(field), expected_type):
+            precommit_update_archive_violations.append(f"{field}_invalid_type")
+    if precommit_update_archive.get("status") not in {"passed", "failed", "unavailable"}:
+        precommit_update_archive_violations.append("status_invalid_value")
+    if precommit_update_archive.get("status") == "passed" and precommit_update_archive.get("ok") is not True:
+        precommit_update_archive_violations.append("passed_status_without_ok_true")
+    if precommit_update_archive.get("status") in {"failed", "unavailable"} and precommit_update_archive.get("ok") is not False:
+        precommit_update_archive_violations.append("nonpassing_status_without_ok_false")
+    if precommit_update_archive.get("before_local_git_commit") is not True:
+        precommit_update_archive_violations.append("before_local_git_commit_not_true")
+    if precommit_update_archive.get("review_existing_files_for_required_updates") is not True:
+        precommit_update_archive_violations.append("review_existing_files_for_required_updates_not_true")
+    if precommit_update_archive.get("archive_completed_openspec_changes_before_commit") is not True:
+        precommit_update_archive_violations.append("archive_completed_openspec_changes_before_commit_not_true")
+    for field in ("error_count", "warning_count", "changed_path_count", "active_change_review_count"):
+        value = precommit_update_archive.get(field)
+        if isinstance(value, int) and not isinstance(value, bool) and value < 0:
+            precommit_update_archive_violations.append(f"{field}_negative")
+    if precommit_update_archive.get("status") != "passed":
+        precommit_update_archive_violations.append("status_not_passed")
     runtime_paths = report.get("runtime_paths") if isinstance(report.get("runtime_paths"), dict) else {}
     runtime_path_violations: list[str] = []
     for field in sorted(REQUIRED_RUNTIME_PATH_FIELDS):
@@ -1834,6 +1953,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"noise_review:{field}" for field in noise_violations]
         + [f"script_capability_boundaries:{field}" for field in script_capability_violations]
         + [f"output_retention:{field}" for field in output_retention_violations]
+        + [f"precommit_update_archive:{field}" for field in precommit_update_archive_violations]
         + [f"runtime_paths:{field}" for field in runtime_path_violations]
         + [f"module_evidence:{field}" for field in module_evidence_violations]
         + [f"decision_recommendation:{field}" for field in decision_violations]
@@ -1877,6 +1997,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "noise_review_violations": noise_violations,
         "script_capability_boundary_violations": script_capability_violations,
         "output_retention_violations": output_retention_violations,
+        "precommit_update_archive_violations": precommit_update_archive_violations,
         "embedded_field_contract_violations": embedded_violations,
     }
 
@@ -2156,6 +2277,7 @@ def build_script_capability_boundaries() -> dict[str, Any]:
             "logs_2_sqlite_budget_warnings_all_descriptions_removed_omitted_skills_and_skipped_loading_samples",
             "profile_module_aggregation_from_helper_calls_and_plugin_skill_path_reads",
             "stable_tool_call_aliases_for_medium_evidence_only_module_review",
+            "precommit_existing_file_update_and_openspec_archive_gate_status",
         ],
         "human_review_required_for": [
             "weak_plugin_mentions_are_text_trends_not_real_invocation_evidence",
@@ -2532,6 +2654,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     manual_notes = collect_manual_notes(getattr(args, "manual_notes", []) or [])
     decision_recommendation = build_decision_recommendation(module_evidence, warning_severity, audit_state)
     output_retention = build_output_retention_status(root)
+    precommit_update_archive = build_precommit_update_archive_status(root)
     runtime_paths = build_runtime_paths(root, codex_home)
     report = {
         "schema_version": 1,
@@ -2577,11 +2700,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "manual_evidence": manual_notes,
         "script_capability_boundaries": build_script_capability_boundaries(),
         "output_retention": output_retention,
+        "precommit_update_archive": precommit_update_archive,
         "recommendations": [
             "Do not treat another 2% budget warning as soft-load failure; soft-load is outside the model-visible skills budget surface.",
             "Continue audit-only mode until the agreed window closes unless a concrete task requires a profile preview or explicitly approved hard-load apply.",
             "Use strong evidence, not weak mentions, to decide default profile changes.",
             "Keep disabled plugins restorable; do not delete plugin cache or vendor SKILL.md files.",
+            "Before local commit, run the pre-commit update/archive gate and resolve required existing-file updates or OpenSpec archive work.",
         ],
     }
     report["field_contract"] = validate_report_field_contract(report)
@@ -2603,6 +2728,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         else {}
     )
     output_retention = report.get("output_retention", {})
+    precommit_update_archive = report.get("precommit_update_archive", {})
     runtime_paths = report.get("runtime_paths", {})
     audit_state = report.get("audit_state", {})
     field_contract = report.get("field_contract", {})
@@ -2637,6 +2763,8 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             f"- Field contract: `{field_contract.get('status')}`",
             f"- Output retention gate: `{output_retention.get('status')}` via `{output_retention.get('checker')}`",
             f"- Output retention violations: `{output_retention.get('violation_count')}`",
+            f"- Pre-commit update/archive gate: `{precommit_update_archive.get('status')}` via `{precommit_update_archive.get('checker')}`",
+            f"- Pre-commit update/archive errors: `{precommit_update_archive.get('error_count')}`",
             f"- Late run: `{cadence_review.get('late_run')}`",
         f"- Missed weekly runs: `{cadence_review.get('missed_weekly_runs')}`",
         f"- Weekly report review: `{cadence_review.get('weekly_report_review')}`",
@@ -2732,6 +2860,10 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             f"- Audit output long-term evidence format: `{output_retention.get('long_term_evidence_format')}`",
             f"- `.tmp/` outputs local only: `{output_retention.get('tmp_outputs_local_only')}`",
             f"- Raw audit JSON local only: `{output_retention.get('raw_audit_json_local_only')}`",
+            f"- Pre-commit existing-file update review: `{precommit_update_archive.get('review_existing_files_for_required_updates')}`",
+            f"- Pre-commit OpenSpec archive gate: `{precommit_update_archive.get('archive_completed_openspec_changes_before_commit')}`",
+            f"- Pre-commit changed path count: `{precommit_update_archive.get('changed_path_count')}`",
+            f"- Pre-commit active change reviews: `{precommit_update_archive.get('active_change_review_count')}`",
             f"- Runtime path raw values retained: `{runtime_paths.get('raw_paths_retained')}`",
             f"- Runtime path privacy policy: `{runtime_paths.get('privacy_policy')}`",
             "",

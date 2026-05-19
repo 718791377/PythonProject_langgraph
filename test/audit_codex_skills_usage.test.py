@@ -250,6 +250,43 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Output retention gate: `passed`", summary)
         self.assertIn("Audit output long-term evidence format: `sanitized_markdown_summary`", summary)
 
+    def test_report_includes_precommit_update_archive_gate_status(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-precommit-update-archive")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        gate = report["precommit_update_archive"]
+        summary = audit.render_markdown_summary(report)
+
+        self.assertEqual(gate["status"], "passed")
+        self.assertTrue(gate["ok"])
+        self.assertEqual(gate["checker"], "tools/check_precommit_update_archive.py")
+        self.assertTrue(gate["before_local_git_commit"])
+        self.assertTrue(gate["review_existing_files_for_required_updates"])
+        self.assertTrue(gate["archive_completed_openspec_changes_before_commit"])
+        self.assertEqual(gate["error_count"], 0)
+        self.assertEqual(report["field_contract"]["status"], "passed")
+        self.assertIn("Pre-commit update/archive gate: `passed`", summary)
+        self.assertIn("Pre-commit existing-file update review: `True`", summary)
+
     def test_field_contract_requires_output_retention_gate_status(self) -> None:
         codex_home = self.make_codex_home("skills-audit-output-retention-contract")
         args = argparse.Namespace(
@@ -285,6 +322,48 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("output_retention:tmp_outputs_local_only_missing", contract["blockers"])
         self.assertIn("output_retention:raw_audit_json_local_only_missing", contract["blockers"])
         self.assertIn("output_retention:long_term_evidence_format_missing", contract["blockers"])
+
+    def test_field_contract_requires_precommit_update_archive_gate_status(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-precommit-update-archive-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        broken = dict(report)
+        broken["precommit_update_archive"] = {
+            "status": "passed",
+            "ok": True,
+            "checker": "tools/check_precommit_update_archive.py",
+        }
+
+        contract = audit.validate_report_field_contract(broken)
+
+        self.assertEqual(contract["status"], "failed")
+        self.assertIn("precommit_update_archive:before_local_git_commit_missing", contract["blockers"])
+        self.assertIn(
+            "precommit_update_archive:review_existing_files_for_required_updates_missing",
+            contract["blockers"],
+        )
+        self.assertIn(
+            "precommit_update_archive:archive_completed_openspec_changes_before_commit_missing",
+            contract["blockers"],
+        )
 
     def test_report_redacts_runtime_paths_and_exposes_path_privacy(self) -> None:
         codex_home = self.make_codex_home("skills-audit-runtime-paths")
@@ -1456,6 +1535,18 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "raw_audit_json_local_only": True,
                 "long_term_evidence_format": "sanitized_markdown_summary",
                 "violation_count": 0,
+            },
+            "precommit_update_archive": {
+                "status": "passed",
+                "ok": True,
+                "checker": "tools/check_precommit_update_archive.py",
+                "before_local_git_commit": True,
+                "review_existing_files_for_required_updates": True,
+                "archive_completed_openspec_changes_before_commit": True,
+                "error_count": 0,
+                "warning_count": 0,
+                "changed_path_count": 0,
+                "active_change_review_count": 0,
             },
             "runtime_paths": {
                 "root": "[REPO_ROOT]",
@@ -2656,6 +2747,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Source paths retained:", summary)
         self.assertIn("Max source path length:", summary)
         self.assertIn("Source path privacy policy:", summary)
+        self.assertIn("Pre-commit update/archive gate:", summary)
+        self.assertIn("Pre-commit existing-file update review:", summary)
+        self.assertIn("Pre-commit OpenSpec archive gate:", summary)
         self.assertIn("## Decision recommendation", summary)
         self.assertIn("Decision status: `advisory_only_no_profile_apply`", summary)
         self.assertIn("Profile review candidates:", summary)
