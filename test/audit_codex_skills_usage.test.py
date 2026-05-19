@@ -1115,8 +1115,17 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         broken["field_contract"] = audit.validate_report_field_contract(broken)
 
         self.assertEqual(report["field_contract"]["status"], "passed")
+        registry = report["script_capability_boundaries"]["stable_tool_call_alias_registry"]
         self.assertIn("## Script coverage and human review boundaries", summary)
         self.assertIn("weak_plugin_mentions_are_text_trends_not_real_invocation_evidence", summary)
+        self.assertEqual(registry["evidence_level"], "medium")
+        self.assertFalse(registry["counts_as_strong_evidence"])
+        self.assertEqual(registry["plugin_aliases"]["Browser"], ["mcp__chrome_devtools__", "mcp__cdp_bridge__"])
+        self.assertEqual(registry["module_aliases"]["creative-content"], ["mcp__pencil__"])
+        self.assertIn("Stable tool-call alias evidence level: `medium`", summary)
+        self.assertIn("Stable tool-call aliases count as strong evidence: `False`", summary)
+        self.assertIn("Plugin `Browser` aliases: `mcp__chrome_devtools__, mcp__cdp_bridge__`", summary)
+        self.assertIn("Module `creative-content` aliases: `mcp__pencil__`", summary)
         self.assertIn(
             "script_capability_boundaries:human_review_required_for_empty",
             broken["field_contract"]["blockers"],
@@ -1124,6 +1133,55 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn(
             "field_contract:script_capability_boundaries:human_review_required_for_empty",
             audit.build_candidate_generation_gate(broken, summary_reviewed=True)["blockers"],
+        )
+
+    def test_field_contract_requires_stable_tool_call_alias_registry_medium_only(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-alias-registry-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        missing = json.loads(json.dumps(report))
+        del missing["script_capability_boundaries"]["stable_tool_call_alias_registry"]
+        unsafe = json.loads(json.dumps(report))
+        unsafe_registry = unsafe["script_capability_boundaries"]["stable_tool_call_alias_registry"]
+        unsafe_registry["evidence_level"] = "strong"
+        unsafe_registry["counts_as_strong_evidence"] = True
+        unsafe_registry["plugin_aliases"]["Browser"] = []
+
+        missing_contract = audit.validate_report_field_contract(missing)
+        unsafe_contract = audit.validate_report_field_contract(unsafe)
+
+        self.assertFalse(missing_contract["passed"])
+        self.assertIn(
+            "script_capability_boundaries:stable_tool_call_alias_registry_missing",
+            missing_contract["blockers"],
+        )
+        self.assertFalse(unsafe_contract["passed"])
+        self.assertIn(
+            "script_capability_boundaries:stable_tool_call_alias_registry:evidence_level_not_medium",
+            unsafe_contract["blockers"],
+        )
+        self.assertIn(
+            "script_capability_boundaries:stable_tool_call_alias_registry:counts_as_strong_evidence_not_false",
+            unsafe_contract["blockers"],
+        )
+        self.assertIn(
+            "script_capability_boundaries:stable_tool_call_alias_registry:plugin_aliases:Browser_aliases_invalid",
+            unsafe_contract["blockers"],
         )
 
     def test_cadence_review_contract_and_summary_are_explicit(self) -> None:

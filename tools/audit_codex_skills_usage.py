@@ -214,6 +214,17 @@ TOOL_CALL_MODULE_ALIASES = {
         "mcp__pencil__",
     ),
 }
+
+
+def stable_tool_call_alias_registry() -> dict[str, Any]:
+    """Return the stable alias registry exposed in reports for human review."""
+    return {
+        "policy": "stable_aliases_are_medium_evidence_only_and_never_profile_apply_evidence",
+        "evidence_level": "medium",
+        "counts_as_strong_evidence": False,
+        "plugin_aliases": {plugin: list(aliases) for plugin, aliases in sorted(TOOL_CALL_PLUGIN_ALIASES.items())},
+        "module_aliases": {module: list(aliases) for module, aliases in sorted(TOOL_CALL_MODULE_ALIASES.items())},
+    }
 REQUIRED_NOISE_REVIEW_FIELDS = {
     "status",
     "explicit_skill_noise_removed",
@@ -397,12 +408,28 @@ REQUIRED_SCRIPT_CAPABILITY_FIELDS = {
     "reliable_coverage",
     "human_review_required_for",
     "enhancement_triggers",
+    "stable_tool_call_alias_registry",
 }
 REQUIRED_SCRIPT_CAPABILITY_FIELD_TYPES = {
     "policy": str,
     "reliable_coverage": list,
     "human_review_required_for": list,
     "enhancement_triggers": list,
+    "stable_tool_call_alias_registry": dict,
+}
+REQUIRED_STABLE_TOOL_CALL_ALIAS_REGISTRY_FIELDS = {
+    "policy",
+    "evidence_level",
+    "counts_as_strong_evidence",
+    "plugin_aliases",
+    "module_aliases",
+}
+REQUIRED_STABLE_TOOL_CALL_ALIAS_REGISTRY_FIELD_TYPES = {
+    "policy": str,
+    "evidence_level": str,
+    "counts_as_strong_evidence": bool,
+    "plugin_aliases": dict,
+    "module_aliases": dict,
 }
 REQUIRED_OUTPUT_RETENTION_FIELDS = {
     "status",
@@ -1604,6 +1631,38 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         script_capability_violations.append("human_review_required_for_empty")
     if not script_capabilities.get("enhancement_triggers"):
         script_capability_violations.append("enhancement_triggers_empty")
+    alias_registry = (
+        script_capabilities.get("stable_tool_call_alias_registry")
+        if isinstance(script_capabilities.get("stable_tool_call_alias_registry"), dict)
+        else {}
+    )
+    for field in sorted(REQUIRED_STABLE_TOOL_CALL_ALIAS_REGISTRY_FIELDS):
+        if field not in alias_registry:
+            script_capability_violations.append(f"stable_tool_call_alias_registry:{field}_missing")
+    for field, expected_type in sorted(REQUIRED_STABLE_TOOL_CALL_ALIAS_REGISTRY_FIELD_TYPES.items()):
+        if field in alias_registry and not isinstance(alias_registry.get(field), expected_type):
+            script_capability_violations.append(f"stable_tool_call_alias_registry:{field}_invalid_type")
+    if alias_registry.get("policy") != "stable_aliases_are_medium_evidence_only_and_never_profile_apply_evidence":
+        script_capability_violations.append("stable_tool_call_alias_registry:policy_invalid_value")
+    if alias_registry.get("evidence_level") != "medium":
+        script_capability_violations.append("stable_tool_call_alias_registry:evidence_level_not_medium")
+    if alias_registry.get("counts_as_strong_evidence") is not False:
+        script_capability_violations.append("stable_tool_call_alias_registry:counts_as_strong_evidence_not_false")
+    for field in ("plugin_aliases", "module_aliases"):
+        aliases_by_target = alias_registry.get(field)
+        if isinstance(aliases_by_target, dict):
+            if not aliases_by_target:
+                script_capability_violations.append(f"stable_tool_call_alias_registry:{field}_empty")
+            for target, aliases in aliases_by_target.items():
+                if not isinstance(target, str) or not target.strip():
+                    script_capability_violations.append(f"stable_tool_call_alias_registry:{field}_target_invalid")
+                    continue
+                if not isinstance(aliases, list) or not aliases or any(
+                    not isinstance(alias, str) or not alias.strip() for alias in aliases
+                ):
+                    script_capability_violations.append(
+                        f"stable_tool_call_alias_registry:{field}:{target}_aliases_invalid"
+                    )
     output_retention = report.get("output_retention") if isinstance(report.get("output_retention"), dict) else {}
     output_retention_violations = []
     for field in sorted(REQUIRED_OUTPUT_RETENTION_FIELDS):
@@ -2112,6 +2171,7 @@ def build_script_capability_boundaries() -> dict[str, Any]:
             "live_session_warning_cannot_be_localized_from_logs_2_sqlite",
             "profile_registry_and_enabled_plugin_surface_diverge_enough_to_mislead_module_evidence",
         ],
+        "stable_tool_call_alias_registry": stable_tool_call_alias_registry(),
     }
 
 
@@ -2537,6 +2597,11 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     noise_review = report.get("noise_review", {})
     manual_evidence = report.get("manual_evidence", {})
     script_capabilities = report.get("script_capability_boundaries", {})
+    stable_alias_registry = (
+        script_capabilities.get("stable_tool_call_alias_registry", {})
+        if isinstance(script_capabilities, dict)
+        else {}
+    )
     output_retention = report.get("output_retention", {})
     runtime_paths = report.get("runtime_paths", {})
     audit_state = report.get("audit_state", {})
@@ -2659,6 +2724,11 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             f"- Reliable coverage items: `{len(script_capabilities.get('reliable_coverage') or [])}`",
             f"- Human-review items: `{len(script_capabilities.get('human_review_required_for') or [])}`",
             f"- Enhancement triggers: `{len(script_capabilities.get('enhancement_triggers') or [])}`",
+            f"- Stable tool-call alias registry policy: `{stable_alias_registry.get('policy')}`",
+            f"- Stable tool-call alias evidence level: `{stable_alias_registry.get('evidence_level')}`",
+            f"- Stable tool-call aliases count as strong evidence: `{stable_alias_registry.get('counts_as_strong_evidence')}`",
+            f"- Stable tool-call plugin alias targets: `{len(stable_alias_registry.get('plugin_aliases') or {})}`",
+            f"- Stable tool-call module alias targets: `{len(stable_alias_registry.get('module_aliases') or {})}`",
             f"- Audit output long-term evidence format: `{output_retention.get('long_term_evidence_format')}`",
             f"- `.tmp/` outputs local only: `{output_retention.get('tmp_outputs_local_only')}`",
             f"- Raw audit JSON local only: `{output_retention.get('raw_audit_json_local_only')}`",
@@ -2689,6 +2759,17 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     )
     for item in (script_capabilities.get("enhancement_triggers") or [])[:8]:
         lines.append(f"- `{item}`")
+    lines.extend(
+        [
+            "",
+            "### Stable tool-call alias registry",
+            "",
+        ]
+    )
+    for target, aliases in (stable_alias_registry.get("plugin_aliases") or {}).items():
+        lines.append(f"- Plugin `{target}` aliases: `{', '.join(str(alias) for alias in aliases)}`")
+    for target, aliases in (stable_alias_registry.get("module_aliases") or {}).items():
+        lines.append(f"- Module `{target}` aliases: `{', '.join(str(alias) for alias in aliases)}`")
     lines.extend(
         [
             "",
