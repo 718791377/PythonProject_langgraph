@@ -287,6 +287,48 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Pre-commit update/archive gate: `passed`", summary)
         self.assertIn("Pre-commit existing-file update review: `True`", summary)
 
+    def test_human_output_exposes_local_commit_gates(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-human-output-gates")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        stream = io.StringIO()
+        original = audit.sys.stdout
+        try:
+            audit.sys.stdout = stream
+            audit.print_human(report)
+        finally:
+            audit.sys.stdout = original
+
+        output = stream.getvalue()
+
+        self.assertIn("Audit state: running", output)
+        self.assertIn("Warning triage: not_requested requested=False window_ok=True", output)
+        self.assertIn("Skill path reads: 0", output)
+        self.assertIn("Profile helper calls: 0", output)
+        self.assertIn("Script capability boundaries: reliable=", output)
+        self.assertIn("Decision recommendation: advisory_only_no_profile_apply profile_apply_allowed=False", output)
+        self.assertIn("Field contract: passed", output)
+        self.assertIn("Output retention gate: passed", output)
+        self.assertIn("Pre-commit update/archive gate: passed errors=0 warnings=0", output)
+
     def test_field_contract_requires_output_retention_gate_status(self) -> None:
         codex_home = self.make_codex_home("skills-audit-output-retention-contract")
         args = argparse.Namespace(

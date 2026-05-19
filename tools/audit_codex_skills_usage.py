@@ -3047,10 +3047,72 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
 
 
 def print_human(report: dict[str, Any]) -> None:
+    audit_state = report.get("audit_state", {}) if isinstance(report.get("audit_state"), dict) else {}
+    warning_triage = report.get("warning_triage", {}) if isinstance(report.get("warning_triage"), dict) else {}
+    session_evidence = report.get("session_evidence", {}) if isinstance(report.get("session_evidence"), dict) else {}
+    script_capabilities = (
+        report.get("script_capability_boundaries")
+        if isinstance(report.get("script_capability_boundaries"), dict)
+        else {}
+    )
+    decision_recommendation = (
+        report.get("decision_recommendation")
+        if isinstance(report.get("decision_recommendation"), dict)
+        else {}
+    )
+    field_contract = report.get("field_contract", {}) if isinstance(report.get("field_contract"), dict) else {}
+    output_retention = report.get("output_retention", {}) if isinstance(report.get("output_retention"), dict) else {}
+    precommit_update_archive = (
+        report.get("precommit_update_archive")
+        if isinstance(report.get("precommit_update_archive"), dict)
+        else {}
+    )
     print(f"Codex skills usage audit ({report['mode']})")
     print(f"Window: {report['audit_window']['since']} -> {report['audit_window']['until']}")
     print(f"Enabled plugins: {len(report['config_summary']['enabled_plugins'])}")
     print(f"Budget warnings: {report['log_evidence'].get('budget_warning_count')}")
+    print(f"Audit state: {audit_state.get('state')} ({audit_state.get('reason')})")
+    print(f"Audit next action: {audit_state.get('next_action')}")
+    print(f"Profile apply allowed: {audit_state.get('profile_apply_allowed')}")
+    print(
+        "Warning triage: "
+        f"{warning_triage.get('status')} "
+        f"requested={warning_triage.get('requested')} "
+        f"window_ok={warning_triage.get('window_ok')}"
+    )
+    print(f"Skill path reads: {sum((session_evidence.get('skill_paths') or {}).values())}")
+    print(f"Profile helper calls: {sum((session_evidence.get('profile_helper_calls') or {}).values())}")
+    print(
+        "Script capability boundaries: "
+        f"reliable={len(script_capabilities.get('reliable_coverage') or [])} "
+        f"human_review={len(script_capabilities.get('human_review_required_for') or [])} "
+        f"enhancement_triggers={len(script_capabilities.get('enhancement_triggers') or [])}"
+    )
+    print(
+        "Decision recommendation: "
+        f"{decision_recommendation.get('status')} "
+        f"profile_apply_allowed={decision_recommendation.get('profile_apply_allowed')}"
+    )
+    print(f"Field contract: {field_contract.get('status')}")
+    print(f"Output retention gate: {output_retention.get('status')}")
+    print(
+        "Pre-commit update/archive gate: "
+        f"{precommit_update_archive.get('status')} "
+        f"errors={precommit_update_archive.get('error_count')} "
+        f"warnings={precommit_update_archive.get('warning_count')}"
+    )
+    if field_contract.get("blockers"):
+        print("Field contract blockers:")
+        for blocker in field_contract.get("blockers", [])[:10]:
+            print(f"  - {blocker}")
+    if output_retention.get("violation_reasons"):
+        print("Output retention violations:")
+        for reason in output_retention.get("violation_reasons", [])[:10]:
+            print(f"  - {reason}")
+    if precommit_update_archive.get("error_reasons"):
+        print("Pre-commit update/archive errors:")
+        for reason in precommit_update_archive.get("error_reasons", [])[:10]:
+            print(f"  - {reason}")
     print("Top explicit skills:")
     for name, count in list(report["session_evidence"].get("explicit_skills", {}).items())[:10]:
         print(f"  {name}: {count}")
