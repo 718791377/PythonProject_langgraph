@@ -14,7 +14,8 @@
 - `native_omx` 是 worker-centric durable backend lane；它只在计划冻结并且存在两个以上基本独立执行切片后使用。
 - `langgraph` 是图式 checkpoint 和 approval-gate backend lane；它只在需要图阶段、checkpoint 恢复、interrupt gate 或 survivor queue 时使用。
 - `OpenSpec` 是仓库治理工作流；它记录 durable proposal、design、tasks、stable specs 和 archive。
-- `D:\PythonProject_General_2` 是本地项目模板目录；它初始化后续项目，但不把后续项目变成平台实现位置。
+- `D:\PythonProject_General` 是本地项目模板目录；它初始化后续项目，但不把后续项目变成平台实现位置。
+- `D:\PythonProject_General_2` 是其他未开发 OMX、LangGraph 功能和 Codex 环境的新电脑用的项目模板目录；它初始化后续项目，但不把后续项目变成平台实现位置，保留接口兼容后续升级到 OMX、LangGraph 以及 Codex CLI 个人开发者生产级持久化团队平台的可能。
 
 ## 生命周期裁剪叠加规则
 
