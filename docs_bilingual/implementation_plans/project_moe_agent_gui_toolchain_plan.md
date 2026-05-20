@@ -219,6 +219,7 @@ Failure-mode and exit-code contract:
 | corrupt or mismatched state blocks effective-state calculation | 3 | `state_corrupt`, `schema_version_mismatch`, `blocked:unsupported_schema_version`, `agent_name_mismatch`, `session_mismatch`, `worktree_mismatch`, `branch_mismatch` |
 | unsafe target root or ownership preflight refusal | 4 | `blocked:unsafe_target_root`, `blocked:ownership_precheck_failed`, `blocked:dirty_unowned_files` |
 | missing dependency or required project file | 5 | `blocked:missing_agent_toml`, `blocked:missing_mode_cli`, `blocked:pyside6_unavailable` |
+| concurrent write lock cannot be acquired, or a suspected stale lock needs human confirmation | 6 | `blocked:state_lock_timeout`, `blocked:stale_state_lock` |
 
 CLI and GUI outputs should include both a human-readable message and a stable machine-readable token. GUI code should branch on tokens, not localized prose.
 
@@ -373,6 +374,19 @@ Implementation and update commands must:
 
 If an update fails halfway, rerunning the installer or updater must be safe. For project state changes, rollback is the target project's Git history plus the state JSON files under `.omx/state`.
 
+### 9.1 State-write atomicity and concurrency control
+
+The MOE control surface may be called by multiple Codex sessions, command-line wrappers, and the GUI at the same time. The first version must use a simple, auditable, cross-process local-file strategy to avoid corrupting state during concurrent writes:
+
+- before writing project defaults, session overrides, or audit logs, acquire a state-namespace lock file such as `.omx/state/<state_namespace>/.lock`;
+- lock-file content contains only operational metadata: pid, command, normalized session id, target state path, created_at, and lock timeout; it must not contain private prompt text or raw session ids;
+- lock acquisition must use a short timeout and retry backoff; timeout returns `blocked:state_lock_timeout` and must not proceed with the write;
+- suspected stale locks only report `blocked:stale_state_lock` plus the lock-file path and are not deleted automatically unless a later explicit repair/unlock command is added;
+- JSON state writes must use a temporary file, flush/fsync, and atomic replace inside the same directory so partial files are not observed;
+- `list-sessions --json`, `status --json`, and `project-status --json` are read-only by default and should not take the write lock; if they observe an in-progress write, they may retry briefly or report that state is changing;
+- the GUI must serialize in-process button actions: while one on/off operation is in flight, duplicate buttons for the same scope are disabled;
+- concurrency conflicts, lock timeouts, or atomic-replace failures are never evidence that a mode was enabled or disabled, and must surface stable tokens in CLI/GUI output and audit summaries.
+
 ## 10. Audit log, privacy, and retention boundaries
 
 MOE control tooling should emit a small local audit record for state-changing actions:
@@ -418,6 +432,7 @@ Minimum test matrix:
 | Invalid state | corrupt or mismatched state is reported and not auto-repaired. |
 | GUI install | install refuses missing agent TOML and writes only inside the target project. |
 | GUI actions | GUI action results match CLI `status --json` and `project-status --json`. |
+| Concurrent writes | two commands writing the same namespace concurrently result in one success and the other either waiting then succeeding or returning a stable lock token; no partial JSON is produced. |
 
 ## 12. Validation and acceptance
 
@@ -426,7 +441,8 @@ Document-level acceptance for this plan:
 - English and Chinese plan files exist as a pair;
 - the plan clearly separates the MOE GUI toolchain from generic GUI tooling;
 - the plan defines project default plus session override behavior;
-- the plan forbids `full-history fork + specified custom role` for project MOE Agents.
+- the plan forbids `full-history fork + specified custom role` for project MOE Agents;
+- the plan defines state-write locking, atomic writes, concurrency failure tokens, and GUI serialization boundaries.
 
 Phase 1 acceptance:
 

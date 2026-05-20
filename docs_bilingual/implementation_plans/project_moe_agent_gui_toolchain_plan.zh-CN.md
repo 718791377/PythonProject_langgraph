@@ -219,6 +219,7 @@ python .\tools\thesis_moe_mode.py assert-on
 | 损坏或不匹配状态阻止有效状态计算 | 3 | `state_corrupt`、`schema_version_mismatch`、`blocked:unsupported_schema_version`、`agent_name_mismatch`、`session_mismatch`、`worktree_mismatch`、`branch_mismatch` |
 | 目标根目录不安全或 ownership preflight 拒绝 | 4 | `blocked:unsafe_target_root`、`blocked:ownership_precheck_failed`、`blocked:dirty_unowned_files` |
 | 缺少依赖或必需项目文件 | 5 | `blocked:missing_agent_toml`、`blocked:missing_mode_cli`、`blocked:pyside6_unavailable` |
+| 并发写入锁不可获得或疑似过期锁需要人工确认 | 6 | `blocked:state_lock_timeout`、`blocked:stale_state_lock` |
 
 CLI 和 GUI 输出应同时包含面向人的说明和稳定机器可读 token。GUI 代码应基于 token 分支，不依赖本地化自然语言。
 
@@ -373,6 +374,19 @@ PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来�
 
 如果更新中途失败，重复运行安装器或更新器必须是安全的。项目状态回滚依赖目标项目 Git 历史，以及 `.omx/state` 下的状态 JSON 文件。
 
+### 9.1 状态写入原子性与并发控制
+
+MOE 控制面可能被多个 Codex session、命令行 wrapper 和 GUI 同时调用。第一版必须用简单、可审计、跨进程有效的本地文件策略避免并发写坏状态：
+
+- 每次写入项目默认值、session 覆盖或审计日志前，先获取 state namespace 级别的锁文件，例如 `.omx/state/<state_namespace>/.lock`；
+- 锁文件内容只保存操作元数据：pid、command、normalized session id、target state path、created_at 和 lock timeout，不写私有提示词或 raw session id；
+- 获取锁必须有短超时和重试退避；超时后返回 `blocked:state_lock_timeout`，不得继续写入；
+- 检测到疑似过期锁时只报告 `blocked:stale_state_lock` 和 lock 文件路径，不自动删除，除非后续另行创建显式 repair/unlock 命令；
+- JSON 状态写入必须采用临时文件 + flush/fsync + 原子 replace，同一目录内完成，避免半写文件；
+- `list-sessions --json`、`status --json` 和 `project-status --json` 默认只读，不应持有写锁；如果发现正在写入，可短暂重试或报告状态正在变化；
+- GUI 必须串行化本进程内按钮动作：一个 on/off 操作完成前禁用同一 scope 的重复按钮，避免本地 GUI 自己制造并发写；
+- 并发冲突、锁超时或原子替换失败都不是“已启用/已关闭”的证据，必须在 CLI/GUI 和审计摘要中暴露稳定 token。
+
 ## 10. 审计日志、隐私与保留边界
 
 MOE 控制工具对状态变更动作应写入轻量本地审计记录：
@@ -418,6 +432,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | 无效状态 | 损坏或不匹配状态会被报告，且不会自动修复。 |
 | GUI 安装 | 缺少 Agent TOML 时安装失败，且只写目标项目内文件。 |
 | GUI 操作 | GUI 操作结果与 CLI `status --json` 和 `project-status --json` 一致。 |
+| 并发写入 | 两个命令同时写同一 namespace 时，一个成功，另一个等待后成功或返回稳定 lock token；不会产生半写 JSON。 |
 
 ## 12. 校验与验收
 
@@ -426,7 +441,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 英文与中文方案文件成对存在；
 - 方案明确区分 MOE GUI 工具链和通用 GUI 工具；
 - 方案定义项目默认值 + session override 行为；
-- 方案禁止项目级 MOE Agent 使用 `full-history fork + specified custom role`。
+- 方案禁止项目级 MOE Agent 使用 `full-history fork + specified custom role`；
+- 方案定义状态写入的锁、原子写入、并发失败 token 和 GUI 串行化边界。
 
 第一阶段验收：
 
