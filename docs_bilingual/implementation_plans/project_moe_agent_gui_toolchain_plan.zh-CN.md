@@ -574,6 +574,24 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 新增测试、checker 或工具入口必须注册到本仓库 `tools/ci/ci_test_manifest.json` 或共享 local gate 调用链，避免只在本地手跑；
 - 目标项目侧测试应在目标项目自身提交中注册到该项目测试入口；本仓库不得假设其他项目 CI 自动覆盖这些脚本。
 
+实施阶段门与回滚点：
+
+| 阶段 | go/no-go 条件 | 回滚点 |
+| --- | --- | --- |
+| Phase 0：只读盘点 | 目标项目 dirty/ownership preflight 通过，已有 Agent TOML、CLI、wrapper、文档路径确认。 | 不写文件；无需回滚。 |
+| Phase 1A：CLI 状态模型 | fixture 测试覆盖 JSON envelope、project default、session override、lock、invalid state；目标项目本地测试通过。 | 目标项目 Git commit 前可直接丢弃工作区；commit 后用目标项目 Git 回退。 |
+| Phase 1B：`paper_suggest` wrapper 接入 | `thesis-moe-on/off.cmd` 调用项目级命令；真实项目冒烟测试通过；不推送远端。 | 回退目标项目 wrapper 与 CLI commit；保留审计日志作为本地事实。 |
+| Phase 2A：本仓库安装器/checker | 临时 fixture 项目验证 dry run/apply/manifest/hash/path blocker；local gate 注册通过。 | 回退本仓库 feature commit；目标 fixture 可删除。 |
+| Phase 2B：PySide6 GUI | headless GUI 自动化或手动视觉证据满足可用性规则；GUI 不直接写 JSON。 | 删除或回退目标项目 managed install artifacts；不得删除 `.omx/state`。 |
+| Phase 2C：跨项目复用 | 至少两个不同 fixture 或真实项目通过相同 contract；无跨项目状态泄漏。 | 回退安装产物；保留项目私有 Agent TOML 和私有提示源。 |
+
+每个阶段的完成定义：
+
+- 对应阶段的 contract、测试、文档和操作者命令已更新；
+- 本阶段引入的新 checker/test 已注册到本仓库或目标项目的测试入口；
+- 工作区干净，提交信息说明阶段和回滚方式；
+- 未获得远端发布指令时，不推送 GitLab/GitHub，也不修改目标项目远端。
+
 ## 12. 校验与验收
 
 本文档级验收：
@@ -592,7 +610,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案定义 CLI JSON envelope、状态字段、计数字段、写入结果字段和失败脱敏字段；
 - 方案定义新项目接入、scaffold dry run、Agent TOML/namespace 校验和私有提示源边界；
 - 方案定义项目级传播、手动 session override、冲突展示和清除覆盖非目标边界；
-- 方案定义测试 fixture、contract 测试、GUI 自动化/手动证据边界和 CI 注册规则。
+- 方案定义测试 fixture、contract 测试、GUI 自动化/手动证据边界和 CI 注册规则；
+- 方案定义 Phase 0/1/2 阶段门、go/no-go 条件、完成定义和回滚点。
 
 第一阶段验收：
 

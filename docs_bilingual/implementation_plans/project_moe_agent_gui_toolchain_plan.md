@@ -574,6 +574,24 @@ Test execution and CI registration rules:
 - new tests, checkers, or tool entrypoints must be registered in this repository's `tools/ci/ci_test_manifest.json` or the shared local-gate call chain so they are not local-only;
 - target-project tests must be registered in the target project's own test entrypoint in that project's commit; this repository must not assume other projects' CI automatically covers these scripts.
 
+Implementation phase gates and rollback points:
+
+| Phase | Go/no-go condition | Rollback point |
+| --- | --- | --- |
+| Phase 0: read-only inventory | target-project dirty/ownership preflight passes, and existing Agent TOML, CLI, wrapper, and documentation paths are confirmed. | no writes; no rollback needed. |
+| Phase 1A: CLI state model | fixture tests cover JSON envelope, project default, session override, lock, and invalid state; target-project local tests pass. | before target-project commit, discard the working tree; after commit, use target-project Git rollback. |
+| Phase 1B: `paper_suggest` wrapper integration | `thesis-moe-on/off.cmd` calls project-level commands; real-project smoke test passes; no remote push. | revert the target-project wrapper and CLI commit; keep audit logs as local facts. |
+| Phase 2A: central installer/checker | temporary fixture project verifies dry run/apply/manifest/hash/path blockers; local gate registration passes. | revert this repository's feature commit; delete target fixtures. |
+| Phase 2B: PySide6 GUI | headless GUI automation or manual visual evidence satisfies usability rules; GUI never writes JSON directly. | remove or revert target-project managed install artifacts; never delete `.omx/state`. |
+| Phase 2C: cross-project reuse | at least two different fixture or real projects pass the same contract; no cross-project state leakage. | revert installed artifacts; preserve project-private Agent TOMLs and prompt sources. |
+
+Definition of done for each phase:
+
+- the phase's contract, tests, documentation, and operator commands are updated;
+- any new checker/test introduced by the phase is registered in this repository or target project's test entrypoint;
+- the working tree is clean, and the commit message names the phase and rollback approach;
+- without an explicit remote-publication instruction, do not push to GitLab/GitHub and do not mutate target-project remotes.
+
 ## 12. Validation and acceptance
 
 Document-level acceptance for this plan:
@@ -592,7 +610,8 @@ Document-level acceptance for this plan:
 - the plan defines the CLI JSON envelope, status fields, count fields, write-result fields, and redacted failure fields;
 - the plan defines new project onboarding, scaffold dry run, Agent TOML/namespace validation, and private prompt-source boundaries;
 - the plan defines project-level propagation, manual session overrides, conflict display, and clear-override non-goals;
-- the plan defines test fixtures, contract tests, GUI automation/manual evidence boundaries, and CI registration rules.
+- the plan defines test fixtures, contract tests, GUI automation/manual evidence boundaries, and CI registration rules;
+- the plan defines Phase 0/1/2 gates, go/no-go conditions, definitions of done, and rollback points.
 
 Phase 1 acceptance:
 
