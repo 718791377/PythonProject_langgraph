@@ -304,6 +304,51 @@ The cleanup helper SHALL use Git worktree commands to remove the local `.worktre
 - **THEN** the cleanup helper SHALL fail closed
 - **AND** it SHALL NOT remove the worktree or delete the local branch
 
+
+
+### Requirement: Feature worktrees SHALL carry task receipts and lifecycle metadata
+
+The repository SHALL require every newly created feature worktree to carry task receipt metadata before writable work begins.
+
+The metadata SHALL exist in two local-only surfaces:
+
+- `.omx/session-claims/<session>.json` for session ownership and conflict checks.
+- `.omx/worktree-task-receipt.json` inside the worktree for quick resumed-session task identification.
+
+Both surfaces SHALL record at least the worktree path, branch, creating or taking-over session, task name, task summary, document-plan-only flag, later-code-required flag, touched paths, next action, local-main merge requirement, remote-sync requirement, expected merge-or-pause point, and lifecycle status.
+
+Allowed lifecycle statuses SHALL include `active`, `paused`, `ready-to-merge`, `merged-local-main`, `cleaned`, `remote-sync-needed`, `completed`, and `superseded`. Completed or cleaned worktrees SHALL carry completion receipt fields including rollback ref, local-main commit, cleaned worktree path, deleted branch, and remote sync status.
+
+#### Scenario: New feature worktree lacks a receipt
+
+- **WHEN** `tools/check_worktree_task_receipt.py --root . --json` scans the current feature worktree
+- **AND** that feature worktree lacks `.omx/worktree-task-receipt.json`
+- **THEN** the checker SHALL fail
+- **AND** it SHALL instruct the operator to create lifecycle metadata before continuing writable work
+
+#### Scenario: Legacy residual worktrees lack receipts
+
+- **WHEN** the worktree task receipt checker runs in normal guard mode
+- **AND** older residual feature worktrees lack task receipts or branch-matching claims
+- **THEN** the checker MAY report warnings rather than fail
+- **AND** it SHALL summarize the residual worktree classification so cleanup work can classify or migrate them later
+
+#### Scenario: Strict audit is requested
+
+- **WHEN** the checker runs with `--require-all-feature-worktrees`
+- **THEN** every registered feature worktree SHALL have a receipt and branch-matching claim
+- **AND** missing metadata SHALL fail the check
+
+### Requirement: OpenSpec guard SHALL include worktree task receipt verification
+
+The aggregate repository OpenSpec guard SHALL run the worktree task receipt checker so local gate, remote mirrored CI, and pre-commit hook paths detect missing lifecycle metadata for current feature worktrees.
+
+#### Scenario: Aggregate guard scans worktree receipts
+
+- **WHEN** `python tools/run_openspec_guard.py --root . --json` runs
+- **THEN** the aggregated output SHALL include a `check_worktree_task_receipt` step
+- **AND** the aggregate guard SHALL fail if the checker reports errors
+
 ### Requirement: Publication SHALL use mirrored local and remote CI/MR gates
 
 Repository publication SHALL use local-first validation plus mirrored local and remote CI/MR gates.
@@ -400,6 +445,12 @@ After local `main` integration, the session SHALL report any intentional remote 
 
 Generic continuation language such as `continue`, `go on`, `proceed`, or a localized equivalent SHALL NOT be treated as remote publication approval unless it explicitly names remote publication, GitLab push/MR/merge, GitHub sync/mirror, or an equivalent remote action.
 
+A current user message that explicitly requests remote publication, including `push remote` Chinese wording, `publish remote`, `push remote`, `remote publication`, or `use GitLab MR then sync GitHub` Chinese wording, SHALL authorize the normal green-path remote publication sequence as one approval: GitLab publication branch push/update, GitLab MR create/update, GitLab CI wait, GitLab MR merge after green CI, GitLab `main` confirmation, GitHub `main` sync of the same intended commit, and post-publication checks.
+
+During that approved remote publication flow, the session SHALL prefer commands already allowed by the Codex sandbox and previously approved command prefixes. If sandbox escalation is still required for GitLab push, MR, CI, merge, or GitHub sync commands inside the approved green path, the session SHALL request one scoped escalation for the whole `push GitLab / open MR / merge MR / sync GitHub` flow rather than asking once per command.
+
+The session SHALL stop for a new approval before force push, protected-branch setting changes, remote ref deletion, history rewrite, scope expansion, credential changes, or security configuration changes.
+
 #### Scenario: Local integration is approved but remote publication is not
 - **GIVEN** local validation and local MR review have passed
 - **AND** the user approves local `main` integration
@@ -420,6 +471,26 @@ Generic continuation language such as `continue`, `go on`, `proceed`, or a local
 - **WHEN** the user explicitly approves GitLab publication, GitLab MR merge, GitHub sync, or equivalent remote publication
 - **THEN** the session MAY perform only the explicitly approved remote action sequence
 - **AND** it SHALL report GitLab/GitHub state and stop at the next approval boundary if scope expands
+
+#### Scenario: Single remote-publication approval covers the normal green path
+- **GIVEN** local validation and local MR review have passed
+- **AND** local `main` contains the intended batch
+- **WHEN** the current user message says `push remote` Chinese wording, `publish remote`, `push remote`, `remote publication`, `use GitLab MR then sync GitHub` Chinese wording, or equivalent explicit remote-publication wording
+- **THEN** the session MAY push or update the GitLab publication branch, create or update the GitLab MR, wait for GitLab CI, merge the MR after CI is green, fetch and confirm GitLab `main`, sync the same intended commit to GitHub `main`, and run post-publication state checks under the same approval
+- **AND** it SHALL NOT ask for separate approvals inside that normal green path
+
+#### Scenario: Sandbox escalation is scoped to the approved remote publication flow
+- **GIVEN** the current user message has approved the normal green-path remote publication flow
+- **AND** the Codex sandbox requires elevation for a GitLab push, MR, CI, merge, or GitHub sync command inside that approved flow
+- **WHEN** the session requests escalation
+- **THEN** the request SHALL be scoped to the complete `push GitLab / open MR / merge MR / sync GitHub` flow
+- **AND** the session SHALL NOT ask for a separate escalation per green-path command
+
+#### Scenario: Exceptional remote operation requires new approval
+- **GIVEN** the current user message has approved the normal green-path remote publication flow
+- **WHEN** the remote work requires force push, protected-branch setting changes, remote ref deletion, history rewrite, scope expansion, credential changes, or security configuration changes
+- **THEN** the session SHALL stop before that operation
+- **AND** it SHALL request a new explicit approval for the exceptional action
 
 ### Requirement: Local commits SHALL run a pre-commit update/archive review
 

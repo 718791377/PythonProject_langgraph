@@ -106,6 +106,7 @@ REQUIRED_REPORT_FIELDS = {
     "decision_recommendation",
     "cadence_review",
     "output_retention",
+    "precommit_update_archive",
     "runtime_paths",
     "recommendations",
 }
@@ -125,6 +126,7 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "decision_recommendation": dict,
     "cadence_review": dict,
     "output_retention": dict,
+    "precommit_update_archive": dict,
     "runtime_paths": dict,
     "recommendations": list,
 }
@@ -194,6 +196,37 @@ VALID_MEDIUM_EVIDENCE_RATIONALES = {
     "no_mapped_tool_call_medium_evidence",
 }
 MODULE_EVIDENCE_MAPPED_TOOL_POLICY = "medium_evidence_only_not_counted_as_strong_evidence"
+TOOL_CALL_PLUGIN_ALIASES = {
+    # These are stable local tool surfaces whose invocation name does not
+    # always include the plugin display name. They remain medium evidence only:
+    # a tool call can prove task affinity, not default-profile eligibility.
+    "Browser": (
+        "mcp__chrome_devtools__",
+        "mcp__cdp_bridge__",
+    ),
+    "Cloudflare": (
+        "mcp__cloudflare_api__",
+    ),
+}
+TOOL_CALL_MODULE_ALIASES = {
+    # Pencil is a design/canvas surface rather than a native plugin skill, so
+    # map it to the creative module for human review instead of claiming Canva
+    # or Figma plugin usage.
+    "creative-content": (
+        "mcp__pencil__",
+    ),
+}
+
+
+def stable_tool_call_alias_registry() -> dict[str, Any]:
+    """Return the stable alias registry exposed in reports for human review."""
+    return {
+        "policy": "stable_aliases_are_medium_evidence_only_and_never_profile_apply_evidence",
+        "evidence_level": "medium",
+        "counts_as_strong_evidence": False,
+        "plugin_aliases": {plugin: list(aliases) for plugin, aliases in sorted(TOOL_CALL_PLUGIN_ALIASES.items())},
+        "module_aliases": {module: list(aliases) for module, aliases in sorted(TOOL_CALL_MODULE_ALIASES.items())},
+    }
 REQUIRED_NOISE_REVIEW_FIELDS = {
     "status",
     "explicit_skill_noise_removed",
@@ -377,12 +410,28 @@ REQUIRED_SCRIPT_CAPABILITY_FIELDS = {
     "reliable_coverage",
     "human_review_required_for",
     "enhancement_triggers",
+    "stable_tool_call_alias_registry",
 }
 REQUIRED_SCRIPT_CAPABILITY_FIELD_TYPES = {
     "policy": str,
     "reliable_coverage": list,
     "human_review_required_for": list,
     "enhancement_triggers": list,
+    "stable_tool_call_alias_registry": dict,
+}
+REQUIRED_STABLE_TOOL_CALL_ALIAS_REGISTRY_FIELDS = {
+    "policy",
+    "evidence_level",
+    "counts_as_strong_evidence",
+    "plugin_aliases",
+    "module_aliases",
+}
+REQUIRED_STABLE_TOOL_CALL_ALIAS_REGISTRY_FIELD_TYPES = {
+    "policy": str,
+    "evidence_level": str,
+    "counts_as_strong_evidence": bool,
+    "plugin_aliases": dict,
+    "module_aliases": dict,
 }
 REQUIRED_OUTPUT_RETENTION_FIELDS = {
     "status",
@@ -401,6 +450,30 @@ REQUIRED_OUTPUT_RETENTION_FIELD_TYPES = {
     "raw_audit_json_local_only": bool,
     "long_term_evidence_format": str,
     "violation_count": int,
+}
+REQUIRED_PRECOMMIT_UPDATE_ARCHIVE_FIELDS = {
+    "status",
+    "ok",
+    "checker",
+    "before_local_git_commit",
+    "review_existing_files_for_required_updates",
+    "archive_completed_openspec_changes_before_commit",
+    "error_count",
+    "warning_count",
+    "changed_path_count",
+    "active_change_review_count",
+}
+REQUIRED_PRECOMMIT_UPDATE_ARCHIVE_FIELD_TYPES = {
+    "status": str,
+    "ok": bool,
+    "checker": str,
+    "before_local_git_commit": bool,
+    "review_existing_files_for_required_updates": bool,
+    "archive_completed_openspec_changes_before_commit": bool,
+    "error_count": int,
+    "warning_count": int,
+    "changed_path_count": int,
+    "active_change_review_count": int,
 }
 REQUIRED_RUNTIME_PATH_FIELDS = {
     "root",
@@ -485,6 +558,7 @@ def build_output_retention_status(root: Path) -> dict[str, Any]:
         if spec is None or spec.loader is None:
             raise RuntimeError("checker_import_spec_unavailable")
         module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
         spec.loader.exec_module(module)
         raw_report = module.build_report(root)
     except Exception as exc:  # pragma: no cover - defensive guard for checker import/runtime drift.
@@ -516,6 +590,68 @@ def build_output_retention_status(root: Path) -> dict[str, Any]:
                 if isinstance(item, dict) and item.get("reason")
             }
         ),
+    }
+
+
+def build_precommit_update_archive_status(root: Path) -> dict[str, Any]:
+    """Expose the pre-commit existing-file update/archive gate in each audit report."""
+    checker = root / "tools" / "check_precommit_update_archive.py"
+    relative_checker = "tools/check_precommit_update_archive.py"
+    if not checker.exists():
+        return {
+            "status": "unavailable",
+            "ok": False,
+            "checker": relative_checker,
+            "before_local_git_commit": False,
+            "review_existing_files_for_required_updates": False,
+            "archive_completed_openspec_changes_before_commit": False,
+            "error_count": 0,
+            "warning_count": 0,
+            "changed_path_count": 0,
+            "active_change_review_count": 0,
+            "blockers": ["checker_missing"],
+        }
+    try:
+        spec = importlib.util.spec_from_file_location("check_precommit_update_archive", checker)
+        if spec is None or spec.loader is None:
+            raise RuntimeError("checker_import_spec_unavailable")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        raw_report = module.check(root)
+    except Exception as exc:  # pragma: no cover - defensive guard for checker import/runtime drift.
+        return {
+            "status": "unavailable",
+            "ok": False,
+            "checker": relative_checker,
+            "before_local_git_commit": False,
+            "review_existing_files_for_required_updates": False,
+            "archive_completed_openspec_changes_before_commit": False,
+            "error_count": 0,
+            "warning_count": 0,
+            "changed_path_count": 0,
+            "active_change_review_count": 0,
+            "blockers": [f"checker_unavailable:{type(exc).__name__}"],
+        }
+    policy = raw_report.get("policy", {}) if isinstance(raw_report, dict) else {}
+    counts = raw_report.get("counts", {}) if isinstance(raw_report, dict) else {}
+    errors = raw_report.get("errors", []) if isinstance(raw_report, dict) else []
+    warnings = raw_report.get("warnings", []) if isinstance(raw_report, dict) else []
+    ok = bool(raw_report.get("ok")) if isinstance(raw_report, dict) else False
+    return {
+        "status": "passed" if ok else "failed",
+        "ok": ok,
+        "checker": relative_checker,
+        "before_local_git_commit": policy.get("before_local_git_commit") is True,
+        "review_existing_files_for_required_updates": policy.get("review_existing_files_for_required_updates") is True,
+        "archive_completed_openspec_changes_before_commit": (
+            policy.get("archive_completed_openspec_changes_before_commit") is True
+        ),
+        "error_count": len(errors) if isinstance(errors, list) else int(counts.get("errors") or 0),
+        "warning_count": len(warnings) if isinstance(warnings, list) else int(counts.get("warnings") or 0),
+        "changed_path_count": int(counts.get("changed_paths") or 0),
+        "active_change_review_count": int(counts.get("active_change_reviews") or 0),
+        "error_reasons": [str(error)[:240] for error in errors[:10]] if isinstance(errors, list) else [],
     }
 
 
@@ -1584,6 +1720,38 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         script_capability_violations.append("human_review_required_for_empty")
     if not script_capabilities.get("enhancement_triggers"):
         script_capability_violations.append("enhancement_triggers_empty")
+    alias_registry = (
+        script_capabilities.get("stable_tool_call_alias_registry")
+        if isinstance(script_capabilities.get("stable_tool_call_alias_registry"), dict)
+        else {}
+    )
+    for field in sorted(REQUIRED_STABLE_TOOL_CALL_ALIAS_REGISTRY_FIELDS):
+        if field not in alias_registry:
+            script_capability_violations.append(f"stable_tool_call_alias_registry:{field}_missing")
+    for field, expected_type in sorted(REQUIRED_STABLE_TOOL_CALL_ALIAS_REGISTRY_FIELD_TYPES.items()):
+        if field in alias_registry and not isinstance(alias_registry.get(field), expected_type):
+            script_capability_violations.append(f"stable_tool_call_alias_registry:{field}_invalid_type")
+    if alias_registry.get("policy") != "stable_aliases_are_medium_evidence_only_and_never_profile_apply_evidence":
+        script_capability_violations.append("stable_tool_call_alias_registry:policy_invalid_value")
+    if alias_registry.get("evidence_level") != "medium":
+        script_capability_violations.append("stable_tool_call_alias_registry:evidence_level_not_medium")
+    if alias_registry.get("counts_as_strong_evidence") is not False:
+        script_capability_violations.append("stable_tool_call_alias_registry:counts_as_strong_evidence_not_false")
+    for field in ("plugin_aliases", "module_aliases"):
+        aliases_by_target = alias_registry.get(field)
+        if isinstance(aliases_by_target, dict):
+            if not aliases_by_target:
+                script_capability_violations.append(f"stable_tool_call_alias_registry:{field}_empty")
+            for target, aliases in aliases_by_target.items():
+                if not isinstance(target, str) or not target.strip():
+                    script_capability_violations.append(f"stable_tool_call_alias_registry:{field}_target_invalid")
+                    continue
+                if not isinstance(aliases, list) or not aliases or any(
+                    not isinstance(alias, str) or not alias.strip() for alias in aliases
+                ):
+                    script_capability_violations.append(
+                        f"stable_tool_call_alias_registry:{field}:{target}_aliases_invalid"
+                    )
     output_retention = report.get("output_retention") if isinstance(report.get("output_retention"), dict) else {}
     output_retention_violations = []
     for field in sorted(REQUIRED_OUTPUT_RETENTION_FIELDS):
@@ -1609,6 +1777,36 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         output_retention_violations.append("violation_count_negative")
     if output_retention.get("status") != "passed":
         output_retention_violations.append("status_not_passed")
+    precommit_update_archive = (
+        report.get("precommit_update_archive")
+        if isinstance(report.get("precommit_update_archive"), dict)
+        else {}
+    )
+    precommit_update_archive_violations = []
+    for field in sorted(REQUIRED_PRECOMMIT_UPDATE_ARCHIVE_FIELDS):
+        if field not in precommit_update_archive:
+            precommit_update_archive_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_PRECOMMIT_UPDATE_ARCHIVE_FIELD_TYPES.items()):
+        if field in precommit_update_archive and not isinstance(precommit_update_archive.get(field), expected_type):
+            precommit_update_archive_violations.append(f"{field}_invalid_type")
+    if precommit_update_archive.get("status") not in {"passed", "failed", "unavailable"}:
+        precommit_update_archive_violations.append("status_invalid_value")
+    if precommit_update_archive.get("status") == "passed" and precommit_update_archive.get("ok") is not True:
+        precommit_update_archive_violations.append("passed_status_without_ok_true")
+    if precommit_update_archive.get("status") in {"failed", "unavailable"} and precommit_update_archive.get("ok") is not False:
+        precommit_update_archive_violations.append("nonpassing_status_without_ok_false")
+    if precommit_update_archive.get("before_local_git_commit") is not True:
+        precommit_update_archive_violations.append("before_local_git_commit_not_true")
+    if precommit_update_archive.get("review_existing_files_for_required_updates") is not True:
+        precommit_update_archive_violations.append("review_existing_files_for_required_updates_not_true")
+    if precommit_update_archive.get("archive_completed_openspec_changes_before_commit") is not True:
+        precommit_update_archive_violations.append("archive_completed_openspec_changes_before_commit_not_true")
+    for field in ("error_count", "warning_count", "changed_path_count", "active_change_review_count"):
+        value = precommit_update_archive.get(field)
+        if isinstance(value, int) and not isinstance(value, bool) and value < 0:
+            precommit_update_archive_violations.append(f"{field}_negative")
+    if precommit_update_archive.get("status") != "passed":
+        precommit_update_archive_violations.append("status_not_passed")
     runtime_paths = report.get("runtime_paths") if isinstance(report.get("runtime_paths"), dict) else {}
     runtime_path_violations: list[str] = []
     for field in sorted(REQUIRED_RUNTIME_PATH_FIELDS):
@@ -1755,6 +1953,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"noise_review:{field}" for field in noise_violations]
         + [f"script_capability_boundaries:{field}" for field in script_capability_violations]
         + [f"output_retention:{field}" for field in output_retention_violations]
+        + [f"precommit_update_archive:{field}" for field in precommit_update_archive_violations]
         + [f"runtime_paths:{field}" for field in runtime_path_violations]
         + [f"module_evidence:{field}" for field in module_evidence_violations]
         + [f"decision_recommendation:{field}" for field in decision_violations]
@@ -1798,6 +1997,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "noise_review_violations": noise_violations,
         "script_capability_boundary_violations": script_capability_violations,
         "output_retention_violations": output_retention_violations,
+        "precommit_update_archive_violations": precommit_update_archive_violations,
         "embedded_field_contract_violations": embedded_violations,
     }
 
@@ -1886,6 +2086,20 @@ def normalize_name_for_match(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", value.lower())
 
 
+def tool_call_matches_stable_alias(tool_name: str, aliases: tuple[str, ...]) -> bool:
+    """Match known tool-call prefixes without turning them into strong evidence."""
+    tool_lower = tool_name.lower()
+    tool_key = normalize_name_for_match(tool_name)
+    for alias in aliases:
+        alias_lower = alias.lower()
+        alias_key = normalize_name_for_match(alias)
+        if alias_lower.endswith("__") and tool_lower.startswith(alias_lower):
+            return True
+        if alias_key and alias_key in tool_key:
+            return True
+    return False
+
+
 def match_enabled_known_plugins(enabled_plugins: list[str], known_plugins: list[str]) -> tuple[list[str], list[str]]:
     """Map config plugin entries to registry plugin names without exposing config contents."""
     matched: set[str] = set()
@@ -1962,6 +2176,12 @@ def build_current_profile_summary(profiles: dict[str, Any], enabled_plugins: lis
 def mapped_tool_call_count(tool_call_counts: Counter[str], module_name: str, plugins: list[str]) -> int:
     module_key = normalize_name_for_match(module_name)
     plugin_keys = [normalize_name_for_match(plugin) for plugin in plugins]
+    module_aliases = TOOL_CALL_MODULE_ALIASES.get(module_name, ())
+    plugin_aliases = tuple(
+        alias
+        for plugin in plugins
+        for alias in TOOL_CALL_PLUGIN_ALIASES.get(plugin, ())
+    )
     total = 0
     for tool_name, count in tool_call_counts.items():
         tool_key = normalize_name_for_match(tool_name)
@@ -1969,6 +2189,11 @@ def mapped_tool_call_count(tool_call_counts: Counter[str], module_name: str, plu
             total += count
             continue
         if any(plugin_key and plugin_key in tool_key for plugin_key in plugin_keys):
+            total += count
+            continue
+        if tool_call_matches_stable_alias(tool_name, module_aliases) or tool_call_matches_stable_alias(
+            tool_name, plugin_aliases
+        ):
             total += count
     return total
 
@@ -2051,21 +2276,24 @@ def build_script_capability_boundaries() -> dict[str, Any]:
             "session_explicit_skill_announcements_skill_path_reads_helper_calls_and_tool_call_names",
             "logs_2_sqlite_budget_warnings_all_descriptions_removed_omitted_skills_and_skipped_loading_samples",
             "profile_module_aggregation_from_helper_calls_and_plugin_skill_path_reads",
+            "stable_tool_call_aliases_for_medium_evidence_only_module_review",
+            "precommit_existing_file_update_and_openspec_archive_gate_status",
         ],
         "human_review_required_for": [
             "weak_plugin_mentions_are_text_trends_not_real_invocation_evidence",
             "explicit_skills_can_contain_natural_language_or_example_token_false_positives",
-            "tool_call_names_are_not_plugin_usage_without_a_concrete_capability_mapping",
+            "tool_call_names_and_stable_aliases_are_medium_evidence_not_plugin_or_profile_apply_evidence",
             "unreadable_rotated_or_missing_logs_can_underreport_warning_counts",
             "missing_or_stale_profile_registry_data_can_make_module_evidence_incomplete",
         ],
         "enhancement_triggers": [
             "same_false_positive_pattern_repeats_in_two_weekly_reports",
             "thirty_day_summary_needs_evidence_that_is_only_reported_as_weak_mentions",
-            "stable_tool_call_pattern_maps_to_a_plugin_or_module_but_is_not_aggregated",
+            "stable_tool_call_pattern_maps_to_a_plugin_or_module_but_is_not_in_the_alias_registry",
             "live_session_warning_cannot_be_localized_from_logs_2_sqlite",
             "profile_registry_and_enabled_plugin_surface_diverge_enough_to_mislead_module_evidence",
         ],
+        "stable_tool_call_alias_registry": stable_tool_call_alias_registry(),
     }
 
 
@@ -2426,6 +2654,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     manual_notes = collect_manual_notes(getattr(args, "manual_notes", []) or [])
     decision_recommendation = build_decision_recommendation(module_evidence, warning_severity, audit_state)
     output_retention = build_output_retention_status(root)
+    precommit_update_archive = build_precommit_update_archive_status(root)
     runtime_paths = build_runtime_paths(root, codex_home)
     report = {
         "schema_version": 1,
@@ -2471,11 +2700,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "manual_evidence": manual_notes,
         "script_capability_boundaries": build_script_capability_boundaries(),
         "output_retention": output_retention,
+        "precommit_update_archive": precommit_update_archive,
         "recommendations": [
             "Do not treat another 2% budget warning as soft-load failure; soft-load is outside the model-visible skills budget surface.",
             "Continue audit-only mode until the agreed window closes unless a concrete task requires a profile preview or explicitly approved hard-load apply.",
             "Use strong evidence, not weak mentions, to decide default profile changes.",
             "Keep disabled plugins restorable; do not delete plugin cache or vendor SKILL.md files.",
+            "Before local commit, run the pre-commit update/archive gate and resolve required existing-file updates or OpenSpec archive work.",
         ],
     }
     report["field_contract"] = validate_report_field_contract(report)
@@ -2491,7 +2722,13 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     noise_review = report.get("noise_review", {})
     manual_evidence = report.get("manual_evidence", {})
     script_capabilities = report.get("script_capability_boundaries", {})
+    stable_alias_registry = (
+        script_capabilities.get("stable_tool_call_alias_registry", {})
+        if isinstance(script_capabilities, dict)
+        else {}
+    )
     output_retention = report.get("output_retention", {})
+    precommit_update_archive = report.get("precommit_update_archive", {})
     runtime_paths = report.get("runtime_paths", {})
     audit_state = report.get("audit_state", {})
     field_contract = report.get("field_contract", {})
@@ -2526,6 +2763,8 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             f"- Field contract: `{field_contract.get('status')}`",
             f"- Output retention gate: `{output_retention.get('status')}` via `{output_retention.get('checker')}`",
             f"- Output retention violations: `{output_retention.get('violation_count')}`",
+            f"- Pre-commit update/archive gate: `{precommit_update_archive.get('status')}` via `{precommit_update_archive.get('checker')}`",
+            f"- Pre-commit update/archive errors: `{precommit_update_archive.get('error_count')}`",
             f"- Late run: `{cadence_review.get('late_run')}`",
         f"- Missed weekly runs: `{cadence_review.get('missed_weekly_runs')}`",
         f"- Weekly report review: `{cadence_review.get('weekly_report_review')}`",
@@ -2613,9 +2852,18 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
             f"- Reliable coverage items: `{len(script_capabilities.get('reliable_coverage') or [])}`",
             f"- Human-review items: `{len(script_capabilities.get('human_review_required_for') or [])}`",
             f"- Enhancement triggers: `{len(script_capabilities.get('enhancement_triggers') or [])}`",
+            f"- Stable tool-call alias registry policy: `{stable_alias_registry.get('policy')}`",
+            f"- Stable tool-call alias evidence level: `{stable_alias_registry.get('evidence_level')}`",
+            f"- Stable tool-call aliases count as strong evidence: `{stable_alias_registry.get('counts_as_strong_evidence')}`",
+            f"- Stable tool-call plugin alias targets: `{len(stable_alias_registry.get('plugin_aliases') or {})}`",
+            f"- Stable tool-call module alias targets: `{len(stable_alias_registry.get('module_aliases') or {})}`",
             f"- Audit output long-term evidence format: `{output_retention.get('long_term_evidence_format')}`",
             f"- `.tmp/` outputs local only: `{output_retention.get('tmp_outputs_local_only')}`",
             f"- Raw audit JSON local only: `{output_retention.get('raw_audit_json_local_only')}`",
+            f"- Pre-commit existing-file update review: `{precommit_update_archive.get('review_existing_files_for_required_updates')}`",
+            f"- Pre-commit OpenSpec archive gate: `{precommit_update_archive.get('archive_completed_openspec_changes_before_commit')}`",
+            f"- Pre-commit changed path count: `{precommit_update_archive.get('changed_path_count')}`",
+            f"- Pre-commit active change reviews: `{precommit_update_archive.get('active_change_review_count')}`",
             f"- Runtime path raw values retained: `{runtime_paths.get('raw_paths_retained')}`",
             f"- Runtime path privacy policy: `{runtime_paths.get('privacy_policy')}`",
             "",
@@ -2643,6 +2891,17 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     )
     for item in (script_capabilities.get("enhancement_triggers") or [])[:8]:
         lines.append(f"- `{item}`")
+    lines.extend(
+        [
+            "",
+            "### Stable tool-call alias registry",
+            "",
+        ]
+    )
+    for target, aliases in (stable_alias_registry.get("plugin_aliases") or {}).items():
+        lines.append(f"- Plugin `{target}` aliases: `{', '.join(str(alias) for alias in aliases)}`")
+    for target, aliases in (stable_alias_registry.get("module_aliases") or {}).items():
+        lines.append(f"- Module `{target}` aliases: `{', '.join(str(alias) for alias in aliases)}`")
     lines.extend(
         [
             "",
@@ -2788,10 +3047,139 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
 
 
 def print_human(report: dict[str, Any]) -> None:
+    audit_state = report.get("audit_state", {}) if isinstance(report.get("audit_state"), dict) else {}
+    config_summary = report.get("config_summary", {}) if isinstance(report.get("config_summary"), dict) else {}
+    inventory_summary = (
+        report.get("inventory_summary") if isinstance(report.get("inventory_summary"), dict) else {}
+    )
+    log_evidence = report.get("log_evidence", {}) if isinstance(report.get("log_evidence"), dict) else {}
+    warning_severity = (
+        report.get("warning_severity") if isinstance(report.get("warning_severity"), dict) else {}
+    )
+    warning_triage = report.get("warning_triage", {}) if isinstance(report.get("warning_triage"), dict) else {}
+    session_evidence = report.get("session_evidence", {}) if isinstance(report.get("session_evidence"), dict) else {}
+    script_capabilities = (
+        report.get("script_capability_boundaries")
+        if isinstance(report.get("script_capability_boundaries"), dict)
+        else {}
+    )
+    decision_recommendation = (
+        report.get("decision_recommendation")
+        if isinstance(report.get("decision_recommendation"), dict)
+        else {}
+    )
+    field_contract = report.get("field_contract", {}) if isinstance(report.get("field_contract"), dict) else {}
+    output_retention = report.get("output_retention", {}) if isinstance(report.get("output_retention"), dict) else {}
+    precommit_update_archive = (
+        report.get("precommit_update_archive")
+        if isinstance(report.get("precommit_update_archive"), dict)
+        else {}
+    )
+    current_profile = (
+        config_summary.get("current_profile") if isinstance(config_summary.get("current_profile"), dict) else {}
+    )
+    enabled_plugins = config_summary.get("enabled_plugins") if isinstance(config_summary.get("enabled_plugins"), list) else []
+    recommendations = report.get("recommendations") if isinstance(report.get("recommendations"), list) else []
     print(f"Codex skills usage audit ({report['mode']})")
     print(f"Window: {report['audit_window']['since']} -> {report['audit_window']['until']}")
-    print(f"Enabled plugins: {len(report['config_summary']['enabled_plugins'])}")
-    print(f"Budget warnings: {report['log_evidence'].get('budget_warning_count')}")
+    print(
+        "Enabled plugins: "
+        f"{len(enabled_plugins)} "
+        f"matched_known={len(current_profile.get('matched_enabled_known_plugins') or [])} "
+        f"unmatched={len(current_profile.get('unmatched_enabled_plugin_entries') or [])}"
+    )
+    print(
+        "Current profile: "
+        f"inferred={current_profile.get('inferred_profile')} "
+        f"exact_matches={len(current_profile.get('exact_profile_matches') or [])} "
+        f"closest_matches={len(current_profile.get('closest_profile_matches') or [])} "
+        f"manual_review_required={current_profile.get('manual_review_required')}"
+    )
+    print(
+        "Inventory summary: "
+        f"total={inventory_summary.get('total_skills')} "
+        f"user={inventory_summary.get('user_skills')} "
+        f"repo={inventory_summary.get('repo_skills')} "
+        f"plugin={inventory_summary.get('plugin_skills')}"
+    )
+    print(f"Log evidence available: {log_evidence.get('available')}")
+    print(f"Budget warnings: {log_evidence.get('budget_warning_count')}")
+    print(
+        "Budget warning samples: "
+        f"recent={len(log_evidence.get('recent_budget_warnings') or [])} "
+        f"last_7d={log_evidence.get('last_7d_budget_warning_count')}"
+    )
+    print(
+        "Warning severity: "
+        f"{warning_severity.get('level')} "
+        f"reason={warning_severity.get('reason')} "
+        f"action={warning_severity.get('recommended_action')}"
+    )
+    print(
+        "Budget warning pressure: "
+        f"all_descriptions_removed={log_evidence.get('all_descriptions_removed_count')} "
+        f"last_7d_all_descriptions_removed={log_evidence.get('last_7d_all_descriptions_removed_count')} "
+        f"max_omitted_additional_skills={log_evidence.get('max_omitted_additional_skills')}"
+    )
+    print(f"Audit state: {audit_state.get('state')} ({audit_state.get('reason')})")
+    print(f"Audit next action: {audit_state.get('next_action')}")
+    print(f"Profile apply allowed: {audit_state.get('profile_apply_allowed')}")
+    print(
+        "Warning triage: "
+        f"{warning_triage.get('status')} "
+        f"requested={warning_triage.get('requested')} "
+        f"window_ok={warning_triage.get('window_ok')}"
+    )
+    print(f"Warning triage policy: {warning_triage.get('window_policy')}")
+    print(
+        "Warning triage warnings: "
+        f"budget={warning_triage.get('budget_warning_count')} "
+        f"skipped_loading={warning_triage.get('skipped_loading_count')} "
+        f"recent_skipped_samples={warning_triage.get('recent_skipped_loading_samples')}"
+    )
+    print(f"Warning triage skipped-loading review: {warning_triage.get('skipped_loading_review')}")
+    print(f"Warning triage recommended action: {warning_triage.get('recommended_action')}")
+    warning_triage_blockers = warning_triage.get("blockers") if isinstance(warning_triage.get("blockers"), list) else []
+    print(
+        "Warning triage blockers: "
+        f"{', '.join(str(blocker) for blocker in warning_triage_blockers) if warning_triage_blockers else 'none'}"
+    )
+    print(f"Skill path reads: {sum((session_evidence.get('skill_paths') or {}).values())}")
+    print(f"Profile helper calls: {sum((session_evidence.get('profile_helper_calls') or {}).values())}")
+    print(
+        "Script capability boundaries: "
+        f"reliable={len(script_capabilities.get('reliable_coverage') or [])} "
+        f"human_review={len(script_capabilities.get('human_review_required_for') or [])} "
+        f"enhancement_triggers={len(script_capabilities.get('enhancement_triggers') or [])}"
+    )
+    print(
+        "Decision recommendation: "
+        f"{decision_recommendation.get('status')} "
+        f"profile_apply_allowed={decision_recommendation.get('profile_apply_allowed')}"
+    )
+    print(f"Recommendations: {len(recommendations)}")
+    for recommendation in recommendations[:2]:
+        print(f"  - {recommendation}")
+    print(f"Field contract: {field_contract.get('status')}")
+    print(f"Output retention gate: {output_retention.get('status')}")
+    print(
+        "Pre-commit update/archive gate: "
+        f"{precommit_update_archive.get('status')} "
+        f"errors={precommit_update_archive.get('error_count')} "
+        f"warnings={precommit_update_archive.get('warning_count')}"
+    )
+    if field_contract.get("blockers"):
+        print("Field contract blockers:")
+        for blocker in field_contract.get("blockers", [])[:10]:
+            print(f"  - {blocker}")
+    if output_retention.get("violation_reasons"):
+        print("Output retention violations:")
+        for reason in output_retention.get("violation_reasons", [])[:10]:
+            print(f"  - {reason}")
+    if precommit_update_archive.get("error_reasons"):
+        print("Pre-commit update/archive errors:")
+        for reason in precommit_update_archive.get("error_reasons", [])[:10]:
+            print(f"  - {reason}")
     print("Top explicit skills:")
     for name, count in list(report["session_evidence"].get("explicit_skills", {}).items())[:10]:
         print(f"  {name}: {count}")

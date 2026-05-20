@@ -79,6 +79,18 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md
 
+  - doc_id: pyside6_cross_project_gui_capability_plan
+    doc_class: implementation_plan
+    status: draft
+    canonical_path: docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.zh-CN.md
+
+  - doc_id: project_moe_agent_gui_toolchain_plan
+    doc_class: implementation_plan
+    status: draft
+    canonical_path: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md
+
   - doc_id: codex_user_level_skills_governance_policy
     doc_class: governance
     status: active
@@ -188,3 +200,9 @@ documents:
     status: active
     canonical_path: docs_bilingual/implementation_plans/main_worktree_backup_reconciliation_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/main_worktree_backup_reconciliation_plan.zh-CN.md
+
+  - doc_id: chrome_devtools_mcp_multi_session_isolation_plan
+    doc_class: implementation_plan
+    status: draft
+    canonical_path: docs_bilingual/implementation_plans/chrome_devtools_mcp_multi_session_isolation_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/chrome_devtools_mcp_multi_session_isolation_plan.zh-CN.md

@@ -98,6 +98,21 @@ Feature worktree 是临时执行面。本地验证通过、所有计划保留的
 - 无法判断的文件：不能跟随 worktree 一起删除；必须先让操作者选择保留、提交、移动、摘要记录或丢弃。
 
 安全总结是：本地 `main` 集成后，干净的 `.worktrees/` feature worktree 与已合入的本地 feature branch 可以由受保护 helper 自动清理；远端 refs 和 backup refs 不自动清理。
+## 5.2 Worktree 任务 Receipt 与生命周期状态
+
+每个新建 feature worktree 在开始可写工作前，必须携带 durable task metadata（持久任务元数据）。元数据有两个 local-only surface（仅本地表面）：
+
+1. `.omx/session-claims/<session>.json` 声明 session ownership，用于冲突检查。
+2. `.omx/worktree-task-receipt.json` 放在 worktree 内部，作为简短 receipt，让任何恢复会话都能第一眼知道这个 worktree 为什么存在。
+
+两个 surface 至少必须记录：任务名、任务摘要、worktree 路径、branch、创建或接管会话、创建时间、是否只是文档计划、是否还需要后续代码实现、涉及路径、下一步动作、是否需要合入本地 `main`、是否需要远端同步，以及预计 merge-or-pause 时间点。
+
+允许的生命周期标签是：`active`、`paused`、`ready-to-merge`、`merged-local-main`、`cleaned`、`remote-sync-needed`、`completed`、`superseded`。如果 worktree 暂时不能合入，必须留下其中一个明确标签和具体下一步动作。只写计划文档的 worktree 默认不长期保留：写完计划，运行本地验证，合入本地 `main`，创建 rollback ref，保留 completed receipt，然后清理 worktree 和本地 feature branch。
+
+每次本地 `main` 合入或远端发布/同步后，操作者流程必须扫描 `git worktree list --porcelain`、active session claims 和残留 worktree 分类。后续回答“接下来做什么”时，必须把残留 worktree 单独列出，不允许混在大任务 backlog 里被遗忘。completed receipt 必须保存 rollback ref、合入后的 local-main commit、已清理 worktree、已删除 branch，以及远端同步状态。
+
+`tools/check_worktree_task_receipt.py` 是这个生命周期的脚本控制。普通 guard 模式下，为兼容历史 worktree，缺少 receipt 会报告 warning；当前工作流新建的 worktree 必须立即写入 receipt。严格模式（`--require-all-feature-worktrees`）可用于迁移或审计所有残留 worktree。
+
 ## 6. 脚本控制
 
 这个安全边界不能只靠提示词提醒。
@@ -106,6 +121,7 @@ Feature worktree 是临时执行面。本地验证通过、所有计划保留的
 
 - `tools/check_worktree_session_hygiene.py` - 只读 checker，用来检查已登记 Git worktrees、脏状态、重复脏路径、branch cleanup readiness、rollback backup ref 是否存在，以及 `main` 对齐风险。
 - `tools/cleanup_integrated_worktree.py` - 本地-only 的受保护清理 helper；只有在 completed claim 已保留、rollback backup ref 已确认、feature worktree 干净、branch 已合入 local `main` 时，才删除 `.worktrees/` 下的 worktree，并用 `git branch -d` 删除本地 feature branch。
+- `tools/check_worktree_task_receipt.py` - 只读 checker，用来检查 feature worktree 的 task receipt、生命周期标签、branch-matching claim、只写计划文档的清理意图，以及 completed receipt 字段。
 
 推荐用法：
 
@@ -193,6 +209,8 @@ Runner 配额与发布包规则：
 - 本地 `main` 不得从陈旧远端基线继续。新建可写任务、判断发布时机、远端 push、创建/更新 MR 或声明主线状态之前，必须刷新 `gitlab/main`；如果本地 `main` 落后，就先 fast-forward 本地 `main` 再继续，除非用户明确接受 stale-base risk。如果 feature branch 基于陈旧远端基线准备，本地集成或发布前必须 rebase 或 merge 到刷新后的基线，除非用户明确接受风险。
 - 经批准本地集成后允许 intentional remote lag（有意远端滞后）。本地 `main` 可以领先 `gitlab/main` 和 `github/main`；会话必须明确报告该状态，直到远端发布或镜像同步追上。
 - 本地集成批准和远端发布批准是两个独立 release decisions。本地 `main` 集成后，会话必须停在 remote-publication approval gate；除非当前用户消息或 approved release record 明确授权该远端发布动作，否则不得推送 GitLab、创建/更新/合并 GitLab MR、同步 GitHub、删除远端发布分支或修改远端 refs。泛化的 `continue`、`继续`、`go on` 或 `proceed` 不是远端发布批准，除非它明确点名该远端动作。
+- 当前用户消息如果明确说 `推送远端`、`publish remote`、`push remote`、`remote publication`、`走 GitLab MR 后同步 GitHub` 或等价远端发布措辞，就视为一次性批准正常绿色路径的完整远端发布流程：推送或更新 GitLab publication branch、创建或更新 GitLab MR、等待 GitLab CI、CI 绿色后合并 MR、fetch 并确认 GitLab `main`、把同一个预期 commit 同步到 GitHub `main`，以及运行发布后状态检查。正常绿色路径中不得拆成多次授权。
+- 已批准远端发布流程中，应优先使用 sandbox 已允许的命令和已批准 command prefixes，尽量不请求权限提升。如果 Codex sandbox 仍要求对 GitLab push / MR / CI / merge 或 GitHub sync 这类已批准流程内命令进行提升，则只请求一次覆盖整个 `推送 GitLab / 开 MR / 合并 MR / 同步 GitHub` 流程的 scoped escalation，不得每条命令重复询问。若需要 force push、修改 protected branch 设置、删除远端 ref、改写历史、扩大 scope 或修改凭据/安全配置，必须停止并重新请求授权。
 - 主目录 `D:\PythonProject_langgraph` 是 primary main worktree，必须检出本地 `main`，其 HEAD 不得落后于本地 `main`，正常应与本地 `main` 完全一致。`tools/check_worktree_session_hygiene.py` 必须在主目录脏、主目录不在 `main`、主目录落后于本地 `main`，或本地 `main` 未经明确风险接受却落后于 `gitlab/main` 时失败。
 - 每次提交本地仓库 commit 前，必须运行 `tools/check_precommit_update_archive.py --root . --json`，或依赖已安装的 `.githooks/pre-commit` hook 间接调用 `tools/run_openspec_guard.py`。该提交前复核必须检查 existing governance、CI manifest、checker registration 或 OpenSpec lifecycle 文件是否需要同步更新或 archive movement；必要更新与 completed OpenSpec archives 必须先处理完才能 `git commit`。如果走 two-step exception，必须同时记录 `x_archive_deferred_reason` 与 `x_archive_follow_up`。
 - 本地 `main` 集成或首次远端推送前，先在本地完成 commits、checker runs、local MR review、rework 和 cleanup。

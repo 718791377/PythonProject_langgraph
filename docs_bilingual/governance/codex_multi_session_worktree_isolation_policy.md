@@ -103,6 +103,21 @@ File-class tasks must be handled before worktree release:
 
 The safe summary is: after local `main` integration, a clean `.worktrees/` feature worktree and its merged local feature branch can be cleaned automatically by the guarded cleanup helper; remote refs and backup refs are not cleaned automatically.
 
+## 5.2 Worktree Task Receipts and Lifecycle States
+
+Every newly created feature worktree must carry durable task metadata before writable work begins. The metadata has two local-only surfaces:
+
+1. `.omx/session-claims/<session>.json` declares session ownership for conflict checks.
+2. `.omx/worktree-task-receipt.json` is a short receipt inside the worktree so any resumed session can immediately see why the worktree exists.
+
+Both surfaces must record at least: task name, task summary, worktree path, branch, creating or taking-over session, creation time, whether the work is document-plan-only, whether later code implementation is required, touched paths, next action, whether local `main` integration is required, whether remote sync is required, and the expected merge-or-pause point.
+
+Allowed lifecycle labels are: `active`, `paused`, `ready-to-merge`, `merged-local-main`, `cleaned`, `remote-sync-needed`, `completed`, and `superseded`. A worktree that cannot be merged immediately must be left with one of these explicit lifecycle labels and a concrete next action. Document-plan-only worktrees should not be kept long term: write the plan, run local validation, merge to local `main`, create a rollback ref, preserve a completed receipt, and clean the worktree plus local feature branch.
+
+After each local `main` merge or remote publication/sync, the operator workflow must scan `git worktree list --porcelain`, active session claims, and residual worktree classifications. Future "what next" reports must list residual worktrees separately from the main task instead of letting them disappear inside a broad backlog. Completed receipts must preserve rollback ref, merged local-main commit, cleaned worktree path, deleted branch, and remote-sync status.
+
+The checker `tools/check_worktree_task_receipt.py` is the script-backed control for this lifecycle. In normal guard mode it reports missing receipts as warnings for legacy worktrees, while new worktrees created by the current workflow must write the receipt immediately. In strict mode (`--require-all-feature-worktrees`) it can be used to migrate or audit all residual worktrees.
+
 ## 6. Script Control
 
 Prompt reminders are not sufficient for this safety boundary.
@@ -112,6 +127,7 @@ The repository provides:
 - `tools/check_worktree_session_hygiene.py` - read-only checker that inspects registered Git worktrees, dirty states, duplicate dirty paths, branch cleanup readiness, rollback backup ref presence, and `main` alignment risk.
 - `tools/cleanup_integrated_worktree.py` - guarded local-only cleanup helper that removes a clean, already-integrated `.worktrees/` feature worktree and deletes its merged local feature branch with `git branch -d` only after preserving the completed claim and confirming a rollback backup ref.
 - `tools/check_session_ownership_claims.py` - read-only checker that inspects local `.omx/session-claims/*.json` claim files and fails on duplicate OpenSpec-change or overlapping path ownership.
+- `tools/check_worktree_task_receipt.py` - read-only checker for feature worktree task receipts, lifecycle labels, branch-matching claims, document-plan-only cleanup intent, and completed receipt fields.
 
 Expected usage:
 
@@ -189,6 +205,8 @@ Runner-budget and publication-package rules:
 - Keep local `main` from starting from a stale upstream baseline. Before new writable work, release-timing judgment, remote push, MR creation/update, or mainline-state claims, refresh `gitlab/main`; if local `main` is behind, fast-forward it before continuing unless the user explicitly accepts stale-base risk. If a feature branch was prepared on a stale base, rebase or merge it onto the refreshed base before local integration or publication unless the user explicitly accepts the stale-base risk.
 - Allow intentional remote lag after approved local integration. Local `main` may lead `gitlab/main` and `github/main`; sessions must report that state clearly until remote publication or mirror sync catches up.
 - Treat local integration approval and remote publication approval as separate release decisions. After local `main` integration, the session must stop at the remote-publication approval gate and must not push GitLab, create/update/merge GitLab MRs, sync GitHub, delete remote publication branches, or mutate remote refs unless the current user message or an approved release record explicitly authorizes that remote publication action. Generic continuation such as `continue`, `go on`, `proceed`, or a localized equivalent is not remote publication approval unless it names the remote action.
+- A current user message saying `push remote` Chinese wording, `publish remote`, `push remote`, `remote publication`, `use GitLab MR then sync GitHub` Chinese wording, or equivalent explicit remote-publication wording is a single approval for the normal green-path remote publication flow: push or update the GitLab publication branch, create or update the GitLab MR, wait for GitLab CI, merge the MR after CI is green, fetch and confirm GitLab `main`, sync the same intended commit to GitHub `main`, and run post-publication state checks. Do not ask for separate approvals inside that green path.
+- Prefer sandbox-approved commands and existing approved command prefixes during the approved remote publication flow. If the Codex sandbox still requires escalation for GitLab push/MR/CI/merge or GitHub sync commands that are inside the already approved flow, request one scoped escalation for the whole `push GitLab / open MR / merge MR / sync GitHub` flow instead of asking once per command. Stop for a new approval if the flow needs force push, protected-branch setting changes, remote ref deletion, history rewrite, scope expansion, or credential/security changes.
 - Keep the primary main worktree from falling behind local `main`. `D:\PythonProject_langgraph` is the primary directory; it must be on local `main`, its HEAD must not lag behind the local `main` branch reference, and in normal operation its HEAD should exactly match local `main`. `tools/check_worktree_session_hygiene.py` must fail if the primary directory is dirty, not on `main`, behind local `main`, or if local `main` is behind `gitlab/main` without explicit stale-base acceptance.
 - Before every local repository commit, run `tools/check_precommit_update_archive.py --root . --json` or rely on the installed `.githooks/pre-commit` hook that invokes `tools/run_openspec_guard.py`. This pre-commit review must inspect whether existing governance, CI manifest, checker registration, or OpenSpec lifecycle files require updates or archive movement. Required updates and completed OpenSpec archives must be resolved before `git commit`; a two-step exception must record both `x_archive_deferred_reason` and `x_archive_follow_up`.
 - Do local commits, local checker runs, local MR review, local rework, and local cleanup before local `main` integration or the first remote push.
@@ -216,11 +234,10 @@ Default local-main-first sequence:
 12. Verify the primary directory `D:\PythonProject_langgraph` is on local `main`, clean, and at the intended local `main` commit.
 13. Create or verify the local rollback backup ref for the pre-merge local `main` state, then use `tools/cleanup_integrated_worktree.py --execute` to preserve the completed claim, remove the clean integrated feature worktree, and delete the merged local feature branch with `git branch -d`.
 14. If local `main` now leads `gitlab/main` or `github/main`, report intentional remote lag. Recreate a publication branch from local `main` later only when explicit remote publication approval is given.
-15. Ask for explicit remote-publication approval when local `main` leads GitLab or GitHub; do not treat generic continuation as approval. Push to GitLab and open or update a GitLab MR only after that explicit approval or an approved release record authorizes the remote action.
-16. Wait for the GitLab pipeline to pass when using GitLab remote confirmation. The pipeline must invoke the same `tools/ci/local_gate.ps1` script.
-17. Reconcile any remote CI discrepancy by fixing the local/shared gate or environment drift, not by bypassing evidence.
-18. Sync the exact intended local `main` commit to GitHub after GitLab remote confirmation is green or when the user explicitly chooses direct mirroring.
-19. Keep remote publication branches, remote refs, and backup refs protected until a separate explicit cleanup approval is given.
+15. Ask for explicit remote-publication approval when local `main` leads GitLab or GitHub; do not treat generic continuation as approval. A current user message such as `push remote` Chinese wording, `publish remote`, `push remote`, `remote publication`, or `use GitLab MR then sync GitHub` Chinese wording authorizes the whole normal green path once: push or update the GitLab publication branch, create or update the GitLab MR, wait for GitLab CI, merge the MR after CI is green, fetch and confirm GitLab `main`, sync the exact intended local `main` commit to GitHub `main`, and run post-publication checks.
+16. Prefer sandbox-approved commands and existing approved command prefixes during that approved green path. If the Codex sandbox still requires escalation for GitLab push/MR/CI/merge or GitHub sync inside the flow, request one scoped escalation for the complete `push GitLab / open MR / merge MR / sync GitHub` flow instead of one escalation per command.
+17. Reconcile any remote CI discrepancy by fixing the local/shared gate or environment drift, not by bypassing evidence. Stop for a new approval before force push, protected-branch setting changes, remote ref deletion, history rewrite, scope expansion, or credential/security changes.
+18. Keep remote publication branches, remote refs, and backup refs protected until a separate explicit cleanup approval is given.
 
 GitHub PRs are not the default workflow for this repository.
 

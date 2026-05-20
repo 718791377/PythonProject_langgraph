@@ -250,6 +250,110 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Output retention gate: `passed`", summary)
         self.assertIn("Audit output long-term evidence format: `sanitized_markdown_summary`", summary)
 
+    def test_report_includes_precommit_update_archive_gate_status(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-precommit-update-archive")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        gate = report["precommit_update_archive"]
+        summary = audit.render_markdown_summary(report)
+
+        self.assertEqual(gate["status"], "passed")
+        self.assertTrue(gate["ok"])
+        self.assertEqual(gate["checker"], "tools/check_precommit_update_archive.py")
+        self.assertTrue(gate["before_local_git_commit"])
+        self.assertTrue(gate["review_existing_files_for_required_updates"])
+        self.assertTrue(gate["archive_completed_openspec_changes_before_commit"])
+        self.assertEqual(gate["error_count"], 0)
+        self.assertEqual(report["field_contract"]["status"], "passed")
+        self.assertIn("Pre-commit update/archive gate: `passed`", summary)
+        self.assertIn("Pre-commit existing-file update review: `True`", summary)
+
+    def test_human_output_exposes_local_commit_gates(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-human-output-gates")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        stream = io.StringIO()
+        original = audit.sys.stdout
+        try:
+            audit.sys.stdout = stream
+            audit.print_human(report)
+        finally:
+            audit.sys.stdout = original
+
+        output = stream.getvalue()
+
+        self.assertIn("Enabled plugins: 0 matched_known=0 unmatched=0", output)
+        self.assertIn("Current profile: inferred=custom_or_unmatched", output)
+        self.assertIn("Inventory summary: total=", output)
+        self.assertIn("Log evidence available: False", output)
+        self.assertIn("Budget warning samples: recent=0 last_7d=0", output)
+        self.assertIn(
+            "Warning severity: unknown reason=logs_unavailable "
+            "action=keep_log_evidence_available_false_and_do_not_treat_zero_as_no_warning",
+            output,
+        )
+        self.assertIn(
+            "Budget warning pressure: all_descriptions_removed=0 "
+            "last_7d_all_descriptions_removed=0 max_omitted_additional_skills=0",
+            output,
+        )
+        self.assertIn("Audit state: running", output)
+        self.assertIn("Warning triage: not_requested requested=False window_ok=True", output)
+        self.assertIn("Warning triage policy: use_days_1_or_since_for_warning_triage", output)
+        self.assertIn("Warning triage warnings: budget=0 skipped_loading=0 recent_skipped_samples=0", output)
+        self.assertIn("Warning triage skipped-loading review: none", output)
+        self.assertIn(
+            "Warning triage recommended action: run_with_warning_triage_after_a_live_session_budget_warning",
+            output,
+        )
+        self.assertIn("Warning triage blockers: none", output)
+        self.assertIn("Skill path reads: 0", output)
+        self.assertIn("Profile helper calls: 0", output)
+        self.assertIn("Script capability boundaries: reliable=", output)
+        self.assertIn("Decision recommendation: advisory_only_no_profile_apply profile_apply_allowed=False", output)
+        self.assertIn("Recommendations: 5", output)
+        self.assertIn("Do not treat another 2% budget warning as soft-load failure", output)
+        self.assertIn("Field contract: passed", output)
+        self.assertIn("Output retention gate: passed", output)
+        self.assertIn("Pre-commit update/archive gate: passed errors=0 warnings=0", output)
+
     def test_field_contract_requires_output_retention_gate_status(self) -> None:
         codex_home = self.make_codex_home("skills-audit-output-retention-contract")
         args = argparse.Namespace(
@@ -285,6 +389,48 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("output_retention:tmp_outputs_local_only_missing", contract["blockers"])
         self.assertIn("output_retention:raw_audit_json_local_only_missing", contract["blockers"])
         self.assertIn("output_retention:long_term_evidence_format_missing", contract["blockers"])
+
+    def test_field_contract_requires_precommit_update_archive_gate_status(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-precommit-update-archive-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        broken = dict(report)
+        broken["precommit_update_archive"] = {
+            "status": "passed",
+            "ok": True,
+            "checker": "tools/check_precommit_update_archive.py",
+        }
+
+        contract = audit.validate_report_field_contract(broken)
+
+        self.assertEqual(contract["status"], "failed")
+        self.assertIn("precommit_update_archive:before_local_git_commit_missing", contract["blockers"])
+        self.assertIn(
+            "precommit_update_archive:review_existing_files_for_required_updates_missing",
+            contract["blockers"],
+        )
+        self.assertIn(
+            "precommit_update_archive:archive_completed_openspec_changes_before_commit_missing",
+            contract["blockers"],
+        )
 
     def test_report_redacts_runtime_paths_and_exposes_path_privacy(self) -> None:
         codex_home = self.make_codex_home("skills-audit-runtime-paths")
@@ -724,7 +870,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         profiles = {
             "modules": {
                 "web-saas": {
-                    "plugins": ["Vercel"],
+                    "plugins": ["Vercel", "Browser", "Cloudflare"],
                 }
             }
         }
@@ -734,15 +880,51 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             {
                 "profile_helper_calls": {},
                 "skill_paths": {},
-                "tool_call_names": {"mcp__vercel__deploy": 4, "web_saas_preview": 2},
+                "tool_call_names": {
+                    "mcp__vercel__deploy": 4,
+                    "web_saas_preview": 2,
+                    "mcp__chrome_devtools__take_snapshot": 3,
+                    "mcp__cdp_bridge__browser_scan": 2,
+                    "mcp__cloudflare_api__execute": 1,
+                    "mcp__pencil__batch_design": 5,
+                },
+                "weak_plugin_mentions": {},
+            },
+        )[0]
+
+        self.assertEqual(row["mapped_tool_call_mentions"], 12)
+        self.assertEqual(row["mapped_tool_call_policy"], "medium_evidence_only_not_counted_as_strong_evidence")
+        self.assertEqual(row["medium_evidence_rationale"], "mapped_tool_calls_present_manual_review_required")
+        self.assertEqual(row["cross_project_utility"], "manual_review_required")
+        self.assertEqual(row["strong_total"], 0)
+        self.assertEqual(row["recommendation"], "no_recent_evidence_keep_dormant_not_deleted")
+
+    def test_stable_tool_call_aliases_map_to_module_medium_evidence(self) -> None:
+        profiles = {
+            "modules": {
+                "creative-content": {
+                    "plugins": ["Canva", "Figma"],
+                }
+            }
+        }
+
+        row = audit.build_module_evidence(
+            profiles,
+            {
+                "profile_helper_calls": {},
+                "skill_paths": {},
+                "tool_call_names": {
+                    "mcp__pencil__batch_design": 3,
+                    "mcp__pencil__export_nodes": 2,
+                    "canva_export": 1,
+                },
                 "weak_plugin_mentions": {},
             },
         )[0]
 
         self.assertEqual(row["mapped_tool_call_mentions"], 6)
-        self.assertEqual(row["mapped_tool_call_policy"], "medium_evidence_only_not_counted_as_strong_evidence")
+        self.assertEqual(row["mapped_tool_call_policy"], audit.MODULE_EVIDENCE_MAPPED_TOOL_POLICY)
         self.assertEqual(row["medium_evidence_rationale"], "mapped_tool_calls_present_manual_review_required")
-        self.assertEqual(row["cross_project_utility"], "manual_review_required")
         self.assertEqual(row["strong_total"], 0)
         self.assertEqual(row["recommendation"], "no_recent_evidence_keep_dormant_not_deleted")
 
@@ -1079,8 +1261,17 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         broken["field_contract"] = audit.validate_report_field_contract(broken)
 
         self.assertEqual(report["field_contract"]["status"], "passed")
+        registry = report["script_capability_boundaries"]["stable_tool_call_alias_registry"]
         self.assertIn("## Script coverage and human review boundaries", summary)
         self.assertIn("weak_plugin_mentions_are_text_trends_not_real_invocation_evidence", summary)
+        self.assertEqual(registry["evidence_level"], "medium")
+        self.assertFalse(registry["counts_as_strong_evidence"])
+        self.assertEqual(registry["plugin_aliases"]["Browser"], ["mcp__chrome_devtools__", "mcp__cdp_bridge__"])
+        self.assertEqual(registry["module_aliases"]["creative-content"], ["mcp__pencil__"])
+        self.assertIn("Stable tool-call alias evidence level: `medium`", summary)
+        self.assertIn("Stable tool-call aliases count as strong evidence: `False`", summary)
+        self.assertIn("Plugin `Browser` aliases: `mcp__chrome_devtools__, mcp__cdp_bridge__`", summary)
+        self.assertIn("Module `creative-content` aliases: `mcp__pencil__`", summary)
         self.assertIn(
             "script_capability_boundaries:human_review_required_for_empty",
             broken["field_contract"]["blockers"],
@@ -1088,6 +1279,55 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn(
             "field_contract:script_capability_boundaries:human_review_required_for_empty",
             audit.build_candidate_generation_gate(broken, summary_reviewed=True)["blockers"],
+        )
+
+    def test_field_contract_requires_stable_tool_call_alias_registry_medium_only(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-alias-registry-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        missing = json.loads(json.dumps(report))
+        del missing["script_capability_boundaries"]["stable_tool_call_alias_registry"]
+        unsafe = json.loads(json.dumps(report))
+        unsafe_registry = unsafe["script_capability_boundaries"]["stable_tool_call_alias_registry"]
+        unsafe_registry["evidence_level"] = "strong"
+        unsafe_registry["counts_as_strong_evidence"] = True
+        unsafe_registry["plugin_aliases"]["Browser"] = []
+
+        missing_contract = audit.validate_report_field_contract(missing)
+        unsafe_contract = audit.validate_report_field_contract(unsafe)
+
+        self.assertFalse(missing_contract["passed"])
+        self.assertIn(
+            "script_capability_boundaries:stable_tool_call_alias_registry_missing",
+            missing_contract["blockers"],
+        )
+        self.assertFalse(unsafe_contract["passed"])
+        self.assertIn(
+            "script_capability_boundaries:stable_tool_call_alias_registry:evidence_level_not_medium",
+            unsafe_contract["blockers"],
+        )
+        self.assertIn(
+            "script_capability_boundaries:stable_tool_call_alias_registry:counts_as_strong_evidence_not_false",
+            unsafe_contract["blockers"],
+        )
+        self.assertIn(
+            "script_capability_boundaries:stable_tool_call_alias_registry:plugin_aliases:Browser_aliases_invalid",
+            unsafe_contract["blockers"],
         )
 
     def test_cadence_review_contract_and_summary_are_explicit(self) -> None:
@@ -1362,6 +1602,18 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "raw_audit_json_local_only": True,
                 "long_term_evidence_format": "sanitized_markdown_summary",
                 "violation_count": 0,
+            },
+            "precommit_update_archive": {
+                "status": "passed",
+                "ok": True,
+                "checker": "tools/check_precommit_update_archive.py",
+                "before_local_git_commit": True,
+                "review_existing_files_for_required_updates": True,
+                "archive_completed_openspec_changes_before_commit": True,
+                "error_count": 0,
+                "warning_count": 0,
+                "changed_path_count": 0,
+                "active_change_review_count": 0,
             },
             "runtime_paths": {
                 "root": "[REPO_ROOT]",
@@ -2562,6 +2814,9 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Source paths retained:", summary)
         self.assertIn("Max source path length:", summary)
         self.assertIn("Source path privacy policy:", summary)
+        self.assertIn("Pre-commit update/archive gate:", summary)
+        self.assertIn("Pre-commit existing-file update review:", summary)
+        self.assertIn("Pre-commit OpenSpec archive gate:", summary)
         self.assertIn("## Decision recommendation", summary)
         self.assertIn("Decision status: `advisory_only_no_profile_apply`", summary)
         self.assertIn("Profile review candidates:", summary)

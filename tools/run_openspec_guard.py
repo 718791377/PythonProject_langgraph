@@ -119,6 +119,7 @@ def main() -> int:
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
+    worktree_task_receipt_script = root / "tools" / "check_worktree_task_receipt.py"
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
     orchestration_activation_policy_script = root / "tools" / "check_orchestration_activation_policy.py"
     custom_agent_toml_schema_script = root / "tools" / "check_custom_agent_toml_schema.py"
@@ -174,6 +175,8 @@ def main() -> int:
         raise SystemExit(f"Missing Codex native rollback release gate template check script: {codex_native_rollback_release_gate_template_script}")
     if not worktree_hygiene_script.exists():
         raise SystemExit(f"Missing worktree session hygiene check script: {worktree_hygiene_script}")
+    if not worktree_task_receipt_script.exists():
+        raise SystemExit(f"Missing worktree task receipt check script: {worktree_task_receipt_script}")
     if not session_ownership_claims_script.exists():
         raise SystemExit(f"Missing session ownership claims check script: {session_ownership_claims_script}")
     if not orchestration_activation_policy_script.exists():
@@ -354,6 +357,11 @@ def main() -> int:
                 "check_worktree_session_hygiene",
                 [str(python_exe), str(worktree_hygiene_script), "--root", str(root), "--allow-current-dirty", "--json"],
                 "OpenSpec guard failed during multi-session worktree hygiene verification.",
+            ),
+            (
+                "check_worktree_task_receipt",
+                [str(python_exe), str(worktree_task_receipt_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during worktree task receipt verification.",
             ),
             (
                 "check_session_ownership_claims",
@@ -604,6 +612,12 @@ def main() -> int:
         [str(python_exe), str(worktree_hygiene_script), "--root", str(root), "--allow-current-dirty"],
         cwd=root,
         failure_message="OpenSpec guard failed during multi-session worktree hygiene verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(worktree_task_receipt_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during worktree task receipt verification.",
     )
 
     run_checked(

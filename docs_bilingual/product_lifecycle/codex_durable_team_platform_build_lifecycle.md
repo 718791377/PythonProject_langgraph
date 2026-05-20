@@ -14,7 +14,8 @@ The platform-build lifecycle covers reusable user-level and repository-level orc
 - `native_omx` is the worker-centric durable backend lane; it is used only after a plan is frozen and two or more mostly independent execution slices exist.
 - `langgraph` is the graph checkpoint and approval-gate backend lane; it is used when graph phases, checkpoint recovery, interrupt gates, or survivor queues are required.
 - `OpenSpec` is the repository governance workflow; it records durable proposals, designs, tasks, stable specs, and archives.
-- `D:\PythonProject_General_2` is the local project template directory; it initializes later projects without turning them into platform implementation locations.
+- `D:\PythonProject_General` is the local project template directory; it initializes later projects without turning them into platform implementation locations.
+- `D:\PythonProject_General_2` is the project template directory for other new computers where OMX, LangGraph features, and the Codex environment have not yet been developed or configured; it initializes later projects without turning them into platform implementation locations, while preserving interface compatibility for future upgrades to OMX, LangGraph, and the Codex CLI personal production-grade durable team platform.
 
 ## Lifecycle Tailoring Overlay
 

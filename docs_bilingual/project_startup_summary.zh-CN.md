@@ -176,6 +176,8 @@ translation_of: docs_bilingual/project_startup_summary.md
 - 新建可写任务、判断发布时机、远端 push、创建 MR 或声明本地已对齐之前，必须保持本地 `main` 不落后于 `gitlab/main`。local-first batching 不是允许基于陈旧远端基线继续工作的理由。
 - 经批准本地集成后，本地 `main` 可以有意领先 `gitlab/main` 和 `github/main`；必须在状态报告中明确说明这种远端滞后，直到 GitLab/GitHub 发布或镜像同步追上。
 - 本地集成批准不等于远端发布批准。本地 `main` 集成后必须停在 remote-publication approval gate：除非当前用户消息明确批准该远端动作，否则不得推送 GitLab、创建/更新/合并 GitLab MR、同步 GitHub、删除远端发布分支或修改任何远端 ref。泛化的 `continue` / `继续` 不足以授权远端发布，除非它明确点名对应远端发布动作。
+- 当前用户消息如果明确说 `推送远端`、`publish remote`、`push remote`、`remote publication`、`走 GitLab MR 后同步 GitHub` 或等价远端发布措辞，就视为一次性批准正常绿色路径的完整远端发布流程：推送或更新 GitLab publication branch、创建或更新 GitLab MR、等待 GitLab CI、CI 绿色后合并 MR、fetch 并确认 GitLab `main`、把同一个预期 commit 同步到 GitHub `main`，以及运行发布后状态检查。正常绿色路径中不得拆成多次授权。
+- 已批准远端发布流程中，应优先使用 sandbox 已允许的命令和已批准 command prefixes，尽量不请求权限提升。如果 Codex sandbox 仍要求对 GitLab push / MR / CI / merge 或 GitHub sync 这类已批准流程内命令进行提升，则只请求一次覆盖整个 `推送 GitLab / 开 MR / 合并 MR / 同步 GitHub` 流程的 scoped escalation，不得每条命令重复询问。若需要 force push、修改 protected branch 设置、删除远端 ref、改写历史、扩大 scope 或修改凭据/安全配置，必须停止并重新请求授权。
 - feature branch 只有在 local CI 和 local MR review 都通过后，才推送到 GitLab 并创建或更新 GitLab MR；除非用户明确要求提前跑远端 pipeline。
 - 如果本地 gate 和远端 CI 的结果不一致，必须修复共享脚本、环境安装或配置漂移，不得绕过任一证据层。
 - 主题相同且 rollback boundary（回退边界）相同的小变更可以合并到一个本地集成包；不要为了节省 runner minutes 把无关主题硬塞进同一个包。

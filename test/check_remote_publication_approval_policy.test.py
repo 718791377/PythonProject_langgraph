@@ -71,6 +71,48 @@ class RemotePublicationApprovalPolicyCheckerTests(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("Generic continuation" in e or "泛化" in e for e in payload["errors"]), payload["errors"])
 
+
+    def test_missing_single_approval_green_path_fails(self) -> None:
+        blocked = {
+            "single approval for the normal green-path remote publication flow",
+            "????????????????????",
+            "normal green-path remote publication sequence as one approval",
+            "GitLab publication branch push/update",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("\n".join(s for s in snippets if s not in blocked), encoding="utf-8")
+            write_valid_registry(root)
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("green-path" in e or "?????" in e for e in payload["errors"]), payload["errors"]
+        )
+
+    def test_missing_scoped_sandbox_escalation_fails(self) -> None:
+        blocked = {
+            "request one scoped escalation",
+            "rather than asking once per command",
+            "instead of asking once per command",
+            "?????????",
+            "??????????",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for rel, snippets in module.REQUIRED_SNIPPETS.items():
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("\n".join(s for s in snippets if s not in blocked), encoding="utf-8")
+            write_valid_registry(root)
+            payload = module.run_check(root)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("scoped escalation" in e or "?????" in e for e in payload["errors"]), payload["errors"]
+        )
+
     def test_missing_registry_rule_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
