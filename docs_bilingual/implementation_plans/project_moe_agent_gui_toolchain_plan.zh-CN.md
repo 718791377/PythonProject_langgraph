@@ -563,6 +563,17 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | 新项目接入 | 默认校验已有 Agent TOML；模板生成必须显式 dry run；不得复制其他项目 `MOE.md` 或生成伪私有提示。 |
 | 覆盖冲突 | 项目级传播不覆盖手动 session override；冲突时以 session 为准并显式显示 effective source。 |
 
+测试执行与 CI 注册规则：
+
+- 本仓库工具链测试必须使用临时目录或 fixture 项目模拟目标项目结构，不得在普通单元测试中直接写 `D:\PythonProject_paper_suggest`；
+- 目标项目真实冒烟测试必须是显式手动或集成测试步骤，且先运行目标项目 dirty/ownership preflight；
+- CLI JSON 契约必须有 contract fixture，覆盖成功、失败、no-op、lock timeout、invalid state、stale/orphan 和 manual override conflict；
+- 安装/update/check 测试必须验证 dry run 不写文件、apply 写 manifest、hash mismatch fail closed、路径穿越 fail closed；
+- PySide6 GUI 测试优先使用 headless Qt / QTest / pytest-qt 等可自动化方式；如果当前环境没有 GUI runtime，则保留 CLI/installer 测试通过，并把 GUI 视觉验证列为手动证据；
+- 截图或视觉快照只能作为辅助证据，不得替代 CLI JSON contract 和状态文件断言；
+- 新增测试、checker 或工具入口必须注册到本仓库 `tools/ci/ci_test_manifest.json` 或共享 local gate 调用链，避免只在本地手跑；
+- 目标项目侧测试应在目标项目自身提交中注册到该项目测试入口；本仓库不得假设其他项目 CI 自动覆盖这些脚本。
+
 ## 12. 校验与验收
 
 本文档级验收：
@@ -580,7 +591,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案定义 session 生命周期、last seen、stale/orphan 标记和 pruning 非目标边界；
 - 方案定义 CLI JSON envelope、状态字段、计数字段、写入结果字段和失败脱敏字段；
 - 方案定义新项目接入、scaffold dry run、Agent TOML/namespace 校验和私有提示源边界；
-- 方案定义项目级传播、手动 session override、冲突展示和清除覆盖非目标边界。
+- 方案定义项目级传播、手动 session override、冲突展示和清除覆盖非目标边界；
+- 方案定义测试 fixture、contract 测试、GUI 自动化/手动证据边界和 CI 注册规则。
 
 第一阶段验收：
 

@@ -563,6 +563,17 @@ Minimum test matrix:
 | New project onboarding | existing Agent TOML is validated by default; template generation is explicit dry run; other projects' `MOE.md` content and invented private prompts are not copied. |
 | Override conflict | project-level propagation does not overwrite manual session overrides; conflicts prefer session source and show effective source explicitly. |
 
+Test execution and CI registration rules:
+
+- central toolchain tests in this repository must use temporary directories or fixture projects that simulate the target project layout; ordinary unit tests must not write directly to `D:\PythonProject_paper_suggest`;
+- real target-project smoke tests are explicit manual or integration-test steps and must first run the target project's dirty/ownership preflight;
+- CLI JSON contracts require contract fixtures covering success, failure, no-op, lock timeout, invalid state, stale/orphan, and manual override conflict;
+- install/update/check tests must verify dry run writes no files, apply writes the manifest, hash mismatch fails closed, and path traversal fails closed;
+- PySide6 GUI tests should use headless Qt / QTest / pytest-qt or equivalent automation where possible; if no GUI runtime is available, CLI/installer tests remain required and GUI visual verification is recorded as manual evidence;
+- screenshots or visual snapshots are supporting evidence only and must not replace CLI JSON contract checks and state-file assertions;
+- new tests, checkers, or tool entrypoints must be registered in this repository's `tools/ci/ci_test_manifest.json` or the shared local-gate call chain so they are not local-only;
+- target-project tests must be registered in the target project's own test entrypoint in that project's commit; this repository must not assume other projects' CI automatically covers these scripts.
+
 ## 12. Validation and acceptance
 
 Document-level acceptance for this plan:
@@ -580,7 +591,8 @@ Document-level acceptance for this plan:
 - the plan defines session lifecycle, last seen, stale/orphan marking, and pruning non-goals;
 - the plan defines the CLI JSON envelope, status fields, count fields, write-result fields, and redacted failure fields;
 - the plan defines new project onboarding, scaffold dry run, Agent TOML/namespace validation, and private prompt-source boundaries;
-- the plan defines project-level propagation, manual session overrides, conflict display, and clear-override non-goals.
+- the plan defines project-level propagation, manual session overrides, conflict display, and clear-override non-goals;
+- the plan defines test fixtures, contract tests, GUI automation/manual evidence boundaries, and CI registration rules.
 
 Phase 1 acceptance:
 
