@@ -165,12 +165,20 @@ Effective status rule:
 2. otherwise use the valid project default;
 3. otherwise fail closed as disabled.
 
+Session identity rule:
+
+- `--session-id` is the strongest identity source and is required for exact control of a known session from scripts or GUI.
+- Runtime environment variables such as `THESIS_MOE_SESSION_ID`, `CODEX_SESSION_ID`, `OPENAI_CODEX_SESSION_ID`, `OH_MY_CODEX_SESSION_ID`, `OMX_SESSION_ID`, and `CODEX_SESSION` are accepted when present.
+- If no stable session id exists, the CLI may generate a project-local compatibility id from worktree, branch, and user. This generated id is sufficient for a single local workflow but is not a hard isolation boundary for multiple simultaneous sessions in the same worktree and branch.
+- The GUI must display the `session_id_source` so the user can distinguish real session ids from generated compatibility ids.
+
 Recommended CLI surface:
 
 ```powershell
 python .\tools\thesis_moe_mode.py project-on
 python .\tools\thesis_moe_mode.py project-off
 python .\tools\thesis_moe_mode.py project-status --json
+python .\tools\thesis_moe_mode.py list-sessions --json
 python .\tools\thesis_moe_mode.py on --session-id <id>
 python .\tools\thesis_moe_mode.py off --session-id <id>
 python .\tools\thesis_moe_mode.py status --json
@@ -184,12 +192,15 @@ Command semantics:
 | `project-on` | project default and registered valid session files | Enables default and known sessions. |
 | `project-off` | project default and registered valid session files | Disables default and known sessions. |
 | `project-status --json` | none | Reports project default, registered session counts, invalid records, and state paths. |
+| `list-sessions --json` | none | Lists registered session records for GUI and diagnostics. |
 | `on --session-id <id>` | one session file | Enables that session override. |
 | `off --session-id <id>` | one session file | Disables that session override. |
 | `status --json` | none | Reports effective state for current or explicit session. |
 | `assert-on` | none | Exits zero only when effective state is enabled. |
 
 Invalid registered session files must not block project-level on/off. They should be reported as skipped invalid records and left untouched.
+
+`list-sessions --json` should return only redacted identifiers and metadata needed for control: session id, source, enabled flag, validity, status reason, branch, worktree, timestamps, reason, and state path. It must not expose raw session id values beyond the normalized stored session id, and it must not include private prompt content.
 
 Backward compatibility:
 
@@ -257,6 +268,7 @@ First GUI layout:
 - log panel: exact CLI command invoked, exit code, and short stdout/stderr summary.
 
 The GUI must never edit JSON files directly in the first version. All state changes go through the project-local CLI so CLI and GUI behavior cannot drift.
+The GUI session table should be populated through `list-sessions --json`; if that command is unavailable, the GUI must fail with an actionable message instead of scanning `.omx/state` directly in v1.
 
 Installed GUI config:
 

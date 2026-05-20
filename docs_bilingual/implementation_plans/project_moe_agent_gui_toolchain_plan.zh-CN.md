@@ -165,12 +165,20 @@ expert timeout、stalled expert 或 full-history fork 失败都不是有效证�
 2. 否则使用有效项目默认值；
 3. 否则 fail closed，视为关闭。
 
+session 身份规则：
+
+- `--session-id` 是最强身份来源，脚本或 GUI 精确控制某个已知 session 时必须优先使用它；
+- 存在 `THESIS_MOE_SESSION_ID`、`CODEX_SESSION_ID`、`OPENAI_CODEX_SESSION_ID`、`OH_MY_CODEX_SESSION_ID`、`OMX_SESSION_ID`、`CODEX_SESSION` 等运行时环境变量时，可以用它们作为 session id；
+- 如果没有稳定 session id，CLI 可以根据 worktree、branch 和用户生成项目本地兼容 id。该 generated id 足够支撑单个本地工作流，但不是同一 worktree、同一 branch 下多个并发会话的强隔离边界；
+- GUI 必须显示 `session_id_source`，让用户区分真实 session id 与 generated 兼容 id。
+
 推荐 CLI 表面：
 
 ```powershell
 python .\tools\thesis_moe_mode.py project-on
 python .\tools\thesis_moe_mode.py project-off
 python .\tools\thesis_moe_mode.py project-status --json
+python .\tools\thesis_moe_mode.py list-sessions --json
 python .\tools\thesis_moe_mode.py on --session-id <id>
 python .\tools\thesis_moe_mode.py off --session-id <id>
 python .\tools\thesis_moe_mode.py status --json
@@ -184,12 +192,15 @@ python .\tools\thesis_moe_mode.py assert-on
 | `project-on` | 项目默认值和已登记有效 session 文件 | 开启默认值和已知 session。 |
 | `project-off` | 项目默认值和已登记有效 session 文件 | 关闭默认值和已知 session。 |
 | `project-status --json` | 不写入 | 报告项目默认值、已登记 session 数、无效记录和状态路径。 |
+| `list-sessions --json` | 不写入 | 为 GUI 和诊断列出已登记 session 记录。 |
 | `on --session-id <id>` | 单个 session 文件 | 开启该 session 覆盖。 |
 | `off --session-id <id>` | 单个 session 文件 | 关闭该 session 覆盖。 |
 | `status --json` | 不写入 | 报告当前或显式 session 的有效状态。 |
 | `assert-on` | 不写入 | 只有有效状态为开启时返回 0。 |
 
 无效的已登记 session 文件不得阻塞项目级 on/off。脚本应报告这些文件为 skipped invalid records，并保持原文件不变。
+
+`list-sessions --json` 只返回控制所需的脱敏标识和元数据：session id、来源、enabled、validity、status reason、branch、worktree、时间戳、reason 和 state path。它不得暴露 raw session id，不得包含私有提示词内容。
 
 兼容要求：
 
@@ -257,6 +268,7 @@ tools/project_moe_gui_toolchain/
 - 日志面板：实际调用的 CLI 命令、退出码和简短 stdout/stderr 摘要。
 
 第一版 GUI 不得直接编辑 JSON 文件。所有状态变更都通过项目本地 CLI 完成，避免 CLI 和 GUI 行为漂移。
+GUI session 表格应通过 `list-sessions --json` 填充；如果该命令不可用，GUI 必须给出可执行错误提示，而不是在 v1 里直接扫描 `.omx/state`。
 
 安装后的 GUI 配置：
 
