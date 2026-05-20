@@ -235,6 +235,15 @@ Failure-mode and exit-code contract:
 
 CLI and GUI outputs should include both a human-readable message and a stable machine-readable token. GUI code should branch on tokens, not localized prose.
 
+CLI JSON output contract:
+
+- every `--json` command returns a shared envelope: `schema_version`, `command`, `ok`, `token`, `exit_code`, `message`, `project_root`, `agent_name`, `state_namespace`, `generated_at`, `warnings`, and `errors`;
+- `status --json` additionally returns `effective_enabled`, `effective_source` (`session`, `project-default`, `fail-closed`), `session_id`, `session_id_source`, `session_confidence`, `lifecycle_status`, `project_default_enabled`, `session_override_enabled`, and `state_path`;
+- `project-status --json` additionally returns `project_default`, `registered_session_count`, `valid_session_count`, `invalid_session_count`, `stale_session_count`, `orphan_candidate_count`, `state_paths`, and `cli_contract`;
+- `list-sessions --json` returns a `sessions` array, `counts`, `redaction_policy`, and `source_paths`; each session row may include only redacted session id, source, confidence, enabled flag, effective enabled flag, validity, lifecycle status, status reason, branch, worktree, first seen, last seen, updated at, reason summary, and state path;
+- JSON output for write commands must include `before`, `after`, `changed_scope`, `changed_paths`, `skipped_invalid_records`, `lock_status`, `audit_path`, and `no_op`;
+- failure JSON must include stable `token`, `remediation_hint`, and optional redacted `details`; it must not embed private prompt text, raw session ids, paper text, raw environment variable values, or full stderr output.
+
 Backward compatibility:
 
 - existing `status --json` remains machine-readable;
@@ -530,6 +539,7 @@ Minimum test matrix:
 | Path and command safety | path traversal, outside-project link targets, and shell-concatenated command invocation are rejected; GUI-to-CLI calls use argv/list. |
 | GUI usability | status badges include text semantics, error banners show stable tokens, refresh is read-only, button scope is explicit, and keyboard operation works. |
 | Session lifecycle | `last_seen_at` updates only activity observation and not enabled state; stale/orphan are marked only; generated ids show lower confidence. |
+| JSON output contract | `status`, `project-status`, `list-sessions`, and write commands return a shared envelope, stable tokens, redacted fields, and GUI-needed counts. |
 
 ## 12. Validation and acceptance
 
@@ -545,7 +555,8 @@ Document-level acceptance for this plan:
 - the plan defines the installed artifact manifest, managed/protected file ownership, and uninstall/cleanup non-goals;
 - the plan defines path normalization, symlink/junction, path traversal, and command-invocation safety boundaries;
 - the plan defines GUI status badges, error banners, refresh semantics, button scope, empty states, and keyboard accessibility;
-- the plan defines session lifecycle, last seen, stale/orphan marking, and pruning non-goals.
+- the plan defines session lifecycle, last seen, stale/orphan marking, and pruning non-goals;
+- the plan defines the CLI JSON envelope, status fields, count fields, write-result fields, and redacted failure fields.
 
 Phase 1 acceptance:
 

@@ -235,6 +235,15 @@ python .\tools\thesis_moe_mode.py assert-on
 
 CLI 和 GUI 输出应同时包含面向人的说明和稳定机器可读 token。GUI 代码应基于 token 分支，不依赖本地化自然语言。
 
+CLI JSON 输出契约：
+
+- 所有 `--json` 命令返回统一 envelope：`schema_version`、`command`、`ok`、`token`、`exit_code`、`message`、`project_root`、`agent_name`、`state_namespace`、`generated_at`、`warnings`、`errors`；
+- `status --json` 额外返回：`effective_enabled`、`effective_source`（`session`、`project-default`、`fail-closed`）、`session_id`、`session_id_source`、`session_confidence`、`lifecycle_status`、`project_default_enabled`、`session_override_enabled`、`state_path`；
+- `project-status --json` 额外返回：`project_default`、`registered_session_count`、`valid_session_count`、`invalid_session_count`、`stale_session_count`、`orphan_candidate_count`、`state_paths`、`cli_contract`；
+- `list-sessions --json` 返回：`sessions` 数组、`counts`、`redaction_policy` 和 `source_paths`；每行 session 只允许包含脱敏 session id、source、confidence、enabled、effective_enabled、validity、lifecycle_status、status reason、branch、worktree、first seen、last seen、updated at、reason 摘要和 state path；
+- 写入命令的 JSON 输出必须包含 `before`、`after`、`changed_scope`、`changed_paths`、`skipped_invalid_records`、`lock_status`、`audit_path` 和 `no_op`；
+- 失败 JSON 必须包含稳定 `token`、`remediation_hint` 和可选的脱敏 `details`；不得把私有提示词、raw session id、论文正文、原始环境变量值或完整 stderr 直接塞进 JSON。
+
 兼容要求：
 
 - 现有 `status --json` 保持机器可读；
@@ -530,6 +539,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | 路径与命令安全 | 路径穿越、项目外 link 目标和 shell 拼接式命令调用被拒绝；GUI 调 CLI 使用 argv/list。 |
 | GUI 可用性 | 状态徽标有文字语义，错误横幅显示 stable token，刷新只读，按钮 scope 明确，键盘可操作。 |
 | session 生命周期 | `last_seen_at` 只更新活动观测，不改变 enabled；stale/orphan 只标记不清理；generated id 显示低置信度。 |
+| JSON 输出契约 | `status`、`project-status`、`list-sessions` 和写入命令都返回统一 envelope、稳定 token、脱敏字段和 GUI 所需计数。 |
 
 ## 12. 校验与验收
 
@@ -545,7 +555,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案定义安装产物清单、managed/protected 文件所有权和卸载/清理非目标边界；
 - 方案定义路径规范化、符号链接/junction、路径穿越和命令调用安全边界；
 - 方案定义 GUI 状态徽标、错误横幅、刷新语义、按钮 scope、空状态和键盘可访问性；
-- 方案定义 session 生命周期、last seen、stale/orphan 标记和 pruning 非目标边界。
+- 方案定义 session 生命周期、last seen、stale/orphan 标记和 pruning 非目标边界；
+- 方案定义 CLI JSON envelope、状态字段、计数字段、写入结果字段和失败脱敏字段。
 
 第一阶段验收：
 
