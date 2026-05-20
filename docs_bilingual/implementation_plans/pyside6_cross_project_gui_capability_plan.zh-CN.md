@@ -129,6 +129,14 @@ PySide6
 5. 运行 import smoke test；
 6. 不修改其他项目环境。
 
+额外 preflight 要求：
+
+- 安装前必须确认项目的 Python 版本、解释器架构和包管理器；
+- 如果项目还没有虚拟环境，preview 必须先给出明确的环境创建命令和目标路径；
+- apply 只能在显式目标项目根目录下创建新环境，除非用户提供并批准外部 `-PythonPath`；
+- 不能因为某个全局解释器刚好能 import PySide6，就把项目状态判断为 `env_ready`；
+- 可见 GUI 启动属于交互式桌面动作，必须由请求驱动；默认验证仍以 import-only 为主。
+
 最小 smoke 命令：
 
 ```powershell
@@ -153,15 +161,18 @@ Headless 或 CI 环境可以只跑 import-only 测试，不显示窗口；除非
 
 Preview 输出必须包含：
 
-- 检测到的项目根目录；
-- 检测到的 Python 环境；
+- 检测到的项目根目录，以及用于判定根目录的证据；
+- 检测到的 Python 环境、Python 版本和包管理器；
 - 选中的依赖声明方式；
 - 将创建或修改的文件；
 - 将执行的安装命令；
 - smoke test 命令；
+- 预计新增的本地-only 产物，例如 `.venv`、build 输出或缓存；
 - 风险和回滚说明。
 
-Apply 模式必须保持项目本地化；如果无法可靠识别目标项目根目录，必须 fail closed。
+Preview 还应输出机器可读摘要，例如 JSON 字段 `project_root`、`project_root_evidence`、`python_path`、`python_version`、`package_manager`、`dependency_style`、`planned_file_changes`、`planned_commands`、`local_only_artifacts`、`blockers` 和 `rollback_steps`。人类可读输出可以包裹这份摘要，但后续 checker 应消费结构化表面。
+
+Apply 模式必须保持项目本地化；如果无法可靠识别目标项目根目录、依赖管理方式或可写范围，必须 fail closed。
 
 ## 9. 最小 GUI 模板契约
 
@@ -173,7 +184,10 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 默认不访问网络；
 - 不修改全局配置；
 - 默认不创建后台 daemon；
-- GUI shell 与项目业务逻辑明确分离。
+- GUI shell 与项目业务逻辑明确分离；
+- 长耗时任务默认不阻塞 UI event loop；
+- 项目业务逻辑错误能以用户可理解的方式显示，并保留可诊断日志；
+- logging、settings 和数据目录行为必须显式且可测试。
 
 推荐源码边界：
 
@@ -184,21 +198,27 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 | 项目 service modules | 提供 GUI 可调用的业务逻辑 |
 | `tools/gui/run_gui.ps1` | 定位项目 venv 并运行 app |
 | `tests/test_gui_import.py` | 不显示 GUI，仅验证可导入 |
+| worker / service adapter | 承接长耗时任务，避免阻塞 Qt event loop |
+| config / data directory adapter | 明确本地配置、缓存和数据目录，不写入仓库外未知位置 |
+| logging / diagnostics adapter | 写入可诊断日志，同时避免在普通 UI 输出中泄露凭据或用户私有路径 |
 
 ## 10. Codex 执行流程
 
 当用户在任意项目要求 PySide6 GUI 时，Codex 应该：
 
-1. 确认目标项目根目录；
+1. 确认目标项目根目录，并说明判定依据，例如 `.git`、`pyproject.toml`、README 或既有脚本；
 2. 检查现有依赖风格（`requirements*.txt`、`pyproject.toml`、`poetry.lock`、`uv.lock` 等）；
 3. 选择该项目原生依赖声明方式；
-4. 新增或更新 GUI 依赖声明；
-5. 只有当前需要本地执行时，才把 PySide6 安装到项目环境；
-6. 创建或更新 GUI 源码；
-7. 增加 import smoke test；
-8. 运行 smoke test；
-9. 如用户要求打包，再增加打包脚本并运行打包 preflight；
-10. GUI 变更保留在目标项目仓库内，除非任务明确是更新共享政策或模板，否则不要写回本编排仓库。
+4. 检查是否已有 GUI 技术栈，避免把 PySide6 与既有 GUI 框架并行引入；
+5. 修改文件前创建本地回滚边界，例如 feature branch 或提交计划；
+6. 新增或更新 GUI 依赖声明；
+7. 只有当前需要本地执行时，才把 PySide6 安装到项目环境；
+8. 创建或更新 GUI 源码，并保持 GUI shell、业务服务、配置数据路径和 worker 边界分离；
+9. 增加 import smoke test；
+10. 运行 smoke test；
+11. 只有用户明确要求交互式验证，或任务本身已经需要可见窗口时，才启动可见 GUI；
+12. 如用户要求打包，再增加打包脚本并运行打包 preflight；
+13. GUI 变更保留在目标项目仓库内，除非任务明确是更新共享政策或模板，否则不要写回本编排仓库。
 
 ## 11. 测试策略
 
@@ -208,7 +228,10 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 项目环境内 `from PySide6.QtWidgets import QApplication` import smoke 通过；
 - GUI package 可导入且不显示窗口；
 - `tools/gui/run_gui.ps1` 或等价 run helper 能解析项目根目录和 Python 路径；
-- 如果 GUI 调用业务逻辑，业务逻辑必须脱离 GUI event loop 单独可测试。
+- 如果 GUI 调用业务逻辑，业务逻辑必须脱离 GUI event loop 单独可测试；
+- 长耗时动作必须有 worker、thread、process 或 async 边界，并有取消或失败反馈策略；
+- 本地配置、缓存和数据目录必须有文档或 helper 输出证据；
+- 排障诊断可以被启用，但不得暴露凭据、访问 token、浏览器 profile 或无关的用户私有路径。
 
 可选测试：
 
@@ -237,7 +260,9 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 启动日志；
 - 数据目录和配置文件位置；
 - 本地可执行文件的杀软误报风险；
-- 可复现 build 命令和输出目录。
+- 可复现 build 命令和输出目录；
+- 打包产物排除凭据、浏览器 profile、用户私有数据目录和无关仓库文件；
+- release、签名和分发步骤必须作为区别于本地打包的单独授权处理。
 
 ## 13. 安全、回滚与授权
 
@@ -258,7 +283,9 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 推送远端分支或发布 release；
 - 修改 protected branch 设置；
 - 删除约定 GUI 范围之外的项目文件；
-- 改写无关项目的 dependency lock。
+- 改写无关项目的 dependency lock；
+- 让 GUI helper 访问网络、凭据、浏览器 profile 或用户私有目录，除非任务明确需要且已说明风险；
+- 在用户没有要求交互式验证时，从自动化会话启动可见 GUI 窗口。
 
 回滚路径：
 
@@ -279,7 +306,8 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 不让多个项目 GUI 共用同一个可变 venv；
 - 不为了给 GUI 腾空间而禁用 browser 或 web automation skills；
 - 如果项目同时需要 GUI 和 browser automation，保持两个能力面分离；
-- 项目特定 GUI 决策写入该项目自己的文档或依赖文件。
+- 项目特定 GUI 决策写入该项目自己的文档或依赖文件；
+- GUI helper 只能在显式目标项目根目录内写入模板、脚本和测试，用户级模板更新必须作为单独任务处理。
 
 ## 15. 能力状态模型
 
@@ -305,7 +333,7 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 | --- | --- | --- | --- |
 | 0. 盘点 | 查明目标项目现有 GUI 形态和依赖管理方式 | 只读盘点记录 | 不修改项目文件 |
 | 1. 政策与模板 | 发布共享政策和最小模板 | 双语方案、模板文件、smoke test 示例 | docs 和模板 checker 通过 |
-| 2. Preview helper | 增加 `ensure-pyside6-gui.ps1` preview 模式 | 带 `preview` 输出的 helper，不做 apply 修改 | preview 快照已复核 |
+| 2. Preview helper | 增加 `ensure-pyside6-gui.ps1` preview 模式 | 带人类可读和 JSON `preview` 输出的 helper，不做 apply 修改 | preview 快照已复核，结构化 schema 已被 checker 消费 |
 | 3. Apply helper | 允许受控的项目本地修改 | helper `apply` 模式，生成回滚说明 | 在一次性 fixture 中完成 dry-run 与 apply 测试 |
 | 4. 项目 opt-in | 为一个消费项目启用 GUI | 依赖声明、GUI shell、import test | 项目本地 gate 通过 |
 | 5. 打包 opt-in | 仅在用户要求时打包 | PyInstaller/Nuitka 配置、preflight 脚本 | 打包 preflight 和回滚路径已记录 |
@@ -334,9 +362,11 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - `check_pyside6_env.py` 模板；
 - `run_gui.ps1` 模板；
 - 最小 PySide6 main-window 模板；
+- 结构化 helper preview schema 及对应 checker 覆盖；
 - 打包 preflight 模板；
 - skills/profile helper 文档中的跨项目使用说明；
-- 检查项目本地 PySide6 opt-in 是否具备依赖声明和 import smoke test 的 checker。
+- 检查项目本地 PySide6 opt-in 是否具备依赖声明和 import smoke test 的 checker；
+- checker 还应验证目标项目根目录证据、依赖声明唯一性、GUI/业务边界、worker 边界、配置数据路径和打包 preflight 证据。
 
 ## 19. 验收标准
 
@@ -352,5 +382,7 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 方案定义测试、打包、回滚和授权边界；
 - 方案定义项目本地 PySide6 能力状态模型，避免把政策文本误报为运行时就绪；
 - 方案定义小步实施切片、每个切片的交付物和合入闸门；
+- 方案明确目标项目发现、安装前置条件、GUI/业务边界、worker 边界和配置数据路径要求；
+- 方案明确结构化 helper preview 证据、可见 GUI 启动边界和打包数据排除要求；
 - 方案列出关键失败模式与排障路径；
 - 实施保持本地-only，未获得用户明确授权前不推送远端。

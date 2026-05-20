@@ -129,6 +129,14 @@ Before writing or running a PySide6 GUI in a project:
 5. run an import smoke test;
 6. do not mutate other project environments.
 
+Additional preflight requirements:
+
+- verify the project's Python version, interpreter architecture, and package manager before installing;
+- if no project environment exists, preview must propose the exact environment-creation command and target path before apply;
+- apply may create a new environment only under the explicit target project root unless the user provides and approves an external `-PythonPath`;
+- do not infer `env_ready` from a global interpreter that happens to import PySide6;
+- visible GUI launch is an interactive desktop action and must be request-driven; default verification remains import-only.
+
 Minimal smoke command:
 
 ```powershell
@@ -153,15 +161,18 @@ Required inputs:
 
 Required preview output:
 
-- detected project root;
-- detected Python environment;
+- detected project root and the evidence used to identify it;
+- detected Python environment, Python version, and package manager;
 - selected dependency style;
 - files that would be created or changed;
 - install command that would be run;
 - smoke-test command;
+- expected local-only artifacts such as `.venv`, build output, or caches;
 - risks and rollback notes.
 
-Apply mode must be project-local and must fail closed if the target project root cannot be identified confidently.
+Preview should also emit a machine-readable summary, for example JSON fields for `project_root`, `project_root_evidence`, `python_path`, `python_version`, `package_manager`, `dependency_style`, `planned_file_changes`, `planned_commands`, `local_only_artifacts`, `blockers`, and `rollback_steps`. Human-readable output may wrap this summary, but the structured surface is what later checkers should consume.
+
+Apply mode must be project-local and must fail closed if the target project root, dependency manager, or writable scope cannot be identified confidently.
 
 ## 9. Minimal GUI template contract
 
@@ -173,7 +184,10 @@ The minimal template should create a tiny application with:
 - no network access;
 - no global configuration mutation;
 - no background daemon by default;
-- clear separation between GUI shell and project business logic.
+- clear separation between GUI shell and project business logic;
+- long-running work must not block the UI event loop by default;
+- project business errors must be shown in user-understandable form while preserving diagnostic logs;
+- logging, settings, and data-directory behavior must be explicit and testable.
 
 Recommended source boundaries:
 
@@ -184,21 +198,27 @@ Recommended source boundaries:
 | project service modules | provide business logic callable from the GUI |
 | `tools/gui/run_gui.ps1` | locate the project venv and run the app |
 | `tests/test_gui_import.py` | verify importability without showing the GUI |
+| worker / service adapter | run long-running work without blocking the Qt event loop |
+| config / data directory adapter | define local config, cache, and data directories without writing to unknown locations outside the repository |
+| logging / diagnostics adapter | write diagnosable logs without leaking credentials or user-private paths into normal UI output |
 
 ## 10. Codex execution workflow
 
 When the user asks for a PySide6 GUI in any project, Codex should:
 
-1. confirm the target project root;
+1. confirm the target project root and state the evidence, such as `.git`, `pyproject.toml`, README, or existing scripts;
 2. inspect existing dependency style (`requirements*.txt`, `pyproject.toml`, `poetry.lock`, `uv.lock`, etc.);
 3. choose the project-native dependency declaration;
-4. add or update the GUI dependency declaration;
-5. install PySide6 into the project environment only if execution is needed now;
-6. create or update the GUI source files;
-7. add an import smoke test;
-8. run the smoke test;
-9. if packaging is requested, add packaging scripts and run a packaging preflight;
-10. keep GUI changes in that project repository, not in this orchestration repository unless the task is about shared policy or templates.
+4. check for an existing GUI stack before introducing PySide6 in parallel;
+5. create a local rollback boundary such as a feature branch or commit plan before modifying files;
+6. add or update the GUI dependency declaration;
+7. install PySide6 into the project environment only if execution is needed now;
+8. create or update GUI source while separating GUI shell, business services, config/data paths, and worker boundaries;
+9. add an import smoke test;
+10. run the smoke test;
+11. launch a visible GUI only when the user explicitly asks for interactive verification or when the task already requires it;
+12. if packaging is requested, add packaging scripts and run a packaging preflight;
+13. keep GUI changes in that project repository, not in this orchestration repository unless the task is about shared policy or templates.
 
 ## 11. Testing strategy
 
@@ -208,7 +228,10 @@ Minimum tests for every opted-in project:
 - `from PySide6.QtWidgets import QApplication` import smoke passes in the project environment;
 - GUI package imports without creating a visible window;
 - `tools/gui/run_gui.ps1` or equivalent run helper resolves the project root and Python path;
-- if the GUI calls business logic, business logic remains testable without the GUI event loop.
+- if the GUI calls business logic, business logic remains testable without the GUI event loop;
+- long-running actions have a worker, thread, process, or async boundary plus cancellation or failure-feedback behavior;
+- local config, cache, and data directories are documented or emitted by the helper preview;
+- diagnostics can be enabled for troubleshooting without exposing credentials, access tokens, browser profiles, or unrelated user-private paths.
 
 Optional tests:
 
@@ -237,7 +260,9 @@ Packaging checks must cover:
 - startup logging;
 - data directory and config-file locations;
 - antivirus false-positive risk for local executables;
-- reproducible build command and output directory.
+- reproducible build command and output directory;
+- exclusion of credentials, browser profiles, user-private data directories, and unrelated repository files from the packaged artifact;
+- release, signing, and distribution steps as separate approvals from local packaging.
 
 ## 13. Safety, rollback, and authorization
 
@@ -258,7 +283,9 @@ Requires explicit approval:
 - publishing remote branches or releases;
 - changing protected branch settings;
 - deleting project files outside the agreed GUI scope;
-- rewriting dependency locks across unrelated projects.
+- rewriting dependency locks across unrelated projects;
+- allowing the GUI helper to access network resources, credentials, browser profiles, or private user directories unless the task explicitly requires it and the risk is stated;
+- launching a visible GUI window from an automated session when the user has not requested interactive verification.
 
 Rollback path:
 
@@ -279,7 +306,8 @@ Rules:
 - do not use a shared mutable venv for multiple project GUIs;
 - do not disable browser or web automation skills to make room for GUI capability;
 - if a project needs both GUI and browser automation, keep them separate capability surfaces;
-- record project-specific GUI decisions in that project's docs or dependency files.
+- record project-specific GUI decisions in that project's docs or dependency files;
+- GUI helpers may write templates, scripts, and tests only under the explicit target project root; user-level template updates must be separate tasks.
 
 ## 15. Capability state model
 
@@ -305,7 +333,7 @@ Implement this capability in small, reviewable slices. A later implementation ch
 | --- | --- | --- | --- |
 | 0. Inventory | find existing GUI patterns and dependency managers in the target project | read-only inventory note | no project files changed |
 | 1. Policy and templates | publish the shared policy and minimal templates | bilingual plan, template files, sample smoke test | docs and template checker pass |
-| 2. Preview helper | add `ensure-pyside6-gui.ps1` preview mode | helper with `preview` output, no apply mutation | preview snapshot reviewed |
+| 2. Preview helper | add `ensure-pyside6-gui.ps1` preview mode | helper with human-readable and JSON `preview` output, no apply mutation | preview snapshot reviewed and structured schema consumed by a checker |
 | 3. Apply helper | allow controlled project-local mutation | helper `apply` mode, rollback note generation | dry-run plus apply test in a disposable fixture |
 | 4. Project opt-in | enable one consumer project | dependency declaration, GUI shell, import test | project-local gate passes |
 | 5. Packaging opt-in | package only if requested | PyInstaller/Nuitka config, preflight script | package preflight and rollback path recorded |
@@ -334,9 +362,11 @@ A later implementation change may add:
 - `check_pyside6_env.py` template;
 - `run_gui.ps1` template;
 - a minimal PySide6 main-window template;
+- structured helper preview schema plus checker coverage;
 - a packaging preflight template;
 - a cross-project usage note in the skills/profile helper documentation;
-- a checker that verifies a project-local PySide6 opt-in has a dependency declaration and import smoke test.
+- a checker that verifies a project-local PySide6 opt-in has a dependency declaration and import smoke test;
+- checker coverage for target-root evidence, dependency declaration uniqueness, GUI/business boundaries, worker boundaries, config/data paths, and packaging preflight evidence.
 
 ## 19. Acceptance criteria
 
@@ -352,5 +382,7 @@ The plan is complete when:
 - the plan defines testing, packaging, rollback, and authorization boundaries;
 - the plan defines a project-local PySide6 capability state model so policy text is not misreported as runtime readiness;
 - the plan defines small implementation slices, per-slice deliverables, and merge gates;
+- the plan defines target-project discovery, install preconditions, GUI/business boundaries, worker boundaries, and config/data path requirements;
+- the plan defines structured helper preview evidence, visible-GUI launch boundaries, and packaging data-exclusion requirements;
 - the plan lists key failure modes and triage paths;
 - implementation remains local-only and does not push remotes without explicit user approval.
