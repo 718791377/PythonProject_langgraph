@@ -299,6 +299,19 @@ First GUI layout:
 The GUI must never edit JSON files directly in the first version. All state changes go through the project-local CLI so CLI and GUI behavior cannot drift.
 The GUI session table should be populated through `list-sessions --json`; if that command is unavailable, the GUI must fail with an actionable message instead of scanning `.omx/state` directly in v1.
 
+First GUI interaction and accessibility rules:
+
+- every status badge must express state with both text and color, for example `Project default: enabled`, `Session override: disabled`, and `Invalid record`; never rely on red/green color alone;
+- on/off buttons must name their scope clearly: `Enable project default`, `Disable project default`, `Enable selected session`, and `Disable selected session`;
+- refresh only reads `project-status --json` and `list-sessions --json`; it must not trigger writes, migrations, or installs;
+- while a write command is running, buttons for the same scope are disabled and a loading state is shown; after completion, the GUI rereads state instead of trusting a local predicted value;
+- errors show the stable token, a short explanation, and an actionable next step; stdout/stderr summaries remain copyable but must not expose private content;
+- the session table must support empty state, invalid-record state, and load-failed state; empty state must not be confused with "MOE is disabled";
+- the table supports at least updated-time sorting and validity filtering; sorting/filtering operates only on already-returned redacted rows and never rescans `.omx/state`;
+- keyboard operation is required for refresh, project-default toggles, selected-session toggles, and copying error summaries; default focus must not land on dangerous write buttons;
+- high-contrast or system theme must still make status, disabled buttons, and error banners distinguishable;
+- localized GUI text is never a machine decision surface; code branches only on CLI JSON fields and stable tokens.
+
 Installed GUI config:
 
 ```json
@@ -503,6 +516,7 @@ Minimum test matrix:
 | Runtime/launcher | launcher does not depend on accidental `PATH`, UTF-8 output is clean, and missing Python runtime, PySide6, or bad config returns stable blocker tokens. |
 | Installed artifact manifest | updates touch only declared managed files; private files remain read-only; hash mismatches fail closed. |
 | Path and command safety | path traversal, outside-project link targets, and shell-concatenated command invocation are rejected; GUI-to-CLI calls use argv/list. |
+| GUI usability | status badges include text semantics, error banners show stable tokens, refresh is read-only, button scope is explicit, and keyboard operation works. |
 
 ## 12. Validation and acceptance
 
@@ -516,7 +530,8 @@ Document-level acceptance for this plan:
 - the plan defines check, dry-run, apply, no-op, and GUI operator-confirmation boundaries;
 - the plan defines runtime/launcher resolution, UTF-8 output, environment-variable boundaries, and missing-dependency blockers;
 - the plan defines the installed artifact manifest, managed/protected file ownership, and uninstall/cleanup non-goals;
-- the plan defines path normalization, symlink/junction, path traversal, and command-invocation safety boundaries.
+- the plan defines path normalization, symlink/junction, path traversal, and command-invocation safety boundaries;
+- the plan defines GUI status badges, error banners, refresh semantics, button scope, empty states, and keyboard accessibility.
 
 Phase 1 acceptance:
 

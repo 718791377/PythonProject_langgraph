@@ -299,6 +299,19 @@ tools/project_moe_gui_toolchain/
 第一版 GUI 不得直接编辑 JSON 文件。所有状态变更都通过项目本地 CLI 完成，避免 CLI 和 GUI 行为漂移。
 GUI session 表格应通过 `list-sessions --json` 填充；如果该命令不可用，GUI 必须给出可执行错误提示，而不是在 v1 里直接扫描 `.omx/state`。
 
+第一版 GUI 交互与可访问性规则：
+
+- 所有状态徽标必须同时使用文字和颜色表达，例如 `项目默认：开启`、`session 覆盖：关闭`、`无效记录`，不得只靠红/绿颜色；
+- on/off 按钮必须明确 scope：`开启项目默认值`、`关闭项目默认值`、`开启选中 session`、`关闭选中 session`；
+- 刷新只读取 `project-status --json` 和 `list-sessions --json`，不得触发写入、迁移或安装；
+- 执行写入命令期间，同一 scope 的按钮禁用并显示 loading 状态；命令完成后重新读取状态，而不是相信本地 UI 预测值；
+- 错误必须显示稳定 token、简短说明和建议动作；同时保留 stdout/stderr 摘要供复制，但不显示私有内容；
+- session 表格必须支持空状态、无效记录状态和加载失败状态；空状态不得被误读为“MOE 已关闭”；
+- 表格至少支持按更新时间排序和按有效性筛选；排序/筛选只作用于已返回的脱敏行，不重新扫描 `.omx/state`；
+- 必须支持键盘操作：刷新、切换项目默认值、切换选中 session、复制错误摘要；默认焦点不得落在危险写入按钮上；
+- 高对比或系统主题下仍能辨认状态、按钮禁用状态和错误横幅；
+- 任何 GUI 本地化文本不得成为机器判断依据；代码分支只能依赖 CLI JSON 字段和 stable token。
+
 安装后的 GUI 配置：
 
 ```json
@@ -503,6 +516,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | Runtime/launcher | launcher 不依赖偶然 `PATH`，UTF-8 输出正常；缺少 Python runtime、PySide6 或坏配置时返回稳定 blocker token。 |
 | 安装产物清单 | 更新只触碰清单声明的 managed files；私有文件保持只读；hash 不匹配时 fail closed。 |
 | 路径与命令安全 | 路径穿越、项目外 link 目标和 shell 拼接式命令调用被拒绝；GUI 调 CLI 使用 argv/list。 |
+| GUI 可用性 | 状态徽标有文字语义，错误横幅显示 stable token，刷新只读，按钮 scope 明确，键盘可操作。 |
 
 ## 12. 校验与验收
 
@@ -516,7 +530,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案定义 check、dry run、apply、no-op 与 GUI 操作者确认边界；
 - 方案定义 runtime/launcher 解析、UTF-8 输出、环境变量边界和缺失依赖 blocker；
 - 方案定义安装产物清单、managed/protected 文件所有权和卸载/清理非目标边界；
-- 方案定义路径规范化、符号链接/junction、路径穿越和命令调用安全边界。
+- 方案定义路径规范化、符号链接/junction、路径穿越和命令调用安全边界；
+- 方案定义 GUI 状态徽标、错误横幅、刷新语义、按钮 scope、空状态和键盘可访问性。
 
 第一阶段验收：
 
