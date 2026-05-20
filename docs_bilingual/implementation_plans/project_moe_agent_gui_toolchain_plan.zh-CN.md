@@ -218,7 +218,7 @@ python .\tools\thesis_moe_mode.py assert-on
 | 命令参数无效或不支持该命令 | 2 | `usage_error` |
 | 损坏或不匹配状态阻止有效状态计算 | 3 | `state_corrupt`、`schema_version_mismatch`、`blocked:unsupported_schema_version`、`agent_name_mismatch`、`session_mismatch`、`worktree_mismatch`、`branch_mismatch` |
 | 目标根目录不安全或 ownership preflight 拒绝 | 4 | `blocked:unsafe_target_root`、`blocked:ownership_precheck_failed`、`blocked:dirty_unowned_files` |
-| 缺少依赖或必需项目文件 | 5 | `blocked:missing_agent_toml`、`blocked:missing_mode_cli`、`blocked:pyside6_unavailable` |
+| 缺少依赖、启动器配置无效或必需项目文件缺失 | 5 | `blocked:missing_agent_toml`、`blocked:missing_mode_cli`、`blocked:pyside6_unavailable`、`blocked:python_runtime_unavailable`、`blocked:launcher_config_invalid` |
 | 并发写入锁不可获得或疑似过期锁需要人工确认 | 6 | `blocked:state_lock_timeout`、`blocked:stale_state_lock` |
 
 CLI 和 GUI 输出应同时包含面向人的说明和稳定机器可读 token。GUI 代码应基于 token 分支，不依赖本地化自然语言。
@@ -310,7 +310,9 @@ GUI session 表格应通过 `list-sessions --json` 填充；如果该命令不�
   "state_namespace": "thesis_moe",
   "mode_cli": "tools/thesis_moe_mode.py",
   "project_root_strategy": "launcher-parent-git-root",
-  "pyside6_runtime": "project-or-shared-runtime"
+  "pyside6_runtime": "project-or-shared-runtime",
+  "python_runtime_strategy": "project-venv-then-shared-gui-runtime",
+  "python_utf8": true
 }
 ```
 
@@ -362,6 +364,18 @@ PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来�
 - `update_project_moe_gui.py` 在写入前必须输出将修改的安装产物列表，写入后输出更新 receipt；
 - 更新 receipt 至少包含目标项目根、旧/新 `toolchain_version`、`schema_version`、变更文件、跳过的私有文件、执行时间和 rollback hint；
 - 任何迁移失败不得被当作成功启用 MOE Agent 的证据。
+
+### 8.2 Runtime 与 launcher 契约
+
+GUI 源码由本仓库维护，但启动 runtime 必须在目标项目侧可解释、可诊断、可替换。第一版 launcher 不得依赖操作者当前 shell 的偶然 `PATH` 或全局 Python 包状态：
+
+- `project-moe-gui.cmd` 应从安装配置解析目标项目根，并优先使用目标项目已记录的 Python runtime；没有项目 runtime 时才使用文档化的共享 GUI runtime；
+- launcher 不得永久修改用户级 `PATH`、`PYTHONPATH`、pip 配置或系统环境变量；如需临时环境变量，只能作用于当前子进程；
+- Windows 启动器必须启用 UTF-8 安全输出，例如设置当前子进程的 `PYTHONUTF8=1` 或等价方式，避免中文路径、中文状态 token 或日志乱码；
+- GUI 子进程调用项目本地 CLI 时必须传入解析后的 `--project-root` 或等价上下文，不能依赖当前工作目录碰巧正确；
+- 如果 Python runtime 不存在或不可执行，返回 `blocked:python_runtime_unavailable`；如果配置文件缺失关键字段或路径越界，返回 `blocked:launcher_config_invalid`；
+- launcher 日志只记录解析步骤、runtime 路径类别、退出码、stdout/stderr 摘要和 stable token；不得记录私有提示词、raw session id、论文正文或原始环境变量值；
+- `check_project_moe_gui_install.py --json` 必须验证 launcher、config、Python runtime、PySide6 可导入性和项目本地 CLI contract；失败时给出可执行修复建议。
 
 ## 9. 安全与回滚规则
 
@@ -449,6 +463,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | GUI 操作 | GUI 操作结果与 CLI `status --json` 和 `project-status --json` 一致。 |
 | 并发写入 | 两个命令同时写同一 namespace 时，一个成功，另一个等待后成功或返回稳定 lock token；不会产生半写 JSON。 |
 | dry run / no-op | install/update dry run 不写文件；重复启用或关闭输出 `no_op = true`，且不制造无意义文件差异。 |
+| Runtime/launcher | launcher 不依赖偶然 `PATH`，UTF-8 输出正常；缺少 Python runtime、PySide6 或坏配置时返回稳定 blocker token。 |
 
 ## 12. 校验与验收
 
@@ -459,7 +474,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案定义项目默认值 + session override 行为；
 - 方案禁止项目级 MOE Agent 使用 `full-history fork + specified custom role`；
 - 方案定义状态写入的锁、原子写入、并发失败 token 和 GUI 串行化边界；
-- 方案定义 check、dry run、apply、no-op 与 GUI 操作者确认边界。
+- 方案定义 check、dry run、apply、no-op 与 GUI 操作者确认边界；
+- 方案定义 runtime/launcher 解析、UTF-8 输出、环境变量边界和缺失依赖 blocker。
 
 第一阶段验收：
 

@@ -218,7 +218,7 @@ Failure-mode and exit-code contract:
 | invalid command arguments or unsupported command | 2 | `usage_error` |
 | corrupt or mismatched state blocks effective-state calculation | 3 | `state_corrupt`, `schema_version_mismatch`, `blocked:unsupported_schema_version`, `agent_name_mismatch`, `session_mismatch`, `worktree_mismatch`, `branch_mismatch` |
 | unsafe target root or ownership preflight refusal | 4 | `blocked:unsafe_target_root`, `blocked:ownership_precheck_failed`, `blocked:dirty_unowned_files` |
-| missing dependency or required project file | 5 | `blocked:missing_agent_toml`, `blocked:missing_mode_cli`, `blocked:pyside6_unavailable` |
+| missing dependency, invalid launcher config, or missing required project file | 5 | `blocked:missing_agent_toml`, `blocked:missing_mode_cli`, `blocked:pyside6_unavailable`, `blocked:python_runtime_unavailable`, `blocked:launcher_config_invalid` |
 | concurrent write lock cannot be acquired, or a suspected stale lock needs human confirmation | 6 | `blocked:state_lock_timeout`, `blocked:stale_state_lock` |
 
 CLI and GUI outputs should include both a human-readable message and a stable machine-readable token. GUI code should branch on tokens, not localized prose.
@@ -310,7 +310,9 @@ Installed GUI config:
   "state_namespace": "thesis_moe",
   "mode_cli": "tools/thesis_moe_mode.py",
   "project_root_strategy": "launcher-parent-git-root",
-  "pyside6_runtime": "project-or-shared-runtime"
+  "pyside6_runtime": "project-or-shared-runtime",
+  "python_runtime_strategy": "project-venv-then-shared-gui-runtime",
+  "python_utf8": true
 }
 ```
 
@@ -362,6 +364,18 @@ Upgrade acceptance requirements:
 - `update_project_moe_gui.py` must print the install artifacts it will modify before writing and must emit an update receipt after writing;
 - the update receipt must include at least the target project root, old/new `toolchain_version`, `schema_version`, changed files, skipped private files, timestamp, and rollback hint;
 - a failed migration is never evidence that the MOE Agent was successfully enabled.
+
+### 8.2 Runtime and launcher contract
+
+The GUI source is maintained by this repository, but the runtime used to launch an installed GUI must be explainable, diagnosable, and replaceable inside the target project. The first launcher version must not depend on the operator's accidental shell `PATH` or global Python package state:
+
+- `project-moe-gui.cmd` should resolve the target project root from the installed config and prefer the target project's recorded Python runtime; only fall back to a documented shared GUI runtime when no project runtime is configured;
+- launchers must not permanently mutate user-level `PATH`, `PYTHONPATH`, pip config, or system environment variables; any environment override is scoped to the child process only;
+- Windows launchers must force UTF-8-safe output, for example by setting child-process `PYTHONUTF8=1` or an equivalent mechanism, so Chinese paths, status tokens, and logs do not become mojibake;
+- when the GUI invokes the project-local CLI, it must pass the resolved `--project-root` or an equivalent context and must not depend on the current working directory being accidentally correct;
+- missing or non-executable Python runtime returns `blocked:python_runtime_unavailable`; missing required config fields or out-of-scope paths return `blocked:launcher_config_invalid`;
+- launcher logs only record resolution steps, runtime path category, exit code, stdout/stderr summaries, and stable tokens; they must not record private prompts, raw session ids, paper text, or raw environment variable values;
+- `check_project_moe_gui_install.py --json` must validate launcher presence, config, Python runtime, PySide6 importability, and the project-local CLI contract; failures include actionable remediation hints.
 
 ## 9. Safety and rollback rules
 
@@ -449,6 +463,7 @@ Minimum test matrix:
 | GUI actions | GUI action results match CLI `status --json` and `project-status --json`. |
 | Concurrent writes | two commands writing the same namespace concurrently result in one success and the other either waiting then succeeding or returning a stable lock token; no partial JSON is produced. |
 | Dry run / no-op | install/update dry run writes no files; repeated enable/disable outputs `no_op = true` and does not create meaningless file diffs. |
+| Runtime/launcher | launcher does not depend on accidental `PATH`, UTF-8 output is clean, and missing Python runtime, PySide6, or bad config returns stable blocker tokens. |
 
 ## 12. Validation and acceptance
 
@@ -459,7 +474,8 @@ Document-level acceptance for this plan:
 - the plan defines project default plus session override behavior;
 - the plan forbids `full-history fork + specified custom role` for project MOE Agents;
 - the plan defines state-write locking, atomic writes, concurrency failure tokens, and GUI serialization boundaries;
-- the plan defines check, dry-run, apply, no-op, and GUI operator-confirmation boundaries.
+- the plan defines check, dry-run, apply, no-op, and GUI operator-confirmation boundaries;
+- the plan defines runtime/launcher resolution, UTF-8 output, environment-variable boundaries, and missing-dependency blockers.
 
 Phase 1 acceptance:
 
