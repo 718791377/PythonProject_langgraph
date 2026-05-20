@@ -24,7 +24,8 @@
     "check_plugin_modules_skill.test.py",
     "evidence_intake_pipeline.test.py",
     "evidence_adapters.test.py",
-    "check_pyside6_gui_template_contract.test.py"
+    "check_pyside6_gui_template_contract.test.py",
+    "check_pyside6_gui_preview_helper_contract.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []

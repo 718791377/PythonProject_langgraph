@@ -32,6 +32,7 @@ GUARD_STEPS = [
     ("check_windows_cleanup_output_control", "check_windows_cleanup_output_control.py", "windows_cleanup_output_control"),
     ("check_plugin_modules_skill", "check_plugin_modules_skill.py", "plugin_modules_skill"),
     ("check_pyside6_gui_template_contract", "check_pyside6_gui_template_contract.py", "pyside6_gui_template_contract"),
+    ("check_pyside6_gui_preview_helper_contract", "check_pyside6_gui_preview_helper_contract.py", "pyside6_gui_preview_helper_contract"),
     ("check_durable_routing_smoke_gate_template", "check_durable_routing_smoke_gate_template.py", "durable_routing_smoke_gate_template"),
     ("check_codex_native_rollback_release_gate_template", "check_codex_native_rollback_release_gate_template.py", "codex_native_rollback_release_gate_template"),
     ("check_worktree_session_hygiene", "check_worktree_session_hygiene.py", "worktree_session_hygiene"),

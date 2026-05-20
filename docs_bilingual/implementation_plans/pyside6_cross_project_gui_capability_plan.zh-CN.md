@@ -147,7 +147,7 @@ Headless 或 CI 环境可以只跑 import-only 测试，不显示窗口；除非
 
 ## 8. 用户级 helper 契约
 
-未来的 `ensure-pyside6-gui.ps1` 或等价 helper 应该采用 preview-first 行为。
+仓库源码中的 `ensure-pyside6-gui.ps1` helper，以及任何安装到用户级目录的副本，都必须采用 preview-first 行为。
 
 必需输入：
 
@@ -344,8 +344,10 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 
 - 切片 0/1 的共享政策与最小模板已由 `tools/pyside6_gui_templates/` 承载；
 - 模板契约由 `tools/check_pyside6_gui_template_contract.py` 和 `test/check_pyside6_gui_template_contract.test.py` 验证；
-- CI manifest 已登记该 checker 测试；
-- 后续切片 2/3 仍应单独实现 `ensure-pyside6-gui.ps1` 的 preview/apply helper，不得把模板存在误报为任意消费项目已经 `env_ready` 或 `template_ready`。
+- 切片 2 的 preview helper 源码已由 `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1` 承载；
+- preview helper 契约由 `tools/check_pyside6_gui_preview_helper_contract.py` 和 `test/check_pyside6_gui_preview_helper_contract.test.py` 验证；
+- CI manifest 已登记两个 PySide6 契约测试，`tools/run_openspec_guard.py` 已运行两个 checker；
+- 后续切片 3 仍应单独实现 `ensure-pyside6-gui.ps1` 的 `apply` 模式，不得把 helper 或模板存在误报为任意消费项目已经 `env_ready` 或 `template_ready`。
 
 ## 17. 失败模式与排障
 
@@ -365,11 +367,11 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 后续 implementation change 可以新增：
 
 - 用户级 `pyside6-gui` skill 指引；
-- `ensure-pyside6-gui.ps1` helper；
+- `ensure-pyside6-gui.ps1` `apply` 模式与回滚说明生成；
 - `check_pyside6_env.py` 模板；
 - `run_gui.ps1` 模板；
 - 最小 PySide6 main-window 模板；
-- 结构化 helper preview schema 及对应 checker 覆盖；
+- 项目本地 apply-mode fixture 覆盖；
 - 打包 preflight 模板；
 - skills/profile helper 文档中的跨项目使用说明；
 - 检查项目本地 PySide6 opt-in 是否具备依赖声明和 import smoke test 的 checker；

@@ -147,7 +147,7 @@ Headless or CI environments may run import-only tests and skip showing a window 
 
 ## 8. User-level helper contract
 
-A future `ensure-pyside6-gui.ps1` or equivalent helper should support preview-first behavior.
+The repository-source `ensure-pyside6-gui.ps1` helper, and any installed user-level copy, must support preview-first behavior.
 
 Required inputs:
 
@@ -344,8 +344,10 @@ Current local implementation status:
 
 - Slices 0/1 shared policy and minimal templates are carried by `tools/pyside6_gui_templates/`;
 - the template contract is verified by `tools/check_pyside6_gui_template_contract.py` and `test/check_pyside6_gui_template_contract.test.py`;
-- the CI manifest registers that checker test;
-- later slices 2/3 must still implement the `ensure-pyside6-gui.ps1` preview/apply helper separately, and template presence must not be misreported as any consumer project already being `env_ready` or `template_ready`.
+- Slice 2 preview helper source is carried by `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1`;
+- the preview helper contract is verified by `tools/check_pyside6_gui_preview_helper_contract.py` and `test/check_pyside6_gui_preview_helper_contract.test.py`;
+- the CI manifest registers both PySide6 contract tests, and `tools/run_openspec_guard.py` runs both checkers;
+- later Slice 3 must still implement the `ensure-pyside6-gui.ps1` `apply` mode separately, and helper/template presence must not be misreported as any consumer project already being `env_ready` or `template_ready`.
 
 ## 17. Failure modes and triage
 
@@ -365,11 +367,11 @@ Common failure modes must be handled as local project issues, not by weakening t
 A later implementation change may add:
 
 - user-level `pyside6-gui` skill instructions;
-- `ensure-pyside6-gui.ps1` helper;
+- `ensure-pyside6-gui.ps1` `apply` mode with rollback-note generation;
 - `check_pyside6_env.py` template;
 - `run_gui.ps1` template;
 - a minimal PySide6 main-window template;
-- structured helper preview schema plus checker coverage;
+- project-local apply-mode fixture coverage;
 - a packaging preflight template;
 - a cross-project usage note in the skills/profile helper documentation;
 - a checker that verifies a project-local PySide6 opt-in has a dependency declaration and import smoke test;
