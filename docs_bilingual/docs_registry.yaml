@@ -79,6 +79,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md
 
+  - doc_id: pyside6_cross_project_gui_capability_plan
+    doc_class: implementation_plan
+    status: draft
+    canonical_path: docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.zh-CN.md
+
   - doc_id: codex_user_level_skills_governance_policy
     doc_class: governance
     status: active
