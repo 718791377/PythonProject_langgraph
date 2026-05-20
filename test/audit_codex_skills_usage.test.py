@@ -336,6 +336,21 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         )
         self.assertIn("Audit state: running", output)
         self.assertIn(
+            "Audit-only safety: audit_only=True mutates_config=False "
+            "edits_plugin_cache=False hard_load_apply_performed=False",
+            output,
+        )
+        self.assertIn(
+            "Runtime path privacy: raw_paths_retained=False "
+            "policy=runtime_paths_are_kind_labels_and_placeholders_no_raw_user_paths",
+            output,
+        )
+        self.assertIn(
+            "Runtime path placeholders: "
+            "root=[REPO_ROOT] codex_home=[CODEX_HOME] config_path=[CODEX_HOME]/config.toml",
+            output,
+        )
+        self.assertIn(
             "Cadence review: late_run=False missed_weekly_runs=None weekly_report_review=manual_review_required",
             output,
         )

@@ -3065,6 +3065,8 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
 
 def print_human(report: dict[str, Any]) -> None:
     audit_state = report.get("audit_state", {}) if isinstance(report.get("audit_state"), dict) else {}
+    safety = report.get("safety", {}) if isinstance(report.get("safety"), dict) else {}
+    runtime_paths = report.get("runtime_paths", {}) if isinstance(report.get("runtime_paths"), dict) else {}
     config_summary = report.get("config_summary", {}) if isinstance(report.get("config_summary"), dict) else {}
     inventory_summary = (
         report.get("inventory_summary") if isinstance(report.get("inventory_summary"), dict) else {}
@@ -3157,6 +3159,24 @@ def print_human(report: dict[str, Any]) -> None:
     print(f"Audit state: {audit_state.get('state')} ({audit_state.get('reason')})")
     print(f"Audit next action: {audit_state.get('next_action')}")
     print(f"Profile apply allowed: {audit_state.get('profile_apply_allowed')}")
+    print(
+        "Audit-only safety: "
+        f"audit_only={safety.get('audit_only')} "
+        f"mutates_config={safety.get('mutates_config')} "
+        f"edits_plugin_cache={safety.get('edits_plugin_cache')} "
+        f"hard_load_apply_performed={safety.get('hard_load_apply_performed')}"
+    )
+    print(
+        "Runtime path privacy: "
+        f"raw_paths_retained={runtime_paths.get('raw_paths_retained')} "
+        f"policy={runtime_paths.get('privacy_policy')}"
+    )
+    print(
+        "Runtime path placeholders: "
+        f"root={runtime_paths.get('root')} "
+        f"codex_home={runtime_paths.get('codex_home')} "
+        f"config_path={runtime_paths.get('config_path')}"
+    )
     print(
         "Cadence review: "
         f"late_run={cadence_review.get('late_run')} "
