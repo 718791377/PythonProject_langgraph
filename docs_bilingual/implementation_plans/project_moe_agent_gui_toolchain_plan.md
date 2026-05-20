@@ -216,7 +216,7 @@ Failure-mode and exit-code contract:
 | successful read or write | 0 | `ok` |
 | `assert-on` sees effective disabled state | 1 | `disabled` |
 | invalid command arguments or unsupported command | 2 | `usage_error` |
-| corrupt or mismatched state blocks effective-state calculation | 3 | `state_corrupt`, `schema_version_mismatch`, `agent_name_mismatch`, `session_mismatch`, `worktree_mismatch`, `branch_mismatch` |
+| corrupt or mismatched state blocks effective-state calculation | 3 | `state_corrupt`, `schema_version_mismatch`, `blocked:unsupported_schema_version`, `agent_name_mismatch`, `session_mismatch`, `worktree_mismatch`, `branch_mismatch` |
 | unsafe target root or ownership preflight refusal | 4 | `blocked:unsafe_target_root`, `blocked:ownership_precheck_failed`, `blocked:dirty_unowned_files` |
 | missing dependency or required project file | 5 | `blocked:missing_agent_toml`, `blocked:missing_mode_cli`, `blocked:pyside6_unavailable` |
 
@@ -303,6 +303,8 @@ Installed GUI config:
 {
   "schema_version": 1,
   "toolchain": "project_moe_gui",
+  "toolchain_version": "0.1.0",
+  "cli_contract": "project-moe-cli-v1",
   "agent_name": "thesis-moe-mentor",
   "state_namespace": "thesis_moe",
   "mode_cli": "tools/thesis_moe_mode.py",
@@ -336,6 +338,27 @@ python tools/project_moe_gui_toolchain/check_project_moe_gui_install.py --target
 The installer must fail if the target project has no matching `.codex/agents/<agent>.toml` unless an explicit template-generation mode is added later.
 
 PySide6 runtime can be supplied by either a documented shared GUI runtime or the target project's own virtual environment. The first implementation must record which runtime is used in the installed config and must fail with an actionable message if PySide6 is unavailable.
+
+### 8.1 Versioning, compatibility, and upgrade policy
+
+`schema_version = 1` is the first supported target-project config and state contract. `toolchain_version` identifies the GUI toolchain version or release marker maintained by this repository, and `cli_contract` identifies the stable command contract expected from the installed target-project CLI. Install, update, and check commands must report at least these JSON fields: `installed_toolchain_version`, `target_toolchain_version`, `config_schema_version`, `cli_contract`, `migration_actions`, and `rollback_hint`.
+
+Compatibility policy:
+
+- v1 readers must ignore unknown extra fields so additive later fields do not break older tools immediately;
+- v1 writers should preserve unknown fields where practical and only update fields they own;
+- a missing, non-integer, lower-than-1, or higher incompatible `schema_version` must fail closed with stable token `blocked:unsupported_schema_version`;
+- additive migrations within the same `schema_version` must be idempotent, repeatable, and local to the target project;
+- migrations must not read, copy, or overwrite `MOE.md`, `.codex/agents/*.toml`, private prompt text, or existing `.omx/state` content unless a later explicit repair/change adds that behavior;
+- downgrade is never automatic. Downgrade requires an explicit user request and uses the target project's Git history, backup refs, or the previous version recorded in an install receipt;
+- if the central toolchain is newer but the target-project CLI lacks required `project-moe-cli-v1` commands, the GUI reports `blocked:missing_mode_cli` or a more specific CLI-contract token instead of directly scanning or modifying state files.
+
+Upgrade acceptance requirements:
+
+- `check_project_moe_gui_install.py --json` must distinguish `up_to_date`, `upgrade_available`, `migration_required`, `blocked:unsupported_schema_version`, and `blocked:missing_mode_cli`;
+- `update_project_moe_gui.py` must print the install artifacts it will modify before writing and must emit an update receipt after writing;
+- the update receipt must include at least the target project root, old/new `toolchain_version`, `schema_version`, changed files, skipped private files, timestamp, and rollback hint;
+- a failed migration is never evidence that the MOE Agent was successfully enabled.
 
 ## 9. Safety and rollback rules
 

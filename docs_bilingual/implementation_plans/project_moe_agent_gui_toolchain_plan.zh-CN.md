@@ -216,7 +216,7 @@ python .\tools\thesis_moe_mode.py assert-on
 | 成功读取或写入 | 0 | `ok` |
 | `assert-on` 发现有效状态为关闭 | 1 | `disabled` |
 | 命令参数无效或不支持该命令 | 2 | `usage_error` |
-| 损坏或不匹配状态阻止有效状态计算 | 3 | `state_corrupt`、`schema_version_mismatch`、`agent_name_mismatch`、`session_mismatch`、`worktree_mismatch`、`branch_mismatch` |
+| 损坏或不匹配状态阻止有效状态计算 | 3 | `state_corrupt`、`schema_version_mismatch`、`blocked:unsupported_schema_version`、`agent_name_mismatch`、`session_mismatch`、`worktree_mismatch`、`branch_mismatch` |
 | 目标根目录不安全或 ownership preflight 拒绝 | 4 | `blocked:unsafe_target_root`、`blocked:ownership_precheck_failed`、`blocked:dirty_unowned_files` |
 | 缺少依赖或必需项目文件 | 5 | `blocked:missing_agent_toml`、`blocked:missing_mode_cli`、`blocked:pyside6_unavailable` |
 
@@ -303,6 +303,8 @@ GUI session 表格应通过 `list-sessions --json` 填充；如果该命令不�
 {
   "schema_version": 1,
   "toolchain": "project_moe_gui",
+  "toolchain_version": "0.1.0",
+  "cli_contract": "project-moe-cli-v1",
   "agent_name": "thesis-moe-mentor",
   "state_namespace": "thesis_moe",
   "mode_cli": "tools/thesis_moe_mode.py",
@@ -336,6 +338,27 @@ python tools/project_moe_gui_toolchain/check_project_moe_gui_install.py --target
 如果目标项目没有匹配的 `.codex/agents/<agent>.toml`，安装器必须失败；除非后续另行增加显式模板生成模式。
 
 PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来自目标项目自己的虚拟环境。第一版实现必须在安装配置里记录使用哪种 runtime；如果 PySide6 不可用，必须给出可执行的错误提示。
+
+### 8.1 版本、兼容与升级策略
+
+`schema_version = 1` 是第一版可支持的目标项目配置与状态契约。`toolchain_version` 表示由本仓库维护的 GUI 工具链版本或发布标识，`cli_contract` 表示安装后的 GUI 期望目标项目本地 CLI 暴露的稳定命令契约。安装、更新和检查命令必须在 JSON 输出中报告至少以下字段：`installed_toolchain_version`、`target_toolchain_version`、`config_schema_version`、`cli_contract`、`migration_actions` 和 `rollback_hint`。
+
+兼容策略：
+
+- v1 reader 必须忽略未知的额外字段，避免后续小版本增加字段时导致旧工具直接失效；
+- v1 writer 在重写配置或状态时，应在可行范围内保留未知字段，只更新自己拥有的字段；
+- 遇到缺失、低于 1、非整数或高于当前支持范围且不兼容的 `schema_version` 时，必须 fail closed，并输出稳定 token `blocked:unsupported_schema_version`；
+- 同一 `schema_version` 内的新增字段迁移必须幂等、可重复运行、仅作用于目标项目内文件；
+- 迁移不得读取、复制或覆盖 `MOE.md`、`.codex/agents/*.toml`、私有提示词全文或已有 `.omx/state` 内容，除非后续另建显式 repair/change；
+- 不自动降级。需要降级时，必须由用户显式要求，并通过目标项目 Git 历史、backup refs 或安装 receipt 指向的旧版本进行回滚；
+- 如果中央工具链版本较新但目标项目 CLI 仍缺少 `project-moe-cli-v1` 必需命令，GUI 应报告 `blocked:missing_mode_cli` 或更具体的 CLI contract token，而不是直接扫描或修改状态文件。
+
+升级验收要求：
+
+- `check_project_moe_gui_install.py --json` 必须能区分 `up_to_date`、`upgrade_available`、`migration_required`、`blocked:unsupported_schema_version` 和 `blocked:missing_mode_cli`；
+- `update_project_moe_gui.py` 在写入前必须输出将修改的安装产物列表，写入后输出更新 receipt；
+- 更新 receipt 至少包含目标项目根、旧/新 `toolchain_version`、`schema_version`、变更文件、跳过的私有文件、执行时间和 rollback hint；
+- 任何迁移失败不得被当作成功启用 MOE Agent 的证据。
 
 ## 9. 安全与回滚规则
 
