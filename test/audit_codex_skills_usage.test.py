@@ -319,6 +319,21 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         output = stream.getvalue()
 
+        self.assertIn("Enabled plugins: 0 matched_known=0 unmatched=0", output)
+        self.assertIn("Current profile: inferred=custom_or_unmatched", output)
+        self.assertIn("Inventory summary: total=", output)
+        self.assertIn("Log evidence available: False", output)
+        self.assertIn("Budget warning samples: recent=0 last_7d=0", output)
+        self.assertIn(
+            "Warning severity: unknown reason=logs_unavailable "
+            "action=keep_log_evidence_available_false_and_do_not_treat_zero_as_no_warning",
+            output,
+        )
+        self.assertIn(
+            "Budget warning pressure: all_descriptions_removed=0 "
+            "last_7d_all_descriptions_removed=0 max_omitted_additional_skills=0",
+            output,
+        )
         self.assertIn("Audit state: running", output)
         self.assertIn("Warning triage: not_requested requested=False window_ok=True", output)
         self.assertIn("Warning triage policy: use_days_1_or_since_for_warning_triage", output)
@@ -333,6 +348,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Profile helper calls: 0", output)
         self.assertIn("Script capability boundaries: reliable=", output)
         self.assertIn("Decision recommendation: advisory_only_no_profile_apply profile_apply_allowed=False", output)
+        self.assertIn("Recommendations: 5", output)
+        self.assertIn("Do not treat another 2% budget warning as soft-load failure", output)
         self.assertIn("Field contract: passed", output)
         self.assertIn("Output retention gate: passed", output)
         self.assertIn("Pre-commit update/archive gate: passed errors=0 warnings=0", output)

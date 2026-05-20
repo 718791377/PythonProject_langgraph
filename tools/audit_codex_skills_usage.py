@@ -3048,6 +3048,14 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
 
 def print_human(report: dict[str, Any]) -> None:
     audit_state = report.get("audit_state", {}) if isinstance(report.get("audit_state"), dict) else {}
+    config_summary = report.get("config_summary", {}) if isinstance(report.get("config_summary"), dict) else {}
+    inventory_summary = (
+        report.get("inventory_summary") if isinstance(report.get("inventory_summary"), dict) else {}
+    )
+    log_evidence = report.get("log_evidence", {}) if isinstance(report.get("log_evidence"), dict) else {}
+    warning_severity = (
+        report.get("warning_severity") if isinstance(report.get("warning_severity"), dict) else {}
+    )
     warning_triage = report.get("warning_triage", {}) if isinstance(report.get("warning_triage"), dict) else {}
     session_evidence = report.get("session_evidence", {}) if isinstance(report.get("session_evidence"), dict) else {}
     script_capabilities = (
@@ -3067,10 +3075,52 @@ def print_human(report: dict[str, Any]) -> None:
         if isinstance(report.get("precommit_update_archive"), dict)
         else {}
     )
+    current_profile = (
+        config_summary.get("current_profile") if isinstance(config_summary.get("current_profile"), dict) else {}
+    )
+    enabled_plugins = config_summary.get("enabled_plugins") if isinstance(config_summary.get("enabled_plugins"), list) else []
+    recommendations = report.get("recommendations") if isinstance(report.get("recommendations"), list) else []
     print(f"Codex skills usage audit ({report['mode']})")
     print(f"Window: {report['audit_window']['since']} -> {report['audit_window']['until']}")
-    print(f"Enabled plugins: {len(report['config_summary']['enabled_plugins'])}")
-    print(f"Budget warnings: {report['log_evidence'].get('budget_warning_count')}")
+    print(
+        "Enabled plugins: "
+        f"{len(enabled_plugins)} "
+        f"matched_known={len(current_profile.get('matched_enabled_known_plugins') or [])} "
+        f"unmatched={len(current_profile.get('unmatched_enabled_plugin_entries') or [])}"
+    )
+    print(
+        "Current profile: "
+        f"inferred={current_profile.get('inferred_profile')} "
+        f"exact_matches={len(current_profile.get('exact_profile_matches') or [])} "
+        f"closest_matches={len(current_profile.get('closest_profile_matches') or [])} "
+        f"manual_review_required={current_profile.get('manual_review_required')}"
+    )
+    print(
+        "Inventory summary: "
+        f"total={inventory_summary.get('total_skills')} "
+        f"user={inventory_summary.get('user_skills')} "
+        f"repo={inventory_summary.get('repo_skills')} "
+        f"plugin={inventory_summary.get('plugin_skills')}"
+    )
+    print(f"Log evidence available: {log_evidence.get('available')}")
+    print(f"Budget warnings: {log_evidence.get('budget_warning_count')}")
+    print(
+        "Budget warning samples: "
+        f"recent={len(log_evidence.get('recent_budget_warnings') or [])} "
+        f"last_7d={log_evidence.get('last_7d_budget_warning_count')}"
+    )
+    print(
+        "Warning severity: "
+        f"{warning_severity.get('level')} "
+        f"reason={warning_severity.get('reason')} "
+        f"action={warning_severity.get('recommended_action')}"
+    )
+    print(
+        "Budget warning pressure: "
+        f"all_descriptions_removed={log_evidence.get('all_descriptions_removed_count')} "
+        f"last_7d_all_descriptions_removed={log_evidence.get('last_7d_all_descriptions_removed_count')} "
+        f"max_omitted_additional_skills={log_evidence.get('max_omitted_additional_skills')}"
+    )
     print(f"Audit state: {audit_state.get('state')} ({audit_state.get('reason')})")
     print(f"Audit next action: {audit_state.get('next_action')}")
     print(f"Profile apply allowed: {audit_state.get('profile_apply_allowed')}")
@@ -3107,6 +3157,9 @@ def print_human(report: dict[str, Any]) -> None:
         f"{decision_recommendation.get('status')} "
         f"profile_apply_allowed={decision_recommendation.get('profile_apply_allowed')}"
     )
+    print(f"Recommendations: {len(recommendations)}")
+    for recommendation in recommendations[:2]:
+        print(f"  - {recommendation}")
     print(f"Field contract: {field_contract.get('status')}")
     print(f"Output retention gate: {output_retention.get('status')}")
     print(
