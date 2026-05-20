@@ -159,6 +159,7 @@ expert timeout、stalled expert 或 full-history fork 失败都不是有效证�
   "enabled": true,
   "session_id": "session-id",
   "session_id_source": "argument",
+  "override_origin": "manual-session",
   "raw_session_id_sha256": "sha256",
   "worktree": "D:\\PythonProject_paper_suggest",
   "branch": "main",
@@ -221,6 +222,15 @@ python .\tools\thesis_moe_mode.py assert-on
 | `assert-on` | 不写入 | 只有有效状态为开启时返回 0。 |
 
 无效的已登记 session 文件不得阻塞项目级 on/off。脚本应报告这些文件为 skipped invalid records，并保持原文件不变。
+
+项目级传播与手动 session 覆盖规则：
+
+- `project-on` / `project-off` 默认更新项目默认值，并只传播到 `override_origin = "project-propagated"` 或没有显式手动来源的有效 session 记录；
+- `on --session-id <id>` / `off --session-id <id>` 写入 `override_origin = "manual-session"`，表示操作者显式设置过该 session；
+- 项目级命令不得静默覆盖 `override_origin = "manual-session"` 的记录；如后续确实需要批量覆盖，必须新增显式参数，例如 `--include-manual-overrides`，并在 dry run 与 JSON 输出中列出将被覆盖的 session；
+- 当 session 记录只是因为项目级传播而存在时，GUI 应显示“跟随项目默认值传播”，避免用户误认为它是手动例外；
+- 如果项目默认值与手动 session 覆盖冲突，`effective_source = "session"`，并在 `status --json` / GUI 中显示冲突提示，但不自动修复；
+- 清除手动覆盖不属于第一阶段必需命令；若后续增加 `clear-session-override`，必须回到继承项目默认值，而不是删除审计历史。
 
 `list-sessions --json` 只返回控制所需的脱敏标识和元数据：session id、来源、enabled、validity、lifecycle status、status reason、branch、worktree、first seen、last seen、时间戳、reason 和 state path。它不得暴露 raw session id，不得包含私有提示词内容。
 
@@ -551,6 +561,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | session 生命周期 | `last_seen_at` 只更新活动观测，不改变 enabled；stale/orphan 只标记不清理；generated id 显示低置信度。 |
 | JSON 输出契约 | `status`、`project-status`、`list-sessions` 和写入命令都返回统一 envelope、稳定 token、脱敏字段和 GUI 所需计数。 |
 | 新项目接入 | 默认校验已有 Agent TOML；模板生成必须显式 dry run；不得复制其他项目 `MOE.md` 或生成伪私有提示。 |
+| 覆盖冲突 | 项目级传播不覆盖手动 session override；冲突时以 session 为准并显式显示 effective source。 |
 
 ## 12. 校验与验收
 
@@ -568,7 +579,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案定义 GUI 状态徽标、错误横幅、刷新语义、按钮 scope、空状态和键盘可访问性；
 - 方案定义 session 生命周期、last seen、stale/orphan 标记和 pruning 非目标边界；
 - 方案定义 CLI JSON envelope、状态字段、计数字段、写入结果字段和失败脱敏字段；
-- 方案定义新项目接入、scaffold dry run、Agent TOML/namespace 校验和私有提示源边界。
+- 方案定义新项目接入、scaffold dry run、Agent TOML/namespace 校验和私有提示源边界；
+- 方案定义项目级传播、手动 session override、冲突展示和清除覆盖非目标边界。
 
 第一阶段验收：
 

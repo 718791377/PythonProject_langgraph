@@ -159,6 +159,7 @@ Minimum session JSON contract:
   "enabled": true,
   "session_id": "session-id",
   "session_id_source": "argument",
+  "override_origin": "manual-session",
   "raw_session_id_sha256": "sha256",
   "worktree": "D:\\PythonProject_paper_suggest",
   "branch": "main",
@@ -221,6 +222,15 @@ Command semantics:
 | `assert-on` | none | Exits zero only when effective state is enabled. |
 
 Invalid registered session files must not block project-level on/off. They should be reported as skipped invalid records and left untouched.
+
+Project-level propagation and manual session override rules:
+
+- `project-on` / `project-off` update the project default and propagate only to valid session records whose `override_origin = "project-propagated"` or that have no explicit manual origin;
+- `on --session-id <id>` / `off --session-id <id>` write `override_origin = "manual-session"` to mark an operator-explicit session setting;
+- project-level commands must not silently overwrite records with `override_origin = "manual-session"`; if bulk override is needed later, add an explicit option such as `--include-manual-overrides` and list affected sessions in dry-run and JSON output;
+- when a session record exists only because of project-level propagation, the GUI should display "follows project default propagation" so users do not confuse it with a manual exception;
+- if project default conflicts with a manual session override, `effective_source = "session"` and `status --json` / GUI displays the conflict hint without auto-repairing it;
+- clearing manual overrides is not required for Phase 1; if `clear-session-override` is later added, it must return to inheriting project default and must not delete audit history.
 
 `list-sessions --json` should return only redacted identifiers and metadata needed for control: session id, source, enabled flag, validity, lifecycle status, status reason, branch, worktree, first seen, last seen, timestamps, reason, and state path. It must not expose raw session id values beyond the normalized stored session id, and it must not include private prompt content.
 
@@ -551,6 +561,7 @@ Minimum test matrix:
 | Session lifecycle | `last_seen_at` updates only activity observation and not enabled state; stale/orphan are marked only; generated ids show lower confidence. |
 | JSON output contract | `status`, `project-status`, `list-sessions`, and write commands return a shared envelope, stable tokens, redacted fields, and GUI-needed counts. |
 | New project onboarding | existing Agent TOML is validated by default; template generation is explicit dry run; other projects' `MOE.md` content and invented private prompts are not copied. |
+| Override conflict | project-level propagation does not overwrite manual session overrides; conflicts prefer session source and show effective source explicitly. |
 
 ## 12. Validation and acceptance
 
@@ -568,7 +579,8 @@ Document-level acceptance for this plan:
 - the plan defines GUI status badges, error banners, refresh semantics, button scope, empty states, and keyboard accessibility;
 - the plan defines session lifecycle, last seen, stale/orphan marking, and pruning non-goals;
 - the plan defines the CLI JSON envelope, status fields, count fields, write-result fields, and redacted failure fields;
-- the plan defines new project onboarding, scaffold dry run, Agent TOML/namespace validation, and private prompt-source boundaries.
+- the plan defines new project onboarding, scaffold dry run, Agent TOML/namespace validation, and private prompt-source boundaries;
+- the plan defines project-level propagation, manual session overrides, conflict display, and clear-override non-goals.
 
 Phase 1 acceptance:
 
