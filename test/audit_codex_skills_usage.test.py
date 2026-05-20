@@ -352,6 +352,18 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Skill path reads: 0", output)
         self.assertIn("Profile helper calls: 0", output)
         self.assertIn("Script capability boundaries: reliable=", output)
+        self.assertIn(
+            "Stable tool-call alias registry: "
+            "policy=stable_aliases_are_medium_evidence_only_and_never_profile_apply_evidence "
+            "evidence_level=medium counts_as_strong_evidence=False",
+            output,
+        )
+        self.assertIn("Stable tool-call alias targets: plugin=2 module=1", output)
+        self.assertIn(
+            "Stable tool-call plugin alias targets: Browser=mcp__chrome_devtools__, mcp__cdp_bridge__; Cloudflare=mcp__cloudflare_api__",
+            output,
+        )
+        self.assertIn("Stable tool-call module alias targets: creative-content=mcp__pencil__", output)
         self.assertIn("Decision recommendation: advisory_only_no_profile_apply profile_apply_allowed=False", output)
         self.assertIn("Recommendations: 5", output)
         self.assertIn("Do not treat another 2% budget warning as soft-load failure", output)

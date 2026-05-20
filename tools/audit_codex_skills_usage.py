@@ -787,6 +787,23 @@ def bounded_inline_list(values: list[str], *, limit: int = 12) -> str:
     return ", ".join(samples)
 
 
+def format_alias_targets_for_human(targets: dict[str, Any], *, limit: int = 4) -> str:
+    """Render stable tool-call alias targets for bounded human stdout."""
+    if not isinstance(targets, dict) or not targets:
+        return "none"
+    parts: list[str] = []
+    for target, aliases in sorted(targets.items()):
+        alias_values = [str(alias) for alias in (aliases if isinstance(aliases, list) else []) if alias]
+        if alias_values:
+            parts.append(f"{target}={', '.join(alias_values[:limit])}")
+    if not parts:
+        return "none"
+    shown = parts[:limit]
+    if len(parts) > limit:
+        shown.append(f"+{len(parts) - limit} more")
+    return "; ".join(shown)
+
+
 def build_decision_recommendation(
     module_evidence: list[dict[str, Any]],
     warning_severity: dict[str, Any],
@@ -3064,6 +3081,11 @@ def print_human(report: dict[str, Any]) -> None:
         if isinstance(report.get("script_capability_boundaries"), dict)
         else {}
     )
+    stable_alias_registry = (
+        script_capabilities.get("stable_tool_call_alias_registry")
+        if isinstance(script_capabilities.get("stable_tool_call_alias_registry"), dict)
+        else {}
+    )
     decision_recommendation = (
         report.get("decision_recommendation")
         if isinstance(report.get("decision_recommendation"), dict)
@@ -3166,6 +3188,25 @@ def print_human(report: dict[str, Any]) -> None:
         f"reliable={len(script_capabilities.get('reliable_coverage') or [])} "
         f"human_review={len(script_capabilities.get('human_review_required_for') or [])} "
         f"enhancement_triggers={len(script_capabilities.get('enhancement_triggers') or [])}"
+    )
+    print(
+        "Stable tool-call alias registry: "
+        f"policy={stable_alias_registry.get('policy')} "
+        f"evidence_level={stable_alias_registry.get('evidence_level')} "
+        f"counts_as_strong_evidence={stable_alias_registry.get('counts_as_strong_evidence')}"
+    )
+    print(
+        "Stable tool-call alias targets: "
+        f"plugin={len(stable_alias_registry.get('plugin_aliases') or {})} "
+        f"module={len(stable_alias_registry.get('module_aliases') or {})}"
+    )
+    print(
+        "Stable tool-call plugin alias targets: "
+        f"{format_alias_targets_for_human(stable_alias_registry.get('plugin_aliases') or {})}"
+    )
+    print(
+        "Stable tool-call module alias targets: "
+        f"{format_alias_targets_for_human(stable_alias_registry.get('module_aliases') or {})}"
     )
     print(
         "Decision recommendation: "
