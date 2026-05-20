@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import platform
+import sys
+from pathlib import Path
+from typing import Any
+
+
+def detect_project_root(start: Path) -> tuple[Path, list[str]]:
+    current = start.resolve()
+    for candidate in [current, *current.parents]:
+        evidence: list[str] = []
+        for marker in [".git", "pyproject.toml", "requirements.txt", "requirements-gui.txt"]:
+            if (candidate / marker).exists():
+                evidence.append(marker)
+        if evidence:
+            return candidate, evidence
+    return current, []
+
+
+def detect_package_manager(root: Path) -> str:
+    if (root / "uv.lock").exists():
+        return "uv"
+    if (root / "poetry.lock").exists():
+        return "poetry"
+    if (root / "pyproject.toml").exists():
+        return "pyproject"
+    return "pip"
+
+
+def build_payload(root: Path) -> dict[str, Any]:
+    project_root, evidence = detect_project_root(root)
+    python_path = Path(sys.executable).resolve()
+    blockers: list[str] = []
+    if not evidence:
+        blockers.append("project_root_evidence_missing")
+    dependency_style = "pyproject-extra" if (project_root / "pyproject.toml").exists() else "requirements"
+    return {
+        "schema_version": 1,
+        "project_root": str(project_root),
+        "project_root_evidence": evidence,
+        "python_path": str(python_path),
+        "python_version": sys.version.split()[0],
+        "python_architecture": platform.architecture()[0],
+        "package_manager": detect_package_manager(project_root),
+        "dependency_style": dependency_style,
+        "planned_file_changes": [],
+        "planned_commands": [],
+        "local_only_artifacts": [".venv", "build", "dist", ".pytest_cache"],
+        "blockers": blockers,
+        "rollback_steps": [
+            "revert the local feature branch or commit",
+            "remove project-local GUI dependency declarations",
+            "remove generated GUI template files",
+            "restore lockfile from the previous revision if changed",
+        ],
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Emit PySide6 GUI environment preview evidence for this project.")
+    parser.add_argument("--project-root", default=".")
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args()
+    payload = build_payload(Path(args.project_root))
+    if args.json:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        print("PySide6 GUI environment preview")
+        for key in ["project_root", "python_path", "python_version", "package_manager", "dependency_style"]:
+            print(f"{key}: {payload[key]}")
+        if payload["blockers"]:
+            print("blockers: " + ", ".join(payload["blockers"]))
+    return 1 if payload["blockers"] else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,65 @@
+from __future__ import annotations
+
+import logging
+from collections.abc import Callable
+
+from PySide6.QtWidgets import QLabel, QMainWindow, QMessageBox, QWidget, QVBoxLayout
+
+LOGGER = logging.getLogger(__name__)
+
+
+class ServiceAdapter:
+    """Boundary for project business services used by the GUI shell."""
+
+    def health_summary(self) -> str:
+        return "Ready"
+
+
+class WorkerAdapter:
+    """Boundary for long-running work; do not block the Qt event loop."""
+
+    def run_later(self, callback: Callable[[], None]) -> None:
+        # Replace with QThread, QtConcurrent, process, or async integration when needed.
+        callback()
+
+
+class ConfigDataDirectoryAdapter:
+    """Boundary for local config/cache/data paths."""
+
+    def describe(self) -> str:
+        return "Project-local config/cache/data paths are configured by the target project."
+
+
+class MainWindow(QMainWindow):
+    """Minimal GUI shell that keeps business logic behind adapters."""
+
+    def __init__(
+        self,
+        service: ServiceAdapter | None = None,
+        worker: WorkerAdapter | None = None,
+        data_dirs: ConfigDataDirectoryAdapter | None = None,
+    ) -> None:
+        super().__init__()
+        self.service = service or ServiceAdapter()
+        self.worker = worker or WorkerAdapter()
+        self.data_dirs = data_dirs or ConfigDataDirectoryAdapter()
+        self.setWindowTitle("{{window_title}}")
+        self._build_layout()
+
+    def _build_layout(self) -> None:
+        label = QLabel(self.service.health_summary())
+        label.setObjectName("healthSummaryLabel")
+        data_label = QLabel(self.data_dirs.describe())
+        data_label.setObjectName("dataDirectoryLabel")
+        container = QWidget(self)
+        layout = QVBoxLayout(container)
+        layout.addWidget(label)
+        layout.addWidget(data_label)
+        self.setCentralWidget(container)
+        self.statusBar().showMessage("Ready")
+
+    def show_business_error(self, message: str, exc: Exception | None = None) -> None:
+        """Show a user-readable error while retaining diagnostic logs."""
+        if exc is not None:
+            LOGGER.exception("GUI business operation failed", exc_info=exc)
+        QMessageBox.warning(self, "{{project_name}}", message)

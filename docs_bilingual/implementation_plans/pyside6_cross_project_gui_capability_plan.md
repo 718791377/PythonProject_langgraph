@@ -340,6 +340,13 @@ Implement this capability in small, reviewable slices. A later implementation ch
 
 Default rollout order is 0 -> 1 -> 2 -> 3 -> 4. Slice 5 is optional and must remain request-driven.
 
+Current local implementation status:
+
+- Slices 0/1 shared policy and minimal templates are carried by `tools/pyside6_gui_templates/`;
+- the template contract is verified by `tools/check_pyside6_gui_template_contract.py` and `test/check_pyside6_gui_template_contract.test.py`;
+- the CI manifest registers that checker test;
+- later slices 2/3 must still implement the `ensure-pyside6-gui.ps1` preview/apply helper separately, and template presence must not be misreported as any consumer project already being `env_ready` or `template_ready`.
+
 ## 17. Failure modes and triage
 
 Common failure modes must be handled as local project issues, not by weakening the shared policy:

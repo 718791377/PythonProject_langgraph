@@ -1,0 +1,18 @@
+param(
+    [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
+    [string]$PythonPath
+)
+
+$ErrorActionPreference = "Stop"
+$projectRootPath = (Resolve-Path -LiteralPath $ProjectRoot).Path
+if (-not $PythonPath) {
+    $candidate = Join-Path $projectRootPath ".venv\Scripts\python.exe"
+    if (-not (Test-Path -LiteralPath $candidate)) {
+        throw "Project-local Python was not found at $candidate. Create the project .venv before launching the visible GUI."
+    }
+    $PythonPath = $candidate
+}
+
+$env:PYTHONPATH = Join-Path $projectRootPath "src"
+& $PythonPath -m {{package_name}}.app
+exit $LASTEXITCODE

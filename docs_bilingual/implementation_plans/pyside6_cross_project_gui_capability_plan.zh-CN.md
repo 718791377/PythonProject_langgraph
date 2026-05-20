@@ -340,6 +340,13 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 
 默认推进顺序是 0 -> 1 -> 2 -> 3 -> 4。切片 5 是可选阶段，必须保持请求驱动。
 
+当前本地实施状态：
+
+- 切片 0/1 的共享政策与最小模板已由 `tools/pyside6_gui_templates/` 承载；
+- 模板契约由 `tools/check_pyside6_gui_template_contract.py` 和 `test/check_pyside6_gui_template_contract.test.py` 验证；
+- CI manifest 已登记该 checker 测试；
+- 后续切片 2/3 仍应单独实现 `ensure-pyside6-gui.ps1` 的 preview/apply helper，不得把模板存在误报为任意消费项目已经 `env_ready` 或 `template_ready`。
+
 ## 17. 失败模式与排障
 
 常见失败模式必须作为项目本地问题处理，不能通过削弱共享政策解决：

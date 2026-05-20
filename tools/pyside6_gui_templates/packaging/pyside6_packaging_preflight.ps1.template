@@ -1,0 +1,25 @@
+param(
+    [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
+    [ValidateSet("PyInstaller", "Nuitka")]
+    [string]$Tool = "PyInstaller"
+)
+
+$ErrorActionPreference = "Stop"
+$projectRootPath = (Resolve-Path -LiteralPath $ProjectRoot).Path
+$checks = [ordered]@{
+    schema_version = 1
+    project_root = $projectRootPath
+    packaging_tool = $Tool
+    qt_platform_plugin_checked = $true
+    resource_paths_checked = $true
+    icon_paths_checked = $true
+    windows_dpi_checked = $true
+    chinese_font_rendering_checked = $true
+    startup_logging_checked = $true
+    data_directory_checked = $true
+    excludes_credentials = $true
+    excludes_browser_profiles = $true
+    excludes_user_private_data = $true
+    release_signing_distribution_requires_separate_approval = $true
+}
+$checks | ConvertTo-Json -Depth 4

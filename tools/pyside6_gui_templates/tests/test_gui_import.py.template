@@ -1,0 +1,11 @@
+from __future__ import annotations
+
+import importlib
+
+
+def test_gui_package_imports_without_visible_window() -> None:
+    module = importlib.import_module("{{package_name}}.main_window")
+    assert hasattr(module, "MainWindow")
+    assert hasattr(module, "ServiceAdapter")
+    assert hasattr(module, "WorkerAdapter")
+    assert hasattr(module, "ConfigDataDirectoryAdapter")
