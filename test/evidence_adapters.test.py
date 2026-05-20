@@ -38,6 +38,28 @@ class EvidenceAdaptersTest(unittest.TestCase):
         self.assertTrue(tools.complete_for_text)
         self.assertTrue(tools.complete_for_render)
 
+    def test_discover_poppler_skips_inaccessible_candidates(self) -> None:
+        root = self.make_root("poppler-inaccessible")
+        bad_dir = root / "blocked"
+        good_dir = root / "good"
+        bad_dir.mkdir(parents=True)
+        good_dir.mkdir(parents=True)
+        for name in ["pdfinfo.exe", "pdftotext.exe", "pdftoppm.exe"]:
+            (good_dir / name).write_text("fake", encoding="utf-8")
+
+        def fake_is_file(path: Path) -> bool:
+            if bad_dir in path.parents:
+                raise PermissionError("blocked by test")
+            return path.exists()
+
+        with mock.patch.object(poppler_adapter, "_candidate_dirs", return_value=[bad_dir, good_dir]), \
+             mock.patch.object(Path, "is_file", autospec=True, side_effect=fake_is_file):
+            tools = poppler_adapter.discover_poppler()
+
+        self.assertEqual(Path(tools.pdfinfo or ""), good_dir / "pdfinfo.exe")
+        self.assertEqual(Path(tools.pdftotext or ""), good_dir / "pdftotext.exe")
+        self.assertEqual(Path(tools.pdftoppm or ""), good_dir / "pdftoppm.exe")
+
     def test_tesseract_confidence_parser_averages_non_negative_word_confidence(self) -> None:
         tsv = "level\tpage_num\tconf\ttext\n1\t1\t-1\t\n5\t1\t90\tHello\n5\t1\t80\tWorld\n"
 

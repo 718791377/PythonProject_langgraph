@@ -72,8 +72,11 @@ def _tool_in_dir(directory: Path, tool_name: str) -> str | None:
         names.append(tool_name + ".exe")
     for name in names:
         candidate = directory / name
-        if candidate.is_file():
-            return str(candidate)
+        try:
+            if candidate.is_file():
+                return str(candidate)
+        except OSError:
+            continue
     return None
 
 
