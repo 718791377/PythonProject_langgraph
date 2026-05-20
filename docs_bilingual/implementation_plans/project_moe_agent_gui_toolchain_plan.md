@@ -350,7 +350,25 @@ Implementation and update commands must:
 
 If an update fails halfway, rerunning the installer or updater must be safe. For project state changes, rollback is the target project's Git history plus the state JSON files under `.omx/state`.
 
-## 10. Implementation slices and test matrix
+## 10. Audit log, privacy, and retention boundaries
+
+MOE control tooling should emit a small local audit record for state-changing actions:
+
+```text
+.omx/state/<state_namespace>/audit/<yyyy-mm-dd>.jsonl
+```
+
+Each audit entry should contain only operational metadata: timestamp, command, stable token, exit code, project root, branch, normalized session id when applicable, state path, changed scope, and reason. Audit records must not contain `MOE.md` content, `developer_instructions`, raw session ids, raw environment variable values, thesis text, paper content, or browser/literature-search payloads.
+
+Privacy and retention rules:
+
+- retain `raw_session_id_sha256`, not raw session id values;
+- keep project-private prompts and documents inside the target project;
+- do not copy audit logs into `D:\PythonProject_langgraph` when installing or updating the GUI;
+- make audit writing best-effort for state changes: failure to write the audit log should be reported but must not silently change the state without an error token;
+- retention pruning is a later explicit feature and must not delete audit or session state in the first implementation.
+
+## 11. Implementation slices and test matrix
 
 Recommended Phase 1 target-project file ownership:
 
@@ -378,7 +396,7 @@ Minimum test matrix:
 | GUI install | install refuses missing agent TOML and writes only inside the target project. |
 | GUI actions | GUI action results match CLI `status --json` and `project-status --json`. |
 
-## 11. Validation and acceptance
+## 12. Validation and acceptance
 
 Document-level acceptance for this plan:
 
@@ -402,7 +420,7 @@ Phase 2 acceptance:
 - no target project's private agent TOML, `MOE.md`, or state is overwritten by GUI update;
 - GUI actions and CLI status agree.
 
-## 12. Immediate next implementation boundary
+## 13. Immediate next implementation boundary
 
 After this plan is accepted, implementation should proceed in this order:
 

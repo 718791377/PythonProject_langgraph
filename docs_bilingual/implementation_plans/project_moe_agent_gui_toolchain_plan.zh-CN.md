@@ -350,7 +350,25 @@ PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来�
 
 如果更新中途失败，重复运行安装器或更新器必须是安全的。项目状态回滚依赖目标项目 Git 历史，以及 `.omx/state` 下的状态 JSON 文件。
 
-## 10. 实施切片与测试矩阵
+## 10. 审计日志、隐私与保留边界
+
+MOE 控制工具对状态变更动作应写入轻量本地审计记录：
+
+```text
+.omx/state/<state_namespace>/audit/<yyyy-mm-dd>.jsonl
+```
+
+每条审计记录只包含操作元数据：timestamp、command、stable token、exit code、project root、branch、适用时的 normalized session id、state path、changed scope 和 reason。审计记录不得包含 `MOE.md` 内容、`developer_instructions`、raw session id、原始环境变量值、论文正文、paper 内容或浏览器/文献检索载荷。
+
+隐私与保留规则：
+
+- 只保留 `raw_session_id_sha256`，不保留 raw session id；
+- 项目私有提示词和文档必须留在目标项目内；
+- 安装或更新 GUI 时不得把审计日志复制到 `D:\PythonProject_langgraph`；
+- 状态变更的审计写入应是 best-effort：如果审计日志写入失败，必须报告错误 token，不得静默改状态；
+- retention pruning 是后续显式功能，第一版不得删除 audit 或 session state。
+
+## 11. 实施切片与测试矩阵
 
 第一阶段目标项目推荐文件所有权：
 
@@ -378,7 +396,7 @@ PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来�
 | GUI 安装 | 缺少 Agent TOML 时安装失败，且只写目标项目内文件。 |
 | GUI 操作 | GUI 操作结果与 CLI `status --json` 和 `project-status --json` 一致。 |
 
-## 11. 校验与验收
+## 12. 校验与验收
 
 本文档级验收：
 
@@ -402,7 +420,7 @@ PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来�
 - GUI 更新不覆盖目标项目私有 Agent TOML、`MOE.md` 或 state；
 - GUI 操作结果与 CLI status 一致。
 
-## 12. 下一步实施边界
+## 13. 下一步实施边界
 
 本文确认后，具体实施按以下顺序推进：
 
