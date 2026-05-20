@@ -148,6 +148,16 @@ python .\tools\thesis_moe_mode.py assert-on
 - 现有 session state 文件保持可读取；
 - 损坏、session 不匹配或越界状态必须 fail closed。
 
+第一阶段实施顺序：
+
+1. 扩展 `tools/thesis_moe_mode.py`，增加项目默认状态的读取和写入 helper；
+2. 新增 `project-on`、`project-off`、`project-status` 命令；
+3. 让 `status` 和 `assert-on` 按“session 覆盖、项目默认值、fail-closed 关闭”的顺序计算有效状态；
+4. 更新 `thesis-moe-on.cmd` 与 `thesis-moe-off.cmd`，默认调用项目级命令；
+5. 更新使用说明和测试，覆盖项目默认值、已登记 session 传播和单 session 覆盖。
+
+第一阶段不得修改论文正文、私有提示词内容、浏览器自动化或文献检索行为。
+
 ## 7. 第二阶段：独立 PySide6 项目 MOE GUI
 
 GUI 源码由本仓库统一维护，但必须与本仓库其他 GUI 工具明确隔离。
@@ -189,6 +199,22 @@ tools/project_moe_gui_toolchain/
 - 调用与 `.cmd` 相同的项目本地 CLI 脚本；
 - 显示解析出的项目根目录和 state namespace，避免误控其他项目。
 
+安装后的 GUI 配置：
+
+```json
+{
+  "schema_version": 1,
+  "toolchain": "project_moe_gui",
+  "agent_name": "thesis-moe-mentor",
+  "state_namespace": "thesis_moe",
+  "mode_cli": "tools/thesis_moe_mode.py",
+  "project_root_strategy": "launcher-parent-git-root",
+  "pyside6_runtime": "project-or-shared-runtime"
+}
+```
+
+GUI 必须把该配置视为目标项目配置。它不得读取中央工具链状态来决定目标项目 session。
+
 ## 8. 安装与更新模型
 
 `D:\PythonProject_langgraph` 是 GUI 工具链 source of truth。目标项目只接收安装产物。
@@ -203,7 +229,19 @@ tools/project_moe_gui_toolchain/
 
 PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来自目标项目自己的虚拟环境。第一版实现必须在安装配置里记录使用哪种 runtime；如果 PySide6 不可用，必须给出可执行的错误提示。
 
-## 9. 校验与验收
+## 9. 安全与回滚规则
+
+实施和更新命令必须：
+
+- 写入前打印解析出的目标项目根目录；
+- 拒绝写入目标项目根目录以外的位置；
+- 拒绝覆盖 `MOE.md`、`.codex/agents/*.toml` 或 `.omx/state`，除非后续另行创建显式 repair 命令；
+- 在目标项目内形成可由 Git 审查的变更；
+- 输出足够状态信息，让用户能看清变更的是项目默认值还是单 session 覆盖。
+
+如果更新中途失败，重复运行安装器或更新器必须是安全的。项目状态回滚依赖目标项目 Git 历史，以及 `.omx/state` 下的状态 JSON 文件。
+
+## 10. 校验与验收
 
 本文档级验收：
 
@@ -226,3 +264,15 @@ PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来�
 - GUI 安装到第二个项目后只控制第二个项目；
 - GUI 更新不覆盖目标项目私有 Agent TOML、`MOE.md` 或 state；
 - GUI 操作结果与 CLI status 一致。
+
+## 11. 下一步实施边界
+
+本文确认后，具体实施按以下顺序推进：
+
+1. 先在 `D:\PythonProject_paper_suggest` 实施并测试第一阶段；
+2. 如果第一阶段暴露出可复用契约缺口，再回到本仓库补充项目级 MOE TOML/checker 期望；
+3. 在本仓库实现独立 `project_moe_gui` 工具链；
+4. 把 GUI 安装到 `paper_suggest` 作为第一个目标项目；
+5. 第一个目标稳定后，再把 installer 泛化给其他项目。
+
+命令行状态模型稳定之前，不启动 PySide6 GUI 实现。

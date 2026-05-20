@@ -148,6 +148,16 @@ Backward compatibility:
 - existing session state files remain readable;
 - corrupted, mismatched, or out-of-scope state fails closed.
 
+Phase 1 implementation sequence:
+
+1. extend `tools/thesis_moe_mode.py` with project-default state read/write helpers;
+2. add `project-on`, `project-off`, and `project-status` commands;
+3. make `status` and `assert-on` compute effective state from session override, then project default, then fail-closed disabled;
+4. update `thesis-moe-on.cmd` and `thesis-moe-off.cmd` to call project-level commands by default;
+5. add or update usage documentation and tests for project default, registered-session propagation, and single-session override behavior.
+
+Phase 1 must not change paper content, private prompt content, browser automation, or literature-search behavior.
+
 ## 7. Phase 2: dedicated PySide6 project MOE GUI
 
 The GUI source is maintained in this repository, but it is isolated from other GUI work.
@@ -189,6 +199,22 @@ First GUI version:
 - calls the same project-local CLI script used by `.cmd` files;
 - displays the resolved project root and state namespace so accidental cross-project control is visible.
 
+Installed GUI config:
+
+```json
+{
+  "schema_version": 1,
+  "toolchain": "project_moe_gui",
+  "agent_name": "thesis-moe-mentor",
+  "state_namespace": "thesis_moe",
+  "mode_cli": "tools/thesis_moe_mode.py",
+  "project_root_strategy": "launcher-parent-git-root",
+  "pyside6_runtime": "project-or-shared-runtime"
+}
+```
+
+The GUI must treat this config as target-project configuration. It must not read central toolchain state to decide target sessions.
+
 ## 8. Install and update model
 
 `D:\PythonProject_langgraph` is the source of truth for the GUI toolchain. Target projects receive install artifacts only.
@@ -203,7 +229,19 @@ Install/update rules:
 
 PySide6 runtime can be supplied by either a documented shared GUI runtime or the target project's own virtual environment. The first implementation must record which runtime is used in the installed config and must fail with an actionable message if PySide6 is unavailable.
 
-## 9. Validation and acceptance
+## 9. Safety and rollback rules
+
+Implementation and update commands must:
+
+- print the resolved target project root before writing;
+- refuse to write outside the target project root;
+- refuse to overwrite `MOE.md`, `.codex/agents/*.toml`, or `.omx/state` unless a later explicit repair command is created;
+- create normal Git-reviewable changes in the target project;
+- preserve enough status output for the user to see whether a project default or a session override was changed.
+
+If an update fails halfway, rerunning the installer or updater must be safe. For project state changes, rollback is the target project's Git history plus the state JSON files under `.omx/state`.
+
+## 10. Validation and acceptance
 
 Document-level acceptance for this plan:
 
@@ -226,3 +264,15 @@ Phase 2 acceptance:
 - installing into a second project controls only that second project;
 - no target project's private agent TOML, `MOE.md`, or state is overwritten by GUI update;
 - GUI actions and CLI status agree.
+
+## 11. Immediate next implementation boundary
+
+After this plan is accepted, implementation should proceed in this order:
+
+1. implement and test Phase 1 in `D:\PythonProject_paper_suggest`;
+2. update this repository with reusable project MOE TOML/checker expectations if Phase 1 exposes a reusable contract gap;
+3. implement the dedicated `project_moe_gui` toolchain in this repository;
+4. install the GUI into `paper_suggest` as the first target project;
+5. only after the first target is stable, generalize the installer for additional projects.
+
+Do not start the PySide6 GUI before the command-line state model is stable.
