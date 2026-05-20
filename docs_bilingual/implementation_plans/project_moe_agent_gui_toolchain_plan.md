@@ -209,6 +209,19 @@ State compatibility and migration:
 - project-level commands must preserve `created_at` when it already exists and update `updated_at` and `reason`;
 - invalid or corrupt legacy records are never auto-repaired during normal on/off operations; they require a later explicit repair command if repair is needed.
 
+Failure-mode and exit-code contract:
+
+| Case | Exit code | Stable token |
+| --- | ---: | --- |
+| successful read or write | 0 | `ok` |
+| `assert-on` sees effective disabled state | 1 | `disabled` |
+| invalid command arguments or unsupported command | 2 | `usage_error` |
+| corrupt or mismatched state blocks effective-state calculation | 3 | `state_corrupt`, `schema_version_mismatch`, `agent_name_mismatch`, `session_mismatch`, `worktree_mismatch`, `branch_mismatch` |
+| unsafe target root or ownership preflight refusal | 4 | `blocked:unsafe_target_root`, `blocked:ownership_precheck_failed`, `blocked:dirty_unowned_files` |
+| missing dependency or required project file | 5 | `blocked:missing_agent_toml`, `blocked:missing_mode_cli`, `blocked:pyside6_unavailable` |
+
+CLI and GUI outputs should include both a human-readable message and a stable machine-readable token. GUI code should branch on tokens, not localized prose.
+
 Backward compatibility:
 
 - existing `status --json` remains machine-readable;

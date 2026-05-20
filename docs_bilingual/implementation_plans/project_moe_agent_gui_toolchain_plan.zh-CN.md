@@ -209,6 +209,19 @@ python .\tools\thesis_moe_mode.py assert-on
 - 项目级命令应保留已有 `created_at`，并更新 `updated_at` 与 `reason`；
 - 无效或损坏的旧记录不得在普通 on/off 操作中自动修复；如确实需要修复，后续必须另行创建显式 repair 命令。
 
+失败模式与退出码契约：
+
+| 场景 | 退出码 | 稳定 token |
+| --- | ---: | --- |
+| 成功读取或写入 | 0 | `ok` |
+| `assert-on` 发现有效状态为关闭 | 1 | `disabled` |
+| 命令参数无效或不支持该命令 | 2 | `usage_error` |
+| 损坏或不匹配状态阻止有效状态计算 | 3 | `state_corrupt`、`schema_version_mismatch`、`agent_name_mismatch`、`session_mismatch`、`worktree_mismatch`、`branch_mismatch` |
+| 目标根目录不安全或 ownership preflight 拒绝 | 4 | `blocked:unsafe_target_root`、`blocked:ownership_precheck_failed`、`blocked:dirty_unowned_files` |
+| 缺少依赖或必需项目文件 | 5 | `blocked:missing_agent_toml`、`blocked:missing_mode_cli`、`blocked:pyside6_unavailable` |
+
+CLI 和 GUI 输出应同时包含面向人的说明和稳定机器可读 token。GUI 代码应基于 token 分支，不依赖本地化自然语言。
+
 兼容要求：
 
 - 现有 `status --json` 保持机器可读；
