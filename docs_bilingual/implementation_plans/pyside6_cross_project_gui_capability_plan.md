@@ -345,9 +345,10 @@ Current local implementation status:
 - Slices 0/1 shared policy and minimal templates are carried by `tools/pyside6_gui_templates/`;
 - the template contract is verified by `tools/check_pyside6_gui_template_contract.py` and `test/check_pyside6_gui_template_contract.test.py`;
 - Slice 2 preview helper source is carried by `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1`;
-- the preview helper contract is verified by `tools/check_pyside6_gui_preview_helper_contract.py` and `test/check_pyside6_gui_preview_helper_contract.test.py`;
+- Slice 3 controlled `apply` mode is now implemented in `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1` with fail-closed target-root checks, dependency-surface updates, template generation, structured `applied_file_changes`, and `docs/pyside6_gui_rollback.md` rollback-note generation;
+- the preview/apply helper contract is verified by `tools/check_pyside6_gui_preview_helper_contract.py` and `test/check_pyside6_gui_preview_helper_contract.test.py`, including preview read-only behavior, disposable apply fixture writes, and unsafe-root fail-closed coverage;
 - the CI manifest registers both PySide6 contract tests, and `tools/run_openspec_guard.py` runs both checkers;
-- later Slice 3 must still implement the `ensure-pyside6-gui.ps1` `apply` mode separately, and helper/template presence must not be misreported as any consumer project already being `env_ready` or `template_ready`.
+- Slice 4 consumer-project opt-in remains project/request-specific, and helper/template presence must not be misreported as any consumer project already being `env_ready`, `template_ready`, or `verified`; Slice 5 packaging remains opt-in only.
 
 ## 17. Failure modes and triage
 
@@ -364,18 +365,15 @@ Common failure modes must be handled as local project issues, not by weakening t
 
 ## 18. Future implementation tasks
 
-A later implementation change may add:
+Remaining implementation changes may add:
 
 - user-level `pyside6-gui` skill instructions;
-- `ensure-pyside6-gui.ps1` `apply` mode with rollback-note generation;
-- `check_pyside6_env.py` template;
-- `run_gui.ps1` template;
-- a minimal PySide6 main-window template;
-- project-local apply-mode fixture coverage;
-- a packaging preflight template;
 - a cross-project usage note in the skills/profile helper documentation;
-- a checker that verifies a project-local PySide6 opt-in has a dependency declaration and import smoke test;
-- checker coverage for target-root evidence, dependency declaration uniqueness, GUI/business boundaries, worker boundaries, config/data paths, and packaging preflight evidence.
+- a checker that verifies a consumer project-local PySide6 opt-in has a dependency declaration, import smoke test, and rollback note;
+- project opt-in coverage for dependency declaration uniqueness, GUI/business boundaries, worker boundaries, config/data paths, and package-manager-specific lockfile behavior;
+- packaging opt-in coverage for PyInstaller/Nuitka preflight evidence, data exclusion, signing/distribution approval boundaries, and rollback artifacts.
+
+Already implemented shared-surface tasks include the minimal GUI templates, `check_pyside6_env.py` and `run_gui.ps1` templates, packaging preflight template, `ensure-pyside6-gui.ps1` preview/apply modes, rollback-note generation, and disposable apply-mode fixture coverage.
 
 ## 19. Acceptance criteria
 

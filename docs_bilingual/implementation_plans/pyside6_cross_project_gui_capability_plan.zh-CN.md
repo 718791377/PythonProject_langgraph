@@ -345,9 +345,10 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 切片 0/1 的共享政策与最小模板已由 `tools/pyside6_gui_templates/` 承载；
 - 模板契约由 `tools/check_pyside6_gui_template_contract.py` 和 `test/check_pyside6_gui_template_contract.test.py` 验证；
 - 切片 2 的 preview helper 源码已由 `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1` 承载；
-- preview helper 契约由 `tools/check_pyside6_gui_preview_helper_contract.py` 和 `test/check_pyside6_gui_preview_helper_contract.test.py` 验证；
+- 切片 3 的受控 `apply` 模式已在 `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1` 中实现，覆盖 fail-closed 目标根目录检查、依赖声明面更新、模板生成、结构化 `applied_file_changes`，以及 `docs/pyside6_gui_rollback.md` 回滚说明生成；
+- preview/apply helper 契约由 `tools/check_pyside6_gui_preview_helper_contract.py` 和 `test/check_pyside6_gui_preview_helper_contract.test.py` 验证，覆盖 preview 只读、一次性 apply fixture 写入，以及不安全根目录 fail-closed；
 - CI manifest 已登记两个 PySide6 契约测试，`tools/run_openspec_guard.py` 已运行两个 checker；
-- 后续切片 3 仍应单独实现 `ensure-pyside6-gui.ps1` 的 `apply` 模式，不得把 helper 或模板存在误报为任意消费项目已经 `env_ready` 或 `template_ready`。
+- 切片 4 消费项目 opt-in 仍按具体项目和请求推进，不得把 helper 或模板存在误报为任意消费项目已经 `env_ready`、`template_ready` 或 `verified`；切片 5 打包仍保持按需 opt-in。
 
 ## 17. 失败模式与排障
 
@@ -364,18 +365,15 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 
 ## 18. 后续实施任务
 
-后续 implementation change 可以新增：
+后续剩余 implementation change 可以新增：
 
 - 用户级 `pyside6-gui` skill 指引；
-- `ensure-pyside6-gui.ps1` `apply` 模式与回滚说明生成；
-- `check_pyside6_env.py` 模板；
-- `run_gui.ps1` 模板；
-- 最小 PySide6 main-window 模板；
-- 项目本地 apply-mode fixture 覆盖；
-- 打包 preflight 模板；
 - skills/profile helper 文档中的跨项目使用说明；
-- 检查项目本地 PySide6 opt-in 是否具备依赖声明和 import smoke test 的 checker；
-- checker 还应验证目标项目根目录证据、依赖声明唯一性、GUI/业务边界、worker 边界、配置数据路径和打包 preflight 证据。
+- 检查消费项目本地 PySide6 opt-in 是否具备依赖声明、import smoke test 和回滚说明的 checker；
+- 项目 opt-in 覆盖依赖声明唯一性、GUI/业务边界、worker 边界、配置数据路径和包管理器 lockfile 行为；
+- 打包 opt-in 覆盖 PyInstaller/Nuitka preflight 证据、数据排除、签名/分发授权边界和回滚产物。
+
+已落地的共享面任务包括最小 GUI 模板、`check_pyside6_env.py` 与 `run_gui.ps1` 模板、打包 preflight 模板、`ensure-pyside6-gui.ps1` preview/apply 模式、回滚说明生成，以及一次性 apply-mode fixture 覆盖。
 
 ## 19. 验收标准
 

@@ -22,6 +22,10 @@ REQUIRED_JSON_FIELDS = [
     "package_manager",
     "dependency_style",
     "planned_file_changes",
+    "applied_file_changes",
+    "rollback_note",
+    "apply_mode",
+    "smoke_test",
     "planned_commands",
     "local_only_artifacts",
     "blockers",
@@ -38,22 +42,37 @@ REQUIRED_SCRIPT_SNIPPETS = [
     "CreateTemplate",
     "RunSmokeTest",
     "ConvertTo-Json",
-    "apply_not_implemented",
     "project_root_evidence",
     "planned_file_changes",
+    "applied_file_changes",
+    "rollback_note",
     "local_only_artifacts",
     "rollback_steps",
+    "Get-ProjectRelativeFullPath",
+    "Update-RequirementsGui",
+    "Update-PyProjectDependency",
+    "Apply-TemplateFiles",
+    "Write-RollbackNote",
 ]
-FORBIDDEN_WRITE_SNIPPETS = [
+FORBIDDEN_HELPER_SNIPPETS = [
+    "apply_not_implemented",
+    "Start-Process",
+    "pip install --user",
+    "--user",
+    "git push",
+    "git fetch",
+    "git merge",
+    "git reset",
+    "git clean",
+    "Remove-Item",
+    "Move-Item",
+]
+LEGACY_UNGATED_WRITE_SNIPPETS = [
     "New-Item",
     "Set-Content",
     "Out-File",
     "Add-Content",
-    "Remove-Item",
     "Copy-Item",
-    "Move-Item",
-    "Start-Process",
-    "git ",
 ]
 
 
@@ -72,10 +91,20 @@ def find_powershell() -> str | None:
     return None
 
 
-def run_helper(repo_root: Path, fixture: Path, extra_args: list[str] | None = None) -> subprocess.CompletedProcess[str]:
+def run_helper(
+    repo_root: Path,
+    fixture: Path,
+    *,
+    mode: str = "preview",
+    dependency_style: str = "auto",
+    package_name: str = "sample_gui",
+    create_template: bool = True,
+    run_smoke_test: bool = True,
+    extra_args: list[str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     powershell = find_powershell()
     if not powershell:
-        raise RuntimeError("PowerShell executable not found; cannot validate preview helper execution.")
+        raise RuntimeError("PowerShell executable not found; cannot validate PySide6 GUI helper execution.")
     command = [
         powershell,
         "-NoProfile",
@@ -86,33 +115,116 @@ def run_helper(repo_root: Path, fixture: Path, extra_args: list[str] | None = No
         "-ProjectRoot",
         str(fixture),
         "-Mode",
-        "preview",
+        mode,
         "-DependencyStyle",
-        "auto",
+        dependency_style,
         "-PackageName",
-        "sample_gui",
-        "-CreateTemplate",
-        "-RunSmokeTest",
-        "-Json",
+        package_name,
     ]
+    if create_template:
+        command.append("-CreateTemplate")
+    if run_smoke_test:
+        command.append("-RunSmokeTest")
+    command.append("-Json")
     if extra_args:
         command.extend(extra_args)
     return subprocess.run(command, cwd=repo_root, capture_output=True, text=True, encoding="utf-8", check=False)
 
 
-def make_fixture(root: Path) -> Path:
-    fixture = root / ".omx" / "test-artifacts" / f"pyside6-preview-{uuid.uuid4().hex[:8]}"
+def make_fixture(root: Path, *, name: str, dependency_surface: str) -> Path:
+    fixture = root / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}"
     fixture.mkdir(parents=True, exist_ok=True)
-    (fixture / "pyproject.toml").write_text(
-        "[project]\nname = \"sample\"\nversion = \"0.1.0\"\n",
-        encoding="utf-8",
-    )
-    (fixture / "README.md").write_text("# Sample\n", encoding="utf-8")
+    if dependency_surface == "pyproject":
+        (fixture / "pyproject.toml").write_text(
+            "[project]\nname = \"sample\"\nversion = \"0.1.0\"\n",
+            encoding="utf-8",
+        )
+    elif dependency_surface == "requirements":
+        (fixture / "requirements.txt").write_text("pytest\n", encoding="utf-8")
+    elif dependency_surface == "none":
+        pass
+    else:
+        raise ValueError(f"unknown dependency surface: {dependency_surface}")
+    if dependency_surface != "none":
+        (fixture / "README.md").write_text("# Sample\n", encoding="utf-8")
     return fixture
 
 
 def snapshot_files(root: Path) -> set[str]:
-    return {str(path.relative_to(root)) for path in root.rglob("*") if path.is_file()}
+    return {str(path.relative_to(root)).replace("\\", "/") for path in root.rglob("*") if path.is_file()}
+
+
+def load_json_stdout(result: subprocess.CompletedProcess[str], errors: list[str], label: str) -> dict[str, Any] | None:
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        errors.append(f"{label} did not emit valid JSON with -Json: {exc}: {result.stdout!r}")
+        return None
+
+
+def validate_preview_payload(payload: dict[str, Any], errors: list[str]) -> None:
+    for field in REQUIRED_JSON_FIELDS:
+        if field not in payload:
+            errors.append(f"Preview helper JSON missing required field `{field}`.")
+    if payload.get("mode") != "preview":
+        errors.append("Preview helper JSON must report mode=preview.")
+    if payload.get("apply_mode") is not False:
+        errors.append("Preview helper JSON must report apply_mode=false.")
+    if payload.get("dependency_style") != "pyproject-extra":
+        errors.append("Preview helper should detect pyproject fixture as dependency_style=pyproject-extra.")
+    planned = payload.get("planned_file_changes") or []
+    if not any(isinstance(item, dict) and item.get("path") == "pyproject.toml" for item in planned):
+        errors.append("Preview helper did not plan pyproject.toml dependency update for pyproject fixture.")
+    if not any(isinstance(item, dict) and item.get("path") == "src/sample_gui/app.py" for item in planned):
+        errors.append("Preview helper did not plan sample_gui app template creation when -CreateTemplate is set.")
+    if payload.get("applied_file_changes") not in ([], None):
+        errors.append("Preview helper must not report applied_file_changes in preview mode.")
+
+
+def validate_apply_payload(payload: dict[str, Any], fixture: Path, errors: list[str]) -> None:
+    for field in REQUIRED_JSON_FIELDS:
+        if field not in payload:
+            errors.append(f"Apply helper JSON missing required field `{field}`.")
+    if payload.get("mode") != "apply":
+        errors.append("Apply helper JSON must report mode=apply.")
+    if payload.get("apply_mode") is not True:
+        errors.append("Apply helper JSON must report apply_mode=true.")
+    if not payload.get("ok"):
+        errors.append(f"Apply helper reported blockers for a valid requirements fixture: {payload.get('blockers')}")
+    expected_paths = [
+        "requirements-gui.txt",
+        "src/sample_gui/__init__.py",
+        "src/sample_gui/app.py",
+        "src/sample_gui/main_window.py",
+        "tools/gui/check_pyside6_env.py",
+        "tools/gui/run_gui.ps1",
+        "tests/test_gui_import.py",
+        "docs/pyside6_gui_rollback.md",
+    ]
+    for rel in expected_paths:
+        if not (fixture / rel).exists():
+            errors.append(f"Apply helper did not create expected project-local file: {rel}")
+    requirements = fixture / "requirements-gui.txt"
+    if requirements.exists() and "PySide6" not in requirements.read_text(encoding="utf-8"):
+        errors.append("requirements-gui.txt does not declare PySide6 after apply.")
+    app = fixture / "src" / "sample_gui" / "app.py"
+    if app.exists() and "{{" in app.read_text(encoding="utf-8"):
+        errors.append("Generated app.py still contains unresolved template placeholders.")
+    applied = payload.get("applied_file_changes") or []
+    if not any(isinstance(item, dict) and item.get("path") == "requirements-gui.txt" for item in applied):
+        errors.append("Apply helper JSON did not report requirements-gui.txt in applied_file_changes.")
+    if payload.get("rollback_note") != "docs/pyside6_gui_rollback.md":
+        errors.append("Apply helper JSON must report rollback_note=docs/pyside6_gui_rollback.md.")
+
+
+def validate_fail_closed_payload(payload: dict[str, Any], fixture: Path, errors: list[str]) -> None:
+    if payload.get("ok"):
+        errors.append("Apply helper should fail closed when project root evidence is missing.")
+    blocker_codes = {item.get("code") for item in payload.get("blockers", []) if isinstance(item, dict)}
+    if "unsafe_project_root" not in blocker_codes:
+        errors.append("Apply helper missing unsafe_project_root blocker for fixture without root evidence.")
+    if snapshot_files(fixture):
+        errors.append("Fail-closed apply helper wrote files into an unsafe fixture.")
 
 
 def validate(root: Path) -> dict[str, Any]:
@@ -122,59 +234,68 @@ def validate(root: Path) -> dict[str, Any]:
     helper = root / HELPER_PATH
 
     if not helper.exists():
-        errors.append(f"Missing PySide6 GUI preview helper: {HELPER_PATH}")
+        errors.append(f"Missing PySide6 GUI helper: {HELPER_PATH}")
     else:
         text = read_text(helper)
         for snippet in REQUIRED_SCRIPT_SNIPPETS:
             if snippet not in text:
                 errors.append(f"{HELPER_PATH} missing required snippet: {snippet}")
-        for snippet in FORBIDDEN_WRITE_SNIPPETS:
+        for snippet in FORBIDDEN_HELPER_SNIPPETS + LEGACY_UNGATED_WRITE_SNIPPETS:
             if snippet in text:
-                errors.append(f"{HELPER_PATH} contains forbidden preview-mode write or launch snippet: {snippet}")
+                errors.append(f"{HELPER_PATH} contains forbidden global write, launch, or remote-operation snippet: {snippet}")
 
-    fixture_payload: dict[str, Any] | None = None
+    preview_payload: dict[str, Any] | None = None
+    apply_payload: dict[str, Any] | None = None
+    fail_closed_payload: dict[str, Any] | None = None
+    created_fixtures: list[Path] = []
     if helper.exists() and not errors:
-        fixture = make_fixture(root)
-        before = snapshot_files(fixture)
+        preview_fixture = make_fixture(root, name="pyside6-preview", dependency_surface="pyproject")
+        apply_fixture = make_fixture(root, name="pyside6-apply", dependency_surface="requirements")
+        unsafe_fixture = make_fixture(root, name="pyside6-unsafe", dependency_surface="none")
+        created_fixtures.extend([preview_fixture, apply_fixture, unsafe_fixture])
+        before = snapshot_files(preview_fixture)
         try:
-            result = run_helper(root, fixture)
+            preview_result = run_helper(root, preview_fixture, mode="preview", dependency_style="auto")
+            apply_result = run_helper(root, apply_fixture, mode="apply", dependency_style="requirements")
+            fail_result = run_helper(root, unsafe_fixture, mode="apply", dependency_style="requirements", create_template=True)
         except RuntimeError as exc:
             errors.append(str(exc))
         else:
-            after = snapshot_files(fixture)
+            after = snapshot_files(preview_fixture)
             if before != after:
                 errors.append("Preview helper changed fixture files; preview mode must be read-only.")
-            if result.returncode != 0:
-                errors.append(f"Preview helper returned {result.returncode}: {result.stderr or result.stdout}")
-            try:
-                fixture_payload = json.loads(result.stdout)
-            except json.JSONDecodeError as exc:
-                errors.append(f"Preview helper did not emit valid JSON with -Json: {exc}: {result.stdout!r}")
-            if fixture_payload:
-                if not fixture_payload.get("ok"):
-                    errors.append(f"Preview helper reported blockers for a valid pyproject fixture: {fixture_payload.get('blockers')}")
-                for field in REQUIRED_JSON_FIELDS:
-                    if field not in fixture_payload:
-                        errors.append(f"Preview helper JSON missing required field `{field}`.")
-                if fixture_payload.get("mode") != "preview":
-                    errors.append("Preview helper JSON must report mode=preview.")
-                if fixture_payload.get("dependency_style") != "pyproject-extra":
-                    errors.append("Preview helper should detect pyproject fixture as dependency_style=pyproject-extra.")
-                planned = fixture_payload.get("planned_file_changes") or []
-                if not any(item.get("path") == "pyproject.toml" for item in planned if isinstance(item, dict)):
-                    errors.append("Preview helper did not plan pyproject.toml dependency update for pyproject fixture.")
-                if not any("src/sample_gui/app.py" == item.get("path") for item in planned if isinstance(item, dict)):
-                    errors.append("Preview helper did not plan sample_gui app template creation when -CreateTemplate is set.")
+            if preview_result.returncode != 0:
+                errors.append(f"Preview helper returned {preview_result.returncode}: {preview_result.stderr or preview_result.stdout}")
+            if apply_result.returncode != 0:
+                errors.append(f"Apply helper returned {apply_result.returncode}: {apply_result.stderr or apply_result.stdout}")
+            if fail_result.returncode == 0:
+                errors.append("Fail-closed apply scenario returned success for unsafe fixture.")
+            preview_payload = load_json_stdout(preview_result, errors, "Preview helper")
+            apply_payload = load_json_stdout(apply_result, errors, "Apply helper")
+            fail_closed_payload = load_json_stdout(fail_result, errors, "Fail-closed apply helper")
+            if preview_payload:
+                if not preview_payload.get("ok"):
+                    errors.append(f"Preview helper reported blockers for a valid pyproject fixture: {preview_payload.get('blockers')}")
+                validate_preview_payload(preview_payload, errors)
+            if apply_payload:
+                validate_apply_payload(apply_payload, apply_fixture, errors)
+            if fail_closed_payload:
+                validate_fail_closed_payload(fail_closed_payload, unsafe_fixture, errors)
+        finally:
+            for fixture in created_fixtures:
+                shutil.rmtree(fixture, ignore_errors=True)
 
-    info.append("PySide6 GUI preview helper is preview-first, structured, and read-only.")
+    info.append("PySide6 GUI helper is preview-first and supports explicit project-local apply mode with rollback evidence.")
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "check_name": CHECK_NAME,
         "ok": not errors,
         "root": str(root),
         "helper": str(helper),
-        "preview_sample": fixture_payload,
+        "preview_sample": preview_payload,
+        "apply_sample": apply_payload,
+        "fail_closed_sample": fail_closed_payload,
         "errors": errors,
         "warnings": warnings,
         "info": info,
@@ -187,7 +308,7 @@ def validate(root: Path) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Check PySide6 GUI preview helper contract.")
+    parser = argparse.ArgumentParser(description="Check PySide6 GUI preview/apply helper contract.")
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument("--json", action="store_true", help="Emit JSON.")
     args = parser.parse_args()
@@ -195,7 +316,7 @@ def main() -> int:
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
-        print("PySide6 GUI preview helper contract check passed." if payload["ok"] else "PySide6 GUI preview helper contract check failed:")
+        print("PySide6 GUI helper contract check passed." if payload["ok"] else "PySide6 GUI helper contract check failed:")
         for error in payload["errors"]:
             print(f"  - {error}")
         if payload["warnings"]:
