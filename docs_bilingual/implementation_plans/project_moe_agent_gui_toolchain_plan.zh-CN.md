@@ -267,6 +267,7 @@ tools/project_moe_gui_toolchain/
 <project>/tools/project_moe_gui/
   launcher.py
   project_moe_gui.config.json
+  project_moe_gui.install-manifest.json
 <project>/project-moe-gui.cmd
 ```
 
@@ -377,6 +378,30 @@ GUI 源码由本仓库维护，但启动 runtime 必须在目标项目侧可解�
 - launcher 日志只记录解析步骤、runtime 路径类别、退出码、stdout/stderr 摘要和 stable token；不得记录私有提示词、raw session id、论文正文或原始环境变量值；
 - `check_project_moe_gui_install.py --json` 必须验证 launcher、config、Python runtime、PySide6 可导入性和项目本地 CLI contract；失败时给出可执行修复建议。
 
+### 8.3 安装产物清单与所有权边界
+
+目标项目内必须有安装产物清单，用来区分“中央工具链可管理的安装产物”和“目标项目私有文件”。第一版推荐清单路径：
+
+```text
+<project>/tools/project_moe_gui/project_moe_gui.install-manifest.json
+```
+
+清单至少记录：
+
+- `schema_version`、`toolchain`、`toolchain_version`、`source_repo`、`source_commit`；
+- `target_project_root`、`agent_name`、`state_namespace`、`installed_at`、`updated_at`；
+- `managed_files`：安装器拥有并可在更新时重写的文件，例如 launcher、GUI 包装文件和配置模板；
+- `protected_project_files`：安装器必须视为只读的文件，例如 `MOE.md`、`.codex/agents/*.toml`、论文正文、私有提示源和 `.omx/state`；
+- 每个 managed file 的相对路径、sha256、写入原因和上一版本 hash；
+- `last_dry_run` 与 `last_apply_receipt` 的摘要或路径。
+
+所有权规则：
+
+- 更新器只能自动修改清单里的 `managed_files`；如果某个 managed file 在目标项目内被人工改动且 hash 不匹配，必须报告 `blocked:managed_file_modified` 或进入显式三方合并/repair 流程，不得直接覆盖；
+- 清单缺失时，`check_project_moe_gui_install.py --json` 报告 `migration_required` 或 `blocked:launcher_config_invalid`，由显式 install/update 重新生成；GUI 启动不得隐式生成；
+- 卸载、清理、删除清单、删除 launcher 或删除 audit/session state 不属于第一版自动行为；后续如需实现，必须另建显式 uninstall/cleanup 命令、dry run、验收和回滚规则；
+- 清单不得复制项目私有提示词、raw session id、论文正文或审计日志内容。
+
 ## 9. 安全与回滚规则
 
 实施和更新命令必须：
@@ -464,6 +489,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | 并发写入 | 两个命令同时写同一 namespace 时，一个成功，另一个等待后成功或返回稳定 lock token；不会产生半写 JSON。 |
 | dry run / no-op | install/update dry run 不写文件；重复启用或关闭输出 `no_op = true`，且不制造无意义文件差异。 |
 | Runtime/launcher | launcher 不依赖偶然 `PATH`，UTF-8 输出正常；缺少 Python runtime、PySide6 或坏配置时返回稳定 blocker token。 |
+| 安装产物清单 | 更新只触碰清单声明的 managed files；私有文件保持只读；hash 不匹配时 fail closed。 |
 
 ## 12. 校验与验收
 
@@ -475,7 +501,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案禁止项目级 MOE Agent 使用 `full-history fork + specified custom role`；
 - 方案定义状态写入的锁、原子写入、并发失败 token 和 GUI 串行化边界；
 - 方案定义 check、dry run、apply、no-op 与 GUI 操作者确认边界；
-- 方案定义 runtime/launcher 解析、UTF-8 输出、环境变量边界和缺失依赖 blocker。
+- 方案定义 runtime/launcher 解析、UTF-8 输出、环境变量边界和缺失依赖 blocker；
+- 方案定义安装产物清单、managed/protected 文件所有权和卸载/清理非目标边界。
 
 第一阶段验收：
 

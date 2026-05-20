@@ -267,6 +267,7 @@ Target project install layout:
 <project>/tools/project_moe_gui/
   launcher.py
   project_moe_gui.config.json
+  project_moe_gui.install-manifest.json
 <project>/project-moe-gui.cmd
 ```
 
@@ -377,6 +378,30 @@ The GUI source is maintained by this repository, but the runtime used to launch 
 - launcher logs only record resolution steps, runtime path category, exit code, stdout/stderr summaries, and stable tokens; they must not record private prompts, raw session ids, paper text, or raw environment variable values;
 - `check_project_moe_gui_install.py --json` must validate launcher presence, config, Python runtime, PySide6 importability, and the project-local CLI contract; failures include actionable remediation hints.
 
+### 8.3 Installed artifact manifest and ownership boundary
+
+The target project must contain an installed artifact manifest that distinguishes central-toolchain-managed install artifacts from target-project private files. The recommended first-version manifest path is:
+
+```text
+<project>/tools/project_moe_gui/project_moe_gui.install-manifest.json
+```
+
+The manifest records at least:
+
+- `schema_version`, `toolchain`, `toolchain_version`, `source_repo`, and `source_commit`;
+- `target_project_root`, `agent_name`, `state_namespace`, `installed_at`, and `updated_at`;
+- `managed_files`: files owned by the installer and safe to rewrite during updates, such as the launcher, GUI wrapper files, and config templates;
+- `protected_project_files`: files the installer must treat as read-only, such as `MOE.md`, `.codex/agents/*.toml`, paper content, private prompt sources, and `.omx/state`;
+- each managed file's relative path, sha256, write reason, and previous-version hash;
+- a summary or path for `last_dry_run` and `last_apply_receipt`.
+
+Ownership rules:
+
+- the updater may automatically modify only files listed under `managed_files`; if a managed file was manually edited in the target project and its hash no longer matches, report `blocked:managed_file_modified` or enter an explicit three-way merge/repair flow instead of overwriting it;
+- when the manifest is missing, `check_project_moe_gui_install.py --json` reports `migration_required` or `blocked:launcher_config_invalid`; explicit install/update may regenerate it, but GUI startup must not;
+- uninstall, cleanup, manifest deletion, launcher deletion, and audit/session-state deletion are not first-version automatic behaviors; if needed later, they require explicit uninstall/cleanup commands, dry runs, acceptance criteria, and rollback rules;
+- the manifest must not copy project-private prompts, raw session ids, paper content, or audit-log content.
+
 ## 9. Safety and rollback rules
 
 Implementation and update commands must:
@@ -464,6 +489,7 @@ Minimum test matrix:
 | Concurrent writes | two commands writing the same namespace concurrently result in one success and the other either waiting then succeeding or returning a stable lock token; no partial JSON is produced. |
 | Dry run / no-op | install/update dry run writes no files; repeated enable/disable outputs `no_op = true` and does not create meaningless file diffs. |
 | Runtime/launcher | launcher does not depend on accidental `PATH`, UTF-8 output is clean, and missing Python runtime, PySide6, or bad config returns stable blocker tokens. |
+| Installed artifact manifest | updates touch only declared managed files; private files remain read-only; hash mismatches fail closed. |
 
 ## 12. Validation and acceptance
 
@@ -475,7 +501,8 @@ Document-level acceptance for this plan:
 - the plan forbids `full-history fork + specified custom role` for project MOE Agents;
 - the plan defines state-write locking, atomic writes, concurrency failure tokens, and GUI serialization boundaries;
 - the plan defines check, dry-run, apply, no-op, and GUI operator-confirmation boundaries;
-- the plan defines runtime/launcher resolution, UTF-8 output, environment-variable boundaries, and missing-dependency blockers.
+- the plan defines runtime/launcher resolution, UTF-8 output, environment-variable boundaries, and missing-dependency blockers;
+- the plan defines the installed artifact manifest, managed/protected file ownership, and uninstall/cleanup non-goals.
 
 Phase 1 acceptance:
 
