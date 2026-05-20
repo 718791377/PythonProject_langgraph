@@ -337,7 +337,35 @@ Implementation and update commands must:
 
 If an update fails halfway, rerunning the installer or updater must be safe. For project state changes, rollback is the target project's Git history plus the state JSON files under `.omx/state`.
 
-## 10. Validation and acceptance
+## 10. Implementation slices and test matrix
+
+Recommended Phase 1 target-project file ownership:
+
+- `tools/thesis_moe_mode.py`: state model, command surface, effective status, and list output;
+- `thesis-moe-on.cmd` and `thesis-moe-off.cmd`: project-level default wrappers;
+- `docs_bilingual/operations/thesis_moe_mode_usage.zh-CN.md`: operator usage and failure modes;
+- tests such as `tests/test_thesis_moe_mode.py` or the target project's existing test location: project default, session override, list output, invalid records, and legacy compatibility.
+
+Recommended Phase 2 central-repository file ownership:
+
+- `tools/project_moe_gui_toolchain/src/project_moe_gui/`: GUI implementation;
+- `tools/project_moe_gui_toolchain/install_project_moe_gui.py`: target-project install;
+- `tools/project_moe_gui_toolchain/update_project_moe_gui.py`: idempotent update;
+- `tools/project_moe_gui_toolchain/check_project_moe_gui_install.py`: installed artifact checker;
+- `docs_bilingual/operations/project_moe_gui_usage.zh-CN.md`: operator documentation.
+
+Minimum test matrix:
+
+| Area | Required evidence |
+| --- | --- |
+| Project default | `project-on`, `project-off`, `project-status --json`, and new-session inheritance. |
+| Session override | explicit `--session-id` on/off beats project default. |
+| Session list | `list-sessions --json` returns redacted, valid, GUI-usable rows. |
+| Invalid state | corrupt or mismatched state is reported and not auto-repaired. |
+| GUI install | install refuses missing agent TOML and writes only inside the target project. |
+| GUI actions | GUI action results match CLI `status --json` and `project-status --json`. |
+
+## 11. Validation and acceptance
 
 Document-level acceptance for this plan:
 
@@ -361,7 +389,7 @@ Phase 2 acceptance:
 - no target project's private agent TOML, `MOE.md`, or state is overwritten by GUI update;
 - GUI actions and CLI status agree.
 
-## 11. Immediate next implementation boundary
+## 12. Immediate next implementation boundary
 
 After this plan is accepted, implementation should proceed in this order:
 

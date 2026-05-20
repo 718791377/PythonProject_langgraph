@@ -337,7 +337,35 @@ PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来�
 
 如果更新中途失败，重复运行安装器或更新器必须是安全的。项目状态回滚依赖目标项目 Git 历史，以及 `.omx/state` 下的状态 JSON 文件。
 
-## 10. 校验与验收
+## 10. 实施切片与测试矩阵
+
+第一阶段目标项目推荐文件所有权：
+
+- `tools/thesis_moe_mode.py`：状态模型、命令表面、有效状态和列表输出；
+- `thesis-moe-on.cmd` 与 `thesis-moe-off.cmd`：项目级默认值包装入口；
+- `docs_bilingual/operations/thesis_moe_mode_usage.zh-CN.md`：操作者用法和失败模式；
+- `tests/test_thesis_moe_mode.py` 或目标项目既有测试位置：覆盖项目默认值、session 覆盖、列表输出、无效记录和旧记录兼容。
+
+第二阶段本仓库推荐文件所有权：
+
+- `tools/project_moe_gui_toolchain/src/project_moe_gui/`：GUI 实现；
+- `tools/project_moe_gui_toolchain/install_project_moe_gui.py`：目标项目安装；
+- `tools/project_moe_gui_toolchain/update_project_moe_gui.py`：幂等更新；
+- `tools/project_moe_gui_toolchain/check_project_moe_gui_install.py`：安装产物 checker；
+- `docs_bilingual/operations/project_moe_gui_usage.zh-CN.md`：操作者文档。
+
+最小测试矩阵：
+
+| 范围 | 必需证据 |
+| --- | --- |
+| 项目默认值 | `project-on`、`project-off`、`project-status --json` 和新 session 继承。 |
+| session 覆盖 | 显式 `--session-id` 的 on/off 优先于项目默认值。 |
+| session 列表 | `list-sessions --json` 返回脱敏、有效、GUI 可用的行。 |
+| 无效状态 | 损坏或不匹配状态会被报告，且不会自动修复。 |
+| GUI 安装 | 缺少 Agent TOML 时安装失败，且只写目标项目内文件。 |
+| GUI 操作 | GUI 操作结果与 CLI `status --json` 和 `project-status --json` 一致。 |
+
+## 11. 校验与验收
 
 本文档级验收：
 
@@ -361,7 +389,7 @@ PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来�
 - GUI 更新不覆盖目标项目私有 Agent TOML、`MOE.md` 或 state；
 - GUI 操作结果与 CLI status 一致。
 
-## 11. 下一步实施边界
+## 12. 下一步实施边界
 
 本文确认后，具体实施按以下顺序推进：
 
