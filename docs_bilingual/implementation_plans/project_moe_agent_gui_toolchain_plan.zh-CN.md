@@ -1,0 +1,228 @@
+---
+doc_id: project_moe_agent_gui_toolchain_plan
+lang: zh-CN
+status: draft
+doc_class: implementation_plan
+translation_of: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
+created_at: 2026-05-20
+related_docs:
+  - docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.zh-CN.md
+---
+
+# 项目级 MOE Agent GUI 工具链方案
+
+> 冷启动契约：本文定义项目级 MOE Agent 的开关状态模型和独立 PySide6 GUI 工具链。GUI 源码由 `D:\PythonProject_langgraph` 统一维护，但安装到哪个项目，就只控制哪个项目的会话状态。
+
+## 1. 目标
+
+为每个本地项目提供一套可复用的 MOE AI Agent 定义、开关和 GUI 控制方式，同时避免跨仓库混用项目私有 Agent、私有提示源、会话状态和 GUI 工具。
+
+当前急需项目是 `D:\PythonProject_paper_suggest`，它需要通过 `thesis-moe-on.cmd` 与 `thesis-moe-off.cmd` 控制“论文质量要求极高的导师型 MOE Agent”。后续其他项目应能按同一结构添加自己的 MOE Agent。
+
+## 2. 与 PySide6 通用能力方案的关系
+
+`pyside6_cross_project_gui_capability_plan.zh-CN.md` 定义的是本地项目如何获得通用 PySide6 GUI 能力。本文范围更窄：
+
+- 只覆盖 MOE Agent 控制面；
+- 独立拥有 `project_moe_gui` 工具链命名空间；
+- 不得混入通用 GUI 工具；
+- 定义“GUI 安装到哪个项目，就控制哪个项目 session”的规则。
+
+如果两份方案出现重叠，MOE Agent 控制行为以本文为准，PySide6 安装与排障通用建议以 PySide6 通用能力方案为准。
+
+## 3. 非目标
+
+本文不做：
+
+- 立即实现 GUI；
+- 把项目私有 `MOE.md` 全文复制到用户级配置；
+- 默认把项目专属 MOE Agent 安装到 `C:\Users\lenovo\.codex\agents`；
+- 第一版就创建跨项目总控台；
+- 允许安装在某个项目里的 GUI 默认读取或写入其他项目的 `.omx/state`；
+- 把 workflow skills、plugin profiles 或 GUI profile loading 当成 native expert evidence。
+
+## 4. 项目级 MOE Agent TOML 标准
+
+每个项目的 MOE Agent 默认放在目标仓库内：
+
+```text
+<project>/.codex/agents/<project-moe-agent>.toml
+```
+
+TOML 采用“固定核心字段 + 扩展字段”格式。
+
+必填顶层字段：
+
+```toml
+name = "project-moe-agent-name"
+description = "Short human-readable description."
+developer_instructions = """
+Project-local MOE instructions.
+"""
+```
+
+推荐标准扩展区：
+
+```toml
+[project]
+scope = "repo-local"
+state_namespace = "project_moe"
+private_prompt_source = "MOE.md"
+private_prompt_policy = "do-not-copy-full-content"
+
+[moe]
+kind = "project-moe-agent"
+family = "project-specific"
+requires_manual_enable = true
+project_default_state = ".omx/state/project_moe/project-default.json"
+session_state_dir = ".omx/state/project_moe/sessions"
+
+[dispatch]
+mode = "brief-based"
+forbidden = ["full-history-fork-with-custom-role"]
+fallback = ["main-session-takeover", "durable-brief"]
+
+[extensions]
+# 允许放项目专属字段。
+```
+
+checker 可以先沿用现有 `name`、`description`、`developer_instructions` 校验；后续对启用 MOE GUI 工具链的项目，再逐步强制校验这些标准扩展区。
+
+## 5. 专家派发策略
+
+项目级 MOE Agent 禁止使用以下不兼容组合：
+
+```text
+full-history fork + specified custom role
+```
+
+必须改用以下兼容模式之一：
+
+1. 主会话接管：leader session 读取 repo-local TOML 后直接按 MOE 规则执行审查；
+2. brief-based fresh dispatch：leader 生成最小任务 brief，只把 brief 交给兼容的专家执行面；
+3. durable brief：LangGraph 或 native_omx lane 读取目标项目 `.omx/state` 下的 frozen brief。
+
+expert timeout、stalled expert 或 full-history fork 失败都不是有效证据。会话必须重试兼容 brief、切到 durable brief，或明确记录 main-session takeover。
+
+## 6. 第一阶段：`paper_suggest` 急需命令行控制
+
+第一阶段增强 `D:\PythonProject_paper_suggest` 已有 thesis MOE 控制。
+
+目标行为：
+
+- `thesis-moe-on.cmd` 开启项目默认值、所有已登记现有 session，以及后续新建 session；
+- `thesis-moe-off.cmd` 关闭项目默认值、所有已登记现有 session，以及后续新建 session；
+- CLI 继续支持通过 `--session-id` 做单 session 覆盖；
+- 项目级 `.cmd` 操作会有意覆盖已登记 session 状态；后续 GUI 可再次单独设置某个 session。
+
+状态布局：
+
+```text
+.omx/state/thesis_moe/project-default.json
+.omx/state/thesis_moe/sessions/<session-id>.json
+```
+
+“已登记现有 session”指 `sessions/` 下已经存在的 JSON 记录。未写过记录的历史会话无法自动发现；它们第一次调用 `status` 或 `assert-on` 时继承项目默认值。
+
+有效状态规则：
+
+1. 如果存在有效 session 记录，使用 session 记录；
+2. 否则使用有效项目默认值；
+3. 否则 fail closed，视为关闭。
+
+推荐 CLI 表面：
+
+```powershell
+python .\tools\thesis_moe_mode.py project-on
+python .\tools\thesis_moe_mode.py project-off
+python .\tools\thesis_moe_mode.py project-status --json
+python .\tools\thesis_moe_mode.py on --session-id <id>
+python .\tools\thesis_moe_mode.py off --session-id <id>
+python .\tools\thesis_moe_mode.py status --json
+python .\tools\thesis_moe_mode.py assert-on
+```
+
+兼容要求：
+
+- 现有 `status --json` 保持机器可读；
+- 现有 session state 文件保持可读取；
+- 损坏、session 不匹配或越界状态必须 fail closed。
+
+## 7. 第二阶段：独立 PySide6 项目 MOE GUI
+
+GUI 源码由本仓库统一维护，但必须与本仓库其他 GUI 工具明确隔离。
+
+`D:\PythonProject_langgraph` 内 source of truth 布局：
+
+```text
+tools/project_moe_gui_toolchain/
+  src/project_moe_gui/
+  install_project_moe_gui.py
+  update_project_moe_gui.py
+  check_project_moe_gui_install.py
+  templates/
+```
+
+目标项目安装布局：
+
+```text
+<project>/tools/project_moe_gui/
+  launcher.py
+  project_moe_gui.config.json
+<project>/project-moe-gui.cmd
+```
+
+隔离规则：
+
+- MOE GUI 源码不得放入通用 `tools/gui` 目录；
+- 不复用其他 GUI 工具的状态目录；
+- 中央工具链不得导入项目私有 `MOE.md`；
+- 默认不做跨项目扫描；
+- 安装后的 GUI 只能控制从 launcher 路径或显式 `--project-root` 解析出来的项目根目录。
+
+第一版 GUI 功能：
+
+- 显示项目默认状态；
+- 列出已登记 session 记录；
+- 开启/关闭项目默认值；
+- 开启/关闭选中的单个 session；
+- 调用与 `.cmd` 相同的项目本地 CLI 脚本；
+- 显示解析出的项目根目录和 state namespace，避免误控其他项目。
+
+## 8. 安装与更新模型
+
+`D:\PythonProject_langgraph` 是 GUI 工具链 source of truth。目标项目只接收安装产物。
+
+安装/更新规则：
+
+- 安装到 `<project>` 时只写该项目根目录内的文件；
+- 更新可以刷新 launcher、配置模板和 GUI 包装文件；
+- 更新不得覆盖项目私有 `MOE.md`、`.codex/agents/*.toml` 或已有 `.omx/state` 记录；
+- 更新必须幂等，并报告变更文件；
+- 回滚依赖目标项目自身 Git 历史，必要时结合本地 backup refs。
+
+PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来自目标项目自己的虚拟环境。第一版实现必须在安装配置里记录使用哪种 runtime；如果 PySide6 不可用，必须给出可执行的错误提示。
+
+## 9. 校验与验收
+
+本文档级验收：
+
+- 英文与中文方案文件成对存在；
+- 方案明确区分 MOE GUI 工具链和通用 GUI 工具；
+- 方案定义项目默认值 + session override 行为；
+- 方案禁止项目级 MOE Agent 使用 `full-history fork + specified custom role`。
+
+第一阶段验收：
+
+- `thesis-moe-on.cmd` 能开启项目默认值和已登记 session；
+- `thesis-moe-off.cmd` 能关闭项目默认值和已登记 session；
+- 新 session 继承项目默认值；
+- 显式 `--session-id` 覆盖有效；
+- `assert-on` 遵循有效状态规则。
+
+第二阶段验收：
+
+- GUI 安装到 `paper_suggest` 后只控制 `paper_suggest`；
+- GUI 安装到第二个项目后只控制第二个项目；
+- GUI 更新不覆盖目标项目私有 Agent TOML、`MOE.md` 或 state；
+- GUI 操作结果与 CLI status 一致。
