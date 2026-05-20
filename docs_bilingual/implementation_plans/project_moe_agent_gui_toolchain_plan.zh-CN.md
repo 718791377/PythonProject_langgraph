@@ -122,6 +122,41 @@ expert timeout、stalled expert 或 full-history fork 失败都不是有效证�
 .omx/state/thesis_moe/sessions/<session-id>.json
 ```
 
+最小项目默认 JSON 契约：
+
+```json
+{
+  "schema_version": 1,
+  "agent_name": "thesis-moe-mentor",
+  "state_namespace": "thesis_moe",
+  "scope": "project-default",
+  "enabled": true,
+  "worktree": "D:\\PythonProject_paper_suggest",
+  "branch": "main",
+  "updated_at": "2026-05-20T00:00:00+00:00",
+  "reason": "project-on"
+}
+```
+
+最小 session JSON 契约：
+
+```json
+{
+  "schema_version": 1,
+  "agent_name": "thesis-moe-mentor",
+  "state_namespace": "thesis_moe",
+  "scope": "session",
+  "enabled": true,
+  "session_id": "session-id",
+  "session_id_source": "argument",
+  "raw_session_id_sha256": "sha256",
+  "worktree": "D:\\PythonProject_paper_suggest",
+  "branch": "main",
+  "updated_at": "2026-05-20T00:00:00+00:00",
+  "reason": "manual-session-on"
+}
+```
+
 “已登记现有 session”指 `sessions/` 下已经存在的 JSON 记录。未写过记录的历史会话无法自动发现；它们第一次调用 `status` 或 `assert-on` 时继承项目默认值。
 
 有效状态规则：
@@ -141,6 +176,20 @@ python .\tools\thesis_moe_mode.py off --session-id <id>
 python .\tools\thesis_moe_mode.py status --json
 python .\tools\thesis_moe_mode.py assert-on
 ```
+
+命令语义：
+
+| 命令 | 写入位置 | 效果 |
+| --- | --- | --- |
+| `project-on` | 项目默认值和已登记有效 session 文件 | 开启默认值和已知 session。 |
+| `project-off` | 项目默认值和已登记有效 session 文件 | 关闭默认值和已知 session。 |
+| `project-status --json` | 不写入 | 报告项目默认值、已登记 session 数、无效记录和状态路径。 |
+| `on --session-id <id>` | 单个 session 文件 | 开启该 session 覆盖。 |
+| `off --session-id <id>` | 单个 session 文件 | 关闭该 session 覆盖。 |
+| `status --json` | 不写入 | 报告当前或显式 session 的有效状态。 |
+| `assert-on` | 不写入 | 只有有效状态为开启时返回 0。 |
+
+无效的已登记 session 文件不得阻塞项目级 on/off。脚本应报告这些文件为 skipped invalid records，并保持原文件不变。
 
 兼容要求：
 
@@ -199,6 +248,16 @@ tools/project_moe_gui_toolchain/
 - 调用与 `.cmd` 相同的项目本地 CLI 脚本；
 - 显示解析出的项目根目录和 state namespace，避免误控其他项目。
 
+第一版 GUI 布局：
+
+- 顶部横幅：解析出的项目根、agent name、state namespace 和当前分支；
+- 项目默认卡片：有效默认状态、最后更新时间和开启/关闭按钮；
+- session 表格：session id、来源、有效状态、覆盖状态、分支、更新时间、reason 和有效性；
+- 操作面板：刷新、开启选中 session、关闭选中 session；如果后续 CLI 支持，再增加清除选中 session 覆盖；
+- 日志面板：实际调用的 CLI 命令、退出码和简短 stdout/stderr 摘要。
+
+第一版 GUI 不得直接编辑 JSON 文件。所有状态变更都通过项目本地 CLI 完成，避免 CLI 和 GUI 行为漂移。
+
 安装后的 GUI 配置：
 
 ```json
@@ -226,6 +285,16 @@ GUI 必须把该配置视为目标项目配置。它不得读取中央工具链�
 - 更新不得覆盖项目私有 `MOE.md`、`.codex/agents/*.toml` 或已有 `.omx/state` 记录；
 - 更新必须幂等，并报告变更文件；
 - 回滚依赖目标项目自身 Git 历史，必要时结合本地 backup refs。
+
+安装器命令表面：
+
+```powershell
+python tools/project_moe_gui_toolchain/install_project_moe_gui.py --target-project <project> --agent-name <agent> --state-namespace <namespace>
+python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-project <project>
+python tools/project_moe_gui_toolchain/check_project_moe_gui_install.py --target-project <project> --json
+```
+
+如果目标项目没有匹配的 `.codex/agents/<agent>.toml`，安装器必须失败；除非后续另行增加显式模板生成模式。
 
 PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来自目标项目自己的虚拟环境。第一版实现必须在安装配置里记录使用哪种 runtime；如果 PySide6 不可用，必须给出可执行的错误提示。
 

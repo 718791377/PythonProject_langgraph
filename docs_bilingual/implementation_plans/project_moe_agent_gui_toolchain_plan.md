@@ -122,6 +122,41 @@ State layout:
 .omx/state/thesis_moe/sessions/<session-id>.json
 ```
 
+Minimum project-default JSON contract:
+
+```json
+{
+  "schema_version": 1,
+  "agent_name": "thesis-moe-mentor",
+  "state_namespace": "thesis_moe",
+  "scope": "project-default",
+  "enabled": true,
+  "worktree": "D:\\PythonProject_paper_suggest",
+  "branch": "main",
+  "updated_at": "2026-05-20T00:00:00+00:00",
+  "reason": "project-on"
+}
+```
+
+Minimum session JSON contract:
+
+```json
+{
+  "schema_version": 1,
+  "agent_name": "thesis-moe-mentor",
+  "state_namespace": "thesis_moe",
+  "scope": "session",
+  "enabled": true,
+  "session_id": "session-id",
+  "session_id_source": "argument",
+  "raw_session_id_sha256": "sha256",
+  "worktree": "D:\\PythonProject_paper_suggest",
+  "branch": "main",
+  "updated_at": "2026-05-20T00:00:00+00:00",
+  "reason": "manual-session-on"
+}
+```
+
 Registered existing sessions are the JSON records already present under `sessions/`. Sessions that have never written a record cannot be discovered automatically and inherit the project default when they first call `status` or `assert-on`.
 
 Effective status rule:
@@ -141,6 +176,20 @@ python .\tools\thesis_moe_mode.py off --session-id <id>
 python .\tools\thesis_moe_mode.py status --json
 python .\tools\thesis_moe_mode.py assert-on
 ```
+
+Command semantics:
+
+| Command | Writes | Effect |
+| --- | --- | --- |
+| `project-on` | project default and registered valid session files | Enables default and known sessions. |
+| `project-off` | project default and registered valid session files | Disables default and known sessions. |
+| `project-status --json` | none | Reports project default, registered session counts, invalid records, and state paths. |
+| `on --session-id <id>` | one session file | Enables that session override. |
+| `off --session-id <id>` | one session file | Disables that session override. |
+| `status --json` | none | Reports effective state for current or explicit session. |
+| `assert-on` | none | Exits zero only when effective state is enabled. |
+
+Invalid registered session files must not block project-level on/off. They should be reported as skipped invalid records and left untouched.
 
 Backward compatibility:
 
@@ -199,6 +248,16 @@ First GUI version:
 - calls the same project-local CLI script used by `.cmd` files;
 - displays the resolved project root and state namespace so accidental cross-project control is visible.
 
+First GUI layout:
+
+- top banner: resolved project root, agent name, state namespace, and current branch;
+- project-default card: effective default state, last update time, and on/off buttons;
+- session table: session id, source, effective state, override state, branch, updated time, reason, and validity;
+- action panel: refresh, enable selected session, disable selected session, clear selected session override if a later CLI command supports it;
+- log panel: exact CLI command invoked, exit code, and short stdout/stderr summary.
+
+The GUI must never edit JSON files directly in the first version. All state changes go through the project-local CLI so CLI and GUI behavior cannot drift.
+
 Installed GUI config:
 
 ```json
@@ -226,6 +285,16 @@ Install/update rules:
 - updates must not overwrite project-private `MOE.md`, `.codex/agents/*.toml`, or existing `.omx/state` records;
 - updates must be idempotent and report changed files;
 - rollback uses normal project Git history plus local backup refs when the target project workflow requires them.
+
+Installer command surface:
+
+```powershell
+python tools/project_moe_gui_toolchain/install_project_moe_gui.py --target-project <project> --agent-name <agent> --state-namespace <namespace>
+python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-project <project>
+python tools/project_moe_gui_toolchain/check_project_moe_gui_install.py --target-project <project> --json
+```
+
+The installer must fail if the target project has no matching `.codex/agents/<agent>.toml` unless an explicit template-generation mode is added later.
 
 PySide6 runtime can be supplied by either a documented shared GUI runtime or the target project's own virtual environment. The first implementation must record which runtime is used in the installed config and must fail with an actionable message if PySide6 is unavailable.
 
