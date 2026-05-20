@@ -217,7 +217,7 @@ Failure-mode and exit-code contract:
 | `assert-on` sees effective disabled state | 1 | `disabled` |
 | invalid command arguments or unsupported command | 2 | `usage_error` |
 | corrupt or mismatched state blocks effective-state calculation | 3 | `state_corrupt`, `schema_version_mismatch`, `blocked:unsupported_schema_version`, `agent_name_mismatch`, `session_mismatch`, `worktree_mismatch`, `branch_mismatch` |
-| unsafe target root or ownership preflight refusal | 4 | `blocked:unsafe_target_root`, `blocked:ownership_precheck_failed`, `blocked:dirty_unowned_files` |
+| unsafe target root, path, command invocation, or ownership preflight refusal | 4 | `blocked:unsafe_target_root`, `blocked:path_outside_project`, `blocked:path_traversal`, `blocked:unsafe_symlink_or_junction`, `blocked:command_invocation_unsafe`, `blocked:ownership_precheck_failed`, `blocked:dirty_unowned_files` |
 | missing dependency, invalid launcher config, or missing required project file | 5 | `blocked:missing_agent_toml`, `blocked:missing_mode_cli`, `blocked:pyside6_unavailable`, `blocked:python_runtime_unavailable`, `blocked:launcher_config_invalid` |
 | concurrent write lock cannot be acquired, or a suspected stale lock needs human confirmation | 6 | `blocked:state_lock_timeout`, `blocked:stale_state_lock` |
 
@@ -441,6 +441,18 @@ To avoid silent writes in the wrong project, the first version must distinguish 
 - no-op operations should return success token `ok` with `no_op = true` and emit an audit summary or stdout summary so the operator can confirm no state changed;
 - deletion, cleanup, unlock, repair, retention pruning, or uninstall of GUI artifacts are outside first-version implicit behavior and require later explicit commands and acceptance rules.
 
+### 9.3 Path resolution and command-invocation safety boundary
+
+Target project paths, installed artifact paths, and GUI-to-CLI command invocations are security boundaries. The first version must not rely on string prefixes or shell concatenation to decide safety:
+
+- `--target-project`, `--project-root`, `mode_cli`, and all manifest managed/protected paths must be normalized and resolved to real paths before use; the resolved path must still be inside the target project root;
+- reject `..` path traversal, absolute-path injection, UNC path escape, Windows drive switching, and symlinks or junctions that point managed files outside the project;
+- permitted in-project symlinks or junctions must be explicitly reported in check output with `link_target_status`; unverifiable targets fail closed;
+- when the GUI invokes the project-local CLI, it must use argv/list subprocess invocation and must not concatenate user input, session ids, paths, or reasons into shell strings;
+- command logs may display redacted argv summaries, but must not log raw session ids, private reason content, or unnormalized user input;
+- `reason`, session id, and agent name are data fields and must be validated for length, character set, and JSON serialization safety; they must not be reused as path fragments or shell fragments;
+- any path escape, path traversal, external link target, or unsafe command invocation returns a stable blocker token and must not degrade to plain `usage_error`.
+
 ## 10. Audit log, privacy, and retention boundaries
 
 MOE control tooling should emit a small local audit record for state-changing actions:
@@ -490,6 +502,7 @@ Minimum test matrix:
 | Dry run / no-op | install/update dry run writes no files; repeated enable/disable outputs `no_op = true` and does not create meaningless file diffs. |
 | Runtime/launcher | launcher does not depend on accidental `PATH`, UTF-8 output is clean, and missing Python runtime, PySide6, or bad config returns stable blocker tokens. |
 | Installed artifact manifest | updates touch only declared managed files; private files remain read-only; hash mismatches fail closed. |
+| Path and command safety | path traversal, outside-project link targets, and shell-concatenated command invocation are rejected; GUI-to-CLI calls use argv/list. |
 
 ## 12. Validation and acceptance
 
@@ -502,7 +515,8 @@ Document-level acceptance for this plan:
 - the plan defines state-write locking, atomic writes, concurrency failure tokens, and GUI serialization boundaries;
 - the plan defines check, dry-run, apply, no-op, and GUI operator-confirmation boundaries;
 - the plan defines runtime/launcher resolution, UTF-8 output, environment-variable boundaries, and missing-dependency blockers;
-- the plan defines the installed artifact manifest, managed/protected file ownership, and uninstall/cleanup non-goals.
+- the plan defines the installed artifact manifest, managed/protected file ownership, and uninstall/cleanup non-goals;
+- the plan defines path normalization, symlink/junction, path traversal, and command-invocation safety boundaries.
 
 Phase 1 acceptance:
 

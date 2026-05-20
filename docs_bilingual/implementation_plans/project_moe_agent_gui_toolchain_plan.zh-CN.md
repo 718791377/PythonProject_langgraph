@@ -217,7 +217,7 @@ python .\tools\thesis_moe_mode.py assert-on
 | `assert-on` 发现有效状态为关闭 | 1 | `disabled` |
 | 命令参数无效或不支持该命令 | 2 | `usage_error` |
 | 损坏或不匹配状态阻止有效状态计算 | 3 | `state_corrupt`、`schema_version_mismatch`、`blocked:unsupported_schema_version`、`agent_name_mismatch`、`session_mismatch`、`worktree_mismatch`、`branch_mismatch` |
-| 目标根目录不安全或 ownership preflight 拒绝 | 4 | `blocked:unsafe_target_root`、`blocked:ownership_precheck_failed`、`blocked:dirty_unowned_files` |
+| 目标根目录、路径或命令调用不安全，或 ownership preflight 拒绝 | 4 | `blocked:unsafe_target_root`、`blocked:path_outside_project`、`blocked:path_traversal`、`blocked:unsafe_symlink_or_junction`、`blocked:command_invocation_unsafe`、`blocked:ownership_precheck_failed`、`blocked:dirty_unowned_files` |
 | 缺少依赖、启动器配置无效或必需项目文件缺失 | 5 | `blocked:missing_agent_toml`、`blocked:missing_mode_cli`、`blocked:pyside6_unavailable`、`blocked:python_runtime_unavailable`、`blocked:launcher_config_invalid` |
 | 并发写入锁不可获得或疑似过期锁需要人工确认 | 6 | `blocked:state_lock_timeout`、`blocked:stale_state_lock` |
 
@@ -441,6 +441,18 @@ MOE 控制面可能被多个 Codex session、命令行 wrapper 和 GUI 同时调
 - no-op 操作应返回成功 token `ok` 与 `no_op = true`，并写入审计摘要或 stdout 摘要，方便确认没有真实状态变化；
 - 任何需要删除、清理、unlock、repair、retention pruning 或卸载 GUI 产物的行为都不属于第一版隐式动作，必须后续另建显式命令和验收规则。
 
+### 9.3 路径解析与命令调用安全边界
+
+目标项目路径、安装产物路径和 GUI 调用 CLI 的命令行都必须作为安全边界处理。第一版不得依赖字符串前缀或 shell 拼接来判断安全性：
+
+- `--target-project`、`--project-root`、`mode_cli`、manifest 里的 managed/protected 路径都必须先做规范化和真实路径解析；解析后的路径必须仍位于目标项目根目录内；
+- 拒绝 `..` 路径穿越、绝对路径注入、UNC 路径越界、Windows drive 切换、符号链接或 junction 指向项目外部的 managed file；
+- 对于允许存在的项目内符号链接或 junction，必须在检查输出中显式标记 `link_target_status`；如果目标不可验证则 fail closed；
+- GUI 调用项目本地 CLI 时必须使用 argv/list 形式的子进程调用，不得把用户输入、session id、路径或 reason 拼接进 shell 字符串；
+- 命令日志可以显示脱敏后的 argv 摘要，但不得记录 raw session id、原始 reason 中的私有内容或未经规范化的用户输入；
+- `reason`、session id 和 agent name 必须作为数据字段校验长度、字符集和 JSON 序列化安全性；不得把它们当作路径片段或 shell 片段；
+- 任何路径解析越界、路径穿越、外部 link 目标或不安全命令调用都必须返回稳定 blocker token，不得降级为普通 `usage_error`。
+
 ## 10. 审计日志、隐私与保留边界
 
 MOE 控制工具对状态变更动作应写入轻量本地审计记录：
@@ -490,6 +502,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | dry run / no-op | install/update dry run 不写文件；重复启用或关闭输出 `no_op = true`，且不制造无意义文件差异。 |
 | Runtime/launcher | launcher 不依赖偶然 `PATH`，UTF-8 输出正常；缺少 Python runtime、PySide6 或坏配置时返回稳定 blocker token。 |
 | 安装产物清单 | 更新只触碰清单声明的 managed files；私有文件保持只读；hash 不匹配时 fail closed。 |
+| 路径与命令安全 | 路径穿越、项目外 link 目标和 shell 拼接式命令调用被拒绝；GUI 调 CLI 使用 argv/list。 |
 
 ## 12. 校验与验收
 
@@ -502,7 +515,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案定义状态写入的锁、原子写入、并发失败 token 和 GUI 串行化边界；
 - 方案定义 check、dry run、apply、no-op 与 GUI 操作者确认边界；
 - 方案定义 runtime/launcher 解析、UTF-8 输出、环境变量边界和缺失依赖 blocker；
-- 方案定义安装产物清单、managed/protected 文件所有权和卸载/清理非目标边界。
+- 方案定义安装产物清单、managed/protected 文件所有权和卸载/清理非目标边界；
+- 方案定义路径规范化、符号链接/junction、路径穿越和命令调用安全边界。
 
 第一阶段验收：
 
