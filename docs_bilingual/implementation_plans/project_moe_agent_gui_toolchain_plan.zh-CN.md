@@ -225,6 +225,13 @@ python .\tools\thesis_moe_mode.py assert-on
 
 第一阶段不得修改论文正文、私有提示词内容、浏览器自动化或文献检索行为。
 
+第一阶段写入目标项目前的 preflight：
+
+- 在 `D:\PythonProject_paper_suggest` 内运行 `git status --short --branch`，如果存在会被本次任务触碰的无关 dirty 或未跟踪文件，必须先停止；
+- 如果目标项目提供 ownership precheck，先运行，例如 `python .\tools\check_session_ownership_claims.py --root . --precheck-task "thesis MOE project-default session toggle" --target-path tools/thesis_moe_mode.py --json`；
+- 编辑前确认 `.codex/agents/thesis-moe-mentor.toml`、`tools/thesis_moe_mode.py`、`thesis-moe-on.cmd`、`thesis-moe-off.cmd` 和使用说明文件存在；
+- 测试通过后，在目标项目内创建普通本地 Git commit；没有单独远端发布请求时，不推送或发布目标项目变更。
+
 ## 7. 第二阶段：独立 PySide6 项目 MOE GUI
 
 GUI 源码由本仓库统一维护，但必须与本仓库其他 GUI 工具明确隔离。
@@ -326,6 +333,7 @@ PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来�
 - 拒绝覆盖 `MOE.md`、`.codex/agents/*.toml` 或 `.omx/state`，除非后续另行创建显式 repair 命令；
 - 在目标项目内形成可由 Git 审查的变更；
 - 输出足够状态信息，让用户能看清变更的是项目默认值还是单 session 覆盖。
+- 在输出中区分实现文件写入、状态文件写入、安装/更新写入和只读 status 命令，方便操作者审计实际变化。
 
 如果更新中途失败，重复运行安装器或更新器必须是安全的。项目状态回滚依赖目标项目 Git 历史，以及 `.omx/state` 下的状态 JSON 文件。
 

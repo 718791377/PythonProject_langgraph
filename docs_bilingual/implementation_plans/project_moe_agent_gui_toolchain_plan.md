@@ -225,6 +225,13 @@ Phase 1 implementation sequence:
 
 Phase 1 must not change paper content, private prompt content, browser automation, or literature-search behavior.
 
+Target-project preflight before Phase 1 writes:
+
+- run `git status --short --branch` in `D:\PythonProject_paper_suggest` and stop if unrelated dirty or untracked files would be touched;
+- run the target project's ownership precheck when available, for example `python .\tools\check_session_ownership_claims.py --root . --precheck-task "thesis MOE project-default session toggle" --target-path tools/thesis_moe_mode.py --json`;
+- confirm the existing `.codex/agents/thesis-moe-mentor.toml`, `tools/thesis_moe_mode.py`, `thesis-moe-on.cmd`, `thesis-moe-off.cmd`, and usage document are present before editing;
+- create a normal local Git commit in the target project after tests pass; do not push or publish that target-project change without a separate remote-publication request.
+
 ## 7. Phase 2: dedicated PySide6 project MOE GUI
 
 The GUI source is maintained in this repository, but it is isolated from other GUI work.
@@ -326,6 +333,7 @@ Implementation and update commands must:
 - refuse to overwrite `MOE.md`, `.codex/agents/*.toml`, or `.omx/state` unless a later explicit repair command is created;
 - create normal Git-reviewable changes in the target project;
 - preserve enough status output for the user to see whether a project default or a session override was changed.
+- distinguish implementation writes, state writes, install/update writes, and read-only status commands in output so an operator can audit what changed.
 
 If an update fails halfway, rerunning the installer or updater must be safe. For project state changes, rollback is the target project's Git history plus the state JSON files under `.omx/state`.
 
