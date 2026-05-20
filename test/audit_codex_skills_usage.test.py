@@ -351,6 +351,36 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Explicit skill usages: total=0 unique=0", output)
         self.assertIn("Skill path reads: 0", output)
         self.assertIn("Profile helper calls: 0", output)
+        self.assertIn(
+            "Noise review: status=no_obvious_false_positives_found "
+            "removed=0 raw_retained=False max_token_length=120",
+            output,
+        )
+        self.assertIn(
+            "Noise privacy policy: "
+            "explicit_skill_noise_tokens_are_sanitized_path_secret_redacted_and_truncated",
+            output,
+        )
+        self.assertIn(
+            "Manual evidence: files_requested=0 files_read=0 valid=0 invalid=0 "
+            "raw_retained=False source_paths_retained=False max_path_length=300",
+            output,
+        )
+        self.assertIn(
+            "Manual evidence privacy policy: "
+            "manual_notes_are_sanitized_markdown_fields_only_no_raw_transcripts",
+            output,
+        )
+        self.assertIn(
+            "Manual evidence path privacy policy: "
+            "manual_note_source_paths_are_redacted_and_bounded_before_report_retention",
+            output,
+        )
+        self.assertIn(
+            "Manual conflict review: status=no_manual_conflict_or_exception_notes "
+            "conflicts=0 disposition_required=False disposition=none",
+            output,
+        )
         self.assertIn("Script capability boundaries: reliable=", output)
         self.assertIn(
             "Stable tool-call alias registry: "

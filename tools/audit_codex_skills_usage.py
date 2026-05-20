@@ -3075,6 +3075,13 @@ def print_human(report: dict[str, Any]) -> None:
     )
     warning_triage = report.get("warning_triage", {}) if isinstance(report.get("warning_triage"), dict) else {}
     cadence_review = report.get("cadence_review", {}) if isinstance(report.get("cadence_review"), dict) else {}
+    noise_review = report.get("noise_review", {}) if isinstance(report.get("noise_review"), dict) else {}
+    manual_evidence = report.get("manual_evidence", {}) if isinstance(report.get("manual_evidence"), dict) else {}
+    manual_conflict_review = (
+        manual_evidence.get("conflict_review")
+        if isinstance(manual_evidence.get("conflict_review"), dict)
+        else {}
+    )
     session_evidence = report.get("session_evidence", {}) if isinstance(report.get("session_evidence"), dict) else {}
     script_capabilities = (
         report.get("script_capability_boundaries")
@@ -3183,6 +3190,33 @@ def print_human(report: dict[str, Any]) -> None:
     )
     print(f"Skill path reads: {sum((session_evidence.get('skill_paths') or {}).values())}")
     print(f"Profile helper calls: {sum((session_evidence.get('profile_helper_calls') or {}).values())}")
+    print(
+        "Noise review: "
+        f"status={noise_review.get('status')} "
+        f"removed={len(noise_review.get('explicit_skill_noise_removed') or {})} "
+        f"raw_retained={noise_review.get('raw_noise_tokens_retained')} "
+        f"max_token_length={noise_review.get('max_noise_token_length')}"
+    )
+    print(f"Noise privacy policy: {noise_review.get('token_privacy_policy')}")
+    print(
+        "Manual evidence: "
+        f"files_requested={manual_evidence.get('files_requested')} "
+        f"files_read={manual_evidence.get('files_read')} "
+        f"valid={manual_evidence.get('valid_note_count')} "
+        f"invalid={len(manual_evidence.get('invalid_notes') or [])} "
+        f"raw_retained={manual_evidence.get('raw_notes_retained')} "
+        f"source_paths_retained={manual_evidence.get('source_paths_retained')} "
+        f"max_path_length={manual_evidence.get('max_path_length')}"
+    )
+    print(f"Manual evidence privacy policy: {manual_evidence.get('privacy_policy')}")
+    print(f"Manual evidence path privacy policy: {manual_evidence.get('path_privacy_policy')}")
+    print(
+        "Manual conflict review: "
+        f"status={manual_conflict_review.get('status')} "
+        f"conflicts={manual_conflict_review.get('conflict_or_exception_count')} "
+        f"disposition_required={manual_conflict_review.get('disposition_required')} "
+        f"disposition={manual_conflict_review.get('disposition')}"
+    )
     print(
         "Script capability boundaries: "
         f"reliable={len(script_capabilities.get('reliable_coverage') or [])} "
