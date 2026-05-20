@@ -335,6 +335,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             output,
         )
         self.assertIn("Audit state: running", output)
+        self.assertIn(
+            "Cadence review: late_run=False missed_weekly_runs=None weekly_report_review=manual_review_required",
+            output,
+        )
         self.assertIn("Warning triage: not_requested requested=False window_ok=True", output)
         self.assertIn("Warning triage policy: use_days_1_or_since_for_warning_triage", output)
         self.assertIn("Warning triage warnings: budget=0 skipped_loading=0 recent_skipped_samples=0", output)

@@ -3057,6 +3057,7 @@ def print_human(report: dict[str, Any]) -> None:
         report.get("warning_severity") if isinstance(report.get("warning_severity"), dict) else {}
     )
     warning_triage = report.get("warning_triage", {}) if isinstance(report.get("warning_triage"), dict) else {}
+    cadence_review = report.get("cadence_review", {}) if isinstance(report.get("cadence_review"), dict) else {}
     session_evidence = report.get("session_evidence", {}) if isinstance(report.get("session_evidence"), dict) else {}
     script_capabilities = (
         report.get("script_capability_boundaries")
@@ -3127,6 +3128,12 @@ def print_human(report: dict[str, Any]) -> None:
     print(f"Audit state: {audit_state.get('state')} ({audit_state.get('reason')})")
     print(f"Audit next action: {audit_state.get('next_action')}")
     print(f"Profile apply allowed: {audit_state.get('profile_apply_allowed')}")
+    print(
+        "Cadence review: "
+        f"late_run={cadence_review.get('late_run')} "
+        f"missed_weekly_runs={cadence_review.get('missed_weekly_runs')} "
+        f"weekly_report_review={cadence_review.get('weekly_report_review')}"
+    )
     print(
         "Warning triage: "
         f"{warning_triage.get('status')} "
