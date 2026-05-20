@@ -152,6 +152,8 @@ Minimum session JSON contract:
   "raw_session_id_sha256": "sha256",
   "worktree": "D:\\PythonProject_paper_suggest",
   "branch": "main",
+  "first_seen_at": "2026-05-20T00:00:00+00:00",
+  "last_seen_at": "2026-05-20T00:00:00+00:00",
   "updated_at": "2026-05-20T00:00:00+00:00",
   "reason": "manual-session-on"
 }
@@ -171,6 +173,16 @@ Session identity rule:
 - Runtime environment variables such as `THESIS_MOE_SESSION_ID`, `CODEX_SESSION_ID`, `OPENAI_CODEX_SESSION_ID`, `OH_MY_CODEX_SESSION_ID`, `OMX_SESSION_ID`, and `CODEX_SESSION` are accepted when present.
 - If no stable session id exists, the CLI may generate a project-local compatibility id from worktree, branch, and user. This generated id is sufficient for a single local workflow but is not a hard isolation boundary for multiple simultaneous sessions in the same worktree and branch.
 - The GUI must display the `session_id_source` so the user can distinguish real session ids from generated compatibility ids.
+
+Session lifecycle and stale-record rules:
+
+- `status --json` or `assert-on` may best-effort update `last_seen_at` when the current session id can be identified; that update must not change `enabled`;
+- the first session record creation writes `first_seen_at`, and ordinary on/off operations must not overwrite it later;
+- `list-sessions --json` must derive `lifecycle_status` with at least `active`, `stale`, `invalid`, and `orphan_candidate`; this field is for display and filtering only and does not directly change effective state;
+- `stale` means `last_seen_at` exceeds a configured threshold or the session cannot be confirmed as still active; first version marks only and never auto-deletes or auto-disables;
+- `orphan_candidate` means the record's worktree, branch, or session source can no longer be confirmed; it appears in a GUI invalid/needs-review group and must not be silently repaired by project-level on/off;
+- the first version does not implement automatic pruning, archive, tombstone, or session-state cleanup; if needed later, add explicit commands such as `prune-sessions --dry-run` / `--apply`, audit records, and rollback rules;
+- records created from generated compatibility ids must be shown as lower confidence in the GUI so the operator does not confuse them with strongly isolated real sessions.
 
 Recommended CLI surface:
 
@@ -200,7 +212,7 @@ Command semantics:
 
 Invalid registered session files must not block project-level on/off. They should be reported as skipped invalid records and left untouched.
 
-`list-sessions --json` should return only redacted identifiers and metadata needed for control: session id, source, enabled flag, validity, status reason, branch, worktree, timestamps, reason, and state path. It must not expose raw session id values beyond the normalized stored session id, and it must not include private prompt content.
+`list-sessions --json` should return only redacted identifiers and metadata needed for control: session id, source, enabled flag, validity, lifecycle status, status reason, branch, worktree, first seen, last seen, timestamps, reason, and state path. It must not expose raw session id values beyond the normalized stored session id, and it must not include private prompt content.
 
 State compatibility and migration:
 
@@ -517,6 +529,7 @@ Minimum test matrix:
 | Installed artifact manifest | updates touch only declared managed files; private files remain read-only; hash mismatches fail closed. |
 | Path and command safety | path traversal, outside-project link targets, and shell-concatenated command invocation are rejected; GUI-to-CLI calls use argv/list. |
 | GUI usability | status badges include text semantics, error banners show stable tokens, refresh is read-only, button scope is explicit, and keyboard operation works. |
+| Session lifecycle | `last_seen_at` updates only activity observation and not enabled state; stale/orphan are marked only; generated ids show lower confidence. |
 
 ## 12. Validation and acceptance
 
@@ -531,7 +544,8 @@ Document-level acceptance for this plan:
 - the plan defines runtime/launcher resolution, UTF-8 output, environment-variable boundaries, and missing-dependency blockers;
 - the plan defines the installed artifact manifest, managed/protected file ownership, and uninstall/cleanup non-goals;
 - the plan defines path normalization, symlink/junction, path traversal, and command-invocation safety boundaries;
-- the plan defines GUI status badges, error banners, refresh semantics, button scope, empty states, and keyboard accessibility.
+- the plan defines GUI status badges, error banners, refresh semantics, button scope, empty states, and keyboard accessibility;
+- the plan defines session lifecycle, last seen, stale/orphan marking, and pruning non-goals.
 
 Phase 1 acceptance:
 

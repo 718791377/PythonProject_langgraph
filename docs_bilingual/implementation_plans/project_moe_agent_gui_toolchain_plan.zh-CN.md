@@ -152,6 +152,8 @@ expert timeout、stalled expert 或 full-history fork 失败都不是有效证�
   "raw_session_id_sha256": "sha256",
   "worktree": "D:\\PythonProject_paper_suggest",
   "branch": "main",
+  "first_seen_at": "2026-05-20T00:00:00+00:00",
+  "last_seen_at": "2026-05-20T00:00:00+00:00",
   "updated_at": "2026-05-20T00:00:00+00:00",
   "reason": "manual-session-on"
 }
@@ -171,6 +173,16 @@ session 身份规则：
 - 存在 `THESIS_MOE_SESSION_ID`、`CODEX_SESSION_ID`、`OPENAI_CODEX_SESSION_ID`、`OH_MY_CODEX_SESSION_ID`、`OMX_SESSION_ID`、`CODEX_SESSION` 等运行时环境变量时，可以用它们作为 session id；
 - 如果没有稳定 session id，CLI 可以根据 worktree、branch 和用户生成项目本地兼容 id。该 generated id 足够支撑单个本地工作流，但不是同一 worktree、同一 branch 下多个并发会话的强隔离边界；
 - GUI 必须显示 `session_id_source`，让用户区分真实 session id 与 generated 兼容 id。
+
+session 生命周期与陈旧记录规则：
+
+- `status --json` 或 `assert-on` 在能识别当前 session id 时，可以 best-effort 更新该 session 记录的 `last_seen_at`；该更新不得改变 `enabled`；
+- 首次创建 session 记录时写入 `first_seen_at`，之后普通 on/off 不得覆盖它；
+- `list-sessions --json` 必须派生 `lifecycle_status`，至少包含 `active`、`stale`、`invalid`、`orphan_candidate`；该字段仅用于展示和筛选，不直接改变有效状态；
+- `stale` 表示 `last_seen_at` 超过配置阈值或无法确认会话仍在活动；第一版默认只标记，不自动删除、不自动关闭；
+- `orphan_candidate` 表示记录关联的 worktree、branch 或 session source 已无法确认；它必须进入 GUI 的无效/需复核分组，不能被项目级 on/off 静默修复；
+- 第一版不实现自动 pruning、归档、tombstone 或清理 session state；如后续需要，必须新增显式 `prune-sessions --dry-run` / `--apply` 之类命令、审计记录和回滚规则；
+- generated 兼容 id 的记录必须在 GUI 中显示较低置信度，避免操作者误以为它是强隔离真实 session。
 
 推荐 CLI 表面：
 
@@ -200,7 +212,7 @@ python .\tools\thesis_moe_mode.py assert-on
 
 无效的已登记 session 文件不得阻塞项目级 on/off。脚本应报告这些文件为 skipped invalid records，并保持原文件不变。
 
-`list-sessions --json` 只返回控制所需的脱敏标识和元数据：session id、来源、enabled、validity、status reason、branch、worktree、时间戳、reason 和 state path。它不得暴露 raw session id，不得包含私有提示词内容。
+`list-sessions --json` 只返回控制所需的脱敏标识和元数据：session id、来源、enabled、validity、lifecycle status、status reason、branch、worktree、first seen、last seen、时间戳、reason 和 state path。它不得暴露 raw session id，不得包含私有提示词内容。
 
 状态兼容与迁移：
 
@@ -517,6 +529,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | 安装产物清单 | 更新只触碰清单声明的 managed files；私有文件保持只读；hash 不匹配时 fail closed。 |
 | 路径与命令安全 | 路径穿越、项目外 link 目标和 shell 拼接式命令调用被拒绝；GUI 调 CLI 使用 argv/list。 |
 | GUI 可用性 | 状态徽标有文字语义，错误横幅显示 stable token，刷新只读，按钮 scope 明确，键盘可操作。 |
+| session 生命周期 | `last_seen_at` 只更新活动观测，不改变 enabled；stale/orphan 只标记不清理；generated id 显示低置信度。 |
 
 ## 12. 校验与验收
 
@@ -531,7 +544,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案定义 runtime/launcher 解析、UTF-8 输出、环境变量边界和缺失依赖 blocker；
 - 方案定义安装产物清单、managed/protected 文件所有权和卸载/清理非目标边界；
 - 方案定义路径规范化、符号链接/junction、路径穿越和命令调用安全边界；
-- 方案定义 GUI 状态徽标、错误横幅、刷新语义、按钮 scope、空状态和键盘可访问性。
+- 方案定义 GUI 状态徽标、错误横幅、刷新语义、按钮 scope、空状态和键盘可访问性；
+- 方案定义 session 生命周期、last seen、stale/orphan 标记和 pruning 非目标边界。
 
 第一阶段验收：
 
