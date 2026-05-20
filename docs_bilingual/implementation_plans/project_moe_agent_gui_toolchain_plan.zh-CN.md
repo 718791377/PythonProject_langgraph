@@ -270,13 +270,23 @@ CLI JSON 输出契约：
 - 现有 session state 文件保持可读取；
 - 损坏、session 不匹配或越界状态必须 fail closed。
 
+会话自动生效与启动钩子规则：
+
+- `project-on` / `project-off` 只负责写入项目与 session 状态；它们本身不能让已经打开的 Codex 会话跨进程即时改变模型上下文，必须配套目标项目的启动/恢复检查面；
+- `paper_suggest` 第一阶段必须在目标项目的 `AGENTS.md`、等价 startup summary 或 launcher helper 中增加短规则：在首个实质任务、`resume` / `continue`、reload / restart、phase change 或用户显式询问 MOE 状态时，读取 `python .\tools\thesis_moe_mode.py status --json`，需要强制开启时再使用 `assert-on`；
+- 新会话启动时先继承项目默认值；已有会话在下一次触发上述检查点时重新读取有效状态；不得宣称 `.cmd` 能即时注入已经打开会话的历史上下文；
+- 当有效状态为 enabled 时，会话按 `.codex/agents/thesis-moe-mentor.toml` 与项目私有 `MOE.md` 的摘要化/引用规则启用严苛导师型审查；当状态为 disabled 或 fail-closed 时，不加载私有提示全文；
+- 如果启动钩子缺失、CLI 缺失或返回 blocker token，会话必须报告 named blocker，例如 `blocked:missing_moe_activation_hook` 或 `blocked:missing_mode_cli`，而不是默默认为 MOE 已启用；
+- GUI 显示的项目与 session 状态必须来自同一 `status` / `project-status` / `list-sessions` JSON 合约，不能维护第二套状态。
+
 第一阶段实施顺序：
 
 1. 扩展 `tools/thesis_moe_mode.py`，增加项目默认状态的读取和写入 helper；
 2. 新增 `project-on`、`project-off`、`project-status` 命令；
 3. 让 `status` 和 `assert-on` 按“session 覆盖、项目默认值、fail-closed 关闭”的顺序计算有效状态；
 4. 更新 `thesis-moe-on.cmd` 与 `thesis-moe-off.cmd`，默认调用项目级命令；
-5. 更新使用说明和测试，覆盖项目默认值、已登记 session 传播和单 session 覆盖。
+5. 更新目标项目 `AGENTS.md`、startup summary 或 launcher helper，让新会话和已有会话在激活检查点重新读取 MOE 状态；
+6. 更新使用说明和测试，覆盖项目默认值、已登记 session 传播、单 session 覆盖和会话自动生效链路。
 
 第一阶段不得修改论文正文、私有提示词内容、浏览器自动化或文献检索行为。
 
@@ -532,7 +542,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - `tools/thesis_moe_mode.py`：状态模型、命令表面、有效状态和列表输出；
 - `thesis-moe-on.cmd` 与 `thesis-moe-off.cmd`：项目级默认值包装入口；
 - `docs_bilingual/operations/thesis_moe_mode_usage.zh-CN.md`：操作者用法和失败模式；
-- `tests/test_thesis_moe_mode.py` 或目标项目既有测试位置：覆盖项目默认值、session 覆盖、列表输出、无效记录和旧记录兼容。
+- `AGENTS.md` 或目标项目等价 startup summary / launcher helper：会话激活检查点与 MOE 状态读取规则；
+- `tests/test_thesis_moe_mode.py` 或目标项目既有测试位置：覆盖项目默认值、session 覆盖、列表输出、无效记录、旧记录兼容和会话激活链路。
 
 第二阶段本仓库推荐文件所有权：
 
@@ -559,6 +570,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | 路径与命令安全 | 路径穿越、项目外 link 目标和 shell 拼接式命令调用被拒绝；GUI 调 CLI 使用 argv/list。 |
 | GUI 可用性 | 状态徽标有文字语义，错误横幅显示 stable token，刷新只读，按钮 scope 明确，键盘可操作。 |
 | session 生命周期 | `last_seen_at` 只更新活动观测，不改变 enabled；stale/orphan 只标记不清理；generated id 显示低置信度。 |
+| 会话自动生效 | 新会话继承项目默认值；已有会话在 resume/continue/reload/phase change 等检查点重新读取 `status --json`；缺失 hook 或 CLI 时显示 blocker。 |
 | JSON 输出契约 | `status`、`project-status`、`list-sessions` 和写入命令都返回统一 envelope、稳定 token、脱敏字段和 GUI 所需计数。 |
 | 新项目接入 | 默认校验已有 Agent TOML；模板生成必须显式 dry run；不得复制其他项目 `MOE.md` 或生成伪私有提示。 |
 | 覆盖冲突 | 项目级传播不覆盖手动 session override；冲突时以 session 为准并显式显示 effective source。 |
@@ -607,6 +619,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案定义路径规范化、符号链接/junction、路径穿越和命令调用安全边界；
 - 方案定义 GUI 状态徽标、错误横幅、刷新语义、按钮 scope、空状态和键盘可访问性；
 - 方案定义 session 生命周期、last seen、stale/orphan 标记和 pruning 非目标边界；
+- 方案定义新会话与已有会话在启动/恢复/继续/阶段变化检查点读取 MOE 状态的自动生效链路；
 - 方案定义 CLI JSON envelope、状态字段、计数字段、写入结果字段和失败脱敏字段；
 - 方案定义新项目接入、scaffold dry run、Agent TOML/namespace 校验和私有提示源边界；
 - 方案定义项目级传播、手动 session override、冲突展示和清除覆盖非目标边界；
@@ -618,6 +631,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - `thesis-moe-on.cmd` 能开启项目默认值和已登记 session；
 - `thesis-moe-off.cmd` 能关闭项目默认值和已登记 session；
 - 新 session 继承项目默认值；
+- 已打开 session 在 resume/continue/reload/phase change 等激活检查点重新读取 MOE 状态；
 - 显式 `--session-id` 覆盖有效；
 - `assert-on` 遵循有效状态规则。
 

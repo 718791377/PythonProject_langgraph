@@ -270,13 +270,23 @@ Backward compatibility:
 - existing session state files remain readable;
 - corrupted, mismatched, or out-of-scope state fails closed.
 
+Session activation and auto-effect rules:
+
+- `project-on` / `project-off` only write project and session state; by themselves they cannot instantly mutate the model context of already-open Codex sessions across processes, so they must be paired with a target-project startup/resume check surface;
+- Phase 1 for `paper_suggest` must add a short rule to the target project's `AGENTS.md`, equivalent startup summary, or launcher helper: on first substantive task, `resume` / `continue`, reload / restart, phase change, or an explicit user question about MOE state, read `python .\tools\thesis_moe_mode.py status --json`, and use `assert-on` only when a hard enabled assertion is required;
+- new sessions inherit the project default at startup; already-open sessions re-read effective state at the next activation checkpoint above; the plan must not claim that `.cmd` files can instantly inject state into an already-open session's history;
+- when the effective state is enabled, the session applies strict mentor review using `.codex/agents/thesis-moe-mentor.toml` and the summary/reference policy for the project-private `MOE.md`; when disabled or fail-closed, it must not load the private prompt text in full;
+- if the activation hook is missing, the CLI is missing, or the CLI returns a blocker token, the session must report a named blocker such as `blocked:missing_moe_activation_hook` or `blocked:missing_mode_cli` instead of silently treating MOE as enabled;
+- GUI state must come from the same `status` / `project-status` / `list-sessions` JSON contract and must not maintain a second state source.
+
 Phase 1 implementation sequence:
 
 1. extend `tools/thesis_moe_mode.py` with project-default state read/write helpers;
 2. add `project-on`, `project-off`, and `project-status` commands;
 3. make `status` and `assert-on` compute effective state from session override, then project default, then fail-closed disabled;
 4. update `thesis-moe-on.cmd` and `thesis-moe-off.cmd` to call project-level commands by default;
-5. add or update usage documentation and tests for project default, registered-session propagation, and single-session override behavior.
+5. update the target project's `AGENTS.md`, startup summary, or launcher helper so new and already-open sessions re-read MOE state at activation checkpoints;
+6. add or update usage documentation and tests for project default, registered-session propagation, single-session override behavior, and the session auto-effect chain.
 
 Phase 1 must not change paper content, private prompt content, browser automation, or literature-search behavior.
 
@@ -532,7 +542,8 @@ Recommended Phase 1 target-project file ownership:
 - `tools/thesis_moe_mode.py`: state model, command surface, effective status, and list output;
 - `thesis-moe-on.cmd` and `thesis-moe-off.cmd`: project-level default wrappers;
 - `docs_bilingual/operations/thesis_moe_mode_usage.zh-CN.md`: operator usage and failure modes;
-- tests such as `tests/test_thesis_moe_mode.py` or the target project's existing test location: project default, session override, list output, invalid records, and legacy compatibility.
+- `AGENTS.md` or the target project's equivalent startup summary / launcher helper: session activation checkpoints and MOE state-reading rules;
+- tests such as `tests/test_thesis_moe_mode.py` or the target project's existing test location: project default, session override, list output, invalid records, legacy compatibility, and the session activation chain.
 
 Recommended Phase 2 central-repository file ownership:
 
@@ -559,6 +570,7 @@ Minimum test matrix:
 | Path and command safety | path traversal, outside-project link targets, and shell-concatenated command invocation are rejected; GUI-to-CLI calls use argv/list. |
 | GUI usability | status badges include text semantics, error banners show stable tokens, refresh is read-only, button scope is explicit, and keyboard operation works. |
 | Session lifecycle | `last_seen_at` updates only activity observation and not enabled state; stale/orphan are marked only; generated ids show lower confidence. |
+| Session auto-effect | new sessions inherit project default; already-open sessions re-read `status --json` at resume/continue/reload/phase-change checkpoints; missing hook or CLI shows a blocker. |
 | JSON output contract | `status`, `project-status`, `list-sessions`, and write commands return a shared envelope, stable tokens, redacted fields, and GUI-needed counts. |
 | New project onboarding | existing Agent TOML is validated by default; template generation is explicit dry run; other projects' `MOE.md` content and invented private prompts are not copied. |
 | Override conflict | project-level propagation does not overwrite manual session overrides; conflicts prefer session source and show effective source explicitly. |
@@ -607,6 +619,7 @@ Document-level acceptance for this plan:
 - the plan defines path normalization, symlink/junction, path traversal, and command-invocation safety boundaries;
 - the plan defines GUI status badges, error banners, refresh semantics, button scope, empty states, and keyboard accessibility;
 - the plan defines session lifecycle, last seen, stale/orphan marking, and pruning non-goals;
+- the plan defines the auto-effect chain for new and already-open sessions to read MOE state at startup, resume, continue, reload, and phase-change checkpoints;
 - the plan defines the CLI JSON envelope, status fields, count fields, write-result fields, and redacted failure fields;
 - the plan defines new project onboarding, scaffold dry run, Agent TOML/namespace validation, and private prompt-source boundaries;
 - the plan defines project-level propagation, manual session overrides, conflict display, and clear-override non-goals;
@@ -618,6 +631,7 @@ Phase 1 acceptance:
 - `thesis-moe-on.cmd` enables project default and registered sessions;
 - `thesis-moe-off.cmd` disables project default and registered sessions;
 - new sessions inherit project default;
+- already-open sessions re-read MOE state at resume/continue/reload/phase-change activation checkpoints;
 - explicit `--session-id` overrides work;
 - `assert-on` follows the effective status rule.
 
