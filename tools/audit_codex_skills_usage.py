@@ -3079,6 +3079,9 @@ def print_human(report: dict[str, Any]) -> None:
         config_summary.get("current_profile") if isinstance(config_summary.get("current_profile"), dict) else {}
     )
     enabled_plugins = config_summary.get("enabled_plugins") if isinstance(config_summary.get("enabled_plugins"), list) else []
+    explicit_skills = (
+        session_evidence.get("explicit_skills") if isinstance(session_evidence.get("explicit_skills"), dict) else {}
+    )
     recommendations = report.get("recommendations") if isinstance(report.get("recommendations"), list) else []
     print(f"Codex skills usage audit ({report['mode']})")
     print(f"Window: {report['audit_window']['since']} -> {report['audit_window']['until']}")
@@ -3144,6 +3147,11 @@ def print_human(report: dict[str, Any]) -> None:
         "Warning triage blockers: "
         f"{', '.join(str(blocker) for blocker in warning_triage_blockers) if warning_triage_blockers else 'none'}"
     )
+    print(
+        "Explicit skill usages: "
+        f"total={sum(explicit_skills.values())} "
+        f"unique={len(explicit_skills)}"
+    )
     print(f"Skill path reads: {sum((session_evidence.get('skill_paths') or {}).values())}")
     print(f"Profile helper calls: {sum((session_evidence.get('profile_helper_calls') or {}).values())}")
     print(
@@ -3181,7 +3189,7 @@ def print_human(report: dict[str, Any]) -> None:
         for reason in precommit_update_archive.get("error_reasons", [])[:10]:
             print(f"  - {reason}")
     print("Top explicit skills:")
-    for name, count in list(report["session_evidence"].get("explicit_skills", {}).items())[:10]:
+    for name, count in list(explicit_skills.items())[:10]:
         print(f"  {name}: {count}")
     print("Top module evidence:")
     for row in report.get("module_evidence", [])[:20]:

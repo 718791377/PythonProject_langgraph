@@ -344,6 +344,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             output,
         )
         self.assertIn("Warning triage blockers: none", output)
+        self.assertIn("Explicit skill usages: total=0 unique=0", output)
         self.assertIn("Skill path reads: 0", output)
         self.assertIn("Profile helper calls: 0", output)
         self.assertIn("Script capability boundaries: reliable=", output)
