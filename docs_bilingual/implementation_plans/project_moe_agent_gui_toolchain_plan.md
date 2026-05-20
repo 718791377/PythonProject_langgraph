@@ -88,6 +88,16 @@ fallback = ["main-session-takeover", "durable-brief"]
 
 The checker may start with the existing `name`, `description`, and `developer_instructions` requirement, then later enforce these standard sections for projects that opt in to the MOE GUI toolchain.
 
+Project onboarding and template-generation boundary:
+
+- new project onboarding defaults to "validate an existing Agent TOML, then install the GUI"; the installer must not auto-generate `.codex/agents/*.toml` in default mode;
+- if template generation is added later, it must be an explicit command such as `scaffold-project-moe-agent --target-project <project> --agent-name <agent> --state-namespace <namespace> --dry-run --json`, and it defaults to dry run;
+- template generation may create only a skeleton TOML, an empty project-private prompt-source placeholder note, and operator documentation; it must not invent long `developer_instructions` content and must not copy another project's `MOE.md`;
+- `agent_name` must be cross-checked against top-level TOML `name`, installed config, manifest, and state namespace; name conflicts or namespace reuse by another agent fail closed;
+- `state_namespace` must be project-unique and safe as a directory name; it must not contain path separators, whitespace control characters, or shell-special semantics;
+- onboarding checkers must validate required top-level fields, recommended sections, private prompt source path, dispatch policy, scope, state paths, and schema version; failures return stable tokens and remediation hints;
+- target projects may maintain their own private `MOE.md`, but scaffold/install/update must not read its full content to generate user-level configuration or central toolchain cache.
+
 ## 5. Dispatch policy
 
 Project MOE Agents must not be launched with the incompatible combination:
@@ -540,6 +550,7 @@ Minimum test matrix:
 | GUI usability | status badges include text semantics, error banners show stable tokens, refresh is read-only, button scope is explicit, and keyboard operation works. |
 | Session lifecycle | `last_seen_at` updates only activity observation and not enabled state; stale/orphan are marked only; generated ids show lower confidence. |
 | JSON output contract | `status`, `project-status`, `list-sessions`, and write commands return a shared envelope, stable tokens, redacted fields, and GUI-needed counts. |
+| New project onboarding | existing Agent TOML is validated by default; template generation is explicit dry run; other projects' `MOE.md` content and invented private prompts are not copied. |
 
 ## 12. Validation and acceptance
 
@@ -556,7 +567,8 @@ Document-level acceptance for this plan:
 - the plan defines path normalization, symlink/junction, path traversal, and command-invocation safety boundaries;
 - the plan defines GUI status badges, error banners, refresh semantics, button scope, empty states, and keyboard accessibility;
 - the plan defines session lifecycle, last seen, stale/orphan marking, and pruning non-goals;
-- the plan defines the CLI JSON envelope, status fields, count fields, write-result fields, and redacted failure fields.
+- the plan defines the CLI JSON envelope, status fields, count fields, write-result fields, and redacted failure fields;
+- the plan defines new project onboarding, scaffold dry run, Agent TOML/namespace validation, and private prompt-source boundaries.
 
 Phase 1 acceptance:
 

@@ -88,6 +88,16 @@ fallback = ["main-session-takeover", "durable-brief"]
 
 checker 可以先沿用现有 `name`、`description`、`developer_instructions` 校验；后续对启用 MOE GUI 工具链的项目，再逐步强制校验这些标准扩展区。
 
+项目接入与模板生成边界：
+
+- 新项目接入默认走“先校验已有 Agent TOML，再安装 GUI”的路径；安装器不得在默认模式下自动生成 `.codex/agents/*.toml`；
+- 后续如增加模板生成，必须是显式命令，例如 `scaffold-project-moe-agent --target-project <project> --agent-name <agent> --state-namespace <namespace> --dry-run --json`，且默认 dry run；
+- 模板生成只能创建骨架 TOML、空的项目私有提示源占位说明和操作者文档，不得生成长篇 `developer_instructions` 伪内容，不得复制其他项目 `MOE.md`；
+- `agent_name` 必须与 TOML 顶层 `name`、安装配置、manifest 和 state namespace 绑定校验；名称冲突或 namespace 已被其他 agent 使用时 fail closed；
+- `state_namespace` 必须是项目内唯一、可作为目录名的稳定标识；不得包含路径分隔符、空白控制字符或 shell 特殊语义；
+- 接入检查器必须验证必填顶层字段、推荐扩展区、私有提示源路径、dispatch 策略、scope、state 路径和 schema 版本；失败返回稳定 token 与修复建议；
+- 项目私有 `MOE.md` 可以由目标项目自行维护，但 scaffold/install/update 都不得读取其全文来生成用户级配置或中央工具链缓存。
+
 ## 5. 专家派发策略
 
 项目级 MOE Agent 禁止使用以下不兼容组合：
@@ -540,6 +550,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | GUI 可用性 | 状态徽标有文字语义，错误横幅显示 stable token，刷新只读，按钮 scope 明确，键盘可操作。 |
 | session 生命周期 | `last_seen_at` 只更新活动观测，不改变 enabled；stale/orphan 只标记不清理；generated id 显示低置信度。 |
 | JSON 输出契约 | `status`、`project-status`、`list-sessions` 和写入命令都返回统一 envelope、稳定 token、脱敏字段和 GUI 所需计数。 |
+| 新项目接入 | 默认校验已有 Agent TOML；模板生成必须显式 dry run；不得复制其他项目 `MOE.md` 或生成伪私有提示。 |
 
 ## 12. 校验与验收
 
@@ -556,7 +567,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案定义路径规范化、符号链接/junction、路径穿越和命令调用安全边界；
 - 方案定义 GUI 状态徽标、错误横幅、刷新语义、按钮 scope、空状态和键盘可访问性；
 - 方案定义 session 生命周期、last seen、stale/orphan 标记和 pruning 非目标边界；
-- 方案定义 CLI JSON envelope、状态字段、计数字段、写入结果字段和失败脱敏字段。
+- 方案定义 CLI JSON envelope、状态字段、计数字段、写入结果字段和失败脱敏字段；
+- 方案定义新项目接入、scaffold dry run、Agent TOML/namespace 校验和私有提示源边界。
 
 第一阶段验收：
 
