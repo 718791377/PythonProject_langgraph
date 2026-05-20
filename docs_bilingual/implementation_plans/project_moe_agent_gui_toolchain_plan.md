@@ -336,6 +336,8 @@ python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-projec
 python tools/project_moe_gui_toolchain/check_project_moe_gui_install.py --target-project <project> --json
 ```
 
+Installers and updaters should support `--dry-run --json`. Dry run only computes the resolved target project root, files that would be written or updated, private files that would be skipped, required migration actions, and rollback hints. It must not write files. Real writes must clearly report `mode = "apply"`; when nothing changes, output `no_op = true` and do not rewrite files just to create a commit.
+
 The installer must fail if the target project has no matching `.codex/agents/<agent>.toml` unless an explicit template-generation mode is added later.
 
 PySide6 runtime can be supplied by either a documented shared GUI runtime or the target project's own virtual environment. The first implementation must record which runtime is used in the installed config and must fail with an actionable message if PySide6 is unavailable.
@@ -387,6 +389,19 @@ The MOE control surface may be called by multiple Codex sessions, command-line w
 - the GUI must serialize in-process button actions: while one on/off operation is in flight, duplicate buttons for the same scope are disabled;
 - concurrency conflicts, lock timeouts, or atomic-replace failures are never evidence that a mode was enabled or disabled, and must surface stable tokens in CLI/GUI output and audit summaries.
 
+### 9.2 Preview, apply, and operator-confirmation boundaries
+
+To avoid silent writes in the wrong project, the first version must distinguish read-only checks, dry-run previews, and real apply operations:
+
+- `check_project_moe_gui_install.py` is always read-only; it may report `up_to_date`, `upgrade_available`, or blockers, but it must not write;
+- install/update `--dry-run --json` output must list `planned_writes`, `planned_skips`, `planned_migrations`, `target_project_root`, `state_namespace`, `agent_name`, and `rollback_hint`;
+- real install/update writes require explicit apply semantics, for example the command name itself is install/update and output includes `mode = "apply"`, or a later implementation adds `--apply`; `check` and GUI startup must never implicitly install;
+- `project-on`, `project-off`, `on --session-id`, and `off --session-id` may execute directly as explicit write commands, but JSON output must report before/after effective state, changed scope, and `no_op`;
+- when the GUI first connects to a target project, it must display the target project root, agent name, state namespace, and current branch; before the user clicks on/off, button labels must make clear whether they affect the project default or one session;
+- opening the GUI window, refreshing the session table, or reading status must not automatically perform install, update, migration, on/off, or repair;
+- no-op operations should return success token `ok` with `no_op = true` and emit an audit summary or stdout summary so the operator can confirm no state changed;
+- deletion, cleanup, unlock, repair, retention pruning, or uninstall of GUI artifacts are outside first-version implicit behavior and require later explicit commands and acceptance rules.
+
 ## 10. Audit log, privacy, and retention boundaries
 
 MOE control tooling should emit a small local audit record for state-changing actions:
@@ -433,6 +448,7 @@ Minimum test matrix:
 | GUI install | install refuses missing agent TOML and writes only inside the target project. |
 | GUI actions | GUI action results match CLI `status --json` and `project-status --json`. |
 | Concurrent writes | two commands writing the same namespace concurrently result in one success and the other either waiting then succeeding or returning a stable lock token; no partial JSON is produced. |
+| Dry run / no-op | install/update dry run writes no files; repeated enable/disable outputs `no_op = true` and does not create meaningless file diffs. |
 
 ## 12. Validation and acceptance
 
@@ -442,7 +458,8 @@ Document-level acceptance for this plan:
 - the plan clearly separates the MOE GUI toolchain from generic GUI tooling;
 - the plan defines project default plus session override behavior;
 - the plan forbids `full-history fork + specified custom role` for project MOE Agents;
-- the plan defines state-write locking, atomic writes, concurrency failure tokens, and GUI serialization boundaries.
+- the plan defines state-write locking, atomic writes, concurrency failure tokens, and GUI serialization boundaries;
+- the plan defines check, dry-run, apply, no-op, and GUI operator-confirmation boundaries.
 
 Phase 1 acceptance:
 

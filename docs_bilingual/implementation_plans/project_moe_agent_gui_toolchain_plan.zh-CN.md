@@ -336,6 +336,8 @@ python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-projec
 python tools/project_moe_gui_toolchain/check_project_moe_gui_install.py --target-project <project> --json
 ```
 
+安装器和更新器应支持 `--dry-run --json`。dry run 只计算目标项目根、将写入或更新的文件、跳过的私有文件、需要的迁移动作和 rollback hint，不实际写入。真实写入必须在输出中明确标记 `mode = "apply"`；无变化时输出 `no_op = true`，不得为了制造提交而重写文件。
+
 如果目标项目没有匹配的 `.codex/agents/<agent>.toml`，安装器必须失败；除非后续另行增加显式模板生成模式。
 
 PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来自目标项目自己的虚拟环境。第一版实现必须在安装配置里记录使用哪种 runtime；如果 PySide6 不可用，必须给出可执行的错误提示。
@@ -387,6 +389,19 @@ MOE 控制面可能被多个 Codex session、命令行 wrapper 和 GUI 同时调
 - GUI 必须串行化本进程内按钮动作：一个 on/off 操作完成前禁用同一 scope 的重复按钮，避免本地 GUI 自己制造并发写；
 - 并发冲突、锁超时或原子替换失败都不是“已启用/已关闭”的证据，必须在 CLI/GUI 和审计摘要中暴露稳定 token。
 
+### 9.2 预览、应用与操作者确认边界
+
+为了避免 GUI 或 wrapper 在错误项目中静默写入，第一版必须区分只读检查、dry run 预览和真实应用：
+
+- `check_project_moe_gui_install.py` 永远只读；它可以报告 `up_to_date`、`upgrade_available` 或 blocker，但不得写入；
+- install/update 命令的 `--dry-run --json` 输出必须列出 `planned_writes`、`planned_skips`、`planned_migrations`、`target_project_root`、`state_namespace`、`agent_name` 和 `rollback_hint`；
+- install/update 的真实写入必须要求显式 apply 语义，例如命令名本身是 install/update 且输出 `mode = "apply"`，或后续实现增加 `--apply`；不得让 `check` 或 GUI 启动动作隐式安装；
+- `project-on`、`project-off`、`on --session-id`、`off --session-id` 可以作为明确写入命令直接执行，但必须在 JSON 中报告 before/after effective state、changed scope 和 `no_op`；
+- GUI 首次连接某个目标项目时必须显示目标项目根、agent name、state namespace 和当前分支；用户点击 on/off 前，按钮标签必须明确是项目默认值还是单 session；
+- GUI 不得在窗口打开、刷新 session 表格或读取状态时自动执行安装、更新、迁移、on/off 或 repair；
+- no-op 操作应返回成功 token `ok` 与 `no_op = true`，并写入审计摘要或 stdout 摘要，方便确认没有真实状态变化；
+- 任何需要删除、清理、unlock、repair、retention pruning 或卸载 GUI 产物的行为都不属于第一版隐式动作，必须后续另建显式命令和验收规则。
+
 ## 10. 审计日志、隐私与保留边界
 
 MOE 控制工具对状态变更动作应写入轻量本地审计记录：
@@ -433,6 +448,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | GUI 安装 | 缺少 Agent TOML 时安装失败，且只写目标项目内文件。 |
 | GUI 操作 | GUI 操作结果与 CLI `status --json` 和 `project-status --json` 一致。 |
 | 并发写入 | 两个命令同时写同一 namespace 时，一个成功，另一个等待后成功或返回稳定 lock token；不会产生半写 JSON。 |
+| dry run / no-op | install/update dry run 不写文件；重复启用或关闭输出 `no_op = true`，且不制造无意义文件差异。 |
 
 ## 12. 校验与验收
 
@@ -442,7 +458,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - 方案明确区分 MOE GUI 工具链和通用 GUI 工具；
 - 方案定义项目默认值 + session override 行为；
 - 方案禁止项目级 MOE Agent 使用 `full-history fork + specified custom role`；
-- 方案定义状态写入的锁、原子写入、并发失败 token 和 GUI 串行化边界。
+- 方案定义状态写入的锁、原子写入、并发失败 token 和 GUI 串行化边界；
+- 方案定义 check、dry run、apply、no-op 与 GUI 操作者确认边界。
 
 第一阶段验收：
 
