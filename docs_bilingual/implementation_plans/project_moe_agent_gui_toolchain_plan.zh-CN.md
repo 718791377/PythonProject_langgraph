@@ -202,6 +202,13 @@ python .\tools\thesis_moe_mode.py assert-on
 
 `list-sessions --json` 只返回控制所需的脱敏标识和元数据：session id、来源、enabled、validity、status reason、branch、worktree、时间戳、reason 和 state path。它不得暴露 raw session id，不得包含私有提示词内容。
 
+状态兼容与迁移：
+
+- 现有 `thesis_moe_mode.py` 已写出的 session 记录即使还没有 `scope` 或 `state_namespace`，只要原有必填字段有效，也必须继续可读；
+- 项目级命令重写有效旧 session 记录时，应补入 `scope = "session"` 与 `state_namespace = "thesis_moe"`；
+- 项目级命令应保留已有 `created_at`，并更新 `updated_at` 与 `reason`；
+- 无效或损坏的旧记录不得在普通 on/off 操作中自动修复；如确实需要修复，后续必须另行创建显式 repair 命令。
+
 兼容要求：
 
 - 现有 `status --json` 保持机器可读；
@@ -357,3 +364,10 @@ PySide6 runtime 可以来自有文档记录的共享 GUI runtime，也可以来�
 5. 第一个目标稳定后，再把 installer 泛化给其他项目。
 
 命令行状态模型稳定之前，不启动 PySide6 GUI 实现。
+
+阶段门规则：
+
+- 第一阶段只有在命令行测试证明项目默认值、已登记 session 传播、session 覆盖、无效记录跳过和旧记录可读后才算完成；
+- 第二阶段只有在第一阶段已合入目标项目，并且 CLI 提供 `list-sessions --json` 后才能启动；
+- 任何新增到本仓库的可复用 checker、installer 或 GUI 源码，都应在本文确认后作为单独本地变更实施；
+- 远端发布不属于本文自动授权范围，必须继续遵守本仓库发布流程。

@@ -202,6 +202,13 @@ Invalid registered session files must not block project-level on/off. They shoul
 
 `list-sessions --json` should return only redacted identifiers and metadata needed for control: session id, source, enabled flag, validity, status reason, branch, worktree, timestamps, reason, and state path. It must not expose raw session id values beyond the normalized stored session id, and it must not include private prompt content.
 
+State compatibility and migration:
+
+- existing `thesis_moe_mode.py` session records that do not yet contain `scope` or `state_namespace` must remain readable when their existing required fields are valid;
+- when a project-level command rewrites a valid legacy session record, it should add `scope = "session"` and `state_namespace = "thesis_moe"`;
+- project-level commands must preserve `created_at` when it already exists and update `updated_at` and `reason`;
+- invalid or corrupt legacy records are never auto-repaired during normal on/off operations; they require a later explicit repair command if repair is needed.
+
 Backward compatibility:
 
 - existing `status --json` remains machine-readable;
@@ -357,3 +364,10 @@ After this plan is accepted, implementation should proceed in this order:
 5. only after the first target is stable, generalize the installer for additional projects.
 
 Do not start the PySide6 GUI before the command-line state model is stable.
+
+Phase gate rules:
+
+- Phase 1 is complete only after command-line tests prove project default, registered-session propagation, session override, invalid-record skip, and legacy-record readability.
+- Phase 2 may start only after Phase 1 is merged into the target project and the CLI exposes `list-sessions --json`.
+- Any reusable checker, installer, or GUI source added to this repository should be implemented as a separate local change after this plan is accepted.
+- Remote publication is outside this plan and requires the repository publication workflow.
