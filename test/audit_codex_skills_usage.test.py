@@ -335,6 +335,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             output,
         )
         self.assertIn("Audit state: running", output)
+        self.assertIn("Audit state blockers: none", output)
         self.assertIn(
             "Audit-only safety: audit_only=True mutates_config=False "
             "edits_plugin_cache=False hard_load_apply_performed=False",
@@ -424,6 +425,45 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Field contract: passed", output)
         self.assertIn("Output retention gate: passed", output)
         self.assertIn("Pre-commit update/archive gate: passed errors=0 warnings=0", output)
+
+    def test_human_output_exposes_audit_state_blockers(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-human-output-audit-state-blockers")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output="candidate.json",
+            candidate_summary_output="candidate.md",
+            summary_reviewed=True,
+            target_profile=None,
+        )
+        report = audit.build_report(args)
+        stream = io.StringIO()
+        original = audit.sys.stdout
+        try:
+            audit.sys.stdout = stream
+            audit.print_human(report)
+        finally:
+            audit.sys.stdout = original
+
+        output = stream.getvalue()
+
+        self.assertIn("Audit state: ready-for-summary (profile_apply_candidate_gate_blocked)", output)
+        self.assertIn(
+            "Audit state blockers: source_report_paths_missing, target_profile_missing",
+            output,
+        )
 
     def test_field_contract_requires_output_retention_gate_status(self) -> None:
         codex_home = self.make_codex_home("skills-audit-output-retention-contract")

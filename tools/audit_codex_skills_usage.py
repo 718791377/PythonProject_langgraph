@@ -3124,6 +3124,12 @@ def print_human(report: dict[str, Any]) -> None:
     explicit_skills = (
         session_evidence.get("explicit_skills") if isinstance(session_evidence.get("explicit_skills"), dict) else {}
     )
+    audit_state_blockers = [
+        str(blocker)
+        for field in AUDIT_STATE_BLOCKER_FIELDS
+        for blocker in (audit_state.get(field) if isinstance(audit_state.get(field), list) else [])
+        if blocker is not None
+    ]
     recommendations = report.get("recommendations") if isinstance(report.get("recommendations"), list) else []
     print(f"Codex skills usage audit ({report['mode']})")
     print(f"Window: {report['audit_window']['since']} -> {report['audit_window']['until']}")
@@ -3169,6 +3175,10 @@ def print_human(report: dict[str, Any]) -> None:
     print(f"Audit state: {audit_state.get('state')} ({audit_state.get('reason')})")
     print(f"Audit next action: {audit_state.get('next_action')}")
     print(f"Profile apply allowed: {audit_state.get('profile_apply_allowed')}")
+    print(
+        "Audit state blockers: "
+        f"{', '.join(audit_state_blockers) if audit_state_blockers else 'none'}"
+    )
     print(
         "Audit-only safety: "
         f"audit_only={safety.get('audit_only')} "
