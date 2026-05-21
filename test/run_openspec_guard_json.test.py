@@ -34,6 +34,7 @@ GUARD_STEPS = [
     ("check_pyside6_gui_template_contract", "check_pyside6_gui_template_contract.py", "pyside6_gui_template_contract"),
     ("check_pyside6_gui_preview_helper_contract", "check_pyside6_gui_preview_helper_contract.py", "pyside6_gui_preview_helper_contract"),
     ("check_pyside6_gui_skill_contract", "check_pyside6_gui_skill_contract.py", "pyside6_gui_skill_contract"),
+    ("check_pyside6_project_opt_in_contract", "check_pyside6_project_opt_in_contract.py", "pyside6_project_opt_in_contract"),
     ("check_durable_routing_smoke_gate_template", "check_durable_routing_smoke_gate_template.py", "durable_routing_smoke_gate_template"),
     ("check_codex_native_rollback_release_gate_template", "check_codex_native_rollback_release_gate_template.py", "codex_native_rollback_release_gate_template"),
     ("check_worktree_session_hygiene", "check_worktree_session_hygiene.py", "worktree_session_hygiene"),

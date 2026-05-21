@@ -350,7 +350,9 @@ Current local implementation status:
 - the CI manifest registers both PySide6 contract tests, and `tools/run_openspec_guard.py` runs both checkers;
 - the repo-local `pyside6-gui` skill source is now carried by `.codex/skills/pyside6-gui/SKILL.md` for future session routing; user-level installation or copying remains a separate user-level deployment decision;
 - the skill contract is verified by `tools/check_pyside6_gui_skill_contract.py` and `test/check_pyside6_gui_skill_contract.test.py`, and `tools/run_openspec_guard.py` runs that checker;
-- Slice 4 consumer-project opt-in remains project/request-specific, and helper/template/skill presence must not be misreported as any consumer project already being `env_ready`, `template_ready`, or `verified`; Slice 5 packaging remains opt-in only.
+- Slice 4 consumer-project opt-in evidence checking is now carried by `tools/check_pyside6_project_opt_in_contract.py` and `test/check_pyside6_project_opt_in_contract.test.py`; the checker verifies target-root evidence, a single reviewed PySide6 dependency surface, GUI source boundaries, import-only smoke-test behavior, run/env helpers, rollback notes, and the rule that policy/template/skill presence cannot imply `env_ready`, `verified`, or `packaged`;
+- `tools/run_openspec_guard.py` and `tools/ci/ci_test_manifest.json` register the consumer-project opt-in checker so future guard and CI runs keep the shared opt-in contract executable;
+- actual Slice 4 enablement for a specific consumer project remains project/request-specific, and helper/template/skill/checker presence must not be misreported as any consumer project already being `env_ready`, `template_ready`, or `verified`; Slice 5 packaging remains opt-in only.
 
 ## 17. Failure modes and triage
 
@@ -371,8 +373,7 @@ Remaining implementation changes may add:
 
 - user-level installation or profile-helper routing for the repo-local `pyside6-gui` skill source;
 - a cross-project usage note in the skills/profile helper documentation;
-- a checker that verifies a consumer project-local PySide6 opt-in has a dependency declaration, import smoke test, and rollback note;
-- project opt-in coverage for dependency declaration uniqueness, GUI/business boundaries, worker boundaries, config/data paths, and package-manager-specific lockfile behavior;
+- extending the consumer-project opt-in checker to cover package-manager-specific lockfile behavior after a concrete target project adopts PySide6;
 - packaging opt-in coverage for PyInstaller/Nuitka preflight evidence, data exclusion, signing/distribution approval boundaries, and rollback artifacts.
 
 Already implemented shared-surface tasks include the minimal GUI templates, `check_pyside6_env.py` and `run_gui.ps1` templates, packaging preflight template, `ensure-pyside6-gui.ps1` preview/apply modes, rollback-note generation, and disposable apply-mode fixture coverage.

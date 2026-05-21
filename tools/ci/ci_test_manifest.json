@@ -26,7 +26,8 @@
     "evidence_adapters.test.py",
     "check_pyside6_gui_template_contract.test.py",
     "check_pyside6_gui_preview_helper_contract.test.py",
-    "check_pyside6_gui_skill_contract.test.py"
+    "check_pyside6_gui_skill_contract.test.py",
+    "check_pyside6_project_opt_in_contract.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []
