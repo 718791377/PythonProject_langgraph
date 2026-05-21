@@ -357,7 +357,8 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 具体消费项目的切片 4 启用仍按具体项目和请求推进，不得把 helper、模板、skill 或 checker 存在误报为任意消费项目已经 `env_ready`、`template_ready` 或 `verified`；
 - 切片 5 打包 opt-in 证据检查已由 `tools/check_pyside6_packaging_opt_in_contract.py` 和 `test/check_pyside6_packaging_opt_in_contract.test.py` 承载；该 checker 要求先通过项目 opt-in 基线、只选择一个打包工具（`PyInstaller` 或 `Nuitka`）、具备打包 preflight 证据、数据排除证据、回滚证据、可复现 build/output-directory 证据，以及 release/signing/distribution 单独授权边界；
 - `tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template` 已补充可复现 build 命令、生成产物、输出目录、杀软风险记录、回滚步骤、数据排除和单独发布授权等结构化字段；`tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json` 已登记打包 opt-in checker；
-- 实际可执行文件打包仍保持请求驱动，不得把 checker/模板存在误报为任意消费项目已经 `packaged` 或 `release_ready`。
+- 实际可执行文件打包仍保持请求驱动，不得把 checker/模板存在误报为任意消费项目已经 `packaged` 或 `release_ready`；
+- 跨项目 operator 使用方式已由 `docs_bilingual/guides/pyside6_gui_cross_project_usage.zh-CN.md` 文档化，并由 `tools/check_pyside6_operator_usage_guide.py` 与 `test/check_pyside6_operator_usage_guide.test.py` 验证，覆盖 `plugin-modules` `pyside6-gui` soft-load、`-RepoRoot` 解析、preview/apply 边界、soft-load 时不安装 PySide6、不编辑 `config.toml`、可见 GUI 授权、打包 opt-in 和基于证据的状态报告。
 
 ## 17. 失败模式与排障
 
@@ -377,11 +378,10 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 后续剩余 implementation change 可以新增：
 
 - repo-local `pyside6-gui` skill 源文件的可选用户级安装或复制；该动作必须等到明确的用户级部署决策之后再做；
-- 跨项目 operator 示例，说明如何在消费项目中调用 `plugin-modules` 的 `pyside6-gui` soft-load 模块而不改变 plugin profile；
 - 在具体目标项目采用 PySide6 之后，继续扩展消费项目 opt-in checker 对包管理器 lockfile 行为的覆盖；
 - 在具体消费项目请求可执行文件打包之后，继续扩展打包 opt-in checker 对目标项目 lockfile/build-output 的断言。
 
-已落地的共享面任务包括最小 GUI 模板、`check_pyside6_env.py` 与 `run_gui.ps1` 模板、打包 preflight 模板、`ensure-pyside6-gui.ps1` preview/apply 模式、回滚说明生成，以及一次性 apply-mode fixture 覆盖。
+已落地的共享面任务包括最小 GUI 模板、`check_pyside6_env.py` 与 `run_gui.ps1` 模板、打包 preflight 模板、`ensure-pyside6-gui.ps1` preview/apply 模式、回滚说明生成、一次性 apply-mode fixture 覆盖、repo-local `pyside6-gui` skill 通过 `plugin-modules` 路由，以及跨项目 operator 使用指南。
 
 ## 19. 验收标准
 

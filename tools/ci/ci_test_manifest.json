@@ -28,7 +28,8 @@
     "check_pyside6_gui_preview_helper_contract.test.py",
     "check_pyside6_gui_skill_contract.test.py",
     "check_pyside6_project_opt_in_contract.test.py",
-    "check_pyside6_packaging_opt_in_contract.test.py"
+    "check_pyside6_packaging_opt_in_contract.test.py",
+    "check_pyside6_operator_usage_guide.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []

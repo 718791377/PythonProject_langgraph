@@ -121,6 +121,7 @@ def main() -> int:
     pyside6_gui_skill_contract_script = root / "tools" / "check_pyside6_gui_skill_contract.py"
     pyside6_project_opt_in_contract_script = root / "tools" / "check_pyside6_project_opt_in_contract.py"
     pyside6_packaging_opt_in_contract_script = root / "tools" / "check_pyside6_packaging_opt_in_contract.py"
+    pyside6_operator_usage_guide_script = root / "tools" / "check_pyside6_operator_usage_guide.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
@@ -178,6 +179,8 @@ def main() -> int:
         raise SystemExit(f"Missing PySide6 project opt-in contract check script: {pyside6_project_opt_in_contract_script}")
     if not pyside6_packaging_opt_in_contract_script.exists():
         raise SystemExit(f"Missing PySide6 packaging opt-in contract check script: {pyside6_packaging_opt_in_contract_script}")
+    if not pyside6_operator_usage_guide_script.exists():
+        raise SystemExit(f"Missing PySide6 operator usage guide check script: {pyside6_operator_usage_guide_script}")
     if not durable_routing_smoke_gate_template_script.exists():
         raise SystemExit(f"Missing durable routing smoke gate template check script: {durable_routing_smoke_gate_template_script}")
     if not codex_native_rollback_release_gate_template_script.exists():
@@ -376,6 +379,11 @@ def main() -> int:
                 "check_pyside6_packaging_opt_in_contract",
                 [str(python_exe), str(pyside6_packaging_opt_in_contract_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during PySide6 packaging opt-in contract verification.",
+            ),
+            (
+                "check_pyside6_operator_usage_guide",
+                [str(python_exe), str(pyside6_operator_usage_guide_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during PySide6 operator usage guide verification.",
             ),
             (
                 "check_durable_routing_smoke_gate_template",
@@ -658,6 +666,12 @@ def main() -> int:
         [str(python_exe), str(pyside6_packaging_opt_in_contract_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during PySide6 packaging opt-in contract verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(pyside6_operator_usage_guide_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during PySide6 operator usage guide verification.",
     )
 
     run_checked(

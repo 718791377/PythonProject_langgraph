@@ -417,6 +417,24 @@
         "check_fanout_write_ownership_evidence"
       ],
       "description": "Requires native subagent fan-out to stay within managed bounds, remain leader-side spawned with leader-owned fan-in, reject raw Codex auto-spawn claims, and require write-heavy parallel ownership isolation, hotspot serialization, leader-owned final integration, and changed-path reporting."
+    },
+    {
+      "id": "pyside6-operator-usage-guide",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.md",
+        "docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.zh-CN.md",
+        "docs_bilingual/guides/pyside6_gui_cross_project_usage.md",
+        "docs_bilingual/guides/pyside6_gui_cross_project_usage.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_pyside6_operator_usage_guide.py"
+      ],
+      "guard_steps": [
+        "check_pyside6_operator_usage_guide"
+      ],
+      "description": "Keeps the PySide6 cross-project operator soft-load guide explicit about plugin-modules pyside6-gui loading, preview/apply boundaries, no config mutation, no PySide6 installation during soft-load, visible-GUI approval, packaging opt-in, and evidence-based state reporting."
     }
   ]
 }
