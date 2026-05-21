@@ -3109,6 +3109,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Field contract safety violations: `0`", summary)
         self.assertIn("Field contract audit-state violations: `0`", summary)
         self.assertIn("Field contract log-evidence violations: `0`", summary)
+        self.assertIn("Field contract warning-severity violations: `0`", summary)
         self.assertIn("Field contract warning-triage violations: `0`", summary)
         self.assertIn("Field contract cadence-review violations: `0`", summary)
         self.assertIn("Field contract manual-evidence violations: `0`", summary)
@@ -3122,6 +3123,12 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Field contract embedded-contract violations: `0`", summary)
         self.assertIn("## Current configuration surface", summary)
         self.assertIn("## Warning conclusion", summary)
+        self.assertIn("Highest severity: `unknown`", summary)
+        self.assertIn("Severity reason: `logs_unavailable`", summary)
+        self.assertIn(
+            "Severity recommended action: `keep_log_evidence_available_false_and_do_not_treat_zero_as_no_warning`",
+            summary,
+        )
         self.assertIn("## Warning triage", summary)
         self.assertIn("Window policy:", summary)
         self.assertIn("## Module evidence", summary)

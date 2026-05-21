@@ -2993,6 +2993,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Skipped loading count: `{warnings.get('skipped_loading_count')}`",
         f"- Highest severity: `{warning_severity.get('level')}`",
         f"- Severity reason: `{warning_severity.get('reason')}`",
+        f"- Severity recommended action: `{warning_severity.get('recommended_action')}`",
         "",
         "## Warning triage",
         "",
