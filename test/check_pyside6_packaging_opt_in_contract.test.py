@@ -57,6 +57,12 @@ class PySide6PackagingOptInContractTest(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["selected_packaging_tool"], "Nuitka")
         self.assertEqual(payload["packaging_state"], "preflight_ready")
+        self.assertEqual(payload["build_output_evidence"]["output_directory"], "dist")
+        self.assertEqual(payload["build_output_evidence"]["generated_artifacts"], ["build", "dist"])
+        self.assertTrue(payload["build_output_evidence"]["output_directory_project_relative"])
+        self.assertTrue(payload["build_output_evidence"]["generated_artifacts_project_relative"])
+        self.assertFalse(payload["build_output_evidence"]["packaged_inferred_from_output_evidence"])
+        self.assertFalse(payload["build_output_evidence"]["release_ready_inferred_from_output_evidence"])
         self.assertFalse(payload["packaged"])
         self.assertFalse(payload["release_ready"])
 
@@ -106,6 +112,44 @@ class PySide6PackagingOptInContractTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertTrue(any("Start-Process" in error for error in payload["errors"]))
         self.assertTrue(any("Remove-Item" in error for error in payload["errors"]))
+
+    def test_absolute_output_directory_fails(self) -> None:
+        project = self.make_project("pyside6-packaging-absolute-output")
+        script = project / PREFLIGHT_SCRIPT
+        script.write_text(
+            script.read_text(encoding="utf-8").replace('  output_directory = "dist"\n', '  output_directory = "C:/temp/dist"\n'),
+            encoding="utf-8",
+        )
+        result = self.run_check("--root", str(REPO_ROOT), "--project-root", str(project))
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertTrue(any("output_directory must be a project-relative" in error for error in payload["errors"]))
+        self.assertFalse(payload["build_output_evidence"]["output_directory_project_relative"])
+
+    def test_generated_artifacts_must_include_project_relative_output_directory(self) -> None:
+        project = self.make_project("pyside6-packaging-unsafe-artifacts")
+        script = project / PREFLIGHT_SCRIPT
+        script.write_text(
+            script.read_text(encoding="utf-8").replace('  generated_artifacts = @("build", "dist")\n', '  generated_artifacts = @("build", "../dist")\n'),
+            encoding="utf-8",
+        )
+        result = self.run_check("--root", str(REPO_ROOT), "--project-root", str(project))
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertTrue(any("generated_artifacts must be project-relative" in error for error in payload["errors"]))
+        self.assertTrue(any("generated_artifacts must include the output_directory" in error for error in payload["errors"]))
+
+    def test_missing_generated_artifacts_fails(self) -> None:
+        project = self.make_project("pyside6-packaging-missing-artifacts")
+        script = project / PREFLIGHT_SCRIPT
+        script.write_text(
+            script.read_text(encoding="utf-8").replace('  generated_artifacts = @("build", "dist")\n', ''),
+            encoding="utf-8",
+        )
+        result = self.run_check("--root", str(REPO_ROOT), "--project-root", str(project))
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertTrue(any("generated_artifacts" in error for error in payload["errors"]))
 
 
 if __name__ == "__main__":

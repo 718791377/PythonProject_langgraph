@@ -359,6 +359,7 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 具体消费项目的切片 4 启用仍按具体项目和请求推进，不得把 helper、模板、skill 或 checker 存在误报为任意消费项目已经 `env_ready`、`template_ready` 或 `verified`；
 - 切片 5 打包 opt-in 证据检查已由 `tools/check_pyside6_packaging_opt_in_contract.py` 和 `test/check_pyside6_packaging_opt_in_contract.test.py` 承载；该 checker 要求先通过项目 opt-in 基线、只选择一个打包工具（`PyInstaller` 或 `Nuitka`）、具备打包 preflight 证据、数据排除证据、回滚证据、可复现 build/output-directory 证据，以及 release/signing/distribution 单独授权边界；
 - `tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template` 已补充可复现 build 命令、生成产物、输出目录、杀软风险记录、回滚步骤、数据排除和单独发布授权等结构化字段；`tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json` 已登记打包 opt-in checker；
+- 打包 opt-in checker 现在输出结构化 `build_output_evidence`，验证打包 `output_directory` 与 `generated_artifacts` 均为项目相对路径，生成产物包含选定输出目录，并且不得仅凭 preflight 文本推断 `packaged` 或 `release_ready`；
 - 实际可执行文件打包仍保持请求驱动，不得把 checker/模板存在误报为任意消费项目已经 `packaged` 或 `release_ready`；
 - 跨项目 operator 使用方式已由 `docs_bilingual/guides/pyside6_gui_cross_project_usage.zh-CN.md` 文档化，并由 `tools/check_pyside6_operator_usage_guide.py` 与 `test/check_pyside6_operator_usage_guide.test.py` 验证，覆盖 `plugin-modules` `pyside6-gui` soft-load、`-RepoRoot` 解析、preview/apply 边界、soft-load 时不安装 PySide6、不编辑 `config.toml`、可见 GUI 授权、打包 opt-in 和基于证据的状态报告。
 
@@ -403,6 +404,7 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 方案明确结构化 helper preview 证据、可见 GUI 启动边界和打包数据排除要求；
 - 方案和 helper 契约要求包管理器专属命令与 lockfile 证据，避免后续消费项目 GUI opt-in 静默使用错误安装路径或改写无关 lockfile；
 - 消费项目 opt-in checker 报告包管理器专属 `lockfile_evidence`，并在 Poetry GUI group 缺少 `poetry.lock` 时 fail closed；
+- 打包 opt-in checker 报告结构化 `build_output_evidence`，并在输出目录或生成产物为绝对路径、根路径、项目外路径、空值或未包含选定输出目录时 fail closed；
 - 方案列出关键失败模式与排障路径；
 - repo-local `pyside6-gui` skill 可通过 `plugin-modules` soft-load 路由被发现，同时不 hard-load plugin、不修改用户级配置；
 - 实施保持本地-only，未获得用户明确授权前不推送远端。

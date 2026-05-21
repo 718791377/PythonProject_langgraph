@@ -359,6 +359,7 @@ Current local implementation status:
 - actual Slice 4 enablement for a specific consumer project remains project/request-specific, and helper/template/skill/checker presence must not be misreported as any consumer project already being `env_ready`, `template_ready`, or `verified`;
 - Slice 5 packaging opt-in evidence checking is now carried by `tools/check_pyside6_packaging_opt_in_contract.py` and `test/check_pyside6_packaging_opt_in_contract.test.py`; the checker requires a passing project opt-in baseline, exactly one chosen tool (`PyInstaller` or `Nuitka`), packaging preflight evidence, data-exclusion evidence, rollback evidence, reproducible build/output-directory evidence, and separate approval for release/signing/distribution;
 - `tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template` now includes structured fields for reproducible build commands, generated artifacts, output directories, antivirus-risk recording, rollback steps, data exclusions, and separate release approval; `tools/run_openspec_guard.py` and `tools/ci/ci_test_manifest.json` register the packaging opt-in checker;
+- the packaging opt-in checker now emits structured `build_output_evidence` that verifies the packaging `output_directory` and `generated_artifacts` are project-relative, that generated artifacts include the selected output directory, and that neither `packaged` nor `release_ready` is inferred from preflight text alone;
 - actual executable packaging remains request-driven, and checker/template presence must not be reported as any consumer project already being `packaged` or `release_ready`;
 - cross-project operator usage is now documented in `docs_bilingual/guides/pyside6_gui_cross_project_usage.md` and verified by `tools/check_pyside6_operator_usage_guide.py` plus `test/check_pyside6_operator_usage_guide.test.py`, covering `plugin-modules` `pyside6-gui` soft-load, `-RepoRoot` resolution, preview/apply boundaries, no PySide6 install during soft-load, no `config.toml` edits, visible-GUI approval, packaging opt-in, and evidence-based state reporting.
 
@@ -381,7 +382,7 @@ Remaining implementation changes may add:
 
 - optional user-level installation or copying for the repo-local `pyside6-gui` skill source, only after an explicit user-level deployment decision;
 - extending the consumer-project opt-in checker to cover package-manager-specific lockfile behavior after a concrete target project adopts PySide6;
-- extending the packaging opt-in checker with concrete target-project lockfile/build-output assertions after an actual consumer project requests executable packaging.
+- applying the existing packaging opt-in checker to a concrete target project after an actual consumer project requests executable packaging, preserving project-local lockfile/build-output evidence.
 
 Already implemented shared-surface tasks include the minimal GUI templates, `check_pyside6_env.py` and `run_gui.ps1` templates, packaging preflight template, `ensure-pyside6-gui.ps1` preview/apply modes, rollback-note generation, disposable apply-mode fixture coverage, repo-local `pyside6-gui` skill routing through `plugin-modules`, and the cross-project operator usage guide.
 
@@ -405,5 +406,6 @@ The plan is complete when:
 - the consumer-project opt-in checker reports package-manager-specific `lockfile_evidence` and fails closed when Poetry GUI-group evidence lacks `poetry.lock`;
 - the plan lists key failure modes and triage paths;
 - the repo-local `pyside6-gui` skill can be discovered through `plugin-modules` soft-load routing without hard-loading plugins or mutating user-level config;
+- the packaging opt-in checker reports structured `build_output_evidence` and fails closed when output directories or generated artifacts are absolute, root-like, outside-project, empty, or missing the selected output directory;
 - the cross-project operator guide documents and checks the `pyside6-gui` soft-load workflow, preview/apply boundary, no `config.toml` edit, no PySide6 install during soft-load, visible-GUI approval, and packaging opt-in boundary;
 - implementation remains local-only and does not push remotes without explicit user approval.

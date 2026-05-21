@@ -37,6 +37,7 @@ PREFLIGHT_SCRIPT_SNIPPETS = [
     "excludes_user_private_data",
     "reproducible_build_command",
     "output_directory",
+    "generated_artifacts",
     "rollback_steps",
     "release_signing_distribution_requires_separate_approval",
 ]
@@ -94,6 +95,64 @@ def lower_contains_all(text: str, snippets: list[str]) -> list[str]:
     return [snippet for snippet in snippets if snippet.lower() not in lower]
 
 
+
+def extract_powershell_string_field(text: str, field: str) -> str | None:
+    match = re.search(rf'(?im)^\s*{re.escape(field)}\s*=\s*"([^"]+)"\s*$', text)
+    return match.group(1).strip() if match else None
+
+
+def extract_powershell_array_field(text: str, field: str) -> list[str]:
+    match = re.search(rf'(?ims)^\s*{re.escape(field)}\s*=\s*@\((.*?)\)\s*$', text)
+    if not match:
+        return []
+    return [item.strip() for item in re.findall(r'"([^"]+)"', match.group(1)) if item.strip()]
+
+
+def is_project_relative_path(value: str) -> bool:
+    normalized = value.replace("\\", "/").strip()
+    if not normalized or normalized in {".", "./"}:
+        return False
+    if re.match(r"(?i)^[a-z]:/", normalized) or normalized.startswith("/") or normalized.startswith("//"):
+        return False
+    parts = [part for part in normalized.split("/") if part]
+    return bool(parts) and all(part not in {".", ".."} for part in parts)
+
+
+def collect_build_output_evidence(project_root: Path, script_text: str, errors: list[str]) -> dict[str, Any]:
+    output_directory = extract_powershell_string_field(script_text, "output_directory")
+    generated_artifacts = extract_powershell_array_field(script_text, "generated_artifacts")
+
+    evidence = {
+        "output_directory": output_directory,
+        "generated_artifacts": generated_artifacts,
+        "output_directory_project_relative": False,
+        "generated_artifacts_project_relative": False,
+        "packaged_inferred_from_output_evidence": False,
+        "release_ready_inferred_from_output_evidence": False,
+        "review_required": True,
+    }
+
+    if not output_directory:
+        errors.append(f"{PREFLIGHT_SCRIPT} must define a structured `output_directory = \"...\"` field.")
+    elif not is_project_relative_path(output_directory):
+        errors.append(f"{PREFLIGHT_SCRIPT} output_directory must be a project-relative non-root path: {output_directory}")
+    else:
+        evidence["output_directory_project_relative"] = True
+
+    if not generated_artifacts:
+        errors.append(f"{PREFLIGHT_SCRIPT} must define a non-empty `generated_artifacts = @(...)` array.")
+    else:
+        unsafe_artifacts = [artifact for artifact in generated_artifacts if not is_project_relative_path(artifact)]
+        if unsafe_artifacts:
+            errors.append(f"{PREFLIGHT_SCRIPT} generated_artifacts must be project-relative non-root paths: {', '.join(unsafe_artifacts)}")
+        else:
+            evidence["generated_artifacts_project_relative"] = True
+
+    if output_directory and generated_artifacts and output_directory not in generated_artifacts:
+        errors.append(f"{PREFLIGHT_SCRIPT} generated_artifacts must include the output_directory `{output_directory}`.")
+
+    return evidence
+
 def validate_packaging_opt_in(project_root: Path) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -130,6 +189,7 @@ def validate_packaging_opt_in(project_root: Path) -> dict[str, Any]:
         if missing_doc_snippets:
             errors.append(f"{PREFLIGHT_DOC} missing required packaging evidence snippets: " + ", ".join(missing_doc_snippets))
 
+    build_output_evidence: dict[str, Any] = {}
     preflight_script = project_root / PREFLIGHT_SCRIPT
     if preflight_script.exists():
         script_text = read_text(preflight_script)
@@ -141,6 +201,7 @@ def validate_packaging_opt_in(project_root: Path) -> dict[str, Any]:
                 errors.append(f"{PREFLIGHT_SCRIPT} contains forbidden automated packaging/release/destructive snippet `{snippet}`.")
         if selected_tool and selected_tool not in script_text:
             errors.append(f"{PREFLIGHT_SCRIPT} must mention selected packaging tool `{selected_tool}`.")
+        build_output_evidence = collect_build_output_evidence(project_root, script_text, errors)
 
     rollback_doc = project_root / ROLLBACK_DOC
     if rollback_doc.exists():
@@ -162,6 +223,7 @@ def validate_packaging_opt_in(project_root: Path) -> dict[str, Any]:
         "base_project_ok": base_project["ok"],
         "selected_packaging_tool": selected_tool,
         "selected_tool_markers": selected_tool_markers,
+        "build_output_evidence": build_output_evidence,
         "packaging_state": "preflight_ready" if not errors else "candidate",
         "required_files_present": existing_files,
         "required_files_missing": missing_files,
@@ -175,6 +237,7 @@ def validate_packaging_opt_in(project_root: Path) -> dict[str, Any]:
             "warnings": len(warnings),
             "required_files": len(REQUIRED_PACKAGING_FILES),
             "required_files_present": len(existing_files),
+            "generated_artifacts": len(build_output_evidence.get("generated_artifacts", [])),
         },
     }
 
@@ -206,6 +269,7 @@ def add_packaging_evidence(project: Path, *, tool: str = "PyInstaller") -> None:
         "  excludes_user_private_data = $true\n"
         "  reproducible_build_command = \"python -m PyInstaller --clean app.spec\"\n"
         "  output_directory = \"dist\"\n"
+        "  generated_artifacts = @(\"build\", \"dist\")\n"
         "  rollback_steps = @(\"remove generated artifacts\", \"restore previous dependency files\")\n"
         "  release_signing_distribution_requires_separate_approval = $true\n"
         "}\n"
