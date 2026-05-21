@@ -2768,6 +2768,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         for blocker in (audit_state.get(field) or [])
         if blocker is not None
     ]
+    field_contract_blockers = field_contract.get("blockers") if isinstance(field_contract.get("blockers"), list) else []
     lines = [
         "# Codex Skills Usage Audit Summary",
         "",
@@ -2780,7 +2781,27 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Audit next action: `{audit_state.get('next_action')}`",
         f"- Profile apply allowed: `{audit_state.get('profile_apply_allowed')}`",
         f"- Audit state blockers: `{', '.join(audit_state_blockers) if audit_state_blockers else 'none'}`",
-            f"- Field contract: `{field_contract.get('status')}`",
+        f"- Field contract: `{field_contract.get('status')}`",
+        f"- Field contract passed: `{field_contract.get('passed')}`",
+        f"- Field contract blockers: `{len(field_contract_blockers)}`",
+        f"- Field contract required fields: `{len(field_contract.get('required_fields') or [])}`",
+        f"- Field contract missing fields: `{len(field_contract.get('missing_fields') or [])}`",
+        f"- Field contract invalid-type fields: `{len(field_contract.get('invalid_type_fields') or [])}`",
+        f"- Field contract requires embedded contract: `{field_contract.get('requires_embedded_field_contract')}`",
+        f"- Field contract safety violations: `{len(field_contract.get('safety_violations') or [])}`",
+        f"- Field contract audit-state violations: `{len(field_contract.get('audit_state_violations') or [])}`",
+        f"- Field contract log-evidence violations: `{len(field_contract.get('log_evidence_violations') or [])}`",
+        f"- Field contract warning-triage violations: `{len(field_contract.get('warning_triage_violations') or [])}`",
+        f"- Field contract cadence-review violations: `{len(field_contract.get('cadence_review_violations') or [])}`",
+        f"- Field contract manual-evidence violations: `{len(field_contract.get('manual_evidence_violations') or [])}`",
+        f"- Field contract noise-review violations: `{len(field_contract.get('noise_review_violations') or [])}`",
+        f"- Field contract script-capability violations: `{len(field_contract.get('script_capability_boundary_violations') or [])}`",
+        f"- Field contract output-retention violations: `{len(field_contract.get('output_retention_violations') or [])}`",
+        f"- Field contract precommit-update-archive violations: `{len(field_contract.get('precommit_update_archive_violations') or [])}`",
+        f"- Field contract runtime-path violations: `{len(field_contract.get('runtime_path_violations') or [])}`",
+        f"- Field contract module-evidence violations: `{len(field_contract.get('module_evidence_violations') or [])}`",
+        f"- Field contract decision-recommendation violations: `{len(field_contract.get('decision_recommendation_violations') or [])}`",
+        f"- Field contract embedded-contract violations: `{len(field_contract.get('embedded_field_contract_violations') or [])}`",
             f"- Output retention gate: `{output_retention.get('status')}` via `{output_retention.get('checker')}`",
             f"- Output retention violations: `{output_retention.get('violation_count')}`",
             f"- Pre-commit update/archive gate: `{precommit_update_archive.get('status')}` via `{precommit_update_archive.get('checker')}`",
