@@ -423,6 +423,20 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Recommendations: 5", output)
         self.assertIn("Do not treat another 2% budget warning as soft-load failure", output)
         self.assertIn("Field contract: passed", output)
+        self.assertIn(
+            "Field contract details: passed=True blockers=0 "
+            "required_fields=",
+            output,
+        )
+        self.assertIn("missing_fields=0 invalid_type_fields=0 requires_embedded=False", output)
+        self.assertIn(
+            "Field contract violation groups: safety=0 audit_state=0 "
+            "log_evidence=0 warning_triage=0 cadence_review=0 manual_evidence=0 "
+            "noise_review=0 script_capability=0 output_retention=0 "
+            "precommit_update_archive=0 runtime_paths=0 module_evidence=0 "
+            "decision_recommendation=0 embedded=0",
+            output,
+        )
         self.assertIn("Output retention gate: passed", output)
         self.assertIn(
             "Output retention details: checker=tools/check_skills_audit_output_retention.py "

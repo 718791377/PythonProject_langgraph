@@ -2015,6 +2015,9 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "script_capability_boundary_violations": script_capability_violations,
         "output_retention_violations": output_retention_violations,
         "precommit_update_archive_violations": precommit_update_archive_violations,
+        "runtime_path_violations": runtime_path_violations,
+        "module_evidence_violations": module_evidence_violations,
+        "decision_recommendation_violations": decision_violations,
         "embedded_field_contract_violations": embedded_violations,
     }
 
@@ -3111,6 +3114,7 @@ def print_human(report: dict[str, Any]) -> None:
         else {}
     )
     field_contract = report.get("field_contract", {}) if isinstance(report.get("field_contract"), dict) else {}
+    field_contract_blockers = field_contract.get("blockers") if isinstance(field_contract.get("blockers"), list) else []
     output_retention = report.get("output_retention", {}) if isinstance(report.get("output_retention"), dict) else {}
     precommit_update_archive = (
         report.get("precommit_update_archive")
@@ -3314,6 +3318,32 @@ def print_human(report: dict[str, Any]) -> None:
     for recommendation in recommendations[:2]:
         print(f"  - {recommendation}")
     print(f"Field contract: {field_contract.get('status')}")
+    print(
+        "Field contract details: "
+        f"passed={field_contract.get('passed')} "
+        f"blockers={len(field_contract_blockers)} "
+        f"required_fields={len(field_contract.get('required_fields') or [])} "
+        f"missing_fields={len(field_contract.get('missing_fields') or [])} "
+        f"invalid_type_fields={len(field_contract.get('invalid_type_fields') or [])} "
+        f"requires_embedded={field_contract.get('requires_embedded_field_contract')}"
+    )
+    print(
+        "Field contract violation groups: "
+        f"safety={len(field_contract.get('safety_violations') or [])} "
+        f"audit_state={len(field_contract.get('audit_state_violations') or [])} "
+        f"log_evidence={len(field_contract.get('log_evidence_violations') or [])} "
+        f"warning_triage={len(field_contract.get('warning_triage_violations') or [])} "
+        f"cadence_review={len(field_contract.get('cadence_review_violations') or [])} "
+        f"manual_evidence={len(field_contract.get('manual_evidence_violations') or [])} "
+        f"noise_review={len(field_contract.get('noise_review_violations') or [])} "
+        f"script_capability={len(field_contract.get('script_capability_boundary_violations') or [])} "
+        f"output_retention={len(field_contract.get('output_retention_violations') or [])} "
+        f"precommit_update_archive={len(field_contract.get('precommit_update_archive_violations') or [])} "
+        f"runtime_paths={len(field_contract.get('runtime_path_violations') or [])} "
+        f"module_evidence={len(field_contract.get('module_evidence_violations') or [])} "
+        f"decision_recommendation={len(field_contract.get('decision_recommendation_violations') or [])} "
+        f"embedded={len(field_contract.get('embedded_field_contract_violations') or [])}"
+    )
     print(f"Output retention gate: {output_retention.get('status')}")
     print(
         "Output retention details: "
