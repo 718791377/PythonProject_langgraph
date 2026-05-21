@@ -348,7 +348,9 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 切片 3 的受控 `apply` 模式已在 `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1` 中实现，覆盖 fail-closed 目标根目录检查、依赖声明面更新、模板生成、结构化 `applied_file_changes`，以及 `docs/pyside6_gui_rollback.md` 回滚说明生成；
 - preview/apply helper 契约由 `tools/check_pyside6_gui_preview_helper_contract.py` 和 `test/check_pyside6_gui_preview_helper_contract.test.py` 验证，覆盖 preview 只读、一次性 apply fixture 写入，以及不安全根目录 fail-closed；
 - CI manifest 已登记两个 PySide6 契约测试，`tools/run_openspec_guard.py` 已运行两个 checker；
-- 切片 4 消费项目 opt-in 仍按具体项目和请求推进，不得把 helper 或模板存在误报为任意消费项目已经 `env_ready`、`template_ready` 或 `verified`；切片 5 打包仍保持按需 opt-in。
+- repo-local `pyside6-gui` skill 源文件已由 `.codex/skills/pyside6-gui/SKILL.md` 承载，用于未来会话路由；是否安装或复制到用户级目录仍属于单独的用户级部署决策；
+- skill 契约由 `tools/check_pyside6_gui_skill_contract.py` 和 `test/check_pyside6_gui_skill_contract.test.py` 验证，`tools/run_openspec_guard.py` 会运行该 checker；
+- 切片 4 消费项目 opt-in 仍按具体项目和请求推进，不得把 helper、模板或 skill 存在误报为任意消费项目已经 `env_ready`、`template_ready` 或 `verified`；切片 5 打包仍保持按需 opt-in。
 
 ## 17. 失败模式与排障
 
@@ -367,7 +369,7 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 
 后续剩余 implementation change 可以新增：
 
-- 用户级 `pyside6-gui` skill 指引；
+- repo-local `pyside6-gui` skill 源文件的用户级安装或 profile-helper 路由；
 - skills/profile helper 文档中的跨项目使用说明；
 - 检查消费项目本地 PySide6 opt-in 是否具备依赖声明、import smoke test 和回滚说明的 checker；
 - 项目 opt-in 覆盖依赖声明唯一性、GUI/业务边界、worker 边界、配置数据路径和包管理器 lockfile 行为；

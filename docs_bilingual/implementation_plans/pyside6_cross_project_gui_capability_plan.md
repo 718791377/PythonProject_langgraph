@@ -348,7 +348,9 @@ Current local implementation status:
 - Slice 3 controlled `apply` mode is now implemented in `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1` with fail-closed target-root checks, dependency-surface updates, template generation, structured `applied_file_changes`, and `docs/pyside6_gui_rollback.md` rollback-note generation;
 - the preview/apply helper contract is verified by `tools/check_pyside6_gui_preview_helper_contract.py` and `test/check_pyside6_gui_preview_helper_contract.test.py`, including preview read-only behavior, disposable apply fixture writes, and unsafe-root fail-closed coverage;
 - the CI manifest registers both PySide6 contract tests, and `tools/run_openspec_guard.py` runs both checkers;
-- Slice 4 consumer-project opt-in remains project/request-specific, and helper/template presence must not be misreported as any consumer project already being `env_ready`, `template_ready`, or `verified`; Slice 5 packaging remains opt-in only.
+- the repo-local `pyside6-gui` skill source is now carried by `.codex/skills/pyside6-gui/SKILL.md` for future session routing; user-level installation or copying remains a separate user-level deployment decision;
+- the skill contract is verified by `tools/check_pyside6_gui_skill_contract.py` and `test/check_pyside6_gui_skill_contract.test.py`, and `tools/run_openspec_guard.py` runs that checker;
+- Slice 4 consumer-project opt-in remains project/request-specific, and helper/template/skill presence must not be misreported as any consumer project already being `env_ready`, `template_ready`, or `verified`; Slice 5 packaging remains opt-in only.
 
 ## 17. Failure modes and triage
 
@@ -367,7 +369,7 @@ Common failure modes must be handled as local project issues, not by weakening t
 
 Remaining implementation changes may add:
 
-- user-level `pyside6-gui` skill instructions;
+- user-level installation or profile-helper routing for the repo-local `pyside6-gui` skill source;
 - a cross-project usage note in the skills/profile helper documentation;
 - a checker that verifies a consumer project-local PySide6 opt-in has a dependency declaration, import smoke test, and rollback note;
 - project opt-in coverage for dependency declaration uniqueness, GUI/business boundaries, worker boundaries, config/data paths, and package-manager-specific lockfile behavior;

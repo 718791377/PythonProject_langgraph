@@ -118,6 +118,7 @@ def main() -> int:
     plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
     pyside6_gui_template_contract_script = root / "tools" / "check_pyside6_gui_template_contract.py"
     pyside6_gui_preview_helper_contract_script = root / "tools" / "check_pyside6_gui_preview_helper_contract.py"
+    pyside6_gui_skill_contract_script = root / "tools" / "check_pyside6_gui_skill_contract.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
@@ -354,6 +355,11 @@ def main() -> int:
                 "check_pyside6_gui_preview_helper_contract",
                 [str(python_exe), str(pyside6_gui_preview_helper_contract_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during PySide6 GUI preview helper contract verification.",
+            ),
+            (
+                "check_pyside6_gui_skill_contract",
+                [str(python_exe), str(pyside6_gui_skill_contract_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during PySide6 GUI skill contract verification.",
             ),
             (
                 "check_durable_routing_smoke_gate_template",
