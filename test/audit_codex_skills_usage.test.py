@@ -410,6 +410,15 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         )
         self.assertIn("Stable tool-call module alias targets: creative-content=mcp__pencil__", output)
         self.assertIn("Decision recommendation: advisory_only_no_profile_apply profile_apply_allowed=False", output)
+        self.assertIn(
+            "Decision recommendation buckets: profile_review_candidates=0 "
+            "on_demand_soft_load=0 manual_review_medium_or_weak=0 dormant_restorable=",
+            output,
+        )
+        self.assertIn("Decision profile review candidates: `none`", output)
+        self.assertIn("Decision on-demand soft-load modules: `none`", output)
+        self.assertIn("Decision manual-review medium/weak modules: `none`", output)
+        self.assertIn("Decision dormant/restorable modules:", output)
         self.assertIn("Recommendations: 5", output)
         self.assertIn("Do not treat another 2% budget warning as soft-load failure", output)
         self.assertIn("Field contract: passed", output)

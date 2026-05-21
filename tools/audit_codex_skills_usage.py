@@ -3100,6 +3100,16 @@ def print_human(report: dict[str, Any]) -> None:
         if isinstance(report.get("decision_recommendation"), dict)
         else {}
     )
+    decision_buckets = (
+        decision_recommendation.get("buckets")
+        if isinstance(decision_recommendation.get("buckets"), dict)
+        else {}
+    )
+    decision_bucket_counts = (
+        decision_recommendation.get("bucket_counts")
+        if isinstance(decision_recommendation.get("bucket_counts"), dict)
+        else {}
+    )
     field_contract = report.get("field_contract", {}) if isinstance(report.get("field_contract"), dict) else {}
     output_retention = report.get("output_retention", {}) if isinstance(report.get("output_retention"), dict) else {}
     precommit_update_archive = (
@@ -3266,6 +3276,29 @@ def print_human(report: dict[str, Any]) -> None:
         "Decision recommendation: "
         f"{decision_recommendation.get('status')} "
         f"profile_apply_allowed={decision_recommendation.get('profile_apply_allowed')}"
+    )
+    print(
+        "Decision recommendation buckets: "
+        f"profile_review_candidates={decision_bucket_counts.get('profile_review_candidates')} "
+        f"on_demand_soft_load={decision_bucket_counts.get('on_demand_soft_load')} "
+        f"manual_review_medium_or_weak={decision_bucket_counts.get('manual_review_medium_or_weak')} "
+        f"dormant_restorable={decision_bucket_counts.get('dormant_restorable')}"
+    )
+    print(
+        "Decision profile review candidates: "
+        f"{bounded_inline_list(decision_buckets.get('profile_review_candidates') or [])}"
+    )
+    print(
+        "Decision on-demand soft-load modules: "
+        f"{bounded_inline_list(decision_buckets.get('on_demand_soft_load') or [])}"
+    )
+    print(
+        "Decision manual-review medium/weak modules: "
+        f"{bounded_inline_list(decision_buckets.get('manual_review_medium_or_weak') or [])}"
+    )
+    print(
+        "Decision dormant/restorable modules: "
+        f"{bounded_inline_list(decision_buckets.get('dormant_restorable') or [])}"
     )
     print(f"Recommendations: {len(recommendations)}")
     for recommendation in recommendations[:2]:
