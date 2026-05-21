@@ -97,6 +97,7 @@ REQUIRED_REPORT_FIELDS = {
     "config_summary",
     "inventory_summary",
     "log_evidence",
+    "warning_severity",
     "warning_triage",
     "session_evidence",
     "manual_evidence",
@@ -117,6 +118,7 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "config_summary": dict,
     "inventory_summary": dict,
     "log_evidence": dict,
+    "warning_severity": dict,
     "warning_triage": dict,
     "session_evidence": dict,
     "manual_evidence": dict,
@@ -167,6 +169,22 @@ LOG_EVIDENCE_NON_NEGATIVE_INTEGER_FIELDS = (
     "last_7d_budget_warning_count",
     "recent_budget_warning_samples",
 )
+REQUIRED_WARNING_SEVERITY_FIELDS = {
+    "level",
+    "reason",
+    "recommended_action",
+}
+REQUIRED_WARNING_SEVERITY_FIELD_TYPES = {
+    "level": str,
+    "reason": str,
+    "recommended_action": str,
+}
+VALID_WARNING_SEVERITY_LEVELS = {
+    "unknown",
+    "high",
+    "medium",
+    "none",
+}
 REQUIRED_MODULE_EVIDENCE_FIELDS = {
     "module",
     "plugins",
@@ -1673,6 +1691,35 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
             if STANDALONE_TOKEN_PATTERN.search(excerpt):
                 log_violations.append("recent_budget_warning_sample_excerpts_contains_standalone_token")
                 break
+    warning_severity = (
+        report.get("warning_severity") if isinstance(report.get("warning_severity"), dict) else {}
+    )
+    warning_severity_violations = []
+    for field in sorted(REQUIRED_WARNING_SEVERITY_FIELDS):
+        if field not in warning_severity:
+            warning_severity_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_WARNING_SEVERITY_FIELD_TYPES.items()):
+        if field in warning_severity and not isinstance(warning_severity.get(field), expected_type):
+            warning_severity_violations.append(f"{field}_invalid_type")
+    if warning_severity.get("level") not in (None, *VALID_WARNING_SEVERITY_LEVELS):
+        warning_severity_violations.append("level_invalid_value")
+    for field in sorted(REQUIRED_WARNING_SEVERITY_FIELDS):
+        value = warning_severity.get(field)
+        if not isinstance(value, str):
+            continue
+        if any(pattern.search(value) for pattern in PRIVATE_PATH_PATTERNS):
+            warning_severity_violations.append(f"{field}_contains_private_path")
+            continue
+        raw_secret_found = False
+        for match in ACCESS_TOKEN_PATTERN.finditer(value):
+            if match.group(1) != "[REDACTED_SECRET]":
+                warning_severity_violations.append(f"{field}_contains_raw_secret")
+                raw_secret_found = True
+                break
+        if raw_secret_found:
+            continue
+        if STANDALONE_TOKEN_PATTERN.search(value):
+            warning_severity_violations.append(f"{field}_contains_standalone_token")
     warning_triage = report.get("warning_triage") if isinstance(report.get("warning_triage"), dict) else {}
     warning_triage_violations = []
     for field in sorted(REQUIRED_WARNING_TRIAGE_FIELDS):
@@ -2049,6 +2096,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"audit_state:{field}" for field in audit_state_violations]
         + [f"config_summary:{field}" for field in config_violations]
         + [f"log_evidence:{field}" for field in log_violations]
+        + [f"warning_severity:{field}" for field in warning_severity_violations]
         + [f"warning_triage:{field}" for field in warning_triage_violations]
         + [f"cadence_review:{field}" for field in cadence_review_violations]
         + [f"manual_evidence:{field}" for field in manual_violations]
@@ -2093,6 +2141,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "audit_state_violations": audit_state_violations,
         "config_summary_violations": config_violations,
         "log_evidence_violations": log_violations,
+        "warning_severity_violations": warning_severity_violations,
         "warning_triage_violations": warning_triage_violations,
         "cadence_review_violations": cadence_review_violations,
         "manual_evidence_violations": manual_violations,
@@ -2904,6 +2953,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Field contract safety violations: `{len(field_contract.get('safety_violations') or [])}`",
         f"- Field contract audit-state violations: `{len(field_contract.get('audit_state_violations') or [])}`",
         f"- Field contract log-evidence violations: `{len(field_contract.get('log_evidence_violations') or [])}`",
+        f"- Field contract warning-severity violations: `{len(field_contract.get('warning_severity_violations') or [])}`",
         f"- Field contract warning-triage violations: `{len(field_contract.get('warning_triage_violations') or [])}`",
         f"- Field contract cadence-review violations: `{len(field_contract.get('cadence_review_violations') or [])}`",
         f"- Field contract manual-evidence violations: `{len(field_contract.get('manual_evidence_violations') or [])}`",
@@ -3492,6 +3542,7 @@ def print_human(report: dict[str, Any]) -> None:
         f"safety={len(field_contract.get('safety_violations') or [])} "
         f"audit_state={len(field_contract.get('audit_state_violations') or [])} "
         f"log_evidence={len(field_contract.get('log_evidence_violations') or [])} "
+        f"warning_severity={len(field_contract.get('warning_severity_violations') or [])} "
         f"warning_triage={len(field_contract.get('warning_triage_violations') or [])} "
         f"cadence_review={len(field_contract.get('cadence_review_violations') or [])} "
         f"manual_evidence={len(field_contract.get('manual_evidence_violations') or [])} "

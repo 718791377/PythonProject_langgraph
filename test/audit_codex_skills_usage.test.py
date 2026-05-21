@@ -433,7 +433,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("missing_fields=0 invalid_type_fields=0 requires_embedded=False", output)
         self.assertIn(
             "Field contract violation groups: safety=0 audit_state=0 "
-            "log_evidence=0 warning_triage=0 cadence_review=0 manual_evidence=0 "
+            "log_evidence=0 warning_severity=0 warning_triage=0 cadence_review=0 manual_evidence=0 "
             "noise_review=0 script_capability=0 output_retention=0 "
             "precommit_update_archive=0 runtime_paths=0 module_evidence=0 "
             "decision_recommendation=0 embedded=0",
@@ -790,6 +790,60 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(high_by_removed_descriptions["level"], "high")
         self.assertEqual(medium["level"], "medium")
         self.assertEqual(none["level"], "none")
+
+    def test_field_contract_requires_warning_severity_decision_fields(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-warning-severity-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            target_profile=None,
+        )
+        report = audit.build_report(args)
+        missing = json.loads(json.dumps(report))
+        missing["warning_severity"].pop("reason")
+        invalid_level = json.loads(json.dumps(report))
+        invalid_level["warning_severity"]["level"] = "critical"
+        raw_path = json.loads(json.dumps(report))
+        raw_path["warning_severity"]["reason"] = r"C:\Users\lenovo\.codex\logs_2.sqlite"
+        raw_secret = json.loads(json.dumps(report))
+        raw_secret["warning_severity"]["recommended_action"] = "review access_token=sk-test-secret"
+        stale_report = json.loads(json.dumps(report))
+        stale_report["warning_severity"]["recommended_action"] = "review sk-test-secret"
+
+        missing_contract = audit.validate_report_field_contract(missing)
+        invalid_level_contract = audit.validate_report_field_contract(invalid_level)
+        raw_path_contract = audit.validate_report_field_contract(raw_path)
+        raw_secret_contract = audit.validate_report_field_contract(raw_secret)
+        stale_contract = audit.validate_report_field_contract(stale_report)
+
+        self.assertFalse(missing_contract["passed"])
+        self.assertIn("warning_severity:reason_missing", missing_contract["blockers"])
+        self.assertFalse(invalid_level_contract["passed"])
+        self.assertIn("warning_severity:level_invalid_value", invalid_level_contract["blockers"])
+        self.assertFalse(raw_path_contract["passed"])
+        self.assertIn("warning_severity:reason_contains_private_path", raw_path_contract["blockers"])
+        self.assertFalse(raw_secret_contract["passed"])
+        self.assertIn("warning_severity:recommended_action_contains_raw_secret", raw_secret_contract["blockers"])
+        self.assertFalse(stale_contract["passed"])
+        self.assertIn(
+            "warning_severity:recommended_action_contains_standalone_token",
+            stale_contract["blockers"],
+        )
 
     def test_warning_triage_marker_requires_narrow_window(self) -> None:
         codex_home = self.make_codex_home("skills-audit-warning-triage-window")
@@ -1757,6 +1811,11 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "recent_budget_warning_samples": 0,
                 "recent_budget_warning_sample_excerpts": [],
             },
+            "warning_severity": {
+                "level": "none",
+                "reason": "no_budget_warnings_in_window",
+                "recommended_action": "continue_scheduled_audit_without_profile_apply",
+            },
             "warning_triage": {
                 "requested": False,
                 "status": "not_requested",
@@ -2718,7 +2777,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                     "unmatched_enabled_plugin_entries": [],
                 },
             },
-            "warning_severity": {"level": "none"},
+            "warning_severity": {"level": "none", "reason": "no_budget_warnings_in_window", "recommended_action": "continue_scheduled_audit_without_profile_apply"},
             "manual_evidence": {"valid_note_count": 0, "counts_by_evidence_level": {}, "counts_by_action": {}},
             "module_evidence": [],
         }
@@ -2757,7 +2816,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                     "unmatched_enabled_plugin_entries": [],
                 },
             },
-            "warning_severity": {"level": "none"},
+            "warning_severity": {"level": "none", "reason": "no_budget_warnings_in_window", "recommended_action": "continue_scheduled_audit_without_profile_apply"},
             "manual_evidence": {"valid_note_count": 0, "counts_by_evidence_level": {}, "counts_by_action": {}},
             "module_evidence": [],
         }
@@ -2789,7 +2848,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                     "unmatched_enabled_plugin_entries": ["Legacy Plugin"],
                 },
             },
-            "warning_severity": {"level": "high", "reason": "all_descriptions_removed_or_last_7d_budget_warning_count_at_least_3"},
+            "warning_severity": {"level": "high", "reason": "all_descriptions_removed_or_last_7d_budget_warning_count_at_least_3", "recommended_action": "avoid_full_profile_and_prefer_smaller_default_or_task_profile_during_audit"},
             "manual_evidence": {
                 "valid_note_count": 1,
                 "counts_by_evidence_level": {"medium": 1},
@@ -2871,7 +2930,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                         "unmatched_enabled_plugin_entries": [],
                     },
                 },
-                "warning_severity": {"level": "none"},
+                "warning_severity": {"level": "none", "reason": "no_budget_warnings_in_window", "recommended_action": "continue_scheduled_audit_without_profile_apply"},
                 "manual_evidence": {"valid_note_count": 0, "counts_by_evidence_level": {}, "counts_by_action": {}},
                 "module_evidence": [],
             },
@@ -2930,7 +2989,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                         "unmatched_enabled_plugin_entries": [],
                     },
                 },
-                "warning_severity": {"level": "none"},
+                "warning_severity": {"level": "none", "reason": "no_budget_warnings_in_window", "recommended_action": "continue_scheduled_audit_without_profile_apply"},
                 "manual_evidence": {},
                 "module_evidence": [],
             },
