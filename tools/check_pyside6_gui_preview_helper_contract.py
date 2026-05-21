@@ -316,7 +316,23 @@ def validate(root: Path) -> dict[str, Any]:
         unsafe_fixture = make_fixture(root, name="pyside6-unsafe", dependency_surface="none")
         missing_runtime_fixture = make_fixture(root, name="pyside6-missing-runtime", dependency_surface="requirements")
         fake_runtime = make_fake_runtime(root, "pyside6-runtime")
-        created_fixtures.extend([preview_fixture, apply_fixture, override_fixture, unsafe_fixture, missing_runtime_fixture, fake_runtime.parent])
+        missing_runtime_root = (
+            root
+            / ".omx"
+            / "test-artifacts"
+            / f"pyside6-runtime-missing-{uuid.uuid4().hex[:8]}"
+            / ".shared_runtimes"
+            / "pyside6"
+        )
+        created_fixtures.extend([
+            preview_fixture,
+            apply_fixture,
+            override_fixture,
+            unsafe_fixture,
+            missing_runtime_fixture,
+            fake_runtime.parent,
+            missing_runtime_root.parent,
+        ])
         before = snapshot_files(preview_fixture)
         try:
             preview_result = run_helper(root, preview_fixture, mode="preview", runtime_mode="shared")
@@ -331,7 +347,13 @@ def validate(root: Path) -> dict[str, Any]:
                 override_reason="fixture isolated PySide6 version",
             )
             fail_result = run_helper(root, unsafe_fixture, mode="apply", runtime_mode="shared", runtime_root=fake_runtime)
-            missing_runtime_result = run_helper(root, missing_runtime_fixture, mode="apply", runtime_mode="shared")
+            missing_runtime_result = run_helper(
+                root,
+                missing_runtime_fixture,
+                mode="apply",
+                runtime_mode="shared",
+                runtime_root=missing_runtime_root,
+            )
         except RuntimeError as exc:
             errors.append(str(exc))
         else:
