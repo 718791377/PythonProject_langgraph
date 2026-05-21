@@ -354,6 +354,7 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - `tools/check_plugin_modules_skill.py` 和 `test/check_plugin_modules_skill.test.py` 验证 `pyside6-gui` 模块的 repo-local hint 契约与 hard-load no-op 边界；
 - skill 契约由 `tools/check_pyside6_gui_skill_contract.py` 和 `test/check_pyside6_gui_skill_contract.test.py` 验证，`tools/run_openspec_guard.py` 会运行该 checker；
 - 切片 4 消费项目 opt-in 证据检查已由 `tools/check_pyside6_project_opt_in_contract.py` 和 `test/check_pyside6_project_opt_in_contract.test.py` 承载；该 checker 验证目标项目根证据、单一经复核 PySide6 依赖声明面、GUI 源码边界、import-only smoke test 行为、run/env helper、回滚说明，以及不得把政策/模板/skill 存在误报为 `env_ready`、`verified` 或 `packaged` 的规则；
+- 消费项目 opt-in checker 现在输出结构化 `lockfile_evidence`，覆盖 requirements、pyproject optional extra、uv dependency group 与 Poetry GUI group；它记录 lockfile 是否预期/存在，要求 Poetry GUI group 必须有 `poetry.lock`，并保持不能从依赖声明或 lockfile 文本本身推断 `env_ready`；
 - `tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json` 已登记消费项目 opt-in checker，后续 guard 和 CI 会持续验证共享 opt-in 契约；
 - 具体消费项目的切片 4 启用仍按具体项目和请求推进，不得把 helper、模板、skill 或 checker 存在误报为任意消费项目已经 `env_ready`、`template_ready` 或 `verified`；
 - 切片 5 打包 opt-in 证据检查已由 `tools/check_pyside6_packaging_opt_in_contract.py` 和 `test/check_pyside6_packaging_opt_in_contract.test.py` 承载；该 checker 要求先通过项目 opt-in 基线、只选择一个打包工具（`PyInstaller` 或 `Nuitka`）、具备打包 preflight 证据、数据排除证据、回滚证据、可复现 build/output-directory 证据，以及 release/signing/distribution 单独授权边界；
@@ -401,6 +402,7 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 方案明确目标项目发现、安装前置条件、GUI/业务边界、worker 边界和配置数据路径要求；
 - 方案明确结构化 helper preview 证据、可见 GUI 启动边界和打包数据排除要求；
 - 方案和 helper 契约要求包管理器专属命令与 lockfile 证据，避免后续消费项目 GUI opt-in 静默使用错误安装路径或改写无关 lockfile；
+- 消费项目 opt-in checker 报告包管理器专属 `lockfile_evidence`，并在 Poetry GUI group 缺少 `poetry.lock` 时 fail closed；
 - 方案列出关键失败模式与排障路径；
 - repo-local `pyside6-gui` skill 可通过 `plugin-modules` soft-load 路由被发现，同时不 hard-load plugin、不修改用户级配置；
 - 实施保持本地-only，未获得用户明确授权前不推送远端。

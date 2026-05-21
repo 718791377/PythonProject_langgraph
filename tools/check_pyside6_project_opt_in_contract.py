@@ -116,6 +116,89 @@ def collect_dependency_surfaces(project_root: Path, errors: list[str]) -> list[d
     return collect_requirement_surfaces(project_root) + collect_pyproject_surfaces(project_root, errors)
 
 
+def collect_lockfile_evidence(project_root: Path, dependency_surfaces: list[dict[str, Any]], errors: list[str], warnings: list[str]) -> list[dict[str, Any]]:
+    evidence: list[dict[str, Any]] = []
+    uv_lock = project_root / "uv.lock"
+    poetry_lock = project_root / "poetry.lock"
+
+    for surface in dependency_surfaces:
+        kind = str(surface.get("kind", "unknown"))
+        record: dict[str, Any] = {
+            "dependency_surface": kind,
+            "dependency_path": surface.get("path"),
+            "lockfile_required": False,
+            "lockfile_path": None,
+            "lockfile_present": False,
+            "manager": "unknown",
+            "review_required": True,
+            "env_ready_inferred_from_lockfile": False,
+        }
+        if kind == "requirements":
+            record.update(
+                {
+                    "manager": "pip",
+                    "lockfile_required": False,
+                    "lockfile_path": "requirements-gui.txt",
+                    "lockfile_present": True,
+                    "note": "requirements-gui.txt declares the GUI dependency; no lockfile is required by this shared contract.",
+                }
+            )
+        elif kind == "dependency-group" and uv_lock.exists():
+            record.update(
+                {
+                    "manager": "uv",
+                    "lockfile_required": True,
+                    "lockfile_path": "uv.lock",
+                    "lockfile_present": True,
+                    "note": "uv.lock exists and must be reviewed with the PySide6 GUI opt-in diff before claiming environment readiness.",
+                }
+            )
+        elif kind == "dependency-group":
+            record.update(
+                {
+                    "manager": "dependency-group",
+                    "lockfile_required": False,
+                    "note": "No uv.lock marker was found; use the target project's native dependency-group lockfile workflow if one exists.",
+                }
+            )
+            warnings.append("PySide6 is declared in a dependency group without uv.lock; verify the target project's lockfile workflow manually.")
+        elif kind == "poetry-group":
+            record.update(
+                {
+                    "manager": "poetry",
+                    "lockfile_required": True,
+                    "lockfile_path": "poetry.lock",
+                    "lockfile_present": poetry_lock.exists(),
+                    "note": "Poetry GUI group opt-in requires poetry.lock review before claiming environment readiness.",
+                }
+            )
+            if not poetry_lock.exists():
+                errors.append("Poetry GUI dependency group is present but poetry.lock is missing; generate or document the Poetry lockfile before accepting opt-in evidence.")
+        elif kind == "pyproject-extra" and poetry_lock.exists():
+            record.update(
+                {
+                    "manager": "poetry",
+                    "lockfile_required": True,
+                    "lockfile_path": "poetry.lock",
+                    "lockfile_present": True,
+                    "note": "poetry.lock exists and must be reviewed with the optional GUI extra before claiming environment readiness.",
+                }
+            )
+        elif kind == "pyproject-extra":
+            record.update(
+                {
+                    "manager": "pyproject",
+                    "lockfile_required": False,
+                    "note": "No project lockfile marker was found; do not infer env_ready from the optional dependency declaration alone.",
+                }
+            )
+        else:
+            record["note"] = "Unknown dependency surface; do not infer lockfile or environment readiness."
+        evidence.append(record)
+
+    return evidence
+
+
 def find_gui_packages(project_root: Path) -> list[dict[str, Any]]:
     src = project_root / "src"
     if not src.exists():
@@ -163,6 +246,7 @@ def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces:
         errors.append(f"PySide6 appears in multiple dependency surfaces; keep one project-native declaration or pass --allow-duplicate-dependency-surfaces after human review: {surface_names}")
     if any(item.get("kind") == "requirements" and not item.get("preferred") for item in dependency_surfaces):
         warnings.append("PySide6 is declared in a requirements*.txt file other than requirements-gui.txt; verify this matches the target project's dependency convention.")
+    lockfile_evidence = collect_lockfile_evidence(project_root, dependency_surfaces, errors, warnings) if project_root.exists() else []
 
     existing_files = []
     missing_files = []
@@ -226,6 +310,7 @@ def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces:
         "project_root_evidence": evidence,
         "capability_state": capability_state,
         "dependency_surfaces": dependency_surfaces,
+        "lockfile_evidence": lockfile_evidence,
         "gui_packages": packages,
         "required_files_present": existing_files,
         "required_files_missing": missing_files,
@@ -236,6 +321,7 @@ def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces:
         "info": info,
         "counts": {
             "dependency_surfaces": len(dependency_surfaces),
+            "lockfile_evidence": len(lockfile_evidence),
             "gui_packages": len(packages),
             "errors": len(errors),
             "warnings": len(warnings),

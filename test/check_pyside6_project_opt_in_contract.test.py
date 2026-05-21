@@ -74,6 +74,36 @@ class PySide6ProjectOptInContractTest(unittest.TestCase):
         )
         return root
 
+    def make_uv_project(self, name: str) -> Path:
+        project = self.make_valid_project(name)
+        (project / "requirements-gui.txt").unlink()
+        self.write_file(
+            project,
+            "pyproject.toml",
+            "[project]\nname = \"sample\"\nversion = \"0.1.0\"\n\n"
+            "[dependency-groups]\ngui = [\"PySide6\"]\n",
+        )
+        self.write_file(project, "uv.lock", "# fixture uv lockfile\n")
+        return project
+
+    def make_poetry_project(self, name: str, *, include_lockfile: bool = True) -> Path:
+        project = self.make_valid_project(name)
+        (project / "requirements-gui.txt").unlink()
+        self.write_file(
+            project,
+            "pyproject.toml",
+            "[tool.poetry]\n"
+            "name = \"sample\"\n"
+            "version = \"0.1.0\"\n"
+            "description = \"fixture\"\n"
+            "authors = []\n\n"
+            "[tool.poetry.group.gui.dependencies]\n"
+            "PySide6 = \"*\"\n",
+        )
+        if include_lockfile:
+            self.write_file(project, "poetry.lock", "# fixture poetry lockfile\n")
+        return project
+
     def run_check(self, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(SCRIPT_PATH), *args, "--json"],
@@ -103,6 +133,39 @@ class PySide6ProjectOptInContractTest(unittest.TestCase):
         self.assertEqual(payload["capability_state"], "template_ready")
         self.assertFalse(payload["verified"])
         self.assertFalse(payload["packaged"])
+        self.assertEqual(payload["lockfile_evidence"][0]["manager"], "pip")
+        self.assertFalse(payload["lockfile_evidence"][0]["env_ready_inferred_from_lockfile"])
+
+    def test_uv_dependency_group_reports_lockfile_evidence(self) -> None:
+        project = self.make_uv_project("pyside6-project-uv")
+        result = self.run_check("--root", str(REPO_ROOT), "--project-root", str(project))
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["dependency_surfaces"][0]["kind"], "dependency-group")
+        self.assertEqual(payload["lockfile_evidence"][0]["manager"], "uv")
+        self.assertEqual(payload["lockfile_evidence"][0]["lockfile_path"], "uv.lock")
+        self.assertTrue(payload["lockfile_evidence"][0]["lockfile_present"])
+        self.assertFalse(payload["lockfile_evidence"][0]["env_ready_inferred_from_lockfile"])
+
+    def test_poetry_group_requires_lockfile_evidence(self) -> None:
+        project = self.make_poetry_project("pyside6-project-poetry")
+        result = self.run_check("--root", str(REPO_ROOT), "--project-root", str(project))
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["dependency_surfaces"][0]["kind"], "poetry-group")
+        self.assertEqual(payload["lockfile_evidence"][0]["manager"], "poetry")
+        self.assertEqual(payload["lockfile_evidence"][0]["lockfile_path"], "poetry.lock")
+        self.assertTrue(payload["lockfile_evidence"][0]["lockfile_present"])
+
+    def test_poetry_group_without_lockfile_fails(self) -> None:
+        project = self.make_poetry_project("pyside6-project-poetry-missing-lock", include_lockfile=False)
+        result = self.run_check("--root", str(REPO_ROOT), "--project-root", str(project))
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("poetry.lock is missing" in error for error in payload["errors"]))
 
     def test_missing_dependency_fails(self) -> None:
         project = self.make_valid_project("pyside6-project-missing-dependency")
