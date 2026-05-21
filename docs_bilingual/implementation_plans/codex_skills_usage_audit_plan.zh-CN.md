@@ -280,7 +280,7 @@ created_at: 2026-05-16
 - 候选记录必须包含 `source_reports_privacy.status=passed`；如果 privacy contract 失败，候选必须保持 blocked，直到重新生成 report 路径或修复脱敏器；
 - 候选 Markdown 摘要必须渲染 source-report privacy 状态与 violations/blockers；没有违规时写入 `none`，保证 preview 记录可复核且不暴露原始 source 路径；
 - 候选生成还必须校验报告字段契约；当必需顶层字段、audit-only 安全标志、决策关键嵌套字段或内嵌 `field_contract` 本身缺失、过期或类型错误时，必须以 `field_contract:<reason>` 阻断；
-- 候选生成还必须附加并渲染 `candidate_record_contract`；当候选必需字段、preview-only 安全标志、`source_reports_privacy.status=passed`、`candidate_generation_gate.allowed/blockers`、`rollback_path.restore_command` / `restart_required` 或非空 `validation_plan` 缺失或无效时，该契约必须失败，且该候选不得被当成可 apply 证据；
+- 候选生成还必须附加并渲染 `candidate_record_contract`；当候选必需字段、preview-only 安全标志、`source_reports_privacy.status=passed`、`candidate_generation_gate.allowed/blockers`、`rollback_path.restore_command` / `restart_required` 或非空 `validation_plan` 缺失或无效时，该契约必须失败，且该候选不得被当成可 apply 证据。候选 Markdown 必须渲染候选契约的通过标志、blocker 数、必需/缺失/类型错误字段计数、preview-safety 违规数、source-report-privacy 违规数、gate-shape 违规数、rollback-path 违规数、validation-plan 违规数、sanitization 违规数、approval policy 与有界 blocker 细节，让复核者不打开原始 JSON 也能诊断被阻断的候选记录；
 - `approval_state=preview-only` 只能运行 preview，不得修改 `config.toml`；
 - `approved-to-apply` 必须来自用户明确授权，不能由“继续”或普通确认替代；
 - apply 后必须保存 apply 前后的脱敏 diff 摘要；
@@ -523,7 +523,7 @@ JSON 报告和脱敏 Markdown 摘要必须通过 `script_capability_boundaries` 
 - 要求候选生成必须绑定 JSON 报告路径与脱敏 Markdown 摘要路径；
 - 要求候选生成只接受 `summary-reviewed`、`apply-candidate` 或 `closed-with-candidate` 审计状态，阻断未就绪或已 `closed-no-change` 的审计状态；
 - 要求 candidate `source_reports` 在写入候选 JSON 或 Markdown 前必须通过隐私契约；
-- 要求生成的候选 JSON 和 Markdown 暴露通过的 `candidate_record_contract`，覆盖 preview-only 安全标志、门禁形状、回滚路径与验证计划完整性；
+- 要求生成的候选 JSON 和 Markdown 暴露通过的 `candidate_record_contract`，覆盖 preview-only 安全标志、门禁形状、回滚路径、验证计划完整性、脱敏与 source-report privacy；候选 Markdown 必须显示非 JSON 复核所需的同等有界契约计数与 blocker 细节；
 - 明确 audit 数据源的数据最小化、脱敏、留存和禁止外发边界；
 - 明确 audit 脚本的能力边界、已知限制和触发脚本增强的条件；
 - 明确审计运行状态机、停止条件，以及审计结束后与 profile apply 候选变更的分界；

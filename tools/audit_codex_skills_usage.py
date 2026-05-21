@@ -2490,6 +2490,34 @@ def validate_profile_apply_candidate_contract(candidate: dict[str, Any]) -> dict
         "required_fields": sorted(REQUIRED_PROFILE_APPLY_CANDIDATE_FIELDS),
         "missing_fields": missing_fields,
         "invalid_type_fields": invalid_type_fields,
+        "preview_safety_violations": sorted(
+            blocker
+            for blocker in blockers
+            if blocker
+            in {
+                "approval_state_not_preview_only",
+                "mutates_config_not_false",
+                "edits_plugin_cache_not_false",
+                "hard_load_apply_performed_not_false",
+                "explicit_authorization_required_for_apply_not_true",
+                "ordinary_continue_or_generic_confirmation_is_not_apply_authorization_not_true",
+            }
+        ),
+        "source_reports_privacy_violations": sorted(
+            blocker for blocker in blockers if blocker.startswith("source_reports_privacy")
+        ),
+        "candidate_gate_violations": sorted(
+            blocker for blocker in blockers if blocker.startswith("candidate_generation_gate:")
+        ),
+        "rollback_path_violations": sorted(
+            blocker for blocker in blockers if blocker.startswith("rollback_path:")
+        ),
+        "validation_plan_violations": sorted(
+            blocker for blocker in blockers if blocker.startswith("validation_plan")
+        ),
+        "sanitization_violations": sorted(
+            blocker for blocker in blockers if blocker.startswith("candidate_contains_")
+        ),
         "approval_state_policy": "candidate_outputs_from_this_script_must_remain_preview_only_until_a_separate_explicit_apply_change",
     }
 
@@ -2996,6 +3024,9 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
         if isinstance(candidate.get("candidate_record_contract"), dict)
         else validate_profile_apply_candidate_contract(candidate)
     )
+    candidate_contract_blockers = (
+        candidate_contract.get("blockers") if isinstance(candidate_contract.get("blockers"), list) else []
+    )
     lines = [
         "# Codex Skills Profile Apply Candidate",
         "",
@@ -3014,7 +3045,19 @@ def render_candidate_markdown(candidate: dict[str, Any]) -> str:
         f"- Explicit authorization required for apply: `{candidate.get('explicit_authorization_required_for_apply')}`",
         f"- Generic continue is not apply authorization: `{candidate.get('ordinary_continue_or_generic_confirmation_is_not_apply_authorization')}`",
         f"- Candidate record contract: `{candidate_contract.get('status')}`",
-        f"- Candidate record blockers: `{', '.join(candidate_contract.get('blockers') or []) or 'none'}`",
+        f"- Candidate record passed: `{candidate_contract.get('passed')}`",
+        f"- Candidate record blockers: `{len(candidate_contract_blockers)}`",
+        f"- Candidate record required fields: `{len(candidate_contract.get('required_fields') or [])}`",
+        f"- Candidate record missing fields: `{len(candidate_contract.get('missing_fields') or [])}`",
+        f"- Candidate record invalid-type fields: `{len(candidate_contract.get('invalid_type_fields') or [])}`",
+        f"- Candidate record preview-safety violations: `{len(candidate_contract.get('preview_safety_violations') or [])}`",
+        f"- Candidate record source-report-privacy violations: `{len(candidate_contract.get('source_reports_privacy_violations') or [])}`",
+        f"- Candidate record gate-shape violations: `{len(candidate_contract.get('candidate_gate_violations') or [])}`",
+        f"- Candidate record rollback-path violations: `{len(candidate_contract.get('rollback_path_violations') or [])}`",
+        f"- Candidate record validation-plan violations: `{len(candidate_contract.get('validation_plan_violations') or [])}`",
+        f"- Candidate record sanitization violations: `{len(candidate_contract.get('sanitization_violations') or [])}`",
+        f"- Candidate record approval policy: `{candidate_contract.get('approval_state_policy')}`",
+        f"- Candidate record blocker details: `{', '.join(candidate_contract_blockers) if candidate_contract_blockers else 'none'}`",
         "",
         "## Source reports",
         "",
