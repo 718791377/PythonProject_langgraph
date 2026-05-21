@@ -414,7 +414,7 @@ This checklist lists concrete implementation items only; it does not count “up
 - [x] After this continue-implementation request, provision the real shared PySide6 runtime at `D:\PythonProject_langgraph\.shared_runtimes\pyside6`; the directory remains a gitignored local-only runtime.
 - [x] After provisioning, run shared runtime `verify` and record Python 3.12.10, PySide6 6.11.1, and Qt 6.11.1 import-only evidence with no visible GUI launch.
 - [x] After provisioning, generate real `runtime.json` with versions, paths, update time, import-only state, and rollback steps; keep it under `.shared_runtimes/` as a local-only artifact outside Git.
-- [ ] Select the first consumer project when a concrete request exists; run shared mode `preview` first and confirm target root, write scope, and blockers.
+- [x] Select the first consumer project when a concrete request exists; run shared mode `preview` first and confirm target root, write scope, and blockers; on 2026-05-22 selected the first registered consumer project and recorded preview evidence in `docs_bilingual/memory/pyside6_first_consumer_preview_2026-05-22.md`.
 - [ ] Run shared mode `apply` in the first consumer project to generate GUI shell, runtime contract, run helper, adapter, import smoke test, and rollback note.
 - [ ] Run the import-only smoke test in the first consumer project through the shared runtime.
 - [ ] Update first-consumer project-local documentation with GUI capability state, runtime contract, adapter boundary, and rollback path.

@@ -474,7 +474,7 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - [x] 按本轮继续实施请求，在 `D:\PythonProject_langgraph\.shared_runtimes\pyside6` provision 真实共享 PySide6 runtime；该目录仍为 gitignored 本地-only runtime。
 - [x] provision 后运行共享 runtime `verify`，记录 Python 3.12.10、PySide6 6.11.1 与 Qt 6.11.1 import-only 证据，未启动可见 GUI。
 - [x] provision 后生成真实 `runtime.json`，记录版本、路径、更新时间、import-only 状态和回滚步骤；该文件保留在 `.shared_runtimes/` 本地产物中，不进入 Git。
-- [ ] 按具体需求选择第一个消费项目，先运行 shared 模式 `preview`，确认目标项目根目录、写入范围和阻塞项。
+- [x] 按具体需求选择第一个消费项目，先运行 shared 模式 `preview`，确认目标项目根目录、写入范围和阻塞项；2026-05-22 已选择首个已登记消费项目并记录 preview 证据到 `docs_bilingual/memory/pyside6_first_consumer_preview_2026-05-22.zh-CN.md`。
 - [ ] 在首个消费项目中运行 shared 模式 `apply`，生成 GUI shell、runtime contract、run helper、adapter、import smoke test 与 rollback note。
 - [ ] 在首个消费项目中通过共享 runtime 运行 import-only smoke test。
 - [ ] 在首个消费项目中更新项目本地文档，记录 GUI 能力状态、runtime contract、adapter 边界和回滚方式。
