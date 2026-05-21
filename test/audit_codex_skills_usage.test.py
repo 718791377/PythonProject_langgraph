@@ -358,6 +358,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Warning triage: not_requested requested=False window_ok=True", output)
         self.assertIn("Warning triage policy: use_days_1_or_since_for_warning_triage", output)
         self.assertIn("Warning triage warnings: budget=0 skipped_loading=0 recent_skipped_samples=0", output)
+        self.assertIn("Warning triage skipped-loading sample excerpts: `none`", output)
         self.assertIn("Warning triage skipped-loading review: none", output)
         self.assertIn(
             "Warning triage recommended action: run_with_warning_triage_after_a_live_session_budget_warning",
@@ -900,6 +901,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(report["warning_triage"]["budget_warning_count"], 1)
         self.assertEqual(report["warning_triage"]["skipped_loading_count"], 1)
         self.assertEqual(report["warning_triage"]["recent_skipped_loading_samples"], 1)
+        self.assertEqual(len(report["warning_triage"]["recent_skipped_loading_sample_excerpts"]), 1)
         self.assertEqual(
             report["warning_triage"]["skipped_loading_review"],
             "record_source_and_do_not_edit_vendor_cache_without_authorization",
@@ -909,10 +911,15 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         skipped_excerpt = report["log_evidence"]["recent_skipped_loading"][0]["message_excerpt"]
         self.assertIn("[REDACTED_PATH]", skipped_excerpt)
         self.assertIn("[REDACTED_SECRET]", skipped_excerpt)
+        triage_excerpt = report["warning_triage"]["recent_skipped_loading_sample_excerpts"][0]
+        self.assertIn("[REDACTED_PATH]", triage_excerpt)
+        self.assertIn("[REDACTED_SECRET]", triage_excerpt)
         self.assertNotIn(r"C:\Users\lenovo", json.dumps(report, ensure_ascii=False))
         summary = audit.render_markdown_summary(report)
         self.assertIn("Skipped loading in triage window: `1`", summary)
         self.assertIn("Recent skipped-loading samples: `1`", summary)
+        self.assertIn("Recent skipped-loading sample excerpts: `Skipped loading", summary)
+        self.assertIn("[REDACTED_PATH]", summary)
         self.assertIn(
             "Skipped-loading review: `record_source_and_do_not_edit_vendor_cache_without_authorization`",
             summary,
@@ -1548,6 +1555,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "budget_warning_count": -1,
                 "skipped_loading_count": -2,
                 "recent_skipped_loading_samples": -3,
+                "recent_skipped_loading_sample_excerpts": [r"C:\Users\lenovo\.codex\plugins\cache\vendor\SKILL.md api_key=sk-test-secret"],
             }
         )
 
@@ -1566,6 +1574,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("warning_triage:budget_warning_count_negative", value_contract["blockers"])
         self.assertIn("warning_triage:skipped_loading_count_negative", value_contract["blockers"])
         self.assertIn("warning_triage:recent_skipped_loading_samples_negative", value_contract["blockers"])
+        self.assertIn(
+            "warning_triage:recent_skipped_loading_sample_excerpts_contains_private_path",
+            value_contract["blockers"],
+        )
 
         blocked_without_reason = audit.build_report(args)
         blocked_without_reason["warning_triage"].update({"status": "blocked", "blockers": []})
@@ -1682,6 +1694,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "budget_warning_count": 0,
                 "skipped_loading_count": 0,
                 "recent_skipped_loading_samples": 0,
+                "recent_skipped_loading_sample_excerpts": [],
                 "skipped_loading_review": "none",
                 "recommended_action": "run_with_warning_triage_after_a_live_session_budget_warning",
             },

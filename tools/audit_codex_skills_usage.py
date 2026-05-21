@@ -331,6 +331,7 @@ REQUIRED_WARNING_TRIAGE_FIELDS = {
     "budget_warning_count",
     "skipped_loading_count",
     "recent_skipped_loading_samples",
+    "recent_skipped_loading_sample_excerpts",
     "skipped_loading_review",
     "recommended_action",
 }
@@ -343,6 +344,7 @@ REQUIRED_WARNING_TRIAGE_FIELD_TYPES = {
     "budget_warning_count": int,
     "skipped_loading_count": int,
     "recent_skipped_loading_samples": int,
+    "recent_skipped_loading_sample_excerpts": list,
     "skipped_loading_review": str,
     "recommended_action": str,
 }
@@ -1507,7 +1509,13 @@ def build_warning_triage(
     blockers = ["warning_triage_window_not_narrow"] if requested and not window_ok else []
     warning_count = int(logs_data.get("budget_warning_count") or 0)
     skipped_loading_count = int(logs_data.get("skipped_loading_count") or 0)
-    recent_skipped_loading_samples = len(logs_data.get("recent_skipped_loading") or [])
+    recent_skipped_loading = logs_data.get("recent_skipped_loading") or []
+    recent_skipped_loading_samples = len(recent_skipped_loading)
+    recent_skipped_loading_sample_excerpts = [
+        str(row.get("message_excerpt") or "")
+        for row in recent_skipped_loading[:3]
+        if isinstance(row, dict) and str(row.get("message_excerpt") or "").strip()
+    ]
     skipped_loading_review = (
         "record_source_and_do_not_edit_vendor_cache_without_authorization"
         if skipped_loading_count
@@ -1544,6 +1552,7 @@ def build_warning_triage(
         "budget_warning_count": warning_count,
         "skipped_loading_count": skipped_loading_count,
         "recent_skipped_loading_samples": recent_skipped_loading_samples,
+        "recent_skipped_loading_sample_excerpts": recent_skipped_loading_sample_excerpts,
         "skipped_loading_review": skipped_loading_review,
         "all_descriptions_removed_count": logs_data.get("all_descriptions_removed_count", 0),
         "max_omitted_additional_skills": logs_data.get("max_omitted_additional_skills", 0),
@@ -1641,6 +1650,26 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
                     warning_triage_violations.append(f"{field}_invalid_type")
             elif value < 0:
                 warning_triage_violations.append(f"{field}_negative")
+    sample_excerpts = warning_triage.get("recent_skipped_loading_sample_excerpts")
+    if isinstance(sample_excerpts, list):
+        for excerpt in sample_excerpts:
+            if not isinstance(excerpt, str):
+                warning_triage_violations.append("recent_skipped_loading_sample_excerpts_item_invalid_type")
+                break
+            if any(pattern.search(excerpt) for pattern in PRIVATE_PATH_PATTERNS):
+                warning_triage_violations.append("recent_skipped_loading_sample_excerpts_contains_private_path")
+                break
+            raw_secret_found = False
+            for match in ACCESS_TOKEN_PATTERN.finditer(excerpt):
+                if match.group(1) != "[REDACTED_SECRET]":
+                    warning_triage_violations.append("recent_skipped_loading_sample_excerpts_contains_raw_secret")
+                    raw_secret_found = True
+                    break
+            if raw_secret_found:
+                break
+            if STANDALONE_TOKEN_PATTERN.search(excerpt):
+                warning_triage_violations.append("recent_skipped_loading_sample_excerpts_contains_standalone_token")
+                break
     cadence_review = report.get("cadence_review") if isinstance(report.get("cadence_review"), dict) else {}
     cadence_review_violations = []
     for field in sorted(REQUIRED_CADENCE_REVIEW_FIELDS):
@@ -2866,6 +2895,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Budget warnings in triage window: `{warning_triage.get('budget_warning_count')}`",
         f"- Skipped loading in triage window: `{warning_triage.get('skipped_loading_count')}`",
         f"- Recent skipped-loading samples: `{warning_triage.get('recent_skipped_loading_samples')}`",
+        f"- Recent skipped-loading sample excerpts: {bounded_inline_list(warning_triage.get('recent_skipped_loading_sample_excerpts') or [], limit=3)}",
         f"- Skipped-loading review: `{warning_triage.get('skipped_loading_review')}`",
         f"- Recommended action: `{warning_triage.get('recommended_action')}`",
         "",
@@ -3283,6 +3313,10 @@ def print_human(report: dict[str, Any]) -> None:
         f"budget={warning_triage.get('budget_warning_count')} "
         f"skipped_loading={warning_triage.get('skipped_loading_count')} "
         f"recent_skipped_samples={warning_triage.get('recent_skipped_loading_samples')}"
+    )
+    print(
+        "Warning triage skipped-loading sample excerpts: "
+        f"{bounded_inline_list(warning_triage.get('recent_skipped_loading_sample_excerpts') or [], limit=3)}"
     )
     print(f"Warning triage skipped-loading review: {warning_triage.get('skipped_loading_review')}")
     print(f"Warning triage recommended action: {warning_triage.get('recommended_action')}")
