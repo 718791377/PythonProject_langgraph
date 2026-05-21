@@ -179,6 +179,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("`draft`", summary)
         self.assertIn("`unknown-skill`", summary)
         self.assertNotIn("and |", summary)
+        self.assertEqual(
+            audit.markdown_noise_token_sample("bad?\ue000"),
+            "`redacted_noise_token_sample`",
+        )
 
     def test_field_contract_requires_noise_review_privacy_fields(self) -> None:
         codex_home = self.make_codex_home("skills-audit-noise-contract")
@@ -1525,6 +1529,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         registry = report["script_capability_boundaries"]["stable_tool_call_alias_registry"]
         self.assertIn("## Script coverage and human review boundaries", summary)
         self.assertIn("weak_plugin_mentions_are_text_trends_not_real_invocation_evidence", summary)
+        self.assertIn(
+            "`weak_plugin_mentions_are_text_trends_not_real_invocation_evidence` - needs human review",
+            summary,
+        )
         self.assertEqual(registry["evidence_level"], "medium")
         self.assertFalse(registry["counts_as_strong_evidence"])
         self.assertEqual(registry["plugin_aliases"]["Browser"], ["mcp__chrome_devtools__", "mcp__cdp_bridge__"])

@@ -788,6 +788,43 @@ def inline_code(value: str) -> str:
     return "`" + str(value).replace("`", "'") + "`"
 
 
+SCRIPT_CAPABILITY_ITEM_DESCRIPTIONS = {
+    "plugin_enabled_disabled_unknown_state_from_config_toml": "reads plugin enablement state without mutating user config.",
+    "user_repo_plugin_skill_inventory_counts": "counts visible user, repository, and plugin skill inventory.",
+    "session_explicit_skill_announcements_skill_path_reads_helper_calls_and_tool_call_names": "correlates session-visible skill mentions, skill-file reads, helpers, and tool calls.",
+    "logs_2_sqlite_budget_warnings_all_descriptions_removed_omitted_skills_and_skipped_loading_samples": "extracts skills-budget and skipped-loading signals from runtime logs.",
+    "profile_module_aggregation_from_helper_calls_and_plugin_skill_path_reads": "maps helper calls and plugin skill reads into profile-module evidence.",
+    "stable_tool_call_aliases_for_medium_evidence_only_module_review": "keeps stable tool-call aliases as medium evidence for human review only.",
+    "precommit_existing_file_update_and_openspec_archive_gate_status": "embeds the pre-commit update/archive gate state in audit reports.",
+    "weak_plugin_mentions_are_text_trends_not_real_invocation_evidence": "needs human review because text mentions are not invocation proof.",
+    "explicit_skills_can_contain_natural_language_or_example_token_false_positives": "needs human review because natural language can look like skill names.",
+    "tool_call_names_and_stable_aliases_are_medium_evidence_not_plugin_or_profile_apply_evidence": "needs human review before any profile decision uses alias evidence.",
+    "unreadable_rotated_or_missing_logs_can_underreport_warning_counts": "needs human review when log availability may undercount warnings.",
+    "missing_or_stale_profile_registry_data_can_make_module_evidence_incomplete": "needs human review when registry data is absent or stale.",
+    "same_false_positive_pattern_repeats_in_two_weekly_reports": "triggers parser or filter refinement review.",
+    "thirty_day_summary_needs_evidence_that_is_only_reported_as_weak_mentions": "triggers manual evidence review before final decisions.",
+    "stable_tool_call_pattern_maps_to_a_plugin_or_module_but_is_not_in_the_alias_registry": "triggers alias registry review rather than automatic strong evidence.",
+    "live_session_warning_cannot_be_localized_from_logs_2_sqlite": "triggers log-source or transcript fallback review.",
+    "profile_registry_and_enabled_plugin_surface_diverge_enough_to_mislead_module_evidence": "triggers profile registry reconciliation review.",
+}
+
+
+def render_described_code_item(item: Any) -> str:
+    """Render a code-name item with a short purpose phrase for name-clarity gates."""
+    text = str(item)
+    description = SCRIPT_CAPABILITY_ITEM_DESCRIPTIONS.get(text, "audit boundary item for human review.")
+    return f"- `{text}` - {description}"
+
+
+def markdown_noise_token_sample(token: str) -> str:
+    """Render a noise-token sample without retaining mojibake or private-use glyph fragments."""
+    sanitized = sanitize_explicit_skill_noise_token(str(token))
+    has_private_use = any(0xE000 <= ord(char) <= 0xF8FF for char in sanitized)
+    if "?" in sanitized or has_private_use:
+        return inline_code("redacted_noise_token_sample")
+    return inline_code(sanitized)
+
+
 def format_noise_token_samples(removed_noise: Any) -> str:
     """Return a bounded sanitized sample list for removed explicit-skill noise tokens."""
     if not isinstance(removed_noise, dict) or not removed_noise:
@@ -804,7 +841,7 @@ def format_noise_token_samples(removed_noise: Any) -> str:
         key=lambda item: (-sortable_count(item[1]), sanitize_explicit_skill_noise_token(str(item[0])).lower()),
     )
     samples = [
-        inline_code(sanitize_explicit_skill_noise_token(str(token)))
+        markdown_noise_token_sample(str(token))
         for token, _count in sorted_items[:EXPLICIT_SKILL_NOISE_SUMMARY_SAMPLE_LIMIT]
     ]
     if len(sorted_items) > EXPLICIT_SKILL_NOISE_SUMMARY_SAMPLE_LIMIT:
@@ -3080,7 +3117,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         ]
     )
     for item in (script_capabilities.get("reliable_coverage") or [])[:8]:
-        lines.append(f"- `{item}`")
+        lines.append(render_described_code_item(item))
     lines.extend(
         [
             "",
@@ -3089,7 +3126,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         ]
     )
     for item in (script_capabilities.get("human_review_required_for") or [])[:8]:
-        lines.append(f"- `{item}`")
+        lines.append(render_described_code_item(item))
     lines.extend(
         [
             "",
@@ -3098,7 +3135,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         ]
     )
     for item in (script_capabilities.get("enhancement_triggers") or [])[:8]:
-        lines.append(f"- `{item}`")
+        lines.append(render_described_code_item(item))
     lines.extend(
         [
             "",
