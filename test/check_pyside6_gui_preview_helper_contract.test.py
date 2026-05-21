@@ -59,6 +59,18 @@ class PySide6GuiPreviewHelperContractTest(unittest.TestCase):
         fail_closed = payload["fail_closed_sample"]
         self.assertFalse(fail_closed["ok"])
         self.assertTrue(any(item["code"] == "unsafe_project_root" for item in fail_closed["blockers"]))
+        uv_sample = payload["uv_sample"]
+        self.assertEqual(uv_sample["package_manager"], "uv")
+        self.assertEqual(uv_sample["dependency_style"], "group")
+        self.assertEqual(uv_sample["package_manager_command_evidence"]["project_native_dependency_command"], "uv add --group gui PySide6")
+        self.assertEqual(uv_sample["package_manager_command_evidence"]["install_command"], "uv sync --group gui")
+        self.assertEqual(uv_sample["package_manager_command_evidence"]["lockfile_update_command"], "uv lock")
+        poetry_sample = payload["poetry_sample"]
+        self.assertEqual(poetry_sample["package_manager"], "poetry")
+        self.assertEqual(poetry_sample["dependency_style"], "pyproject-extra")
+        self.assertEqual(poetry_sample["package_manager_command_evidence"]["project_native_dependency_command"], "poetry add --optional PySide6")
+        self.assertEqual(poetry_sample["package_manager_command_evidence"]["install_command"], "poetry install --extras gui")
+        self.assertEqual(poetry_sample["package_manager_command_evidence"]["lockfile_update_command"], "poetry lock")
 
     def test_missing_preview_helper_fails(self) -> None:
         root = self.make_root("pyside6-preview-missing")

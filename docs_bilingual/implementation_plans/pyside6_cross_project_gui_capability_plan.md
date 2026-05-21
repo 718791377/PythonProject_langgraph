@@ -347,6 +347,7 @@ Current local implementation status:
 - Slice 2 preview helper source is carried by `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1`;
 - Slice 3 controlled `apply` mode is now implemented in `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1` with fail-closed target-root checks, dependency-surface updates, template generation, structured `applied_file_changes`, and `docs/pyside6_gui_rollback.md` rollback-note generation;
 - the preview/apply helper contract is verified by `tools/check_pyside6_gui_preview_helper_contract.py` and `test/check_pyside6_gui_preview_helper_contract.test.py`, including preview read-only behavior, disposable apply fixture writes, and unsafe-root fail-closed coverage;
+- the helper now emits structured `package_manager_command_evidence` plus contextual `planned_commands` for requirements, pyproject optional extras, uv dependency groups, and Poetry projects; the evidence includes project-native dependency commands, project-environment install/sync commands, lockfile-update guidance, and import-only smoke-test guidance without executing installs or mutating lockfiles by default;
 - the CI manifest registers both PySide6 contract tests, and `tools/run_openspec_guard.py` runs both checkers;
 - the repo-local `pyside6-gui` skill source is now carried by `.codex/skills/pyside6-gui/SKILL.md` for future session routing; user-level installation or copying remains a separate user-level deployment decision;
 - the `plugin-modules` profile helper now exposes a `pyside6-gui` soft-load module that resolves repo-local `repo:` hints for the skill, preview/apply helper, templates, and packaging preflight template without installing PySide6, editing `config.toml`, enabling plugin bundles, launching visible GUI windows, or packaging executables;
@@ -399,6 +400,7 @@ The plan is complete when:
 - the plan defines small implementation slices, per-slice deliverables, and merge gates;
 - the plan defines target-project discovery, install preconditions, GUI/business boundaries, worker boundaries, and config/data path requirements;
 - the plan defines structured helper preview evidence, visible-GUI launch boundaries, and packaging data-exclusion requirements;
+- the plan and helper contract require package-manager-specific command and lockfile evidence so future consumer-project GUI opt-ins do not silently use the wrong install path or mutate unrelated lockfiles;
 - the plan lists key failure modes and triage paths;
 - the repo-local `pyside6-gui` skill can be discovered through `plugin-modules` soft-load routing without hard-loading plugins or mutating user-level config;
 - the cross-project operator guide documents and checks the `pyside6-gui` soft-load workflow, preview/apply boundary, no `config.toml` edit, no PySide6 install during soft-load, visible-GUI approval, and packaging opt-in boundary;

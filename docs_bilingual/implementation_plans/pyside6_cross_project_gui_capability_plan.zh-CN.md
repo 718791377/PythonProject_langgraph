@@ -347,6 +347,7 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 切片 2 的 preview helper 源码已由 `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1` 承载；
 - 切片 3 的受控 `apply` 模式已在 `tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1` 中实现，覆盖 fail-closed 目标根目录检查、依赖声明面更新、模板生成、结构化 `applied_file_changes`，以及 `docs/pyside6_gui_rollback.md` 回滚说明生成；
 - preview/apply helper 契约由 `tools/check_pyside6_gui_preview_helper_contract.py` 和 `test/check_pyside6_gui_preview_helper_contract.test.py` 验证，覆盖 preview 只读、一次性 apply fixture 写入，以及不安全根目录 fail-closed；
+- helper 现在输出结构化 `package_manager_command_evidence` 和上下文化 `planned_commands`，覆盖 requirements、pyproject optional extra、uv dependency group 与 Poetry 项目；该证据包含项目原生依赖命令、项目环境 install/sync 命令、lockfile 更新指引和 import-only smoke-test 指引，默认不执行安装、不改写 lockfile；
 - CI manifest 已登记两个 PySide6 契约测试，`tools/run_openspec_guard.py` 已运行两个 checker；
 - repo-local `pyside6-gui` skill 源文件已由 `.codex/skills/pyside6-gui/SKILL.md` 承载，用于未来会话路由；是否安装或复制到用户级目录仍属于单独的用户级部署决策；
 - `plugin-modules` profile helper 已暴露 `pyside6-gui` soft-load 模块，可通过 repo-local `repo:` hint 解析 skill、preview/apply helper、模板和打包 preflight 模板，同时不安装 PySide6、不编辑 `config.toml`、不启用 plugin bundle、不启动可见 GUI、不打包可执行文件；
@@ -399,6 +400,7 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 方案定义小步实施切片、每个切片的交付物和合入闸门；
 - 方案明确目标项目发现、安装前置条件、GUI/业务边界、worker 边界和配置数据路径要求；
 - 方案明确结构化 helper preview 证据、可见 GUI 启动边界和打包数据排除要求；
+- 方案和 helper 契约要求包管理器专属命令与 lockfile 证据，避免后续消费项目 GUI opt-in 静默使用错误安装路径或改写无关 lockfile；
 - 方案列出关键失败模式与排障路径；
 - repo-local `pyside6-gui` skill 可通过 `plugin-modules` soft-load 路由被发现，同时不 hard-load plugin、不修改用户级配置；
 - 实施保持本地-only，未获得用户明确授权前不推送远端。

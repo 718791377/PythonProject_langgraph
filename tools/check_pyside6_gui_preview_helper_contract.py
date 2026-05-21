@@ -26,6 +26,7 @@ REQUIRED_JSON_FIELDS = [
     "rollback_note",
     "apply_mode",
     "smoke_test",
+    "package_manager_command_evidence",
     "planned_commands",
     "local_only_artifacts",
     "blockers",
@@ -53,6 +54,11 @@ REQUIRED_SCRIPT_SNIPPETS = [
     "Update-PyProjectDependency",
     "Apply-TemplateFiles",
     "Write-RollbackNote",
+    "New-PlannedCommand",
+    "Get-PackageManagerCommandEvidence",
+    "project_native_dependency_command",
+    "lockfile_update_command",
+    "lockfile_expectation",
 ]
 FORBIDDEN_HELPER_SNIPPETS = [
     "apply_not_implemented",
@@ -139,6 +145,18 @@ def make_fixture(root: Path, *, name: str, dependency_surface: str) -> Path:
             "[project]\nname = \"sample\"\nversion = \"0.1.0\"\n",
             encoding="utf-8",
         )
+    elif dependency_surface == "uv":
+        (fixture / "pyproject.toml").write_text(
+            "[project]\nname = \"sample\"\nversion = \"0.1.0\"\n",
+            encoding="utf-8",
+        )
+        (fixture / "uv.lock").write_text("# fixture lockfile marker\n", encoding="utf-8")
+    elif dependency_surface == "poetry":
+        (fixture / "pyproject.toml").write_text(
+            "[tool.poetry]\nname = \"sample\"\nversion = \"0.1.0\"\ndescription = \"fixture\"\nauthors = []\n",
+            encoding="utf-8",
+        )
+        (fixture / "poetry.lock").write_text("# fixture lockfile marker\n", encoding="utf-8")
     elif dependency_surface == "requirements":
         (fixture / "requirements.txt").write_text("pytest\n", encoding="utf-8")
     elif dependency_surface == "none":
@@ -179,6 +197,16 @@ def validate_preview_payload(payload: dict[str, Any], errors: list[str]) -> None
         errors.append("Preview helper did not plan sample_gui app template creation when -CreateTemplate is set.")
     if payload.get("applied_file_changes") not in ([], None):
         errors.append("Preview helper must not report applied_file_changes in preview mode.")
+    command_evidence = payload.get("package_manager_command_evidence") or {}
+    if command_evidence.get("project_package_manager") != "pyproject":
+        errors.append("Preview helper should report project_package_manager=pyproject for pyproject fixture command evidence.")
+    if command_evidence.get("install_command") != 'python -m pip install -e ".[gui]"':
+        errors.append("Preview helper should emit pyproject-extra install guidance for pyproject fixtures.")
+    if "lockfile" not in str(command_evidence.get("lockfile_expectation", "")).lower():
+        errors.append("Preview helper command evidence must include lockfile expectation text.")
+    planned_commands = payload.get("planned_commands") or []
+    if not any(isinstance(item, dict) and item.get("affects_lockfile") is True for item in planned_commands):
+        errors.append("Preview helper planned_commands must identify the command/guidance that can affect lockfile state.")
 
 
 def validate_apply_payload(payload: dict[str, Any], fixture: Path, errors: list[str]) -> None:
@@ -215,6 +243,13 @@ def validate_apply_payload(payload: dict[str, Any], fixture: Path, errors: list[
         errors.append("Apply helper JSON did not report requirements-gui.txt in applied_file_changes.")
     if payload.get("rollback_note") != "docs/pyside6_gui_rollback.md":
         errors.append("Apply helper JSON must report rollback_note=docs/pyside6_gui_rollback.md.")
+    command_evidence = payload.get("package_manager_command_evidence") or {}
+    if command_evidence.get("project_package_manager") != "pip":
+        errors.append("Apply helper should report project_package_manager=pip for requirements fixtures command evidence.")
+    if command_evidence.get("install_command") != "python -m pip install -r requirements-gui.txt":
+        errors.append("Apply helper should emit requirements-gui install guidance for requirements fixtures.")
+    if command_evidence.get("run_smoke_test_requested") is not True:
+        errors.append("Apply helper command evidence should preserve whether -RunSmokeTest was requested.")
 
 
 def validate_fail_closed_payload(payload: dict[str, Any], fixture: Path, errors: list[str]) -> None:
@@ -225,6 +260,31 @@ def validate_fail_closed_payload(payload: dict[str, Any], fixture: Path, errors:
         errors.append("Apply helper missing unsafe_project_root blocker for fixture without root evidence.")
     if snapshot_files(fixture):
         errors.append("Fail-closed apply helper wrote files into an unsafe fixture.")
+
+
+def validate_package_manager_command_payload(
+    payload: dict[str, Any],
+    errors: list[str],
+    *,
+    expected_package_manager: str,
+    expected_dependency_style: str,
+    expected_dependency_command: str,
+    expected_install_command: str,
+    expected_lockfile_command: str,
+) -> None:
+    if payload.get("mode") != "preview":
+        errors.append(f"{expected_package_manager} command sample must use preview mode.")
+    command_evidence = payload.get("package_manager_command_evidence") or {}
+    if command_evidence.get("project_package_manager") != expected_package_manager:
+        errors.append(f"Expected project_package_manager={expected_package_manager}, got {command_evidence.get('project_package_manager')!r}.")
+    if command_evidence.get("dependency_style") != expected_dependency_style:
+        errors.append(f"Expected dependency_style={expected_dependency_style}, got {command_evidence.get('dependency_style')!r}.")
+    if command_evidence.get("project_native_dependency_command") != expected_dependency_command:
+        errors.append(f"Expected dependency command `{expected_dependency_command}`, got {command_evidence.get('project_native_dependency_command')!r}.")
+    if command_evidence.get("install_command") != expected_install_command:
+        errors.append(f"Expected install command `{expected_install_command}`, got {command_evidence.get('install_command')!r}.")
+    if command_evidence.get("lockfile_update_command") != expected_lockfile_command:
+        errors.append(f"Expected lockfile command `{expected_lockfile_command}`, got {command_evidence.get('lockfile_update_command')!r}.")
 
 
 def validate(root: Path) -> dict[str, Any]:
@@ -247,17 +307,23 @@ def validate(root: Path) -> dict[str, Any]:
     preview_payload: dict[str, Any] | None = None
     apply_payload: dict[str, Any] | None = None
     fail_closed_payload: dict[str, Any] | None = None
+    uv_payload: dict[str, Any] | None = None
+    poetry_payload: dict[str, Any] | None = None
     created_fixtures: list[Path] = []
     if helper.exists() and not errors:
         preview_fixture = make_fixture(root, name="pyside6-preview", dependency_surface="pyproject")
         apply_fixture = make_fixture(root, name="pyside6-apply", dependency_surface="requirements")
         unsafe_fixture = make_fixture(root, name="pyside6-unsafe", dependency_surface="none")
-        created_fixtures.extend([preview_fixture, apply_fixture, unsafe_fixture])
+        uv_fixture = make_fixture(root, name="pyside6-uv", dependency_surface="uv")
+        poetry_fixture = make_fixture(root, name="pyside6-poetry", dependency_surface="poetry")
+        created_fixtures.extend([preview_fixture, apply_fixture, unsafe_fixture, uv_fixture, poetry_fixture])
         before = snapshot_files(preview_fixture)
         try:
             preview_result = run_helper(root, preview_fixture, mode="preview", dependency_style="auto")
             apply_result = run_helper(root, apply_fixture, mode="apply", dependency_style="requirements")
             fail_result = run_helper(root, unsafe_fixture, mode="apply", dependency_style="requirements", create_template=True)
+            uv_result = run_helper(root, uv_fixture, mode="preview", dependency_style="auto", create_template=False, run_smoke_test=False)
+            poetry_result = run_helper(root, poetry_fixture, mode="preview", dependency_style="auto", create_template=False, run_smoke_test=False)
         except RuntimeError as exc:
             errors.append(str(exc))
         else:
@@ -270,9 +336,15 @@ def validate(root: Path) -> dict[str, Any]:
                 errors.append(f"Apply helper returned {apply_result.returncode}: {apply_result.stderr or apply_result.stdout}")
             if fail_result.returncode == 0:
                 errors.append("Fail-closed apply scenario returned success for unsafe fixture.")
+            if uv_result.returncode != 0:
+                errors.append(f"uv preview helper returned {uv_result.returncode}: {uv_result.stderr or uv_result.stdout}")
+            if poetry_result.returncode != 0:
+                errors.append(f"Poetry preview helper returned {poetry_result.returncode}: {poetry_result.stderr or poetry_result.stdout}")
             preview_payload = load_json_stdout(preview_result, errors, "Preview helper")
             apply_payload = load_json_stdout(apply_result, errors, "Apply helper")
             fail_closed_payload = load_json_stdout(fail_result, errors, "Fail-closed apply helper")
+            uv_payload = load_json_stdout(uv_result, errors, "uv preview helper")
+            poetry_payload = load_json_stdout(poetry_result, errors, "Poetry preview helper")
             if preview_payload:
                 if not preview_payload.get("ok"):
                     errors.append(f"Preview helper reported blockers for a valid pyproject fixture: {preview_payload.get('blockers')}")
@@ -281,6 +353,26 @@ def validate(root: Path) -> dict[str, Any]:
                 validate_apply_payload(apply_payload, apply_fixture, errors)
             if fail_closed_payload:
                 validate_fail_closed_payload(fail_closed_payload, unsafe_fixture, errors)
+            if uv_payload:
+                validate_package_manager_command_payload(
+                    uv_payload,
+                    errors,
+                    expected_package_manager="uv",
+                    expected_dependency_style="group",
+                    expected_dependency_command="uv add --group gui PySide6",
+                    expected_install_command="uv sync --group gui",
+                    expected_lockfile_command="uv lock",
+                )
+            if poetry_payload:
+                validate_package_manager_command_payload(
+                    poetry_payload,
+                    errors,
+                    expected_package_manager="poetry",
+                    expected_dependency_style="pyproject-extra",
+                    expected_dependency_command="poetry add --optional PySide6",
+                    expected_install_command="poetry install --extras gui",
+                    expected_lockfile_command="poetry lock",
+                )
         finally:
             for fixture in created_fixtures:
                 shutil.rmtree(fixture, ignore_errors=True)
@@ -296,6 +388,8 @@ def validate(root: Path) -> dict[str, Any]:
         "preview_sample": preview_payload,
         "apply_sample": apply_payload,
         "fail_closed_sample": fail_closed_payload,
+        "uv_sample": uv_payload,
+        "poetry_sample": poetry_payload,
         "errors": errors,
         "warnings": warnings,
         "info": info,

@@ -252,6 +252,81 @@ $($changeLines -join "`r`n")
     return Write-TextFileIfChanged "docs/pyside6_gui_rollback.md" $content "create_or_update" "Record the project-local rollback path for PySide6 GUI enablement." -OverwriteExisting
 }
 
+function New-PlannedCommand {
+    param(
+        [string]$Command,
+        [string]$Execution,
+        [string]$Reason,
+        [bool]$AffectsLockfile = $false
+    )
+    return [ordered]@{
+        command = $Command
+        execution = $Execution
+        reason = $Reason
+        affects_lockfile = $AffectsLockfile
+    }
+}
+
+function Get-PackageManagerCommandEvidence {
+    param(
+        [string]$PackageManager,
+        [string]$DependencyStyle,
+        [string]$PySideSpec,
+        [bool]$RunSmokeTestRequested
+    )
+    $projectNativeDependencyCommand = ""
+    $installCommand = ""
+    $lockfileUpdateCommand = ""
+    $lockfileExpectation = "No lockfile update is inferred from policy text alone; update only the target project's native lockfile after review."
+
+    if ($PackageManager -eq "uv") {
+        if ($DependencyStyle -eq "group") {
+            $projectNativeDependencyCommand = "uv add --group gui $PySideSpec"
+            $installCommand = "uv sync --group gui"
+        } else {
+            $projectNativeDependencyCommand = "uv add --optional gui $PySideSpec"
+            $installCommand = "uv sync --extra gui"
+        }
+        $lockfileUpdateCommand = "uv lock"
+        $lockfileExpectation = "uv.lock may change only inside the explicit target project and must be reviewed with the GUI opt-in diff."
+    } elseif ($PackageManager -eq "poetry") {
+        if ($DependencyStyle -eq "group") {
+            $projectNativeDependencyCommand = "poetry add --group gui $PySideSpec"
+            $installCommand = "poetry install --with gui"
+        } else {
+            $projectNativeDependencyCommand = "poetry add --optional $PySideSpec"
+            $installCommand = "poetry install --extras gui"
+        }
+        $lockfileUpdateCommand = "poetry lock"
+        $lockfileExpectation = "poetry.lock may change only inside the explicit target project and must be reviewed with the GUI opt-in diff."
+    } elseif ($DependencyStyle -eq "requirements") {
+        $projectNativeDependencyCommand = "Edit requirements-gui.txt to include $PySideSpec"
+        $installCommand = "python -m pip install -r requirements-gui.txt"
+        $lockfileUpdateCommand = "Use the target project's existing lockfile workflow if it has one; otherwise no lockfile is required for requirements-gui.txt."
+    } elseif ($DependencyStyle -eq "pyproject-extra") {
+        $projectNativeDependencyCommand = "Edit pyproject.toml [project.optional-dependencies].gui to include $PySideSpec"
+        $installCommand = 'python -m pip install -e ".[gui]"'
+        $lockfileUpdateCommand = "Use the target project's native lockfile workflow after reviewing pyproject.toml changes."
+    } elseif ($DependencyStyle -eq "group") {
+        $projectNativeDependencyCommand = "Edit pyproject.toml [dependency-groups].gui to include $PySideSpec"
+        $installCommand = "python -m pip install -e ."
+        $lockfileUpdateCommand = "Use the target project's dependency-group-aware lockfile workflow after reviewing pyproject.toml changes."
+    }
+
+    return [ordered]@{
+        project_package_manager = $PackageManager
+        dependency_style = $DependencyStyle
+        dependency_declaration_spec = $PySideSpec
+        project_native_dependency_command = $projectNativeDependencyCommand
+        install_command = $installCommand
+        lockfile_update_command = $lockfileUpdateCommand
+        lockfile_expectation = $lockfileExpectation
+        smoke_test_command = "python -m unittest tests/test_gui_import.py"
+        run_smoke_test_requested = $RunSmokeTestRequested
+        policy = "Commands are guidance only; execute them only in the explicit target project environment, never globally or across unrelated projects."
+    }
+}
+
 $blockers = @()
 $warnings = @()
 $info = @("Preview-first helper: preview creates no files, installs no packages, and launches no GUI window.")
@@ -382,11 +457,20 @@ if ($Mode -eq "apply") {
     }
 }
 
-$plannedCommands = @(
-    [ordered]@{ command = "Review preview JSON and create a feature branch or rollback commit before apply."; execution = "manual_review" },
-    [ordered]@{ command = "python -m pip install -r requirements-gui.txt"; execution = "optional_project_venv_only_after_apply" },
-    [ordered]@{ command = "python -m unittest tests/test_gui_import.py"; execution = if ($RunSmokeTest) { "apply_phase_if_project_env_ready" } else { "optional_after_apply" } }
-)
+$commandEvidence = Get-PackageManagerCommandEvidence $packageManager $selectedDependencyStyle $pySideSpec ([bool]$RunSmokeTest)
+$plannedCommands = @()
+$plannedCommands += New-PlannedCommand "Review preview JSON and create a feature branch or rollback commit before apply." "manual_review" "Preserve a rollback boundary before project-local GUI writes."
+if (-not [string]::IsNullOrWhiteSpace($commandEvidence.project_native_dependency_command)) {
+    $plannedCommands += New-PlannedCommand $commandEvidence.project_native_dependency_command "optional_manual_if_using_package_manager_cli" "Use the target project's native dependency manager instead of editing multiple dependency surfaces."
+}
+if (-not [string]::IsNullOrWhiteSpace($commandEvidence.install_command)) {
+    $plannedCommands += New-PlannedCommand $commandEvidence.install_command "optional_project_env_only_after_apply" "Install or sync PySide6 only inside the explicit target project environment."
+}
+if (-not [string]::IsNullOrWhiteSpace($commandEvidence.lockfile_update_command)) {
+    $plannedCommands += New-PlannedCommand $commandEvidence.lockfile_update_command "optional_project_native_lockfile_update" "Update only the target project's lockfile when its package manager requires it." $true
+}
+$smokeExecution = if ($RunSmokeTest) { "apply_phase_if_project_env_ready" } else { "optional_after_apply" }
+$plannedCommands += New-PlannedCommand $commandEvidence.smoke_test_command $smokeExecution "Verify import-only behavior without launching a visible GUI window."
 
 $localOnlyArtifacts = @(
     ".venv/",
@@ -450,6 +534,7 @@ $payload = [ordered]@{
     applied_file_changes = $appliedFileChanges
     rollback_note = $rollbackNote
     smoke_test = $smokeTest
+    package_manager_command_evidence = $commandEvidence
     planned_commands = $plannedCommands
     local_only_artifacts = $localOnlyArtifacts
     blockers = $blockers
