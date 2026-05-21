@@ -423,7 +423,68 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - 具体消费项目的 GUI 启用仍按具体项目和请求推进，不得把 helper、模板、skill 或 checker 存在误报为任意消费项目已经 `project_gui_verified_with_shared_runtime` 或 `packaged`；
 - 实际可执行文件打包仍保持请求驱动，不得把 checker/模板存在误报为任意消费项目已经 `packaged` 或 `release_ready`。
 
-## 17. 失败模式与排障
+
+## 17. 细颗粒度实施事项勾选清单
+
+本清单只列具体实施事项，不把“更新本方案文件”作为实施事项。事项按实际推进顺序排列；已完成项用 `[x]`，未完成项用 `[ ]`。
+
+- [x] 盘点已有 PySide6 GUI 基线：模板、`ensure-pyside6-gui.ps1`、`pyside6-gui` skill、operator 指南、项目 opt-in checker 与打包 opt-in checker。
+- [x] 确认默认策略从“项目本地安装 PySide6”调整为“本仓库维护共享 PySide6 runtime，项目本地安装仅作为 override 例外”。
+- [x] 明确共享 runtime 默认路径为 `D:\PythonProject_langgraph\.shared_runtimes\pyside6`。
+- [x] 将 `.shared_runtimes/` 写入 `.gitignore`，防止 runtime 二进制、site-packages、Qt 插件、缓存或日志进入仓库。
+- [x] 新增共享 runtime 依赖模板 `tools/pyside6_gui_templates/shared_runtime/requirements-pyside6.txt.template`。
+- [x] 新增共享 runtime 元数据模板 `tools/pyside6_gui_templates/shared_runtime/runtime.json.template`。
+- [x] 新增共享 runtime helper `tools/pyside6_gui_helpers/ensure-shared-pyside6-runtime.ps1`。
+- [x] 为共享 runtime helper 实现 `preview` 模式，确保预览只读并输出计划动作。
+- [x] 为共享 runtime helper 实现 `provision` 模式，确保只写入共享 runtime 根目录。
+- [x] 为共享 runtime helper 实现 `verify` 模式，确保只做 import-only 验证，不启动可见 GUI。
+- [x] 为共享 runtime helper 输出结构化 JSON 字段，覆盖 runtime 根目录、Python 路径、状态、计划动作、阻塞项与回滚提示。
+- [x] 修改 `ensure-pyside6-gui.ps1`，新增 `-RuntimeMode shared|project-local-override`。
+- [x] 将 `ensure-pyside6-gui.ps1` 默认 runtime 模式设为 `shared`。
+- [x] 为 `ensure-pyside6-gui.ps1` 新增 `-RuntimeRoot`，默认指向共享 runtime 路径。
+- [x] 在 shared 模式下禁止默认写入项目依赖声明或 lockfile。
+- [x] 在 shared 模式下当共享 runtime 缺失时 fail closed，不静默安装到消费项目 `.venv`。
+- [x] 在 shared 模式下生成项目本地 `tools/gui/pyside6_runtime_contract.json`。
+- [x] 在 shared 模式下生成项目本地 GUI adapter 说明 `tools/gui/adapters/README.md`。
+- [x] 更新 `tools/gui/check_pyside6_env.py` 模板，使其通过 runtime contract 与共享 runtime 做 import-only smoke。
+- [x] 更新 `tools/gui/run_gui.ps1` 模板，使项目通过共享 runtime 启动 GUI。
+- [x] 保留 GUI 源码、运行 helper、adapter、测试和 rollback note 在消费项目本地，不把消费项目 GUI 代码写回本仓库。
+- [x] 为 `project-local-override` 增加 `-OverrideReason` 要求。
+- [x] 为 `project-local-override` 保留依赖声明、lockfile 证据和回滚证据边界。
+- [x] 更新 repo-local `pyside6-gui` skill，使其说明共享 runtime 默认策略、缺失 runtime 的阻塞行为和 override 例外。
+- [x] 更新中英文 operator 使用指南，使 preview/apply/verify 流程与共享 runtime 默认策略一致。
+- [x] 新增 `tools/check_pyside6_shared_runtime_contract.py`，检查共享 runtime helper、模板、gitignore、skill 与 CI 注册契约。
+- [x] 更新 `tools/check_pyside6_gui_preview_helper_contract.py`，覆盖 shared/runtime-root/override 行为。
+- [x] 更新 `tools/check_pyside6_gui_skill_contract.py`，覆盖共享 runtime 默认策略与禁止误报状态。
+- [x] 更新 `tools/check_pyside6_gui_template_contract.py`，覆盖 runtime contract、adapter 与 shared runtime 模板。
+- [x] 更新 `tools/check_pyside6_operator_usage_guide.py`，覆盖 operator 指南中的共享 runtime 用法。
+- [x] 更新 `tools/check_pyside6_project_opt_in_contract.py`，覆盖 shared 模式不安装 PySide6 与 override 例外。
+- [x] 新增并更新 PySide6 相关 Node 测试，覆盖共享 runtime checker、模板 checker、preview helper checker、skill checker、project opt-in checker、packaging opt-in checker 与 operator 指南 checker。
+- [x] 将共享 runtime checker 注册到 `tools/run_openspec_guard.py`。
+- [x] 将共享 runtime checker 测试注册到 `tools/ci/ci_test_manifest.json`。
+- [x] 修正 `test/run_openspec_guard_json.test.py`，确保 guard JSON 测试覆盖新增 checker。
+- [x] 运行 PySide6 目标测试并确认通过。
+- [x] 运行 `python tools/run_openspec_guard.py --root .` 并确认通过。
+- [x] 运行 `python tools/check_precommit_update_archive.py --root . --json` 并确认通过。
+- [x] 运行 `git diff --check` 并确认通过。
+- [x] 运行本地 MR review gate 并确认通过。
+- [x] 运行本地 CI gate 并确认通过。
+- [x] 将共享 runtime 默认策略合入本地 `main`。
+- [x] 清理已合入的 `implement-pyside6-shared-runtime` worktree 与本地 feature branch。
+- [ ] 经用户明确授权后，在 `D:\PythonProject_langgraph\.shared_runtimes\pyside6` provision 真实共享 PySide6 runtime。
+- [ ] provision 后运行共享 runtime `verify`，记录 Python、PySide6 与 Qt import-only 证据。
+- [ ] provision 后生成或刷新真实 `runtime.json`，记录版本、路径、创建时间和维护脚本版本。
+- [ ] 按具体需求选择第一个消费项目，先运行 shared 模式 `preview`，确认目标项目根目录、写入范围和阻塞项。
+- [ ] 在首个消费项目中运行 shared 模式 `apply`，生成 GUI shell、runtime contract、run helper、adapter、import smoke test 与 rollback note。
+- [ ] 在首个消费项目中通过共享 runtime 运行 import-only smoke test。
+- [ ] 在首个消费项目中更新项目本地文档，记录 GUI 能力状态、runtime contract、adapter 边界和回滚方式。
+- [ ] 根据首个消费项目的证据扩展项目 opt-in checker，覆盖真实 runtime contract、adapter 和 shared runtime smoke 输出。
+- [ ] 如果首个消费项目暴露需要，再新增跨项目 `run-shared-pyside6-gui.ps1` 或记录 per-project `tools/gui/run_gui.ps1` 已足够的取舍依据。
+- [ ] 仅在项目有独立版本、隔离或自包含打包需求时，执行 `project-local-override`，并记录 override reason、依赖/lockfile 证据和 rollback 证据。
+- [ ] 仅在用户明确要求可见 GUI 验证时，执行交互式窗口验证或截图/人工 QA 清单。
+- [ ] 仅在用户明确要求可执行文件时，进入 PyInstaller/Nuitka 打包 opt-in 阶段并运行 packaging preflight。
+
+## 18. 失败模式与排障
 
 常见失败模式必须作为项目本地问题处理，不能通过削弱共享政策解决：
 
@@ -436,22 +497,22 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 | 打包 exe 被杀软警告 | one-file 可执行文件启发式误报 | 记录工具和版本，优先可复现 build，避免未经复核的二进制 |
 | helper 无法识别项目根目录 | 目标检测不安全 | fail closed，并要求显式传入 `-ProjectRoot` |
 
-## 18. 后续实施任务
+## 19. 后续实施任务
 
-后续剩余 implementation change 可以新增：
+剩余任务必须由具体维护请求或具体消费项目需求触发，不再把已落地的 helper、模板、checker、skill 或 CI 注册重复列为后续任务：
 
-- 将 `.shared_runtimes/` 写入 `.gitignore`，并添加共享 runtime 目录说明；
-- 新增 `requirements-pyside6.txt` 与 `runtime.json` schema / template；
-- 新增 `ensure-shared-pyside6-runtime.ps1` 的 preview/provision/verify 模式；
-- 改造 `ensure-pyside6-gui.ps1`，默认 `-RuntimeMode shared`，仅在 `project-local-override` 时写项目依赖声明；
-- 新增 `run-shared-pyside6-gui.ps1` 或等价 wrapper，让所有项目默认调用同一共享 runtime；
-- 更新 `pyside6-gui` skill、`plugin-modules` soft-load、operator 使用指南、checker 和测试，反映共享 runtime 默认策略；
-- 在具体目标项目采用 PySide6 之后，扩展消费项目 opt-in checker 对 runtime contract、adapter 和共享 runtime smoke 证据的覆盖；
-- 在具体消费项目请求可执行文件打包之后，继续扩展打包 opt-in checker 对目标项目 build-output 的断言。
+- 首次 provision `D:\PythonProject_langgraph\.shared_runtimes\pyside6` 共享 runtime，并运行 import-only verify；
+- 生成或刷新真实 `runtime.json`，记录 Python、PySide6、Qt、路径和维护脚本版本；
+- 选择首个消费项目后，运行 shared 模式 preview/apply，并在消费项目中生成 GUI shell、runtime contract、adapter、import smoke test 和 rollback note；
+- 基于真实消费项目证据扩展 opt-in checker，避免只凭模板存在就误报 `project_gui_verified_with_shared_runtime`；
+- 根据首个消费项目运行体验判断是否需要额外跨项目 `run-shared-pyside6-gui.ps1`；若 per-project `tools/gui/run_gui.ps1` 已足够，应记录不新增的依据；
+- 仅在具体项目具备独立版本、隔离或自包含打包需求时，推进 `project-local-override`；
+- 仅在用户请求可执行文件时，推进 PyInstaller/Nuitka 打包 opt-in 与 packaging preflight；
+- 仅在用户请求可见 GUI 验证时，推进截图、人工 QA 或 `pytest-qt` 等交互测试。
 
-当前已落地的共享面任务仍可复用为模板和 checker 基线，但其“项目本地安装 PySide6”的默认叙述必须在后续切片中迁移为“共享 runtime 默认、项目本地 override 例外”。
+当前已落地的共享面任务可复用为模板和 checker 基线，但不能被误报为任意消费项目已经 `project_gui_verified_with_shared_runtime`、`project_local_override_ready`、`packaged` 或 `release_ready`。
 
-## 19. 验收标准
+## 20. 验收标准
 
 本方案完成的标准：
 
@@ -467,6 +528,7 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - 方案定义测试、打包、回滚和授权边界；
 - 方案定义共享 runtime 与项目 GUI 能力状态模型，避免把政策文本误报为运行时就绪；
 - 方案定义小步实施切片、每个切片的交付物和合入闸门；
+- 方案包含按实施顺序排列的细颗粒度实施事项勾选清单，且区分已完成、待授权和按需触发事项；
 - 方案明确目标项目发现、共享 runtime preflight、GUI/业务边界、worker/adapter 边界和配置数据路径要求；
 - 方案明确结构化 helper preview 证据、可见 GUI 启动边界和打包数据排除要求；
 - 方案列出关键失败模式与排障路径；

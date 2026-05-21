@@ -363,7 +363,68 @@ Current local implementation status:
 - actual executable packaging remains request-driven, and checker/template presence must not be reported as any consumer project already being `packaged` or `release_ready`;
 - cross-project operator usage is now documented in `docs_bilingual/guides/pyside6_gui_cross_project_usage.md` and verified by `tools/check_pyside6_operator_usage_guide.py` plus `test/check_pyside6_operator_usage_guide.test.py`, covering `plugin-modules` `pyside6-gui` soft-load, `-RepoRoot` resolution, preview/apply boundaries, no PySide6 install during soft-load, no `config.toml` edits, visible-GUI approval, packaging opt-in, and evidence-based state reporting.
 
-## 17. Failure modes and triage
+
+## 17. Fine-grained implementation checklist
+
+This checklist lists concrete implementation items only; it does not count “update this plan file” as an implementation item. Items are ordered by rollout sequence. Completed items use `[x]`; remaining items use `[ ]`.
+
+- [x] Inventory the existing PySide6 GUI baseline: templates, `ensure-pyside6-gui.ps1`, the `pyside6-gui` skill, operator guide, project opt-in checker, and packaging opt-in checker.
+- [x] Change the default strategy from “install PySide6 in each project” to “use the shared PySide6 runtime maintained by this repository, with project-local install as an override exception only”.
+- [x] Define the shared runtime default path as `D:\PythonProject_langgraph\.shared_runtimes\pyside6`.
+- [x] Add `.shared_runtimes/` to `.gitignore` so runtime binaries, site-packages, Qt plugins, caches, and logs are not committed.
+- [x] Add the shared runtime requirements template `tools/pyside6_gui_templates/shared_runtime/requirements-pyside6.txt.template`.
+- [x] Add the shared runtime metadata template `tools/pyside6_gui_templates/shared_runtime/runtime.json.template`.
+- [x] Add the shared runtime helper `tools/pyside6_gui_helpers/ensure-shared-pyside6-runtime.ps1`.
+- [x] Implement shared runtime helper `preview` mode as read-only planned-action output.
+- [x] Implement shared runtime helper `provision` mode so it writes only under the shared runtime root.
+- [x] Implement shared runtime helper `verify` mode as import-only verification with no visible GUI launch.
+- [x] Emit structured JSON from the shared runtime helper for runtime root, Python path, status, planned actions, blockers, and rollback notes.
+- [x] Update `ensure-pyside6-gui.ps1` with `-RuntimeMode shared|project-local-override`.
+- [x] Make `shared` the default runtime mode for `ensure-pyside6-gui.ps1`.
+- [x] Add `-RuntimeRoot` to `ensure-pyside6-gui.ps1`, defaulting to the shared runtime path.
+- [x] Prevent shared mode from changing project dependency declarations or lockfiles by default.
+- [x] Make shared mode fail closed when the shared runtime is missing instead of silently installing PySide6 into the consumer project `.venv`.
+- [x] Generate project-local `tools/gui/pyside6_runtime_contract.json` in shared mode.
+- [x] Generate project-local GUI adapter guidance at `tools/gui/adapters/README.md` in shared mode.
+- [x] Update the `tools/gui/check_pyside6_env.py` template to use the runtime contract and shared runtime for import-only smoke checks.
+- [x] Update the `tools/gui/run_gui.ps1` template so the project launches GUI code through the shared runtime.
+- [x] Keep GUI source, run helper, adapter, tests, and rollback notes in the consumer project instead of writing consumer GUI code back to this repository.
+- [x] Require `-OverrideReason` for `project-local-override`.
+- [x] Preserve dependency declaration, lockfile evidence, and rollback evidence boundaries for `project-local-override`.
+- [x] Update the repo-local `pyside6-gui` skill to describe the shared runtime default, missing-runtime blocker, and override exception.
+- [x] Update bilingual operator usage guides so preview/apply/verify flow matches the shared runtime default.
+- [x] Add `tools/check_pyside6_shared_runtime_contract.py` for shared runtime helper, templates, gitignore, skill, and CI registration contracts.
+- [x] Update `tools/check_pyside6_gui_preview_helper_contract.py` for shared/runtime-root/override behavior.
+- [x] Update `tools/check_pyside6_gui_skill_contract.py` for shared runtime defaults and state-reporting guardrails.
+- [x] Update `tools/check_pyside6_gui_template_contract.py` for runtime contract, adapter, and shared runtime templates.
+- [x] Update `tools/check_pyside6_operator_usage_guide.py` for shared runtime usage in operator guidance.
+- [x] Update `tools/check_pyside6_project_opt_in_contract.py` for shared mode no-install behavior and override exceptions.
+- [x] Add and update PySide6 Node tests for shared runtime checker, template checker, preview helper checker, skill checker, project opt-in checker, packaging opt-in checker, and operator guide checker.
+- [x] Register the shared runtime checker in `tools/run_openspec_guard.py`.
+- [x] Register the shared runtime checker test in `tools/ci/ci_test_manifest.json`.
+- [x] Fix `test/run_openspec_guard_json.test.py` so guard JSON tests cover the new checker.
+- [x] Run targeted PySide6 tests and confirm they pass.
+- [x] Run `python tools\run_openspec_guard.py --root .` and confirm it passes.
+- [x] Run `python tools/check_precommit_update_archive.py --root . --json` and confirm it passes.
+- [x] Run `git diff --check` and confirm it passes.
+- [x] Run the local MR review gate and confirm it passes.
+- [x] Run the local CI gate and confirm it passes.
+- [x] Merge the shared runtime default strategy into local `main`.
+- [x] Clean the integrated `implement-pyside6-shared-runtime` worktree and local feature branch.
+- [ ] After explicit user approval, provision the real shared PySide6 runtime at `D:\PythonProject_langgraph\.shared_runtimes\pyside6`.
+- [ ] After provisioning, run shared runtime `verify` and record Python, PySide6, and Qt import-only evidence.
+- [ ] After provisioning, generate or refresh real `runtime.json` with versions, paths, creation time, and helper version.
+- [ ] Select the first consumer project when a concrete request exists; run shared mode `preview` first and confirm target root, write scope, and blockers.
+- [ ] Run shared mode `apply` in the first consumer project to generate GUI shell, runtime contract, run helper, adapter, import smoke test, and rollback note.
+- [ ] Run the import-only smoke test in the first consumer project through the shared runtime.
+- [ ] Update first-consumer project-local documentation with GUI capability state, runtime contract, adapter boundary, and rollback path.
+- [ ] Extend the project opt-in checker based on first-consumer evidence to cover real runtime contract, adapter, and shared runtime smoke output.
+- [ ] If the first consumer project shows a need, add a cross-project `run-shared-pyside6-gui.ps1`; otherwise record why per-project `tools/gui/run_gui.ps1` is sufficient.
+- [ ] Execute `project-local-override` only when a project has independent-version, isolation, or self-contained packaging needs, with override reason plus dependency/lockfile and rollback evidence.
+- [ ] Run visible GUI verification or screenshot/manual QA only when the user explicitly requests visible GUI validation.
+- [ ] Enter the PyInstaller/Nuitka packaging opt-in phase and run packaging preflight only when the user explicitly requests an executable.
+
+## 18. Failure modes and triage
 
 Common failure modes must be handled as local project issues, not by weakening the shared policy:
 
@@ -376,17 +437,22 @@ Common failure modes must be handled as local project issues, not by weakening t
 | antivirus warning for packaged exe | one-file executable heuristic | record tool/version, prefer reproducible build, avoid unreviewed binaries |
 | helper cannot identify project root | unsafe target detection | fail closed and ask for `-ProjectRoot` |
 
-## 18. Future implementation tasks
+## 19. Future implementation tasks
 
-Remaining implementation changes may add:
+Remaining work must be triggered by a concrete maintenance request or a concrete consumer-project need. Do not keep listing already landed helpers, templates, checkers, skills, or CI registration as future work:
 
-- optional user-level installation or copying for the repo-local `pyside6-gui` skill source, only after an explicit user-level deployment decision;
-- extending the consumer-project opt-in checker to cover package-manager-specific lockfile behavior after a concrete target project adopts PySide6;
-- applying the existing packaging opt-in checker to a concrete target project after an actual consumer project requests executable packaging, preserving project-local lockfile/build-output evidence.
+- provision the first real shared runtime at `D:\PythonProject_langgraph\.shared_runtimes\pyside6` and run import-only verify;
+- generate or refresh the real `runtime.json` with Python, PySide6, Qt, path, and helper-version evidence;
+- when the first consumer project is selected, run shared mode preview/apply and generate GUI shell, runtime contract, adapter, import smoke test, and rollback note inside that project;
+- extend opt-in checkers from real consumer-project evidence so template presence alone cannot imply `project_gui_verified_with_shared_runtime`;
+- decide from first-consumer usage whether an additional cross-project `run-shared-pyside6-gui.ps1` is needed; if per-project `tools/gui/run_gui.ps1` is sufficient, record that tradeoff;
+- advance `project-local-override` only for a concrete project with independent-version, isolation, or self-contained packaging needs;
+- advance PyInstaller/Nuitka packaging opt-in and packaging preflight only when the user asks for an executable;
+- advance screenshots, manual QA, or `pytest-qt` style interactive tests only when the user asks for visible GUI verification.
 
-Already implemented shared-surface tasks include the minimal GUI templates, `check_pyside6_env.py` and `run_gui.ps1` templates, packaging preflight template, `ensure-pyside6-gui.ps1` preview/apply modes, rollback-note generation, disposable apply-mode fixture coverage, repo-local `pyside6-gui` skill routing through `plugin-modules`, and the cross-project operator usage guide.
+The shared surfaces already implemented can be reused as template and checker baselines, but they must not be reported as evidence that any consumer project is already `project_gui_verified_with_shared_runtime`, `project_local_override_ready`, `packaged`, or `release_ready`.
 
-## 19. Acceptance criteria
+## 20. Acceptance criteria
 
 The plan is complete when:
 
