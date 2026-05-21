@@ -471,9 +471,9 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - [x] 运行本地 CI gate 并确认通过。
 - [x] 将共享 runtime 默认策略合入本地 `main`。
 - [x] 清理已合入的 `implement-pyside6-shared-runtime` worktree 与本地 feature branch。
-- [ ] 经用户明确授权后，在 `D:\PythonProject_langgraph\.shared_runtimes\pyside6` provision 真实共享 PySide6 runtime。
-- [ ] provision 后运行共享 runtime `verify`，记录 Python、PySide6 与 Qt import-only 证据。
-- [ ] provision 后生成或刷新真实 `runtime.json`，记录版本、路径、创建时间和维护脚本版本。
+- [x] 按本轮继续实施请求，在 `D:\PythonProject_langgraph\.shared_runtimes\pyside6` provision 真实共享 PySide6 runtime；该目录仍为 gitignored 本地-only runtime。
+- [x] provision 后运行共享 runtime `verify`，记录 Python 3.12.10、PySide6 6.11.1 与 Qt 6.11.1 import-only 证据，未启动可见 GUI。
+- [x] provision 后生成真实 `runtime.json`，记录版本、路径、更新时间、import-only 状态和回滚步骤；该文件保留在 `.shared_runtimes/` 本地产物中，不进入 Git。
 - [ ] 按具体需求选择第一个消费项目，先运行 shared 模式 `preview`，确认目标项目根目录、写入范围和阻塞项。
 - [ ] 在首个消费项目中运行 shared 模式 `apply`，生成 GUI shell、runtime contract、run helper、adapter、import smoke test 与 rollback note。
 - [ ] 在首个消费项目中通过共享 runtime 运行 import-only smoke test。
@@ -499,10 +499,8 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 
 ## 19. 后续实施任务
 
-剩余任务必须由具体维护请求或具体消费项目需求触发，不再把已落地的 helper、模板、checker、skill 或 CI 注册重复列为后续任务：
+剩余任务必须由具体维护请求或具体消费项目需求触发，不再把已落地的 helper、模板、checker、skill、CI 注册或本机共享 runtime provision 重复列为后续任务：
 
-- 首次 provision `D:\PythonProject_langgraph\.shared_runtimes\pyside6` 共享 runtime，并运行 import-only verify；
-- 生成或刷新真实 `runtime.json`，记录 Python、PySide6、Qt、路径和维护脚本版本；
 - 选择首个消费项目后，运行 shared 模式 preview/apply，并在消费项目中生成 GUI shell、runtime contract、adapter、import smoke test 和 rollback note；
 - 基于真实消费项目证据扩展 opt-in checker，避免只凭模板存在就误报 `project_gui_verified_with_shared_runtime`；
 - 根据首个消费项目运行体验判断是否需要额外跨项目 `run-shared-pyside6-gui.ps1`；若 per-project `tools/gui/run_gui.ps1` 已足够，应记录不新增的依据；

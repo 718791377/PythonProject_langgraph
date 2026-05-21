@@ -33,6 +33,10 @@ REQUIRED_HELPER_SNIPPETS = [
     "local_only_artifacts",
     "blockers",
     "rollback_steps",
+    "GetTempFileName",
+    "WriteAllText($probePath",
+    "Remove-Item -LiteralPath $probePath -Force",
+    "Out-String",
 ]
 
 FORBIDDEN_HELPER_SNIPPETS = [
@@ -43,6 +47,7 @@ FORBIDDEN_HELPER_SNIPPETS = [
     "Set-ExecutionPolicy",
     "git push",
     "Remove-Item -Recurse",
+    "-c $probe",
 ]
 
 
@@ -78,6 +83,11 @@ def validate(root: Path) -> dict[str, Any]:
             errors.append(f"{HELPER.as_posix()} must install only from requirements-pyside6.txt inside the shared runtime during provision.")
         if "runtime_root_outside_shared_runtime" not in helper_text:
             errors.append(f"{HELPER.as_posix()} must fail closed when RuntimeRoot is outside .shared_runtimes/pyside6.")
+        if "GetTempFileName" not in helper_text or "-c $probe" in helper_text:
+            errors.append(
+                f"{HELPER.as_posix()} must run the import-only probe from a temporary UTF-8 Python file, "
+                "not by passing a multi-line script through `python -c`, which drops quotes in Windows PowerShell."
+            )
 
     for template in (REQUIREMENTS_TEMPLATE, RUNTIME_JSON_TEMPLATE):
         path = root / template

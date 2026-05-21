@@ -7,6 +7,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "check_pyside6_shared_runtime_contract.py"
+HELPER_PATH = REPO_ROOT / "tools" / "pyside6_gui_helpers" / "ensure-shared-pyside6-runtime.ps1"
 
 
 class PySide6SharedRuntimeContractTest(unittest.TestCase):
@@ -29,6 +30,14 @@ class PySide6SharedRuntimeContractTest(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["check_name"], "pyside6_shared_runtime_contract")
         self.assertEqual(payload["counts"]["errors"], 0)
+
+    def test_import_probe_uses_temporary_python_file(self) -> None:
+        helper = HELPER_PATH.read_text(encoding="utf-8")
+        self.assertIn("GetTempFileName", helper)
+        self.assertIn("WriteAllText($probePath", helper)
+        self.assertIn("Remove-Item -LiteralPath $probePath -Force", helper)
+        self.assertIn("Out-String", helper)
+        self.assertNotIn("-c $probe", helper)
 
 
 if __name__ == "__main__":

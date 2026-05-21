@@ -411,9 +411,9 @@ This checklist lists concrete implementation items only; it does not count “up
 - [x] Run the local CI gate and confirm it passes.
 - [x] Merge the shared runtime default strategy into local `main`.
 - [x] Clean the integrated `implement-pyside6-shared-runtime` worktree and local feature branch.
-- [ ] After explicit user approval, provision the real shared PySide6 runtime at `D:\PythonProject_langgraph\.shared_runtimes\pyside6`.
-- [ ] After provisioning, run shared runtime `verify` and record Python, PySide6, and Qt import-only evidence.
-- [ ] After provisioning, generate or refresh real `runtime.json` with versions, paths, creation time, and helper version.
+- [x] After this continue-implementation request, provision the real shared PySide6 runtime at `D:\PythonProject_langgraph\.shared_runtimes\pyside6`; the directory remains a gitignored local-only runtime.
+- [x] After provisioning, run shared runtime `verify` and record Python 3.12.10, PySide6 6.11.1, and Qt 6.11.1 import-only evidence with no visible GUI launch.
+- [x] After provisioning, generate real `runtime.json` with versions, paths, update time, import-only state, and rollback steps; keep it under `.shared_runtimes/` as a local-only artifact outside Git.
 - [ ] Select the first consumer project when a concrete request exists; run shared mode `preview` first and confirm target root, write scope, and blockers.
 - [ ] Run shared mode `apply` in the first consumer project to generate GUI shell, runtime contract, run helper, adapter, import smoke test, and rollback note.
 - [ ] Run the import-only smoke test in the first consumer project through the shared runtime.
@@ -439,10 +439,8 @@ Common failure modes must be handled as local project issues, not by weakening t
 
 ## 19. Future implementation tasks
 
-Remaining work must be triggered by a concrete maintenance request or a concrete consumer-project need. Do not keep listing already landed helpers, templates, checkers, skills, or CI registration as future work:
+Remaining work must be triggered by a concrete maintenance request or a concrete consumer-project need. Do not keep listing already landed helpers, templates, checkers, skills, CI registration, or this machine's shared runtime provision as future work:
 
-- provision the first real shared runtime at `D:\PythonProject_langgraph\.shared_runtimes\pyside6` and run import-only verify;
-- generate or refresh the real `runtime.json` with Python, PySide6, Qt, path, and helper-version evidence;
 - when the first consumer project is selected, run shared mode preview/apply and generate GUI shell, runtime contract, adapter, import smoke test, and rollback note inside that project;
 - extend opt-in checkers from real consumer-project evidence so template presence alone cannot imply `project_gui_verified_with_shared_runtime`;
 - decide from first-consumer usage whether an additional cross-project `run-shared-pyside6-gui.ps1` is needed; if per-project `tools/gui/run_gui.ps1` is sufficient, record that tradeoff;

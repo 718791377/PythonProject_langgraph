@@ -64,11 +64,25 @@ except Exception as exc:
     payload["error"] = str(exc)
 print(json.dumps(payload, ensure_ascii=False))
 '@
-    $output = & $RuntimePython -c $probe 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "PySide6 import-only probe failed: $output"
+    $probePath = [System.IO.Path]::ChangeExtension([System.IO.Path]::GetTempFileName(), ".py")
+    try {
+        [System.IO.File]::WriteAllText($probePath, $probe, $Utf8NoBom)
+        $output = & $RuntimePython $probePath 2>&1
+        $exitCode = $LASTEXITCODE
+        $combinedOutput = ($output | Out-String).Trim()
+        if ($exitCode -ne 0) {
+            throw "PySide6 import-only probe failed with exit code ${exitCode}: $combinedOutput"
+        }
+        $jsonLine = $output | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Select-Object -Last 1
+        if ([string]::IsNullOrWhiteSpace([string]$jsonLine)) {
+            throw "PySide6 import-only probe did not emit JSON output."
+        }
+        return ([string]$jsonLine | ConvertFrom-Json)
+    } finally {
+        if (Test-Path -LiteralPath $probePath -PathType Leaf) {
+            Remove-Item -LiteralPath $probePath -Force
+        }
     }
-    return ($output | Select-Object -Last 1 | ConvertFrom-Json)
 }
 
 $repoRoot = Get-RepoRoot
