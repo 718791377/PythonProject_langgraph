@@ -19,7 +19,17 @@ REQUIRED_FILES: dict[str, list[str]] = {
     "tools/gui/check_pyside6_env.py.template": ["project_root_evidence", "python_path", "python_version", "package_manager", "dependency_style", "local_only_artifacts", "blockers", "rollback_steps"],
     "tools/gui/run_gui.ps1.template": [".venv\\Scripts\\python.exe", "Project-local Python", "{{package_name}}.app"],
     "tests/test_gui_import.py.template": ["imports_without_visible_window", "MainWindow", "WorkerAdapter", "ConfigDataDirectoryAdapter"],
-    "packaging/pyside6_packaging_preflight.ps1.template": ["excludes_credentials", "excludes_browser_profiles", "release_signing_distribution_requires_separate_approval"],
+    "packaging/pyside6_packaging_preflight.ps1.template": [
+        "excludes_credentials",
+        "excludes_browser_profiles",
+        "excludes_user_private_data",
+        "reproducible_build_command",
+        "output_directory",
+        "generated_artifacts",
+        "antivirus_false_positive_risk_recorded",
+        "rollback_steps",
+        "release_signing_distribution_requires_separate_approval",
+    ],
 }
 
 FORBIDDEN_SNIPPETS: dict[str, list[str]] = {

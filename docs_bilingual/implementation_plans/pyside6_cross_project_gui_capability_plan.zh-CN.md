@@ -352,7 +352,10 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - skill 契约由 `tools/check_pyside6_gui_skill_contract.py` 和 `test/check_pyside6_gui_skill_contract.test.py` 验证，`tools/run_openspec_guard.py` 会运行该 checker；
 - 切片 4 消费项目 opt-in 证据检查已由 `tools/check_pyside6_project_opt_in_contract.py` 和 `test/check_pyside6_project_opt_in_contract.test.py` 承载；该 checker 验证目标项目根证据、单一经复核 PySide6 依赖声明面、GUI 源码边界、import-only smoke test 行为、run/env helper、回滚说明，以及不得把政策/模板/skill 存在误报为 `env_ready`、`verified` 或 `packaged` 的规则；
 - `tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json` 已登记消费项目 opt-in checker，后续 guard 和 CI 会持续验证共享 opt-in 契约；
-- 具体消费项目的切片 4 启用仍按具体项目和请求推进，不得把 helper、模板、skill 或 checker 存在误报为任意消费项目已经 `env_ready`、`template_ready` 或 `verified`；切片 5 打包仍保持按需 opt-in。
+- 具体消费项目的切片 4 启用仍按具体项目和请求推进，不得把 helper、模板、skill 或 checker 存在误报为任意消费项目已经 `env_ready`、`template_ready` 或 `verified`；
+- 切片 5 打包 opt-in 证据检查已由 `tools/check_pyside6_packaging_opt_in_contract.py` 和 `test/check_pyside6_packaging_opt_in_contract.test.py` 承载；该 checker 要求先通过项目 opt-in 基线、只选择一个打包工具（`PyInstaller` 或 `Nuitka`）、具备打包 preflight 证据、数据排除证据、回滚证据、可复现 build/output-directory 证据，以及 release/signing/distribution 单独授权边界；
+- `tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template` 已补充可复现 build 命令、生成产物、输出目录、杀软风险记录、回滚步骤、数据排除和单独发布授权等结构化字段；`tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json` 已登记打包 opt-in checker；
+- 实际可执行文件打包仍保持请求驱动，不得把 checker/模板存在误报为任意消费项目已经 `packaged` 或 `release_ready`。
 
 ## 17. 失败模式与排障
 
@@ -374,7 +377,7 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - repo-local `pyside6-gui` skill 源文件的用户级安装或 profile-helper 路由；
 - skills/profile helper 文档中的跨项目使用说明；
 - 在具体目标项目采用 PySide6 之后，继续扩展消费项目 opt-in checker 对包管理器 lockfile 行为的覆盖；
-- 打包 opt-in 覆盖 PyInstaller/Nuitka preflight 证据、数据排除、签名/分发授权边界和回滚产物。
+- 在具体消费项目请求可执行文件打包之后，继续扩展打包 opt-in checker 对目标项目 lockfile/build-output 的断言。
 
 已落地的共享面任务包括最小 GUI 模板、`check_pyside6_env.py` 与 `run_gui.ps1` 模板、打包 preflight 模板、`ensure-pyside6-gui.ps1` preview/apply 模式、回滚说明生成，以及一次性 apply-mode fixture 覆盖。
 

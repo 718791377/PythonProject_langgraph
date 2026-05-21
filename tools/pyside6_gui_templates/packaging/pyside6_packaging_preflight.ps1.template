@@ -20,6 +20,15 @@ $checks = [ordered]@{
     excludes_credentials = $true
     excludes_browser_profiles = $true
     excludes_user_private_data = $true
+    reproducible_build_command = "Record the exact local PyInstaller or Nuitka build command here before packaging."
+    output_directory = "dist"
+    generated_artifacts = @("build", "dist")
+    antivirus_false_positive_risk_recorded = $true
+    rollback_steps = @(
+        "Remove generated artifacts from the output directory.",
+        "Restore the previous packaging dependency and lock files.",
+        "Keep source templates intact unless this packaging opt-in created them."
+    )
     release_signing_distribution_requires_separate_approval = $true
 }
 $checks | ConvertTo-Json -Depth 4

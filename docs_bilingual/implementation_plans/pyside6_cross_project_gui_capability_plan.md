@@ -352,7 +352,10 @@ Current local implementation status:
 - the skill contract is verified by `tools/check_pyside6_gui_skill_contract.py` and `test/check_pyside6_gui_skill_contract.test.py`, and `tools/run_openspec_guard.py` runs that checker;
 - Slice 4 consumer-project opt-in evidence checking is now carried by `tools/check_pyside6_project_opt_in_contract.py` and `test/check_pyside6_project_opt_in_contract.test.py`; the checker verifies target-root evidence, a single reviewed PySide6 dependency surface, GUI source boundaries, import-only smoke-test behavior, run/env helpers, rollback notes, and the rule that policy/template/skill presence cannot imply `env_ready`, `verified`, or `packaged`;
 - `tools/run_openspec_guard.py` and `tools/ci/ci_test_manifest.json` register the consumer-project opt-in checker so future guard and CI runs keep the shared opt-in contract executable;
-- actual Slice 4 enablement for a specific consumer project remains project/request-specific, and helper/template/skill/checker presence must not be misreported as any consumer project already being `env_ready`, `template_ready`, or `verified`; Slice 5 packaging remains opt-in only.
+- actual Slice 4 enablement for a specific consumer project remains project/request-specific, and helper/template/skill/checker presence must not be misreported as any consumer project already being `env_ready`, `template_ready`, or `verified`;
+- Slice 5 packaging opt-in evidence checking is now carried by `tools/check_pyside6_packaging_opt_in_contract.py` and `test/check_pyside6_packaging_opt_in_contract.test.py`; the checker requires a passing project opt-in baseline, exactly one chosen tool (`PyInstaller` or `Nuitka`), packaging preflight evidence, data-exclusion evidence, rollback evidence, reproducible build/output-directory evidence, and separate approval for release/signing/distribution;
+- `tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template` now includes structured fields for reproducible build commands, generated artifacts, output directories, antivirus-risk recording, rollback steps, data exclusions, and separate release approval; `tools/run_openspec_guard.py` and `tools/ci/ci_test_manifest.json` register the packaging opt-in checker;
+- actual executable packaging remains request-driven, and checker/template presence must not be reported as any consumer project already being `packaged` or `release_ready`.
 
 ## 17. Failure modes and triage
 
@@ -374,7 +377,7 @@ Remaining implementation changes may add:
 - user-level installation or profile-helper routing for the repo-local `pyside6-gui` skill source;
 - a cross-project usage note in the skills/profile helper documentation;
 - extending the consumer-project opt-in checker to cover package-manager-specific lockfile behavior after a concrete target project adopts PySide6;
-- packaging opt-in coverage for PyInstaller/Nuitka preflight evidence, data exclusion, signing/distribution approval boundaries, and rollback artifacts.
+- extending the packaging opt-in checker with concrete target-project lockfile/build-output assertions after an actual consumer project requests executable packaging.
 
 Already implemented shared-surface tasks include the minimal GUI templates, `check_pyside6_env.py` and `run_gui.ps1` templates, packaging preflight template, `ensure-pyside6-gui.ps1` preview/apply modes, rollback-note generation, and disposable apply-mode fixture coverage.
 
