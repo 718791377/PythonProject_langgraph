@@ -31,6 +31,7 @@ GUARD_STEPS = [
     ("check_capability_switch_chain", "check_capability_switch_chain.py", "capability_switch_chain"),
     ("check_windows_cleanup_output_control", "check_windows_cleanup_output_control.py", "windows_cleanup_output_control"),
     ("check_plugin_modules_skill", "check_plugin_modules_skill.py", "plugin_modules_skill"),
+    ("check_pyside6_shared_runtime_contract", "check_pyside6_shared_runtime_contract.py", "pyside6_shared_runtime_contract"),
     ("check_pyside6_gui_template_contract", "check_pyside6_gui_template_contract.py", "pyside6_gui_template_contract"),
     ("check_pyside6_gui_preview_helper_contract", "check_pyside6_gui_preview_helper_contract.py", "pyside6_gui_preview_helper_contract"),
     ("check_pyside6_gui_skill_contract", "check_pyside6_gui_skill_contract.py", "pyside6_gui_skill_contract"),

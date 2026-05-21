@@ -24,6 +24,7 @@
     "check_plugin_modules_skill.test.py",
     "evidence_intake_pipeline.test.py",
     "evidence_adapters.test.py",
+    "check_pyside6_shared_runtime_contract.test.py",
     "check_pyside6_gui_template_contract.test.py",
     "check_pyside6_gui_preview_helper_contract.test.py",
     "check_pyside6_gui_skill_contract.test.py",

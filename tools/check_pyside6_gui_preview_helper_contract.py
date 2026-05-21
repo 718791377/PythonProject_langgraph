@@ -17,8 +17,10 @@ HELPER_PATH = Path("tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1")
 REQUIRED_JSON_FIELDS = [
     "project_root",
     "project_root_evidence",
-    "python_path",
-    "python_version",
+    "runtime_mode",
+    "shared_runtime_root",
+    "shared_runtime_python",
+    "shared_runtime_status",
     "package_manager",
     "dependency_style",
     "planned_file_changes",
@@ -37,13 +39,19 @@ REQUIRED_SCRIPT_SNIPPETS = [
     "Mode",
     "preview",
     "apply",
+    "RuntimeMode",
+    "shared",
+    "project-local-override",
+    "RuntimeRoot",
     "DependencyStyle",
-    "PythonPath",
-    "PackageVersion",
+    "OverrideReason",
     "CreateTemplate",
     "RunSmokeTest",
     "ConvertTo-Json",
     "project_root_evidence",
+    "shared_runtime_status",
+    "shared_runtime_missing",
+    "pyside6_runtime_contract.json",
     "planned_file_changes",
     "applied_file_changes",
     "rollback_note",
@@ -102,11 +110,13 @@ def run_helper(
     fixture: Path,
     *,
     mode: str = "preview",
+    runtime_mode: str = "shared",
+    runtime_root: Path | None = None,
     dependency_style: str = "auto",
     package_name: str = "sample_gui",
     create_template: bool = True,
     run_smoke_test: bool = True,
-    extra_args: list[str] | None = None,
+    override_reason: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     powershell = find_powershell()
     if not powershell:
@@ -122,18 +132,22 @@ def run_helper(
         str(fixture),
         "-Mode",
         mode,
+        "-RuntimeMode",
+        runtime_mode,
         "-DependencyStyle",
         dependency_style,
         "-PackageName",
         package_name,
     ]
+    if runtime_root is not None:
+        command.extend(["-RuntimeRoot", str(runtime_root)])
+    if override_reason:
+        command.extend(["-OverrideReason", override_reason])
     if create_template:
         command.append("-CreateTemplate")
     if run_smoke_test:
         command.append("-RunSmokeTest")
     command.append("-Json")
-    if extra_args:
-        command.extend(extra_args)
     return subprocess.run(command, cwd=repo_root, capture_output=True, text=True, encoding="utf-8", check=False)
 
 
@@ -141,22 +155,7 @@ def make_fixture(root: Path, *, name: str, dependency_surface: str) -> Path:
     fixture = root / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}"
     fixture.mkdir(parents=True, exist_ok=True)
     if dependency_surface == "pyproject":
-        (fixture / "pyproject.toml").write_text(
-            "[project]\nname = \"sample\"\nversion = \"0.1.0\"\n",
-            encoding="utf-8",
-        )
-    elif dependency_surface == "uv":
-        (fixture / "pyproject.toml").write_text(
-            "[project]\nname = \"sample\"\nversion = \"0.1.0\"\n",
-            encoding="utf-8",
-        )
-        (fixture / "uv.lock").write_text("# fixture lockfile marker\n", encoding="utf-8")
-    elif dependency_surface == "poetry":
-        (fixture / "pyproject.toml").write_text(
-            "[tool.poetry]\nname = \"sample\"\nversion = \"0.1.0\"\ndescription = \"fixture\"\nauthors = []\n",
-            encoding="utf-8",
-        )
-        (fixture / "poetry.lock").write_text("# fixture lockfile marker\n", encoding="utf-8")
+        (fixture / "pyproject.toml").write_text("[project]\nname = \"sample\"\nversion = \"0.1.0\"\n", encoding="utf-8")
     elif dependency_surface == "requirements":
         (fixture / "requirements.txt").write_text("pytest\n", encoding="utf-8")
     elif dependency_surface == "none":
@@ -166,6 +165,26 @@ def make_fixture(root: Path, *, name: str, dependency_surface: str) -> Path:
     if dependency_surface != "none":
         (fixture / "README.md").write_text("# Sample\n", encoding="utf-8")
     return fixture
+
+
+def make_fake_runtime(root: Path, name: str) -> Path:
+    runtime = root / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}" / ".shared_runtimes" / "pyside6"
+    python = runtime / ".venv" / "Scripts" / "python.exe"
+    python.parent.mkdir(parents=True, exist_ok=True)
+    python.write_text("fake runtime python marker\n", encoding="utf-8")
+    (runtime / "runtime.json").write_text(
+        json.dumps(
+            {
+                "runtime_mode": "shared",
+                "runtime_root": str(runtime),
+                "runtime_python": str(python),
+                "import_only_verified": True,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return runtime
 
 
 def snapshot_files(root: Path) -> set[str]:
@@ -188,25 +207,24 @@ def validate_preview_payload(payload: dict[str, Any], errors: list[str]) -> None
         errors.append("Preview helper JSON must report mode=preview.")
     if payload.get("apply_mode") is not False:
         errors.append("Preview helper JSON must report apply_mode=false.")
-    if payload.get("dependency_style") != "pyproject-extra":
-        errors.append("Preview helper should detect pyproject fixture as dependency_style=pyproject-extra.")
+    if payload.get("runtime_mode") != "shared":
+        errors.append("Preview helper must default runtime_mode=shared.")
     planned = payload.get("planned_file_changes") or []
-    if not any(isinstance(item, dict) and item.get("path") == "pyproject.toml" for item in planned):
-        errors.append("Preview helper did not plan pyproject.toml dependency update for pyproject fixture.")
+    if any(isinstance(item, dict) and item.get("path") in {"pyproject.toml", "requirements-gui.txt"} for item in planned):
+        errors.append("Shared-runtime preview must not plan project dependency writes.")
+    if not any(isinstance(item, dict) and item.get("path") == "tools/gui/pyside6_runtime_contract.json" for item in planned):
+        errors.append("Preview helper did not plan shared runtime contract creation.")
     if not any(isinstance(item, dict) and item.get("path") == "src/sample_gui/app.py" for item in planned):
         errors.append("Preview helper did not plan sample_gui app template creation when -CreateTemplate is set.")
     if payload.get("applied_file_changes") not in ([], None):
         errors.append("Preview helper must not report applied_file_changes in preview mode.")
     command_evidence = payload.get("package_manager_command_evidence") or {}
-    if command_evidence.get("project_package_manager") != "pyproject":
-        errors.append("Preview helper should report project_package_manager=pyproject for pyproject fixture command evidence.")
-    if command_evidence.get("install_command") != 'python -m pip install -e ".[gui]"':
-        errors.append("Preview helper should emit pyproject-extra install guidance for pyproject fixtures.")
-    if "lockfile" not in str(command_evidence.get("lockfile_expectation", "")).lower():
-        errors.append("Preview helper command evidence must include lockfile expectation text.")
-    planned_commands = payload.get("planned_commands") or []
-    if not any(isinstance(item, dict) and item.get("affects_lockfile") is True for item in planned_commands):
-        errors.append("Preview helper planned_commands must identify the command/guidance that can affect lockfile state.")
+    if command_evidence.get("runtime_mode") != "shared":
+        errors.append("Preview helper command evidence must report runtime_mode=shared.")
+    if command_evidence.get("install_command") not in ("", None):
+        errors.append("Shared-runtime preview must not emit project-local PySide6 install guidance.")
+    if "shared runtime" not in str(command_evidence.get("lockfile_expectation", "")).lower():
+        errors.append("Shared-runtime command evidence must state no project lockfile mutation.")
 
 
 def validate_apply_payload(payload: dict[str, Any], fixture: Path, errors: list[str]) -> None:
@@ -218,12 +236,13 @@ def validate_apply_payload(payload: dict[str, Any], fixture: Path, errors: list[
     if payload.get("apply_mode") is not True:
         errors.append("Apply helper JSON must report apply_mode=true.")
     if not payload.get("ok"):
-        errors.append(f"Apply helper reported blockers for a valid requirements fixture: {payload.get('blockers')}")
+        errors.append(f"Apply helper reported blockers for a valid shared-runtime fixture: {payload.get('blockers')}")
     expected_paths = [
-        "requirements-gui.txt",
         "src/sample_gui/__init__.py",
         "src/sample_gui/app.py",
         "src/sample_gui/main_window.py",
+        "tools/gui/pyside6_runtime_contract.json",
+        "tools/gui/adapters/README.md",
         "tools/gui/check_pyside6_env.py",
         "tools/gui/run_gui.ps1",
         "tests/test_gui_import.py",
@@ -231,25 +250,30 @@ def validate_apply_payload(payload: dict[str, Any], fixture: Path, errors: list[
     ]
     for rel in expected_paths:
         if not (fixture / rel).exists():
-            errors.append(f"Apply helper did not create expected project-local file: {rel}")
-    requirements = fixture / "requirements-gui.txt"
-    if requirements.exists() and "PySide6" not in requirements.read_text(encoding="utf-8"):
-        errors.append("requirements-gui.txt does not declare PySide6 after apply.")
-    app = fixture / "src" / "sample_gui" / "app.py"
-    if app.exists() and "{{" in app.read_text(encoding="utf-8"):
-        errors.append("Generated app.py still contains unresolved template placeholders.")
+            errors.append(f"Apply helper did not create expected project-local shared-runtime file: {rel}")
+    if (fixture / "requirements-gui.txt").exists():
+        errors.append("Shared-runtime apply must not create requirements-gui.txt.")
+    contract = fixture / "tools" / "gui" / "pyside6_runtime_contract.json"
+    if contract.exists():
+        contract_data = json.loads(contract.read_text(encoding="utf-8"))
+        if contract_data.get("runtime_mode") != "shared":
+            errors.append("Generated runtime contract must use runtime_mode=shared.")
     applied = payload.get("applied_file_changes") or []
-    if not any(isinstance(item, dict) and item.get("path") == "requirements-gui.txt" for item in applied):
-        errors.append("Apply helper JSON did not report requirements-gui.txt in applied_file_changes.")
+    if not any(isinstance(item, dict) and item.get("path") == "tools/gui/pyside6_runtime_contract.json" for item in applied):
+        errors.append("Apply helper JSON did not report runtime contract in applied_file_changes.")
     if payload.get("rollback_note") != "docs/pyside6_gui_rollback.md":
         errors.append("Apply helper JSON must report rollback_note=docs/pyside6_gui_rollback.md.")
-    command_evidence = payload.get("package_manager_command_evidence") or {}
-    if command_evidence.get("project_package_manager") != "pip":
-        errors.append("Apply helper should report project_package_manager=pip for requirements fixtures command evidence.")
-    if command_evidence.get("install_command") != "python -m pip install -r requirements-gui.txt":
-        errors.append("Apply helper should emit requirements-gui install guidance for requirements fixtures.")
-    if command_evidence.get("run_smoke_test_requested") is not True:
-        errors.append("Apply helper command evidence should preserve whether -RunSmokeTest was requested.")
+
+
+def validate_override_payload(payload: dict[str, Any], fixture: Path, errors: list[str]) -> None:
+    if not payload.get("ok"):
+        errors.append(f"Project-local override apply unexpectedly failed: {payload.get('blockers')}")
+    if payload.get("runtime_mode") != "project-local-override":
+        errors.append("Override helper JSON must report runtime_mode=project-local-override.")
+    if not (fixture / "requirements-gui.txt").exists():
+        errors.append("Project-local override apply should create requirements-gui.txt.")
+    elif "PySide6" not in (fixture / "requirements-gui.txt").read_text(encoding="utf-8"):
+        errors.append("Project-local override requirements-gui.txt must declare PySide6.")
 
 
 def validate_fail_closed_payload(payload: dict[str, Any], fixture: Path, errors: list[str]) -> None:
@@ -260,31 +284,6 @@ def validate_fail_closed_payload(payload: dict[str, Any], fixture: Path, errors:
         errors.append("Apply helper missing unsafe_project_root blocker for fixture without root evidence.")
     if snapshot_files(fixture):
         errors.append("Fail-closed apply helper wrote files into an unsafe fixture.")
-
-
-def validate_package_manager_command_payload(
-    payload: dict[str, Any],
-    errors: list[str],
-    *,
-    expected_package_manager: str,
-    expected_dependency_style: str,
-    expected_dependency_command: str,
-    expected_install_command: str,
-    expected_lockfile_command: str,
-) -> None:
-    if payload.get("mode") != "preview":
-        errors.append(f"{expected_package_manager} command sample must use preview mode.")
-    command_evidence = payload.get("package_manager_command_evidence") or {}
-    if command_evidence.get("project_package_manager") != expected_package_manager:
-        errors.append(f"Expected project_package_manager={expected_package_manager}, got {command_evidence.get('project_package_manager')!r}.")
-    if command_evidence.get("dependency_style") != expected_dependency_style:
-        errors.append(f"Expected dependency_style={expected_dependency_style}, got {command_evidence.get('dependency_style')!r}.")
-    if command_evidence.get("project_native_dependency_command") != expected_dependency_command:
-        errors.append(f"Expected dependency command `{expected_dependency_command}`, got {command_evidence.get('project_native_dependency_command')!r}.")
-    if command_evidence.get("install_command") != expected_install_command:
-        errors.append(f"Expected install command `{expected_install_command}`, got {command_evidence.get('install_command')!r}.")
-    if command_evidence.get("lockfile_update_command") != expected_lockfile_command:
-        errors.append(f"Expected lockfile command `{expected_lockfile_command}`, got {command_evidence.get('lockfile_update_command')!r}.")
 
 
 def validate(root: Path) -> dict[str, Any]:
@@ -306,24 +305,33 @@ def validate(root: Path) -> dict[str, Any]:
 
     preview_payload: dict[str, Any] | None = None
     apply_payload: dict[str, Any] | None = None
+    override_payload: dict[str, Any] | None = None
     fail_closed_payload: dict[str, Any] | None = None
-    uv_payload: dict[str, Any] | None = None
-    poetry_payload: dict[str, Any] | None = None
+    missing_runtime_payload: dict[str, Any] | None = None
     created_fixtures: list[Path] = []
     if helper.exists() and not errors:
         preview_fixture = make_fixture(root, name="pyside6-preview", dependency_surface="pyproject")
         apply_fixture = make_fixture(root, name="pyside6-apply", dependency_surface="requirements")
+        override_fixture = make_fixture(root, name="pyside6-override", dependency_surface="requirements")
         unsafe_fixture = make_fixture(root, name="pyside6-unsafe", dependency_surface="none")
-        uv_fixture = make_fixture(root, name="pyside6-uv", dependency_surface="uv")
-        poetry_fixture = make_fixture(root, name="pyside6-poetry", dependency_surface="poetry")
-        created_fixtures.extend([preview_fixture, apply_fixture, unsafe_fixture, uv_fixture, poetry_fixture])
+        missing_runtime_fixture = make_fixture(root, name="pyside6-missing-runtime", dependency_surface="requirements")
+        fake_runtime = make_fake_runtime(root, "pyside6-runtime")
+        created_fixtures.extend([preview_fixture, apply_fixture, override_fixture, unsafe_fixture, missing_runtime_fixture, fake_runtime.parent])
         before = snapshot_files(preview_fixture)
         try:
-            preview_result = run_helper(root, preview_fixture, mode="preview", dependency_style="auto")
-            apply_result = run_helper(root, apply_fixture, mode="apply", dependency_style="requirements")
-            fail_result = run_helper(root, unsafe_fixture, mode="apply", dependency_style="requirements", create_template=True)
-            uv_result = run_helper(root, uv_fixture, mode="preview", dependency_style="auto", create_template=False, run_smoke_test=False)
-            poetry_result = run_helper(root, poetry_fixture, mode="preview", dependency_style="auto", create_template=False, run_smoke_test=False)
+            preview_result = run_helper(root, preview_fixture, mode="preview", runtime_mode="shared")
+            apply_result = run_helper(root, apply_fixture, mode="apply", runtime_mode="shared", runtime_root=fake_runtime)
+            override_result = run_helper(
+                root,
+                override_fixture,
+                mode="apply",
+                runtime_mode="project-local-override",
+                runtime_root=fake_runtime,
+                dependency_style="requirements",
+                override_reason="fixture isolated PySide6 version",
+            )
+            fail_result = run_helper(root, unsafe_fixture, mode="apply", runtime_mode="shared", runtime_root=fake_runtime)
+            missing_runtime_result = run_helper(root, missing_runtime_fixture, mode="apply", runtime_mode="shared")
         except RuntimeError as exc:
             errors.append(str(exc))
         else:
@@ -333,53 +341,39 @@ def validate(root: Path) -> dict[str, Any]:
             if preview_result.returncode != 0:
                 errors.append(f"Preview helper returned {preview_result.returncode}: {preview_result.stderr or preview_result.stdout}")
             if apply_result.returncode != 0:
-                errors.append(f"Apply helper returned {apply_result.returncode}: {apply_result.stderr or apply_result.stdout}")
+                errors.append(f"Shared apply helper returned {apply_result.returncode}: {apply_result.stderr or apply_result.stdout}")
+            if override_result.returncode != 0:
+                errors.append(f"Project-local override apply helper returned {override_result.returncode}: {override_result.stderr or override_result.stdout}")
             if fail_result.returncode == 0:
                 errors.append("Fail-closed apply scenario returned success for unsafe fixture.")
-            if uv_result.returncode != 0:
-                errors.append(f"uv preview helper returned {uv_result.returncode}: {uv_result.stderr or uv_result.stdout}")
-            if poetry_result.returncode != 0:
-                errors.append(f"Poetry preview helper returned {poetry_result.returncode}: {poetry_result.stderr or poetry_result.stdout}")
+            if missing_runtime_result.returncode == 0:
+                errors.append("Shared apply scenario returned success when the shared runtime was missing.")
             preview_payload = load_json_stdout(preview_result, errors, "Preview helper")
-            apply_payload = load_json_stdout(apply_result, errors, "Apply helper")
+            apply_payload = load_json_stdout(apply_result, errors, "Shared apply helper")
+            override_payload = load_json_stdout(override_result, errors, "Override apply helper")
             fail_closed_payload = load_json_stdout(fail_result, errors, "Fail-closed apply helper")
-            uv_payload = load_json_stdout(uv_result, errors, "uv preview helper")
-            poetry_payload = load_json_stdout(poetry_result, errors, "Poetry preview helper")
+            missing_runtime_payload = load_json_stdout(missing_runtime_result, errors, "Missing-runtime apply helper")
             if preview_payload:
                 if not preview_payload.get("ok"):
                     errors.append(f"Preview helper reported blockers for a valid pyproject fixture: {preview_payload.get('blockers')}")
                 validate_preview_payload(preview_payload, errors)
             if apply_payload:
                 validate_apply_payload(apply_payload, apply_fixture, errors)
+            if override_payload:
+                validate_override_payload(override_payload, override_fixture, errors)
             if fail_closed_payload:
                 validate_fail_closed_payload(fail_closed_payload, unsafe_fixture, errors)
-            if uv_payload:
-                validate_package_manager_command_payload(
-                    uv_payload,
-                    errors,
-                    expected_package_manager="uv",
-                    expected_dependency_style="group",
-                    expected_dependency_command="uv add --group gui PySide6",
-                    expected_install_command="uv sync --group gui",
-                    expected_lockfile_command="uv lock",
-                )
-            if poetry_payload:
-                validate_package_manager_command_payload(
-                    poetry_payload,
-                    errors,
-                    expected_package_manager="poetry",
-                    expected_dependency_style="pyproject-extra",
-                    expected_dependency_command="poetry add --optional PySide6",
-                    expected_install_command="poetry install --extras gui",
-                    expected_lockfile_command="poetry lock",
-                )
+            if missing_runtime_payload:
+                blocker_codes = {item.get("code") for item in missing_runtime_payload.get("blockers", []) if isinstance(item, dict)}
+                if "shared_runtime_missing" not in blocker_codes:
+                    errors.append("Shared apply helper must report shared_runtime_missing when runtime Python is absent.")
         finally:
             for fixture in created_fixtures:
                 shutil.rmtree(fixture, ignore_errors=True)
 
-    info.append("PySide6 GUI helper is preview-first and supports explicit project-local apply mode with rollback evidence.")
+    info.append("PySide6 GUI helper is preview-first, shared-runtime default, and project-local override gated.")
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "check_name": CHECK_NAME,
         "ok": not errors,
@@ -387,9 +381,9 @@ def validate(root: Path) -> dict[str, Any]:
         "helper": str(helper),
         "preview_sample": preview_payload,
         "apply_sample": apply_payload,
+        "override_sample": override_payload,
         "fail_closed_sample": fail_closed_payload,
-        "uv_sample": uv_payload,
-        "poetry_sample": poetry_payload,
+        "missing_runtime_sample": missing_runtime_payload,
         "errors": errors,
         "warnings": warnings,
         "info": info,

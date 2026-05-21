@@ -13,13 +13,17 @@ from typing import Any
 
 try:
     import tomllib
-except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback is not expected here.
+except ModuleNotFoundError:  # pragma: no cover
     tomllib = None  # type: ignore[assignment]
 
 
 CHECK_NAME = "pyside6_project_opt_in_contract"
 ROLLBACK_NOTE = Path("docs/pyside6_gui_rollback.md")
+RUNTIME_CONTRACT = Path("tools/gui/pyside6_runtime_contract.json")
+ADAPTER_README = Path("tools/gui/adapters/README.md")
 REQUIRED_PROJECT_FILES = [
+    RUNTIME_CONTRACT,
+    ADAPTER_README,
     Path("tools/gui/run_gui.ps1"),
     Path("tools/gui/check_pyside6_env.py"),
     Path("tests/test_gui_import.py"),
@@ -34,6 +38,7 @@ REQUIRED_MAIN_WINDOW_SNIPPETS = [
 ]
 VISIBLE_TEST_SNIPPETS = [".show()", "app.exec()", "QApplication.exec("]
 PYSIDE6_REQUIREMENT_RE = re.compile(r"^\s*PySide6(?:\s*(?:==|~=|>=|<=|>|<|!=).*)?\s*(?:#.*)?$", re.IGNORECASE)
+DEFAULT_SHARED_RUNTIME_ROOT = r"D:\PythonProject_langgraph\.shared_runtimes\pyside6"
 
 
 def read_text(path: Path) -> str:
@@ -82,11 +87,11 @@ def collect_pyproject_surfaces(project_root: Path, errors: list[str]) -> list[di
     if not pyproject.exists():
         return []
     if tomllib is None:
-        errors.append("tomllib is unavailable; cannot inspect pyproject.toml for PySide6 opt-in evidence.")
+        errors.append("tomllib is unavailable; cannot inspect pyproject.toml for PySide6 override evidence.")
         return []
     try:
         data = tomllib.loads(read_text(pyproject))
-    except Exception as exc:  # pragma: no cover - exact TOML parser exception is version-specific.
+    except Exception as exc:  # pragma: no cover
         errors.append(f"Cannot parse pyproject.toml: {exc}")
         return []
 
@@ -132,71 +137,63 @@ def collect_lockfile_evidence(project_root: Path, dependency_surfaces: list[dict
             "manager": "unknown",
             "review_required": True,
             "env_ready_inferred_from_lockfile": False,
+            "project_local_override_only": True,
         }
         if kind == "requirements":
-            record.update(
-                {
-                    "manager": "pip",
-                    "lockfile_required": False,
-                    "lockfile_path": "requirements-gui.txt",
-                    "lockfile_present": True,
-                    "note": "requirements-gui.txt declares the GUI dependency; no lockfile is required by this shared contract.",
-                }
-            )
+            record.update({"manager": "pip", "lockfile_path": "requirements-gui.txt", "lockfile_present": True})
         elif kind == "dependency-group" and uv_lock.exists():
-            record.update(
-                {
-                    "manager": "uv",
-                    "lockfile_required": True,
-                    "lockfile_path": "uv.lock",
-                    "lockfile_present": True,
-                    "note": "uv.lock exists and must be reviewed with the PySide6 GUI opt-in diff before claiming environment readiness.",
-                }
-            )
+            record.update({"manager": "uv", "lockfile_required": True, "lockfile_path": "uv.lock", "lockfile_present": True})
         elif kind == "dependency-group":
-            record.update(
-                {
-                    "manager": "dependency-group",
-                    "lockfile_required": False,
-                    "note": "No uv.lock marker was found; use the target project's native dependency-group lockfile workflow if one exists.",
-                }
-            )
-            warnings.append("PySide6 is declared in a dependency group without uv.lock; verify the target project's lockfile workflow manually.")
+            record.update({"manager": "dependency-group"})
+            warnings.append("PySide6 project-local override dependency group has no uv.lock marker; verify the lockfile workflow manually.")
         elif kind == "poetry-group":
-            record.update(
-                {
-                    "manager": "poetry",
-                    "lockfile_required": True,
-                    "lockfile_path": "poetry.lock",
-                    "lockfile_present": poetry_lock.exists(),
-                    "note": "Poetry GUI group opt-in requires poetry.lock review before claiming environment readiness.",
-                }
-            )
+            record.update({"manager": "poetry", "lockfile_required": True, "lockfile_path": "poetry.lock", "lockfile_present": poetry_lock.exists()})
             if not poetry_lock.exists():
-                errors.append("Poetry GUI dependency group is present but poetry.lock is missing; generate or document the Poetry lockfile before accepting opt-in evidence.")
+                errors.append("Poetry GUI override dependency group is present but poetry.lock is missing.")
         elif kind == "pyproject-extra" and poetry_lock.exists():
-            record.update(
-                {
-                    "manager": "poetry",
-                    "lockfile_required": True,
-                    "lockfile_path": "poetry.lock",
-                    "lockfile_present": True,
-                    "note": "poetry.lock exists and must be reviewed with the optional GUI extra before claiming environment readiness.",
-                }
-            )
+            record.update({"manager": "poetry", "lockfile_required": True, "lockfile_path": "poetry.lock", "lockfile_present": True})
         elif kind == "pyproject-extra":
-            record.update(
-                {
-                    "manager": "pyproject",
-                    "lockfile_required": False,
-                    "note": "No project lockfile marker was found; do not infer env_ready from the optional dependency declaration alone.",
-                }
-            )
-        else:
-            record["note"] = "Unknown dependency surface; do not infer lockfile or environment readiness."
+            record.update({"manager": "pyproject"})
         evidence.append(record)
 
     return evidence
+
+
+def load_runtime_contract(project_root: Path, errors: list[str]) -> dict[str, Any]:
+    path = project_root / RUNTIME_CONTRACT
+    if not path.exists():
+        return {}
+    try:
+        contract = json.loads(read_text(path))
+    except json.JSONDecodeError as exc:
+        errors.append(f"{RUNTIME_CONTRACT} is not valid JSON: {exc}")
+        return {}
+    return contract
+
+
+def validate_runtime_contract(contract: dict[str, Any], errors: list[str], warnings: list[str]) -> None:
+    if not contract:
+        errors.append(f"Missing shared PySide6 runtime contract: {RUNTIME_CONTRACT}")
+        return
+    runtime_mode = contract.get("runtime_mode")
+    if runtime_mode not in {"shared", "project-local-override"}:
+        errors.append(f"{RUNTIME_CONTRACT} runtime_mode must be shared or project-local-override.")
+    if runtime_mode == "shared":
+        runtime_root = str(contract.get("runtime_root", ""))
+        runtime_python = str(contract.get("runtime_python", ""))
+        if DEFAULT_SHARED_RUNTIME_ROOT not in runtime_root:
+            errors.append(f"{RUNTIME_CONTRACT} must point shared runtime root at {DEFAULT_SHARED_RUNTIME_ROOT}.")
+        if DEFAULT_SHARED_RUNTIME_ROOT not in runtime_python:
+            errors.append(f"{RUNTIME_CONTRACT} must point shared runtime Python at {DEFAULT_SHARED_RUNTIME_ROOT}.")
+        if contract.get("project_local_override") is True:
+            errors.append(f"{RUNTIME_CONTRACT} shared mode must not set project_local_override=true.")
+    if runtime_mode == "project-local-override":
+        if not contract.get("override_reason"):
+            errors.append(f"{RUNTIME_CONTRACT} project-local-override mode requires override_reason.")
+        warnings.append("Project-local PySide6 override is accepted only with dependency, lockfile/version, and rollback evidence.")
+    for key in ["visible_gui_requires_explicit_request", "packaging_requires_explicit_request"]:
+        if contract.get(key) is not True:
+            errors.append(f"{RUNTIME_CONTRACT} must set {key}=true.")
 
 
 def find_gui_packages(project_root: Path) -> list[dict[str, Any]]:
@@ -238,14 +235,18 @@ def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces:
     if not evidence:
         errors.append("No reliable project-root evidence found; expected .git, pyproject.toml, requirements, README, setup file, poetry.lock, or uv.lock.")
 
+    runtime_contract = load_runtime_contract(project_root, errors) if project_root.exists() else {}
+    validate_runtime_contract(runtime_contract, errors, warnings)
+    runtime_mode = runtime_contract.get("runtime_mode", "unknown") if runtime_contract else "unknown"
+
     dependency_surfaces = collect_dependency_surfaces(project_root, errors) if project_root.exists() else []
-    if not dependency_surfaces:
-        errors.append("No project-local PySide6 dependency declaration found in requirements-gui.txt, requirements*.txt, pyproject optional dependencies, dependency groups, or Poetry gui group.")
+    if dependency_surfaces and runtime_mode == "shared":
+        errors.append("Shared runtime mode must not declare PySide6 in project-local dependency surfaces; use project-local-override with override_reason if needed.")
+    if runtime_mode == "project-local-override" and not dependency_surfaces:
+        errors.append("Project-local override requires a PySide6 dependency declaration in the target project.")
     if len(dependency_surfaces) > 1 and not allow_duplicate_dependency_surfaces:
         surface_names = ", ".join(f"{item.get('kind')}:{item.get('path')}" for item in dependency_surfaces)
-        errors.append(f"PySide6 appears in multiple dependency surfaces; keep one project-native declaration or pass --allow-duplicate-dependency-surfaces after human review: {surface_names}")
-    if any(item.get("kind") == "requirements" and not item.get("preferred") for item in dependency_surfaces):
-        warnings.append("PySide6 is declared in a requirements*.txt file other than requirements-gui.txt; verify this matches the target project's dependency convention.")
+        errors.append(f"PySide6 appears in multiple dependency surfaces; keep one project-native override declaration or pass --allow-duplicate-dependency-surfaces after human review: {surface_names}")
     lockfile_evidence = collect_lockfile_evidence(project_root, dependency_surfaces, errors, warnings) if project_root.exists() else []
 
     existing_files = []
@@ -257,7 +258,7 @@ def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces:
         else:
             missing_files.append(str(relative).replace("\\", "/"))
     if missing_files:
-        errors.append("Missing required PySide6 opt-in project files: " + ", ".join(missing_files))
+        errors.append("Missing required PySide6 shared-runtime project files: " + ", ".join(missing_files))
 
     packages = find_gui_packages(project_root) if project_root.exists() else []
     if not packages:
@@ -281,27 +282,39 @@ def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces:
     rollback = project_root / ROLLBACK_NOTE
     if rollback.exists():
         rollback_text = read_text(rollback).lower()
-        for snippet in ["rollback", "pyside6", "dependency"]:
+        for snippet in ["rollback", "pyside6", "shared runtime"]:
             if snippet not in rollback_text:
                 errors.append(f"{ROLLBACK_NOTE} must mention {snippet!r}.")
 
     run_gui = project_root / "tools" / "gui" / "run_gui.ps1"
     if run_gui.exists():
         run_text = read_text(run_gui)
-        for snippet in [".venv", "PYTHONPATH", "-m"]:
+        for snippet in ["pyside6_runtime_contract.json", "runtime_mode", "PYTHONPATH", "-AllowVisibleGui"]:
             if snippet not in run_text:
-                errors.append(f"tools/gui/run_gui.ps1 must include project-local launch evidence snippet `{snippet}`.")
+                errors.append(f"tools/gui/run_gui.ps1 must include shared runtime launch evidence snippet `{snippet}`.")
+        if ".venv\\Scripts\\python.exe" in run_text and runtime_mode == "shared":
+            errors.append("tools/gui/run_gui.ps1 must not hard-code a project .venv Python in shared runtime mode.")
 
     env_check = project_root / "tools" / "gui" / "check_pyside6_env.py"
-    if env_check.exists() and "PySide6" not in read_text(env_check):
-        errors.append("tools/gui/check_pyside6_env.py must mention PySide6 import/environment evidence.")
+    if env_check.exists():
+        env_text = read_text(env_check)
+        for snippet in ["PySide6", "shared_runtime_root", "shared_runtime_python", "import_only_verified"]:
+            if snippet not in env_text:
+                errors.append(f"tools/gui/check_pyside6_env.py must mention shared runtime evidence snippet `{snippet}`.")
 
     if not errors:
-        info.append("Consumer project PySide6 opt-in has dependency, template, import-smoke, run-helper, and rollback evidence.")
+        info.append("Consumer project PySide6 opt-in has shared runtime contract, template, import-smoke, run-helper, adapter, and rollback evidence.")
 
-    capability_state = "template_ready" if dependency_surfaces and packages and not missing_files else "declared" if dependency_surfaces else "candidate"
+    capability_state = "candidate"
+    if runtime_contract:
+        capability_state = "shared_runtime_declared"
+    if runtime_contract and packages and not missing_files:
+        capability_state = "project_gui_template_ready"
+    if runtime_mode == "project-local-override" and dependency_surfaces and not errors:
+        capability_state = "project_local_override_ready"
+
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "check_name": CHECK_NAME,
         "mode": "project",
@@ -309,6 +322,7 @@ def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces:
         "project_root": str(project_root),
         "project_root_evidence": evidence,
         "capability_state": capability_state,
+        "runtime_contract": runtime_contract,
         "dependency_surfaces": dependency_surfaces,
         "lockfile_evidence": lockfile_evidence,
         "gui_packages": packages,
@@ -336,8 +350,29 @@ def write(path: Path, content: str) -> None:
 
 def make_valid_fixture(root: Path, name: str) -> Path:
     fixture = root / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}"
-    write(fixture / "README.md", "# Sample PySide6 opt-in fixture\n")
-    write(fixture / "requirements-gui.txt", "PySide6\n")
+    write(fixture / "README.md", "# Sample PySide6 shared-runtime opt-in fixture\n")
+    write(
+        fixture / RUNTIME_CONTRACT,
+        json.dumps(
+            {
+                "schema_version": 1,
+                "runtime_mode": "shared",
+                "runtime_owner_repo": "D:\\PythonProject_langgraph",
+                "runtime_root": DEFAULT_SHARED_RUNTIME_ROOT,
+                "runtime_python": DEFAULT_SHARED_RUNTIME_ROOT + "\\.venv\\Scripts\\python.exe",
+                "project_root": str(fixture),
+                "gui_package": "sample_gui",
+                "business_runtime_mode": "project-local-adapter",
+                "visible_gui_requires_explicit_request": True,
+                "packaging_requires_explicit_request": True,
+                "project_local_override": False,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+    )
+    write(fixture / ADAPTER_README, "# Adapters\n\nUse shared runtime and keep business dependencies project-local.\n")
     write(fixture / "src" / "sample_gui" / "__init__.py", '"""Sample GUI."""\n')
     write(
         fixture / "src" / "sample_gui" / "app.py",
@@ -357,10 +392,42 @@ def make_valid_fixture(root: Path, name: str) -> Path:
         "    module = importlib.import_module('sample_gui.main_window')\n"
         "    assert hasattr(module, 'MainWindow')\n",
     )
-    write(fixture / "tools" / "gui" / "run_gui.ps1", "$env:PYTHONPATH = Join-Path $ProjectRoot 'src'\n& .\\.venv\\Scripts\\python.exe -m sample_gui.app\n")
-    write(fixture / "tools" / "gui" / "check_pyside6_env.py", "from PySide6.QtWidgets import QApplication\nprint('PySide6 ok')\n")
-    write(fixture / "docs" / "pyside6_gui_rollback.md", "# PySide6 GUI rollback\n\nRemove the PySide6 dependency and generated GUI files.\n")
+    write(
+        fixture / "tools" / "gui" / "run_gui.ps1",
+        "$RuntimeContract = Join-Path $PSScriptRoot 'pyside6_runtime_contract.json'\n"
+        "$contract = Get-Content -LiteralPath $RuntimeContract -Raw -Encoding UTF8 | ConvertFrom-Json\n"
+        "if ($contract.runtime_mode -ne 'shared') { throw 'runtime_mode must be shared' }\n"
+        "# Visible GUI launch requires the explicit -AllowVisibleGui operator flag.\n"
+        "param([switch]$AllowVisibleGui)\n"
+        "$env:PYTHONPATH = Join-Path $ProjectRoot 'src'\n"
+        "& $contract.runtime_python -m sample_gui.app\n",
+    )
+    write(
+        fixture / "tools" / "gui" / "check_pyside6_env.py",
+        "from PySide6.QtWidgets import QApplication\n"
+        "payload = {'shared_runtime_root': '', 'shared_runtime_python': '', 'import_only_verified': True}\n"
+        "print('PySide6 shared runtime ok')\n",
+    )
+    write(fixture / ROLLBACK_NOTE, "# PySide6 GUI rollback\n\nRollback shared runtime GUI files; keep shared runtime unchanged.\n")
     return fixture
+
+
+def add_project_local_override(project: Path, *, kind: str = "requirements", include_lockfile: bool = True) -> None:
+    contract = json.loads(read_text(project / RUNTIME_CONTRACT))
+    contract.update({"runtime_mode": "project-local-override", "project_local_override": True, "override_reason": "fixture requires isolated PySide6 version"})
+    write(project / RUNTIME_CONTRACT, json.dumps(contract, ensure_ascii=False, indent=2) + "\n")
+    if kind == "requirements":
+        write(project / "requirements-gui.txt", "PySide6\n")
+    elif kind == "uv":
+        write(project / "pyproject.toml", "[project]\nname = \"sample\"\nversion = \"0.1.0\"\n\n[dependency-groups]\ngui = [\"PySide6\"]\n")
+        if include_lockfile:
+            write(project / "uv.lock", "# fixture uv lockfile\n")
+    elif kind == "poetry":
+        write(project / "pyproject.toml", "[tool.poetry]\nname = \"sample\"\nversion = \"0.1.0\"\ndescription = \"fixture\"\nauthors = []\n\n[tool.poetry.group.gui.dependencies]\nPySide6 = \"*\"\n")
+        if include_lockfile:
+            write(project / "poetry.lock", "# fixture poetry lockfile\n")
+    else:
+        raise ValueError(kind)
 
 
 def run_self_test(root: Path) -> dict[str, Any]:
@@ -369,28 +436,32 @@ def run_self_test(root: Path) -> dict[str, Any]:
     samples: dict[str, Any] = {}
     fixtures: list[Path] = []
     try:
-        valid = make_valid_fixture(root, "pyside6-optin-valid")
+        valid = make_valid_fixture(root, "pyside6-shared-optin-valid")
         fixtures.append(valid)
         samples["valid"] = validate_project(valid)
         if not samples["valid"]["ok"]:
-            errors.append("Valid opt-in fixture did not pass: " + "; ".join(samples["valid"]["errors"]))
+            errors.append("Valid shared-runtime opt-in fixture did not pass: " + "; ".join(samples["valid"]["errors"]))
 
-        missing_dependency = make_valid_fixture(root, "pyside6-optin-missing-dependency")
-        fixtures.append(missing_dependency)
-        (missing_dependency / "requirements-gui.txt").unlink()
-        samples["missing_dependency"] = validate_project(missing_dependency)
-        if samples["missing_dependency"]["ok"]:
-            errors.append("Fixture without PySide6 dependency declaration unexpectedly passed.")
+        missing_contract = make_valid_fixture(root, "pyside6-shared-optin-missing-contract")
+        fixtures.append(missing_contract)
+        (missing_contract / RUNTIME_CONTRACT).unlink()
+        samples["missing_contract"] = validate_project(missing_contract)
+        if samples["missing_contract"]["ok"]:
+            errors.append("Fixture without runtime contract unexpectedly passed.")
 
-        duplicate_dependency = make_valid_fixture(root, "pyside6-optin-duplicate-dependency")
-        fixtures.append(duplicate_dependency)
-        write(
-            duplicate_dependency / "pyproject.toml",
-            "[project]\nname = \"sample\"\nversion = \"0.1.0\"\n\n[project.optional-dependencies]\ngui = [\"PySide6\"]\n",
-        )
-        samples["duplicate_dependency"] = validate_project(duplicate_dependency)
-        if samples["duplicate_dependency"]["ok"]:
-            errors.append("Fixture with duplicate PySide6 dependency surfaces unexpectedly passed.")
+        shared_with_dependency = make_valid_fixture(root, "pyside6-shared-optin-forbidden-dependency")
+        fixtures.append(shared_with_dependency)
+        write(shared_with_dependency / "requirements-gui.txt", "PySide6\n")
+        samples["shared_with_dependency"] = validate_project(shared_with_dependency)
+        if samples["shared_with_dependency"]["ok"]:
+            errors.append("Shared-runtime fixture with project-local PySide6 dependency unexpectedly passed.")
+
+        override_valid = make_valid_fixture(root, "pyside6-override-valid")
+        fixtures.append(override_valid)
+        add_project_local_override(override_valid, kind="requirements")
+        samples["override_valid"] = validate_project(override_valid)
+        if not samples["override_valid"]["ok"]:
+            errors.append("Valid project-local override fixture did not pass: " + "; ".join(samples["override_valid"]["errors"]))
 
         visible_test = make_valid_fixture(root, "pyside6-optin-visible-test")
         fixtures.append(visible_test)
@@ -403,7 +474,7 @@ def run_self_test(root: Path) -> dict[str, Any]:
             shutil.rmtree(fixture, ignore_errors=True)
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "check_name": CHECK_NAME,
         "mode": "self-test",
@@ -412,7 +483,7 @@ def run_self_test(root: Path) -> dict[str, Any]:
         "samples": samples,
         "errors": errors,
         "warnings": warnings,
-        "info": ["Self-test validates pass/fail behavior for consumer-project PySide6 opt-in checks."],
+        "info": ["Self-test validates shared-runtime default and project-local override behavior for consumer-project PySide6 opt-in checks."],
         "counts": {
             "samples": len(samples),
             "errors": len(errors),
@@ -422,10 +493,10 @@ def run_self_test(root: Path) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Check consumer-project PySide6 opt-in evidence or self-test the checker contract.")
+    parser = argparse.ArgumentParser(description="Check consumer-project PySide6 shared-runtime opt-in evidence or self-test the checker contract.")
     parser.add_argument("--root", default=".", help="Repository root for self-test artifacts.")
     parser.add_argument("--project-root", help="Consumer project root to validate. If omitted, run checker self-test fixtures.")
-    parser.add_argument("--allow-duplicate-dependency-surfaces", action="store_true", help="Allow duplicated PySide6 dependency surfaces after human review.")
+    parser.add_argument("--allow-duplicate-dependency-surfaces", action="store_true", help="Allow duplicated PySide6 override dependency surfaces after human review.")
     parser.add_argument("--json", action="store_true", help="Emit JSON.")
     args = parser.parse_args()
 

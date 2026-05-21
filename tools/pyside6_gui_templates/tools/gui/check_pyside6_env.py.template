@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import platform
 import sys
@@ -13,7 +14,7 @@ def detect_project_root(start: Path) -> tuple[Path, list[str]]:
     current = start.resolve()
     for candidate in [current, *current.parents]:
         evidence: list[str] = []
-        for marker in [".git", "pyproject.toml", "requirements.txt", "requirements-gui.txt"]:
+        for marker in [".git", "pyproject.toml", "requirements.txt", "requirements-gui.txt", "README.md"]:
             if (candidate / marker).exists():
                 evidence.append(marker)
         if evidence:
@@ -21,47 +22,75 @@ def detect_project_root(start: Path) -> tuple[Path, list[str]]:
     return current, []
 
 
-def detect_package_manager(root: Path) -> str:
-    if (root / "uv.lock").exists():
-        return "uv"
-    if (root / "poetry.lock").exists():
-        return "poetry"
-    if (root / "pyproject.toml").exists():
-        return "pyproject"
-    return "pip"
+def load_contract(project_root: Path) -> tuple[dict[str, Any], list[str]]:
+    contract_path = project_root / "tools" / "gui" / "pyside6_runtime_contract.json"
+    blockers: list[str] = []
+    if not contract_path.exists():
+        return {}, ["runtime_contract_missing"]
+    try:
+        return json.loads(contract_path.read_text(encoding="utf-8")), blockers
+    except json.JSONDecodeError as exc:
+        return {}, [f"runtime_contract_invalid_json:{exc}"]
 
 
 def build_payload(root: Path) -> dict[str, Any]:
     project_root, evidence = detect_project_root(root)
-    python_path = Path(sys.executable).resolve()
-    blockers: list[str] = []
-    if not evidence:
-        blockers.append("project_root_evidence_missing")
-    dependency_style = "pyproject-extra" if (project_root / "pyproject.toml").exists() else "requirements"
+    contract, blockers = load_contract(project_root)
+    runtime_python = contract.get("runtime_python")
+    runtime_root = contract.get("runtime_root")
+    shared_runtime_status = "missing"
+    pyside6_version = None
+    qt_version = None
+    import_only_verified = False
+
+    if runtime_python and Path(str(runtime_python)).exists():
+        shared_runtime_status = "present"
+    else:
+        blockers.append("shared_runtime_python_missing")
+
+    try:
+        import PySide6
+        from PySide6.QtCore import qVersion
+        from PySide6.QtWidgets import QApplication
+
+        pyside6_version = getattr(PySide6, "__version__", "")
+        qt_version = qVersion()
+        importlib.import_module("{{package_name}}.main_window")
+        import_only_verified = True
+        shared_runtime_status = "import_only_verified"
+    except Exception as exc:
+        blockers.append(f"import_only_failed:{exc}")
+
     return {
         "schema_version": 1,
         "project_root": str(project_root),
         "project_root_evidence": evidence,
-        "python_path": str(python_path),
+        "python_path": str(Path(sys.executable).resolve()),
         "python_version": sys.version.split()[0],
         "python_architecture": platform.architecture()[0],
-        "package_manager": detect_package_manager(project_root),
-        "dependency_style": dependency_style,
+        "runtime_mode": contract.get("runtime_mode", "unknown"),
+        "shared_runtime_root": runtime_root,
+        "shared_runtime_python": runtime_python,
+        "shared_runtime_status": shared_runtime_status,
+        "pyside6_version": pyside6_version,
+        "qt_version": qt_version,
+        "import_only_verified": import_only_verified,
+        "package_manager": "shared-runtime",
+        "dependency_style": "none-shared-runtime",
         "planned_file_changes": [],
         "planned_commands": [],
-        "local_only_artifacts": [".venv", "build", "dist", ".pytest_cache"],
+        "local_only_artifacts": [".shared_runtimes/pyside6/.venv", "build", "dist", ".pytest_cache"],
         "blockers": blockers,
         "rollback_steps": [
             "revert the local feature branch or commit",
-            "remove project-local GUI dependency declarations",
             "remove generated GUI template files",
-            "restore lockfile from the previous revision if changed",
+            "keep the shared runtime unchanged unless this task explicitly provisioned it",
         ],
     }
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Emit PySide6 GUI environment preview evidence for this project.")
+    parser = argparse.ArgumentParser(description="Emit shared PySide6 GUI import-only evidence for this project.")
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
@@ -69,8 +98,8 @@ def main() -> int:
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
-        print("PySide6 GUI environment preview")
-        for key in ["project_root", "python_path", "python_version", "package_manager", "dependency_style"]:
+        print("Shared PySide6 GUI environment preview")
+        for key in ["project_root", "python_path", "python_version", "runtime_mode", "shared_runtime_status"]:
             print(f"{key}: {payload[key]}")
         if payload["blockers"]:
             print("blockers: " + ", ".join(payload["blockers"]))

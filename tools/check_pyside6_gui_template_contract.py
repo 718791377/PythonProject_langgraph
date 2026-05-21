@@ -11,13 +11,29 @@ CHECK_NAME = "pyside6_gui_template_contract"
 TEMPLATE_ROOT = Path("tools/pyside6_gui_templates")
 
 REQUIRED_FILES: dict[str, list[str]] = {
-    "README.md": ["project-local", "do not install PySide6 globally", "{{package_name}}", "{{window_title}}"],
+    "README.md": ["shared runtime", "project-local override", "do not install PySide6 globally", "{{package_name}}", "{{window_title}}"],
     "requirements-gui.txt": ["PySide6"],
+    "shared_runtime/requirements-pyside6.txt.template": ["PySide6"],
+    "shared_runtime/runtime.json.template": ["runtime_mode", "shared", "runtime_python", "import_only_verified"],
     "src/package_gui/__init__.py.template": ["{{project_name}}", "__version__"],
     "src/package_gui/app.py.template": ["QApplication", "MainWindow", "app.exec()", "explicit interactive verification"],
     "src/package_gui/main_window.py.template": ["QMainWindow", "ServiceAdapter", "WorkerAdapter", "ConfigDataDirectoryAdapter", "show_business_error", "{{window_title}}"],
-    "tools/gui/check_pyside6_env.py.template": ["project_root_evidence", "python_path", "python_version", "package_manager", "dependency_style", "local_only_artifacts", "blockers", "rollback_steps"],
-    "tools/gui/run_gui.ps1.template": [".venv\\Scripts\\python.exe", "Project-local Python", "{{package_name}}.app"],
+    "tools/gui/pyside6_runtime_contract.json.template": ["runtime_mode", "shared", "{{runtime_root}}", "{{runtime_python}}", "visible_gui_requires_explicit_request"],
+    "tools/gui/adapters/README.md.template": ["shared PySide6 runtime", "business dependencies", "visible GUI"],
+    "tools/gui/check_pyside6_env.py.template": [
+        "project_root_evidence",
+        "python_path",
+        "python_version",
+        "runtime_mode",
+        "shared_runtime_root",
+        "shared_runtime_python",
+        "shared_runtime_status",
+        "import_only_verified",
+        "local_only_artifacts",
+        "blockers",
+        "rollback_steps",
+    ],
+    "tools/gui/run_gui.ps1.template": ["pyside6_runtime_contract.json", "sharedPython", "-AllowVisibleGui", "{{package_name}}.app"],
     "tests/test_gui_import.py.template": ["imports_without_visible_window", "MainWindow", "WorkerAdapter", "ConfigDataDirectoryAdapter"],
     "packaging/pyside6_packaging_preflight.ps1.template": [
         "excludes_credentials",
@@ -34,7 +50,7 @@ REQUIRED_FILES: dict[str, list[str]] = {
 
 FORBIDDEN_SNIPPETS: dict[str, list[str]] = {
     "all": ["pip install --user", "--global", "Remove-Item -Recurse $ProjectRoot"],
-    "tools/gui/run_gui.ps1.template": ["pip install", "Start-Process"],
+    "tools/gui/run_gui.ps1.template": ["pip install", "Start-Process", ".venv\\Scripts\\python.exe"],
     "src/package_gui/app.py.template": ["requests.", "urllib.request", "socket."],
 }
 
@@ -74,8 +90,13 @@ def validate(root: Path) -> dict[str, Any]:
             "project_root_evidence",
             "python_path",
             "python_version",
-            "package_manager",
-            "dependency_style",
+            "runtime_mode",
+            "shared_runtime_root",
+            "shared_runtime_python",
+            "shared_runtime_status",
+            "pyside6_version",
+            "qt_version",
+            "import_only_verified",
             "planned_file_changes",
             "planned_commands",
             "local_only_artifacts",
@@ -92,9 +113,9 @@ def validate(root: Path) -> dict[str, Any]:
         if "QApplication(" in text or ".show()" in text or "app.exec" in text:
             errors.append("Import smoke template must not create a visible QApplication or run the event loop.")
 
-    info.append("PySide6 GUI templates are present and remain project-local, preview-first, and import-smoke friendly.")
+    info.append("PySide6 GUI templates are shared-runtime-first, project-local-override aware, and import-smoke friendly.")
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "check_name": CHECK_NAME,
         "ok": not errors,

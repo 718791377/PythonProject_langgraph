@@ -48,29 +48,27 @@ class PySide6GuiPreviewHelperContractTest(unittest.TestCase):
         preview = payload["preview_sample"]
         self.assertEqual(preview["mode"], "preview")
         self.assertFalse(preview["apply_mode"])
+        self.assertEqual(preview["runtime_mode"], "shared")
         self.assertEqual(preview["dependency_style"], "pyproject-extra")
         self.assertEqual(preview["blockers"], [])
+        self.assertFalse(any(item["path"] in {"pyproject.toml", "requirements-gui.txt"} for item in preview["planned_file_changes"]))
         apply = payload["apply_sample"]
         self.assertEqual(apply["mode"], "apply")
         self.assertTrue(apply["apply_mode"])
+        self.assertEqual(apply["runtime_mode"], "shared")
         self.assertEqual(apply["dependency_style"], "requirements")
         self.assertEqual(apply["rollback_note"], "docs/pyside6_gui_rollback.md")
-        self.assertTrue(any(item["path"] == "requirements-gui.txt" for item in apply["applied_file_changes"]))
+        self.assertTrue(any(item["path"] == "tools/gui/pyside6_runtime_contract.json" for item in apply["applied_file_changes"]))
+        self.assertFalse((Path(apply["project_root"]) / "requirements-gui.txt").exists())
+        override = payload["override_sample"]
+        self.assertEqual(override["runtime_mode"], "project-local-override")
+        self.assertTrue(any(item["path"] == "requirements-gui.txt" for item in override["applied_file_changes"]))
         fail_closed = payload["fail_closed_sample"]
         self.assertFalse(fail_closed["ok"])
         self.assertTrue(any(item["code"] == "unsafe_project_root" for item in fail_closed["blockers"]))
-        uv_sample = payload["uv_sample"]
-        self.assertEqual(uv_sample["package_manager"], "uv")
-        self.assertEqual(uv_sample["dependency_style"], "group")
-        self.assertEqual(uv_sample["package_manager_command_evidence"]["project_native_dependency_command"], "uv add --group gui PySide6")
-        self.assertEqual(uv_sample["package_manager_command_evidence"]["install_command"], "uv sync --group gui")
-        self.assertEqual(uv_sample["package_manager_command_evidence"]["lockfile_update_command"], "uv lock")
-        poetry_sample = payload["poetry_sample"]
-        self.assertEqual(poetry_sample["package_manager"], "poetry")
-        self.assertEqual(poetry_sample["dependency_style"], "pyproject-extra")
-        self.assertEqual(poetry_sample["package_manager_command_evidence"]["project_native_dependency_command"], "poetry add --optional PySide6")
-        self.assertEqual(poetry_sample["package_manager_command_evidence"]["install_command"], "poetry install --extras gui")
-        self.assertEqual(poetry_sample["package_manager_command_evidence"]["lockfile_update_command"], "poetry lock")
+        missing_runtime = payload["missing_runtime_sample"]
+        self.assertFalse(missing_runtime["ok"])
+        self.assertTrue(any(item["code"] == "shared_runtime_missing" for item in missing_runtime["blockers"]))
 
     def test_missing_preview_helper_fails(self) -> None:
         root = self.make_root("pyside6-preview-missing")

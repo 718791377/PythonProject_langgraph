@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "runtime_mode": "shared",
+  "runtime_owner_repo": "D:\\PythonProject_langgraph",
+  "runtime_root": "{{runtime_root}}",
+  "runtime_python": "{{runtime_python}}",
+  "project_root": "{{project_root}}",
+  "gui_package": "{{package_name}}",
+  "business_runtime_mode": "project-local-adapter",
+  "visible_gui_requires_explicit_request": true,
+  "packaging_requires_explicit_request": true,
+  "project_local_override": false,
+  "shared_runtime_status_at_apply": "{{shared_runtime_status}}"
+}

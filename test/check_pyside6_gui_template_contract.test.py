@@ -41,7 +41,7 @@ class PySide6GuiTemplateContractTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
         payload = json.loads(result.stdout)
         self.assertTrue(payload["ok"])
-        self.assertEqual(payload["counts"]["required_files"], 9)
+        self.assertEqual(payload["counts"]["required_files"], 13)
 
     def test_missing_template_file_fails(self) -> None:
         root = self.make_root("pyside6-template-missing")

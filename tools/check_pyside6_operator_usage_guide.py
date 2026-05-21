@@ -24,10 +24,15 @@ REQUIRED_SHARED_SNIPPETS = [
     ("-RepoRoot", "repo-root argument"),
     ("skill_docs", "skill-doc output"),
     ("missing_hints", "missing hint blocker"),
+    ("ensure-shared-pyside6-runtime.ps1", "shared runtime helper"),
+    ("D:\\PythonProject_langgraph\\.shared_runtimes\\pyside6", "shared runtime root"),
+    ("shared_runtime_missing", "shared runtime missing blocker"),
     ("-Mode preview", "preview command"),
+    ("-RuntimeMode shared", "shared runtime mode"),
     ("-DependencyStyle auto", "dependency-style selection"),
     ("-CreateTemplate", "template preview"),
     ("-Mode apply", "apply command"),
+    ("project-local-override", "project-local override boundary"),
     ("applied_file_changes", "apply evidence"),
     ("rollback_note", "rollback note"),
     ("docs/pyside6_gui_rollback.md", "rollback-note path"),
@@ -42,16 +47,16 @@ REQUIRED_EN_SNIPPETS = [
     ("does not enable plugin bundles", "no plugin enablement during soft-load"),
     ("visible GUI", "visible GUI boundary"),
     ("packaging", "packaging boundary"),
-    ("Never infer `env_ready`, `verified`, `packaged`, or `release_ready`", "state non-inference rule"),
+    ("Never infer `shared_runtime_ready`, `project_gui_verified_with_shared_runtime`, `project_local_override_ready`, `packaged`, or `release_ready`", "state non-inference rule"),
 ]
 
 REQUIRED_ZH_SNIPPETS = [
-    ('不会安装 PySide6', 'no PySide6 install during soft-load'),
-    ('不会编辑 `config.toml`', 'no config mutation during soft-load'),
-    ('不会启用 plugin bundle', 'no plugin enablement during soft-load'),
-    ('可见 GUI', 'visible GUI boundary'),
-    ('打包', 'packaging boundary'),
-    ('不得只根据政策、指南、skill、helper 或模板文本推断', 'state non-inference rule'),
+    ("不会安装 PySide6", "no PySide6 install during soft-load"),
+    ("不会编辑 `config.toml`", "no config mutation during soft-load"),
+    ("不会启用 plugin bundle", "no plugin enablement during soft-load"),
+    ("可见 GUI", "visible GUI boundary"),
+    ("打包", "packaging boundary"),
+    ("不得只根据 policy、guide、skill、helper 或 template 文本推断", "state non-inference rule"),
 ]
 
 FORBIDDEN_PATTERNS = [
@@ -143,9 +148,9 @@ def validate(root: Path) -> dict[str, Any]:
             if snippet not in registry:
                 errors.append(f"docs_bilingual/docs_registry.yaml missing registry snippet: {snippet}")
 
-    info.append("PySide6 cross-project operator guide keeps soft-load, preview/apply, visible-GUI, and packaging boundaries explicit.")
+    info.append("PySide6 cross-project operator guide keeps soft-load, shared-runtime, preview/apply, override, visible-GUI, and packaging boundaries explicit.")
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "check_name": CHECK_NAME,
         "ok": not errors,

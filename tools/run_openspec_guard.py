@@ -116,6 +116,7 @@ def main() -> int:
     capability_switch_chain_script = root / "tools" / "check_capability_switch_chain.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
+    pyside6_shared_runtime_contract_script = root / "tools" / "check_pyside6_shared_runtime_contract.py"
     pyside6_gui_template_contract_script = root / "tools" / "check_pyside6_gui_template_contract.py"
     pyside6_gui_preview_helper_contract_script = root / "tools" / "check_pyside6_gui_preview_helper_contract.py"
     pyside6_gui_skill_contract_script = root / "tools" / "check_pyside6_gui_skill_contract.py"
@@ -175,6 +176,8 @@ def main() -> int:
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
     if not plugin_modules_skill_script.exists():
         raise SystemExit(f"Missing plugin-modules skill check script: {plugin_modules_skill_script}")
+    if not pyside6_shared_runtime_contract_script.exists():
+        raise SystemExit(f"Missing PySide6 shared runtime contract check script: {pyside6_shared_runtime_contract_script}")
     if not pyside6_project_opt_in_contract_script.exists():
         raise SystemExit(f"Missing PySide6 project opt-in contract check script: {pyside6_project_opt_in_contract_script}")
     if not pyside6_packaging_opt_in_contract_script.exists():
@@ -354,6 +357,11 @@ def main() -> int:
                 "check_plugin_modules_skill",
                 [str(python_exe), str(plugin_modules_skill_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during plugin-modules skill verification.",
+            ),
+            (
+                "check_pyside6_shared_runtime_contract",
+                [str(python_exe), str(pyside6_shared_runtime_contract_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during PySide6 shared runtime contract verification.",
             ),
             (
                 "check_pyside6_gui_template_contract",
@@ -636,6 +644,12 @@ def main() -> int:
         [str(python_exe), str(plugin_modules_skill_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during plugin-modules skill verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(pyside6_shared_runtime_contract_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during PySide6 shared runtime contract verification.",
     )
 
     run_checked(

@@ -19,6 +19,12 @@ REQUIRED_SNIPPETS = [
     "ProjectRoot",
     "-Mode preview",
     "-Mode apply",
+    "RuntimeMode shared",
+    "project-local-override",
+    "D:\\PythonProject_langgraph\\.shared_runtimes\\pyside6",
+    "ensure-shared-pyside6-runtime.ps1",
+    "pyside6_runtime_contract.json",
+    "shared_runtime_missing",
     "DependencyStyle auto",
     "requirements-gui.txt",
     "pyproject.toml",
@@ -30,12 +36,13 @@ REQUIRED_SNIPPETS = [
     "rollback_note",
     "docs/pyside6_gui_rollback.md",
     "candidate",
-    "declared",
-    "env_ready",
-    "template_ready",
-    "verified",
+    "shared_runtime_declared",
+    "shared_runtime_ready",
+    "project_gui_template_ready",
+    "project_gui_verified_with_shared_runtime",
+    "project_local_override_ready",
     "packaged",
-    "Do not infer `env_ready`, `verified`, or `packaged`",
+    "Do not infer `shared_runtime_ready`, `project_gui_verified_with_shared_runtime`, `project_local_override_ready`, or `packaged`",
 ]
 FORBIDDEN_SNIPPETS = [
     "pip install --user",
@@ -51,12 +58,12 @@ FORBIDDEN_SNIPPETS = [
 def parse_frontmatter(text: str) -> tuple[dict[str, str], str, list[str]]:
     errors: list[str] = []
     if not text.startswith("---\n"):
-        return {}, text, ["SKILL.md must start with YAML frontmatter delimited by ---." ]
+        return {}, text, ["SKILL.md must start with YAML frontmatter delimited by ---."]
     end = text.find("\n---\n", 4)
     if end == -1:
-        return {}, text, ["SKILL.md frontmatter must end with a standalone --- delimiter." ]
+        return {}, text, ["SKILL.md frontmatter must end with a standalone --- delimiter."]
     raw = text[4:end]
-    body = text[end + len("\n---\n"):]
+    body = text[end + len("\n---\n") :]
     parsed: dict[str, str] = {}
     for line in raw.splitlines():
         if not line.strip() or line.lstrip().startswith("#"):
@@ -102,9 +109,9 @@ def validate(root: Path) -> dict[str, Any]:
         if re.search(r"(?i)install\s+PySide6\s+globally", body) and "Do not install PySide6 globally" not in body:
             errors.append(f"{SKILL_PATH} must not allow global PySide6 installation.")
 
-    info.append("PySide6 GUI skill guidance is repo-local, preview-first, project-local, and evidence-based.")
+    info.append("PySide6 GUI skill guidance is shared-runtime-first, preview-first, override-gated, and evidence-based.")
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "check_name": CHECK_NAME,
         "ok": not errors,

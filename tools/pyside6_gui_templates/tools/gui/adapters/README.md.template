@@ -1,0 +1,12 @@
+# PySide6 GUI adapters
+
+This project uses the shared PySide6 runtime owned by `D:\PythonProject_langgraph`.
+
+Keep project business dependencies in the project runtime. Use this adapter folder for
+small, explicit boundaries between the GUI shell and the project's own CLI, HTTP API,
+local IPC, worker process, configuration directory, data directory, logging, or
+diagnostics surfaces.
+
+Do not install business packages into the shared PySide6 runtime. Do not launch a
+visible GUI from automated checks unless the operator explicitly requests interactive
+verification.

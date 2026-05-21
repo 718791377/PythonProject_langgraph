@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "runtime_mode": "shared",
+  "runtime_owner_repo": "D:\\PythonProject_langgraph",
+  "runtime_root": "D:\\PythonProject_langgraph\\.shared_runtimes\\pyside6",
+  "runtime_python": "D:\\PythonProject_langgraph\\.shared_runtimes\\pyside6\\.venv\\Scripts\\python.exe",
+  "python_version": "",
+  "pyside6_version": "",
+  "qt_version": "",
+  "requirements_file": "D:\\PythonProject_langgraph\\.shared_runtimes\\pyside6\\requirements-pyside6.txt",
+  "created_at": "",
+  "updated_at": "",
+  "import_only_verified": false,
+  "visible_gui_requires_explicit_request": true,
+  "local_only_artifacts": [
+    ".shared_runtimes/pyside6/.venv/",
+    ".shared_runtimes/pyside6/logs/"
+  ],
+  "rollback_steps": [
+    "remove or rename D:\\PythonProject_langgraph\\.shared_runtimes\\pyside6",
+    "restore the previous requirements-pyside6.txt or runtime.json snapshot if one was captured",
+    "run ensure-shared-pyside6-runtime.ps1 -Mode provision again when approved"
+  ]
+}

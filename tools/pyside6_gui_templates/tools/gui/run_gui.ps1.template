@@ -1,18 +1,28 @@
 param(
     [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
-    [string]$PythonPath
+    [string]$RuntimeContract = (Join-Path $PSScriptRoot "pyside6_runtime_contract.json"),
+    [switch]$AllowVisibleGui
 )
 
 $ErrorActionPreference = "Stop"
 $projectRootPath = (Resolve-Path -LiteralPath $ProjectRoot).Path
-if (-not $PythonPath) {
-    $candidate = Join-Path $projectRootPath ".venv\Scripts\python.exe"
-    if (-not (Test-Path -LiteralPath $candidate)) {
-        throw "Project-local Python was not found at $candidate. Create the project .venv before launching the visible GUI."
-    }
-    $PythonPath = $candidate
+if (-not (Test-Path -LiteralPath $RuntimeContract -PathType Leaf)) {
+    throw "Shared PySide6 runtime contract was not found: $RuntimeContract"
+}
+
+$contract = Get-Content -LiteralPath $RuntimeContract -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($contract.runtime_mode -ne "shared") {
+    throw "run_gui.ps1 expects runtime_mode=shared. Use project-local-override only through an explicit project helper."
+}
+if (-not $AllowVisibleGui) {
+    throw "Visible GUI launch requires explicit -AllowVisibleGui. Automated checks should use tools/gui/check_pyside6_env.py."
+}
+
+$sharedPython = [string]$contract.runtime_python
+if (-not (Test-Path -LiteralPath $sharedPython -PathType Leaf)) {
+    throw "Shared runtime Python was not found at $sharedPython. Provision or verify D:\PythonProject_langgraph\.shared_runtimes\pyside6 first."
 }
 
 $env:PYTHONPATH = Join-Path $projectRootPath "src"
-& $PythonPath -m {{package_name}}.app
+& $sharedPython -m {{package_name}}.app
 exit $LASTEXITCODE
