@@ -349,6 +349,8 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - preview/apply helper 契约由 `tools/check_pyside6_gui_preview_helper_contract.py` 和 `test/check_pyside6_gui_preview_helper_contract.test.py` 验证，覆盖 preview 只读、一次性 apply fixture 写入，以及不安全根目录 fail-closed；
 - CI manifest 已登记两个 PySide6 契约测试，`tools/run_openspec_guard.py` 已运行两个 checker；
 - repo-local `pyside6-gui` skill 源文件已由 `.codex/skills/pyside6-gui/SKILL.md` 承载，用于未来会话路由；是否安装或复制到用户级目录仍属于单独的用户级部署决策；
+- `plugin-modules` profile helper 已暴露 `pyside6-gui` soft-load 模块，可通过 repo-local `repo:` hint 解析 skill、preview/apply helper、模板和打包 preflight 模板，同时不安装 PySide6、不编辑 `config.toml`、不启用 plugin bundle、不启动可见 GUI、不打包可执行文件；
+- `tools/check_plugin_modules_skill.py` 和 `test/check_plugin_modules_skill.test.py` 验证 `pyside6-gui` 模块的 repo-local hint 契约与 hard-load no-op 边界；
 - skill 契约由 `tools/check_pyside6_gui_skill_contract.py` 和 `test/check_pyside6_gui_skill_contract.test.py` 验证，`tools/run_openspec_guard.py` 会运行该 checker；
 - 切片 4 消费项目 opt-in 证据检查已由 `tools/check_pyside6_project_opt_in_contract.py` 和 `test/check_pyside6_project_opt_in_contract.test.py` 承载；该 checker 验证目标项目根证据、单一经复核 PySide6 依赖声明面、GUI 源码边界、import-only smoke test 行为、run/env helper、回滚说明，以及不得把政策/模板/skill 存在误报为 `env_ready`、`verified` 或 `packaged` 的规则；
 - `tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json` 已登记消费项目 opt-in checker，后续 guard 和 CI 会持续验证共享 opt-in 契约；
@@ -374,8 +376,8 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 
 后续剩余 implementation change 可以新增：
 
-- repo-local `pyside6-gui` skill 源文件的用户级安装或 profile-helper 路由；
-- skills/profile helper 文档中的跨项目使用说明；
+- repo-local `pyside6-gui` skill 源文件的可选用户级安装或复制；该动作必须等到明确的用户级部署决策之后再做；
+- 跨项目 operator 示例，说明如何在消费项目中调用 `plugin-modules` 的 `pyside6-gui` soft-load 模块而不改变 plugin profile；
 - 在具体目标项目采用 PySide6 之后，继续扩展消费项目 opt-in checker 对包管理器 lockfile 行为的覆盖；
 - 在具体消费项目请求可执行文件打包之后，继续扩展打包 opt-in checker 对目标项目 lockfile/build-output 的断言。
 
@@ -398,4 +400,5 @@ Apply 模式必须保持项目本地化；如果无法可靠识别目标项目�
 - 方案明确目标项目发现、安装前置条件、GUI/业务边界、worker 边界和配置数据路径要求；
 - 方案明确结构化 helper preview 证据、可见 GUI 启动边界和打包数据排除要求；
 - 方案列出关键失败模式与排障路径；
+- repo-local `pyside6-gui` skill 可通过 `plugin-modules` soft-load 路由被发现，同时不 hard-load plugin、不修改用户级配置；
 - 实施保持本地-only，未获得用户明确授权前不推送远端。

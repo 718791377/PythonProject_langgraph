@@ -39,4 +39,6 @@ Use this skill when the operator wants a task-scoped plugin capability module in
 
 ## Module names
 
-The initial modules are `core-dev`, `web-saas`, `company-ops`, `market-research`, `customer-comms`, `creative-content`, and `full`.
+The modules are `core-dev`, `web-saas`, `company-ops`, `market-research`, `customer-comms`, `creative-content`, `pyside6-gui`, and `full`.
+
+Use `pyside6-gui` when a task asks for local desktop GUI, PySide6, Qt, Windows desktop tooling, a local operator console, or GUI packaging preflight. It is a repo-local soft-load module: it reads the project-local PySide6 skill, helper, and templates, but it does not install PySide6, mutate `config.toml`, enable unrelated plugins, launch a visible GUI, or package executables by itself.

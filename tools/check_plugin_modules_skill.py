@@ -17,6 +17,7 @@ REQUIRED_MODULES = [
     "market-research",
     "customer-comms",
     "creative-content",
+    "pyside6-gui",
     "full",
 ]
 REQUIRED_FILES = [
@@ -26,6 +27,18 @@ REQUIRED_FILES = [
     "scripts/load_module.ps1",
     "scripts/set_plugin_profile.ps1",
     "agents/openai.yaml",
+]
+PYSIDE6_REPO_HINTS = [
+    "repo:.codex/skills/pyside6-gui/SKILL.md",
+    "repo:tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1",
+    "repo:tools/pyside6_gui_templates/README.md",
+    "repo:tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template",
+]
+PYSIDE6_REPO_HINT_TARGETS = [
+    Path(".codex/skills/pyside6-gui/SKILL.md"),
+    Path("tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1"),
+    Path("tools/pyside6_gui_templates/README.md"),
+    Path("tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template"),
 ]
 REQUIRED_SCRIPT_MARKERS = {
     "apply_gate": "[switch]$Apply",
@@ -115,6 +128,38 @@ def validate(root: Path) -> dict[str, Any]:
                 errors.append("profiles.json safety.backup_before_config_write must be true.")
             if safety.get("do_not_edit_plugin_cache") is not True:
                 errors.append("profiles.json safety.do_not_edit_plugin_cache must be true.")
+            for target in PYSIDE6_REPO_HINT_TARGETS:
+                if not (root / target).exists():
+                    errors.append(f"Module `pyside6-gui` repo-local hint target is missing: {target.as_posix()}")
+            pyside6 = modules.get("pyside6-gui")
+            if isinstance(pyside6, dict):
+                plugins = pyside6.get("plugins", [])
+                if plugins not in ([], None):
+                    errors.append("Module `pyside6-gui` must not enable plugin bundles; it is repo-local guidance only.")
+                hard_load = pyside6.get("hard_load", {})
+                if hard_load.get("enable_plugins") not in ([], None):
+                    errors.append("Module `pyside6-gui` hard_load.enable_plugins must be an empty list.")
+                if hard_load.get("disable_other_known_plugins") is not False:
+                    errors.append("Module `pyside6-gui` hard_load.disable_other_known_plugins must be false.")
+                soft_load = pyside6.get("soft_load", {})
+                hints = soft_load.get("skill_doc_hints", [])
+                for hint in PYSIDE6_REPO_HINTS:
+                    if hint not in hints:
+                        errors.append(f"Module `pyside6-gui` missing soft-load hint `{hint}`.")
+                for hint in hints:
+                    if "pyside6" in str(hint).lower() and not str(hint).startswith("repo:"):
+                        errors.append("Module `pyside6-gui` PySide6 hints must use the repo: prefix.")
+                notes = " ".join(str(item) for item in soft_load.get("notes", []))
+                for phrase in ["does not install PySide6", "preview before apply", "Visible GUI launch", "packaging"]:
+                    if phrase not in notes:
+                        errors.append(f"Module `pyside6-gui` notes must preserve boundary phrase: {phrase}")
+
+    load_script = skill_root / "scripts" / "load_module.ps1"
+    if load_script.exists():
+        text = read_text(load_script)
+        for phrase in ["[string]$RepoRoot", "repo_root", "StartsWith('repo:'", "Join-Path $repoRootPath"]:
+            if phrase not in text:
+                errors.append(f"load_module.ps1 missing repo-local hint support marker: {phrase}")
 
     set_script = skill_root / "scripts" / "set_plugin_profile.ps1"
     if set_script.exists():

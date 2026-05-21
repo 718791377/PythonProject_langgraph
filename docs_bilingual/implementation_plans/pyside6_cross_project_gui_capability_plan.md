@@ -349,6 +349,8 @@ Current local implementation status:
 - the preview/apply helper contract is verified by `tools/check_pyside6_gui_preview_helper_contract.py` and `test/check_pyside6_gui_preview_helper_contract.test.py`, including preview read-only behavior, disposable apply fixture writes, and unsafe-root fail-closed coverage;
 - the CI manifest registers both PySide6 contract tests, and `tools/run_openspec_guard.py` runs both checkers;
 - the repo-local `pyside6-gui` skill source is now carried by `.codex/skills/pyside6-gui/SKILL.md` for future session routing; user-level installation or copying remains a separate user-level deployment decision;
+- the `plugin-modules` profile helper now exposes a `pyside6-gui` soft-load module that resolves repo-local `repo:` hints for the skill, preview/apply helper, templates, and packaging preflight template without installing PySide6, editing `config.toml`, enabling plugin bundles, launching visible GUI windows, or packaging executables;
+- `tools/check_plugin_modules_skill.py` and `test/check_plugin_modules_skill.test.py` verify the `pyside6-gui` module's repo-local hint contract and hard-load no-op boundary;
 - the skill contract is verified by `tools/check_pyside6_gui_skill_contract.py` and `test/check_pyside6_gui_skill_contract.test.py`, and `tools/run_openspec_guard.py` runs that checker;
 - Slice 4 consumer-project opt-in evidence checking is now carried by `tools/check_pyside6_project_opt_in_contract.py` and `test/check_pyside6_project_opt_in_contract.test.py`; the checker verifies target-root evidence, a single reviewed PySide6 dependency surface, GUI source boundaries, import-only smoke-test behavior, run/env helpers, rollback notes, and the rule that policy/template/skill presence cannot imply `env_ready`, `verified`, or `packaged`;
 - `tools/run_openspec_guard.py` and `tools/ci/ci_test_manifest.json` register the consumer-project opt-in checker so future guard and CI runs keep the shared opt-in contract executable;
@@ -374,8 +376,8 @@ Common failure modes must be handled as local project issues, not by weakening t
 
 Remaining implementation changes may add:
 
-- user-level installation or profile-helper routing for the repo-local `pyside6-gui` skill source;
-- a cross-project usage note in the skills/profile helper documentation;
+- optional user-level installation or copying for the repo-local `pyside6-gui` skill source, only after an explicit user-level deployment decision;
+- cross-project operator examples that show how to call the `plugin-modules` `pyside6-gui` soft-load module from consumer projects without changing their plugin profile;
 - extending the consumer-project opt-in checker to cover package-manager-specific lockfile behavior after a concrete target project adopts PySide6;
 - extending the packaging opt-in checker with concrete target-project lockfile/build-output assertions after an actual consumer project requests executable packaging.
 
@@ -398,4 +400,5 @@ The plan is complete when:
 - the plan defines target-project discovery, install preconditions, GUI/business boundaries, worker boundaries, and config/data path requirements;
 - the plan defines structured helper preview evidence, visible-GUI launch boundaries, and packaging data-exclusion requirements;
 - the plan lists key failure modes and triage paths;
+- the repo-local `pyside6-gui` skill can be discovered through `plugin-modules` soft-load routing without hard-loading plugins or mutating user-level config;
 - implementation remains local-only and does not push remotes without explicit user approval.

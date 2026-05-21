@@ -184,6 +184,28 @@
         "disable_other_known_plugins": true
       }
     },
+    "pyside6-gui": {
+      "description": "Project-local PySide6 desktop GUI profile for preview/apply helper guidance, GUI templates, import-smoke checks, and packaging opt-in boundaries without enabling unrelated plugins.",
+      "plugins": [],
+      "soft_load": {
+        "use_for": ["local desktop GUI", "PySide6", "Qt", "Windows desktop tooling", "operator console", "GUI packaging preflight"],
+        "skill_doc_hints": [
+          "repo:.codex/skills/pyside6-gui/SKILL.md",
+          "repo:tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1",
+          "repo:tools/pyside6_gui_templates/README.md",
+          "repo:tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template"
+        ],
+        "notes": [
+          "This module is repo-local guidance only; soft-load does not install PySide6 or edit config.toml.",
+          "Keep PySide6 project-local and use preview before apply.",
+          "Visible GUI launch and executable packaging remain request-driven opt-in phases."
+        ]
+      },
+      "hard_load": {
+        "enable_plugins": [],
+        "disable_other_known_plugins": false
+      }
+    },
     "full": {
       "description": "Troubleshooting profile that enables every known installed plugin family.",
       "plugins": "all_known_plugins",

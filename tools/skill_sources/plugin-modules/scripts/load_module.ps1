@@ -3,6 +3,7 @@ param(
   [Parameter(Mandatory = $true, Position = 0)]
   [string]$Module,
   [string]$CodexHome = $(if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME '.codex' }),
+  [string]$RepoRoot = $(Get-Location),
   [int]$MaxFiles = 12,
   [switch]$Json
 )
@@ -25,6 +26,7 @@ if (-not $property) {
 
 $entry = $property[0].Value
 $codexHomePath = [System.IO.Path]::GetFullPath($CodexHome)
+$repoRootPath = [System.IO.Path]::GetFullPath($RepoRoot)
 $resolved = New-Object System.Collections.Generic.List[string]
 $missing = New-Object System.Collections.Generic.List[string]
 $totalMatches = 0
@@ -32,7 +34,10 @@ $totalMatches = 0
 foreach ($hint in @($entry.soft_load.skill_doc_hints)) {
   if ([string]::IsNullOrWhiteSpace([string]$hint)) { continue }
   $pattern = [string]$hint
-  if (-not [System.IO.Path]::IsPathRooted($pattern)) {
+  if ($pattern.StartsWith('repo:', [System.StringComparison]::OrdinalIgnoreCase)) {
+    $repoRelativePattern = $pattern.Substring(5).TrimStart('\', '/')
+    $pattern = Join-Path $repoRootPath $repoRelativePattern
+  } elseif (-not [System.IO.Path]::IsPathRooted($pattern)) {
     $pattern = Join-Path $codexHomePath $pattern
   }
   $matches = @(Get-ChildItem -Path $pattern -File -ErrorAction SilentlyContinue | Sort-Object FullName)
@@ -59,6 +64,7 @@ $payload = [ordered]@{
   module = $Module
   mode = 'soft-load'
   codex_home = $codexHomePath
+  repo_root = $repoRootPath
   description = [string]$entry.description
   plugins = @($plugins)
   use_for = @($entry.soft_load.use_for)
