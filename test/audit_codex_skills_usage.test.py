@@ -324,6 +324,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Inventory summary: total=", output)
         self.assertIn("Log evidence available: False", output)
         self.assertIn("Budget warning samples: recent=0 last_7d=0", output)
+        self.assertIn("Budget warning sample excerpts: `none`", output)
         self.assertIn(
             "Warning severity: unknown reason=logs_unavailable "
             "action=keep_log_evidence_available_false_and_do_not_treat_zero_as_no_warning",
@@ -744,6 +745,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "last_7d_all_descriptions_removed_count": 0,
                 "max_omitted_additional_skills": 0,
                 "recent_budget_warnings": [],
+                "recent_budget_warning_samples": 0,
+                "recent_budget_warning_sample_excerpts": [],
                 "skipped_loading_count": 0,
                 "recent_skipped_loading": [],
             },
@@ -908,6 +911,12 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         )
         self.assertEqual(report["warning_triage"]["all_descriptions_removed_count"], 1)
         self.assertEqual(report["warning_triage"]["max_omitted_additional_skills"], 16)
+        self.assertEqual(report["log_evidence"]["recent_budget_warning_samples"], 1)
+        self.assertEqual(len(report["log_evidence"]["recent_budget_warning_sample_excerpts"]), 1)
+        self.assertIn(
+            "Exceeded skills context budget of 2%",
+            report["log_evidence"]["recent_budget_warning_sample_excerpts"][0],
+        )
         skipped_excerpt = report["log_evidence"]["recent_skipped_loading"][0]["message_excerpt"]
         self.assertIn("[REDACTED_PATH]", skipped_excerpt)
         self.assertIn("[REDACTED_SECRET]", skipped_excerpt)
@@ -916,6 +925,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("[REDACTED_SECRET]", triage_excerpt)
         self.assertNotIn(r"C:\Users\lenovo", json.dumps(report, ensure_ascii=False))
         summary = audit.render_markdown_summary(report)
+        self.assertIn("Recent budget warning samples: `1`", summary)
+        self.assertIn("Recent budget warning sample excerpts: `Exceeded skills context budget", summary)
         self.assertIn("Skipped loading in triage window: `1`", summary)
         self.assertIn("Recent skipped-loading samples: `1`", summary)
         self.assertIn("Recent skipped-loading sample excerpts: `Skipped loading", summary)
@@ -1161,6 +1172,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("last_7d_budget_warning_count", report["log_evidence"])
         self.assertIn("total_skills", report["inventory_summary"])
         self.assertIn("budget_warning_count", report["log_evidence"])
+        self.assertIn("recent_budget_warning_samples", report["log_evidence"])
+        self.assertIn("recent_budget_warning_sample_excerpts", report["log_evidence"])
         self.assertIn("level", report["warning_severity"])
         self.assertIn("requested", report["warning_triage"])
         self.assertIn("status", report["warning_triage"])
@@ -1193,6 +1206,55 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "passed",
         )
         self.assertIsInstance(report["recommendations"], list)
+
+    def test_log_evidence_contract_requires_budget_warning_sample_excerpts(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-log-sample-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+            warning_triage=False,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+        )
+        report = audit.build_report(args)
+        missing = dict(report)
+        missing["log_evidence"] = dict(report["log_evidence"])
+        missing["log_evidence"].pop("recent_budget_warning_sample_excerpts")
+        missing["log_evidence"].pop("recent_budget_warning_samples")
+
+        missing_contract = audit.validate_report_field_contract(missing)
+
+        self.assertFalse(missing_contract["passed"])
+        self.assertIn("log_evidence:recent_budget_warning_sample_excerpts_missing", missing_contract["blockers"])
+        self.assertIn("log_evidence:recent_budget_warning_samples_missing", missing_contract["blockers"])
+
+        invalid = dict(report)
+        invalid["log_evidence"] = dict(report["log_evidence"])
+        invalid["log_evidence"]["recent_budget_warning_samples"] = -1
+        invalid["log_evidence"]["recent_budget_warning_sample_excerpts"] = [
+            r"C:\Users\lenovo\.codex\logs_2.sqlite api_key=sk-test-secret"
+        ]
+
+        invalid_contract = audit.validate_report_field_contract(invalid)
+
+        self.assertFalse(invalid_contract["passed"])
+        self.assertIn("log_evidence:recent_budget_warning_samples_negative", invalid_contract["blockers"])
+        self.assertIn(
+            "log_evidence:recent_budget_warning_sample_excerpts_contains_private_path",
+            invalid_contract["blockers"],
+        )
 
     def test_field_contract_requires_decision_recommendation_fields(self) -> None:
         codex_home = self.make_codex_home("skills-audit-decision-contract")
@@ -1645,7 +1707,12 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             },
             "config_summary": {"current_profile": {}},
             "inventory_summary": {},
-            "log_evidence": {"budget_warning_count": 0, "last_7d_budget_warning_count": 0},
+            "log_evidence": {
+                "budget_warning_count": 0,
+                "last_7d_budget_warning_count": 0,
+                "recent_budget_warning_samples": 0,
+                "recent_budget_warning_sample_excerpts": [],
+            },
             "session_evidence": {},
             "module_evidence": [],
             "cadence_review": {},
@@ -1684,7 +1751,12 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             },
             "config_summary": {"current_profile": {}},
             "inventory_summary": {},
-            "log_evidence": {"budget_warning_count": 0, "last_7d_budget_warning_count": 0},
+            "log_evidence": {
+                "budget_warning_count": 0,
+                "last_7d_budget_warning_count": 0,
+                "recent_budget_warning_samples": 0,
+                "recent_budget_warning_sample_excerpts": [],
+            },
             "warning_triage": {
                 "requested": False,
                 "status": "not_requested",

@@ -150,6 +150,23 @@ REQUIRED_DECISION_BUCKET_NAMES = (
     "manual_review_medium_or_weak",
     "dormant_restorable",
 )
+REQUIRED_LOG_EVIDENCE_FIELDS = {
+    "budget_warning_count",
+    "last_7d_budget_warning_count",
+    "recent_budget_warning_samples",
+    "recent_budget_warning_sample_excerpts",
+}
+REQUIRED_LOG_EVIDENCE_FIELD_TYPES = {
+    "budget_warning_count": int,
+    "last_7d_budget_warning_count": int,
+    "recent_budget_warning_samples": int,
+    "recent_budget_warning_sample_excerpts": list,
+}
+LOG_EVIDENCE_NON_NEGATIVE_INTEGER_FIELDS = (
+    "budget_warning_count",
+    "last_7d_budget_warning_count",
+    "recent_budget_warning_samples",
+)
 REQUIRED_MODULE_EVIDENCE_FIELDS = {
     "module",
     "plugins",
@@ -1240,6 +1257,8 @@ def scan_logs(codex_home: Path, cutoff: datetime, until: datetime | None = None)
             "last_7d_all_descriptions_removed_count": 0,
             "max_omitted_additional_skills": 0,
             "recent_budget_warnings": [],
+            "recent_budget_warning_samples": 0,
+            "recent_budget_warning_sample_excerpts": [],
             "skipped_loading_count": 0,
             "recent_skipped_loading": [],
         }
@@ -1288,6 +1307,12 @@ def scan_logs(codex_home: Path, cutoff: datetime, until: datetime | None = None)
         "last_7d_all_descriptions_removed_count": last_7d_all_descriptions_removed_count,
         "max_omitted_additional_skills": max_omitted_additional_skills,
         "recent_budget_warnings": warnings[:20],
+        "recent_budget_warning_samples": len(warnings[:20]),
+        "recent_budget_warning_sample_excerpts": [
+            str(row.get("message_excerpt") or "")
+            for row in warnings[:3]
+            if isinstance(row, dict) and str(row.get("message_excerpt") or "").strip()
+        ],
         "skipped_loading_count": len(skipped),
         "recent_skipped_loading": skipped[:20],
     }
@@ -1614,9 +1639,40 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         config_violations.append("current_profile_missing")
     log_evidence = report.get("log_evidence") if isinstance(report.get("log_evidence"), dict) else {}
     log_violations = []
-    for field in ("budget_warning_count", "last_7d_budget_warning_count"):
+    for field in sorted(REQUIRED_LOG_EVIDENCE_FIELDS):
         if field not in log_evidence:
             log_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_LOG_EVIDENCE_FIELD_TYPES.items()):
+        if field in log_evidence and not isinstance(log_evidence.get(field), expected_type):
+            log_violations.append(f"{field}_invalid_type")
+    for field in LOG_EVIDENCE_NON_NEGATIVE_INTEGER_FIELDS:
+        if field in log_evidence:
+            value = log_evidence.get(field)
+            if isinstance(value, bool) or not isinstance(value, int):
+                if f"{field}_invalid_type" not in log_violations:
+                    log_violations.append(f"{field}_invalid_type")
+            elif value < 0:
+                log_violations.append(f"{field}_negative")
+    budget_sample_excerpts = log_evidence.get("recent_budget_warning_sample_excerpts")
+    if isinstance(budget_sample_excerpts, list):
+        for excerpt in budget_sample_excerpts:
+            if not isinstance(excerpt, str):
+                log_violations.append("recent_budget_warning_sample_excerpts_item_invalid_type")
+                break
+            if any(pattern.search(excerpt) for pattern in PRIVATE_PATH_PATTERNS):
+                log_violations.append("recent_budget_warning_sample_excerpts_contains_private_path")
+                break
+            raw_secret_found = False
+            for match in ACCESS_TOKEN_PATTERN.finditer(excerpt):
+                if match.group(1) != "[REDACTED_SECRET]":
+                    log_violations.append("recent_budget_warning_sample_excerpts_contains_raw_secret")
+                    raw_secret_found = True
+                    break
+            if raw_secret_found:
+                break
+            if STANDALONE_TOKEN_PATTERN.search(excerpt):
+                log_violations.append("recent_budget_warning_sample_excerpts_contains_standalone_token")
+                break
     warning_triage = report.get("warning_triage") if isinstance(report.get("warning_triage"), dict) else {}
     warning_triage_violations = []
     for field in sorted(REQUIRED_WARNING_TRIAGE_FIELDS):
@@ -2880,6 +2936,8 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         "",
         f"- Budget warning count: `{warnings.get('budget_warning_count')}`",
         f"- Last 7d budget warning count: `{warnings.get('last_7d_budget_warning_count')}`",
+        f"- Recent budget warning samples: `{warnings.get('recent_budget_warning_samples')}`",
+        f"- Recent budget warning sample excerpts: {bounded_inline_list(warnings.get('recent_budget_warning_sample_excerpts') or [], limit=3)}",
         f"- All descriptions removed count: `{warnings.get('all_descriptions_removed_count')}`",
         f"- Max omitted additional skills: `{warnings.get('max_omitted_additional_skills')}`",
         f"- Skipped loading count: `{warnings.get('skipped_loading_count')}`",
@@ -3255,8 +3313,12 @@ def print_human(report: dict[str, Any]) -> None:
     print(f"Budget warnings: {log_evidence.get('budget_warning_count')}")
     print(
         "Budget warning samples: "
-        f"recent={len(log_evidence.get('recent_budget_warnings') or [])} "
+        f"recent={log_evidence.get('recent_budget_warning_samples')} "
         f"last_7d={log_evidence.get('last_7d_budget_warning_count')}"
+    )
+    print(
+        "Budget warning sample excerpts: "
+        f"{bounded_inline_list(log_evidence.get('recent_budget_warning_sample_excerpts') or [], limit=3)}"
     )
     print(
         "Warning severity: "
