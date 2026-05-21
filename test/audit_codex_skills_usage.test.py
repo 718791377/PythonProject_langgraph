@@ -424,7 +424,20 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Do not treat another 2% budget warning as soft-load failure", output)
         self.assertIn("Field contract: passed", output)
         self.assertIn("Output retention gate: passed", output)
+        self.assertIn(
+            "Output retention details: checker=tools/check_skills_audit_output_retention.py "
+            "violations=0 tmp_outputs_local_only=True raw_audit_json_local_only=True "
+            "long_term_evidence_format=sanitized_markdown_summary",
+            output,
+        )
         self.assertIn("Pre-commit update/archive gate: passed errors=0 warnings=0", output)
+        self.assertIn(
+            "Pre-commit update/archive details: checker=tools/check_precommit_update_archive.py "
+            "before_local_git_commit=True review_existing_files=True "
+            "archive_completed_openspec=True changed_paths=",
+            output,
+        )
+        self.assertIn("active_change_reviews=0", output)
 
     def test_human_output_exposes_audit_state_blockers(self) -> None:
         codex_home = self.make_codex_home("skills-audit-human-output-audit-state-blockers")

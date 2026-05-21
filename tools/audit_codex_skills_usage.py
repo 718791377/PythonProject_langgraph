@@ -3316,10 +3316,27 @@ def print_human(report: dict[str, Any]) -> None:
     print(f"Field contract: {field_contract.get('status')}")
     print(f"Output retention gate: {output_retention.get('status')}")
     print(
+        "Output retention details: "
+        f"checker={output_retention.get('checker')} "
+        f"violations={output_retention.get('violation_count')} "
+        f"tmp_outputs_local_only={output_retention.get('tmp_outputs_local_only')} "
+        f"raw_audit_json_local_only={output_retention.get('raw_audit_json_local_only')} "
+        f"long_term_evidence_format={output_retention.get('long_term_evidence_format')}"
+    )
+    print(
         "Pre-commit update/archive gate: "
         f"{precommit_update_archive.get('status')} "
         f"errors={precommit_update_archive.get('error_count')} "
         f"warnings={precommit_update_archive.get('warning_count')}"
+    )
+    print(
+        "Pre-commit update/archive details: "
+        f"checker={precommit_update_archive.get('checker')} "
+        f"before_local_git_commit={precommit_update_archive.get('before_local_git_commit')} "
+        f"review_existing_files={precommit_update_archive.get('review_existing_files_for_required_updates')} "
+        f"archive_completed_openspec={precommit_update_archive.get('archive_completed_openspec_changes_before_commit')} "
+        f"changed_paths={precommit_update_archive.get('changed_path_count')} "
+        f"active_change_reviews={precommit_update_archive.get('active_change_review_count')}"
     )
     if field_contract.get("blockers"):
         print("Field contract blockers:")
