@@ -481,7 +481,7 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - [x] 根据首个消费项目证据修正模板，使共享 runtime Python 执行项目 import smoke 时显式加入目标项目 `src` 到 `sys.path`。
 - [x] 根据首个消费项目证据修正 rollback note 生成逻辑，防止 PowerShell 将变更项序列化为 `System.Collections.Specialized.OrderedDictionary` 或破坏 `tools/gui/` / `tests/` 字面路径。
 - [x] 根据首个消费项目的证据扩展项目 opt-in checker，覆盖真实 runtime contract、adapter 和 shared runtime smoke 输出；`tools/check_pyside6_project_opt_in_contract.py` 已支持 `--smoke-json`，只有 import-only smoke 成功且无 blockers 才能提升到 `project_gui_verified_with_shared_runtime`。
-- [ ] 如果首个消费项目暴露需要，再新增跨项目 `run-shared-pyside6-gui.ps1` 或记录 per-project `tools/gui/run_gui.ps1` 已足够的取舍依据。
+- [x] 根据首个消费项目证据完成跨项目 launcher 取舍判断；当前证据显示 per-project `tools/gui/run_gui.ps1` 已足够，暂不新增跨项目 `run-shared-pyside6-gui.ps1`，取舍依据已记录到 memory 文件。
 - [ ] 仅在项目有独立版本、隔离或自包含打包需求时，执行 `project-local-override`，并记录 override reason、依赖/lockfile 证据和 rollback 证据。
 - [ ] 仅在用户明确要求可见 GUI 验证时，执行交互式窗口验证或截图/人工 QA 清单。
 - [ ] 仅在用户明确要求可执行文件时，进入 PyInstaller/Nuitka 打包 opt-in 阶段并运行 packaging preflight。
@@ -500,6 +500,8 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - shared 模式可以在不向消费项目安装 PySide6 的前提下生成 GUI shell、runtime contract、run helper、adapter 说明、import smoke test、rollback note 与项目本地文档；
 - 由共享 runtime Python 执行项目 import smoke 时，模板必须显式把目标项目 `src` 加入 `sys.path`；
 - rollback note 生成必须使用显式格式化字符串记录变更路径，避免 PowerShell 输出 ordered dictionary 或破坏 `tools/gui/` / `tests/` 字面路径；
+- 当前单一消费项目证据显示，per-project `tools/gui/run_gui.ps1` 已足够承载项目根目录、GUI 包名、可见窗口授权和 runtime contract，不需要新增跨项目 `run-shared-pyside6-gui.ps1`；
+- 跨项目 launcher 仅在至少两个消费项目暴露重复 launcher 逻辑且 per-project wrapper 无法消除重复时再重开；
 - 项目专属证据保留在 memory artifact，不写入本通用实施方案。
 
 ## 19. 失败模式与排障
@@ -521,12 +523,13 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 
 - 选择首个消费项目后，运行 shared 模式 preview/apply，并在消费项目中生成 GUI shell、runtime contract、adapter、import smoke test 和 rollback note；
 - 基于真实消费项目证据扩展 opt-in checker，避免只凭模板存在就误报 `project_gui_verified_with_shared_runtime`；
-- 根据首个消费项目运行体验判断是否需要额外跨项目 `run-shared-pyside6-gui.ps1`；若 per-project `tools/gui/run_gui.ps1` 已足够，应记录不新增的依据；
 - 仅在具体项目具备独立版本、隔离或自包含打包需求时，推进 `project-local-override`；
 - 仅在用户请求可执行文件时，推进 PyInstaller/Nuitka 打包 opt-in 与 packaging preflight；
 - 仅在用户请求可见 GUI 验证时，推进截图、人工 QA 或 `pytest-qt` 等交互测试。
 
 当前已落地的共享面任务可复用为模板和 checker 基线，但不能被误报为任意消费项目已经 `project_gui_verified_with_shared_runtime`、`project_local_override_ready`、`packaged` 或 `release_ready`。
+
+跨项目 launcher 取舍已在当前证据集下收口：继续使用每个消费项目生成的 `tools/gui/run_gui.ps1` 作为默认入口；只有后续第二个及以上消费项目证明存在无法由 per-project wrapper 吸收的重复 launcher 逻辑时，才重新评估 `run-shared-pyside6-gui.ps1`。
 
 ## 21. 验收标准
 

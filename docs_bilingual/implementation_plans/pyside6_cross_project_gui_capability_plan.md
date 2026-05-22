@@ -230,7 +230,7 @@ Concrete implementation items only; updating this plan file is not counted as an
 - [x] Run the first consumer project's import-only smoke test through the shared runtime.
 - [x] Update the first consumer project's local documentation with GUI state, runtime contract, adapter boundary, and rollback path.
 - [x] Extend the project opt-in checker so real shared-runtime smoke JSON can promote state to `project_gui_verified_with_shared_runtime` only when `import_only_verified=true` and blockers are empty.
-- [ ] Decide from first-consumer evidence whether an extra cross-project `run-shared-pyside6-gui.ps1` is needed; otherwise record that per-project `tools/gui/run_gui.ps1` is sufficient.
+- [x] Decide from first-consumer evidence whether an extra cross-project `run-shared-pyside6-gui.ps1` is needed; current evidence shows per-project `tools/gui/run_gui.ps1` is sufficient, and the decision is recorded in memory artifacts.
 - [ ] Execute `project-local-override` only when a concrete project has independent-version, isolation, or self-contained packaging needs.
 - [ ] Run visible GUI validation only when explicitly requested.
 - [ ] Enter PyInstaller/Nuitka packaging only when explicitly requested.
@@ -247,16 +247,19 @@ The reusable conclusions for this plan are:
 - shared-mode apply can generate the GUI shell, runtime contract, run helper, adapter note, import smoke test, rollback note, and local project documentation without installing PySide6 into the consumer project;
 - the generated import smoke needs to inject the target project's `src` directory when it is executed by the shared runtime Python;
 - the rollback note generator must use explicit formatted strings for changed paths so PowerShell does not serialize ordered dictionaries or corrupt literal `tools/gui/` / `tests/` paths;
+- per-project `tools/gui/run_gui.ps1` is sufficient for the current single-consumer evidence set because it keeps project root, GUI package name, visible-launch authorization, and runtime contract local to the consumer project;
+- a cross-project `run-shared-pyside6-gui.ps1` remains deferred until at least two consumer projects show repeated launcher logic that cannot be handled by the generated per-project wrapper;
 - project-specific evidence remains in memory artifacts, not in this generic implementation plan.
 
 ## 13. Remaining work
 
 Remaining work is request-driven:
 
-- decide whether a cross-project launcher adds value beyond per-project `tools/gui/run_gui.ps1`;
 - use project-local override only for a concrete project and documented reason;
 - run visible GUI/manual QA only by explicit request;
 - run packaging preflight only by explicit executable-packaging request.
+
+The cross-project launcher decision is closed for the current evidence set: per-project `tools/gui/run_gui.ps1` remains the default. Reopen this decision only after a second consumer project produces repeated launcher requirements that justify a shared wrapper.
 
 ## 14. Acceptance criteria
 
