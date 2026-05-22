@@ -485,6 +485,7 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - [ ] 仅在项目有独立版本、隔离或自包含打包需求时，执行 `project-local-override`，并记录 override reason、依赖/lockfile 证据和 rollback 证据。
 - [ ] 仅在用户明确要求可见 GUI 验证时，执行交互式窗口验证或截图/人工 QA 清单。
 - [ ] 仅在用户明确要求可执行文件时，进入 PyInstaller/Nuitka 打包 opt-in 阶段并运行 packaging preflight。
+- [x] 记录上述三个剩余事项均为显式触发门，不能因为泛化“继续”请求而自动执行。
 
 
 
@@ -502,6 +503,7 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - rollback note 生成必须使用显式格式化字符串记录变更路径，避免 PowerShell 输出 ordered dictionary 或破坏 `tools/gui/` / `tests/` 字面路径；
 - 当前单一消费项目证据显示，per-project `tools/gui/run_gui.ps1` 已足够承载项目根目录、GUI 包名、可见窗口授权和 runtime contract，不需要新增跨项目 `run-shared-pyside6-gui.ps1`；
 - 跨项目 launcher 仅在至少两个消费项目暴露重复 launcher 逻辑且 per-project wrapper 无法消除重复时再重开；
+- 剩余 `project-local-override`、可见 GUI 验证和打包 opt-in 是高影响显式触发门，泛化“继续”请求不能授权这些副作用动作；
 - 项目专属证据保留在 memory artifact，不写入本通用实施方案。
 
 ## 19. 失败模式与排障
@@ -521,15 +523,20 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 
 剩余任务必须由具体维护请求或具体消费项目需求触发，不再把已落地的 helper、模板、checker、skill、CI 注册或本机共享 runtime provision 重复列为后续任务：
 
-- 选择首个消费项目后，运行 shared 模式 preview/apply，并在消费项目中生成 GUI shell、runtime contract、adapter、import smoke test 和 rollback note；
-- 基于真实消费项目证据扩展 opt-in checker，避免只凭模板存在就误报 `project_gui_verified_with_shared_runtime`；
-- 仅在具体项目具备独立版本、隔离或自包含打包需求时，推进 `project-local-override`；
-- 仅在用户请求可执行文件时，推进 PyInstaller/Nuitka 打包 opt-in 与 packaging preflight；
-- 仅在用户请求可见 GUI 验证时，推进截图、人工 QA 或 `pytest-qt` 等交互测试。
+- 仅在具名具体项目具备独立版本、隔离或自包含打包需求，并且记录项目名、override reason、依赖/lockfile 与回滚证据时，推进 `project-local-override`；
+- 仅在用户明确请求可见 GUI 验证、截图复核或交互式桌面验证时，推进截图、人工 QA 或 `pytest-qt` 等交互测试；
+- 仅在用户明确请求可执行文件或安装包交付物时，推进 PyInstaller/Nuitka 打包 opt-in 与 packaging preflight。
+
+泛化“继续”“继续实施方案”“继续提交本地 git 仓库”不足以授权上述三个高影响动作。安全处理方式是记录 gate、停止副作用，或要求用户给出具体目标项目和理由。
 
 当前已落地的共享面任务可复用为模板和 checker 基线，但不能被误报为任意消费项目已经 `project_gui_verified_with_shared_runtime`、`project_local_override_ready`、`packaged` 或 `release_ready`。
 
 跨项目 launcher 取舍已在当前证据集下收口：继续使用每个消费项目生成的 `tools/gui/run_gui.ps1` 作为默认入口；只有后续第二个及以上消费项目证明存在无法由 per-project wrapper 吸收的重复 launcher 逻辑时，才重新评估 `run-shared-pyside6-gui.ps1`。
+
+显式触发门证据记录在：
+
+- `docs_bilingual/memory/pyside6_explicit_trigger_gates_2026-05-22.md` - 记录英文高影响动作 gate 依据；
+- `docs_bilingual/memory/pyside6_explicit_trigger_gates_2026-05-22.zh-CN.md` - 记录中文配套 gate 依据。
 
 ## 21. 验收标准
 

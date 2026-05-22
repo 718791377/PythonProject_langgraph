@@ -234,6 +234,7 @@ Concrete implementation items only; updating this plan file is not counted as an
 - [ ] Execute `project-local-override` only when a concrete project has independent-version, isolation, or self-contained packaging needs.
 - [ ] Run visible GUI validation only when explicitly requested.
 - [ ] Enter PyInstaller/Nuitka packaging only when explicitly requested.
+- [x] Record that the three remaining items above are explicit-trigger gates and must not be executed from a generic `continue` request.
 
 ## 12. First-consumer evidence summary
 
@@ -253,13 +254,20 @@ The reusable conclusions for this plan are:
 
 ## 13. Remaining work
 
-Remaining work is request-driven:
+Remaining work is request-driven and gated:
 
-- use project-local override only for a concrete project and documented reason;
-- run visible GUI/manual QA only by explicit request;
-- run packaging preflight only by explicit executable-packaging request.
+- use project-local override only for a named concrete project plus a documented independent-version, isolation, or self-contained packaging reason;
+- run visible GUI/manual QA only after the user explicitly requests visible GUI validation, screenshot review, or interactive desktop verification;
+- run packaging preflight only after the user explicitly requests an executable/package deliverable such as PyInstaller or Nuitka.
+
+A generic continuation request such as `continue` or `keep implementing this plan` is not sufficient authorization for those remaining high-impact actions. The safe response is to record the gate, stop before side effects, or ask for the concrete target and reason.
 
 The cross-project launcher decision is closed for the current evidence set: per-project `tools/gui/run_gui.ps1` remains the default. Reopen this decision only after a second consumer project produces repeated launcher requirements that justify a shared wrapper.
+
+Explicit-trigger gate evidence is recorded in:
+
+- `docs_bilingual/memory/pyside6_explicit_trigger_gates_2026-05-22.md` - records the English high-impact action gate rationale.
+- `docs_bilingual/memory/pyside6_explicit_trigger_gates_2026-05-22.zh-CN.md` - records the Chinese companion gate rationale.
 
 ## 14. Acceptance criteria
 
