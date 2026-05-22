@@ -3,12 +3,28 @@ doc_id: user_level_mcp_skills_browser_cli_governance_plan
 lang: en
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
+plan_readiness: execution-ready
+implementation_state: not_started
+last_reviewed_at: 2026-05-23
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
 ---
 
 # User-Level MCP, Skills, Browser, and CLI Harness Governance Plan
+
+## 0. Current review verdict
+
+As of 2026-05-23, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure.
+
+Review verdict:
+
+- Coverage is complete: MCP facade, on-demand skills discovery, browser ownership, Chrome DevTools MCP, CDP Bridge, OpenCLI, `oh-my-pi`, CLI-Anything, and `wecom-cli` all have default states, authorization boundaries, install evidence, and rollback requirements.
+- The granularity is implementation-ready: every lane can become an OpenSpec change, and every change must state owned files, checker/test evidence, receipt schema, rollback method, and non-goals.
+- Unchecked checklist items are downstream implementation state, not plan gaps. A lane must not be marked `active` until its code, checker, install artifact, and receipt evidence all exist.
+- The sequence is baseline before capability: finish token/risk, authorization receipt, update receipt, and evidence-redaction controls before implementing `skills2cli`, `mcp2cli`, browser automation, and `wecom-cli` capability surfaces.
+
+The next action is not to broaden this plan. Pick the first OpenSpec change and implement section 16 slice 1 as repo-local checker/test work, then proceed through the local commit workflow.
 
 ## 1. Purpose
 
@@ -390,6 +406,23 @@ Implement this plan as small, locally testable, rollbackable changes. Default sp
 8. `wecom-cli` API/Webhook MVP with secret redaction;
 9. `wecom-cli` process/window inventory with read-only evidence;
 10. `wecom-cli` gated GUI automation with global WXWork lease and one-task authorization receipts.
+
+OpenSpec slice delivery matrix:
+
+| Slice | Main artifacts | Minimum validation | Completion evidence |
+| --- | --- | --- | --- |
+| 1. Policy/checker baseline | token/risk checker, authorization receipt schema, update receipt schema, evidence-redaction policy | checker unit tests plus local-gate registration | checker output, test record, OpenSpec delta/spec update |
+| 2. `skills2cli` MVP | repo-local helper, user-level wrapper, skill index/search/show/warning audit | compact-output, privacy-redaction, profile-non-apply, and warning-audit tests | redacted index summary, wrapper smoke, receipt |
+| 3. `mcp2cli` MVP | allowed profile registry, list/search/show/call facade | compact-output, sensitive-call fail-closed, and receipt-required tests | profile registry, blocked authorization example, wrapper smoke |
+| 4. Browser owner registry | owner registry, lease schema, managed `chrome-devtools-mcp` wrapper | isolated/project-profile/human-owned protection and cleanup dry-run tests | lease receipt, stale-scan dry-run, wrapper smoke |
+| 5. CDP Bridge/OpenCLI enforcement | read/write separation gate and on-demand OpenCLI adapter | cookie/JavaScript/click/type/navigate sensitive-action fail-closed tests | owner-check evidence, authorization receipt sample, blocked-action record |
+| 6. `oh-my-pi` sidecar | pinned clone/install wrapper and update receipt model | wrapper help smoke, staging fetch, pin switch, rollback tests | lock/receipt, smoke summary, rollback pointer |
+| 7. CLI-Anything boundary | isolated install receipt and harness-generation boundary | no-hard-load check, update pin, rollback tests | install receipt and profile-visibility evidence |
+| 8. `wecom-cli` API/Webhook | webhook/app-message commands and secret redaction | secret-redaction, dry-run/smoke, receipt-required tests | redacted send summary and evidence that secrets are not stored in repo |
+| 9. `wecom-cli` inventory | process/window inventory commands | no-content-capture and read-only fixture/smoke tests | read-only inventory summary and no message-content evidence |
+| 10. `wecom-cli` GUI gate | global WXWork lease and one-task authorization gate | unauthorized fail, lease exclusivity, and manual smoke marker tests | authorization receipt, lease receipt, manual smoke marker |
+
+Slice completion rule: a slice is complete only when implementation, tests, CI registration, OpenSpec updates, rollback evidence, and a completed receipt all exist. If a slice has only documentation or research, it can be `planned` or `implemented-local`, but not `active`.
 
 Each OpenSpec change must define:
 

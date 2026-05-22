@@ -4,12 +4,28 @@ lang: zh-CN
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
+plan_readiness: execution-ready
+implementation_state: not_started
+last_reviewed_at: 2026-05-23
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
 ---
 
 # 用户级 MCP、Skills、Browser 与 CLI Harness 治理实施方案
+
+## 0. 当前复核结论
+
+截至 2026-05-23，本方案作为“执行前蓝图”已具备进入 OpenSpec 小步切片的颗粒度。`status: draft` 表示用户级运行时尚未按本方案全部落地，不表示本文缺少执行结构。
+
+复核结论：
+
+- 内容覆盖完整：MCP facade、skills 按需发现、browser owner、Chrome DevTools MCP、CDP Bridge、OpenCLI、`oh-my-pi`、CLI-Anything 与 `wecom-cli` 均有默认状态、授权边界、安装证据和回滚要求。
+- 颗粒度达到可实施：每个 lane 都能拆成 OpenSpec change；每个 change 都必须有 owned files、checker/test、receipt schema、rollback method 和 non-goals。
+- 未勾选清单是后续实施状态，不是方案缺口；在对应代码、checker、安装产物和 receipt 都完成前，不得把 lane 标为 `active`。
+- 推进原则是先 baseline 后能力：先完成 token/risk、授权 receipt、update receipt 与 evidence redaction，再实现 `skills2cli`、`mcp2cli`、browser 与 `wecom-cli` 等具体能力。
+
+本方案下一步不是继续扩大范围，而是选择第一个 OpenSpec change，把第 16 节的第 1 个切片落到 repo-local checker/test，再按本地提交流程推进。
 
 ## 1. 目的
 
@@ -390,6 +406,23 @@ receipt 必填字段：
 8. `wecom-cli` API/Webhook MVP 与 secret redaction；
 9. `wecom-cli` process/window inventory 与 read-only evidence；
 10. `wecom-cli` gated GUI automation，包含 global WXWork lease 与 one-task authorization receipts。
+
+OpenSpec 切片交付矩阵：
+
+| 切片 | 主要产物 | 最小验证 | 完成证据 |
+| --- | --- | --- | --- |
+| 1. Policy/checker baseline | token/risk checker、authorization receipt schema、update receipt schema、evidence redaction policy | checker 单元测试 + local gate 注册 | checker 输出、测试记录、OpenSpec delta/spec 更新 |
+| 2. `skills2cli` MVP | repo-local helper、用户级 wrapper、skill index/search/show/warning audit | compact output、privacy redaction、profile non-apply、warning audit 测试 | 脱敏索引摘要、wrapper smoke、receipt |
+| 3. `mcp2cli` MVP | allowed profile registry、list/search/show/call facade | compact output、sensitive-call fail-closed、receipt-required 测试 | profile registry、授权失败样例、wrapper smoke |
+| 4. Browser owner registry | owner registry、lease schema、`chrome-devtools-mcp` managed wrapper | isolated/project-profile/human-owned protection、cleanup dry-run 测试 | lease receipt、stale scan dry-run、wrapper smoke |
+| 5. CDP Bridge/OpenCLI enforcement | read/write 分离 gate、OpenCLI on-demand adapter | cookie/JS/click/type/navigate sensitive action fail-closed 测试 | owner check 证据、授权 receipt 样例、阻断记录 |
+| 6. `oh-my-pi` sidecar | pinned clone/install wrapper、update receipt model | wrapper help smoke、staging fetch、pin switch、rollback 测试 | lock/receipt、smoke summary、rollback pointer |
+| 7. CLI-Anything boundary | isolated install receipt、harness-generation boundary | no hard-load check、update pin、rollback 测试 | install receipt、profile visibility 证据 |
+| 8. `wecom-cli` API/Webhook | webhook/app-message commands、secret redaction | secret redaction、dry-run/smoke、receipt-required 测试 | 脱敏发送摘要、secret 不落库证据 |
+| 9. `wecom-cli` inventory | process/window inventory commands | no-content-capture、read-only fixture/smoke 测试 | 只读 inventory 摘要、窗口内容未采集证据 |
+| 10. `wecom-cli` GUI gate | global WXWork lease、one-task authorization gate | unauthorized fail、lease exclusivity、manual smoke marker 测试 | 授权 receipt、lease receipt、人工 smoke marker |
+
+切片完成判定：每个切片只有在实现、测试、CI 注册、OpenSpec 更新、rollback 证据和 completed receipt 均存在时才算完成；如果只完成文档或研究，只能标记为 `planned` 或 `implemented-local`，不能标记为 `active`。
 
 每个 OpenSpec change 必须定义：
 
