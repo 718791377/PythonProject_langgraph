@@ -36,6 +36,9 @@ audit_run_type: continuation_status
 - 17:08 follow-up warning triage ???`docs_bilingual/memory/skills_usage_audit_warning_triage_2026-05-22_1708.zh-CN.md`?
 - 17:08 follow-up warning ?????`docs_bilingual/memory/skills_usage_audit_warning_manual_review_2026-05-22_1708.zh-CN.md`?
 - 17:08 follow-up skipped-loading ?????`docs_bilingual/memory/skills_usage_audit_skipped_loading_source_review_2026-05-22_1708.zh-CN.md`?
+- 21:54 follow-up warning triage ???`docs_bilingual/memory/skills_usage_audit_warning_triage_2026-05-22_2154.zh-CN.md`?
+- 21:54 follow-up warning ?????`docs_bilingual/memory/skills_usage_audit_warning_manual_review_2026-05-22_2154.zh-CN.md`?
+- 21:54 follow-up skipped-loading ?????`docs_bilingual/memory/skills_usage_audit_skipped_loading_source_review_2026-05-22_2154.zh-CN.md`?
 
 ## ????????
 
@@ -62,5 +65,12 @@ audit_run_type: continuation_status
 ## 17:08 ????
 
 - 17:08 follow-up ???? live warning ?? 30 ???????
+- ?? 1 ??? budget warning count ? `28`?skipped-loading count ? `28`?severity ? `high`?
+- ???? audit-only???? `config.toml`???? plugin cache???? hard-load/profile apply?
+
+## 21:54 ????
+
+- 21:54 follow-up ???? live warning ?? 30 ???????
+- ???? warning ??? `2026-05-22T22:17:40+08:00`?
 - ?? 1 ??? budget warning count ? `28`?skipped-loading count ? `28`?severity ? `high`?
 - ???? audit-only???? `config.toml`???? plugin cache???? hard-load/profile apply?
