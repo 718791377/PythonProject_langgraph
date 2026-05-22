@@ -35,6 +35,9 @@ def load_contract(project_root: Path) -> tuple[dict[str, Any], list[str]]:
 
 def build_payload(root: Path) -> dict[str, Any]:
     project_root, evidence = detect_project_root(root)
+    src_path = project_root / "src"
+    if src_path.exists():
+        sys.path.insert(0, str(src_path))
     contract, blockers = load_contract(project_root)
     runtime_python = contract.get("runtime_python")
     runtime_root = contract.get("runtime_root")

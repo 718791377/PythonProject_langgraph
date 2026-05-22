@@ -263,6 +263,29 @@ def validate_apply_payload(payload: dict[str, Any], fixture: Path, errors: list[
         errors.append("Apply helper JSON did not report runtime contract in applied_file_changes.")
     if payload.get("rollback_note") != "docs/pyside6_gui_rollback.md":
         errors.append("Apply helper JSON must report rollback_note=docs/pyside6_gui_rollback.md.")
+    rollback_note = fixture / "docs" / "pyside6_gui_rollback.md"
+    if rollback_note.exists():
+        rollback_text = rollback_note.read_text(encoding="utf-8", errors="replace")
+        required_rollback_snippets = [
+            "`tools/gui/pyside6_runtime_contract.json`",
+            "`src/sample_gui/`",
+            "`tools/gui/`",
+            "`tests/`",
+        ]
+        for snippet in required_rollback_snippets:
+            if snippet not in rollback_text:
+                errors.append(f"Rollback note missing clean literal path snippet: {snippet}")
+        forbidden_rollback_snippets = [
+            "System.Collections.Specialized.OrderedDictionary",
+            "$(System.Collections.Specialized.OrderedDictionary.path)",
+            "\tools/gui/",
+            "\tests/",
+            "\\ools/gui/",
+            "\\ests/",
+        ]
+        for snippet in forbidden_rollback_snippets:
+            if snippet in rollback_text:
+                errors.append(f"Rollback note contains corrupted PowerShell interpolation/path snippet: {snippet!r}")
 
 
 def validate_override_payload(payload: dict[str, Any], fixture: Path, errors: list[str]) -> None:

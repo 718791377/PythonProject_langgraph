@@ -224,7 +224,7 @@ function Write-RollbackNote {
     $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     $changeLines = @()
     foreach ($change in $AppliedChanges) {
-        $changeLines += "- $($change.status): `$($change.path)` ($($change.action))"
+        $changeLines += ("- {0}: ``{1}`` ({2})" -f $change.status, $change.path, $change.action)
     }
     if ($changeLines.Count -eq 0) { $changeLines += "- no files changed" }
     $dependencyLine = if ($RuntimeMode -eq "shared") { "No PySide6 dependency was written to this consumer project." } else { "Project-local override dependency declaration: $PySideSpec via $DependencyStyle." }
@@ -248,9 +248,9 @@ $($changeLines -join "`r`n")
 ## Rollback steps
 
 1. Revert the local commit or feature branch that introduced the GUI changes.
-2. Delete generated GUI template files under `src/$PackageName/`, `tools/gui/`, and `tests/` if they were created by apply mode.
-3. Keep the shared PySide6 runtime maintained by `D:\PythonProject_langgraph` unless this task explicitly provisioned or upgraded it.
-4. If `project-local-override` was used, remove the project-local PySide6 dependency declaration and restore any changed lockfile.
+2. Delete generated GUI template files under ``src/$PackageName/``, ``tools/gui/``, and ``tests/`` if they were created by apply mode.
+3. Keep the shared PySide6 runtime maintained by ``D:\PythonProject_langgraph`` unless this task explicitly provisioned or upgraded it.
+4. If ``project-local-override`` was used, remove the project-local PySide6 dependency declaration and restore any changed lockfile.
 5. Keep user-level templates and unrelated project files unchanged.
 "@
     return Write-TextFileIfChanged "docs/pyside6_gui_rollback.md" $content "create_or_update" "Record the project-local rollback path for PySide6 GUI enablement." -OverwriteExisting

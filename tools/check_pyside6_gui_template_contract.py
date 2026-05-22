@@ -22,6 +22,8 @@ REQUIRED_FILES: dict[str, list[str]] = {
     "tools/gui/adapters/README.md.template": ["shared PySide6 runtime", "business dependencies", "visible GUI"],
     "tools/gui/check_pyside6_env.py.template": [
         "project_root_evidence",
+        "src_path = project_root / \"src\"",
+        "sys.path.insert(0, str(src_path))",
         "python_path",
         "python_version",
         "runtime_mode",

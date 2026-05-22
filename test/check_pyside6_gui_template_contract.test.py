@@ -75,6 +75,20 @@ class PySide6GuiTemplateContractTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertTrue(any("pip install" in error for error in payload["errors"]))
 
+    def test_env_checker_template_adds_project_src_to_import_path(self) -> None:
+        root = self.make_root("pyside6-template-srcpath")
+        self.copy_templates(root)
+        path = root / "tools" / "pyside6_gui_templates" / "tools" / "gui" / "check_pyside6_env.py.template"
+        text = path.read_text(encoding="utf-8")
+        text = text.replace('    src_path = project_root / "src"\n', "")
+        text = text.replace("    if src_path.exists():\n        sys.path.insert(0, str(src_path))\n", "")
+        path.write_text(text, encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertTrue(any("sys.path.insert" in error or "src_path" in error for error in payload["errors"]))
+
 
 if __name__ == "__main__":
     unittest.main()

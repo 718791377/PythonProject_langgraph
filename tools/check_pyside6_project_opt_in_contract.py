@@ -39,10 +39,23 @@ REQUIRED_MAIN_WINDOW_SNIPPETS = [
 VISIBLE_TEST_SNIPPETS = [".show()", "app.exec()", "QApplication.exec("]
 PYSIDE6_REQUIREMENT_RE = re.compile(r"^\s*PySide6(?:\s*(?:==|~=|>=|<=|>|<|!=).*)?\s*(?:#.*)?$", re.IGNORECASE)
 DEFAULT_SHARED_RUNTIME_ROOT = r"D:\PythonProject_langgraph\.shared_runtimes\pyside6"
+SMOKE_EVIDENCE_REQUIRED_TRUE_FIELDS = ["import_only_verified"]
+SMOKE_EVIDENCE_REQUIRED_FIELDS = [
+    "project_root",
+    "python_path",
+    "runtime_mode",
+    "shared_runtime_root",
+    "shared_runtime_python",
+    "shared_runtime_status",
+    "pyside6_version",
+    "qt_version",
+    "import_only_verified",
+    "blockers",
+]
 
 
 def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8", errors="replace")
+    return path.read_text(encoding="utf-8-sig", errors="replace")
 
 
 def is_pyside6_requirement(value: object) -> bool:
@@ -196,6 +209,46 @@ def validate_runtime_contract(contract: dict[str, Any], errors: list[str], warni
             errors.append(f"{RUNTIME_CONTRACT} must set {key}=true.")
 
 
+def load_smoke_evidence(smoke_json: Path | None, project_root: Path, errors: list[str]) -> dict[str, Any]:
+    if smoke_json is None:
+        return {"provided": False, "verified": False}
+    if not smoke_json.exists():
+        errors.append(f"Smoke evidence file does not exist: {smoke_json}")
+        return {"provided": True, "verified": False, "path": str(smoke_json)}
+    try:
+        payload = json.loads(read_text(smoke_json))
+    except json.JSONDecodeError as exc:
+        errors.append(f"Smoke evidence JSON is invalid: {smoke_json}: {exc}")
+        return {"provided": True, "verified": False, "path": str(smoke_json)}
+
+    for field in SMOKE_EVIDENCE_REQUIRED_FIELDS:
+        if field not in payload:
+            errors.append(f"Smoke evidence missing required field `{field}`.")
+    for field in SMOKE_EVIDENCE_REQUIRED_TRUE_FIELDS:
+        if payload.get(field) is not True:
+            errors.append(f"Smoke evidence must set {field}=true before project_gui_verified_with_shared_runtime can be claimed.")
+    if payload.get("blockers") not in ([], None):
+        errors.append(f"Smoke evidence contains blockers: {payload.get('blockers')}")
+    if payload.get("runtime_mode") != "shared":
+        errors.append("Smoke evidence runtime_mode must be shared.")
+    if payload.get("shared_runtime_status") != "import_only_verified":
+        errors.append("Smoke evidence shared_runtime_status must be import_only_verified.")
+    if DEFAULT_SHARED_RUNTIME_ROOT not in str(payload.get("shared_runtime_root", "")):
+        errors.append(f"Smoke evidence shared_runtime_root must point at {DEFAULT_SHARED_RUNTIME_ROOT}.")
+    if DEFAULT_SHARED_RUNTIME_ROOT not in str(payload.get("shared_runtime_python", "")):
+        errors.append(f"Smoke evidence shared_runtime_python must point at {DEFAULT_SHARED_RUNTIME_ROOT}.")
+    reported_root = Path(str(payload.get("project_root", ""))).resolve() if payload.get("project_root") else None
+    if reported_root and reported_root != project_root.resolve():
+        errors.append(f"Smoke evidence project_root does not match target project root: {reported_root} != {project_root.resolve()}")
+
+    return {
+        "provided": True,
+        "verified": payload.get("import_only_verified") is True and payload.get("blockers") in ([], None),
+        "path": str(smoke_json),
+        "payload": payload,
+    }
+
+
 def find_gui_packages(project_root: Path) -> list[dict[str, Any]]:
     src = project_root / "src"
     if not src.exists():
@@ -220,7 +273,7 @@ def find_gui_packages(project_root: Path) -> list[dict[str, Any]]:
     return packages
 
 
-def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces: bool = False) -> dict[str, Any]:
+def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces: bool = False, smoke_json: Path | None = None) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
     info: list[str] = []
@@ -261,6 +314,7 @@ def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces:
         errors.append("Missing required PySide6 shared-runtime project files: " + ", ".join(missing_files))
 
     packages = find_gui_packages(project_root) if project_root.exists() else []
+    smoke_evidence = load_smoke_evidence(smoke_json, project_root, errors) if project_root.exists() else {"provided": bool(smoke_json), "verified": False}
     if not packages:
         errors.append("No GUI package found under src/* with __init__.py, app.py, and main_window.py.")
     for package in packages:
@@ -310,6 +364,8 @@ def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces:
         capability_state = "shared_runtime_declared"
     if runtime_contract and packages and not missing_files:
         capability_state = "project_gui_template_ready"
+    if runtime_mode == "shared" and smoke_evidence.get("verified") and not errors:
+        capability_state = "project_gui_verified_with_shared_runtime"
     if runtime_mode == "project-local-override" and dependency_surfaces and not errors:
         capability_state = "project_local_override_ready"
 
@@ -325,10 +381,11 @@ def validate_project(project_root: Path, *, allow_duplicate_dependency_surfaces:
         "runtime_contract": runtime_contract,
         "dependency_surfaces": dependency_surfaces,
         "lockfile_evidence": lockfile_evidence,
+        "shared_runtime_smoke_evidence": smoke_evidence,
         "gui_packages": packages,
         "required_files_present": existing_files,
         "required_files_missing": missing_files,
-        "verified": False,
+        "verified": smoke_evidence.get("verified", False),
         "packaged": False,
         "errors": errors,
         "warnings": warnings,
@@ -430,6 +487,37 @@ def add_project_local_override(project: Path, *, kind: str = "requirements", inc
         raise ValueError(kind)
 
 
+def write_smoke_evidence(project: Path, *, import_only_verified: bool = True, blockers: list[str] | None = None) -> Path:
+    path = project / ".tmp" / "pyside6_shared_gui_import_smoke.json"
+    write(
+        path,
+        json.dumps(
+            {
+                "schema_version": 1,
+                "project_root": str(project.resolve()),
+                "project_root_evidence": ["README.md"],
+                "python_path": DEFAULT_SHARED_RUNTIME_ROOT + "\\.venv\\Scripts\\python.exe",
+                "python_version": "3.12.10",
+                "python_architecture": "64bit",
+                "runtime_mode": "shared",
+                "shared_runtime_root": DEFAULT_SHARED_RUNTIME_ROOT,
+                "shared_runtime_python": DEFAULT_SHARED_RUNTIME_ROOT + "\\.venv\\Scripts\\python.exe",
+                "shared_runtime_status": "import_only_verified" if import_only_verified else "present",
+                "pyside6_version": "6.11.1",
+                "qt_version": "6.11.1",
+                "import_only_verified": import_only_verified,
+                "package_manager": "shared-runtime",
+                "dependency_style": "none-shared-runtime",
+                "blockers": blockers or [],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+    )
+    return path
+
+
 def run_self_test(root: Path) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -441,6 +529,20 @@ def run_self_test(root: Path) -> dict[str, Any]:
         samples["valid"] = validate_project(valid)
         if not samples["valid"]["ok"]:
             errors.append("Valid shared-runtime opt-in fixture did not pass: " + "; ".join(samples["valid"]["errors"]))
+
+        smoke_path = write_smoke_evidence(valid)
+        samples["valid_with_smoke"] = validate_project(valid, smoke_json=smoke_path)
+        if not samples["valid_with_smoke"].get("verified"):
+            errors.append("Valid shared-runtime opt-in fixture with smoke evidence did not become verified.")
+        if samples["valid_with_smoke"].get("capability_state") != "project_gui_verified_with_shared_runtime":
+            errors.append("Valid smoke evidence must promote capability_state to project_gui_verified_with_shared_runtime.")
+
+        bad_smoke = make_valid_fixture(root, "pyside6-shared-optin-bad-smoke")
+        fixtures.append(bad_smoke)
+        bad_smoke_path = write_smoke_evidence(bad_smoke, import_only_verified=False, blockers=["import_only_failed:fixture"])
+        samples["bad_smoke"] = validate_project(bad_smoke, smoke_json=bad_smoke_path)
+        if samples["bad_smoke"].get("ok"):
+            errors.append("Fixture with failed shared-runtime smoke evidence unexpectedly passed.")
 
         missing_contract = make_valid_fixture(root, "pyside6-shared-optin-missing-contract")
         fixtures.append(missing_contract)
@@ -497,12 +599,17 @@ def main() -> int:
     parser.add_argument("--root", default=".", help="Repository root for self-test artifacts.")
     parser.add_argument("--project-root", help="Consumer project root to validate. If omitted, run checker self-test fixtures.")
     parser.add_argument("--allow-duplicate-dependency-surfaces", action="store_true", help="Allow duplicated PySide6 override dependency surfaces after human review.")
+    parser.add_argument("--smoke-json", help="Optional import-only shared-runtime smoke evidence JSON from tools/gui/check_pyside6_env.py.")
     parser.add_argument("--json", action="store_true", help="Emit JSON.")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
     if args.project_root:
-        payload = validate_project(Path(args.project_root), allow_duplicate_dependency_surfaces=args.allow_duplicate_dependency_surfaces)
+        payload = validate_project(
+            Path(args.project_root),
+            allow_duplicate_dependency_surfaces=args.allow_duplicate_dependency_surfaces,
+            smoke_json=Path(args.smoke_json) if args.smoke_json else None,
+        )
     else:
         payload = run_self_test(root)
 

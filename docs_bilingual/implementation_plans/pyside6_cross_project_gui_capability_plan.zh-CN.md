@@ -446,7 +446,7 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - [x] 在 shared 模式下当共享 runtime 缺失时 fail closed，不静默安装到消费项目 `.venv`。
 - [x] 在 shared 模式下生成项目本地 `tools/gui/pyside6_runtime_contract.json`。
 - [x] 在 shared 模式下生成项目本地 GUI adapter 说明 `tools/gui/adapters/README.md`。
-- [x] 更新 `tools/gui/check_pyside6_env.py` 模板，使其通过 runtime contract 与共享 runtime 做 import-only smoke。
+- [x] 更新 `tools/gui/check_pyside6_env.py` 模板，使其通过 runtime contract 与共享 runtime 做 import-only smoke，并在使用共享 runtime Python 时显式加入目标项目 `src` 到 `sys.path`。
 - [x] 更新 `tools/gui/run_gui.ps1` 模板，使项目通过共享 runtime 启动 GUI。
 - [x] 保留 GUI 源码、运行 helper、adapter、测试和 rollback note 在消费项目本地，不把消费项目 GUI 代码写回本仓库。
 - [x] 为 `project-local-override` 增加 `-OverrideReason` 要求。
@@ -457,6 +457,7 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - [x] 更新 `tools/check_pyside6_gui_preview_helper_contract.py`，覆盖 shared/runtime-root/override 行为。
 - [x] 更新 `tools/check_pyside6_gui_skill_contract.py`，覆盖共享 runtime 默认策略与禁止误报状态。
 - [x] 更新 `tools/check_pyside6_gui_template_contract.py`，覆盖 runtime contract、adapter 与 shared runtime 模板。
+- [x] 修复 `ensure-pyside6-gui.ps1` rollback note 生成中的 PowerShell 插值问题，防止出现 `System.Collections.Specialized.OrderedDictionary` 或制表符破坏的 `tools/gui/` / `tests/` 路径。
 - [x] 更新 `tools/check_pyside6_operator_usage_guide.py`，覆盖 operator 指南中的共享 runtime 用法。
 - [x] 更新 `tools/check_pyside6_project_opt_in_contract.py`，覆盖 shared 模式不安装 PySide6 与 override 例外。
 - [x] 新增并更新 PySide6 相关 Node 测试，覆盖共享 runtime checker、模板 checker、preview helper checker、skill checker、project opt-in checker、packaging opt-in checker 与 operator 指南 checker。
@@ -474,17 +475,34 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - [x] 按本轮继续实施请求，在 `D:\PythonProject_langgraph\.shared_runtimes\pyside6` provision 真实共享 PySide6 runtime；该目录仍为 gitignored 本地-only runtime。
 - [x] provision 后运行共享 runtime `verify`，记录 Python 3.12.10、PySide6 6.11.1 与 Qt 6.11.1 import-only 证据，未启动可见 GUI。
 - [x] provision 后生成真实 `runtime.json`，记录版本、路径、更新时间、import-only 状态和回滚步骤；该文件保留在 `.shared_runtimes/` 本地产物中，不进入 Git。
-- [x] 按具体需求选择第一个消费项目，先运行 shared 模式 `preview`，确认目标项目根目录、写入范围和阻塞项；2026-05-22 已选择首个已登记消费项目并记录 preview 证据到 `docs_bilingual/memory/pyside6_first_consumer_preview_2026-05-22.zh-CN.md`。
-- [ ] 在首个消费项目中运行 shared 模式 `apply`，生成 GUI shell、runtime contract、run helper、adapter、import smoke test 与 rollback note。
-- [ ] 在首个消费项目中通过共享 runtime 运行 import-only smoke test。
-- [ ] 在首个消费项目中更新项目本地文档，记录 GUI 能力状态、runtime contract、adapter 边界和回滚方式。
-- [ ] 根据首个消费项目的证据扩展项目 opt-in checker，覆盖真实 runtime contract、adapter 和 shared runtime smoke 输出。
+- [x] 按具体需求选择第一个消费项目，先运行 shared 模式 `preview`，确认目标项目根目录、写入范围和阻塞项；2026-05-22 已选择首个已登记消费项目并把项目专属证据记录到 memory 文件。
+- [x] 在首个消费项目中运行 shared 模式 `apply`，生成 GUI shell、runtime contract、run helper、adapter、import smoke test、rollback note 与项目本地双语文档；项目专属路径、提交号和回滚证据只保存在 memory 文件中。
+- [x] 在首个消费项目中通过共享 runtime 运行 import-only smoke test；证据显示 PySide6 6.11.1、Qt 6.11.1、`import_only_verified=true`，且未启动可见 GUI。
+- [x] 根据首个消费项目证据修正模板，使共享 runtime Python 执行项目 import smoke 时显式加入目标项目 `src` 到 `sys.path`。
+- [x] 根据首个消费项目证据修正 rollback note 生成逻辑，防止 PowerShell 将变更项序列化为 `System.Collections.Specialized.OrderedDictionary` 或破坏 `tools/gui/` / `tests/` 字面路径。
+- [x] 根据首个消费项目的证据扩展项目 opt-in checker，覆盖真实 runtime contract、adapter 和 shared runtime smoke 输出；`tools/check_pyside6_project_opt_in_contract.py` 已支持 `--smoke-json`，只有 import-only smoke 成功且无 blockers 才能提升到 `project_gui_verified_with_shared_runtime`。
 - [ ] 如果首个消费项目暴露需要，再新增跨项目 `run-shared-pyside6-gui.ps1` 或记录 per-project `tools/gui/run_gui.ps1` 已足够的取舍依据。
 - [ ] 仅在项目有独立版本、隔离或自包含打包需求时，执行 `project-local-override`，并记录 override reason、依赖/lockfile 证据和 rollback 证据。
 - [ ] 仅在用户明确要求可见 GUI 验证时，执行交互式窗口验证或截图/人工 QA 清单。
 - [ ] 仅在用户明确要求可执行文件时，进入 PyInstaller/Nuitka 打包 opt-in 阶段并运行 packaging preflight。
 
-## 18. 失败模式与排障
+
+
+## 18. 首个消费项目证据摘要
+
+2026-05-22 已完成首个已登记消费项目的本地 shared runtime GUI opt-in。为保持本仓库级方案的通用性，并满足 current-repo authority guard，项目专属路径、提交号、smoke 输出和回滚细节只记录在：
+
+- `docs_bilingual/memory/pyside6_first_consumer_apply_2026-05-22.md` - 记录首个消费项目 apply 的项目专属证据；
+- `docs_bilingual/memory/pyside6_first_consumer_apply_2026-05-22.zh-CN.md` - 记录同一证据的中文配套文件。
+
+本方案只保留可复用结论：
+
+- shared 模式可以在不向消费项目安装 PySide6 的前提下生成 GUI shell、runtime contract、run helper、adapter 说明、import smoke test、rollback note 与项目本地文档；
+- 由共享 runtime Python 执行项目 import smoke 时，模板必须显式把目标项目 `src` 加入 `sys.path`；
+- rollback note 生成必须使用显式格式化字符串记录变更路径，避免 PowerShell 输出 ordered dictionary 或破坏 `tools/gui/` / `tests/` 字面路径；
+- 项目专属证据保留在 memory artifact，不写入本通用实施方案。
+
+## 19. 失败模式与排障
 
 常见失败模式必须作为项目本地问题处理，不能通过削弱共享政策解决：
 
@@ -497,7 +515,7 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 | 打包 exe 被杀软警告 | one-file 可执行文件启发式误报 | 记录工具和版本，优先可复现 build，避免未经复核的二进制 |
 | helper 无法识别项目根目录 | 目标检测不安全 | fail closed，并要求显式传入 `-ProjectRoot` |
 
-## 19. 后续实施任务
+## 20. 后续实施任务
 
 剩余任务必须由具体维护请求或具体消费项目需求触发，不再把已落地的 helper、模板、checker、skill、CI 注册或本机共享 runtime provision 重复列为后续任务：
 
@@ -510,7 +528,7 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 
 当前已落地的共享面任务可复用为模板和 checker 基线，但不能被误报为任意消费项目已经 `project_gui_verified_with_shared_runtime`、`project_local_override_ready`、`packaged` 或 `release_ready`。
 
-## 20. 验收标准
+## 21. 验收标准
 
 本方案完成的标准：
 
