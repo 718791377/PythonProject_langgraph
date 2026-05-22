@@ -278,7 +278,168 @@ Disallowed for this plan:
 - no default skill/profile inclusion;
 - no runtime integration.
 
-## 13. Implementation order
+## 13. Readiness gates and acceptance criteria
+
+Status flow:
+
+`planned -> implemented-local -> installed-user-level -> smoke-tested -> active -> rollback-ready`
+
+The status names are operational states, not marketing labels:
+
+- `planned`: the OpenSpec change, file ownership, test target, and rollback target are known.
+- `implemented-local`: repository code, docs, and tests exist on a feature branch or worktree.
+- `installed-user-level`: the user-level wrapper or helper exists outside the repository source tree with a receipt.
+- `smoke-tested`: the user-level wrapper has passed a minimal read-only or fail-closed command in the intended shell.
+- `active`: the tool may be used by default within its allowed lane and authorization boundary.
+- `rollback-ready`: the receipt contains enough version, path, command, and backup evidence to revert without guessing.
+
+Default lane-state table:
+
+| Lane | Initial default state | Allowed default actions | Forbidden or approval-gated actions | Evidence required before `active` |
+| --- | --- | --- | --- | --- |
+| `skills2cli` | `planned`, then eligible for `active` after implementation | Compact read-only index/search/show/warning summaries | Applying/disabling skills, dumping complete plugin skill bodies, recording full private paths | Compact-output tests, warning-audit redaction tests, evidence that profile suggestions do not apply changes |
+| `mcp2cli` | `planned`, then profile-by-profile `active` | list/search/show; non-sensitive calls after category checks | Secrets, shell, browser state, remote mutation, payment/account/personal-data calls | Allowed-profile registry, sensitive-call fail-closed checker, authorization receipt schema |
+| `chrome-devtools-mcp` | `planned`; local isolated debug mode may become `active` first | isolated-session local/debug inspection | human-owned Chrome, logged-in project profiles, cleanup | Managed wrapper, lease, profile ownership, stale-cleanup dry-run evidence |
+| CDP Bridge | `on-demand` | tab list, DOM scan, screenshot, read-only inventory | cookies, JavaScript write, click/type/navigate in sensitive context | owner check, authorization gate, read/write separation tests |
+| OpenCLI | `on-demand` | explicit isolated or project-profile task adaptation | default binding to human-owned tabs or always-on loading | wrapper pin, browser owner registry, human-owned protection tests |
+| `oh-my-pi` | `reference-only` | architecture, UX, and harness reference reading | replacing Codex, replacing native subagents, runtime updates without receipts | pinned clone, smoke test, update/rollback receipt |
+| CLI-Anything | `reference-only` | harness-structure reference and generation aid | bulk hard-loading skills or bypassing authorization rules | isolated install receipt, update pin, rollback evidence |
+| `wecom-cli` API/Webhook | `planned` | low-risk notifications/API sends when secrets are available and governed | plaintext credentials without secret storage or unredacted logs | secret redaction, webhook/app-message smoke, receipt |
+| `wecom-cli` process/window inventory | `planned` | read-only process/window/foreground-state inventory | message-content capture, click, type, send | process/window fixture or smoke, no-content-capture tests |
+| `wecom-cli` GUI automation | `disabled` | no default actions | read/send/click/type unless one-task approval and a global lease both exist | global WXWork lease, one-task authorization receipt, manual smoke marker |
+
+
+Lane-specific `active` criteria:
+
+- `skills2cli`: `index`, `search`, `show`, and warning-audit summary commands work; default output is compact; output does not leak private full paths, cookies, tokens, or full plugin skill descriptions.
+- `mcp2cli`: allowed profiles are explicit; list/search/show output is compact by default; sensitive calls fail closed unless a matching authorization receipt is present.
+- `chrome-devtools-mcp`: the wrapper writes a lease; isolated-session-managed and project-profile modes are distinct; human-owned Chrome is protected; stale-cleanup dry-run passes before cleanup is allowed.
+- CDP Bridge: read-only inspection is separated from write-capable actions; every write or sensitive read requires owner evidence and authorization evidence before execution.
+- OpenCLI: remains on-demand until installation pinning, profile binding, and the rule blocking unauthorized human-owned tabs are implemented and tested.
+- `oh-my-pi`: remains a reference-sidecar until updater receipts, smoke tests, and rollback pins exist.
+- CLI-Anything: remains harness-generation support until installation receipts, update pins, and rollback evidence exist.
+- `wecom-cli` GUI automation: remains disabled until process/window inventory, a global WXWork lease, and one-task authorization receipts are implemented and tested.
+
+Acceptance criteria for this plan:
+
+- every lane has a documented default state: `active`, `on-demand`, `reference-only`, or `disabled`;
+- every user-level installed tool has an update receipt and rollback pointer;
+- every sensitive lane has a fail-closed checker or wrapper guard;
+- every browser automation lane records owner class before actions that can read or mutate state;
+- no repository evidence stores secrets, cookies, raw browser data, full personal runtime paths, or complete plugin description dumps.
+
+## 14. Sensitive authorization matrix
+
+| Action | Default | Required authorization evidence |
+| --- | --- | --- |
+| Skill index/search/show | Allowed | None; output must stay compact and redacted. |
+| Skill warning audit summary | Allowed | None; warning text must be summarized without dumping full skill bodies. |
+| MCP list/search/show | Allowed | Tool must belong to an allowed profile registry entry. |
+| MCP call without secrets, side effects, remote mutation, or personal data | Conditional | Allowed tool category plus compact output policy. |
+| MCP call with secrets, shell execution, browser state, remote infrastructure mutation, payment/account action, or personal data | Blocked by default | Explicit one-task approval plus receipt containing tool, purpose, scope, and expiry. |
+| Chrome isolated-session-managed local debugging | Allowed | Managed lease and isolated profile path. |
+| Chrome project-profile with login state | Blocked by default | Project-profile approval plus owner lease; no cross-project reuse without a new lease. |
+| Human-owned Chrome read or write | Blocked by default | One-tab, one-task, current-session delegation; no background browsing of personal assets. |
+| CDP Bridge or OpenCLI click/type/navigate/cookie/JavaScript write | Blocked by default | Owner check plus explicit approval naming the target and allowed action. |
+| WXWork process/window inventory | Allowed read-only | No message content captured; no click/type/send actions. |
+| WXWork message read/send/click/type | Blocked by default | One-task approval plus global WXWork lease and receipt. |
+
+Authorization receipts must be short-lived. A receipt for one browser tab, one WXWork task, one MCP call family, or one shell-capable tool does not authorize unrelated future tasks.
+
+## 15. Installation and update evidence contract
+
+Every user-level installed tool in this plan must write a receipt under:
+
+`C:\Users\lenovo\.codex\state\tool-updates\`
+
+Required receipt fields:
+
+- tool name;
+- installed version, git commit, package version, or package lock hash;
+- source URL;
+- install path;
+- wrapper path;
+- state path;
+- smoke test command and result;
+- updater command;
+- rollback pointer;
+- last updated time;
+- status: `active`, `on-demand`, `reference-only`, or `disabled`;
+- owner lane: `skills2cli`, `mcp2cli`, `browser`, `oh-my-pi`, `cli-anything`, `wecom-cli`, or `reference`.
+
+Repository evidence may record the receipt schema, relative state names, status, and sanitized smoke-test summaries. It must not record secrets, cookies, tokens, raw browser data, message contents, or full personal runtime paths.
+
+Update rule:
+
+- updater commands must be pinned or version-aware;
+- an update that changes wrapper behavior must re-run smoke tests and authorization guard tests;
+- a failed smoke test must leave the previous installed version selected;
+- rollback must be possible from the receipt without re-reading chat history.
+
+## 16. OpenSpec implementation split
+
+Implement this plan as small, locally testable, rollbackable changes. Default split:
+
+1. policy and checker baseline for token-risk priority, browser asset classes, sensitive authorization, update receipts, and evidence redaction;
+2. `skills2cli` MVP: index/search/show plus warning-audit summary with compact output tests;
+3. `mcp2cli` user-level wrapper and allowed profile registry;
+4. browser owner registry plus `chrome-devtools-mcp` managed wrapper for isolated-session-managed and project-profile modes;
+5. CDP Bridge and OpenCLI on-demand enforcement, including human-owned tab protection;
+6. `oh-my-pi` sidecar install/update receipts and rollback evidence;
+7. CLI-Anything install/update receipts and harness-generation boundary;
+8. `wecom-cli` API/Webhook MVP with secret redaction;
+9. `wecom-cli` process/window inventory with read-only evidence;
+10. `wecom-cli` gated GUI automation with global WXWork lease and one-task authorization receipts.
+
+Each OpenSpec change must define:
+
+- files owned by the change;
+- local tests or checkers that prove the new behavior;
+- user-level install artifact, if any;
+- receipt path and schema, if any;
+- rollback method;
+- explicit non-goals to keep the change from expanding.
+
+
+Fine-grained implementation checklist:
+
+- [ ] Create or reuse a small OpenSpec change for this plan and state scope, non-goals, and rollback boundary.
+- [ ] Add a token/risk priority checker that prevents high-token or high-risk surfaces from becoming default without evidence.
+- [ ] Add the sensitive authorization receipt schema with at least action, target, scope, expiry, session, and operator confirmation.
+- [ ] Add the user-level tool update receipt schema covering install path, wrapper path, state path, pin, smoke result, and rollback pointer.
+- [ ] Add sanitized-evidence rules that forbid committing secrets, cookies, tokens, raw browser data, message contents, full personal runtime paths, or complete plugin description dumps.
+- [ ] Implement `skills2cli index --json` with skill id, source layer, short description hash/summary, and availability status.
+- [ ] Implement `skills2cli search <query> --json` with compact summaries and location hints by default.
+- [ ] Implement `skills2cli show <skill-id> --json` without dumping complete skill bodies by default; full content requires a governed flag.
+- [ ] Implement `skills2cli profile suggest --task <text> --json` as recommendation-only, never direct apply.
+- [ ] Implement `skills2cli audit warnings --since <duration> --json` covering 2% skills-context-budget warnings and skipped-loading warnings.
+- [ ] Add `skills2cli` compact-output, privacy-redaction, profile-non-apply, and warning-audit tests.
+- [ ] Implement the `mcp2cli` allowed profile registry and separate low-risk discovery from medium/high-risk calls.
+- [ ] Implement compact `mcp2cli list/search/show` output with explicit `--full` expansion boundaries.
+- [ ] Implement the `mcp2cli call` sensitive-category fail-closed gate.
+- [ ] Add `mcp2cli` profile-registry, sensitive-call-blocking, compact-output, and receipt-required tests.
+- [ ] Implement the browser owner registry with owner class, project slug, session id, profile path, and lease expiry.
+- [ ] Implement the `chrome-devtools-mcp` managed wrapper isolated-session mode.
+- [ ] Implement the `chrome-devtools-mcp` managed wrapper project-profile mode.
+- [ ] Implement browser stale scan and safe-cleanup dry-run, scoped only to known managed profiles.
+- [ ] Add browser-lane tests for tab-owner exclusivity, project-profile retention, human-owned protection, and cleanup dry-run.
+- [ ] Harden CDP Bridge read-only defaults so write actions require owner and authorization receipts.
+- [ ] Keep OpenCLI as an on-demand adapter and connect it to the browser owner registry.
+- [ ] Add CDP Bridge/OpenCLI fail-closed tests for cookie, JavaScript, click, type, and navigate sensitive actions.
+- [ ] When adapting `oh-my-pi`, write pinned receipt, smoke result, and rollback pointer.
+- [ ] Add `oh-my-pi` updater tests for staging fetch, smoke, pin switch, and rollback.
+- [ ] Install CLI-Anything / CLI Hub with user-level install receipts and without hard-loading bulk skills.
+- [ ] Use CLI-Anything to help design `wecom-cli` while keeping repo-local source and authorization gates.
+- [ ] Implement read-only `wecom-cli process list --json` and `window list --json` inventory.
+- [ ] Implement `wecom-cli webhook send` and `app-message send` with secret redaction and receipts.
+- [ ] Implement `wecom-cli gui attach` with global WXWork lease and one-task authorization gate; keep it disabled by default.
+- [ ] Add `wecom-cli` process/window read-only, secret-redaction, GUI-unauthorized-fail, and lease-exclusivity tests.
+- [ ] Register every new test or checker in `tools/ci/ci_test_manifest.json` or the shared local-gate call chain.
+- [ ] Run the precommit update/archive gate, local gate, and local MR review for every completed OpenSpec change.
+- [ ] Record rollback-ready receipts after every user-level installation; lanes without receipts must not be marked active.
+
+
+## 17. Implementation order
 
 1. Create an OpenSpec change for this plan.
 2. Add governance docs and checkers for token/risk priority, browser asset classes, sensitive authorization, and update receipts.
@@ -291,7 +452,7 @@ Disallowed for this plan:
 9. Build `wecom-cli` API/Webhook MVP, then window inventory, then gated GUI automation.
 10. Run local gate, local MR review, and user confirmation before local main integration.
 
-## 14. Validation plan
+## 18. Validation plan
 
 - `skills2cli` tests prove index/search/show do not emit all skill descriptions.
 - `mcp2cli` tests prove compact list/search/show and sensitive-call blocking.
@@ -300,8 +461,10 @@ Disallowed for this plan:
 - `oh-my-pi` updater tests prove pinned update and rollback receipts.
 - `wecom-cli` tests prove process inventory is read-only, secrets are redacted, GUI write actions fail without authorization, and WXWork GUI lease is exclusive.
 - Repository checks continue to include OpenSpec guard, precommit update/archive gate, local gate, and local MR review.
+- Readiness-gate tests prove no lane becomes `active` without smoke-test evidence, install/update receipt evidence, and rollback evidence.
+- Authorization-matrix tests prove sensitive MCP, browser, CDP/OpenCLI, and WXWork actions fail closed without a current one-task authorization receipt.
 
-## 15. Sources
+## 19. Sources
 
 - https://github.com/knowsuchagency/mcp2cli
 - https://github.com/jackwener/OpenCLI
