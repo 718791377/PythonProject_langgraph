@@ -569,7 +569,16 @@ Recommended Phase 2 central-repository file ownership:
 
 ### 11.1 Implementation progress checklist
 
-This checklist is ordered by concrete item. An item is not the same thing as an implementation slice. A checked item means there is local repository evidence or the contract is explicitly fixed by this plan; unchecked items still require a later feature worktree, target-project evidence, or GUI verification.
+This checklist is ordered by concrete item. An item is not the same thing as an implementation slice. A phase-level checkbox means the whole phase definition of done has been satisfied; an item-level checkbox means there is local repository evidence or the contract is explicitly fixed by this plan. Do not read unchecked items under a phase as evidence that this plan is incomplete; they mean the item still needs target-project evidence, GUI evidence, or cross-project acceptance evidence.
+
+Phase-level summary:
+
+| Phase | Phase checkbox | Current status | Anti-ambiguity note |
+| --- | --- | --- | --- |
+| Phase 1: target-project command-line state model | [ ] | Pending target-project implementation/verification | It is unchecked because the `D:\PythonProject_paper_suggest` CLI, wrappers, startup hooks, and tests have not yet been confirmed by this repository; it does not mean the plan design is missing. |
+| Phase 2A: central installer, checker, and updater in this repository | [x] | Complete and merged into local `main` | Backed by this repository's local commit `3e4e819c73c78472d948e68d5352085dcac6551d` and local-gate evidence. |
+| Phase 2B: PySide6 GUI application | [ ] | Incomplete; may continue in fixture mode | It is unchecked because the real GUI window, buttons, CLI invocation, and GUI verification are not implemented yet. |
+| Phase 2C: cross-project reuse and target install | [ ] | Not closed | It is unchecked because at least two fixture or real projects have not yet passed the same contract. |
 
 #### Documentation and architecture contract
 
