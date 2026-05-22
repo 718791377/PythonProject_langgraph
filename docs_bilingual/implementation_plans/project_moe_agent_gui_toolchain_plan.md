@@ -13,6 +13,20 @@ related_docs:
 
 > Cold-start contract: this plan defines a repo-local MOE Agent control pattern and a dedicated PySide6 GUI toolchain. The GUI source is maintained in `D:\PythonProject_langgraph`, but installed launchers control only the target project where they are installed.
 
+## 0. Current status and review conclusion
+
+Review date: 2026-05-22.
+
+Conclusion: the original plan already covered the architectural boundary, state model, safety rules, and phase gates, but it lacked an item-level implementation checklist. That made it hard for later sessions to distinguish implemented work from plan-only intent. This revision adds the item-level progress checklist in section 11 and updates section 13 to reflect current implementation facts.
+
+Status note: this document remains `status: draft`. Draft here means it is not a global active governance policy and does not claim that the whole runtime is complete. Only Phase 2A central installer/checker/updater is confirmed on local `main`; the Phase 1 target-project CLI state model, Phase 2B PySide6 GUI, and Phase 2C cross-project reuse are still open.
+
+Current known local facts:
+
+- Phase 2A is merged into this repository's local `main`: `3e4e819c73c78472d948e68d5352085dcac6551d` (`实现项目 MOE GUI 第二阶段安装器`).
+- That fact only means the central installer/checker/updater and fixture tests exist in this repository; it does not mean `D:\PythonProject_paper_suggest` has completed Phase 1, and it does not mean a real GUI is ready for operation.
+- Without explicit remote-publication approval, GitLab/GitHub are outside this plan's automatic execution scope.
+
 ## 1. Goal
 
 Create a repeatable way for each local project to define and control its own MOE AI Agent without mixing project-private agent state, prompt sources, or GUI tooling across repositories.
@@ -553,6 +567,86 @@ Recommended Phase 2 central-repository file ownership:
 - `tools/project_moe_gui_toolchain/check_project_moe_gui_install.py`: installed artifact checker;
 - `docs_bilingual/operations/project_moe_gui_usage.zh-CN.md`: operator documentation.
 
+### 11.1 Implementation progress checklist
+
+This checklist is ordered by concrete item. An item is not the same thing as an implementation slice. A checked item means there is local repository evidence or the contract is explicitly fixed by this plan; unchecked items still require a later feature worktree, target-project evidence, or GUI verification.
+
+#### Documentation and architecture contract
+
+- [x] Define the project-level MOE Agent GUI toolchain goal and non-goals.
+- [x] Define the boundary with the general PySide6 GUI capability plan.
+- [x] Define required project-level MOE Agent TOML top-level fields.
+- [x] Define recommended extension sections: `project`, `moe`, `dispatch`, and `extensions`.
+- [x] Define default onboarding as validation of an existing Agent TOML, not default private-agent generation.
+- [x] Define template generation as explicit dry run that must not copy another project's `MOE.md`.
+- [x] Define the dispatch boundary forbidding `full-history fork + specified custom role`.
+- [x] Define the compatible paths: main-session takeover, brief-based fresh dispatch, and durable brief.
+
+#### Phase 1: target-project command-line state model
+
+- [ ] Run read-only dirty/ownership preflight in `D:\PythonProject_paper_suggest`.
+- [ ] Confirm the target project has `.codex/agents/<project-moe-agent>.toml` with fields matching this plan.
+- [ ] Confirm the target project's private prompt source `MOE.md` stays inside that project.
+- [ ] Implement or verify `tools/thesis_moe_mode.py project-on`.
+- [ ] Implement or verify `tools/thesis_moe_mode.py project-off`.
+- [ ] Implement or verify `tools/thesis_moe_mode.py project-status --json`.
+- [ ] Implement or verify `tools/thesis_moe_mode.py list-sessions --json`.
+- [ ] Implement or verify `tools/thesis_moe_mode.py on/off --session-id <id>`.
+- [ ] Implement or verify `tools/thesis_moe_mode.py status --json` and `assert-on`.
+- [ ] Cover project default, session override, invalid records, legacy compatibility, and no-op tests.
+- [ ] Cover state lock, atomic write, lock timeout, and stale lock blocker tests.
+- [ ] Wire `thesis-moe-on.cmd` and `thesis-moe-off.cmd`.
+- [ ] Add MOE state-read checkpoints to the target project's startup / launcher / AGENTS surfaces.
+- [ ] Write or update target-project operator documentation.
+- [ ] Run the target-project local gate / smoke test and preserve evidence.
+
+#### Phase 2A: central installer, checker, and updater in this repository
+
+- [x] Create the `tools/project_moe_gui_toolchain/` toolchain directory.
+- [x] Create the `tools/project_moe_gui_toolchain/src/project_moe_gui/` package boundary.
+- [x] Implement `install_project_moe_gui.py`.
+- [x] Implement `check_project_moe_gui_install.py`.
+- [x] Implement `update_project_moe_gui.py`.
+- [x] Implement install manifest and managed/protected file boundaries.
+- [x] Fail closed when the target Agent TOML is missing.
+- [x] Ensure dry run does not write target-project files.
+- [x] Ensure apply writes target-project install artifacts and manifest.
+- [x] Fail closed on hash mismatch.
+- [x] Fail closed on path traversal / unsafe target blocker.
+- [x] Write `docs_bilingual/operations/project_moe_gui_usage.zh-CN.md`.
+- [x] Write `test/project_moe_gui_toolchain.test.py`.
+- [x] Register tests in `tools/ci/ci_test_manifest.json`.
+- [x] Pass local gate and merge Phase 2A into this repository's local `main`.
+
+#### Phase 2B: PySide6 GUI application
+
+- [ ] Define the GUI application entrypoint and window structure.
+- [ ] Implement target-project config reading from `project_moe_gui.config.json`.
+- [ ] Implement the top banner: project root, agent name, state namespace, and current branch.
+- [ ] Implement the project-default status card.
+- [ ] Implement the session table and empty / invalid / load-failed states.
+- [ ] Implement the refresh button as read-only.
+- [ ] Implement project-default on/off buttons with explicit scope wording.
+- [ ] Implement selected-session on/off buttons with explicit scope wording.
+- [ ] Invoke the CLI from the GUI using argv/list, never shell string concatenation.
+- [ ] Prevent the GUI from directly writing `.omx/state` JSON.
+- [ ] Show stable tokens, short messages, and redacted stdout/stderr summaries.
+- [ ] Disable same-scope buttons while write commands run, then re-read state.
+- [ ] Support keyboard operation and high-contrast/system-theme readability.
+- [ ] Add headless Qt / QTest / manual visual verification boundaries.
+- [ ] Register GUI tests or checkers in this repository's local gate.
+
+#### Phase 2C: cross-project reuse and target install
+
+- [ ] Verify the full install/check/update/status flow in at least one fixture project.
+- [ ] Verify the same contract in a second fixture or real project.
+- [ ] Confirm installing the GUI into project A controls only project A.
+- [ ] Confirm installing the GUI into project B controls only project B.
+- [ ] Confirm update never overwrites target-project private Agent TOML, `MOE.md`, or state.
+- [ ] Define dirty/ownership preflight before any real target-project install.
+- [ ] State that real target-project remote publication remains controlled by the target project's own publication workflow.
+- [ ] Record cross-project reuse acceptance evidence and decide whether this document should move beyond `draft`.
+
 Minimum test matrix:
 
 | Area | Required evidence |
@@ -644,19 +738,18 @@ Phase 2 acceptance:
 
 ## 13. Immediate next implementation boundary
 
-After this plan is accepted, implementation should proceed in this order:
+Next implementation should proceed as: close the target-project CLI first, keep GUI work fixture-backed first, and defer real target install until the target CLI contract exists.
 
-1. implement and test Phase 1 in `D:\PythonProject_paper_suggest`;
-2. update this repository with reusable project MOE TOML/checker expectations if Phase 1 exposes a reusable contract gap;
-3. implement the dedicated `project_moe_gui` toolchain in this repository;
-4. install the GUI into `paper_suggest` as the first target project;
-5. only after the first target is stable, generalize the installer for additional projects.
-
-Do not start the PySide6 GUI before the command-line state model is stable.
+1. To control real `D:\PythonProject_paper_suggest` sessions, complete Phase 1 in the target project first: CLI state model, `list-sessions --json`, `status --json`, `assert-on`, `thesis-moe-on/off.cmd`, and target-project startup checkpoints.
+2. If there is no target-project write approval, this repository may continue with Phase 2B only against fixture/mock target projects; it must not write real `paper_suggest` `.omx/state`.
+3. The Phase 2B GUI may change state only by invoking the target-project CLI; if that CLI is missing, the GUI must show a blocker instead of scanning or writing state files directly.
+4. Phase 2C starts closing only after at least two fixture or real projects pass the same contract.
+5. Deciding whether this document should move from `draft` requires at least one complete local evidence pass across Phase 1, Phase 2B, and cross-project isolation evidence.
 
 Phase gate rules:
 
 - Phase 1 is complete only after command-line tests prove project default, registered-session propagation, session override, invalid-record skip, and legacy-record readability.
-- Phase 2 may start only after Phase 1 is merged into the target project and the CLI exposes `list-sessions --json`.
-- Any reusable checker, installer, or GUI source added to this repository should be implemented as a separate local change after this plan is accepted.
+- Phase 2A is complete on this repository's local `main`; it covers only the central installer/checker/updater and does not remove the Phase 1 prerequisite for real GUI use.
+- Phase 2B may start in fixture mode in this repository; real target-project GUI install still requires the Phase 1 CLI contract.
+- Any GUI source, checker, or test added to this repository should be implemented as a separate local change and run through this repository's local gate.
 - Remote publication is outside this plan and requires the repository publication workflow.

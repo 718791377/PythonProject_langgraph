@@ -13,6 +13,20 @@ related_docs:
 
 > 冷启动契约：本文定义项目级 MOE Agent 的开关状态模型和独立 PySide6 GUI 工具链。GUI 源码由 `D:\PythonProject_langgraph` 统一维护，但安装到哪个项目，就只控制哪个项目的会话状态。
 
+## 0. 当前状态与本次复核结论
+
+复核日期：2026-05-22。
+
+结论：原方案的架构边界、状态模型、安全规则和阶段门基本完整，但缺少“按事项粒度”的实施进度清单，容易让后续会话无法判断哪些内容已经落地、哪些仍只是方案。本次补齐第 11 节的实施进度勾选清单，并把第 13 节改成基于当前事实的后续实施边界。
+
+状态说明：本文继续保持 `status: draft`。这里的 draft 表示它不是全局 active 治理政策，也不表示全部运行时能力已经完成。当前只确认 Phase 2A 本仓库安装器/checker/updater 已在本地 `main` 集成；Phase 1 目标项目 CLI 状态模型、Phase 2B PySide6 GUI 本体和 Phase 2C 跨项目复用仍未完成。
+
+当前已知本地事实：
+
+- Phase 2A 已合入本仓库本地 `main`：`3e4e819c73c78472d948e68d5352085dcac6551d`（`实现项目 MOE GUI 第二阶段安装器`）。
+- 该事实只表示本仓库中央安装器/checker/updater 与 fixture 测试已落地；不表示 `D:\PythonProject_paper_suggest` 已完成 Phase 1，也不表示真实 GUI 已可操作。
+- 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
+
 ## 1. 目标
 
 为每个本地项目提供一套可复用的 MOE AI Agent 定义、开关和 GUI 控制方式，同时避免跨仓库混用项目私有 Agent、私有提示源、会话状态和 GUI 工具。
@@ -553,6 +567,86 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - `tools/project_moe_gui_toolchain/check_project_moe_gui_install.py`：安装产物 checker；
 - `docs_bilingual/operations/project_moe_gui_usage.zh-CN.md`：操作者文档。
 
+### 11.1 实施进度勾选清单
+
+本清单按具体事项排序，事项不等于实施切片。勾选只表示该事项已有本地仓库证据或已由本文方案明确固化；未勾选项仍需后续 feature worktree、目标项目证据或 GUI 验证闭环。
+
+#### 文档与架构契约
+
+- [x] 定义项目级 MOE Agent GUI 工具链目标和非目标。
+- [x] 定义与 PySide6 通用 GUI 能力方案的边界。
+- [x] 定义项目级 MOE Agent TOML 必填字段。
+- [x] 定义推荐扩展区：`project`、`moe`、`dispatch`、`extensions`。
+- [x] 定义新项目接入时默认校验已有 Agent TOML，而不是默认生成私有 Agent。
+- [x] 定义模板生成必须显式 dry run 且不得复制其他项目 `MOE.md`。
+- [x] 定义禁止 `full-history fork + specified custom role` 的派发边界。
+- [x] 定义 main-session takeover、brief-based fresh dispatch 与 durable brief 三种兼容路径。
+
+#### Phase 1：目标项目命令行状态模型
+
+- [ ] 在 `D:\PythonProject_paper_suggest` 做只读 dirty/ownership preflight。
+- [ ] 确认目标项目已有 `.codex/agents/<project-moe-agent>.toml` 且字段符合本方案。
+- [ ] 确认目标项目私有提示源 `MOE.md` 只在目标项目内维护。
+- [ ] 实现或核验 `tools/thesis_moe_mode.py project-on`。
+- [ ] 实现或核验 `tools/thesis_moe_mode.py project-off`。
+- [ ] 实现或核验 `tools/thesis_moe_mode.py project-status --json`。
+- [ ] 实现或核验 `tools/thesis_moe_mode.py list-sessions --json`。
+- [ ] 实现或核验 `tools/thesis_moe_mode.py on/off --session-id <id>`。
+- [ ] 实现或核验 `tools/thesis_moe_mode.py status --json` 与 `assert-on`。
+- [ ] 覆盖项目默认值、session override、无效记录、旧记录兼容和 no-op 测试。
+- [ ] 覆盖 state lock、atomic write、lock timeout 与 stale lock blocker 测试。
+- [ ] 接入 `thesis-moe-on.cmd` 与 `thesis-moe-off.cmd`。
+- [ ] 在目标项目 startup / launcher / AGENTS 等入口加入 MOE 状态读取检查点。
+- [ ] 编写或更新目标项目操作者文档。
+- [ ] 目标项目本地 gate / smoke test 通过并留下证据。
+
+#### Phase 2A：本仓库中央安装器、checker 与 updater
+
+- [x] 建立 `tools/project_moe_gui_toolchain/` 工具链目录。
+- [x] 建立 `tools/project_moe_gui_toolchain/src/project_moe_gui/` 包边界。
+- [x] 实现 `install_project_moe_gui.py`。
+- [x] 实现 `check_project_moe_gui_install.py`。
+- [x] 实现 `update_project_moe_gui.py`。
+- [x] 实现安装 manifest 与 managed/protected 文件边界。
+- [x] 实现缺少 Agent TOML 时 fail closed。
+- [x] 实现 dry run 不写目标项目文件。
+- [x] 实现 apply 写入目标项目安装产物与 manifest。
+- [x] 实现 hash mismatch fail closed。
+- [x] 实现 path traversal / unsafe target blocker。
+- [x] 编写 `docs_bilingual/operations/project_moe_gui_usage.zh-CN.md`。
+- [x] 编写 `test/project_moe_gui_toolchain.test.py`。
+- [x] 将测试注册到 `tools/ci/ci_test_manifest.json`。
+- [x] Phase 2A 本地 gate 通过并合入本仓库本地 `main`。
+
+#### Phase 2B：PySide6 GUI 本体
+
+- [ ] 定义 GUI 应用入口和窗口结构。
+- [ ] 实现目标项目配置读取：`project_moe_gui.config.json`。
+- [ ] 实现顶部横幅：项目根、agent name、state namespace、当前分支。
+- [ ] 实现项目默认状态卡片。
+- [ ] 实现 session 表格和空状态 / 无效状态 / 加载失败状态。
+- [ ] 实现刷新按钮，且刷新只读。
+- [ ] 实现项目默认值 on/off 按钮，scope 文案明确。
+- [ ] 实现选中 session on/off 按钮，scope 文案明确。
+- [ ] GUI 调 CLI 必须使用 argv/list，不使用 shell 字符串拼接。
+- [ ] GUI 不直接写 `.omx/state` JSON。
+- [ ] GUI 显示 stable token、简短说明和脱敏 stdout/stderr 摘要。
+- [ ] 写入命令执行期间禁用同一 scope 按钮并重新读取状态。
+- [ ] 支持键盘操作和高对比/系统主题可辨认状态。
+- [ ] 补充 headless Qt / QTest / 手动视觉验证边界。
+- [ ] 将 GUI 测试或 checker 注册到本仓库 local gate。
+
+#### Phase 2C：跨项目复用与目标安装
+
+- [ ] 在至少一个 fixture 项目验证完整 install/check/update/status 流程。
+- [ ] 在第二个 fixture 或真实项目验证相同 contract。
+- [ ] 确认 GUI 安装到项目 A 只控制项目 A。
+- [ ] 确认 GUI 安装到项目 B 只控制项目 B。
+- [ ] 确认 update 不覆盖目标项目私有 Agent TOML、`MOE.md` 或 state。
+- [ ] 明确目标项目真实安装前的 dirty/ownership preflight。
+- [ ] 明确真实目标项目远端发布仍由目标项目自己的发布流程控制。
+- [ ] 记录跨项目复用验收证据并决定是否把本文 `status` 从 `draft` 提升为更高状态。
+
 最小测试矩阵：
 
 | 范围 | 必需证据 |
@@ -644,19 +738,18 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 
 ## 13. 下一步实施边界
 
-本文确认后，具体实施按以下顺序推进：
+当前后续实施应按“目标项目 CLI 先闭环、GUI 先 fixture 化、真实项目安装后置”的顺序推进：
 
-1. 先在 `D:\PythonProject_paper_suggest` 实施并测试第一阶段；
-2. 如果第一阶段暴露出可复用契约缺口，再回到本仓库补充项目级 MOE TOML/checker 期望；
-3. 在本仓库实现独立 `project_moe_gui` 工具链；
-4. 把 GUI 安装到 `paper_suggest` 作为第一个目标项目；
-5. 第一个目标稳定后，再把 installer 泛化给其他项目。
-
-命令行状态模型稳定之前，不启动 PySide6 GUI 实现。
+1. 若要控制 `D:\PythonProject_paper_suggest` 真实会话，必须先在目标项目完成 Phase 1：CLI 状态模型、`list-sessions --json`、`status --json`、`assert-on`、`thesis-moe-on/off.cmd` 和目标项目启动检查点。
+2. 若当前没有目标项目写入授权，本仓库可以继续做 Phase 2B，但只能使用 fixture/mock 目标项目，不得直接写 `paper_suggest` 真实 `.omx/state`。
+3. Phase 2B GUI 本体只能通过目标项目 CLI 改状态，不得直接编辑 JSON；若目标 CLI 缺失，GUI 必须显示 blocker，而不是降级扫描或写状态文件。
+4. Phase 2C 只有在至少两个 fixture 或真实项目通过相同 contract 后才算开始闭环。
+5. 本文 `status` 是否从 `draft` 提升，需要等 Phase 1、Phase 2B 和跨项目隔离证据至少有一轮完整本地证据后再判断。
 
 阶段门规则：
 
-- 第一阶段只有在命令行测试证明项目默认值、已登记 session 传播、session 覆盖、无效记录跳过和旧记录可读后才算完成；
-- 第二阶段只有在第一阶段已合入目标项目，并且 CLI 提供 `list-sessions --json` 后才能启动；
-- 任何新增到本仓库的可复用 checker、installer 或 GUI 源码，都应在本文确认后作为单独本地变更实施；
+- Phase 1 只有在命令行测试证明项目默认值、已登记 session 传播、session 覆盖、无效记录跳过和旧记录可读后才算完成。
+- Phase 2A 已在本仓库本地 `main` 完成；但它只覆盖中央 installer/checker/updater，不解除 Phase 1 对真实 GUI 的前置要求。
+- Phase 2B 可以在本仓库 fixture 模式下启动；真实目标项目 GUI 安装仍要求 Phase 1 CLI contract 已就绪。
+- 任何新增到本仓库的 GUI 源码、checker 或测试，都应作为单独本地变更实施并走本仓库 local gate。
 - 远端发布不属于本文自动授权范围，必须继续遵守本仓库发布流程。
