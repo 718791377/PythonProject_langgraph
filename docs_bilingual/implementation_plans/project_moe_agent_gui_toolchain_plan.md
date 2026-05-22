@@ -577,7 +577,7 @@ Phase-level summary:
 | --- | --- | --- | --- |
 | Phase 1: target-project command-line state model | [ ] | Pending target-project implementation/verification | It is unchecked because the `D:\PythonProject_paper_suggest` CLI, wrappers, startup hooks, and tests have not yet been confirmed by this repository; it does not mean the plan design is missing. |
 | Phase 2A: central installer, checker, and updater in this repository | [x] | Complete and merged into local `main` | Backed by this repository's local commit `3e4e819c73c78472d948e68d5352085dcac6551d` and local-gate evidence. |
-| Phase 2B: PySide6 GUI application | [ ] | Incomplete; may continue in fixture mode | It is unchecked because the real GUI window, buttons, CLI invocation, and GUI verification are not implemented yet. |
+| Phase 2B: PySide6 GUI application | [ ] | Partially complete: fixture-safe GUI shell has landed | It remains unchecked because real visible-window interaction, write-then-refresh behavior, keyboard/high-contrast evidence, and cross-project GUI verification are not closed yet. |
 | Phase 2C: cross-project reuse and target install | [ ] | Not closed | It is unchecked because at least two fixture or real projects have not yet passed the same contract. |
 
 #### Documentation and architecture contract
@@ -629,21 +629,21 @@ Phase-level summary:
 
 #### Phase 2B: PySide6 GUI application
 
-- [ ] Define the GUI application entrypoint and window structure.
-- [ ] Implement target-project config reading from `project_moe_gui.config.json`.
-- [ ] Implement the top banner: project root, agent name, state namespace, and current branch.
-- [ ] Implement the project-default status card.
-- [ ] Implement the session table and empty / invalid / load-failed states.
-- [ ] Implement the refresh button as read-only.
-- [ ] Implement project-default on/off buttons with explicit scope wording.
-- [ ] Implement selected-session on/off buttons with explicit scope wording.
-- [ ] Invoke the CLI from the GUI using argv/list, never shell string concatenation.
-- [ ] Prevent the GUI from directly writing `.omx/state` JSON.
-- [ ] Show stable tokens, short messages, and redacted stdout/stderr summaries.
+- [x] Define the import-safe GUI shell entrypoint, window-structure descriptor, and guarded visible-launch boundary.
+- [x] Implement target-project config reading from `project_moe_gui.config.json`.
+- [x] Implement the top-banner view model: project root, agent name, state namespace, and current branch.
+- [x] Implement the project-default status-card view model.
+- [x] Implement the session-table view model and empty / invalid / load-failed states.
+- [x] Implement the refresh action plan as read-only.
+- [x] Implement project-default on/off action plans with explicit scope wording.
+- [x] Implement selected-session on/off action plans with explicit scope wording.
+- [x] Invoke the CLI from the GUI using argv/list, never shell string concatenation.
+- [x] Prevent the GUI shell from directly writing `.omx/state` JSON.
+- [x] Show stable tokens, short messages, and redacted stdout/stderr summaries in the GUI shell view model.
 - [ ] Disable same-scope buttons while write commands run, then re-read state.
 - [ ] Support keyboard operation and high-contrast/system-theme readability.
-- [ ] Add headless Qt / QTest / manual visual verification boundaries.
-- [ ] Register GUI tests or checkers in this repository's local gate.
+- [x] Add import-only fixture GUI tests and the explicit visible-window launch boundary; headless Qt / QTest / manual visual verification remains follow-up evidence for the real GUI.
+- [x] Register GUI shell fixture coverage through the already registered `project_moe_gui_toolchain.test.py` local-gate test.
 
 #### Phase 2C: cross-project reuse and target install
 

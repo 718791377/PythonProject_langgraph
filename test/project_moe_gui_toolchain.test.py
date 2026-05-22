@@ -9,6 +9,8 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+TOOLCHAIN_SRC = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "src"
+sys.path.insert(0, str(TOOLCHAIN_SRC))
 INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_moe_gui.py"
 CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_gui_install.py"
 UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_moe_gui.py"
@@ -193,6 +195,119 @@ print(json.dumps(payload))
             _, payload = self.run_tool(str(UPDATER), "--target-project", str(project), "--dry-run")
             self.assertTrue(payload["no_op"], payload)
             self.assertEqual(payload["status"], "up_to_date")
+
+    def gui_config(self, project: Path) -> dict:
+        return {
+            "schema_version": 1,
+            "toolchain": "project_moe_gui",
+            "toolchain_version": "0.2.0",
+            "cli_contract": "project-moe-cli-v1",
+            "agent_name": "thesis-moe-mentor",
+            "state_namespace": "thesis_moe",
+            "mode_cli": "tools/thesis_moe_mode.py",
+            "target_project_root": str(project),
+            "shared_runtime_root": str(REPO_ROOT / ".shared_runtimes" / "pyside6"),
+            "runtime_python": str(REPO_ROOT / ".shared_runtimes" / "pyside6" / ".venv" / "Scripts" / "python.exe"),
+        }
+
+    def test_gui_shell_import_safe_without_pyside6(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            payload = gui_shell.build_gui_preflight(config, pyside6_available=False)
+            self.assertFalse(payload["ok"], payload)
+            self.assertEqual(payload["token"], "blocked:pyside6_unavailable")
+            self.assertEqual(payload["gui_shell_contract"], "project-moe-gui-shell-v1")
+            self.assertTrue(payload["view_model"]["window_structure"]["automation_boundary"]["import_safe_without_pyside6"])
+
+    def test_gui_shell_builds_status_card_and_empty_session_table(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "feature/gui-shell"},
+                sessions_payload={"ok": True, "token": "ok", "sessions": []},
+                status_payload={"ok": True, "token": "ok", "effective_enabled": True},
+                pyside6_available=False,
+            )
+            self.assertEqual(view_model["top_banner"]["current_branch"], "feature/gui-shell")
+            self.assertEqual(view_model["project_default_card"]["label"], "enabled")
+            self.assertEqual(view_model["project_default_card"]["effective_label"], "enabled")
+            self.assertTrue(view_model["session_table"]["empty_state"]["is_empty"])
+            self.assertEqual(view_model["session_table"]["token"], "ok")
+
+    def test_gui_shell_action_plans_use_argv_lists_not_shell_strings(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            plan = gui_shell.build_action_plan(config, "session-on", session_id="session-1234567890abcdef")
+            self.assertTrue(plan["ok"], plan)
+            self.assertIsInstance(plan["argv"], list)
+            self.assertFalse(plan["shell"])
+            self.assertTrue(plan["writes_state"])
+            self.assertFalse(plan["direct_state_write"])
+            self.assertIn("--session-id", plan["argv"])
+            self.assertIn("session-1234567890abcdef", plan["argv"])
+
+            refresh = gui_shell.build_refresh_plan(config)
+            self.assertFalse(refresh["writes_state"])
+            self.assertFalse(refresh["shell"])
+            self.assertTrue(all(command["shell"] is False for command in refresh["commands"]))
+            self.assertTrue(all(command["writes_state"] is False for command in refresh["commands"]))
+
+    def test_gui_shell_invalid_session_rows_use_stable_tokens(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            table = gui_shell.build_session_table(config, {"ok": True, "token": "ok", "sessions": [{"enabled": True}, "bad-row"]})
+            self.assertEqual(table["invalid_count"], 2)
+            self.assertEqual(table["rows"][0]["token"], "blocked:invalid_session_record")
+            self.assertEqual(table["rows"][1]["token"], "blocked:invalid_session_record")
+            self.assertEqual(table["rows"][0]["actions"], {})
+            self.assertEqual(table["rows"][1]["actions"], {})
+
+    def test_installed_launcher_preflight_reports_gui_shell_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            launcher = project / "tools" / "project_moe_gui" / "launcher.py"
+            result = subprocess.run(
+                [sys.executable, str(launcher), "--preflight", "--json"],
+                cwd=project,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+            payload = json.loads(result.stdout)
+            self.assertIn(payload["token"], {"ok", "blocked:pyside6_unavailable"}, payload)
+            self.assertEqual(payload["gui_shell_contract"], "project-moe-gui-shell-v1")
+            self.assertNotEqual(payload["token"], "blocked:gui_not_implemented_phase2a")
+            self.assertNotIn("Interactive PySide6 GUI is implemented in Phase 2B.", result.stdout)
 
 
 if __name__ == "__main__":

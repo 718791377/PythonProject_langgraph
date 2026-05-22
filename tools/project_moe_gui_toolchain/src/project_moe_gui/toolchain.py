@@ -15,6 +15,7 @@ except ModuleNotFoundError:  # pragma: no cover
     tomllib = None  # type: ignore[assignment]
 
 from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
+from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT
 
 
 SCHEMA_VERSION = 1
@@ -208,6 +209,7 @@ def emit(payload: dict, json_mode: bool) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Launch or preflight the project-local MOE GUI.")
     parser.add_argument("--preflight", action="store_true")
+    parser.add_argument("--allow-visible", action="store_true", help="Launch a visible PySide6 window. Use only in an interactive session.")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -223,22 +225,42 @@ def main() -> int:
     if not mode_cli.exists():
         return emit({"schema_version": 1, "ok": False, "token": "blocked:missing_mode_cli", "exit_code": 5, "message": "Target project mode CLI is missing.", "project_root": str(project_root), "mode_cli": str(mode_cli)}, args.json)
 
-    result = subprocess.run([sys.executable, str(mode_cli), "project-status", "--json"], cwd=str(project_root), capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
-    if result.returncode != 0:
-        return emit({"schema_version": 1, "ok": False, "token": "blocked:mode_cli_failed", "exit_code": result.returncode, "message": "Target project mode CLI failed.", "stderr": result.stderr[-800:]}, args.json)
+    def run_mode(command: str) -> tuple[dict | None, dict | None]:
+        result = subprocess.run([sys.executable, str(mode_cli), command, "--json"], cwd=str(project_root), capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
+        if result.returncode != 0:
+            return None, {"token": "blocked:mode_cli_failed", "message": "Target project mode CLI failed.", "command": command, "exit_code": result.returncode, "stderr": result.stderr[-800:]}
+        try:
+            payload = json.loads(result.stdout)
+        except Exception as exc:
+            return None, {"token": "blocked:mode_cli_invalid_json", "message": "Target project mode CLI did not emit valid JSON.", "command": command, "error": str(exc), "stdout": result.stdout[-800:]}
+        return payload, None
 
-    payload = {
-        "schema_version": 1,
-        "ok": args.preflight,
-        "token": "ok" if args.preflight else "blocked:gui_not_implemented_phase2a",
-        "exit_code": 0 if args.preflight else 2,
-        "message": "Project MOE GUI launcher preflight passed." if args.preflight else "Interactive PySide6 GUI is implemented in Phase 2B.",
-        "project_root": str(project_root),
-        "agent_name": config.get("agent_name"),
-        "state_namespace": config.get("state_namespace"),
-        "project_status_stdout": result.stdout[-1200:],
-    }
-    return emit(payload, args.json)
+    project_status, project_error = run_mode("project-status")
+    sessions_payload, sessions_error = run_mode("list-sessions")
+    status_payload, status_error = run_mode("status")
+    cli_errors = [err for err in [project_error, sessions_error, status_error] if err]
+    if cli_errors:
+        return emit({"schema_version": 1, "ok": False, "token": cli_errors[0]["token"], "exit_code": cli_errors[0].get("exit_code", 5), "message": cli_errors[0]["message"], "project_root": str(project_root), "blockers": cli_errors}, args.json)
+
+    source_root = Path(str(config.get("toolchain_source_root") or ""))
+    if source_root:
+        sys.path.insert(0, str(source_root / "src"))
+    try:
+        from project_moe_gui import gui_shell
+    except Exception as exc:
+        return emit({"schema_version": 1, "ok": False, "token": "blocked:gui_shell_unavailable", "exit_code": 5, "message": "Cannot import central Project MOE GUI shell.", "toolchain_source_root": str(source_root), "error": str(exc)}, args.json)
+
+    preflight = gui_shell.build_gui_preflight(config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload)
+    if args.preflight:
+        return emit(preflight, args.json)
+    if not args.allow_visible:
+        return emit({**preflight, "ok": False, "token": "blocked:visible_gui_launch_requires_explicit_approval", "exit_code": 2, "message": "GUI shell is available. Visible PySide6 launch requires --allow-visible in an interactive session."}, args.json)
+    if not preflight.get("ok"):
+        return emit(preflight, args.json)
+    try:
+        return gui_shell.launch_visible(preflight["view_model"])
+    except RuntimeError as exc:
+        return emit({"schema_version": 1, "ok": False, "token": str(exc), "exit_code": 5, "message": "Visible GUI launch failed."}, args.json)
 
 
 if __name__ == "__main__":
@@ -258,9 +280,10 @@ This directory is managed by `D:\\PythonProject_langgraph` Project MOE GUI toolc
 - Agent: `{agent_name}`
 - State namespace: `{namespace}`
 - CLI contract: `{CLI_CONTRACT}`
+- GUI shell contract: `{GUI_SHELL_CONTRACT}`
 
 Do not place private `MOE.md` content or project state files in this directory.
-Phase 2A installs launcher/config/manifest only; the interactive PySide6 GUI is added in Phase 2B.
+Phase 2B provides an import-safe GUI shell and guarded visible-launch path through the central toolchain source. Automated checks must use `--preflight`; visible PySide6 launch requires an explicit interactive command.
 """
 
 
@@ -283,6 +306,8 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "shared_runtime_root": str(runtime_root),
             "runtime_python": str(runtime_python),
             "target_project_root": str(root),
+            "toolchain_source_root": str(Path(__file__).resolve().parents[2]),
+            "gui_shell_contract": GUI_SHELL_CONTRACT,
         }
     )
     return data

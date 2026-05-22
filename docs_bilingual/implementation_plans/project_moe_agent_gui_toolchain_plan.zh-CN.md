@@ -577,7 +577,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 | --- | --- | --- | --- |
 | Phase 1：目标项目命令行状态模型 | [ ] | 待目标项目实施/验证 | 未勾选是因为 `D:\PythonProject_paper_suggest` 侧 CLI、wrapper、startup hook 和测试证据尚未由本仓库确认，不代表本文档缺少方案设计。 |
 | Phase 2A：本仓库中央安装器、checker 与 updater | [x] | 已完成并合入本地 `main` | 已有本仓库本地提交 `3e4e819c73c78472d948e68d5352085dcac6551d` 与 local gate 证据。 |
-| Phase 2B：PySide6 GUI 本体 | [ ] | 未完成；可在 fixture 模式继续 | 未勾选是因为真实 GUI 窗口、按钮、CLI 调用和 GUI 验证尚未落地。 |
+| Phase 2B：PySide6 GUI 本体 | [ ] | 部分完成：fixture-safe GUI shell 已落地 | 未勾选是因为真实可见窗口、按钮交互、写入后重读、键盘/高对比和跨项目 GUI 验证尚未闭环。 |
 | Phase 2C：跨项目复用与目标安装 | [ ] | 未开始闭环 | 未勾选是因为仍缺至少两个 fixture 或真实项目的相同 contract 验收。 |
 
 #### 文档与架构契约
@@ -629,21 +629,21 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 
 #### Phase 2B：PySide6 GUI 本体
 
-- [ ] 定义 GUI 应用入口和窗口结构。
-- [ ] 实现目标项目配置读取：`project_moe_gui.config.json`。
-- [ ] 实现顶部横幅：项目根、agent name、state namespace、当前分支。
-- [ ] 实现项目默认状态卡片。
-- [ ] 实现 session 表格和空状态 / 无效状态 / 加载失败状态。
-- [ ] 实现刷新按钮，且刷新只读。
-- [ ] 实现项目默认值 on/off 按钮，scope 文案明确。
-- [ ] 实现选中 session on/off 按钮，scope 文案明确。
-- [ ] GUI 调 CLI 必须使用 argv/list，不使用 shell 字符串拼接。
-- [ ] GUI 不直接写 `.omx/state` JSON。
-- [ ] GUI 显示 stable token、简短说明和脱敏 stdout/stderr 摘要。
+- [x] 定义 import-safe GUI shell 入口、窗口结构描述和受控可见启动边界。
+- [x] 实现目标项目配置读取：`project_moe_gui.config.json`。
+- [x] 实现顶部横幅 view model：项目根、agent name、state namespace、当前分支。
+- [x] 实现项目默认状态卡片 view model。
+- [x] 实现 session 表格 view model 和空状态 / 无效状态 / 加载失败状态。
+- [x] 实现刷新动作计划，且刷新只读。
+- [x] 实现项目默认值 on/off 动作计划，scope 文案明确。
+- [x] 实现选中 session on/off 动作计划，scope 文案明确。
+- [x] GUI 调 CLI 必须使用 argv/list，不使用 shell 字符串拼接。
+- [x] GUI shell 不直接写 `.omx/state` JSON。
+- [x] GUI shell view model 显示 stable token、简短说明和脱敏 stdout/stderr 摘要。
 - [ ] 写入命令执行期间禁用同一 scope 按钮并重新读取状态。
 - [ ] 支持键盘操作和高对比/系统主题可辨认状态。
-- [ ] 补充 headless Qt / QTest / 手动视觉验证边界。
-- [ ] 将 GUI 测试或 checker 注册到本仓库 local gate。
+- [x] 补充 import-only fixture GUI 测试与可见窗口显式启动边界；headless Qt / QTest / 手动视觉验证仍作为后续真实 GUI 证据。
+- [x] 将 GUI shell fixture 测试纳入本仓库 local gate 已注册的 `project_moe_gui_toolchain.test.py`。
 
 #### Phase 2C：跨项目复用与目标安装
 
