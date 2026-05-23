@@ -410,7 +410,19 @@ else:
             "\n[project]\n"
             'scope = "repo-local"\n'
             f'state_namespace = "{namespace}"\n'
-            'private_prompt_source = "MOE.md"\n',
+            'private_prompt_source = "MOE.md"\n'
+            'private_prompt_policy = "do-not-copy-full-content"\n'
+            "\n[moe]\n"
+            'kind = "project-moe-agent"\n'
+            'family = "project-specific"\n'
+            "requires_manual_enable = true\n"
+            f'project_default_state = ".omx/state/{namespace}/project-default.json"\n'
+            f'session_state_dir = ".omx/state/{namespace}/sessions"\n'
+            "\n[dispatch]\n"
+            'mode = "brief-based"\n'
+            'forbidden = ["full-history-fork-with-custom-role"]\n'
+            'fallback = ["main-session-takeover", "durable-brief"]\n'
+            "\n[extensions]\n",
             encoding="utf-8",
         )
         state_root = root / ".omx" / "state" / namespace
@@ -518,6 +530,12 @@ else:
             self.assertFalse(payload["writes_target_project"])
             self.assertFalse(payload["git_status"]["dirty"])
             self.assertTrue(payload["private_prompt_source"]["exists"])
+            self.assertTrue(payload["agent_toml"]["standard_profile_ready"])
+            self.assertTrue(payload["agent_toml"]["extension_fields_ok"])
+            self.assertEqual(
+                payload["agent_toml"]["required_extension_sections"],
+                ["project", "moe", "dispatch", "extensions"],
+            )
             self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "status"])
             self.assertTrue(payload["wrappers"]["on"]["references_expected_command"])
             self.assertTrue(payload["wrappers"]["off"]["references_expected_command"])
@@ -606,6 +624,73 @@ else:
             missing = next(item["missing"] for item in payload["blockers"] if item["code"] == "blocked:phase1_operator_docs_incomplete")
             self.assertIn("project-off", missing)
             self.assertIn("status --json", missing)
+
+    def test_phase1_readiness_checker_blocks_agent_toml_missing_extensions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-agent-missing-extensions"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-agent-missing-extensions", session_id="session-agent-missing")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / ".codex" / "agents" / "thesis-moe-mentor.toml").write_text(
+                'name = "thesis-moe-mentor"\n'
+                'description = "Strict thesis mentor."\n'
+                'developer_instructions = "Use strict thesis mentor rules."\n',
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:agent_toml_missing_extension_sections", blocker_codes)
+            self.assertFalse(payload["agent_toml"]["standard_profile_ready"])
+            self.assertEqual(
+                payload["agent_toml"]["required_extension_sections"],
+                ["project", "moe", "dispatch", "extensions"],
+            )
+
+    def test_phase1_readiness_checker_blocks_agent_toml_bad_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-agent-bad-boundaries"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-agent-bad-boundaries", session_id="session-agent-bad")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
+            agent_path.write_text(
+                agent_path.read_text(encoding="utf-8")
+                .replace('private_prompt_policy = "do-not-copy-full-content"', 'private_prompt_policy = "copy-full-content"')
+                .replace('session_state_dir = ".omx/state/thesis_moe/sessions"', 'session_state_dir = "../sessions"')
+                .replace('forbidden = ["full-history-fork-with-custom-role"]', 'forbidden = []')
+                .replace('fallback = ["main-session-takeover", "durable-brief"]', 'fallback = ["full-history-fork"]'),
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:agent_project_boundary_invalid", blocker_codes)
+            self.assertIn("blocked:agent_moe_boundary_invalid", blocker_codes)
+            self.assertIn("blocked:agent_dispatch_boundary_incomplete", blocker_codes)
+            self.assertFalse(payload["agent_toml"]["extension_fields_ok"])
 
     def test_phase1_readiness_checker_blocks_wrapper_without_json_and_direct_state_surface(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

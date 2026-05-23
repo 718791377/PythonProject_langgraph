@@ -60,6 +60,19 @@ PHASE1_OPERATOR_DOC_REQUIRED_TOKENS = (
     "thesis-moe-on.cmd",
     "thesis-moe-off.cmd",
 )
+PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS = ("project", "moe", "dispatch", "extensions")
+PHASE1_AGENT_PROJECT_REQUIRED_VALUES = {
+    "scope": "repo-local",
+    "private_prompt_policy": "do-not-copy-full-content",
+}
+PHASE1_AGENT_MOE_REQUIRED_VALUES = {
+    "kind": "project-moe-agent",
+    "family": "project-specific",
+    "requires_manual_enable": True,
+}
+PHASE1_AGENT_DISPATCH_REQUIRED_MODE = "brief-based"
+PHASE1_AGENT_DISPATCH_REQUIRED_FORBIDDEN = ("full-history-fork-with-custom-role",)
+PHASE1_AGENT_DISPATCH_REQUIRED_FALLBACKS = ("main-session-takeover", "durable-brief")
 PRIVATE_CLI_FIELD_NAMES = {
     "developer_instructions",
     "moe_md",
@@ -238,7 +251,10 @@ def inspect_agent_toml(root: Path, agent_name: str, namespace: str) -> tuple[dic
         "exists": path.exists(),
         "required_fields_ok": False,
         "extension_sections": [],
+        "required_extension_sections": list(PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS),
+        "extension_fields_ok": False,
         "private_prompt_source": "MOE.md",
+        "standard_profile_ready": False,
     }
     if not path.exists():
         return details, [blocker("blocked:missing_agent_toml", "Target project must define the MOE agent TOML before Phase 1 readiness.")]
@@ -261,13 +277,107 @@ def inspect_agent_toml(root: Path, agent_name: str, namespace: str) -> tuple[dic
     details["required_fields_ok"] = not missing
     details["extension_sections"] = [name for name in ["project", "moe", "dispatch", "extensions"] if isinstance(data.get(name), dict)]
     details["private_prompt_source"] = str(project_section.get("private_prompt_source") or "MOE.md")
-    if project_section.get("scope") not in {None, "repo-local"}:
-        errors.append(blocker("blocked:agent_project_scope_invalid", "Agent TOML [project].scope must be repo-local when present.", observed=project_section.get("scope")))
+    missing_sections = [section for section in PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS if not isinstance(data.get(section), dict)]
+    if missing_sections:
+        errors.append(
+            blocker(
+                "blocked:agent_toml_missing_extension_sections",
+                "Agent TOML must include the standard Project MOE extension sections before Phase 1 readiness.",
+                missing=missing_sections,
+                required=list(PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS),
+            )
+        )
+    for key, expected in PHASE1_AGENT_PROJECT_REQUIRED_VALUES.items():
+        observed = project_section.get(key)
+        if observed != expected:
+            errors.append(
+                blocker(
+                    "blocked:agent_project_boundary_invalid",
+                    "Agent TOML [project] boundary fields must match the Project MOE standard.",
+                    field=f"project.{key}",
+                    expected=expected,
+                    observed=observed,
+                )
+            )
+    project_namespace = project_section.get("state_namespace")
+    if project_namespace != namespace:
+        errors.append(
+            blocker(
+                "blocked:agent_state_namespace_mismatch",
+                "Agent TOML [project].state_namespace must match --state-namespace.",
+                field="project.state_namespace",
+                expected=namespace,
+                observed=project_namespace,
+            )
+        )
     if moe_section.get("state_namespace") not in {None, namespace}:
-        errors.append(blocker("blocked:agent_state_namespace_mismatch", "Agent TOML [moe].state_namespace must match --state-namespace.", expected=namespace, observed=moe_section.get("state_namespace")))
+        errors.append(blocker("blocked:agent_state_namespace_mismatch", "Agent TOML [moe].state_namespace must match --state-namespace when present.", field="moe.state_namespace", expected=namespace, observed=moe_section.get("state_namespace")))
+    expected_state_paths = {
+        "project_default_state": f".omx/state/{namespace}/project-default.json",
+        "session_state_dir": f".omx/state/{namespace}/sessions",
+    }
+    for key, expected in {**PHASE1_AGENT_MOE_REQUIRED_VALUES, **expected_state_paths}.items():
+        observed = moe_section.get(key)
+        if observed != expected:
+            errors.append(
+                blocker(
+                    "blocked:agent_moe_boundary_invalid",
+                    "Agent TOML [moe] fields must match the Project MOE state boundary.",
+                    field=f"moe.{key}",
+                    expected=expected,
+                    observed=observed,
+                )
+            )
+    dispatch_mode = dispatch_section.get("mode")
+    if dispatch_mode != PHASE1_AGENT_DISPATCH_REQUIRED_MODE:
+        errors.append(
+            blocker(
+                "blocked:agent_dispatch_boundary_incomplete",
+                "Agent TOML [dispatch].mode must use the compatible Project MOE dispatch mode.",
+                field="dispatch.mode",
+                expected=PHASE1_AGENT_DISPATCH_REQUIRED_MODE,
+                observed=dispatch_mode,
+            )
+        )
     forbidden_dispatch = dispatch_section.get("forbidden")
-    if isinstance(forbidden_dispatch, list) and "full-history-fork-with-custom-role" not in forbidden_dispatch:
-        errors.append(blocker("blocked:agent_dispatch_boundary_incomplete", "Agent TOML dispatch boundary should forbid full-history-fork-with-custom-role."))
+    missing_forbidden = [
+        item
+        for item in PHASE1_AGENT_DISPATCH_REQUIRED_FORBIDDEN
+        if not isinstance(forbidden_dispatch, list) or item not in forbidden_dispatch
+    ]
+    if missing_forbidden:
+        errors.append(
+            blocker(
+                "blocked:agent_dispatch_boundary_incomplete",
+                "Agent TOML dispatch boundary must forbid incompatible full-history custom-role dispatch.",
+                field="dispatch.forbidden",
+                missing=missing_forbidden,
+            )
+        )
+    fallback_dispatch = dispatch_section.get("fallback")
+    missing_fallbacks = [
+        item
+        for item in PHASE1_AGENT_DISPATCH_REQUIRED_FALLBACKS
+        if not isinstance(fallback_dispatch, list) or item not in fallback_dispatch
+    ]
+    if missing_fallbacks:
+        errors.append(
+            blocker(
+                "blocked:agent_dispatch_boundary_incomplete",
+                "Agent TOML dispatch boundary must define compatible fallback paths.",
+                field="dispatch.fallback",
+                missing=missing_fallbacks,
+            )
+        )
+    extension_blocker_codes = {
+        "blocked:agent_toml_missing_extension_sections",
+        "blocked:agent_project_boundary_invalid",
+        "blocked:agent_state_namespace_mismatch",
+        "blocked:agent_moe_boundary_invalid",
+        "blocked:agent_dispatch_boundary_incomplete",
+    }
+    details["extension_fields_ok"] = not any(error["code"] in extension_blocker_codes for error in errors)
+    details["standard_profile_ready"] = details["required_fields_ok"] and details["extension_fields_ok"] and data.get("name") == agent_name
     return details, errors
 
 
