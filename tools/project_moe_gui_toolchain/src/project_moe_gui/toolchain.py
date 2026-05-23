@@ -40,8 +40,26 @@ DEFAULT_STARTUP_HOOK_CANDIDATES = (
     Path("docs_bilingual/project_startup_summary.zh-CN.md"),
     Path("docs/project_startup_summary.md"),
 )
+DEFAULT_OPERATOR_DOC_CANDIDATES = (
+    Path("docs_bilingual/operations/thesis_moe_mode_usage.zh-CN.md"),
+    Path("docs_bilingual/operations/thesis_moe_mode_usage.md"),
+    Path("docs/operations/thesis_moe_mode_usage.md"),
+    Path("docs/thesis_moe_mode_usage.md"),
+)
 COMMON_CLI_ENVELOPE_KEYS = ("schema_version", "command", "ok", "token", "cli_contract")
 STATUS_EFFECTIVE_SOURCES = {"session", "project-default", "fail-closed"}
+PHASE1_OPERATOR_DOC_REQUIRED_TOKENS = (
+    "thesis_moe_mode.py",
+    "project-on",
+    "project-off",
+    "project-status --json",
+    "list-sessions --json",
+    "status --json",
+    "assert-on",
+    "--session-id",
+    "thesis-moe-on.cmd",
+    "thesis-moe-off.cmd",
+)
 PRIVATE_CLI_FIELD_NAMES = {
     "developer_instructions",
     "moe_md",
@@ -356,6 +374,43 @@ def inspect_startup_hooks(root: Path, startup_paths: list[Path]) -> tuple[dict[s
         checked.append({"path": norm(rel), "exists": exists, "has_moe_status_hook": has_hook})
     errors = [] if hook_found else [blocker("blocked:missing_moe_activation_hook", "No startup or launcher file contains a MOE status --json activation checkpoint.")]
     return {"candidates_checked": checked, "hook_found": hook_found}, errors
+
+
+def inspect_operator_docs(root: Path, doc_paths: list[Path]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    checked: list[dict[str, Any]] = []
+    docs_found = False
+    ready_doc = False
+    best_missing: list[str] = list(PHASE1_OPERATOR_DOC_REQUIRED_TOKENS)
+    for rel in doc_paths:
+        path, err = safe_relative(root, rel, "blocked:operator_doc_path_invalid")
+        if err:
+            checked.append({"path": norm(rel), "exists": False, "token": err["code"], "missing_tokens": list(PHASE1_OPERATOR_DOC_REQUIRED_TOKENS)})
+            continue
+        assert path is not None
+        exists = path.exists()
+        if not exists:
+            checked.append({"path": norm(rel), "exists": False, "missing_tokens": list(PHASE1_OPERATOR_DOC_REQUIRED_TOKENS)})
+            continue
+        docs_found = True
+        text = read_text(path).lower()
+        matched = [token for token in PHASE1_OPERATOR_DOC_REQUIRED_TOKENS if token.lower() in text]
+        missing = [token for token in PHASE1_OPERATOR_DOC_REQUIRED_TOKENS if token.lower() not in text]
+        if len(missing) < len(best_missing):
+            best_missing = missing
+        ready = not missing
+        ready_doc = ready_doc or ready
+        checked.append({"path": norm(rel), "exists": True, "ready": ready, "matched_tokens": matched, "missing_tokens": missing})
+    if ready_doc:
+        return {"candidates_checked": checked, "docs_found": docs_found, "ready": True, "required_tokens": list(PHASE1_OPERATOR_DOC_REQUIRED_TOKENS)}, []
+    if not docs_found:
+        return (
+            {"candidates_checked": checked, "docs_found": False, "ready": False, "required_tokens": list(PHASE1_OPERATOR_DOC_REQUIRED_TOKENS)},
+            [blocker("blocked:missing_phase1_operator_docs", "No target-project operator documentation for thesis MOE mode was found.", expected_paths=[norm(path) for path in doc_paths])],
+        )
+    return (
+        {"candidates_checked": checked, "docs_found": True, "ready": False, "required_tokens": list(PHASE1_OPERATOR_DOC_REQUIRED_TOKENS)},
+        [blocker("blocked:phase1_operator_docs_incomplete", "Target-project operator documentation is missing required command and wrapper tokens.", missing=best_missing)],
+    )
 
 
 def run_cli(root: Path, mode_cli: Path, command: str) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
@@ -680,6 +735,7 @@ def check_phase1_readiness(
     on_wrapper: Path = DEFAULT_ON_WRAPPER,
     off_wrapper: Path = DEFAULT_OFF_WRAPPER,
     startup_paths: list[Path] | None = None,
+    operator_doc_paths: list[Path] | None = None,
 ) -> dict[str, Any]:
     errors = validate_identifiers(agent_name, namespace)
     evidence = project_evidence(root)
@@ -708,6 +764,8 @@ def check_phase1_readiness(
     errors.extend(off_errors)
     hook_details, hook_errors = inspect_startup_hooks(root, startup_paths or list(DEFAULT_STARTUP_HOOK_CANDIDATES))
     errors.extend(hook_errors)
+    operator_doc_details, operator_doc_errors = inspect_operator_docs(root, operator_doc_paths or list(DEFAULT_OPERATOR_DOC_CANDIDATES))
+    errors.extend(operator_doc_errors)
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "check_project_moe_phase1_readiness",
@@ -728,6 +786,7 @@ def check_phase1_readiness(
         "cli_contract_check": cli_details,
         "wrappers": {"on": on_details, "off": off_details},
         "startup_activation_hooks": hook_details,
+        "operator_docs": operator_doc_details,
         "blockers": errors,
         "next_actions": [] if not errors else sorted({error["code"] for error in errors}),
     }

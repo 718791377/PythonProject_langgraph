@@ -460,6 +460,19 @@ else:
             "On startup, resume, continue, or phase change, run `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
             encoding="utf-8",
         )
+        docs_dir = root / "docs_bilingual" / "operations"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+        (docs_dir / "thesis_moe_mode_usage.zh-CN.md").write_text(
+            "# Thesis MOE mode usage\n\n"
+            "- Use `python .\\tools\\thesis_moe_mode.py project-on` or `thesis-moe-on.cmd` to enable the project default.\n"
+            "- Use `python .\\tools\\thesis_moe_mode.py project-off` or `thesis-moe-off.cmd` to disable the project default.\n"
+            "- Use `python .\\tools\\thesis_moe_mode.py project-status --json` for project-default state.\n"
+            "- Use `python .\\tools\\thesis_moe_mode.py list-sessions --json` for redacted session rows.\n"
+            "- Use `python .\\tools\\thesis_moe_mode.py status --json` for the effective current session state.\n"
+            "- Use `python .\\tools\\thesis_moe_mode.py assert-on` when a hard enabled assertion is required.\n"
+            "- Use `python .\\tools\\thesis_moe_mode.py on --session-id <id>` or `off --session-id <id>` for a single session override.\n",
+            encoding="utf-8",
+        )
 
     def git_commit_all(self, root: Path) -> None:
         commands = [
@@ -512,6 +525,7 @@ else:
             self.assertEqual(payload["wrappers"]["on"]["unsafe_shell_tokens"], [])
             self.assertEqual(payload["wrappers"]["on"]["direct_state_path_references"], [])
             self.assertTrue(payload["startup_activation_hooks"]["hook_found"])
+            self.assertTrue(payload["operator_docs"]["ready"])
 
     def test_phase1_readiness_checker_blocks_dirty_target_and_missing_wrapper(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -539,6 +553,59 @@ else:
             self.assertIn("blocked:dirty_target_project", blocker_codes)
             self.assertIn("blocked:missing_phase1_wrapper", blocker_codes)
             self.assertTrue(payload["git_status"]["dirty"])
+
+    def test_phase1_readiness_checker_blocks_missing_operator_docs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-missing-docs"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-missing-docs", session_id="session-phase1-docs")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "docs_bilingual" / "operations" / "thesis_moe_mode_usage.zh-CN.md").unlink()
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:missing_phase1_operator_docs", blocker_codes)
+            self.assertFalse(payload["operator_docs"]["ready"])
+
+    def test_phase1_readiness_checker_blocks_incomplete_operator_docs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-incomplete-docs"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-incomplete-docs", session_id="session-phase1-incomplete-docs")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "docs_bilingual" / "operations" / "thesis_moe_mode_usage.zh-CN.md").write_text(
+                "# Incomplete docs\n\nOnly mentions thesis_moe_mode.py and project-on.\n",
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:phase1_operator_docs_incomplete", blocker_codes)
+            missing = next(item["missing"] for item in payload["blockers"] if item["code"] == "blocked:phase1_operator_docs_incomplete")
+            self.assertIn("project-off", missing)
+            self.assertIn("status --json", missing)
 
     def test_phase1_readiness_checker_blocks_wrapper_without_json_and_direct_state_surface(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
