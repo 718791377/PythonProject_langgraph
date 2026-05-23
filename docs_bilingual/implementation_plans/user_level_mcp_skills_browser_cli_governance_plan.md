@@ -235,7 +235,14 @@ Update strategy:
 
 Goal: install CLI-Anything at user level as harness-generation/reference tooling and build a governed `wecom-cli` for enterprise WeChat.
 
-Current local fact: `WXWork.exe` is present and running from `D:\Program Files\WXWork\WXWork.exe`.
+Implementation-time local fact handling: `WXWork.exe` has been observed as the target enterprise WeChat process name, but process presence and install path are dynamic local facts. Each `wecom-cli` implementation step, smoke test, or GUI task must refresh them through read-only process/window inventory before relying on them.
+
+Fact refresh rule:
+
+- repository evidence may record process name, owner class, presence, and a redacted path summary;
+- repository evidence must not record the full local install path, message contents, or raw window data;
+- absence of a running `WXWork.exe` blocks only process/window inventory or GUI automation tests, not API/Webhook design work;
+- GUI automation remains `disabled` unless a fresh process/window inventory, global WXWork lease, and one-task authorization receipt all exist.
 
 Installation/adaptation:
 

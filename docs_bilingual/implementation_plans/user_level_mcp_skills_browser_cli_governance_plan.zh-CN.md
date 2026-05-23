@@ -21,6 +21,7 @@ source_reference_file: reference_files/1.md
 复核结论：
 
 - 内容覆盖完整：MCP facade、skills 按需发现、browser owner、Chrome DevTools MCP、CDP Bridge、OpenCLI、`oh-my-pi`、CLI-Anything 与 `wecom-cli` 均有默认状态、授权边界、安装证据和回滚要求。
+- 动态本地事实已纳入治理：运行时进程是否存在、本机安装路径等信息必须由只读 inventory 刷新，并脱敏后才能成为仓库证据。
 - 颗粒度达到可实施：每个 lane 都能拆成 OpenSpec change；每个 change 都必须有 owned files、checker/test、receipt schema、rollback method 和 non-goals。
 - 未勾选清单是后续实施状态，不是方案缺口；在对应代码、checker、安装产物和 receipt 都完成前，不得把 lane 标为 `active`。
 - 推进原则是先 baseline 后能力：先完成 token/risk、授权 receipt、update receipt 与 evidence redaction，再实现 `skills2cli`、`mcp2cli`、browser 与 `wecom-cli` 等具体能力。
@@ -236,7 +237,14 @@ OpenCLI：
 
 目标：把 CLI-Anything 安装为用户级 harness 生成/参考工具，并构建受治理的企业微信 `wecom-cli`。
 
-当前本地事实：`WXWork.exe` 正在运行，路径为 `D:\Program Files\WXWork\WXWork.exe`。
+动态本地事实处理：`WXWork.exe` 已被识别为企业微信目标进程名，但进程是否正在运行、安装路径在哪里都属于动态本地事实。每次实施 `wecom-cli`、执行 smoke test 或进入 GUI task 前，都必须通过只读 process/window inventory 重新确认，不能把一次会话中的运行状态写成长期事实。
+
+事实刷新规则：
+
+- 仓库证据只能记录 process name、owner class、presence 和脱敏路径摘要；
+- 仓库证据不得记录完整本机安装路径、消息内容或 raw window data；
+- 未发现正在运行的 `WXWork.exe` 只阻断 process/window inventory 或 GUI automation 测试，不阻断 API/Webhook 设计工作；
+- GUI automation 保持 `disabled`，除非同时存在新鲜 process/window inventory、global WXWork lease 和 one-task authorization receipt。
 
 安装/适配要求：
 
