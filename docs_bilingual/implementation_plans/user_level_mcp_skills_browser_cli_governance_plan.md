@@ -424,6 +424,7 @@ Acceptance criteria for this plan:
 
 - every lane has a documented default state: `active`, `on-demand`, `reference-only`, or `disabled`;
 - every user-level installed tool has an update receipt and rollback pointer;
+- every shared local listener uses the port allocator, records a port lease receipt, and avoids fixed ports except documented `legacy_reserved` entries;
 - every sensitive lane has a fail-closed checker or wrapper guard;
 - every browser automation lane records owner class before actions that can read or mutate state;
 - no repository evidence stores secrets, cookies, raw browser data, full personal runtime paths, or complete plugin description dumps.
@@ -469,6 +470,8 @@ Required receipt fields:
 
 Repository evidence may record the receipt schema, relative state names, status, and sanitized smoke-test summaries. It must not record secrets, cookies, tokens, raw browser data, message contents, or full personal runtime paths.
 
+Port lease receipts are operational receipts under `C:\Users\lenovo\.codex\state\ports\receipts\`. They do not replace install/update receipts under `tool-updates`; instead the install/update receipt must reference the relevant port-registry range, allocator wrapper, and lease receipt schema when a tool can open a local listener.
+
 Update rule:
 
 - updater commands must be pinned or version-aware;
@@ -495,7 +498,7 @@ OpenSpec slice delivery matrix:
 
 | Slice | Main artifacts | Minimum validation | Completion evidence |
 | --- | --- | --- | --- |
-| 1. Policy/checker baseline | token/risk checker, authorization receipt schema, update receipt schema, evidence-redaction policy | checker unit tests plus local-gate registration | checker output, test record, OpenSpec delta/spec update |
+| 1. Policy/checker baseline | token/risk checker, port registry/lease checker, `codex-port` allocator contract, authorization receipt schema, update receipt schema, evidence-redaction policy | checker unit tests, port-collision fixture, allocator fail-closed fixture, and local-gate registration | checker output, test record, allocator contract evidence, OpenSpec delta/spec update |
 | 2. `skills2cli` MVP | repo-local helper, user-level wrapper, skill index/search/show/warning audit | compact-output, privacy-redaction, profile-non-apply, and warning-audit tests | redacted index summary, wrapper smoke, receipt |
 | 3. `mcp2cli` MVP | allowed profile registry, list/search/show/call facade | compact-output, sensitive-call fail-closed, and receipt-required tests | profile registry, blocked authorization example, wrapper smoke |
 | 4. Browser owner registry | owner registry, lease schema, managed `chrome-devtools-mcp` wrapper | isolated/project-profile/human-owned protection and cleanup dry-run tests | lease receipt, stale-scan dry-run, wrapper smoke |
@@ -514,6 +517,7 @@ Each OpenSpec change must define:
 - local tests or checkers that prove the new behavior;
 - user-level install artifact, if any;
 - receipt path and schema, if any;
+- local listener or port lease ownership, if the change can bind a TCP port;
 - rollback method;
 - explicit non-goals to keep the change from expanding.
 

@@ -425,6 +425,7 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 
 - 每个 lane 都有明确默认状态：`active`、`on-demand`、`reference-only` 或 `disabled`。
 - 每个用户级安装工具都有 update receipt 与 rollback pointer。
+- 每个共享本地监听服务都必须通过端口分配器申请 lease、记录端口 lease receipt，并避免固定端口，除非它是已记录的 `legacy_reserved`。
 - 每个敏感 lane 都有 fail-closed checker 或 wrapper guard。
 - 每个 browser automation lane 在可读取或修改状态的动作前都会记录 owner class。
 - 仓库证据不保存 secrets、cookies、raw browser data、完整个人运行时路径或完整 plugin description dumps。
@@ -470,6 +471,8 @@ receipt 必填字段：
 
 仓库证据可以记录 receipt schema、相对 state 名称、status 和脱敏后的 smoke-test summary。仓库证据不得记录 secrets、cookies、tokens、raw browser data、消息内容或完整个人运行时路径。
 
+端口 lease receipt 是写在 `C:\Users\lenovo\.codex\state\ports\receipts\` 下的运行时操作 receipt。它不能替代 `tool-updates` 下的安装/更新 receipt；如果工具可能打开本地监听端口，则对应安装/更新 receipt 必须引用相关 port-registry 号段、allocator wrapper 和 lease receipt schema。
+
 更新规则：
 
 - updater command 必须 pinned 或 version-aware；
@@ -496,7 +499,7 @@ OpenSpec 切片交付矩阵：
 
 | 切片 | 主要产物 | 最小验证 | 完成证据 |
 | --- | --- | --- | --- |
-| 1. Policy/checker baseline | token/risk checker、port registry/lease checker、authorization receipt schema、update receipt schema、evidence redaction policy | checker 单元测试、端口冲突 fixture、local gate 注册 | checker 输出、测试记录、OpenSpec delta/spec 更新 |
+| 1. Policy/checker baseline | token/risk checker、port registry/lease checker、`codex-port` allocator contract、authorization receipt schema、update receipt schema、evidence redaction policy | checker 单元测试、端口冲突 fixture、allocator fail-closed fixture、local gate 注册 | checker 输出、测试记录、allocator contract 证据、OpenSpec delta/spec 更新 |
 | 2. `skills2cli` MVP | repo-local helper、用户级 wrapper、skill index/search/show/warning audit | compact output、privacy redaction、profile non-apply、warning audit 测试 | 脱敏索引摘要、wrapper smoke、receipt |
 | 3. `mcp2cli` MVP | allowed profile registry、list/search/show/call facade | compact output、sensitive-call fail-closed、receipt-required 测试 | profile registry、授权失败样例、wrapper smoke |
 | 4. Browser owner registry | owner registry、lease schema、`chrome-devtools-mcp` managed wrapper | isolated/project-profile/human-owned protection、cleanup dry-run 测试 | lease receipt、stale scan dry-run、wrapper smoke |
@@ -515,6 +518,7 @@ OpenSpec 切片交付矩阵：
 - 证明新行为的 local tests 或 checkers；
 - 如有用户级安装产物，必须列出产物；
 - 如有 receipt，必须列出 receipt path 与 schema；
+- 如 change 可能绑定 TCP 端口，必须列出 local listener 或 port lease 归属；
 - rollback method；
 - 明确 non-goals，避免 change 膨胀。
 
