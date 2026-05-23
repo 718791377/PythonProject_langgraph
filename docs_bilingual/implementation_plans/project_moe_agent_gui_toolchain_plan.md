@@ -640,8 +640,8 @@ Phase-level summary:
 - [x] Invoke the CLI from the GUI using argv/list, never shell string concatenation.
 - [x] Prevent the GUI shell from directly writing `.omx/state` JSON.
 - [x] Show stable tokens, short messages, and redacted stdout/stderr summaries in the GUI shell view model.
-- [ ] Disable same-scope buttons while write commands run, then re-read state.
-- [ ] Support keyboard operation and high-contrast/system-theme readability.
+- [x] Disable same-scope buttons while write commands run, then re-read state.
+- [x] Support keyboard operation and high-contrast/system-theme readability.
 - [x] Add import-only fixture GUI tests and the explicit visible-window launch boundary; headless Qt / QTest / manual visual verification remains follow-up evidence for the real GUI.
 - [x] Register GUI shell fixture coverage through the already registered `project_moe_gui_toolchain.test.py` local-gate test.
 

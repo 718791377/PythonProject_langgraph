@@ -23,6 +23,13 @@ ACTION_COMMANDS = {
     "session-on": ["on", "--json"],
     "session-off": ["off", "--json"],
 }
+KEYBOARD_SHORTCUTS = {
+    "refresh": "F5",
+    "project-on": "Alt+P",
+    "project-off": "Alt+Shift+P",
+    "session-on": "Alt+S",
+    "session-off": "Alt+Shift+S",
+}
 
 
 def norm(path: str | Path) -> str:
@@ -111,6 +118,87 @@ def state_label(value: bool | None) -> str:
     return "unknown"
 
 
+def action_scope_key(action: str, session_id: str | None = None) -> str:
+    if action.startswith("session-"):
+        return f"session:{redact_identifier(session_id)}"
+    if action in READ_ACTIONS:
+        return "read"
+    return "project-default"
+
+
+def action_label(action: str) -> str:
+    return {
+        "refresh": "Refresh status",
+        "project-status": "Read project status",
+        "list-sessions": "Read sessions",
+        "status": "Read effective status",
+        "project-on": "Enable project default",
+        "project-off": "Disable project default",
+        "session-on": "Enable selected session",
+        "session-off": "Disable selected session",
+    }.get(action, action)
+
+
+def scope_label(scope: str, scope_key: str | None = None) -> str:
+    if scope == "project-default":
+        return "Project default scope"
+    if scope == "session":
+        return f"Selected session scope {scope_key or ''}".strip()
+    if scope == "read":
+        return "Read-only refresh scope"
+    return scope
+
+
+def same_pending_scope(action_plan: dict[str, Any], pending_scope: str | None, pending_scope_key: str | None = None) -> bool:
+    if not pending_scope and not pending_scope_key:
+        return False
+    scope = str(action_plan.get("scope") or "")
+    scope_key = str(action_plan.get("scope_key") or scope)
+    if pending_scope_key:
+        return pending_scope_key == scope_key
+    return bool(pending_scope and pending_scope == scope)
+
+
+def decorate_action_for_button(
+    action_plan: dict[str, Any],
+    *,
+    pending_scope: str | None = None,
+    pending_scope_key: str | None = None,
+) -> dict[str, Any]:
+    decorated = dict(action_plan)
+    action = str(decorated.get("action") or "")
+    disabled_by_pending = same_pending_scope(decorated, pending_scope, pending_scope_key) and bool(decorated.get("writes_state"))
+    enabled = bool(decorated.get("ok")) and not disabled_by_pending
+    disabled_reason = ""
+    if not decorated.get("ok"):
+        disabled_reason = str(decorated.get("token") or "blocked:action_plan_invalid")
+    elif disabled_by_pending:
+        disabled_reason = "pending_same_scope_write"
+    button = {
+        "label": action_label(action),
+        "enabled": enabled,
+        "disabled_reason": disabled_reason,
+        "scope": decorated.get("scope"),
+        "scope_key": decorated.get("scope_key"),
+        "scope_label": scope_label(str(decorated.get("scope") or ""), decorated.get("scope_key")),
+        "keyboard_shortcut": KEYBOARD_SHORTCUTS.get(action),
+        "accessible_name": f"{action_label(action)}; {scope_label(str(decorated.get('scope') or ''), decorated.get('scope_key'))}",
+        "high_contrast_text": f"{action_label(action)} [{decorated.get('token', 'ok')}]",
+    }
+    decorated["button"] = button
+    decorated["enabled"] = enabled
+    decorated["disabled_reason"] = disabled_reason
+    return decorated
+
+
+def readback_specs_for_write_action(action: str, session_id: str | None = None) -> list[tuple[str, str | None]]:
+    if action not in WRITE_ACTIONS:
+        return []
+    specs: list[tuple[str, str | None]] = [("project-status", None), ("list-sessions", None)]
+    specs.append(("status", session_id if action.startswith("session-") else None))
+    return specs
+
+
 def extract_project_default(project_status: dict[str, Any] | None, status_payload: dict[str, Any] | None = None) -> bool | None:
     for payload in [project_status, status_payload]:
         if not isinstance(payload, dict):
@@ -195,6 +283,8 @@ def build_action_plan(
     root = configured_project_root(config, project_root)
     mode_cli = configured_mode_cli(config, root)
     argv = [python_executable or sys.executable, str(mode_cli), *ACTION_COMMANDS[action]]
+    scope = "session" if action.startswith("session-") else ("read" if action in READ_ACTIONS else "project-default")
+    scope_key = action_scope_key(action, session_id)
     if action in {"session-on", "session-off"}:
         argv.extend(["--session-id", str(session_id)])
     return {
@@ -202,13 +292,21 @@ def build_action_plan(
         "ok": True,
         "token": "ok",
         "action": action,
-        "scope": "session" if action.startswith("session-") else ("read" if action in READ_ACTIONS else "project-default"),
+        "scope": scope,
+        "scope_key": scope_key,
+        "scope_label": scope_label(scope, scope_key),
         "project_root": str(root),
         "mode_cli": str(mode_cli),
         "argv": argv,
         "shell": False,
         "writes_state": action in WRITE_ACTIONS,
         "direct_state_write": False,
+        "keyboard_shortcut": KEYBOARD_SHORTCUTS.get(action),
+        "requires_readback_after_write": action in WRITE_ACTIONS,
+        "readback_after_write": [
+            build_action_plan(config, read_action, session_id=read_session_id, project_root=root, python_executable=python_executable)
+            for read_action, read_session_id in readback_specs_for_write_action(action, session_id)
+        ],
     }
 
 
@@ -227,10 +325,18 @@ def build_refresh_plan(config: dict[str, Any], *, project_root: str | Path | Non
             build_action_plan(config, "list-sessions", project_root=project_root, python_executable=python_executable),
             build_action_plan(config, "status", project_root=project_root, python_executable=python_executable),
         ],
+        "keyboard_shortcut": KEYBOARD_SHORTCUTS["refresh"],
     }
 
 
-def build_project_default_card(project_status: dict[str, Any] | None, status_payload: dict[str, Any] | None, config: dict[str, Any]) -> dict[str, Any]:
+def build_project_default_card(
+    project_status: dict[str, Any] | None,
+    status_payload: dict[str, Any] | None,
+    config: dict[str, Any],
+    *,
+    pending_scope: str | None = None,
+    pending_scope_key: str | None = None,
+) -> dict[str, Any]:
     project_default = extract_project_default(project_status, status_payload)
     effective = extract_effective(status_payload, project_status)
     token = payload_token(project_status, "blocked:project_status_not_loaded")
@@ -245,13 +351,34 @@ def build_project_default_card(project_status: dict[str, Any] | None, status_pay
         "effective_enabled": effective,
         "effective_label": state_label(effective),
         "actions": {
-            "enable_project_default": build_action_plan(config, "project-on"),
-            "disable_project_default": build_action_plan(config, "project-off"),
+            "enable_project_default": decorate_action_for_button(
+                build_action_plan(config, "project-on"),
+                pending_scope=pending_scope,
+                pending_scope_key=pending_scope_key,
+            ),
+            "disable_project_default": decorate_action_for_button(
+                build_action_plan(config, "project-off"),
+                pending_scope=pending_scope,
+                pending_scope_key=pending_scope_key,
+            ),
+        },
+        "status_badge": {
+            "text": state_label(project_default),
+            "effective_text": state_label(effective),
+            "token_text": token,
+            "high_contrast_text": f"Project default: {state_label(project_default)}; effective: {state_label(effective)}; token: {token}",
         },
     }
 
 
-def normalize_session_row(config: dict[str, Any], row: Any, index: int) -> dict[str, Any]:
+def normalize_session_row(
+    config: dict[str, Any],
+    row: Any,
+    index: int,
+    *,
+    pending_scope: str | None = None,
+    pending_scope_key: str | None = None,
+) -> dict[str, Any]:
     if not isinstance(row, dict):
         return {
             "row_index": index,
@@ -272,8 +399,16 @@ def normalize_session_row(config: dict[str, Any], row: Any, index: int) -> dict[
     if valid:
         raw_id = str(session_id)
         actions = {
-            "enable_session": build_action_plan(config, "session-on", session_id=raw_id),
-            "disable_session": build_action_plan(config, "session-off", session_id=raw_id),
+            "enable_session": decorate_action_for_button(
+                build_action_plan(config, "session-on", session_id=raw_id),
+                pending_scope=pending_scope,
+                pending_scope_key=pending_scope_key,
+            ),
+            "disable_session": decorate_action_for_button(
+                build_action_plan(config, "session-off", session_id=raw_id),
+                pending_scope=pending_scope,
+                pending_scope_key=pending_scope_key,
+            ),
         }
     return {
         "row_index": index,
@@ -287,10 +422,21 @@ def normalize_session_row(config: dict[str, Any], row: Any, index: int) -> dict[
         "source": row.get("source") or row.get("effective_source") or "unknown",
         "last_seen_at": row.get("last_seen_at"),
         "actions": actions,
+        "status_badge": {
+            "text": state_label(enabled),
+            "token_text": token,
+            "high_contrast_text": f"Session {redact_identifier(session_id)}: {state_label(enabled)}; token: {token}",
+        },
     }
 
 
-def build_session_table(config: dict[str, Any], sessions_payload: dict[str, Any] | None) -> dict[str, Any]:
+def build_session_table(
+    config: dict[str, Any],
+    sessions_payload: dict[str, Any] | None,
+    *,
+    pending_scope: str | None = None,
+    pending_scope_key: str | None = None,
+) -> dict[str, Any]:
     if sessions_payload is None:
         return {
             "token": "blocked:list_sessions_not_loaded",
@@ -313,7 +459,16 @@ def build_session_table(config: dict[str, Any], sessions_payload: dict[str, Any]
             "empty_state": {"is_empty": True, "message": "list-sessions --json must return a sessions array."},
             "invalid_count": 0,
         }
-    rows = [normalize_session_row(config, row, index) for index, row in enumerate(sessions)]
+    rows = [
+        normalize_session_row(
+            config,
+            row,
+            index,
+            pending_scope=pending_scope,
+            pending_scope_key=pending_scope_key,
+        )
+        for index, row in enumerate(sessions)
+    ]
     invalid_count = sum(1 for row in rows if not row["valid"] or row["token"] != "ok")
     return {
         "token": "ok",
@@ -338,8 +493,10 @@ def describe_window_structure() -> dict[str, Any]:
         "accessibility_contract": {
             "button_scope_labels_required": True,
             "status_badges_have_text": True,
-            "system_theme_or_high_contrast_readable": "manual_or_qtest_evidence_required",
-            "keyboard_operation": "manual_or_qtest_evidence_required",
+            "system_theme_or_high_contrast_readable": "view_model_exposes_high_contrast_text_manual_or_qtest_visible_evidence_required",
+            "keyboard_operation": "view_model_exposes_shortcuts_manual_or_qtest_visible_evidence_required",
+            "write_buttons_disable_same_scope_while_pending": True,
+            "write_actions_require_readback_after_write": True,
         },
         "automation_boundary": {
             "import_safe_without_pyside6": True,
@@ -360,7 +517,14 @@ def build_view_model(
 ) -> dict[str, Any]:
     root = configured_project_root(config)
     pyside6_status = "import_ok" if (is_pyside6_available() if pyside6_available is None else pyside6_available) else "pyside6_unavailable"
-    session_table = build_session_table(config, sessions_payload)
+    pending_scope_key = str(pending_scope) if pending_scope and ":" in pending_scope else None
+    pending_scope_name = pending_scope.split(":", 1)[0] if pending_scope and ":" in pending_scope else pending_scope
+    session_table = build_session_table(
+        config,
+        sessions_payload,
+        pending_scope=pending_scope_name,
+        pending_scope_key=pending_scope_key,
+    )
     project_token = payload_token(project_status, "blocked:project_status_not_loaded")
     status_token = payload_token(status_payload, "blocked:status_not_loaded")
     table_token = session_table["token"]
@@ -387,7 +551,13 @@ def build_view_model(
             "state_namespace": config.get("state_namespace"),
             "cli_contract": config.get("cli_contract"),
         },
-        "project_default_card": build_project_default_card(project_status, status_payload, config),
+        "project_default_card": build_project_default_card(
+            project_status,
+            status_payload,
+            config,
+            pending_scope=pending_scope_name,
+            pending_scope_key=pending_scope_key,
+        ),
         "session_table": session_table,
         "refresh_action": build_refresh_plan(config),
         "runtime": {
@@ -397,8 +567,21 @@ def build_view_model(
         },
         "banners": banners,
         "button_state": {
-            "pending_scope": pending_scope,
+            "pending_scope": pending_scope_name,
+            "pending_scope_key": pending_scope_key,
             "same_scope_buttons_disabled": bool(pending_scope),
+            "readback_required_after_write": True,
+        },
+        "keyboard_navigation": {
+            "tab_order": ["refresh", "project-on", "project-off", "session-table", "session-on", "session-off"],
+            "shortcuts": KEYBOARD_SHORTCUTS,
+            "focus_policy": "buttons_and_session_table_are_keyboard_reachable",
+        },
+        "theme_accessibility": {
+            "uses_system_theme": True,
+            "status_not_color_only": True,
+            "high_contrast_text_required": True,
+            "badge_text_fields": ["text", "effective_text", "token_text", "high_contrast_text"],
         },
         "direct_state_write": False,
     }
@@ -434,8 +617,14 @@ def build_gui_preflight(
     }
 
 
-def run_cli_json(config: dict[str, Any], action: str, *, timeout: int = 20) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-    plan = build_action_plan(config, action)
+def run_cli_json(
+    config: dict[str, Any],
+    action: str,
+    *,
+    session_id: str | None = None,
+    timeout: int = 20,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    plan = build_action_plan(config, action, session_id=session_id)
     if not plan.get("ok"):
         return None, stable_blocker(str(plan["token"]), str(plan.get("message") or "Cannot build action plan."))
     try:
@@ -468,6 +657,67 @@ def run_cli_json(config: dict[str, Any], action: str, *, timeout: int = 20) -> t
     if not isinstance(payload, dict):
         return None, stable_blocker("blocked:mode_cli_invalid_json", "Target project mode CLI JSON must be an object.", action=action)
     return payload, None
+
+
+def execute_write_action_with_readback(
+    config: dict[str, Any],
+    action: str,
+    *,
+    session_id: str | None = None,
+    timeout: int = 20,
+) -> dict[str, Any]:
+    plan = build_action_plan(config, action, session_id=session_id)
+    if not plan.get("ok"):
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "ok": False,
+            "token": plan.get("token"),
+            "action": action,
+            "message": plan.get("message"),
+            "write_payload": None,
+            "readback": {},
+            "button_state_during_command": {},
+        }
+    if action not in WRITE_ACTIONS:
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "ok": False,
+            "token": "blocked:not_a_write_action",
+            "action": action,
+            "message": "Only write actions use execute_write_action_with_readback.",
+            "write_payload": None,
+            "readback": {},
+            "button_state_during_command": {},
+        }
+    pending_key = str(plan.get("scope_key") or plan.get("scope") or "")
+    pending_view_model = build_view_model(config, pending_scope=pending_key)
+    write_payload, write_error = run_cli_json(config, action, session_id=session_id, timeout=timeout)
+    readback: dict[str, Any] = {}
+    readback_errors: list[dict[str, Any]] = []
+    for read_plan in plan.get("readback_after_write", []):
+        read_action = str(read_plan.get("action"))
+        read_session_id = session_id if read_action == "status" and action.startswith("session-") else None
+        payload, err = run_cli_json(config, read_action, session_id=read_session_id, timeout=timeout)
+        readback[read_action] = payload
+        if err:
+            readback_errors.append(err)
+    errors = [err for err in [write_error, *readback_errors] if err]
+    token = "ok" if not errors else str(errors[0]["code"])
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "ok": not errors,
+        "token": token,
+        "action": action,
+        "scope": plan.get("scope"),
+        "scope_key": plan.get("scope_key"),
+        "message": "Write action completed and status was re-read." if not errors else "Write action or readback failed.",
+        "write_payload": write_payload,
+        "readback": readback,
+        "readback_required": True,
+        "readback_commands": [item.get("action") for item in plan.get("readback_after_write", [])],
+        "errors": errors,
+        "button_state_during_command": pending_view_model["button_state"],
+    }
 
 
 def launch_visible(view_model: dict[str, Any]) -> int:

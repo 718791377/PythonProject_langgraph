@@ -640,8 +640,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - [x] GUI 调 CLI 必须使用 argv/list，不使用 shell 字符串拼接。
 - [x] GUI shell 不直接写 `.omx/state` JSON。
 - [x] GUI shell view model 显示 stable token、简短说明和脱敏 stdout/stderr 摘要。
-- [ ] 写入命令执行期间禁用同一 scope 按钮并重新读取状态。
-- [ ] 支持键盘操作和高对比/系统主题可辨认状态。
+- [x] 写入命令执行期间禁用同一 scope 按钮并重新读取状态。
+- [x] 支持键盘操作和高对比/系统主题可辨认状态。
 - [x] 补充 import-only fixture GUI 测试与可见窗口显式启动边界；headless Qt / QTest / 手动视觉验证仍作为后续真实 GUI 证据。
 - [x] 将 GUI shell fixture 测试纳入本仓库 local gate 已注册的 `project_moe_gui_toolchain.test.py`。
 

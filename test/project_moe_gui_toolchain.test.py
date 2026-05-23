@@ -67,10 +67,28 @@ payload = {
 }
 if cmd == "list-sessions":
     payload["message"] = "session list read"
+    payload["sessions"] = [
+        {"session_id": "session-1234567890abcdef", "enabled": False, "effective_enabled": False, "valid": True, "token": "ok", "source": "manual-session"}
+    ]
 elif cmd == "project-status":
     payload["message"] = "project status read"
+    payload["project_default_enabled"] = False
+    payload["git_branch"] = "main"
 elif cmd == "status":
     payload["message"] = "mentor mode disabled"
+    payload["effective_enabled"] = False
+elif cmd == "project-on":
+    payload["message"] = "project default enabled"
+    payload["project_default_enabled"] = True
+elif cmd == "project-off":
+    payload["message"] = "project default disabled"
+    payload["project_default_enabled"] = False
+elif cmd == "on":
+    payload["message"] = "session enabled"
+    payload["effective_enabled"] = True
+elif cmd == "off":
+    payload["message"] = "session disabled"
+    payload["effective_enabled"] = False
 else:
     payload = {"ok": False, "token": "unsupported"}
 print(json.dumps(payload))
@@ -258,12 +276,82 @@ print(json.dumps(payload))
             self.assertFalse(plan["direct_state_write"])
             self.assertIn("--session-id", plan["argv"])
             self.assertIn("session-1234567890abcdef", plan["argv"])
+            self.assertEqual(plan["scope"], "session")
+            self.assertTrue(plan["requires_readback_after_write"])
+            self.assertEqual([item["action"] for item in plan["readback_after_write"]], ["project-status", "list-sessions", "status"])
 
             refresh = gui_shell.build_refresh_plan(config)
             self.assertFalse(refresh["writes_state"])
             self.assertFalse(refresh["shell"])
             self.assertTrue(all(command["shell"] is False for command in refresh["commands"]))
             self.assertTrue(all(command["writes_state"] is False for command in refresh["commands"]))
+            self.assertEqual(refresh["keyboard_shortcut"], "F5")
+
+    def test_gui_shell_pending_write_disables_same_scope_buttons_and_keeps_read_refresh_available(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": False, "git_branch": "main"},
+                sessions_payload={
+                    "ok": True,
+                    "token": "ok",
+                    "sessions": [{"session_id": "session-1234567890abcdef", "enabled": False, "token": "ok"}],
+                },
+                status_payload={"ok": True, "token": "ok", "effective_enabled": False},
+                pyside6_available=False,
+                pending_scope="session:sessio…cdef",
+            )
+
+            row = view_model["session_table"]["rows"][0]
+            self.assertFalse(row["actions"]["enable_session"]["button"]["enabled"])
+            self.assertEqual(row["actions"]["enable_session"]["button"]["disabled_reason"], "pending_same_scope_write")
+            self.assertFalse(row["actions"]["disable_session"]["button"]["enabled"])
+            self.assertTrue(view_model["refresh_action"]["commands"][0]["ok"])
+            self.assertEqual(view_model["button_state"]["pending_scope"], "session")
+            self.assertEqual(view_model["button_state"]["pending_scope_key"], "session:sessio…cdef")
+
+    def test_gui_shell_exposes_keyboard_and_high_contrast_state_text(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"},
+                sessions_payload={"ok": True, "token": "ok", "sessions": []},
+                status_payload={"ok": True, "token": "ok", "effective_enabled": True},
+                pyside6_available=False,
+            )
+
+            self.assertEqual(view_model["keyboard_navigation"]["shortcuts"]["refresh"], "F5")
+            self.assertIn("Project default:", view_model["project_default_card"]["status_badge"]["high_contrast_text"])
+            enable_button = view_model["project_default_card"]["actions"]["enable_project_default"]["button"]
+            self.assertIn("Project default scope", enable_button["accessible_name"])
+            self.assertTrue(view_model["theme_accessibility"]["status_not_color_only"])
+            self.assertTrue(view_model["window_structure"]["accessibility_contract"]["write_buttons_disable_same_scope_while_pending"])
+
+    def test_gui_shell_write_action_runs_readback_after_write(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            config = self.gui_config(project)
+            result = gui_shell.execute_write_action_with_readback(config, "project-on")
+            self.assertTrue(result["ok"], result)
+            self.assertEqual(result["token"], "ok")
+            self.assertTrue(result["readback_required"])
+            self.assertEqual(result["readback_commands"], ["project-status", "list-sessions", "status"])
+            self.assertIn("project-status", result["readback"])
+            self.assertEqual(result["button_state_during_command"]["pending_scope"], "project-default")
 
     def test_gui_shell_invalid_session_rows_use_stable_tokens(self) -> None:
         from project_moe_gui import gui_shell
