@@ -54,6 +54,30 @@ PRIVATE_CLI_FIELD_NAMES = {
     "stderr_full",
     "stdout_full",
 }
+PHASE1_WRAPPER_UNSAFE_SHELL_TOKENS = (
+    "%*",
+    "&&",
+    "||",
+    "|",
+    ">",
+    "<",
+    "cmd /c",
+    "powershell ",
+    "pwsh ",
+    "start ",
+    "del ",
+    "erase ",
+    "move ",
+    "copy ",
+    "xcopy ",
+    "robocopy ",
+)
+PHASE1_WRAPPER_DIRECT_STATE_TOKENS = (
+    ".omx",
+    "project-default.json",
+    "sessions/",
+    "sessions\\",
+)
 
 
 def now_utc() -> str:
@@ -245,6 +269,18 @@ def command_token_hits(text: str, tokens: tuple[str, ...]) -> list[str]:
     return [token for token in tokens if token in text]
 
 
+def inspect_wrapper_safety(text: str) -> tuple[list[str], list[str]]:
+    lowered = text.lower()
+    normalized = lowered.replace("\\", "/")
+    unsafe_shell_hits = [token for token in PHASE1_WRAPPER_UNSAFE_SHELL_TOKENS if token in lowered]
+    direct_state_hits = []
+    for token in PHASE1_WRAPPER_DIRECT_STATE_TOKENS:
+        needle = token.lower().replace("\\", "/")
+        if needle in normalized:
+            direct_state_hits.append(token)
+    return unsafe_shell_hits, direct_state_hits
+
+
 def inspect_mode_cli_surface(root: Path, mode_cli: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     path, err = safe_relative(root, mode_cli, "blocked:mode_cli_path_invalid")
     if err:
@@ -268,17 +304,37 @@ def inspect_wrapper(root: Path, relative: Path, expected_command: str, mode_cli:
     if err:
         return {"path": norm(relative), "exists": False, "expected_command": expected_command}, [err]
     assert path is not None
-    details = {"path": norm(relative), "exists": path.exists(), "expected_command": expected_command, "references_mode_cli": False, "references_expected_command": False}
+    details = {
+        "path": norm(relative),
+        "exists": path.exists(),
+        "expected_command": expected_command,
+        "references_mode_cli": False,
+        "references_expected_command": False,
+        "passes_json_flag": False,
+        "unsafe_shell_tokens": [],
+        "direct_state_path_references": [],
+    }
     if not path.exists():
         return details, [blocker("blocked:missing_phase1_wrapper", "Expected Phase 1 wrapper is missing.", path=norm(relative))]
-    text = read_text(path).lower()
-    details["references_mode_cli"] = mode_cli.name.lower() in text or norm(mode_cli).lower() in text.replace("\\", "/")
-    details["references_expected_command"] = expected_command.lower() in text
+    text = read_text(path)
+    lowered = text.lower()
+    details["references_mode_cli"] = mode_cli.name.lower() in lowered or norm(mode_cli).lower() in lowered.replace("\\", "/")
+    details["references_expected_command"] = expected_command.lower() in lowered
+    details["passes_json_flag"] = "--json" in lowered
+    unsafe_shell_hits, direct_state_hits = inspect_wrapper_safety(text)
+    details["unsafe_shell_tokens"] = unsafe_shell_hits
+    details["direct_state_path_references"] = direct_state_hits
     errors: list[dict[str, Any]] = []
     if not details["references_mode_cli"]:
         errors.append(blocker("blocked:phase1_wrapper_not_bound_to_mode_cli", "Wrapper must invoke the target project's mode CLI.", path=norm(relative), mode_cli=norm(mode_cli)))
     if not details["references_expected_command"]:
         errors.append(blocker("blocked:phase1_wrapper_command_mismatch", "Wrapper must invoke the expected project-level command.", path=norm(relative), expected_command=expected_command))
+    if not details["passes_json_flag"]:
+        errors.append(blocker("blocked:phase1_wrapper_json_output_missing", "Wrapper must pass --json so automation can rely on stable machine-readable output.", path=norm(relative), expected_command=expected_command))
+    if unsafe_shell_hits:
+        errors.append(blocker("blocked:phase1_wrapper_unsafe_shell_surface", "Wrapper must not expose arbitrary argument passthrough, shell chaining, redirection, or file-operation command tokens.", path=norm(relative), unsafe_tokens=unsafe_shell_hits))
+    if direct_state_hits:
+        errors.append(blocker("blocked:phase1_wrapper_direct_state_surface", "Wrapper must delegate state reads and writes to the target mode CLI instead of touching .omx/state or status JSON files directly.", path=norm(relative), direct_state_tokens=direct_state_hits))
     return details, errors
 
 

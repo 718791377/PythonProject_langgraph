@@ -508,6 +508,9 @@ else:
             self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "status"])
             self.assertTrue(payload["wrappers"]["on"]["references_expected_command"])
             self.assertTrue(payload["wrappers"]["off"]["references_expected_command"])
+            self.assertTrue(payload["wrappers"]["on"]["passes_json_flag"])
+            self.assertEqual(payload["wrappers"]["on"]["unsafe_shell_tokens"], [])
+            self.assertEqual(payload["wrappers"]["on"]["direct_state_path_references"], [])
             self.assertTrue(payload["startup_activation_hooks"]["hook_found"])
 
     def test_phase1_readiness_checker_blocks_dirty_target_and_missing_wrapper(self) -> None:
@@ -536,6 +539,71 @@ else:
             self.assertIn("blocked:dirty_target_project", blocker_codes)
             self.assertIn("blocked:missing_phase1_wrapper", blocker_codes)
             self.assertTrue(payload["git_status"]["dirty"])
+
+    def test_phase1_readiness_checker_blocks_wrapper_without_json_and_direct_state_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-wrapper-direct-state"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-wrapper-direct-state", session_id="session-wrapper-direct")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "thesis-moe-on.cmd").write_text(
+                '@echo off\n'
+                'python "%~dp0tools\\thesis_moe_mode.py" project-on\n'
+                'echo unsafe > "%~dp0.omx\\state\\thesis_moe\\project-default.json"\n'
+                "exit /b %ERRORLEVEL%\n",
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:phase1_wrapper_json_output_missing", blocker_codes)
+            self.assertIn("blocked:phase1_wrapper_unsafe_shell_surface", blocker_codes)
+            self.assertIn("blocked:phase1_wrapper_direct_state_surface", blocker_codes)
+            self.assertFalse(payload["wrappers"]["on"]["passes_json_flag"])
+            self.assertIn(">", payload["wrappers"]["on"]["unsafe_shell_tokens"])
+            self.assertIn(".omx", payload["wrappers"]["on"]["direct_state_path_references"])
+
+    def test_phase1_readiness_checker_blocks_wrapper_argument_passthrough_and_shell_chaining(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-wrapper-shell"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-wrapper-shell", session_id="session-wrapper-shell")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "thesis-moe-off.cmd").write_text(
+                '@echo off\n'
+                'python "%~dp0tools\\thesis_moe_mode.py" project-off --json %* && echo done\n'
+                "exit /b %ERRORLEVEL%\n",
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:phase1_wrapper_unsafe_shell_surface", blocker_codes)
+            self.assertTrue(payload["wrappers"]["off"]["passes_json_flag"])
+            self.assertIn("%*", payload["wrappers"]["off"]["unsafe_shell_tokens"])
+            self.assertIn("&&", payload["wrappers"]["off"]["unsafe_shell_tokens"])
 
     def test_install_cli_contract_fixture_accepts_phase1_read_envelope(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
