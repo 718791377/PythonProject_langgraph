@@ -27,6 +27,9 @@ LAUNCHER_RELATIVE = Path("tools/project_moe_gui/launcher.py")
 README_RELATIVE = Path("tools/project_moe_gui/README.md")
 CMD_RELATIVE = Path("project-moe-gui.cmd")
 MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE]
+PRIVATE_PROMPT_AGENT_DIR = Path(".codex/agents")
+PRIVATE_PROMPT_STATE_DIR = Path(".omx/state")
+PRIVATE_PROMPT_GUI_MANAGED_DIR = Path("tools/project_moe_gui")
 PROJECT_EVIDENCE = [".git", "AGENTS.md", "pyproject.toml", "requirements.txt", "README.md", "setup.cfg", "setup.py", "poetry.lock", "uv.lock"]
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 NAMESPACE_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
@@ -117,6 +120,16 @@ def now_utc() -> str:
 
 def norm(path: str | Path) -> str:
     return str(path).replace("\\", "/")
+
+
+def rel_matches(rel: str | Path, prefix: str | Path) -> bool:
+    candidate = norm(rel).strip("./").lower()
+    parent = norm(prefix).strip("./").lower()
+    return candidate == parent or candidate.startswith(parent + "/")
+
+
+def rel_equals(rel: str | Path, exact: str | Path) -> bool:
+    return norm(rel).strip("./").lower() == norm(exact).strip("./").lower()
 
 
 def blocker(code: str, message: str, **extra: Any) -> dict[str, Any]:
@@ -384,13 +397,59 @@ def inspect_agent_toml(root: Path, agent_name: str, namespace: str) -> tuple[dic
 def inspect_private_prompt(root: Path, source: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     rel = Path(source or "MOE.md")
     path, err = safe_relative(root, rel, "blocked:private_prompt_path_invalid")
+    base_details = {
+        "path": norm(rel),
+        "exists": False,
+        "managed_by_toolchain": False,
+        "under_state_dir": False,
+        "under_agent_dir": False,
+        "under_gui_managed_dir": False,
+        "private_prompt_boundary_ok": False,
+    }
     if err:
-        return {"path": norm(rel), "exists": False}, [err]
+        return base_details, [err]
     assert path is not None
-    details = {"path": norm(rel), "exists": path.exists(), "managed_by_toolchain": False}
+    under_agent_dir = rel_matches(rel, PRIVATE_PROMPT_AGENT_DIR)
+    under_state_dir = rel_matches(rel, PRIVATE_PROMPT_STATE_DIR)
+    under_gui_managed_dir = rel_matches(rel, PRIVATE_PROMPT_GUI_MANAGED_DIR)
+    managed_by_toolchain = under_gui_managed_dir or any(rel_equals(rel, managed) for managed in MANAGED_RELATIVES)
+    details = {
+        **base_details,
+        "exists": path.exists(),
+        "managed_by_toolchain": managed_by_toolchain,
+        "under_state_dir": under_state_dir,
+        "under_agent_dir": under_agent_dir,
+        "under_gui_managed_dir": under_gui_managed_dir,
+    }
+    errors: list[dict[str, Any]] = []
+    if under_agent_dir:
+        errors.append(
+            blocker(
+                "blocked:private_prompt_source_inside_agent_dir",
+                "Project-private prompt source must not point at agent definitions.",
+                path=norm(rel),
+            )
+        )
+    if under_state_dir:
+        errors.append(
+            blocker(
+                "blocked:private_prompt_source_inside_state",
+                "Project-private prompt source must not point at MOE runtime state.",
+                path=norm(rel),
+            )
+        )
+    if managed_by_toolchain:
+        errors.append(
+            blocker(
+                "blocked:private_prompt_source_managed_by_toolchain",
+                "Project-private prompt source must not point at Project MOE GUI managed artifacts.",
+                path=norm(rel),
+            )
+        )
+    details["private_prompt_boundary_ok"] = not errors
     if not path.exists():
-        return details, [blocker("blocked:missing_private_prompt_source", "Project-private prompt source must exist inside the target project.", path=norm(rel))]
-    return details, []
+        errors.append(blocker("blocked:missing_private_prompt_source", "Project-private prompt source must exist inside the target project.", path=norm(rel)))
+    return details, errors
 
 
 def command_token_hits(text: str, tokens: tuple[str, ...]) -> list[str]:

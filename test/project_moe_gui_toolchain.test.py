@@ -530,6 +530,10 @@ else:
             self.assertFalse(payload["writes_target_project"])
             self.assertFalse(payload["git_status"]["dirty"])
             self.assertTrue(payload["private_prompt_source"]["exists"])
+            self.assertFalse(payload["private_prompt_source"]["managed_by_toolchain"])
+            self.assertFalse(payload["private_prompt_source"]["under_state_dir"])
+            self.assertFalse(payload["private_prompt_source"]["under_agent_dir"])
+            self.assertTrue(payload["private_prompt_source"]["private_prompt_boundary_ok"])
             self.assertTrue(payload["agent_toml"]["standard_profile_ready"])
             self.assertTrue(payload["agent_toml"]["extension_fields_ok"])
             self.assertEqual(
@@ -691,6 +695,109 @@ else:
             self.assertIn("blocked:agent_moe_boundary_invalid", blocker_codes)
             self.assertIn("blocked:agent_dispatch_boundary_incomplete", blocker_codes)
             self.assertFalse(payload["agent_toml"]["extension_fields_ok"])
+
+    def test_phase1_readiness_checker_blocks_private_prompt_inside_state(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-private-prompt-state"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-private-prompt-state", session_id="session-private-prompt-state")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
+            agent_path.write_text(
+                agent_path.read_text(encoding="utf-8").replace(
+                    'private_prompt_source = "MOE.md"',
+                    'private_prompt_source = ".omx/state/thesis_moe/private-note.json"',
+                ),
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:private_prompt_source_inside_state", blocker_codes)
+            self.assertTrue(payload["private_prompt_source"]["exists"])
+            self.assertTrue(payload["private_prompt_source"]["under_state_dir"])
+            self.assertFalse(payload["private_prompt_source"]["private_prompt_boundary_ok"])
+
+    def test_phase1_readiness_checker_blocks_private_prompt_inside_agent_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-private-prompt-agent-dir"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-private-prompt-agent-dir", session_id="session-private-prompt-agent")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
+            agent_path.write_text(
+                agent_path.read_text(encoding="utf-8").replace(
+                    'private_prompt_source = "MOE.md"',
+                    'private_prompt_source = ".codex/agents/thesis-moe-mentor.toml"',
+                ),
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:private_prompt_source_inside_agent_dir", blocker_codes)
+            self.assertTrue(payload["private_prompt_source"]["exists"])
+            self.assertTrue(payload["private_prompt_source"]["under_agent_dir"])
+            self.assertFalse(payload["private_prompt_source"]["private_prompt_boundary_ok"])
+
+    def test_phase1_readiness_checker_blocks_private_prompt_inside_gui_managed_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-private-prompt-gui-managed"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-private-prompt-gui-managed", session_id="session-private-prompt-gui")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            managed_readme = project / "tools" / "project_moe_gui" / "README.md"
+            managed_readme.parent.mkdir(parents=True)
+            managed_readme.write_text("# Managed GUI artifact\n", encoding="utf-8")
+            agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
+            agent_path.write_text(
+                agent_path.read_text(encoding="utf-8").replace(
+                    'private_prompt_source = "MOE.md"',
+                    'private_prompt_source = "tools/project_moe_gui/README.md"',
+                ),
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:private_prompt_source_managed_by_toolchain", blocker_codes)
+            self.assertTrue(payload["private_prompt_source"]["exists"])
+            self.assertTrue(payload["private_prompt_source"]["managed_by_toolchain"])
+            self.assertTrue(payload["private_prompt_source"]["under_gui_managed_dir"])
+            self.assertFalse(payload["private_prompt_source"]["private_prompt_boundary_ok"])
 
     def test_phase1_readiness_checker_blocks_wrapper_without_json_and_direct_state_surface(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
