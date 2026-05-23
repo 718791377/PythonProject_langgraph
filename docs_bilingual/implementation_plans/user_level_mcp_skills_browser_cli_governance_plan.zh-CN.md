@@ -21,6 +21,7 @@ source_reference_file: reference_files/1.md
 复核结论：
 
 - 内容覆盖完整：MCP facade、skills 按需发现、browser owner、Chrome DevTools MCP、CDP Bridge、OpenCLI、`oh-my-pi`、CLI-Anything 与 `wecom-cli` 均有默认状态、授权边界、安装证据和回滚要求。
+- 端口治理已明确：Codex 使用靠前的用户级号段，OpenClaw 使用靠后的号段，OpenCLI 必须使用端口分配器驱动的 `--port auto`，不得固定端口。
 - 动态本地事实已纳入治理：运行时进程是否存在、本机安装路径等信息必须由只读 inventory 刷新，并脱敏后才能成为仓库证据。
 - 颗粒度达到可实施：每个 lane 都能拆成 OpenSpec change；每个 change 都必须有 owned files、checker/test、receipt schema、rollback method 和 non-goals。
 - 未勾选清单是后续实施状态，不是方案缺口；在对应代码、checker、安装产物和 receipt 都完成前，不得把 lane 标为 `active`。
@@ -97,6 +98,48 @@ C:\Users\lenovo\.codex\state\tool-updates\
 | 8 | 用户个人 Chrome 或 WXWork GUI 写操作 | 高 | 极高 | 必须显式单任务授权 |
 
 敏感操作包括读取 cookie、token、密码、私人聊天、个人标签页、个人 Chrome profile 数据、企业微信消息，或在已登录应用中点击、输入、发送。
+
+## 4.1 用户级端口治理
+
+端口归属不靠单个工具硬编码，而由号段、registry 和 lease 共同治理。
+
+默认号段：
+
+| 号段 | 归属 | 用途 |
+| --- | --- | --- |
+| `39000-39299` | Codex | MCP facade、`skills2cli` 与低风险用户级 helper。 |
+| `39300-39499` | Codex | OpenCLI on-demand browser adapter。 |
+| `39500-39699` | Codex | Browser automation，包括 managed `chrome-devtools-mcp` wrappers。 |
+| `39700-39999` | Codex | 预留给用户级 Codex 后续扩展。 |
+| `40000-40999` | OpenClaw | OpenClaw 项目服务与 OpenClaw-managed local control plane。 |
+
+规则：
+
+- OpenClaw 端口必须排在 Codex 端口后面；Codex 不得从 `40000-40999` 分配端口。
+- OpenClaw 迁移后不得从 `39000-39999` 分配端口；已有历史 OpenClaw 端口先导入为 `legacy_reserved`，再逐步迁移。
+- 所有受管本地服务默认只绑定 `127.0.0.1`；绑定 `0.0.0.0` 必须单独做安全复核并获得 one-task approval。
+- smoke test 与短生命周期探测优先使用系统临时端口（`port=0`），除非确实需要稳定 lease。
+- OpenCLI 在本方案中没有固定端口。它必须通过端口分配器请求 `--port auto`，并在 `39300-39499` 号段获得 lease。
+- `chrome-devtools-mcp` managed wrapper 如需端口，必须从 `39500-39699` 申请；如果上游工具只使用 stdio，则不分配 TCP 端口。
+- wrapper 绑定前必须同时检查 registry 与当前监听 socket 表；发生冲突时选择同号段下一个可用端口，绝不 kill 或抢占持有端口的进程。
+- stale lease 只有在记录的 PID 已不存在，或只读 health check 证明 owner 已不存活时才能回收。
+
+Registry 路径：
+
+`C:\Users\lenovo\.codex\state\ports\registry.json`
+
+最小 registry 字段：
+
+- `owner`：`codex`、`openclaw` 或 `external_reserved`；
+- `project` 或 `project_slug`；
+- `tool`；
+- `host`；
+- `port`；
+- `pid`；
+- `lease_expiry`；
+- `owner_session`；
+- `purpose`；
+- `status`：`active`、`stale`、`legacy_reserved` 或 `released`。
 
 ## 5. `mcp2cli` 实施线
 
@@ -404,7 +447,7 @@ receipt 必填字段：
 
 按小步、可本地测试、可回滚的 change 实施本方案。默认拆分：
 
-1. token-risk priority、browser asset classes、sensitive authorization、update receipts 和 evidence redaction 的 policy/checker baseline；
+1. token-risk priority、port registry/lease rules、browser asset classes、sensitive authorization、update receipts 和 evidence redaction 的 policy/checker baseline；
 2. `skills2cli` MVP：index/search/show 加 warning-audit summary，并覆盖 compact output 测试；
 3. `mcp2cli` 用户级 wrapper 与 allowed profile registry；
 4. browser owner registry 加 `chrome-devtools-mcp` managed wrapper，覆盖 isolated-session-managed 与 project-profile 模式；
@@ -419,7 +462,7 @@ OpenSpec 切片交付矩阵：
 
 | 切片 | 主要产物 | 最小验证 | 完成证据 |
 | --- | --- | --- | --- |
-| 1. Policy/checker baseline | token/risk checker、authorization receipt schema、update receipt schema、evidence redaction policy | checker 单元测试 + local gate 注册 | checker 输出、测试记录、OpenSpec delta/spec 更新 |
+| 1. Policy/checker baseline | token/risk checker、port registry/lease checker、authorization receipt schema、update receipt schema、evidence redaction policy | checker 单元测试、端口冲突 fixture、local gate 注册 | checker 输出、测试记录、OpenSpec delta/spec 更新 |
 | 2. `skills2cli` MVP | repo-local helper、用户级 wrapper、skill index/search/show/warning audit | compact output、privacy redaction、profile non-apply、warning audit 测试 | 脱敏索引摘要、wrapper smoke、receipt |
 | 3. `mcp2cli` MVP | allowed profile registry、list/search/show/call facade | compact output、sensitive-call fail-closed、receipt-required 测试 | profile registry、授权失败样例、wrapper smoke |
 | 4. Browser owner registry | owner registry、lease schema、`chrome-devtools-mcp` managed wrapper | isolated/project-profile/human-owned protection、cleanup dry-run 测试 | lease receipt、stale scan dry-run、wrapper smoke |
@@ -445,6 +488,7 @@ OpenSpec 切片交付矩阵：
 
 - [ ] 为本方案创建或复用一个小步 OpenSpec change，并写明 scope、non-goals、rollback boundary。
 - [ ] 建立 token/risk priority checker，禁止高 token/高风险 surface 在无证据时默认常驻。
+- [ ] 建立用户级 port registry 与 allocator，确保 Codex 号段在前、OpenClaw 号段在后，并让 OpenCLI 使用 allocator 驱动的 `--port auto`。
 - [ ] 建立 sensitive authorization receipt schema，字段至少包含 action、target、scope、expiry、session、operator confirmation。
 - [ ] 建立 user-level tool update receipt schema，并覆盖 install path、wrapper path、state path、pin、smoke、rollback pointer。
 - [ ] 建立 sanitized evidence 规则，禁止提交 secrets、cookies、tokens、raw browser data、消息内容、完整个人运行时路径和完整 plugin description dumps。
@@ -496,6 +540,7 @@ OpenSpec 切片交付矩阵：
 - `skills2cli` 测试证明 index/search/show 不输出全量 skill descriptions。
 - `mcp2cli` 测试证明 compact list/search/show 和 sensitive-call blocking。
 - Browser checker 测试证明 isolated cleanup、project-profile retention、human-owned protection、tab owner exclusivity。
+- Port-governance 测试证明 Codex 不会分配 OpenClaw 号段，OpenClaw 历史端口会导入为 reserved，冲突时只跳过不 kill 进程，stale lease 复用前必须有 PID/health evidence。
 - CDP Bridge/OpenCLI 测试证明敏感动作必须显式授权。
 - `oh-my-pi` updater 测试证明 pinned update 和 rollback receipt。
 - `wecom-cli` 测试证明 process inventory 只读、secrets 脱敏、GUI write 无授权失败、WXWork GUI lease 独占。

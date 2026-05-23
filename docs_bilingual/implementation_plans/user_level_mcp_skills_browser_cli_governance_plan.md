@@ -96,6 +96,48 @@ Use this priority order when multiple surfaces can solve the same task:
 
 Sensitive operations include reading cookies, tokens, passwords, private chats, personal tabs, personal Chrome profile data, WeCom messages, or performing clicks/typing/sends in a logged-in app.
 
+## 4.1 User-level port governance
+
+Port ownership is governed by range, registry, and lease instead of hard-coded per-tool defaults.
+
+Default ranges:
+
+| Range | Owner | Purpose |
+| --- | --- | --- |
+| `39000-39299` | Codex | MCP facade, `skills2cli`, and low-risk user-level helpers. |
+| `39300-39499` | Codex | OpenCLI on-demand browser adapter. |
+| `39500-39699` | Codex | Browser automation, including managed `chrome-devtools-mcp` wrappers. |
+| `39700-39999` | Codex | Reserved user-level Codex expansion. |
+| `40000-40999` | OpenClaw | OpenClaw project services and OpenClaw-managed local control plane. |
+
+Rules:
+
+- OpenClaw ports are intentionally after Codex ports; Codex must not allocate from `40000-40999`.
+- OpenClaw must not allocate from `39000-39999` after migration; existing legacy OpenClaw ports are imported as `legacy_reserved` until migrated.
+- All managed local services bind to `127.0.0.1` by default; `0.0.0.0` requires a separate explicit security review and one-task approval.
+- Smoke tests and short-lived probes should use OS-assigned ephemeral ports (`port=0`) unless a stable lease is required.
+- OpenCLI has no fixed port in this plan. It must request `--port auto` through the port allocator and receive a lease in the `39300-39499` range.
+- `chrome-devtools-mcp` managed wrappers must request browser-automation ports from `39500-39699` unless the upstream tool uses stdio only.
+- A wrapper must check both the registry and the live listening socket table before binding; on conflict it selects the next allowed port, never kills the process holding the port.
+- Stale leases can be reclaimed only when the recorded PID is gone or a read-only health check proves the owner is no longer alive.
+
+Registry path:
+
+`C:\Users\lenovo\.codex\state\ports\registry.json`
+
+Minimum registry fields:
+
+- `owner`: `codex`, `openclaw`, or `external_reserved`;
+- `project` or `project_slug`;
+- `tool`;
+- `host`;
+- `port`;
+- `pid`;
+- `lease_expiry`;
+- `owner_session`;
+- `purpose`;
+- `status`: `active`, `stale`, `legacy_reserved`, or `released`.
+
 ## 5. `mcp2cli` implementation lane
 
 Goal: reduce Codex MCP tool-list pressure by converting selected MCP surfaces into low-token CLI discovery and calls.
@@ -403,7 +445,7 @@ Update rule:
 
 Implement this plan as small, locally testable, rollbackable changes. Default split:
 
-1. policy and checker baseline for token-risk priority, browser asset classes, sensitive authorization, update receipts, and evidence redaction;
+1. policy and checker baseline for token-risk priority, port registry/lease rules, browser asset classes, sensitive authorization, update receipts, and evidence redaction;
 2. `skills2cli` MVP: index/search/show plus warning-audit summary with compact output tests;
 3. `mcp2cli` user-level wrapper and allowed profile registry;
 4. browser owner registry plus `chrome-devtools-mcp` managed wrapper for isolated-session-managed and project-profile modes;
@@ -497,6 +539,7 @@ Fine-grained implementation checklist:
 - `skills2cli` tests prove index/search/show do not emit all skill descriptions.
 - `mcp2cli` tests prove compact list/search/show and sensitive-call blocking.
 - Browser checker tests prove isolated cleanup, project-profile retention, human-owned protection, and tab owner exclusivity.
+- Port-governance tests prove Codex never allocates OpenClaw ranges, OpenClaw legacy ports are imported as reserved, conflicts are skipped without killing processes, and stale leases require PID/health evidence before reuse.
 - CDP Bridge/OpenCLI tests prove sensitive actions require explicit authorization.
 - `oh-my-pi` updater tests prove pinned update and rollback receipts.
 - `wecom-cli` tests prove process inventory is read-only, secrets are redacted, GUI write actions fail without authorization, and WXWork GUI lease is exclusive.
