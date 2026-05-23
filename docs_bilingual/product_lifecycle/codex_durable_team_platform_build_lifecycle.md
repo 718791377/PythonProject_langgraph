@@ -70,6 +70,8 @@ The Codex CLI platform target is fixed as:
 - 12 governed AI agents: Research, PM, Architect, Code, Review, Test, Security, DevOps, Data, Docs, Ops, and Risk.
 - 12 recommended books: Scaling People; Working Backwards; High Output Management; INSPIRED; Product Operations; Team Topologies; Accelerate; Shape Up; Lean Analytics; Designing Data-Intensive Applications; Secure by Design; The Staff Engineer's Path.
 
+The canonical count map is `codex_platform_inventory_map.md`. Use that map for concrete document-family, agent, module, and department references; use this lifecycle file for process-group execution guidance across the 12 layers.
+
 Every non-trivial platform release slice must state which layer, department, responsibility domain, cross-cutting module, core document, and governed-agent boundary it changes. When a slice changes execution behavior, it must also state Inputs, Tools and Techniques, and Outputs for the affected gate.
 
 
@@ -133,10 +135,10 @@ Question: Which developer workflows need the platform?
 
 - User segmentation distinguishes platform maintainers, downstream project maintainers, operators, and occasional consumers.
 - Capability profiling abstracts concrete work into reusable development capabilities.
-- `docs_bilingual/market/codex_cli_durable_team_mrd.md` is the future ASCII market requirements document; it should describe user segments, pain points, and adoption scenes for personal developers and small teams.
-- `docs_bilingual/market/codex_cli_durable_team_mrd.zh-CN.md` is the future UTF-8 Chinese companion for those market requirements.
-- `docs_bilingual/references/codex_business_capability_mapping.md` is the ASCII abstract capability mapping; it maps concrete workload examples to abstract capability profiles.
-- `docs_bilingual/references/codex_business_capability_mapping.zh-CN.md` is the UTF-8 Chinese companion for the same mapping.
+- `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md` is the current MRD; it describes target users, capability profiles, runtime-owner boundaries, and adoption/risk scenes for personal developers and downstream projects.
+- `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.zh-CN.md` is the current Chinese companion for those market requirements.
+- The abstract capability mapping now lives in Appendix A of the MRD rather than a separate reference file.
+- The Chinese capability mapping also lives in the Chinese MRD appendix.
 
 ### Outputs
 

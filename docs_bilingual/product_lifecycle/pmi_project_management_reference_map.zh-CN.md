@@ -96,7 +96,7 @@
 | Initiating | 判断是否打开 change | `openspec/changes/<change-id>/proposal.md` 是 OpenSpec proposal，用来说明为什么需要某个 change |
 | Planning | 冻结设计和执行范围 | `openspec/changes/<change-id>/design.md` 是 OpenSpec design；`tasks.md` 是跟踪执行的任务清单 |
 | Executing | 实施已规划工作 | 按已接受 tasks 修改 source、documentation、templates 或 checker files |
-| Monitoring and controlling | 验证并控制变更 | `tools/run_openspec_guard.py` 是 OpenSpec guard 脚本；GitLab pipeline 是 review-time CI gate |
+| Monitoring and controlling | 验证并控制变更 | `tools/run_openspec_guard.py` 是 OpenSpec guard 脚本；`tools/ci/local_gate.ps1` 和 `tools/ci/local_mr_review.ps1` 是本地 review gates；使用 GitLab pipeline 时，它是后续 clean-environment confirmation |
 | Closing | 归档并学习 | `openspec archive` 是 archive command，用来把完成的 changes 移入 `openspec/changes/archive/` 并同步 stable specs |
 
 ## Predictive, Adaptive, And Hybrid Use

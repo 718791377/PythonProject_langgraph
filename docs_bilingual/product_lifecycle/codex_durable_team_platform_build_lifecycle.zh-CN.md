@@ -133,10 +133,10 @@ Codex CLI 平台目标固定为：
 
 - 用户分层：区分平台维护者、下游项目维护者、操作者和偶发消费者。
 - 能力画像：把具体工作抽象为可复用开发能力。
-- `docs_bilingual/market/codex_cli_durable_team_mrd.md` 是未来 ASCII 市场需求文档；它应该描述个人开发者和小团队的用户分层、痛点和采用场景。
-- `docs_bilingual/market/codex_cli_durable_team_mrd.zh-CN.md` 是未来 UTF-8 中文对照版；它承载同一市场需求。
-- `docs_bilingual/references/codex_business_capability_mapping.md` 是 ASCII 抽象能力映射；它把具体 workload examples 映射到抽象 capability profiles。
-- `docs_bilingual/references/codex_business_capability_mapping.zh-CN.md` 是 UTF-8 中文对照版；它承载同一映射。
+- `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md` 是当前 MRD；它描述个人开发者和下游项目的目标用户、能力画像、运行归属边界与采用/风险场景。
+- `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.zh-CN.md` 是当前 MRD 的中文对照版。
+- 抽象能力映射现在位于 MRD 附录 A，不再使用单独 reference 文件。
+- 中文能力映射同样位于中文 MRD 附录 A。
 
 ### 输出
 

@@ -15,6 +15,16 @@ This MRD identifies target users, project types, usage scenarios, capability pro
 
 It replaces the former standalone `docs_bilingual/implementation_plans/codex_business_capability_profiles.md` reference; that file was a capability-profile lookup table and is now merged into Appendix A of this MRD.
 
+
+## White Paper, Research Canon, And 10-To-12-Layer Bridge
+
+This MRD uses the same document split as the refreshed lifecycle canon:
+
+- White paper: `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` is the concise strategic narrative for why the platform exists, what target state it pursues, and how the 12-layer product/business lifecycle frames the platform direction.
+- Governance research canon: `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md` is the evidence-heavy research document for production capability, governance, and the 10-layer runtime capability core.
+- Merge policy: these two documents should not be collapsed by default. The white paper must remain readable as a directional artifact, while the research canon preserves detailed evidence, alternatives, and operating constraints.
+- Bridge rule: the 10-layer core is an execution-capability decomposition; the 12-layer trunk is the market/product/business lifecycle architecture. MRD requirements must use the 12-layer trunk for market traceability and may reference the 10-layer core only when a requirement needs runtime capability ownership.
+
 ## Target Users And Project Types
 
 - Solo maintainer: the primary operator who uses Codex CLI across multiple repositories.
@@ -46,16 +56,18 @@ Market requirements must now be traced to the Codex platform inventory:
 - 18 cross-cutting modules identify risks that cross product, engineering, operations, and governance boundaries.
 - 48 core documents are the maximum serious platform document surface, not the default for every change.
 - 12 governed agents are capability profiles with explicit read/write/review boundaries, not autonomous business decision makers.
+- `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md` is the canonical inventory-count map for these platform requirements.
 
-For downstream one-person-company work, the MRD belongs in the downstream repository. That MRD owns local customer evidence, market segmentation, pricing signals, channel evidence, finance assumptions, product commitments, and support expectations.
+For downstream one-person-company work, the MRD belongs in the downstream repository. That MRD owns local customer evidence, market segmentation, pricing signals, channel evidence, finance assumptions, product commitments, and support expectations. The downstream count reference is `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`.
 
 ## Tailoring Requirements
 
-Market requirements must not force every project to create the maximum document stack. Use `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md` to choose the minimum sufficient architecture depth.
+Market requirements must not force every project to create the maximum document stack. Use `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md` to choose the minimum sufficient architecture depth. Use `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` as the PMI reference map: PMBOK 8 frames value delivery and tailoring, PMBOK 7 and PMBOK 6 supplement principles and process vocabulary, Process Groups provides delivery gates, Agile Practice Guide covers adaptive/hybrid work, Program Management covers related initiatives, Portfolio Management covers value/capacity trade-offs, and the PMO Practice Guide covers governance services.
 
 - Full Codex platform scope is required when a requirement affects reusable orchestration, native subagent routing, `native_omx`, LangGraph, worktree safety, OpenSpec governance, user-level launcher policy, skill/profile governance, local-main-first publication, shared templates, durable state, release safety, or cross-project adoption.
 - Whole-project lightweight scope is allowed only for private spikes, early ideas, local learning, or low-risk internal tools without external users, money, trust boundaries, sensitive data, shared runtime entrypoints, or release commitments.
-- Phase-local or module-level lightweight scope is allowed when a bounded part of a larger effort is low-risk, reversible, and has explicit escalation triggers.
+- Phase-local lightweight scope is allowed when a specific discovery, metrics, growth, or retrospective phase inside a larger effort is low-risk, reversible, and has explicit expansion triggers.
+- Module-level lightweight scope is allowed when a bounded documentation, research, helper, prototype, or spike module does not change runtime entrypoints, durable state, secrets, CI gates, release gates, or downstream project dependencies.
 - Hybrid scope is required when market or product uncertainty is high but the eventual delivery may affect users, trust, revenue, compliance, runtime behavior, or release safety.
 
 ## Process-Group Evidence For Market Requirements

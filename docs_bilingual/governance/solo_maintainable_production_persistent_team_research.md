@@ -7,7 +7,47 @@ doc_class: governance
 status: draft
 ---
 
-# White Paper: Solo-Maintainable Production-Grade Persistent Teams
+# Research Note: Solo-Maintainable Production-Grade Persistent Teams
+
+## 0. Document Identity, Relationship, And Merge Policy
+
+This file is intentionally not the platform white paper, even though the subject overlaps.
+
+- `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md` is the research and governance document. It collects the stricter capability model, the official-versus-derived distinction, and the evidence base for long-running persistent-team systems.
+- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` is the platform white paper. It explains why the Codex CLI platform needs this direction and what boundaries the platform should keep.
+
+Why both exist:
+
+- the white paper is narrative-first and decision-facing
+- this research note is capability-first and governance-facing
+- the white paper can stay concise only if this document keeps the deeper capability inventory
+
+Default merge policy:
+
+1. Keep the files separate while they serve different readers or different lifecycle layers.
+2. Update the white paper when the platform story, boundaries, or paradigm shift changes.
+3. Update this research note when the production-grade criteria, evidence base, or runtime-capability decomposition changes.
+4. Merge only if one file becomes a non-functional duplicate of the other. That is not the current state.
+
+## 0.1 Bridge From The 10-Layer Research Model To The Repository 12-Layer Lifecycle
+
+This research note uses a ten-layer model because it studies the minimum production capabilities of a persistent-team runtime. The repository lifecycle uses twelve layers because product and governance work must also cover narrative, market, growth, operations, and retrospective learning.
+
+| 10-layer research model | Primary 12-layer lifecycle landing zones | Why |
+| --- | --- | --- |
+| 1. Persistence Core | Technical, Execution, Operations | Recovery semantics must be designed, run, and operated |
+| 2. Interaction and Execution | Product, Technical, Execution | Commands and task execution connect user intent to implementation |
+| 3. Team Orchestration | Organization, Execution, Operations | Role ownership and intervention rules are operational, not just technical |
+| 4. Long-Term Memory | Technical, Operations, Retrospective | Memory needs storage policy, operating policy, and learning feedback |
+| 5. Context Enhancement | Technical, Metrics, Operations | Retrieval quality depends on design, measurement, and runtime budgets |
+| 6. Vector Database and Retrieval Storage | Technical, Operations | Storage, tenancy, lifecycle, and restore policy are infrastructure concerns |
+| 7. Quality Assurance | Technical, Execution, Operations | Runtime validation and gates sit in delivery and production |
+| 8. Evaluation and Regression | Metrics, Execution, Retrospective | Evaluation needs measurable baselines and post-release learning |
+| 9. Security and Persistence Hardening | Technical, Organization, Operations | Security is architecture plus authority plus operating discipline |
+| 10. Local GUI Control Center | Product, Technical, Operations | The control plane is both a user surface and a production surface |
+
+The 12-layer lifecycle adds four trunks that this research note does not try to own directly: cognitive narrative, business, market, and growth. Those trunks explain why the platform exists, who it serves, and how adoption or value should be measured. See `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`. Count authority lives in `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md` and `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`; PMI delivery and tailoring authority lives in `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md`.
+
 
 ## 1. Abstract
 
@@ -37,7 +77,7 @@ It defines it as a long-running system with all of the following properties:
 - evolvable versioning and regression mechanisms
 - a sufficiently simple and sufficiently secure local control center
 
-Compared with the previous revision, this white paper deepens the following areas:
+Compared with the previous revision, this research note deepens the following areas:
 
 - agent state persistence
 - task-flow persistence
@@ -214,28 +254,28 @@ Derived judgment:
 
 #### 7.1.3 Differences Across Official Systems
 
-- `LangGraph` directly models agent or graph state as checkpoints. Each super-step stores a `StateSnapshot`, organized by `thread_id`. This is also the basis for human interruption, memory, time travel, and fault-tolerant execution.  
-  Sources:  
-  <https://docs.langchain.com/oss/python/langgraph/persistence>  
+- `LangGraph` directly models agent or graph state as checkpoints. Each super-step stores a `StateSnapshot`, organized by `thread_id`. This is also the basis for human interruption, memory, time travel, and fault-tolerant execution.
+  Sources:
+  <https://docs.langchain.com/oss/python/langgraph/persistence>
   <https://docs.langchain.com/oss/python/langgraph/human-in-the-loop>
 
-- `Temporal` does not treat worker memory as the source of truth. The true state is represented by append-only `Event History`, allowing execution to continue on the same or another worker after failure.  
-  Sources:  
-  <https://docs.temporal.io/encyclopedia/event-history>  
+- `Temporal` does not treat worker memory as the source of truth. The true state is represented by append-only `Event History`, allowing execution to continue on the same or another worker after failure.
+  Sources:
+  <https://docs.temporal.io/encyclopedia/event-history>
   <https://docs.temporal.io/workers>
 
-- `Azure Durable Functions` lets the runtime manage state, checkpoints, retries, and recovery, while the storage backend persists orchestration history, entity state, and internal messages.  
-  Sources:  
-  <https://learn.microsoft.com/en-us/azure/azure-functions/durable-functions/durable-functions-overview>  
+- `Azure Durable Functions` lets the runtime manage state, checkpoints, retries, and recovery, while the storage backend persists orchestration history, entity state, and internal messages.
+  Sources:
+  <https://learn.microsoft.com/en-us/azure/azure-functions/durable-functions/durable-functions-overview>
   <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-storage-providers>
 
-- `Prefect` is more centered on runtime observation and orchestration control, with persistent state lifecycles for flow runs and task runs.  
-  Sources:  
-  <https://docs.prefect.io/v3/concepts/states>  
+- `Prefect` is more centered on runtime observation and orchestration control, with persistent state lifecycles for flow runs and task runs.
+  Sources:
+  <https://docs.prefect.io/v3/concepts/states>
   <https://docs.prefect.io/v3/concepts/flows>
 
-- `AWS Step Functions` Standard Workflows persist execution state between transitions and retain full execution history.  
-  Source:  
+- `AWS Step Functions` Standard Workflows persist execution state between transitions and retain full execution history.
+  Source:
   <https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html>
 
 #### 7.1.4 Engineering Judgment
@@ -272,24 +312,24 @@ A production-grade task flow should persist at least:
 
 #### 7.2.3 Differences Across Official Systems
 
-- `Temporal` and `Azure Durable` are fundamentally event-sourced: recovery relies on replay rather than on reading only a final result.  
-  Sources:  
-  <https://docs.temporal.io/encyclopedia/event-history>  
-  <https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-orchestrations>  
+- `Temporal` and `Azure Durable` are fundamentally event-sourced: recovery relies on replay rather than on reading only a final result.
+  Sources:
+  <https://docs.temporal.io/encyclopedia/event-history>
+  <https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-orchestrations>
   <https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-code-constraints>
 
-- `LangGraph` stores per-super-step checkpoints; steps before a checkpoint are skipped on recovery, while later nodes may re-execute. The official guidance explicitly warns that LLM calls, API requests, and interrupts will fire again during replay unless side effects are wrapped in tasks.  
-  Sources:  
-  <https://docs.langchain.com/oss/python/langgraph/persistence>  
+- `LangGraph` stores per-super-step checkpoints; steps before a checkpoint are skipped on recovery, while later nodes may re-execute. The official guidance explicitly warns that LLM calls, API requests, and interrupts will fire again during replay unless side effects are wrapped in tasks.
+  Sources:
+  <https://docs.langchain.com/oss/python/langgraph/persistence>
   <https://docs.langchain.com/oss/python/langgraph/durable-execution>
 
-- `Step Functions` Standard redrive resumes from the failed step while preserving successful results and execution history.  
-  Source:  
+- `Step Functions` Standard redrive resumes from the failed step while preserving successful results and execution history.
+  Source:
   <https://docs.aws.amazon.com/step-functions/latest/dg/redrive-executions.html>
 
-- `Prefect` emphasizes flow-run and task-run state transitions more than explicit event sourcing.  
-  Sources:  
-  <https://docs.prefect.io/v3/concepts/states>  
+- `Prefect` emphasizes flow-run and task-run state transitions more than explicit event sourcing.
+  Sources:
+  <https://docs.prefect.io/v3/concepts/states>
   <https://docs.prefect.io/v3/concepts/flows>
 
 #### 7.2.4 Engineering Judgment
@@ -317,27 +357,27 @@ A production-grade persistent team should have explicit semantics for:
 
 #### 7.3.2 Differences Across Official Systems
 
-- `Temporal` uses `Signal`, `Update`, and `Query`, effectively treating workflows as stateful services that can receive messages.  
-  Source:  
+- `Temporal` uses `Signal`, `Update`, and `Query`, effectively treating workflows as stateful services that can receive messages.
+  Source:
   <https://docs.temporal.io/encyclopedia/workflow-message-passing>
 
-- `LangGraph` uses `interrupt()` to pause graph execution and persist state, then resumes with `Command(resume=...)`. Its HITL middleware formalizes human decisions as `approve / edit / reject`.  
-  Sources:  
-  <https://docs.langchain.com/oss/python/langgraph/human-in-the-loop>  
-  <https://docs.langchain.com/oss/javascript/langgraph/interrupts>  
+- `LangGraph` uses `interrupt()` to pause graph execution and persist state, then resumes with `Command(resume=...)`. Its HITL middleware formalizes human decisions as `approve / edit / reject`.
+  Sources:
+  <https://docs.langchain.com/oss/python/langgraph/human-in-the-loop>
+  <https://docs.langchain.com/oss/javascript/langgraph/interrupts>
   <https://docs.langchain.com/oss/python/langchain/human-in-the-loop>
 
-- `Azure Durable` uses `WaitForExternalEvent` to wait indefinitely for external input; the instance wakes automatically when the event arrives.  
-  Source:  
+- `Azure Durable` uses `WaitForExternalEvent` to wait indefinitely for external input; the instance wakes automatically when the event arrives.
+  Source:
   <https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-external-events>
 
-- `Step Functions` uses `.waitForTaskToken` for human approval and third-party callbacks.  
-  Source:  
+- `Step Functions` uses `.waitForTaskToken` for human approval and third-party callbacks.
+  Source:
   <https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html>
 
-- `Prefect` distinguishes `Paused` and `Suspended`, representing two different classes of human stoppage.  
-  Sources:  
-  <https://docs.prefect.io/v3/concepts/states>  
+- `Prefect` distinguishes `Paused` and `Suspended`, representing two different classes of human stoppage.
+  Sources:
+  <https://docs.prefect.io/v3/concepts/states>
   <https://docs.prefect.io/v3/api-ref/python/prefect-flow_runs>
 
 #### 7.3.3 Engineering Judgment
@@ -364,41 +404,41 @@ Many systems equate "parallelism" with orchestration, but what often decides mai
   - Task Queues are dynamic and lightweight.
   - Workers poll them synchronously.
   - Workflow and activity tasks remain durable in the queue.
-  - Ordering is not strong global FIFO.  
-  Sources:  
-  <https://docs.temporal.io/task-queue>  
-  <https://docs.temporal.io/workers>  
+  - Ordering is not strong global FIFO.
+  Sources:
+  <https://docs.temporal.io/task-queue>
+  <https://docs.temporal.io/workers>
   <https://docs.temporal.io/sticky-execution>
 
 - `Azure Durable` - Control-plane operations such as start, terminate, and suspend are also queued.
   - Control-plane operations such as start, terminate, and suspend are also queued.
-  - The Azure Storage backend uses queues, tables, and blobs or leases.  
-  Sources:  
-  <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-instance-management>  
+  - The Azure Storage backend uses queues, tables, and blobs or leases.
+  Sources:
+  <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-instance-management>
   <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-storage-providers>
 
 - `AWS Step Functions` - Standard = exactly-once
   - Standard = exactly-once
   - Async Express = at-least-once
   - Sync Express = at-most-once
-  - The Activity model is the clearest queue-like external worker pattern.  
-  Sources:  
-  <https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html>  
-  <https://docs.aws.amazon.com/step-functions/latest/dg/concepts-activities.html>  
+  - The Activity model is the clearest queue-like external worker pattern.
+  Sources:
+  <https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html>
+  <https://docs.aws.amazon.com/step-functions/latest/dg/concepts-activities.html>
   <https://docs.aws.amazon.com/step-functions/latest/apireference/API_GetActivityTask.html>
 
 - `Prefect` - Workers poll work pools by default.
   - Workers poll work pools by default.
-  - Work queues support priority and concurrency limits.  
-  Sources:  
-  <https://docs.prefect.io/v3/concepts/workers>  
+  - Work queues support priority and concurrency limits.
+  Sources:
+  <https://docs.prefect.io/v3/concepts/workers>
   <https://docs.prefect.io/v3/concepts/work-pools>
 
 - `LangGraph` - Officially, the center of gravity is not queue semantics but `thread + super-step + checkpoint + replay`.
   - Officially, the center of gravity is not queue semantics but `thread + super-step + checkpoint + replay`.
-  - Queue priority, partitioning, and polling semantics are not first-class official concerns.  
-  Sources:  
-  <https://docs.langchain.com/oss/python/langgraph/persistence>  
+  - Queue priority, partitioning, and polling semantics are not first-class official concerns.
+  Sources:
+  <https://docs.langchain.com/oss/python/langgraph/persistence>
   <https://docs.langchain.com/oss/python/langgraph/durable-execution>
 
 #### 7.4.3 Engineering Judgment
@@ -444,7 +484,7 @@ Derived judgment:
 
 ### 8.2 Team Orchestration Layer
 
-The team orchestration layer is one of the main differentiators of this white paper.
+The team orchestration layer is one of the main differentiators of this research note.
 
 It is not just "run more workers." It must answer:
 
@@ -488,16 +528,16 @@ At minimum, it should cover:
 
 Representative sources:
 
-- OpenTelemetry overview and signals  
-  <https://opentelemetry.io/docs/>  
+- OpenTelemetry overview and signals
+  <https://opentelemetry.io/docs/>
   <https://opentelemetry.io/docs/concepts/signals/>
 
-- AWS Step Functions monitoring and tracing  
-  <https://docs.aws.amazon.com/step-functions/latest/dg/monitoring-logging.html>  
+- AWS Step Functions monitoring and tracing
+  <https://docs.aws.amazon.com/step-functions/latest/dg/monitoring-logging.html>
   <https://docs.aws.amazon.com/step-functions/latest/dg/concepts-xray-tracing.html>
 
-- LangSmith observability and evaluation  
-  <https://docs.langchain.com/langsmith>  
+- LangSmith observability and evaluation
+  <https://docs.langchain.com/langsmith>
   <https://docs.langchain.com/langsmith/evaluation>
 
 Derived judgment:
@@ -543,14 +583,14 @@ The security specialist's conclusions should be treated as normative requirement
 
 Representative sources:
 
-- Electron Security Checklist  
+- Electron Security Checklist
   <https://www.electronjs.org/docs/latest/tutorial/security>
 
-- OpenTelemetry Collector configuration and hosting security best practices  
-  <https://opentelemetry.io/docs/security/config-best-practices/>  
+- OpenTelemetry Collector configuration and hosting security best practices
+  <https://opentelemetry.io/docs/security/config-best-practices/>
   <https://opentelemetry.io/docs/security/hosting-best-practices/>
 
-- OWASP HTML5 Security Cheat Sheet  
+- OWASP HTML5 Security Cheat Sheet
   <https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html>
 
 Derived judgment:
@@ -573,9 +613,9 @@ Based on LangGraph and LangChain concepts, at least five layers should be separa
 
 Representative sources:
 
-- LangGraph add memory  
+- LangGraph add memory
   <https://docs.langchain.com/oss/python/langgraph/add-memory>
-- LangGraph and LangChain memory concepts  
+- LangGraph and LangChain memory concepts
   <https://docs.langchain.com/oss/python/concepts/memory>
 
 Derived judgment:
@@ -603,9 +643,9 @@ LangGraph and LangChain emphasize that:
 
 - thread-level state is not the same as long-term memory
 - long-term memory is appropriate for facts, rules, and experience
-- long-term memory should use a database backend in production rather than remain in-memory  
-  Sources:  
-  <https://docs.langchain.com/oss/python/langchain/long-term-memory>  
+- long-term memory should use a database backend in production rather than remain in-memory
+  Sources:
+  <https://docs.langchain.com/oss/python/langchain/long-term-memory>
   <https://docs.langchain.com/oss/python/langgraph/add-memory>
 
 ### 9.3 Context Enhancement Layer
@@ -623,17 +663,17 @@ It must decide:
 
 Official evidence:
 
-- LangChain explicitly ties retrieval enhancement to finite context windows and static knowledge  
-  Source:  
+- LangChain explicitly ties retrieval enhancement to finite context windows and static knowledge
+  Source:
   <https://docs.langchain.com/oss/python/langchain/retrieval>
 
-- OpenAI `file_search` supports semantic retrieval, keyword retrieval, attribute filtering, and result injection  
-  Sources:  
-  <https://developers.openai.com/api/docs/guides/tools-file-search>  
+- OpenAI `file_search` supports semantic retrieval, keyword retrieval, attribute filtering, and result injection
+  Sources:
+  <https://developers.openai.com/api/docs/guides/tools-file-search>
   <https://developers.openai.com/api/reference/resources/vector_stores/methods/search>
 
-- LangGraph provides `trim`, `delete`, `summary`, and checkpoint management as context-budget tools  
-  Source:  
+- LangGraph provides `trim`, `delete`, `summary`, and checkpoint management as context-budget tools
+  Source:
   <https://docs.langchain.com/oss/python/langgraph/add-memory>
 
 Derived judgment:
@@ -655,14 +695,14 @@ In practice:
 
 Representative sources:
 
-- LangChain retrieval  
+- LangChain retrieval
   <https://docs.langchain.com/oss/python/langchain/retrieval>
 
-- LangChain document splitters  
-  <https://docs.langchain.com/oss/python/integrations/splitters/index>  
+- LangChain document splitters
+  <https://docs.langchain.com/oss/python/integrations/splitters/index>
   <https://docs.langchain.com/oss/python/integrations/splitters/recursive_text_splitter>
 
-- OpenAI hosted vector retrieval  
+- OpenAI hosted vector retrieval
   <https://platform.openai.com/docs/api-reference/vector-stores/search>
 
 A standard RAG pipeline should include at least:
@@ -694,52 +734,52 @@ The selection dimensions should be compressed into six questions:
 #### Pinecone
 
 - namespaces are the primary isolation mechanism
-- metadata filtering is first-class  
-  Sources:  
-  <https://docs.pinecone.io/guides/index-data/indexing-overview>  
-  <https://docs.pinecone.io/guides/search/search-overview>  
-  <https://docs.pinecone.io/guides/data/delete-data>  
+- metadata filtering is first-class
+  Sources:
+  <https://docs.pinecone.io/guides/index-data/indexing-overview>
+  <https://docs.pinecone.io/guides/search/search-overview>
+  <https://docs.pinecone.io/guides/data/delete-data>
   <https://docs.pinecone.io/guides/manage-data/backups-overview>
 
 #### Weaviate
 
 - emphasizes hybrid search
 - filtering is pre-filtering
-- multi-tenancy shards by tenant  
-  Sources:  
-  <https://docs.weaviate.io/weaviate/concepts/search/hybrid-search>  
-  <https://docs.weaviate.io/weaviate/concepts/filtering>  
-  <https://docs.weaviate.io/weaviate/manage-data/multi-tenancy>  
+- multi-tenancy shards by tenant
+  Sources:
+  <https://docs.weaviate.io/weaviate/concepts/search/hybrid-search>
+  <https://docs.weaviate.io/weaviate/concepts/filtering>
+  <https://docs.weaviate.io/weaviate/manage-data/multi-tenancy>
   <https://docs.weaviate.io/deploy/configuration/backups>
 
 #### Qdrant
 
 - core model is `vector + payload(JSON)`
 - filtering supports boolean composition and nested objects
-- multi-tenancy often favors a shared collection with payload or shard separation  
-  Sources:  
-  <https://qdrant.tech/documentation/concepts/payload/>  
-  <https://qdrant.tech/documentation/concepts/filtering/>  
-  <https://qdrant.tech/documentation/guides/multitenancy/>  
-  <https://qdrant.tech/documentation/manage-data/quantization/>  
+- multi-tenancy often favors a shared collection with payload or shard separation
+  Sources:
+  <https://qdrant.tech/documentation/concepts/payload/>
+  <https://qdrant.tech/documentation/concepts/filtering/>
+  <https://qdrant.tech/documentation/guides/multitenancy/>
+  <https://qdrant.tech/documentation/manage-data/quantization/>
   <https://qdrant.tech/documentation/operations/snapshots/>
 
 #### Milvus
 
 - partition keys can support search optimization and multi-tenancy
-- IVF_PQ and similar quantized indexes reduce memory cost  
-  Sources:  
-  <https://milvus.io/docs/v2.4.x/use-partition-key.md>  
-  <https://milvus.io/docs/ivf-pq.md>  
+- IVF_PQ and similar quantized indexes reduce memory cost
+  Sources:
+  <https://milvus.io/docs/v2.4.x/use-partition-key.md>
+  <https://milvus.io/docs/ivf-pq.md>
   <https://milvus.io/docs/v2.3.x/compact_data.md>
 
 #### OpenAI Hosted Vector Stores
 
 - well suited for managed file search and vector search
 - support expiration policy via `expires_after`
-- provide automatic chunking by default  
-  Sources:  
-  <https://developers.openai.com/api/docs/guides/tools-file-search>  
+- provide automatic chunking by default
+  Sources:
+  <https://developers.openai.com/api/docs/guides/tools-file-search>
   <https://platform.openai.com/docs/api-reference/vector-stores/search>
 
 Derived judgment:
@@ -811,12 +851,12 @@ At minimum, it should cover:
 
 Representative sources:
 
-- LangSmith Evaluation  
-  <https://docs.langchain.com/langsmith/evaluation>  
-  <https://docs.langchain.com/langsmith/evaluation-concepts>  
-  <https://docs.langchain.com/langsmith/evaluate-llm-application>  
-  <https://docs.langchain.com/langsmith/compare-experiment-results>  
-  <https://docs.langchain.com/langsmith/online-evaluations>  
+- LangSmith Evaluation
+  <https://docs.langchain.com/langsmith/evaluation>
+  <https://docs.langchain.com/langsmith/evaluation-concepts>
+  <https://docs.langchain.com/langsmith/evaluate-llm-application>
+  <https://docs.langchain.com/langsmith/compare-experiment-results>
+  <https://docs.langchain.com/langsmith/online-evaluations>
   <https://docs.langchain.com/langsmith/evaluation-approaches>
 
 Derived judgment:
@@ -883,25 +923,25 @@ Durable state should at least provide:
 
 Representative sources:
 
-- OWASP Authorization, Logging, Secrets, and HTML5 Security Cheat Sheets  
-  <https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html>  
-  <https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html>  
-  <https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html>  
+- OWASP Authorization, Logging, Secrets, and HTML5 Security Cheat Sheets
+  <https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html>
+  <https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html>
+  <https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html>
   <https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html>
 
-- OWASP ASVS, WSTG, and Top 10  
-  <https://owasp.org/www-project-application-security-verification-standard/>  
-  <https://owasp.org/www-project-web-security-testing-guide/>  
-  <https://owasp.org/Top10/2021/A01_2021-Broken_Access_Control/>  
+- OWASP ASVS, WSTG, and Top 10
+  <https://owasp.org/www-project-application-security-verification-standard/>
+  <https://owasp.org/www-project-web-security-testing-guide/>
+  <https://owasp.org/Top10/2021/A01_2021-Broken_Access_Control/>
   <https://owasp.org/Top10/2021/A09_2021-Security_Logging_and_Monitoring_Failures/>
 
-- NIST, CISA, Microsoft, and OpenTelemetry  
-  <https://csrc.nist.gov/pubs/sp/800/218/final>  
-  <https://csrc.nist.gov/pubs/sp/800/92/final>  
-  <https://csrc.nist.gov/pubs/sp/800/60/v1/r1/final>  
-  <https://www.cisa.gov/resources-tools/resources/secure-by-design>  
-  <https://learn.microsoft.com/en-us/windows/apps/get-started/make-apps-great-for-windows>  
-  <https://opentelemetry.io/docs/security/>  
+- NIST, CISA, Microsoft, and OpenTelemetry
+  <https://csrc.nist.gov/pubs/sp/800/218/final>
+  <https://csrc.nist.gov/pubs/sp/800/92/final>
+  <https://csrc.nist.gov/pubs/sp/800/60/v1/r1/final>
+  <https://www.cisa.gov/resources-tools/resources/secure-by-design>
+  <https://learn.microsoft.com/en-us/windows/apps/get-started/make-apps-great-for-windows>
+  <https://opentelemetry.io/docs/security/>
   <https://opentelemetry.io/docs/security/handling-sensitive-data/>
 
 ## 11. Local GUI Control Center: Implementation Checklist

@@ -23,6 +23,8 @@ This lifecycle now has two explicit operating modes.
 
 The two modes share the same 12-layer trunk, but they do not share authority. The Codex platform may provide governance mechanisms and templates. A downstream one-person company owns its own customer evidence, revenue facts, financial evidence, product commitments, legal risk, release state, durable state, and lessons learned.
 
+Canonical inventory maps now live in `codex_platform_inventory_map.md` and `one_person_company_inventory_map.md`. Treat those two files as the count authority when another document needs the 48-document or 60-document target; this lifecycle file explains how those inventories move through the 12-layer document stack.
+
 ## Execution-Facing Process-Group Rule
 
 For any layer that drives work, use the PMI process-group style as the execution grammar:

@@ -27,9 +27,10 @@ This plan defines, under the following baseline assumptions, how to build a prod
 - no new capability may break the stable three-lane operating model
 - external tooling reuse is allowed, but only within existing repository safety boundaries and additive-only governance
 
-This plan does not modify the white paper:
+This plan does not replace the white paper or the governance research canon:
 
-- [solo_maintainable_production_persistent_team_research.zh-CN.md](/D:/PythonProject_langgraph/docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md)
+- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` - concise strategic white paper for why the direction exists, target-state narrative, and the 12-layer lifecycle frame.
+- `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md` - evidence-heavy production-capability research canon, including the 10-layer runtime capability core.
 
 Document-layer role:
 
@@ -41,7 +42,7 @@ Document-layer role:
 
 This plan exists to:
 
-- map the white paper's ten-layer model into a reusable personal production durable team model for all `PyCharm / Codex CLI` projects
+- map the governance research document's 10-layer production-capability core into the white paper and lifecycle documents' 12-layer product/business architecture for all `PyCharm / Codex CLI` projects
 - explain how the user-level layer, cross-project shared layer, and project layer should each land under the baseline
 - define what can be reused directly, what should only be borrowed by design, and what should stay out of the main stack
 - explain how many projects can share one durable-team model while keeping project durable truth isolated
@@ -62,7 +63,10 @@ PMBOK8 value-delivery overlay for this draft:
 - PMBOK 8th Edition is used as the primary overlay for value delivery, project canvas, performance-domain thinking, AI-era project governance, hybrid delivery, and tailoring.
 - PMBOK 6th Edition and Process Groups are used only as execution support for inputs, tools and techniques, outputs, and closeout gates.
 - PMBOK 7th Edition is used as the principles, value-delivery, performance-domain, and tailoring bridge.
-- Agile guidance is used for adaptive discovery, MVP slices, feedback loops, and small reversible releases.
+- Agile Practice Guide is used for adaptive discovery, MVP slices, feedback loops, and small reversible releases.
+- Program Management is used when multiple related initiatives need shared benefits, sequencing, or dependency alignment.
+- Portfolio Management is used when value, capacity, risk, and release timing must be balanced across competing work.
+- PMO Practice Guide is used as the pattern for governance services, enablement, oversight, and reusable operating standards.
 
 This means each future release slice must describe not only the task list, but also the value increment, feedback point, validation path, rollback boundary, and operator consent boundary.
 
@@ -70,9 +74,9 @@ This means each future release slice must describe not only the task list, but a
 
 The older ten-layer runtime map in this plan is a historical decomposition for execution lanes. It is not the full document-governance model. The full product/business lifecycle model is now the 12-layer trunk: cognitive narrative, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, and retrospective.
 
-The Codex CLI personal production durable-team target uses this inventory: 12 trunk layers, 4 virtual departments, 24 responsibility domains, 18 cross-cutting modules, 48 core documents, 12 governed AI agents, and 12 recommended books. This is the platform target for reusable Codex orchestration mechanisms.
+The Codex CLI personal production durable-team target uses this inventory: 12 trunk layers, 4 virtual departments, 24 responsibility domains, 18 cross-cutting modules, 48 core documents, 12 governed AI agents, and 12 recommended books. This is the platform target for reusable Codex orchestration mechanisms. The canonical count map is `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md`.
 
-The downstream personal production one-person-company target uses this larger inventory: 12 trunk layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. This is a downstream business operating-system model and must not be treated as platform repo-local truth.
+The downstream personal production one-person-company target uses this larger inventory: 12 trunk layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. This is a downstream business operating-system model and must not be treated as platform repo-local truth. The canonical count map is `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`.
 
 ### 1.3 Process-Group Execution Contract
 
@@ -90,7 +94,7 @@ This contract applies before a durable team or graph lane is launched. A durable
 
 For this plan, full architecture coverage is required for affected scopes that change reusable orchestration behavior, native subagent routing, `native_omx`, LangGraph, worktree safety, OpenSpec governance, user-level launcher policy, skill/profile governance, local-main-first publication, shared templates, durable state, release safety, or cross-project adoption.
 
-Lightweight treatment is permitted only for bounded documentation, research, local helper, or spike modules that do not change runtime entrypoints, durable state, secrets, CI gates, release gates, or downstream project dependencies. If a lightweight module becomes shared infrastructure or production behavior, the affected layer must be expanded before release.
+Use the five tailoring outcomes explicitly. Full architecture is required for affected platform orchestration, trust, durable-state, release-safety, or cross-project adoption scope. Whole-project lightweight is allowed only for private, reversible, low-risk work with no external users, money, sensitive data, shared runtime, or release commitment. Phase-local lightweight is allowed for bounded discovery, metrics, growth, or retrospective phases inside a larger governed project. Module-level lightweight is allowed for bounded documentation, research, local helper, or spike modules that do not change runtime entrypoints, durable state, secrets, CI gates, release gates, or downstream project dependencies. Hybrid is required when uncertainty remains high but later delivery may affect production, users, trust, revenue, compliance, runtime behavior, or release safety. If a lightweight module becomes shared infrastructure or production behavior, expand the affected layers before release.
 
 
 ## 2. Problem Statement And Design Drivers
@@ -138,11 +142,11 @@ This plan does not:
 - make GUI the primary runtime too early
 - rewrite existing durable truth in order to add memory or vector retrieval
 
-### 3.3 Restored Ten-Layer Framework Landing Map
+### 3.3 10-To-12-Layer Framework Landing Map
 
-The white paper's ten-layer framework is a required organizing model for this draft. It must remain visible in this plan so a cold-start maintainer can see how the production target decomposes before reading the deeper governance paper.
+The ten-layer framework is the research document's production-capability core, not the full product/business lifecycle. It remains visible in this plan so a cold-start maintainer can see how the runtime target decomposes, but the planning frame is now the 12-layer lifecycle defined in `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`.
 
-Restored ten-layer model:
+10-layer capability core:
 
 | Layer | Production meaning | Landing rule in this plan |
 | --- | --- | --- |
@@ -1000,7 +1004,8 @@ Authority split:
 
 | Authority layer | Main responsibility |
 | --- | --- |
-| White paper | overall method, target state, ten-layer model |
+| White paper | overall method, target-state narrative, and 12-layer product/business lifecycle frame |
+| Governance research canon | evidence-heavy production-capability research and the 10-layer runtime capability core that feeds the 12-layer frame |
 | `docs_bilingual/governance/` | stable user-level rules, shared runtime policy, long-term boundaries |
 | This implementation plan | shared user-level plus project-level implementation shape, multi-project reuse, repository handoff |
 | OpenSpec proposal / design / spec / tasks | structural implementation changes, migration steps, task decomposition, acceptance |

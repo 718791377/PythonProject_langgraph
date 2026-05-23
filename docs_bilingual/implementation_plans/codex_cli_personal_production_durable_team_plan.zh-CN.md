@@ -27,9 +27,10 @@ status: draft
 - 不允许为了新能力而破坏现有三条 `lane`，即三条长期稳定的能力与职责分工通道，的正常使用
 - 允许复用外部工具，但复用必须服从仓库现有安全边界与 additive-only 治理纪律
 
-本方案**不修改**白皮书：
+本方案**不替代**白皮书或治理研究正本：
 
-- [solo_maintainable_production_persistent_team_research.zh-CN.md](/D:/PythonProject_langgraph/docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md)
+- `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` - 简洁战略白皮书，负责说明方向为何存在、目标态叙事和 12 层生命周期框架。
+- `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md` - 证据密集的生产能力研究正本，包含 10 层运行时能力核心。
 
 本方案在文档体系中的定位是：
 
@@ -41,7 +42,7 @@ status: draft
 
 本方案的作用是：
 
-- 把白皮书里的十层框架映射到一套可供所有 `PyCharm / Codex CLI` 项目共用的个人开发者生产级持久化团队方案
+- 把治理研究文档中的 10 层生产能力核心，映射到白皮书和生命周期文档中的 12 层产品/商业架构，形成可供所有 `PyCharm / Codex CLI` 项目共用的个人开发者生产级持久化团队方案
 - 说明在该假设基线下，用户级、跨项目共享层和项目级各自应如何落地
 - 定义哪些能力可直接复用，哪些只能借鉴，哪些不应进入主栈
 - 说明多个项目如何共享同一套个人开发者生产级持久化团队方案，同时保持项目 durable state 隔离
@@ -62,7 +63,10 @@ status: draft
 - PMBOK 第8版作为 value delivery、project canvas、performance-domain thinking、AI-era project governance、hybrid delivery 和 tailoring 的主要叠加层。
 - PMBOK 第6版和 Process Groups 只作为 inputs、tools and techniques、outputs 和 closeout gates 的执行支撑。
 - PMBOK 第7版作为 principles、value-delivery、performance-domain 和 tailoring 的桥接层。
-- Agile guidance 用于 adaptive discovery、MVP slices、feedback loops 和 small reversible releases。
+- Agile Practice Guide 用于 adaptive discovery、MVP slices、feedback loops 和 small reversible releases。
+- 项目集管理用于多个相关倡议需要共享收益、排序或依赖对齐时。
+- 项目组合管理用于多个竞争工作之间需要平衡价值、容量、风险和发布时间时。
+- PMO 实践指南用于治理服务、赋能、监督和可复用运行标准的模式。
 
 这意味着每个未来 release slice 不只要描述 task list，还要描述 value increment、feedback point、validation path、rollback boundary 和 operator consent boundary。
 
@@ -90,7 +94,7 @@ Codex CLI 个人开发者生产级持久化团队目标采用以下清单：12 �
 
 对本方案而言，凡是改变可复用编排行为、原生 subagent 路由、`native_omx`、LangGraph、worktree safety、OpenSpec governance、user-level launcher policy、skill/profile governance、local-main-first publication、shared templates、durable state、release safety 或跨项目采用的受影响范围，都必须使用完整架构覆盖。
 
-只有不改变 runtime entrypoints、durable state、secrets、CI gates、release gates 或下游项目依赖的有边界文档、研究、本地 helper 或 spike 模块，才允许轻量处理。如果轻量模块变成共享基础设施或生产行为，必须先扩展受影响层级，再发布。
+本方案显式使用五类裁剪结果。凡是影响平台编排、信任、durable state、release safety 或跨项目采用的受影响范围，都必须使用完整架构。只有私有、可逆、低风险，并且没有外部用户、金钱、敏感数据、共享 runtime 或发布承诺时，才允许整个项目轻量。有边界的 discovery、metrics、growth 或 retrospective 阶段位于较大受治理项目内部时，可以阶段局部轻量。不改变 runtime entrypoints、durable state、secrets、CI gates、release gates 或下游项目依赖的有边界文档、研究、本地 helper 或 spike 模块，可以模块级轻量。当不确定性仍高，但后续交付可能影响生产、用户、信任、收入、合规、runtime behavior 或 release safety 时，必须使用混合方式。如果轻量模块变成共享基础设施或生产行为，必须先扩展受影响层级，再发布。
 
 
 ## 2. 问题陈述与设计驱动
@@ -138,11 +142,11 @@ Codex CLI 个人开发者生产级持久化团队目标采用以下清单：12 �
 - 不把 GUI 提前做成主运行时
 - 不为了记忆或向量检索，重写已有 durable truth
 
-### 3.3 恢复的十层框架落地映射
+### 3.3 10 层到 12 层框架落地映射
 
-白皮书中的十层框架是本 draft 的必备组织模型。它必须保留在本方案中，确保冷启动维护者不用先读完整治理白皮书，也能看到“生产级持久化团队”目标态如何拆解。
+十层框架是研究文档中的生产能力核心，不是完整产品/商业生命周期。本方案保留它，是为了让冷启动维护者能看到 runtime 目标如何拆解；但本方案的规划框架已经切换到 `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md` 定义的 12 层生命周期。
 
-恢复后的十层模型如下：
+10 层能力核心如下：
 
 | 层级 | 生产含义 | 本方案中的落地规则 |
 | --- | --- | --- |
@@ -612,9 +616,9 @@ Business capability profiles 是覆盖十层框架的横向 workload classificat
 
 因此，最稳妥的做法不是把所有经验都堆到一个“memory”里，而是：
 
-1. 原始失败或成功案例，先保留在事件和报告层  
-2. 与当前主线直接相关的部分，摘要写进当前 implementation plan  
-3. 已经被验证值得长期保留的规则，再提升到治理文档、工具文档、测试或默认行为里  
+1. 原始失败或成功案例，先保留在事件和报告层
+2. 与当前主线直接相关的部分，摘要写进当前 implementation plan
+3. 已经被验证值得长期保留的规则，再提升到治理文档、工具文档、测试或默认行为里
 
 如果后续需要统一检索，可以在 `SQLite` 增加 lesson index 或 lessons metadata；但它仍然只是索引层，不是新的真相源。
 
@@ -622,13 +626,13 @@ Business capability profiles 是覆盖十层框架的横向 workload classificat
 
 经验教训只有在能转成后续动作时，才真正有价值。建议固定三种转化方式：
 
-- 转成约束  
+- 转成约束
   - 例如：新增入口时，必须检查是否存在命令行长度上限风险
 
-- 转成检查项  
+- 转成检查项
   - 例如：在 rollout 前增加一条验证，确认默认入口不会因为超长参数而失效
 
-- 转成默认做法  
+- 转成默认做法
   - 例如：优先用配置文件、参数文件、状态文件或短参数引用承载稳定上下文，而不是把大段信息直接拼进命令行
 
 在维护机制上，建议长期坚持：
@@ -642,7 +646,7 @@ Business capability profiles 是覆盖十层框架的横向 workload classificat
 
 示例：
 
-> `PS D:\PythonProject_langgraph> codex-ohmy`  
+> `PS D:\PythonProject_langgraph> codex-ohmy`
 > `命令行太长。`
 
 这个案例首先属于：
@@ -656,16 +660,16 @@ Business capability profiles 是覆盖十层框架的横向 workload classificat
 
 因此，这个案例建议分三层放置：
 
-1. **原始事件层**  
-   - 放在 incident note、排障报告、日志或 change 记录里  
+1. **原始事件层**
+   - 放在 incident note、排障报告、日志或 change 记录里
    - 记录当时的命令、报错现象、触发环境和影响范围
 
-2. **当前主线摘要层**  
-   - 放在当前 implementation plan 的这一节里  
+2. **当前主线摘要层**
+   - 放在当前 implementation plan 的这一节里
    - 作用是提醒后续设计与 rollout：新增入口时，默认避免继续堆长命令
 
-3. **长期规则层**  
-   - 放到 launcher / control surface 的契约文档、实现默认值和测试里  
+3. **长期规则层**
+   - 放到 launcher / control surface 的契约文档、实现默认值和测试里
    - 例如明确：大块 `developer_instructions` 不得长期依赖命令行内联传递；应改为文件、状态文件或短引用
 
 也就是说，这个案例不应主要归到“用户说太多”或“prompt 写得不好”，而应主要归到：
@@ -1016,7 +1020,8 @@ Release rules：
 
 | 权威层 | 主要负责 |
 | --- | --- |
-| 白皮书 | 总方法论、总目标态、十层框架 |
+| 白皮书 | 总方法论、目标态叙事和 12 层产品/商业生命周期框架 |
+| 治理研究正本 | 证据密集的生产能力研究，以及输入 12 层框架的 10 层运行时能力核心 |
 | `docs_bilingual/governance/` | 稳定用户级规则、共享运行时规则、长期 policy、权威边界 |
 | 当前 implementation plan | 兼顾用户级与项目级的共享实施方案，解释多项目如何共用、当前仓库如何承接 |
 | OpenSpec proposal / design / spec / tasks | 当前仓库的结构性实现变更、迁移步骤、任务拆分与验收 |

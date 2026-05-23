@@ -46,6 +46,8 @@ The minimum startup set is deliberately only 12 documents: `company-thesis.md`, 
 
 Do not start a downstream one-person company by creating all 60 documents. Start with the 12 minimal documents, then expand only when risk, customer evidence, revenue, compliance, delivery, or operations requires deeper coverage.
 
+The canonical count map is `one_person_company_inventory_map.md`. Use that map for concrete document-family, agent, module, and department references; use this lifecycle file for downstream adoption and process-group execution guidance.
+
 
 ## Downstream Adoption Canvas
 

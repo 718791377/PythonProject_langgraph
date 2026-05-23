@@ -1,130 +1,113 @@
-# Business Management 源库综合
+# Business Management 来源库综合
 
-本文总结本地忽略目录 `D:/PythonProject_langgraph/Business Management` 对本仓库 `docs_bilingual/product_lifecycle/` 的生命周期启发。本文是综合层，不替代原书，也不复制原书正文。
+本文基于 2026-05-23 对忽略目录 `D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP` 的 fresh extraction 结果，总结与本仓库相关的经营、产品、架构与交付启发。本文是 `docs_bilingual/product_lifecycle/` 的综合层，不替代原始书籍，也不复制长段版权正文。
 
-## 读取覆盖
+## Fresh Extraction 范围
 
-写入本综合前，已按页级或 EPUB spine item 级读取源目录。
+本次刷新只以 `.omx/state/langgraph/extraction/` 下的忽略态产物为依据。
 
-- PDF 文件使用 PyMuPDF 逐页遍历。记录页数和低文本页，因为封面、空白页、扫描图和图片页可能没有足够可抽取文字。
-- EPUB 文件按 OPF spine 顺序读取，每个 HTML/XHTML item 均抽取文字。
-- Markdown 架构笔记按 UTF-8 文本读取。
-- 临时抽取产物保存在 `.tmp/` 下，并由 Git 忽略。
+- 清单：`fresh_source_manifest.json`
+- 逐单元提取日志：`fresh_source_items.jsonl`
+- 紧凑汇总：`fresh_source_synthesis.json`
+- 提取脚本入口：`fresh_extract_sources.py`
 
-| 源文件 | 格式 | 覆盖 | 生命周期作用 |
+54 个已记录来源全部以 `ok` 状态完成。
+
+## 覆盖清单
+
+### 总体覆盖
+
+| 来源家族 | 来源数 | PDF / 页数 | EPUB / spine item | Markdown / 全文文件 | 总读取单元 | 提取文本字符数 | 空白单元 | 低文本单元 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Business Management | 31 | 22 / 6,253 | 7 / 305 | 2 / 2 | 6,560 | 14,702,314 | 352 | 511 |
+| PMP | 23 | 9 / 3,035 | 2 / 58 | 12 / 12 | 3,105 | 4,341,068 | 392 | 752 |
+| **合计** | **54** | **31 / 9,288** | **9 / 363** | **14 / 14** | **9,665** | **19,043,382** | **744** | **1,263** |
+
+### 按格式的读取方法
+
+| 格式 | 记录数量 | 覆盖单元 | 提取方法 | 实际含义 |
+| --- | ---: | --- | --- | --- |
+| PDF | 31 个文件 | 页 | 对每一页执行 PyMuPDF `get_text("text")` | 适合记录页数证据、低文本页统计，以及扫描件/图像页注意事项 |
+| EPUB | 9 个文件 | OPF spine item | 使用 `ebooklib` 迭代 spine，再抽取 HTML/XHTML 文本 | 适合在不打乱原阅读顺序的前提下记录章节级覆盖 |
+| Markdown | 14 个文件 | 全文件 | 直接按 UTF-8 全文读取 | 适合保留精确架构清单、标题结构与仓库术语 |
+
+### 需要保留的覆盖说明
+
+- 低文本复核是覆盖统计的一部分，不代表未阅读。许多低文本单元来自封面、空白页、图表页、扫描页或图片密集页。
+- 低文本最集中的主要是少数扫描感较强或图片较重的 PMP PDF，尤其是 `PMBOK® Guide 8th Edition .pdf`（401 页，372 个低文本页）、`项目管里知识体系指南  PMBOK指南  第6版.pdf`（812 页，293 个低文本页）、`敏捷实践指南 = Agile practice guide.pdf`（184 页，183 个低文本页）和 `项目组合管理标准  第4版.pdf`（142 页，141 个低文本页）。
+- 因为本文是综合产物，所以只记录计数、方法和解释，不保留原始提取文本。
+
+## 目标架构清单证据
+
+用户要求的两个目标架构清单，控制性来源都是本地 Markdown 架构笔记，因为它们采用 UTF-8 全文读取并保留了明确的章节标题。
+
+| 目标 | 控制性来源 | fresh-read 证据 | 生命周期文档中保留的清单 |
 | --- | --- | --- | --- |
-| `Accelerate.pdf` | PDF | 315 页 | 交付绩效、架构能力、管理能力和基于证据的软件改进 |
-| `Clean Architecture.pdf` | PDF | 429 页 | 技术边界、依赖方向、组件原则和架构价值 |
-| `Clean Architecture - 架构整洁之道.pdf` | PDF | 380 页 | Clean Architecture 概念的中文对照 |
-| `Company of One.epub` | EPUB | 44 个 spine item | 有意保持小规模、可扩展个人系统、信任、小步发布和深关系 |
-| `Company of One.pdf` | PDF | 209 页 | 一人公司 operating system 主题的 PDF 对照 |
-| `Continuous Discovery Habits.pdf` | PDF | 197 页 | 持续产品发现、访谈节奏、机会映射和假设测试 |
-| `Crossing the Chasm, 3rd Edition.pdf` | PDF | 288 页 | 滩头市场、whole product 和采用分层风险 |
-| `Deploy Empathy.epub` | EPUB | 79 个 spine item | 客户访谈、研究循环、过去行为问题和反馈分析 |
-| `Designing Data-Intensive Applications.pdf` | PDF | 613 页 | 可靠性、可扩展性、可维护性、数据模型、存储、分布式数据和派生数据架构 |
-| `Escaping the build trap.pdf` | PDF | 199 页 | outcome-focused 产品管理、产品战略、product kata 和避免 output obsession |
-| `Good strategy, bad strategy.pdf` | PDF | 144 页 | 诊断、指导方针、连贯行动、杠杆和近端目标 |
-| `High Output Management.pdf` | PDF | 239 页 | 管理杠杆、经营节奏、会议、one-on-one 和产出思维 |
-| `INSPIRED.pdf` | PDF | 370 页 | 产品发现、授权产品团队、value/usability/feasibility/viability 和产品风险 |
-| `Lean Analytics.pdf` | PDF | 439 页 | One Metric That Matters、阶段指标、阈值线和分析纪律 |
-| `Master60- 亞馬遜的逆向工法.pdf` | PDF | 38 页 | Working Backwards 摘要、PR/FAQ、客户倒推机制和叙事决策 |
-| `Measure What Matters.pdf` | PDF | 306 页 | OKR、聚焦、对齐、跟踪、拉伸和 CFR 式运营节奏 |
-| `Obviously Awesome.pdf` | PDF | 140 页 | 定位、竞争替代、价值主题和市场框架选择 |
-| `Product Operations.epub` | EPUB | 65 个 spine item | 产品数据、客户和市场洞察、operating model、流程和产品运营规模化 |
-| `Product Operations.pdf` | PDF | 346 页 | Product Operations 的 PDF 对照 |
-| `Scaling People.epub` | EPUB | 24 个 spine item | 运营原则、目标/资源规划、团队发展、反馈机制和 metronome |
-| `Secure by Design.epub` | EPUB | 31 个 spine item | 安全作为设计关注点、domain primitives、不变量、安全流水线和代码审查 |
-| `Secure by Design.pdf` | PDF | 400 页 | Secure by Design 的 PDF 对照 |
-| `Shape Up.pdf` | PDF | 133 页 | appetite、shaping、betting、scope map、circuit breaker 和交付风险控制 |
-| `Team Topologies.epub` | EPUB | 29 个 spine item | cognitive load、team API、平台边界、交互模式和 Conway-aware 设计 |
-| `The E-Myth Revisited.pdf` | PDF | 286 页 | business-as-system、角色分离、流程原型和 SOP 纪律 |
-| `The Lean Startup.pdf` | PDF | 150 页 | build-measure-learn、MVP、validated learning、innovation accounting 和 pivot/persevere 决策 |
-| `The Staff Engineer's Path.pdf` | PDF | 359 页 | 技术领导力、范围塑形、影响力、执行战略和高级工程判断 |
-| `Traction.epub` | EPUB | 33 个 spine item | 渠道测试、traction goal、critical path 和增长渠道选择 |
-| `Working Backwards.pdf` | PDF | 273 页 | PR/FAQ、叙事规划、机制、single-threaded ownership 和指标纪律 |
-| `架构 1：Codex CLI 个人开发者生产级持久化团队.md` | Markdown | 167 行 | Codex 持久化团队架构源笔记 |
-| `架构 2：个人级生产级一人公司运营.md` | Markdown | 448 行 | 个人级一人公司 operating system 源笔记 |
+| Codex CLI 个人开发者生产级持久化团队 | `架构 1：Codex CLI 个人开发者生产级持久化团队.md` | 10,424 字符；标题包含 `1 主干层级矩阵`、`2 虚拟部门矩阵`、`3 24 个责任域矩阵`、`4 18 个横切模块矩阵`、`5 48 个核心文档系统`、`6 12 个受治理 AI Agent` | 12 层主干、4 个虚拟部门、24 个责任域、18 个横切模块、48 个核心文档、12 个受治理 AI Agent、12 本推荐书籍 |
+| 个人级生产级一人公司 | `架构 2：个人级生产级一人公司运营.md` | 18,544 字符；标题包含 `2. 12 层主干`、`3. 5 个虚拟部门`、`4. 30 个责任域`、`5. 20 个横切模块`、`6. 60 个核心文档系统`、`7. 15 个受治理 AI Agent`、`11. 最小可运行 MVP` | 12 层主干、5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍、12 份最小启动文档 |
 
-## 综合来源覆盖与读取方式
+这两份笔记定义了仓库内部要使用的精确清单数量；Business Management 与 PMP 书籍则解释这些清单应如何运行、如何裁剪、以及如何保持轻量。
 
-本次刷新只把被 Git 忽略的 `.local/reference_extraction/` 作为本地读取证据和私有工作区。仓库只记录覆盖摘要与治理综合结论；不提交原始书籍、逐页抽取文本、OCR 输出或长篇版权原文。
+## 来源家族映射
 
-| 读取类别 | 覆盖量 | 读取方式 | 仓库用途 |
-| --- | ---: | --- | --- |
-| Business Management 与 PMP PDF | 31 份 PDF / 9,288 页 | 按页抽取文本、记录页级指标，并复核低文本页 | 支撑生命周期、架构、交付、风险、治理和运营综合 |
-| Business Management 与 PMP EPUB | 9 份 EPUB / 363 个 spine item | 按 OPF spine 顺序逐项读取 | 支撑经营系统、团队拓扑、安全设计、产品运营、项目集与 PMO 综合 |
-| 架构与 PMP Markdown 笔记 | 14 份 Markdown / 93,632 字符 | UTF-8 全文读取并记录标题结构 | 保留两个目标架构清单、PMI/AI 时代解读与仓库化规则 |
-| 低文本 PDF 页 | 已复核 1,066 页；失败 0 页；复核后仍低文本 462 页 | 对可抽取文本较少的页做 OCR / 图像页复核 | 封面、空白页、图表页、扫描页或图片密集页已纳入覆盖判断，但不复制原文 |
+### Business Management 家族 → 经营模型与架构综合
 
-两份架构 Markdown 是本次用户指定数量清单的控制来源。它们分别定义 Codex CLI 持久化团队目标与一人公司经营系统目标；书籍来源用于补强这些清单背后的经营原则。
-
-## 目标架构清单综合
-
-| 目标 | 固定清单 | 在本仓库中的解释 |
+| 来源簇 | fresh-read 代表来源 | 对生命周期的主要贡献 |
 | --- | --- | --- |
-| Codex CLI 个人开发者生产级持久化团队 | 12 层主干、4 个虚拟部门、24 个责任域、18 个横切模块、48 个核心文档、12 个受治理 AI Agent、12 本推荐书籍 | `D:/PythonProject_langgraph` 的平台建设模型；治理 Codex 编排、用户级 wrapper、worktree 安全、OpenSpec、本地 main 优先发布与可复用项目模板 |
-| 个人级生产级一人公司经营系统 | 12 层主干、5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍、12 个最小启动文档 | 下游业务经营系统模型；治理公司战略、客户证据、产品、收入、运营、财务、风险和学习闭环，但不把下游 repo-local truth 移入 Codex 平台仓库 |
+| 战略、定位与商业设计 | `Good strategy, bad strategy.pdf`、`Company of One`（PDF + EPUB）、`The E-Myth Revisited.pdf`、`Working Backwards.pdf`、`Obviously Awesome.pdf`、`Traction.epub` | 诊断、指导方针、有意保持小规模、定位、渠道选择、PR/FAQ 式思考与 operating system 设计 |
+| 产品发现与产品运营 | `INSPIRED.pdf`、`Continuous Discovery Habits.pdf`、`Deploy Empathy.epub`、`Escaping the build trap.pdf`、`Product Operations`（PDF + EPUB）、`The Lean Startup.pdf`、`Crossing the Chasm, 3rd Edition.pdf` | 机会发现、访谈循环、产品风险分解、产品运营赋能、MVP 纪律与采用阶段排序 |
+| 指标、管理节奏与规模化 | `Lean Analytics.pdf`、`Measure What Matters.pdf`、`High Output Management.pdf`、`Scaling People.epub` | OMTM 与阶段指标、OKR 对齐、管理杠杆、规划节奏，以及一人公司或 agent-assisted 系统的规模纪律 |
+| 架构、技术边界与交付设计 | `Clean Architecture.pdf`、`Clean Architecture - 架构整洁之道.pdf`、`Designing Data-Intensive Applications.pdf`、`Accelerate.pdf`、`Team Topologies.epub`、`Secure by Design`（PDF + EPUB）、`The Staff Engineer’s Path.pdf`、`Shape Up.pdf` | 依赖方向、数据与可靠性关注点、团队/API 边界、安全设计约束、资深工程判断、shaping、appetite 与交付护栏 |
+| 仓库特定架构清单 | `架构 1：Codex CLI 个人开发者生产级持久化团队.md`、`架构 2：个人级生产级一人公司运营.md` | 精确目标清单、本地术语，以及通用管理建议到仓库规则之间的桥梁 |
 
-Codex 虚拟部门为 `Strategy & Product Office`、`Engineering & Platform Office`、`Agent Governance Office`、`Growth & Knowledge Office`。24 个责任域覆盖战略、商业模式、财务、市场情报、客户研究、产品战略、PRD、CLI/UX、指标、架构、工程管理、代码质量、DevOps、工具链、安全、隐私、数据治理、Agent 治理、Agent 评估、文档、支持、信任、知识与复盘。
+### PMP 家族 → 交付治理与 tailoring 叠加层
 
-一人公司虚拟部门为 `Strategy Office`、`Product & Market Office`、`Revenue & Growth Office`、`Operations Office`、`Governance Office`。30 个责任域覆盖创始人战略、经营节奏、商业模式、财务、风险、市场情报、客户研究、定位、产品战略、offer、PRD、服务设计、分析、增长、销售、定价、内容、品牌信任、合作、客户成功、支持、交付、社区、知识、自动化、安全隐私、法务合规、数据治理、IP/资产与 Agent 治理。
-
-## PMI 交付叠加层
-
-生命周期采用 PMI 过程组作为执行纪律，而不是替代产品思考：
-
-- 启动：确认价值、范围、干系人、授权，以及是否值得展开完整生命周期文档。
-- 规划：冻结需求、裁剪深度、风险、验证、发布、回滚、沟通与 owner 边界。
-- 执行：按阈值选择人工、原生 subagent、持久化团队或 graph 后端，产出选定增量。
-- 监控与控制：检查指标、风险、质量、问题状态、变更请求、预算、provider pacing、CI 证据与验收证据。
-- 收尾：归档 OpenSpec 或项目证据，更新稳定文档/规格，沉淀经验教训，并把可复用学习反馈到下一轮生命周期。
-
-
-## 跨来源运营原则
-
-1. **先诊断，后行动。** 战略工作必须先命名真实约束、目标客户、采用障碍和指导方针，再变成路线图或任务清单。
-2. **结果优先于产出。** roadmap、OpenSpec change 和 implementation plan 必须连接到用户价值、商业价值、运营价值、信任价值或学习价值。
-3. **一人系统要有意保持小。** solo operator 应优先使用轻量机制、稳定节奏、可复用模板和明确非目标，而不是组织表演。
-4. **让 discovery 持续发生。** 客户访谈、支持信号、使用数据和市场证据应在大规模 build commitment 前进入产品决策。
-5. **执行前先塑形。** 变更在扩大实施前，需要 appetite、边界、风险、验证证据和 circuit-breaker 规则。
-6. **把架构当作长期可选性。** 边界、依赖方向、数据契约、安全不变量和 team/agent API 保护未来变更速度。
-7. **衡量系统，而不是 vanity。** 使用能改变决策的 North Star 输入指标、OKR、阶段指标、交付指标和采用指标。
-8. **为采用和信任而设计。** 定位、滩头市场、whole-product 支持、文档和支持循环都是产品生命周期的一部分，不是事后补丁。
-9. **闭环。** retrospective、postmortem、lessons learned 和 upstream feedback 必须更新模板、checker、文档或未来战略。
-
-## 0-11 / 12 层生命周期映射
-
-两份本地架构源笔记把当前权威主干定义为十二层：认知、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营、复盘。任何早期压缩生命周期说法都只作为历史简表，不再是权威主干。
-
-| 层级 | 源库强调点 | 仓库规则 |
+| 来源簇 | fresh-read 代表来源 | 对生命周期的主要贡献 |
 | --- | --- | --- |
-| 0 认知层 | 一人公司目的、平台叙事、类别框架和客户倒推故事 | 先解释方向为什么存在，再定义功能或团队 |
-| 1 商业层 | 单位经济、协作成本、有意保持小、风险降低和运营杠杆 | 判断维护成本和机会成本是否值得 |
-| 2 市场层 | 访谈、持续发现、采用分层、定位和客户证据 | 先识别目标用户和滩头用例，再扩大范围 |
-| 3 战略层 | 诊断、指导方针、连贯行动、产品战略和 critical path | 选择狭窄获胜条件、战略取舍和明确非目标 |
-| 4 指标层 | 北极星指标、OKR、OMTM、阶段指标、护栏指标和数据定义 | 定义会改变决策的指标和阈值 |
-| 5 产品层 | PR/FAQ、product kata、机会映射、产品运营、MVP 和 usability/value/viability/feasibility 风险 | 在构建前定义用户可见行为、非目标和验收证据 |
-| 6 技术层 | 清晰边界、数据系统质量、安全不变量、组件边界和 staff engineer 判断 | 记录架构边界、数据契约、信任边界和回滚路径 |
-| 7 组织层 | 一人公司角色分离、Agent 治理、team API、认知负载、ownership 和责任边界 | 定义谁或哪个 Agent 可以读取、写入、决策、审查、批准和恢复工作 |
-| 8 执行层 | shaping、appetite、betting、implementation slices、local-main-first gates 和交付指标 | 用小而可检查的切片执行，并保留验证、回滚和 circuit-breaker 证据 |
-| 9 增长层 | traction channel tests、跨越鸿沟、定位、获客、激活、留存和信任故事 | 把渠道、onboarding、采用和 whole-product 支持纳入生命周期设计 |
-| 10 运营层 | support、FAQ、customer success、bug triage、运营节奏、文档和反馈 intake | 让已发布工作可用、可支持、可衡量，并持续连接用户反馈 |
-| 11 复盘层 | postmortem、SOP、月度复盘、产品运营学习和模板/checker 更新 | 把重复经验转化为持久文档、checker、模板或 OpenSpec spec |
+| 核心标准与过程控制 | `PMBOK® Guide 8th Edition .pdf`、`项目管理知识体系 第七版 (PMBOK® 体系) 指南.pdf`、`项目管里知识体系指南  PMBOK指南  第6版.pdf`、`Process groups _ a practice guide.pdf`、`过程组_实践指南(ProcessGroupsPracticeGuide) .pdf` | 过程组纪律、结果导向、tailoring 决策、控制回路、风险/变更审视与收尾证据 |
+| 敏捷、项目集、项目组合与 PMO 叠加 | `The Agile practice guide.pdf`、`The Standard for Program Management - Fifth Edition.epub`、`The Standard for Portfolio Management-Fourth Edition.pdf`、`Project Management Offices  a Practice Guide.epub` | 混合/敏捷交付、项目集排序、项目组合优先级、治理 operating model 与 PMO 能力映射 |
+| PMBOK 8 / AI 时代解读笔记 | `PMP/PMP_MD/` 下 12 份 Markdown 笔记，以及 Joshua Parrott 中文翻译笔记 | 更贴近仓库语境的 PMBOK 8 原则、focus areas、PMO 演化、tailoring 与 AI 时代项目领导解释 |
 
-## Codex 平台解释
+## 有证据支撑的阅读重点
 
-对 `D:/PythonProject_langgraph` 来说，源库强化以下平台规则：
+### 架构密度最高的 Business Management 来源
 
-- 当前主 Codex 会话继续承担 accountable leader 职责；agents 和 durable lanes 是机制，不是隐藏管理权威。
-- `native_omx` 和 `langgraph` 应按问题形状选择，而不是按新奇程度选择。只有当 durable execution、graph checkpoint 或 approval gate 产生可衡量价值时才使用。
-- worktree isolation、local-main-first publication、OpenSpec archive 和 checker-backed safety rules 是一人平台团队的 operating-system 机制。
-- product lifecycle docs 应指导决策，而不是制造 paperwork。最小充分文档集由不确定性、风险、影响和可逆性决定。
-- 源库经验只有被翻译成仓库特定 policy、template、checker 或 OpenSpec spec 语言后，才成为平台事实。
+fresh extraction 汇总显示，以下来源最集中地支撑架构层判断：
 
-## 下游项目解释
+| 来源 | 格式 | 覆盖 | 在这里的重要性 |
+| --- | --- | --- | --- |
+| `Designing Data-Intensive Applications.pdf` | PDF | 613 页 | 全语料中架构信号最强，支撑状态、数据、可靠性与集成推理 |
+| `Secure by Design.pdf` | PDF | 400 页 | 提供安全不变量与 secure-by-default 生命周期约束 |
+| `Secure by Design.epub` | EPUB | 31 个 spine item | 作为同主题 EPUB 侧的 spine 级复核 |
+| `Clean Architecture.pdf` | PDF | 429 页 | 支撑边界与依赖方向纪律 |
+| `Clean Architecture - 架构整洁之道.pdf` | PDF | 380 页 | 同一架构主题的中文对照来源 |
+| `Team Topologies.epub` | EPUB | 29 个 spine item | 支撑 human/agent operating design 的认知负载与交互模式映射 |
 
-对后续消费平台的项目来说：
+### 交付密度最高的 PMP 来源
 
-- 平台提供可复用机制；下游项目拥有自己的商业模型、客户证据、产品指标、架构决策、发布状态和学习循环。
-- 下游项目可以用本综合判断需要哪些生命周期文档，但不能复制平台事实或 durable state。
-- 如果下游经验足够通用，先记录为 upstream feedback，再通过平台 OpenSpec change 提升。
+PMP 家族为显式交付与治理覆盖提供了主要证据：
+
+| 来源 | 格式 | 覆盖 | 在这里的重要性 |
+| --- | --- | --- | --- |
+| `PMBOK® Guide 8th Edition .pdf` | PDF | 401 页 | 交付信号最高，适合支撑当前 PMI 生命周期重述 |
+| `Process groups _ a practice guide.pdf` | PDF | 390 页 | 发起/规划/执行/监控/收尾叠加层的规范来源 |
+| `过程组_实践指南(ProcessGroupsPracticeGuide) .pdf` | PDF | 409 页 | 过程组中文对照来源，治理计数也很强 |
+| `The Standard for Program Management - Fifth Edition.epub` | EPUB | 16 个 spine item | 支撑项目集级排序与收益实现 |
+| `项目管理知识体系 第七版 (PMBOK® 体系) 指南.pdf` | PDF | 369 页 | 支撑 PMBOK 7 绩效域的中文覆盖 |
+| `Project Management Offices  a Practice Guide.epub` | EPUB | 42 个 spine item | PMO / 组织信号最强，适合治理 operating model 综合 |
+
+## 仓库解释
+
+1. 两份 Markdown 架构笔记提供明确目标清单，生命周期裁剪时应继续把它们当作计数权威来源。
+2. Business Management 书籍提供有意控制范围、持续发现、架构边界、交付 appetite 与一人公司机制背后的经营原理。
+3. PMP 标准提供执行纪律、治理词汇、tailoring 规则与收尾要求，但不替代产品判断或架构判断。
+4. 仓库应继续用计数、标题与来源家族映射作为证据面，而不是把长段源文复制到跟踪文档中。
+5. 未来生命周期文档如果提到架构清单、PMO 叠加层或 tailoring 逻辑，应先区分来源家族：精确计数看本地 Markdown，经营原则看 Business Management，交付治理看 PMP。
+
+## 生命周期含义
+
+对于 `D:/PythonProject_langgraph`，fresh-read 证据支持一种分层模型：
+
+- **平台架构与 operating-system 真相** 来自两份本地架构笔记，以及 Business Management 中关于架构、发现、治理和有意保持小规模的来源。
+- **执行纪律与交付控制** 来自 PMP 标准与 PMBOK 8 时代解读笔记。
+- **仓库跟踪文档** 应继续只保留综合后的源依据，不保留原始提取文本。

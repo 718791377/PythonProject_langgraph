@@ -7,7 +7,46 @@ doc_class: governance
 status: draft
 ---
 
-# 白皮书：个人开发者可长期维护的生产级持久化团队
+# Research Note: Solo-Maintainable Production-Grade Persistent Teams
+
+## 0. 文档身份、关系与合并规则
+
+本文有意不等同于平台白皮书，虽然主题重叠。
+
+- 研究稿：保留更严格的能力模型、官方结论与工程推导的区分，以及长期运行持久化团队系统的证据基础。
+- 白皮书：保留 Codex CLI 平台叙事、平台边界和为什么现在需要这个方向。
+
+两份文档同时存在的原因：
+
+- 白皮书 = 叙事优先、面向决策。
+- 研究稿 = 能力优先、面向治理。
+- 深层能力清单留在本文中，白皮书才能保持简洁。
+
+默认合并规则：
+
+1. 只要两份文件服务不同读者或不同生命周期层，就保持分开。
+2. 当平台故事、边界或范式变化时，更新白皮书。
+3. 当生产级判据、证据基础或运行时能力分解变化时，更新本文。
+4. 只有当其中一份文件变成另一份的无功能重复时才合并；当前不满足该条件。
+
+## 0.1 从 10 层研究模型桥接到仓库 12 层生命周期
+
+本文使用 10 层模型，因为它研究持久化团队 runtime 的最低生产能力。仓库生命周期使用 12 层，因为产品与治理工作还必须覆盖叙事、市场、增长、运营和复盘学习。
+
+| 10 层研究模型 | 主要落地到 12 层生命周期的哪些区域 | 原因 |
+| --- | --- | --- |
+| 1. 持久化内核 | 技术、执行、运营 | 恢复语义必须被设计、执行和运营 |
+| 2. 交互与执行 | 产品、技术、执行 | 命令与任务执行把用户意图连接到实现 |
+| 3. 团队编排 | 组织、执行、运营 | 角色 ownership 与介入规则是运营问题，不只是技术问题 |
+| 4. 长期记忆 | 技术、运营、复盘 | 记忆需要存储策略、运行策略和学习反馈 |
+| 5. 上下文增强 | 技术、指标、运营 | 检索质量依赖设计、度量和运行预算 |
+| 6. 向量数据库与检索存储 | 技术、运营 | 存储、租户隔离、生命周期和恢复策略属于基础设施问题 |
+| 7. 质量保障 | 技术、执行、运营 | 运行时验证与 gate 位于交付和生产中 |
+| 8. 评测与回归 | 指标、执行、复盘 | 评测需要可度量基线和发布后学习 |
+| 9. 安全与持久化加固 | 技术、组织、运营 | 安全是架构、权限和运行纪律的组合 |
+| 10. 本地 GUI 控制中心 | 产品、技术、运营 | 控制面同时是用户表面和生产表面 |
+
+12 层生命周期还增加了本文不直接承担的四个主干：认知叙事、商业、市场和增长。参见 `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md`。数量权威见 `docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`；PMI 交付和裁剪权威见 `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md`。
 
 ## 1. 摘要
 
@@ -33,7 +72,7 @@ status: draft
 - 有可演进的版本与回归机制
 - 有足够简单且足够安全的本地控制中心
 
-这份白皮书在上一版研究稿的基础上，重点补充并深化了以下方向：
+与上一版相比，本文加深以下方向：
 
 - Agent 状态持久化
 - 任务流持久化
@@ -211,27 +250,27 @@ Agent 状态持久化回答的是：
 
 #### 7.1.3 官方实现差异
 
-- `LangGraph` 直接把 agent / graph state 建模为 checkpoint；每个 super-step 保存 `StateSnapshot`，用 `thread_id` 组织。这也是人类中断、记忆、time travel 和容错执行的基础。  
+- `LangGraph` 直接把 agent / graph state 建模为 checkpoint；每个 super-step 保存 `StateSnapshot`，用 `thread_id` 组织。这也是人类中断、记忆、time travel 和容错执行的基础。
   来源：
   <https://docs.langchain.com/oss/python/langgraph/persistence>
   <https://docs.langchain.com/oss/python/langgraph/human-in-the-loop>
 
-- `Temporal` 不把 worker 内存当真相源。真实状态由 append-only `Event History` 表达，worker 崩溃后可由同一或另一 worker 继续执行。  
+- `Temporal` 不把 worker 内存当真相源。真实状态由 append-only `Event History` 表达，worker 崩溃后可由同一或另一 worker 继续执行。
   来源：
   <https://docs.temporal.io/encyclopedia/event-history>
   <https://docs.temporal.io/workers>
 
-- `Azure Durable Functions` 由运行时负责状态、检查点、重试和恢复；存储后端负责 orchestration history、entity state 和内部消息。  
+- `Azure Durable Functions` 由运行时负责状态、检查点、重试和恢复；存储后端负责 orchestration history、entity state 和内部消息。
   来源：
   <https://learn.microsoft.com/en-us/azure/azure-functions/durable-functions/durable-functions-overview>
   <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-storage-providers>
 
-- `Prefect` 更偏运行观测与编排控制，flow run / task run 的 state lifecycle 是持久化的。  
+- `Prefect` 更偏运行观测与编排控制，flow run / task run 的 state lifecycle 是持久化的。
   来源：
   <https://docs.prefect.io/v3/concepts/states>
   <https://docs.prefect.io/v3/concepts/flows>
 
-- `AWS Step Functions` 的 Standard Workflow 在状态转换之间持久化执行状态，并保留完整 execution history。  
+- `AWS Step Functions` 的 Standard Workflow 在状态转换之间持久化执行状态，并保留完整 execution history。
   来源：
   <https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html>
 
@@ -269,22 +308,22 @@ Agent 状态持久化回答的是：
 
 #### 7.2.3 官方实现差异
 
-- `Temporal` 和 `Azure Durable` 的核心是事件溯源：恢复时靠 replay 重建局部状态，而不是只看最终结果。  
+- `Temporal` 和 `Azure Durable` 的核心是事件溯源：恢复时靠 replay 重建局部状态，而不是只看最终结果。
   来源：
   <https://docs.temporal.io/encyclopedia/event-history>
   <https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-orchestrations>
   <https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-code-constraints>
 
-- `LangGraph` 保存的是每个 super-step 的检查点；checkpoint 之前的步骤跳过，之后的节点会重新执行。官方特别提醒：LLM 调用、API 请求和 interrupt 在 replay 时会再次触发，所以副作用必须包进 tasks。  
+- `LangGraph` 保存的是每个 super-step 的检查点；checkpoint 之前的步骤跳过，之后的节点会重新执行。官方特别提醒：LLM 调用、API 请求和 interrupt 在 replay 时会再次触发，所以副作用必须包进 tasks。
   来源：
   <https://docs.langchain.com/oss/python/langgraph/persistence>
   <https://docs.langchain.com/oss/python/langgraph/durable-execution>
 
-- `Step Functions` 的 Standard redrive 会从失败步继续，保留成功步骤结果和历史，不重跑已成功步骤。  
+- `Step Functions` 的 Standard redrive 会从失败步继续，保留成功步骤结果和历史，不重跑已成功步骤。
   来源：
   <https://docs.aws.amazon.com/step-functions/latest/dg/redrive-executions.html>
 
-- `Prefect` 更强调 flow run / task run state 与调度状态转换历史，而不是显式事件溯源。  
+- `Prefect` 更强调 flow run / task run state 与调度状态转换历史，而不是显式事件溯源。
   来源：
   <https://docs.prefect.io/v3/concepts/states>
   <https://docs.prefect.io/v3/concepts/flows>
@@ -314,25 +353,25 @@ Agent 状态持久化回答的是：
 
 #### 7.3.2 官方实现差异
 
-- `Temporal` 用 `Signal`、`Update`、`Query` 把工作流视为可接收消息的有状态服务。  
+- `Temporal` 用 `Signal`、`Update`、`Query` 把工作流视为可接收消息的有状态服务。
   来源：
   <https://docs.temporal.io/encyclopedia/workflow-message-passing>
 
-- `LangGraph` 的 `interrupt()` 会暂停图执行并持久化状态，之后通过 `Command(resume=...)` 恢复；HITL middleware 把人工决策规范为 `approve / edit / reject`。  
+- `LangGraph` 的 `interrupt()` 会暂停图执行并持久化状态，之后通过 `Command(resume=...)` 恢复；HITL middleware 把人工决策规范为 `approve / edit / reject`。
   来源：
   <https://docs.langchain.com/oss/python/langgraph/human-in-the-loop>
   <https://docs.langchain.com/oss/javascript/langgraph/interrupts>
   <https://docs.langchain.com/oss/python/langchain/human-in-the-loop>
 
-- `Azure Durable` 的 `WaitForExternalEvent` 可无限期等待外部输入；事件到来后实例自动唤醒。  
+- `Azure Durable` 的 `WaitForExternalEvent` 可无限期等待外部输入；事件到来后实例自动唤醒。
   来源：
   <https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-external-events>
 
-- `Step Functions` 的 `.waitForTaskToken` 支持 human approval 和 third-party callback。  
+- `Step Functions` 的 `.waitForTaskToken` 支持 human approval 和 third-party callback。
   来源：
   <https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html>
 
-- `Prefect` 区分 `Paused` 和 `Suspended` 两种人工停顿语义。  
+- `Prefect` 区分 `Paused` 和 `Suspended` 两种人工停顿语义。
   来源：
   <https://docs.prefect.io/v3/concepts/states>
   <https://docs.prefect.io/v3/api-ref/python/prefect-flow_runs>
@@ -361,7 +400,7 @@ Agent 状态持久化回答的是：
   - Task Queue 动态创建
   - worker 同步轮询
   - Workflow / Activity task 会持久化留在队列里
-  - 队列不是强全局 FIFO  
+  - 队列不是强全局 FIFO
   来源：
   <https://docs.temporal.io/task-queue>
   <https://docs.temporal.io/workers>
@@ -369,7 +408,7 @@ Agent 状态持久化回答的是：
 
 - `Azure Durable` - start、terminate、suspend 本身也是排队操作
   - start、terminate、suspend 本身也是排队操作
-  - Azure Storage 后端使用 queues、tables、blobs / leases  
+  - Azure Storage 后端使用 queues、tables、blobs / leases
   来源：
   <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-instance-management>
   <https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-storage-providers>
@@ -378,7 +417,7 @@ Agent 状态持久化回答的是：
   - Standard = exactly-once
   - Async Express = at-least-once
   - Sync Express = at-most-once
-  - Activity 模式最像显式队列  
+  - Activity 模式最像显式队列
   来源：
   <https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html>
   <https://docs.aws.amazon.com/step-functions/latest/dg/concepts-activities.html>
@@ -386,14 +425,14 @@ Agent 状态持久化回答的是：
 
 - `Prefect` - worker 默认轮询 work pool
   - worker 默认轮询 work pool
-  - work queue 支持优先级和并发限制  
+  - work queue 支持优先级和并发限制
   来源：
   <https://docs.prefect.io/v3/concepts/workers>
   <https://docs.prefect.io/v3/concepts/work-pools>
 
 - `LangGraph` - 官方重点不在任务队列，而在 `thread + super-step + checkpoint + replay`
   - 官方重点不在任务队列，而在 `thread + super-step + checkpoint + replay`
-  - 队列、优先级、分区语义不是其核心官方能力  
+  - 队列、优先级、分区语义不是其核心官方能力
   来源：
   <https://docs.langchain.com/oss/python/langgraph/persistence>
   <https://docs.langchain.com/oss/python/langgraph/durable-execution>
@@ -485,15 +524,15 @@ Agent 状态持久化回答的是：
 
 代表性来源：
 
-- OpenTelemetry 总览与 signals  
+- OpenTelemetry 总览与 signals
   <https://opentelemetry.io/docs/>
   <https://opentelemetry.io/docs/concepts/signals/>
 
-- AWS Step Functions monitoring 与 tracing  
+- AWS Step Functions monitoring 与 tracing
   <https://docs.aws.amazon.com/step-functions/latest/dg/monitoring-logging.html>
   <https://docs.aws.amazon.com/step-functions/latest/dg/concepts-xray-tracing.html>
 
-- LangSmith observability / evaluation  
+- LangSmith observability / evaluation
   <https://docs.langchain.com/langsmith>
   <https://docs.langchain.com/langsmith/evaluation>
 
@@ -540,14 +579,14 @@ Agent 状态持久化回答的是：
 
 代表性来源：
 
-- Electron Security Checklist  
+- Electron Security Checklist
   <https://www.electronjs.org/docs/latest/tutorial/security>
 
-- OpenTelemetry Collector config / hosting security best practices  
+- OpenTelemetry Collector config / hosting security best practices
   <https://opentelemetry.io/docs/security/config-best-practices/>
   <https://opentelemetry.io/docs/security/hosting-best-practices/>
 
-- OWASP HTML5 Security Cheat Sheet  
+- OWASP HTML5 Security Cheat Sheet
   <https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html>
 
 归纳：
@@ -570,9 +609,9 @@ Agent 状态持久化回答的是：
 
 代表性来源：
 
-- LangGraph add memory  
+- LangGraph add memory
   <https://docs.langchain.com/oss/python/langgraph/add-memory>
-- LangGraph / LangChain memory concepts  
+- LangGraph / LangChain memory concepts
   <https://docs.langchain.com/oss/python/concepts/memory>
 
 归纳：
@@ -600,7 +639,7 @@ LangGraph / LangChain 的长期记忆模型强调：
 
 - 线程级状态不等于长期记忆
 - 长期记忆适合存事实、规则、经验
-- 长期记忆可以放到数据库后端，不建议只停留在内存实现  
+- 长期记忆可以放到数据库后端，不建议只停留在内存实现
   来源：
   <https://docs.langchain.com/oss/python/langchain/long-term-memory>
   <https://docs.langchain.com/oss/python/langgraph/add-memory>
@@ -620,16 +659,16 @@ LangGraph / LangChain 的长期记忆模型强调：
 
 官方证据：
 
-- LangChain 官方明确把检索增强的根因归结为“上下文窗口有限、知识静态”  
+- LangChain 官方明确把检索增强的根因归结为“上下文窗口有限、知识静态”
   来源：
   <https://docs.langchain.com/oss/python/langchain/retrieval>
 
-- OpenAI `file_search` 支持语义检索、关键词检索、按文件属性过滤与搜索结果注入  
+- OpenAI `file_search` 支持语义检索、关键词检索、按文件属性过滤与搜索结果注入
   来源：
   <https://developers.openai.com/api/docs/guides/tools-file-search>
   <https://developers.openai.com/api/reference/resources/vector_stores/methods/search>
 
-- LangGraph 对上下文预算管理给出 `trim`、`delete`、`summary`、checkpoint 管理等手段  
+- LangGraph 对上下文预算管理给出 `trim`、`delete`、`summary`、checkpoint 管理等手段
   来源：
   <https://docs.langchain.com/oss/python/langgraph/add-memory>
 
@@ -652,14 +691,14 @@ LangChain 官方把 RAG 方案至少分成：
 
 代表性来源：
 
-- LangChain retrieval  
+- LangChain retrieval
   <https://docs.langchain.com/oss/python/langchain/retrieval>
 
-- LangChain 文档切分器  
+- LangChain 文档切分器
   <https://docs.langchain.com/oss/python/integrations/splitters/index>
   <https://docs.langchain.com/oss/python/integrations/splitters/recursive_text_splitter>
 
-- OpenAI 托管向量检索  
+- OpenAI 托管向量检索
   <https://platform.openai.com/docs/api-reference/vector-stores/search>
 
 归纳的标准 RAG pipeline 至少应包含：
@@ -689,7 +728,7 @@ LangChain 官方把 RAG 方案至少分成：
 #### Pinecone
 
 - namespace 是首选隔离单元
-- metadata filter 是一等能力  
+- metadata filter 是一等能力
   来源：
   <https://docs.pinecone.io/guides/index-data/indexing-overview>
   <https://docs.pinecone.io/guides/search/search-overview>
@@ -700,7 +739,7 @@ LangChain 官方把 RAG 方案至少分成：
 
 - 强调 hybrid search
 - 过滤是 pre-filter
-- 多租户按 tenant 分 shard  
+- 多租户按 tenant 分 shard
   来源：
   <https://docs.weaviate.io/weaviate/concepts/search/hybrid-search>
   <https://docs.weaviate.io/weaviate/concepts/filtering>
@@ -711,7 +750,7 @@ LangChain 官方把 RAG 方案至少分成：
 
 - 核心模型是 `vector + payload(JSON)`
 - 过滤支持布尔组合与嵌套对象
-- 多租户推荐单 collection + payload / shard  
+- 多租户推荐单 collection + payload / shard
   来源：
   <https://qdrant.tech/documentation/concepts/payload/>
   <https://qdrant.tech/documentation/concepts/filtering/>
@@ -722,7 +761,7 @@ LangChain 官方把 RAG 方案至少分成：
 #### Milvus
 
 - partition key 可用于检索优化和多租户实现
-- IVF_PQ 等量化索引可以节省内存  
+- IVF_PQ 等量化索引可以节省内存
   来源：
   <https://milvus.io/docs/v2.4.x/use-partition-key.md>
   <https://milvus.io/docs/ivf-pq.md>
@@ -732,7 +771,7 @@ LangChain 官方把 RAG 方案至少分成：
 
 - 适合做托管式 file search / vector search
 - 支持过期策略 `expires_after`
-- 有默认 auto chunking 路径  
+- 有默认 auto chunking 路径
   来源：
   <https://developers.openai.com/api/docs/guides/tools-file-search>
   <https://platform.openai.com/docs/api-reference/vector-stores/search>
@@ -806,7 +845,7 @@ LangChain 官方把 RAG 方案至少分成：
 
 代表性来源：
 
-- LangSmith Evaluation  
+- LangSmith Evaluation
   <https://docs.langchain.com/langsmith/evaluation>
   <https://docs.langchain.com/langsmith/evaluation-concepts>
   <https://docs.langchain.com/langsmith/evaluate-llm-application>
@@ -878,19 +917,19 @@ LangChain 官方把 RAG 方案至少分成：
 
 代表性来源：
 
-- OWASP Authorization / Logging / Secrets / HTML5 Security Cheat Sheets  
+- OWASP Authorization / Logging / Secrets / HTML5 Security Cheat Sheets
   <https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html>
   <https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html>
   <https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html>
   <https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html>
 
-- OWASP ASVS / WSTG / Top 10  
+- OWASP ASVS / WSTG / Top 10
   <https://owasp.org/www-project-application-security-verification-standard/>
   <https://owasp.org/www-project-web-security-testing-guide/>
   <https://owasp.org/Top10/2021/A01_2021-Broken_Access_Control/>
   <https://owasp.org/Top10/2021/A09_2021-Security_Logging_and_Monitoring_Failures/>
 
-- NIST / CISA / Microsoft / OpenTelemetry  
+- NIST / CISA / Microsoft / OpenTelemetry
   <https://csrc.nist.gov/pubs/sp/800/218/final>
   <https://csrc.nist.gov/pubs/sp/800/92/final>
   <https://csrc.nist.gov/pubs/sp/800/60/v1/r1/final>

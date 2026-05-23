@@ -15,6 +15,15 @@ status: draft
 
 本文替代原独立文件 `docs_bilingual/implementation_plans/codex_business_capability_profiles.zh-CN.md`；该文件原本是能力画像查询表，现在合并到本文附录 A。能力画像查询表是把具体 workload 映射到抽象 capability profile 的表格。
 
+## 白皮书、研究正本与 10 层到 12 层桥接
+
+本文沿用刷新后的生命周期正本分工：
+
+- 白皮书：`docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` 是简洁战略叙事，负责说明平台为什么存在、追求什么目标态，以及 12 层产品/商业生命周期如何框定平台方向。
+- 治理研究正本：`docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md` 是证据密集的生产能力研究文档，负责保存生产能力、治理依据和 10 层运行时能力核心。
+- 合并策略：两份文档默认不合并。白皮书必须保持可读的方向性，研究正本保留详细证据、备选方案和运行约束。
+- 桥接规则：10 层核心是执行能力分解；12 层主干是市场/产品/商业生命周期架构。MRD 需求必须使用 12 层主干做市场可追溯性，只在需求需要 runtime capability ownership 时引用 10 层核心。
+
 ## 目标用户与项目类型
 
 - solo maintainer：单人维护者，是跨多个仓库使用 `Codex CLI` 的主要操作者。
@@ -47,15 +56,16 @@ status: draft
 - 48 个核心文档是严肃平台的最大文档面，不是每个变更的默认要求。
 - 12 个受治理 Agent 是带读/写/评审边界的能力画像，不是自治业务决策者。
 
-对于下游一人公司工作，MRD 属于下游仓库。该 MRD 拥有本地客户证据、市场分层、定价信号、渠道证据、财务假设、产品承诺与支持预期。
+对于下游一人公司工作，MRD 属于下游仓库。该 MRD 拥有本地客户证据、市场分层、定价信号、渠道证据、财务假设、产品承诺与支持预期。下游数量参考见 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`。
 
 ## 裁剪需求
 
-市场需求不得强制每个项目创建最大文档栈。使用 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 选择最小充分架构深度。
+市场需求不得强制每个项目创建最大文档栈。使用 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 选择最小充分架构深度。使用 `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 作为 PMI 参考图：PMBOK 第8版负责价值交付和裁剪框架，PMBOK 第7版和第6版补充原则与过程词汇，Process Groups 提供交付门，Agile Practice Guide 覆盖适应式/混合工作，项目集管理覆盖相关倡议，项目组合管理覆盖价值/容量取舍，PMO 实践指南覆盖治理服务。
 
 - 当需求影响可复用编排、原生 subagent 路由、`native_omx`、LangGraph、worktree safety、OpenSpec governance、user-level launcher policy、skill/profile governance、local-main-first publication、shared templates、durable state、release safety 或跨项目采用时，必须使用完整 Codex 平台范围。
 - 只有私有 spike、早期想法、本地学习或低风险内部工具，且没有外部用户、金钱、信任边界、敏感数据、共享 runtime entrypoints 或发布承诺时，才允许整个项目轻量。
-- 当较大工作中的有边界部分低风险、可逆，并有明确升级触发条件时，可以采用阶段局部或模块级轻量。
+- 当较大工作中的某个 discovery、metrics、growth 或 retrospective 阶段低风险、可逆，并有明确扩展触发条件时，可以采用阶段局部轻量。
+- 当有边界的文档、研究、helper、prototype 或 spike 模块不改变 runtime entrypoints、durable state、secrets、CI gates、release gates 或下游项目依赖时，可以采用模块级轻量。
 - 当市场或产品不确定性高，但最终交付可能影响用户、信任、收入、合规、runtime behavior 或 release safety 时，必须采用混合范围。
 
 ## 市场需求的过程组式证据

@@ -1,130 +1,113 @@
 # Business Management Source Library Synthesis
 
-This document summarizes repository-specific lessons from the ignored local source directory `D:/PythonProject_langgraph/Business Management`. It is a synthesis layer for `docs_bilingual/product_lifecycle/`; it is not a substitute for the source books and does not reproduce their text.
+This document summarizes repository-relevant lessons from the fresh extraction run over the ignored local source roots `D:/PythonProject_langgraph/Business Management` and `D:/PythonProject_langgraph/PMP`. It is a synthesis layer for `docs_bilingual/product_lifecycle/`. It does not replace the source books, and it does not reproduce long copyrighted passages.
 
-## Reading Coverage
+## Fresh Extraction Scope
 
-The source directory was read with page-level or spine-item-level extraction before this synthesis was written.
+This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/` generated on 2026-05-23.
 
-- PDF sources were opened with PyMuPDF page iteration. Page counts and low-text pages were recorded because covers, blank pages, scanned figures, and image-heavy pages can have little extractable text.
-- EPUB sources were opened through their OPF spine order and each HTML/XHTML item was extracted.
-- Markdown architecture notes were read as UTF-8 text.
-- Temporary extraction artifacts stay under `.tmp/` and are ignored by Git.
+- Manifest: `fresh_source_manifest.json`
+- Per-unit extraction log: `fresh_source_items.jsonl`
+- Compact rollup: `fresh_source_synthesis.json`
+- Extractor entrypoint: `fresh_extract_sources.py`
 
-| Source file | Format | Coverage | Lifecycle role |
+All 54 recorded sources completed with status `ok`.
+
+## Coverage Inventory
+
+### Aggregate coverage
+
+| Family | Sources | PDFs / pages | EPUBs / spine items | Markdown / full-text files | Total read units | Extracted text chars | Blank units | Low-text units |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Business Management | 31 | 22 / 6,253 | 7 / 305 | 2 / 2 | 6,560 | 14,702,314 | 352 | 511 |
+| PMP | 23 | 9 / 3,035 | 2 / 58 | 12 / 12 | 3,105 | 4,341,068 | 392 | 752 |
+| **Total** | **54** | **31 / 9,288** | **9 / 363** | **14 / 14** | **9,665** | **19,043,382** | **744** | **1,263** |
+
+### Intake method by format
+
+| Format | Recorded count | Unit of coverage | Extraction method | Practical interpretation |
+| --- | ---: | --- | --- | --- |
+| PDF | 31 files | Page | PyMuPDF `get_text("text")` for every page | Suitable for page-count evidence, low-text-page tracking, and scanned/image-heavy caveats |
+| EPUB | 9 files | OPF spine item | `ebooklib` spine iteration plus HTML/XHTML text extraction | Suitable for chapter/spine coverage without flattening the original reading order |
+| Markdown | 14 files | Full file | Full UTF-8 text read | Suitable for exact architecture inventories, headings, and repository-local terminology |
+
+### Coverage caveats worth preserving
+
+- Low-text review is part of coverage accounting, not proof of missing reading. Many low-text units are covers, blanks, diagrams, scans, or image-dominant pages.
+- The highest low-text concentration sits in a few scanned or image-heavy PMP PDFs, especially `PMBOK 8th Edition.pdf` (401 pages, 372 low-text), `PMBOK 6 Chinese edition.pdf` (812 pages, 293 low-text), `Agile Practice Guide Chinese edition.pdf` (184 pages, 183 low-text), and `Portfolio Management Chinese edition.pdf` (142 pages, 141 low-text).
+- Because this document is a synthesis artifact, it records counts, methods, and interpretations rather than reproducing raw extraction text.
+
+## Target Architecture Inventory Evidence
+
+The two local Markdown architecture notes are the controlling source for the requested target inventories because they were read as full UTF-8 files and preserve explicit section headings.
+
+| Target | Controlling source | Fresh-read evidence | Inventory carried into lifecycle docs |
 | --- | --- | --- | --- |
-| `Accelerate.pdf` | PDF | 315 pages | Delivery performance, architecture capability, management capability, and evidence-based software improvement |
-| `Clean Architecture.pdf` | PDF | 429 pages | Technical boundaries, dependency direction, component principles, and architecture value |
-| `Clean Architecture - Chinese edition.pdf` | PDF | 380 pages | Chinese companion for clean architecture concepts |
-| `Company of One.epub` | EPUB | 44 spine items | Intentional smallness, scalable solo systems, trust, tiny launches, and relationship depth |
-| `Company of One.pdf` | PDF | 209 pages | Duplicate PDF companion for the same one-person-company operating-system theme |
-| `Continuous Discovery Habits.pdf` | PDF | 197 pages | Continuous product discovery, interview cadence, opportunity mapping, and assumption testing |
-| `Crossing the Chasm, 3rd Edition.pdf` | PDF | 288 pages | Beachhead market choice, whole-product thinking, and adoption-segment risk |
-| `Deploy Empathy.epub` | EPUB | 79 spine items | Customer interviewing, research loops, past-behavior questions, and feedback analysis |
-| `Designing Data-Intensive Applications.pdf` | PDF | 613 pages | Reliability, scalability, maintainability, data-model, storage, distributed-data, and derived-data architecture |
-| `Escaping the build trap.pdf` | PDF | 199 pages | Outcome-focused product management, product strategy, product kata, and avoiding output obsession |
-| `Good strategy, bad strategy.pdf` | PDF | 144 pages | Diagnosis, guiding policy, coherent action, leverage, and proximate objectives |
-| `High Output Management.pdf` | PDF | 239 pages | Managerial leverage, operating cadence, meetings, one-on-ones, and output thinking |
-| `INSPIRED.pdf` | PDF | 370 pages | Product discovery, empowered product teams, value/usability/feasibility/viability, and product risk |
-| `Lean Analytics.pdf` | PDF | 439 pages | One metric that matters, stage metrics, threshold lines, and analytics discipline |
-| `Master60 - Working Backwards summary.pdf` | PDF | 38 pages | PR/FAQ, customer-backward mechanisms, and narrative decision practice |
-| `Measure What Matters.pdf` | PDF | 306 pages | OKRs, focus, alignment, tracking, stretching, and CFR-style operating rhythm |
-| `Obviously Awesome.pdf` | PDF | 140 pages | Positioning, competitive alternatives, value themes, and market frame selection |
-| `Product Operations.epub` | EPUB | 65 spine items | Product data, customer and market insights, operating model, process, and product-ops scaling |
-| `Product Operations.pdf` | PDF | 346 pages | Duplicate PDF companion for product operations |
-| `Scaling People.epub` | EPUB | 24 spine items | Operating principles, goal/resource planning, team development, feedback mechanisms, and metronome |
-| `Secure by Design.epub` | EPUB | 31 spine items | Security as a design concern, domain primitives, invariants, secure pipeline, and code-review guidance |
-| `Secure by Design.pdf` | PDF | 400 pages | Duplicate PDF companion for secure-by-design guidance |
-| `Shape Up.pdf` | PDF | 133 pages | Appetite, shaping, betting, scope maps, circuit breakers, and shipping risk control |
-| `Team Topologies.epub` | EPUB | 29 spine items | Cognitive load, team APIs, platform boundaries, interaction modes, and Conway-aware design |
-| `The E-Myth Revisited.pdf` | PDF | 286 pages | Business-as-system thinking, role separation, process prototype, and SOP discipline |
-| `The Lean Startup.pdf` | PDF | 150 pages | Build-measure-learn loops, MVPs, validated learning, innovation accounting, and pivot/persevere decisions |
-| `The Staff Engineer's Path.pdf` | PDF | 359 pages | Technical leadership, scope shaping, influence, execution strategy, and senior engineering judgment |
-| `Traction.epub` | EPUB | 33 spine items | Channel testing, traction goals, critical path, and growth-channel selection |
-| `Working Backwards.pdf` | PDF | 273 pages | PR/FAQ, narrative planning, mechanisms, single-threaded ownership, and metric discipline |
-| `Architecture note 1: Codex CLI personal durable team.md` | Markdown | 167 lines | Codex durable-team architecture source note |
-| `Architecture note 2: one-person company operating system.md` | Markdown | 448 lines | One-person-company operating-system source note |
+| Codex CLI personal production durable team | `Architecture note 1 (Codex CLI personal production durable team).md` | 10,424 chars; headings include `1 trunk-layer matrix`, `2 virtual-department matrix`, `3 matrix of 24 responsibility domains`, `4 matrix of 18 cross-cutting modules`, `5 system of 48 core documents`, `6 twelve governed AI agents` | 12 trunk layers, 4 virtual departments, 24 responsibility domains, 18 cross-cutting modules, 48 core documents, 12 governed AI agents, 12 recommended books |
+| Personal production one-person company | `Architecture note 2 (personal production one-person company).md` | 18,544 chars; headings include `2 twelve-layer trunk`, `3 five virtual departments`, `4 thirty responsibility domains`, `5 twenty cross-cutting modules`, `6 system of 60 core documents`, `7 fifteen governed AI agents`, `11 minimum runnable MVP` | 12 trunk layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, 12 minimal startup documents |
 
-## Integrated Source Coverage And Reading Method
+These two notes define the repository-specific inventory counts. The book and PMP sources explain how to operate those inventories, tailor them, and keep them lightweight.
 
-This refresh used the ignored local extraction evidence under `.local/reference_extraction/` only as a private reading aid. The tracked repository records coverage and governance synthesis; it does not commit raw book text, extracted pages, OCR output, or long copyrighted excerpts.
+## Source-Family Mapping
 
-| Intake class | Coverage recorded | Reading method | Repository use |
-| --- | ---: | --- | --- |
-| Business Management and PMP PDFs | 31 PDFs / 9,288 pages | Per-page text extraction, page metrics, and low-text-page review | Source-backed lifecycle, architecture, delivery, risk, governance, and operations synthesis |
-| Business Management and PMP EPUBs | 9 EPUBs / 363 spine items | OPF spine order, one text pass per spine item | Source-backed operating-system, team-topology, secure-design, product-ops, program, and PMO synthesis |
-| Architecture and PMP Markdown notes | 14 Markdown files / 93,632 characters | Full UTF-8 text read plus heading inventory | Exact architecture inventories, PMI/AI-era commentary, and repository-specific document rules |
-| Low-text PDF pages | 1,066 pages reviewed; 0 failed; 462 still low-text after review | OCR / image-heavy-page review where extractable text was low | Covers, blank pages, diagrams, scans, or figure-heavy pages were accounted for without copying source content |
+### Business Management family -> operating model and architecture synthesis
 
-The two architecture Markdown notes are the controlling local source for the requested inventory counts. They define the Codex CLI durable-team target and the one-person-company operating-system target. Book sources then inform the operating principles behind those inventories.
-
-## Target Architecture Inventory Synthesis
-
-| Target | Fixed inventory | Interpretation for this repository |
+| Source cluster | Representative fresh-read sources | Main lifecycle contribution |
 | --- | --- | --- |
-| Codex CLI personal production durable team | 12 trunk layers, 4 virtual departments, 24 responsibility domains, 18 cross-cutting modules, 48 core documents, 12 governed AI agents, 12 recommended books | Platform-building model for `D:/PythonProject_langgraph`; it governs Codex orchestration, user-level wrappers, worktree safety, OpenSpec, local-main-first publication, and reusable project templates |
-| Personal production one-person company | 12 trunk layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, 12 minimal startup documents | Downstream business operating-system model; it governs company strategy, customer evidence, product, revenue, operations, finance, risk, and learning without moving repo-local truth into the Codex platform repository |
+| Strategy, positioning, and business design | `Good strategy, bad strategy.pdf`, `Company of One` (PDF + EPUB), `The E-Myth Revisited.pdf`, `Working Backwards.pdf`, `Obviously Awesome.pdf`, `Traction.epub` | Diagnosis, guiding policy, intentional smallness, positioning, channel choice, PR/FAQ-style thinking, and operating-system design |
+| Product discovery and product operations | `INSPIRED.pdf`, `Continuous Discovery Habits.pdf`, `Deploy Empathy.epub`, `Escaping the build trap.pdf`, `Product Operations` (PDF + EPUB), `The Lean Startup.pdf`, `Crossing the Chasm, 3rd Edition.pdf` | Opportunity discovery, interview loops, product risk framing, product-ops enablement, MVP discipline, and adoption-segment sequencing |
+| Metrics, management cadence, and scaling | `Lean Analytics.pdf`, `Measure What Matters.pdf`, `High Output Management.pdf`, `Scaling People.epub` | OMTM and stage metrics, OKR alignment, managerial leverage, planning cadence, and scaling discipline for a one-person or agent-assisted system |
+| Architecture, technical boundaries, and delivery design | `Clean Architecture.pdf`, `Clean Architecture - Chinese edition.pdf`, `Designing Data-Intensive Applications.pdf`, `Accelerate.pdf`, `Team Topologies.epub`, `Secure by Design` (PDF + EPUB), `The Staff Engineer's Path.pdf`, `Shape Up.pdf` | Dependency direction, data and reliability concerns, team/API boundaries, secure design constraints, staff-level judgment, shaping, appetite, and delivery guardrails |
+| Repository-specific architecture inventory | `Architecture note 1 (Codex CLI personal production durable team).md`, `Architecture note 2 (personal production one-person company).md` | Exact target inventories, local terminology, and the bridge between generic management advice and repository policy |
 
-Codex virtual departments are `Strategy & Product Office`, `Engineering & Platform Office`, `Agent Governance Office`, and `Growth & Knowledge Office`. Their responsibility domains cover strategy, business model, finance, market intelligence, customer research, product strategy, PRD ownership, CLI/UX, metrics, architecture, engineering management, code quality, DevOps, toolchain, security, privacy, data governance, agent governance, agent evaluation, docs, support, trust, knowledge, and review.
+### PMP family -> delivery governance and tailoring overlay
 
-One-person-company virtual departments are `Strategy Office`, `Product & Market Office`, `Revenue & Growth Office`, `Operations Office`, and `Governance Office`. Their 30 domains cover founder strategy, operating cadence, business model, finance, risk, market intelligence, customer research, positioning, product strategy, offer, PRD, service design, analytics, growth, sales, pricing, content, brand/trust, partnerships, customer success, support, delivery, community, knowledge, automation, security/privacy, legal/compliance, data governance, IP/assets, and agent governance.
-
-## PMI Delivery Overlay
-
-The lifecycle uses PMI process groups as execution discipline, not as a replacement for product thinking:
-
-- Initiating confirms value, scope, stakeholders, authorization, and whether a full lifecycle artifact is justified.
-- Planning freezes requirements, tailoring depth, risk, validation, release, rollback, communications, and owner boundaries.
-- Executing produces the selected increment through human, native subagent, durable-team, or graph-backed work only when the launch threshold is met.
-- Monitoring and Controlling inspects metrics, risk, quality, issue state, change requests, budget, provider pacing, CI evidence, and acceptance evidence.
-- Closing archives the OpenSpec or project evidence, updates stable docs/specs, captures lessons learned, and returns reusable learning into the next lifecycle pass.
-
-
-## Cross-Source Operating Principles
-
-1. **Start from diagnosis, not activity.** Strategy work must name the real constraint, target customer, adoption barrier, and guiding policy before it becomes a roadmap or task list.
-2. **Prefer outcomes over output.** Roadmaps, OpenSpec changes, and implementation plans must connect to user value, business value, operational value, trust value, or learning value.
-3. **Keep one-person systems intentionally small.** A solo operator should favor lightweight mechanisms, stable cadence, reusable templates, and explicit non-goals over organizational theater.
-4. **Make discovery continuous.** Customer interviews, support signals, usage data, and market evidence should feed product decisions before large build commitments.
-5. **Shape work before execution.** A change needs appetite, boundaries, risks, validation evidence, and a circuit-breaker rule before broad implementation begins.
-6. **Treat architecture as long-term optionality.** Boundaries, dependency direction, data contracts, security invariants, and team or agent APIs protect future change speed.
-7. **Measure the system, not vanity.** Use North Star inputs, OKRs, stage metrics, delivery metrics, and adoption metrics that can change a decision.
-8. **Design for adoption and trust.** Positioning, beachhead choice, whole-product support, documentation, and support loops are part of product lifecycle, not afterthoughts.
-9. **Close the loop.** Retrospectives, postmortems, lessons learned, and upstream feedback must update templates, checkers, docs, or future strategy.
-
-## 0-11 / 12-Layer Lifecycle Mapping
-
-The two local architecture source notes define the current authoritative trunk as twelve layers: cognition, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, and retrospective. Any earlier compressed lifecycle wording is historical shorthand only.
-
-| Layer | Source-backed emphasis | Repository rule |
+| Source cluster | Representative fresh-read sources | Main lifecycle contribution |
 | --- | --- | --- |
-| 0 Cognitive narrative | Company-of-one purpose, platform narrative, category framing, and customer-backward story | Explain why the direction should exist before defining features or teams |
-| 1 Business | Unit economics, cost of coordination, intentional smallness, risk reduction, and operating leverage | Decide whether maintenance cost and opportunity cost are justified |
-| 2 Market and users | Interviews, discovery habits, adoption segments, positioning, and customer evidence | Identify target users and beachhead use cases before expanding scope |
-| 3 Strategy | Diagnosis, guiding policy, coherent action, product strategy, and critical path | Select a narrow win condition, strategic trade-offs, and explicit non-goals |
-| 4 Metrics | North Star metric, OKRs, OMTM, stage metrics, guardrails, and data definitions | Define the measures and thresholds that will change decisions |
-| 5 Product | PR/FAQ, product kata, opportunity mapping, product operations, MVP, and usability/value/viability/feasibility risk | Define user-visible behavior, non-goals, and acceptance evidence before building |
-| 6 Technical | Clean boundaries, data-system qualities, security invariants, component boundaries, and staff-engineer judgment | Record architecture boundaries, data contracts, trust boundaries, and rollback paths |
-| 7 Organization | Company-of-one role separation, agent governance, team APIs, cognitive load, ownership, and responsibility boundaries | Define who or which agent can read, write, decide, review, approve, and recover work |
-| 8 Execution | Shaping, appetite, betting, implementation slices, local-main-first gates, and delivery metrics | Execute in small inspectable slices with validation, rollback, and circuit-breaker evidence |
-| 9 Growth | Traction channel tests, chasm crossing, positioning, acquisition, activation, retention, and trust story | Treat channels, onboarding, adoption, and whole-product support as part of lifecycle design |
-| 10 Operations | Support, FAQ, customer success, bug triage, operating cadence, documentation, and feedback intake | Keep released work usable, supportable, measurable, and connected to user feedback |
-| 11 Retrospective | Postmortems, SOPs, monthly reviews, product-ops learning, and template/checker updates | Convert repeated lessons into durable docs, checkers, templates, or OpenSpec specs |
+| Core standards and process control | `PMBOK 8th Edition.pdf`, `PMBOK 7 Chinese edition.pdf`, `PMBOK 6 Chinese edition.pdf`, `Process groups _ a practice guide.pdf`, `Process Groups Practice Guide Chinese edition.pdf` | Process-group discipline, outcome framing, tailoring decisions, control loops, risk/change review, and closure evidence |
+| Agile, program, portfolio, and PMO overlays | `The Agile practice guide.pdf`, `The Standard for Program Management - Fifth Edition.epub`, `The Standard for Portfolio Management-Fourth Edition.pdf`, `Project Management Offices  a Practice Guide.epub` | Hybrid/agile delivery, program sequencing, portfolio prioritization, governance operating model, and PMO capability mapping |
+| PMBOK 8 / AI-era interpretation notes | 12 Markdown notes under `PMP/PMP_MD/`, plus the Joshua Parrott translation note | Repository-friendly interpretation of PMBOK 8 principles, focus areas, PMO evolution, tailoring, and AI-era project leadership |
 
-## Codex Platform Interpretation
+## Evidence-Backed Reading Highlights
 
-For `D:/PythonProject_langgraph`, the source library reinforces these platform-specific rules:
+### Architecture-heavy Business Management sources
 
-- The current main Codex session remains the accountable leader; agents and durable lanes are mechanisms, not hidden management authority.
-- `native_omx` and `langgraph` should be selected by problem shape, not by novelty. Use them when durable execution, graph checkpoints, or approval gates create measurable value.
-- Worktree isolation, local-main-first publication, OpenSpec archival, and checker-backed safety rules are operating-system mechanisms for a one-person platform team.
-- Product lifecycle docs should guide decisions, not create paperwork. The minimum sufficient document set is chosen by uncertainty, risk, impact, and reversibility.
-- A source-library lesson becomes platform truth only after it is translated into repository-specific policy, template, checker, or OpenSpec spec language.
+The fresh extraction totals show where architecture guidance is most concentrated:
 
-## Downstream Project Interpretation
+| Source | Format | Coverage | Why it matters here |
+| --- | --- | --- | --- |
+| `Designing Data-Intensive Applications.pdf` | PDF | 613 pages | Strongest architecture signal in the corpus; supports state, data, reliability, and integration reasoning |
+| `Secure by Design.pdf` | PDF | 400 pages | Security invariants and secure-by-default lifecycle constraints |
+| `Secure by Design.epub` | EPUB | 31 spine items | EPUB companion with the same theme for spine-level verification |
+| `Clean Architecture.pdf` | PDF | 429 pages | Boundary and dependency-direction discipline |
+| `Clean Architecture - Chinese edition.pdf` | PDF | 380 pages | Chinese companion for the same architecture concepts |
+| `Team Topologies.epub` | EPUB | 29 spine items | Cognitive-load and interaction-mode mapping for human/agent operating design |
 
-For later projects that consume this platform:
+### Delivery-heavy PMP sources
 
-- The platform supplies reusable mechanisms; the downstream project owns its business model, customer evidence, product metrics, architecture decisions, release state, and learning loop.
-- A downstream project should use the source synthesis to decide which lifecycle documents it needs, but it should not copy platform facts or durable state.
-- If a downstream lesson is generic enough to improve the platform, record it as upstream feedback first and promote it through a platform OpenSpec change.
+The PMP family contributes most of the explicit delivery and governance coverage:
+
+| Source | Format | Coverage | Why it matters here |
+| --- | --- | --- | --- |
+| `PMBOK 8th Edition.pdf` | PDF | 401 pages | Highest delivery signal; useful for current PMI lifecycle reframing |
+| `Process groups _ a practice guide.pdf` | PDF | 390 pages | Canonical initiating/planning/executing/monitoring-closing overlay |
+| `Process Groups Practice Guide Chinese edition.pdf` | PDF | 409 pages | Chinese process-groups companion with strong governance counts |
+| `The Standard for Program Management - Fifth Edition.epub` | EPUB | 16 spine items | Program-level sequencing and benefits realization |
+| `PMBOK 7 Chinese edition.pdf` | PDF | 369 pages | Chinese PMBOK 7 performance-domain support |
+| `Project Management Offices  a Practice Guide.epub` | EPUB | 42 spine items | Strongest PMO/organization signal for governance-operating-model synthesis |
+
+## Repository Interpretation
+
+1. The two Markdown architecture notes supply the explicit target inventories; they should remain the authoritative count source for lifecycle tailoring.
+2. Business Management books supply the operating principles behind intentional scope, discovery, architecture boundaries, delivery appetite, and one-person-company mechanisms.
+3. PMP standards supply execution discipline, governance vocabulary, tailoring rules, and close-out expectations, but they do not replace product or architecture judgment.
+4. The repository should keep using counts, headings, and source-family mappings as evidence surfaces instead of copying long source text into tracked docs.
+5. When future lifecycle docs mention architecture inventories, PMO overlays, or tailoring logic, they should cite the relevant source family first: local Markdown for exact counts, Business Management for operating principles, PMP for delivery governance.
+
+## Lifecycle Implication
+
+For `D:/PythonProject_langgraph`, the fresh-read evidence supports a split model:
+
+- **Platform architecture and operating-system truth** come from the two local architecture notes plus Business Management sources on architecture, discovery, governance, and intentional smallness.
+- **Execution discipline and delivery control** come from PMP standards and PMBOK-8-era interpretation notes.
+- **Tracked repository docs** should continue to summarize source-backed implications, not preserve raw extraction text.
