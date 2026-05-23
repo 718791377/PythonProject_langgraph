@@ -51,6 +51,17 @@ def read_json(path: Path, default: dict | None = None) -> dict:
         return dict(default or {})
     return payload if isinstance(payload, dict) else dict(default or {})
 
+def read_json_with_validity(path: Path) -> tuple[dict, bool, str]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return {}, False, "invalid_json"
+    if not isinstance(payload, dict):
+        return {}, False, "invalid_shape"
+    if payload.get("schema_version") not in {None, 1}:
+        return payload, False, "unsupported_schema_version"
+    return payload, True, "ok"
+
 def write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -80,7 +91,10 @@ def write_project(enabled: bool) -> tuple[dict, bool]:
     skipped_invalid_records = []
     changed_paths = [str(PROJECT_DEFAULT)]
     for path in SESSIONS_ROOT.glob("*.json"):
-        session = read_json(path)
+        session, valid, status_reason = read_json_with_validity(path)
+        if not valid:
+            skipped_invalid_records.append({"path": str(path), "token": status_reason})
+            continue
         if session.get("override_origin") == "manual-session":
             continue
         session.update({"enabled": enabled, "project_label": PROJECT_LABEL, "override_origin": "project-propagated", "updated_at": now()})
@@ -93,9 +107,9 @@ def write_project(enabled: bool) -> tuple[dict, bool]:
         "changed_paths": changed_paths,
         "skipped_invalid_records": skipped_invalid_records,
         "lock_status": "not_locked_fixture",
-    "audit_path": str(STATE_ROOT / "audit.log"),
-    "atomic_write": True,
-}, bool(before) == enabled
+        "audit_path": str(STATE_ROOT / "audit.log"),
+        "atomic_write": True,
+    }, bool(before) == enabled
 
 def write_session(session_id: str, enabled: bool) -> tuple[dict, bool]:
     path = session_path(session_id)
@@ -122,15 +136,31 @@ def write_session(session_id: str, enabled: bool) -> tuple[dict, bool]:
         "changed_paths": [str(path)],
         "skipped_invalid_records": [],
         "lock_status": "not_locked_fixture",
-    "audit_path": str(STATE_ROOT / "audit.log"),
-    "atomic_write": True,
-}, bool(before) == enabled
+        "audit_path": str(STATE_ROOT / "audit.log"),
+        "atomic_write": True,
+    }, bool(before) == enabled
 
 def list_sessions() -> list[dict]:
     rows = []
     SESSIONS_ROOT.mkdir(parents=True, exist_ok=True)
     for path in sorted(SESSIONS_ROOT.glob("*.json")):
-        payload = read_json(path)
+        payload, valid, status_reason = read_json_with_validity(path)
+        if not valid:
+            rows.append({
+                "project_label": PROJECT_LABEL,
+                "session_id": path.stem,
+                "enabled": False,
+                "effective_enabled": False,
+                "valid": False,
+                "token": status_reason,
+                "source": "invalid-record",
+                "lifecycle_status": "invalid",
+                "status_reason": status_reason,
+            })
+            continue
+        source = payload.get("override_origin", "project-propagated")
+        if payload.get("schema_version") is None:
+            source = "legacy-compatible"
         rows.append({
             "project_label": PROJECT_LABEL,
             "session_id": payload.get("session_id") or path.stem,
@@ -138,7 +168,9 @@ def list_sessions() -> list[dict]:
             "effective_enabled": bool(payload.get("enabled", False)),
             "valid": True,
             "token": "ok",
-            "source": payload.get("override_origin", "project-propagated"),
+            "source": source,
+            "lifecycle_status": payload.get("lifecycle_status", "active"),
+            "status_reason": "ok",
         })
     return rows
 
@@ -941,6 +973,101 @@ else:
 
             private_after = self.private_project_digests(project)
             self.assertEqual(private_before, private_after)
+
+    def test_phase1_project_default_propagates_only_to_project_managed_sessions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "fixture-phase1-propagation"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-phase1", session_id="session-project-managed")
+            manual_path = project / ".omx" / "state" / "thesis_moe" / "sessions" / "session-manual.json"
+            manual_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "project_label": "fixture-phase1",
+                        "agent_name": "thesis-moe-mentor",
+                        "state_namespace": "thesis_moe",
+                        "scope": "session",
+                        "session_id": "session-manual",
+                        "enabled": False,
+                        "override_origin": "manual-session",
+                        "token": "ok",
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            self.install_fixture_gui(project)
+
+            result = self.run_toolchain_write(project, "project-on")
+            self.assertTrue(result["ok"], result)
+            project_managed = json.loads(
+                (project / ".omx" / "state" / "thesis_moe" / "sessions" / "session-project-managed.json").read_text(encoding="utf-8-sig")
+            )
+            manual = json.loads(manual_path.read_text(encoding="utf-8-sig"))
+            self.assertTrue(project_managed["enabled"])
+            self.assertEqual(project_managed["override_origin"], "project-propagated")
+            self.assertFalse(manual["enabled"])
+            self.assertEqual(manual["override_origin"], "manual-session")
+            self.assertTrue(result["write_payload"]["project_default_enabled"])
+            self.assertFalse(result["write_payload"]["no_op"])
+
+    def test_phase1_session_override_wins_over_project_default_and_noop_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "fixture-phase1-override"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-override", session_id="session-override")
+            self.install_fixture_gui(project)
+
+            session_on = self.run_toolchain_write(project, "session-on", session_id="session-override")
+            self.assertTrue(session_on["ok"], session_on)
+            self.assertEqual(session_on["write_payload"]["changed_scope"], "session")
+            self.assertFalse(session_on["write_payload"]["no_op"])
+            self.assertEqual(session_on["readback"]["status"]["effective_source"], "session")
+            self.assertTrue(session_on["readback"]["status"]["effective_enabled"])
+
+            second_session_on = self.run_toolchain_write(project, "session-on", session_id="session-override")
+            self.assertTrue(second_session_on["ok"], second_session_on)
+            self.assertTrue(second_session_on["write_payload"]["no_op"])
+
+            project_off = self.run_toolchain_write(project, "project-off")
+            self.assertTrue(project_off["ok"], project_off)
+            self.assertTrue(project_off["readback"]["status"]["effective_enabled"])
+            self.assertEqual(project_off["readback"]["status"]["effective_source"], "session")
+
+    def test_phase1_invalid_and_legacy_session_records_are_classified_without_blocking_project_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "fixture-phase1-invalid-legacy"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-invalid", session_id="session-current")
+            sessions_root = project / ".omx" / "state" / "thesis_moe" / "sessions"
+            invalid_path = sessions_root / "session-invalid.json"
+            invalid_path.write_text("{invalid-json", encoding="utf-8")
+            legacy_path = sessions_root / "session-legacy.json"
+            legacy_path.write_text(
+                json.dumps({"session_id": "session-legacy", "enabled": False, "token": "ok"}, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            self.install_fixture_gui(project)
+
+            project_on = self.run_toolchain_write(project, "project-on")
+            self.assertTrue(project_on["ok"], project_on)
+            skipped = project_on["write_payload"]["skipped_invalid_records"]
+            self.assertEqual(len(skipped), 1, project_on)
+            self.assertEqual(skipped[0]["token"], "invalid_json")
+            self.assertEqual(invalid_path.read_text(encoding="utf-8"), "{invalid-json")
+            legacy = json.loads(legacy_path.read_text(encoding="utf-8-sig"))
+            self.assertTrue(legacy["enabled"])
+            self.assertEqual(legacy["override_origin"], "project-propagated")
+            preflight = self.run_installed_launcher(project, "--preflight")
+            rows = preflight["view_model"]["session_table"]["rows"]
+            token_by_session = {row["session_id"]: row["token"] for row in rows}
+            self.assertEqual(token_by_session["session-invalid"], "invalid_json")
+            self.assertEqual(token_by_session["session-legacy"], "ok")
+            source_by_session = {row["session_id"]: row["source"] for row in rows}
+            self.assertEqual(source_by_session["session-invalid"], "invalid-record")
 
     def test_phase2c_fixture_b_uses_same_contract_and_isolated_project_scope(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
