@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -14,6 +15,168 @@ sys.path.insert(0, str(TOOLCHAIN_SRC))
 INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_moe_gui.py"
 CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_gui_install.py"
 UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_moe_gui.py"
+
+
+STATEFUL_MODE_CLI_TEMPLATE = r'''
+from __future__ import annotations
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+PROJECT_LABEL = "__PROJECT_LABEL__"
+AGENT_NAME = "__AGENT_NAME__"
+NAMESPACE = "__NAMESPACE__"
+DEFAULT_SESSION_ID = "__SESSION_ID__"
+ROOT = Path.cwd()
+STATE_ROOT = ROOT / ".omx" / "state" / NAMESPACE
+SESSIONS_ROOT = STATE_ROOT / "sessions"
+PROJECT_DEFAULT = STATE_ROOT / "project-default.json"
+
+def now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+def arg_value(name: str) -> str | None:
+    if name not in sys.argv:
+        return None
+    index = sys.argv.index(name)
+    if index + 1 >= len(sys.argv):
+        return None
+    return sys.argv[index + 1]
+
+def read_json(path: Path, default: dict | None = None) -> dict:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return dict(default or {})
+    return payload if isinstance(payload, dict) else dict(default or {})
+
+def write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+def session_path(session_id: str) -> Path:
+    return SESSIONS_ROOT / f"{session_id}.json"
+
+def project_default_enabled() -> bool:
+    payload = read_json(PROJECT_DEFAULT)
+    return bool(payload.get("enabled", False))
+
+def write_project(enabled: bool) -> tuple[dict, bool]:
+    before = read_json(PROJECT_DEFAULT, {"enabled": False}).get("enabled", False)
+    payload = {
+        "schema_version": 1,
+        "project_label": PROJECT_LABEL,
+        "agent_name": AGENT_NAME,
+        "state_namespace": NAMESPACE,
+        "scope": "project-default",
+        "enabled": enabled,
+        "updated_at": now(),
+        "reason": "project-on" if enabled else "project-off",
+    }
+    write_json(PROJECT_DEFAULT, payload)
+    SESSIONS_ROOT.mkdir(parents=True, exist_ok=True)
+    for path in SESSIONS_ROOT.glob("*.json"):
+        session = read_json(path)
+        if session.get("override_origin") == "manual-session":
+            continue
+        session.update({"enabled": enabled, "project_label": PROJECT_LABEL, "override_origin": "project-propagated", "updated_at": now()})
+        write_json(path, session)
+    return payload, bool(before) == enabled
+
+def write_session(session_id: str, enabled: bool) -> tuple[dict, bool]:
+    path = session_path(session_id)
+    before = read_json(path, {"enabled": False}).get("enabled", False)
+    payload = read_json(path)
+    payload.update({
+        "schema_version": 1,
+        "project_label": PROJECT_LABEL,
+        "agent_name": AGENT_NAME,
+        "state_namespace": NAMESPACE,
+        "scope": "session",
+        "session_id": session_id,
+        "enabled": enabled,
+        "override_origin": "manual-session",
+        "token": "ok",
+        "updated_at": now(),
+        "reason": "session-on" if enabled else "session-off",
+    })
+    write_json(path, payload)
+    return payload, bool(before) == enabled
+
+def list_sessions() -> list[dict]:
+    rows = []
+    SESSIONS_ROOT.mkdir(parents=True, exist_ok=True)
+    for path in sorted(SESSIONS_ROOT.glob("*.json")):
+        payload = read_json(path)
+        rows.append({
+            "project_label": PROJECT_LABEL,
+            "session_id": payload.get("session_id") or path.stem,
+            "enabled": bool(payload.get("enabled", False)),
+            "effective_enabled": bool(payload.get("enabled", False)),
+            "valid": True,
+            "token": "ok",
+            "source": payload.get("override_origin", "project-propagated"),
+        })
+    return rows
+
+def envelope(command: str, **extra: object) -> dict:
+    payload = {
+        "schema_version": 1,
+        "command": command,
+        "ok": True,
+        "token": "ok",
+        "exit_code": 0,
+        "message": "ok",
+        "project_label": PROJECT_LABEL,
+        "project_root": str(ROOT),
+        "agent_name": AGENT_NAME,
+        "state_namespace": NAMESPACE,
+        "generated_at": now(),
+        "cli_contract": "project-moe-cli-v1",
+        "warnings": [],
+        "errors": [],
+    }
+    payload.update(extra)
+    return payload
+
+def main() -> int:
+    command = sys.argv[1] if len(sys.argv) > 1 else "status"
+    session_id = arg_value("--session-id") or DEFAULT_SESSION_ID
+    if command == "project-status":
+        payload = envelope(command, project_default_enabled=project_default_enabled(), project_default=read_json(PROJECT_DEFAULT, {"enabled": False}), registered_session_count=len(list_sessions()), sessions_state_root=str(SESSIONS_ROOT), git_branch="main")
+    elif command == "list-sessions":
+        rows = list_sessions()
+        payload = envelope(command, sessions=rows, counts={"total": len(rows), "valid": len(rows)})
+    elif command == "status":
+        session_payload = read_json(session_path(session_id), {})
+        if "enabled" in session_payload:
+            effective = bool(session_payload["enabled"])
+            effective_source = "session"
+        else:
+            effective = project_default_enabled()
+            effective_source = "project-default"
+        payload = envelope(command, session_id=session_id, effective_enabled=effective, effective_source=effective_source)
+    elif command == "project-on":
+        changed, no_op = write_project(True)
+        payload = envelope(command, project_default_enabled=True, changed_scope="project-default", no_op=no_op, changed=changed)
+    elif command == "project-off":
+        changed, no_op = write_project(False)
+        payload = envelope(command, project_default_enabled=False, changed_scope="project-default", no_op=no_op, changed=changed)
+    elif command == "on":
+        changed, no_op = write_session(session_id, True)
+        payload = envelope(command, session_id=session_id, effective_enabled=True, changed_scope="session", no_op=no_op, changed=changed)
+    elif command == "off":
+        changed, no_op = write_session(session_id, False)
+        payload = envelope(command, session_id=session_id, effective_enabled=False, changed_scope="session", no_op=no_op, changed=changed)
+    else:
+        payload = {"schema_version": 1, "command": command, "ok": False, "token": "usage_error", "exit_code": 2, "message": "unsupported"}
+    print(json.dumps(payload, ensure_ascii=False))
+    return int(payload.get("exit_code", 0))
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+'''
 
 
 class ProjectMoeGuiToolchainTests(unittest.TestCase):
@@ -95,6 +258,74 @@ print(json.dumps(payload))
 """.lstrip(),
             encoding="utf-8",
         )
+
+    def make_stateful_project(
+        self,
+        root: Path,
+        *,
+        project_label: str,
+        session_id: str,
+        agent_name: str = "thesis-moe-mentor",
+        namespace: str = "thesis_moe",
+    ) -> None:
+        (root / ".git").mkdir()
+        (root / ".codex" / "agents").mkdir(parents=True)
+        (root / "tools").mkdir()
+        (root / "MOE.md").write_text(f"# Private MOE prompt for {project_label}\n", encoding="utf-8")
+        (root / ".codex" / "agents" / f"{agent_name}.toml").write_text(
+            f'name = "{agent_name}"\n'
+            f'description = "Fixture MOE agent for {project_label}."\n'
+            'developer_instructions = "Use only project-local fixture state."\n'
+            "\n[project]\n"
+            'scope = "repo-local"\n'
+            f'state_namespace = "{namespace}"\n'
+            'private_prompt_source = "MOE.md"\n',
+            encoding="utf-8",
+        )
+        state_root = root / ".omx" / "state" / namespace
+        sessions_root = state_root / "sessions"
+        sessions_root.mkdir(parents=True)
+        (state_root / "private-note.json").write_text(
+            json.dumps({"project_label": project_label, "private": True}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        (sessions_root / f"{session_id}.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "project_label": project_label,
+                    "agent_name": agent_name,
+                    "state_namespace": namespace,
+                    "scope": "session",
+                    "session_id": session_id,
+                    "enabled": False,
+                    "override_origin": "project-propagated",
+                    "token": "ok",
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        (root / "tools" / "thesis_moe_mode.py").write_text(
+            STATEFUL_MODE_CLI_TEMPLATE.replace("__PROJECT_LABEL__", project_label)
+            .replace("__AGENT_NAME__", agent_name)
+            .replace("__NAMESPACE__", namespace)
+            .replace("__SESSION_ID__", session_id)
+            .lstrip(),
+            encoding="utf-8",
+        )
+
+    def file_digest(self, path: Path) -> str:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def private_project_digests(self, project: Path, *, agent_name: str = "thesis-moe-mentor", namespace: str = "thesis_moe") -> dict[str, str]:
+        private_paths = {
+            "agent_toml": project / ".codex" / "agents" / f"{agent_name}.toml",
+            "moe_prompt": project / "MOE.md",
+            "private_state": project / ".omx" / "state" / namespace / "private-note.json",
+        }
+        return {key: self.file_digest(path) for key, path in private_paths.items()}
 
     def test_install_dry_run_does_not_write_target_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -396,6 +627,124 @@ print(json.dumps(payload))
             self.assertEqual(payload["gui_shell_contract"], "project-moe-gui-shell-v1")
             self.assertNotEqual(payload["token"], "blocked:gui_not_implemented_phase2a")
             self.assertNotIn("Interactive PySide6 GUI is implemented in Phase 2B.", result.stdout)
+
+    def run_installed_launcher(self, project: Path, *args: str) -> dict:
+        result = subprocess.run(
+            [sys.executable, str(project / "tools" / "project_moe_gui" / "launcher.py"), *args, "--json"],
+            cwd=project,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+        try:
+            return json.loads(result.stdout)
+        except Exception as exc:  # pragma: no cover
+            self.fail(f"launcher did not emit JSON: {exc}\nstdout={result.stdout}\nstderr={result.stderr}")
+
+    def install_fixture_gui(self, project: Path, *, agent_name: str = "thesis-moe-mentor", namespace: str = "thesis_moe") -> dict:
+        _, payload = self.run_tool(
+            str(INSTALLER),
+            "--target-project",
+            str(project),
+            "--agent-name",
+            agent_name,
+            "--state-namespace",
+            namespace,
+        )
+        self.assertTrue((project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json").exists())
+        return payload
+
+    def run_toolchain_write(self, project: Path, action: str, *, session_id: str | None = None) -> dict:
+        from project_moe_gui import gui_shell
+
+        config = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").read_text(encoding="utf-8-sig"))
+        return gui_shell.execute_write_action_with_readback(config, action, session_id=session_id)
+
+    def test_phase2c_fixture_a_full_install_check_update_status_flow(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "fixture-a"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-a", session_id="session-fixture-a")
+            private_before = self.private_project_digests(project)
+
+            install_payload = self.install_fixture_gui(project)
+            self.assertEqual(install_payload["mode"], "apply")
+            self.assertEqual(install_payload["target_project_root"], str(project.resolve()))
+
+            _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
+            self.assertEqual(check_payload["status"], "up_to_date")
+            self.assertEqual(check_payload["runtime_status"], "skipped_by_flag")
+
+            _, update_payload = self.run_tool(str(UPDATER), "--target-project", str(project), "--dry-run")
+            self.assertTrue(update_payload["no_op"], update_payload)
+            self.assertEqual(update_payload["status"], "up_to_date")
+
+            preflight = self.run_installed_launcher(project, "--preflight")
+            self.assertIn(preflight["token"], {"ok", "blocked:pyside6_unavailable"}, preflight)
+            self.assertEqual(preflight["view_model"]["top_banner"]["project_root"], str(project.resolve()))
+            self.assertEqual(preflight["view_model"]["top_banner"]["current_branch"], "main")
+            self.assertNotEqual(preflight["view_model"]["session_table"]["rows"][0]["display_id"], "session-fixture-a")
+            self.assertTrue(preflight["view_model"]["session_table"]["rows"][0]["display_id"].startswith("sessio"))
+            self.assertEqual(preflight["view_model"]["session_table"]["rows"][0]["source"], "project-propagated")
+
+            project_on = self.run_toolchain_write(project, "project-on")
+            self.assertTrue(project_on["ok"], project_on)
+            self.assertTrue(project_on["readback"]["project-status"]["project_default_enabled"])
+            self.assertTrue(project_on["readback"]["status"]["effective_enabled"])
+
+            private_after = self.private_project_digests(project)
+            self.assertEqual(private_before, private_after)
+
+    def test_phase2c_fixture_b_uses_same_contract_and_isolated_project_scope(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project_a = Path(tmp) / "fixture-a"
+            project_b = Path(tmp) / "fixture-b"
+            project_a.mkdir()
+            project_b.mkdir()
+            self.make_stateful_project(project_a, project_label="fixture-a", session_id="session-fixture-a")
+            self.make_stateful_project(project_b, project_label="fixture-b", session_id="session-fixture-b")
+            self.install_fixture_gui(project_a)
+            self.install_fixture_gui(project_b)
+
+            result_a = self.run_toolchain_write(project_a, "project-on")
+            self.assertTrue(result_a["ok"], result_a)
+            status_a = result_a["readback"]["project-status"]
+            self.assertEqual(status_a["project_label"], "fixture-a")
+            self.assertTrue(status_a["project_default_enabled"])
+
+            _, check_b = self.run_tool(str(CHECKER), "--target-project", str(project_b), "--skip-runtime-import")
+            self.assertEqual(check_b["status"], "up_to_date")
+            preflight_b = self.run_installed_launcher(project_b, "--preflight")
+            self.assertEqual(preflight_b["view_model"]["top_banner"]["project_root"], str(project_b.resolve()))
+            self.assertEqual(preflight_b["view_model"]["project_default_card"]["label"], "disabled")
+            self.assertFalse((project_b / ".omx" / "state" / "thesis_moe" / "project-default.json").exists())
+
+            result_b = self.run_toolchain_write(project_b, "session-on", session_id="session-fixture-b")
+            self.assertTrue(result_b["ok"], result_b)
+            self.assertEqual(result_b["readback"]["project-status"]["project_label"], "fixture-b")
+            self.assertTrue(result_b["readback"]["status"]["effective_enabled"])
+            session_a = json.loads((project_a / ".omx" / "state" / "thesis_moe" / "sessions" / "session-fixture-a.json").read_text(encoding="utf-8-sig"))
+            self.assertTrue(session_a["enabled"])
+            self.assertFalse((project_a / ".omx" / "state" / "thesis_moe" / "sessions" / "session-fixture-b.json").exists())
+
+    def test_phase2c_update_preserves_private_agent_prompt_and_state(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "fixture-private"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-private", session_id="session-private")
+            self.install_fixture_gui(project)
+            private_before = self.private_project_digests(project)
+
+            readme = project / "tools" / "project_moe_gui" / "README.md"
+            readme.write_text(readme.read_text(encoding="utf-8-sig") + "\nlocal managed-file drift\n", encoding="utf-8")
+            _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import", expect_success=False)
+            self.assertEqual(check_payload["token"], "blocked:managed_file_hash_mismatch")
+
+            _, update_payload = self.run_tool(str(UPDATER), "--target-project", str(project), "--dry-run", expect_success=False)
+            self.assertEqual(update_payload["token"], "blocked:managed_file_hash_mismatch")
+            self.assertEqual(private_before, self.private_project_digests(project))
 
 
 if __name__ == "__main__":

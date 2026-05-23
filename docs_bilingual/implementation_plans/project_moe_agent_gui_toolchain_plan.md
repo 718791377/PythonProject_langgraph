@@ -15,16 +15,18 @@ related_docs:
 
 ## 0. Current status and review conclusion
 
-Review date: 2026-05-22.
+Review date: 2026-05-23.
 
 Conclusion: the original plan already covered the architectural boundary, state model, safety rules, and phase gates, but it lacked an item-level implementation checklist. That made it hard for later sessions to distinguish implemented work from plan-only intent. This revision adds the item-level progress checklist in section 11 and updates section 13 to reflect current implementation facts.
 
-Status note: this document remains `status: draft`. Draft here means it is not a global active governance policy and does not claim that the whole runtime is complete. Only Phase 2A central installer/checker/updater is confirmed on local `main`; the Phase 1 target-project CLI state model, Phase 2B PySide6 GUI, and Phase 2C cross-project reuse are still open.
+Status note: this document remains `status: draft`. Draft here means it is not a global active governance policy and does not claim that the whole runtime is complete. Phase 2A central installer/checker/updater and the Phase 2B fixture-safe GUI shell are confirmed on local `main`; this change adds Phase 2C dual-fixture install/check/update/status and isolation evidence. The real target-project Phase 1 CLI state model is still open, so the document remains `draft`.
 
 Current known local facts:
 
 - Phase 2A is merged into this repository's local `main`: `3e4e819c73c78472d948e68d5352085dcac6551d` (`实现项目 MOE GUI 第二阶段安装器`).
-- That fact only means the central installer/checker/updater and fixture tests exist in this repository; it does not mean `D:\PythonProject_paper_suggest` has completed Phase 1, and it does not mean a real GUI is ready for operation.
+- Phase 2B is merged into this repository's local `main`: `47187a7da4b167341cf0a8fc01db415db601fe92`.
+- This change adds Phase 2C dual-fixture evidence through `test_phase2c_fixture_a_full_install_check_update_status_flow`, `test_phase2c_fixture_b_uses_same_contract_and_isolated_project_scope`, and `test_phase2c_update_preserves_private_agent_prompt_and_state`, covering full install/check/update/status flow, project A/B isolation, and update not overwriting private Agent TOML, `MOE.md`, or state.
+- These facts only mean repository fixture evidence exists; they do not mean `D:\PythonProject_paper_suggest` has completed Phase 1, and they do not mean a real target-project GUI is ready for operation.
 - Without explicit remote-publication approval, GitLab/GitHub are outside this plan's automatic execution scope.
 
 ## 1. Goal
@@ -577,8 +579,8 @@ Phase-level summary:
 | --- | --- | --- | --- |
 | Phase 1: target-project command-line state model | [ ] | Pending target-project implementation/verification | It is unchecked because the `D:\PythonProject_paper_suggest` CLI, wrappers, startup hooks, and tests have not yet been confirmed by this repository; it does not mean the plan design is missing. |
 | Phase 2A: central installer, checker, and updater in this repository | [x] | Complete and merged into local `main` | Backed by this repository's local commit `3e4e819c73c78472d948e68d5352085dcac6551d` and local-gate evidence. |
-| Phase 2B: PySide6 GUI application | [ ] | Partially complete: fixture-safe GUI shell has landed | It remains unchecked because real visible-window interaction, write-then-refresh behavior, keyboard/high-contrast evidence, and cross-project GUI verification are not closed yet. |
-| Phase 2C: cross-project reuse and target install | [ ] | Not closed | It is unchecked because at least two fixture or real projects have not yet passed the same contract. |
+| Phase 2B: PySide6 GUI application | [x] | Fixture-safe GUI shell complete and merged into local `main` | Covers import-safe shell, view model, write readback, same-scope pending disable, keyboard/high-contrast semantics, and explicit visible-window boundary; real visible-window/QTest evidence remains later operational evidence and does not block the repository fixture-safe definition. |
+| Phase 2C: cross-project reuse and target install | [x] | Dual-fixture contract closed | Two isolated fixture projects now pass the same install/check/update/status contract, project A/B isolation, and private Agent TOML / `MOE.md` / state preservation on update; real target-project install still needs target-project Phase 1 completion and separate approval. |
 
 #### Documentation and architecture contract
 
@@ -647,14 +649,14 @@ Phase-level summary:
 
 #### Phase 2C: cross-project reuse and target install
 
-- [ ] Verify the full install/check/update/status flow in at least one fixture project.
-- [ ] Verify the same contract in a second fixture or real project.
-- [ ] Confirm installing the GUI into project A controls only project A.
-- [ ] Confirm installing the GUI into project B controls only project B.
-- [ ] Confirm update never overwrites target-project private Agent TOML, `MOE.md`, or state.
-- [ ] Define dirty/ownership preflight before any real target-project install.
-- [ ] State that real target-project remote publication remains controlled by the target project's own publication workflow.
-- [ ] Record cross-project reuse acceptance evidence and decide whether this document should move beyond `draft`.
+- [x] Verify the full install/check/update/status flow in at least one fixture project.
+- [x] Verify the same contract in a second fixture or real project.
+- [x] Confirm installing the GUI into project A controls only project A.
+- [x] Confirm installing the GUI into project B controls only project B.
+- [x] Confirm update never overwrites target-project private Agent TOML, `MOE.md`, or state.
+- [x] Define dirty/ownership preflight before any real target-project install.
+- [x] State that real target-project remote publication remains controlled by the target project's own publication workflow.
+- [x] Record cross-project reuse acceptance evidence and decide whether this document should move beyond `draft`: because real target-project Phase 1 CLI is not complete, this document stays `draft` for now.
 
 Minimum test matrix:
 
@@ -752,8 +754,8 @@ Next implementation should proceed as: close the target-project CLI first, keep 
 1. To control real `D:\PythonProject_paper_suggest` sessions, complete Phase 1 in the target project first: CLI state model, `list-sessions --json`, `status --json`, `assert-on`, `thesis-moe-on/off.cmd`, and target-project startup checkpoints.
 2. If there is no target-project write approval, this repository may continue with Phase 2B only against fixture/mock target projects; it must not write real `paper_suggest` `.omx/state`.
 3. The Phase 2B GUI may change state only by invoking the target-project CLI; if that CLI is missing, the GUI must show a blocker instead of scanning or writing state files directly.
-4. Phase 2C starts closing only after at least two fixture or real projects pass the same contract.
-5. Deciding whether this document should move from `draft` requires at least one complete local evidence pass across Phase 1, Phase 2B, and cross-project isolation evidence.
+4. Phase 2C is closed at the repository fixture layer after two isolated fixtures passed the same contract; real-project install still depends on later target-project approval and Phase 1 readiness.
+5. This document does not move from `draft` yet: Phase 2B and fixture-level Phase 2C now have local evidence, but the real target-project Phase 1 CLI / wrapper / startup checkpoint remains incomplete.
 
 Phase gate rules:
 
