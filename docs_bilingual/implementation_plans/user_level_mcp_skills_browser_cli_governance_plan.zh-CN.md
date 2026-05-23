@@ -22,6 +22,7 @@ source_reference_file: reference_files/1.md
 
 - 内容覆盖完整：MCP facade、skills 按需发现、browser owner、Chrome DevTools MCP、CDP Bridge、OpenCLI、`oh-my-pi`、CLI-Anything 与 `wecom-cli` 均有默认状态、授权边界、安装证据和回滚要求。
 - 端口治理已明确：Codex 使用靠前的用户级号段，OpenClaw 使用靠后的号段，OpenCLI 必须使用端口分配器驱动的 `--port auto`，不得固定端口；端口分配器已经具备 reserve/release/import/gc 命令契约。
+- 并发分配安全已明确：registry 更新必须原子化，绑定过程使用临时 lease，长时间运行的 owner 必须续租，崩溃恢复必须有证据。
 - 动态本地事实已纳入治理：运行时进程是否存在、本机安装路径等信息必须由只读 inventory 刷新，并脱敏后才能成为仓库证据。
 - 颗粒度达到可实施：每个 lane 都能拆成 OpenSpec change；每个 change 都必须有 owned files、checker/test、receipt schema、rollback method 和 non-goals。
 - 未勾选清单是后续实施状态，不是方案缺口；在对应代码、checker、安装产物和 receipt 都完成前，不得把 lane 标为 `active`。
@@ -137,11 +138,16 @@ Registry 路径：
 - `tool`；
 - `host`；
 - `port`；
+- `lease_id`；
 - `pid`；
+- `created_at`；
+- `renewed_at`；
+- `ttl_seconds`；
 - `lease_expiry`；
 - `owner_session`；
 - `purpose`；
-- `status`：`active`、`stale`、`legacy_reserved` 或 `released`。
+- `status`：`pending_bind`、`active`、`stale`、`legacy_reserved` 或 `released`；
+- `registry_revision`：用于检测过时并发写入的单调递增 registry 版本号。
 
 ### 4.1.1 端口分配器最小命令契约
 
@@ -150,7 +156,8 @@ Registry 路径：
 最小命令：
 
 ```text
-codex-port lease reserve --owner codex --project <slug> --tool <tool> --range <range-name> --purpose <text> --json
+codex-port lease reserve --owner codex --project <slug> --tool <tool> --range <range-name> --purpose <text> --ttl <seconds> --json
+codex-port lease renew --lease-id <lease-id> --owner-session <session-id> --ttl <seconds> --json
 codex-port lease release --owner-session <session-id> --port <port> --json
 codex-port lease list --owner codex --json
 codex-port lease import-legacy --owner openclaw --port <port> --purpose <text> --json
@@ -163,6 +170,7 @@ Port-governance 冲突决策表：
 | --- | --- |
 | registry 显示空闲，但 live socket 已监听 | 视为被占用，跳到同号段下一个可用端口，并记录 collision warning。 |
 | registry 显示 active，但 PID 已不存在 | 标记为 `stale`；只有写入只读 PID/health 证据后才能复用。 |
+| registry 中存在已超时的 `pending_bind` lease | 只有记录对应 session 已无法完成绑定和临时 lease 超时证据后才能回收。 |
 | registry 显示 `legacy_reserved` | 绝不自动分配；必须先有明确 migration 或 release receipt。 |
 | 请求号段与 owner 不匹配 | fail closed，例如 Codex 请求 `40000-40999`，或 OpenClaw 迁移后请求 `39000-39999`。 |
 | release 请求缺少匹配的 owner session | fail closed，并保留 lease。 |
@@ -170,8 +178,19 @@ Port-governance 冲突决策表：
 读写边界：
 
 - `list` 与 `gc --dry-run` 是只读动作，默认允许。
-- `reserve`、`release`、`import-legacy` 和非 dry-run `gc` 是写动作，必须在 `C:\Users\lenovo\.codex\state\ports\receipts\` 写入 receipt。
+- `reserve`、`renew`、`release`、`import-legacy` 和非 dry-run `gc` 是写动作，必须在 `C:\Users\lenovo\.codex\state\ports\receipts\` 写入 receipt。
 - 端口分配器永远不得终止进程。进程清理属于 owner wrapper 的责任，并且需要单独的证据和授权。
+
+### 4.1.2 多会话并发分配与崩溃恢复
+
+多项目、多会话同时使用要求 registry 具备原子生命周期控制，不能只依赖号段约定：
+
+- 每次修改 registry 都必须在 `C:\Users\lenovo\.codex\state\ports\registry.lock` 或等价锁面上取得短时独占锁，校验当前 `registry_revision`，写入临时文件后原子替换 `registry.json`。
+- `reserve` 必须先写入包含唯一 `lease_id`、`status=pending_bind` 与短超时的临时 lease。owner wrapper 随后绑定 socket，并在成功后把 lease 提升为 `active`；如果绑定竞争失败，则把该 lease 标记为 released/collided，并继续申请同号段可用端口。
+- registry lock 必须在启动浏览器、打开监听 socket、执行网络 I/O 或运行 health probe 前释放；该锁只序列化状态写入，不能包住长时间工具操作。
+- 长时间运行的受管服务必须在 lease 过期前执行 `renew`。已过期的 `active` lease 只有在 PID 或只读 health evidence 证明前 owner 不再存活后才能复用。
+- wrapper 正常停止必须执行 `release`。崩溃 session 留下的过期或 stale lease 只能由带证据的 `gc` 处理；其他 session 绝不能 release 或 renew 不属于自己的 lease。
+- registry 内容损坏、原子替换失败或锁归属不明确时必须 fail closed，保留恢复副本，并阻止新分配，直到修复或显式恢复。
 
 ## 5. `mcp2cli` 实施线
 
@@ -399,7 +418,7 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 | --- | --- | --- | --- | --- |
 | `skills2cli` | `planned`，实现后可成为 `active` | index/search/show/warning summary 的紧凑只读输出 | apply/disable skills、输出完整 plugin skill body、记录私有完整路径 | compact-output 测试、warning audit 脱敏测试、profile 建议不直接应用的证据 |
 | `mcp2cli` | `planned`，按 profile 逐步 `active` | list/search/show，非敏感 call 需 category 检查 | secrets、shell、browser state、remote mutation、payment/account/personal data call | allowed-profile registry、sensitive-call fail-closed checker、授权 receipt schema |
-| `codex-port` allocator | `planned`，reserve/release 均有 receipt 后可成为 `active` | 按号段 reserve/list/release/import/gc lease | 跨 owner 分配端口、kill 端口持有进程、无证据复用 stale lease | owner-range 测试、live-socket 冲突 fixture、lease receipt schema、stale PID/health 证据 |
+| `codex-port` allocator | `planned`，reserve/renew/release 均有 receipt 后可成为 `active` | 按号段 reserve/list/renew/release/import/gc lease | 跨 owner 分配端口、kill 端口持有进程、非原子 registry 写入、无证据复用 stale lease | owner-range 测试、并发 reserve fixture、live-socket 冲突 fixture、lease receipt schema、stale PID/health 证据 |
 | `chrome-devtools-mcp` | `planned`，本地调试 isolated mode 可先 `active` | isolated-session local/debug inspect | human-owned Chrome、登录态 project-profile、cleanup | managed wrapper、lease、profile ownership、stale cleanup dry-run 证据 |
 | CDP Bridge | `on-demand` | tab list、DOM scan、screenshot、read-only inventory | cookie、JS write、click/type/navigate sensitive context | owner check、authorization gate、read/write 分离测试 |
 | OpenCLI | `on-demand` | isolated 或 project-profile 的明确任务适配 | 默认绑定 human-owned tab、常驻加载 | wrapper pin、browser owner registry、human-owned protection 测试 |
@@ -413,7 +432,7 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 
 - `skills2cli`：`index`、`search`、`show` 和 warning-audit summary 可用；默认输出紧凑；输出不得泄露私有完整路径、cookie、token 或全量 plugin skill descriptions。
 - `mcp2cli`：allowed profiles 明确；list/search/show 默认紧凑；敏感调用在没有匹配授权 receipt 时 fail closed。
-- `codex-port`：Codex/OpenClaw 号段被强制执行，OpenCLI 只获得 allocator 驱动的 `--port auto` lease，每个写动作都有 rollback-ready receipt。
+- `codex-port`：Codex/OpenClaw 号段被强制执行，并发 reserve 保持原子性，active owner 会续租，OpenCLI 只获得 allocator 驱动的 `--port auto` lease，每个写动作都有 rollback-ready receipt。
 - `chrome-devtools-mcp`：wrapper 写入 lease；isolated-session-managed 与 project-profile 模式明确区分；human-owned Chrome 被保护；stale-cleanup 必须先 dry-run 通过。
 - CDP Bridge：只读检查与可写动作分离；每个写动作或敏感读取都必须先具备 owner evidence 与 authorization evidence。
 - OpenCLI：在安装 pin、profile binding、阻止无授权绑定 human-owned tabs 的规则完成并通过测试前，保持 on-demand。
@@ -426,6 +445,7 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 - 每个 lane 都有明确默认状态：`active`、`on-demand`、`reference-only` 或 `disabled`。
 - 每个用户级安装工具都有 update receipt 与 rollback pointer。
 - 每个共享本地监听服务都必须通过端口分配器申请 lease、记录端口 lease receipt，并避免固定端口，除非它是已记录的 `legacy_reserved`。
+- 并发端口申请必须通过原子 registry 写入和临时绑定处理进行串行化，并在复用前证明崩溃恢复安全。
 - 每个敏感 lane 都有 fail-closed checker 或 wrapper guard。
 - 每个 browser automation lane 在可读取或修改状态的动作前都会记录 owner class。
 - 仓库证据不保存 secrets、cookies、raw browser data、完整个人运行时路径或完整 plugin description dumps。
@@ -499,7 +519,7 @@ OpenSpec 切片交付矩阵：
 
 | 切片 | 主要产物 | 最小验证 | 完成证据 |
 | --- | --- | --- | --- |
-| 1. Policy/checker baseline | token/risk checker、port registry/lease checker、`codex-port` allocator contract、authorization receipt schema、update receipt schema、evidence redaction policy | checker 单元测试、端口冲突 fixture、allocator fail-closed fixture、local gate 注册 | checker 输出、测试记录、allocator contract 证据、OpenSpec delta/spec 更新 |
+| 1. Policy/checker baseline | token/risk checker、port registry/lease checker、`codex-port` allocator/locking/lifecycle contract、authorization receipt schema、update receipt schema、evidence redaction policy | checker 单元测试、并发 reserve fixture、pending-bind 竞争 fixture、崩溃恢复 fail-closed fixture、local gate 注册 | checker 输出、测试记录、allocator lifecycle 证据、OpenSpec delta/spec 更新 |
 | 2. `skills2cli` MVP | repo-local helper、用户级 wrapper、skill index/search/show/warning audit | compact output、privacy redaction、profile non-apply、warning audit 测试 | 脱敏索引摘要、wrapper smoke、receipt |
 | 3. `mcp2cli` MVP | allowed profile registry、list/search/show/call facade | compact output、sensitive-call fail-closed、receipt-required 测试 | profile registry、授权失败样例、wrapper smoke |
 | 4. Browser owner registry | owner registry、lease schema、`chrome-devtools-mcp` managed wrapper | isolated/project-profile/human-owned protection、cleanup dry-run 测试 | lease receipt、stale scan dry-run、wrapper smoke |
@@ -527,7 +547,7 @@ OpenSpec 切片交付矩阵：
 - [ ] 为本方案创建或复用一个小步 OpenSpec change，并写明 scope、non-goals、rollback boundary。
 - [ ] 建立 token/risk priority checker，禁止高 token/高风险 surface 在无证据时默认常驻。
 - [ ] 建立用户级 port registry 与 allocator，确保 Codex 号段在前、OpenClaw 号段在后，并让 OpenCLI 使用 allocator 驱动的 `--port auto`。
-- [ ] 实现 `codex-port lease reserve/release/list/import-legacy/gc`，覆盖 owner-range 校验、live-socket 冲突跳过、stale 证据和写入 receipt。
+- [ ] 实现 `codex-port lease reserve/renew/release/list/import-legacy/gc`，覆盖 owner-range 校验、registry 原子锁、临时 `pending_bind`、live-socket 冲突跳过、stale/崩溃证据和写入 receipt。
 - [ ] 建立 sensitive authorization receipt schema，字段至少包含 action、target、scope、expiry、session、operator confirmation。
 - [ ] 建立 user-level tool update receipt schema，并覆盖 install path、wrapper path、state path、pin、smoke、rollback pointer。
 - [ ] 建立 sanitized evidence 规则，禁止提交 secrets、cookies、tokens、raw browser data、消息内容、完整个人运行时路径和完整 plugin description dumps。
@@ -580,7 +600,7 @@ OpenSpec 切片交付矩阵：
 - `mcp2cli` 测试证明 compact list/search/show 和 sensitive-call blocking。
 - Browser checker 测试证明 isolated cleanup、project-profile retention、human-owned protection、tab owner exclusivity。
 - Port-governance 测试证明 Codex 不会分配 OpenClaw 号段，OpenClaw 历史端口会导入为 reserved，冲突时只跳过不 kill 进程，stale lease 复用前必须有 PID/health evidence。
-- Port allocator CLI 测试证明 `reserve`、`release`、`import-legacy` 与非 dry-run `gc` 会写 receipt，owner/range 不匹配和 owner-session 不匹配会 fail closed。
+- Port allocator CLI 测试证明 `reserve`、`renew`、`release`、`import-legacy` 与非 dry-run `gc` 会写 receipt；并发 reserve 不会分配同一端口；pending-bind/崩溃恢复受证据门控；owner/range 或 owner-session 不匹配会 fail closed。
 - CDP Bridge/OpenCLI 测试证明敏感动作必须显式授权。
 - `oh-my-pi` updater 测试证明 pinned update 和 rollback receipt。
 - `wecom-cli` 测试证明 process inventory 只读、secrets 脱敏、GUI write 无授权失败、WXWork GUI lease 独占。

@@ -21,6 +21,7 @@ Review verdict:
 
 - Coverage is complete: MCP facade, on-demand skills discovery, browser ownership, Chrome DevTools MCP, CDP Bridge, OpenCLI, `oh-my-pi`, CLI-Anything, and `wecom-cli` all have default states, authorization boundaries, install evidence, and rollback requirements.
 - User-level port governance is explicit: Codex uses earlier user-level ranges, OpenClaw uses later ranges, OpenCLI must use allocator-driven `--port auto`, and the allocator has reserve/release/import/gc command contracts.
+- Concurrent allocation safety is explicit: registry updates are atomic, binds use provisional leases, long-running owners renew leases, and crash recovery requires evidence.
 - The granularity is implementation-ready: every lane can become an OpenSpec change, and every change must state owned files, checker/test evidence, receipt schema, rollback method, and non-goals.
 - Unchecked checklist items are downstream implementation state, not plan gaps. A lane must not be marked `active` until its code, checker, install artifact, and receipt evidence all exist.
 - The sequence is baseline before capability: finish token/risk, authorization receipt, update receipt, and evidence-redaction controls before implementing `skills2cli`, `mcp2cli`, browser automation, and `wecom-cli` capability surfaces.
@@ -135,11 +136,16 @@ Minimum registry fields:
 - `tool`;
 - `host`;
 - `port`;
+- `lease_id`;
 - `pid`;
+- `created_at`;
+- `renewed_at`;
+- `ttl_seconds`;
 - `lease_expiry`;
 - `owner_session`;
 - `purpose`;
-- `status`: `active`, `stale`, `legacy_reserved`, or `released`.
+- `status`: `pending_bind`, `active`, `stale`, `legacy_reserved`, or `released`.
+- `registry_revision`: monotonic registry version used to detect stale concurrent writes.
 
 ### 4.1.1 Port allocator minimum CLI contract
 
@@ -148,7 +154,8 @@ The allocator must be a user-level wrapper generated or synced from repository s
 Minimum commands:
 
 ```text
-codex-port lease reserve --owner codex --project <slug> --tool <tool> --range <range-name> --purpose <text> --json
+codex-port lease reserve --owner codex --project <slug> --tool <tool> --range <range-name> --purpose <text> --ttl <seconds> --json
+codex-port lease renew --lease-id <lease-id> --owner-session <session-id> --ttl <seconds> --json
 codex-port lease release --owner-session <session-id> --port <port> --json
 codex-port lease list --owner codex --json
 codex-port lease import-legacy --owner openclaw --port <port> --purpose <text> --json
@@ -161,6 +168,7 @@ Port-governance decision table:
 | --- | --- |
 | Registry says free, but live socket is already listening | Treat the port as occupied, skip to the next allowed port, and record a collision warning. |
 | Registry says active, but PID is gone | Mark `stale`; reuse only after a read-only PID or health evidence record exists. |
+| Registry contains an expired `pending_bind` lease | Reclaim only after its session cannot complete binding and the provisional-lease timeout evidence is recorded. |
 | Registry says `legacy_reserved` | Never allocate automatically; require an explicit migration or release receipt. |
 | Requested range does not match owner | Fail closed, for example Codex requesting `40000-40999` or OpenClaw requesting `39000-39999` after migration. |
 | Release request lacks the matching owner session | Fail closed and keep the lease. |
@@ -168,8 +176,19 @@ Port-governance decision table:
 Read/write boundary:
 
 - `list` and `gc --dry-run` are read-only and allowed by default.
-- `reserve`, `release`, `import-legacy`, and non-dry-run `gc` are write operations and must write receipts under `C:\Users\lenovo\.codex\state\ports\receipts\`.
+- `reserve`, `renew`, `release`, `import-legacy`, and non-dry-run `gc` are write operations and must write receipts under `C:\Users\lenovo\.codex\state\ports\receipts\`.
 - The allocator must never terminate processes. Process cleanup belongs to the owning wrapper and requires separate evidence and authorization.
+
+### 4.1.2 Concurrent-session allocation and crash recovery
+
+Multi-project and multi-session use requires an atomic registry lifecycle, not only a port-range convention:
+
+- Each registry mutation must take a short-lived exclusive lock at `C:\Users\lenovo\.codex\state\ports\registry.lock` or an equivalent lock surface, validate the current `registry_revision`, write a temporary file, and atomically replace `registry.json`.
+- `reserve` first records a unique `lease_id` with `status=pending_bind` and a short timeout. The owning wrapper then binds the socket and promotes the lease to `active`; if binding loses a race, it marks that lease released/collided and reserves another allowed port.
+- The registry lock must be released before launching a browser, opening a listening socket, performing network I/O, or running a health probe; it serializes state updates, not long-running tool work.
+- Long-lived managed services must call `renew` before expiry. An expired `active` lease is not reusable until PID or read-only health evidence confirms that the previous owner is no longer live.
+- A normal wrapper shutdown must call `release`. A crashed session leaves an evidence-gated stale or expired lease for `gc`; another session must never release or renew a lease it does not own.
+- Corrupt registry content, failed atomic replacement, or lock ownership ambiguity must fail closed, retain a recovery copy, and block new allocation until repaired or explicitly recovered.
 
 ## 5. `mcp2cli` implementation lane
 
@@ -397,7 +416,7 @@ Default lane-state table:
 | --- | --- | --- | --- | --- |
 | `skills2cli` | `planned`, then eligible for `active` after implementation | Compact read-only index/search/show/warning summaries | Applying/disabling skills, dumping complete plugin skill bodies, recording full private paths | Compact-output tests, warning-audit redaction tests, evidence that profile suggestions do not apply changes |
 | `mcp2cli` | `planned`, then profile-by-profile `active` | list/search/show; non-sensitive calls after category checks | Secrets, shell, browser state, remote mutation, payment/account/personal-data calls | Allowed-profile registry, sensitive-call fail-closed checker, authorization receipt schema |
-| `codex-port` allocator | `planned`; eligible for `active` only after receipt-backed reserve/release | range-aware lease reserve/list/release/import/gc | cross-owner range allocation, killing port holders, silent stale reuse | owner-range tests, live-socket collision fixtures, lease receipt schema, stale PID/health evidence |
+| `codex-port` allocator | `planned`; eligible for `active` only after receipt-backed reserve/renew/release | range-aware lease reserve/list/renew/release/import/gc | cross-owner range allocation, killing port holders, non-atomic registry writes, silent stale reuse | owner-range tests, concurrent-reservation fixtures, live-socket collision fixtures, lease receipt schema, stale PID/health evidence |
 | `chrome-devtools-mcp` | `planned`; local isolated debug mode may become `active` first | isolated-session local/debug inspection | human-owned Chrome, logged-in project profiles, cleanup | Managed wrapper, lease, profile ownership, stale-cleanup dry-run evidence |
 | CDP Bridge | `on-demand` | tab list, DOM scan, screenshot, read-only inventory | cookies, JavaScript write, click/type/navigate in sensitive context | owner check, authorization gate, read/write separation tests |
 | OpenCLI | `on-demand` | explicit isolated or project-profile task adaptation | default binding to human-owned tabs or always-on loading | wrapper pin, browser owner registry, human-owned protection tests |
@@ -412,7 +431,7 @@ Lane-specific `active` criteria:
 
 - `skills2cli`: `index`, `search`, `show`, and warning-audit summary commands work; default output is compact; output does not leak private full paths, cookies, tokens, or full plugin skill descriptions.
 - `mcp2cli`: allowed profiles are explicit; list/search/show output is compact by default; sensitive calls fail closed unless a matching authorization receipt is present.
-- `codex-port`: port registry/lease enforcement keeps Codex/OpenClaw ranges separated, OpenCLI receives only allocator-driven `--port auto` leases, and every write action has a rollback-ready receipt.
+- `codex-port`: port registry/lease enforcement keeps Codex/OpenClaw ranges separated, concurrent reserves are atomic, active owners renew leases, OpenCLI receives only allocator-driven `--port auto` leases, and every write action has a rollback-ready receipt.
 - `chrome-devtools-mcp`: the wrapper writes a lease; isolated-session-managed and project-profile modes are distinct; human-owned Chrome is protected; stale-cleanup dry-run passes before cleanup is allowed.
 - CDP Bridge: read-only inspection is separated from write-capable actions; every write or sensitive read requires owner evidence and authorization evidence before execution.
 - OpenCLI: remains on-demand until installation pinning, profile binding, and the rule blocking unauthorized human-owned tabs are implemented and tested.
@@ -425,6 +444,7 @@ Acceptance criteria for this plan:
 - every lane has a documented default state: `active`, `on-demand`, `reference-only`, or `disabled`;
 - every user-level installed tool has an update receipt and rollback pointer;
 - every shared local listener uses the port allocator, records a port lease receipt, and avoids fixed ports except documented `legacy_reserved` entries;
+- concurrent port reservations are serialized through atomic registry writes and provisional-bind handling, with crash recovery proven before reuse;
 - every sensitive lane has a fail-closed checker or wrapper guard;
 - every browser automation lane records owner class before actions that can read or mutate state;
 - no repository evidence stores secrets, cookies, raw browser data, full personal runtime paths, or complete plugin description dumps.
@@ -498,7 +518,7 @@ OpenSpec slice delivery matrix:
 
 | Slice | Main artifacts | Minimum validation | Completion evidence |
 | --- | --- | --- | --- |
-| 1. Policy/checker baseline | token/risk checker, port registry/lease checker, `codex-port` allocator contract, authorization receipt schema, update receipt schema, evidence-redaction policy | checker unit tests, port-collision fixture, allocator fail-closed fixture, and local-gate registration | checker output, test record, allocator contract evidence, OpenSpec delta/spec update |
+| 1. Policy/checker baseline | token/risk checker, port registry/lease checker, `codex-port` allocator/locking/lifecycle contract, authorization receipt schema, update receipt schema, evidence-redaction policy | checker unit tests, concurrent-reservation fixture, pending-bind collision fixture, crash-recovery fail-closed fixture, and local-gate registration | checker output, test record, allocator lifecycle evidence, OpenSpec delta/spec update |
 | 2. `skills2cli` MVP | repo-local helper, user-level wrapper, skill index/search/show/warning audit | compact-output, privacy-redaction, profile-non-apply, and warning-audit tests | redacted index summary, wrapper smoke, receipt |
 | 3. `mcp2cli` MVP | allowed profile registry, list/search/show/call facade | compact-output, sensitive-call fail-closed, and receipt-required tests | profile registry, blocked authorization example, wrapper smoke |
 | 4. Browser owner registry | owner registry, lease schema, managed `chrome-devtools-mcp` wrapper | isolated/project-profile/human-owned protection and cleanup dry-run tests | lease receipt, stale-scan dry-run, wrapper smoke |
@@ -527,7 +547,7 @@ Fine-grained implementation checklist:
 - [ ] Create or reuse a small OpenSpec change for this plan and state scope, non-goals, and rollback boundary.
 - [ ] Add a token/risk priority checker that prevents high-token or high-risk surfaces from becoming default without evidence.
 - [ ] Establish the user-level port registry/lease allocator so Codex ranges come before OpenClaw ranges and OpenCLI uses allocator-driven `--port auto`.
-- [ ] Implement `codex-port lease reserve/release/list/import-legacy/gc` with owner-range validation, live-socket collision skipping, stale evidence, and write receipts.
+- [ ] Implement `codex-port lease reserve/renew/release/list/import-legacy/gc` with owner-range validation, atomic registry locking, provisional `pending_bind`, live-socket collision skipping, stale/crash evidence, and write receipts.
 - [ ] Add the sensitive authorization receipt schema with at least action, target, scope, expiry, session, and operator confirmation.
 - [ ] Add the user-level tool update receipt schema covering install path, wrapper path, state path, pin, smoke result, and rollback pointer.
 - [ ] Add sanitized-evidence rules that forbid committing secrets, cookies, tokens, raw browser data, message contents, full personal runtime paths, or complete plugin description dumps.
@@ -581,7 +601,7 @@ Fine-grained implementation checklist:
 - `mcp2cli` tests prove compact list/search/show and sensitive-call blocking.
 - Browser checker tests prove isolated cleanup, project-profile retention, human-owned protection, and tab owner exclusivity.
 - Port-governance tests prove Codex never allocates OpenClaw ranges, OpenClaw legacy ports are imported as reserved, conflicts are skipped without killing processes, and stale leases require PID/health evidence before reuse.
-- Port allocator CLI tests prove `reserve`, `release`, `import-legacy`, and non-dry-run `gc` write receipts, while mismatched owner/range requests and owner-session mismatches fail closed.
+- Port allocator CLI tests prove `reserve`, `renew`, `release`, `import-legacy`, and non-dry-run `gc` write receipts; concurrent reserves do not allocate the same port; pending-bind/crash recovery is evidence-gated; and mismatched owner/range or owner-session requests fail closed.
 - CDP Bridge/OpenCLI tests prove sensitive actions require explicit authorization.
 - `oh-my-pi` updater tests prove pinned update and rollback receipts.
 - `wecom-cli` tests prove process inventory is read-only, secrets are redacted, GUI write actions fail without authorization, and WXWork GUI lease is exclusive.
