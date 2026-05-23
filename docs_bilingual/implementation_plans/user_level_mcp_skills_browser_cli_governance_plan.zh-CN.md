@@ -71,10 +71,12 @@ C:\Users\lenovo\.codex\external\cli-anything\
 C:\Users\lenovo\.codex\external\opencli\
 C:\Users\lenovo\.codex\tools\mcp2cli\
 C:\Users\lenovo\.codex\tools\skills2cli\
+C:\Users\lenovo\.codex\tools\codex-port\
 C:\Users\lenovo\.codex\tools\browser-automation\
 C:\Users\lenovo\.codex\tools\wecom-cli\
 C:\Users\lenovo\.codex\state\mcp2cli\
 C:\Users\lenovo\.codex\state\skills2cli\
+C:\Users\lenovo\.codex\state\ports\
 C:\Users\lenovo\.codex\state\browser-automation\
 C:\Users\lenovo\.codex\state\wecom-cli\
 C:\Users\lenovo\.codex\state\tool-updates\
@@ -397,6 +399,7 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 | --- | --- | --- | --- | --- |
 | `skills2cli` | `planned`，实现后可成为 `active` | index/search/show/warning summary 的紧凑只读输出 | apply/disable skills、输出完整 plugin skill body、记录私有完整路径 | compact-output 测试、warning audit 脱敏测试、profile 建议不直接应用的证据 |
 | `mcp2cli` | `planned`，按 profile 逐步 `active` | list/search/show，非敏感 call 需 category 检查 | secrets、shell、browser state、remote mutation、payment/account/personal data call | allowed-profile registry、sensitive-call fail-closed checker、授权 receipt schema |
+| `codex-port` allocator | `planned`，reserve/release 均有 receipt 后可成为 `active` | 按号段 reserve/list/release/import/gc lease | 跨 owner 分配端口、kill 端口持有进程、无证据复用 stale lease | owner-range 测试、live-socket 冲突 fixture、lease receipt schema、stale PID/health 证据 |
 | `chrome-devtools-mcp` | `planned`，本地调试 isolated mode 可先 `active` | isolated-session local/debug inspect | human-owned Chrome、登录态 project-profile、cleanup | managed wrapper、lease、profile ownership、stale cleanup dry-run 证据 |
 | CDP Bridge | `on-demand` | tab list、DOM scan、screenshot、read-only inventory | cookie、JS write、click/type/navigate sensitive context | owner check、authorization gate、read/write 分离测试 |
 | OpenCLI | `on-demand` | isolated 或 project-profile 的明确任务适配 | 默认绑定 human-owned tab、常驻加载 | wrapper pin、browser owner registry、human-owned protection 测试 |
@@ -410,6 +413,7 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 
 - `skills2cli`：`index`、`search`、`show` 和 warning-audit summary 可用；默认输出紧凑；输出不得泄露私有完整路径、cookie、token 或全量 plugin skill descriptions。
 - `mcp2cli`：allowed profiles 明确；list/search/show 默认紧凑；敏感调用在没有匹配授权 receipt 时 fail closed。
+- `codex-port`：Codex/OpenClaw 号段被强制执行，OpenCLI 只获得 allocator 驱动的 `--port auto` lease，每个写动作都有 rollback-ready receipt。
 - `chrome-devtools-mcp`：wrapper 写入 lease；isolated-session-managed 与 project-profile 模式明确区分；human-owned Chrome 被保护；stale-cleanup 必须先 dry-run 通过。
 - CDP Bridge：只读检查与可写动作分离；每个写动作或敏感读取都必须先具备 owner evidence 与 authorization evidence。
 - OpenCLI：在安装 pin、profile binding、阻止无授权绑定 human-owned tabs 的规则完成并通过测试前，保持 on-demand。
@@ -462,7 +466,7 @@ receipt 必填字段：
 - rollback pointer；
 - last updated time；
 - status：`active`、`on-demand`、`reference-only` 或 `disabled`；
-- owner lane：`skills2cli`、`mcp2cli`、`browser`、`oh-my-pi`、`cli-anything`、`wecom-cli` 或 `reference`。
+- owner lane：`skills2cli`、`mcp2cli`、`codex-port`、`browser`、`oh-my-pi`、`cli-anything`、`wecom-cli` 或 `reference`。
 
 仓库证据可以记录 receipt schema、相对 state 名称、status 和脱敏后的 smoke-test summary。仓库证据不得记录 secrets、cookies、tokens、raw browser data、消息内容或完整个人运行时路径。
 
@@ -556,7 +560,7 @@ OpenSpec 切片交付矩阵：
 ## 17. 实施顺序
 
 1. 为本方案创建 OpenSpec change。
-2. 增加 token/risk priority、browser asset class、sensitive authorization、update receipt 的治理文档和 checker。
+2. 增加 token/risk priority、port registry/lease、browser asset class、sensitive authorization、update receipt 的治理文档和 checker。
 3. 实现 `skills2cli` MVP 和测试。
 4. 增加 `mcp2cli` 用户级 wrapper 与允许 profile registry。
 5. 把 `chrome-devtools-mcp` 提升为用户级 managed wrapper。

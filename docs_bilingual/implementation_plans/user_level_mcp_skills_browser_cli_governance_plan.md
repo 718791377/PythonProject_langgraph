@@ -69,10 +69,12 @@ C:\Users\lenovo\.codex\external\cli-anything\
 C:\Users\lenovo\.codex\external\opencli\
 C:\Users\lenovo\.codex\tools\mcp2cli\
 C:\Users\lenovo\.codex\tools\skills2cli\
+C:\Users\lenovo\.codex\tools\codex-port\
 C:\Users\lenovo\.codex\tools\browser-automation\
 C:\Users\lenovo\.codex\tools\wecom-cli\
 C:\Users\lenovo\.codex\state\mcp2cli\
 C:\Users\lenovo\.codex\state\skills2cli\
+C:\Users\lenovo\.codex\state\ports\
 C:\Users\lenovo\.codex\state\browser-automation\
 C:\Users\lenovo\.codex\state\wecom-cli\
 C:\Users\lenovo\.codex\state\tool-updates\
@@ -395,6 +397,7 @@ Default lane-state table:
 | --- | --- | --- | --- | --- |
 | `skills2cli` | `planned`, then eligible for `active` after implementation | Compact read-only index/search/show/warning summaries | Applying/disabling skills, dumping complete plugin skill bodies, recording full private paths | Compact-output tests, warning-audit redaction tests, evidence that profile suggestions do not apply changes |
 | `mcp2cli` | `planned`, then profile-by-profile `active` | list/search/show; non-sensitive calls after category checks | Secrets, shell, browser state, remote mutation, payment/account/personal-data calls | Allowed-profile registry, sensitive-call fail-closed checker, authorization receipt schema |
+| `codex-port` allocator | `planned`; eligible for `active` only after receipt-backed reserve/release | range-aware lease reserve/list/release/import/gc | cross-owner range allocation, killing port holders, silent stale reuse | owner-range tests, live-socket collision fixtures, lease receipt schema, stale PID/health evidence |
 | `chrome-devtools-mcp` | `planned`; local isolated debug mode may become `active` first | isolated-session local/debug inspection | human-owned Chrome, logged-in project profiles, cleanup | Managed wrapper, lease, profile ownership, stale-cleanup dry-run evidence |
 | CDP Bridge | `on-demand` | tab list, DOM scan, screenshot, read-only inventory | cookies, JavaScript write, click/type/navigate in sensitive context | owner check, authorization gate, read/write separation tests |
 | OpenCLI | `on-demand` | explicit isolated or project-profile task adaptation | default binding to human-owned tabs or always-on loading | wrapper pin, browser owner registry, human-owned protection tests |
@@ -409,6 +412,7 @@ Lane-specific `active` criteria:
 
 - `skills2cli`: `index`, `search`, `show`, and warning-audit summary commands work; default output is compact; output does not leak private full paths, cookies, tokens, or full plugin skill descriptions.
 - `mcp2cli`: allowed profiles are explicit; list/search/show output is compact by default; sensitive calls fail closed unless a matching authorization receipt is present.
+- `codex-port`: port registry/lease enforcement keeps Codex/OpenClaw ranges separated, OpenCLI receives only allocator-driven `--port auto` leases, and every write action has a rollback-ready receipt.
 - `chrome-devtools-mcp`: the wrapper writes a lease; isolated-session-managed and project-profile modes are distinct; human-owned Chrome is protected; stale-cleanup dry-run passes before cleanup is allowed.
 - CDP Bridge: read-only inspection is separated from write-capable actions; every write or sensitive read requires owner evidence and authorization evidence before execution.
 - OpenCLI: remains on-demand until installation pinning, profile binding, and the rule blocking unauthorized human-owned tabs are implemented and tested.
@@ -461,7 +465,7 @@ Required receipt fields:
 - rollback pointer;
 - last updated time;
 - status: `active`, `on-demand`, `reference-only`, or `disabled`;
-- owner lane: `skills2cli`, `mcp2cli`, `browser`, `oh-my-pi`, `cli-anything`, `wecom-cli`, or `reference`.
+- owner lane: `skills2cli`, `mcp2cli`, `codex-port`, `browser`, `oh-my-pi`, `cli-anything`, `wecom-cli`, or `reference`.
 
 Repository evidence may record the receipt schema, relative state names, status, and sanitized smoke-test summaries. It must not record secrets, cookies, tokens, raw browser data, message contents, or full personal runtime paths.
 
@@ -557,7 +561,7 @@ Fine-grained implementation checklist:
 ## 17. Implementation order
 
 1. Create an OpenSpec change for this plan.
-2. Add governance docs and checkers for token/risk priority, browser asset classes, sensitive authorization, and update receipts.
+2. Add governance docs and checkers for token/risk priority, port registry/lease, browser asset classes, sensitive authorization, and update receipts.
 3. Implement `skills2cli` MVP and tests.
 4. Add `mcp2cli` user-level wrapper and allowed-profile registry.
 5. Promote `chrome-devtools-mcp` to managed user-level wrapper.
