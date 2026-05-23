@@ -19,7 +19,7 @@ Review date: 2026-05-23.
 
 Conclusion: the original plan already covered the architectural boundary, state model, safety rules, and phase gates, but it lacked an item-level implementation checklist. That made it hard for later sessions to distinguish implemented work from plan-only intent. This revision adds the item-level progress checklist in section 11 and updates section 13 to reflect current implementation facts.
 
-Status note: this document remains `status: draft`. Draft here means it is not a global active governance policy and does not claim that the whole runtime is complete. Phase 2A central installer/checker/updater, the Phase 2B fixture-safe GUI shell, and the Phase 2C dual-fixture install/check/update/status isolation evidence are confirmed on local `main`; this follow-up adds the Phase 1 CLI read-contract fixture gate, the GUI write-command output-contract fixture gate, the write-command `atomic_write` / `lock_status` fail-closed fixture gate, and the project-default, session-override, invalid-record, legacy-compatibility, and no-op state-behavior fixture gate. The real target-project Phase 1 CLI state model is still open, so the document remains `draft`.
+Status note: this document remains `status: draft`. Draft here means it is not a global active governance policy and does not claim that the whole runtime is complete. Phase 2A central installer/checker/updater, the Phase 2B fixture-safe GUI shell, and the Phase 2C dual-fixture install/check/update/status isolation evidence are confirmed on local `main`; this repository now has the Phase 1 CLI read-contract fixture gate, the GUI write-command output-contract fixture gate, the write-command `atomic_write` / `lock_status` fail-closed fixture gate, the project-default, session-override, invalid-record, legacy-compatibility, and no-op state-behavior fixture gate, plus a read-only Phase 1 readiness checker fixture gate. The real target-project Phase 1 CLI state model is still open, so the document remains `draft`.
 
 Current known local facts:
 
@@ -28,6 +28,7 @@ Current known local facts:
 - This follow-up adds Phase 1 CLI read-contract fixture support: installer/checker preflight now validates the shared envelope, `effective_source`, session counts, list structure, and private-field redaction for `project-status`, `list-sessions`, and `status`, so the GUI cannot be installed against an incomplete target CLI.
 - This follow-up also adds GUI write-command output-contract fixture support: after `project-on`, `project-off`, `session-on`, or `session-off`, the GUI now requires `before`, `after`, `changed_scope`, `changed_paths`, `skipped_invalid_records`, `lock_status`, `audit_path`, `atomic_write`, `no_op`, scope agreement, atomic-write declaration, safe lock state, and private-field redaction before accepting the result.
 - This follow-up also adds Phase 1 state-behavior fixture support: project-level on/off propagates only to project-managed sessions and does not overwrite `manual-session`; single-session overrides win over the project default; repeated writes report `no_op = true`; invalid JSON records are classified with stable tokens and skipped; and legacy records remain read-compatible.
+- This follow-up adds the read-only `check_project_moe_phase1_readiness.py` readiness checker: without writing the target project, it checks dirty Git state, Agent TOML, private `MOE.md`, CLI read contract, CLI write-command surface, `thesis-moe-on/off.cmd` wrappers, and the startup hook; this checker provides go/no-go evidence before target writes.
 - These facts only mean repository fixture and contract-gate evidence exists; they do not mean `D:\PythonProject_paper_suggest` has completed Phase 1, and they do not mean a real target-project GUI is ready for operation.
 - Without explicit remote-publication approval, GitLab/GitHub are outside this plan's automatic execution scope.
 
@@ -569,6 +570,7 @@ Recommended Phase 2 central-repository file ownership:
 - `tools/project_moe_gui_toolchain/install_project_moe_gui.py`: target-project install;
 - `tools/project_moe_gui_toolchain/update_project_moe_gui.py`: idempotent update;
 - `tools/project_moe_gui_toolchain/check_project_moe_gui_install.py`: installed artifact checker;
+- `tools/project_moe_gui_toolchain/check_project_moe_phase1_readiness.py`: read-only readiness checker before target-project writes;
 - `docs_bilingual/operations/project_moe_gui_usage.zh-CN.md`: operator documentation.
 
 ### 11.1 Implementation progress checklist
@@ -579,7 +581,7 @@ Phase-level summary:
 
 | Phase | Phase checkbox | Current status | Anti-ambiguity note |
 | --- | --- | --- | --- |
-| Phase 1: target-project command-line state model | [ ] | Pending target-project implementation/verification | It is unchecked because the `D:\PythonProject_paper_suggest` CLI, wrappers, startup hooks, and tests have not yet been confirmed by this repository. This repository now has read-contract, write-contract, atomic/lock-state, and state-behavior fixture gates, but the real target project remains incomplete. |
+| Phase 1: target-project command-line state model | [ ] | Pending target-project implementation/verification | It is unchecked because the `D:\PythonProject_paper_suggest` CLI, wrappers, startup hooks, and tests have not yet been confirmed by this repository. This repository now has read-contract, write-contract, atomic/lock-state, state-behavior fixture gates, and a read-only readiness checker, but the real target project remains incomplete. |
 | Phase 2A: central installer, checker, and updater in this repository | [x] | Complete and merged into local `main` | Backed by this repository's local commit `3e4e819c73c78472d948e68d5352085dcac6551d` and local-gate evidence. |
 | Phase 2B: PySide6 GUI application | [x] | Fixture-safe GUI shell complete and merged into local `main` | Covers import-safe shell, view model, write readback, same-scope pending disable, keyboard/high-contrast semantics, and explicit visible-window boundary; real visible-window/QTest evidence remains later operational evidence and does not block the repository fixture-safe definition. |
 | Phase 2C: cross-project reuse and target install | [x] | Dual-fixture contract closed | Two isolated fixture projects now pass the same install/check/update/status contract, project A/B isolation, and private Agent TOML / `MOE.md` / state preservation on update; real target-project install still needs target-project Phase 1 completion and separate approval. |
@@ -598,6 +600,7 @@ Phase-level summary:
 #### Phase 1: target-project command-line state model
 
 - [ ] Run read-only dirty/ownership preflight in `D:\PythonProject_paper_suggest`.
+- [x] Provide the repository `check_project_moe_phase1_readiness.py` read-only readiness checker with fixture coverage for clean target success plus dirty target and missing-wrapper fail-closed behavior.
 - [ ] Confirm the target project has `.codex/agents/<project-moe-agent>.toml` with fields matching this plan.
 - [ ] Confirm the target project's private prompt source `MOE.md` stays inside that project.
 - [ ] Implement or verify `tools/thesis_moe_mode.py project-on`.
@@ -759,10 +762,10 @@ Phase 2 acceptance:
 Next implementation should proceed as: close the target-project CLI first, keep GUI work fixture-backed first, and defer real target install until the target CLI contract exists.
 
 1. To control real `D:\PythonProject_paper_suggest` sessions, complete Phase 1 in the target project first: CLI state model, `list-sessions --json`, `status --json`, `assert-on`, `thesis-moe-on/off.cmd`, and target-project startup checkpoints.
-2. If there is no target-project write approval, this repository may continue with Phase 2B only against fixture/mock target projects; it must not write real `paper_suggest` `.omx/state`.
+2. If there is no target-project write approval, this repository may continue with read-only readiness checking and fixture/mock target-project validation; it must not write real `paper_suggest` `.omx/state` or wrappers.
 3. The Phase 2B GUI may change state only by invoking the target-project CLI; if that CLI is missing, the GUI must show a blocker instead of scanning or writing state files directly.
-4. Phase 2C is closed at the repository fixture layer after two isolated fixtures passed the same contract; this follow-up also adds the Phase 1 read-contract fixture gate, the GUI write-command output-contract fixture gate, the write-command atomic/lock fixture gate, and the project-default/session-override/invalid-record/legacy/no-op state-behavior fixture gate, while real-project install still depends on later target-project approval and Phase 1 readiness.
-5. This document does not move from `draft` yet: Phase 2B, fixture-level Phase 2C, the repository Phase 1 read-contract gate, the GUI write-command output-contract gate, the write-command atomic/lock gate, and the state-behavior gate now have local evidence, but the real target-project Phase 1 CLI / wrapper / startup checkpoint remains incomplete.
+4. Phase 2C is closed at the repository fixture layer after two isolated fixtures passed the same contract; the repository also has the Phase 1 read-contract fixture gate, the GUI write-command output-contract fixture gate, the write-command atomic/lock fixture gate, the project-default/session-override/invalid-record/legacy/no-op state-behavior fixture gate, and the read-only readiness checker, while real-project install still depends on later target-project approval and Phase 1 readiness.
+5. This document does not move from `draft` yet: Phase 2B, fixture-level Phase 2C, the repository Phase 1 read-contract gate, the GUI write-command output-contract gate, the write-command atomic/lock gate, the state-behavior gate, and the read-only readiness checker now have local evidence, but the real target-project Phase 1 CLI / wrapper / startup checkpoint remains incomplete.
 
 Phase gate rules:
 

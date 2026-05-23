@@ -31,6 +31,15 @@ PROJECT_EVIDENCE = [".git", "AGENTS.md", "pyproject.toml", "requirements.txt", "
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 NAMESPACE_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
 READ_CLI_CONTRACT_COMMANDS = ("project-status", "list-sessions", "status")
+PHASE1_EXPECTED_WRITE_COMMANDS = ("project-on", "project-off", "on", "off", "assert-on")
+DEFAULT_ON_WRAPPER = Path("thesis-moe-on.cmd")
+DEFAULT_OFF_WRAPPER = Path("thesis-moe-off.cmd")
+DEFAULT_STARTUP_HOOK_CANDIDATES = (
+    Path("AGENTS.md"),
+    Path("docs_bilingual/project_startup_summary.md"),
+    Path("docs_bilingual/project_startup_summary.zh-CN.md"),
+    Path("docs/project_startup_summary.md"),
+)
 COMMON_CLI_ENVELOPE_KEYS = ("schema_version", "command", "ok", "token", "cli_contract")
 STATUS_EFFECTIVE_SOURCES = {"session", "project-default", "fail-closed"}
 PRIVATE_CLI_FIELD_NAMES = {
@@ -113,6 +122,26 @@ def project_evidence(root: Path) -> list[str]:
     return [item for item in PROJECT_EVIDENCE if (root / item).exists()]
 
 
+def git_status_summary(root: Path) -> dict[str, Any]:
+    result = subprocess.run(
+        ["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    records = [line for line in result.stdout.splitlines() if line.strip()]
+    return {
+        "is_git_worktree": result.returncode == 0,
+        "dirty": bool(records) if result.returncode == 0 else None,
+        "dirty_count": len(records) if result.returncode == 0 else None,
+        "records_sample": records[:20],
+        "token": "ok" if result.returncode == 0 and not records else ("blocked:dirty_target_project" if result.returncode == 0 else "blocked:git_status_unavailable"),
+        "stderr": result.stderr[-800:] if result.returncode != 0 else "",
+    }
+
+
 def safe_relative(root: Path, relative: str | Path, token: str = "blocked:path_outside_project") -> tuple[Path | None, dict[str, Any] | None]:
     rel = Path(relative)
     if rel.is_absolute():
@@ -154,6 +183,123 @@ def check_agent_toml(root: Path, agent_name: str) -> list[dict[str, Any]]:
         except Exception as exc:
             errors.append(blocker("blocked:invalid_agent_toml", "Cannot parse target agent TOML.", path=norm(rel), error=str(exc)))
     return errors
+
+
+def inspect_agent_toml(root: Path, agent_name: str, namespace: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    rel = Path(".codex/agents") / f"{agent_name}.toml"
+    path, err = safe_relative(root, rel, "blocked:agent_toml_path_invalid")
+    if err:
+        return {"path": norm(rel), "exists": False, "required_fields_ok": False, "extension_sections": []}, [err]
+    assert path is not None
+    details: dict[str, Any] = {
+        "path": norm(rel),
+        "exists": path.exists(),
+        "required_fields_ok": False,
+        "extension_sections": [],
+        "private_prompt_source": "MOE.md",
+    }
+    if not path.exists():
+        return details, [blocker("blocked:missing_agent_toml", "Target project must define the MOE agent TOML before Phase 1 readiness.")]
+    if tomllib is None:
+        return details, [blocker("blocked:tomllib_unavailable", "Cannot validate agent TOML without tomllib.")]
+    errors: list[dict[str, Any]] = []
+    try:
+        data = tomllib.loads(read_text(path))
+    except Exception as exc:
+        return details, [blocker("blocked:invalid_agent_toml", "Cannot parse target agent TOML.", path=norm(rel), error=str(exc))]
+    required = ["name", "description", "developer_instructions"]
+    missing = [key for key in required if not str(data.get(key) or "").strip()]
+    if missing:
+        errors.append(blocker("blocked:agent_toml_missing_required_fields", "Agent TOML is missing required top-level fields.", missing=missing))
+    if data.get("name") != agent_name:
+        errors.append(blocker("blocked:agent_name_mismatch", "Agent TOML top-level name must match --agent-name.", expected=agent_name, observed=data.get("name")))
+    project_section = data.get("project") if isinstance(data.get("project"), dict) else {}
+    moe_section = data.get("moe") if isinstance(data.get("moe"), dict) else {}
+    dispatch_section = data.get("dispatch") if isinstance(data.get("dispatch"), dict) else {}
+    details["required_fields_ok"] = not missing
+    details["extension_sections"] = [name for name in ["project", "moe", "dispatch", "extensions"] if isinstance(data.get(name), dict)]
+    details["private_prompt_source"] = str(project_section.get("private_prompt_source") or "MOE.md")
+    if project_section.get("scope") not in {None, "repo-local"}:
+        errors.append(blocker("blocked:agent_project_scope_invalid", "Agent TOML [project].scope must be repo-local when present.", observed=project_section.get("scope")))
+    if moe_section.get("state_namespace") not in {None, namespace}:
+        errors.append(blocker("blocked:agent_state_namespace_mismatch", "Agent TOML [moe].state_namespace must match --state-namespace.", expected=namespace, observed=moe_section.get("state_namespace")))
+    forbidden_dispatch = dispatch_section.get("forbidden")
+    if isinstance(forbidden_dispatch, list) and "full-history-fork-with-custom-role" not in forbidden_dispatch:
+        errors.append(blocker("blocked:agent_dispatch_boundary_incomplete", "Agent TOML dispatch boundary should forbid full-history-fork-with-custom-role."))
+    return details, errors
+
+
+def inspect_private_prompt(root: Path, source: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    rel = Path(source or "MOE.md")
+    path, err = safe_relative(root, rel, "blocked:private_prompt_path_invalid")
+    if err:
+        return {"path": norm(rel), "exists": False}, [err]
+    assert path is not None
+    details = {"path": norm(rel), "exists": path.exists(), "managed_by_toolchain": False}
+    if not path.exists():
+        return details, [blocker("blocked:missing_private_prompt_source", "Project-private prompt source must exist inside the target project.", path=norm(rel))]
+    return details, []
+
+
+def command_token_hits(text: str, tokens: tuple[str, ...]) -> list[str]:
+    return [token for token in tokens if token in text]
+
+
+def inspect_mode_cli_surface(root: Path, mode_cli: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    path, err = safe_relative(root, mode_cli, "blocked:mode_cli_path_invalid")
+    if err:
+        return {"path": norm(mode_cli), "exists": False, "write_commands_seen": []}, [err]
+    assert path is not None
+    details: dict[str, Any] = {"path": norm(mode_cli), "exists": path.exists(), "write_commands_seen": []}
+    if not path.exists():
+        return details, [blocker("blocked:missing_mode_cli", "Target project mode CLI is missing.", path=norm(mode_cli))]
+    text = read_text(path)
+    hits = command_token_hits(text, PHASE1_EXPECTED_WRITE_COMMANDS)
+    details["write_commands_seen"] = hits
+    missing = [command for command in PHASE1_EXPECTED_WRITE_COMMANDS if command not in hits]
+    errors = []
+    if missing:
+        errors.append(blocker("blocked:phase1_write_command_surface_incomplete", "Mode CLI text does not expose all expected Phase 1 command tokens.", missing=missing))
+    return details, errors
+
+
+def inspect_wrapper(root: Path, relative: Path, expected_command: str, mode_cli: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    path, err = safe_relative(root, relative, "blocked:wrapper_path_invalid")
+    if err:
+        return {"path": norm(relative), "exists": False, "expected_command": expected_command}, [err]
+    assert path is not None
+    details = {"path": norm(relative), "exists": path.exists(), "expected_command": expected_command, "references_mode_cli": False, "references_expected_command": False}
+    if not path.exists():
+        return details, [blocker("blocked:missing_phase1_wrapper", "Expected Phase 1 wrapper is missing.", path=norm(relative))]
+    text = read_text(path).lower()
+    details["references_mode_cli"] = mode_cli.name.lower() in text or norm(mode_cli).lower() in text.replace("\\", "/")
+    details["references_expected_command"] = expected_command.lower() in text
+    errors: list[dict[str, Any]] = []
+    if not details["references_mode_cli"]:
+        errors.append(blocker("blocked:phase1_wrapper_not_bound_to_mode_cli", "Wrapper must invoke the target project's mode CLI.", path=norm(relative), mode_cli=norm(mode_cli)))
+    if not details["references_expected_command"]:
+        errors.append(blocker("blocked:phase1_wrapper_command_mismatch", "Wrapper must invoke the expected project-level command.", path=norm(relative), expected_command=expected_command))
+    return details, errors
+
+
+def inspect_startup_hooks(root: Path, startup_paths: list[Path]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    checked: list[dict[str, Any]] = []
+    hook_found = False
+    for rel in startup_paths:
+        path, err = safe_relative(root, rel, "blocked:startup_hook_path_invalid")
+        if err:
+            checked.append({"path": norm(rel), "exists": False, "token": err["code"]})
+            continue
+        assert path is not None
+        exists = path.exists()
+        has_hook = False
+        if exists:
+            text = read_text(path).lower()
+            has_hook = "thesis_moe_mode.py" in text and "status" in text and "--json" in text
+            hook_found = hook_found or has_hook
+        checked.append({"path": norm(rel), "exists": exists, "has_moe_status_hook": has_hook})
+    errors = [] if hook_found else [blocker("blocked:missing_moe_activation_hook", "No startup or launcher file contains a MOE status --json activation checkpoint.")]
+    return {"candidates_checked": checked, "hook_found": hook_found}, errors
 
 
 def run_cli(root: Path, mode_cli: Path, command: str) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
@@ -468,6 +614,67 @@ def preflight(root: Path, agent_name: str, namespace: str, mode_cli: Path, check
         cli_errors, cli_details = check_cli_contract(root, mode_cli)
         errors.extend(cli_errors)
     return errors, {"project_root_evidence": evidence, "cli_contract_check": cli_details}
+
+
+def check_phase1_readiness(
+    root: Path,
+    agent_name: str,
+    namespace: str,
+    mode_cli: Path,
+    on_wrapper: Path = DEFAULT_ON_WRAPPER,
+    off_wrapper: Path = DEFAULT_OFF_WRAPPER,
+    startup_paths: list[Path] | None = None,
+) -> dict[str, Any]:
+    errors = validate_identifiers(agent_name, namespace)
+    evidence = project_evidence(root)
+    if not evidence:
+        errors.append(blocker("blocked:missing_project_evidence", "Target directory does not look like a project.", expected=PROJECT_EVIDENCE))
+    git_status = git_status_summary(root)
+    if git_status["token"] == "blocked:dirty_target_project":
+        errors.append(blocker("blocked:dirty_target_project", "Target project has dirty or untracked files; preserve or classify them before Phase 1 writes.", dirty_count=git_status["dirty_count"], records_sample=git_status["records_sample"]))
+    elif git_status["token"] == "blocked:git_status_unavailable":
+        errors.append(blocker("blocked:git_status_unavailable", "Cannot run git status in target project.", stderr=git_status["stderr"]))
+
+    agent_details, agent_errors = inspect_agent_toml(root, agent_name, namespace)
+    errors.extend(agent_errors)
+    prompt_details, prompt_errors = inspect_private_prompt(root, str(agent_details.get("private_prompt_source") or "MOE.md"))
+    errors.extend(prompt_errors)
+    mode_cli_surface, mode_surface_errors = inspect_mode_cli_surface(root, mode_cli)
+    errors.extend(mode_surface_errors)
+    if mode_cli_surface.get("exists"):
+        cli_errors, cli_details = check_cli_contract(root, mode_cli)
+        errors.extend(cli_errors)
+    else:
+        cli_details = {"mode_cli": norm(mode_cli), "commands_checked": [], "validated_fields": {}}
+    on_details, on_errors = inspect_wrapper(root, on_wrapper, "project-on", mode_cli)
+    off_details, off_errors = inspect_wrapper(root, off_wrapper, "project-off", mode_cli)
+    errors.extend(on_errors)
+    errors.extend(off_errors)
+    hook_details, hook_errors = inspect_startup_hooks(root, startup_paths or list(DEFAULT_STARTUP_HOOK_CANDIDATES))
+    errors.extend(hook_errors)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "command": "check_project_moe_phase1_readiness",
+        "ok": not errors,
+        "token": "ok" if not errors else errors[0]["code"],
+        "readiness_status": "ready" if not errors else "blocked",
+        "read_only": True,
+        "writes_target_project": False,
+        "target_project_root": str(root),
+        "agent_name": agent_name,
+        "state_namespace": namespace,
+        "mode_cli": norm(mode_cli),
+        "project_root_evidence": evidence,
+        "git_status": git_status,
+        "agent_toml": agent_details,
+        "private_prompt_source": prompt_details,
+        "mode_cli_surface": mode_cli_surface,
+        "cli_contract_check": cli_details,
+        "wrappers": {"on": on_details, "off": off_details},
+        "startup_activation_hooks": hook_details,
+        "blockers": errors,
+        "next_actions": [] if not errors else sorted({error["code"] for error in errors}),
+    }
 
 
 def planned_changes(root: Path, planned: dict[Path, str]) -> tuple[list[dict[str, Any]], bool]:

@@ -21,6 +21,30 @@ related_plan: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchai
 
 安装器不会读取或复制目标项目私有 `MOE.md`，不会覆盖 `.codex/agents/*.toml`，也不会写入 `.omx/state`。
 
+## Phase 1 只读 readiness 检查
+
+在对真实目标项目写入 CLI、wrapper 或 GUI 安装产物前，先运行只读 readiness checker。它只读取目标项目，不写文件：
+
+```powershell
+python tools/project_moe_gui_toolchain/check_project_moe_phase1_readiness.py `
+  --target-project D:\SomeProject `
+  --agent-name thesis-moe-mentor `
+  --state-namespace thesis_moe `
+  --json
+```
+
+该检查会验证：
+
+- 目标项目 Git 状态是否干净；
+- `.codex/agents/<agent>.toml` 是否存在且核心字段匹配；
+- 私有提示源 `MOE.md` 是否留在目标项目内；
+- `tools/thesis_moe_mode.py` 是否具备读取契约：`project-status --json`、`list-sessions --json`、`status --json`；
+- CLI 文本是否暴露 Phase 1 写命令 surface：`project-on`、`project-off`、`on`、`off`、`assert-on`；
+- `thesis-moe-on.cmd` 与 `thesis-moe-off.cmd` 是否分别调用 `project-on` / `project-off`；
+- `AGENTS.md` 或启动摘要等入口是否包含 `status --json` 激活检查点。
+
+返回 `read_only = true` 与 `writes_target_project = false` 才能作为只读证据。若返回 `blocked:dirty_target_project`、`blocked:missing_phase1_wrapper` 或 `blocked:missing_moe_activation_hook` 等 token，应先在目标项目内修复或单独授权写入后再继续。
+
 ## 预览安装
 
 ```powershell

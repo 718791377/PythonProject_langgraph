@@ -15,6 +15,7 @@ sys.path.insert(0, str(TOOLCHAIN_SRC))
 INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_moe_gui.py"
 CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_gui_install.py"
 UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_moe_gui.py"
+PHASE1_READINESS = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_phase1_readiness.py"
 
 
 STATEFUL_MODE_CLI_TEMPLATE = r'''
@@ -211,6 +212,12 @@ def main() -> int:
             effective = project_default_enabled()
             effective_source = "project-default"
         payload = envelope(command, session_id=session_id, effective_enabled=effective, effective_source=effective_source)
+    elif command == "assert-on":
+        session_payload = read_json(session_path(session_id), {})
+        effective = bool(session_payload.get("enabled", project_default_enabled()))
+        payload = envelope(command, session_id=session_id, effective_enabled=effective, effective_source="session" if "enabled" in session_payload else "project-default")
+        if not effective:
+            payload.update(ok=False, token="disabled", exit_code=1, message="MOE mode is disabled")
     elif command == "project-on":
         changed, no_op = write_project(True)
         payload = envelope(command, project_default_enabled=True, changed_scope="project-default", no_op=no_op, changed=changed, **changed)
@@ -440,6 +447,30 @@ else:
             encoding="utf-8",
         )
 
+    def add_phase1_wrappers_and_startup_hook(self, root: Path) -> None:
+        (root / "thesis-moe-on.cmd").write_text(
+            '@echo off\npython "%~dp0tools\\thesis_moe_mode.py" project-on --json\nexit /b %ERRORLEVEL%\n',
+            encoding="utf-8",
+        )
+        (root / "thesis-moe-off.cmd").write_text(
+            '@echo off\npython "%~dp0tools\\thesis_moe_mode.py" project-off --json\nexit /b %ERRORLEVEL%\n',
+            encoding="utf-8",
+        )
+        (root / "AGENTS.md").write_text(
+            "On startup, resume, continue, or phase change, run `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
+            encoding="utf-8",
+        )
+
+    def git_commit_all(self, root: Path) -> None:
+        commands = [
+            ["git", "-C", str(root), "init"],
+            ["git", "-C", str(root), "add", "-A"],
+            ["git", "-C", str(root), "-c", "user.name=Project MOE Test", "-c", "user.email=project-moe@example.invalid", "commit", "-m", "initial fixture"],
+        ]
+        for command in commands:
+            result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
+            self.assertEqual(result.returncode, 0, f"{command}\nstdout={result.stdout}\nstderr={result.stderr}")
+
     def file_digest(self, path: Path) -> str:
         return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -450,6 +481,61 @@ else:
             "private_state": project / ".omx" / "state" / namespace / "private-note.json",
         }
         return {key: self.file_digest(path) for key, path in private_paths.items()}
+
+    def test_phase1_readiness_checker_accepts_clean_target_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-ready"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-ready", session_id="session-phase1-ready")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+
+            self.assertEqual(payload["token"], "ok", payload)
+            self.assertTrue(payload["read_only"])
+            self.assertFalse(payload["writes_target_project"])
+            self.assertFalse(payload["git_status"]["dirty"])
+            self.assertTrue(payload["private_prompt_source"]["exists"])
+            self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "status"])
+            self.assertTrue(payload["wrappers"]["on"]["references_expected_command"])
+            self.assertTrue(payload["wrappers"]["off"]["references_expected_command"])
+            self.assertTrue(payload["startup_activation_hooks"]["hook_found"])
+
+    def test_phase1_readiness_checker_blocks_dirty_target_and_missing_wrapper(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-blocked"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-blocked", session_id="session-phase1-blocked")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "thesis-moe-off.cmd").unlink()
+            self.git_commit_all(project)
+            (project / "operator-note.txt").write_text("unclassified local note\n", encoding="utf-8")
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertEqual(payload["token"], "blocked:dirty_target_project", payload)
+            self.assertIn("blocked:dirty_target_project", blocker_codes)
+            self.assertIn("blocked:missing_phase1_wrapper", blocker_codes)
+            self.assertTrue(payload["git_status"]["dirty"])
 
     def test_install_cli_contract_fixture_accepts_phase1_read_envelope(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
