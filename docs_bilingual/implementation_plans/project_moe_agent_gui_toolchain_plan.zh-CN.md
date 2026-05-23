@@ -19,14 +19,14 @@ related_docs:
 
 结论：原方案的架构边界、状态模型、安全规则和阶段门基本完整，但缺少“按事项粒度”的实施进度清单，容易让后续会话无法判断哪些内容已经落地、哪些仍只是方案。本次补齐第 11 节的实施进度勾选清单，并把第 13 节改成基于当前事实的后续实施边界。
 
-状态说明：本文继续保持 `status: draft`。这里的 draft 表示它不是全局 active 治理政策，也不表示全部运行时能力已经完成。Phase 2A 本仓库中央 installer/checker/updater、Phase 2B fixture-safe GUI shell 与 Phase 2C 双 fixture install/check/update/status 隔离证据已确认合入本地 `main`；本次变更新增 Phase 1 CLI 读取契约 fixture gate 与 GUI 写入命令输出契约 fixture gate。真实目标项目 Phase 1 CLI 状态模型仍未完成，所以本文继续保持 `draft`。
+状态说明：本文继续保持 `status: draft`。这里的 draft 表示它不是全局 active 治理政策，也不表示全部运行时能力已经完成。Phase 2A 本仓库中央 installer/checker/updater、Phase 2B fixture-safe GUI shell 与 Phase 2C 双 fixture install/check/update/status 隔离证据已确认合入本地 `main`；本次变更新增 Phase 1 CLI 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate，以及写入命令 `atomic_write` / `lock_status` fail-closed fixture gate。真实目标项目 Phase 1 CLI 状态模型仍未完成，所以本文继续保持 `draft`。
 
 当前已知本地事实：
 
 - Phase 2A 已合入本仓库本地 `main`：`3e4e819c73c78472d948e68d5352085dcac6551d`（`实现项目 MOE GUI 第二阶段安装器`）。
 - Phase 2B 已合入本仓库本地 `main`：`47187a7da4b167341cf0a8fc01db415db601fe92`。
 - 本次后续变更新增 Phase 1 CLI 读取契约 fixture 支撑：installer/checker 会在安装前校验 `project-status`、`list-sessions`、`status` 的统一 envelope、`effective_source`、session counts、列表结构与私有字段泄露，避免真实目标项目 Phase 1 尚未落地时 GUI 误接入不完整 CLI。
-- 本次后续变更继续新增 GUI 写入命令输出契约 fixture 支撑：GUI 执行 `project-on`、`project-off`、`session-on` 或 `session-off` 后，必须校验 `before`、`after`、`changed_scope`、`changed_paths`、`skipped_invalid_records`、`lock_status`、`audit_path`、`no_op`、scope 匹配和私有字段泄露，契约不完整时 fail closed。
+- 本次后续变更继续新增 GUI 写入命令输出契约 fixture 支撑：GUI 执行 `project-on`、`project-off`、`session-on` 或 `session-off` 后，必须校验 `before`、`after`、`changed_scope`、`changed_paths`、`skipped_invalid_records`、`lock_status`、`audit_path`、`atomic_write`、`no_op`、scope 匹配、原子写入声明、锁状态安全和私有字段泄露，契约不完整时 fail closed。
 - 这些事实只表示本仓库 fixture 与契约验证支撑已落地；不表示 `D:\PythonProject_paper_suggest` 已完成 Phase 1，也不表示真实目标项目 GUI 已可操作。
 - 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
 
@@ -278,7 +278,7 @@ CLI JSON 输出契约：
 - `status --json` 额外返回：`effective_enabled`、`effective_source`（`session`、`project-default`、`fail-closed`）、`session_id`、`session_id_source`、`session_confidence`、`lifecycle_status`、`project_default_enabled`、`session_override_enabled`、`state_path`；
 - `project-status --json` 额外返回：`project_default`、`registered_session_count`、`valid_session_count`、`invalid_session_count`、`stale_session_count`、`orphan_candidate_count`、`state_paths`、`cli_contract`；
 - `list-sessions --json` 返回：`sessions` 数组、`counts`、`redaction_policy` 和 `source_paths`；每行 session 只允许包含脱敏 session id、source、confidence、enabled、effective_enabled、validity、lifecycle_status、status reason、branch、worktree、first seen、last seen、updated at、reason 摘要和 state path；
-- 写入命令的 JSON 输出必须包含 `before`、`after`、`changed_scope`、`changed_paths`、`skipped_invalid_records`、`lock_status`、`audit_path` 和 `no_op`；
+- 写入命令的 JSON 输出必须包含 `before`、`after`、`changed_scope`、`changed_paths`、`skipped_invalid_records`、`lock_status`、`audit_path`、`atomic_write` 和 `no_op`；
 - 失败 JSON 必须包含稳定 `token`、`remediation_hint` 和可选的脱敏 `details`；不得把私有提示词、raw session id、论文正文、原始环境变量值或完整 stderr 直接塞进 JSON。
 
 兼容要求：
@@ -611,7 +611,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - [ ] 覆盖项目默认值、session override、无效记录、旧记录兼容和 no-op 测试。
 - [x] 在本仓库测试中覆盖目标 CLI 读取契约不完整时安装前 fail closed：缺失 `effective_source`、缺失 session counts、暴露 raw/private 字段。
 - [x] 在本仓库 GUI shell fixture 中覆盖目标 CLI 写入契约不完整时 fail closed：缺失 `changed_paths`、写入 scope 不匹配、暴露 raw/private 字段。
-- [ ] 覆盖 state lock、atomic write、lock timeout 与 stale lock blocker 测试。
+- [x] 在本仓库 GUI shell fixture 中覆盖 state lock、atomic write、lock timeout 与 stale lock blocker fail-closed 测试：缺失 `atomic_write`、`atomic_write=false`、`lock_timeout` / stale lock blocker 均不得被 GUI 当成有效写入结果。
 - [ ] 接入 `thesis-moe-on.cmd` 与 `thesis-moe-off.cmd`。
 - [ ] 在目标项目 startup / launcher / AGENTS 等入口加入 MOE 状态读取检查点。
 - [ ] 编写或更新目标项目操作者文档。
@@ -760,8 +760,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 1. 若要控制 `D:\PythonProject_paper_suggest` 真实会话，必须先在目标项目完成 Phase 1：CLI 状态模型、`list-sessions --json`、`status --json`、`assert-on`、`thesis-moe-on/off.cmd` 和目标项目启动检查点。
 2. 若当前没有目标项目写入授权，本仓库可以继续做 Phase 2B，但只能使用 fixture/mock 目标项目，不得直接写 `paper_suggest` 真实 `.omx/state`。
 3. Phase 2B GUI 本体只能通过目标项目 CLI 改状态，不得直接编辑 JSON；若目标 CLI 缺失，GUI 必须显示 blocker，而不是降级扫描或写状态文件。
-4. Phase 2C 已在本仓库 fixture 层闭环：两个隔离 fixture 已通过相同 contract；本次又补充 Phase 1 读取契约 fixture gate 与 GUI 写入命令输出契约 fixture gate，真实项目安装仍取决于后续目标项目授权和 Phase 1 就绪性。
-5. 本文暂不从 `draft` 提升：Phase 2B、fixture 级 Phase 2C、本仓库 Phase 1 读取契约 gate 与 GUI 写入命令输出契约 gate 已有本地证据，但真实目标项目 Phase 1 CLI / wrapper / startup checkpoint 仍未完成。
+4. Phase 2C 已在本仓库 fixture 层闭环：两个隔离 fixture 已通过相同 contract；本次又补充 Phase 1 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate，以及写入命令原子写入/锁状态 fixture gate，真实项目安装仍取决于后续目标项目授权和 Phase 1 就绪性。
+5. 本文暂不从 `draft` 提升：Phase 2B、fixture 级 Phase 2C、本仓库 Phase 1 读取契约 gate、GUI 写入命令输出契约 gate 与写入命令 atomic/lock gate 已有本地证据，但真实目标项目 Phase 1 CLI / wrapper / startup checkpoint 仍未完成。
 
 阶段门规则：
 

@@ -39,7 +39,25 @@ WRITE_CLI_REQUIRED_FIELDS = (
     "lock_status",
     "audit_path",
     "no_op",
+    "atomic_write",
 )
+WRITE_CLI_LOCK_OK_STATUSES = {
+    "acquired",
+    "lock_acquired",
+    "lock_released",
+    "no_lock_required",
+    "not_locked",
+    "not_locked_fixture",
+    "released",
+}
+WRITE_CLI_LOCK_BLOCKED_STATUSES = {
+    "blocked",
+    "lock_failed",
+    "lock_timeout",
+    "locked",
+    "stale_lock",
+    "timeout",
+}
 PRIVATE_CLI_FIELD_NAMES = {
     "developer_instructions",
     "moe_md",
@@ -166,6 +184,42 @@ def validate_write_cli_payload(action: str, payload: dict[str, Any] | None) -> l
                 "blocked:write_cli_contract_invalid",
                 "Write command no_op must be a boolean.",
                 action=action,
+            )
+        )
+    if not isinstance(payload.get("atomic_write"), bool):
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_contract_invalid",
+                "Write command atomic_write must be a boolean.",
+                action=action,
+            )
+        )
+    elif payload.get("atomic_write") is not True:
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_atomic_write_required",
+                "Write command must report atomic_write=true before the GUI accepts state changes.",
+                action=action,
+            )
+        )
+    lock_status = str(payload.get("lock_status") or "").strip().lower()
+    if lock_status in WRITE_CLI_LOCK_BLOCKED_STATUSES or "stale" in lock_status or "timeout" in lock_status:
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_lock_not_clean",
+                "Write command lock_status reports a lock blocker and must fail closed.",
+                action=action,
+                lock_status=payload.get("lock_status"),
+            )
+        )
+    elif lock_status not in WRITE_CLI_LOCK_OK_STATUSES:
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_contract_invalid",
+                "Write command lock_status must be a known safe state.",
+                action=action,
+                observed=payload.get("lock_status"),
+                supported=sorted(WRITE_CLI_LOCK_OK_STATUSES),
             )
         )
     if action.startswith("session-") and not payload.get("session_id"):

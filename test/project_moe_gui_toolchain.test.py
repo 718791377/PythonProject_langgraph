@@ -93,8 +93,9 @@ def write_project(enabled: bool) -> tuple[dict, bool]:
         "changed_paths": changed_paths,
         "skipped_invalid_records": skipped_invalid_records,
         "lock_status": "not_locked_fixture",
-        "audit_path": str(STATE_ROOT / "audit.log"),
-    }, bool(before) == enabled
+    "audit_path": str(STATE_ROOT / "audit.log"),
+    "atomic_write": True,
+}, bool(before) == enabled
 
 def write_session(session_id: str, enabled: bool) -> tuple[dict, bool]:
     path = session_path(session_id)
@@ -121,8 +122,9 @@ def write_session(session_id: str, enabled: bool) -> tuple[dict, bool]:
         "changed_paths": [str(path)],
         "skipped_invalid_records": [],
         "lock_status": "not_locked_fixture",
-        "audit_path": str(STATE_ROOT / "audit.log"),
-    }, bool(before) == enabled
+    "audit_path": str(STATE_ROOT / "audit.log"),
+    "atomic_write": True,
+}, bool(before) == enabled
 
 def list_sessions() -> list[dict]:
     rows = []
@@ -246,6 +248,12 @@ class ProjectMoeGuiToolchainTests(unittest.TestCase):
             extra_payload = 'payload["changed_scope"] = "project-default" if cmd in {"on", "off"} else "session"\n'
         elif cli_variant == "write_private_field_exposed":
             extra_payload = 'payload["raw_session_id"] = "secret-session-value"\npayload["private_prompt_text"] = "never expose prompt"\n'
+        elif cli_variant == "write_missing_atomic_write":
+            extra_payload = 'payload.pop("atomic_write", None)\n'
+        elif cli_variant == "write_atomic_write_false":
+            extra_payload = 'payload["atomic_write"] = False\n'
+        elif cli_variant == "write_lock_timeout":
+            extra_payload = 'payload["lock_status"] = "lock_timeout"\n'
         (root / "tools" / "thesis_moe_mode.py").write_text(
             f"""
 from __future__ import annotations
@@ -296,6 +304,7 @@ elif cmd == "project-on":
     payload["skipped_invalid_records"] = []
     payload["lock_status"] = "not_locked_fixture"
     payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
+    payload["atomic_write"] = True
     payload["no_op"] = False
 elif cmd == "project-off":
     payload["message"] = "project default disabled"
@@ -307,6 +316,7 @@ elif cmd == "project-off":
     payload["skipped_invalid_records"] = []
     payload["lock_status"] = "not_locked_fixture"
     payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
+    payload["atomic_write"] = True
     payload["no_op"] = False
 elif cmd == "on":
     payload["message"] = "session enabled"
@@ -319,6 +329,7 @@ elif cmd == "on":
     payload["skipped_invalid_records"] = []
     payload["lock_status"] = "not_locked_fixture"
     payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
+    payload["atomic_write"] = True
     payload["no_op"] = False
 elif cmd == "off":
     payload["message"] = "session disabled"
@@ -331,6 +342,7 @@ elif cmd == "off":
     payload["skipped_invalid_records"] = []
     payload["lock_status"] = "not_locked_fixture"
     payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
+    payload["atomic_write"] = True
     payload["no_op"] = False
 else:
     payload = {{"schema_version": 1, "command": cmd, "ok": False, "token": "usage_error", "exit_code": 2, "message": "unsupported", "cli_contract": "project-moe-cli-v1"}}
@@ -778,6 +790,44 @@ else:
             self.assertFalse(result["ok"], result)
             self.assertEqual(result["token"], "blocked:write_cli_private_field_exposed")
             self.assertTrue(any("raw_session_id" in field for field in result["errors"][0]["fields"]))
+
+    def test_gui_shell_rejects_write_payload_without_atomic_write(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project, cli_variant="write_missing_atomic_write")
+            config = self.gui_config(project)
+            result = gui_shell.execute_write_action_with_readback(config, "project-on")
+            self.assertFalse(result["ok"], result)
+            self.assertEqual(result["token"], "blocked:write_cli_contract_missing_fields")
+            self.assertIn("atomic_write", result["errors"][0]["missing"])
+
+    def test_gui_shell_rejects_write_payload_when_atomic_write_is_false(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project, cli_variant="write_atomic_write_false")
+            config = self.gui_config(project)
+            result = gui_shell.execute_write_action_with_readback(config, "project-on")
+            self.assertFalse(result["ok"], result)
+            self.assertEqual(result["token"], "blocked:write_cli_atomic_write_required")
+
+    def test_gui_shell_rejects_write_payload_with_lock_timeout(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project, cli_variant="write_lock_timeout")
+            config = self.gui_config(project)
+            result = gui_shell.execute_write_action_with_readback(config, "project-on")
+            self.assertFalse(result["ok"], result)
+            self.assertEqual(result["token"], "blocked:write_cli_lock_not_clean")
+            self.assertEqual(result["errors"][0]["lock_status"], "lock_timeout")
 
     def test_gui_shell_invalid_session_rows_use_stable_tokens(self) -> None:
         from project_moe_gui import gui_shell
