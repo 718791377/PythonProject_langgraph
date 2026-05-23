@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: not_started
+implementation_state: baseline_policy_checker_complete
 last_reviewed_at: 2026-05-23
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -544,13 +544,13 @@ OpenSpec 切片交付矩阵：
 
 细颗粒度实施清单：
 
-- [ ] 为本方案创建或复用一个小步 OpenSpec change，并写明 scope、non-goals、rollback boundary。
-- [ ] 建立 token/risk priority checker，禁止高 token/高风险 surface 在无证据时默认常驻。
+- [x] 为本方案创建或复用一个小步 OpenSpec change，并写明 scope、non-goals、rollback boundary。
+- [x] 建立 token/risk priority checker，禁止高 token/高风险 surface 在无证据时默认常驻。
 - [ ] 建立用户级 port registry 与 allocator，确保 Codex 号段在前、OpenClaw 号段在后，并让 OpenCLI 使用 allocator 驱动的 `--port auto`。
 - [ ] 实现 `codex-port lease reserve/renew/release/list/import-legacy/gc`，覆盖 owner-range 校验、registry 原子锁、临时 `pending_bind`、live-socket 冲突跳过、stale/崩溃证据和写入 receipt。
-- [ ] 建立 sensitive authorization receipt schema，字段至少包含 action、target、scope、expiry、session、operator confirmation。
-- [ ] 建立 user-level tool update receipt schema，并覆盖 install path、wrapper path、state path、pin、smoke、rollback pointer。
-- [ ] 建立 sanitized evidence 规则，禁止提交 secrets、cookies、tokens、raw browser data、消息内容、完整个人运行时路径和完整 plugin description dumps。
+- [x] 建立 sensitive authorization receipt schema，字段至少包含 action、target、scope、expiry、session、operator confirmation。
+- [x] 建立 user-level tool update receipt schema，并覆盖 install path、wrapper path、state path、pin、smoke、rollback pointer。
+- [x] 建立 sanitized evidence 规则，禁止提交 secrets、cookies、tokens、raw browser data、消息内容、完整个人运行时路径和完整 plugin description dumps。
 - [ ] 实现 `skills2cli index --json`，输出 skill id、source layer、short description hash/summary 和可用状态。
 - [ ] 实现 `skills2cli search <query> --json`，默认只返回紧凑摘要和定位信息。
 - [ ] 实现 `skills2cli show <skill-id> --json`，默认不倾倒全量 skill body，完整内容需受控参数。
@@ -578,7 +578,7 @@ OpenSpec 切片交付矩阵：
 - [ ] 实现 `wecom-cli gui attach` 的 global WXWork lease 与 one-task authorization gate；默认保持 disabled。
 - [ ] 为 `wecom-cli` 增加 process/window read-only、secret redaction、GUI unauthorized fail、lease exclusivity 测试。
 - [ ] 把新增测试或 checker 注册到 `tools/ci/ci_test_manifest.json` 或共享 local gate 调用链。
-- [ ] 对每个完成的 OpenSpec change 运行 precommit update/archive gate、local gate、local MR review。
+- [x] 对每个完成的 OpenSpec change 运行 precommit update/archive gate、local gate、local MR review。
 - [ ] 每个用户级安装动作完成后记录 rollback-ready receipt；没有 receipt 的 lane 不得标记 active。
 
 ## 17. 实施顺序

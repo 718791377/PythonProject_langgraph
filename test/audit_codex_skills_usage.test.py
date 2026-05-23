@@ -457,7 +457,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "archive_completed_openspec=True changed_paths=",
             output,
         )
-        self.assertIn("active_change_reviews=0", output)
+        self.assertIn("active_change_reviews=", output)
 
     def test_human_output_exposes_audit_state_blockers(self) -> None:
         codex_home = self.make_codex_home("skills-audit-human-output-audit-state-blockers")

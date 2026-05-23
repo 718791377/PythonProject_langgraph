@@ -4,7 +4,7 @@ lang: en
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: not_started
+implementation_state: baseline_policy_checker_complete
 last_reviewed_at: 2026-05-23
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -544,13 +544,13 @@ Each OpenSpec change must define:
 
 Fine-grained implementation checklist:
 
-- [ ] Create or reuse a small OpenSpec change for this plan and state scope, non-goals, and rollback boundary.
-- [ ] Add a token/risk priority checker that prevents high-token or high-risk surfaces from becoming default without evidence.
+- [x] Create or reuse a small OpenSpec change for this plan and state scope, non-goals, and rollback boundary.
+- [x] Add a token/risk priority checker that prevents high-token or high-risk surfaces from becoming default without evidence.
 - [ ] Establish the user-level port registry/lease allocator so Codex ranges come before OpenClaw ranges and OpenCLI uses allocator-driven `--port auto`.
 - [ ] Implement `codex-port lease reserve/renew/release/list/import-legacy/gc` with owner-range validation, atomic registry locking, provisional `pending_bind`, live-socket collision skipping, stale/crash evidence, and write receipts.
-- [ ] Add the sensitive authorization receipt schema with at least action, target, scope, expiry, session, and operator confirmation.
-- [ ] Add the user-level tool update receipt schema covering install path, wrapper path, state path, pin, smoke result, and rollback pointer.
-- [ ] Add sanitized-evidence rules that forbid committing secrets, cookies, tokens, raw browser data, message contents, full personal runtime paths, or complete plugin description dumps.
+- [x] Add the sensitive authorization receipt schema with at least action, target, scope, expiry, session, and operator confirmation.
+- [x] Add the user-level tool update receipt schema covering install path, wrapper path, state path, pin, smoke result, and rollback pointer.
+- [x] Add sanitized-evidence rules that forbid committing secrets, cookies, tokens, raw browser data, message contents, full personal runtime paths, or complete plugin description dumps.
 - [ ] Implement `skills2cli index --json` with skill id, source layer, short description hash/summary, and availability status.
 - [ ] Implement `skills2cli search <query> --json` with compact summaries and location hints by default.
 - [ ] Implement `skills2cli show <skill-id> --json` without dumping complete skill bodies by default; full content requires a governed flag.
