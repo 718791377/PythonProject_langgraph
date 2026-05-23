@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from project_moe_gui import CLI_CONTRACT
+
 
 SCHEMA_VERSION = 1
 GUI_SHELL_CONTRACT = "project-moe-gui-shell-v1"
@@ -23,6 +25,33 @@ ACTION_COMMANDS = {
     "session-on": ["on", "--json"],
     "session-off": ["off", "--json"],
 }
+WRITE_CLI_REQUIRED_FIELDS = (
+    "schema_version",
+    "command",
+    "ok",
+    "token",
+    "cli_contract",
+    "before",
+    "after",
+    "changed_scope",
+    "changed_paths",
+    "skipped_invalid_records",
+    "lock_status",
+    "audit_path",
+    "no_op",
+)
+PRIVATE_CLI_FIELD_NAMES = {
+    "developer_instructions",
+    "moe_md",
+    "moe_prompt",
+    "private_prompt",
+    "private_prompt_text",
+    "raw_environment",
+    "raw_env",
+    "raw_session_id",
+    "stderr_full",
+    "stdout_full",
+}
 KEYBOARD_SHORTCUTS = {
     "refresh": "F5",
     "project-on": "Alt+P",
@@ -30,6 +59,134 @@ KEYBOARD_SHORTCUTS = {
     "session-on": "Alt+S",
     "session-off": "Alt+Shift+S",
 }
+
+
+def expected_cli_command_for_action(action: str) -> str:
+    if action == "session-on":
+        return "on"
+    if action == "session-off":
+        return "off"
+    return action
+
+
+def private_cli_field_hits(value: Any, path: str = "$") -> list[str]:
+    hits: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            lowered = str(key).strip().lower().replace("-", "_")
+            child_path = f"{path}.{key}"
+            if lowered in PRIVATE_CLI_FIELD_NAMES:
+                hits.append(child_path)
+            hits.extend(private_cli_field_hits(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            hits.extend(private_cli_field_hits(child, f"{path}[{index}]"))
+    return hits
+
+
+def validate_write_cli_payload(action: str, payload: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(payload, dict):
+        return [
+            stable_blocker(
+                "blocked:write_cli_contract_invalid",
+                "Write command JSON payload must be an object.",
+                action=action,
+            )
+        ]
+    errors: list[dict[str, Any]] = []
+    missing = [field for field in WRITE_CLI_REQUIRED_FIELDS if field not in payload]
+    if missing:
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_contract_missing_fields",
+                "Write command JSON payload is missing required fields for GUI-safe state changes.",
+                action=action,
+                missing=missing,
+            )
+        )
+    expected_command = expected_cli_command_for_action(action)
+    if payload.get("command") != expected_command:
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_command_echo_mismatch",
+                "Write command JSON command field must match the invoked CLI command.",
+                action=action,
+                expected=expected_command,
+                observed=payload.get("command"),
+            )
+        )
+    if payload.get("ok") is not True or payload.get("token") != "ok":
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_command_not_ok",
+                "Write command JSON must return ok/token=ok before the GUI accepts the state change.",
+                action=action,
+                token=payload.get("token"),
+            )
+        )
+    if payload.get("cli_contract") != CLI_CONTRACT:
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_contract_mismatch",
+                "Write command CLI contract does not match project-moe-cli-v1.",
+                action=action,
+                observed=payload.get("cli_contract"),
+            )
+        )
+    expected_scope = "session" if action.startswith("session-") else "project-default"
+    if payload.get("changed_scope") != expected_scope:
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_scope_mismatch",
+                "Write command changed_scope must match the GUI action scope.",
+                action=action,
+                expected=expected_scope,
+                observed=payload.get("changed_scope"),
+            )
+        )
+    if not isinstance(payload.get("changed_paths"), list):
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_contract_invalid",
+                "Write command changed_paths must be a list.",
+                action=action,
+            )
+        )
+    if not isinstance(payload.get("skipped_invalid_records"), list):
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_contract_invalid",
+                "Write command skipped_invalid_records must be a list.",
+                action=action,
+            )
+        )
+    if not isinstance(payload.get("no_op"), bool):
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_contract_invalid",
+                "Write command no_op must be a boolean.",
+                action=action,
+            )
+        )
+    if action.startswith("session-") and not payload.get("session_id"):
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_contract_invalid",
+                "Session write commands must echo the normalized/redacted session_id.",
+                action=action,
+            )
+        )
+    private_hits = private_cli_field_hits(payload)
+    if private_hits:
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_private_field_exposed",
+                "Write command JSON exposed private/raw fields that GUI contracts must not consume.",
+                action=action,
+                fields=private_hits[:12],
+            )
+        )
+    return errors
 
 
 def norm(path: str | Path) -> str:
@@ -692,6 +849,9 @@ def execute_write_action_with_readback(
     pending_key = str(plan.get("scope_key") or plan.get("scope") or "")
     pending_view_model = build_view_model(config, pending_scope=pending_key)
     write_payload, write_error = run_cli_json(config, action, session_id=session_id, timeout=timeout)
+    write_contract_errors: list[dict[str, Any]] = []
+    if write_error is None:
+        write_contract_errors = validate_write_cli_payload(action, write_payload)
     readback: dict[str, Any] = {}
     readback_errors: list[dict[str, Any]] = []
     for read_plan in plan.get("readback_after_write", []):
@@ -701,7 +861,7 @@ def execute_write_action_with_readback(
         readback[read_action] = payload
         if err:
             readback_errors.append(err)
-    errors = [err for err in [write_error, *readback_errors] if err]
+    errors = [err for err in [write_error, *write_contract_errors, *readback_errors] if err]
     token = "ok" if not errors else str(errors[0]["code"])
     return {
         "schema_version": SCHEMA_VERSION,

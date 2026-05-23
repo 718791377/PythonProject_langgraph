@@ -64,6 +64,7 @@ def project_default_enabled() -> bool:
 
 def write_project(enabled: bool) -> tuple[dict, bool]:
     before = read_json(PROJECT_DEFAULT, {"enabled": False}).get("enabled", False)
+    before_payload = read_json(PROJECT_DEFAULT, {"enabled": False})
     payload = {
         "schema_version": 1,
         "project_label": PROJECT_LABEL,
@@ -76,17 +77,29 @@ def write_project(enabled: bool) -> tuple[dict, bool]:
     }
     write_json(PROJECT_DEFAULT, payload)
     SESSIONS_ROOT.mkdir(parents=True, exist_ok=True)
+    skipped_invalid_records = []
+    changed_paths = [str(PROJECT_DEFAULT)]
     for path in SESSIONS_ROOT.glob("*.json"):
         session = read_json(path)
         if session.get("override_origin") == "manual-session":
             continue
         session.update({"enabled": enabled, "project_label": PROJECT_LABEL, "override_origin": "project-propagated", "updated_at": now()})
         write_json(path, session)
-    return payload, bool(before) == enabled
+        changed_paths.append(str(path))
+    after_payload = read_json(PROJECT_DEFAULT)
+    return {
+        "before": before_payload,
+        "after": after_payload,
+        "changed_paths": changed_paths,
+        "skipped_invalid_records": skipped_invalid_records,
+        "lock_status": "not_locked_fixture",
+        "audit_path": str(STATE_ROOT / "audit.log"),
+    }, bool(before) == enabled
 
 def write_session(session_id: str, enabled: bool) -> tuple[dict, bool]:
     path = session_path(session_id)
     before = read_json(path, {"enabled": False}).get("enabled", False)
+    before_payload = read_json(path, {"enabled": False})
     payload = read_json(path)
     payload.update({
         "schema_version": 1,
@@ -102,7 +115,14 @@ def write_session(session_id: str, enabled: bool) -> tuple[dict, bool]:
         "reason": "session-on" if enabled else "session-off",
     })
     write_json(path, payload)
-    return payload, bool(before) == enabled
+    return {
+        "before": before_payload,
+        "after": read_json(path),
+        "changed_paths": [str(path)],
+        "skipped_invalid_records": [],
+        "lock_status": "not_locked_fixture",
+        "audit_path": str(STATE_ROOT / "audit.log"),
+    }, bool(before) == enabled
 
 def list_sessions() -> list[dict]:
     rows = []
@@ -159,16 +179,16 @@ def main() -> int:
         payload = envelope(command, session_id=session_id, effective_enabled=effective, effective_source=effective_source)
     elif command == "project-on":
         changed, no_op = write_project(True)
-        payload = envelope(command, project_default_enabled=True, changed_scope="project-default", no_op=no_op, changed=changed)
+        payload = envelope(command, project_default_enabled=True, changed_scope="project-default", no_op=no_op, changed=changed, **changed)
     elif command == "project-off":
         changed, no_op = write_project(False)
-        payload = envelope(command, project_default_enabled=False, changed_scope="project-default", no_op=no_op, changed=changed)
+        payload = envelope(command, project_default_enabled=False, changed_scope="project-default", no_op=no_op, changed=changed, **changed)
     elif command == "on":
         changed, no_op = write_session(session_id, True)
-        payload = envelope(command, session_id=session_id, effective_enabled=True, changed_scope="session", no_op=no_op, changed=changed)
+        payload = envelope(command, session_id=session_id, effective_enabled=True, changed_scope="session", no_op=no_op, changed=changed, **changed)
     elif command == "off":
         changed, no_op = write_session(session_id, False)
-        payload = envelope(command, session_id=session_id, effective_enabled=False, changed_scope="session", no_op=no_op, changed=changed)
+        payload = envelope(command, session_id=session_id, effective_enabled=False, changed_scope="session", no_op=no_op, changed=changed, **changed)
     else:
         payload = {"schema_version": 1, "command": command, "ok": False, "token": "usage_error", "exit_code": 2, "message": "unsupported"}
     print(json.dumps(payload, ensure_ascii=False))
@@ -220,6 +240,12 @@ class ProjectMoeGuiToolchainTests(unittest.TestCase):
             extra_payload = 'payload["raw_session_id"] = "secret-session-value"\npayload["private_prompt_text"] = "never expose prompt"\n'
         elif cli_variant == "bad_list_sessions_counts":
             extra_payload = 'payload.pop("counts", None)\n'
+        elif cli_variant == "write_missing_changed_paths":
+            extra_payload = 'payload.pop("changed_paths", None)\n'
+        elif cli_variant == "write_scope_mismatch":
+            extra_payload = 'payload["changed_scope"] = "project-default" if cmd in {"on", "off"} else "session"\n'
+        elif cli_variant == "write_private_field_exposed":
+            extra_payload = 'payload["raw_session_id"] = "secret-session-value"\npayload["private_prompt_text"] = "never expose prompt"\n'
         (root / "tools" / "thesis_moe_mode.py").write_text(
             f"""
 from __future__ import annotations
@@ -263,15 +289,49 @@ elif cmd == "status":
 elif cmd == "project-on":
     payload["message"] = "project default enabled"
     payload["project_default_enabled"] = True
+    payload["before"] = {{"enabled": False}}
+    payload["after"] = {{"enabled": True}}
+    payload["changed_scope"] = "project-default"
+    payload["changed_paths"] = [".omx/state/thesis_moe/project-default.json"]
+    payload["skipped_invalid_records"] = []
+    payload["lock_status"] = "not_locked_fixture"
+    payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
+    payload["no_op"] = False
 elif cmd == "project-off":
     payload["message"] = "project default disabled"
     payload["project_default_enabled"] = False
+    payload["before"] = {{"enabled": True}}
+    payload["after"] = {{"enabled": False}}
+    payload["changed_scope"] = "project-default"
+    payload["changed_paths"] = [".omx/state/thesis_moe/project-default.json"]
+    payload["skipped_invalid_records"] = []
+    payload["lock_status"] = "not_locked_fixture"
+    payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
+    payload["no_op"] = False
 elif cmd == "on":
     payload["message"] = "session enabled"
     payload["effective_enabled"] = True
+    payload["session_id"] = "session-1234567890abcdef"
+    payload["before"] = {{"enabled": False}}
+    payload["after"] = {{"enabled": True}}
+    payload["changed_scope"] = "session"
+    payload["changed_paths"] = [".omx/state/thesis_moe/sessions/session-1234567890abcdef.json"]
+    payload["skipped_invalid_records"] = []
+    payload["lock_status"] = "not_locked_fixture"
+    payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
+    payload["no_op"] = False
 elif cmd == "off":
     payload["message"] = "session disabled"
     payload["effective_enabled"] = False
+    payload["session_id"] = "session-1234567890abcdef"
+    payload["before"] = {{"enabled": True}}
+    payload["after"] = {{"enabled": False}}
+    payload["changed_scope"] = "session"
+    payload["changed_paths"] = [".omx/state/thesis_moe/sessions/session-1234567890abcdef.json"]
+    payload["skipped_invalid_records"] = []
+    payload["lock_status"] = "not_locked_fixture"
+    payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
+    payload["no_op"] = False
 else:
     payload = {{"schema_version": 1, "command": cmd, "ok": False, "token": "usage_error", "exit_code": 2, "message": "unsupported", "cli_contract": "project-moe-cli-v1"}}
 {extra_payload}print(json.dumps(payload))
@@ -679,6 +739,45 @@ else:
             self.assertEqual(result["readback_commands"], ["project-status", "list-sessions", "status"])
             self.assertIn("project-status", result["readback"])
             self.assertEqual(result["button_state_during_command"]["pending_scope"], "project-default")
+
+    def test_gui_shell_rejects_write_payload_without_changed_paths(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project, cli_variant="write_missing_changed_paths")
+            config = self.gui_config(project)
+            result = gui_shell.execute_write_action_with_readback(config, "project-on")
+            self.assertFalse(result["ok"], result)
+            self.assertEqual(result["token"], "blocked:write_cli_contract_missing_fields")
+            self.assertIn("changed_paths", result["errors"][0]["missing"])
+
+    def test_gui_shell_rejects_write_payload_scope_mismatch(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project, cli_variant="write_scope_mismatch")
+            config = self.gui_config(project)
+            result = gui_shell.execute_write_action_with_readback(config, "session-on", session_id="session-1234567890abcdef")
+            self.assertFalse(result["ok"], result)
+            self.assertEqual(result["token"], "blocked:write_cli_scope_mismatch")
+            self.assertEqual(result["errors"][0]["expected"], "session")
+
+    def test_gui_shell_rejects_write_payload_private_field_exposure(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project, cli_variant="write_private_field_exposed")
+            config = self.gui_config(project)
+            result = gui_shell.execute_write_action_with_readback(config, "project-on")
+            self.assertFalse(result["ok"], result)
+            self.assertEqual(result["token"], "blocked:write_cli_private_field_exposed")
+            self.assertTrue(any("raw_session_id" in field for field in result["errors"][0]["fields"]))
 
     def test_gui_shell_invalid_session_rows_use_stable_tokens(self) -> None:
         from project_moe_gui import gui_shell
