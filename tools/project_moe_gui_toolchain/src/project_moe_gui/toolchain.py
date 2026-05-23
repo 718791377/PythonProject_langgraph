@@ -30,6 +30,21 @@ MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RE
 PROJECT_EVIDENCE = [".git", "AGENTS.md", "pyproject.toml", "requirements.txt", "README.md", "setup.cfg", "setup.py", "poetry.lock", "uv.lock"]
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 NAMESPACE_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
+READ_CLI_CONTRACT_COMMANDS = ("project-status", "list-sessions", "status")
+COMMON_CLI_ENVELOPE_KEYS = ("schema_version", "command", "ok", "token", "cli_contract")
+STATUS_EFFECTIVE_SOURCES = {"session", "project-default", "fail-closed"}
+PRIVATE_CLI_FIELD_NAMES = {
+    "developer_instructions",
+    "moe_md",
+    "moe_prompt",
+    "private_prompt",
+    "private_prompt_text",
+    "raw_environment",
+    "raw_env",
+    "raw_session_id",
+    "stderr_full",
+    "stdout_full",
+}
 
 
 def now_utc() -> str:
@@ -171,19 +186,107 @@ def run_cli(root: Path, mode_cli: Path, command: str) -> tuple[dict[str, Any] | 
         return None, blocker("blocked:mode_cli_invalid_json", "Target project mode CLI did not emit valid JSON.", command=command, error=str(exc), stdout=result.stdout[-800:])
 
 
+def private_cli_field_hits(value: Any, path: str = "$") -> list[str]:
+    hits: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            lowered = str(key).strip().lower().replace("-", "_")
+            child_path = f"{path}.{key}"
+            if lowered in PRIVATE_CLI_FIELD_NAMES:
+                hits.append(child_path)
+            hits.extend(private_cli_field_hits(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            hits.extend(private_cli_field_hits(child, f"{path}[{index}]"))
+    return hits
+
+
+def require_cli_envelope(command: str, payload: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(payload, dict):
+        return [blocker("blocked:cli_contract_invalid", "Mode CLI JSON payload must be an object.", command=command)]
+    errors: list[dict[str, Any]] = []
+    missing = [key for key in COMMON_CLI_ENVELOPE_KEYS if key not in payload]
+    if missing:
+        errors.append(blocker("blocked:cli_envelope_missing_fields", "Mode CLI JSON envelope is missing required fields.", command=command, missing=missing))
+    if payload.get("command") != command:
+        errors.append(blocker("blocked:cli_command_echo_mismatch", "Mode CLI JSON command field must match the invoked command.", command=command, observed=payload.get("command")))
+    if payload.get("ok") is not True or payload.get("token") != "ok":
+        errors.append(blocker("blocked:cli_read_command_not_ok", "Read-only Mode CLI contract command must return ok/token=ok.", command=command, token=payload.get("token")))
+    if payload.get("cli_contract") != CLI_CONTRACT:
+        errors.append(blocker("blocked:cli_contract_mismatch", "Target CLI contract does not match project-moe-cli-v1.", command=command, observed=payload.get("cli_contract")))
+    private_hits = private_cli_field_hits(payload)
+    if private_hits:
+        errors.append(blocker("blocked:cli_contract_private_field_exposed", "Mode CLI JSON exposed private/raw fields that GUI contracts must not consume.", command=command, fields=private_hits[:12]))
+    return errors
+
+
+def validate_project_status_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
+    if "project_default_enabled" not in payload and "project_default" not in payload:
+        errors.append(blocker("blocked:project_status_contract_invalid", "project-status --json must expose project_default_enabled or project_default."))
+    has_count = any(key in payload for key in ["registered_session_count", "valid_session_count", "invalid_session_count", "stale_session_count", "orphan_candidate_count"]) or isinstance(payload.get("counts"), dict)
+    if not has_count:
+        errors.append(blocker("blocked:project_status_contract_invalid", "project-status --json must expose registered session counts."))
+    return errors
+
+
+def validate_list_sessions_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
+    sessions = payload.get("sessions")
+    if not isinstance(sessions, list):
+        return [blocker("blocked:list_sessions_contract_invalid", "list-sessions --json must return a sessions array.")]
+    if not isinstance(payload.get("counts"), dict):
+        errors.append(blocker("blocked:list_sessions_contract_invalid", "list-sessions --json must return a counts object for GUI summaries."))
+    for index, row in enumerate(sessions):
+        if not isinstance(row, dict):
+            errors.append(blocker("blocked:list_sessions_contract_invalid", "Each session row must be a JSON object.", row_index=index))
+            continue
+        if not (row.get("session_id") or row.get("display_id") or row.get("id")):
+            errors.append(blocker("blocked:list_sessions_contract_invalid", "Each session row must include a redacted or normalized session identifier.", row_index=index))
+        if "enabled" not in row and "effective_enabled" not in row:
+            errors.append(blocker("blocked:list_sessions_contract_invalid", "Each session row must include enabled or effective_enabled.", row_index=index))
+        if "token" not in row:
+            errors.append(blocker("blocked:list_sessions_contract_invalid", "Each session row must include a stable token.", row_index=index))
+    return errors
+
+
+def validate_status_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
+    if not isinstance(payload.get("effective_enabled"), bool):
+        errors.append(blocker("blocked:status_contract_invalid", "status --json must include boolean effective_enabled."))
+    source = payload.get("effective_source")
+    if source not in STATUS_EFFECTIVE_SOURCES:
+        errors.append(blocker("blocked:status_contract_invalid", "status --json must include a supported effective_source.", observed=source, supported=sorted(STATUS_EFFECTIVE_SOURCES)))
+    if "session_id" in payload and payload.get("raw_session_id"):
+        errors.append(blocker("blocked:cli_contract_private_field_exposed", "status --json must not expose raw_session_id."))
+    return errors
+
+
+def validate_cli_payload(command: str, payload: dict[str, Any] | None) -> list[dict[str, Any]]:
+    errors = require_cli_envelope(command, payload)
+    if errors or not isinstance(payload, dict):
+        return errors
+    if command == "project-status":
+        errors.extend(validate_project_status_payload(payload))
+    elif command == "list-sessions":
+        errors.extend(validate_list_sessions_payload(payload))
+    elif command == "status":
+        errors.extend(validate_status_payload(payload))
+    return errors
+
+
 def check_cli_contract(root: Path, mode_cli: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     errors: list[dict[str, Any]] = []
-    details: dict[str, Any] = {"mode_cli": norm(mode_cli), "commands_checked": []}
-    for command in ["project-status", "list-sessions", "status"]:
+    details: dict[str, Any] = {"mode_cli": norm(mode_cli), "commands_checked": [], "validated_fields": {}}
+    for command in READ_CLI_CONTRACT_COMMANDS:
         payload, err = run_cli(root, mode_cli, command)
         if err:
             errors.append(err)
             continue
         details["commands_checked"].append(command)
-        if command == "project-status" and payload and payload.get("cli_contract") != CLI_CONTRACT:
-            errors.append(blocker("blocked:cli_contract_mismatch", "Target CLI contract does not match project-moe-cli-v1.", observed=payload.get("cli_contract")))
-        if command == "list-sessions" and payload and not isinstance(payload.get("sessions"), list):
-            errors.append(blocker("blocked:list_sessions_contract_invalid", "list-sessions --json must return a sessions array."))
+        command_errors = validate_cli_payload(command, payload)
+        errors.extend(command_errors)
+        details["validated_fields"][command] = sorted([key for key in (payload or {}).keys()])
     return errors, details
 
 

@@ -202,7 +202,7 @@ class ProjectMoeGuiToolchainTests(unittest.TestCase):
             self.assertFalse(payload.get("ok"), payload)
         return result, payload
 
-    def make_project(self, root: Path, *, with_agent: bool = True) -> None:
+    def make_project(self, root: Path, *, with_agent: bool = True, cli_variant: str = "valid") -> None:
         (root / ".git").mkdir()
         (root / ".codex" / "agents").mkdir(parents=True)
         (root / "tools").mkdir()
@@ -213,33 +213,53 @@ class ProjectMoeGuiToolchainTests(unittest.TestCase):
                 'developer_instructions = "Use strict thesis mentor rules."\n',
                 encoding="utf-8",
             )
+        extra_payload = ""
+        if cli_variant == "missing_effective_source":
+            extra_payload = 'payload.pop("effective_source", None)\n'
+        elif cli_variant == "private_field_exposed":
+            extra_payload = 'payload["raw_session_id"] = "secret-session-value"\npayload["private_prompt_text"] = "never expose prompt"\n'
+        elif cli_variant == "bad_list_sessions_counts":
+            extra_payload = 'payload.pop("counts", None)\n'
         (root / "tools" / "thesis_moe_mode.py").write_text(
-            """
+            f"""
 from __future__ import annotations
 import json
 import sys
 cmd = sys.argv[1]
-payload = {
+payload = {{
     "schema_version": 1,
     "command": cmd,
     "ok": True,
     "token": "ok",
+    "exit_code": 0,
+    "message": "ok",
+    "project_root": str(__import__('pathlib').Path.cwd()),
+    "agent_name": "thesis-moe-mentor",
+    "state_namespace": "thesis_moe",
+    "generated_at": "2026-05-23T00:00:00+00:00",
+    "warnings": [],
+    "errors": [],
     "cli_contract": "project-moe-cli-v1",
     "sessions": [],
-    "counts": {"total": 0, "valid": 0},
-}
+    "counts": {{"total": 0, "valid": 0}},
+}}
 if cmd == "list-sessions":
     payload["message"] = "session list read"
     payload["sessions"] = [
-        {"session_id": "session-1234567890abcdef", "enabled": False, "effective_enabled": False, "valid": True, "token": "ok", "source": "manual-session"}
+        {{"session_id": "session-1234567890abcdef", "enabled": False, "effective_enabled": False, "valid": True, "token": "ok", "source": "manual-session", "lifecycle_status": "active"}}
     ]
 elif cmd == "project-status":
     payload["message"] = "project status read"
     payload["project_default_enabled"] = False
+    payload["registered_session_count"] = 1
+    payload["valid_session_count"] = 1
+    payload["invalid_session_count"] = 0
     payload["git_branch"] = "main"
 elif cmd == "status":
     payload["message"] = "mentor mode disabled"
     payload["effective_enabled"] = False
+    payload["effective_source"] = "project-default"
+    payload["session_id"] = "sessio?cdef"
 elif cmd == "project-on":
     payload["message"] = "project default enabled"
     payload["project_default_enabled"] = True
@@ -253,8 +273,8 @@ elif cmd == "off":
     payload["message"] = "session disabled"
     payload["effective_enabled"] = False
 else:
-    payload = {"ok": False, "token": "unsupported"}
-print(json.dumps(payload))
+    payload = {{"schema_version": 1, "command": cmd, "ok": False, "token": "usage_error", "exit_code": 2, "message": "unsupported", "cli_contract": "project-moe-cli-v1"}}
+{extra_payload}print(json.dumps(payload))
 """.lstrip(),
             encoding="utf-8",
         )
@@ -326,6 +346,82 @@ print(json.dumps(payload))
             "private_state": project / ".omx" / "state" / namespace / "private-note.json",
         }
         return {key: self.file_digest(path) for key, path in private_paths.items()}
+
+    def test_install_cli_contract_fixture_accepts_phase1_read_envelope(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            _, payload = self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--dry-run",
+            )
+            self.assertEqual(payload["token"], "ok", payload)
+            self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "status"])
+            self.assertIn("effective_source", payload["cli_contract_check"]["validated_fields"]["status"])
+            self.assertIn("registered_session_count", payload["cli_contract_check"]["validated_fields"]["project-status"])
+
+    def test_install_cli_contract_rejects_missing_effective_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project, cli_variant="missing_effective_source")
+            _, payload = self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--dry-run",
+                expect_success=False,
+            )
+            self.assertEqual(payload["token"], "blocked:status_contract_invalid", payload)
+            self.assertIn("effective_source", payload["blockers"][0]["message"])
+
+    def test_install_cli_contract_rejects_private_field_exposure(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project, cli_variant="private_field_exposed")
+            _, payload = self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--dry-run",
+                expect_success=False,
+            )
+            self.assertEqual(payload["token"], "blocked:cli_contract_private_field_exposed", payload)
+            self.assertTrue(any("raw_session_id" in field for field in payload["blockers"][0]["fields"]))
+
+    def test_install_cli_contract_rejects_list_sessions_without_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project, cli_variant="bad_list_sessions_counts")
+            _, payload = self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--dry-run",
+                expect_success=False,
+            )
+            self.assertEqual(payload["token"], "blocked:list_sessions_contract_invalid", payload)
 
     def test_install_dry_run_does_not_write_target_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
