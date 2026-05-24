@@ -1742,6 +1742,47 @@ else:
             self.assertNotEqual(payload["token"], "blocked:gui_not_implemented_phase2a")
             self.assertNotIn("Interactive PySide6 GUI is implemented in Phase 2B.", result.stdout)
 
+    def test_installed_launcher_missing_mode_cli_returns_bootstrap_scaffold_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            self.git_commit_all(project)
+            self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            private_before = {
+                "moe_prompt": self.file_digest(project / "MOE.md"),
+                "agent_toml": self.file_digest(project / ".codex" / "agents" / "thesis-moe-mentor.toml"),
+            }
+            (project / "tools" / "thesis_moe_mode.py").unlink()
+
+            payload = self.run_installed_launcher(project, "--preflight")
+
+            self.assertFalse(payload["ok"], payload)
+            self.assertEqual(payload["token"], "blocked:missing_mode_cli")
+            self.assertEqual(payload["adaptation_lane"], "bootstrap")
+            self.assertTrue(payload["bootstrap_required"])
+            self.assertFalse(payload["control_mode_allowed"])
+            self.assertFalse(payload["target_project_write_allowed_by_launcher"])
+            self.assertEqual(payload["bootstrap_plan"]["command"], "scaffold_project_moe_phase1")
+            self.assertFalse(payload["bootstrap_plan"]["writes_target_project"])
+            self.assertFalse(payload["bootstrap_plan"]["privacy_boundary"]["private_prompt_body_read"])
+            planned = {item["role"]: item for item in payload["bootstrap_plan"]["planned_writes"]}
+            self.assertEqual(planned["mode_cli"]["action"], "create")
+            self.assertFalse(any(item["content_included"] for item in payload["bootstrap_plan"]["planned_writes"]))
+            private_after = {
+                "moe_prompt": self.file_digest(project / "MOE.md"),
+                "agent_toml": self.file_digest(project / ".codex" / "agents" / "thesis-moe-mentor.toml"),
+            }
+            self.assertEqual(private_after, private_before)
+
     def run_installed_launcher(self, project: Path, *args: str) -> dict:
         result = subprocess.run(
             [sys.executable, str(project / "tools" / "project_moe_gui" / "launcher.py"), *args, "--json"],

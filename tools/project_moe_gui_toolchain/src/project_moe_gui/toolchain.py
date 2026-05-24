@@ -1380,9 +1380,43 @@ def main() -> int:
         return emit({"schema_version": 1, "ok": False, "token": "blocked:launcher_config_invalid", "exit_code": 5, "message": "Cannot read Project MOE GUI config.", "error": str(exc)}, args.json)
 
     project_root = launcher.parents[2]
-    mode_cli = project_root / str(config.get("mode_cli", "tools/thesis_moe_mode.py"))
+    source_root = Path(str(config.get("toolchain_source_root") or ""))
+    if source_root:
+        sys.path.insert(0, str(source_root / "src"))
+    mode_cli_value = str(config.get("mode_cli", "tools/thesis_moe_mode.py"))
+    mode_cli = project_root / mode_cli_value
     if not mode_cli.exists():
-        return emit({"schema_version": 1, "ok": False, "token": "blocked:missing_mode_cli", "exit_code": 5, "message": "Target project mode CLI is missing.", "project_root": str(project_root), "mode_cli": str(mode_cli)}, args.json)
+        bootstrap_plan = None
+        bootstrap_error = None
+        try:
+            from project_moe_gui.toolchain import phase1_bootstrap_scaffold_plan
+            bootstrap_plan = phase1_bootstrap_scaffold_plan(
+                project_root,
+                str(config.get("agent_name") or ""),
+                str(config.get("state_namespace") or ""),
+                Path(mode_cli_value),
+            )
+        except Exception as exc:
+            bootstrap_error = {"code": "blocked:bootstrap_plan_unavailable", "token": "blocked:bootstrap_plan_unavailable", "message": "Cannot build Bootstrap Lane scaffold plan.", "error": str(exc)}
+        missing = {"code": "blocked:missing_mode_cli", "token": "blocked:missing_mode_cli", "message": "Target project mode CLI is missing.", "path": str(mode_cli)}
+        blockers = [missing]
+        if bootstrap_error:
+            blockers.append(bootstrap_error)
+        return emit({
+            "schema_version": 1,
+            "ok": False,
+            "token": "blocked:missing_mode_cli",
+            "exit_code": 5,
+            "message": "Target project mode CLI is missing; Bootstrap Lane scaffold plan is available when possible.",
+            "project_root": str(project_root),
+            "mode_cli": str(mode_cli),
+            "adaptation_lane": "bootstrap",
+            "bootstrap_required": True,
+            "control_mode_allowed": False,
+            "target_project_write_allowed_by_launcher": False,
+            "bootstrap_plan": bootstrap_plan,
+            "blockers": blockers,
+        }, args.json)
 
     def run_mode(command: str) -> tuple[dict | None, dict | None]:
         result = subprocess.run([sys.executable, str(mode_cli), command, "--json"], cwd=str(project_root), capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
@@ -1401,9 +1435,6 @@ def main() -> int:
     if cli_errors:
         return emit({"schema_version": 1, "ok": False, "token": cli_errors[0]["token"], "exit_code": cli_errors[0].get("exit_code", 5), "message": cli_errors[0]["message"], "project_root": str(project_root), "blockers": cli_errors}, args.json)
 
-    source_root = Path(str(config.get("toolchain_source_root") or ""))
-    if source_root:
-        sys.path.insert(0, str(source_root / "src"))
     try:
         from project_moe_gui import gui_shell
     except Exception as exc:
