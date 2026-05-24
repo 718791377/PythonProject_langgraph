@@ -5,6 +5,7 @@ import argparse
 import fnmatch
 import json
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,6 +14,7 @@ CHECK_NAME = "context_retention_canary_surface"
 
 START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
 END_CANARY = chr(21941) + "~"
+LEGACY_ENCODINGS_FOR_MOJIBAKE = ("gbk", "gb18030", "cp936", "latin-1")
 
 ALLOWED_CANARY_PROMPT_PATHS = {
     Path("docs_bilingual/project_startup_summary.md"),
@@ -58,6 +60,27 @@ AGENTS_PATH = Path("AGENTS.md")
 RECOVERY_ANCHORS = (
     "Recovery action:",
     "恢复动作：",
+)
+
+
+def derive_mojibake_variants(text: str) -> tuple[str, ...]:
+    variants: set[str] = set()
+    raw = text.encode("utf-8")
+    for encoding in LEGACY_ENCODINGS_FOR_MOJIBAKE:
+        for errors in ("ignore", "replace"):
+            try:
+                decoded = raw.decode(encoding, errors=errors)
+            except LookupError:
+                continue
+            if decoded and decoded != text:
+                variants.add(decoded)
+    return tuple(sorted(variants, key=lambda value: (-len(value), value)))
+
+
+MOJIBAKE_CANARY_MARKERS = tuple(
+    variant
+    for marker in (START_CANARY, END_CANARY)
+    for variant in derive_mojibake_variants(marker)
 )
 
 
@@ -157,6 +180,24 @@ def find_line_numbers(text: str, needle: str) -> list[int]:
     ]
 
 
+def find_mojibake_canary_lines(text: str) -> list[dict]:
+    findings: list[dict] = []
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        matched_markers = [
+            marker
+            for marker in MOJIBAKE_CANARY_MARKERS
+            if marker and marker in line
+        ]
+        if matched_markers:
+            findings.append(
+                {
+                    "line": line_number,
+                    "markers": sorted(set(matched_markers)),
+                }
+            )
+    return findings
+
+
 def recovery_mentions_agents(text: str) -> bool:
     lines = text.splitlines()
     for index, line in enumerate(lines):
@@ -189,6 +230,18 @@ def run_check(root: Path) -> dict:
                 f"{relative_path.as_posix()} is missing the startup-summary canary "
                 f"{', '.join(missing_parts)}."
             )
+        mojibake_lines = find_mojibake_canary_lines(text)
+        if mojibake_lines:
+            errors.append(
+                f"{relative_path.as_posix()} contains mojibake canary marker text; "
+                "read and write the startup summary as UTF-8 and do not preserve the corrupted runtime copy."
+            )
+            findings.append(
+                {
+                    "path": relative_path.as_posix(),
+                    "mojibake_canary_lines": mojibake_lines,
+                }
+            )
         if not recovery_mentions_agents(text):
             errors.append(
                 f"{relative_path.as_posix()} must state that canary recovery rereads AGENTS.md "
@@ -201,6 +254,17 @@ def run_check(root: Path) -> dict:
     elif START_CANARY in agents_text or END_CANARY in agents_text:
         errors.append(
             "AGENTS.md must remain a recovery reread target but must not duplicate the literal canary prompt."
+        )
+    elif (agents_mojibake_lines := find_mojibake_canary_lines(agents_text)):
+        errors.append(
+            "AGENTS.md contains mojibake canary marker text; keep AGENTS.md UTF-8-clean and "
+            "point to the startup summary pair instead of copying corrupted runtime instructions."
+        )
+        findings.append(
+            {
+                "path": AGENTS_PATH.as_posix(),
+                "mojibake_canary_lines": agents_mojibake_lines,
+            }
         )
 
     for path in iter_candidate_files(root):
@@ -223,6 +287,18 @@ def run_check(root: Path) -> dict:
             errors.append(
                 "Context-retention canary prompt text must live only in "
                 f"project_startup_summary.*; duplicate marker found in {relative_path.as_posix()}."
+            )
+        mojibake_lines = find_mojibake_canary_lines(text)
+        if mojibake_lines:
+            findings.append(
+                {
+                    "path": relative_path.as_posix(),
+                    "mojibake_canary_lines": mojibake_lines,
+                }
+            )
+            errors.append(
+                "Context-retention canary prompt text must stay UTF-8-clean; "
+                f"mojibake marker found in {relative_path.as_posix()}."
             )
 
     if not findings and not errors:
@@ -248,6 +324,8 @@ def run_check(root: Path) -> dict:
 
 
 def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(
         description="Verify that the context-retention canary prompt lives only in startup summaries."
     )

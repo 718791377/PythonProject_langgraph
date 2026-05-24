@@ -6,16 +6,19 @@
       "owner_level": "project",
       "status": "implemented",
       "prompt_reminders": [
+        "AGENTS.md",
         "docs_bilingual/project_startup_summary.md",
         "docs_bilingual/project_startup_summary.zh-CN.md"
       ],
       "script_controls": [
-        "tools/check_context_retention_canary_surface.py"
+        "tools/check_context_retention_canary_surface.py",
+        "tools/check_startup_instruction_mojibake.py"
       ],
       "guard_steps": [
-        "check_context_retention_canary_surface"
+        "check_context_retention_canary_surface",
+        "check_startup_instruction_mojibake"
       ],
-      "description": "Keeps the startup-summary canary project-owned, prevents duplicate literal prompt placement, and requires cold-start recovery to reread AGENTS.md."
+      "description": "Keeps the startup-summary canary project-owned, prevents duplicate literal prompt placement, requires cold-start recovery to reread AGENTS.md, and rejects mojibake in startup/instruction authority surfaces."
     },
     {
       "id": "multi-session-worktree-isolation",
@@ -147,6 +150,22 @@
         "check_mcp_router_scope_policy"
       ],
       "description": "Keeps Codex-dedicated MCP servers direct and reports MCP Router drift for dedicated or self-referential server entries."
+    },
+    {
+      "id": "user-level-mcp-skills-browser-cli-baseline",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md",
+        "docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_user_level_mcp_skills_browser_cli_baseline.py"
+      ],
+      "guard_steps": [
+        "check_user_level_mcp_skills_browser_cli_baseline"
+      ],
+      "description": "Keeps the user-level MCP, skills, browser automation, and CLI harness baseline script-backed: token/risk priority, sensitive authorization receipts, update receipts, evidence redaction, and slice readiness cannot drift silently."
     },
     {
       "id": "openspec-code-archive-evidence",

@@ -1,0 +1,8 @@
+schema: spec-driven
+created: 2026-05-22
+x_change_class: tooling
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/check_user_level_mcp_skills_browser_cli_baseline.py
+  - test/check_user_level_mcp_skills_browser_cli_baseline.test.py
+  - tools/run_openspec_guard.py

@@ -102,11 +102,14 @@ def main() -> int:
     skills_governance_script = root / "tools" / "check_codex_skills_governance.py"
     name_clarity_rules_script = root / "tools" / "check_name_clarity_rules.py"
     canary_surface_script = root / "tools" / "check_context_retention_canary_surface.py"
+    startup_instruction_mojibake_script = root / "tools" / "check_startup_instruction_mojibake.py"
     safety_rule_script_backing_script = root / "tools" / "check_safety_rule_script_backing.py"
     precommit_update_archive_script = root / "tools" / "check_precommit_update_archive.py"
     skills_audit_output_retention_script = root / "tools" / "check_skills_audit_output_retention.py"
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
+    openspec_comet_superpowers_policy_script = root / "tools" / "check_openspec_comet_superpowers_policy.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
+    user_level_mcp_skills_browser_cli_baseline_script = root / "tools" / "check_user_level_mcp_skills_browser_cli_baseline.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
@@ -148,6 +151,8 @@ def main() -> int:
         raise SystemExit(f"Missing name clarity rules check script: {name_clarity_rules_script}")
     if not canary_surface_script.exists():
         raise SystemExit(f"Missing context-retention canary surface check script: {canary_surface_script}")
+    if not startup_instruction_mojibake_script.exists():
+        raise SystemExit(f"Missing startup instruction mojibake check script: {startup_instruction_mojibake_script}")
     if not safety_rule_script_backing_script.exists():
         raise SystemExit(f"Missing safety rule script-backing check script: {safety_rule_script_backing_script}")
     if not precommit_update_archive_script.exists():
@@ -156,8 +161,15 @@ def main() -> int:
         raise SystemExit(f"Missing Skills audit output retention check script: {skills_audit_output_retention_script}")
     if not openspec_code_archive_evidence_script.exists():
         raise SystemExit(f"Missing OpenSpec code archive evidence check script: {openspec_code_archive_evidence_script}")
+    if not openspec_comet_superpowers_policy_script.exists():
+        raise SystemExit(f"Missing OpenSpec Comet/Superpowers policy check script: {openspec_comet_superpowers_policy_script}")
     if not mcp_router_scope_policy_script.exists():
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
+    if not user_level_mcp_skills_browser_cli_baseline_script.exists():
+        raise SystemExit(
+            "Missing user-level MCP/skills/browser/CLI baseline check script: "
+            f"{user_level_mcp_skills_browser_cli_baseline_script}"
+        )
     if not local_mirrored_ci_gate_script.exists():
         raise SystemExit(f"Missing local mirrored CI/MR gate check script: {local_mirrored_ci_gate_script}")
     if not remote_publication_approval_policy_script.exists():
@@ -289,6 +301,11 @@ def main() -> int:
                 "OpenSpec guard failed during context-retention canary surface verification.",
             ),
             (
+                "check_startup_instruction_mojibake",
+                [str(python_exe), str(startup_instruction_mojibake_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during startup instruction mojibake verification.",
+            ),
+            (
                 "check_safety_rule_script_backing",
                 [str(python_exe), str(safety_rule_script_backing_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during safety rule script-backing verification.",
@@ -309,9 +326,19 @@ def main() -> int:
                 "OpenSpec guard failed during OpenSpec code archive evidence verification.",
             ),
             (
+                "check_openspec_comet_superpowers_policy",
+                [str(python_exe), str(openspec_comet_superpowers_policy_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Comet/OpenSpec/Superpowers policy verification.",
+            ),
+            (
                 "check_mcp_router_scope_policy",
                 [str(python_exe), str(mcp_router_scope_policy_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during MCP Router scope policy verification.",
+            ),
+            (
+                "check_user_level_mcp_skills_browser_cli_baseline",
+                [str(python_exe), str(user_level_mcp_skills_browser_cli_baseline_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during user-level MCP/skills/browser/CLI baseline verification.",
             ),
             (
                 "check_local_mirrored_ci_gate",
@@ -578,6 +605,12 @@ def main() -> int:
     )
 
     run_checked(
+        [str(python_exe), str(startup_instruction_mojibake_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during startup instruction mojibake verification.",
+    )
+
+    run_checked(
         [str(python_exe), str(safety_rule_script_backing_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during safety rule script-backing verification.",
@@ -598,10 +631,22 @@ def main() -> int:
         failure_message="OpenSpec guard failed during OpenSpec code archive evidence verification.",
     )
     run_checked(
+        [str(python_exe), str(openspec_comet_superpowers_policy_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Comet/OpenSpec/Superpowers policy verification.",
+    )
+    run_checked(
         [str(python_exe), str(mcp_router_scope_policy_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during MCP Router scope policy verification.",
     )
+
+    run_checked(
+        [str(python_exe), str(user_level_mcp_skills_browser_cli_baseline_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during user-level MCP/skills/browser/CLI baseline verification.",
+    )
+
     run_checked(
         [str(python_exe), str(local_mirrored_ci_gate_script), "--root", str(root)],
         cwd=root,

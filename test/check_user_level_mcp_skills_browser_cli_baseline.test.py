@@ -1,0 +1,149 @@
+import json
+import shutil
+import subprocess
+import sys
+import unittest
+import uuid
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCRIPT_PATH = REPO_ROOT / "tools" / "check_user_level_mcp_skills_browser_cli_baseline.py"
+
+
+class UserLevelMcpSkillsBrowserCliBaselineCheckTest(unittest.TestCase):
+    maxDiff = None
+
+    def make_root(self, name: str) -> Path:
+        root = REPO_ROOT / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}"
+        root.mkdir(parents=True, exist_ok=True)
+        self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
+        return root
+
+    def run_check(self, root: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(SCRIPT_PATH), "--root", str(root), "--json"],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=REPO_ROOT,
+        )
+
+    def write_minimal_repo(self, root: Path, *, omit: str | None = None) -> None:
+        plan_dir = root / "docs_bilingual" / "implementation_plans"
+        spec_dir = root / "openspec" / "specs" / "codex-user-level-mcp-skills-browser-cli-governance"
+        tools_dir = root / "tools" / "ci"
+        plan_dir.mkdir(parents=True, exist_ok=True)
+        spec_dir.mkdir(parents=True, exist_ok=True)
+        tools_dir.mkdir(parents=True, exist_ok=True)
+        checklist = "\n".join(f"- [ ] item {i}" for i in range(34))
+        rows = "\n".join("| a | b | c | d |" for _ in range(47))
+        shared = f"""
+status: draft
+plan_readiness: execution-ready
+implementation_state: baseline_policy_checker_complete
+last_reviewed_at: 2026-05-23
+skills2cli mcp2cli chrome-devtools-mcp CDP Bridge OpenCLI oh-my-pi CLI-Anything wecom-cli
+active on-demand reference-only disabled
+port registry codex-port pending_bind registry_revision 39000-39299 40000-40999 --port auto
+authorization receipt schema action target scope expiry session operator confirmation
+update receipt tool name installed version source URL install path wrapper path state path smoke test command updater command rollback pointer owner lane
+secrets, cookies, tokens, raw browser data, message contents, full personal runtime paths, complete plugin description dumps
+{rows}
+{checklist}
+"""
+        zh = """
+## 0. Current review verdict
+## 4. Token and risk priority model
+## 13. Readiness gate acceptance criteria
+## 14. Sensitive authorization matrix
+## 15. Installation and update evidence contract
+## 16. OpenSpec implementation split
+OpenSpec slice delivery matrix
+Fine-grained implementation checklist
+Slice completion rule
+""" + shared
+        en = """
+## 0. Current review verdict
+## 4. Token and risk priority model
+## 13. Readiness gates and acceptance criteria
+## 14. Sensitive authorization matrix
+## 15. Installation and update evidence contract
+## 16. OpenSpec implementation split
+OpenSpec slice delivery matrix
+Fine-grained implementation checklist
+Slice completion rule
+""" + shared
+        if omit == "operator confirmation":
+            zh = zh.replace("operator confirmation", "")
+            en = en.replace("operator confirmation", "")
+        if omit == "port":
+            zh = zh.replace("pending_bind", "")
+            en = en.replace("pending_bind", "")
+        (plan_dir / "user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md").write_text(zh, encoding="utf-8")
+        (plan_dir / "user_level_mcp_skills_browser_cli_governance_plan.md").write_text(en, encoding="utf-8")
+        spec_text = "Token/risk priority authorization receipt update receipt evidence redaction port registry/lease codex-port allocator pending_bind registry_revision 39000-39299 40000-40999 OpenSpec slice fail closed"
+        if omit == "spec":
+            spec_text = "Token/risk priority only"
+        (spec_dir / "spec.md").write_text(spec_text, encoding="utf-8")
+        (root / "tools").mkdir(exist_ok=True)
+        (root / "tools" / "safety_rule_script_backing_registry.json").write_text(json.dumps({
+            "schema_version": 1,
+            "rules": [{
+                "id": "user-level-mcp-skills-browser-cli-baseline",
+                "status": "implemented",
+                "prompt_reminders": ["docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md"],
+                "script_controls": ["tools/check_user_level_mcp_skills_browser_cli_baseline.py"],
+                "guard_steps": ["check_user_level_mcp_skills_browser_cli_baseline"],
+            }],
+        }), encoding="utf-8")
+        (root / "tools" / "run_openspec_guard.py").write_text("check_user_level_mcp_skills_browser_cli_baseline", encoding="utf-8")
+        (tools_dir / "ci_test_manifest.json").write_text(json.dumps({
+            "schema_version": 1,
+            "python_unittest": ["check_user_level_mcp_skills_browser_cli_baseline.test.py"],
+        }), encoding="utf-8")
+
+    def test_repository_surfaces_pass(self) -> None:
+        result = self.run_check(REPO_ROOT)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["errors"], 0)
+
+    def test_minimal_valid_surfaces_pass(self) -> None:
+        root = self.make_root("baseline-pass")
+        self.write_minimal_repo(root)
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+
+    def test_missing_authorization_receipt_field_fails(self) -> None:
+        root = self.make_root("baseline-auth-fail")
+        self.write_minimal_repo(root, omit="operator confirmation")
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("operator confirmation" in error for error in payload["errors"]))
+
+    def test_missing_port_governance_marker_fails(self) -> None:
+        root = self.make_root("baseline-port-fail")
+        self.write_minimal_repo(root, omit="port")
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("port-governance" in error for error in payload["errors"]))
+
+    def test_missing_spec_markers_fail(self) -> None:
+        root = self.make_root("baseline-spec-fail")
+        self.write_minimal_repo(root, omit="spec")
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("spec candidate" in error for error in payload["errors"]))
+
+
+if __name__ == "__main__":
+    unittest.main()

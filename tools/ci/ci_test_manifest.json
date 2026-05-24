@@ -3,6 +3,7 @@
   "python_unittest": [
     "audit_codex_skills_usage.test.py",
     "check_context_retention_canary_surface.test.py",
+    "check_startup_instruction_mojibake.test.py",
     "check_precommit_update_archive.test.py",
     "cleanup_integrated_worktree.test.py",
     "check_worktree_task_receipt.test.py",
@@ -31,7 +32,12 @@
     "check_pyside6_project_opt_in_contract.test.py",
     "check_pyside6_packaging_opt_in_contract.test.py",
     "check_pyside6_operator_usage_guide.test.py",
-    "project_moe_gui_toolchain.test.py"
+    "project_moe_gui_toolchain.test.py",
+    "check_user_level_mcp_skills_browser_cli_baseline.test.py",
+    "skills2cli.test.py",
+    "mcp2cli.test.py",
+    "codex_port.test.py",
+    "browser_owner_registry.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []

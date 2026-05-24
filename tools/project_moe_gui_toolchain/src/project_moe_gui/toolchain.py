@@ -34,7 +34,18 @@ PROJECT_EVIDENCE = [".git", "AGENTS.md", "pyproject.toml", "requirements.txt", "
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 NAMESPACE_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
 READ_CLI_CONTRACT_COMMANDS = ("project-status", "list-sessions", "status")
+READ_ASSERTION_COMMANDS = ("assert-on",)
 PHASE1_EXPECTED_WRITE_COMMANDS = ("project-on", "project-off", "on", "off", "assert-on")
+BOOTSTRAP_BLOCKER_CAPABILITIES = {
+    "blocked:missing_agent_toml": "agent_toml",
+    "blocked:missing_private_prompt_source": "private_prompt_source",
+    "blocked:missing_mode_cli": "mode_cli",
+    "blocked:phase1_read_command_surface_incomplete": "mode_cli_read_commands",
+    "blocked:phase1_write_command_surface_incomplete": "mode_cli_write_commands",
+    "blocked:missing_phase1_wrapper": "phase1_wrapper",
+    "blocked:missing_moe_activation_hook": "startup_activation_hook",
+    "blocked:missing_phase1_operator_docs": "operator_docs",
+}
 DEFAULT_ON_WRAPPER = Path("thesis-moe-on.cmd")
 DEFAULT_OFF_WRAPPER = Path("thesis-moe-off.cmd")
 DEFAULT_STARTUP_HOOK_CANDIDATES = (
@@ -51,6 +62,7 @@ DEFAULT_OPERATOR_DOC_CANDIDATES = (
 )
 COMMON_CLI_ENVELOPE_KEYS = ("schema_version", "command", "ok", "token", "cli_contract")
 STATUS_EFFECTIVE_SOURCES = {"session", "project-default", "fail-closed"}
+ASSERT_ON_TOKENS = {"ok", "disabled", "blocked:moe_disabled"}
 PHASE1_OPERATOR_DOC_REQUIRED_TOKENS = (
     "thesis_moe_mode.py",
     "project-on",
@@ -62,6 +74,15 @@ PHASE1_OPERATOR_DOC_REQUIRED_TOKENS = (
     "--session-id",
     "thesis-moe-on.cmd",
     "thesis-moe-off.cmd",
+)
+PHASE1_STARTUP_HOOK_REQUIRED_TOKENS = (
+    "thesis_moe_mode.py",
+    "status --json",
+    "startup",
+    "resume",
+    "continue",
+    "reload",
+    "phase change",
 )
 PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS = ("project", "moe", "dispatch", "extensions")
 PHASE1_AGENT_PROJECT_REQUIRED_VALUES = {
@@ -471,18 +492,23 @@ def inspect_wrapper_safety(text: str) -> tuple[list[str], list[str]]:
 def inspect_mode_cli_surface(root: Path, mode_cli: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     path, err = safe_relative(root, mode_cli, "blocked:mode_cli_path_invalid")
     if err:
-        return {"path": norm(mode_cli), "exists": False, "write_commands_seen": []}, [err]
+        return {"path": norm(mode_cli), "exists": False, "read_commands_seen": [], "write_commands_seen": []}, [err]
     assert path is not None
-    details: dict[str, Any] = {"path": norm(mode_cli), "exists": path.exists(), "write_commands_seen": []}
+    details: dict[str, Any] = {"path": norm(mode_cli), "exists": path.exists(), "read_commands_seen": [], "write_commands_seen": []}
     if not path.exists():
         return details, [blocker("blocked:missing_mode_cli", "Target project mode CLI is missing.", path=norm(mode_cli))]
     text = read_text(path)
-    hits = command_token_hits(text, PHASE1_EXPECTED_WRITE_COMMANDS)
-    details["write_commands_seen"] = hits
-    missing = [command for command in PHASE1_EXPECTED_WRITE_COMMANDS if command not in hits]
+    read_hits = command_token_hits(text, READ_CLI_CONTRACT_COMMANDS + READ_ASSERTION_COMMANDS)
+    write_hits = command_token_hits(text, PHASE1_EXPECTED_WRITE_COMMANDS)
+    details["read_commands_seen"] = read_hits
+    details["write_commands_seen"] = write_hits
+    missing_read = [command for command in READ_CLI_CONTRACT_COMMANDS + READ_ASSERTION_COMMANDS if command not in read_hits]
+    missing_write = [command for command in PHASE1_EXPECTED_WRITE_COMMANDS if command not in write_hits]
     errors = []
-    if missing:
-        errors.append(blocker("blocked:phase1_write_command_surface_incomplete", "Mode CLI text does not expose all expected Phase 1 command tokens.", missing=missing))
+    if missing_read:
+        errors.append(blocker("blocked:phase1_read_command_surface_incomplete", "Mode CLI text does not expose all expected Phase 1 read command tokens.", missing=missing_read))
+    if missing_write:
+        errors.append(blocker("blocked:phase1_write_command_surface_incomplete", "Mode CLI text does not expose all expected Phase 1 write command tokens.", missing=missing_write))
     return details, errors
 
 
@@ -528,21 +554,49 @@ def inspect_wrapper(root: Path, relative: Path, expected_command: str, mode_cli:
 def inspect_startup_hooks(root: Path, startup_paths: list[Path]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     checked: list[dict[str, Any]] = []
     hook_found = False
+    basic_status_hook_found = False
+    best_missing: list[str] = list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS)
+
+    def has_required_token(text: str, token: str) -> bool:
+        lowered = text.lower()
+        if token == "status --json":
+            return "status" in lowered and "--json" in lowered
+        if token == "phase change":
+            return "phase change" in lowered or "phase-change" in lowered
+        return token in lowered
+
     for rel in startup_paths:
         path, err = safe_relative(root, rel, "blocked:startup_hook_path_invalid")
         if err:
-            checked.append({"path": norm(rel), "exists": False, "token": err["code"]})
+            checked.append({"path": norm(rel), "exists": False, "token": err["code"], "missing_tokens": list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS)})
             continue
         assert path is not None
         exists = path.exists()
         has_hook = False
+        matched: list[str] = []
+        missing: list[str] = list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS)
         if exists:
             text = read_text(path).lower()
-            has_hook = "thesis_moe_mode.py" in text and "status" in text and "--json" in text
+            matched = [token for token in PHASE1_STARTUP_HOOK_REQUIRED_TOKENS if has_required_token(text, token)]
+            missing = [token for token in PHASE1_STARTUP_HOOK_REQUIRED_TOKENS if token not in matched]
+            if len(missing) < len(best_missing):
+                best_missing = missing
+            basic_status_hook = "thesis_moe_mode.py" in text and "status" in text and "--json" in text
+            basic_status_hook_found = basic_status_hook_found or basic_status_hook
+            has_hook = not missing
             hook_found = hook_found or has_hook
-        checked.append({"path": norm(rel), "exists": exists, "has_moe_status_hook": has_hook})
-    errors = [] if hook_found else [blocker("blocked:missing_moe_activation_hook", "No startup or launcher file contains a MOE status --json activation checkpoint.")]
-    return {"candidates_checked": checked, "hook_found": hook_found}, errors
+        checked.append({"path": norm(rel), "exists": exists, "has_moe_status_hook": has_hook, "matched_tokens": matched, "missing_tokens": missing})
+    details = {
+        "candidates_checked": checked,
+        "hook_found": hook_found,
+        "basic_status_hook_found": basic_status_hook_found,
+        "required_tokens": list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS),
+    }
+    if hook_found:
+        return details, []
+    if basic_status_hook_found:
+        return details, [blocker("blocked:moe_activation_hook_incomplete", "Startup activation hook must cover startup/resume/continue/reload/phase-change checkpoints with status --json.", missing=best_missing, required=list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS))]
+    return details, [blocker("blocked:missing_moe_activation_hook", "No startup or launcher file contains a complete MOE status --json activation checkpoint.", required=list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS))]
 
 
 def inspect_operator_docs(root: Path, doc_paths: list[Path]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
@@ -604,12 +658,15 @@ def run_cli(root: Path, mode_cli: Path, command: str) -> tuple[dict[str, Any] | 
         return None, blocker("blocked:mode_cli_timeout", "Mode CLI timed out during read-only contract check.", command=command)
     except Exception as exc:
         return None, blocker("blocked:mode_cli_invocation_failed", "Cannot invoke target project mode CLI.", command=command, error=str(exc))
-    if result.returncode != 0:
-        return None, blocker("blocked:mode_cli_failed", "Target project mode CLI returned non-zero.", command=command, exit_code=result.returncode, stderr=result.stderr[-800:])
     try:
-        return json.loads(result.stdout), None
+        payload = json.loads(result.stdout)
     except Exception as exc:
+        if result.returncode != 0:
+            return None, blocker("blocked:mode_cli_failed", "Target project mode CLI returned non-zero and did not emit valid JSON.", command=command, exit_code=result.returncode, stderr=result.stderr[-800:], stdout=result.stdout[-800:])
         return None, blocker("blocked:mode_cli_invalid_json", "Target project mode CLI did not emit valid JSON.", command=command, error=str(exc), stdout=result.stdout[-800:])
+    if result.returncode != 0 and command not in READ_ASSERTION_COMMANDS:
+        return None, blocker("blocked:mode_cli_failed", "Target project mode CLI returned non-zero.", command=command, exit_code=result.returncode, stderr=result.stderr[-800:])
+    return payload, None
 
 
 def private_cli_field_hits(value: Any, path: str = "$") -> list[str]:
@@ -627,7 +684,12 @@ def private_cli_field_hits(value: Any, path: str = "$") -> list[str]:
     return hits
 
 
-def require_cli_envelope(command: str, payload: dict[str, Any] | None) -> list[dict[str, Any]]:
+def require_cli_envelope(
+    command: str,
+    payload: dict[str, Any] | None,
+    *,
+    allow_non_ok_tokens: set[str] | None = None,
+) -> list[dict[str, Any]]:
     if not isinstance(payload, dict):
         return [blocker("blocked:cli_contract_invalid", "Mode CLI JSON payload must be an object.", command=command)]
     errors: list[dict[str, Any]] = []
@@ -636,7 +698,17 @@ def require_cli_envelope(command: str, payload: dict[str, Any] | None) -> list[d
         errors.append(blocker("blocked:cli_envelope_missing_fields", "Mode CLI JSON envelope is missing required fields.", command=command, missing=missing))
     if payload.get("command") != command:
         errors.append(blocker("blocked:cli_command_echo_mismatch", "Mode CLI JSON command field must match the invoked command.", command=command, observed=payload.get("command")))
-    if payload.get("ok") is not True or payload.get("token") != "ok":
+    ok_value = payload.get("ok")
+    token = str(payload.get("token") or "")
+    allowed_tokens = allow_non_ok_tokens or {"ok"}
+    if command == "assert-on":
+        if token not in allowed_tokens:
+            errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on must return a stable supported token.", command=command, token=payload.get("token"), supported=sorted(allowed_tokens)))
+        if token == "ok" and ok_value is not True:
+            errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on token=ok must report ok=true.", command=command, ok=ok_value))
+        if token != "ok" and ok_value is not False:
+            errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on disabled/blocker tokens must report ok=false.", command=command, token=payload.get("token"), ok=ok_value))
+    elif ok_value is not True or token != "ok":
         errors.append(blocker("blocked:cli_read_command_not_ok", "Read-only Mode CLI contract command must return ok/token=ok.", command=command, token=payload.get("token")))
     if payload.get("cli_contract") != CLI_CONTRACT:
         errors.append(blocker("blocked:cli_contract_mismatch", "Target CLI contract does not match project-moe-cli-v1.", command=command, observed=payload.get("cli_contract")))
@@ -688,9 +760,27 @@ def validate_status_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return errors
 
 
+def validate_assert_on_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
+    if not isinstance(payload.get("effective_enabled"), bool):
+        errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on --json must include boolean effective_enabled."))
+    source = payload.get("effective_source")
+    if source not in STATUS_EFFECTIVE_SOURCES:
+        errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on --json must include a supported effective_source.", observed=source, supported=sorted(STATUS_EFFECTIVE_SOURCES)))
+    if payload.get("token") == "ok" and payload.get("effective_enabled") is not True:
+        errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on token=ok is only valid when effective_enabled=true."))
+    if payload.get("token") != "ok" and payload.get("effective_enabled") is not False:
+        errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on disabled/blocker tokens are only valid when effective_enabled=false."))
+    forbidden_write_fields = [field for field in ("before", "after", "changed_paths", "changed_scope", "atomic_write", "lock_status", "audit_path") if field in payload]
+    if forbidden_write_fields:
+        errors.append(blocker("blocked:assert_on_not_read_only", "assert-on must be a read-only assertion and must not expose write-result fields.", fields=forbidden_write_fields))
+    return errors
+
+
 def validate_cli_payload(command: str, payload: dict[str, Any] | None) -> list[dict[str, Any]]:
-    errors = require_cli_envelope(command, payload)
-    if errors or not isinstance(payload, dict):
+    allow_non_ok_tokens = ASSERT_ON_TOKENS if command == "assert-on" else None
+    errors = require_cli_envelope(command, payload, allow_non_ok_tokens=allow_non_ok_tokens)
+    if not isinstance(payload, dict):
         return errors
     if command == "project-status":
         errors.extend(validate_project_status_payload(payload))
@@ -698,22 +788,83 @@ def validate_cli_payload(command: str, payload: dict[str, Any] | None) -> list[d
         errors.extend(validate_list_sessions_payload(payload))
     elif command == "status":
         errors.extend(validate_status_payload(payload))
+    elif command == "assert-on":
+        errors.extend(validate_assert_on_payload(payload))
     return errors
+
+
+def classify_phase1_adaptation_lane(errors: list[dict[str, Any]]) -> dict[str, Any]:
+    if not errors:
+        return {
+            "adaptation_lane": "ready",
+            "control_mode_allowed": True,
+            "bootstrap_required": False,
+            "bootstrap_missing_capabilities": [],
+            "repair_required": False,
+            "lane_reason": "phase1_readiness_checker_passed",
+        }
+    codes = [str(error.get("code") or "") for error in errors]
+    missing_capabilities = sorted(
+        {
+            BOOTSTRAP_BLOCKER_CAPABILITIES[code]
+            for code in codes
+            if code in BOOTSTRAP_BLOCKER_CAPABILITIES
+        }
+    )
+    if missing_capabilities:
+        return {
+            "adaptation_lane": "bootstrap",
+            "control_mode_allowed": False,
+            "bootstrap_required": True,
+            "bootstrap_missing_capabilities": missing_capabilities,
+            "repair_required": False,
+            "lane_reason": "phase1_contract_surface_missing",
+        }
+    return {
+        "adaptation_lane": "repair",
+        "control_mode_allowed": False,
+        "bootstrap_required": False,
+        "bootstrap_missing_capabilities": [],
+        "repair_required": True,
+        "lane_reason": "phase1_contract_surface_present_but_blocked",
+    }
 
 
 def check_cli_contract(root: Path, mode_cli: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     errors: list[dict[str, Any]] = []
-    details: dict[str, Any] = {"mode_cli": norm(mode_cli), "commands_checked": [], "validated_fields": {}}
-    for command in READ_CLI_CONTRACT_COMMANDS:
+    details: dict[str, Any] = {
+        "mode_cli": norm(mode_cli),
+        "cli_execution_mode": "execute-read-contract",
+        "execution_skipped": False,
+        "commands_checked": [],
+        "assertion_commands_checked": [],
+        "validated_fields": {},
+    }
+    for command in READ_CLI_CONTRACT_COMMANDS + READ_ASSERTION_COMMANDS:
         payload, err = run_cli(root, mode_cli, command)
         if err:
             errors.append(err)
             continue
-        details["commands_checked"].append(command)
+        if command in READ_ASSERTION_COMMANDS:
+            details["assertion_commands_checked"].append(command)
+        else:
+            details["commands_checked"].append(command)
         command_errors = validate_cli_payload(command, payload)
         errors.extend(command_errors)
         details["validated_fields"][command] = sorted([key for key in (payload or {}).keys()])
     return errors, details
+
+
+def skipped_cli_contract_details(mode_cli: Path, reason: str) -> dict[str, Any]:
+    return {
+        "mode_cli": norm(mode_cli),
+        "cli_execution_mode": "static-only",
+        "execution_skipped": True,
+        "skip_reason": reason,
+        "commands_checked": [],
+        "assertion_commands_checked": [],
+        "validated_fields": {},
+    }
 
 
 def launcher_text() -> str:
@@ -905,6 +1056,7 @@ def check_phase1_readiness(
     off_wrapper: Path = DEFAULT_OFF_WRAPPER,
     startup_paths: list[Path] | None = None,
     operator_doc_paths: list[Path] | None = None,
+    execute_cli: bool = True,
 ) -> dict[str, Any]:
     errors = validate_identifiers(agent_name, namespace)
     evidence = project_evidence(root)
@@ -922,11 +1074,14 @@ def check_phase1_readiness(
     errors.extend(prompt_errors)
     mode_cli_surface, mode_surface_errors = inspect_mode_cli_surface(root, mode_cli)
     errors.extend(mode_surface_errors)
-    if mode_cli_surface.get("exists"):
+    cli_execution_mode = "execute-read-contract" if execute_cli else "static-only"
+    if mode_cli_surface.get("exists") and execute_cli:
         cli_errors, cli_details = check_cli_contract(root, mode_cli)
         errors.extend(cli_errors)
+    elif mode_cli_surface.get("exists"):
+        cli_details = skipped_cli_contract_details(mode_cli, "static_only_no_exec_cli")
     else:
-        cli_details = {"mode_cli": norm(mode_cli), "commands_checked": [], "validated_fields": {}}
+        cli_details = skipped_cli_contract_details(mode_cli, "mode_cli_missing")
     on_details, on_errors = inspect_wrapper(root, on_wrapper, "project-on", mode_cli)
     off_details, off_errors = inspect_wrapper(root, off_wrapper, "project-off", mode_cli)
     errors.extend(on_errors)
@@ -935,12 +1090,25 @@ def check_phase1_readiness(
     errors.extend(hook_errors)
     operator_doc_details, operator_doc_errors = inspect_operator_docs(root, operator_doc_paths or list(DEFAULT_OPERATOR_DOC_CANDIDATES))
     errors.extend(operator_doc_errors)
+    lane = classify_phase1_adaptation_lane(errors)
+    if not errors and not execute_cli:
+        lane = {
+            "adaptation_lane": "ready-candidate",
+            "control_mode_allowed": False,
+            "bootstrap_required": False,
+            "bootstrap_missing_capabilities": [],
+            "repair_required": False,
+            "lane_reason": "static_surface_passed_cli_execution_skipped",
+        }
+    readiness_status = "ready" if not errors and execute_cli else ("static-ready-candidate" if not errors else "blocked")
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "check_project_moe_phase1_readiness",
         "ok": not errors,
         "token": "ok" if not errors else errors[0]["code"],
-        "readiness_status": "ready" if not errors else "blocked",
+        "readiness_status": readiness_status,
+        **lane,
+        "cli_execution_mode": cli_execution_mode,
         "read_only": True,
         "writes_target_project": False,
         "target_project_root": str(root),

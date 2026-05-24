@@ -268,10 +268,27 @@ class ProjectMoeGuiToolchainTests(unittest.TestCase):
         (root / ".codex" / "agents").mkdir(parents=True)
         (root / "tools").mkdir()
         if with_agent:
+            (root / "MOE.md").write_text("# Private fixture prompt\n", encoding="utf-8")
             (root / ".codex" / "agents" / "thesis-moe-mentor.toml").write_text(
                 'name = "thesis-moe-mentor"\n'
                 'description = "Strict thesis mentor."\n'
-                'developer_instructions = "Use strict thesis mentor rules."\n',
+                'developer_instructions = "Use strict thesis mentor rules."\n'
+                "\n[project]\n"
+                'scope = "repo-local"\n'
+                'state_namespace = "thesis_moe"\n'
+                'private_prompt_source = "MOE.md"\n'
+                'private_prompt_policy = "do-not-copy-full-content"\n'
+                "\n[moe]\n"
+                'kind = "project-moe-agent"\n'
+                'family = "project-specific"\n'
+                'requires_manual_enable = true\n'
+                'project_default_state = ".omx/state/thesis_moe/project-default.json"\n'
+                'session_state_dir = ".omx/state/thesis_moe/sessions"\n'
+                "\n[dispatch]\n"
+                'mode = "brief-based"\n'
+                'forbidden = ["full-history-fork-with-custom-role"]\n'
+                'fallback = ["main-session-takeover", "durable-brief"]\n'
+                "\n[extensions]\n",
                 encoding="utf-8",
             )
         extra_payload = ""
@@ -293,6 +310,12 @@ class ProjectMoeGuiToolchainTests(unittest.TestCase):
             extra_payload = 'payload["atomic_write"] = False\n'
         elif cli_variant == "write_lock_timeout":
             extra_payload = 'payload["lock_status"] = "lock_timeout"\n'
+        elif cli_variant == "assert_on_missing_effective_enabled":
+            extra_payload = 'payload.pop("effective_enabled", None)\n'
+        elif cli_variant == "assert_on_not_read_only":
+            extra_payload = 'payload["changed_paths"] = [".omx/state/thesis_moe/project-default.json"]\npayload["atomic_write"] = True\npayload["lock_status"] = "not_locked_fixture"\n'
+        elif cli_variant == "assert_on_unknown_token":
+            extra_payload = 'payload.update(ok=False, token="unexpected_assert_token", exit_code=1)\n'
         (root / "tools" / "thesis_moe_mode.py").write_text(
             f"""
 from __future__ import annotations
@@ -316,7 +339,9 @@ payload = {{
     "sessions": [],
     "counts": {{"total": 0, "valid": 0}},
 }}
-if cmd == "list-sessions":
+if cmd == "assert-on":
+    payload.update(ok=False, token="disabled", exit_code=1, message="MOE mode is disabled", effective_enabled=False, effective_source="project-default")
+elif cmd == "list-sessions":
     payload["message"] = "session list read"
     payload["sessions"] = [
         {{"session_id": "session-1234567890abcdef", "enabled": False, "effective_enabled": False, "valid": True, "token": "ok", "source": "manual-session", "lifecycle_status": "active"}}
@@ -332,7 +357,7 @@ elif cmd == "status":
     payload["message"] = "mentor mode disabled"
     payload["effective_enabled"] = False
     payload["effective_source"] = "project-default"
-    payload["session_id"] = "sessio?cdef"
+    payload["session_id"] = "session-1234567890abcdef"
 elif cmd == "project-on":
     payload["message"] = "project default enabled"
     payload["project_default_enabled"] = True
@@ -469,7 +494,7 @@ else:
             encoding="utf-8",
         )
         (root / "AGENTS.md").write_text(
-            "On startup, resume, continue, or phase change, run `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
+            "On startup, resume, continue, reload, or phase change, run `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
             encoding="utf-8",
         )
         docs_dir = root / "docs_bilingual" / "operations"
@@ -528,6 +553,11 @@ else:
             self.assertEqual(payload["token"], "ok", payload)
             self.assertTrue(payload["read_only"])
             self.assertFalse(payload["writes_target_project"])
+            self.assertEqual(payload["adaptation_lane"], "ready")
+            self.assertTrue(payload["control_mode_allowed"])
+            self.assertFalse(payload["bootstrap_required"])
+            self.assertFalse(payload["repair_required"])
+            self.assertEqual(payload["bootstrap_missing_capabilities"], [])
             self.assertFalse(payload["git_status"]["dirty"])
             self.assertTrue(payload["private_prompt_source"]["exists"])
             self.assertFalse(payload["private_prompt_source"]["managed_by_toolchain"])
@@ -541,13 +571,58 @@ else:
                 ["project", "moe", "dispatch", "extensions"],
             )
             self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "status"])
+            self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], ["assert-on"])
+            self.assertEqual(payload["cli_execution_mode"], "execute-read-contract")
+            self.assertFalse(payload["cli_contract_check"]["execution_skipped"])
+            self.assertIn("assert-on", payload["cli_contract_check"]["validated_fields"])
             self.assertTrue(payload["wrappers"]["on"]["references_expected_command"])
             self.assertTrue(payload["wrappers"]["off"]["references_expected_command"])
             self.assertTrue(payload["wrappers"]["on"]["passes_json_flag"])
             self.assertEqual(payload["wrappers"]["on"]["unsafe_shell_tokens"], [])
             self.assertEqual(payload["wrappers"]["on"]["direct_state_path_references"], [])
             self.assertTrue(payload["startup_activation_hooks"]["hook_found"])
+            self.assertTrue(payload["startup_activation_hooks"]["basic_status_hook_found"])
+            self.assertEqual(payload["startup_activation_hooks"]["required_tokens"], ["thesis_moe_mode.py", "status --json", "startup", "resume", "continue", "reload", "phase change"])
             self.assertTrue(payload["operator_docs"]["ready"])
+
+    def test_phase1_readiness_checker_static_only_does_not_execute_target_cli(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-static-only"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-static-only", session_id="session-static-only")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            marker = project / "cli-executed-marker.txt"
+            (project / "tools" / "thesis_moe_mode.py").write_text(
+                "from pathlib import Path\n"
+                "Path('cli-executed-marker.txt').write_text('executed', encoding='utf-8')\n"
+                "# static command surface tokens: project-on project-off on off assert-on\n"
+                "# read contract tokens: project-status list-sessions status --json\n"
+                "raise SystemExit(99)\n",
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--static-only",
+            )
+
+            self.assertFalse(marker.exists(), "static-only readiness must not execute the target mode CLI")
+            self.assertEqual(payload["token"], "ok", payload)
+            self.assertEqual(payload["readiness_status"], "static-ready-candidate")
+            self.assertEqual(payload["adaptation_lane"], "ready-candidate")
+            self.assertFalse(payload["control_mode_allowed"])
+            self.assertEqual(payload["cli_execution_mode"], "static-only")
+            self.assertTrue(payload["cli_contract_check"]["execution_skipped"])
+            self.assertEqual(payload["cli_contract_check"]["skip_reason"], "static_only_no_exec_cli")
+            self.assertEqual(payload["cli_contract_check"]["commands_checked"], [])
+            self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], [])
 
     def test_phase1_readiness_checker_blocks_dirty_target_and_missing_wrapper(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -572,9 +647,45 @@ else:
 
             blocker_codes = {item["code"] for item in payload["blockers"]}
             self.assertEqual(payload["token"], "blocked:dirty_target_project", payload)
+            self.assertEqual(payload["adaptation_lane"], "bootstrap")
+            self.assertFalse(payload["control_mode_allowed"])
+            self.assertTrue(payload["bootstrap_required"])
+            self.assertIn("phase1_wrapper", payload["bootstrap_missing_capabilities"])
             self.assertIn("blocked:dirty_target_project", blocker_codes)
             self.assertIn("blocked:missing_phase1_wrapper", blocker_codes)
             self.assertTrue(payload["git_status"]["dirty"])
+
+    def test_phase1_readiness_checker_classifies_empty_target_as_bootstrap_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-empty-target"
+            project.mkdir()
+            (project / "README.md").write_text("# empty target\n", encoding="utf-8")
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertEqual(payload["adaptation_lane"], "bootstrap")
+            self.assertFalse(payload["control_mode_allowed"])
+            self.assertTrue(payload["bootstrap_required"])
+            self.assertFalse(payload["repair_required"])
+            self.assertIn("agent_toml", payload["bootstrap_missing_capabilities"])
+            self.assertIn("mode_cli", payload["bootstrap_missing_capabilities"])
+            self.assertIn("phase1_wrapper", payload["bootstrap_missing_capabilities"])
+            self.assertIn("startup_activation_hook", payload["bootstrap_missing_capabilities"])
+            self.assertIn("operator_docs", payload["bootstrap_missing_capabilities"])
+            self.assertIn("blocked:missing_agent_toml", blocker_codes)
+            self.assertIn("blocked:missing_mode_cli", blocker_codes)
+            self.assertIn("blocked:missing_phase1_wrapper", blocker_codes)
 
     def test_phase1_readiness_checker_blocks_missing_operator_docs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -628,6 +739,95 @@ else:
             missing = next(item["missing"] for item in payload["blockers"] if item["code"] == "blocked:phase1_operator_docs_incomplete")
             self.assertIn("project-off", missing)
             self.assertIn("status --json", missing)
+
+    def test_phase1_readiness_checker_classifies_incomplete_docs_as_repair_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-repair-docs"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-repair-docs", session_id="session-phase1-repair-docs")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "docs_bilingual" / "operations" / "thesis_moe_mode_usage.zh-CN.md").write_text(
+                "# Incomplete docs\n\nUse `project-on` only.\n",
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertEqual(payload["adaptation_lane"], "repair")
+            self.assertFalse(payload["control_mode_allowed"])
+            self.assertFalse(payload["bootstrap_required"])
+            self.assertTrue(payload["repair_required"])
+            self.assertEqual(payload["bootstrap_missing_capabilities"], [])
+            self.assertIn("blocked:phase1_operator_docs_incomplete", blocker_codes)
+
+    def test_phase1_readiness_checker_blocks_incomplete_startup_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-incomplete-startup-hook"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-incomplete-startup-hook", session_id="session-phase1-incomplete-hook")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "AGENTS.md").write_text(
+                "On startup, run `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:moe_activation_hook_incomplete", blocker_codes)
+            self.assertFalse(payload["startup_activation_hooks"]["hook_found"])
+            self.assertTrue(payload["startup_activation_hooks"]["basic_status_hook_found"])
+            missing = next(item["missing"] for item in payload["blockers"] if item["code"] == "blocked:moe_activation_hook_incomplete")
+            self.assertIn("resume", missing)
+            self.assertIn("continue", missing)
+            self.assertIn("reload", missing)
+            self.assertIn("phase change", missing)
+
+    def test_phase1_readiness_checker_blocks_missing_startup_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-missing-startup-hook"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-missing-startup-hook", session_id="session-phase1-missing-hook")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "AGENTS.md").unlink()
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:missing_moe_activation_hook", blocker_codes)
+            self.assertFalse(payload["startup_activation_hooks"]["hook_found"])
+            self.assertFalse(payload["startup_activation_hooks"]["basic_status_hook_found"])
 
     def test_phase1_readiness_checker_blocks_agent_toml_missing_extensions(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -695,6 +895,99 @@ else:
             self.assertIn("blocked:agent_moe_boundary_invalid", blocker_codes)
             self.assertIn("blocked:agent_dispatch_boundary_incomplete", blocker_codes)
             self.assertFalse(payload["agent_toml"]["extension_fields_ok"])
+
+    def test_phase1_readiness_checker_accepts_assert_on_disabled_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-assert-on-disabled"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-assert-on-disabled", session_id="session-assert-disabled")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+
+            self.assertEqual(payload["token"], "ok", payload)
+            self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], ["assert-on"])
+            assert_on_fields = payload["cli_contract_check"]["validated_fields"]["assert-on"]
+            self.assertIn("effective_enabled", assert_on_fields)
+            self.assertIn("effective_source", assert_on_fields)
+
+    def test_phase1_readiness_checker_blocks_assert_on_missing_effective_enabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-assert-on-missing-effective"
+            project.mkdir()
+            self.make_project(project, cli_variant="assert_on_missing_effective_enabled")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:assert_on_contract_invalid", blocker_codes)
+            self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], ["assert-on"])
+
+    def test_phase1_readiness_checker_blocks_assert_on_write_result_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-assert-on-write-fields"
+            project.mkdir()
+            self.make_project(project, cli_variant="assert_on_not_read_only")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:assert_on_not_read_only", blocker_codes)
+            self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], ["assert-on"])
+
+    def test_phase1_readiness_checker_blocks_assert_on_unknown_token(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-assert-on-unknown-token"
+            project.mkdir()
+            self.make_project(project, cli_variant="assert_on_unknown_token")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:assert_on_contract_invalid", blocker_codes)
+            self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], ["assert-on"])
 
     def test_phase1_readiness_checker_blocks_private_prompt_inside_state(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
