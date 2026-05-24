@@ -19,7 +19,7 @@ related_docs:
 
 结论：原方案的架构边界、状态模型、安全规则和阶段门基本完整，但缺少“按事项粒度”的实施进度清单，容易让后续会话无法判断哪些内容已经落地、哪些仍只是方案。本次补齐第 11 节的实施进度勾选清单，并把第 13 节改成基于当前事实的后续实施边界。
 
-状态说明：本文继续保持 `status: draft`。这里的 draft 表示它不是全局 active 治理政策，也不表示全部运行时能力已经完成。Phase 2A 本仓库中央 installer/checker/updater、Phase 2B fixture-safe GUI shell 与 Phase 2C 双 fixture install/check/update/status 隔离证据已确认合入本地 `main`；本仓库已新增 Phase 1 CLI 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令 `atomic_write` / `lock_status` fail-closed fixture gate、项目默认值、session override、无效记录、旧记录兼容和 no-op 状态行为 fixture gate、只读 Phase 1 readiness checker fixture gate、`--static-only` / `--no-exec-cli` 静态只读候选模式 fixture gate、wrapper `--json` / shell surface / 直接 state 触碰 fail-closed fixture gate、startup 激活检查点完整性 fixture gate、目标项目操作者文档 readiness fixture gate，以及 Agent TOML 标准扩展 / 私有提示源边界 readiness fixture gate。`D:\PythonProject_paper_suggest` 已被只读盘点为 Phase 1 Ready Lane 候选，但仍需要 readiness checker 给出正式 go/no-go 证据；无 Phase 1 的项目则走 Bootstrap Lane，所以本文继续保持 `draft`。
+状态说明：本文继续保持 `status: draft`。这里的 draft 表示它不是全局 active 治理政策，也不表示全部运行时能力已经完成。Phase 2A 本仓库中央 installer/checker/updater、Phase 2B fixture-safe GUI shell 与 Phase 2C 双 fixture install/check/update/status 隔离证据已确认合入本地 `main`；本仓库已新增 Phase 1 CLI 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令 `atomic_write` / `lock_status` fail-closed fixture gate、项目默认值、session override、无效记录、旧记录兼容和 no-op 状态行为 fixture gate、只读 Phase 1 readiness checker fixture gate、`--static-only` / `--no-exec-cli` 静态只读候选模式 fixture gate、wrapper `--json` / shell surface / 直接 state 触碰 fail-closed fixture gate、startup 激活检查点完整性 fixture gate、目标项目操作者文档 readiness fixture gate，以及 Agent TOML 标准扩展 / 私有提示源边界 readiness fixture gate。`D:\PythonProject_paper_suggest` 已经有正式 static-only readiness checker 证据。2026-05-24 的结果是 no-go / repair-lane：目标项目存在 dirty worktree，Agent TOML 缺少标准 Project MOE 扩展区，且两个 wrapper 都未通过严格的 `--json` / shell-surface gate。它只能继续视为 Phase 1 surface 候选，不能批准 GUI 控制；无 Phase 1 的项目则走 Bootstrap Lane，所以本文继续保持 `draft`。
 
 当前已知本地事实：
 
@@ -29,7 +29,9 @@ related_docs:
 - 本次后续变更继续新增 GUI 写入命令输出契约 fixture 支撑：GUI 执行 `project-on`、`project-off`、`session-on` 或 `session-off` 后，必须校验 `before`、`after`、`changed_scope`、`changed_paths`、`skipped_invalid_records`、`lock_status`、`audit_path`、`atomic_write`、`no_op`、scope 匹配、原子写入声明、锁状态安全和私有字段泄露，契约不完整时 fail closed。
 - 本次后续变更还新增 Phase 1 状态行为 fixture 支撑：项目级 on/off 只传播到项目管理的 session，不覆盖 `manual-session`；单 session override 优先于项目默认值；重复写入返回 `no_op = true`；无效 JSON 记录被分类为 stable token 并跳过，legacy 记录继续兼容读取。
 - 本次后续变更新增 `check_project_moe_phase1_readiness.py` 只读 readiness checker：在不写目标项目的前提下检查 dirty Git 状态、Agent TOML、私有 `MOE.md`、CLI 读取契约、CLI 写命令 surface、`thesis-moe-on/off.cmd` wrapper 和 startup hook；该 checker 只提供目标写入前的 go/no-go 证据。
-- 本次后续变更继续新增 `--static-only` / `--no-exec-cli` 静态只读模式：当真实目标项目 CLI 的读命令可能带有 last-seen 等副作用时，只检查文件 surface，不执行目标 CLI，输出 `ready-candidate` 证据且禁止 GUI 控制。
+- 本次后续变更继续新增 `--static-only` / `--no-exec-cli` 静态只读模式：当真实目标项目 CLI 的读命令可能带有 last-seen 等副作用时，只检查文件 surface，不执行目标 CLI；只有其他非执行 gate 全部干净时才输出 `ready-candidate` 证据，并始终禁止 GUI 控制。
+- 本次后续变更加固只读 Git preflight：运行 `git status --porcelain --untracked-files=all` 时设置 `GIT_OPTIONAL_LOCKS=0`，并在 readiness payload 中暴露 `git_status.read_only_git_optional_locks=true` 与 `git_status.git_optional_locks=0`。
+- 2026-05-24 针对 `D:\PythonProject_paper_suggest` 的 static-only 检查已记录到 `docs_bilingual/memory/project_moe_paper_suggest_static_readiness_evidence_2026-05-24.md` 和 `.zh-CN.md`；结果为 `readiness_status=blocked`、`adaptation_lane=repair`、`control_mode_allowed=false`。
 - 本次后续变更继续加固 Phase 1 wrapper readiness gate：`thesis-moe-on/off.cmd` 必须传递 `--json`，不得透传任意 `%*` 参数、使用 shell 串联/重定向/file-op token，也不得直接引用 `.omx`、`project-default.json` 或 `sessions/` 状态路径；wrapper 只能委托项目本地 CLI 读写状态。
 - 本次后续变更继续新增目标项目操作者文档 readiness gate：只读 checker 会确认目标项目文档包含 `project-on/off`、`project-status --json`、`list-sessions --json`、`status --json`、`assert-on`、`--session-id` 和 `.cmd` wrapper 入口等稳定 token；文档缺失或不完整时 fail closed。
 - 本次后续变更继续新增 Agent TOML 标准扩展 readiness gate：只读 checker 会确认目标项目 Agent TOML 含 `project`、`moe`、`dispatch`、`extensions` 标准区，校验 `repo-local` scope、`do-not-copy-full-content` 私有提示源策略、state namespace/state path、`brief-based` dispatch、禁止 `full-history-fork-with-custom-role` 和 fallback；缺失或越界时 fail closed。
@@ -37,7 +39,7 @@ related_docs:
 - 本次后续变更继续新增 `assert-on` 只读断言 readiness gate：只读 checker 会执行并校验 `assert-on --json`，允许 `disabled` / `blocked:moe_disabled` 作为关闭态 fail-closed token，但要求 `effective_enabled`、`effective_source`、稳定 envelope 与无写入结果字段；未知 token、缺失字段或暴露写入字段时 fail closed。
 - 本次后续变更继续加固 startup 激活检查点 readiness gate：目标 startup / launcher / `AGENTS.md` 表面必须明确包含 `thesis_moe_mode.py status --json`，并覆盖 startup、resume、continue、reload 和 phase change 检查点；只写模糊 startup 钩子会以 `blocked:moe_activation_hook_incomplete` fail closed，完全缺失时仍为 `blocked:missing_moe_activation_hook`。
 - 本次后续变更继续让 Phase 1 readiness checker 输出机器可读适配路线：`adaptation_lane = ready | ready-candidate | bootstrap | repair`、`control_mode_allowed`、`bootstrap_required`、`bootstrap_missing_capabilities`、`repair_required` 和 `cli_execution_mode`，避免有 Phase 1 项目、静态只读候选、缺 Phase 1 项目和局部修复项目混淆。
-- 这些事实只表示本仓库 fixture 与契约验证支撑已落地；对 `D:\PythonProject_paper_suggest` 的只读盘点显示其已具备 Phase 1 候选实现，但仍需 readiness checker 形成正式证据；这不表示真实目标项目 GUI 已可操作。
+- 这些事实只表示本仓库 fixture 与契约验证支撑已落地；对 `D:\PythonProject_paper_suggest` 的 static-only readiness 证据显示其具备 Phase 1 文件 surface 候选，但当前结果仍是 blocked / repair-lane；这不表示真实目标项目 GUI 已可操作。
 - 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
 
 ## 1. 目标
@@ -597,7 +599,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 
 | 阶段 | 阶段勾选 | 当前状态 | 不易误解的说明 |
 | --- | --- | --- | --- |
-| Phase 1：目标项目命令行状态模型 | [ ] | Ready Lane 候选已出现，待 readiness checker 正式验证；无 Phase 1 项目则走 Bootstrap Lane | 未勾选不再表示 `D:\PythonProject_paper_suggest` 一定没有 Phase 1；它表示本仓库尚未把该项目的只读 readiness checker 结果纳入正式证据链。对于完全没有 Phase 1 的项目，GUI 不得直接控制，必须先走 Bootstrap Lane 补齐 CLI / wrapper / startup checkpoint。 |
+| Phase 1：目标项目命令行状态模型 | [ ] | 已记录 `D:\PythonProject_paper_suggest` 的 static-only readiness-checker 证据，但结果是 no-go / repair-lane。无 Phase 1 项目则走 Bootstrap Lane。 | 未勾选表示 Phase 1 尚未被接受用于真实 GUI 控制。目标项目已有文件 surface 证据，但仍有 blocker：目标 worktree dirty、Agent TOML 标准扩展区不完整、wrapper 不合规。对于完全没有 Phase 1 的项目，GUI 不得直接控制，必须先走 Bootstrap Lane 补齐 CLI / wrapper / startup checkpoint。 |
 | Phase 2A：本仓库中央安装器、checker 与 updater | [x] | 已完成并合入本地 `main` | 已有本仓库本地提交 `3e4e819c73c78472d948e68d5352085dcac6551d` 与 local gate 证据。 |
 | Phase 2B：PySide6 GUI 本体 | [x] | fixture-safe GUI shell 已完成并合入本地 `main` | 覆盖 import-safe shell、view model、写入后重读、同 scope pending 禁用、键盘/高对比语义和显式可见窗口边界；真实可见窗口/QTest 证据仍属于后续操作证据，不阻塞本仓库 fixture-safe 完成定义。 |
 | Phase 2C：跨项目复用与目标安装 | [x] | 双 fixture contract 已闭环 | 两个隔离 fixture 项目已经通过相同 install/check/update/status contract、项目 A/B 隔离，以及 update 保留私有 Agent TOML / `MOE.md` / state；真实目标项目安装仍需要 Phase 1 readiness checker 通过与单独授权。 |
@@ -619,21 +621,22 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 
 #### Phase 1：目标项目命令行状态模型
 
-- [ ] 在 `D:\PythonProject_paper_suggest` 做只读 dirty/ownership preflight。
+- [x] 在 `D:\PythonProject_paper_suggest` 做只读 dirty/ownership preflight；2026-05-24 static-only 证据记录 `blocked:dirty_target_project` 且 `dirty_count=4`，所以目标写入仍被禁止。
 - [x] 在本仓库提供 `check_project_moe_phase1_readiness.py` 只读 readiness checker，用 fixture 覆盖 clean target 通过、dirty target 与缺失 wrapper fail closed。
-- [x] 在本仓库提供 readiness checker 静态只读模式 fixture：`--static-only` / `--no-exec-cli` 不执行目标 CLI，不产生目标项目 marker/状态副作用，只形成 Ready Lane 候选证据。
+- [x] 在本仓库提供 readiness checker 静态只读模式 fixture：`--static-only` / `--no-exec-cli` 不执行目标 CLI，不产生目标项目 marker/状态副作用；只有所有非执行 gate 干净时才形成 Ready Lane 候选证据。
+- [x] 记录真实 `D:\PythonProject_paper_suggest` static-only readiness 证据；2026-05-24 结果是 `readiness_status=blocked`、`adaptation_lane=repair`、`control_mode_allowed=false`，不是 Ready Lane 批准。
 - [ ] 确认目标项目已有 `.codex/agents/<project-moe-agent>.toml` 且字段符合本方案。
 - [x] 在本仓库 readiness checker fixture 中校验 Agent TOML 标准扩展区、state namespace/path、私有提示源策略和 dispatch fallback；这不代表真实目标项目 TOML 已完成。
 - [x] 在本仓库 readiness checker fixture 中校验私有提示源位置边界：`private_prompt_source` 不得指向 `.codex/agents/`、`.omx/state/`、`tools/project_moe_gui/` 或 managed artifacts；这不代表真实目标项目 `MOE.md` 已完成。
-- [ ] 确认目标项目私有提示源 `MOE.md` 只在目标项目内维护。
+- [x] 通过 static-only readiness 证据确认目标项目私有提示源 `MOE.md` 存在于目标项目内，且不在 `.codex/agents/`、`.omx/state/` 或 GUI managed artifacts 下；checker 未读取或复制提示正文。
 - [ ] 实现或核验 `tools/thesis_moe_mode.py project-on`。
 - [ ] 实现或核验 `tools/thesis_moe_mode.py project-off`。
-- [ ] 实现或核验 `tools/thesis_moe_mode.py project-status --json`。
+- [ ] 通过执行目标 CLI read contract 实现或核验 `tools/thesis_moe_mode.py project-status --json`；static-only 证据只看到命令 token，且有意跳过执行。
 - [x] 在本仓库安装器/checker fixture 中校验 `project-status --json` 的统一 envelope、CLI contract、默认值字段和 session 计数字段。
-- [ ] 实现或核验 `tools/thesis_moe_mode.py list-sessions --json`。
+- [ ] 通过执行目标 CLI read contract 实现或核验 `tools/thesis_moe_mode.py list-sessions --json`；static-only 证据只看到命令 token，且有意跳过执行。
 - [x] 在本仓库安装器/checker fixture 中校验 `list-sessions --json` 的 sessions 数组、counts 对象、行级 session 标识、enabled/effective 字段和 stable token。
 - [ ] 实现或核验 `tools/thesis_moe_mode.py on/off --session-id <id>`。
-- [ ] 实现或核验 `tools/thesis_moe_mode.py status --json` 与 `assert-on`。
+- [ ] 通过执行目标 CLI read/assertion contract 实现或核验 `tools/thesis_moe_mode.py status --json` 与 `assert-on`；static-only 证据只看到命令 token，且有意跳过执行。
 - [x] 在本仓库安装器/checker fixture 中校验 `status --json` 的 boolean `effective_enabled`、受支持 `effective_source` 和 raw/private 字段 fail-closed。
 - [x] 在本仓库 readiness checker fixture 中校验 `assert-on --json` 是只读断言命令：关闭态可返回稳定 fail-closed token，必须包含 `effective_enabled` / `effective_source`，且不得暴露 `changed_paths` / `atomic_write` 等写入结果字段；这不代表真实目标项目 `assert-on` 已完成。
 - [x] 在本仓库状态行为 fixture 中覆盖项目默认值、session override、无效记录、旧记录兼容和 no-op 测试；这不代表真实目标项目测试已完成。
@@ -644,8 +647,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - [x] 在本仓库 readiness checker fixture 中校验 startup / launcher / `AGENTS.md` 激活钩子必须覆盖 `thesis_moe_mode.py status --json` 以及 startup、resume、continue、reload、phase change 检查点；不完整钩子会 fail closed，且这不代表真实目标项目 startup 表面已更新。
 - [x] 在本仓库 readiness checker fixture 中校验目标项目操作者文档必须覆盖 `thesis_moe_mode.py`、`project-on/off`、`project-status --json`、`list-sessions --json`、`status --json`、`assert-on`、`--session-id` 和 `.cmd` wrapper 入口。
 - [ ] 接入 `thesis-moe-on.cmd` 与 `thesis-moe-off.cmd`。
-- [ ] 在目标项目 startup / launcher / AGENTS 等入口加入 MOE 状态读取检查点。
-- [ ] 编写或更新目标项目操作者文档。
+- [x] 通过 static-only readiness 证据确认目标 `AGENTS.md` startup surface 已提到 `thesis_moe_mode.py status --json`，并覆盖 startup、resume、continue、reload、phase change 检查点。
+- [x] 通过 static-only readiness 证据确认目标项目操作者文档覆盖 `thesis_moe_mode.py`、`project-on/off`、`project-status --json`、`list-sessions --json`、`status --json`、`assert-on`、`--session-id` 与 `.cmd` wrapper。
 - [ ] 目标项目本地 gate / smoke test 通过并留下证据。
 
 #### Phase 2A：本仓库中央安装器、checker 与 updater
@@ -788,12 +791,12 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 
 当前后续实施应按“Ready Lane 先验证、Bootstrap Lane 先脚手架、GUI 真实项目安装后置”的顺序推进：
 
-1. 若要控制 `D:\PythonProject_paper_suggest` 真实会话，先用只读 readiness checker 记录其 Phase 1 go/no-go 证据；若目标 CLI 读命令可能更新状态，先运行 `--static-only` / `--no-exec-cli`，并只把结果视为 `ready-candidate`；若 checker 不通过，只补具体缺口，不把它误判为“完全无 Phase 1 项目”。
+1. 若要控制 `D:\PythonProject_paper_suggest` 真实会话，必须先获得通过的 Phase 1 readiness checker 结果。2026-05-24 的 `--static-only` / `--no-exec-cli` 证据是 no-go / repair-lane，不是 `ready-candidate`：在任何 GUI 安装或控制前，必须先修复或分类目标 dirty worktree，补齐标准 Agent TOML 扩展区，并让 `thesis-moe-on/off.cmd` 传递 `--json` 且不暴露不安全 shell-surface token。若未来目标 CLI 读命令仍可能更新状态，应继续先使用 `--static-only`，但只有所有非执行 gate 干净时才能把它作为 surface 候选证据。
 2. 若当前没有目标项目写入授权，本仓库可以继续做只读 readiness checker 与 fixture/mock 目标项目验证，不得直接写 `paper_suggest` 真实 `.omx/state` 或 wrapper。
 3. 对没有 Phase 1 的项目，GUI 只进入 Bootstrap Lane：显示缺失项、输出 scaffold / bootstrap 建议或显式 dry-run 计划；在 CLI / wrapper / startup checkpoint 未补齐前，不进入控制模式。
 4. Phase 2B GUI 本体只能通过目标项目 CLI 改状态，不得直接编辑 JSON；若目标 CLI 缺失，GUI 必须显示 blocker，而不是降级扫描或写状态文件。
 5. Phase 2C 已在本仓库 fixture 层闭环：两个隔离 fixture 已通过相同 contract；本仓库又补充 Phase 1 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令原子写入/锁状态 fixture gate、项目默认值/session override/无效记录/legacy/no-op 状态行为 fixture gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 fixture gate、操作者文档 readiness gate、Agent TOML 标准扩展 readiness gate、私有提示源位置 readiness gate，以及 `assert-on` 只读断言 readiness gate，真实项目安装仍取决于后续目标项目授权和 Phase 1 就绪性。
-6. 本文暂不从 `draft` 提升：Phase 2B、fixture 级 Phase 2C、本仓库 Phase 1 读取契约 gate、GUI 写入命令输出契约 gate、写入命令 atomic/lock gate、状态行为 gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 gate、操作者文档 gate、Agent TOML 标准扩展 gate、私有提示源位置 gate 与 `assert-on` 只读断言 gate 已有本地证据，但 `D:\PythonProject_paper_suggest` 仍需要正式 readiness checker 结果，而无 Phase 1 项目还需要 Bootstrap Lane 脚手架落地。
+6. 本文暂不从 `draft` 提升：Phase 2B、fixture 级 Phase 2C、本仓库 Phase 1 读取契约 gate、GUI 写入命令输出契约 gate、写入命令 atomic/lock gate、状态行为 gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 gate、操作者文档 gate、Agent TOML 标准扩展 gate、私有提示源位置 gate 与 `assert-on` 只读断言 gate 已有本地证据，但 `D:\PythonProject_paper_suggest` 的正式 static-only 证据仍是 blocked / repair-lane，真实 GUI 控制仍需后续修复并重新通过 readiness checker；无 Phase 1 项目还需要 Bootstrap Lane 脚手架落地。
 
 阶段门规则：
 

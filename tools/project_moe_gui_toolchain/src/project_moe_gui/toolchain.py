@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -212,6 +213,8 @@ def project_evidence(root: Path) -> list[str]:
 
 
 def git_status_summary(root: Path) -> dict[str, Any]:
+    env = dict(os.environ)
+    env["GIT_OPTIONAL_LOCKS"] = "0"
     result = subprocess.run(
         ["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all"],
         capture_output=True,
@@ -219,10 +222,13 @@ def git_status_summary(root: Path) -> dict[str, Any]:
         encoding="utf-8",
         errors="replace",
         check=False,
+        env=env,
     )
     records = [line for line in result.stdout.splitlines() if line.strip()]
     return {
         "is_git_worktree": result.returncode == 0,
+        "read_only_git_optional_locks": True,
+        "git_optional_locks": "0",
         "dirty": bool(records) if result.returncode == 0 else None,
         "dirty_count": len(records) if result.returncode == 0 else None,
         "records_sample": records[:20],
