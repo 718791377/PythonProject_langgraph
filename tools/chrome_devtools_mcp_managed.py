@@ -482,6 +482,40 @@ def command_status(args: argparse.Namespace) -> dict[str, Any]:
     return response(True, action, registry_mutated=False, start_performed=False, leases=leases)
 
 
+def command_stale_scan(args: argparse.Namespace) -> dict[str, Any]:
+    base = state_dir(args)
+    owner = run_owner_registry(base, ["stale-scan", "--dry-run"])
+    candidates = sanitize_json(owner.get("stale_candidates", []))
+    return response(
+        True,
+        "stale-scan",
+        dry_run=True,
+        registry_mutated=False,
+        start_performed=False,
+        cleanup_performed=False,
+        managed_profiles_only=True,
+        stale_candidates=candidates,
+    )
+
+
+def command_cleanup_dry_run(args: argparse.Namespace) -> dict[str, Any]:
+    base = state_dir(args)
+    owner = run_owner_registry(base, ["cleanup", "dry-run"])
+    return response(
+        True,
+        "cleanup-dry-run",
+        dry_run=True,
+        registry_mutated=False,
+        start_performed=False,
+        cleanup_performed=False,
+        human_owned_cleanup_performed=False,
+        managed_profiles_only=True,
+        cleanup_candidates=sanitize_json(owner.get("cleanup_candidates", [])),
+        protected_profiles=sanitize_json(owner.get("protected_profiles", [])),
+        deleted_profiles=sanitize_json(owner.get("deleted_profiles", [])),
+    )
+
+
 def add_common_session_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--project", required=True)
     parser.add_argument("--session", required=True)
@@ -552,6 +586,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     project_status = project_sub.add_parser("status")
     project_status.set_defaults(func=command_status, profile_mode="project")
+
+    stale = sub.add_parser("stale-scan")
+    stale.add_argument("--dry-run", action="store_true", required=True)
+    stale.set_defaults(func=command_stale_scan)
+
+    cleanup = sub.add_parser("cleanup")
+    cleanup_sub = cleanup.add_subparsers(dest="cleanup_command", required=True)
+    cleanup_dry_run = cleanup_sub.add_parser("dry-run")
+    cleanup_dry_run.set_defaults(func=command_cleanup_dry_run)
     return parser
 
 
@@ -564,7 +607,7 @@ def main(argv: list[str] | None = None) -> int:
     if not json_requested:
         emit(response(False, "parse", error="json_required", message="chrome-devtools-mcp-managed requires --json"))
         return 2
-    action = getattr(args, "isolated_command", None) or getattr(args, "project_command", None) or args.command
+    action = getattr(args, "isolated_command", None) or getattr(args, "project_command", None) or getattr(args, "cleanup_command", None) or args.command
     try:
         emit(args.func(args))
         return 0

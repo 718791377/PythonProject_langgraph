@@ -288,17 +288,47 @@ class BrowserOwnerRegistryTests(unittest.TestCase):
                 ],
                 state,
             )
+            delegated_receipt = write_receipt(state, target="tab:delegated", session="session-c")
+            delegated = run_cmd(
+                [
+                    "lease",
+                    "reserve",
+                    "--owner-class",
+                    "human-delegated",
+                    "--project",
+                    "personal",
+                    "--session",
+                    "session-c",
+                    "--target",
+                    "tab:delegated",
+                    "--profile-path",
+                    r"C:\Users\lenovo\AppData\Local\Google\Chrome\User Data",
+                    "--purpose",
+                    "expired delegated human tab",
+                    "--ttl",
+                    "-1",
+                    "--authorization-receipt",
+                    str(delegated_receipt),
+                ],
+                state,
+            )
 
             stale = run_cmd(["stale-scan", "--dry-run"], state)
             self.assertTrue(stale["dry_run"])
             self.assertFalse(stale["registry_mutated"])
-            self.assertEqual({item["lease_id"] for item in stale["stale_candidates"]}, {isolated["lease"]["lease_id"], project["lease"]["lease_id"]})
+            self.assertEqual(
+                {item["lease_id"] for item in stale["stale_candidates"]},
+                {isolated["lease"]["lease_id"], project["lease"]["lease_id"], delegated["lease"]["lease_id"]},
+            )
 
             cleanup = run_cmd(["cleanup", "dry-run"], state)
             self.assertFalse(cleanup["cleanup_performed"])
             self.assertFalse(cleanup["human_owned_cleanup_performed"])
             self.assertEqual([item["lease_id"] for item in cleanup["cleanup_candidates"]], [isolated["lease"]["lease_id"]])
-            self.assertEqual([item["lease_id"] for item in cleanup["protected_profiles"]], [project["lease"]["lease_id"]])
+            self.assertEqual(
+                {item["lease_id"] for item in cleanup["protected_profiles"]},
+                {project["lease"]["lease_id"], delegated["lease"]["lease_id"]},
+            )
             self.assertEqual(cleanup["deleted_profiles"], [])
 
 

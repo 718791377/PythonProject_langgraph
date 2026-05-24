@@ -4,7 +4,7 @@ lang: en
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: chrome_devtools_mcp_project_profile_wrapper_repo_local_implemented
+implementation_state: browser_stale_cleanup_dry_run_repo_local_implemented
 last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -26,7 +26,7 @@ Review verdict:
 - Unchecked checklist items are downstream implementation state, not plan gaps. A lane must not be marked `active` until its code, checker, install artifact, and receipt evidence all exist.
 - The sequence is baseline before capability: finish token/risk, authorization receipt, update receipt, and evidence-redaction controls before implementing `skills2cli`, `mcp2cli`, browser automation, and `wecom-cli` capability surfaces.
 
-The next action is not to broaden this plan. After the repo-local `chrome-devtools-mcp` isolated-session and project-profile managed wrapper MVPs are validated and archived, continue with browser stale scan and safe cleanup dry-run slices rather than installing user-level wrappers implicitly.
+The next action is not to broaden this plan. After the repo-local `chrome-devtools-mcp` isolated-session, project-profile, browser stale scan, and safe cleanup dry-run MVPs are validated and archived, continue with CDP Bridge and OpenCLI on-demand enforcement slices rather than installing user-level wrappers implicitly.
 
 ## 1. Purpose
 
@@ -417,7 +417,7 @@ Default lane-state table:
 | `skills2cli` | `implemented-local`; eligible for user-level `active` only after a later governed wrapper/install receipt | Compact read-only index/search/show/warning summaries | Applying/disabling skills, dumping complete plugin skill bodies, recording full private paths | Compact-output tests, warning-audit redaction tests, evidence that profile suggestions do not apply changes |
 | `mcp2cli` | `implemented-local`; eligible for user-level `active` only after later governed wrapper/install receipt and live adapter slices | list/search/show; non-sensitive calls through category-checked local guard facade | Secrets, shell, browser state, remote mutation, payment/account/personal-data calls | Allowed-profile registry, sensitive-call fail-closed checker, authorization receipt schema |
 | `codex-port` allocator | `implemented-local`; eligible for user-level `active` only after governed wrapper/install receipt and smoke evidence | range-aware lease reserve/list/renew/release/import/gc | cross-owner range allocation, killing port holders, non-atomic registry writes, silent stale reuse | owner-range tests, live-socket collision fixtures, lease receipt schema, stale PID/health evidence |
-| `chrome-devtools-mcp` | `implemented-local` for isolated-session and project-profile managed wrappers; live user-level start and cleanup remain `planned` | isolated-session / project-profile local-debug inspection with owner leases, authorization gates, and dry-run start plans | human-owned Chrome, unauthorized logged-in project profiles, live start, cleanup | Managed wrapper, leases, profile ownership, project-profile retention, stale-cleanup dry-run evidence |
+| `chrome-devtools-mcp` | `implemented-local` for isolated-session, project-profile, stale scan, and cleanup dry-run wrappers; live user-level start and real cleanup remain `planned` | isolated-session / project-profile local-debug inspection with owner leases, authorization gates, dry-run start plans, stale scan, and cleanup dry-run | human-owned Chrome, unauthorized logged-in project profiles, live start, real cleanup | Managed wrapper, leases, profile ownership, project-profile retention, stale-cleanup dry-run evidence |
 | CDP Bridge | `on-demand` | tab list, DOM scan, screenshot, read-only inventory | cookies, JavaScript write, click/type/navigate in sensitive context | owner check, authorization gate, read/write separation tests |
 | OpenCLI | `on-demand` | explicit isolated or project-profile task adaptation | default binding to human-owned tabs or always-on loading | wrapper pin, browser owner registry, human-owned protection tests |
 | `oh-my-pi` | `reference-only` | architecture, UX, and harness reference reading | replacing Codex, replacing native subagents, runtime updates without receipts | pinned clone, smoke test, update/rollback receipt |
@@ -564,8 +564,8 @@ Fine-grained implementation checklist:
 - [x] Implement the browser owner registry with owner class, project slug, session id, profile path, and lease expiry.
 - [x] Implement the `chrome-devtools-mcp` managed wrapper isolated-session mode.
 - [x] Implement the `chrome-devtools-mcp` managed wrapper project-profile mode.
-- [ ] Implement browser stale scan and safe-cleanup dry-run, scoped only to known managed profiles.
-- [ ] Add browser-lane tests for tab-owner exclusivity, project-profile retention, human-owned protection, and cleanup dry-run.
+- [x] Implement browser stale scan and safe-cleanup dry-run, scoped only to known managed profiles.
+- [x] Add browser-lane tests for tab-owner exclusivity, project-profile retention, human-owned protection, and cleanup dry-run.
 - [ ] Harden CDP Bridge read-only defaults so write actions require owner and authorization receipts.
 - [ ] Keep OpenCLI as an on-demand adapter and connect it to the browser owner registry.
 - [ ] Add CDP Bridge/OpenCLI fail-closed tests for cookie, JavaScript, click, type, and navigate sensitive actions.

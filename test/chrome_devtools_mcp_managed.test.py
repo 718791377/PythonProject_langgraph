@@ -436,6 +436,71 @@ class ChromeDevToolsMcpManagedTests(unittest.TestCase):
             self.assertEqual(released["owner_lease"]["status"], "released")
             self.assertTrue(list((state / "receipts").glob("*-release-project-profile-*.json")))
 
+    def test_stale_scan_and_cleanup_dry_run_are_managed_and_non_mutating(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            isolated = run_cmd(
+                [
+                    "isolated-session",
+                    "reserve",
+                    "--project",
+                    "pythonproject-langgraph",
+                    "--session",
+                    "session-a",
+                    "--purpose",
+                    "expired isolated",
+                    "--ttl",
+                    "-1",
+                ],
+                state,
+            )
+            target = "chrome-devtools-mcp:project:pythonproject-langgraph:dev-login"
+            receipt = write_authorization_receipt(state / "auth.json", target=target, session="session-b")
+            project = run_cmd(
+                [
+                    "project-profile",
+                    "reserve",
+                    "--project",
+                    "pythonproject-langgraph",
+                    "--profile",
+                    "dev-login",
+                    "--session",
+                    "session-b",
+                    "--purpose",
+                    "expired project profile",
+                    "--ttl",
+                    "-1",
+                    "--authorization-receipt",
+                    str(receipt),
+                ],
+                state,
+            )
+
+            stale = run_cmd(["stale-scan", "--dry-run"], state)
+            serialized_stale = json.dumps(stale, ensure_ascii=False)
+            self.assertTrue(stale["ok"])
+            self.assertTrue(stale["dry_run"])
+            self.assertFalse(stale["registry_mutated"])
+            self.assertFalse(stale["cleanup_performed"])
+            self.assertTrue(stale["managed_profiles_only"])
+            self.assertEqual(
+                {item["lease_id"] for item in stale["stale_candidates"]},
+                {isolated["owner_lease"]["lease_id"], project["owner_lease"]["lease_id"]},
+            )
+            self.assertNotIn(str(state), serialized_stale)
+
+            cleanup = run_cmd(["cleanup", "dry-run"], state)
+            serialized_cleanup = json.dumps(cleanup, ensure_ascii=False)
+            self.assertTrue(cleanup["ok"])
+            self.assertTrue(cleanup["dry_run"])
+            self.assertFalse(cleanup["registry_mutated"])
+            self.assertFalse(cleanup["cleanup_performed"])
+            self.assertFalse(cleanup["human_owned_cleanup_performed"])
+            self.assertEqual([item["lease_id"] for item in cleanup["cleanup_candidates"]], [isolated["owner_lease"]["lease_id"]])
+            self.assertEqual([item["lease_id"] for item in cleanup["protected_profiles"]], [project["owner_lease"]["lease_id"]])
+            self.assertEqual(cleanup["deleted_profiles"], [])
+            self.assertNotIn(str(state), serialized_cleanup)
+
 
 if __name__ == "__main__":
     unittest.main()
