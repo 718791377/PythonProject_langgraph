@@ -39,6 +39,7 @@ related_docs:
 - 本次后续变更继续新增 `assert-on` 只读断言 readiness gate：只读 checker 会执行并校验 `assert-on --json`，允许 `disabled` / `blocked:moe_disabled` 作为关闭态 fail-closed token，但要求 `effective_enabled`、`effective_source`、稳定 envelope 与无写入结果字段；未知 token、缺失字段或暴露写入字段时 fail closed。
 - 本次后续变更继续加固 startup 激活检查点 readiness gate：目标 startup / launcher / `AGENTS.md` 表面必须明确包含 `thesis_moe_mode.py status --json`，并覆盖 startup、resume、continue、reload 和 phase change 检查点；只写模糊 startup 钩子会以 `blocked:moe_activation_hook_incomplete` fail closed，完全缺失时仍为 `blocked:missing_moe_activation_hook`。
 - 本次后续变更继续让 Phase 1 readiness checker 输出机器可读适配路线：`adaptation_lane = ready | ready-candidate | bootstrap | repair`、`control_mode_allowed`、`bootstrap_required`、`bootstrap_missing_capabilities`、`repair_required` 和 `cli_execution_mode`，避免有 Phase 1 项目、静态只读候选、缺 Phase 1 项目和局部修复项目混淆。
+- 本次后续变更继续让 Phase 1 readiness checker 输出结构化 `remediation_plan`：blocked、Bootstrap Lane、Repair Lane 与 static-only candidate 结果会按 `preflight`、`bootstrap`、`repair`、`execute-read-contract` 分组给出有序下一步；checker 仍保持只读，本身不授权写目标项目。
 - 这些事实只表示本仓库 fixture 与契约验证支撑已落地；对 `D:\PythonProject_paper_suggest` 的 static-only readiness 证据显示其具备 Phase 1 文件 surface 候选，但当前结果仍是 blocked / repair-lane；这不表示真实目标项目 GUI 已可操作。
 - 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
 
@@ -618,6 +619,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - [x] 定义无 Phase 1 项目的 Bootstrap Lane：只输出 blocker / scaffold / bootstrap 计划，补齐 Phase 1 前不得直接控制。
 - [x] 在 Phase 1 readiness checker 中输出机器可读 `adaptation_lane`、`control_mode_allowed`、`bootstrap_required`、`bootstrap_missing_capabilities` 和 `repair_required`，并用 fixture 覆盖 ready / bootstrap / repair 三类。
 - [x] 在 Phase 1 readiness checker 中提供 `--static-only` / `--no-exec-cli` 模式：只检查文件 surface，不执行目标 CLI；通过时输出 `adaptation_lane = ready-candidate`、`cli_execution_mode = static-only` 且 `control_mode_allowed = false`。
+- [x] 在 Phase 1 readiness checker 中输出结构化 `remediation_plan`：ready 结果不产生修复步骤；static-only candidate 要求后续执行 `run_execute_read_contract_readiness_check`；blocked/bootstrap/repair 结果把稳定 blocker code 按 preflight、bootstrap、repair 与 execute-read-contract 动作分组排序，且不授权 checker 写目标项目。
 
 #### Phase 1：目标项目命令行状态模型
 
@@ -791,7 +793,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 
 当前后续实施应按“Ready Lane 先验证、Bootstrap Lane 先脚手架、GUI 真实项目安装后置”的顺序推进：
 
-1. 若要控制 `D:\PythonProject_paper_suggest` 真实会话，必须先获得通过的 Phase 1 readiness checker 结果。2026-05-24 的 `--static-only` / `--no-exec-cli` 证据是 no-go / repair-lane，不是 `ready-candidate`：在任何 GUI 安装或控制前，必须先修复或分类目标 dirty worktree，补齐标准 Agent TOML 扩展区，并让 `thesis-moe-on/off.cmd` 传递 `--json` 且不暴露不安全 shell-surface token。若未来目标 CLI 读命令仍可能更新状态，应继续先使用 `--static-only`，但只有所有非执行 gate 干净时才能把它作为 surface 候选证据。
+1. 若要控制 `D:\PythonProject_paper_suggest` 真实会话，必须先获得通过的 Phase 1 readiness checker 结果。2026-05-24 的 `--static-only` / `--no-exec-cli` 证据是 no-go / repair-lane，不是 `ready-candidate`：在任何 GUI 安装或控制前，必须按 readiness payload 的 `remediation_plan` 顺序处理。对当前目标项目来说，顺序是先分类或清理 dirty worktree，再补齐标准 Agent TOML 扩展区，再让 `thesis-moe-on/off.cmd` 传递 `--json` 且不暴露不安全 shell-surface token，最后在静态 surface 干净后执行 execute-read-contract readiness 检查。若未来目标 CLI 读命令仍可能更新状态，应继续先使用 `--static-only`，但只有所有非执行 gate 干净时才能把它作为 surface 候选证据。
 2. 若当前没有目标项目写入授权，本仓库可以继续做只读 readiness checker 与 fixture/mock 目标项目验证，不得直接写 `paper_suggest` 真实 `.omx/state` 或 wrapper。
 3. 对没有 Phase 1 的项目，GUI 只进入 Bootstrap Lane：显示缺失项、输出 scaffold / bootstrap 建议或显式 dry-run 计划；在 CLI / wrapper / startup checkpoint 未补齐前，不进入控制模式。
 4. Phase 2B GUI 本体只能通过目标项目 CLI 改状态，不得直接编辑 JSON；若目标 CLI 缺失，GUI 必须显示 blocker，而不是降级扫描或写状态文件。

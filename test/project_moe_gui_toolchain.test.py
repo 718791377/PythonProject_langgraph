@@ -603,6 +603,12 @@ else:
             self.assertTrue(payload["startup_activation_hooks"]["basic_status_hook_found"])
             self.assertEqual(payload["startup_activation_hooks"]["required_tokens"], ["thesis_moe_mode.py", "status --json", "startup", "resume", "continue", "reload", "phase change"])
             self.assertTrue(payload["operator_docs"]["ready"])
+            remediation = payload["remediation_plan"]
+            self.assertTrue(remediation["ready_for_control"])
+            self.assertEqual(remediation["lane"], "ready")
+            self.assertEqual(remediation["summary"], "no_remediation_required")
+            self.assertEqual(remediation["groups"], [])
+            self.assertEqual(remediation["ordered_next_steps"], [])
 
     def test_phase1_readiness_checker_static_only_does_not_execute_target_cli(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -642,6 +648,15 @@ else:
             self.assertEqual(payload["cli_contract_check"]["skip_reason"], "static_only_no_exec_cli")
             self.assertEqual(payload["cli_contract_check"]["commands_checked"], [])
             self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], [])
+            remediation = payload["remediation_plan"]
+            self.assertFalse(remediation["ready_for_control"])
+            self.assertEqual(remediation["lane"], "ready-candidate")
+            self.assertEqual(remediation["cli_execution_mode"], "static-only")
+            self.assertFalse(remediation["target_project_write_allowed_by_checker"])
+            self.assertEqual(remediation["summary"], "execute_read_contract_required_before_control")
+            self.assertEqual(remediation["ordered_next_steps"], ["run_execute_read_contract_readiness_check"])
+            self.assertEqual(remediation["groups"][0]["category"], "mode_cli_contract")
+            self.assertFalse(remediation["groups"][0]["safe_to_auto_apply"])
 
     def test_phase1_readiness_checker_blocks_dirty_target_and_missing_wrapper(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -673,6 +688,16 @@ else:
             self.assertIn("blocked:dirty_target_project", blocker_codes)
             self.assertIn("blocked:missing_phase1_wrapper", blocker_codes)
             self.assertTrue(payload["git_status"]["dirty"])
+            remediation = payload["remediation_plan"]
+            self.assertFalse(remediation["ready_for_control"])
+            self.assertEqual(remediation["lane"], payload["adaptation_lane"])
+            self.assertFalse(remediation["target_project_write_allowed_by_checker"])
+            self.assertEqual(remediation["ordered_next_steps"][0], "classify_or_clean_dirty_target_worktree")
+            groups = {group["category"]: group for group in remediation["groups"]}
+            self.assertIn("target_git_state", groups)
+            self.assertIn("phase1_wrapper", groups)
+            self.assertIn("blocked:dirty_target_project", groups["target_git_state"]["codes"])
+            self.assertIn("blocked:missing_phase1_wrapper", groups["phase1_wrapper"]["codes"])
 
     def test_phase1_readiness_checker_classifies_empty_target_as_bootstrap_lane(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -705,6 +730,12 @@ else:
             self.assertIn("blocked:missing_agent_toml", blocker_codes)
             self.assertIn("blocked:missing_mode_cli", blocker_codes)
             self.assertIn("blocked:missing_phase1_wrapper", blocker_codes)
+            remediation = payload["remediation_plan"]
+            self.assertEqual(remediation["lane"], "bootstrap")
+            self.assertEqual(remediation["summary"], "bootstrap_phase1_surface_before_gui_control")
+            categories = {group["category"] for group in remediation["groups"]}
+            self.assertTrue({"agent_toml", "mode_cli", "phase1_wrapper", "startup_activation_hook", "operator_docs"}.issubset(categories))
+            self.assertTrue(remediation["ordered_next_steps"])
 
     def test_phase1_readiness_checker_blocks_missing_operator_docs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -789,6 +820,10 @@ else:
             self.assertTrue(payload["repair_required"])
             self.assertEqual(payload["bootstrap_missing_capabilities"], [])
             self.assertIn("blocked:phase1_operator_docs_incomplete", blocker_codes)
+            remediation = payload["remediation_plan"]
+            self.assertEqual(remediation["lane"], "repair")
+            self.assertEqual(remediation["summary"], "repair_existing_phase1_surface_before_gui_control")
+            self.assertIn("complete_phase1_operator_docs", remediation["ordered_next_steps"])
 
     def test_phase1_readiness_checker_blocks_incomplete_startup_hook(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
