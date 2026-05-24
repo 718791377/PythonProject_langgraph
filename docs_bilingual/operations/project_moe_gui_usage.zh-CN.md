@@ -89,6 +89,26 @@ python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-projec
 
 检查器会验证 managed files 的 manifest hash。若目标项目手改了受管文件，返回 `blocked:managed_file_hash_mismatch`，更新器不得静默覆盖。
 
+## 预览卸载 / 清理计划
+
+卸载或清理 Project MOE GUI 时，先只生成计划，不直接删除目标项目文件：
+
+```powershell
+python tools/project_moe_gui_toolchain/plan_project_moe_gui_uninstall.py `
+  --target-project D:\SomeProject `
+  --json
+```
+
+该命令只读取 `project_moe_gui.install-manifest.json` 和 managed file hash，返回 `planned_deletes` 与 `protected_paths_preserved`。它必须满足：
+
+- `read_only = true`；
+- `writes_target_project = false`；
+- `apply_supported = false`；
+- `state_deletion_allowed = false`；
+- `private_files_deletion_allowed = false` - 表示卸载计划不得删除 `MOE.md` 或 `.codex/agents/*.toml` 等目标项目私有文件。
+
+如果 managed file hash 不匹配，返回 `blocked:managed_file_hash_mismatch`，不得把本地改动过的 managed file 当作可删除对象。该计划不删除 `.omx/state`、私有 `MOE.md` 或 `.codex/agents/*.toml`。
+
 ## 回滚
 
 回滚依赖目标项目 Git 历史和 `project_moe_gui.install-manifest.json`。回滚 GUI 产物时不得删除 `.omx/state`、私有 `MOE.md` 或 Agent TOML。

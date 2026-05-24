@@ -16,6 +16,7 @@ sys.path.insert(0, str(TOOLCHAIN_SRC))
 INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_moe_gui.py"
 CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_gui_install.py"
 UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_moe_gui.py"
+UNINSTALL_PLANNER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "plan_project_moe_gui_uninstall.py"
 PHASE1_READINESS = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_phase1_readiness.py"
 PHASE1_SCAFFOLD = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "scaffold_project_moe_phase1.py"
 
@@ -1499,6 +1500,64 @@ else:
             _, payload = self.run_tool(str(UPDATER), "--target-project", str(project), "--dry-run")
             self.assertTrue(payload["no_op"], payload)
             self.assertEqual(payload["status"], "up_to_date")
+
+    def test_uninstall_plan_is_dry_run_and_preserves_private_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-uninstall", session_id="session-uninstall")
+            self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            private_before = self.private_project_digests(project)
+
+            _, payload = self.run_tool(str(UNINSTALL_PLANNER), "--target-project", str(project))
+
+            self.assertEqual(payload["command"], "plan_project_moe_gui_uninstall")
+            self.assertEqual(payload["mode"], "dry-run")
+            self.assertTrue(payload["read_only"])
+            self.assertFalse(payload["writes_target_project"])
+            self.assertFalse(payload["apply_supported"])
+            self.assertFalse(payload["state_deletion_allowed"])
+            self.assertFalse(payload["private_files_deletion_allowed"])
+            delete_paths = {item["path"]: item for item in payload["planned_deletes"]}
+            self.assertEqual(delete_paths["tools/project_moe_gui/launcher.py"]["action"], "delete")
+            self.assertEqual(delete_paths["tools/project_moe_gui/project_moe_gui.install-manifest.json"]["action"], "delete")
+            self.assertIn("MOE.md", payload["protected_paths_preserved"])
+            self.assertIn(".codex/agents/*.toml", payload["protected_paths_preserved"])
+            self.assertIn(".omx/state/thesis_moe/", payload["protected_paths_preserved"])
+            self.assertTrue((project / "tools" / "project_moe_gui" / "launcher.py").exists())
+            self.assertEqual(private_before, self.private_project_digests(project))
+
+    def test_uninstall_plan_fails_closed_on_managed_hash_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            launcher = project / "tools" / "project_moe_gui" / "launcher.py"
+            launcher.write_text(launcher.read_text(encoding="utf-8") + "\n# local mutation\n", encoding="utf-8")
+
+            _, payload = self.run_tool(str(UNINSTALL_PLANNER), "--target-project", str(project), expect_success=False)
+
+            self.assertEqual(payload["token"], "blocked:managed_file_hash_mismatch")
+            delete_paths = {item["path"]: item for item in payload["planned_deletes"]}
+            self.assertEqual(delete_paths["tools/project_moe_gui/launcher.py"]["action"], "blocked")
+            self.assertFalse(delete_paths["tools/project_moe_gui/launcher.py"]["safe_to_delete"])
 
     def gui_config(self, project: Path) -> dict:
         return {

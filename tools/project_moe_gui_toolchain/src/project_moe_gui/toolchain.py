@@ -2048,6 +2048,86 @@ def hash_errors(root: Path, manifest: dict[str, Any] | None) -> list[dict[str, A
     return errors
 
 
+def managed_file_uninstall_plan(root: Path, manifest: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    planned_deletes: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in manifest.get("managed_files", []):
+        rel = str(item.get("path") or "").strip()
+        if not rel or rel in seen:
+            continue
+        seen.add(rel)
+        expected = item.get("sha256")
+        full, err = safe_relative(root, Path(rel))
+        if err:
+            errors.append(err)
+            planned_deletes.append({"path": rel, "action": "blocked", "safe_to_delete": False, "blocker": err})
+            continue
+        assert full is not None
+        exists = full.exists()
+        action = "delete" if exists else "already_absent"
+        observed = sha256_file(full) if exists and expected else None
+        safe_to_delete = exists
+        if exists and expected and observed != expected:
+            blocker_payload = blocker(
+                "blocked:managed_file_hash_mismatch",
+                "Managed file hash does not match install manifest; uninstall plan must fail closed instead of deleting a locally changed file.",
+                path=rel,
+                expected=expected,
+                observed=observed,
+            )
+            errors.append(blocker_payload)
+            action = "blocked"
+            safe_to_delete = False
+        planned_deletes.append(
+            {
+                "path": rel,
+                "role": item.get("role") or "managed",
+                "action": action,
+                "exists": exists,
+                "safe_to_delete": safe_to_delete,
+                "managed": True,
+                "sha256_verified": bool(exists and expected and observed == expected),
+            }
+        )
+    return planned_deletes, errors
+
+
+def plan_uninstall(root: Path) -> dict[str, Any]:
+    manifest, config, load_errors = existing_install(root)
+    errors: list[dict[str, Any]] = list(load_errors)
+    planned_deletes: list[dict[str, Any]] = []
+    protected_files: list[str] = []
+    if not manifest or not config:
+        errors.extend(load_errors or [blocker("blocked:not_installed", "Project MOE GUI is not installed in target project.")])
+    else:
+        planned_deletes, delete_errors = managed_file_uninstall_plan(root, manifest)
+        errors.extend(delete_errors)
+        protected_files = list(manifest.get("protected_files") or [])
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "command": "plan_project_moe_gui_uninstall",
+        "mode": "dry-run",
+        "ok": not errors,
+        "token": "ok" if not errors else errors[0]["code"],
+        "read_only": True,
+        "writes_target_project": False,
+        "apply_supported": False,
+        "target_project_root": str(root),
+        "toolchain": TOOLCHAIN_NAME,
+        "installed_toolchain_version": manifest.get("toolchain_version") if manifest else None,
+        "target_toolchain_version": TOOLCHAIN_VERSION,
+        "agent_name": (config or manifest or {}).get("agent_name") if (config or manifest) else None,
+        "state_namespace": (config or manifest or {}).get("state_namespace") if (config or manifest) else None,
+        "planned_deletes": planned_deletes,
+        "protected_paths_preserved": protected_files,
+        "state_deletion_allowed": False,
+        "private_files_deletion_allowed": False,
+        "blockers": errors,
+        "rollback_hint": (manifest or {}).get("rollback_hint") or "Uninstall planning only covers managed GUI artifacts; preserve .omx/state, MOE.md, and .codex/agents/*.toml.",
+    }
+
+
 def check_install(root: Path, skip_runtime_import: bool = False) -> dict[str, Any]:
     errors: list[dict[str, Any]] = []
     manifest, config, load_errors = existing_install(root)

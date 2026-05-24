@@ -43,6 +43,7 @@ related_docs:
 - 本次后续变更新增 `scaffold_project_moe_phase1.py` Bootstrap Lane dry-run 计划器：为无 Phase 1 项目报告需要补齐的 Phase 1 文件清单，JSON payload 不包含生成文件正文，不读取私有提示正文，不写目标项目文件，并保持 GUI 控制禁用。
 - 本次后续变更继续让已安装的项目本地 launcher 在配置的 mode CLI 缺失时暴露 Bootstrap Lane 脚手架计划；launcher preflight 会返回 `blocked:missing_mode_cli`、`adaptation_lane=bootstrap`、`control_mode_allowed=false` 和只读 `bootstrap_plan`，且不写目标项目文件。
 - 本次后续变更继续让 Bootstrap Lane payload 输出稳定的 `operator_next_steps`：按顺序列出 preflight 清理、私有 surface 复核、Phase 1 文件创建/更新、static-only readiness、执行读契约 readiness，以及 Ready Lane 后才能 GUI 安装/控制；这些步骤本身不授权目标项目写入或 GUI 控制。
+- 本次后续变更新增只读 managed-artifact 卸载计划器：只对 manifest 声明的 GUI managed artifacts 输出 `planned_deletes`，保留私有 Agent TOML / `MOE.md` / `.omx/state`，并在 managed file hash 不匹配时 fail closed，避免删除本地改动。
 - 这些事实只表示本仓库 fixture 与契约验证支撑已落地；对 `D:\PythonProject_paper_suggest` 的 static-only readiness 证据显示其具备 Phase 1 文件 surface 候选，但当前结果仍是 blocked / repair-lane；这不表示真实目标项目 GUI 已可操作。
 - 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
 
@@ -672,6 +673,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - [x] 实现 apply 写入目标项目安装产物与 manifest。
 - [x] 实现 hash mismatch fail closed。
 - [x] 实现 path traversal / unsafe target blocker。
+- [x] 实现只读 managed-artifact 卸载计划：只计划删除 manifest 声明的 GUI managed artifacts，私有 Agent TOML、`MOE.md` 和 `.omx/state` 保持 protected；hash mismatch 时 fail closed。
 - [x] 编写 `docs_bilingual/operations/project_moe_gui_usage.zh-CN.md`。
 - [x] 编写 `test/project_moe_gui_toolchain.test.py`。
 - [x] 将测试注册到 `tools/ci/ci_test_manifest.json`。
@@ -803,8 +805,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 2. 若当前没有目标项目写入授权，本仓库可以继续做只读 readiness checker 与 fixture/mock 目标项目验证，不得直接写 `paper_suggest` 真实 `.omx/state` 或 wrapper。
 3. 对没有 Phase 1 的项目，GUI 只进入 Bootstrap Lane：运行 `scaffold_project_moe_phase1.py --target-project <project> --agent-name <agent> --state-namespace <namespace> --dry-run --json` 输出只读脚手架计划，覆盖缺失的 Agent TOML、私有提示占位、mode CLI、wrapper、startup hook 与操作者文档。若已安装 launcher 发现配置的 mode CLI 缺失，launcher preflight 必须返回同一类 Bootstrap Lane 计划和稳定 `operator_next_steps`，并继续拒绝写入/控制，直到目标项目内完成这些 CLI / wrapper / startup checkpoint 且 readiness 进入 Ready Lane。
 4. Phase 2B GUI 本体只能通过目标项目 CLI 改状态，不得直接编辑 JSON；若目标 CLI 缺失，GUI 必须显示 blocker，而不是降级扫描或写状态文件。
-5. Phase 2C 已在本仓库 fixture 层闭环：两个隔离 fixture 已通过相同 contract；本仓库又补充 Phase 1 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令原子写入/锁状态 fixture gate、项目默认值/session override/无效记录/legacy/no-op 状态行为 fixture gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 fixture gate、操作者文档 readiness gate、Agent TOML 标准扩展 readiness gate、私有提示源位置 readiness gate，以及 `assert-on` 只读断言 readiness gate，真实项目安装仍取决于后续目标项目授权和 Phase 1 就绪性。
-6. 本文暂不从 `draft` 提升：Phase 2B、fixture 级 Phase 2C、本仓库 Phase 1 读取契约 gate、GUI 写入命令输出契约 gate、写入命令 atomic/lock gate、状态行为 gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 gate、操作者文档 gate、Agent TOML 标准扩展 gate、私有提示源位置 gate、`assert-on` 只读断言 gate、Bootstrap Lane dry-run 脚手架计划器、installed-launcher Bootstrap Lane preflight 和稳定 Bootstrap Lane `operator_next_steps` 已有本地证据，但 `D:\PythonProject_paper_suggest` 的正式 static-only 证据仍是 blocked / repair-lane，真实 GUI 控制仍需后续修复并重新通过 readiness checker；无 Phase 1 项目仍需在目标项目内应用脚手架计划后才能升级为 Ready Lane。
+5. Phase 2C 已在本仓库 fixture 层闭环：两个隔离 fixture 已通过相同 contract；本仓库又补充 Phase 1 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令原子写入/锁状态 fixture gate、项目默认值/session override/无效记录/legacy/no-op 状态行为 fixture gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 fixture gate、操作者文档 readiness gate、Agent TOML 标准扩展 readiness gate、私有提示源位置 readiness gate、`assert-on` 只读断言 readiness gate，以及 managed-artifact 卸载计划器，真实项目安装仍取决于后续目标项目授权和 Phase 1 就绪性。
+6. 本文暂不从 `draft` 提升：Phase 2B、fixture 级 Phase 2C、本仓库 Phase 1 读取契约 gate、GUI 写入命令输出契约 gate、写入命令 atomic/lock gate、状态行为 gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 gate、操作者文档 gate、Agent TOML 标准扩展 gate、私有提示源位置 gate、`assert-on` 只读断言 gate、Bootstrap Lane dry-run 脚手架计划器、installed-launcher Bootstrap Lane preflight、稳定 Bootstrap Lane `operator_next_steps` 和 managed-artifact 卸载计划器已有本地证据，但 `D:\PythonProject_paper_suggest` 的正式 static-only 证据仍是 blocked / repair-lane，真实 GUI 控制仍需后续修复并重新通过 readiness checker；无 Phase 1 项目仍需在目标项目内应用脚手架计划后才能升级为 Ready Lane。
 
 阶段门规则：
 
