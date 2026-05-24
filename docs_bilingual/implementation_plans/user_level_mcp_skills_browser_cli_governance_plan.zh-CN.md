@@ -16,7 +16,7 @@ source_reference_file: reference_files/1.md
 
 ## 0. 当前复核结论
 
-截至 2026-05-24，本方案作为“执行前蓝图”已具备进入 OpenSpec 小步切片的颗粒度。`status: draft` 表示用户级运行时尚未按本方案全部落地，不表示本文缺少执行结构。第 1 个 policy/checker baseline 切片已完成本地实现、验证、stable spec 提升和 OpenSpec archive 收口。第 2 个 `skills2cli` MVP 切片现在已具备 repo-local helper 与测试覆盖；在后续受治理 wrapper/install receipt 切片落地前，它仍是 `implemented-local`，不是完整用户级 `active`。
+截至 2026-05-24，本方案作为“执行前蓝图”已具备进入 OpenSpec 小步切片的颗粒度。`status: draft` 表示用户级运行时尚未按本方案全部落地，不表示本文缺少执行结构。第 1 个 policy/checker baseline 切片已完成本地实现、验证、stable spec 提升和 OpenSpec archive 收口。`skills2cli`、`mcp2cli` 与 `codex-port` allocator MVP 切片现在已具备 repo-local helper 与测试覆盖；在后续受治理 wrapper/install receipt、live adapter 与用户级 smoke 切片落地前，它们仍是 `implemented-local`，不是完整用户级 `active`。
 
 复核结论：
 
@@ -28,7 +28,7 @@ source_reference_file: reference_files/1.md
 - 未勾选清单是后续实施状态，不是方案缺口；在对应代码、checker、安装产物和 receipt 都完成前，不得把 lane 标为 `active`。
 - 推进原则是先 baseline 后能力：先完成 token/risk、授权 receipt、update receipt 与 evidence redaction，再实现 `skills2cli`、`mcp2cli`、browser 与 `wecom-cli` 等具体能力。
 
-本方案下一步不是继续扩大范围。repo-local `skills2cli` MVP 验证并归档后，应继续下一个受治理实施切片，不得隐式安装用户级 wrapper。
+本方案下一步不是继续扩大范围。repo-local `codex-port` allocator MVP 验证并归档后，应继续 browser owner registry 与 `chrome-devtools-mcp` managed wrapper 等受治理切片，不得隐式安装用户级 wrapper。
 
 ## 1. 目的
 
@@ -417,8 +417,8 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 | Lane | 初始默认状态 | 允许的默认动作 | 禁止或需授权动作 | Active 前必须具备的证据 |
 | --- | --- | --- | --- | --- |
 | `skills2cli` | `implemented-local`；只有后续受治理 wrapper/install receipt 落地后才可成为用户级 `active` | index/search/show/warning summary 的紧凑只读输出 | apply/disable skills、输出完整 plugin skill body、记录私有完整路径 | compact-output 测试、warning audit 脱敏测试、profile 建议不直接应用的证据 |
-| `mcp2cli` | `implemented-local`???????? wrapper/install receipt ? live adapter ?????????? `active` | list/search/show???? call ?????????? guard facade | secrets?shell?browser state?remote mutation?payment/account/personal-data call | allowed-profile registry?sensitive-call fail-closed checker?authorization receipt schema |
-| `codex-port` allocator | `planned`，reserve/renew/release 均有 receipt 后可成为 `active` | 按号段 reserve/list/renew/release/import/gc lease | 跨 owner 分配端口、kill 端口持有进程、非原子 registry 写入、无证据复用 stale lease | owner-range 测试、并发 reserve fixture、live-socket 冲突 fixture、lease receipt schema、stale PID/health 证据 |
+| `mcp2cli` | `implemented-local`；只有后续受治理 wrapper/install receipt 与 live adapter 切片落地后才可成为用户级 `active` | list/search/show；非敏感 call 通过类别检查的本地 guard facade | secrets、shell、browser state、remote mutation、payment/account/personal-data call | allowed-profile registry、sensitive-call fail-closed checker、authorization receipt schema |
+| `codex-port` allocator | `implemented-local`；只有后续受治理 wrapper/install receipt 与 smoke evidence 落地后才可成为用户级 `active` | 按号段 reserve/list/renew/release/import/gc lease | 跨 owner 分配端口、kill 端口持有进程、非原子 registry 写入、无证据复用 stale lease | owner-range 测试、live-socket 冲突 fixture、lease receipt schema、stale PID/health 证据 |
 | `chrome-devtools-mcp` | `planned`，本地调试 isolated mode 可先 `active` | isolated-session local/debug inspect | human-owned Chrome、登录态 project-profile、cleanup | managed wrapper、lease、profile ownership、stale cleanup dry-run 证据 |
 | CDP Bridge | `on-demand` | tab list、DOM scan、screenshot、read-only inventory | cookie、JS write、click/type/navigate sensitive context | owner check、authorization gate、read/write 分离测试 |
 | OpenCLI | `on-demand` | isolated 或 project-profile 的明确任务适配 | 默认绑定 human-owned tab、常驻加载 | wrapper pin、browser owner registry、human-owned protection 测试 |
@@ -546,8 +546,8 @@ OpenSpec 切片交付矩阵：
 
 - [x] 为本方案创建或复用一个小步 OpenSpec change，并写明 scope、non-goals、rollback boundary。
 - [x] 建立 token/risk priority checker，禁止高 token/高风险 surface 在无证据时默认常驻。
-- [ ] 建立用户级 port registry 与 allocator，确保 Codex 号段在前、OpenClaw 号段在后，并让 OpenCLI 使用 allocator 驱动的 `--port auto`。
-- [ ] 实现 `codex-port lease reserve/renew/release/list/import-legacy/gc`，覆盖 owner-range 校验、registry 原子锁、临时 `pending_bind`、live-socket 冲突跳过、stale/崩溃证据和写入 receipt。
+- [x] 建立用户级 port registry 与 allocator，确保 Codex 号段在前、OpenClaw 号段在后，并让 OpenCLI 使用 allocator 驱动的 `--port auto`。
+- [x] 实现 `codex-port lease reserve/renew/release/list/import-legacy/gc`，覆盖 owner-range 校验、registry 原子锁、临时 `pending_bind`、live-socket 冲突跳过、stale/崩溃证据和写入 receipt。
 - [x] 建立 sensitive authorization receipt schema，字段至少包含 action、target、scope、expiry、session、operator confirmation。
 - [x] 建立 user-level tool update receipt schema，并覆盖 install path、wrapper path、state path、pin、smoke、rollback pointer。
 - [x] 建立 sanitized evidence 规则，禁止提交 secrets、cookies、tokens、raw browser data、消息内容、完整个人运行时路径和完整 plugin description dumps。
