@@ -84,6 +84,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
             capture_output=True,
             text=True,
             encoding="utf-8",
+            errors="replace",
             cwd=REPO_ROOT,
         )
 
@@ -241,6 +242,7 @@ documents:
             capture_output=True,
             text=True,
             encoding="utf-8",
+            errors="replace",
             cwd=REPO_ROOT,
         )
 
