@@ -1,11 +1,11 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Repo-local chrome-devtools-mcp managed wrapper MVP.
 
-This wrapper models the safe isolated-session lane for Chrome DevTools MCP
-without launching Chrome, connecting to CDP, installing user-level wrappers, or
-editing Codex configuration. It coordinates with the repo-local browser owner
-registry so later user-level install slices can reuse the same ownership and
-receipt contract.
+This wrapper models safe Chrome DevTools MCP browser-profile lanes without
+launching Chrome, connecting to CDP, installing user-level wrappers, or editing
+Codex configuration. It coordinates with the repo-local browser owner registry
+so later user-level install slices can reuse the same ownership and receipt
+contract.
 """
 from __future__ import annotations
 
@@ -30,12 +30,14 @@ DEFAULT_STATE_DIR = Path(
 )
 ROOT = Path(__file__).resolve().parents[1]
 OWNER_REGISTRY_SCRIPT = ROOT / "tools" / "browser_owner_registry.py"
-OWNER_CLASS = "codex-managed-isolated"
+OWNER_CLASS_ISOLATED = "codex-managed-isolated"
+OWNER_CLASS_PROJECT = "codex-managed-project"
 TOOL_NAME = "chrome-devtools-mcp-managed"
 WINDOWS_PATH_RE = re.compile(r"[A-Za-z]:[\\/][^\s\"'<>|?]+")
 UNC_PATH_RE = re.compile(r"\\\\[^\s\"'<>|?]+(?:\\[^\s\"'<>|?]+)+")
 POSIX_PRIVATE_PATH_RE = re.compile(r"(?<![\w.-])/(?:Users|home|private|var|tmp|mnt|Volumes|builds)/[^\s\"'<>|?]+")
 SECRET_RE = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie|password)\s*[:=]\s*([^\s,;\"']+)")
+REQUIRED_AUTHORIZATION_RECEIPT_FIELDS = ("action", "target", "scope", "expiry", "session", "operator_confirmation")
 
 
 class ManagedWrapperError(Exception):
@@ -53,6 +55,10 @@ def now_iso() -> str:
 
 def hash_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8", "surrogatepass")).hexdigest()[:16]
+
+
+def safe_slug(value: str, fallback: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip("-.") or fallback
 
 
 def sanitize_text(value: Any, *, limit: int | None = None) -> str:
@@ -76,6 +82,54 @@ def sanitize_json(value: Any) -> Any:
     if isinstance(value, str):
         return sanitize_text(value, limit=240)
     return value
+
+
+def project_authorization_receipt_blockers(path: str | None, *, target: str, session: str) -> list[str]:
+    if not path:
+        return ["authorization_receipt_required"]
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return ["authorization_receipt_missing"]
+    except json.JSONDecodeError:
+        return ["authorization_receipt_invalid_json"]
+    except OSError:
+        return ["authorization_receipt_unreadable"]
+    if not isinstance(data, dict):
+        return ["authorization_receipt_not_object"]
+
+    blockers: list[str] = []
+    for field in REQUIRED_AUTHORIZATION_RECEIPT_FIELDS:
+        if field not in data:
+            blockers.append(f"authorization_receipt_missing_{field}")
+    if data.get("operator_confirmation") is not True:
+        blockers.append("authorization_receipt_operator_confirmation_not_true")
+    receipt_target = data.get("target")
+    if isinstance(receipt_target, str) and receipt_target not in {target, "*"}:
+        blockers.append("authorization_receipt_target_mismatch")
+    elif not isinstance(receipt_target, str):
+        blockers.append("authorization_receipt_target_invalid")
+    receipt_session = data.get("session")
+    if isinstance(receipt_session, str) and receipt_session != session:
+        blockers.append("authorization_receipt_session_mismatch")
+    elif not isinstance(receipt_session, str):
+        blockers.append("authorization_receipt_session_invalid")
+    action = str(data.get("action", "")).lower()
+    if "browser" not in action and "profile" not in action and "delegate" not in action:
+        blockers.append("authorization_receipt_action_not_browser")
+    expiry = data.get("expiry")
+    if isinstance(expiry, str):
+        try:
+            parsed = datetime.fromisoformat(expiry.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            if parsed.astimezone(timezone.utc) <= datetime.now(timezone.utc):
+                blockers.append("authorization_receipt_expired")
+        except ValueError:
+            blockers.append("authorization_receipt_expiry_invalid")
+    elif "expiry" in data:
+        blockers.append("authorization_receipt_expiry_invalid")
+    return blockers
 
 
 def response(ok: bool, action: str, **kwargs: Any) -> dict[str, Any]:
@@ -110,9 +164,11 @@ def owner_state_dir(base: Path) -> Path:
 
 
 def isolated_profile_path(base: Path, project: str, session: str) -> Path:
-    safe_project = re.sub(r"[^A-Za-z0-9_.-]+", "-", project).strip("-.") or "project"
-    safe_session = re.sub(r"[^A-Za-z0-9_.-]+", "-", session).strip("-.") or "session"
-    return base / "profiles" / "isolated" / safe_project / safe_session
+    return base / "profiles" / "isolated" / safe_slug(project, "project") / safe_slug(session, "session")
+
+
+def project_profile_path(base: Path, project: str, profile: str) -> Path:
+    return base / "profiles" / "project" / safe_slug(project, "project") / safe_slug(profile, "default")
 
 
 def wrapper_receipt_path(base: Path, action: str, receipt_id: str | None = None) -> Path:
@@ -144,19 +200,73 @@ def write_wrapper_receipt(base: Path, action: str, payload: dict[str, Any]) -> d
     return {"receipt_path_hash": hash_text(str(path)), "receipt_written": True}
 
 
-def launch_plan(base: Path, args: argparse.Namespace) -> dict[str, Any]:
+def isolated_launch_plan(base: Path, args: argparse.Namespace) -> dict[str, Any]:
     profile = isolated_profile_path(base, args.project, args.session)
     target = f"chrome-devtools-mcp:isolated:{args.project}:{args.session}"
+    return profile_launch_plan(
+        mode="isolated-session",
+        owner_class=OWNER_CLASS_ISOLATED,
+        project=args.project,
+        session=args.session,
+        profile_name=args.session,
+        purpose=args.purpose,
+        ttl=args.ttl,
+        profile=profile,
+        target=target,
+        retention="temporary-managed-profile",
+        cleanup_allowed_after_stale_evidence=True,
+        authorization_required_for_reserve=False,
+    )
+
+
+def project_launch_plan(base: Path, args: argparse.Namespace) -> dict[str, Any]:
+    profile = project_profile_path(base, args.project, args.profile)
+    target = f"chrome-devtools-mcp:project:{args.project}:{args.profile}"
+    return profile_launch_plan(
+        mode="project-profile",
+        owner_class=OWNER_CLASS_PROJECT,
+        project=args.project,
+        session=args.session,
+        profile_name=args.profile,
+        purpose=args.purpose,
+        ttl=args.ttl,
+        profile=profile,
+        target=target,
+        retention="long-lived-project-profile",
+        cleanup_allowed_after_stale_evidence=False,
+        authorization_required_for_reserve=True,
+    )
+
+
+def profile_launch_plan(
+    *,
+    mode: str,
+    owner_class: str,
+    project: str,
+    session: str,
+    profile_name: str,
+    purpose: str,
+    ttl: int,
+    profile: Path,
+    target: str,
+    retention: str,
+    cleanup_allowed_after_stale_evidence: bool,
+    authorization_required_for_reserve: bool,
+) -> dict[str, Any]:
     return {
-        "mode": "isolated-session",
-        "owner_class": OWNER_CLASS,
-        "project_slug": args.project,
-        "session_id": args.session,
+        "mode": mode,
+        "owner_class": owner_class,
+        "project_slug": project,
+        "session_id": session,
+        "profile_name": sanitize_text(profile_name, limit=120),
         "target": sanitize_text(target, limit=180),
         "profile_path_hint": sanitize_text(str(profile), limit=180),
         "profile_path_hash": hash_text(str(profile)),
-        "ttl_seconds": int(args.ttl),
-        "purpose": sanitize_text(args.purpose, limit=180),
+        "profile_retention": retention,
+        "cleanup_allowed_after_stale_evidence": cleanup_allowed_after_stale_evidence,
+        "authorization_required_for_reserve": authorization_required_for_reserve,
+        "ttl_seconds": int(ttl),
+        "purpose": sanitize_text(purpose, limit=180),
         "port_policy": {
             "tcp_port_required_by_wrapper": False,
             "chrome_debugging_port": "ephemeral-or-owner-wrapper-managed",
@@ -169,7 +279,7 @@ def launch_plan(base: Path, args: argparse.Namespace) -> dict[str, Any]:
             "live_start_supported_in_repo_local_mvp": False,
         },
         "command_plan": {
-            "chrome_profile": "isolated managed profile",
+            "chrome_profile": mode,
             "profile_path_hash": hash_text(str(profile)),
             "browser_owner_registry_required": True,
             "launch_performed": False,
@@ -198,42 +308,59 @@ def run_owner_registry(base: Path, argv: list[str]) -> dict[str, Any]:
     return payload
 
 
-def command_plan(args: argparse.Namespace) -> dict[str, Any]:
-    base = state_dir(args)
-    return response(
-        True,
-        "isolated-session-plan",
-        dry_run=True,
-        registry_mutated=False,
-        start_performed=False,
-        plan=launch_plan(base, args),
-    )
+def reserve_owner_lease(
+    *,
+    base: Path,
+    owner_class: str,
+    project: str,
+    session: str,
+    target: str,
+    profile: Path,
+    purpose: str,
+    ttl: int,
+    authorization_receipt: str | None = None,
+) -> dict[str, Any]:
+    argv = [
+        "lease",
+        "reserve",
+        "--owner-class",
+        owner_class,
+        "--project",
+        project,
+        "--session",
+        session,
+        "--target",
+        target,
+        "--profile-path",
+        str(profile),
+        "--purpose",
+        purpose,
+        "--ttl",
+        str(ttl),
+    ]
+    if authorization_receipt:
+        argv.extend(["--authorization-receipt", authorization_receipt])
+    return run_owner_registry(base, argv)
 
 
-def command_reserve(args: argparse.Namespace) -> dict[str, Any]:
+def command_isolated_plan(args: argparse.Namespace) -> dict[str, Any]:
     base = state_dir(args)
-    plan = launch_plan(base, args)
+    return response(True, "isolated-session-plan", dry_run=True, registry_mutated=False, start_performed=False, plan=isolated_launch_plan(base, args))
+
+
+def command_isolated_reserve(args: argparse.Namespace) -> dict[str, Any]:
+    base = state_dir(args)
+    plan = isolated_launch_plan(base, args)
     profile = isolated_profile_path(base, args.project, args.session)
-    owner = run_owner_registry(
-        base,
-        [
-            "lease",
-            "reserve",
-            "--owner-class",
-            OWNER_CLASS,
-            "--project",
-            args.project,
-            "--session",
-            args.session,
-            "--target",
-            f"chrome-devtools-mcp:isolated:{args.project}:{args.session}",
-            "--profile-path",
-            str(profile),
-            "--purpose",
-            args.purpose,
-            "--ttl",
-            str(args.ttl),
-        ],
+    owner = reserve_owner_lease(
+        base=base,
+        owner_class=OWNER_CLASS_ISOLATED,
+        project=args.project,
+        session=args.session,
+        target=f"chrome-devtools-mcp:isolated:{args.project}:{args.session}",
+        profile=profile,
+        purpose=args.purpose,
+        ttl=args.ttl,
     )
     lease = sanitize_json(owner.get("lease", {}))
     wrapper_receipt = write_wrapper_receipt(
@@ -241,7 +368,7 @@ def command_reserve(args: argparse.Namespace) -> dict[str, Any]:
         "reserve-isolated-session",
         {
             "owner_lease_id": lease.get("lease_id"),
-            "owner_class": OWNER_CLASS,
+            "owner_class": OWNER_CLASS_ISOLATED,
             "project_slug": args.project,
             "session_id": args.session,
             "target": plan["target"],
@@ -251,29 +378,76 @@ def command_reserve(args: argparse.Namespace) -> dict[str, Any]:
             "mutates_user_codex_config": False,
         },
     )
-    return response(
-        True,
-        "isolated-session-reserve",
-        dry_run=False,
-        registry_mutated=True,
-        start_performed=False,
-        plan=plan,
-        owner_lease=lease,
-        wrapper_receipt=wrapper_receipt,
-    )
+    return response(True, "isolated-session-reserve", dry_run=False, registry_mutated=True, start_performed=False, plan=plan, owner_lease=lease, wrapper_receipt=wrapper_receipt)
 
 
-def command_start(args: argparse.Namespace) -> dict[str, Any]:
+def command_isolated_start(args: argparse.Namespace) -> dict[str, Any]:
     base = state_dir(args)
-    plan = launch_plan(base, args)
+    plan = isolated_launch_plan(base, args)
+    return fail_or_dry_run_start(args, action="isolated-session-start", plan=plan, requires_project_authorization=False)
+
+
+def command_project_plan(args: argparse.Namespace) -> dict[str, Any]:
+    base = state_dir(args)
+    return response(True, "project-profile-plan", dry_run=True, registry_mutated=False, start_performed=False, plan=project_launch_plan(base, args))
+
+
+def command_project_reserve(args: argparse.Namespace) -> dict[str, Any]:
+    base = state_dir(args)
+    plan = project_launch_plan(base, args)
+    profile = project_profile_path(base, args.project, args.profile)
+    owner = reserve_owner_lease(
+        base=base,
+        owner_class=OWNER_CLASS_PROJECT,
+        project=args.project,
+        session=args.session,
+        target=f"chrome-devtools-mcp:project:{args.project}:{args.profile}",
+        profile=profile,
+        purpose=args.purpose,
+        ttl=args.ttl,
+        authorization_receipt=args.authorization_receipt,
+    )
+    lease = sanitize_json(owner.get("lease", {}))
+    wrapper_receipt = write_wrapper_receipt(
+        base,
+        "reserve-project-profile",
+        {
+            "owner_lease_id": lease.get("lease_id"),
+            "owner_class": OWNER_CLASS_PROJECT,
+            "project_slug": args.project,
+            "session_id": args.session,
+            "target": plan["target"],
+            "profile_path_hash": plan["profile_path_hash"],
+            "profile_retention": plan["profile_retention"],
+            "cleanup_allowed_after_stale_evidence": False,
+            "authorization_receipt_required": True,
+            "start_performed": False,
+            "connects_to_cdp": False,
+            "mutates_user_codex_config": False,
+        },
+    )
+    return response(True, "project-profile-reserve", dry_run=False, registry_mutated=True, start_performed=False, plan=plan, owner_lease=lease, wrapper_receipt=wrapper_receipt)
+
+
+def command_project_start(args: argparse.Namespace) -> dict[str, Any]:
+    base = state_dir(args)
+    plan = project_launch_plan(base, args)
+    return fail_or_dry_run_start(args, action="project-profile-start", plan=plan, requires_project_authorization=True)
+
+
+def fail_or_dry_run_start(args: argparse.Namespace, *, action: str, plan: dict[str, Any], requires_project_authorization: bool) -> dict[str, Any]:
     if args.dry_run:
-        return response(
-            True,
-            "isolated-session-start-dry-run",
-            dry_run=True,
-            registry_mutated=False,
-            start_performed=False,
-            plan=plan,
+        return response(True, f"{action}-dry-run", dry_run=True, registry_mutated=False, start_performed=False, plan=plan)
+    if requires_project_authorization:
+        authorization_blockers = project_authorization_receipt_blockers(args.authorization_receipt, target=str(plan["target"]), session=str(plan["session_id"]))
+    else:
+        authorization_blockers = []
+    if authorization_blockers:
+        raise ManagedWrapperError(
+            "project_profile_authorization_required",
+            "Project-profile live start requires a current project-profile authorization receipt.",
+            exit_code=3,
+            details={"start_performed": False, "authorization_blockers": authorization_blockers, "plan": plan},
         )
     if not args.install_receipt:
         raise ManagedWrapperError(
@@ -284,7 +458,7 @@ def command_start(args: argparse.Namespace) -> dict[str, Any]:
         )
     raise ManagedWrapperError(
         "live_start_not_implemented_repo_local_mvp",
-        "Repo-local MVP records the isolated-session contract only; user-level live start is deferred to a later governed install slice.",
+        "Repo-local MVP records the profile contract only; user-level live start is deferred to a later governed install slice.",
         exit_code=4,
         details={"start_performed": False, "plan": plan},
     )
@@ -294,23 +468,18 @@ def command_release(args: argparse.Namespace) -> dict[str, Any]:
     base = state_dir(args)
     owner = run_owner_registry(base, ["lease", "release", "--lease-id", args.lease_id, "--session", args.session])
     lease = sanitize_json(owner.get("lease", {}))
-    wrapper_receipt = write_wrapper_receipt(
-        base,
-        "release-isolated-session",
-        {
-            "owner_lease_id": args.lease_id,
-            "session_id": args.session,
-            "status": "released",
-        },
-    )
-    return response(True, "isolated-session-release", registry_mutated=True, start_performed=False, owner_lease=lease, wrapper_receipt=wrapper_receipt)
+    action = "release-project-profile" if lease.get("owner_class") == OWNER_CLASS_PROJECT else "release-isolated-session"
+    wrapper_receipt = write_wrapper_receipt(base, action, {"owner_lease_id": args.lease_id, "session_id": args.session, "status": "released"})
+    return response(True, "profile-release", registry_mutated=True, start_performed=False, owner_lease=lease, wrapper_receipt=wrapper_receipt)
 
 
 def command_status(args: argparse.Namespace) -> dict[str, Any]:
     base = state_dir(args)
-    owner = run_owner_registry(base, ["lease", "list", "--owner-class", OWNER_CLASS])
+    owner_class = OWNER_CLASS_PROJECT if getattr(args, "profile_mode", "isolated") == "project" else OWNER_CLASS_ISOLATED
+    owner = run_owner_registry(base, ["lease", "list", "--owner-class", owner_class])
     leases = sanitize_json(owner.get("leases", []))
-    return response(True, "isolated-session-status", registry_mutated=False, start_performed=False, leases=leases)
+    action = "project-profile-status" if owner_class == OWNER_CLASS_PROJECT else "isolated-session-status"
+    return response(True, action, registry_mutated=False, start_performed=False, leases=leases)
 
 
 def add_common_session_args(parser: argparse.ArgumentParser) -> None:
@@ -318,6 +487,15 @@ def add_common_session_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--session", required=True)
     parser.add_argument("--purpose", default="chrome-devtools-mcp isolated managed session")
     parser.add_argument("--ttl", type=int, default=900)
+
+
+def add_common_project_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--project", required=True)
+    parser.add_argument("--profile", default="default")
+    parser.add_argument("--session", required=True)
+    parser.add_argument("--purpose", default="chrome-devtools-mcp project profile session")
+    parser.add_argument("--ttl", type=int, default=900)
+    parser.add_argument("--authorization-receipt")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -330,17 +508,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     plan = isolated_sub.add_parser("plan")
     add_common_session_args(plan)
-    plan.set_defaults(func=command_plan)
+    plan.set_defaults(func=command_isolated_plan)
 
     reserve = isolated_sub.add_parser("reserve")
     add_common_session_args(reserve)
-    reserve.set_defaults(func=command_reserve)
+    reserve.set_defaults(func=command_isolated_reserve)
 
     start = isolated_sub.add_parser("start")
     add_common_session_args(start)
     start.add_argument("--dry-run", action="store_true")
     start.add_argument("--install-receipt")
-    start.set_defaults(func=command_start)
+    start.set_defaults(func=command_isolated_start)
 
     release = isolated_sub.add_parser("release")
     release.add_argument("--lease-id", required=True)
@@ -348,7 +526,32 @@ def build_parser() -> argparse.ArgumentParser:
     release.set_defaults(func=command_release)
 
     status = isolated_sub.add_parser("status")
-    status.set_defaults(func=command_status)
+    status.set_defaults(func=command_status, profile_mode="isolated")
+
+    project = sub.add_parser("project-profile")
+    project_sub = project.add_subparsers(dest="project_command", required=True)
+
+    project_plan = project_sub.add_parser("plan")
+    add_common_project_args(project_plan)
+    project_plan.set_defaults(func=command_project_plan)
+
+    project_reserve = project_sub.add_parser("reserve")
+    add_common_project_args(project_reserve)
+    project_reserve.set_defaults(func=command_project_reserve)
+
+    project_start = project_sub.add_parser("start")
+    add_common_project_args(project_start)
+    project_start.add_argument("--dry-run", action="store_true")
+    project_start.add_argument("--install-receipt")
+    project_start.set_defaults(func=command_project_start)
+
+    project_release = project_sub.add_parser("release")
+    project_release.add_argument("--lease-id", required=True)
+    project_release.add_argument("--session", required=True)
+    project_release.set_defaults(func=command_release)
+
+    project_status = project_sub.add_parser("status")
+    project_status.set_defaults(func=command_status, profile_mode="project")
     return parser
 
 
@@ -361,7 +564,7 @@ def main(argv: list[str] | None = None) -> int:
     if not json_requested:
         emit(response(False, "parse", error="json_required", message="chrome-devtools-mcp-managed requires --json"))
         return 2
-    action = getattr(args, "isolated_command", None) or args.command
+    action = getattr(args, "isolated_command", None) or getattr(args, "project_command", None) or args.command
     try:
         emit(args.func(args))
         return 0
