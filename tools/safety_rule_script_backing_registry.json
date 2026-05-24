@@ -6,16 +6,19 @@
       "owner_level": "project",
       "status": "implemented",
       "prompt_reminders": [
+        "AGENTS.md",
         "docs_bilingual/project_startup_summary.md",
         "docs_bilingual/project_startup_summary.zh-CN.md"
       ],
       "script_controls": [
-        "tools/check_context_retention_canary_surface.py"
+        "tools/check_context_retention_canary_surface.py",
+        "tools/check_startup_instruction_mojibake.py"
       ],
       "guard_steps": [
-        "check_context_retention_canary_surface"
+        "check_context_retention_canary_surface",
+        "check_startup_instruction_mojibake"
       ],
-      "description": "Keeps the startup-summary canary project-owned, prevents duplicate literal prompt placement, and requires cold-start recovery to reread AGENTS.md."
+      "description": "Keeps the startup-summary canary project-owned, prevents duplicate literal prompt placement, requires cold-start recovery to reread AGENTS.md, and rejects mojibake in startup/instruction authority surfaces."
     },
     {
       "id": "multi-session-worktree-isolation",

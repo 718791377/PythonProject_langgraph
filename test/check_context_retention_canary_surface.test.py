@@ -13,6 +13,10 @@ START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
 END_CANARY = chr(21941) + "~"
 
 
+def mojibake_variant(text: str) -> str:
+    return text.encode("utf-8").decode("gbk", errors="ignore")
+
+
 class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
     maxDiff = None
 
@@ -86,6 +90,42 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
         self.assertTrue(any("AGENTS.md" in error for error in payload["errors"]))
+
+    def test_fails_when_agents_contains_mojibake_canary(self) -> None:
+        root = self.make_root("canary-agents-mojibake")
+        self.write_startup_pair(root)
+        self.write_file(
+            root,
+            "AGENTS.md",
+            f"Corrupted runtime instruction marker: `{mojibake_variant(START_CANARY)}`.\n",
+        )
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("mojibake canary marker" in error for error in payload["errors"]))
+
+    def test_fails_when_startup_summary_contains_mojibake_canary(self) -> None:
+        root = self.make_root("canary-startup-mojibake")
+        self.write_startup_pair(root)
+        self.write_file(
+            root,
+            "docs_bilingual/project_startup_summary.md",
+            (
+                "# Startup\n\nContext-retention canary:\n\n"
+                f"Start `{START_CANARY}` and end `{END_CANARY}`.\n"
+                "Recovery action: reread AGENTS.md before continuing.\n"
+                f"Corrupted runtime copy: `{mojibake_variant(END_CANARY)}`.\n"
+            ),
+        )
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("project_startup_summary.md contains mojibake" in error for error in payload["errors"]))
 
     def test_ignores_archived_openspec_history(self) -> None:
         root = self.make_root("canary-archive")

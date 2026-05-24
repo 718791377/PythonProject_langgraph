@@ -102,6 +102,7 @@ def main() -> int:
     skills_governance_script = root / "tools" / "check_codex_skills_governance.py"
     name_clarity_rules_script = root / "tools" / "check_name_clarity_rules.py"
     canary_surface_script = root / "tools" / "check_context_retention_canary_surface.py"
+    startup_instruction_mojibake_script = root / "tools" / "check_startup_instruction_mojibake.py"
     safety_rule_script_backing_script = root / "tools" / "check_safety_rule_script_backing.py"
     precommit_update_archive_script = root / "tools" / "check_precommit_update_archive.py"
     skills_audit_output_retention_script = root / "tools" / "check_skills_audit_output_retention.py"
@@ -148,6 +149,8 @@ def main() -> int:
         raise SystemExit(f"Missing name clarity rules check script: {name_clarity_rules_script}")
     if not canary_surface_script.exists():
         raise SystemExit(f"Missing context-retention canary surface check script: {canary_surface_script}")
+    if not startup_instruction_mojibake_script.exists():
+        raise SystemExit(f"Missing startup instruction mojibake check script: {startup_instruction_mojibake_script}")
     if not safety_rule_script_backing_script.exists():
         raise SystemExit(f"Missing safety rule script-backing check script: {safety_rule_script_backing_script}")
     if not precommit_update_archive_script.exists():
@@ -287,6 +290,11 @@ def main() -> int:
                 "check_context_retention_canary_surface",
                 [str(python_exe), str(canary_surface_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during context-retention canary surface verification.",
+            ),
+            (
+                "check_startup_instruction_mojibake",
+                [str(python_exe), str(startup_instruction_mojibake_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during startup instruction mojibake verification.",
             ),
             (
                 "check_safety_rule_script_backing",
@@ -575,6 +583,12 @@ def main() -> int:
         [str(python_exe), str(canary_surface_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during context-retention canary surface verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(startup_instruction_mojibake_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during startup instruction mojibake verification.",
     )
 
     run_checked(
