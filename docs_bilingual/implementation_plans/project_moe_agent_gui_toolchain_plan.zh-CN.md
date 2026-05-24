@@ -33,6 +33,7 @@ related_docs:
 - 本次后续变更继续新增目标项目操作者文档 readiness gate：只读 checker 会确认目标项目文档包含 `project-on/off`、`project-status --json`、`list-sessions --json`、`status --json`、`assert-on`、`--session-id` 和 `.cmd` wrapper 入口等稳定 token；文档缺失或不完整时 fail closed。
 - 本次后续变更继续新增 Agent TOML 标准扩展 readiness gate：只读 checker 会确认目标项目 Agent TOML 含 `project`、`moe`、`dispatch`、`extensions` 标准区，校验 `repo-local` scope、`do-not-copy-full-content` 私有提示源策略、state namespace/state path、`brief-based` dispatch、禁止 `full-history-fork-with-custom-role` 和 fallback；缺失或越界时 fail closed。
 - 本次后续变更继续新增私有提示源位置 readiness gate：只读 checker 会确认 `private_prompt_source` 存在于目标项目内，且不指向 `.codex/agents/`、`.omx/state/`、`tools/project_moe_gui/` 或 Project MOE GUI managed artifacts；该 gate 只检查路径和存在性，不读取或复制私有提示全文。
+- 本次后续变更继续新增 `assert-on` 只读断言 readiness gate：只读 checker 会执行并校验 `assert-on --json`，允许 `disabled` / `blocked:moe_disabled` 作为关闭态 fail-closed token，但要求 `effective_enabled`、`effective_source`、稳定 envelope 与无写入结果字段；未知 token、缺失字段或暴露写入字段时 fail closed。
 - 这些事实只表示本仓库 fixture 与契约验证支撑已落地；不表示 `D:\PythonProject_paper_suggest` 已完成 Phase 1，也不表示真实目标项目 GUI 已可操作。
 - 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
 
@@ -618,6 +619,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - [ ] 实现或核验 `tools/thesis_moe_mode.py on/off --session-id <id>`。
 - [ ] 实现或核验 `tools/thesis_moe_mode.py status --json` 与 `assert-on`。
 - [x] 在本仓库安装器/checker fixture 中校验 `status --json` 的 boolean `effective_enabled`、受支持 `effective_source` 和 raw/private 字段 fail-closed。
+- [x] 在本仓库 readiness checker fixture 中校验 `assert-on --json` 是只读断言命令：关闭态可返回稳定 fail-closed token，必须包含 `effective_enabled` / `effective_source`，且不得暴露 `changed_paths` / `atomic_write` 等写入结果字段；这不代表真实目标项目 `assert-on` 已完成。
 - [x] 在本仓库状态行为 fixture 中覆盖项目默认值、session override、无效记录、旧记录兼容和 no-op 测试；这不代表真实目标项目测试已完成。
 - [x] 在本仓库测试中覆盖目标 CLI 读取契约不完整时安装前 fail closed：缺失 `effective_source`、缺失 session counts、暴露 raw/private 字段。
 - [x] 在本仓库 GUI shell fixture 中覆盖目标 CLI 写入契约不完整时 fail closed：缺失 `changed_paths`、写入 scope 不匹配、暴露 raw/private 字段。
@@ -772,8 +774,8 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 1. 若要控制 `D:\PythonProject_paper_suggest` 真实会话，必须先在目标项目完成 Phase 1：CLI 状态模型、`list-sessions --json`、`status --json`、`assert-on`、`thesis-moe-on/off.cmd` 和目标项目启动检查点。
 2. 若当前没有目标项目写入授权，本仓库可以继续做只读 readiness checker 与 fixture/mock 目标项目验证，不得直接写 `paper_suggest` 真实 `.omx/state` 或 wrapper。
 3. Phase 2B GUI 本体只能通过目标项目 CLI 改状态，不得直接编辑 JSON；若目标 CLI 缺失，GUI 必须显示 blocker，而不是降级扫描或写状态文件。
-4. Phase 2C 已在本仓库 fixture 层闭环：两个隔离 fixture 已通过相同 contract；本仓库又补充 Phase 1 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令原子写入/锁状态 fixture gate、项目默认值/session override/无效记录/legacy/no-op 状态行为 fixture gate、只读 readiness checker、wrapper 安全 fixture gate、操作者文档 readiness gate、Agent TOML 标准扩展 readiness gate，以及私有提示源位置 readiness gate，真实项目安装仍取决于后续目标项目授权和 Phase 1 就绪性。
-5. 本文暂不从 `draft` 提升：Phase 2B、fixture 级 Phase 2C、本仓库 Phase 1 读取契约 gate、GUI 写入命令输出契约 gate、写入命令 atomic/lock gate、状态行为 gate、只读 readiness checker、wrapper 安全 gate、操作者文档 gate、Agent TOML 标准扩展 gate 与私有提示源位置 gate 已有本地证据，但真实目标项目 Phase 1 CLI / wrapper / startup checkpoint 仍未完成。
+4. Phase 2C 已在本仓库 fixture 层闭环：两个隔离 fixture 已通过相同 contract；本仓库又补充 Phase 1 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令原子写入/锁状态 fixture gate、项目默认值/session override/无效记录/legacy/no-op 状态行为 fixture gate、只读 readiness checker、wrapper 安全 fixture gate、操作者文档 readiness gate、Agent TOML 标准扩展 readiness gate、私有提示源位置 readiness gate，以及 `assert-on` 只读断言 readiness gate，真实项目安装仍取决于后续目标项目授权和 Phase 1 就绪性。
+5. 本文暂不从 `draft` 提升：Phase 2B、fixture 级 Phase 2C、本仓库 Phase 1 读取契约 gate、GUI 写入命令输出契约 gate、写入命令 atomic/lock gate、状态行为 gate、只读 readiness checker、wrapper 安全 gate、操作者文档 gate、Agent TOML 标准扩展 gate、私有提示源位置 gate 与 `assert-on` 只读断言 gate 已有本地证据，但真实目标项目 Phase 1 CLI / wrapper / startup checkpoint 仍未完成。
 
 阶段门规则：
 

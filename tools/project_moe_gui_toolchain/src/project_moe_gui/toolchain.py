@@ -34,6 +34,7 @@ PROJECT_EVIDENCE = [".git", "AGENTS.md", "pyproject.toml", "requirements.txt", "
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 NAMESPACE_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
 READ_CLI_CONTRACT_COMMANDS = ("project-status", "list-sessions", "status")
+READ_ASSERTION_COMMANDS = ("assert-on",)
 PHASE1_EXPECTED_WRITE_COMMANDS = ("project-on", "project-off", "on", "off", "assert-on")
 DEFAULT_ON_WRAPPER = Path("thesis-moe-on.cmd")
 DEFAULT_OFF_WRAPPER = Path("thesis-moe-off.cmd")
@@ -51,6 +52,7 @@ DEFAULT_OPERATOR_DOC_CANDIDATES = (
 )
 COMMON_CLI_ENVELOPE_KEYS = ("schema_version", "command", "ok", "token", "cli_contract")
 STATUS_EFFECTIVE_SOURCES = {"session", "project-default", "fail-closed"}
+ASSERT_ON_TOKENS = {"ok", "disabled", "blocked:moe_disabled"}
 PHASE1_OPERATOR_DOC_REQUIRED_TOKENS = (
     "thesis_moe_mode.py",
     "project-on",
@@ -604,12 +606,15 @@ def run_cli(root: Path, mode_cli: Path, command: str) -> tuple[dict[str, Any] | 
         return None, blocker("blocked:mode_cli_timeout", "Mode CLI timed out during read-only contract check.", command=command)
     except Exception as exc:
         return None, blocker("blocked:mode_cli_invocation_failed", "Cannot invoke target project mode CLI.", command=command, error=str(exc))
-    if result.returncode != 0:
-        return None, blocker("blocked:mode_cli_failed", "Target project mode CLI returned non-zero.", command=command, exit_code=result.returncode, stderr=result.stderr[-800:])
     try:
-        return json.loads(result.stdout), None
+        payload = json.loads(result.stdout)
     except Exception as exc:
+        if result.returncode != 0:
+            return None, blocker("blocked:mode_cli_failed", "Target project mode CLI returned non-zero and did not emit valid JSON.", command=command, exit_code=result.returncode, stderr=result.stderr[-800:], stdout=result.stdout[-800:])
         return None, blocker("blocked:mode_cli_invalid_json", "Target project mode CLI did not emit valid JSON.", command=command, error=str(exc), stdout=result.stdout[-800:])
+    if result.returncode != 0 and command not in READ_ASSERTION_COMMANDS:
+        return None, blocker("blocked:mode_cli_failed", "Target project mode CLI returned non-zero.", command=command, exit_code=result.returncode, stderr=result.stderr[-800:])
+    return payload, None
 
 
 def private_cli_field_hits(value: Any, path: str = "$") -> list[str]:
@@ -627,7 +632,12 @@ def private_cli_field_hits(value: Any, path: str = "$") -> list[str]:
     return hits
 
 
-def require_cli_envelope(command: str, payload: dict[str, Any] | None) -> list[dict[str, Any]]:
+def require_cli_envelope(
+    command: str,
+    payload: dict[str, Any] | None,
+    *,
+    allow_non_ok_tokens: set[str] | None = None,
+) -> list[dict[str, Any]]:
     if not isinstance(payload, dict):
         return [blocker("blocked:cli_contract_invalid", "Mode CLI JSON payload must be an object.", command=command)]
     errors: list[dict[str, Any]] = []
@@ -636,7 +646,17 @@ def require_cli_envelope(command: str, payload: dict[str, Any] | None) -> list[d
         errors.append(blocker("blocked:cli_envelope_missing_fields", "Mode CLI JSON envelope is missing required fields.", command=command, missing=missing))
     if payload.get("command") != command:
         errors.append(blocker("blocked:cli_command_echo_mismatch", "Mode CLI JSON command field must match the invoked command.", command=command, observed=payload.get("command")))
-    if payload.get("ok") is not True or payload.get("token") != "ok":
+    ok_value = payload.get("ok")
+    token = str(payload.get("token") or "")
+    allowed_tokens = allow_non_ok_tokens or {"ok"}
+    if command == "assert-on":
+        if token not in allowed_tokens:
+            errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on must return a stable supported token.", command=command, token=payload.get("token"), supported=sorted(allowed_tokens)))
+        if token == "ok" and ok_value is not True:
+            errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on token=ok must report ok=true.", command=command, ok=ok_value))
+        if token != "ok" and ok_value is not False:
+            errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on disabled/blocker tokens must report ok=false.", command=command, token=payload.get("token"), ok=ok_value))
+    elif ok_value is not True or token != "ok":
         errors.append(blocker("blocked:cli_read_command_not_ok", "Read-only Mode CLI contract command must return ok/token=ok.", command=command, token=payload.get("token")))
     if payload.get("cli_contract") != CLI_CONTRACT:
         errors.append(blocker("blocked:cli_contract_mismatch", "Target CLI contract does not match project-moe-cli-v1.", command=command, observed=payload.get("cli_contract")))
@@ -688,9 +708,27 @@ def validate_status_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return errors
 
 
+def validate_assert_on_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
+    if not isinstance(payload.get("effective_enabled"), bool):
+        errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on --json must include boolean effective_enabled."))
+    source = payload.get("effective_source")
+    if source not in STATUS_EFFECTIVE_SOURCES:
+        errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on --json must include a supported effective_source.", observed=source, supported=sorted(STATUS_EFFECTIVE_SOURCES)))
+    if payload.get("token") == "ok" and payload.get("effective_enabled") is not True:
+        errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on token=ok is only valid when effective_enabled=true."))
+    if payload.get("token") != "ok" and payload.get("effective_enabled") is not False:
+        errors.append(blocker("blocked:assert_on_contract_invalid", "assert-on disabled/blocker tokens are only valid when effective_enabled=false."))
+    forbidden_write_fields = [field for field in ("before", "after", "changed_paths", "changed_scope", "atomic_write", "lock_status", "audit_path") if field in payload]
+    if forbidden_write_fields:
+        errors.append(blocker("blocked:assert_on_not_read_only", "assert-on must be a read-only assertion and must not expose write-result fields.", fields=forbidden_write_fields))
+    return errors
+
+
 def validate_cli_payload(command: str, payload: dict[str, Any] | None) -> list[dict[str, Any]]:
-    errors = require_cli_envelope(command, payload)
-    if errors or not isinstance(payload, dict):
+    allow_non_ok_tokens = ASSERT_ON_TOKENS if command == "assert-on" else None
+    errors = require_cli_envelope(command, payload, allow_non_ok_tokens=allow_non_ok_tokens)
+    if not isinstance(payload, dict):
         return errors
     if command == "project-status":
         errors.extend(validate_project_status_payload(payload))
@@ -698,18 +736,23 @@ def validate_cli_payload(command: str, payload: dict[str, Any] | None) -> list[d
         errors.extend(validate_list_sessions_payload(payload))
     elif command == "status":
         errors.extend(validate_status_payload(payload))
+    elif command == "assert-on":
+        errors.extend(validate_assert_on_payload(payload))
     return errors
 
 
 def check_cli_contract(root: Path, mode_cli: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     errors: list[dict[str, Any]] = []
-    details: dict[str, Any] = {"mode_cli": norm(mode_cli), "commands_checked": [], "validated_fields": {}}
-    for command in READ_CLI_CONTRACT_COMMANDS:
+    details: dict[str, Any] = {"mode_cli": norm(mode_cli), "commands_checked": [], "assertion_commands_checked": [], "validated_fields": {}}
+    for command in READ_CLI_CONTRACT_COMMANDS + READ_ASSERTION_COMMANDS:
         payload, err = run_cli(root, mode_cli, command)
         if err:
             errors.append(err)
             continue
-        details["commands_checked"].append(command)
+        if command in READ_ASSERTION_COMMANDS:
+            details["assertion_commands_checked"].append(command)
+        else:
+            details["commands_checked"].append(command)
         command_errors = validate_cli_payload(command, payload)
         errors.extend(command_errors)
         details["validated_fields"][command] = sorted([key for key in (payload or {}).keys()])
