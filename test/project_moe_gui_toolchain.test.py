@@ -773,6 +773,24 @@ else:
             self.assertEqual(planned["startup_activation_hook"]["action"], "create")
             self.assertEqual(planned["operator_docs"]["action"], "create")
             self.assertTrue(all(item["content_included"] is False for item in payload["planned_writes"]))
+            self.assertEqual(payload["summary"]["next_step_count"], len(payload["operator_next_steps"]))
+            next_actions = [step["action"] for step in payload["operator_next_steps"]]
+            self.assertEqual(
+                next_actions,
+                [
+                    "classify_or_clean_target_project_state",
+                    "review_existing_private_surfaces",
+                    "create_or_update_phase1_contract_files",
+                    "run_static_only_readiness_check",
+                    "run_execute_read_contract_readiness_check",
+                    "install_or_launch_gui_only_after_ready_lane",
+                ],
+            )
+            create_step = next(step for step in payload["operator_next_steps"] if step["action"] == "create_or_update_phase1_contract_files")
+            self.assertTrue(create_step["requires_target_project_write"])
+            self.assertFalse(create_step["control_mode_allowed_after_step"])
+            ready_step = payload["operator_next_steps"][-1]
+            self.assertEqual(ready_step["control_mode_allowed_after_step"], "only_after_readiness_status_ready")
             self.assertFalse(payload["privacy_boundary"]["private_prompt_body_read"])
             self.assertFalse((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
             self.assertFalse((project / "MOE.md").exists())
@@ -1774,6 +1792,10 @@ else:
             self.assertEqual(payload["bootstrap_plan"]["command"], "scaffold_project_moe_phase1")
             self.assertFalse(payload["bootstrap_plan"]["writes_target_project"])
             self.assertFalse(payload["bootstrap_plan"]["privacy_boundary"]["private_prompt_body_read"])
+            self.assertEqual(payload["operator_next_steps"], payload["bootstrap_plan"]["operator_next_steps"])
+            next_actions = [step["action"] for step in payload["operator_next_steps"]]
+            self.assertIn("create_or_update_phase1_contract_files", next_actions)
+            self.assertIn("run_execute_read_contract_readiness_check", next_actions)
             planned = {item["role"]: item for item in payload["bootstrap_plan"]["planned_writes"]}
             self.assertEqual(planned["mode_cli"]["action"], "create")
             self.assertFalse(any(item["content_included"] for item in payload["bootstrap_plan"]["planned_writes"]))

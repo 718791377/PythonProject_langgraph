@@ -1415,6 +1415,7 @@ def main() -> int:
             "control_mode_allowed": False,
             "target_project_write_allowed_by_launcher": False,
             "bootstrap_plan": bootstrap_plan,
+            "operator_next_steps": bootstrap_plan.get("operator_next_steps", []) if isinstance(bootstrap_plan, dict) else [],
             "blockers": blockers,
         }, args.json)
 
@@ -1807,6 +1808,75 @@ def bootstrap_plan_item(root: Path, rel: Path, role: str, content: str, *, exist
     }
 
 
+def phase1_bootstrap_operator_next_steps(planned_writes: list[dict[str, Any]], git_status: dict[str, Any]) -> list[dict[str, Any]]:
+    create_items = [item for item in planned_writes if item.get("action") == "create"]
+    manual_items = [item for item in planned_writes if str(item.get("action", "")).startswith("manual")]
+    preserve_items = [item for item in planned_writes if str(item.get("action", "")).startswith("preserve")]
+    dirty_count = int(git_status.get("dirty_count") or 0) if isinstance(git_status, dict) else 0
+    git_token = str(git_status.get("token") or "") if isinstance(git_status, dict) else ""
+    preflight_required = dirty_count > 0 or git_token == "blocked:git_status_unavailable"
+    return [
+        {
+            "order": 1,
+            "phase": "preflight",
+            "action": "classify_or_clean_target_project_state",
+            "required_now": preflight_required,
+            "requires_target_project_write": False,
+            "control_mode_allowed_after_step": False,
+            "reason": "Target project git state must be understood before applying Phase 1 files.",
+        },
+        {
+            "order": 2,
+            "phase": "bootstrap",
+            "action": "review_existing_private_surfaces",
+            "required_now": bool(manual_items or preserve_items),
+            "requires_target_project_write": False,
+            "control_mode_allowed_after_step": False,
+            "paths": [item["path"] for item in [*manual_items, *preserve_items] if item.get("path")],
+            "reason": "Existing Agent TOML, startup, operator docs, or private prompt surfaces require manual review; private prompt bodies are not read.",
+        },
+        {
+            "order": 3,
+            "phase": "bootstrap",
+            "action": "create_or_update_phase1_contract_files",
+            "required_now": bool(create_items or manual_items),
+            "requires_target_project_write": True,
+            "control_mode_allowed_after_step": False,
+            "paths": [item["path"] for item in [*create_items, *manual_items] if item.get("path")],
+            "reason": "Phase 1 CLI, wrappers, startup checkpoint, operator docs, Agent TOML, and prompt placeholder must exist before Ready Lane.",
+        },
+        {
+            "order": 4,
+            "phase": "verify-static",
+            "action": "run_static_only_readiness_check",
+            "required_now": True,
+            "requires_target_project_write": False,
+            "control_mode_allowed_after_step": False,
+            "command_template": "check_project_moe_phase1_readiness.py --target-project <project> --agent-name <agent> --state-namespace <namespace> --static-only --no-exec-cli --json",
+            "reason": "Static-only readiness must pass before executing target CLI read contracts when CLI reads may have side effects.",
+        },
+        {
+            "order": 5,
+            "phase": "verify-execute-read-contract",
+            "action": "run_execute_read_contract_readiness_check",
+            "required_now": True,
+            "requires_target_project_write": False,
+            "control_mode_allowed_after_step": False,
+            "command_template": "check_project_moe_phase1_readiness.py --target-project <project> --agent-name <agent> --state-namespace <namespace> --json",
+            "reason": "Ready Lane requires executed read/assertion contract evidence, not only file-surface evidence.",
+        },
+        {
+            "order": 6,
+            "phase": "ready-lane",
+            "action": "install_or_launch_gui_only_after_ready_lane",
+            "required_now": False,
+            "requires_target_project_write": False,
+            "control_mode_allowed_after_step": "only_after_readiness_status_ready",
+            "reason": "GUI install/control remains forbidden until the readiness checker returns the Ready Lane with control_mode_allowed=true.",
+        },
+    ]
+
+
 def phase1_bootstrap_scaffold_plan(
     root: Path,
     agent_name: str,
@@ -1845,6 +1915,7 @@ def phase1_bootstrap_scaffold_plan(
     create_count = sum(1 for item in planned_writes if item.get("action") == "create")
     manual_review_count = sum(1 for item in planned_writes if str(item.get("action", "")).startswith("manual"))
     preserve_count = sum(1 for item in planned_writes if str(item.get("action", "")).startswith("preserve"))
+    operator_next_steps = phase1_bootstrap_operator_next_steps(planned_writes, git_status)
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "scaffold_project_moe_phase1",
@@ -1865,11 +1936,13 @@ def phase1_bootstrap_scaffold_plan(
         "mode_cli": norm(mode_cli),
         "private_prompt_source": norm(private_prompt_source),
         "planned_writes": planned_writes,
+        "operator_next_steps": operator_next_steps,
         "summary": {
             "create_count": create_count,
             "manual_review_count": manual_review_count,
             "preserve_existing_count": preserve_count,
             "blocked_count": len(plan_blockers),
+            "next_step_count": len(operator_next_steps),
         },
         "git_status": git_status,
         "project_root_evidence": evidence,
