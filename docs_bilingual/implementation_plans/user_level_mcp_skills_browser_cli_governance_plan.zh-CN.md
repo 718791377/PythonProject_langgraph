@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: browser_owner_registry_repo_local_implemented
+implementation_state: chrome_devtools_mcp_project_profile_wrapper_repo_local_implemented
 last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -28,7 +28,7 @@ source_reference_file: reference_files/1.md
 - 未勾选清单是后续实施状态，不是方案缺口；在对应代码、checker、安装产物和 receipt 都完成前，不得把 lane 标为 `active`。
 - 推进原则是先 baseline 后能力：先完成 token/risk、授权 receipt、update receipt 与 evidence redaction，再实现 `skills2cli`、`mcp2cli`、browser 与 `wecom-cli` 等具体能力。
 
-本方案下一步不是继续扩大范围。repo-local browser owner registry MVP 验证并归档后，应继续 `chrome-devtools-mcp` managed wrapper 等受治理切片，不得隐式安装用户级 wrapper。
+本方案下一步不是继续扩大范围。repo-local `chrome-devtools-mcp` isolated-session 与 project-profile managed wrapper MVP 验证并归档后，应继续 browser stale scan 与 safe cleanup dry-run 等受治理切片，不得隐式安装用户级 wrapper。
 
 ## 1. 目的
 
@@ -419,7 +419,7 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 | `skills2cli` | `implemented-local`；只有后续受治理 wrapper/install receipt 落地后才可成为用户级 `active` | index/search/show/warning summary 的紧凑只读输出 | apply/disable skills、输出完整 plugin skill body、记录私有完整路径 | compact-output 测试、warning audit 脱敏测试、profile 建议不直接应用的证据 |
 | `mcp2cli` | `implemented-local`；只有后续受治理 wrapper/install receipt 与 live adapter 切片落地后才可成为用户级 `active` | list/search/show；非敏感 call 通过类别检查的本地 guard facade | secrets、shell、browser state、remote mutation、payment/account/personal-data call | allowed-profile registry、sensitive-call fail-closed checker、authorization receipt schema |
 | `codex-port` allocator | `implemented-local`；只有后续受治理 wrapper/install receipt 与 smoke evidence 落地后才可成为用户级 `active` | 按号段 reserve/list/renew/release/import/gc lease | 跨 owner 分配端口、kill 端口持有进程、非原子 registry 写入、无证据复用 stale lease | owner-range 测试、live-socket 冲突 fixture、lease receipt schema、stale PID/health 证据 |
-| `chrome-devtools-mcp` | `planned`，本地调试 isolated mode 可先 `active` | isolated-session local/debug inspect | human-owned Chrome、登录态 project-profile、cleanup | managed wrapper、lease、profile ownership、stale cleanup dry-run 证据 |
+| `chrome-devtools-mcp` | isolated-session 与 project-profile managed wrapper 为 `implemented-local`；live user-level start 与 cleanup 仍为 `planned` | 带 owner lease、授权 gate 和 dry-run start plan 的 isolated-session / project-profile local/debug inspect | human-owned Chrome、无授权登录态 project-profile、live start、cleanup | managed wrapper、lease、profile ownership、project-profile retention、stale cleanup dry-run 证据 |
 | CDP Bridge | `on-demand` | tab list、DOM scan、screenshot、read-only inventory | cookie、JS write、click/type/navigate sensitive context | owner check、authorization gate、read/write 分离测试 |
 | OpenCLI | `on-demand` | isolated 或 project-profile 的明确任务适配 | 默认绑定 human-owned tab、常驻加载 | wrapper pin、browser owner registry、human-owned protection 测试 |
 | `oh-my-pi` | `reference-only` | 架构/UX/harness 参考读取 | 替代 Codex、替代 native subagent、无 receipt 更新 runtime | pinned clone、smoke test、update/rollback receipt |
@@ -557,13 +557,13 @@ OpenSpec 切片交付矩阵：
 - [x] 实现 `skills2cli profile suggest --task <text> --json`，只给建议，不直接 apply。
 - [x] 实现 `skills2cli audit warnings --since <duration> --json`，纳入 2% skills context budget warning 和 skipped-loading warning 摘要。
 - [x] 为 `skills2cli` 增加 compact-output、privacy redaction、profile-non-apply、warning-audit 测试。
-- [ ] 实现 `mcp2cli` allowed profile registry，并区分低风险 discovery 与中高风险 call。
-- [ ] 实现 `mcp2cli list/search/show` 紧凑输出与 `--full` 显式展开边界。
-- [ ] 实现 `mcp2cli call` sensitive-category fail-closed gate。
-- [ ] 为 `mcp2cli` 增加 profile registry、sensitive-call blocking、compact output、receipt-required 测试。
+- [x] 实现 `mcp2cli` allowed profile registry，并区分低风险 discovery 与中高风险 call。
+- [x] 实现 `mcp2cli list/search/show` 紧凑输出与 `--full` 显式展开边界。
+- [x] 实现 `mcp2cli call` sensitive-category fail-closed gate。
+- [x] 为 `mcp2cli` 增加 profile registry、sensitive-call blocking、compact output、receipt-required 测试。
 - [x] 实现 browser owner registry，记录 owner class、project slug、session id、profile path、lease expiry。
-- [ ] 实现 `chrome-devtools-mcp` managed wrapper 的 isolated-session mode。
-- [ ] 实现 `chrome-devtools-mcp` managed wrapper 的 project-profile mode。
+- [x] 实现 `chrome-devtools-mcp` managed wrapper 的 isolated-session mode。
+- [x] 实现 `chrome-devtools-mcp` managed wrapper 的 project-profile mode。
 - [ ] 实现 browser stale scan 与 safe cleanup dry-run，清理范围只限已知 managed profiles。
 - [ ] 为 browser lane 增加 tab owner exclusivity、project-profile retention、human-owned protection、cleanup dry-run 测试。
 - [ ] 加固 CDP Bridge read-only 默认边界，写动作必须检查 owner 与授权 receipt。

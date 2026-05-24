@@ -47,6 +47,358 @@ BOOTSTRAP_BLOCKER_CAPABILITIES = {
     "blocked:missing_moe_activation_hook": "startup_activation_hook",
     "blocked:missing_phase1_operator_docs": "operator_docs",
 }
+PHASE1_REMEDIATION_PHASE_ORDER = {
+    "preflight": 10,
+    "bootstrap": 20,
+    "repair": 30,
+    "execute-read-contract": 40,
+    "manual-review": 90,
+}
+PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
+    "blocked:dirty_target_project": {
+        "category": "target_git_state",
+        "phase": "preflight",
+        "action": "classify_or_clean_dirty_target_worktree",
+        "description": "Classify, preserve, commit, stash, or otherwise explicitly handle dirty target-project files before Phase 1 writes.",
+        "requires_target_project_write": False,
+    },
+    "blocked:git_status_unavailable": {
+        "category": "target_git_state",
+        "phase": "preflight",
+        "action": "restore_read_only_git_status_preflight",
+        "description": "Restore a read-only git status surface for the target project before readiness can be trusted.",
+        "requires_target_project_write": False,
+    },
+    "blocked:missing_agent_toml": {
+        "category": "agent_toml",
+        "phase": "bootstrap",
+        "action": "create_project_moe_agent_toml",
+        "description": "Create the project-local MOE agent TOML with required top-level fields and standard Project MOE extension sections.",
+        "requires_target_project_write": True,
+    },
+    "blocked:agent_toml_missing_required_fields": {
+        "category": "agent_toml",
+        "phase": "repair",
+        "action": "complete_agent_toml_required_fields",
+        "description": "Add non-empty name, description, and developer_instructions to the project-local MOE agent TOML.",
+        "requires_target_project_write": True,
+    },
+    "blocked:agent_name_mismatch": {
+        "category": "agent_toml",
+        "phase": "repair",
+        "action": "align_agent_toml_name_with_requested_agent",
+        "description": "Align the agent TOML top-level name with the Project MOE GUI configuration and readiness command.",
+        "requires_target_project_write": True,
+    },
+    "blocked:agent_toml_missing_extension_sections": {
+        "category": "agent_toml",
+        "phase": "repair",
+        "action": "add_project_moe_standard_extension_sections",
+        "description": "Add [project], [moe], [dispatch], and [extensions] standard sections to the existing agent TOML.",
+        "requires_target_project_write": True,
+    },
+    "blocked:agent_project_boundary_invalid": {
+        "category": "agent_toml",
+        "phase": "repair",
+        "action": "repair_agent_project_boundary_fields",
+        "description": "Repair [project] scope, namespace, and private prompt policy fields to match the Project MOE boundary contract.",
+        "requires_target_project_write": True,
+    },
+    "blocked:agent_state_namespace_mismatch": {
+        "category": "agent_toml",
+        "phase": "repair",
+        "action": "align_agent_state_namespace",
+        "description": "Align the agent TOML namespace and state paths with the requested Project MOE state namespace.",
+        "requires_target_project_write": True,
+    },
+    "blocked:agent_moe_boundary_invalid": {
+        "category": "agent_toml",
+        "phase": "repair",
+        "action": "repair_agent_moe_boundary_fields",
+        "description": "Repair [moe] kind, family, manual-enable, and state-path fields to the Project MOE standard.",
+        "requires_target_project_write": True,
+    },
+    "blocked:agent_dispatch_boundary_incomplete": {
+        "category": "agent_toml",
+        "phase": "repair",
+        "action": "repair_agent_dispatch_boundary",
+        "description": "Use brief-based dispatch, forbid full-history custom-role dispatch, and configure supported fallback paths.",
+        "requires_target_project_write": True,
+    },
+    "blocked:invalid_agent_toml": {
+        "category": "agent_toml",
+        "phase": "repair",
+        "action": "repair_agent_toml_syntax",
+        "description": "Fix the target agent TOML syntax before any semantic Project MOE checks can be trusted.",
+        "requires_target_project_write": True,
+    },
+    "blocked:tomllib_unavailable": {
+        "category": "checker_runtime",
+        "phase": "preflight",
+        "action": "run_checker_with_tomllib_capable_python",
+        "description": "Run readiness with Python 3.11+ or an environment that can parse TOML.",
+        "requires_target_project_write": False,
+    },
+    "blocked:missing_private_prompt_source": {
+        "category": "private_prompt_source",
+        "phase": "bootstrap",
+        "action": "create_project_private_prompt_source_placeholder",
+        "description": "Create the project-private prompt source placeholder inside the target project without copying private content elsewhere.",
+        "requires_target_project_write": True,
+    },
+    "blocked:private_prompt_path_invalid": {
+        "category": "private_prompt_source",
+        "phase": "repair",
+        "action": "repair_private_prompt_source_path",
+        "description": "Replace the private prompt source with a safe project-relative path.",
+        "requires_target_project_write": True,
+    },
+    "blocked:private_prompt_source_inside_agent_dir": {
+        "category": "private_prompt_source",
+        "phase": "repair",
+        "action": "move_private_prompt_source_outside_agent_dir",
+        "description": "Move the private prompt source out of .codex/agents and keep agent definitions separate from private prompt text.",
+        "requires_target_project_write": True,
+    },
+    "blocked:private_prompt_source_inside_state": {
+        "category": "private_prompt_source",
+        "phase": "repair",
+        "action": "move_private_prompt_source_outside_state_dir",
+        "description": "Move the private prompt source out of .omx/state so runtime state is not treated as prompt source material.",
+        "requires_target_project_write": True,
+    },
+    "blocked:private_prompt_source_managed_by_toolchain": {
+        "category": "private_prompt_source",
+        "phase": "repair",
+        "action": "move_private_prompt_source_outside_gui_managed_artifacts",
+        "description": "Keep private prompt source outside Project MOE GUI managed artifacts.",
+        "requires_target_project_write": True,
+    },
+    "blocked:missing_mode_cli": {
+        "category": "mode_cli",
+        "phase": "bootstrap",
+        "action": "create_phase1_mode_cli",
+        "description": "Create the target project's Phase 1 mode CLI with read and write command surfaces.",
+        "requires_target_project_write": True,
+    },
+    "blocked:phase1_read_command_surface_incomplete": {
+        "category": "mode_cli",
+        "phase": "bootstrap",
+        "action": "add_phase1_read_command_surface",
+        "description": "Add project-status, list-sessions, status, and assert-on read-command tokens and JSON contract support.",
+        "requires_target_project_write": True,
+    },
+    "blocked:phase1_write_command_surface_incomplete": {
+        "category": "mode_cli",
+        "phase": "bootstrap",
+        "action": "add_phase1_write_command_surface",
+        "description": "Add project-on, project-off, on, off, and assert-on command-surface support.",
+        "requires_target_project_write": True,
+    },
+    "blocked:mode_cli_path_invalid": {
+        "category": "mode_cli",
+        "phase": "repair",
+        "action": "repair_mode_cli_path",
+        "description": "Use a safe project-relative mode CLI path.",
+        "requires_target_project_write": True,
+    },
+    "blocked:mode_cli_timeout": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_timeout",
+        "description": "Make read-contract commands fast and bounded before GUI readiness can depend on them.",
+        "requires_target_project_write": True,
+    },
+    "blocked:mode_cli_invocation_failed": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_invocation",
+        "description": "Restore executable target mode CLI invocation for read-only readiness checks.",
+        "requires_target_project_write": True,
+    },
+    "blocked:mode_cli_failed": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_read_contract_exit_codes",
+        "description": "Make read-contract commands return supported exit codes and JSON envelopes.",
+        "requires_target_project_write": True,
+    },
+    "blocked:mode_cli_invalid_json": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_json_output",
+        "description": "Ensure read-contract commands emit valid JSON.",
+        "requires_target_project_write": True,
+    },
+    "blocked:cli_contract_invalid": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_json_object_contract",
+        "description": "Return a JSON object for every read-contract command.",
+        "requires_target_project_write": True,
+    },
+    "blocked:cli_envelope_missing_fields": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_common_envelope_fields",
+        "description": "Add schema_version, command, ok, token, and cli_contract envelope fields.",
+        "requires_target_project_write": True,
+    },
+    "blocked:cli_command_echo_mismatch": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_command_echo",
+        "description": "Make each JSON envelope echo the invoked command.",
+        "requires_target_project_write": True,
+    },
+    "blocked:cli_read_command_not_ok": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_read_command_ok_tokens",
+        "description": "Make read commands return ok=true and token=ok unless the command has an explicitly supported fail-closed token.",
+        "requires_target_project_write": True,
+    },
+    "blocked:cli_contract_mismatch": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_contract_version",
+        "description": "Align the target CLI contract with project-moe-cli-v1.",
+        "requires_target_project_write": True,
+    },
+    "blocked:cli_contract_private_field_exposed": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "redact_private_fields_from_mode_cli_json",
+        "description": "Remove raw session identifiers, private prompt text, and other private fields from CLI JSON.",
+        "requires_target_project_write": True,
+    },
+    "blocked:project_status_contract_invalid": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_project_status_json_contract",
+        "description": "Expose project default state and registered session counts in project-status --json.",
+        "requires_target_project_write": True,
+    },
+    "blocked:list_sessions_contract_invalid": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_list_sessions_json_contract",
+        "description": "Return redacted session rows and counts from list-sessions --json.",
+        "requires_target_project_write": True,
+    },
+    "blocked:status_contract_invalid": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_status_json_contract",
+        "description": "Expose effective_enabled, effective_source, and safe session metadata from status --json.",
+        "requires_target_project_write": True,
+    },
+    "blocked:assert_on_contract_invalid": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_assert_on_read_only_contract",
+        "description": "Make assert-on a read-only assertion with stable enabled/disabled/blocker tokens.",
+        "requires_target_project_write": True,
+    },
+    "blocked:assert_on_not_read_only": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "remove_write_result_fields_from_assert_on",
+        "description": "Remove write-result fields from assert-on output so it remains a read-only assertion.",
+        "requires_target_project_write": True,
+    },
+    "blocked:missing_phase1_wrapper": {
+        "category": "phase1_wrapper",
+        "phase": "bootstrap",
+        "action": "create_phase1_cmd_wrappers",
+        "description": "Create thesis-moe-on.cmd and thesis-moe-off.cmd wrappers that delegate to the target mode CLI with --json.",
+        "requires_target_project_write": True,
+    },
+    "blocked:wrapper_path_invalid": {
+        "category": "phase1_wrapper",
+        "phase": "repair",
+        "action": "repair_wrapper_paths",
+        "description": "Use safe project-relative wrapper paths.",
+        "requires_target_project_write": True,
+    },
+    "blocked:phase1_wrapper_not_bound_to_mode_cli": {
+        "category": "phase1_wrapper",
+        "phase": "repair",
+        "action": "bind_wrappers_to_mode_cli",
+        "description": "Make each wrapper invoke the configured target mode CLI.",
+        "requires_target_project_write": True,
+    },
+    "blocked:phase1_wrapper_command_mismatch": {
+        "category": "phase1_wrapper",
+        "phase": "repair",
+        "action": "repair_wrapper_command_targets",
+        "description": "Make on/off wrappers call the expected project-on/project-off commands.",
+        "requires_target_project_write": True,
+    },
+    "blocked:phase1_wrapper_json_output_missing": {
+        "category": "phase1_wrapper",
+        "phase": "repair",
+        "action": "add_json_flag_to_phase1_wrappers",
+        "description": "Pass --json through wrapper commands so automation can consume stable machine-readable output.",
+        "requires_target_project_write": True,
+    },
+    "blocked:phase1_wrapper_unsafe_shell_surface": {
+        "category": "phase1_wrapper",
+        "phase": "repair",
+        "action": "remove_unsafe_shell_surface_from_wrappers",
+        "description": "Remove arbitrary argument passthrough, shell chaining, redirection, and file-operation command tokens from wrappers.",
+        "requires_target_project_write": True,
+    },
+    "blocked:phase1_wrapper_direct_state_surface": {
+        "category": "phase1_wrapper",
+        "phase": "repair",
+        "action": "remove_direct_state_access_from_wrappers",
+        "description": "Make wrappers delegate state access to the mode CLI instead of touching .omx/state directly.",
+        "requires_target_project_write": True,
+    },
+    "blocked:missing_moe_activation_hook": {
+        "category": "startup_activation_hook",
+        "phase": "bootstrap",
+        "action": "add_moe_startup_activation_hook",
+        "description": "Add startup/resume/continue/reload/phase-change status --json checks to the target project startup surface.",
+        "requires_target_project_write": True,
+    },
+    "blocked:moe_activation_hook_incomplete": {
+        "category": "startup_activation_hook",
+        "phase": "repair",
+        "action": "complete_moe_startup_activation_hook",
+        "description": "Extend the existing MOE activation hook to cover all required activation checkpoints.",
+        "requires_target_project_write": True,
+    },
+    "blocked:startup_hook_path_invalid": {
+        "category": "startup_activation_hook",
+        "phase": "repair",
+        "action": "repair_startup_hook_candidate_paths",
+        "description": "Use safe project-relative startup hook candidate paths.",
+        "requires_target_project_write": True,
+    },
+    "blocked:missing_phase1_operator_docs": {
+        "category": "operator_docs",
+        "phase": "bootstrap",
+        "action": "create_phase1_operator_docs",
+        "description": "Create target-project operator documentation for Project MOE commands and wrappers.",
+        "requires_target_project_write": True,
+    },
+    "blocked:phase1_operator_docs_incomplete": {
+        "category": "operator_docs",
+        "phase": "repair",
+        "action": "complete_phase1_operator_docs",
+        "description": "Document all required Project MOE commands, --json reads, --session-id, and wrapper entrypoints.",
+        "requires_target_project_write": True,
+    },
+    "blocked:operator_doc_path_invalid": {
+        "category": "operator_docs",
+        "phase": "repair",
+        "action": "repair_operator_doc_candidate_paths",
+        "description": "Use safe project-relative operator documentation candidate paths.",
+        "requires_target_project_write": True,
+    },
+}
 DEFAULT_ON_WRAPPER = Path("thesis-moe-on.cmd")
 DEFAULT_OFF_WRAPPER = Path("thesis-moe-off.cmd")
 DEFAULT_STARTUP_HOOK_CANDIDATES = (
@@ -836,6 +1188,120 @@ def classify_phase1_adaptation_lane(errors: list[dict[str, Any]]) -> dict[str, A
     }
 
 
+def remediation_action_for_code(code: str) -> dict[str, Any]:
+    action = dict(
+        PHASE1_REMEDIATION_ACTIONS.get(
+            code,
+            {
+                "category": "manual_review",
+                "phase": "manual-review",
+                "action": f"review_{re.sub(r'[^a-z0-9]+', '_', code.lower()).strip('_') or 'unknown_blocker'}",
+                "description": "Review this blocker and add a stable remediation mapping before approving GUI control mode.",
+                "requires_target_project_write": False,
+            },
+        )
+    )
+    action.update(
+        {
+            "code": code,
+            "safe_to_auto_apply": False,
+            "blocks_control_mode": True,
+        }
+    )
+    return action
+
+
+def build_phase1_remediation_plan(errors: list[dict[str, Any]], lane: dict[str, Any], execute_cli: bool) -> dict[str, Any]:
+    lane_name = str(lane.get("adaptation_lane") or "unknown")
+    cli_execution_mode = "execute-read-contract" if execute_cli else "static-only"
+    ready_for_control = not errors and execute_cli and lane_name == "ready" and lane.get("control_mode_allowed") is True
+    if ready_for_control:
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "ready_for_control": True,
+            "lane": lane_name,
+            "cli_execution_mode": cli_execution_mode,
+            "target_project_write_allowed_by_checker": False,
+            "summary": "no_remediation_required",
+            "groups": [],
+            "ordered_next_steps": [],
+        }
+
+    actions: list[dict[str, Any]] = []
+    seen_codes: set[str] = set()
+    for error in errors:
+        code = str(error.get("code") or "blocked:unknown")
+        if code in seen_codes:
+            continue
+        seen_codes.add(code)
+        actions.append(remediation_action_for_code(code))
+
+    if not errors and not execute_cli:
+        actions.append(
+            {
+                "code": "candidate:execute_read_contract_required",
+                "category": "mode_cli_contract",
+                "phase": "execute-read-contract",
+                "action": "run_execute_read_contract_readiness_check",
+                "description": "Run readiness without --static-only so the target read-contract CLI commands are executed and verified before GUI control.",
+                "requires_target_project_write": False,
+                "safe_to_auto_apply": False,
+                "blocks_control_mode": True,
+            }
+        )
+
+    actions.sort(
+        key=lambda item: (
+            PHASE1_REMEDIATION_PHASE_ORDER.get(str(item.get("phase")), 99),
+            str(item.get("category") or ""),
+            str(item.get("action") or ""),
+            str(item.get("code") or ""),
+        )
+    )
+    group_map: dict[tuple[str, str], dict[str, Any]] = {}
+    for action in actions:
+        key = (str(action["phase"]), str(action["category"]))
+        group = group_map.setdefault(
+            key,
+            {
+                "phase": action["phase"],
+                "category": action["category"],
+                "codes": [],
+                "actions": [],
+                "descriptions": [],
+                "requires_target_project_write": False,
+                "safe_to_auto_apply": True,
+                "blocks_control_mode": False,
+            },
+        )
+        group["codes"].append(action["code"])
+        group["actions"].append(action["action"])
+        group["descriptions"].append(action["description"])
+        group["requires_target_project_write"] = group["requires_target_project_write"] or bool(action["requires_target_project_write"])
+        group["safe_to_auto_apply"] = group["safe_to_auto_apply"] and bool(action["safe_to_auto_apply"])
+        group["blocks_control_mode"] = group["blocks_control_mode"] or bool(action["blocks_control_mode"])
+
+    if not errors and not execute_cli:
+        summary = "execute_read_contract_required_before_control"
+    elif lane_name == "bootstrap":
+        summary = "bootstrap_phase1_surface_before_gui_control"
+    elif lane_name == "repair":
+        summary = "repair_existing_phase1_surface_before_gui_control"
+    else:
+        summary = "manual_review_required_before_gui_control"
+
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "ready_for_control": False,
+        "lane": lane_name,
+        "cli_execution_mode": cli_execution_mode,
+        "target_project_write_allowed_by_checker": False,
+        "summary": summary,
+        "groups": list(group_map.values()),
+        "ordered_next_steps": [str(action["action"]) for action in actions],
+    }
+
+
 def check_cli_contract(root: Path, mode_cli: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     errors: list[dict[str, Any]] = []
     details: dict[str, Any] = {
@@ -1107,6 +1573,7 @@ def check_phase1_readiness(
             "lane_reason": "static_surface_passed_cli_execution_skipped",
         }
     readiness_status = "ready" if not errors and execute_cli else ("static-ready-candidate" if not errors else "blocked")
+    remediation_plan = build_phase1_remediation_plan(errors, lane, execute_cli)
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "check_project_moe_phase1_readiness",
@@ -1132,6 +1599,7 @@ def check_phase1_readiness(
         "operator_docs": operator_doc_details,
         "blockers": errors,
         "next_actions": [] if not errors else sorted({error["code"] for error in errors}),
+        "remediation_plan": remediation_plan,
     }
 
 
