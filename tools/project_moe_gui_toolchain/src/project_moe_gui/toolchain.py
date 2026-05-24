@@ -40,6 +40,7 @@ BOOTSTRAP_BLOCKER_CAPABILITIES = {
     "blocked:missing_agent_toml": "agent_toml",
     "blocked:missing_private_prompt_source": "private_prompt_source",
     "blocked:missing_mode_cli": "mode_cli",
+    "blocked:phase1_read_command_surface_incomplete": "mode_cli_read_commands",
     "blocked:phase1_write_command_surface_incomplete": "mode_cli_write_commands",
     "blocked:missing_phase1_wrapper": "phase1_wrapper",
     "blocked:missing_moe_activation_hook": "startup_activation_hook",
@@ -491,18 +492,23 @@ def inspect_wrapper_safety(text: str) -> tuple[list[str], list[str]]:
 def inspect_mode_cli_surface(root: Path, mode_cli: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     path, err = safe_relative(root, mode_cli, "blocked:mode_cli_path_invalid")
     if err:
-        return {"path": norm(mode_cli), "exists": False, "write_commands_seen": []}, [err]
+        return {"path": norm(mode_cli), "exists": False, "read_commands_seen": [], "write_commands_seen": []}, [err]
     assert path is not None
-    details: dict[str, Any] = {"path": norm(mode_cli), "exists": path.exists(), "write_commands_seen": []}
+    details: dict[str, Any] = {"path": norm(mode_cli), "exists": path.exists(), "read_commands_seen": [], "write_commands_seen": []}
     if not path.exists():
         return details, [blocker("blocked:missing_mode_cli", "Target project mode CLI is missing.", path=norm(mode_cli))]
     text = read_text(path)
-    hits = command_token_hits(text, PHASE1_EXPECTED_WRITE_COMMANDS)
-    details["write_commands_seen"] = hits
-    missing = [command for command in PHASE1_EXPECTED_WRITE_COMMANDS if command not in hits]
+    read_hits = command_token_hits(text, READ_CLI_CONTRACT_COMMANDS + READ_ASSERTION_COMMANDS)
+    write_hits = command_token_hits(text, PHASE1_EXPECTED_WRITE_COMMANDS)
+    details["read_commands_seen"] = read_hits
+    details["write_commands_seen"] = write_hits
+    missing_read = [command for command in READ_CLI_CONTRACT_COMMANDS + READ_ASSERTION_COMMANDS if command not in read_hits]
+    missing_write = [command for command in PHASE1_EXPECTED_WRITE_COMMANDS if command not in write_hits]
     errors = []
-    if missing:
-        errors.append(blocker("blocked:phase1_write_command_surface_incomplete", "Mode CLI text does not expose all expected Phase 1 command tokens.", missing=missing))
+    if missing_read:
+        errors.append(blocker("blocked:phase1_read_command_surface_incomplete", "Mode CLI text does not expose all expected Phase 1 read command tokens.", missing=missing_read))
+    if missing_write:
+        errors.append(blocker("blocked:phase1_write_command_surface_incomplete", "Mode CLI text does not expose all expected Phase 1 write command tokens.", missing=missing_write))
     return details, errors
 
 
@@ -826,7 +832,14 @@ def classify_phase1_adaptation_lane(errors: list[dict[str, Any]]) -> dict[str, A
 
 def check_cli_contract(root: Path, mode_cli: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     errors: list[dict[str, Any]] = []
-    details: dict[str, Any] = {"mode_cli": norm(mode_cli), "commands_checked": [], "assertion_commands_checked": [], "validated_fields": {}}
+    details: dict[str, Any] = {
+        "mode_cli": norm(mode_cli),
+        "cli_execution_mode": "execute-read-contract",
+        "execution_skipped": False,
+        "commands_checked": [],
+        "assertion_commands_checked": [],
+        "validated_fields": {},
+    }
     for command in READ_CLI_CONTRACT_COMMANDS + READ_ASSERTION_COMMANDS:
         payload, err = run_cli(root, mode_cli, command)
         if err:
@@ -840,6 +853,18 @@ def check_cli_contract(root: Path, mode_cli: Path) -> tuple[list[dict[str, Any]]
         errors.extend(command_errors)
         details["validated_fields"][command] = sorted([key for key in (payload or {}).keys()])
     return errors, details
+
+
+def skipped_cli_contract_details(mode_cli: Path, reason: str) -> dict[str, Any]:
+    return {
+        "mode_cli": norm(mode_cli),
+        "cli_execution_mode": "static-only",
+        "execution_skipped": True,
+        "skip_reason": reason,
+        "commands_checked": [],
+        "assertion_commands_checked": [],
+        "validated_fields": {},
+    }
 
 
 def launcher_text() -> str:
@@ -1031,6 +1056,7 @@ def check_phase1_readiness(
     off_wrapper: Path = DEFAULT_OFF_WRAPPER,
     startup_paths: list[Path] | None = None,
     operator_doc_paths: list[Path] | None = None,
+    execute_cli: bool = True,
 ) -> dict[str, Any]:
     errors = validate_identifiers(agent_name, namespace)
     evidence = project_evidence(root)
@@ -1048,11 +1074,14 @@ def check_phase1_readiness(
     errors.extend(prompt_errors)
     mode_cli_surface, mode_surface_errors = inspect_mode_cli_surface(root, mode_cli)
     errors.extend(mode_surface_errors)
-    if mode_cli_surface.get("exists"):
+    cli_execution_mode = "execute-read-contract" if execute_cli else "static-only"
+    if mode_cli_surface.get("exists") and execute_cli:
         cli_errors, cli_details = check_cli_contract(root, mode_cli)
         errors.extend(cli_errors)
+    elif mode_cli_surface.get("exists"):
+        cli_details = skipped_cli_contract_details(mode_cli, "static_only_no_exec_cli")
     else:
-        cli_details = {"mode_cli": norm(mode_cli), "commands_checked": [], "validated_fields": {}}
+        cli_details = skipped_cli_contract_details(mode_cli, "mode_cli_missing")
     on_details, on_errors = inspect_wrapper(root, on_wrapper, "project-on", mode_cli)
     off_details, off_errors = inspect_wrapper(root, off_wrapper, "project-off", mode_cli)
     errors.extend(on_errors)
@@ -1062,13 +1091,24 @@ def check_phase1_readiness(
     operator_doc_details, operator_doc_errors = inspect_operator_docs(root, operator_doc_paths or list(DEFAULT_OPERATOR_DOC_CANDIDATES))
     errors.extend(operator_doc_errors)
     lane = classify_phase1_adaptation_lane(errors)
+    if not errors and not execute_cli:
+        lane = {
+            "adaptation_lane": "ready-candidate",
+            "control_mode_allowed": False,
+            "bootstrap_required": False,
+            "bootstrap_missing_capabilities": [],
+            "repair_required": False,
+            "lane_reason": "static_surface_passed_cli_execution_skipped",
+        }
+    readiness_status = "ready" if not errors and execute_cli else ("static-ready-candidate" if not errors else "blocked")
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "check_project_moe_phase1_readiness",
         "ok": not errors,
         "token": "ok" if not errors else errors[0]["code"],
-        "readiness_status": "ready" if not errors else "blocked",
+        "readiness_status": readiness_status,
         **lane,
+        "cli_execution_mode": cli_execution_mode,
         "read_only": True,
         "writes_target_project": False,
         "target_project_root": str(root),

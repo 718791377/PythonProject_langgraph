@@ -572,6 +572,8 @@ else:
             )
             self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "status"])
             self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], ["assert-on"])
+            self.assertEqual(payload["cli_execution_mode"], "execute-read-contract")
+            self.assertFalse(payload["cli_contract_check"]["execution_skipped"])
             self.assertIn("assert-on", payload["cli_contract_check"]["validated_fields"])
             self.assertTrue(payload["wrappers"]["on"]["references_expected_command"])
             self.assertTrue(payload["wrappers"]["off"]["references_expected_command"])
@@ -582,6 +584,45 @@ else:
             self.assertTrue(payload["startup_activation_hooks"]["basic_status_hook_found"])
             self.assertEqual(payload["startup_activation_hooks"]["required_tokens"], ["thesis_moe_mode.py", "status --json", "startup", "resume", "continue", "reload", "phase change"])
             self.assertTrue(payload["operator_docs"]["ready"])
+
+    def test_phase1_readiness_checker_static_only_does_not_execute_target_cli(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-static-only"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-static-only", session_id="session-static-only")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            marker = project / "cli-executed-marker.txt"
+            (project / "tools" / "thesis_moe_mode.py").write_text(
+                "from pathlib import Path\n"
+                "Path('cli-executed-marker.txt').write_text('executed', encoding='utf-8')\n"
+                "# static command surface tokens: project-on project-off on off assert-on\n"
+                "# read contract tokens: project-status list-sessions status --json\n"
+                "raise SystemExit(99)\n",
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--static-only",
+            )
+
+            self.assertFalse(marker.exists(), "static-only readiness must not execute the target mode CLI")
+            self.assertEqual(payload["token"], "ok", payload)
+            self.assertEqual(payload["readiness_status"], "static-ready-candidate")
+            self.assertEqual(payload["adaptation_lane"], "ready-candidate")
+            self.assertFalse(payload["control_mode_allowed"])
+            self.assertEqual(payload["cli_execution_mode"], "static-only")
+            self.assertTrue(payload["cli_contract_check"]["execution_skipped"])
+            self.assertEqual(payload["cli_contract_check"]["skip_reason"], "static_only_no_exec_cli")
+            self.assertEqual(payload["cli_contract_check"]["commands_checked"], [])
+            self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], [])
 
     def test_phase1_readiness_checker_blocks_dirty_target_and_missing_wrapper(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

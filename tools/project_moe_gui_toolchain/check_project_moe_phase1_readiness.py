@@ -33,6 +33,16 @@ def main() -> int:
         help="Relative startup/launcher file to inspect for a status --json activation checkpoint. May be repeated.",
     )
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--static-only",
+        action="store_true",
+        help="Inspect target-project files only and do not execute the target mode CLI. This is safer for cross-project evidence capture.",
+    )
+    parser.add_argument(
+        "--no-exec-cli",
+        action="store_true",
+        help="Alias for --static-only.",
+    )
     args = parser.parse_args()
 
     project_root, error_payload = root_or_error(args.target_project, "check_project_moe_phase1_readiness")
@@ -48,6 +58,7 @@ def main() -> int:
         on_wrapper=Path(args.on_wrapper),
         off_wrapper=Path(args.off_wrapper),
         startup_paths=startup_hooks,
+        execute_cli=not (args.static_only or args.no_exec_cli),
     )
     return emit(payload, args.json)
 
