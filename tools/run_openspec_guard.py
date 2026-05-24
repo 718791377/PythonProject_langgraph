@@ -107,6 +107,7 @@ def main() -> int:
     precommit_update_archive_script = root / "tools" / "check_precommit_update_archive.py"
     skills_audit_output_retention_script = root / "tools" / "check_skills_audit_output_retention.py"
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
+    openspec_comet_superpowers_policy_script = root / "tools" / "check_openspec_comet_superpowers_policy.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     user_level_mcp_skills_browser_cli_baseline_script = root / "tools" / "check_user_level_mcp_skills_browser_cli_baseline.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
@@ -160,6 +161,8 @@ def main() -> int:
         raise SystemExit(f"Missing Skills audit output retention check script: {skills_audit_output_retention_script}")
     if not openspec_code_archive_evidence_script.exists():
         raise SystemExit(f"Missing OpenSpec code archive evidence check script: {openspec_code_archive_evidence_script}")
+    if not openspec_comet_superpowers_policy_script.exists():
+        raise SystemExit(f"Missing OpenSpec Comet/Superpowers policy check script: {openspec_comet_superpowers_policy_script}")
     if not mcp_router_scope_policy_script.exists():
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
     if not user_level_mcp_skills_browser_cli_baseline_script.exists():
@@ -321,6 +324,11 @@ def main() -> int:
                 "check_openspec_code_archive_evidence",
                 [str(python_exe), str(openspec_code_archive_evidence_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during OpenSpec code archive evidence verification.",
+            ),
+            (
+                "check_openspec_comet_superpowers_policy",
+                [str(python_exe), str(openspec_comet_superpowers_policy_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Comet/OpenSpec/Superpowers policy verification.",
             ),
             (
                 "check_mcp_router_scope_policy",
@@ -621,6 +629,11 @@ def main() -> int:
         [str(python_exe), str(openspec_code_archive_evidence_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during OpenSpec code archive evidence verification.",
+    )
+    run_checked(
+        [str(python_exe), str(openspec_comet_superpowers_policy_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Comet/OpenSpec/Superpowers policy verification.",
     )
     run_checked(
         [str(python_exe), str(mcp_router_scope_policy_script), "--root", str(root)],

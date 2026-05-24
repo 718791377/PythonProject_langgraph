@@ -9,6 +9,14 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "run_openspec_guard.py"
+COMET_POLICY_SCRIPT_PATH = REPO_ROOT / "tools" / "check_openspec_comet_superpowers_policy.py"
+
+COMET_EN_POLICY = "docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md"
+COMET_ZH_POLICY = "docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.zh-CN.md"
+COMET_SPEC = (
+    "openspec/changes/upgrade-openspec-comet-superpowers/"
+    "specs/codex-user-level-comet-controlled-openspec-superpowers/spec.md"
+)
 
 GUARD_STEPS = [
     ("verify_official_openspec", "verify_official_openspec.py", "verify"),
@@ -22,6 +30,7 @@ GUARD_STEPS = [
     ("check_precommit_update_archive", "check_precommit_update_archive.py", "precommit_update_archive"),
     ("check_skills_audit_output_retention", "check_skills_audit_output_retention.py", "skills_audit_output_retention"),
     ("check_openspec_code_archive_evidence", "check_openspec_code_archive_evidence.py", "openspec_code_archive_evidence"),
+    ("check_openspec_comet_superpowers_policy", "check_openspec_comet_superpowers_policy.py", "openspec_comet_superpowers_policy"),
     ("check_mcp_router_scope_policy", "check_mcp_router_scope_policy.py", "mcp_router_scope_policy"),
     ("check_user_level_mcp_skills_browser_cli_baseline", "check_user_level_mcp_skills_browser_cli_baseline.py", "user_level_mcp_skills_browser_cli_baseline"),
     ("check_local_mirrored_ci_gate", "check_local_mirrored_ci_gate.py", "local_mirrored_ci_gate"),
@@ -120,6 +129,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["steps"][8]["step"], "check_precommit_update_archive")
         self.assertEqual(payload["steps"][9]["step"], "check_skills_audit_output_retention")
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:
         root = self.make_root("guard-json-fail")
@@ -141,6 +151,156 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["failed_step"], "check_current_repo_authority_language")
         self.assertEqual(payload["steps"][1]["data"]["check_name"], "authority")
         self.assertEqual(payload["counts"]["steps_failed"], 1)
+
+
+class CheckOpenSpecCometSuperpowersPolicyTest(unittest.TestCase):
+    maxDiff = None
+
+    def make_root(self) -> Path:
+        root = REPO_ROOT / ".omx" / "test-artifacts" / f"comet-policy-{uuid.uuid4().hex[:8]}"
+        root.mkdir(parents=True, exist_ok=True)
+        self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
+        return root
+
+    def write_file(self, root: Path, relative_path: str, content: str) -> None:
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+    def write_valid_surface(self, root: Path) -> None:
+        self.write_file(
+            root,
+            COMET_EN_POLICY,
+            "\n".join(
+                [
+                    "Comet-controlled OpenSpec + Superpowers",
+                    "OpenSpec is the WHAT layer",
+                    "Superpowers is the HOW layer",
+                    "Comet is the control layer",
+                    "Open -> Design -> Build -> Verify -> Archive",
+                    ".openspec.yaml",
+                    ".comet.yaml",
+                    "comet init",
+                    "explicit operator approval",
+                    "Skills remain workflow instruction surfaces",
+                    "not native subagent evidence",
+                ]
+            ),
+        )
+        self.write_file(
+            root,
+            COMET_ZH_POLICY,
+            "\n".join(
+                [
+                    "Comet 控制",
+                    "OpenSpec",
+                    "Superpowers",
+                    "WHAT",
+                    "HOW",
+                    "Comet 管 WHEN & NEXT",
+                    "Open -> Design -> Build -> Verify -> Archive",
+                    ".openspec.yaml",
+                    ".comet.yaml",
+                    "显式操作员批准",
+                    "不是 native subagent 证据",
+                ]
+            ),
+        )
+        self.write_file(
+            root,
+            "docs_bilingual/docs_registry.yaml",
+            """version: 1
+documents:
+  - doc_id: openspec_comet_superpowers_workflow_policy
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md
+    zh_cn_path: docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.zh-CN.md
+""",
+        )
+        self.write_file(
+            root,
+            COMET_SPEC,
+            "\n".join(
+                [
+                    "Comet-controlled workflow SHALL preserve layer boundaries",
+                    "five-phase pipeline",
+                    "decoupled state",
+                    "guard phase transitions",
+                    "archive evidence",
+                    "explicit and repository-local",
+                    "checker-backed",
+                ]
+            ),
+        )
+
+    def run_comet_policy_check(self, root: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(COMET_POLICY_SCRIPT_PATH), "--root", str(root), "--json"],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=REPO_ROOT,
+        )
+
+    def test_comet_policy_surface_passes(self) -> None:
+        root = self.make_root()
+        self.write_valid_surface(root)
+
+        result = self.run_comet_policy_check(root)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["check_name"], "openspec_comet_superpowers_policy")
+        self.assertEqual(payload["counts"]["errors"], 0)
+        self.assertIn(COMET_EN_POLICY, payload["checked_files"])
+
+    def test_comet_policy_missing_required_term_fails(self) -> None:
+        root = self.make_root()
+        self.write_valid_surface(root)
+        en_path = root / COMET_EN_POLICY
+        en_path.write_text(
+            en_path.read_text(encoding="utf-8").replace("Comet is the control layer", ""),
+            encoding="utf-8",
+        )
+
+        result = self.run_comet_policy_check(root)
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertIn("Comet is the control layer", payload["missing_terms"]["english_policy"])
+        self.assertTrue(any("English policy is missing required term" in error for error in payload["errors"]))
+
+    def test_comet_policy_missing_registry_entry_fails(self) -> None:
+        root = self.make_root()
+        self.write_valid_surface(root)
+        self.write_file(root, "docs_bilingual/docs_registry.yaml", "version: 1\ndocuments: []\n")
+
+        result = self.run_comet_policy_check(root)
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("docs registry is missing" in error for error in payload["errors"]))
+
+    def test_comet_policy_chinese_mojibake_placeholder_fails(self) -> None:
+        root = self.make_root()
+        self.write_valid_surface(root)
+        zh_path = root / COMET_ZH_POLICY
+        zh_path.write_text(
+            zh_path.read_text(encoding="utf-8").replace("Comet 控制", "Comet ??"),
+            encoding="utf-8",
+        )
+
+        result = self.run_comet_policy_check(root)
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("mojibake" in error for error in payload["errors"]))
 
 
 if __name__ == "__main__":
