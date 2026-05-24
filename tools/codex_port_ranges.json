@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "ranges": {
+    "codex-helper": {
+      "owner": "codex",
+      "start": 39000,
+      "end": 39299,
+      "purpose": "MCP facade, skills2cli, mcp2cli, low-risk user-level helpers"
+    },
+    "codex-opencli": {
+      "owner": "codex",
+      "start": 39300,
+      "end": 39499,
+      "purpose": "OpenCLI on-demand browser adapter leases"
+    },
+    "codex-browser": {
+      "owner": "codex",
+      "start": 39500,
+      "end": 39699,
+      "purpose": "Browser automation and managed chrome-devtools-mcp wrappers"
+    },
+    "codex-reserved": {
+      "owner": "codex",
+      "start": 39700,
+      "end": 39999,
+      "purpose": "Reserved Codex user-level extension ports"
+    },
+    "openclaw": {
+      "owner": "openclaw",
+      "start": 40000,
+      "end": 40999,
+      "purpose": "OpenClaw project service and local control plane ports"
+    }
+  },
+  "rules": {
+    "bind_host_default": "127.0.0.1",
+    "forbid_process_kill": true,
+    "opencli_requires_range": "codex-opencli",
+    "chrome_devtools_mcp_requires_range": "codex-browser",
+    "registry_path": "C:/Users/lenovo/.codex/state/ports/registry.json"
+  }
+}

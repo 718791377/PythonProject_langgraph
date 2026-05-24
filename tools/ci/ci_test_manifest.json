@@ -35,7 +35,8 @@
     "project_moe_gui_toolchain.test.py",
     "check_user_level_mcp_skills_browser_cli_baseline.test.py",
     "skills2cli.test.py",
-    "mcp2cli.test.py"
+    "mcp2cli.test.py",
+    "codex_port.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []
