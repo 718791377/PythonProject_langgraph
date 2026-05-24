@@ -38,7 +38,8 @@
     "mcp2cli.test.py",
     "codex_port.test.py",
     "browser_owner_registry.test.py",
-    "chrome_devtools_mcp_managed.test.py"
+    "chrome_devtools_mcp_managed.test.py",
+    "cdp_bridge_governance.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []

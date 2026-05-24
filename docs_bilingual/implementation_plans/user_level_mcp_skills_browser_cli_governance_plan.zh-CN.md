@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: browser_stale_cleanup_dry_run_repo_local_implemented
+implementation_state: cdp_bridge_read_only_defaults_repo_local_implemented
 last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -16,7 +16,7 @@ source_reference_file: reference_files/1.md
 
 ## 0. 当前复核结论
 
-截至 2026-05-24，本方案作为“执行前蓝图”已具备进入 OpenSpec 小步切片的颗粒度。`status: draft` 表示用户级运行时尚未按本方案全部落地，不表示本文缺少执行结构。第 1 个 policy/checker baseline 切片已完成本地实现、验证、stable spec 提升和 OpenSpec archive 收口。`skills2cli`、`mcp2cli`、`codex-port` allocator 与 browser owner registry MVP 切片现在已具备 repo-local helper 与测试覆盖；在后续受治理 wrapper/install receipt、managed-wrapper 与用户级 smoke 切片落地前，它们仍是 `implemented-local`，不是完整用户级 `active`。
+截至 2026-05-24，本方案作为“执行前蓝图”已具备进入 OpenSpec 小步切片的颗粒度。`status: draft` 表示用户级运行时尚未按本方案全部落地，不表示本文缺少执行结构。第 1 个 policy/checker baseline 切片已完成本地实现、验证、stable spec 提升和 OpenSpec archive 收口。`skills2cli`、`mcp2cli`、`codex-port` allocator、browser owner registry、Chrome DevTools managed-wrapper MVP 与 CDP Bridge governance guard 现在已具备 repo-local helper 与测试覆盖；在后续受治理 wrapper/install receipt、managed-wrapper、live adapter 与用户级 smoke 切片落地前，它们仍是 `implemented-local`，不是完整用户级 `active`。
 
 复核结论：
 
@@ -28,7 +28,7 @@ source_reference_file: reference_files/1.md
 - 未勾选清单是后续实施状态，不是方案缺口；在对应代码、checker、安装产物和 receipt 都完成前，不得把 lane 标为 `active`。
 - 推进原则是先 baseline 后能力：先完成 token/risk、授权 receipt、update receipt 与 evidence redaction，再实现 `skills2cli`、`mcp2cli`、browser 与 `wecom-cli` 等具体能力。
 
-本方案下一步不是继续扩大范围。repo-local `chrome-devtools-mcp` isolated-session、project-profile、browser stale scan 与 safe cleanup dry-run MVP 验证并归档后，应继续 CDP Bridge 与 OpenCLI on-demand enforcement 等受治理切片，不得隐式安装用户级 wrapper。
+本方案下一步不是继续扩大范围。repo-local `chrome-devtools-mcp` isolated-session、project-profile、browser stale scan、safe cleanup dry-run 与 CDP Bridge read-only-default guard 切片验证并归档后，应继续 OpenCLI on-demand enforcement 切片，不得隐式安装用户级 wrapper。
 
 ## 1. 目的
 
@@ -566,9 +566,10 @@ OpenSpec 切片交付矩阵：
 - [x] 实现 `chrome-devtools-mcp` managed wrapper 的 project-profile mode。
 - [x] 实现 browser stale scan 与 safe cleanup dry-run，清理范围只限已知 managed profiles。
 - [x] 为 browser lane 增加 tab owner exclusivity、project-profile retention、human-owned protection、cleanup dry-run 测试。
-- [ ] 加固 CDP Bridge read-only 默认边界，写动作必须检查 owner 与授权 receipt。
+- [x] 加固 CDP Bridge read-only 默认边界，写动作必须检查 owner 与授权 receipt。
 - [ ] 把 OpenCLI 保持为 on-demand adapter，并接入 browser owner registry。
-- [ ] 为 CDP Bridge/OpenCLI 增加 cookie/JS/click/type/navigate sensitive action fail-closed 测试。
+- [x] 为 CDP Bridge 增加 cookie/JS/click/type/navigate sensitive action fail-closed 测试。
+- [ ] 为 OpenCLI 增加 cookie/JS/click/type/navigate sensitive action fail-closed 测试。
 - [ ] 安装或适配 `oh-my-pi` sidecar 时写入 pinned receipt、smoke result 和 rollback pointer。
 - [ ] 为 `oh-my-pi` updater 增加 staging fetch、smoke、pin switch、rollback 测试。
 - [ ] 安装 CLI-Anything / CLI Hub 时写入 user-level install receipt，不 hard-load bulk skills。

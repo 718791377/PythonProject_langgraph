@@ -4,7 +4,7 @@ lang: en
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: browser_stale_cleanup_dry_run_repo_local_implemented
+implementation_state: cdp_bridge_read_only_defaults_repo_local_implemented
 last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -15,7 +15,7 @@ source_reference_file: reference_files/1.md
 
 ## 0. Current review verdict
 
-As of 2026-05-24, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure. The first policy/checker baseline slice has completed local implementation, validation, stable spec promotion, and OpenSpec archive closeout. The `skills2cli`, `mcp2cli`, `codex-port` allocator, and browser owner registry MVP slices now have repo-local helpers and test coverage; they remain `implemented-local` rather than fully user-level `active` until later governed wrapper/install receipt, managed-wrapper, and user-level smoke slices land.
+As of 2026-05-24, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure. The first policy/checker baseline slice has completed local implementation, validation, stable spec promotion, and OpenSpec archive closeout. The `skills2cli`, `mcp2cli`, `codex-port` allocator, browser owner registry, Chrome DevTools managed-wrapper MVPs, and CDP Bridge governance guard now have repo-local helpers and test coverage; they remain `implemented-local` rather than fully user-level `active` until later governed wrapper/install receipt, managed-wrapper, live adapter, and user-level smoke slices land.
 
 Review verdict:
 
@@ -26,7 +26,7 @@ Review verdict:
 - Unchecked checklist items are downstream implementation state, not plan gaps. A lane must not be marked `active` until its code, checker, install artifact, and receipt evidence all exist.
 - The sequence is baseline before capability: finish token/risk, authorization receipt, update receipt, and evidence-redaction controls before implementing `skills2cli`, `mcp2cli`, browser automation, and `wecom-cli` capability surfaces.
 
-The next action is not to broaden this plan. After the repo-local `chrome-devtools-mcp` isolated-session, project-profile, browser stale scan, and safe cleanup dry-run MVPs are validated and archived, continue with CDP Bridge and OpenCLI on-demand enforcement slices rather than installing user-level wrappers implicitly.
+The next action is not to broaden this plan. After the repo-local `chrome-devtools-mcp` isolated-session, project-profile, browser stale scan, cleanup dry-run, and CDP Bridge read-only-default guard slices are validated and archived, continue with the OpenCLI on-demand enforcement slice rather than installing user-level wrappers implicitly.
 
 ## 1. Purpose
 
@@ -566,9 +566,10 @@ Fine-grained implementation checklist:
 - [x] Implement the `chrome-devtools-mcp` managed wrapper project-profile mode.
 - [x] Implement browser stale scan and safe-cleanup dry-run, scoped only to known managed profiles.
 - [x] Add browser-lane tests for tab-owner exclusivity, project-profile retention, human-owned protection, and cleanup dry-run.
-- [ ] Harden CDP Bridge read-only defaults so write actions require owner and authorization receipts.
+- [x] Harden CDP Bridge read-only defaults so write actions require owner and authorization receipts.
 - [ ] Keep OpenCLI as an on-demand adapter and connect it to the browser owner registry.
-- [ ] Add CDP Bridge/OpenCLI fail-closed tests for cookie, JavaScript, click, type, and navigate sensitive actions.
+- [x] Add CDP Bridge fail-closed tests for cookie, JavaScript, click, type, and navigate sensitive actions.
+- [ ] Add remaining OpenCLI fail-closed tests for cookie, JavaScript, click, type, and navigate sensitive actions.
 - [ ] When adapting `oh-my-pi`, write pinned receipt, smoke result, and rollback pointer.
 - [ ] Add `oh-my-pi` updater tests for staging fetch, smoke, pin switch, and rollback.
 - [ ] Install CLI-Anything / CLI Hub with user-level install receipts and without hard-loading bulk skills.
