@@ -4,7 +4,7 @@ lang: en
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: codex_port_allocator_repo_local_implemented
+implementation_state: browser_owner_registry_repo_local_implemented
 last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -15,7 +15,7 @@ source_reference_file: reference_files/1.md
 
 ## 0. Current review verdict
 
-As of 2026-05-24, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure. The first policy/checker baseline slice has completed local implementation, validation, stable spec promotion, and OpenSpec archive closeout. The `skills2cli`, `mcp2cli`, and `codex-port` allocator MVP slices now have repo-local helpers and test coverage; they remain `implemented-local` rather than fully user-level `active` until later governed wrapper/install receipt and user-level smoke slices land.
+As of 2026-05-24, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure. The first policy/checker baseline slice has completed local implementation, validation, stable spec promotion, and OpenSpec archive closeout. The `skills2cli`, `mcp2cli`, `codex-port` allocator, and browser owner registry MVP slices now have repo-local helpers and test coverage; they remain `implemented-local` rather than fully user-level `active` until later governed wrapper/install receipt, managed-wrapper, and user-level smoke slices land.
 
 Review verdict:
 
@@ -26,7 +26,7 @@ Review verdict:
 - Unchecked checklist items are downstream implementation state, not plan gaps. A lane must not be marked `active` until its code, checker, install artifact, and receipt evidence all exist.
 - The sequence is baseline before capability: finish token/risk, authorization receipt, update receipt, and evidence-redaction controls before implementing `skills2cli`, `mcp2cli`, browser automation, and `wecom-cli` capability surfaces.
 
-The next action is not to broaden this plan. After the repo-local `codex-port` allocator MVP is validated and archived, continue with the governed browser owner registry and `chrome-devtools-mcp` managed wrapper slices rather than installing user-level wrappers implicitly.
+The next action is not to broaden this plan. After the repo-local browser owner registry MVP is validated and archived, continue with the governed `chrome-devtools-mcp` managed wrapper slices rather than installing user-level wrappers implicitly.
 
 ## 1. Purpose
 
@@ -561,7 +561,7 @@ Fine-grained implementation checklist:
 - [x] Implement compact `mcp2cli list/search/show` output with explicit `--full` expansion boundaries.
 - [x] Implement the `mcp2cli call` sensitive-category fail-closed gate.
 - [x] Add `mcp2cli` profile-registry, sensitive-call-blocking, compact-output, and receipt-required tests.
-- [ ] Implement the browser owner registry with owner class, project slug, session id, profile path, and lease expiry.
+- [x] Implement the browser owner registry with owner class, project slug, session id, profile path, and lease expiry.
 - [ ] Implement the `chrome-devtools-mcp` managed wrapper isolated-session mode.
 - [ ] Implement the `chrome-devtools-mcp` managed wrapper project-profile mode.
 - [ ] Implement browser stale scan and safe-cleanup dry-run, scoped only to known managed profiles.

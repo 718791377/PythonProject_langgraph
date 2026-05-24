@@ -36,7 +36,8 @@
     "check_user_level_mcp_skills_browser_cli_baseline.test.py",
     "skills2cli.test.py",
     "mcp2cli.test.py",
-    "codex_port.test.py"
+    "codex_port.test.py",
+    "browser_owner_registry.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []
