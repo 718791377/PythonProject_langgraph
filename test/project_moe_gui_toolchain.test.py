@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -531,6 +532,24 @@ else:
             "private_state": project / ".omx" / "state" / namespace / "private-note.json",
         }
         return {key: self.file_digest(path) for key, path in private_paths.items()}
+
+    def test_phase1_git_status_summary_uses_read_only_optional_locks(self) -> None:
+        from project_moe_gui import toolchain
+
+        calls: list[dict] = []
+
+        def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            calls.append({"command": command, **kwargs})
+            return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch("project_moe_gui.toolchain.subprocess.run", fake_run):
+                payload = toolchain.git_status_summary(Path(tmp))
+
+        self.assertEqual(payload["token"], "ok", payload)
+        self.assertTrue(payload["read_only_git_optional_locks"])
+        self.assertEqual(payload["git_optional_locks"], "0")
+        self.assertEqual(calls[0]["env"]["GIT_OPTIONAL_LOCKS"], "0")
 
     def test_phase1_readiness_checker_accepts_clean_target_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
