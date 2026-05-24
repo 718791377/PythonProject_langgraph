@@ -55,6 +55,60 @@ documents:
     canonical_path: docs_bilingual/north_star_plan.md
     zh_cn_path: docs_bilingual/north_star_plan.zh-CN.md
 
+  - doc_id: business_management_source_synthesis
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/business_management_source_synthesis.md
+    zh_cn_path: docs_bilingual/product_lifecycle/business_management_source_synthesis.zh-CN.md
+
+  - doc_id: codex_durable_team_platform_build_lifecycle
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/codex_durable_team_platform_build_lifecycle.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_durable_team_platform_build_lifecycle.zh-CN.md
+
+  - doc_id: codex_platform_inventory_map
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_inventory_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md
+
+  - doc_id: codex_platform_project_canvas
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_project_canvas.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_project_canvas.zh-CN.md
+
+  - doc_id: codex_project_consumption_lifecycle
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/codex_project_consumption_lifecycle.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_project_consumption_lifecycle.zh-CN.md
+
+  - doc_id: lifecycle_tailoring_rules
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md
+    zh_cn_path: docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md
+
+  - doc_id: one_person_company_inventory_map
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_inventory_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md
+
+  - doc_id: pmi_project_management_reference_map
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md
+
+  - doc_id: product_business_document_lifecycle
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/product_business_document_lifecycle.md
+    zh_cn_path: docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md
+
   - doc_id: codex_cli_personal_production_durable_team_playbook
     doc_class: implementation_plan
     status: draft

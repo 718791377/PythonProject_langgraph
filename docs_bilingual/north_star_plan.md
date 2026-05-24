@@ -13,7 +13,7 @@ status: draft
 
 This is the metrics-layer North Star plan for the Codex CLI personal production durable-team platform. It translates the white-paper narrative, MRD requirements, and product-lifecycle inventory maps into measurable direction. It is not runtime evidence that a durable or persistent team is currently running.
 
-Fresh source evidence for this refresh comes from ignored extraction artifacts generated on 2026-05-24T09:22:30+00:00 under `.omx/state/langgraph/extraction/`: 54 sources, 31 Business Management sources, 23 PMP sources, 31 PDFs / 9,288 pages, 9 EPUBs / 363 spine items, 14 Markdown full-text files, and 19,043,382 extracted text characters. The tracked document records synthesis only; source text and extraction logs remain uncommitted.
+Fresh source evidence for this refresh comes from ignored extraction artifacts generated on 2026-05-24T09:22:30+00:00 under `.omx/state/langgraph/extraction/`: `fresh_source_manifest.json`, `fresh_source_synthesis.json`, and `fresh_source_items.jsonl`. The extraction covers 54 sources: 31 Business Management sources, 23 PMP sources, 31 PDFs / 9,288 pages, 9 EPUBs / 363 spine items, 14 Markdown full-text files, and 19,043,382 extracted text characters. The tracked document records synthesis only; source text, per-unit extraction streams, and extraction logs remain uncommitted.
 
 ## Primary North Star Metric
 
