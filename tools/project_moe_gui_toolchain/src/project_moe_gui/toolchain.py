@@ -36,6 +36,15 @@ NAMESPACE_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
 READ_CLI_CONTRACT_COMMANDS = ("project-status", "list-sessions", "status")
 READ_ASSERTION_COMMANDS = ("assert-on",)
 PHASE1_EXPECTED_WRITE_COMMANDS = ("project-on", "project-off", "on", "off", "assert-on")
+BOOTSTRAP_BLOCKER_CAPABILITIES = {
+    "blocked:missing_agent_toml": "agent_toml",
+    "blocked:missing_private_prompt_source": "private_prompt_source",
+    "blocked:missing_mode_cli": "mode_cli",
+    "blocked:phase1_write_command_surface_incomplete": "mode_cli_write_commands",
+    "blocked:missing_phase1_wrapper": "phase1_wrapper",
+    "blocked:missing_moe_activation_hook": "startup_activation_hook",
+    "blocked:missing_phase1_operator_docs": "operator_docs",
+}
 DEFAULT_ON_WRAPPER = Path("thesis-moe-on.cmd")
 DEFAULT_OFF_WRAPPER = Path("thesis-moe-off.cmd")
 DEFAULT_STARTUP_HOOK_CANDIDATES = (
@@ -778,6 +787,43 @@ def validate_cli_payload(command: str, payload: dict[str, Any] | None) -> list[d
     return errors
 
 
+def classify_phase1_adaptation_lane(errors: list[dict[str, Any]]) -> dict[str, Any]:
+    if not errors:
+        return {
+            "adaptation_lane": "ready",
+            "control_mode_allowed": True,
+            "bootstrap_required": False,
+            "bootstrap_missing_capabilities": [],
+            "repair_required": False,
+            "lane_reason": "phase1_readiness_checker_passed",
+        }
+    codes = [str(error.get("code") or "") for error in errors]
+    missing_capabilities = sorted(
+        {
+            BOOTSTRAP_BLOCKER_CAPABILITIES[code]
+            for code in codes
+            if code in BOOTSTRAP_BLOCKER_CAPABILITIES
+        }
+    )
+    if missing_capabilities:
+        return {
+            "adaptation_lane": "bootstrap",
+            "control_mode_allowed": False,
+            "bootstrap_required": True,
+            "bootstrap_missing_capabilities": missing_capabilities,
+            "repair_required": False,
+            "lane_reason": "phase1_contract_surface_missing",
+        }
+    return {
+        "adaptation_lane": "repair",
+        "control_mode_allowed": False,
+        "bootstrap_required": False,
+        "bootstrap_missing_capabilities": [],
+        "repair_required": True,
+        "lane_reason": "phase1_contract_surface_present_but_blocked",
+    }
+
+
 def check_cli_contract(root: Path, mode_cli: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     errors: list[dict[str, Any]] = []
     details: dict[str, Any] = {"mode_cli": norm(mode_cli), "commands_checked": [], "assertion_commands_checked": [], "validated_fields": {}}
@@ -1015,12 +1061,14 @@ def check_phase1_readiness(
     errors.extend(hook_errors)
     operator_doc_details, operator_doc_errors = inspect_operator_docs(root, operator_doc_paths or list(DEFAULT_OPERATOR_DOC_CANDIDATES))
     errors.extend(operator_doc_errors)
+    lane = classify_phase1_adaptation_lane(errors)
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "check_project_moe_phase1_readiness",
         "ok": not errors,
         "token": "ok" if not errors else errors[0]["code"],
         "readiness_status": "ready" if not errors else "blocked",
+        **lane,
         "read_only": True,
         "writes_target_project": False,
         "target_project_root": str(root),

@@ -35,6 +35,7 @@ Current known local facts:
 - This follow-up also adds a private-prompt source location readiness gate: the read-only checker confirms `private_prompt_source` exists inside the target project and does not point at `.codex/agents/`, `.omx/state/`, `tools/project_moe_gui/`, or Project MOE GUI managed artifacts; the gate checks only path and existence and does not read or copy private prompt text.
 - This follow-up also adds an `assert-on` read-only assertion readiness gate: the read-only checker executes and validates `assert-on --json`, allows `disabled` / `blocked:moe_disabled` as closed-state fail-closed tokens, and requires `effective_enabled`, `effective_source`, the stable envelope, and no write-result fields; unknown tokens, missing fields, or write-field exposure fail closed.
 - This follow-up also hardens the startup activation-checkpoint readiness gate: target startup / launcher / `AGENTS.md` surfaces must explicitly mention `thesis_moe_mode.py status --json` and the startup, resume, continue, reload, and phase-change checkpoints; a vague startup-only hook now fails closed as `blocked:moe_activation_hook_incomplete`, and a missing hook remains `blocked:missing_moe_activation_hook`.
+- This follow-up also makes the Phase 1 readiness checker emit machine-readable adaptation lanes: `adaptation_lane = ready | bootstrap | repair`, `control_mode_allowed`, `bootstrap_required`, `bootstrap_missing_capabilities`, and `repair_required`, so projects with Phase 1, projects without Phase 1, and partial-repair projects are not confused.
 - These facts only mean repository fixture and contract-gate evidence exists; the read-only inventory for `D:\PythonProject_paper_suggest` shows a Phase 1 candidate implementation, but it still needs formal readiness-checker evidence; they do not mean a real target-project GUI is ready for operation.
 - Without explicit remote-publication approval, GitLab/GitHub are outside this plan's automatic execution scope.
 
@@ -612,6 +613,7 @@ Phase-level summary:
 - [x] Define the compatible paths: main-session takeover, brief-based fresh dispatch, and durable brief.
 - [x] Define the Ready Lane for projects that already have Phase 1: GUI install and control require a passing read-only readiness checker.
 - [x] Define the Bootstrap Lane for projects without Phase 1: report blockers / scaffold / bootstrap plans only, and do not control state directly before Phase 1 exists.
+- [x] Emit machine-readable `adaptation_lane`, `control_mode_allowed`, `bootstrap_required`, `bootstrap_missing_capabilities`, and `repair_required` from the Phase 1 readiness checker, with fixture coverage for ready / bootstrap / repair.
 
 #### Phase 1: target-project command-line state model
 

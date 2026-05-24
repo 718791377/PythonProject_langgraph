@@ -553,6 +553,11 @@ else:
             self.assertEqual(payload["token"], "ok", payload)
             self.assertTrue(payload["read_only"])
             self.assertFalse(payload["writes_target_project"])
+            self.assertEqual(payload["adaptation_lane"], "ready")
+            self.assertTrue(payload["control_mode_allowed"])
+            self.assertFalse(payload["bootstrap_required"])
+            self.assertFalse(payload["repair_required"])
+            self.assertEqual(payload["bootstrap_missing_capabilities"], [])
             self.assertFalse(payload["git_status"]["dirty"])
             self.assertTrue(payload["private_prompt_source"]["exists"])
             self.assertFalse(payload["private_prompt_source"]["managed_by_toolchain"])
@@ -601,9 +606,45 @@ else:
 
             blocker_codes = {item["code"] for item in payload["blockers"]}
             self.assertEqual(payload["token"], "blocked:dirty_target_project", payload)
+            self.assertEqual(payload["adaptation_lane"], "bootstrap")
+            self.assertFalse(payload["control_mode_allowed"])
+            self.assertTrue(payload["bootstrap_required"])
+            self.assertIn("phase1_wrapper", payload["bootstrap_missing_capabilities"])
             self.assertIn("blocked:dirty_target_project", blocker_codes)
             self.assertIn("blocked:missing_phase1_wrapper", blocker_codes)
             self.assertTrue(payload["git_status"]["dirty"])
+
+    def test_phase1_readiness_checker_classifies_empty_target_as_bootstrap_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-empty-target"
+            project.mkdir()
+            (project / "README.md").write_text("# empty target\n", encoding="utf-8")
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertEqual(payload["adaptation_lane"], "bootstrap")
+            self.assertFalse(payload["control_mode_allowed"])
+            self.assertTrue(payload["bootstrap_required"])
+            self.assertFalse(payload["repair_required"])
+            self.assertIn("agent_toml", payload["bootstrap_missing_capabilities"])
+            self.assertIn("mode_cli", payload["bootstrap_missing_capabilities"])
+            self.assertIn("phase1_wrapper", payload["bootstrap_missing_capabilities"])
+            self.assertIn("startup_activation_hook", payload["bootstrap_missing_capabilities"])
+            self.assertIn("operator_docs", payload["bootstrap_missing_capabilities"])
+            self.assertIn("blocked:missing_agent_toml", blocker_codes)
+            self.assertIn("blocked:missing_mode_cli", blocker_codes)
+            self.assertIn("blocked:missing_phase1_wrapper", blocker_codes)
 
     def test_phase1_readiness_checker_blocks_missing_operator_docs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -657,6 +698,37 @@ else:
             missing = next(item["missing"] for item in payload["blockers"] if item["code"] == "blocked:phase1_operator_docs_incomplete")
             self.assertIn("project-off", missing)
             self.assertIn("status --json", missing)
+
+    def test_phase1_readiness_checker_classifies_incomplete_docs_as_repair_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-repair-docs"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-repair-docs", session_id="session-phase1-repair-docs")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "docs_bilingual" / "operations" / "thesis_moe_mode_usage.zh-CN.md").write_text(
+                "# Incomplete docs\n\nUse `project-on` only.\n",
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertEqual(payload["adaptation_lane"], "repair")
+            self.assertFalse(payload["control_mode_allowed"])
+            self.assertFalse(payload["bootstrap_required"])
+            self.assertTrue(payload["repair_required"])
+            self.assertEqual(payload["bootstrap_missing_capabilities"], [])
+            self.assertIn("blocked:phase1_operator_docs_incomplete", blocker_codes)
 
     def test_phase1_readiness_checker_blocks_incomplete_startup_hook(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

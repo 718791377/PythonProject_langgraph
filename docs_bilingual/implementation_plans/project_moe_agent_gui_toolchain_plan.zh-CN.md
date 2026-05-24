@@ -35,6 +35,7 @@ related_docs:
 - 本次后续变更继续新增私有提示源位置 readiness gate：只读 checker 会确认 `private_prompt_source` 存在于目标项目内，且不指向 `.codex/agents/`、`.omx/state/`、`tools/project_moe_gui/` 或 Project MOE GUI managed artifacts；该 gate 只检查路径和存在性，不读取或复制私有提示全文。
 - 本次后续变更继续新增 `assert-on` 只读断言 readiness gate：只读 checker 会执行并校验 `assert-on --json`，允许 `disabled` / `blocked:moe_disabled` 作为关闭态 fail-closed token，但要求 `effective_enabled`、`effective_source`、稳定 envelope 与无写入结果字段；未知 token、缺失字段或暴露写入字段时 fail closed。
 - 本次后续变更继续加固 startup 激活检查点 readiness gate：目标 startup / launcher / `AGENTS.md` 表面必须明确包含 `thesis_moe_mode.py status --json`，并覆盖 startup、resume、continue、reload 和 phase change 检查点；只写模糊 startup 钩子会以 `blocked:moe_activation_hook_incomplete` fail closed，完全缺失时仍为 `blocked:missing_moe_activation_hook`。
+- 本次后续变更继续让 Phase 1 readiness checker 输出机器可读适配路线：`adaptation_lane = ready | bootstrap | repair`、`control_mode_allowed`、`bootstrap_required`、`bootstrap_missing_capabilities` 和 `repair_required`，避免有 Phase 1 项目、缺 Phase 1 项目和局部修复项目混淆。
 - 这些事实只表示本仓库 fixture 与契约验证支撑已落地；对 `D:\PythonProject_paper_suggest` 的只读盘点显示其已具备 Phase 1 候选实现，但仍需 readiness checker 形成正式证据；这不表示真实目标项目 GUI 已可操作。
 - 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
 
@@ -612,6 +613,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - [x] 定义 main-session takeover、brief-based fresh dispatch 与 durable brief 三种兼容路径。
 - [x] 定义有 Phase 1 项目的 Ready Lane：只读 readiness checker 通过后才能安装与控制 GUI。
 - [x] 定义无 Phase 1 项目的 Bootstrap Lane：只输出 blocker / scaffold / bootstrap 计划，补齐 Phase 1 前不得直接控制。
+- [x] 在 Phase 1 readiness checker 中输出机器可读 `adaptation_lane`、`control_mode_allowed`、`bootstrap_required`、`bootstrap_missing_capabilities` 和 `repair_required`，并用 fixture 覆盖 ready / bootstrap / repair 三类。
 
 #### Phase 1：目标项目命令行状态模型
 
