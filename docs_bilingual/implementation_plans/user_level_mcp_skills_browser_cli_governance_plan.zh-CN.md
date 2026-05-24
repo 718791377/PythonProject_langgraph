@@ -5,8 +5,8 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: baseline_policy_checker_complete
-last_reviewed_at: 2026-05-23
+implementation_state: baseline_policy_checker_archived
+last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
@@ -16,7 +16,7 @@ source_reference_file: reference_files/1.md
 
 ## 0. 当前复核结论
 
-截至 2026-05-23，本方案作为“执行前蓝图”已具备进入 OpenSpec 小步切片的颗粒度。`status: draft` 表示用户级运行时尚未按本方案全部落地，不表示本文缺少执行结构。
+截至 2026-05-24，本方案作为“执行前蓝图”已具备进入 OpenSpec 小步切片的颗粒度。`status: draft` 表示用户级运行时尚未按本方案全部落地，不表示本文缺少执行结构。第 1 个 policy/checker baseline 切片已完成本地实现、验证、stable spec 提升和 OpenSpec archive 收口；后续应从第 2 个 `skills2cli` MVP 切片继续。
 
 复核结论：
 
@@ -28,7 +28,7 @@ source_reference_file: reference_files/1.md
 - 未勾选清单是后续实施状态，不是方案缺口；在对应代码、checker、安装产物和 receipt 都完成前，不得把 lane 标为 `active`。
 - 推进原则是先 baseline 后能力：先完成 token/risk、授权 receipt、update receipt 与 evidence redaction，再实现 `skills2cli`、`mcp2cli`、browser 与 `wecom-cli` 等具体能力。
 
-本方案下一步不是继续扩大范围，而是选择第一个 OpenSpec change，把第 16 节的第 1 个切片落到 repo-local checker/test，再按本地提交流程推进。
+本方案下一步不是继续扩大范围，而是从第 16 节第 2 个 `skills2cli` MVP 切片继续：先建立 compact index/search/show 与 warning audit 的 repo-local helper/test，再决定是否安装用户级 wrapper。
 
 ## 1. 目的
 

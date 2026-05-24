@@ -4,8 +4,8 @@ lang: en
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: baseline_policy_checker_complete
-last_reviewed_at: 2026-05-23
+implementation_state: baseline_policy_checker_archived
+last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
@@ -15,7 +15,7 @@ source_reference_file: reference_files/1.md
 
 ## 0. Current review verdict
 
-As of 2026-05-23, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure.
+As of 2026-05-24, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure. The first policy/checker baseline slice has completed local implementation, validation, stable spec promotion, and OpenSpec archive closeout; continue with the second `skills2cli` MVP slice next.
 
 Review verdict:
 
@@ -26,7 +26,7 @@ Review verdict:
 - Unchecked checklist items are downstream implementation state, not plan gaps. A lane must not be marked `active` until its code, checker, install artifact, and receipt evidence all exist.
 - The sequence is baseline before capability: finish token/risk, authorization receipt, update receipt, and evidence-redaction controls before implementing `skills2cli`, `mcp2cli`, browser automation, and `wecom-cli` capability surfaces.
 
-The next action is not to broaden this plan. Pick the first OpenSpec change and implement section 16 slice 1 as repo-local checker/test work, then proceed through the local commit workflow.
+The next action is not to broaden this plan. Continue with section 16 slice 2, the `skills2cli` MVP: build compact index/search/show and warning-audit repo-local helper/tests first, then decide whether to install a user-level wrapper.
 
 ## 1. Purpose
 
@@ -578,7 +578,7 @@ Fine-grained implementation checklist:
 - [ ] Implement `wecom-cli gui attach` with global WXWork lease and one-task authorization gate; keep it disabled by default.
 - [ ] Add `wecom-cli` process/window read-only, secret-redaction, GUI-unauthorized-fail, and lease-exclusivity tests.
 - [ ] Register every new test or checker in `tools/ci/ci_test_manifest.json` or the shared local-gate call chain.
-- [ ] Run the precommit update/archive gate, local gate, and local MR review for every completed OpenSpec change.
+- [x] Run the precommit update/archive gate, local gate, and local MR review for every completed OpenSpec change.
 - [ ] Record rollback-ready receipts after every user-level installation; lanes without receipts must not be marked active.
 
 

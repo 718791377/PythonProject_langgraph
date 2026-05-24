@@ -6,5 +6,5 @@
 - [x] Add regression tests for valid surfaces, missing authorization fields, missing port-governance markers, and missing spec markers.
 - [x] Register the checker in the aggregate OpenSpec guard, safety-rule backing registry, and CI manifest.
 - [x] Update the bilingual implementation plan checklist for completed baseline items.
-- [ ] Run OpenSpec validation, precommit update/archive gate, local gate, and local MR review.
-- [ ] Commit and integrate through the local-main-first workflow.
+- [x] Run OpenSpec validation, precommit update/archive gate, local gate, and local MR review.
+- [x] Commit and integrate through the local-main-first workflow.
