@@ -81,6 +81,8 @@ The white-paper target is not a generic multi-agent story. It is a governed Code
 
 This inventory is intentionally smaller than the downstream one-person-company operating-system inventory. The Codex platform should build developer orchestration mechanisms; it should not absorb downstream customer, revenue, finance, legal, or operations truth. The count authority is `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md`; the downstream comparison authority is `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`.
 
+The downstream operating-system comparison is explicit: 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan that translates this white-paper narrative into the primary success metric, input metrics, guardrails, and staged decision thresholds.
+
 ## PMI Delivery Discipline
 
 The platform narrative becomes actionable only when delivery follows a process-group discipline. Every release slice should identify Inputs, Tools and Techniques, and Outputs, then move through initiating, planning, executing, monitoring and controlling, and closing. This keeps AI-assisted delivery inspectable and prevents hidden automation from becoming approval authority. The explicit reference map is `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md`: PMBOK 8 is the primary value-delivery and tailoring overlay, PMBOK 7 and PMBOK 6 are supplements, Process Groups supplies delivery gates, Agile Practice Guide supplies adaptive/hybrid delivery, Program Management supplies multi-initiative alignment, Portfolio Management supplies value/capacity balancing, and the PMO Practice Guide supplies governance-service patterns.
@@ -118,5 +120,6 @@ Tailoring has five explicit outcomes. Use full architecture for affected scopes 
 ## Downstream Documents
 
 - `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md` is the MRD; it defines target project types, capability profiles, runtime-owner boundaries, and risk controls.
-- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md` is the North Star and implementation-bridge plan; it turns this narrative into staged targets, metrics, lanes, and release slices.
+- `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan; it turns this narrative into a measurable operating system.
+- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md` is the implementation-bridge plan; it turns this narrative and the North Star into staged targets, lanes, and release slices.
 - `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md` is the lifecycle reference; it defines how white papers, MRDs, North Star plans, PRDs, technical designs, release plans, and retrospectives relate.

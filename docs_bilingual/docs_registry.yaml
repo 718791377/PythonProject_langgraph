@@ -49,6 +49,12 @@ documents:
     canonical_path: docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md
     zh_cn_path: docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.zh-CN.md
 
+  - doc_id: north_star_plan
+    doc_class: north_star_plan
+    status: draft
+    canonical_path: docs_bilingual/north_star_plan.md
+    zh_cn_path: docs_bilingual/north_star_plan.zh-CN.md
+
   - doc_id: codex_cli_personal_production_durable_team_playbook
     doc_class: implementation_plan
     status: draft

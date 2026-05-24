@@ -51,12 +51,13 @@ status: draft
 
 ## 1.1 生命周期对齐
 
-本 draft 是战略层的北极星与实施桥接计划。它消费白皮书和 MRD：
+本 draft 是战略层的实施桥接计划。它消费白皮书、MRD 和北极星 Plan：
 
 - `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` 是白皮书英文主版；它解释为什么这个方向存在。
 - `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md` 是 MRD 英文主版；它定义目标项目类型、能力画像、运行归属边界和风险控制。
+- `docs_bilingual/north_star_plan.zh-CN.md` 是指标层北极星 Plan；它定义主成功指标、输入指标、护栏指标和分阶段决策阈值。
 
-本方案向后续 PRD、architecture、test、release、rollback、adoption 和 retrospective 文档输出阶段目标、lane 边界、release slices、指标和非目标。PRD 是产品需求文档，architecture 是架构设计文档，test 是测试计划，release 是发布计划，rollback 是回滚计划，adoption 是采用报告，retrospective 是复盘文档。
+本方案向后续 PRD、architecture、test、release、rollback、adoption 和 retrospective 文档输出阶段目标、lane 边界、release slices、实现责任和非目标。PRD 是产品需求文档，architecture 是架构设计文档，test 是测试计划，release 是发布计划，rollback 是回滚计划，adoption 是采用报告，retrospective 是复盘文档。
 
 本 draft 的 PMBOK8 value-delivery overlay：
 

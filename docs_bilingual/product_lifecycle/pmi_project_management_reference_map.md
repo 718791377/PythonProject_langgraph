@@ -13,7 +13,7 @@ These references are an overlay. They do not replace white papers, BRD, MRD, Nor
 
 ## Local PMP Source Coverage
 
-The local `PMP/` directory was read from local files only. No internet lookup is required for this refresh. The tracked repository records the following coverage summary and synthesized governance mapping only.
+The local `PMP/` directory was read from local files only for this refresh. The fresh extraction evidence was regenerated on 2026-05-24T09:22:30+00:00 and recorded 23 PMP-family sources, including PDF pages, EPUB spine items, and Markdown full text. The tracked repository records the following coverage summary and synthesized governance mapping only.
 
 | Local reference | Format | Coverage | Primary governance use |
 | --- | --- | ---: | --- |
@@ -30,18 +30,32 @@ The local `PMP/` directory was read from local files only. No internet lookup is
 | `Project Management Offices a Practice Guide.epub` | EPUB | 42 spine items | PMO function, governance service, enablement, and oversight pattern |
 | `PMP_MD/*.md` | Markdown | 12 local articles | PMBOK 8 and AI-era interpretation notes for local synthesis |
 
+## Latest-Primary Authority Rule
+
+Use the latest official or most readable reference present in the local `PMP/` source set as the primary authority for its knowledge family. Older versions and companion translations are used only to clarify vocabulary, historical continuity, translation, and process detail.
+
+| Knowledge family | Primary for this refresh | Supplemental or historical use |
+| --- | --- | --- |
+| Project management body of knowledge | `PMBOK® Guide 8th Edition .pdf` | PMBOK 7 supports principles and value-delivery continuity; PMBOK 6 supports process vocabulary and I/T/O structure |
+| Process-group execution grammar | `Process groups _ a practice guide.pdf` | Chinese ProcessGroups PDF is a companion reference when extracted text is readable enough for terminology checks |
+| Agile and hybrid delivery | English `The Agile practice guide.pdf` in this local source set | Chinese Agile PDF is companion-only because the extraction audit records very low text; update this rule only after a newer official guide is added locally and freshly extracted |
+| Program governance | `The Standard for Program Management - Fifth Edition.epub` | Earlier program-management concepts should be treated as historical continuity only if added later |
+| Portfolio governance | `The Standard for Portfolio Management-Fourth Edition.pdf` in this local source set | Chinese portfolio PDF is companion-only because the extraction audit records very low text |
+| PMO governance services | `Project Management Offices a Practice Guide.epub` | Earlier PMO practice material is supplemental only if added later |
+
+Low-text companion PDFs are never treated as the primary authority for this repository. When a public PMI catalog or local source set changes, add the newer source to `PMP/`, rerun page/spine/full-text extraction, and update this map before changing lifecycle rules.
+
 ## Process-Group Operating Overlay For Every Layer
 
 When a lifecycle layer affects execution, write it in the same process-group discipline:
 
-| Process group | Lifecycle use | Expected evidence |
-| --- | --- | --- |
-| Initiating | Decide whether the layer or change should exist | Purpose, value hypothesis, authorization, stakeholders, scope boundary, and initial risks |
-| Planning | Decide how the layer or change will be performed | Inputs, tailored governance depth, acceptance criteria, risk response, validation, release, rollback, owner map, and communications |
-| Executing | Produce the layer deliverable or delivery increment | Drafts, code, tests, templates, docs, agent work, review comments, and controlled implementation artifacts |
-| Monitoring and Controlling | Inspect and control the work while it is in flight | Metric checks, quality checks, issue log, change-control decisions, local gate evidence, CI evidence, and acceptance deltas |
-| Closing | Finish, archive, learn, or deliberately stop | Final artifact, OpenSpec archive or project closeout, stable-spec/doc sync, lessons learned, and next-cycle inputs |
-
+| Process group | Inputs | Tools and Techniques | Outputs |
+| --- | --- | --- | --- |
+| Initiating | Purpose, value hypothesis, authorization, stakeholder signal, scope boundary, initial risks | Charter-like framing, stakeholder identification, problem framing, value-case check | Decision that the layer or change should exist, named owner, scope boundary, initial risk log |
+| Planning | Approved purpose, upstream layer outputs, constraints, tailored governance depth, risk log | Decomposition, acceptance criteria, validation design, release/rollback planning, owner mapping, communication planning | Work plan, I/T/O checklist, acceptance criteria, validation path, release/rollback boundary, communications plan |
+| Executing | Approved plan, source evidence, templates, worktree/ownership state, agent boundaries | Drafting, implementation, reviews, tests, controlled agent delegation, documentation updates | Drafts, code, tests, templates, docs, agent work products, review comments, controlled implementation artifacts |
+| Monitoring and Controlling | Active work products, metrics, issues, review feedback, local gate output, CI evidence | Quality checks, change control, variance review, risk response, diff review, gate reruns | Issue log, change decisions, metric checks, local-gate evidence, CI evidence, acceptance deltas, rollback readiness |
+| Closing | Accepted work, final evidence, archive candidates, lessons, residual risks | Closeout review, archive/sync, release note update, retrospective, next-cycle triage | Final artifact, OpenSpec archive or project closeout, stable-spec/doc sync, lessons learned, next-cycle inputs |
 
 ## PMBOK 8 Primary Overlay
 

@@ -1,6 +1,6 @@
 # Business Management 来源库综合
 
-本文基于 2026-05-23 对忽略目录 `D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP` 的 fresh extraction 结果，总结与本仓库相关的经营、产品、架构与交付启发。本文是 `docs_bilingual/product_lifecycle/` 的综合层，不替代原始书籍，也不复制长段版权正文。
+本文基于 2026-05-24T09:22:30+00:00 对忽略目录 `D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP` 重新生成的 fresh extraction 结果，总结与本仓库相关的经营、产品、架构与交付启发。该抽取产物是本次刷新的证据，不是可替代源文件的缓存结论。本文是 `docs_bilingual/product_lifecycle/` 的综合层，不替代原始书籍，也不复制长段版权正文。
 
 ## Fresh Extraction 范围
 

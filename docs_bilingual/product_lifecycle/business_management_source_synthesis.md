@@ -4,7 +4,7 @@ This document summarizes repository-relevant lessons from the fresh extraction r
 
 ## Fresh Extraction Scope
 
-This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/` generated on 2026-05-23.
+This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/` freshly regenerated on 2026-05-24T09:22:30+00:00. These artifacts are evidence for this refresh, not a substitute for the source files and not a reusable conclusion cache.
 
 - Manifest: `fresh_source_manifest.json`
 - Per-unit extraction log: `fresh_source_items.jsonl`

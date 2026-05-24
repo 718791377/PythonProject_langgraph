@@ -168,13 +168,13 @@ The fresh architecture note fixes the target at 60 core documents. This canonica
 
 ## Process-Group Operating Gate
 
-| Process group | Gate question | Required output for this inventory |
-| --- | --- | --- |
-| Initiating | Should a business line, document family, or agent surface exist | Customer problem, value case, owner, and scope boundary |
-| Planning | How should it run this cycle | Success criteria, dependencies, cash and time constraints, risk response, and human-vs-agent boundary |
-| Executing | What is being shipped or operated now | Draft artifact, active plan, customer-facing work, and validation evidence |
-| Monitoring and Controlling | Is the company system still healthy | Metrics review, issue log, cash and support checks, customer feedback, and rollback or stop triggers |
-| Closing | What becomes durable after the cycle | Updated policy or playbook, review artifact, archived decision, and next-cycle input |
+| Process group | Inputs | Tools and Techniques | Outputs |
+| --- | --- | --- | --- |
+| Initiating | Customer problem, value case, candidate business line, document family, agent surface, cash/time boundary | Customer-evidence review, owner mapping, revenue/risk framing, scope and stop-condition framing | Customer problem, value case, owner, scope boundary, initial risk or stop condition |
+| Planning | Initiation output, cycle capacity, dependencies, cash and time constraints, support load, human-vs-agent boundary | Cycle planning, offer/segment review, risk response, validation planning, budget/runway check, human review design | Success criteria, dependency map, cash/time constraints, risk response, human-vs-agent boundary |
+| Executing | Approved cycle plan, customer evidence, operating templates, agent rules, validation plan | Shipping, selling, supporting, interviewing, measuring, controlled AI drafting/checking | Draft artifact, active plan, customer-facing work, validation evidence |
+| Monitoring and Controlling | Metrics, issue log, cash/support signals, customer feedback, risk triggers | Metrics review, cash check, support review, customer feedback synthesis, rollback/stop decision | Metrics review, issue log, cash and support checks, customer feedback, rollback or stop triggers |
+| Closing | Cycle outputs, decisions, financial/support evidence, lessons | Monthly review, policy/playbook update, archive, next-cycle prioritization | Updated policy or playbook, review artifact, archived decision, next-cycle input |
 
 ## Use Rule
 

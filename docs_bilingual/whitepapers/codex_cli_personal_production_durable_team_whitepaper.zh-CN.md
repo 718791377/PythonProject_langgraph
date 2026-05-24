@@ -73,6 +73,8 @@ status: draft
 
 该清单有意小于下游一人公司经营系统清单。Codex 平台应建设开发者编排机制，而不是吸收下游客户、收入、财务、法律或运营 truth。数量权威见 `docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md`；下游一人公司对照权威见 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`。
 
+下游经营系统对照是明确的：5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍、12 个最小启动文档。`docs_bilingual/north_star_plan.zh-CN.md` 是指标层北极星 Plan，用于把本文叙事转成主成功指标、输入指标、护栏指标与分阶段决策阈值。
+
 ## PMI 交付纪律
 
 平台叙事只有落到过程组式交付纪律中才可执行。每个发布切片都应识别输入、工具与技术、输出，然后经过启动、规划、执行、监控与控制、收尾。这让 AI 辅助交付保持可检查，并防止隐藏自动化变成审批权威。显式参考映射见 `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md`：PMBOK 第8版是价值交付和裁剪的主要叠加层，PMBOK 第7版和第6版是补充，Process Groups 提供交付门，Agile Practice Guide 提供适应式/混合交付，项目集管理提供多倡议对齐，项目组合管理提供价值/容量平衡，PMO 实践指南提供治理服务模式。
@@ -108,5 +110,6 @@ status: draft
 ## Downstream documents
 
 - `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.zh-CN.md` 是 MRD；它定义目标项目类型、能力画像、运行归属边界和风险控制。
-- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md` 是北极星与实施桥接方案；它把本文叙事转换成阶段目标、指标、lane 和发布切片。
+- `docs_bilingual/north_star_plan.zh-CN.md` 是指标层北极星 Plan；它把本文叙事转换成可度量的运行系统。
+- `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md` 是实施桥接方案；它把本文叙事和北极星转换成阶段目标、lane 和发布切片。
 - `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md` 是生命周期参考；它定义白皮书、MRD、北极星计划、PRD、技术设计、发布计划和复盘之间的关系。

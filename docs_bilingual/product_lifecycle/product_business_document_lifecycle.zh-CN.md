@@ -447,4 +447,8 @@
 
 小型内部工具通常需要简短战略或北极星说明、指标说明、PRD、技术设计、owner 或角色说明、implementation plan、test plan、运营说明和 retrospective。implementation plan 是实施方案，用来把已选阶段拆成可执行工作；test plan 是测试计划，用来定义验证方式；retrospective 是复盘记录，用来沉淀经验。公共产品、商业产品或长期平台应该补齐白皮书、BRD、MRD、roadmap、metrics 和 release governance。roadmap 是路线图，用来安排后续版本；metrics 是指标文档，用来定义衡量方式；release governance 是发布治理，用来定义上线门禁和回滚要求。
 
-项目越影响金钱、用户、信任、合规或长期平台行为，这套文档栈就越应该显式化。
+对 Codex CLI durable-team 平台，`docs_bilingual/north_star_plan.zh-CN.md` 是仓库级北极星 Plan。它定义主成功指标、输入指标、护栏指标、分阶段决策阈值，以及 12 层平台/下游清单对照。
+
+对下游一人公司操作系统，轻量起步底线是 `one_person_company_inventory_map.zh-CN.md` 定义的 12 个最小启动文档：`vision.md`、`business-model.md`、`customer-segments.md`、`positioning.md`、`offer-map.md`、`delivery-plan.md`、`finance-model.md`、`ops-playbook.md`、`metrics.yaml`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。只有当客户证据、收入暴露、交付复杂度、治理风险或长期运营成本证明需要更深覆盖时，下游项目才应扩展到 60 文档系统。
+
+项目越影响金钱、用户、信任、合规或长期平台行为，这套文档栈就越应该显式化。轻量模式只有在低风险早期工作中才能覆盖整个项目；其他情况应让高风险阶段或模块保持完整架构路径，只对边界清晰的低风险切片轻量化。

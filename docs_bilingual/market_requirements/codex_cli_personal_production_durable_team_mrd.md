@@ -60,6 +60,8 @@ Market requirements must now be traced to the Codex platform inventory:
 
 For downstream one-person-company work, the MRD belongs in the downstream repository. That MRD owns local customer evidence, market segmentation, pricing signals, channel evidence, finance assumptions, product commitments, and support expectations. The downstream count reference is `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`.
 
+The downstream operating-system target is explicit but not owned by this platform MRD: 12 layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and a 12-document minimal startup floor. Platform requirements may provide templates and governance checks for that target, but they must not become the downstream business runtime truth.
+
 ## Tailoring Requirements
 
 Market requirements must not force every project to create the maximum document stack. Use `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md` to choose the minimum sufficient architecture depth. Use `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` as the PMI reference map: PMBOK 8 frames value delivery and tailoring, PMBOK 7 and PMBOK 6 supplement principles and process vocabulary, Process Groups provides delivery gates, Agile Practice Guide covers adaptive/hybrid work, Program Management covers related initiatives, Portfolio Management covers value/capacity trade-offs, and the PMO Practice Guide covers governance services.
@@ -72,12 +74,15 @@ Market requirements must not force every project to create the maximum document 
 
 ## Process-Group Evidence For Market Requirements
 
-Execution-facing MRD items must state:
+Execution-facing MRD items must state per-process-group Inputs, Tools and Techniques, and Outputs:
 
-- Inputs: customer evidence, market signals, support feedback, local constraints, and source lifecycle layer inputs.
-- Tools and Techniques: segmentation, positioning, interview synthesis, competitor analysis, adoption-friction analysis, prioritization, and risk review.
-- Outputs: target segment, priority problem, value proposition, acceptance evidence, and decision thresholds for continue, stop, pivot, or research more.
-
+| Process group | Inputs | Tools and Techniques | Outputs |
+| --- | --- | --- | --- |
+| Initiating | Customer evidence, operator pain, market signal, support feedback, platform boundary, source lifecycle inputs | Problem framing, stakeholder analysis, value-case check, non-goal framing | Target segment candidate, priority problem, value hypothesis, authorization boundary |
+| Planning | Initiation output, constraints, capacity, risk, existing lifecycle docs, source-synthesis evidence | Segmentation, positioning, interview synthesis, competitor analysis, prioritization, risk review | MRD scope, success criteria, decision thresholds, evidence plan, stop/pivot criteria |
+| Executing | Approved MRD scope, templates, source evidence, stakeholder feedback | Drafting, research synthesis, requirement decomposition, profile mapping, review | Updated MRD, mapped capability profiles, target architecture links, acceptance evidence |
+| Monitoring and Controlling | Draft MRD, review comments, market changes, gate output, issue log | Change control, adoption-friction review, risk review, local doc checks, diff review | Accepted changes, deferred issues, revised thresholds, validation evidence |
+| Closing | Accepted MRD, final evidence, lessons, archive candidates | Closeout review, doc registry update, OpenSpec/archive sync when applicable, retrospective | Final MRD section, registry/spec sync, lessons learned, next-cycle inputs |
 
 ## Prioritization Signals
 

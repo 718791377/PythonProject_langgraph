@@ -51,12 +51,13 @@ This plan exists to:
 
 ## 1.1 Lifecycle Alignment
 
-This draft is the North Star and implementation-bridge plan for the strategy layer. It consumes the white paper and MRD:
+This draft is the implementation-bridge plan for the strategy layer. It consumes the white paper, MRD, and North Star plan:
 
 - `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` is the white paper; it explains why the direction exists.
 - `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.md` is the MRD; it defines target project types, capability profiles, runtime-owner boundaries, and risk controls.
+- `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan; it defines primary success, input metrics, guardrails, and staged decision thresholds.
 
-This plan outputs staged targets, lane boundaries, release slices, metrics, and non-goals for later PRD, architecture, test, release, rollback, adoption, and retrospective documents.
+This plan outputs staged targets, lane boundaries, release slices, implementation responsibilities, and non-goals for later PRD, architecture, test, release, rollback, adoption, and retrospective documents.
 
 PMBOK8 value-delivery overlay for this draft:
 
@@ -77,6 +78,8 @@ The older ten-layer runtime map in this plan is a historical decomposition for e
 The Codex CLI personal production durable-team target uses this inventory: 12 trunk layers, 4 virtual departments, 24 responsibility domains, 18 cross-cutting modules, 48 core documents, 12 governed AI agents, and 12 recommended books. This is the platform target for reusable Codex orchestration mechanisms. The canonical count map is `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md`.
 
 The downstream personal production one-person-company target uses this larger inventory: 12 trunk layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. This is a downstream business operating-system model and must not be treated as platform repo-local truth. The canonical count map is `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`.
+
+Handoff rule: when a platform release slice creates or changes templates for downstream one-person-company use, it must name whether it supports the 12-document startup floor, the full 60-document system, or a bounded module/phase. It must not claim the downstream business has adopted those documents unless the downstream repository records that evidence.
 
 ### 1.3 Process-Group Execution Contract
 

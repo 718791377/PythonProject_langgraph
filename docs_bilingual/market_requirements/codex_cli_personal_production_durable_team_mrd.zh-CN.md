@@ -58,6 +58,8 @@ status: draft
 
 对于下游一人公司工作，MRD 属于下游仓库。该 MRD 拥有本地客户证据、市场分层、定价信号、渠道证据、财务假设、产品承诺与支持预期。下游数量参考见 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`。
 
+下游经营系统目标是明确的，但不由本平台 MRD 持有：12 层、5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍，以及 12 个最小启动文档底线。平台需求可以为该目标提供模板和治理检查，但不能成为下游业务 runtime truth。
+
 ## 裁剪需求
 
 市场需求不得强制每个项目创建最大文档栈。使用 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 选择最小充分架构深度。使用 `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 作为 PMI 参考图：PMBOK 第8版负责价值交付和裁剪框架，PMBOK 第7版和第6版补充原则与过程词汇，Process Groups 提供交付门，Agile Practice Guide 覆盖适应式/混合工作，项目集管理覆盖相关倡议，项目组合管理覆盖价值/容量取舍，PMO 实践指南覆盖治理服务。
@@ -70,12 +72,15 @@ status: draft
 
 ## 市场需求的过程组式证据
 
-面向执行的 MRD 条目必须说明：
+面向执行的 MRD 条目必须按过程组说明输入、工具与技术、输出：
 
-- 输入：客户证据、市场信号、支持反馈、本地约束与来源生命周期层输入。
-- 工具与技术：分层、定位、访谈综合、竞品分析、采用摩擦分析、优先级排序与风险评审。
-- 输出：目标细分、优先问题、价值主张、验收证据，以及继续、停止、转向或继续研究的决策阈值。
-
+| 过程组 | 输入 | 工具与技术 | 输出 |
+| --- | --- | --- | --- |
+| 启动 | 客户证据、operator pain、市场信号、支持反馈、平台边界、来源生命周期输入 | 问题 framing、干系人分析、价值理由检查、非目标 framing | 候选目标细分、优先问题、价值假设、授权边界 |
+| 规划 | 启动输出、约束、容量、风险、现有生命周期文档、来源综合证据 | segmentation、positioning、访谈综合、竞品分析、优先级排序、风险评审 | MRD 范围、成功标准、决策阈值、证据计划、停止/转向标准 |
+| 执行 | 已批准 MRD 范围、模板、来源证据、干系人反馈 | 起草、研究综合、需求分解、profile mapping、评审 | 更新后的 MRD、已映射能力画像、目标架构链接、验收证据 |
+| 监控与控制 | MRD 草稿、评审意见、市场变化、gate 输出、问题日志 | 变更控制、采用摩擦复核、风险评审、本地文档检查、diff review | 已接受变更、延期问题、修订后的阈值、验证证据 |
+| 收尾 | 已验收 MRD、最终证据、经验教训、归档候选 | 收尾复核、docs registry 更新、适用时 OpenSpec/archive sync、复盘 | 最终 MRD section、registry/spec 同步、经验教训、下一周期输入 |
 
 ## 优先级信号
 

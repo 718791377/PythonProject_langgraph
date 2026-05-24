@@ -135,13 +135,13 @@ The fresh architecture note fixes the target at 48 core documents. This canonica
 
 ## Process-Group Operating Gate
 
-| Process group | Gate question | Required output for this inventory |
-| --- | --- | --- |
-| Initiating | Should a layer, document family, module, or agent surface exist | Purpose, value hypothesis, owner, and scope boundary |
-| Planning | How should it operate | Acceptance criteria, dependencies, risk response, and human-vs-agent boundary |
-| Executing | What is being produced now | Drafted artifact, controlled change set, and validation work |
-| Monitoring and Controlling | Is the operating surface still healthy | Metrics, issue log, review findings, local-gate evidence, and rollback readiness |
-| Closing | What becomes durable after the work ends | Final document or policy, archive record, lessons learned, and next-cycle input |
+| Process group | Inputs | Tools and Techniques | Outputs |
+| --- | --- | --- | --- |
+| Initiating | Candidate layer, document family, module, agent surface, value hypothesis, scope boundary | Target-inventory mapping, owner identification, non-goal check, durable-state boundary check | Purpose, value hypothesis, owner, scope boundary, initial risk |
+| Planning | Initiation output, dependencies, acceptance criteria, risk profile, human-vs-agent boundary | I/T/O planning, release slicing, validation design, rollback design, role-boundary review | Acceptance criteria, dependency map, risk response, validation path, human-vs-agent boundary |
+| Executing | Approved slice, source evidence, templates, worktree state, role ownership | Controlled drafting or implementation, review, testing, doc update, expert/durable-lane handoff when eligible | Drafted artifact, controlled change set, validation work, changed-path evidence |
+| Monitoring and Controlling | Active change set, metrics, issues, review findings, gate output | Local gate, OpenSpec guard, diff review, issue triage, change control, rollback readiness check | Metrics, issue log, review findings, local-gate evidence, rollback readiness |
+| Closing | Accepted artifacts, validation evidence, archive candidates, lessons | Archive/sync, release note update, retrospective, next-cycle triage | Final document or policy, archive record, lessons learned, next-cycle input |
 
 ## Use Rule
 
