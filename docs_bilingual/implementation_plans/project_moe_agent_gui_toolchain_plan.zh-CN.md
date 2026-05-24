@@ -19,7 +19,7 @@ related_docs:
 
 结论：原方案的架构边界、状态模型、安全规则和阶段门基本完整，但缺少“按事项粒度”的实施进度清单，容易让后续会话无法判断哪些内容已经落地、哪些仍只是方案。本次补齐第 11 节的实施进度勾选清单，并把第 13 节改成基于当前事实的后续实施边界。
 
-状态说明：本文继续保持 `status: draft`。这里的 draft 表示它不是全局 active 治理政策，也不表示全部运行时能力已经完成。Phase 2A 本仓库中央 installer/checker/updater、Phase 2B fixture-safe GUI shell 与 Phase 2C 双 fixture install/check/update/status 隔离证据已确认合入本地 `main`；本仓库已新增 Phase 1 CLI 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令 `atomic_write` / `lock_status` fail-closed fixture gate、项目默认值、session override、无效记录、旧记录兼容和 no-op 状态行为 fixture gate、只读 Phase 1 readiness checker fixture gate、wrapper `--json` / shell surface / 直接 state 触碰 fail-closed fixture gate、目标项目操作者文档 readiness fixture gate，以及 Agent TOML 标准扩展 / 私有提示源边界 readiness fixture gate。真实目标项目 Phase 1 CLI 状态模型仍未完成，所以本文继续保持 `draft`。
+状态说明：本文继续保持 `status: draft`。这里的 draft 表示它不是全局 active 治理政策，也不表示全部运行时能力已经完成。Phase 2A 本仓库中央 installer/checker/updater、Phase 2B fixture-safe GUI shell 与 Phase 2C 双 fixture install/check/update/status 隔离证据已确认合入本地 `main`；本仓库已新增 Phase 1 CLI 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令 `atomic_write` / `lock_status` fail-closed fixture gate、项目默认值、session override、无效记录、旧记录兼容和 no-op 状态行为 fixture gate、只读 Phase 1 readiness checker fixture gate、wrapper `--json` / shell surface / 直接 state 触碰 fail-closed fixture gate、startup 激活检查点完整性 fixture gate、目标项目操作者文档 readiness fixture gate，以及 Agent TOML 标准扩展 / 私有提示源边界 readiness fixture gate。真实目标项目 Phase 1 CLI 状态模型仍未完成，所以本文继续保持 `draft`。
 
 当前已知本地事实：
 
@@ -34,6 +34,7 @@ related_docs:
 - 本次后续变更继续新增 Agent TOML 标准扩展 readiness gate：只读 checker 会确认目标项目 Agent TOML 含 `project`、`moe`、`dispatch`、`extensions` 标准区，校验 `repo-local` scope、`do-not-copy-full-content` 私有提示源策略、state namespace/state path、`brief-based` dispatch、禁止 `full-history-fork-with-custom-role` 和 fallback；缺失或越界时 fail closed。
 - 本次后续变更继续新增私有提示源位置 readiness gate：只读 checker 会确认 `private_prompt_source` 存在于目标项目内，且不指向 `.codex/agents/`、`.omx/state/`、`tools/project_moe_gui/` 或 Project MOE GUI managed artifacts；该 gate 只检查路径和存在性，不读取或复制私有提示全文。
 - 本次后续变更继续新增 `assert-on` 只读断言 readiness gate：只读 checker 会执行并校验 `assert-on --json`，允许 `disabled` / `blocked:moe_disabled` 作为关闭态 fail-closed token，但要求 `effective_enabled`、`effective_source`、稳定 envelope 与无写入结果字段；未知 token、缺失字段或暴露写入字段时 fail closed。
+- 本次后续变更继续加固 startup 激活检查点 readiness gate：目标 startup / launcher / `AGENTS.md` 表面必须明确包含 `thesis_moe_mode.py status --json`，并覆盖 startup、resume、continue、reload 和 phase change 检查点；只写模糊 startup 钩子会以 `blocked:moe_activation_hook_incomplete` fail closed，完全缺失时仍为 `blocked:missing_moe_activation_hook`。
 - 这些事实只表示本仓库 fixture 与契约验证支撑已落地；不表示 `D:\PythonProject_paper_suggest` 已完成 Phase 1，也不表示真实目标项目 GUI 已可操作。
 - 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
 
@@ -625,6 +626,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - [x] 在本仓库 GUI shell fixture 中覆盖目标 CLI 写入契约不完整时 fail closed：缺失 `changed_paths`、写入 scope 不匹配、暴露 raw/private 字段。
 - [x] 在本仓库 GUI shell fixture 中覆盖 state lock、atomic write、lock timeout 与 stale lock blocker fail-closed 测试：缺失 `atomic_write`、`atomic_write=false`、`lock_timeout` / stale lock blocker 均不得被 GUI 当成有效写入结果。
 - [x] 在本仓库 readiness checker fixture 中校验 `thesis-moe-on/off.cmd` wrapper 必须传递 `--json`、不得透传任意 `%*` 或 shell 组合/重定向/file-op token、不得直接触碰 `.omx/state` 或状态 JSON。
+- [x] 在本仓库 readiness checker fixture 中校验 startup / launcher / `AGENTS.md` 激活钩子必须覆盖 `thesis_moe_mode.py status --json` 以及 startup、resume、continue、reload、phase change 检查点；不完整钩子会 fail closed，且这不代表真实目标项目 startup 表面已更新。
 - [x] 在本仓库 readiness checker fixture 中校验目标项目操作者文档必须覆盖 `thesis_moe_mode.py`、`project-on/off`、`project-status --json`、`list-sessions --json`、`status --json`、`assert-on`、`--session-id` 和 `.cmd` wrapper 入口。
 - [ ] 接入 `thesis-moe-on.cmd` 与 `thesis-moe-off.cmd`。
 - [ ] 在目标项目 startup / launcher / AGENTS 等入口加入 MOE 状态读取检查点。

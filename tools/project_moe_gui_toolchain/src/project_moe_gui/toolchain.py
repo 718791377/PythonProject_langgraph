@@ -65,6 +65,15 @@ PHASE1_OPERATOR_DOC_REQUIRED_TOKENS = (
     "thesis-moe-on.cmd",
     "thesis-moe-off.cmd",
 )
+PHASE1_STARTUP_HOOK_REQUIRED_TOKENS = (
+    "thesis_moe_mode.py",
+    "status --json",
+    "startup",
+    "resume",
+    "continue",
+    "reload",
+    "phase change",
+)
 PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS = ("project", "moe", "dispatch", "extensions")
 PHASE1_AGENT_PROJECT_REQUIRED_VALUES = {
     "scope": "repo-local",
@@ -530,21 +539,49 @@ def inspect_wrapper(root: Path, relative: Path, expected_command: str, mode_cli:
 def inspect_startup_hooks(root: Path, startup_paths: list[Path]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     checked: list[dict[str, Any]] = []
     hook_found = False
+    basic_status_hook_found = False
+    best_missing: list[str] = list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS)
+
+    def has_required_token(text: str, token: str) -> bool:
+        lowered = text.lower()
+        if token == "status --json":
+            return "status" in lowered and "--json" in lowered
+        if token == "phase change":
+            return "phase change" in lowered or "phase-change" in lowered
+        return token in lowered
+
     for rel in startup_paths:
         path, err = safe_relative(root, rel, "blocked:startup_hook_path_invalid")
         if err:
-            checked.append({"path": norm(rel), "exists": False, "token": err["code"]})
+            checked.append({"path": norm(rel), "exists": False, "token": err["code"], "missing_tokens": list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS)})
             continue
         assert path is not None
         exists = path.exists()
         has_hook = False
+        matched: list[str] = []
+        missing: list[str] = list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS)
         if exists:
             text = read_text(path).lower()
-            has_hook = "thesis_moe_mode.py" in text and "status" in text and "--json" in text
+            matched = [token for token in PHASE1_STARTUP_HOOK_REQUIRED_TOKENS if has_required_token(text, token)]
+            missing = [token for token in PHASE1_STARTUP_HOOK_REQUIRED_TOKENS if token not in matched]
+            if len(missing) < len(best_missing):
+                best_missing = missing
+            basic_status_hook = "thesis_moe_mode.py" in text and "status" in text and "--json" in text
+            basic_status_hook_found = basic_status_hook_found or basic_status_hook
+            has_hook = not missing
             hook_found = hook_found or has_hook
-        checked.append({"path": norm(rel), "exists": exists, "has_moe_status_hook": has_hook})
-    errors = [] if hook_found else [blocker("blocked:missing_moe_activation_hook", "No startup or launcher file contains a MOE status --json activation checkpoint.")]
-    return {"candidates_checked": checked, "hook_found": hook_found}, errors
+        checked.append({"path": norm(rel), "exists": exists, "has_moe_status_hook": has_hook, "matched_tokens": matched, "missing_tokens": missing})
+    details = {
+        "candidates_checked": checked,
+        "hook_found": hook_found,
+        "basic_status_hook_found": basic_status_hook_found,
+        "required_tokens": list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS),
+    }
+    if hook_found:
+        return details, []
+    if basic_status_hook_found:
+        return details, [blocker("blocked:moe_activation_hook_incomplete", "Startup activation hook must cover startup/resume/continue/reload/phase-change checkpoints with status --json.", missing=best_missing, required=list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS))]
+    return details, [blocker("blocked:missing_moe_activation_hook", "No startup or launcher file contains a complete MOE status --json activation checkpoint.", required=list(PHASE1_STARTUP_HOOK_REQUIRED_TOKENS))]
 
 
 def inspect_operator_docs(root: Path, doc_paths: list[Path]) -> tuple[dict[str, Any], list[dict[str, Any]]]:

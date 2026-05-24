@@ -494,7 +494,7 @@ else:
             encoding="utf-8",
         )
         (root / "AGENTS.md").write_text(
-            "On startup, resume, continue, or phase change, run `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
+            "On startup, resume, continue, reload, or phase change, run `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
             encoding="utf-8",
         )
         docs_dir = root / "docs_bilingual" / "operations"
@@ -574,6 +574,8 @@ else:
             self.assertEqual(payload["wrappers"]["on"]["unsafe_shell_tokens"], [])
             self.assertEqual(payload["wrappers"]["on"]["direct_state_path_references"], [])
             self.assertTrue(payload["startup_activation_hooks"]["hook_found"])
+            self.assertTrue(payload["startup_activation_hooks"]["basic_status_hook_found"])
+            self.assertEqual(payload["startup_activation_hooks"]["required_tokens"], ["thesis_moe_mode.py", "status --json", "startup", "resume", "continue", "reload", "phase change"])
             self.assertTrue(payload["operator_docs"]["ready"])
 
     def test_phase1_readiness_checker_blocks_dirty_target_and_missing_wrapper(self) -> None:
@@ -655,6 +657,64 @@ else:
             missing = next(item["missing"] for item in payload["blockers"] if item["code"] == "blocked:phase1_operator_docs_incomplete")
             self.assertIn("project-off", missing)
             self.assertIn("status --json", missing)
+
+    def test_phase1_readiness_checker_blocks_incomplete_startup_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-incomplete-startup-hook"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-incomplete-startup-hook", session_id="session-phase1-incomplete-hook")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "AGENTS.md").write_text(
+                "On startup, run `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:moe_activation_hook_incomplete", blocker_codes)
+            self.assertFalse(payload["startup_activation_hooks"]["hook_found"])
+            self.assertTrue(payload["startup_activation_hooks"]["basic_status_hook_found"])
+            missing = next(item["missing"] for item in payload["blockers"] if item["code"] == "blocked:moe_activation_hook_incomplete")
+            self.assertIn("resume", missing)
+            self.assertIn("continue", missing)
+            self.assertIn("reload", missing)
+            self.assertIn("phase change", missing)
+
+    def test_phase1_readiness_checker_blocks_missing_startup_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-missing-startup-hook"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-missing-startup-hook", session_id="session-phase1-missing-hook")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            (project / "AGENTS.md").unlink()
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:missing_moe_activation_hook", blocker_codes)
+            self.assertFalse(payload["startup_activation_hooks"]["hook_found"])
+            self.assertFalse(payload["startup_activation_hooks"]["basic_status_hook_found"])
 
     def test_phase1_readiness_checker_blocks_agent_toml_missing_extensions(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
