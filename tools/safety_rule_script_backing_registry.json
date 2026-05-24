@@ -152,6 +152,22 @@
       "description": "Keeps Codex-dedicated MCP servers direct and reports MCP Router drift for dedicated or self-referential server entries."
     },
     {
+      "id": "user-level-mcp-skills-browser-cli-baseline",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md",
+        "docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_user_level_mcp_skills_browser_cli_baseline.py"
+      ],
+      "guard_steps": [
+        "check_user_level_mcp_skills_browser_cli_baseline"
+      ],
+      "description": "Keeps the user-level MCP, skills, browser automation, and CLI harness baseline script-backed: token/risk priority, sensitive authorization receipts, update receipts, evidence redaction, and slice readiness cannot drift silently."
+    },
+    {
       "id": "openspec-code-archive-evidence",
       "owner_level": "project",
       "status": "implemented",

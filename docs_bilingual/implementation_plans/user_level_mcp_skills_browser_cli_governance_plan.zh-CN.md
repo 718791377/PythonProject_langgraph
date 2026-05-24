@@ -5,8 +5,8 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: not_started
-last_reviewed_at: 2026-05-23
+implementation_state: codex_port_allocator_repo_local_implemented
+last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
@@ -16,7 +16,7 @@ source_reference_file: reference_files/1.md
 
 ## 0. 当前复核结论
 
-截至 2026-05-23，本方案作为“执行前蓝图”已具备进入 OpenSpec 小步切片的颗粒度。`status: draft` 表示用户级运行时尚未按本方案全部落地，不表示本文缺少执行结构。
+截至 2026-05-24，本方案作为“执行前蓝图”已具备进入 OpenSpec 小步切片的颗粒度。`status: draft` 表示用户级运行时尚未按本方案全部落地，不表示本文缺少执行结构。第 1 个 policy/checker baseline 切片已完成本地实现、验证、stable spec 提升和 OpenSpec archive 收口。`skills2cli`、`mcp2cli` 与 `codex-port` allocator MVP 切片现在已具备 repo-local helper 与测试覆盖；在后续受治理 wrapper/install receipt、live adapter 与用户级 smoke 切片落地前，它们仍是 `implemented-local`，不是完整用户级 `active`。
 
 复核结论：
 
@@ -28,7 +28,7 @@ source_reference_file: reference_files/1.md
 - 未勾选清单是后续实施状态，不是方案缺口；在对应代码、checker、安装产物和 receipt 都完成前，不得把 lane 标为 `active`。
 - 推进原则是先 baseline 后能力：先完成 token/risk、授权 receipt、update receipt 与 evidence redaction，再实现 `skills2cli`、`mcp2cli`、browser 与 `wecom-cli` 等具体能力。
 
-本方案下一步不是继续扩大范围，而是选择第一个 OpenSpec change，把第 16 节的第 1 个切片落到 repo-local checker/test，再按本地提交流程推进。
+本方案下一步不是继续扩大范围。repo-local `codex-port` allocator MVP 验证并归档后，应继续 browser owner registry 与 `chrome-devtools-mcp` managed wrapper 等受治理切片，不得隐式安装用户级 wrapper。
 
 ## 1. 目的
 
@@ -416,9 +416,9 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 
 | Lane | 初始默认状态 | 允许的默认动作 | 禁止或需授权动作 | Active 前必须具备的证据 |
 | --- | --- | --- | --- | --- |
-| `skills2cli` | `planned`，实现后可成为 `active` | index/search/show/warning summary 的紧凑只读输出 | apply/disable skills、输出完整 plugin skill body、记录私有完整路径 | compact-output 测试、warning audit 脱敏测试、profile 建议不直接应用的证据 |
-| `mcp2cli` | `planned`，按 profile 逐步 `active` | list/search/show，非敏感 call 需 category 检查 | secrets、shell、browser state、remote mutation、payment/account/personal data call | allowed-profile registry、sensitive-call fail-closed checker、授权 receipt schema |
-| `codex-port` allocator | `planned`，reserve/renew/release 均有 receipt 后可成为 `active` | 按号段 reserve/list/renew/release/import/gc lease | 跨 owner 分配端口、kill 端口持有进程、非原子 registry 写入、无证据复用 stale lease | owner-range 测试、并发 reserve fixture、live-socket 冲突 fixture、lease receipt schema、stale PID/health 证据 |
+| `skills2cli` | `implemented-local`；只有后续受治理 wrapper/install receipt 落地后才可成为用户级 `active` | index/search/show/warning summary 的紧凑只读输出 | apply/disable skills、输出完整 plugin skill body、记录私有完整路径 | compact-output 测试、warning audit 脱敏测试、profile 建议不直接应用的证据 |
+| `mcp2cli` | `implemented-local`；只有后续受治理 wrapper/install receipt 与 live adapter 切片落地后才可成为用户级 `active` | list/search/show；非敏感 call 通过类别检查的本地 guard facade | secrets、shell、browser state、remote mutation、payment/account/personal-data call | allowed-profile registry、sensitive-call fail-closed checker、authorization receipt schema |
+| `codex-port` allocator | `implemented-local`；只有后续受治理 wrapper/install receipt 与 smoke evidence 落地后才可成为用户级 `active` | 按号段 reserve/list/renew/release/import/gc lease | 跨 owner 分配端口、kill 端口持有进程、非原子 registry 写入、无证据复用 stale lease | owner-range 测试、live-socket 冲突 fixture、lease receipt schema、stale PID/health 证据 |
 | `chrome-devtools-mcp` | `planned`，本地调试 isolated mode 可先 `active` | isolated-session local/debug inspect | human-owned Chrome、登录态 project-profile、cleanup | managed wrapper、lease、profile ownership、stale cleanup dry-run 证据 |
 | CDP Bridge | `on-demand` | tab list、DOM scan、screenshot、read-only inventory | cookie、JS write、click/type/navigate sensitive context | owner check、authorization gate、read/write 分离测试 |
 | OpenCLI | `on-demand` | isolated 或 project-profile 的明确任务适配 | 默认绑定 human-owned tab、常驻加载 | wrapper pin、browser owner registry、human-owned protection 测试 |
@@ -544,19 +544,19 @@ OpenSpec 切片交付矩阵：
 
 细颗粒度实施清单：
 
-- [ ] 为本方案创建或复用一个小步 OpenSpec change，并写明 scope、non-goals、rollback boundary。
-- [ ] 建立 token/risk priority checker，禁止高 token/高风险 surface 在无证据时默认常驻。
-- [ ] 建立用户级 port registry 与 allocator，确保 Codex 号段在前、OpenClaw 号段在后，并让 OpenCLI 使用 allocator 驱动的 `--port auto`。
-- [ ] 实现 `codex-port lease reserve/renew/release/list/import-legacy/gc`，覆盖 owner-range 校验、registry 原子锁、临时 `pending_bind`、live-socket 冲突跳过、stale/崩溃证据和写入 receipt。
-- [ ] 建立 sensitive authorization receipt schema，字段至少包含 action、target、scope、expiry、session、operator confirmation。
-- [ ] 建立 user-level tool update receipt schema，并覆盖 install path、wrapper path、state path、pin、smoke、rollback pointer。
-- [ ] 建立 sanitized evidence 规则，禁止提交 secrets、cookies、tokens、raw browser data、消息内容、完整个人运行时路径和完整 plugin description dumps。
-- [ ] 实现 `skills2cli index --json`，输出 skill id、source layer、short description hash/summary 和可用状态。
-- [ ] 实现 `skills2cli search <query> --json`，默认只返回紧凑摘要和定位信息。
-- [ ] 实现 `skills2cli show <skill-id> --json`，默认不倾倒全量 skill body，完整内容需受控参数。
-- [ ] 实现 `skills2cli profile suggest --task <text> --json`，只给建议，不直接 apply。
-- [ ] 实现 `skills2cli audit warnings --since <duration> --json`，纳入 2% skills context budget warning 和 skipped-loading warning 摘要。
-- [ ] 为 `skills2cli` 增加 compact-output、privacy redaction、profile-non-apply、warning-audit 测试。
+- [x] 为本方案创建或复用一个小步 OpenSpec change，并写明 scope、non-goals、rollback boundary。
+- [x] 建立 token/risk priority checker，禁止高 token/高风险 surface 在无证据时默认常驻。
+- [x] 建立用户级 port registry 与 allocator，确保 Codex 号段在前、OpenClaw 号段在后，并让 OpenCLI 使用 allocator 驱动的 `--port auto`。
+- [x] 实现 `codex-port lease reserve/renew/release/list/import-legacy/gc`，覆盖 owner-range 校验、registry 原子锁、临时 `pending_bind`、live-socket 冲突跳过、stale/崩溃证据和写入 receipt。
+- [x] 建立 sensitive authorization receipt schema，字段至少包含 action、target、scope、expiry、session、operator confirmation。
+- [x] 建立 user-level tool update receipt schema，并覆盖 install path、wrapper path、state path、pin、smoke、rollback pointer。
+- [x] 建立 sanitized evidence 规则，禁止提交 secrets、cookies、tokens、raw browser data、消息内容、完整个人运行时路径和完整 plugin description dumps。
+- [x] 实现 `skills2cli index --json`，输出 skill id、source layer、short description hash/summary 和可用状态。
+- [x] 实现 `skills2cli search <query> --json`，默认只返回紧凑摘要和定位信息。
+- [x] 实现 `skills2cli show <skill-id> --json`，默认不倾倒全量 skill body，完整内容需受控参数。
+- [x] 实现 `skills2cli profile suggest --task <text> --json`，只给建议，不直接 apply。
+- [x] 实现 `skills2cli audit warnings --since <duration> --json`，纳入 2% skills context budget warning 和 skipped-loading warning 摘要。
+- [x] 为 `skills2cli` 增加 compact-output、privacy redaction、profile-non-apply、warning-audit 测试。
 - [ ] 实现 `mcp2cli` allowed profile registry，并区分低风险 discovery 与中高风险 call。
 - [ ] 实现 `mcp2cli list/search/show` 紧凑输出与 `--full` 显式展开边界。
 - [ ] 实现 `mcp2cli call` sensitive-category fail-closed gate。
@@ -578,7 +578,7 @@ OpenSpec 切片交付矩阵：
 - [ ] 实现 `wecom-cli gui attach` 的 global WXWork lease 与 one-task authorization gate；默认保持 disabled。
 - [ ] 为 `wecom-cli` 增加 process/window read-only、secret redaction、GUI unauthorized fail、lease exclusivity 测试。
 - [ ] 把新增测试或 checker 注册到 `tools/ci/ci_test_manifest.json` 或共享 local gate 调用链。
-- [ ] 对每个完成的 OpenSpec change 运行 precommit update/archive gate、local gate、local MR review。
+- [x] 对每个完成的 OpenSpec change 运行 precommit update/archive gate、local gate、local MR review。
 - [ ] 每个用户级安装动作完成后记录 rollback-ready receipt；没有 receipt 的 lane 不得标记 active。
 
 ## 17. 实施顺序

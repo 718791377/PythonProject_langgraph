@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "default_profile": "core-readonly",
+  "privacy_policy": "compact_sanitized_metadata_only_no_secret_or_private_path_retention",
+  "profiles": [
+    {
+      "profile_id": "core-readonly",
+      "status": "active-local",
+      "summary": "Low-risk repository and governance discovery facade for local deterministic use.",
+      "tools": [
+        {
+          "tool_id": "repo.openspec.list",
+          "name": "OpenSpec change list",
+          "source": "repo-local",
+          "category": "repository_metadata",
+          "risk_level": "low",
+          "sensitive_categories": [],
+          "summary": "List active OpenSpec changes through the repo-local facade without invoking external MCP servers.",
+          "available": true,
+          "schema_summary": "No input fields are required; optional args are ignored by the deterministic MVP facade.",
+          "call": {
+            "enabled": true,
+            "requires_authorization": false,
+            "mode": "local_facade",
+            "result_kind": "deterministic_summary"
+          }
+        },
+        {
+          "tool_id": "repo.governance.spec.show",
+          "name": "Governance spec metadata",
+          "source": "repo-local",
+          "category": "repository_metadata",
+          "risk_level": "low",
+          "sensitive_categories": [],
+          "summary": "Show compact metadata for the user-level MCP skills browser CLI governance spec.",
+          "available": true,
+          "schema_summary": "Optional args may name a spec id; the MVP returns compact metadata only.",
+          "call": {
+            "enabled": true,
+            "requires_authorization": false,
+            "mode": "local_facade",
+            "result_kind": "deterministic_summary"
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "browser-readonly",
+      "status": "planned-sensitive-local",
+      "summary": "Browser inventory discovery profile; call attempts are sensitive and require explicit authorization receipts.",
+      "tools": [
+        {
+          "tool_id": "browser.tabs.list",
+          "name": "Browser tab inventory",
+          "source": "chrome-devtools-or-cdp-bridge",
+          "category": "browser_inventory",
+          "risk_level": "medium",
+          "sensitive_categories": [
+            "browser_state",
+            "personal_tabs"
+          ],
+          "summary": "Discover browser tab inventory after owner checks; calls are blocked by default in the repo-local MVP.",
+          "available": false,
+          "schema_summary": "No args for inventory discovery; sensitive because tab titles and URLs can reveal user data.",
+          "call": {
+            "enabled": false,
+            "requires_authorization": true,
+            "mode": "blocked_until_browser_owner_registry",
+            "result_kind": "none"
+          }
+        },
+        {
+          "tool_id": "browser.page.screenshot",
+          "name": "Browser page screenshot",
+          "source": "chrome-devtools-or-cdp-bridge",
+          "category": "browser_artifact",
+          "risk_level": "medium",
+          "sensitive_categories": [
+            "browser_state",
+            "visual_personal_data"
+          ],
+          "summary": "Capture a browser screenshot only after owner and authorization checks in later browser-lane slices.",
+          "available": false,
+          "schema_summary": "Requires a target tab reference and owner evidence in later slices.",
+          "call": {
+            "enabled": false,
+            "requires_authorization": true,
+            "mode": "blocked_until_browser_owner_registry",
+            "result_kind": "none"
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "remote-infra-readonly",
+      "status": "planned-sensitive-local",
+      "summary": "Remote infrastructure discovery profile; call attempts require explicit authorization receipts.",
+      "tools": [
+        {
+          "tool_id": "cloudflare.account.read",
+          "name": "Cloudflare account read",
+          "source": "cloudflare-mcp",
+          "category": "remote_infrastructure",
+          "risk_level": "high",
+          "sensitive_categories": [
+            "remote_infrastructure",
+            "account_data"
+          ],
+          "summary": "Read remote account metadata only after authorization; blocked by default in the repo-local MVP.",
+          "available": false,
+          "schema_summary": "Requires account scope and credential context in later slices.",
+          "call": {
+            "enabled": false,
+            "requires_authorization": true,
+            "mode": "blocked_until_authorized_adapter",
+            "result_kind": "none"
+          }
+        }
+      ]
+    }
+  ]
+}

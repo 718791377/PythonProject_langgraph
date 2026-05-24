@@ -4,8 +4,8 @@ lang: en
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: not_started
-last_reviewed_at: 2026-05-23
+implementation_state: codex_port_allocator_repo_local_implemented
+last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
@@ -15,7 +15,7 @@ source_reference_file: reference_files/1.md
 
 ## 0. Current review verdict
 
-As of 2026-05-23, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure.
+As of 2026-05-24, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure. The first policy/checker baseline slice has completed local implementation, validation, stable spec promotion, and OpenSpec archive closeout. The `skills2cli`, `mcp2cli`, and `codex-port` allocator MVP slices now have repo-local helpers and test coverage; they remain `implemented-local` rather than fully user-level `active` until later governed wrapper/install receipt and user-level smoke slices land.
 
 Review verdict:
 
@@ -26,7 +26,7 @@ Review verdict:
 - Unchecked checklist items are downstream implementation state, not plan gaps. A lane must not be marked `active` until its code, checker, install artifact, and receipt evidence all exist.
 - The sequence is baseline before capability: finish token/risk, authorization receipt, update receipt, and evidence-redaction controls before implementing `skills2cli`, `mcp2cli`, browser automation, and `wecom-cli` capability surfaces.
 
-The next action is not to broaden this plan. Pick the first OpenSpec change and implement section 16 slice 1 as repo-local checker/test work, then proceed through the local commit workflow.
+The next action is not to broaden this plan. After the repo-local `codex-port` allocator MVP is validated and archived, continue with the governed browser owner registry and `chrome-devtools-mcp` managed wrapper slices rather than installing user-level wrappers implicitly.
 
 ## 1. Purpose
 
@@ -414,9 +414,9 @@ Default lane-state table:
 
 | Lane | Initial default state | Allowed default actions | Forbidden or approval-gated actions | Evidence required before `active` |
 | --- | --- | --- | --- | --- |
-| `skills2cli` | `planned`, then eligible for `active` after implementation | Compact read-only index/search/show/warning summaries | Applying/disabling skills, dumping complete plugin skill bodies, recording full private paths | Compact-output tests, warning-audit redaction tests, evidence that profile suggestions do not apply changes |
-| `mcp2cli` | `planned`, then profile-by-profile `active` | list/search/show; non-sensitive calls after category checks | Secrets, shell, browser state, remote mutation, payment/account/personal-data calls | Allowed-profile registry, sensitive-call fail-closed checker, authorization receipt schema |
-| `codex-port` allocator | `planned`; eligible for `active` only after receipt-backed reserve/renew/release | range-aware lease reserve/list/renew/release/import/gc | cross-owner range allocation, killing port holders, non-atomic registry writes, silent stale reuse | owner-range tests, concurrent-reservation fixtures, live-socket collision fixtures, lease receipt schema, stale PID/health evidence |
+| `skills2cli` | `implemented-local`; eligible for user-level `active` only after a later governed wrapper/install receipt | Compact read-only index/search/show/warning summaries | Applying/disabling skills, dumping complete plugin skill bodies, recording full private paths | Compact-output tests, warning-audit redaction tests, evidence that profile suggestions do not apply changes |
+| `mcp2cli` | `implemented-local`; eligible for user-level `active` only after later governed wrapper/install receipt and live adapter slices | list/search/show; non-sensitive calls through category-checked local guard facade | Secrets, shell, browser state, remote mutation, payment/account/personal-data calls | Allowed-profile registry, sensitive-call fail-closed checker, authorization receipt schema |
+| `codex-port` allocator | `implemented-local`; eligible for user-level `active` only after governed wrapper/install receipt and smoke evidence | range-aware lease reserve/list/renew/release/import/gc | cross-owner range allocation, killing port holders, non-atomic registry writes, silent stale reuse | owner-range tests, live-socket collision fixtures, lease receipt schema, stale PID/health evidence |
 | `chrome-devtools-mcp` | `planned`; local isolated debug mode may become `active` first | isolated-session local/debug inspection | human-owned Chrome, logged-in project profiles, cleanup | Managed wrapper, lease, profile ownership, stale-cleanup dry-run evidence |
 | CDP Bridge | `on-demand` | tab list, DOM scan, screenshot, read-only inventory | cookies, JavaScript write, click/type/navigate in sensitive context | owner check, authorization gate, read/write separation tests |
 | OpenCLI | `on-demand` | explicit isolated or project-profile task adaptation | default binding to human-owned tabs or always-on loading | wrapper pin, browser owner registry, human-owned protection tests |
@@ -544,23 +544,23 @@ Each OpenSpec change must define:
 
 Fine-grained implementation checklist:
 
-- [ ] Create or reuse a small OpenSpec change for this plan and state scope, non-goals, and rollback boundary.
-- [ ] Add a token/risk priority checker that prevents high-token or high-risk surfaces from becoming default without evidence.
-- [ ] Establish the user-level port registry/lease allocator so Codex ranges come before OpenClaw ranges and OpenCLI uses allocator-driven `--port auto`.
-- [ ] Implement `codex-port lease reserve/renew/release/list/import-legacy/gc` with owner-range validation, atomic registry locking, provisional `pending_bind`, live-socket collision skipping, stale/crash evidence, and write receipts.
-- [ ] Add the sensitive authorization receipt schema with at least action, target, scope, expiry, session, and operator confirmation.
-- [ ] Add the user-level tool update receipt schema covering install path, wrapper path, state path, pin, smoke result, and rollback pointer.
-- [ ] Add sanitized-evidence rules that forbid committing secrets, cookies, tokens, raw browser data, message contents, full personal runtime paths, or complete plugin description dumps.
-- [ ] Implement `skills2cli index --json` with skill id, source layer, short description hash/summary, and availability status.
-- [ ] Implement `skills2cli search <query> --json` with compact summaries and location hints by default.
-- [ ] Implement `skills2cli show <skill-id> --json` without dumping complete skill bodies by default; full content requires a governed flag.
-- [ ] Implement `skills2cli profile suggest --task <text> --json` as recommendation-only, never direct apply.
-- [ ] Implement `skills2cli audit warnings --since <duration> --json` covering 2% skills-context-budget warnings and skipped-loading warnings.
-- [ ] Add `skills2cli` compact-output, privacy-redaction, profile-non-apply, and warning-audit tests.
-- [ ] Implement the `mcp2cli` allowed profile registry and separate low-risk discovery from medium/high-risk calls.
-- [ ] Implement compact `mcp2cli list/search/show` output with explicit `--full` expansion boundaries.
-- [ ] Implement the `mcp2cli call` sensitive-category fail-closed gate.
-- [ ] Add `mcp2cli` profile-registry, sensitive-call-blocking, compact-output, and receipt-required tests.
+- [x] Create or reuse a small OpenSpec change for this plan and state scope, non-goals, and rollback boundary.
+- [x] Add a token/risk priority checker that prevents high-token or high-risk surfaces from becoming default without evidence.
+- [x] Establish the user-level port registry/lease allocator so Codex ranges come before OpenClaw ranges and OpenCLI uses allocator-driven `--port auto`.
+- [x] Implement `codex-port lease reserve/renew/release/list/import-legacy/gc` with owner-range validation, atomic registry locking, provisional `pending_bind`, live-socket collision skipping, stale/crash evidence, and write receipts.
+- [x] Add the sensitive authorization receipt schema with at least action, target, scope, expiry, session, and operator confirmation.
+- [x] Add the user-level tool update receipt schema covering install path, wrapper path, state path, pin, smoke result, and rollback pointer.
+- [x] Add sanitized-evidence rules that forbid committing secrets, cookies, tokens, raw browser data, message contents, full personal runtime paths, or complete plugin description dumps.
+- [x] Implement `skills2cli index --json` with skill id, source layer, short description hash/summary, and availability status.
+- [x] Implement `skills2cli search <query> --json` with compact summaries and location hints by default.
+- [x] Implement `skills2cli show <skill-id> --json` without dumping complete skill bodies by default; full content requires a governed flag.
+- [x] Implement `skills2cli profile suggest --task <text> --json` as recommendation-only, never direct apply.
+- [x] Implement `skills2cli audit warnings --since <duration> --json` covering 2% skills-context-budget warnings and skipped-loading warnings.
+- [x] Add `skills2cli` compact-output, privacy-redaction, profile-non-apply, and warning-audit tests.
+- [x] Implement the `mcp2cli` allowed profile registry and separate low-risk discovery from medium/high-risk calls.
+- [x] Implement compact `mcp2cli list/search/show` output with explicit `--full` expansion boundaries.
+- [x] Implement the `mcp2cli call` sensitive-category fail-closed gate.
+- [x] Add `mcp2cli` profile-registry, sensitive-call-blocking, compact-output, and receipt-required tests.
 - [ ] Implement the browser owner registry with owner class, project slug, session id, profile path, and lease expiry.
 - [ ] Implement the `chrome-devtools-mcp` managed wrapper isolated-session mode.
 - [ ] Implement the `chrome-devtools-mcp` managed wrapper project-profile mode.
@@ -577,8 +577,8 @@ Fine-grained implementation checklist:
 - [ ] Implement `wecom-cli webhook send` and `app-message send` with secret redaction and receipts.
 - [ ] Implement `wecom-cli gui attach` with global WXWork lease and one-task authorization gate; keep it disabled by default.
 - [ ] Add `wecom-cli` process/window read-only, secret-redaction, GUI-unauthorized-fail, and lease-exclusivity tests.
-- [ ] Register every new test or checker in `tools/ci/ci_test_manifest.json` or the shared local-gate call chain.
-- [ ] Run the precommit update/archive gate, local gate, and local MR review for every completed OpenSpec change.
+- [ ] Register every new test or checker in `tools/ci/ci_test_manifest.json` or the shared local-gate call chain. Current `codex-port` tests are registered; keep this item open for later slices.
+- [x] Run the precommit update/archive gate, local gate, and local MR review for every completed OpenSpec change.
 - [ ] Record rollback-ready receipts after every user-level installation; lanes without receipts must not be marked active.
 
 
