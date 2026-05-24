@@ -413,6 +413,9 @@ DEFAULT_OPERATOR_DOC_CANDIDATES = (
     Path("docs/operations/thesis_moe_mode_usage.md"),
     Path("docs/thesis_moe_mode_usage.md"),
 )
+DEFAULT_PRIVATE_PROMPT_SOURCE = Path("MOE.md")
+DEFAULT_BOOTSTRAP_STARTUP_HOOK = Path("AGENTS.md")
+DEFAULT_BOOTSTRAP_OPERATOR_DOC = Path("docs_bilingual/operations/thesis_moe_mode_usage.zh-CN.md")
 COMMON_CLI_ENVELOPE_KEYS = ("schema_version", "command", "ok", "token", "cli_contract")
 STATUS_EFFECTIVE_SOURCES = {"session", "project-default", "fail-closed"}
 ASSERT_ON_TOKENS = {"ok", "disabled", "blocked:moe_disabled"}
@@ -494,6 +497,10 @@ def now_utc() -> str:
 
 def norm(path: str | Path) -> str:
     return str(path).replace("\\", "/")
+
+
+def win_rel(path: str | Path) -> str:
+    return str(path).replace("/", "\\")
 
 
 def rel_matches(rel: str | Path, prefix: str | Path) -> bool:
@@ -1600,6 +1607,254 @@ def check_phase1_readiness(
         "blockers": errors,
         "next_actions": [] if not errors else sorted({error["code"] for error in errors}),
         "remediation_plan": remediation_plan,
+    }
+
+
+def phase1_agent_toml_template(agent_name: str, namespace: str, private_prompt_source: Path) -> str:
+    return f'''name = "{agent_name}"
+description = "Project-local MOE agent. Replace this placeholder with a short project-specific description before enabling GUI control."
+developer_instructions = """
+Project-local MOE instructions live in the project-private prompt source.
+Do not copy private prompt content into shared toolchain or user-level caches.
+"""
+
+[project]
+scope = "repo-local"
+state_namespace = "{namespace}"
+private_prompt_source = "{norm(private_prompt_source)}"
+private_prompt_policy = "do-not-copy-full-content"
+
+[moe]
+kind = "project-moe-agent"
+family = "project-specific"
+requires_manual_enable = true
+project_default_state = ".omx/state/{namespace}/project-default.json"
+session_state_dir = ".omx/state/{namespace}/sessions"
+
+[dispatch]
+mode = "brief-based"
+forbidden = ["full-history-fork-with-custom-role"]
+fallback = ["main-session-takeover", "durable-brief"]
+
+[extensions]
+'''
+
+
+def phase1_private_prompt_placeholder(agent_name: str, namespace: str) -> str:
+    return f"""# Project MOE private prompt placeholder
+
+Agent: `{agent_name}`
+State namespace: `{namespace}`
+
+Replace this placeholder inside the target project only.
+Do not copy another project's private `MOE.md` content into this file.
+Do not move this content into `.codex/agents/`, `.omx/state/`, or Project MOE GUI managed artifacts.
+"""
+
+
+def phase1_mode_cli_template(agent_name: str, namespace: str) -> str:
+    return f'''#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import sys
+from datetime import datetime, timezone
+
+AGENT_NAME = "{agent_name}"
+STATE_NAMESPACE = "{namespace}"
+CLI_CONTRACT = "{CLI_CONTRACT}"
+
+
+def now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def envelope(command: str, **extra: object) -> dict:
+    payload = {{
+        "schema_version": 1,
+        "command": command,
+        "ok": False,
+        "token": "blocked:bootstrap_placeholder",
+        "exit_code": 5,
+        "message": "Phase 1 bootstrap placeholder must be completed before GUI control.",
+        "agent_name": AGENT_NAME,
+        "state_namespace": STATE_NAMESPACE,
+        "generated_at": now(),
+        "warnings": ["complete this target-project CLI before enabling Project MOE GUI control"],
+        "errors": [],
+        "cli_contract": CLI_CONTRACT,
+    }}
+    payload.update(extra)
+    return payload
+
+
+def main() -> int:
+    command = sys.argv[1] if len(sys.argv) > 1 else "status"
+    # Command-surface tokens required by the readiness checker:
+    # project-on project-off project-status list-sessions status on off assert-on --json --session-id
+    payload = envelope(command)
+    if command == "project-status":
+        payload.update(project_default_enabled=False, registered_session_count=0, valid_session_count=0, invalid_session_count=0)
+    elif command == "list-sessions":
+        payload.update(sessions=[], counts={{"total": 0, "valid": 0, "invalid": 0}})
+    elif command in {{"status", "assert-on"}}:
+        payload.update(effective_enabled=False, effective_source="fail-closed")
+    print(json.dumps(payload, ensure_ascii=False))
+    return int(payload.get("exit_code", 5))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+'''
+
+
+def phase1_wrapper_template(mode_cli: Path, command: str) -> str:
+    return f'@echo off\nsetlocal\npython "%~dp0{win_rel(mode_cli)}" {command} --json\nexit /b %ERRORLEVEL%\n'
+
+
+def phase1_startup_hook_template(mode_cli: Path) -> str:
+    return f"""# Project startup MOE activation hook
+
+On startup, resume, continue, reload, or phase change, run:
+
+```powershell
+python .\\{win_rel(mode_cli)} status --json
+```
+
+Only apply project MOE rules when the effective status says it is enabled.
+If the command is missing, invalid, or returns a blocker, fail closed and report the stable token.
+"""
+
+
+def phase1_operator_doc_template(mode_cli: Path, on_wrapper: Path, off_wrapper: Path) -> str:
+    mode_cli_win = win_rel(mode_cli)
+    return f"""# Project MOE Phase 1 operator guide
+
+Use the project-local mode CLI and wrappers only; do not edit `.omx/state` JSON by hand.
+
+Required commands:
+
+- `python .\\{mode_cli_win} project-on`
+- `python .\\{mode_cli_win} project-off`
+- `python .\\{mode_cli_win} project-status --json`
+- `python .\\{mode_cli_win} list-sessions --json`
+- `python .\\{mode_cli_win} status --json`
+- `python .\\{mode_cli_win} assert-on`
+- `python .\\{mode_cli_win} on --session-id <id>`
+- `python .\\{mode_cli_win} off --session-id <id>`
+- `{norm(on_wrapper)}`
+- `{norm(off_wrapper)}`
+
+Startup, resume, continue, reload, and phase change checks must read `status --json` before applying MOE behavior.
+"""
+
+
+def bootstrap_plan_item(root: Path, rel: Path, role: str, content: str, *, existing_action: str = "manual-review-existing") -> dict[str, Any]:
+    full, err = safe_relative(root, rel)
+    if err:
+        return {
+            "path": norm(rel),
+            "role": role,
+            "action": "blocked",
+            "blocker": err,
+            "requires_target_project_write": False,
+            "safe_to_auto_apply": False,
+        }
+    assert full is not None
+    exists = full.exists()
+    action = existing_action if exists else "create"
+    return {
+        "path": norm(rel),
+        "role": role,
+        "action": action,
+        "exists": exists,
+        "sha256": sha256_bytes(content.encode("utf-8")),
+        "requires_target_project_write": not exists,
+        "safe_to_auto_apply": False,
+        "content_included": False,
+        "template_size_bytes": len(content.encode("utf-8")),
+    }
+
+
+def phase1_bootstrap_scaffold_plan(
+    root: Path,
+    agent_name: str,
+    namespace: str,
+    mode_cli: Path = DEFAULT_MODE_CLI,
+    private_prompt_source: Path = DEFAULT_PRIVATE_PROMPT_SOURCE,
+    on_wrapper: Path = DEFAULT_ON_WRAPPER,
+    off_wrapper: Path = DEFAULT_OFF_WRAPPER,
+    startup_hook: Path = DEFAULT_BOOTSTRAP_STARTUP_HOOK,
+    operator_doc: Path = DEFAULT_BOOTSTRAP_OPERATOR_DOC,
+) -> dict[str, Any]:
+    errors = validate_identifiers(agent_name, namespace)
+    evidence = project_evidence(root)
+    if not evidence:
+        errors.append(blocker("blocked:missing_project_evidence", "Target directory does not look like a project.", expected=PROJECT_EVIDENCE))
+    git_status = git_status_summary(root)
+    if git_status["token"] == "blocked:git_status_unavailable":
+        errors.append(blocker("blocked:git_status_unavailable", "Cannot run git status in target project.", stderr=git_status["stderr"]))
+
+    agent_rel = Path(".codex") / "agents" / f"{agent_name}.toml"
+    templates = {
+        agent_rel: ("agent_toml", phase1_agent_toml_template(agent_name, namespace, private_prompt_source), "manual-review-existing"),
+        private_prompt_source: ("private_prompt_source", phase1_private_prompt_placeholder(agent_name, namespace), "preserve-existing-private-prompt"),
+        mode_cli: ("mode_cli", phase1_mode_cli_template(agent_name, namespace), "manual-review-existing"),
+        on_wrapper: ("phase1_wrapper_on", phase1_wrapper_template(mode_cli, "project-on"), "manual-review-existing"),
+        off_wrapper: ("phase1_wrapper_off", phase1_wrapper_template(mode_cli, "project-off"), "manual-review-existing"),
+        startup_hook: ("startup_activation_hook", phase1_startup_hook_template(mode_cli), "manual-update-existing"),
+        operator_doc: ("operator_docs", phase1_operator_doc_template(mode_cli, on_wrapper, off_wrapper), "manual-update-existing"),
+    }
+    planned_writes = [
+        bootstrap_plan_item(root, rel, role, content, existing_action=existing_action)
+        for rel, (role, content, existing_action) in templates.items()
+    ]
+    plan_blockers = [item["blocker"] for item in planned_writes if item.get("action") == "blocked" and item.get("blocker")]
+    errors.extend(plan_blockers)
+    create_count = sum(1 for item in planned_writes if item.get("action") == "create")
+    manual_review_count = sum(1 for item in planned_writes if str(item.get("action", "")).startswith("manual"))
+    preserve_count = sum(1 for item in planned_writes if str(item.get("action", "")).startswith("preserve"))
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "command": "scaffold_project_moe_phase1",
+        "mode": "dry-run",
+        "ok": not errors,
+        "token": "ok" if not errors else errors[0]["code"],
+        "read_only": True,
+        "writes_target_project": False,
+        "apply_supported": False,
+        "target_project_write_allowed_by_checker": False,
+        "control_mode_allowed": False,
+        "bootstrap_required": True,
+        "adaptation_lane": "bootstrap",
+        "lane_reason": "phase1_bootstrap_scaffold_plan_only",
+        "target_project_root": str(root),
+        "agent_name": agent_name,
+        "state_namespace": namespace,
+        "mode_cli": norm(mode_cli),
+        "private_prompt_source": norm(private_prompt_source),
+        "planned_writes": planned_writes,
+        "summary": {
+            "create_count": create_count,
+            "manual_review_count": manual_review_count,
+            "preserve_existing_count": preserve_count,
+            "blocked_count": len(plan_blockers),
+        },
+        "git_status": git_status,
+        "project_root_evidence": evidence,
+        "blockers": errors,
+        "next_actions": [
+            "review_dry_run_plan",
+            "obtain_explicit_target_project_write_approval",
+            "apply_scaffold_in_target_project_worktree",
+            "complete_placeholder_cli_and_private_prompt",
+            "run_phase1_readiness_checker",
+        ],
+        "privacy_boundary": {
+            "private_prompt_body_read": False,
+            "template_content_included_in_payload": False,
+            "copies_other_project_private_prompt": False,
+        },
     }
 
 
