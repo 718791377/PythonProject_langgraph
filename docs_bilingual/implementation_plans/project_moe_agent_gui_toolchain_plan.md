@@ -19,7 +19,7 @@ Review date: 2026-05-23.
 
 Conclusion: the original plan already covered the architectural boundary, state model, safety rules, and phase gates, but it lacked an item-level implementation checklist. That made it hard for later sessions to distinguish implemented work from plan-only intent. This revision adds the item-level progress checklist in section 11 and updates section 13 to reflect current implementation facts.
 
-Status note: this document remains `status: draft`. Draft here means it is not a global active governance policy and does not claim that the whole runtime is complete. Phase 2A central installer/checker/updater, the Phase 2B fixture-safe GUI shell, and the Phase 2C dual-fixture install/check/update/status isolation evidence are confirmed on local `main`; this repository now has the Phase 1 CLI read-contract fixture gate, the GUI write-command output-contract fixture gate, the write-command `atomic_write` / `lock_status` fail-closed fixture gate, the project-default, session-override, invalid-record, legacy-compatibility, and no-op state-behavior fixture gate, plus a read-only Phase 1 readiness checker fixture gate, wrapper `--json` / shell-surface / direct-state-touch fail-closed fixture gate, startup activation-checkpoint completeness fixture gate, target-project operator-docs readiness fixture gate, and Agent TOML standard-extension / private-prompt boundary readiness fixture gate. The real target-project Phase 1 CLI state model is still open, so the document remains `draft`.
+Status note: this document remains `status: draft`. Draft here means it is not a global active governance policy and does not claim that the whole runtime is complete. Phase 2A central installer/checker/updater, the Phase 2B fixture-safe GUI shell, and the Phase 2C dual-fixture install/check/update/status isolation evidence are confirmed on local `main`; this repository now has the Phase 1 CLI read-contract fixture gate, the GUI write-command output-contract fixture gate, the write-command `atomic_write` / `lock_status` fail-closed fixture gate, the project-default, session-override, invalid-record, legacy-compatibility, and no-op state-behavior fixture gate, plus a read-only Phase 1 readiness checker fixture gate, wrapper `--json` / shell-surface / direct-state-touch fail-closed fixture gate, startup activation-checkpoint completeness fixture gate, target-project operator-docs readiness fixture gate, and Agent TOML standard-extension / private-prompt boundary readiness fixture gate. `D:\PythonProject_paper_suggest` has been read-only inventoried as a Phase 1 Ready Lane candidate, but it still needs formal readiness-checker go/no-go evidence; projects without Phase 1 use the Bootstrap Lane, so this document remains `draft`.
 
 Current known local facts:
 
@@ -35,7 +35,7 @@ Current known local facts:
 - This follow-up also adds a private-prompt source location readiness gate: the read-only checker confirms `private_prompt_source` exists inside the target project and does not point at `.codex/agents/`, `.omx/state/`, `tools/project_moe_gui/`, or Project MOE GUI managed artifacts; the gate checks only path and existence and does not read or copy private prompt text.
 - This follow-up also adds an `assert-on` read-only assertion readiness gate: the read-only checker executes and validates `assert-on --json`, allows `disabled` / `blocked:moe_disabled` as closed-state fail-closed tokens, and requires `effective_enabled`, `effective_source`, the stable envelope, and no write-result fields; unknown tokens, missing fields, or write-field exposure fail closed.
 - This follow-up also hardens the startup activation-checkpoint readiness gate: target startup / launcher / `AGENTS.md` surfaces must explicitly mention `thesis_moe_mode.py status --json` and the startup, resume, continue, reload, and phase-change checkpoints; a vague startup-only hook now fails closed as `blocked:moe_activation_hook_incomplete`, and a missing hook remains `blocked:missing_moe_activation_hook`.
-- These facts only mean repository fixture and contract-gate evidence exists; they do not mean `D:\PythonProject_paper_suggest` has completed Phase 1, and they do not mean a real target-project GUI is ready for operation.
+- These facts only mean repository fixture and contract-gate evidence exists; the read-only inventory for `D:\PythonProject_paper_suggest` shows a Phase 1 candidate implementation, but it still needs formal readiness-checker evidence; they do not mean a real target-project GUI is ready for operation.
 - Without explicit remote-publication approval, GitLab/GitHub are outside this plan's automatic execution scope.
 
 ## 1. Goal
@@ -43,6 +43,14 @@ Current known local facts:
 Create a repeatable way for each local project to define and control its own MOE AI Agent without mixing project-private agent state, prompt sources, or GUI tooling across repositories.
 
 The immediate project is `D:\PythonProject_paper_suggest`, which needs a strict thesis-quality mentor MOE Agent controlled by `thesis-moe-on.cmd` and `thesis-moe-off.cmd`. Later projects should be able to add their own MOE Agents with the same structure.
+
+### 1.1 Target-project adaptation lanes
+
+This toolchain supports two project lanes:
+
+- Ready Lane: the target project already has the Phase 1 CLI / wrappers / startup checkpoints; the GUI runs the read-only readiness checker first, then installs and controls only after it passes.
+- Bootstrap Lane: the target project does not have Phase 1 yet; the GUI does not control state directly, and first reports the missing pieces plus an explicit scaffold / bootstrap plan for `project-on/off`, `project-status --json`, `list-sessions --json`, `status --json`, `assert-on`, `--session-id`, `.cmd` wrappers, startup hooks, and the project-private `MOE.md`, then moves to Ready Lane only after those pieces exist.
+- `D:\PythonProject_paper_suggest` should currently be treated as a Ready Lane candidate: this plan must not treat it as a project with no Phase 1, but it still requires formal readiness-checker go/no-go evidence before real GUI installation or control.
 
 ## 2. Relationship to the PySide6 capability plan
 
@@ -141,7 +149,7 @@ A timeout, stalled expert, or failed full-history fork is not evidence. The sess
 
 ## 6. Phase 1: urgent command-line control for `paper_suggest`
 
-The urgent implementation extends the existing `D:\PythonProject_paper_suggest` thesis MOE controls.
+The urgent implementation extends the existing `D:\PythonProject_paper_suggest` thesis MOE controls; projects with no Phase 1 must first use the Bootstrap Lane above to add the same command and checkpoint contract before entering this phase.
 
 Target behavior:
 
@@ -587,10 +595,10 @@ Phase-level summary:
 
 | Phase | Phase checkbox | Current status | Anti-ambiguity note |
 | --- | --- | --- | --- |
-| Phase 1: target-project command-line state model | [ ] | Pending target-project implementation/verification | It is unchecked because the `D:\PythonProject_paper_suggest` CLI, wrappers, startup hooks, and tests have not yet been confirmed by this repository. This repository now has read-contract, write-contract, atomic/lock-state, state-behavior fixture gates, a read-only readiness checker, wrapper-safety fixture gate, and operator-docs readiness gate, but the real target project remains incomplete. |
+| Phase 1: target-project command-line state model | [ ] | Ready Lane candidate exists; awaiting formal readiness-checker verification. Projects with no Phase 1 use the Bootstrap Lane. | Unchecked no longer means `D:\PythonProject_paper_suggest` necessarily lacks Phase 1; it means this repository has not yet recorded that project's read-only readiness-checker output as formal evidence. Projects with no Phase 1 must not enter direct GUI control and must first bootstrap the CLI / wrapper / startup checkpoint contract. |
 | Phase 2A: central installer, checker, and updater in this repository | [x] | Complete and merged into local `main` | Backed by this repository's local commit `3e4e819c73c78472d948e68d5352085dcac6551d` and local-gate evidence. |
 | Phase 2B: PySide6 GUI application | [x] | Fixture-safe GUI shell complete and merged into local `main` | Covers import-safe shell, view model, write readback, same-scope pending disable, keyboard/high-contrast semantics, and explicit visible-window boundary; real visible-window/QTest evidence remains later operational evidence and does not block the repository fixture-safe definition. |
-| Phase 2C: cross-project reuse and target install | [x] | Dual-fixture contract closed | Two isolated fixture projects now pass the same install/check/update/status contract, project A/B isolation, and private Agent TOML / `MOE.md` / state preservation on update; real target-project install still needs target-project Phase 1 completion and separate approval. |
+| Phase 2C: cross-project reuse and target install | [x] | Dual-fixture contract closed | Two isolated fixture projects now pass the same install/check/update/status contract, project A/B isolation, and private Agent TOML / `MOE.md` / state preservation on update; real target-project install still needs a passing Phase 1 readiness checker and separate approval. |
 
 #### Documentation and architecture contract
 
@@ -602,6 +610,8 @@ Phase-level summary:
 - [x] Define template generation as explicit dry run that must not copy another project's `MOE.md`.
 - [x] Define the dispatch boundary forbidding `full-history fork + specified custom role`.
 - [x] Define the compatible paths: main-session takeover, brief-based fresh dispatch, and durable brief.
+- [x] Define the Ready Lane for projects that already have Phase 1: GUI install and control require a passing read-only readiness checker.
+- [x] Define the Bootstrap Lane for projects without Phase 1: report blockers / scaffold / bootstrap plans only, and do not control state directly before Phase 1 exists.
 
 #### Phase 1: target-project command-line state model
 
@@ -770,17 +780,19 @@ Phase 2 acceptance:
 
 ## 13. Immediate next implementation boundary
 
-Next implementation should proceed as: close the target-project CLI first, keep GUI work fixture-backed first, and defer real target install until the target CLI contract exists.
+Next implementation should proceed as: verify Ready Lane candidates first, scaffold Bootstrap Lane projects first, and defer real target install until the target CLI contract exists.
 
-1. To control real `D:\PythonProject_paper_suggest` sessions, complete Phase 1 in the target project first: CLI state model, `list-sessions --json`, `status --json`, `assert-on`, `thesis-moe-on/off.cmd`, and target-project startup checkpoints.
+1. To control real `D:\PythonProject_paper_suggest` sessions, first record its Phase 1 go/no-go evidence with the read-only readiness checker; if it fails, fix only the specific gaps instead of misclassifying it as a project with no Phase 1.
 2. If there is no target-project write approval, this repository may continue with read-only readiness checking and fixture/mock target-project validation; it must not write real `paper_suggest` `.omx/state` or wrappers.
-3. The Phase 2B GUI may change state only by invoking the target-project CLI; if that CLI is missing, the GUI must show a blocker instead of scanning or writing state files directly.
-4. Phase 2C is closed at the repository fixture layer after two isolated fixtures passed the same contract; the repository also has the Phase 1 read-contract fixture gate, the GUI write-command output-contract fixture gate, the write-command atomic/lock fixture gate, the project-default/session-override/invalid-record/legacy/no-op state-behavior fixture gate, the read-only readiness checker, the wrapper-safety fixture gate, the operator-docs readiness gate, the Agent TOML standard-extension readiness gate, the private-prompt source location readiness gate, and the `assert-on` read-only assertion readiness gate, while real-project install still depends on later target-project approval and Phase 1 readiness.
-5. This document does not move from `draft` yet: Phase 2B, fixture-level Phase 2C, the repository Phase 1 read-contract gate, the GUI write-command output-contract gate, the write-command atomic/lock gate, the state-behavior gate, the read-only readiness checker, the wrapper-safety gate, the operator-docs gate, the Agent TOML standard-extension gate, the private-prompt source location gate, and the `assert-on` read-only assertion gate now have local evidence, but the real target-project Phase 1 CLI / wrapper / startup checkpoint remains incomplete.
+3. For projects without Phase 1, the GUI enters only the Bootstrap Lane: show missing pieces and output scaffold / bootstrap suggestions or an explicit dry-run plan; do not enter control mode before the CLI / wrappers / startup checkpoints exist.
+4. The Phase 2B GUI may change state only by invoking the target-project CLI; if that CLI is missing, the GUI must show a blocker instead of scanning or writing state files directly.
+5. Phase 2C is closed at the repository fixture layer after two isolated fixtures passed the same contract; the repository also has the Phase 1 read-contract fixture gate, the GUI write-command output-contract fixture gate, the write-command atomic/lock fixture gate, the project-default/session-override/invalid-record/legacy/no-op state-behavior fixture gate, the read-only readiness checker, the wrapper-safety fixture gate, the operator-docs readiness gate, the Agent TOML standard-extension readiness gate, the private-prompt source location readiness gate, and the `assert-on` read-only assertion readiness gate, while real-project install still depends on later target-project approval and Phase 1 readiness.
+6. This document does not move from `draft` yet: Phase 2B, fixture-level Phase 2C, the repository Phase 1 read-contract gate, the GUI write-command output-contract gate, the write-command atomic/lock gate, the state-behavior gate, the read-only readiness checker, the wrapper-safety gate, the operator-docs gate, the Agent TOML standard-extension gate, the private-prompt source location gate, and the `assert-on` read-only assertion gate now have local evidence, but `D:\PythonProject_paper_suggest` still needs formal readiness-checker output, and projects with no Phase 1 still need the Bootstrap Lane scaffold to land.
 
 Phase gate rules:
 
 - Phase 1 is complete only after command-line tests prove project default, registered-session propagation, session override, invalid-record skip, and legacy-record readability.
+- Ready Lane projects may enter real GUI install or control only after the Phase 1 readiness checker passes; Bootstrap Lane projects may upgrade to Ready Lane only after the same Phase 1 contract exists.
 - Phase 2A is complete on this repository's local `main`; it covers only the central installer/checker/updater and does not remove the Phase 1 prerequisite for real GUI use.
 - Phase 2B may start in fixture mode in this repository; real target-project GUI install still requires the Phase 1 CLI contract.
 - Any GUI source, checker, or test added to this repository should be implemented as a separate local change and run through this repository's local gate.
