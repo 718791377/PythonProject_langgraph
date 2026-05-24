@@ -33,7 +33,8 @@
     "check_pyside6_packaging_opt_in_contract.test.py",
     "check_pyside6_operator_usage_guide.test.py",
     "project_moe_gui_toolchain.test.py",
-    "check_user_level_mcp_skills_browser_cli_baseline.test.py"
+    "check_user_level_mcp_skills_browser_cli_baseline.test.py",
+    "skills2cli.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []

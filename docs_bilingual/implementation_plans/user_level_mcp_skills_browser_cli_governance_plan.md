@@ -4,7 +4,7 @@ lang: en
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: baseline_policy_checker_archived
+implementation_state: skills2cli_mvp_repo_local_implemented
 last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -15,7 +15,7 @@ source_reference_file: reference_files/1.md
 
 ## 0. Current review verdict
 
-As of 2026-05-24, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure. The first policy/checker baseline slice has completed local implementation, validation, stable spec promotion, and OpenSpec archive closeout; continue with the second `skills2cli` MVP slice next.
+As of 2026-05-24, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure. The first policy/checker baseline slice has completed local implementation, validation, stable spec promotion, and OpenSpec archive closeout. The second `skills2cli` MVP slice now has a repo-local helper and test coverage; it remains `implemented-local` rather than fully user-level `active` until a later governed wrapper/install receipt slice lands.
 
 Review verdict:
 
@@ -26,7 +26,7 @@ Review verdict:
 - Unchecked checklist items are downstream implementation state, not plan gaps. A lane must not be marked `active` until its code, checker, install artifact, and receipt evidence all exist.
 - The sequence is baseline before capability: finish token/risk, authorization receipt, update receipt, and evidence-redaction controls before implementing `skills2cli`, `mcp2cli`, browser automation, and `wecom-cli` capability surfaces.
 
-The next action is not to broaden this plan. Continue with section 16 slice 2, the `skills2cli` MVP: build compact index/search/show and warning-audit repo-local helper/tests first, then decide whether to install a user-level wrapper.
+The next action is not to broaden this plan. After the repo-local `skills2cli` MVP is validated and archived, continue with the next governed implementation slice rather than installing user-level wrappers implicitly.
 
 ## 1. Purpose
 
@@ -414,7 +414,7 @@ Default lane-state table:
 
 | Lane | Initial default state | Allowed default actions | Forbidden or approval-gated actions | Evidence required before `active` |
 | --- | --- | --- | --- | --- |
-| `skills2cli` | `planned`, then eligible for `active` after implementation | Compact read-only index/search/show/warning summaries | Applying/disabling skills, dumping complete plugin skill bodies, recording full private paths | Compact-output tests, warning-audit redaction tests, evidence that profile suggestions do not apply changes |
+| `skills2cli` | `implemented-local`; eligible for user-level `active` only after a later governed wrapper/install receipt | Compact read-only index/search/show/warning summaries | Applying/disabling skills, dumping complete plugin skill bodies, recording full private paths | Compact-output tests, warning-audit redaction tests, evidence that profile suggestions do not apply changes |
 | `mcp2cli` | `planned`, then profile-by-profile `active` | list/search/show; non-sensitive calls after category checks | Secrets, shell, browser state, remote mutation, payment/account/personal-data calls | Allowed-profile registry, sensitive-call fail-closed checker, authorization receipt schema |
 | `codex-port` allocator | `planned`; eligible for `active` only after receipt-backed reserve/renew/release | range-aware lease reserve/list/renew/release/import/gc | cross-owner range allocation, killing port holders, non-atomic registry writes, silent stale reuse | owner-range tests, concurrent-reservation fixtures, live-socket collision fixtures, lease receipt schema, stale PID/health evidence |
 | `chrome-devtools-mcp` | `planned`; local isolated debug mode may become `active` first | isolated-session local/debug inspection | human-owned Chrome, logged-in project profiles, cleanup | Managed wrapper, lease, profile ownership, stale-cleanup dry-run evidence |
@@ -551,12 +551,12 @@ Fine-grained implementation checklist:
 - [x] Add the sensitive authorization receipt schema with at least action, target, scope, expiry, session, and operator confirmation.
 - [x] Add the user-level tool update receipt schema covering install path, wrapper path, state path, pin, smoke result, and rollback pointer.
 - [x] Add sanitized-evidence rules that forbid committing secrets, cookies, tokens, raw browser data, message contents, full personal runtime paths, or complete plugin description dumps.
-- [ ] Implement `skills2cli index --json` with skill id, source layer, short description hash/summary, and availability status.
-- [ ] Implement `skills2cli search <query> --json` with compact summaries and location hints by default.
-- [ ] Implement `skills2cli show <skill-id> --json` without dumping complete skill bodies by default; full content requires a governed flag.
-- [ ] Implement `skills2cli profile suggest --task <text> --json` as recommendation-only, never direct apply.
-- [ ] Implement `skills2cli audit warnings --since <duration> --json` covering 2% skills-context-budget warnings and skipped-loading warnings.
-- [ ] Add `skills2cli` compact-output, privacy-redaction, profile-non-apply, and warning-audit tests.
+- [x] Implement `skills2cli index --json` with skill id, source layer, short description hash/summary, and availability status.
+- [x] Implement `skills2cli search <query> --json` with compact summaries and location hints by default.
+- [x] Implement `skills2cli show <skill-id> --json` without dumping complete skill bodies by default; full content requires a governed flag.
+- [x] Implement `skills2cli profile suggest --task <text> --json` as recommendation-only, never direct apply.
+- [x] Implement `skills2cli audit warnings --since <duration> --json` covering 2% skills-context-budget warnings and skipped-loading warnings.
+- [x] Add `skills2cli` compact-output, privacy-redaction, profile-non-apply, and warning-audit tests.
 - [ ] Implement the `mcp2cli` allowed profile registry and separate low-risk discovery from medium/high-risk calls.
 - [ ] Implement compact `mcp2cli list/search/show` output with explicit `--full` expansion boundaries.
 - [ ] Implement the `mcp2cli call` sensitive-category fail-closed gate.
