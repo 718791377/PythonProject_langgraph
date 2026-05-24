@@ -143,6 +143,21 @@ The final report must distinguish:
 - `durable_team blocked by <reason>` - a durable or persistent team was considered but could not launch;
 - `backend_default=langgraph, backend_ready=true` - records that LangGraph is the default ready backend, not proof that a persistent team was launched.
 
+### 2.5 2026-05-24 prompt-independent parity and evidenceguard gap
+
+The 2026-05-24 session retrospective confirmed that Section 2.3 already says automatic collaboration does not depend on a user reminder, but the implemented evidence surface is still not enough to prove that the same complex task always produces the same collaboration path with and without the phrase "use experts / durable_team / persistent team". This section therefore records a hardening gap, not a user-prompt problem.
+
+Handling principles:
+
+- When an explicit collaboration phrase is present, treat it as a hard routing directive or strong reminder; when absent, never use that absence as a reason to skip the activation check.
+- Do not claim prompt-independent parity from policy text alone; require fixtures, checkers, or persisted audit evidence.
+- Durable/persistent team runtime claims require active selector, team manifest, worker heartbeat, worker lifecycle record, and close/absorb record.
+- Expert/subagent use must be traceable through `spawn / wait / timeout / result / close / absorbed`.
+- After a LangGraph workflow is completed or submitted, repo-local state must not keep an unexplained stale `running` state.
+- Until these checkers exist, final reports must distinguish policy expectation from actual runtime evidence.
+
+The follow-up implementation entrypoint is `docs_bilingual/implementation_plans/orchestration_prompt_independent_collaboration_parity_plan.md` and `.zh-CN.md`. That plan is a future implementation plan, not evidence that a durable or persistent team is currently running.
+
 ## 3. Activation trace format
 
 Activation check must re-run on new session, session reload, Codex restart, resume, phase change, user "continue", expert timeout, `.omx` durable-state detection, or expansion to two or more execution slices.
@@ -570,6 +585,28 @@ Completed outcomes:
 - Managed user-level team-mode templates now carry the global automatic-collaboration default.
 
 Operational caveat: live platform constraints can still block native expert spawning, and durable/persistent-team launch still requires task thresholds. The completed implementation enforces reporting and fallback behavior; it does not bypass tool contracts or force every task into a team.
+
+### Phase 4 - Prompt-independent collaboration parity hardening - status: planned follow-up
+
+Phase 4 does not reopen the completed Phase 0-3 baseline. It only handles the new gap found in the 2026-05-24 retrospective. This phase must start with a new bounded OpenSpec change before checkers and tests are implemented.
+
+| Process group | Inputs | Tools and Techniques | Outputs |
+| --- | --- | --- | --- |
+| Initiating | Sections 2.3/2.5, session retrospective, existing routing traces, user requirement for equal collaboration without explicit phrases | Problem framing, non-goal review, evidence-gap decomposition | New OpenSpec proposal, acceptance criteria, explicit non-claims |
+| Planning | `orchestration_prompt_independent_collaboration_parity_plan.*`, current checker patterns, repo-local `.omx/state/` evidence shape | Slice decomposition, fixture design, owner mapping, rollback boundary | Frozen implementation plan, test matrix, file ownership |
+| Executing | Frozen plan, feature worktree, OpenSpec delta, test fixtures | TDD, Python checkers, JSON fixtures, guard wiring, bounded verifier review | Parity checker, evidenceguard, expert lifecycle audit, LangGraph release checker, docs updates |
+| Monitoring and Controlling | Focused tests, `run_openspec_guard`, local gate, local MR review, verifier findings | Diff review, OpenSpec guard, CI manifest check, false-claim fixture review | Accepted/rejected defects, residual risks, rollback-ready changes |
+| Closing | Passing gates, clean branch, OpenSpec completion evidence | Archive decision, docs registry sync, lessons learned | Merge-ready branch, archive or deferral note, next backlog |
+
+Minimum Phase 4 task granularity:
+
+1. Create a new OpenSpec change for prompt-independent collaboration parity, durable/persistent evidenceguard, expert lifecycle audit, and LangGraph release evidence contracts.
+2. Create `tools/check_orchestration_prompt_independent_collaboration_parity.py` to verify that phrase/no-phrase fixtures with the same task shape produce the same routing decision class.
+3. Create `tools/check_durable_persistent_evidence_guard.py` to reject durable/persistent team runtime claims without selector, manifest, heartbeat, worker lifecycle, and close/absorb evidence.
+4. Create `tools/check_expert_lifecycle_audit.py` to require `spawn / wait / timeout / result / close / absorbed` and reject timeout-as-evidence.
+5. Create `tools/check_langgraph_state_release.py` so completed/submitted LangGraph threads do not keep unexplained stale `running` state.
+6. Add one `test/*.test.py` file per checker and register them in `tools/ci/ci_test_manifest.json`.
+7. Wire the checkers into `tools/run_openspec_guard.py`, then run `git diff --check`, `openspec validate --all`, `python .\tools\check_precommit_update_archive.py --root . --json`, `python .\tools\run_openspec_guard.py --root .`, `.\tools\ci\local_gate.ps1 -StepTimeoutSeconds 360`, and `.\tools\ci\local_mr_review.ps1`.
 
 ## 21. Implemented scope and closure evidence
 

@@ -143,6 +143,21 @@ final report 必须区分：
 - `durable_team blocked by <reason>` - 已评估 durable 或 persistent team，但因具体原因无法启动；
 - `backend_default=langgraph, backend_ready=true` - 记录 LangGraph 是默认且 ready 的 backend，并不等同于 persistent team 已启动。
 
+### 2.5 2026-05-24 提示词无关一致性与 evidenceguard 缺口
+
+2026-05-24 会话复盘确认：本文第 2.3 节已经规定“自动协同不依赖用户提示”，但当前已落地证据仍不足以严格证明同一复杂任务在有无“尽可能多使用 experts / durable_team / persistent team”短语时一定产生同类协同执行路径。因此，本节把该问题升级为后续硬化缺口，而不是把它解释成用户提示词问题。
+
+该缺口的处理原则：
+
+- 显式协同短语出现时，是 hard routing directive 或强提醒；没有出现时，不得成为跳过 activation check 的理由；
+- 不能只凭本文的 policy 文字宣称“无提示词也一定相同执行”，必须有 fixture、checker 或落盘审计证据；
+- durable/persistent team 的运行声明必须被 active selector、team manifest、worker heartbeat、worker lifecycle record、close/absorb record 支撑；
+- expert/subagent 的使用必须能追踪 `spawn / wait / timeout / result / close / absorbed`；
+- LangGraph workflow 完成或提交后，repo-local state 不得长期残留无释放说明的 `running`；
+- 在上述 checker 未实现前，final report 必须把“政策要求相同”和“本次已有运行证据证明相同”分开表述。
+
+后续实施入口是 `docs_bilingual/implementation_plans/orchestration_prompt_independent_collaboration_parity_plan.md` 与 `.zh-CN.md`。该计划是后续实施计划，不是当前 durable/persistent team 已运行的证据。
+
 ## 3. Activation trace 新格式
 
 每个新会话、session reload、Codex restart、resume、阶段变化、“继续”、expert 超时、发现 `.omx` durable state、或任务扩展到 2+ execution slices 时，必须重新做 activation check。
@@ -571,6 +586,28 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 
 运行边界说明：live platform constraint 仍可能阻塞 native expert spawning，durable/persistent-team launch 仍需要任务阈值。本实施完成的是报告、fallback 与生成模板 enforcement；它不会绕过工具契约，也不会强制每个任务都进 team。
 
+### Phase 4 - 提示词无关协同一致性硬化 - status: planned follow-up
+
+Phase 4 不重新打开 Phase 0-3 已完成的 baseline；它只处理 2026-05-24 复盘暴露的新缺口。该阶段必须先创建新的有边界 OpenSpec change，再实施 checker 与测试。
+
+| 过程组 | 输入 | 工具与技术 | 输出 |
+| --- | --- | --- | --- |
+| 启动 | 本文第 2.3/2.5 节、会话复盘、已有 routing trace、用户关于“无显式短语也应同等协同”的要求 | 问题框定、非目标审查、证据缺口分解 | 新 OpenSpec proposal、验收标准、非声明边界 |
+| 规划 | `orchestration_prompt_independent_collaboration_parity_plan.*`、当前 checker 模式、repo-local `.omx/state/` 证据结构 | 切片拆分、fixture 设计、owner mapping、rollback boundary | 冻结实施计划、测试矩阵、文件 ownership |
+| 执行 | 冻结计划、feature worktree、OpenSpec delta、测试夹具 | TDD、Python checkers、JSON fixtures、guard wiring、bounded verifier review | parity checker、evidenceguard、expert lifecycle audit、LangGraph release checker、文档更新 |
+| 监控与控制 | 聚焦测试、`run_openspec_guard`、local gate、local MR review、专家复核 | Diff review、OpenSpec guard、CI manifest check、false-claim fixture review | 接受/拒绝的缺陷、剩余风险、可回滚变更 |
+| 收尾 | 通过的 gates、干净分支、OpenSpec 完成证据 | archive decision、docs registry sync、经验教训归档 | merge-ready branch、归档或延期说明、下一轮 backlog |
+
+Phase 4 的最小任务颗粒度：
+
+1. 新建 OpenSpec change，声明 prompt-independent collaboration parity、durable/persistent evidenceguard、expert lifecycle audit、LangGraph release 四个证据契约；
+2. 新建 `tools/check_orchestration_prompt_independent_collaboration_parity.py`，用同一 task shape 的“有显式短语/无显式短语”fixtures 验证 routing decision class 一致；
+3. 新建 `tools/check_durable_persistent_evidence_guard.py`，没有 selector、manifest、heartbeat、worker lifecycle、close/absorb evidence 时，拒绝 durable/persistent team 运行声明；
+4. 新建 `tools/check_expert_lifecycle_audit.py`，要求 expert 证据链包含 `spawn / wait / timeout / result / close / absorbed`，并禁止 timeout-as-evidence；
+5. 新建 `tools/check_langgraph_state_release.py`，完成或提交后的 LangGraph thread 不得无说明残留 `running`；
+6. 为每个 checker 增加对应 `test/*.test.py`，并登记到 `tools/ci/ci_test_manifest.json`；
+7. 将 checker 接入 `tools/run_openspec_guard.py`，再运行 `git diff --check`、`openspec validate --all`、`python .\tools\check_precommit_update_archive.py --root . --json`、`python .\tools\run_openspec_guard.py --root .`、`.\tools\ci\local_gate.ps1 -StepTimeoutSeconds 360`、`.\tools\ci\local_mr_review.ps1`。
+
 ## 21. 已实施范围与收口证据
 
 原 OpenSpec change `enforce-automatic-orchestration-routing` 已经实施、归档，并由后续 enforcement slices 扩展。当前已落地范围如下：
@@ -737,6 +774,11 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 - LangGraph graph/checkpoint work 使用 LangGraph entrypoints 与 repo-local `.omx/state/langgraph/` state，compatibility records 仍仅作为 context。
 - Durable artifacts、frozen briefs 与 survivor queues 必须持久化到 repo-local state 或 documented artifact paths。
 - 计划完成声明必须引用已归档 OpenSpec changes 与当前 checker/test evidence，而不是只引用 `status: active`。
+- 同一 task shape 在有/无显式协同短语时必须产生同一类 activation decision；否则 checker 必须失败。
+- durable/persistent team 运行声明缺少 selector、manifest、heartbeat、worker lifecycle 或 close/absorb evidence 时必须 fail closed。
+- Expert lifecycle 审计必须记录 `spawn / wait / timeout / result / close / absorbed`，且 timeout/stall/upstream pacing 不得作为完成证据。
+- LangGraph work 已完成或提交后，不得长期残留没有 release marker 或继续执行理由的 `running` state。
+- 面向用户的最终报告必须区分 policy expectation、actual expert evidence、durable/persistent team evidence、main-session takeover 和 blocker。
 
 ## 26. 适用范围与权威边界
 
