@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: skills2cli_mvp_repo_local_implemented
+implementation_state: mcp2cli_mvp_repo_local_implemented
 last_reviewed_at: 2026-05-24
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -417,7 +417,7 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 | Lane | 初始默认状态 | 允许的默认动作 | 禁止或需授权动作 | Active 前必须具备的证据 |
 | --- | --- | --- | --- | --- |
 | `skills2cli` | `implemented-local`；只有后续受治理 wrapper/install receipt 落地后才可成为用户级 `active` | index/search/show/warning summary 的紧凑只读输出 | apply/disable skills、输出完整 plugin skill body、记录私有完整路径 | compact-output 测试、warning audit 脱敏测试、profile 建议不直接应用的证据 |
-| `mcp2cli` | `planned`，按 profile 逐步 `active` | list/search/show，非敏感 call 需 category 检查 | secrets、shell、browser state、remote mutation、payment/account/personal data call | allowed-profile registry、sensitive-call fail-closed checker、授权 receipt schema |
+| `mcp2cli` | `implemented-local`???????? wrapper/install receipt ? live adapter ?????????? `active` | list/search/show???? call ?????????? guard facade | secrets?shell?browser state?remote mutation?payment/account/personal-data call | allowed-profile registry?sensitive-call fail-closed checker?authorization receipt schema |
 | `codex-port` allocator | `planned`，reserve/renew/release 均有 receipt 后可成为 `active` | 按号段 reserve/list/renew/release/import/gc lease | 跨 owner 分配端口、kill 端口持有进程、非原子 registry 写入、无证据复用 stale lease | owner-range 测试、并发 reserve fixture、live-socket 冲突 fixture、lease receipt schema、stale PID/health 证据 |
 | `chrome-devtools-mcp` | `planned`，本地调试 isolated mode 可先 `active` | isolated-session local/debug inspect | human-owned Chrome、登录态 project-profile、cleanup | managed wrapper、lease、profile ownership、stale cleanup dry-run 证据 |
 | CDP Bridge | `on-demand` | tab list、DOM scan、screenshot、read-only inventory | cookie、JS write、click/type/navigate sensitive context | owner check、authorization gate、read/write 分离测试 |
