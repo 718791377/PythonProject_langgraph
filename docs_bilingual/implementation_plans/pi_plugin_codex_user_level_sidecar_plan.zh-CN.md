@@ -5,7 +5,7 @@ status: draft
 plan_readiness: ready-for-user-confirmation
 doc_class: implementation_plan
 created_at: 2026-05-24
-last_reviewed_at: 2026-05-24
+last_reviewed_at: 2026-05-25
 scope: codex_to_pi_only
 implementation_lane: p0_read_only_sidecar
 source_reference_file: reference_files/3.md
@@ -29,7 +29,7 @@ related_docs:
 
 ## 0. 本次复核结论
 
-原方案方向正确，但颗粒度偏“架构草案”：缺少可执行的任务级拆分、CLI JSON contract、read-only guard 算法、receipt schema、fixture test 边界和治理文档更新落点。本版已补齐这些内容，因此进入 `ready-for-user-confirmation`：可以请用户确认是否进入实现；在确认前仍不得安装用户级插件、不得修改 `C:\Users\lenovo\.codex\config.toml`、不得写 personal marketplace、不得调用真实 Pi 执行仓库任务。
+原方案方向正确，但颗粒度偏“架构草案”：缺少可执行的任务级拆分、CLI JSON contract、read-only guard 算法、receipt schema、fixture test 边界和治理文档更新落点。本版同时接收从 `user_level_mcp_skills_browser_cli_governance_plan.*` 迁出的 `oh-my-pi` 安装/update/rollback 治理内容。本版已补齐这些内容，因此进入 `ready-for-user-confirmation`：可以请用户确认是否进入实现；在确认前仍不得安装用户级插件、不得修改 `C:\Users\lenovo\.codex\config.toml`、不得写 personal marketplace、不得调用真实 Pi 执行仓库任务。
 
 完备性检查：
 
@@ -243,6 +243,51 @@ C:\Users\lenovo\.codex\state\pi-plugin-codex\
 - 有 install receipt、setup smoke、rollback pointer 后才能是 `on-demand`。
 - 真实 Pi read-only smoke 通过后才能成为 `active-candidate`。
 - installer 不直接编辑 `C:\Users\lenovo\.codex\config.toml`；如需 Codex personal plugin marketplace 注册，先输出 dry-run diff 和 receipt，再由用户确认执行。
+
+### 6.1 `oh-my-pi` / OMP reference-sidecar 治理
+
+从主 MCP/skills/browser/CLI 治理方案迁入的规则统一归属本方案；主方案只保留 reference-only 引用。本小节仍不代表当前已经安装 `oh-my-pi`，而是定义未来如需安装或 binary override 研究时必须满足的治理边界。
+
+默认状态：
+
+- `oh-my-pi` / `omp` 默认是 `reference-only`。
+- 只有在用户明确要求 Pi family sidecar 适配、并且本方案对应 OpenSpec change 已冻结后，才允许进入 `planned/on-demand`。
+- 它不替代 Codex、native subagent、native_omx、LangGraph、`codex-ohmy` 或 Codex `apply_patch`。
+
+未来受控安装布局（仅在单独实施时使用）：
+
+```text
+%USERPROFILE%\.codex\external\oh-my-pi\
+%USERPROFILE%\.codex\tools\oh-my-pi\
+%USERPROFILE%\.codex\state\tool-updates\oh-my-pi\
+%USERPROFILE%\.codex\state\pi-plugin-codex\
+```
+
+安装 / update / rollback 规则：
+
+- clone 必须固定 commit 或 tag；不得把 floating branch 当成可复现安装证据。
+- 依赖必须安装在 external 目录、用户级隔离 runtime 或受控 package 目录中；不得做无记录全局安装。
+- wrapper 必须短小，只转发到 pinned package；不得内嵌长 prompt 或复制 vendor runtime 到 repo 文档。
+- 每项目 state 必须放在源码 clone 外，并包含 project slug、session namespace 或 workspace root hash；仓库证据只能保留脱敏摘要。
+- updater 必须先 fetch 到 staging ref 或 staging package，再运行 smoke tests、wrapper help checks、RPC/read-only smoke（如适用）和 authorization guard checks。
+- smoke 通过后才允许切换 wrapper pin；切换必须写 update receipt。
+- update receipt 必须包含 source URL、pinned ref、install root、wrapper path、state root、smoke summary、rollback pointer、operator confirmation scope 和 `secrets_recorded=false`。
+- smoke 失败时必须继续使用上一 pinned version；不得把失败版本标记为 active。
+- rollback 必须只依赖 receipt 即可恢复上一 wrapper/package/pin；不得依赖聊天记录。
+
+可复用参考范围：
+
+- hash-anchored edit 研究；
+- CLI / harness operator ergonomics；
+- sidecar stats、prompt UX、failure recovery 与 receipt-first update 模式；
+- `The Harness Problem` 中的 harness 可靠性、可恢复编辑与失败显式化思想。
+
+禁止范围：
+
+- 不把 `oh-my-pi` 当成 Codex 启动器；
+- 不把 `omp` binary override 当成默认 Pi binary；
+- 不把 `oh-my-pi` 的 provider config、API key、models 文件或用户目录原文写入仓库；
+- 不在没有 one-task authorization 和 read-only guard 的情况下让 Pi family runtime 修改当前 worktree。
 
 ## 7. CLI JSON contract
 
@@ -575,8 +620,8 @@ P0 的 `ask`、`review`、`adversarial-review` 必须执行以下步骤：
 
 **Steps:**
 
-- [ ] 把 `oh-my-pi` 小节改为 `Pi family 与 pi-plugin-codex 用户级适配`。
-- [ ] readiness 表新增：`pi=on-demand`、`oh-my-pi/omp=reference-only`、`pi-plugin-codex=planned/on-demand`、`pi-plugin-cc=reference-only Claude Code only`、`pi-codex=non-goal reverse bridge`。
+- [x] 将主治理方案中的 `oh-my-pi` 直接安装小节迁入本 Pi sidecar 方案，并把主治理方案改为 reference-only 边界。
+- [x] readiness 表保持：`pi=on-demand`、`oh-my-pi/omp=reference-only`、`pi-plugin-codex=planned/on-demand`、`pi-plugin-cc=reference-only Claude Code only`、`pi-codex=non-goal reverse bridge`。
 - [ ] OpenSpec 切片 6 改为 `Pi family sidecar`，owner lane 增加 `pi-plugin-codex`。
 - [ ] receipt schema 增加 Pi binary、RPC smoke、job state path、read-only guard evidence。
 - [ ] `check_pi_plugin_codex_contract.py` 防止把 `pi-codex` 标成依赖，防止把 `pi-plugin-cc` 标成可直接安装 Codex 插件，防止 `codex-ohmy` 被描述为 Pi launcher。
@@ -678,14 +723,14 @@ docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance
 
 建议变更：
 
-- 标题从 `oh-my-pi 用户级安装和适配` 改为 `Pi family 与 pi-plugin-codex 用户级适配`。
+- 主治理方案标题/小节从直接 `oh-my-pi 用户级安装和适配` 收敛为 Codex 通用 harness reference boundary；Pi family 与 `oh-my-pi` 的安装/update/rollback 规则归属本方案。
 - readiness 表新增：
   - `pi`：`on-demand`；
   - `oh-my-pi/omp`：`reference-only`；
   - `pi-plugin-codex`：`planned/on-demand`；
   - `pi-plugin-cc`：`reference-only, Claude Code only`；
   - `pi-codex`：`non-goal, reverse bridge`。
-- OpenSpec 切片 6 从单一 `oh-my-pi` 改为 `Pi family sidecar`。
+- 主治理方案的 OpenSpec 切片 6 从直接 `oh-my-pi` runtime 实施改为 Codex harness reference boundary；真实 Pi family sidecar 切片归属本方案。
 - owner lane 增加 `pi-plugin-codex`。
 - 安装 receipt schema 增加 Pi binary、RPC smoke、job state path 和 read-only guard evidence。
 - 完成前不得把 Pi family lane 标为 `active`；没有真实 Pi smoke 时最多是 `planned/on-demand`。
@@ -717,5 +762,12 @@ docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance
 - [x] Read-only guard 可测试：before/after fingerprint 与 blocker 已定义。
 - [x] Receipt/rollback 可测试：dry-run、apply、rollback pointer 已定义。
 - [x] P0/P1 切分清楚：P0 不写当前 worktree，P1 独立 worktree。
-- [x] 治理衔接清楚：现有 `user_level_mcp_skills_browser_cli_governance_plan.*` 更新点已列出。
+- [x] 治理衔接清楚：现有 `user_level_mcp_skills_browser_cli_governance_plan.*` 更新点已列出并已迁移 `oh-my-pi` 直接实施内容。
 - [x] 提交前验证命令清楚：implementation plan checker、OpenSpec guard、precommit gate、local gate、local MR review。
+
+
+## 18. 参考源
+
+- https://github.com/can1357/oh-my-pi
+- https://blog.can.ac/2026/02/12/the-harness-problem/
+- `reference_files/3.md` - local reference link list for this plan.

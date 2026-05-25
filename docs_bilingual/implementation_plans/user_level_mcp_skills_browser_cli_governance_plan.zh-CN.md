@@ -6,7 +6,7 @@ translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browse
 status: draft
 plan_readiness: execution-ready
 implementation_state: cdp_bridge_read_only_defaults_repo_local_implemented
-last_reviewed_at: 2026-05-24
+last_reviewed_at: 2026-05-25
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
@@ -20,7 +20,7 @@ source_reference_file: reference_files/1.md
 
 复核结论：
 
-- 内容覆盖完整：MCP facade、skills 按需发现、browser owner、Chrome DevTools MCP、CDP Bridge、OpenCLI、`oh-my-pi`、CLI-Anything 与 `wecom-cli` 均有默认状态、授权边界、安装证据和回滚要求。
+- 内容覆盖完整：MCP facade、skills 按需发现、browser owner、Chrome DevTools MCP、CDP Bridge、OpenCLI、CLI-Anything 与 `wecom-cli` 均有默认状态、授权边界、安装证据和回滚要求；`oh-my-pi` 与 `The Harness Problem` 仅作为 Codex 通用 harness 治理参考源，不再由本方案直接实施。
 - 端口治理已明确：Codex 使用靠前的用户级号段，OpenClaw 使用靠后的号段，OpenCLI 必须使用端口分配器驱动的 `--port auto`，不得固定端口；端口分配器已经具备 reserve/release/import/gc 命令契约。
 - 并发分配安全已明确：registry 更新必须原子化，绑定过程使用临时 lease，长时间运行的 owner 必须续租，崩溃恢复必须有证据。
 - 动态本地事实已纳入治理：运行时进程是否存在、本机安装路径等信息必须由只读 inventory 刷新，并脱敏后才能成为仓库证据。
@@ -39,7 +39,8 @@ source_reference_file: reference_files/1.md
 1. 优先使用低 token、低风险能力；
 2. 只有任务确实需要时才启用高 token 或高风险能力；
 3. 涉及用户敏感信息的操作必须获得用户明确授权；
-4. 所有长期用户级 helper 必须可固定版本、可审计、可更新、可回滚。
+4. 所有长期用户级 helper 必须可固定版本、可审计、可更新、可回滚；
+5. 本方案只治理 Codex 用户级与跨项目通用能力；PyCharm 只可作为运行 Codex 的宿主终端或消费项目环境，不纳入 IDE 本体集成范围。
 
 本方案同时实施 MCP 治理和 skills 治理：新增面向 MCP 的 `mcp2cli`，以及面向 Codex skills 的 `skills2cli`。
 
@@ -54,7 +55,7 @@ source_reference_file: reference_files/1.md
 - `OpenCLI`：安装为 on-demand 用户级 adapter 候选，不作为默认常驻能力。
 - `CLI-Anything` 与 CLI-Anything Hub：安装为用户级 harness 生成/参考工具，并用于辅助设计 `wecom-cli`。
 - `The Harness Problem`：作为后续 hash-anchored edit 与 harness 可靠性研究参考。
-- `oh-my-pi`：作为用户级 sidecar reference/runtime 安装适配，不替代 Codex。
+- `oh-my-pi`：仅作为 Pi family / harness / UX 参考源；真实 sidecar 安装、receipt、update 与 rollback 规则迁入 `pi_plugin_codex_user_level_sidecar_plan.*`。
 
 仅作为后续“Codex CLI 个人开发者生产级持久化团队”参考源：
 
@@ -67,7 +68,6 @@ source_reference_file: reference_files/1.md
 
 ```text
 C:\Users\lenovo\.codex\external\mcp2cli\
-C:\Users\lenovo\.codex\external\oh-my-pi\
 C:\Users\lenovo\.codex\external\cli-anything\
 C:\Users\lenovo\.codex\external\opencli\
 C:\Users\lenovo\.codex\tools\mcp2cli\
@@ -303,29 +303,23 @@ OpenCLI：
 - 未获得明确 one-task 授权时，不得绑定 human-owned Chrome tab。
 - 优先使用 `isolated-session-managed` 或 `project-profile`，而不是 human-owned session。
 
-## 10. `oh-my-pi` 用户级安装和适配
+## 10. Codex 通用治理 harness 参考边界
 
-目标：把 `oh-my-pi` 作为 sidecar reference/runtime，用于 harness 与编辑思路，不替代 Codex。
+目标：把 `oh-my-pi` 与 `The Harness Problem` 中可复用的 harness、UX、hash-anchored edit 与可靠性思想沉淀为 Codex 通用治理参考，而不是在本方案中安装或启动 Pi family runtime。
 
-实施要求：
+本方案只保留参考边界：
 
-- 克隆到 `C:\Users\lenovo\.codex\external\oh-my-pi\`，固定 commit 或 tag。
-- 依赖安装在该目录或用户级 runtime，不做无记录的全局安装。
-- Wrapper 放在 `C:\Users\lenovo\.codex\tools\oh-my-pi\`。
-- 每项目 state 必须放在克隆源码之外，并包含 project slug 和 session namespace。
-- 首轮只适配以下概念：
-  - hash-anchored edit 研究；
-  - CLI/harness 人机工效；
-  - sidecar stats 或 UX 参考。
-- 不替代 Codex `apply_patch`，不替代 native subagent workflow。
+- `oh-my-pi` 只可作为 Pi family / harness / UX 资料来源；不得在本方案中创建用户级 `oh-my-pi` wrapper、安装目录、updater 或 runtime state。
+- `The Harness Problem` 只可作为 hash-anchored edit、harness 可靠性与失败可恢复设计的研究参考；不得把博客内容当成已实现工具能力。
+- 与 Pi、`oh-my-pi`、`omp`、`pi-plugin-codex`、binary override、RPC smoke、job state、read-only guard、update receipt 和 rollback pointer 有关的实施规则，统一归属 `pi_plugin_codex_user_level_sidecar_plan.*`。
+- 本方案可复用的只有通用治理模式：pinned reference、receipt-first update、smoke-before-active、rollback-ready、reference-only 默认状态、敏感操作显式授权和 repo-local source-of-truth。
+- Codex 主会话仍是 leader；reference source、skills profile 或 CLI harness helper 都不是 native subagent，也不是 durable backend。
 
-更新策略：
+检查要求：
 
-- fetch upstream 到 staging ref。
-- 运行 smoke tests 和 wrapper help checks。
-- 写 update receipt。
-- 测试通过后才切换 wrapper pin。
-- 保留上一版本 rollback pointer。
+- 主治理方案不得把 `oh-my-pi` 描述为本方案直接安装的用户级工具。
+- 主治理方案不得把 `oh-my-pi`、Pi 或 OMP 描述为 Codex、native subagent、native_omx 或 LangGraph 的替代品。
+- 如需实现 Pi family sidecar，必须跳转到 `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.*` 并按其 receipt、read-only guard 与 rollback 规则执行。
 
 ## 11. CLI-Anything 与企业微信 WXWork 实施线
 
@@ -422,7 +416,7 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 | `chrome-devtools-mcp` | isolated-session、project-profile、stale scan 与 cleanup dry-run 为 `implemented-local`；live user-level start 与真实 cleanup 仍为 `planned` | 带 owner lease、授权 gate、dry-run start plan、stale scan 和 cleanup dry-run 的 isolated-session / project-profile local/debug inspect | human-owned Chrome、无授权登录态 project-profile、live start、真实 cleanup | managed wrapper、lease、profile ownership、project-profile retention、stale cleanup dry-run 证据 |
 | CDP Bridge | `on-demand` | tab list、DOM scan、screenshot、read-only inventory | cookie、JS write、click/type/navigate sensitive context | owner check、authorization gate、read/write 分离测试 |
 | OpenCLI | `on-demand` | isolated 或 project-profile 的明确任务适配 | 默认绑定 human-owned tab、常驻加载 | wrapper pin、browser owner registry、human-owned protection 测试 |
-| `oh-my-pi` | `reference-only` | 架构/UX/harness 参考读取 | 替代 Codex、替代 native subagent、无 receipt 更新 runtime | pinned clone、smoke test、update/rollback receipt |
+| `oh-my-pi` / `The Harness Problem` references | `reference-only` | 架构/UX/hash-anchored edit/harness 可靠性参考读取 | 替代 Codex、替代 native subagent、在本方案中安装 Pi family runtime | Pi sidecar 实施委派到 `pi_plugin_codex_user_level_sidecar_plan.*`；本方案只保留引用边界 |
 | CLI-Anything | `reference-only` | harness 结构参考和生成辅助 | 大量 hard-load skills、绕过授权规则 | isolated install receipt、update pin、rollback evidence |
 | `wecom-cli` API/Webhook | `planned` | 低风险通知/API 发送，secrets 可用时受控执行 | 无 secret storage 的明文凭据、未脱敏日志 | secret redaction、webhook/app-message smoke、receipt |
 | `wecom-cli` process/window inventory | `planned` | 只读列进程/窗口/前台状态 | 读取消息内容、点击、输入、发送 | process/window fixture 或 smoke、no-content-capture 测试 |
@@ -436,7 +430,7 @@ wecom-cli gui attach --pid <pid> --json --require-human-authorization
 - `chrome-devtools-mcp`：wrapper 写入 lease；isolated-session-managed 与 project-profile 模式明确区分；human-owned Chrome 被保护；stale-cleanup 必须先 dry-run 通过。
 - CDP Bridge：只读检查与可写动作分离；每个写动作或敏感读取都必须先具备 owner evidence 与 authorization evidence。
 - OpenCLI：在安装 pin、profile binding、阻止无授权绑定 human-owned tabs 的规则完成并通过测试前，保持 on-demand。
-- `oh-my-pi`：在 updater receipts、smoke tests 和 rollback pins 存在前，保持 reference-sidecar。
+- `oh-my-pi` / `The Harness Problem` references：永久保持 reference-only；任何 Pi family sidecar 安装、updater、smoke 或 rollback 规则都必须在 `pi_plugin_codex_user_level_sidecar_plan.*` 中处理。
 - CLI-Anything：在 installation receipts、update pins 和 rollback evidence 存在前，只作为 harness-generation support。
 - `wecom-cli` GUI automation：在 process/window inventory、global WXWork lease 和 one-task authorization receipts 完成并通过测试前，保持 disabled。
 
@@ -487,7 +481,7 @@ receipt 必填字段：
 - rollback pointer；
 - last updated time；
 - status：`active`、`on-demand`、`reference-only` 或 `disabled`；
-- owner lane：`skills2cli`、`mcp2cli`、`codex-port`、`browser`、`oh-my-pi`、`cli-anything`、`wecom-cli` 或 `reference`。
+- owner lane：`skills2cli`、`mcp2cli`、`codex-port`、`browser`、`cli-anything`、`wecom-cli` 或 `reference`。Pi family / `oh-my-pi` owner lane 归属 `pi_plugin_codex_user_level_sidecar_plan.*`。
 
 仓库证据可以记录 receipt schema、相对 state 名称、status 和脱敏后的 smoke-test summary。仓库证据不得记录 secrets、cookies、tokens、raw browser data、消息内容或完整个人运行时路径。
 
@@ -509,7 +503,7 @@ receipt 必填字段：
 3. `mcp2cli` 用户级 wrapper 与 allowed profile registry；
 4. browser owner registry 加 `chrome-devtools-mcp` managed wrapper，覆盖 isolated-session-managed 与 project-profile 模式；
 5. CDP Bridge 与 OpenCLI on-demand enforcement，包括 human-owned tab protection；
-6. `oh-my-pi` sidecar install/update receipts 与 rollback evidence；
+6. Codex 通用 harness reference boundary：只抽取 `oh-my-pi` 与 `The Harness Problem` 的治理模式，并把 Pi family sidecar 安装/update/rollback 委派到 `pi_plugin_codex_user_level_sidecar_plan.*`；
 7. CLI-Anything install/update receipts 与 harness-generation boundary；
 8. `wecom-cli` API/Webhook MVP 与 secret redaction；
 9. `wecom-cli` process/window inventory 与 read-only evidence；
@@ -524,7 +518,7 @@ OpenSpec 切片交付矩阵：
 | 3. `mcp2cli` MVP | allowed profile registry、list/search/show/call facade | compact output、sensitive-call fail-closed、receipt-required 测试 | profile registry、授权失败样例、wrapper smoke |
 | 4. Browser owner registry | owner registry、lease schema、`chrome-devtools-mcp` managed wrapper | isolated/project-profile/human-owned protection、cleanup dry-run 测试 | lease receipt、stale scan dry-run、wrapper smoke |
 | 5. CDP Bridge/OpenCLI enforcement | read/write 分离 gate、OpenCLI on-demand adapter | cookie/JS/click/type/navigate sensitive action fail-closed 测试 | owner check 证据、授权 receipt 样例、阻断记录 |
-| 6. `oh-my-pi` sidecar | pinned clone/install wrapper、update receipt model | wrapper help smoke、staging fetch、pin switch、rollback 测试 | lock/receipt、smoke summary、rollback pointer |
+| 6. Codex harness reference boundary | reference-only 边界、Pi sidecar 委派关系、通用 receipt/update/rollback 模式 | 文档边界检查、无直接 `oh-my-pi` 安装 lane、Pi sidecar 交叉引用检查 | reference boundary、delegation note、no-runtime-install 证据 |
 | 7. CLI-Anything boundary | isolated install receipt、harness-generation boundary | no hard-load check、update pin、rollback 测试 | install receipt、profile visibility 证据 |
 | 8. `wecom-cli` API/Webhook | webhook/app-message commands、secret redaction | secret redaction、dry-run/smoke、receipt-required 测试 | 脱敏发送摘要、secret 不落库证据 |
 | 9. `wecom-cli` inventory | process/window inventory commands | no-content-capture、read-only fixture/smoke 测试 | 只读 inventory 摘要、窗口内容未采集证据 |
@@ -570,8 +564,8 @@ OpenSpec 切片交付矩阵：
 - [ ] 把 OpenCLI 保持为 on-demand adapter，并接入 browser owner registry。
 - [x] 为 CDP Bridge 增加 cookie/JS/click/type/navigate sensitive action fail-closed 测试。
 - [ ] 为 OpenCLI 增加 cookie/JS/click/type/navigate sensitive action fail-closed 测试。
-- [ ] 安装或适配 `oh-my-pi` sidecar 时写入 pinned receipt、smoke result 和 rollback pointer。
-- [ ] 为 `oh-my-pi` updater 增加 staging fetch、smoke、pin switch、rollback 测试。
+- [x] 将 `oh-my-pi` 直接安装、updater、smoke 和 rollback 事项迁出本方案，统一并入 `pi_plugin_codex_user_level_sidecar_plan.*`。
+- [x] 本方案仅保留 `oh-my-pi` / `The Harness Problem` 的 reference-only harness 治理边界。
 - [ ] 安装 CLI-Anything / CLI Hub 时写入 user-level install receipt，不 hard-load bulk skills。
 - [ ] 用 CLI-Anything 辅助设计 `wecom-cli`，但保留 repo-local source 和授权 gate。
 - [ ] 实现 `wecom-cli process list --json` 与 `window list --json` 只读 inventory。
@@ -590,7 +584,7 @@ OpenSpec 切片交付矩阵：
 4. 增加 `mcp2cli` 用户级 wrapper 与允许 profile registry。
 5. 把 `chrome-devtools-mcp` 提升为用户级 managed wrapper。
 6. 加固 CDP Bridge policy，并只把 OpenCLI 作为 on-demand adapter。
-7. 增加 `oh-my-pi` 用户级 external install wrapper 和 updater receipt model。
+7. 固化 Codex 通用 harness reference boundary，并把 Pi family / `oh-my-pi` sidecar 安装、updater receipt 与 rollback model 委派到 `pi_plugin_codex_user_level_sidecar_plan.*`。
 8. 安装 CLI-Anything / CLI Hub 用户级工具。
 9. 构建 `wecom-cli` API/Webhook MVP，再做 window inventory，最后做带授权 gate 的 GUI automation。
 10. 跑 local gate、local MR review，并在用户确认后再合入 local main。
@@ -603,7 +597,7 @@ OpenSpec 切片交付矩阵：
 - Port-governance 测试证明 Codex 不会分配 OpenClaw 号段，OpenClaw 历史端口会导入为 reserved，冲突时只跳过不 kill 进程，stale lease 复用前必须有 PID/health evidence。
 - Port allocator CLI 测试证明 `reserve`、`renew`、`release`、`import-legacy` 与非 dry-run `gc` 会写 receipt；并发 reserve 不会分配同一端口；pending-bind/崩溃恢复受证据门控；owner/range 或 owner-session 不匹配会 fail closed。
 - CDP Bridge/OpenCLI 测试证明敏感动作必须显式授权。
-- `oh-my-pi` updater 测试证明 pinned update 和 rollback receipt。
+- Codex harness reference boundary 检查证明本方案不再直接实施 `oh-my-pi` runtime；Pi family updater、pinned update 和 rollback receipt 由 `pi_plugin_codex_user_level_sidecar_plan.*` 负责。
 - `wecom-cli` 测试证明 process inventory 只读、secrets 脱敏、GUI write 无授权失败、WXWork GUI lease 独占。
 - 仓库检查继续包括 OpenSpec guard、precommit update/archive gate、local gate、local MR review。
 - Readiness-gate 测试证明没有 smoke-test evidence、install/update receipt evidence 与 rollback evidence 的 lane 不会变成 `active`。
