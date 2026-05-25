@@ -9,6 +9,9 @@ last_reviewed_at: 2026-05-25
 scope: codex_to_pi_only
 implementation_lane: p0_read_only_sidecar
 source_reference_file: reference_files/3.md
+local_codex_governance_fork_reference:
+  source_plan: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
+  role: "Pi family / Codex->Pi sidecar 本地 Codex 治理 fork 参考；不替代主治理方案。"
 related_docs:
   - docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
   - docs_bilingual/governance/codex_user_level_mcp_scope_policy.zh-CN.md
@@ -30,6 +33,8 @@ related_docs:
 ## 0. 本次复核结论
 
 原方案方向正确，但颗粒度偏“架构草案”：缺少可执行的任务级拆分、CLI JSON contract、read-only guard 算法、receipt schema、fixture test 边界和治理文档更新落点。本版同时接收从 `user_level_mcp_skills_browser_cli_governance_plan.*` 迁出的 `oh-my-pi` 安装/update/rollback 治理内容。本版已补齐这些内容，因此进入 `ready-for-user-confirmation`：可以请用户确认是否进入实现；在确认前仍不得安装用户级插件、不得修改 `C:\Users\lenovo\.codex\config.toml`、不得写 personal marketplace、不得调用真实 Pi 执行仓库任务。
+
+本地 Codex 治理 fork 参考关系：本方案明确列为 `docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md` 的 Pi family / Codex->Pi sidecar 本地 Codex 治理 fork 参考；主治理方案保留通用 MCP、skills、browser 与 CLI harness 边界，本方案只承接 Pi 相关 sidecar 的细化规则、约束和未来实现入口，不代表已经进入实现。
 
 完备性检查：
 
