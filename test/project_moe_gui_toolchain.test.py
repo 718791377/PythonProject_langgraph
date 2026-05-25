@@ -1535,6 +1535,36 @@ else:
             self.assertTrue((project / "tools" / "project_moe_gui" / "launcher.py").exists())
             self.assertEqual(private_before, self.private_project_digests(project))
 
+    def test_uninstall_apply_request_fails_closed_and_deletes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-uninstall-apply", session_id="session-uninstall-apply")
+            self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            private_before = self.private_project_digests(project)
+            launcher = project / "tools" / "project_moe_gui" / "launcher.py"
+
+            _, payload = self.run_tool(str(UNINSTALL_PLANNER), "--target-project", str(project), "--apply", expect_success=False)
+
+            self.assertEqual(payload["command"], "plan_project_moe_gui_uninstall")
+            self.assertEqual(payload["mode"], "apply-requested")
+            self.assertEqual(payload["token"], "blocked:uninstall_apply_not_supported")
+            self.assertTrue(payload["apply_requested"])
+            self.assertFalse(payload["apply_supported"])
+            self.assertFalse(payload["delete_executed"])
+            self.assertTrue(payload["read_only"])
+            self.assertFalse(payload["writes_target_project"])
+            self.assertTrue(launcher.exists())
+            self.assertEqual(private_before, self.private_project_digests(project))
+
     def test_uninstall_plan_fails_closed_on_managed_hash_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp) / "target"

@@ -109,6 +109,8 @@ python tools/project_moe_gui_toolchain/plan_project_moe_gui_uninstall.py `
 
 如果 managed file hash 不匹配，返回 `blocked:managed_file_hash_mismatch`，不得把本地改动过的 managed file 当作可删除对象。该计划不删除 `.omx/state`、私有 `MOE.md` 或 `.codex/agents/*.toml`。
 
+如果误传 `--apply`，命令仍只输出 JSON blocker `blocked:uninstall_apply_not_supported`，并设置 `delete_executed = false`。该 guard 用来防止操作员误以为本版支持真正删除。
+
 ## 回滚
 
 回滚依赖目标项目 Git 历史和 `project_moe_gui.install-manifest.json`。回滚 GUI 产物时不得删除 `.omx/state`、私有 `MOE.md` 或 Agent TOML。

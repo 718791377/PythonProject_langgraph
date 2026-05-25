@@ -2093,11 +2093,18 @@ def managed_file_uninstall_plan(root: Path, manifest: dict[str, Any]) -> tuple[l
     return planned_deletes, errors
 
 
-def plan_uninstall(root: Path) -> dict[str, Any]:
+def plan_uninstall(root: Path, apply_requested: bool = False) -> dict[str, Any]:
     manifest, config, load_errors = existing_install(root)
     errors: list[dict[str, Any]] = list(load_errors)
     planned_deletes: list[dict[str, Any]] = []
     protected_files: list[str] = []
+    if apply_requested:
+        errors.append(
+            blocker(
+                "blocked:uninstall_apply_not_supported",
+                "Project MOE GUI uninstall is plan-only in this version; --apply is accepted only to return a stable fail-closed JSON blocker and never deletes target files.",
+            )
+        )
     if not manifest or not config:
         errors.extend(load_errors or [blocker("blocked:not_installed", "Project MOE GUI is not installed in target project.")])
     else:
@@ -2107,12 +2114,14 @@ def plan_uninstall(root: Path) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "plan_project_moe_gui_uninstall",
-        "mode": "dry-run",
+        "mode": "apply-requested" if apply_requested else "dry-run",
         "ok": not errors,
         "token": "ok" if not errors else errors[0]["code"],
         "read_only": True,
         "writes_target_project": False,
+        "apply_requested": apply_requested,
         "apply_supported": False,
+        "delete_executed": False,
         "target_project_root": str(root),
         "toolchain": TOOLCHAIN_NAME,
         "installed_toolchain_version": manifest.get("toolchain_version") if manifest else None,
