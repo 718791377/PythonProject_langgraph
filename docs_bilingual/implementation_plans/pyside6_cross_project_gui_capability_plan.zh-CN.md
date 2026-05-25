@@ -5,11 +5,27 @@ status: draft
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.md
 created_at: 2026-05-20
+updated_at: 2026-05-25
 ---
 
 # PySide6 跨项目 GUI 能力方案
 
 > 冷启动契约：本文定义所有本地项目如何默认调用由 `D:\PythonProject_langgraph` 维护的同一个共享 PySide6 runtime，并在不污染系统 Python、不在消费项目重复安装 PySide6 的前提下，按需制作各自的桌面 GUI。新 Codex 会话读取 `AGENTS.md` 与 `docs_bilingual/project_startup_summary.md` 后即可继续实施。
+
+## 0. 当前状态与本次冷启动复核结论
+
+复核日期：2026-05-25（按 `docs_bilingual/project_startup_summary.md` cold-start read order 重新补读）。
+
+结论：本文继续保持 `status: draft`。这里的 draft 表示它仍是实施计划和能力边界文档，不是全局强制 active 治理政策；但共享 PySide6 runtime 默认策略、repo-local helper/template/checker、`pyside6-gui` skill、operator 指南、CI/guard 注册、本机共享 runtime provision、首个消费项目 shared-mode opt-in 和 import-only smoke 证据已经落地。剩余事项只剩显式触发门：项目本地 override、可见 GUI 交互验证、可执行文件打包。
+
+当前已知本地事实：
+
+- 默认共享 runtime 路径仍是 `D:\PythonProject_langgraph\.shared_runtimes\pyside6`；`.shared_runtimes/` 是 gitignored 本地产物，不提交 wheel、site-packages、Qt 二进制、缓存或日志。
+- 共享 runtime 已在本机 provision，并通过 import-only verify；已记录 Python 3.12.10、PySide6 6.11.1 与 Qt 6.11.1 证据，未启动可见 GUI。
+- `ensure-shared-pyside6-runtime.ps1`、`ensure-pyside6-gui.ps1`、模板、checker、operator 使用指南和 `pyside6-gui` skill 已按共享 runtime 默认策略更新并纳入 guard / CI 注册。
+- 首个消费项目已完成 shared-mode opt-in、项目本地 GUI shell / runtime contract / run helper / adapter / import smoke test / rollback note 生成，并通过共享 runtime import-only smoke；项目专属路径和提交号只记录在 memory artifact，不写入本通用方案。
+- 当前证据支持继续使用每个消费项目内生成的 `tools/gui/run_gui.ps1` 作为默认运行入口；只有至少第二个消费项目证明存在无法由 per-project wrapper 吸收的重复 launcher 逻辑时，才重新评估跨项目 `run-shared-pyside6-gui.ps1`。
+- 后续会话继续本文时，必须先按 cold-start read order 补读当前必需文件、运行 ownership precheck、使用隔离 feature worktree，并在远端发布前等待当前用户消息明确授权。
 
 ## 1. 目标
 
@@ -416,12 +432,13 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 
 当前本地实施状态：
 
-- 既有 `tools/pyside6_gui_templates/`、`ensure-pyside6-gui.ps1`、`pyside6-gui` skill、`plugin-modules` soft-load、消费项目 opt-in checker、打包 opt-in checker 和 operator 使用指南，是项目-local 安装默认策略时期形成的兼容基线；
-- 本文更新后，新的目标策略改为“共享 PySide6 runtime 默认、项目-local PySide6 仅作 override”；
-- 后续实现必须新增或改造 checker，确保共享 runtime 缺失时不能误报项目 `shared_runtime_ready`，消费项目 opt-in 不能静默执行 PySide6 安装；
-- 后续实现必须把 `.shared_runtimes/` 加入 gitignore，并增加共享 runtime provision/verify helper；
-- 具体消费项目的 GUI 启用仍按具体项目和请求推进，不得把 helper、模板、skill 或 checker 存在误报为任意消费项目已经 `project_gui_verified_with_shared_runtime` 或 `packaged`；
-- 实际可执行文件打包仍保持请求驱动，不得把 checker/模板存在误报为任意消费项目已经 `packaged` 或 `release_ready`。
+- 既有 `tools/pyside6_gui_templates/`、`ensure-pyside6-gui.ps1`、`pyside6-gui` skill、`plugin-modules` soft-load、消费项目 opt-in checker、打包 opt-in checker 和 operator 使用指南，已经从早期项目-local 安装默认策略修正为“共享 PySide6 runtime 默认、项目-local PySide6 仅作 override”的兼容基线；
+- `.shared_runtimes/` 已加入 gitignore；共享 runtime provision / verify helper、requirements 模板、runtime 元数据模板、checker、测试和 guard 注册已落地；
+- checker 已覆盖共享 runtime 缺失不得误报 `shared_runtime_ready`、消费项目 opt-in 不得静默安装 PySide6、shared 模式生成 runtime contract / adapter / run helper、override 需要原因和回滚证据等边界；
+- 本机共享 runtime 已 provision 并通过 import-only verify；该事实只能证明当前机器共享 runtime 可用，不能自动证明任意消费项目已经完成 GUI opt-in 或通过项目本地 smoke；
+- 首个消费项目已经完成 shared-mode opt-in 与 import-only smoke，形成可复用模板反馈；项目专属事实只保存在 memory artifact，不扩大到本通用方案；
+- 具体消费项目的 GUI 启用仍按具体项目和请求推进，不得把 helper、模板、skill 或 checker 存在误报为任意消费项目已经 `project_gui_verified_with_shared_runtime`、`project_local_override_ready`、`packaged` 或 `release_ready`；
+- 实际可见 GUI 验证、项目-local override 与可执行文件打包仍保持请求驱动，不得把泛化“继续”当成授权。
 
 
 ## 17. 细颗粒度实施事项勾选清单
@@ -528,6 +545,8 @@ Apply 模式必须保持项目本地化：项目 helper 只能写目标项目 GU
 - 仅在用户明确请求可执行文件或安装包交付物时，推进 PyInstaller/Nuitka 打包 opt-in 与 packaging preflight。
 
 泛化“继续”“继续实施方案”“继续提交本地 git 仓库”不足以授权上述三个高影响动作。安全处理方式是记录 gate、停止副作用，或要求用户给出具体目标项目和理由。
+
+冷启动续作规则：后续会话若只要求更新或复核本方案，必须先读取 `docs_bilingual/project_startup_summary.md` 和 read order 中当前必需文件，再运行 ownership precheck；若发现已有同主题 worktree/claim，优先续用或按 cleanup gate 分类，不得新建重复写入面。远端 GitLab/GitHub 发布仍不属于默认执行范围。
 
 当前已落地的共享面任务可复用为模板和 checker 基线，但不能被误报为任意消费项目已经 `project_gui_verified_with_shared_runtime`、`project_local_override_ready`、`packaged` 或 `release_ready`。
 
