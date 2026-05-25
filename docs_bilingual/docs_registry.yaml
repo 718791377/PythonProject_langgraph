@@ -18,12 +18,6 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md
 
-  - doc_id: orchestration_prompt_independent_collaboration_parity_plan
-    doc_class: implementation_plan
-    status: draft
-    canonical_path: docs_bilingual/implementation_plans/orchestration_prompt_independent_collaboration_parity_plan.md
-    zh_cn_path: docs_bilingual/implementation_plans/orchestration_prompt_independent_collaboration_parity_plan.zh-CN.md
-
   - doc_id: codex_oh_my_codex_user_level_team_mode_plan
     doc_class: implementation_plan
     status: active
