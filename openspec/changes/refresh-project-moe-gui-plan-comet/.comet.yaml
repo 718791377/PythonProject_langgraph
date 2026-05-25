@@ -1,0 +1,13 @@
+workflow: tweak
+phase: build
+design_doc: openspec/changes/refresh-project-moe-gui-plan-comet/design.md
+plan: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md
+build_mode: direct
+isolation: worktree
+verify_mode: light
+verify_result: pending
+verification_report: null
+branch_status: pending
+verified_at: null
+archived: false
+script_state_blocker: bash_unavailable_in_current_windows_shell

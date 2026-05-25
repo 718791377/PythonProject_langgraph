@@ -5,6 +5,7 @@ status: draft
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
 created_at: 2026-05-20
+updated_at: 2026-05-26
 related_docs:
   - docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.zh-CN.md
 ---
@@ -15,9 +16,9 @@ related_docs:
 
 ## 0. 当前状态与本次复核结论
 
-复核日期：2026-05-25（按 `docs_bilingual/project_startup_summary.md` 冷启动 read order 重新复核）。
+复核日期：2026-05-26（按 `docs_bilingual/project_startup_summary.md` 冷启动 read order 重新复核，并按用户要求使用 Comet 追踪本次小型文档更新）。
 
-结论：原方案的架构边界、状态模型、安全规则和阶段门基本完整；第 11 节已经按事项粒度列出实施进度，第 13 节已经按当前事实收束后续实施边界。本次冷启动复核不改变 `status: draft`，只把 2026-05-25 已落地的 launcher readiness gate 事实正式纳入中文事实链，并补充后续会话继续此方案时必须遵守的冷启动、worktree 所有权和远端发布边界。
+结论：原方案的架构边界、状态模型、安全规则和阶段门基本完整；第 11 节已经按事项粒度列出实施进度，第 13 节已经按当前事实收束后续实施边界。本次 Comet 小型文档更新不改变 `status: draft`，只把 2026-05-26 冷启动复核、Comet trace、既有 worktree claim 复用和 Windows shell 下 Comet `bash` 脚本不可用的处理方式正式纳入中文事实链。
 
 状态说明：本文继续保持 `status: draft`。这里的 draft 表示它不是全局 active 治理政策，也不表示全部运行时能力已经完成。Phase 2A 本仓库中央 installer/checker/updater、Phase 2B fixture-safe GUI shell 与 Phase 2C 双 fixture install/check/update/status 隔离证据已确认合入本地 `main`；本仓库已新增 Phase 1 CLI 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令 `atomic_write` / `lock_status` fail-closed fixture gate、项目默认值、session override、无效记录、旧记录兼容和 no-op 状态行为 fixture gate、只读 Phase 1 readiness checker fixture gate、`--static-only` / `--no-exec-cli` 静态只读候选模式 fixture gate、wrapper `--json` / shell surface / 直接 state 触碰 fail-closed fixture gate、startup 激活检查点完整性 fixture gate、目标项目操作者文档 readiness fixture gate、Agent TOML 标准扩展 / 私有提示源边界 readiness fixture gate，以及 execute-read-contract 静态阻断 guard。`D:\PythonProject_paper_suggest` 已经有正式 static-only readiness checker 证据。2026-05-24 的结果是 no-go / repair-lane：目标项目存在 dirty worktree，Agent TOML 缺少标准 Project MOE 扩展区，且两个 wrapper 都未通过严格的 `--json` / shell-surface gate。它只能继续视为 Phase 1 surface 候选，不能批准 GUI 控制；无 Phase 1 的项目则走 Bootstrap Lane，所以本文继续保持 `draft`。
 
@@ -48,6 +49,9 @@ related_docs:
 - 本次后续变更继续加固 execute-read-contract readiness：当目标项目 dirty，或 wrapper、startup、操作者文档、Agent TOML、私有提示源等静态 surface 仍有 blocker 时，readiness checker 不再执行目标项目 CLI，而是在 `cli_contract_check` 中返回 `execution_skipped = true`、`skip_reason = static_surface_blockers_present` 和 `static_surface_blocking_codes`。
 - 2026-05-25 本仓库已合入 launcher readiness gate 加固：已安装到目标项目的 Project MOE GUI launcher 会先运行 Phase 1 readiness gate，再调用目标项目 `project-status`、`list-sessions`、`status` 等读命令；存在静态 blocker 时直接返回 readiness payload、`remediation_plan` 和 `operator_next_steps`，不执行目标 CLI；正常 GUI 刷新允许 `.omx/state/<namespace>/` 下运行态 dirty 文件存在，但其他 dirty 文件仍阻断控制。
 - 这些事实只表示本仓库 fixture 与契约验证支撑已落地；对 `D:\PythonProject_paper_suggest` 的 static-only readiness 证据显示其具备 Phase 1 文件 surface 候选，但当前结果仍是 blocked / repair-lane；这不表示真实目标项目 GUI 已可操作。
+- 2026-05-26 本次用户明确要求“按照 Comet 更新”本文；当前无 active OpenSpec change，因此本次被归类为 Comet `tweak`：单文件文档局部更新、无新增运行时能力、无接口/架构变更、无目标项目写入。
+- 本次 ownership precheck 命中既有 active claim：`project-moe-agent-gui-toolchain-plan`，因此必须复用并 rebase 该 worktree，不得另建重复写入面；这条事实也用于提醒后续会话先分类/接管已有 worktree。
+- 本次 Comet/OpenSpec trace 写入 `openspec/changes/refresh-project-moe-gui-plan-comet/`；当前 Windows shell 没有可用 `bash`，所以 `comet-state.sh` / `comet-guard.sh` 不能直接运行。处理规则是记录 `script_state_blocker: bash_unavailable_in_current_windows_shell`，使用 OpenSpec artifacts 与仓库 gate 作为可追溯 fallback，不得声称 Comet 脚本状态流转已经成功执行。
 - 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
 
 ## 1. 目标
@@ -814,6 +818,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 5. Phase 2C 已在本仓库 fixture 层闭环：两个隔离 fixture 已通过相同 contract；本仓库又补充 Phase 1 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令原子写入/锁状态 fixture gate、项目默认值/session override/无效记录/legacy/no-op 状态行为 fixture gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 fixture gate、操作者文档 readiness gate、Agent TOML 标准扩展 readiness gate、私有提示源位置 readiness gate、`assert-on` 只读断言 readiness gate、managed-artifact 卸载计划器、卸载 `--apply` fail-closed guard，以及 execute-read-contract 静态阻断 guard，真实项目安装仍取决于后续目标项目授权和 Phase 1 就绪性。
 6. 本文暂不从 `draft` 提升：Phase 2B、fixture 级 Phase 2C、本仓库 Phase 1 读取契约 gate、GUI 写入命令输出契约 gate、写入命令 atomic/lock gate、状态行为 gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 gate、操作者文档 gate、Agent TOML 标准扩展 gate、私有提示源位置 gate、`assert-on` 只读断言 gate、Bootstrap Lane dry-run 脚手架计划器、installed-launcher Bootstrap Lane preflight、稳定 Bootstrap Lane `operator_next_steps`、managed-artifact 卸载计划器、卸载 `--apply` fail-closed guard 和 execute-read-contract 静态阻断 guard 已有本地证据，但 `D:\PythonProject_paper_suggest` 的正式 static-only 证据仍是 blocked / repair-lane，真实 GUI 控制仍需后续修复并重新通过 readiness checker；无 Phase 1 项目仍需在目标项目内应用脚手架计划后才能升级为 Ready Lane。
 7. 后续会话继续本文时，必须先按 `docs_bilingual/project_startup_summary.md` 的 cold-start read order 补读当前必需文件，再运行所有权预检；若已有同名 clean worktree/branch 已被本地 `main` 包含，优先刷新并复用该 worktree 或按本仓库 cleanup gate 清理，不得绕过 ownership claim 另建重复写入面；远端发布仍必须等待当前用户消息明确授权。
+8. 如果用户明确要求“按照 Comet”继续本文，先运行 `openspec list --json` 并检查 `openspec/changes/<name>/.comet.yaml`；没有 active change 时，小型文档修正可走 Comet `tweak`。若当前 Windows shell 仍缺少 `bash`，必须把 `comet-state.sh` / `comet-guard.sh` 不可执行记录为工具面 blocker，并使用 OpenSpec artifacts、tasks 勾选和仓库验证 gate 留痕；不得伪造 `verify_result=pass` 或 archive 完成。
 
 阶段门规则：
 
