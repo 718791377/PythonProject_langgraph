@@ -1,4 +1,4 @@
-﻿---
+---
 name: comet-tweak
 description: "Comet tweak preset for small non-bug local changes: open -> lightweight build -> light verify -> archive, skipping brainstorming and full plan."
 ---
