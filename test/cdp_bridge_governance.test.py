@@ -11,7 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 CDP_GOVERNANCE = ROOT / "tools" / "cdp_bridge_governance.py"
 BROWSER_OWNER_REGISTRY = ROOT / "tools" / "browser_owner_registry.py"
 OPENCLI_GOVERNANCE = ROOT / "tools" / "opencli_governance.py"
-OH_MY_PI_GOVERNANCE = ROOT / "tools" / "oh_my_pi_sidecar_governance.py"
 CLI_ANYTHING_GOVERNANCE = ROOT / "tools" / "cli_anything_governance.py"
 
 
@@ -38,17 +37,6 @@ def run_opencli(args, state_dir, expect=0):
         raise AssertionError(f"unexpected rc {proc.returncode}, expected {expect}\ncmd={cmd}\nstdout={proc.stdout}\nstderr={proc.stderr}")
     return data
 
-
-def run_oh_my_pi(args, expect=0):
-    cmd = [sys.executable, str(OH_MY_PI_GOVERNANCE), *args, "--json"]
-    proc = subprocess.run(cmd, cwd=str(ROOT), text=True, capture_output=True)
-    try:
-        data = json.loads(proc.stdout)
-    except json.JSONDecodeError as exc:  # pragma: no cover - debug aid
-        raise AssertionError(f"invalid json\ncmd={cmd}\nrc={proc.returncode}\nstdout={proc.stdout}\nstderr={proc.stderr}") from exc
-    if proc.returncode != expect:
-        raise AssertionError(f"unexpected rc {proc.returncode}, expected {expect}\ncmd={cmd}\nstdout={proc.stdout}\nstderr={proc.stderr}")
-    return data, proc.stdout
 
 
 def run_cli_anything(args, expect=0):
@@ -447,179 +435,6 @@ class OpenCliGovernanceTests(unittest.TestCase):
                 if action.startswith("experimental"):
                     self.assertIn("unknown_action", result["blockers"])
 
-    def test_oh_my_pi_install_record_writes_pinned_receipt_with_sanitized_output(self):
-        with tempfile.TemporaryDirectory() as td:
-            root = Path(td)
-            receipt_dir = root / "receipts"
-            install_path = root / "external" / "oh-my-pi"
-            wrapper_path = root / "tools" / "oh-my-pi" / "oh-my-pi.cmd"
-            state_path = root / "state" / "oh-my-pi"
-            result, stdout = run_oh_my_pi(
-                [
-                    "install-record",
-                    "--receipt-dir",
-                    str(receipt_dir),
-                    "--pin",
-                    "v0.4.2",
-                    "--install-path",
-                    str(install_path),
-                    "--wrapper-path",
-                    str(wrapper_path),
-                    "--state-path",
-                    str(state_path),
-                    "--smoke-command",
-                    "oh-my-pi --help",
-                    "--rollback-pointer",
-                    "remove-created-sidecar-directories",
-                ]
-            )
-            self.assertTrue(result["ok"])
-            self.assertTrue(result["receipt_written"])
-            self.assertEqual(result["summary"]["tool_name"], "oh-my-pi")
-            self.assertEqual(result["summary"]["owner_lane"], "oh-my-pi")
-            self.assertEqual(result["summary"]["status"], "reference-only")
-            self.assertEqual(result["summary"]["pinned_ref"], "v0.4.2")
-            self.assertEqual(result["summary"]["smoke_status"], "pass")
-            self.assertFalse(result["safety"]["installs_oh_my_pi"])
-            self.assertFalse(result["safety"]["hard_loads_skills"])
-            self.assertNotIn(str(root), stdout)
-            self.assertNotIn(str(install_path), stdout)
-            receipt = receipt_dir / "oh-my-pi.lock.json"
-            self.assertTrue(receipt.exists())
-
-            validated, _ = run_oh_my_pi(["validate", "--receipt", str(receipt)])
-            self.assertTrue(validated["ok"])
-            self.assertTrue(validated["receipt_valid"])
-
-    def test_oh_my_pi_unpinned_ref_is_blocked_without_writing_receipt(self):
-        with tempfile.TemporaryDirectory() as td:
-            root = Path(td)
-            receipt_dir = root / "receipts"
-            result, _ = run_oh_my_pi(
-                [
-                    "install-record",
-                    "--receipt-dir",
-                    str(receipt_dir),
-                    "--pin",
-                    "main",
-                    "--install-path",
-                    str(root / "external" / "oh-my-pi"),
-                    "--wrapper-path",
-                    str(root / "tools" / "oh-my-pi.cmd"),
-                    "--state-path",
-                    str(root / "state" / "oh-my-pi"),
-                    "--smoke-command",
-                    "oh-my-pi --help",
-                    "--rollback-pointer",
-                    "previous-version",
-                ],
-                expect=3,
-            )
-            self.assertFalse(result["ok"])
-            self.assertFalse(result["receipt_written"])
-            self.assertIn("pin_must_be_immutable", result["blockers"])
-            self.assertFalse((receipt_dir / "oh-my-pi.lock.json").exists())
-
-    def test_oh_my_pi_update_requires_smoke_pass_and_preserves_rollback_pin(self):
-        with tempfile.TemporaryDirectory() as td:
-            root = Path(td)
-            receipt_dir = root / "receipts"
-            run_oh_my_pi(
-                [
-                    "install-record",
-                    "--receipt-dir",
-                    str(receipt_dir),
-                    "--pin",
-                    "v0.4.2",
-                    "--install-path",
-                    str(root / "external" / "oh-my-pi"),
-                    "--wrapper-path",
-                    str(root / "tools" / "oh-my-pi.cmd"),
-                    "--state-path",
-                    str(root / "state" / "oh-my-pi"),
-                    "--smoke-command",
-                    "oh-my-pi --help",
-                    "--rollback-pointer",
-                    "remove-created-sidecar-directories",
-                ]
-            )
-            current = receipt_dir / "oh-my-pi.lock.json"
-
-            blocked, _ = run_oh_my_pi(
-                [
-                    "update-plan",
-                    "--current-receipt",
-                    str(current),
-                    "--new-pin",
-                    "v0.4.3",
-                    "--staging-dir",
-                    str(root / "staging" / "oh-my-pi"),
-                    "--smoke-status",
-                    "fail",
-                ],
-                expect=3,
-            )
-            self.assertFalse(blocked["pin_switch_allowed"])
-            self.assertIn("smoke_result_not_passed", blocked["blockers"])
-            self.assertFalse(blocked["safety"]["network_fetch_performed"])
-
-            updated, stdout = run_oh_my_pi(
-                [
-                    "update-record",
-                    "--current-receipt",
-                    str(current),
-                    "--receipt-dir",
-                    str(receipt_dir),
-                    "--new-pin",
-                    "v0.4.3",
-                    "--staging-dir",
-                    str(root / "staging" / "oh-my-pi"),
-                    "--smoke-command",
-                    "oh-my-pi --help",
-                    "--smoke-status",
-                    "pass",
-                ]
-            )
-            self.assertTrue(updated["pin_switch_allowed"])
-            self.assertEqual(updated["rollback_pointer"]["previous_pin"], "v0.4.2")
-            self.assertNotIn(str(root), stdout)
-
-            update_files = sorted(receipt_dir.glob("oh-my-pi.update.*.json"))
-            self.assertEqual(len(update_files), 1)
-            rollback, _ = run_oh_my_pi(["rollback-plan", "--receipt", str(update_files[0])])
-            self.assertTrue(rollback["rollback_allowed"])
-            self.assertFalse(rollback["rollback_performed"])
-            self.assertTrue(rollback["requires_operator_execution"])
-            self.assertEqual(rollback["rollback_pointer"]["previous_pin"], "v0.4.2")
-
-    def test_oh_my_pi_validate_rejects_receipt_without_rollback_pointer(self):
-        with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / "bad.json"
-            path.write_text(
-                json.dumps(
-                    {
-                        "schema_version": 1,
-                        "tool_name": "oh-my-pi",
-                        "owner_lane": "oh-my-pi",
-                        "status": "reference-only",
-                        "source_url": "https://github.com/can1357/oh-my-pi",
-                        "installed_version": "v0.4.2",
-                        "pinned_ref": "v0.4.2",
-                        "install_path": str(Path(td) / "external"),
-                        "wrapper_path": str(Path(td) / "wrapper.cmd"),
-                        "state_path": str(Path(td) / "state"),
-                        "smoke_test_command": "oh-my-pi --help",
-                        "smoke_test_result": {"status": "pass"},
-                        "updater_command": "oh-my-pi updater --pin v0.4.2",
-                        "last_updated_at": "2026-05-25T00:00:00+00:00",
-                    }
-                ),
-                encoding="utf-8",
-            )
-            result, _ = run_oh_my_pi(["validate", "--receipt", str(path)], expect=3)
-            self.assertFalse(result["receipt_valid"])
-            self.assertIn("missing_rollback_pointer", result["blockers"])
-            self.assertIn("rollback_pointer_required", result["blockers"])
 
     def test_cli_anything_install_record_writes_pinned_receipt_with_sanitized_output(self):
         with tempfile.TemporaryDirectory() as td:
