@@ -6,7 +6,7 @@ translation_of: docs_bilingual/implementation_plans/general_template_phase0_upda
 status: active
 doc_class: implementation_plan
 created_at: 2026-04-25
-updated_at: 2026-04-25
+updated_at: 2026-05-25
 phase: 0
 target_template: D:\PythonProject_General
 source_context:
@@ -31,6 +31,29 @@ source_context:
 - 对齐规则：source context、范围、安全规则、交付物、验证命令和验收标准必须同步。
 - 当前结论：Phase 0 是 master template root 的小型安全性与可测试性补丁，不是完整 profile、skills governance、browser、web、publishing、OMX 或 LangGraph rollout。
 - 名称解释规则：凡是列出脚本、路径、命令、变量或 profile 名称，都要补充一句简短解释，确保冷启动读者知道它是什么、用来做什么。
+
+## 2026-05-25 状态刷新
+
+本文现在记录初始 Phase 0 工作以及后续 Comet 治理同步之后，`D:\PythonProject_General` 的当前状态。
+
+当前目标模板事实：
+
+- `D:\PythonProject_General` 现在已经是本地 Git 仓库，分支为 `main`；旧版 Phase 0 中“master template root 尚未纳入 Git 管理”的说明现在只是历史上下文，不再是当前状态。
+- 目标模板已经具备 hydration smoke test、本地 CI gate 和本地 MR review helper surface。local / remote CI/MR 设计仍然复用目标模板脚本，不维护另一套漂移的 checker sequence。
+- 后续 Comet 同步已经加入项目级 Comet workflow skills、`docs/superpowers/` 占位目录、双语 Comet workflow policy、Comet-controlled OpenSpec + Superpowers governance 的 stable OpenSpec spec、本地已归档 OpenSpec change，以及 `tools/check_openspec_comet_superpowers_policy.py`。
+- Comet 在这里只记录为 OpenSpec + Superpowers 治理能力。它不是 native subagent evidence，不是 oh-my-codex，不是 OMX，不是 `native_omx`，不是 LangGraph，也不是 durable-team backend。
+- 当前目标模板 working tree 仍然保留 Comet 治理补丁为本地未提交改动，等待 operator review。既有未跟踪 `.idea/` 目录不属于本计划补丁范围。
+- `D:\PythonProject_General_2` 由另一份 local Git / OpenSpec / native subagents only 计划治理；不得把它当成这份 `General` Phase 0 计划已经覆盖的目标。
+
+Comet 同步后为 `General` 目标记录的最新验证证据：
+
+- `git -C D:\PythonProject_General diff --check` 在线尾换行规范化后通过。
+- `openspec validate --all` 在 `D:\PythonProject_General` 中通过。
+- `comet status D:\PythonProject_General --json` 报告没有 active Comet changes。
+- `comet doctor D:\PythonProject_General --json` 对项目级 Codex Comet skills 和脚本可执行性通过；global Codex Comet skills 可能报告缺失 warning，因为模板有意只携带 project-level skills。
+- `python .\tools\test_template_hydration.py --root . --json` 在 `D:\PythonProject_General` 中通过。
+- `.\tools\ci\local_gate.ps1 -Root . -Json` 在 `D:\PythonProject_General` 中通过。
+- `.\tools\ci\local_mr_review.ps1 -Root . -Json -AllowDirty` 以 draft review 方式通过，因为目标补丁当时有意保留为未提交状态。
 
 ## 1. 目标
 
@@ -63,8 +86,8 @@ source_context:
 当前状态：
 
 - 本文定义要应用到 `D:\PythonProject_General` 的 Phase 0 补丁。
-- 本次文档更新本身不修改目标模板；除非后续步骤显式编辑 `D:\PythonProject_General`。
-- Phase 1 与 Phase 2 后续工作仍然不在当前范围内，除非 Phase 0 已验证通过或用户明确扩大任务。
+- 本仓库内的这份计划用于记录目标模板的预期状态和已观察状态；只有后续步骤显式编辑 `D:\PythonProject_General` 时，才会修改目标模板。
+- 除非 operator 明确扩大任务，否则 Phase 1 与 Phase 2 后续工作仍然不在当前范围内；Comet 治理同步是有界的 OpenSpec + Superpowers 治理更新，不是大范围 durable-orchestration rollout。
 
 ## 3. 当前观察到的状态
 
@@ -85,7 +108,7 @@ source_context:
 
 重要发现：
 
-- master template root 尚未纳入 Git 管理。
+- 历史说明：2026-04-25 时 master template root 尚未纳入 Git 管理；到 2026-05-25，`D:\PythonProject_General` 已经是本地 Git 仓库，分支为 `main`。
 - master template root 中保留 raw placeholder 是正常现象，因为它是生成项目的模板源。
 - 生成后的测试项目在 hydrate 后不应再有 unresolved placeholders。
 - background-process 支持已经存在，应在生成后项目中做 smoke test。
@@ -154,7 +177,7 @@ Phase 0 不做：
 
 ### 6.2 模板 Git 基线
 
-如果 Phase 0 实施时目标模板仍然没有 Git baseline：
+如果 Phase 0 实施时目标模板仍然没有 Git baseline，则使用下面流程。到 2026-05-25，`D:\PythonProject_General` 已经是本地 Git 仓库，分支为 `main`，所以这段流程现在是历史 fallback guidance，而不是当前预期动作：
 
 1. 在 `D:\PythonProject_General` 执行 `git init`；该命令为模板根目录创建仓库元数据。
 2. 创建或重命名初始分支为 `main`；这会为可复用模板提供稳定 baseline branch。
@@ -304,7 +327,7 @@ git status --short --branch
 
 ## 9. 验收标准
 
-Phase 0 满足以下条件才算完成：
+Phase 0 满足以下条件才算完成。根据 2026-05-25 状态刷新，目标模板已经满足原始 Phase 0 的 Git、hydration、local gate 和 local MR helper 形态；当前剩余目标工作是对后续 Comet 治理补丁做 review 以及 commit / publish 决策：
 
 - 双语 Phase 0 plan 文件存在且已对齐。
 - 如果目标模板 registry 用于 implementation plans，则 plan 双语文件已登记进去。

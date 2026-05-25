@@ -6,7 +6,7 @@ translation: docs_bilingual/implementation_plans/general_template_phase0_update_
 status: active
 doc_class: implementation_plan
 created_at: 2026-04-25
-updated_at: 2026-04-25
+updated_at: 2026-05-25
 phase: 0
 target_template: D:\PythonProject_General
 source_context:
@@ -31,6 +31,30 @@ source_context:
 - Alignment rule: keep both files synchronized for source context, scope, safety rules, deliverables, validation commands, and acceptance criteria.
 - Current finding: Phase 0 is a small safety and testability patch for the master template root. It is not the complete profile, skills-governance, browser, web, publishing, OMX, or LangGraph rollout.
 - Name clarity rule: every listed script, path, command, variable, or profile name must include a short explanation so a cold-start reader can tell what it is for.
+
+
+## 2026-05-25 Status Refresh
+
+This file now records the current state after the initial Phase 0 work and the later Comet governance sync for `D:\PythonProject_General`.
+
+Current target-template facts:
+
+- `D:\PythonProject_General` is now a local Git repository on branch `main`; the older Phase 0 note that the master template root had no Git baseline is historical context, not the current state.
+- The target template has a hydration smoke-test path, a shared local CI gate, and a local MR review helper surface. The local and remote CI/MR design still reuses target-template scripts rather than maintaining divergent check sequences.
+- The later Comet sync added project-level Comet workflow skills, `docs/superpowers/` placeholders, a bilingual Comet workflow policy, a stable OpenSpec spec for Comet-controlled OpenSpec + Superpowers governance, an archived local OpenSpec change, and `tools/check_openspec_comet_superpowers_policy.py`.
+- Comet is recorded as OpenSpec + Superpowers governance only. It is not native subagent evidence, not oh-my-codex, not OMX, not `native_omx`, not LangGraph, and not a durable-team backend.
+- The current target-template working tree still contains the Comet governance patch as local uncommitted changes pending operator review. The pre-existing untracked `.idea/` directory remains outside the planned patch scope.
+- `D:\PythonProject_General_2` is governed by a separate local-Git/OpenSpec/native-subagents-only plan and must not be treated as covered by this `General` Phase 0 plan.
+
+Latest validation evidence recorded for the `General` target after the Comet sync:
+
+- `git -C D:\PythonProject_General diff --check` passed after line-ending normalization.
+- `openspec validate --all` passed in `D:\PythonProject_General`.
+- `comet status D:\PythonProject_General --json` reported no active Comet changes.
+- `comet doctor D:\PythonProject_General --json` passed for project-level Codex Comet skills and script executability; global Codex Comet skills may warn as missing because the template intentionally carries project-level skills.
+- `python .\tools\test_template_hydration.py --root . --json` passed in `D:\PythonProject_General`.
+- `.\tools\ci\local_gate.ps1 -Root . -Json` passed in `D:\PythonProject_General`.
+- `.\tools\ci\local_mr_review.ps1 -Root . -Json -AllowDirty` passed as a draft review because the target patch was intentionally left uncommitted.
 
 ## 1. Goal
 
@@ -63,8 +87,8 @@ It also incorporates the local orchestration boundary from `D:\PythonProject_lan
 Current status:
 
 - This file defines the Phase 0 patch to apply to `D:\PythonProject_General`.
-- This documentation update does not itself modify the target template unless a later step explicitly edits `D:\PythonProject_General`.
-- Later Phase 1 and Phase 2 work remains out of scope until Phase 0 is verified or the user explicitly expands the task.
+- This repository copy of the plan records the intended and observed target-template state; target-template edits still happen only when a later step explicitly edits `D:\PythonProject_General`.
+- Later Phase 1 and Phase 2 work remains out of scope until the operator explicitly expands the task; the Comet governance sync is a bounded OpenSpec + Superpowers governance update, not a broad durable-orchestration rollout.
 
 ## 3. Current Observed State
 
@@ -85,7 +109,7 @@ As of 2026-04-25, the target template root contains useful baseline pieces:
 
 Important findings:
 
-- The master template root is not yet under Git control.
+- Historical note: on 2026-04-25 the master template root was not yet under Git control; by 2026-05-25 it is a local Git repository on branch `main`.
 - The master template root intentionally contains raw placeholders for generated repositories.
 - A generated test project should have no unresolved placeholders after hydration.
 - Background-process support exists and should be smoke-tested in generated projects.
@@ -154,7 +178,7 @@ Update if applicable in the target template:
 
 ### 6.2 Template Git Baseline
 
-If the target template still has no Git baseline when Phase 0 is implemented:
+If the target template still has no Git baseline when Phase 0 is implemented, use the sequence below. As of 2026-05-25, `D:\PythonProject_General` is already a local Git repository on branch `main`, so this sequence is historical fallback guidance rather than the current expected action:
 
 1. Run `git init` in `D:\PythonProject_General`; this creates repository metadata for the template root.
 2. Create or rename the initial branch to `main`; this gives the reusable template a stable baseline branch.
@@ -304,7 +328,7 @@ If official OpenSpec bootstrap rewrites managed files, explicitly inspect and co
 
 ## 9. Acceptance Criteria
 
-Phase 0 is complete when all of the following are true:
+Phase 0 is complete when all of the following are true. As of the 2026-05-25 status refresh, the target template has already satisfied the original Phase 0 Git, hydration, local gate, and local MR helper shape; the remaining current target work is review and commit/publish handling for the later Comet governance patch:
 
 - The bilingual Phase 0 plan pair exists and is aligned.
 - The plan pair is registered in the target template registry if that registry is used for implementation plans.
