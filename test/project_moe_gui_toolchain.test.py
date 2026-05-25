@@ -1547,6 +1547,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             project = Path(tmp) / "target"
             project.mkdir()
             self.make_project(project)
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
             self.run_tool(
                 str(INSTALLER),
                 "--target-project",
@@ -1922,6 +1924,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             project = Path(tmp) / "target"
             project.mkdir()
             self.make_project(project)
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
             self.run_tool(
                 str(INSTALLER),
                 "--target-project",
@@ -1931,6 +1935,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "--state-namespace",
                 "thesis_moe",
             )
+            self.git_commit_all(project)
             launcher = project / "tools" / "project_moe_gui" / "launcher.py"
             result = subprocess.run(
                 [sys.executable, str(launcher), "--preflight", "--json"],
@@ -1992,6 +1997,64 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             }
             self.assertEqual(private_after, private_before)
 
+    def test_installed_launcher_readiness_gate_skips_cli_when_static_surface_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            mode_cli = project / "tools" / "thesis_moe_mode.py"
+            mode_cli.write_text(
+                mode_cli.read_text(encoding="utf-8").replace(
+                    "import json\n",
+                    "import json\nfrom pathlib import Path\nPath('launcher-mode-cli-executed.txt').write_text('executed', encoding='utf-8')\n",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+            self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--skip-cli-contract-check",
+            )
+            self.git_commit_all(project)
+
+            payload = self.run_installed_launcher(project, "--preflight")
+
+            self.assertFalse(payload["ok"], payload)
+            self.assertEqual(payload["token"], "blocked:missing_phase1_wrapper")
+            self.assertFalse((project / "launcher-mode-cli-executed.txt").exists())
+            self.assertEqual(payload["cli_contract_check"]["skip_reason"], "static_surface_blockers_present")
+            self.assertIn("blocked:missing_phase1_wrapper", payload["cli_contract_check"]["static_surface_blocking_codes"])
+            self.assertFalse(payload["control_mode_allowed"])
+
+    def test_installed_launcher_allows_runtime_namespace_state_dirty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-runtime-dirty", session_id="session-runtime-dirty")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
+            state_file = project / ".omx" / "state" / "thesis_moe" / "project-default.json"
+            state_file.parent.mkdir(parents=True, exist_ok=True)
+            state_file.write_text(json.dumps({"schema_version": 1, "enabled": True}, ensure_ascii=False), encoding="utf-8")
+
+            payload = self.run_installed_launcher(project, "--preflight")
+
+            self.assertIn(payload["token"], {"ok", "blocked:pyside6_unavailable"}, payload)
+            gate = payload["phase1_readiness_gate"]
+            self.assertEqual(gate["readiness_status"], "ready")
+            self.assertEqual(gate["git_status"]["token"], "ok:runtime_state_dirty_allowed")
+            self.assertTrue(gate["git_status"]["runtime_state_dirty_allowed"])
+            self.assertEqual(gate["git_status"]["runtime_state_dirty_details"]["unsafe_count"], 0)
+
     def run_installed_launcher(self, project: Path, *args: str) -> dict:
         result = subprocess.run(
             [sys.executable, str(project / "tools" / "project_moe_gui" / "launcher.py"), *args, "--json"],
@@ -2031,9 +2094,12 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             project = Path(tmp) / "fixture-a"
             project.mkdir()
             self.make_stateful_project(project, project_label="fixture-a", session_id="session-fixture-a")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
             private_before = self.private_project_digests(project)
 
             install_payload = self.install_fixture_gui(project)
+            self.git_commit_all(project)
             self.assertEqual(install_payload["mode"], "apply")
             self.assertEqual(install_payload["target_project_root"], str(project.resolve()))
 
@@ -2129,6 +2195,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             project = Path(tmp) / "fixture-phase1-invalid-legacy"
             project.mkdir()
             self.make_stateful_project(project, project_label="fixture-invalid", session_id="session-current")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
             sessions_root = project / ".omx" / "state" / "thesis_moe" / "sessions"
             invalid_path = sessions_root / "session-invalid.json"
             invalid_path.write_text("{invalid-json", encoding="utf-8")
@@ -2138,6 +2206,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 encoding="utf-8",
             )
             self.install_fixture_gui(project)
+            self.git_commit_all(project)
 
             project_on = self.run_toolchain_write(project, "project-on")
             self.assertTrue(project_on["ok"], project_on)
@@ -2163,9 +2232,15 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             project_a.mkdir()
             project_b.mkdir()
             self.make_stateful_project(project_a, project_label="fixture-a", session_id="session-fixture-a")
+            self.add_phase1_wrappers_and_startup_hook(project_a)
+            self.git_commit_all(project_a)
             self.make_stateful_project(project_b, project_label="fixture-b", session_id="session-fixture-b")
+            self.add_phase1_wrappers_and_startup_hook(project_b)
+            self.git_commit_all(project_b)
             self.install_fixture_gui(project_a)
+            self.git_commit_all(project_a)
             self.install_fixture_gui(project_b)
+            self.git_commit_all(project_b)
 
             result_a = self.run_toolchain_write(project_a, "project-on")
             self.assertTrue(result_a["ok"], result_a)

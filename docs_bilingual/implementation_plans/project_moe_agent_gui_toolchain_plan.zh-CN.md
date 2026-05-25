@@ -49,6 +49,8 @@ related_docs:
 - 这些事实只表示本仓库 fixture 与契约验证支撑已落地；对 `D:\PythonProject_paper_suggest` 的 static-only readiness 证据显示其具备 Phase 1 文件 surface 候选，但当前结果仍是 blocked / repair-lane；这不表示真实目标项目 GUI 已可操作。
 - 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
 
+Implementation fact 2026-05-25 (ASCII-safe): the installed Project MOE GUI launcher now runs the Phase 1 readiness gate before invoking target read commands such as `project-status`, `list-sessions`, and `status`. Static blockers return readiness payload, `remediation_plan`, and `operator_next_steps` without executing target CLI. Runtime dirty files under `.omx/state/<namespace>/` are allowed for normal GUI refresh; unrelated dirty files still block control.
+
 ## 1. 目标
 
 为每个本地项目提供一套可复用的 MOE AI Agent 定义、开关和 GUI 控制方式，同时避免跨仓库混用项目私有 Agent、私有提示源、会话状态和 GUI 工具。
@@ -701,6 +703,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - [x] 补充 import-only fixture GUI 测试与可见窗口显式启动边界；headless Qt / QTest / 手动视觉验证仍作为后续真实 GUI 证据。
 - [x] 将 GUI shell fixture 测试纳入本仓库 local gate 已注册的 `project_moe_gui_toolchain.test.py`。
 
+- [x] Installed launcher preflight is gated by Phase 1 readiness before target CLI reads; static blockers skip CLI execution and return remediation evidence, while `.omx/state/<namespace>/` runtime dirty files are allowed only for launcher refresh.
 #### Phase 2C：跨项目复用与目标安装
 
 - [x] 在至少一个 fixture 项目验证完整 install/check/update/status 流程。

@@ -590,9 +590,40 @@ def git_status_summary(root: Path) -> dict[str, Any]:
         "git_optional_locks": "0",
         "dirty": bool(records) if result.returncode == 0 else None,
         "dirty_count": len(records) if result.returncode == 0 else None,
+        "records": records,
         "records_sample": records[:20],
         "token": "ok" if result.returncode == 0 and not records else ("blocked:dirty_target_project" if result.returncode == 0 else "blocked:git_status_unavailable"),
         "stderr": result.stderr[-800:] if result.returncode != 0 else "",
+    }
+
+
+def git_status_record_path(record: str) -> str:
+    path = record[3:] if len(record) > 3 else record
+    if " -> " in path:
+        path = path.split(" -> ")[-1]
+    return path.strip().strip('"').replace("\\", "/")
+
+
+def runtime_state_dirty_details(git_status: dict[str, Any], namespace: str) -> dict[str, Any]:
+    records = [str(record) for record in (git_status.get("records") or git_status.get("records_sample") or [])]
+    allowed_prefix = f".omx/state/{namespace}/"
+    allowed_records: list[str] = []
+    unsafe_records: list[str] = []
+    for record in records:
+        path = git_status_record_path(record)
+        if path == f".omx/state/{namespace}" or path.startswith(allowed_prefix):
+            allowed_records.append(record)
+        else:
+            unsafe_records.append(record)
+    return {
+        "policy": "allow_only_project_moe_namespace_state_dirty_for_installed_launcher",
+        "namespace": namespace,
+        "allowed_prefixes": [allowed_prefix],
+        "allowed_count": len(allowed_records),
+        "unsafe_count": len(unsafe_records),
+        "allowed_records_sample": allowed_records[:20],
+        "unsafe_records_sample": unsafe_records[:20],
+        "all_dirty_records_runtime_state_only": bool(records) and not unsafe_records,
     }
 
 
@@ -1428,6 +1459,54 @@ def main() -> int:
             "blockers": blockers,
         }, args.json)
 
+    try:
+        from project_moe_gui.toolchain import check_phase1_readiness
+        readiness = check_phase1_readiness(
+            project_root,
+            str(config.get("agent_name") or ""),
+            str(config.get("state_namespace") or ""),
+            Path(mode_cli_value),
+            execute_cli=True,
+            allow_runtime_state_dirty=True,
+        )
+    except Exception as exc:
+        return emit({
+            "schema_version": 1,
+            "ok": False,
+            "token": "blocked:phase1_readiness_gate_unavailable",
+            "exit_code": 5,
+            "message": "Cannot run Project MOE Phase 1 readiness gate before GUI preflight.",
+            "project_root": str(project_root),
+            "mode_cli": str(mode_cli),
+            "error": str(exc),
+            "control_mode_allowed": False,
+            "target_project_write_allowed_by_launcher": False,
+            "blockers": [{"code": "blocked:phase1_readiness_gate_unavailable", "message": "Cannot run Project MOE Phase 1 readiness gate before GUI preflight.", "error": str(exc)}],
+        }, args.json)
+
+    if not (readiness.get("ok") and readiness.get("control_mode_allowed") is True and readiness.get("readiness_status") == "ready"):
+        remediation = readiness.get("remediation_plan") if isinstance(readiness, dict) else {}
+        return emit({
+            "schema_version": 1,
+            "ok": False,
+            "token": str(readiness.get("token") or "blocked:phase1_readiness_gate_failed"),
+            "exit_code": 5,
+            "message": "Project MOE Phase 1 readiness gate blocks GUI preflight before target CLI reads.",
+            "project_root": str(project_root),
+            "mode_cli": str(mode_cli),
+            "readiness_status": readiness.get("readiness_status"),
+            "adaptation_lane": readiness.get("adaptation_lane"),
+            "bootstrap_required": readiness.get("bootstrap_required"),
+            "repair_required": readiness.get("repair_required"),
+            "control_mode_allowed": False,
+            "target_project_write_allowed_by_launcher": False,
+            "cli_contract_check": readiness.get("cli_contract_check"),
+            "phase1_readiness_gate": readiness,
+            "remediation_plan": remediation,
+            "operator_next_steps": remediation.get("ordered_next_steps", []) if isinstance(remediation, dict) else [],
+            "blockers": readiness.get("blockers", []),
+        }, args.json)
+
     def run_mode(command: str) -> tuple[dict | None, dict | None]:
         result = subprocess.run([sys.executable, str(mode_cli), command, "--json"], cwd=str(project_root), capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
         if result.returncode != 0:
@@ -1451,6 +1530,13 @@ def main() -> int:
         return emit({"schema_version": 1, "ok": False, "token": "blocked:gui_shell_unavailable", "exit_code": 5, "message": "Cannot import central Project MOE GUI shell.", "toolchain_source_root": str(source_root), "error": str(exc)}, args.json)
 
     preflight = gui_shell.build_gui_preflight(config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload)
+    preflight["phase1_readiness_gate"] = {
+        "readiness_status": readiness.get("readiness_status"),
+        "adaptation_lane": readiness.get("adaptation_lane"),
+        "control_mode_allowed": readiness.get("control_mode_allowed"),
+        "cli_execution_mode": readiness.get("cli_execution_mode"),
+        "git_status": readiness.get("git_status"),
+    }
     if args.preflight:
         return emit(preflight, args.json)
     if not args.allow_visible:
@@ -1577,14 +1663,29 @@ def check_phase1_readiness(
     startup_paths: list[Path] | None = None,
     operator_doc_paths: list[Path] | None = None,
     execute_cli: bool = True,
+    allow_runtime_state_dirty: bool = False,
 ) -> dict[str, Any]:
     errors = validate_identifiers(agent_name, namespace)
     evidence = project_evidence(root)
     if not evidence:
         errors.append(blocker("blocked:missing_project_evidence", "Target directory does not look like a project.", expected=PROJECT_EVIDENCE))
     git_status = git_status_summary(root)
+    runtime_dirty = runtime_state_dirty_details(git_status, namespace) if git_status["token"] == "blocked:dirty_target_project" else None
     if git_status["token"] == "blocked:dirty_target_project":
-        errors.append(blocker("blocked:dirty_target_project", "Target project has dirty or untracked files; preserve or classify them before Phase 1 writes.", dirty_count=git_status["dirty_count"], records_sample=git_status["records_sample"]))
+        if allow_runtime_state_dirty and runtime_dirty and runtime_dirty["all_dirty_records_runtime_state_only"]:
+            git_status["token"] = "ok:runtime_state_dirty_allowed"
+            git_status["runtime_state_dirty_allowed"] = True
+            git_status["runtime_state_dirty_details"] = runtime_dirty
+        else:
+            errors.append(
+                blocker(
+                    "blocked:dirty_target_project",
+                    "Target project has dirty or untracked files; preserve or classify them before Phase 1 writes.",
+                    dirty_count=git_status["dirty_count"],
+                    records_sample=git_status["records_sample"],
+                    runtime_state_dirty_details=runtime_dirty,
+                )
+            )
     elif git_status["token"] == "blocked:git_status_unavailable":
         errors.append(blocker("blocked:git_status_unavailable", "Cannot run git status in target project.", stderr=git_status["stderr"]))
 
