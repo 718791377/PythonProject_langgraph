@@ -15,9 +15,9 @@ related_docs:
 
 ## 0. 当前状态与本次复核结论
 
-复核日期：2026-05-23。
+复核日期：2026-05-25（按 `docs_bilingual/project_startup_summary.md` 冷启动 read order 重新复核）。
 
-结论：原方案的架构边界、状态模型、安全规则和阶段门基本完整，但缺少“按事项粒度”的实施进度清单，容易让后续会话无法判断哪些内容已经落地、哪些仍只是方案。本次补齐第 11 节的实施进度勾选清单，并把第 13 节改成基于当前事实的后续实施边界。
+结论：原方案的架构边界、状态模型、安全规则和阶段门基本完整；第 11 节已经按事项粒度列出实施进度，第 13 节已经按当前事实收束后续实施边界。本次冷启动复核不改变 `status: draft`，只把 2026-05-25 已落地的 launcher readiness gate 事实正式纳入中文事实链，并补充后续会话继续此方案时必须遵守的冷启动、worktree 所有权和远端发布边界。
 
 状态说明：本文继续保持 `status: draft`。这里的 draft 表示它不是全局 active 治理政策，也不表示全部运行时能力已经完成。Phase 2A 本仓库中央 installer/checker/updater、Phase 2B fixture-safe GUI shell 与 Phase 2C 双 fixture install/check/update/status 隔离证据已确认合入本地 `main`；本仓库已新增 Phase 1 CLI 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令 `atomic_write` / `lock_status` fail-closed fixture gate、项目默认值、session override、无效记录、旧记录兼容和 no-op 状态行为 fixture gate、只读 Phase 1 readiness checker fixture gate、`--static-only` / `--no-exec-cli` 静态只读候选模式 fixture gate、wrapper `--json` / shell surface / 直接 state 触碰 fail-closed fixture gate、startup 激活检查点完整性 fixture gate、目标项目操作者文档 readiness fixture gate、Agent TOML 标准扩展 / 私有提示源边界 readiness fixture gate，以及 execute-read-contract 静态阻断 guard。`D:\PythonProject_paper_suggest` 已经有正式 static-only readiness checker 证据。2026-05-24 的结果是 no-go / repair-lane：目标项目存在 dirty worktree，Agent TOML 缺少标准 Project MOE 扩展区，且两个 wrapper 都未通过严格的 `--json` / shell-surface gate。它只能继续视为 Phase 1 surface 候选，不能批准 GUI 控制；无 Phase 1 的项目则走 Bootstrap Lane，所以本文继续保持 `draft`。
 
@@ -46,10 +46,9 @@ related_docs:
 - 本次后续变更新增只读 managed-artifact 卸载计划器：只对 manifest 声明的 GUI managed artifacts 输出 `planned_deletes`，保留私有 Agent TOML / `MOE.md` / `.omx/state`，并在 managed file hash 不匹配时 fail closed，避免删除本地改动。
 - 本次后续变更继续新增卸载 `--apply` 请求的稳定 fail-closed 处理：CLI 只接受 `--apply` 来返回 `blocked:uninstall_apply_not_supported`，保持 `delete_executed = false`，且仍不写目标项目。
 - 本次后续变更继续加固 execute-read-contract readiness：当目标项目 dirty，或 wrapper、startup、操作者文档、Agent TOML、私有提示源等静态 surface 仍有 blocker 时，readiness checker 不再执行目标项目 CLI，而是在 `cli_contract_check` 中返回 `execution_skipped = true`、`skip_reason = static_surface_blockers_present` 和 `static_surface_blocking_codes`。
+- 2026-05-25 本仓库已合入 launcher readiness gate 加固：已安装到目标项目的 Project MOE GUI launcher 会先运行 Phase 1 readiness gate，再调用目标项目 `project-status`、`list-sessions`、`status` 等读命令；存在静态 blocker 时直接返回 readiness payload、`remediation_plan` 和 `operator_next_steps`，不执行目标 CLI；正常 GUI 刷新允许 `.omx/state/<namespace>/` 下运行态 dirty 文件存在，但其他 dirty 文件仍阻断控制。
 - 这些事实只表示本仓库 fixture 与契约验证支撑已落地；对 `D:\PythonProject_paper_suggest` 的 static-only readiness 证据显示其具备 Phase 1 文件 surface 候选，但当前结果仍是 blocked / repair-lane；这不表示真实目标项目 GUI 已可操作。
 - 未获得远端发布授权前，GitLab/GitHub 不属于本文自动执行范围。
-
-Implementation fact 2026-05-25 (ASCII-safe): the installed Project MOE GUI launcher now runs the Phase 1 readiness gate before invoking target read commands such as `project-status`, `list-sessions`, and `status`. Static blockers return readiness payload, `remediation_plan`, and `operator_next_steps` without executing target CLI. Runtime dirty files under `.omx/state/<namespace>/` are allowed for normal GUI refresh; unrelated dirty files still block control.
 
 ## 1. 目标
 
@@ -80,7 +79,7 @@ Implementation fact 2026-05-25 (ASCII-safe): the installed Project MOE GUI launc
 
 本文不做：
 
-- 立即实现 GUI；
+- 用 GUI 实现绕过目标项目 Phase 1 readiness gate，或在真实目标项目未就绪时批准 GUI 控制；
 - 把项目私有 `MOE.md` 全文复制到用户级配置；
 - 默认把项目专属 MOE Agent 安装到 `C:\Users\lenovo\.codex\agents`；
 - 第一版就创建跨项目总控台；
@@ -703,7 +702,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 - [x] 补充 import-only fixture GUI 测试与可见窗口显式启动边界；headless Qt / QTest / 手动视觉验证仍作为后续真实 GUI 证据。
 - [x] 将 GUI shell fixture 测试纳入本仓库 local gate 已注册的 `project_moe_gui_toolchain.test.py`。
 
-- [x] Installed launcher preflight is gated by Phase 1 readiness before target CLI reads; static blockers skip CLI execution and return remediation evidence, while `.omx/state/<namespace>/` runtime dirty files are allowed only for launcher refresh.
+- [x] 已安装 launcher 的 preflight 接入 Phase 1 readiness gate：读取目标 CLI 前先检查静态 surface；存在 blocker 时跳过 CLI 执行并返回修复证据；仅正常刷新允许 `.omx/state/<namespace>/` 运行态 dirty 文件，其他 dirty 文件仍阻断控制。
 #### Phase 2C：跨项目复用与目标安装
 
 - [x] 在至少一个 fixture 项目验证完整 install/check/update/status 流程。
@@ -814,6 +813,7 @@ MOE 控制工具对状态变更动作应写入轻量本地审计记录：
 4. Phase 2B GUI 本体只能通过目标项目 CLI 改状态，不得直接编辑 JSON；若目标 CLI 缺失，GUI 必须显示 blocker，而不是降级扫描或写状态文件。
 5. Phase 2C 已在本仓库 fixture 层闭环：两个隔离 fixture 已通过相同 contract；本仓库又补充 Phase 1 读取契约 fixture gate、GUI 写入命令输出契约 fixture gate、写入命令原子写入/锁状态 fixture gate、项目默认值/session override/无效记录/legacy/no-op 状态行为 fixture gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 fixture gate、操作者文档 readiness gate、Agent TOML 标准扩展 readiness gate、私有提示源位置 readiness gate、`assert-on` 只读断言 readiness gate、managed-artifact 卸载计划器、卸载 `--apply` fail-closed guard，以及 execute-read-contract 静态阻断 guard，真实项目安装仍取决于后续目标项目授权和 Phase 1 就绪性。
 6. 本文暂不从 `draft` 提升：Phase 2B、fixture 级 Phase 2C、本仓库 Phase 1 读取契约 gate、GUI 写入命令输出契约 gate、写入命令 atomic/lock gate、状态行为 gate、只读 readiness checker、static-only 候选证据 gate、wrapper 安全 gate、操作者文档 gate、Agent TOML 标准扩展 gate、私有提示源位置 gate、`assert-on` 只读断言 gate、Bootstrap Lane dry-run 脚手架计划器、installed-launcher Bootstrap Lane preflight、稳定 Bootstrap Lane `operator_next_steps`、managed-artifact 卸载计划器、卸载 `--apply` fail-closed guard 和 execute-read-contract 静态阻断 guard 已有本地证据，但 `D:\PythonProject_paper_suggest` 的正式 static-only 证据仍是 blocked / repair-lane，真实 GUI 控制仍需后续修复并重新通过 readiness checker；无 Phase 1 项目仍需在目标项目内应用脚手架计划后才能升级为 Ready Lane。
+7. 后续会话继续本文时，必须先按 `docs_bilingual/project_startup_summary.md` 的 cold-start read order 补读当前必需文件，再运行所有权预检；若已有同名 clean worktree/branch 已被本地 `main` 包含，优先刷新并复用该 worktree 或按本仓库 cleanup gate 清理，不得绕过 ownership claim 另建重复写入面；远端发布仍必须等待当前用户消息明确授权。
 
 阶段门规则：
 
