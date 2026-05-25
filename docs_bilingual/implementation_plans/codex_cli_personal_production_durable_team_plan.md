@@ -470,11 +470,11 @@ Minimum production requirement:
 
 The startup layer should also include a context-retention canary, but the literal canary prompt text is project-level and startup-summary-owned. It belongs only in each repository's `project_startup_summary.*` pair, not in `AGENTS.md`, user-level startup summaries, implementation plans, generated wrappers, or launcher payloads. The current canary convention is:
 
-- startup summaries define the literal prompt for full assistant responses in their repository, unless a higher-priority system or developer instruction prevents it.
-- missing canary text after startup-summary reading is treated as possible context-loss evidence.
-- recovery is to rerun the cold-start read order from `AGENTS.md` and `docs_bilingual/project_startup_summary.*`, then reread only the files needed to continue safely.
+- startup summaries define a visible self-check signal for whether the model still understands cold-start authority after `/resume`, compaction, or long-context pressure.
+- missing canary text after startup-summary reading is treated as possible context-loss evidence; missing or mojibake canary immediately after reading is also possible read-path or encoding-failure evidence.
+- recovery is to rerun the cold-start read order from `AGENTS.md` and `docs_bilingual/project_startup_summary.*` through an explicit UTF-8 path, then reread only the files needed to continue safely.
 
-The user-level canary capability should be a checker, not a prompt injector. When it receives transcript or response text, it should verify the startup-summary-defined canary and emit the recovery instruction above when the canary is absent. Without transcript or response input, it should only verify that the current project declares the canary in `project_startup_summary.*` and does not duplicate the literal prompt in other active instruction surfaces.
+The user-level canary capability should be a checker, not a prompt injector or response gate. When it receives transcript, response text, response file, or session JSONL evidence, it should inspect only user-visible assistant responses, filter out tool output and context copies, and emit the recovery instruction above when the canary is absent or mojibake. Without response/session input, it should only verify that the current project declares the canary in `project_startup_summary.*` and does not duplicate the literal prompt in other active instruction surfaces.
 
 ## 8. State, Memory, And Artifact Persistence
 

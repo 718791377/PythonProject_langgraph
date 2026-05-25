@@ -79,11 +79,11 @@ doc_class: implementation_plan
 
 哨兵约定是：
 
-- startup summary 定义本编排仓库完整模型回复的字面提示词，除非更高优先级 system 或 developer 指令阻止。
-- 如果模型在本应读取 startup summary 后没有输出该哨兵，则视为可能上下文丢失。
-- Recovery action: reread `AGENTS.md`, reread `docs_bilingual/project_startup_summary.*`, follow the startup read order, and then reread only the files required for the current task.
+- startup summary 定义可见自检信号，用来判断模型在 `/resume`、compaction 或长上下文压力之后是否仍理解冷启动权威。
+- 如果模型在本应读取 startup summary 后的完整 assistant 回复没有输出该哨兵，则视为可能上下文丢失；如果刚读完就缺失，也应同时视为可能读取路径或编码失败。
+- Recovery action: reread `AGENTS.md`, reread `docs_bilingual/project_startup_summary.*` through an explicit UTF-8 path, follow the startup read order, and then reread only the files required for the current task.
 
-未来用户级 canary checker 不负责把哨兵提示词注入 wrapper payload。它只在收到 transcript 或 response text 时检查回复是否满足 startup-summary-defined canary；如果不满足，就输出冷启动恢复指令，要求重读 `AGENTS.md` 和 `docs_bilingual/project_startup_summary.*`。
+用户级 canary checker 不负责把哨兵提示词注入 wrapper payload，也不作为 response gate。它在收到 response text、response file 或 session JSONL evidence 时，只检查用户可见 assistant 回复，并过滤 tool output、compaction summary、reasoning、developer/system payload 与 startup-summary 文件读取输出；然后报告 `missing_canary` 或 `mojibake_canary` 诊断和冷启动恢复指令。
 
 已经实现：
 

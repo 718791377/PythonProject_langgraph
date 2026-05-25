@@ -76,6 +76,22 @@ class StartupInstructionMojibakeCheckTest(unittest.TestCase):
             cwd=REPO_ROOT,
         )
 
+    def run_check_args(self, root: Path, *extra_args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(SCRIPT_PATH), "--root", str(root), "--json", *extra_args],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=REPO_ROOT,
+        )
+
+    def write_session_jsonl(self, root: Path, relative_path: str, events: list[dict]) -> Path:
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n", encoding="utf-8")
+        return path
+
     def test_passes_clean_startup_instruction_surfaces(self) -> None:
         root = self.make_root("startup-mojibake-pass")
         self.write_clean_surfaces(root)
@@ -126,6 +142,101 @@ class StartupInstructionMojibakeCheckTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
         self.assertTrue(any("project_startup_summary.zh-CN.md" in error for error in payload["errors"]))
+
+    def test_response_text_mode_fails_when_canary_is_mojibake(self) -> None:
+        root = self.make_root("startup-mojibake-response")
+        self.write_clean_surfaces(root)
+
+        result = self.run_check_args(
+            root,
+            "--response-text",
+            f"{mojibake_variant(START_CANARY)} visible response {mojibake_variant(END_CANARY)}",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "mojibake_canary")
+        self.assertNotIn(mojibake_variant(START_CANARY), result.stdout)
+        self.assertNotIn(mojibake_variant(END_CANARY), result.stdout)
+
+    def test_session_mode_filters_tool_output_and_checks_latest_assistant_response_mojibake(self) -> None:
+        root = self.make_root("startup-mojibake-session")
+        self.write_clean_surfaces(root)
+        session_path = self.write_session_jsonl(
+            root,
+            "session.jsonl",
+            [
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call_output",
+                        "output": f"tool output copied clean startup summary {START_CANARY} / {END_CANARY}",
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": f"{mojibake_variant(START_CANARY)} final visible answer {mojibake_variant(END_CANARY)}",
+                            }
+                        ],
+                    },
+                },
+            ],
+        )
+
+        result = self.run_check_args(root, "--session-jsonl", str(session_path), "--latest-assistant")
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "mojibake_canary")
+
+    def test_session_turn_id_tracks_task_range_without_response_item_turn_ids(self) -> None:
+        root = self.make_root("startup-mojibake-turn-id")
+        self.write_clean_surfaces(root)
+        session_path = self.write_session_jsonl(
+            root,
+            "session.jsonl",
+            [
+                {"type": "event_msg", "payload": {"type": "task_started", "turn_id": "turn-a"}},
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": f"{START_CANARY} first turn {END_CANARY}"}],
+                    },
+                },
+                {"type": "event_msg", "payload": {"type": "task_complete", "turn_id": "turn-a"}},
+                {"type": "event_msg", "payload": {"type": "task_started", "turn_id": "turn-b"}},
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": f"{mojibake_variant(START_CANARY)} second turn {mojibake_variant(END_CANARY)}",
+                            }
+                        ],
+                    },
+                },
+            ],
+        )
+
+        result = self.run_check_args(root, "--session-jsonl", str(session_path), "--turn-id", "turn-a", "--latest-assistant")
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "canonical_present")
 
 
 if __name__ == "__main__":

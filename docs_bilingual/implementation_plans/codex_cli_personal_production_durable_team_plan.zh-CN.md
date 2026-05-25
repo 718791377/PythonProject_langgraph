@@ -458,11 +458,11 @@ Business capability profiles 是覆盖十层框架的横向 workload classificat
 
 启动层还应加入上下文保留哨兵，但哨兵字面提示词属于项目级并由 startup summary 持有。它只能放在每个仓库自己的 `project_startup_summary.*` 文件对中，不进入 `AGENTS.md`、用户级启动摘要、implementation plan、生成式 wrapper 或 launcher payload。当前哨兵约定是：
 
-- startup summary 定义本仓库完整模型回复的字面提示词，除非更高优先级 system 或 developer 指令阻止。
-- 如果 startup summary 本应已读取，但完整回复缺少哨兵文本，则视为可能的上下文丢失信号。
-- 恢复方式是从 `AGENTS.md` 和 `docs_bilingual/project_startup_summary.*` 重新执行冷启动阅读顺序，然后只补读继续当前任务必须需要的文件。
+- startup summary 定义可见自检信号，用来判断模型在 `/resume`、compaction 或长上下文压力之后是否仍理解冷启动权威。
+- 如果 startup summary 本应已读取，但完整回复缺少哨兵文本，则视为可能的上下文丢失信号；如果刚读完就缺失或乱码，也应视为可能读取路径或编码失败。
+- 恢复方式是通过显式 UTF-8 路径，从 `AGENTS.md` 和 `docs_bilingual/project_startup_summary.*` 重新执行冷启动阅读顺序，然后只补读继续当前任务必须需要的文件。
 
-用户级 canary 能力应是 checker，而不是提示词注入器。它在收到 transcript 或 response text 时检查 startup-summary-defined canary；如果缺失，就输出上面的冷启动恢复指令。没有 transcript 或 response 输入时，它只检查当前项目是否在 `project_startup_summary.*` 中声明该哨兵，并且没有在其他 active instruction surface 重复字面提示词。
+用户级 canary 能力应是 checker，而不是提示词注入器或 response gate。它在收到 transcript、response text、response file 或 session JSONL evidence 时，只检查用户可见 assistant 回复，并过滤 tool output 与上下文副本；如果缺失或乱码，就输出上面的冷启动恢复指令。没有 response/session 输入时，它只检查当前项目是否在 `project_startup_summary.*` 中声明该哨兵，并且没有在其他 active instruction surface 重复字面提示词。
 
 ## 8. 状态、记忆与工件持久化
 

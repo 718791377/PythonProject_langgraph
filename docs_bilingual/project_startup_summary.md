@@ -134,9 +134,10 @@ User-level safety rule:
 Context-retention canary:
 
 - The literal canary prompt is maintained only in this startup summary pair: `docs_bilingual/project_startup_summary.md` and `docs_bilingual/project_startup_summary.zh-CN.md`. Other active instruction surfaces may point here, but must not duplicate the literal start/end phrase.
-- Complete assistant responses for this repository's orchestration work should start with `指挥官` and end with `喵~`, unless a higher-priority system or developer instruction prevents it.
-- If a complete response misses that canary after this startup summary should have been read, treat it as possible context loss.
-- Recovery action: reread `AGENTS.md`, reread this startup summary pair, follow the cold-start read order above, then reread only the task-specific files needed to continue safely.
+- For this repository, the visible canary markers are `指挥官` at the start and `喵~` at the end.
+- The literal canary prompt is a visible self-check for whether a resumed or compacted session still understands the cold-start authority. It belongs in user-visible assistant responses, not in wrapper payloads, generated helpers, or other authority surfaces.
+- If a complete assistant response misses that canary after this startup summary should have been read, treat that as possible context loss or a read-path failure.
+- Recovery action: reread `AGENTS.md`, reread this startup summary pair through an explicit UTF-8 path, follow the cold-start read order above, then reread only the task-specific files needed to continue safely.
 
 ## Current Mainline
 

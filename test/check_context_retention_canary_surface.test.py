@@ -59,6 +59,22 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
             cwd=REPO_ROOT,
         )
 
+    def run_check_args(self, root: Path, *extra_args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(SCRIPT_PATH), "--root", str(root), "--json", *extra_args],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=REPO_ROOT,
+        )
+
+    def write_session_jsonl(self, root: Path, relative_path: str, events: list[dict]) -> Path:
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n", encoding="utf-8")
+        return path
+
     def test_passes_when_canary_only_in_startup_pair(self) -> None:
         root = self.make_root("canary-pass")
         self.write_startup_pair(root)
@@ -166,6 +182,115 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
 
         result = self.run_check(root)
         self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+
+    def test_response_text_mode_passes_when_user_visible_response_has_canary(self) -> None:
+        root = self.make_root("canary-response-pass")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+
+        result = self.run_check_args(root, "--response-text", f"{START_CANARY} response body {END_CANARY}")
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "canonical_present")
+        self.assertNotIn(START_CANARY, result.stdout)
+        self.assertNotIn(END_CANARY, result.stdout)
+
+    def test_response_text_mode_fails_when_user_visible_response_missing_canary(self) -> None:
+        root = self.make_root("canary-response-missing")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+
+        result = self.run_check_args(root, "--response-text", "plain response without the marker")
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "missing_canary")
+
+    def test_response_text_mode_fails_when_user_visible_response_has_mojibake_canary(self) -> None:
+        root = self.make_root("canary-response-mojibake")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+
+        result = self.run_check_args(root, "--response-text", f"{mojibake_variant(START_CANARY)} bad {mojibake_variant(END_CANARY)}")
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "mojibake_canary")
+
+    def test_session_mode_filters_tool_output_and_checks_latest_assistant_response(self) -> None:
+        root = self.make_root("canary-session-filter")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+        session_path = self.write_session_jsonl(
+            root,
+            "session.jsonl",
+            [
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call_output",
+                        "output": f"tool output copied startup summary {START_CANARY} / {END_CANARY}",
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": "final visible answer without marker"}],
+                    },
+                },
+            ],
+        )
+
+        result = self.run_check_args(root, "--session-jsonl", str(session_path), "--latest-assistant")
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "missing_canary")
+        self.assertEqual(payload["response_diagnostics"][0]["source"], "session_latest_assistant")
+
+    def test_session_turn_id_tracks_task_range_without_response_item_turn_ids(self) -> None:
+        root = self.make_root("canary-session-turn-id")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+        session_path = self.write_session_jsonl(
+            root,
+            "session.jsonl",
+            [
+                {"type": "event_msg", "payload": {"type": "task_started", "turn_id": "turn-a"}},
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": f"{START_CANARY} first turn {END_CANARY}"}],
+                    },
+                },
+                {"type": "event_msg", "payload": {"type": "task_complete", "turn_id": "turn-a"}},
+                {"type": "event_msg", "payload": {"type": "task_started", "turn_id": "turn-b"}},
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": "second turn without marker"}],
+                    },
+                },
+            ],
+        )
+
+        result = self.run_check_args(root, "--session-jsonl", str(session_path), "--turn-id", "turn-a", "--latest-assistant")
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "canonical_present")
 
 
 if __name__ == "__main__":

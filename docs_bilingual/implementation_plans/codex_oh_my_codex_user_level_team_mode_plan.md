@@ -1374,11 +1374,11 @@ Startup summaries should also carry a lightweight context-retention canary. Othe
 
 The canary convention is:
 
-- startup summaries define the literal prompt for complete assistant responses in this orchestration repository, unless a higher-priority system or developer instruction prevents it.
-- if the canary is missing from a complete response after the startup summary was supposed to be read, treat that as possible context-loss evidence.
-- the recovery action is to re-enter cold-start mode: reread `AGENTS.md`, reread the `docs_bilingual/project_startup_summary.*` pair, follow the startup-summary read order, and then reread only the files required to continue the current task.
+- startup summaries define the visible self-check signal that helps detect whether the model still understands cold-start authority after `/resume`, compaction, or long-context pressure.
+- if the canary is missing from a complete assistant response after the startup summary was supposed to be read, treat that as possible context-loss evidence; if it happens immediately after reading, also treat it as possible read-path or encoding failure.
+- the recovery action is to re-enter cold-start mode: reread `AGENTS.md`, reread the `docs_bilingual/project_startup_summary.*` pair through an explicit UTF-8 path, follow the startup-summary read order, and then reread only the files required to continue the current task.
 
-The future user-level canary checker should not inject the canary prompt into wrapper payloads. It should only verify, when a transcript or response text is provided, whether the response satisfies the startup-summary-defined canary; if not, it should report a cold-start recovery instruction to reread `AGENTS.md` and `docs_bilingual/project_startup_summary.*`.
+The user-level canary checker should not inject the canary prompt into wrapper payloads and should not act as a response gate. When response text, response files, or session JSONL evidence is provided, it should inspect only user-visible assistant responses, filter out tool output, compaction summaries, reasoning, developer/system payloads, and startup-summary file-read output, and then report `missing_canary` or `mojibake_canary` diagnostics with the cold-start recovery instruction.
 
 ## 13. Implementation Order
 

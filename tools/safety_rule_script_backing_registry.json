@@ -18,7 +18,7 @@
         "check_context_retention_canary_surface",
         "check_startup_instruction_mojibake"
       ],
-      "description": "Keeps the startup-summary canary project-owned, prevents duplicate literal prompt placement, requires cold-start recovery to reread AGENTS.md, and rejects mojibake in startup/instruction authority surfaces."
+      "description": "Keeps the startup-summary canary project-owned, prevents duplicate literal prompt placement, supports parameterized response/session diagnostics, requires cold-start recovery to reread AGENTS.md, and rejects mojibake in startup/instruction authority surfaces."
     },
     {
       "id": "multi-session-worktree-isolation",
