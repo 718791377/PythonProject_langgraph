@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.18
+version: 0.19
 status: active
 owner: codex-orchestration
 date: 2026-05-25
@@ -14,7 +14,7 @@ date: 2026-05-25
 
 截至 2026-05-15，本文档最初规划的 enforcement 实施包已经在本地通过下方第 0 节列出的 OpenSpec changes 完成并归档。未来如果发现新的回归或缺口，应基于这个 active baseline 新开一个有边界的小步 change，而不是重新打开已经归档的实施切片。
 
-2026-05-25 冷启动复核新增一个后续硬化点：当会话声称按新会话 cold-start read order 继续工作时，必须有结构化 evidence 说明已读取 `project_startup_summary.md`、按 read order 补读了本次任务所需文件、明确跳过了哪些非必要文件及原因，并把该 evidence 与 activation trace、worktree/session-claim preflight 区分开。该新增内容纳入 Phase 4，仍是 planned follow-up，不改变 Phase 0-3 已完成状态。
+2026-05-25 冷启动复核新增一个后续硬化点：当会话声称按新会话 cold-start read order 继续工作时，必须有结构化 evidence 说明已读取 `project_startup_summary.md`、按 read order 补读了本次任务所需文件、明确跳过了哪些非必要文件及原因，并把该 evidence 与 activation trace、worktree/session-claim preflight、expert/durable/persistent runtime evidence 分层。2026-05-25 后续复核进一步要求 evidence 采用有序 read ledger：每个 read-order 条目都必须标注 `order_index`、`path`、`decision=read|skipped`、`read_mode`、`needed_for_current_task`、`reason` 和 evidence boundary。该新增内容纳入 Phase 4，仍是 planned follow-up，不改变 Phase 0-3 已完成状态。
 
 ## 0. 2026-05-15 完成状态快照
 
@@ -169,8 +169,10 @@ Phase 4 的详细实施内容已合并到本文第 20 节；独立 parity plan �
 - `project_startup_summary.md` 是 cold-start read order 的英文主文件；`.zh-CN.md` 是中文 companion。读取中文 companion 时必须使用显式 UTF-8 路径；如果终端渲染出现乱码，只能把它当成编码/渲染边界问题处理，不得复制乱码哨兵文本到回答或仓库文件。
 - 每次 new session、reload、resume、continue、phase change 或用户要求“按新会话冷启动方式重新读取”时，activation trace 之外还应有 cold-start read-order evidence。
 - 证据必须列出：已读取的 startup summary pair、按 read order 补读的任务必要文件、因本次任务不需要而跳过的 read-order 文件及具体原因、`openspec list --json` 当前结果、Git worktree/mainline preflight 结果。
-- read-order evidence 只证明上下文加载和治理边界；它不是 expert/durable/persistent team 已运行的证据。
+- 证据必须采用有序 ledger，而不是自然语言一句话：每个 read-order 条目都要标注 `order_index`、`path`、`decision=read|skipped`、`read_mode`、`needed_for_current_task`、`reason`。如果使用摘要式读取、定向章节读取或二次 UTF-8 重读，也必须写明 `read_mode` 与为什么足以支撑当前任务。
+- activation trace 只证明“本轮任务怎样选择协同 surface”；worktree/session-claim preflight 只证明“写入所有权是否安全”；read-order evidence 只证明“上下文与治理边界已加载”。三者都不是 expert/durable/persistent team 已运行的证据。
 - 当本次任务只是单文件文档更新且 `openspec list --json` 为空时，可以不开新的 OpenSpec change，但 final report 必须说明这是 bounded document-maintenance slice，而不是 runtime enforcement 已实现。
+- final report 至少包含一个 `cold_start_read_order_evidence` 小节，列出 read-order source、已读文件数量、跳过文件及原因、OpenSpec 状态、worktree/session-claim preflight、以及“未使用 expert/durable/persistent runtime evidence”的边界声明。
 
 ## 3. Activation trace 新格式
 
@@ -702,8 +704,11 @@ Phase 4 不重新打开 Phase 0-3 已完成的 baseline；它只处理 2026-05-2
 ```text
 test/fixtures/cold_start_read_order_evidence/
   valid_single_file_doc_update.json
+  valid_task_specific_skip_with_reason.json
   invalid_missing_startup_summary.json
   invalid_skipped_file_without_reason.json
+  invalid_activation_trace_only.json
+  invalid_read_order_used_as_runtime_evidence.json
 ```
 
 最小 JSON 字段：
@@ -712,43 +717,200 @@ test/fixtures/cold_start_read_order_evidence/
 {
   "case_id": "single_file_doc_update_after_cold_start",
   "trigger": "user_requested_cold_start_reread",
+  "read_order_source": {
+    "path": "docs_bilingual/project_startup_summary.md",
+    "section": "Cold-Start Read Order",
+    "source_sha256": "<sha256-or-null-in-fixture>"
+  },
   "startup_summary_pair": {
     "english_primary": "docs_bilingual/project_startup_summary.md",
     "chinese_companion": "docs_bilingual/project_startup_summary.zh-CN.md",
-    "utf8_explicit_read": true
+    "utf8_explicit_read": true,
+    "mojibake_handling": "treat_rendering_issue_as_encoding_boundary_do_not_copy_corruption"
   },
   "read_order_evidence": {
-    "read_required_files": [
-      "docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md",
-      "AGENTS.md",
-      "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
-      "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
-      "docs_bilingual/governance/openspec_usage_convention.md"
-    ],
-    "skipped_files": [
+    "items": [
       {
+        "order_index": 1,
+        "path": "docs_bilingual/project_startup_summary.md",
+        "decision": "read",
+        "read_mode": "full_text_utf8",
+        "needed_for_current_task": true,
+        "reason": "authoritative cold-start read order and repository posture"
+      },
+      {
+        "order_index": 2,
+        "path": "docs_bilingual/project_startup_summary.zh-CN.md",
+        "decision": "read",
+        "read_mode": "full_text_utf8_or_explicit_utf8_retry",
+        "needed_for_current_task": true,
+        "reason": "Chinese companion and UTF-8/mojibake boundary"
+      },
+      {
+        "order_index": 3,
+        "path": "docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "current mainline handoff and no-drift notes"
+      },
+      {
+        "order_index": 4,
+        "path": "docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections_utf8",
+        "needed_for_current_task": true,
+        "reason": "Chinese mainline handoff companion"
+      },
+      {
+        "order_index": 5,
+        "path": "AGENTS.md",
+        "decision": "read",
+        "read_mode": "full_text_or_authority_sections",
+        "needed_for_current_task": true,
+        "reason": "repository instruction surface for orchestration and publication workflow"
+      },
+      {
+        "order_index": 6,
+        "path": "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "feature worktree, session claim and mainline freshness rules"
+      },
+      {
+        "order_index": 7,
+        "path": "docs_bilingual/governance/langgraph_user_level_runtime_policy.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "LangGraph backend readiness and repo-local state boundary"
+      },
+      {
+        "order_index": 8,
         "path": "docs_bilingual/governance/user_level_launcher_payload_policy.md",
-        "reason": "not needed for a bounded single-file implementation-plan documentation update"
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "startup payload and model instruction boundary for cold-start evidence"
+      },
+      {
+        "order_index": 9,
+        "path": "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "activation trace, evidence and durable-team threshold policy"
+      },
+      {
+        "order_index": 10,
+        "path": "docs_bilingual/governance/openspec_usage_convention.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "decide whether this bounded documentation update needs a new OpenSpec change"
+      },
+      {
+        "order_index": 11,
+        "path": "docs_bilingual/governance/codex_user_level_mcp_scope_policy.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "direct MCP versus router boundary can affect orchestration evidence claims"
+      },
+      {
+        "order_index": 12,
+        "path": "docs_bilingual/governance/openspec_opsx_project_usage_policy.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "repository OPSX and task ownership precheck boundary"
+      },
+      {
+        "order_index": 13,
+        "path": "docs_bilingual/governance/openspec_official_workflow_policy.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "official OpenSpec lifecycle and validation authority"
+      },
+      {
+        "order_index": 14,
+        "path": "docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "active user-level team-mode and routing plan"
+      },
+      {
+        "order_index": 15,
+        "path": "docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md",
+        "decision": "read",
+        "read_mode": "task_relevant_sections",
+        "needed_for_current_task": true,
+        "reason": "active durable-state isolation plan"
+      },
+      {
+        "order_index": 16,
+        "path": "active OpenSpec change from openspec list --json",
+        "decision": "skipped",
+        "read_mode": "not_applicable",
+        "needed_for_current_task": false,
+        "reason": "openspec list --json returned an empty changes array"
       }
     ],
+    "summary_counts": {
+      "read": 15,
+      "skipped": 1,
+      "read_order_total_considered": 16
+    },
     "openspec_list": {"changes": []},
     "worktree_preflight": {
+      "gitlab_main_fetched": true,
       "local_main_not_behind_gitlab_main": true,
       "feature_worktree": ".worktrees/<branch>",
-      "session_claim_declared": true
+      "session_claim_declared": true,
+      "ownership_precheck_state": "unclaimed"
     }
+  },
+  "activation_trace_ref": {
+    "present": true,
+    "boundary": "routing_decision_evidence_not_context_reading_evidence"
+  },
+  "runtime_evidence_refs": {
+    "native_experts": [],
+    "durable_team": [],
+    "persistent_team": [],
+    "boundary": "empty_means_not_used_not_failed"
   },
   "evidence_boundary": "read_order_context_only_not_expert_or_team_runtime_evidence"
 }
 ```
 
+`summary_counts.read + summary_counts.skipped` 必须等于 `read_order_total_considered`。如果 read order 中的 active OpenSpec change 不存在，必须记录 `openspec_list.changes=[]`，并把“停止在 read order 第 16 项之后选择小步文档维护”写入 final report。
+
 检查器必须 fail closed：
 
 - 缺少 startup summary pair 任一文件读取记录；
+- 任一 read-order ledger 条目缺少 `order_index`、`path`、`decision`、`read_mode`、`needed_for_current_task` 或 `reason`；
 - 声称跳过 read-order 文件但没有逐项 reason；
+- `summary_counts` 与 ledger 条目数量不一致；
 - 未记录 `openspec list --json` 结果；
 - 可写任务没有 feature worktree/session claim 证据；
+- 只给出 activation trace，却没有 read-order ledger；
 - 把 read-order evidence 当作 expert/durable/persistent team runtime evidence。
+
+最终用户报告的最小结构：
+
+```text
+cold_start_read_order_evidence:
+  source: docs_bilingual/project_startup_summary.md#Cold-Start Read Order
+  read: <N files with order indexes>
+  skipped: <M files with reasons>
+  openspec: changes=[] or listed active changes
+  worktree_preflight: local_main_not_behind_gitlab_main + feature_worktree + session_claim
+  boundary: context_reading_only; experts/durable/persistent runtime evidence listed separately
+```
 
 ##### Activation parity fixture contract
 
@@ -901,20 +1063,27 @@ repo-local LangGraph state 不得在完成后无解释地残留 `running`。建�
 - 新建：`tools/check_cold_start_read_order_evidence.py`
 - 新建：`test/check_cold_start_read_order_evidence.test.py`
 - 新建：`test/fixtures/cold_start_read_order_evidence/valid_single_file_doc_update.json`
+- 新建：`test/fixtures/cold_start_read_order_evidence/valid_task_specific_skip_with_reason.json`
 - 新建：`test/fixtures/cold_start_read_order_evidence/invalid_missing_startup_summary.json`
 - 新建：`test/fixtures/cold_start_read_order_evidence/invalid_skipped_file_without_reason.json`
+- 新建：`test/fixtures/cold_start_read_order_evidence/invalid_activation_trace_only.json`
+- 新建：`test/fixtures/cold_start_read_order_evidence/invalid_read_order_used_as_runtime_evidence.json`
 - 修改：`tools/run_openspec_guard.py`
 - 修改：`tools/ci/ci_test_manifest.json`
 
 - [ ] **步骤 1：编写失败测试**
 
-  构造两个 negative fixtures：一个缺少 `project_startup_summary.md` 读取记录，一个跳过 read-order 文件但缺少 reason。检查器必须让二者失败。
+  构造四类 negative fixtures：缺少 `project_startup_summary.md` 读取记录、跳过 read-order 文件但缺少 reason、只有 activation trace 没有 read-order ledger、把 read-order evidence 声称为 expert/durable/persistent runtime evidence。检查器必须让这些 fixtures 失败。
 
-- [ ] **步骤 2：实现 evidence schema 校验**
+- [ ] **步骤 2：编写正例 fixtures**
 
-  检查器读取 JSON fixtures，要求 `startup_summary_pair`、`read_required_files`、`skipped_files[].reason`、`openspec_list`、`worktree_preflight` 与 `evidence_boundary` 全部存在。若 `evidence_boundary` 声称 expert 或 durable team runtime evidence，必须失败。
+  `valid_single_file_doc_update.json` 必须覆盖本类 bounded single-file implementation-plan 更新：`openspec list --json` 为空、local main 不落后、feature worktree 与 session claim 已声明、durable/persistent team 未启动。`valid_task_specific_skip_with_reason.json` 必须证明跳过非必要 read-order 文件时具备逐项 reason，且跳过不会改变 activation decision。
 
-- [ ] **步骤 3：接入 guard 与本地 CI**
+- [ ] **步骤 3：实现 evidence schema 校验**
+
+  检查器读取 JSON fixtures，要求 `read_order_source`、`startup_summary_pair`、`read_order_evidence.items[]`、`summary_counts`、`openspec_list`、`worktree_preflight`、`activation_trace_ref`、`runtime_evidence_refs` 与 `evidence_boundary` 全部存在。每个 ledger item 必须含 `order_index/path/decision/read_mode/needed_for_current_task/reason`。若 `evidence_boundary` 声称 expert、durable team 或 persistent team runtime evidence，必须失败。
+
+- [ ] **步骤 4：接入 guard 与本地 CI**
 
   将检查器加入 `tools/run_openspec_guard.py`，将单元测试加入 `tools/ci/ci_test_manifest.json`，并运行：
 
@@ -923,7 +1092,7 @@ repo-local LangGraph state 不得在完成后无解释地残留 `running`。建�
   python .\tools\check_cold_start_read_order_evidence.py --root . --json
   ```
 
-  预期：有效 cold-start evidence 通过；缺少读取记录、缺少跳过理由、或把 read-order evidence 当作 runtime evidence 的 fixtures fail closed。
+  预期：有效 cold-start evidence 通过；缺少读取记录、缺少跳过理由、缺 ledger 字段、summary count 不一致、只有 activation trace、或把 read-order evidence 当作 runtime evidence 的 fixtures fail closed。
 
 #### 任务 2：提示词无关路由一致性检查器
 
@@ -1089,7 +1258,7 @@ repo-local LangGraph state 不得在完成后无解释地残留 `running`。建�
 | 需求 | 验证命令 | 必须失败的反例 | 必须通过的正例 |
 | --- | --- | --- | --- |
 | 有/无协同短语 routing parity | `python .\tools\check_orchestration_prompt_independent_collaboration_parity.py --root . --json` | 短语导致 `persistent_team=running` | 同一 task shape 决策字段一致 |
-| cold-start read-order evidence | `python .\tools\check_cold_start_read_order_evidence.py --root . --json` | 缺 startup summary 读取记录、缺跳过理由、或把 read-order 当 runtime evidence | 已读/跳过/openspec/worktree preflight 边界完整 |
+| cold-start read-order evidence | `python .\tools\check_cold_start_read_order_evidence.py --root . --json` | 缺 startup summary 读取记录、缺 ledger 字段、summary count 不一致、只有 activation trace、或把 read-order 当 runtime evidence | 有序 read ledger、跳过理由、openspec/worktree preflight、runtime evidence 空边界完整 |
 | durable/persistent evidenceguard | `python .\tools\check_durable_persistent_evidence_guard.py --root . --json` | running 缺 heartbeat | complete 具备 selector、manifest、heartbeat、lifecycle、closed、absorbed |
 | expert lifecycle audit | `python .\tools\check_expert_lifecycle_audit.py --root . --json` | timeout 被 final report 引用为证据 | result 被 absorbed 后再引用 |
 | LangGraph release | `python .\tools\check_langgraph_state_release.py --root . --json` | completed 仍 running 且无 release marker | active running 有 heartbeat，或 completed 已 released |
@@ -1108,7 +1277,7 @@ repo-local LangGraph state 不得在完成后无解释地残留 `running`。建�
 #### 验收标准
 
 - 同一 task shape 在有/无显式协同短语时产生同一类 routing decision。
-- 新会话冷启动或用户要求冷启动复读时，read-order evidence 能证明 startup summary pair、任务必要文件、跳过理由、OpenSpec 状态和 worktree preflight 已被记录。
+- 新会话冷启动或用户要求冷启动复读时，read-order evidence 能以有序 ledger 证明 startup summary pair、任务必要文件、跳过理由、OpenSpec 状态、worktree/session-claim preflight 与 evidence boundary 已被记录。
 - 没有 selector、manifest、heartbeat、worker lifecycle、closed agent record、close/absorb 证据时，durable/persistent team 运行声明不能通过。
 - Expert lifecycle audit 能区分 completed/absorbed result 与 timeout/stall/provider pacing non-evidence。
 - LangGraph completed work 不残留 stale `running` state；如仍 running，必须有 active work、heartbeat 和 continue reason。
@@ -1289,7 +1458,7 @@ repo-local LangGraph state 不得在完成后无解释地残留 `running`。建�
 - durable/persistent team 运行声明缺少 selector、manifest、heartbeat、worker lifecycle 或 close/absorb evidence 时必须 fail closed。
 - Expert lifecycle 审计必须记录 `spawn / wait / timeout / result / close / absorbed`，且 timeout/stall/upstream pacing 不得作为完成证据。
 - LangGraph work 已完成或提交后，不得长期残留没有 release marker 或继续执行理由的 `running` state。
-- 面向用户的最终报告必须区分 policy expectation、cold-start read-order evidence、actual expert evidence、durable/persistent team evidence、main-session takeover 和 blocker。
+- 面向用户的最终报告必须区分 policy expectation、cold-start read-order evidence（有序 ledger 摘要）、actual expert evidence、durable/persistent team evidence、main-session takeover 和 blocker。
 
 ## 26. 适用范围与权威边界
 
