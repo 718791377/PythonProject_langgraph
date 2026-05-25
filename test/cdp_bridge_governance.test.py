@@ -10,10 +10,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CDP_GOVERNANCE = ROOT / "tools" / "cdp_bridge_governance.py"
 BROWSER_OWNER_REGISTRY = ROOT / "tools" / "browser_owner_registry.py"
+OPENCLI_GOVERNANCE = ROOT / "tools" / "opencli_governance.py"
 
 
 def run_cdp(args, state_dir, expect=0):
     cmd = [sys.executable, str(CDP_GOVERNANCE), "--state-dir", str(state_dir), *args, "--json"]
+    proc = subprocess.run(cmd, cwd=str(ROOT), text=True, capture_output=True)
+    try:
+        data = json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:  # pragma: no cover - debug aid
+        raise AssertionError(f"invalid json\ncmd={cmd}\nrc={proc.returncode}\nstdout={proc.stdout}\nstderr={proc.stderr}") from exc
+    if proc.returncode != expect:
+        raise AssertionError(f"unexpected rc {proc.returncode}, expected {expect}\ncmd={cmd}\nstdout={proc.stdout}\nstderr={proc.stderr}")
+    return data
+
+
+def run_opencli(args, state_dir, expect=0):
+    cmd = [sys.executable, str(OPENCLI_GOVERNANCE), "--state-dir", str(state_dir), *args, "--json"]
     proc = subprocess.run(cmd, cwd=str(ROOT), text=True, capture_output=True)
     try:
         data = json.loads(proc.stdout)
@@ -53,6 +66,49 @@ def write_authorization_receipt(path: Path, *, target: str, session: str, action
         encoding="utf-8",
     )
     return path
+
+
+def write_opencli_authorization_receipt(path: Path, *, target: str, session: str, action: str = "cookie.read") -> Path:
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "action": "OpenCLI sensitive browser action authorization",
+                "target": target,
+                "scope": f"one-task sensitive OpenCLI action {action}",
+                "expiry": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(timespec="seconds"),
+                "session": session,
+                "operator_confirmation": True,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
+def reserve_opencli_owner(owner_state: Path, *, target: str = "tab:opencli-1", session: str = "session-a"):
+    return run_owner_registry(
+        [
+            "lease",
+            "reserve",
+            "--owner-class",
+            "codex-managed-isolated",
+            "--project",
+            "pythonproject-langgraph",
+            "--session",
+            session,
+            "--target",
+            target,
+            "--profile-path",
+            r"C:\Users\lenovo\.codex\state\browser-automation\isolated\opencli-session-a",
+            "--purpose",
+            "opencli governance unit test",
+            "--ttl",
+            "300",
+        ],
+        owner_state,
+    )
 
 
 class CdpBridgeGovernanceTests(unittest.TestCase):
@@ -203,6 +259,167 @@ class CdpBridgeGovernanceTests(unittest.TestCase):
             self.assertEqual(result["action_kind"], "unknown")
             self.assertIn("unknown_action", result["blockers"])
             self.assertIn("owner_lease_required", result["blockers"])
+
+
+class OpenCliGovernanceTests(unittest.TestCase):
+    def test_read_only_inspection_requires_owner_but_not_authorization(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            missing = run_opencli(
+                [
+                    "check",
+                    "--action",
+                    "session.inspect",
+                    "--target",
+                    r"tab:C:\Users\lenovo\AppData\Local\Google\Chrome\User Data",
+                    "--session",
+                    "session-a",
+                ],
+                state,
+                expect=3,
+            )
+            serialized_missing = json.dumps(missing, ensure_ascii=False)
+            self.assertFalse(missing["dispatch_allowed"])
+            self.assertTrue(missing["owner_required"])
+            self.assertFalse(missing["authorization_required"])
+            self.assertIn("owner_lease_required", missing["blockers"])
+            self.assertIn("[REDACTED_PATH]", serialized_missing)
+
+            owner_state = state / "owner-registry"
+            lease = reserve_opencli_owner(owner_state)
+            allowed = run_opencli(
+                [
+                    "--owner-state-dir",
+                    str(owner_state),
+                    "check",
+                    "--action",
+                    "session.inspect",
+                    "--target",
+                    "tab:opencli-1",
+                    "--session",
+                    "session-a",
+                    "--owner-lease-id",
+                    lease["lease"]["lease_id"],
+                ],
+                state,
+            )
+            serialized_allowed = json.dumps(allowed, ensure_ascii=False)
+            self.assertTrue(allowed["ok"])
+            self.assertTrue(allowed["dispatch_allowed"])
+            self.assertEqual(allowed["adapter_mode"], "on-demand")
+            self.assertFalse(allowed["authorization_required"])
+            self.assertTrue(allowed["owner_verified"])
+            self.assertFalse(allowed["safety"]["connects_to_browser"])
+            self.assertFalse(allowed["safety"]["starts_opencli"])
+            self.assertFalse(allowed["safety"]["autoload_allowed"])
+            self.assertNotIn(str(state), serialized_allowed)
+
+    def test_persistent_adapter_mode_is_blocked(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            owner_state = state / "owner-registry"
+            lease = reserve_opencli_owner(owner_state)
+            result = run_opencli(
+                [
+                    "--owner-state-dir",
+                    str(owner_state),
+                    "check",
+                    "--action",
+                    "session.inspect",
+                    "--target",
+                    "tab:opencli-1",
+                    "--session",
+                    "session-a",
+                    "--owner-lease-id",
+                    lease["lease"]["lease_id"],
+                    "--adapter-mode",
+                    "always-on",
+                ],
+                state,
+                expect=3,
+            )
+            self.assertFalse(result["dispatch_allowed"])
+            self.assertIn("opencli_must_remain_on_demand", result["blockers"])
+            self.assertFalse(result["safety"]["autoload_allowed"])
+
+    def test_opencli_cookie_read_fails_closed_without_owner_or_authorization(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            result = run_opencli(
+                [
+                    "check",
+                    "--action",
+                    "cookie.read",
+                    "--target",
+                    "tab:opencli-1",
+                    "--session",
+                    "session-a",
+                ],
+                state,
+                expect=3,
+            )
+            self.assertFalse(result["dispatch_allowed"])
+            self.assertTrue(result["owner_required"])
+            self.assertTrue(result["authorization_required"])
+            self.assertIn("owner_lease_required", result["blockers"])
+            self.assertIn("authorization_receipt_required", result["blockers"])
+            self.assertTrue(result["safety"]["requested_action_would_read_cookies"])
+            self.assertFalse(result["safety"]["reads_cookies"])
+
+    def test_opencli_sensitive_action_passes_with_active_owner_and_authorization(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            owner_state = state / "owner-registry"
+            target = "tab:opencli-1"
+            session = "session-a"
+            lease = reserve_opencli_owner(owner_state, target=target, session=session)
+            receipt = write_opencli_authorization_receipt(state / "auth.json", target=target, session=session, action="js.evaluate")
+            result = run_opencli(
+                [
+                    "--owner-state-dir",
+                    str(owner_state),
+                    "check",
+                    "--action",
+                    "js.evaluate",
+                    "--target",
+                    target,
+                    "--session",
+                    session,
+                    "--owner-lease-id",
+                    lease["lease"]["lease_id"],
+                    "--authorization-receipt",
+                    str(receipt),
+                ],
+                state,
+            )
+            self.assertTrue(result["dispatch_allowed"])
+            self.assertTrue(result["owner_verified"])
+            self.assertTrue(result["authorization_verified"])
+            self.assertTrue(result["safety"]["requested_action_would_execute_javascript"])
+            self.assertFalse(result["safety"]["executes_javascript"])
+
+    def test_opencli_click_type_navigate_and_unknown_actions_fail_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            for action in ["mouse.click", "keyboard.type", "page.navigate", "experimental.bind-personal-tab"]:
+                result = run_opencli(
+                    [
+                        "check",
+                        "--action",
+                        action,
+                        "--target",
+                        "tab:opencli-1",
+                        "--session",
+                        "session-a",
+                    ],
+                    state,
+                    expect=3,
+                )
+                self.assertFalse(result["dispatch_allowed"], action)
+                self.assertIn("owner_lease_required", result["blockers"], action)
+                self.assertIn("authorization_receipt_required", result["blockers"], action)
+                if action.startswith("experimental"):
+                    self.assertIn("unknown_action", result["blockers"])
 
 
 if __name__ == "__main__":
