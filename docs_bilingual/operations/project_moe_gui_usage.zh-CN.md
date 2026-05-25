@@ -45,6 +45,8 @@ python tools/project_moe_gui_toolchain/check_project_moe_phase1_readiness.py `
 
 返回 `read_only = true` 与 `writes_target_project = false` 才能作为只读证据。若返回 `blocked:dirty_target_project`、`blocked:missing_phase1_wrapper` 或 `blocked:missing_moe_activation_hook` 等 token，应先在目标项目内修复或单独授权写入后再继续。
 
+默认 execute-read-contract 模式只会在静态 surface 全部通过后执行目标 CLI。只要目标项目 dirty，或 wrapper、startup、操作者文档、Agent TOML、私有提示源等静态检查仍有 blocker，checker 就会跳过目标 CLI 执行，并在 `cli_contract_check` 中返回 `execution_skipped = true`、`skip_reason = static_surface_blockers_present` 和 `static_surface_blocking_codes`。这可以避免在静态门未通过前触发可能带有 last-seen 或状态副作用的读命令。
+
 ## 预览安装
 
 ```powershell

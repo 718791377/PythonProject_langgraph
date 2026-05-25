@@ -1346,6 +1346,15 @@ def skipped_cli_contract_details(mode_cli: Path, reason: str) -> dict[str, Any]:
     }
 
 
+def execution_blocking_static_codes(errors: list[dict[str, Any]]) -> list[str]:
+    codes: list[str] = []
+    for error in errors:
+        code = str(error.get("code") or "")
+        if code and code not in codes:
+            codes.append(code)
+    return sorted(codes)
+
+
 def launcher_text() -> str:
     return '''#!/usr/bin/env python3
 from __future__ import annotations
@@ -1586,13 +1595,6 @@ def check_phase1_readiness(
     mode_cli_surface, mode_surface_errors = inspect_mode_cli_surface(root, mode_cli)
     errors.extend(mode_surface_errors)
     cli_execution_mode = "execute-read-contract" if execute_cli else "static-only"
-    if mode_cli_surface.get("exists") and execute_cli:
-        cli_errors, cli_details = check_cli_contract(root, mode_cli)
-        errors.extend(cli_errors)
-    elif mode_cli_surface.get("exists"):
-        cli_details = skipped_cli_contract_details(mode_cli, "static_only_no_exec_cli")
-    else:
-        cli_details = skipped_cli_contract_details(mode_cli, "mode_cli_missing")
     on_details, on_errors = inspect_wrapper(root, on_wrapper, "project-on", mode_cli)
     off_details, off_errors = inspect_wrapper(root, off_wrapper, "project-off", mode_cli)
     errors.extend(on_errors)
@@ -1601,6 +1603,16 @@ def check_phase1_readiness(
     errors.extend(hook_errors)
     operator_doc_details, operator_doc_errors = inspect_operator_docs(root, operator_doc_paths or list(DEFAULT_OPERATOR_DOC_CANDIDATES))
     errors.extend(operator_doc_errors)
+    if mode_cli_surface.get("exists") and execute_cli and not errors:
+        cli_errors, cli_details = check_cli_contract(root, mode_cli)
+        errors.extend(cli_errors)
+    elif mode_cli_surface.get("exists") and execute_cli:
+        cli_details = skipped_cli_contract_details(mode_cli, "static_surface_blockers_present")
+        cli_details["static_surface_blocking_codes"] = execution_blocking_static_codes(errors)
+    elif mode_cli_surface.get("exists"):
+        cli_details = skipped_cli_contract_details(mode_cli, "static_only_no_exec_cli")
+    else:
+        cli_details = skipped_cli_contract_details(mode_cli, "mode_cli_missing")
     lane = classify_phase1_adaptation_lane(errors)
     if not errors and not execute_cli:
         lane = {

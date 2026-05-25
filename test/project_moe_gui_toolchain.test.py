@@ -418,6 +418,49 @@ else:
             encoding="utf-8",
         )
 
+    def write_marker_mode_cli(self, root: Path, marker_name: str = "mode-cli-executed.marker") -> None:
+        (root / "tools" / "thesis_moe_mode.py").write_text(
+            f"""
+from __future__ import annotations
+import json
+import sys
+from pathlib import Path
+
+# Surface tokens required by the static checker:
+# project-status list-sessions status assert-on project-on project-off on off
+Path({marker_name!r}).write_text("executed", encoding="utf-8")
+cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
+payload = {{
+    "schema_version": 1,
+    "command": cmd,
+    "ok": True,
+    "token": "ok",
+    "exit_code": 0,
+    "message": "marker cli executed",
+    "project_root": str(Path.cwd()),
+    "agent_name": "thesis-moe-mentor",
+    "state_namespace": "thesis_moe",
+    "generated_at": "2026-05-25T00:00:00+00:00",
+    "warnings": [],
+    "errors": [],
+    "cli_contract": "project-moe-cli-v1",
+    "effective_enabled": False,
+    "effective_source": "project-default",
+    "project_default_enabled": False,
+    "registered_session_count": 0,
+    "valid_session_count": 0,
+    "invalid_session_count": 0,
+    "sessions": [],
+    "counts": {{"total": 0, "valid": 0}},
+}}
+if cmd == "assert-on":
+    payload.update(ok=False, token="disabled", exit_code=1)
+print(json.dumps(payload))
+raise SystemExit(int(payload.get("exit_code", 0)))
+""".lstrip(),
+            encoding="utf-8",
+        )
+
     def make_stateful_project(
         self,
         root: Path,
@@ -659,6 +702,61 @@ else:
             self.assertEqual(remediation["ordered_next_steps"], ["run_execute_read_contract_readiness_check"])
             self.assertEqual(remediation["groups"][0]["category"], "mode_cli_contract")
             self.assertFalse(remediation["groups"][0]["safe_to_auto_apply"])
+
+    def test_phase1_readiness_checker_skips_cli_when_static_surface_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-static-blocked"
+            project.mkdir()
+            self.make_project(project)
+            self.write_marker_mode_cli(project)
+            self.git_commit_all(project)
+
+            marker = project / "mode-cli-executed.marker"
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            self.assertFalse(marker.exists(), "execute-read-contract must not run target CLI while static surface blockers exist")
+            self.assertEqual(payload["token"], "blocked:missing_phase1_wrapper", payload)
+            cli_details = payload["cli_contract_check"]
+            self.assertTrue(cli_details["execution_skipped"])
+            self.assertEqual(cli_details["skip_reason"], "static_surface_blockers_present")
+            self.assertIn("blocked:missing_phase1_wrapper", cli_details["static_surface_blocking_codes"])
+
+    def test_phase1_readiness_checker_skips_cli_when_target_is_dirty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-dirty-no-exec"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="phase1-dirty-no-exec", session_id="session-phase1-dirty")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.write_marker_mode_cli(project)
+
+            marker = project / "mode-cli-executed.marker"
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            self.assertFalse(marker.exists(), "dirty target preflight must prevent target CLI execution")
+            self.assertEqual(payload["token"], "blocked:dirty_target_project", payload)
+            cli_details = payload["cli_contract_check"]
+            self.assertTrue(cli_details["execution_skipped"])
+            self.assertEqual(cli_details["skip_reason"], "static_surface_blockers_present")
+            self.assertIn("blocked:dirty_target_project", cli_details["static_surface_blocking_codes"])
 
     def test_phase1_readiness_checker_blocks_dirty_target_and_missing_wrapper(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
