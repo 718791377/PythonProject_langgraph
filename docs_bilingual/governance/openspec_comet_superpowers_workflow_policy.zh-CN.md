@@ -38,6 +38,12 @@ Comet 不替代 OpenSpec、Superpowers、native Codex subagents、native_omx 或
 
 Skills 仍然是 workflow instruction surfaces。Comet skill、OpenSpec skill、Superpowers skill 或 profile 调用不是 native subagent 证据。Native subagents 仍然是由主会话 leader 侧显式生成并 fan-in 的角色。
 
+文档目录边界：
+
+- `docs_bilingual/` 是正式、持久化的文档库，用于 governance、implementation plans、product notes、startup summaries，以及已登记的中英文文档对。
+- `docs/superpowers/` 只保留给 Comet state 引用的 Superpowers runtime artifacts，例如 `docs/superpowers/specs/` 下的设计文档，以及 `docs/superpowers/plans/` 下的实施计划。
+- 不要把 `docs_bilingual/` 的正式文档复制到 `docs/`；只有当 workflow 明确记录这些路径时，才把 Superpowers runtime artifacts 放入 `docs/superpowers/`。
+
 ## 4. 五阶段工作流
 
 完整 Comet 控制工作流是：

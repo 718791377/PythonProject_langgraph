@@ -37,6 +37,12 @@ Use this layer map for all Comet-style OpenSpec work:
 
 Skills remain workflow instruction surfaces. A Comet skill, OpenSpec skill, Superpowers skill, or profile is not native subagent evidence. Native subagents remain leader-side spawned roles under the repository orchestration policy.
 
+Document directory boundary:
+
+- `docs_bilingual/` is the formal durable documentation library for governance, implementation plans, product notes, startup summaries, and registered bilingual document pairs.
+- `docs/superpowers/` is reserved for Superpowers runtime artifacts referenced by Comet state, such as design documents under `docs/superpowers/specs/` and implementation plans under `docs/superpowers/plans/`.
+- Do not duplicate `docs_bilingual/` documents into `docs/`; only place Superpowers runtime artifacts under `docs/superpowers/` when the workflow explicitly records those paths.
+
 ## 4. Five-Phase Workflow
 
 The full Comet-controlled workflow is:
