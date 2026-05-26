@@ -1,4 +1,4 @@
 schema: spec-driven
 created: 2026-05-26
-x_archive_deferred_reason: "Comet bash scripts are unavailable in the current Windows shell; verification evidence is repository-native, and archive/state-script mutation must not be fabricated."
-x_archive_follow_up: "Reopen this change with a bash-capable Comet runtime or repository-approved archive path, run Comet verify/archive, then archive this structural documentation change."
+x_archive_deferred_reason: "Comet runtime scripts were executed through Git Bash and advanced this structural documentation change from build to verify; archive is deferred because verify evidence and branch handling still need to be completed in the Comet verify phase."
+x_archive_follow_up: "Run the Comet verify phase, record verification_report and branch_status=handled, then run Comet archive for this change."

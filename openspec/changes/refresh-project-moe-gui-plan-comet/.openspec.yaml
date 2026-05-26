@@ -1,4 +1,4 @@
 schema: spec-driven
 created: 2026-05-25
-x_archive_deferred_reason: "Comet bash scripts are unavailable in the current Windows shell, so this lightweight documentation tweak records verification evidence but defers Comet archive/state-script mutation instead of fabricating script output."
-x_archive_follow_up: "Reopen this change with a bash-capable Comet runtime, run the Comet verify/archive scripts, then archive the OpenSpec change or replace this deferral with validated repository-native archive evidence."
+x_archive_deferred_reason: "Comet runtime scripts were executed through Git Bash and advanced this lightweight tweak from build to verify; archive is deferred because verify evidence and branch handling still need to be completed in the Comet verify phase."
+x_archive_follow_up: "Run the Comet verify phase, record verification_report and branch_status=handled, then run Comet archive for this change."
