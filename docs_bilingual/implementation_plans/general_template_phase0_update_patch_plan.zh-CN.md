@@ -55,6 +55,31 @@ Comet 同步后为 `General` 目标记录的最新验证证据：
 - `.\tools\ci\local_gate.ps1 -Root . -Json` 在 `D:\PythonProject_General` 中通过。
 - `.\tools\ci\local_mr_review.ps1 -Root . -Json -AllowDirty` 以 draft review 方式通过，因为目标补丁当时有意保留为未提交状态。
 
+## 2026-05-25 冷启动补读与提示词哨兵修订
+
+本次更新先按 `docs_bilingual/project_startup_summary.md` 冷启动入口重新读取，并按 read order 补读继续本计划必须需要的文件：
+
+- `docs_bilingual/project_startup_summary.zh-CN.md`：中文启动摘要，用来确认当前仓库、发布、安全与上下文保留哨兵规则。
+- `docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md` 与 `.zh-CN.md`：当前主线 memory summary，用来确认本仓库仍是 Codex user-level orchestration line 的 source of truth。
+- `AGENTS.md`：仓库级 Codex 指令面，用来确认 OpenSpec、worktree、MCP、launcher、LangGraph、native subagents 和提示词哨兵边界。
+- `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md`：多会话 worktree 隔离政策，用来确认模板计划更新应串行写入，且本地 `main` 不应作为随意 feature scratch。
+- `docs_bilingual/governance/langgraph_user_level_runtime_policy.md`：LangGraph runtime 政策，用来确认官方 `langgraph` 安装在用户级共享 venv，而 repo-local 兼容/编排源码才属于模板化候选。
+- `docs_bilingual/governance/user_level_launcher_payload_policy.md`：launcher payload 政策，用来确认 Windows 启动指令应使用短 payload 或文件引用，避免把长提示词 inline 到命令行。
+- `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md`：自动 orchestration activation 政策，用来确认 General 模板可以记录路由规则，但 durable team 仍必须阈值门控。
+- `docs_bilingual/governance/openspec_usage_convention.md`、`openspec_opsx_project_usage_policy.md` 与 `openspec_official_workflow_policy.md`：OpenSpec 使用政策，用来确认本次只是更新实施计划，不打开新的 active OpenSpec change。
+- `docs_bilingual/governance/codex_user_level_mcp_scope_policy.md`：MCP scope 政策，用来区分 Codex-direct `omx_*` MCP、`chrome-devtools`、`pencil` 与默认禁用的 `mcp_router` bridge。
+- `docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md` 与 `codex_user_level_cross_session_durable_state_isolation_plan.md`：active implementation plans，用来确认 native Codex、oh-my-codex、`native_omx`、LangGraph、repo-local durable state 和 consumer project 隔离边界。
+- `openspec list --json`：OpenSpec 状态检查命令，本次读取结果为 `changes: []`。
+
+本次补读后的 General 模板修订约束：
+
+- 如果 Codex 启动提示、渲染后的 `AGENTS.md`、context-retention canary 或 Windows 终端输出出现乱码，必须以 UTF-8 读取的 `docs_bilingual/project_startup_summary.md` 与 `.zh-CN.md` 为准；不得把乱码文本复制到模板文档、launcher payload、generated helper 或 OpenSpec artifact。
+- 如果 General 模板提供上下文保留哨兵，哨兵字面提示词只能由生成项目的 `docs_bilingual/project_startup_summary.md` 与 `.zh-CN.md` 承载；`AGENTS.md`、launcher、installer、OpenSpec proposal/design/tasks/spec、checker 和 native agent TOML 只能引用规则，不得重复字面提示。
+- General 模板不得把本仓库的具体哨兵标记、live session facts、active claims 或 `.omx/state/` 当作新项目默认事实；新项目应在 hydrate 后生成自己的启动摘要、OpenSpec artifacts 和 repo-local durable state。
+- Launcher payload 必须保持 Windows-safe：不要把长 generated orchestration instructions 通过 `-c developer_instructions=...` inline 传入命令行；应使用 file-backed instruction path、短引用或模板内受控 payload 组装脚本。
+- LangGraph 相关源码如果进入 General，必须作为通用模板源码或可选 profile 交付，不能是 `D:\PythonProject_langgraph` 的 live runtime state；官方 `langgraph` 包仍属于用户级共享安装，repo-local `.omx/state/langgraph/` 只允许作为生成项目运行后的本地状态。
+- Comet 仍只记录为 OpenSpec + Superpowers 治理能力：它不是 native subagent evidence，不是 oh-my-codex，不是 `native_omx`，不是 LangGraph，也不是 durable-team backend。
+
 ## 1. 目标
 
 为 `D:\PythonProject_General` 创建一个小型、可 review、可回滚的 Phase 0 补丁，让模板本身在加入更大的 profile、skills、browser、web、publishing 或 orchestration 能力之前，先具备更好的维护安全性与可验证性。
