@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 MOJIBAKE_MARKERS = ("????", "\ufffd")
+IMPLEMENTATION_PHASES = {"build", "verify", "archive"}
 
 
 def read_text_utf8(path: Path) -> str:
@@ -51,6 +52,44 @@ def validate_text_health(path: Path, root: Path, errors: list[str]) -> None:
             )
 
 
+def parse_simple_yaml(path: Path) -> dict[str, str]:
+    data: dict[str, str] = {}
+    for raw_line in read_text_utf8(path).splitlines():
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("#") or ":" not in stripped:
+            continue
+        key, value = stripped.split(":", 1)
+        data[key.strip()] = value.strip().strip("'\"")
+    return data
+
+
+def active_comet_plan_references(root: Path) -> list[dict[str, str]]:
+    references: list[dict[str, str]] = []
+    changes_root = root / "openspec" / "changes"
+    if not changes_root.exists():
+        return references
+    for state_path in sorted(changes_root.glob("*/.comet.yaml")):
+        if "archive" in state_path.parts:
+            continue
+        state = parse_simple_yaml(state_path)
+        phase = state.get("phase", "").strip().lower()
+        plan = state.get("plan", "").strip()
+        if phase not in IMPLEMENTATION_PHASES or not plan:
+            continue
+        normalized_plan = plan.replace("\\", "/")
+        if "/implementation_plans/" not in normalized_plan:
+            continue
+        references.append(
+            {
+                "change": state_path.parent.name,
+                "phase": phase,
+                "plan": normalized_plan,
+                "state": state_path.relative_to(root).as_posix(),
+            }
+        )
+    return references
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Check implementation-plan registry and bilingual integrity rules.")
     parser.add_argument("--root", default=".", help="Repository root.")
@@ -72,6 +111,12 @@ def main() -> int:
     entries = parse_docs_registry(registry_path)
     impl_entries = [entry for entry in entries if entry.get("doc_class") == "implementation_plan"]
     infos.append(f"Implementation plan registry entries: {len(impl_entries)}")
+    impl_by_path: dict[str, dict[str, str]] = {}
+    for entry in impl_entries:
+        for key in ("canonical_path", "zh_cn_path"):
+            value = entry.get(key, "")
+            if value:
+                impl_by_path[value.replace("\\", "/")] = entry
 
     for entry in impl_entries:
         doc_id = entry.get("doc_id", "<unknown>")
@@ -123,6 +168,22 @@ def main() -> int:
                     f"Draft implementation plan `{doc_id}` uses the same file for canonical_path and zh_cn_path."
                 )
 
+    active_plan_refs = active_comet_plan_references(root)
+    infos.append(f"Active Comet implementation plan references: {len(active_plan_refs)}")
+    for reference in active_plan_refs:
+        plan_path = reference["plan"]
+        entry = impl_by_path.get(plan_path)
+        if entry is None:
+            errors.append(
+                f"Comet change `{reference['change']}` phase `{reference['phase']}` references unregistered implementation plan: {plan_path}"
+            )
+            continue
+        status = entry.get("status", "").strip().lower()
+        if status != "active":
+            errors.append(
+                f"Comet change `{reference['change']}` phase `{reference['phase']}` references implementation plan `{entry.get('doc_id', '<unknown>')}` with status `{status}`; implementation plan status must be active before implementation."
+            )
+
     payload = {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -134,6 +195,7 @@ def main() -> int:
         "root": str(root),
         "counts": {
             "implementation_plan_entries": len(impl_entries),
+            "active_comet_plan_references": len(active_plan_refs),
             "errors": len(errors),
             "warnings": len(warnings),
         },

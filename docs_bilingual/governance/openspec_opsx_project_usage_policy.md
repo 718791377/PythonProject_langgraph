@@ -100,6 +100,20 @@ If the precheck finds an ownership signal:
 - avoid fixing the same guard failure from `main` or from a second feature worktree unless the leader explicitly serializes the handoff
 - treat ignored files under `docs_bilingual/` or `openspec/` as guard-affecting task objects until their repository status is decided
 
+## 4B. Post-Plan Documentation-First Routing
+
+When a confirmed `/plan` exits into execution and the task is not documentation-only, the repository workflow starts with a local governance package.
+
+The package updates `docs_bilingual/` first. The target is the best fitting document class and directory, not automatically `implementation_plans/`. Existing files are preferred over new files.
+
+After that update, the session decides whether OPSX/OpenSpec or `docs/` must also change:
+
+- use OPSX/OpenSpec when the task changes reusable rules, stable specs, structural governance, executable guards, or repository validation meaning;
+- use `docs/` only for Superpowers runtime artifacts or a change to the `docs/` directory contract;
+- do not create OpenSpec or `docs/` artifacts as a side effect of updating `docs_bilingual/` alone.
+
+When the local governance package is ready, run the complete local commit flow through local `main` integration and stop at the remote publication gate. This local flow does not authorize remote publication.
+
 ## 5. Command Mapping Model
 
 ### 5.1 `/opsx:onboard`
@@ -300,6 +314,8 @@ OpenSpec should carry:
 - methodology explanations
 - implementation rollout plans
 - operations manuals
+
+Select the `docs_bilingual/` location by content. Governance changes belong in governance, operator instructions in guides or operations, handoff facts in memory, lifecycle synthesis in product lifecycle, and implementation sequencing in implementation plans. Do not force every pre-implementation decision into implementation plans.
 
 ### 7.3 Synchronization Rule
 

@@ -73,11 +73,15 @@ This convention applies to:
 
 ### 4.1 Document First, Then Execute
 
-Before implementation:
+Before implementation, the durable decision must be recorded before runtime or code changes begin:
 
-1. create a new plan file or update an existing plan file
-2. confirm the plan with the user
-3. implement according to the confirmed plan
+1. update the most suitable existing `docs_bilingual/` file first, choosing the directory by document class and content rather than assuming every decision belongs under `implementation_plans/`;
+2. create a new bilingual `docs_bilingual/` pair only when no existing file can carry the decision cleanly;
+3. derive any `openspec/` or `docs/` updates from the `docs_bilingual/` decision: OpenSpec is used for durable capability/spec lifecycle work, while `docs/` is used only for Superpowers runtime artifacts or the `docs/` directory contract itself;
+4. do not create `openspec/` or `docs/` files merely because `docs_bilingual/` was updated;
+5. after a confirmed `/plan` enters execution for a non-documentation-only task, commit and integrate the local governance package through the complete local flow, then stop at the remote publication gate before code or runtime implementation continues.
+
+For already-confirmed local implementation tasks, the local governance package does not require another user confirmation before local `main` integration. Remote publication remains a separate approval boundary.
 
 ### 4.2 When The User Asks To Add Or Update Spec
 

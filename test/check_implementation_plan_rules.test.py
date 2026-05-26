@@ -139,6 +139,37 @@ class ImplementationPlanRulesCheckTest(unittest.TestCase):
         )
         self.assertGreaterEqual(payload["counts"]["errors"], 1)
 
+    def test_fails_when_comet_build_references_draft_plan(self) -> None:
+        root = self.make_root("impl-plan-comet-draft")
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.md", "# Sample\n")
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.zh-CN.md", "# 示例\n")
+        self.write_file(
+            root,
+            "docs_bilingual/docs_registry.yaml",
+            "version: 1\n"
+            "documents:\n"
+            "  - doc_id: sample_plan\n"
+            "    doc_class: implementation_plan\n"
+            "    status: draft\n"
+            "    canonical_path: docs_bilingual/implementation_plans/sample_plan.md\n"
+            "    zh_cn_path: docs_bilingual/implementation_plans/sample_plan.zh-CN.md\n",
+        )
+        self.write_file(
+            root,
+            "openspec/changes/sample-change/.comet.yaml",
+            "workflow: full\n"
+            "phase: build\n"
+            "plan: docs_bilingual/implementation_plans/sample_plan.md\n",
+        )
+
+        json_result = self.run_check_json(root)
+        self.assertNotEqual(json_result.returncode, 0)
+        payload = json.loads(json_result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("status must be active before implementation" in error for error in payload["errors"])
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

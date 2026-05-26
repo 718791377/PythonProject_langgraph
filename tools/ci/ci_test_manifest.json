@@ -39,7 +39,9 @@
     "codex_port.test.py",
     "browser_owner_registry.test.py",
     "chrome_devtools_mcp_managed.test.py",
-    "cdp_bridge_governance.test.py"
+    "cdp_bridge_governance.test.py",
+    "check_document_pair_policy.test.py",
+    "check_git_commit_language.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []

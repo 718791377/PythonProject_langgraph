@@ -43,6 +43,25 @@ Document directory boundary:
 - `docs/superpowers/` is reserved for Superpowers runtime artifacts referenced by Comet state, such as design documents under `docs/superpowers/specs/` and implementation plans under `docs/superpowers/plans/`.
 - Do not duplicate `docs_bilingual/` documents into `docs/`; only place Superpowers runtime artifacts under `docs/superpowers/` when the workflow explicitly records those paths.
 
+## 3A. Post-Plan Local Governance Package
+
+When a session exits `/plan` and the next task is not a documentation-only task, the first executable slice is a local governance package, not direct runtime or code implementation.
+
+The governance package must start in `docs_bilingual/`:
+
+- choose the most suitable existing `docs_bilingual/` directory and document class, such as governance, implementation plans, guides, memory, or product lifecycle notes;
+- update an existing file first when a suitable file exists;
+- create a new bilingual pair only when no suitable existing file can carry the decision;
+- do not treat `implementation_plans/` as the only valid `docs_bilingual/` destination.
+
+After the `docs_bilingual/` update is clear, derive any additional artifact needs from that content:
+
+- update `openspec/` only when the task needs durable capability/spec lifecycle evidence, stable requirements, or a Comet/OpenSpec change;
+- update `docs/` only when the task needs Superpowers runtime artifacts or a change to the `docs/` directory contract itself;
+- never create `openspec/` or `docs/` files merely because a `docs_bilingual/` file was updated.
+
+The package then follows the repository complete local commit flow through local `main` integration and stops at the remote publication gate. No GitLab push, GitLab MR mutation, or GitHub sync is authorized by this local package rule.
+
 ## 4. Five-Phase Workflow
 
 The full Comet-controlled workflow is:

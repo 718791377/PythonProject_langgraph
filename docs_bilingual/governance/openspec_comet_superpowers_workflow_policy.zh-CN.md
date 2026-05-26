@@ -44,6 +44,25 @@ Skills 仍然是 workflow instruction surfaces。Comet skill、OpenSpec skill、
 - `docs/superpowers/` 只保留给 Comet state 引用的 Superpowers runtime artifacts，例如 `docs/superpowers/specs/` 下的设计文档，以及 `docs/superpowers/plans/` 下的实施计划。
 - 不要把 `docs_bilingual/` 的正式文档复制到 `docs/`；只有当 workflow 明确记录这些路径时，才把 Superpowers runtime artifacts 放入 `docs/superpowers/`。
 
+## 3A. `/plan` 之后的本地治理包
+
+当会话退出 `/plan` 且后续任务不是纯文档任务时，第一个可执行切片是本地治理包，而不是直接进入 runtime 或代码实现。
+
+治理包必须从 `docs_bilingual/` 开始：
+
+- 按内容选择最合适的既有 `docs_bilingual/` 目录与 doc_class，例如 governance、implementation plans、guides、memory 或 product lifecycle notes；
+- 有合适既有文件时优先更新既有文件；
+- 只有没有合适既有文件能承载该决策时，才新建中英文文档对；
+- 不要把 `implementation_plans/` 当成唯一可用的 `docs_bilingual/` 目标目录。
+
+`docs_bilingual/` 更新明确后，再由该内容判断是否需要派生更新：
+
+- 只有当任务需要 durable capability/spec lifecycle evidence、stable requirements 或 Comet/OpenSpec change 时，才更新 `openspec/`；
+- 只有当任务需要 Superpowers runtime artifacts 或需要改变 `docs/` 目录契约本身时，才更新 `docs/`；
+- 不得仅仅因为更新了 `docs_bilingual/` 文件，就机械创建 `openspec/` 或 `docs/` 文件。
+
+该治理包随后按仓库完整本地提交流程执行到本地 `main` 合入，并停在远端发布门。此规则不授权 GitLab push、GitLab MR 变更或 GitHub sync。
+
 ## 4. 五阶段工作流
 
 完整 Comet 控制工作流是：

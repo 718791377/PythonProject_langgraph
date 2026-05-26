@@ -77,11 +77,15 @@ OpenSpec 已经在仓库内完成部署并可使用，当前目标不是重新�
 
 ### 4.1 先文档，后实施
 
-实施前必须：
+实施前必须先把持久化决策记录清楚，再进入 runtime 或代码变更：
 
-1. 新建方案文件或更新既有方案文件
-2. 与用户确认
-3. 再按确认后的文件实施
+1. 先更新最合适的既有 `docs_bilingual/` 文件；目录选择应根据 doc_class 和内容判断，而不是默认所有决策都进入 `implementation_plans/`。
+2. 只有没有合适既有文件能够干净承载该决策时，才新建 `docs_bilingual/` 中英文文档对。
+3. 再由 `docs_bilingual/` 决策判断是否需要派生更新 `openspec/` 或 `docs/`：OpenSpec 用于 durable capability/spec lifecycle 工作，`docs/` 只用于 Superpowers runtime artifacts 或 `docs/` 目录契约本身。
+4. 不得仅仅因为更新了 `docs_bilingual/`，就机械创建 `openspec/` 或 `docs/` 文件。
+5. 已确认 `/plan` 后进入非纯文档任务执行时，先把本地治理包按完整本地流程提交并合入本地 `main`，然后停在远端发布门，再等待后续命令进入代码或 runtime 实施。
+
+对于已经确认的本地实施任务，本地治理包合入本地 `main` 前不需要再次询问用户确认。远端发布仍然是独立授权边界。
 
 ### 4.2 用户要求“加入或更新 Spec”时的处理方式
 

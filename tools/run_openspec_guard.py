@@ -98,7 +98,9 @@ def main() -> int:
     verify_script = root / "tools" / "verify_official_openspec.py"
     repo_language_script = root / "tools" / "check_current_repo_authority_language.py"
     governance_rules_script = root / "tools" / "check_document_governance_rules.py"
+    document_pair_policy_script = root / "tools" / "check_document_pair_policy.py"
     implementation_plan_rules_script = root / "tools" / "check_implementation_plan_rules.py"
+    git_commit_language_script = root / "tools" / "check_git_commit_language.py"
     skills_governance_script = root / "tools" / "check_codex_skills_governance.py"
     name_clarity_rules_script = root / "tools" / "check_name_clarity_rules.py"
     canary_surface_script = root / "tools" / "check_context_retention_canary_surface.py"
@@ -143,8 +145,12 @@ def main() -> int:
         raise SystemExit(f"Missing repository wording check script: {repo_language_script}")
     if not governance_rules_script.exists():
         raise SystemExit(f"Missing document governance check script: {governance_rules_script}")
+    if not document_pair_policy_script.exists():
+        raise SystemExit(f"Missing document pair policy check script: {document_pair_policy_script}")
     if not implementation_plan_rules_script.exists():
         raise SystemExit(f"Missing implementation plan rules check script: {implementation_plan_rules_script}")
+    if not git_commit_language_script.exists():
+        raise SystemExit(f"Missing Git commit language check script: {git_commit_language_script}")
     if not skills_governance_script.exists():
         raise SystemExit(f"Missing Codex skills governance check script: {skills_governance_script}")
     if not name_clarity_rules_script.exists():
@@ -286,9 +292,19 @@ def main() -> int:
                 "OpenSpec guard failed during document governance rules verification.",
             ),
             (
+                "check_document_pair_policy",
+                [str(python_exe), str(document_pair_policy_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during forward bilingual document pair verification.",
+            ),
+            (
                 "check_implementation_plan_rules",
                 [str(python_exe), str(implementation_plan_rules_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during implementation plan rules verification.",
+            ),
+            (
+                "check_git_commit_language",
+                [str(python_exe), str(git_commit_language_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Git commit language verification.",
             ),
             (
                 "check_name_clarity_rules",

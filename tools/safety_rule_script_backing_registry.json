@@ -454,6 +454,65 @@
         "check_pyside6_operator_usage_guide"
       ],
       "description": "Keeps the PySide6 cross-project operator soft-load guide explicit about plugin-modules pyside6-gui loading, preview/apply boundaries, no config mutation, no PySide6 installation during soft-load, visible-GUI approval, packaging opt-in, and evidence-based state reporting."
+    },
+    {
+      "id": "forward-bilingual-document-pairs",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/openspec_usage_convention.md",
+        "docs_bilingual/governance/openspec_usage_convention.zh-CN.md",
+        "docs_bilingual/governance/openspec_opsx_project_usage_policy.md",
+        "docs_bilingual/governance/openspec_opsx_project_usage_policy.zh-CN.md",
+        "docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md",
+        "docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_document_pair_policy.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_document_pair_policy"
+      ],
+      "description": "Requires newly changed Markdown files under docs_bilingual, openspec, and docs to use English ASCII primaries plus Chinese companion files, while treating historical legacy gaps as baseline rather than blocking unrelated work."
+    },
+    {
+      "id": "local-git-commit-chinese-subjects",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
+        "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_git_commit_language.py",
+        ".githooks/commit-msg",
+        "tools/ci/local_mr_review.ps1",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_git_commit_language"
+      ],
+      "description": "Requires local feature commit subjects to contain Chinese text; ASCII conventional prefixes remain allowed when the subject still contains Chinese."
+    },
+    {
+      "id": "active-implementation-plan-before-implementation",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/openspec_usage_convention.md",
+        "docs_bilingual/governance/openspec_usage_convention.zh-CN.md",
+        "docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md",
+        "docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_implementation_plan_rules.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_implementation_plan_rules"
+      ],
+      "description": "Requires any implementation plan referenced by an active Comet change in build, verify, or archive phase to be registered with status active before implementation continues."
     }
   ]
 }

@@ -208,12 +208,14 @@ Runner 配额与发布包规则：
 - 如果本地 gate 与远端 CI 结果不一致，必须修复共享脚本、环境安装或 CI 配置漂移；不得绕过任一证据层。
 - 本地 `main` 不得从陈旧远端基线继续。新建可写任务、判断发布时机、远端 push、创建/更新 MR 或声明主线状态之前，必须刷新 `gitlab/main`；如果本地 `main` 落后，就先 fast-forward 本地 `main` 再继续，除非用户明确接受 stale-base risk。如果 feature branch 基于陈旧远端基线准备，本地集成或发布前必须 rebase 或 merge 到刷新后的基线，除非用户明确接受风险。
 - 经批准本地集成后允许 intentional remote lag（有意远端滞后）。本地 `main` 可以领先 `gitlab/main` 和 `github/main`；会话必须明确报告该状态，直到远端发布或镜像同步追上。
-- 本地集成批准和远端发布批准是两个独立 release decisions。本地 `main` 集成后，会话必须停在 remote-publication approval gate；除非当前用户消息或 approved release record 明确授权该远端发布动作，否则不得推送 GitLab、创建/更新/合并 GitLab MR、同步 GitHub、删除远端发布分支或修改远端 refs。泛化的 `continue`、`继续`、`go on` 或 `proceed` 不是远端发布批准，除非它明确点名该远端动作。
+- 本地集成批准和远端发布批准是两个独立 release decisions。本地 `main` 集成后，会话必须停在 remote-publication approval gate；除非当前用户消息或 approved release record 明确授权该远端发布动作，否则不得推送 GitLab、创建/更新/合并 GitLab MR、同步 GitHub、删除远端发布分支或修改远端 refs。泛化的 `continue`、`继续`、`go on` 或 `proceed` 不是远端发布批准，除非它明确点名该远端动作。 规则：不得把泛化的继续指令当作批准。
 - 当前用户消息如果明确说 `推送远端`、`publish remote`、`push remote`、`remote publication`、`走 GitLab MR 后同步 GitHub` 或等价远端发布措辞，就视为一次性批准正常绿色路径的完整远端发布流程：推送或更新 GitLab publication branch、创建或更新 GitLab MR、等待 GitLab CI、CI 绿色后合并 MR、fetch 并确认 GitLab `main`、把同一个预期 commit 同步到 GitHub `main`，以及运行发布后状态检查。正常绿色路径中不得拆成多次授权。
 - 已批准远端发布流程中，应优先使用 sandbox 已允许的命令和已批准 command prefixes，尽量不请求权限提升。如果 Codex sandbox 仍要求对 GitLab push / MR / CI / merge 或 GitHub sync 这类已批准流程内命令进行提升，则只请求一次覆盖整个 `推送 GitLab / 开 MR / 合并 MR / 同步 GitHub` 流程的 scoped escalation，不得每条命令重复询问。若需要 force push、修改 protected branch 设置、删除远端 ref、改写历史、扩大 scope 或修改凭据/安全配置，必须停止并重新请求授权。
 - 主目录 `D:\PythonProject_langgraph` 是 primary main worktree，必须检出本地 `main`，其 HEAD 不得落后于本地 `main`，正常应与本地 `main` 完全一致。`tools/check_worktree_session_hygiene.py` 必须在主目录脏、主目录不在 `main`、主目录落后于本地 `main`，或本地 `main` 未经明确风险接受却落后于 `gitlab/main` 时失败。
 - 每次提交本地仓库 commit 前，必须运行 `tools/check_precommit_update_archive.py --root . --json`，或依赖已安装的 `.githooks/pre-commit` hook 间接调用 `tools/run_openspec_guard.py`。该提交前复核必须检查 existing governance、CI manifest、checker registration 或 OpenSpec lifecycle 文件是否需要同步更新或 archive movement；必要更新与 completed OpenSpec archives 必须先处理完才能 `git commit`。如果走 two-step exception，必须同时记录 `x_archive_deferred_reason` 与 `x_archive_follow_up`。
 - 本地 `main` 集成或首次远端推送前，先在本地完成 commits、checker runs、local MR review、rework 和 cleanup。
+- 本地 feature commit 必须使用中文提交主题。`docs:`、`fix:` 等 ASCII conventional prefix 可以保留，但主题正文必须包含中文。
+- 对已经授权实施的仓库本地任务，本地流程默认授权到远端发布门为止：会话可以创建 feature worktree、本地提交、验证、创建 rollback ref、fast-forward 合入本地 `main`、运行合入后 local gate、保留 completed claim，并通过受保护 helper 清理本地 worktree/branch，不需要再次询问本地集成授权。该默认授权不包含任何 GitLab 或 GitHub 变更。
 - 对已经本地完成、准备集成的 OpenSpec change，默认采用 single integration package（单本地集成包）。该包是指同一个 feature branch 同时包含实现或文档变更、`openspec/changes/archive/` 下的归档结果，以及 `openspec/specs/` 下被提升后的 stable spec。
 - 小型 governance、documentation、checker 和 test 类变更，只要本地验证已经证明完成且 review scope 共享同一个 rollback boundary，就应采用 single integration package。
 - 只有在实现规模大或风险高、需要先让远端 CI 或 MR review 确认实现、归档提升会产生大量 stable-spec 冲突，或用户明确要求 implementation-only publication 时，才使用 two-step flow。two-step flow 必须记录 archive follow-up，不得把 completed active change 视为已经关闭。
@@ -233,16 +235,17 @@ Runner 配额与发布包规则：
 7. 在干净的 feature worktree 运行 `tools/ci/local_gate.ps1`。该脚本是 local CI gate，也是 remote CI mirror entrypoint。
 8. 针对选定 base branch 运行 `tools/ci/local_mr_review.ps1`，先在本地查看本地集成和后续远端 MR 会展示的内容；如果 feature worktree 仍是 dirty，该脚本必须失败。
 9. 如果 completed change 需要 two-step path，必须说明例外原因，保持 active change 或 follow-up archive task 可见，并在 implementation-only publication 前请求用户确认。
-10. 由当前会话模型建议 integrate / publish 或 wait，并说明采用 single-package 还是 two-step 归档决策以及本地 gate 结果，然后请用户确认发布决策。
-11. 用户批准后，先把已验证 feature branch 集成进本地 `main`，线性分支优先使用 fast-forward。
-12. 验证主目录 `D:\PythonProject_langgraph` 检出本地 `main`、状态干净，并位于预期本地 `main` commit。
-13. 创建或确认合入前 local `main` 的 rollback backup ref，然后使用 `tools/cleanup_integrated_worktree.py --execute` 保留 completed claim、删除干净且已合入的 feature worktree，并用 `git branch -d` 删除已合入的本地 feature branch。
-14. 如果本地 `main` 现在领先 `gitlab/main` 或 `github/main`，报告 intentional remote lag。只有在用户明确授权远端发布时，才按需要从本地 `main` 重新创建 publication branch。
-15. 当本地 `main` 领先 GitLab 或 GitHub 时，先请求明确的远端发布批准；不得把泛化的继续指令当作批准。只有当前用户消息或 approved release record 明确授权后，才推送到 GitLab 并创建或更新 GitLab MR。
-16. 使用 GitLab 远端确认时等待 GitLab pipeline 通过；该 pipeline 必须调用同一个 `tools/ci/local_gate.ps1` 脚本。
-17. 远端 CI 若与本地结果不一致，修复本地/共享 gate 或环境漂移，不得绕过证据。
-18. GitLab 远端确认变绿后，或用户明确选择 direct mirroring 时，把预期本地 `main` commit 精确同步到 GitHub。
-19. 远端 publication branches、remote refs 与 backup refs 的清理仍需要单独明确授权。
+10. 当前会话模型必须判断本地 package 是否 ready，包括 single-package 或 two-step 归档决策以及本地 gate 结果。如果 package 已 ready 且仍处于本地默认授权边界内，则不再询问额外本地集成确认，继续执行。
+11. 再次刷新 `gitlab/main`，确认本地 `main` 不落后。
+12. 在 `refs/backup/local-main/*-before-<branch>` 下为合入前本地 `main` 创建本地 rollback backup ref。
+13. 使用 `git merge --ff-only <feature-branch>` 把已验证 feature branch 合入本地 `main`。
+14. 在主目录 `main` worktree 运行合入后 local gate。
+15. 用本地 `main` commit 与 rollback ref 标记 claim completed，然后使用 `tools/cleanup_integrated_worktree.py --execute` 保留 completed claim、删除干净且已合入的 feature worktree，并用 `git branch -d` 删除已合入的本地 feature branch。
+16. 停在远端发布门。如果本地 `main` 现在领先 `gitlab/main` 或 `github/main`，报告 intentional remote lag；不得 push、创建/更新/合并 GitLab MR、同步 GitHub、删除 remote refs 或删除 backup refs，除非用户明确批准远端发布。
+17. 当前用户消息如果明确说 `推送远端`、`publish remote`、`push remote`、`remote publication`、`走 GitLab MR 后同步 GitHub` 或等价远端发布措辞，就视为一次性批准正常绿色路径：推送或更新 GitLab publication branch、创建或更新 GitLab MR、等待 GitLab CI、CI 绿色后合并 MR、fetch 并确认 GitLab `main`、把同一个预期 commit 同步到 GitHub `main`，以及运行发布后状态检查。
+18. 已批准远端发布流程中，优先使用 sandbox 已允许的命令和已批准 command prefixes。如果 Codex sandbox 仍要求对 GitLab push / MR / CI / merge 或 GitHub sync 这类已批准流程内命令进行提升，则只请求一次覆盖整个 `推送 GitLab / 开 MR / 合并 MR / 同步 GitHub` 流程的 scoped escalation，不得每条命令重复询问。
+19. 远端 CI 若与本地结果不一致，修复本地/共享 gate 或环境漂移，不得绕过证据。若需要 force push、修改 protected branch 设置、删除远端 ref、改写历史、扩大 scope 或修改凭据/安全配置，必须停止并重新请求授权。
+20. 远端 publication branches、remote refs 与 backup refs 的清理仍需要单独明确授权。
 
 本仓库默认不使用 GitHub PR。
 

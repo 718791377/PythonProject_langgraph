@@ -55,6 +55,8 @@ $mergeTree = Invoke-GitText -RepoRoot $repoRoot -Arguments @('merge-tree', $merg
 $changedFiles = @($changedFilesText -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 $commits = @($logText -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 $conflictMarkers = @($mergeTree.stdout -split "`r?`n" | Where-Object { $_ -match '^(<<<<<<<|>>>>>>>|=======)' })
+$commitLanguageOutput = & python (Join-Path $repoRoot 'tools/check_git_commit_language.py') --root $repoRoot --base-ref $BaseRef --head-ref $HeadRef --json 2>&1
+$commitLanguageExit = [int]$LASTEXITCODE
 $errors = @()
 if ($dirtyEntries.Count -gt 0 -and -not $AllowDirty) {
   $errors += 'git status --porcelain detected dirty worktree entries; commit, move, or discard local changes before local MR review.'
@@ -64,6 +66,9 @@ if ($mergeTree.exit_code -ne 0) {
 }
 if ($conflictMarkers.Count -gt 0) {
   $errors += 'git merge-tree output contains conflict markers.'
+}
+if ($commitLanguageExit -ne 0) {
+  $errors += 'Git commit language check failed; feature commit subjects must contain Chinese text.'
 }
 
 $result = [ordered]@{
@@ -87,6 +92,11 @@ $result = [ordered]@{
     exit_code = $mergeTree.exit_code
     ok = $mergeTree.ok
     conflict_marker_count = $conflictMarkers.Count
+  }
+  commit_language = [ordered]@{
+    exit_code = $commitLanguageExit
+    ok = ($commitLanguageExit -eq 0)
+    output = (($commitLanguageOutput | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
   }
   errors = $errors
   counts = [ordered]@{

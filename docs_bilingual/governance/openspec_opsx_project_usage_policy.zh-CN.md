@@ -100,6 +100,20 @@ OpenSpec 已经在仓库的工件层生效：
 - 除非 leader 明确串行化 handoff，否则不要从 `main` 或第二个 feature worktree 修同一个 guard failure。
 - 对 `docs_bilingual/` 或 `openspec/` 下的 ignored files，在其仓库归属确定前，一律视为会影响 guard 的 task objects。
 
+## 4B. `/plan` 之后的文档优先路由
+
+当已确认的 `/plan` 退出并进入执行，且任务不是纯文档任务时，仓库工作流先进入本地治理包。
+
+该治理包先更新 `docs_bilingual/`。目标应是最适合的 doc_class 与目录，而不是自动进入 `implementation_plans/`。有合适既有文件时优先更新既有文件。
+
+完成该更新后，会话再判断是否还必须更新 OPSX/OpenSpec 或 `docs/`：
+
+- 当任务改变 reusable rules、stable specs、structural governance、executable guards 或 repository validation meaning 时，使用 OPSX/OpenSpec。
+- 只有需要 Superpowers runtime artifacts 或改变 `docs/` 目录契约时，才使用 `docs/`。
+- 不得把 OpenSpec 或 `docs/` artifacts 当作更新 `docs_bilingual/` 的副作用来创建。
+
+本地治理包 ready 后，按完整本地提交流程执行到本地 `main` 合入，并停在远端发布门。这个本地流程不授权远端发布。
+
 ## 5. 命令映射模型
 
 ### 5.1 `/opsx:onboard`
@@ -300,6 +314,8 @@ OpenSpec 应承载：
 - 方法论文档
 - rollout / migration 计划
 - 运维说明
+
+应按内容选择 `docs_bilingual/` 位置。治理变更进入 governance，操作员说明进入 guides 或 operations，交接事实进入 memory，生命周期综合进入 product_lifecycle，实施排序进入 implementation plans。不要把每个实施前决策都强塞进 implementation plans。
 
 ### 7.3 同步规则
 
