@@ -6,10 +6,13 @@ translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browse
 status: draft
 plan_readiness: execution-ready
 implementation_state: cdp_bridge_read_only_defaults_repo_local_implemented
-last_reviewed_at: 2026-05-25
+last_reviewed_at: 2026-05-26
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
+comet_workflow: tweak
+comet_phase_model: open-build-verify-archive
+local_codex_governance_fork_reference: docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md
 ---
 
 # 用户级 MCP、Skills、Browser 与 CLI Harness 治理实施方案
@@ -29,6 +32,17 @@ source_reference_file: reference_files/1.md
 - 推进原则是先 baseline 后能力：先完成 token/risk、授权 receipt、update receipt 与 evidence redaction，再实现 `skills2cli`、`mcp2cli`、browser 与 `wecom-cli` 等具体能力。
 
 本方案下一步不是继续扩大范围。repo-local `chrome-devtools-mcp` isolated-session、project-profile、browser stale scan、safe cleanup dry-run 与 CDP Bridge read-only-default guard 切片验证并归档后，应继续 OpenCLI on-demand enforcement 切片，不得隐式安装用户级 wrapper。
+
+### 0.1 Comet 执行骨架
+
+本方案按 Comet 轻量 tweak 方式重构：OpenSpec 负责 WHAT，Superpowers 负责 HOW，本文只保留可执行、可验证、可归档的治理切片。
+
+| Comet phase | 本文落点 | 通过条件 |
+| --- | --- | --- |
+| Open | 第 1-4 节 | 范围、参考源、运行时布局、token/risk 和端口边界明确 |
+| Build | 第 5-12 节 | 每条 lane 都有默认状态、授权边界、receipt/rollback 要求 |
+| Verify | 第 13-15、18 节 | readiness gate、授权矩阵、安装/update 证据和检查命令可执行 |
+| Archive | 第 16-17 节 | 完成项有 OpenSpec archive、local gate、local MR review、completed receipt |
 
 ## 1. 目的
 
@@ -55,7 +69,7 @@ source_reference_file: reference_files/1.md
 - `OpenCLI`：安装为 on-demand 用户级 adapter 候选，不作为默认常驻能力。
 - `CLI-Anything` 与 CLI-Anything Hub：安装为用户级 harness 生成/参考工具，并用于辅助设计 `wecom-cli`。
 - `The Harness Problem`：作为后续 hash-anchored edit 与 harness 可靠性研究参考。
-- `oh-my-pi`：仅作为 Pi family / harness / UX 参考源；真实 sidecar 安装、receipt、update 与 rollback 规则迁入 `pi_plugin_codex_user_level_sidecar_plan.*`。
+- `oh-my-pi`：仅作为 Pi family / harness / UX 参考源；真实 sidecar 安装、receipt、update 与 rollback 规则迁入 `pi_plugin_codex_user_level_sidecar_plan.*`；其中 `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 明确列为本方案的本地 Codex 治理 fork 参考。
 
 仅作为后续“Codex CLI 个人开发者生产级持久化团队”参考源：
 
@@ -311,7 +325,7 @@ OpenCLI：
 
 - `oh-my-pi` 只可作为 Pi family / harness / UX 资料来源；不得在本方案中创建用户级 `oh-my-pi` wrapper、安装目录、updater 或 runtime state。
 - `The Harness Problem` 只可作为 hash-anchored edit、harness 可靠性与失败可恢复设计的研究参考；不得把博客内容当成已实现工具能力。
-- 与 Pi、`oh-my-pi`、`omp`、`pi-plugin-codex`、binary override、RPC smoke、job state、read-only guard、update receipt 和 rollback pointer 有关的实施规则，统一归属 `pi_plugin_codex_user_level_sidecar_plan.*`。
+- 与 Pi、`oh-my-pi`、`omp`、`pi-plugin-codex`、binary override、RPC smoke、job state、read-only guard、update receipt 和 rollback pointer 有关的实施规则，统一归属 `pi_plugin_codex_user_level_sidecar_plan.*`；其中 `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 是本方案明确引用的本地 Codex 治理 fork 参考。
 - 本方案可复用的只有通用治理模式：pinned reference、receipt-first update、smoke-before-active、rollback-ready、reference-only 默认状态、敏感操作显式授权和 repo-local source-of-truth。
 - Codex 主会话仍是 leader；reference source、skills profile 或 CLI harness helper 都不是 native subagent，也不是 durable backend。
 
@@ -494,7 +508,18 @@ receipt 必填字段：
 - smoke test 失败时必须继续选择上一个已安装版本；
 - rollback 必须可仅凭 receipt 完成，不依赖聊天记录。
 
-## 16. OpenSpec 实施拆分
+## 16. Comet 执行拆分：OpenSpec WHAT + Superpowers HOW
+
+按 Comet 轻量 tweak 路径实施本方案：每个小步 change 必须先定义 OpenSpec WHAT，再把 HOW 拆成可本地验证、可回滚、可归档的执行项。
+
+### 16.1 Comet phase gate
+
+| Phase | Gate | 证据 |
+| --- | --- | --- |
+| Open | scope / non-goals / owned files | proposal or change note |
+| Build | patch + local checks | changed paths + checker output |
+| Verify | precommit gate + OpenSpec guard + local gate | pass/fail evidence |
+| Archive | stable spec/archive or explicit deferral | archive receipt or deferral note |
 
 按小步、可本地测试、可回滚的 change 实施本方案。默认拆分：
 
@@ -509,7 +534,7 @@ receipt 必填字段：
 9. `wecom-cli` process/window inventory 与 read-only evidence；
 10. `wecom-cli` gated GUI automation，包含 global WXWork lease 与 one-task authorization receipts。
 
-OpenSpec 切片交付矩阵：
+### 16.2 OpenSpec 切片交付矩阵
 
 | 切片 | 主要产物 | 最小验证 | 完成证据 |
 | --- | --- | --- | --- |
@@ -535,8 +560,9 @@ OpenSpec 切片交付矩阵：
 - 如 change 可能绑定 TCP 端口，必须列出 local listener 或 port lease 归属；
 - rollback method；
 - 明确 non-goals，避免 change 膨胀。
+- `.comet.yaml` 或等价执行记录必须写明 phase、verify result、archive/deferral 状态。
 
-细颗粒度实施清单：
+### 16.3 细颗粒度实施清单
 
 - [x] 为本方案创建或复用一个小步 OpenSpec change，并写明 scope、non-goals、rollback boundary。
 - [x] 建立 token/risk priority checker，禁止高 token/高风险 surface 在无证据时默认常驻。
@@ -576,7 +602,7 @@ OpenSpec 切片交付矩阵：
 - [x] 对每个完成的 OpenSpec change 运行 precommit update/archive gate、local gate、local MR review。
 - [ ] 每个用户级安装动作完成后记录 rollback-ready receipt；没有 receipt 的 lane 不得标记 active。
 
-## 17. 实施顺序
+## 17. Comet 实施顺序
 
 1. 为本方案创建 OpenSpec change。
 2. 增加 token/risk priority、port registry/lease、browser asset class、sensitive authorization、update receipt 的治理文档和 checker。
@@ -589,7 +615,7 @@ OpenSpec 切片交付矩阵：
 9. 构建 `wecom-cli` API/Webhook MVP，再做 window inventory，最后做带授权 gate 的 GUI automation。
 10. 跑 local gate、local MR review，并在用户确认后再合入 local main。
 
-## 18. 验证计划
+## 18. Comet 验证计划
 
 - `skills2cli` 测试证明 index/search/show 不输出全量 skill descriptions。
 - `mcp2cli` 测试证明 compact list/search/show 和 sensitive-call blocking。
@@ -602,6 +628,7 @@ OpenSpec 切片交付矩阵：
 - 仓库检查继续包括 OpenSpec guard、precommit update/archive gate、local gate、local MR review。
 - Readiness-gate 测试证明没有 smoke-test evidence、install/update receipt evidence 与 rollback evidence 的 lane 不会变成 `active`。
 - Authorization-matrix 测试证明敏感 MCP、browser、CDP/OpenCLI 和 WXWork 动作在没有当前 one-task authorization receipt 时 fail closed。
+- Comet 状态检查证明本轮 change 的 phase、verify result、archive/deferral 结论与 tasks 完成状态一致；超出 tweak 条件时必须升级 full workflow。
 
 ## 19. 来源
 
