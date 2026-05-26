@@ -279,3 +279,10 @@ documents:
     status: draft
     canonical_path: docs_bilingual/implementation_plans/chrome_devtools_mcp_multi_session_isolation_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/chrome_devtools_mcp_multi_session_isolation_plan.zh-CN.md
+
+
+  - doc_id: comet_runtime_agile_focus_area_plan
+    doc_class: implementation_plan
+    status: draft
+    canonical_path: docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md

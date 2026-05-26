@@ -297,6 +297,117 @@ archived_is_true() {
   [ "$val" = "true" ]
 }
 
+management_record_path() {
+  local record
+  record=$(yaml_field_value "management_record" 2>/dev/null || true)
+  if [ -z "$record" ] || [ "$record" = "null" ]; then
+    record="$CHANGE_DIR/management.md"
+  fi
+  echo "$record"
+}
+
+checklist_done() {
+  local label="$1"
+  local record
+  record=$(management_record_path)
+  if [ ! -f "$record" ]; then
+    echo "management record is missing: $record" >&2
+    return 1
+  fi
+  if grep -Fq -- "- [x] $label" "$record" || grep -Fq -- "- [X] $label" "$record"; then
+    return 0
+  fi
+  echo "management checklist item is not checked: $label" >&2
+  echo "Next: mark '- [x] $label' in $record after recording the evidence." >&2
+  return 1
+}
+
+management_phase_complete() {
+  local phase="$1"
+  case "$phase" in
+    open)
+      checklist_done "价值/Why 已说明" &&
+      checklist_done "成功标准已说明" &&
+      checklist_done "stakeholders 或 constraints 已识别"
+      ;;
+    design)
+      checklist_done "交付方式已裁剪" &&
+      checklist_done "风险与关键假设已记录" &&
+      checklist_done "验收证据路径已定义"
+      ;;
+    build)
+      checklist_done "execution mode 已选择" &&
+      checklist_done "TDD / review / quality evidence 已记录" &&
+      checklist_done "当前阻塞项已清空或已有处理决策"
+      ;;
+    verify)
+      checklist_done "偏差检查完成" &&
+      checklist_done "风险/变更影响已评估" &&
+      checklist_done "control decision 已记录"
+      ;;
+    archive)
+      checklist_done "价值结果已总结" &&
+      checklist_done "经验沉淀已记录" &&
+      checklist_done "delta spec sync / verification evidence / archive path 已确认"
+      ;;
+    *)
+      echo "unknown management phase: $phase" >&2
+      return 1
+      ;;
+  esac
+}
+
+monitoring_allows_forward() {
+  checklist_done "当前阶段事实已检查" || return 1
+  checklist_done "是否需要回退已判断" || return 1
+
+  local status decision target reason
+  status=$(yaml_field_value "monitoring_status" 2>/dev/null || true)
+  decision=$(yaml_field_value "control_decision" 2>/dev/null || true)
+  target=$(yaml_field_value "target_phase" 2>/dev/null || true)
+  reason=$(yaml_field_value "rework_reason" 2>/dev/null || true)
+
+  case "${status:-clear}" in
+    clear) ;;
+    needs_decision)
+      echo "monitoring_status=needs_decision; record control_decision before moving forward" >&2
+      return 1
+      ;;
+    blocked)
+      echo "monitoring_status=blocked; resolve or use a monitor-return-* transition" >&2
+      return 1
+      ;;
+    *)
+      echo "invalid monitoring_status='${status:-null}'" >&2
+      return 1
+      ;;
+  esac
+
+  case "${decision:-continue}" in
+    continue) return 0 ;;
+    adjust-current)
+      echo "control_decision=adjust-current; update current phase evidence, then set control_decision=continue" >&2
+      return 1
+      ;;
+    return-open|return-design|return-build|return-verify)
+      if [ -z "$target" ] || [ "$target" = "null" ] || [ -z "$reason" ] || [ "$reason" = "null" ]; then
+        echo "return decision requires target_phase and rework_reason" >&2
+      else
+        echo "control_decision=$decision requires: bash \"\$COMET_STATE\" transition $CHANGE monitor-${decision}" >&2
+      fi
+      return 1
+      ;;
+    stop)
+      echo "control_decision=stop; forward transition is intentionally blocked" >&2
+      return 1
+      ;;
+    *)
+      echo "invalid control_decision='${decision:-null}'" >&2
+      return 1
+      ;;
+  esac
+}
+
 # --- Phase-specific checks ---
 
 guard_open() {
@@ -306,6 +417,8 @@ guard_open() {
   check "design.md exists and non-empty" file_nonempty "$CHANGE_DIR/design.md"
   check "tasks.md exists and non-empty" file_nonempty "$CHANGE_DIR/tasks.md"
   check "tasks.md has at least one task" tasks_has_any
+  check "Open management checklist complete" management_phase_complete open
+  check "Monitoring allows forward progress" monitoring_allows_forward
 }
 
 guard_design() {
@@ -322,6 +435,8 @@ guard_design() {
   else
     warn "  [WARN] No design_doc recorded in .comet.yaml"
   fi
+  check "Design management checklist complete" management_phase_complete design
+  check "Monitoring allows forward progress" monitoring_allows_forward
 }
 
 guard_build() {
@@ -332,6 +447,8 @@ guard_build() {
   check "build_mode allowed for workflow" build_mode_allowed_for_workflow
   check "tasks.md all tasks checked" tasks_all_done
   check "proposal.md exists" file_nonempty "$CHANGE_DIR/proposal.md"
+  check "Build management checklist complete" management_phase_complete build
+  check "Monitoring allows forward progress" monitoring_allows_forward
   check "Build passes" build_passes
 }
 
@@ -342,6 +459,8 @@ guard_verify() {
   check "Build passes" verification_command_passes
   check "verification_report exists" verification_report_exists
   check "branch_status=handled" branch_status_handled
+  check "Verify management checklist complete" management_phase_complete verify
+  check "Monitoring allows forward progress" monitoring_allows_forward
 }
 
 guard_archive() {
@@ -350,6 +469,8 @@ guard_archive() {
   check "archived is true" archived_is_true
   check "proposal.md exists" file_nonempty "$CHANGE_DIR/proposal.md"
   check "tasks.md all tasks checked" tasks_all_done
+  check "Archive management checklist complete" management_phase_complete archive
+  check "Monitoring allows forward progress" monitoring_allows_forward
 }
 
 apply_state_update() {

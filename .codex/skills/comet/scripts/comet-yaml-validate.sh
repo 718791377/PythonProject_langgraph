@@ -70,7 +70,7 @@ warn_msg() { warn "  WARN: $1"; WARNINGS=$((WARNINGS + 1)); }
 echo "[VALIDATE] $YAML" >&2
 
 # --- Required fields ---
-REQUIRED_FIELDS="workflow phase design_doc plan build_mode isolation verify_mode verify_result verified_at archived"
+REQUIRED_FIELDS="workflow phase design_doc plan build_mode isolation verify_mode verify_result verified_at archived management_record monitoring_status control_decision target_phase rework_reason iteration_count"
 for field in $REQUIRED_FIELDS; do
   if ! grep -q "^${field}:" "$YAML" 2>/dev/null; then
     fail "missing required field '$field'"
@@ -105,6 +105,12 @@ verify_result=$(field_value "verify_result")
 branch_status=$(field_value "branch_status")
 archived=$(field_value "archived")
 direct_override=$(field_value "direct_override")
+management_record=$(field_value "management_record")
+monitoring_status=$(field_value "monitoring_status")
+control_decision=$(field_value "control_decision")
+target_phase=$(field_value "target_phase")
+rework_reason=$(field_value "rework_reason")
+iteration_count=$(field_value "iteration_count")
 design_doc=$(field_value "design_doc")
 plan=$(field_value "plan")
 
@@ -117,6 +123,13 @@ validate_enum "verify_result" "$verify_result"  "pending pass fail"
 validate_enum "branch_status" "$branch_status"  "pending handled"
 validate_enum "archived"      "$archived"       "true false"
 validate_enum "direct_override" "$direct_override" "true false"
+validate_enum "monitoring_status" "$monitoring_status" "clear needs_decision blocked"
+validate_enum "control_decision" "$control_decision" "continue adjust-current return-open return-design return-build return-verify stop"
+validate_enum "target_phase" "$target_phase" "null open design build verify"
+validate_enum "rework_reason" "$rework_reason" "null scope-gap planning-gap execution-gap verification-gap value-gap risk-change stakeholder-change"
+if [ -n "$iteration_count" ] && [ "$iteration_count" != "null" ] && [[ ! "$iteration_count" =~ ^[0-9]+$ ]]; then
+  fail "iteration_count='$iteration_count' is not a non-negative integer"
+fi
 
 # --- Path validation ---
 
@@ -132,8 +145,14 @@ if [ -n "$plan" ] && [ "$plan" != "null" ]; then
   fi
 fi
 
+if [ -n "$management_record" ] && [ "$management_record" != "null" ]; then
+  if [ ! -f "$management_record" ]; then
+    fail "management_record='$management_record' does not exist on disk"
+  fi
+fi
+
 # --- Unknown keys check ---
-KNOWN_KEYS="workflow phase design_doc plan build_mode isolation verify_mode verify_result verification_report branch_status verified_at archived direct_override build_command verify_command"
+KNOWN_KEYS="workflow phase design_doc plan build_mode isolation verify_mode verify_result verification_report branch_status verified_at archived direct_override build_command verify_command management_record monitoring_status control_decision target_phase rework_reason iteration_count"
 while IFS=: read -r key _; do
   key="${key// /}"
   [ -z "$key" ] && continue

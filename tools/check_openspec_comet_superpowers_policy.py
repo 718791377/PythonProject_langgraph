@@ -16,6 +16,22 @@ ACTIVE_SPEC = Path(
     "specs/codex-user-level-comet-controlled-openspec-superpowers/spec.md"
 )
 STABLE_SPEC = Path("openspec/specs/codex-user-level-comet-controlled-openspec-superpowers/spec.md")
+IMPLEMENTATION_PLAN = Path("docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.md")
+IMPLEMENTATION_PLAN_ZH = Path("docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md")
+COMET_STATE_SCRIPT = Path(".codex/skills/comet/scripts/comet-state.sh")
+COMET_GUARD_SCRIPT = Path(".codex/skills/comet/scripts/comet-guard.sh")
+COMET_VALIDATE_SCRIPT = Path(".codex/skills/comet/scripts/comet-yaml-validate.sh")
+COMET_ARCHIVE_SCRIPT = Path(".codex/skills/comet/scripts/comet-archive.sh")
+COMET_SKILL_FILES = [
+    Path(".codex/skills/comet/SKILL.md"),
+    Path(".codex/skills/comet-open/SKILL.md"),
+    Path(".codex/skills/comet-design/SKILL.md"),
+    Path(".codex/skills/comet-build/SKILL.md"),
+    Path(".codex/skills/comet-verify/SKILL.md"),
+    Path(".codex/skills/comet-archive/SKILL.md"),
+    Path(".codex/skills/comet-hotfix/SKILL.md"),
+    Path(".codex/skills/comet-tweak/SKILL.md"),
+]
 
 EN_REQUIRED_TERMS = [
     "Comet-controlled OpenSpec + Superpowers",
@@ -29,6 +45,17 @@ EN_REQUIRED_TERMS = [
     "explicit operator approval",
     "Skills remain workflow instruction surfaces",
     "not native subagent evidence",
+    "PMBOK8 Project Management Focus Areas",
+    "Open | Initiating",
+    "Design | Planning",
+    "Build | Executing",
+    "Verify | Controlling",
+    "Archive | Closing",
+    "Monitoring is a cross-cutting focus area",
+    "non-prescriptive",
+    "Runtime Monitoring is more than a passive check",
+    "return the active change to `open`, `design`, `build`, or `verify`",
+    "adaptive or hybrid control loop",
 ]
 
 ZH_REQUIRED_TERMS = [
@@ -43,6 +70,17 @@ ZH_REQUIRED_TERMS = [
     ".comet.yaml",
     "显式操作员批准",
     "不是 native subagent 证据",
+    "PMBOK8 Project Management Focus Areas",
+    "Open | Initiating",
+    "Design | Planning",
+    "Build | Executing",
+    "Verify | Controlling",
+    "Archive | Closing",
+    "Monitoring 是横切 focus area",
+    "non-prescriptive",
+    "Runtime Monitoring 不只是被动检查或阻拦",
+    "回退到 `open`、`design`、`build` 或 `verify`",
+    "适应型/混合型控制循环",
 ]
 
 SPEC_REQUIRED_TERMS = [
@@ -53,8 +91,87 @@ SPEC_REQUIRED_TERMS = [
     "archive evidence",
     "explicit and repository-local",
     "checker-backed",
+    "PMBOK8 Project Management Focus Areas",
+    "Open = Initiating",
+    "Design = Planning",
+    "Build = Executing",
+    "Verify = Controlling",
+    "Archive = Closing",
+    "Monitoring SHALL be documented as a cross-cutting focus area",
+    "Comet runtime SHALL support iterative management returns",
+    "management record with checklist evidence",
+    "return work from the current phase to `open`, `design`, `build`, or `verify`",
+    "Return transitions SHALL preserve the rework reason and increment an iteration counter",
+    "runtime field names SHALL NOT depend on the literal `PMBOK8` term",
 ]
 
+IMPLEMENTATION_PLAN_REQUIRED_TERMS = [
+    "Comet Runtime Agile Focus-Area Implementation Plan",
+    "Monitoring can return work from any current phase",
+    "return transitions",
+    "iteration_count",
+]
+
+IMPLEMENTATION_PLAN_ZH_REQUIRED_TERMS = [
+    "Comet Runtime 敏捷/混合式管理关注领域落地方案",
+    "可以回退到 `open/design/build/verify`",
+    "不做一次性大瀑布方案",
+    "monitor-return-design",
+]
+
+STATE_SCRIPT_REQUIRED_TERMS = [
+    "management_record:",
+    "monitoring_status: clear",
+    "control_decision: continue",
+    "target_phase: null",
+    "rework_reason: null",
+    "iteration_count: 0",
+    "apply_monitor_return",
+    "increment_iteration",
+    "monitor-return-open",
+    "monitor-return-design",
+    "monitor-return-build",
+    "monitor-return-verify",
+]
+
+GUARD_SCRIPT_REQUIRED_TERMS = [
+    "management_phase_complete",
+    "monitoring_allows_forward",
+    "Open management checklist complete",
+    "Design management checklist complete",
+    "Build management checklist complete",
+    "Verify management checklist complete",
+    "Archive management checklist complete",
+    "control_decision=adjust-current",
+    "monitor-return-* transition",
+]
+
+VALIDATE_SCRIPT_REQUIRED_TERMS = [
+    "management_record monitoring_status control_decision target_phase rework_reason iteration_count",
+    "clear needs_decision blocked",
+    "return-open return-design return-build return-verify stop",
+    "iteration_count='$iteration_count' is not a non-negative integer",
+]
+
+ARCHIVE_SCRIPT_REQUIRED_TERMS = [
+    "Management closing evidence verified",
+    "价值结果已总结",
+    "经验沉淀已记录",
+    "delta spec sync / verification evidence / archive path 已确认",
+    "monitoring_status is",
+    "control_decision is",
+]
+
+SKILL_REQUIRED_TERMS = [
+    "management_record",
+    "monitor-return-open",
+    "monitor-return-design",
+    "monitor-return-build",
+    "monitor-return-verify",
+    "Management Checklist",
+    "adaptive/hybrid rework loop",
+    "Archive management checklist",
+]
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="strict")
@@ -116,6 +233,13 @@ def build_report(root: Path) -> dict:
     en_missing: list[str] = []
     zh_missing: list[str] = []
     spec_missing: list[str] = []
+    implementation_plan_missing: list[str] = []
+    implementation_plan_zh_missing: list[str] = []
+    state_script_missing: list[str] = []
+    guard_script_missing: list[str] = []
+    validate_script_missing: list[str] = []
+    archive_script_missing: list[str] = []
+    skill_missing: list[str] = []
 
     if en_path:
         try:
@@ -185,6 +309,77 @@ def build_report(root: Path) -> dict:
         except UnicodeDecodeError as exc:
             errors.append(f"{spec_path.relative_to(root).as_posix()} is not valid UTF-8: {exc}")
 
+    implementation_plan_path = require_file(root, IMPLEMENTATION_PLAN, errors)
+    if implementation_plan_path:
+        try:
+            implementation_plan_text = read_text(implementation_plan_path)
+            checked_files.append(IMPLEMENTATION_PLAN.as_posix())
+            implementation_plan_missing = check_terms(
+                "Implementation plan",
+                implementation_plan_text,
+                IMPLEMENTATION_PLAN_REQUIRED_TERMS,
+                errors,
+            )
+        except UnicodeDecodeError as exc:
+            errors.append(f"{IMPLEMENTATION_PLAN.as_posix()} is not valid UTF-8: {exc}")
+
+    implementation_plan_zh_path = require_file(root, IMPLEMENTATION_PLAN_ZH, errors)
+    if implementation_plan_zh_path:
+        try:
+            implementation_plan_zh_text = read_text(implementation_plan_zh_path)
+            checked_files.append(IMPLEMENTATION_PLAN_ZH.as_posix())
+            if "\ufffd" in implementation_plan_zh_text or "??" in implementation_plan_zh_text:
+                errors.append(
+                    f"{IMPLEMENTATION_PLAN_ZH.as_posix()} appears to contain mojibake or placeholder question marks; "
+                    "read and maintain it as UTF-8 Chinese text."
+                )
+            implementation_plan_zh_missing = check_terms(
+                "Chinese implementation plan",
+                implementation_plan_zh_text,
+                IMPLEMENTATION_PLAN_ZH_REQUIRED_TERMS,
+                errors,
+            )
+        except UnicodeDecodeError as exc:
+            errors.append(f"{IMPLEMENTATION_PLAN_ZH.as_posix()} is not valid UTF-8: {exc}")
+
+    state_script_path = require_file(root, COMET_STATE_SCRIPT, errors)
+    if state_script_path:
+        state_script_text = read_text(state_script_path)
+        checked_files.append(COMET_STATE_SCRIPT.as_posix())
+        state_script_missing = check_terms("Comet state script", state_script_text, STATE_SCRIPT_REQUIRED_TERMS, errors)
+
+    guard_script_path = require_file(root, COMET_GUARD_SCRIPT, errors)
+    if guard_script_path:
+        guard_script_text = read_text(guard_script_path)
+        checked_files.append(COMET_GUARD_SCRIPT.as_posix())
+        guard_script_missing = check_terms("Comet guard script", guard_script_text, GUARD_SCRIPT_REQUIRED_TERMS, errors)
+
+    validate_script_path = require_file(root, COMET_VALIDATE_SCRIPT, errors)
+    if validate_script_path:
+        validate_script_text = read_text(validate_script_path)
+        checked_files.append(COMET_VALIDATE_SCRIPT.as_posix())
+        validate_script_missing = check_terms(
+            "Comet YAML validator",
+            validate_script_text,
+            VALIDATE_SCRIPT_REQUIRED_TERMS,
+            errors,
+        )
+
+    archive_script_path = require_file(root, COMET_ARCHIVE_SCRIPT, errors)
+    if archive_script_path:
+        archive_script_text = read_text(archive_script_path)
+        checked_files.append(COMET_ARCHIVE_SCRIPT.as_posix())
+        archive_script_missing = check_terms("Comet archive script", archive_script_text, ARCHIVE_SCRIPT_REQUIRED_TERMS, errors)
+
+    skill_texts: list[str] = []
+    for relative in COMET_SKILL_FILES:
+        skill_path = require_file(root, relative, errors)
+        if skill_path:
+            skill_texts.append(read_text(skill_path))
+            checked_files.append(relative.as_posix())
+    if skill_texts:
+        skill_missing = check_terms("Comet skills", "\n".join(skill_texts), SKILL_REQUIRED_TERMS, errors)
+
     return {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -199,17 +394,38 @@ def build_report(root: Path) -> dict:
             "english_policy": EN_REQUIRED_TERMS,
             "chinese_policy": ZH_REQUIRED_TERMS,
             "spec": SPEC_REQUIRED_TERMS,
+            "implementation_plan": IMPLEMENTATION_PLAN_REQUIRED_TERMS,
+            "implementation_plan_zh": IMPLEMENTATION_PLAN_ZH_REQUIRED_TERMS,
+            "state_script": STATE_SCRIPT_REQUIRED_TERMS,
+            "guard_script": GUARD_SCRIPT_REQUIRED_TERMS,
+            "validate_script": VALIDATE_SCRIPT_REQUIRED_TERMS,
+            "archive_script": ARCHIVE_SCRIPT_REQUIRED_TERMS,
+            "skills": SKILL_REQUIRED_TERMS,
         },
         "missing_terms": {
             "english_policy": en_missing,
             "chinese_policy": zh_missing,
             "spec": spec_missing,
+            "implementation_plan": implementation_plan_missing,
+            "implementation_plan_zh": implementation_plan_zh_missing,
+            "state_script": state_script_missing,
+            "guard_script": guard_script_missing,
+            "validate_script": validate_script_missing,
+            "archive_script": archive_script_missing,
+            "skills": skill_missing,
         },
         "counts": {
             "checked_files": len(checked_files),
             "english_terms": len(EN_REQUIRED_TERMS),
             "chinese_terms": len(ZH_REQUIRED_TERMS),
             "spec_terms": len(SPEC_REQUIRED_TERMS),
+            "runtime_terms": (
+                len(STATE_SCRIPT_REQUIRED_TERMS)
+                + len(GUARD_SCRIPT_REQUIRED_TERMS)
+                + len(VALIDATE_SCRIPT_REQUIRED_TERMS)
+                + len(ARCHIVE_SCRIPT_REQUIRED_TERMS)
+                + len(SKILL_REQUIRED_TERMS)
+            ),
             "errors": len(errors),
             "warnings": len(warnings),
         },

@@ -64,11 +64,33 @@ bash "$COMET_GUARD" <change-name> design --apply
 
 State file is updated automatically. No manual editing of other fields required.
 
+### 3. Management Checklist and Monitoring Return
+
+Before running the guard, update `openspec/changes/<name>/management.md`:
+
+- [ ] Mark delivery approach tailoring as checked.
+- [ ] Mark risks and key assumptions as checked.
+- [ ] Mark acceptance evidence path as checked.
+- [ ] Mark Monitoring current facts and return/no-return decision as checked.
+
+If brainstorming shows the original Open evidence is incomplete, set:
+
+```bash
+bash "$COMET_STATE" set <name> monitoring_status blocked
+bash "$COMET_STATE" set <name> control_decision return-open
+bash "$COMET_STATE" set <name> target_phase open
+bash "$COMET_STATE" set <name> rework_reason value-gap
+bash "$COMET_STATE" transition <name> monitor-return-open
+```
+
+Then re-enter `comet-open` instead of continuing to Build.
+
 ## Exit Conditions
 
 - Design Doc has been created and saved
 - Delta spec has been created if there are new capabilities
 - `design_doc` written to `.comet.yaml`
+- Design management checklist and Monitoring checklist are checked in `management.md`
 - **Phase guard**: Run `bash "$COMET_GUARD" <change-name> design --apply`; after all PASS, state advances to `phase: build`
 
 You must use `--apply` before exiting:

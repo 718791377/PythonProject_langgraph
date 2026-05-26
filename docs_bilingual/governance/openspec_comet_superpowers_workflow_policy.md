@@ -21,7 +21,7 @@ Comet does not replace OpenSpec, Superpowers, native Codex subagents, native_omx
 
 ## 2. Evidence Basis
 
-This policy is based on the local reference list in `reference_files/2.md` and the Comet, OpenSpec, and Superpowers upstream project descriptions.
+This policy is based on the local reference list in `reference_files/2.md`, the Comet, OpenSpec, and Superpowers upstream project descriptions, and the repository-local PMBOK8 notes under `PMP/PMP_MD/`.
 
 The local mp4 reference names the same Comet + OpenSpec + Superpowers topic. Detailed video transcript evidence was not available in the current session, so this policy uses the upstream README behavior as the concrete source for the first repository upgrade.
 
@@ -52,6 +52,20 @@ Phase ownership:
 3. Build: Superpowers owns implementation planning, TDD, subagent-driven development, code review, and branch/worktree execution discipline.
 4. Verify: OpenSpec and Superpowers both contribute. Verification must produce evidence, not just a claim.
 5. Archive: OpenSpec owns delta-to-main spec sync, archive movement, and archive status.
+
+PMBOK8 Project Management Focus Areas mapping:
+
+| Comet phase | PMBOK8 focus area | Repository interpretation |
+| --- | --- | --- |
+| Open | Initiating | Confirm why the change is worth doing, what success means, and which stakeholders or constraints matter before opening durable OpenSpec artifacts. |
+| Design | Planning | Tailor the delivery approach, scope, risks, acceptance evidence, and Superpowers design or plan artifacts without treating planning as a one-time waterfall step. |
+| Build | Executing | Coordinate implementation, TDD, review, and branch or worktree execution discipline. |
+| Verify | Controlling | Compare results against requirements, validation evidence, risks, branch state, and acceptance expectations before allowing completion claims. |
+| Archive | Closing | Close the change by syncing delta specs, preserving verification evidence, archiving history, and making the result discoverable for later work. |
+
+Monitoring is a cross-cutting focus area, not a sixth Comet phase. It is implemented through phase detection, transition guards, evidence gates, verify-fail feedback, archive readiness checks, and explicit operator decisions. This keeps the PMBOK8 process guidance non-prescriptive: focus areas may recur, overlap, and be tailored across predictive, adaptive, and hybrid work, while the Comet state machine remains `Open -> Design -> Build -> Verify -> Archive`.
+
+Runtime Monitoring is more than a passive check. If current work shows that an earlier focus area is incomplete, Comet may record a control decision and return the active change to `open`, `design`, `build`, or `verify` for rework. The return path must preserve the reason and iteration count so the workflow behaves like an adaptive or hybrid control loop rather than a one-way waterfall.
 
 Preset workflows such as hotfix or tweak may skip brainstorming or full planning only when the skipped steps are explicit. Verify and Archive remain evidence-gated.
 

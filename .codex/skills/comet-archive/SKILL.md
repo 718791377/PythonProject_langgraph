@@ -49,6 +49,15 @@ When a delta spec differs from an existing main spec, the script prints a unifie
 
 Use `--dry-run` flag to preview without executing.
 
+Before running archive, update `openspec/changes/<name>/management.md`:
+
+- [ ] Mark value outcome summary as checked.
+- [ ] Mark lessons learned as checked.
+- [ ] Mark delta spec sync / verification evidence / archive path confirmation as checked.
+- [ ] Mark Monitoring current facts and return/no-return decision as checked.
+
+If archive review finds missing value, design, build, or verification evidence, record a return decision and use the matching `monitor-return-*` transition instead of archiving.
+
 ### 2. Lifecycle Closed Loop
 
 Spec lifecycle completes here:
@@ -61,6 +70,7 @@ brainstorming → delta spec → implementation → verification → main spec o
 - Archive script executed successfully (exit code 0)
 - Archive directory `openspec/changes/archive/YYYY-MM-DD-<change-name>/` exists
 - Archived `.comet.yaml` contains `archived: true`
+- Archive management checklist and Monitoring checklist were checked before archive script execution
 
 The archive script moves `openspec/changes/<name>/` to `openspec/changes/archive/YYYY-MM-DD-<name>/`. After successful archive, do not run `bash "$COMET_GUARD" <change-name> archive` against the old active change name; the active directory no longer exists. Archive completeness is determined by the script exit code and archived directory state.
 

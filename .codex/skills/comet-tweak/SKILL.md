@@ -50,6 +50,11 @@ Initialize Comet state file:
 bash "$COMET_STATE" init <name> tweak
 ```
 
+Before running the open guard, update `openspec/changes/<name>/management.md` with concise tweak evidence:
+
+- [ ] Mark Open value/why, success criteria, and stakeholders or constraints as checked.
+- [ ] Mark Monitoring current facts and return/no-return decision as checked.
+
 Run phase guard to transition open → build:
 
 ```bash
@@ -70,7 +75,8 @@ Use tweak defaults: `build_mode: direct`. Skip `superpowers:brainstorming` and `
    - Check corresponding `- [ ]` to `- [x]` in tasks.md
    - Commit code, commit message format: `tweak: <brief change description>`
 3. After all tasks complete, explicitly run relevant project tests and build commands
-4. Run phase guard to transition build → verify:
+4. Update `management.md`: mark execution mode, quality evidence, blockers cleared/decided, and Monitoring checks as checked.
+5. Run phase guard to transition build → verify:
 
 ```bash
 bash "$COMET_GUARD" <change-name> build --apply
@@ -123,6 +129,8 @@ Upgrade to full `/comet` when **any** of the following conditions are met:
 
 Upgrade method: On current change basis, supplement Design Doc (execute `/comet-design`), then proceed normally with full workflow.
 
+If the tweak discovers earlier evidence is incomplete, use the Monitoring return fields in `.comet.yaml` and the matching `monitor-return-*` transition instead of forcing the preset forward.
+
 ---
 
 ## Exit Conditions
@@ -130,4 +138,5 @@ Upgrade method: On current change basis, supplement Design Doc (execute `/comet-
 - Small change completed, tests pass
 - Change archived
 - No new capability, architecture adjustments, or interface changes
+- Management checklist evidence is recorded for each executed preset phase
 - **Phase guard**: Before build → verify run `bash "$COMET_GUARD" <change-name> build --apply`; before verify → archive follow `/comet-verify` and run `bash "$COMET_GUARD" <change-name> verify --apply`

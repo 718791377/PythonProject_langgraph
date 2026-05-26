@@ -185,6 +185,17 @@ class CheckOpenSpecCometSuperpowersPolicyTest(unittest.TestCase):
                     "explicit operator approval",
                     "Skills remain workflow instruction surfaces",
                     "not native subagent evidence",
+                    "PMBOK8 Project Management Focus Areas",
+                    "Open | Initiating",
+                    "Design | Planning",
+                    "Build | Executing",
+                    "Verify | Controlling",
+                    "Archive | Closing",
+                    "Monitoring is a cross-cutting focus area",
+                    "non-prescriptive",
+                    "Runtime Monitoring is more than a passive check",
+                    "return the active change to `open`, `design`, `build`, or `verify`",
+                    "adaptive or hybrid control loop",
                 ]
             ),
         )
@@ -204,6 +215,17 @@ class CheckOpenSpecCometSuperpowersPolicyTest(unittest.TestCase):
                     ".comet.yaml",
                     "显式操作员批准",
                     "不是 native subagent 证据",
+                    "PMBOK8 Project Management Focus Areas",
+                    "Open | Initiating",
+                    "Design | Planning",
+                    "Build | Executing",
+                    "Verify | Controlling",
+                    "Archive | Closing",
+                    "Monitoring 是横切 focus area",
+                    "non-prescriptive",
+                    "Runtime Monitoring 不只是被动检查或阻拦",
+                    "回退到 `open`、`design`、`build` 或 `verify`",
+                    "适应型/混合型控制循环",
                 ]
             ),
         )
@@ -231,9 +253,116 @@ documents:
                     "archive evidence",
                     "explicit and repository-local",
                     "checker-backed",
+                    "PMBOK8 Project Management Focus Areas",
+                    "Open = Initiating",
+                    "Design = Planning",
+                    "Build = Executing",
+                    "Verify = Controlling",
+                    "Archive = Closing",
+                    "Monitoring SHALL be documented as a cross-cutting focus area",
+                    "Comet runtime SHALL support iterative management returns",
+                    "management record with checklist evidence",
+                    "return work from the current phase to `open`, `design`, `build`, or `verify`",
+                    "Return transitions SHALL preserve the rework reason and increment an iteration counter",
+                    "runtime field names SHALL NOT depend on the literal `PMBOK8` term",
                 ]
             ),
         )
+        self.write_file(
+            root,
+            "docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.md",
+            "\n".join(
+                [
+                    "Comet Runtime Agile Focus-Area Implementation Plan",
+                    "Monitoring can return work from any current phase",
+                    "return transitions",
+                    "iteration_count",
+                ]
+            ),
+        )
+        self.write_file(
+            root,
+            "docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md",
+            "\n".join(
+                [
+                    "Comet Runtime 敏捷/混合式管理关注领域落地方案",
+                    "可以回退到 `open/design/build/verify`",
+                    "不做一次性大瀑布方案",
+                    "monitor-return-design",
+                ]
+            ),
+        )
+        self.write_file(
+            root,
+            ".codex/skills/comet/scripts/comet-state.sh",
+            "\n".join(
+                [
+                    "management_record:",
+                    "monitoring_status: clear",
+                    "control_decision: continue",
+                    "target_phase: null",
+                    "rework_reason: null",
+                    "iteration_count: 0",
+                    "apply_monitor_return",
+                    "increment_iteration",
+                    "monitor-return-open",
+                    "monitor-return-design",
+                    "monitor-return-build",
+                    "monitor-return-verify",
+                ]
+            ),
+        )
+        self.write_file(
+            root,
+            ".codex/skills/comet/scripts/comet-guard.sh",
+            "\n".join(
+                [
+                    "management_phase_complete",
+                    "monitoring_allows_forward",
+                    "Open management checklist complete",
+                    "Design management checklist complete",
+                    "Build management checklist complete",
+                    "Verify management checklist complete",
+                    "Archive management checklist complete",
+                    "control_decision=adjust-current",
+                    "monitor-return-* transition",
+                ]
+            ),
+        )
+        self.write_file(
+            root,
+            ".codex/skills/comet/scripts/comet-yaml-validate.sh",
+            "\n".join(
+                [
+                    "management_record monitoring_status control_decision target_phase rework_reason iteration_count",
+                    "clear needs_decision blocked",
+                    "return-open return-design return-build return-verify stop",
+                    "iteration_count='$iteration_count' is not a non-negative integer",
+                ]
+            ),
+        )
+        self.write_file(
+            root,
+            ".codex/skills/comet/scripts/comet-archive.sh",
+            "\n".join(
+                [
+                    "Management closing evidence verified",
+                    "价值结果已总结",
+                    "经验沉淀已记录",
+                    "delta spec sync / verification evidence / archive path 已确认",
+                    "monitoring_status is",
+                    "control_decision is",
+                ]
+            ),
+        )
+        self.write_file(root, ".codex/skills/comet/SKILL.md", "management_record\nmonitor-return-open\nadaptive/hybrid rework loop\n")
+        self.write_file(root, ".codex/skills/comet-open/SKILL.md", "Management Checklist\n")
+        self.write_file(root, ".codex/skills/comet-design/SKILL.md", "monitor-return-design\n")
+        self.write_file(root, ".codex/skills/comet-build/SKILL.md", "monitor-return-build\n")
+        self.write_file(root, ".codex/skills/comet-verify/SKILL.md", "monitor-return-verify\n")
+        self.write_file(root, ".codex/skills/comet-archive/SKILL.md", "Archive management checklist\n")
+        self.write_file(root, ".codex/skills/comet-hotfix/SKILL.md", "Management checklist evidence\n")
+        self.write_file(root, ".codex/skills/comet-tweak/SKILL.md", "Management checklist evidence\n")
 
     def run_comet_policy_check(self, root: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(

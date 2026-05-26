@@ -22,7 +22,7 @@ Comet 不替代 OpenSpec、Superpowers、native Codex subagents、native_omx 或
 
 ## 2. 证据基础
 
-本文基于 `reference_files/2.md` 中列出的 Comet、OpenSpec 和 Superpowers 上游项目链接，以及本地 mp4 的同名主题证据。
+本文基于 `reference_files/2.md` 中列出的 Comet、OpenSpec 和 Superpowers 上游项目链接、本地 mp4 的同名主题证据，以及 `PMP/PMP_MD/` 下已有 PMBOK8 缓存材料。
 
 本次会话无法完整转录本地 mp4：`OPENAI_API_KEY` 未设置，且本地 ffmpeg shim 在沙箱内不可运行。因此本次首轮升级以 README 可确认行为作为具体依据，并把视频精听/转录差异留给后续变更处理。
 
@@ -53,6 +53,20 @@ Open -> Design -> Build -> Verify -> Archive
 3. Build：Superpowers 负责实现计划、TDD、subagent-driven development、code review 和 branch/worktree 执行纪律。
 4. Verify：OpenSpec 和 Superpowers 共同参与；验证必须产生证据，而不能只产生自我声明。
 5. Archive：OpenSpec 负责 delta-to-main spec sync、archive movement 和 archive status。
+
+PMBOK8 Project Management Focus Areas 映射：
+
+| Comet phase | PMBOK8 focus area | 仓库解释 |
+| --- | --- | --- |
+| Open | Initiating | 在打开持久化 OpenSpec artifacts 前，确认为什么值得做、成功如何判断，以及哪些 stakeholders 或 constraints 需要被识别。 |
+| Design | Planning | 裁剪交付方式、范围、风险、验收证据，以及 Superpowers design 或 plan artifacts；Planning 不是一次性瀑布步骤。 |
+| Build | Executing | 协调实现、TDD、review，以及 branch 或 worktree 执行纪律。 |
+| Verify | Controlling | 在允许完成声明前，对照 requirements、validation evidence、risks、branch state 和 acceptance expectations 检查偏差。 |
+| Archive | Closing | 通过 delta specs sync、verification evidence 保存、archive history 和可检索知识沉淀来关闭 change。 |
+
+Monitoring 是横切 focus area，不是第六个 Comet phase。它通过 phase detection、transition guards、evidence gates、verify-fail feedback、archive readiness checks 和显式 operator decisions 实现。这样可以保持 PMBOK8 process guidance 的 non-prescriptive 特征：focus areas 可以在预测型、适应型和混合型工作中反复、重叠、按项目裁剪地出现，同时 Comet 状态机仍保持 `Open -> Design -> Build -> Verify -> Archive`。
+
+Runtime Monitoring 不只是被动检查或阻拦。如果当前阶段发现前序关注领域不充分，Comet 可以记录 control decision，并把 active change 回退到 `open`、`design`、`build` 或 `verify` 中需要返工的阶段。回退必须保留原因和迭代次数，使工作流表现为适应型/混合型控制循环，而不是单向瀑布。
 
 hotfix 或 tweak 等 preset workflow 只有在跳过步骤被显式记录时，才可以跳过 brainstorming 或 full planning。Verify 与 Archive 仍然必须由证据门控。
 

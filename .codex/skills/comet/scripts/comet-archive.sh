@@ -109,6 +109,47 @@ fi
 
 step_ok "Entry state verified"
 
+# --- Step 2b: Validate management closing evidence ---
+
+checklist_done() {
+  local label="$1"
+  local record="$2"
+  if grep -Fq -- "- [x] $label" "$record" || grep -Fq -- "- [X] $label" "$record"; then
+    return 0
+  fi
+  red "FATAL: management checklist item is not checked: $label"
+  red "Next: mark '- [x] $label' in $record after recording the evidence."
+  exit 1
+}
+
+MANAGEMENT_RECORD=$(yaml_field "management_record")
+if [ -z "$MANAGEMENT_RECORD" ] || [ "$MANAGEMENT_RECORD" = "null" ]; then
+  MANAGEMENT_RECORD="$CHANGE_DIR/management.md"
+fi
+if [ ! -f "$MANAGEMENT_RECORD" ]; then
+  red "FATAL: management record not found: $MANAGEMENT_RECORD"
+  exit 1
+fi
+
+checklist_done "价值结果已总结" "$MANAGEMENT_RECORD"
+checklist_done "经验沉淀已记录" "$MANAGEMENT_RECORD"
+checklist_done "delta spec sync / verification evidence / archive path 已确认" "$MANAGEMENT_RECORD"
+checklist_done "当前阶段事实已检查" "$MANAGEMENT_RECORD"
+checklist_done "是否需要回退已判断" "$MANAGEMENT_RECORD"
+
+MONITORING_STATUS=$(yaml_field "monitoring_status")
+CONTROL_DECISION=$(yaml_field "control_decision")
+if [ -n "$MONITORING_STATUS" ] && [ "$MONITORING_STATUS" != "clear" ]; then
+  red "FATAL: monitoring_status is '$MONITORING_STATUS', expected 'clear' before archive"
+  exit 1
+fi
+if [ -n "$CONTROL_DECISION" ] && [ "$CONTROL_DECISION" != "continue" ]; then
+  red "FATAL: control_decision is '$CONTROL_DECISION', expected 'continue' before archive"
+  exit 1
+fi
+
+step_ok "Management closing evidence verified"
+
 # --- Step 3: Check archive target ---
 
 if [ -d "$ARCHIVE_DIR" ]; then

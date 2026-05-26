@@ -166,6 +166,45 @@ cmd_init() {
       ;;
   esac
 
+  local management_file
+  management_file="$change_dir/management.md"
+
+  if [ ! -f "$management_file" ]; then
+    cat > "$management_file" <<'EOF'
+# Comet Management Record
+
+## Open / Initiating
+- [ ] 价值/Why 已说明
+- [ ] 成功标准已说明
+- [ ] stakeholders 或 constraints 已识别
+
+## Design / Planning
+- [ ] 交付方式已裁剪
+- [ ] 风险与关键假设已记录
+- [ ] 验收证据路径已定义
+
+## Build / Executing
+- [ ] execution mode 已选择
+- [ ] TDD / review / quality evidence 已记录
+- [ ] 当前阻塞项已清空或已有处理决策
+
+## Verify / Controlling
+- [ ] 偏差检查完成
+- [ ] 风险/变更影响已评估
+- [ ] control decision 已记录
+
+## Archive / Closing
+- [ ] 价值结果已总结
+- [ ] 经验沉淀已记录
+- [ ] delta spec sync / verification evidence / archive path 已确认
+
+## Monitoring Loop
+- [ ] 当前阶段事实已检查
+- [ ] 是否需要回退已判断
+- [ ] 若需回退，target_phase 与 rework_reason 已记录
+EOF
+  fi
+
   # Write .comet.yaml
   cat > "$yaml_file" <<EOF
 workflow: $workflow
@@ -180,6 +219,12 @@ verification_report: null
 branch_status: pending
 verified_at: null
 archived: false
+management_record: $management_file
+monitoring_status: clear
+control_decision: continue
+target_phase: null
+rework_reason: null
+iteration_count: 0
 EOF
 
   green "Initialized: $yaml_file (workflow=$workflow)"
@@ -224,12 +269,12 @@ cmd_set() {
 
   # Validate field name
   case "$field" in
-    workflow|phase|build_mode|isolation|verify_mode|verify_result|verification_report|branch_status|archived|design_doc|plan|verified_at|direct_override|build_command|verify_command)
+    workflow|phase|build_mode|isolation|verify_mode|verify_result|verification_report|branch_status|archived|design_doc|plan|verified_at|direct_override|build_command|verify_command|management_record|monitoring_status|control_decision|target_phase|rework_reason|iteration_count)
       # Valid field
       ;;
     *)
       red "ERROR: Unknown field: '$field'" >&2
-      red "Valid fields: workflow, phase, design_doc, plan, build_mode, isolation, verify_mode, verify_result, verification_report, branch_status, verified_at, archived, direct_override, build_command, verify_command" >&2
+      red "Valid fields: workflow, phase, design_doc, plan, build_mode, isolation, verify_mode, verify_result, verification_report, branch_status, verified_at, archived, direct_override, build_command, verify_command, management_record, monitoring_status, control_decision, target_phase, rework_reason, iteration_count" >&2
       exit 1
       ;;
   esac
@@ -263,7 +308,25 @@ cmd_set() {
     direct_override)
       validate_enum "$value" "true" "false"
       ;;
-    design_doc|plan|verification_report|verified_at|build_command|verify_command)
+    monitoring_status)
+      validate_enum "$value" "clear" "needs_decision" "blocked"
+      ;;
+    control_decision)
+      validate_enum "$value" "continue" "adjust-current" "return-open" "return-design" "return-build" "return-verify" "stop"
+      ;;
+    target_phase)
+      validate_enum "$value" "null" "open" "design" "build" "verify"
+      ;;
+    rework_reason)
+      validate_enum "$value" "null" "scope-gap" "planning-gap" "execution-gap" "verification-gap" "value-gap" "risk-change" "stakeholder-change"
+      ;;
+    iteration_count)
+      if [[ ! "$value" =~ ^[0-9]+$ ]]; then
+        red "ERROR: iteration_count must be a non-negative integer, got '$value'" >&2
+        exit 1
+      fi
+      ;;
+    design_doc|plan|verification_report|verified_at|build_command|verify_command|management_record)
       # No validation for path fields, date fields, or project command strings
       ;;
   esac
@@ -337,12 +400,54 @@ require_build_decisions() {
   fi
 }
 
+increment_iteration() {
+  local change_name="$1"
+  local count
+  count=$(cmd_get "$change_name" "iteration_count" 2>/dev/null || true)
+  if [[ ! "$count" =~ ^[0-9]+$ ]]; then
+    count=0
+  fi
+  cmd_set "$change_name" iteration_count "$((count + 1))"
+}
+
+apply_monitor_return() {
+  local change_name="$1"
+  local target_phase="$2"
+  local expected_decision="$3"
+  local decision recorded_target reason
+
+  decision=$(cmd_get "$change_name" "control_decision" 2>/dev/null || true)
+  recorded_target=$(cmd_get "$change_name" "target_phase" 2>/dev/null || true)
+  reason=$(cmd_get "$change_name" "rework_reason" 2>/dev/null || true)
+
+  if [ "$decision" != "$expected_decision" ]; then
+    red "ERROR: Cannot return to '$target_phase': control_decision must be '$expected_decision', got '${decision:-null}'" >&2
+    exit 1
+  fi
+  if [ "$recorded_target" != "$target_phase" ]; then
+    red "ERROR: Cannot return to '$target_phase': target_phase must be '$target_phase', got '${recorded_target:-null}'" >&2
+    exit 1
+  fi
+  if [ -z "$reason" ] || [ "$reason" = "null" ]; then
+    red "ERROR: Cannot return to '$target_phase': rework_reason must be recorded" >&2
+    exit 1
+  fi
+
+  cmd_set "$change_name" phase "$target_phase"
+  cmd_set "$change_name" verify_result pending
+  cmd_set "$change_name" branch_status pending
+  cmd_set "$change_name" monitoring_status clear
+  cmd_set "$change_name" control_decision continue
+  cmd_set "$change_name" target_phase null
+  increment_iteration "$change_name"
+}
+
 cmd_transition() {
   local change_name="$1"
   local event="$2"
 
   validate_change_name "$change_name"
-  validate_enum "$event" "open-complete" "design-complete" "build-complete" "verify-pass" "verify-fail" "archived"
+  validate_enum "$event" "open-complete" "design-complete" "build-complete" "verify-pass" "verify-fail" "monitor-return-open" "monitor-return-design" "monitor-return-build" "monitor-return-verify" "archived"
 
   case "$event" in
     open-complete)
@@ -379,6 +484,18 @@ cmd_transition() {
       cmd_set "$change_name" verify_result fail
       cmd_set "$change_name" phase build
       cmd_set "$change_name" branch_status pending
+      ;;
+    monitor-return-open)
+      apply_monitor_return "$change_name" "open" "return-open"
+      ;;
+    monitor-return-design)
+      apply_monitor_return "$change_name" "design" "return-design"
+      ;;
+    monitor-return-build)
+      apply_monitor_return "$change_name" "build" "return-build"
+      ;;
+    monitor-return-verify)
+      apply_monitor_return "$change_name" "verify" "return-verify"
       ;;
     archived)
       require_phase "$change_name" "archive"
@@ -640,7 +757,7 @@ case "$SUBCOMMAND" in
   transition)
     if [ $# -lt 2 ]; then
       red "Usage: comet-state.sh transition <change-name> <event>" >&2
-      red "Events: open-complete, design-complete, build-complete, verify-pass, verify-fail, archived" >&2
+      red "Events: open-complete, design-complete, build-complete, verify-pass, verify-fail, monitor-return-open, monitor-return-design, monitor-return-build, monitor-return-verify, archived" >&2
       exit 1
     fi
     cmd_transition "$@"

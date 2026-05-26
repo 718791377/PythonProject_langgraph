@@ -118,10 +118,32 @@ After the skill loads, follow its guidance to complete. Branch handling options:
 - All tests pass
 - No hardcoded secrets or security issues
 
+### 4. Management Checklist and Monitoring Return
+
+Before running the verify guard, update `openspec/changes/<name>/management.md`:
+
+- [ ] Mark variance check as checked.
+- [ ] Mark risk/change impact assessment as checked.
+- [ ] Mark control decision as checked.
+- [ ] Mark Monitoring current facts and return/no-return decision as checked.
+
+If verification finds earlier evidence is incomplete, do not pass verification. Record the appropriate return decision and use a return transition:
+
+```bash
+bash "$COMET_STATE" set <name> monitoring_status blocked
+bash "$COMET_STATE" set <name> control_decision return-build
+bash "$COMET_STATE" set <name> target_phase build
+bash "$COMET_STATE" set <name> rework_reason execution-gap
+bash "$COMET_STATE" transition <name> monitor-return-build
+```
+
+Use `return-design` for planning/design gaps and `return-open` for value or stakeholder gaps.
+
 ## Exit Conditions
 
 - Verification report passed
 - Branch handled
+- Verify management checklist and Monitoring checklist are checked in `management.md`
 - **Phase guard**: Run `bash "$COMET_GUARD" <change-name> verify --apply`; after all PASS, it uses `comet-state transition verify-pass` to advance to `phase: archive`
 
 After verification and branch handling are complete, run guard to auto-transition:

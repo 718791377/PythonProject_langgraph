@@ -160,6 +160,12 @@ verification_report: null
 branch_status: pending
 verified_at: null
 archived: false
+management_record: openspec/changes/<name>/management.md
+monitoring_status: clear
+control_decision: continue
+target_phase: null
+rework_reason: null
+iteration_count: 0
 ```
 
 | Field | Meaning |
@@ -176,6 +182,23 @@ archived: false
 | `branch_status` | `pending` or `handled`; set to `handled` after branch handling completes |
 | `verified_at` | Verification pass time, can be empty |
 | `archived` | Whether change is archived |
+| `management_record` | Per-change management checklist evidence file, normally `openspec/changes/<name>/management.md` |
+| `monitoring_status` | Cross-cutting monitoring state: `clear`, `needs_decision`, or `blocked` |
+| `control_decision` | Monitoring decision: `continue`, `adjust-current`, `return-open`, `return-design`, `return-build`, `return-verify`, or `stop` |
+| `target_phase` | Return target phase when `control_decision=return-*` |
+| `rework_reason` | Return reason such as `scope-gap`, `planning-gap`, `execution-gap`, `verification-gap`, `value-gap`, `risk-change`, or `stakeholder-change` |
+| `iteration_count` | Number of Monitoring-driven return iterations |
+
+Management checklist evidence:
+
+- Open requires checked value/why, success criteria, and stakeholders or constraints.
+- Design requires checked delivery tailoring, risks/assumptions, and acceptance evidence path.
+- Build requires checked execution mode, quality evidence, and blocker decision.
+- Verify requires checked variance review, risk/change impact, and control decision.
+- Archive requires checked value outcome, lessons learned, and archive/sync evidence.
+- Monitoring requires current facts and return/no-return decision on every forward transition.
+
+If Monitoring finds that an earlier focus area is incomplete, set `control_decision=return-open|return-design|return-build|return-verify`, set `target_phase`, set a non-null `rework_reason`, then run `bash "$COMET_STATE" transition <name> monitor-return-<phase>`. This is an adaptive/hybrid rework loop, not a sixth Comet phase.
 
 Optional fields:
 
@@ -189,6 +212,8 @@ State-machine hard constraints:
 - Before `build → verify`, `isolation` must be `branch` or `worktree`
 - Before `build → verify`, `build_mode` must be selected
 - `build_mode: direct` is allowed by default only for `hotfix` / `tweak`; full workflow requires `direct_override: true`
+- Before every forward transition, the current phase management checklist and Monitoring checklist must be checked.
+- Forward transitions require `monitoring_status: clear` and `control_decision: continue`; return decisions must use the matching `monitor-return-*` transition.
 - These constraints are enforced by both `comet-guard.sh build --apply` and `comet-state.sh transition <name> build-complete`
 
 ### Script Location
@@ -222,6 +247,10 @@ bash "$COMET_STATE" transition <change-name> design-complete
 bash "$COMET_STATE" transition <change-name> build-complete
 bash "$COMET_STATE" transition <change-name> verify-pass
 bash "$COMET_STATE" transition <change-name> verify-fail
+bash "$COMET_STATE" transition <change-name> monitor-return-open
+bash "$COMET_STATE" transition <change-name> monitor-return-design
+bash "$COMET_STATE" transition <change-name> monitor-return-build
+bash "$COMET_STATE" transition <change-name> monitor-return-verify
 bash "$COMET_STATE" transition <archive-name> archived
 ```
 

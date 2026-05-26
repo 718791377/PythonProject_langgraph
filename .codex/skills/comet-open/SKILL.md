@@ -62,9 +62,21 @@ Confirm the three documents have complete content:
 - **design.md**: high-level architectural decisions, solution selection, data flow
 - **tasks.md**: task list, each task has a clear description
 
+### 5. Management Checklist
+
+Before running the phase guard, update `openspec/changes/<name>/management.md`:
+
+- [ ] Mark Open value/why evidence as checked.
+- [ ] Mark success criteria evidence as checked.
+- [ ] Mark stakeholders or constraints evidence as checked.
+- [ ] Mark Monitoring current facts and return/no-return decision as checked.
+
+If this phase discovers that the change value or stakeholders are still unclear, keep the phase at `open` and do not run `open --apply`.
+
 ## Exit Conditions
 
 - proposal.md, design.md, and tasks.md are all created with complete content
+- Open management checklist and Monitoring checklist are checked in `management.md`
 - **Phase guard**: Run `bash "$COMET_GUARD" <change-name> open --apply`; after all PASS, state automatically advances to the next phase
 
 You must use `--apply` before exiting. Otherwise `.comet.yaml` stays at `phase: open`, and the next phase entry check will fail.

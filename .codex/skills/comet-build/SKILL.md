@@ -160,6 +160,25 @@ Build is the longest phase and may span many tasks. To support resume after cont
 - **After context compaction**: read `.comet.yaml` to confirm the phase is still build, read the plan header `base-ref`, then read tasks.md to find the next unchecked task
 - **Long task split**: if a single task exceeds 200 lines of code changes, consider splitting it into multiple subtasks and commits
 
+### 7. Management Checklist and Monitoring Return
+
+Before running the build guard, update `openspec/changes/<name>/management.md`:
+
+- [ ] Mark execution mode as checked.
+- [ ] Mark TDD / review / quality evidence as checked.
+- [ ] Mark blockers cleared or decided as checked.
+- [ ] Mark Monitoring current facts and return/no-return decision as checked.
+
+If implementation reveals a planning gap, design gap, or value gap, do not force the build forward. Record a return decision and use the matching return transition, for example:
+
+```bash
+bash "$COMET_STATE" set <name> monitoring_status blocked
+bash "$COMET_STATE" set <name> control_decision return-design
+bash "$COMET_STATE" set <name> target_phase design
+bash "$COMET_STATE" set <name> rework_reason planning-gap
+bash "$COMET_STATE" transition <name> monitor-return-design
+```
+
 ## Exit Conditions
 
 - All tasks.md checked
@@ -167,6 +186,7 @@ Build is the longest phase and may span many tasks. To support resume after cont
 - Project-specific build/tests explicitly run and pass; do not rely only on guard auto-detection
 - `isolation` has been written as `branch` or `worktree`
 - `build_mode` has been written as `subagent-driven-development`, `executing-plans`, or `direct` with explicit override
+- Build management checklist and Monitoring checklist are checked in `management.md`
 - **Phase guard**: Run `bash "$COMET_GUARD" <change-name> build --apply`; after all PASS, state advances to `phase: verify`
 
 Guard reads project command configuration first:
