@@ -1,16 +1,31 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.19
+version: 0.20
 status: active
 owner: codex-orchestration
-date: 2026-05-25
+date: 2026-05-26
 ---
 
 # 自动协同路由强制化实施计划
 
+## Comet 重构说明与阅读路径
+
+本次 `refactor-automatic-routing-plan-comet` 是 Comet tweak 级文档重构：它只提升本文档的结构、阅读路径和 Phase 4 后续实施入口清晰度，不新增 runtime checker，不改变已归档 Phase 0-3 的完成结论，也不构成 durable team、persistent team 或 native expert 已运行的证据。
+
+阅读与维护时按以下分层处理：
+
+| 分层 | 主要章节 | 用途 | 不得误用为 |
+| --- | --- | --- | --- |
+| 当前状态 | `Active 状态说明`、第 0 节、第 21 节 | 判断 baseline 是否仍 active、哪些历史实施包已完成 | 新的 runtime 运行证据 |
+| 硬规则 | 第 1-19 节、第 26-28 节 | 判断 activation trace、expert、durable workflow、persistent team 与 LangGraph/backend 的语义边界 | 每个任务都必须启动团队的命令 |
+| 后续实施 | 第 20 节 Phase 4 | 冻结未来 `enforce-prompt-independent-collaboration-parity` 的实施入口、文件地图、过程组、任务和验收矩阵 | Phase 4 已完成声明 |
+| 验证与风险 | 第 22-25 节 | 维护 checker/test/evidence 映射、风险、非目标与验收标准 | 跳过 OpenSpec/local gate/local MR review 的理由 |
+
+执行者默认从本节开始，再跳到第 20 节的 Phase 4 摘要；只有需要追溯历史完成证据时才阅读全文第 0 节与第 21-25 节。若终端显示中文乱码，应重新用 UTF-8 读取源文件，不得把乱码复制回仓库。
+
 ## Active 状态说明
 
-本文档是自动协同路由强制化的 active baseline。`status: active` 表示它仍然是当前与未来会话采用的规则和验收清单；它本身不是完成声明。
+本文档是自动协同路由强制化的 active baseline。`status: active` 表示它仍然是当前与未来会话采用的规则和验收清单；它本身不是完成声明，也不是任何一次具体 expert/durable/persistent runtime 已运行的证据。
 
 截至 2026-05-15，本文档最初规划的 enforcement 实施包已经在本地通过下方第 0 节列出的 OpenSpec changes 完成并归档。未来如果发现新的回归或缺口，应基于这个 active baseline 新开一个有边界的小步 change，而不是重新打开已经归档的实施切片。
 
@@ -21,6 +36,14 @@ date: 2026-05-25
 当前本地结论：本计划在已确认的仓库 source-of-truth surfaces、生成式用户级模板、脚本化 policy guards 与回归测试层面已经完成。本文档继续保持 active，是因为它仍然定义默认行为和后续工作必须保持的验收标准。
 
 当前完成证据包括：
+
+| 状态域 | 当前结论 | 维护动作 |
+| --- | --- | --- |
+| Phase 0-3 baseline | 已完成并归档 | 后续只做回归修复或文档维护，不重开历史切片 |
+| Phase 4 parity/evidenceguard | planned follow-up | 用固定 change id `enforce-prompt-independent-collaboration-parity` 新开实施包 |
+| LangGraph backend | ready/default backend 可报告 | 不等同于 persistent team running |
+| durable/persistent team | 阈值门控 | 只有 selector、manifest、heartbeat、lifecycle、close/absorb 等证据齐全时才可声明运行或完成 |
+| 本次 Comet 重构 | documentation-only tweak | 只提交文档结构与 Comet/OpenSpec trace，不发布远程 |
 
 - active OpenSpec changes：无（本次复核时 `openspec list --json` 返回空 change 列表）；
 - 稳定 policy 与 startup surfaces：已更新 `AGENTS.md`、`docs_bilingual/project_startup_summary.*`、`docs_bilingual/governance/codex_user_level_orchestration_activation_policy.*` 以及相关 OpenSpec stable specs；
@@ -611,6 +634,18 @@ experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 ### Phase 4 - 提示词无关协同一致性硬化 - status: planned follow-up
 
 Phase 4 不重新打开 Phase 0-3 已完成的 baseline；它只处理 2026-05-24 复盘暴露的新缺口。 原独立 Phase 4 子计划已合并到本节并删除，本文是 Phase 4 的唯一 implementation-plan source of truth。
+
+Phase 4 执行摘要：
+
+| 项目 | 决定 |
+| --- | --- |
+| 未来 change id | `enforce-prompt-independent-collaboration-parity` |
+| 目标 | 证明自动协同路由不依赖用户是否写了“experts / durable_team / persistent team”这类短语 |
+| 必须新增的证据面 | prompt-independent fixtures、cold-start read-order ledger、durable/persistent evidenceguard、expert lifecycle JSONL、LangGraph stale-running release checker |
+| 关键非目标 | 不把 skills/profile 当 native experts；不在 startup 自动拉团队；不把 backend ready 当 team running；不把本计划当运行证据 |
+| 验收出口 | 新检查器接入 `tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json`，并通过 local gate 与 local MR review |
+
+本次 Comet 文档重构只增加上述阅读入口和边界提示；它没有执行 Phase 4 的 checker、fixtures 或 runtime 改造。
 
 #### 当前会话发现
 
