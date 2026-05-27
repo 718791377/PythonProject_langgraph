@@ -429,3 +429,13 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [x] 预期 checker 证据：`tools/check_openspec_comet_superpowers_policy.py` 和 `test/run_openspec_guard_json.test.py` 应在根 Comet skill 丢失回退调度指令时失败。
 - [x] 验收证据必须包含 Comet/Superpowers policy checker、定向 guard fixture 测试、implementation-plan rules、pre-commit update/archive review、local CI 和 local MR review。
 - [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。
+
+## 2026-05-27 Runtime 测试证据治理包
+
+- [x] 本地执行范围先从这次 `docs_bilingual` 治理包开始，再修改定向 runtime 测试。
+- [x] 范围：补强 Monitoring 回退事件、负向回退决策校验和重复 `iteration_count` 递增的任务级证据。
+- [x] 本批次归类为 test-plus-docs 实施；不改变 Comet runtime shell 行为、治理 policy 或稳定 OpenSpec 需求。
+- [x] 本批次不需要派生更新 `openspec/` 或 `docs/`，因为它只用更细测试证明已经定义的 runtime 行为。
+- [x] 预期测试文件：`test/comet_runtime_management_flow.test.py`。
+- [x] 验收证据必须包含定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、local CI 和 local MR review。
+- [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。

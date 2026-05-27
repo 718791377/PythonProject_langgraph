@@ -429,3 +429,13 @@ Tests:
 - [x] Expected checker evidence: `tools/check_openspec_comet_superpowers_policy.py` and `test/run_openspec_guard_json.test.py` should fail if the root Comet skill loses return-dispatch instructions.
 - [x] Acceptance evidence must include the Comet/Superpowers policy checker, targeted guard fixture tests, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
 - [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
+
+## 2026-05-27 Runtime Test Evidence Governance Package
+
+- [x] This local execution range starts with this `docs_bilingual` package before changing targeted runtime tests.
+- [x] Scope: strengthen task-level evidence for Monitoring return events, negative return-decision validation, and repeated `iteration_count` increments.
+- [x] This batch is classified as test-plus-docs implementation; it does not change Comet runtime shell behavior, policy text, or stable OpenSpec requirements.
+- [x] No derived `openspec/` or `docs/` update is needed because this package only proves already-defined runtime behavior with more granular tests.
+- [x] Expected test file: `test/comet_runtime_management_flow.test.py`.
+- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
+- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
