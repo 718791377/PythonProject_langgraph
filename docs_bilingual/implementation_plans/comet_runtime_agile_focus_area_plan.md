@@ -390,3 +390,11 @@ Tests:
 - [x] Expected runtime files: `.codex/skills/comet/scripts/comet-state.sh`, `.codex/skills/comet/scripts/comet-guard.sh`, and `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
 - [x] Expected evidence files: `test/comet_runtime_management_flow.test.py` and `tools/ci/ci_test_manifest.json`.
 - [x] Acceptance evidence must include targeted Comet runtime tests, the OpenSpec Comet/Superpowers policy checker, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
+
+## 2026-05-27 Local Execution Governance Package
+
+- [x] This local execution range starts with this `docs_bilingual` package before runtime script and test changes.
+- [x] Scope: tighten Comet runtime Monitoring gates for forward transitions, guard diagnostics, archive closing labels, and checker fixtures.
+- [x] No derived `openspec/` or `docs/` update is needed in this package because the stable policy and spec already define the management focus-area contract.
+- [x] The next commit may modify runtime scripts, targeted tests, and the Comet/Superpowers policy checker fixture only.
+- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.

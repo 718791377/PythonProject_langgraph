@@ -390,3 +390,11 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [x] 预期 runtime 文件：`.codex/skills/comet/scripts/comet-state.sh`、`.codex/skills/comet/scripts/comet-guard.sh`、`.codex/skills/comet/scripts/comet-yaml-validate.sh`。
 - [x] 预期证据文件：`test/comet_runtime_management_flow.test.py` 与 `tools/ci/ci_test_manifest.json`。
 - [x] 验收证据必须包括定向 Comet runtime 测试、OpenSpec Comet/Superpowers policy checker、implementation-plan rules、pre-commit update/archive review、local CI 与 local MR review。
+
+## 2026-05-27 本地执行治理包
+
+- [x] 本地执行范围先以这次 `docs_bilingual` 治理包开头，再进入 runtime 脚本和测试修改。
+- [x] 范围：收紧 Comet runtime 的 Monitoring 前进门禁、guard 诊断、archive closing label 和 checker fixture。
+- [x] 本治理包不需要派生 `openspec/` 或 `docs/` 更新，因为稳定 policy 与 spec 已经定义管理关注领域契约。
+- [x] 下一次提交可以只修改 runtime 脚本、定向测试和 Comet/Superpowers policy checker fixture。
+- [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。
