@@ -371,14 +371,31 @@ documents:
                 ]
             ),
         )
-        self.write_file(root, ".codex/skills/comet/SKILL.md", "management_record\nmonitor-return-open\nadaptive/hybrid rework loop\n")
-        self.write_file(root, ".codex/skills/comet-open/SKILL.md", "Management Checklist\n")
-        self.write_file(root, ".codex/skills/comet-design/SKILL.md", "monitor-return-design\n")
-        self.write_file(root, ".codex/skills/comet-build/SKILL.md", "monitor-return-build\n")
-        self.write_file(root, ".codex/skills/comet-verify/SKILL.md", "monitor-return-verify\n")
-        self.write_file(root, ".codex/skills/comet-archive/SKILL.md", "Archive management checklist\n")
-        self.write_file(root, ".codex/skills/comet-hotfix/SKILL.md", "Management checklist evidence\n")
-        self.write_file(root, ".codex/skills/comet-tweak/SKILL.md", "Management checklist evidence\n")
+        adaptive_skill_terms = "\n".join(
+            [
+                "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+                "`monitoring_status=clear`",
+                "`control_decision=continue`",
+                "do not force waterfall progression",
+                "monitor-return-open",
+                "monitor-return-design",
+                "monitor-return-build",
+                "monitor-return-verify",
+                "refresh its matching management checklist",
+            ]
+        )
+        self.write_file(
+            root,
+            ".codex/skills/comet/SKILL.md",
+            "management_record\nmonitor-return-open\nadaptive/hybrid rework loop\nManagement Checklist\n",
+        )
+        self.write_file(root, ".codex/skills/comet-open/SKILL.md", "Open management checklist\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-design/SKILL.md", "Design management checklist\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-build/SKILL.md", "Build management checklist\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-verify/SKILL.md", "Verify management checklist\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-archive/SKILL.md", "Archive management checklist\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-hotfix/SKILL.md", "Management checklist evidence\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-tweak/SKILL.md", "Management checklist evidence\n" + adaptive_skill_terms)
 
     def run_comet_policy_check(self, root: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -420,6 +437,29 @@ documents:
         self.assertFalse(payload["ok"])
         self.assertIn("Comet is the control layer", payload["missing_terms"]["english_policy"])
         self.assertTrue(any("English policy is missing required term" in error for error in payload["errors"]))
+
+    def test_comet_policy_missing_phase_skill_monitoring_term_fails(self) -> None:
+        root = self.make_root()
+        self.write_valid_surface(root)
+        skill_path = root / ".codex/skills/comet-build/SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+                "",
+            ),
+            encoding="utf-8",
+        )
+
+        result = self.run_comet_policy_check(root)
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertIn(
+            "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+            payload["missing_terms"]["phase_skills"][".codex/skills/comet-build/SKILL.md"],
+        )
+        self.assertTrue(any("Comet phase skill .codex/skills/comet-build/SKILL.md" in error for error in payload["errors"]))
 
     def test_comet_policy_missing_registry_entry_fails(self) -> None:
         root = self.make_root()

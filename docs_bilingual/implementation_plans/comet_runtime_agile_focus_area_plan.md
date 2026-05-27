@@ -409,3 +409,12 @@ Tests:
 - [x] Expected checker evidence: `tools/check_openspec_comet_superpowers_policy.py` and `test/run_openspec_guard_json.test.py` if aggregate guard fixture output changes.
 - [x] Acceptance evidence must include the Comet/Superpowers policy checker, implementation-plan rules, targeted guard fixture tests, pre-commit update/archive review, local CI, and local MR review.
 - [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
+
+## 2026-05-27 Skill Instruction Alignment Evidence
+
+- [x] Comet phase skills now state that Monitoring is cross-cutting and not a sixth Comet phase.
+- [x] Comet phase skills now state that forward progression requires `monitoring_status=clear` and `control_decision=continue`.
+- [x] Comet phase skills now include return routing for `monitor-return-open`, `monitor-return-design`, `monitor-return-build`, and `monitor-return-verify`.
+- [x] `tools/check_openspec_comet_superpowers_policy.py` now enforces per-phase skill instruction terms instead of only checking aggregate skill text.
+- [x] `test/run_openspec_guard_json.test.py` now fails when a phase skill loses the Monitoring control-loop instruction.
+- [x] Runtime state-machine behavior is unchanged in this batch; no derived `openspec/` or `docs/` update is required.

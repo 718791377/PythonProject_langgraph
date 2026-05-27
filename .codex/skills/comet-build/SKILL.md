@@ -179,6 +179,26 @@ bash "$COMET_STATE" set <name> rework_reason planning-gap
 bash "$COMET_STATE" transition <name> monitor-return-design
 ```
 
+
+### Adaptive Monitoring Control
+
+Monitoring is a cross-cutting focus area, not a sixth Comet phase; do not force waterfall progression when evidence shows an earlier focus area must change.
+
+Forward progression requires both:
+- `monitoring_status=clear`
+- `control_decision=continue`
+
+If Monitoring returns work, set `monitoring_status=blocked`, set the matching `control_decision`, `target_phase`, and non-null `rework_reason`, then run exactly one matching transition:
+
+| Decision | Transition event | Re-enter skill |
+| --- | --- | --- |
+| `return-open` | `monitor-return-open` | `comet-open` |
+| `return-design` | `monitor-return-design` | `comet-design` |
+| `return-build` | `monitor-return-build` | `comet-build` |
+| `return-verify` | `monitor-return-verify` | `comet-verify` |
+
+After the return transition, re-enter the target Comet phase and refresh its matching management checklist before moving forward again.
+
 ## Exit Conditions
 
 - All tasks.md checked
