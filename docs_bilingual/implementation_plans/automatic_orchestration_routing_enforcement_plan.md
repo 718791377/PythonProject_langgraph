@@ -345,7 +345,28 @@ python .\tools\run_openspec_guard.py --root .
 
 Commit message example: Chinese message in the zh-CN companion, equivalent to docs: pass automatic routing governance gates.
 
-### Task 5: Local CI, local MR review, and local main integration
+### Task 5: Expand checker unit tests in CI manifest coverage
+
+Scope:
+- Expand the manifest-registered orchestration test coverage for `tools/check_orchestration_collaboration_evidenceguard.py`.
+- Cover repository-mode success, fixture-mode success, evidence-mode failure cases for durable/persistent claims, expert lifecycle audit, and LangGraph release records.
+- Keep the coverage inside a test file already registered by `tools/ci/ci_test_manifest.json` when another active claim owns the CI manifest hotspot.
+
+Done when:
+- The manifest-registered test coverage validates both passing repository fixtures and failing evidence cases.
+- No write-ownership conflict is introduced on `tools/ci/ci_test_manifest.json`.
+- The checker remains callable through `tools/run_openspec_guard.py`.
+
+Validation:
+```powershell
+python test\check_orchestration_trace_evidence.test.py
+python .\tools\check_orchestration_collaboration_evidenceguard.py --root . --json
+python .\tools\run_openspec_guard.py --root .
+```
+
+Commit message example: Chinese message in the zh-CN companion, equivalent to test: expand orchestration collaboration evidenceguard coverage.
+
+### Task 6: Local CI, local MR review, and local main integration
 
 Scope:
 - Run local gate in the feature worktree.
@@ -373,7 +394,7 @@ Commit message example: Chinese message in the zh-CN companion, equivalent to do
 | --- | --- | --- |
 | P0 document restructure | User asks to rewrite this implementation plan | Bilingual document pair uses the new structure and validates locally |
 | P0 evidence contract freeze | This plan is complete | Evidence contracts are fixture-ready |
-| P1 checker implementation | User requests Phase 4 implementation | `tools/check_orchestration_collaboration_evidenceguard.py`, fixtures, CI wiring, safety registry, and OpenSpec/spec updates land |
+| P1 checker implementation | User requests Phase 4 implementation | `tools/check_orchestration_collaboration_evidenceguard.py`, fixtures, unit tests, CI wiring, safety registry, and OpenSpec/spec updates land |
 | P1 runtime integration | Checkers pass and runtime entry points exist | Activation trace, durable guard, expert lifecycle, and LangGraph release are auditable |
 
 ## 9. Validation plan
@@ -384,6 +405,7 @@ Base validation:
 git diff --check
 python .\tools\check_document_pair_policy.py --root . --json
 python .\tools\check_implementation_plan_rules.py --root . --json
+python test\check_orchestration_trace_evidence.test.py
 python .\tools\check_precommit_update_archive.py --root . --json
 python .\tools\run_openspec_guard.py --root .
 ```
@@ -402,6 +424,7 @@ Manual acceptance:
 - Section 7 can be handed to a worker without new decisions about files, tests, or commit boundaries.
 - The plan says "plan is not evidence".
 - The plan does not confuse ready, selected, running, and complete.
+- The collaboration evidenceguard checker is covered by manifest-registered unit tests without CI-manifest hotspot ownership conflict.
 
 ## 10. Rollback and cleanup
 
@@ -442,6 +465,7 @@ This P0 document restructure does not require runtime policy or checker edits. P
 - [ ] Task-level backlog exists, and every task has validation and commit example.
 - [ ] Readiness gates, validation plan, rollback, risks, and defaults exist.
 - [ ] English primary is ASCII-only.
+- [ ] `tools/check_orchestration_collaboration_evidenceguard.py` has CI-manifest-registered unit coverage.
 - [ ] Local commit and merge commit use Chinese.
 
 ## 14. References

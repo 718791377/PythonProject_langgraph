@@ -347,7 +347,29 @@ python .\tools\run_openspec_guard.py --root .
 
 提交示例：`文档：通过自动路由方案治理门禁`
 
-### Task 5：本地 CI、MR review 与本地 main 集成
+### Task 5：扩展 CI manifest 已登记的 checker 单元测试覆盖
+
+范围：
+- 扩展 `tools/check_orchestration_collaboration_evidenceguard.py` 的 manifest 已登记单元测试覆盖。
+- 覆盖 repository mode 成功、fixture mode 成功、durable/persistent claim、expert lifecycle audit 与 LangGraph release evidence 的失败用例。
+- 当另一个 active claim 已拥有 `tools/ci/ci_test_manifest.json` 热点文件时，把覆盖放入已登记测试文件，避免写入所有权冲突。
+
+完成标准：
+- manifest 已登记的测试覆盖同时验证通过的仓库 fixture 和失败的 evidence case。
+- 不引入 `tools/ci/ci_test_manifest.json` 的写入所有权冲突。
+- checker 仍然可通过 `tools/run_openspec_guard.py` 调用。
+
+验证：
+
+```powershell
+python test\check_orchestration_trace_evidence.test.py
+python .\tools\check_orchestration_collaboration_evidenceguard.py --root . --json
+python .\tools\run_openspec_guard.py --root .
+```
+
+提交示例：`测试：扩展协同证据守卫覆盖`
+
+### Task 6：本地 CI、MR review 与本地 main 集成
 
 范围：
 - 在 feature worktree 中完成本地 gate。
@@ -376,7 +398,7 @@ git merge-base --is-ancestor <feature-sha> main
 | --- | --- | --- |
 | P0 文档结构重构 | 用户要求重写 implementation plan | 双语文档新版结构完成，本地验证通过 |
 | P0 evidence contract freeze | 本方案完成 | evidence contracts 可直接生成 fixtures |
-| P1 checker implementation | 用户要求实现 Phase 4 | `tools/check_orchestration_collaboration_evidenceguard.py`、fixtures、CI wiring、safety registry 与 OpenSpec/spec updates 落地 |
+| P1 checker implementation | 用户要求实现 Phase 4 | `tools/check_orchestration_collaboration_evidenceguard.py`、fixtures、unit tests、CI wiring、safety registry 与 OpenSpec/spec updates 落地 |
 | P1 runtime integration | checker 通过且有 runtime 入口 | activation trace、durable guard、expert lifecycle、LangGraph release 均可审计 |
 
 ## 9. 验证计划
@@ -387,6 +409,7 @@ git merge-base --is-ancestor <feature-sha> main
 git diff --check
 python .\tools\check_document_pair_policy.py --root . --json
 python .\tools\check_implementation_plan_rules.py --root . --json
+python test\check_orchestration_trace_evidence.test.py
 python .\tools\check_precommit_update_archive.py --root . --json
 python .\tools\run_openspec_guard.py --root .
 ```
@@ -405,6 +428,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -S
 - 第 7 节任务可交给 worker 执行，无需重新决定文件、测试或提交边界。
 - 方案明确“计划不等于 evidence”。
 - 方案没有把 ready、selected、running、complete 混用。
+- 协同证据守卫 checker 已有 CI manifest 登记的单元测试覆盖，且没有 CI manifest 热点所有权冲突。
 
 ## 10. Rollback 与清理
 
@@ -445,6 +469,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -S
 - [ ] 有任务级 Backlog，且每个任务有验证与提交示例。
 - [ ] 有 readiness gates、验证计划、rollback、风险与默认决策。
 - [ ] 英文 primary 是 ASCII-only。
+- [ ] `tools/check_orchestration_collaboration_evidenceguard.py` 已有 CI manifest 登记的单元测试覆盖。
 - [ ] 本地 commit 和 merge commit 使用中文。
 
 ## 14. 参考源
