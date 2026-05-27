@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "case_type": "activation_parity",
+  "case_id": "doc_update_without_collaboration_phrase",
+  "parity_group": "doc_update",
+  "collaboration_phrase_present": false,
+  "prompt": "Update this implementation plan and merge it into local main.",
+  "input": {
+    "task_phase": "verify-accept",
+    "frozen_plan": true,
+    "execution_slices": 1,
+    "explicit_directive": null
+  },
+  "expected": {
+    "phase": "verify-accept",
+    "capability_chain": "subagent:auto > omx:on > langgraph:on",
+    "backend_default": "langgraph",
+    "backend_ready": "true",
+    "experts": "none",
+    "durable_workflow": "not_needed",
+    "persistent_team": "not_needed",
+    "why": "threshold_not_met:single_execution_slice for a single low-risk document update."
+  }
+}

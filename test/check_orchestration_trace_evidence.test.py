@@ -215,5 +215,87 @@ class OrchestrationTraceEvidenceCheckTest(unittest.TestCase):
         self.assertTrue(payload["ok"], payload["errors"])
 
 
+COLLAB_SCRIPT_PATH = REPO_ROOT / "tools" / "check_orchestration_collaboration_evidenceguard.py"
+collab_spec = importlib.util.spec_from_file_location(
+    "check_orchestration_collaboration_evidenceguard",
+    COLLAB_SCRIPT_PATH,
+)
+collab_module = importlib.util.module_from_spec(collab_spec)
+assert collab_spec and collab_spec.loader
+collab_spec.loader.exec_module(collab_module)
+
+
+class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
+    maxDiff = None
+
+    def make_root(self, name: str) -> Path:
+        root = REPO_ROOT / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}"
+        root.mkdir(parents=True, exist_ok=True)
+        self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
+        return root
+
+    def write_json(self, path: Path, payload: dict) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    def test_repository_collaboration_evidenceguard_surfaces_pass(self) -> None:
+        payload = collab_module.run_repository_check(REPO_ROOT)
+        self.assertTrue(payload["ok"], payload["errors"])
+
+    def test_prompt_independent_fixture_parity_passes(self) -> None:
+        payload = collab_module.run_fixture_check(REPO_ROOT)
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertGreaterEqual(payload["counts"]["checked_cases"], 6)
+
+    def test_explicit_directive_without_threshold_requires_blocker(self) -> None:
+        root = self.make_root("collab-directive-no-threshold")
+        path = root / "evidence.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "activation_parity",
+                "case_id": "explicit",
+                "parity_group": "explicit",
+                "collaboration_phrase_present": False,
+                "prompt": "Use LangGraph for this single document edit.",
+                "input": {"frozen_plan": False, "execution_slices": 1, "explicit_directive": "langgraph"},
+                "expected": {
+                    "phase": "verify-accept",
+                    "capability_chain": "subagent:auto > omx:on > langgraph:on",
+                    "backend_default": "langgraph",
+                    "backend_ready": "true",
+                    "experts": "none",
+                    "durable_workflow": "candidate",
+                    "persistent_team": "candidate",
+                    "why": "using langgraph",
+                },
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("without thresholds" in error for error in payload["errors"]), payload["errors"])
+
+    def test_langgraph_completed_state_must_release_running(self) -> None:
+        root = self.make_root("collab-langgraph-release")
+        path = root / "lg.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "langgraph_state_release",
+                "task_completed": True,
+                "thread_state": {"status": "running", "completed_at": "2026-05-27T00:00:00Z"},
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("status=running" in error for error in payload["errors"]), payload["errors"])
+
+
 if __name__ == "__main__":
     unittest.main()

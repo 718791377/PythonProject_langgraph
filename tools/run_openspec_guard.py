@@ -118,6 +118,7 @@ def main() -> int:
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
     delegation_wait_discipline_evidence_script = root / "tools" / "check_delegation_wait_discipline_evidence.py"
     durable_artifact_state_surfaces_script = root / "tools" / "check_durable_artifact_state_surfaces.py"
+    orchestration_collaboration_evidenceguard_script = root / "tools" / "check_orchestration_collaboration_evidenceguard.py"
     leader_session_scope_evidence_script = root / "tools" / "check_leader_session_scope_evidence.py"
     capability_switch_chain_script = root / "tools" / "check_capability_switch_chain.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
@@ -189,6 +190,8 @@ def main() -> int:
         raise SystemExit(f"Missing delegation/wait discipline evidence check script: {delegation_wait_discipline_evidence_script}")
     if not durable_artifact_state_surfaces_script.exists():
         raise SystemExit(f"Missing durable artifact/state-surface evidence check script: {durable_artifact_state_surfaces_script}")
+    if not orchestration_collaboration_evidenceguard_script.exists():
+        raise SystemExit(f"Missing orchestration collaboration evidenceguard script: {orchestration_collaboration_evidenceguard_script}")
     if not leader_session_scope_evidence_script.exists():
         raise SystemExit(f"Missing leader/session scope evidence check script: {leader_session_scope_evidence_script}")
     if not capability_switch_chain_script.exists():
@@ -388,6 +391,11 @@ def main() -> int:
                 "check_durable_artifact_state_surfaces",
                 [str(python_exe), str(durable_artifact_state_surfaces_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during durable artifact/state-surface evidence verification.",
+            ),
+            (
+                "check_orchestration_collaboration_evidenceguard",
+                [str(python_exe), str(orchestration_collaboration_evidenceguard_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during orchestration collaboration evidenceguard verification.",
             ),
             (
                 "check_leader_session_scope_evidence",
@@ -701,6 +709,11 @@ def main() -> int:
         [str(python_exe), str(durable_artifact_state_surfaces_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during durable artifact/state-surface evidence verification.",
+    )
+    run_checked(
+        [str(python_exe), str(orchestration_collaboration_evidenceguard_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during orchestration collaboration evidenceguard verification.",
     )
 
     run_checked(

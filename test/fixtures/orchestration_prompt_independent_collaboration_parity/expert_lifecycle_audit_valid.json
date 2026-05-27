@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "case_type": "expert_lifecycle_audit",
+  "case_id": "expert_lifecycle_audit_valid",
+  "total_wait_bound_seconds": 180,
+  "events": [
+    {
+      "event": "spawn",
+      "role": "verifier",
+      "task_summary": "validate evidenceguard implementation"
+    },
+    {
+      "event": "wait",
+      "wait_seconds": 30
+    },
+    {
+      "event": "result",
+      "summary": "ok"
+    },
+    {
+      "event": "absorbed",
+      "leader_decision": "accepted"
+    },
+    {
+      "event": "close",
+      "retention_policy": "close"
+    }
+  ]
+}

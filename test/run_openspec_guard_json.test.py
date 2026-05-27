@@ -41,6 +41,11 @@ GUARD_STEPS = [
     ("check_role_routing_directive_evidence", "check_role_routing_directive_evidence.py", "role_routing_directive_evidence"),
     ("check_delegation_wait_discipline_evidence", "check_delegation_wait_discipline_evidence.py", "delegation_wait_discipline_evidence"),
     ("check_durable_artifact_state_surfaces", "check_durable_artifact_state_surfaces.py", "durable_artifact_state_surfaces"),
+    (
+        "check_orchestration_collaboration_evidenceguard",
+        "check_orchestration_collaboration_evidenceguard.py",
+        "orchestration_collaboration_evidenceguard",
+    ),
     ("check_leader_session_scope_evidence", "check_leader_session_scope_evidence.py", "leader_session_scope_evidence"),
     ("check_capability_switch_chain", "check_capability_switch_chain.py", "capability_switch_chain"),
     ("check_windows_cleanup_output_control", "check_windows_cleanup_output_control.py", "windows_cleanup_output_control"),
@@ -137,6 +142,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["steps"][12]["step"], "check_skills_audit_output_retention")
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
         self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_orchestration_collaboration_evidenceguard", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:
         root = self.make_root("guard-json-fail")

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "case_type": "activation_parity",
+  "case_id": "explicit_omx_without_threshold",
+  "parity_group": "explicit_omx_single",
+  "collaboration_phrase_present": false,
+  "prompt": "Use omx for this single-file formatting fix.",
+  "input": {
+    "task_phase": "verify-accept",
+    "frozen_plan": false,
+    "execution_slices": 1,
+    "explicit_directive": "omx"
+  },
+  "expected": {
+    "phase": "verify-accept",
+    "capability_chain": "subagent:auto > omx:on > langgraph:on",
+    "backend_default": "langgraph",
+    "backend_ready": "true",
+    "experts": "none",
+    "durable_workflow": "blocked",
+    "persistent_team": "blocked",
+    "why": "threshold_not_met:no_frozen_plan and threshold_not_met:single_execution_slice for explicit omx directive."
+  }
+}

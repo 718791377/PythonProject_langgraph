@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "case_type": "cold_start_read_order",
+  "case_id": "cold_start_read_order_valid",
+  "trigger": "first_substantive_work",
+  "read_order": [
+    {
+      "order_index": 1,
+      "path": "docs_bilingual/project_startup_summary.md",
+      "decision": "read",
+      "read_mode": "full_text_utf8",
+      "needed_for_current_task": true,
+      "reason": "startup authority and read order"
+    }
+  ],
+  "summary_counts": {
+    "read": 1,
+    "skipped": 0
+  }
+}
