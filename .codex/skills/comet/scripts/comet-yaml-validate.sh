@@ -113,6 +113,7 @@ rework_reason=$(field_value "rework_reason")
 iteration_count=$(field_value "iteration_count")
 design_doc=$(field_value "design_doc")
 plan=$(field_value "plan")
+verification_report=$(field_value "verification_report")
 
 validate_enum "workflow"      "$workflow"      "full hotfix tweak"
 validate_enum "phase"         "$phase"          "open design build verify archive"
@@ -183,6 +184,12 @@ fi
 if [ -n "$plan" ] && [ "$plan" != "null" ]; then
   if [ ! -f "$plan" ]; then
     fail "plan='$plan' does not exist on disk"
+  fi
+fi
+
+if [ -n "$verification_report" ] && [ "$verification_report" != "null" ]; then
+  if [ ! -f "$verification_report" ]; then
+    fail "verification_report='$verification_report' does not exist on disk"
   fi
 fi
 

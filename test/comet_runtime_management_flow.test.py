@@ -104,7 +104,7 @@ class CometRuntimeManagementStaticTests(unittest.TestCase):
     def test_validator_declares_artifact_path_checks_and_unknown_key_warnings(self) -> None:
         text = read(VALIDATE_SCRIPT)
 
-        for field in ["design_doc", "plan", "management_record"]:
+        for field in ["design_doc", "plan", "verification_report", "management_record"]:
             self.assertIn(f"{field}='$", text)
             self.assertIn(f"{field}='${field}' does not exist on disk", text)
 
