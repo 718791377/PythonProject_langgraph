@@ -438,7 +438,7 @@ apply_monitor_return() {
   cmd_set "$change_name" branch_status pending
   cmd_set "$change_name" monitoring_status clear
   cmd_set "$change_name" control_decision continue
-  cmd_set "$change_name" target_phase null
+  # Preserve target_phase and rework_reason as durable evidence of the Monitoring return decision.
   increment_iteration "$change_name"
 }
 
