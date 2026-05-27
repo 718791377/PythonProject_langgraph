@@ -163,6 +163,21 @@ class CometRuntimeManagementBehaviorTests(unittest.TestCase):
         (change / "tasks.md").write_text("- [x] Done\n", encoding="utf-8")
         return change
 
+    def set_yaml_field_directly(self, root: Path, name: str, field: str, value: str) -> None:
+        yaml_path = root / "openspec" / "changes" / name / ".comet.yaml"
+        lines = yaml_path.read_text(encoding="utf-8").splitlines()
+        updated = []
+        found = False
+        for line in lines:
+            if line.startswith(f"{field}:"):
+                updated.append(f"{field}: {value}")
+                found = True
+            else:
+                updated.append(line)
+        if not found:
+            updated.append(f"{field}: {value}")
+        yaml_path.write_text("\n".join(updated) + "\n", encoding="utf-8")
+
     def test_init_creates_management_record_and_required_runtime_fields(self) -> None:
         with self.make_root() as temp:
             root = Path(temp)
@@ -223,6 +238,97 @@ class CometRuntimeManagementBehaviorTests(unittest.TestCase):
             self.assertIn("target_phase: design", yaml_text)
             self.assertIn("rework_reason: planning-gap", yaml_text)
             self.assertIn("iteration_count: 1", yaml_text)
+
+    def test_monitor_return_supports_all_targets_and_repeated_iterations(self) -> None:
+        with self.make_root() as temp:
+            root = Path(temp)
+            self.write_minimal_change(root, "demo")
+            self.run_bash(root, "comet-state.sh", "init", "demo", "full")
+
+            cases = [
+                ("monitor-return-open", "return-open", "open", "scope-gap", "1"),
+                ("monitor-return-design", "return-design", "design", "planning-gap", "2"),
+                ("monitor-return-build", "return-build", "build", "execution-gap", "3"),
+                ("monitor-return-verify", "return-verify", "verify", "verification-gap", "4"),
+            ]
+
+            for event, decision, target, reason, expected_count in cases:
+                for field, value in [
+                    ("control_decision", decision),
+                    ("target_phase", target),
+                    ("rework_reason", reason),
+                ]:
+                    self.assertEqual(self.run_bash(root, "comet-state.sh", "set", "demo", field, value).returncode, 0)
+
+                result = self.run_bash(root, "comet-state.sh", "transition", "demo", event)
+
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                yaml_text = (root / "openspec" / "changes" / "demo" / ".comet.yaml").read_text(encoding="utf-8")
+                self.assertIn(f"phase: {target}", yaml_text)
+                self.assertIn(f"target_phase: {target}", yaml_text)
+                self.assertIn(f"rework_reason: {reason}", yaml_text)
+                self.assertIn(f"iteration_count: {expected_count}", yaml_text)
+                self.assertIn("control_decision: continue", yaml_text)
+
+    def test_monitor_return_rejects_mismatched_decision_target_and_missing_reason(self) -> None:
+        with self.make_root() as temp:
+            root = Path(temp)
+            self.write_minimal_change(root, "demo")
+            self.run_bash(root, "comet-state.sh", "init", "demo", "full")
+
+            for field, value in [
+                ("control_decision", "return-open"),
+                ("target_phase", "design"),
+                ("rework_reason", "planning-gap"),
+            ]:
+                self.assertEqual(self.run_bash(root, "comet-state.sh", "set", "demo", field, value).returncode, 0)
+            result = self.run_bash(root, "comet-state.sh", "transition", "demo", "monitor-return-design")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("control_decision must be 'return-design'", result.stderr)
+
+            for field, value in [
+                ("control_decision", "return-design"),
+                ("target_phase", "build"),
+                ("rework_reason", "planning-gap"),
+            ]:
+                self.assertEqual(self.run_bash(root, "comet-state.sh", "set", "demo", field, value).returncode, 0)
+            result = self.run_bash(root, "comet-state.sh", "transition", "demo", "monitor-return-design")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("target_phase must be 'design'", result.stderr)
+
+            for field, value in [
+                ("control_decision", "return-design"),
+                ("target_phase", "design"),
+                ("rework_reason", "null"),
+            ]:
+                self.assertEqual(self.run_bash(root, "comet-state.sh", "set", "demo", field, value).returncode, 0)
+            result = self.run_bash(root, "comet-state.sh", "transition", "demo", "monitor-return-design")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("rework_reason must be recorded", result.stderr)
+
+    def test_validator_rejects_non_numeric_iteration_count(self) -> None:
+        with self.make_root() as temp:
+            root = Path(temp)
+            self.write_minimal_change(root, "demo")
+            self.run_bash(root, "comet-state.sh", "init", "demo", "full")
+            self.set_yaml_field_directly(root, "demo", "iteration_count", "not-a-number")
+
+            result = self.run_bash(root, "comet-yaml-validate.sh", "demo")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("iteration_count='not-a-number' is not a non-negative integer", result.stderr)
+
+    def test_guard_rejects_unchecked_open_management_checklist(self) -> None:
+        with self.make_root() as temp:
+            root = Path(temp)
+            self.write_minimal_change(root, "demo")
+            self.run_bash(root, "comet-state.sh", "init", "demo", "full")
+
+            result = self.run_bash(root, "comet-guard.sh", "demo", "open")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Missing management checklist section: Open / Initiating", result.stderr)
+            self.assertIn("Missing management checklist item: Value and why are stated.", result.stderr)
 
     def test_guard_accepts_english_management_template_for_open_gate(self) -> None:
         with self.make_root() as temp:
