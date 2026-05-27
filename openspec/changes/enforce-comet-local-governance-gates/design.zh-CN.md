@@ -7,6 +7,8 @@
 - 使用独立 checker 与 commit-msg hook 强制中文提交主题；当主题包含中文时仍允许 ASCII conventional prefix。
 - 复用既有 implementation-plan checker 执行 active-plan 规则，因为该脚本已经负责 registry 完整性。
 
+- 新增静态 local-flow checker，并把 `/plan` 后范围 checker 接入 local MR review。
+
 ## 验证
 - 单元测试覆盖文档对策略、提交语言和 active-plan 引用。
 - aggregate guard 运行新检查。

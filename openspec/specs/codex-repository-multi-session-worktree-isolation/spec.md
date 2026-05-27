@@ -566,3 +566,11 @@ Repository-local feature commits SHALL use commit subjects that contain Chinese 
 - **WHEN** a local feature commit subject is `docs: update governance rules`
 - **THEN** the commit-language checker SHALL fail
 - **AND** local MR review or the commit-msg hook SHALL require a Chinese subject before completion
+
+### Requirement: Complete local flow SHALL have a protected helper
+The repository SHALL provide `tools/complete_local_flow_to_remote_gate.py` as a dry-run-first helper for the complete local flow. In execute mode, the helper SHALL require a clean feature worktree and a clean primary `main` worktree, run local gate and local MR review, create a rollback backup ref, fast-forward local `main`, run the post-merge local gate, and stop before remote publication.
+
+#### Scenario: Implementation plan update is locally ready
+- **WHEN** an implementation-plan update has been committed on a clean feature branch
+- **THEN** the helper SHALL be able to show or execute the local flow through `git merge --ff-only <feature-branch>`
+- **AND** it SHALL NOT push GitLab, mutate GitLab MRs, or sync GitHub

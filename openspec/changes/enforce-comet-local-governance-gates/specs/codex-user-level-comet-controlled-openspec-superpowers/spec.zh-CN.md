@@ -16,3 +16,13 @@
 - **WHEN** `docs_bilingual/` 更新已经完整承载本地治理决策
 - **THEN** 会话不得仅因为 `docs_bilingual/` 变更就创建 `openspec/` 或 `docs/` artifacts
 - **AND** 额外 `openspec/` 或 `docs/` 文件必须由任务内容自身证明需要
+
+### Requirement: `/plan` 后治理流程必须由本地范围检查强制执行
+仓库必须保留脚本化的提交范围检查，用于 `/plan` 后的非文档执行。该检查要求包含非文档执行的提交范围中，第一条提交必须是 docs-only 本地治理包，并且必须先触达 `docs_bilingual/`。
+
+local MR review 必须在本地 `main` 集成前运行该范围检查。aggregate OpenSpec guard 必须运行静态 local-flow checker，确认范围 checker、完整本地流程 helper、治理文档和 CI 测试登记仍然接线完整。
+
+#### 场景：非文档执行分支跳过治理包
+- **WHEN** feature branch 包含非文档变更，且第一条提交没有更新 `docs_bilingual/`
+- **THEN** `tools/check_plan_exit_execution_governance.py` 必须对该范围失败
+- **AND** `tools/ci/local_mr_review.ps1` 必须阻止本地集成

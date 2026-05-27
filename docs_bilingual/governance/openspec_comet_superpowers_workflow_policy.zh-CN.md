@@ -63,6 +63,15 @@ Skills 仍然是 workflow instruction surfaces。Comet skill、OpenSpec skill、
 
 该治理包随后按仓库完整本地提交流程执行到本地 `main` 合入，并停在远端发布门。此规则不授权 GitLab push、GitLab MR 变更或 GitHub sync。
 
+脚本化执行约束：
+
+- `tools/check_plan_exit_execution_governance.py`：检查包含非文档执行的提交范围必须先以 docs-only 本地治理包开头，且第一包必须触达 `docs_bilingual/`。
+- `tools/complete_local_flow_to_remote_gate.py`：执行或预演从干净 feature branch 到 ff-only 合入本地 `main` 的完整本地提交流程，并在远端发布门前停止。
+- `tools/check_local_flow_scripted_enforcement.py`：校验本 policy、`完整提交流程.md` 和本地流程脚本持续存在并互相链接。
+- `tools/ci/local_mr_review.ps1`：在本地 MR review 中运行 `/plan` 后提交范围 checker，防止非文档执行绕过治理包。
+
+每次更新或创建 implementation plan 也适用同一套完整本地提交流程。方案对更新并提交后，默认本地动作不是停留在 feature branch 等待，而是把本地 integration package 完成到 local `main`，然后停在远端发布门。
+
 ## 4. 五阶段工作流
 
 完整 Comet 控制工作流是：

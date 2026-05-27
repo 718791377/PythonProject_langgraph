@@ -1,5 +1,5 @@
 name: enforce-comet-local-governance-gates
 status: active
 x_change_class: tooling
-x_archive_deferred_reason: null
-x_archive_follow_up: null
+x_archive_deferred_reason: scripted-local-flow-extension-awaits-integration
+x_archive_follow_up: archive-after-local-flow-scripted-enforcement-extension

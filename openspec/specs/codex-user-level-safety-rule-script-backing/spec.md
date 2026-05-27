@@ -72,3 +72,13 @@ The repository SHALL require any implementation plan referenced by an active Com
 - **AND** its `.comet.yaml` references a `docs_bilingual/implementation_plans/` file whose registry entry is not `active`
 - **THEN** the implementation-plan checker SHALL fail
 - **AND** it SHALL identify the change and plan that must be activated or replaced
+
+### Requirement: Post-plan and complete-local-flow rules SHALL be script-backed
+The repository SHALL register safety-rule script backing for both post-`/plan` execution governance and the complete local flow to the remote publication gate.
+
+The registry SHALL point to prompt reminders, executable script controls, aggregate guard steps, local MR review wiring, and tests for the local-flow checker surface.
+
+#### Scenario: Local-flow script backing is checked
+- **WHEN** `python tools/check_safety_rule_script_backing.py --root . --json` runs
+- **THEN** implemented rules SHALL exist for `post-plan-execution-governance-package` and `complete-local-flow-to-remote-gate`
+- **AND** `python tools/run_openspec_guard.py --root . --json` SHALL include `check_local_flow_scripted_enforcement`

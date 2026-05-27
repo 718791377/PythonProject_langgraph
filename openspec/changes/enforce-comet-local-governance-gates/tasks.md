@@ -8,6 +8,7 @@
 - [x] 2.2 Add Chinese commit-subject checker and commit-msg hook.
 - [x] 2.3 Extend implementation-plan rules for active Comet implementation references.
 - [x] 2.4 Register new checks in aggregate guard, local MR review, safety registry, and CI manifest.
+- [x] 2.5 Add explicit post-plan and complete-local-flow scripts/checkers.
 
 ## 3. Verification
 - [x] 3.1 Add unit tests for new and extended checks.

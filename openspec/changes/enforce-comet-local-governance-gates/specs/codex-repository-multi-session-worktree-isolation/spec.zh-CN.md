@@ -28,3 +28,11 @@
 - **WHEN** 本地 feature commit 主题为 `docs: update governance rules`
 - **THEN** commit-language checker 必须失败
 - **AND** local MR review 或 commit-msg hook 必须要求改为中文主题后才能完成
+
+### Requirement: 完整本地流程必须有受保护 helper
+仓库必须提供 `tools/complete_local_flow_to_remote_gate.py`，作为 dry-run 优先的完整本地流程 helper。execute 模式下，该 helper 必须要求 feature worktree 干净、主目录 `main` worktree 干净，运行 local gate 和 local MR review，创建 rollback backup ref，快进合入本地 `main`，运行合入后 local gate，并停在远端发布前。
+
+#### 场景：implementation plan 更新已本地 ready
+- **WHEN** implementation-plan 更新已经在干净 feature branch 上提交
+- **THEN** helper 必须能展示或执行直到 `git merge --ff-only <feature-branch>` 的本地流程
+- **AND** 不得 push GitLab、变更 GitLab MR 或同步 GitHub

@@ -27,3 +27,13 @@ local commit-language 规则要求 feature commit 主题包含中文；当主题
 - **AND** 其 `.comet.yaml` 引用的 `docs_bilingual/implementation_plans/` 文件在 registry 中不是 `active`
 - **THEN** implementation-plan checker 必须失败
 - **AND** 必须指出需要激活或替换的 change 与 plan
+
+### Requirement: `/plan` 后与完整本地流程规则必须脚本化
+仓库必须在 safety-rule script backing registry 中登记 `/plan` 后执行治理与执行到远端发布门的完整本地流程两类规则。
+
+registry 必须指向 prompt reminders、可执行脚本控制、aggregate guard 步骤、local MR review 接线，以及 local-flow checker 表面的测试。
+
+#### 场景：local-flow 脚本支撑被检查
+- **WHEN** `python tools/check_safety_rule_script_backing.py --root . --json` 运行
+- **THEN** 必须存在 `post-plan-execution-governance-package` 和 `complete-local-flow-to-remote-gate` 两条 implemented rules
+- **AND** `python tools/run_openspec_guard.py --root . --json` 必须包含 `check_local_flow_scripted_enforcement`

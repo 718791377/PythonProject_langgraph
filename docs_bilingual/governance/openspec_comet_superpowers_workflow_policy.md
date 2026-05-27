@@ -62,6 +62,15 @@ After the `docs_bilingual/` update is clear, derive any additional artifact need
 
 The package then follows the repository complete local commit flow through local `main` integration and stops at the remote publication gate. No GitLab push, GitLab MR mutation, or GitHub sync is authorized by this local package rule.
 
+Script-backed enforcement:
+
+- `tools/check_plan_exit_execution_governance.py` - checks that a range containing non-document execution starts with a docs-only local governance package and that the first package touches `docs_bilingual/`.
+- `tools/complete_local_flow_to_remote_gate.py` - executes or dry-runs the local flow from a clean feature branch through ff-only local `main` integration and stops before remote publication.
+- `tools/check_local_flow_scripted_enforcement.py` - verifies that this policy, the repository-root complete local flow document, and the local-flow scripts remain present and mutually linked.
+- `tools/ci/local_mr_review.ps1` - runs the post-plan range checker before local `main` integration so non-document execution cannot bypass the governance package.
+
+Implementation plan updates or creations are governed by the same complete local commit flow. After a plan pair is updated and committed, the default local action is not to wait on a feature branch; it is to finish the local integration package into local `main`, then stop at the remote publication gate.
+
 ## 4. Five-Phase Workflow
 
 The full Comet-controlled workflow is:

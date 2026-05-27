@@ -8,6 +8,7 @@
 - [x] 2.2 新增中文提交主题 checker 与 commit-msg hook。
 - [x] 2.3 扩展 implementation-plan 规则，检查 active Comet implementation references。
 - [x] 2.4 将新检查注册到 aggregate guard、local MR review、safety registry 和 CI manifest。
+- [x] 2.5 新增明确的 `/plan` 后与完整本地流程脚本/checker。
 
 ## 3. 验证
 - [x] 3.1 为新增和扩展检查增加单元测试。

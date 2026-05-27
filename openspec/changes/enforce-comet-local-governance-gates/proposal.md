@@ -10,6 +10,8 @@ The repository needs executable controls for the corrected Comet governance rule
 - Extend implementation-plan checks so Comet build/verify/archive phases require referenced implementation plans to be active.
 - Record stable OpenSpec requirements for the new governance and script controls.
 
+- Add explicit scripts/checkers for post-plan execution governance and complete local-flow-to-remote-gate behavior.
+
 ## Impact
 - Local feature branches get stricter checks before local integration.
 - Historical unchanged Markdown gaps remain baseline and do not block unrelated work.

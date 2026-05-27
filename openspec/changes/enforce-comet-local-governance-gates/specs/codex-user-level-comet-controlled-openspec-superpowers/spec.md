@@ -16,3 +16,13 @@ OpenSpec artifacts and `docs/` artifacts SHALL be derived from the `docs_bilingu
 - **WHEN** a `docs_bilingual/` update fully captures the local governance decision
 - **THEN** the session SHALL NOT create `openspec/` or `docs/` artifacts only because `docs_bilingual/` changed
 - **AND** any additional `openspec/` or `docs/` file SHALL be justified by the task content itself
+
+### Requirement: Post-plan governance flow SHALL be enforced by local range checks
+The repository SHALL keep a script-backed range check for post-`/plan` non-document execution. The check SHALL require the first commit in a non-document execution range to be a docs-only local governance package that touches `docs_bilingual/` first.
+
+Local MR review SHALL run that range check before local `main` integration. The aggregate OpenSpec guard SHALL run a static local-flow checker that verifies the range checker, complete local-flow helper, policy documents, and CI test registrations remain wired.
+
+#### Scenario: Non-document execution branch skips the governance package
+- **WHEN** a feature branch contains non-document changes and the first commit does not update `docs_bilingual/`
+- **THEN** `tools/check_plan_exit_execution_governance.py` SHALL fail for that range
+- **AND** `tools/ci/local_mr_review.ps1` SHALL block local integration

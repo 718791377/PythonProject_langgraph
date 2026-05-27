@@ -10,6 +10,8 @@
 - 扩展 implementation-plan 检查，使 Comet build/verify/archive 阶段引用的 implementation plan 必须为 active。
 - 记录新的稳定 OpenSpec 需求。
 
+- 新增 `/plan` 后执行治理与完整本地流程到远端发布门的明确脚本/checker。
+
 ## 影响
 - 本地 feature branch 在合入本地 `main` 前会受到更严格门禁。
 - 未变更的历史 Markdown 缺口作为 baseline，不阻断无关工作。

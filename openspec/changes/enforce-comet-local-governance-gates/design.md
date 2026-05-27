@@ -7,6 +7,8 @@
 - Enforce Chinese commit subjects with a dedicated checker and commit-msg hook. ASCII conventional prefixes remain allowed when the subject contains Chinese.
 - Reuse the existing implementation-plan checker for active-plan enforcement because it already owns registry integrity.
 
+- Add a static local-flow checker and wire the post-plan range checker into local MR review.
+
 ## Validation
 - Unit tests cover pair policy, commit language, and active-plan references.
 - The aggregate guard runs the new checks.
