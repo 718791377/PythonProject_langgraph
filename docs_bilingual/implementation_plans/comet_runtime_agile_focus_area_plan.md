@@ -379,3 +379,12 @@ Tests:
 - [ ] Risk: return loops hide real failure. Mitigation: require `rework_reason` and increment `iteration_count`.
 - [ ] Risk: users mistake Monitoring for a sixth phase. Mitigation: keep Monitoring as transition evidence only.
 - [ ] Risk: docs and runtime drift. Mitigation: checker coverage plus paired updates to skills, scripts, and specs.
+
+## 2026-05-27 Runtime Evidence Batch
+
+- [x] Governance-order package is recorded before non-document runtime execution.
+- [x] This batch is classified as script-plus-test implementation, not a new OpenSpec scope.
+- [x] No derived `openspec/` or `docs/` update is required for this batch because the active stable spec and governance policy already require management checklist evidence, Monitoring return transitions, and runtime field validation.
+- [x] Expected runtime files: `.codex/skills/comet/scripts/comet-state.sh`, `.codex/skills/comet/scripts/comet-guard.sh`, and `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
+- [x] Expected evidence files: `test/comet_runtime_management_flow.test.py` and `tools/ci/ci_test_manifest.json`.
+- [x] Acceptance evidence must include targeted Comet runtime tests, the OpenSpec Comet/Superpowers policy checker, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.

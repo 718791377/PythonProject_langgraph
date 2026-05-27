@@ -379,3 +379,12 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [ ] 风险：回退循环掩盖真实失败。缓解：强制 `rework_reason` 并递增 `iteration_count`。
 - [ ] 风险：用户误以为 Monitoring 是第六阶段。缓解：只把 Monitoring 作为 transition evidence。
 - [ ] 风险：docs 与 runtime 漂移。缓解：checker 覆盖，并成对更新 skills、scripts 和 specs。
+
+## 2026-05-27 Runtime 证据批次
+
+- [x] 已在非文档 runtime 执行前记录治理顺序包。
+- [x] 本批次归类为 script-plus-test 实施，不是新的 OpenSpec 范围。
+- [x] 本批次不需要派生更新 `openspec/` 或 `docs/`，因为当前 active stable spec 与治理 policy 已经要求管理勾选证据、Monitoring 回退 transition 与 runtime 字段校验。
+- [x] 预期 runtime 文件：`.codex/skills/comet/scripts/comet-state.sh`、`.codex/skills/comet/scripts/comet-guard.sh`、`.codex/skills/comet/scripts/comet-yaml-validate.sh`。
+- [x] 预期证据文件：`test/comet_runtime_management_flow.test.py` 与 `tools/ci/ci_test_manifest.json`。
+- [x] 验收证据必须包括定向 Comet runtime 测试、OpenSpec Comet/Superpowers policy checker、implementation-plan rules、pre-commit update/archive review、local CI 与 local MR review。
