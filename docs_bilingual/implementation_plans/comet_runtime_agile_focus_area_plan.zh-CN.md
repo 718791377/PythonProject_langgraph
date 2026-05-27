@@ -439,3 +439,13 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [x] 预期测试文件：`test/comet_runtime_management_flow.test.py`。
 - [x] 验收证据必须包含定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、local CI 和 local MR review。
 - [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。
+
+## 2026-05-27 Monitoring 决策门禁证据治理包
+
+- [x] 本地执行范围先从这次 `docs_bilingual` 治理包开始，再修改定向 runtime 测试。
+- [x] 范围：增加静态证据，证明 Monitoring 中非 `continue` 的决策会阻断前进；这里的 `continue` 指“当前证据足够，可以前进”，而 `adjust-current`、`return-*` 或 `stop` 指当前阶段必须调整、回退或停止。archive completion 也要求最终 Monitoring 放行。
+- [x] 本批次归类为 test-plus-docs 实施；不改变 Comet runtime shell 行为、治理 policy、稳定 OpenSpec 需求或 skill 指令。
+- [x] 本批次不需要派生更新 `openspec/` 或 `docs/`，因为它只证明已经定义的 guard 与 archive 行为。
+- [x] 预期测试文件：`test/comet_runtime_management_flow.test.py`。
+- [x] 验收证据必须包含定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、local CI 和 local MR review。
+- [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。

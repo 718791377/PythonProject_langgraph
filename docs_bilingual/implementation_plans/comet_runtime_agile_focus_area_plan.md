@@ -439,3 +439,13 @@ Tests:
 - [x] Expected test file: `test/comet_runtime_management_flow.test.py`.
 - [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
 - [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
+
+## 2026-05-27 Monitoring Decision Gate Evidence Package
+
+- [x] This local execution range starts with this `docs_bilingual` package before changing targeted runtime tests.
+- [x] Scope: add static evidence that Monitoring decisions other than `continue` block forward progress; here `continue` means "current evidence is sufficient to advance," while `adjust-current`, `return-*`, or `stop` means the current phase must be adjusted, returned, or stopped. Archive completion also requires final Monitoring clearance.
+- [x] This batch is classified as test-plus-docs implementation; it does not change Comet runtime shell behavior, policy text, stable OpenSpec requirements, or skill instructions.
+- [x] No derived `openspec/` or `docs/` update is needed because this package only proves already-defined guard and archive behavior.
+- [x] Expected test file: `test/comet_runtime_management_flow.test.py`.
+- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
+- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
