@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: cdp_bridge_read_only_defaults_repo_local_implemented
+implementation_state: wecom_cli_guarded_dry_run_repo_local_implemented
 last_reviewed_at: 2026-05-27
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -37,7 +37,7 @@ related_docs:
 
 This version is reworked into the modern structure family used by the Pi sidecar plan and the Comet runtime plan: worker instructions, Goal, Architecture, Tech Stack, relationship boundaries, runtime contracts, file responsibility map, definition of ready, task-level backlog, acceptance criteria, required evidence, and rollback rules.
 
-`status: draft` means the full user-level install, live smoke tests, and cross-project rollout are not complete. `plan_readiness: execution-ready` means the plan has enough structure and granularity for an agentic worker. Repo-local `skills2cli`, `mcp2cli`, `codex-port`, browser owner registry, `chrome-devtools-mcp` wrapper MVP, and CDP Bridge read-only defaults are implemented-local. A lane becomes active only after installation receipt, update receipt, smoke test result, and rollback pointer evidence exist.
+`status: draft` means the full user-level install, live smoke tests, and cross-project rollout are not complete. `plan_readiness: execution-ready` means the plan has enough structure and granularity for an agentic worker. Repo-local `skills2cli`, `mcp2cli`, `codex-port`, browser owner registry, `chrome-devtools-mcp` wrapper MVP, and CDP Bridge read-only defaults are implemented-local. A lane becomes active only after installation receipt, update receipt, smoke test result, and rollback pointer evidence exist. `wecom-cli` is currently repo-local guarded dry-run only; it does not enable live WeCom GUI automation.
 
 ## 1. Relationship model and naming boundary
 
@@ -51,7 +51,7 @@ This version is reworked into the modern structure family used by the Pi sidecar
 | CDP Bridge | browser bridge and CDP actions | implemented-local | Read-only by default; cookies, input, click, and navigation are sensitive. |
 | OpenCLI | on-demand browser/MCP adapter | planned/partial | Must use `--port auto` and owner/receipt gates. |
 | CLI-Anything | GUI/CLI harness generation and reference | planned | Hard-loading many skills is blocked by default. |
-| `wecom-cli` | WeCom/WXWork API, webhook, and GUI adapter | planned | WXWork.exe GUI writes are disabled by default. |
+| `wecom-cli` | WeCom/WXWork API, webhook, and GUI adapter | implemented-local | WXWork.exe GUI writes remain disabled by default; the repo-local guard now provides API/Webhook-first posture plus global lease, operator confirmation, and timeout-release dry-run checks. |
 | `oh-my-pi` | Pi family and harness reference | reference-only | Detailed Pi sidecar work belongs to the Pi sidecar plan. |
 | `ohmyopenagent` / `snow-cli` | future durable-team reference source | reference-only | Not installed or wired by this plan. |
 | human-owned Chrome | personal browser assets | disabled for automation by default | No cookies, tokens, or raw browser data without explicit approval. |
@@ -375,11 +375,11 @@ Runtime receipts must not include secrets, cookies, tokens, raw browser data, We
 
 ### Task 6: CLI-Anything and `wecom-cli`
 
-- [ ] CLI-Anything defaults to harness plan generation only.
-- [ ] Hard-loading skills is blocked until receipt and smoke pass.
-- [ ] `wecom-cli` uses API/Webhook before GUI automation.
-- [ ] WXWork.exe GUI actions require global lease, operator confirmation, and timeout release.
-- [ ] Local verification: fixture tests or a guarded dry-run test.
+- [x] CLI-Anything defaults to harness plan generation only.
+- [x] Hard-loading skills is blocked until receipt and smoke pass.
+- [x] `wecom-cli` uses API/Webhook before GUI automation.
+- [x] WXWork.exe GUI actions require global lease, operator confirmation, and timeout release.
+- [x] Local verification: `wecom_cli_governance.test.py` covers API/Webhook-first posture, GUI dry-run, fail-closed missing receipts, and valid-receipt dry-run dispatch.
 
 ### Task 7: Receipts, rollback, and redaction
 

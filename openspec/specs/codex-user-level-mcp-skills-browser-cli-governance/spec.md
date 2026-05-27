@@ -593,3 +593,52 @@ The guard SHALL keep CLI-Anything as harness-generation support only until insta
 
 - **WHEN** `harness-plan` is asked to hard-load skills
 - **THEN** it SHALL fail closed with `hard_load_skills_must_be_false`
+
+### Requirement: WeCom CLI governance guard SHALL prefer API/Webhook and fail closed for WXWork GUI automation
+
+The repository SHALL provide a repo-local `wecom-cli` governance guard that models Enterprise WeChat / WeCom / WXWork control boundaries without attaching to `WXWork.exe`, probing local processes, calling live APIs or webhooks, reading message content, sending messages, mutating user-level Codex configuration, or controlling GUI state.
+
+The guard SHALL support at least:
+
+- `api-status --json` - reports the API/Webhook-first posture without probing the process table;
+- `webhook-plan --name <name> --secret-ref <ref> --json` - plans webhook usage without calling WeCom or retaining secret values;
+- `gui-plan --target-process WXWork.exe --json` - reports GUI gate requirements without live control;
+- `gui-check --action <action> --session <id> --authorization-receipt <path> --lease-receipt <path> --json` - fail-closed precheck for sensitive GUI actions.
+
+WXWork GUI actions SHALL require a global WXWork lease receipt, operator authorization receipt, session match, future expiry, and timeout release evidence. Valid receipts MAY allow only dry-run dispatch eligibility in the repo-local MVP; they SHALL NOT cause live GUI control.
+
+#### Scenario: API/Webhook status is requested
+
+- **WHEN** `python tools/wecom_cli_governance.py api-status --json` runs
+- **THEN** the command SHALL return `ok=true`
+- **AND** it SHALL report `api_or_webhook_first`
+- **AND** it SHALL report no process probe, no GUI control, no message-content read, and no WeCom API call
+
+#### Scenario: Webhook planning receives an inline secret
+
+- **WHEN** `python tools/wecom_cli_governance.py webhook-plan --name ops --secret-ref "secret=<value>" --json` runs
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL not call a webhook
+- **AND** it SHALL not retain the raw secret value in default output
+
+#### Scenario: GUI planning is requested
+
+- **WHEN** `python tools/wecom_cli_governance.py gui-plan --target-process WXWork.exe --json` runs
+- **THEN** the command SHALL return `ok=true`
+- **AND** it SHALL report global lease, operator confirmation, and timeout release requirements
+- **AND** it SHALL report live GUI control is not allowed by the repo-local MVP
+
+#### Scenario: GUI attach lacks receipts
+
+- **WHEN** `python tools/wecom_cli_governance.py gui-check --action gui.attach --session session-a --json` runs without receipts
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL require both operator authorization receipt and global WXWork lease receipt
+- **AND** it SHALL report `gui_control_performed=false`
+
+#### Scenario: GUI attach has valid receipts
+
+- **WHEN** `gui-check` receives matching, current operator authorization and global WXWork lease receipts
+- **THEN** it SHALL return `dispatch_allowed=true`
+- **AND** it SHALL remain `dry_run_only=true`
+- **AND** it SHALL report `gui_control_performed=false`
+- **AND** it SHALL not emit raw private receipt paths

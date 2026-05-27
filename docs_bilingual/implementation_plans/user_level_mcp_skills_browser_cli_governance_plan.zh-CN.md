@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: cdp_bridge_read_only_defaults_repo_local_implemented
+implementation_state: wecom_cli_guarded_dry_run_repo_local_implemented
 last_reviewed_at: 2026-05-27
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -37,7 +37,7 @@ related_docs:
 
 本版已按 `pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 和 `comet_runtime_agile_focus_area_plan.zh-CN.md` 的新版结构返工：先给出 worker 指令、Goal、Architecture、Tech Stack，再给出关系模型、runtime 契约、文件职责图、实施前就绪定义、任务级执行 Backlog、验收标准、需要保留的证据和 rollback 规则。
 
-`status: draft` 只表示完整用户级安装、真实 smoke test 与跨项目 rollout 尚未全部完成；`plan_readiness: execution-ready` 表示本文结构与执行颗粒度已经足够让 agentic worker 接手实现。当前 repo-local `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP 与 CDP Bridge read-only defaults 属于 implemented-local；完整用户级 `active` 仍取决于 installation receipt、update receipt、smoke test result 与 rollback pointer。
+`status: draft` 只表示完整用户级安装、真实 smoke test 与跨项目 rollout 尚未全部完成；`plan_readiness: execution-ready` 表示本文结构与执行颗粒度已经足够让 agentic worker 接手实现。当前 repo-local `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP 与 CDP Bridge read-only defaults 属于 implemented-local；完整用户级 `active` 仍取决于 installation receipt、update receipt、smoke test result 与 rollback pointer。`wecom-cli` 当前只达到 repo-local guarded dry-run，不代表真实企业微信 GUI 自动化已启用。
 
 ## 1. 关系模型与命名边界
 
@@ -51,7 +51,7 @@ related_docs:
 | CDP Bridge | 浏览器桥接与 CDP 操作 | implemented-local | 默认 read-only；cookies、输入、点击、导航属于敏感操作。 |
 | OpenCLI | on-demand browser/MCP adapter | planned/partial | 必须 `--port auto`，并受 owner registry 与 receipt 约束。 |
 | CLI-Anything | GUI/CLI harness generation/reference | planned | 不允许 hard-load 大量 skills；生成优先，执行受授权门禁控制。 |
-| `wecom-cli` | WeCom/WXWork API/Webhook/GUI adapter | planned | WXWork.exe GUI write 默认 disabled，需要全局 lease 与 operator confirmation。 |
+| `wecom-cli` | WeCom/WXWork API/Webhook/GUI adapter | implemented-local | WXWork.exe GUI write 默认 disabled；repo-local guard 已提供 API/Webhook first、global lease、operator confirmation 与 timeout release dry-run 检查。 |
 | `oh-my-pi` | Pi family / harness reference | reference-only | 具体 Pi sidecar 归属 `pi_plugin_codex_user_level_sidecar_plan`。 |
 | `ohmyopenagent` / `snow-cli` | 未来 durable-team 参考源 | reference-only | 本方案不安装、不接入 runtime。 |
 | human-owned Chrome | 用户个人资产 | disabled for automation by default | 未授权不得读取 cookies、tokens、raw browser data。 |
@@ -375,11 +375,11 @@ runtime receipts 不得包含 secrets、cookies、tokens、raw browser data、We
 
 ### Task 6：CLI-Anything 与 `wecom-cli`
 
-- [ ] CLI-Anything 默认只生成 harness plan。
-- [ ] hard-load skills 必须 blocked，直到 receipt 和 smoke pass。
-- [ ] `wecom-cli` 优先 API/Webhook，不默认 GUI automation。
-- [ ] WXWork.exe GUI 操作必须有全局 lease、operator confirmation 和超时释放。
-- [ ] 局部验证：fixture tests 或新增 guarded dry-run test。
+- [x] CLI-Anything 默认只生成 harness plan。
+- [x] hard-load skills 必须 blocked，直到 receipt 和 smoke pass。
+- [x] `wecom-cli` 优先 API/Webhook，不默认 GUI automation。
+- [x] WXWork.exe GUI 操作必须有全局 lease、operator confirmation 和超时释放。
+- [x] 局部验证：`wecom_cli_governance.test.py` 覆盖 API/Webhook 优先、GUI dry-run、缺 receipt fail closed、有效 receipt 仅允许 dry-run dispatch。
 
 ### Task 7：Receipts、rollback 与 redaction
 
