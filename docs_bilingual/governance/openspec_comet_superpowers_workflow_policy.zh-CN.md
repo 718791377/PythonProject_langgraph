@@ -137,6 +137,14 @@ guard failure 应使用 `[HARD STOP]` 或等价 hard-stop 风格，并给出可�
 
 Archive 需要 completed tasks、validation evidence、已有 verification report、已处理 branch state，以及 delta-to-main spec sync。
 
+## 6A. Runtime 语义注释契约
+
+Comet runtime 治理文本在新增或修改 runtime 字段、状态值、control decision 和 transition 名称时，必须解释其运行含义。
+
+这尤其适用于 Monitoring-loop 术语，例如 `monitoring_status`、`control_decision`、`target_phase`、`rework_reason`、`iteration_count`，以及 `monitor-return-design` 这类 return transition。未来操作者应能在不依赖聊天历史的情况下，判断一个术语究竟是字段、允许取值、transition，还是 gate condition。
+
+解释可以写在同一句、同一个 checklist 项、相邻表格行，或附近 glossary 中。该要求关注语义清晰度，而不是要求每个反引号 token 都有注释。前向 enforcement 交由 `tools/check_name_clarity_rules.py` 承接，因此不会为了满足新规则而批量改写历史 Comet 文档。
+
 ## 7. 安装与变更边界
 
 本文档不是运行时资产变更授权。

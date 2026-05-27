@@ -136,6 +136,14 @@ Guard failures should use a hard-stop style such as `[HARD STOP]` plus actionabl
 
 Archive requires completed tasks, validation evidence, an existing verification report, handled branch state, and delta-to-main spec sync.
 
+## 6A. Runtime Semantic Annotation Contract
+
+Comet runtime governance text must explain newly added runtime fields, state values, control decisions, and transition names when they are introduced or changed.
+
+This applies especially to Monitoring-loop terms such as `monitoring_status`, `control_decision`, `target_phase`, `rework_reason`, `iteration_count`, and return transitions such as `monitor-return-design`. A future operator should be able to tell whether a term is a field, an allowed value, a transition, or a gate condition without relying on chat history.
+
+The explanation may be inline, in the same checklist item, in an adjacent table row, or in a nearby glossary. The requirement is semantic clarity, not commentary on every backticked token. Forward-only enforcement is delegated to `tools/check_name_clarity_rules.py` so historical Comet documents are not rewritten just to satisfy the new rule.
+
 ## 7. Installation and Mutation Boundary
 
 This repository does not treat this governance policy as permission to mutate runtime assets.
