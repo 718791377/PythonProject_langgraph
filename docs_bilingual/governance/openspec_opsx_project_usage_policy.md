@@ -114,6 +114,21 @@ After that update, the session decides whether OPSX/OpenSpec or `docs/` must als
 
 When the local governance package is ready, run the complete local commit flow through local `main` integration and stop at the remote publication gate. This local flow does not authorize remote publication.
 
+Two-stage implementation confirmation rule:
+
+- Stage A is the governance-confirmation package. It is documentation-only, updates `docs_bilingual/` first, may derive `openspec/` or `docs/` only when the governance decision requires it, merges into local `main`, and then stops before non-document implementation.
+- Stage A records receipt or claim fields: `requires_user_confirmation_before_implementation`, `governance_package_commit`, `governance_package_merged_to_local_main`, `implementation_confirmed_by_user=false`, and `implementation_stage=awaiting_confirmation`.
+- Stage B may change scripts, checkers, tests, tools, CI manifests, or runtime behavior only after a current user confirmation is recorded in the receipt or claim as `implementation_confirmed_by_user=true` with `implementation_confirmation_recorded_at`.
+- Confirmation after Stage A may authorize a thicker implementation batch. Prefer one related batch with two to five tightly related execution slices over one tiny commit per rule.
+
+Implementation-plan size and evidence rules:
+
+- Implementation plans keep current decisions, latest status, task backlog, and a compact completed-evidence index. They must not become long evidence ledgers.
+- Completed slices are indexed by date, topic, status, commit, and evidence path. Full evidence moves to `docs/superpowers/reports/`, an appropriate `docs_bilingual/` evidence document, or the OpenSpec archive.
+- Routine updates use lightweight inspection first: file size, line count, heading list, relevant anchors, and the last 50 to 100 lines. Full reads are reserved for first intake, missing anchors, structural damage, large refactors, or whole-file consistency review.
+- Plans should expose stable anchors for current status, task backlog, and evidence index so scripts can perform targeted updates instead of rewriting or rereading the whole file.
+- Repository checkers warn on oversized plans and fail closed for unapproved oversized or unstructured implementation plans.
+
 ## 5. Command Mapping Model
 
 ### 5.1 `/opsx:onboard`

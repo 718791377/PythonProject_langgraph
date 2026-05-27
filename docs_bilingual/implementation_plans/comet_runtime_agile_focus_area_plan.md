@@ -18,6 +18,16 @@ The previous plan was not complete enough for execution. It was still marked `dr
 
 2026-05-27 completeness audit: the plan content and granularity are now implementation-ready. This audit adds no new runtime scope; it records that the active plan already contains five execution slices, Task A-E backlog items, file ownership, per-task test evidence, Chinese commit examples, local integration gates, acceptance criteria, and risk mitigations sufficient for a worker to execute without rediscovering the plan structure.
 
+## Current Status
+
+<!-- CURRENT_STATUS_START -->
+
+- [x] Status: active implementation plan. Historical evidence packages are externalized to keep routine reads lightweight.
+- [x] Routine updates should inspect file size, headings, anchors, and the evidence index before full-file reads.
+- [x] Non-document execution still requires a governance package and confirmation gate before implementation.
+
+<!-- CURRENT_STATUS_END -->
+
 ## Objective
 
 Upgrade Comet runtime governance from a one-way phase label into an adaptive management loop while preserving the five Comet phases:
@@ -255,6 +265,8 @@ Tests:
 
 ## Task-Level Execution Backlog
 
+<!-- TASK_BACKLOG_START -->
+
 ### Task A: Add runtime-state bootstrap coverage
 
 **Files:**
@@ -335,6 +347,8 @@ Tests:
 - [ ] Step E6: Run `python tools/run_openspec_guard.py --root . --json` or record the exact known local-state blocker if the guard is blocked by unrelated worktree hygiene.
 - [ ] Step E7: Commit with a Chinese message that means "sync Comet agile management focus areas".
 
+<!-- TASK_BACKLOG_END -->
+
 ## Local Integration Sequence
 
 - [ ] Keep the feature worktree clean before integration: `git status --short` returns no paths.
@@ -382,133 +396,24 @@ Tests:
 - [ ] Risk: users mistake Monitoring for a sixth phase. Mitigation: keep Monitoring as transition evidence only.
 - [ ] Risk: docs and runtime drift. Mitigation: checker coverage plus paired updates to skills, scripts, and specs.
 
-## 2026-05-27 Runtime Evidence Batch
+## Completed Evidence Index
 
-- [x] Governance-order package is recorded before non-document runtime execution.
-- [x] This batch is classified as script-plus-test implementation, not a new OpenSpec scope.
-- [x] No derived `openspec/` or `docs/` update is required for this batch because the active stable spec and governance policy already require management checklist evidence, Monitoring return transitions, and runtime field validation.
-- [x] Expected runtime files: `.codex/skills/comet/scripts/comet-state.sh`, `.codex/skills/comet/scripts/comet-guard.sh`, and `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
-- [x] Expected evidence files: `test/comet_runtime_management_flow.test.py` and `tools/ci/ci_test_manifest.json`.
-- [x] Acceptance evidence must include targeted Comet runtime tests, the OpenSpec Comet/Superpowers policy checker, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
+<!-- EVIDENCE_INDEX_START -->
 
-## 2026-05-27 Local Execution Governance Package
+Each completed package is indexed here; full evidence is preserved in the external report rather than appended to this implementation plan.
 
-- [x] This local execution range starts with this `docs_bilingual` package before runtime script and test changes.
-- [x] Scope: tighten Comet runtime Monitoring gates for forward transitions, guard diagnostics, archive closing labels, and checker fixtures.
-- [x] No derived `openspec/` or `docs/` update is needed in this package because the stable policy and spec already define the management focus-area contract.
-- [x] The next commit may modify runtime scripts, targeted tests, and the Comet/Superpowers policy checker fixture only.
-- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
+- [x] 2026-05-27 Runtime Evidence Batch: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Local Execution Governance Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Skill Instruction Alignment Governance Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Skill Instruction Alignment Evidence: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Root Comet Controller Routing Governance Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Runtime Test Evidence Governance Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Monitoring Decision Gate Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 UTF-8 Management Label Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 Management Record Validation Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 YAML Enum Validation Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 YAML Path Validation Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 Verification Report Path Validation Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 Artifact Path Safety Validation Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
 
-## 2026-05-27 Skill Instruction Alignment Governance Package
-
-- [x] This execution range starts with this `docs_bilingual` package before changing Comet skill instruction files.
-- [x] Scope: align operator-facing Comet phase skills with the already implemented management checklist gates, Monitoring return transitions, and non-waterfall adaptive routing.
-- [x] This batch is classified as skill-plus-checker implementation; it does not change runtime state-machine behavior.
-- [x] No derived `openspec/` or `docs/` update is needed because the stable policy and spec already require checklist evidence, Monitoring return transitions, and adaptive/hybrid control.
-- [x] Expected skill files: `.codex/skills/comet-open/SKILL.md`, `.codex/skills/comet-design/SKILL.md`, `.codex/skills/comet-build/SKILL.md`, `.codex/skills/comet-verify/SKILL.md`, `.codex/skills/comet-archive/SKILL.md`, `.codex/skills/comet-hotfix/SKILL.md`, and `.codex/skills/comet-tweak/SKILL.md`.
-- [x] Expected checker evidence: `tools/check_openspec_comet_superpowers_policy.py` and `test/run_openspec_guard_json.test.py` if aggregate guard fixture output changes.
-- [x] Acceptance evidence must include the Comet/Superpowers policy checker, implementation-plan rules, targeted guard fixture tests, pre-commit update/archive review, local CI, and local MR review.
-- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
-
-## 2026-05-27 Skill Instruction Alignment Evidence
-
-- [x] Comet phase skills now state that Monitoring is cross-cutting and not a sixth Comet phase.
-- [x] Comet phase skills now state that forward progression requires `monitoring_status=clear` and `control_decision=continue`.
-- [x] Comet phase skills now include return routing for `monitor-return-open`, `monitor-return-design`, `monitor-return-build`, and `monitor-return-verify`.
-- [x] `tools/check_openspec_comet_superpowers_policy.py` now enforces per-phase skill instruction terms instead of only checking aggregate skill text.
-- [x] `test/run_openspec_guard_json.test.py` now fails when a phase skill loses the Monitoring control-loop instruction.
-- [x] Runtime state-machine behavior is unchanged in this batch; no derived `openspec/` or `docs/` update is required.
-
-## 2026-05-27 Root Comet Controller Routing Governance Package
-
-- [x] This local execution range starts with this `docs_bilingual` package before changing the root Comet controller skill or checker code.
-- [x] Scope: align `.codex/skills/comet/SKILL.md` phase detection with Monitoring return decisions so the root dispatcher does not force waterfall progression when `control_decision=return-*` is present.
-- [x] This batch is classified as root-skill-plus-checker implementation; it does not change runtime state-machine shell behavior.
-- [x] No derived `openspec/` or `docs/` update is needed because the stable policy and spec already require adaptive Monitoring return routing and the five-phase Comet contract.
-- [x] Expected skill file: `.codex/skills/comet/SKILL.md`.
-- [x] Expected checker evidence: `tools/check_openspec_comet_superpowers_policy.py` and `test/run_openspec_guard_json.test.py` should fail if the root Comet skill loses return-dispatch instructions.
-- [x] Acceptance evidence must include the Comet/Superpowers policy checker, targeted guard fixture tests, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
-- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
-
-## 2026-05-27 Runtime Test Evidence Governance Package
-
-- [x] This local execution range starts with this `docs_bilingual` package before changing targeted runtime tests.
-- [x] Scope: strengthen task-level evidence for Monitoring return events, negative return-decision validation, and repeated `iteration_count` increments.
-- [x] This batch is classified as test-plus-docs implementation; it does not change Comet runtime shell behavior, policy text, or stable OpenSpec requirements.
-- [x] No derived `openspec/` or `docs/` update is needed because this package only proves already-defined runtime behavior with more granular tests.
-- [x] Expected test file: `test/comet_runtime_management_flow.test.py`.
-- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
-- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
-
-## 2026-05-27 Monitoring Decision Gate Evidence Package
-
-- [x] This local execution range starts with this `docs_bilingual` package before changing targeted runtime tests.
-- [x] Scope: add static evidence that Monitoring decisions other than `continue` block forward progress; here `continue` means "current evidence is sufficient to advance," while `adjust-current`, `return-*`, or `stop` means the current phase must be adjusted, returned, or stopped. Archive completion also requires final Monitoring clearance.
-- [x] This batch is classified as test-plus-docs implementation; it does not change Comet runtime shell behavior, policy text, stable OpenSpec requirements, or skill instructions.
-- [x] No derived `openspec/` or `docs/` update is needed because this package only proves already-defined guard and archive behavior.
-- [x] Expected test file: `test/comet_runtime_management_flow.test.py`.
-- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
-- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
-
-## 2026-05-28 UTF-8 Management Label Evidence Package
-
-- [x] This local execution range starts with this `docs_bilingual` package before changing Comet runtime scripts and targeted tests.
-- [x] Scope: make the Comet runtime management checklist labels readable as UTF-8 Chinese while preserving compatibility with the already supported English labels and existing legacy mojibake labels.
-- [x] This batch is classified as script-plus-test implementation; it does not change the Comet phase model, Monitoring transition semantics, stable OpenSpec requirements, or operator-facing skill workflow.
-- [x] No derived `openspec/` or `docs/` update is needed because this package only strengthens label compatibility for the existing management-record contract.
-- [x] Expected runtime files: `.codex/skills/comet/scripts/comet-state.sh`, `.codex/skills/comet/scripts/comet-guard.sh`, and `.codex/skills/comet/scripts/comet-archive.sh`.
-- [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
-- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
-- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
-
-## 2026-05-28 Management Record Validation Evidence Package
-
-- [x] This local execution range starts with this `docs_bilingual` package before changing Comet runtime validation scripts and targeted tests.
-- [x] Scope: make `comet-yaml-validate.sh` fail closed when `management_record` is `null`, empty, or points to a missing file, so every active Comet change keeps durable checklist evidence instead of silently falling back during validation.
-- [x] This batch is classified as script-plus-test implementation; it does not change Comet phase semantics, Monitoring return semantics, stable OpenSpec requirements, or operator-facing skill workflow.
-- [x] No derived `openspec/` or `docs/` update is needed because the existing stable contract already requires a management record with checklist evidence.
-- [x] Expected runtime file: `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
-- [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
-- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
-- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
-
-## 2026-05-28 YAML Enum Validation Evidence Package
-
-- [x] This local execution range starts with this `docs_bilingual` package before changing targeted Comet runtime validation tests.
-- [x] Scope: strengthen evidence that `comet-yaml-validate.sh` keeps the managed enum contract described in the Runtime State Contract above; that contract covers workflow kind, current phase, execution mode, isolation mode, verification state, branch handling state, archive flag, monitoring status, control decision, return target, and rework reason.
-- [x] This batch is classified as test-plus-docs implementation; it does not change Comet phase semantics, Monitoring return semantics, stable OpenSpec requirements, or operator-facing skill workflow.
-- [x] No derived `openspec/` or `docs/` update is needed because the existing stable contract already requires runtime field validation and fail-closed enum handling.
-- [x] Expected runtime reference file: `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
-- [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
-- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
-- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
-
-## 2026-05-28 YAML Path Validation Evidence Package
-
-- [x] This local execution range starts with this `docs_bilingual` package before changing targeted Comet runtime validation tests.
-- [x] Scope: strengthen evidence that `comet-yaml-validate.sh` validates non-null artifact paths for design documents, implementation plans, and management records, while treating unknown YAML keys as warnings rather than forward-transition blockers.
-- [x] This batch is classified as test-plus-docs implementation; it does not change Comet phase semantics, Monitoring return semantics, stable OpenSpec requirements, or operator-facing skill workflow.
-- [x] No derived `openspec/` or `docs/` update is needed because the existing stable contract already requires path validation for recorded runtime artifacts.
-- [x] Expected runtime reference file: `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
-- [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
-- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
-- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
-## 2026-05-28 Verification Report Path Validation Evidence Package
-- [x] Local execution scope starts with this `docs_bilingual` governance package, then updates the Comet runtime validator and targeted runtime tests.
-- [x] Scope: make `comet-yaml-validate.sh` fail closed when `verification_report` is non-null but points to a missing file, preserving the existing rule that pending phases may keep `verification_report: null`.
-- [x] This package is script-plus-test implementation; it does not change Comet phase semantics, Monitoring return semantics, stable OpenSpec requirements, or operator-facing skill workflow.
-- [x] This package does not require derived `openspec/` or `docs/` updates because existing stable policy and spec already require verification-report evidence and fail-closed missing-artifact handling.
-- [x] Expected runtime file: `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
-- [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
-- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
-- [x] Remote publication remains gated; unless the user explicitly requests remote publication, stop at local `main`.
-## 2026-05-28 Artifact Path Safety Validation Evidence Package
-- [x] Local execution scope starts with this `docs_bilingual` governance package, then updates the Comet runtime validator and targeted runtime tests.
-- [x] Scope: make `comet-yaml-validate.sh` fail closed when managed artifact paths are absolute paths or contain path traversal segments, while keeping existing repo-relative artifact paths valid.
-- [x] Managed artifact paths in this batch are `design_doc`, `plan`, `verification_report`, and `management_record`.
-- [x] This package is script-plus-test implementation; it does not change Comet phase semantics, Monitoring return semantics, stable OpenSpec requirements, or operator-facing skill workflow.
-- [x] This package does not require derived `openspec/` or `docs/` updates because existing stable policy and spec already require recorded runtime artifacts and fail-closed missing-artifact handling.
-- [x] Expected runtime file: `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
-- [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
-- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
-- [x] Remote publication remains gated; unless the user explicitly requests remote publication, stop at local `main`.
+<!-- EVIDENCE_INDEX_END -->

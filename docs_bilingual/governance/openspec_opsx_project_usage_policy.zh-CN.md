@@ -114,6 +114,21 @@ OpenSpec 已经在仓库的工件层生效：
 
 本地治理包 ready 后，按完整本地提交流程执行到本地 `main` 合入，并停在远端发布门。这个本地流程不授权远端发布。
 
+两阶段实施确认规则：
+
+- Stage A 是治理确认包。它必须是纯文档更新，先更新 `docs_bilingual/`，只有治理判断确实需要时才派生更新 `openspec/` 或 `docs/`，合入本地 `main` 后停在非文档实施之前。
+- Stage A 记录 receipt 或 claim 字段：`requires_user_confirmation_before_implementation`、`governance_package_commit`、`governance_package_merged_to_local_main`、`implementation_confirmed_by_user=false`、`implementation_stage=awaiting_confirmation`。
+- Stage B 只有在当前用户确认已经写入 receipt 或 claim，且包含 `implementation_confirmed_by_user=true` 与 `implementation_confirmation_recorded_at` 后，才允许修改 scripts、checkers、tests、tools、CI manifests 或 runtime behavior。
+- Stage A 之后的确认可以授权更厚的实施批次。优先把二到五个强相关执行切片合并为一个相关批次，而不是每个小规则单独提交。
+
+实施方案体积与证据规则：
+
+- Implementation plan 只保留当前决策、最新状态、任务 Backlog 和紧凑的已完成证据索引，不能长期膨胀成完整证据流水账。
+- 已完成切片只按日期、主题、状态、commit 与证据路径建索引。完整证据迁移到 `docs/superpowers/reports/`、合适的 `docs_bilingual/` evidence 文档，或 OpenSpec archive。
+- 常规更新先做轻量读取：文件大小、行数、标题列表、相关锚点、最后 50 到 100 行。只有首次接手、缺少锚点、结构损坏、大规模重构或全局一致性复核时才全量读取。
+- Plan 应提供当前状态、任务 Backlog、证据索引的稳定锚点，使脚本可以定点更新，而不是每次整篇重写或整篇重读。
+- 仓库 checker 对超大 plan 给出 warning，并对未批准的超大或非结构化 implementation plan fail closed。
+
 ## 5. 命令映射模型
 
 ### 5.1 `/opsx:onboard`
