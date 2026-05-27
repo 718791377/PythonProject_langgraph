@@ -2,6 +2,7 @@
   "schema_version": 1,
   "python_unittest": [
     "audit_codex_skills_usage.test.py",
+    "check_name_clarity_rules.test.py",
     "check_context_retention_canary_surface.test.py",
     "check_startup_instruction_mojibake.test.py",
     "check_precommit_update_archive.test.py",

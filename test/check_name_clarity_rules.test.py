@@ -25,6 +25,21 @@ class NameClarityRulesCheckTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
 
+    def init_git_repo(self, root: Path) -> None:
+        subprocess.run(["git", "init", "-b", "main"], check=True, capture_output=True, text=True, cwd=root)
+        subprocess.run(["git", "config", "user.name", "Test User"], check=True, capture_output=True, text=True, cwd=root)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.invalid"],
+            check=True,
+            capture_output=True,
+            text=True,
+            cwd=root,
+        )
+
+    def git_commit_all(self, root: Path, message: str) -> None:
+        subprocess.run(["git", "add", "-A"], check=True, capture_output=True, text=True, cwd=root)
+        subprocess.run(["git", "commit", "-m", message], check=True, capture_output=True, text=True, cwd=root)
+
     def run_check_json(self, root: Path, *extra_args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(SCRIPT_PATH), "--root", str(root), "--json", *extra_args],
@@ -119,6 +134,93 @@ class NameClarityRulesCheckTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
         self.assertIn("Compatibility baseline: disabled", result.stdout)
         self.assertIn("Baseline allowed findings: 0", result.stdout)
+
+    def test_fails_for_changed_unexplained_semantic_terms_in_git_forward_mode(self) -> None:
+        root = self.make_root("semantic-forward-fail")
+        self.init_git_repo(root)
+        self.write_file(root, "docs_bilingual/guide.md", "# Guide\n\nExisting context.\n")
+        self.git_commit_all(root, "initial")
+        self.write_file(
+            root,
+            "docs_bilingual/guide.md",
+            (
+                "# Guide\n\nExisting context.\n"
+                "- [ ] `monitoring_status`: `clear`, `needs_decision`, or `blocked`.\n"
+                "- [ ] Forward transition requires `monitoring_status=clear`.\n"
+                "- [ ] Add `monitor-return-design`.\n"
+            ),
+        )
+
+        result = self.run_check_json(root, "--no-baseline")
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["counts"]["semantic_violations"], 3)
+        self.assertTrue(all("semantic_term_without_explanation" in error for error in payload["errors"]))
+
+    def test_forward_mode_ignores_unchanged_historical_semantic_debt(self) -> None:
+        root = self.make_root("semantic-forward-history")
+        self.init_git_repo(root)
+        self.write_file(
+            root,
+            "docs_bilingual/guide.md",
+            "# Guide\n\n- [ ] `monitoring_status`: `clear`, `needs_decision`, or `blocked`.\n",
+        )
+        self.git_commit_all(root, "historical debt")
+
+        result = self.run_check_json(root, "--no-baseline")
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["counts"]["semantic_violations"], 0)
+
+    def test_semantic_terms_pass_with_inline_explanation(self) -> None:
+        root = self.make_root("semantic-inline-pass")
+        self.write_file(
+            root,
+            "docs_bilingual/guide.md",
+            (
+                "# Guide\n\n"
+                "- `monitoring_status` - workflow field that records whether Monitoring is clear, needs operator decision, or blocks phase progress.\n"
+                "- `monitor-return-design` - transition that moves work back to Design when planning evidence is incomplete.\n"
+            ),
+        )
+
+        result = self.run_check_json(root, "--no-baseline", "--full-scan")
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+
+    def test_semantic_terms_pass_with_nearby_glossary(self) -> None:
+        root = self.make_root("semantic-glossary-pass")
+        self.write_file(
+            root,
+            "docs_bilingual/guide.md",
+            (
+                "# Guide\n\n"
+                "## Semantic notes\n\n"
+                "| Term | Meaning |\n"
+                "| --- | --- |\n"
+                "| `monitor-return-design` | Transition that moves work back to Design when planning evidence is incomplete. |\n\n"
+                "- [ ] In `comet-state.sh transition`, add `monitor-return-design`.\n"
+            ),
+        )
+
+        result = self.run_check_json(root, "--no-baseline", "--full-scan")
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+
+    def test_paths_commands_urls_and_test_names_are_not_semantic_terms(self) -> None:
+        root = self.make_root("semantic-ignore-pass")
+        self.write_file(
+            root,
+            "docs_bilingual/guide.md",
+            (
+                "# Guide\n\n"
+                "- `tools/check_name_clarity_rules.py` - checker script path, not a workflow state term.\n"
+                "- `python tools/check_name_clarity_rules.py --root . --json` - command example, not a policy value.\n"
+                "- `https://example.invalid/docs` - URL example, not a control decision.\n"
+                "- `test/check_name_clarity_rules.test.py` - test file path, not a transition name.\n"
+            ),
+        )
+
+        result = self.run_check_json(root, "--no-baseline", "--full-scan")
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
 
 
 if __name__ == "__main__":
