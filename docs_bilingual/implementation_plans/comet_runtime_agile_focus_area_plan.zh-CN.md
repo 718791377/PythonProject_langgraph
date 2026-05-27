@@ -460,3 +460,14 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [x] 预期证据文件：`test/comet_runtime_management_flow.test.py`。
 - [x] 验收证据必须包括定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、本地 MR review 和 local CI。
 - [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。
+
+## 2026-05-28 管理记录校验证据包
+
+- [x] 本地执行范围先从这次 `docs_bilingual` 治理包开始，然后再修改 Comet runtime 校验脚本和定向测试。
+- [x] 范围：让 `comet-yaml-validate.sh` 在 `management_record` 为 `null`、空值或指向缺失文件时 fail closed，确保每个 active Comet change 都保留持久化清单证据，而不是在校验阶段静默回退。
+- [x] 本批次归类为 script-plus-test 实施；不改变 Comet 阶段语义、Monitoring 回退语义、稳定 OpenSpec 要求或面向操作员的 skill workflow。
+- [x] 本包不需要派生更新 `openspec/` 或 `docs/`，因为既有稳定契约已经要求带有勾选证据的 management record。
+- [x] 预期 runtime 文件：`.codex/skills/comet/scripts/comet-yaml-validate.sh`。
+- [x] 预期证据文件：`test/comet_runtime_management_flow.test.py`。
+- [x] 验收证据必须包括定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、本地 MR review 和 local CI。
+- [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。
