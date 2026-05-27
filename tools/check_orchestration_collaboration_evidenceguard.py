@@ -59,6 +59,12 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
         "LangGraph state release",
         "tools/check_orchestration_collaboration_evidenceguard.py",
     ],
+    "openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md": [
+        "prompt-independent collaboration parity",
+        "durable/persistent evidenceguard",
+        "LangGraph state release",
+        "tools/check_orchestration_collaboration_evidenceguard.py",
+    ],
 }
 
 ROUTE_FIELDS = (

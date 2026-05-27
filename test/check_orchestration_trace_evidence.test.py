@@ -242,6 +242,32 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
         payload = collab_module.run_repository_check(REPO_ROOT)
         self.assertTrue(payload["ok"], payload["errors"])
 
+    def test_repository_collaboration_evidenceguard_requires_chinese_openspec_surface(self) -> None:
+        root = self.make_root("collab-zh-surface")
+        fixture_src = REPO_ROOT / collab_module.DEFAULT_FIXTURE_DIR
+        fixture_dst = root / collab_module.DEFAULT_FIXTURE_DIR
+        shutil.copytree(fixture_src, fixture_dst)
+        for rel in collab_module.REQUIRED_SURFACE_SNIPPETS:
+            if rel == "openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md":
+                continue
+            src = REPO_ROOT / rel
+            dst = root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        for rel in ("tools/run_openspec_guard.py", "tools/safety_rule_script_backing_registry.json"):
+            src = REPO_ROOT / rel
+            dst = root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+
+        payload = collab_module.run_repository_check(root)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("spec.zh-CN.md" in error for error in payload["errors"]),
+            payload["errors"],
+        )
+
     def test_prompt_independent_fixture_parity_passes(self) -> None:
         payload = collab_module.run_fixture_check(REPO_ROOT)
         self.assertTrue(payload["ok"], payload["errors"])
