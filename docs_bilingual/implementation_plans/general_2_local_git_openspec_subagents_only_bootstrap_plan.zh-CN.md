@@ -1,79 +1,321 @@
 ---
 doc_id: general_2_local_git_openspec_subagents_only_bootstrap_plan
 lang: zh-CN
-canonical: docs_bilingual/implementation_plans/general_2_local_git_openspec_subagents_only_bootstrap_plan.zh-CN.md
-status: active-local-plan
-updated_at: 2026-05-27
-target_template: D:\PythonProject_General_2
-comet_change: refactor-general-template-plans-comet
+canonical: docs_bilingual/implementation_plans/general_2_local_git_openspec_subagents_only_bootstrap_plan.md
+translation_of: docs_bilingual/implementation_plans/general_2_local_git_openspec_subagents_only_bootstrap_plan.md
+status: active
+plan_readiness: ready-for-implementation
+doc_class: implementation_plan
+last_reviewed: 2026-05-27
+target_template: "D:\PythonProject_General_2"
 capability_tier: local-git-openspec-superpowers-native-subagents-only
+comet_workflow: full
 ---
 
-# D:\PythonProject_General_2 本地 Git + OpenSpec + Superpowers + native Codex subagents 模板实施计划
+# `D:\PythonProject_General_2` 本地 Git + OpenSpec + Superpowers + Native Subagents 模板方案
 
-## 1. 目标
+> **For agentic workers:** REQUIRED SUB-SKILL：使用 `comet` 作为 OpenSpec + Superpowers 控制层，然后按本方案逐个 checkbox 执行。不要向本模板加入 oh-my-codex、native_omx、LangGraph、remote CI/MR 或 `.omx/state/`。
 
-`D:\PythonProject_General_2` 是轻量本地模板，面向没有远程仓库和 durable orchestration 需求的新项目。它只提供本地 Git、OpenSpec、Superpowers 治理方法和 native Codex subagents 配置，不启用 oh-my-codex、native_omx、LangGraph durable backend、远程 CI/MR 或 `.omx/state/` 运行时状态。
+**Goal:** 保持 `D:\PythonProject_General_2` 是轻量 local template：只面向需要 local Git、OpenSpec、Superpowers 与 native Codex subagents 的项目。模板应适合离线/本地项目，不暗示 durable orchestration 或 remote publication。
 
-本计划的成功标准是：未来冷启动会话读取本文件后，可以在目标目录中生成或修复一个本地-only 模板，并且不会误把 `D:\PythonProject_langgraph` 的 live session facts、用户级配置、远端发布流程或 LangGraph runtime 当成 General_2 的当前能力。
+**Architecture:** 一个 local-only 仓库，包含双语启动文档、OpenSpec skeleton、Comet/Superpowers workflow 指南、成对 native agent TOML 目录、local-only bootstrap scripts、具有远端兼容 JSON 形状的 local gate scripts，以及禁止 orchestration/runtime surface 的 checkers。
 
-## 2. 能力边界
+**Tech Stack:** Local Git、OpenSpec、Comet、Superpowers、native Codex custom agent TOML、`.codex/agents/`、`template_assets/codex-agents/`、Python checkers、PowerShell local gate、UTF-8 bilingual Markdown。
 
-### 2.1 当前启用能力
+---
 
-- 本地 Git：`git init -b main` 用来创建本机版本历史，不默认配置 `origin`、`gitlab` 或 `github` remote。
-- OpenSpec：`openspec/` 用来保存本地 proposal、design、spec 和 tasks 文件，作为 WHAT 与变更生命周期治理。
-- Superpowers：Superpowers skills 用作 HOW 层的方法论，例如 brainstorming、writing-plans、executing-plans 和 verification-before-completion。
-- Comet：`/comet` 只表示 OpenSpec + Superpowers 的治理工作流，负责 Open、Design、Build、Verify、Archive 阶段证据，不是 native subagent、oh-my-codex、native_omx、LangGraph 或 durable-team backend。
-- native Codex subagents：`.codex/agents/` 存放项目内可复用的原生 agent TOML；每个 TOML 必须有 `name`、`description`、`developer_instructions`。
+## 0. 复核结论
 
-### 2.2 明确不启用能力
+旧方案正确排除了 oh-my-codex、OMX、LangGraph、remote CI/MR 与 `.omx/state/`，但对未来 worker 来说仍缺少任务级颗粒度。本版把 local-only 边界转换为可执行切片，包含文件所有权、检查、验收标准与回滚。
 
-- 不配置 GitLab/GitHub remote，也不创建 `.gitlab-ci.yml` 或 `.github/workflows/`。
-- 不安装或调用 oh-my-codex、native_omx、LangGraph durable backend、LangGraph CLI wrapper 或 `.omx/state/`。
-- 不复制本机 `C:\Users\lenovo\.codex\config.toml`、token、`.env`、credential cache、`.venv/`、`node_modules/` 或 `.git/`。
-- 不把 `D:\PythonProject_langgraph` 的 current mainline、active worktree claim、Comet state、LangGraph state 或提示词哨兵字面内容写成模板默认事实。
+完整性复核：
 
-## 3. 目标目录结构
+| 领域 | 结论 | 落点 |
+| --- | --- | --- |
+| Local-only 能力边界 | 完整 | 第 1、2 节 |
+| OpenSpec + Superpowers + Comet contract | 完整 | 第 1.2、4 节 |
+| Native agent TOML 配对 | 完整 | 第 3.2、5 节 Task 3 |
+| Local gate JSON 兼容形状 | 完整 | 第 3.4、5 节 Task 5 |
+| 禁止 OMX/LangGraph surface | 完整 | 第 2.2、7 节 |
+| 验证与回滚 | 完整 | 第 6、8 节 |
 
-生成后的模板根目录建议如下：
+## 1. 关系模型与命名边界
+
+### 1.1 这个模板是什么
+
+`PythonProject_General_2` 是 local-only bootstrap template。新项目如果需要治理与 native Codex subagents，但不需要远端发布或 durable orchestration，应使用这个模板。
+
+它包含：
+
+- 本地 Git 历史；
+- 本地 OpenSpec artifacts；
+- Superpowers 与 Comet workflow instructions；
+- native Codex custom agent TOML files；
+- local checkers 与 local gate helpers；
+- 双语文档配对。
+
+### 1.2 这里的 Comet 是什么
+
+Comet 表示 OpenSpec + Superpowers workflow：
+
+- OpenSpec 负责 WHAT；
+- Superpowers 负责 HOW；
+- Comet 协调 Open -> Design -> Build -> Verify -> Archive。
+
+Comet 不是 oh-my-codex、native_omx、LangGraph、persistent team，也不是 native subagent evidence。
+
+### 1.3 `.codex/agents/` 与 `template_assets/codex-agents/`
+
+- `.codex/agents/` 是项目本地 native Codex agent 目录，Codex 运行时可以读取。
+- `template_assets/codex-agents/` 是可分发副本，用于比较、恢复或把同一套 agent definitions 安装到其他位置。
+- 两个目录必须包含同一组预期 TOML 文件。
+- 每个 standalone custom agent TOML 必须定义顶层 `name`、`description`、`developer_instructions`。
+
+## 2. 目标与非目标
+
+### 2.1 目标
+
+- 提供 minimal local Git + OpenSpec + Superpowers + Comet governance template。
+- 在成对 source/distribution 目录中提供 native Codex subagent TOML definitions。
+- 提供 local-only bootstrap scripts；除非后续显式运行安装命令，否则不修改用户级 Codex 配置。
+- 提供 local gate scripts：JSON 输出兼容更完整模板的 gate 格式，但不添加 remote CI/MR 配置。
+- 提供 UTF-8 双语 startup summaries 与 governance docs。
+- 提供 checkers：如果引入 oh-my-codex、native_omx、LangGraph、`.omx/state/` 或 remote CI/MR 文件则失败。
+
+### 2.2 非目标
+
+- 默认不配置 `origin`、`gitlab` 或 `github` remote。
+- 不创建 `.gitlab-ci.yml`、`.github/workflows/`、GitLab MR helper 或 GitHub PR helper。
+- 不安装或调用 oh-my-codex、native_omx、OMX durable team、LangGraph、LangGraph CLI wrapper 或 `tools/langgraph_durable_orchestrator/`。
+- 不创建 `.omx/state/`、`.omx/session-claims/`、LangGraph backend JSON、durable selector 或 durable-team receipt。
+- 不复制 `C:\Users\lenovo\.codex\config.toml`、token、`.env`、credential cache、`.venv/`、`node_modules/`、`.git/` 或 `D:\PythonProject_langgraph` live facts。
+
+## 3. 目标模板拓扑
+
+建议结构：
 
 ```text
 D:\PythonProject_General_2
-├── AGENTS.md
-├── README.md
-├── TEMPLATE_MANIFEST.md
-├── .gitignore
-├── .codex\agents\
-├── template_assets\codex-agents\
-├── docs_bilingual\project_startup_summary.md
-├── docs_bilingual\project_startup_summary.zh-CN.md
-├── docs_bilingual\governance\
-├── openspec\changes\
-├── openspec\specs\
-└── tools\
+|-- AGENTS.md
+|-- README.md
+|-- TEMPLATE_MANIFEST.md
+|-- .gitignore
+|-- .codex\agents\
+|-- template_assets\codex-agents\
+|-- docs_bilingual\
+|   |-- project_startup_summary.md
+|   |-- project_startup_summary.zh-CN.md
+|   |-- docs_registry.yaml
+|   `-- governance\
+|-- openspec\
+|   |-- changes\
+|   `-- specs\
+`-- tools\
+    |-- ci\
+    `-- template_checks\
 ```
 
-关键目录说明：
+### 3.1 Startup docs
 
-- `.codex\agents\` 是 Codex 运行时读取的项目级 native subagent TOML 目录。
-- `template_assets\codex-agents\` 是模板分发副本，用来在生成新项目或安装用户级 agents 前做文件对比和恢复。
-- `docs_bilingual\project_startup_summary.md` 与 `.zh-CN.md` 是冷启动摘要对；如果未来加入上下文保留哨兵，字面哨兵只能放在这对摘要中。
-- `openspec\changes\` 与 `openspec\specs\` 是本地 OpenSpec 变更和稳定规格目录，不需要远端仓库。
-- `tools\` 存放 bootstrap、checker 和本地 gate 脚本；脚本必须使用 `$env:USERPROFILE` 或参数，不得硬编码 `C:\Users\lenovo`。
+Startup summaries 必须解释 local-only scope、read order、OpenSpec/Comet/Superpowers roles、native subagent boundaries 与 local gate commands。如果未来加入上下文保留哨兵，其字面提示只属于 startup summary pair。
 
-## 4. 实施顺序
+### 3.2 Native agent assets
 
-1. 备份目标目录：如果 `D:\PythonProject_General_2` 已存在，先检查 `git status --short`；发现本地改动时停止并报告，不覆盖。
-2. 写入基础文档：更新 `AGENTS.md`、`README.md`、`TEMPLATE_MANIFEST.md`、启动摘要和 governance 文档，明确 local-only 能力边界。
-3. 初始化 OpenSpec：创建 `openspec/changes/`、`openspec/specs/` 和本地示例 change；示例不得复制本仓库既有 active changes 或 archive 历史。
-4. 同步 native agents：保持 `.codex/agents/` 与 `template_assets/codex-agents/` 文件名和 TOML schema 一致；安装到用户级目录前必须备份同名文件。
-5. 写入本地脚本：提供 `bootstrap-new-pc.ps1`、`bootstrap-local-project.ps1`、`install-subagents-user-level.ps1`、`check_template_health.py`、`check_subagent_only_policy.py`、`check_custom_agent_toml_schema.py`、`check_bilingual_pairs.py` 和 `check_local_git_only_policy.py`。
-6. 初始化本地 Git：仅在用户确认的目标目录中运行 `git init -b main`、`git add .` 和本地初始化 commit；不添加 remote。
+模板只应包含明确维护的通用 TOML 文件。默认不从用户级目录或无关 repo-local 目录复制 agents。若未来支持安装到用户级目录，必须显式触发、先备份、可回滚。
 
-## 5. 验证命令
+### 3.3 OpenSpec assets
 
-在 `D:\PythonProject_General_2` 模板根目录运行：
+创建本地 OpenSpec skeleton 与可选 sample change。不得复制本仓库 active changes、archived changes、Comet state 或当前 mainline facts。
+
+### 3.4 Local gate assets
+
+Local gate scripts 可以使用与 remote-capable templates 相同的 JSON report 格式，方便下游自动化统一解析。这只是格式兼容，不表示启用 remote CI/MR。
+
+## 4. Comet / OpenSpec / Superpowers Contract
+
+- 使用 OpenSpec 管理本地 change lifecycle 与 durable WHAT evidence。
+- 使用 Superpowers 管理 HOW discipline、planning、execution 与 verification。
+- 使用 Comet 协调 phase evidence 与 archive readiness。
+- 所有 Comet/OpenSpec state 都保持项目本地、人类可读。
+- 不把 Comet 使用解释成 native subagent execution 或 durable orchestration 证据。
+
+## 5. 任务级实施切片
+
+### Task 0：目标清点与 local-only 写入范围
+
+**Files:**
+
+- Read: `D:\PythonProject_General_2\AGENTS.md`
+- Read: `D:\PythonProject_General_2\README.md`
+- Read: `D:\PythonProject_General_2\openspec\`
+- Read: `D:\PythonProject_General_2\.codex\agents\`
+
+**Steps:**
+
+- [ ] 确认目标目录是否已存在。
+- [ ] 如果目标是 Git 仓库，运行 `git status --short`，遇到未提交人工修改则停止。
+- [ ] 记录是否存在 remotes；如果意外存在 remotes，只报告，不自动删除。
+- [ ] 为 local-only governance bootstrap 创建目标本地 OpenSpec change。
+- [ ] 编辑文件前冻结 write scope。
+
+**Validation:**
+
+- [ ] 已记录目标状态与 blocker。
+- [ ] 本任务没有添加 remote configuration。
+
+### Task 1：Local-only docs 与 startup authority
+
+**Files:**
+
+- Modify: `AGENTS.md`
+- Modify: `README.md`
+- Modify: `TEMPLATE_MANIFEST.md`
+- Modify: `docs_bilingual/project_startup_summary.md`
+- Modify: `docs_bilingual/project_startup_summary.zh-CN.md`
+- Modify: `docs_bilingual/docs_registry.yaml`
+
+**Steps:**
+
+- [ ] 声明此模板只包含 local Git + OpenSpec + Superpowers + native subagents。
+- [ ] 定义 read order 与按任务补读的 docs。
+- [ ] 解释 Comet 是 OpenSpec + Superpowers 控制层，不是 durable orchestration。
+- [ ] 加入 forbidden-surface reminders：oh-my-codex、OMX、LangGraph、remote CI/MR、`.omx/state/`。
+- [ ] 登记需要长期维护的双语文档。
+
+**Validation:**
+
+- [ ] 双语配对检查通过。
+- [ ] 文档不含 mojibake 或复制来的 live facts。
+
+### Task 2：OpenSpec 与 Comet local skeleton
+
+**Files:**
+
+- Create/modify: `openspec/config.yaml`
+- Create/modify: `openspec/changes/`
+- Create/modify: `openspec/specs/`
+- Create/modify: `docs_bilingual/governance/openspec_comet_local_workflow.md`
+- Create/modify: `docs_bilingual/governance/openspec_comet_local_workflow.zh-CN.md`
+
+**Steps:**
+
+- [ ] 缺失时创建本地 OpenSpec 目录。
+- [ ] 添加 template-safe example change 或 bootstrap note。
+- [ ] 说明 change history 属于项目本地，不从本仓库复制。
+- [ ] 记录 Comet phase loop 与 archive criteria。
+
+**Validation:**
+
+- [ ] 目标仓库中 `openspec validate --all` 通过。
+- [ ] 示例 artifacts 明确标记为 template examples。
+
+### Task 3：Native agent TOML pairing
+
+**Files:**
+
+- Modify/create: `.codex/agents/*.toml`
+- Modify/create: `template_assets/codex-agents/*.toml`
+- Create/modify: `tools/check_custom_agent_toml_schema.py`
+- Create/modify: `tools/check_agent_asset_pairs.py`
+
+**Steps:**
+
+- [ ] 只选择属于此模板的通用 local agents。
+- [ ] 保持 `.codex/agents/` 与 `template_assets/codex-agents/` 文件名一致。
+- [ ] 验证每个 TOML 都有 `name`、`description`、`developer_instructions`。
+- [ ] 默认不复制本仓库中缺失或无关的 agents。
+- [ ] 如果未来支持用户级安装，覆盖前必须备份。
+
+**Validation:**
+
+- [ ] `python .\tools\check_custom_agent_toml_schema.py --root .` 通过。
+- [ ] Pair checker 通过。
+
+### Task 4：Local-only policy checker
+
+**Files:**
+
+- Create/modify: `tools/check_subagent_only_policy.py`
+- Create/modify: `tools/check_local_git_only_policy.py`
+- Create/modify: `tools/check_template_health.py`
+- Create/modify: `.gitignore`
+
+**Steps:**
+
+- [ ] 如果模板中存在 `.omx/state/` 或 `.omx/session-claims/` 则失败。
+- [ ] 如果引入 LangGraph runtime/source 文件则失败。
+- [ ] 如果 oh-my-codex/native_omx launcher docs 被写成 enabled 则失败。
+- [ ] 如果出现 remote CI/MR config 则失败。
+- [ ] 确保 `.gitignore` 排除 local caches、`.venv/`、`node_modules/`、`.env`、coverage 与 temp reports。
+
+**Validation:**
+
+- [ ] `python .\tools\check_subagent_only_policy.py --root .` 通过。
+- [ ] `python .\tools\check_local_git_only_policy.py --root .` 通过。
+
+### Task 5：具有兼容 JSON 形状的 local gate
+
+**Files:**
+
+- Create/modify: `tools/ci/local_gate.ps1`
+- Create/modify: `tools/ci/local_mr_review.ps1`
+- Create/modify: `tools/ci/ci_test_manifest.json`（如果使用 manifest）
+
+**Steps:**
+
+- [ ] local gate 运行 template health、subagent-only、TOML schema、bilingual pair、local Git-only、OpenSpec 与 `git diff --check`。
+- [ ] JSON 输出保持稳定，并兼容 fuller template gate shape。
+- [ ] `local_mr_review` 只作为本地 review/report helper；不配置远端 MR 创建。
+- [ ] 文档说明 remote CI/MR 不属于此模板范围。
+
+**Validation:**
+
+- [ ] `tools\ci\local_gate.ps1 -Root . -Json` 通过。
+- [ ] `tools\ci\local_mr_review.ps1 -Root . -Json` 通过。
+
+### Task 6：Bootstrap scripts 与本地 Git 初始化
+
+**Files:**
+
+- Create/modify: `tools/bootstrap-local-project.ps1`
+- Create/modify: `tools/bootstrap-new-pc.ps1`
+- Create/modify: `tools/install-subagents-user-level.ps1`（仅当支持用户级安装）
+
+**Steps:**
+
+- [ ] Bootstrap 必须幂等且参数化。
+- [ ] 使用 `$env:USERPROFILE` 或参数，不硬编码用户路径。
+- [ ] 只在确认的目标 root 内运行 `git init -b main`。
+- [ ] 不添加 remotes。
+- [ ] 如需提交初始内容，只在验证通过后本地提交。
+
+**Validation:**
+
+- [ ] Bootstrap dry-run 报告 planned actions。
+- [ ] Bootstrap 后 local Git 没有默认 remote。
+
+### Task 7：源仓库方案维护与本地集成
+
+**Files:**
+
+- 源仓库 `docs_bilingual/implementation_plans/` 下方案配对
+- Tasks 0-6 修改的目标仓库文件
+
+**Steps:**
+
+- [ ] 保持本方案配对与目标模板实际 contract 一致。
+- [ ] 运行源仓库 implementation-plan 与 OpenSpec checks。
+- [ ] 目标验证通过后，只在目标仓库本地 commit。
+- [ ] 没有明确远端发布批准时，不推送任何远端。
+
+**Validation:**
+
+- [ ] 源方案配对通过仓库 checks。
+- [ ] 目标仓库 local commit 后 status clean。
+
+## 6. 验证计划
+
+在 `D:\PythonProject_General_2` 运行：
 
 ```powershell
 python .\tools\check_template_health.py --root .
@@ -86,20 +328,48 @@ git diff --check
 git status --short
 ```
 
-命令用途：模板健康检查确认关键文件存在；subagent-only 检查确认未启用 OMX/LangGraph；TOML schema 检查确认 agent 文件可被 Codex 读取；双语配对检查确认 Markdown 对齐；本地 Git-only 检查确认没有 remote-first 配置；OpenSpec 与 Git 检查确认治理和文本格式健康。
+在 `D:\PythonProject_langgraph` 维护本方案时运行：
 
-## 6. 验收标准
+```powershell
+python .\tools\check_implementation_plan_rules.py --root . --json
+python .\tools\check_precommit_update_archive.py --root . --json
+python .\tools\run_openspec_guard.py --root . --json
+.\tools\ci\local_mr_review.ps1 -Root . -Json
+.\tools\ci\local_gate.ps1 -Root . -Json
+git diff --check
+```
 
-- General_2 明确保持 local Git + OpenSpec + Superpowers + native Codex subagents only。
-- `.codex/agents/` 与 `template_assets/codex-agents/` 成对一致，且所有 agent TOML 有必需字段。
-- 目标目录没有 `.omx/state/`、`.omx/session-claims/`、LangGraph runtime、oh-my-codex launcher、GitLab/GitHub remote 或远程 CI 配置。
-- 所有脚本可重复运行；遇到已存在目标目录、本地 Git 改动或用户级同名 agent 时先报告并备份，不静默覆盖。
-- 中文文档以 UTF-8 保存，不包含乱码、替换字符或从终端复制来的 mojibake。
+## 7. 验收标准
 
-## 7. 回滚策略
+- [ ] General_2 保持 local Git + OpenSpec + Superpowers + native Codex subagents only。
+- [ ] `.codex/agents/` 与 `template_assets/codex-agents/` 保持成对。
+- [ ] 每个 agent TOML 都有 `name`、`description`、`developer_instructions`。
+- [ ] 不存在 `.omx/state/`、`.omx/session-claims/`、LangGraph、oh-my-codex、native_omx、remote CI 或 remote MR/PR config。
+- [ ] Local gates 输出稳定 JSON，且不需要远端。
+- [ ] 中文与英文文档成对且 UTF-8 干净。
 
-- 目标目录错误时先重命名为 `D:\PythonProject_General_2.backup.<timestamp>`，确认没有需要保留的本地提交后再人工删除。
-- 用户级 agents 安装错误时，从 `%USERPROFILE%\.codex\agents.backup.<timestamp>\` 恢复同名 TOML。
-- pip 用户级镜像不再需要时，运行 `python -m pip config --user unset global.index-url` 和 `python -m pip config --user unset global.timeout`。
-- 本地 Git 初始化错误时，只能在确认没有需要保留的提交后人工删除 `.git/`；脚本不得自动删除 Git 历史。
-- OpenSpec 初始化错误时，先查看 `git status --short`，按文件清单回退；脚本不得自动清空 `openspec/`。
+## 8. 回滚与清理
+
+- 错误目标目录先重命名为 `D:\PythonProject_General_2.backup.<timestamp>`，再人工清理。
+- 文档或 checker 误改使用目标本地 Git 回滚。
+- 如果曾显式运行 user-level agent install，从 `%USERPROFILE%\.codex\agents.backup.<timestamp>\` 恢复。
+- 只有确认没有需要保留的 commits 后，才人工删除 `.git/`。
+- OpenSpec 文件按 `git status --short` 列表逐项恢复，不自动清空 `openspec/`。
+- 不使用会递归删除已确认目标 root 之外内容的清理脚本。
+
+## 9. 风险与默认决策
+
+- 风险：local-only 模板误加入 durable orchestration。默认：`check_subagent_only_policy.py` fail closed。
+- 风险：agent TOML runtime 与 template assets 漂移。默认：pair checker 比较文件名与必需 schema。
+- 风险：gate JSON 兼容导致误以为启用了 remote CI/MR。默认：文档说明 JSON compatibility 只是格式兼容。
+- 风险：复制终端输出污染中文文档。默认：直接写 UTF-8 文件并检查源文本。
+- 风险：用户级 agent install 覆盖既有文件。默认：不默认安装；显式安装必须备份。
+
+## 10. 自检清单
+
+- [ ] 未启用 oh-my-codex、OMX、LangGraph、remote CI/MR 或 `.omx/state/` surface。
+- [ ] OpenSpec 与 Comet 只是 local governance。
+- [ ] Native agent TOML 文件成对且 schema-valid。
+- [ ] Local gates 与 checkers 有明确命令。
+- [ ] 回滚绝不自动删除 Git history。
+- [ ] 源仓库与目标仓库保持分离。

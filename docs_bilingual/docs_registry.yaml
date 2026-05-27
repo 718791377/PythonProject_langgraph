@@ -249,6 +249,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.zh-CN.md
 
+  - doc_id: general_2_local_git_openspec_subagents_only_bootstrap_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/general_2_local_git_openspec_subagents_only_bootstrap_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/general_2_local_git_openspec_subagents_only_bootstrap_plan.zh-CN.md
+
   - doc_id: main_worktree_gitlab_main_alignment_safety_plan
     doc_class: implementation_plan
     status: active

@@ -2,79 +2,337 @@
 doc_id: general_template_phase0_update_patch_plan
 lang: zh-CN
 canonical: docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.md
-zh_cn_path: docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.zh-CN.md
+translation_of: docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.md
 status: active
-updated_at: 2026-05-27
-target_template: D:\PythonProject_General
-comet_change: refactor-general-template-plans-comet
+plan_readiness: ready-for-implementation
+doc_class: implementation_plan
+last_reviewed: 2026-05-27
+target_template: "D:\PythonProject_General"
 capability_tier: fuller-codex-openspec-comet-governance-template
+comet_workflow: full
 ---
 
-# D:\PythonProject_General Phase 0 通用治理模板实施计划
+# `D:\PythonProject_General` Phase 0 通用治理模板实施方案
 
-## 1. 目标
+> **For agentic workers:** REQUIRED SUB-SKILL：使用 `comet` 作为 OpenSpec + Superpowers 控制层，然后按任务使用 `superpowers:executing-plans` 或等价逐步执行方式。每个 checkbox 都是工作证据。没有完成目标仓库干净性预检和明确写入范围前，不要写入 `D:\PythonProject_General`。
 
-`D:\PythonProject_General` 是更完整的通用 Codex/OpenSpec/Comet 生产模板。Phase 0 的目标不是把它变成 `D:\PythonProject_langgraph` 的克隆，而是把可复用的治理能力做成模板化、可验证、可回滚的基础层。
+**Goal:** 将 `D:\PythonProject_General` 做成更完整、可复用的 Codex/OpenSpec/Comet 生产模板，但不克隆 `D:\PythonProject_langgraph` 的 live state。模板必须能为新项目干净 hydrate，并提供可复用治理、检查与可选 durable orchestration 入口。
 
-Phase 0 完成后，新项目应能继承清晰的冷启动摘要、OpenSpec 治理、Superpowers 方法论、Comet 工作流说明、local/remote gate 一致性、MCP scope 边界、Windows-safe launcher payload 规则，以及可选 LangGraph/OMX 能力的模板入口。所有 live runtime state 必须在生成项目运行后再产生，不能从本仓库复制。
+**Architecture:** 模板源码定义冷启动权威、OpenSpec/Superpowers/Comet 治理、MCP 与 launcher payload 边界、可选编排 profile、LangGraph 兼容源码模板，以及 manifest-driven 的 local/remote gate 一致性。运行时状态由 hydrate 后的新项目自行生成，绝不从本仓库复制。
 
-## 2. 能力定位
+**Tech Stack:** Git、OpenSpec、Comet、Superpowers、Codex 启动文档、native Codex agent TOML schema 检查、PowerShell gates、Python checkers、JSON reports、可选 `tools/langgraph_durable_orchestrator/` 模板源码、生成项目 `.omx/state/` ignore/state 规则。
 
-### 2.1 General 与 General_2 的区别
+---
 
-- General 是 fuller governance template：允许模板化 oh-my-codex、native_omx、LangGraph 兼容源码、MCP scope policy、launcher payload policy、local/remote CI/MR gate parity 和生成项目的 repo-local durable-state 脚手架。
-- General_2 是 local-only template：只允许本地 Git、OpenSpec、Superpowers governance 和 native Codex subagents，不启用 remote CI/MR、oh-my-codex、native_omx、LangGraph durable backend 或 `.omx/state/`。
+## 0. 复核结论
 
-### 2.2 Comet 边界
+旧方案方向正确，但对冷启动 worker 来说仍然偏粗：缺少可直接执行的源事实读取、模板拓扑、artifact contract、任务切片、验证证据、回滚路径和验收门槛。本版把这些内容拆成可执行结构。
 
-`/comet` 在本计划中表示 OpenSpec + Superpowers 的双星治理流程：OpenSpec 负责 WHAT、proposal、spec、tasks、validate 和 archive；Superpowers 负责 HOW、brainstorming、writing-plans、executing-plans、verification-before-completion；Comet 负责阶段调度、状态证据和归档闭环。
+完整性复核：
 
-Comet 不是 native subagent evidence，不是 oh-my-codex，不是 native_omx，不是 LangGraph，也不是 durable-team backend。文档中引用 Comet 时必须同时说明这个边界。
+| 领域 | 结论 | 落点 |
+| --- | --- | --- |
+| General 与 General_2 边界 | 完整 | 第 1、2 节 |
+| Comet/OpenSpec/Superpowers contract | 完整 | 第 1.2、4 节 |
+| 可选 orchestration 模板边界 | 完整 | 第 3.4、5 节 Task 3、Task 4 |
+| LangGraph source 与 runtime state | 完整 | 第 3.5、5 节 Task 4 |
+| MCP 与 launcher payload policy | 完整 | 第 3.3、5 节 Task 3 |
+| Local/remote CI/MR parity | 完整 | 第 3.6、5 节 Task 5 |
+| 验证与回滚 | 完整 | 第 6、8 节 |
 
-### 2.3 冷启动与提示词哨兵边界
+## 1. 关系模型与命名边界
 
-General 模板的冷启动 authority 来自生成项目自己的 `docs_bilingual/project_startup_summary.md` 与 `.zh-CN.md`；模板只能写入通用读取顺序和补读分类，不能复制本仓库 live read list、当前会话结论或 active mainline facts。
+### 1.1 `General` 与 `General_2`
 
-- 新 Codex 会话先读取启动摘要对，再按任务需要补读 worktree isolation、MCP scope、launcher payload、LangGraph runtime、orchestration activation 与 OpenSpec workflow 政策；这些政策名称必须附带用途说明，方便冷启动读者理解。
-- 如果启动提示、渲染后的 `AGENTS.md`、上下文保留哨兵或 Windows 终端输出出现乱码，必须以 UTF-8 读取的启动摘要对为准；不得把乱码复制到模板文档、launcher payload、generated helper、OpenSpec artifact、checker 或 native agent TOML。
-- 上下文保留哨兵的字面提示词只能由生成项目的启动摘要对承载；`AGENTS.md`、launcher、installer、OpenSpec proposal/design/tasks/spec、checker 和 native agent TOML 只能引用规则，不得重复字面提示。
-- Launcher payload 必须保持 Windows-safe：不要通过 `-c developer_instructions=...` 内联传递长生成式 orchestration instructions；应使用 file-backed instruction path、短引用或模板内受控 payload 组装脚本。
-- LangGraph 进入 General 时只能作为通用模板源码或可选 profile：官方 `langgraph` 包属于用户级共享安装，`tools/langgraph_durable_orchestrator/` 是可模板化的 repo-local 兼容/编排源码，`.omx/state/langgraph/` 只允许作为生成项目运行后的本地状态。
+- `PythonProject_General` 是 fuller governance template。它可以模板化 oh-my-codex、native_omx、LangGraph compatibility source、MCP scope policy、launcher payload policy、local/remote gate parity，以及生成项目的 repo-local durable-state 脚手架。
+- `PythonProject_General_2` 是 local-only template。它必须保持 local Git + OpenSpec + Superpowers + native Codex subagents only。
+- 两个模板都不得把 `D:\PythonProject_langgraph` 的 live `.omx/state/`、selector、worktree claim、runtime log、当前 mainline facts、凭据或用户专属绝对路径复制成默认值。
 
-## 3. Phase 0 范围
+### 1.2 Comet / OpenSpec / Superpowers
 
-### 3.1 范围内
+- OpenSpec 负责 WHAT：proposal、design constraints、capability specs、tasks、validation 与 archive。
+- Superpowers 负责 HOW：brainstorming、planning、execution discipline、TDD/debugging/review 与 verification-before-completion。
+- Comet 协调五阶段控制环：Open -> Design -> Build -> Verify -> Archive。
+- Comet 不是 native subagent、oh-my-codex、native_omx、LangGraph 或 durable-team backend。模板中引用 `/comet` 时必须显式保留这个边界。
 
-- 更新 `AGENTS.md`：写入冷启动读取顺序、OpenSpec/Comet/Superpowers 边界、multi-session/worktree isolation、MCP scope、launcher payload、orchestration activation 和提示词哨兵规则。
-- 更新 `README.md` 与启动摘要：让没有历史聊天上下文的新 Codex 会话知道模板目标、生成方式、验证命令和回滚方式。
-- 更新 `docs_bilingual/docs_registry.yaml`：登记需要长期维护的双语治理文档和 implementation plans。
-- 提供 `tools/test_template_hydration.py`：用于生成临时项目并验证 hydrate 后没有未解析占位符。
-- 提供 `tools/ci/local_gate.ps1` 与 `tools/ci/local_mr_review.ps1`：本地 gate 与 MR review helper，远端 CI/MR 只调用同一套脚本，不维护漂移序列。
-- 提供 manifest-driven gate：用清单声明 Python、Node 和 PowerShell 检查项，输出 JSON report，便于 local/remote 结果对齐。
-- 模板化 LangGraph 兼容源码入口：`tools/langgraph_durable_orchestrator/` 可作为通用源码模板，但官方 `langgraph` 包仍属于用户级共享安装。
-- 模板化 repo-local durable state 规则：`.omx/state/langgraph/` 只作为生成项目运行后可产生的本地状态目录，不复制本仓库 live state。
+### 1.3 可选编排产品线假设
 
-### 3.2 范围外
+General 可以把 Codex orchestration 产品线写成可复用假设：
 
-- 不复制 `D:\PythonProject_langgraph` 的 `.omx/state/`、active selector、worktree claim、LangGraph backend JSON、运行日志或当前 mainline facts。
-- 不修改用户级 `C:\Users\lenovo\.codex\config.toml`、全局 pip/npm/Git 配置或浏览器配置。
-- 不把 legacy consumer project 的事实写入通用模板默认值。
-- 不在 Phase 0 中实现业务项目代码、GUI、浏览器自动化、Vercel/GitHub 发布策略或长期 persistent team runtime。
-- 不推送远端、不创建 GitLab/GitHub MR/PR。
+- native Codex 仍是基础层；
+- oh-my-codex 是 additive workflow layer；
+- native_omx 是 worker-centric durable lane；
+- LangGraph 是 graph-shaped durable orchestration lane；
+- 一个 durable task 同一时间只使用一个 backend family；
+- durable team 受阈值约束，不在模板启动时自动拉起。
 
-## 4. 实施顺序
+这些是可模板化治理假设，不是生成项目已经有 running team 或 ready LangGraph backend 的证据。
 
-1. 读取当前源事实：以 `docs_bilingual/project_startup_summary.md` 与 `.zh-CN.md` 为冷启动入口，再补读 OpenSpec、MCP scope、launcher payload、LangGraph runtime、多会话 worktree isolation 和 orchestration activation 政策。
-2. 清点目标目录：在 `D:\PythonProject_General` 中运行 `git status --short`、`openspec list --json` 和模板 checker；发现未提交人工改动时停止并报告。
-3. 更新治理文档：优先写入模板可复用规则，避免复制本仓库 live state 或当前会话结论。
-4. 更新脚本与 gate：让 local gate、local MR review 和远端 CI/MR 使用同一 manifest 与 checker 顺序；JSON 输出字段保持一致。
-5. 更新通用 runtime scaffold：把 LangGraph 兼容/编排源码作为可选模板源码，把 `.omx/state/` 写入 ignore 和生成后本地状态说明。
-6. 运行 hydration smoke test：生成临时项目，验证占位符、启动摘要、OpenSpec、background process、launcher payload 和 local gate 基础路径。
-7. 形成本地提交：提交前运行 pre-commit update/archive 检查、OpenSpec guard、local gate 和 local MR review；不推送远端。
+## 2. 目标与非目标
 
-## 5. 验证命令
+### 2.1 目标
 
-在 `D:\PythonProject_General` 模板根目录运行：
+- 为新项目提供可复用冷启动 read order 与按任务补读的 policy routing。
+- 提供 OpenSpec + Superpowers + Comet 治理文档与安全示例 change 脚手架。
+- 提供本地和远端都能复用 JSON 输出形状的 CI/MR gate 脚本。
+- 提供 Windows-safe 的 MCP scope 与 launcher payload 指南，避免长 inline startup payload。
+- 提供可选 LangGraph compatibility/orchestration source 模板，同时保持官方 `langgraph` 安装在用户级共享环境。
+- 提供生成项目 durable-state 规则：`.omx/state/` 可在 hydrate 后由项目运行时生成，但不得从本仓库复制。
+- 提供 fail-closed checkers：未解析 placeholder、缺失双语配对、native agent TOML 格式错误、local/remote gate 漂移都要失败。
+
+### 2.2 非目标
+
+- 不克隆 `D:\PythonProject_langgraph`。
+- 不安装或修改用户级 Codex 配置、全局 pip/npm/Git 配置、浏览器配置或凭据。
+- 不复制 `.git/`、`.venv/`、`node_modules/`、`.env`、cache、token、runtime log 或 `.omx/state/`。
+- 不在 Phase 0 实现业务应用代码、GUI flow、浏览器自动化、远端发布或 persistent team runtime。
+- 不推送远端，也不创建 GitLab/GitHub MR/PR。
+
+## 3. 目标模板拓扑
+
+建议 hydrate 后结构：
+
+```text
+D:\PythonProject_General
+|-- AGENTS.md
+|-- README.md
+|-- TEMPLATE_MANIFEST.md
+|-- .gitignore
+|-- .codex\agents\
+|-- template_assets\codex-agents\
+|-- docs_bilingual\
+|   |-- project_startup_summary.md
+|   |-- project_startup_summary.zh-CN.md
+|   |-- docs_registry.yaml
+|   `-- governance\
+|-- openspec\
+|   |-- changes\
+|   `-- specs\
+|-- tools\
+|   |-- ci\
+|   |-- langgraph_durable_orchestrator\
+|   `-- template_checks\
+`-- template_assets\
+```
+
+### 3.1 Startup authority
+
+生成项目拥有自己的 `docs_bilingual/project_startup_summary.md` 与 `.zh-CN.md`。模板可以定义可复用 read order，但不得把本仓库当前 read order 当成 live fact 复制进去。上下文保留哨兵规则可以引用，但哨兵字面提示只属于生成项目的 startup summary pair。
+
+### 3.2 OpenSpec 与 Comet assets
+
+General 应创建本地 OpenSpec skeleton 与 template-safe example change。不得复制本仓库 active 或 archived changes。示例 artifacts 必须标注为 example，并允许项目初始化后删除。
+
+### 3.3 MCP 与 launcher payload assets
+
+MCP 文档必须区分：
+
+- Codex-direct project tools；
+- MCP Router shared tools；
+- 默认不属于任一侧的工具。
+
+Launcher 文档与 helper 必须优先使用短 file-backed payload reference，而不是通过 `-c developer_instructions=...` 传入长 inline 指令。
+
+### 3.4 可选 orchestration assets
+
+General 可以包含 oh-my-codex、native_omx 与 LangGraph 的可选 profile 文档。这些文档必须区分 `installed`、`enabled`、`selected`、`ready` 状态，并且不得声称生成项目已经选择或拉起 durable orchestration。
+
+### 3.5 LangGraph compatibility source 与 state
+
+- 官方 `langgraph` 包：用户级共享安装，不 vendored 到模板内。
+- `tools/langgraph_durable_orchestrator/`：repo-local compatibility/orchestration source，可以模板化。
+- `.omx/state/langgraph/`：只允许作为生成项目 runtime state；hydrate 后按需创建或 ignore。
+
+### 3.6 CI/MR parity
+
+Local CI、local MR review 与 remote CI/MR 必须调用同一套 manifest-driven scripts。远端配置可以安装前置依赖并调用共享脚本，但不得维护另一套漂移 checker sequence。
+
+## 4. Comet / OpenSpec / Superpowers Contract
+
+- 每个实质模板更新默认先有 OpenSpec change，除非明确归类为小 tweak/hotfix。
+- Comet state 是 change governance metadata，不是生成项目的 durable runtime state。
+- Superpowers planning 必须形成任务级 implementation slices，包含 files、steps、validation 与 rollback。
+- Archive 只有在 verification evidence 存在后才关闭 OpenSpec loop。
+- 本方案是源仓库方案；实际写入目标模板仍需要目标仓库 precheck 与目标本地 OpenSpec change。
+
+## 5. 任务级实施切片
+
+### Task 0：目标清点与写入范围冻结
+
+**Files:**
+
+- Read: `D:\PythonProject_General\AGENTS.md`
+- Read: `D:\PythonProject_General\README.md`
+- Read: `D:\PythonProject_General\docs_bilingual\`
+- Read: `D:\PythonProject_General\openspec\`
+
+**Steps:**
+
+- [ ] 确认 `D:\PythonProject_General` 是本地 Git 仓库。
+- [ ] 运行 `git status --short`，若存在未提交人工修改则停止。
+- [ ] 运行 `openspec list --json`，记录目标本地 active changes，但不复制本仓库 changes。
+- [ ] 为治理模板更新创建目标本地 OpenSpec change。
+- [ ] 修改文件前记录精确 write scope。
+
+**Validation:**
+
+- [ ] 目标状态已知且干净，或 blocker 已报告。
+- [ ] 目标本地 OpenSpec change 已存在。
+
+### Task 1：Startup summaries、README、registry 与 AGENTS
+
+**Files:**
+
+- Modify: `AGENTS.md`
+- Modify: `README.md`
+- Modify: `docs_bilingual/project_startup_summary.md`
+- Modify: `docs_bilingual/project_startup_summary.zh-CN.md`
+- Modify: `docs_bilingual/docs_registry.yaml`
+
+**Steps:**
+
+- [ ] 定义模板目标与非目标。
+- [ ] 加入可复用冷启动 read order 与按任务补读的 policy categories。
+- [ ] 解释 Comet、OpenSpec 与 Superpowers 边界。
+- [ ] 加入上下文保留哨兵位置规则，但不复制本仓库任何 corrupted 或 live literal sentinel text。
+- [ ] 登记长期维护的双语 governance docs 与 implementation plans。
+
+**Validation:**
+
+- [ ] 双语配对检查通过。
+- [ ] Startup summaries 不含 unresolved placeholders 或 mojibake。
+
+### Task 2：治理文档集合
+
+**Files:**
+
+- Create/modify: `docs_bilingual/governance/` 下治理文档
+- Modify: `TEMPLATE_MANIFEST.md`
+
+**Steps:**
+
+- [ ] 增加 multi-session/worktree isolation 规则。
+- [ ] 增加 MCP scope 规则。
+- [ ] 增加 launcher-payload 规则。
+- [ ] 增加 orchestration activation 规则。
+- [ ] 增加 OpenSpec official workflow 与 Comet/Superpowers workflow 规则。
+- [ ] 将项目专属示例标为 placeholders。
+
+**Validation:**
+
+- [ ] `docs_bilingual/docs_registry.yaml` 登记每个长期治理文档。
+- [ ] Policy docs 不声称本仓库 live state。
+
+### Task 3：可选 orchestration profile 模板
+
+**Files:**
+
+- Create/modify: `docs_bilingual/governance/codex_orchestration_profile.md`
+- Create/modify: `docs_bilingual/governance/codex_orchestration_profile.zh-CN.md`
+- Modify: `AGENTS.md`
+
+**Steps:**
+
+- [ ] 定义 native Codex 为 base layer。
+- [ ] 定义 oh-my-codex、native_omx、LangGraph 为 optional profiles。
+- [ ] 区分 installed/enabled/selected/ready 状态。
+- [ ] 写明 durable-team thresholds 与 single-backend-family 规则。
+- [ ] 不把 General_2 exclusions 写成 General optional profile default。
+
+**Validation:**
+
+- [ ] 生成文档不暗示 durable orchestration 已经 running。
+- [ ] Activation trace 示例引用阈值或 blocker。
+
+### Task 4：LangGraph compatibility source 与 runtime-state scaffold
+
+**Files:**
+
+- Create/modify: `tools/langgraph_durable_orchestrator/`
+- Modify: `.gitignore`
+- Modify: `TEMPLATE_MANIFEST.md`
+- Modify: 相关 LangGraph governance docs
+
+**Steps:**
+
+- [ ] 如目标模板支持 LangGraph，则模板化 repo-local compatibility/orchestration source。
+- [ ] 文档写明官方 `langgraph` 安装在用户级共享 LangGraph venv。
+- [ ] 将 `.omx/state/` 与 generated runtime reports 加入 ignore。
+- [ ] 为 `.omx/state/langgraph/` 提供 placeholder 或 generator note，而不是复制 live state。
+- [ ] 提供 readiness-check commands，能分别报告 installed/enabled/selected/ready。
+
+**Validation:**
+
+- [ ] 模板源码中不存在复制来的 `.omx/state/` 文件。
+- [ ] LangGraph 文档区分源码、官方包与运行时状态。
+
+### Task 5：Manifest-driven CI/local gate parity
+
+**Files:**
+
+- Create/modify: `tools/ci/local_gate.ps1`
+- Create/modify: `tools/ci/local_mr_review.ps1`
+- Create/modify: `tools/ci/ci_test_manifest.json`
+- Create/modify: Python/Node/PowerShell checker scripts
+- Create/modify: remote CI config（仅当模板明确包含 remote CI）
+
+**Steps:**
+
+- [ ] 用一个 manifest 定义所有 check steps。
+- [ ] 本地与远端 CI 都输出稳定 JSON report。
+- [ ] local MR review 调用同一 checker sequence。
+- [ ] 增加 drift checker，远端 CI 若使用漂移脚本序列则失败。
+- [ ] 将新增 tests 登记进 manifest。
+
+**Validation:**
+
+- [ ] `tools/ci/local_gate.ps1 -Root . -Json` 通过。
+- [ ] `tools/ci/local_mr_review.ps1 -Root . -Json` 通过。
+- [ ] 本地与远端配置共享同一 entrypoint。
+
+### Task 6：Hydration 与模板健康
+
+**Files:**
+
+- Create/modify: `tools/test_template_hydration.py`
+- Create/modify: `tools/check_template_health.py`
+- Create/modify: `tools/check_bilingual_pairs.py`
+- Create/modify: `tools/check_custom_agent_toml_schema.py`
+
+**Steps:**
+
+- [ ] 从模板 hydrate 一个临时项目。
+- [ ] 验证 placeholders 已解析或被明确标记为 intentionally documented。
+- [ ] 验证 startup summaries、OpenSpec skeleton、optional profile docs 与 gate scripts 存在。
+- [ ] 验证 ignored runtime directories 未被复制。
+- [ ] 验证双语文档配对且 UTF-8 干净。
+
+**Validation:**
+
+- [ ] `python .\tools\test_template_hydration.py --root . --json` 通过。
+- [ ] `git diff --check` 通过。
+
+### Task 7：目标本地提交与源仓库方案维护
+
+**Files:**
+
+- Tasks 0-6 修改的目标仓库文件
+- 源仓库 `docs_bilingual/implementation_plans/` 下方案文件
+
+**Steps:**
+
+- [ ] 只有目标验证通过后，才在 `D:\PythonProject_General` 提交目标模板更新。
+- [ ] 当 scope 或 validation 改变时，同步维护本源仓库方案配对。
+- [ ] 没有明确远端发布批准时，不推送任何远端。
+
+**Validation:**
+
+- [ ] 目标仓库有本地 commit 且 status clean。
+- [ ] 源仓库 plan checker 与 OpenSpec guard 通过。
+
+## 6. 验证计划
+
+在 `D:\PythonProject_General` 目标仓库运行：
 
 ```powershell
 python .\tools\test_template_hydration.py --root . --json
@@ -85,27 +343,49 @@ git diff --check
 git status --short
 ```
 
-在本仓库 `D:\PythonProject_langgraph` 中维护本计划时运行：
+在 `D:\PythonProject_langgraph` 维护本方案时运行：
 
 ```powershell
+python .\tools\check_implementation_plan_rules.py --root . --json
 python .\tools\check_precommit_update_archive.py --root . --json
 python .\tools\run_openspec_guard.py --root . --json
-.\tools\ci\local_gate.ps1 -Root . -Json
 .\tools\ci\local_mr_review.ps1 -Root . -Json
+.\tools\ci\local_gate.ps1 -Root . -Json
+git diff --check
 ```
 
-## 6. 验收标准
+## 7. 验收标准
 
-- General 文档清楚说明 fuller governance template 的目标，不把 General_2 或本仓库 live runtime state 混入默认模板事实。
-- Comet 被定义为 OpenSpec + Superpowers governance，而不是 native subagent、OMX、LangGraph 或 durable team。
-- MCP scope、launcher payload、LangGraph runtime source、repo-local `.omx/state/`、local/remote CI/MR gate parity 均有模板化说明和验证路径。
-- 新项目模板中的 `.omx/state/`、`.venv/`、`node_modules/`、`.env`、token、coverage 和临时 report 均被 ignore 或标记为生成后本地状态。
-- 所有中文文档以 UTF-8 保存，不包含乱码、替换字符或从终端复制来的 mojibake。
+- [ ] General 明确是 fuller governance template，而不是 `D:\PythonProject_langgraph` 克隆。
+- [ ] Comet 被定义为 OpenSpec + Superpowers governance，而不是 subagent 或 durable backend。
+- [ ] MCP scope、launcher payload、orchestration activation、LangGraph source/state 与 CI/MR parity 均有 template-safe docs 和 checker paths。
+- [ ] 未复制 live `.omx/state/`、selectors、worktree claims、logs、credentials 或当前 mainline facts。
+- [ ] Hydrated project 会 ignore 或本地生成 `.omx/state/`、`.venv/`、`node_modules/`、`.env`、tokens、coverage 与 temporary reports。
+- [ ] 英文与中文文档成对、UTF-8 干净，长期文档已登记。
 
-## 7. 回滚策略
+## 8. 回滚与清理
 
-- 文档误改：使用本地 Git revert 回退本计划提交，并重新运行 `git diff --check` 与 OpenSpec guard。
-- 目标模板误改：在 `D:\PythonProject_General` 中使用本地 Git 回退；如果未提交，按 `git status --short` 文件清单逐项恢复。
-- hydration 失败：保留失败临时目录和 JSON report 作为诊断材料，修复模板脚本后重新运行 smoke test。
-- LangGraph 模板化错误：只回退 `tools/langgraph_durable_orchestrator/` 模板源码或说明，不删除用户级官方 `langgraph` 安装。
-- launcher payload 错误：回退模板内 launcher/helper 生成逻辑，不修改用户级 launcher 或全局 Codex 配置。
+- 文档误改：使用本地 Git revert 回滚，并重新运行 `git diff --check` 与 OpenSpec guard。
+- `D:\PythonProject_General` 目标模板误改：使用目标仓库本地 Git 回滚；若未提交，则按 `git status --short` 文件清单逐项恢复。
+- Hydration 失败：保留失败临时目录与 JSON report 直到定位根因，修复后重新跑 smoke test。
+- LangGraph 模板错误：只回滚模板 `tools/langgraph_durable_orchestrator/` 源码或文档，不删除用户级官方 `langgraph` 安装。
+- Launcher/helper payload 错误：回滚模板生成逻辑，不修改用户级 launcher 或全局 Codex 配置。
+- Phase 0 回滚不删除远端分支、不推送远端、不修改 protected remote settings。
+
+## 9. 风险与默认决策
+
+- 风险：模板文档误继承 live facts。默认：使用 placeholders 与 target-local probes，永不复制 runtime state。
+- 风险：文档让 LangGraph 看起来已经启用。默认：描述 optional profile states，并要求 readiness checks。
+- 风险：local 与 remote gates 漂移。默认：remote CI 调用 local manifest-driven gate。
+- 风险：Windows 命令行 payload 过长。默认：使用 file-backed instruction payloads。
+- 风险：中文文档因终端复制产生 mojibake。默认：直接读写 UTF-8 文件并验证源文本，而不是相信 console rendering。
+
+## 10. 自检清单
+
+- [ ] 每个 implementation slice 都列出 files、steps 与 validation。
+- [ ] 可选 orchestration source 与 runtime state 已分离。
+- [ ] 官方 LangGraph 包安装位置是用户级，不 vendored。
+- [ ] `.omx/state/` 只是生成项目状态。
+- [ ] Comet、OpenSpec 与 Superpowers 角色显式分离。
+- [ ] CI/MR parity 是 manifest-driven。
+- [ ] 回滚不修改用户级配置或远端。
