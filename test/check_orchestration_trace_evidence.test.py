@@ -278,6 +278,75 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("without thresholds" in error for error in payload["errors"]), payload["errors"])
 
+    def test_durable_running_claim_requires_heartbeat(self) -> None:
+        root = self.make_root("collab-durable-no-heartbeat")
+        path = root / "durable.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "durable_persistent_claim",
+                "state": "running",
+                "claim": "persistent team is running",
+                "evidence": {
+                    "active_selector": True,
+                    "backend_family": "langgraph",
+                    "preflight_passed": True,
+                    "ownership_plan": True,
+                    "team_manifest": True,
+                },
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("heartbeat" in error for error in payload["errors"]), payload["errors"])
+
+    def test_expert_result_requires_absorbed_event(self) -> None:
+        root = self.make_root("collab-expert-result")
+        path = root / "expert.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "expert_lifecycle_audit",
+                "total_wait_bound_seconds": 30,
+                "events": [
+                    {"event": "spawn", "role": "verifier", "task_summary": "check evidence"},
+                    {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
+                    {"event": "result", "agent_id": "agent-1", "summary": "looks good"},
+                ],
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("absorbed" in error for error in payload["errors"]), payload["errors"])
+
+    def test_expert_timeout_must_be_non_evidence(self) -> None:
+        root = self.make_root("collab-expert-timeout")
+        path = root / "timeout.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "expert_lifecycle_audit",
+                "total_wait_bound_seconds": 30,
+                "events": [
+                    {"event": "spawn", "role": "verifier", "task_summary": "check evidence"},
+                    {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
+                    {"event": "timeout", "agent_id": "agent-1", "classification": "success"},
+                ],
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("non-evidence" in error for error in payload["errors"]), payload["errors"])
+
     def test_langgraph_completed_state_must_release_running(self) -> None:
         root = self.make_root("collab-langgraph-release")
         path = root / "lg.json"
