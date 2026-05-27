@@ -502,3 +502,13 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [x] 预期证据文件：`test/comet_runtime_management_flow.test.py`。
 - [x] 验收证据必须包括定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、本地 MR review 和 local CI。
 - [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。
+## 2026-05-28 Artifact Path 安全校验证据包
+- [x] 本地执行范围先从这次 `docs_bilingual` 治理包开始，然后再修改 Comet runtime 校验脚本和定向 runtime 测试。
+- [x] 范围：让 `comet-yaml-validate.sh` 在受管 artifact 路径是绝对路径或包含路径穿越片段时 fail closed，同时保持既有仓库相对路径 artifact 有效。
+- [x] 本批次受管 artifact 路径为 `design_doc`、`plan`、`verification_report` 和 `management_record`。
+- [x] 本批次归类为 script-plus-test 实施；不改变 Comet 阶段语义、Monitoring 回退语义、稳定 OpenSpec 需求或面向操作员的 skill workflow。
+- [x] 本包不需要派生更新 `openspec/` 或 `docs/`，因为既有稳定 policy 与 spec 已经要求记录 runtime artifacts，并对缺失 artifact 进行 fail-closed 处理。
+- [x] 预期 runtime 文件：`.codex/skills/comet/scripts/comet-yaml-validate.sh`。
+- [x] 预期证据文件：`test/comet_runtime_management_flow.test.py`。
+- [x] 验收证据必须包括定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、本地 MR review 和 local CI。
+- [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。

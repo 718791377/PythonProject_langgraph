@@ -502,3 +502,13 @@ Tests:
 - [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
 - [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
 - [x] Remote publication remains gated; unless the user explicitly requests remote publication, stop at local `main`.
+## 2026-05-28 Artifact Path Safety Validation Evidence Package
+- [x] Local execution scope starts with this `docs_bilingual` governance package, then updates the Comet runtime validator and targeted runtime tests.
+- [x] Scope: make `comet-yaml-validate.sh` fail closed when managed artifact paths are absolute paths or contain path traversal segments, while keeping existing repo-relative artifact paths valid.
+- [x] Managed artifact paths in this batch are `design_doc`, `plan`, `verification_report`, and `management_record`.
+- [x] This package is script-plus-test implementation; it does not change Comet phase semantics, Monitoring return semantics, stable OpenSpec requirements, or operator-facing skill workflow.
+- [x] This package does not require derived `openspec/` or `docs/` updates because existing stable policy and spec already require recorded runtime artifacts and fail-closed missing-artifact handling.
+- [x] Expected runtime file: `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
+- [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
+- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
+- [x] Remote publication remains gated; unless the user explicitly requests remote publication, stop at local `main`.
