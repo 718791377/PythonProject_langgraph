@@ -1,12 +1,12 @@
 ---
 doc_id: user_level_mcp_skills_browser_cli_governance_plan
 lang: zh-CN
-canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
+canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
-status: draft
+status: active
 plan_readiness: execution-ready
 implementation_state: receipt_redaction_guard_repo_local_implemented
-last_reviewed_at: 2026-05-27
+last_reviewed_at: 2026-05-28
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
@@ -37,7 +37,7 @@ related_docs:
 
 本版已按 `pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 和 `comet_runtime_agile_focus_area_plan.zh-CN.md` 的新版结构返工：先给出 worker 指令、Goal、Architecture、Tech Stack，再给出关系模型、runtime 契约、文件职责图、实施前就绪定义、任务级执行 Backlog、验收标准、需要保留的证据和 rollback 规则。
 
-`status: draft` 只表示完整用户级安装、真实 smoke test 与跨项目 rollout 尚未全部完成；`plan_readiness: execution-ready` 表示本文结构与执行颗粒度已经足够让 agentic worker 接手实现。当前 repo-local `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP 与 CDP Bridge read-only defaults 属于 implemented-local；完整用户级 `active` 仍取决于 installation receipt、update receipt、smoke test result 与 rollback pointer。`wecom-cli` 当前只达到 repo-local guarded dry-run，不代表真实企业微信 GUI 自动化已启用。
+`status: active` 表示本双语文件现在是 repo-local governance-to-user-level capability lane 的执行权威；不表示完整用户级安装、真实 smoke test 或跨项目 rollout 已完成。`plan_readiness: execution-ready` 表示本文结构与执行颗粒度已经足够让 agentic worker 接手实现。当前 repo-local `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP 与 CDP Bridge read-only defaults 属于 implemented-local；完整用户级 `active` 仍取决于 installation receipt、update receipt、smoke test result 与 rollback pointer。`wecom-cli` 当前只达到 repo-local guarded dry-run，不代表真实企业微信 GUI 自动化已启用。
 
 ## 1. 关系模型与命名边界
 

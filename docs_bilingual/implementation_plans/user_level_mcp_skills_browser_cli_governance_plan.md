@@ -2,11 +2,11 @@
 doc_id: user_level_mcp_skills_browser_cli_governance_plan
 lang: en
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
-translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
-status: draft
+translation: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
+status: active
 plan_readiness: execution-ready
 implementation_state: receipt_redaction_guard_repo_local_implemented
-last_reviewed_at: 2026-05-27
+last_reviewed_at: 2026-05-28
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
@@ -37,7 +37,7 @@ related_docs:
 
 This version is reworked into the modern structure family used by the Pi sidecar plan and the Comet runtime plan: worker instructions, Goal, Architecture, Tech Stack, relationship boundaries, runtime contracts, file responsibility map, definition of ready, task-level backlog, acceptance criteria, required evidence, and rollback rules.
 
-`status: draft` means the full user-level install, live smoke tests, and cross-project rollout are not complete. `plan_readiness: execution-ready` means the plan has enough structure and granularity for an agentic worker. Repo-local `skills2cli`, `mcp2cli`, `codex-port`, browser owner registry, `chrome-devtools-mcp` wrapper MVP, and CDP Bridge read-only defaults are implemented-local. A lane becomes active only after installation receipt, update receipt, smoke test result, and rollback pointer evidence exist. `wecom-cli` is currently repo-local guarded dry-run only; it does not enable live WeCom GUI automation.
+`status: active` means this document pair is now the execution authority for the repo-local governance-to-user-level capability lane. It does not mean the full user-level install, live smoke tests, or cross-project rollout are complete. `plan_readiness: execution-ready` means the plan has enough structure and granularity for an agentic worker. Repo-local `skills2cli`, `mcp2cli`, `codex-port`, browser owner registry, `chrome-devtools-mcp` wrapper MVP, CDP Bridge read-only defaults, `wecom-cli` guarded dry-run, and receipt/redaction governance are implemented-local. A runtime lane becomes active only after installation receipt, update receipt, smoke test result, and rollback pointer evidence exist.
 
 ## 1. Relationship model and naming boundary
 
