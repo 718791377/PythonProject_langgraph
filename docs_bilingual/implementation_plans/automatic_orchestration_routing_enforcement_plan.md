@@ -45,7 +45,7 @@ Current status:
 
 - This document is an active implementation plan and Phase 4 boundary, not durable or persistent runtime evidence.
 - Phase 0-3 baseline work has historical implementation and archive evidence; this plan keeps the stable boundary without keeping long archive tables in the main flow.
-- The default Phase 4 change id is `enforce-prompt-independent-collaboration-parity`; it remains follow-up work until the matching checkers, fixtures, guard wiring, and validation records land.
+- The default Phase 4 change id is `enforce-prompt-independent-collaboration-parity`; its P1 checker slice lands through `tools/check_orchestration_collaboration_evidenceguard.py`, fixture pairs, guard wiring, CI registration, and OpenSpec/spec updates.
 - A single bilingual document-pair rewrite does not meet the persistent-team threshold; the main session should perform it directly and may use a verifier at close, but must not claim that a durable or persistent team ran.
 
 ## 1. Relationship model and naming boundary
@@ -166,6 +166,7 @@ Behavior rules:
 | `openspec/specs/codex-user-level-orchestration-activation-policy/spec.*` | Stable WHAT requirements |
 | `tools/check_orchestration_activation_policy.py` | Authority wording and forbidden reason guard |
 | `tools/check_orchestration_trace_evidence.py` | Trace evidence validator |
+| `tools/check_orchestration_collaboration_evidenceguard.py` | prompt-independent collaboration parity, cold-start read-order evidence, durable/persistent evidenceguard, expert lifecycle audit events, and LangGraph state release guard |
 | `tools/check_capability_switch_chain.py` | Capability dependency guard |
 | `tools/check_role_routing_directive_evidence.py` | Hard directive and role-routing guard |
 | `tools/check_expert_lifecycle_wait_pacing_evidence.py` | Expert lifecycle wait and pacing guard |
@@ -197,7 +198,7 @@ Minimum shape:
 }
 ```
 
-Reject when startup summary is missing, skipped items lack reasons, full-read claims lack paths, or mojibake is observed without recovery.
+Reject when startup summary is missing, skipped items lack reasons, full-read claims lack paths, or mojibake is observed without recovery. Checker surface: `tools/check_orchestration_collaboration_evidenceguard.py` validates saved `cold_start_read_order` JSON evidence.
 
 ### 6.2 Prompt-independent activation parity
 
@@ -215,7 +216,7 @@ test/fixtures/orchestration_prompt_independent_collaboration_parity/
   explicit_langgraph_single_slice.json
 ```
 
-Reject when a missing user phrase is used as the skip reason, collaboration phrases bypass frozen-plan and slice thresholds, or LangGraph ready is reported as persistent team running.
+Reject when a missing user phrase is used as the skip reason, collaboration phrases bypass frozen-plan and slice thresholds, or LangGraph ready is reported as persistent team running. Checker surface: `tools/check_orchestration_collaboration_evidenceguard.py` validates prompt-independent collaboration parity fixture pairs under `test/fixtures/orchestration_prompt_independent_collaboration_parity/`.
 
 ### 6.3 Durable / persistent evidenceguard
 
@@ -228,7 +229,7 @@ Goal: final reports cannot claim durable or persistent teams ran without durable
 | `complete` | Running evidence plus result summary, close record, and leader absorbed record |
 | `blocked` | Named blocker, repeated blocking evidence, and no completion claim |
 
-Reject plans, skill invocations, timeouts, branch names, or a bare `.omx` directory as proof that a team ran.
+Reject plans, skill invocations, timeouts, branch names, or a bare `.omx` directory as proof that a team ran. Checker surface: `tools/check_orchestration_collaboration_evidenceguard.py` validates durable/persistent evidenceguard records before a selected, running, or complete team claim is accepted.
 
 ### 6.4 Expert lifecycle audit
 
@@ -245,7 +246,7 @@ JSONL events:
 {"event":"close","agent_id":"...","retention_policy":"close"}
 ```
 
-Reject timeouts as results, missing close records when close policy should apply, or final reports that cite results before absorption.
+Reject timeouts as results, missing close records when close policy should apply, or final reports that cite results before absorption. Checker surface: `tools/check_orchestration_collaboration_evidenceguard.py` validates structured expert lifecycle audit events; `tools/check_expert_lifecycle_wait_pacing_evidence.py` continues to validate text run-summary evidence.
 
 ### 6.5 LangGraph state release
 
@@ -255,7 +256,7 @@ Minimum rules:
 
 - On completion, write `completed_at` (completion timestamp), `final_phase` (last graph phase), `result_summary` (absorbed outcome), and `released_by` (actor or helper that released the state).
 - On handoff to native_omx or main-session takeover, write `handoff_at`, `handoff_target`, and `reason`.
-- Stale `running` is a release gap and cannot serve as active-work evidence.
+- Stale `running` is a release gap and cannot serve as active-work evidence; `tools/check_orchestration_collaboration_evidenceguard.py` validates LangGraph state release evidence and rejects completed work that remains `running`.
 
 ## 7. Implementation tasks
 
@@ -372,7 +373,7 @@ Commit message example: Chinese message in the zh-CN companion, equivalent to do
 | --- | --- | --- |
 | P0 document restructure | User asks to rewrite this implementation plan | Bilingual document pair uses the new structure and validates locally |
 | P0 evidence contract freeze | This plan is complete | Evidence contracts are fixture-ready |
-| P1 checker implementation | User requests Phase 4 implementation | New checkers, fixtures, CI wiring, and OpenSpec change land |
+| P1 checker implementation | User requests Phase 4 implementation | `tools/check_orchestration_collaboration_evidenceguard.py`, fixtures, CI wiring, safety registry, and OpenSpec/spec updates land |
 | P1 runtime integration | Checkers pass and runtime entry points exist | Activation trace, durable guard, expert lifecycle, and LangGraph release are auditable |
 
 ## 9. Validation plan

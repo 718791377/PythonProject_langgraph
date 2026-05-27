@@ -79,6 +79,8 @@ The trace vocabulary SHALL distinguish `not_needed`, `candidate`, `selected`, `b
 
 The repository SHALL provide an executable trace-evidence validator that can inspect saved activation trace text for required fields, capability-chain consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert-timeout evidence labels, and durable-team threshold evidence in the `why` field. It SHALL also provide `tools/check_expert_lifecycle_wait_pacing_evidence.py` for saved run-summary evidence covering completed-expert closure, preserved-thread exceptions, bounded wait windows, liveness/stall actions, and provider pacing as backpressure.
 
+Prompt-independent collaboration parity SHALL be checker-backed. The repository SHALL provide `tools/check_orchestration_collaboration_evidenceguard.py` and fixture pairs that prove equivalent tasks produce equivalent routing decisions with or without collaboration phrases. The same checker SHALL validate cold-start read-order evidence, durable/persistent evidenceguard records, structured expert lifecycle audit events, and LangGraph state release evidence. Durable/persistent evidenceguard SHALL reject selected, running, or complete durable-team claims unless active selector, backend family, preflight, ownership plan, manifest or LangGraph thread state, heartbeat, close, and leader absorption evidence are present as required by the claimed state. LangGraph state release SHALL reject completed work that remains in stale `running` state instead of recording `completed_at`, `final_phase`, `result_summary`, and `released_by`.
+
 #### Scenario: Saved trace evidence is checked
 - **WHEN** a saved activation trace is passed to the repository trace-evidence validator
 - **THEN** the validator SHALL fail if any required trace field is missing
@@ -86,6 +88,19 @@ The repository SHALL provide an executable trace-evidence validator that can ins
 - **AND** it SHALL fail if durable workflow or persistent-team states use unsupported vocabulary
 - **AND** it SHALL fail if expert timeout language is presented without a non-evidence, bounded-wait, respawn, durable-handoff, or main-session-takeover label
 - **AND** it SHALL fail if durable workflow or persistent-team decisions omit required unmet-threshold, named-blocker, or triggered-threshold evidence from `why`
+
+#### Scenario: Prompt-independent collaboration parity evidence is checked
+
+- **WHEN** the repository evidenceguard validates prompt-independent collaboration fixtures
+- **THEN** paired cases with and without collaboration phrases SHALL produce the same route fields for the same task shape
+- **AND** explicit `omx` or `LangGraph` directives that lack frozen-plan or slice thresholds SHALL report named blockers or unmet thresholds
+- **AND** missing user reminders SHALL NOT appear as routing reasons
+
+#### Scenario: Durable and LangGraph completion evidence is checked
+
+- **WHEN** saved durable/persistent or LangGraph evidence is checked
+- **THEN** durable/persistent team claims SHALL fail without the required selector, manifest or thread-state, heartbeat, close, and leader absorption evidence
+- **AND** completed LangGraph tasks SHALL fail if the state remains `running` without release fields
 
 ### Requirement: Missing user reminders SHALL NOT be a routing reason
 

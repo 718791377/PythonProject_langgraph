@@ -84,6 +84,8 @@ Final reports must label evidence sources explicitly, for example:
 
 Saved activation trace evidence can be checked with `tools/check_orchestration_trace_evidence.py`. The checker validates required trace fields, capability-chain dependency consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert timeout labels, and durable-team threshold evidence in `why`. Use it for local transcript snippets, run summaries, or other saved trace evidence before treating an activation trace as accepted evidence. Expert lifecycle, wait, liveness, and provider pacing evidence can be checked with `tools/check_expert_lifecycle_wait_pacing_evidence.py`; this checker enforces completed-agent closure or explicit preservation, fresh-agent follow-up, bounded wait windows, stall handling actions, and upstream pacing as backpressure rather than an orchestration disablement reason.
 
+Prompt-independent collaboration parity, cold-start read-order evidence, durable/persistent evidenceguard records, expert lifecycle audit events, and LangGraph state release are checked together by `tools/check_orchestration_collaboration_evidenceguard.py`. The checker uses fixture pairs to prove that equivalent prompts with and without collaboration phrases produce the same routing decision, rejects durable/persistent team claims without active selector, manifest or thread state, heartbeat, close, and leader absorption evidence, and rejects completed LangGraph work that remains in stale `running` state instead of recording `completed_at`, `final_phase`, `result_summary`, and `released_by`.
+
 ## Team threshold rules
 
 Do not auto-launch durable teams during startup, read-only inventory, or plan-freeze work.

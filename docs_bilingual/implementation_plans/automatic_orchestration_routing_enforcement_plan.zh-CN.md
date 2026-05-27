@@ -45,7 +45,7 @@ last_reviewed: 2026-05-27
 
 - 本文是 `status: active` 的实施方案和后续 Phase 4 工作边界，不是 durable/persistent runtime evidence。
 - Phase 0-3 baseline 已有历史实现与归档证据；本文仅保留其稳定边界，不再把历史归档列表放在主流程中。
-- Phase 4 默认 change id 为 `enforce-prompt-independent-collaboration-parity`，仍属于待实现 follow-up，除非对应 checker、fixture、guard wiring 和验证记录同时落地。
+- Phase 4 默认 change id 为 `enforce-prompt-independent-collaboration-parity`；P1 checker 切片通过 `tools/check_orchestration_collaboration_evidenceguard.py`、fixture pairs、guard wiring、CI registration 与 OpenSpec/spec updates 落地。
 - 单文件或双语文档对重构不满足 persistent team 阈值；此类任务应由主会话直接执行，可在收尾时使用 verifier，但不能宣称 durable/persistent team 已运行。
 
 ## 1. 关系模型与命名边界
@@ -166,6 +166,7 @@ why=<task-shape, threshold, blocker, or evidence reason>
 | `openspec/specs/codex-user-level-orchestration-activation-policy/spec.*` | 稳定 WHAT requirements |
 | `tools/check_orchestration_activation_policy.py` | authority wording 与 forbidden reason guard |
 | `tools/check_orchestration_trace_evidence.py` | trace evidence validator |
+| `tools/check_orchestration_collaboration_evidenceguard.py` | prompt-independent collaboration parity、cold-start read-order evidence、durable/persistent evidenceguard、expert lifecycle audit events 与 LangGraph state release guard |
 | `tools/check_capability_switch_chain.py` | capability dependency guard |
 | `tools/check_role_routing_directive_evidence.py` | hard directive 与 role-routing evidence guard |
 | `tools/check_expert_lifecycle_wait_pacing_evidence.py` | expert lifecycle wait/pacing guard |
@@ -197,7 +198,7 @@ why=<task-shape, threshold, blocker, or evidence reason>
 }
 ```
 
-拒绝条件：缺少 startup summary、跳过项无 reason、声称 full read 但没有路径、读取结果包含 mojibake 且未触发恢复动作。
+拒绝条件：缺少 startup summary、跳过项无 reason、声称 full read 但没有路径、读取结果包含 mojibake 且未触发恢复动作。Checker surface：`tools/check_orchestration_collaboration_evidenceguard.py` 校验已保存的 `cold_start_read_order` JSON evidence。
 
 ### 6.2 Prompt-independent activation parity
 
@@ -215,7 +216,7 @@ test/fixtures/orchestration_prompt_independent_collaboration_parity/
   explicit_langgraph_single_slice.json
 ```
 
-拒绝条件：把“用户没有要求 parallel/subagents”写成 skip reason；有协作短语时无视 frozen-plan 和 slice 阈值；LangGraph ready 被写成 persistent team running。
+拒绝条件：把“用户没有要求 parallel/subagents”写成 skip reason；有协作短语时无视 frozen-plan 和 slice 阈值；LangGraph ready 被写成 persistent team running。Checker surface：`tools/check_orchestration_collaboration_evidenceguard.py` 校验 `test/fixtures/orchestration_prompt_independent_collaboration_parity/` 下的 prompt-independent collaboration parity fixture pairs。
 
 ### 6.3 Durable / persistent evidenceguard
 
@@ -228,7 +229,7 @@ test/fixtures/orchestration_prompt_independent_collaboration_parity/
 | `complete` | running 证据 + result summary + close record + leader absorbed record |
 | blocked（阻塞态） | 明确 blocker 名称、连续阻塞证据、且未把阻塞结果当完成 |
 
-拒绝条件：只有 plan、skill invocation、timeout、branch name 或 `.omx` 目录存在就声明 team ran。
+拒绝条件：只有 plan、skill invocation、timeout、branch name 或 `.omx` 目录存在就声明 team ran。Checker surface：`tools/check_orchestration_collaboration_evidenceguard.py` 在接受 selected、running 或 complete team 声明前校验 durable/persistent evidenceguard records。
 
 ### 6.4 Expert lifecycle audit
 
@@ -245,7 +246,7 @@ JSONL 事件：
 {"event":"close","agent_id":"...","retention_policy":"close"}
 ```
 
-拒绝条件：timeout 当结果、未 close 却声称 retention policy applied、最终报告引用未 absorbed 的结果。
+拒绝条件：timeout 当结果、未 close 却声称 retention policy applied、最终报告引用未 absorbed 的结果。Checker surface：`tools/check_orchestration_collaboration_evidenceguard.py` 校验结构化 expert lifecycle audit events；`tools/check_expert_lifecycle_wait_pacing_evidence.py` 继续校验文本 run-summary evidence。
 
 ### 6.5 LangGraph state release
 
@@ -255,7 +256,7 @@ JSONL 事件：
 
 - 完成时写入 `completed_at`（完成时间）、`final_phase`（最后 graph 阶段）、`result_summary`（已吸收结果摘要）、`released_by`（释放状态的 actor/helper）。
 - 如果切换到 native_omx 或主会话接管，写入 `handoff_at`、`handoff_target`、`reason`。
-- stale `running` 必须被 checker 标记为 release gap，不能作为活跃工作证据。
+- stale `running` 必须被 checker 标记为 release gap，不能作为活跃工作证据；`tools/check_orchestration_collaboration_evidenceguard.py` 校验 LangGraph state release evidence，并拒绝已完成工作仍保留 `running` 的状态。
 
 ## 7. 实施任务拆分
 
@@ -375,7 +376,7 @@ git merge-base --is-ancestor <feature-sha> main
 | --- | --- | --- |
 | P0 文档结构重构 | 用户要求重写 implementation plan | 双语文档新版结构完成，本地验证通过 |
 | P0 evidence contract freeze | 本方案完成 | evidence contracts 可直接生成 fixtures |
-| P1 checker implementation | 用户要求实现 Phase 4 | 新增 checker、fixtures、CI wiring 和 OpenSpec change |
+| P1 checker implementation | 用户要求实现 Phase 4 | `tools/check_orchestration_collaboration_evidenceguard.py`、fixtures、CI wiring、safety registry 与 OpenSpec/spec updates 落地 |
 | P1 runtime integration | checker 通过且有 runtime 入口 | activation trace、durable guard、expert lifecycle、LangGraph release 均可审计 |
 
 ## 9. 验证计划
