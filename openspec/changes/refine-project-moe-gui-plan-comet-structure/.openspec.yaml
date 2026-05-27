@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-05-27
+x_archive_deferred_reason: "Full Comet documentation refactor is committed on a feature branch; archive is deferred until verification report and branch handling are completed after local integration decision."
+x_archive_follow_up: "After local integration approval, run final Comet verify/archive or record an explicit archive package that moves this active change to archive with stable spec sync evidence."
