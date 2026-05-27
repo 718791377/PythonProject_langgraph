@@ -283,6 +283,6 @@ documents:
 
   - doc_id: comet_runtime_agile_focus_area_plan
     doc_class: implementation_plan
-    status: draft
+    status: active
     canonical_path: docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md
