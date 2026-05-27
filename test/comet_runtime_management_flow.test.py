@@ -101,6 +101,17 @@ class CometRuntimeManagementStaticTests(unittest.TestCase):
 
         self.assertIn('fail "$field=\'$value\' is not valid. Expected: $valid_values"', text)
 
+    def test_validator_declares_artifact_path_checks_and_unknown_key_warnings(self) -> None:
+        text = read(VALIDATE_SCRIPT)
+
+        for field in ["design_doc", "plan", "management_record"]:
+            self.assertIn(f"{field}='$", text)
+            self.assertIn(f"{field}='${field}' does not exist on disk", text)
+
+        self.assertIn('KNOWN_KEYS="workflow phase design_doc plan build_mode isolation verify_mode verify_result verification_report branch_status verified_at archived direct_override build_command verify_command management_record monitoring_status control_decision target_phase rework_reason iteration_count"', text)
+        self.assertIn('warn_msg "unknown field \'$key\' found"', text)
+        self.assertIn("WARNINGS=$((WARNINGS + 1))", text)
+
     def test_guard_accepts_english_and_chinese_management_checklist_labels(self) -> None:
         text = read(GUARD_SCRIPT)
 
