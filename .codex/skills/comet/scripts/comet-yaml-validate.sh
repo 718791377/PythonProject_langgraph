@@ -186,10 +186,10 @@ if [ -n "$plan" ] && [ "$plan" != "null" ]; then
   fi
 fi
 
-if [ -n "$management_record" ] && [ "$management_record" != "null" ]; then
-  if [ ! -f "$management_record" ]; then
-    fail "management_record='$management_record' does not exist on disk"
-  fi
+if [ -z "$management_record" ] || [ "$management_record" = "null" ]; then
+  fail "management_record must be recorded"
+elif [ ! -f "$management_record" ]; then
+  fail "management_record='$management_record' does not exist on disk"
 fi
 
 # --- Unknown keys check ---

@@ -73,6 +73,8 @@ class CometRuntimeManagementStaticTests(unittest.TestCase):
         self.assertIn("target_phase must be build", text)
         self.assertIn("return-verify", text)
         self.assertIn("target_phase must be verify", text)
+        self.assertIn("management_record must be recorded", text)
+        self.assertIn('[ -z "$management_record" ] || [ "$management_record" = "null" ]', text)
 
     def test_guard_accepts_english_and_chinese_management_checklist_labels(self) -> None:
         text = read(GUARD_SCRIPT)
@@ -356,6 +358,43 @@ class CometRuntimeManagementBehaviorTests(unittest.TestCase):
 
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("iteration_count='not-a-number' is not a non-negative integer", result.stderr)
+
+    def test_validator_rejects_null_management_record(self) -> None:
+        with self.make_root() as temp:
+            root = Path(temp)
+            self.write_minimal_change(root, "demo")
+            self.run_bash(root, "comet-state.sh", "init", "demo", "full")
+            self.set_yaml_field_directly(root, "demo", "management_record", "null")
+
+            result = self.run_bash(root, "comet-yaml-validate.sh", "demo")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("management_record must be recorded", result.stderr)
+
+    def test_validator_rejects_empty_management_record(self) -> None:
+        with self.make_root() as temp:
+            root = Path(temp)
+            self.write_minimal_change(root, "demo")
+            self.run_bash(root, "comet-state.sh", "init", "demo", "full")
+            self.set_yaml_field_directly(root, "demo", "management_record", "")
+
+            result = self.run_bash(root, "comet-yaml-validate.sh", "demo")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("management_record must be recorded", result.stderr)
+
+    def test_validator_rejects_missing_management_record_file(self) -> None:
+        with self.make_root() as temp:
+            root = Path(temp)
+            self.write_minimal_change(root, "demo")
+            self.run_bash(root, "comet-state.sh", "init", "demo", "full")
+            missing = "openspec/changes/demo/missing-management.md"
+            self.set_yaml_field_directly(root, "demo", "management_record", missing)
+
+            result = self.run_bash(root, "comet-yaml-validate.sh", "demo")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(f"management_record='{missing}' does not exist on disk", result.stderr)
 
     def test_guard_rejects_unchecked_open_management_checklist(self) -> None:
         with self.make_root() as temp:
