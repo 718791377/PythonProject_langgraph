@@ -418,3 +418,14 @@ Tests:
 - [x] `tools/check_openspec_comet_superpowers_policy.py` now enforces per-phase skill instruction terms instead of only checking aggregate skill text.
 - [x] `test/run_openspec_guard_json.test.py` now fails when a phase skill loses the Monitoring control-loop instruction.
 - [x] Runtime state-machine behavior is unchanged in this batch; no derived `openspec/` or `docs/` update is required.
+
+## 2026-05-27 Root Comet Controller Routing Governance Package
+
+- [x] This local execution range starts with this `docs_bilingual` package before changing the root Comet controller skill or checker code.
+- [x] Scope: align `.codex/skills/comet/SKILL.md` phase detection with Monitoring return decisions so the root dispatcher does not force waterfall progression when `control_decision=return-*` is present.
+- [x] This batch is classified as root-skill-plus-checker implementation; it does not change runtime state-machine shell behavior.
+- [x] No derived `openspec/` or `docs/` update is needed because the stable policy and spec already require adaptive Monitoring return routing and the five-phase Comet contract.
+- [x] Expected skill file: `.codex/skills/comet/SKILL.md`.
+- [x] Expected checker evidence: `tools/check_openspec_comet_superpowers_policy.py` and `test/run_openspec_guard_json.test.py` should fail if the root Comet skill loses return-dispatch instructions.
+- [x] Acceptance evidence must include the Comet/Superpowers policy checker, targeted guard fixture tests, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
+- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.

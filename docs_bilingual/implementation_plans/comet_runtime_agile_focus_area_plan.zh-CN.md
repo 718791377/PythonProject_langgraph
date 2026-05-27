@@ -418,3 +418,14 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [x] `tools/check_openspec_comet_superpowers_policy.py` 已从聚合 skill 文本检查升级为逐 phase skill 指令术语检查。
 - [x] `test/run_openspec_guard_json.test.py` 已覆盖 phase skill 丢失 Monitoring 控制回路指令时必须失败。
 - [x] 本批次不改变 runtime 状态机行为；不需要派生更新 `openspec/` 或 `docs/`。
+
+## 2026-05-27 根 Comet 控制器路由治理包
+
+- [x] 本地执行范围先从这次 `docs_bilingual` 治理包开始，再修改根 Comet 控制器 skill 或 checker 代码。
+- [x] 范围：将 `.codex/skills/comet/SKILL.md` 的阶段检测与 Monitoring 回退决策对齐，确保存在 `control_decision=return-*` 时根调度器不会强制瀑布式前进。
+- [x] 本批次归类为 root-skill-plus-checker 实施；不改变 runtime shell 状态机行为。
+- [x] 本批次不需要派生更新 `openspec/` 或 `docs/`，因为稳定 policy 与 spec 已经要求自适应 Monitoring 回退路由和 Comet 五阶段契约。
+- [x] 预期 skill 文件：`.codex/skills/comet/SKILL.md`。
+- [x] 预期 checker 证据：`tools/check_openspec_comet_superpowers_policy.py` 和 `test/run_openspec_guard_json.test.py` 应在根 Comet skill 丢失回退调度指令时失败。
+- [x] 验收证据必须包含 Comet/Superpowers policy checker、定向 guard fixture 测试、implementation-plan rules、pre-commit update/archive review、local CI 和 local MR review。
+- [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。
