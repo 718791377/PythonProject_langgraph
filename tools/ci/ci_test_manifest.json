@@ -41,6 +41,7 @@
     "browser_owner_registry.test.py",
     "chrome_devtools_mcp_managed.test.py",
     "cdp_bridge_governance.test.py",
+    "wecom_cli_governance.test.py",
     "check_document_pair_policy.test.py",
     "check_git_commit_language.test.py",
     "check_plan_exit_execution_governance.test.py",
