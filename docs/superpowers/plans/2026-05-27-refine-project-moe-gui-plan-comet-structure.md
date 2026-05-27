@@ -46,9 +46,9 @@ base-ref: 9fbc66e
 
 ## Step 5: Commit and integrate locally
 
-- [ ] Commit the feature branch with a Chinese commit message.
-- [ ] Run `.\tools\ci\local_gate.ps1` after commit.
-- [ ] Run `.\tools\ci\local_mr_review.ps1` after commit.
+- [x] Commit the feature branch with Chinese commit messages.
+- [x] Run `.\tools\ci\local_gate.ps1` after commit.
+- [x] Run `.\tools\ci\local_mr_review.ps1` after commit.
 - [ ] Merge into local `main` under the user-approved local integration flow.
 - [ ] Confirm the primary worktree HEAD equals local `main`.
 
@@ -57,7 +57,7 @@ base-ref: 9fbc66e
 - [x] Implement `plan_project_moe_gui_uninstall.py --apply` for fixed-allowlist, manifest-hash-verified managed file deletion only.
 - [x] Preserve `MOE.md`, `.codex/agents/*.toml`, and `.omx/state`; fail closed on unsafe manifest entries before deletion.
 - [x] Update targeted tests, the operations guide, the plan pair, and OpenSpec contract artifacts.
-- [ ] Re-run toolchain tests, repository guards, local gate, and local MR review before local `main` integration.
+- [x] Re-run toolchain tests, repository guards, local gate, and local MR review before local `main` integration.
 
 ## Non-goals
 

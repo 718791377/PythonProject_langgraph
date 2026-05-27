@@ -26,8 +26,8 @@
 - [x] 4.3 运行 `python .\tools\check_implementation_plan_rules.py --root . --json`。
 - [x] 4.4 运行 `python .\tools\check_precommit_update_archive.py --root . --json`。
 - [x] 4.5 运行 `python .\tools\run_openspec_guard.py --root .`。
-- [ ] 4.6 保持 feature worktree 干净后提交当前实现到本地 feature 分支。
-- [ ] 4.7 commit 后运行 `.\tools\ci\local_gate.ps1` 与 `.\tools\ci\local_mr_review.ps1`。
+- [x] 4.6 保持 feature worktree 干净后提交当前实现到本地 feature 分支。
+- [x] 4.7 commit 后运行 `.\tools\ci\local_gate.ps1` 与 `.\tools\ci\local_mr_review.ps1`。
 
 ## 5. 受保护卸载 apply 实现
 
@@ -35,4 +35,4 @@
 - [x] 5.2 当 manifest 声明白名单外路径、缺失 hash、hash 不匹配或目录条目时，在删除前 fail closed。
 - [x] 5.3 更新 Project MOE GUI 测试，覆盖成功 apply、私有文件保留和白名单失败。
 - [x] 5.4 更新 Project MOE GUI 方案与操作文档，把旧的 apply-not-supported 合同替换为受保护 apply 合同。
-- [ ] 5.5 本地 `main` 集成前重新运行 Project MOE 定向测试、仓库 guard、local gate 和 local MR review。
+- [x] 5.5 本地 `main` 集成前重新运行 Project MOE 定向测试、仓库 guard、local gate 和 local MR review。

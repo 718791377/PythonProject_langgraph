@@ -46,9 +46,9 @@ base-ref: 9fbc66e
 
 ## Step 5：提交与本地集成
 
-- [ ] 用中文提交信息提交 feature 分支。
-- [ ] commit 后运行 `.\tools\ci\local_gate.ps1`。
-- [ ] commit 后运行 `.\tools\ci\local_mr_review.ps1`。
+- [x] 用中文提交信息提交 feature 分支。
+- [x] commit 后运行 `.\tools\ci\local_gate.ps1`。
+- [x] commit 后运行 `.\tools\ci\local_mr_review.ps1`。
 - [ ] 经用户已授权的本地集成流程合入本地 `main`。
 - [ ] 合入后确认主目录 HEAD 等于本地 `main`。
 
@@ -57,7 +57,7 @@ base-ref: 9fbc66e
 - [x] 实现 `plan_project_moe_gui_uninstall.py --apply`，仅删除固定白名单内且 manifest hash 已验证的受管文件。
 - [x] 保留 `MOE.md`、`.codex/agents/*.toml` 与 `.omx/state`；遇到不安全 manifest 条目时在删除前 fail closed。
 - [x] 更新定向测试、操作指南、方案双语文件与 OpenSpec contract artifacts。
-- [ ] 本地 `main` 集成前重新运行工具链测试、仓库 guard、local gate 与 local MR review。
+- [x] 本地 `main` 集成前重新运行工具链测试、仓库 guard、local gate 与 local MR review。
 
 ## 非目标
 

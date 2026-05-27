@@ -26,8 +26,8 @@
 - [x] 4.3 Run `python .\tools\check_implementation_plan_rules.py --root . --json`.
 - [x] 4.4 Run `python .\tools\check_precommit_update_archive.py --root . --json`.
 - [x] 4.5 Run `python .\tools\run_openspec_guard.py --root .`.
-- [ ] 4.6 Keep the feature worktree clean and commit the current implementation on the feature branch.
-- [ ] 4.7 Run `.\tools\ci\local_gate.ps1` and `.\tools\ci\local_mr_review.ps1` after commit.
+- [x] 4.6 Keep the feature worktree clean and commit the current implementation on the feature branch.
+- [x] 4.7 Run `.\tools\ci\local_gate.ps1` and `.\tools\ci\local_mr_review.ps1` after commit.
 
 ## 5. Guarded Uninstall Apply Implementation
 
@@ -35,4 +35,4 @@
 - [x] 5.2 Fail closed before deletion when the manifest lists non-allowlisted paths, missing hashes, hash mismatches, or directory entries.
 - [x] 5.3 Update Project MOE GUI tests for successful apply, private-file preservation, and allowlist failure.
 - [x] 5.4 Update the Project MOE GUI plan and operations document to replace the old apply-not-supported contract with the guarded apply contract.
-- [ ] 5.5 Re-run targeted Project MOE tests, repository guards, local gate, and local MR review before local `main` integration.
+- [x] 5.5 Re-run targeted Project MOE tests, repository guards, local gate, and local MR review before local `main` integration.
