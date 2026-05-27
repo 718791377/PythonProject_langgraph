@@ -1,37 +1,37 @@
 ## Why
 
-`project_moe_agent_gui_toolchain_plan.zh-CN.md` 已经完成过一次结构整理，但仍需要按完整 `/comet` 语义补齐 Open / Design / Build / Verify 证据、archive deferral、实施事项顺序和 readiness lane 解释。现在重构可以避免后续代码实施时把“方案结构就绪”“目标项目 ready”“GUI runtime 已完成”混成一个状态。
+`project_moe_agent_gui_toolchain_plan.zh-CN.md` was already refactored once, but it still needs a full `/comet` package with Open / Design / Build / Verify evidence, archive deferral, ordered tasks, and readiness-lane explanation. This refactor prevents later implementation work from confusing "plan structure is done" with "target project GUI runtime is done."
 
 ## What Changes
 
-- 重构 `docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md`，使其与新版 Pi sidecar 方案同级：目标、架构、source of truth、contract、gate、rollback、风险、自检、验证路径齐全。
-- 新增完整 Comet/OpenSpec active change 证据：proposal、design、delta spec、tasks、management、`.comet.yaml`。
-- 新增 Superpowers design doc 与 implementation plan，记录本次文档重构的设计选择和执行计划。
-- 明确 `D:\PythonProject_paper_suggest` 仍是 blocked/repair-lane 证据，不得误称 ready。
-- 明确 archive deferral：本地 feature 分支提交后，archive 等待后续本地集成/验证报告/branch handling 决策。
+- Refactor `docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md` so it matches the newer Pi sidecar plan family: goal, architecture, source of truth, contract, gate, rollback, risk, self-check, and verification order.
+- Add a complete Comet/OpenSpec active-change package: proposal, design, delta spec, tasks, management, and `.comet.yaml`.
+- Add Superpowers design and implementation-plan records so this refactor has durable design and execution notes.
+- Clearly state that `D:\PythonProject_paper_suggest` remains blocked/repair-lane evidence and must not be mislabeled ready.
+- Record archive deferral explicitly: after feature-branch submission, archive waits for the later local integration and verification decision.
 
 ## Capabilities
 
-### New Capabilities
+### New Capability
 
-- `project-moe-agent-gui-plan-contract`: 约束 Project MOE GUI 实施方案必须区分文档结构就绪、目标项目 readiness、GUI runtime 完成度与远端发布授权边界。
+- `project-moe-agent-gui-plan-contract`: constrains the Project MOE GUI implementation plan to a clear documentation structure, readiness metadata, GUI runtime completion boundary, and remote-publication boundary.
 
-### Modified Capabilities
+### Modified Capability
 
-- 无。本次不修改 stable spec 中已存在 capability；active change 只新增文档方案合同。
+- None. This change adds document-contract context only and does not modify an existing stable capability.
 
 ## Impact
 
 - Affected docs: `docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md`
 - Affected OpenSpec artifacts: `openspec/changes/refine-project-moe-gui-plan-comet-structure/`
 - Affected Superpowers artifacts: `docs/superpowers/specs/2026-05-27-project-moe-gui-plan-comet-design.md` and `docs/superpowers/plans/2026-05-27-refine-project-moe-gui-plan-comet-structure.md`
-- No runtime code, dependency, user-level install, target-project write, GitLab/GitHub publication, or PySide6 installation is performed by this change.
+- No runtime code, dependency install, target-project write, GitLab/GitHub publication, or PySide6 installation is performed by this change.
 
 ## Governance Fields
 
-- `impact_scope`: documentation plan + active OpenSpec artifacts only.
+- `impact_scope`: documentation plan plus active OpenSpec artifacts only.
 - `explicit_non_goals`: runtime implementation, target project writes, PySide6 install, remote publication, user-level config mutation.
-- `rollout_sequence`: feature worktree -> document rewrite -> local validation -> feature branch commit -> await local main integration instruction.
-- `rollback_plan`: revert the feature branch commit or reset local branch to the pre-change base; no external state is mutated.
+- `rollout_sequence`: feature worktree -> document rewrite -> local validation -> feature branch commit -> local main integration decision.
+- `rollback_plan`: revert the feature branch commit or reset the local branch to the pre-change base.
 - `validation_path`: `git diff --check`, `openspec validate`, implementation-plan checker, precommit update/archive gate, OpenSpec guard, local MR review.
-- `mainline_classification`: existing Project MOE GUI documentation/implementation planning lane under the repository's user-level orchestration product line.
+- `mainline_classification`: Project MOE GUI documentation and implementation-planning lane in the repository's user-level orchestration product line.
