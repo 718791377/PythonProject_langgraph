@@ -2,7 +2,7 @@
 
 ### Selected approach
 
-Use a full Comet documentation refactor rather than a tweak. The target file is a long-lived implementation plan that will drive later toolchain implementation, so it needs durable OpenSpec artifacts, a delta spec, a design record, a build plan, and an explicit archive deferral record.
+Use a full Comet refactor plus bounded implementation continuation rather than a tweak. The target file is a long-lived implementation plan that drives toolchain implementation, so it needs durable OpenSpec artifacts, a delta spec, a design record, a build plan, an explicit archive deferral record, and checker-backed evidence for any runtime slice implemented under the plan.
 
 ### Structure decision
 
@@ -36,14 +36,17 @@ The plan also borrows the control semantics from `comet_runtime_agile_focus_area
 - The GUI never edits target state JSON directly; it only calls target project CLI contracts.
 - Existing `D:\PythonProject_paper_suggest` evidence remains blocked/repair-lane until a future readiness checker proves otherwise.
 - Chinese support artifacts for this change must be valid UTF-8 Chinese, not mojibake or question-mark placeholders.
+- The uninstall `--apply` path is allowed only for this repository's Project MOE GUI managed artifact allowlist, and it must verify manifest hashes before deleting anything.
+- The uninstall apply path must preserve target-project private prompt files, Agent TOMLs, and `.omx/state` even if a target manifest attempts to list them as managed files.
 
 ### Verification design
 
-The change is documentation-only, so validation focuses on:
+The initial structure pass was documentation-only. This continuation adds a bounded toolchain behavior change, so validation focuses on:
 
 - markdown/diff hygiene;
 - OpenSpec change validity;
 - implementation plan frontmatter/structure guard;
+- targeted Project MOE GUI toolchain tests for uninstall apply success and fail-closed behavior;
 - precommit update/archive gate including archive deferral;
 - repository OpenSpec guard;
 - local MR review after the commit.

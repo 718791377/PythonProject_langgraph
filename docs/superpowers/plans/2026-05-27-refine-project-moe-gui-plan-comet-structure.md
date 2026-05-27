@@ -6,11 +6,11 @@ base-ref: 9fbc66e
 
 # Refine Project MOE GUI Plan Comet Structure Implementation Plan
 
-> **For agentic workers:** Use the `$comet` control layer and `superpowers:executing-plans` style execution for this documentation/governance refactor. Track every item with checkbox syntax. Do not claim unrun Comet bash scripts passed.
+> **For agentic workers:** Use the `$comet` control layer and `superpowers:executing-plans` style execution for the plan refactor and bounded guarded-uninstall continuation. Track every item with checkbox syntax. Do not claim unrun Comet bash scripts passed.
 
 **Goal:** Rewrite the Project MOE Agent GUI implementation plan into a complete `/comet`-traceable executable-plan structure aligned with the newer Pi sidecar plan and Comet runtime agile focus-area plan.
 
-**Scope:** Update only the implementation-plan pair plus this change's OpenSpec / Superpowers support artifacts. Do not install PySide6, write target projects, edit user-level directories, or publish remote refs.
+**Scope:** Complete the implementation-plan/OpenSpec/Superpowers refactor and add one bounded toolchain implementation slice for guarded uninstall `--apply`, with tests and operations documentation. Do not install PySide6, roll out to real target projects, edit user-level directories, or publish remote refs.
 
 ---
 
@@ -18,7 +18,7 @@ base-ref: 9fbc66e
 
 - [x] Reuse `openspec/changes/refine-project-moe-gui-plan-comet-structure/`.
 - [x] Confirm `.comet.yaml` is in `phase: verify` and records `comet_script_state: blocked:bash_not_found_on_windows`.
-- [x] Confirm this pass is not runtime code implementation; it is plan structure and evidence closure.
+- [x] Confirm the initial pass was plan structure and evidence closure; record this continuation as a bounded runtime slice rather than mislabelling it documentation-only.
 
 ## Step 2: Refactor the target plan structure
 
@@ -51,6 +51,13 @@ base-ref: 9fbc66e
 - [ ] Run `.\tools\ci\local_mr_review.ps1` after commit.
 - [ ] Merge into local `main` under the user-approved local integration flow.
 - [ ] Confirm the primary worktree HEAD equals local `main`.
+
+## Step 6: Guarded uninstall apply continuation
+
+- [x] Implement `plan_project_moe_gui_uninstall.py --apply` for fixed-allowlist, manifest-hash-verified managed file deletion only.
+- [x] Preserve `MOE.md`, `.codex/agents/*.toml`, and `.omx/state`; fail closed on unsafe manifest entries before deletion.
+- [x] Update targeted tests, the operations guide, the plan pair, and OpenSpec contract artifacts.
+- [ ] Re-run toolchain tests, repository guards, local gate, and local MR review before local `main` integration.
 
 ## Non-goals
 

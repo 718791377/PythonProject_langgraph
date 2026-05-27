@@ -6,11 +6,11 @@ base-ref: 9fbc66e
 
 # 重构 Project MOE GUI 计划 Comet 结构实施计划
 
-> **给 agentic workers：** 本变更是文档/治理重构，优先使用 `$comet` 控制层和 `superpowers:executing-plans` 的逐项执行方式。所有事项使用 checkbox 跟踪；不得把未运行的 Comet bash 脚本声明为通过。
+> **给 agentic workers：** 本变更包含方案重构与有界的受保护卸载延续切片，优先使用 `$comet` 控制层和 `superpowers:executing-plans` 的逐项执行方式。所有事项使用 checkbox 跟踪；不得把未运行的 Comet bash 脚本声明为通过。
 
 **目标：** 将 Project MOE Agent GUI 实施方案重构成完整 `/comet` 可追溯的可执行方案结构，并与新版 Pi sidecar 方案和 Comet runtime 敏捷关注领域方案保持同级颗粒度。
 
-**范围：** 只修改实施方案与本 change 的 OpenSpec / Superpowers 支撑 artifacts；不安装 PySide6，不写目标项目，不改 user-level 目录，不进行远端发布。
+**范围：** 完成实施方案与本 change 的 OpenSpec / Superpowers 重构，并增加一项受保护卸载 `--apply` 的有界工具链实现、测试与操作文档更新；不安装 PySide6，不向真实目标项目投放，不改 user-level 目录，不进行远端发布。
 
 ---
 
@@ -18,7 +18,7 @@ base-ref: 9fbc66e
 
 - [x] 复用 `openspec/changes/refine-project-moe-gui-plan-comet-structure/`。
 - [x] 确认 `.comet.yaml` 处于 `phase: verify` 且记录 `comet_script_state: blocked:bash_not_found_on_windows`。
-- [x] 确认本次不是 runtime 代码实现，而是计划结构和证据收口。
+- [x] 确认初始切片是计划结构和证据收口；把本延续切片如实记录为有界 runtime 实现，而不是继续标称纯文档变更。
 
 ## Step 2：重构目标方案结构
 
@@ -51,6 +51,13 @@ base-ref: 9fbc66e
 - [ ] commit 后运行 `.\tools\ci\local_mr_review.ps1`。
 - [ ] 经用户已授权的本地集成流程合入本地 `main`。
 - [ ] 合入后确认主目录 HEAD 等于本地 `main`。
+
+## Step 6：受保护卸载 apply 延续切片
+
+- [x] 实现 `plan_project_moe_gui_uninstall.py --apply`，仅删除固定白名单内且 manifest hash 已验证的受管文件。
+- [x] 保留 `MOE.md`、`.codex/agents/*.toml` 与 `.omx/state`；遇到不安全 manifest 条目时在删除前 fail closed。
+- [x] 更新定向测试、操作指南、方案双语文件与 OpenSpec contract artifacts。
+- [ ] 本地 `main` 集成前重新运行工具链测试、仓库 guard、local gate 与 local MR review。
 
 ## 非目标
 

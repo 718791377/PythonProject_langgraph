@@ -100,15 +100,15 @@ related_docs:
 | --- | --- | --- |
 | Open | `proposal.md`、`.openspec.yaml` | 定义 why/what/scope/non-goals/rollback/validation |
 | Design | `design.md`、`docs/superpowers/specs/*design.md`、delta spec | 固化结构选择、lane 模型、contract 边界 |
-| Build | 本文、`docs/superpowers/plans/*`、`tasks.md` | 执行文档重构并勾选任务 |
+| Build | 本文、`docs/superpowers/plans/*`、`tasks.md` | 执行方案重构与有界工具链切片，并勾选任务 |
 | Verify | `git diff --check`、`openspec validate`、repo guard、precommit gate | 不把未运行的脚本声明为通过 |
 | Archive | 后续单独执行 | 若本地分支尚未合入或 Comet bash 不可用，必须写明 archive deferral |
 
 当前策略：
 
-- 本次是文档/方案重构，不改变运行时代码。
-- 本次不安装 PySide6、不写目标项目、不写 user-level 目录。
-- 本次可以提交本地 feature 分支；本地 `main` 合入与远端发布仍需用户后续明确指令。
+- 初始切片是文档/方案重构；当前延续切片包含一项受保护卸载 `--apply` 的有界 runtime 实现。
+- 本次不安装 PySide6、不向真实目标项目投放、不写 user-level 目录。
+- 用户已授权本地 feature 提交与本地 `main` 合入；远端发布仍需用户后续明确指令。
 
 ### 3.1 Comet 管理记录、阶段门禁与 Monitoring 语义
 
@@ -437,8 +437,9 @@ session state：
 - 目标项目安装前必须记录 manifest 和 rollback pointer。
 - 更新前必须比较 managed file hash。
 - 回滚只还原 GUI managed artifacts，不删除项目私有 Agent TOML、`MOE.md` 或 `.omx/state`。
-- 卸载默认 dry-run，仅输出 `planned_deletes`。
-- `--apply` 在未实现前必须稳定返回 `blocked:uninstall_apply_not_supported`，且 `delete_executed=false`。
+- 卸载默认 dry-run，仅输出 `planned_deletes`，不删除目标项目文件。
+- `--apply` 仅在 manifest 路径白名单和 managed file hash 检查全部通过后才受支持；它只删除 Project MOE GUI 受管产物，返回 `delete_executed=true`，并保留 `MOE.md`、`.codex/agents/*.toml` 和 `.omx/state`。
+- 如果 manifest 中存在白名单外路径、hash 缺失或不匹配，或 managed entry 不是文件，卸载必须在删除任何文件前 fail closed。
 
 远端规则：
 
@@ -519,8 +520,8 @@ readiness payload 必须包含：
 - [ ] 生成 `<project>/project-moe-gui.cmd` 作为窄 launcher，不允许任意命令透传。
 - [ ] 写入 `project_moe_gui.install-manifest.json`，包含 source commit、managed files、hashes、target root、agent name、namespace、readiness result 和 rollback pointer。
 - [ ] 通过 manifest hash 与 source version 比较实现 update。
-- [ ] 通过 manifest 只删除自身 owned managed files 实现 uninstall。
-- [ ] 覆盖任何 managed target artifact 前，先创建本地 rollback receipt。
+- [x] 通过 manifest 只删除自身 owned managed files 实现受保护 uninstall apply。
+- [x] 覆盖或删除任何 managed target artifact 前，先依赖 manifest hash / receipt / rollback hint 形成本地可追溯证据。
 
 #### Slice 4：Phase 2 PySide6 GUI shell
 
@@ -644,6 +645,7 @@ python .\tools\run_openspec_guard.py --root .
 - [x] 明确 `D:\PythonProject_paper_suggest` 当前仍不是 GUI ready。
 - [x] 明确私有提示源只引用不复制。
 - [x] 明确安装、更新、卸载、rollback 的 managed artifact 边界。
+- [x] 明确受保护卸载 `--apply` 只能删除白名单内且 hash 已验证的受管文件。
 - [x] 明确验证命令和本地 main / 远端发布边界。
 - [x] 明确 Comet 管理记录、阶段门禁、Monitoring 回退语义和证据留存。
 - [x] 明确实施切片、文件职责图和本地集成顺序。

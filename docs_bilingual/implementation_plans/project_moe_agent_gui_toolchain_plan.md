@@ -104,9 +104,9 @@ Non-goals:
 
 Current strategy:
 
-- This is documentation / plan work, not runtime code.
-- This work does not install PySide6, touch target projects, or write user-level directories.
-- This work may be committed on a local feature branch; local `main` integration and remote publication require a later explicit user instruction.
+- The initial slice was documentation / plan work; the current continuation includes one bounded runtime slice for guarded uninstall `--apply`.
+- This work does not install PySide6, roll out to real target projects, or write user-level directories.
+- This work is authorized for local feature commit and local `main` integration only; remote publication still requires a later explicit user instruction.
 
 ### 3.1 Comet management record, phase-gate, and Monitoring semantics
 
@@ -436,7 +436,8 @@ Rollback rules:
 - Compare managed-file hashes before update.
 - Rollback only restores GUI managed artifacts; do not delete project-private Agent TOMLs, `MOE.md`, or `.omx/state`.
 - Uninstall defaults to dry-run and only outputs `planned_deletes`.
-- `--apply` must stay blocked until uninstall is implemented, and it must report `blocked:uninstall_apply_not_supported` with `delete_executed=false`.
+- `--apply` is supported only after the manifest path allowlist and managed-file hash checks pass; it deletes only Project MOE GUI managed artifacts, reports `delete_executed=true`, and preserves `MOE.md`, `.codex/agents/*.toml`, and `.omx/state`.
+- If any manifest path is outside the managed allowlist, any hash is missing or mismatched, or a managed entry is not a file, uninstall must fail closed before deleting anything.
 
 Remote rules:
 
@@ -517,8 +518,8 @@ The readiness payload must include:
 - [ ] Generate `<project>/project-moe-gui.cmd` as a narrow launcher, not an arbitrary command passthrough.
 - [ ] Write `project_moe_gui.install-manifest.json` with source commit, managed files, hashes, target root, agent name, namespace, readiness result, and rollback pointer.
 - [ ] Implement update by comparing manifest hashes and source version.
-- [ ] Implement uninstall by deleting only manifest-owned managed files.
-- [ ] Create local rollback receipts before overwriting any managed target artifact.
+- [x] Implement uninstall by deleting only manifest-owned managed files.
+- [x] Create local uninstall receipts before deleting any managed target artifact and keep rollback hints in the JSON payload.
 
 #### Slice 4: Phase 2 PySide6 GUI shell
 

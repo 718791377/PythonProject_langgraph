@@ -24,3 +24,26 @@ The Project MOE Agent GUI implementation plan SHALL use a full Comet executable-
 - **WHEN** the change records Comet state
 - **THEN** the state records the script blocker and uses OpenSpec/repository gates as fallback evidence
 - **AND** it does not claim `comet-state.sh` or `comet-guard.sh` passed.
+
+### Requirement: Project MOE GUI Uninstall Apply Deletes Only Verified Managed Artifacts
+
+The Project MOE GUI uninstall command SHALL support an explicit `--apply` path that deletes only Project MOE GUI managed artifacts after manifest allowlist and hash verification pass, while preserving target-project private prompts, Agent TOMLs, and `.omx/state` runtime state.
+
+#### Scenario: Successful apply removes only managed GUI artifacts
+
+- **GIVEN** a target project has a Project MOE GUI install manifest produced by this toolchain
+- **AND** every planned managed-file path is in the Project MOE GUI managed artifact allowlist
+- **AND** every non-manifest managed file hash matches the manifest
+- **WHEN** the operator runs `plan_project_moe_gui_uninstall.py --apply --json`
+- **THEN** the command deletes only the verified managed GUI files
+- **AND** the JSON payload reports `apply_supported=true`, `delete_executed=true`, `applied_file_changes`, and an `uninstall_receipt`
+- **AND** target-project `MOE.md`, `.codex/agents/*.toml`, and `.omx/state` are preserved.
+
+#### Scenario: Unsafe manifest fails closed before deletion
+
+- **GIVEN** a target install manifest lists a path outside the Project MOE GUI managed artifact allowlist
+- **OR** a non-manifest managed file has a missing or mismatched hash
+- **OR** a managed entry resolves to a directory
+- **WHEN** the operator runs the uninstall command with `--apply`
+- **THEN** the command fails closed before deleting any file
+- **AND** it reports a stable blocker such as `blocked:uninstall_path_not_in_managed_allowlist`, `blocked:managed_file_hash_missing`, `blocked:managed_file_hash_mismatch`, or `blocked:managed_path_is_directory`.

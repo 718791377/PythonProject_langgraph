@@ -2,7 +2,7 @@
 
 ### 选择的方式
 
-本次采用完整 Comet 文档重构，而不是 tweak。目标文件是长期实施方案，会驱动后续工具链实现，因此需要可追溯的 OpenSpec 产物、delta spec、设计记录、实施计划和明确的归档延期记录。
+本次采用完整 Comet 重构，而不是 tweak。初始切片整理长期实施方案；本次延续切片新增受保护卸载 `--apply` 工具链行为，因此需要可追溯的 OpenSpec 产物、delta spec、设计记录、实施计划、运行时测试与明确的归档延期记录。
 
 ### 结构决策
 
@@ -36,14 +36,17 @@
 - GUI 永远不直接编辑目标状态 JSON；它只能调用目标项目 CLI contract。
 - 既有 `D:\PythonProject_paper_suggest` 证据保持 blocked / repair-lane，直到未来 readiness checker 证明其可以进入 Ready Lane。
 - 本 change 的中文支撑 artifacts 必须是合法 UTF-8 中文，不能是乱码或问号占位。
+- 卸载 `--apply` 只能删除安装 manifest 声明且位于固定 allowlist 中的 Project MOE GUI 受管文件；除 manifest 自身外的受管文件必须通过 hash 校验。
+- 卸载不得删除目录、`MOE.md`、`.codex/agents/*.toml` 或 `.omx/state`；出现白名单外路径、缺失 hash、hash 不匹配或目录条目时必须在删除前 fail closed。
 
 ### 验证设计
 
-本次是文档与方案结构重构，验证重点是：
+初始切片是文档与方案结构重构；本次延续切片还改变了卸载执行行为，验证重点是：
 
 - Markdown / diff hygiene；
 - OpenSpec change 有效性；
 - implementation plan frontmatter / structure guard；
+- Project MOE GUI 工具链测试，尤其是安全 apply、私有文件保留与恶意/越界 manifest 拒绝测试；
 - precommit update/archive gate 与 archive deferral；
 - 仓库 OpenSpec guard；
 - commit 后 local gate 与 local MR review。
