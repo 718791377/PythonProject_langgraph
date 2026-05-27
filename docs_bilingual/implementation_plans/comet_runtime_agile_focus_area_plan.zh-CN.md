@@ -493,3 +493,12 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [x] 预期证据文件：`test/comet_runtime_management_flow.test.py`。
 - [x] 验收证据必须包括定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、本地 MR review 和 local CI。
 - [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。
+## 2026-05-28 Verification Report 路径校验证据包
+- [x] 本地执行范围先从这次 `docs_bilingual` 治理包开始，然后再修改 Comet runtime 校验脚本和定向 runtime 测试。
+- [x] 范围：让 `comet-yaml-validate.sh` 在 `verification_report` 非 `null` 且指向缺失文件时 fail closed，同时保留待验证阶段可以使用 `verification_report: null` 的既有规则。
+- [x] 本批次归类为 script-plus-test 实施；不改变 Comet 阶段语义、Monitoring 回退语义、稳定 OpenSpec 需求或面向操作员的 skill workflow。
+- [x] 本包不需要派生更新 `openspec/` 或 `docs/`，因为既有稳定 policy 与 spec 已经要求 verification-report 证据和缺失 artifact 的 fail-closed 处理。
+- [x] 预期 runtime 文件：`.codex/skills/comet/scripts/comet-yaml-validate.sh`。
+- [x] 预期证据文件：`test/comet_runtime_management_flow.test.py`。
+- [x] 验收证据必须包括定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、本地 MR review 和 local CI。
+- [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。

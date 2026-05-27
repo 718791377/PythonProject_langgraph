@@ -493,3 +493,12 @@ Tests:
 - [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
 - [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
 - [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
+## 2026-05-28 Verification Report Path Validation Evidence Package
+- [x] Local execution scope starts with this `docs_bilingual` governance package, then updates the Comet runtime validator and targeted runtime tests.
+- [x] Scope: make `comet-yaml-validate.sh` fail closed when `verification_report` is non-null but points to a missing file, preserving the existing rule that pending phases may keep `verification_report: null`.
+- [x] This package is script-plus-test implementation; it does not change Comet phase semantics, Monitoring return semantics, stable OpenSpec requirements, or operator-facing skill workflow.
+- [x] This package does not require derived `openspec/` or `docs/` updates because existing stable policy and spec already require verification-report evidence and fail-closed missing-artifact handling.
+- [x] Expected runtime file: `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
+- [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
+- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
+- [x] Remote publication remains gated; unless the user explicitly requests remote publication, stop at local `main`.
