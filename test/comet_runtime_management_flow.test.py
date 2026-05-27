@@ -112,6 +112,17 @@ class CometRuntimeManagementStaticTests(unittest.TestCase):
         self.assertIn('warn_msg "unknown field \'$key\' found"', text)
         self.assertIn("WARNINGS=$((WARNINGS + 1))", text)
 
+    def test_validator_declares_artifact_path_safety_checks(self) -> None:
+        text = read(VALIDATE_SCRIPT)
+
+        self.assertIn("validate_artifact_path_safety()", text)
+        self.assertIn("must be a repository-relative path", text)
+        self.assertIn("must not contain path traversal segments", text)
+        self.assertIn('[[ "$path" =~ ^[A-Za-z]: ]]', text)
+        self.assertIn('[[ "$path" == ".." || "$path" == ../* || "$path" == */../* || "$path" == */.. ]]', text)
+        for field in ["design_doc", "plan", "verification_report", "management_record"]:
+            self.assertIn(f'validate_artifact_path_safety "{field}" "${field}"', text)
+
     def test_guard_accepts_english_and_chinese_management_checklist_labels(self) -> None:
         text = read(GUARD_SCRIPT)
 

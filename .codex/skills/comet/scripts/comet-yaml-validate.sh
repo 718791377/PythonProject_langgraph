@@ -67,6 +67,19 @@ strip_wrapping_quotes() {
 fail()  { red "  FAIL: $1"; ERRORS=$((ERRORS + 1)); }
 warn_msg() { warn "  WARN: $1"; WARNINGS=$((WARNINGS + 1)); }
 
+validate_artifact_path_safety() {
+  local field="$1" path="$2"
+  if [ -z "$path" ] || [ "$path" = "null" ]; then
+    return 0
+  fi
+  if [[ "$path" = /* ]] || [[ "$path" =~ ^[A-Za-z]: ]] || [[ "$path" = \\* ]] || [[ "$path" == *\\* ]]; then
+    fail "$field must be a repository-relative path, got '$path'"
+  fi
+  if [[ "$path" == ".." || "$path" == ../* || "$path" == */../* || "$path" == */.. ]]; then
+    fail "$field must not contain path traversal segments, got '$path'"
+  fi
+}
+
 echo "[VALIDATE] $YAML" >&2
 
 # --- Required fields ---
@@ -176,18 +189,21 @@ fi
 # --- Path validation ---
 
 if [ -n "$design_doc" ] && [ "$design_doc" != "null" ]; then
+  validate_artifact_path_safety "design_doc" "$design_doc"
   if [ ! -f "$design_doc" ]; then
     fail "design_doc='$design_doc' does not exist on disk"
   fi
 fi
 
 if [ -n "$plan" ] && [ "$plan" != "null" ]; then
+  validate_artifact_path_safety "plan" "$plan"
   if [ ! -f "$plan" ]; then
     fail "plan='$plan' does not exist on disk"
   fi
 fi
 
 if [ -n "$verification_report" ] && [ "$verification_report" != "null" ]; then
+  validate_artifact_path_safety "verification_report" "$verification_report"
   if [ ! -f "$verification_report" ]; then
     fail "verification_report='$verification_report' does not exist on disk"
   fi
@@ -195,7 +211,10 @@ fi
 
 if [ -z "$management_record" ] || [ "$management_record" = "null" ]; then
   fail "management_record must be recorded"
-elif [ ! -f "$management_record" ]; then
+else
+  validate_artifact_path_safety "management_record" "$management_record"
+fi
+if [ -n "$management_record" ] && [ "$management_record" != "null" ] && [ ! -f "$management_record" ]; then
   fail "management_record='$management_record' does not exist on disk"
 fi
 
