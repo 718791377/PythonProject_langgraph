@@ -1,25 +1,37 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.20
+version: 0.21
 status: active
 owner: codex-orchestration
-date: 2026-05-26
+date: 2026-05-27
 ---
 
 # 自动协同路由强制化实施计划
 
-## Comet 重构说明与阅读路径
+## 完整 Comet 重构说明与阅读路径
 
-本次 `refactor-automatic-routing-plan-comet` 是 Comet tweak 级文档重构：它只提升本文档的结构、阅读路径和 Phase 4 后续实施入口清晰度，不新增 runtime checker，不改变已归档 Phase 0-3 的完成结论，也不构成 durable team、persistent team 或 native expert 已运行的证据。
+本次 `refactor-automatic-routing-plan-full-comet` 是完整 `/comet` 文档重构：它把本文档从上一次 `tweak` 级结构整理提升为可追踪的 full workflow 记录，补齐 OpenSpec `proposal / design / tasks / delta spec`、Superpowers design doc、implementation plan、management checklist 与 verification report。由于当前 Windows shell 不提供 `bash`，Comet `comet-state.sh` / `comet-guard.sh` 不能直接执行；本次只记录 `script_state_blocker: bash_unavailable_in_current_windows_shell`，并用 OpenSpec artifacts 与仓库验证命令作为 fallback 证据，不声称 shell guard transition 已成功运行。
+
+本次 full Comet 重构仍然是 documentation-only：它提升本文档的权威分层、阅读路径、Phase 4 后续实施入口、evidence contract 与验收矩阵清晰度，不新增 runtime checker，不改变已归档 Phase 0-3 的完成结论，也不构成 durable team、persistent team、LangGraph workflow 或 native expert 已运行的证据。
 
 阅读与维护时按以下分层处理：
 
 | 分层 | 主要章节 | 用途 | 不得误用为 |
 | --- | --- | --- | --- |
-| 当前状态 | `Active 状态说明`、第 0 节、第 21 节 | 判断 baseline 是否仍 active、哪些历史实施包已完成 | 新的 runtime 运行证据 |
-| 硬规则 | 第 1-19 节、第 26-28 节 | 判断 activation trace、expert、durable workflow、persistent team 与 LangGraph/backend 的语义边界 | 每个任务都必须启动团队的命令 |
+| 当前状态 | `Active 状态说明`、第 0 节、第 21 节 | 判断 baseline 是否仍 active、哪些历史实施包已完成、哪些后续缺口仍 planned | 新的 runtime 运行证据 |
+| 硬规则 | 第 1-19 节、第 26-28 节 | 判断 activation trace、expert、durable workflow、persistent team、LangGraph/backend 与 legacy-session retrofit 的语义边界 | 每个任务都必须启动 durable/persistent team 的命令 |
 | 后续实施 | 第 20 节 Phase 4 | 冻结未来 `enforce-prompt-independent-collaboration-parity` 的实施入口、文件地图、过程组、任务和验收矩阵 | Phase 4 已完成声明 |
-| 验证与风险 | 第 22-25 节 | 维护 checker/test/evidence 映射、风险、非目标与验收标准 | 跳过 OpenSpec/local gate/local MR review 的理由 |
+| 证据契约 | 第 20 节证据契约、第 22 节 | 维护 prompt-independent fixtures、cold-start ledger、evidenceguard、expert lifecycle、LangGraph release 与 guard wiring 的输入/输出契约 | 用自然语言替代 checker 或落盘审计 |
+| 验证与风险 | 第 23-25 节、本次 Comet verification report | 维护风险、回滚、非目标、验收标准和本地验证命令清单 | 跳过 OpenSpec/local gate/local MR review 的理由 |
+
+本次 full Comet 工件路径：
+
+| 工件 | 路径 | 状态 |
+| --- | --- | --- |
+| OpenSpec change | `openspec/changes/refactor-automatic-routing-plan-full-comet/`（归档后为 `openspec/changes/archive/2026-05-27-refactor-automatic-routing-plan-full-comet/`） | documentation-only full workflow |
+| Superpowers design | `docs/superpowers/specs/2026-05-27-automatic-routing-plan-full-comet-refactor-design.md` | 记录已选设计、范围和非目标 |
+| Superpowers plan | `docs/superpowers/plans/2026-05-27-automatic-routing-plan-full-comet-refactor.md` | 记录实施步骤、验证和提交边界 |
+| Verification report | `openspec/changes/refactor-automatic-routing-plan-full-comet/verification.md`（归档后随 change 移动） | 记录实际运行的验证命令和未运行项 |
 
 执行者默认从本节开始，再跳到第 20 节的 Phase 4 摘要；只有需要追溯历史完成证据时才阅读全文第 0 节与第 21-25 节。若终端显示中文乱码，应重新用 UTF-8 读取源文件，不得把乱码复制回仓库。
 
@@ -43,9 +55,9 @@ date: 2026-05-26
 | Phase 4 parity/evidenceguard | planned follow-up | 用固定 change id `enforce-prompt-independent-collaboration-parity` 新开实施包 |
 | LangGraph backend | ready/default backend 可报告 | 不等同于 persistent team running |
 | durable/persistent team | 阈值门控 | 只有 selector、manifest、heartbeat、lifecycle、close/absorb 等证据齐全时才可声明运行或完成 |
-| 本次 Comet 重构 | documentation-only tweak | 只提交文档结构与 Comet/OpenSpec trace，不发布远程 |
+| 本次 full Comet 重构 | documentation-only full workflow | 补齐 OpenSpec/Superpowers 工件、重构本文档结构，不发布远程、不声称 runtime team 已运行 |
 
-- active OpenSpec changes：无（本次复核时 `openspec list --json` 返回空 change 列表）；
+- 2026-05-15 历史快照中的 active OpenSpec changes：无；后续维护可能通过独立 bounded change 补充新的 Comet/OpenSpec 记录，不能用这条历史快照判断当前工作区一定没有 active change；
 - 稳定 policy 与 startup surfaces：已更新 `AGENTS.md`、`docs_bilingual/project_startup_summary.*`、`docs_bilingual/governance/codex_user_level_orchestration_activation_policy.*` 以及相关 OpenSpec stable specs；
 - 脚本化 enforcement：已由 `tools/check_orchestration_activation_policy.py`、`tools/check_orchestration_trace_evidence.py`、`tools/check_capability_switch_chain.py`、`tools/check_expert_lifecycle_wait_pacing_evidence.py`、`tools/check_role_routing_directive_evidence.py`、`tools/check_agent_skill_profile_surface_boundaries.py`、`tools/check_custom_agent_toml_schema.py`、`tools/check_leader_session_scope_evidence.py`、`tools/check_delegation_wait_discipline_evidence.py`、`tools/check_durable_artifact_state_surfaces.py`、`tools/check_effective_lane_fit_evidence.py`、`tools/check_fanout_write_ownership_evidence.py` 与 OpenSpec guard wiring 覆盖；
 - 生成式用户级 source templates：已在 `tools/install-codex-user-level-team-mode.ps1` 中固化，并由 `test/install-codex-user-level-team-mode.test.ps1` 覆盖；
@@ -645,13 +657,19 @@ Phase 4 执行摘要：
 | 关键非目标 | 不把 skills/profile 当 native experts；不在 startup 自动拉团队；不把 backend ready 当 team running；不把本计划当运行证据 |
 | 验收出口 | 新检查器接入 `tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json`，并通过 local gate 与 local MR review |
 
-本次 Comet 文档重构只增加上述阅读入口和边界提示；它没有执行 Phase 4 的 checker、fixtures 或 runtime 改造。
+本次 2026-05-27 full Comet 文档重构只增加上述阅读入口、边界提示和完整 Comet/OpenSpec/Superpowers 工件；它没有执行 Phase 4 的 checker、fixtures 或 runtime 改造。
 
 #### 当前会话发现
 
 本 session 中两条用户指令的业务范围相同。其中一条显式包含“use experts / durable_team / persistent team”，另一条没有。最终文档结果已经对齐，但会话证据不能严格证明“没有这句话”的指令独立产生了同一条协同执行路径。仓库政策已经要求自动协同不得依赖这句话，因此缺口不是再写提示词提醒，而是补上可执行的一致性 guard 和 lifecycle audit surface。
 
 本计划是未来实施计划，不是运行时证据。它不能证明当前已有 durable team 或 persistent team 正在运行。
+
+#### 2026-05-27 完整 Comet 重构边界
+
+本次 full Comet 重构只改进本文档与对应 Comet/OpenSpec/Superpowers 工件的结构化可读性。它将 `refactor-automatic-routing-plan-full-comet` 作为独立 documentation-only change，补齐设计、计划、任务、验证与归档记录；它不实现 Phase 4 checker，不创建 durable/persistent runtime worker，不改变 user-level launcher 或 LangGraph runtime state。
+
+因此，本次提交可作为“本文档已经按完整 `/comet` 流程重构”的证据；不能作为“prompt-independent collaboration parity 已实现”或“durable/persistent team 已运行”的证据。
 
 #### 2026-05-25 颗粒度复核结论
 

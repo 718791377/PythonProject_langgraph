@@ -1,12 +1,37 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.17
+version: 0.18
 status: active
 owner: codex-orchestration
-date: 2026-05-15
+date: 2026-05-27
 ---
 
 # Automatic Orchestration Routing Enforcement Plan
+
+## Full Comet Refactor Note and Reading Path
+
+The `refactor-automatic-routing-plan-full-comet` change records a full `/comet` documentation refactor for this plan. It supplements the previous tweak-level cleanup with OpenSpec `proposal / design / tasks / delta spec`, a Superpowers design doc, an implementation plan, a management checklist, and a verification report. The current Windows shell does not expose `bash`, so Comet shell helpers such as `comet-state.sh` and `comet-guard.sh` are recorded as blocked by `script_state_blocker: bash_unavailable_in_current_windows_shell`; repository validation and OpenSpec artifacts are the fallback evidence, and this document must not claim that shell guard transitions ran.
+
+This refactor remains documentation-only. It improves the authority layering, reading path, Phase 4 follow-up entry point, evidence contracts, and acceptance matrix. It does not add runtime checkers, change the completed Phase 0-3 baseline, or prove that a durable team, persistent team, LangGraph workflow, or native expert actually ran.
+
+Reading order:
+
+| Layer | Main sections | Use for | Do not use as |
+| --- | --- | --- | --- |
+| Current status | `Active status note`, section 0, section 21 | Decide whether the baseline is active, which historical packages are complete, and which gaps remain planned | New runtime execution evidence |
+| Hard rules | Sections 1-19 and 26-28 | Interpret activation traces, experts, durable workflow, persistent team, LangGraph/backend, and legacy-session retrofit boundaries | A command to start a team for every task |
+| Follow-up implementation | Section 20 Phase 4 | Freeze the future `enforce-prompt-independent-collaboration-parity` entry point, file map, process groups, tasks, and acceptance matrix | A Phase 4 completion claim |
+| Evidence contracts | Section 20 evidence contracts and section 22 | Maintain prompt-independent fixtures, cold-start ledger, evidenceguard, expert lifecycle, LangGraph release, and guard wiring contracts | Natural-language replacement for checkers or persisted audit |
+| Verification and risk | Sections 23-25 and the Comet verification report | Maintain risks, rollback, non-goals, acceptance criteria, and local verification commands | A reason to skip OpenSpec, local gate, or local MR review |
+
+Full Comet artifact paths:
+
+| Artifact | Path | Status |
+| --- | --- | --- |
+| OpenSpec change | `openspec/changes/refactor-automatic-routing-plan-full-comet/` or, after archive, `openspec/changes/archive/2026-05-27-refactor-automatic-routing-plan-full-comet/` | Documentation-only full workflow |
+| Superpowers design | `docs/superpowers/specs/2026-05-27-automatic-routing-plan-full-comet-refactor-design.md` | Records the chosen design, scope, and non-goals |
+| Superpowers plan | `docs/superpowers/plans/2026-05-27-automatic-routing-plan-full-comet-refactor.md` | Records implementation steps, validation, and commit boundary |
+| Verification report | `openspec/changes/refactor-automatic-routing-plan-full-comet/verification.md` or archived equivalent | Records verification commands that actually ran and commands not run |
 
 ## Active status note
 
@@ -20,7 +45,7 @@ Current local conclusion: this plan is complete for the agreed repository source
 
 Completion evidence currently consists of:
 
-- active OpenSpec changes: none (`openspec list --json` returned an empty change list during this review);
+- active OpenSpec changes in the 2026-05-15 historical snapshot: none; later maintenance may add independent bounded Comet/OpenSpec records, so this historical line must not be used to infer that the current worktree has no active change;
 - stable policy and startup surfaces: updated in `AGENTS.md`, `docs_bilingual/project_startup_summary.*`, `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.*`, and related OpenSpec stable specs;
 - script-backed enforcement: covered by `tools/check_orchestration_activation_policy.py`, `tools/check_orchestration_trace_evidence.py`, `tools/check_capability_switch_chain.py`, `tools/check_expert_lifecycle_wait_pacing_evidence.py`, `tools/check_role_routing_directive_evidence.py`, `tools/check_agent_skill_profile_surface_boundaries.py`, `tools/check_custom_agent_toml_schema.py`, `tools/check_leader_session_scope_evidence.py`, `tools/check_delegation_wait_discipline_evidence.py`, `tools/check_durable_artifact_state_surfaces.py`, `tools/check_effective_lane_fit_evidence.py`, `tools/check_fanout_write_ownership_evidence.py`, and the OpenSpec guard wiring;
 - generated user-level source templates: hardened in `tools/install-codex-user-level-team-mode.ps1`, with regression coverage in `test/install-codex-user-level-team-mode.test.ps1`;
@@ -157,6 +182,14 @@ Handling principles:
 - Until these checkers exist, final reports must distinguish policy expectation from actual runtime evidence.
 
 The detailed Phase 4 implementation content has been merged into section 20 of this document; the standalone parity plan has been deleted. This document is the only implementation-plan source of truth for that hardening work, and Phase 4 is still not evidence that a durable or persistent team is currently running.
+
+### 2.6 2026-05-25 cold-start read-order evidence gap
+
+A later cold-start review confirmed that activation traces are not enough to prove that the repository startup read order was actually followed. Future new-session, reload, resume, continue, phase-change, or explicit cold-start-reread work needs structured read-order evidence that lists the startup summary pair, task-relevant files read, skipped read-order entries with reasons, OpenSpec state, and worktree/mainline preflight. This evidence is separate from activation trace evidence and is not expert, durable-team, or persistent-team runtime evidence.
+
+### 2.7 2026-05-27 full Comet refactor boundary
+
+The full Comet refactor for `refactor-automatic-routing-plan-full-comet` only improves this plan and its Comet/OpenSpec/Superpowers traceability. It does not implement Phase 4 checkers, create durable or persistent workers, mutate user-level launchers, or change LangGraph runtime state. The commit may be used as evidence that the plan was refactored through a full `/comet` workflow; it must not be used as evidence that prompt-independent collaboration parity is already implemented or that a durable/persistent team ran.
 
 ## 3. Activation trace format
 
@@ -589,6 +622,19 @@ Operational caveat: live platform constraints can still block native expert spaw
 ### Phase 4 - Prompt-independent collaboration parity hardening - status: planned follow-up
 
 Phase 4 does not reopen the completed Phase 0-3 baseline; it only addresses the gap found during the 2026-05-24 retrospective. The former standalone Phase 4 subplan has been merged into this section and deleted, making this document the only Phase 4 implementation-plan source of truth.
+
+Phase 4 execution summary:
+
+| Item | Decision |
+| --- | --- |
+| Future change id | `enforce-prompt-independent-collaboration-parity` |
+| Goal | Prove automatic collaboration routing does not depend on whether the user wrote phrases such as `experts / durable_team / persistent team` |
+| Required evidence surfaces | prompt-independent fixtures, cold-start read-order ledger, durable/persistent evidenceguard, expert lifecycle JSONL, LangGraph stale-running release checker |
+| Key non-goals | Do not treat skills/profiles as native experts; do not auto-launch teams at startup; do not equate backend ready with team running; do not treat this plan as runtime evidence |
+| Acceptance exit | New checkers wired into `tools/run_openspec_guard.py` and `tools/ci/ci_test_manifest.json`, then local gate and local MR review pass |
+
+The 2026-05-27 full Comet documentation refactor adds the reading path, boundary notes, and full Comet/OpenSpec/Superpowers artifacts only. It does not execute Phase 4 checkers, fixtures, or runtime changes.
+
 
 #### Current Session Finding
 
