@@ -19,6 +19,10 @@ def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def legacy_mojibake(label: str, encoding: str = "gbk") -> str:
+    return label.encode("utf-8").decode(encoding, errors="replace")
+
+
 class CometRuntimeManagementStaticTests(unittest.TestCase):
     maxDiff = None
 
@@ -84,6 +88,15 @@ class CometRuntimeManagementStaticTests(unittest.TestCase):
             "Current facts are checked.",
         ]:
             self.assertIn(required, text)
+
+    def test_guard_and_archive_accept_legacy_mojibake_management_labels(self) -> None:
+        guard_text = read(GUARD_SCRIPT)
+        archive_text = read(ARCHIVE_SCRIPT)
+
+        for text in [guard_text, archive_text]:
+            self.assertIn("checklist_done_legacy_mojibake()", text)
+            self.assertIn('("gbk", "cp936", "gb18030", "cp1252")', text)
+            self.assertIn('decoded.replace("\\ufffd", "?")', text)
 
     def test_state_script_requires_monitoring_clear_for_forward_transitions(self) -> None:
         text = read(STATE_SCRIPT)
@@ -374,6 +387,35 @@ class CometRuntimeManagementBehaviorTests(unittest.TestCase):
                         "## Monitoring Loop",
                         "- [x] Current facts are checked.",
                         "- [x] Continue, adjust, stop, or return decision is made.",
+                        "- [ ] If returning, target_phase and rework_reason are recorded.",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = self.run_bash(root, "comet-guard.sh", "demo", "open")
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_guard_accepts_legacy_mojibake_management_template_for_open_gate(self) -> None:
+        with self.make_root() as temp:
+            root = Path(temp)
+            change = self.write_minimal_change(root, "demo")
+            self.run_bash(root, "comet-state.sh", "init", "demo", "full")
+            (change / "management.md").write_text(
+                "\n".join(
+                    [
+                        "# Comet Management Record",
+                        "",
+                        "## Open / Initiating",
+                        f"- [x] {legacy_mojibake('价值/Why 已说明')}",
+                        f"- [x] {legacy_mojibake('成功标准已说明')}",
+                        f"- [x] {legacy_mojibake('stakeholders 或 constraints 已识别')}",
+                        "",
+                        "## Monitoring Loop",
+                        f"- [x] {legacy_mojibake('当前阶段事实已检查')}",
+                        f"- [x] {legacy_mojibake('是否需要回退已判断')}",
                         "- [ ] If returning, target_phase and rework_reason are recorded.",
                     ]
                 )

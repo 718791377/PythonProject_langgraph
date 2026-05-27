@@ -306,6 +306,61 @@ management_record_path() {
   echo "$record"
 }
 
+python_for_legacy_label_check() {
+  if command -v python3 >/dev/null 2>&1; then
+    command -v python3
+    return 0
+  fi
+  if command -v python >/dev/null 2>&1; then
+    command -v python
+    return 0
+  fi
+  if command -v py >/dev/null 2>&1; then
+    command -v py
+    return 0
+  fi
+  return 1
+}
+
+checklist_done_legacy_mojibake() {
+  local record="$1"
+  shift
+  local py_bin
+  py_bin=$(python_for_legacy_label_check 2>/dev/null || true)
+  if [ -z "$py_bin" ]; then
+    return 1
+  fi
+
+  "$py_bin" - "$record" "$@" <<'PY'
+from pathlib import Path
+import sys
+
+record = Path(sys.argv[1])
+labels = sys.argv[2:]
+
+try:
+    text = record.read_text(encoding="utf-8", errors="replace")
+except OSError:
+    sys.exit(1)
+
+checked = set()
+for line in text.splitlines():
+    if line.startswith("- [x] ") or line.startswith("- [X] "):
+        checked.add(line[6:])
+
+variants = set()
+for label in labels:
+    variants.add(label)
+    data = label.encode("utf-8", errors="replace")
+    for encoding in ("gbk", "cp936", "gb18030", "cp1252"):
+        decoded = data.decode(encoding, errors="replace")
+        variants.add(decoded)
+        variants.add(decoded.replace("\ufffd", "?"))
+
+sys.exit(0 if checked.intersection(variants) else 1)
+PY
+}
+
 checklist_done() {
   local record
   record=$(management_record_path)
@@ -320,6 +375,9 @@ checklist_done() {
       return 0
     fi
   done
+  if checklist_done_legacy_mojibake "$record" "$@"; then
+    return 0
+  fi
 
   echo "management checklist item is not checked. Accepted labels:" >&2
   for label in "$@"; do
