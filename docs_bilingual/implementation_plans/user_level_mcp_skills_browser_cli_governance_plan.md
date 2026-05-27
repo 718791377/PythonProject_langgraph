@@ -5,10 +5,13 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 status: draft
 plan_readiness: execution-ready
 implementation_state: cdp_bridge_read_only_defaults_repo_local_implemented
-last_reviewed_at: 2026-05-25
+last_reviewed_at: 2026-05-27
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
+comet_workflow: full
+comet_phase_model: open-design-build-verify-archive
+local_codex_governance_fork_reference: docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.md
 ---
 
 # User-Level MCP, Skills, Browser, and CLI Harness Governance Plan
@@ -27,6 +30,20 @@ Review verdict:
 - The sequence is baseline before capability: finish token/risk, authorization receipt, update receipt, and evidence-redaction controls before implementing `skills2cli`, `mcp2cli`, browser automation, and `wecom-cli` capability surfaces.
 
 The next action is not to broaden this plan. After the repo-local `chrome-devtools-mcp` isolated-session, project-profile, browser stale scan, cleanup dry-run, and CDP Bridge read-only-default guard slices are validated and archived, continue with the OpenCLI on-demand enforcement slice rather than installing user-level wrappers implicitly.
+
+### 0.1 Full Comet execution skeleton
+
+This plan is refactored through the complete `/comet` workflow rather than a lightweight tweak: OpenSpec owns WHAT, Superpowers owns HOW, and Comet owns WHEN/NEXT plus phase evidence. The plan keeps governance slices definable, designable, executable, verifiable, and archivable; any real user-level install or high-risk browser/WXWork action still depends on that lane's receipt, smoke evidence, and authorization gate.
+
+| Comet phase | Plan location | Required evidence | Pass condition |
+| --- | --- | --- | --- |
+| Open | Sections 1-4 | scope, non-goals, stakeholder/constraint, rollback boundary | Scope, reference sources, runtime layout, token/risk, and port boundaries are explicit |
+| Design | Sections 5-12 | Superpowers design doc, trade-offs, ownership boundaries, failure modes | Every lane has default state, authorization boundary, receipt/rollback requirements, and reference-only boundaries |
+| Build | Sections 13-17 | Superpowers implementation plan, owned files, checker/test, OpenSpec slice | Every item has executable order, state flow, install/update/rollback receipt requirements |
+| Verify | Section 18 | verification report, precommit gate, OpenSpec guard, local gate/local MR review | Readiness gate, authorization matrix, install/update evidence, and checker commands are executable; no unevidenced lane is marked active |
+| Archive | Sections 16-18 plus OpenSpec archive | stable spec/archive or explicit archive deferral | Completed items have archive/deferral, local gate, local MR review, and completed receipt; unfinished items remain planned/implemented-local |
+
+Complete `/comet` does not allow skipping Design/Plan/Verify because a change is documentation-only. If later implementation exceeds this governance blueprint, such as adding wrappers, port allocators, browser-owner writes, or WXWork GUI automation, it must open a separate OpenSpec change instead of expanding this document-refactor change.
 
 ## 1. Purpose
 
@@ -493,9 +510,21 @@ Update rule:
 - a failed smoke test must leave the previous installed version selected;
 - rollback must be possible from the receipt without re-reading chat history.
 
-## 16. OpenSpec implementation split
+## 16. Comet implementation split: OpenSpec WHAT + Superpowers HOW
 
-Implement this plan as small, locally testable, rollbackable changes. Default split:
+Implement this plan through the complete `/comet` path: every small change must first define OpenSpec WHAT, then split HOW into locally verifiable, rollbackable, archivable execution items. Complete Comet also requires explicit Design/Plan evidence rather than downgrading documentation changes to tweak-only execution.
+
+### 16.1 Full Comet phase gates
+
+| Phase | Gate | Evidence | Return when failed |
+| --- | --- | --- | --- |
+| Open / Initiating | scope / non-goals / owned files / rollback boundary | proposal or change note | return-open |
+| Design / Planning | trade-offs, ownership boundary, authorization boundary, failure modes | Superpowers design doc + delta spec | return-design |
+| Build / Executing | patch + local checks + plan task evidence | Superpowers implementation plan + changed paths + checker output | return-build |
+| Verify / Controlling | precommit gate + OpenSpec guard + local gate + local MR review | verification report + pass/fail evidence | return-build or return-design |
+| Archive / Closing | stable spec/archive or explicit deferral | archive receipt or deferral note | return-verify |
+
+Default split:
 
 1. policy and checker baseline for token-risk priority, port registry/lease rules, browser asset classes, sensitive authorization, update receipts, and evidence redaction;
 2. `skills2cli` MVP: index/search/show plus warning-audit summary with compact output tests;
@@ -534,6 +563,7 @@ Each OpenSpec change must define:
 - local listener or port lease ownership, if the change can bind a TCP port;
 - rollback method;
 - explicit non-goals to keep the change from expanding.
+- `.comet.yaml` or an equivalent execution record must state workflow, phase, design_doc, plan, build_mode, isolation, verify result, verification report, branch status, and archive/deferral status.
 
 
 Fine-grained implementation checklist:
@@ -577,21 +607,27 @@ Fine-grained implementation checklist:
 - [ ] Record rollback-ready receipts after every user-level installation; lanes without receipts must not be marked active.
 
 
-## 17. Implementation order
+## 17. Complete Comet implementation order
 
-1. Create an OpenSpec change for this plan.
-2. Add governance docs and checkers for token/risk priority, port registry/lease, browser asset classes, sensitive authorization, and update receipts.
-3. Implement `skills2cli` MVP and tests.
-4. Add `mcp2cli` user-level wrapper and allowed-profile registry.
-5. Promote `chrome-devtools-mcp` to managed user-level wrapper.
-6. Harden CDP Bridge policy and add OpenCLI as on-demand adapter only.
-7. Lock the Codex reusable harness reference boundary, and delegate Pi family / `oh-my-pi` sidecar install, updater receipt, and rollback model to `pi_plugin_codex_user_level_sidecar_plan.*`.
-8. Install CLI-Anything / CLI Hub user-level tooling.
-9. Build `wecom-cli` API/Webhook MVP, then window inventory, then gated GUI automation.
-10. Run local gate, local MR review, and user confirmation before local main integration.
+1. Open: create an OpenSpec change for this plan and record scope, non-goals, stakeholder/constraint, and rollback boundary.
+2. Design: use a Superpowers design doc to freeze trade-offs, lane ownership boundaries, authorization boundaries, receipt state flow, failure modes, and later slicing rules.
+3. Build: use a Superpowers implementation plan to break down owned files, checkers/tests, CI manifest entries, install/update/rollback receipts, and local commit steps.
+4. Build: add governance docs and checkers for token/risk priority, port registry/lease, browser asset classes, sensitive authorization, and update receipts.
+5. Build: implement `skills2cli` MVP and tests.
+6. Build: add `mcp2cli` user-level wrapper and allowed-profile registry.
+7. Build: promote `chrome-devtools-mcp` to managed user-level wrapper.
+8. Build: harden CDP Bridge policy and add OpenCLI as on-demand adapter only.
+9. Build: lock the Codex reusable harness reference boundary, and delegate Pi family / `oh-my-pi` sidecar install, updater receipt, and rollback model to `pi_plugin_codex_user_level_sidecar_plan.*`.
+10. Build: install CLI-Anything / CLI Hub user-level tooling.
+11. Build: build `wecom-cli` API/Webhook MVP, then window inventory, then gated GUI automation.
+12. Verify/Archive: run local gate and local MR review, then integrate to local main only after user confirmation; archive completed changes or record archive deferral.
 
-## 18. Validation plan
+## 18. Complete Comet validation plan
 
+- Open evidence: `proposal.md` must cover goal, scope, non-goals, affected files, risk, and rollback boundary.
+- Design evidence: the Superpowers design doc must cover trade-offs, architecture boundary, state flow, authorization gates, failure modes, and future slicing rules.
+- Build evidence: the Superpowers implementation plan must list tasks, owned files, test commands, commit points, and rollback method.
+- Target document evidence: this plan must state complete `/comet` Open/Design/Build/Verify/Archive phases and must not describe itself as tweak-only.
 - `skills2cli` tests prove index/search/show do not emit all skill descriptions.
 - `mcp2cli` tests prove compact list/search/show and sensitive-call blocking.
 - Browser checker tests prove isolated cleanup, project-profile retention, human-owned protection, and tab owner exclusivity.
@@ -603,6 +639,7 @@ Fine-grained implementation checklist:
 - Repository checks continue to include OpenSpec guard, precommit update/archive gate, local gate, and local MR review.
 - Readiness-gate tests prove no lane becomes `active` without smoke-test evidence, install/update receipt evidence, and rollback evidence.
 - Authorization-matrix tests prove sensitive MCP, browser, CDP/OpenCLI, and WXWork actions fail closed without a current one-task authorization receipt.
+- Comet state checks prove this change's phase, verify result, branch status, verification report, archive/deferral conclusion, and task completion status are consistent; out-of-scope work must open a new change or return to an earlier phase.
 
 ## 19. Sources
 

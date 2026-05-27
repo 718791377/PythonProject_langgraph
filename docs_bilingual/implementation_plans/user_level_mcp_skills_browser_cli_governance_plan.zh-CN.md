@@ -6,12 +6,12 @@ translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browse
 status: draft
 plan_readiness: execution-ready
 implementation_state: cdp_bridge_read_only_defaults_repo_local_implemented
-last_reviewed_at: 2026-05-26
+last_reviewed_at: 2026-05-27
 doc_class: implementation_plan
 created_at: 2026-05-22
 source_reference_file: reference_files/1.md
-comet_workflow: tweak
-comet_phase_model: open-build-verify-archive
+comet_workflow: full
+comet_phase_model: open-design-build-verify-archive
 local_codex_governance_fork_reference: docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md
 ---
 
@@ -33,16 +33,19 @@ local_codex_governance_fork_reference: docs_bilingual/implementation_plans/pi_pl
 
 本方案下一步不是继续扩大范围。repo-local `chrome-devtools-mcp` isolated-session、project-profile、browser stale scan、safe cleanup dry-run 与 CDP Bridge read-only-default guard 切片验证并归档后，应继续 OpenCLI on-demand enforcement 切片，不得隐式安装用户级 wrapper。
 
-### 0.1 Comet 执行骨架
+### 0.1 Comet 完整执行骨架
 
-本方案按 Comet 轻量 tweak 方式重构：OpenSpec 负责 WHAT，Superpowers 负责 HOW，本文只保留可执行、可验证、可归档的治理切片。
+本方案按完整 `/comet` 工作流重构，而不是轻量 tweak：OpenSpec 负责 WHAT，Superpowers 负责 HOW，Comet 负责 WHEN/NEXT 与阶段证据。本文保留可定义、可设计、可执行、可验证、可归档的治理切片；任何实际用户级安装或高风险浏览器/企业微信动作仍必须由对应 lane 的 receipt、smoke 与授权 gate 决定。
 
-| Comet phase | 本文落点 | 通过条件 |
-| --- | --- | --- |
-| Open | 第 1-4 节 | 范围、参考源、运行时布局、token/risk 和端口边界明确 |
-| Build | 第 5-12 节 | 每条 lane 都有默认状态、授权边界、receipt/rollback 要求 |
-| Verify | 第 13-15、18 节 | readiness gate、授权矩阵、安装/update 证据和检查命令可执行 |
-| Archive | 第 16-17 节 | 完成项有 OpenSpec archive、local gate、local MR review、completed receipt |
+| Comet phase | 本文落点 | 必备证据 | 通过条件 |
+| --- | --- | --- | --- |
+| Open | 第 1-4 节 | scope、non-goals、stakeholder/constraint、rollback boundary | 范围、参考源、运行时布局、token/risk 和端口边界明确 |
+| Design | 第 5-12 节 | Superpowers design doc、方案取舍、责任边界、失败模式 | 每条 lane 都有默认状态、授权边界、receipt/rollback 要求，并明确 reference-only 边界 |
+| Build | 第 13-17 节 | Superpowers implementation plan、owned files、checker/test、OpenSpec slice | 每个实施项都有可执行顺序、状态流、安装/update/rollback receipt 要求 |
+| Verify | 第 18 节 | verification report、precommit gate、OpenSpec guard、local gate/local MR review | readiness gate、授权矩阵、安装/update 证据和检查命令可执行，且不得把无证据 lane 标为 active |
+| Archive | 第 16-18 节及 OpenSpec archive | stable spec/archive 或显式 archive deferral | 完成项有 archive/deferral、local gate、local MR review、completed receipt；未完成项保持 planned/implemented-local |
+
+完整 `/comet` 不允许用“只是文档”跳过 Design/Plan/Verify。若后续实施实际超过本文的治理蓝图，例如新增 wrapper、端口分配器、browser owner 写操作或企业微信 GUI 自动化，则必须新开独立 OpenSpec change，而不是继续扩大本文档重构 change。
 
 ## 1. 目的
 
@@ -510,16 +513,17 @@ receipt 必填字段：
 
 ## 16. Comet 执行拆分：OpenSpec WHAT + Superpowers HOW
 
-按 Comet 轻量 tweak 路径实施本方案：每个小步 change 必须先定义 OpenSpec WHAT，再把 HOW 拆成可本地验证、可回滚、可归档的执行项。
+按完整 `/comet` 路径实施本方案：每个小步 change 必须先定义 OpenSpec WHAT，再把 HOW 拆成可本地验证、可回滚、可归档的执行项。完整 Comet 还要求显式 Design/Plan 阶段证据，而不是把文档类变更降级为 tweak-only。
 
-### 16.1 Comet phase gate
+### 16.1 完整 Comet phase gate
 
-| Phase | Gate | 证据 |
-| --- | --- | --- |
-| Open | scope / non-goals / owned files | proposal or change note |
-| Build | patch + local checks | changed paths + checker output |
-| Verify | precommit gate + OpenSpec guard + local gate | pass/fail evidence |
-| Archive | stable spec/archive or explicit deferral | archive receipt or deferral note |
+| Phase | Gate | 证据 | 失败时回退 |
+| --- | --- | --- | --- |
+| Open / Initiating | scope / non-goals / owned files / rollback boundary | proposal or change note | return-open |
+| Design / Planning | 方案取舍、责任边界、授权边界、失败模式 | Superpowers design doc + delta spec | return-design |
+| Build / Executing | patch + local checks + plan task evidence | Superpowers implementation plan + changed paths + checker output | return-build |
+| Verify / Controlling | precommit gate + OpenSpec guard + local gate + local MR review | verification report + pass/fail evidence | return-build 或 return-design |
+| Archive / Closing | stable spec/archive or explicit deferral | archive receipt or deferral note | return-verify |
 
 按小步、可本地测试、可回滚的 change 实施本方案。默认拆分：
 
@@ -560,7 +564,7 @@ receipt 必填字段：
 - 如 change 可能绑定 TCP 端口，必须列出 local listener 或 port lease 归属；
 - rollback method；
 - 明确 non-goals，避免 change 膨胀。
-- `.comet.yaml` 或等价执行记录必须写明 phase、verify result、archive/deferral 状态。
+- `.comet.yaml` 或等价执行记录必须写明 workflow、phase、design_doc、plan、build_mode、isolation、verify result、verification report、branch status、archive/deferral 状态。
 
 ### 16.3 细颗粒度实施清单
 
@@ -602,21 +606,27 @@ receipt 必填字段：
 - [x] 对每个完成的 OpenSpec change 运行 precommit update/archive gate、local gate、local MR review。
 - [ ] 每个用户级安装动作完成后记录 rollback-ready receipt；没有 receipt 的 lane 不得标记 active。
 
-## 17. Comet 实施顺序
+## 17. 完整 Comet 实施顺序
 
-1. 为本方案创建 OpenSpec change。
-2. 增加 token/risk priority、port registry/lease、browser asset class、sensitive authorization、update receipt 的治理文档和 checker。
-3. 实现 `skills2cli` MVP 和测试。
-4. 增加 `mcp2cli` 用户级 wrapper 与允许 profile registry。
-5. 把 `chrome-devtools-mcp` 提升为用户级 managed wrapper。
-6. 加固 CDP Bridge policy，并只把 OpenCLI 作为 on-demand adapter。
-7. 固化 Codex 通用 harness reference boundary，并把 Pi family / `oh-my-pi` sidecar 安装、updater receipt 与 rollback model 委派到 `pi_plugin_codex_user_level_sidecar_plan.*`。
-8. 安装 CLI-Anything / CLI Hub 用户级工具。
-9. 构建 `wecom-cli` API/Webhook MVP，再做 window inventory，最后做带授权 gate 的 GUI automation。
-10. 跑 local gate、local MR review，并在用户确认后再合入 local main。
+1. Open：为本方案创建 OpenSpec change，写明 scope、non-goals、stakeholder/constraint、rollback boundary。
+2. Design：用 Superpowers design doc 固化方案取舍、lane 责任边界、授权边界、receipt 状态流、失败模式和后续分片原则。
+3. Build：用 Superpowers implementation plan 拆解 owned files、checker/test、CI manifest、安装/update/rollback receipt 与本地提交步骤。
+4. Build：增加 token/risk priority、port registry/lease、browser asset class、sensitive authorization、update receipt 的治理文档和 checker。
+5. Build：实现 `skills2cli` MVP 和测试。
+6. Build：增加 `mcp2cli` 用户级 wrapper 与允许 profile registry。
+7. Build：把 `chrome-devtools-mcp` 提升为用户级 managed wrapper。
+8. Build：加固 CDP Bridge policy，并只把 OpenCLI 作为 on-demand adapter。
+9. Build：固化 Codex 通用 harness reference boundary，并把 Pi family / `oh-my-pi` sidecar 安装、updater receipt 与 rollback model 委派到 `pi_plugin_codex_user_level_sidecar_plan.*`。
+10. Build：安装 CLI-Anything / CLI Hub 用户级工具。
+11. Build：构建 `wecom-cli` API/Webhook MVP，再做 window inventory，最后做带授权 gate 的 GUI automation。
+12. Verify/Archive：跑 local gate、local MR review，并在用户确认后再合入 local main；完成的 change 归档或写明 archive deferral。
 
-## 18. Comet 验证计划
+## 18. 完整 Comet 验证计划
 
+- Open evidence：`proposal.md` 必须覆盖目标、范围、非目标、影响文件、风险和 rollback boundary。
+- Design evidence：Superpowers design doc 必须覆盖方案取舍、架构边界、状态流、授权 gate、失败模式和后续切片规则。
+- Build evidence：Superpowers implementation plan 必须列出任务、owned files、测试命令、提交点和回滚方式。
+- Target document evidence：本文必须声明完整 `/comet` 的 Open/Design/Build/Verify/Archive 阶段，不得继续把本方案描述为 tweak-only。
 - `skills2cli` 测试证明 index/search/show 不输出全量 skill descriptions。
 - `mcp2cli` 测试证明 compact list/search/show 和 sensitive-call blocking。
 - Browser checker 测试证明 isolated cleanup、project-profile retention、human-owned protection、tab owner exclusivity。
@@ -628,7 +638,7 @@ receipt 必填字段：
 - 仓库检查继续包括 OpenSpec guard、precommit update/archive gate、local gate、local MR review。
 - Readiness-gate 测试证明没有 smoke-test evidence、install/update receipt evidence 与 rollback evidence 的 lane 不会变成 `active`。
 - Authorization-matrix 测试证明敏感 MCP、browser、CDP/OpenCLI 和 WXWork 动作在没有当前 one-task authorization receipt 时 fail closed。
-- Comet 状态检查证明本轮 change 的 phase、verify result、archive/deferral 结论与 tasks 完成状态一致；超出 tweak 条件时必须升级 full workflow。
+- Comet 状态检查证明本轮 change 的 phase、verify result、branch status、verification report、archive/deferral 结论与 tasks 完成状态一致；超出当前治理重构范围时必须新开 change 或回退阶段。
 
 ## 19. 来源
 
