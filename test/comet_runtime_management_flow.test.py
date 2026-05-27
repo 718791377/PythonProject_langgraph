@@ -132,6 +132,32 @@ class CometRuntimeManagementStaticTests(unittest.TestCase):
         ]:
             self.assertIn(required, text)
 
+    def test_guard_blocks_non_continue_monitoring_decisions(self) -> None:
+        text = read(GUARD_SCRIPT)
+
+        for required in [
+            "monitoring_status=needs_decision; record control_decision before moving forward",
+            "monitoring_status=blocked; resolve or use a monitor-return-* transition",
+            "control_decision=adjust-current; update current phase evidence, then set control_decision=continue",
+            "control_decision=stop; forward transition is intentionally blocked",
+            "return decision requires target_phase and rework_reason",
+            "control_decision=$decision requires: bash",
+            "$COMET_STATE",
+            "transition $CHANGE monitor-${decision}",
+        ]:
+            self.assertIn(required, text)
+
+    def test_archive_requires_final_monitoring_clearance(self) -> None:
+        text = read(ARCHIVE_SCRIPT)
+
+        for required in [
+            'MONITORING_STATUS=$(yaml_field "monitoring_status")',
+            'CONTROL_DECISION=$(yaml_field "control_decision")',
+            "expected 'clear' before archive",
+            "expected 'continue' before archive",
+        ]:
+            self.assertIn(required, text)
+
 
 @unittest.skipIf(shutil.which("bash") is None, "bash is not available on this platform")
 class CometRuntimeManagementBehaviorTests(unittest.TestCase):
