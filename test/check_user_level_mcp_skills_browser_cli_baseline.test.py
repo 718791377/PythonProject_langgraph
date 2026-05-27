@@ -89,6 +89,7 @@ Slice completion rule
         (spec_dir / "spec.md").write_text(spec_text, encoding="utf-8")
         (root / "tools").mkdir(exist_ok=True)
         (root / "tools" / "wecom_cli_governance.py").write_text("# fixture helper\n", encoding="utf-8")
+        (root / "tools" / "user_level_receipt_governance.py").write_text("# fixture receipt helper\n", encoding="utf-8")
         (root / "tools" / "safety_rule_script_backing_registry.json").write_text(json.dumps({
             "schema_version": 1,
             "rules": [{
@@ -102,7 +103,11 @@ Slice completion rule
         (root / "tools" / "run_openspec_guard.py").write_text("check_user_level_mcp_skills_browser_cli_baseline", encoding="utf-8")
         (tools_dir / "ci_test_manifest.json").write_text(json.dumps({
             "schema_version": 1,
-            "python_unittest": ["check_user_level_mcp_skills_browser_cli_baseline.test.py", "wecom_cli_governance.test.py"],
+            "python_unittest": [
+                "check_user_level_mcp_skills_browser_cli_baseline.test.py",
+                "wecom_cli_governance.test.py",
+                "user_level_receipt_governance.test.py",
+            ],
         }), encoding="utf-8")
 
     def test_repository_surfaces_pass(self) -> None:
