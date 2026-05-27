@@ -16,7 +16,7 @@ DOCS_BILINGUAL_PREFIX = "docs_bilingual/"
 
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["git", "-C", str(root), *args],
+        ["git", "-c", "core.quotePath=false", "-C", str(root), *args],
         check=False,
         capture_output=True,
         text=True,
