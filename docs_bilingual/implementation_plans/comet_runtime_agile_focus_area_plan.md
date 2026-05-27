@@ -471,3 +471,14 @@ Tests:
 - [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
 - [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
 - [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
+
+## 2026-05-28 YAML Enum Validation Evidence Package
+
+- [x] This local execution range starts with this `docs_bilingual` package before changing targeted Comet runtime validation tests.
+- [x] Scope: strengthen evidence that `comet-yaml-validate.sh` keeps the managed enum contract described in the Runtime State Contract above; that contract covers workflow kind, current phase, execution mode, isolation mode, verification state, branch handling state, archive flag, monitoring status, control decision, return target, and rework reason.
+- [x] This batch is classified as test-plus-docs implementation; it does not change Comet phase semantics, Monitoring return semantics, stable OpenSpec requirements, or operator-facing skill workflow.
+- [x] No derived `openspec/` or `docs/` update is needed because the existing stable contract already requires runtime field validation and fail-closed enum handling.
+- [x] Expected runtime reference file: `.codex/skills/comet/scripts/comet-yaml-validate.sh`.
+- [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
+- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
+- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
