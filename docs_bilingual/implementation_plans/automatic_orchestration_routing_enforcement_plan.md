@@ -1,258 +1,452 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.22
+lang: en
+canonical: docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md
+translation_of: null
+version: 1.0
 status: active
+plan_readiness: ready-for-implementation
+doc_class: implementation_plan
 owner: codex-orchestration
-date: 2026-05-27
+implementation_lane: prompt_independent_collaboration_parity
+last_reviewed: 2026-05-27
 ---
 
-# Automatic Orchestration Routing Enforcement Plan
+# Automatic Orchestration Routing Enforcement Implementation Plan
 
-## 0. Full `/comet` refactor verdict
+> **For agentic workers:** REQUIRED WORKFLOW: use the full `/comet` cadence for later code implementation. Updating this document is not runtime evidence. Track all implementation tasks with checkboxes, run each task-level validation before moving on, and use Chinese commit messages.
 
-This version keeps the automatic orchestration rules unchanged while reshaping the plan into the newer implementation-plan structure used by `pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` and `comet_runtime_agile_focus_area_plan.zh-CN.md`. It is documentation-only: it does not implement Phase 4, start a durable or persistent team, create a LangGraph workflow, or prove that native experts ran.
+**Goal:** Make Codex sessions evaluate collaboration from task shape, risk, phase, evidence, and thresholds rather than from whether the user typed phrases such as "use experts", "durable_team", or "persistent team".
+
+**Architecture:** The main Codex session remains the leader. The activation check reads startup authority, capability chain, task phase, and durable state; then it chooses the smallest sufficient surface among main-session work, native experts, `native_omx`, LangGraph durable workflow, and persistent team; every final claim must map to auditable evidence.
+
+**Tech Stack:** Codex startup policy, AGENTS.md, OpenSpec, Comet workflow, Python checkers, JSON/JSONL fixtures, repo-local `.omx` state, local CI, local MR review, Chinese commits, and local-main-first publication.
+
+---
+
+## 0. Review conclusion
+
+The previous version compressed historical content, but it still read like a governance rule bundle. It was organized by policy topic and did not provide the worker-ready tasks, inputs, outputs, file ownership, validation boundaries, and rollback path expected from the newer implementation-plan structure. This version rewrites the plan in the same execution-ready style as `pi_plugin_codex_user_level_sidecar_plan.md` and `comet_runtime_agile_focus_area_plan.md`.
+
+| Check | Verdict | Location |
+| --- | --- | --- |
+| Goals and non-goals | Complete | Section 2 |
+| Expert / durable team / persistent team relationship | Complete | Section 1 |
+| Codex activation behavior | Complete | Sections 3 and 4 |
+| Repo-local source of truth | Complete | Section 5 |
+| Evidence contracts | Filled | Section 6 |
+| Task-level granularity | Filled | Section 7 |
+| Readiness gates | Filled | Section 8 |
+| Validation and local integration | Filled | Section 9 |
+| Rollback and cleanup | Filled | Section 10 |
+| Required governance updates | Filled | Section 11 |
 
 Current status:
 
-- Phase 0-3 are complete and archived as the historical baseline.
-- Phase 4 `enforce-prompt-independent-collaboration-parity` remains a planned follow-up.
-- This document is active policy and planning guidance, not runtime evidence.
+- This document is an active implementation plan and Phase 4 boundary, not durable or persistent runtime evidence.
+- Phase 0-3 baseline work has historical implementation and archive evidence; this plan keeps the stable boundary without keeping long archive tables in the main flow.
+- The default Phase 4 change id is `enforce-prompt-independent-collaboration-parity`; it remains follow-up work until the matching checkers, fixtures, guard wiring, and validation records land.
+- A single bilingual document-pair rewrite does not meet the persistent-team threshold; the main session should perform it directly and may use a verifier at close, but must not claim that a durable or persistent team ran.
 
-## 1. Goals
+## 1. Relationship model and naming boundary
 
-- Ensure Codex sessions evaluate collaboration automatically without depending on user phrases such as "use experts / durable_team / persistent team".
-- Separate policy expectation, runtime capability, adopted state, and auditable evidence.
-- Make native experts, native_omx, LangGraph durable workflow, and persistent team adoption checker-backed.
-- Define Phase 4 with a fixed change id, file map, evidence contracts, slices, validation, and rollback.
+| Name | Role in this plan | Runtime evidence | Boundary |
+| --- | --- | --- | --- |
+| Main Codex session | Leader, integrator, evidence absorber | Yes, as final accountable actor | Never replaced by a persistent leader pane |
+| Native expert | Leader-side specialist thread | Only with spawn / wait / result / close / absorbed audit | Skill or profile invocation is not an expert |
+| `native_omx` | Worker-centric durable lane | Requires selector, manifest, heartbeat, and worker lifecycle | Best for worker lifecycle, worktree isolation, and mailbox flow |
+| LangGraph | Graph-shaped durable workflow lane | Requires thread state, checkpoints, briefs, and release records | Ready does not mean persistent team running |
+| Persistent team | Threshold-gated worker team | Requires active selector, manifest, heartbeat, closed and absorbed records | Requires frozen plan plus 2+ independent execution slices, or stabilize with blocking issue |
+| Skills / plugin profiles | Workflow instruction surface | No | They only change visible process context |
+| OpenSpec / Comet | WHAT/HOW governance flow | Change-governance evidence, not worker runtime evidence | Cannot replace runtime audit |
 
-## 2. Non-goals
-
-- Do not force every task into multi-worker execution.
-- Do not treat skills, plugin profiles, profile helpers, or prompts as native experts.
-- Do not auto-launch durable or persistent teams during startup, read-context, boundary-freeze, or low-risk single-file work.
-- Do not treat `backend_default=langgraph` as proof that a persistent team is running.
-- Do not push or publish remotely without explicit current-user authorization.
-
-## 3. Authority and state terms
-
-| State | Meaning | Not evidence for |
-| --- | --- | --- |
-| `active` | Current rule and acceptance baseline. | Runtime worker execution. |
-| `complete` | A bounded slice has validation evidence. | No future gaps. |
-| `planned follow-up` | Scope and tasks are defined but not built. | Existing checker/runtime behavior. |
-| `documentation-only` | Text changed only. | Runtime state change. |
-
-Capability chain:
+Capability switches are interpreted as a dependency chain:
 
 ```text
-subagent_routing != off -> oh_my_codex = on -> langgraph = on -> backend_default=langgraph when ready
+subagent_routing != off
+  -> oh_my_codex = on
+    -> langgraph = on
+      -> langgraph_ready = true allows backend_default=langgraph
 ```
 
-`backend_default=langgraph` means the durable backend is available; it does not mean durable workflow or persistent team is selected, running, or complete.
+Forbidden inferences:
 
-## 4. Runtime governance principles
+- `backend_ready=true` does not imply persistent team running.
+- `skill invoked` does not imply native expert running.
+- `timeout`, `stall`, and `provider pacing` do not imply expert result evidence.
+- Missing user collaboration phrases are not a valid reason to skip orchestration activation.
 
-- The main Codex session remains the leader for activation checks, role selection, fan-in, evidence labels, local integration, and final reporting.
-- Explicit `omx` or `LangGraph` is a hard directive; non-adoption requires a named blocker or unmet threshold.
-- Missing collaboration phrases are not a skip reason; present phrases cannot bypass frozen plans, evidence guards, or ownership.
-- Expert timeout, stall, provider pacing, and silent waits are non-evidence.
-- One durable task uses one backend family unless close or explicit handoff is recorded.
+## 2. Goals and non-goals
 
-## 5. Activation trace contract
+Goals:
 
-Activation runs on first substantive work, reload/restart/resume/continue, phase change, `.omx` state detection, capability-state change, expert timeout/stall, expansion to 2+ slices, or explicit collaboration/backend directives.
+1. Run activation checks on first substantive work, resume, continue, phase change, `.omx` state detection, capability change, expert timeout or stall, and expansion to 2+ slices.
+2. Produce the same routing decision for equivalent tasks with or without explicit collaboration phrases.
+3. Separate `not_needed`, `candidate`, `selected`, `running`, `complete`, and `blocked` so readiness, plans, and timeouts are not reported as completion.
+4. Make native expert lifecycle, durable/persistent evidence, LangGraph stale-running release, cold-start read order, and write ownership checker-backed.
+5. Preserve local-main-first publication: local validation, local MR review, local `main` integration, and remote publication only after explicit authorization.
 
-Minimum trace fields:
+Non-goals:
+
+- Do not force every small task into multi-worker execution.
+- Do not auto-launch a persistent team during startup, read-context, boundary-freeze, or single low-risk document work.
+- Do not report LangGraph ready as persistent team running.
+- Do not treat this plan as runtime evidence.
+- Do not rewrite the foundations of native Codex, oh-my-codex, OpenSpec, or LangGraph.
+- Do not push GitLab or GitHub without a separate explicit remote-publication authorization.
+
+## 3. Runtime architecture
 
 ```text
-phase=<...>
-capability_chain=subagent_routing:<...> > oh_my_codex:<...> > langgraph:<...>
+User request
+  -> Codex leader reads startup authority and task context
+  -> Orchestration activation check
+  -> Capability chain and backend readiness inspection
+  -> Task phase and slice count classification
+  -> Evidence threshold evaluation
+  -> Smallest sufficient lane decision
+  -> Execution / delegation / durable workflow / main-session takeover
+  -> Verification, fan-in, close, absorbed record
+  -> Local commit, local gate, local MR review, local main integration
+```
+
+Minimum state words:
+
+| State | Meaning | Minimum evidence |
+| --- | --- | --- |
+| `not_needed` | Current task does not meet threshold | Trace names `threshold_not_met:*` or task-shape reason |
+| `candidate` | Collaboration may be needed but is not adopted yet | Slice analysis, adoption blocker, next required condition |
+| `selected` | Lane has been selected | Selector / preflight / ownership plan |
+| `running` | Worker or workflow is executing | Selector, manifest or thread state, heartbeat, lifecycle running |
+| `complete` | Work completed and was absorbed | Result summary, close record, leader absorbed record |
+| `blocked` | Cannot claim success | Named blocker, repeated blocking evidence, no completion claim |
+
+Recommended activation trace:
+
+```text
+Routing trace:
+phase=<define-target|read-context|freeze-plan|execute-parallel|integrate-converge|stabilize|verify-accept>
+capability_chain=subagent_routing:<auto|manual|off> > oh_my_codex:<on|off> > langgraph:<on|off>
 backend_default=<langgraph|native_omx|none>
 backend_ready=<true|false|unknown>
-experts=<none|role|blocked:reason>
+experts=<none|analystxN|architect|planner|writer|verifier|blocked:<reason>|...>
 durable_workflow=<not_needed|candidate|selected|running|complete|blocked>
-persistent_team=<not_needed|candidate|selected|running|complete|blocked>
-why=<task-shape|threshold|blocker|evidence>
+persistent_team=<not_selected|not_needed|candidate|selected|running|complete|blocked>
+why=<task-shape, threshold, blocker, or evidence reason>
 ```
 
-Forbidden explanations include "the user did not ask for parallelism", "the user did not type experts", "LangGraph ready means persistent team running", and "skill invocation means native expert ran".
+## 4. Codex usage
 
-## 6. Routing matrix
+Natural-language triggers:
 
-| Scenario | Experts | Durable workflow | Persistent team | Leader action |
-| --- | --- | --- | --- | --- |
-| Single low-risk doc file | Usually none. | Not needed. | Not needed. | Edit, check, commit. |
-| Large doc rewrite | Writer/verifier if useful. | Candidate when checkpoints are needed. | Only after frozen plan and 2+ independent slices. | Leader-owned integration. |
-| Bounded multi-face research | Analyst-only first fan-out. | Re-evaluate after fan-in. | Not before plan freeze. | Freeze brief. |
-| Cross-module design | Architect/security as needed. | Candidate. | Candidate after frozen plan and 2+ slices. | Define interfaces and ownership. |
-| Blocking regression | Debugger. | Survivor queue if needed. | Stabilize may use debugger lanes. | Converge repair. |
+```text
+Check whether this plan is complete
+Update this implementation plan and merge it into local main
+Continue the current task
+Use experts / durable_team / persistent team collaboration
+Use LangGraph to continue this multi-phase work
+```
 
-## 7. Durable-team thresholds
+Behavior rules:
 
-Persistent teams require a frozen plan plus at least two mostly independent execution slices, except stabilize/debugger lanes where one blocking issue can justify debugger workers. Startup, read-context, freeze-plan, and verify-accept do not start new durable teams by default.
+- Ordinary single-document rewrite: run activation, usually report `persistent_team=not_selected:threshold_not_met:single_execution_slice`, and execute in the main session.
+- Explicit experts: if native spawn is not exposed, report `experts=blocked:platform_subagent_invocation_constraint`; do not fabricate expert results.
+- Explicit `omx`: if the task lacks a frozen plan plus 2+ slices, report the unmet threshold; if satisfied, use `omx-team-auto.ps1` or the matching native_omx lane.
+- Explicit LangGraph: select it for graph-shaped multi-phase work when ready; for a single document edit, report that the durable workflow threshold is not met.
+- Timeout or stall: inspect, redirect, respawn, hand off, or take over in the main session; never record success from silence.
 
-## 8. Expert lifecycle and wait discipline
-
-Expert audit events are `spawn`, `wait`, `timeout`, `stall`, `provider_pacing_wait`, `result`, `absorbed`, and `close`. Results cited by final reports must have matching `absorbed`; timeout/stall/provider pacing may only be non-evidence. Completed experts are closed by default after absorption.
-
-## 9. Agent / skill / profile boundary
-
-| Surface | Evidence rule |
-| --- | --- |
-| Native Codex subagent | Requires spawn/wait/result/close/absorbed audit. |
-| Skill from `SKILL.md` | Workflow instruction only; not expert evidence. |
-| Plugin/profile helper | Procedural context only; not expert evidence. |
-| LangGraph node | Durable workflow evidence, not native expert evidence. |
-| OMX durable worker | Selector/manifest/heartbeat/lifecycle evidence, not native expert evidence. |
-
-## 10. Effective lane choice
-
-Use the main session for small single-slice work, native experts for bounded review/research/debug/verification, native_omx for worker-centric durable execution and mailbox/worktree control, LangGraph for graph-shaped checkpointed workflows, and persistent teams only after the team thresholds are met.
-
-## 11. File responsibility map
+## 5. Repo-local source of truth
 
 | File or directory | Responsibility |
 | --- | --- |
-| `AGENTS.md` | Startup and orchestration authority. |
-| `docs_bilingual/project_startup_summary.*` | Cold-start read order and repository posture. |
-| `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.*` | Activation policy and evidence boundaries. |
-| `docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.*` | This active baseline and Phase 4 plan. |
-| `openspec/specs/codex-user-level-orchestration-activation-policy/spec.md` | Stable OpenSpec requirements. |
-| `tools/run_openspec_guard.py` | Repository guard entrypoint. |
-| `tools/ci/ci_test_manifest.json` | Local gate test registration. |
+| `AGENTS.md` | Session and project orchestration authority surface |
+| `docs_bilingual/project_startup_summary.*` | Cold-start read order, canary, repository posture |
+| `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.*` | Activation policy, capability chain, hard directives, timeout evidence |
+| `docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.*` | This implementation plan and Phase 4 boundary |
+| `openspec/specs/codex-user-level-orchestration-activation-policy/spec.*` | Stable WHAT requirements |
+| `tools/check_orchestration_activation_policy.py` | Authority wording and forbidden reason guard |
+| `tools/check_orchestration_trace_evidence.py` | Trace evidence validator |
+| `tools/check_capability_switch_chain.py` | Capability dependency guard |
+| `tools/check_role_routing_directive_evidence.py` | Hard directive and role-routing guard |
+| `tools/check_expert_lifecycle_wait_pacing_evidence.py` | Expert lifecycle wait and pacing guard |
+| `tools/check_agent_skill_profile_surface_boundaries.py` | Native agent / skill / profile boundary guard |
+| `tools/check_durable_artifact_state_surfaces.py` | Durable artifact and state surface guard |
+| `tools/check_effective_lane_fit_evidence.py` | Backend family and task-fit guard |
+| `tools/check_fanout_write_ownership_evidence.py` | Write ownership and one-backend-family guard |
+| `tools/check_leader_session_scope_evidence.py` | Main-session leader scope guard |
+| `tools/run_openspec_guard.py` | Repository guard aggregator |
+| `tools/ci/ci_test_manifest.json` | Local gate test registry |
 
-## 12. Completed baseline
+## 6. Evidence contracts
 
-| Phase | Status | Result |
-| --- | --- | --- |
-| Phase 0 | complete | Registered and protected the plan. |
-| Phase 1 | complete | Updated startup, governance, and policy surfaces. |
-| Phase 2 | complete | Added script-backed enforcement for trace, capability, role, lifecycle, delegation, state, lane, and ownership rules. |
-| Phase 3 | implemented | Generated user-level templates carry the automatic collaboration default. |
+### 6.1 Cold-start read-order evidence
 
-Archived slices include the automatic-routing baseline, active selector helper, hard directive adoption, capability chain, custom agent TOML schema, expert lifecycle evidence, trace evidence validator, agent/skill/profile boundaries, delegation wait discipline, durable artifact surfaces, lane fit, fan-out ownership, leader scope, checker CI coverage, role directive routing evidence, and global collaboration default hardening.
+Goal: when a session claims it followed cold-start read order, it must show what it read, what it skipped, and why.
 
-## 13. Phase 4 package
+Minimum shape:
 
-| Item | Decision |
+```json
+{
+  "schema_version": 1,
+  "session_id": "...",
+  "trigger": "first_substantive_work|resume|continue|phase_change",
+  "read_order": [
+    {"order_index": 1, "path": "docs_bilingual/project_startup_summary.md", "decision": "read", "read_mode": "full_text_utf8", "needed_for_current_task": true, "reason": "startup authority"}
+  ],
+  "summary_counts": {"read": 1, "skipped": 0}
+}
+```
+
+Reject when startup summary is missing, skipped items lack reasons, full-read claims lack paths, or mojibake is observed without recovery.
+
+### 6.2 Prompt-independent activation parity
+
+Goal: equivalent tasks must produce equivalent routing decisions with or without explicit collaboration phrases.
+
+Fixture set:
+
+```text
+test/fixtures/orchestration_prompt_independent_collaboration_parity/
+  doc_update_without_collaboration_phrase.json
+  doc_update_with_collaboration_phrase.json
+  multi_slice_without_collaboration_phrase.json
+  multi_slice_with_collaboration_phrase.json
+  explicit_omx_without_threshold.json
+  explicit_langgraph_single_slice.json
+```
+
+Reject when a missing user phrase is used as the skip reason, collaboration phrases bypass frozen-plan and slice thresholds, or LangGraph ready is reported as persistent team running.
+
+### 6.3 Durable / persistent evidenceguard
+
+Goal: final reports cannot claim durable or persistent teams ran without durable evidence.
+
+| State | Required evidence |
 | --- | --- |
-| Change id | `enforce-prompt-independent-collaboration-parity` |
-| Recommended branch | `enforce-prompt-independent-collaboration-parity` |
-| Recommended worktree | `.worktrees/enforce-prompt-independent-collaboration-parity` |
-| Goal | Prove routing parity with or without explicit collaboration phrases. |
-| Evidence surfaces | Prompt-independent fixtures, cold-start ledger, durable/persistent evidenceguard, expert lifecycle JSONL, LangGraph release checker. |
-| Exit | New checkers wired into `tools/run_openspec_guard.py` and `tools/ci/ci_test_manifest.json`; local gate and local MR review pass. |
+| `selected` | Active selector, backend family, passed preflight, ownership plan |
+| `running` | Selected evidence plus team manifest or LangGraph thread state plus heartbeat/lifecycle running |
+| `complete` | Running evidence plus result summary, close record, and leader absorbed record |
+| `blocked` | Named blocker, repeated blocking evidence, and no completion claim |
 
-## 14. Process-group model
+Reject plans, skill invocations, timeouts, branch names, or a bare `.omx` directory as proof that a team ran.
 
-| Group | Inputs | Tools and techniques | Outputs |
-| --- | --- | --- | --- |
-| Initiating | Review, policy, archived baseline. | Problem framing and evidence-gap analysis. | Proposal and non-claim boundary. |
-| Planning | Change, file map, fixture needs. | Slicing, owner mapping, test-first design. | Frozen plan and validation matrix. |
-| Executing | Worktree, delta spec, fixtures. | TDD, JSON/JSONL fixtures, guard wiring. | Checkers, tests, docs, changed paths. |
-| Monitoring | Test and guard output. | Diff review, local CI, verifier review. | Fixes and risk list. |
-| Closing | Passing gates and clean branch. | Local MR review and archive decision. | Merge-ready branch or deferral evidence. |
+### 6.4 Expert lifecycle audit
 
-## 15. Evidence contracts
+Goal: every native expert lifecycle event is auditable.
 
-### 15.1 Cold-start read-order evidence
+JSONL events:
 
-Fixtures live under `test/fixtures/cold_start_read_order_evidence/`. Required fields include `case_id`, `trigger`, `read_order_source.path`, `startup_summary_pair`, `read_order_evidence.items[]`, `summary_counts`, `openspec_list`, `worktree_preflight`, `activation_trace_ref`, `runtime_evidence_refs`, and `evidence_boundary`. Fail when startup-summary reads are missing, skipped files lack reasons, only activation trace exists, counts mismatch, or read-order evidence is used as runtime worker evidence.
+```json
+{"event":"spawn","role":"verifier","task_summary":"...","scope":["..."],"non_goals":["..."]}
+{"event":"wait","agent_id":"...","wait_seconds":30}
+{"event":"timeout","agent_id":"...","classification":"non-evidence"}
+{"event":"result","agent_id":"...","summary":"...","changed_paths":[]}
+{"event":"absorbed","agent_id":"...","leader_decision":"accepted"}
+{"event":"close","agent_id":"...","retention_policy":"close"}
+```
 
-### 15.2 Prompt-independent activation parity
+Reject timeouts as results, missing close records when close policy should apply, or final reports that cite results before absorption.
 
-Paired fixtures live under `test/fixtures/orchestration_prompt_independent_collaboration_parity/` and share `task_shape_id`. Compare phase, experts, durable workflow, persistent-team threshold, default backend, and claim boundary. The explicit phrase can only set `directive_seen=true`.
+### 6.5 LangGraph state release
 
-### 15.3 Durable / persistent evidenceguard
+Goal: completed LangGraph threads must not remain stale `running` records.
 
-`not_needed` needs threshold trace. `candidate` needs slice analysis. `selected` needs selector/preflight/ownership. `running` needs selector, manifest, heartbeat, and lifecycle. `complete` also needs closed agent, result summary, and absorbed record. `blocked` needs blocker evidence and must not be claimed as success.
+Minimum rules:
 
-### 15.4 Expert lifecycle audit
+- On completion, write `completed_at` (completion timestamp), `final_phase` (last graph phase), `result_summary` (absorbed outcome), and `released_by` (actor or helper that released the state).
+- On handoff to native_omx or main-session takeover, write `handoff_at`, `handoff_target`, and `reason`.
+- Stale `running` is a release gap and cannot serve as active-work evidence.
 
-Lifecycle JSONL must include event, timestamp, agent id, role, optional nickname, task summary, status, and evidence disposition. `result` cited by a final report requires `absorbed`. Timeout/stall/provider pacing is non-evidence.
+## 7. Implementation tasks
 
-### 15.5 LangGraph state release
+### Task 0: Freeze OpenSpec / Comet boundary
 
-LangGraph state must include thread id, workflow id, status, active work, heartbeat, completion marker, release marker, and continue reason. Completed work cannot remain `running` without release marker or continue reason.
+Scope:
+- Confirm whether the current work is documentation-only or, for later code work, open `enforce-prompt-independent-collaboration-parity`.
+- Record why persistent team is not launched: one bilingual document pair, not 2+ independent slices.
 
-## 16. Implementation slices
+Done when:
+- Front matter, goals, non-goals, and readiness are explicit.
+- The feature worktree has receipt and claim records.
 
-- Slice 0: create OpenSpec proposal, tasks, and delta spec for `enforce-prompt-independent-collaboration-parity`.
-- Slice 1: implement cold-start read-order evidence guard and fixtures.
-- Slice 2: implement prompt-independent parity checker and paired fixtures.
-- Slice 3: implement durable/persistent evidenceguard.
-- Slice 4: implement expert lifecycle audit.
-- Slice 5: implement LangGraph state release checker.
-- Slice 6: update governance docs, guard wiring, CI manifest, and closeout evidence.
+Validation:
+- `openspec list --json` - inspect active OpenSpec change state before freezing the boundary.
+- `git status --short --branch` - confirm the feature worktree and branch are isolated.
 
-## 17. Task-level backlog
+Commit message example: Chinese message in the zh-CN companion, equivalent to docs: freeze automatic routing plan new-structure boundary.
 
-- Task A: Freeze Phase 4 OpenSpec WHAT; output active change and acceptance criteria.
-- Task B: Implement cold-start evidence guard; output checker, tests, fixtures, guard wiring.
-- Task C: Implement prompt-independent parity checker; output paired fixtures and field comparison.
-- Task D: Implement durable/persistent evidenceguard; output false-claim rejection.
-- Task E: Implement expert lifecycle audit; output spawn/wait/timeout/result/close/absorbed checks.
-- Task F: Implement LangGraph release checker; output stale-running failure.
-- Task G: Update governance, validate, and integrate locally.
+### Task 1: Rewrite the Chinese implementation plan
 
-## 18. Validation plan
+Scope:
+- Replace the historical rule bundle with this structure.
+- Preserve core governance meaning while removing long archive tables from the main flow.
+- State clearly that this plan is not runtime evidence.
 
-Minimum validation for documentation-only refactors:
+Done when:
+- Section order matches the newer reference plans.
+- Every task has scope, done criteria, validation, and a Chinese commit example.
+- The file contains no mojibake text.
+
+Validation:
+- Manual heading review.
+- Mojibake sentinel check for common GBK/UTF-8 garble markers and the Unicode replacement character returns no body hits.
+
+Commit message example: Chinese message in the zh-CN companion, equivalent to docs: rewrite automatic routing Chinese plan structure.
+
+### Task 2: Sync the English primary
+
+Scope:
+- Mirror the Chinese plan as an ASCII English primary.
+- Keep doc_id, canonical, translation metadata, and section semantics aligned.
+
+Done when:
+- The English file is ASCII-only.
+- It is a full companion, not an old summary.
+
+Validation:
+- `python .\tools\check_document_pair_policy.py --root . --json` - verify bilingual pairing and ASCII English primary requirements.
+- Custom ASCII scan has no non-ASCII characters.
+
+Commit message example: Chinese message in the zh-CN companion, equivalent to docs: sync automatic routing English plan.
+
+### Task 3: Validate bilingual pairing and plan rules
+
+Scope:
+- Validate bilingual pairing, registry rules, and active plan references.
+
+Done when:
+- Document pair policy passes.
+- Implementation plan rules pass.
+
+Validation:
+```powershell
+python .\tools\check_document_pair_policy.py --root . --json
+python .\tools\check_implementation_plan_rules.py --root . --json
+```
+
+Commit message example: Chinese message in the zh-CN companion, equivalent to docs: validate automatic routing bilingual pair.
+
+### Task 4: Run OpenSpec guard and pre-commit review
+
+Scope:
+- Run repository guards.
+- Fix task-owned errors; record unrelated residual worktree warnings without expanding scope.
+
+Done when:
+- `run_openspec_guard` passes.
+- `check_precommit_update_archive` passes.
+
+Validation:
+```powershell
+python .\tools\check_precommit_update_archive.py --root . --json
+python .\tools\run_openspec_guard.py --root .
+```
+
+Commit message example: Chinese message in the zh-CN companion, equivalent to docs: pass automatic routing governance gates.
+
+### Task 5: Local CI, local MR review, and local main integration
+
+Scope:
+- Run local gate in the feature worktree.
+- Commit, run local MR review, and merge into local `main`.
+- Do not push remote.
+
+Done when:
+- Feature worktree is clean.
+- Local gate passes.
+- Local MR review passes.
+- Local `main` contains the feature commit.
+
+Validation:
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600
+.\tools\ci\local_mr_review.ps1
+git merge-base --is-ancestor <feature-sha> main
+```
+
+Commit message example: Chinese message in the zh-CN companion, equivalent to docs: rewrite automatic routing plan in the new structure.
+
+## 8. P0 / P1 readiness gates
+
+| Gate | Entry condition | Exit condition |
+| --- | --- | --- |
+| P0 document restructure | User asks to rewrite this implementation plan | Bilingual document pair uses the new structure and validates locally |
+| P0 evidence contract freeze | This plan is complete | Evidence contracts are fixture-ready |
+| P1 checker implementation | User requests Phase 4 implementation | New checkers, fixtures, CI wiring, and OpenSpec change land |
+| P1 runtime integration | Checkers pass and runtime entry points exist | Activation trace, durable guard, expert lifecycle, and LangGraph release are auditable |
+
+## 9. Validation plan
+
+Base validation:
 
 ```powershell
 git diff --check
+python .\tools\check_document_pair_policy.py --root . --json
 python .\tools\check_implementation_plan_rules.py --root . --json
 python .\tools\check_precommit_update_archive.py --root . --json
 python .\tools\run_openspec_guard.py --root .
 ```
 
-Full integration validation also runs `openspec validate --all`, focused checker tests, `tools/ci/local_gate.ps1`, and `tools/ci/local_mr_review.ps1`.
+Integration validation:
 
-## 19. Local integration order
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600
+.\tools\ci\local_mr_review.ps1
+```
 
-Create a feature worktree from current local main, confirm local main is not behind gitlab/main, update paired documents, run validation, commit with a Chinese message, keep the worktree clean, merge into local main, and do not publish remotely without explicit authorization.
+Manual acceptance:
 
-## 20. Completion checklist
+- The document starts with Goal / Architecture / Tech Stack.
+- Section 0 is a review conclusion, not a historical timeline.
+- Section 7 can be handed to a worker without new decisions about files, tests, or commit boundaries.
+- The plan says "plan is not evidence".
+- The plan does not confuse ready, selected, running, and complete.
 
-- [ ] Newer implementation-plan structure is present.
-- [ ] Phase 0-3 completion and Phase 4 planning are not mixed.
-- [ ] No durable/persistent runtime is claimed without evidence.
-- [ ] Agent/skill/profile/backend evidence boundaries are clear.
-- [ ] Phase 4 checkers have files, fixtures, failure conditions, and validation commands.
+## 10. Rollback and cleanup
 
-## 21. Acceptance criteria
+- If checkers fail after the rewrite and the issue is not quickly fixable, restore the bilingual pair to the feature-branch base.
+- If the feature branch is committed but not merged, use a new fix commit or local reset; avoid rewriting `main`.
+- If the branch is merged and must be undone, use a Chinese `git revert` commit; do not rewrite `main` history.
+- `.omx/worktree-task-receipt.json` and session claims are ignored local evidence and must not enter git.
+- Without remote authorization, do not push, open MRs, or sync GitHub.
 
-- Automatic collaboration rules map to checkers or evidence contracts.
-- Same task shape produces the same decision with or without collaboration phrases.
-- Cold-start evidence records reads, skips, OpenSpec state, worktree preflight, and evidence boundary.
-- Durable/persistent claims fail without selector, manifest, heartbeat, lifecycle, closed/absorbed evidence.
-- Expert results require `absorbed`; timeouts remain non-evidence.
-- LangGraph completed work does not leave stale `running` state.
-- Local validation, local gate, and local MR review pass before local main merge.
+## 11. Required updates to existing governance
 
-## 22. Evidence to retain
+This P0 document restructure does not require runtime policy or checker edits. P1 must update:
 
-Keep this document pair diff, OpenSpec records, checker outputs, `run_openspec_guard.py` output, local gate output, local MR review output, feature worktree clean status, and local main merge record.
+- Activation policy: add prompt-independent parity as an acceptance rule.
+- OpenSpec spec: add evidenceguard, expert lifecycle, and LangGraph release requirements.
+- CI manifest: register new checker tests.
+- Team-mode docs: keep "automatic collaboration default, threshold-gated team launch" wording consistent.
 
-## 23. Risks and mitigations
+## 12. Risks and default decisions
 
-| Risk | Mitigation |
-| --- | --- |
-| Small tasks over-launch workers. | Separate backend readiness from team launch thresholds. |
-| Read evidence becomes runtime evidence. | Enforce `evidence_boundary`. |
-| Skills/profiles become expert evidence. | Accept only native lifecycle audit. |
-| LangGraph `running` is overclaimed. | Require heartbeat, active work, release marker, or continue reason. |
-| Parallel writes conflict. | Require ownership, disjoint write sets, serialization, and leader integration. |
+| Risk | Default decision | Mitigation |
+| --- | --- | --- |
+| The document becomes a rule bundle again | Keep task-ready structure primary | Every task needs scope, done criteria, validation, and commit example |
+| User thinks the plan is already runtime implementation | Use P0/P1 gates | Avoid wording planned work as running fact |
+| Checkers pass but structure is not acceptable | Manual comparison with reference plans | Keep Goal, Architecture, Tech Stack, Backlog, Rollback, self-check |
+| Console renders Chinese as mojibake | Trust UTF-8 source files | Do not copy mojibake; use Python UTF-8 reads when needed |
+| Concurrent session advances main | Re-fetch and inspect main before merge | Use fast-forward or Chinese merge commit only |
 
-## 24. Rollback rules
+## 13. Self-checklist
 
-Revert documentation commits for text-only rollback. For checker false positives, temporarily remove guard wiring while preserving fixtures and governance requirements. Remote publication rollback is out of scope without separate authorization.
+- [ ] Front matter uses the newer implementation-plan fields.
+- [ ] The title is followed by an agentic worker note.
+- [ ] Goal, Architecture, and Tech Stack summaries exist.
+- [ ] Review conclusion and completeness table exist.
+- [ ] Relationship model and naming boundary exist.
+- [ ] Repo-local source of truth exists.
+- [ ] Evidence contracts exist.
+- [ ] Task-level backlog exists, and every task has validation and commit example.
+- [ ] Readiness gates, validation plan, rollback, risks, and defaults exist.
+- [ ] English primary is ASCII-only.
+- [ ] Local commit and merge commit use Chinese.
 
-## 25. References
+## 14. References
 
-- `AGENTS.md` - repository and user-level instruction surface.
-- `docs_bilingual/project_startup_summary.md` - cold-start read order.
-- `docs_bilingual/project_startup_summary.zh-CN.md` - Chinese startup companion.
-- `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md` - activation policy.
-- `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md` - worktree safety policy.
-- `docs_bilingual/governance/openspec_usage_convention.md` - OpenSpec usage convention.
+- `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.md` - newer sidecar implementation-plan structure reference.
+- `docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.md` - newer Comet runtime plan structure reference.
+- `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md` - activation policy authority.
+- `docs_bilingual/project_startup_summary.md` - cold-start read-order authority.
+- `AGENTS.md` - project-level orchestration and publication authority.
