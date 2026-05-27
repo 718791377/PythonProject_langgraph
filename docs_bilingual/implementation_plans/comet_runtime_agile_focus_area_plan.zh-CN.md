@@ -398,3 +398,14 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [x] 本治理包不需要派生 `openspec/` 或 `docs/` 更新，因为稳定 policy 与 spec 已经定义管理关注领域契约。
 - [x] 下一次提交可以只修改 runtime 脚本、定向测试和 Comet/Superpowers policy checker fixture。
 - [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。
+
+## 2026-05-27 Skill 指令对齐治理包
+
+- [x] 本执行区间先记录这份 `docs_bilingual` 治理包，再修改 Comet skill 指令文件。
+- [x] 范围：将面向操作员的 Comet phase skills 与已实现的管理勾选门禁、Monitoring 回退 transition、非瀑布式自适应路由保持一致。
+- [x] 本批次归类为 skill-plus-checker 实施，不改变 runtime 状态机行为。
+- [x] 本批次不需要派生更新 `openspec/` 或 `docs/`，因为稳定 policy 与 spec 已经要求勾选证据、Monitoring 回退 transition 和适应型/混合型控制。
+- [x] 预期 skill 文件：`.codex/skills/comet-open/SKILL.md`、`.codex/skills/comet-design/SKILL.md`、`.codex/skills/comet-build/SKILL.md`、`.codex/skills/comet-verify/SKILL.md`、`.codex/skills/comet-archive/SKILL.md`、`.codex/skills/comet-hotfix/SKILL.md` 和 `.codex/skills/comet-tweak/SKILL.md`。
+- [x] 预期 checker 证据：`tools/check_openspec_comet_superpowers_policy.py`，如聚合 guard fixture 输出变化则同步 `test/run_openspec_guard_json.test.py`。
+- [x] 验收证据必须包括 Comet/Superpowers policy checker、implementation-plan rules、定向 guard fixture 测试、pre-commit update/archive review、local CI 和 local MR review。
+- [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。

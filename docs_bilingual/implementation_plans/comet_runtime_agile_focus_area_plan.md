@@ -398,3 +398,14 @@ Tests:
 - [x] No derived `openspec/` or `docs/` update is needed in this package because the stable policy and spec already define the management focus-area contract.
 - [x] The next commit may modify runtime scripts, targeted tests, and the Comet/Superpowers policy checker fixture only.
 - [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
+
+## 2026-05-27 Skill Instruction Alignment Governance Package
+
+- [x] This execution range starts with this `docs_bilingual` package before changing Comet skill instruction files.
+- [x] Scope: align operator-facing Comet phase skills with the already implemented management checklist gates, Monitoring return transitions, and non-waterfall adaptive routing.
+- [x] This batch is classified as skill-plus-checker implementation; it does not change runtime state-machine behavior.
+- [x] No derived `openspec/` or `docs/` update is needed because the stable policy and spec already require checklist evidence, Monitoring return transitions, and adaptive/hybrid control.
+- [x] Expected skill files: `.codex/skills/comet-open/SKILL.md`, `.codex/skills/comet-design/SKILL.md`, `.codex/skills/comet-build/SKILL.md`, `.codex/skills/comet-verify/SKILL.md`, `.codex/skills/comet-archive/SKILL.md`, `.codex/skills/comet-hotfix/SKILL.md`, and `.codex/skills/comet-tweak/SKILL.md`.
+- [x] Expected checker evidence: `tools/check_openspec_comet_superpowers_policy.py` and `test/run_openspec_guard_json.test.py` if aggregate guard fixture output changes.
+- [x] Acceptance evidence must include the Comet/Superpowers policy checker, implementation-plan rules, targeted guard fixture tests, pre-commit update/archive review, local CI, and local MR review.
+- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
