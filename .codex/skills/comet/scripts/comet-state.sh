@@ -410,6 +410,25 @@ increment_iteration() {
   cmd_set "$change_name" iteration_count "$((count + 1))"
 }
 
+require_forward_monitoring_clear() {
+  local change_name="$1"
+  local event="$2"
+  local status decision
+
+  status=$(cmd_get "$change_name" "monitoring_status" 2>/dev/null || true)
+  decision=$(cmd_get "$change_name" "control_decision" 2>/dev/null || true)
+
+  if [ "$status" != "clear" ]; then
+    red "ERROR: Cannot apply forward transition '$event': monitoring_status must be 'clear', got '${status:-null}'" >&2
+    exit 1
+  fi
+  if [ "$decision" != "continue" ]; then
+    red "ERROR: Cannot apply forward transition '$event': control_decision must be 'continue', got '${decision:-null}'" >&2
+    red "Use a monitor-return-* transition for returns, or adjust the current phase and set control_decision=continue." >&2
+    exit 1
+  fi
+}
+
 apply_monitor_return() {
   local change_name="$1"
   local target_phase="$2"
@@ -452,6 +471,7 @@ cmd_transition() {
   case "$event" in
     open-complete)
       require_phase "$change_name" "open"
+      require_forward_monitoring_clear "$change_name" "$event"
       local workflow
       workflow=$(cmd_get "$change_name" "workflow")
       if [ "$workflow" = "full" ]; then
@@ -462,10 +482,12 @@ cmd_transition() {
       ;;
     design-complete)
       require_phase "$change_name" "design"
+      require_forward_monitoring_clear "$change_name" "$event"
       cmd_set "$change_name" phase build
       ;;
     build-complete)
       require_phase "$change_name" "build"
+      require_forward_monitoring_clear "$change_name" "$event"
       require_build_decisions "$change_name"
       cmd_set "$change_name" phase verify
       cmd_set "$change_name" verify_result pending
@@ -474,6 +496,7 @@ cmd_transition() {
       ;;
     verify-pass)
       require_phase "$change_name" "verify"
+      require_forward_monitoring_clear "$change_name" "$event"
       require_verification_evidence "$change_name"
       cmd_set "$change_name" verify_result pass
       cmd_set "$change_name" phase archive
@@ -499,6 +522,7 @@ cmd_transition() {
       ;;
     archived)
       require_phase "$change_name" "archive"
+      require_forward_monitoring_clear "$change_name" "$event"
       cmd_set "$change_name" archived true
       ;;
   esac

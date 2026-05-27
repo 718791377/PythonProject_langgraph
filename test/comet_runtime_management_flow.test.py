@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import tempfile
@@ -11,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 STATE_SCRIPT = REPO_ROOT / ".codex" / "skills" / "comet" / "scripts" / "comet-state.sh"
 GUARD_SCRIPT = REPO_ROOT / ".codex" / "skills" / "comet" / "scripts" / "comet-guard.sh"
 VALIDATE_SCRIPT = REPO_ROOT / ".codex" / "skills" / "comet" / "scripts" / "comet-yaml-validate.sh"
+ARCHIVE_SCRIPT = REPO_ROOT / ".codex" / "skills" / "comet" / "scripts" / "comet-archive.sh"
 
 
 def read(path: Path) -> str:
@@ -19,6 +21,38 @@ def read(path: Path) -> str:
 
 class CometRuntimeManagementStaticTests(unittest.TestCase):
     maxDiff = None
+
+    def test_state_bootstrap_template_contains_management_record_sections(self) -> None:
+        text = read(STATE_SCRIPT)
+
+        for required in [
+            "# Comet Management Record",
+            "## Open / Initiating",
+            "## Design / Planning",
+            "## Build / Executing",
+            "## Verify / Controlling",
+            "## Archive / Closing",
+            "## Monitoring Loop",
+            "- [ ] 价值/Why 已说明",
+            "- [ ] 成功标准已说明",
+            "- [ ] stakeholders 或 constraints 已识别",
+            "- [ ] 交付方式已裁剪",
+            "- [ ] 风险与关键假设已记录",
+            "- [ ] 验收证据路径已定义",
+            "- [ ] execution mode 已选择",
+            "- [ ] TDD / review / quality evidence 已记录",
+            "- [ ] 当前阻塞项已清空或已有处理决策",
+            "- [ ] 偏差检查完成",
+            "- [ ] 风险/变更影响已评估",
+            "- [ ] control decision 已记录",
+            "- [ ] 价值结果已总结",
+            "- [ ] 经验沉淀已记录",
+            "- [ ] delta spec sync / verification evidence / archive path 已确认",
+            "- [ ] 当前阶段事实已检查",
+            "- [ ] 是否需要回退已判断",
+            "- [ ] 若需回退，target_phase 与 rework_reason 已记录",
+        ]:
+            self.assertIn(required, text)
 
     def test_validator_declares_required_runtime_fields_and_return_invariants(self) -> None:
         text = read(VALIDATE_SCRIPT)
@@ -48,6 +82,53 @@ class CometRuntimeManagementStaticTests(unittest.TestCase):
             "Delivery approach is tailored: predictive, agile, or hybrid.",
             "当前阶段事实已检查",
             "Current facts are checked.",
+        ]:
+            self.assertIn(required, text)
+
+    def test_state_script_requires_monitoring_clear_for_forward_transitions(self) -> None:
+        text = read(STATE_SCRIPT)
+
+        self.assertIn("require_forward_monitoring_clear()", text)
+        self.assertIn("monitoring_status must be 'clear'", text)
+        self.assertIn("control_decision must be 'continue'", text)
+
+        for event in ["open-complete", "design-complete", "build-complete", "verify-pass", "archived"]:
+            pattern = rf"{re.escape(event)}\)\n\s+require_phase \"\$change_name\" .+?\n\s+require_forward_monitoring_clear \"\$change_name\" \"\$event\""
+            self.assertRegex(text, pattern)
+
+    def test_state_script_maps_all_monitor_return_events_to_target_phases(self) -> None:
+        text = read(STATE_SCRIPT)
+
+        for event, target, decision in [
+            ("monitor-return-open", "open", "return-open"),
+            ("monitor-return-design", "design", "return-design"),
+            ("monitor-return-build", "build", "return-build"),
+            ("monitor-return-verify", "verify", "return-verify"),
+        ]:
+            self.assertIn(f'{event})', text)
+            self.assertIn(f'apply_monitor_return "$change_name" "{target}" "{decision}"', text)
+
+    def test_guard_reports_missing_section_and_item_for_management_gates(self) -> None:
+        text = read(GUARD_SCRIPT)
+
+        self.assertIn("checklist_done_named()", text)
+        self.assertIn("Missing management checklist section:", text)
+        self.assertIn("Missing management checklist item:", text)
+        self.assertIn('"Open / Initiating" "Value and why are stated."', text)
+        self.assertIn('"Monitoring Loop" "Current facts are checked."', text)
+
+    def test_archive_accepts_english_and_chinese_closing_and_monitoring_labels(self) -> None:
+        text = read(ARCHIVE_SCRIPT)
+
+        self.assertIn("checklist_done_any()", text)
+        for required in [
+            "Value outcome is summarized.",
+            "Lessons learned or reusable guidance are recorded.",
+            "Delta spec sync, verification evidence, and archive path are confirmed.",
+            "Current facts are checked.",
+            "Continue, adjust, stop, or return decision is made.",
+            "价值结果已总结",
+            "经验沉淀已记录",
         ]:
             self.assertIn(required, text)
 
@@ -100,7 +181,9 @@ class CometRuntimeManagementBehaviorTests(unittest.TestCase):
                 "iteration_count: 0",
             ]:
                 self.assertIn(expected, yaml_text)
-            self.assertTrue((root / "openspec" / "changes" / "demo" / "management.md").exists())
+            management_text = (root / "openspec" / "changes" / "demo" / "management.md").read_text(encoding="utf-8")
+            self.assertIn("- [ ] 价值/Why 已说明", management_text)
+            self.assertIn("- [ ] 是否需要回退已判断", management_text)
 
     def test_validator_rejects_return_decision_without_target_and_reason(self) -> None:
         with self.make_root() as temp:

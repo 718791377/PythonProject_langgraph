@@ -329,34 +329,46 @@ checklist_done() {
   return 1
 }
 
+checklist_done_named() {
+  local section="$1"
+  local item="$2"
+  shift 2
+  if checklist_done "$@"; then
+    return 0
+  fi
+  echo "Missing management checklist section: $section" >&2
+  echo "Missing management checklist item: $item" >&2
+  return 1
+}
+
 
 management_phase_complete() {
   local phase="$1"
   case "$phase" in
     open)
-      checklist_done "价值/Why 已说明" "Value and why are stated." &&
-      checklist_done "成功标准已说明" "Success criteria are measurable." &&
-      checklist_done "stakeholders 或 constraints 已识别" "Stakeholders, constraints, or operating boundaries are identified."
+      checklist_done_named "Open / Initiating" "Value and why are stated." "价值/Why 已说明" "Value and why are stated." &&
+      checklist_done_named "Open / Initiating" "Success criteria are measurable." "成功标准已说明" "Success criteria are measurable." &&
+      checklist_done_named "Open / Initiating" "Stakeholders, constraints, or operating boundaries are identified." "stakeholders 或 constraints 已识别" "Stakeholders, constraints, or operating boundaries are identified."
       ;;
     design)
-      checklist_done "交付方式已裁剪" "Delivery approach is tailored: predictive, agile, or hybrid." &&
-      checklist_done "风险与关键假设已记录" "Major risks and assumptions are recorded." &&
-      checklist_done "验收证据路径已定义" "Acceptance evidence path is defined."
+      checklist_done_named "Design / Planning" "Delivery approach is tailored: predictive, agile, or hybrid." "交付方式已裁剪" "Delivery approach is tailored: predictive, agile, or hybrid." &&
+      checklist_done_named "Design / Planning" "Major risks and assumptions are recorded." "风险与关键假设已记录" "Major risks and assumptions are recorded." &&
+      checklist_done_named "Design / Planning" "Acceptance evidence path is defined." "验收证据路径已定义" "Acceptance evidence path is defined."
       ;;
     build)
-      checklist_done "execution mode 已选择" "Execution mode is selected." &&
-      checklist_done "TDD / review / quality evidence 已记录" "Quality evidence is recorded: TDD, review, test, or equivalent." &&
-      checklist_done "当前阻塞项已清空或已有处理决策" "Blockers are cleared or have an explicit decision."
+      checklist_done_named "Build / Executing" "Execution mode is selected." "execution mode 已选择" "Execution mode is selected." &&
+      checklist_done_named "Build / Executing" "Quality evidence is recorded: TDD, review, test, or equivalent." "TDD / review / quality evidence 已记录" "Quality evidence is recorded: TDD, review, test, or equivalent." &&
+      checklist_done_named "Build / Executing" "Blockers are cleared or have an explicit decision." "当前阻塞项已清空或已有处理决策" "Blockers are cleared or have an explicit decision."
       ;;
     verify)
-      checklist_done "偏差检查完成" "Variance from scope, design, and acceptance criteria is checked." &&
-      checklist_done "风险/变更影响已评估" "Risk and change impact are assessed." &&
-      checklist_done "control decision 已记录" "Control decision is recorded."
+      checklist_done_named "Verify / Controlling" "Variance from scope, design, and acceptance criteria is checked." "偏差检查完成" "Variance from scope, design, and acceptance criteria is checked." &&
+      checklist_done_named "Verify / Controlling" "Risk and change impact are assessed." "风险/变更影响已评估" "Risk and change impact are assessed." &&
+      checklist_done_named "Verify / Controlling" "Control decision is recorded." "control decision 已记录" "Control decision is recorded."
       ;;
     archive)
-      checklist_done "价值结果已总结" "Value outcome is summarized." &&
-      checklist_done "经验沉淀已记录" "Lessons learned or reusable guidance are recorded." &&
-      checklist_done "delta spec sync / verification evidence / archive path 已确认" "Delta spec sync, verification evidence, and archive path are confirmed."
+      checklist_done_named "Archive / Closing" "Value outcome is summarized." "价值结果已总结" "Value outcome is summarized." &&
+      checklist_done_named "Archive / Closing" "Lessons learned or reusable guidance are recorded." "经验沉淀已记录" "Lessons learned or reusable guidance are recorded." &&
+      checklist_done_named "Archive / Closing" "Delta spec sync, verification evidence, and archive path are confirmed." "delta spec sync / verification evidence / archive path 已确认" "Delta spec sync, verification evidence, and archive path are confirmed."
       ;;
     *)
       echo "unknown management phase: $phase" >&2
@@ -367,8 +379,8 @@ management_phase_complete() {
 
 
 monitoring_allows_forward() {
-  checklist_done "当前阶段事实已检查" "Current facts are checked." || return 1
-  checklist_done "是否需要回退已判断" "Continue, adjust, stop, or return decision is made." || return 1
+  checklist_done_named "Monitoring Loop" "Current facts are checked." "当前阶段事实已检查" "Current facts are checked." || return 1
+  checklist_done_named "Monitoring Loop" "Continue, adjust, stop, or return decision is made." "是否需要回退已判断" "Continue, adjust, stop, or return decision is made." || return 1
 
   local status decision target reason
   status=$(yaml_field_value "monitoring_status" 2>/dev/null || true)

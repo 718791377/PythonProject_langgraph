@@ -128,6 +128,9 @@ STATE_SCRIPT_REQUIRED_TERMS = [
     "iteration_count: 0",
     "apply_monitor_return",
     "increment_iteration",
+    "require_forward_monitoring_clear",
+    "monitoring_status must be 'clear'",
+    "control_decision must be 'continue'",
     "monitor-return-open",
     "monitor-return-design",
     "monitor-return-build",
@@ -142,6 +145,9 @@ GUARD_SCRIPT_REQUIRED_TERMS = [
     "Build management checklist complete",
     "Verify management checklist complete",
     "Archive management checklist complete",
+    "checklist_done_named",
+    "Missing management checklist section:",
+    "Missing management checklist item:",
     "control_decision=adjust-current",
     "monitor-return-* transition",
 ]
@@ -155,9 +161,13 @@ VALIDATE_SCRIPT_REQUIRED_TERMS = [
 
 ARCHIVE_SCRIPT_REQUIRED_TERMS = [
     "Management closing evidence verified",
+    "checklist_done_any",
     "价值结果已总结",
     "经验沉淀已记录",
     "delta spec sync / verification evidence / archive path 已确认",
+    "Value outcome is summarized.",
+    "Lessons learned or reusable guidance are recorded.",
+    "Delta spec sync, verification evidence, and archive path are confirmed.",
     "monitoring_status is",
     "control_decision is",
 ]

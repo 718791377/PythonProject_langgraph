@@ -111,6 +111,28 @@ step_ok "Entry state verified"
 
 # --- Step 2b: Validate management closing evidence ---
 
+checklist_done_any() {
+  local section="$1"
+  local item="$2"
+  shift 2
+  local record="$1"
+  shift
+  local label
+  for label in "$@"; do
+    if grep -Fq -- "- [x] $label" "$record" || grep -Fq -- "- [X] $label" "$record"; then
+      return 0
+    fi
+  done
+  red "FATAL: management checklist item is not checked: $item"
+  red "Missing management checklist section: $section"
+  red "Accepted labels:"
+  for label in "$@"; do
+    red "  - $label"
+  done
+  red "Next: mark one accepted '- [x]' item in $record after recording the evidence."
+  exit 1
+}
+
 checklist_done() {
   local label="$1"
   local record="$2"
@@ -131,11 +153,17 @@ if [ ! -f "$MANAGEMENT_RECORD" ]; then
   exit 1
 fi
 
-checklist_done "价值结果已总结" "$MANAGEMENT_RECORD"
-checklist_done "经验沉淀已记录" "$MANAGEMENT_RECORD"
-checklist_done "delta spec sync / verification evidence / archive path 已确认" "$MANAGEMENT_RECORD"
-checklist_done "当前阶段事实已检查" "$MANAGEMENT_RECORD"
-checklist_done "是否需要回退已判断" "$MANAGEMENT_RECORD"
+checklist_done_any "Archive / Closing" "Value outcome is summarized." "$MANAGEMENT_RECORD" \
+  "价值结果已总结" "Value outcome is summarized."
+checklist_done_any "Archive / Closing" "Lessons learned or reusable guidance are recorded." "$MANAGEMENT_RECORD" \
+  "经验沉淀已记录" "Lessons learned or reusable guidance are recorded."
+checklist_done_any "Archive / Closing" "Delta spec sync, verification evidence, and archive path are confirmed." "$MANAGEMENT_RECORD" \
+  "delta spec sync / verification evidence / archive path 已确认" \
+  "Delta spec sync, verification evidence, and archive path are confirmed."
+checklist_done_any "Monitoring Loop" "Current facts are checked." "$MANAGEMENT_RECORD" \
+  "当前阶段事实已检查" "Current facts are checked."
+checklist_done_any "Monitoring Loop" "Continue, adjust, stop, or return decision is made." "$MANAGEMENT_RECORD" \
+  "是否需要回退已判断" "Continue, adjust, stop, or return decision is made."
 
 MONITORING_STATUS=$(yaml_field "monitoring_status")
 CONTROL_DECISION=$(yaml_field "control_decision")
