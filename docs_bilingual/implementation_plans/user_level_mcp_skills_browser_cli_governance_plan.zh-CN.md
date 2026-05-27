@@ -12,635 +12,394 @@ created_at: 2026-05-22
 source_reference_file: reference_files/1.md
 comet_workflow: full
 comet_phase_model: open-design-build-verify-archive
+implementation_lane: p0_repo_local_governance_to_user_level_capability
 local_codex_governance_fork_reference: docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md
+related_docs:
+  - docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md
+  - docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md
+  - docs_bilingual/governance/codex_user_level_mcp_scope_policy.zh-CN.md
+  - docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md
 ---
 
 # 用户级 MCP、Skills、Browser 与 CLI Harness 治理实施方案
 
 ## 0. 当前复核结论
 
-截至 2026-05-24，本方案作为“执行前蓝图”已具备进入 OpenSpec 小步切片的颗粒度。`status: draft` 表示用户级运行时尚未按本方案全部落地，不表示本文缺少执行结构。第 1 个 policy/checker baseline 切片已完成本地实现、验证、stable spec 提升和 OpenSpec archive 收口。`skills2cli`、`mcp2cli`、`codex-port` allocator、browser owner registry、Chrome DevTools managed-wrapper MVP 与 CDP Bridge governance guard 现在已具备 repo-local helper 与测试覆盖；在后续受治理 wrapper/install receipt、managed-wrapper、live adapter 与用户级 smoke 切片落地前，它们仍是 `implemented-local`，不是完整用户级 `active`。
+本方案已按 `pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 与 `comet_runtime_agile_focus_area_plan.zh-CN.md` 的新版实施方案结构重构：先说明关系边界，再说明目标/非目标、运行时架构、Codex 使用方式、repo-local source of truth、用户级安装产物、receipt、状态契约、Comet 管理记录、阶段门禁、实施切片、任务级 backlog、本地集成、验收、证据、回滚与风险。
 
-复核结论：
+`status: draft` 表示完整用户级 runtime 尚未全部安装并完成 smoke test；它不表示本文缺少执行结构。当前 repo-local 的 `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP 与 CDP Bridge read-only-default guard 仍属于 `implemented-local`，不是完整用户级 `active`。
 
-- 内容覆盖完整：MCP facade、skills 按需发现、browser owner、Chrome DevTools MCP、CDP Bridge、OpenCLI、CLI-Anything 与 `wecom-cli` 均有默认状态、授权边界、安装证据和回滚要求；`oh-my-pi` 与 `The Harness Problem` 仅作为 Codex 通用 harness 治理参考源，不再由本方案直接实施。
-- 端口治理已明确：Codex 使用靠前的用户级号段，OpenClaw 使用靠后的号段，OpenCLI 必须使用端口分配器驱动的 `--port auto`，不得固定端口；端口分配器已经具备 reserve/release/import/gc 命令契约。
-- 并发分配安全已明确：registry 更新必须原子化，绑定过程使用临时 lease，长时间运行的 owner 必须续租，崩溃恢复必须有证据。
-- 动态本地事实已纳入治理：运行时进程是否存在、本机安装路径等信息必须由只读 inventory 刷新，并脱敏后才能成为仓库证据。
-- 颗粒度达到可实施：每个 lane 都能拆成 OpenSpec change；每个 change 都必须有 owned files、checker/test、receipt schema、rollback method 和 non-goals。
-- 未勾选清单是后续实施状态，不是方案缺口；在对应代码、checker、安装产物和 receipt 都完成前，不得把 lane 标为 `active`。
-- 推进原则是先 baseline 后能力：先完成 token/risk、授权 receipt、update receipt 与 evidence redaction，再实现 `skills2cli`、`mcp2cli`、browser 与 `wecom-cli` 等具体能力。
+## 1. 关系模型与命名边界
 
-本方案下一步不是继续扩大范围。repo-local `chrome-devtools-mcp` isolated-session、project-profile、browser stale scan、safe cleanup dry-run 与 CDP Bridge read-only-default guard 切片验证并归档后，应继续 OpenCLI on-demand enforcement 切片，不得隐式安装用户级 wrapper。
+本方案治理 Codex 用户级、跨项目、跨会话可复用的控制面。它不是 PyCharm IDE 集成，也不是某个单项目私有脚本。
 
-### 0.1 Comet 完整执行骨架
-
-本方案按完整 `/comet` 工作流重构，而不是轻量 tweak：OpenSpec 负责 WHAT，Superpowers 负责 HOW，Comet 负责 WHEN/NEXT 与阶段证据。本文保留可定义、可设计、可执行、可验证、可归档的治理切片；任何实际用户级安装或高风险浏览器/企业微信动作仍必须由对应 lane 的 receipt、smoke 与授权 gate 决定。
-
-| Comet phase | 本文落点 | 必备证据 | 通过条件 |
+| 名称 | 责任边界 | 默认状态 | 边界说明 |
 | --- | --- | --- | --- |
-| Open | 第 1-4 节 | scope、non-goals、stakeholder/constraint、rollback boundary | 范围、参考源、运行时布局、token/risk 和端口边界明确 |
-| Design | 第 5-12 节 | Superpowers design doc、方案取舍、责任边界、失败模式 | 每条 lane 都有默认状态、授权边界、receipt/rollback 要求，并明确 reference-only 边界 |
-| Build | 第 13-17 节 | Superpowers implementation plan、owned files、checker/test、OpenSpec slice | 每个实施项都有可执行顺序、状态流、安装/update/rollback receipt 要求 |
-| Verify | 第 18 节 | verification report、precommit gate、OpenSpec guard、local gate/local MR review | readiness gate、授权矩阵、安装/update 证据和检查命令可执行，且不得把无证据 lane 标为 active |
-| Archive | 第 16-18 节及 OpenSpec archive | stable spec/archive 或显式 archive deferral | 完成项有 archive/deferral、local gate、local MR review、completed receipt；未完成项保持 planned/implemented-local |
+| skills2cli | skill index/search/show/audit/profile suggest | implemented-local | 默认不把完整 skill bodies 放入上下文 |
+| mcp2cli | MCP list/search/show/call facade | implemented-local | sensitive calls fail closed |
+| codex-port | port registry / lease allocator | implemented-local | Codex ranges precede downstream consumer ranges |
+| chrome-devtools-mcp | managed browser automation wrapper | implemented-local | 三类浏览器资产必须隔离 |
+| CDP Bridge | browser bridge | implemented-local | read-only first |
+| OpenCLI | on-demand browser/MCP adapter | planned/partial | 必须使用 --port auto 和 owner gate |
+| CLI-Anything | harness generation/reference | planned | 不 hard-load 大量 skills |
+| wecom-cli | WeCom/WXWork API/Webhook/GUI | planned | GUI write 默认 disabled |
+| oh-my-pi | Pi family / harness reference | reference-only | 真正 sidecar 归属 pi_plugin 方案 |
+| ohmyopenagent / snow-cli | 未来 durable-team 参考 | reference-only | 本方案不实施 |
 
-完整 `/comet` 不允许用“只是文档”跳过 Design/Plan/Verify。若后续实施实际超过本文的治理蓝图，例如新增 wrapper、端口分配器、browser owner 写操作或企业微信 GUI 自动化，则必须新开独立 OpenSpec change，而不是继续扩大本文档重构 change。
+## 2. 目标与非目标
 
-## 1. 目的
+目标：
 
-本方案把 MCP、skills、浏览器自动化和 CLI harness 能力从零散的项目级使用，提升为用户级、多项目、多会话可复用基础设施。
+1. 优先使用 Token 最低、风险最低的界面完成 discovery、indexing、status checks 与 read-only diagnostics。
+2. 使用 `skills2cli` 降低 skills context budget 压力，避免暴露完整 skill bodies 或 plugin description dumps。
+3. 使用 `mcp2cli` 按风险拆分 MCP discovery、profiles 与 calls；敏感 MCP 调用默认 fail closed。
+4. 使用 browser owner registry 区分 `isolated-session-managed`、`project-profile` 与 human-owned Chrome assets。
+5. 使用 `codex-port` 管理 port registry / lease / `pending_bind` / `registry_revision`，避免 Codex、下游消费项目与 OpenCLI 端口冲突。
+6. 使用 authorization receipt schema、update receipt、rollback pointer 与 evidence redaction，让用户级工具可审计、可回滚、可恢复。
 
-目标不是增加更多常驻工具，而是通过“最小充分面”降低 token 压力和安全风险：
+非目标：hard-load 每个 MCP 或 skill；为了隐藏 Token 压力而粗暴禁用有用的 Browser/OpenCLI/WeCom 能力；在没有 receipt 的情况下修改 `C:\Users\lenovo\.codex`；在没有当前授权的情况下读取 cookies、tokens、raw browser data、WeCom message contents 或 human-owned Chrome assets。
 
-1. 优先使用低 token、低风险能力；
-2. 只有任务确实需要时才启用高 token 或高风险能力；
-3. 涉及用户敏感信息的操作必须获得用户明确授权；
-4. 所有长期用户级 helper 必须可固定版本、可审计、可更新、可回滚；
-5. 本方案只治理 Codex 用户级与跨项目通用能力；PyCharm 只可作为运行 Codex 的宿主终端或消费项目环境，不纳入 IDE 本体集成范围。
-
-本方案同时实施 MCP 治理和 skills 治理：新增面向 MCP 的 `mcp2cli`，以及面向 Codex skills 的 `skills2cli`。
-
-## 2. 参考源与实施定位
-
-本轮实施：
-
-- `mcp2cli`：用户级 MCP CLI facade 和低 token MCP 发现/调用面。
-- `skills2cli`：新建 clean-room 本地 helper，用于 skill index/search/show/profile suggest/warning audit。
-- `chrome-devtools-mcp`：从当前项目/裸入口使用提升为用户级受管 browser automation。
-- `CDP Bridge`：保留为用户级 browser bridge，默认 inspect-first，敏感操作需授权。
-- `OpenCLI`：安装为 on-demand 用户级 adapter 候选，不作为默认常驻能力。
-- `CLI-Anything` 与 CLI-Anything Hub：安装为用户级 harness 生成/参考工具，并用于辅助设计 `wecom-cli`。
-- `The Harness Problem`：作为后续 hash-anchored edit 与 harness 可靠性研究参考。
-- `oh-my-pi`：仅作为 Pi family / harness / UX 参考源；真实 sidecar 安装、receipt、update 与 rollback 规则迁入 `pi_plugin_codex_user_level_sidecar_plan.*`；其中 `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 明确列为本方案的本地 Codex 治理 fork 参考。
-
-仅作为后续“Codex CLI 个人开发者生产级持久化团队”参考源：
-
-- `ohmyopenagent`：OpenAgent 风格多 agent 提示词和运行时思路参考源。
-- `snow-cli`：CLI 产品形态和操作员交互设计参考源。
-
-## 3. 用户级运行时目录布局
-
-除非后续实施变更明确替代，默认使用以下布局：
+## 3. 运行时架构
 
 ```text
-C:\Users\lenovo\.codex\external\mcp2cli\
-C:\Users\lenovo\.codex\external\cli-anything\
-C:\Users\lenovo\.codex\external\opencli\
-C:\Users\lenovo\.codex\tools\mcp2cli\
-C:\Users\lenovo\.codex\tools\skills2cli\
-C:\Users\lenovo\.codex\tools\codex-port\
-C:\Users\lenovo\.codex\tools\browser-automation\
-C:\Users\lenovo\.codex\tools\wecom-cli\
-C:\Users\lenovo\.codex\state\mcp2cli\
-C:\Users\lenovo\.codex\state\skills2cli\
-C:\Users\lenovo\.codex\state\ports\
-C:\Users\lenovo\.codex\state\browser-automation\
-C:\Users\lenovo\.codex\state\wecom-cli\
-C:\Users\lenovo\.codex\state\tool-updates\
+Codex session -> repo-local policy/checkers/OpenSpec -> user-level helper facade
+  -> skills2cli -> mcp2cli -> codex-port -> browser lane -> CLI-Anything -> wecom-cli
 ```
 
-本仓库仍是 source of truth。用户级文件只是安装产物。任何安装器都必须从 repo-local source 生成或同步用户级副本，并保留 receipt。
+默认用户级路径包括 `C:\Users\lenovo\.codex\tools\skills2cli\`、`C:\Users\lenovo\.codex\tools\mcp2cli\`、`C:\Users\lenovo\.codex\tools\codex-port\`、`C:\Users\lenovo\.codex\tools\browser-automation\`、`C:\Users\lenovo\.codex\tools\wecom-cli\`，对应 runtime state 放在 `C:\Users\lenovo\.codex\state\` 下。
 
-## 4. Token 与风险优先级模型
+## 4. Codex 中的使用方式
 
-当多个能力面都能完成任务时，按以下顺序选择：
+1. 先根据 repo-local policy、checker 与文档判断当前是否需要 MCP、skills、browser automation 或 CLI harness 能力。
+2. discovery 阶段优先读取 `skills2cli index/search/show` 或 `mcp2cli list/search/show` 的紧凑 JSON。
+3. 真实 MCP call 或 browser write 之前必须先创建 authorization receipt。
+4. 端口必须使用 `codex-port lease reserve --owner codex --purpose <tool> --port auto`。
+5. OpenCLI 必须要求 `--port auto`、owner registry 与 receipt。
+6. WeCom 默认优先 API/Webhook；GUI automation 必须有明确用户授权和全局 WXWork lease。
 
-| 优先级 | 能力面 | Token 成本 | 安全风险 | 默认行为 |
-|---|---|---:|---:|---|
-| 1 | `skills2cli search/show`、`mcp2cli list/search` | 低 | 低 | 默认允许 |
-| 2 | 仓库内脚本/checker | 低 | 低 | 默认允许 |
-| 3 | 非敏感 MCP 的 `mcp2cli call` | 中 | 中 | 工具/类别检查后允许 |
-| 4 | `chrome-devtools-mcp` isolated/session profile | 中 | 中 | 本地/调试任务允许 |
-| 5 | CDP Bridge 只读 scan/screenshot/tab inventory | 中 | 中 | inspect-first |
-| 6 | OpenCLI 绑定浏览器 session | 高 | 高 | 需显式 browser-lane 授权 |
-| 7 | 带登录态 project-profile | 高 | 高 | 需显式 project-profile 授权 |
-| 8 | 用户个人 Chrome 或 WXWork GUI 写操作 | 高 | 极高 | 必须显式单任务授权 |
+## 5. Repo-local source of truth
 
-敏感操作包括读取 cookie、token、密码、私人聊天、个人标签页、个人 Chrome profile 数据、企业微信消息，或在已登录应用中点击、输入、发送。
-
-## 4.1 用户级端口治理
-
-端口归属不靠单个工具硬编码，而由号段、registry 和 lease 共同治理。
-
-默认号段：
-
-| 号段 | 归属 | 用途 |
+| 分类 | repo-local source | 用户级产物 |
 | --- | --- | --- |
-| `39000-39299` | Codex | MCP facade、`skills2cli` 与低风险用户级 helper。 |
-| `39300-39499` | Codex | OpenCLI on-demand browser adapter。 |
-| `39500-39699` | Codex | Browser automation，包括 managed `chrome-devtools-mcp` wrappers。 |
-| `39700-39999` | Codex | 预留给用户级 Codex 后续扩展。 |
-| `40000-40999` | OpenClaw | OpenClaw 项目服务与 OpenClaw-managed local control plane。 |
-
-规则：
-
-- OpenClaw 端口必须排在 Codex 端口后面；Codex 不得从 `40000-40999` 分配端口。
-- OpenClaw 迁移后不得从 `39000-39999` 分配端口；已有历史 OpenClaw 端口先导入为 `legacy_reserved`，再逐步迁移。
-- 所有受管本地服务默认只绑定 `127.0.0.1`；绑定 `0.0.0.0` 必须单独做安全复核并获得 one-task approval。
-- smoke test 与短生命周期探测优先使用系统临时端口（`port=0`），除非确实需要稳定 lease。
-- OpenCLI 在本方案中没有固定端口。它必须通过端口分配器请求 `--port auto`，并在 `39300-39499` 号段获得 lease。
-- `chrome-devtools-mcp` managed wrapper 如需端口，必须从 `39500-39699` 申请；如果上游工具只使用 stdio，则不分配 TCP 端口。
-- wrapper 绑定前必须同时检查 registry 与当前监听 socket 表；发生冲突时选择同号段下一个可用端口，绝不 kill 或抢占持有端口的进程。
-- stale lease 只有在记录的 PID 已不存在，或只读 health check 证明 owner 已不存活时才能回收。
-
-Registry 路径：
-
-`C:\Users\lenovo\.codex\state\ports\registry.json`
-
-最小 registry 字段：
-
-- `owner`：`codex`、`openclaw` 或 `external_reserved`；
-- `project` 或 `project_slug`；
-- `tool`；
-- `host`；
-- `port`；
-- `lease_id`；
-- `pid`；
-- `created_at`；
-- `renewed_at`；
-- `ttl_seconds`；
-- `lease_expiry`；
-- `owner_session`；
-- `purpose`；
-- `status`：`pending_bind`、`active`、`stale`、`legacy_reserved` 或 `released`；
-- `registry_revision`：用于检测过时并发写入的单调递增 registry 版本号。
-
-### 4.1.1 端口分配器最小命令契约
-
-端口分配器必须是由仓库源代码生成或同步的用户级 wrapper，不能把临时端口探测逻辑散落到每个工具 wrapper 里。
-
-最小命令：
-
-```text
-codex-port lease reserve --owner codex --project <slug> --tool <tool> --range <range-name> --purpose <text> --ttl <seconds> --json
-codex-port lease renew --lease-id <lease-id> --owner-session <session-id> --ttl <seconds> --json
-codex-port lease release --owner-session <session-id> --port <port> --json
-codex-port lease list --owner codex --json
-codex-port lease import-legacy --owner openclaw --port <port> --purpose <text> --json
-codex-port lease gc --dry-run --json
-```
-
-Port-governance 冲突决策表：
-
-| 情况 | 必须行为 |
-| --- | --- |
-| registry 显示空闲，但 live socket 已监听 | 视为被占用，跳到同号段下一个可用端口，并记录 collision warning。 |
-| registry 显示 active，但 PID 已不存在 | 标记为 `stale`；只有写入只读 PID/health 证据后才能复用。 |
-| registry 中存在已超时的 `pending_bind` lease | 只有记录对应 session 已无法完成绑定和临时 lease 超时证据后才能回收。 |
-| registry 显示 `legacy_reserved` | 绝不自动分配；必须先有明确 migration 或 release receipt。 |
-| 请求号段与 owner 不匹配 | fail closed，例如 Codex 请求 `40000-40999`，或 OpenClaw 迁移后请求 `39000-39999`。 |
-| release 请求缺少匹配的 owner session | fail closed，并保留 lease。 |
-
-读写边界：
-
-- `list` 与 `gc --dry-run` 是只读动作，默认允许。
-- `reserve`、`renew`、`release`、`import-legacy` 和非 dry-run `gc` 是写动作，必须在 `C:\Users\lenovo\.codex\state\ports\receipts\` 写入 receipt。
-- 端口分配器永远不得终止进程。进程清理属于 owner wrapper 的责任，并且需要单独的证据和授权。
-
-### 4.1.2 多会话并发分配与崩溃恢复
-
-多项目、多会话同时使用要求 registry 具备原子生命周期控制，不能只依赖号段约定：
-
-- 每次修改 registry 都必须在 `C:\Users\lenovo\.codex\state\ports\registry.lock` 或等价锁面上取得短时独占锁，校验当前 `registry_revision`，写入临时文件后原子替换 `registry.json`。
-- `reserve` 必须先写入包含唯一 `lease_id`、`status=pending_bind` 与短超时的临时 lease。owner wrapper 随后绑定 socket，并在成功后把 lease 提升为 `active`；如果绑定竞争失败，则把该 lease 标记为 released/collided，并继续申请同号段可用端口。
-- registry lock 必须在启动浏览器、打开监听 socket、执行网络 I/O 或运行 health probe 前释放；该锁只序列化状态写入，不能包住长时间工具操作。
-- 长时间运行的受管服务必须在 lease 过期前执行 `renew`。已过期的 `active` lease 只有在 PID 或只读 health evidence 证明前 owner 不再存活后才能复用。
-- wrapper 正常停止必须执行 `release`。崩溃 session 留下的过期或 stale lease 只能由带证据的 `gc` 处理；其他 session 绝不能 release 或 renew 不属于自己的 lease。
-- registry 内容损坏、原子替换失败或锁归属不明确时必须 fail closed，保留恢复副本，并阻止新分配，直到修复或显式恢复。
-
-## 5. `mcp2cli` 实施线
-
-目标：通过把选定 MCP 能力转成低 token CLI 发现和调用面，降低 Codex MCP tools/list 压力。
-
-实施要求：
-
-- 将 `mcp2cli` 安装到隔离的用户级运行时，不安装到全局 Python。
-- 在 `C:\Users\lenovo\.codex\state\tool-updates\mcp2cli.lock.json` 中固定版本或 git commit。
-- 在 `C:\Users\lenovo\.codex\tools\mcp2cli\` 下提供 `.cmd` 或 `.ps1` wrapper。
-- 增加允许被 CLI facade 暴露的 MCP endpoint registry。
-- 默认不暴露高风险 MCP server。
-- CLI 默认输出 compact summary；完整 schema 必须显式 `--full`。
-- 访问 secrets、browser、shell、远程基础设施或个人数据的调用必须经过授权 gate。
-
-最小命令：
-
-```text
-mcp2cli list --profile <profile> --json
-mcp2cli search <query> --profile <profile> --json
-mcp2cli show <tool> --profile <profile> --json
-mcp2cli call <tool> --profile <profile> --json --args <json>
-```
-
-## 6. `skills2cli` 实施线
-
-目标：解决反复出现的 `Exceeded skills context budget of 2%` warning，让大部分 skills 从“默认可见”转为“按需发现”。
-
-实施要求：
-
-- 从 repo-local source 做 clean-room helper，不 fork `mcp2cli`。
-- 扫描 repo、user、system、plugin `SKILL.md` 并生成本地索引。
-- 原始索引保存在用户级 state；只有脱敏 summary 可以提交到本仓库。
-- 接入既有 skills usage audit plan 和 soft-load/profile helper 规则。
-- 只保留一个很小的常驻 skill/profile 入口来路由 `skills2cli`。
-
-最小命令：
-
-```text
-skills2cli index --json
-skills2cli search <query> --json
-skills2cli show <skill-id> --json
-skills2cli profile suggest --task <text> --json
-skills2cli audit warnings --since <duration> --json
-```
-
-`skills2cli` 自身不得 apply 或 disable skills。它只推荐 profile 并产生证据；profile apply 仍是独立的受治理动作。
-
-## 7. 用户级 browser automation lane
-
-把浏览器自动化提升为用户级、多项目、多会话 lane。
-
-浏览器资产严格分成三类：
-
-1. `isolated-session-managed`：Codex 受管临时 profile；证明归属和 stale 后可清理。
-2. `project-profile`：项目长期 profile；可包含项目收藏夹、插件、测试登录态；不得自动删除。
-3. `human-owned-personal-asset`：用户个人 Chrome；不得自动接管、自动清理或视作 Codex 受管资产。
-
-Adapter：
-
-- `chrome-devtools-mcp`：用户级 managed wrapper，本地/调试浏览器任务优先使用。
-- `CDP Bridge`：用户级 inspect-first bridge；写操作必须先检查 owner 和授权。
-- `OpenCLI`：可选 on-demand adapter，用于 website/browser-to-CLI 场景；不默认加载。
-
-必须支持的 owner 状态：
-
-```text
-owner=codex-managed-isolated
-owner=codex-managed-project
-owner=human-owned
-owner=human-delegated
-```
-
-规则：
-
-- 同一 tab 同一时间只能有一个 automation owner。
-- 同一 `project-profile` 同一时间只能被一个 session 控制。
-- `human-owned-personal-asset` 只能在 one-tab、one-task、current-session 范围内临时升级为 `human-delegated`。
-- 用户敏感读取和登录态上下文里的写入/点击/输入都必须显式授权。
-- cleanup 永远不能作用于 human-owned Chrome。
-
-## 8. `chrome-devtools-mcp` 用户级提升
-
-当前状态：用户级 Codex config 已有 `chrome-devtools-mcp`，但本质上仍是裸 entry，尚未成为多项目、多会话受管模式。
-
-实施要求：
-
-- 用用户级 managed wrapper 替换裸启动。
-- Wrapper 支持：
-  - `--mode isolated-session`；
-  - `--mode project-profile --project <slug>`；
-  - 写入 lease；
-  - stale scan；
-  - 最大活跃实例数量限制；
-  - 只清理已知 managed profile 的安全 cleanup。
-- 保持 Codex direct MCP entry，不经 MCP Router 转发。
-
-## 9. CDP Bridge 与 OpenCLI 用户级适配
-
-CDP Bridge：
-
-- 保持为用户级 Codex direct MCP server。
-- 默认 lane 是只读 inventory、DOM scan、screenshot、tab list。
-- cookie 读取、JS 写入、点击、输入、个人标签页导航或敏感上下文操作必须授权。
-
-OpenCLI：
-
-- 安装为用户级 external tool 和 wrapper，不作为常驻 Codex tool list 扩展。
-- 只能通过 browser owner registry 使用。
-- 未获得明确 one-task 授权时，不得绑定 human-owned Chrome tab。
-- 优先使用 `isolated-session-managed` 或 `project-profile`，而不是 human-owned session。
-
-## 10. Codex 通用治理 harness 参考边界
-
-目标：把 `oh-my-pi` 与 `The Harness Problem` 中可复用的 harness、UX、hash-anchored edit 与可靠性思想沉淀为 Codex 通用治理参考，而不是在本方案中安装或启动 Pi family runtime。
-
-本方案只保留参考边界：
-
-- `oh-my-pi` 只可作为 Pi family / harness / UX 资料来源；不得在本方案中创建用户级 `oh-my-pi` wrapper、安装目录、updater 或 runtime state。
-- `The Harness Problem` 只可作为 hash-anchored edit、harness 可靠性与失败可恢复设计的研究参考；不得把博客内容当成已实现工具能力。
-- 与 Pi、`oh-my-pi`、`omp`、`pi-plugin-codex`、binary override、RPC smoke、job state、read-only guard、update receipt 和 rollback pointer 有关的实施规则，统一归属 `pi_plugin_codex_user_level_sidecar_plan.*`；其中 `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 是本方案明确引用的本地 Codex 治理 fork 参考。
-- 本方案可复用的只有通用治理模式：pinned reference、receipt-first update、smoke-before-active、rollback-ready、reference-only 默认状态、敏感操作显式授权和 repo-local source-of-truth。
-- Codex 主会话仍是 leader；reference source、skills profile 或 CLI harness helper 都不是 native subagent，也不是 durable backend。
-
-检查要求：
-
-- 主治理方案不得把 `oh-my-pi` 描述为本方案直接安装的用户级工具。
-- 主治理方案不得把 `oh-my-pi`、Pi 或 OMP 描述为 Codex、native subagent、native_omx 或 LangGraph 的替代品。
-- 如需实现 Pi family sidecar，必须跳转到 `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.*` 并按其 receipt、read-only guard 与 rollback 规则执行。
-
-## 11. CLI-Anything 与企业微信 WXWork 实施线
-
-目标：把 CLI-Anything 安装为用户级 harness 生成/参考工具，并构建受治理的企业微信 `wecom-cli`。
-
-动态本地事实处理：`WXWork.exe` 已被识别为企业微信目标进程名，但进程是否正在运行、安装路径在哪里都属于动态本地事实。每次实施 `wecom-cli`、执行 smoke test 或进入 GUI task 前，都必须通过只读 process/window inventory 重新确认，不能把一次会话中的运行状态写成长期事实。
-
-事实刷新规则：
-
-- 仓库证据只能记录 process name、owner class、presence 和脱敏路径摘要；
-- 仓库证据不得记录完整本机安装路径、消息内容或 raw window data；
-- 未发现正在运行的 `WXWork.exe` 只阻断 process/window inventory 或 GUI automation 测试，不阻断 API/Webhook 设计工作；
-- GUI automation 保持 `disabled`，除非同时存在新鲜 process/window inventory、global WXWork lease 和 one-task authorization receipt。
-
-安装/适配要求：
-
-- CLI-Anything / CLI Hub 安装到隔离的用户级 runtime。
-- 不把 CLI-Anything 大量 skills hard-load 到 Codex 上下文。
-- 使用 CLI-Anything 指导 harness 结构，但不能绕过本地授权规则。
-- `wecom-cli` 作为受治理 harness 维护：用户级 tools 是安装产物，repo-local source 是事实来源。
-
-`wecom-cli` 三阶段：
-
-1. API/Webhook 层，低风险：
-   - 发送 webhook 通知；
-   - 凭据可用时通过官方 API 发送应用消息；
-   - secrets 只存用户级 secret storage。
-2. Process/window inventory 层，中风险：
-   - 列出 `WXWork.exe` 进程；
-   - 列窗口和标题；
-   - 报告前台状态。
-3. GUI automation 层，高风险：
-   - attach 到指定 WXWork process/window；
-   - click/type/send/read visible chat content；
-   - 必须显式 one-task 授权，并持有全局 WXWork lease。
-
-最小命令：
-
-```text
-wecom-cli process list --json
-wecom-cli window list --json
-wecom-cli webhook send --text <text> --json
-wecom-cli app-message send --to <target> --text <text> --json
-wecom-cli gui attach --pid <pid> --json --require-human-authorization
-```
-
-多会话规则：API/Webhook 在 secret 访问被允许时可并发；GUI automation 因为只有一个 WXWork desktop session，必须全局串行。
-
-更新策略：
-
-- CLI-Anything 更新不得自动重写 `wecom-cli`。
-- `wecom-cli` 更新必须通过测试、授权策略检查和 rollback receipt。
-- GUI automation 变更必须有人工 smoke test marker 后才能 active。
-
-## 12. 仅参考项
-
-`ohmyopenagent` 和 `snow-cli` 仅作为参考。
-
-允许用途：
-
-- 阅读架构思想；
-- 对比 CLI UX；
-- 支撑未来 Codex CLI 个人开发者生产级持久化团队设计。
-
-禁止用于本方案：
-
-- 不安装依赖；
-- 不复制代码；
-- 不加入默认 skill/profile；
-- 不做 runtime integration。
-
-## 13. Readiness gate 与验收标准
-
-状态流：
-
-`planned -> implemented-local -> installed-user-level -> smoke-tested -> active -> rollback-ready`
-
-这些状态是可执行状态，不是宣传标签：
-
-- `planned`：OpenSpec change、文件归属、测试目标和 rollback 目标已明确。
-- `implemented-local`：仓库代码、文档和测试已在 feature branch 或 worktree 中实现。
-- `installed-user-level`：用户级 wrapper 或 helper 已作为安装产物存在于仓库源码树之外，并写入 receipt。
-- `smoke-tested`：用户级 wrapper 已在目标 shell 中通过最小只读或 fail-closed 命令。
-- `active`：该工具可在允许 lane 与授权边界内默认使用。
-- `rollback-ready`：receipt 中有足够的版本、路径、命令和备份证据，可不依赖聊天记录回退。
-
-默认 lane 状态表：
-
-| Lane | 初始默认状态 | 允许的默认动作 | 禁止或需授权动作 | Active 前必须具备的证据 |
+| policy | `docs_bilingual/governance/*`, `openspec/specs/*` | 生成的 launcher/helper 配置 |
+| plan | `docs_bilingual/implementation_plans/*` | 无直接 runtime 产物 |
+| checker | `tools/check_*.py`, `tools/ci/local_gate.ps1` | 可选 installed wrapper |
+| helper source | repo-local tools/templates | `C:\Users\lenovo\.codex\tools\...` |
+| receipt schema | docs + tests | redacted runtime JSON receipt |
+
+## 6. 安装与更新证据契约
+
+每一次用户级安装动作都必须生成 update receipt。没有 receipt 证据的 lane 只能是 `planned` 或 `implemented-local`，不能标为 `active`。
+
+| 字段 | 必填 | 说明 |
+| --- | --- | --- |
+| tool name | 是 | lane id |
+| installed version | 是 | commit、tag 或 package version |
+| source URL | 是 | 不能包含 token |
+| install path | 是 | runtime 安装目标 |
+| wrapper path | 是 | 用户级 wrapper |
+| state path | 是 | runtime state root |
+| smoke test command | 是 | 可重复执行 |
+| smoke test result | 是 | pass/fail + timestamp |
+| updater command | 是 | 必须 pin-aware |
+| rollback pointer | 是 | 上一版本或备份路径 |
+| owner lane | 是 | `skills2cli`、`mcp2cli`、`browser`、`wecom-cli` 等 |
+
+runtime receipts 不得包含 secrets、cookies、tokens、raw browser data、WeCom message contents 或完整 plugin description dumps。
+
+## 7. Token 与风险优先级模型
+
+| Priority | Surface | Token | Risk | Default action |
 | --- | --- | --- | --- | --- |
-| `skills2cli` | `implemented-local`；只有后续受治理 wrapper/install receipt 落地后才可成为用户级 `active` | index/search/show/warning summary 的紧凑只读输出 | apply/disable skills、输出完整 plugin skill body、记录私有完整路径 | compact-output 测试、warning audit 脱敏测试、profile 建议不直接应用的证据 |
-| `mcp2cli` | `implemented-local`；只有后续受治理 wrapper/install receipt 与 live adapter 切片落地后才可成为用户级 `active` | list/search/show；非敏感 call 通过类别检查的本地 guard facade | secrets、shell、browser state、remote mutation、payment/account/personal-data call | allowed-profile registry、sensitive-call fail-closed checker、authorization receipt schema |
-| `codex-port` allocator | `implemented-local`；只有后续受治理 wrapper/install receipt 与 smoke evidence 落地后才可成为用户级 `active` | 按号段 reserve/list/renew/release/import/gc lease | 跨 owner 分配端口、kill 端口持有进程、非原子 registry 写入、无证据复用 stale lease | owner-range 测试、live-socket 冲突 fixture、lease receipt schema、stale PID/health 证据 |
-| `chrome-devtools-mcp` | isolated-session、project-profile、stale scan 与 cleanup dry-run 为 `implemented-local`；live user-level start 与真实 cleanup 仍为 `planned` | 带 owner lease、授权 gate、dry-run start plan、stale scan 和 cleanup dry-run 的 isolated-session / project-profile local/debug inspect | human-owned Chrome、无授权登录态 project-profile、live start、真实 cleanup | managed wrapper、lease、profile ownership、project-profile retention、stale cleanup dry-run 证据 |
-| CDP Bridge | `on-demand` | tab list、DOM scan、screenshot、read-only inventory | cookie、JS write、click/type/navigate sensitive context | owner check、authorization gate、read/write 分离测试 |
-| OpenCLI | `on-demand` | isolated 或 project-profile 的明确任务适配 | 默认绑定 human-owned tab、常驻加载 | wrapper pin、browser owner registry、human-owned protection 测试 |
-| `oh-my-pi` / `The Harness Problem` references | `reference-only` | 架构/UX/hash-anchored edit/harness 可靠性参考读取 | 替代 Codex、替代 native subagent、在本方案中安装 Pi family runtime | Pi sidecar 实施委派到 `pi_plugin_codex_user_level_sidecar_plan.*`；本方案只保留引用边界 |
-| CLI-Anything | `reference-only` | harness 结构参考和生成辅助 | 大量 hard-load skills、绕过授权规则 | isolated install receipt、update pin、rollback evidence |
-| `wecom-cli` API/Webhook | `planned` | 低风险通知/API 发送，secrets 可用时受控执行 | 无 secret storage 的明文凭据、未脱敏日志 | secret redaction、webhook/app-message smoke、receipt |
-| `wecom-cli` process/window inventory | `planned` | 只读列进程/窗口/前台状态 | 读取消息内容、点击、输入、发送 | process/window fixture 或 smoke、no-content-capture 测试 |
-| `wecom-cli` GUI automation | `disabled` | 无默认动作 | read/send/click/type，除非 one-task approval 与全局 lease 均存在 | global WXWork lease、one-task authorization receipt、manual smoke marker |
+| P0 | repo docs/checkers | low | low | 直接读取 |
+| P1 | `skills2cli index/search` | low | low | compact summary |
+| P1 | `mcp2cli list/search/show` | low | low | compact summary |
+| P2 | browser tab inventory | medium | medium | read-only + owner evidence |
+| P2 | OpenCLI discovery | medium | medium | on-demand + port lease |
+| P3 | MCP call / browser JS / cookies | high | high | 需要 authorization receipt |
+| P3 | `wecom-cli gui attach` | high | high | 默认 disabled |
 
-各 lane 的 `active` 条件：
+## 8. 用户级端口治理
 
-- `skills2cli`：`index`、`search`、`show` 和 warning-audit summary 可用；默认输出紧凑；输出不得泄露私有完整路径、cookie、token 或全量 plugin skill descriptions。
-- `mcp2cli`：allowed profiles 明确；list/search/show 默认紧凑；敏感调用在没有匹配授权 receipt 时 fail closed。
-- `codex-port`：Codex/OpenClaw 号段被强制执行，并发 reserve 保持原子性，active owner 会续租，OpenCLI 只获得 allocator 驱动的 `--port auto` lease，每个写动作都有 rollback-ready receipt。
-- `chrome-devtools-mcp`：wrapper 写入 lease；isolated-session-managed 与 project-profile 模式明确区分；human-owned Chrome 被保护；stale-cleanup 必须先 dry-run 通过。
-- CDP Bridge：只读检查与可写动作分离；每个写动作或敏感读取都必须先具备 owner evidence 与 authorization evidence。
-- OpenCLI：在安装 pin、profile binding、阻止无授权绑定 human-owned tabs 的规则完成并通过测试前，保持 on-demand。
-- `oh-my-pi` / `The Harness Problem` references：永久保持 reference-only；任何 Pi family sidecar 安装、updater、smoke 或 rollback 规则都必须在 `pi_plugin_codex_user_level_sidecar_plan.*` 中处理。
-- CLI-Anything：在 installation receipts、update pins 和 rollback evidence 存在前，只作为 harness-generation support。
-- `wecom-cli` GUI automation：在 process/window inventory、global WXWork lease 和 one-task authorization receipts 完成并通过测试前，保持 disabled。
+port registry 由 `codex-port` 管理，必须支持 `registry_revision`、原子写入、`pending_bind`、lease renewal 与 crash recovery。
 
-本方案验收标准：
-
-- 每个 lane 都有明确默认状态：`active`、`on-demand`、`reference-only` 或 `disabled`。
-- 每个用户级安装工具都有 update receipt 与 rollback pointer。
-- 每个共享本地监听服务都必须通过端口分配器申请 lease、记录端口 lease receipt，并避免固定端口，除非它是已记录的 `legacy_reserved`。
-- 并发端口申请必须通过原子 registry 写入和临时绑定处理进行串行化，并在复用前证明崩溃恢复安全。
-- 每个敏感 lane 都有 fail-closed checker 或 wrapper guard。
-- 每个 browser automation lane 在可读取或修改状态的动作前都会记录 owner class。
-- 仓库证据不保存 secrets、cookies、raw browser data、完整个人运行时路径或完整 plugin description dumps。
-
-## 14. 敏感授权矩阵
-
-| 动作 | 默认状态 | 必需授权证据 |
+| Owner | Range | 说明 |
 | --- | --- | --- |
-| Skill index/search/show | 允许 | 无；输出必须紧凑并脱敏。 |
-| Skill warning audit summary | 允许 | 无；warning text 只能摘要，不得倾倒完整 skill body。 |
-| MCP list/search/show | 允许 | 工具必须属于 allowed profile registry。 |
-| 不涉及 secrets、副作用、远端变更或个人数据的 MCP call | 条件允许 | allowed tool category 加 compact output policy。 |
-| 涉及 secrets、shell execution、browser state、remote infrastructure mutation、payment/account action 或 personal data 的 MCP call | 默认阻断 | 显式 one-task approval，并写入包含 tool、purpose、scope、expiry 的 receipt。 |
-| Chrome isolated-session-managed local debugging | 允许 | managed lease 与 isolated profile path。 |
-| 带登录态的 Chrome project-profile | 默认阻断 | project-profile approval 加 owner lease；跨项目复用必须重新授权。 |
-| human-owned Chrome 读取或写入 | 默认阻断 | one-tab、one-task、current-session delegation；不得后台浏览个人资产。 |
-| CDP Bridge 或 OpenCLI click/type/navigate/cookie/JavaScript write | 默认阻断 | owner check 加显式授权，授权中需命名 target 与 allowed action。 |
-| WXWork process/window inventory | 只读允许 | 不捕获消息内容；不执行 click/type/send。 |
-| WXWork message read/send/click/type | 默认阻断 | one-task approval 加 global WXWork lease 与 receipt。 |
+| Codex general helpers | `39000-39299` | 默认 Codex 用户级 helper 端口段 |
+| Codex browser/OpenCLI | `39300-39499` | OpenCLI 必须使用 `--port auto` |
+| Reserved local bridge | `39500-39999` | 预留给本地桥接 |
+| Downstream consumer project range | `40000-40999` | 下游消费项目端口排在 Codex 后面 |
 
-授权 receipt 必须短期有效。一个 browser tab、一个 WXWork task、一个 MCP call family 或一个 shell-capable tool 的 receipt，不授权未来无关任务。
+| Command | Purpose | Receipt |
+| --- | --- | --- |
+| `codex-port registry show --json` | 读取 registry | 不写入 |
+| `codex-port lease reserve --owner <name> --port auto --json` | 自动分配 | lease receipt |
+| `codex-port lease renew --lease-id <id> --json` | 续约 | updated lease |
+| `codex-port lease release --lease-id <id> --json` | 释放 | completed receipt |
+| `codex-port import-legacy --owner openclaw --json` | 导入旧端口 | migration receipt |
+| `codex-port gc --dry-run --json` | stale scan | 不写入 |
+| `codex-port gc --apply --json` | stale cleanup | evidence-gated write |
 
-## 15. 安装与更新证据契约
+## 9. `skills2cli` lane contract
 
-本方案中的每个用户级安装工具都必须把 receipt 写到：
+| Command | Default output | Risk gate |
+| --- | --- | --- |
+| `skills2cli index --json` | id、source layer、summary hash、availability | no full body |
+| `skills2cli search <query> --json` | compact matches | no full body |
+| `skills2cli show <id> --json` | bounded summary + path hint | `--full` 才能展开 |
+| `skills2cli profile suggest --task <text> --json` | recommendation only | never direct apply |
+| `skills2cli audit warnings --since <duration> --json` | 2% budget 与 skipped-loading summary | redacted paths |
 
-`C:\Users\lenovo\.codex\state\tool-updates\`
+## 10. `mcp2cli` lane contract
 
-receipt 必填字段：
+| Operation | Default | Required evidence |
+| --- | --- | --- |
+| list/search/show | compact JSON | profile registry |
+| low-risk read-only call | allowed | allowlist |
+| medium-risk call | gated | task scope + owner |
+| sensitive call | fail closed | authorization receipt schema |
+| write/mutate call | fail closed | current user approval + receipt |
 
-- tool name；
-- installed version、git commit、package version 或 package lock hash；
-- source URL；
-- install path；
-- wrapper path；
-- state path；
-- smoke test command 与 result；
-- updater command；
-- rollback pointer；
-- last updated time；
-- status：`active`、`on-demand`、`reference-only` 或 `disabled`；
-- owner lane：`skills2cli`、`mcp2cli`、`codex-port`、`browser`、`cli-anything`、`wecom-cli` 或 `reference`。Pi family / `oh-my-pi` owner lane 归属 `pi_plugin_codex_user_level_sidecar_plan.*`。
+## 11. Browser automation 与 Chrome/DevTools/CDP/OpenCLI lane
 
-仓库证据可以记录 receipt schema、相对 state 名称、status 和脱敏后的 smoke-test summary。仓库证据不得记录 secrets、cookies、tokens、raw browser data、消息内容或完整个人运行时路径。
+| Asset class | Profile | Bookmarks/extensions | Default permission | Cleanup |
+| --- | --- | --- | --- | --- |
+| `isolated-session-managed` | per-session temp profile | 无 | 最安全自动化 | 可自动清理 |
+| `project-profile` | per-project managed profile | 可选 imported baseline | 项目自动化 | stale scan + dry-run |
+| human-owned asset | 用户个人 Chrome | 真实 bookmarks/extensions/cookies | 人类拥有 | 永不自动清理 |
 
-端口 lease receipt 是写在 `C:\Users\lenovo\.codex\state\ports\receipts\` 下的运行时操作 receipt。它不能替代 `tool-updates` 下的安装/更新 receipt；如果工具可能打开本地监听端口，则对应安装/更新 receipt 必须引用相关 port-registry 号段、allocator wrapper 和 lease receipt schema。
+`chrome-devtools-mcp`、CDP Bridge 与 OpenCLI 默认 inspect/read-only first。navigate、click、type、JavaScript、cookies、downloads、uploads、account data、CRM、email、calendar、Drive、Slack、HubSpot 或 WeCom 数据都需要当前任务的一次性 authorization receipt。
 
-更新规则：
+## 12. CLI-Anything 与 `wecom-cli` lane
 
-- updater command 必须 pinned 或 version-aware；
-- 改变 wrapper 行为的 update 必须重跑 smoke tests 与 authorization guard tests；
-- smoke test 失败时必须继续选择上一个已安装版本；
-- rollback 必须可仅凭 receipt 完成，不依赖聊天记录。
+| Phase | Scope | Default |
+| --- | --- | --- |
+| API/Webhook MVP | webhook send、app-message send、secret redaction | planned |
+| Inventory | `WXWork.exe` process list、window list | read-only |
+| GUI attach | attach、click、type、read UI state | disabled |
+| GUI write | send message / mutate state | one-task authorization + global WXWork lease |
 
-## 16. Comet 执行拆分：OpenSpec WHAT + Superpowers HOW
+## 13. reference-only 项与外部来源边界
 
-按完整 `/comet` 路径实施本方案：每个小步 change 必须先定义 OpenSpec WHAT，再把 HOW 拆成可本地验证、可回滚、可归档的执行项。完整 Comet 还要求显式 Design/Plan 阶段证据，而不是把文档类变更降级为 tweak-only。
+| Reference | Use | Not allowed |
+| --- | --- | --- |
+| The Harness Problem | hash-anchored edit reliability | no unaudited import |
+| `oh-my-pi` | Pi family / UX / sidecar reference-only | no install here |
+| `ohmyopenagent` | future durable-team reference | no implementation here |
+| `snow-cli` | CLI product-shape reference | no implementation here |
 
-### 16.1 完整 Comet phase gate
+## 14. 敏感操作授权矩阵
 
-| Phase | Gate | 证据 | 失败时回退 |
+authorization receipt schema 必须包含 action、target、scope、expiry、session 与 operator confirmation。
+
+| Action | Risk | Default | Required receipt |
 | --- | --- | --- | --- |
-| Open / Initiating | scope / non-goals / owned files / rollback boundary | proposal or change note | return-open |
-| Design / Planning | 方案取舍、责任边界、授权边界、失败模式 | Superpowers design doc + delta spec | return-design |
-| Build / Executing | patch + local checks + plan task evidence | Superpowers implementation plan + changed paths + checker output | return-build |
-| Verify / Controlling | precommit gate + OpenSpec guard + local gate + local MR review | verification report + pass/fail evidence | return-build 或 return-design |
-| Archive / Closing | stable spec/archive or explicit deferral | archive receipt or deferral note | return-verify |
+| compact list/search/show | low | allowed | none |
+| read-only browser inventory | medium | allowed with owner evidence | owner lease |
+| MCP sensitive call | high | fail closed | authorization receipt |
+| CDP Bridge click/type/JS/cookies | high | fail closed | one-task authorization receipt |
+| OpenCLI write/navigation | high | fail closed | authorization receipt + port lease |
+| `wecom-cli` GUI write | high | disabled | authorization receipt + global WXWork lease |
 
-按小步、可本地测试、可回滚的 change 实施本方案。默认拆分：
+## 15. Runtime state contract
 
-1. token-risk priority、port registry/lease rules、browser asset classes、sensitive authorization、update receipts 和 evidence redaction 的 policy/checker baseline；
-2. `skills2cli` MVP：index/search/show 加 warning-audit summary，并覆盖 compact output 测试；
-3. `mcp2cli` 用户级 wrapper 与 allowed profile registry；
-4. browser owner registry 加 `chrome-devtools-mcp` managed wrapper，覆盖 isolated-session-managed 与 project-profile 模式；
-5. CDP Bridge 与 OpenCLI on-demand enforcement，包括 human-owned tab protection；
-6. Codex 通用 harness reference boundary：只抽取 `oh-my-pi` 与 `The Harness Problem` 的治理模式，并把 Pi family sidecar 安装/update/rollback 委派到 `pi_plugin_codex_user_level_sidecar_plan.*`；
-7. CLI-Anything install/update receipts 与 harness-generation boundary；
-8. `wecom-cli` API/Webhook MVP 与 secret redaction；
-9. `wecom-cli` process/window inventory 与 read-only evidence；
-10. `wecom-cli` gated GUI automation，包含 global WXWork lease 与 one-task authorization receipts。
+| State | Meaning | Entry condition |
+| --- | --- | --- |
+| planned | 只有方案 | docs 或 OpenSpec 已存在 |
+| implemented-local | repo-local helper/checker 存在 | tests pass |
+| installed-user-level | 用户级产物存在 | update receipt 存在 |
+| smoke-tested | 用户级 smoke 通过 | smoke test result is pass |
+| on-demand | 可按需启用 | receipt 和 rollback pointer 存在 |
+| active | 默认可用或当前启用 | all readiness gates pass |
+| disabled | 已禁用 | explicit reason exists |
+| reference-only | 仅参考来源 | no runtime path |
+| rollback-ready | 可快速回滚 | rollback pointer verified |
 
-### 16.2 OpenSpec 切片交付矩阵
+状态不变式：没有 wrapper path + smoke test result + rollback pointer 就不能标 `active`；没有 authorization receipt 时 sensitive actions 必须 fail closed；没有 port lease 时 OpenCLI/browser listener 不得启动。
 
-| 切片 | 主要产物 | 最小验证 | 完成证据 |
+## 16. Comet Management Record 模板
+
+```markdown
+# Comet Management Record
+## Open / Initiating
+- [ ] Value / why is stated.
+- [ ] Success criteria are stated.
+- [ ] Stakeholders and constraints are identified.
+## Design / Planning
+- [ ] Delivery tailoring is recorded.
+- [ ] Risks and assumptions are recorded.
+- [ ] Acceptance evidence path is defined.
+## Build / Executing
+- [ ] Execution mode is selected.
+- [ ] Quality evidence is recorded.
+- [ ] Current blockers are cleared or have a handling decision.
+## Verify / Controlling
+- [ ] Variance review is complete.
+- [ ] Risk/change impact is assessed.
+- [ ] Control decision is recorded.
+## Archive / Closing
+- [ ] Value outcome is summarized.
+- [ ] Lessons learned are recorded.
+- [ ] Archive/sync/deferral decision is confirmed.
+## Monitoring Loop
+- [ ] Current phase facts are checked.
+- [ ] Return/no-return decision is made.
+```
+
+## 17. Phase gate matrix
+
+| Comet phase | PM focus | Gate | Evidence | Return |
+| --- | --- | --- | --- | --- |
+| Open | initiating | scope / non-goals / stakeholders / rollback | proposal.md | return-open |
+| Design | planning | architecture、lane boundaries、authorization model | design doc + delta spec | return-design |
+| Build | executing | patch、tests、receipt schema、state updates | implementation plan + changed paths | return-build |
+| Verify | monitoring/controlling | precommit、guard、local gate、local MR review | verification report | return-build / return-design |
+| Archive | closing | stable spec sync 或 archive deferral | archive receipt / deferral | return-verify |
+
+## 18. Monitoring return semantics
+
+| Trigger | Decision | target_phase | rework_reason |
 | --- | --- | --- | --- |
-| 1. Policy/checker baseline | token/risk checker、port registry/lease checker、`codex-port` allocator/locking/lifecycle contract、authorization receipt schema、update receipt schema、evidence redaction policy | checker 单元测试、并发 reserve fixture、pending-bind 竞争 fixture、崩溃恢复 fail-closed fixture、local gate 注册 | checker 输出、测试记录、allocator lifecycle 证据、OpenSpec delta/spec 更新 |
-| 2. `skills2cli` MVP | repo-local helper、用户级 wrapper、skill index/search/show/warning audit | compact output、privacy redaction、profile non-apply、warning audit 测试 | 脱敏索引摘要、wrapper smoke、receipt |
-| 3. `mcp2cli` MVP | allowed profile registry、list/search/show/call facade | compact output、sensitive-call fail-closed、receipt-required 测试 | profile registry、授权失败样例、wrapper smoke |
-| 4. Browser owner registry | owner registry、lease schema、`chrome-devtools-mcp` managed wrapper | isolated/project-profile/human-owned protection、cleanup dry-run 测试 | lease receipt、stale scan dry-run、wrapper smoke |
-| 5. CDP Bridge/OpenCLI enforcement | read/write 分离 gate、OpenCLI on-demand adapter | cookie/JS/click/type/navigate sensitive action fail-closed 测试 | owner check 证据、授权 receipt 样例、阻断记录 |
-| 6. Codex harness reference boundary | reference-only 边界、Pi sidecar 委派关系、通用 receipt/update/rollback 模式 | 文档边界检查、无直接 `oh-my-pi` 安装 lane、Pi sidecar 交叉引用检查 | reference boundary、delegation note、no-runtime-install 证据 |
-| 7. CLI-Anything boundary | isolated install receipt、harness-generation boundary | no hard-load check、update pin、rollback 测试 | install receipt、profile visibility 证据 |
-| 8. `wecom-cli` API/Webhook | webhook/app-message commands、secret redaction | secret redaction、dry-run/smoke、receipt-required 测试 | 脱敏发送摘要、secret 不落库证据 |
-| 9. `wecom-cli` inventory | process/window inventory commands | no-content-capture、read-only fixture/smoke 测试 | 只读 inventory 摘要、窗口内容未采集证据 |
-| 10. `wecom-cli` GUI gate | global WXWork lease、one-task authorization gate | unauthorized fail、lease exclusivity、manual smoke marker 测试 | 授权 receipt、lease receipt、人工 smoke marker |
+| scope 或 non-goals 不清晰 | return-open | open | value-gap |
+| lane boundary 或 authorization model 不完整 | return-design | design | planning-gap |
+| checker/test 未注册 | return-build | build | execution-gap |
+| local gate / MR review 失败 | return-build | build | verification-gap |
+| 完整 change 没有 archive 或 deferral | return-verify | verify | archive-gap |
 
-切片完成判定：每个切片只有在实现、测试、CI 注册、OpenSpec 更新、rollback 证据和 completed receipt 均存在时才算完成；如果只完成文档或研究，只能标记为 `planned` 或 `implemented-local`，不能标记为 `active`。
+## 19. Implementation slices
 
-每个 OpenSpec change 必须定义：
+### OpenSpec slice delivery matrix
 
-- change 拥有的文件；
-- 证明新行为的 local tests 或 checkers；
-- 如有用户级安装产物，必须列出产物；
-- 如有 receipt，必须列出 receipt path 与 schema；
-- 如 change 可能绑定 TCP 端口，必须列出 local listener 或 port lease 归属；
-- rollback method；
-- 明确 non-goals，避免 change 膨胀。
-- `.comet.yaml` 或等价执行记录必须写明 workflow、phase、design_doc、plan、build_mode、isolation、verify result、verification report、branch status、archive/deferral 状态。
+| Slice | Main artifacts | Minimum validation | Completion evidence |
+| --- | --- | --- | --- |
+| 1. Policy/checker baseline | token/risk checker、port registry、authorization receipt schema、update receipt schema、evidence redaction | checker tests + local gate | OpenSpec spec + checker output |
+| 2. skills2cli MVP | index/search/show/audit/profile suggest | compact-output 与 privacy-redaction tests | wrapper smoke + receipt |
+| 3. mcp2cli MVP | profile registry、list/search/show/call facade | sensitive-call fail-closed tests | blocked call evidence |
+| 4. codex-port allocator | reserve/renew/release/import-legacy/gc | pending_bind 与 concurrent reserve tests | registry_revision + lease receipt |
+| 5. Browser owner registry | isolated/project/human asset separation | owner exclusivity + cleanup dry-run tests | browser lease receipt |
+| 6. chrome-devtools-mcp wrapper | isolated-session-managed 与 project-profile managed wrapper | wrapper smoke | install/update receipt |
+| 7. CDP Bridge/OpenCLI enforcement | read/write split 与 on-demand adapter | cookie/JS/click/type/navigate fail-closed | authorization receipt evidence |
+| 8. Codex harness reference boundary | oh-my-pi 与 The Harness Problem reference-only | docs boundary check | no runtime install evidence |
+| 9. CLI-Anything boundary | install/update receipts 与 harness boundary | no-hard-load 与 rollback tests | install receipt |
+| 10. wecom-cli API/Webhook | webhook send、app-message send、secret redaction | dry-run 与 secret-redaction tests | redacted send summary |
+| 11. wecom-cli inventory | process/window read-only inventory | no-content-capture tests | read-only inventory summary |
+| 12. wecom-cli GUI gate | global WXWork lease + one-task authorization | unauthorized fail + lease exclusivity | manual smoke marker |
 
-### 16.3 细颗粒度实施清单
+### Slice completion rule
 
-- [x] 为本方案创建或复用一个小步 OpenSpec change，并写明 scope、non-goals、rollback boundary。
-- [x] 建立 token/risk priority checker，禁止高 token/高风险 surface 在无证据时默认常驻。
-- [x] 建立用户级 port registry 与 allocator，确保 Codex 号段在前、OpenClaw 号段在后，并让 OpenCLI 使用 allocator 驱动的 `--port auto`。
-- [x] 实现 `codex-port lease reserve/renew/release/list/import-legacy/gc`，覆盖 owner-range 校验、registry 原子锁、临时 `pending_bind`、live-socket 冲突跳过、stale/崩溃证据和写入 receipt。
-- [x] 建立 sensitive authorization receipt schema，字段至少包含 action、target、scope、expiry、session、operator confirmation。
-- [x] 建立 user-level tool update receipt schema，并覆盖 install path、wrapper path、state path、pin、smoke、rollback pointer。
-- [x] 建立 sanitized evidence 规则，禁止提交 secrets、cookies、tokens、raw browser data、消息内容、完整个人运行时路径和完整 plugin description dumps。
-- [x] 实现 `skills2cli index --json`，输出 skill id、source layer、short description hash/summary 和可用状态。
-- [x] 实现 `skills2cli search <query> --json`，默认只返回紧凑摘要和定位信息。
-- [x] 实现 `skills2cli show <skill-id> --json`，默认不倾倒全量 skill body，完整内容需受控参数。
-- [x] 实现 `skills2cli profile suggest --task <text> --json`，只给建议，不直接 apply。
-- [x] 实现 `skills2cli audit warnings --since <duration> --json`，纳入 2% skills context budget warning 和 skipped-loading warning 摘要。
-- [x] 为 `skills2cli` 增加 compact-output、privacy redaction、profile-non-apply、warning-audit 测试。
-- [x] 实现 `mcp2cli` allowed profile registry，并区分低风险 discovery 与中高风险 call。
-- [x] 实现 `mcp2cli list/search/show` 紧凑输出与 `--full` 显式展开边界。
+切片只有在 implementation、tests、CI registration、OpenSpec update、rollback evidence 与 completed receipt 都存在时才算完成。Documentation-only 或 research-only 切片可以是 `planned` 或 `implemented-local`，但不能是 `active`。
+
+## 20. Definition of ready before implementation
+
+- [ ] 对应 OpenSpec change 已存在，并说明 scope / non-goals。
+- [ ] lane 已有 owner、owned files、receipt schema 与 rollback method。
+- [ ] 如果涉及端口，已有 `codex-port` port registry lease。
+- [ ] 如果涉及浏览器，已确认 asset class 与 owner registry。
+- [ ] 如果涉及敏感数据，已有当前任务的一次性 authorization receipt。
+- [ ] 如果涉及用户级安装，已定义 update receipt 与 rollback pointer。
+- [ ] 新测试已注册到 `tools/ci/ci_test_manifest.json` 或 local gate。
+
+## 21. 细粒度实施清单
+
+- [x] 创建或复用一个小 OpenSpec change，说明本方案的 scope、non-goals 与 rollback boundary。
+- [x] 增加 token/risk priority controls，避免高 Token 或高风险 surface 在没有证据时成为默认能力。
+- [x] 建立用户级 port registry / lease allocator，让 Codex 端口段排在下游消费项目端口段前面。
+- [x] 实现最小 `codex-port` reserve/renew/release/list/import-legacy/gc contract。
+- [x] 覆盖 pending_bind、live-socket collision、stale/crash evidence 与 registry_revision。
+- [x] 增加 authorization receipt schema，包含 action、target、scope、expiry、session 与 operator confirmation。
+- [x] 增加 update receipt 字段：tool name、installed version、source URL、install path、wrapper path、state path、smoke test command、rollback pointer、owner lane。
+- [x] 增加 sanitized-evidence 规则，禁止 secrets、cookies、tokens、raw browser data、message contents 与 plugin description dumps。
+- [x] 实现 compact `skills2cli index --json` 输出。
+- [x] 实现 compact `skills2cli search <query> --json` 输出。
+- [x] 实现 `skills2cli show <skill-id> --json`，默认不输出完整 skill bodies。
+- [x] 实现 `skills2cli profile suggest --task <text> --json`，仅 recommendation-only。
+- [x] 实现 `skills2cli audit warnings --since <duration> --json`，覆盖 2% skills context budget 与 skipped-loading warnings。
+- [x] 增加 skills2cli compact-output、privacy-redaction、profile-non-apply 与 warning-audit tests。
+- [x] 实现 `mcp2cli` allowed profile registry。
+- [x] 实现 compact `mcp2cli list/search/show`。
 - [x] 实现 `mcp2cli call` sensitive-category fail-closed gate。
-- [x] 为 `mcp2cli` 增加 profile registry、sensitive-call blocking、compact output、receipt-required 测试。
-- [x] 实现 browser owner registry，记录 owner class、project slug、session id、profile path、lease expiry。
-- [x] 实现 `chrome-devtools-mcp` managed wrapper 的 isolated-session mode。
-- [x] 实现 `chrome-devtools-mcp` managed wrapper 的 project-profile mode。
-- [x] 实现 browser stale scan 与 safe cleanup dry-run，清理范围只限已知 managed profiles。
-- [x] 为 browser lane 增加 tab owner exclusivity、project-profile retention、human-owned protection、cleanup dry-run 测试。
-- [x] 加固 CDP Bridge read-only 默认边界，写动作必须检查 owner 与授权 receipt。
-- [ ] 把 OpenCLI 保持为 on-demand adapter，并接入 browser owner registry。
-- [x] 为 CDP Bridge 增加 cookie/JS/click/type/navigate sensitive action fail-closed 测试。
-- [ ] 为 OpenCLI 增加 cookie/JS/click/type/navigate sensitive action fail-closed 测试。
-- [x] 将 `oh-my-pi` 直接安装、updater、smoke 和 rollback 事项迁出本方案，统一并入 `pi_plugin_codex_user_level_sidecar_plan.*`。
-- [x] 本方案仅保留 `oh-my-pi` / `The Harness Problem` 的 reference-only harness 治理边界。
-- [ ] 安装 CLI-Anything / CLI Hub 时写入 user-level install receipt，不 hard-load bulk skills。
-- [ ] 用 CLI-Anything 辅助设计 `wecom-cli`，但保留 repo-local source 和授权 gate。
-- [ ] 实现 `wecom-cli process list --json` 与 `window list --json` 只读 inventory。
-- [ ] 实现 `wecom-cli webhook send` 和 `app-message send` 的 secret redaction 与 receipt。
-- [ ] 实现 `wecom-cli gui attach` 的 global WXWork lease 与 one-task authorization gate；默认保持 disabled。
-- [ ] 为 `wecom-cli` 增加 process/window read-only、secret redaction、GUI unauthorized fail、lease exclusivity 测试。
-- [ ] 把新增测试或 checker 注册到 `tools/ci/ci_test_manifest.json` 或共享 local gate 调用链。
-- [x] 对每个完成的 OpenSpec change 运行 precommit update/archive gate、local gate、local MR review。
-- [ ] 每个用户级安装动作完成后记录 rollback-ready receipt；没有 receipt 的 lane 不得标记 active。
+- [x] 增加 mcp2cli profile-registry、sensitive-call-blocking、compact-output 与 receipt-required tests。
+- [x] 实现 browser owner registry，包含 owner class、project slug、session id、profile path 与 lease expiry。
+- [x] 实现 `chrome-devtools-mcp` isolated-session-managed wrapper。
+- [x] 实现 `chrome-devtools-mcp` project-profile wrapper。
+- [x] 实现 browser stale scan 与 safe-cleanup dry-run。
+- [x] 增加 browser-lane tests：tab-owner exclusivity、project-profile retention、human-owned protection 与 cleanup dry-run。
+- [x] 加固 CDP Bridge read-only defaults，让 write actions 必须有 owner 与 authorization receipts。
+- [ ] 保持 OpenCLI 为 on-demand adapter，并接入 browser owner registry 与 --port auto。
+- [x] 增加 CDP Bridge fail-closed tests，覆盖 cookie、JavaScript、click、type、navigate。
+- [ ] 增加剩余 OpenCLI fail-closed tests，覆盖 cookie、JavaScript、click、type、navigate。
+- [x] 将直接 oh-my-pi install、updater、smoke、rollback 工作迁入 `pi_plugin_codex_user_level_sidecar_plan.*`。
+- [x] 本方案仅保留 oh-my-pi / The Harness Problem 的 reference-only harness governance boundary。
+- [ ] 以用户级 install receipts 安装 CLI-Anything / CLI Hub，且不 hard-load bulk skills。
+- [ ] 使用 CLI-Anything 辅助设计 wecom-cli，同时保持 repo-local source 与 authorization gates。
+- [ ] 实现 read-only `wecom-cli process list --json` 与 `window list --json` inventory。
+- [ ] 实现 `wecom-cli webhook send` 与 `app-message send`，带 secret redaction 与 receipts。
+- [ ] 实现 `wecom-cli gui attach`，带 global WXWork lease 与 one-task authorization gate，并保持默认 disabled。
+- [ ] 增加 wecom-cli process/window read-only、secret-redaction、GUI-unauthorized-fail 与 lease-exclusivity tests。
+- [ ] 将所有新 test 或 checker 注册到 `tools/ci/ci_test_manifest.json` 或 shared local-gate call chain。
+- [x] 对每个完成的 OpenSpec change 运行 precommit update/archive gate、local gate 与 local MR review。
+- [ ] 每次用户级安装后记录 rollback-ready receipts；没有 receipt 的 lane 不得标为 active。
 
-## 17. 完整 Comet 实施顺序
+## 22. 本地集成顺序
 
-1. Open：为本方案创建 OpenSpec change，写明 scope、non-goals、stakeholder/constraint、rollback boundary。
-2. Design：用 Superpowers design doc 固化方案取舍、lane 责任边界、授权边界、receipt 状态流、失败模式和后续分片原则。
-3. Build：用 Superpowers implementation plan 拆解 owned files、checker/test、CI manifest、安装/update/rollback receipt 与本地提交步骤。
-4. Build：增加 token/risk priority、port registry/lease、browser asset class、sensitive authorization、update receipt 的治理文档和 checker。
-5. Build：实现 `skills2cli` MVP 和测试。
-6. Build：增加 `mcp2cli` 用户级 wrapper 与允许 profile registry。
-7. Build：把 `chrome-devtools-mcp` 提升为用户级 managed wrapper。
-8. Build：加固 CDP Bridge policy，并只把 OpenCLI 作为 on-demand adapter。
-9. Build：固化 Codex 通用 harness reference boundary，并把 Pi family / `oh-my-pi` sidecar 安装、updater receipt 与 rollback model 委派到 `pi_plugin_codex_user_level_sidecar_plan.*`。
-10. Build：安装 CLI-Anything / CLI Hub 用户级工具。
-11. Build：构建 `wecom-cli` API/Webhook MVP，再做 window inventory，最后做带授权 gate 的 GUI automation。
-12. Verify/Archive：跑 local gate、local MR review，并在用户确认后再合入 local main；完成的 change 归档或写明 archive deferral。
+1. 在隔离 feature worktree 中创建 OpenSpec change。
+2. 写 Design Doc、Implementation Plan、delta spec 与 management record。
+3. 修改双语 plan pair，并保持英文 ASCII primary 与 zh-CN companion 同步。
+4. 运行 document pair policy、baseline checker、implementation plan checker、precommit update/archive gate、OpenSpec guard 与 local gate。
+5. 使用中文提交标题提交 feature branch，然后运行 local MR review。
+6. 创建 rollback backup refs，并 fast-forward merge 到 local main。
+7. 远端发布必须等待用户明确说出 remote push、GitLab/MR、merge 或 GitHub sync。
 
-## 18. 完整 Comet 验证计划
+## 23. Readiness gates and acceptance criteria
 
-- Open evidence：`proposal.md` 必须覆盖目标、范围、非目标、影响文件、风险和 rollback boundary。
-- Design evidence：Superpowers design doc 必须覆盖方案取舍、架构边界、状态流、授权 gate、失败模式和后续切片规则。
-- Build evidence：Superpowers implementation plan 必须列出任务、owned files、测试命令、提交点和回滚方式。
-- Target document evidence：本文必须声明完整 `/comet` 的 Open/Design/Build/Verify/Archive 阶段，不得继续把本方案描述为 tweak-only。
-- `skills2cli` 测试证明 index/search/show 不输出全量 skill descriptions。
-- `mcp2cli` 测试证明 compact list/search/show 和 sensitive-call blocking。
-- Browser checker 测试证明 isolated cleanup、project-profile retention、human-owned protection、tab owner exclusivity。
-- Port-governance 测试证明 Codex 不会分配 OpenClaw 号段，OpenClaw 历史端口会导入为 reserved，冲突时只跳过不 kill 进程，stale lease 复用前必须有 PID/health evidence。
-- Port allocator CLI 测试证明 `reserve`、`renew`、`release`、`import-legacy` 与非 dry-run `gc` 会写 receipt；并发 reserve 不会分配同一端口；pending-bind/崩溃恢复受证据门控；owner/range 或 owner-session 不匹配会 fail closed。
-- CDP Bridge/OpenCLI 测试证明敏感动作必须显式授权。
-- Codex harness reference boundary 检查证明本方案不再直接实施 `oh-my-pi` runtime；Pi family updater、pinned update 和 rollback receipt 由 `pi_plugin_codex_user_level_sidecar_plan.*` 负责。
-- `wecom-cli` 测试证明 process inventory 只读、secrets 脱敏、GUI write 无授权失败、WXWork GUI lease 独占。
-- 仓库检查继续包括 OpenSpec guard、precommit update/archive gate、local gate、local MR review。
-- Readiness-gate 测试证明没有 smoke-test evidence、install/update receipt evidence 与 rollback evidence 的 lane 不会变成 `active`。
-- Authorization-matrix 测试证明敏感 MCP、browser、CDP/OpenCLI 和 WXWork 动作在没有当前 one-task authorization receipt 时 fail closed。
-- Comet 状态检查证明本轮 change 的 phase、verify result、branch status、verification report、archive/deferral 结论与 tasks 完成状态一致；超出当前治理重构范围时必须新开 change 或回退阶段。
+| Gate | Criteria | Evidence |
+| --- | --- | --- |
+| Documentation readiness | bilingual docs synced、structure clear、markers complete | document pair policy |
+| OpenSpec readiness | proposal/design/tasks/spec complete | `openspec validate --strict` |
+| Runtime readiness | wrapper + state path + smoke + rollback | update receipt |
+| Authorization readiness | action/target/scope/expiry/session/operator confirmation | authorization receipt schema |
+| Port readiness | lease + owner + registry_revision | port registry receipt |
+| Browser readiness | owner registry + asset class + cleanup policy | browser lease receipt |
+| Active readiness | installed-user-level + smoke-tested + rollback-ready | completed receipt |
 
-## 19. 来源
+## 24. Verification plan
+
+- `python tools/check_user_level_mcp_skills_browser_cli_baseline.py --root . --json` - 验证治理基线 marker。
+- `python tools/check_implementation_plan_rules.py --root . --json` - 验证实施方案规则。
+- `python tools/check_document_pair_policy.py --root . --json` - 验证双语 companion 覆盖。
+- `python tools/check_precommit_update_archive.py --root . --json` - 复核更新/归档就绪度。
+- `python tools/run_openspec_guard.py --root . --json` - 运行仓库 OpenSpec guards。
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1` - 运行共享本地 CI 门禁。
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_mr_review.ps1` - 提交后执行本地 MR review。
+- `openspec validate <change> --strict` - 校验 change schema 与 artifacts。
+- `openspec status --change <change> --json` - 报告 artifacts 完成状态。
+
+## 25. 回滚与清理
+
+文档重构可以通过 revert feature commit 或 reset 到 backup ref 回滚。用户级安装回滚使用 update receipt 中的 rollback pointer。端口 lease 清理先运行 `codex-port gc --dry-run --json`。浏览器清理只作用于 managed profiles，永远不自动清理 human-owned Chrome。
+
+## 26. 风险与默认决策
+
+| Risk | Default decision | Mitigation |
+| --- | --- | --- |
+| skills context 2% budget 再次超限 | 不盲目禁用 | usage audit，再使用 `skills2cli` / profile helper |
+| MCP surface 泄露敏感数据 | fail closed | authorization receipt schema |
+| port conflict | 不直接 kill processes | port registry + pending_bind + live-socket evidence |
+| browser asset confusion | 保护 human-owned assets | asset class + owner registry |
+| OpenCLI high-risk write action | on-demand only | receipt + port lease + owner gate |
+| WeCom GUI misoperation | 默认 disabled | global WXWork lease + one-task authorization |
+| user-level cache 被更新覆盖 | receipt + source of truth | repo-local source + updater rollback |
+
+## 27. 自检清单
+
+- [ ] 本方案仍保留 `plan_readiness: execution-ready`。
+- [ ] 本方案仍声明 `implementation_state:`，并且不把未完成 lane 标为 active。
+- [ ] 文本包含 Token、Readiness gate、OpenSpec、skills2cli、mcp2cli、CDP Bridge 与 OpenCLI。
+- [ ] 文本包含 port registry、codex-port、pending_bind、registry_revision、39000-39299 与 40000-40999。
+- [ ] 文本包含 authorization receipt schema、operator confirmation、update receipt 与 rollback pointer。
+- [ ] 文本包含 `chrome-devtools-mcp`、`oh-my-pi`、CLI-Anything、`wecom-cli`、active、on-demand、reference-only 与 disabled。
+
+## 28. Sources
 
 - https://github.com/knowsuchagency/mcp2cli
 - https://github.com/jackwener/OpenCLI

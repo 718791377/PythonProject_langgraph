@@ -2,6 +2,7 @@
 doc_id: user_level_mcp_skills_browser_cli_governance_plan
 lang: en
 canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
+translation: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
 status: draft
 plan_readiness: execution-ready
 implementation_state: cdp_bridge_read_only_defaults_repo_local_implemented
@@ -11,637 +12,394 @@ created_at: 2026-05-22
 source_reference_file: reference_files/1.md
 comet_workflow: full
 comet_phase_model: open-design-build-verify-archive
+implementation_lane: p0_repo_local_governance_to_user_level_capability
 local_codex_governance_fork_reference: docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.md
+related_docs:
+  - docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.md
+  - docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.md
+  - docs_bilingual/governance/codex_user_level_mcp_scope_policy.md
+  - docs_bilingual/governance/codex_user_level_skills_governance_policy.md
 ---
 
 # User-Level MCP, Skills, Browser, and CLI Harness Governance Plan
 
 ## 0. Current review verdict
 
-As of 2026-05-24, this plan is sufficiently granular as a pre-execution blueprint and is ready for OpenSpec slicing. `status: draft` means the user-level runtime has not been fully implemented from this plan; it does not mean the document lacks an execution structure. The first policy/checker baseline slice has completed local implementation, validation, stable spec promotion, and OpenSpec archive closeout. The `skills2cli`, `mcp2cli`, `codex-port` allocator, browser owner registry, Chrome DevTools managed-wrapper MVPs, and CDP Bridge governance guard now have repo-local helpers and test coverage; they remain `implemented-local` rather than fully user-level `active` until later governed wrapper/install receipt, managed-wrapper, live adapter, and user-level smoke slices land.
+This plan now follows the newer implementation-plan structure used by `pi_plugin_codex_user_level_sidecar_plan.md` and `comet_runtime_agile_focus_area_plan.md`: relationship boundaries first, then goals/non-goals, runtime architecture, Codex usage, repo-local source of truth, install artifacts, receipts, state contract, Comet management record, phase gates, implementation slices, task backlog, local integration, acceptance, evidence, rollback, and risks.
 
-Review verdict:
+`status: draft` means the complete user-level runtime is not fully installed and smoke-tested. It does not mean the document lacks execution structure. Repo-local `skills2cli`, `mcp2cli`, `codex-port`, browser owner registry, `chrome-devtools-mcp` wrapper MVPs, and CDP Bridge read-only-default guards remain `implemented-local`, not fully user-level `active`.
 
-- Coverage is complete: MCP facade, on-demand skills discovery, browser ownership, Chrome DevTools MCP, CDP Bridge, OpenCLI, CLI-Anything, and `wecom-cli` all have default states, authorization boundaries, install evidence, and rollback requirements; `oh-my-pi` and `The Harness Problem` are reference sources for Codex reusable harness governance only and are no longer implemented directly by this plan.
-- User-level port governance is explicit: Codex uses earlier user-level ranges, OpenClaw uses later ranges, OpenCLI must use allocator-driven `--port auto`, and the allocator has reserve/release/import/gc command contracts.
-- Concurrent allocation safety is explicit: registry updates are atomic, binds use provisional leases, long-running owners renew leases, and crash recovery requires evidence.
-- The granularity is implementation-ready: every lane can become an OpenSpec change, and every change must state owned files, checker/test evidence, receipt schema, rollback method, and non-goals.
-- Unchecked checklist items are downstream implementation state, not plan gaps. A lane must not be marked `active` until its code, checker, install artifact, and receipt evidence all exist.
-- The sequence is baseline before capability: finish token/risk, authorization receipt, update receipt, and evidence-redaction controls before implementing `skills2cli`, `mcp2cli`, browser automation, and `wecom-cli` capability surfaces.
+## 1. Relationship model and naming boundary
 
-The next action is not to broaden this plan. After the repo-local `chrome-devtools-mcp` isolated-session, project-profile, browser stale scan, cleanup dry-run, and CDP Bridge read-only-default guard slices are validated and archived, continue with the OpenCLI on-demand enforcement slice rather than installing user-level wrappers implicitly.
+This plan governs Codex user-level, multi-project, multi-session reusable control surfaces. It is not PyCharm IDE integration and not a single project private script.
 
-### 0.1 Full Comet execution skeleton
-
-This plan is refactored through the complete `/comet` workflow rather than a lightweight tweak: OpenSpec owns WHAT, Superpowers owns HOW, and Comet owns WHEN/NEXT plus phase evidence. The plan keeps governance slices definable, designable, executable, verifiable, and archivable; any real user-level install or high-risk browser/WXWork action still depends on that lane's receipt, smoke evidence, and authorization gate.
-
-| Comet phase | Plan location | Required evidence | Pass condition |
+| Name | Owner | Default state | Boundary |
 | --- | --- | --- | --- |
-| Open | Sections 1-4 | scope, non-goals, stakeholder/constraint, rollback boundary | Scope, reference sources, runtime layout, token/risk, and port boundaries are explicit |
-| Design | Sections 5-12 | Superpowers design doc, trade-offs, ownership boundaries, failure modes | Every lane has default state, authorization boundary, receipt/rollback requirements, and reference-only boundaries |
-| Build | Sections 13-17 | Superpowers implementation plan, owned files, checker/test, OpenSpec slice | Every item has executable order, state flow, install/update/rollback receipt requirements |
-| Verify | Section 18 | verification report, precommit gate, OpenSpec guard, local gate/local MR review | Readiness gate, authorization matrix, install/update evidence, and checker commands are executable; no unevidenced lane is marked active |
-| Archive | Sections 16-18 plus OpenSpec archive | stable spec/archive or explicit archive deferral | Completed items have archive/deferral, local gate, local MR review, and completed receipt; unfinished items remain planned/implemented-local |
+| skills2cli | skill index/search/show/audit/profile suggest | implemented-local | full skill bodies stay out of context |
+| mcp2cli | MCP list/search/show/call facade | implemented-local | sensitive calls fail closed |
+| codex-port | port registry / lease allocator | implemented-local | Codex ranges precede downstream consumer ranges |
+| chrome-devtools-mcp | managed browser automation wrapper | implemented-local | three browser asset classes stay separated |
+| CDP Bridge | browser bridge | implemented-local | read-only first |
+| OpenCLI | on-demand browser/MCP adapter | planned/partial | requires --port auto and owner gate |
+| CLI-Anything | harness generation/reference | planned | no hard-loaded bulk skills |
+| wecom-cli | WeCom/WXWork API/Webhook/GUI | planned | GUI write disabled by default |
+| oh-my-pi | Pi family / harness reference | reference-only | real sidecar belongs to pi_plugin plan |
+| ohmyopenagent / snow-cli | future durable-team references | reference-only | not implemented here |
 
-Complete `/comet` does not allow skipping Design/Plan/Verify because a change is documentation-only. If later implementation exceeds this governance blueprint, such as adding wrappers, port allocators, browser-owner writes, or WXWork GUI automation, it must open a separate OpenSpec change instead of expanding this document-refactor change.
+## 2. Goals and non-goals
 
-## 1. Purpose
+Goals:
 
-This plan upgrades MCP, skills, browser automation, and CLI harness capability from ad-hoc per-project usage into user-level, multi-project, multi-session infrastructure.
+1. Prefer the lowest-token and lowest-risk surface for discovery, indexing, status checks, and read-only diagnostics.
+2. Use `skills2cli` to reduce skills context budget pressure without exposing full skill bodies or plugin description dumps.
+3. Use `mcp2cli` to split MCP discovery, profiles, and calls by risk; sensitive MCP calls fail closed by default.
+4. Use browser owner registry to separate `isolated-session-managed`, `project-profile`, and human-owned Chrome assets.
+5. Use `codex-port` for port registry / lease / `pending_bind` / `registry_revision` so Codex, downstream consumer projects, and OpenCLI do not conflict.
+6. Use the authorization receipt schema, update receipt, rollback pointer, and evidence redaction so user-level tools are auditable, rollbackable, and resumable.
 
-The target is not to add more always-visible tools. The target is to reduce token pressure and safety risk by routing work through the smallest sufficient surface:
+Non-goals: hard-loading every MCP or skill; disabling useful browser/OpenCLI/WeCom capability merely to hide token pressure; mutating `C:\Users\lenovo\.codex` without receipts; reading cookies, tokens, raw browser data, WeCom message contents, or human-owned Chrome assets without current authorization.
 
-1. low token and low risk surfaces first;
-2. high token or high risk surfaces only when the task requires them;
-3. operations involving user-sensitive data require explicit user authorization;
-4. all long-lived user-level helpers are pinned, auditable, updateable, and rollbackable;
-5. this plan governs Codex user-level and cross-project reusable capability only. PyCharm may host a terminal or consumer project, but PyCharm IDE integration is out of scope.
-
-The plan implements both MCP governance and skills governance. It adds `mcp2cli` for MCP tool surfaces and `skills2cli` for Codex skill surfaces.
-
-## 2. Reference sources and implementation disposition
-
-Implement now:
-
-- `mcp2cli`: user-level MCP CLI facade and low-token MCP discovery/call surface.
-- `skills2cli`: new local clean-room helper for skill index/search/show/profile suggestion and warning audit.
-- `chrome-devtools-mcp`: promote from project-local/default usage into user-level managed browser automation.
-- `CDP Bridge`: keep as user-level browser bridge with inspect-first defaults and explicit authorization for sensitive operations.
-- `OpenCLI`: install as on-demand user-level adapter candidate, not as an always-on default.
-- `CLI-Anything` and CLI-Anything Hub: install as user-level harness-generation/reference tooling, then use it to help design `wecom-cli`.
-- `The Harness Problem`: use as the editing/harness reliability reference for future hash-anchored edit experiments.
-- `oh-my-pi`: reference-only Pi family / harness / UX source; real sidecar install, receipts, updates, and rollback rules move to `pi_plugin_codex_user_level_sidecar_plan.*`.
-
-Reference only for later Codex CLI personal production durable team design:
-
-- `ohmyopenagent`: reference source for OpenAgent-style multi-agent prompts and runtime ideas.
-- `snow-cli`: reference source for CLI product shape and operator interaction design.
-
-## 3. User-level runtime layout
-
-Use this layout unless a later implementation change explicitly replaces it:
+## 3. Runtime architecture
 
 ```text
-C:\Users\lenovo\.codex\external\mcp2cli\
-C:\Users\lenovo\.codex\external\cli-anything\
-C:\Users\lenovo\.codex\external\opencli\
-C:\Users\lenovo\.codex\tools\mcp2cli\
-C:\Users\lenovo\.codex\tools\skills2cli\
-C:\Users\lenovo\.codex\tools\codex-port\
-C:\Users\lenovo\.codex\tools\browser-automation\
-C:\Users\lenovo\.codex\tools\wecom-cli\
-C:\Users\lenovo\.codex\state\mcp2cli\
-C:\Users\lenovo\.codex\state\skills2cli\
-C:\Users\lenovo\.codex\state\ports\
-C:\Users\lenovo\.codex\state\browser-automation\
-C:\Users\lenovo\.codex\state\wecom-cli\
-C:\Users\lenovo\.codex\state\tool-updates\
+Codex session -> repo-local policy/checkers/OpenSpec -> user-level helper facade
+  -> skills2cli -> mcp2cli -> codex-port -> browser lane -> CLI-Anything -> wecom-cli
 ```
 
-Repository source of truth remains in this repository. User-level files are install artifacts. Any installer must generate or sync user-level copies from repo-local source and must keep receipts.
+Default user-level paths include `C:\Users\lenovo\.codex\tools\skills2cli\`, `C:\Users\lenovo\.codex\tools\mcp2cli\`, `C:\Users\lenovo\.codex\tools\codex-port\`, `C:\Users\lenovo\.codex\tools\browser-automation\`, `C:\Users\lenovo\.codex\tools\wecom-cli\`, and matching state directories under `C:\Users\lenovo\.codex\state\`.
 
-## 4. Token and risk priority model
+## 4. Codex usage model
 
-Use this priority order when multiple surfaces can solve the same task:
+1. Use repo-local policy, checkers, and docs to decide whether MCP, skills, browser automation, or CLI harness capability is needed.
+2. For discovery, use compact JSON from `skills2cli index/search/show` or `mcp2cli list/search/show`.
+3. For real MCP calls or browser writes, create an authorization receipt first.
+4. For ports, use `codex-port lease reserve --owner codex --purpose <tool> --port auto`.
+5. For OpenCLI, require `--port auto`, owner registry, and receipt.
+6. For WeCom, prefer API/Webhook; GUI automation requires explicit user authorization and a global WXWork lease.
 
-| Priority | Surface | Token cost | Safety risk | Default behavior |
-|---|---|---:|---:|---|
-| 1 | `skills2cli search/show`, `mcp2cli list/search` | Low | Low | Allowed by default |
-| 2 | direct repo scripts/checkers | Low | Low | Allowed by default |
-| 3 | `mcp2cli call` for non-sensitive MCP tools | Medium | Medium | Allowed after tool/category check |
-| 4 | `chrome-devtools-mcp` isolated/session profile | Medium | Medium | Allowed for local/debug tasks |
-| 5 | CDP Bridge read-only scan/screenshot/tab inventory | Medium | Medium | Inspect-first only |
-| 6 | OpenCLI bound browser session | High | High | Explicit browser-lane authorization |
-| 7 | project-profile with login state | High | High | Explicit project-profile authorization |
-| 8 | human-owned Chrome or WXWork GUI write actions | High | Critical | Explicit one-task authorization required |
+## 5. Repo-local source of truth
 
-Sensitive operations include reading cookies, tokens, passwords, private chats, personal tabs, personal Chrome profile data, WeCom messages, or performing clicks/typing/sends in a logged-in app.
-
-## 4.1 User-level port governance
-
-Port ownership is governed by range, registry, and lease instead of hard-coded per-tool defaults.
-
-Default ranges:
-
-| Range | Owner | Purpose |
+| Category | Repo-local source | User-level artifact |
 | --- | --- | --- |
-| `39000-39299` | Codex | MCP facade, `skills2cli`, and low-risk user-level helpers. |
-| `39300-39499` | Codex | OpenCLI on-demand browser adapter. |
-| `39500-39699` | Codex | Browser automation, including managed `chrome-devtools-mcp` wrappers. |
-| `39700-39999` | Codex | Reserved user-level Codex expansion. |
-| `40000-40999` | OpenClaw | OpenClaw project services and OpenClaw-managed local control plane. |
-
-Rules:
-
-- OpenClaw ports are intentionally after Codex ports; Codex must not allocate from `40000-40999`.
-- OpenClaw must not allocate from `39000-39999` after migration; existing legacy OpenClaw ports are imported as `legacy_reserved` until migrated.
-- All managed local services bind to `127.0.0.1` by default; `0.0.0.0` requires a separate explicit security review and one-task approval.
-- Smoke tests and short-lived probes should use OS-assigned ephemeral ports (`port=0`) unless a stable lease is required.
-- OpenCLI has no fixed port in this plan. It must request `--port auto` through the port allocator and receive a lease in the `39300-39499` range.
-- `chrome-devtools-mcp` managed wrappers must request browser-automation ports from `39500-39699` unless the upstream tool uses stdio only.
-- A wrapper must check both the registry and the live listening socket table before binding; on conflict it selects the next allowed port, never kills the process holding the port.
-- Stale leases can be reclaimed only when the recorded PID is gone or a read-only health check proves the owner is no longer alive.
-
-Registry path:
-
-`C:\Users\lenovo\.codex\state\ports\registry.json`
-
-Minimum registry fields:
-
-- `owner`: `codex`, `openclaw`, or `external_reserved`;
-- `project` or `project_slug`;
-- `tool`;
-- `host`;
-- `port`;
-- `lease_id`;
-- `pid`;
-- `created_at`;
-- `renewed_at`;
-- `ttl_seconds`;
-- `lease_expiry`;
-- `owner_session`;
-- `purpose`;
-- `status`: `pending_bind`, `active`, `stale`, `legacy_reserved`, or `released`.
-- `registry_revision`: monotonic registry version used to detect stale concurrent writes.
-
-### 4.1.1 Port allocator minimum CLI contract
-
-The allocator must be a user-level wrapper generated or synced from repository source. Do not scatter temporary port probing logic across individual tool wrappers.
-
-Minimum commands:
-
-```text
-codex-port lease reserve --owner codex --project <slug> --tool <tool> --range <range-name> --purpose <text> --ttl <seconds> --json
-codex-port lease renew --lease-id <lease-id> --owner-session <session-id> --ttl <seconds> --json
-codex-port lease release --owner-session <session-id> --port <port> --json
-codex-port lease list --owner codex --json
-codex-port lease import-legacy --owner openclaw --port <port> --purpose <text> --json
-codex-port lease gc --dry-run --json
-```
-
-Port-governance decision table:
-
-| Case | Required behavior |
-| --- | --- |
-| Registry says free, but live socket is already listening | Treat the port as occupied, skip to the next allowed port, and record a collision warning. |
-| Registry says active, but PID is gone | Mark `stale`; reuse only after a read-only PID or health evidence record exists. |
-| Registry contains an expired `pending_bind` lease | Reclaim only after its session cannot complete binding and the provisional-lease timeout evidence is recorded. |
-| Registry says `legacy_reserved` | Never allocate automatically; require an explicit migration or release receipt. |
-| Requested range does not match owner | Fail closed, for example Codex requesting `40000-40999` or OpenClaw requesting `39000-39999` after migration. |
-| Release request lacks the matching owner session | Fail closed and keep the lease. |
-
-Read/write boundary:
-
-- `list` and `gc --dry-run` are read-only and allowed by default.
-- `reserve`, `renew`, `release`, `import-legacy`, and non-dry-run `gc` are write operations and must write receipts under `C:\Users\lenovo\.codex\state\ports\receipts\`.
-- The allocator must never terminate processes. Process cleanup belongs to the owning wrapper and requires separate evidence and authorization.
-
-### 4.1.2 Concurrent-session allocation and crash recovery
-
-Multi-project and multi-session use requires an atomic registry lifecycle, not only a port-range convention:
-
-- Each registry mutation must take a short-lived exclusive lock at `C:\Users\lenovo\.codex\state\ports\registry.lock` or an equivalent lock surface, validate the current `registry_revision`, write a temporary file, and atomically replace `registry.json`.
-- `reserve` first records a unique `lease_id` with `status=pending_bind` and a short timeout. The owning wrapper then binds the socket and promotes the lease to `active`; if binding loses a race, it marks that lease released/collided and reserves another allowed port.
-- The registry lock must be released before launching a browser, opening a listening socket, performing network I/O, or running a health probe; it serializes state updates, not long-running tool work.
-- Long-lived managed services must call `renew` before expiry. An expired `active` lease is not reusable until PID or read-only health evidence confirms that the previous owner is no longer live.
-- A normal wrapper shutdown must call `release`. A crashed session leaves an evidence-gated stale or expired lease for `gc`; another session must never release or renew a lease it does not own.
-- Corrupt registry content, failed atomic replacement, or lock ownership ambiguity must fail closed, retain a recovery copy, and block new allocation until repaired or explicitly recovered.
-
-## 5. `mcp2cli` implementation lane
-
-Goal: reduce Codex MCP tool-list pressure by converting selected MCP surfaces into low-token CLI discovery and calls.
-
-Implementation:
-
-- Install `mcp2cli` in an isolated user-level runtime, not global Python.
-- Pin the installed version or git commit in `C:\Users\lenovo\.codex\state\tool-updates\mcp2cli.lock.json`.
-- Provide a wrapper command under `C:\Users\lenovo\.codex\tools\mcp2cli\mcp2cli.cmd` or `.ps1`.
-- Add a local registry of MCP endpoints allowed for CLI facading.
-- Do not expose high-risk MCP servers by default.
-- CLI output must default to compact summaries; full schemas require explicit `--full`.
-- Calls that access secrets, browsers, shell, remote infrastructure, or personal data require authorization gates.
-
-Minimum commands:
-
-```text
-mcp2cli list --profile <profile> --json
-mcp2cli search <query> --profile <profile> --json
-mcp2cli show <tool> --profile <profile> --json
-mcp2cli call <tool> --profile <profile> --json --args <json>
-```
-
-## 6. `skills2cli` implementation lane
-
-Goal: resolve the recurring `Exceeded skills context budget of 2%` warning by making most skills discoverable on demand instead of always visible.
-
-Implementation:
-
-- Build a clean-room helper from repo-local source; do not fork `mcp2cli`.
-- Scan repo, user, system, and plugin `SKILL.md` files into a local index.
-- Store raw index under user-level state; only sanitized summaries may be committed to this repository.
-- Integrate with the existing skills usage audit plan and soft-load/profile helper rules.
-- Keep one small always-visible skill/profile entry that can route to `skills2cli`.
-
-Minimum commands:
-
-```text
-skills2cli index --json
-skills2cli search <query> --json
-skills2cli show <skill-id> --json
-skills2cli profile suggest --task <text> --json
-skills2cli audit warnings --since <duration> --json
-```
-
-`skills2cli` must not apply or disable skills by itself. It recommends profiles and produces evidence; profile application remains a separate governed action.
-
-## 7. User-level browser automation lane
-
-Promote browser automation to a user-level, multi-project, multi-session lane.
-
-Browser assets are exactly these three classes:
-
-1. `isolated-session-managed`: temporary Codex-managed browser profile; may be cleaned after ownership and staleness are proven.
-2. `project-profile`: long-lived project-managed profile; may contain project bookmarks, extensions, and test login state; must not be auto-deleted.
-3. `human-owned-personal-asset`: user's personal Chrome; must not be auto-taken-over, auto-cleaned, or treated as Codex-managed.
-
-Adapters:
-
-- `chrome-devtools-mcp`: user-level managed wrapper, preferred for local/debug browser work.
-- `CDP Bridge`: user-level inspect-first bridge; write actions require owner and authorization checks.
-- `OpenCLI`: optional on-demand adapter for website/browser-to-CLI use cases; not default and not always loaded.
-
-Required owner states:
-
-```text
-owner=codex-managed-isolated
-owner=codex-managed-project
-owner=human-owned
-owner=human-delegated
-```
-
-Rules:
-
-- One tab can have only one automation owner at a time.
-- One `project-profile` can be controlled by only one session at a time.
-- `human-owned-personal-asset` can become `human-delegated` only for one tab, one task, and the current session.
-- User-sensitive reads and all writes/clicks/typing in logged-in contexts require explicit user authorization.
-- Cleanup must never target human-owned Chrome.
-
-## 8. `chrome-devtools-mcp` promotion
-
-Current state: `chrome-devtools-mcp` exists in user-level Codex config, but it is effectively a bare entry and not yet fully managed for multi-project/multi-session use.
-
-Implementation:
-
-- Replace bare startup with a user-level managed wrapper.
-- Wrapper supports:
-  - `--mode isolated-session`;
-  - `--mode project-profile --project <slug>`;
-  - lease writing;
-  - stale scan;
-  - max active instance limit;
-  - safe cleanup that only targets known managed profiles.
-- Keep the direct Codex MCP entry for `chrome-devtools`; do not route it through MCP Router.
-
-## 9. CDP Bridge and OpenCLI user-level adaptation
-
-CDP Bridge:
-
-- Keep installed as a user-level direct Codex MCP server.
-- Default lane is read-only inventory, DOM scan, screenshots, and tab listing.
-- Cookie reads, JS writes, clicks, typing, navigation in personal tabs, or sensitive contexts require authorization.
-
-OpenCLI:
-
-- Install as a user-level external tool and wrapper, not as an always-on Codex tool list expansion.
-- Use only through the browser owner registry.
-- Never bind a human-owned Chrome tab without explicit one-task authorization.
-- Prefer `isolated-session-managed` or `project-profile` over human-owned sessions.
-
-## 10. Codex reusable governance harness reference boundary
-
-Goal: capture reusable harness, UX, hash-anchored edit, and reliability ideas from `oh-my-pi` and `The Harness Problem` as Codex governance references, without installing or starting any Pi family runtime in this plan.
-
-This plan keeps only the reference boundary:
-
-- `oh-my-pi` is a Pi family / harness / UX reference source only. This plan must not create a user-level `oh-my-pi` wrapper, install root, updater, or runtime state.
-- `The Harness Problem` is a research reference for hash-anchored editing, harness reliability, and recoverable failure design. It is not evidence that a tool capability is implemented.
-- Implementation rules for Pi, `oh-my-pi`, `omp`, `pi-plugin-codex`, binary overrides, RPC smoke, job state, read-only guard, update receipts, and rollback pointers belong to `pi_plugin_codex_user_level_sidecar_plan.*`.
-- The reusable governance patterns that remain here are pinned references, receipt-first updates, smoke-before-active, rollback-ready installs, reference-only defaults, explicit authorization for sensitive actions, and repo-local source of truth.
-- The Codex main session remains the leader. Reference sources, skills profiles, and CLI harness helpers are not native subagents and are not durable backends.
-
-Check requirements:
-
-- This main governance plan must not describe `oh-my-pi` as a directly installed user-level tool owned by this plan.
-- This main governance plan must not describe `oh-my-pi`, Pi, or OMP as replacements for Codex, native subagents, native_omx, or LangGraph.
-- To implement a Pi family sidecar, switch to `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.*` and follow its receipt, read-only guard, and rollback rules.
-
-## 11. CLI-Anything and WeCom / WXWork implementation lane
-
-Goal: install CLI-Anything at user level as harness-generation/reference tooling and build a governed `wecom-cli` for enterprise WeChat.
-
-Implementation-time local fact handling: `WXWork.exe` has been observed as the target enterprise WeChat process name, but process presence and install path are dynamic local facts. Each `wecom-cli` implementation step, smoke test, or GUI task must refresh them through read-only process/window inventory before relying on them.
-
-Fact refresh rule:
-
-- repository evidence may record process name, owner class, presence, and a redacted path summary;
-- repository evidence must not record the full local install path, message contents, or raw window data;
-- absence of a running `WXWork.exe` blocks only process/window inventory or GUI automation tests, not API/Webhook design work;
-- GUI automation remains `disabled` unless a fresh process/window inventory, global WXWork lease, and one-task authorization receipt all exist.
-
-Installation/adaptation:
-
-- Install CLI-Anything / CLI Hub in user-level isolated runtime.
-- Do not hard-load all CLI-Anything skills into Codex context.
-- Use CLI-Anything to guide harness structure, not to bypass local authorization rules.
-- Generate or maintain `wecom-cli` as a governed harness under user-level tools with repo-local source.
-
-`wecom-cli` stages:
-
-1. API/Webhook layer, low risk:
-   - send webhook notifications;
-   - send app messages through official API where credentials are available;
-   - secrets stored only in user-level secret storage.
-2. Process/window inventory layer, medium risk:
-   - list `WXWork.exe` processes;
-   - list windows and titles;
-   - report foreground state.
-3. GUI automation layer, high risk:
-   - attach to a specific WXWork process/window;
-   - click/type/send/read visible chat content;
-   - requires explicit one-task user authorization and a global WXWork lease.
-
-Minimum commands:
-
-```text
-wecom-cli process list --json
-wecom-cli window list --json
-wecom-cli webhook send --text <text> --json
-wecom-cli app-message send --to <target> --text <text> --json
-wecom-cli gui attach --pid <pid> --json --require-human-authorization
-```
-
-Multi-session rule: API/Webhook commands may run concurrently if secret access is permitted; GUI automation is globally serialized because there is one WXWork desktop session.
-
-Update strategy:
-
-- CLI-Anything updates do not automatically rewrite `wecom-cli`.
-- `wecom-cli` updates require tests, authorization policy checks, and rollback receipts.
-- GUI automation changes require a manual smoke test marker before becoming active.
-
-## 12. Reference-only items
-
-`ohmyopenagent` and `snow-cli` remain reference-only.
-
-Allowed use:
-
-- review architecture ideas;
-- compare CLI UX;
-- inform future Codex CLI personal production durable team design.
-
-Disallowed for this plan:
-
-- no dependency install;
-- no code copy;
-- no default skill/profile inclusion;
-- no runtime integration.
-
-## 13. Readiness gates and acceptance criteria
-
-Status flow:
-
-`planned -> implemented-local -> installed-user-level -> smoke-tested -> active -> rollback-ready`
-
-The status names are operational states, not marketing labels:
-
-- `planned`: the OpenSpec change, file ownership, test target, and rollback target are known.
-- `implemented-local`: repository code, docs, and tests exist on a feature branch or worktree.
-- `installed-user-level`: the user-level wrapper or helper exists outside the repository source tree with a receipt.
-- `smoke-tested`: the user-level wrapper has passed a minimal read-only or fail-closed command in the intended shell.
-- `active`: the tool may be used by default within its allowed lane and authorization boundary.
-- `rollback-ready`: the receipt contains enough version, path, command, and backup evidence to revert without guessing.
-
-Default lane-state table:
-
-| Lane | Initial default state | Allowed default actions | Forbidden or approval-gated actions | Evidence required before `active` |
+| policy | `docs_bilingual/governance/*`, `openspec/specs/*` | generated launcher/helper config |
+| plan | `docs_bilingual/implementation_plans/*` | none |
+| checker | `tools/check_*.py`, `tools/ci/local_gate.ps1` | optional installed wrapper |
+| helper source | repo-local tools/templates | `C:\Users\lenovo\.codex\tools\...` |
+| receipt schema | docs + tests | redacted runtime JSON receipt |
+
+## 6. Installation and update evidence contract
+
+Every user-level install action must create an update receipt. Without receipt evidence a lane can be only `planned` or `implemented-local`, not `active`.
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| tool name | yes | lane id |
+| installed version | yes | commit, tag, or package version |
+| source URL | yes | no token |
+| install path | yes | runtime install target |
+| wrapper path | yes | user-level wrapper |
+| state path | yes | runtime state root |
+| smoke test command | yes | repeatable |
+| smoke test result | yes | pass/fail + timestamp |
+| updater command | yes | pin-aware |
+| rollback pointer | yes | previous version or backup path |
+| owner lane | yes | `skills2cli`, `mcp2cli`, `browser`, `wecom-cli`, etc. |
+
+Runtime receipts must not contain secrets, cookies, tokens, raw browser data, WeCom message contents, or complete plugin description dumps.
+
+## 7. Token and risk priority model
+
+| Priority | Surface | Token | Risk | Default action |
 | --- | --- | --- | --- | --- |
-| `skills2cli` | `implemented-local`; eligible for user-level `active` only after a later governed wrapper/install receipt | Compact read-only index/search/show/warning summaries | Applying/disabling skills, dumping complete plugin skill bodies, recording full private paths | Compact-output tests, warning-audit redaction tests, evidence that profile suggestions do not apply changes |
-| `mcp2cli` | `implemented-local`; eligible for user-level `active` only after later governed wrapper/install receipt and live adapter slices | list/search/show; non-sensitive calls through category-checked local guard facade | Secrets, shell, browser state, remote mutation, payment/account/personal-data calls | Allowed-profile registry, sensitive-call fail-closed checker, authorization receipt schema |
-| `codex-port` allocator | `implemented-local`; eligible for user-level `active` only after governed wrapper/install receipt and smoke evidence | range-aware lease reserve/list/renew/release/import/gc | cross-owner range allocation, killing port holders, non-atomic registry writes, silent stale reuse | owner-range tests, live-socket collision fixtures, lease receipt schema, stale PID/health evidence |
-| `chrome-devtools-mcp` | `implemented-local` for isolated-session, project-profile, stale scan, and cleanup dry-run wrappers; live user-level start and real cleanup remain `planned` | isolated-session / project-profile local-debug inspection with owner leases, authorization gates, dry-run start plans, stale scan, and cleanup dry-run | human-owned Chrome, unauthorized logged-in project profiles, live start, real cleanup | Managed wrapper, leases, profile ownership, project-profile retention, stale-cleanup dry-run evidence |
-| CDP Bridge | `on-demand` | tab list, DOM scan, screenshot, read-only inventory | cookies, JavaScript write, click/type/navigate in sensitive context | owner check, authorization gate, read/write separation tests |
-| OpenCLI | `on-demand` | explicit isolated or project-profile task adaptation | default binding to human-owned tabs or always-on loading | wrapper pin, browser owner registry, human-owned protection tests |
-| `oh-my-pi` / `The Harness Problem` references | `reference-only` | architecture, UX, hash-anchored edit, and harness reliability reference reading | replacing Codex, replacing native subagents, installing Pi family runtime in this plan | Pi sidecar implementation delegated to `pi_plugin_codex_user_level_sidecar_plan.*`; this plan keeps only the reference boundary |
-| CLI-Anything | `reference-only` | harness-structure reference and generation aid | bulk hard-loading skills or bypassing authorization rules | isolated install receipt, update pin, rollback evidence |
-| `wecom-cli` API/Webhook | `planned` | low-risk notifications/API sends when secrets are available and governed | plaintext credentials without secret storage or unredacted logs | secret redaction, webhook/app-message smoke, receipt |
-| `wecom-cli` process/window inventory | `planned` | read-only process/window/foreground-state inventory | message-content capture, click, type, send | process/window fixture or smoke, no-content-capture tests |
-| `wecom-cli` GUI automation | `disabled` | no default actions | read/send/click/type unless one-task approval and a global lease both exist | global WXWork lease, one-task authorization receipt, manual smoke marker |
+| P0 | repo docs/checkers | low | low | read directly |
+| P1 | `skills2cli index/search` | low | low | compact summary |
+| P1 | `mcp2cli list/search/show` | low | low | compact summary |
+| P2 | browser tab inventory | medium | medium | read-only with owner evidence |
+| P2 | OpenCLI discovery | medium | medium | on-demand with port lease |
+| P3 | MCP call / browser JS / cookies | high | high | authorization receipt required |
+| P3 | `wecom-cli gui attach` | high | high | disabled by default |
 
+## 8. User-level port governance
 
-Lane-specific `active` criteria:
+The port registry is managed by `codex-port` and must support `registry_revision`, atomic writes, `pending_bind`, lease renewal, and crash recovery.
 
-- `skills2cli`: `index`, `search`, `show`, and warning-audit summary commands work; default output is compact; output does not leak private full paths, cookies, tokens, or full plugin skill descriptions.
-- `mcp2cli`: allowed profiles are explicit; list/search/show output is compact by default; sensitive calls fail closed unless a matching authorization receipt is present.
-- `codex-port`: port registry/lease enforcement keeps Codex/OpenClaw ranges separated, concurrent reserves are atomic, active owners renew leases, OpenCLI receives only allocator-driven `--port auto` leases, and every write action has a rollback-ready receipt.
-- `chrome-devtools-mcp`: the wrapper writes a lease; isolated-session-managed and project-profile modes are distinct; human-owned Chrome is protected; stale-cleanup dry-run passes before cleanup is allowed.
-- CDP Bridge: read-only inspection is separated from write-capable actions; every write or sensitive read requires owner evidence and authorization evidence before execution.
-- OpenCLI: remains on-demand until installation pinning, profile binding, and the rule blocking unauthorized human-owned tabs are implemented and tested.
-- `oh-my-pi` / `The Harness Problem` references: remain permanently reference-only here; every Pi family sidecar install, updater, smoke, or rollback rule is handled by `pi_plugin_codex_user_level_sidecar_plan.*`.
-- CLI-Anything: remains harness-generation support until installation receipts, update pins, and rollback evidence exist.
-- `wecom-cli` GUI automation: remains disabled until process/window inventory, a global WXWork lease, and one-task authorization receipts are implemented and tested.
+| Owner | Range | Notes |
+| --- | --- | --- |
+| Codex general helpers | `39000-39299` | default Codex user-level helper range |
+| Codex browser/OpenCLI | `39300-39499` | OpenCLI must use `--port auto` |
+| Reserved local bridge | `39500-39999` | future use |
+| Downstream consumer project range | `40000-40999` | consumer ports come after Codex |
 
-Acceptance criteria for this plan:
+| Command | Purpose | Receipt |
+| --- | --- | --- |
+| `codex-port registry show --json` | read registry | no write |
+| `codex-port lease reserve --owner <name> --port auto --json` | auto allocate | lease receipt |
+| `codex-port lease renew --lease-id <id> --json` | renew | updated lease |
+| `codex-port lease release --lease-id <id> --json` | release | completed receipt |
+| `codex-port import-legacy --owner openclaw --json` | import old ports | migration receipt |
+| `codex-port gc --dry-run --json` | stale scan | no write |
+| `codex-port gc --apply --json` | stale cleanup | evidence-gated write |
 
-- every lane has a documented default state: `active`, `on-demand`, `reference-only`, or `disabled`;
-- every user-level installed tool has an update receipt and rollback pointer;
-- every shared local listener uses the port allocator, records a port lease receipt, and avoids fixed ports except documented `legacy_reserved` entries;
-- concurrent port reservations are serialized through atomic registry writes and provisional-bind handling, with crash recovery proven before reuse;
-- every sensitive lane has a fail-closed checker or wrapper guard;
-- every browser automation lane records owner class before actions that can read or mutate state;
-- no repository evidence stores secrets, cookies, raw browser data, full personal runtime paths, or complete plugin description dumps.
+## 9. `skills2cli` lane contract
+
+| Command | Default output | Risk gate |
+| --- | --- | --- |
+| `skills2cli index --json` | id, source layer, summary hash, availability | no full body |
+| `skills2cli search <query> --json` | compact matches | no full body |
+| `skills2cli show <id> --json` | bounded summary + path hint | `--full` required for expansion |
+| `skills2cli profile suggest --task <text> --json` | recommendation only | never direct apply |
+| `skills2cli audit warnings --since <duration> --json` | 2% budget and skipped-loading summary | redacted paths |
+
+## 10. `mcp2cli` lane contract
+
+| Operation | Default | Required evidence |
+| --- | --- | --- |
+| list/search/show | compact JSON | profile registry |
+| low-risk read-only call | allowed | allowlist |
+| medium-risk call | gated | task scope + owner |
+| sensitive call | fail closed | authorization receipt schema |
+| write/mutate call | fail closed | current user approval + receipt |
+
+## 11. Browser automation and Chrome/DevTools/CDP/OpenCLI lane
+
+| Asset class | Profile | Bookmarks/extensions | Default permission | Cleanup |
+| --- | --- | --- | --- | --- |
+| `isolated-session-managed` | per-session temp profile | none | safest automation | automatic cleanup allowed |
+| `project-profile` | per-project managed profile | optional imported baseline | project automation | stale scan + dry-run |
+| human-owned asset | user's own Chrome | real bookmarks/extensions/cookies | human-owned | never automatic cleanup |
+
+`chrome-devtools-mcp`, CDP Bridge, and OpenCLI are inspect/read-only first. Navigate, click, type, JavaScript, cookies, downloads, uploads, account data, CRM, email, calendar, Drive, Slack, HubSpot, or WeCom data require a current one-task authorization receipt.
+
+## 12. CLI-Anything and `wecom-cli` lane
+
+| Phase | Scope | Default |
+| --- | --- | --- |
+| API/Webhook MVP | webhook send, app-message send, secret redaction | planned |
+| Inventory | `WXWork.exe` process list, window list | read-only |
+| GUI attach | attach, click, type, read UI state | disabled |
+| GUI write | send message / mutate state | one-task authorization + global WXWork lease |
+
+## 13. Reference-only items and external-source boundary
+
+| Reference | Use | Not allowed |
+| --- | --- | --- |
+| The Harness Problem | hash-anchored edit reliability | no unaudited import |
+| `oh-my-pi` | Pi family / UX / sidecar reference-only | no install here |
+| `ohmyopenagent` | future durable-team reference | no implementation here |
+| `snow-cli` | CLI product-shape reference | no implementation here |
 
 ## 14. Sensitive authorization matrix
 
-| Action | Default | Required authorization evidence |
-| --- | --- | --- |
-| Skill index/search/show | Allowed | None; output must stay compact and redacted. |
-| Skill warning audit summary | Allowed | None; warning text must be summarized without dumping full skill bodies. |
-| MCP list/search/show | Allowed | Tool must belong to an allowed profile registry entry. |
-| MCP call without secrets, side effects, remote mutation, or personal data | Conditional | Allowed tool category plus compact output policy. |
-| MCP call with secrets, shell execution, browser state, remote infrastructure mutation, payment/account action, or personal data | Blocked by default | Explicit one-task approval plus receipt containing tool, purpose, scope, and expiry. |
-| Chrome isolated-session-managed local debugging | Allowed | Managed lease and isolated profile path. |
-| Chrome project-profile with login state | Blocked by default | Project-profile approval plus owner lease; no cross-project reuse without a new lease. |
-| Human-owned Chrome read or write | Blocked by default | One-tab, one-task, current-session delegation; no background browsing of personal assets. |
-| CDP Bridge or OpenCLI click/type/navigate/cookie/JavaScript write | Blocked by default | Owner check plus explicit approval naming the target and allowed action. |
-| WXWork process/window inventory | Allowed read-only | No message content captured; no click/type/send actions. |
-| WXWork message read/send/click/type | Blocked by default | One-task approval plus global WXWork lease and receipt. |
+The authorization receipt schema requires action, target, scope, expiry, session, and operator confirmation.
 
-Authorization receipts must be short-lived. A receipt for one browser tab, one WXWork task, one MCP call family, or one shell-capable tool does not authorize unrelated future tasks.
-
-## 15. Installation and update evidence contract
-
-Every user-level installed tool in this plan must write a receipt under:
-
-`C:\Users\lenovo\.codex\state\tool-updates\`
-
-Required receipt fields:
-
-- tool name;
-- installed version, git commit, package version, or package lock hash;
-- source URL;
-- install path;
-- wrapper path;
-- state path;
-- smoke test command and result;
-- updater command;
-- rollback pointer;
-- last updated time;
-- status: `active`, `on-demand`, `reference-only`, or `disabled`;
-- owner lane: `skills2cli`, `mcp2cli`, `codex-port`, `browser`, `cli-anything`, `wecom-cli`, or `reference`. The Pi family / `oh-my-pi` owner lane belongs to `pi_plugin_codex_user_level_sidecar_plan.*`.
-
-Repository evidence may record the receipt schema, relative state names, status, and sanitized smoke-test summaries. It must not record secrets, cookies, tokens, raw browser data, message contents, or full personal runtime paths.
-
-Port lease receipts are operational receipts under `C:\Users\lenovo\.codex\state\ports\receipts\`. They do not replace install/update receipts under `tool-updates`; instead the install/update receipt must reference the relevant port-registry range, allocator wrapper, and lease receipt schema when a tool can open a local listener.
-
-Update rule:
-
-- updater commands must be pinned or version-aware;
-- an update that changes wrapper behavior must re-run smoke tests and authorization guard tests;
-- a failed smoke test must leave the previous installed version selected;
-- rollback must be possible from the receipt without re-reading chat history.
-
-## 16. Comet implementation split: OpenSpec WHAT + Superpowers HOW
-
-Implement this plan through the complete `/comet` path: every small change must first define OpenSpec WHAT, then split HOW into locally verifiable, rollbackable, archivable execution items. Complete Comet also requires explicit Design/Plan evidence rather than downgrading documentation changes to tweak-only execution.
-
-### 16.1 Full Comet phase gates
-
-| Phase | Gate | Evidence | Return when failed |
+| Action | Risk | Default | Required receipt |
 | --- | --- | --- | --- |
-| Open / Initiating | scope / non-goals / owned files / rollback boundary | proposal or change note | return-open |
-| Design / Planning | trade-offs, ownership boundary, authorization boundary, failure modes | Superpowers design doc + delta spec | return-design |
-| Build / Executing | patch + local checks + plan task evidence | Superpowers implementation plan + changed paths + checker output | return-build |
-| Verify / Controlling | precommit gate + OpenSpec guard + local gate + local MR review | verification report + pass/fail evidence | return-build or return-design |
-| Archive / Closing | stable spec/archive or explicit deferral | archive receipt or deferral note | return-verify |
+| compact list/search/show | low | allowed | none |
+| read-only browser inventory | medium | allowed with owner evidence | owner lease |
+| MCP sensitive call | high | fail closed | authorization receipt |
+| CDP Bridge click/type/JS/cookies | high | fail closed | one-task authorization receipt |
+| OpenCLI write/navigation | high | fail closed | authorization receipt + port lease |
+| `wecom-cli` GUI write | high | disabled | authorization receipt + global WXWork lease |
 
-Default split:
+## 15. Runtime state contract
 
-1. policy and checker baseline for token-risk priority, port registry/lease rules, browser asset classes, sensitive authorization, update receipts, and evidence redaction;
-2. `skills2cli` MVP: index/search/show plus warning-audit summary with compact output tests;
-3. `mcp2cli` user-level wrapper and allowed profile registry;
-4. browser owner registry plus `chrome-devtools-mcp` managed wrapper for isolated-session-managed and project-profile modes;
-5. CDP Bridge and OpenCLI on-demand enforcement, including human-owned tab protection;
-6. Codex reusable harness reference boundary: extract only governance patterns from `oh-my-pi` and `The Harness Problem`, and delegate Pi family sidecar install/update/rollback work to `pi_plugin_codex_user_level_sidecar_plan.*`;
-7. CLI-Anything install/update receipts and harness-generation boundary;
-8. `wecom-cli` API/Webhook MVP with secret redaction;
-9. `wecom-cli` process/window inventory with read-only evidence;
-10. `wecom-cli` gated GUI automation with global WXWork lease and one-task authorization receipts.
+| State | Meaning | Entry condition |
+| --- | --- | --- |
+| planned | plan only | docs or OpenSpec exists |
+| implemented-local | repo-local helper/checker exists | tests pass |
+| installed-user-level | user-level artifact exists | update receipt exists |
+| smoke-tested | user-level smoke passed | smoke test result is pass |
+| on-demand | can be enabled when needed | receipt and rollback pointer exist |
+| active | default usable or currently enabled | all readiness gates pass |
+| disabled | disabled | explicit reason exists |
+| reference-only | reference source only | no runtime path |
+| rollback-ready | quick rollback possible | rollback pointer verified |
 
-OpenSpec slice delivery matrix:
+State invariants: no wrapper path + smoke test result + rollback pointer means not `active`; no authorization receipt means sensitive actions fail closed; no port lease means OpenCLI/browser listener cannot start.
+
+## 16. Comet Management Record template
+
+```markdown
+# Comet Management Record
+## Open / Initiating
+- [ ] Value / why is stated.
+- [ ] Success criteria are stated.
+- [ ] Stakeholders and constraints are identified.
+## Design / Planning
+- [ ] Delivery tailoring is recorded.
+- [ ] Risks and assumptions are recorded.
+- [ ] Acceptance evidence path is defined.
+## Build / Executing
+- [ ] Execution mode is selected.
+- [ ] Quality evidence is recorded.
+- [ ] Current blockers are cleared or have a handling decision.
+## Verify / Controlling
+- [ ] Variance review is complete.
+- [ ] Risk/change impact is assessed.
+- [ ] Control decision is recorded.
+## Archive / Closing
+- [ ] Value outcome is summarized.
+- [ ] Lessons learned are recorded.
+- [ ] Archive/sync/deferral decision is confirmed.
+## Monitoring Loop
+- [ ] Current phase facts are checked.
+- [ ] Return/no-return decision is made.
+```
+
+## 17. Phase gate matrix
+
+| Comet phase | PM focus | Gate | Evidence | Return |
+| --- | --- | --- | --- | --- |
+| Open | initiating | scope / non-goals / stakeholders / rollback | proposal.md | return-open |
+| Design | planning | architecture, lane boundaries, authorization model | design doc + delta spec | return-design |
+| Build | executing | patch, tests, receipt schema, state updates | implementation plan + changed paths | return-build |
+| Verify | monitoring/controlling | precommit, guard, local gate, local MR review | verification report | return-build / return-design |
+| Archive | closing | stable spec sync or archive deferral | archive receipt / deferral | return-verify |
+
+## 18. Monitoring return semantics
+
+| Trigger | Decision | target_phase | rework_reason |
+| --- | --- | --- | --- |
+| scope or non-goals unclear | return-open | open | value-gap |
+| lane boundary or authorization model incomplete | return-design | design | planning-gap |
+| checker/test not registered | return-build | build | execution-gap |
+| local gate / MR review fails | return-build | build | verification-gap |
+| complete change has no archive or deferral | return-verify | verify | archive-gap |
+
+## 19. Implementation slices
+
+### OpenSpec slice delivery matrix
 
 | Slice | Main artifacts | Minimum validation | Completion evidence |
 | --- | --- | --- | --- |
-| 1. Policy/checker baseline | token/risk checker, port registry/lease checker, `codex-port` allocator/locking/lifecycle contract, authorization receipt schema, update receipt schema, evidence-redaction policy | checker unit tests, concurrent-reservation fixture, pending-bind collision fixture, crash-recovery fail-closed fixture, and local-gate registration | checker output, test record, allocator lifecycle evidence, OpenSpec delta/spec update |
-| 2. `skills2cli` MVP | repo-local helper, user-level wrapper, skill index/search/show/warning audit | compact-output, privacy-redaction, profile-non-apply, and warning-audit tests | redacted index summary, wrapper smoke, receipt |
-| 3. `mcp2cli` MVP | allowed profile registry, list/search/show/call facade | compact-output, sensitive-call fail-closed, and receipt-required tests | profile registry, blocked authorization example, wrapper smoke |
-| 4. Browser owner registry | owner registry, lease schema, managed `chrome-devtools-mcp` wrapper | isolated/project-profile/human-owned protection and cleanup dry-run tests | lease receipt, stale-scan dry-run, wrapper smoke |
-| 5. CDP Bridge/OpenCLI enforcement | read/write separation gate and on-demand OpenCLI adapter | cookie/JavaScript/click/type/navigate sensitive-action fail-closed tests | owner-check evidence, authorization receipt sample, blocked-action record |
-| 6. Codex harness reference boundary | reference-only boundary, Pi sidecar delegation, reusable receipt/update/rollback patterns | docs boundary check, no direct `oh-my-pi` install lane, Pi sidecar cross-reference check | reference boundary, delegation note, no-runtime-install evidence |
-| 7. CLI-Anything boundary | isolated install receipt and harness-generation boundary | no-hard-load check, update pin, rollback tests | install receipt and profile-visibility evidence |
-| 8. `wecom-cli` API/Webhook | webhook/app-message commands and secret redaction | secret-redaction, dry-run/smoke, receipt-required tests | redacted send summary and evidence that secrets are not stored in repo |
-| 9. `wecom-cli` inventory | process/window inventory commands | no-content-capture and read-only fixture/smoke tests | read-only inventory summary and no message-content evidence |
-| 10. `wecom-cli` GUI gate | global WXWork lease and one-task authorization gate | unauthorized fail, lease exclusivity, and manual smoke marker tests | authorization receipt, lease receipt, manual smoke marker |
+| 1. Policy/checker baseline | token/risk checker; port registry; authorization receipt schema; update receipt schema; evidence redaction | checker tests + local gate | OpenSpec spec + checker output |
+| 2. skills2cli MVP | index/search/show/audit/profile suggest | compact-output and privacy-redaction tests | wrapper smoke + receipt |
+| 3. mcp2cli MVP | profile registry; list/search/show/call facade | sensitive-call fail-closed tests | blocked call evidence |
+| 4. codex-port allocator | reserve/renew/release/import-legacy/gc | pending_bind and concurrent reserve tests | registry_revision + lease receipt |
+| 5. Browser owner registry | isolated/project/human asset separation | owner exclusivity + cleanup dry-run tests | browser lease receipt |
+| 6. chrome-devtools-mcp wrapper | managed wrapper for isolated-session-managed and project-profile | wrapper smoke | install/update receipt |
+| 7. CDP Bridge/OpenCLI enforcement | read/write split and on-demand adapter | cookie/JS/click/type/navigate fail-closed | authorization receipt evidence |
+| 8. Codex harness reference boundary | oh-my-pi and The Harness Problem reference-only | docs boundary check | no runtime install evidence |
+| 9. CLI-Anything boundary | install/update receipts and harness boundary | no-hard-load and rollback tests | install receipt |
+| 10. wecom-cli API/Webhook | webhook send; app-message send; secret redaction | dry-run and secret-redaction tests | redacted send summary |
+| 11. wecom-cli inventory | process/window read-only inventory | no-content-capture tests | read-only inventory summary |
+| 12. wecom-cli GUI gate | global WXWork lease + one-task authorization | unauthorized fail + lease exclusivity | manual smoke marker |
 
-Slice completion rule: a slice is complete only when implementation, tests, CI registration, OpenSpec updates, rollback evidence, and a completed receipt all exist. If a slice has only documentation or research, it can be `planned` or `implemented-local`, but not `active`.
+### Slice completion rule
 
-Each OpenSpec change must define:
+A slice is complete only when implementation, tests, CI registration, OpenSpec update, rollback evidence, and completed receipt exist. Documentation-only or research-only slices can be `planned` or `implemented-local`, but not `active`.
 
-- files owned by the change;
-- local tests or checkers that prove the new behavior;
-- user-level install artifact, if any;
-- receipt path and schema, if any;
-- local listener or port lease ownership, if the change can bind a TCP port;
-- rollback method;
-- explicit non-goals to keep the change from expanding.
-- `.comet.yaml` or an equivalent execution record must state workflow, phase, design_doc, plan, build_mode, isolation, verify result, verification report, branch status, and archive/deferral status.
+## 20. Definition of ready before implementation
 
+- [ ] The corresponding OpenSpec change exists and states scope / non-goals.
+- [ ] The lane has an owner, owned files, receipt schema, and rollback method.
+- [ ] If a port is involved, a `codex-port` port registry lease exists.
+- [ ] If a browser is involved, asset class and owner registry are confirmed.
+- [ ] If sensitive data is involved, a current one-task authorization receipt exists.
+- [ ] If user-level installation is involved, update receipt and rollback pointer are defined.
+- [ ] New tests are registered in `tools/ci/ci_test_manifest.json` or the local gate.
 
-Fine-grained implementation checklist:
+## 21. Fine-grained implementation checklist
 
 - [x] Create or reuse a small OpenSpec change for this plan and state scope, non-goals, and rollback boundary.
-- [x] Add a token/risk priority checker that prevents high-token or high-risk surfaces from becoming default without evidence.
-- [x] Establish the user-level port registry/lease allocator so Codex ranges come before OpenClaw ranges and OpenCLI uses allocator-driven `--port auto`.
-- [x] Implement `codex-port lease reserve/renew/release/list/import-legacy/gc` with owner-range validation, atomic registry locking, provisional `pending_bind`, live-socket collision skipping, stale/crash evidence, and write receipts.
-- [x] Add the sensitive authorization receipt schema with at least action, target, scope, expiry, session, and operator confirmation.
-- [x] Add the user-level tool update receipt schema covering install path, wrapper path, state path, pin, smoke result, and rollback pointer.
-- [x] Add sanitized-evidence rules that forbid committing secrets, cookies, tokens, raw browser data, message contents, full personal runtime paths, or complete plugin description dumps.
-- [x] Implement `skills2cli index --json` with skill id, source layer, short description hash/summary, and availability status.
-- [x] Implement `skills2cli search <query> --json` with compact summaries and location hints by default.
-- [x] Implement `skills2cli show <skill-id> --json` without dumping complete skill bodies by default; full content requires a governed flag.
-- [x] Implement `skills2cli profile suggest --task <text> --json` as recommendation-only, never direct apply.
-- [x] Implement `skills2cli audit warnings --since <duration> --json` covering 2% skills-context-budget warnings and skipped-loading warnings.
-- [x] Add `skills2cli` compact-output, privacy-redaction, profile-non-apply, and warning-audit tests.
-- [x] Implement the `mcp2cli` allowed profile registry and separate low-risk discovery from medium/high-risk calls.
-- [x] Implement compact `mcp2cli list/search/show` output with explicit `--full` expansion boundaries.
-- [x] Implement the `mcp2cli call` sensitive-category fail-closed gate.
-- [x] Add `mcp2cli` profile-registry, sensitive-call-blocking, compact-output, and receipt-required tests.
+- [x] Add token/risk priority controls so high-token or high-risk surfaces cannot become default without evidence.
+- [x] Establish the user-level port registry / lease allocator so Codex ranges come before downstream consumer ranges.
+- [x] Implement the minimum codex-port reserve/renew/release/list/import-legacy/gc contract.
+- [x] Cover pending_bind, live-socket collision, stale/crash evidence, and registry_revision.
+- [x] Add the authorization receipt schema with action, target, scope, expiry, session, and operator confirmation.
+- [x] Add update receipt fields: tool name, installed version, source URL, install path, wrapper path, state path, smoke test command, rollback pointer, owner lane.
+- [x] Add sanitized-evidence rules forbidding secrets, cookies, tokens, raw browser data, message contents, and plugin description dumps.
+- [x] Implement compact skills2cli index --json output.
+- [x] Implement compact skills2cli search <query> --json output.
+- [x] Implement skills2cli show <skill-id> --json without full skill bodies by default.
+- [x] Implement skills2cli profile suggest --task <text> --json as recommendation-only.
+- [x] Implement skills2cli audit warnings --since <duration> --json for 2% skills context budget and skipped-loading warnings.
+- [x] Add skills2cli compact-output, privacy-redaction, profile-non-apply, and warning-audit tests.
+- [x] Implement the mcp2cli allowed profile registry.
+- [x] Implement compact mcp2cli list/search/show.
+- [x] Implement mcp2cli call sensitive-category fail-closed gate.
+- [x] Add mcp2cli profile-registry, sensitive-call-blocking, compact-output, and receipt-required tests.
 - [x] Implement the browser owner registry with owner class, project slug, session id, profile path, and lease expiry.
-- [x] Implement the `chrome-devtools-mcp` managed wrapper isolated-session mode.
-- [x] Implement the `chrome-devtools-mcp` managed wrapper project-profile mode.
-- [x] Implement browser stale scan and safe-cleanup dry-run, scoped only to known managed profiles.
+- [x] Implement the chrome-devtools-mcp isolated-session-managed wrapper.
+- [x] Implement the chrome-devtools-mcp project-profile wrapper.
+- [x] Implement browser stale scan and safe-cleanup dry-run.
 - [x] Add browser-lane tests for tab-owner exclusivity, project-profile retention, human-owned protection, and cleanup dry-run.
 - [x] Harden CDP Bridge read-only defaults so write actions require owner and authorization receipts.
-- [ ] Keep OpenCLI as an on-demand adapter and connect it to the browser owner registry.
-- [x] Add CDP Bridge fail-closed tests for cookie, JavaScript, click, type, and navigate sensitive actions.
-- [ ] Add remaining OpenCLI fail-closed tests for cookie, JavaScript, click, type, and navigate sensitive actions.
-- [x] Move direct `oh-my-pi` install, updater, smoke, and rollback work out of this plan and into `pi_plugin_codex_user_level_sidecar_plan.*`.
-- [x] Keep only the reference-only harness governance boundary for `oh-my-pi` / `The Harness Problem` in this plan.
+- [ ] Keep OpenCLI as an on-demand adapter and connect it to browser owner registry and --port auto.
+- [x] Add CDP Bridge fail-closed tests for cookie, JavaScript, click, type, and navigate.
+- [ ] Add remaining OpenCLI fail-closed tests for cookie, JavaScript, click, type, and navigate.
+- [x] Move direct oh-my-pi install, updater, smoke, and rollback work into pi_plugin_codex_user_level_sidecar_plan.*.
+- [x] Keep only the reference-only harness governance boundary for oh-my-pi / The Harness Problem in this plan.
 - [ ] Install CLI-Anything / CLI Hub with user-level install receipts and without hard-loading bulk skills.
-- [ ] Use CLI-Anything to help design `wecom-cli` while keeping repo-local source and authorization gates.
-- [ ] Implement read-only `wecom-cli process list --json` and `window list --json` inventory.
-- [ ] Implement `wecom-cli webhook send` and `app-message send` with secret redaction and receipts.
-- [ ] Implement `wecom-cli gui attach` with global WXWork lease and one-task authorization gate; keep it disabled by default.
-- [ ] Add `wecom-cli` process/window read-only, secret-redaction, GUI-unauthorized-fail, and lease-exclusivity tests.
-- [ ] Register every new test or checker in `tools/ci/ci_test_manifest.json` or the shared local-gate call chain. Current `codex-port` tests are registered; keep this item open for later slices.
+- [ ] Use CLI-Anything to help design wecom-cli while keeping repo-local source and authorization gates.
+- [ ] Implement read-only wecom-cli process list --json and window list --json inventory.
+- [ ] Implement wecom-cli webhook send and app-message send with secret redaction and receipts.
+- [ ] Implement wecom-cli gui attach with global WXWork lease and one-task authorization gate; keep it disabled by default.
+- [ ] Add wecom-cli process/window read-only, secret-redaction, GUI-unauthorized-fail, and lease-exclusivity tests.
+- [ ] Register every new test or checker in tools/ci/ci_test_manifest.json or the shared local-gate call chain.
 - [x] Run the precommit update/archive gate, local gate, and local MR review for every completed OpenSpec change.
 - [ ] Record rollback-ready receipts after every user-level installation; lanes without receipts must not be marked active.
 
+## 22. Local integration sequence
 
-## 17. Complete Comet implementation order
+1. Create an OpenSpec change in an isolated feature worktree.
+2. Write the Design Doc, Implementation Plan, delta spec, and management record.
+3. Modify the bilingual plan pair and keep English ASCII primary plus zh-CN companion synchronized.
+4. Run document pair policy, baseline checker, implementation plan checker, precommit update/archive gate, OpenSpec guard, and local gate.
+5. Commit the feature branch with a Chinese commit subject, then run local MR review.
+6. Create rollback backup refs and fast-forward merge into local main.
+7. Remote publication waits for explicit user wording naming remote push, GitLab/MR, merge, or GitHub sync.
 
-1. Open: create an OpenSpec change for this plan and record scope, non-goals, stakeholder/constraint, and rollback boundary.
-2. Design: use a Superpowers design doc to freeze trade-offs, lane ownership boundaries, authorization boundaries, receipt state flow, failure modes, and later slicing rules.
-3. Build: use a Superpowers implementation plan to break down owned files, checkers/tests, CI manifest entries, install/update/rollback receipts, and local commit steps.
-4. Build: add governance docs and checkers for token/risk priority, port registry/lease, browser asset classes, sensitive authorization, and update receipts.
-5. Build: implement `skills2cli` MVP and tests.
-6. Build: add `mcp2cli` user-level wrapper and allowed-profile registry.
-7. Build: promote `chrome-devtools-mcp` to managed user-level wrapper.
-8. Build: harden CDP Bridge policy and add OpenCLI as on-demand adapter only.
-9. Build: lock the Codex reusable harness reference boundary, and delegate Pi family / `oh-my-pi` sidecar install, updater receipt, and rollback model to `pi_plugin_codex_user_level_sidecar_plan.*`.
-10. Build: install CLI-Anything / CLI Hub user-level tooling.
-11. Build: build `wecom-cli` API/Webhook MVP, then window inventory, then gated GUI automation.
-12. Verify/Archive: run local gate and local MR review, then integrate to local main only after user confirmation; archive completed changes or record archive deferral.
+## 23. Readiness gates and acceptance criteria
 
-## 18. Complete Comet validation plan
+| Gate | Criteria | Evidence |
+| --- | --- | --- |
+| Documentation readiness | bilingual docs synced, structure clear, markers complete | document pair policy |
+| OpenSpec readiness | proposal/design/tasks/spec complete | `openspec validate --strict` |
+| Runtime readiness | wrapper + state path + smoke + rollback | update receipt |
+| Authorization readiness | action/target/scope/expiry/session/operator confirmation | authorization receipt schema |
+| Port readiness | lease + owner + registry_revision | port registry receipt |
+| Browser readiness | owner registry + asset class + cleanup policy | browser lease receipt |
+| Active readiness | installed-user-level + smoke-tested + rollback-ready | completed receipt |
 
-- Open evidence: `proposal.md` must cover goal, scope, non-goals, affected files, risk, and rollback boundary.
-- Design evidence: the Superpowers design doc must cover trade-offs, architecture boundary, state flow, authorization gates, failure modes, and future slicing rules.
-- Build evidence: the Superpowers implementation plan must list tasks, owned files, test commands, commit points, and rollback method.
-- Target document evidence: this plan must state complete `/comet` Open/Design/Build/Verify/Archive phases and must not describe itself as tweak-only.
-- `skills2cli` tests prove index/search/show do not emit all skill descriptions.
-- `mcp2cli` tests prove compact list/search/show and sensitive-call blocking.
-- Browser checker tests prove isolated cleanup, project-profile retention, human-owned protection, and tab owner exclusivity.
-- Port-governance tests prove Codex never allocates OpenClaw ranges, OpenClaw legacy ports are imported as reserved, conflicts are skipped without killing processes, and stale leases require PID/health evidence before reuse.
-- Port allocator CLI tests prove `reserve`, `renew`, `release`, `import-legacy`, and non-dry-run `gc` write receipts; concurrent reserves do not allocate the same port; pending-bind/crash recovery is evidence-gated; and mismatched owner/range or owner-session requests fail closed.
-- CDP Bridge/OpenCLI tests prove sensitive actions require explicit authorization.
-- Codex harness reference-boundary checks prove this plan no longer implements `oh-my-pi` runtime directly; Pi family updater, pinned update, and rollback receipt tests belong to `pi_plugin_codex_user_level_sidecar_plan.*`.
-- `wecom-cli` tests prove process inventory is read-only, secrets are redacted, GUI write actions fail without authorization, and WXWork GUI lease is exclusive.
-- Repository checks continue to include OpenSpec guard, precommit update/archive gate, local gate, and local MR review.
-- Readiness-gate tests prove no lane becomes `active` without smoke-test evidence, install/update receipt evidence, and rollback evidence.
-- Authorization-matrix tests prove sensitive MCP, browser, CDP/OpenCLI, and WXWork actions fail closed without a current one-task authorization receipt.
-- Comet state checks prove this change's phase, verify result, branch status, verification report, archive/deferral conclusion, and task completion status are consistent; out-of-scope work must open a new change or return to an earlier phase.
+## 24. Verification plan
 
-## 19. Sources
+- `python tools/check_user_level_mcp_skills_browser_cli_baseline.py --root . --json` - verifies governance baseline markers.
+- `python tools/check_implementation_plan_rules.py --root . --json` - verifies implementation-plan rules.
+- `python tools/check_document_pair_policy.py --root . --json` - verifies bilingual companion coverage.
+- `python tools/check_precommit_update_archive.py --root . --json` - reviews update/archive readiness.
+- `python tools/run_openspec_guard.py --root . --json` - runs repository OpenSpec guards.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\\tools\\ci\\local_gate.ps1` - runs the shared local CI gate.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\\tools\\ci\\local_mr_review.ps1` - runs local MR review after commit.
+- `openspec validate <change> --strict` - validates the change schema and artifacts.
+- `openspec status --change <change> --json` - reports artifact completion.
+
+## 25. Rollback and cleanup
+
+Rollback the documentation refactor by reverting the feature commit or resetting to the backup ref. User-level install rollback uses the update receipt rollback pointer. Port lease cleanup starts with `codex-port gc --dry-run --json`. Browser cleanup affects only managed profiles, never human-owned Chrome.
+
+## 26. Risks and default decisions
+
+| Risk | Default decision | Mitigation |
+| --- | --- | --- |
+| skills context 2% budget exceeds again | do not disable blindly | usage audit, then `skills2cli` / profile helper |
+| MCP surface leaks sensitive data | fail closed | authorization receipt schema |
+| port conflict | do not kill processes | port registry + pending_bind + live-socket evidence |
+| browser asset confusion | protect human-owned assets | asset class + owner registry |
+| OpenCLI high-risk write action | on-demand only | receipt + port lease + owner gate |
+| WeCom GUI misoperation | disabled by default | global WXWork lease + one-task authorization |
+| user-level cache overwritten by updates | receipt + source of truth | repo-local source + updater rollback |
+
+## 27. Self-checklist
+
+- [ ] This plan still has `plan_readiness: execution-ready`.
+- [ ] This plan still declares `implementation_state:` and does not mark unfinished lanes as active.
+- [ ] The text includes Token, Readiness gate, OpenSpec, skills2cli, mcp2cli, CDP Bridge, and OpenCLI.
+- [ ] The text includes port registry, codex-port, pending_bind, registry_revision, 39000-39299, and 40000-40999.
+- [ ] The text includes authorization receipt schema, operator confirmation, update receipt, and rollback pointer.
+- [ ] The text includes `chrome-devtools-mcp`, `oh-my-pi`, CLI-Anything, `wecom-cli`, active, on-demand, reference-only, and disabled.
+
+## 28. Sources
 
 - https://github.com/knowsuchagency/mcp2cli
 - https://github.com/jackwener/OpenCLI
