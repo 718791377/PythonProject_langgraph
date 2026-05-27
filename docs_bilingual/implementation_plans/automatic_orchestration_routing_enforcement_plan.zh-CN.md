@@ -1,6 +1,6 @@
 ---
 doc_id: automatic_orchestration_routing_enforcement_plan
-version: 0.21
+version: 0.22
 status: active
 owner: codex-orchestration
 date: 2026-05-27
@@ -8,751 +8,281 @@ date: 2026-05-27
 
 # 自动协同路由强制化实施计划
 
-## 完整 Comet 重构说明与阅读路径
+## 0. 本次完整 `/comet` 重构结论
 
-本次 `refactor-automatic-routing-plan-full-comet` 是完整 `/comet` 文档重构：它把本文档从上一次 `tweak` 级结构整理提升为可追踪的 full workflow 记录，补齐 OpenSpec `proposal / design / tasks / delta spec`、Superpowers design doc、implementation plan、management checklist 与 verification report。由于当前 Windows shell 不提供 `bash`，Comet `comet-state.sh` / `comet-guard.sh` 不能直接执行；本次只记录 `script_state_blocker: bash_unavailable_in_current_windows_shell`，并用 OpenSpec artifacts 与仓库验证命令作为 fallback 证据，不声称 shell guard transition 已成功运行。
+本版本把原来按历史时间和问题追加形成的长文档，重构为类似以下两份新版实施方案的结构：
 
-本次 full Comet 重构仍然是 documentation-only：它提升本文档的权威分层、阅读路径、Phase 4 后续实施入口、evidence contract 与验收矩阵清晰度，不新增 runtime checker，不改变已归档 Phase 0-3 的完成结论，也不构成 durable team、persistent team、LangGraph workflow 或 native expert 已运行的证据。
+- `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` - 作为用户级 sidecar 方案的新式结构参考。
+- `docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md` - 作为 Comet runtime 治理方案的新式结构参考。
 
-阅读与维护时按以下分层处理：
+重构目标不是改变自动协同路由规则，而是把规则、证据契约、实施切片、验证命令、回滚路径和本地集成顺序变成更容易执行、复核和继续实施的 implementation-ready 文档。
 
-| 分层 | 主要章节 | 用途 | 不得误用为 |
-| --- | --- | --- | --- |
-| 当前状态 | `Active 状态说明`、第 0 节、第 21 节 | 判断 baseline 是否仍 active、哪些历史实施包已完成、哪些后续缺口仍 planned | 新的 runtime 运行证据 |
-| 硬规则 | 第 1-19 节、第 26-28 节 | 判断 activation trace、expert、durable workflow、persistent team、LangGraph/backend 与 legacy-session retrofit 的语义边界 | 每个任务都必须启动 durable/persistent team 的命令 |
-| 后续实施 | 第 20 节 Phase 4 | 冻结未来 `enforce-prompt-independent-collaboration-parity` 的实施入口、文件地图、过程组、任务和验收矩阵 | Phase 4 已完成声明 |
-| 证据契约 | 第 20 节证据契约、第 22 节 | 维护 prompt-independent fixtures、cold-start ledger、evidenceguard、expert lifecycle、LangGraph release 与 guard wiring 的输入/输出契约 | 用自然语言替代 checker 或落盘审计 |
-| 验证与风险 | 第 23-25 节、本次 Comet verification report | 维护风险、回滚、非目标、验收标准和本地验证命令清单 | 跳过 OpenSpec/local gate/local MR review 的理由 |
+当前结论：
 
-本次 full Comet 工件路径：
+- 本文仍是 `status: active` 的自动协同路由 baseline。
+- Phase 0-3 baseline 已完成并归档，继续作为历史完成证据和稳定规则来源。
+- Phase 4 `enforce-prompt-independent-collaboration-parity` 仍是 planned follow-up，不因本文重构而被视为已实现。
+- 本次文档重构是 documentation-only，不新增 runtime checker，不启动 durable team / persistent team，不创建 LangGraph durable workflow，也不构成 native expert 已运行的证据。
+- 若终端渲染中文为乱码，应以 UTF-8 读取的源文件为准，不得把乱码复制回仓库。
 
-| 工件 | 路径 | 状态 |
+## 1. 目标
+
+- 让 Codex 主会话在所有用户级工作流中自动执行 orchestration activation check，而不是依赖用户显式写“使用 experts / durable_team / persistent team”。
+- 区分 policy expectation、runtime capability、实际采用状态和可审计证据，避免把 backend ready、技能调用、提示词短语或 timeout 误当作 worker 运行证明。
+- 让 `native experts`、`native_omx`、LangGraph durable workflow、persistent team 的采用逻辑具备脚本化 guard、fixture、CI 和本地 MR review 证据。
+- 为后续 Phase 4 提供固定 change id、文件地图、证据契约、过程组式执行模型和任务级 backlog。
+- 保持本仓库是 Codex 用户级编排产品线的 source of truth；用户级生成文件和安装产物只能是同步结果，不是本计划的权威源。
+
+## 2. 非目标
+
+- 不把每个小任务都强制变成 multi-worker execution。
+- 不把 skills、plugin profiles、profile helpers 或 workflow prompts 当成 native Codex experts。
+- 不在 startup、read-context、boundary-freeze 或单文件低风险修改中自动启动 durable/persistent team。
+- 不把 `backend_default=langgraph` 或 `backend_ready=true` 解释成 persistent team 已运行。
+- 不绕过 OpenSpec、pre-commit update/archive check、local gate 或 local MR review。
+- 不把本文档本身当作 durable/persistent runtime evidence。
+- 不推送 GitLab/GitHub；远端发布必须另有当前用户明确授权。
+
+## 3. 权威边界与状态词
+
+### 3.1 文档状态
+
+| 状态 | 含义 | 不能推导为 |
 | --- | --- | --- |
-| OpenSpec change | `openspec/changes/refactor-automatic-routing-plan-full-comet/`（归档后为 `openspec/changes/archive/2026-05-27-refactor-automatic-routing-plan-full-comet/`） | documentation-only full workflow |
-| Superpowers design | `docs/superpowers/specs/2026-05-27-automatic-routing-plan-full-comet-refactor-design.md` | 记录已选设计、范围和非目标 |
-| Superpowers plan | `docs/superpowers/plans/2026-05-27-automatic-routing-plan-full-comet-refactor.md` | 记录实施步骤、验证和提交边界 |
-| Verification report | `openspec/changes/refactor-automatic-routing-plan-full-comet/verification.md`（归档后随 change 移动） | 记录实际运行的验证命令和未运行项 |
+| `active` | 当前和未来会话必须遵守的规则与验收清单 | 某个 runtime worker 已启动或完成 |
+| `complete` | 某个受边界约束的实施切片已完成并有验证证据 | 后续缺口不再存在 |
+| `planned follow-up` | 已定义范围、证据和任务，但尚未实施 | checker、fixtures 或 runtime 行为已落地 |
+| `documentation-only` | 只更新文档、计划或记录 | 运行时状态已改变 |
 
-执行者默认从本节开始，再跳到第 20 节的 Phase 4 摘要；只有需要追溯历史完成证据时才阅读全文第 0 节与第 21-25 节。若终端显示中文乱码，应重新用 UTF-8 读取源文件，不得把乱码复制回仓库。
+### 3.2 Capability chain
 
-## Active 状态说明
-
-本文档是自动协同路由强制化的 active baseline。`status: active` 表示它仍然是当前与未来会话采用的规则和验收清单；它本身不是完成声明，也不是任何一次具体 expert/durable/persistent runtime 已运行的证据。
-
-截至 2026-05-15，本文档最初规划的 enforcement 实施包已经在本地通过下方第 0 节列出的 OpenSpec changes 完成并归档。未来如果发现新的回归或缺口，应基于这个 active baseline 新开一个有边界的小步 change，而不是重新打开已经归档的实施切片。
-
-2026-05-25 冷启动复核新增一个后续硬化点：当会话声称按新会话 cold-start read order 继续工作时，必须有结构化 evidence 说明已读取 `project_startup_summary.md`、按 read order 补读了本次任务所需文件、明确跳过了哪些非必要文件及原因，并把该 evidence 与 activation trace、worktree/session-claim preflight、expert/durable/persistent runtime evidence 分层。2026-05-25 后续复核进一步要求 evidence 采用有序 read ledger：每个 read-order 条目都必须标注 `order_index`、`path`、`decision=read|skipped`、`read_mode`、`needed_for_current_task`、`reason` 和 evidence boundary。该新增内容纳入 Phase 4，仍是 planned follow-up，不改变 Phase 0-3 已完成状态。
-
-## 0. 2026-05-15 完成状态快照
-
-当前本地结论：本计划在已确认的仓库 source-of-truth surfaces、生成式用户级模板、脚本化 policy guards 与回归测试层面已经完成。本文档继续保持 active，是因为它仍然定义默认行为和后续工作必须保持的验收标准。
-
-当前完成证据包括：
-
-| 状态域 | 当前结论 | 维护动作 |
-| --- | --- | --- |
-| Phase 0-3 baseline | 已完成并归档 | 后续只做回归修复或文档维护，不重开历史切片 |
-| Phase 4 parity/evidenceguard | planned follow-up | 用固定 change id `enforce-prompt-independent-collaboration-parity` 新开实施包 |
-| LangGraph backend | ready/default backend 可报告 | 不等同于 persistent team running |
-| durable/persistent team | 阈值门控 | 只有 selector、manifest、heartbeat、lifecycle、close/absorb 等证据齐全时才可声明运行或完成 |
-| 本次 full Comet 重构 | documentation-only full workflow | 补齐 OpenSpec/Superpowers 工件、重构本文档结构，不发布远程、不声称 runtime team 已运行 |
-
-- 2026-05-15 历史快照中的 active OpenSpec changes：无；后续维护可能通过独立 bounded change 补充新的 Comet/OpenSpec 记录，不能用这条历史快照判断当前工作区一定没有 active change；
-- 稳定 policy 与 startup surfaces：已更新 `AGENTS.md`、`docs_bilingual/project_startup_summary.*`、`docs_bilingual/governance/codex_user_level_orchestration_activation_policy.*` 以及相关 OpenSpec stable specs；
-- 脚本化 enforcement：已由 `tools/check_orchestration_activation_policy.py`、`tools/check_orchestration_trace_evidence.py`、`tools/check_capability_switch_chain.py`、`tools/check_expert_lifecycle_wait_pacing_evidence.py`、`tools/check_role_routing_directive_evidence.py`、`tools/check_agent_skill_profile_surface_boundaries.py`、`tools/check_custom_agent_toml_schema.py`、`tools/check_leader_session_scope_evidence.py`、`tools/check_delegation_wait_discipline_evidence.py`、`tools/check_durable_artifact_state_surfaces.py`、`tools/check_effective_lane_fit_evidence.py`、`tools/check_fanout_write_ownership_evidence.py` 与 OpenSpec guard wiring 覆盖；
-- 生成式用户级 source templates：已在 `tools/install-codex-user-level-team-mode.ps1` 中固化，并由 `test/install-codex-user-level-team-mode.test.ps1` 覆盖；
-- 已归档实施切片：
-  - `openspec/changes/archive/2026-05-11-enforce-automatic-orchestration-routing/`；
-  - `openspec/changes/archive/2026-05-11-enforce-active-selector-status-helper/`；
-  - `openspec/changes/archive/2026-05-12-enforce-hard-routing-directive-adoption/`；
-  - `openspec/changes/archive/2026-05-13-enforce-capability-switch-chain/`；
-  - `openspec/changes/archive/2026-05-13-enforce-custom-agent-toml-schema/`；
-  - `openspec/changes/archive/2026-05-13-enforce-expert-lifecycle-wait-pacing-evidence/`；
-  - `openspec/changes/archive/2026-05-13-enforce-orchestration-trace-evidence-validator/`；
-  - `openspec/changes/archive/2026-05-13-extend-orchestration-activation-checker-coverage/`；
-  - `openspec/changes/archive/2026-05-14-enforce-agent-skill-profile-surface-boundaries/`；
-  - `openspec/changes/archive/2026-05-14-enforce-delegation-wait-discipline/`；
-  - `openspec/changes/archive/2026-05-14-enforce-durable-artifact-state-surfaces/`；
-  - `openspec/changes/archive/2026-05-14-enforce-effective-lane-fit-evidence/`；
-  - `openspec/changes/archive/2026-05-14-enforce-fanout-write-ownership-evidence/`；
-  - `openspec/changes/archive/2026-05-14-enforce-leader-session-scope-evidence/`；
-  - `openspec/changes/archive/2026-05-14-enforce-orchestration-checker-ci-coverage/`；
-  - `openspec/changes/archive/2026-05-14-enforce-role-directive-routing-evidence/`；
-  - `openspec/changes/archive/2026-05-15-harden-global-automatic-collaboration-default/`；
-- 远端发布：与本地计划完成度分离，仍必须获得明确 GitLab/GitHub 发布授权。
-
-完成后仍然成立的剩余边界：
-
-1. native `spawn_agent` 仍受 live platform/tool contract 约束；被阻塞时 trace 必须写 `experts=blocked:platform_subagent_invocation_constraint`，然后使用合格 durable lane 或主会话接管；
-2. LangGraph 是 ready default backend 不等于 persistent team 正在运行；durable workflow 与 team launch 仍受阈值约束；
-3. 用户级 Codex 目录下的生成文件仍可能需要执行 installer refresh 才能同步 source-template 变化，仓库模板仍是 source of truth；
-4. 未来每个具体任务的 orchestration decision 仍需要 activation trace、threshold evidence，以及适用时的 checker-backed evidence。
-
-## 1. 背景
-
-本仓库的用户级 orchestration 规则已经要求 Codex 主会话自动判断是否使用 native experts、durable workflow、persistent team、`native_omx` 和 LangGraph，而不是等待用户在每次任务里显式写“尽可能多使用 experts / durable_team / persistent team”。
-
-近期日志复盘暴露了三个问题：
-
-1. routing trace 曾把“不启动并行/子代理”的原因写成“用户没有要求并行/子代理”。这是错误理由。
-2. expert/subagent 超时后，日志中存在“继续推进”和“后来结果已吸收”之间证据链不够清晰的问题。
-3. LangGraph 已经在 user-level 状态中 installed/enabled/selected/ready，但当前任务 trace 容易把“backend 是否常开”和“任务是否需要 team”混在一起。
-
-## 2. 用户确认的硬规则
-
-### 2.1 能力依赖链
-
-能力链必须是硬依赖，而不是软偏好：
-
-```text
-subagent_routing 开启/可用
-  -> 才允许 oh-my-codex / OMX 开启
-    -> 才允许 LangGraph 开启
-      -> LangGraph ready 时作为默认 durable backend 常开
-```
-
-规则化表达：
-
-```text
-if subagent_routing == off:
-    oh_my_codex = off
-    langgraph = off
-
-if oh_my_codex == off:
-    langgraph = off
-
-if langgraph == on:
-    require subagent_routing != off
-    require oh_my_codex == on
-
-if durable_orchestration_backend == langgraph:
-    require langgraph == on
-```
-
-### 2.2 LangGraph 默认 backend 常开
-
-当 user-level 状态满足以下条件：
+能力开关必须按硬依赖链解释：
 
 ```text
 subagent_routing != off
-oh_my_codex = on
-langgraph = on
-langgraph_ready = true
+  -> oh_my_codex = on
+    -> langgraph = on
+      -> langgraph_ready = true 时可报告 backend_default=langgraph
 ```
 
-则 LangGraph 是默认 durable backend。任务复杂度只决定是否启动 durable workflow / persistent team，不决定 LangGraph backend 是否启用。
+规则：
 
-### 2.3 自动协同不依赖用户提示
+- `subagent_routing=off` 时，`oh_my_codex` 与 `langgraph` 必须视为 off。
+- `oh_my_codex=off` 时，`langgraph` 必须视为 off。
+- `langgraph=on` 要求 `oh_my_codex=on` 且 routing 可用。
+- `backend_default=langgraph` 只说明默认 durable backend 可用，不说明当前 task 已采用 durable workflow 或 persistent team。
 
-禁止把以下内容作为不使用 experts / durable_team / persistent team 的理由：
+### 3.3 Workflow 与 team 状态
 
-```text
-用户没有要求并行
-用户没有要求子代理
-用户没有写 experts/durable_team/persistent team
-```
+| 状态 | 最小含义 | 最小证据 |
+| --- | --- | --- |
+| `not_needed` | 当前任务未达阈值 | activation trace 写明 `threshold_not_met:*` 或 task shape 理由 |
+| `candidate` | 可能需要 durable/workers，但尚未启动 | plan/slice 分析、未启动原因 |
+| `selected` | 已选择 backend 或 team lane | active selector、preflight、ownership plan |
+| `running` | worker 或 workflow 正在执行 | selector、manifest、heartbeat、lifecycle running 记录 |
+| `complete` | 运行已完成并被 leader 吸收 | running 证据 + result summary + close/absorbed record |
+| `blocked` | 含义：阻塞且不能继续声明成功 | 阻塞原因名称（例如 `backend_not_ready`）、连续阻塞证据、未把阻塞当完成 |
 
-正确判断依据：
+## 4. 运行时治理原则
 
-- 任务阶段；
-- 是否是 bounded multi-face research；
-- 是否跨模块、跨接口、跨信任边界；
-- 是否存在 2+ 独立执行切片；
-- 计划是否已冻结；
-- backend / preflight 是否 ready；
-- 是否存在更高权威或 runtime surface blocker；
-- 当前会话是否能安全本地接管。
+- Codex 主会话始终是 leader：负责 activation check、角色选择、worker brief、fan-in、证据标注、本地集成和最终汇报。
+- Native Codex 是 base layer；oh-my-codex、native_omx、LangGraph、skills 和 profile helpers 是 additive workflow/runtime surfaces。
+- 显式 `omx` 或 `LangGraph` 是 hard routing directive；如果不采用，必须写明 named blocker 或 unmet threshold。
+- 缺少用户短语不是跳过 collaboration 的理由；有短语也不能跳过 frozen plan、证据守卫或 worker ownership。
+- Expert timeout、stall、provider pacing、quiet wait 都是 non-evidence；不能被最终报告引用为已完成结果。
+- Research 和 implementation 在开放式任务中保持角色分离；research fan-in 后先冻结 implementation brief，再进入执行。
+- Durable task 默认一次只使用一个 backend family；切换 backend 必须记录 close 或 explicit handoff。
 
-### 2.4 expert 超时处理
+## 5. Activation trace 契约
 
-关键路径 expert/subagent 超时后，不得把超时结果当作证据。必须选择以下路径之一：
+触发时机：
 
-1. 在有进展迹象时继续 bounded wait；
-2. respawn 一个更窄、更明确的新 expert；
-3. 若满足条件，用 LangGraph durable workflow / durable lane 接管；
-4. 若 durable/persistent team 不适合或 preflight 阻塞，由本会话明确接管并完成缺失复核。
+- first substantive work
+- reload / restart / resume / continue
+- phase change
+- `.omx` durable-state detection
+- capability-state change
+- expert timeout / stall
+- 任务扩展到 2+ execution slices
+- 用户显式要求 `experts`、`parallel`、`omx`、`LangGraph`、`durable_team` 或 `persistent team`
 
-final report 必须区分：
-
-- `expert returned and absorbed` - expert 结果已返回并被用作证据；
-- `expert timed out; not used as evidence` - expert 未返回，不得支持最终结论；
-- `main session took over verification` - leader 主会话直接完成缺失复核；
-- `durable_team blocked by <reason>` - 已评估 durable 或 persistent team，但因具体原因无法启动；
-- `backend_default=langgraph, backend_ready=true` - 记录 LangGraph 是默认且 ready 的 backend，并不等同于 persistent team 已启动。
-
-### 2.5 2026-05-24 提示词无关一致性与 evidenceguard 缺口
-
-2026-05-24 会话复盘确认：本文第 2.3 节已经规定“自动协同不依赖用户提示”，但当前已落地证据仍不足以严格证明同一复杂任务在有无“尽可能多使用 experts / durable_team / persistent team”短语时一定产生同类协同执行路径。因此，本节把该问题升级为后续硬化缺口，而不是把它解释成用户提示词问题。
-
-该缺口的处理原则：
-
-- 显式协同短语出现时，是 hard routing directive 或强提醒；没有出现时，不得成为跳过 activation check 的理由；
-- 不能只凭本文的 policy 文字宣称“无提示词也一定相同执行”，必须有 fixture、checker 或落盘审计证据；
-- durable/persistent team 的运行声明必须被 active selector、team manifest、worker heartbeat、worker lifecycle record、close/absorb record 支撑；
-- expert/subagent 的使用必须能追踪 `spawn / wait / timeout / result / close / absorbed`；
-- LangGraph workflow 完成或提交后，repo-local state 不得长期残留无释放说明的 `running`；
-- 在上述 checker 未实现前，final report 必须把“政策要求相同”和“本次已有运行证据证明相同”分开表述。
-
-Phase 4 的详细实施内容已合并到本文第 20 节；独立 parity plan 已删除。本文是该后续硬化工作的唯一 implementation-plan source of truth，Phase 4 仍不是当前 durable/persistent team 已运行的证据。
-
-### 2.6 2026-05-25 新会话冷启动 read-order 证据缺口
-
-本次复核按 `docs_bilingual/project_startup_summary.md` 的 cold-start read order 重新读取上下文后确认：现有计划已经要求新会话、reload、resume、continue 与阶段变化触发 activation check，但还没有把“冷启动 read order 是否真正被执行”落成可审计证据。因此，未来不得仅凭一句“我已冷启动读取”来支撑 orchestration 决策。
-
-新增原则：
-
-- `project_startup_summary.md` 是 cold-start read order 的英文主文件；`.zh-CN.md` 是中文 companion。读取中文 companion 时必须使用显式 UTF-8 路径；如果终端渲染出现乱码，只能把它当成编码/渲染边界问题处理，不得复制乱码哨兵文本到回答或仓库文件。
-- 每次 new session、reload、resume、continue、phase change 或用户要求“按新会话冷启动方式重新读取”时，activation trace 之外还应有 cold-start read-order evidence。
-- 证据必须列出：已读取的 startup summary pair、按 read order 补读的任务必要文件、因本次任务不需要而跳过的 read-order 文件及具体原因、`openspec list --json` 当前结果、Git worktree/mainline preflight 结果。
-- 证据必须采用有序 ledger，而不是自然语言一句话：每个 read-order 条目都要标注 `order_index`、`path`、`decision=read|skipped`、`read_mode`、`needed_for_current_task`、`reason`。如果使用摘要式读取、定向章节读取或二次 UTF-8 重读，也必须写明 `read_mode` 与为什么足以支撑当前任务。
-- activation trace 只证明“本轮任务怎样选择协同 surface”；worktree/session-claim preflight 只证明“写入所有权是否安全”；read-order evidence 只证明“上下文与治理边界已加载”。三者都不是 expert/durable/persistent team 已运行的证据。
-- 当本次任务只是单文件文档更新且 `openspec list --json` 为空时，可以不开新的 OpenSpec change，但 final report 必须说明这是 bounded document-maintenance slice，而不是 runtime enforcement 已实现。
-- final report 至少包含一个 `cold_start_read_order_evidence` 小节，列出 read-order source、已读文件数量、跳过文件及原因、OpenSpec 状态、worktree/session-claim preflight、以及“未使用 expert/durable/persistent runtime evidence”的边界声明。
-
-## 3. Activation trace 新格式
-
-每个新会话、session reload、Codex restart、resume、阶段变化、“继续”、expert 超时、发现 `.omx` durable state、或任务扩展到 2+ execution slices 时，必须重新做 activation check。
-
-必填 trace 字段：
+推荐最小 trace：
 
 ```text
 Routing trace:
-phase=<phase>
-capability_chain=subagent:<auto|manual|off> > omx:<on|off> > langgraph:<on|off>
+phase=<define-target|read-context|freeze-plan|execute-parallel|integrate-converge|stabilize|verify-accept>
+capability_chain=subagent_routing:<auto|manual|off> > oh_my_codex:<on|off> > langgraph:<on|off>
 backend_default=<langgraph|native_omx|none>
-backend_ready=<true|false>
-experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
-durable_workflow=<not_needed|candidate|selected|blocked|running>
-persistent_team=<not_needed|candidate|selected|blocked|running>
-why=<concrete reason>
+backend_ready=<true|false|unknown>
+experts=<none|analystxN|architect|planner|writer|verifier|blocked:<reason>|...>
+durable_workflow=<not_needed|candidate|selected|running|complete|blocked>
+persistent_team=<not_selected|not_needed|candidate|selected|running|complete|blocked>
+why=<task-shape, threshold, blocker, or evidence reason>
 ```
 
-规范英文文件使用 ASCII `analystxN`；中文或其他本地化文档可写成 `analyst x N` 或其他本地化形式。
+禁止理由：
 
-## 4. 自动路由决策矩阵
+- “用户没有要求并行/子代理”。
+- “没有写 experts / durable_team / persistent team，所以不评估”。
+- “LangGraph ready，所以 persistent team 已运行”。
+- “skill/profile 已调用，所以 native expert 已运行”。
 
-| 触发场景 | Experts | Durable workflow | Persistent team | 主会话兜底 |
+## 6. 自动路由决策矩阵
+
+| 触发场景 | Experts | Durable workflow | Persistent team | 主会话动作 |
 | --- | --- | --- | --- | --- |
-| 单个低风险文件编辑 | 默认不需要，除非需要专项复核 | 不需要 | 不需要 | 本地编辑并验证 |
-| 有边界的多面研究 | 先 analystxN 同质扇出 | research fan-in 后形成阶段化执行时才作为候选 | plan freeze 前不启动 | 主会话综合 fan-in |
-| 跨模块架构或共享接口 | architect，必要时 security-reviewer | 候选 | 计划冻结且 2+ 独立切片后 | leader 写集成契约 |
-| 大型文档重写 | 按需 analyst / writer / verifier | 多阶段或需要 checkpoint 时作为候选 | 仅在写入切片独立时 | leader-owned integration |
-| 行为变化型多文件工作 | test-engineer 和 verifier | 候选 | 切片隔离后 | local gate + 主会话复核 |
-| 安全、权限、密钥、支付、不可信输入 | security-reviewer | 候选 | trust boundary 映射后才可考虑 | 未复核前阻断发布 |
-| 关键路径 expert 超时 | respawn 更窄 expert 或替代角色 | LangGraph-ready 且适合 checkpoint handoff 时选择 | preflight 通过才启动 | 主会话接管并声明证据来源 |
+| 单个低风险文档文件 | 默认不需要；可在收尾使用 verifier | 不需要 | 不需要 | 本地编辑、检查、提交 |
+| 大型文档重写 | 可用 writer/verifier；多面研究先 analyst-only | 需要 checkpoint 或 frozen brief 时作为 candidate | 只有 2+ 独立写入切片且 plan 冻结后 | leader-owned integration |
+| 有边界的多面研究 | analystxN 首轮同质 fan-out | fan-in 后若进入多阶段实施再评估 | plan 冻结前不启动 | 综合研究、冻结 brief |
+| 跨模块架构/接口 | architect，必要时 security-reviewer | candidate | frozen plan + 2+ slices 后 candidate | 写接口和所有权契约 |
+| 行为变化型多文件工作 | test-engineer + verifier | candidate | 2+ 独立执行切片时 selected | 本地集成和测试 |
+| blocking regression | debugger | 可用 survivor queue | stabilize 阶段 1+ blocking issue 可启动 2 debugger | 收敛修复 |
+| 远端发布/合并 | verifier / release reviewer | 通常不需要 | 通常不需要 | 遵守 local-main-first 和远端授权门禁 |
 
-## 5. 硬路由指令与最小充分角色选择
+## 7. Durable-team 阈值映射
 
-显式 routing directive 是 activation check 的硬输入，不是软偏好。
-
-Directive 规则：
-
-- 用户请求 `omx`、`LangGraph`、`resume`、`continue`、`parallel`、`experts`、`durable_team` 或 `persistent team` 时，必须触发 activation check；
-- 显式 `omx` 或 `LangGraph` 请求必须被视为当前 task flow 的 hard routing directive；
-- 当 capability chain、preflight 与 task threshold 都满足时，会话必须实际采用被选中的 lane（`selected` 或 `running`），不得停留在 explanation-only mode；
-- 如果没有采用被请求的 lane，trace 必须在 `why` 中写明具体 blocker 或未满足阈值，例如 `blocked:backend_not_ready`、`blocked:platform_subagent_invocation_constraint` 或 `threshold_not_met:no_frozen_plan`；
-- `resume` 与 `continue` 会触发 retrofit 和 state re-read；它们本身不强制启动 durable team，除非阈值满足。
-
-最小充分 expert role 选择：
-
-| Role | 选择条件 | 默认边界 |
+| 阶段 | Durable / persistent team 决策 | 必须写入 trace 的理由 |
 | --- | --- | --- |
-| `analyst` | outcome、non-goals 或 acceptance target 不清；仍有两个以上主要歧义；bounded multi-face research 需要首轮 fan-out | bounded multi-face research 第一轮 analyst-only |
-| `researcher` | 需要 external docs、dependency behavior、version-sensitive facts 或 official-source verification | 任务开放式开始时与 implementation 分离 |
-| `architect` | 涉及两个以上 modules、trust boundaries、shared interfaces、migrations 或 non-local design decisions | bounded multi-face research 中等 analyst fan-in 后再升级 |
-| `planner` | 存在两个以上 execution slices、serial hotspots、rollout ordering 或 dependency chains | architecture/context 清楚后再使用 |
-| `debugger` | 存在 blocking failure、regression、reproducible defect 或 stabilization-heavy repair | stabilization lane，不作通用 executor |
-| `verifier` | final acceptance、behavior-changing work、multi-file integration 或 multi-worker integration 需要验证 | multi-worker integration 后必须使用 |
-| `test-engineer` | critical-path behavior changed、tests missing、flaky 或 broad regression risk | 负责 test strategy 与 evidence，不拥有产品决策 |
-| `security-reviewer` | 涉及 auth、secrets、permissions、untrusted input、code execution、external trust boundaries 或 payments | 未复核前阻断 release |
-| `writer` | 涉及 user-facing behavior、setup、migration、operator workflow 或 document-finalization work | bounded multi-face research 中等 analyst fan-in 后再升级 |
-| `bug-finder` / `bug-rebutter` / `bug-judge` | 常规 verification 后仍有 contested、noisy 或 high-volume bug triage | burst、read-only、leader-side；持久化 survivors，而不是持久化 workers |
-
-使用最小充分 expert 集合。不得因为角色可用就添加角色；只有触发条件存在且输出能实质推进当前阶段时才添加。
-
-## 6. Native agents、skills、profiles 与 follow-up thread 边界
-
-Native Codex subagents、workflow skills、plugin-provided skills 与 profile helpers 是不同 surface，不得混为一谈。
-
-Registry 与加载规则：
-
-- native reusable role definitions 位于 user-level agents directory 或 repo-local `.codex/agents/`；
-- 每个 standalone custom agent TOML 至少必须定义 `name`、`description` 与 `developer_instructions`；
-- skills 从已安装的 `SKILL.md` 文件加载，并通过 `$name` 或 AGENTS.md routing 调用；skills 不是 native subagents；
-- plugin modules 与 profile helper 的 hard-load/soft-load 只改变哪些 procedural instructions 可见，本身不启动 durable workers，也不满足 persistent-team thresholds；
-- launcher 或 profile surface 需要长 generated instructions 时，优先使用 `model_instructions_file` 等 file-backed reference，而不是很长的 inline `-c developer_instructions=...` payload。
-
-Follow-up thread 规则：
-
-- completed expert 被吸收并关闭后，如果后续仍需要 follow-up work，应 spawn fresh agent 并传入必要 context；
-- 只有用户明确要求 preserve thread，或计划记录了 intentional preserved-thread reason 时，才复用 preserved thread；
-- 不得把 skill invocation、plugin profile 或 preserved transcript 当成 expert result returned 的证据；证据必须来自显式 expert result、durable checkpoint、本地 verification 或 cited source。
-
-Selector source 规则：
-
-- 自动 durable-team routing 读取 `.omx/state/selectors/active.json` 作为 shared repo-local activation selector；
-- compatibility records 可以作为上下文检查，但不能单独授权自动接管 unmanaged teams。
-
-## 7. Leader session 与采用范围边界
-
-当前 main Codex CLI session 仍然是 task flow 的 leader。orchestration 设计不得创建或要求一个 separate persistent leader pane 来替代当前主会话。
-
-Leader-session 规则：
-
-- 主会话负责 activation checks、role selection、worker brief quality、fan-in、evidence labeling、final integration 与最终用户报告；
-- subagents、durable workers、skills、plugin profiles 与 LangGraph nodes 都是 leader 控制下的 execution surfaces，不是独立 release authorities；
-- local mainline 或 publication decisions 仍然是用户授权的 release decisions，不是 worker 自动决策；
-- 如果使用多个 workers，leader 负责冲突解决、证据充分性与最终 acceptance claims。
-
-采用范围规则：
-
-- orchestration decision target 是当前 task flow，而不是仓库是否 newly created；
-- existing projects 的 new sessions 应自动遵循当前 user-level orchestration policy；
-- existing live sessions 必须在 reload、restart、resume、continue、phase change、durable-state detection 或 capability-state change 时 retrofit；
-- Codex startup itself 不会 auto-launch durable team；durable launch 仍是 session 内部后续 threshold-gated action；
-- resumed legacy Codex sessions 是 compatibility-scoped：可以继续 follow-up discussion，但不能覆盖当前 repository governance 或当前 capability-chain policy。
-
-Trace 要求：当会话在 startup 或首次 activation 中没有采用 durable workflow 或 persistent team 时，trace 必须说明哪个阈值未满足，而不是暗示 startup 完全不能使用 orchestration。
-
-## 8. Base layer、wrapper layer 与 effective lane 选择
-
-Native Codex 仍是 base layer。oh-my-codex、native OMX、skills、profile helpers 与 LangGraph 是围绕 Codex 增加 workflow 与 durable-state 行为的层；它们不是 Codex replacement。
-
-Layer 与 switch 规则：
-
-- user-level capability switches 必须按链式状态读取：当前预期状态为 `subagent_routing=auto`、`oh_my_codex=on`、`langgraph=on`；
-- `langgraph=on` 要求 `oh_my_codex=on` 且 routing 可用；
-- `oh_my_codex=off` 会禁用 LangGraph availability；
-- `subagent_routing=off` 会禁用更高 orchestration layers；
-- 当 `durable_orchestration_backend=langgraph` 且 `langgraph_ready=true` 时，LangGraph 是默认 durable backend state。
-
-Effective lane 规则：
-
-- default backend state 不会消除 task-level lane choice；
-- worker-centric durable execution、worktree isolation、mailbox flow 与 direct worker lifecycle control 优先使用 `native_omx`；
-- graph-shaped multi-phase execution、checkpoint-driven recovery、interrupt/resume approval gates、frozen briefs 与 persisted survivor queues 优先使用 LangGraph；
-- effective lane choice 可以随 task flow 改变，但一个 durable task 同一时间仍只能使用一个 backend family；
-- backend-family switching 仍必须显式化，并记录为 close/handoff，而不是隐藏成静默 lane change。
-
-## 9. Durable-team 阈值映射
-
-Durable team 启动必须受阈值约束。`backend_default=langgraph` 与 `backend_ready=true` 表示 durable backend 可用；它不表示 persistent team 必须已经运行。
-
-阶段映射：
-
-| 阶段 | Durable team 决策 | Worker 形态 | 必须写入 trace 的理由 |
-| --- | --- | --- | --- |
-| define-target | `persistent_team=not_needed` | 无 | target 与 acceptance boundary 仍在定义 |
-| read-context | `persistent_team=not_needed` | 无 | context gathering 仍由 leader 或 analyst-only 完成 |
-| freeze-plan | `persistent_team=not_needed` | 无 | plan 尚未冻结 |
-| verify-accept | 默认 `persistent_team=not_needed` | 按需使用 verifier/test-engineer experts | acceptance verification 本身不是 multi-worker execution slice |
-| execute-parallel | plan 已冻结且存在 2+ 独立 execution slices 时 `persistent_team=selected` | 2 个 `team-executor` workers；3+ slices 时扩展到 3 workers | 具名 slice 数量与所有权边界触发 team launch |
-| integrate-converge | 存在 2+ 独立 integration/convergence slices 时 `persistent_team=selected` | 2 个 `team-executor` workers；leader 负责最终集成 | 具名 convergence slices 足够独立，可并行 |
-| stabilize | 存在至少 1 个 blocking failure、regression 或 stabilization issue 时 `persistent_team=selected` | 默认 2 个 `debugger` workers | 具名 blocking issue 触发 debugger-lane stabilization |
-
-首轮报告规则：
-
-- 如果第一次 activation check 没有选择 `omx team` / durable team，trace 必须说明哪个阈值未满足；
-- 如果选择了 durable team，trace 必须说明哪个阈值触发了它；
-- 当阈值满足且没有 blocker 时，使用已批准的自动 durable-team launcher，例如 `omx-team-auto.ps1`，而不是 raw `omx team`；
-- 不自动接管 unmanaged existing teams；必须把它们报告为需要显式 adopt 或 cleanup 的既有状态。
-
-Bounded multi-face research 仍然是 analyst-fanout-first：第一轮使用同质 `analystxN`；默认第一轮不得混入 `architect`、`planner` 或 `writer`。只有在 analyst fan-in 显示 architecture、execution-ordering 或 document-finalization layer 后，才升级到这些角色。
-
-## 10. Delegation 设计与 leader wait discipline
-
-Delegation 必须缩短获得正确结果的路径；它不能变成反射式后台等待。
-
-委派前：
-
-- 先识别 leader 当前应本地执行的 immediate critical-path task；
-- 只委派 concrete、bounded、self-contained 且能 materially advance 主任务的 sidecar work；
-- 如果下一步 leader action 依赖该结果，不要把 urgent blocking work 委派出去等待；
-- leader 与 experts 之间、experts 彼此之间不得 duplicate work；
-- 避免在同一个 unresolved thread 上重复发起多次 delegate call，除非 follow-up 确实不同且必要。
-
-委派执行期间：
-
-- leader 立即继续 meaningful non-overlapping work；
-- 不要在本地重做 delegated task，除非 delegated lane 已 timeout、stalled 或被明确 abandoned，并且 leader 记录 takeover；
-- `wait_agent` 要 sparingly 使用，只在 leader 下一步 critical-path step 被该结果阻塞时才等待；
-- worker 返回 code 或 documents 后，leader 必须快速 review、integrate 或 refine，而不是自动接受。
-
-代码委派：
-
-- 明确 file/module ownership 与 expected output；
-- 告知 workers 他们不是代码库中唯一执行者，不得 revert 其他人的 edits；
-- 要求 workers 在 final answer 中列出 changed paths；
-- delegated write sets 必须保持 disjoint，除非 leader 对 hotspot 做 serializes。
-
-## 11. Codebase exploration、code-change delegation 与 durable state surfaces
-
-Read-only exploration、code-changing worker execution 与 durable-state persistence 具有不同的证据和所有权规则。
-
-Exploration 与代码委派规则：
-
-- `explorer` 风格 codebase search 用于 specific、well-scoped 的 read-only questions、symbol mapping 或 file discovery；
-- 当 bounded code change 已清楚且可以安全委派时，不得用 read-only exploration 替代 implementation worker；
-- 对 coding tasks，如果 worker 能在隔离 ownership area 中完成 bounded patch，优先委派 concrete code-change worker subtasks，而不是只做 read-only explorer analysis；
-- 当 leader 对 critical path 已有足够本地上下文时，应本地推进，而不是委派一个会阻塞的 read-only exploration task；
-- explorer results 可以用于 routing 和 briefs，但最终 implementation evidence 仍需要 local verification、tests 或经 review 的 worker patches。
-
-LangGraph entrypoint 与 repo-local state 规则：
-
-- 当任务需要 graph phases、checkpoint gates、frozen briefs、survivor queues 或 tracked LangGraph thread state 时，使用 LangGraph entrypoints 与 repo-local `.omx/state/langgraph/` runtime state；
-- repo-local `.omx/state/langgraph/backend.json` 可作为 backend context 检查；
-- `.omx/state/team/codex-auto-managed-team.json` 可作为 compatibility context 检查；
-- `.omx/state/selectors/active.json` 仍是自动 durable-team adoption 的 active selector authority；
-- durable artifacts、frozen briefs 与 persisted survivor queues 必须写入 repo-local state 或已记录 artifact paths，不得只保存在 transient chat context。
-
-## 12. Expert 生命周期、bounded wait 与 provider backpressure
-
-Expert 与 subagent 的使用必须由 leader 从启动、fan-in 到清理全程负责。
-
-生命周期规则：
-
-- 使用 bounded wait，不得无限等待；
-- 第一个 wait window 从约 30 秒开始；
-- bounded review 可延长到约 60 秒；
-- 更深的 architect、verifier 或 researcher 工作可延长到约 120 秒；
-- 单个 expert 的总等待时间默认控制在约 180 秒内，除非用户明确要求保留或继续该线程；
-- 长时间运行的 expert 必须约每 30 秒或在重要 milestone 给出简短 progress/liveness update，包含当前步骤、已完成工作、下一步和 blocker；
-- 如果连续两次 progress check 都静默，视为 stalled，并选择 inspect、redirect、respawn 更窄任务、handoff 到 durable lane，或由主会话接管；
-- `wait_agent` 返回 completed 结果且 leader 吸收后，默认关闭 completed agent；
-- 只有用户明确要求保留该线程时，才继续保持 completed agent 打开。
-
-timeout、stall 或 upstream wait 都不是证据。final report 必须说明哪条 lane 提供了证据，以及哪条 lane timed out、stalled、吸收后关闭，或由主会话接管。
-
-Provider pacing 与 backpressure 规则：
-
-- provider proxy 有共享 upstream pacing budget：每 rolling 1-minute window 最多 10 次 true upstream provider forwards；
-- 当 budget 饱和时，upstream-bound 请求等待 slot，而不是把该条件视为本地 fatal error；
-- upstream pacing 本身不是避免 LangGraph、native OMX 或 native experts 的理由；
-- 当多个 agent step 可能命中 provider 时，优先 local-first phases、deterministic local checks 与 bounded fan-out；
-- 如果 pacing 对执行产生实质影响，报告为 `backpressure:upstream_pacing` 或等价具名条件，而不是解释成用户意图缺失。
-
-## 13. Fan-out 上限、写入所有权与 backend-family 边界
-
-Native expert 的使用是 leader 显式启动并由 leader 负责 fan-in。不得暗示 raw Codex 默认会自动生成 specialist roles。
-
-Fan-out 上限：
-
-- native subagent fan-out 必须保持有界；当前 managed defaults 为 `agents.max_threads=6` 与 `agents.max_depth=1`；
-- 优先把并行 fan-out 用于 read-heavy、bounded、相互独立的工作；
-- 如果下一步 critical path 依赖该结果，则该工作应由主会话本地完成，而不是交给后台阻塞等待；
-- 写入型并行执行必须明确 file/module ownership、disjoint write sets、hotspot serialization 与 leader-owned final integration；
-- worker 必须被告知自己不是代码库中的唯一执行者，不得 revert 或覆盖其他 active owners 的变更。
-
-Backend-family 边界：
-
-- 一个 durable task 同一时间只使用一个 backend family；
-- backend-family switching 必须显式化，并记录在 trace 或 handoff notes 中；
-- 当 LangGraph ready 且被选为默认 backend 时，如果 durable lane 使用 `native_omx`，必须给出具名理由，例如 worker-centric durable execution、worktree isolation、mailbox flow 或 direct worker lifecycle control；
-- graph-shaped multi-phase execution、checkpoint-driven recovery、interrupt/resume approval gates、frozen briefs 与 persisted survivor queues 优先使用 LangGraph；
-- 不得在没有关闭或显式 handoff 前一 backend family 的情况下，把 `native_omx` worker lifecycle 与 LangGraph checkpoint state 混进同一个 durable task。
-
-开放式任务必须保持 research 与 implementation 分离：先用 analyst/research roles 做 discovery，只有在 plan、ownership 与 acceptance evidence 冻结后，才进入 executor/team execution。
-
-## 14. Handoff、对抗复核与相邻 runtime 边界
-
-开放式 research 与有争议的 bug review 必须有明确 handoff 边界，避免临时 expert lane 变成 unmanaged persistent workers。
-
-Research handoff 规则：
-
-- 任务开放式开始时，research 与 implementation 必须使用不同角色；
-- research fan-in 后，先把结果持久化为 frozen implementation brief，再开始 implementation；
-- implementation 应在 fresh execution context 或明确标记的 execution phase 中继续，并把 frozen brief 作为契约；
-- brief 必须包含 scope、non-goals、acceptance evidence、ownership boundaries 与 unresolved risks。
-
-对抗复核规则：
-
-- `bug-finder`、`bug-rebutter`、`bug-judge` 是 burst-review roles，默认保持 leader-side 且 read-only；
-- 仅当一次常规 verification 后仍存在争议、噪声或大批候选 bug 时，才使用它们做 contested / noisy / high-volume bug triage；
-- 不把 bug triad 保持为 persistent workers；
-- 剩余候选问题必须持久化为 adversarial-review survivor queue，需要修复时转入 debugger lane；
-- final report 必须区分 confirmed bugs、rebutted candidates、unresolved survivors 与 debugger-lane follow-up。
-
-Durable-state 与相邻 runtime 边界：
-
-- 使用 `codex-durable-state-status.ps1` 作为当前仓库或 worktree 的 canonical read-only cross-backend durable-state summary；
-- 不得仅凭 compatibility records 自动接管 unmanaged teams；
-- 术语优先使用 OpenHands，而不是 archived OpenDevin；
-- LangGraph、AutoGen、CrewAI 是通用 programmable orchestration runtimes，不等同于 native Codex-subagent equivalents；
-- LangGraph graph 可以协调 phases、checkpoints、approvals 与 survivor queues，但 native Codex experts 仍必须由 leader 显式 spawn 并负责 fan-in。
-
-## 15. Backend、workflow 与 team 语义边界
-
-以下概念不得混用：
-
-- `backend_default` - user-level capability state 选择的默认 durable backend。
-- `backend_ready` - 已选 backend 是否 installed、enabled、selected、ready。
-- `durable_workflow` - 当前任务是否应使用 checkpointed 或 graph-shaped durable execution。
-- `persistent_team` - 当前任务是否应启动 multi-worker persistent team。
-
-当 LangGraph ready 时，它就是默认 backend。小任务仍然可以是 `durable_workflow=not_needed` 且 `persistent_team=not_needed`。这表示任务不需要这些执行面，不表示 LangGraph 关闭。
-
-## 16. 检查基线与当前复核结论
-
-2026-05-11 本地只读检查建立了最初的能力基线：
-
-```text
-C:\Users\lenovo\.codex\state\user-level-team-mode.json:
-  subagent_routing = auto
-  oh_my_codex = on
-  langgraph = on
-  durable_orchestration_backend = langgraph
-  langgraph_ready = true
-
-C:\Users\lenovo\.codex\venvs\langgraph-py312:
-  exists
-  langgraph importable
-  langgraph_cli available
-
-D:\PythonProject_langgraph\.omx\state\langgraph\backend.json:
-  backend = langgraph
-  status = running
-
-D:\PythonProject_langgraph\.omx\state\selectors\active.json:
-  missing at inspection time
-```
-
-解释：user-level LangGraph backend 当时已经可用，并应视为默认 backend。repo-local active selector 缺失是状态刷新或报告缺口，不能被解释成 LangGraph backend 不可用。
-
-2026-05-15 当前复核结论：
-
-- 本 implementation plan frontmatter 为 `version: 0.17`、`status: active`、`date: 2026-05-15`。
-- 第 0 节记录了计划完成状态快照，并列出已归档实施切片。
-- 第 20 节把已规划实施阶段标记为当前约定 baseline 下完成。
-- 第 21 节记录已实施范围与收口证据。
-- `tools/check_implementation_plan_rules.py --root . --json` 已通过双语 implementation-plan registry 检查。
-- 2026-05-15 将 version 0.17 合入本地 main 后，`tools/run_openspec_guard.py --root . --tool codex --json` 与 `tools/check_worktree_session_hygiene.py --root . --json` 均已通过。
-
-结论：本方案在当前已约定 baseline 下已经完善并完成；它继续保持 active，是作为持续治理与验收 surface。未来发现新缺口时，应新开有边界的小步 change 处理。
-
-2026-05-25 补充复核结论：
-
-- 本 implementation plan frontmatter 已提升为 `version: 0.18`、`date: 2026-05-25`，仅用于记录 Phase 4 planned follow-up 的冷启动 read-order evidence 缺口。
-- 该补充不改变 2026-05-15 已归档 implementation baseline；它新增的是后续 checker/fixture 计划，不能被解释成 cold-start evidence guard 已经实现。
-- 后续实施必须通过有边界的小步 OpenSpec change、feature worktree、session claim、本地 guard、local gate 与 local MR review 完成。
-
-## 17. Active selector 处理规则
-
-当 `.omx/state/selectors/active.json` 缺失，但 user-level capability state 显示 `durable_orchestration_backend=langgraph` 且 `langgraph_ready=true` 时，会话不得静默降级到 `native_omx` 或 `none`。
-
-必需行为：
-
-1. 报告 `backend_default=langgraph` 与 `backend_ready=true`；
-2. 把 `active_selector=missing` 报告为 repo-local state-refresh gap；
-3. 当实现工作需要 tracked durable thread 时，通过已批准 helper 刷新或创建 selector；
-4. 如果 helper 尚不存在，将其记录为实现缺口，而不是解释成 backend 不可用。
-
-## 18. 低风险迭代与本地合入边界
-
-对于已经确认范围内的重复低风险完善，主会话在同时满足以下条件时，可以不再逐次请求用户授权：
-
-- 变更仅限于文档、治理文本、本地检查元数据或等价的非 runtime surface；
-- 受影响文件仍在已经同意的主题边界内；
-- activation check 能够说明 `experts=none`、`durable_workflow=not_needed`、`persistent_team=not_needed`；
-- 目标提交后的 local gate 与 local MR review 均通过；
-- feature worktree 干净，且本地 `main` 不落后于 `gitlab/main`。
-
-在这种情况下，会话可以在同一个低风险循环中提交变更，并 fast-forward 或合并到本地 `main`。这样可以避免用户对同一类简单迭代反复授权，包括反复检查和完善本计划文件的请求。
-
-以下动作仍然必须获得用户明确授权：
-
-1. 推送到 GitLab 或 GitHub；
-2. 创建、为发布更新、或合并 GitLab MR；
-3. 从 GitLab 或本地 `main` 同步 GitHub；
-4. hard reset、force push、大范围删除、或清理约定工作区以外内容等破坏性操作；
-5. 范围扩展到 runtime 代码、启动器行为、CI wiring、安全边界或大范围多文件实现；
-6. local gate 或 local MR review 失败后仍要集成；
-7. 存在所有权冲突风险的写入型并行执行。
-
-这个本地合入许可不会削弱发布流程。它只定义已经授权的简单迭代在本地执行时的边界；远端发布仍然是单独决策。
-
-## 19. 更高权威与 runtime surface 阻塞边界
-
-自动协同是默认策略，但 live execution 仍必须服从更高优先级指令、当前工具契约以及实际 runtime surface 可用性。如果某个任务按策略本应选择 expert、durable workflow 或 persistent team，但对应 surface 不能被调用，trace 必须报告具名 blocker，而不能把决策重新表述成用户偏好。
-
-合法 blocker 示例包括：
-
-- `blocked:platform_subagent_invocation_constraint` - 当前 live tool contract 不允许本轮会话启动 native subagent；
-- `blocked:helper_missing` - 已批准的 durable 或 selector helper 尚未实现或安装；
-- `blocked:preflight_failed` - lane 已被选中，但具体 preflight 检查失败；
-- `blocked:write_ownership_conflict` - 写入型并行执行会与另一个 active owner 重叠；
-- `blocked:backend_not_ready` - 所需 backend 尚未 installed、enabled、selected 或 ready。
-
-必须采用的 fallback 行为：
-
-1. 如果该 execution surface 确实不需要，报告 `not_needed` 并保持本地执行；
-2. 如果该 surface 需要但被阻塞，报告 `blocked:<reason>`，并选择通过可用 surface respawn、durable handoff，或由主会话明确接管；
-3. 绝不能把 platform 或 helper blocker 改写成被禁止的“用户没有要求 subagents/parallelism”；
-4. final report 必须区分 `not_needed`、`selected/running`、`blocked` 和 `main_session_takeover` 证据。
-
-因此，规范 activation trace 允许 expert blocker：
-
-```text
-experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
-```
-
-## 20. 实施阶段
-
-### Phase 0 - 记录并保护计划 - status: complete
-
-已完成结果：
-
-- 新增并注册本双语 active implementation plan。
-- 忽略 `log202605111306.md` 之类的本地 transcript 日志。
-- 保持 canary guard 与 root `.gitignore` 的本地日志忽略规则一致，避免 ignored transcript 破坏 local gate。
-
-### Phase 1 - Policy surfaces - status: complete
-
-已完成结果：
-
-- 更新 `AGENTS.md`。
-- 更新 `docs_bilingual/project_startup_summary.*`。
-- 新增并迭代 bilingual orchestration activation policy 文档。
-- 按需更新 team-mode、quick-reference 与 LangGraph 相关 policy surfaces。
-- 将全局自动协同默认规则写入生成式用户级 team-mode source templates，确保后续 installer refresh 不会丢失。
-
-### Phase 2 - Script-backed enforcement - status: complete for planned baseline
-
-已完成的 checker 或 test 覆盖包括：
-
-- forbidden missing-reminder routing reasons；
-- durable-team phase thresholds 与 first-activation threshold explanations；
-- capability-chain consistency；
-- expert-timeout evidence claims、completed-agent closure、bounded wait windows、liveness/stall handling 与 upstream pacing labels；
-- fan-out bounds、write ownership isolation、leader-side spawning language 与 one-backend-family durable tasks；
-- frozen research handoff briefs、adversarial-review survivor queues、adjacent-runtime terminology boundaries 与 durable artifact/state surfaces；
-- hard routing directives、actual adoption versus explanation-only mode 与 smallest-sufficient role selection；
-- native-agent versus skill/profile/plugin boundaries、custom agent TOML fields、fresh follow-up agent use 与 selector-source handling；
-- main-session leader ownership、no separate persistent leader pane、startup non-autolaunch、task-flow scoped adoption 与 legacy-session compatibility boundaries；
-- native Codex as base layer、oh-my-codex as wrapper/workflow layer、capability-switch chain values 与 `native_omx` / LangGraph effective lane choice；
-- delegation design quality、critical-path local work、等待期间 non-overlapping leader work、duplicate-work prevention 与 sparse `wait_agent` use；
-- explorer versus code-change worker boundaries、LangGraph entrypoints、repo-local `.omx/state/langgraph/` state、compatibility record usage 与 durable artifact persistence；
-- repo-local `.omx/state/selectors/active.json` 缺失时的 selector refresh/status reporting。
-
-### Phase 3 - Runtime integration - status: implemented as source-of-truth and generated-template enforcement
-
-已完成结果：
-
-- Startup 与 governance surfaces 要求新会话、session reload、Codex restart、resume、phase change、`continue`、`.omx` state detection、expert timeout/stall 时输出 activation trace。
-- LangGraph-ready 会话必须把 LangGraph 报告为默认 durable backend。
-- 受管理的用户级 team-mode 模板已经携带全局自动协同默认规则。
-
-运行边界说明：live platform constraint 仍可能阻塞 native expert spawning，durable/persistent-team launch 仍需要任务阈值。本实施完成的是报告、fallback 与生成模板 enforcement；它不会绕过工具契约，也不会强制每个任务都进 team。
-
-### Phase 4 - 提示词无关协同一致性硬化 - status: planned follow-up
-
-Phase 4 不重新打开 Phase 0-3 已完成的 baseline；它只处理 2026-05-24 复盘暴露的新缺口。 原独立 Phase 4 子计划已合并到本节并删除，本文是 Phase 4 的唯一 implementation-plan source of truth。
-
-Phase 4 执行摘要：
-
-| 项目 | 决定 |
+| `define-target` | 不启动 | 目标与验收边界未冻结 |
+| `read-context` | 不启动；可用 bounded analyst | 上下文读取还不是执行切片 |
+| `freeze-plan` | 不启动 | 计划尚未冻结 |
+| `execute-parallel` | 2+ mostly independent slices 后 candidate/selected | frozen plan、ownership、disjoint write sets |
+| `integrate-converge` | 2+ workers 的结果需要合入时可 selected | leader-owned final integration |
+| `stabilize` | 1+ blocking issue 可启动 debugger lane | blocker 证据和收敛目标 |
+| `verify-accept` | 不新启动 team；可用 verifier | 收尾验证，不扩大写入面 |
+
+## 8. Expert 生命周期与等待纪律
+
+Native expert lifecycle 必须由 leader 负责：
+
+1. `spawn`：记录 role、agent id、nickname（如有）、task summary、scope、non-goals、ownership。
+2. `wait`：使用 bounded wait；初始约 30 秒，review 可到约 60 秒，深度 architect/verifier/research 可到约 120 秒，总等待默认约 180 秒。
+3. `timeout/stall/provider_pacing_wait`：标记 non-evidence，并选择 inspect、redirect、respawn narrower task、handoff durable lane 或主会话接管。
+4. `result`：只有实际返回的结果才可进入 fan-in。
+5. `absorbed`：最终报告引用 result 前，必须记录 leader 已吸收。
+6. `close`：completed expert 被吸收后默认关闭；后续需要新工作时重新 spawn。
+
+写入型 worker 必须收到：
+
+- 文件/模块 ownership。
+- 不得 revert 或覆盖他人变更。
+- 需要报告 changed paths。
+- 由 leader 进行最终集成。
+
+## 9. Native agents、skills、profiles 与 follow-up thread 边界
+
+| Surface | 来源 | 可作为 expert evidence 吗 |
+| --- | --- | --- |
+| Native Codex subagent | user-level 或 repo-local agent TOML | 可以，但必须有 spawn/wait/result/close/absorbed audit |
+| Skill | `SKILL.md` | 不可以；它是 workflow instruction surface |
+| Plugin profile/helper | plugin 或 profile surface | 不可以；只改变可见过程上下文 |
+| LangGraph node | repo-local durable workflow | 不是 native expert；按 LangGraph state evidence 审计 |
+| OMX durable worker | native_omx lane | 不是 native expert；按 selector/manifest/heartbeat/lifecycle 审计 |
+
+Follow-up work 默认新建 fresh agent/thread，并传递必要上下文；只有用户明确要求保留线程时才复用。
+
+## 10. Effective lane 选择
+
+| Lane | 适用 | 不适用 |
+| --- | --- | --- |
+| 主会话本地执行 | 单文件、小范围、低风险、critical path 清楚 | 需要长时间并行或 worker ownership 分离时 |
+| Native experts | bounded review、research、debug、verification | 没有可审计 spawn/result 的场景 |
+| `native_omx` | worker-centric durable execution、worktree isolation、mailbox flow、直接 worker lifecycle control | 图状阶段、checkpoint approval gates 为主时 |
+| LangGraph | graph-shaped multi-phase execution、checkpoint recovery、approval gates、frozen briefs、survivor queues | 简单单切片文档修改 |
+| Persistent team | plan 已冻结且有 2+ 独立执行切片，或 stabilize 有 blocking issues | startup、read-context、单文件 edit、证据不足时 |
+
+## 11. 文件职责图
+
+| 文件/目录 | 职责 |
 | --- | --- |
-| 未来 change id | `enforce-prompt-independent-collaboration-parity` |
-| 目标 | 证明自动协同路由不依赖用户是否写了“experts / durable_team / persistent team”这类短语 |
-| 必须新增的证据面 | prompt-independent fixtures、cold-start read-order ledger、durable/persistent evidenceguard、expert lifecycle JSONL、LangGraph stale-running release checker |
-| 关键非目标 | 不把 skills/profile 当 native experts；不在 startup 自动拉团队；不把 backend ready 当 team running；不把本计划当运行证据 |
-| 验收出口 | 新检查器接入 `tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json`，并通过 local gate 与 local MR review |
+| `AGENTS.md` | 当前会话启动与 orchestration authority surface |
+| `docs_bilingual/project_startup_summary.*` | cold-start read order、canary 与 repository posture |
+| `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.*` | activation policy、capability chain、hard directives、timeout evidence |
+| `docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.*` | 本 active baseline 与后续 Phase 4 实施计划 |
+| `openspec/specs/codex-user-level-orchestration-activation-policy/spec.md` | 稳定 OpenSpec 能力要求 |
+| `tools/check_orchestration_activation_policy.py` | activation policy 文本和 forbidden reason guard |
+| `tools/check_orchestration_trace_evidence.py` | trace evidence validator |
+| `tools/check_capability_switch_chain.py` | capability dependency chain guard |
+| `tools/check_role_routing_directive_evidence.py` | hard directive 与 role-routing evidence guard |
+| `tools/check_agent_skill_profile_surface_boundaries.py` | native agent / skill / profile 边界 guard |
+| `tools/check_expert_lifecycle_wait_pacing_evidence.py` | expert wait/pacing evidence guard |
+| `tools/check_delegation_wait_discipline_evidence.py` | delegation 和 wait discipline guard |
+| `tools/check_durable_artifact_state_surfaces.py` | durable artifact/state surface guard |
+| `tools/check_effective_lane_fit_evidence.py` | backend family 与 task-fit evidence guard |
+| `tools/check_fanout_write_ownership_evidence.py` | fan-out、写入 ownership 与 one-backend-family guard |
+| `tools/check_leader_session_scope_evidence.py` | main-session leader 和 no separate persistent leader pane guard |
+| `tools/run_openspec_guard.py` | 仓库级 OpenSpec / governance guard 汇总入口 |
+| `tools/ci/ci_test_manifest.json` | local gate 测试登记 |
 
-本次 2026-05-27 full Comet 文档重构只增加上述阅读入口、边界提示和完整 Comet/OpenSpec/Superpowers 工件；它没有执行 Phase 4 的 checker、fixtures 或 runtime 改造。
+## 12. 已完成 baseline
 
-#### 当前会话发现
+### 12.1 Phase 0-3 完成状态
 
-本 session 中两条用户指令的业务范围相同。其中一条显式包含“use experts / durable_team / persistent team”，另一条没有。最终文档结果已经对齐，但会话证据不能严格证明“没有这句话”的指令独立产生了同一条协同执行路径。仓库政策已经要求自动协同不得依赖这句话，因此缺口不是再写提示词提醒，而是补上可执行的一致性 guard 和 lifecycle audit surface。
-
-本计划是未来实施计划，不是运行时证据。它不能证明当前已有 durable team 或 persistent team 正在运行。
-
-#### 2026-05-27 完整 Comet 重构边界
-
-本次 full Comet 重构只改进本文档与对应 Comet/OpenSpec/Superpowers 工件的结构化可读性。它将 `refactor-automatic-routing-plan-full-comet` 作为独立 documentation-only change，补齐设计、计划、任务、验证与归档记录；它不实现 Phase 4 checker，不创建 durable/persistent runtime worker，不改变 user-level launcher 或 LangGraph runtime state。
-
-因此，本次提交可作为“本文档已经按完整 `/comet` 流程重构”的证据；不能作为“prompt-independent collaboration parity 已实现”或“durable/persistent team 已运行”的证据。
-
-#### 2026-05-25 颗粒度复核结论
-
-本计划需要更新。原稿已经覆盖主要方向，但还不够 implementation-ready，主要缺口如下：
-
-1. 曾使用未固定变更标识的 OpenSpec 路径，执行者无法直接落地。
-2. 四类 checker 的输入夹具、输出字段、失败语义和通过语义不够明确。
-3. 没有把“prompt phrase 只能改变 hard directive 标记，不能改变 task-shape 阈值判断”写成可测试契约。
-4. durable/persistent evidenceguard 没有区分 `selected`、`running`、`complete`、`not_needed`、`blocked` 的证据需求。
-5. expert lifecycle 只列出事件名，没有定义 JSONL 事件字段、引用关系和 timeout-as-evidence 的失败条件。
-6. LangGraph `running` 释放规则缺少 thread/workflow/job 三类 state surface 的最小字段。
-7. 验证矩阵没有明确每个新增工具应接入 `tools/run_openspec_guard.py`、`tools/ci/ci_test_manifest.json` 和本地 MR review 的顺序。
-
-本次修订把这些缺口补成可执行颗粒度。它仍是实施计划，不是运行时证据；不能证明当前已有 durable team 或 persistent team 正在运行。
-
-#### 范围
-
-范围内：
-
-- 提示词无关的路由一致性 fixtures。
-- durable/persistent team evidenceguard。
-- expert lifecycle audit：`spawn / wait / timeout / result / close / absorbed`。
-- LangGraph state 完成/释放检查，避免 work 已提交后仍残留 `running`。
-- timeout 与 provider pacing 作为 non-evidence 的处理。
-- 文档与 guard wiring 更新。
-- cold-start read-order evidence：新会话或用户要求冷启动复读时，记录已读文件、跳过原因、OpenSpec 状态与 worktree preflight。
-
-范围外：
-
-- 替代 native Codex subagents。
-- 把 skills 或 plugin profiles 当作 native experts。
-- 在 startup 阶段自动启动 durable teams。
-- 未经用户明确授权的远端发布。
-
-#### 计划文件地图
-
-后续实施时使用固定 OpenSpec change id，避免占位符：
-
-- change id：`enforce-prompt-independent-collaboration-parity`
-- 推荐实现分支：`enforce-prompt-independent-collaboration-parity`
-- 推荐 worktree：`.worktrees/enforce-prompt-independent-collaboration-parity`
-
-| 路径 | 动作 | 责任 |
+| Phase | 状态 | 已完成结果 |
 | --- | --- | --- |
-| `openspec/changes/enforce-prompt-independent-collaboration-parity/proposal.md` | 新建 | 定义有边界的 change、非目标和验收标准。 |
-| `openspec/changes/enforce-prompt-independent-collaboration-parity/tasks.md` | 新建 | 跟踪实施完成度。 |
-| `openspec/changes/enforce-prompt-independent-collaboration-parity/specs/codex-user-level-orchestration-activation-policy/spec.md` | 新建 | 增加提示词无关一致性、evidenceguard、lifecycle audit、LangGraph release 要求。 |
-| `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md` | 修改 | 解释提示词无关的自动协同与证据边界。 |
-| `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md` | 修改 | 中文伴随更新。 |
-| `tools/check_orchestration_prompt_independent_collaboration_parity.py` | 新建 | 校验有/无显式短语的路由一致性 fixtures。 |
-| `tools/check_cold_start_read_order_evidence.py` | 新建 | 校验 cold-start read-order evidence 是否列明已读文件、跳过理由、OpenSpec 状态与 worktree preflight。 |
-| `tools/check_durable_persistent_evidence_guard.py` | 新建 | 缺少 selector/manifest/heartbeat/worker 证据时拒绝 durable/persistent 声明。 |
-| `tools/check_expert_lifecycle_audit.py` | 新建 | 校验 expert lifecycle audit 记录。 |
-| `tools/check_langgraph_state_release.py` | 新建 | 检测完成/释放后仍残留的 stale `running` 状态。 |
-| `test/check_orchestration_prompt_independent_collaboration_parity.test.py` | 新建 | 一致性检查器单元测试。 |
-| `test/check_cold_start_read_order_evidence.test.py` | 新建 | cold-start read-order evidence 单元测试。 |
-| `test/check_durable_persistent_evidence_guard.test.py` | 新建 | evidenceguard 单元测试。 |
-| `test/check_expert_lifecycle_audit.test.py` | 新建 | lifecycle audit 单元测试。 |
-| `test/check_langgraph_state_release.test.py` | 新建 | LangGraph release 检查单元测试。 |
-| `test/fixtures/orchestration_prompt_independent_collaboration_parity/` | 新建 | 有/无显式协同短语的成对 fixtures。 |
-| `test/fixtures/cold_start_read_order_evidence/` | 新建 | 新会话、resume、用户要求冷启动复读和缺失跳过理由的 evidence fixtures。 |
-| `test/fixtures/durable_persistent_evidence_guard/` | 新建 | durable/persistent claim 与证据夹具。 |
-| `test/fixtures/expert_lifecycle_audit/` | 新建 | expert lifecycle JSONL 夹具。 |
-| `test/fixtures/langgraph_state_release/` | 新建 | LangGraph state 夹具。 |
-| `tools/run_openspec_guard.py` | 修改 | 将新检查器接入 guard sequence。 |
-| `tools/ci/ci_test_manifest.json` | 修改 | 注册新单元测试。 |
-| `docs_bilingual/docs_registry.yaml` | 修改 | 注册本计划和必要的新治理伴随文档。 |
+| Phase 0：记录并保护计划 | complete | 注册本 active implementation plan；忽略本地 transcript；保持 canary guard 与 `.gitignore` 一致 |
+| Phase 1：Policy surfaces | complete | 更新 `AGENTS.md`、startup summary、activation policy、team-mode、quick-reference 与 LangGraph policy surfaces |
+| Phase 2：Script-backed enforcement | complete for planned baseline | 增加 capability chain、trace evidence、expert timeout、role routing、surface boundary、leader scope、delegation、durable artifact、lane fit、fan-out ownership 等 checkers/tests |
+| Phase 3：Runtime integration | implemented as source-of-truth and generated-template enforcement | 生成式用户级 team-mode templates 携带全局自动协同默认规则；LangGraph-ready 会话必须报告默认 backend |
 
-#### 过程组式运营模型
+### 12.2 已归档实施切片
+
+| 归档路径 | 用途 |
+| --- | --- |
+| `openspec/changes/archive/2026-05-11-enforce-automatic-orchestration-routing/` | 自动协同路由 baseline。 |
+| `openspec/changes/archive/2026-05-11-enforce-active-selector-status-helper/` | active selector 状态 helper。 |
+| `openspec/changes/archive/2026-05-12-enforce-hard-routing-directive-adoption/` | hard routing directive adoption。 |
+| `openspec/changes/archive/2026-05-13-enforce-capability-switch-chain/` | capability switch chain。 |
+| `openspec/changes/archive/2026-05-13-enforce-custom-agent-toml-schema/` | custom agent TOML schema。 |
+| `openspec/changes/archive/2026-05-13-enforce-expert-lifecycle-wait-pacing-evidence/` | expert lifecycle wait/pacing evidence。 |
+| `openspec/changes/archive/2026-05-13-enforce-orchestration-trace-evidence-validator/` | orchestration trace evidence validator。 |
+| `openspec/changes/archive/2026-05-13-extend-orchestration-activation-checker-coverage/` | activation checker coverage extension。 |
+| `openspec/changes/archive/2026-05-14-enforce-agent-skill-profile-surface-boundaries/` | agent / skill / profile surface boundaries。 |
+| `openspec/changes/archive/2026-05-14-enforce-delegation-wait-discipline/` | delegation wait discipline。 |
+| `openspec/changes/archive/2026-05-14-enforce-durable-artifact-state-surfaces/` | durable artifact and state surfaces。 |
+| `openspec/changes/archive/2026-05-14-enforce-effective-lane-fit-evidence/` | effective lane-fit evidence。 |
+| `openspec/changes/archive/2026-05-14-enforce-fanout-write-ownership-evidence/` | fan-out write ownership evidence。 |
+| `openspec/changes/archive/2026-05-14-enforce-leader-session-scope-evidence/` | leader session scope evidence。 |
+| `openspec/changes/archive/2026-05-14-enforce-orchestration-checker-ci-coverage/` | orchestration checker CI coverage。 |
+| `openspec/changes/archive/2026-05-14-enforce-role-directive-routing-evidence/` | role directive routing evidence。 |
+| `openspec/changes/archive/2026-05-15-harden-global-automatic-collaboration-default/` | global automatic collaboration default hardening。 |
+
+### 12.3 已完成但仍需保持的边界
+
+- Native `spawn_agent` 仍受 live platform/tool contract 约束；阻塞时写 `experts=blocked:platform_subagent_invocation_constraint`。
+- LangGraph ready 不等于 persistent team running。
+- 用户级安装产物需要 installer refresh 才能同步 source-template 变化。
+- 每个具体任务仍需 activation trace、threshold evidence 和适用的 checker-backed evidence。
+
+## 13. Phase 4 实施包定义
+
+Phase 4 不重开 Phase 0-3；它只处理提示词无关协同一致性、evidenceguard、expert lifecycle audit、LangGraph release 和 cold-start read-order evidence 缺口。
+
+| 项 | 决定 |
+| --- | --- |
+| Change id | `enforce-prompt-independent-collaboration-parity` |
+| 推荐分支 | `enforce-prompt-independent-collaboration-parity` |
+| 推荐 worktree | `.worktrees/enforce-prompt-independent-collaboration-parity` |
+| 目标 | 证明自动协同由 task shape / threshold / blocker 决定，不由用户是否写协同短语决定 |
+| 必须新增证据面 | prompt-independent fixtures、cold-start read-order ledger、durable/persistent evidenceguard、expert lifecycle JSONL、LangGraph stale-running release checker |
+| 非目标 | 不把 skills/profile 当 expert；不 startup auto-launch team；不把 backend ready 当 team running |
+| 验收出口 | 新检查器接入 `tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json`，local gate 与 local MR review 通过 |
+
+## 14. 过程组式运营模型
 
 | 过程组 | 输入 | 工具与技术 | 输出 |
 | --- | --- | --- | --- |
-| 启动 | 会话复盘、当前治理政策、用户对自动协同的要求 | 问题框定、证据缺口分析、非目标审查 | change proposal、验收标准、明确的非声明边界 |
-| 规划 | OpenSpec change、文件地图、当前 checker 模式、fixture 要求 | 切片拆分、owner mapping、test-first design、timeout budget review | 冻结实施计划、独立任务、验证矩阵 |
-| 执行 | 冻结计划、worktree、OpenSpec delta、测试 | TDD、Python checkers、JSON fixtures、本地 guard wiring、必要时的 bounded expert review | 检查器、测试、文档更新、changed-path list |
-| 监控与控制 | 测试输出、guard 输出、路由 fixtures、lifecycle records | Diff review、OpenSpec guard、local CI、expert verifier review、缺陷分诊 | 已接受修复、被拒绝的虚假声明、剩余风险清单 |
-| 收尾 | 通过的 gates、干净分支、更新的 docs registry、完成后的 OpenSpec archive 候选 | 收尾审查、本地 MR review、archive 决策、经验教训 | merge-ready 分支、archive 或延期证据、后续 backlog |
+| 启动 | 会话复盘、当前治理政策、用户对自动协同的确认、已归档 Phase 0-3 | 问题框定、证据缺口分析、非目标审查 | OpenSpec proposal、验收标准、明确的非声明边界 |
+| 规划 | OpenSpec change、文件地图、checker 模式、fixture 要求 | 切片拆分、owner mapping、test-first design、timeout budget review | 冻结实施计划、独立任务、验证矩阵 |
+| 执行 | 冻结计划、feature worktree、OpenSpec delta、测试夹具 | TDD、Python checkers、JSON/JSONL fixtures、guard wiring、bounded expert review | 检查器、测试、治理文档更新、changed-path list |
+| 监控与控制 | 测试输出、guard 输出、routing fixtures、lifecycle records | Diff review、OpenSpec guard、local CI、verifier review、缺陷分诊 | 已接受修复、被拒绝的虚假声明、剩余风险清单 |
+| 收尾 | 通过的 gates、干净分支、docs registry、OpenSpec archive 候选 | 本地 MR review、archive 决策、经验教训 | merge-ready 分支、archive 或延期证据、后续 backlog |
 
-#### 证据契约
+## 15. Evidence contracts
 
-##### Cold-start read-order evidence contract
+### 15.1 Cold-start read-order evidence
 
-每次声称按 cold-start read order 继续当前任务时，必须能落盘或生成结构化 evidence。建议路径：
+当会话声称按 cold-start read order 继续时，必须生成结构化 evidence。建议 fixture 路径：
 
 ```text
 test/fixtures/cold_start_read_order_evidence/
@@ -764,210 +294,44 @@ test/fixtures/cold_start_read_order_evidence/
   invalid_read_order_used_as_runtime_evidence.json
 ```
 
-最小 JSON 字段：
+最小字段：
 
-```json
-{
-  "case_id": "single_file_doc_update_after_cold_start",
-  "trigger": "user_requested_cold_start_reread",
-  "read_order_source": {
-    "path": "docs_bilingual/project_startup_summary.md",
-    "section": "Cold-Start Read Order",
-    "source_sha256": "<sha256-or-null-in-fixture>"
-  },
-  "startup_summary_pair": {
-    "english_primary": "docs_bilingual/project_startup_summary.md",
-    "chinese_companion": "docs_bilingual/project_startup_summary.zh-CN.md",
-    "utf8_explicit_read": true,
-    "mojibake_handling": "treat_rendering_issue_as_encoding_boundary_do_not_copy_corruption"
-  },
-  "read_order_evidence": {
-    "items": [
-      {
-        "order_index": 1,
-        "path": "docs_bilingual/project_startup_summary.md",
-        "decision": "read",
-        "read_mode": "full_text_utf8",
-        "needed_for_current_task": true,
-        "reason": "authoritative cold-start read order and repository posture"
-      },
-      {
-        "order_index": 2,
-        "path": "docs_bilingual/project_startup_summary.zh-CN.md",
-        "decision": "read",
-        "read_mode": "full_text_utf8_or_explicit_utf8_retry",
-        "needed_for_current_task": true,
-        "reason": "Chinese companion and UTF-8/mojibake boundary"
-      },
-      {
-        "order_index": 3,
-        "path": "docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "current mainline handoff and no-drift notes"
-      },
-      {
-        "order_index": 4,
-        "path": "docs_bilingual/memory/mainline_sync-langgraph-capability-gap-after-migration-aware-live-primary-engine-compatibility-state_startup_summary.zh-CN.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections_utf8",
-        "needed_for_current_task": true,
-        "reason": "Chinese mainline handoff companion"
-      },
-      {
-        "order_index": 5,
-        "path": "AGENTS.md",
-        "decision": "read",
-        "read_mode": "full_text_or_authority_sections",
-        "needed_for_current_task": true,
-        "reason": "repository instruction surface for orchestration and publication workflow"
-      },
-      {
-        "order_index": 6,
-        "path": "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "feature worktree, session claim and mainline freshness rules"
-      },
-      {
-        "order_index": 7,
-        "path": "docs_bilingual/governance/langgraph_user_level_runtime_policy.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "LangGraph backend readiness and repo-local state boundary"
-      },
-      {
-        "order_index": 8,
-        "path": "docs_bilingual/governance/user_level_launcher_payload_policy.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "startup payload and model instruction boundary for cold-start evidence"
-      },
-      {
-        "order_index": 9,
-        "path": "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "activation trace, evidence and durable-team threshold policy"
-      },
-      {
-        "order_index": 10,
-        "path": "docs_bilingual/governance/openspec_usage_convention.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "decide whether this bounded documentation update needs a new OpenSpec change"
-      },
-      {
-        "order_index": 11,
-        "path": "docs_bilingual/governance/codex_user_level_mcp_scope_policy.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "direct MCP versus router boundary can affect orchestration evidence claims"
-      },
-      {
-        "order_index": 12,
-        "path": "docs_bilingual/governance/openspec_opsx_project_usage_policy.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "repository OPSX and task ownership precheck boundary"
-      },
-      {
-        "order_index": 13,
-        "path": "docs_bilingual/governance/openspec_official_workflow_policy.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "official OpenSpec lifecycle and validation authority"
-      },
-      {
-        "order_index": 14,
-        "path": "docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "active user-level team-mode and routing plan"
-      },
-      {
-        "order_index": 15,
-        "path": "docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md",
-        "decision": "read",
-        "read_mode": "task_relevant_sections",
-        "needed_for_current_task": true,
-        "reason": "active durable-state isolation plan"
-      },
-      {
-        "order_index": 16,
-        "path": "active OpenSpec change from openspec list --json",
-        "decision": "skipped",
-        "read_mode": "not_applicable",
-        "needed_for_current_task": false,
-        "reason": "openspec list --json returned an empty changes array"
-      }
-    ],
-    "summary_counts": {
-      "read": 15,
-      "skipped": 1,
-      "read_order_total_considered": 16
-    },
-    "openspec_list": {"changes": []},
-    "worktree_preflight": {
-      "gitlab_main_fetched": true,
-      "local_main_not_behind_gitlab_main": true,
-      "feature_worktree": ".worktrees/<branch>",
-      "session_claim_declared": true,
-      "ownership_precheck_state": "unclaimed"
-    }
-  },
-  "activation_trace_ref": {
-    "present": true,
-    "boundary": "routing_decision_evidence_not_context_reading_evidence"
-  },
-  "runtime_evidence_refs": {
-    "native_experts": [],
-    "durable_team": [],
-    "persistent_team": [],
-    "boundary": "empty_means_not_used_not_failed"
-  },
-  "evidence_boundary": "read_order_context_only_not_expert_or_team_runtime_evidence"
-}
-```
+| 字段 | 用途 |
+| --- | --- |
+| `case_id` | 标识当前 fixture。 |
+| `trigger` | 记录触发 cold-start read-order evidence 的原因。 |
+| `read_order_source.path` | 指向 read order 的权威来源。 |
+| `startup_summary_pair.english_primary` | 记录英文 startup summary 主文件。 |
+| `startup_summary_pair.chinese_companion` | 记录中文伴随文件。 |
+| `startup_summary_pair.utf8_explicit_read` | 证明使用 UTF-8 读取而非复制乱码。 |
+| `read_order_evidence.items[]` | 保存逐项 read ledger。 |
+| `order_index` | 记录 read-order 顺序。 |
+| `path` | 记录被读取或跳过的文件路径。 |
+| `decision=read|skipped` | 记录该项是读取还是跳过。 |
+| `read_mode` | 字段含义：记录读取模式，例如 `full_text_utf8`、`task_relevant_sections` 或 `not_applicable`。 |
+| `needed_for_current_task` | 标明该项是否为当前任务必要上下文。 |
+| `reason` | 解释读取或跳过原因。 |
+| `summary_counts.read` | 统计 read 项。 |
+| `summary_counts.skipped` | 统计 skipped 项。 |
+| `summary_counts.read_order_total_considered` | 统计本次纳入判断的 read-order 总数。 |
+| `openspec_list` | 记录 `openspec list --json` 结果。 |
+| `worktree_preflight.local_main_not_behind_gitlab_main` | 证明本地 main 不落后。 |
+| `worktree_preflight.feature_worktree` | 记录 feature worktree 路径。 |
+| `activation_trace_ref.present` | 证明 activation trace 单独存在。 |
+| `runtime_evidence_refs.native_experts|durable_team|persistent_team` | 记录实际 runtime evidence 引用，空数组表示未使用。 |
+| `evidence_boundary=context_reading_only_not_expert_or_team_runtime_evidence` | 防止把读取证据误当 worker 运行证据。 |
 
-`summary_counts.read + summary_counts.skipped` 必须等于 `read_order_total_considered`。如果 read order 中的 active OpenSpec change 不存在，必须记录 `openspec_list.changes=[]`，并把“停止在 read order 第 16 项之后选择小步文档维护”写入 final report。
+失败条件：
 
-检查器必须 fail closed：
+- 缺少 startup summary 读取记录。
+- 跳过 read-order 项但没有 reason。
+- 只有 activation trace，没有 read-order ledger。
+- 当 `summary_counts.read + summary_counts.skipped != read_order_total_considered` 时失败。
+- 把 read-order evidence 声称为 expert/durable/persistent runtime evidence。
 
-- 缺少 startup summary pair 任一文件读取记录；
-- 任一 read-order ledger 条目缺少 `order_index`、`path`、`decision`、`read_mode`、`needed_for_current_task` 或 `reason`；
-- 声称跳过 read-order 文件但没有逐项 reason；
-- `summary_counts` 与 ledger 条目数量不一致；
-- 未记录 `openspec list --json` 结果；
-- 可写任务没有 feature worktree/session claim 证据；
-- 只给出 activation trace，却没有 read-order ledger；
-- 把 read-order evidence 当作 expert/durable/persistent team runtime evidence。
+### 15.2 Prompt-independent activation parity
 
-最终用户报告的最小结构：
-
-```text
-cold_start_read_order_evidence:
-  source: docs_bilingual/project_startup_summary.md#Cold-Start Read Order
-  read: <N files with order indexes>
-  skipped: <M files with reasons>
-  openspec: changes=[] or listed active changes
-  worktree_preflight: local_main_not_behind_gitlab_main + feature_worktree + session_claim
-  boundary: context_reading_only; experts/durable/persistent runtime evidence listed separately
-```
-
-##### Activation parity fixture contract
-
-成对 fixture 必须共享同一个 `task_shape_id`，只允许 `prompt_features.explicit_collaboration_phrase` 不同。建议路径：
+成对 fixture 必须共享 `task_shape_id`，只允许 `prompt_features.explicit_collaboration_phrase` 不同：
 
 ```text
 test/fixtures/orchestration_prompt_independent_collaboration_parity/
@@ -975,582 +339,293 @@ test/fixtures/orchestration_prompt_independent_collaboration_parity/
   same_task_with_phrase.json
 ```
 
-最小 JSON 字段：
+比较字段：
 
-```json
-{
-  "case_id": "same_product_lifecycle_refresh_without_phrase",
-  "task_shape_id": "product_lifecycle_refresh_business_pmp_multi_doc",
-  "prompt_features": {
-    "explicit_collaboration_phrase": false,
-    "explicit_omx_directive": false,
-    "explicit_langgraph_directive": false
-  },
-  "expected_decision": {
-    "phase": "read-context-or-execute-parallel",
-    "experts_now": "candidate_or_selected",
-    "durable_workflow": "candidate_or_selected_when_threshold_met",
-    "persistent_team_threshold": "requires_frozen_plan_and_2plus_slices",
-    "backend_default": "langgraph",
-    "claim_boundary": "do_not_claim_team_without_evidence"
-  }
-}
-```
+| 字段 | 用途 |
+| --- | --- |
+| `expected_decision.phase` | 比较任务阶段判断。 |
+| `expected_decision.experts_now` | 比较 expert need 决策。 |
+| `expected_decision.durable_workflow` | 比较 durable workflow 决策。 |
+| `expected_decision.persistent_team_threshold` | 比较 persistent team 阈值结果。 |
+| `expected_decision.backend_default` | 比较默认 durable backend。 |
+| `expected_decision.claim_boundary` | 比较证据声明边界。 |
 
-通过条件：同一 `task_shape_id` 的 fixtures 在 `phase`、`experts_now`、`durable_workflow`、`persistent_team_threshold`、`backend_default`、`claim_boundary` 上一致。显式短语只能让 trace 标注 `directive_seen=true`，不能让原本不达阈值的 task 被宣称为 persistent team 已运行。
+通过条件：同一 `task_shape_id` 的有短语/无短语 fixtures 在上述字段上相同。显式短语只能让 trace 标注 `directive_seen=true`，不能把未达阈值的任务宣称为 `persistent_team=running`。
 
-失败条件：显式短语导致 `persistent_team=running`、跳过 frozen plan、跳过 evidenceguard、把 timeout 当证据、或改变 backend family 而没有 task-fit 理由。
-
-##### Durable/persistent evidenceguard contract
-
-durable/persistent 声明的证据按状态分层：
+### 15.3 Durable / persistent evidenceguard
 
 | 声明状态 | 最小证据 |
 | --- | --- |
-| `not_needed` | activation trace 说明未达阈值，例如 `threshold_not_met:single_execution_slice`。 |
-| `candidate` | frozen plan 或切片分析，以及为何尚未启动。 |
-| `selected` | active selector、backend family、preflight 通过记录、worker ownership plan。 |
-| `running` | active selector、team manifest、worker heartbeat、worker lifecycle `started/running` 记录。 |
-| `complete` | `running` 所需证据，加 closed agent record、result summary、leader absorbed record。 |
-| `blocked` | blocker 名称、最近三次阻塞证据、未把阻塞结果当完成。 |
+| `not_needed` | activation trace 说明未达阈值，例如 `threshold_not_met:single_execution_slice` |
+| `candidate` | frozen plan 或切片分析，以及为何尚未启动 |
+| `selected` | active selector、backend family、preflight 通过记录、worker ownership plan |
+| `running` | active selector、team manifest、worker heartbeat、worker lifecycle `started/running` 记录 |
+| `complete` | `running` 所需证据 + closed agent record + result summary + leader absorbed record |
+| `blocked` | 含义：阻塞状态需要阻塞原因名称（例如 `preflight_failed`）、最近三次阻塞证据、未把阻塞结果当完成 |
 
-建议 fixture 结构：
+建议 fixtures：
 
 ```text
 test/fixtures/durable_persistent_evidence_guard/
   invalid_running_missing_heartbeat/
-    transcript.json
-    .omx/state/selectors/active.json
-    .omx/state/team/manifest.json
   valid_complete_team/
-    transcript.json
-    .omx/state/selectors/active.json
-    .omx/state/team/manifest.json
-    .omx/state/team/worker-heartbeats/worker-1.json
-    .omx/state/team/lifecycle.jsonl
-    .omx/state/team/closed-agents/worker-1.json
-    .omx/state/team/absorbed-results.jsonl
 ```
 
-##### Expert lifecycle audit contract
+### 15.4 Expert lifecycle audit
 
-每个 expert lifecycle record 使用 JSONL，建议路径：`.omx/state/experts/lifecycle.jsonl` 或测试夹具中的同名路径。每行最小字段：
+建议 JSONL 路径：`.omx/state/experts/lifecycle.jsonl`，测试夹具使用同名相对路径。
 
-```json
-{
-  "event": "spawn",
-  "timestamp": "2026-05-25T00:00:00+08:00",
-  "agent_id": "agent-001",
-  "role": "verifier",
-  "nickname": "Bernoulli",
-  "task_summary": "review routing parity checker fixtures",
-  "status": "started",
-  "evidence_disposition": "not_evidence_yet"
-}
-```
+每行最小字段：
 
-事件顺序要求：
+| 字段 | 用途 |
+| --- | --- |
+| `event=spawn|wait|timeout|stall|provider_pacing_wait|result|close|absorbed` | 记录生命周期事件类型。 |
+| `timestamp` | 记录事件发生时间。 |
+| `agent_id` | 绑定同一 expert 的事件流。 |
+| `role` | 记录 expert 角色。 |
+| `nickname` | 可空；最终报告使用昵称时必须存在。 |
+| `task_summary` | 记录委派任务摘要。 |
+| `status` | 记录事件状态。 |
+| `evidence_disposition` | 区分 accepted evidence 与 non-evidence。 |
 
-1. `spawn` 必须先于同一 `agent_id` 的 `wait`、`timeout`、`result`、`close`、`absorbed`。
-2. `result` 被最终报告引用时，必须存在同一 `agent_id` 的 `absorbed`。
-3. `timeout`、`stall`、`provider_pacing_wait` 只能产生 non-evidence disposition。
-4. `close` 后不得继续写入新的 `result`，除非新 `spawn` 使用新的 `agent_id`。
+顺序要求：
 
-##### LangGraph state release contract
+1. `spawn` 必须先于同一 `agent_id` 的其他事件。
+2. `result` 被最终报告引用时，必须有同一 `agent_id` 的 `absorbed`。
+3. `timeout/stall/provider_pacing_wait` 只能产生 non-evidence disposition。
+4. `close` 后不得继续写同一 `agent_id` 的新 `result`；需要继续时必须新 `spawn`。
 
-repo-local LangGraph state 不得在完成后无解释地残留 `running`。建议最小 state：
+### 15.5 LangGraph state release
 
-```json
-{
-  "thread_id": "lg-thread-001",
-  "workflow_id": "prompt-independent-parity",
-  "status": "running",
-  "active_work": true,
-  "last_heartbeat_at": "2026-05-25T00:00:00+08:00",
-  "completion_marker": null,
-  "release_marker": null,
-  "continue_reason": "worker still processing task 2"
-}
-```
+repo-local LangGraph state 不得在完成后无解释地残留 `running`。
 
-失败条件：`completion_marker` 存在或 closeout evidence 表示完成，但 `status=running` 且 `release_marker=null` 且 `continue_reason` 为空。
+最小字段：
+
+| 字段 | 用途 |
+| --- | --- |
+| `thread_id` | 标识 LangGraph thread。 |
+| `workflow_id` | 标识 durable workflow。 |
+| `status=running|complete|released|closed|blocked` | 记录状态枚举。 |
+| `active_work` | 标记是否仍有活动工作。 |
+| `last_heartbeat_at` | 记录最近 heartbeat。 |
+| `completion_marker` | 记录完成标记。 |
+| `release_marker` | 记录释放标记。 |
+| `continue_reason` | 解释仍为 running 的原因。 |
+
+失败条件：closeout evidence 表示完成，但 `status=running` 且 `release_marker=null` 且 `continue_reason` 为空。
 
 通过条件：
 
 - active work 仍在运行且 heartbeat 新鲜；或
 - work 已完成，state 为 `complete/released/closed`；或
-- state 仍为 `running`，但有明确 release deferral 与未完成 work 证据。
+- state 仍 `running`，但有 release deferral 与未完成 work 证据。
 
-#### 任务 1：OpenSpec Change 与证据契约
+## 16. 实施切片
 
-**文件：**
-- 新建：`openspec/changes/enforce-prompt-independent-collaboration-parity/proposal.md`
-- 新建：`openspec/changes/enforce-prompt-independent-collaboration-parity/tasks.md`
-- 新建：`openspec/changes/enforce-prompt-independent-collaboration-parity/specs/codex-user-level-orchestration-activation-policy/spec.md`
+### Slice 0：OpenSpec change 与证据契约冻结
 
-- [ ] **步骤 1：创建 OpenSpec proposal**
+- [ ] 新建 `openspec/changes/enforce-prompt-independent-collaboration-parity/proposal.md`。
+- [ ] 新建 `openspec/changes/enforce-prompt-independent-collaboration-parity/tasks.md`。
+- [ ] 新建 `openspec/changes/enforce-prompt-independent-collaboration-parity/specs/codex-user-level-orchestration-activation-policy/spec.md`。
+- [ ] 运行 `openspec validate enforce-prompt-independent-collaboration-parity --strict`。
 
-  proposal 必须说明：自动协同由任务阈值触发，不由提示词短语触发。proposal 必须命名四类 evidence contract：提示词无关一致性、durable/persistent evidenceguard、expert lifecycle audit、LangGraph state release。
+### Slice 1：Cold-start read-order evidence guard
 
-- [ ] **步骤 2：增加规范性要求**
+- [ ] 新建 `tools/check_cold_start_read_order_evidence.py`。
+- [ ] 新建 `test/check_cold_start_read_order_evidence.test.py`。
+- [ ] 新建 `test/fixtures/cold_start_read_order_evidence/` 下正反例。
+- [ ] 接入 `tools/run_openspec_guard.py` 与 `tools/ci/ci_test_manifest.json`。
 
-  增加以下要求：
-  - 同一 task shape 的有短语/无短语 fixtures 必须产生同一类 activation decision；
-  - durable/persistent team 声明必须具备 selector、manifest、heartbeat、worker lifecycle、close/absorb 证据；
-  - expert timeout 是 non-evidence；
-  - submit/close 后 LangGraph `running` 状态必须完成或释放。
+### Slice 2：Prompt-independent collaboration parity checker
 
-- [ ] **步骤 3：验证 change**
+- [ ] 新建 `tools/check_orchestration_prompt_independent_collaboration_parity.py`。
+- [ ] 新建 `test/check_orchestration_prompt_independent_collaboration_parity.test.py`。
+- [ ] 新建 `test/fixtures/orchestration_prompt_independent_collaboration_parity/` 成对 fixtures。
+- [ ] 验证同一 task shape 有/无短语的 routing decision class 一致。
 
-  运行：
+### Slice 3：Durable / persistent evidenceguard
 
-  ```powershell
-  openspec validate enforce-prompt-independent-collaboration-parity --strict
-  ```
+- [ ] 新建 `tools/check_durable_persistent_evidence_guard.py`。
+- [ ] 新建 `test/check_durable_persistent_evidence_guard.test.py`。
+- [ ] 新建 `test/fixtures/durable_persistent_evidence_guard/invalid_running_missing_heartbeat/`。
+- [ ] 新建 `test/fixtures/durable_persistent_evidence_guard/valid_complete_team/`。
 
-  预期：change 校验通过，没有 failed requirements。
+### Slice 4：Expert lifecycle audit
 
-#### 任务 1A：Cold-start Read-Order Evidence Guard
+- [ ] 新建 `tools/check_expert_lifecycle_audit.py`。
+- [ ] 新建 `test/check_expert_lifecycle_audit.test.py`。
+- [ ] 新建 `test/fixtures/expert_lifecycle_audit/valid_absorbed_result/lifecycle.jsonl`。
+- [ ] 新建 `test/fixtures/expert_lifecycle_audit/invalid_timeout_as_evidence/lifecycle.jsonl`。
 
-**文件：**
-- 新建：`tools/check_cold_start_read_order_evidence.py`
-- 新建：`test/check_cold_start_read_order_evidence.test.py`
-- 新建：`test/fixtures/cold_start_read_order_evidence/valid_single_file_doc_update.json`
-- 新建：`test/fixtures/cold_start_read_order_evidence/valid_task_specific_skip_with_reason.json`
-- 新建：`test/fixtures/cold_start_read_order_evidence/invalid_missing_startup_summary.json`
-- 新建：`test/fixtures/cold_start_read_order_evidence/invalid_skipped_file_without_reason.json`
-- 新建：`test/fixtures/cold_start_read_order_evidence/invalid_activation_trace_only.json`
-- 新建：`test/fixtures/cold_start_read_order_evidence/invalid_read_order_used_as_runtime_evidence.json`
-- 修改：`tools/run_openspec_guard.py`
-- 修改：`tools/ci/ci_test_manifest.json`
+### Slice 5：LangGraph state release checker
 
-- [ ] **步骤 1：编写失败测试**
+- [ ] 新建 `tools/check_langgraph_state_release.py`。
+- [ ] 新建 `test/check_langgraph_state_release.test.py`。
+- [ ] 新建 `test/fixtures/langgraph_state_release/valid_active_running/`。
+- [ ] 新建 `test/fixtures/langgraph_state_release/valid_released_complete/`。
+- [ ] 新建 `test/fixtures/langgraph_state_release/invalid_completed_still_running/`。
 
-  构造四类 negative fixtures：缺少 `project_startup_summary.md` 读取记录、跳过 read-order 文件但缺少 reason、只有 activation trace 没有 read-order ledger、把 read-order evidence 声称为 expert/durable/persistent runtime evidence。检查器必须让这些 fixtures 失败。
+### Slice 6：文档、guard wiring 与收尾
 
-- [ ] **步骤 2：编写正例 fixtures**
+- [ ] 修改 `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md`。
+- [ ] 修改 `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md`。
+- [ ] 修改本计划英文主版和中文伴随版。
+- [ ] 按需更新 `docs_bilingual/docs_registry.yaml`。
+- [ ] 运行聚焦测试、OpenSpec guard、local gate 与 local MR review。
 
-  `valid_single_file_doc_update.json` 必须覆盖本类 bounded single-file implementation-plan 更新：`openspec list --json` 为空、local main 不落后、feature worktree 与 session claim 已声明、durable/persistent team 未启动。`valid_task_specific_skip_with_reason.json` 必须证明跳过非必要 read-order 文件时具备逐项 reason，且跳过不会改变 activation decision。
+## 17. 任务级执行 Backlog
 
-- [ ] **步骤 3：实现 evidence schema 校验**
+### Task A：冻结 Phase 4 OpenSpec WHAT
 
-  检查器读取 JSON fixtures，要求 `read_order_source`、`startup_summary_pair`、`read_order_evidence.items[]`、`summary_counts`、`openspec_list`、`worktree_preflight`、`activation_trace_ref`、`runtime_evidence_refs` 与 `evidence_boundary` 全部存在。每个 ledger item 必须含 `order_index/path/decision/read_mode/needed_for_current_task/reason`。若 `evidence_boundary` 声称 expert、durable team 或 persistent team runtime evidence，必须失败。
+**输入**：本文第 13-16 节、已归档 Phase 0-3、activation policy stable spec。
+**工具与技术**：OpenSpec proposal、delta spec、strict validation。
+**输出**：`enforce-prompt-independent-collaboration-parity` active change，明确 scope/non-goals/acceptance。
 
-- [ ] **步骤 4：接入 guard 与本地 CI**
+### Task B：实现 cold-start read-order evidence guard
 
-  将检查器加入 `tools/run_openspec_guard.py`，将单元测试加入 `tools/ci/ci_test_manifest.json`，并运行：
+**输入**：startup summary read order、worktree policy、fixture schema。
+**工具与技术**：TDD、JSON schema-like validation、negative fixtures。
+**输出**：checker、unit test、fixtures、guard/CI wiring。
 
-  ```powershell
-  python .\test\check_cold_start_read_order_evidence.test.py
-  python .\tools\check_cold_start_read_order_evidence.py --root . --json
-  ```
+### Task C：实现提示词无关一致性 checker
 
-  预期：有效 cold-start evidence 通过；缺少读取记录、缺少跳过理由、缺 ledger 字段、summary count 不一致、只有 activation trace、或把 read-order evidence 当作 runtime evidence 的 fixtures fail closed。
+**输入**：同一 task shape 的有短语/无短语 prompts。
+**工具与技术**：fixture grouping、decision field comparison、fail-closed diagnostics。
+**输出**：parity checker 和成对 fixtures。
 
-#### 任务 2：提示词无关路由一致性检查器
+### Task D：实现 durable/persistent evidenceguard
 
-**文件：**
-- 新建：`tools/check_orchestration_prompt_independent_collaboration_parity.py`
-- 新建：`test/check_orchestration_prompt_independent_collaboration_parity.test.py`
-- 新建：`test/fixtures/orchestration_prompt_independent_collaboration_parity/same_task_without_phrase.json`
-- 新建：`test/fixtures/orchestration_prompt_independent_collaboration_parity/same_task_with_phrase.json`
-- 修改：`tools/run_openspec_guard.py`
-- 修改：`tools/ci/ci_test_manifest.json`
+**输入**：selector、manifest、heartbeat、lifecycle、closed/absorbed records。
+**工具与技术**：repo-local state fixture traversal、claim-state matrix validation。
+**输出**：缺证据时拒绝 running/complete 声明的 checker。
 
-- [ ] **步骤 1：编写失败测试**
+### Task E：实现 expert lifecycle audit
 
-  为同一任务增加两组 fixtures：
-  - 不含显式协同短语；
-  - 包含“use experts / durable_team / persistent team”。
+**输入**：expert lifecycle JSONL、final report refs、timeout/stall/provider pacing records。
+**工具与技术**：事件顺序校验、引用完整性校验、non-evidence disposition guard。
+**输出**：spawn/wait/timeout/result/close/absorbed 审计 checker。
 
-  预期行为：两组 fixtures 的 phase、expert need、durable threshold result、persistent-team evidence state 必须一致。
+### Task F：实现 LangGraph release checker
 
-- [ ] **步骤 2：实现检查器**
+**输入**：repo-local `.omx/state/langgraph/` fixtures、completion/release markers。
+**工具与技术**：state transition invariant、fresh heartbeat 判断、release deferral 判断。
+**输出**：stale running fail-closed checker。
 
-  检查器读取 JSON fixtures，按 `task_shape_id` 分组，并比较 `expected_decision.phase`、`experts_now`、`durable_workflow`、`persistent_team_threshold`、`backend_default`、`claim_boundary`。当显式短语在没有 task-shape 差异的情况下改变 activation decision class 时，检查器失败。失败输出必须包含 `case_id`、`task_shape_id`、字段名、左值与右值。
+### Task G：治理文档、验证与本地集成
 
-- [ ] **步骤 3：注册 guard 与测试**
+**输入**：已通过聚焦测试的 checkers、治理文本差异、OpenSpec tasks。
+**工具与技术**：`git diff --check`、`openspec validate --all`、pre-commit update/archive check、OpenSpec guard、local gate、local MR review。
+**输出**：merge-ready 分支、干净 worktree、本地 main integration package。
 
-  将检查器加入 `tools/run_openspec_guard.py`，并把测试文件加入 `tools/ci/ci_test_manifest.json`。
+## 18. 验证计划
 
-- [ ] **步骤 4：运行聚焦测试**
-
-  ```powershell
-  python .\test\check_orchestration_prompt_independent_collaboration_parity.test.py
-  python .\tools\check_orchestration_prompt_independent_collaboration_parity.py --root . --json
-  ```
-
-  预期：测试与检查器均通过。
-
-#### 任务 3：Durable/Persistent Evidenceguard
-
-**文件：**
-- 新建：`tools/check_durable_persistent_evidence_guard.py`
-- 新建：`test/check_durable_persistent_evidence_guard.test.py`
-- 新建：`test/fixtures/durable_persistent_evidence_guard/invalid_running_missing_heartbeat/`
-- 新建：`test/fixtures/durable_persistent_evidence_guard/valid_complete_team/`
-- 修改：`tools/run_openspec_guard.py`
-- 修改：`tools/ci/ci_test_manifest.json`
-
-- [ ] **步骤 1：编写失败测试**
-
-  增加 negative fixtures：transcript 声称 `durable_team=running` 或 `persistent_team=running`，但缺少一个或多个必要证据文件。检查器必须让这些 fixtures 失败。
-
-- [ ] **步骤 2：实现证据校验**
-
-  要求以下证据：
-  - active selector；
-  - team manifest；
-  - worker heartbeat；
-  - worker lifecycle record；
-  - 当 work 被声明 complete 时，必须存在 closed agent record、result summary 与 final close/absorb record。
-
-- [ ] **步骤 3：运行聚焦测试**
-
-  ```powershell
-  python .\test\check_durable_persistent_evidence_guard.test.py
-  python .\tools\check_durable_persistent_evidence_guard.py --root . --json
-  ```
-
-  预期：虚假 durable/persistent 声明 fail closed；有效证据 fixtures 通过。
-
-#### 任务 4：Expert Lifecycle Audit
-
-**文件：**
-- 新建：`tools/check_expert_lifecycle_audit.py`
-- 新建：`test/check_expert_lifecycle_audit.test.py`
-- 新建：`test/fixtures/expert_lifecycle_audit/valid_absorbed_result/lifecycle.jsonl`
-- 新建：`test/fixtures/expert_lifecycle_audit/invalid_timeout_as_evidence/lifecycle.jsonl`
-- 修改：`tools/run_openspec_guard.py`
-- 修改：`tools/ci/ci_test_manifest.json`
-
-- [ ] **步骤 1：定义 lifecycle schema**
-
-  为 `spawn`、`wait`、`timeout`、`result`、`close`、`absorbed` 定义必填字段：timestamp、role、agent id、可用时的 nickname、task summary、status、evidence disposition。
-
-- [ ] **步骤 2：实现检查器**
-
-  当 completed expert result 被 `final_report_refs.json` 引用但没有匹配的 `absorbed` event 时失败；当 timed-out/stalled/provider-paced expert 被用作 accepted evidence 时失败；当 `close` 之后同一 `agent_id` 又出现新 `result` 时失败。
-
-- [ ] **步骤 3：运行聚焦测试**
-
-  ```powershell
-  python .\test\check_expert_lifecycle_audit.test.py
-  python .\tools\check_expert_lifecycle_audit.py --root . --json
-  ```
-
-  预期：完整 lifecycle fixtures 通过；timeout-as-evidence fixtures 失败。
-
-#### 任务 5：LangGraph 完成与释放状态
-
-**文件：**
-- 新建：`tools/check_langgraph_state_release.py`
-- 新建：`test/check_langgraph_state_release.test.py`
-- 新建：`test/fixtures/langgraph_state_release/valid_active_running/`
-- 新建：`test/fixtures/langgraph_state_release/valid_released_complete/`
-- 新建：`test/fixtures/langgraph_state_release/invalid_completed_still_running/`
-- 修改：`tools/run_openspec_guard.py`
-- 修改：`tools/ci/ci_test_manifest.json`
-
-- [ ] **步骤 1：增加状态 fixtures**
-
-  增加以下 fixtures：
-  - 有 active work 的合法 running thread；
-  - completed thread 且 state 已 release；
-  - work 已完成但仍标记为 `running` 的非法状态。
-
-- [ ] **步骤 2：实现 release checker**
-
-  当 handoff 或 closeout evidence 已把 thread 标记为 complete，但 repo-local LangGraph state 仍是 `running` 且没有 release marker 或 continue reason 时失败。active running state 必须具备 active work、fresh heartbeat 与继续执行理由。
-
-- [ ] **步骤 3：运行聚焦测试**
-
-  ```powershell
-  python .\test\check_langgraph_state_release.test.py
-  python .\tools\check_langgraph_state_release.py --root . --json
-  ```
-
-  预期：stale running state 失败；有 live work 的 active running state 通过。
-
-#### 任务 6：文档、验证与收尾
-
-**文件：**
-- 修改：`docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md`
-- 修改：`docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md`
-- 修改：`docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md`
-- 修改：`docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md`
-- 修改：`docs_bilingual/docs_registry.yaml`
-
-- [ ] **步骤 1：更新治理文本**
-
-  增加说明：显式协同短语出现时是 routing directive，但没有这些短语不是跳过 activation check 的理由；用户要求按冷启动方式继续时，还必须记录 read-order evidence，但该 evidence 不能被当作 expert/durable/persistent team runtime evidence。
-
-- [ ] **步骤 2：运行验证**
-
-  ```powershell
-  git diff --check
-  openspec validate --all
-  python .\tools\check_precommit_update_archive.py --root . --json
-  python .\tools\run_openspec_guard.py --root .
-  .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600
-  .\tools\ci\local_mr_review.ps1
-  ```
-
-  预期：全部检查通过；如存在无关外部 worktree/state 阻塞，必须如实报告，不能把它当作完成证据。
-
-- [ ] **步骤 3：收尾证据**
-
-  最终报告必须区分：
-  - 已使用并关闭的 native experts；
-  - durable/persistent team 未启动，除非证据存在；
-  - timed-out experts 未被用作证据；
-  - LangGraph backend ready 不等于 persistent-team runtime 正在运行。
-
-#### 验证矩阵
-
-| 需求 | 验证命令 | 必须失败的反例 | 必须通过的正例 |
-| --- | --- | --- | --- |
-| 有/无协同短语 routing parity | `python .\tools\check_orchestration_prompt_independent_collaboration_parity.py --root . --json` | 短语导致 `persistent_team=running` | 同一 task shape 决策字段一致 |
-| cold-start read-order evidence | `python .\tools\check_cold_start_read_order_evidence.py --root . --json` | 缺 startup summary 读取记录、缺 ledger 字段、summary count 不一致、只有 activation trace、或把 read-order 当 runtime evidence | 有序 read ledger、跳过理由、openspec/worktree preflight、runtime evidence 空边界完整 |
-| durable/persistent evidenceguard | `python .\tools\check_durable_persistent_evidence_guard.py --root . --json` | running 缺 heartbeat | complete 具备 selector、manifest、heartbeat、lifecycle、closed、absorbed |
-| expert lifecycle audit | `python .\tools\check_expert_lifecycle_audit.py --root . --json` | timeout 被 final report 引用为证据 | result 被 absorbed 后再引用 |
-| LangGraph release | `python .\tools\check_langgraph_state_release.py --root . --json` | completed 仍 running 且无 release marker | active running 有 heartbeat，或 completed 已 released |
-| guard wiring | `python .\tools\run_openspec_guard.py --root .` | checker 未注册 | guard 输出包含新增 checker |
-| CI manifest | `.\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` | 测试未注册 | local gate 执行新增测试 |
-
-#### 风险与回滚
-
-- 风险：checker 过度依赖 chat transcript 文本。缓解：以结构化 fixture 和 repo-local state 为主，transcript 只作为 claim source。
-- 风险：cold-start read-order evidence 被误用为 durable/persistent team runtime evidence。缓解：evidence schema 显式写入 `evidence_boundary`，并在 checker 中拒绝把读取记录当作 worker 运行证明。
-- 风险：把 LangGraph backend ready 误判成 persistent team running。缓解：backend readiness 与 team evidence 分离。
-- 风险：阻塞真实 running work。缓解：允许 active running state 通过，但要求 heartbeat、active work 和 continue reason。
-- 风险：误把 skills/profile 当 expert。缓解：expert lifecycle 只接受 native spawn/wait/result/close/absorbed 事件。
-- 回滚：若新增 checker 误报，先从 `tools/run_openspec_guard.py` 临时移除该 checker，并保留测试夹具用于修复；不得删除治理要求或把虚假 team 声明放行。
-
-#### 验收标准
-
+聚焦验证：
+
+```powershell
+python .\test\check_cold_start_read_order_evidence.test.py
+python .\tools\check_cold_start_read_order_evidence.py --root . --json
+python .\test\check_orchestration_prompt_independent_collaboration_parity.test.py
+python .\tools\check_orchestration_prompt_independent_collaboration_parity.py --root . --json
+python .\test\check_durable_persistent_evidence_guard.test.py
+python .\tools\check_durable_persistent_evidence_guard.py --root . --json
+python .\test\check_expert_lifecycle_audit.test.py
+python .\tools\check_expert_lifecycle_audit.py --root . --json
+python .\test\check_langgraph_state_release.test.py
+python .\tools\check_langgraph_state_release.py --root . --json
+```
+
+集成验证：
+
+```powershell
+git diff --check
+openspec validate --all
+python .\tools\check_precommit_update_archive.py --root . --json
+python .\tools\run_openspec_guard.py --root .
+python .\tools\check_implementation_plan_rules.py --root . --json
+.\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600
+.\tools\ci\local_mr_review.ps1
+```
+
+本次 documentation-only 重构的最小验证：
+
+```powershell
+git diff --check
+python .\tools\check_implementation_plan_rules.py --root . --json
+python .\tools\check_precommit_update_archive.py --root . --json
+python .\tools\run_openspec_guard.py --root .
+```
+
+## 19. 本地集成顺序
+
+- [ ] 从当前本地 `main` 创建 feature worktree。
+- [ ] 确认本地 `main` 不落后于 `gitlab/main`。
+- [ ] 只在 feature worktree 修改目标文件。
+- [ ] 运行最小验证；若改动触达 checker/runtime，再运行完整 local gate。
+- [ ] 运行 pre-commit update/archive check。
+- [ ] 提交中文 commit message。
+- [ ] feature worktree 保持干净。
+- [ ] 合入本地 `main`。
+- [ ] 不做远端 push / MR / mirror，除非用户另行明确授权。
+
+## 20. 完成复核清单
+
+- [ ] 文档结构符合新版 implementation plan 风格：复核结论、目标、非目标、原则、状态契约、文件职责、切片、任务 backlog、验证、集成、风险。
+- [ ] Phase 0-3 与 Phase 4 状态没有混淆。
+- [ ] 本文没有宣称 durable/persistent team 已运行。
+- [ ] 显式协同短语只作为 directive signal，不作为 task-shape 阈值替代物。
+- [ ] Native expert、skill、profile、LangGraph node、OMX worker 的证据边界清楚。
+- [ ] 每个 Phase 4 checker 都有目标文件、fixtures、失败条件和验证命令。
+- [ ] 所有提交信息使用中文。
+
+## 21. 验收标准
+
+- `AGENTS.md` / startup summary / activation policy 中的自动协同规则可以从本文映射到具体 checker 或 evidence contract。
 - 同一 task shape 在有/无显式协同短语时产生同一类 routing decision。
-- 新会话冷启动或用户要求冷启动复读时，read-order evidence 能以有序 ledger 证明 startup summary pair、任务必要文件、跳过理由、OpenSpec 状态、worktree/session-claim preflight 与 evidence boundary 已被记录。
-- 没有 selector、manifest、heartbeat、worker lifecycle、closed agent record、close/absorb 证据时，durable/persistent team 运行声明不能通过。
-- Expert lifecycle audit 能区分 completed/absorbed result 与 timeout/stall/provider pacing non-evidence。
-- LangGraph completed work 不残留 stale `running` state；如仍 running，必须有 active work、heartbeat 和 continue reason。
-- Repository guard 与 local CI 包含新增检查。
-- 面向用户的最终报告保持证据诚实，区分 policy expectation、actual evidence、blocked/non-evidence、main-session takeover，不把提示词文本当作运行时证明。
-- 本计划本身不宣称 durable/persistent team 已运行；只有后续执行产生的 repo-local evidence 才能支撑该声明。
+- Cold-start read-order evidence 能证明已读文件、跳过理由、OpenSpec 状态、worktree/session preflight 和 evidence boundary。
+- 没有 selector、manifest、heartbeat、lifecycle、closed/absorbed 证据时，durable/persistent running/complete 声明不能通过。
+- Expert result 只有在 `absorbed` 后才能被最终报告引用；timeout/stall/provider pacing 永远不是完成证据。
+- LangGraph completed work 不残留 stale `running` state；若仍 running，必须有 active work、heartbeat 和 continue reason。
+- 新增 checker 接入 `tools/run_openspec_guard.py` 和 `tools/ci/ci_test_manifest.json`。
+- 本地验证、local gate 和 local MR review 通过后才合入本地 `main`。
 
-## 21. 已实施范围与收口证据
+## 22. 需要保留的证据
 
-原 OpenSpec change `enforce-automatic-orchestration-routing` 已经实施、归档，并由后续 enforcement slices 扩展。当前已落地范围如下：
+- 本计划文件及英文主版/中文伴随版的 diff。
+- OpenSpec change proposal、tasks、delta spec 与 archive/deferral 记录。
+- 新增 checkers 与 tests 的输出。
+- `tools/run_openspec_guard.py` 输出。
+- `tools/ci/local_gate.ps1` 与 `tools/ci/local_mr_review.ps1` 输出。
+- Feature worktree clean status。
+- 本地 `main` 合入记录。
 
-1. `AGENTS.md` 的 orchestration activation 规则已更新。
-2. `docs_bilingual/project_startup_summary.*` 的冷启动提醒已更新。
-3. Team-mode、quick-reference、LangGraph 与 orchestration activation governance surfaces 已更新。
-4. 生成式用户级 team-mode source templates 已固化全局自动协同默认规则。
-5. checker / test 已覆盖以下回归：
-   - 用“用户没有要求并行/子代理”解释不启动 experts；
-   - LangGraph ready 时仍把 backend 当成可选或不可用；
-   - expert timeout 后把未返回结果当作验证证据；
-   - routing trace 不区分 backend 常开与 persistent team 启动阈值；
-   - tool/runtime blocker 被误报成用户偏好或 `not_needed`；
-   - 没有 frozen plan、独立切片或具名 stabilization blocker 时选择 durable team；
-   - bounded multi-face research 跳过 analyst-only 首轮 fan-out；
-   - completed expert fan-in 后未被显式要求保留却仍保持打开；
-   - provider upstream pacing 被报告成禁用 orchestration 的理由；
-   - fan-out 未显式 override 却超过 `agents.max_threads=6` 或 `agents.max_depth=1`；
-   - 写入型并行工作没有 disjoint ownership 与 leader-owned final integration；
-   - 同一个 durable task 在没有显式 handoff 时混用 `native_omx` 与 LangGraph state；
-   - implementation 从开放式 research 直接开始，缺少 frozen implementation brief；
-   - bug triad roles 被保持为 persistent workers，而不是把 survivors 持久化到 debugger-lane queue；
-   - 把 AutoGen、CrewAI 或 LangGraph 说成 native Codex-subagent equivalents；
-   - 显式 `omx` 或 `LangGraph` directive 被当成 optional preference；
-   - thresholds 已满足但会话停留在 explanation-only mode；
-   - 没有 smallest-sufficient trigger 却添加角色；
-   - skills 或 plugin profiles 被当成 native subagents 或 expert evidence；
-   - custom agent TOMLs 缺少 `name`、`description` 或 `developer_instructions`；
-   - follow-up work 在没有 explicit preservation reason 时复用已关闭/已完成 expert thread；
-   - 仅凭 compatibility records 自动接管 unmanaged team，而不是读取 `.omx/state/selectors/active.json`；
-   - orchestration decision 依赖仓库是否 newly created，而不是当前 task flow；
-   - Codex startup 被当成自动 durable-team launch；
-   - separate persistent leader pane 替代 main Codex session；
-   - resumed legacy sessions 覆盖当前 repository governance；
-   - oh-my-codex 或 LangGraph 被描述为 Codex replacement，而不是 additive layer；
-   - capability switches 没有按 dependency chain 读取；
-   - worker-centric durable execution 未考虑 `native_omx` lane fit 而默认进入 LangGraph；
-   - graph-shaped checkpoint work 未考虑 LangGraph lane fit 而默认进入 `native_omx`；
-   - leader 应本地处理的 blocking critical-path work 被委派出去；
-   - leader/expert 或 expert/expert 之间 duplicate work；
-   - leader 在没有尝试 non-overlapping local work 时静默等待；
-   - read-only explorer work 替代了清楚的 bounded code-change worker task；
-   - LangGraph checkpoint work 没有使用 LangGraph entrypoints 或 repo-local `.omx/state/langgraph/` state；
-   - durable artifacts、frozen briefs 或 survivor queues 只存在于 transient chat context。
-6. repo-local `.omx/state/selectors/active.json` 缺失会被当成 selector refresh/reporting gap，而不是 LangGraph 不可用证据。
+## 23. 风险与缓解
 
-未来如果复核发现新的缺口，应新开 bounded OpenSpec change。不要仅因为本文档仍是 active baseline，就把已经完成的实施包重新解释为未完成。
+| 风险 | 缓解 |
+| --- | --- |
+| 小任务过度启动 workers | 严格区分 backend ready 与 team launch threshold |
+| 把文档阅读证据误当 runtime evidence | `evidence_boundary` 必填并由 checker 拒绝误用 |
+| 把 skills/profile 当 expert | 只接受 native spawn/wait/result/close/absorbed audit |
+| LangGraph running 状态误报 | 要求 heartbeat、active work、continue reason 或 release marker |
+| checker 过度依赖 chat transcript | 以结构化 fixtures 和 repo-local state 为主，transcript 只做 claim source |
+| 并行写入互相覆盖 | 要求 ownership、disjoint write sets、hotspot serialization 与 leader-owned final integration |
+| 上游 pacing 被误判为失败或成功 | 标记 provider backpressure，继续 bounded wait 或主会话接管，不作为结果证据 |
 
-## 22. 证据与测试映射
+## 24. 回滚规则
 
-| 规则 | 最小证据 | 候选测试/检查 |
-| --- | --- | --- |
-| 能力链被强制执行 | state file normalization 示例 | invalid state combinations 单元测试 |
-| LangGraph ready 表示默认 backend | status output 包含 backend_default 与 backend_ready | status helper golden output 测试 |
-| 不依赖用户提醒 | routing trace 不出现 forbidden reason | 静态 trace 文本 checker |
-| 冷启动 read order 被审计 | evidence 列出 startup summary pair、任务必要文件、跳过理由、OpenSpec 状态与 worktree preflight | cold-start read-order evidence checker |
-| expert timeout 不是证据 | final report 区分 timeout 与 absorbed result | log/report pattern checker |
-| ignored local logs 不破坏 canary guard | 含 canary marker 的 ignored transcript 通过 guard | context-retention canary 测试 |
-| active selector 缺失是 refresh gap | status 报告 selector missing 但不 downgrade backend | selector status helper 测试 |
-| tool/runtime blocker 被显式报告 | trace 报告 `blocked:<reason>`，而不是用户提醒缺失 | activation trace blocker 测试 |
-| reload 与 restart 触发 activation | reload/restart transcript 包含 capability chain 与 backend default | startup/reload trace smoke test |
-| durable-team 阈值映射被执行 | 首次 activation trace 解释阈值满足或未满足 | durable-team threshold checker |
-| bounded multi-face research analyst-first | 首轮 fan-out 是 `analystxN`，默认不含 architect/planner/writer | role-routing golden test |
-| completed experts 被关闭 | completed agent 在结果吸收后关闭，除非明确要求保留 | agent lifecycle checker |
-| expert waits 受 bounded 约束 | wait transcript 显示 30s/60s/120s window 与约 180s 总上限 | wait/liveness trace checker |
-| provider backpressure 不禁用 orchestration | pacing 被报告为具名 backpressure，而不是 skip reason | upstream pacing trace checker |
-| fan-out bounds 被执行 | trace 与 worker briefs 不超过 max_threads/max_depth，除非显式 override | fan-out bounds checker |
-| 写入所有权被隔离 | worker briefs 声明 disjoint file/module ownership 与 hotspot serialization | ownership isolation checker |
-| durable backend family 单任务一致 | handoff notes 显示单一 backend family，或 switching 前显式 close/handoff | backend-family consistency checker |
-| research handoff 被冻结 | implementation 从包含 scope、non-goals、acceptance evidence、ownership 与 risks 的 frozen brief 开始 | frozen-brief checker |
-| bug triad 不持久化 | bug-finder/rebutter/judge 结果被吸收，survivors 被排入 debugger lane | adversarial survivor queue checker |
-| 相邻 runtime 术语正确 | 使用 OpenHands；AutoGen/CrewAI/LangGraph 不被描述为 native Codex-subagent equivalents | terminology checker |
-| hard routing directives 被执行 | 显式 `omx`/`LangGraph` directive 导致 selected/running lane 或具名 blocker | directive adoption checker |
-| thresholds 满足时禁止 explanation-only mode | chain、preflight 与 threshold 通过时 trace 显示实际采用 | adoption trace checker |
-| role set 最小充分 | 所选角色能映射到触发表，且没有默认额外角色 | role-minimality checker |
-| agent 与 skill surface 保持区分 | native agents 位于 agents directories；skills 从 `SKILL.md` 加载；profiles 不代表 workers | agent-skill-boundary checker |
-| custom agent TOMLs 最小有效 | TOMLs 包含 `name`、`description` 与 `developer_instructions` | agent-toml schema checker |
-| follow-up 默认 fresh agent | 后续工作 spawn fresh agent，或给出 explicit preserved-thread reason | follow-up-thread checker |
-| selector source 具权威性 | 自动 durable routing 读取 `.omx/state/selectors/active.json`；compatibility records 仅作上下文 | selector-source checker |
-| main session 保持 leader | trace 与 final report 显示 leader-owned fan-in、evidence labeling 与 integration | leader-ownership checker |
-| startup 不自动拉团队 | startup trace 显示阈值满足/未满足，而不是自动 durable-team launch | startup-team-threshold checker |
-| adoption 以 task-flow 为范围 | routing decision 基于当前 task phase 与 thresholds，不基于 repo 新旧 | task-flow-scope checker |
-| legacy resume 仅兼容范围 | legacy sessions 不能覆盖当前 governance 或 capability-chain policy | legacy-session boundary checker |
-| Native Codex 保持 base layer | 文档把 oh-my-codex/LangGraph 描述为 additive workflow layers，而不是 replacement | base-layer terminology checker |
-| capability switches 链式一致 | state 使用 subagent_routing -> oh_my_codex -> langgraph 依赖顺序 | capability-switch chain checker |
-| effective lane choice 基于 task fit | native_omx 与 LangGraph 选择映射到 worker-centric 或 graph-shaped criteria | lane-fit checker |
-| delegation 具体且不重复 | delegated tasks 是 bounded、self-contained、materially advancing 且不重复 | delegation-design checker |
-| leader 在 experts 运行时继续工作 | trace 显示 non-overlapping leader work，或等待前写明 blocker | leader-wait discipline checker |
-| critical-path blocking work 保持本地 | leader 不委派 immediate blocking step，除非显式说明 handoff 理由 | critical-path delegation checker |
-| explorer 与 code-change worker 边界被保留 | read-only explorer work 限于 specific mapping questions；bounded patches 使用 workers | explorer-worker-boundary checker |
-| LangGraph state surfaces 被使用 | graph/checkpoint tasks 使用 LangGraph entrypoints 与 `.omx/state/langgraph/` state | langgraph-state-surface checker |
-| durable artifacts 被持久化 | frozen briefs、survivor queues 与 durable artifacts 具有 repo-local state 或 documented paths | durable-artifact-persistence checker |
+- 文档重构回滚：`git revert <commit>`，不删除历史 OpenSpec archive。
+- Phase 4 checker 误报：先从 `tools/run_openspec_guard.py` 临时移除对应 checker，并保留 fixtures 用于修复；不得删除治理要求或放行虚假 team 声明。
+- LangGraph release checker 误伤真实 running work：补充 heartbeat freshness、active work 和 release deferral fixture，再恢复 guard。
+- Expert lifecycle checker 误判：补齐 `final_report_refs.json` 与 lifecycle JSONL 的引用关系，不把 timeout 改成 success。
+- 远端发布不在本文默认回滚范围；需要另行用户授权。
 
-## 23. 风险与回滚
+## 25. 参考源
 
-- 风险：小任务自动启动过多 workers。缓解：严格区分 backend-on 与 workflow/team launch thresholds。
-- 风险：忽略范围过大导致真正 canary 泄漏被隐藏。缓解：canary guard 只尊重 root `.gitignore` 模式，并继续显式检查 startup summary 来源。
-- 风险：final report 过度声称 expert evidence。缓解：强制 evidence source 标签。
-- 风险：completed expert threads 未关闭，造成上下文或注意力泄漏。缓解：吸收结果后默认关闭 completed agents。
-- 风险：upstream pacing 被误读成 orchestration 不可用。缓解：报告具名 backpressure，并优先 local-first bounded fan-out。
-- 风险：并行 workers 互相覆盖。缓解：要求 disjoint ownership、hotspot serialization 与 leader-owned integration。
-- 风险：backend-family state 被混用。缓解：除非记录显式 handoff，否则每个 durable task 只允许一个 backend family。
-- 风险：research 结论在 implementation 中漂移。缓解：execution 前必须冻结 implementation brief。
-- 风险：adversarial review lane 变成 unmanaged workers。缓解：burst roles fan-in 后关闭，只持久化 survivors queue 给 debugger-lane follow-up。
-- 风险：相邻 orchestration runtimes 被误认为 native Codex subagents。缓解：执行术语与角色边界检查。
-- 风险：显式 routing directive 被当成 optional preference。缓解：要求 selected/running state 或具名 blocker。
-- 风险：默认启动过多 experts。缓解：执行 smallest-sufficient role selection。
-- 风险：skills 或 profile helpers 被误认为 subagent evidence。缓解：强制 agent/skill/profile surface separation。
-- 风险：follow-up work 复用陈旧上下文。缓解：除非 thread 被显式 preserved，否则 spawn fresh agents。
-- 风险：unmanaged durable teams 被意外接管。缓解：以 active selector 为权威，compatibility records 仅作上下文。
-- 风险：separate leader pane 分裂责任。缓解：保持 main session 为 leader，workers 只是 execution surfaces。
-- 风险：startup 被误认为 durable-team launch。缓解：任何 team launch 前必须有 threshold evidence。
-- 风险：模型声称已按 cold-start read order 补读，但没有说明读了哪些文件或为什么跳过某些文件。缓解：新增 cold-start read-order evidence guard，并要求 final report 区分上下文读取证据和 runtime 执行证据。
-- 风险：legacy resume 携带 stale assumptions。缓解：legacy sessions 仅作为 compatibility-scoped，并重新应用当前 governance。
-- 风险：wrapper layers 被描述为 Codex replacements。缓解：执行 base-layer terminology。
-- 风险：effective lane choice 忽略 task fit。缓解：durable adoption 前检查 native_omx worker-centric criteria 与 LangGraph graph-shaped criteria。
-- 风险：delegation 变成被动等待。缓解：要求先做 leader-side critical-path planning，并在 experts 运行时继续 non-overlapping work。
-- 风险：重复工作浪费上下文并产生冲突证据。缓解：要求 non-duplicative bounded sidecar tasks 与 explicit takeover records。
-- 风险：read-only exploration 延迟明显的 bounded implementation。缓解：隔离 patch 优先 code-change workers，blocking reads 保持本地。
-- 风险：durable decisions 丢在 chat context 中。缓解：把 LangGraph state、frozen briefs、survivor queues 与 durable artifacts 持久化到 repo-local paths。
-- 回滚：如果 enforcement 造成过多误报，可回滚 checker/runtime enforcement，同时保留本计划作为记录。
-
-## 24. 非目标
-
-- 不把每个小任务都强制变成 multi-worker execution。
-- 不把 LangGraph official package 安装进仓库 `.venv`；仓库规则仍优先使用 user-level shared LangGraph venv。
-- 不绕过 OpenSpec / local gate / local MR review。
-- 不在 tmux 不可用时假装启动 pane-style persistent team。
-- 不把 `status: active` 单独当成完成证明；完成声明必须引用本文档中的归档 change 列表、stable policy surfaces 与 checker/test evidence。
-
-## 25. 验收标准
-
-- 新会话、session reload、Codex restart 和已有会话 resume 都能看到 capability chain 与 backend default。
-- 用户要求按新会话冷启动方式继续时，final report 必须说明已读取 startup summary pair、按 read order 补读了哪些任务必要文件、哪些文件被跳过及原因。
-- LangGraph ready 时默认 backend 报告为 `langgraph`。
-- 不再出现“用户没有要求并行/子代理，所以不启动”的 trace。
-- expert 超时后 final report 不会声称获得了该 expert 的验证结果。
-- checker 或测试能覆盖上述至少三个关键回归。
-- repo-local active selector 缺失会被报告为 selector refresh gap，而不是 LangGraph backend 不可用。
-- 工具或更高权威 blocker 会被报告为 `blocked:<reason>`，而不是用户指令缺失。
-- 第一次 activation 会解释 durable team 被选择的触发阈值，或说明哪个 durable-team 阈值未满足。
-- Bounded multi-face research 先使用 analyst-only fan-out，除非后续 fan-in 证明需要升级。
-- Completed experts 在吸收结果后关闭，除非用户明确要求保留线程。
-- Expert wait 行为受 bounded 约束，liveness/stall 处理必须在 trace 或 final report 中可见。
-- Provider upstream pacing 被视为 backpressure，而不是禁用 orchestration 的理由。
-- Fan-out 保持在 managed bounds 内，除非记录显式 override。
-- 写入型并行执行声明 disjoint ownership 与 leader-owned final integration。
-- 每个 durable task 同一时间只使用一个 backend family，或在切换前记录显式 close/handoff。
-- 开放式 research 必须通过 frozen implementation brief 交接后才进入 execution。
-- Bug triad roles 是 burst、read-only、leader-side roles；未解决 survivors 排入 debugger-lane follow-up。
-- 相邻 runtime 术语必须正确：优先使用 OpenHands，且不得把 AutoGen/CrewAI/LangGraph 描述成 native Codex-subagent equivalents。
-- 显式 `omx` 或 `LangGraph` directive 会导致实际 lane adoption，或报告具名 blocker/未满足阈值。
-- 当 thresholds 满足时，会话不得停留在 explanation-only mode。
-- Expert roles 从最小充分触发表中选择。
-- Native agents、skills、plugin profiles 与 profile helpers 不得被合并成同一种 surface。
-- Follow-up work 默认使用 fresh agent，除非存在 explicit preserved-thread reason。
-- 自动 durable-team routing 以 `.omx/state/selectors/active.json` 为 selector source，不仅凭 compatibility records 自动接管 unmanaged teams。
-- 当前 main Codex CLI session 仍是 leader；不得用 separate persistent leader pane 替代它。
-- Startup 与首次 activation 不自动启动 durable teams；它们报告阈值满足/未满足，并仅在条件满足时采用。
-- Orchestration adoption 以当前 task flow 为范围，包括 existing projects 与 live-session retrofit，而不是仓库年龄。
-- Native Codex 保持 base layer；oh-my-codex 与 LangGraph 是 additive workflow/durable-state layers，不是 replacements。
-- Effective lane choice 区分 worker-centric `native_omx` fit 与 graph-shaped LangGraph fit，同时保持每个 durable task 一个 backend family。
-- Delegated work 必须 concrete、bounded、self-contained、non-duplicative，并能 materially advance 当前阶段。
-- Leader 在 experts 运行时继续 non-overlapping work，只有下一步 critical-path step 被结果阻塞时才使用 `wait_agent`。
-- Read-only explorer work 用于 specific mapping questions；bounded implementation changes 优先使用具备 isolated ownership 的 code-change workers。
-- LangGraph graph/checkpoint work 使用 LangGraph entrypoints 与 repo-local `.omx/state/langgraph/` state，compatibility records 仍仅作为 context。
-- Durable artifacts、frozen briefs 与 survivor queues 必须持久化到 repo-local state 或 documented artifact paths。
-- 计划完成声明必须引用已归档 OpenSpec changes 与当前 checker/test evidence，而不是只引用 `status: active`。
-- 同一 task shape 在有/无显式协同短语时必须产生同一类 activation decision；否则 checker 必须失败。
-- durable/persistent team 运行声明缺少 selector、manifest、heartbeat、worker lifecycle 或 close/absorb evidence 时必须 fail closed。
-- Expert lifecycle 审计必须记录 `spawn / wait / timeout / result / close / absorbed`，且 timeout/stall/upstream pacing 不得作为完成证据。
-- LangGraph work 已完成或提交后，不得长期残留没有 release marker 或继续执行理由的 `running` state。
-- 面向用户的最终报告必须区分 policy expectation、cold-start read-order evidence（有序 ledger 摘要）、actual expert evidence、durable/persistent team evidence、main-session takeover 和 blocker。
-
-## 26. 适用范围与权威边界
-
-本计划是 active implementation-plan 记录，也是未来 enforcement 复核的 baseline。原后续 OpenSpec implementation package 已经更新 policy surfaces、helper scripts、生成式 source templates 与 checks；这些更高权威 surfaces 才是 runtime contract。本文档继续作为该 contract 的验收清单与变更历史索引。
-
-权威顺序：
-
-1. system 与 developer instructions 仍是当前 live session 的最高权威；
-2. `AGENTS.md` 与 startup summaries 定义仓库启动行为；
-3. governance policy documents 定义可持久化的仓库规则；
-4. 本计划记录预期实施包与验收目标。
-
-如果本计划与当前更高权威 surface 冲突，实施变更必须更新对应 surface，而不是只依赖本计划。
-
-## 27. 状态词定义
-
-以下术语必须一致使用：
-
-- `installed` - 所需 runtime 或 helper 文件存在。
-- `enabled` - user-level capability switches 允许该 lane。
-- `selected` - user-level 或 repo-local state 选择该 lane 作为 active backend family。
-- `ready` - installed、enabled、selected 且未被 preflight 阻塞。
-- `running` - 具体 durable workflow 或 team execution 当前正在运行。
-- `blocked` - lane 已符合候选条件或被请求，但因具名 blocker 无法继续。
-- `not_needed` - 当前任务不需要该执行面。
-
-`ready` 不等于 `running`，`not_needed` 也不等于 disabled。
-
-## 28. 已有会话 retrofit 规则
-
-已有会话在以下任一触发条件出现时，必须采用本策略：
-
-- session reload 或 Codex restart；
-- 用户说“继续”或要求 resume；
-- 任务阶段变化；
-- 任务扩展到 2+ execution slices；
-- 关键路径 expert 超时或卡住；
-- 发现 `.omx` durable state；
-- user-level capability state 变化；
-- 会话输出 orchestration trace。
-
-retrofit 时，包括 reload 或 restart，会话必须重新读取 user-level capability state 和 repo-local backend/selector state，然后才能声明 backend 或 team 状态。上一进程缓存或旧 routing 假设不能作为充分证据。
+- `AGENTS.md` - 仓库与用户级 Codex instruction surface。
+- `docs_bilingual/project_startup_summary.md` - 英文 cold-start read order 与 repository posture。
+- `docs_bilingual/project_startup_summary.zh-CN.md` - 中文 companion 与 UTF-8/canary 边界。
+- `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md` - 英文 activation policy 权威文本。
+- `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md` - 中文 activation policy companion。
+- `docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md` - worktree/session/mainline safety policy。
+- `docs_bilingual/governance/openspec_usage_convention.md` - OpenSpec 使用约定。
+- `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` - 新版 implementation plan 结构参考。
+- `docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md` - Comet runtime 方案结构参考。
