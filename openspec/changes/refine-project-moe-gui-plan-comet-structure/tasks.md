@@ -12,9 +12,12 @@
 
 ## 3. Document Refactor
 
-- [x] 3.1 Rewrite `project_moe_agent_gui_toolchain_plan.zh-CN.md` into the full Comet executable-plan structure.
+- [x] 3.1 Rewrite `project_moe_agent_gui_toolchain_plan.md` and `.zh-CN.md` into the full Comet executable-plan structure.
 - [x] 3.2 Preserve Project MOE-specific contracts: Phase 1/Phase 2, Ready/Bootstrap/Repair lanes, target install boundaries, JSON state contracts and privacy rules.
 - [x] 3.3 Add explicit readiness metadata and self-check checklist.
+- [x] 3.4 Align with `pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` structure: review conclusion, relationship model, goals/non-goals, runtime architecture, source of truth, install artifacts, CLI/JSON/state contracts, gates, rollback, risks and self-check.
+- [x] 3.5 Align with `comet_runtime_agile_focus_area_plan.zh-CN.md` semantics: management record, phase gates, Monitoring return semantics, implementation slices, file ownership map, local integration order and evidence retention.
+- [x] 3.6 Repair the Chinese OpenSpec/Superpowers support artifacts for this change so they are valid UTF-8 Chinese instead of mojibake/question-mark placeholders.
 
 ## 4. Verification
 

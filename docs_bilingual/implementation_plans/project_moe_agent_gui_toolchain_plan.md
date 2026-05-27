@@ -108,6 +108,34 @@ Current strategy:
 - This work does not install PySide6, touch target projects, or write user-level directories.
 - This work may be committed on a local feature branch; local `main` integration and remote publication require a later explicit user instruction.
 
+### 3.1 Comet management record, phase-gate, and Monitoring semantics
+
+This plan follows the newer Comet runtime-control structure, but Project MOE GUI remains a Project MOE toolchain plan rather than a Comet runtime implementation. The reusable semantics are:
+
+| Concept | Required interpretation for this plan |
+| --- | --- |
+| Management record | `management.md` is the phase evidence ledger for Open, Design, Build, Verify, Archive, and Monitoring. It is not a decorative note; it is evidence for why the current phase may advance. |
+| Phase gate | A forward transition is valid only when the phase checklist is complete and Monitoring says `clear` / `continue`. If Comet bash scripts are unavailable on Windows, file-state evidence must be recorded instead of claiming a script transition. |
+| Monitoring loop | Monitoring is a cross-phase control loop, not a sixth Comet phase. Return decisions map to `return-open`, `return-design`, `return-build`, or `return-verify`, with a concrete reason and preserved artifacts. |
+| Evidence retention | Verification output, archive deferral, worktree receipts, and changed-path summaries must stay in repo-local artifacts, not only in chat history. |
+| Approval boundary | Local feature work and local `main` integration follow the local-first policy; remote publication, target-project writes, destructive cleanup outside the approved flow, and scope expansion need explicit user authorization. |
+
+### 3.2 Full `/comet` structure parity checklist
+
+The target structure must be same-level with the newer Pi sidecar plan and must also inherit the Comet runtime plan's control semantics:
+
+| Reference structure | Project MOE GUI mapping |
+| --- | --- |
+| Review conclusion | Section 0 records readiness, draft status, and what is still not implemented. |
+| Relationship / naming boundary | Section 1 separates target-project MOE Agents, private prompt sources, Phase 1 CLI, Phase 2 GUI, checker, and state namespace. |
+| Runtime architecture and usage | Sections 4-5 define operator, launcher, GUI, CLI, and target-state interactions. |
+| Source of truth | Section 6 keeps shared toolchain source in this repository and target state in target projects. |
+| Install artifacts / receipt | Section 7 defines target managed files and manifest requirements. |
+| CLI / JSON / state contract | Sections 9-11 define read/write commands, envelopes, state files, effective-state precedence, and stable failure tokens. |
+| Readiness gates | Section 13 defines Ready, Ready-candidate, Bootstrap, and Repair lanes. |
+| Implementation backlog | Section 14 uses ordered slices plus item-level checkboxes, file ownership, local integration order, and evidence-retention rules. |
+| Verification / rollback / self-check | Sections 12, 15, 17, and 18 define safety, rollback, validation, risks, and completion criteria. |
+
 ## 4. Runtime Architecture
 
 ```text
@@ -452,35 +480,104 @@ The readiness payload must include:
 - [x] Define that `D:\PythonProject_paper_suggest` cannot jump into GUI control just because a Phase 1 candidate exists.
 - [x] Define that missing Comet bash scripts must not be faked.
 - [x] Recast this document into the new Comet executable-plan structure.
+- [x] Add Comet management-record, phase-gate, Monitoring-return, evidence-retention, and approval-boundary semantics to this plan.
 
-### 14.2 Next implementation batch
+### 14.2 Implementation slices
 
-- [ ] Freeze the `check_project_moe_phase1_readiness.py` output schema.
-- [ ] Add ready, ready-candidate, bootstrap, and repair fixtures for the readiness checker.
-- [ ] Freeze the Bootstrap Lane payload for `scaffold_project_moe_phase1.py --dry-run --json`.
-- [ ] Freeze the wrapper readiness gate: force `--json`, forbid arbitrary `%*` pass-through, and forbid shell chaining.
-- [ ] Freeze the Agent TOML standard extension gate.
-- [ ] Freeze the private prompt path readiness gate.
-- [ ] Freeze the `assert-on --json` read-only assertion gate.
-- [ ] Freeze the GUI launcher preflight: readiness first, target CLI read commands second.
-- [ ] Freeze the project-default card in the GUI shell.
-- [ ] Freeze the session table in the GUI shell.
-- [ ] Freeze the error-token display in the GUI shell.
-- [ ] Freeze the refresh-after-write behavior in the GUI shell.
-- [ ] Freeze the install/update/uninstall managed-manifest hash gate.
-- [ ] Before the real target project enters Ready Lane, record both static-only and read-contract evidence.
+#### Slice 0: plan and OpenSpec evidence closure
 
-### 14.3 Never-skip execution rules
+- [x] Reuse the existing OpenSpec change `refine-project-moe-gui-plan-comet-structure`; do not open an unrelated duplicate change.
+- [x] Keep `status: draft` and use `plan_readiness` for implementation-slicing readiness, not runtime completion.
+- [x] Keep the bilingual implementation-plan pair synchronized.
+- [x] Keep `.comet.yaml` honest about Windows Comet bash unavailability.
+- [x] Replace any corrupted Chinese OpenSpec / Superpowers support artifacts for this change with valid UTF-8 Chinese text.
+- [x] Update `tasks.md` / `tasks.zh-CN.md` so this full `/comet` structural pass has explicit evidence.
+- [x] Run OpenSpec validation and repository guard after the support artifacts are repaired.
+
+#### Slice 1: Phase 1 readiness checker and schema
+
+- [ ] Define the `check_project_moe_phase1_readiness.py --json` envelope.
+- [ ] Add `ready`, `ready-candidate`, `bootstrap`, and `repair` fixture projects.
+- [ ] Add negative fixtures for missing Agent TOML, invalid TOML, missing private prompt source, unsafe private prompt path, missing CLI, unsupported CLI schema, and dirty target root.
+- [ ] Ensure static-only mode never executes a target project CLI.
+- [ ] Ensure read-contract mode only executes safe read commands.
+- [ ] Ensure readiness output includes lane, blockers, warnings, checked files, redacted paths, and `control_mode_allowed`.
+
+#### Slice 2: Bootstrap and repair lane tooling
+
+- [ ] Freeze `scaffold_project_moe_phase1.py --dry-run --json` output.
+- [ ] Generate bootstrap actions without writing target files by default.
+- [ ] Add an explicit `--apply` path only after target ownership and dirty-state checks pass.
+- [ ] Produce a repair-lane report for partially implemented Phase 1 projects.
+- [ ] Preserve `D:\PythonProject_paper_suggest` as repair-lane until fresh checker evidence proves otherwise.
+
+#### Slice 3: target install, update, uninstall, and rollback manifest
+
+- [ ] Implement install artifact generation under `<project>/tools/project_moe_gui/`.
+- [ ] Generate `<project>/project-moe-gui.cmd` as a narrow launcher, not an arbitrary command passthrough.
+- [ ] Write `project_moe_gui.install-manifest.json` with source commit, managed files, hashes, target root, agent name, namespace, readiness result, and rollback pointer.
+- [ ] Implement update by comparing manifest hashes and source version.
+- [ ] Implement uninstall by deleting only manifest-owned managed files.
+- [ ] Create local rollback receipts before overwriting any managed target artifact.
+
+#### Slice 4: Phase 2 PySide6 GUI shell
+
+- [ ] Build the launcher preflight: target root selection, readiness check, read-contract check, and fail-closed blocker display.
+- [ ] Implement the project-default status card.
+- [ ] Implement the session table with desensitized session identifiers and lifecycle fields.
+- [ ] Implement project default on/off actions through target CLI only.
+- [ ] Implement selected-session on/off actions through target CLI only.
+- [ ] Disable same-scope write controls during writes and refresh state after every write.
+- [ ] Display stable failure tokens, concise explanations, suggested next actions, and redacted stdout/stderr summaries.
+
+#### Slice 5: governance, docs, and checker integration
+
+- [ ] Register any new checker in the repository guard and CI manifest.
+- [ ] Update the PySide6 cross-project capability plan only for shared runtime and launcher boundary changes.
+- [ ] Update Project MOE-specific docs only for MOE GUI state, readiness, and installer behavior.
+- [ ] Keep workflow skills, plugin profiles, and GUI profile loading out of native-expert evidence claims.
+- [ ] Keep private prompt source content referenced, not copied.
+
+#### Slice 6: target-project acceptance and rollout
+
+- [ ] Record static-only evidence for the target project.
+- [ ] Record read-contract evidence for the target project.
+- [ ] Record write-fixture evidence for project on/off, session on/off, no-op, invalid record skip, lock timeout, and atomic write.
+- [ ] Only after fresh Ready Lane evidence exists, allow GUI control for that target project.
+- [ ] Record the target install receipt and rollback pointer.
+
+### 14.3 File ownership map
+
+| Path family | Owner | Rule |
+| --- | --- | --- |
+| `docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan*.md` | This plan change | Bilingual plan source; update as a pair. |
+| `openspec/changes/refine-project-moe-gui-plan-comet-structure/` | Current Comet/OpenSpec change | Proposal, design, tasks, management record, delta spec, and archive deferral evidence. |
+| `docs/superpowers/specs/*project-moe-gui*` and `docs/superpowers/plans/*project-moe-gui*` | Current Comet/Superpowers change | HOW evidence for this refactor; Chinese pair must be valid UTF-8 if present. |
+| `tools/project_moe_gui_toolchain/` | Future implementation slices | Shared checker, installer, updater, launcher templates, PySide6 GUI shell, tests. |
+| `<target>/.codex/agents/*.toml`, `<target>/MOE.md`, `<target>/tools/*_moe_mode.py`, `<target>/.omx/state/<namespace>/` | Target project | Target-owned; this repository may inspect or call declared CLI contracts but must not silently own or mutate them. |
+
+### 14.4 Local integration order and evidence retention
+
+- [ ] Start implementation from a feature branch or feature worktree based on current local `main`.
+- [ ] Keep the primary worktree on local `main`; do not turn it into a feature workspace.
+- [ ] Commit only after the precommit update/archive review passes.
+- [ ] Run local gate and local MR review before local `main` integration.
+- [ ] Merge into local `main` only after the feature branch is clean and user approval for local integration is present.
+- [ ] Keep remote publication separate; do not push GitLab/GitHub unless the current user message explicitly approves remote publication.
+- [ ] Retain evidence: command output summaries, changed paths, worktree receipt, rollback ref if created, and archive deferral reason if archive cannot run.
+
+### 14.5 Never-skip execution rules
 
 - [ ] Before every target-project write, confirm dirty/ownership preflight.
 - [ ] Whenever a new checker is added, register it in the repo guard.
 - [ ] After every completed OpenSpec change, archive it; if Comet bash is unavailable, record `x_archive_deferred_reason` and `x_archive_follow_up`.
 - [ ] Before every local commit, run the precommit update/archive review.
 - [ ] Before every local `main` integration, run the local gate and local MR review.
+- [ ] If an expert, durable worker, GUI action, or target CLI times out, treat the result as missing evidence; retry, narrow, hand off, or record explicit main-session takeover.
 
 ## 15. Verification Plan
 
-Local verification:
+Feature-branch verification:
 
 ```powershell
 git diff --check
@@ -488,14 +585,16 @@ openspec validate refine-project-moe-gui-plan-comet-structure
 python .\tools\check_implementation_plan_rules.py --root . --json
 python .\tools\check_precommit_update_archive.py --root . --json
 python .\tools\run_openspec_guard.py --root .
-.\tools\ci\local_mr_review.ps1
 ```
 
-Before local `main` integration:
+After commit and before local `main` integration:
 
 ```powershell
 .\tools\ci\local_gate.ps1
+.\tools\ci\local_mr_review.ps1
 ```
+
+If Comet bash scripts are unavailable, the verification report must say so explicitly and must rely on OpenSpec validation, repository guards, local CI, and local MR review rather than fabricated `comet-state.sh` evidence.
 
 Target-project readiness verification:
 
@@ -544,12 +643,15 @@ When implementation moves from docs to code, also update/check:
 - [x] Private prompt sources are referenced, not copied.
 - [x] Install, update, uninstall, and rollback managed-artifact boundaries are explicit.
 - [x] Verification commands and local-main / remote-publication boundaries are explicit.
+- [x] Comet management record, phase gates, Monitoring return semantics, and evidence retention are explicit.
+- [x] Implementation slices, file ownership map, and local integration order are explicit.
 - [ ] Once the code implementation is complete, archive the corresponding OpenSpec change.
 - [ ] Once real Ready Lane evidence exists for a target project, allow GUI control.
 
 ## 19. References
 
 - `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md`: newer executable-plan structure reference.
+- `docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md`: Comet management-record, phase-gate, Monitoring-return and evidence-retention semantics.
 - `docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.md`: generic PySide6 runtime and cross-project GUI boundary.
 - `openspec/changes/refresh-project-moe-gui-plan-comet/`: previous Project MOE GUI document fact-chain update trace.
 - `openspec/changes/restructure-project-moe-gui-plan-modern/`: previous structure-refactor trace.

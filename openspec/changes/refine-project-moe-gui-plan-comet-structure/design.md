@@ -19,6 +19,14 @@ The plan is organized around the same top-level pattern as `pi_plugin_codex_user
 9. readiness lanes;
 10. ordered implementation items, validation plan, related-doc update rules, risks, self-checks.
 
+The plan also borrows the control semantics from `comet_runtime_agile_focus_area_plan.zh-CN.md`:
+
+- management records are phase evidence, not decoration;
+- phase gates require checklist evidence and a clear Monitoring decision;
+- Monitoring return is a cross-phase control loop, not a sixth phase;
+- implementation work is expressed as slices plus item-level checkboxes;
+- file ownership, local integration order, and evidence retention are explicit.
+
 ### Key boundary decisions
 
 - The plan remains `status: draft` because it is not a runtime completion claim.
@@ -27,6 +35,7 @@ The plan is organized around the same top-level pattern as `pi_plugin_codex_user
 - This repository remains the owner of the shared GUI toolchain source, templates, checker and installer.
 - The GUI never edits target state JSON directly; it only calls target project CLI contracts.
 - Existing `D:\PythonProject_paper_suggest` evidence remains blocked/repair-lane until a future readiness checker proves otherwise.
+- Chinese support artifacts for this change must be valid UTF-8 Chinese, not mojibake or question-mark placeholders.
 
 ### Verification design
 

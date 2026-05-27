@@ -10,6 +10,7 @@ The Project MOE Agent GUI plan is a long-lived implementation plan. A previous p
 - Preserve Project MOE-specific boundaries instead of copying Pi sidecar runtime assumptions.
 - Keep target project readiness, GUI runtime implementation and remote publication as separate states.
 - Record Windows Comet bash unavailability honestly.
+- Align with the Comet runtime plan's management-record, phase-gate, Monitoring-return, and evidence-retention semantics.
 
 ## Selected Structure
 
@@ -24,13 +25,15 @@ The plan uses the same structural family as `pi_plugin_codex_user_level_sidecar_
 - Phase 1 CLI and Phase 2 GUI contracts;
 - JSON state model;
 - readiness lanes;
-- ordered implementation checklist;
+- ordered implementation slices, item-level checkboxes, file ownership, and local integration order;
 - verification plan, related-doc rules, risk table and self-checks.
 
 ## Acceptance Criteria
 
 - The target plan has no ambiguous claim that a target project is GUI-ready.
 - The target plan names the current Comet change.
+- Management record, phase gates, Monitoring return semantics and evidence retention are explicit.
+- Chinese paired support artifacts are valid UTF-8 Chinese instead of mojibake or question-mark placeholders.
 - The OpenSpec change validates.
 - The precommit update/archive gate accepts the explicit archive deferral.
 - The local MR review passes after commit.

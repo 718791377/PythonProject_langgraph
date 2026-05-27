@@ -110,6 +110,34 @@ related_docs:
 - 本次不安装 PySide6、不写目标项目、不写 user-level 目录。
 - 本次可以提交本地 feature 分支；本地 `main` 合入与远端发布仍需用户后续明确指令。
 
+### 3.1 Comet 管理记录、阶段门禁与 Monitoring 语义
+
+本方案采用新版 Comet runtime-control 结构，但 Project MOE GUI 仍然是 Project MOE 工具链方案，不是 Comet runtime 本体实现。需要复用的语义如下：
+
+| 概念 | 本方案中的强制解释 |
+| --- | --- |
+| 管理记录 | `management.md` 是 Open、Design、Build、Verify、Archive 与 Monitoring 的阶段证据账本，不是装饰性备注；它证明当前阶段为什么可以前进。 |
+| 阶段门禁 | 只有当前阶段 checklist 完成，且 Monitoring 为 `clear` / `continue` 时，前进 transition 才有效；如果 Windows 上 Comet bash 脚本不可用，只能记录文件态证据，不能声称脚本 transition 已通过。 |
+| Monitoring 回路 | Monitoring 是跨阶段控制回路，不是第六个 Comet phase；回退决策只能映射到 `return-open`、`return-design`、`return-build` 或 `return-verify`，并保留明确原因和既有 artifacts。 |
+| 证据留存 | 验证输出、归档延期、worktree receipt、changed-path 摘要必须保存在仓库本地 artifacts 中，不能只留在聊天记录里。 |
+| 授权边界 | 本地 feature 工作与本地 `main` 合入遵循 local-first 规则；远端发布、目标项目写入、批准流程外的破坏性清理和范围扩大必须再次获得用户明确授权。 |
+
+### 3.2 完整 `/comet` 结构对齐清单
+
+目标结构必须与新版 Pi sidecar 方案同级，同时继承 Comet runtime 方案的控制语义：
+
+| 参考结构 | Project MOE GUI 对应落点 |
+| --- | --- |
+| 复核结论 | 第 0 节记录 readiness、draft 状态以及仍未实现的能力。 |
+| 关系 / 命名边界 | 第 1 节分离目标项目 MOE Agent、私有提示源、Phase 1 CLI、Phase 2 GUI、checker 与 state namespace。 |
+| 运行时架构与使用方式 | 第 4-5 节定义 operator、launcher、GUI、CLI 与目标状态之间的交互。 |
+| Source of truth | 第 6 节规定共享工具链源码在本仓库，目标状态在目标项目。 |
+| 安装产物 / receipt | 第 7 节定义目标项目 managed files 与 manifest 要求。 |
+| CLI / JSON / 状态契约 | 第 9-11 节定义读写命令、envelope、状态文件、有效状态优先级和稳定失败 token。 |
+| Readiness gates | 第 13 节定义 Ready、Ready-candidate、Bootstrap 与 Repair lane。 |
+| 实施 backlog | 第 14 节使用有序切片、事项级 checkbox、文件职责、集成顺序和证据留存规则。 |
+| 验证 / 回滚 / 自检 | 第 12、15、17、18 节定义安全、回滚、验证、风险和完成标准。 |
+
 ## 4. 运行时架构
 
 ```text
@@ -454,35 +482,104 @@ readiness payload 必须包含：
 - [x] 明确 `D:\PythonProject_paper_suggest` 不能因存在 Phase 1 候选就直接进入 GUI 控制。
 - [x] 明确 Comet bash 不可用时不得伪造脚本状态。
 - [x] 将本文重构为完整 Comet 可执行方案结构。
+- [x] 将 Comet 管理记录、阶段门禁、Monitoring 回退、证据留存和授权边界语义补入本文。
 
-### 14.2 下一批实现事项
+### 14.2 实施切片
 
-- [ ] 固化 `check_project_moe_phase1_readiness.py` 的输出 schema。
-- [ ] 为 readiness checker 新增 ready、ready-candidate、bootstrap、repair 四类 fixture。
-- [ ] 固化 `scaffold_project_moe_phase1.py --dry-run --json` 的 Bootstrap Lane payload。
-- [ ] 固化目标项目 wrapper readiness gate：强制 `--json`、禁止任意 `%*` 透传、禁止 shell 串联。
-- [ ] 固化 Agent TOML 标准扩展区 readiness gate。
-- [ ] 固化私有提示源路径 readiness gate。
-- [ ] 固化 `assert-on --json` 只读断言 gate。
-- [ ] 固化 GUI launcher preflight：先 readiness，再目标 CLI 读命令。
-- [ ] 固化 GUI shell 的项目默认卡片。
-- [ ] 固化 GUI shell 的 session 表格。
-- [ ] 固化 GUI shell 的错误 token 展示。
-- [ ] 固化 GUI shell 的写入后刷新。
-- [ ] 固化安装/更新/卸载 managed manifest 与 hash gate。
-- [ ] 在真实目标项目进入 Ready Lane 前，先记录 static-only 和执行读契约两类证据。
+#### Slice 0：方案与 OpenSpec 证据收口
 
-### 14.3 不得跳过的执行规则
+- [x] 复用既有 OpenSpec change `refine-project-moe-gui-plan-comet-structure`，不新开无关重复 change。
+- [x] 保留 `status: draft`，并用 `plan_readiness` 表示可进入实现切片，不表示运行时已完成。
+- [x] 保持中英文 implementation-plan 成对同步。
+- [x] 如实在 `.comet.yaml` 记录 Windows Comet bash 不可用。
+- [x] 将本 change 下损坏的中文 OpenSpec / Superpowers 支撑 artifacts 替换为合法 UTF-8 中文文本。
+- [x] 更新 `tasks.md` / `tasks.zh-CN.md`，让本次完整 `/comet` 结构化通过具备显式证据。
+- [x] 支撑 artifacts 修复后重新运行 OpenSpec validate 与仓库 guard。
+
+#### Slice 1：Phase 1 readiness checker 与 schema
+
+- [ ] 定义 `check_project_moe_phase1_readiness.py --json` envelope。
+- [ ] 新增 `ready`、`ready-candidate`、`bootstrap`、`repair` 四类 fixture 项目。
+- [ ] 新增负向 fixture：缺 Agent TOML、TOML 无效、缺私有提示源、私有提示源越界、缺 CLI、CLI schema 不支持、目标根目录 dirty。
+- [ ] 确保 static-only 模式永不执行目标项目 CLI。
+- [ ] 确保 read-contract 模式只执行安全读命令。
+- [ ] 确保 readiness 输出包含 lane、blockers、warnings、checked files、脱敏路径和 `control_mode_allowed`。
+
+#### Slice 2：Bootstrap 与 Repair lane 工具
+
+- [ ] 固化 `scaffold_project_moe_phase1.py --dry-run --json` 输出。
+- [ ] 默认只生成 bootstrap actions，不写目标文件。
+- [ ] 只有在目标 ownership 和 dirty-state 检查通过后，才提供显式 `--apply` 路径。
+- [ ] 为部分实现 Phase 1 的项目输出 repair-lane report。
+- [ ] 在新 checker 证据证明之前，保持 `D:\PythonProject_paper_suggest` 为 repair-lane。
+
+#### Slice 3：目标安装、更新、卸载与回滚 manifest
+
+- [ ] 在 `<project>/tools/project_moe_gui/` 下实现安装产物生成。
+- [ ] 生成 `<project>/project-moe-gui.cmd` 作为窄 launcher，不允许任意命令透传。
+- [ ] 写入 `project_moe_gui.install-manifest.json`，包含 source commit、managed files、hashes、target root、agent name、namespace、readiness result 和 rollback pointer。
+- [ ] 通过 manifest hash 与 source version 比较实现 update。
+- [ ] 通过 manifest 只删除自身 owned managed files 实现 uninstall。
+- [ ] 覆盖任何 managed target artifact 前，先创建本地 rollback receipt。
+
+#### Slice 4：Phase 2 PySide6 GUI shell
+
+- [ ] 实现 launcher preflight：目标根选择、readiness check、read-contract check、fail-closed blocker 展示。
+- [ ] 实现项目默认状态卡片。
+- [ ] 实现 session 表格，并脱敏 session identifier 与生命周期字段。
+- [ ] 通过目标 CLI 实现项目默认 on/off。
+- [ ] 通过目标 CLI 实现选中 session on/off。
+- [ ] 写入期间禁用同 scope 控件，并在每次写入后刷新状态。
+- [ ] 展示 stable failure token、简短解释、建议动作和脱敏 stdout/stderr 摘要。
+
+#### Slice 5：治理、文档与 checker 集成
+
+- [ ] 新增 checker 时同步注册到仓库 guard 和 CI manifest。
+- [ ] 只在共享 runtime 与 launcher 边界变化时更新 PySide6 跨项目能力方案。
+- [ ] 只在 MOE GUI 状态、readiness 与 installer 行为变化时更新 Project MOE 专属文档。
+- [ ] 不把 workflow skills、plugin profiles 或 GUI profile loading 写成 native-expert evidence。
+- [ ] 私有提示源只引用，不复制正文。
+
+#### Slice 6：目标项目验收与推广
+
+- [ ] 记录目标项目 static-only 证据。
+- [ ] 记录目标项目 read-contract 证据。
+- [ ] 记录写入 fixture 证据：project on/off、session on/off、no-op、invalid record skip、lock timeout、atomic write。
+- [ ] 只有产生新的 Ready Lane 证据后，才允许该目标项目进入 GUI 控制。
+- [ ] 记录目标项目安装 receipt 与 rollback pointer。
+
+### 14.3 文件职责图
+
+| 路径族 | Owner | 规则 |
+| --- | --- | --- |
+| `docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan*.md` | 本方案 change | 双语方案源文件，必须成对更新。 |
+| `openspec/changes/refine-project-moe-gui-plan-comet-structure/` | 当前 Comet/OpenSpec change | proposal、design、tasks、management record、delta spec 与 archive deferral 证据。 |
+| `docs/superpowers/specs/*project-moe-gui*` 与 `docs/superpowers/plans/*project-moe-gui*` | 当前 Comet/Superpowers change | 本次重构的 HOW 证据；若存在中文配对，必须是合法 UTF-8 中文文本。 |
+| `tools/project_moe_gui_toolchain/` | 后续实现切片 | 共享 checker、installer、updater、launcher templates、PySide6 GUI shell 与 tests。 |
+| `<target>/.codex/agents/*.toml`、`<target>/MOE.md`、`<target>/tools/*_moe_mode.py`、`<target>/.omx/state/<namespace>/` | 目标项目 | 目标项目 owned；本仓库只能按 contract 检查或调用 CLI，不能静默接管或修改。 |
+
+### 14.4 本地集成顺序与证据留存
+
+- [ ] 从当前本地 `main` 创建 feature branch 或 feature worktree。
+- [ ] 主目录保持在本地 `main`，不要变成 feature workspace。
+- [ ] 只有 precommit update/archive review 通过后才提交。
+- [ ] 本地 `main` 合入前运行 local gate 和 local MR review。
+- [ ] feature 分支干净且用户已批准本地集成后，才合入本地 `main`。
+- [ ] 远端发布保持独立；除非当前用户消息明确批准远端发布，否则不推 GitLab/GitHub。
+- [ ] 留存证据：命令输出摘要、changed paths、worktree receipt、如已创建则记录 rollback ref、如无法 archive 则记录 archive deferral reason。
+
+### 14.5 不得跳过的执行规则
 
 - [ ] 每次目标项目写入前先确认 dirty/ownership preflight。
 - [ ] 每次新增 checker 同步注册到仓库 guard。
 - [ ] 每次完成 OpenSpec change 后要 archive；若 Comet bash 不可用，必须记录 `x_archive_deferred_reason` 和 `x_archive_follow_up`。
 - [ ] 每次本地提交前运行 precommit update/archive review。
 - [ ] 每次本地 main 合入前运行 local gate 与 local MR review。
+- [ ] 如果 expert、durable worker、GUI action 或目标 CLI 超时，必须视为缺失证据；只能重试、缩小范围、转交合格 durable lane，或记录主会话显式接管。
 
 ## 15. 验证计划
 
-局部验证：
+feature 分支验证：
 
 ```powershell
 git diff --check
@@ -490,14 +587,16 @@ openspec validate refine-project-moe-gui-plan-comet-structure
 python .\tools\check_implementation_plan_rules.py --root . --json
 python .\tools\check_precommit_update_archive.py --root . --json
 python .\tools\run_openspec_guard.py --root .
-.\tools\ci\local_mr_review.ps1
 ```
 
-本地 main 合入前：
+提交后、本地 main 合入前：
 
 ```powershell
 .\tools\ci\local_gate.ps1
+.\tools\ci\local_mr_review.ps1
 ```
+
+如果 Comet bash 脚本不可用，验证报告必须明确说明，并使用 OpenSpec validate、仓库 guard、本地 CI 与 local MR review 作为证据，不得伪造 `comet-state.sh` 证据。
 
 目标项目 readiness 验证：
 
@@ -546,12 +645,15 @@ python .\tools\run_openspec_guard.py --root .
 - [x] 明确私有提示源只引用不复制。
 - [x] 明确安装、更新、卸载、rollback 的 managed artifact 边界。
 - [x] 明确验证命令和本地 main / 远端发布边界。
+- [x] 明确 Comet 管理记录、阶段门禁、Monitoring 回退语义和证据留存。
+- [x] 明确实施切片、文件职责图和本地集成顺序。
 - [ ] 后续代码实现完成后归档对应 OpenSpec change。
 - [ ] 目标项目真实 Ready Lane 证据生成后，再允许 GUI 控制。
 
 ## 19. 参考源
 
 - `docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md`：新版可执行方案结构参考。
+- `docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md`：Comet 管理记录、阶段门禁、Monitoring 回退和证据留存语义参考。
 - `docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.zh-CN.md`：通用 PySide6 runtime 与跨项目 GUI 能力边界。
 - `openspec/changes/refresh-project-moe-gui-plan-comet/`：上一轮 Project MOE GUI 文档事实链更新 trace。
 - `openspec/changes/restructure-project-moe-gui-plan-modern/`：上一轮结构重构 trace。
