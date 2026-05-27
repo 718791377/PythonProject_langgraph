@@ -387,7 +387,25 @@ documents:
         self.write_file(
             root,
             ".codex/skills/comet/SKILL.md",
-            "management_record\nmonitor-return-open\nadaptive/hybrid rework loop\nManagement Checklist\n",
+            "\n".join(
+                [
+                    "management_record",
+                    "monitor-return-open",
+                    "adaptive/hybrid rework loop",
+                    "Management Checklist",
+                    "Adaptive Monitoring Return Dispatch",
+                    "`control_decision=return-open|return-design|return-build|return-verify`",
+                    "`monitoring_status=blocked`",
+                    "do not force waterfall progression",
+                    "`return-open` -> `/comet-open`",
+                    "`return-design` -> `/comet-design`",
+                    "`return-build` -> `/comet-build`",
+                    "`return-verify` -> `/comet-verify`",
+                    "reread `.comet.yaml`",
+                    "refresh the target phase management checklist",
+                ]
+            )
+            + "\n",
         )
         self.write_file(root, ".codex/skills/comet-open/SKILL.md", "Open management checklist\n" + adaptive_skill_terms)
         self.write_file(root, ".codex/skills/comet-design/SKILL.md", "Design management checklist\n" + adaptive_skill_terms)
@@ -460,6 +478,29 @@ documents:
             payload["missing_terms"]["phase_skills"][".codex/skills/comet-build/SKILL.md"],
         )
         self.assertTrue(any("Comet phase skill .codex/skills/comet-build/SKILL.md" in error for error in payload["errors"]))
+
+    def test_comet_policy_missing_root_skill_return_dispatch_term_fails(self) -> None:
+        root = self.make_root()
+        self.write_valid_surface(root)
+        skill_path = root / ".codex/skills/comet/SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "Adaptive Monitoring Return Dispatch",
+                "",
+            ),
+            encoding="utf-8",
+        )
+
+        result = self.run_comet_policy_check(root)
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertIn(
+            "Adaptive Monitoring Return Dispatch",
+            payload["missing_terms"]["root_skill"],
+        )
+        self.assertTrue(any("Root Comet skill" in error for error in payload["errors"]))
 
     def test_comet_policy_missing_registry_entry_fails(self) -> None:
         root = self.make_root()

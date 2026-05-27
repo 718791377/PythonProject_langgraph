@@ -183,6 +183,19 @@ SKILL_REQUIRED_TERMS = [
     "Archive management checklist",
 ]
 
+ROOT_SKILL_REQUIRED_TERMS = [
+    "Adaptive Monitoring Return Dispatch",
+    "`control_decision=return-open|return-design|return-build|return-verify`",
+    "`monitoring_status=blocked`",
+    "do not force waterfall progression",
+    "`return-open` -> `/comet-open`",
+    "`return-design` -> `/comet-design`",
+    "`return-build` -> `/comet-build`",
+    "`return-verify` -> `/comet-verify`",
+    "reread `.comet.yaml`",
+    "refresh the target phase management checklist",
+]
+
 PHASE_SKILL_REQUIRED_TERMS = {
     ".codex/skills/comet-open/SKILL.md": [
         "Open management checklist",
@@ -337,6 +350,7 @@ def build_report(root: Path) -> dict:
     validate_script_missing: list[str] = []
     archive_script_missing: list[str] = []
     skill_missing: list[str] = []
+    root_skill_missing: list[str] = []
     phase_skill_missing: dict[str, list[str]] = {}
 
     if en_path:
@@ -476,6 +490,8 @@ def build_report(root: Path) -> dict:
             skill_text = read_text(skill_path)
             skill_texts.append(skill_text)
             checked_files.append(relative.as_posix())
+            if relative.as_posix() == ".codex/skills/comet/SKILL.md":
+                root_skill_missing = check_terms("Root Comet skill", skill_text, ROOT_SKILL_REQUIRED_TERMS, errors)
             per_file_terms = PHASE_SKILL_REQUIRED_TERMS.get(relative.as_posix())
             if per_file_terms:
                 missing = check_terms(f"Comet phase skill {relative.as_posix()}", skill_text, per_file_terms, errors)
@@ -504,6 +520,7 @@ def build_report(root: Path) -> dict:
             "validate_script": VALIDATE_SCRIPT_REQUIRED_TERMS,
             "archive_script": ARCHIVE_SCRIPT_REQUIRED_TERMS,
             "skills": SKILL_REQUIRED_TERMS,
+            "root_skill": ROOT_SKILL_REQUIRED_TERMS,
             "phase_skills": PHASE_SKILL_REQUIRED_TERMS,
         },
         "missing_terms": {
@@ -517,6 +534,7 @@ def build_report(root: Path) -> dict:
             "validate_script": validate_script_missing,
             "archive_script": archive_script_missing,
             "skills": skill_missing,
+            "root_skill": root_skill_missing,
             "phase_skills": phase_skill_missing,
         },
         "counts": {
@@ -530,6 +548,7 @@ def build_report(root: Path) -> dict:
                 + len(VALIDATE_SCRIPT_REQUIRED_TERMS)
                 + len(ARCHIVE_SCRIPT_REQUIRED_TERMS)
                 + len(SKILL_REQUIRED_TERMS)
+                + len(ROOT_SKILL_REQUIRED_TERMS)
                 + sum(len(terms) for terms in PHASE_SKILL_REQUIRED_TERMS.values())
             ),
             "errors": len(errors),
