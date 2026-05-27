@@ -1623,7 +1623,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(payload["mode"], "dry-run")
             self.assertTrue(payload["read_only"])
             self.assertFalse(payload["writes_target_project"])
-            self.assertFalse(payload["apply_supported"])
+            self.assertTrue(payload["apply_supported"])
             self.assertFalse(payload["state_deletion_allowed"])
             self.assertFalse(payload["private_files_deletion_allowed"])
             delete_paths = {item["path"]: item for item in payload["planned_deletes"]}
@@ -1635,7 +1635,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertTrue((project / "tools" / "project_moe_gui" / "launcher.py").exists())
             self.assertEqual(private_before, self.private_project_digests(project))
 
-    def test_uninstall_apply_request_fails_closed_and_deletes_nothing(self) -> None:
+    def test_uninstall_apply_deletes_only_manifest_owned_gui_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp) / "target"
             project.mkdir()
@@ -1651,19 +1651,27 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             )
             private_before = self.private_project_digests(project)
             launcher = project / "tools" / "project_moe_gui" / "launcher.py"
+            manifest = project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json"
+            config = project / "tools" / "project_moe_gui" / "project_moe_gui.config.json"
+            command = project / "project-moe-gui.cmd"
 
-            _, payload = self.run_tool(str(UNINSTALL_PLANNER), "--target-project", str(project), "--apply", expect_success=False)
+            _, payload = self.run_tool(str(UNINSTALL_PLANNER), "--target-project", str(project), "--apply")
 
             self.assertEqual(payload["command"], "plan_project_moe_gui_uninstall")
-            self.assertEqual(payload["mode"], "apply-requested")
-            self.assertEqual(payload["token"], "blocked:uninstall_apply_not_supported")
+            self.assertEqual(payload["mode"], "apply")
+            self.assertEqual(payload["token"], "ok")
             self.assertTrue(payload["apply_requested"])
-            self.assertFalse(payload["apply_supported"])
-            self.assertFalse(payload["delete_executed"])
-            self.assertTrue(payload["read_only"])
-            self.assertFalse(payload["writes_target_project"])
-            self.assertTrue(launcher.exists())
+            self.assertTrue(payload["apply_supported"])
+            self.assertTrue(payload["delete_executed"])
+            self.assertFalse(payload["read_only"])
+            self.assertTrue(payload["writes_target_project"])
+            self.assertFalse(launcher.exists())
+            self.assertFalse(manifest.exists())
+            self.assertFalse(config.exists())
+            self.assertFalse(command.exists())
+            self.assertIn("tools/project_moe_gui/launcher.py", payload["uninstall_receipt"]["deleted_files"])
             self.assertEqual(private_before, self.private_project_digests(project))
+            self.assertTrue((project / ".omx" / "state" / "thesis_moe").exists())
 
     def test_uninstall_plan_fails_closed_on_managed_hash_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1688,6 +1696,33 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             delete_paths = {item["path"]: item for item in payload["planned_deletes"]}
             self.assertEqual(delete_paths["tools/project_moe_gui/launcher.py"]["action"], "blocked")
             self.assertFalse(delete_paths["tools/project_moe_gui/launcher.py"]["safe_to_delete"])
+
+    def test_uninstall_apply_fails_closed_on_manifest_path_outside_managed_allowlist(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-uninstall-allowlist", session_id="session-uninstall-allowlist")
+            self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            private_before = self.private_project_digests(project)
+            manifest_path = project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+            manifest["managed_files"].append({"path": "MOE.md", "role": "managed", "sha256": self.file_digest(project / "MOE.md")})
+            manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+
+            _, payload = self.run_tool(str(UNINSTALL_PLANNER), "--target-project", str(project), "--apply", expect_success=False)
+
+            self.assertEqual(payload["token"], "blocked:uninstall_path_not_in_managed_allowlist")
+            self.assertFalse(payload["delete_executed"])
+            self.assertTrue((project / "tools" / "project_moe_gui" / "launcher.py").exists())
+            self.assertEqual(private_before, self.private_project_digests(project))
 
     def gui_config(self, project: Path) -> dict:
         return {

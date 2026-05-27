@@ -28,6 +28,13 @@ LAUNCHER_RELATIVE = Path("tools/project_moe_gui/launcher.py")
 README_RELATIVE = Path("tools/project_moe_gui/README.md")
 CMD_RELATIVE = Path("project-moe-gui.cmd")
 MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE]
+UNINSTALL_MANAGED_ALLOWLIST = {
+    "tools/project_moe_gui/launcher.py",
+    "tools/project_moe_gui/project_moe_gui.config.json",
+    "tools/project_moe_gui/project_moe_gui.install-manifest.json",
+    "tools/project_moe_gui/README.md",
+    "project-moe-gui.cmd",
+}
 PRIVATE_PROMPT_AGENT_DIR = Path(".codex/agents")
 PRIVATE_PROMPT_STATE_DIR = Path(".omx/state")
 PRIVATE_PROMPT_GUI_MANAGED_DIR = Path("tools/project_moe_gui")
@@ -2166,11 +2173,30 @@ def managed_file_uninstall_plan(root: Path, manifest: dict[str, Any]) -> tuple[l
     errors: list[dict[str, Any]] = []
     seen: set[str] = set()
     for item in manifest.get("managed_files", []):
-        rel = str(item.get("path") or "").strip()
+        rel = norm(str(item.get("path") or "").strip())
         if not rel or rel in seen:
             continue
         seen.add(rel)
         expected = item.get("sha256")
+        if rel not in UNINSTALL_MANAGED_ALLOWLIST:
+            blocker_payload = blocker(
+                "blocked:uninstall_path_not_in_managed_allowlist",
+                "Uninstall may delete only the Project MOE GUI managed artifact allowlist, even if a target manifest lists another path.",
+                path=rel,
+                allowed=sorted(UNINSTALL_MANAGED_ALLOWLIST),
+            )
+            errors.append(blocker_payload)
+            planned_deletes.append({"path": rel, "action": "blocked", "safe_to_delete": False, "blocker": blocker_payload})
+            continue
+        if rel != norm(MANIFEST_RELATIVE) and not expected:
+            blocker_payload = blocker(
+                "blocked:managed_file_hash_missing",
+                "Managed file must include a manifest hash before uninstall can delete it.",
+                path=rel,
+            )
+            errors.append(blocker_payload)
+            planned_deletes.append({"path": rel, "action": "blocked", "safe_to_delete": False, "blocker": blocker_payload})
+            continue
         full, err = safe_relative(root, Path(rel))
         if err:
             errors.append(err)
@@ -2181,6 +2207,15 @@ def managed_file_uninstall_plan(root: Path, manifest: dict[str, Any]) -> tuple[l
         action = "delete" if exists else "already_absent"
         observed = sha256_file(full) if exists and expected else None
         safe_to_delete = exists
+        if exists and full.is_dir():
+            blocker_payload = blocker(
+                "blocked:managed_path_is_directory",
+                "Uninstall deletes managed files only; directories are never removed from a manifest entry.",
+                path=rel,
+            )
+            errors.append(blocker_payload)
+            action = "blocked"
+            safe_to_delete = False
         if exists and expected and observed != expected:
             blocker_payload = blocker(
                 "blocked:managed_file_hash_mismatch",
@@ -2206,35 +2241,55 @@ def managed_file_uninstall_plan(root: Path, manifest: dict[str, Any]) -> tuple[l
     return planned_deletes, errors
 
 
+def apply_managed_file_uninstall(root: Path, planned_deletes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    applied: list[dict[str, Any]] = []
+    for item in planned_deletes:
+        rel = str(item.get("path") or "").strip()
+        if item.get("action") != "delete" or item.get("safe_to_delete") is not True:
+            applied.append({"path": rel, "status": "skipped", "reason": item.get("action") or "not_safe_to_delete"})
+            continue
+        full, err = safe_relative(root, Path(rel))
+        if err:
+            raise RuntimeError(err["message"])
+        assert full is not None
+        if not full.exists():
+            applied.append({"path": rel, "status": "already_absent"})
+            continue
+        if full.is_dir():
+            raise RuntimeError(f"Refusing to uninstall directory manifest entry: {rel}")
+        full.unlink()
+        applied.append({"path": rel, "status": "deleted"})
+    return applied
+
+
 def plan_uninstall(root: Path, apply_requested: bool = False) -> dict[str, Any]:
     manifest, config, load_errors = existing_install(root)
     errors: list[dict[str, Any]] = list(load_errors)
     planned_deletes: list[dict[str, Any]] = []
     protected_files: list[str] = []
-    if apply_requested:
-        errors.append(
-            blocker(
-                "blocked:uninstall_apply_not_supported",
-                "Project MOE GUI uninstall is plan-only in this version; --apply is accepted only to return a stable fail-closed JSON blocker and never deletes target files.",
-            )
-        )
     if not manifest or not config:
         errors.extend(load_errors or [blocker("blocked:not_installed", "Project MOE GUI is not installed in target project.")])
     else:
         planned_deletes, delete_errors = managed_file_uninstall_plan(root, manifest)
         errors.extend(delete_errors)
         protected_files = list(manifest.get("protected_files") or [])
+    applied_file_changes: list[dict[str, Any]] = []
+    if apply_requested and not errors:
+        try:
+            applied_file_changes = apply_managed_file_uninstall(root, planned_deletes)
+        except Exception as exc:
+            errors.append(blocker("blocked:uninstall_apply_failed", "Project MOE GUI uninstall apply failed before completing all planned deletes.", error=str(exc)))
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "plan_project_moe_gui_uninstall",
-        "mode": "apply-requested" if apply_requested else "dry-run",
+        "mode": "apply" if apply_requested and not errors else ("apply-requested" if apply_requested else "dry-run"),
         "ok": not errors,
         "token": "ok" if not errors else errors[0]["code"],
-        "read_only": True,
-        "writes_target_project": False,
+        "read_only": not any(item.get("status") == "deleted" for item in applied_file_changes),
+        "writes_target_project": any(item.get("status") == "deleted" for item in applied_file_changes),
         "apply_requested": apply_requested,
-        "apply_supported": False,
-        "delete_executed": False,
+        "apply_supported": True,
+        "delete_executed": any(item.get("status") == "deleted" for item in applied_file_changes),
         "target_project_root": str(root),
         "toolchain": TOOLCHAIN_NAME,
         "installed_toolchain_version": manifest.get("toolchain_version") if manifest else None,
@@ -2247,6 +2302,17 @@ def plan_uninstall(root: Path, apply_requested: bool = False) -> dict[str, Any]:
         "private_files_deletion_allowed": False,
         "blockers": errors,
         "rollback_hint": (manifest or {}).get("rollback_hint") or "Uninstall planning only covers managed GUI artifacts; preserve .omx/state, MOE.md, and .codex/agents/*.toml.",
+        "applied_file_changes": applied_file_changes,
+        "uninstall_receipt": {
+            "schema_version": SCHEMA_VERSION,
+            "executed": any(item.get("status") == "deleted" for item in applied_file_changes),
+            "executed_at": now_utc() if any(item.get("status") == "deleted" for item in applied_file_changes) else None,
+            "deleted_files": [item["path"] for item in applied_file_changes if item.get("status") == "deleted"],
+            "skipped_private_files": protected_files,
+            "state_deletion_allowed": False,
+            "private_files_deletion_allowed": False,
+            "rollback_hint": (manifest or {}).get("rollback_hint") or "Use target project Git history to restore managed GUI artifacts if needed.",
+        },
     }
 
 
