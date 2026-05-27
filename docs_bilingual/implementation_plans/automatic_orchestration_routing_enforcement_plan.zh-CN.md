@@ -369,7 +369,29 @@ python .\tools\run_openspec_guard.py --root .
 
 提交示例：`测试：扩展协同证据守卫覆盖`
 
-### Task 6：本地 CI、MR review 与本地 main 集成
+### Task 6：守卫双语 OpenSpec evidence surface
+
+范围：
+- 将 `tools/check_orchestration_collaboration_evidenceguard.py` 的 repository-mode surface 检查扩展到 `openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md`。
+- 要求中文 OpenSpec companion 明确包含 prompt-independent collaboration parity、durable/persistent evidenceguard、LangGraph state release 和 checker 路径。
+- 增加回归测试，证明中文 OpenSpec surface 缺失时 repository mode 会失败。
+
+完成标准：
+- 英文与中文 stable OpenSpec spec surface 都受协同证据守卫检查。
+- 测试套件可在不依赖瞬时聊天上下文的情况下发现中文 OpenSpec companion surface 缺失。
+- 不因文档存在本身宣称 durable/persistent runtime 已运行。
+
+验证：
+
+```powershell
+python test\check_orchestration_trace_evidence.test.py
+python .\tools\check_orchestration_collaboration_evidenceguard.py --root . --json
+python .\tools\run_openspec_guard.py --root .
+```
+
+提交示例：`守卫：覆盖双语 OpenSpec 协同证据`
+
+### Task 7：本地 CI、MR review 与本地 main 集成
 
 范围：
 - 在 feature worktree 中完成本地 gate。
@@ -429,6 +451,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -S
 - 方案明确“计划不等于 evidence”。
 - 方案没有把 ready、selected、running、complete 混用。
 - 协同证据守卫 checker 已有 CI manifest 登记的单元测试覆盖，且没有 CI manifest 热点所有权冲突。
+- 协同证据守卫同时检查英文与中文 stable OpenSpec spec surface。
 
 ## 10. Rollback 与清理
 
@@ -470,6 +493,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -S
 - [ ] 有 readiness gates、验证计划、rollback、风险与默认决策。
 - [ ] 英文 primary 是 ASCII-only。
 - [ ] `tools/check_orchestration_collaboration_evidenceguard.py` 已有 CI manifest 登记的单元测试覆盖。
+- [ ] stable OpenSpec spec surface 已同时覆盖英文与中文。
 - [ ] 本地 commit 和 merge commit 使用中文。
 
 ## 14. 参考源

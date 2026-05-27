@@ -366,7 +366,28 @@ python .\tools\run_openspec_guard.py --root .
 
 Commit message example: Chinese message in the zh-CN companion, equivalent to test: expand orchestration collaboration evidenceguard coverage.
 
-### Task 6: Local CI, local MR review, and local main integration
+### Task 6: Guard the bilingual OpenSpec evidence surface
+
+Scope:
+- Extend `tools/check_orchestration_collaboration_evidenceguard.py` repository-mode surface checks to include `openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md`.
+- Require the Chinese OpenSpec companion to mention prompt-independent collaboration parity, durable/persistent evidenceguard, LangGraph state release, and the checker path.
+- Add a regression test proving repository mode fails when the Chinese OpenSpec surface is missing.
+
+Done when:
+- Both English and Chinese stable OpenSpec spec surfaces are checked by the collaboration evidenceguard.
+- The test suite catches a missing Chinese OpenSpec companion surface without depending on transient chat context.
+- No durable/persistent runtime claim is made from document presence alone.
+
+Validation:
+```powershell
+python test\check_orchestration_trace_evidence.test.py
+python .\tools\check_orchestration_collaboration_evidenceguard.py --root . --json
+python .\tools\run_openspec_guard.py --root .
+```
+
+Commit message example: Chinese message in the zh-CN companion, equivalent to checker: guard bilingual OpenSpec collaboration evidence.
+
+### Task 7: Local CI, local MR review, and local main integration
 
 Scope:
 - Run local gate in the feature worktree.
@@ -425,6 +446,7 @@ Manual acceptance:
 - The plan says "plan is not evidence".
 - The plan does not confuse ready, selected, running, and complete.
 - The collaboration evidenceguard checker is covered by manifest-registered unit tests without CI-manifest hotspot ownership conflict.
+- The collaboration evidenceguard checks both English and Chinese stable OpenSpec spec surfaces.
 
 ## 10. Rollback and cleanup
 
@@ -466,6 +488,7 @@ This P0 document restructure does not require runtime policy or checker edits. P
 - [ ] Readiness gates, validation plan, rollback, risks, and defaults exist.
 - [ ] English primary is ASCII-only.
 - [ ] `tools/check_orchestration_collaboration_evidenceguard.py` has CI-manifest-registered unit coverage.
+- [ ] Stable OpenSpec spec surfaces are guarded in both English and Chinese.
 - [ ] Local commit and merge commit use Chinese.
 
 ## 14. References
