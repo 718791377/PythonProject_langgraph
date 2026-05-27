@@ -76,6 +76,31 @@ class CometRuntimeManagementStaticTests(unittest.TestCase):
         self.assertIn("management_record must be recorded", text)
         self.assertIn('[ -z "$management_record" ] || [ "$management_record" = "null" ]', text)
 
+    def test_validator_declares_exact_managed_enum_contracts(self) -> None:
+        text = read(VALIDATE_SCRIPT)
+
+        expected_contracts = {
+            "workflow": "full hotfix tweak",
+            "phase": "open design build verify archive",
+            "build_mode": "subagent-driven-development executing-plans direct",
+            "isolation": "branch worktree",
+            "verify_mode": "light full",
+            "verify_result": "pending pass fail",
+            "branch_status": "pending handled",
+            "archived": "true false",
+            "direct_override": "true false",
+            "monitoring_status": "clear needs_decision blocked",
+            "control_decision": "continue adjust-current return-open return-design return-build return-verify stop",
+            "target_phase": "null open design build verify",
+            "rework_reason": "null scope-gap planning-gap execution-gap verification-gap value-gap risk-change stakeholder-change",
+        }
+
+        for field, valid_values in expected_contracts.items():
+            self.assertIn(f'validate_enum "{field}"', text)
+            self.assertIn(f'"{valid_values}"', text)
+
+        self.assertIn('fail "$field=\'$value\' is not valid. Expected: $valid_values"', text)
+
     def test_guard_accepts_english_and_chinese_management_checklist_labels(self) -> None:
         text = read(GUARD_SCRIPT)
 
