@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: wecom_cli_guarded_dry_run_repo_local_implemented
+implementation_state: receipt_redaction_guard_repo_local_implemented
 last_reviewed_at: 2026-05-27
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -383,11 +383,11 @@ Runtime receipts must not include secrets, cookies, tokens, raw browser data, We
 
 ### Task 7: Receipts, rollback, and redaction
 
-- [ ] authorization receipt schema includes action, target, scope, expiry, session, and operator confirmation.
-- [ ] update receipt includes tool name, installed version, source URL, install path, wrapper path, state path, smoke test command, updater command, rollback pointer, and owner lane.
-- [ ] Redaction covers secrets, cookies, tokens, raw browser data, and plugin description dumps.
-- [ ] rollback pointer resolves to a prior version or backup directory.
-- [ ] Local verification: baseline checker and redaction tests.
+- [x] authorization receipt schema includes action, target, scope, expiry, session, and operator confirmation, enforced by `tools/user_level_receipt_governance.py auth-check`.
+- [x] update receipt includes tool name, installed version, source URL, install path, wrapper path, state path, smoke test command, smoke result, updater command, rollback pointer, owner lane, and redaction status, enforced by `tools/user_level_receipt_governance.py update-check`.
+- [x] Redaction covers secrets, cookies, tokens, raw browser data, message contents, and plugin description dumps via `redact-check` fail-closed findings.
+- [x] rollback pointer resolves to a prior version or backup directory and is emitted only as a hash in default output.
+- [x] Local verification: `user_level_receipt_governance.test.py` and baseline checker cover receipt schema, rollback pointer, and redaction output.
 
 ### Task 8: Local integration
 

@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: draft
 plan_readiness: execution-ready
-implementation_state: wecom_cli_guarded_dry_run_repo_local_implemented
+implementation_state: receipt_redaction_guard_repo_local_implemented
 last_reviewed_at: 2026-05-27
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -383,11 +383,11 @@ runtime receipts 不得包含 secrets、cookies、tokens、raw browser data、We
 
 ### Task 7：Receipts、rollback 与 redaction
 
-- [ ] authorization receipt schema 包含 action、target、scope、expiry、session、operator confirmation。
-- [ ] update receipt 包含 tool name、installed version、source URL、install path、wrapper path、state path、smoke test command、updater command、rollback pointer、owner lane。
-- [ ] redaction 覆盖 secrets、cookies、tokens、raw browser data、plugin description dumps。
-- [ ] rollback pointer 可定位上一版本或备份目录。
-- [ ] 局部验证：baseline checker 和 redaction tests。
+- [x] authorization receipt schema 包含 action、target、scope、expiry、session、operator confirmation，并由 `tools/user_level_receipt_governance.py auth-check` 强制校验。
+- [x] update receipt 包含 tool name、installed version、source URL、install path、wrapper path、state path、smoke test command、smoke result、updater command、rollback pointer、owner lane、redaction status，并由 `tools/user_level_receipt_governance.py update-check` 强制校验。
+- [x] redaction 覆盖 secrets、cookies、tokens、raw browser data、message contents、plugin description dumps，并由 `redact-check` fail closed。
+- [x] rollback pointer 可定位上一版本或备份目录，默认输出只暴露 hash。
+- [x] 局部验证：`user_level_receipt_governance.test.py` 和 baseline checker 覆盖 receipt schema、rollback pointer、redaction output。
 
 ### Task 8：本地集成
 

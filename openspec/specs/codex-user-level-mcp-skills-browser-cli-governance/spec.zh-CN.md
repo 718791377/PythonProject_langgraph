@@ -136,3 +136,69 @@ WXWork GUI 动作必须要求 global WXWork lease receipt、operator authorizati
 - **AND** 必须保持 `dry_run_only=true`
 - **AND** 必须报告 `gui_control_performed=false`
 - **AND** 不得输出 raw private receipt paths
+
+### Requirement: 用户级 receipt governance guard SHALL 校验 authorization、update、rollback 与 redaction evidence
+
+仓库必须提供 repo-local 通用 receipt governance guard，用于用户级 MCP、skills、browser 与 CLI harness lanes。该 guard 必须校验单任务 authorization receipt schema、update receipt schema、rollback pointer、smoke evidence 和 redaction 边界；不得安装工具、调用 MCP server、控制浏览器、读取 browser data、修改用户级 Codex 配置，默认输出不得暴露 raw private paths 或 raw secrets。
+
+guard 至少必须支持：
+
+- `auth-check --receipt <path> --action <action> --target <target> --session <id> --json` - 校验单任务 authorization evidence。
+- `update-check --receipt <path> --tool-name <name> --owner-lane <lane> --json` - 校验安装/更新 evidence。
+- `redact-check --receipt <path> --json` - 校验敏感数据 redaction 边界。
+- `template --kind authorization --json` - 输出 authorization receipt 字段模板。
+- `template --kind update --json` - 输出 update receipt 字段模板。
+
+Receipt field glossary：
+
+| Field | 含义 |
+| --- | --- |
+| `action` | 请求的敏感操作。 |
+| `target` | 被授权执行该操作的资源或 adapter target。 |
+| `scope` | 允许的 action set；必须包含请求操作或 `*`。 |
+| `expiry` | 授权失效的未来时间戳。 |
+| `session` | 当前 Codex session 或 owner session id。 |
+| `operator_confirmation` | operator 已批准敏感操作的布尔证据。 |
+| `tool_name` | 被安装或更新的用户级 helper 或 adapter。 |
+| `installed_version` | 安装产物的 pinned version、tag 或 commit。 |
+| `source_url` | 不含 credential 的公开来源位置。 |
+| `install_path`、`wrapper_path`、`state_path` | 默认输出必须 hash 或 redact 的本地私有路径。 |
+| `smoke_test_command`、`smoke_test_result` | 可重复验证命令与 pass/fail 证据。 |
+| `updater_command` | pin-aware 更新命令。 |
+| `rollback_pointer` | 上一版本、备份目录或 rollback reference。 |
+| `owner_lane` | 所属 lane，例如 `skills2cli`、`mcp2cli` 或 `browser`。 |
+| `redaction_status` | secrets、cookies、tokens、raw browser data、message contents、API keys、passwords、plugin description dumps 缺失或已脱敏的证据。 |
+
+#### Scenario: Authorization receipt 缺少必填字段
+
+- **WHEN** `python tools/user_level_receipt_governance.py auth-check --receipt <path> --action browser.click --target tab:123 --session session-a --json` 针对不完整 receipt 运行
+- **THEN** 命令必须 fail closed
+- **AND** 必须报告缺失的 authorization receipt 字段
+- **AND** 必须报告未修改用户级状态、未运行外部工具、未读取 browser data
+
+#### Scenario: 有效 authorization receipt 被安全摘要化
+
+- **WHEN** `auth-check` 收到 action/target/session 匹配、尚未过期且包含 operator confirmation 的 receipt
+- **THEN** 命令必须返回 `ok=true`
+- **AND** 必须报告 `authorization_valid=true`
+- **AND** 必须输出 receipt path hash 而不是 raw receipt path
+
+#### Scenario: Update receipt 缺少 rollback 或通过的 smoke evidence
+
+- **WHEN** `python tools/user_level_receipt_governance.py update-check --receipt <path> --tool-name skills2cli --owner-lane skills2cli --json` 针对缺少 rollback pointer 或通过的 smoke evidence 的 update receipt 运行
+- **THEN** 命令必须 fail closed
+- **AND** 必须报告 rollback 和 smoke blockers
+
+#### Scenario: 有效 update receipt 对私有路径和 rollback pointer 做 hash 化输出
+
+- **WHEN** `update-check` 收到具有 install、wrapper、state、smoke、updater、owner-lane、redaction 和 rollback evidence 的有效 receipt
+- **THEN** 命令必须返回 `ok=true`
+- **AND** 必须报告 `rollback_ready=true`
+- **AND** 必须对 install path、wrapper path、state path 和 rollback pointer 输出 hash
+
+#### Scenario: Redaction check 发现原始敏感 payload
+
+- **WHEN** `python tools/user_level_receipt_governance.py redact-check --receipt <path> --json` 针对含 cookies、inline token value、message contents 或 plugin description dumps 的 receipt 运行
+- **THEN** 命令必须 fail closed
+- **AND** 必须报告 redaction findings
+- **AND** 默认输出不得读取 browser data 或暴露 raw secrets
