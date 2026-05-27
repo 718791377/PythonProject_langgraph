@@ -101,6 +101,7 @@ def main() -> int:
     document_pair_policy_script = root / "tools" / "check_document_pair_policy.py"
     implementation_plan_rules_script = root / "tools" / "check_implementation_plan_rules.py"
     git_commit_language_script = root / "tools" / "check_git_commit_language.py"
+    local_flow_scripted_enforcement_script = root / "tools" / "check_local_flow_scripted_enforcement.py"
     skills_governance_script = root / "tools" / "check_codex_skills_governance.py"
     name_clarity_rules_script = root / "tools" / "check_name_clarity_rules.py"
     canary_surface_script = root / "tools" / "check_context_retention_canary_surface.py"
@@ -151,6 +152,8 @@ def main() -> int:
         raise SystemExit(f"Missing implementation plan rules check script: {implementation_plan_rules_script}")
     if not git_commit_language_script.exists():
         raise SystemExit(f"Missing Git commit language check script: {git_commit_language_script}")
+    if not local_flow_scripted_enforcement_script.exists():
+        raise SystemExit(f"Missing local-flow scripted enforcement check script: {local_flow_scripted_enforcement_script}")
     if not skills_governance_script.exists():
         raise SystemExit(f"Missing Codex skills governance check script: {skills_governance_script}")
     if not name_clarity_rules_script.exists():
@@ -305,6 +308,11 @@ def main() -> int:
                 "check_git_commit_language",
                 [str(python_exe), str(git_commit_language_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Git commit language verification.",
+            ),
+            (
+                "check_local_flow_scripted_enforcement",
+                [str(python_exe), str(local_flow_scripted_enforcement_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during local-flow scripted enforcement verification.",
             ),
             (
                 "check_name_clarity_rules",
@@ -606,6 +614,12 @@ def main() -> int:
         [str(python_exe), str(implementation_plan_rules_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during implementation plan rules verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(local_flow_scripted_enforcement_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during local-flow scripted enforcement verification.",
     )
 
     run_checked(

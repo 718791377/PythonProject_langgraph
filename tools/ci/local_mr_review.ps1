@@ -57,6 +57,8 @@ $commits = @($logText -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhi
 $conflictMarkers = @($mergeTree.stdout -split "`r?`n" | Where-Object { $_ -match '^(<<<<<<<|>>>>>>>|=======)' })
 $commitLanguageOutput = & python (Join-Path $repoRoot 'tools/check_git_commit_language.py') --root $repoRoot --base-ref $BaseRef --head-ref $HeadRef --json 2>&1
 $commitLanguageExit = [int]$LASTEXITCODE
+$planExitGovernanceOutput = & python (Join-Path $repoRoot 'tools/check_plan_exit_execution_governance.py') --root $repoRoot --base-ref $BaseRef --head-ref $HeadRef --json 2>&1
+$planExitGovernanceExit = [int]$LASTEXITCODE
 $errors = @()
 if ($dirtyEntries.Count -gt 0 -and -not $AllowDirty) {
   $errors += 'git status --porcelain detected dirty worktree entries; commit, move, or discard local changes before local MR review.'
@@ -69,6 +71,9 @@ if ($conflictMarkers.Count -gt 0) {
 }
 if ($commitLanguageExit -ne 0) {
   $errors += 'Git commit language check failed; feature commit subjects must contain Chinese text.'
+}
+if ($planExitGovernanceExit -ne 0) {
+  $errors += 'Post-/plan execution governance check failed; non-document execution must start with a docs_bilingual-first local governance package.'
 }
 
 $result = [ordered]@{
@@ -97,6 +102,11 @@ $result = [ordered]@{
     exit_code = $commitLanguageExit
     ok = ($commitLanguageExit -eq 0)
     output = (($commitLanguageOutput | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
+  }
+  post_plan_execution_governance = [ordered]@{
+    exit_code = $planExitGovernanceExit
+    ok = ($planExitGovernanceExit -eq 0)
+    output = (($planExitGovernanceOutput | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
   }
   errors = $errors
   counts = [ordered]@{
