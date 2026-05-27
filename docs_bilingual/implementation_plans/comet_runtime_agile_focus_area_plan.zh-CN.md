@@ -449,3 +449,14 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [x] 预期测试文件：`test/comet_runtime_management_flow.test.py`。
 - [x] 验收证据必须包含定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、local CI 和 local MR review。
 - [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。
+
+## 2026-05-28 UTF-8 管理标签证据包
+
+- [x] 本次先更新 `docs_bilingual` 治理记录，再修改 Comet runtime 脚本和定向测试。
+- [x] 范围：让 Comet runtime 管理清单标签以可读 UTF-8 中文呈现，同时保留英文标签和既有 legacy mojibake 标签兼容性。
+- [x] 本批次归类为 script-plus-test 实施；不改变 Comet 阶段模型、Monitoring transition 语义、稳定 OpenSpec 要求或面向操作员的 skill workflow。
+- [x] 本包不需要派生更新 `openspec/` 或 `docs/`，因为它只增强既有 management-record 契约的标签兼容性。
+- [x] 预期 runtime 文件：`.codex/skills/comet/scripts/comet-state.sh`、`.codex/skills/comet/scripts/comet-guard.sh` 和 `.codex/skills/comet/scripts/comet-archive.sh`。
+- [x] 预期证据文件：`test/comet_runtime_management_flow.test.py`。
+- [x] 验收证据必须包括定向 Comet runtime management flow 测试、implementation-plan rules、pre-commit update/archive review、本地 MR review 和 local CI。
+- [x] 远端发布仍受门控；除非用户明确要求远端发布，否则停在本地 `main`。

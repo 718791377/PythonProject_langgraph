@@ -449,3 +449,14 @@ Tests:
 - [x] Expected test file: `test/comet_runtime_management_flow.test.py`.
 - [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local CI, and local MR review.
 - [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
+
+## 2026-05-28 UTF-8 Management Label Evidence Package
+
+- [x] This local execution range starts with this `docs_bilingual` package before changing Comet runtime scripts and targeted tests.
+- [x] Scope: make the Comet runtime management checklist labels readable as UTF-8 Chinese while preserving compatibility with the already supported English labels and existing legacy mojibake labels.
+- [x] This batch is classified as script-plus-test implementation; it does not change the Comet phase model, Monitoring transition semantics, stable OpenSpec requirements, or operator-facing skill workflow.
+- [x] No derived `openspec/` or `docs/` update is needed because this package only strengthens label compatibility for the existing management-record contract.
+- [x] Expected runtime files: `.codex/skills/comet/scripts/comet-state.sh`, `.codex/skills/comet/scripts/comet-guard.sh`, and `.codex/skills/comet/scripts/comet-archive.sh`.
+- [x] Expected evidence file: `test/comet_runtime_management_flow.test.py`.
+- [x] Acceptance evidence must include the targeted Comet runtime management flow test, implementation-plan rules, pre-commit update/archive review, local MR review, and local CI.
+- [x] Remote publication remains gated; stop at local `main` unless the user explicitly requests remote publication.
