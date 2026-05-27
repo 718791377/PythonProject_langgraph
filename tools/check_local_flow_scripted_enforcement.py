@@ -47,6 +47,19 @@ REQUIRED_TESTS = {
     "check_plan_exit_execution_governance.test.py",
     "check_local_flow_scripted_enforcement.test.py",
 }
+REQUIRED_PLAN_EXIT_TERMS = [
+    "requires_user_confirmation_before_implementation",
+    "implementation_confirmed_by_user",
+    "governance_package_commit",
+    "governance_package_merged_to_local_main",
+    "confirmed Stage A receipt/claim",
+]
+REQUIRED_LOCAL_FLOW_HELPER_TERMS = [
+    "governance-confirmation",
+    "implementation_confirmed_by_user",
+    "awaiting_implementation_confirmation",
+    "Governance-confirmation stage must be docs-only",
+]
 
 
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -97,12 +110,16 @@ def evaluate(root: Path, base_ref: str | None, head_ref: str | None, require_mai
     local_mr_review = read_text(root, LOCAL_MR_REVIEW, errors)
     run_guard = read_text(root, RUN_GUARD, errors)
     manifest_text = read_text(root, CI_MANIFEST, errors)
+    plan_exit_checker = read_text(root, PLAN_EXIT_CHECKER, errors)
+    local_flow_helper = read_text(root, LOCAL_FLOW_HELPER, errors)
 
     require_terms(COMPLETE_FLOW_DOC.as_posix(), complete_flow, REQUIRED_DOC_TERMS, errors)
     require_terms(POLICY_EN.as_posix(), policy_en, REQUIRED_POLICY_EN_TERMS, errors)
     require_terms(POLICY_ZH.as_posix(), policy_zh, REQUIRED_POLICY_ZH_TERMS, errors)
     require_terms(LOCAL_MR_REVIEW.as_posix(), local_mr_review, ["check_plan_exit_execution_governance.py"], errors)
     require_terms(RUN_GUARD.as_posix(), run_guard, ["check_local_flow_scripted_enforcement"], errors)
+    require_terms(PLAN_EXIT_CHECKER.as_posix(), plan_exit_checker, REQUIRED_PLAN_EXIT_TERMS, errors)
+    require_terms(LOCAL_FLOW_HELPER.as_posix(), local_flow_helper, REQUIRED_LOCAL_FLOW_HELPER_TERMS, errors)
 
     try:
         manifest = json.loads(manifest_text) if manifest_text else {}

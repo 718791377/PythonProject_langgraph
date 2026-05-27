@@ -1,0 +1,231 @@
+{
+  "schema_version": 1,
+  "check_name": "implementation_plan_size_baseline",
+  "note": "Forward-compatibility baseline for pre-existing implementation plans. Do not add new entries for new plans; migrate legacy plans to stable anchors and evidence indexes instead.",
+  "thresholds": {
+    "warning_bytes": 40960,
+    "fail_bytes": 61440
+  },
+  "entries": {
+    "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/chrome_devtools_mcp_multi_session_isolation_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/chrome_devtools_mcp_multi_session_isolation_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors",
+        "oversized_fail_threshold"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_playbook.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_playbook.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_langgraph_repository_split_migration_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_langgraph_repository_split_migration_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors",
+        "oversized_fail_threshold"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_oh_my_codex_user_level_team_mode_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_shared_local_model_assets_migration_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_shared_local_model_assets_migration_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors",
+        "oversized_fail_threshold"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors",
+        "oversized_fail_threshold"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/evidence_intake_pipeline_run_summary.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/evidence_intake_pipeline_run_summary.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/evidence_intake_pipeline_workflow_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/evidence_intake_pipeline_workflow_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/general_2_local_git_openspec_subagents_only_bootstrap_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/general_2_local_git_openspec_subagents_only_bootstrap_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/general_template_phase0_update_patch_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/main_worktree_backup_reconciliation_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/main_worktree_backup_reconciliation_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/main_worktree_gitlab_main_alignment_safety_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/main_worktree_gitlab_main_alignment_safety_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    }
+  }
+}
