@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 from datetime import datetime, timezone
@@ -11,6 +12,7 @@ from typing import Any
 
 CHECK_NAME = "git_commit_language"
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
+ZERO_SHA_RE = re.compile(r"^0{40}$")
 
 
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -28,13 +30,58 @@ def subject_has_chinese(subject: str) -> bool:
     return bool(CJK_RE.search(subject))
 
 
+def commit_ref_exists(root: Path, ref: str) -> bool:
+    result = run_git(root, ["rev-parse", "--verify", f"{ref}^{{commit}}"])
+    return result.returncode == 0
+
+
+def fallback_base_refs(base_ref: str) -> list[str]:
+    candidates: list[str] = []
+    for env_name in (
+        "CI_MERGE_REQUEST_DIFF_BASE_SHA",
+        "CI_MERGE_REQUEST_TARGET_BRANCH_SHA",
+        "CI_COMMIT_BEFORE_SHA",
+    ):
+        value = os.environ.get(env_name, "").strip()
+        if value and not ZERO_SHA_RE.fullmatch(value):
+            candidates.append(value)
+    if "/" not in base_ref:
+        candidates.extend(
+            [
+                f"origin/{base_ref}",
+                f"gitlab/{base_ref}",
+                f"refs/remotes/origin/{base_ref}",
+                f"refs/remotes/gitlab/{base_ref}",
+            ]
+        )
+    return candidates
+
+
 def subjects_from_range(root: Path, base_ref: str, head_ref: str) -> tuple[list[str], list[str]]:
     errors: list[str] = []
-    result = run_git(root, ["log", "--format=%s", f"{base_ref}..{head_ref}"])
-    if result.returncode != 0:
-        errors.append(result.stderr.strip() or result.stdout.strip() or "git log failed")
-        return [], errors
-    return [line.strip() for line in result.stdout.splitlines() if line.strip()], errors
+    candidates = [base_ref]
+    if not commit_ref_exists(root, base_ref):
+        candidates.extend(fallback_base_refs(base_ref))
+    seen: set[str] = set()
+    last_error = ""
+    for candidate in candidates:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        if not commit_ref_exists(root, candidate):
+            continue
+        result = run_git(root, ["log", "--format=%s", f"{candidate}..{head_ref}"])
+        if result.returncode == 0:
+            return [line.strip() for line in result.stdout.splitlines() if line.strip()], errors
+        last_error = result.stderr.strip() or result.stdout.strip() or f"git log failed for {candidate}..{head_ref}"
+    if last_error:
+        errors.append(last_error)
+    else:
+        fallback_list = ", ".join(fallback_base_refs(base_ref))
+        errors.append(
+            f"Cannot resolve base ref '{base_ref}' for commit-language range; tried CI fallback refs and remotes: {fallback_list}"
+        )
+    return [], errors
 
 
 def evaluate_subjects(root: Path, subjects: list[str], source: str) -> dict[str, Any]:
