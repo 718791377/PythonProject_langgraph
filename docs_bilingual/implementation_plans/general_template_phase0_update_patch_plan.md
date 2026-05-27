@@ -31,6 +31,16 @@ After Phase 0, generated projects should inherit cold-start summaries, OpenSpec 
 
 Comet is not native subagent evidence, oh-my-codex, native_omx, LangGraph, or a durable-team backend. Any plan reference to Comet must say so.
 
+### 2.3 Cold-Start and Prompt-Sentinel Boundaries
+
+General's cold-start authority comes from each generated project's own `docs_bilingual/project_startup_summary.md` and `.zh-CN.md`. The template may define reusable read order and follow-up reading categories, but it must not copy this repository's live read list, current-session conclusions, or active mainline facts.
+
+- A new Codex session reads the startup summary pair first, then reads worktree isolation, MCP scope, launcher payload, LangGraph runtime, orchestration activation, and OpenSpec workflow policies as the task requires; each policy name should include a short purpose note for cold-start readers.
+- If startup instructions, rendered `AGENTS.md`, the context-retention sentinel, or Windows terminal output appears as mojibake, the UTF-8 startup summary pair is canonical; corrupted text must not be copied into template docs, launcher payloads, generated helpers, OpenSpec artifacts, checkers, or native agent TOML.
+- The literal context-retention sentinel text may live only in the generated project's startup summary pair; `AGENTS.md`, launchers, installers, OpenSpec proposal/design/tasks/spec files, checkers, and native agent TOML may reference the rule but must not duplicate the literal prompt.
+- Launcher payloads must stay Windows-safe: do not pass long generated orchestration instructions inline through `-c developer_instructions=...`; use a file-backed instruction path, short reference, or template-controlled payload assembly script.
+- LangGraph may enter General only as general template source or an optional profile: the official `langgraph` package belongs in user-level shared installation, `tools/langgraph_durable_orchestrator/` is templateable repo-local compatibility/orchestration source, and `.omx/state/langgraph/` is generated-project local state only.
+
 ## 3. Phase 0 Scope
 
 ### 3.1 In Scope

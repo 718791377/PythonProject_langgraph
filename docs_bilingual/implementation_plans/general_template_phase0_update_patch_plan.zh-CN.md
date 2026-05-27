@@ -31,6 +31,16 @@ Phase 0 完成后，新项目应能继承清晰的冷启动摘要、OpenSpec 治
 
 Comet 不是 native subagent evidence，不是 oh-my-codex，不是 native_omx，不是 LangGraph，也不是 durable-team backend。文档中引用 Comet 时必须同时说明这个边界。
 
+### 2.3 冷启动与提示词哨兵边界
+
+General 模板的冷启动 authority 来自生成项目自己的 `docs_bilingual/project_startup_summary.md` 与 `.zh-CN.md`；模板只能写入通用读取顺序和补读分类，不能复制本仓库 live read list、当前会话结论或 active mainline facts。
+
+- 新 Codex 会话先读取启动摘要对，再按任务需要补读 worktree isolation、MCP scope、launcher payload、LangGraph runtime、orchestration activation 与 OpenSpec workflow 政策；这些政策名称必须附带用途说明，方便冷启动读者理解。
+- 如果启动提示、渲染后的 `AGENTS.md`、上下文保留哨兵或 Windows 终端输出出现乱码，必须以 UTF-8 读取的启动摘要对为准；不得把乱码复制到模板文档、launcher payload、generated helper、OpenSpec artifact、checker 或 native agent TOML。
+- 上下文保留哨兵的字面提示词只能由生成项目的启动摘要对承载；`AGENTS.md`、launcher、installer、OpenSpec proposal/design/tasks/spec、checker 和 native agent TOML 只能引用规则，不得重复字面提示。
+- Launcher payload 必须保持 Windows-safe：不要通过 `-c developer_instructions=...` 内联传递长生成式 orchestration instructions；应使用 file-backed instruction path、短引用或模板内受控 payload 组装脚本。
+- LangGraph 进入 General 时只能作为通用模板源码或可选 profile：官方 `langgraph` 包属于用户级共享安装，`tools/langgraph_durable_orchestrator/` 是可模板化的 repo-local 兼容/编排源码，`.omx/state/langgraph/` 只允许作为生成项目运行后的本地状态。
+
 ## 3. Phase 0 范围
 
 ### 3.1 范围内
