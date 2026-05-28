@@ -18,6 +18,13 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md
 
+
+  - doc_id: implementation_plan_confirmation_gate
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/implementation_plan_confirmation_gate.md
+    zh_cn_path: docs_bilingual/implementation_plans/implementation_plan_confirmation_gate.zh-CN.md
+
   - doc_id: codex_oh_my_codex_user_level_team_mode_plan
     doc_class: implementation_plan
     status: active
