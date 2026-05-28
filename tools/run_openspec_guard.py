@@ -135,6 +135,7 @@ def main() -> int:
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     worktree_task_receipt_script = root / "tools" / "check_worktree_task_receipt.py"
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
+    implementation_plan_claim_lock_script = root / "tools" / "check_implementation_plan_claim_lock.py"
     orchestration_activation_policy_script = root / "tools" / "check_orchestration_activation_policy.py"
     custom_agent_toml_schema_script = root / "tools" / "check_custom_agent_toml_schema.py"
     agent_skill_profile_surface_boundaries_script = root / "tools" / "check_agent_skill_profile_surface_boundaries.py"
@@ -218,6 +219,8 @@ def main() -> int:
         raise SystemExit(f"Missing worktree task receipt check script: {worktree_task_receipt_script}")
     if not session_ownership_claims_script.exists():
         raise SystemExit(f"Missing session ownership claims check script: {session_ownership_claims_script}")
+    if not implementation_plan_claim_lock_script.exists():
+        raise SystemExit(f"Missing implementation plan claim-lock check script: {implementation_plan_claim_lock_script}")
     if not orchestration_activation_policy_script.exists():
         raise SystemExit(f"Missing orchestration activation policy check script: {orchestration_activation_policy_script}")
     if not custom_agent_toml_schema_script.exists():
@@ -476,6 +479,11 @@ def main() -> int:
                 "check_session_ownership_claims",
                 [str(python_exe), str(session_ownership_claims_script), "--root", str(root), "--allow-current-dirty", "--json"],
                 "OpenSpec guard failed during session ownership claim verification.",
+            ),
+            (
+                "check_implementation_plan_claim_lock",
+                [str(python_exe), str(implementation_plan_claim_lock_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during implementation-plan claim-lock verification.",
             ),
             (
                 "check_orchestration_activation_policy",
@@ -804,6 +812,12 @@ def main() -> int:
         [str(python_exe), str(session_ownership_claims_script), "--root", str(root), "--allow-current-dirty"],
         cwd=root,
         failure_message="OpenSpec guard failed during session ownership claim verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(implementation_plan_claim_lock_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during implementation-plan claim-lock verification.",
     )
 
     run_checked(

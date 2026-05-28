@@ -69,9 +69,9 @@ Only one session may own each hotspot at a time:
 
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
-- [ ] Define the portable claim schema with plan path, branch, worktree, session id, and expiry or release state.
-- [ ] Add tests for one active claim, stale claim, released claim, and conflicting active claim.
-- [ ] Implement the claim helper and checker without depending on OMX or LangGraph.
+- [x] Define the portable claim schema with plan path, branch, worktree, session id, and expiry or release state.
+- [x] Add tests for one active claim, stale claim, released claim, and conflicting active claim.
+- [x] Implement the claim helper and checker without depending on OMX or LangGraph.
 - [ ] Run claim-lock tests, worktree receipt checker, and local gate.
 <!-- TASK_BACKLOG_END -->
 
@@ -96,6 +96,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage C implementation: added `tools/check_implementation_plan_claim_lock.py`, `tools/claim_implementation_plan.py`, focused tests, and local guard registration for portable implementation-plan claim locking.
 - 2026-05-28 Stage C entry: user confirmed continued implementation of this child plan; governance status updated in branch `implement-portable-plan-claim-lock-20260528` before runtime/checker work.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->
