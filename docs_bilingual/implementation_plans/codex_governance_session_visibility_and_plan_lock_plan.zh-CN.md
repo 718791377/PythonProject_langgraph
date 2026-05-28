@@ -41,9 +41,9 @@ translation_of: docs_bilingual/implementation_plans/codex_governance_session_vis
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage A 文档包
+阶段：Stage A 已合入文档包
 责任会话：主 Codex leader 会话
-当前门禁：创建并合入本 implementation plan，然后停止等待用户确认
+当前门禁：等待用户明确确认本 implementation plan 后再进入 Stage B
 Stage B 进入条件：本地 `main` 合入后，用户明确确认本文件或英文主版
 最后更新：2026-05-28
 <!-- CURRENT_STATUS_END -->
@@ -121,8 +121,8 @@ Stage B 在修改用户级 launcher、安装包、运行 Spec Kit 初始化或�
 - [x] Stage A：创建英文 ASCII 主版 implementation plan。
 - [x] Stage A：创建中文对照 implementation plan。
 - [x] Stage A：在 `docs_bilingual/docs_registry.yaml` 中登记为 active implementation plan。
-- [ ] Stage A：使用中文提交信息提交文档包。
-- [ ] Stage A：把文档包合入本地 `main`。
+- [x] Stage A：使用中文提交信息提交文档包。
+- [x] Stage A：把文档包合入本地 `main`。
 - [ ] Stage A：停止并要求用户确认本 implementation_plan 文件后再进入 Stage B。
 - [ ] Stage B：更新 orchestration activation 治理，使用户可见 `Routing trace` 使用中文。
 - [ ] Stage B：更新 trace checker 或 fixture，使其强制中文对话 trace，同时不破坏结构化证据 token。
@@ -160,5 +160,5 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 等待 Stage A 提交证据。本方案只保存索引，不在正文追加完整证据包。
+- 2026-05-28 Stage A 正式方案包：已用 `2429f3c` 提交并合入本地 `main`；验证包括 `check_implementation_plan_rules.py --root . --json`、`check_precommit_update_archive.py --root . --json`、`tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` 和 `tools/ci/local_mr_review.ps1`。
 <!-- EVIDENCE_INDEX_END -->

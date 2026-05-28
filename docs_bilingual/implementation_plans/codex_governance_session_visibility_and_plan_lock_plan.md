@@ -41,9 +41,9 @@ This plan covers five related governance upgrades:
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage A documentation package
+Stage: Stage A integrated documentation package
 Owner session: main Codex leader session
-Current gate: create and integrate this implementation plan, then stop for user confirmation
+Current gate: wait for explicit user confirmation of this implementation plan before Stage B
 Stage B entry condition: user confirms this file or its Chinese companion after local `main` integration
 Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
@@ -121,8 +121,8 @@ Stage B must stop again for a separate scope decision before editing user-level 
 - [x] Stage A: create the English ASCII primary implementation plan.
 - [x] Stage A: create the Chinese companion implementation plan.
 - [x] Stage A: register the plan pair in `docs_bilingual/docs_registry.yaml` as an active implementation plan.
-- [ ] Stage A: commit the documentation package with a Chinese commit message.
-- [ ] Stage A: integrate the documentation package into local `main`.
+- [x] Stage A: commit the documentation package with a Chinese commit message.
+- [x] Stage A: integrate the documentation package into local `main`.
 - [ ] Stage A: stop and ask the user to confirm this implementation-plan file before Stage B.
 - [ ] Stage B: update orchestration activation governance so user-facing `Routing trace` is Chinese.
 - [ ] Stage B: update trace checker or fixtures so Chinese conversation trace is enforced without breaking structured evidence tokens.
@@ -160,5 +160,5 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- Pending Stage A commit evidence. This plan intentionally stores only an index, not full evidence packages.
+- 2026-05-28 Stage A formal plan package: committed and integrated to local `main` as `2429f3c`; verification included `check_implementation_plan_rules.py --root . --json`, `check_precommit_update_archive.py --root . --json`, `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600`, and `tools/ci/local_mr_review.ps1`.
 <!-- EVIDENCE_INDEX_END -->
