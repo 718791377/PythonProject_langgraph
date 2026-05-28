@@ -368,6 +368,81 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("heartbeat" in error for error in payload["errors"]), payload["errors"])
 
+    def test_durable_running_claim_requires_manifest_or_thread_state(self) -> None:
+        root = self.make_root("collab-durable-no-runtime-state")
+        path = root / "durable-no-runtime-state.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "durable_persistent_claim",
+                "state": "running",
+                "claim": "durable workflow is running",
+                "evidence": {
+                    "active_selector": True,
+                    "backend_family": "native_omx",
+                    "preflight_passed": True,
+                    "ownership_plan": True,
+                    "heartbeat": True,
+                },
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("team_manifest or langgraph_thread_state" in error for error in payload["errors"]),
+            payload["errors"],
+        )
+
+    def test_durable_complete_claim_requires_close_and_absorption(self) -> None:
+        root = self.make_root("collab-durable-complete-no-close")
+        path = root / "durable-complete-no-close.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "durable_persistent_claim",
+                "state": "complete",
+                "claim": "persistent team completed",
+                "evidence": {
+                    "active_selector": True,
+                    "backend_family": "langgraph",
+                    "preflight_passed": True,
+                    "ownership_plan": True,
+                    "langgraph_thread_state": True,
+                    "heartbeat": True,
+                    "result_summary": "validated",
+                },
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("close_record" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("leader_absorbed_record" in error for error in payload["errors"]), payload["errors"])
+
+    def test_durable_candidate_claim_cannot_say_running(self) -> None:
+        root = self.make_root("collab-durable-candidate-running-claim")
+        path = root / "durable-candidate-running-claim.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "durable_persistent_claim",
+                "state": "candidate",
+                "claim": "durable team is running",
+                "evidence": {},
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("cannot claim running" in error for error in payload["errors"]), payload["errors"])
+
     def test_expert_result_requires_absorbed_event(self) -> None:
         root = self.make_root("collab-expert-result")
         path = root / "expert.json"
@@ -524,6 +599,49 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
         self.assertTrue(any("scope" in error for error in payload["errors"]), payload["errors"])
         self.assertTrue(any("non_goals" in error for error in payload["errors"]), payload["errors"])
         self.assertTrue(any("changed_paths" in error for error in payload["errors"]), payload["errors"])
+
+    def test_langgraph_completed_release_fields_pass(self) -> None:
+        root = self.make_root("collab-langgraph-release-pass")
+        path = root / "lg-release-pass.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "langgraph_state_release",
+                "task_completed": True,
+                "thread_state": {
+                    "status": "complete",
+                    "completed_at": "2026-05-27T00:00:00Z",
+                    "final_phase": "verify-accept",
+                    "result_summary": "accepted",
+                    "released_by": "omx-langgraph-resume.ps1",
+                },
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertTrue(payload["ok"], payload["errors"])
+
+    def test_langgraph_handoff_requires_handoff_fields(self) -> None:
+        root = self.make_root("collab-langgraph-handoff-missing-fields")
+        path = root / "lg-handoff-missing-fields.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "langgraph_state_release",
+                "task_completed": False,
+                "handoff": True,
+                "thread_state": {"status": "blocked", "handoff_at": "2026-05-27T00:00:00Z"},
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("handoff_target" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("reason" in error for error in payload["errors"]), payload["errors"])
 
     def test_langgraph_completed_state_must_release_running(self) -> None:
         root = self.make_root("collab-langgraph-release")
