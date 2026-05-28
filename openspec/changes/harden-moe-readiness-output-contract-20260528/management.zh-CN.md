@@ -20,9 +20,9 @@
 
 ## Verify
 
-- [ ] 运行定向测试和仓库门禁。
-- [ ] 运行本地 gate 和本地 MR review。
-- [ ] 在合入本地 main 前检查控制决策。
+- [x] 运行定向测试和仓库门禁。
+- [x] 运行本地 gate 和本地 MR review。
+- [x] 在合入本地 main 前检查控制决策。
 
 ## Monitoring
 

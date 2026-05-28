@@ -14,7 +14,7 @@
 
 ## 3. 验证和本地集成
 
-- [ ] 3.1 运行定向 Project MOE GUI toolchain 测试。
-- [ ] 3.2 运行 OpenSpec validation、precommit update/archive review 和仓库 guard。
-- [ ] 3.3 在干净 feature worktree 上运行本地 gate 和本地 MR review。
+- [x] 3.1 运行定向 Project MOE GUI toolchain 测试。
+- [x] 3.2 运行 OpenSpec validation、precommit update/archive review 和仓库 guard。
+- [x] 3.3 在干净 feature worktree 上运行本地 gate 和本地 MR review。
 - [ ] 3.4 创建 rollback ref，合入本地 `main`，运行合入后本地 gate，并清理已集成 worktree/branch。

@@ -20,9 +20,9 @@
 
 ## Verify
 
-- [ ] Run targeted tests and repository gates.
-- [ ] Run local gate and local MR review.
-- [ ] Check control decision before local main integration.
+- [x] Run targeted tests and repository gates.
+- [x] Run local gate and local MR review.
+- [x] Check control decision before local main integration.
 
 ## Monitoring
 

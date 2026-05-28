@@ -14,7 +14,7 @@
 
 ## 3. Validation and local integration
 
-- [ ] 3.1 Run targeted Project MOE GUI toolchain tests.
-- [ ] 3.2 Run OpenSpec validation, precommit update/archive review, and repository guard.
-- [ ] 3.3 Run local gate and local MR review on the clean feature worktree.
+- [x] 3.1 Run targeted Project MOE GUI toolchain tests.
+- [x] 3.2 Run OpenSpec validation, precommit update/archive review, and repository guard.
+- [x] 3.3 Run local gate and local MR review on the clean feature worktree.
 - [ ] 3.4 Create a rollback ref, merge into local `main`, run post-merge local gate, and clean the integrated worktree/branch.
