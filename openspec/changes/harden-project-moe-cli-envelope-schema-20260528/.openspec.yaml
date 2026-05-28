@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-05-28
+x_archive_deferred_reason: "This bounded Project MOE readiness hardening slice is being implemented in a feature worktree; archive is deferred until code, tests, local gate, local MR review, and local main integration evidence are complete."
+x_archive_follow_up: "After local integration, archive this change or record the final archive package that promotes stable readiness-contract evidence."

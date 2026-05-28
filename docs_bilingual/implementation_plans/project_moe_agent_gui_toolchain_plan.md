@@ -497,12 +497,13 @@ The readiness payload must include:
 
 #### Slice 1: Phase 1 readiness checker and schema
 
-- [ ] Define the `check_project_moe_phase1_readiness.py --json` envelope.
-- [ ] Add `ready`, `ready-candidate`, `bootstrap`, and `repair` fixture projects.
-- [ ] Add negative fixtures for missing Agent TOML, invalid TOML, missing private prompt source, unsafe private prompt path, missing CLI, unsupported CLI schema, and dirty target root.
-- [ ] Ensure static-only mode never executes a target project CLI.
-- [ ] Ensure read-contract mode only executes safe read commands.
+- [x] Define the `check_project_moe_phase1_readiness.py --json` envelope.
+- [x] Add `ready`, `ready-candidate`, `bootstrap`, and `repair` fixture projects.
+- [x] Add negative fixtures for missing Agent TOML, invalid TOML, missing private prompt source, unsafe private prompt path, missing CLI, unsupported CLI schema, and dirty target root.
+- [x] Ensure static-only mode never executes a target project CLI.
+- [x] Ensure read-contract mode only executes safe read commands.
 - [ ] Ensure readiness output includes lane, blockers, warnings, checked files, redacted paths, and `control_mode_allowed`.
+- Evidence (2026-05-28): the current schema-hardening OpenSpec change adds a stable fail-closed blocker for unsupported CLI envelope schema; its regression test proves readiness remains blocked; existing fixture coverage still proves the ready, ready-candidate, bootstrap, repair, static-only, and read-contract command boundaries.
 
 #### Slice 2: Bootstrap and repair lane tooling
 

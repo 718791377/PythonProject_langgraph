@@ -499,12 +499,13 @@ readiness payload 必须包含：
 
 #### Slice 1：Phase 1 readiness checker 与 schema
 
-- [ ] 定义 `check_project_moe_phase1_readiness.py --json` envelope。
-- [ ] 新增 `ready`、`ready-candidate`、`bootstrap`、`repair` 四类 fixture 项目。
-- [ ] 新增负向 fixture：缺 Agent TOML、TOML 无效、缺私有提示源、私有提示源越界、缺 CLI、CLI schema 不支持、目标根目录 dirty。
-- [ ] 确保 static-only 模式永不执行目标项目 CLI。
-- [ ] 确保 read-contract 模式只执行安全读命令。
+- [x] 定义 `check_project_moe_phase1_readiness.py --json` envelope。
+- [x] 新增 `ready`、`ready-candidate`、`bootstrap`、`repair` 四类 fixture 项目。
+- [x] 新增负向 fixture：缺 Agent TOML、TOML 无效、缺私有提示源、私有提示源越界、缺 CLI、CLI schema 不支持、目标根目录 dirty。
+- [x] 确保 static-only 模式永不执行目标项目 CLI。
+- [x] 确保 read-contract 模式只执行安全读命令。
 - [ ] 确保 readiness 输出包含 lane、blockers、warnings、checked files、脱敏路径和 `control_mode_allowed`。
+- 证据（2026-05-28）：当前 schema 加固 OpenSpec change 增加了用于不支持 CLI envelope schema 的稳定 fail-closed blocker；对应回归测试证明 readiness 会保持阻断；既有 fixture 继续覆盖 ready、ready-candidate、bootstrap、repair、static-only 和 read-contract 命令边界。
 
 #### Slice 2：Bootstrap 与 Repair lane 工具
 
