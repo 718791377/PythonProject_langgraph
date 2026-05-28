@@ -251,6 +251,13 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
         "description": "Add schema_version, command, ok, token, and cli_contract envelope fields.",
         "requires_target_project_write": True,
     },
+    "blocked:cli_envelope_schema_version_mismatch": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_schema_version",
+        "description": "Return the supported Project MOE GUI toolchain schema_version in every read-contract envelope.",
+        "requires_target_project_write": True,
+    },
     "blocked:cli_command_echo_mismatch": {
         "category": "mode_cli_contract",
         "phase": "repair",
@@ -1099,6 +1106,16 @@ def require_cli_envelope(
     missing = [key for key in COMMON_CLI_ENVELOPE_KEYS if key not in payload]
     if missing:
         errors.append(blocker("blocked:cli_envelope_missing_fields", "Mode CLI JSON envelope is missing required fields.", command=command, missing=missing))
+    if "schema_version" in payload and payload.get("schema_version") != SCHEMA_VERSION:
+        errors.append(
+            blocker(
+                "blocked:cli_envelope_schema_version_mismatch",
+                "Mode CLI JSON envelope schema_version is not supported by this Project MOE GUI toolchain.",
+                command=command,
+                expected=SCHEMA_VERSION,
+                observed=payload.get("schema_version"),
+            )
+        )
     if payload.get("command") != command:
         errors.append(blocker("blocked:cli_command_echo_mismatch", "Mode CLI JSON command field must match the invoked command.", command=command, observed=payload.get("command")))
     ok_value = payload.get("ok")

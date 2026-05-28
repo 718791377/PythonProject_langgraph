@@ -297,6 +297,8 @@ class ProjectMoeGuiToolchainTests(unittest.TestCase):
         extra_payload = ""
         if cli_variant == "missing_effective_source":
             extra_payload = 'payload.pop("effective_source", None)\n'
+        elif cli_variant == "unsupported_schema_version":
+            extra_payload = 'payload["schema_version"] = 999\n'
         elif cli_variant == "private_field_exposed":
             extra_payload = 'payload["raw_session_id"] = "secret-session-value"\npayload["private_prompt_text"] = "never expose prompt"\n'
         elif cli_variant == "bad_list_sessions_counts":
@@ -654,6 +656,40 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(remediation["summary"], "no_remediation_required")
             self.assertEqual(remediation["groups"], [])
             self.assertEqual(remediation["ordered_next_steps"], [])
+
+    def test_phase1_readiness_checker_rejects_unsupported_read_contract_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-unsupported-schema"
+            project.mkdir()
+            self.make_project(project, cli_variant="unsupported_schema_version")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_READINESS),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertEqual(payload["token"], "blocked:cli_envelope_schema_version_mismatch", payload)
+            self.assertIn("blocked:cli_envelope_schema_version_mismatch", blocker_codes)
+            self.assertEqual(payload["adaptation_lane"], "repair")
+            self.assertFalse(payload["control_mode_allowed"])
+            self.assertTrue(payload["repair_required"])
+            self.assertEqual(payload["cli_execution_mode"], "execute-read-contract")
+            self.assertFalse(payload["cli_contract_check"]["execution_skipped"])
+            self.assertIn("schema_version", payload["cli_contract_check"]["validated_fields"]["project-status"])
+            remediation = payload["remediation_plan"]
+            groups = {group["category"]: group for group in remediation["groups"]}
+            self.assertIn("mode_cli_contract", groups)
+            self.assertIn("repair_mode_cli_schema_version", groups["mode_cli_contract"]["actions"])
+            self.assertTrue(groups["mode_cli_contract"]["requires_target_project_write"])
 
     def test_phase1_readiness_checker_static_only_does_not_execute_target_cli(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
