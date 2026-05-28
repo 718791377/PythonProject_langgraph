@@ -268,6 +268,45 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
             payload["errors"],
         )
 
+    def test_repository_collaboration_evidenceguard_requires_chinese_openspec_heading_parity(self) -> None:
+        root = self.make_root("collab-zh-heading-parity")
+        fixture_src = REPO_ROOT / collab_module.DEFAULT_FIXTURE_DIR
+        fixture_dst = root / collab_module.DEFAULT_FIXTURE_DIR
+        shutil.copytree(fixture_src, fixture_dst)
+        for rel in collab_module.REQUIRED_SURFACE_SNIPPETS:
+            src = REPO_ROOT / rel
+            dst = root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            if rel == "openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md":
+                dst.write_text(
+                    "\n".join(
+                        [
+                            "# Codex 用户级 Orchestration Activation Policy",
+                            "prompt-independent collaboration parity",
+                            "durable/persistent evidenceguard",
+                            "LangGraph state release",
+                            "tools/check_orchestration_collaboration_evidenceguard.py",
+                        ]
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
+            else:
+                dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        for rel in ("tools/run_openspec_guard.py", "tools/safety_rule_script_backing_registry.json"):
+            src = REPO_ROOT / rel
+            dst = root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+
+        payload = collab_module.run_repository_check(root)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("bilingual parity" in error or "Requirement/Scenario headings" in error for error in payload["errors"]),
+            payload["errors"],
+        )
+
     def test_prompt_independent_fixture_parity_passes(self) -> None:
         payload = collab_module.run_fixture_check(REPO_ROOT)
         self.assertTrue(payload["ok"], payload["errors"])

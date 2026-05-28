@@ -67,6 +67,10 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
     ],
 }
 
+OPENSPEC_PRIMARY_SPEC = "openspec/specs/codex-user-level-orchestration-activation-policy/spec.md"
+OPENSPEC_ZH_CN_SPEC = "openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md"
+OPENSPEC_PARITY_HEADING_PREFIXES = ("### Requirement:", "#### Scenario:")
+
 ROUTE_FIELDS = (
     "phase",
     "capability_chain",
@@ -123,6 +127,32 @@ def lower(value: Any) -> str:
 def contains_any(text: str, markers: tuple[str, ...]) -> bool:
     haystack = text.lower()
     return any(marker.lower() in haystack for marker in markers)
+
+
+def extract_openspec_requirement_scenario_headings(text: str) -> list[str]:
+    return [
+        line.strip()
+        for line in text.splitlines()
+        if any(line.startswith(prefix) for prefix in OPENSPEC_PARITY_HEADING_PREFIXES)
+    ]
+
+
+def validate_openspec_companion_heading_parity(root: Path, errors: list[str]) -> None:
+    primary_text = read_text(root / OPENSPEC_PRIMARY_SPEC)
+    companion_text = read_text(root / OPENSPEC_ZH_CN_SPEC)
+    if primary_text is None or companion_text is None:
+        return
+
+    primary_headings = extract_openspec_requirement_scenario_headings(primary_text)
+    companion_headings = extract_openspec_requirement_scenario_headings(companion_text)
+    if len(companion_headings) < len(primary_headings):
+        errors.append(
+            f"{OPENSPEC_ZH_CN_SPEC} has {len(companion_headings)} Requirement/Scenario headings; "
+            f"{OPENSPEC_PRIMARY_SPEC} has {len(primary_headings)}."
+        )
+    for heading in primary_headings:
+        if heading not in companion_text:
+            errors.append(f"{OPENSPEC_ZH_CN_SPEC} missing source heading for bilingual parity: {heading}")
 
 
 def require_string(payload: dict[str, Any], key: str, errors: list[str], label: str) -> str:
@@ -393,6 +423,8 @@ def run_repository_check(root: Path) -> dict[str, Any]:
         for snippet in snippets:
             if snippet not in text:
                 errors.append(f"{rel} missing required snippet: {snippet}")
+
+    validate_openspec_companion_heading_parity(root, errors)
 
     guard_text = read_text(root / "tools/run_openspec_guard.py") or ""
     if GUARD_STEP not in guard_text:

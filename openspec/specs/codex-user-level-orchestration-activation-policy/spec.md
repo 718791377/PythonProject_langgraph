@@ -81,6 +81,8 @@ The repository SHALL provide an executable trace-evidence validator that can ins
 
 Prompt-independent collaboration parity SHALL be checker-backed. The repository SHALL provide `tools/check_orchestration_collaboration_evidenceguard.py` and fixture pairs that prove equivalent tasks produce equivalent routing decisions with or without collaboration phrases. The same checker SHALL validate cold-start read-order evidence, durable/persistent evidenceguard records, structured expert lifecycle audit events, and LangGraph state release evidence. Durable/persistent evidenceguard SHALL reject selected, running, or complete durable-team claims unless active selector, backend family, preflight, ownership plan, manifest or LangGraph thread state, heartbeat, close, and leader absorption evidence are present as required by the claimed state. LangGraph state release SHALL reject completed work that remains in stale `running` state instead of recording `completed_at`, `final_phase`, `result_summary`, and `released_by`.
 
+The repository SHALL keep the Chinese OpenSpec companion for this policy structurally aligned with this English primary by preserving every source `### Requirement:` and `#### Scenario:` heading, and `tools/check_orchestration_collaboration_evidenceguard.py` SHALL fail repository checks when that bilingual OpenSpec heading parity is lost.
+
 #### Scenario: Saved trace evidence is checked
 - **WHEN** a saved activation trace is passed to the repository trace-evidence validator
 - **THEN** the validator SHALL fail if any required trace field is missing
