@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
 status: active
 plan_readiness: execution-ready
-implementation_state: receipt_redaction_guard_repo_local_implemented
+implementation_state: opencli_port_auto_guard_repo_local_implemented
 last_reviewed_at: 2026-05-28
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -37,7 +37,7 @@ related_docs:
 
 This version is reworked into the modern structure family used by the Pi sidecar plan and the Comet runtime plan: worker instructions, Goal, Architecture, Tech Stack, relationship boundaries, runtime contracts, file responsibility map, definition of ready, task-level backlog, acceptance criteria, required evidence, and rollback rules.
 
-`status: active` means this document pair is now the execution authority for the repo-local governance-to-user-level capability lane. It does not mean the full user-level install, live smoke tests, or cross-project rollout are complete. `plan_readiness: execution-ready` means the plan has enough structure and granularity for an agentic worker. Repo-local `skills2cli`, `mcp2cli`, `codex-port`, browser owner registry, `chrome-devtools-mcp` wrapper MVP, CDP Bridge read-only defaults, `wecom-cli` guarded dry-run, and receipt/redaction governance are implemented-local. A runtime lane becomes active only after installation receipt, update receipt, smoke test result, and rollback pointer evidence exist.
+`status: active` means this document pair is now the execution authority for the repo-local governance-to-user-level capability lane. It does not mean the full user-level install, live smoke tests, or cross-project rollout are complete. `plan_readiness: execution-ready` means the plan has enough structure and granularity for an agentic worker. Repo-local `skills2cli`, `mcp2cli`, `codex-port`, browser owner registry, `chrome-devtools-mcp` wrapper MVP, CDP Bridge read-only defaults, OpenCLI `--port auto` lease guard, `wecom-cli` guarded dry-run, and receipt/redaction governance are implemented-local. A runtime lane becomes active only after installation receipt, update receipt, smoke test result, and rollback pointer evidence exist.
 
 ## 1. Relationship model and naming boundary
 
@@ -49,7 +49,7 @@ This version is reworked into the modern structure family used by the Pi sidecar
 | browser owner registry | browser asset registration and leases | implemented-local | Separates isolated-session-managed, project-profile, and human-owned assets. |
 | `chrome-devtools-mcp` | user-level DevTools MCP wrapper | implemented-local | Read-only first; writes need owner evidence and authorization receipt. |
 | CDP Bridge | browser bridge and CDP actions | implemented-local | Read-only by default; cookies, input, click, and navigation are sensitive. |
-| OpenCLI | on-demand browser/MCP adapter | planned/partial | Must use `--port auto` and owner/receipt gates. |
+| OpenCLI | on-demand browser/MCP adapter | implemented-local | Repo-local guard now requires `--port auto`, `codex-port` lease evidence in `39300-39499`, and owner/receipt gates; live user-level install still needs receipt evidence. |
 | CLI-Anything | GUI/CLI harness generation and reference | planned | Hard-loading many skills is blocked by default. |
 | `wecom-cli` | WeCom/WXWork API, webhook, and GUI adapter | implemented-local | WXWork.exe GUI writes remain disabled by default; the repo-local guard now provides API/Webhook-first posture plus global lease, operator confirmation, and timeout-release dry-run checks. |
 | `oh-my-pi` | Pi family and harness reference | reference-only | Detailed Pi sidecar work belongs to the Pi sidecar plan. |
@@ -367,11 +367,11 @@ Runtime receipts must not include secrets, cookies, tokens, raw browser data, We
 
 ### Task 5: CDP Bridge / chrome-devtools-mcp / OpenCLI
 
-- [ ] Read-only tab inventory does not need sensitive authorization.
-- [ ] click/type/navigate/JS/cookie read requires authorization.
-- [ ] OpenCLI must use `--port auto`.
+- [x] Read-only tab inventory does not need sensitive authorization.
+- [x] click/type/navigate/JS/cookie read requires authorization.
+- [x] OpenCLI must use `--port auto` and provide sanitized `codex-port` lease evidence in `39300-39499`.
 - [ ] Live start requires install receipt and owner evidence.
-- [ ] Local verification: `chrome_devtools_mcp_managed.test.py` and `cdp_bridge_governance.test.py`.
+- [x] Local verification: `chrome_devtools_mcp_managed.test.py` and `cdp_bridge_governance.test.py`.
 
 ### Task 6: CLI-Anything and `wecom-cli`
 

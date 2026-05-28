@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: active
 plan_readiness: execution-ready
-implementation_state: receipt_redaction_guard_repo_local_implemented
+implementation_state: opencli_port_auto_guard_repo_local_implemented
 last_reviewed_at: 2026-05-28
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -37,7 +37,7 @@ related_docs:
 
 本版已按 `pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 和 `comet_runtime_agile_focus_area_plan.zh-CN.md` 的新版结构返工：先给出 worker 指令、Goal、Architecture、Tech Stack，再给出关系模型、runtime 契约、文件职责图、实施前就绪定义、任务级执行 Backlog、验收标准、需要保留的证据和 rollback 规则。
 
-`status: active` 表示本双语文件现在是 repo-local governance-to-user-level capability lane 的执行权威；不表示完整用户级安装、真实 smoke test 或跨项目 rollout 已完成。`plan_readiness: execution-ready` 表示本文结构与执行颗粒度已经足够让 agentic worker 接手实现。当前 repo-local `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP 与 CDP Bridge read-only defaults 属于 implemented-local；完整用户级 `active` 仍取决于 installation receipt、update receipt、smoke test result 与 rollback pointer。`wecom-cli` 当前只达到 repo-local guarded dry-run，不代表真实企业微信 GUI 自动化已启用。
+`status: active` 表示本双语文件现在是 repo-local governance-to-user-level capability lane 的执行权威；不表示完整用户级安装、真实 smoke test 或跨项目 rollout 已完成。`plan_readiness: execution-ready` 表示本文结构与执行颗粒度已经足够让 agentic worker 接手实现。当前 repo-local `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP、CDP Bridge read-only defaults、OpenCLI `--port auto` 租约门禁、`wecom-cli` guarded dry-run 和 receipt/redaction governance 均属于 implemented-local；完整用户级 `active` 仍取决于 installation receipt、update receipt、smoke test result 与 rollback pointer。
 
 ## 1. 关系模型与命名边界
 
@@ -49,7 +49,7 @@ related_docs:
 | browser owner registry | 三类浏览器资产登记与 lease | implemented-local | 区分 isolated-session-managed、project-profile、human-owned。 |
 | `chrome-devtools-mcp` | 用户级 DevTools MCP wrapper | implemented-local | 低风险 read-only 优先；写操作需要 owner + authorization receipt。 |
 | CDP Bridge | 浏览器桥接与 CDP 操作 | implemented-local | 默认 read-only；cookies、输入、点击、导航属于敏感操作。 |
-| OpenCLI | on-demand browser/MCP adapter | planned/partial | 必须 `--port auto`，并受 owner registry 与 receipt 约束。 |
+| OpenCLI | on-demand browser/MCP adapter | implemented-local | repo-local guard 已要求 `--port auto`、`39300-39499` 范围内的 `codex-port` lease evidence，以及 owner/receipt gates；真实用户级 live install 仍需 receipt evidence。 |
 | CLI-Anything | GUI/CLI harness generation/reference | planned | 不允许 hard-load 大量 skills；生成优先，执行受授权门禁控制。 |
 | `wecom-cli` | WeCom/WXWork API/Webhook/GUI adapter | implemented-local | WXWork.exe GUI write 默认 disabled；repo-local guard 已提供 API/Webhook first、global lease、operator confirmation 与 timeout release dry-run 检查。 |
 | `oh-my-pi` | Pi family / harness reference | reference-only | 具体 Pi sidecar 归属 `pi_plugin_codex_user_level_sidecar_plan`。 |
@@ -367,11 +367,11 @@ runtime receipts 不得包含 secrets、cookies、tokens、raw browser data、We
 
 ### Task 5：CDP Bridge / chrome-devtools-mcp / OpenCLI
 
-- [ ] read-only tab inventory 不需要敏感授权。
-- [ ] click/type/navigate/JS/cookie read 必须授权。
-- [ ] OpenCLI 必须用 `--port auto`。
+- [x] read-only tab inventory 不需要敏感授权。
+- [x] click/type/navigate/JS/cookie read 必须授权。
+- [x] OpenCLI 必须用 `--port auto`，并提供 `39300-39499` 范围内已清洗的 `codex-port` lease evidence。
 - [ ] live start 需要 install receipt 和 owner evidence。
-- [ ] 局部验证：`chrome_devtools_mcp_managed.test.py`、`cdp_bridge_governance.test.py`。
+- [x] 局部验证：`chrome_devtools_mcp_managed.test.py`、`cdp_bridge_governance.test.py`。
 
 ### Task 6：CLI-Anything 与 `wecom-cli`
 
