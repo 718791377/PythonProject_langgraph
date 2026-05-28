@@ -101,6 +101,27 @@ def write_opencli_authorization_receipt(path: Path, *, target: str, session: str
     return path
 
 
+def write_opencli_port_lease_receipt(path: Path, *, port: int = 39300, owner: str = "codex", status: str = "pending_bind") -> Path:
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "tool": "codex-port",
+                "action": "reserve",
+                "sanitized": True,
+                "lease_id": "opencli-port-lease-test",
+                "owner": owner,
+                "port": port,
+                "status": status,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
 def reserve_opencli_owner(owner_state: Path, *, target: str = "tab:opencli-1", session: str = "session-a"):
     return run_owner_registry(
         [
@@ -301,6 +322,7 @@ class OpenCliGovernanceTests(unittest.TestCase):
 
             owner_state = state / "owner-registry"
             lease = reserve_opencli_owner(owner_state)
+            port_receipt = write_opencli_port_lease_receipt(state / "port-lease.json")
             allowed = run_opencli(
                 [
                     "--owner-state-dir",
@@ -314,6 +336,8 @@ class OpenCliGovernanceTests(unittest.TestCase):
                     "session-a",
                     "--owner-lease-id",
                     lease["lease"]["lease_id"],
+                    "--port-lease-receipt",
+                    str(port_receipt),
                 ],
                 state,
             )
@@ -321,6 +345,8 @@ class OpenCliGovernanceTests(unittest.TestCase):
             self.assertTrue(allowed["ok"])
             self.assertTrue(allowed["dispatch_allowed"])
             self.assertEqual(allowed["adapter_mode"], "on-demand")
+            self.assertTrue(allowed["port_policy"]["lease_verified"])
+            self.assertFalse(allowed["port_policy"]["hard_coded_port_allowed"])
             self.assertFalse(allowed["authorization_required"])
             self.assertTrue(allowed["owner_verified"])
             self.assertFalse(allowed["safety"]["connects_to_browser"])
@@ -333,6 +359,7 @@ class OpenCliGovernanceTests(unittest.TestCase):
             state = Path(td)
             owner_state = state / "owner-registry"
             lease = reserve_opencli_owner(owner_state)
+            port_receipt = write_opencli_port_lease_receipt(state / "port-lease.json")
             result = run_opencli(
                 [
                     "--owner-state-dir",
@@ -346,6 +373,8 @@ class OpenCliGovernanceTests(unittest.TestCase):
                     "session-a",
                     "--owner-lease-id",
                     lease["lease"]["lease_id"],
+                    "--port-lease-receipt",
+                    str(port_receipt),
                     "--adapter-mode",
                     "always-on",
                 ],
@@ -388,6 +417,7 @@ class OpenCliGovernanceTests(unittest.TestCase):
             session = "session-a"
             lease = reserve_opencli_owner(owner_state, target=target, session=session)
             receipt = write_opencli_authorization_receipt(state / "auth.json", target=target, session=session, action="js.evaluate")
+            port_receipt = write_opencli_port_lease_receipt(state / "port-lease.json")
             result = run_opencli(
                 [
                     "--owner-state-dir",
@@ -403,14 +433,96 @@ class OpenCliGovernanceTests(unittest.TestCase):
                     lease["lease"]["lease_id"],
                     "--authorization-receipt",
                     str(receipt),
+                    "--port-lease-receipt",
+                    str(port_receipt),
                 ],
                 state,
             )
             self.assertTrue(result["dispatch_allowed"])
+            self.assertTrue(result["port_policy"]["lease_verified"])
             self.assertTrue(result["owner_verified"])
             self.assertTrue(result["authorization_verified"])
             self.assertTrue(result["safety"]["requested_action_would_execute_javascript"])
             self.assertFalse(result["safety"]["executes_javascript"])
+
+    def test_opencli_hard_coded_port_and_missing_port_lease_fail_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            owner_state = state / "owner-registry"
+            lease = reserve_opencli_owner(owner_state)
+            missing = run_opencli(
+                [
+                    "--owner-state-dir",
+                    str(owner_state),
+                    "check",
+                    "--action",
+                    "session.inspect",
+                    "--target",
+                    "tab:opencli-1",
+                    "--session",
+                    "session-a",
+                    "--owner-lease-id",
+                    lease["lease"]["lease_id"],
+                ],
+                state,
+                expect=3,
+            )
+            self.assertFalse(missing["dispatch_allowed"])
+            self.assertIn("opencli_port_lease_receipt_required", missing["blockers"])
+
+            port_receipt = write_opencli_port_lease_receipt(state / "port-lease.json")
+            fixed = run_opencli(
+                [
+                    "--owner-state-dir",
+                    str(owner_state),
+                    "check",
+                    "--action",
+                    "session.inspect",
+                    "--target",
+                    "tab:opencli-1",
+                    "--session",
+                    "session-a",
+                    "--owner-lease-id",
+                    lease["lease"]["lease_id"],
+                    "--port",
+                    "39300",
+                    "--port-lease-receipt",
+                    str(port_receipt),
+                ],
+                state,
+                expect=3,
+            )
+            self.assertFalse(fixed["dispatch_allowed"])
+            self.assertIn("opencli_port_must_be_auto", fixed["blockers"])
+            self.assertEqual(fixed["port_policy"]["port_mode"], "fixed")
+
+    def test_opencli_port_lease_must_belong_to_codex_opencli_range(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            owner_state = state / "owner-registry"
+            lease = reserve_opencli_owner(owner_state)
+            wrong_range = write_opencli_port_lease_receipt(state / "port-lease.json", port=40000)
+            result = run_opencli(
+                [
+                    "--owner-state-dir",
+                    str(owner_state),
+                    "check",
+                    "--action",
+                    "session.inspect",
+                    "--target",
+                    "tab:opencli-1",
+                    "--session",
+                    "session-a",
+                    "--owner-lease-id",
+                    lease["lease"]["lease_id"],
+                    "--port-lease-receipt",
+                    str(wrong_range),
+                ],
+                state,
+                expect=3,
+            )
+            self.assertFalse(result["dispatch_allowed"])
+            self.assertIn("opencli_port_lease_range_mismatch", result["blockers"])
 
     def test_opencli_click_type_navigate_and_unknown_actions_fail_closed(self):
         with tempfile.TemporaryDirectory() as td:

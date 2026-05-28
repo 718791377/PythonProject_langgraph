@@ -21,6 +21,8 @@ from typing import Any
 
 DEFAULT_STATE_DIR = Path(os.environ.get("OPENCLI_GOVERNANCE_STATE_DIR", str(Path.home() / ".codex" / "state" / "browser-automation" / "opencli")))
 REQUIRED_RECEIPT_FIELDS = ("action", "target", "scope", "expiry", "session", "operator_confirmation")
+OPENCLI_PORT_RANGE = range(39300, 39500)
+VALID_PORT_LEASE_STATUS = {"pending_bind", "active"}
 READ_ONLY_ACTIONS = {
     "adapter.inventory": "read-only OpenCLI adapter inventory",
     "session.inspect": "read-only browser session inspection",
@@ -198,6 +200,67 @@ def validate_authorization_receipt(path: str | None, *, action: str, target: str
     return not blockers, blockers, summary
 
 
+def validate_port_policy(args: argparse.Namespace) -> tuple[bool, list[str], dict[str, Any]]:
+    blockers: list[str] = []
+    requested_port = str(args.port).strip().lower()
+    if requested_port != "auto":
+        blockers.append("opencli_port_must_be_auto")
+
+    if not args.port_lease_receipt:
+        blockers.append("opencli_port_lease_receipt_required")
+        return False, blockers, {
+            "port": sanitize_text(args.port, limit=32),
+            "port_mode": "auto" if requested_port == "auto" else "fixed",
+            "lease_verified": False,
+            "hard_coded_port_allowed": False,
+            "codex_browser_opencli_range": "39300-39499",
+        }
+
+    try:
+        data = json.loads(Path(args.port_lease_receipt).read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return False, blockers + ["opencli_port_lease_receipt_missing"], {}
+    except json.JSONDecodeError:
+        return False, blockers + ["opencli_port_lease_receipt_invalid_json"], {}
+    except OSError:
+        return False, blockers + ["opencli_port_lease_receipt_unreadable"], {}
+
+    if not isinstance(data, dict):
+        return False, blockers + ["opencli_port_lease_receipt_not_object"], {}
+
+    if data.get("tool") != "codex-port":
+        blockers.append("opencli_port_lease_tool_mismatch")
+    if data.get("owner") != "codex":
+        blockers.append("opencli_port_lease_owner_mismatch")
+    if data.get("status") not in VALID_PORT_LEASE_STATUS:
+        blockers.append("opencli_port_lease_status_not_active_or_pending")
+    if data.get("sanitized") is not True:
+        blockers.append("opencli_port_lease_not_sanitized")
+    if not data.get("lease_id"):
+        blockers.append("opencli_port_lease_id_missing")
+
+    try:
+        leased_port = int(data.get("port"))
+    except (TypeError, ValueError):
+        leased_port = None
+        blockers.append("opencli_port_lease_port_invalid")
+    if leased_port is not None and leased_port not in OPENCLI_PORT_RANGE:
+        blockers.append("opencli_port_lease_range_mismatch")
+
+    summary = {
+        "port": "auto",
+        "port_mode": "auto" if requested_port == "auto" else "fixed",
+        "lease_verified": not blockers,
+        "hard_coded_port_allowed": False,
+        "codex_browser_opencli_range": "39300-39499",
+        "lease_id": sanitize_text(data.get("lease_id", ""), limit=64),
+        "lease_status": sanitize_text(data.get("status", ""), limit=32),
+        "owner": sanitize_text(data.get("owner", ""), limit=32),
+        "leased_port": leased_port,
+    }
+    return not blockers, blockers, summary
+
+
 def classify_action(action: str) -> dict[str, Any]:
     if action in READ_ONLY_ACTIONS:
         return {
@@ -221,7 +284,7 @@ def classify_action(action: str) -> dict[str, Any]:
     }
 
 
-def build_safety(action: str, classification: dict[str, Any], adapter_mode: str) -> dict[str, Any]:
+def build_safety(action: str, classification: dict[str, Any], adapter_mode: str, *, uses_port_auto: bool) -> dict[str, Any]:
     return {
         "governance_check_only": True,
         "adapter_mode": adapter_mode,
@@ -238,6 +301,9 @@ def build_safety(action: str, classification: dict[str, Any], adapter_mode: str)
         "mutates_browser_state": False,
         "raw_profile_paths_in_output": False,
         "human_owned_direct_binding_allowed": False,
+        "hard_coded_port_allowed": False,
+        "requires_codex_port_lease_receipt": True,
+        "uses_port_auto": uses_port_auto,
         "requested_action_would_read_cookies": action == "cookie.read",
         "requested_action_would_execute_javascript": action == "js.evaluate",
         "requested_action_would_click_or_type": action in {"mouse.click", "keyboard.type"},
@@ -256,6 +322,8 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
         blockers.append("opencli_must_remain_on_demand")
     if not classification["known"]:
         blockers.append("unknown_action")
+    _, port_blockers, port_summary = validate_port_policy(args)
+    blockers.extend(port_blockers)
 
     registry = load_registry(Path(args.owner_state_dir) if args.owner_state_dir else state_dir(args) / "owner-registry")
     owner_lease, owner_blockers = find_owner_lease(registry, target=args.target, session=args.session, lease_id=args.owner_lease_id)
@@ -287,10 +355,11 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
         "authorization_required": bool(classification["sensitive"]),
         "owner_verified": bool(owner_lease and "owner_lease_required" not in blockers and "owner_class_not_allowed_for_opencli" not in blockers),
         "authorization_verified": bool(classification["sensitive"] and authorization_summary and not any(item.startswith("authorization_receipt_") for item in blockers)),
+        "port_policy": port_summary,
         "owner_lease": compact_lease(owner_lease),
         "authorization_receipt": authorization_summary,
         "blockers": blockers,
-        "safety": build_safety(action, classification, args.adapter_mode),
+        "safety": build_safety(action, classification, args.adapter_mode, uses_port_auto=str(args.port).strip().lower() == "auto"),
     }
 
 
@@ -310,6 +379,8 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument("--target", required=True, help="Browser owner target key.")
     check.add_argument("--session", required=True, help="Current automation session id.")
     check.add_argument("--adapter-mode", default="on-demand", help="Must remain on-demand in this repo-local guard.")
+    check.add_argument("--port", default="auto", help="OpenCLI adapter port policy. Only 'auto' is allowed.")
+    check.add_argument("--port-lease-receipt", default=None, help="Path to a sanitized codex-port lease receipt for the OpenCLI adapter.")
     check.add_argument("--owner-lease-id", default=None, help="Optional expected browser owner lease id.")
     check.add_argument("--authorization-receipt", default=None, help="Path to one-task sensitive browser/OpenCLI authorization receipt.")
     check.add_argument("--json", action="store_true", help="Emit JSON.")

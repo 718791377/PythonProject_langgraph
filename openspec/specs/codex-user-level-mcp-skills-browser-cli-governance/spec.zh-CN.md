@@ -237,3 +237,29 @@ Receipt field glossary：
 - **WHEN** full Comet refactor 已应用到文档
 - **THEN** 它必须保留既有规则：真实用户级安装、live browser automation 与 WXWork GUI automation 需要独立治理证据
 - **AND** 它不得把未完成 lanes 标记为 `active`
+
+### Requirement: OpenCLI governance guard SHALL 要求 port-auto lease evidence
+
+repo-local OpenCLI governance guard 在允许任何 OpenCLI pre-dispatch action 前，必须要求 allocator 驱动的 `--port auto` 和 sanitized codex-port lease receipt。
+
+receipt 必须证明 Codex ownership，并且端口位于 OpenCLI/browser 范围 `39300-39499`。即使 browser owner 和 authorization evidence 有效，硬编码 OpenCLI port 也必须 fail closed。
+
+#### Scenario: 缺少 port lease 会阻止 OpenCLI dispatch
+
+- **WHEN** `python tools/opencli_governance.py check --action session.inspect --target tab:opencli-1 --session session-a --json` 在没有 codex-port lease receipt 的情况下运行
+- **THEN** 命令必须 fail closed
+- **AND** blockers 必须包含 `opencli_port_lease_receipt_required`
+- **AND** 必须报告 `dispatch_allowed=false`
+
+#### Scenario: 拒绝硬编码 OpenCLI port
+
+- **WHEN** OpenCLI guard 收到 `--port 39300`
+- **THEN** 命令必须 fail closed
+- **AND** blockers 必须包含 `opencli_port_must_be_auto`
+- **AND** 必须报告不允许硬编码 OpenCLI port
+
+#### Scenario: 拒绝 OpenCLI 范围外的 port lease
+
+- **WHEN** OpenCLI guard 收到端口不在 `39300-39499` 范围内的 codex-port lease receipt
+- **THEN** 命令必须 fail closed
+- **AND** blockers 必须包含 `opencli_port_lease_range_mismatch`

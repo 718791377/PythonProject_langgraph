@@ -741,3 +741,29 @@ The plan SHALL NOT describe the current governance-plan execution model as tweak
 - **THEN** it SHALL preserve the existing rule that actual user-level installs, live browser automation, and WXWork GUI automation require separate governed evidence
 - **AND** it SHALL NOT mark unfinished lanes as `active`
 
+### Requirement: OpenCLI governance guard SHALL require port-auto lease evidence
+
+The repository-local OpenCLI governance guard SHALL require allocator-driven `--port auto` and a sanitized codex-port lease receipt before it allows any OpenCLI pre-dispatch action.
+
+The receipt SHALL prove Codex ownership and an OpenCLI/browser port in the `39300-39499` range. Hard-coded OpenCLI ports SHALL fail closed even when browser owner and authorization evidence are otherwise valid.
+
+#### Scenario: Missing port lease blocks OpenCLI dispatch
+
+- **WHEN** `python tools/opencli_governance.py check --action session.inspect --target tab:opencli-1 --session session-a --json` runs without a codex-port lease receipt
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL include `opencli_port_lease_receipt_required` in blockers
+- **AND** it SHALL report `dispatch_allowed=false`
+
+#### Scenario: Hard-coded OpenCLI port is rejected
+
+- **WHEN** the OpenCLI guard receives `--port 39300`
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL include `opencli_port_must_be_auto` in blockers
+- **AND** it SHALL report hard-coded OpenCLI ports are not allowed
+
+#### Scenario: Port lease outside the OpenCLI range is rejected
+
+- **WHEN** the OpenCLI guard receives a codex-port lease receipt whose port is outside `39300-39499`
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL include `opencli_port_lease_range_mismatch` in blockers
+
