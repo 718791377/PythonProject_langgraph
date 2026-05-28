@@ -9,7 +9,7 @@ plan_readiness: ready-for-implementation
 doc_class: implementation_plan
 owner: codex-orchestration
 implementation_lane: prompt_independent_collaboration_parity
-last_reviewed: 2026-05-27
+last_reviewed: 2026-05-28
 ---
 
 # 自动协同路由强制化实施方案
@@ -482,19 +482,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -S
 
 ## 13. 自检清单
 
-- [ ] front matter 使用新版 implementation plan 字段。
-- [ ] 标题下有 agentic worker 提示。
-- [ ] 有 Goal、Architecture、Tech Stack 摘要。
-- [ ] 有复核结论和完整性检查表。
-- [ ] 有关系模型和命名边界。
-- [ ] 有 repo-local source of truth。
-- [ ] 有 evidence contracts。
-- [ ] 有任务级 Backlog，且每个任务有验证与提交示例。
-- [ ] 有 readiness gates、验证计划、rollback、风险与默认决策。
-- [ ] 英文 primary 是 ASCII-only。
-- [ ] `tools/check_orchestration_collaboration_evidenceguard.py` 已有 CI manifest 登记的单元测试覆盖。
-- [ ] stable OpenSpec spec surface 已同时覆盖英文与中文。
-- [ ] 本地 commit 和 merge commit 使用中文。
+- [x] front matter 使用新版 implementation plan 字段。
+- [x] 标题下有 agentic worker 提示。
+- [x] 有 Goal、Architecture、Tech Stack 摘要。
+- [x] 有复核结论和完整性检查表。
+- [x] 有关系模型和命名边界。
+- [x] 有 repo-local source of truth。
+- [x] 有 evidence contracts。
+- [x] 有任务级 Backlog，且每个任务有验证与提交示例。
+- [x] 有 readiness gates、验证计划、rollback、风险与默认决策。
+- [x] 英文 primary 是 ASCII-only。
+- [x] `tools/check_orchestration_collaboration_evidenceguard.py` 已有 CI manifest 登记的单元测试覆盖，包括 durable complete、runtime-state 与 LangGraph release/handoff 回归用例。
+- [x] stable OpenSpec spec surface 已同时覆盖英文与中文。
+- [x] 本地 commit 和 merge commit 使用中文。
 
 ## 14. 参考源
 

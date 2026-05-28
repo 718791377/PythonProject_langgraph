@@ -9,7 +9,7 @@ plan_readiness: ready-for-implementation
 doc_class: implementation_plan
 owner: codex-orchestration
 implementation_lane: prompt_independent_collaboration_parity
-last_reviewed: 2026-05-27
+last_reviewed: 2026-05-28
 ---
 
 # Automatic Orchestration Routing Enforcement Implementation Plan
@@ -477,19 +477,19 @@ This P0 document restructure does not require runtime policy or checker edits. P
 
 ## 13. Self-checklist
 
-- [ ] Front matter uses the newer implementation-plan fields.
-- [ ] The title is followed by an agentic worker note.
-- [ ] Goal, Architecture, and Tech Stack summaries exist.
-- [ ] Review conclusion and completeness table exist.
-- [ ] Relationship model and naming boundary exist.
-- [ ] Repo-local source of truth exists.
-- [ ] Evidence contracts exist.
-- [ ] Task-level backlog exists, and every task has validation and commit example.
-- [ ] Readiness gates, validation plan, rollback, risks, and defaults exist.
-- [ ] English primary is ASCII-only.
-- [ ] `tools/check_orchestration_collaboration_evidenceguard.py` has CI-manifest-registered unit coverage.
-- [ ] Stable OpenSpec spec surfaces are guarded in both English and Chinese.
-- [ ] Local commit and merge commit use Chinese.
+- [x] Front matter uses the newer implementation-plan fields.
+- [x] The title is followed by an agentic worker note.
+- [x] Goal, Architecture, and Tech Stack summaries exist.
+- [x] Review conclusion and completeness table exist.
+- [x] Relationship model and naming boundary exist.
+- [x] Repo-local source of truth exists.
+- [x] Evidence contracts exist.
+- [x] Task-level backlog exists, and every task has validation and commit example.
+- [x] Readiness gates, validation plan, rollback, risks, and defaults exist.
+- [x] English primary is ASCII-only.
+- [x] `tools/check_orchestration_collaboration_evidenceguard.py` has CI-manifest-registered unit coverage, including durable complete, runtime-state, and LangGraph release/handoff regression cases.
+- [x] Stable OpenSpec spec surfaces are guarded in both English and Chinese.
+- [x] Local commit and merge commit use Chinese.
 
 ## 14. References
 
