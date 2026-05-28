@@ -7,22 +7,33 @@
     {
       "event": "spawn",
       "role": "verifier",
-      "task_summary": "validate evidenceguard implementation"
+      "task_summary": "validate evidenceguard implementation",
+      "scope": [
+        "test evidenceguard"
+      ],
+      "non_goals": [
+        "edit source files"
+      ]
     },
     {
       "event": "wait",
+      "agent_id": "agent-1",
       "wait_seconds": 30
     },
     {
       "event": "result",
-      "summary": "ok"
+      "agent_id": "agent-1",
+      "summary": "ok",
+      "changed_paths": []
     },
     {
       "event": "absorbed",
+      "agent_id": "agent-1",
       "leader_decision": "accepted"
     },
     {
       "event": "close",
+      "agent_id": "agent-1",
       "retention_policy": "close"
     }
   ]

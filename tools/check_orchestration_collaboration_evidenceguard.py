@@ -13,6 +13,18 @@ REGISTRY_RULE_ID = "orchestration-collaboration-evidenceguard"
 GUARD_STEP = "check_orchestration_collaboration_evidenceguard"
 DEFAULT_FIXTURE_DIR = Path("test/fixtures/orchestration_prompt_independent_collaboration_parity")
 EXPERT_LIFECYCLE_EVENT_NAMES = {"spawn", "wait", "timeout", "result", "absorbed", "close"}
+EXPERT_LIFECYCLE_REQUIRED_STRING_FIELDS: dict[str, tuple[str, ...]] = {
+    "spawn": ("role", "task_summary"),
+    "wait": ("agent_id",),
+    "timeout": ("agent_id", "classification"),
+    "result": ("agent_id", "summary"),
+    "absorbed": ("agent_id", "leader_decision"),
+    "close": ("agent_id", "retention_policy"),
+}
+EXPERT_LIFECYCLE_REQUIRED_LIST_FIELDS: dict[str, tuple[str, ...]] = {
+    "spawn": ("scope", "non_goals"),
+    "result": ("changed_paths",),
+}
 
 REQUIRED_FIXTURES = {
     "doc_update_without_collaboration_phrase.json",
@@ -160,6 +172,29 @@ def load_expert_lifecycle_jsonl(path: Path, errors: list[str]) -> dict[str, Any]
 
 def lower(value: Any) -> str:
     return str(value or "").strip().lower()
+
+
+def validate_required_string_list_field(
+    event: dict[str, Any],
+    *,
+    label: str,
+    index: int,
+    event_name: str,
+    field: str,
+    errors: list[str],
+    require_non_empty: bool = False,
+) -> None:
+    value = event.get(field)
+    if not isinstance(value, list):
+        errors.append(f"{label}.events[{index}] {event_name} event missing list field: {field}.")
+        return
+    if require_non_empty and not value:
+        errors.append(f"{label}.events[{index}] {event_name} event list field must be non-empty: {field}.")
+        return
+    if any(not isinstance(item, str) or not str(item).strip() for item in value):
+        errors.append(
+            f"{label}.events[{index}] {event_name} event list field must contain only non-empty strings: {field}."
+        )
 
 
 def contains_any(text: str, markers: tuple[str, ...]) -> bool:
@@ -352,6 +387,19 @@ def validate_expert_lifecycle_case(case: dict[str, Any], errors: list[str], labe
             allowed = ", ".join(sorted(EXPERT_LIFECYCLE_EVENT_NAMES))
             errors.append(
                 f"{label}.events[{index}] has unsupported expert lifecycle event `{name}`; allowed: {allowed}."
+            )
+        for field in EXPERT_LIFECYCLE_REQUIRED_STRING_FIELDS.get(name, ()):
+            if not isinstance(event.get(field), str) or not str(event.get(field)).strip():
+                errors.append(f"{label}.events[{index}] {name} event missing non-empty string field: {field}.")
+        for field in EXPERT_LIFECYCLE_REQUIRED_LIST_FIELDS.get(name, ()):
+            validate_required_string_list_field(
+                event,
+                label=label,
+                index=index,
+                event_name=name,
+                field=field,
+                errors=errors,
+                require_non_empty=name == "spawn",
             )
         names.append(name)
         if name == "timeout" and lower(event.get("classification")) != "non-evidence":

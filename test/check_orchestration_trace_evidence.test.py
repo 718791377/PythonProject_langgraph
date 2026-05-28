@@ -378,7 +378,13 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
                 "case_type": "expert_lifecycle_audit",
                 "total_wait_bound_seconds": 30,
                 "events": [
-                    {"event": "spawn", "role": "verifier", "task_summary": "check evidence"},
+                    {
+                        "event": "spawn",
+                        "role": "verifier",
+                        "task_summary": "check evidence",
+                        "scope": ["test evidence"],
+                        "non_goals": ["edit files"],
+                    },
                     {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
                     {"event": "result", "agent_id": "agent-1", "summary": "looks good"},
                 ],
@@ -400,7 +406,13 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
                 "case_type": "expert_lifecycle_audit",
                 "total_wait_bound_seconds": 30,
                 "events": [
-                    {"event": "spawn", "role": "verifier", "task_summary": "check evidence"},
+                    {
+                        "event": "spawn",
+                        "role": "verifier",
+                        "task_summary": "check evidence",
+                        "scope": ["test evidence"],
+                        "non_goals": ["edit files"],
+                    },
                     {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
                     {"event": "timeout", "agent_id": "agent-1", "classification": "success"},
                 ],
@@ -416,7 +428,13 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
         root = self.make_root("collab-expert-jsonl")
         path = root / "expert-lifecycle.jsonl"
         events = [
-            {"event": "spawn", "role": "verifier", "task_summary": "check evidence"},
+            {
+                "event": "spawn",
+                "role": "verifier",
+                "task_summary": "check evidence",
+                "scope": ["test evidence"],
+                "non_goals": ["edit files"],
+            },
             {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
             {"event": "result", "agent_id": "agent-1", "summary": "verified", "changed_paths": []},
             {"event": "absorbed", "agent_id": "agent-1", "leader_decision": "accepted"},
@@ -433,7 +451,13 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
         root = self.make_root("collab-expert-jsonl-unsupported")
         path = root / "expert-lifecycle-unsupported.jsonl"
         events = [
-            {"event": "spawn", "role": "verifier", "task_summary": "check evidence"},
+            {
+                "event": "spawn",
+                "role": "verifier",
+                "task_summary": "check evidence",
+                "scope": ["test evidence"],
+                "non_goals": ["edit files"],
+            },
             {"event": "bogus", "agent_id": "agent-1", "summary": "not a lifecycle event"},
         ]
         path.write_text("\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n", encoding="utf-8")
@@ -446,6 +470,60 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
             any("unsupported expert lifecycle event" in error for error in payload["errors"]),
             payload["errors"],
         )
+
+    def test_expert_lifecycle_jsonl_rejects_missing_required_event_fields(self) -> None:
+        root = self.make_root("collab-expert-jsonl-required-fields")
+        path = root / "expert-lifecycle-missing-fields.jsonl"
+        events = [
+            {"event": "spawn", "role": "verifier"},
+            {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
+            {"event": "result", "agent_id": "agent-1", "summary": "verified"},
+            {"event": "absorbed", "agent_id": "agent-1", "leader_decision": "accepted"},
+            {"event": "close", "agent_id": "agent-1", "retention_policy": "close"},
+        ]
+        path.write_text("\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n", encoding="utf-8")
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["evidence_format"], "jsonl")
+        self.assertTrue(any("task_summary" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("scope" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("non_goals" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("changed_paths" in error for error in payload["errors"]), payload["errors"])
+
+    def test_expert_lifecycle_rejects_invalid_list_field_contents(self) -> None:
+        root = self.make_root("collab-expert-invalid-list-values")
+        path = root / "expert-lifecycle-invalid-list-values.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "expert_lifecycle_audit",
+                "total_wait_bound_seconds": 30,
+                "events": [
+                    {
+                        "event": "spawn",
+                        "role": "verifier",
+                        "task_summary": "check evidence",
+                        "scope": [],
+                        "non_goals": [""],
+                    },
+                    {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
+                    {"event": "result", "agent_id": "agent-1", "summary": "verified", "changed_paths": [123]},
+                    {"event": "absorbed", "agent_id": "agent-1", "leader_decision": "accepted"},
+                    {"event": "close", "agent_id": "agent-1", "retention_policy": "close"},
+                ],
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["evidence_format"], "json")
+        self.assertTrue(any("scope" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("non_goals" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("changed_paths" in error for error in payload["errors"]), payload["errors"])
 
     def test_langgraph_completed_state_must_release_running(self) -> None:
         root = self.make_root("collab-langgraph-release")
