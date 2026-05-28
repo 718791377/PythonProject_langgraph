@@ -52,10 +52,10 @@ This parent plan coordinates the following existing plans without replacing thei
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage A integrated parent-plan documentation package
+Stage: Stage B child-plan package prepared for local main integration
 Owner session: main Codex leader session
-Current gate: wait for explicit user confirmation of this parent implementation plan before Stage B child-plan creation
-Stage B entry condition: user confirms this parent plan or its Chinese companion after local `main` integration
+Current gate: complete local validation and local main integration, then wait for explicit user confirmation of the child implementation plans before Stage C non-document implementation
+Stage C entry condition: user confirms the relevant child plans after local `main` integration
 Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -88,9 +88,10 @@ Candidate child plans:
 
 1. `plan_inventory_registry_alignment_plan` - inventory current plan status, registry entries, anchors, and evidence-index health.
 2. `parent_parallel_orchestration_index_plan` - maintain the parent phase map, child-plan registry, and dependency table.
-3. `canary_plan_registry_recovery_plan` - decide whether and how the context-retention canary plan should be registered or repaired.
 
-Parallelism: up to 3 sessions after this parent plan is confirmed.
+Conditional follow-up: create a canary registry recovery child plan only if the inventory child plan finds a real canary registry, bilingual pairing, anchor, or evidence-index defect.
+
+Parallelism: up to 2 sessions after this parent plan is confirmed.
 
 ### Phase 1: Construction Safety Base
 
@@ -103,7 +104,7 @@ Candidate child plans:
 3. `implementation_plan_registry_active_state_plan` - enforce active status, bilingual pairing, and docs registry consistency.
 4. `main_session_escalation_visibility_plan` - add visible pending-approval/preflight surfaces for main-session escalation.
 
-Parallelism: up to 4 sessions, with `docs_bilingual/docs_registry.yaml` owned by one session per batch.
+Parallelism: up to 3 sessions, with `docs_bilingual/docs_registry.yaml` owned by one session per batch.
 
 ### Phase 2: Context and UTF-8 Safety
 
@@ -116,7 +117,7 @@ Candidate child plans:
 3. `session_replay_context_filtering_plan` - filter assistant/session replay surfaces so stale canary or mojibake does not re-enter prompts.
 4. `launcher_payload_context_boundary_plan` - preserve launcher payload boundaries without mutating user-level config in this phase.
 
-Parallelism: up to 4 sessions, with startup summary files serialized.
+Parallelism: up to 2 sessions, with startup summary files serialized.
 
 ### Phase 3: Durable State and Cross-Session Isolation
 
@@ -126,11 +127,12 @@ Candidate child plans:
 
 1. `repo_local_selector_ownership_plan` - enforce repository-local active selector ownership.
 2. `durable_capability_readiness_projection_plan` - distinguish installed, enabled, selected, and ready.
-3. `legacy_durable_residue_classification_plan` - classify stale `.omx/state` residue without auto-adoption.
-4. `worktree_receipt_claim_lifecycle_plan` - define active, paused, completed, stale, and cleaned claim/receipt lifecycle.
-5. `portable_no_backend_parallel_session_plan` - support Git/Python-only parallel sessions when OMX and LangGraph are unavailable.
+3. `durable_smoke_adoption_gate_template_plan` - create the gate template and field checker before live durable smoke or apply-mode adoption.
+4. `legacy_durable_residue_classification_plan` - classify stale `.omx/state` residue without auto-adoption.
+5. `worktree_receipt_claim_lifecycle_plan` - define active, paused, completed, stale, and cleaned claim/receipt lifecycle.
+6. `portable_no_backend_parallel_session_plan` - support Git/Python-only parallel sessions when OMX and LangGraph are unavailable.
 
-Parallelism: up to 5 sessions, with `.omx/state` write scopes serialized by repository/worktree.
+Parallelism: up to 3 sessions, with `.omx/state` write scopes serialized by repository/worktree.
 
 ### Phase 4: Automatic Routing and Chinese Visibility
 
@@ -144,8 +146,9 @@ Candidate child plans:
 4. `expert_lifecycle_timeout_pacing_evidence_plan` - treat timeout/stall/pacing as non-evidence and require bounded handling.
 5. `langgraph_state_release_evidence_plan` - reject stale `running` state after completed LangGraph work.
 6. `role_routing_fanout_write_ownership_plan` - enforce smallest-sufficient role selection and write ownership for fan-out.
+7. `collaboration_evidenceguard_and_bilingual_openspec_surface_plan` - give the evidenceguard, fixtures, CI registration, and bilingual OpenSpec stable spec surface one serialized owner.
 
-Parallelism: up to 6 sessions, with shared routing checkers serialized.
+Parallelism: up to 3 sessions, with shared routing checkers and OpenSpec spec surfaces serialized.
 
 ### Phase 5: Comet Runtime Agile Management Loop
 
@@ -159,7 +162,7 @@ Candidate child plans:
 4. `comet_superpowers_visibility_plan` - make Superpowers HOW-layer skill usage explicit in Comet phases.
 5. `comet_runtime_policy_checker_alignment_plan` - align policy, OpenSpec specs, checker coverage, and integration gates.
 
-Parallelism: up to 4 sessions. `comet-state.sh` and `comet-guard.sh` must have one owner at a time.
+Parallelism: up to 2 sessions. `comet-state.sh` and `comet-guard.sh` must have one owner at a time.
 
 ### Phase 6: Spec Kit Boundary
 
@@ -181,9 +184,10 @@ Candidate child plans:
 1. `parallel_plan_docs_registry_integration_plan` - validate docs registry, bilingual pairs, and implementation-plan rules.
 2. `parallel_plan_checker_ci_integration_plan` - validate checker, unit, and local CI coverage.
 3. `parallel_plan_openspec_comet_archive_plan` - validate OpenSpec/Comet guard health and archive completed changes.
-4. `parallel_plan_publication_readiness_plan` - prepare release recommendation without remote publication unless explicitly approved.
 
-Parallelism: validation may be parallel, but local `main` merge remains serial.
+Delayed follow-up: publication readiness is not created as a Stage B child plan because remote publication is outside this scope until the user explicitly approves it.
+
+Parallelism: validation may prepare evidence in parallel, but Phase 7 ownership and local `main` merge remain serial.
 
 ## Stage B Creation Rules
 
@@ -211,12 +215,12 @@ Each child plan must include:
 - [x] Stage A: register the parent plan in `docs_bilingual/docs_registry.yaml`.
 - [x] Stage A: commit the parent documentation package with a Chinese commit message.
 - [x] Stage A: integrate the parent documentation package into local `main`.
-- [ ] Stage A: stop and ask the user to confirm this parent plan before Stage B child-plan creation.
-- [ ] Stage B: create Batch 1 child implementation plans for Phase 0 and Phase 1.
-- [ ] Stage B: create Batch 2 child implementation plans for Phase 2 and Phase 3.
-- [ ] Stage B: create Batch 3 child implementation plans for Phase 4.
-- [ ] Stage B: create Batch 4 child implementation plans for Phase 5 and Phase 6.
-- [ ] Stage B: create Batch 5 child implementation plans for Phase 7 integration.
+- [x] Stage A: stop and ask the user to confirm this parent plan before Stage B child-plan creation.
+- [x] Stage B: create Batch 1 child implementation plans for Phase 0 and Phase 1.
+- [x] Stage B: create Batch 2 child implementation plans for Phase 2 and Phase 3.
+- [x] Stage B: create Batch 3 child implementation plans for Phase 4.
+- [x] Stage B: create Batch 4 child implementation plans for Phase 5 and Phase 6.
+- [x] Stage B: create Batch 5 child implementation plans for Phase 7 integration.
 - [ ] Stage C: implement portable child-plan claim locking after child plans are confirmed.
 - [ ] Later stages: run child-plan work with at most six parallel sessions per phase and serial local-main integration.
 <!-- TASK_BACKLOG_END -->
@@ -244,5 +248,7 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage B child-plan creation package: created and registered 33 active child implementation plans with English primary and Chinese companion files; final commit is recorded in the assistant response and local git history.
+- 2026-05-28 Stage B child-plan creation package: created and registered 33 active child implementation plans with English primary and Chinese companion files; final commit is recorded in the assistant response and local git history.
 - 2026-05-28 Stage A parent plan package: committed as `ac867ff` and integrated into local `main`; validation included `check_implementation_plan_rules.py --root . --json`, `check_precommit_update_archive.py --root . --json`, `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600`, and `tools/ci/local_mr_review.ps1`.
 <!-- EVIDENCE_INDEX_END -->

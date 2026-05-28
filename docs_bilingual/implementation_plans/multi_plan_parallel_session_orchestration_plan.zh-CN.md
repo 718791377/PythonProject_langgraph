@@ -52,10 +52,10 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage A 已合入父级方案文档包
-责任会话：主 Codex leader 会话
-当前门禁：等待用户明确确认本父级 implementation plan 后再进入 Stage B 子方案创建
-Stage B 进入条件：本地 `main` 合入后，用户明确确认本父方案或英文主版
+阶段：Stage B 子方案创建包已准备合入本地 main
+责任会话：main Codex leader session
+当前门禁：完成本地验证和本地 main 合入后，等待用户明确确认这些子 implementation_plan，再进入 Stage C 非文档实现
+Stage C 进入条件：本地 `main` 合入后，用户明确确认相关子方案
 最后更新：2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -88,9 +88,10 @@ Stage B 进入条件：本地 `main` 合入后，用户明确确认本父方案�
 
 1. `plan_inventory_registry_alignment_plan` - 盘点当前方案状态、registry、锚点和 evidence index 健康度。
 2. `parent_parallel_orchestration_index_plan` - 维护父级阶段图、子方案登记表和依赖表。
-3. `canary_plan_registry_recovery_plan` - 决定 context-retention canary 方案是否以及如何补登记或修复。
 
-并行度：本父方案确认后最多 3 个 session。
+条件后续：只有当 inventory 子方案发现 canary registry、双语配对、锚点或 evidence index 存在真实缺陷时，才创建 canary registry recovery 子方案。
+
+并行度：本父方案确认后最多 2 个 session。
 
 ### Phase 1：施工安全底座
 
@@ -103,7 +104,7 @@ Stage B 进入条件：本地 `main` 合入后，用户明确确认本父方案�
 3. `implementation_plan_registry_active_state_plan` - 强制 active 状态、双语配对和 docs registry 一致。
 4. `main_session_escalation_visibility_plan` - 增加主会话可见的待授权和提权预检表面。
 
-并行度：最多 4 个 session；`docs_bilingual/docs_registry.yaml` 每批只能一个 session 拥有。
+并行度：最多 3 个 session；`docs_bilingual/docs_registry.yaml` 每批只能一个 session 拥有。
 
 ### Phase 2：上下文与 UTF-8 安全
 
@@ -116,7 +117,7 @@ Stage B 进入条件：本地 `main` 合入后，用户明确确认本父方案�
 3. `session_replay_context_filtering_plan` - 过滤 assistant/session replay 表面，避免 stale canary 或乱码重新进入 prompt。
 4. `launcher_payload_context_boundary_plan` - 保持 launcher payload 边界，本阶段不修改用户级配置。
 
-并行度：最多 4 个 session；startup summary 文件串行。
+并行度：最多 2 个 session；startup summary 文件串行。
 
 ### Phase 3：Durable State 与跨 Session 隔离
 
@@ -126,11 +127,12 @@ Stage B 进入条件：本地 `main` 合入后，用户明确确认本父方案�
 
 1. `repo_local_selector_ownership_plan` - 强制 repository-local active selector 归属。
 2. `durable_capability_readiness_projection_plan` - 区分 installed、enabled、selected 和 ready。
-3. `legacy_durable_residue_classification_plan` - 对陈旧 `.omx/state` residue 分类，但不自动接管。
-4. `worktree_receipt_claim_lifecycle_plan` - 定义 active、paused、completed、stale 和 cleaned claim/receipt 生命周期。
-5. `portable_no_backend_parallel_session_plan` - 在没有 OMX 和 LangGraph 时支持 Git/Python-only 并行 session。
+3. `durable_smoke_adoption_gate_template_plan` - 在 live durable smoke 或 apply-mode adoption 前创建 gate template 和字段 checker。
+4. `legacy_durable_residue_classification_plan` - 对陈旧 `.omx/state` residue 分类，但不自动接管。
+5. `worktree_receipt_claim_lifecycle_plan` - 定义 active、paused、completed、stale 和 cleaned claim/receipt 生命周期。
+6. `portable_no_backend_parallel_session_plan` - 在没有 OMX 和 LangGraph 时支持 Git/Python-only 并行 session。
 
-并行度：最多 5 个 session；`.omx/state` 写入按仓库或 worktree 串行。
+并行度：最多 3 个 session；`.omx/state` 写入按仓库或 worktree 串行。
 
 ### Phase 4：自动路由与中文可视化
 
@@ -144,8 +146,9 @@ Stage B 进入条件：本地 `main` 合入后，用户明确确认本父方案�
 4. `expert_lifecycle_timeout_pacing_evidence_plan` - 将 timeout、stall 和 pacing 视为非证据，并要求有界处理。
 5. `langgraph_state_release_evidence_plan` - 拒绝 LangGraph 工作完成后仍保留 stale `running` 状态。
 6. `role_routing_fanout_write_ownership_plan` - 强制最小充分角色选择和 fan-out 写入归属。
+7. `collaboration_evidenceguard_and_bilingual_openspec_surface_plan` - 让 evidenceguard、fixtures、CI 注册和双语 OpenSpec stable spec surface 由一个 owner 串行处理。
 
-并行度：最多 6 个 session；共享 routing checker 串行。
+并行度：最多 3 个 session；共享 routing checker 和 OpenSpec spec surface 串行。
 
 ### Phase 5：Comet Runtime 敏捷管理循环
 
@@ -159,7 +162,7 @@ Stage B 进入条件：本地 `main` 合入后，用户明确确认本父方案�
 4. `comet_superpowers_visibility_plan` - 让 Comet 阶段显式展示 Superpowers HOW-layer skill 使用。
 5. `comet_runtime_policy_checker_alignment_plan` - 对齐 policy、OpenSpec specs、checker 覆盖和集成门禁。
 
-并行度：最多 4 个 session。`comet-state.sh` 和 `comet-guard.sh` 同一时间只能一个 owner。
+并行度：最多 2 个 session。`comet-state.sh` 和 `comet-guard.sh` 同一时间只能一个 owner。
 
 ### Phase 6：Spec Kit 边界
 
@@ -181,9 +184,10 @@ Stage B 进入条件：本地 `main` 合入后，用户明确确认本父方案�
 1. `parallel_plan_docs_registry_integration_plan` - 验证 docs registry、双语配对和 implementation-plan rules。
 2. `parallel_plan_checker_ci_integration_plan` - 验证 checker、unit 和 local CI 覆盖。
 3. `parallel_plan_openspec_comet_archive_plan` - 验证 OpenSpec/Comet guard 健康，并归档已完成变更。
-4. `parallel_plan_publication_readiness_plan` - 准备发布建议；没有明确授权时不做远端发布。
 
-并行度：验证可以并行，但本地 `main` 合入保持串行。
+延后后续：publication readiness 不作为 Stage B 子方案创建，因为远端发布不在本次范围内，除非用户明确批准。
+
+并行度：验证可以并行准备证据，但 Phase 7 ownership 和本地 `main` 合入保持串行。
 
 ## Stage B 创建规则
 
@@ -211,11 +215,11 @@ Stage B 进入条件：本地 `main` 合入后，用户明确确认本父方案�
 - [x] Stage A：在 `docs_bilingual/docs_registry.yaml` 登记父方案。
 - [x] Stage A：使用中文提交信息提交父级文档包。
 - [x] Stage A：把父级文档包合入本地 `main`。
-- [ ] Stage A：停止并要求用户确认本父方案后再进入 Stage B 子方案创建。
-- [ ] Stage B：为 Phase 0 和 Phase 1 创建 Batch 1 子 implementation_plan。
-- [ ] Stage B：为 Phase 2 和 Phase 3 创建 Batch 2 子 implementation_plan。
-- [ ] Stage B：为 Phase 4 创建 Batch 3 子 implementation_plan。
-- [ ] Stage B：为 Phase 5 和 Phase 6 创建 Batch 4 子 implementation_plan。
+- [x] Stage A：停止并要求用户确认本父方案后再进入 Stage B 子方案创建。
+- [x] Stage B：为 Phase 0 和 Phase 1 创建 Batch 1 子 implementation_plan。
+- [x] Stage B：为 Phase 2 和 Phase 3 创建 Batch 2 子 implementation_plan。
+- [x] Stage B：为 Phase 4 创建 Batch 3 子 implementation_plan。
+- [x] Stage B：为 Phase 5 和 Phase 6 创建 Batch 4 子 implementation_plan。
 - [ ] Stage B：为 Phase 7 集成创建 Batch 5 子 implementation_plan。
 - [ ] Stage C：子方案确认后，实现 portable child-plan claim lock。
 - [ ] 后续阶段：每阶段最多 6 个并行 session 执行子方案，并串行合入本地 main。
@@ -244,5 +248,7 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage B 子方案创建包：创建并登记 33 个 active 子 implementation_plan 的英文主版和中文对照版；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-28 Stage B 子方案创建包：创建并登记 33 个 active 子 implementation_plan 的英文主版和中文对照版；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-28 Stage A 父级方案包：已用 `ac867ff` 提交并合入本地 `main`；验证包括 `check_implementation_plan_rules.py --root . --json`、`check_precommit_update_archive.py --root . --json`、`tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` 和 `tools/ci/local_mr_review.ps1`。
 <!-- EVIDENCE_INDEX_END -->

@@ -37,6 +37,205 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md
 
+  - doc_id: plan_inventory_registry_alignment_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/plan_inventory_registry_alignment_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/plan_inventory_registry_alignment_plan.zh-CN.md
+
+  - doc_id: parent_parallel_orchestration_index_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/parent_parallel_orchestration_index_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/parent_parallel_orchestration_index_plan.zh-CN.md
+
+  - doc_id: formal_plan_confirmation_gate_runtime_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/formal_plan_confirmation_gate_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/formal_plan_confirmation_gate_runtime_plan.zh-CN.md
+
+  - doc_id: portable_implementation_plan_claim_lock_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/portable_implementation_plan_claim_lock_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/portable_implementation_plan_claim_lock_plan.zh-CN.md
+
+  - doc_id: implementation_plan_registry_active_state_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/implementation_plan_registry_active_state_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/implementation_plan_registry_active_state_plan.zh-CN.md
+
+  - doc_id: main_session_escalation_visibility_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/main_session_escalation_visibility_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/main_session_escalation_visibility_plan.zh-CN.md
+
+  - doc_id: context_retention_canary_literal_boundary_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/context_retention_canary_literal_boundary_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/context_retention_canary_literal_boundary_plan.zh-CN.md
+
+  - doc_id: startup_mojibake_utf8_recovery_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/startup_mojibake_utf8_recovery_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/startup_mojibake_utf8_recovery_plan.zh-CN.md
+
+  - doc_id: session_replay_context_filtering_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/session_replay_context_filtering_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/session_replay_context_filtering_plan.zh-CN.md
+
+  - doc_id: launcher_payload_context_boundary_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/launcher_payload_context_boundary_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/launcher_payload_context_boundary_plan.zh-CN.md
+
+  - doc_id: repo_local_selector_ownership_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/repo_local_selector_ownership_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/repo_local_selector_ownership_plan.zh-CN.md
+
+  - doc_id: durable_capability_readiness_projection_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/durable_capability_readiness_projection_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/durable_capability_readiness_projection_plan.zh-CN.md
+
+  - doc_id: durable_smoke_adoption_gate_template_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/durable_smoke_adoption_gate_template_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/durable_smoke_adoption_gate_template_plan.zh-CN.md
+
+  - doc_id: legacy_durable_residue_classification_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/legacy_durable_residue_classification_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/legacy_durable_residue_classification_plan.zh-CN.md
+
+  - doc_id: worktree_receipt_claim_lifecycle_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/worktree_receipt_claim_lifecycle_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/worktree_receipt_claim_lifecycle_plan.zh-CN.md
+
+  - doc_id: portable_no_backend_parallel_session_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/portable_no_backend_parallel_session_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/portable_no_backend_parallel_session_plan.zh-CN.md
+
+  - doc_id: chinese_routing_trace_conversation_surface_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/chinese_routing_trace_conversation_surface_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/chinese_routing_trace_conversation_surface_plan.zh-CN.md
+
+  - doc_id: routing_trace_structured_evidence_schema_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/routing_trace_structured_evidence_schema_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/routing_trace_structured_evidence_schema_plan.zh-CN.md
+
+  - doc_id: prompt_independent_activation_parity_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/prompt_independent_activation_parity_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/prompt_independent_activation_parity_plan.zh-CN.md
+
+  - doc_id: expert_lifecycle_timeout_pacing_evidence_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/expert_lifecycle_timeout_pacing_evidence_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/expert_lifecycle_timeout_pacing_evidence_plan.zh-CN.md
+
+  - doc_id: langgraph_state_release_evidence_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/langgraph_state_release_evidence_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/langgraph_state_release_evidence_plan.zh-CN.md
+
+  - doc_id: role_routing_fanout_write_ownership_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/role_routing_fanout_write_ownership_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/role_routing_fanout_write_ownership_plan.zh-CN.md
+
+  - doc_id: collaboration_evidenceguard_and_bilingual_openspec_surface_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/collaboration_evidenceguard_and_bilingual_openspec_surface_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/collaboration_evidenceguard_and_bilingual_openspec_surface_plan.zh-CN.md
+
+  - doc_id: comet_management_record_bootstrap_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/comet_management_record_bootstrap_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/comet_management_record_bootstrap_plan.zh-CN.md
+
+  - doc_id: comet_phase_checklist_gate_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/comet_phase_checklist_gate_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/comet_phase_checklist_gate_plan.zh-CN.md
+
+  - doc_id: comet_monitoring_return_transition_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/comet_monitoring_return_transition_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/comet_monitoring_return_transition_plan.zh-CN.md
+
+  - doc_id: comet_superpowers_visibility_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/comet_superpowers_visibility_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/comet_superpowers_visibility_plan.zh-CN.md
+
+  - doc_id: comet_runtime_policy_checker_alignment_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/comet_runtime_policy_checker_alignment_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/comet_runtime_policy_checker_alignment_plan.zh-CN.md
+
+  - doc_id: spec_kit_subordinate_adapter_governance_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/spec_kit_subordinate_adapter_governance_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/spec_kit_subordinate_adapter_governance_plan.zh-CN.md
+
+  - doc_id: spec_kit_authority_guard_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/spec_kit_authority_guard_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/spec_kit_authority_guard_plan.zh-CN.md
+
+  - doc_id: parallel_plan_docs_registry_integration_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/parallel_plan_docs_registry_integration_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/parallel_plan_docs_registry_integration_plan.zh-CN.md
+
+  - doc_id: parallel_plan_checker_ci_integration_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/parallel_plan_checker_ci_integration_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/parallel_plan_checker_ci_integration_plan.zh-CN.md
+
+  - doc_id: parallel_plan_openspec_comet_archive_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/parallel_plan_openspec_comet_archive_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/parallel_plan_openspec_comet_archive_plan.zh-CN.md
+
+
   - doc_id: codex_oh_my_codex_user_level_team_mode_plan
     doc_class: implementation_plan
     status: active
