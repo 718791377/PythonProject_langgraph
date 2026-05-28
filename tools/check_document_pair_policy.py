@@ -44,7 +44,7 @@ def changed_markdown(root: Path, base_ref: str) -> dict[str, str]:
     changed: dict[str, str] = {}
     merge_base = run_git(root, ["merge-base", base_ref, "HEAD"])
     base = merge_base.stdout.strip() if merge_base.returncode == 0 and merge_base.stdout.strip() else base_ref
-    diff = run_git(root, ["diff", "--name-status", "--diff-filter=ACMR", f"{base}...HEAD"])
+    diff = run_git(root, ["diff", "--name-status", "--diff-filter=ACMRD", f"{base}...HEAD"])
     if diff.returncode == 0:
         for raw in diff.stdout.splitlines():
             if not raw.strip():
@@ -66,7 +66,12 @@ def changed_markdown(root: Path, base_ref: str) -> dict[str, str]:
                 path_text = path_text.split(" -> ", 1)[1]
             path = normalize(path_text)
             if is_target_markdown(path):
-                changed[path] = "A" if "?" in code or "A" in code else "M"
+                if "D" in code:
+                    changed[path] = "D"
+                elif "?" in code or "A" in code:
+                    changed[path] = "A"
+                else:
+                    changed[path] = "M"
     return changed
 
 
@@ -82,11 +87,16 @@ def evaluate(root: Path, base_ref: str, require_companion_changed: bool) -> dict
     for rel, status in sorted(changed.items()):
         path = root / rel
         checked_files.append(rel)
+        companion = companion_for(path)
+        companion_rel = companion.relative_to(root).as_posix()
+        companion_status = changed.get(companion_rel)
+        if status == "D":
+            if companion_status != "D":
+                errors.append(f"{rel} was deleted without deleting its bilingual companion: {companion_rel}")
+            continue
         if not path.exists():
             errors.append(f"Changed target Markdown file is missing from disk: {rel}")
             continue
-        companion = companion_for(path)
-        companion_rel = companion.relative_to(root).as_posix()
         is_chinese = rel.endswith(CHINESE_SUFFIX)
         if not companion.exists():
             errors.append(f"{rel} is missing bilingual companion: {companion_rel}")
