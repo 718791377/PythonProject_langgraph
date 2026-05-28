@@ -12,6 +12,7 @@ CHECK_NAME = "orchestration_collaboration_evidenceguard"
 REGISTRY_RULE_ID = "orchestration-collaboration-evidenceguard"
 GUARD_STEP = "check_orchestration_collaboration_evidenceguard"
 DEFAULT_FIXTURE_DIR = Path("test/fixtures/orchestration_prompt_independent_collaboration_parity")
+EXPERT_LIFECYCLE_EVENT_NAMES = {"spawn", "wait", "timeout", "result", "absorbed", "close"}
 
 REQUIRED_FIXTURES = {
     "doc_update_without_collaboration_phrase.json",
@@ -118,6 +119,43 @@ def load_json(path: Path, errors: list[str]) -> dict[str, Any] | None:
         errors.append(f"JSON evidence file must contain an object: {path}")
         return None
     return payload
+
+
+def load_expert_lifecycle_jsonl(path: Path, errors: list[str]) -> dict[str, Any] | None:
+    text = read_text(path)
+    if text is None:
+        errors.append(f"Missing or unreadable JSONL evidence file: {path}")
+        return None
+    events: list[dict[str, Any]] = []
+    for line_number, raw_line in enumerate(text.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError as exc:
+            errors.append(f"Invalid JSONL evidence line {line_number} in {path}: {exc}")
+            continue
+        if not isinstance(payload, dict):
+            errors.append(f"JSONL evidence line {line_number} must contain an object: {path}")
+            continue
+        events.append(payload)
+    if not events:
+        errors.append(f"JSONL evidence file must contain at least one event object: {path}")
+        return None
+    total_wait = sum(
+        int(event.get("wait_seconds"))
+        for event in events
+        if lower(event.get("event")) == "wait" and isinstance(event.get("wait_seconds"), int)
+    )
+    case: dict[str, Any] = {
+        "schema_version": 1,
+        "case_type": "expert_lifecycle_audit",
+        "events": events,
+    }
+    if total_wait > 0:
+        case["total_wait_bound_seconds"] = total_wait
+    return case
 
 
 def lower(value: Any) -> str:
@@ -310,6 +348,11 @@ def validate_expert_lifecycle_case(case: dict[str, Any], errors: list[str], labe
         name = lower(event.get("event"))
         if not name:
             errors.append(f"{label}.events[{index}] missing event name.")
+        elif name not in EXPERT_LIFECYCLE_EVENT_NAMES:
+            allowed = ", ".join(sorted(EXPERT_LIFECYCLE_EVENT_NAMES))
+            errors.append(
+                f"{label}.events[{index}] has unsupported expert lifecycle event `{name}`; allowed: {allowed}."
+            )
         names.append(name)
         if name == "timeout" and lower(event.get("classification")) != "non-evidence":
             errors.append(f"{label}.events[{index}] timeout must be classified as non-evidence.")
@@ -473,7 +516,8 @@ def run_repository_check(root: Path) -> dict[str, Any]:
 
 def run_evidence_check(path: Path) -> dict[str, Any]:
     errors: list[str] = []
-    payload = load_json(path, errors)
+    evidence_format = "jsonl" if path.suffix.lower() == ".jsonl" else "json"
+    payload = load_expert_lifecycle_jsonl(path, errors) if evidence_format == "jsonl" else load_json(path, errors)
     checked = False
     if payload is not None:
         checked = True
@@ -485,6 +529,7 @@ def run_evidence_check(path: Path) -> dict[str, Any]:
         "mode": "evidence",
         "ok": not errors,
         "evidence_path": str(path),
+        "evidence_format": evidence_format,
         "checked": checked,
         "errors": errors,
         "warnings": [],
@@ -515,7 +560,11 @@ def main() -> int:
     )
     parser.add_argument("--root", default=".", help="Repository root for repository and fixture checks.")
     parser.add_argument("--fixture-dir", default=None, help="Fixture directory relative to root.")
-    parser.add_argument("--evidence", default=None, help="Validate one JSON evidence case instead of repository surfaces.")
+    parser.add_argument(
+        "--evidence",
+        default=None,
+        help="Validate one JSON evidence case or JSONL expert lifecycle audit instead of repository surfaces.",
+    )
     parser.add_argument("--fixtures-only", action="store_true", help="Validate fixtures without repository surface checks.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")
     args = parser.parse_args()

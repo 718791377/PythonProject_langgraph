@@ -412,6 +412,41 @@ class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("non-evidence" in error for error in payload["errors"]), payload["errors"])
 
+    def test_expert_lifecycle_jsonl_evidence_passes(self) -> None:
+        root = self.make_root("collab-expert-jsonl")
+        path = root / "expert-lifecycle.jsonl"
+        events = [
+            {"event": "spawn", "role": "verifier", "task_summary": "check evidence"},
+            {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
+            {"event": "result", "agent_id": "agent-1", "summary": "verified", "changed_paths": []},
+            {"event": "absorbed", "agent_id": "agent-1", "leader_decision": "accepted"},
+            {"event": "close", "agent_id": "agent-1", "retention_policy": "close"},
+        ]
+        path.write_text("\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n", encoding="utf-8")
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertEqual(payload["evidence_format"], "jsonl")
+
+    def test_expert_lifecycle_jsonl_rejects_unsupported_event(self) -> None:
+        root = self.make_root("collab-expert-jsonl-unsupported")
+        path = root / "expert-lifecycle-unsupported.jsonl"
+        events = [
+            {"event": "spawn", "role": "verifier", "task_summary": "check evidence"},
+            {"event": "bogus", "agent_id": "agent-1", "summary": "not a lifecycle event"},
+        ]
+        path.write_text("\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n", encoding="utf-8")
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["evidence_format"], "jsonl")
+        self.assertTrue(
+            any("unsupported expert lifecycle event" in error for error in payload["errors"]),
+            payload["errors"],
+        )
+
     def test_langgraph_completed_state_must_release_running(self) -> None:
         root = self.make_root("collab-langgraph-release")
         path = root / "lg.json"
