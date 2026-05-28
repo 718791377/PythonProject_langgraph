@@ -234,6 +234,96 @@ class ImplementationPlanRulesCheckTest(unittest.TestCase):
         payload = json.loads(json_result.stdout)
         self.assertTrue(any("dated evidence-package headings" in error for error in payload["errors"]))
 
+    def active_plan_file(self, *, lang: str = "en", companion: bool = False) -> str:
+        if companion:
+            front_matter = (
+                "---\n"
+                "doc_id: sample_plan\n"
+                "lang: zh-CN\n"
+                "status: active\n"
+                "doc_class: implementation_plan\n"
+                "translation_of: docs_bilingual/implementation_plans/sample_plan.md\n"
+                "---\n"
+            )
+            return front_matter + self.structured_plan("Sample zh")
+        front_matter = (
+            "---\n"
+            "doc_id: sample_plan\n"
+            f"lang: {lang}\n"
+            "status: active\n"
+            "doc_class: implementation_plan\n"
+            "zh_cn_path: docs_bilingual/implementation_plans/sample_plan.zh-CN.md\n"
+            "---\n"
+        )
+        return front_matter + self.structured_plan()
+
+    def test_fails_when_active_plan_file_missing_registry_record(self) -> None:
+        root = self.make_root("impl-plan-missing-registry")
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.md", self.active_plan_file())
+        self.write_file(root, "docs_bilingual/docs_registry.yaml", "version: 1\ndocuments:\n")
+
+        json_result = self.run_check_json(root)
+
+        self.assertNotEqual(json_result.returncode, 0)
+        payload = json.loads(json_result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("missing a docs_registry.yaml record" in error for error in payload["errors"]))
+        self.assertTrue(any("\u4e2d\u6587\u63d0\u793a" in error for error in payload["errors"]))
+
+    def test_fails_when_active_plan_file_registered_as_draft(self) -> None:
+        root = self.make_root("impl-plan-status-mismatch")
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.md", self.active_plan_file())
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.zh-CN.md", self.active_plan_file(companion=True))
+        self.write_file(root, "docs_bilingual/docs_registry.yaml", self.registry("draft"))
+
+        json_result = self.run_check_json(root)
+
+        self.assertNotEqual(json_result.returncode, 0)
+        payload = json.loads(json_result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("registered with status `draft`; expected `active`" in error for error in payload["errors"]))
+
+
+    def test_fails_when_registry_active_but_plan_front_matter_is_draft(self) -> None:
+        root = self.make_root("impl-plan-registry-active-file-draft")
+        draft_front_matter = (
+            "---\n"
+            "doc_id: sample_plan\n"
+            "lang: en\n"
+            "status: draft\n"
+            "doc_class: implementation_plan\n"
+            "zh_cn_path: docs_bilingual/implementation_plans/sample_plan.zh-CN.md\n"
+            "---\n"
+        )
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.md", draft_front_matter + self.structured_plan())
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.zh-CN.md", self.active_plan_file(companion=True))
+        self.write_file(root, "docs_bilingual/docs_registry.yaml", self.registry("active"))
+
+        json_result = self.run_check_json(root)
+
+        self.assertNotEqual(json_result.returncode, 0)
+        payload = json.loads(json_result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any(
+                "registry entry `sample_plan` is active" in error
+                and "front matter status is `draft`; expected `active`" in error
+                for error in payload["errors"]
+            )
+        )
+
+    def test_fails_when_active_plan_missing_chinese_companion_file(self) -> None:
+        root = self.make_root("impl-plan-missing-companion")
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.md", self.structured_plan())
+        self.write_file(root, "docs_bilingual/docs_registry.yaml", self.registry())
+
+        json_result = self.run_check_json(root)
+
+        self.assertNotEqual(json_result.returncode, 0)
+        payload = json.loads(json_result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("zh_cn_path does not exist" in error for error in payload["errors"]))
+
 
 if __name__ == "__main__":
     unittest.main()

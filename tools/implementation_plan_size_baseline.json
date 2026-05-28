@@ -107,6 +107,18 @@
       ],
       "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
     },
+    "docs_bilingual/implementation_plans/codex_user_level_context_retention_canary_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/codex_user_level_context_retention_canary_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
     "docs_bilingual/implementation_plans/codex_user_level_cross_session_durable_state_isolation_plan.md": {
       "allowed_findings": [
         "missing_required_anchors"
@@ -210,6 +222,18 @@
       "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
     },
     "docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md": {
+      "allowed_findings": [
+        "missing_required_anchors"
+      ],
+      "reason": "Legacy implementation plan predates stable anchors/evidence-index enforcement; forward changes should migrate or remove this allowance."
+    },
+    "docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md": {
       "allowed_findings": [
         "missing_required_anchors"
       ],

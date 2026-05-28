@@ -19,6 +19,19 @@ documents:
     zh_cn_path: docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md
 
 
+
+  - doc_id: codex_user_level_context_retention_canary_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_user_level_context_retention_canary_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_user_level_context_retention_canary_plan.zh-CN.md
+
+  - doc_id: user_level_mcp_skills_browser_cli_governance_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
+
   - doc_id: implementation_plan_confirmation_gate
     doc_class: implementation_plan
     status: active

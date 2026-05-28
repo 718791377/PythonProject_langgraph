@@ -13,6 +13,7 @@ IMPLEMENTATION_PHASES = {"build", "verify", "archive"}
 PLAN_SIZE_WARNING_BYTES = 40 * 1024
 PLAN_SIZE_FAIL_BYTES = 60 * 1024
 PLAN_SIZE_BASELINE = Path("tools/implementation_plan_size_baseline.json")
+PLAN_FILES_ROOT = Path("docs_bilingual/implementation_plans")
 REQUIRED_ANCHOR_PAIRS = (
     ("CURRENT_STATUS_START", "CURRENT_STATUS_END"),
     ("TASK_BACKLOG_START", "TASK_BACKLOG_END"),
@@ -74,6 +75,34 @@ def parse_simple_yaml(path: Path) -> dict[str, str]:
         key, value = stripped.split(":", 1)
         data[key.strip()] = value.strip().strip("'\"")
     return data
+
+
+def parse_front_matter(path: Path) -> dict[str, str]:
+    text = read_text_utf8(path)
+    if not text.startswith("---"):
+        return {}
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    data: dict[str, str] = {}
+    for raw_line in lines[1:]:
+        stripped = raw_line.strip()
+        if stripped == "---":
+            return data
+        if not stripped or stripped.startswith("#") or ":" not in stripped:
+            continue
+        key, value = stripped.split(":", 1)
+        data[key.strip()] = value.strip().strip("'\"")
+    return data
+
+
+def active_plan_guidance() -> str:
+    return (
+        "\u4e2d\u6587\u63d0\u793a\uff1a\u5f00\u59cb\u5b9e\u65bd\u524d\uff0c"
+        "\u8bf7\u5148\u5728 docs_bilingual/docs_registry.yaml \u767b\u8bb0 active "
+        "\u53cc\u8bed implementation plan\uff0c\u5e76\u4fdd\u6301\u82f1\u6587\u4e3b\u6587\u4ef6"
+        "\u548c zh-CN companion \u72b6\u6001\u4e00\u81f4\u3002"
+    )
 
 
 def load_plan_size_baseline(root: Path) -> dict[str, set[str]]:
@@ -209,6 +238,64 @@ def validate_plan_structure(
     )
 
 
+def validate_on_disk_plan_registry_state(
+    root: Path,
+    impl_by_path: dict[str, dict[str, str]],
+    errors: list[str],
+    warnings: list[str],
+) -> int:
+    plan_root = root / PLAN_FILES_ROOT
+    if not plan_root.exists():
+        return 0
+
+    disk_plan_count = 0
+    for path in sorted(plan_root.glob("*.md")):
+        front_matter = parse_front_matter(path)
+        if front_matter.get("doc_class") != "implementation_plan":
+            continue
+
+        disk_plan_count += 1
+        relative_path = path.relative_to(root).as_posix()
+        status = front_matter.get("status", "").strip().lower()
+        doc_id = front_matter.get("doc_id", "").strip()
+        registry_entry = impl_by_path.get(relative_path)
+
+        if registry_entry is None:
+            message = (
+                f"Implementation plan file `{relative_path}` is missing a docs_registry.yaml record."
+                f" {active_plan_guidance()}"
+            )
+            if status == "active":
+                errors.append("Active " + message)
+            else:
+                warnings.append("Draft/non-active " + message)
+            continue
+
+        registry_status = registry_entry.get("status", "").strip().lower()
+        registry_doc_id = registry_entry.get("doc_id", "<unknown>")
+        if doc_id and registry_doc_id != doc_id:
+            errors.append(
+                f"Implementation plan file `{relative_path}` has doc_id `{doc_id}` but docs_registry.yaml records `{registry_doc_id}`. {active_plan_guidance()}"
+            )
+        if status == "active" and registry_status != "active":
+            errors.append(
+                f"Active implementation plan file `{relative_path}` is registered with status `{registry_status}`; expected `active`. {active_plan_guidance()}"
+            )
+        elif registry_status == "active" and status != "active":
+            errors.append(
+                f"Implementation plan registry entry `{registry_doc_id}` is active, but `{relative_path}` front matter status is `{status or '<missing>'}`; expected `active`. {active_plan_guidance()}"
+            )
+
+        if status == "active" and relative_path.endswith(".zh-CN.md"):
+            translation_of = front_matter.get("translation_of", "").replace("\\", "/")
+            if translation_of and translation_of not in impl_by_path:
+                errors.append(
+                    f"Active implementation plan companion `{relative_path}` points to unregistered translation_of `{translation_of}`. {active_plan_guidance()}"
+                )
+
+    return disk_plan_count
+
+
 def active_comet_plan_references(root: Path) -> list[dict[str, str]]:
     references: list[dict[str, str]] = []
     changes_root = root / "openspec" / "changes"
@@ -265,6 +352,9 @@ def main() -> int:
             value = entry.get(key, "")
             if value:
                 impl_by_path[value.replace("\\", "/")] = entry
+
+    disk_plan_files = validate_on_disk_plan_registry_state(root, impl_by_path, errors, warnings)
+    infos.append(f"Implementation plan files with front matter: {disk_plan_files}")
 
     for entry in impl_entries:
         doc_id = entry.get("doc_id", "<unknown>")
@@ -346,6 +436,7 @@ def main() -> int:
         "counts": {
             "implementation_plan_entries": len(impl_entries),
             "implementation_plan_files": len(plan_files),
+            "disk_implementation_plan_files": disk_plan_files,
             "active_comet_plan_references": len(active_plan_refs),
             "errors": len(errors),
             "warnings": len(warnings),

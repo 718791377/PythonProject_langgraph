@@ -36,10 +36,10 @@ Require implementation plans to be active, bilingual, registered, and confirmati
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
+阶段：Stage C 实施包
+责任会话：implement-registry-active-state-20260528
+当前门禁：本地 git 提交与 local MR review
+Stage C 进入条件：已由用户在 2026-05-28 明确确认
 最后更新：2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -67,11 +67,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add registry-state checks for active implementation plans and bilingual companions.
-- [ ] Add tests for missing companion, wrong status, missing anchors, and missing registry record.
-- [ ] Update implementation-plan checker messages with Chinese-facing operator guidance where appropriate.
-- [ ] Run implementation-plan checker, precommit review, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add registry-state checks for active implementation plans and bilingual companions.
+- [x] Add tests for missing companion, wrong status, missing anchors, and missing registry record.
+- [x] Update implementation-plan checker messages with Chinese-facing operator guidance where appropriate.
+- [x] Run implementation-plan checker, precommit review, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,4 +96,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-28 Stage C 实施：由 `implement-registry-active-state-20260528` 认领；新增 checker-backed active-plan registry state validation、registry/front-matter 双向状态匹配、missing registry/wrong status/missing companion 回归测试、checker finding 中的中文操作提示，并修复既有 Project MOE active registry/front-matter 状态不一致。
+- 2026-05-28 验证：在 `implement-registry-active-state-20260528` 中通过 targeted implementation-plan tests、claim-lock tests、`check_implementation_plan_rules.py --json`、precommit update/archive review、session-ownership check、worktree receipt check、`git diff --check` 与 `tools/ci/local_gate.ps1`。
 <!-- EVIDENCE_INDEX_END -->
