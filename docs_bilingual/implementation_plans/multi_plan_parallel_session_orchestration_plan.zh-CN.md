@@ -38,6 +38,8 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 4. comet_runtime_agile_focus_area_plan - 增加 Comet management record、阶段勾选门禁和 Monitoring 回退 transition。
 5. implementation_plan_confirmation_gate - 要求非文档实现开始前必须有已提交的 active implementation-plan 文件；这里的 confirmation gate 指阻塞检查点，必须等用户确认已提交的方案文件后才能继续执行。
 6. codex_governance_session_visibility_and_plan_lock_plan - 增加中文 routing trace 可视化、主会话提权可视化、Superpowers 证据、Spec Kit 边界和 plan lock。
+7. pi_plugin_codex_user_level_sidecar_plan - 提供 Pi family、Codex -> Pi sidecar 与 oh-my-pi reference-only 边界。
+8. user_level_mcp_skills_browser_cli_governance_plan - 提供 MCP、skills、browser、OpenCLI 与 CLI harness 的低 token、receipt-first 治理边界。
 
 ## 非目标
 
@@ -60,6 +62,24 @@ Stage C 进入条件：本地 `main` 合入后，用户明确确认相关子方�
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
+
+### 层级架构图
+
+本方案采用二层级 implementation-plan 结构。所有 front matter 中 `parent_plan` 指向本父方案的 implementation plans 都是同级子方案；`parent_parallel_orchestration_index_plan` 是索引维护子方案，不是二级父方案。
+
+```text
+一级：父方案 / 总地图
+└─ multi_plan_parallel_session_orchestration_plan.zh-CN.md
+   ├─ Phase 0 / Batch 1 子方案：plan_inventory_registry_alignment_plan.zh-CN.md
+   ├─ Phase 0 / Batch 1 子方案：parent_parallel_orchestration_index_plan.zh-CN.md
+   │  └─ 说明：这是索引维护子方案，不拥有下级 implementation_plan 文件。
+   ├─ Phase 1-6 子方案：其他同级 child implementation plans
+   ├─ Phase 7 / Batch 5 子方案：parallel_plan_docs_registry_integration_plan.zh-CN.md
+   ├─ Phase 7 / Batch 5 子方案：parallel_plan_checker_ci_integration_plan.zh-CN.md
+   └─ Phase 7 / Batch 5 子方案：parallel_plan_openspec_comet_archive_plan.zh-CN.md
+```
+
+`Phase`、`Stage`、`Batch` 用于表示工作主题、生命周期状态和创建/集成批次，不是文档树层级。父子关系以 front matter 为准，尤其是 `parent_plan` 字段。
 
 ### Session 与 Claim 规则
 
@@ -95,7 +115,7 @@ Stage C 进入条件：本地 `main` 合入后，用户明确确认相关子方�
 
 ### Phase 1：施工安全底座
 
-目的：在 runtime-heavy 工作开始前，先让并行执行安全。
+目的：在 runtime-heavy 工作开始前，先让并行执行安全。用户级安装和更新通道，包括 Pi family 或 harness 通道，必须先满足 receipt-first，才能被视为 active runtime surface。
 
 候选子方案：
 
@@ -121,7 +141,7 @@ Stage C 进入条件：本地 `main` 合入后，用户明确确认相关子方�
 
 ### Phase 3：Durable State 与跨 Session 隔离
 
-目的：确保 durable-state 选择和检查在跨仓库、worktree、session 时安全。
+目的：确保 durable-state 选择和检查在跨仓库、worktree、session 时安全。Pi/harness state、receipt、rollback pointer 与 sidecar artifact 不得跨 repository、worktree 或 session 泄漏。
 
 候选子方案：
 
@@ -136,7 +156,7 @@ Stage C 进入条件：本地 `main` 合入后，用户明确确认相关子方�
 
 ### Phase 4：自动路由与中文可视化
 
-目的：让协同路由自动、可审计，并在对话中面向中文展示。
+目的：让协同路由自动、可审计，并在对话中面向中文展示。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由 Codex leader 负责的最终 verification evidence。
 
 候选子方案：
 
@@ -166,7 +186,7 @@ Stage C 进入条件：本地 `main` 合入后，用户明确确认相关子方�
 
 ### Phase 6：Spec Kit 边界
 
-目的：防止 GitHub Spec Kit 成为竞争性治理层。
+目的：防止 GitHub Spec Kit 成为竞争性治理层。同样的 subordinate-adapter 规则也适用于 oh-my-pi、Pi sidecar 与 CLI harness 引用：它们只能是 reference 或 adapter surface，不是项目治理层。
 
 候选子方案：
 
@@ -177,7 +197,7 @@ Stage C 进入条件：本地 `main` 合入后，用户明确确认相关子方�
 
 ### Phase 7：集成、验证与归档
 
-目的：把并行工作收敛为串行本地 main 包，并在适用时归档已完成 OpenSpec 工作。
+目的：把并行工作收敛为串行本地 main 包，并在适用时归档已完成 OpenSpec 工作。集成报告必须在考虑任何 runtime 或用户级变更前声明每个 Pi/harness lane 的状态：`reference-only`、`planned`、`on-demand` 或 `active-candidate`。
 
 候选子方案：
 
@@ -220,7 +240,8 @@ Stage C 进入条件：本地 `main` 合入后，用户明确确认相关子方�
 - [x] Stage B：为 Phase 2 和 Phase 3 创建 Batch 2 子 implementation_plan。
 - [x] Stage B：为 Phase 4 创建 Batch 3 子 implementation_plan。
 - [x] Stage B：为 Phase 5 和 Phase 6 创建 Batch 4 子 implementation_plan。
-- [ ] Stage B：为 Phase 7 集成创建 Batch 5 子 implementation_plan。
+- [x] Stage B：为 Phase 7 集成创建 Batch 5 子 implementation_plan。
+- [x] Stage B 父方案修订：加入二层级架构图，并吸收 Pi family / oh-my-pi / CLI harness reference-only 边界到父级编排方案。
 - [ ] Stage C：子方案确认后，实现 portable child-plan claim lock。
 - [ ] 后续阶段：每阶段最多 6 个并行 session 执行子方案，并串行合入本地 main。
 <!-- TASK_BACKLOG_END -->
@@ -248,7 +269,7 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-28 Stage B 子方案创建包：创建并登记 33 个 active 子 implementation_plan 的英文主版和中文对照版；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-28 Stage B 父方案修订：加入二层级架构图，并从 `pi_plugin_codex_user_level_sidecar_plan` 与 `user_level_mcp_skills_browser_cli_governance_plan` 吸收 Pi family / oh-my-pi / CLI harness reference-only 边界；commit 记录在本地 git 历史中。
 - 2026-05-28 Stage B 子方案创建包：创建并登记 33 个 active 子 implementation_plan 的英文主版和中文对照版；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-28 Stage A 父级方案包：已用 `ac867ff` 提交并合入本地 `main`；验证包括 `check_implementation_plan_rules.py --root . --json`、`check_precommit_update_archive.py --root . --json`、`tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` 和 `tools/ci/local_mr_review.ps1`。
 <!-- EVIDENCE_INDEX_END -->

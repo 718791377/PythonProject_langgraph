@@ -37,8 +37,8 @@ Keep the parent phase map, child-plan registry, dependency order, and session-li
 <!-- CURRENT_STATUS_START -->
 状态：active
 阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
+责任会话：main Codex leader session
+当前门禁：仅执行文档治理类父方案修订，不进入 runtime 实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
 最后更新：2026-05-28
 <!-- CURRENT_STATUS_END -->
@@ -67,6 +67,8 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- TASK_BACKLOG_START -->
 - [ ] Confirm this child plan after local main integration.
+- [x] 为父方案加入二层级架构图，并明确本索引维护方案是同级子方案，不是二级父方案。
+- [x] 吸收 Pi family / oh-my-pi / CLI harness reference-only 边界到父级编排方案。
 - [ ] Add a compact child-plan status table to the parent plan if the parent needs an execution index.
 - [ ] Record dependency edges between phases and child plans without duplicating full evidence packages.
 - [ ] Verify that parent status can be updated through stable anchors only.
@@ -94,5 +96,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 文档治理更新：main Codex leader session 认领本索引维护子方案，用于更新父方案层级架构图和 Pi/harness reference-only 边界；commit 记录在本地 git 历史中。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

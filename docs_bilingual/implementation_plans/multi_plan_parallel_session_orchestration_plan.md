@@ -38,6 +38,8 @@ This parent plan coordinates the following existing plans without replacing thei
 4. comet_runtime_agile_focus_area_plan - adds Comet management records, phase checklist gates, and Monitoring return transitions.
 5. implementation_plan_confirmation_gate - requires a committed active implementation-plan file before non-document implementation can start; here "confirmation gate" means a blocking checkpoint that stops execution until the user confirms the committed plan file.
 6. codex_governance_session_visibility_and_plan_lock_plan - adds Chinese routing trace visibility, main-session escalation visibility, Superpowers evidence, Spec Kit boundaries, and plan locks.
+7. pi_plugin_codex_user_level_sidecar_plan - provides the Pi family, Codex-to-Pi sidecar, and oh-my-pi reference-only boundary.
+8. user_level_mcp_skills_browser_cli_governance_plan - provides the low-token, receipt-first governance boundary for MCP, skills, browser, OpenCLI, and CLI harness lanes.
 
 ## Non-Goals
 
@@ -60,6 +62,24 @@ Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model
+
+### Hierarchy Architecture
+
+This plan uses a two-level implementation-plan structure. All implementation plans whose front matter `parent_plan` points to this parent plan are sibling child plans; `parent_parallel_orchestration_index_plan` is an index-maintenance child plan, not a second-level parent.
+
+```text
+Level 1: parent plan / master map
+`-- multi_plan_parallel_session_orchestration_plan.md
+    |-- Phase 0 / Batch 1 child: plan_inventory_registry_alignment_plan.md
+    |-- Phase 0 / Batch 1 child: parent_parallel_orchestration_index_plan.md
+    |   `-- note: index-maintenance child plan; it owns no lower-level implementation_plan files.
+    |-- Phase 1-6 children: other sibling child implementation plans
+    |-- Phase 7 / Batch 5 child: parallel_plan_docs_registry_integration_plan.md
+    |-- Phase 7 / Batch 5 child: parallel_plan_checker_ci_integration_plan.md
+    `-- Phase 7 / Batch 5 child: parallel_plan_openspec_comet_archive_plan.md
+```
+
+`Phase`, `Stage`, and `Batch` classify work topic, lifecycle state, and creation/integration batch; they are not document-tree levels. Parent-child relationships are determined by front matter, especially `parent_plan`.
 
 ### Session and Claim Rules
 
@@ -95,7 +115,7 @@ Parallelism: up to 2 sessions after this parent plan is confirmed.
 
 ### Phase 1: Construction Safety Base
 
-Purpose: make parallel execution safe before runtime-heavy work begins.
+Purpose: make parallel execution safe before runtime-heavy work begins. User-level install and update lanes, including Pi family or harness lanes, must remain receipt-first before they can be treated as active runtime surfaces.
 
 Candidate child plans:
 
@@ -121,7 +141,7 @@ Parallelism: up to 2 sessions, with startup summary files serialized.
 
 ### Phase 3: Durable State and Cross-Session Isolation
 
-Purpose: make durable-state selection and inspection safe across repositories, worktrees, and sessions.
+Purpose: make durable-state selection and inspection safe across repositories, worktrees, and sessions. Pi/harness state, receipts, rollback pointers, and sidecar artifacts must not leak across repository, worktree, or session boundaries.
 
 Candidate child plans:
 
@@ -136,7 +156,7 @@ Parallelism: up to 3 sessions, with `.omx/state` write scopes serialized by repo
 
 ### Phase 4: Automatic Routing and Chinese Visibility
 
-Purpose: make collaboration routing automatic, auditable, and Chinese-facing in conversation.
+Purpose: make collaboration routing automatic, auditable, and Chinese-facing in conversation. Routing and evidence records must distinguish Pi/harness sidecar evidence from final verification evidence owned by the Codex leader.
 
 Candidate child plans:
 
@@ -166,7 +186,7 @@ Parallelism: up to 2 sessions. `comet-state.sh` and `comet-guard.sh` must have o
 
 ### Phase 6: Spec Kit Boundary
 
-Purpose: prevent GitHub Spec Kit from becoming a competing governance layer.
+Purpose: prevent GitHub Spec Kit from becoming a competing governance layer. The same subordinate-adapter rule applies to oh-my-pi, Pi sidecar, and CLI harness references: they are reference or adapter surfaces, not project governance layers.
 
 Candidate child plans:
 
@@ -177,7 +197,7 @@ Parallelism: up to 2 sessions.
 
 ### Phase 7: Integration, Verification, and Archive
 
-Purpose: converge parallel work into serial local-main packages and archive completed OpenSpec work where applicable.
+Purpose: converge parallel work into serial local-main packages and archive completed OpenSpec work where applicable. Integration reports must state each Pi/harness lane as `reference-only`, `planned`, `on-demand`, or `active-candidate` before any runtime or user-level mutation is considered.
 
 Candidate child plans:
 
@@ -221,6 +241,7 @@ Each child plan must include:
 - [x] Stage B: create Batch 3 child implementation plans for Phase 4.
 - [x] Stage B: create Batch 4 child implementation plans for Phase 5 and Phase 6.
 - [x] Stage B: create Batch 5 child implementation plans for Phase 7 integration.
+- [x] Stage B parent revision: add the two-level hierarchy diagram and absorb Pi family / oh-my-pi / CLI harness reference-only boundaries into this parent plan.
 - [ ] Stage C: implement portable child-plan claim locking after child plans are confirmed.
 - [ ] Later stages: run child-plan work with at most six parallel sessions per phase and serial local-main integration.
 <!-- TASK_BACKLOG_END -->
@@ -248,7 +269,7 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-28 Stage B child-plan creation package: created and registered 33 active child implementation plans with English primary and Chinese companion files; final commit is recorded in the assistant response and local git history.
+- 2026-05-28 Stage B parent revision: added the two-level hierarchy diagram and absorbed Pi family / oh-my-pi / CLI harness reference-only boundaries from `pi_plugin_codex_user_level_sidecar_plan` and `user_level_mcp_skills_browser_cli_governance_plan`; commit recorded in local git history.
 - 2026-05-28 Stage B child-plan creation package: created and registered 33 active child implementation plans with English primary and Chinese companion files; final commit is recorded in the assistant response and local git history.
 - 2026-05-28 Stage A parent plan package: committed as `ac867ff` and integrated into local `main`; validation included `check_implementation_plan_rules.py --root . --json`, `check_precommit_update_archive.py --root . --json`, `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600`, and `tools/ci/local_mr_review.ps1`.
 <!-- EVIDENCE_INDEX_END -->
