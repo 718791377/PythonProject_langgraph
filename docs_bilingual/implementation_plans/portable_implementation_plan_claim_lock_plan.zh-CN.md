@@ -37,9 +37,9 @@ Implement a Git and filesystem portable single-active-session claim lock for eac
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage C 实施已开始
+阶段：Stage C 实施已验证，准备合入本地 main
 责任会话：main Codex leader session
-当前门禁：在 `.worktrees/implement-portable-plan-claim-lock-20260528` 中实现 portable child-plan claim lock，并在合入本地 `main` 前完成本地验证
+当前门禁：local gate 和 local MR review 已通过；下一步将本 feature branch 串行合入本地 `main`
 Stage C 进入条件：Stage B 子方案包合入本地 `main` 后，用户已确认继续实施本子方案
 最后更新：2026-05-28
 <!-- CURRENT_STATUS_END -->
@@ -72,7 +72,7 @@ Stage C 进入条件：Stage B 子方案包合入本地 `main` 后，用户已�
 - [x] Define the portable claim schema with plan path, branch, worktree, session id, and expiry or release state.
 - [x] Add tests for one active claim, stale claim, released claim, and conflicting active claim.
 - [x] Implement the claim helper and checker without depending on OMX or LangGraph.
-- [ ] Run claim-lock tests, worktree receipt checker, and local gate.
+- [x] Run claim-lock tests, worktree receipt checker, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,6 +96,7 @@ Stage C 进入条件：Stage B 子方案包合入本地 `main` 后，用户已�
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage C 验证：在 `implement-portable-plan-claim-lock-20260528` 分支中通过 `python test/check_implementation_plan_claim_lock.test.py`、`tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` 和 `tools/ci/local_mr_review.ps1`。
 - 2026-05-28 Stage C 实施：新增 `tools/check_implementation_plan_claim_lock.py`、`tools/claim_implementation_plan.py`、聚焦测试和本地 guard 注册，用于 portable implementation-plan claim locking。
 - 2026-05-28 Stage C 进入：用户确认继续实施本子方案；runtime/checker 工作前已在 `implement-portable-plan-claim-lock-20260528` 分支更新治理状态。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。

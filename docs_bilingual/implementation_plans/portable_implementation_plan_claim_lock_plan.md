@@ -37,9 +37,9 @@ Implement a Git and filesystem portable single-active-session claim lock for eac
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C implementation started
+Stage: Stage C implementation validated; ready for local main integration
 Owner session: main Codex leader session
-Current gate: implement portable child-plan claim lock in `.worktrees/implement-portable-plan-claim-lock-20260528`, then run local validation before local `main` integration
+Current gate: local gate and local MR review passed; merge this feature branch serially into local `main`
 Stage C entry condition: satisfied by user confirmation after local `main` integration of the Stage B child-plan package
 Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
@@ -72,7 +72,7 @@ Only one session may own each hotspot at a time:
 - [x] Define the portable claim schema with plan path, branch, worktree, session id, and expiry or release state.
 - [x] Add tests for one active claim, stale claim, released claim, and conflicting active claim.
 - [x] Implement the claim helper and checker without depending on OMX or LangGraph.
-- [ ] Run claim-lock tests, worktree receipt checker, and local gate.
+- [x] Run claim-lock tests, worktree receipt checker, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -96,6 +96,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage C validation: `python test/check_implementation_plan_claim_lock.test.py`, `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600`, and `tools/ci/local_mr_review.ps1` passed in branch `implement-portable-plan-claim-lock-20260528`.
 - 2026-05-28 Stage C implementation: added `tools/check_implementation_plan_claim_lock.py`, `tools/claim_implementation_plan.py`, focused tests, and local guard registration for portable implementation-plan claim locking.
 - 2026-05-28 Stage C entry: user confirmed continued implementation of this child plan; governance status updated in branch `implement-portable-plan-claim-lock-20260528` before runtime/checker work.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
