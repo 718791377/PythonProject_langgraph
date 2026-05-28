@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: active
 plan_readiness: execution-ready
-implementation_state: opencli_live_start_guard_stage_a_confirmed
+implementation_state: opencli_live_start_guard_repo_local_implemented
 last_reviewed_at: 2026-05-28
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -39,7 +39,7 @@ related_docs:
 
 `status: active` 表示本双语文件现在是 repo-local governance-to-user-level capability lane 的执行权威；不表示完整用户级安装、真实 smoke test 或跨项目 rollout 已完成。`plan_readiness: execution-ready` 表示本文结构与执行颗粒度已经足够让 agentic worker 接手实现。当前 repo-local `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP、CDP Bridge read-only defaults、OpenCLI `--port auto` 租约门禁、`wecom-cli` guarded dry-run 和 receipt/redaction governance 均属于 implemented-local；完整用户级 `active` 仍取决于 installation receipt、update receipt、smoke test result 与 rollback pointer。
 
-下一小步 Stage A 已确认：补齐 Task 5 中 `live start 需要 install receipt 和 owner evidence` 的 repo-local OpenCLI guard。该小步只实现非启动、非安装、非浏览器连接的 fail-closed 检查，要求 install receipt、browser owner lease evidence 与 `codex-port --port auto` lease evidence 后仍停在 repo-local MVP deferral，不修改用户级运行时。
+Task 5 的 `live start 需要 install receipt 和 owner evidence` 已补齐为 repo-local OpenCLI guard：它只执行非启动、非安装、非浏览器连接的 fail-closed 检查，要求 install receipt、browser owner lease evidence 与 `codex-port --port auto` lease evidence 后仍停在 repo-local MVP deferral，不修改用户级运行时。
 
 ## 1. 关系模型与命名边界
 
@@ -51,7 +51,7 @@ related_docs:
 | browser owner registry | 三类浏览器资产登记与 lease | implemented-local | 区分 isolated-session-managed、project-profile、human-owned。 |
 | `chrome-devtools-mcp` | 用户级 DevTools MCP wrapper | implemented-local | 低风险 read-only 优先；写操作需要 owner + authorization receipt。 |
 | CDP Bridge | 浏览器桥接与 CDP 操作 | implemented-local | 默认 read-only；cookies、输入、点击、导航属于敏感操作。 |
-| OpenCLI | on-demand browser/MCP adapter | implemented-local | repo-local guard 已要求 `--port auto`、`39300-39499` 范围内的 `codex-port` lease evidence，以及 owner/receipt gates；真实用户级 live install 仍需 receipt evidence。 |
+| OpenCLI | on-demand browser/MCP adapter | implemented-local | repo-local guard 已要求 `--port auto`、`39300-39499` 范围内的 `codex-port` lease evidence、owner/authorization gates，以及 live-start install receipt + owner evidence；真实用户级 live install 仍需外部授权执行。 |
 | CLI-Anything | GUI/CLI harness generation/reference | planned | 不允许 hard-load 大量 skills；生成优先，执行受授权门禁控制。 |
 | `wecom-cli` | WeCom/WXWork API/Webhook/GUI adapter | implemented-local | WXWork.exe GUI write 默认 disabled；repo-local guard 已提供 API/Webhook first、global lease、operator confirmation 与 timeout release dry-run 检查。 |
 | `oh-my-pi` | Pi family / harness reference | reference-only | 具体 Pi sidecar 归属 `pi_plugin_codex_user_level_sidecar_plan`。 |
