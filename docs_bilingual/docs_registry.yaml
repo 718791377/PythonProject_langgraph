@@ -31,6 +31,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/codex_governance_session_visibility_and_plan_lock_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_governance_session_visibility_and_plan_lock_plan.zh-CN.md
 
+  - doc_id: multi_plan_parallel_session_orchestration_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md
+
   - doc_id: codex_oh_my_codex_user_level_team_mode_plan
     doc_class: implementation_plan
     status: active
