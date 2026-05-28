@@ -32,12 +32,16 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
             "implementation_confirmed_by_user\n"
             "governance_package_commit\n"
             "governance_package_merged_to_local_main\n"
+            "implementation_plan\n"
+            "active registered implementation-plan\n"
             "confirmed Stage A receipt/claim\n",
             encoding="utf-8",
         )
         (root / "tools/complete_local_flow_to_remote_gate.py").write_text(
             "governance-confirmation\n"
+            "--implementation-plan\n"
             "implementation_confirmed_by_user\n"
+            "implementation_plan\n"
             "awaiting_implementation_confirmation\n"
             "Governance-confirmation stage must be docs-only\n",
             encoding="utf-8",

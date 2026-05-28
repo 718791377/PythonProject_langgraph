@@ -117,8 +117,9 @@ When the local governance package is ready, run the complete local commit flow t
 Two-stage implementation confirmation rule:
 
 - Stage A is the governance-confirmation package. It is documentation-only, updates `docs_bilingual/` first, may derive `openspec/` or `docs/` only when the governance decision requires it, merges into local `main`, and then stops before non-document implementation.
-- Stage A records receipt or claim fields: `requires_user_confirmation_before_implementation`, `governance_package_commit`, `governance_package_merged_to_local_main`, `implementation_confirmed_by_user=false`, and `implementation_stage=awaiting_confirmation`.
-- Stage B may change scripts, checkers, tests, tools, CI manifests, or runtime behavior only after a current user confirmation is recorded in the receipt or claim as `implementation_confirmed_by_user=true` with `implementation_confirmation_recorded_at`.
+- Stage A records receipt or claim fields: `requires_user_confirmation_before_implementation`, `governance_package_commit`, `governance_package_merged_to_local_main`, `implementation_plan`, `implementation_confirmed_by_user=false`, and `implementation_stage=awaiting_confirmation`. `implementation_plan` means the repo-relative path of the active implementation-plan file under `docs_bilingual/implementation_plans/` that the user must confirm.
+- Stage B may change scripts, checkers, tests, tools, CI manifests, or runtime behavior only after a current user confirmation is recorded in the receipt or claim as `implementation_confirmed_by_user=true` with `implementation_confirmation_recorded_at`, and the recorded `implementation_plan` is still active, registered in `docs_bilingual/docs_registry.yaml`, and already present on local `main`.
+- Chat-only plan approval, a same-range docs-first commit, or a receipt that omits the formal implementation-plan path is not sufficient for non-document execution.
 - Confirmation after Stage A may authorize a thicker implementation batch. Prefer one related batch with two to five tightly related execution slices over one tiny commit per rule.
 
 Implementation-plan size and evidence rules:

@@ -12,6 +12,8 @@ CHECK_NAME = "plan_exit_execution_governance"
 DOC_PREFIXES = ("docs_bilingual/", "openspec/", "docs/")
 DOC_EXACT_PATHS = {"完整提交流程.md"}
 DOCS_BILINGUAL_PREFIX = "docs_bilingual/"
+IMPLEMENTATION_PLAN_PREFIX = "docs_bilingual/implementation_plans/"
+DOCS_REGISTRY_PATH = "docs_bilingual/docs_registry.yaml"
 DEFAULT_RECEIPT = ".omx/worktree-task-receipt.json"
 DEFAULT_CLAIMS_SUBDIR = ".omx/session-claims"
 
@@ -57,6 +59,18 @@ def commit_exists(root: Path, commit: str) -> bool:
     return result.returncode == 0
 
 
+def git_path_exists(root: Path, ref: str, path: str) -> bool:
+    result = run_git(root, ["cat-file", "-e", f"{ref}:{path}"])
+    return result.returncode == 0
+
+
+def read_git_text(root: Path, ref: str, path: str) -> tuple[str | None, str | None]:
+    result = run_git(root, ["show", f"{ref}:{path}"])
+    if result.returncode != 0:
+        return None, result.stderr.strip() or result.stdout.strip() or f"unable to read {ref}:{path}"
+    return result.stdout, None
+
+
 def is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
     result = run_git(root, ["merge-base", "--is-ancestor", ancestor, descendant])
     return result.returncode == 0
@@ -68,6 +82,60 @@ def is_docs_path(path: str) -> bool:
 
 def is_docs_bilingual_path(path: str) -> bool:
     return path.startswith(DOCS_BILINGUAL_PREFIX)
+
+
+def is_implementation_plan_path(path: str) -> bool:
+    normalized = normalize_path(path)
+    return normalized.startswith(IMPLEMENTATION_PLAN_PREFIX) and normalized.endswith(".md")
+
+
+def parse_simple_yaml(text: str) -> dict[str, str]:
+    data: dict[str, str] = {}
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("#") or ":" not in stripped:
+            continue
+        key, value = stripped.split(":", 1)
+        data[key.strip()] = value.strip().strip("'\"")
+    return data
+
+
+def parse_docs_registry_text(text: str) -> list[dict[str, str]]:
+    entries: list[dict[str, str]] = []
+    current: dict[str, str] | None = None
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("- "):
+            if current:
+                entries.append(current)
+            current = {}
+            stripped = stripped[2:]
+            if ":" in stripped:
+                key, value = stripped.split(":", 1)
+                current[key.strip()] = value.strip()
+            continue
+        if current is None or ":" not in stripped:
+            continue
+        key, value = stripped.split(":", 1)
+        current[key.strip()] = value.strip()
+    if current:
+        entries.append(current)
+    return entries
+
+
+def implementation_plan_from_payload(payload: dict[str, Any]) -> str:
+    for key in (
+        "implementation_plan",
+        "implementation_plan_path",
+        "confirmed_implementation_plan_path",
+        "confirmed_plan_path",
+    ):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return normalize_path(value)
+    return ""
 
 
 def read_json_file(path: Path) -> tuple[dict[str, Any] | None, str | None]:
@@ -115,6 +183,77 @@ def validate_governance_commit(root: Path, commit: str, main_ref: str) -> list[s
     return errors
 
 
+def validate_implementation_plan_confirmation(root: Path, plan: str, commit: str, main_ref: str) -> list[str]:
+    errors: list[str] = []
+    if not plan:
+        return ["implementation_plan must name the confirmed active implementation-plan file."]
+    plan = normalize_path(plan)
+    if plan.startswith("/") or ":" in plan.split("/", 1)[0]:
+        return [f"implementation_plan must be repo-relative: {plan}"]
+    if not is_implementation_plan_path(plan):
+        errors.append(f"implementation_plan must point under {IMPLEMENTATION_PLAN_PREFIX} and end with .md: {plan}")
+    if not git_path_exists(root, main_ref, plan):
+        errors.append(f"implementation_plan must already exist on local {main_ref}: {plan}")
+
+    registry_text, registry_error = read_git_text(root, main_ref, DOCS_REGISTRY_PATH)
+    if registry_error:
+        errors.append(f"implementation_plan must be registered in {DOCS_REGISTRY_PATH}: {plan}")
+        errors.append(f"Unable to read {DOCS_REGISTRY_PATH} from local {main_ref}: {registry_error}")
+        return errors
+
+    entries = parse_docs_registry_text(registry_text or "")
+    matches = [
+        entry
+        for entry in entries
+        if normalize_path(entry.get("canonical_path", "")) == plan
+        or normalize_path(entry.get("zh_cn_path", "")) == plan
+    ]
+    if not matches:
+        errors.append(f"implementation_plan must be registered in {DOCS_REGISTRY_PATH}: {plan}")
+        return errors
+
+    entry = matches[0]
+    doc_id = entry.get("doc_id", "<unknown>")
+    if entry.get("doc_class") != "implementation_plan":
+        errors.append(f"registered implementation_plan `{doc_id}` must have doc_class=implementation_plan.")
+    if entry.get("status", "").strip().lower() != "active":
+        errors.append(f"registered implementation_plan `{doc_id}` must have status=active.")
+
+    canonical_path = normalize_path(entry.get("canonical_path", ""))
+    zh_cn_path = normalize_path(entry.get("zh_cn_path", ""))
+    for sibling in (canonical_path, zh_cn_path):
+        if sibling and not git_path_exists(root, main_ref, sibling):
+            errors.append(f"registered implementation_plan `{doc_id}` path must exist on local {main_ref}: {sibling}")
+
+    plan_text, plan_error = read_git_text(root, main_ref, plan)
+    if plan_error:
+        errors.append(f"Unable to read implementation_plan from local {main_ref}: {plan_error}")
+    else:
+        plan_meta = parse_simple_yaml(plan_text or "")
+        if plan_meta.get("doc_class") != "implementation_plan":
+            errors.append(f"implementation_plan front matter must declare doc_class=implementation_plan: {plan}")
+        if plan_meta.get("status", "").strip().lower() != "active":
+            errors.append(f"implementation_plan front matter must declare status=active: {plan}")
+        if plan == canonical_path and plan_meta.get("doc_id") and plan_meta.get("doc_id") != doc_id:
+            errors.append(
+                f"implementation_plan front matter doc_id `{plan_meta.get('doc_id')}` must match registry doc_id `{doc_id}`."
+            )
+
+    if commit and commit_exists(root, commit):
+        try:
+            commit_paths = changed_paths_for_commit(root, commit)
+        except RuntimeError as exc:
+            errors.append(str(exc))
+            commit_paths = []
+        evidence_paths = {path for path in (plan, canonical_path, zh_cn_path, DOCS_REGISTRY_PATH) if path}
+        if not any(path in evidence_paths for path in commit_paths):
+            errors.append(
+                "governance_package_commit must include the confirmed implementation plan or docs registry entry: "
+                + commit
+            )
+    return errors
+
+
 def source_relative(root: Path, path: Path) -> str:
     try:
         return path.relative_to(root).as_posix()
@@ -146,6 +285,8 @@ def evaluate_confirmation_source(
         errors.append("governance_package_merged_to_local_main must be true.")
     commit = str(payload.get("governance_package_commit") or "").strip()
     errors.extend(validate_governance_commit(root, commit, main_ref))
+    plan = implementation_plan_from_payload(payload)
+    errors.extend(validate_implementation_plan_confirmation(root, plan, commit, main_ref))
 
     return {
         "source_kind": source_kind,
@@ -153,6 +294,7 @@ def evaluate_confirmation_source(
         "valid": not errors,
         "errors": errors,
         "governance_package_commit": commit,
+        "implementation_plan": plan,
         "implementation_confirmation_recorded_at": payload.get("implementation_confirmation_recorded_at"),
     }
 
@@ -223,15 +365,16 @@ def evaluate(
             legacy_governance_errors.append("Non-document execution requires at least one docs_bilingual/ governance artifact in the range.")
         legacy_same_range_governance = not legacy_governance_errors
 
-        if not legacy_same_range_governance and not valid_staged_confirmations:
-            errors.extend(legacy_governance_errors)
-            errors.append(
-                "Non-document execution requires either a same-range docs_bilingual-first governance commit or a confirmed Stage A receipt/claim whose governance package is already merged to local main."
-            )
-        elif legacy_same_range_governance:
-            info.append("Non-document execution uses the legacy same-range docs_bilingual-first governance package.")
-        else:
+        if valid_staged_confirmations:
             info.append("Non-document execution authorized by confirmed Stage A receipt/claim.")
+            if legacy_same_range_governance:
+                info.append("Same-range docs_bilingual-first governance was detected, but formal plan-file confirmation is the active authorization gate.")
+        else:
+            if legacy_governance_errors:
+                errors.extend(legacy_governance_errors)
+            errors.append(
+                "Non-document execution requires a confirmed Stage A receipt/claim naming an active registered implementation-plan file already merged to local main; same-range chat or docs-only governance is not sufficient."
+            )
     else:
         info.append("No non-document changed paths detected; post-/plan governance package rule is not required for this range.")
 

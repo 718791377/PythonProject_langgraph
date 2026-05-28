@@ -117,8 +117,9 @@ OpenSpec 已经在仓库的工件层生效：
 两阶段实施确认规则：
 
 - Stage A 是治理确认包。它必须是纯文档更新，先更新 `docs_bilingual/`，只有治理判断确实需要时才派生更新 `openspec/` 或 `docs/`，合入本地 `main` 后停在非文档实施之前。
-- Stage A 记录 receipt 或 claim 字段：`requires_user_confirmation_before_implementation`、`governance_package_commit`、`governance_package_merged_to_local_main`、`implementation_confirmed_by_user=false`、`implementation_stage=awaiting_confirmation`。
-- Stage B 只有在当前用户确认已经写入 receipt 或 claim，且包含 `implementation_confirmed_by_user=true` 与 `implementation_confirmation_recorded_at` 后，才允许修改 scripts、checkers、tests、tools、CI manifests 或 runtime behavior。
+- Stage A 记录 receipt 或 claim 字段：`requires_user_confirmation_before_implementation`、`governance_package_commit`、`governance_package_merged_to_local_main`、`implementation_plan`、`implementation_confirmed_by_user=false`、`implementation_stage=awaiting_confirmation`。`implementation_plan` 指向 `docs_bilingual/implementation_plans/` 下、需要用户确认的 active implementation-plan 文件仓库相对路径。
+- Stage B 只有在当前用户确认已经写入 receipt 或 claim，且包含 `implementation_confirmed_by_user=true` 与 `implementation_confirmation_recorded_at` 后，才允许修改 scripts、checkers、tests、tools、CI manifests 或 runtime behavior；同时记录的 `implementation_plan` 必须仍为 active、已注册在 `docs_bilingual/docs_registry.yaml`，并且已经存在于本地 `main`。
+- 仅聊天中的 plan approval、同一变更范围内的 docs-first commit，或缺少正式 implementation-plan 路径的 receipt，都不足以授权非文档执行。
 - Stage A 之后的确认可以授权更厚的实施批次。优先把二到五个强相关执行切片合并为一个相关批次，而不是每个小规则单独提交。
 
 实施方案体积与证据规则：

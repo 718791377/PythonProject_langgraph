@@ -36,10 +36,10 @@ Enforce that chat-only plan confirmation is not enough for non-document implemen
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
+阶段：Stage C 实施包
+责任会话：implement-formal-plan-confirmation-gate-runtime-20260528
+当前门禁：验证并提交 feature 分支实施包
+Stage C 进入条件：已由指向本 active implementation plan 的已确认 receipt/claim 满足
 最后更新：2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -68,11 +68,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add negative tests for chat-only confirmation without a committed active implementation-plan file.
-- [ ] Add positive tests for active registered committed plan-file confirmation.
-- [ ] Implement the helper/checker gate with fail-closed behavior.
-- [ ] Update governance docs and run the plan-exit checker plus local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add negative tests for chat-only confirmation without a committed active implementation-plan file.
+- [x] Add positive tests for active registered committed plan-file confirmation.
+- [x] Implement the helper/checker gate with fail-closed behavior.
+- [x] Update governance docs and run the plan-exit checker plus local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -97,4 +97,5 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-28 Stage C 实施：receipt/claim 已记录用户明确确认 `docs_bilingual/implementation_plans/formal_plan_confirmation_gate_runtime_plan.md`，并关联 Stage B 治理包 `4a92f9fc673923a6fec9e31cbcee0526535531b7`；定向测试与仓库门禁证据记录在本次实施会话输出中。
 <!-- EVIDENCE_INDEX_END -->

@@ -8,9 +8,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import check_plan_exit_execution_governance as plan_exit
+
 DOC_PREFIXES = ("docs_bilingual/", "openspec/", "docs/")
 DOC_EXACT_PATHS = {"完整提交流程.md"}
 DOCS_BILINGUAL_PREFIX = "docs_bilingual/"
+IMPLEMENTATION_PLAN_PREFIX = "docs_bilingual/implementation_plans/"
 DEFAULT_RECEIPT = ".omx/worktree-task-receipt.json"
 
 
@@ -54,6 +57,21 @@ def is_docs_bilingual_path(path: str) -> bool:
     return path.startswith(DOCS_BILINGUAL_PREFIX)
 
 
+def is_canonical_implementation_plan_path(path: str) -> bool:
+    return (
+        path.startswith(IMPLEMENTATION_PLAN_PREFIX)
+        and path.endswith(".md")
+        and not path.endswith(".zh-CN.md")
+    )
+
+
+def infer_implementation_plan(paths: list[str]) -> str | None:
+    candidates = sorted({path for path in paths if is_canonical_implementation_plan_path(path)})
+    if len(candidates) == 1:
+        return candidates[0]
+    return None
+
+
 def require_governance_confirmation_diff(paths: list[str]) -> None:
     if not paths:
         raise RuntimeError("Governance-confirmation stage has no changed paths to merge.")
@@ -75,7 +93,7 @@ def write_receipt(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def record_governance_receipt(path: Path, *, branch: str, commit: str) -> None:
+def record_governance_receipt(path: Path, *, branch: str, commit: str, implementation_plan: str) -> None:
     payload = load_receipt(path)
     now = datetime.now(timezone.utc).isoformat()
     payload.update(
@@ -86,6 +104,7 @@ def record_governance_receipt(path: Path, *, branch: str, commit: str) -> None:
             "requires_user_confirmation_before_implementation": True,
             "governance_package_commit": commit,
             "governance_package_merged_to_local_main": True,
+            "implementation_plan": implementation_plan,
             "implementation_confirmed_by_user": False,
             "implementation_confirmation_recorded_at": None,
             "implementation_stage": "awaiting_confirmation",
@@ -95,7 +114,7 @@ def record_governance_receipt(path: Path, *, branch: str, commit: str) -> None:
     write_receipt(path, payload)
 
 
-def require_implementation_confirmation(path: Path) -> None:
+def require_implementation_confirmation(path: Path, *, root: Path, main_ref: str) -> None:
     payload = load_receipt(path)
     if not payload:
         raise RuntimeError(f"Implementation stage requires receipt confirmation, but receipt is missing: {path}")
@@ -109,6 +128,18 @@ def require_implementation_confirmation(path: Path) -> None:
         raise RuntimeError("Implementation stage requires governance_package_merged_to_local_main=true in the receipt.")
     if not payload.get("governance_package_commit"):
         raise RuntimeError("Implementation stage requires governance_package_commit in the receipt.")
+    plan = plan_exit.implementation_plan_from_payload(payload)
+    validation_errors = plan_exit.validate_implementation_plan_confirmation(
+        root,
+        plan,
+        str(payload.get("governance_package_commit") or ""),
+        main_ref,
+    )
+    if validation_errors:
+        raise RuntimeError(
+            "Implementation stage requires active registered implementation-plan confirmation: "
+            + "; ".join(validation_errors)
+        )
 
 
 def run_local_gate(script_root: Path, label: str) -> None:
@@ -157,6 +188,7 @@ def main() -> int:
     parser.add_argument("--branch", default=None, help="Feature branch name. Defaults to the worktree current branch.")
     parser.add_argument("--main", default="main", help="Local main branch name.")
     parser.add_argument("--stage", choices=("standard", "governance-confirmation", "implementation"), default="standard", help="Flow stage: standard final integration, Stage A governance confirmation, or Stage B implementation integration.")
+    parser.add_argument("--implementation-plan", default=None, help="Confirmed implementation-plan file for governance-confirmation or implementation stages.")
     parser.add_argument("--receipt", default=DEFAULT_RECEIPT, help="Receipt JSON path relative to the feature worktree.")
     parser.add_argument("--skip-local-gate", action="store_true", help="Do not run local_gate.ps1; intended only when another checker already explains why the full gate cannot run.")
     parser.add_argument("--skip-local-mr-review", action="store_true", help="Do not run local_mr_review.ps1; intended only for explicitly justified diagnostics.")
@@ -177,6 +209,7 @@ def main() -> int:
     stop_state = "remote_publication_gate"
     changed_paths: list[str] = []
     governance_package_commit: str | None = None
+    implementation_plan: str | None = None
 
     try:
         if branch == args.main:
@@ -195,10 +228,20 @@ def main() -> int:
         changed_paths = diff_paths(root, args.main, branch)
         if args.stage == "governance-confirmation":
             require_governance_confirmation_diff(changed_paths)
+            implementation_plan = plan_exit.normalize_path(args.implementation_plan) if args.implementation_plan else infer_implementation_plan(changed_paths)
+            if not implementation_plan:
+                raise RuntimeError(
+                    "Governance-confirmation stage requires --implementation-plan or exactly one canonical implementation-plan file in the branch diff."
+                )
+            if implementation_plan not in changed_paths:
+                raise RuntimeError(
+                    "Governance-confirmation stage implementation plan must be part of the committed docs package: "
+                    + implementation_plan
+                )
             governance_package_commit = run_git(root, ["rev-parse", branch], check=True).stdout.strip()
             stop_state = "awaiting_implementation_confirmation"
         elif args.stage == "implementation":
-            require_implementation_confirmation(receipt_path)
+            require_implementation_confirmation(receipt_path, root=root, main_ref=args.main)
 
         actions.extend([
             f"verify feature worktree clean: {worktree}",
@@ -209,7 +252,7 @@ def main() -> int:
             "stop before GitLab/GitHub remote publication",
         ])
         if args.stage == "governance-confirmation":
-            actions.append("record receipt as awaiting implementation confirmation")
+            actions.append("record receipt as awaiting implementation confirmation for " + str(implementation_plan))
         if not args.skip_local_gate:
             actions.insert(3, "run tools/ci/local_gate.ps1 in feature worktree")
             actions.append("run tools/ci/local_gate.ps1 in primary root after merge")
@@ -226,7 +269,13 @@ def main() -> int:
             run_git(root, ["merge", "--ff-only", branch], check=True)
             if args.stage == "governance-confirmation":
                 assert governance_package_commit is not None
-                record_governance_receipt(receipt_path, branch=branch, commit=governance_package_commit)
+                assert implementation_plan is not None
+                record_governance_receipt(
+                    receipt_path,
+                    branch=branch,
+                    commit=governance_package_commit,
+                    implementation_plan=implementation_plan,
+                )
             if not args.skip_local_gate:
                 run_local_gate(root, "main")
     except Exception as exc:
@@ -244,6 +293,7 @@ def main() -> int:
         "main": args.main,
         "backup_ref": backup_ref,
         "changed_paths": changed_paths,
+        "implementation_plan": implementation_plan,
         "receipt": str(receipt_path),
         "remote_publication_performed": False,
         "stop_state": stop_state,

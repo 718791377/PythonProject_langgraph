@@ -52,11 +52,15 @@ REQUIRED_PLAN_EXIT_TERMS = [
     "implementation_confirmed_by_user",
     "governance_package_commit",
     "governance_package_merged_to_local_main",
+    "implementation_plan",
+    "active registered implementation-plan",
     "confirmed Stage A receipt/claim",
 ]
 REQUIRED_LOCAL_FLOW_HELPER_TERMS = [
     "governance-confirmation",
+    "--implementation-plan",
     "implementation_confirmed_by_user",
+    "implementation_plan",
     "awaiting_implementation_confirmation",
     "Governance-confirmation stage must be docs-only",
 ]

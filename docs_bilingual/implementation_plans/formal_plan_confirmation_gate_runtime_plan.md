@@ -36,10 +36,10 @@ Enforce that chat-only plan confirmation is not enough for non-document implemen
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
+Stage: Stage C implementation package
+Owner session: implement-formal-plan-confirmation-gate-runtime-20260528
+Current gate: validate and commit the feature-branch implementation package
+Stage C entry condition: satisfied by confirmed receipt/claim for this active implementation plan
 Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -68,11 +68,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add negative tests for chat-only confirmation without a committed active implementation-plan file.
-- [ ] Add positive tests for active registered committed plan-file confirmation.
-- [ ] Implement the helper/checker gate with fail-closed behavior.
-- [ ] Update governance docs and run the plan-exit checker plus local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add negative tests for chat-only confirmation without a committed active implementation-plan file.
+- [x] Add positive tests for active registered committed plan-file confirmation.
+- [x] Implement the helper/checker gate with fail-closed behavior.
+- [x] Update governance docs and run the plan-exit checker plus local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -97,4 +97,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-28 Stage C implementation: receipt/claim recorded explicit user confirmation for `docs_bilingual/implementation_plans/formal_plan_confirmation_gate_runtime_plan.md` against Stage B governance package `4a92f9fc673923a6fec9e31cbcee0526535531b7`; targeted tests and repository gates are recorded in the implementation session output.
 <!-- EVIDENCE_INDEX_END -->
