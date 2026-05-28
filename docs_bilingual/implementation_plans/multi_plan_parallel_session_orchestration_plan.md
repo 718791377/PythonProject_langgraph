@@ -52,9 +52,9 @@ This parent plan coordinates the following existing plans without replacing thei
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage A parent-plan documentation package
+Stage: Stage A integrated parent-plan documentation package
 Owner session: main Codex leader session
-Current gate: create and integrate this parent implementation plan, then stop for user confirmation
+Current gate: wait for explicit user confirmation of this parent implementation plan before Stage B child-plan creation
 Stage B entry condition: user confirms this parent plan or its Chinese companion after local `main` integration
 Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
@@ -209,8 +209,8 @@ Each child plan must include:
 - [x] Stage A: create the English ASCII parent implementation plan.
 - [x] Stage A: create the Chinese companion parent implementation plan.
 - [x] Stage A: register the parent plan in `docs_bilingual/docs_registry.yaml`.
-- [ ] Stage A: commit the parent documentation package with a Chinese commit message.
-- [ ] Stage A: integrate the parent documentation package into local `main`.
+- [x] Stage A: commit the parent documentation package with a Chinese commit message.
+- [x] Stage A: integrate the parent documentation package into local `main`.
 - [ ] Stage A: stop and ask the user to confirm this parent plan before Stage B child-plan creation.
 - [ ] Stage B: create Batch 1 child implementation plans for Phase 0 and Phase 1.
 - [ ] Stage B: create Batch 2 child implementation plans for Phase 2 and Phase 3.
@@ -244,5 +244,5 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- Pending Stage A commit evidence. This plan stores only a lightweight evidence index.
+- 2026-05-28 Stage A parent plan package: committed as `ac867ff` and integrated into local `main`; validation included `check_implementation_plan_rules.py --root . --json`, `check_precommit_update_archive.py --root . --json`, `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600`, and `tools/ci/local_mr_review.ps1`.
 <!-- EVIDENCE_INDEX_END -->
