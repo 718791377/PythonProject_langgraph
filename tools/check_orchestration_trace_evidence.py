@@ -19,6 +19,9 @@ REQUIRED_FIELDS = (
     "experts",
     "durable_workflow",
     "persistent_team",
+    "main_session_escalation",
+    "approval_timeout_risk",
+    "approval_receipt",
     "why",
 )
 
@@ -39,6 +42,36 @@ CAPABILITY_CHAIN_PATTERN = re.compile(
 BACKEND_DEFAULT_VALUES = {"langgraph", "native_omx", "none"}
 BOOLEAN_VALUES = {"true", "false"}
 LANE_STATE_VALUES = {"not_needed", "candidate", "selected", "blocked", "running"}
+MAIN_SESSION_ESCALATION_VALUES = {
+    "not_needed",
+    "preflight",
+    "pending_approval",
+    "granted",
+    "timed_out",
+    "blocked",
+}
+APPROVAL_TIMEOUT_RISK_VALUES = {"none", "low", "medium", "high", "expired"}
+NO_APPROVAL_RECEIPT_VALUES = {"", "none", "not_needed", "n/a", "na", "-"}
+
+PENDING_APPROVAL_MARKERS = (
+    "pending approval",
+    "approval pending",
+    "pending_approval",
+    "approval_wait",
+    "waiting_for_approval",
+    "human_approval_required",
+    "needs_human",
+    "awaiting_manual_approval",
+)
+
+APPROVAL_TIMEOUT_MARKERS = (
+    "approval timeout",
+    "approval timed out",
+    "approval_timeout",
+    "approval_timed_out",
+    "timed_out",
+    "expired",
+)
 
 UNMET_THRESHOLD_MARKERS = (
     "threshold_not_met:",
@@ -246,6 +279,25 @@ def validate_fields(fields: dict[str, str], full_text: str) -> tuple[list[str], 
                 f"{field} must be one of: " + ", ".join(sorted(LANE_STATE_VALUES)) + "."
             )
 
+    main_session_escalation = fields["main_session_escalation"].lower()
+    if main_session_escalation not in MAIN_SESSION_ESCALATION_VALUES:
+        errors.append(
+            "main_session_escalation must be one of: "
+            + ", ".join(sorted(MAIN_SESSION_ESCALATION_VALUES))
+            + "."
+        )
+
+    approval_timeout_risk = fields["approval_timeout_risk"].lower()
+    if approval_timeout_risk not in APPROVAL_TIMEOUT_RISK_VALUES:
+        errors.append(
+            "approval_timeout_risk must be one of: "
+            + ", ".join(sorted(APPROVAL_TIMEOUT_RISK_VALUES))
+            + "."
+        )
+
+    approval_receipt = fields["approval_receipt"].strip()
+    receipt_missing = approval_receipt.lower() in NO_APPROVAL_RECEIPT_VALUES
+
     why = fields["why"].strip()
     if why in {"...", "<concrete reason>", "<reason>", "todo", "tbd"}:
         errors.append("why must contain a concrete reason, not a placeholder.")
@@ -254,6 +306,34 @@ def validate_fields(fields: dict[str, str], full_text: str) -> tuple[list[str], 
     if contains_any(why_and_text, FORBIDDEN_MISSING_REMINDER_REASONS):
         errors.append(
             "Activation trace must not cite missing user reminders such as not requesting parallelism or subagents."
+        )
+
+    if main_session_escalation == "not_needed":
+        if approval_timeout_risk != "none":
+            errors.append("main_session_escalation=not_needed requires approval_timeout_risk=none.")
+        if not receipt_missing:
+            errors.append("main_session_escalation=not_needed requires approval_receipt=none.")
+    elif main_session_escalation in {"pending_approval", "granted", "timed_out", "blocked"} and receipt_missing:
+        errors.append(f"main_session_escalation={main_session_escalation} requires a visible approval_receipt.")
+
+    if main_session_escalation == "pending_approval" and approval_timeout_risk in {"none", "expired"}:
+        errors.append("main_session_escalation=pending_approval requires approval_timeout_risk=low, medium, or high.")
+
+    if approval_timeout_risk == "expired" and main_session_escalation not in {"timed_out", "blocked"}:
+        errors.append("approval_timeout_risk=expired requires main_session_escalation=timed_out or blocked.")
+
+    if main_session_escalation in {"timed_out", "blocked"} and not contains_any(
+        why,
+        BLOCKER_MARKERS + APPROVAL_TIMEOUT_MARKERS + ("human_approval_required",),
+    ):
+        errors.append(
+            f"main_session_escalation={main_session_escalation} must cite a named blocker or approval timeout in why."
+        )
+
+    if contains_any(full_text, PENDING_APPROVAL_MARKERS) and main_session_escalation == "not_needed":
+        errors.append(
+            "Pending approval or approval-wait language must be visible through main_session_escalation, "
+            "approval_timeout_risk, and approval_receipt fields."
         )
 
     for field in ("durable_workflow", "persistent_team"):

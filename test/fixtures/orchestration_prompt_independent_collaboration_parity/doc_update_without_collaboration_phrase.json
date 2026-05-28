@@ -19,6 +19,9 @@
     "experts": "none",
     "durable_workflow": "not_needed",
     "persistent_team": "not_needed",
-    "why": "threshold_not_met:single_execution_slice for a single low-risk document update."
+    "why": "threshold_not_met:single_execution_slice for a single low-risk document update.",
+    "main_session_escalation": "not_needed",
+    "approval_timeout_risk": "none",
+    "approval_receipt": "none"
   }
 }

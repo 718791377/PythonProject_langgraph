@@ -19,6 +19,7 @@
     "check_leader_session_scope_evidence.test.py",
     "check_capability_switch_chain.test.py",
     "check_orchestration_trace_evidence.test.py",
+    "check_main_session_escalation_visibility.test.py",
     "check_expert_lifecycle_wait_pacing_evidence.test.py",
     "check_custom_agent_toml_schema.test.py",
     "check_agent_skill_profile_surface_boundaries.test.py",

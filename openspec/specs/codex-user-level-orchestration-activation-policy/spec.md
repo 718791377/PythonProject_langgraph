@@ -104,6 +104,40 @@ The repository SHALL keep the Chinese OpenSpec companion for this policy structu
 - **THEN** durable/persistent team claims SHALL fail without the required selector, manifest or thread-state, heartbeat, close, and leader absorption evidence
 - **AND** completed LangGraph tasks SHALL fail if the state remains `running` without release fields
 
+### Requirement: Main-session escalation visibility SHALL be explicit
+
+The orchestration activation policy SHALL require visible main-session escalation fields before OMX, LangGraph, durable-worker, or local shell workflows depend on an approval that only the main Codex CLI session can request or receive.
+
+Activation trace and saved evidence SHALL expose:
+
+- `main_session_escalation`, the main Codex CLI session approval lifecycle state, with one of `not_needed`, `preflight`, `pending_approval`, `granted`, `timed_out`, or `blocked`;
+- `approval_timeout_risk`, the current risk band for a pending or expired approval wait, with one of `none`, `low`, `medium`, `high`, or `expired`;
+- `approval_receipt`, the repo-local proof or artifact reference for the approval request, as `none` when approval is not needed, or as a repo-local receipt, interrupt, checkpoint, or pending-approval artifact reference when approval is pending, granted, timed out, or blocked.
+
+Worker contexts MAY record an approval receipt or blocked state, but SHALL NOT hide approval waits inside worker-only context or request approval outside the main session.
+
+#### Scenario: Pending approval is visible before a durable wait
+
+- **WHEN** a LangGraph, OMX, durable-worker, or shell flow is waiting for main-session approval
+- **THEN** saved evidence SHALL report `main_session_escalation=pending_approval`
+- **AND** it SHALL report a non-`none` `approval_timeout_risk`
+- **AND** it SHALL record a visible `approval_receipt`
+- **AND** it SHALL state that the main session, not the worker, owns the approval decision
+
+#### Scenario: Approval wait times out
+
+- **WHEN** a pending main-session approval expires or risks blocking progress
+- **THEN** saved evidence SHALL report `main_session_escalation=timed_out` or `main_session_escalation=blocked`
+- **AND** it SHALL report `approval_timeout_risk=expired` for timed-out approvals
+- **AND** it SHALL cite a named blocker such as `blocked:approval_timeout`
+
+#### Scenario: No approval is required
+
+- **WHEN** the current task does not need privileged shell, durable workflow, or worker approval
+- **THEN** the trace SHALL report `main_session_escalation=not_needed`
+- **AND** it SHALL report `approval_timeout_risk=none`
+- **AND** it SHALL report `approval_receipt=none`
+
 ### Requirement: Missing user reminders SHALL NOT be a routing reason
 
 The orchestration activation policy SHALL forbid using "the user did not request parallelism", "the user did not request subagents", or equivalent missing-reminder language as the reason for not using experts, durable workflow, or persistent team.

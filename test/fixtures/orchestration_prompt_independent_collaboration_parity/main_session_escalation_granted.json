@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "case_type": "main_session_escalation_visibility",
+  "case_id": "main_session_escalation_granted",
+  "main_session_escalation": "granted",
+  "pending_approval": false,
+  "approval_timeout_risk": "none",
+  "approval_receipt": ".omx/state/langgraph/interrupts/thread-123.json#interrupt-1",
+  "main_session_only": true,
+  "granted_by": "main_session"
+}
