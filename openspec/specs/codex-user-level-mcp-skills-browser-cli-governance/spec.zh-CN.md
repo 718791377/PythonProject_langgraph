@@ -202,3 +202,19 @@ Receipt field glossary：
 - **THEN** 命令必须 fail closed
 - **AND** 必须报告 redaction findings
 - **AND** 默认输出不得读取 browser data 或暴露 raw secrets
+
+### Requirement: 治理方案 SHALL 使用可执行的 modern Comet 结构
+
+用户级 MCP、skills、browser automation 与 CLI harness 治理方案必须包含面向 worker 的 Goal、Architecture 和 Tech Stack 开头块，并包含文件归属、就绪定义、任务 backlog、验收、证据、回滚和风险等面向执行的章节。
+
+#### Scenario: modern section 齐全
+
+- **WHEN** 人工复核该方案
+- **THEN** 它必须包含 Goal、Architecture、Tech Stack、文件职责图、实施前就绪定义、任务级 backlog、验收标准、需要保留的证据、rollback 与风险章节
+- **AND** 它必须保留 Token/risk priority、authorization receipt、update receipt、evidence redaction、port registry/lease、codex-port allocator、pending_bind、registry_revision、39000-39299、40000-40999、OpenSpec slice 与 fail closed governance markers
+
+#### Scenario: runtime lane 仍受风险门禁约束
+
+- **WHEN** 某个 lane 缺少 install、smoke、receipt 或 rollback evidence
+- **THEN** 它必须保持低于 active
+- **AND** 敏感 MCP、browser、CDP Bridge、OpenCLI、CLI-Anything 与 WeCom 动作必须要求当前 authorization receipt evidence

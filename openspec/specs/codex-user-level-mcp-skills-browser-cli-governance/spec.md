@@ -117,7 +117,6 @@ The repository-local `skills2cli audit warnings --since <duration> --json` comma
 - **AND** recent excerpts SHALL be sanitized
 - **AND** raw log paths SHALL NOT be retained
 
-
 ### Requirement: Codex-port allocator MVP SHALL provide range-aware port leases
 
 The repository SHALL provide a repo-local `codex-port` helper and range registry for compact, deterministic port lease governance.
@@ -435,7 +434,6 @@ Both commands SHALL be non-mutating dry runs in the repo-local MVP. They SHALL N
 - **AND** `human_owned_cleanup_performed` SHALL be `false`
 - **AND** `deleted_profiles` SHALL be empty
 
-
 ### Requirement: CDP Bridge governance guard SHALL keep read-only defaults and fail closed sensitive actions
 
 The repository SHALL provide a repo-local CDP Bridge governance guard that classifies CDP Bridge actions before any live browser dispatch can occur.
@@ -542,7 +540,6 @@ The guard SHALL be non-mutating. It SHALL NOT install OpenCLI, start OpenCLI, la
 - **AND** each check SHALL report `dispatch_allowed=false`
 - **AND** each check SHALL require owner lease evidence
 - **AND** each check SHALL require authorization receipt evidence
-
 
 ### Requirement: CLI-Anything governance guard SHALL require receipt evidence and harness-generation boundaries
 
@@ -708,3 +705,20 @@ Receipt field glossary:
 - **THEN** the command SHALL fail closed
 - **AND** it SHALL report redaction findings
 - **AND** it SHALL not read browser data or emit raw secrets in default output
+
+### Requirement: Governance plan SHALL use the executable modern Comet structure
+
+The user-level MCP, skills, browser automation, and CLI harness governance plan SHALL include worker-facing Goal, Architecture, and Tech Stack opening blocks plus execution-oriented sections for file ownership, readiness, task backlog, acceptance, evidence, rollback, and risks.
+
+#### Scenario: Modern sections are present
+
+- **WHEN** the plan is reviewed manually
+- **THEN** it SHALL include Goal, Architecture, Tech Stack, file responsibility map, definition of ready, task-level backlog, acceptance criteria, required evidence, rollback, and risks
+- **AND** it SHALL preserve Token/risk priority, authorization receipt, update receipt, evidence redaction, port registry/lease, codex-port allocator, pending_bind, registry_revision, 39000-39299, 40000-40999, OpenSpec slice, and fail closed governance markers
+
+#### Scenario: Runtime lanes remain risk-gated
+
+- **WHEN** a lane lacks install, smoke, receipt, or rollback evidence
+- **THEN** it SHALL stay below active
+- **AND** sensitive MCP, browser, CDP Bridge, OpenCLI, CLI-Anything, and WeCom actions SHALL require current authorization receipt evidence
+
