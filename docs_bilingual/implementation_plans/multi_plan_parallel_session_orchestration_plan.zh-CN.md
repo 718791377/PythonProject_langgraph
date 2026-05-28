@@ -242,7 +242,7 @@ Stage C 进入条件：用户已确认继续实施 portable claim-lock 子方案
 - [x] Stage B：为 Phase 5 和 Phase 6 创建 Batch 4 子 implementation_plan。
 - [x] Stage B：为 Phase 7 集成创建 Batch 5 子 implementation_plan。
 - [x] Stage B 父方案修订：加入二层级架构图，并吸收 Pi family / oh-my-pi / CLI harness reference-only 边界到父级编排方案。
-- [ ] Stage C：子方案确认后，实现 portable child-plan claim lock。
+- [x] Stage C：子方案确认后，实现 portable child-plan claim lock。
 - [ ] 后续阶段：每阶段最多 6 个并行 session 执行子方案，并串行合入本地 main。
 <!-- TASK_BACKLOG_END -->
 
@@ -270,7 +270,7 @@ Stage B 后续确认后的验收条件：
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage C 本地集成：portable child-plan claim lock 已快进合入本地 `main`；合入后 local gate 通过；远端发布尚未授权。
-- 2026-05-28 Stage C 验证：portable child-plan claim lock 在 `implement-portable-plan-claim-lock-20260528` 分支通过聚焦测试、local gate 和 local MR review；下一门禁是串行合入本地 `main`。
+- 2026-05-28 Stage C 验证：portable child-plan claim lock 在 `implement-portable-plan-claim-lock-20260528` 分支通过聚焦测试、local gate 和 local MR review；随后已按上一条记录串行合入本地 `main`。
 - 2026-05-28 Stage C 进入：通过 `portable_implementation_plan_claim_lock_plan` 开始实施 portable child-plan claim lock；本轮工作在 `implement-portable-plan-claim-lock-20260528` 分支隔离完成后再合入本地 `main`。
 - 2026-05-28 Stage B 父方案修订：加入二层级架构图，并从 `pi_plugin_codex_user_level_sidecar_plan` 与 `user_level_mcp_skills_browser_cli_governance_plan` 吸收 Pi family / oh-my-pi / CLI harness reference-only 边界；commit 记录在本地 git 历史中。
 - 2026-05-28 Stage B 子方案创建包：创建并登记 33 个 active 子 implementation_plan 的英文主版和中文对照版；最终 commit 记录在 assistant 回复和本地 git 历史中。

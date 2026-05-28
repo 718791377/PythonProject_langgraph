@@ -242,7 +242,7 @@ Each child plan must include:
 - [x] Stage B: create Batch 4 child implementation plans for Phase 5 and Phase 6.
 - [x] Stage B: create Batch 5 child implementation plans for Phase 7 integration.
 - [x] Stage B parent revision: add the two-level hierarchy diagram and absorb Pi family / oh-my-pi / CLI harness reference-only boundaries into this parent plan.
-- [ ] Stage C: implement portable child-plan claim locking after child plans are confirmed.
+- [x] Stage C: implement portable child-plan claim locking after child plans are confirmed.
 - [ ] Later stages: run child-plan work with at most six parallel sessions per phase and serial local-main integration.
 <!-- TASK_BACKLOG_END -->
 
@@ -270,7 +270,7 @@ Stage B acceptance after later confirmation:
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage C local integration: portable child-plan claim locking was fast-forwarded into local `main`; post-merge local gate passed; remote publication is not approved yet.
-- 2026-05-28 Stage C validation: portable child-plan claim locking passed focused tests, local gate, and local MR review on branch `implement-portable-plan-claim-lock-20260528`; local `main` integration is the next serial gate.
+- 2026-05-28 Stage C validation: portable child-plan claim locking passed focused tests, local gate, and local MR review on branch `implement-portable-plan-claim-lock-20260528`; local `main` integration has since completed as recorded above.
 - 2026-05-28 Stage C entry: portable child-plan claim locking began through `portable_implementation_plan_claim_lock_plan`; work is isolated on branch `implement-portable-plan-claim-lock-20260528` before local-main integration.
 - 2026-05-28 Stage B parent revision: added the two-level hierarchy diagram and absorbed Pi family / oh-my-pi / CLI harness reference-only boundaries from `pi_plugin_codex_user_level_sidecar_plan` and `user_level_mcp_skills_browser_cli_governance_plan`; commit recorded in local git history.
 - 2026-05-28 Stage B child-plan creation package: created and registered 33 active child implementation plans with English primary and Chinese companion files; final commit is recorded in the assistant response and local git history.
