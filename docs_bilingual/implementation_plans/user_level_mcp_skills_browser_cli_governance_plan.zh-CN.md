@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: active
 plan_readiness: execution-ready
-implementation_state: opencli_port_auto_guard_repo_local_implemented
+implementation_state: opencli_live_start_guard_stage_a_confirmed
 last_reviewed_at: 2026-05-28
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -38,6 +38,8 @@ related_docs:
 本版已按 `pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 和 `comet_runtime_agile_focus_area_plan.zh-CN.md` 的新版结构返工：先给出 worker 指令、Goal、Architecture、Tech Stack，再给出关系模型、runtime 契约、文件职责图、实施前就绪定义、任务级执行 Backlog、验收标准、需要保留的证据和 rollback 规则。
 
 `status: active` 表示本双语文件现在是 repo-local governance-to-user-level capability lane 的执行权威；不表示完整用户级安装、真实 smoke test 或跨项目 rollout 已完成。`plan_readiness: execution-ready` 表示本文结构与执行颗粒度已经足够让 agentic worker 接手实现。当前 repo-local `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP、CDP Bridge read-only defaults、OpenCLI `--port auto` 租约门禁、`wecom-cli` guarded dry-run 和 receipt/redaction governance 均属于 implemented-local；完整用户级 `active` 仍取决于 installation receipt、update receipt、smoke test result 与 rollback pointer。
+
+下一小步 Stage A 已确认：补齐 Task 5 中 `live start 需要 install receipt 和 owner evidence` 的 repo-local OpenCLI guard。该小步只实现非启动、非安装、非浏览器连接的 fail-closed 检查，要求 install receipt、browser owner lease evidence 与 `codex-port --port auto` lease evidence 后仍停在 repo-local MVP deferral，不修改用户级运行时。
 
 ## 1. 关系模型与命名边界
 
