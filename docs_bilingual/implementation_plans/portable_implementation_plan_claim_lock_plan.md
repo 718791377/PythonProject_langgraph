@@ -5,10 +5,11 @@ status: active
 doc_class: implementation_plan
 zh_cn_path: docs_bilingual/implementation_plans/portable_implementation_plan_claim_lock_plan.zh-CN.md
 parent_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md
-stage: Stage B child plan
+stage: Stage C implementation
 phase: 1
 batch: 1
 confirmation_required: true
+confirmed_for_implementation_at: 2026-05-28
 ---
 
 # Portable Implementation Plan Claim Lock Plan
@@ -27,19 +28,19 @@ Implement a Git and filesystem portable single-active-session claim lock for eac
 
 - Level: project-level governance and runtime planning for `D:/PythonProject_langgraph`.
 - Parent: `docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`.
-- Batch: Stage B Batch 1.
+- Batch: Stage C implementation slice for Phase 1 Batch 1.
 - Phase: Phase 1.
-- Status: this file is an active child implementation plan, but implementation must not start until the user confirms this child plan after local `main` integration.
+- Status: confirmed for Stage C implementation in the main Codex leader session; non-document implementation may proceed inside the declared feature worktree.
 - Remote publication: out of scope unless the user explicitly asks for remote publication.
 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
+Stage: Stage C implementation started
+Owner session: main Codex leader session
+Current gate: implement portable child-plan claim lock in `.worktrees/implement-portable-plan-claim-lock-20260528`, then run local validation before local `main` integration
+Stage C entry condition: satisfied by user confirmation after local `main` integration of the Stage B child-plan package
 Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -67,7 +68,7 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
+- [x] Confirm this child plan after local main integration.
 - [ ] Define the portable claim schema with plan path, branch, worktree, session id, and expiry or release state.
 - [ ] Add tests for one active claim, stale claim, released claim, and conflicting active claim.
 - [ ] Implement the claim helper and checker without depending on OMX or LangGraph.
@@ -95,5 +96,6 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage C entry: user confirmed continued implementation of this child plan; governance status updated in branch `implement-portable-plan-claim-lock-20260528` before runtime/checker work.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

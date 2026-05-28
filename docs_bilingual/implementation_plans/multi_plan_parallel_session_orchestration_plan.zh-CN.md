@@ -54,10 +54,10 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B 子方案创建包已准备合入本地 main
+阶段：Stage C portable claim-lock 实施已开始
 责任会话：main Codex leader session
-当前门禁：完成本地验证和本地 main 合入后，等待用户明确确认这些子 implementation_plan，再进入 Stage C 非文档实现
-Stage C 进入条件：本地 `main` 合入后，用户明确确认相关子方案
+当前门禁：在隔离 feature worktree 中实施 `portable_implementation_plan_claim_lock_plan`，本地验证通过后串行合入本地 `main`
+Stage C 进入条件：用户已确认继续实施 portable claim-lock 子方案
 最后更新：2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -269,6 +269,7 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage C 进入：通过 `portable_implementation_plan_claim_lock_plan` 开始实施 portable child-plan claim lock；本轮工作在 `implement-portable-plan-claim-lock-20260528` 分支隔离完成后再合入本地 `main`。
 - 2026-05-28 Stage B 父方案修订：加入二层级架构图，并从 `pi_plugin_codex_user_level_sidecar_plan` 与 `user_level_mcp_skills_browser_cli_governance_plan` 吸收 Pi family / oh-my-pi / CLI harness reference-only 边界；commit 记录在本地 git 历史中。
 - 2026-05-28 Stage B 子方案创建包：创建并登记 33 个 active 子 implementation_plan 的英文主版和中文对照版；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-28 Stage A 父级方案包：已用 `ac867ff` 提交并合入本地 `main`；验证包括 `check_implementation_plan_rules.py --root . --json`、`check_precommit_update_archive.py --root . --json`、`tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` 和 `tools/ci/local_mr_review.ps1`。

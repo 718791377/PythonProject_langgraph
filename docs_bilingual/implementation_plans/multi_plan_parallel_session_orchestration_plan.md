@@ -54,10 +54,10 @@ This parent plan coordinates the following existing plans without replacing thei
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan package prepared for local main integration
+Stage: Stage C portable claim-lock implementation started
 Owner session: main Codex leader session
-Current gate: complete local validation and local main integration, then wait for explicit user confirmation of the child implementation plans before Stage C non-document implementation
-Stage C entry condition: user confirms the relevant child plans after local `main` integration
+Current gate: implement `portable_implementation_plan_claim_lock_plan` in an isolated feature worktree, validate locally, and integrate serially into local `main`
+Stage C entry condition: satisfied for the portable claim-lock child plan by the user's continued-implementation confirmation
 Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -269,6 +269,7 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage C entry: portable child-plan claim locking began through `portable_implementation_plan_claim_lock_plan`; work is isolated on branch `implement-portable-plan-claim-lock-20260528` before local-main integration.
 - 2026-05-28 Stage B parent revision: added the two-level hierarchy diagram and absorbed Pi family / oh-my-pi / CLI harness reference-only boundaries from `pi_plugin_codex_user_level_sidecar_plan` and `user_level_mcp_skills_browser_cli_governance_plan`; commit recorded in local git history.
 - 2026-05-28 Stage B child-plan creation package: created and registered 33 active child implementation plans with English primary and Chinese companion files; final commit is recorded in the assistant response and local git history.
 - 2026-05-28 Stage A parent plan package: committed as `ac867ff` and integrated into local `main`; validation included `check_implementation_plan_rules.py --root . --json`, `check_precommit_update_archive.py --root . --json`, `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600`, and `tools/ci/local_mr_review.ps1`.

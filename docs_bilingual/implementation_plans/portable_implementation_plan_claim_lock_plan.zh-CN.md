@@ -5,10 +5,11 @@ status: active
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/portable_implementation_plan_claim_lock_plan.md
 parent_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md
-stage: Stage B child plan
+stage: Stage C implementation
 phase: 1
 batch: 1
 confirmation_required: true
+confirmed_for_implementation_at: 2026-05-28
 ---
 
 # Portable Implementation Plan Claim Lock Plan（中文对照）
@@ -27,19 +28,19 @@ Implement a Git and filesystem portable single-active-session claim lock for eac
 
 - 层级：`D:/PythonProject_langgraph` 项目级治理和 runtime 规划。
 - 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
-- 批次：Stage B Batch 1。
+- 批次：Stage C implementation slice for Phase 1 Batch 1。
 - 阶段：Phase 1。
-- 状态：本文件是 active 子 implementation_plan，但在本地 `main` 合入后仍必须等待用户确认，才能开始非文档实现。
+- 状态：本子方案已由用户确认为 Stage C 实施项；可以在声明的 feature worktree 内开始非文档实现。
 - 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
+阶段：Stage C 实施已开始
+责任会话：main Codex leader session
+当前门禁：在 `.worktrees/implement-portable-plan-claim-lock-20260528` 中实现 portable child-plan claim lock，并在合入本地 `main` 前完成本地验证
+Stage C 进入条件：Stage B 子方案包合入本地 `main` 后，用户已确认继续实施本子方案
 最后更新：2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -67,7 +68,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
+- [x] Confirm this child plan after local main integration.
 - [ ] Define the portable claim schema with plan path, branch, worktree, session id, and expiry or release state.
 - [ ] Add tests for one active claim, stale claim, released claim, and conflicting active claim.
 - [ ] Implement the claim helper and checker without depending on OMX or LangGraph.
@@ -95,5 +96,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage C 进入：用户确认继续实施本子方案；runtime/checker 工作前已在 `implement-portable-plan-claim-lock-20260528` 分支更新治理状态。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->
