@@ -37,9 +37,9 @@ Implement a Git and filesystem portable single-active-session claim lock for eac
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C implementation validated; ready for local main integration
+Stage: Stage C implementation integrated into local main; remote publication pending
 Owner session: main Codex leader session
-Current gate: local gate and local MR review passed; merge this feature branch serially into local `main`
+Current gate: remote publication approval gate; keep GitLab/GitHub publication stopped until explicit user approval
 Stage C entry condition: satisfied by user confirmation after local `main` integration of the Stage B child-plan package
 Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
@@ -96,6 +96,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage C local integration: implementation package was fast-forwarded into local `main`; post-merge `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` passed; remote publication remains pending.
 - 2026-05-28 Stage C validation: `python test/check_implementation_plan_claim_lock.test.py`, `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600`, and `tools/ci/local_mr_review.ps1` passed in branch `implement-portable-plan-claim-lock-20260528`.
 - 2026-05-28 Stage C implementation: added `tools/check_implementation_plan_claim_lock.py`, `tools/claim_implementation_plan.py`, focused tests, and local guard registration for portable implementation-plan claim locking.
 - 2026-05-28 Stage C entry: user confirmed continued implementation of this child plan; governance status updated in branch `implement-portable-plan-claim-lock-20260528` before runtime/checker work.

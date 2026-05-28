@@ -54,9 +54,9 @@ This parent plan coordinates the following existing plans without replacing thei
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C portable claim-lock validated; ready for local main integration
+Stage: Stage C portable claim-lock integrated into local main; remote publication pending
 Owner session: main Codex leader session
-Current gate: local validation passed for `portable_implementation_plan_claim_lock_plan`; integrate the feature branch serially into local `main`
+Current gate: remote publication approval gate; do not publish GitLab/GitHub until the user explicitly approves remote publication
 Stage C entry condition: satisfied for the portable claim-lock child plan by the user's continued-implementation confirmation
 Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
@@ -269,6 +269,7 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage C local integration: portable child-plan claim locking was fast-forwarded into local `main`; post-merge local gate passed; remote publication is not approved yet.
 - 2026-05-28 Stage C validation: portable child-plan claim locking passed focused tests, local gate, and local MR review on branch `implement-portable-plan-claim-lock-20260528`; local `main` integration is the next serial gate.
 - 2026-05-28 Stage C entry: portable child-plan claim locking began through `portable_implementation_plan_claim_lock_plan`; work is isolated on branch `implement-portable-plan-claim-lock-20260528` before local-main integration.
 - 2026-05-28 Stage B parent revision: added the two-level hierarchy diagram and absorbed Pi family / oh-my-pi / CLI harness reference-only boundaries from `pi_plugin_codex_user_level_sidecar_plan` and `user_level_mcp_skills_browser_cli_governance_plan`; commit recorded in local git history.

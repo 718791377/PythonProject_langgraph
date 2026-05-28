@@ -54,9 +54,9 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage C portable claim-lock 已验证，准备合入本地 main
+阶段：Stage C portable claim-lock 已合入本地 main，远端发布待授权
 责任会话：main Codex leader session
-当前门禁：`portable_implementation_plan_claim_lock_plan` 本地验证已通过；下一步将 feature branch 串行合入本地 `main`
+当前门禁：远端发布授权门；用户明确授权远端发布前，不推送 GitLab/GitHub
 Stage C 进入条件：用户已确认继续实施 portable claim-lock 子方案
 最后更新：2026-05-28
 <!-- CURRENT_STATUS_END -->
@@ -269,6 +269,7 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-28 Stage C 本地集成：portable child-plan claim lock 已快进合入本地 `main`；合入后 local gate 通过；远端发布尚未授权。
 - 2026-05-28 Stage C 验证：portable child-plan claim lock 在 `implement-portable-plan-claim-lock-20260528` 分支通过聚焦测试、local gate 和 local MR review；下一门禁是串行合入本地 `main`。
 - 2026-05-28 Stage C 进入：通过 `portable_implementation_plan_claim_lock_plan` 开始实施 portable child-plan claim lock；本轮工作在 `implement-portable-plan-claim-lock-20260528` 分支隔离完成后再合入本地 `main`。
 - 2026-05-28 Stage B 父方案修订：加入二层级架构图，并从 `pi_plugin_codex_user_level_sidecar_plan` 与 `user_level_mcp_skills_browser_cli_governance_plan` 吸收 Pi family / oh-my-pi / CLI harness reference-only 边界；commit 记录在本地 git 历史中。
