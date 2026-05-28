@@ -218,3 +218,22 @@ Receipt field glossary：
 - **WHEN** 某个 lane 缺少 install、smoke、receipt 或 rollback evidence
 - **THEN** 它必须保持低于 active
 - **AND** 敏感 MCP、browser、CDP Bridge、OpenCLI、CLI-Anything 与 WeCom 动作必须要求当前 authorization receipt evidence
+
+### Requirement: 治理方案 SHALL 保留完整 Comet 阶段证据
+
+用户级 MCP、skills、browser automation 与 CLI harness 治理实施方案，在 operator 明确要求完整 `/comet` 重构时，必须描述完整的 Comet `Open -> Design -> Build -> Verify -> Archive` 工作流。
+
+当 active change 是 full workflow 时，方案不得把当前治理方案执行模型描述为 tweak-only。
+
+#### Scenario: 需要完整 Comet framing
+
+- **WHEN** full Comet 重构后复核中文治理实施方案
+- **THEN** 其 frontmatter 必须标识 `comet_workflow: full`
+- **AND** 其 phase model 必须包含 `open-design-build-verify-archive`
+- **AND** 正文必须包含明确的 Open、Design、Build、Verify、Archive gates
+
+#### Scenario: Runtime implementation 仍然不在本次范围内
+
+- **WHEN** full Comet refactor 已应用到文档
+- **THEN** 它必须保留既有规则：真实用户级安装、live browser automation 与 WXWork GUI automation 需要独立治理证据
+- **AND** 它不得把未完成 lanes 标记为 `active`
