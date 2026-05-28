@@ -25,6 +25,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/implementation_plan_confirmation_gate.md
     zh_cn_path: docs_bilingual/implementation_plans/implementation_plan_confirmation_gate.zh-CN.md
 
+  - doc_id: codex_governance_session_visibility_and_plan_lock_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_governance_session_visibility_and_plan_lock_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_governance_session_visibility_and_plan_lock_plan.zh-CN.md
+
   - doc_id: codex_oh_my_codex_user_level_team_mode_plan
     doc_class: implementation_plan
     status: active
