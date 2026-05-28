@@ -624,6 +624,35 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertFalse(payload["bootstrap_required"])
             self.assertFalse(payload["repair_required"])
             self.assertEqual(payload["bootstrap_missing_capabilities"], [])
+            for key in ["adaptation_lane", "blockers", "warnings", "checked_files", "redacted_paths", "control_mode_allowed"]:
+                self.assertIn(key, payload)
+            self.assertEqual(payload["blockers"], [])
+            self.assertEqual(payload["warnings"], [])
+            checked_roles = {record["role"] for record in payload["checked_files"]}
+            self.assertTrue(
+                {
+                    "agent_toml",
+                    "private_prompt_source",
+                    "mode_cli",
+                    "on_wrapper",
+                    "off_wrapper",
+                    "startup_hook",
+                    "operator_doc",
+                }.issubset(checked_roles),
+                payload["checked_files"],
+            )
+            for record in payload["checked_files"]:
+                self.assertFalse(Path(record["path"]).is_absolute(), record)
+                self.assertNotIn(str(project), record["path"])
+            redacted_aliases = {record["alias"] for record in payload["redacted_paths"]}
+            self.assertIn("phase1.agent_toml", redacted_aliases)
+            self.assertIn("phase1.private_prompt_source", redacted_aliases)
+            self.assertIn("phase1.mode_cli", redacted_aliases)
+            self.assertIn("phase1.on_wrapper", redacted_aliases)
+            self.assertIn("phase1.off_wrapper", redacted_aliases)
+            for record in payload["redacted_paths"]:
+                self.assertFalse(Path(record["path"]).is_absolute(), record)
+                self.assertNotIn(str(project), record["path"])
             self.assertFalse(payload["git_status"]["dirty"])
             self.assertTrue(payload["private_prompt_source"]["exists"])
             self.assertFalse(payload["private_prompt_source"]["managed_by_toolchain"])
@@ -729,6 +758,20 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(payload["cli_contract_check"]["skip_reason"], "static_only_no_exec_cli")
             self.assertEqual(payload["cli_contract_check"]["commands_checked"], [])
             self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], [])
+            self.assertEqual(
+                payload["warnings"],
+                [
+                    {
+                        "code": "warning:read_contract_cli_execution_skipped",
+                        "message": "Read-contract CLI execution was skipped because readiness ran in static-only mode.",
+                        "cli_execution_mode": "static-only",
+                        "skip_reason": "static_only_no_exec_cli",
+                        "blocks_control_mode": True,
+                    }
+                ],
+            )
+            self.assertTrue(payload["checked_files"])
+            self.assertTrue(payload["redacted_paths"])
             remediation = payload["remediation_plan"]
             self.assertFalse(remediation["ready_for_control"])
             self.assertEqual(remediation["lane"], "ready-candidate")

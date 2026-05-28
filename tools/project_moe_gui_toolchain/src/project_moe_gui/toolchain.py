@@ -1401,6 +1401,89 @@ def skipped_cli_contract_details(mode_cli: Path, reason: str) -> dict[str, Any]:
     }
 
 
+def build_phase1_readiness_warnings(execute_cli: bool, cli_details: dict[str, Any]) -> list[dict[str, Any]]:
+    warnings: list[dict[str, Any]] = []
+    if not execute_cli:
+        warnings.append(
+            {
+                "code": "warning:read_contract_cli_execution_skipped",
+                "message": "Read-contract CLI execution was skipped because readiness ran in static-only mode.",
+                "cli_execution_mode": "static-only",
+                "skip_reason": cli_details.get("skip_reason") or "static_only_no_exec_cli",
+                "blocks_control_mode": True,
+            }
+        )
+    return warnings
+
+
+def phase1_checked_file_record(role: str, path: str | Path, exists: Any, *, source: str) -> dict[str, Any]:
+    return {
+        "role": role,
+        "path": norm(path),
+        "exists": bool(exists),
+        "source": source,
+    }
+
+
+def build_phase1_checked_files(
+    agent_details: dict[str, Any],
+    prompt_details: dict[str, Any],
+    mode_cli_surface: dict[str, Any],
+    on_details: dict[str, Any],
+    off_details: dict[str, Any],
+    hook_details: dict[str, Any],
+    operator_doc_details: dict[str, Any],
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+
+    def append(role: str, details: dict[str, Any], *, source: str) -> None:
+        path = details.get("path")
+        if path is None:
+            return
+        records.append(phase1_checked_file_record(role, path, details.get("exists"), source=source))
+
+    append("agent_toml", agent_details, source="agent_toml")
+    append("private_prompt_source", prompt_details, source="private_prompt_source")
+    append("mode_cli", mode_cli_surface, source="mode_cli_surface")
+    append("on_wrapper", on_details, source="wrappers.on")
+    append("off_wrapper", off_details, source="wrappers.off")
+
+    for item in hook_details.get("candidates_checked") or []:
+        if isinstance(item, dict):
+            append("startup_hook", item, source="startup_activation_hooks.candidates_checked")
+    for item in operator_doc_details.get("candidates_checked") or []:
+        if isinstance(item, dict):
+            append("operator_doc", item, source="operator_docs.candidates_checked")
+
+    deduped: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for record in records:
+        key = (str(record["role"]), str(record["path"]), str(record["source"]))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(record)
+    return deduped
+
+
+def build_phase1_redacted_paths(checked_files: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    counters: dict[str, int] = {}
+    redacted: list[dict[str, Any]] = []
+    for record in checked_files:
+        role = str(record.get("role") or "path")
+        counters[role] = counters.get(role, 0) + 1
+        alias = f"phase1.{role}" if counters[role] == 1 else f"phase1.{role}.{counters[role]}"
+        redacted.append(
+            {
+                "alias": alias,
+                "role": role,
+                "path": str(record.get("path") or ""),
+                "exists": bool(record.get("exists")),
+            }
+        )
+    return redacted
+
+
 def execution_blocking_static_codes(errors: list[dict[str, Any]]) -> list[str]:
     codes: list[str] = []
     for error in errors:
@@ -1750,6 +1833,17 @@ def check_phase1_readiness(
         }
     readiness_status = "ready" if not errors and execute_cli else ("static-ready-candidate" if not errors else "blocked")
     remediation_plan = build_phase1_remediation_plan(errors, lane, execute_cli)
+    warnings = build_phase1_readiness_warnings(execute_cli, cli_details)
+    checked_files = build_phase1_checked_files(
+        agent_details,
+        prompt_details,
+        mode_cli_surface,
+        on_details,
+        off_details,
+        hook_details,
+        operator_doc_details,
+    )
+    redacted_paths = build_phase1_redacted_paths(checked_files)
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "check_project_moe_phase1_readiness",
@@ -1773,6 +1867,9 @@ def check_phase1_readiness(
         "wrappers": {"on": on_details, "off": off_details},
         "startup_activation_hooks": hook_details,
         "operator_docs": operator_doc_details,
+        "warnings": warnings,
+        "checked_files": checked_files,
+        "redacted_paths": redacted_paths,
         "blockers": errors,
         "next_actions": [] if not errors else sorted({error["code"] for error in errors}),
         "remediation_plan": remediation_plan,

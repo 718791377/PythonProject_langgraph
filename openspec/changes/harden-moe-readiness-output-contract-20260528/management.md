@@ -14,9 +14,9 @@
 
 ## Build
 
-- [ ] Implement derived readiness output contract fields.
-- [ ] Add regression assertions.
-- [ ] Update plan checklist from evidence.
+- [x] Implement derived readiness output contract fields.
+- [x] Add regression assertions.
+- [x] Update plan checklist from evidence.
 
 ## Verify
 

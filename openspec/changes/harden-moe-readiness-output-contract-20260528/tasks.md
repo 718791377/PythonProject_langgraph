@@ -7,10 +7,10 @@
 
 ## 2. Implementation
 
-- [ ] 2.1 Add top-level `warnings`, `checked_files`, and `redacted_paths` fields to Phase 1 readiness output.
-- [ ] 2.2 Preserve existing adaptation lane, blockers, and `control_mode_allowed` behavior.
-- [ ] 2.3 Add regression coverage for the Ready Lane readiness output contract.
-- [ ] 2.4 Update the Project MOE GUI implementation-plan checklist for the covered readiness evidence.
+- [x] 2.1 Add top-level `warnings`, `checked_files`, and `redacted_paths` fields to Phase 1 readiness output.
+- [x] 2.2 Preserve existing adaptation lane, blockers, and `control_mode_allowed` behavior.
+- [x] 2.3 Add regression coverage for the Ready Lane readiness output contract.
+- [x] 2.4 Update the Project MOE GUI implementation-plan checklist for the covered readiness evidence.
 
 ## 3. Validation and local integration
 
