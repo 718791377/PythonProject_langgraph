@@ -503,6 +503,7 @@ The readiness payload must include:
 - [x] Ensure static-only mode never executes a target project CLI.
 - [x] Ensure read-contract mode only executes safe read commands.
 - [ ] Ensure readiness output includes lane, blockers, warnings, checked files, redacted paths, and `control_mode_allowed`.
+- Current slice (2026-05-28): `harden-moe-readiness-output-contract-20260528` is adding explicit `warnings`, `checked_files`, and `redacted_paths` evidence fields before this item is checked.
 - Evidence (2026-05-28): the current schema-hardening OpenSpec change adds a stable fail-closed blocker for unsupported CLI envelope schema; its regression test proves readiness remains blocked; existing fixture coverage still proves the ready, ready-candidate, bootstrap, repair, static-only, and read-contract command boundaries.
 
 #### Slice 2: Bootstrap and repair lane tooling

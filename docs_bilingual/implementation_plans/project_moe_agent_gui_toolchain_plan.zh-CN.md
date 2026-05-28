@@ -505,6 +505,7 @@ readiness payload 必须包含：
 - [x] 确保 static-only 模式永不执行目标项目 CLI。
 - [x] 确保 read-contract 模式只执行安全读命令。
 - [ ] 确保 readiness 输出包含 lane、blockers、warnings、checked files、脱敏路径和 `control_mode_allowed`。
+- 当前切片（2026-05-28）：`harden-moe-readiness-output-contract-20260528` 正在补齐显式 `warnings`、`checked_files` 与 `redacted_paths` 证据字段；测试证据通过前不勾选本项。
 - 证据（2026-05-28）：当前 schema 加固 OpenSpec change 增加了用于不支持 CLI envelope schema 的稳定 fail-closed blocker；对应回归测试证明 readiness 会保持阻断；既有 fixture 继续覆盖 ready、ready-candidate、bootstrap、repair、static-only 和 read-contract 命令边界。
 
 #### Slice 2：Bootstrap 与 Repair lane 工具
