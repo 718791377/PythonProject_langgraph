@@ -10,8 +10,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "check_startup_instruction_mojibake.py"
 
-START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
-END_CANARY = chr(21941) + "~"
+START_CANARY = "CODEX_CTX_" + "CANARY_START"
+END_CANARY = "CODEX_CTX_" + "CANARY_END"
+LEGACY_START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
+LEGACY_END_CANARY = chr(21941) + "~"
 
 AUTHORITY_SURFACES = (
     "AGENTS.md",
@@ -150,15 +152,30 @@ class StartupInstructionMojibakeCheckTest(unittest.TestCase):
         result = self.run_check_args(
             root,
             "--response-text",
-            f"{mojibake_variant(START_CANARY)} visible response {mojibake_variant(END_CANARY)}",
+            f"{mojibake_variant(LEGACY_START_CANARY)} visible response {mojibake_variant(LEGACY_END_CANARY)}",
         )
 
         self.assertNotEqual(result.returncode, 0)
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
         self.assertEqual(payload["response_diagnostics"][0]["status"], "mojibake_canary")
-        self.assertNotIn(mojibake_variant(START_CANARY), result.stdout)
-        self.assertNotIn(mojibake_variant(END_CANARY), result.stdout)
+        self.assertNotIn(mojibake_variant(LEGACY_START_CANARY), result.stdout)
+        self.assertNotIn(mojibake_variant(LEGACY_END_CANARY), result.stdout)
+
+    def test_response_text_mode_fails_when_canary_uses_legacy_non_ascii_marker(self) -> None:
+        root = self.make_root("startup-legacy-canary-response")
+        self.write_clean_surfaces(root)
+
+        result = self.run_check_args(
+            root,
+            "--response-text",
+            f"{LEGACY_START_CANARY} visible response {LEGACY_END_CANARY}",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "mojibake_canary")
 
     def test_session_mode_filters_tool_output_and_checks_latest_assistant_response_mojibake(self) -> None:
         root = self.make_root("startup-mojibake-session")
@@ -182,7 +199,7 @@ class StartupInstructionMojibakeCheckTest(unittest.TestCase):
                         "content": [
                             {
                                 "type": "output_text",
-                                "text": f"{mojibake_variant(START_CANARY)} final visible answer {mojibake_variant(END_CANARY)}",
+                                "text": f"{mojibake_variant(LEGACY_START_CANARY)} final visible answer {mojibake_variant(LEGACY_END_CANARY)}",
                             }
                         ],
                     },
@@ -223,7 +240,7 @@ class StartupInstructionMojibakeCheckTest(unittest.TestCase):
                         "content": [
                             {
                                 "type": "output_text",
-                                "text": f"{mojibake_variant(START_CANARY)} second turn {mojibake_variant(END_CANARY)}",
+                                "text": f"{mojibake_variant(LEGACY_START_CANARY)} second turn {mojibake_variant(LEGACY_END_CANARY)}",
                             }
                         ],
                     },
