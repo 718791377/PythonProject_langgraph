@@ -37,11 +37,11 @@ Implement a Git and filesystem portable single-active-session claim lock for eac
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage C 实施已合入本地 main，远端发布待授权
+阶段：Stage C 实施已合入本地 main 并已验证
 责任会话：main Codex leader session
-当前门禁：远端发布授权门；用户明确授权前保持 GitLab/GitHub 发布停止
+当前门禁：纳入 Phase 1 收口；本收口包合入本地 main 后，远端发布已获授权
 Stage C 进入条件：Stage B 子方案包合入本地 `main` 后，用户已确认继续实施本子方案
-最后更新：2026-05-28
+最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -96,7 +96,8 @@ Stage C 进入条件：Stage B 子方案包合入本地 `main` 后，用户已�
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-28 Stage C 本地集成：实施包已快进合入本地 `main`；合入后 `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` 通过；远端发布仍待授权。
+- 2026-05-29 Phase 1 收口：portable child-plan claim locking 已通过 `fb3ad75` 进入本地 `main`；Phase 1 收口验证确认其已实现、已集成，并可进入已授权的远端发布包。
+- 2026-05-28 Stage C 本地集成：实施包已快进合入本地 `main`；合入后 `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` 通过；当时远端发布仍待授权，后续 2026-05-29 Phase 1 收口已获得明确发布授权。
 - 2026-05-28 Stage C 验证：在 `implement-portable-plan-claim-lock-20260528` 分支中通过 `python test/check_implementation_plan_claim_lock.test.py`、`tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` 和 `tools/ci/local_mr_review.ps1`。
 - 2026-05-28 Stage C 实施：新增 `tools/check_implementation_plan_claim_lock.py`、`tools/claim_implementation_plan.py`、聚焦测试和本地 guard 注册，用于 portable implementation-plan claim locking。
 - 2026-05-28 Stage C 进入：用户确认继续实施本子方案；runtime/checker 工作前已在 `implement-portable-plan-claim-lock-20260528` 分支更新治理状态。

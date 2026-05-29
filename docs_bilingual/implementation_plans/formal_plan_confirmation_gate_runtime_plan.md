@@ -36,11 +36,11 @@ Enforce that chat-only plan confirmation is not enough for non-document implemen
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C implementation package
-Owner session: implement-formal-plan-confirmation-gate-runtime-20260528
-Current gate: validate and commit the feature-branch implementation package
+Stage: Stage C implementation integrated into local main and verified
+Owner session: main Codex leader session
+Current gate: included in Phase 1 closure; remote publication is authorized after this closure package is locally integrated
 Stage C entry condition: satisfied by confirmed receipt/claim for this active implementation plan
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -96,6 +96,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 Phase 1 closure: implementation is contained in local `main` at `e81d840`; Phase 1 closure verification confirmed the formal plan confirmation gate is implemented, integrated, and covered by repository gates before remote publication.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-28 Stage C implementation: receipt/claim recorded explicit user confirmation for `docs_bilingual/implementation_plans/formal_plan_confirmation_gate_runtime_plan.md` against Stage B governance package `4a92f9fc673923a6fec9e31cbcee0526535531b7`; targeted tests and repository gates are recorded in the implementation session output.
 <!-- EVIDENCE_INDEX_END -->

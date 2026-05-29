@@ -41,9 +41,9 @@ Make multi-session local commit flow safe by allowing sessions to execute in iso
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C runtime/checker implementation complete; local validation passed; commit and local-main integration pending
+Stage: Stage C runtime/checker implementation integrated into local main and verified
 Owner session: main Codex leader session
-Current gate: run focused tests, local gate, and local MR review before local-main integration
+Current gate: remote publication is authorized after Phase 1 closure records are committed and locally integrated
 Implementation entry condition: user confirmed continued implementation of this child plan on 2026-05-29
 Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
@@ -128,6 +128,6 @@ If available in the active branch, also run the shared local gate and local MR r
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-29 runtime/checker implementation: added `tools/commit_reorder_buffer.py`, `tools/check_commit_reorder_buffer.py`, focused tests, local gate manifest registration, and OpenSpec guard wiring; focused tests, Python manifest, precommit/update-archive, OpenSpec guard JSON, and local gate passed; local-main integration evidence pending after commit.
-- 2026-05-29 documentation-governance package: created this active Phase 1A child plan and updated complete-flow/parent/consumer plan references; local-main integration pending.
+- 2026-05-29 runtime/checker implementation: added `tools/commit_reorder_buffer.py`, `tools/check_commit_reorder_buffer.py`, focused tests, local gate manifest registration, and OpenSpec guard wiring; focused tests, Python manifest, precommit/update-archive, OpenSpec guard JSON, local MR review, and local gate passed; integrated into local `main` at `4479593` with rollback ref `refs/backup/local-main/20260529-1259-before-complete-flow-rob-runtime`, then post-merge local gate passed and the ROB entry was retired.
+- 2026-05-29 documentation-governance package: created this active Phase 1A child plan and updated complete-flow/parent/consumer plan references; integrated into local `main` at `ebe5f69` before runtime/checker implementation.
 <!-- EVIDENCE_INDEX_END -->

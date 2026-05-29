@@ -36,11 +36,11 @@ Require implementation plans to be active, bilingual, registered, and confirmati
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C implementation package
-Owner session: implement-registry-active-state-20260528
-Current gate: local git commit and local MR review
+Stage: Stage C implementation integrated into local main and verified
+Owner session: main Codex leader session
+Current gate: included in Phase 1 closure; remote publication is authorized after this closure package is locally integrated
 Stage C entry condition: satisfied by user confirmation on 2026-05-28
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -95,6 +95,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 Phase 1 closure: implementation-plan registry active-state validation is contained in local `main` at `54a965d`; Phase 1 closure verification confirmed active status, bilingual pairing, registry consistency, and checker coverage before remote publication.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-28 Stage C implementation: claimed by `implement-registry-active-state-20260528`; added checker-backed active-plan registry state validation, bidirectional registry/front-matter status matching, regression tests for missing registry/wrong status/missing companion coverage, Chinese-facing guidance in checker findings, and repaired the pre-existing Project MOE active registry/front-matter mismatch.
 - 2026-05-28 validation: targeted implementation-plan tests, claim-lock tests, `check_implementation_plan_rules.py --json`, precommit update/archive review, session-ownership check, worktree receipt check, `git diff --check`, and `tools/ci/local_gate.ps1` passed in `implement-registry-active-state-20260528`.

@@ -54,10 +54,10 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B Batch 1 补充 Phase 1A 调度器/ROB 治理包执行中
+阶段：Phase 1 已实现、已合入本地 main、已验证；远端发布已获授权
 责任会话：main Codex leader session
-当前门禁：先完成本文档治理包本地合入；合入本地 main 后停在远端发布门
-Phase 1A 进入条件：用户已确认 complete-flow 调度器/ROB 子方案应尽量靠前放入 Phase 1
+当前门禁：本 Phase 1 收口提交合入本地 main 后，将当前本地 main 包发布到 GitLab 和 GitHub
+Phase 1 收口：complete-flow ROB、正式方案确认门禁、portable claim lock、registry active-state validation 与主会话提权可见性均已进入本地 main
 最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
 
@@ -274,7 +274,8 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-29 Stage B Batch 1 补充：新增 Phase 1A complete-flow 调度器/ROB 子方案，更新 `完整提交流程.md`，并把 portable claim / receipt 子方案标为下游消费者；本包正在等待本地 main 合入证据。
+- 2026-05-29 Phase 1 收口：Phase 1 子方案均已实现、合入本地 `main` 并完成验证；证据提交包括 `4479593`、`e81d840`、`fb3ad75`、`54a965d` 和 `e23c40b`；ROB 合入后 local gate 已通过；用户现已明确授权远端发布。
+- 2026-05-29 Stage B Batch 1 补充：新增 Phase 1A complete-flow 调度器/ROB 子方案，更新 `完整提交流程.md`，并把 portable claim / receipt 子方案标为下游消费者；随后 ROB runtime/checker 包已在 `4479593` 合入本地 `main`。
 - 2026-05-28 Stage C 本地集成：portable child-plan claim lock 已快进合入本地 `main`；合入后 local gate 通过；远端发布尚未授权。
 - 2026-05-28 Stage C 验证：portable child-plan claim lock 在 `implement-portable-plan-claim-lock-20260528` 分支通过聚焦测试、local gate 和 local MR review；随后已按上一条记录串行合入本地 `main`。
 - 2026-05-28 Stage C 进入：通过 `portable_implementation_plan_claim_lock_plan` 开始实施 portable child-plan claim lock；本轮工作在 `implement-portable-plan-claim-lock-20260528` 分支隔离完成后再合入本地 `main`。

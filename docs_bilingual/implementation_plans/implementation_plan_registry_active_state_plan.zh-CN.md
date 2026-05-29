@@ -36,11 +36,11 @@ Require implementation plans to be active, bilingual, registered, and confirmati
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage C 实施包
-责任会话：implement-registry-active-state-20260528
-当前门禁：本地 git 提交与 local MR review
+阶段：Stage C 实施已合入本地 main 并已验证
+责任会话：main Codex leader session
+当前门禁：纳入 Phase 1 收口；本收口包合入本地 main 后，远端发布已获授权
 Stage C 进入条件：已由用户在 2026-05-28 明确确认
-最后更新：2026-05-28
+最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -95,6 +95,7 @@ Stage C 进入条件：已由用户在 2026-05-28 明确确认
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 Phase 1 收口：implementation-plan registry active-state validation 已通过 `54a965d` 进入本地 `main`；Phase 1 收口验证确认 active 状态、双语配对、registry 一致性和 checker 覆盖均已就绪。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-28 Stage C 实施：由 `implement-registry-active-state-20260528` 认领；新增 checker-backed active-plan registry state validation、registry/front-matter 双向状态匹配、missing registry/wrong status/missing companion 回归测试、checker finding 中的中文操作提示，并修复既有 Project MOE active registry/front-matter 状态不一致。
 - 2026-05-28 验证：在 `implement-registry-active-state-20260528` 中通过 targeted implementation-plan tests、claim-lock tests、`check_implementation_plan_rules.py --json`、precommit update/archive review、session-ownership check、worktree receipt check、`git diff --check` 与 `tools/ci/local_gate.ps1`。

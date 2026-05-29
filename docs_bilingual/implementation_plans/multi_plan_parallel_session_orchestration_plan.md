@@ -54,10 +54,10 @@ This parent plan coordinates the following existing plans without replacing thei
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B Batch 1 supplemental Phase 1A scheduler/ROB governance package in progress
+Stage: Phase 1 implemented, integrated, and verified; remote publication authorized
 Owner session: main Codex leader session
-Current gate: local documentation-governance integration first; after local main integration, stop at the remote publication gate
-Phase 1A entry condition: user confirmed early placement for the complete-flow scheduler/ROB child plan
+Current gate: publish the current local-main package to GitLab and GitHub after this Phase 1 closure commit is locally integrated
+Phase 1 closure: complete-flow ROB, formal plan confirmation, portable claim lock, registry active-state validation, and main-session escalation visibility are all in local main
 Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
@@ -274,7 +274,8 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-29 Stage B Batch 1 supplement: added the Phase 1A complete-flow scheduler/ROB child plan, updated the repository-root complete local commit-flow document, and linked portable claim/receipt child plans as downstream consumers; local-main integration pending in this package.
+- 2026-05-29 Phase 1 closure: Phase 1 child plans are implemented, integrated into local `main`, and verified; evidence commits include `4479593`, `e81d840`, `fb3ad75`, `54a965d`, and `e23c40b`; post-ROB local gate passed before this closure update; remote publication is now explicitly authorized by the user.
+- 2026-05-29 Stage B Batch 1 supplement: added the Phase 1A complete-flow scheduler/ROB child plan, updated the repository-root complete local commit-flow document, linked portable claim/receipt child plans as downstream consumers, and later integrated the ROB runtime/checker package into local `main` at `4479593`.
 - 2026-05-28 Stage C local integration: portable child-plan claim locking was fast-forwarded into local `main`; post-merge local gate passed; remote publication is not approved yet.
 - 2026-05-28 Stage C validation: portable child-plan claim locking passed focused tests, local gate, and local MR review on branch `implement-portable-plan-claim-lock-20260528`; local `main` integration has since completed as recorded above.
 - 2026-05-28 Stage C entry: portable child-plan claim locking began through `portable_implementation_plan_claim_lock_plan`; work is isolated on branch `implement-portable-plan-claim-lock-20260528` before local-main integration.

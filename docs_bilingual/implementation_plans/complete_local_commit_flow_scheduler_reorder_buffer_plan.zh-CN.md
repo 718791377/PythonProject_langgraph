@@ -41,9 +41,9 @@ confirmation_required: true
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage C runtime/checker 实现已完成，等待本地验证与合入
+阶段：Stage C runtime/checker 实现已合入本地 main 并已验证
 责任会话：main Codex leader session
-当前门禁：运行聚焦测试、local gate 和 local MR review 后合入本地 main
+当前门禁：Phase 1 收口记录提交并合入本地 main 后，远端发布已获授权
 实现进入条件：已由用户在 2026-05-29 确认继续实施本子 implementation plan
 最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
@@ -128,6 +128,6 @@ python tools/check_local_flow_scripted_enforcement.py --root . --json
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-29 runtime/checker 实现：新增 `tools/commit_reorder_buffer.py`、`tools/check_commit_reorder_buffer.py`、聚焦测试、local gate manifest 登记和 OpenSpec guard 接线；本地 main 合入证据待提交后补充。
-- 2026-05-29 文档治理包：创建 active Phase 1A 子方案，并更新 complete-flow、父方案和消费者方案引用；本地 main 合入待完成。
+- 2026-05-29 runtime/checker 实现：新增 `tools/commit_reorder_buffer.py`、`tools/check_commit_reorder_buffer.py`、聚焦测试、local gate manifest 登记和 OpenSpec guard 接线；聚焦测试、Python manifest、precommit/update-archive、OpenSpec guard JSON、local MR review 与 local gate 已通过；已在 `4479593` 合入本地 `main`，rollback ref 为 `refs/backup/local-main/20260529-1259-before-complete-flow-rob-runtime`，合入后 local gate 已通过，ROB entry 已 retired。
+- 2026-05-29 文档治理包：创建 active Phase 1A 子方案，并更新 complete-flow、父方案和消费者方案引用；已在 `ebe5f69` 合入本地 `main`，随后才进入 runtime/checker 实现。
 <!-- EVIDENCE_INDEX_END -->

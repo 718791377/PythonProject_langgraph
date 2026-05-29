@@ -35,12 +35,12 @@ Make main-session permission escalation, pending approval, and timeout risk visi
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implementation-ready-for-local-commit
-Stage: Stage C child-plan implementation
-Owner session: main-session-escalation-visibility-20260528
-Current gate: local feature commit after final guards; local main integration and remote publication are not authorized in this step
-Stage C entry condition: satisfied by current user request to continue this confirmed child plan
-Last updated: 2026-05-28
+Status: active
+Stage: Stage C implementation integrated into local main and verified
+Owner session: main Codex leader session
+Current gate: included in Phase 1 closure; remote publication is authorized after this closure package is locally integrated
+Stage C entry condition: satisfied by user confirmation to continue this confirmed child plan
+Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -95,6 +95,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 Phase 1 closure: main-session escalation visibility is contained in local `main` at `e23c40b`; Phase 1 closure verification confirmed pending approval, timeout-risk, and approval-receipt evidence surfaces before remote publication.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-28 Stage C implementation: added trace/evidenceguard fields `main_session_escalation`, `approval_timeout_risk`, and `approval_receipt`; added pending/granted/timed-out/not-needed fixtures; updated governance/OpenSpec surfaces, checker snippets, and CI manifest. Validation evidence is recorded in the final assistant response for branch `implement-main-session-escalation-visibility-20260528`.
 <!-- EVIDENCE_INDEX_END -->

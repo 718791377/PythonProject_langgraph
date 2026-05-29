@@ -35,12 +35,12 @@ Make main-session permission escalation, pending approval, and timeout risk visi
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：implementation-ready-for-local-commit
-阶段：Stage C 子方案实施
-责任会话：main-session-escalation-visibility-20260528
-当前门禁：完成最终 guard 后提交本地 feature 分支；本步骤不授权本地 main 集成或远端发布
-Stage C 进入条件：当前用户消息已要求继续实施本子方案
-最后更新：2026-05-28
+状态：active
+阶段：Stage C 实施已合入本地 main 并已验证
+责任会话：main Codex leader session
+当前门禁：纳入 Phase 1 收口；本收口包合入本地 main 后，远端发布已获授权
+Stage C 进入条件：用户已确认继续实施本子方案
+最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -95,6 +95,7 @@ Stage C 进入条件：当前用户消息已要求继续实施本子方案
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 Phase 1 收口：main-session escalation visibility 已通过 `e23c40b` 进入本地 `main`；Phase 1 收口验证确认 pending approval、timeout-risk 与 approval-receipt 证据表面已在远端发布前就绪。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-28 Stage C 实施：新增 trace/evidenceguard 字段 `main_session_escalation`、`approval_timeout_risk`、`approval_receipt`；新增 pending / granted / timed-out / not-needed fixtures；同步更新治理文档、OpenSpec 表面、checker snippets 和 CI manifest。验证证据记录在分支 `implement-main-session-escalation-visibility-20260528` 的最终 assistant 回复中。
 <!-- EVIDENCE_INDEX_END -->

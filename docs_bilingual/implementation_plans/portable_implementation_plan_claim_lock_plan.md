@@ -37,11 +37,11 @@ Implement a Git and filesystem portable single-active-session claim lock for eac
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C implementation integrated into local main; remote publication pending
+Stage: Stage C implementation integrated into local main and verified
 Owner session: main Codex leader session
-Current gate: remote publication approval gate; keep GitLab/GitHub publication stopped until explicit user approval
+Current gate: included in Phase 1 closure; remote publication is authorized after this closure package is locally integrated
 Stage C entry condition: satisfied by user confirmation after local `main` integration of the Stage B child-plan package
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -96,7 +96,8 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-28 Stage C local integration: implementation package was fast-forwarded into local `main`; post-merge `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` passed; remote publication remains pending.
+- 2026-05-29 Phase 1 closure: portable child-plan claim locking is contained in local `main` at `fb3ad75`; Phase 1 closure verification confirmed it is implemented, integrated, and ready for the authorized remote publication package.
+- 2026-05-28 Stage C local integration: implementation package was fast-forwarded into local `main`; post-merge `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` passed; remote publication remained pending at that time, before the later 2026-05-29 Phase 1 closure authorization.
 - 2026-05-28 Stage C validation: `python test/check_implementation_plan_claim_lock.test.py`, `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600`, and `tools/ci/local_mr_review.ps1` passed in branch `implement-portable-plan-claim-lock-20260528`.
 - 2026-05-28 Stage C implementation: added `tools/check_implementation_plan_claim_lock.py`, `tools/claim_implementation_plan.py`, focused tests, and local guard registration for portable implementation-plan claim locking.
 - 2026-05-28 Stage C entry: user confirmed continued implementation of this child plan; governance status updated in branch `implement-portable-plan-claim-lock-20260528` before runtime/checker work.
