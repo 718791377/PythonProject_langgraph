@@ -40,7 +40,7 @@ Stage: Stage B child-plan creation package
 Owner session: unclaimed until implementation begins
 Current gate: wait for explicit user confirmation of this child plan before non-document implementation
 Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -49,6 +49,11 @@ Last updated: 2026-05-28
 - tools/check_implementation_plan_claim_lock.py
 - docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md
 - test/*portable_parallel*
+
+## Upstream Scheduling Contract
+
+Portable no-backend sessions consume the Phase 1A scheduler/ROB contract: no-backend claims may execute in parallel only when their predicted and actual write sets can later retire through the leader-owned ROB queue.
+
 
 ## Hotspot Serialization
 
@@ -72,6 +77,7 @@ Only one session may own each hotspot at a time:
 - [ ] Add tests proving two sessions cannot claim the same child plan but can claim different child plans.
 - [ ] Update governance docs with the portable fallback path.
 - [ ] Run claim lock, worktree receipt, and local gate checks.
+- [ ] Align portable claim startup/status output with the Phase 1A scheduler/ROB entry model before runtime integration.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,5 +101,6 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 upstream contract supplement: referenced the Phase 1A scheduler/ROB model as the later portable/receipt runtime alignment source.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

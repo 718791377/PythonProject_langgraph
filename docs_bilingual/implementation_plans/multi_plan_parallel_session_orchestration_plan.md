@@ -54,11 +54,11 @@ This parent plan coordinates the following existing plans without replacing thei
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C portable claim-lock integrated into local main; remote publication pending
+Stage: Stage B Batch 1 supplemental Phase 1A scheduler/ROB governance package in progress
 Owner session: main Codex leader session
-Current gate: remote publication approval gate; do not publish GitLab/GitHub until the user explicitly approves remote publication
-Stage C entry condition: satisfied for the portable claim-lock child plan by the user's continued-implementation confirmation
-Last updated: 2026-05-28
+Current gate: local documentation-governance integration first; after local main integration, stop at the remote publication gate
+Phase 1A entry condition: user confirmed early placement for the complete-flow scheduler/ROB child plan
+Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model
@@ -73,6 +73,7 @@ Level 1: parent plan / master map
     |-- Phase 0 / Batch 1 child: plan_inventory_registry_alignment_plan.md
     |-- Phase 0 / Batch 1 child: parent_parallel_orchestration_index_plan.md
     |   `-- note: index-maintenance child plan; it owns no lower-level implementation_plan files.
+    |-- Phase 1A / Batch 1 child: complete_local_commit_flow_scheduler_reorder_buffer_plan.md
     |-- Phase 1-6 children: other sibling child implementation plans
     |-- Phase 7 / Batch 5 child: parallel_plan_docs_registry_integration_plan.md
     |-- Phase 7 / Batch 5 child: parallel_plan_checker_ci_integration_plan.md
@@ -96,7 +97,8 @@ Level 1: parent plan / master map
 - Default maximum parallel sessions per phase: 4.
 - Burst maximum parallel sessions per phase: 6.
 - A phase may use fewer sessions when write scopes overlap.
-- A phase must pause before crossing into the next phase if child plans have unresolved claims, dirty worktrees, failed local gates, or unmerged local-main integration.
+- Phase 1A adds a commit reorder-buffer rule: sessions may finish out of order, but local `main` retirement is serial and leader-owned.
+- A phase must pause before crossing into the next phase if child plans have unresolved claims, dirty worktrees, failed local gates, unretired ROB entries, or unmerged local-main integration.
 
 ## Phase and Child-Plan Breakdown
 
@@ -119,10 +121,11 @@ Purpose: make parallel execution safe before runtime-heavy work begins. User-lev
 
 Candidate child plans:
 
-1. `formal_plan_confirmation_gate_runtime_plan` - enforce that chat-only plan confirmation is insufficient.
-2. `portable_implementation_plan_claim_lock_plan` - implement child-plan single-active-session locking without requiring OMX or LangGraph.
-3. `implementation_plan_registry_active_state_plan` - enforce active status, bilingual pairing, and docs registry consistency.
-4. `main_session_escalation_visibility_plan` - add visible pending-approval/preflight surfaces for main-session escalation.
+1. `complete_local_commit_flow_scheduler_reorder_buffer_plan` - Phase 1A early-foundation rule for ROB-style multi-session execution, hotspot fences, ready queues, and serial local-main retirement.
+2. `formal_plan_confirmation_gate_runtime_plan` - enforce that chat-only plan confirmation is insufficient.
+3. `portable_implementation_plan_claim_lock_plan` - implement child-plan single-active-session locking without requiring OMX or LangGraph.
+4. `implementation_plan_registry_active_state_plan` - enforce active status, bilingual pairing, and docs registry consistency.
+5. `main_session_escalation_visibility_plan` - add visible pending-approval/preflight surfaces for main-session escalation.
 
 Parallelism: up to 3 sessions, with `docs_bilingual/docs_registry.yaml` owned by one session per batch.
 
@@ -213,7 +216,7 @@ Parallelism: validation may prepare evidence in parallel, but Phase 7 ownership 
 
 When Stage B starts, child plans must be created in batches:
 
-- Batch 1: Phase 0 and Phase 1 child plans.
+- Batch 1: Phase 0 and Phase 1 child plans, including the Phase 1A complete-flow scheduler/ROB child plan as an early safety-foundation supplement.
 - Batch 2: Phase 2 and Phase 3 child plans.
 - Batch 3: Phase 4 child plans.
 - Batch 4: Phase 5 and Phase 6 child plans.
@@ -243,7 +246,8 @@ Each child plan must include:
 - [x] Stage B: create Batch 5 child implementation plans for Phase 7 integration.
 - [x] Stage B parent revision: add the two-level hierarchy diagram and absorb Pi family / oh-my-pi / CLI harness reference-only boundaries into this parent plan.
 - [x] Stage C: implement portable child-plan claim locking after child plans are confirmed.
-- [ ] Later stages: run child-plan work with at most six parallel sessions per phase and serial local-main integration.
+- [x] Stage B Batch 1 supplement: create the Phase 1A complete-flow scheduler/ROB child plan and update complete local commit-flow governance.
+- [ ] Later stages: run child-plan work with at most six parallel sessions per phase and ROB-backed serial local-main retirement.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -265,10 +269,12 @@ Stage B acceptance after later confirmation:
 - No child plan is left without bilingual pairing or registry entry.
 - Each child plan declares file ownership, session limit, and validation gates.
 - No non-document implementation starts before the relevant child plan is confirmed.
+- Phase 1A records scheduler/ROB governance before later multi-session runtime execution.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 Stage B Batch 1 supplement: added the Phase 1A complete-flow scheduler/ROB child plan, updated the repository-root complete local commit-flow document, and linked portable claim/receipt child plans as downstream consumers; local-main integration pending in this package.
 - 2026-05-28 Stage C local integration: portable child-plan claim locking was fast-forwarded into local `main`; post-merge local gate passed; remote publication is not approved yet.
 - 2026-05-28 Stage C validation: portable child-plan claim locking passed focused tests, local gate, and local MR review on branch `implement-portable-plan-claim-lock-20260528`; local `main` integration has since completed as recorded above.
 - 2026-05-28 Stage C entry: portable child-plan claim locking began through `portable_implementation_plan_claim_lock_plan`; work is isolated on branch `implement-portable-plan-claim-lock-20260528` before local-main integration.

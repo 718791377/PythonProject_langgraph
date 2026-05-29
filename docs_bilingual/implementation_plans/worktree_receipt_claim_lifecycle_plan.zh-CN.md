@@ -40,7 +40,7 @@ Define and enforce active, paused, ready-to-merge, merged-local-main, completed,
 责任会话：实施开始前未认领
 当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -49,6 +49,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - .omx/worktree-task-receipt.json fixtures
 - .omx/session-claims fixtures
 - test/*worktree*receipt*
+
+## 上游调度契约
+
+Worktree receipt lifecycle 是 Phase 1A scheduler/ROB 模型的状态来源：ready-to-merge 对应 ROB `ready`，merged-local-main 对应 `retired`，stale/superseded 对应 blocked 或 flushed entry。
+
 
 ## 热点串行规则
 
@@ -72,6 +77,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - [ ] Require completion fields for merged or completed states.
 - [ ] Document cleanup and branch deletion evidence without forcing immediate cleanup.
 - [ ] Run receipt checker and local gate.
+- [ ] runtime 集成前，将 receipt lifecycle 状态对齐 Phase 1A ROB entry 状态。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,5 +101,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 上游契约补充：引用 Phase 1A scheduler/ROB 模型，作为后续 portable/receipt runtime 对齐依据。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

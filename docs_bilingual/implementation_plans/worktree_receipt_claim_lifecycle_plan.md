@@ -40,7 +40,7 @@ Stage: Stage B child-plan creation package
 Owner session: unclaimed until implementation begins
 Current gate: wait for explicit user confirmation of this child plan before non-document implementation
 Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -49,6 +49,11 @@ Last updated: 2026-05-28
 - .omx/worktree-task-receipt.json fixtures
 - .omx/session-claims fixtures
 - test/*worktree*receipt*
+
+## Upstream Scheduling Contract
+
+Worktree receipt lifecycle is a state source for the Phase 1A scheduler/ROB model: ready-to-merge maps to ROB `ready`, merged-local-main maps to `retired`, and stale/superseded states map to blocked or flushed entries.
+
 
 ## Hotspot Serialization
 
@@ -72,6 +77,7 @@ Only one session may own each hotspot at a time:
 - [ ] Require completion fields for merged or completed states.
 - [ ] Document cleanup and branch deletion evidence without forcing immediate cleanup.
 - [ ] Run receipt checker and local gate.
+- [ ] Align receipt lifecycle states with Phase 1A ROB entry states before runtime integration.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,5 +101,6 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 upstream contract supplement: referenced the Phase 1A scheduler/ROB model as the later portable/receipt runtime alignment source.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

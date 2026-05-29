@@ -62,6 +62,13 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/parent_parallel_orchestration_index_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/parent_parallel_orchestration_index_plan.zh-CN.md
 
+
+  - doc_id: complete_local_commit_flow_scheduler_reorder_buffer_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/complete_local_commit_flow_scheduler_reorder_buffer_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/complete_local_commit_flow_scheduler_reorder_buffer_plan.zh-CN.md
+
   - doc_id: formal_plan_confirmation_gate_runtime_plan
     doc_class: implementation_plan
     status: active

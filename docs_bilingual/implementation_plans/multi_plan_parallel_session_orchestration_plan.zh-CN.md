@@ -54,11 +54,11 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage C portable claim-lock 已合入本地 main，远端发布待授权
+阶段：Stage B Batch 1 补充 Phase 1A 调度器/ROB 治理包执行中
 责任会话：main Codex leader session
-当前门禁：远端发布授权门；用户明确授权远端发布前，不推送 GitLab/GitHub
-Stage C 进入条件：用户已确认继续实施 portable claim-lock 子方案
-最后更新：2026-05-28
+当前门禁：先完成本文档治理包本地合入；合入本地 main 后停在远端发布门
+Phase 1A 进入条件：用户已确认 complete-flow 调度器/ROB 子方案应尽量靠前放入 Phase 1
+最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -73,6 +73,7 @@ Stage C 进入条件：用户已确认继续实施 portable claim-lock 子方案
    ├─ Phase 0 / Batch 1 子方案：plan_inventory_registry_alignment_plan.zh-CN.md
    ├─ Phase 0 / Batch 1 子方案：parent_parallel_orchestration_index_plan.zh-CN.md
    │  └─ 说明：这是索引维护子方案，不拥有下级 implementation_plan 文件。
+   ├─ Phase 1A / Batch 1 子方案：complete_local_commit_flow_scheduler_reorder_buffer_plan.zh-CN.md
    ├─ Phase 1-6 子方案：其他同级 child implementation plans
    ├─ Phase 7 / Batch 5 子方案：parallel_plan_docs_registry_integration_plan.zh-CN.md
    ├─ Phase 7 / Batch 5 子方案：parallel_plan_checker_ci_integration_plan.zh-CN.md
@@ -96,7 +97,8 @@ Stage C 进入条件：用户已确认继续实施 portable claim-lock 子方案
 - 每阶段默认最多 4 个并行 session。
 - 每阶段突发上限最多 6 个并行 session。
 - 当写入范围重叠时，阶段必须降低并行度。
-- 如果子方案存在未关闭 claim、脏 worktree、失败本地门禁或未合入的本地 main 集成，不得进入下一阶段。
+- Phase 1A 增加提交重排序缓冲规则：session 可以乱序完成，但 local `main` retire 必须由 leader 串行执行。
+- 如果子方案存在未关闭 claim、脏 worktree、失败本地门禁、未退休 ROB entry 或未合入的本地 main 集成，不得进入下一阶段。
 
 ## 阶段与子方案拆分
 
@@ -119,10 +121,11 @@ Stage C 进入条件：用户已确认继续实施 portable claim-lock 子方案
 
 候选子方案：
 
-1. `formal_plan_confirmation_gate_runtime_plan` - 强制“仅对话确认 plan 不足以进入实现”。
-2. `portable_implementation_plan_claim_lock_plan` - 实现不依赖 OMX 或 LangGraph 的子方案单 active session 锁。
-3. `implementation_plan_registry_active_state_plan` - 强制 active 状态、双语配对和 docs registry 一致。
-4. `main_session_escalation_visibility_plan` - 增加主会话可见的待授权和提权预检表面。
+1. `complete_local_commit_flow_scheduler_reorder_buffer_plan` - Phase 1A 早期安全底座，定义 ROB 风格多 session 执行、热点 fence、ready queue 和 local main 串行 retire。
+2. `formal_plan_confirmation_gate_runtime_plan` - 强制“仅对话确认 plan 不足以进入实现”。
+3. `portable_implementation_plan_claim_lock_plan` - 实现不依赖 OMX 或 LangGraph 的子方案单 active session 锁。
+4. `implementation_plan_registry_active_state_plan` - 强制 active 状态、双语配对和 docs registry 一致。
+5. `main_session_escalation_visibility_plan` - 增加主会话可见的待授权和提权预检表面。
 
 并行度：最多 3 个 session；`docs_bilingual/docs_registry.yaml` 每批只能一个 session 拥有。
 
@@ -213,7 +216,7 @@ Stage C 进入条件：用户已确认继续实施 portable claim-lock 子方案
 
 进入 Stage B 后，子方案按批次创建：
 
-- Batch 1：Phase 0 和 Phase 1 子方案。
+- Batch 1：Phase 0 和 Phase 1 子方案，并把 Phase 1A complete-flow 调度器/ROB 子方案作为早期安全底座补充。
 - Batch 2：Phase 2 和 Phase 3 子方案。
 - Batch 3：Phase 4 子方案。
 - Batch 4：Phase 5 和 Phase 6 子方案。
@@ -243,7 +246,8 @@ Stage C 进入条件：用户已确认继续实施 portable claim-lock 子方案
 - [x] Stage B：为 Phase 7 集成创建 Batch 5 子 implementation_plan。
 - [x] Stage B 父方案修订：加入二层级架构图，并吸收 Pi family / oh-my-pi / CLI harness reference-only 边界到父级编排方案。
 - [x] Stage C：子方案确认后，实现 portable child-plan claim lock。
-- [ ] 后续阶段：每阶段最多 6 个并行 session 执行子方案，并串行合入本地 main。
+- [x] Stage B Batch 1 补充：创建 Phase 1A complete-flow 调度器/ROB 子方案，并更新完整本地提交流程治理。
+- [ ] 后续阶段：每阶段最多 6 个并行 session 执行子方案，并通过 ROB 支撑的 local main 串行 retire 合入。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -265,10 +269,12 @@ Stage B 后续确认后的验收条件：
 - 没有子方案缺少双语配对或 registry 登记。
 - 每个子方案声明文件归属、session 上限和验证门禁。
 - 相关子方案未确认前，不开始非文档实现。
+- Phase 1A 在后续多 session runtime 执行前先记录 scheduler/ROB 治理。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 Stage B Batch 1 补充：新增 Phase 1A complete-flow 调度器/ROB 子方案，更新 `完整提交流程.md`，并把 portable claim / receipt 子方案标为下游消费者；本包正在等待本地 main 合入证据。
 - 2026-05-28 Stage C 本地集成：portable child-plan claim lock 已快进合入本地 `main`；合入后 local gate 通过；远端发布尚未授权。
 - 2026-05-28 Stage C 验证：portable child-plan claim lock 在 `implement-portable-plan-claim-lock-20260528` 分支通过聚焦测试、local gate 和 local MR review；随后已按上一条记录串行合入本地 `main`。
 - 2026-05-28 Stage C 进入：通过 `portable_implementation_plan_claim_lock_plan` 开始实施 portable child-plan claim lock；本轮工作在 `implement-portable-plan-claim-lock-20260528` 分支隔离完成后再合入本地 `main`。

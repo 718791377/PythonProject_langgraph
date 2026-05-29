@@ -40,7 +40,7 @@ Stage: Stage B child-plan creation package
 Owner session: main Codex leader session
 Current gate: document-governance-only parent-plan revision; no runtime implementation
 Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -69,6 +69,7 @@ Only one session may own each hotspot at a time:
 - [ ] Confirm this child plan after local main integration.
 - [x] Add the two-level hierarchy diagram to the parent plan and clarify that this index plan is a sibling child plan, not a second-level parent.
 - [x] Absorb Pi family / oh-my-pi / CLI harness reference-only boundaries into the parent plan.
+- [x] Register the Phase 1A complete-flow scheduler/ROB child plan as a Batch 1 early-foundation supplement.
 - [ ] Add a compact child-plan status table to the parent plan if the parent needs an execution index.
 - [ ] Record dependency edges between phases and child plans without duplicating full evidence packages.
 - [ ] Verify that parent status can be updated through stable anchors only.
@@ -96,6 +97,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 index supplement: registered the Phase 1A complete-flow scheduler/ROB child plan as a sibling child implementation_plan under the parent map.
 - 2026-05-28 document-governance update: main Codex leader session claimed this index child plan to update the parent hierarchy diagram and Pi/harness reference-only boundary; commit recorded in local git history.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

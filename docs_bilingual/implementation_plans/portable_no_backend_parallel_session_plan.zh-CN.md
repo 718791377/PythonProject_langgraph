@@ -40,7 +40,7 @@ Support multi-session parallel implementation using only Git worktrees, registry
 责任会话：实施开始前未认领
 当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -49,6 +49,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - tools/check_implementation_plan_claim_lock.py
 - docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md
 - test/*portable_parallel*
+
+## 上游调度契约
+
+Portable no-backend session 消费 Phase 1A scheduler/ROB 契约：无后端 claim 只有在预测写集和实际写集后续能通过 leader-owned ROB queue retire 时，才允许并行执行。
+
 
 ## 热点串行规则
 
@@ -72,6 +77,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - [ ] Add tests proving two sessions cannot claim the same child plan but can claim different child plans.
 - [ ] Update governance docs with the portable fallback path.
 - [ ] Run claim lock, worktree receipt, and local gate checks.
+- [ ] runtime 集成前，将 portable claim 启动和状态输出对齐 Phase 1A scheduler/ROB entry 模型。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,5 +101,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 上游契约补充：引用 Phase 1A scheduler/ROB 模型，作为后续 portable/receipt runtime 对齐依据。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->
