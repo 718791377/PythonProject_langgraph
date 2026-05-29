@@ -41,6 +41,11 @@ GUARD_STEPS = [
     ("check_role_routing_directive_evidence", "check_role_routing_directive_evidence.py", "role_routing_directive_evidence"),
     ("check_delegation_wait_discipline_evidence", "check_delegation_wait_discipline_evidence.py", "delegation_wait_discipline_evidence"),
     ("check_durable_artifact_state_surfaces", "check_durable_artifact_state_surfaces.py", "durable_artifact_state_surfaces"),
+    (
+        "check_orchestration_collaboration_evidenceguard",
+        "check_orchestration_collaboration_evidenceguard.py",
+        "orchestration_collaboration_evidenceguard",
+    ),
     ("check_leader_session_scope_evidence", "check_leader_session_scope_evidence.py", "leader_session_scope_evidence"),
     ("check_capability_switch_chain", "check_capability_switch_chain.py", "capability_switch_chain"),
     ("check_windows_cleanup_output_control", "check_windows_cleanup_output_control.py", "windows_cleanup_output_control"),
@@ -57,6 +62,8 @@ GUARD_STEPS = [
     ("check_worktree_session_hygiene", "check_worktree_session_hygiene.py", "worktree_session_hygiene"),
     ("check_worktree_task_receipt", "check_worktree_task_receipt.py", "worktree_task_receipt"),
     ("check_session_ownership_claims", "check_session_ownership_claims.py", "session_ownership_claims"),
+    ("check_implementation_plan_claim_lock", "check_implementation_plan_claim_lock.py", "implementation_plan_claim_lock"),
+    ("check_commit_reorder_buffer", "check_commit_reorder_buffer.py", "commit_reorder_buffer"),
     ("check_orchestration_activation_policy", "check_orchestration_activation_policy.py", "orchestration_activation_policy"),
     ("check_codex_skills_governance", "check_codex_skills_governance.py", "codex_skills_governance"),
     ("check_custom_agent_toml_schema", "check_custom_agent_toml_schema.py", "custom_agent_toml_schema"),
@@ -137,6 +144,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["steps"][12]["step"], "check_skills_audit_output_retention")
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
         self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_orchestration_collaboration_evidenceguard", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:
         root = self.make_root("guard-json-fail")
@@ -311,6 +319,9 @@ documents:
                     "iteration_count: 0",
                     "apply_monitor_return",
                     "increment_iteration",
+                    "require_forward_monitoring_clear",
+                    "monitoring_status must be 'clear'",
+                    "control_decision must be 'continue'",
                     "monitor-return-open",
                     "monitor-return-design",
                     "monitor-return-build",
@@ -330,6 +341,9 @@ documents:
                     "Build management checklist complete",
                     "Verify management checklist complete",
                     "Archive management checklist complete",
+                    "checklist_done_named",
+                    "Missing management checklist section:",
+                    "Missing management checklist item:",
                     "control_decision=adjust-current",
                     "monitor-return-* transition",
                 ]
@@ -353,22 +367,61 @@ documents:
             "\n".join(
                 [
                     "Management closing evidence verified",
+                    "checklist_done_any",
                     "价值结果已总结",
                     "经验沉淀已记录",
                     "delta spec sync / verification evidence / archive path 已确认",
+                    "Value outcome is summarized.",
+                    "Lessons learned or reusable guidance are recorded.",
+                    "Delta spec sync, verification evidence, and archive path are confirmed.",
                     "monitoring_status is",
                     "control_decision is",
                 ]
             ),
         )
-        self.write_file(root, ".codex/skills/comet/SKILL.md", "management_record\nmonitor-return-open\nadaptive/hybrid rework loop\n")
-        self.write_file(root, ".codex/skills/comet-open/SKILL.md", "Management Checklist\n")
-        self.write_file(root, ".codex/skills/comet-design/SKILL.md", "monitor-return-design\n")
-        self.write_file(root, ".codex/skills/comet-build/SKILL.md", "monitor-return-build\n")
-        self.write_file(root, ".codex/skills/comet-verify/SKILL.md", "monitor-return-verify\n")
-        self.write_file(root, ".codex/skills/comet-archive/SKILL.md", "Archive management checklist\n")
-        self.write_file(root, ".codex/skills/comet-hotfix/SKILL.md", "Management checklist evidence\n")
-        self.write_file(root, ".codex/skills/comet-tweak/SKILL.md", "Management checklist evidence\n")
+        adaptive_skill_terms = "\n".join(
+            [
+                "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+                "`monitoring_status=clear`",
+                "`control_decision=continue`",
+                "do not force waterfall progression",
+                "monitor-return-open",
+                "monitor-return-design",
+                "monitor-return-build",
+                "monitor-return-verify",
+                "refresh its matching management checklist",
+            ]
+        )
+        self.write_file(
+            root,
+            ".codex/skills/comet/SKILL.md",
+            "\n".join(
+                [
+                    "management_record",
+                    "monitor-return-open",
+                    "adaptive/hybrid rework loop",
+                    "Management Checklist",
+                    "Adaptive Monitoring Return Dispatch",
+                    "`control_decision=return-open|return-design|return-build|return-verify`",
+                    "`monitoring_status=blocked`",
+                    "do not force waterfall progression",
+                    "`return-open` -> `/comet-open`",
+                    "`return-design` -> `/comet-design`",
+                    "`return-build` -> `/comet-build`",
+                    "`return-verify` -> `/comet-verify`",
+                    "reread `.comet.yaml`",
+                    "refresh the target phase management checklist",
+                ]
+            )
+            + "\n",
+        )
+        self.write_file(root, ".codex/skills/comet-open/SKILL.md", "Open management checklist\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-design/SKILL.md", "Design management checklist\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-build/SKILL.md", "Build management checklist\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-verify/SKILL.md", "Verify management checklist\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-archive/SKILL.md", "Archive management checklist\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-hotfix/SKILL.md", "Management checklist evidence\n" + adaptive_skill_terms)
+        self.write_file(root, ".codex/skills/comet-tweak/SKILL.md", "Management checklist evidence\n" + adaptive_skill_terms)
 
     def run_comet_policy_check(self, root: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -410,6 +463,52 @@ documents:
         self.assertFalse(payload["ok"])
         self.assertIn("Comet is the control layer", payload["missing_terms"]["english_policy"])
         self.assertTrue(any("English policy is missing required term" in error for error in payload["errors"]))
+
+    def test_comet_policy_missing_phase_skill_monitoring_term_fails(self) -> None:
+        root = self.make_root()
+        self.write_valid_surface(root)
+        skill_path = root / ".codex/skills/comet-build/SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+                "",
+            ),
+            encoding="utf-8",
+        )
+
+        result = self.run_comet_policy_check(root)
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertIn(
+            "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+            payload["missing_terms"]["phase_skills"][".codex/skills/comet-build/SKILL.md"],
+        )
+        self.assertTrue(any("Comet phase skill .codex/skills/comet-build/SKILL.md" in error for error in payload["errors"]))
+
+    def test_comet_policy_missing_root_skill_return_dispatch_term_fails(self) -> None:
+        root = self.make_root()
+        self.write_valid_surface(root)
+        skill_path = root / ".codex/skills/comet/SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "Adaptive Monitoring Return Dispatch",
+                "",
+            ),
+            encoding="utf-8",
+        )
+
+        result = self.run_comet_policy_check(root)
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertIn(
+            "Adaptive Monitoring Return Dispatch",
+            payload["missing_terms"]["root_skill"],
+        )
+        self.assertTrue(any("Root Comet skill" in error for error in payload["errors"]))
 
     def test_comet_policy_missing_registry_entry_fails(self) -> None:
         root = self.make_root()

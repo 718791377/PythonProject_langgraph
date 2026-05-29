@@ -477,3 +477,22 @@ OpenSpec 与 OPSX 负责定义结构性工作如何提出、实施、验证与�
 
 - 中文 authority 文件可能本身存储正确，但受限 shell 或终端仍然会把它显示错。
 - 先强制走显式 UTF-8 读取，可以避免误判并减少不必要的文档修复。
+
+## 20. 前向语义注释规则
+
+`docs_bilingual/`、`openspec/` 和 `docs/` 下新增或修改的治理类 Markdown 必须解释容易在上下文丢失后产生歧义的语义术语。
+
+这是一条前向规则。它不要求批量修复历史文本；默认 checker 只应让新增/修改行失败，或在维护者显式要求 full-scan 清债时才检查全量历史内容。
+
+语义术语包括：
+
+- 承载 workflow state 或 policy state 的 runtime 字段；
+- status 值、enum 值和具名 control decision；
+- transition 名称和 return-path 名称；
+- gate 名称、checker 决策标签，以及其他控制面术语。
+
+当同一句、相邻 bullet/table 行，或附近 glossary/semantic-notes 表已经说明该术语的运行含义时，该语义术语视为已解释。普通文件路径、命令名、URL、包名和测试文件名不需要额外解释，除非它们被用作 policy decision value。
+
+这条规则的目的不是增加形式主义注释，而是保留上下文：未来新会话应能直接理解某个字段、取值或 transition 的意义，而不需要重新发现当时的讨论。
+
+可执行 enforcement 默认只做前向检查，由 `tools/check_name_clarity_rules.py` 承接。该 checker 可以提供 full-scan 模式用于未来清债，但仓库 guard 和 CI 不应仅因为本规则后来引入，就让历史未变更行失败。

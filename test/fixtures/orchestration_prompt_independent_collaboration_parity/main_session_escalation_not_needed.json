@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "case_type": "main_session_escalation_visibility",
+  "case_id": "main_session_escalation_not_needed",
+  "main_session_escalation": "not_needed",
+  "pending_approval": false,
+  "approval_timeout_risk": "none",
+  "approval_receipt": "none",
+  "main_session_only": false
+}

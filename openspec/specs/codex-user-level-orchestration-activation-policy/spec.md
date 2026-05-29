@@ -79,6 +79,10 @@ The trace vocabulary SHALL distinguish `not_needed`, `candidate`, `selected`, `b
 
 The repository SHALL provide an executable trace-evidence validator that can inspect saved activation trace text for required fields, capability-chain consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert-timeout evidence labels, and durable-team threshold evidence in the `why` field. It SHALL also provide `tools/check_expert_lifecycle_wait_pacing_evidence.py` for saved run-summary evidence covering completed-expert closure, preserved-thread exceptions, bounded wait windows, liveness/stall actions, and provider pacing as backpressure.
 
+Prompt-independent collaboration parity SHALL be checker-backed. The repository SHALL provide `tools/check_orchestration_collaboration_evidenceguard.py` and fixture pairs that prove equivalent tasks produce equivalent routing decisions with or without collaboration phrases. The same checker SHALL validate cold-start read-order evidence, durable/persistent evidenceguard records, structured expert lifecycle audit events, persisted JSONL expert lifecycle audit logs with required per-event fields for `spawn`, `wait`, `timeout`, `result`, `absorbed`, and `close`, list-content rules that require `spawn.scope` and `spawn.non_goals` to be non-empty lists of non-empty strings and `result.changed_paths` to be a list of non-empty strings, and LangGraph state release evidence. Durable/persistent evidenceguard SHALL reject selected, running, or complete durable-team claims unless active selector, backend family, preflight, ownership plan, manifest or LangGraph thread state, heartbeat, close, and leader absorption evidence are present as required by the claimed state. LangGraph state release SHALL reject completed work that remains in stale `running` state instead of recording `completed_at`, `final_phase`, `result_summary`, and `released_by`.
+
+The repository SHALL keep the Chinese OpenSpec companion for this policy structurally aligned with this English primary by preserving every source `### Requirement:` and `#### Scenario:` heading, and `tools/check_orchestration_collaboration_evidenceguard.py` SHALL fail repository checks when that bilingual OpenSpec heading parity is lost.
+
 #### Scenario: Saved trace evidence is checked
 - **WHEN** a saved activation trace is passed to the repository trace-evidence validator
 - **THEN** the validator SHALL fail if any required trace field is missing
@@ -86,6 +90,53 @@ The repository SHALL provide an executable trace-evidence validator that can ins
 - **AND** it SHALL fail if durable workflow or persistent-team states use unsupported vocabulary
 - **AND** it SHALL fail if expert timeout language is presented without a non-evidence, bounded-wait, respawn, durable-handoff, or main-session-takeover label
 - **AND** it SHALL fail if durable workflow or persistent-team decisions omit required unmet-threshold, named-blocker, or triggered-threshold evidence from `why`
+
+#### Scenario: Prompt-independent collaboration parity evidence is checked
+
+- **WHEN** the repository evidenceguard validates prompt-independent collaboration fixtures
+- **THEN** paired cases with and without collaboration phrases SHALL produce the same route fields for the same task shape
+- **AND** explicit `omx` or `LangGraph` directives that lack frozen-plan or slice thresholds SHALL report named blockers or unmet thresholds
+- **AND** missing user reminders SHALL NOT appear as routing reasons
+
+#### Scenario: Durable and LangGraph completion evidence is checked
+
+- **WHEN** saved durable/persistent or LangGraph evidence is checked
+- **THEN** durable/persistent team claims SHALL fail without the required selector, manifest or thread-state, heartbeat, close, and leader absorption evidence
+- **AND** completed LangGraph tasks SHALL fail if the state remains `running` without release fields
+
+### Requirement: Main-session escalation visibility SHALL be explicit
+
+The orchestration activation policy SHALL require visible main-session escalation fields before OMX, LangGraph, durable-worker, or local shell workflows depend on an approval that only the main Codex CLI session can request or receive.
+
+Activation trace and saved evidence SHALL expose:
+
+- `main_session_escalation`, the main Codex CLI session approval lifecycle state, with one of `not_needed`, `preflight`, `pending_approval`, `granted`, `timed_out`, or `blocked`;
+- `approval_timeout_risk`, the current risk band for a pending or expired approval wait, with one of `none`, `low`, `medium`, `high`, or `expired`;
+- `approval_receipt`, the repo-local proof or artifact reference for the approval request, as `none` when approval is not needed, or as a repo-local receipt, interrupt, checkpoint, or pending-approval artifact reference when approval is pending, granted, timed out, or blocked.
+
+Worker contexts MAY record an approval receipt or blocked state, but SHALL NOT hide approval waits inside worker-only context or request approval outside the main session.
+
+#### Scenario: Pending approval is visible before a durable wait
+
+- **WHEN** a LangGraph, OMX, durable-worker, or shell flow is waiting for main-session approval
+- **THEN** saved evidence SHALL report `main_session_escalation=pending_approval`
+- **AND** it SHALL report a non-`none` `approval_timeout_risk`
+- **AND** it SHALL record a visible `approval_receipt`
+- **AND** it SHALL state that the main session, not the worker, owns the approval decision
+
+#### Scenario: Approval wait times out
+
+- **WHEN** a pending main-session approval expires or risks blocking progress
+- **THEN** saved evidence SHALL report `main_session_escalation=timed_out` or `main_session_escalation=blocked`
+- **AND** it SHALL report `approval_timeout_risk=expired` for timed-out approvals
+- **AND** it SHALL cite a named blocker such as `blocked:approval_timeout`
+
+#### Scenario: No approval is required
+
+- **WHEN** the current task does not need privileged shell, durable workflow, or worker approval
+- **THEN** the trace SHALL report `main_session_escalation=not_needed`
+- **AND** it SHALL report `approval_timeout_risk=none`
+- **AND** it SHALL report `approval_receipt=none`
 
 ### Requirement: Missing user reminders SHALL NOT be a routing reason
 

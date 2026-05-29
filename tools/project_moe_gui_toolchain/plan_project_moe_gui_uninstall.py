@@ -12,10 +12,10 @@ from project_moe_gui.toolchain import emit, plan_uninstall, root_or_error
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Plan removal of managed Project MOE GUI artifacts from a target project without deleting private state.")
+    parser = argparse.ArgumentParser(description="Plan or apply removal of managed Project MOE GUI artifacts from a target project without deleting private state.")
     parser.add_argument("--target-project", required=True)
     parser.add_argument("--json", action="store_true")
-    parser.add_argument("--apply", action="store_true", help="Return a stable fail-closed JSON blocker; actual uninstall deletion is not supported.")
+    parser.add_argument("--apply", action="store_true", help="Delete only hash-verified manifest-owned Project MOE GUI managed files; private prompts, agent TOML, and .omx/state are preserved.")
     args = parser.parse_args()
 
     project_root, error_payload = root_or_error(args.target_project, "plan_project_moe_gui_uninstall")

@@ -1,0 +1,81 @@
+## MODIFIED Requirements
+
+### Requirement: Canary placement SHALL have executable enforcement
+
+The repository SHALL provide an executable checker that validates active canary placement, canary encoding integrity, recovery wording, and optional user-provided response/session evidence without relying on model memory alone.
+
+The visible startup canary markers SHALL be ASCII-only tokens defined by the startup summary pair. Historical non-ASCII canary markers SHALL NOT be accepted as current canonical response evidence; they MAY remain only as checker-internal legacy/corruption detection inputs.
+
+The checker SHALL continue to enforce static placement rules for repository files.
+
+When response or session evidence is explicitly provided, the checker SHALL inspect only user-visible assistant responses and SHALL NOT count tool output, compaction summaries, reasoning, developer/system payloads, startup-summary file reads, or other context copies as satisfying the canary.
+
+When session JSONL evidence is narrowed to a specific turn or latest assistant response, the checker SHALL apply that selection only to eligible assistant messages and SHALL continue to ignore non-user-visible context sources.
+
+#### Scenario: Startup summary defines transport-stable canary markers
+
+- **WHEN** the startup summary pair defines the current visible canary markers
+- **THEN** the markers SHALL be ASCII-only and safe to render through legacy Windows console or launcher payload boundaries
+- **AND** no active source file outside the startup summary pair SHALL contain the literal marker text
+
+#### Scenario: User-visible assistant response uses historical non-ASCII canary text
+
+- **WHEN** the checker receives response text or session JSONL with an eligible assistant response
+- **AND** that response contains a historical non-ASCII canary marker instead of the current startup-summary-defined marker
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report the response as invalid canary evidence requiring cold-start recovery
+
+#### Scenario: Startup recovery omits repository instructions
+
+- **WHEN** either startup summary describes canary recovery
+- **AND** the recovery action does not mention `AGENTS.md`
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report the startup summary path
+
+#### Scenario: Repository instructions duplicate the literal prompt
+
+- **WHEN** `AGENTS.md` contains the literal canary prompt text
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report that `AGENTS.md` must remain a recovery reread target rather than a literal prompt source
+
+#### Scenario: Repository instructions contain mojibake canary text
+
+- **WHEN** `AGENTS.md` contains a corrupted legacy-encoding rendering of either canary marker
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report the path and line containing the corrupted marker
+
+#### Scenario: Startup summary contains mojibake canary text
+
+- **WHEN** either startup summary contains a corrupted legacy-encoding rendering of either canary marker
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report that the startup summary canary source is not UTF-8-clean
+
+#### Scenario: User-visible assistant response is missing the canary
+
+- **WHEN** the checker receives response text or a session JSONL containing an eligible assistant response
+- **AND** that assistant response does not include the startup-summary-defined canary markers
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report `missing_canary`
+- **AND** it SHALL recommend cold-start rereading the startup summary pair and required read order
+
+#### Scenario: Tool output contains canary text but assistant response omits it
+
+- **WHEN** a session JSONL contains tool output or file-read output with canary markers
+- **AND** the eligible assistant response omits the markers
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report `missing_canary`
+- **AND** it SHALL NOT treat the tool output as satisfying the response diagnostic
+
+#### Scenario: Selected turn assistant response is the canonical evidence source
+
+- **WHEN** the checker receives session JSONL evidence together with a selected turn id or latest-assistant selector
+- **AND** the selected assistant response contains the startup-summary-defined canary markers
+- **THEN** the checker SHALL report `canonical_present`
+- **AND** it SHALL ignore other turns' context copies and assistant messages outside the selected turn scope
+
+#### Scenario: Assistant response contains mojibake canary text
+
+- **WHEN** the eligible assistant response contains a legacy-encoding mojibake rendering of either canary marker
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report `mojibake_canary`
+- **AND** it SHALL state that the UTF-8 startup summary pair is canonical

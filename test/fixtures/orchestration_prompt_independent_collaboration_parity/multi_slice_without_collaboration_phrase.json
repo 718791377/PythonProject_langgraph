@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "case_type": "activation_parity",
+  "case_id": "multi_slice_without_collaboration_phrase",
+  "parity_group": "multi_slice",
+  "collaboration_phrase_present": false,
+  "prompt": "Implement the frozen plan across checker, fixture, documentation, and CI slices.",
+  "input": {
+    "task_phase": "execute-parallel",
+    "frozen_plan": true,
+    "execution_slices": 4,
+    "explicit_directive": null
+  },
+  "expected": {
+    "phase": "execute-parallel",
+    "capability_chain": "subagent:auto > omx:on > langgraph:on",
+    "backend_default": "langgraph",
+    "backend_ready": "true",
+    "experts": "none",
+    "durable_workflow": "selected",
+    "persistent_team": "selected",
+    "why": "triggered_threshold:frozen_plan_with_2+_independent_slices for execute-parallel.",
+    "main_session_escalation": "not_needed",
+    "approval_timeout_risk": "none",
+    "approval_receipt": "none"
+  }
+}

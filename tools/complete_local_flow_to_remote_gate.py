@@ -8,9 +8,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import check_plan_exit_execution_governance as plan_exit
+
+DOC_PREFIXES = ("docs_bilingual/", "openspec/", "docs/")
+DOC_EXACT_PATHS = {"完整提交流程.md"}
+DOCS_BILINGUAL_PREFIX = "docs_bilingual/"
+IMPLEMENTATION_PLAN_PREFIX = "docs_bilingual/implementation_plans/"
+DEFAULT_RECEIPT = ".omx/worktree-task-receipt.json"
+
 
 def run_git(root: Path, args: list[str], *, check: bool = False) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(["git", "-C", str(root), *args], check=False, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    result = subprocess.run(["git", "-c", "core.quotePath=false", "-C", str(root), *args], check=False, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if check and result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or result.stdout.strip() or f"git {' '.join(args)} failed")
     return result
@@ -29,12 +37,159 @@ def current_branch(root: Path) -> str:
     return branch
 
 
+def normalize_path(value: str) -> str:
+    value = value.strip().replace("\\", "/")
+    while value.startswith("./"):
+        value = value[2:]
+    return value
+
+
+def diff_paths(root: Path, base_ref: str, head_ref: str) -> list[str]:
+    result = run_git(root, ["diff", "--name-only", f"{base_ref}..{head_ref}"], check=True)
+    return [normalize_path(line) for line in result.stdout.splitlines() if line.strip()]
+
+
+def is_docs_path(path: str) -> bool:
+    return path in DOC_EXACT_PATHS or path.startswith(DOC_PREFIXES)
+
+
+def is_docs_bilingual_path(path: str) -> bool:
+    return path.startswith(DOCS_BILINGUAL_PREFIX)
+
+
+def is_canonical_implementation_plan_path(path: str) -> bool:
+    return (
+        path.startswith(IMPLEMENTATION_PLAN_PREFIX)
+        and path.endswith(".md")
+        and not path.endswith(".zh-CN.md")
+    )
+
+
+def infer_implementation_plan(paths: list[str]) -> str | None:
+    candidates = sorted({path for path in paths if is_canonical_implementation_plan_path(path)})
+    if len(candidates) == 1:
+        return candidates[0]
+    return None
+
+
+def require_governance_confirmation_diff(paths: list[str]) -> None:
+    if not paths:
+        raise RuntimeError("Governance-confirmation stage has no changed paths to merge.")
+    non_docs = [path for path in paths if not is_docs_path(path)]
+    if non_docs:
+        raise RuntimeError("Governance-confirmation stage must be docs-only; non-doc paths: " + ", ".join(non_docs))
+    if not any(is_docs_bilingual_path(path) for path in paths):
+        raise RuntimeError("Governance-confirmation stage must update docs_bilingual/ first.")
+
+
+def load_receipt(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def write_receipt(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def record_governance_receipt(path: Path, *, branch: str, commit: str, implementation_plan: str) -> None:
+    payload = load_receipt(path)
+    now = datetime.now(timezone.utc).isoformat()
+    payload.update(
+        {
+            "schema_version": payload.get("schema_version", 1),
+            "branch": payload.get("branch", branch),
+            "updated_at": now,
+            "requires_user_confirmation_before_implementation": True,
+            "governance_package_commit": commit,
+            "governance_package_merged_to_local_main": True,
+            "implementation_plan": implementation_plan,
+            "implementation_confirmed_by_user": False,
+            "implementation_confirmation_recorded_at": None,
+            "implementation_stage": "awaiting_confirmation",
+            "next_action": "Await current user confirmation before non-document implementation.",
+        }
+    )
+    write_receipt(path, payload)
+
+
+def require_implementation_confirmation(path: Path, *, root: Path, main_ref: str) -> None:
+    payload = load_receipt(path)
+    if not payload:
+        raise RuntimeError(f"Implementation stage requires receipt confirmation, but receipt is missing: {path}")
+    if payload.get("requires_user_confirmation_before_implementation") is not True:
+        raise RuntimeError("Receipt must set requires_user_confirmation_before_implementation=true before implementation stage.")
+    if payload.get("implementation_confirmed_by_user") is not True:
+        raise RuntimeError("Implementation stage requires implementation_confirmed_by_user=true in the receipt.")
+    if not payload.get("implementation_confirmation_recorded_at"):
+        raise RuntimeError("Implementation stage requires implementation_confirmation_recorded_at in the receipt.")
+    if payload.get("governance_package_merged_to_local_main") is not True:
+        raise RuntimeError("Implementation stage requires governance_package_merged_to_local_main=true in the receipt.")
+    if not payload.get("governance_package_commit"):
+        raise RuntimeError("Implementation stage requires governance_package_commit in the receipt.")
+    plan = plan_exit.implementation_plan_from_payload(payload)
+    validation_errors = plan_exit.validate_implementation_plan_confirmation(
+        root,
+        plan,
+        str(payload.get("governance_package_commit") or ""),
+        main_ref,
+    )
+    if validation_errors:
+        raise RuntimeError(
+            "Implementation stage requires active registered implementation-plan confirmation: "
+            + "; ".join(validation_errors)
+        )
+
+
+def run_local_gate(script_root: Path, label: str) -> None:
+    gate = subprocess.run(
+        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script_root / "tools/ci/local_gate.ps1")],
+        cwd=str(script_root),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if gate.returncode != 0:
+        raise RuntimeError(f"{label} local_gate.ps1 failed\n" + gate.stdout + gate.stderr)
+
+
+def run_local_mr_review(worktree: Path, main_ref: str, branch: str) -> None:
+    review = subprocess.run(
+        [
+            "powershell",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(worktree / "tools/ci/local_mr_review.ps1"),
+            "-Root",
+            str(worktree),
+            "-BaseRef",
+            main_ref,
+            "-HeadRef",
+            branch,
+        ],
+        cwd=str(worktree),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if review.returncode != 0:
+        raise RuntimeError("feature local_mr_review.ps1 failed\n" + review.stdout + review.stderr)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Complete a local feature branch flow through local main and stop at the remote publication gate.")
     parser.add_argument("--root", default=".", help="Primary repository root, normally D:\\PythonProject_langgraph.")
     parser.add_argument("--worktree", default=None, help="Feature worktree path. Defaults to current working directory.")
     parser.add_argument("--branch", default=None, help="Feature branch name. Defaults to the worktree current branch.")
     parser.add_argument("--main", default="main", help="Local main branch name.")
+    parser.add_argument("--stage", choices=("standard", "governance-confirmation", "implementation"), default="standard", help="Flow stage: standard final integration, Stage A governance confirmation, or Stage B implementation integration.")
+    parser.add_argument("--implementation-plan", default=None, help="Confirmed implementation-plan file for governance-confirmation or implementation stages.")
+    parser.add_argument("--receipt", default=DEFAULT_RECEIPT, help="Receipt JSON path relative to the feature worktree.")
     parser.add_argument("--skip-local-gate", action="store_true", help="Do not run local_gate.ps1; intended only when another checker already explains why the full gate cannot run.")
     parser.add_argument("--skip-local-mr-review", action="store_true", help="Do not run local_mr_review.ps1; intended only for explicitly justified diagnostics.")
     parser.add_argument("--execute", action="store_true", help="Actually create backup ref, merge, and optionally run gates. Without this flag, print the planned actions only.")
@@ -43,6 +198,7 @@ def main() -> int:
 
     root = Path(args.root).resolve()
     worktree = Path(args.worktree).resolve() if args.worktree else Path.cwd().resolve()
+    receipt_path = worktree / args.receipt
     branch = args.branch or current_branch(worktree)
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     safe_branch = branch.replace("/", "-")
@@ -50,6 +206,10 @@ def main() -> int:
     actions: list[str] = []
     errors: list[str] = []
     warnings: list[str] = []
+    stop_state = "remote_publication_gate"
+    changed_paths: list[str] = []
+    governance_package_commit: str | None = None
+    implementation_plan: str | None = None
 
     try:
         if branch == args.main:
@@ -65,55 +225,59 @@ def main() -> int:
         if not merge_base:
             raise RuntimeError("Unable to find merge base between local main and feature branch.")
 
+        changed_paths = diff_paths(root, args.main, branch)
+        if args.stage == "governance-confirmation":
+            require_governance_confirmation_diff(changed_paths)
+            implementation_plan = plan_exit.normalize_path(args.implementation_plan) if args.implementation_plan else infer_implementation_plan(changed_paths)
+            if not implementation_plan:
+                raise RuntimeError(
+                    "Governance-confirmation stage requires --implementation-plan or exactly one canonical implementation-plan file in the branch diff."
+                )
+            if implementation_plan not in changed_paths:
+                raise RuntimeError(
+                    "Governance-confirmation stage implementation plan must be part of the committed docs package: "
+                    + implementation_plan
+                )
+            governance_package_commit = run_git(root, ["rev-parse", branch], check=True).stdout.strip()
+            stop_state = "awaiting_implementation_confirmation"
+        elif args.stage == "implementation":
+            require_implementation_confirmation(receipt_path, root=root, main_ref=args.main)
+
         actions.extend([
             f"verify feature worktree clean: {worktree}",
             f"verify primary root clean and on {args.main}: {root}",
+            f"validate stage: {args.stage}",
             f"create rollback backup ref {backup_ref} -> {args.main}",
             f"merge --ff-only {branch} into {args.main}",
             "stop before GitLab/GitHub remote publication",
         ])
+        if args.stage == "governance-confirmation":
+            actions.append("record receipt as awaiting implementation confirmation for " + str(implementation_plan))
         if not args.skip_local_gate:
-            actions.insert(2, "run tools/ci/local_gate.ps1 in feature worktree")
+            actions.insert(3, "run tools/ci/local_gate.ps1 in feature worktree")
             actions.append("run tools/ci/local_gate.ps1 in primary root after merge")
         if not args.skip_local_mr_review:
-            insert_at = 3 if not args.skip_local_gate else 2
+            insert_at = 4 if not args.skip_local_gate else 3
             actions.insert(insert_at, "run tools/ci/local_mr_review.ps1 in feature worktree")
 
         if args.execute:
             if not args.skip_local_gate:
-                gate = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(worktree / "tools/ci/local_gate.ps1")], cwd=str(worktree), capture_output=True, text=True, encoding="utf-8", errors="replace")
-                if gate.returncode != 0:
-                    raise RuntimeError("feature local_gate.ps1 failed\n" + gate.stdout + gate.stderr)
+                run_local_gate(worktree, "feature")
             if not args.skip_local_mr_review:
-                review = subprocess.run(
-                    [
-                        "powershell",
-                        "-NoProfile",
-                        "-ExecutionPolicy",
-                        "Bypass",
-                        "-File",
-                        str(worktree / "tools/ci/local_mr_review.ps1"),
-                        "-Root",
-                        str(worktree),
-                        "-BaseRef",
-                        args.main,
-                        "-HeadRef",
-                        branch,
-                    ],
-                    cwd=str(worktree),
-                    capture_output=True,
-                    text=True,
-                    encoding="utf-8",
-                    errors="replace",
-                )
-                if review.returncode != 0:
-                    raise RuntimeError("feature local_mr_review.ps1 failed\n" + review.stdout + review.stderr)
+                run_local_mr_review(worktree, args.main, branch)
             run_git(root, ["update-ref", backup_ref, args.main], check=True)
             run_git(root, ["merge", "--ff-only", branch], check=True)
+            if args.stage == "governance-confirmation":
+                assert governance_package_commit is not None
+                assert implementation_plan is not None
+                record_governance_receipt(
+                    receipt_path,
+                    branch=branch,
+                    commit=governance_package_commit,
+                    implementation_plan=implementation_plan,
+                )
             if not args.skip_local_gate:
-                gate = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(root / "tools/ci/local_gate.ps1")], cwd=str(root), capture_output=True, text=True, encoding="utf-8", errors="replace")
-                if gate.returncode != 0:
-                    raise RuntimeError("main local_gate.ps1 failed after merge\n" + gate.stdout + gate.stderr)
+                run_local_gate(root, "main")
     except Exception as exc:
         errors.append(str(exc))
 
@@ -122,13 +286,17 @@ def main() -> int:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "ok": not errors,
         "executed": args.execute,
+        "stage": args.stage,
         "root": str(root),
         "worktree": str(worktree),
         "branch": branch,
         "main": args.main,
         "backup_ref": backup_ref,
+        "changed_paths": changed_paths,
+        "implementation_plan": implementation_plan,
+        "receipt": str(receipt_path),
         "remote_publication_performed": False,
-        "stop_state": "remote_publication_gate",
+        "stop_state": stop_state,
         "actions": actions,
         "errors": errors,
         "warnings": warnings,

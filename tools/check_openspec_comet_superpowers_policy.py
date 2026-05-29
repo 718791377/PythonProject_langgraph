@@ -128,6 +128,9 @@ STATE_SCRIPT_REQUIRED_TERMS = [
     "iteration_count: 0",
     "apply_monitor_return",
     "increment_iteration",
+    "require_forward_monitoring_clear",
+    "monitoring_status must be 'clear'",
+    "control_decision must be 'continue'",
     "monitor-return-open",
     "monitor-return-design",
     "monitor-return-build",
@@ -142,6 +145,9 @@ GUARD_SCRIPT_REQUIRED_TERMS = [
     "Build management checklist complete",
     "Verify management checklist complete",
     "Archive management checklist complete",
+    "checklist_done_named",
+    "Missing management checklist section:",
+    "Missing management checklist item:",
     "control_decision=adjust-current",
     "monitor-return-* transition",
 ]
@@ -155,9 +161,13 @@ VALIDATE_SCRIPT_REQUIRED_TERMS = [
 
 ARCHIVE_SCRIPT_REQUIRED_TERMS = [
     "Management closing evidence verified",
+    "checklist_done_any",
     "价值结果已总结",
     "经验沉淀已记录",
     "delta spec sync / verification evidence / archive path 已确认",
+    "Value outcome is summarized.",
+    "Lessons learned or reusable guidance are recorded.",
+    "Delta spec sync, verification evidence, and archive path are confirmed.",
     "monitoring_status is",
     "control_decision is",
 ]
@@ -172,6 +182,106 @@ SKILL_REQUIRED_TERMS = [
     "adaptive/hybrid rework loop",
     "Archive management checklist",
 ]
+
+ROOT_SKILL_REQUIRED_TERMS = [
+    "Adaptive Monitoring Return Dispatch",
+    "`control_decision=return-open|return-design|return-build|return-verify`",
+    "`monitoring_status=blocked`",
+    "do not force waterfall progression",
+    "`return-open` -> `/comet-open`",
+    "`return-design` -> `/comet-design`",
+    "`return-build` -> `/comet-build`",
+    "`return-verify` -> `/comet-verify`",
+    "reread `.comet.yaml`",
+    "refresh the target phase management checklist",
+]
+
+PHASE_SKILL_REQUIRED_TERMS = {
+    ".codex/skills/comet-open/SKILL.md": [
+        "Open management checklist",
+        "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+        "`monitoring_status=clear`",
+        "`control_decision=continue`",
+        "do not force waterfall progression",
+        "monitor-return-open",
+        "monitor-return-design",
+        "monitor-return-build",
+        "monitor-return-verify",
+        "refresh its matching management checklist",
+    ],
+    ".codex/skills/comet-design/SKILL.md": [
+        "Design management checklist",
+        "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+        "`monitoring_status=clear`",
+        "`control_decision=continue`",
+        "do not force waterfall progression",
+        "monitor-return-open",
+        "monitor-return-design",
+        "monitor-return-build",
+        "monitor-return-verify",
+        "refresh its matching management checklist",
+    ],
+    ".codex/skills/comet-build/SKILL.md": [
+        "Build management checklist",
+        "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+        "`monitoring_status=clear`",
+        "`control_decision=continue`",
+        "do not force waterfall progression",
+        "monitor-return-open",
+        "monitor-return-design",
+        "monitor-return-build",
+        "monitor-return-verify",
+        "refresh its matching management checklist",
+    ],
+    ".codex/skills/comet-verify/SKILL.md": [
+        "Verify management checklist",
+        "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+        "`monitoring_status=clear`",
+        "`control_decision=continue`",
+        "do not force waterfall progression",
+        "monitor-return-open",
+        "monitor-return-design",
+        "monitor-return-build",
+        "monitor-return-verify",
+        "refresh its matching management checklist",
+    ],
+    ".codex/skills/comet-archive/SKILL.md": [
+        "Archive management checklist",
+        "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+        "`monitoring_status=clear`",
+        "`control_decision=continue`",
+        "do not force waterfall progression",
+        "monitor-return-open",
+        "monitor-return-design",
+        "monitor-return-build",
+        "monitor-return-verify",
+        "refresh its matching management checklist",
+    ],
+    ".codex/skills/comet-hotfix/SKILL.md": [
+        "Management checklist evidence",
+        "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+        "`monitoring_status=clear`",
+        "`control_decision=continue`",
+        "do not force waterfall progression",
+        "monitor-return-open",
+        "monitor-return-design",
+        "monitor-return-build",
+        "monitor-return-verify",
+        "refresh its matching management checklist",
+    ],
+    ".codex/skills/comet-tweak/SKILL.md": [
+        "Management checklist evidence",
+        "Monitoring is a cross-cutting focus area, not a sixth Comet phase",
+        "`monitoring_status=clear`",
+        "`control_decision=continue`",
+        "do not force waterfall progression",
+        "monitor-return-open",
+        "monitor-return-design",
+        "monitor-return-build",
+        "monitor-return-verify",
+        "refresh its matching management checklist",
+    ],
+}
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="strict")
@@ -240,6 +350,8 @@ def build_report(root: Path) -> dict:
     validate_script_missing: list[str] = []
     archive_script_missing: list[str] = []
     skill_missing: list[str] = []
+    root_skill_missing: list[str] = []
+    phase_skill_missing: dict[str, list[str]] = {}
 
     if en_path:
         try:
@@ -375,8 +487,15 @@ def build_report(root: Path) -> dict:
     for relative in COMET_SKILL_FILES:
         skill_path = require_file(root, relative, errors)
         if skill_path:
-            skill_texts.append(read_text(skill_path))
+            skill_text = read_text(skill_path)
+            skill_texts.append(skill_text)
             checked_files.append(relative.as_posix())
+            if relative.as_posix() == ".codex/skills/comet/SKILL.md":
+                root_skill_missing = check_terms("Root Comet skill", skill_text, ROOT_SKILL_REQUIRED_TERMS, errors)
+            per_file_terms = PHASE_SKILL_REQUIRED_TERMS.get(relative.as_posix())
+            if per_file_terms:
+                missing = check_terms(f"Comet phase skill {relative.as_posix()}", skill_text, per_file_terms, errors)
+                phase_skill_missing[relative.as_posix()] = missing
     if skill_texts:
         skill_missing = check_terms("Comet skills", "\n".join(skill_texts), SKILL_REQUIRED_TERMS, errors)
 
@@ -401,6 +520,8 @@ def build_report(root: Path) -> dict:
             "validate_script": VALIDATE_SCRIPT_REQUIRED_TERMS,
             "archive_script": ARCHIVE_SCRIPT_REQUIRED_TERMS,
             "skills": SKILL_REQUIRED_TERMS,
+            "root_skill": ROOT_SKILL_REQUIRED_TERMS,
+            "phase_skills": PHASE_SKILL_REQUIRED_TERMS,
         },
         "missing_terms": {
             "english_policy": en_missing,
@@ -413,6 +534,8 @@ def build_report(root: Path) -> dict:
             "validate_script": validate_script_missing,
             "archive_script": archive_script_missing,
             "skills": skill_missing,
+            "root_skill": root_skill_missing,
+            "phase_skills": phase_skill_missing,
         },
         "counts": {
             "checked_files": len(checked_files),
@@ -425,6 +548,8 @@ def build_report(root: Path) -> dict:
                 + len(VALIDATE_SCRIPT_REQUIRED_TERMS)
                 + len(ARCHIVE_SCRIPT_REQUIRED_TERMS)
                 + len(SKILL_REQUIRED_TERMS)
+                + len(ROOT_SKILL_REQUIRED_TERMS)
+                + sum(len(terms) for terms in PHASE_SKILL_REQUIRED_TERMS.values())
             ),
             "errors": len(errors),
             "warnings": len(warnings),

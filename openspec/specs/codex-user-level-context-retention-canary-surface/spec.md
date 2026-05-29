@@ -22,11 +22,26 @@ Other active instruction surfaces MAY refer to the startup-summary canary and MA
 
 The repository SHALL provide an executable checker that validates active canary placement, canary encoding integrity, recovery wording, and optional user-provided response/session evidence without relying on model memory alone.
 
+The visible startup canary markers SHALL be ASCII-only tokens defined by the startup summary pair. Historical non-ASCII canary markers SHALL NOT be accepted as current canonical response evidence; they MAY remain only as checker-internal legacy/corruption detection inputs.
+
 The checker SHALL continue to enforce static placement rules for repository files.
 
 When response or session evidence is explicitly provided, the checker SHALL inspect only user-visible assistant responses and SHALL NOT count tool output, compaction summaries, reasoning, developer/system payloads, startup-summary file reads, or other context copies as satisfying the canary.
 
 When session JSONL evidence is narrowed to a specific turn or latest assistant response, the checker SHALL apply that selection only to eligible assistant messages and SHALL continue to ignore non-user-visible context sources.
+
+#### Scenario: Startup summary defines transport-stable canary markers
+
+- **WHEN** the startup summary pair defines the current visible canary markers
+- **THEN** the markers SHALL be ASCII-only and safe to render through legacy Windows console or launcher payload boundaries
+- **AND** no active source file outside the startup summary pair SHALL contain the literal marker text
+
+#### Scenario: User-visible assistant response uses historical non-ASCII canary text
+
+- **WHEN** the checker receives response text or session JSONL with an eligible assistant response
+- **AND** that response contains a historical non-ASCII canary marker instead of the current startup-summary-defined marker
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report the response as invalid canary evidence requiring cold-start recovery
 
 #### Scenario: Startup recovery omits repository instructions
 

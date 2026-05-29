@@ -67,10 +67,23 @@ strip_wrapping_quotes() {
 fail()  { red "  FAIL: $1"; ERRORS=$((ERRORS + 1)); }
 warn_msg() { warn "  WARN: $1"; WARNINGS=$((WARNINGS + 1)); }
 
+validate_artifact_path_safety() {
+  local field="$1" path="$2"
+  if [ -z "$path" ] || [ "$path" = "null" ]; then
+    return 0
+  fi
+  if [[ "$path" = /* ]] || [[ "$path" =~ ^[A-Za-z]: ]] || [[ "$path" = \\* ]] || [[ "$path" == *\\* ]]; then
+    fail "$field must be a repository-relative path, got '$path'"
+  fi
+  if [[ "$path" == ".." || "$path" == ../* || "$path" == */../* || "$path" == */.. ]]; then
+    fail "$field must not contain path traversal segments, got '$path'"
+  fi
+}
+
 echo "[VALIDATE] $YAML" >&2
 
 # --- Required fields ---
-REQUIRED_FIELDS="workflow phase design_doc plan build_mode isolation verify_mode verify_result verified_at archived management_record monitoring_status control_decision target_phase rework_reason iteration_count"
+REQUIRED_FIELDS="workflow phase design_doc plan build_mode isolation verify_mode verify_result verification_report branch_status verified_at archived management_record monitoring_status control_decision target_phase rework_reason iteration_count"
 for field in $REQUIRED_FIELDS; do
   if ! grep -q "^${field}:" "$YAML" 2>/dev/null; then
     fail "missing required field '$field'"
@@ -113,6 +126,7 @@ rework_reason=$(field_value "rework_reason")
 iteration_count=$(field_value "iteration_count")
 design_doc=$(field_value "design_doc")
 plan=$(field_value "plan")
+verification_report=$(field_value "verification_report")
 
 validate_enum "workflow"      "$workflow"      "full hotfix tweak"
 validate_enum "phase"         "$phase"          "open design build verify archive"
@@ -127,6 +141,47 @@ validate_enum "monitoring_status" "$monitoring_status" "clear needs_decision blo
 validate_enum "control_decision" "$control_decision" "continue adjust-current return-open return-design return-build return-verify stop"
 validate_enum "target_phase" "$target_phase" "null open design build verify"
 validate_enum "rework_reason" "$rework_reason" "null scope-gap planning-gap execution-gap verification-gap value-gap risk-change stakeholder-change"
+
+validate_return_invariants() {
+  case "$control_decision" in
+    return-open|return-design|return-build|return-verify)
+      if [ -z "$target_phase" ] || [ "$target_phase" = "null" ] || [ -z "$rework_reason" ] || [ "$rework_reason" = "null" ]; then
+        fail "return decision requires target_phase and rework_reason"
+      fi
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+
+  case "$control_decision" in
+    return-open)
+      if [ "$target_phase" != "open" ]; then
+        fail "return-open target_phase must be open"
+      fi
+      ;;
+    return-design)
+      if [ "$target_phase" != "design" ]; then
+        fail "return-design target_phase must be design"
+      fi
+      ;;
+    return-build)
+      if [ "$target_phase" != "build" ]; then
+        fail "return-build target_phase must be build"
+      fi
+      ;;
+    return-verify)
+      if [ "$target_phase" != "verify" ]; then
+        fail "return-verify target_phase must be verify"
+      fi
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+validate_return_invariants
+
 if [ -n "$iteration_count" ] && [ "$iteration_count" != "null" ] && [[ ! "$iteration_count" =~ ^[0-9]+$ ]]; then
   fail "iteration_count='$iteration_count' is not a non-negative integer"
 fi
@@ -134,21 +189,33 @@ fi
 # --- Path validation ---
 
 if [ -n "$design_doc" ] && [ "$design_doc" != "null" ]; then
+  validate_artifact_path_safety "design_doc" "$design_doc"
   if [ ! -f "$design_doc" ]; then
     fail "design_doc='$design_doc' does not exist on disk"
   fi
 fi
 
 if [ -n "$plan" ] && [ "$plan" != "null" ]; then
+  validate_artifact_path_safety "plan" "$plan"
   if [ ! -f "$plan" ]; then
     fail "plan='$plan' does not exist on disk"
   fi
 fi
 
-if [ -n "$management_record" ] && [ "$management_record" != "null" ]; then
-  if [ ! -f "$management_record" ]; then
-    fail "management_record='$management_record' does not exist on disk"
+if [ -n "$verification_report" ] && [ "$verification_report" != "null" ]; then
+  validate_artifact_path_safety "verification_report" "$verification_report"
+  if [ ! -f "$verification_report" ]; then
+    fail "verification_report='$verification_report' does not exist on disk"
   fi
+fi
+
+if [ -z "$management_record" ] || [ "$management_record" = "null" ]; then
+  fail "management_record must be recorded"
+else
+  validate_artifact_path_safety "management_record" "$management_record"
+fi
+if [ -n "$management_record" ] && [ "$management_record" != "null" ] && [ ! -f "$management_record" ]; then
+  fail "management_record='$management_record' does not exist on disk"
 fi
 
 # --- Unknown keys check ---

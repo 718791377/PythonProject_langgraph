@@ -27,6 +27,9 @@ backend_ready=true
 experts=none
 durable_workflow=not_needed
 persistent_team=not_needed
+main_session_escalation=not_needed
+approval_timeout_risk=none
+approval_receipt=none
 why=single validated checker slice; threshold_not_met:single_execution_slice.
 """
 
@@ -38,6 +41,9 @@ backend_ready=true
 experts=verifier
 durable_workflow=selected
 persistent_team=running
+main_session_escalation=not_needed
+approval_timeout_risk=none
+approval_receipt=none
 why=triggered_threshold:frozen_plan_with_2+_independent_slices for execute-parallel.
 """
 
@@ -213,6 +219,453 @@ class OrchestrationTraceEvidenceCheckTest(unittest.TestCase):
         payload = module.run_check(path)
 
         self.assertTrue(payload["ok"], payload["errors"])
+
+
+COLLAB_SCRIPT_PATH = REPO_ROOT / "tools" / "check_orchestration_collaboration_evidenceguard.py"
+collab_spec = importlib.util.spec_from_file_location(
+    "check_orchestration_collaboration_evidenceguard",
+    COLLAB_SCRIPT_PATH,
+)
+collab_module = importlib.util.module_from_spec(collab_spec)
+assert collab_spec and collab_spec.loader
+collab_spec.loader.exec_module(collab_module)
+
+
+class OrchestrationCollaborationEvidenceguardTest(unittest.TestCase):
+    maxDiff = None
+
+    def make_root(self, name: str) -> Path:
+        root = REPO_ROOT / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}"
+        root.mkdir(parents=True, exist_ok=True)
+        self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
+        return root
+
+    def write_json(self, path: Path, payload: dict) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    def test_repository_collaboration_evidenceguard_surfaces_pass(self) -> None:
+        payload = collab_module.run_repository_check(REPO_ROOT)
+        self.assertTrue(payload["ok"], payload["errors"])
+
+    def test_repository_collaboration_evidenceguard_requires_chinese_openspec_surface(self) -> None:
+        root = self.make_root("collab-zh-surface")
+        fixture_src = REPO_ROOT / collab_module.DEFAULT_FIXTURE_DIR
+        fixture_dst = root / collab_module.DEFAULT_FIXTURE_DIR
+        shutil.copytree(fixture_src, fixture_dst)
+        for rel in collab_module.REQUIRED_SURFACE_SNIPPETS:
+            if rel == "openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md":
+                continue
+            src = REPO_ROOT / rel
+            dst = root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        for rel in ("tools/run_openspec_guard.py", "tools/safety_rule_script_backing_registry.json"):
+            src = REPO_ROOT / rel
+            dst = root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+
+        payload = collab_module.run_repository_check(root)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("spec.zh-CN.md" in error for error in payload["errors"]),
+            payload["errors"],
+        )
+
+    def test_repository_collaboration_evidenceguard_requires_chinese_openspec_heading_parity(self) -> None:
+        root = self.make_root("collab-zh-heading-parity")
+        fixture_src = REPO_ROOT / collab_module.DEFAULT_FIXTURE_DIR
+        fixture_dst = root / collab_module.DEFAULT_FIXTURE_DIR
+        shutil.copytree(fixture_src, fixture_dst)
+        for rel in collab_module.REQUIRED_SURFACE_SNIPPETS:
+            src = REPO_ROOT / rel
+            dst = root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            if rel == "openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md":
+                dst.write_text(
+                    "\n".join(
+                        [
+                            "# Codex 用户级 Orchestration Activation Policy",
+                            "prompt-independent collaboration parity",
+                            "durable/persistent evidenceguard",
+                            "LangGraph state release",
+                            "tools/check_orchestration_collaboration_evidenceguard.py",
+                        ]
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
+            else:
+                dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        for rel in ("tools/run_openspec_guard.py", "tools/safety_rule_script_backing_registry.json"):
+            src = REPO_ROOT / rel
+            dst = root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+
+        payload = collab_module.run_repository_check(root)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("bilingual parity" in error or "Requirement/Scenario headings" in error for error in payload["errors"]),
+            payload["errors"],
+        )
+
+    def test_prompt_independent_fixture_parity_passes(self) -> None:
+        payload = collab_module.run_fixture_check(REPO_ROOT)
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertGreaterEqual(payload["counts"]["checked_cases"], 6)
+
+    def test_explicit_directive_without_threshold_requires_blocker(self) -> None:
+        root = self.make_root("collab-directive-no-threshold")
+        path = root / "evidence.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "activation_parity",
+                "case_id": "explicit",
+                "parity_group": "explicit",
+                "collaboration_phrase_present": False,
+                "prompt": "Use LangGraph for this single document edit.",
+                "input": {"frozen_plan": False, "execution_slices": 1, "explicit_directive": "langgraph"},
+                "expected": {
+                    "phase": "verify-accept",
+                    "capability_chain": "subagent:auto > omx:on > langgraph:on",
+                    "backend_default": "langgraph",
+                    "backend_ready": "true",
+                    "experts": "none",
+                    "durable_workflow": "candidate",
+                    "persistent_team": "candidate",
+                    "why": "using langgraph",
+                },
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("without thresholds" in error for error in payload["errors"]), payload["errors"])
+
+    def test_durable_running_claim_requires_heartbeat(self) -> None:
+        root = self.make_root("collab-durable-no-heartbeat")
+        path = root / "durable.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "durable_persistent_claim",
+                "state": "running",
+                "claim": "persistent team is running",
+                "evidence": {
+                    "active_selector": True,
+                    "backend_family": "langgraph",
+                    "preflight_passed": True,
+                    "ownership_plan": True,
+                    "team_manifest": True,
+                },
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("heartbeat" in error for error in payload["errors"]), payload["errors"])
+
+    def test_durable_running_claim_requires_manifest_or_thread_state(self) -> None:
+        root = self.make_root("collab-durable-no-runtime-state")
+        path = root / "durable-no-runtime-state.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "durable_persistent_claim",
+                "state": "running",
+                "claim": "durable workflow is running",
+                "evidence": {
+                    "active_selector": True,
+                    "backend_family": "native_omx",
+                    "preflight_passed": True,
+                    "ownership_plan": True,
+                    "heartbeat": True,
+                },
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("team_manifest or langgraph_thread_state" in error for error in payload["errors"]),
+            payload["errors"],
+        )
+
+    def test_durable_complete_claim_requires_close_and_absorption(self) -> None:
+        root = self.make_root("collab-durable-complete-no-close")
+        path = root / "durable-complete-no-close.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "durable_persistent_claim",
+                "state": "complete",
+                "claim": "persistent team completed",
+                "evidence": {
+                    "active_selector": True,
+                    "backend_family": "langgraph",
+                    "preflight_passed": True,
+                    "ownership_plan": True,
+                    "langgraph_thread_state": True,
+                    "heartbeat": True,
+                    "result_summary": "validated",
+                },
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("close_record" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("leader_absorbed_record" in error for error in payload["errors"]), payload["errors"])
+
+    def test_durable_candidate_claim_cannot_say_running(self) -> None:
+        root = self.make_root("collab-durable-candidate-running-claim")
+        path = root / "durable-candidate-running-claim.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "durable_persistent_claim",
+                "state": "candidate",
+                "claim": "durable team is running",
+                "evidence": {},
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("cannot claim running" in error for error in payload["errors"]), payload["errors"])
+
+    def test_expert_result_requires_absorbed_event(self) -> None:
+        root = self.make_root("collab-expert-result")
+        path = root / "expert.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "expert_lifecycle_audit",
+                "total_wait_bound_seconds": 30,
+                "events": [
+                    {
+                        "event": "spawn",
+                        "role": "verifier",
+                        "task_summary": "check evidence",
+                        "scope": ["test evidence"],
+                        "non_goals": ["edit files"],
+                    },
+                    {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
+                    {"event": "result", "agent_id": "agent-1", "summary": "looks good"},
+                ],
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("absorbed" in error for error in payload["errors"]), payload["errors"])
+
+    def test_expert_timeout_must_be_non_evidence(self) -> None:
+        root = self.make_root("collab-expert-timeout")
+        path = root / "timeout.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "expert_lifecycle_audit",
+                "total_wait_bound_seconds": 30,
+                "events": [
+                    {
+                        "event": "spawn",
+                        "role": "verifier",
+                        "task_summary": "check evidence",
+                        "scope": ["test evidence"],
+                        "non_goals": ["edit files"],
+                    },
+                    {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
+                    {"event": "timeout", "agent_id": "agent-1", "classification": "success"},
+                ],
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("non-evidence" in error for error in payload["errors"]), payload["errors"])
+
+    def test_expert_lifecycle_jsonl_evidence_passes(self) -> None:
+        root = self.make_root("collab-expert-jsonl")
+        path = root / "expert-lifecycle.jsonl"
+        events = [
+            {
+                "event": "spawn",
+                "role": "verifier",
+                "task_summary": "check evidence",
+                "scope": ["test evidence"],
+                "non_goals": ["edit files"],
+            },
+            {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
+            {"event": "result", "agent_id": "agent-1", "summary": "verified", "changed_paths": []},
+            {"event": "absorbed", "agent_id": "agent-1", "leader_decision": "accepted"},
+            {"event": "close", "agent_id": "agent-1", "retention_policy": "close"},
+        ]
+        path.write_text("\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n", encoding="utf-8")
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertEqual(payload["evidence_format"], "jsonl")
+
+    def test_expert_lifecycle_jsonl_rejects_unsupported_event(self) -> None:
+        root = self.make_root("collab-expert-jsonl-unsupported")
+        path = root / "expert-lifecycle-unsupported.jsonl"
+        events = [
+            {
+                "event": "spawn",
+                "role": "verifier",
+                "task_summary": "check evidence",
+                "scope": ["test evidence"],
+                "non_goals": ["edit files"],
+            },
+            {"event": "bogus", "agent_id": "agent-1", "summary": "not a lifecycle event"},
+        ]
+        path.write_text("\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n", encoding="utf-8")
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["evidence_format"], "jsonl")
+        self.assertTrue(
+            any("unsupported expert lifecycle event" in error for error in payload["errors"]),
+            payload["errors"],
+        )
+
+    def test_expert_lifecycle_jsonl_rejects_missing_required_event_fields(self) -> None:
+        root = self.make_root("collab-expert-jsonl-required-fields")
+        path = root / "expert-lifecycle-missing-fields.jsonl"
+        events = [
+            {"event": "spawn", "role": "verifier"},
+            {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
+            {"event": "result", "agent_id": "agent-1", "summary": "verified"},
+            {"event": "absorbed", "agent_id": "agent-1", "leader_decision": "accepted"},
+            {"event": "close", "agent_id": "agent-1", "retention_policy": "close"},
+        ]
+        path.write_text("\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n", encoding="utf-8")
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["evidence_format"], "jsonl")
+        self.assertTrue(any("task_summary" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("scope" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("non_goals" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("changed_paths" in error for error in payload["errors"]), payload["errors"])
+
+    def test_expert_lifecycle_rejects_invalid_list_field_contents(self) -> None:
+        root = self.make_root("collab-expert-invalid-list-values")
+        path = root / "expert-lifecycle-invalid-list-values.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "expert_lifecycle_audit",
+                "total_wait_bound_seconds": 30,
+                "events": [
+                    {
+                        "event": "spawn",
+                        "role": "verifier",
+                        "task_summary": "check evidence",
+                        "scope": [],
+                        "non_goals": [""],
+                    },
+                    {"event": "wait", "agent_id": "agent-1", "wait_seconds": 30},
+                    {"event": "result", "agent_id": "agent-1", "summary": "verified", "changed_paths": [123]},
+                    {"event": "absorbed", "agent_id": "agent-1", "leader_decision": "accepted"},
+                    {"event": "close", "agent_id": "agent-1", "retention_policy": "close"},
+                ],
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["evidence_format"], "json")
+        self.assertTrue(any("scope" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("non_goals" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("changed_paths" in error for error in payload["errors"]), payload["errors"])
+
+    def test_langgraph_completed_release_fields_pass(self) -> None:
+        root = self.make_root("collab-langgraph-release-pass")
+        path = root / "lg-release-pass.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "langgraph_state_release",
+                "task_completed": True,
+                "thread_state": {
+                    "status": "complete",
+                    "completed_at": "2026-05-27T00:00:00Z",
+                    "final_phase": "verify-accept",
+                    "result_summary": "accepted",
+                    "released_by": "omx-langgraph-resume.ps1",
+                },
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertTrue(payload["ok"], payload["errors"])
+
+    def test_langgraph_handoff_requires_handoff_fields(self) -> None:
+        root = self.make_root("collab-langgraph-handoff-missing-fields")
+        path = root / "lg-handoff-missing-fields.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "langgraph_state_release",
+                "task_completed": False,
+                "handoff": True,
+                "thread_state": {"status": "blocked", "handoff_at": "2026-05-27T00:00:00Z"},
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("handoff_target" in error for error in payload["errors"]), payload["errors"])
+        self.assertTrue(any("reason" in error for error in payload["errors"]), payload["errors"])
+
+    def test_langgraph_completed_state_must_release_running(self) -> None:
+        root = self.make_root("collab-langgraph-release")
+        path = root / "lg.json"
+        self.write_json(
+            path,
+            {
+                "schema_version": 1,
+                "case_type": "langgraph_state_release",
+                "task_completed": True,
+                "thread_state": {"status": "running", "completed_at": "2026-05-27T00:00:00Z"},
+            },
+        )
+
+        payload = collab_module.run_evidence_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("status=running" in error for error in payload["errors"]), payload["errors"])
 
 
 if __name__ == "__main__":

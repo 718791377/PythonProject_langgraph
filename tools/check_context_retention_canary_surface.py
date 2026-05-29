@@ -12,8 +12,10 @@ from pathlib import Path
 
 CHECK_NAME = "context_retention_canary_surface"
 
-START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
-END_CANARY = chr(21941) + "~"
+START_CANARY = "CODEX_CTX_" + "CANARY_START"
+END_CANARY = "CODEX_CTX_" + "CANARY_END"
+LEGACY_START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
+LEGACY_END_CANARY = chr(21941) + "~"
 LEGACY_ENCODINGS_FOR_MOJIBAKE = ("gbk", "gb18030", "cp936", "latin-1")
 
 ALLOWED_CANARY_PROMPT_PATHS = {
@@ -78,9 +80,13 @@ def derive_mojibake_variants(text: str) -> tuple[str, ...]:
 
 
 MOJIBAKE_CANARY_MARKERS = tuple(
-    variant
-    for marker in (START_CANARY, END_CANARY)
-    for variant in derive_mojibake_variants(marker)
+    sorted(
+        {
+            marker_or_variant
+            for marker in (LEGACY_START_CANARY, LEGACY_END_CANARY)
+            for marker_or_variant in (marker, *derive_mojibake_variants(marker))
+        }
+    )
 )
 
 

@@ -105,16 +105,24 @@ python tools/project_moe_gui_toolchain/plan_project_moe_gui_uninstall.py `
 
 - `read_only = true`；
 - `writes_target_project = false`；
-- `apply_supported = false`；
+- `apply_supported = true`；
 - `state_deletion_allowed = false`；
 - `private_files_deletion_allowed = false` - 表示卸载计划不得删除 `MOE.md` 或 `.codex/agents/*.toml` 等目标项目私有文件。
 
 如果 managed file hash 不匹配，返回 `blocked:managed_file_hash_mismatch`，不得把本地改动过的 managed file 当作可删除对象。该计划不删除 `.omx/state`、私有 `MOE.md` 或 `.codex/agents/*.toml`。
 
-如果误传 `--apply`，命令仍只输出 JSON blocker `blocked:uninstall_apply_not_supported`，并设置 `delete_executed = false`。该 guard 用来防止操作员误以为本版支持真正删除。
+确认 `planned_deletes` 后，可以显式传入 `--apply` 执行真正卸载：
+
+```powershell
+python tools/project_moe_gui_toolchain/plan_project_moe_gui_uninstall.py `
+  --target-project D:\SomeProject `
+  --apply --json
+```
+
+`--apply` 只会删除 manifest 白名单内、hash 已验证的 Project MOE GUI 受管文件；如果 manifest 试图声明 `MOE.md`、`.codex/agents/*.toml`、`.omx/state` 或其他白名单外路径，命令返回 `blocked:uninstall_path_not_in_managed_allowlist` 并且 `delete_executed = false`。成功时返回 `delete_executed = true`、`applied_file_changes` 和 `uninstall_receipt`。
 
 ## 回滚
 
 回滚依赖目标项目 Git 历史和 `project_moe_gui.install-manifest.json`。回滚 GUI 产物时不得删除 `.omx/state`、私有 `MOE.md` 或 Agent TOML。
 
-`project-moe-gui.cmd --preflight --json` ??????? Phase 1 readiness gate????????? surface ?? blocker?launcher ?? `phase1_readiness_gate`?`remediation_plan` ? `operator_next_steps`???????? CLI ??????????? `.omx/state/<namespace>/` ????????launcher ????? GUI ?????????? `blocked:dirty_target_project` ???
+`project-moe-gui.cmd --preflight --json` 会先执行 Phase 1 readiness gate。若静态 surface 仍有 blocker，launcher 会在 `phase1_readiness_gate`、`remediation_plan` 与 `operator_next_steps` 中返回修复顺序，并跳过目标 CLI 执行，避免在 `.omx/state/<namespace>/` 中产生副作用；launcher 只有在 GUI 控制前提满足时才进入控制路径，遇到 `blocked:dirty_target_project` 等 blocker 必须 fail closed。

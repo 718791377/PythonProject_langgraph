@@ -3,12 +3,26 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
 
 MOJIBAKE_MARKERS = ("????", "\ufffd")
 IMPLEMENTATION_PHASES = {"build", "verify", "archive"}
+PLAN_SIZE_WARNING_BYTES = 40 * 1024
+PLAN_SIZE_FAIL_BYTES = 60 * 1024
+PLAN_SIZE_BASELINE = Path("tools/implementation_plan_size_baseline.json")
+PLAN_FILES_ROOT = Path("docs_bilingual/implementation_plans")
+REQUIRED_ANCHOR_PAIRS = (
+    ("CURRENT_STATUS_START", "CURRENT_STATUS_END"),
+    ("TASK_BACKLOG_START", "TASK_BACKLOG_END"),
+    ("EVIDENCE_INDEX_START", "EVIDENCE_INDEX_END"),
+)
+EVIDENCE_HEADING_RE = re.compile(r"^##\s+20\d\d-\d\d-\d\d\b.*(?:Evidence|证据)", re.MULTILINE)
+BACKTICK_PATH_RE = re.compile(r"`([^`]+)`")
+MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+EVIDENCE_PATH_PREFIXES = ("docs/", "docs_bilingual/", "openspec/")
 
 
 def read_text_utf8(path: Path) -> str:
@@ -63,6 +77,225 @@ def parse_simple_yaml(path: Path) -> dict[str, str]:
     return data
 
 
+def parse_front_matter(path: Path) -> dict[str, str]:
+    text = read_text_utf8(path)
+    if not text.startswith("---"):
+        return {}
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    data: dict[str, str] = {}
+    for raw_line in lines[1:]:
+        stripped = raw_line.strip()
+        if stripped == "---":
+            return data
+        if not stripped or stripped.startswith("#") or ":" not in stripped:
+            continue
+        key, value = stripped.split(":", 1)
+        data[key.strip()] = value.strip().strip("'\"")
+    return data
+
+
+def active_plan_guidance() -> str:
+    return (
+        "\u4e2d\u6587\u63d0\u793a\uff1a\u5f00\u59cb\u5b9e\u65bd\u524d\uff0c"
+        "\u8bf7\u5148\u5728 docs_bilingual/docs_registry.yaml \u767b\u8bb0 active "
+        "\u53cc\u8bed implementation plan\uff0c\u5e76\u4fdd\u6301\u82f1\u6587\u4e3b\u6587\u4ef6"
+        "\u548c zh-CN companion \u72b6\u6001\u4e00\u81f4\u3002"
+    )
+
+
+def load_plan_size_baseline(root: Path) -> dict[str, set[str]]:
+    path = root / PLAN_SIZE_BASELINE
+    if not path.exists():
+        return {}
+    payload = json.loads(read_text_utf8(path))
+    entries = payload.get("entries", {})
+    baseline: dict[str, set[str]] = {}
+    if isinstance(entries, dict):
+        for relative_path, value in entries.items():
+            checks = value.get("allowed_findings", value) if isinstance(value, dict) else value
+            if isinstance(checks, list):
+                baseline[relative_path.replace("\\", "/")] = {str(item) for item in checks}
+    return baseline
+
+
+def anchor_counts(text: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for start, end in REQUIRED_ANCHOR_PAIRS:
+        counts[start] = text.count(start)
+        counts[end] = text.count(end)
+    return counts
+
+
+def missing_required_anchors(text: str) -> list[str]:
+    missing: list[str] = []
+    counts = anchor_counts(text)
+    for start, end in REQUIRED_ANCHOR_PAIRS:
+        if counts[start] != 1:
+            missing.append(start)
+        if counts[end] != 1:
+            missing.append(end)
+    return missing
+
+
+def evidence_index_section(text: str) -> str | None:
+    start = text.find("EVIDENCE_INDEX_START")
+    end = text.find("EVIDENCE_INDEX_END")
+    if start == -1 or end == -1 or end <= start:
+        return None
+    return text[start:end]
+
+
+def referenced_evidence_paths(section: str) -> list[str]:
+    paths: set[str] = set()
+    for value in [*BACKTICK_PATH_RE.findall(section), *MARKDOWN_LINK_RE.findall(section)]:
+        candidate = value.strip().replace("\\", "/")
+        if candidate.startswith(EVIDENCE_PATH_PREFIXES):
+            paths.add(candidate)
+    return sorted(paths)
+
+
+def add_or_allow_plan_finding(
+    *,
+    relative_path: str,
+    finding_code: str,
+    message: str,
+    baseline: dict[str, set[str]],
+    errors: list[str],
+    warnings: list[str],
+) -> None:
+    allowed = finding_code in baseline.get(relative_path, set())
+    if allowed:
+        warnings.append(f"{relative_path}: legacy-baseline allows `{finding_code}`; {message}")
+    else:
+        errors.append(f"{relative_path}: {message}")
+
+
+def validate_plan_structure(
+    path: Path,
+    root: Path,
+    baseline: dict[str, set[str]],
+    errors: list[str],
+    warnings: list[str],
+    plan_files: list[dict[str, object]],
+) -> None:
+    relative_path = path.relative_to(root).as_posix()
+    text = read_text_utf8(path)
+    size_bytes = path.stat().st_size
+    missing_anchors = missing_required_anchors(text)
+    evidence_heading_count = len(EVIDENCE_HEADING_RE.findall(text))
+    section = evidence_index_section(text)
+    evidence_paths = referenced_evidence_paths(section) if section is not None else []
+
+    if size_bytes > PLAN_SIZE_WARNING_BYTES:
+        warnings.append(
+            f"{relative_path}: size {size_bytes} bytes exceeds warning threshold {PLAN_SIZE_WARNING_BYTES} bytes."
+        )
+    if size_bytes > PLAN_SIZE_FAIL_BYTES:
+        add_or_allow_plan_finding(
+            relative_path=relative_path,
+            finding_code="oversized_fail_threshold",
+            message=f"size {size_bytes} bytes exceeds fail threshold {PLAN_SIZE_FAIL_BYTES} bytes.",
+            baseline=baseline,
+            errors=errors,
+            warnings=warnings,
+        )
+    if missing_anchors:
+        add_or_allow_plan_finding(
+            relative_path=relative_path,
+            finding_code="missing_required_anchors",
+            message="missing required stable update anchors: " + ", ".join(missing_anchors),
+            baseline=baseline,
+            errors=errors,
+            warnings=warnings,
+        )
+    if evidence_heading_count > 3 and section is None:
+        add_or_allow_plan_finding(
+            relative_path=relative_path,
+            finding_code="evidence_ledger_without_index",
+            message=(
+                f"contains {evidence_heading_count} dated evidence-package headings but no "
+                "EVIDENCE_INDEX_START/EVIDENCE_INDEX_END section."
+            ),
+            baseline=baseline,
+            errors=errors,
+            warnings=warnings,
+        )
+    for evidence_path in evidence_paths:
+        if not (root / evidence_path).exists():
+            errors.append(f"{relative_path}: evidence index references missing path: {evidence_path}")
+
+    plan_files.append(
+        {
+            "path": relative_path,
+            "size_bytes": size_bytes,
+            "missing_required_anchors": missing_anchors,
+            "evidence_heading_count": evidence_heading_count,
+            "evidence_index_paths": evidence_paths,
+            "baseline_allowed_findings": sorted(baseline.get(relative_path, set())),
+        }
+    )
+
+
+def validate_on_disk_plan_registry_state(
+    root: Path,
+    impl_by_path: dict[str, dict[str, str]],
+    errors: list[str],
+    warnings: list[str],
+) -> int:
+    plan_root = root / PLAN_FILES_ROOT
+    if not plan_root.exists():
+        return 0
+
+    disk_plan_count = 0
+    for path in sorted(plan_root.glob("*.md")):
+        front_matter = parse_front_matter(path)
+        if front_matter.get("doc_class") != "implementation_plan":
+            continue
+
+        disk_plan_count += 1
+        relative_path = path.relative_to(root).as_posix()
+        status = front_matter.get("status", "").strip().lower()
+        doc_id = front_matter.get("doc_id", "").strip()
+        registry_entry = impl_by_path.get(relative_path)
+
+        if registry_entry is None:
+            message = (
+                f"Implementation plan file `{relative_path}` is missing a docs_registry.yaml record."
+                f" {active_plan_guidance()}"
+            )
+            if status == "active":
+                errors.append("Active " + message)
+            else:
+                warnings.append("Draft/non-active " + message)
+            continue
+
+        registry_status = registry_entry.get("status", "").strip().lower()
+        registry_doc_id = registry_entry.get("doc_id", "<unknown>")
+        if doc_id and registry_doc_id != doc_id:
+            errors.append(
+                f"Implementation plan file `{relative_path}` has doc_id `{doc_id}` but docs_registry.yaml records `{registry_doc_id}`. {active_plan_guidance()}"
+            )
+        if status == "active" and registry_status != "active":
+            errors.append(
+                f"Active implementation plan file `{relative_path}` is registered with status `{registry_status}`; expected `active`. {active_plan_guidance()}"
+            )
+        elif registry_status == "active" and status != "active":
+            errors.append(
+                f"Implementation plan registry entry `{registry_doc_id}` is active, but `{relative_path}` front matter status is `{status or '<missing>'}`; expected `active`. {active_plan_guidance()}"
+            )
+
+        if status == "active" and relative_path.endswith(".zh-CN.md"):
+            translation_of = front_matter.get("translation_of", "").replace("\\", "/")
+            if translation_of and translation_of not in impl_by_path:
+                errors.append(
+                    f"Active implementation plan companion `{relative_path}` points to unregistered translation_of `{translation_of}`. {active_plan_guidance()}"
+                )
+
+    return disk_plan_count
+
+
 def active_comet_plan_references(root: Path) -> list[dict[str, str]]:
     references: list[dict[str, str]] = []
     changes_root = root / "openspec" / "changes"
@@ -107,6 +340,8 @@ def main() -> int:
     errors: list[str] = []
     warnings: list[str] = []
     infos: list[str] = []
+    plan_files: list[dict[str, object]] = []
+    size_baseline = load_plan_size_baseline(root)
 
     entries = parse_docs_registry(registry_path)
     impl_entries = [entry for entry in entries if entry.get("doc_class") == "implementation_plan"]
@@ -117,6 +352,9 @@ def main() -> int:
             value = entry.get(key, "")
             if value:
                 impl_by_path[value.replace("\\", "/")] = entry
+
+    disk_plan_files = validate_on_disk_plan_registry_state(root, impl_by_path, errors, warnings)
+    infos.append(f"Implementation plan files with front matter: {disk_plan_files}")
 
     for entry in impl_entries:
         doc_id = entry.get("doc_id", "<unknown>")
@@ -138,10 +376,12 @@ def main() -> int:
             errors.append(f"Implementation plan `{doc_id}` canonical_path does not exist: {canonical_path}")
         else:
             validate_text_health(canonical_file, root, errors)
+            validate_plan_structure(canonical_file, root, size_baseline, errors, warnings, plan_files)
         if not zh_file.exists():
             errors.append(f"Implementation plan `{doc_id}` zh_cn_path does not exist: {zh_cn_path}")
         elif zh_file != canonical_file:
             validate_text_health(zh_file, root, errors)
+            validate_plan_structure(zh_file, root, size_baseline, errors, warnings, plan_files)
 
         canonical_is_chinese = canonical_path.endswith(".zh-CN.md")
         zh_is_chinese = zh_cn_path.endswith(".zh-CN.md")
@@ -195,11 +435,19 @@ def main() -> int:
         "root": str(root),
         "counts": {
             "implementation_plan_entries": len(impl_entries),
+            "implementation_plan_files": len(plan_files),
+            "disk_implementation_plan_files": disk_plan_files,
             "active_comet_plan_references": len(active_plan_refs),
             "errors": len(errors),
             "warnings": len(warnings),
         },
         "implementation_plan_entries": len(impl_entries),
+        "thresholds": {
+            "plan_size_warning_bytes": PLAN_SIZE_WARNING_BYTES,
+            "plan_size_fail_bytes": PLAN_SIZE_FAIL_BYTES,
+        },
+        "plan_size_baseline_path": str(root / PLAN_SIZE_BASELINE),
+        "implementation_plan_files": plan_files,
     }
 
     if args.json:

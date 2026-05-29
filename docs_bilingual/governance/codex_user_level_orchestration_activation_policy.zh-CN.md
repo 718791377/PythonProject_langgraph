@@ -64,8 +64,13 @@ backend_ready=<true|false>
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 durable_workflow=<not_needed|candidate|selected|blocked|running>
 persistent_team=<not_needed|candidate|selected|blocked|running>
+main_session_escalation=<not_needed|preflight|pending_approval|granted|timed_out|blocked>
+approval_timeout_risk=<none|low|medium|high|expired>
+approval_receipt=<none|receipt id or repo-local artifact path>
 why=<concrete reason>
 ```
+
+Main-session escalation visibility 必须显式可见：在任何 OMX、LangGraph、durable-worker 或 shell flow 等待主会话审批前，trace 必须暴露 `main_session_escalation`、`approval_timeout_risk` 和 `approval_receipt`。`main_session_escalation` 的状态为 `not_needed`、`preflight`、`pending_approval`、`granted`、`timed_out` 或 `blocked`；`approval_timeout_risk` 的状态为 `none`、`low`、`medium`、`high` 或 `expired`；`approval_receipt` 在无需审批时为 `none`，否则必须指向 repo-local receipt、interrupt、checkpoint 或 pending-approval artifact path。Worker context 必须收到同一个 receipt 或 blocked state，不得把 approval wait 隐藏在 main session 之外。
 
 不得使用“用户没有要求并行”或“用户没有要求子代理”等 missing-reminder reasons。必须用任务阶段、范围、阈值、blocker 或 main-session takeover 作为原因。
 
@@ -84,6 +89,8 @@ Final report 必须显式标注证据来源，例如：
 - `backend_default=langgraph, backend_ready=true` - 记录默认 durable backend 与 ready 证据。
 
 保存的 activation trace evidence 可用 `tools/check_orchestration_trace_evidence.py` 检查。该 checker 校验必填 trace 字段、capability-chain dependency 一致性、backend readiness 语义、durable workflow 与 persistent-team 词汇、禁止的 missing-reminder reasons、expert timeout 标签，以及 `why` 中的 durable-team threshold evidence。接受本地 transcript 片段、run summary 或其他保存版 trace evidence 前，应先运行该 checker。Expert lifecycle、wait、liveness 与 provider pacing evidence 可用 `tools/check_expert_lifecycle_wait_pacing_evidence.py` 检查；该 checker 强制 completed-agent closure 或 explicit preservation、fresh-agent follow-up、bounded wait windows、stall handling actions，以及 upstream pacing 只能作为 backpressure，不能作为禁用 orchestration 的理由。
+
+Prompt-independent collaboration parity、cold-start read-order evidence、durable/persistent evidenceguard records、expert lifecycle audit events 与 LangGraph state release 由 `tools/check_orchestration_collaboration_evidenceguard.py` 统一检查。该 checker 使用 fixture pairs 证明有无协作短语的等价 prompt 会得到相同 routing decision；缺少 active selector、manifest 或 thread state、heartbeat、close、leader absorption evidence 时拒绝 durable/persistent team 声明；任务已完成但 LangGraph 仍残留 stale `running` 时也会失败，除非写入 `completed_at`、`final_phase`、`result_summary` 与 `released_by`。
 
 ## Team 阈值规则
 

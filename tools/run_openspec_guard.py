@@ -118,6 +118,7 @@ def main() -> int:
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
     delegation_wait_discipline_evidence_script = root / "tools" / "check_delegation_wait_discipline_evidence.py"
     durable_artifact_state_surfaces_script = root / "tools" / "check_durable_artifact_state_surfaces.py"
+    orchestration_collaboration_evidenceguard_script = root / "tools" / "check_orchestration_collaboration_evidenceguard.py"
     leader_session_scope_evidence_script = root / "tools" / "check_leader_session_scope_evidence.py"
     capability_switch_chain_script = root / "tools" / "check_capability_switch_chain.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
@@ -134,6 +135,8 @@ def main() -> int:
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     worktree_task_receipt_script = root / "tools" / "check_worktree_task_receipt.py"
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
+    implementation_plan_claim_lock_script = root / "tools" / "check_implementation_plan_claim_lock.py"
+    commit_reorder_buffer_script = root / "tools" / "check_commit_reorder_buffer.py"
     orchestration_activation_policy_script = root / "tools" / "check_orchestration_activation_policy.py"
     custom_agent_toml_schema_script = root / "tools" / "check_custom_agent_toml_schema.py"
     agent_skill_profile_surface_boundaries_script = root / "tools" / "check_agent_skill_profile_surface_boundaries.py"
@@ -189,6 +192,8 @@ def main() -> int:
         raise SystemExit(f"Missing delegation/wait discipline evidence check script: {delegation_wait_discipline_evidence_script}")
     if not durable_artifact_state_surfaces_script.exists():
         raise SystemExit(f"Missing durable artifact/state-surface evidence check script: {durable_artifact_state_surfaces_script}")
+    if not orchestration_collaboration_evidenceguard_script.exists():
+        raise SystemExit(f"Missing orchestration collaboration evidenceguard script: {orchestration_collaboration_evidenceguard_script}")
     if not leader_session_scope_evidence_script.exists():
         raise SystemExit(f"Missing leader/session scope evidence check script: {leader_session_scope_evidence_script}")
     if not capability_switch_chain_script.exists():
@@ -215,6 +220,10 @@ def main() -> int:
         raise SystemExit(f"Missing worktree task receipt check script: {worktree_task_receipt_script}")
     if not session_ownership_claims_script.exists():
         raise SystemExit(f"Missing session ownership claims check script: {session_ownership_claims_script}")
+    if not implementation_plan_claim_lock_script.exists():
+        raise SystemExit(f"Missing implementation plan claim-lock check script: {implementation_plan_claim_lock_script}")
+    if not commit_reorder_buffer_script.exists():
+        raise SystemExit(f"Missing commit reorder-buffer check script: {commit_reorder_buffer_script}")
     if not orchestration_activation_policy_script.exists():
         raise SystemExit(f"Missing orchestration activation policy check script: {orchestration_activation_policy_script}")
     if not custom_agent_toml_schema_script.exists():
@@ -390,6 +399,11 @@ def main() -> int:
                 "OpenSpec guard failed during durable artifact/state-surface evidence verification.",
             ),
             (
+                "check_orchestration_collaboration_evidenceguard",
+                [str(python_exe), str(orchestration_collaboration_evidenceguard_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during orchestration collaboration evidenceguard verification.",
+            ),
+            (
                 "check_leader_session_scope_evidence",
                 [str(python_exe), str(leader_session_scope_evidence_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during leader/session scope evidence verification.",
@@ -468,6 +482,16 @@ def main() -> int:
                 "check_session_ownership_claims",
                 [str(python_exe), str(session_ownership_claims_script), "--root", str(root), "--allow-current-dirty", "--json"],
                 "OpenSpec guard failed during session ownership claim verification.",
+            ),
+            (
+                "check_implementation_plan_claim_lock",
+                [str(python_exe), str(implementation_plan_claim_lock_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during implementation-plan claim-lock verification.",
+            ),
+            (
+                "check_commit_reorder_buffer",
+                [str(python_exe), str(commit_reorder_buffer_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during commit reorder-buffer verification.",
             ),
             (
                 "check_orchestration_activation_policy",
@@ -702,6 +726,11 @@ def main() -> int:
         cwd=root,
         failure_message="OpenSpec guard failed during durable artifact/state-surface evidence verification.",
     )
+    run_checked(
+        [str(python_exe), str(orchestration_collaboration_evidenceguard_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during orchestration collaboration evidenceguard verification.",
+    )
 
     run_checked(
         [str(python_exe), str(leader_session_scope_evidence_script), "--root", str(root)],
@@ -791,6 +820,18 @@ def main() -> int:
         [str(python_exe), str(session_ownership_claims_script), "--root", str(root), "--allow-current-dirty"],
         cwd=root,
         failure_message="OpenSpec guard failed during session ownership claim verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(implementation_plan_claim_lock_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during implementation-plan claim-lock verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(commit_reorder_buffer_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during commit reorder-buffer verification.",
     )
 
     run_checked(

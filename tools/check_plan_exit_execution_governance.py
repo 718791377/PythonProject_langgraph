@@ -12,6 +12,10 @@ CHECK_NAME = "plan_exit_execution_governance"
 DOC_PREFIXES = ("docs_bilingual/", "openspec/", "docs/")
 DOC_EXACT_PATHS = {"完整提交流程.md"}
 DOCS_BILINGUAL_PREFIX = "docs_bilingual/"
+IMPLEMENTATION_PLAN_PREFIX = "docs_bilingual/implementation_plans/"
+DOCS_REGISTRY_PATH = "docs_bilingual/docs_registry.yaml"
+DEFAULT_RECEIPT = ".omx/worktree-task-receipt.json"
+DEFAULT_CLAIMS_SUBDIR = ".omx/session-claims"
 
 
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -50,6 +54,28 @@ def range_commits(root: Path, base_ref: str, head_ref: str) -> tuple[list[str], 
     return [line.strip() for line in result.stdout.splitlines() if line.strip()], errors
 
 
+def commit_exists(root: Path, commit: str) -> bool:
+    result = run_git(root, ["cat-file", "-e", f"{commit}^{{commit}}"])
+    return result.returncode == 0
+
+
+def git_path_exists(root: Path, ref: str, path: str) -> bool:
+    result = run_git(root, ["cat-file", "-e", f"{ref}:{path}"])
+    return result.returncode == 0
+
+
+def read_git_text(root: Path, ref: str, path: str) -> tuple[str | None, str | None]:
+    result = run_git(root, ["show", f"{ref}:{path}"])
+    if result.returncode != 0:
+        return None, result.stderr.strip() or result.stdout.strip() or f"unable to read {ref}:{path}"
+    return result.stdout, None
+
+
+def is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
+    result = run_git(root, ["merge-base", "--is-ancestor", ancestor, descendant])
+    return result.returncode == 0
+
+
 def is_docs_path(path: str) -> bool:
     return path in DOC_EXACT_PATHS or path.startswith(DOC_PREFIXES)
 
@@ -58,7 +84,235 @@ def is_docs_bilingual_path(path: str) -> bool:
     return path.startswith(DOCS_BILINGUAL_PREFIX)
 
 
-def evaluate(root: Path, base_ref: str, head_ref: str) -> dict[str, Any]:
+def is_implementation_plan_path(path: str) -> bool:
+    normalized = normalize_path(path)
+    return normalized.startswith(IMPLEMENTATION_PLAN_PREFIX) and normalized.endswith(".md")
+
+
+def parse_simple_yaml(text: str) -> dict[str, str]:
+    data: dict[str, str] = {}
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("#") or ":" not in stripped:
+            continue
+        key, value = stripped.split(":", 1)
+        data[key.strip()] = value.strip().strip("'\"")
+    return data
+
+
+def parse_docs_registry_text(text: str) -> list[dict[str, str]]:
+    entries: list[dict[str, str]] = []
+    current: dict[str, str] | None = None
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("- "):
+            if current:
+                entries.append(current)
+            current = {}
+            stripped = stripped[2:]
+            if ":" in stripped:
+                key, value = stripped.split(":", 1)
+                current[key.strip()] = value.strip()
+            continue
+        if current is None or ":" not in stripped:
+            continue
+        key, value = stripped.split(":", 1)
+        current[key.strip()] = value.strip()
+    if current:
+        entries.append(current)
+    return entries
+
+
+def implementation_plan_from_payload(payload: dict[str, Any]) -> str:
+    for key in (
+        "implementation_plan",
+        "implementation_plan_path",
+        "confirmed_implementation_plan_path",
+        "confirmed_plan_path",
+    ):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return normalize_path(value)
+    return ""
+
+
+def read_json_file(path: Path) -> tuple[dict[str, Any] | None, str | None]:
+    try:
+        return json.loads(path.read_text(encoding="utf-8-sig")), None
+    except FileNotFoundError:
+        return None, "missing"
+    except json.JSONDecodeError as exc:
+        return None, f"invalid JSON: {exc}"
+
+
+def iter_confirmation_sources(root: Path, receipt: str, claims_subdir: str) -> list[tuple[str, Path, dict[str, Any] | None, str | None]]:
+    sources: list[tuple[str, Path, dict[str, Any] | None, str | None]] = []
+    receipt_path = root / receipt
+    payload, error = read_json_file(receipt_path)
+    if payload is not None or receipt_path.exists():
+        sources.append(("receipt", receipt_path, payload, error))
+
+    claims_path = root / claims_subdir
+    if claims_path.exists():
+        for claim_path in sorted(claims_path.glob("*.json")):
+            payload, error = read_json_file(claim_path)
+            sources.append(("claim", claim_path, payload, error))
+    return sources
+
+
+def validate_governance_commit(root: Path, commit: str, main_ref: str) -> list[str]:
+    errors: list[str] = []
+    if not commit:
+        return ["governance_package_commit is missing."]
+    if not commit_exists(root, commit):
+        return [f"governance_package_commit does not exist: {commit}"]
+    try:
+        paths = changed_paths_for_commit(root, commit)
+    except RuntimeError as exc:
+        return [str(exc)]
+    if not paths:
+        errors.append(f"governance_package_commit changed no paths: {commit}")
+    if not all(is_docs_path(path) for path in paths):
+        errors.append(f"governance_package_commit must be docs-only: {commit}")
+    if not any(is_docs_bilingual_path(path) for path in paths):
+        errors.append(f"governance_package_commit must touch docs_bilingual/: {commit}")
+    if not is_ancestor(root, commit, main_ref):
+        errors.append(f"governance_package_commit must already be merged to local {main_ref}: {commit}")
+    return errors
+
+
+def validate_implementation_plan_confirmation(root: Path, plan: str, commit: str, main_ref: str) -> list[str]:
+    errors: list[str] = []
+    if not plan:
+        return ["implementation_plan must name the confirmed active implementation-plan file."]
+    plan = normalize_path(plan)
+    if plan.startswith("/") or ":" in plan.split("/", 1)[0]:
+        return [f"implementation_plan must be repo-relative: {plan}"]
+    if not is_implementation_plan_path(plan):
+        errors.append(f"implementation_plan must point under {IMPLEMENTATION_PLAN_PREFIX} and end with .md: {plan}")
+    if not git_path_exists(root, main_ref, plan):
+        errors.append(f"implementation_plan must already exist on local {main_ref}: {plan}")
+
+    registry_text, registry_error = read_git_text(root, main_ref, DOCS_REGISTRY_PATH)
+    if registry_error:
+        errors.append(f"implementation_plan must be registered in {DOCS_REGISTRY_PATH}: {plan}")
+        errors.append(f"Unable to read {DOCS_REGISTRY_PATH} from local {main_ref}: {registry_error}")
+        return errors
+
+    entries = parse_docs_registry_text(registry_text or "")
+    matches = [
+        entry
+        for entry in entries
+        if normalize_path(entry.get("canonical_path", "")) == plan
+        or normalize_path(entry.get("zh_cn_path", "")) == plan
+    ]
+    if not matches:
+        errors.append(f"implementation_plan must be registered in {DOCS_REGISTRY_PATH}: {plan}")
+        return errors
+
+    entry = matches[0]
+    doc_id = entry.get("doc_id", "<unknown>")
+    if entry.get("doc_class") != "implementation_plan":
+        errors.append(f"registered implementation_plan `{doc_id}` must have doc_class=implementation_plan.")
+    if entry.get("status", "").strip().lower() != "active":
+        errors.append(f"registered implementation_plan `{doc_id}` must have status=active.")
+
+    canonical_path = normalize_path(entry.get("canonical_path", ""))
+    zh_cn_path = normalize_path(entry.get("zh_cn_path", ""))
+    for sibling in (canonical_path, zh_cn_path):
+        if sibling and not git_path_exists(root, main_ref, sibling):
+            errors.append(f"registered implementation_plan `{doc_id}` path must exist on local {main_ref}: {sibling}")
+
+    plan_text, plan_error = read_git_text(root, main_ref, plan)
+    if plan_error:
+        errors.append(f"Unable to read implementation_plan from local {main_ref}: {plan_error}")
+    else:
+        plan_meta = parse_simple_yaml(plan_text or "")
+        if plan_meta.get("doc_class") != "implementation_plan":
+            errors.append(f"implementation_plan front matter must declare doc_class=implementation_plan: {plan}")
+        if plan_meta.get("status", "").strip().lower() != "active":
+            errors.append(f"implementation_plan front matter must declare status=active: {plan}")
+        if plan == canonical_path and plan_meta.get("doc_id") and plan_meta.get("doc_id") != doc_id:
+            errors.append(
+                f"implementation_plan front matter doc_id `{plan_meta.get('doc_id')}` must match registry doc_id `{doc_id}`."
+            )
+
+    if commit and commit_exists(root, commit):
+        try:
+            commit_paths = changed_paths_for_commit(root, commit)
+        except RuntimeError as exc:
+            errors.append(str(exc))
+            commit_paths = []
+        evidence_paths = {path for path in (plan, canonical_path, zh_cn_path, DOCS_REGISTRY_PATH) if path}
+        if not any(path in evidence_paths for path in commit_paths):
+            errors.append(
+                "governance_package_commit must include the confirmed implementation plan or docs registry entry: "
+                + commit
+            )
+    return errors
+
+
+def source_relative(root: Path, path: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def evaluate_confirmation_source(
+    root: Path,
+    source_kind: str,
+    source_path: Path,
+    payload: dict[str, Any] | None,
+    load_error: str | None,
+    main_ref: str,
+) -> dict[str, Any]:
+    errors: list[str] = []
+    if load_error:
+        errors.append(load_error)
+    if payload is None:
+        return {"source_kind": source_kind, "path": source_relative(root, source_path), "valid": False, "errors": errors}
+
+    if payload.get("requires_user_confirmation_before_implementation") is not True:
+        errors.append("requires_user_confirmation_before_implementation must be true.")
+    if payload.get("implementation_confirmed_by_user") is not True:
+        errors.append("implementation_confirmed_by_user must be true.")
+    if not payload.get("implementation_confirmation_recorded_at"):
+        errors.append("implementation_confirmation_recorded_at is missing.")
+    if payload.get("governance_package_merged_to_local_main") is not True:
+        errors.append("governance_package_merged_to_local_main must be true.")
+    commit = str(payload.get("governance_package_commit") or "").strip()
+    errors.extend(validate_governance_commit(root, commit, main_ref))
+    plan = implementation_plan_from_payload(payload)
+    errors.extend(validate_implementation_plan_confirmation(root, plan, commit, main_ref))
+
+    return {
+        "source_kind": source_kind,
+        "path": source_relative(root, source_path),
+        "valid": not errors,
+        "errors": errors,
+        "governance_package_commit": commit,
+        "implementation_plan": plan,
+        "implementation_confirmation_recorded_at": payload.get("implementation_confirmation_recorded_at"),
+    }
+
+
+def evaluate_staged_confirmations(root: Path, main_ref: str, receipt: str, claims_subdir: str) -> list[dict[str, Any]]:
+    return [
+        evaluate_confirmation_source(root, kind, path, payload, error, main_ref)
+        for kind, path, payload, error in iter_confirmation_sources(root, receipt, claims_subdir)
+    ]
+
+
+def evaluate(
+    root: Path,
+    base_ref: str,
+    head_ref: str,
+    receipt: str = DEFAULT_RECEIPT,
+    claims_subdir: str = DEFAULT_CLAIMS_SUBDIR,
+) -> dict[str, Any]:
     root = root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
@@ -89,21 +343,38 @@ def evaluate(root: Path, base_ref: str, head_ref: str) -> dict[str, Any]:
     docs_bilingual_paths = sorted({path for path in all_changed_paths if is_docs_bilingual_path(path)})
     docs_or_openspec_paths = sorted({path for path in all_changed_paths if path.startswith(("docs/", "openspec/"))})
 
+    staged_confirmations = evaluate_staged_confirmations(root, base_ref, receipt, claims_subdir)
+    valid_staged_confirmations = [record for record in staged_confirmations if record.get("valid")]
     requires_governance_package = bool(non_doc_paths)
+    legacy_same_range_governance = False
+
     if requires_governance_package:
+        legacy_governance_errors: list[str] = []
         if not commits:
-            errors.append("Non-document execution cannot be evaluated because the range has no commits.")
+            legacy_governance_errors.append("Non-document execution cannot be evaluated because the range has no commits.")
         first_record = commit_records[0] if commit_records else None
         if first_record and not first_record["docs_only"]:
-            errors.append(
+            legacy_governance_errors.append(
                 "When a post-/plan task contains non-document changes, the first commit in the range must be a local governance package limited to docs_bilingual/, openspec/, or docs/."
             )
         if first_record and not first_record["touches_docs_bilingual"]:
-            errors.append(
+            legacy_governance_errors.append(
                 "The first local governance package commit must update docs_bilingual/ first; openspec/ and docs/ may only be derived from that decision."
             )
         if not docs_bilingual_paths:
-            errors.append("Non-document execution requires at least one docs_bilingual/ governance artifact in the range.")
+            legacy_governance_errors.append("Non-document execution requires at least one docs_bilingual/ governance artifact in the range.")
+        legacy_same_range_governance = not legacy_governance_errors
+
+        if valid_staged_confirmations:
+            info.append("Non-document execution authorized by confirmed Stage A receipt/claim.")
+            if legacy_same_range_governance:
+                info.append("Same-range docs_bilingual-first governance was detected, but formal plan-file confirmation is the active authorization gate.")
+        else:
+            if legacy_governance_errors:
+                errors.extend(legacy_governance_errors)
+            errors.append(
+                "Non-document execution requires a confirmed Stage A receipt/claim naming an active registered implementation-plan file already merged to local main; same-range chat or docs-only governance is not sufficient."
+            )
     else:
         info.append("No non-document changed paths detected; post-/plan governance package rule is not required for this range.")
 
@@ -124,10 +395,14 @@ def evaluate(root: Path, base_ref: str, head_ref: str) -> dict[str, Any]:
             "non_doc_paths": len(non_doc_paths),
             "docs_bilingual_paths": len(docs_bilingual_paths),
             "docs_or_openspec_paths": len(docs_or_openspec_paths),
+            "staged_confirmation_records": len(staged_confirmations),
+            "valid_staged_confirmations": len(valid_staged_confirmations),
             "errors": len(errors),
             "warnings": len(warnings),
         },
         "requires_governance_package": requires_governance_package,
+        "legacy_same_range_governance": legacy_same_range_governance,
+        "staged_confirmations": staged_confirmations,
         "non_doc_paths": non_doc_paths,
         "docs_bilingual_paths": docs_bilingual_paths,
         "docs_or_openspec_paths": docs_or_openspec_paths,
@@ -137,14 +412,16 @@ def evaluate(root: Path, base_ref: str, head_ref: str) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Check that post-/plan non-document execution starts with a local Comet governance package.")
+    parser = argparse.ArgumentParser(description="Check that post-/plan non-document execution has docs_bilingual-first governance and implementation confirmation evidence.")
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument("--base-ref", default="main", help="Base ref for the checked range.")
     parser.add_argument("--head-ref", default="HEAD", help="Head ref for the checked range.")
+    parser.add_argument("--receipt", default=DEFAULT_RECEIPT, help="Receipt JSON path relative to root.")
+    parser.add_argument("--claims-subdir", default=DEFAULT_CLAIMS_SUBDIR, help="Claims directory relative to root.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")
     args = parser.parse_args()
 
-    payload = evaluate(Path(args.root), args.base_ref, args.head_ref)
+    payload = evaluate(Path(args.root), args.base_ref, args.head_ref, args.receipt, args.claims_subdir)
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:

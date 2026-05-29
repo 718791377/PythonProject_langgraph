@@ -2,11 +2,14 @@
   "schema_version": 1,
   "python_unittest": [
     "audit_codex_skills_usage.test.py",
+    "check_name_clarity_rules.test.py",
     "check_context_retention_canary_surface.test.py",
     "check_startup_instruction_mojibake.test.py",
     "check_precommit_update_archive.test.py",
     "cleanup_integrated_worktree.test.py",
     "check_worktree_task_receipt.test.py",
+    "check_implementation_plan_claim_lock.test.py",
+    "check_commit_reorder_buffer.test.py",
     "check_skills_audit_output_retention.test.py",
     "run_openspec_guard_json.test.py",
     "check_local_mirrored_ci_gate.test.py",
@@ -17,6 +20,7 @@
     "check_leader_session_scope_evidence.test.py",
     "check_capability_switch_chain.test.py",
     "check_orchestration_trace_evidence.test.py",
+    "check_main_session_escalation_visibility.test.py",
     "check_expert_lifecycle_wait_pacing_evidence.test.py",
     "check_custom_agent_toml_schema.test.py",
     "check_agent_skill_profile_surface_boundaries.test.py",
@@ -40,10 +44,13 @@
     "browser_owner_registry.test.py",
     "chrome_devtools_mcp_managed.test.py",
     "cdp_bridge_governance.test.py",
+    "wecom_cli_governance.test.py",
+    "user_level_receipt_governance.test.py",
     "check_document_pair_policy.test.py",
     "check_git_commit_language.test.py",
     "check_plan_exit_execution_governance.test.py",
-    "check_local_flow_scripted_enforcement.test.py"
+    "check_local_flow_scripted_enforcement.test.py",
+    "comet_runtime_management_flow.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []

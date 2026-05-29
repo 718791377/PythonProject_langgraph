@@ -55,6 +55,17 @@ Prefer reading `openspec/changes/<name>/.comet.yaml`. If not available, fall bac
 - If `phase: open` but proposal/design/tasks are complete, run `bash "$COMET_GUARD" <change-name> open --apply` to repair state, then continue detection
 - If `phase: archive`, only invoke `/comet-archive`; after archive succeeds, the change moves to the archive directory, so do not run guard against the old active directory
 
+### Adaptive Monitoring Return Dispatch
+
+Check Monitoring return state before normal phase determination. If `.comet.yaml` has `control_decision=return-open|return-design|return-build|return-verify`, do not force waterfall progression from the current phase.
+
+- `return-open` -> `/comet-open`
+- `return-design` -> `/comet-design`
+- `return-build` -> `/comet-build`
+- `return-verify` -> `/comet-verify`
+
+If `monitoring_status=blocked` or `monitoring_status=needs_decision`, stop normal forward dispatch unless a matching return decision, `target_phase`, and non-null `rework_reason` are present. When a valid return decision exists but the state has not moved yet, run the matching `bash "$COMET_STATE" transition <name> monitor-return-<phase>` command, reread `.comet.yaml`, enter the target Comet phase, and refresh the target phase management checklist before attempting any later forward transition.
+
 **Step 2: Phase Determination** (check in order, first match wins)
 
 1. `archived: true` or change moved to archive → Workflow complete

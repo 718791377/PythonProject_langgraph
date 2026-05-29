@@ -23,12 +23,29 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
     def write_required_surfaces(self, root: Path) -> None:
         (root / "tools/ci").mkdir(parents=True, exist_ok=True)
         for script in [
-            "check_plan_exit_execution_governance.py",
             "check_local_flow_scripted_enforcement.py",
-            "complete_local_flow_to_remote_gate.py",
             "run_openspec_guard.py",
         ]:
             (root / "tools" / script).write_text("# check_local_flow_scripted_enforcement\n", encoding="utf-8")
+        (root / "tools/check_plan_exit_execution_governance.py").write_text(
+            "requires_user_confirmation_before_implementation\n"
+            "implementation_confirmed_by_user\n"
+            "governance_package_commit\n"
+            "governance_package_merged_to_local_main\n"
+            "implementation_plan\n"
+            "active registered implementation-plan\n"
+            "confirmed Stage A receipt/claim\n",
+            encoding="utf-8",
+        )
+        (root / "tools/complete_local_flow_to_remote_gate.py").write_text(
+            "governance-confirmation\n"
+            "--implementation-plan\n"
+            "implementation_confirmed_by_user\n"
+            "implementation_plan\n"
+            "awaiting_implementation_confirmation\n"
+            "Governance-confirmation stage must be docs-only\n",
+            encoding="utf-8",
+        )
         (root / "tools/ci/local_mr_review.ps1").write_text("check_plan_exit_execution_governance.py\n", encoding="utf-8")
         (root / "tools/ci/ci_test_manifest.json").write_text(
             json.dumps(

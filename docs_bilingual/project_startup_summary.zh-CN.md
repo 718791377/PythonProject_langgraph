@@ -43,7 +43,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 - 旧会话可以临时继续用于跟进讨论，但新的治理实施、脏文件归属和发布决策必须以当前仓库文档和当前本地 Git 状态为准。
 - 优先先启动 `codex-ohmy`，再从临时会话里进入 `/resume`。`codex-ohmy` 是日常用户级编排工作的稳定包装 Codex 入口。
 - 如果某个旧 thread 出现 MCP 启动问题，只对该旧 thread 使用一次性覆盖，例如 `-c "mcp_servers.omx_code_intel.enabled=false"`。这个 `-c` 参数是单次启动的 Codex 配置覆盖，不能变成永久用户级配置修改。
-- 不要因为某个旧会话失败就全局禁用 `omx_state`、`omx_memory`、`omx_code_intel`、`omx_trace`、`chrome-devtools` 或 `pencil`。这些名称是 Codex 直连 MCP server，分别提供编排状态、记忆、代码智能、trace 检查、浏览器调试和设计访问能力。
+- 不要因为某个旧会话失败就全局禁用 `omx_state`、`omx_memory`、`omx_code_intel`、`omx_trace`、`chrome-devtools` 或 `pencil`。这些名称是 Codex 直连 MCP server，分别提供编排状态、记忆、代码智能、trace 检查、浏览器调试和设计访问能力。 MCP server means Model Context Protocol server, a callable tool endpoint exposed to Codex.
 
 ## 当前实施边界
 
@@ -117,7 +117,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 上下文保留哨兵：
 
 - 哨兵的字面提示词只维护在这对 startup summary 文件中：`docs_bilingual/project_startup_summary.md` 与 `docs_bilingual/project_startup_summary.zh-CN.md`。其他 active instruction surface 可以指向这里，但不得重复字面开头/结尾短语。
-- 本仓库的可见哨兵标记是开头 `指挥官` 与结尾 `喵~`。
+- 本仓库的可见哨兵标记使用 ASCII 稳定标记：开头 `CODEX_CTX_CANARY_START` 与结尾 `CODEX_CTX_CANARY_END`；旧的非 ASCII 标记只保留为历史损坏/兼容检测输入，不再用于用户可见回复。
 - 哨兵字面提示词是可见自检信号，用来判断 `/resume`、compaction 或长上下文后的模型是否仍理解冷启动权威；它属于用户可见 assistant 回复，不属于 wrapper payload、generated helper 或其他 authority surface。
 - 如果本 startup summary 本应已读取，但完整 assistant 回复缺少该哨兵，则视为可能发生上下文丢失或读取路径失败。
 - 恢复动作：重读 `AGENTS.md`，通过显式 UTF-8 路径重读这对 startup summary 文件，按上面的冷启动阅读顺序补读，然后只补读继续当前任务必须需要的任务相关文件。
@@ -176,7 +176,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 - 本地 CI 与远端 CI 必须复用 `tools/ci/local_gate.ps1`。远端 CI 配置只应安装必要工具并调用该脚本，不得另写一套 checker 命令。CI 管理的测试登记在 `tools/ci/ci_test_manifest.json`。本地 MR review 在所有计划保留的改动已提交、feature worktree 干净之后、集成本地 `main` 或远端发布之前使用 `tools/ci/local_mr_review.ps1`。
 - 新建可写任务、判断发布时机、远端 push、创建 MR 或声明本地已对齐之前，必须保持本地 `main` 不落后于 `gitlab/main`。local-first batching 不是允许基于陈旧远端基线继续工作的理由。
 - 经批准本地集成后，本地 `main` 可以有意领先 `gitlab/main` 和 `github/main`；必须在状态报告中明确说明这种远端滞后，直到 GitLab/GitHub 发布或镜像同步追上。
-- 本地集成批准不等于远端发布批准。本地 `main` 集成后必须停在 remote-publication approval gate：除非当前用户消息明确批准该远端动作，否则不得推送 GitLab、创建/更新/合并 GitLab MR、同步 GitHub、删除远端发布分支或修改任何远端 ref。泛化的 `continue` / `继续` 不足以授权远端发布，除非它明确点名对应远端发布动作。
+- 本地集成批准不等于远端发布批准。本地 `main` 集成后必须停在 remote-publication approval gate (means explicit remote-action authorization gate)：除非当前用户消息明确批准该远端动作，否则不得推送 GitLab、创建/更新/合并 GitLab MR、同步 GitHub、删除远端发布分支或修改任何远端 ref。泛化的 `continue` / `继续` 不足以授权远端发布，除非它明确点名对应远端发布动作。
 - 当前用户消息如果明确说 `推送远端`、`publish remote`、`push remote`、`remote publication`、`走 GitLab MR 后同步 GitHub` 或等价远端发布措辞，就视为一次性批准正常绿色路径的完整远端发布流程：推送或更新 GitLab publication branch、创建或更新 GitLab MR、等待 GitLab CI、CI 绿色后合并 MR、fetch 并确认 GitLab `main`、把同一个预期 commit 同步到 GitHub `main`，以及运行发布后状态检查。正常绿色路径中不得拆成多次授权。
 - 已批准远端发布流程中，应优先使用 sandbox 已允许的命令和已批准 command prefixes，尽量不请求权限提升。如果 Codex sandbox 仍要求对 GitLab push / MR / CI / merge 或 GitHub sync 这类已批准流程内命令进行提升，则只请求一次覆盖整个 `推送 GitLab / 开 MR / 合并 MR / 同步 GitHub` 流程的 scoped escalation，不得每条命令重复询问。若需要 force push、修改 protected branch 设置、删除远端 ref、改写历史、扩大 scope 或修改凭据/安全配置，必须停止并重新请求授权。
 - feature branch 只有在 local CI 和 local MR review 都通过后，才推送到 GitLab 并创建或更新 GitLab MR；除非用户明确要求提前跑远端 pipeline。

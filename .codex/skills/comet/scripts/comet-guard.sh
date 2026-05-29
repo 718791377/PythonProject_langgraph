@@ -306,49 +306,127 @@ management_record_path() {
   echo "$record"
 }
 
+python_for_legacy_label_check() {
+  if command -v python3 >/dev/null 2>&1; then
+    command -v python3
+    return 0
+  fi
+  if command -v python >/dev/null 2>&1; then
+    command -v python
+    return 0
+  fi
+  if command -v py >/dev/null 2>&1; then
+    command -v py
+    return 0
+  fi
+  return 1
+}
+
+checklist_done_legacy_mojibake() {
+  local record="$1"
+  shift
+  local py_bin
+  py_bin=$(python_for_legacy_label_check 2>/dev/null || true)
+  if [ -z "$py_bin" ]; then
+    return 1
+  fi
+
+  "$py_bin" - "$record" "$@" <<'PY'
+from pathlib import Path
+import sys
+
+record = Path(sys.argv[1])
+labels = sys.argv[2:]
+
+try:
+    text = record.read_text(encoding="utf-8", errors="replace")
+except OSError:
+    sys.exit(1)
+
+checked = set()
+for line in text.splitlines():
+    if line.startswith("- [x] ") or line.startswith("- [X] "):
+        checked.add(line[6:])
+
+variants = set()
+for label in labels:
+    variants.add(label)
+    data = label.encode("utf-8", errors="replace")
+    for encoding in ("gbk", "cp936", "gb18030", "cp1252"):
+        decoded = data.decode(encoding, errors="replace")
+        variants.add(decoded)
+        variants.add(decoded.replace("\ufffd", "?"))
+
+sys.exit(0 if checked.intersection(variants) else 1)
+PY
+}
+
 checklist_done() {
-  local label="$1"
   local record
   record=$(management_record_path)
   if [ ! -f "$record" ]; then
     echo "management record is missing: $record" >&2
     return 1
   fi
-  if grep -Fq -- "- [x] $label" "$record" || grep -Fq -- "- [X] $label" "$record"; then
+
+  local label
+  for label in "$@"; do
+    if grep -Fq -- "- [x] $label" "$record" || grep -Fq -- "- [X] $label" "$record"; then
+      return 0
+    fi
+  done
+  if checklist_done_legacy_mojibake "$record" "$@"; then
     return 0
   fi
-  echo "management checklist item is not checked: $label" >&2
-  echo "Next: mark '- [x] $label' in $record after recording the evidence." >&2
+
+  echo "management checklist item is not checked. Accepted labels:" >&2
+  for label in "$@"; do
+    echo "  - $label" >&2
+  done
+  echo "Next: mark one accepted '- [x]' item in $record after recording the evidence." >&2
   return 1
 }
+
+checklist_done_named() {
+  local section="$1"
+  local item="$2"
+  shift 2
+  if checklist_done "$@"; then
+    return 0
+  fi
+  echo "Missing management checklist section: $section" >&2
+  echo "Missing management checklist item: $item" >&2
+  return 1
+}
+
 
 management_phase_complete() {
   local phase="$1"
   case "$phase" in
     open)
-      checklist_done "价值/Why 已说明" &&
-      checklist_done "成功标准已说明" &&
-      checklist_done "stakeholders 或 constraints 已识别"
+      checklist_done_named "Open / Initiating" "Value and why are stated." "价值/Why 已说明" "Value and why are stated." &&
+      checklist_done_named "Open / Initiating" "Success criteria are measurable." "成功标准已说明" "Success criteria are measurable." &&
+      checklist_done_named "Open / Initiating" "Stakeholders, constraints, or operating boundaries are identified." "stakeholders 或 constraints 已识别" "Stakeholders, constraints, or operating boundaries are identified."
       ;;
     design)
-      checklist_done "交付方式已裁剪" &&
-      checklist_done "风险与关键假设已记录" &&
-      checklist_done "验收证据路径已定义"
+      checklist_done_named "Design / Planning" "Delivery approach is tailored: predictive, agile, or hybrid." "交付方式已裁剪" "Delivery approach is tailored: predictive, agile, or hybrid." &&
+      checklist_done_named "Design / Planning" "Major risks and assumptions are recorded." "风险与关键假设已记录" "Major risks and assumptions are recorded." &&
+      checklist_done_named "Design / Planning" "Acceptance evidence path is defined." "验收证据路径已定义" "Acceptance evidence path is defined."
       ;;
     build)
-      checklist_done "execution mode 已选择" &&
-      checklist_done "TDD / review / quality evidence 已记录" &&
-      checklist_done "当前阻塞项已清空或已有处理决策"
+      checklist_done_named "Build / Executing" "Execution mode is selected." "execution mode 已选择" "Execution mode is selected." &&
+      checklist_done_named "Build / Executing" "Quality evidence is recorded: TDD, review, test, or equivalent." "TDD / review / quality evidence 已记录" "Quality evidence is recorded: TDD, review, test, or equivalent." &&
+      checklist_done_named "Build / Executing" "Blockers are cleared or have an explicit decision." "当前阻塞项已清空或已有处理决策" "Blockers are cleared or have an explicit decision."
       ;;
     verify)
-      checklist_done "偏差检查完成" &&
-      checklist_done "风险/变更影响已评估" &&
-      checklist_done "control decision 已记录"
+      checklist_done_named "Verify / Controlling" "Variance from scope, design, and acceptance criteria is checked." "偏差检查完成" "Variance from scope, design, and acceptance criteria is checked." &&
+      checklist_done_named "Verify / Controlling" "Risk and change impact are assessed." "风险/变更影响已评估" "Risk and change impact are assessed." &&
+      checklist_done_named "Verify / Controlling" "Control decision is recorded." "control decision 已记录" "Control decision is recorded."
       ;;
     archive)
-      checklist_done "价值结果已总结" &&
-      checklist_done "经验沉淀已记录" &&
-      checklist_done "delta spec sync / verification evidence / archive path 已确认"
+      checklist_done_named "Archive / Closing" "Value outcome is summarized." "价值结果已总结" "Value outcome is summarized." &&
+      checklist_done_named "Archive / Closing" "Lessons learned or reusable guidance are recorded." "经验沉淀已记录" "Lessons learned or reusable guidance are recorded." &&
+      checklist_done_named "Archive / Closing" "Delta spec sync, verification evidence, and archive path are confirmed." "delta spec sync / verification evidence / archive path 已确认" "Delta spec sync, verification evidence, and archive path are confirmed."
       ;;
     *)
       echo "unknown management phase: $phase" >&2
@@ -357,9 +435,10 @@ management_phase_complete() {
   esac
 }
 
+
 monitoring_allows_forward() {
-  checklist_done "当前阶段事实已检查" || return 1
-  checklist_done "是否需要回退已判断" || return 1
+  checklist_done_named "Monitoring Loop" "Current facts are checked." "当前阶段事实已检查" "Current facts are checked." || return 1
+  checklist_done_named "Monitoring Loop" "Continue, adjust, stop, or return decision is made." "是否需要回退已判断" "Continue, adjust, stop, or return decision is made." || return 1
 
   local status decision target reason
   status=$(yaml_field_value "monitoring_status" 2>/dev/null || true)

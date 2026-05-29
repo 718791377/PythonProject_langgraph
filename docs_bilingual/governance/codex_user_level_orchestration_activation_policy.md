@@ -63,10 +63,15 @@ backend_ready=<true|false>
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 durable_workflow=<not_needed|candidate|selected|blocked|running>
 persistent_team=<not_needed|candidate|selected|blocked|running>
+main_session_escalation=<not_needed|preflight|pending_approval|granted|timed_out|blocked>
+approval_timeout_risk=<none|low|medium|high|expired>
+approval_receipt=<none|receipt id or repo-local artifact path>
 why=<concrete reason>
 ```
 
 Do not use missing-reminder reasons such as "the user did not request parallelism" or "the user did not request subagents". Use task phase, scope, thresholds, blockers, or main-session takeover as the reason.
+
+Main-session escalation visibility is mandatory whenever an OMX, LangGraph, durable-worker, or local shell flow may need operator approval. `main_session_escalation` records whether the current main Codex CLI session has no escalation need, is running preflight, is waiting for approval, has received approval, has timed out, or is blocked. `approval_timeout_risk` records the visible risk level before a hidden worker wait can go stale. `approval_receipt` records `none` when no approval is needed, or a repo-local receipt, interrupt, checkpoint, or pending-approval artifact path when approval is pending, granted, timed out, or blocked. Worker contexts may record the receipt, but only the main session may request or receive escalation approval.
 
 Explicit `omx` and `LangGraph` requests are hard routing directives for the current task flow. If the capability chain, preflight, and task thresholds are satisfied, the trace must report the selected lane as `selected` or `running` and must not remain in explanation-only mode. If the requested lane is not adopted, the trace must report a named blocker or unmet threshold such as `blocked:backend_not_ready`, `blocked:preflight_failed`, `blocked:helper_missing`, `blocked:write_ownership_conflict`, or `threshold_not_met:no_frozen_plan`. The trace must not describe an explicit directive as an optional preference. Saved hard-directive adoption evidence is checked by `tools/check_role_routing_directive_evidence.py`.
 
@@ -83,6 +88,8 @@ Final reports must label evidence sources explicitly, for example:
 - `backend_default=langgraph, backend_ready=true` - records the default durable backend and its readiness evidence.
 
 Saved activation trace evidence can be checked with `tools/check_orchestration_trace_evidence.py`. The checker validates required trace fields, capability-chain dependency consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert timeout labels, and durable-team threshold evidence in `why`. Use it for local transcript snippets, run summaries, or other saved trace evidence before treating an activation trace as accepted evidence. Expert lifecycle, wait, liveness, and provider pacing evidence can be checked with `tools/check_expert_lifecycle_wait_pacing_evidence.py`; this checker enforces completed-agent closure or explicit preservation, fresh-agent follow-up, bounded wait windows, stall handling actions, and upstream pacing as backpressure rather than an orchestration disablement reason.
+
+Prompt-independent collaboration parity, cold-start read-order evidence, durable/persistent evidenceguard records, expert lifecycle audit events, and LangGraph state release are checked together by `tools/check_orchestration_collaboration_evidenceguard.py`. The checker uses fixture pairs to prove that equivalent prompts with and without collaboration phrases produce the same routing decision, rejects durable/persistent team claims without active selector, manifest or thread state, heartbeat, close, and leader absorption evidence, and rejects completed LangGraph work that remains in stale `running` state instead of recording `completed_at`, `final_phase`, `result_summary`, and `released_by`.
 
 ## Team threshold rules
 

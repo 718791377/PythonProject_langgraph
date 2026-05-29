@@ -14,6 +14,20 @@ last_reviewed: 2026-05-27
 
 The previous plan was not complete enough for execution. It was still marked `draft`, the Chinese companion contained mojibake, and the execution slices did not define enough runtime fields, gate rules, tests, rollback paths, or ownership boundaries. This version is the active implementation plan.
 
+2026-05-27 granularity review: the plan now passes repository implementation-plan checks, but the slice-only backlog was still too coarse for an agentic worker to execute without rediscovering file ownership and test order. This revision keeps the five implementation slices and adds an explicit file map, readiness checklist, task-level backlog, command evidence, rollback rules, and local-integration sequence.
+
+2026-05-27 completeness audit: the plan content and granularity are now implementation-ready. This audit adds no new runtime scope; it records that the active plan already contains five execution slices, Task A-E backlog items, file ownership, per-task test evidence, Chinese commit examples, local integration gates, acceptance criteria, and risk mitigations sufficient for a worker to execute without rediscovering the plan structure.
+
+## Current Status
+
+<!-- CURRENT_STATUS_START -->
+
+- [x] Status: active implementation plan. Historical evidence packages are externalized to keep routine reads lightweight.
+- [x] Routine updates should inspect file size, headings, anchors, and the evidence index before full-file reads.
+- [x] Non-document execution still requires a governance package and confirmation gate before implementation.
+
+<!-- CURRENT_STATUS_END -->
+
 ## Objective
 
 Upgrade Comet runtime governance from a one-way phase label into an adaptive management loop while preserving the five Comet phases:
@@ -228,6 +242,130 @@ Tests:
 - [ ] `python tools/run_openspec_guard.py --root .` - verifies OpenSpec, document governance, implementation-plan rules, and name clarity gates.
 - [ ] Targeted Comet runtime unit tests.
 
+## File Responsibility Map
+
+- [ ] `.codex/skills/comet/scripts/comet-state.sh`: owns `.comet.yaml` default fields, transition events, Monitoring return transitions, and `iteration_count` mutation.
+- [ ] `.codex/skills/comet/scripts/comet-guard.sh`: owns forward-transition gate checks, management checklist parsing, and fail-closed diagnostic output.
+- [ ] `.codex/skills/comet/scripts/comet-yaml-validate.sh`: owns enum validation and cross-field invariants for `monitoring_status`, `control_decision`, `target_phase`, `rework_reason`, and `iteration_count`.
+- [ ] `.codex/skills/comet/scripts/comet-archive.sh`: owns archive-time Closing evidence checks and the final Monitoring decision before archive completion.
+- [ ] `.codex/skills/comet/SKILL.md` and `.codex/skills/comet-{open,design,build,verify,archive,hotfix,tweak}/SKILL.md`: own operator-facing workflow instructions and routing text.
+- [ ] `docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md` and `.zh-CN.md`: own user-facing governance language.
+- [ ] `openspec/specs/codex-user-level-comet-controlled-openspec-superpowers/spec.md` and `.zh-CN.md`: own stable WHAT requirements.
+- [ ] `test/run_openspec_guard_json.test.py`: owns guard aggregation fixture coverage when a new checker or guard dependency is added.
+- [ ] New targeted runtime tests, if needed, should be placed under `test/` with names that describe the checked runtime contract, then registered in `tools/ci/ci_test_manifest.json`.
+
+## Definition of Ready Before Implementation
+
+- [ ] The implementation branch or worktree starts from current local `main`.
+- [ ] The active plan status remains `active` in `docs_bilingual/docs_registry.yaml`.
+- [ ] English canonical and Chinese companion are both updated before any runtime script changes.
+- [ ] The worker records whether the implementation is script-only, skill-only, or script-plus-skill.
+- [ ] The worker identifies the exact transition being changed before editing a script.
+- [ ] Each runtime behavior change has a matching test or checker update in the same commit.
+
+## Task-Level Execution Backlog
+
+<!-- TASK_BACKLOG_START -->
+
+### Task A: Add runtime-state bootstrap coverage
+
+**Files:**
+- Modify: `.codex/skills/comet/scripts/comet-state.sh`
+- Modify: `.codex/skills/comet/scripts/comet-yaml-validate.sh`
+- Test: add or extend `test/comet_runtime_management_flow.test.py`
+- Register if new: `tools/ci/ci_test_manifest.json`
+
+- [ ] Step A1: Write a failing test that initializes a sample change and asserts `.comet.yaml` contains `management_record`, `monitoring_status: clear`, `control_decision: continue`, `target_phase: null`, `rework_reason: null`, and `iteration_count: 0`.
+- [ ] Step A2: Run `python test/comet_runtime_management_flow.test.py -k bootstrap` and confirm the failure is caused by missing management defaults, not by test setup.
+- [ ] Step A3: Update `comet-state.sh` initialization so a new change writes the required fields and creates `openspec/changes/<name>/management.md` if absent.
+- [ ] Step A4: Update `comet-yaml-validate.sh` so missing management fields and illegal enum values fail closed with field-specific messages.
+- [ ] Step A5: Re-run the bootstrap test and `python tools/check_openspec_comet_superpowers_policy.py --root . --json`.
+- [ ] Step A6: Commit with a Chinese message that means "initialize Comet management fields".
+
+### Task B: Enforce phase checklist gates
+
+**Files:**
+- Modify: `.codex/skills/comet/scripts/comet-guard.sh`
+- Test: add or extend `test/comet_runtime_management_flow.test.py`
+- Register if new: `tools/ci/ci_test_manifest.json`
+
+- [ ] Step B1: Write failing fixtures for unchecked Open, Design, Build, Verify, and Archive management sections.
+- [ ] Step B2: Run the targeted guard tests and confirm each transition currently passes or fails for the wrong reason.
+- [ ] Step B3: Add one reusable checklist parser in `comet-guard.sh`; do not duplicate per-phase parsing logic.
+- [ ] Step B4: Wire `open -> design`, `design -> build`, `build -> verify`, `verify -> archive`, and archive completion to the parser.
+- [ ] Step B5: Ensure diagnostic output names both the missing section and missing item.
+- [ ] Step B6: Re-run targeted tests, then run `python tools/run_openspec_guard.py --root . --skip-validate --json` if the full guard would otherwise be blocked by unrelated local state.
+- [ ] Step B7: Commit with a Chinese message that means "enforce phase management checklist gates".
+
+### Task C: Implement Monitoring return transitions
+
+**Files:**
+- Modify: `.codex/skills/comet/scripts/comet-state.sh`
+- Modify: `.codex/skills/comet/scripts/comet-yaml-validate.sh`
+- Test: add or extend `test/comet_runtime_management_flow.test.py`
+
+- [ ] Step C1: Write failing tests for `monitor-return-open`, `monitor-return-design`, `monitor-return-build`, and `monitor-return-verify`.
+- [ ] Step C2: Add negative tests where `target_phase` is missing, `control_decision` does not match the event, `rework_reason` is `null`, or `iteration_count` is non-numeric.
+- [ ] Step C3: Implement a single return helper in `comet-state.sh` that maps return events to target phases and preserves existing artifact paths.
+- [ ] Step C4: Increment `iteration_count` exactly once per successful return event.
+- [ ] Step C5: Re-run targeted tests twice to confirm repeated returns increment from `0` to `1` to `2` without resetting other fields.
+- [ ] Step C6: Commit with a Chinese message that means "support Monitoring return transitions".
+
+### Task D: Align Comet skill instructions
+
+**Files:**
+- Modify: `.codex/skills/comet/SKILL.md`
+- Modify: `.codex/skills/comet-open/SKILL.md`
+- Modify: `.codex/skills/comet-design/SKILL.md`
+- Modify: `.codex/skills/comet-build/SKILL.md`
+- Modify: `.codex/skills/comet-verify/SKILL.md`
+- Modify: `.codex/skills/comet-archive/SKILL.md`
+- Modify if preset behavior changes: `.codex/skills/comet-hotfix/SKILL.md`, `.codex/skills/comet-tweak/SKILL.md`
+
+- [ ] Step D1: Add instruction text that Monitoring is a cross-cutting control loop, not a sixth phase.
+- [ ] Step D2: Add per-phase exit requirements that point to the matching management checklist section.
+- [ ] Step D3: Add return routing instructions so `return-open`, `return-design`, `return-build`, and `return-verify` route to the corresponding Comet phase instead of forcing forward progression.
+- [ ] Step D4: Run `python tools/check_openspec_comet_superpowers_policy.py --root . --json` and confirm all skill terms remain present.
+- [ ] Step D5: Commit with a Chinese message that means "align Comet management return instructions".
+
+### Task E: Align policy, specs, checker coverage, and integration gates
+
+**Files:**
+- Modify: `docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md`
+- Modify: `docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.zh-CN.md`
+- Modify: `openspec/specs/codex-user-level-comet-controlled-openspec-superpowers/spec.md`
+- Modify: `openspec/specs/codex-user-level-comet-controlled-openspec-superpowers/spec.zh-CN.md`
+- Modify if checker terms change: `tools/check_openspec_comet_superpowers_policy.py`
+- Modify if guard steps change: `tools/run_openspec_guard.py` and `test/run_openspec_guard_json.test.py`
+- Register tests: `tools/ci/ci_test_manifest.json`
+
+- [ ] Step E1: Update the English policy first, then update the Chinese companion with the same governance meaning.
+- [ ] Step E2: Update stable OpenSpec requirements for checklist evidence, Monitoring return transitions, and non-waterfall adaptive execution.
+- [ ] Step E3: If a new checker is introduced, add it to `tools/run_openspec_guard.py` and mirror it in `test/run_openspec_guard_json.test.py` fixture steps.
+- [ ] Step E4: Run `python tools/check_implementation_plan_rules.py --root . --json`.
+- [ ] Step E5: Run `python tools/check_openspec_comet_superpowers_policy.py --root . --json`.
+- [ ] Step E6: Run `python tools/run_openspec_guard.py --root . --json` or record the exact known local-state blocker if the guard is blocked by unrelated worktree hygiene.
+- [ ] Step E7: Commit with a Chinese message that means "sync Comet agile management focus areas".
+
+<!-- TASK_BACKLOG_END -->
+
+## Local Integration Sequence
+
+- [ ] Keep the feature worktree clean before integration: `git status --short` returns no paths.
+- [ ] Run the local MR review gate against the pre-change base: `powershell -NoProfile -ExecutionPolicy Bypass -File tools/ci/local_mr_review.ps1 -Root . -BaseRef <base-sha> -HeadRef HEAD -Json`.
+- [ ] Fast-forward or merge the feature branch into local `main` only after local checks pass.
+- [ ] Do not push remote unless the user explicitly asks for remote publication.
+- [ ] Preserve the branch until the user decides whether to publish or clean it up.
+
+## Completion Review Checklist
+
+- [ ] Every scope item has a matching task-level step.
+- [ ] Every runtime field has bootstrap, validation, and at least one negative test.
+- [ ] Every forward transition has both a passing and failing checklist fixture.
+- [ ] Every Monitoring return event has success, missing-target, missing-reason, and iteration-count evidence.
+- [ ] English and Chinese documents are semantically aligned.
+- [ ] All commits use Chinese messages.
+
 ## Acceptance Criteria
 
 - [ ] A missing Open checklist blocks the transition to Design.
@@ -257,3 +395,25 @@ Tests:
 - [ ] Risk: return loops hide real failure. Mitigation: require `rework_reason` and increment `iteration_count`.
 - [ ] Risk: users mistake Monitoring for a sixth phase. Mitigation: keep Monitoring as transition evidence only.
 - [ ] Risk: docs and runtime drift. Mitigation: checker coverage plus paired updates to skills, scripts, and specs.
+
+## Completed Evidence Index
+
+<!-- EVIDENCE_INDEX_START -->
+
+Each completed package is indexed here; full evidence is preserved in the external report rather than appended to this implementation plan.
+
+- [x] 2026-05-27 Runtime Evidence Batch: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Local Execution Governance Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Skill Instruction Alignment Governance Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Skill Instruction Alignment Evidence: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Root Comet Controller Routing Governance Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Runtime Test Evidence Governance Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-27 Monitoring Decision Gate Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 UTF-8 Management Label Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 Management Record Validation Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 YAML Enum Validation Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 YAML Path Validation Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 Verification Report Path Validation Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+- [x] 2026-05-28 Artifact Path Safety Validation Evidence Package: completed; evidence: `docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.md`.
+
+<!-- EVIDENCE_INDEX_END -->

@@ -580,3 +580,22 @@ Rationale:
 
 - Chinese authority files may be stored correctly while a constrained shell or terminal still renders them incorrectly.
 - A forced explicit UTF-8 read prevents false diagnosis and unnecessary document repair.
+
+## 20. Forward Semantic Annotation Rule
+
+New or changed governance Markdown under `docs_bilingual/`, `openspec/`, and `docs/` must explain semantic terms that would otherwise be ambiguous after context loss.
+
+This rule is forward-looking. It does not require bulk repair of historical text, and current checkers should fail only on changed lines or explicitly requested full-scan cleanup.
+
+Semantic terms include:
+
+- runtime fields that carry workflow state or policy state
+- status values, enum values, and named control decisions
+- transition names and return-path names
+- gate names, checker decision labels, and other control-surface terms
+
+A semantic term is acceptable when the same sentence, the nearby bullet/table row, or a nearby glossary/semantic-notes table explains what the term means operationally. Plain file paths, command names, URLs, package names, and test filenames do not require extra explanation unless they are being used as a policy decision value.
+
+The purpose is context retention: a future session should be able to understand what a field, value, or transition means without rediscovering the earlier discussion.
+
+Executable enforcement is intentionally forward-only by default and is owned by `tools/check_name_clarity_rules.py`. The checker may provide a full-scan mode for future debt cleanup, but repository guard and CI should not fail historical unchanged lines merely because this rule was introduced later.

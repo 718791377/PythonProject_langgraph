@@ -117,7 +117,6 @@ The repository-local `skills2cli audit warnings --since <duration> --json` comma
 - **AND** recent excerpts SHALL be sanitized
 - **AND** raw log paths SHALL NOT be retained
 
-
 ### Requirement: Codex-port allocator MVP SHALL provide range-aware port leases
 
 The repository SHALL provide a repo-local `codex-port` helper and range registry for compact, deterministic port lease governance.
@@ -435,7 +434,6 @@ Both commands SHALL be non-mutating dry runs in the repo-local MVP. They SHALL N
 - **AND** `human_owned_cleanup_performed` SHALL be `false`
 - **AND** `deleted_profiles` SHALL be empty
 
-
 ### Requirement: CDP Bridge governance guard SHALL keep read-only defaults and fail closed sensitive actions
 
 The repository SHALL provide a repo-local CDP Bridge governance guard that classifies CDP Bridge actions before any live browser dispatch can occur.
@@ -543,7 +541,6 @@ The guard SHALL be non-mutating. It SHALL NOT install OpenCLI, start OpenCLI, la
 - **AND** each check SHALL require owner lease evidence
 - **AND** each check SHALL require authorization receipt evidence
 
-
 ### Requirement: CLI-Anything governance guard SHALL require receipt evidence and harness-generation boundaries
 
 The repository SHALL provide a repo-local CLI-Anything governance guard that validates install/update receipt evidence and harness-generation boundaries before any future user-level CLI-Anything or CLI Hub adaptation is treated as eligible.
@@ -593,3 +590,206 @@ The guard SHALL keep CLI-Anything as harness-generation support only until insta
 
 - **WHEN** `harness-plan` is asked to hard-load skills
 - **THEN** it SHALL fail closed with `hard_load_skills_must_be_false`
+
+### Requirement: WeCom CLI governance guard SHALL prefer API/Webhook and fail closed for WXWork GUI automation
+
+The repository SHALL provide a repo-local `wecom-cli` governance guard that models Enterprise WeChat / WeCom / WXWork control boundaries without attaching to `WXWork.exe`, probing local processes, calling live APIs or webhooks, reading message content, sending messages, mutating user-level Codex configuration, or controlling GUI state.
+
+The guard SHALL support at least:
+
+- `api-status --json` - reports the API/Webhook-first posture without probing the process table;
+- `webhook-plan --name <name> --secret-ref <ref> --json` - plans webhook usage without calling WeCom or retaining secret values;
+- `gui-plan --target-process WXWork.exe --json` - reports GUI gate requirements without live control;
+- `gui-check --action <action> --session <id> --authorization-receipt <path> --lease-receipt <path> --json` - fail-closed precheck for sensitive GUI actions.
+
+WXWork GUI actions SHALL require a global WXWork lease receipt, operator authorization receipt, session match, future expiry, and timeout release evidence. Valid receipts MAY allow only dry-run dispatch eligibility in the repo-local MVP; they SHALL NOT cause live GUI control.
+
+#### Scenario: API/Webhook status is requested
+
+- **WHEN** `python tools/wecom_cli_governance.py api-status --json` runs
+- **THEN** the command SHALL return `ok=true`
+- **AND** it SHALL report `api_or_webhook_first`
+- **AND** it SHALL report no process probe, no GUI control, no message-content read, and no WeCom API call
+
+#### Scenario: Webhook planning receives an inline secret
+
+- **WHEN** `python tools/wecom_cli_governance.py webhook-plan --name ops --secret-ref "secret=<value>" --json` runs
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL not call a webhook
+- **AND** it SHALL not retain the raw secret value in default output
+
+#### Scenario: GUI planning is requested
+
+- **WHEN** `python tools/wecom_cli_governance.py gui-plan --target-process WXWork.exe --json` runs
+- **THEN** the command SHALL return `ok=true`
+- **AND** it SHALL report global lease, operator confirmation, and timeout release requirements
+- **AND** it SHALL report live GUI control is not allowed by the repo-local MVP
+
+#### Scenario: GUI attach lacks receipts
+
+- **WHEN** `python tools/wecom_cli_governance.py gui-check --action gui.attach --session session-a --json` runs without receipts
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL require both operator authorization receipt and global WXWork lease receipt
+- **AND** it SHALL report `gui_control_performed=false`
+
+#### Scenario: GUI attach has valid receipts
+
+- **WHEN** `gui-check` receives matching, current operator authorization and global WXWork lease receipts
+- **THEN** it SHALL return `dispatch_allowed=true`
+- **AND** it SHALL remain `dry_run_only=true`
+- **AND** it SHALL report `gui_control_performed=false`
+- **AND** it SHALL not emit raw private receipt paths
+
+### Requirement: User-level receipt governance guard SHALL validate authorization, update, rollback, and redaction evidence
+
+The repository SHALL provide a repo-local generic receipt governance guard for user-level MCP, skills, browser, and CLI harness lanes. The guard SHALL validate one-task authorization receipt schema, update receipt schema, rollback pointer presence, smoke evidence, and redaction boundaries without installing tools, calling MCP servers, controlling browsers, reading browser data, mutating user-level Codex configuration, or emitting raw private paths or raw secrets in default output.
+
+The guard SHALL support at least:
+
+- `auth-check --receipt <path> --action <action> --target <target> --session <id> --json` - validates one-task authorization evidence.
+- `update-check --receipt <path> --tool-name <name> --owner-lane <lane> --json` - validates install/update evidence.
+- `redact-check --receipt <path> --json` - validates sensitive-data redaction boundaries.
+- `template --kind authorization --json` - prints the authorization receipt field template.
+- `template --kind update --json` - prints the update receipt field template.
+
+Receipt field glossary:
+
+| Field | Meaning |
+| --- | --- |
+| `action` | Requested sensitive operation. |
+| `target` | Resource or adapter target authorized for that operation. |
+| `scope` | Allowed action set; it must include the requested operation or `*`. |
+| `expiry` | Future timestamp after which the authorization is invalid. |
+| `session` | Current Codex session or owner session id. |
+| `operator_confirmation` | Boolean proof that the operator approved the sensitive action. |
+| `tool_name` | User-level helper or adapter being installed or updated. |
+| `installed_version` | Pinned version, tag, or commit of the installed artifact. |
+| `source_url` | Public source location, without credentials. |
+| `install_path`, `wrapper_path`, `state_path` | Private local paths that default output must hash or redact. |
+| `smoke_test_command`, `smoke_test_result` | Repeatable validation command and pass/fail evidence. |
+| `updater_command` | Pin-aware update command. |
+| `rollback_pointer` | Previous version, backup directory, or rollback reference. |
+| `owner_lane` | Owning lane such as `skills2cli`, `mcp2cli`, or `browser`. |
+| `redaction_status` | Evidence that secrets, cookies, tokens, raw browser data, message contents, API keys, passwords, and plugin description dumps are absent or redacted. |
+
+#### Scenario: Authorization receipt is missing required fields
+
+- **WHEN** `python tools/user_level_receipt_governance.py auth-check --receipt <path> --action browser.click --target tab:123 --session session-a --json` runs on an incomplete receipt
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL report missing authorization receipt fields
+- **AND** it SHALL report no user-level mutation, no external tool run, and no browser-data read
+
+#### Scenario: Valid authorization receipt is summarized safely
+
+- **WHEN** `auth-check` receives a matching future-expiry authorization receipt with operator confirmation
+- **THEN** the command SHALL return `ok=true`
+- **AND** it SHALL report `authorization_valid=true`
+- **AND** it SHALL emit a receipt path hash instead of the raw receipt path
+
+#### Scenario: Update receipt lacks rollback or passing smoke evidence
+
+- **WHEN** `python tools/user_level_receipt_governance.py update-check --receipt <path> --tool-name skills2cli --owner-lane skills2cli --json` runs on an update receipt without rollback pointer or passing smoke evidence
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL report rollback and smoke blockers
+
+#### Scenario: Valid update receipt hashes private paths and rollback pointer
+
+- **WHEN** `update-check` receives a valid update receipt with install, wrapper, state, smoke, updater, owner-lane, redaction, and rollback evidence
+- **THEN** the command SHALL return `ok=true`
+- **AND** it SHALL report `rollback_ready=true`
+- **AND** it SHALL emit hashes for install path, wrapper path, state path, and rollback pointer
+
+#### Scenario: Redaction check detects raw sensitive payloads
+
+- **WHEN** `python tools/user_level_receipt_governance.py redact-check --receipt <path> --json` runs on a receipt containing cookies, inline token values, message contents, or plugin description dumps
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL report redaction findings
+- **AND** it SHALL not read browser data or emit raw secrets in default output
+
+### Requirement: Governance plan SHALL use the executable modern Comet structure
+
+The user-level MCP, skills, browser automation, and CLI harness governance plan SHALL include worker-facing Goal, Architecture, and Tech Stack opening blocks plus execution-oriented sections for file ownership, readiness, task backlog, acceptance, evidence, rollback, and risks.
+
+#### Scenario: Modern sections are present
+
+- **WHEN** the plan is reviewed manually
+- **THEN** it SHALL include Goal, Architecture, Tech Stack, file responsibility map, definition of ready, task-level backlog, acceptance criteria, required evidence, rollback, and risks
+- **AND** it SHALL preserve Token/risk priority, authorization receipt, update receipt, evidence redaction, port registry/lease, codex-port allocator, pending_bind, registry_revision, 39000-39299, 40000-40999, OpenSpec slice, and fail closed governance markers
+
+#### Scenario: Runtime lanes remain risk-gated
+
+- **WHEN** a lane lacks install, smoke, receipt, or rollback evidence
+- **THEN** it SHALL stay below active
+- **AND** sensitive MCP, browser, CDP Bridge, OpenCLI, CLI-Anything, and WeCom actions SHALL require current authorization receipt evidence
+
+### Requirement: Governance plan SHALL preserve complete Comet phase evidence
+
+The user-level MCP, skills, browser automation, and CLI harness governance implementation plan SHALL describe the complete Comet `Open -> Design -> Build -> Verify -> Archive` workflow when the operator explicitly requests a complete `/comet` refactor.
+
+The plan SHALL NOT describe the current governance-plan execution model as tweak-only when the active change is full workflow.
+
+#### Scenario: Complete Comet framing is required
+
+- **WHEN** the Chinese governance implementation plan is reviewed after the full Comet refactor
+- **THEN** its frontmatter SHALL identify `comet_workflow: full`
+- **AND** its phase model SHALL include `open-design-build-verify-archive`
+- **AND** its body SHALL include explicit Open, Design, Build, Verify, and Archive gates
+
+#### Scenario: Runtime implementation remains out of scope
+
+- **WHEN** the full Comet refactor is applied to the document
+- **THEN** it SHALL preserve the existing rule that actual user-level installs, live browser automation, and WXWork GUI automation require separate governed evidence
+- **AND** it SHALL NOT mark unfinished lanes as `active`
+
+### Requirement: OpenCLI governance guard SHALL require port-auto lease evidence
+
+The repository-local OpenCLI governance guard SHALL require allocator-driven `--port auto` and a sanitized codex-port lease receipt before it allows any OpenCLI pre-dispatch action.
+
+The receipt SHALL prove Codex ownership and an OpenCLI/browser port in the `39300-39499` range. Hard-coded OpenCLI ports SHALL fail closed even when browser owner and authorization evidence are otherwise valid.
+
+#### Scenario: Missing port lease blocks OpenCLI dispatch
+
+- **WHEN** `python tools/opencli_governance.py check --action session.inspect --target tab:opencli-1 --session session-a --json` runs without a codex-port lease receipt
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL include `opencli_port_lease_receipt_required` in blockers
+- **AND** it SHALL report `dispatch_allowed=false`
+
+#### Scenario: Hard-coded OpenCLI port is rejected
+
+- **WHEN** the OpenCLI guard receives `--port 39300`
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL include `opencli_port_must_be_auto` in blockers
+- **AND** it SHALL report hard-coded OpenCLI ports are not allowed
+
+#### Scenario: Port lease outside the OpenCLI range is rejected
+
+- **WHEN** the OpenCLI guard receives a codex-port lease receipt whose port is outside `39300-39499`
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL include `opencli_port_lease_range_mismatch` in blockers
+
+### Requirement: OpenCLI live-start preflight SHALL require install receipt, owner evidence, and port lease evidence
+
+The repository-local OpenCLI governance guard SHALL provide a non-mutating live-start preflight that fails closed unless OpenCLI has valid install receipt evidence, active browser-owner lease evidence, and sanitized codex-port `--port auto` lease evidence in the Codex browser/OpenCLI range.
+
+Even when all evidence is present, the repo-local MVP SHALL NOT start OpenCLI. It SHALL return `live_start_not_implemented_repo_local_mvp` and `start_performed=false`.
+
+#### Scenario: OpenCLI live start lacks install receipt
+
+- **WHEN** `python tools/opencli_governance.py --state-dir <tmp> --owner-state-dir <owner-state> start --target tab:opencli-1 --session session-a --owner-lease-id <lease> --port-lease-receipt <receipt> --json` runs without an install receipt
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL include `install_receipt_required` in blockers
+- **AND** it SHALL report `start_performed=false`
+
+#### Scenario: OpenCLI live start lacks owner evidence
+
+- **WHEN** `python tools/opencli_governance.py --state-dir <tmp> start --target tab:opencli-1 --session session-a --install-receipt <receipt> --port-lease-receipt <receipt> --json` runs without owner evidence
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL include `owner_lease_required` in blockers
+- **AND** it SHALL report `install_receipt_verified=true`
+
+#### Scenario: OpenCLI live start has complete evidence but remains deferred
+
+- **WHEN** the OpenCLI live-start preflight receives valid install receipt, owner lease, and port lease evidence
+- **THEN** the command SHALL fail closed with `live_start_not_implemented_repo_local_mvp`
+- **AND** it SHALL report `start_performed=false`
+- **AND** it SHALL NOT install OpenCLI, start OpenCLI, launch browsers, connect to browser targets, or mutate user-level Codex configuration

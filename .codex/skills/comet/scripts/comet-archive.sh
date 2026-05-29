@@ -111,6 +111,86 @@ step_ok "Entry state verified"
 
 # --- Step 2b: Validate management closing evidence ---
 
+python_for_legacy_label_check() {
+  if command -v python3 >/dev/null 2>&1; then
+    command -v python3
+    return 0
+  fi
+  if command -v python >/dev/null 2>&1; then
+    command -v python
+    return 0
+  fi
+  if command -v py >/dev/null 2>&1; then
+    command -v py
+    return 0
+  fi
+  return 1
+}
+
+checklist_done_legacy_mojibake() {
+  local record="$1"
+  shift
+  local py_bin
+  py_bin=$(python_for_legacy_label_check 2>/dev/null || true)
+  if [ -z "$py_bin" ]; then
+    return 1
+  fi
+
+  "$py_bin" - "$record" "$@" <<'PY'
+from pathlib import Path
+import sys
+
+record = Path(sys.argv[1])
+labels = sys.argv[2:]
+
+try:
+    text = record.read_text(encoding="utf-8", errors="replace")
+except OSError:
+    sys.exit(1)
+
+checked = set()
+for line in text.splitlines():
+    if line.startswith("- [x] ") or line.startswith("- [X] "):
+        checked.add(line[6:])
+
+variants = set()
+for label in labels:
+    variants.add(label)
+    data = label.encode("utf-8", errors="replace")
+    for encoding in ("gbk", "cp936", "gb18030", "cp1252"):
+        decoded = data.decode(encoding, errors="replace")
+        variants.add(decoded)
+        variants.add(decoded.replace("\ufffd", "?"))
+
+sys.exit(0 if checked.intersection(variants) else 1)
+PY
+}
+
+checklist_done_any() {
+  local section="$1"
+  local item="$2"
+  shift 2
+  local record="$1"
+  shift
+  local label
+  for label in "$@"; do
+    if grep -Fq -- "- [x] $label" "$record" || grep -Fq -- "- [X] $label" "$record"; then
+      return 0
+    fi
+  done
+  if checklist_done_legacy_mojibake "$record" "$@"; then
+    return 0
+  fi
+  red "FATAL: management checklist item is not checked: $item"
+  red "Missing management checklist section: $section"
+  red "Accepted labels:"
+  for label in "$@"; do
+    red "  - $label"
+  done
+  red "Next: mark one accepted '- [x]' item in $record after recording the evidence."
+  exit 1
+}
+
 checklist_done() {
   local label="$1"
   local record="$2"
@@ -131,11 +211,17 @@ if [ ! -f "$MANAGEMENT_RECORD" ]; then
   exit 1
 fi
 
-checklist_done "价值结果已总结" "$MANAGEMENT_RECORD"
-checklist_done "经验沉淀已记录" "$MANAGEMENT_RECORD"
-checklist_done "delta spec sync / verification evidence / archive path 已确认" "$MANAGEMENT_RECORD"
-checklist_done "当前阶段事实已检查" "$MANAGEMENT_RECORD"
-checklist_done "是否需要回退已判断" "$MANAGEMENT_RECORD"
+checklist_done_any "Archive / Closing" "Value outcome is summarized." "$MANAGEMENT_RECORD" \
+  "价值结果已总结" "Value outcome is summarized."
+checklist_done_any "Archive / Closing" "Lessons learned or reusable guidance are recorded." "$MANAGEMENT_RECORD" \
+  "经验沉淀已记录" "Lessons learned or reusable guidance are recorded."
+checklist_done_any "Archive / Closing" "Delta spec sync, verification evidence, and archive path are confirmed." "$MANAGEMENT_RECORD" \
+  "delta spec sync / verification evidence / archive path 已确认" \
+  "Delta spec sync, verification evidence, and archive path are confirmed."
+checklist_done_any "Monitoring Loop" "Current facts are checked." "$MANAGEMENT_RECORD" \
+  "当前阶段事实已检查" "Current facts are checked."
+checklist_done_any "Monitoring Loop" "Continue, adjust, stop, or return decision is made." "$MANAGEMENT_RECORD" \
+  "是否需要回退已判断" "Continue, adjust, stop, or return decision is made."
 
 MONITORING_STATUS=$(yaml_field "monitoring_status")
 CONTROL_DECISION=$(yaml_field "control_decision")

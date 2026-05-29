@@ -1,0 +1,14 @@
+﻿workflow: tweak
+phase: verify
+design_doc: openspec/changes/refactor-automatic-routing-plan-comet/design.md
+plan: docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md
+build_mode: direct
+isolation: worktree
+verify_mode: light
+verify_result: pass
+verification_report: null
+branch_status: pending
+verified_at: 2026-05-26T03:56:53.1018723Z
+archived: false
+script_state_blocker: bash_unavailable_in_current_windows_shell
+

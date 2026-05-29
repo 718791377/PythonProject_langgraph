@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "case_type": "main_session_escalation_visibility",
+  "case_id": "main_session_escalation_timed_out",
+  "main_session_escalation": "timed_out",
+  "pending_approval": false,
+  "approval_timeout_risk": "expired",
+  "approval_receipt": ".omx/state/langgraph/interrupts/thread-123.json#interrupt-1",
+  "main_session_only": true,
+  "blocked_reason": "blocked:approval_timeout"
+}

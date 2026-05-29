@@ -17,6 +17,10 @@ CHANGE_SPEC_GLOB = f"openspec/changes/*/specs/{SPEC_DIR}/spec.md"
 SAFETY_REGISTRY = Path("tools/safety_rule_script_backing_registry.json")
 CI_MANIFEST = Path("tools/ci/ci_test_manifest.json")
 GUARD_SCRIPT = Path("tools/run_openspec_guard.py")
+WECOM_HELPER = Path("tools/wecom_cli_governance.py")
+WECOM_TEST = "wecom_cli_governance.test.py"
+RECEIPT_HELPER = Path("tools/user_level_receipt_governance.py")
+RECEIPT_TEST = "user_level_receipt_governance.test.py"
 
 PLAN_REQUIRED: dict[str, list[str]] = {
     "zh": [
@@ -236,16 +240,37 @@ def check_safety_registry(root: Path, errors: list[str]) -> dict[str, Any]:
 def check_ci_and_guard(root: Path, errors: list[str]) -> dict[str, Any]:
     manifest = read_json(root / CI_MANIFEST, errors)
     manifest_ok = False
+    wecom_manifest_ok = False
+    receipt_manifest_ok = False
     if isinstance(manifest, dict):
         tests = manifest.get("python_unittest", [])
         manifest_ok = "check_user_level_mcp_skills_browser_cli_baseline.test.py" in tests
+        wecom_manifest_ok = WECOM_TEST in tests
+        receipt_manifest_ok = RECEIPT_TEST in tests
     if not manifest_ok:
         errors.append("CI manifest must include `check_user_level_mcp_skills_browser_cli_baseline.test.py`.")
+    if not wecom_manifest_ok:
+        errors.append(f"CI manifest must include `{WECOM_TEST}` for the wecom-cli guarded dry-run lane.")
+    if not receipt_manifest_ok:
+        errors.append(f"CI manifest must include `{RECEIPT_TEST}` for the receipt/redaction governance lane.")
     guard_text = read_text(root / GUARD_SCRIPT, errors)
     guard_ok = "check_user_level_mcp_skills_browser_cli_baseline" in guard_text
     if not guard_ok:
         errors.append("OpenSpec guard must run `check_user_level_mcp_skills_browser_cli_baseline`.")
-    return {"ci_manifest_registered": manifest_ok, "openspec_guard_registered": guard_ok}
+    wecom_helper_present = (root / WECOM_HELPER).exists()
+    if not wecom_helper_present:
+        errors.append("Repository must include `tools/wecom_cli_governance.py` for the wecom-cli guarded dry-run lane.")
+    receipt_helper_present = (root / RECEIPT_HELPER).exists()
+    if not receipt_helper_present:
+        errors.append("Repository must include `tools/user_level_receipt_governance.py` for the receipt/redaction governance lane.")
+    return {
+        "ci_manifest_registered": manifest_ok,
+        "openspec_guard_registered": guard_ok,
+        "wecom_helper_present": wecom_helper_present,
+        "wecom_test_registered": wecom_manifest_ok,
+        "receipt_helper_present": receipt_helper_present,
+        "receipt_test_registered": receipt_manifest_ok,
+    }
 
 
 def evaluate(root: Path) -> dict[str, Any]:

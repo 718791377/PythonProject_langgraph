@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "case_type": "langgraph_state_release",
+  "case_id": "langgraph_state_release_valid",
+  "task_completed": true,
+  "thread_state": {
+    "status": "complete",
+    "completed_at": "2026-05-27T00:00:00Z",
+    "final_phase": "verify-accept",
+    "result_summary": "accepted",
+    "released_by": "codex-leader"
+  }
+}

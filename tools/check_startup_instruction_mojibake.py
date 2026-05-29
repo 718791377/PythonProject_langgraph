@@ -13,8 +13,10 @@ CHECK_NAME = "startup_instruction_mojibake"
 
 LEGACY_ENCODINGS_FOR_MOJIBAKE = ("gbk", "gb18030", "cp936", "latin-1")
 
-START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
-END_CANARY = chr(21941) + "~"
+START_CANARY = "CODEX_CTX_" + "CANARY_START"
+END_CANARY = "CODEX_CTX_" + "CANARY_END"
+LEGACY_START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
+LEGACY_END_CANARY = chr(21941) + "~"
 
 AUTHORITY_SURFACES = (
     Path("AGENTS.md"),
@@ -42,8 +44,8 @@ def from_codepoints(*codepoints: int) -> str:
 
 
 CANONICAL_CHINESE_TOKENS = {
-    "canary_start_marker": START_CANARY,
-    "canary_end_marker": END_CANARY,
+    "canary_start_marker": LEGACY_START_CANARY,
+    "canary_end_marker": LEGACY_END_CANARY,
     "mojibake": from_codepoints(20081, 30721),
     "prompt_sentinel": from_codepoints(25552, 31034, 35789, 21736, 20853),
     "startup_instructions": from_codepoints(21551, 21160, 35828, 26126),
@@ -69,8 +71,15 @@ def derive_mojibake_variants(text: str) -> tuple[str, ...]:
     return tuple(sorted(variants, key=lambda value: (-len(value), value)))
 
 
+def configured_mojibake_variants(token_name: str, token_text: str) -> tuple[str, ...]:
+    variants = set(derive_mojibake_variants(token_text))
+    if token_name in {"canary_start_marker", "canary_end_marker"}:
+        variants.add(token_text)
+    return tuple(sorted(variants, key=lambda value: (-len(value), value)))
+
+
 MOJIBAKE_VARIANTS_BY_TOKEN = {
-    token_name: derive_mojibake_variants(token_text)
+    token_name: configured_mojibake_variants(token_name, token_text)
     for token_name, token_text in CANONICAL_CHINESE_TOKENS.items()
 }
 

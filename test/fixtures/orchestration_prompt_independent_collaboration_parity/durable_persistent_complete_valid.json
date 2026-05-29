@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "case_type": "durable_persistent_claim",
+  "case_id": "durable_persistent_complete_valid",
+  "claim": "persistent_team_complete",
+  "state": "complete",
+  "evidence": {
+    "active_selector": true,
+    "backend_family": "native_omx",
+    "preflight_passed": true,
+    "ownership_plan": true,
+    "team_manifest": true,
+    "heartbeat": true,
+    "result_summary": true,
+    "close_record": true,
+    "leader_absorbed_record": true
+  }
+}

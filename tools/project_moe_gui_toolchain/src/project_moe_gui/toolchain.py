@@ -28,6 +28,13 @@ LAUNCHER_RELATIVE = Path("tools/project_moe_gui/launcher.py")
 README_RELATIVE = Path("tools/project_moe_gui/README.md")
 CMD_RELATIVE = Path("project-moe-gui.cmd")
 MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE]
+UNINSTALL_MANAGED_ALLOWLIST = {
+    "tools/project_moe_gui/launcher.py",
+    "tools/project_moe_gui/project_moe_gui.config.json",
+    "tools/project_moe_gui/project_moe_gui.install-manifest.json",
+    "tools/project_moe_gui/README.md",
+    "project-moe-gui.cmd",
+}
 PRIVATE_PROMPT_AGENT_DIR = Path(".codex/agents")
 PRIVATE_PROMPT_STATE_DIR = Path(".omx/state")
 PRIVATE_PROMPT_GUI_MANAGED_DIR = Path("tools/project_moe_gui")
@@ -242,6 +249,13 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
         "phase": "repair",
         "action": "repair_mode_cli_common_envelope_fields",
         "description": "Add schema_version, command, ok, token, and cli_contract envelope fields.",
+        "requires_target_project_write": True,
+    },
+    "blocked:cli_envelope_schema_version_mismatch": {
+        "category": "mode_cli_contract",
+        "phase": "repair",
+        "action": "repair_mode_cli_schema_version",
+        "description": "Return the supported Project MOE GUI toolchain schema_version in every read-contract envelope.",
         "requires_target_project_write": True,
     },
     "blocked:cli_command_echo_mismatch": {
@@ -1092,6 +1106,16 @@ def require_cli_envelope(
     missing = [key for key in COMMON_CLI_ENVELOPE_KEYS if key not in payload]
     if missing:
         errors.append(blocker("blocked:cli_envelope_missing_fields", "Mode CLI JSON envelope is missing required fields.", command=command, missing=missing))
+    if "schema_version" in payload and payload.get("schema_version") != SCHEMA_VERSION:
+        errors.append(
+            blocker(
+                "blocked:cli_envelope_schema_version_mismatch",
+                "Mode CLI JSON envelope schema_version is not supported by this Project MOE GUI toolchain.",
+                command=command,
+                expected=SCHEMA_VERSION,
+                observed=payload.get("schema_version"),
+            )
+        )
     if payload.get("command") != command:
         errors.append(blocker("blocked:cli_command_echo_mismatch", "Mode CLI JSON command field must match the invoked command.", command=command, observed=payload.get("command")))
     ok_value = payload.get("ok")
@@ -1375,6 +1399,89 @@ def skipped_cli_contract_details(mode_cli: Path, reason: str) -> dict[str, Any]:
         "assertion_commands_checked": [],
         "validated_fields": {},
     }
+
+
+def build_phase1_readiness_warnings(execute_cli: bool, cli_details: dict[str, Any]) -> list[dict[str, Any]]:
+    warnings: list[dict[str, Any]] = []
+    if not execute_cli:
+        warnings.append(
+            {
+                "code": "warning:read_contract_cli_execution_skipped",
+                "message": "Read-contract CLI execution was skipped because readiness ran in static-only mode.",
+                "cli_execution_mode": "static-only",
+                "skip_reason": cli_details.get("skip_reason") or "static_only_no_exec_cli",
+                "blocks_control_mode": True,
+            }
+        )
+    return warnings
+
+
+def phase1_checked_file_record(role: str, path: str | Path, exists: Any, *, source: str) -> dict[str, Any]:
+    return {
+        "role": role,
+        "path": norm(path),
+        "exists": bool(exists),
+        "source": source,
+    }
+
+
+def build_phase1_checked_files(
+    agent_details: dict[str, Any],
+    prompt_details: dict[str, Any],
+    mode_cli_surface: dict[str, Any],
+    on_details: dict[str, Any],
+    off_details: dict[str, Any],
+    hook_details: dict[str, Any],
+    operator_doc_details: dict[str, Any],
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+
+    def append(role: str, details: dict[str, Any], *, source: str) -> None:
+        path = details.get("path")
+        if path is None:
+            return
+        records.append(phase1_checked_file_record(role, path, details.get("exists"), source=source))
+
+    append("agent_toml", agent_details, source="agent_toml")
+    append("private_prompt_source", prompt_details, source="private_prompt_source")
+    append("mode_cli", mode_cli_surface, source="mode_cli_surface")
+    append("on_wrapper", on_details, source="wrappers.on")
+    append("off_wrapper", off_details, source="wrappers.off")
+
+    for item in hook_details.get("candidates_checked") or []:
+        if isinstance(item, dict):
+            append("startup_hook", item, source="startup_activation_hooks.candidates_checked")
+    for item in operator_doc_details.get("candidates_checked") or []:
+        if isinstance(item, dict):
+            append("operator_doc", item, source="operator_docs.candidates_checked")
+
+    deduped: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for record in records:
+        key = (str(record["role"]), str(record["path"]), str(record["source"]))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(record)
+    return deduped
+
+
+def build_phase1_redacted_paths(checked_files: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    counters: dict[str, int] = {}
+    redacted: list[dict[str, Any]] = []
+    for record in checked_files:
+        role = str(record.get("role") or "path")
+        counters[role] = counters.get(role, 0) + 1
+        alias = f"phase1.{role}" if counters[role] == 1 else f"phase1.{role}.{counters[role]}"
+        redacted.append(
+            {
+                "alias": alias,
+                "role": role,
+                "path": str(record.get("path") or ""),
+                "exists": bool(record.get("exists")),
+            }
+        )
+    return redacted
 
 
 def execution_blocking_static_codes(errors: list[dict[str, Any]]) -> list[str]:
@@ -1726,6 +1833,17 @@ def check_phase1_readiness(
         }
     readiness_status = "ready" if not errors and execute_cli else ("static-ready-candidate" if not errors else "blocked")
     remediation_plan = build_phase1_remediation_plan(errors, lane, execute_cli)
+    warnings = build_phase1_readiness_warnings(execute_cli, cli_details)
+    checked_files = build_phase1_checked_files(
+        agent_details,
+        prompt_details,
+        mode_cli_surface,
+        on_details,
+        off_details,
+        hook_details,
+        operator_doc_details,
+    )
+    redacted_paths = build_phase1_redacted_paths(checked_files)
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "check_project_moe_phase1_readiness",
@@ -1749,6 +1867,9 @@ def check_phase1_readiness(
         "wrappers": {"on": on_details, "off": off_details},
         "startup_activation_hooks": hook_details,
         "operator_docs": operator_doc_details,
+        "warnings": warnings,
+        "checked_files": checked_files,
+        "redacted_paths": redacted_paths,
         "blockers": errors,
         "next_actions": [] if not errors else sorted({error["code"] for error in errors}),
         "remediation_plan": remediation_plan,
@@ -2166,11 +2287,30 @@ def managed_file_uninstall_plan(root: Path, manifest: dict[str, Any]) -> tuple[l
     errors: list[dict[str, Any]] = []
     seen: set[str] = set()
     for item in manifest.get("managed_files", []):
-        rel = str(item.get("path") or "").strip()
+        rel = norm(str(item.get("path") or "").strip())
         if not rel or rel in seen:
             continue
         seen.add(rel)
         expected = item.get("sha256")
+        if rel not in UNINSTALL_MANAGED_ALLOWLIST:
+            blocker_payload = blocker(
+                "blocked:uninstall_path_not_in_managed_allowlist",
+                "Uninstall may delete only the Project MOE GUI managed artifact allowlist, even if a target manifest lists another path.",
+                path=rel,
+                allowed=sorted(UNINSTALL_MANAGED_ALLOWLIST),
+            )
+            errors.append(blocker_payload)
+            planned_deletes.append({"path": rel, "action": "blocked", "safe_to_delete": False, "blocker": blocker_payload})
+            continue
+        if rel != norm(MANIFEST_RELATIVE) and not expected:
+            blocker_payload = blocker(
+                "blocked:managed_file_hash_missing",
+                "Managed file must include a manifest hash before uninstall can delete it.",
+                path=rel,
+            )
+            errors.append(blocker_payload)
+            planned_deletes.append({"path": rel, "action": "blocked", "safe_to_delete": False, "blocker": blocker_payload})
+            continue
         full, err = safe_relative(root, Path(rel))
         if err:
             errors.append(err)
@@ -2181,6 +2321,15 @@ def managed_file_uninstall_plan(root: Path, manifest: dict[str, Any]) -> tuple[l
         action = "delete" if exists else "already_absent"
         observed = sha256_file(full) if exists and expected else None
         safe_to_delete = exists
+        if exists and full.is_dir():
+            blocker_payload = blocker(
+                "blocked:managed_path_is_directory",
+                "Uninstall deletes managed files only; directories are never removed from a manifest entry.",
+                path=rel,
+            )
+            errors.append(blocker_payload)
+            action = "blocked"
+            safe_to_delete = False
         if exists and expected and observed != expected:
             blocker_payload = blocker(
                 "blocked:managed_file_hash_mismatch",
@@ -2206,35 +2355,55 @@ def managed_file_uninstall_plan(root: Path, manifest: dict[str, Any]) -> tuple[l
     return planned_deletes, errors
 
 
+def apply_managed_file_uninstall(root: Path, planned_deletes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    applied: list[dict[str, Any]] = []
+    for item in planned_deletes:
+        rel = str(item.get("path") or "").strip()
+        if item.get("action") != "delete" or item.get("safe_to_delete") is not True:
+            applied.append({"path": rel, "status": "skipped", "reason": item.get("action") or "not_safe_to_delete"})
+            continue
+        full, err = safe_relative(root, Path(rel))
+        if err:
+            raise RuntimeError(err["message"])
+        assert full is not None
+        if not full.exists():
+            applied.append({"path": rel, "status": "already_absent"})
+            continue
+        if full.is_dir():
+            raise RuntimeError(f"Refusing to uninstall directory manifest entry: {rel}")
+        full.unlink()
+        applied.append({"path": rel, "status": "deleted"})
+    return applied
+
+
 def plan_uninstall(root: Path, apply_requested: bool = False) -> dict[str, Any]:
     manifest, config, load_errors = existing_install(root)
     errors: list[dict[str, Any]] = list(load_errors)
     planned_deletes: list[dict[str, Any]] = []
     protected_files: list[str] = []
-    if apply_requested:
-        errors.append(
-            blocker(
-                "blocked:uninstall_apply_not_supported",
-                "Project MOE GUI uninstall is plan-only in this version; --apply is accepted only to return a stable fail-closed JSON blocker and never deletes target files.",
-            )
-        )
     if not manifest or not config:
         errors.extend(load_errors or [blocker("blocked:not_installed", "Project MOE GUI is not installed in target project.")])
     else:
         planned_deletes, delete_errors = managed_file_uninstall_plan(root, manifest)
         errors.extend(delete_errors)
         protected_files = list(manifest.get("protected_files") or [])
+    applied_file_changes: list[dict[str, Any]] = []
+    if apply_requested and not errors:
+        try:
+            applied_file_changes = apply_managed_file_uninstall(root, planned_deletes)
+        except Exception as exc:
+            errors.append(blocker("blocked:uninstall_apply_failed", "Project MOE GUI uninstall apply failed before completing all planned deletes.", error=str(exc)))
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "plan_project_moe_gui_uninstall",
-        "mode": "apply-requested" if apply_requested else "dry-run",
+        "mode": "apply" if apply_requested and not errors else ("apply-requested" if apply_requested else "dry-run"),
         "ok": not errors,
         "token": "ok" if not errors else errors[0]["code"],
-        "read_only": True,
-        "writes_target_project": False,
+        "read_only": not any(item.get("status") == "deleted" for item in applied_file_changes),
+        "writes_target_project": any(item.get("status") == "deleted" for item in applied_file_changes),
         "apply_requested": apply_requested,
-        "apply_supported": False,
-        "delete_executed": False,
+        "apply_supported": True,
+        "delete_executed": any(item.get("status") == "deleted" for item in applied_file_changes),
         "target_project_root": str(root),
         "toolchain": TOOLCHAIN_NAME,
         "installed_toolchain_version": manifest.get("toolchain_version") if manifest else None,
@@ -2247,6 +2416,17 @@ def plan_uninstall(root: Path, apply_requested: bool = False) -> dict[str, Any]:
         "private_files_deletion_allowed": False,
         "blockers": errors,
         "rollback_hint": (manifest or {}).get("rollback_hint") or "Uninstall planning only covers managed GUI artifacts; preserve .omx/state, MOE.md, and .codex/agents/*.toml.",
+        "applied_file_changes": applied_file_changes,
+        "uninstall_receipt": {
+            "schema_version": SCHEMA_VERSION,
+            "executed": any(item.get("status") == "deleted" for item in applied_file_changes),
+            "executed_at": now_utc() if any(item.get("status") == "deleted" for item in applied_file_changes) else None,
+            "deleted_files": [item["path"] for item in applied_file_changes if item.get("status") == "deleted"],
+            "skipped_private_files": protected_files,
+            "state_deletion_allowed": False,
+            "private_files_deletion_allowed": False,
+            "rollback_hint": (manifest or {}).get("rollback_hint") or "Use target project Git history to restore managed GUI artifacts if needed.",
+        },
     }
 
 
