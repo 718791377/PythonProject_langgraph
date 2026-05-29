@@ -80,12 +80,15 @@
       "script_controls": [
         "tools/commit_reorder_buffer.py",
         "tools/check_commit_reorder_buffer.py",
+        "tools/local_main_retire_lock.py",
+        "tools/check_local_main_retire_lock.py",
         "tools/run_openspec_guard.py"
       ],
       "guard_steps": [
-        "check_commit_reorder_buffer"
+        "check_commit_reorder_buffer",
+        "check_local_main_retire_lock"
       ],
-      "description": "Keeps multi-session candidate packages in a repo-local commit reorder buffer, validates ready/retired state, hotspot fences, branch-prediction mismatch handling, backpressure, and leader-owned serial local-main retirement evidence."
+      "description": "Keeps multi-session candidate packages in a repo-local commit reorder buffer, validates ready/retired state, hotspot fences, branch-prediction mismatch handling, backpressure, and serial local-main retirement evidence, including nonce-protected peer-session self-retirement locks."
     },
     {
       "id": "openspec-official-guard",

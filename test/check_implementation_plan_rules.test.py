@@ -325,5 +325,37 @@ class ImplementationPlanRulesCheckTest(unittest.TestCase):
         self.assertTrue(any("zh_cn_path does not exist" in error for error in payload["errors"]))
 
 
+    def test_active_plan_without_parent_plan_is_allowed(self) -> None:
+        root = self.make_root("impl-plan-no-parent")
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.md", self.active_plan_file())
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.zh-CN.md", self.active_plan_file(companion=True))
+        self.write_file(root, "docs_bilingual/docs_registry.yaml", self.registry("active"))
+
+        json_result = self.run_check_json(root)
+
+        self.assertEqual(json_result.returncode, 0, json_result.stdout + "\n" + json_result.stderr)
+        payload = json.loads(json_result.stdout)
+        self.assertTrue(payload["ok"])
+
+    def test_fails_when_active_plan_declares_missing_parent_plan(self) -> None:
+        root = self.make_root("impl-plan-missing-parent")
+        with_parent = self.active_plan_file().replace(
+            "zh_cn_path: docs_bilingual/implementation_plans/sample_plan.zh-CN.md\n",
+            "zh_cn_path: docs_bilingual/implementation_plans/sample_plan.zh-CN.md\n"
+            "parent_plan: docs_bilingual/implementation_plans/missing_parent.md\n",
+        )
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.md", with_parent)
+        self.write_file(root, "docs_bilingual/implementation_plans/sample_plan.zh-CN.md", self.active_plan_file(companion=True))
+        self.write_file(root, "docs_bilingual/docs_registry.yaml", self.registry("active"))
+
+        json_result = self.run_check_json(root)
+
+        self.assertNotEqual(json_result.returncode, 0)
+        payload = json.loads(json_result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("declares missing parent_plan" in error for error in payload["errors"]))
+
+
+
 if __name__ == "__main__":
     unittest.main()

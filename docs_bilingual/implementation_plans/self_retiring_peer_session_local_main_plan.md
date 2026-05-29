@@ -4,7 +4,7 @@ lang: en
 status: active
 doc_class: implementation_plan
 zh_cn_path: docs_bilingual/implementation_plans/self_retiring_peer_session_local_main_plan.zh-CN.md
-stage: Stage A recovery governance package
+stage: Stage B runtime/checker recovery
 priority: early-foundation
 confirmation_required: true
 ---
@@ -28,10 +28,10 @@ Local `main` mutation remains serial through a repository-local nonce lock.
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage A recovery governance package
-Owner session: `recover-self-retire-runtime-20260529`
-Current gate: commit the docs_bilingual drift-recovery status update, run document governance gates, integrate to local `main`, then stop for user confirmation before runtime recovery.
-Runtime drift: source commit `867f882` contains the local-main retire runtime, but current local `main` at `b4af80f` does not contain `tools/local_main_retire_lock.py` or `tools/check_local_main_retire_lock.py`.
+Stage: Stage B runtime/checker recovery
+Owner session: `recover-self-retire-runtime-stageb-20260529` on branch `recover-self-retire-runtime-stageb-20260529`
+Current gate: resolve recovery conflicts from source commit `867f882`, validate the restored runtime/checker/test package, commit with a Chinese message, run local MR review and local gate, merge to local `main`, then stop at the remote publication gate.
+Runtime drift: Stage A was integrated on local `main` at `655882c`; source commit `867f882` is the recovery source for the runtime/checker package.
 Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
@@ -53,12 +53,12 @@ Last updated: 2026-05-29
 - `tools/commit_reorder_buffer.py` - records `retire_mode`, `retire_owner_session_id`, and `retire_lock_nonce` when a ROB entry is self-retired.
 - `tools/check_commit_reorder_buffer.py` - validates the self-retirement metadata on retired ROB entries.
 - `tools/run_openspec_guard.py` - runs the local-main retire-lock checker as part of the repository guard.
-- `tools/check_local_flow_scripted_enforcement.py` - verifies that the lock helper, checker, policies, and tests remain wired.
+- `tools/check_local_flow_scripted_enforcement.py` - verifies that the lock helper, checker, policies, and tests remain wired while parent orchestration plans remain optional references.
 - `tools/safety_rule_script_backing_registry.json` - records script-backed safety coverage for peer-session local-main retirement.
 - `test/check_local_main_retire_lock.test.py` - covers lock acquire, denial, nonce mismatch, stale reclaim, and release.
 - `test/check_commit_reorder_buffer.test.py` - covers ROB self-retirement metadata.
 - `test/check_implementation_plan_rules.test.py` - covers optional parent plans and missing declared parent plans.
-- `test/check_local_flow_scripted_enforcement.test.py` - covers script-backed enforcement wiring for the new lock.
+- `test/check_local_flow_scripted_enforcement.test.py` - covers script-backed enforcement wiring for the new lock and verifies optional parent plans are not a global local-flow gate.
 - `test/run_openspec_guard_json.test.py` - covers guard registration for the new checker.
 - `tools/ci/ci_test_manifest.json` - registers the focused local-main retire-lock test in the local Python test manifest.
 - `docs_bilingual/docs_registry.yaml` - registers this bilingual implementation plan pair.
@@ -74,7 +74,7 @@ Last updated: 2026-05-29
 - [ ] Stage B recovery: reapply `tools/check_local_main_retire_lock.py` so stale locks warn and absent locks pass.
 - [ ] Stage B recovery: extend `tools/complete_local_flow_to_remote_gate.py` with peer-session `--self-retire`, `--session-id`, `--rob-entry-id`, `--acquire-retire-lock`, and `--lock-ttl-minutes` controls.
 - [ ] Stage B recovery: extend ROB helper/checker support for `retire_mode`, `retire_owner_session_id`, and `retire_lock_nonce`.
-- [ ] Stage B recovery: wire the local-main retire-lock checker into the OpenSpec guard and local scripted-enforcement checker.
+- [ ] Stage B recovery: wire the local-main retire-lock checker into the OpenSpec guard and local scripted-enforcement checker without making optional parent orchestration plans a global local-flow gate.
 - [ ] Stage B recovery: add focused tests and local CI manifest registration.
 - [ ] Stage B recovery: run focused tests, local MR review, local gate, integrate into local `main`, and stop at the remote publication gate.
 <!-- TASK_BACKLOG_END -->
@@ -86,11 +86,12 @@ Last updated: 2026-05-29
 - [ ] After Stage B recovery, stale lock reclaim requires an explicit operator-controlled flag.
 - [ ] After Stage B recovery, ROB retired entries can record `retire_mode=self_retire_lock` with owner and nonce evidence.
 - [ ] After Stage B recovery, the complete local flow helper acquires and releases the lock around local `main` mutation and records ROB evidence.
+- [ ] After Stage B recovery, the local-flow scripted checker enforces lock/helper/scheduler wiring but does not treat optional parent orchestration plans as a global gate for unrelated sessions.
 - [ ] Documentation no longer implies that all local `main` integration must be controlled by one fixed main session.
 
 ## Completed Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-29 Stage A recovery package: current local `main` at `b4af80f` lacks the self-retire runtime files; source commit `867f882` is the recovery source; Stage B runtime recovery must wait for user confirmation after this docs package is integrated.
-- 2026-05-29 self-retiring peer-session implementation pre-commit validation: focused tests passed in source branch `decentralize-session-self-retire-20260529`, but that runtime commit was not merged into current local `main`; use it as recovery evidence, not as current-main runtime evidence.
+- 2026-05-29 Stage A recovery package: local `main` lacked the self-retire runtime files before Stage B; source commit `867f882` is the recovery source; Stage A was integrated before this runtime recovery began.
+- 2026-05-29 self-retiring peer-session implementation source evidence: focused tests passed in source branch `decentralize-session-self-retire-20260529`, but that evidence must be refreshed in this recovery branch before claiming current-main runtime readiness.
 <!-- EVIDENCE_INDEX_END -->

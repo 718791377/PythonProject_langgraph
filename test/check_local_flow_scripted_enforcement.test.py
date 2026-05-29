@@ -25,8 +25,23 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
         for script in [
             "check_local_flow_scripted_enforcement.py",
             "run_openspec_guard.py",
+            "check_local_main_retire_lock.py",
         ]:
             (root / "tools" / script).write_text("# check_local_flow_scripted_enforcement\n", encoding="utf-8")
+        (root / "tools/local_main_retire_lock.py").write_text(
+            "local-main-retire\n"
+            "owner_session_id\n"
+            "nonce\n"
+            "reclaim-stale\n",
+            encoding="utf-8",
+        )
+        (root / "tools/check_local_main_retire_lock.py").write_text(
+            "local-main-retire\n"
+            "owner_session_id\n"
+            "nonce\n"
+            "reclaim-stale\n",
+            encoding="utf-8",
+        )
         (root / "tools/check_plan_exit_execution_governance.py").write_text(
             "requires_user_confirmation_before_implementation\n"
             "implementation_confirmed_by_user\n"
@@ -43,7 +58,11 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
             "implementation_confirmed_by_user\n"
             "implementation_plan\n"
             "awaiting_implementation_confirmation\n"
-            "Governance-confirmation stage must be docs-only\n",
+            "Governance-confirmation stage must be docs-only\n"
+            "--self-retire\n"
+            "--acquire-retire-lock\n"
+            "local_main_retire_lock.py\n"
+            "self_retire_lock\n",
             encoding="utf-8",
         )
         (root / "tools/ci/local_mr_review.ps1").write_text("check_plan_exit_execution_governance.py\n", encoding="utf-8")
@@ -53,6 +72,7 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
                     "python_unittest": [
                         "check_plan_exit_execution_governance.test.py",
                         "check_local_flow_scripted_enforcement.test.py",
+                        "check_local_main_retire_lock.test.py",
                     ]
                 }
             ),
@@ -64,9 +84,22 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
             "git merge --ff-only <feature-branch>\n"
             "远端发布门\n"
             "tools/check_plan_exit_execution_governance.py\n"
-            "tools/complete_local_flow_to_remote_gate.py\n",
+            "tools/complete_local_flow_to_remote_gate.py\n"
+            "local-main-retire.lock\n"
+            "Work-Conserving eligible hotspot lease resource backpressure local-main retire\n",
             encoding="utf-8",
         )
+        (root / "docs_bilingual/implementation_plans").mkdir(parents=True, exist_ok=True)
+        for plan in [
+            "multi_plan_parallel_session_orchestration_plan.md",
+            "multi_plan_parallel_session_orchestration_plan.zh-CN.md",
+            "complete_local_commit_flow_scheduler_reorder_buffer_plan.md",
+            "complete_local_commit_flow_scheduler_reorder_buffer_plan.zh-CN.md",
+        ]:
+            (root / "docs_bilingual/implementation_plans" / plan).write_text(
+                "Work-Conserving eligible hotspot lease resource backpressure local-main retire\n",
+                encoding="utf-8",
+            )
         (root / "docs_bilingual/governance").mkdir(parents=True, exist_ok=True)
         (root / "docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md").write_text(
             "# Policy\n"
@@ -75,6 +108,7 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
             "remote publication gate\n"
             "tools/check_plan_exit_execution_governance.py\n"
             "tools/complete_local_flow_to_remote_gate.py\n"
+            "tools/local_main_retire_lock.py\n"
             "tools/ci/local_mr_review.ps1\n",
             encoding="utf-8",
         )
@@ -85,44 +119,10 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
             "远端发布门\n"
             "tools/check_plan_exit_execution_governance.py\n"
             "tools/complete_local_flow_to_remote_gate.py\n"
+            "tools/local_main_retire_lock.py\n"
             "tools/ci/local_mr_review.ps1\n",
             encoding="utf-8",
         )
-
-    def write_parent_parallel_plan(self, root: Path, *, fixed_cap: bool = False) -> None:
-        plan_dir = root / "docs_bilingual/implementation_plans"
-        plan_dir.mkdir(parents=True, exist_ok=True)
-        if fixed_cap:
-            body_en = (
-                "# Parent Plan\n"
-                "Work-Conserving eligible hotspot lease resource backpressure local-main retire\n"
-                "Default maximum parallel sessions per phase: 4.\n"
-                "Burst maximum parallel sessions per phase: 6.\n"
-                "Later stages: run child-plan work with at most six parallel sessions per phase.\n"
-            )
-            body_zh = (
-                "# 父方案\n"
-                "Work-Conserving eligible hotspot lease resource backpressure local-main retire\n"
-                "每阶段默认最多 4 个并行 session。\n"
-                "每阶段突发上限最多 6 个并行 session。\n"
-            )
-        else:
-            body_en = (
-                "# Parent Plan\n"
-                "Work-Conserving admission admits every eligible session.\n"
-                "A hotspot lease serializes shared write surfaces.\n"
-                "resource backpressure throttles runtime scheduling only.\n"
-                "local-main retire remains serial through a lock.\n"
-            )
-            body_zh = (
-                "# 父方案\n"
-                "Work-Conserving 准入允许每个 eligible session 入场。\n"
-                "hotspot lease 串行化共享写入表面。\n"
-                "resource backpressure 只做运行时节流。\n"
-                "local-main retire 仍由 lock 串行化。\n"
-            )
-        (plan_dir / "multi_plan_parallel_session_orchestration_plan.md").write_text(body_en, encoding="utf-8")
-        (plan_dir / "multi_plan_parallel_session_orchestration_plan.zh-CN.md").write_text(body_zh, encoding="utf-8")
 
     def run_check(self, root: Path, *extra: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -152,25 +152,27 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("complete_local_flow_to_remote_gate.py" in error for error in payload["errors"]))
 
-    def test_parent_parallel_plan_passes_with_work_conserving_terms(self) -> None:
-        root = self.make_root("local-flow-parent-pass")
+    def test_optional_parent_plan_is_not_a_global_local_flow_gate(self) -> None:
+        root = self.make_root("local-flow-optional-parent")
         self.write_required_surfaces(root)
-        self.write_parent_parallel_plan(root)
+        parent = root / "docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md"
+        parent.write_text(
+            "Work-Conserving eligible hotspot lease resource backpressure local-main retire\n"
+            "Default maximum parallel sessions per phase\n",
+            encoding="utf-8",
+        )
+        parent_zh = root / "docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md"
+        parent_zh.write_text(
+            "Work-Conserving eligible hotspot lease resource backpressure local-main retire\n"
+            "\u6700\u591a 3 \u4e2a session\n",
+            encoding="utf-8",
+        )
         result = self.run_check(root)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-
-    def test_parent_parallel_plan_rejects_fixed_phase_caps(self) -> None:
-        root = self.make_root("local-flow-parent-fixed-cap")
-        self.write_required_surfaces(root)
-        self.write_parent_parallel_plan(root, fixed_cap=True)
-        result = self.run_check(root)
-        self.assertNotEqual(result.returncode, 0)
         payload = json.loads(result.stdout)
-        self.assertFalse(payload["ok"])
-        self.assertTrue(
-            any("fixed phase-cap" in error for error in payload["errors"]),
-            payload["errors"],
-        )
+        self.assertTrue(payload["ok"])
+        joined = "\n".join(payload["info"])
+        self.assertIn("not a global local-flow gate", joined)
 
 
 if __name__ == "__main__":

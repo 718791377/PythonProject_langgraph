@@ -14,6 +14,7 @@ PLAN_SIZE_WARNING_BYTES = 40 * 1024
 PLAN_SIZE_FAIL_BYTES = 60 * 1024
 PLAN_SIZE_BASELINE = Path("tools/implementation_plan_size_baseline.json")
 PLAN_FILES_ROOT = Path("docs_bilingual/implementation_plans")
+PLAN_FILES_ROOT_POSIX = PLAN_FILES_ROOT.as_posix()
 REQUIRED_ANCHOR_PAIRS = (
     ("CURRENT_STATUS_START", "CURRENT_STATUS_END"),
     ("TASK_BACKLOG_START", "TASK_BACKLOG_END"),
@@ -258,7 +259,22 @@ def validate_on_disk_plan_registry_state(
         relative_path = path.relative_to(root).as_posix()
         status = front_matter.get("status", "").strip().lower()
         doc_id = front_matter.get("doc_id", "").strip()
+        parent_plan = front_matter.get("parent_plan", "").strip().replace("\\", "/")
         registry_entry = impl_by_path.get(relative_path)
+
+        if parent_plan:
+            if (
+                parent_plan.startswith("/")
+                or parent_plan.startswith("../")
+                or "/../" in parent_plan
+                or not parent_plan.startswith(f"{PLAN_FILES_ROOT_POSIX}/")
+                or not parent_plan.endswith(".md")
+            ):
+                errors.append(
+                    f"Implementation plan file `{relative_path}` declares unsafe parent_plan `{parent_plan}`; expected a repo-relative path under `{PLAN_FILES_ROOT_POSIX}/`."
+                )
+            elif not (root / parent_plan).exists():
+                errors.append(f"Implementation plan file `{relative_path}` declares missing parent_plan `{parent_plan}`.")
 
         if registry_entry is None:
             message = (

@@ -200,17 +200,29 @@ def cmd_retire(args: argparse.Namespace) -> int:
     entry = load_entry(root, args.entry_id)
     if entry.get("state") != "ready" and not args.force:
         return print_payload(result(False, action="retire", errors=[f"entry {args.entry_id} is not ready"]))
+    if args.retire_mode == "self_retire_lock" and (not args.retire_owner_session_id or not args.retire_lock_nonce):
+        return print_payload(
+            result(
+                False,
+                action="retire",
+                errors=["self_retire_lock retire mode requires --retire-owner-session-id and --retire-lock-nonce"],
+            )
+        )
     evidence = list(entry.get("evidence") or [])
     evidence.extend(normalize_list(args.evidence))
-    entry.update(
-        {
-            "state": "retired",
-            "rollback_ref": args.rollback_ref,
-            "local_main_commit": args.local_main_commit,
-            "retired_at": utc_now(),
-            "evidence": evidence,
-        }
-    )
+    updates = {
+        "state": "retired",
+        "retire_mode": args.retire_mode,
+        "rollback_ref": args.rollback_ref,
+        "local_main_commit": args.local_main_commit,
+        "retired_at": utc_now(),
+        "evidence": evidence,
+    }
+    if args.retire_owner_session_id:
+        updates["retire_owner_session_id"] = args.retire_owner_session_id
+    if args.retire_lock_nonce:
+        updates["retire_lock_nonce"] = args.retire_lock_nonce
+    entry.update(updates)
     path = write_entry(root, entry)
     return print_payload(result(True, action="retire", entry=entry, path=str(path)))
 
@@ -267,6 +279,9 @@ def build_parser() -> argparse.ArgumentParser:
     retire.add_argument("--rollback-ref", required=True)
     retire.add_argument("--local-main-commit", required=True)
     retire.add_argument("--evidence", action="append", default=[])
+    retire.add_argument("--retire-mode", choices=["legacy_leader_serial", "self_retire_lock"], default="legacy_leader_serial")
+    retire.add_argument("--retire-owner-session-id", default=None)
+    retire.add_argument("--retire-lock-nonce", default=None)
     retire.add_argument("--force", action="store_true")
     retire.set_defaults(func=cmd_retire)
 

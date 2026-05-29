@@ -15,11 +15,13 @@ POLICY_ZH = Path("docs_bilingual/governance/openspec_comet_superpowers_workflow_
 PLAN_EXIT_CHECKER = Path("tools/check_plan_exit_execution_governance.py")
 LOCAL_FLOW_CHECKER = Path("tools/check_local_flow_scripted_enforcement.py")
 LOCAL_FLOW_HELPER = Path("tools/complete_local_flow_to_remote_gate.py")
+LOCAL_RETIRE_LOCK = Path("tools/local_main_retire_lock.py")
+LOCAL_RETIRE_LOCK_CHECKER = Path("tools/check_local_main_retire_lock.py")
+SCHEDULER_ROB_PLAN_EN = Path("docs_bilingual/implementation_plans/complete_local_commit_flow_scheduler_reorder_buffer_plan.md")
+SCHEDULER_ROB_PLAN_ZH = Path("docs_bilingual/implementation_plans/complete_local_commit_flow_scheduler_reorder_buffer_plan.zh-CN.md")
 LOCAL_MR_REVIEW = Path("tools/ci/local_mr_review.ps1")
 RUN_GUARD = Path("tools/run_openspec_guard.py")
 CI_MANIFEST = Path("tools/ci/ci_test_manifest.json")
-PARENT_PARALLEL_PLAN_EN = Path("docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md")
-PARENT_PARALLEL_PLAN_ZH = Path("docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md")
 
 REQUIRED_DOC_TERMS = [
     "完整本地提交流程",
@@ -28,6 +30,7 @@ REQUIRED_DOC_TERMS = [
     "远端发布门",
     "tools/check_plan_exit_execution_governance.py",
     "tools/complete_local_flow_to_remote_gate.py",
+    "local-main-retire.lock",
 ]
 REQUIRED_POLICY_EN_TERMS = [
     "Post-Plan Local Governance Package",
@@ -35,6 +38,7 @@ REQUIRED_POLICY_EN_TERMS = [
     "remote publication gate",
     "tools/check_plan_exit_execution_governance.py",
     "tools/complete_local_flow_to_remote_gate.py",
+    "tools/local_main_retire_lock.py",
     "tools/ci/local_mr_review.ps1",
 ]
 REQUIRED_POLICY_ZH_TERMS = [
@@ -43,11 +47,13 @@ REQUIRED_POLICY_ZH_TERMS = [
     "远端发布门",
     "tools/check_plan_exit_execution_governance.py",
     "tools/complete_local_flow_to_remote_gate.py",
+    "tools/local_main_retire_lock.py",
     "tools/ci/local_mr_review.ps1",
 ]
 REQUIRED_TESTS = {
     "check_plan_exit_execution_governance.test.py",
     "check_local_flow_scripted_enforcement.test.py",
+    "check_local_main_retire_lock.test.py",
 }
 REQUIRED_PLAN_EXIT_TERMS = [
     "requires_user_confirmation_before_implementation",
@@ -65,31 +71,24 @@ REQUIRED_LOCAL_FLOW_HELPER_TERMS = [
     "implementation_plan",
     "awaiting_implementation_confirmation",
     "Governance-confirmation stage must be docs-only",
+    "--self-retire",
+    "--acquire-retire-lock",
+    "local_main_retire_lock.py",
+    "self_retire_lock",
 ]
-REQUIRED_PARENT_WORK_CONSERVING_TERMS = [
+REQUIRED_RETIRE_LOCK_TERMS = [
+    "local-main-retire",
+    "owner_session_id",
+    "nonce",
+    "reclaim-stale",
+]
+REQUIRED_PARALLEL_ADMISSION_TERMS = [
     "Work-Conserving",
     "eligible",
     "hotspot lease",
     "resource backpressure",
     "local-main retire",
 ]
-FORBIDDEN_PARENT_FIXED_CAP_TERMS = [
-    "Default maximum parallel sessions per phase",
-    "Burst maximum parallel sessions per phase",
-    "at most six parallel sessions per phase",
-    "up to 2 sessions",
-    "up to 3 sessions",
-    "up to 4 sessions",
-    "up to 6 sessions",
-    "每阶段默认最多",
-    "每阶段突发上限",
-    "最多 2 个 session",
-    "最多 3 个 session",
-    "最多 4 个 session",
-    "最多 6 个 session",
-]
-
-
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["git", "-C", str(root), *args], check=False, capture_output=True, text=True, encoding="utf-8", errors="replace")
 
@@ -106,23 +105,10 @@ def read_text(root: Path, relative: Path, errors: list[str]) -> str:
         return ""
 
 
-def read_optional_text(root: Path, relative: Path, errors: list[str]) -> str | None:
-    path = root / relative
-    if not path.exists():
-        return None
-    return read_text(root, relative, errors)
-
-
 def require_terms(label: str, text: str, terms: list[str], errors: list[str]) -> None:
     for term in terms:
         if term not in text:
             errors.append(f"{label} is missing required term: {term}")
-
-
-def forbid_terms(label: str, text: str, terms: list[str], errors: list[str]) -> None:
-    for term in terms:
-        if term in text:
-            errors.append(f"{label} contains forbidden fixed phase-cap term: {term}")
 
 
 def changed_paths(root: Path, base_ref: str, head_ref: str) -> tuple[list[str], list[str]]:
@@ -153,24 +139,32 @@ def evaluate(root: Path, base_ref: str | None, head_ref: str | None, require_mai
     manifest_text = read_text(root, CI_MANIFEST, errors)
     plan_exit_checker = read_text(root, PLAN_EXIT_CHECKER, errors)
     local_flow_helper = read_text(root, LOCAL_FLOW_HELPER, errors)
-    parent_plan_en = read_optional_text(root, PARENT_PARALLEL_PLAN_EN, errors)
-    parent_plan_zh = read_optional_text(root, PARENT_PARALLEL_PLAN_ZH, errors)
+    retire_lock = read_text(root, LOCAL_RETIRE_LOCK, errors)
+    retire_lock_checker = read_text(root, LOCAL_RETIRE_LOCK_CHECKER, errors)
+    scheduler_plan_en = read_text(root, SCHEDULER_ROB_PLAN_EN, errors)
+    scheduler_plan_zh = read_text(root, SCHEDULER_ROB_PLAN_ZH, errors)
 
     require_terms(COMPLETE_FLOW_DOC.as_posix(), complete_flow, REQUIRED_DOC_TERMS, errors)
+    require_terms(COMPLETE_FLOW_DOC.as_posix(), complete_flow, REQUIRED_PARALLEL_ADMISSION_TERMS, errors)
     require_terms(POLICY_EN.as_posix(), policy_en, REQUIRED_POLICY_EN_TERMS, errors)
     require_terms(POLICY_ZH.as_posix(), policy_zh, REQUIRED_POLICY_ZH_TERMS, errors)
     require_terms(LOCAL_MR_REVIEW.as_posix(), local_mr_review, ["check_plan_exit_execution_governance.py"], errors)
     require_terms(RUN_GUARD.as_posix(), run_guard, ["check_local_flow_scripted_enforcement"], errors)
     require_terms(PLAN_EXIT_CHECKER.as_posix(), plan_exit_checker, REQUIRED_PLAN_EXIT_TERMS, errors)
     require_terms(LOCAL_FLOW_HELPER.as_posix(), local_flow_helper, REQUIRED_LOCAL_FLOW_HELPER_TERMS, errors)
-    for relative, text in (
-        (PARENT_PARALLEL_PLAN_EN, parent_plan_en),
-        (PARENT_PARALLEL_PLAN_ZH, parent_plan_zh),
+    require_terms(LOCAL_RETIRE_LOCK.as_posix(), retire_lock, REQUIRED_RETIRE_LOCK_TERMS, errors)
+    require_terms(LOCAL_RETIRE_LOCK_CHECKER.as_posix(), retire_lock_checker, REQUIRED_RETIRE_LOCK_TERMS, errors)
+    for plan_path, plan_text in (
+        (SCHEDULER_ROB_PLAN_EN, scheduler_plan_en),
+        (SCHEDULER_ROB_PLAN_ZH, scheduler_plan_zh),
     ):
-        if text is None:
-            continue
-        require_terms(relative.as_posix(), text, REQUIRED_PARENT_WORK_CONSERVING_TERMS, errors)
-        forbid_terms(relative.as_posix(), text, FORBIDDEN_PARENT_FIXED_CAP_TERMS, errors)
+        require_terms(plan_path.as_posix(), plan_text, REQUIRED_PARALLEL_ADMISSION_TERMS, errors)
+    info.append(
+        "Parent orchestration plans are optional references and are not a global local-flow gate for unrelated sessions."
+    )
+    info.append(
+        "Local-flow hard gates are enforced on complete-flow policy, scheduler/ROB plan surfaces, helper scripts, lock scripts, and CI registration."
+    )
 
     try:
         manifest = json.loads(manifest_text) if manifest_text else {}
@@ -181,7 +175,7 @@ def evaluate(root: Path, base_ref: str | None, head_ref: str | None, require_mai
     for test_name in sorted(REQUIRED_TESTS - registered_tests):
         errors.append(f"{CI_MANIFEST.as_posix()} is missing required test registration: {test_name}")
 
-    for relative in (PLAN_EXIT_CHECKER, LOCAL_FLOW_CHECKER, LOCAL_FLOW_HELPER):
+    for relative in (PLAN_EXIT_CHECKER, LOCAL_FLOW_CHECKER, LOCAL_FLOW_HELPER, LOCAL_RETIRE_LOCK, LOCAL_RETIRE_LOCK_CHECKER):
         path = root / relative
         if not path.exists():
             errors.append(f"Missing required script/checker: {relative.as_posix()}")

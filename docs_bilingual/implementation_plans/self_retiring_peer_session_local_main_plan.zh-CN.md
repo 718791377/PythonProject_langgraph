@@ -4,7 +4,7 @@ lang: zh-CN
 status: active
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/self_retiring_peer_session_local_main_plan.md
-stage: Stage A recovery governance package
+stage: Stage B runtime/checker recovery
 priority: early-foundation
 confirmation_required: true
 ---
@@ -27,12 +27,12 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage A 恢复治理文档包
-责任会话：`recover-self-retire-runtime-20260529`
-当前门禁：合入本文档更新后停止，等待用户确认再恢复 runtime。
-Runtime 状态：`867f882` 是来源提交；当前本地 `main`=`b4af80f` 缺少 retire lock helper/checker。
-最后更新：2026-05-29
+Status: active
+Stage: Stage B runtime/checker recovery
+Owner session: `recover-self-retire-runtime-stageb-20260529` on branch `recover-self-retire-runtime-stageb-20260529`
+Current gate: validate the restored runtime/checker/test package, commit with a Chinese message, run local MR review and local gate, merge to local `main`, then stop at the remote publication gate.
+Source commit: `867f882`; Stage A was integrated on local `main` at `655882c` before this runtime recovery.
+Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
 ## 语义术语
@@ -67,28 +67,33 @@ Runtime 状态：`867f882` 是来源提交；当前本地 `main`=`b4af80f` 缺�
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [x] 创建 active 英文主版和中文对照版。
+- [x] 创建本 active 英文主版 implementation plan 和中文对照版，确保实现有已确认的治理表面。
 - [x] 在 `docs_bilingual/docs_registry.yaml` 登记本双语 implementation plan。
-- [x] Stage A 恢复：记录 `867f882` 为来源提交，但当前本地 `main` 缺少 runtime 文件。
-- [ ] Stage B 恢复：重新应用 `tools/local_main_retire_lock.py`。
-- [ ] Stage B 恢复：重新应用 `tools/check_local_main_retire_lock.py`。
-- [ ] Stage B 恢复：扩展 `tools/complete_local_flow_to_remote_gate.py` 的 self-retire 参数。
-- [ ] Stage B 恢复：扩展 ROB helper/checker 的 retire metadata。
-- [ ] Stage B 恢复：接入 guard/checker，增加聚焦测试和 CI manifest 登记。
-- [ ] Stage B 恢复：运行门禁，合入本地 `main`，并停在远程发布门。
+- [x] 实现 `tools/local_main_retire_lock.py`，包含 acquire、status、release、nonce、TTL 和 stale reclaim。
+- [x] 实现 `tools/check_local_main_retire_lock.py`，使 stale lock 只警告、无 lock 时通过。
+- [x] 扩展 `tools/complete_local_flow_to_remote_gate.py`，增加对等 session `--self-retire`、`--session-id`、`--rob-entry-id`、`--acquire-retire-lock` 和 `--lock-ttl-minutes` 控制。
+- [x] 扩展 ROB helper/checker，支持 `retire_mode`、`retire_owner_session_id` 和 `retire_lock_nonce`。
+- [x] 将 local-main retire-lock checker 接入 OpenSpec guard 和本地脚本化治理 checker。
+- [x] 增加聚焦测试并登记到本地 CI manifest。
+- [x] 更新治理文档，说明父方案可选，local-main 写入通过锁由对等 session 自退休。
+- [x] 更新 Phase 并行治理，使每个 eligible child plan 都可并行入场，不再使用固定 2/3/4/6 Phase cap。
+- [x] 扩展脚本化检查和测试，使 work-conserving admission 有 checker 支撑。
+- [x] 提交前运行聚焦测试、本地 CI manifest 测试和 OpenSpec guard。
+- [ ] 使用中文提交信息提交，运行提交后的 local MR review 和 local gate，合入本地 `main`，并停在远端发布门。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收清单
 
-- [ ] Stage B 恢复后，peer session 可以获取 local-main retire lock，并拒绝并发竞争者。
-- [ ] Stage B 恢复后，release 必须匹配 nonce，不能释放其他 session 的锁。
-- [ ] Stage B 恢复后，stale reclaim 必须显式授权。
-- [ ] Stage B 恢复后，ROB retired entry 能记录 `retire_mode=self_retire_lock`（表示持锁会话合入自己的分支）和 nonce 证据（一次性锁令牌）。
-- [ ] 文档不再暗示所有本地 `main` 集成都必须由固定 main session 控制。
+- [x] 对等 session 可以获取 local-main retire lock；另一个 session 在锁有效时会被拒绝。
+- [x] 对等 session 不能释放其他 session 的锁，因为 release 必须带匹配 nonce。
+- [x] stale lock reclaim 必须使用显式 operator 控制标志。
+- [x] ROB retired entry 可以记录 `retire_mode=self_retire_lock`，并用 `retire_owner_session_id` 表示 session-owner 证据、用 `retire_lock_nonce` 表示 lock-token 证据。
+- [x] 完整本地流程 helper 可以在本地 `main` 写入前获取锁，在 `finally` 中释放锁，并在成功 merge 后记录 ROB 自退休证据。
+- [x] implementation-plan checker 允许缺省 `parent_plan`，并拒绝不安全或声明但缺失的 `parent_plan` 路径。
+- [x] 文档不再暗示所有本地 `main` 集成都必须由一个固定 main session 控制。
 
 ## 已完成证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-29 Stage A 恢复文档包：当前本地 `main`=`b4af80f` 缺少 self-retire runtime 文件；`867f882` 是恢复来源；Stage B runtime 恢复必须等待用户确认。
-- 2026-05-29 来源分支验证：`decentralize-session-self-retire-20260529` 中的聚焦测试曾通过，但不能视为当前 main 已具备 runtime 的证据。
+- 2026-05-29 对等 session 自退休实现提交前验证：聚焦测试已通过，本地 CI manifest 已通过，local-main retire-lock checker 已通过，commit ROB checker 已通过，implementation-plan checker 已通过，本地脚本化治理 checker 已通过，precommit update/archive checker 已通过，OpenSpec guard 使用 `--skip-validate` 已通过；local MR review 和 local gate 仍是提交后门禁。
 <!-- EVIDENCE_INDEX_END -->
