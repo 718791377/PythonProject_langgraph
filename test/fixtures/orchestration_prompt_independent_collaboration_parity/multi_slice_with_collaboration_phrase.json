@@ -19,6 +19,9 @@
     "experts": "none",
     "durable_workflow": "selected",
     "persistent_team": "selected",
-    "why": "triggered_threshold:frozen_plan_with_2+_independent_slices for execute-parallel."
+    "why": "triggered_threshold:frozen_plan_with_2+_independent_slices for execute-parallel.",
+    "main_session_escalation": "not_needed",
+    "approval_timeout_risk": "none",
+    "approval_receipt": "none"
   }
 }

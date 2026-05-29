@@ -33,6 +33,10 @@ REQUIRED_FIXTURES = {
     "multi_slice_with_collaboration_phrase.json",
     "explicit_omx_without_threshold.json",
     "explicit_langgraph_single_slice.json",
+    "main_session_escalation_pending.json",
+    "main_session_escalation_granted.json",
+    "main_session_escalation_timed_out.json",
+    "main_session_escalation_not_needed.json",
 }
 
 REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
@@ -92,9 +96,15 @@ ROUTE_FIELDS = (
     "experts",
     "durable_workflow",
     "persistent_team",
+    "main_session_escalation",
+    "approval_timeout_risk",
+    "approval_receipt",
     "why",
 )
 LANE_STATES = {"not_needed", "candidate", "selected", "running", "complete", "blocked"}
+MAIN_SESSION_ESCALATION_STATES = {"not_needed", "preflight", "pending_approval", "granted", "timed_out", "blocked"}
+APPROVAL_TIMEOUT_RISKS = {"none", "low", "medium", "high", "expired"}
+NO_APPROVAL_RECEIPT_VALUES = {"", "none", "not_needed", "n/a", "na", "-"}
 FORBIDDEN_MISSING_REMINDERS = (
     "the user did not request parallelism",
     "the user did not request subagents",
@@ -248,6 +258,28 @@ def expected_route(case: dict[str, Any], errors: list[str], label: str) -> dict[
         value = lower(route.get(lane))
         if value and value not in LANE_STATES:
             errors.append(f"{label}.expected.{lane} uses unsupported state `{route[lane]}`.")
+    escalation_state = lower(route.get("main_session_escalation"))
+    if escalation_state and escalation_state not in MAIN_SESSION_ESCALATION_STATES:
+        errors.append(
+            f"{label}.expected.main_session_escalation uses unsupported state `{route.get('main_session_escalation')}`."
+        )
+    timeout_risk = lower(route.get("approval_timeout_risk"))
+    if timeout_risk and timeout_risk not in APPROVAL_TIMEOUT_RISKS:
+        errors.append(f"{label}.expected.approval_timeout_risk uses unsupported risk `{route.get('approval_timeout_risk')}`.")
+    receipt_missing = lower(route.get("approval_receipt")) in NO_APPROVAL_RECEIPT_VALUES
+    if escalation_state == "not_needed":
+        if timeout_risk != "none":
+            errors.append(f"{label}.expected.main_session_escalation=not_needed requires approval_timeout_risk=none.")
+        if not receipt_missing:
+            errors.append(f"{label}.expected.main_session_escalation=not_needed requires approval_receipt=none.")
+    elif escalation_state in {"pending_approval", "granted", "timed_out", "blocked"} and receipt_missing:
+        errors.append(f"{label}.expected.main_session_escalation={escalation_state} requires visible approval_receipt.")
+    if escalation_state == "pending_approval" and timeout_risk in {"none", "expired"}:
+        errors.append(
+            f"{label}.expected.main_session_escalation=pending_approval requires approval_timeout_risk=low, medium, or high."
+        )
+    if timeout_risk == "expired" and escalation_state not in {"timed_out", "blocked"}:
+        errors.append(f"{label}.expected.approval_timeout_risk=expired requires timed_out or blocked escalation state.")
     why = lower(route.get("why"))
     if contains_any(why, FORBIDDEN_MISSING_REMINDERS):
         errors.append(f"{label}.expected.why cites missing user reminders as a routing reason.")
@@ -370,6 +402,66 @@ def validate_langgraph_release_case(case: dict[str, Any], errors: list[str], lab
                 errors.append(f"{label} LangGraph handoff missing field: {key}")
 
 
+def validate_main_session_escalation_case(case: dict[str, Any], errors: list[str], label: str) -> None:
+    state = lower(case.get("main_session_escalation"))
+    if state not in MAIN_SESSION_ESCALATION_STATES:
+        errors.append(f"{label}.main_session_escalation must be one of {sorted(MAIN_SESSION_ESCALATION_STATES)}.")
+
+    pending = case.get("pending_approval")
+    if not isinstance(pending, bool):
+        errors.append(f"{label}.pending_approval must be a boolean.")
+
+    risk = lower(case.get("approval_timeout_risk"))
+    if risk not in APPROVAL_TIMEOUT_RISKS:
+        errors.append(f"{label}.approval_timeout_risk must be one of {sorted(APPROVAL_TIMEOUT_RISKS)}.")
+
+    receipt = lower(case.get("approval_receipt"))
+    receipt_missing = receipt in NO_APPROVAL_RECEIPT_VALUES
+
+    main_session_only = case.get("main_session_only")
+    if state != "not_needed" and main_session_only is not True:
+        errors.append(f"{label}.main_session_only must be true for escalation states that need approval.")
+
+    if state == "not_needed":
+        if pending is not False:
+            errors.append(f"{label}.pending_approval must be false when main_session_escalation=not_needed.")
+        if risk != "none":
+            errors.append(f"{label}.approval_timeout_risk must be none when main_session_escalation=not_needed.")
+        if not receipt_missing:
+            errors.append(f"{label}.approval_receipt must be none when main_session_escalation=not_needed.")
+        return
+
+    if state in {"pending_approval", "granted", "timed_out", "blocked"} and receipt_missing:
+        errors.append(f"{label}.approval_receipt must be visible for main_session_escalation={state}.")
+
+    if state == "pending_approval":
+        if pending is not True:
+            errors.append(f"{label}.pending_approval must be true when main_session_escalation=pending_approval.")
+        if risk in {"none", "expired"}:
+            errors.append(f"{label}.approval_timeout_risk must be low, medium, or high while approval is pending.")
+        liveness = case.get("liveness_summary")
+        if not isinstance(liveness, str) or not liveness.strip():
+            errors.append(f"{label}.liveness_summary must explain the visible main-session approval wait.")
+
+    if state == "granted":
+        if pending is not False:
+            errors.append(f"{label}.pending_approval must be false after approval is granted.")
+        if lower(case.get("granted_by")) != "main_session":
+            errors.append(f"{label}.granted_by must be main_session for granted approval.")
+
+    if state == "timed_out":
+        if risk != "expired":
+            errors.append(f"{label}.approval_timeout_risk must be expired when main_session_escalation=timed_out.")
+        blocked_reason = lower(case.get("blocked_reason"))
+        if not (blocked_reason.startswith("blocked:") or "approval_timeout" in blocked_reason):
+            errors.append(f"{label}.blocked_reason must name blocked:approval_timeout or equivalent timeout blocker.")
+
+    if state == "blocked":
+        blocked_reason = lower(case.get("blocked_reason"))
+        if not (blocked_reason.startswith("blocked:") or blocked_reason.startswith("threshold_not_met:")):
+            errors.append(f"{label}.blocked_reason must use blocked:* or threshold_not_met:* when escalation is blocked.")
+
+
 def validate_expert_lifecycle_case(case: dict[str, Any], errors: list[str], label: str) -> None:
     events = case.get("events")
     if not isinstance(events, list) or not events:
@@ -421,6 +513,7 @@ CASE_VALIDATORS = {
     "cold_start_read_order": validate_cold_start_case,
     "durable_persistent_claim": validate_durable_claim_case,
     "langgraph_state_release": validate_langgraph_release_case,
+    "main_session_escalation_visibility": validate_main_session_escalation_case,
     "expert_lifecycle_audit": validate_expert_lifecycle_case,
 }
 
@@ -476,7 +569,18 @@ def run_fixture_check(root: Path, fixture_dir: Path | None = None) -> dict[str, 
         baseline = {
             key: value
             for key, value in entries[0][1].items()
-            if key in {"phase", "backend_default", "backend_ready", "experts", "durable_workflow", "persistent_team", "why"}
+            if key in {
+                "phase",
+                "backend_default",
+                "backend_ready",
+                "experts",
+                "durable_workflow",
+                "persistent_team",
+                "main_session_escalation",
+                "approval_timeout_risk",
+                "approval_receipt",
+                "why",
+            }
         }
         for _, route, name in entries[1:]:
             current = {key: value for key, value in route.items() if key in baseline}

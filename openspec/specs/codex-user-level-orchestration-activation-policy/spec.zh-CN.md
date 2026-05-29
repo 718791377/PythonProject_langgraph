@@ -93,6 +93,42 @@ Prompt-independent collaboration parity 必须由 checker 背书。仓库必须�
 - **THEN** durable/persistent team claims 缺少 required selector、manifest 或 thread-state、heartbeat、close 与 leader absorption evidence 时必须失败
 - **AND** completed LangGraph tasks 若 state 仍为 `running` 且没有 release fields，则必须失败
 
+
+
+### Requirement: Main-session escalation visibility SHALL be explicit / Main-session escalation visibility 必须显式可见
+
+Orchestration activation policy 必须要求：在 OMX、LangGraph、durable-worker 或 shell workflow 等待主会话审批前，trace 与 saved evidence 必须显式记录 main-session escalation fields，以便 operator 能看见 main Codex CLI session 正在处理、已批准、已超时或已阻塞的 approval request。
+
+Trace 与 saved evidence 必须包含：
+
+- `main_session_escalation`：main Codex CLI session 的 approval lifecycle state，取值为 `not_needed`、`preflight`、`pending_approval`、`granted`、`timed_out` 或 `blocked`
+- `approval_timeout_risk`：pending 或 expired approval wait 的当前风险带，取值为 `none`、`low`、`medium`、`high` 或 `expired`
+- `approval_receipt`：approval request 的 repo-local proof 或 artifact reference；无需 approval 时为 `none`，否则为 repo-local receipt、interrupt、checkpoint 或 pending-approval artifact reference
+
+Worker contexts 必须收到相同的 approval receipt 或 blocked state；approval waits 不得只停留在 worker 私有上下文中，也不得绕开 main session 的可见审批边界。
+
+#### Scenario: Pending approval is visible before a durable wait / pending approval 在 durable wait 前可见
+
+- **WHEN** LangGraph、OMX、durable-worker 或 shell flow 需要 main-session approval
+- **THEN** saved evidence 必须记录 `main_session_escalation=pending_approval`
+- **AND** 必须记录非 `none` 的 `approval_timeout_risk`
+- **AND** 必须记录可追踪的 `approval_receipt`
+- **AND** 必须说明 approval decision 由 main session 持有，而不是由 worker 私下持有
+
+#### Scenario: Approval wait times out / approval wait 超时
+
+- **WHEN** pending main-session approval 超过允许等待窗口
+- **THEN** saved evidence 必须记录 `main_session_escalation=timed_out` 或 `main_session_escalation=blocked`
+- **AND** 对应 approval 必须记录 `approval_timeout_risk=expired`
+- **AND** 必须记录 named blocker，例如 `blocked:approval_timeout`
+
+#### Scenario: No approval is required / 不需要 approval
+
+- **WHEN** 当前任务不需要 privileged shell、durable workflow 或 worker approval
+- **THEN** trace 必须记录 `main_session_escalation=not_needed`
+- **AND** 必须记录 `approval_timeout_risk=none`
+- **AND** 必须记录 `approval_receipt=none`
+
 ### Requirement: Missing user reminders SHALL NOT be a routing reason / 缺少用户提醒不得作为路由理由
 
 Orchestration activation policy 必须禁止使用 "the user did not request parallelism"、"the user did not request subagents" 或等价 missing-reminder language 作为不使用 experts、durable workflow 或 persistent team 的原因。

@@ -64,8 +64,13 @@ backend_ready=<true|false>
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
 durable_workflow=<not_needed|candidate|selected|blocked|running>
 persistent_team=<not_needed|candidate|selected|blocked|running>
+main_session_escalation=<not_needed|preflight|pending_approval|granted|timed_out|blocked>
+approval_timeout_risk=<none|low|medium|high|expired>
+approval_receipt=<none|receipt id or repo-local artifact path>
 why=<concrete reason>
 ```
+
+Main-session escalation visibility 必须显式可见：在任何 OMX、LangGraph、durable-worker 或 shell flow 等待主会话审批前，trace 必须暴露 `main_session_escalation`、`approval_timeout_risk` 和 `approval_receipt`。`main_session_escalation` 的状态为 `not_needed`、`preflight`、`pending_approval`、`granted`、`timed_out` 或 `blocked`；`approval_timeout_risk` 的状态为 `none`、`low`、`medium`、`high` 或 `expired`；`approval_receipt` 在无需审批时为 `none`，否则必须指向 repo-local receipt、interrupt、checkpoint 或 pending-approval artifact path。Worker context 必须收到同一个 receipt 或 blocked state，不得把 approval wait 隐藏在 main session 之外。
 
 不得使用“用户没有要求并行”或“用户没有要求子代理”等 missing-reminder reasons。必须用任务阶段、范围、阈值、blocker 或 main-session takeover 作为原因。
 

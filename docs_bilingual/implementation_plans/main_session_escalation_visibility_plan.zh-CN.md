@@ -35,11 +35,11 @@ Make main-session permission escalation, pending approval, and timeout risk visi
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
+状态：implementation-ready-for-local-commit
+阶段：Stage C 子方案实施
+责任会话：main-session-escalation-visibility-20260528
+当前门禁：完成最终 guard 后提交本地 feature 分支；本步骤不授权本地 main 集成或远端发布
+Stage C 进入条件：当前用户消息已要求继续实施本子方案
 最后更新：2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -67,11 +67,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Define required fields for pending approval, approval timeout risk, and main-session-only escalation.
-- [ ] Add evidence fixtures for pending, granted, timed-out, and not-needed escalation states.
-- [ ] Update checker logic to reject invisible escalation waits.
-- [ ] Run routing evidence checks and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Define required fields for pending approval, approval timeout risk, and main-session-only escalation.
+- [x] Add evidence fixtures for pending, granted, timed-out, and not-needed escalation states.
+- [x] Update checker logic to reject invisible escalation waits.
+- [x] Run routing evidence checks and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,4 +96,5 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-28 Stage C 实施：新增 trace/evidenceguard 字段 `main_session_escalation`、`approval_timeout_risk`、`approval_receipt`；新增 pending / granted / timed-out / not-needed fixtures；同步更新治理文档、OpenSpec 表面、checker snippets 和 CI manifest。验证证据记录在分支 `implement-main-session-escalation-visibility-20260528` 的最终 assistant 回复中。
 <!-- EVIDENCE_INDEX_END -->

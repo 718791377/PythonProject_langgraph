@@ -19,6 +19,9 @@
     "experts": "none",
     "durable_workflow": "blocked",
     "persistent_team": "not_needed",
-    "why": "threshold_not_met:single_execution_slice for explicit LangGraph directive."
+    "why": "threshold_not_met:single_execution_slice for explicit LangGraph directive.",
+    "main_session_escalation": "not_needed",
+    "approval_timeout_risk": "none",
+    "approval_receipt": "none"
   }
 }

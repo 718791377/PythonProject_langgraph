@@ -35,11 +35,11 @@ Make main-session permission escalation, pending approval, and timeout risk visi
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
+Status: implementation-ready-for-local-commit
+Stage: Stage C child-plan implementation
+Owner session: main-session-escalation-visibility-20260528
+Current gate: local feature commit after final guards; local main integration and remote publication are not authorized in this step
+Stage C entry condition: satisfied by current user request to continue this confirmed child plan
 Last updated: 2026-05-28
 <!-- CURRENT_STATUS_END -->
 
@@ -67,11 +67,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Define required fields for pending approval, approval timeout risk, and main-session-only escalation.
-- [ ] Add evidence fixtures for pending, granted, timed-out, and not-needed escalation states.
-- [ ] Update checker logic to reject invisible escalation waits.
-- [ ] Run routing evidence checks and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Define required fields for pending approval, approval timeout risk, and main-session-only escalation.
+- [x] Add evidence fixtures for pending, granted, timed-out, and not-needed escalation states.
+- [x] Update checker logic to reject invisible escalation waits.
+- [x] Run routing evidence checks and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -96,4 +96,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-28 Stage C implementation: added trace/evidenceguard fields `main_session_escalation`, `approval_timeout_risk`, and `approval_receipt`; added pending/granted/timed-out/not-needed fixtures; updated governance/OpenSpec surfaces, checker snippets, and CI manifest. Validation evidence is recorded in the final assistant response for branch `implement-main-session-escalation-visibility-20260528`.
 <!-- EVIDENCE_INDEX_END -->

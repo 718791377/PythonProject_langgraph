@@ -19,6 +19,9 @@
     "experts": "none",
     "durable_workflow": "blocked",
     "persistent_team": "blocked",
-    "why": "threshold_not_met:no_frozen_plan and threshold_not_met:single_execution_slice for explicit omx directive."
+    "why": "threshold_not_met:no_frozen_plan and threshold_not_met:single_execution_slice for explicit omx directive.",
+    "main_session_escalation": "not_needed",
+    "approval_timeout_risk": "none",
+    "approval_receipt": "none"
   }
 }

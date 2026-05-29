@@ -27,6 +27,9 @@ backend_ready=true
 experts=none
 durable_workflow=not_needed
 persistent_team=not_needed
+main_session_escalation=not_needed
+approval_timeout_risk=none
+approval_receipt=none
 why=single validated checker slice; threshold_not_met:single_execution_slice.
 """
 
@@ -38,6 +41,9 @@ backend_ready=true
 experts=verifier
 durable_workflow=selected
 persistent_team=running
+main_session_escalation=not_needed
+approval_timeout_risk=none
+approval_receipt=none
 why=triggered_threshold:frozen_plan_with_2+_independent_slices for execute-parallel.
 """
 
