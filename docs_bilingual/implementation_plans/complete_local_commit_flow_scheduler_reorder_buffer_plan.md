@@ -41,10 +41,10 @@ Make multi-session local commit flow safe by allowing sessions to execute in iso
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B Batch 1 supplemental documentation-governance package
+Stage: Stage C runtime/checker implementation complete; local validation passed; commit and local-main integration pending
 Owner session: main Codex leader session
-Current gate: create and locally integrate the documentation-governance package, then stop before runtime/checker implementation
-Implementation entry condition: user confirms this child implementation plan after local main integration
+Current gate: run focused tests, local gate, and local MR review before local-main integration
+Implementation entry condition: user confirmed continued implementation of this child plan on 2026-05-29
 Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
@@ -97,12 +97,12 @@ This child plan adapts scheduler and CPU commit principles into repository gover
 - [x] Update the parent orchestration plan pair with the Phase 1A child plan and Batch 1 supplemental status.
 - [x] Register this bilingual child plan pair in `docs_bilingual/docs_registry.yaml`.
 - [x] Link portable no-backend session and worktree receipt lifecycle plans as downstream consumers.
-- [ ] Confirm this child plan after local main integration before runtime/checker implementation.
-- [ ] Define the ROB entry schema and non-Git runtime state directory, defaulting to `.omx/commit-rob/`.
-- [ ] Implement `tools/commit_reorder_buffer.py` commands: `predict`, `enqueue`, `status`, `retire`, and `flush`.
-- [ ] Implement `tools/check_commit_reorder_buffer.py` for claim uniqueness, hotspot fences, ready entry validation, and retired evidence.
-- [ ] Add focused tests for disjoint ready entries, hotspot conflicts, branch-prediction failures, gate failures, and backpressure.
-- [ ] Wire the checker into local gate or local MR review after the runtime helper is implemented.
+- [x] Confirm this child plan after local main integration before runtime/checker implementation.
+- [x] Define the ROB entry schema and non-Git runtime state directory, defaulting to `.omx/commit-rob/`.
+- [x] Implement `tools/commit_reorder_buffer.py` commands: `predict`, `enqueue`, `status`, `retire`, and `flush`.
+- [x] Implement `tools/check_commit_reorder_buffer.py` for claim uniqueness, hotspot fences, ready entry validation, and retired evidence.
+- [x] Add focused tests for disjoint ready entries, hotspot conflicts, branch-prediction failures, gate failures, and backpressure.
+- [x] Wire the checker into local gate or local MR review after the runtime helper is implemented.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -128,5 +128,6 @@ If available in the active branch, also run the shared local gate and local MR r
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 runtime/checker implementation: added `tools/commit_reorder_buffer.py`, `tools/check_commit_reorder_buffer.py`, focused tests, local gate manifest registration, and OpenSpec guard wiring; focused tests, Python manifest, precommit/update-archive, OpenSpec guard JSON, and local gate passed; local-main integration evidence pending after commit.
 - 2026-05-29 documentation-governance package: created this active Phase 1A child plan and updated complete-flow/parent/consumer plan references; local-main integration pending.
 <!-- EVIDENCE_INDEX_END -->

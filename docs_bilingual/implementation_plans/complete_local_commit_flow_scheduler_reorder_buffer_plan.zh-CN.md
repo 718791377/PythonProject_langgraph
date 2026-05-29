@@ -41,10 +41,10 @@ confirmation_required: true
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B Batch 1 补充文档治理包
+阶段：Stage C runtime/checker 实现已完成，等待本地验证与合入
 责任会话：main Codex leader session
-当前门禁：创建并本地合入文档治理包，然后在 runtime/checker 实现前停止
-实现进入条件：本地 main 合入后，用户确认本子 implementation plan
+当前门禁：运行聚焦测试、local gate 和 local MR review 后合入本地 main
+实现进入条件：已由用户在 2026-05-29 确认继续实施本子 implementation plan
 最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
 
@@ -97,12 +97,12 @@ confirmation_required: true
 - [x] 更新父级编排方案中英文对，加入 Phase 1A 子方案和 Batch 1 补充状态。
 - [x] 在 `docs_bilingual/docs_registry.yaml` 登记本双语子方案。
 - [x] 把 portable no-backend session 和 worktree receipt lifecycle 方案标为下游消费者。
-- [ ] 本地 main 合入后先确认本子方案，再进入 runtime/checker 实现。
-- [ ] 定义 ROB entry schema 和非 Git 运行态目录，默认 `.omx/commit-rob/`。
-- [ ] 实现 `tools/commit_reorder_buffer.py` 命令：`predict`、`enqueue`、`status`、`retire`、`flush`。
-- [ ] 实现 `tools/check_commit_reorder_buffer.py`，检查 claim 唯一性、热点 fence、ready entry 可 retire 和 retired evidence。
-- [ ] 增加聚焦测试：互不重叠 ready entry、热点冲突、分支预测失败、gate 失败和 backpressure。
-- [ ] runtime helper 实现后，把 checker 接入 local gate 或 local MR review。
+- [x] 本地 main 合入后先确认本子方案，再进入 runtime/checker 实现。
+- [x] 定义 ROB entry schema 和非 Git 运行态目录，默认 `.omx/commit-rob/`。
+- [x] 实现 `tools/commit_reorder_buffer.py` 命令：`predict`、`enqueue`、`status`、`retire`、`flush`。
+- [x] 实现 `tools/check_commit_reorder_buffer.py`，检查 claim 唯一性、热点 fence、ready entry 可 retire 和 retired evidence。
+- [x] 增加聚焦测试：互不重叠 ready entry、热点冲突、分支预测失败、gate 失败和 backpressure。
+- [x] runtime helper 实现后，把 checker 接入 local gate 或 local MR review。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -128,5 +128,6 @@ python tools/check_local_flow_scripted_enforcement.py --root . --json
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 runtime/checker 实现：新增 `tools/commit_reorder_buffer.py`、`tools/check_commit_reorder_buffer.py`、聚焦测试、local gate manifest 登记和 OpenSpec guard 接线；本地 main 合入证据待提交后补充。
 - 2026-05-29 文档治理包：创建 active Phase 1A 子方案，并更新 complete-flow、父方案和消费者方案引用；本地 main 合入待完成。
 <!-- EVIDENCE_INDEX_END -->

@@ -63,6 +63,7 @@ GUARD_STEPS = [
     ("check_worktree_task_receipt", "check_worktree_task_receipt.py", "worktree_task_receipt"),
     ("check_session_ownership_claims", "check_session_ownership_claims.py", "session_ownership_claims"),
     ("check_implementation_plan_claim_lock", "check_implementation_plan_claim_lock.py", "implementation_plan_claim_lock"),
+    ("check_commit_reorder_buffer", "check_commit_reorder_buffer.py", "commit_reorder_buffer"),
     ("check_orchestration_activation_policy", "check_orchestration_activation_policy.py", "orchestration_activation_policy"),
     ("check_codex_skills_governance", "check_codex_skills_governance.py", "codex_skills_governance"),
     ("check_custom_agent_toml_schema", "check_custom_agent_toml_schema.py", "custom_agent_toml_schema"),

@@ -9,6 +9,7 @@
     "cleanup_integrated_worktree.test.py",
     "check_worktree_task_receipt.test.py",
     "check_implementation_plan_claim_lock.test.py",
+    "check_commit_reorder_buffer.test.py",
     "check_skills_audit_output_retention.test.py",
     "run_openspec_guard_json.test.py",
     "check_local_mirrored_ci_gate.test.py",
