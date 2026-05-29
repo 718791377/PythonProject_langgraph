@@ -10,27 +10,30 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 
 ## 目的
 
-创建父级编排方案，用于把六份既有 implementation_plan 重构为更小、可认领、可并行的工作包。
+创建本方案族的父级编排方案，用于把本文件覆盖的既有 implementation_plan 重构为更小、可认领、可并行的工作包。本文件不是 `docs_bilingual/implementation_plans/` 目录下所有方案的全局父方案。
 目标执行模型如下：
 
-- 一个父方案负责阶段顺序、依赖、集成门禁和 session 上限；
-- 每个子 `implementation_plan` 负责一个可执行切片；
-- 同一个子 `implementation_plan` 同一时间只能有一个 active session claim；
-- 不同子方案在写入范围不冲突或已明确串行化时可以并行；
-- 本地 `main` 集成始终串行，并由主会话负责。
+- 本父方案只负责其方案族内部的阶段顺序、依赖、集成门禁和 session 上限；
+- 每个相关子 `implementation_plan` 负责一个可执行切片；
+- 同一个 `implementation_plan` 同一时间只能有一个 active session claim；
+- 不同方案在写入范围不冲突或已明确串行化时可以并行，即使它们不属于同一个父方案；
+- 本地 `main` 写入始终串行；后续目标是由拿到 `local-main-retire` lock 的 session 合入自己的 ready branch，而不是固定主会话总控。
 
 ## 范围决策
 
 - 层级：项目级治理，适用于 `D:/PythonProject_langgraph`。
 - 复用形态：通用、可迁移的模式，后续可复制到其他仓库；但 Stage A 不修改用户级全局配置。
 - 当前阶段：Stage A，只创建父级文档包。
-- Stage B 类型：用户确认本父方案后，创建子 implementation_plan。
-- Stage C 及以后：通过子方案实施 plan lock、routing、durable-state、context-retention、Comet runtime 和 Spec Kit 边界工作。
+- Stage B 类型：用户确认本父方案后，创建本方案族子 implementation_plan。
+- Stage C 及以后：通过本方案族子方案实施 plan lock、routing、durable-state、context-retention、Comet runtime 和 Spec Kit 边界工作。
+- 父子范围：本父方案只协调 front matter 中 `parent_plan` 指向本文件，或正文明确列为本方案族来源、拆分对象、集成对象的 implementation_plan。
+- 无关方案：其他 implementation_plan 不因位于 `docs_bilingual/implementation_plans/` 目录下而自动成为本父方案的子方案；它们可以无父方案，也可以属于其他父方案。
+- 新会话读取：新 session 不默认读取本文件；只有处理本文件、其子方案、任务清单、证据索引或本文件 Phase / Batch 中列出的相关方案时才需要读取。
 - 远端发布：不在范围内，除非用户明确要求远端发布。
 
 ## 覆盖的来源方案
 
-本父方案协调以下既有方案，但不替代它们的详细内容：
+本父方案协调以下本方案族内既有方案，但不替代它们的详细内容；未列入且未声明 `parent_plan` 指向本文件的方案不受本父方案约束：
 
 1. automatic_orchestration_routing_enforcement_plan - 定义自动协同路由、activation trace、expert 生命周期证据和 durable-team 阈值。
 2. codex_user_level_context_retention_canary_plan - 保护冷启动上下文保留、canary 字面量位置、乱码检测和 replay 过滤。
@@ -48,15 +51,17 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 - 不安装 GitHub Spec Kit，也不运行 `specify init`。
 - 不为本文档包启动 OMX、LangGraph 或持久化团队。
 - 不允许多个 session 同时写同一个子 implementation_plan。
+- 不把本文件作为所有新 session 的冷启动必读文件。
+- 不把本文件作为无关 implementation_plan 的全局父方案或运行时控制面。
 - 除非用户明确要求远端发布，否则不推送 GitLab 或 GitHub。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Phase 1 已实现、已合入本地 main、已验证；远端发布已获授权
-责任会话：main Codex leader session
-当前门禁：本 Phase 1 收口提交合入本地 main 后，将当前本地 main 包发布到 GitLab 和 GitHub
+阶段：Phase 1 已发布；本次 Stage B 父方案范围修订正在本地集成
+责任边界：本文件只治理本方案族；后续同机多 session 目标是不以固定主会话控制其他 session
+当前门禁：将本次父方案范围与 self-retire 治理文档更新合入本地 main；远端发布仍需用户明确请求
 Phase 1 收口：complete-flow ROB、正式方案确认门禁、portable claim lock、registry active-state validation 与主会话提权可见性均已进入本地 main
 最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
@@ -65,7 +70,7 @@ Phase 1 收口：complete-flow ROB、正式方案确认门禁、portable claim l
 
 ### 层级架构图
 
-本方案采用二层级 implementation-plan 结构。所有 front matter 中 `parent_plan` 指向本父方案的 implementation plans 都是同级子方案；`parent_parallel_orchestration_index_plan` 是索引维护子方案，不是二级父方案。
+本方案采用本方案族内部的二层级 implementation-plan 结构。只有 front matter 中 `parent_plan` 指向本父方案，或正文明确列入本方案族的 implementation plans，才是本父方案的同级子方案；`parent_parallel_orchestration_index_plan` 是索引维护子方案，不是二级父方案。无关 implementation_plan 可以没有父方案，也可以属于其他父方案。
 
 ```text
 一级：父方案 / 总地图
@@ -80,25 +85,142 @@ Phase 1 收口：complete-flow ROB、正式方案确认门禁、portable claim l
    └─ Phase 7 / Batch 5 子方案：parallel_plan_openspec_comet_archive_plan.zh-CN.md
 ```
 
-`Phase`、`Stage`、`Batch` 用于表示工作主题、生命周期状态和创建/集成批次，不是文档树层级。父子关系以 front matter 为准，尤其是 `parent_plan` 字段。
+本层级图只适用于本方案族，不代表 `docs_bilingual/implementation_plans/` 目录下所有 implementation_plan 的全局层级。
+
+`Phase`、`Stage`、`Batch` 用于表示本方案族内部的工作主题、生命周期状态和创建/集成批次，不是全目录文档树层级。`parent_plan` 是可选关系，不是目录强制字段；如果某方案声明 `parent_plan` 指向本文件，则它受本文件的 Phase / Batch / 并行度 / 热点文件规则约束；如果某方案没有 `parent_plan`，或 `parent_plan` 指向其他文件，则不受本文件父子结构约束。
 
 ### Session 与 Claim 规则
 
-- 每个子 implementation_plan 是最小认领单元。
-- session claim 必须在写入开始前声明子 implementation_plan 路径。
-- 同一个子 implementation_plan 同一时间只能有一个 active claim。
-- 多个 session 只有在认领不同子方案时才允许并行。
-- `docs_bilingual/docs_registry.yaml`、CI manifest、共享 checker、`comet-state.sh` 和 `comet-guard.sh` 等热点文件必须在每个批次中有明确 owner。
-- 主 Codex leader 会话负责 fan-in、验证、本地 `main` 集成和发布建议。
-- 即使实施 session 并行，本地 `main` 集成也保持串行。
+- 每个 implementation_plan 是最小认领单元；本方案族子方案遵循本文件的阶段和批次规则，无关方案只遵循自己的方案或全局 checker。
+- session claim 必须在写入开始前声明 implementation_plan 路径。
+- 同一个 implementation_plan 同一时间只能有一个 active claim。
+- 多个 session 只要认领不同 implementation_plan，且写入范围不冲突或已明确串行化，就可以并行；这些方案不必属于同一个父方案。
+- `docs_bilingual/docs_registry.yaml`、CI manifest、共享 checker、`comet-state.sh`、`comet-guard.sh` 和父方案文件等热点文件必须有明确 owner。
+- 每个 session 自己负责自己认领的 implementation_plan、worktree、branch、claim、receipt、ROB entry、本地提交和本地 `main` 合入。
+- 本父方案不代表某个主 session 对其他 session 的运行时控制权。
+- 本地 `main` 写入必须串行；后续目标是通过 `local-main-retire` lock 保护每次合入，拿到锁的 session 只合入自己已 ready 的候选包。
 
 ### 默认并行度
 
 - 每阶段默认最多 4 个并行 session。
 - 每阶段突发上限最多 6 个并行 session。
 - 当写入范围重叠时，阶段必须降低并行度。
-- Phase 1A 增加提交重排序缓冲规则：session 可以乱序完成，但 local `main` retire 必须由 leader 串行执行。
+- Phase 1A 已增加提交重排序缓冲规则：session 可以乱序完成；后续目标是把 local `main` retire 从固定 leader 串行执行改为 `local-main-retire` lock 保护的 session-owned self-retire。
 - 如果子方案存在未关闭 claim、脏 worktree、失败本地门禁、未退休 ROB entry 或未合入的本地 main 集成，不得进入下一阶段。
+
+### 同机 Peer Session 自主合入本地 main 目标模型
+
+本小节记录同机多 session 治理目标。它是后续子方案、checker 和 helper 的治理契约；本次 Stage B 文档更新不直接实现 runtime 脚本。
+
+#### 摘要
+
+- 将固定“main Codex leader 控制所有 retire”的模型，改为同机 peer session 自主执行 + 本地 `main` 写入串行保护。
+- 每个 session 自己负责自己的 implementation plan、worktree、feature branch、claim、task receipt、ROB entry、本地提交、本地门禁和本地 `main` 合入尝试。
+- `parent_plan` 是可选元数据。只有声明时才校验；没有该字段的方案可以是独立方案，也可以属于其他父方案。
+- 新 session 读取自己的目标 implementation plan、必要 registry/checker 状态、claim 状态、receipt 状态和 ROB 状态；除非处理本文件或本文件治理的方案，否则不读取本父方案。
+- 范围只覆盖同一台电脑、同一仓库、多 worktree/session；跨电脑远端锁不在范围内。
+- 远端发布仍不自动执行，仍需用户明确请求。
+
+#### 治理语义调整
+
+- 任意 session 拿到 local-main retire lock 后，都可以临时成为本次 retire owner。
+- retire owner 只合入自己的 ready branch，不替其他 session retire。
+- 合入成功或失败后，retire owner 必须释放锁，或记录明确的 failed/stale 状态。
+- 父方案文件是热点文件。session 修改父方案时，必须明确认领该父方案写入面。
+- 普通 session 处理无关 implementation_plan 时，不需要读取或修改某个父方案。
+
+#### 本地 main retire 锁契约
+
+- 锁文件：`.omx/locks/local-main-retire.lock`
+- 计划 helper：`tools/local_main_retire_lock.py`
+- 计划命令：
+
+```text
+python tools/local_main_retire_lock.py acquire --root . --session-id <id> --branch <branch> --worktree <path> --entry-id <rob-entry> --ttl-minutes 120 --json
+python tools/local_main_retire_lock.py release --root . --nonce <nonce> --json
+python tools/local_main_retire_lock.py status --root . --json
+```
+
+锁结构目标：
+
+```json
+{
+  "schema_version": 1,
+  "lock_name": "local-main-retire",
+  "owner_session_id": "session-a",
+  "branch": "implement-x-session-a",
+  "worktree": ".worktrees/implement-x-session-a",
+  "entry_id": "rob-entry-id",
+  "created_at": "...",
+  "expires_at": "...",
+  "nonce": "...",
+  "status": "active"
+}
+```
+
+行为要求：
+
+- 获取锁必须使用原子创建；存在未过期 active 锁时 fail closed。
+- stale 锁默认不自动抢占；必须显式使用 `--reclaim-stale`，先归档旧锁再获取新锁。
+- 释放锁必须匹配锁内 `nonce`，避免一个 session 误删另一个 session 的锁。
+- 锁文件属于 runtime state，不进入 Git 提交。
+
+#### 自主 retire 本地流程目标
+
+后续 helper 扩展目标是 `tools/complete_local_flow_to_remote_gate.py`，计划参数包括：
+
+- `--self-retire` - 启用 session 自主合入本地 main 的 retire 模式。
+- `--session-id <id>` - 记录本次 retire 尝试归属的 peer session。
+- `--rob-entry-id <entry-id>` - 关联对应的提交重排序缓冲 entry。
+- `--acquire-retire-lock` - 要求 helper 在合入前先获取 local-main retire lock。
+- `--lock-ttl-minutes 120` - 设置锁过期窗口，用于 stale lock 报告。
+
+固定执行顺序：
+
+1. 确认当前 worktree 是 feature branch，不是 `main`。
+2. 确认 feature worktree clean。
+3. 运行 feature local gate。
+4. 运行 local MR review。
+5. 获取 `local-main-retire.lock`。
+6. 拿到锁后重新确认 primary root clean 且位于本地 `main`。
+7. fetch 并确认本地 `main` 不落后 `gitlab/main`。
+8. 运行 claim / receipt / ROB checker。
+9. 创建 rollback backup ref。
+10. 执行 `git merge --ff-only <feature-branch>`。
+11. 运行 post-merge local gate。
+12. 将 ROB entry 更新为 `retired`，记录 lock nonce、rollback ref、local main commit 和 evidence。
+13. 释放 retire lock。
+14. 停在远端发布门。
+
+#### Checker 与 Gate 目标
+
+- `check_implementation_plan_claim_lock.py`：保留同一方案单 active claim 规则；不要求必须存在 `parent_plan`。
+- `check_worktree_task_receipt.py`：receipt 记录 session 自己负责的 plan、branch、worktree 和 lifecycle；不要求父方案。
+- `check_commit_reorder_buffer.py`：新增 ROB 字段 `retire_mode`，用于说明本地 main retire 由谁负责；`legacy_leader_serial` 表示旧的固定 leader 串行合入路径，`self_retire_lock` 表示拿到 retire lock 的 peer session 合入自己的 branch。当 `self_retire_lock` entry 为 retired 时，要求 `retire_owner_session_id`、`retire_lock_nonce`、`rollback_ref`、`local_main_commit` 与非空 evidence。
+- 新增 `check_local_main_retire_lock.py`：校验锁 JSON schema、active lock 唯一性和 stale lock 报告。
+- 只有对应 runtime helper 存在后，才把新 checker 接入 OpenSpec guard 与 local gate。
+
+#### 后续实现验证目标
+
+- 两个 session 同时获取 `local-main-retire.lock`：第一个成功，第二个 fail closed。
+- 使用错误 nonce release：不得释放锁。
+- stale 锁默认不能抢占；使用 `--reclaim-stale` 后归档 stale 锁并获取新锁。
+- 没有 `parent_plan` 的 implementation plan：通过校验。
+- 声明了 `parent_plan` 但路径不存在：checker 失败。
+- 两个 active claim 指向同一个 implementation plan：checker 失败。
+- 两个 active claim 指向不同 implementation plan：checker 通过。
+- `self_retire_lock` 模式的 retired ROB entry 缺少 lock nonce：checker 失败。
+- `complete_local_flow_to_remote_gate.py --self-retire --execute` 在合入前获取锁、合入后释放锁。
+- 合入失败时必须释放锁或记录明确 failed/stale 状态，不能静默遗留 active lock。
+- local-main 合入流程不得 push GitLab、不得创建 MR、不得同步 GitHub。
+
+#### 假设
+
+- 本阶段只支持同机多 session / 多 worktree 协调。
+- 每个 session 只 retire 自己的 feature branch。
+- 去掉固定主会话总控，不等于去掉本地 `main` 写入串行保护。
+- 远端发布仍是用户明确授权步骤。
+
 
 ## 阶段与子方案拆分
 
@@ -121,7 +243,7 @@ Phase 1 收口：complete-flow ROB、正式方案确认门禁、portable claim l
 
 候选子方案：
 
-1. `complete_local_commit_flow_scheduler_reorder_buffer_plan` - Phase 1A 早期安全底座，定义 ROB 风格多 session 执行、热点 fence、ready queue 和 local main 串行 retire。
+1. `complete_local_commit_flow_scheduler_reorder_buffer_plan` - Phase 1A 早期安全底座，定义 ROB 风格多 session 执行、热点 fence、ready queue 和 local main 串行 retire；后续消费者将把 retire 从固定 leader 模型推进到 `local-main-retire` lock 保护的 session self-retire。
 2. `formal_plan_confirmation_gate_runtime_plan` - 强制“仅对话确认 plan 不足以进入实现”。
 3. `portable_implementation_plan_claim_lock_plan` - 实现不依赖 OMX 或 LangGraph 的子方案单 active session 锁。
 4. `implementation_plan_registry_active_state_plan` - 强制 active 状态、双语配对和 docs registry 一致。
@@ -159,7 +281,7 @@ Phase 1 收口：complete-flow ROB、正式方案确认门禁、portable claim l
 
 ### Phase 4：自动路由与中文可视化
 
-目的：让协同路由自动、可审计，并在对话中面向中文展示。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由 Codex leader 负责的最终 verification evidence。
+目的：让协同路由自动、可审计，并在对话中面向中文展示。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由当前 owner session 负责的最终 verification evidence。
 
 候选子方案：
 
@@ -247,7 +369,11 @@ Phase 1 收口：complete-flow ROB、正式方案确认门禁、portable claim l
 - [x] Stage B 父方案修订：加入二层级架构图，并吸收 Pi family / oh-my-pi / CLI harness reference-only 边界到父级编排方案。
 - [x] Stage C：子方案确认后，实现 portable child-plan claim lock。
 - [x] Stage B Batch 1 补充：创建 Phase 1A complete-flow 调度器/ROB 子方案，并更新完整本地提交流程治理。
+- [x] Stage B 父方案范围修订：收窄本文件父方案语义，明确它只约束本方案族，不控制无关 implementation_plan。
+- [x] Stage B 父方案范围修订：明确 `parent_plan` 是可选局部关系，新 session 不默认读取本文件。
+- [x] Stage B 父方案范围修订：结构化记录同机 peer session self-retire 目标、锁契约、checker 目标、验证目标和假设。
 - [ ] 后续阶段：每阶段最多 6 个并行 session 执行子方案，并通过 ROB 支撑的 local main 串行 retire 合入。
+- [ ] 后续阶段：实现 `local-main-retire` lock、session-owned self-retire、ROB 归属字段 `retire_mode=self_retire_lock`（含义是拿到锁的 session 只 retire 自己的 branch）和对应 checker/local gate 接线。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -270,10 +396,14 @@ Stage B 后续确认后的验收条件：
 - 每个子方案声明文件归属、session 上限和验证门禁。
 - 相关子方案未确认前，不开始非文档实现。
 - Phase 1A 在后续多 session runtime 执行前先记录 scheduler/ROB 治理。
+- 本父方案明确只约束本方案族；无关 implementation_plan 可以无父方案或属于其他父方案。
+- 新 session 不默认读取本文件，除非处理本文件、其子方案或正文列出的相关方案。
+- 后续同机多 session 目标是 session 自主负责自己的提交和本地 `main` 合入，并用 `local-main-retire` lock 保持本地 `main` 写入串行。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 父方案范围修订：结构化吸收同机多 session 自主合入治理对话，明确本文件仍是本方案族父方案，但不控制无关 implementation_plan；新增 `parent_plan` 可选局部生效、新 session 非默认读取、session-owned self-retire 与 `local-main-retire` lock 后续目标。
 - 2026-05-29 Phase 1 收口：Phase 1 子方案均已实现、合入本地 `main` 并完成验证；证据提交包括 `4479593`、`e81d840`、`fb3ad75`、`54a965d` 和 `e23c40b`；ROB 合入后 local gate 已通过；用户现已明确授权远端发布。
 - 2026-05-29 Stage B Batch 1 补充：新增 Phase 1A complete-flow 调度器/ROB 子方案，更新 `完整提交流程.md`，并把 portable claim / receipt 子方案标为下游消费者；随后 ROB runtime/checker 包已在 `4479593` 合入本地 `main`。
 - 2026-05-28 Stage C 本地集成：portable child-plan claim lock 已快进合入本地 `main`；合入后 local gate 通过；远端发布尚未授权。
