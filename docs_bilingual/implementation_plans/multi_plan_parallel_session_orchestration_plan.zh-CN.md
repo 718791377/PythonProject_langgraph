@@ -13,7 +13,7 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 创建本方案族的父级编排方案，用于把本文件覆盖的既有 implementation_plan 重构为更小、可认领、可并行的工作包。本文件不是 `docs_bilingual/implementation_plans/` 目录下所有方案的全局父方案。
 目标执行模型如下：
 
-- 本父方案只负责其方案族内部的阶段顺序、依赖、集成门禁和 session 上限；
+- 本父方案只负责其方案族内部的阶段顺序、依赖、集成门禁和 Work-Conserving 准入、hotspot lease；
 - 每个相关子 `implementation_plan` 负责一个可执行切片；
 - 同一个 `implementation_plan` 同一时间只能有一个 active session claim；
 - 不同方案在写入范围不冲突或已明确串行化时可以并行，即使它们不属于同一个父方案；
@@ -100,11 +100,12 @@ Phase 1 收口：complete-flow ROB、正式方案确认门禁、portable claim l
 - 本父方案不代表某个主 session 对其他 session 的运行时控制权。
 - 本地 `main` 写入必须串行；后续目标是通过 `local-main-retire` lock 保护每次合入，拿到锁的 session 只合入自己已 ready 的候选包。
 
-### 默认并行度
+### Work-Conserving 会话准入
 
-- 每阶段默认最多 4 个并行 session。
-- 每阶段突发上限最多 6 个并行 session。
-- 当写入范围重叠时，阶段必须降低并行度。
+- 不再把固定 Phase 数量 cap 写成治理硬上限。
+- 一个 Phase 应准入每个 eligible implementation_plan/session：状态为 active、没有 active claim、依赖满足、worktree 干净，并且写集互不冲突或已取得明确 hotspot lease。
+- provider pacing、CPU、内存、终端数量、失败 gate、main 落后和 retire queue 堆积属于 resource backpressure；它们只做运行时节流，不改变“所有 eligible session 都可入场”的治理原则。
+- hotspot lease 和 local-main retire lock 用来串行化共享写入；它们是 lease/lock，不是全局 Phase 数量 cap。
 - Phase 1A 已增加提交重排序缓冲规则：session 可以乱序完成；后续目标是把 local `main` retire 从固定 leader 串行执行改为 `local-main-retire` lock 保护的 session-owned self-retire。
 - 如果子方案存在未关闭 claim、脏 worktree、失败本地门禁、未退休 ROB entry 或未合入的本地 main 集成，不得进入下一阶段。
 
@@ -235,7 +236,7 @@ python tools/local_main_retire_lock.py status --root . --json
 
 条件后续：只有当 inventory 子方案发现 canary registry、双语配对、锚点或 evidence index 存在真实缺陷时，才创建 canary registry recovery 子方案。
 
-并行度：本父方案确认后最多 2 个 session。
+准入规则：本父方案确认后，所有 eligible session 均可并行；registry 与层级维护热点同一时间只能有一个 hotspot lease owner。
 
 ### Phase 1：施工安全底座
 
@@ -249,7 +250,7 @@ python tools/local_main_retire_lock.py status --root . --json
 4. `implementation_plan_registry_active_state_plan` - 强制 active 状态、双语配对和 docs registry 一致。
 5. `main_session_escalation_visibility_plan` - 增加主会话可见的待授权和提权预检表面。
 
-并行度：最多 3 个 session；`docs_bilingual/docs_registry.yaml` 每批只能一个 session 拥有。
+准入规则：所有 eligible 子方案均可并行；`docs_bilingual/docs_registry.yaml` 每批只能由一个 hotspot lease owner 写入。
 
 ### Phase 2：上下文与 UTF-8 安全
 
@@ -262,7 +263,7 @@ python tools/local_main_retire_lock.py status --root . --json
 3. `session_replay_context_filtering_plan` - 过滤 assistant/session replay 表面，避免 stale canary 或乱码重新进入 prompt。
 4. `launcher_payload_context_boundary_plan` - 保持 launcher payload 边界，本阶段不修改用户级配置。
 
-并行度：最多 2 个 session；startup summary 文件串行。
+准入规则：所有 eligible 子方案均可并行；startup summary 文件必须取得 hotspot lease 并串行写入。
 
 ### Phase 3：Durable State 与跨 Session 隔离
 
@@ -277,7 +278,7 @@ python tools/local_main_retire_lock.py status --root . --json
 5. `worktree_receipt_claim_lifecycle_plan` - 定义 active、paused、completed、stale 和 cleaned claim/receipt 生命周期。
 6. `portable_no_backend_parallel_session_plan` - 在没有 OMX 和 LangGraph 时支持 Git/Python-only 并行 session。
 
-并行度：最多 3 个 session；`.omx/state` 写入按仓库或 worktree 串行。
+准入规则：所有 eligible 子方案均可并行；`.omx/state` 写入按仓库和 worktree hotspot lease 串行化。
 
 ### Phase 4：自动路由与中文可视化
 
@@ -293,7 +294,7 @@ python tools/local_main_retire_lock.py status --root . --json
 6. `role_routing_fanout_write_ownership_plan` - 强制最小充分角色选择和 fan-out 写入归属。
 7. `collaboration_evidenceguard_and_bilingual_openspec_surface_plan` - 让 evidenceguard、fixtures、CI 注册和双语 OpenSpec stable spec surface 由一个 owner 串行处理。
 
-并行度：最多 3 个 session；共享 routing checker 和 OpenSpec spec surface 串行。
+准入规则：所有 eligible 子方案均可并行；共享 routing checker 和 OpenSpec spec surface 必须通过 hotspot lease 串行化。
 
 ### Phase 5：Comet Runtime 敏捷管理循环
 
@@ -307,7 +308,7 @@ python tools/local_main_retire_lock.py status --root . --json
 4. `comet_superpowers_visibility_plan` - 让 Comet 阶段显式展示 Superpowers HOW-layer skill 使用。
 5. `comet_runtime_policy_checker_alignment_plan` - 对齐 policy、OpenSpec specs、checker 覆盖和集成门禁。
 
-并行度：最多 2 个 session。`comet-state.sh` 和 `comet-guard.sh` 同一时间只能一个 owner。
+准入规则：所有 eligible 子方案均可并行。`comet-state.sh` 和 `comet-guard.sh` 同一时间只能有一个 hotspot lease owner。
 
 ### Phase 6：Spec Kit 边界
 
@@ -318,7 +319,7 @@ python tools/local_main_retire_lock.py status --root . --json
 1. `spec_kit_subordinate_adapter_governance_plan` - 将 Spec Kit 文档化为可选从属 adapter 或模板来源。
 2. `spec_kit_authority_guard_plan` - 没有单独 active plan 时阻止 `specify init --force`、`.specify/` 或治理权威迁移。
 
-并行度：最多 2 个 session。
+准入规则：写集互不冲突或已取得 hotspot lease 的所有 eligible 子方案均可并行。
 
 ### Phase 7：集成、验证与归档
 
@@ -332,7 +333,7 @@ python tools/local_main_retire_lock.py status --root . --json
 
 延后后续：publication readiness 不作为 Stage B 子方案创建，因为远端发布不在本次范围内，除非用户明确批准。
 
-并行度：验证可以并行准备证据，但 Phase 7 ownership 和本地 `main` 合入保持串行。
+准入规则：所有 eligible 验证 session 都可以并行准备证据，但 Phase 7 集成热点和每次 local-main retire 必须通过 lease/lock 串行化。
 
 ## Stage B 创建规则
 
@@ -349,7 +350,7 @@ python tools/local_main_retire_lock.py status --root . --json
 - YAML front matter，含 `doc_id`、`lang`、`status: active`、`doc_class: implementation_plan` 和双语 companion 元数据。
 - CURRENT_STATUS 锚点记录当前阶段和检查点，TASK_BACKLOG 锚点记录复选框任务项，EVIDENCE_INDEX 锚点记录轻量 commit/report 引用；这些锚点是脚本用于局部更新的稳定 HTML 注释。
 - 明确文件归属和热点文件串行说明。
-- 该子方案或阶段的最大并行 session 数。
+- 该子方案或阶段的 Work-Conserving 准入规则、hotspot lease 要求、resource backpressure 说明和验证门禁。
 - 本地验证命令和预期门禁行为。
 
 ## 任务清单
@@ -372,8 +373,8 @@ python tools/local_main_retire_lock.py status --root . --json
 - [x] Stage B 父方案范围修订：收窄本文件父方案语义，明确它只约束本方案族，不控制无关 implementation_plan。
 - [x] Stage B 父方案范围修订：明确 `parent_plan` 是可选局部关系，新 session 不默认读取本文件。
 - [x] Stage B 父方案范围修订：结构化记录同机 peer session self-retire 目标、锁契约、checker 目标、验证目标和假设。
-- [ ] 后续阶段：每阶段最多 6 个并行 session 执行子方案，并通过 ROB 支撑的 local main 串行 retire 合入。
-- [ ] 后续阶段：实现 `local-main-retire` lock、session-owned self-retire、ROB 归属字段 `retire_mode=self_retire_lock`（含义是拿到锁的 session 只 retire 自己的 branch）和对应 checker/local gate 接线。
+- [x] Stage B 父方案修订：将固定 Phase 数量 cap 替换为 Work-Conserving all-eligible session admission、hotspot lease、resource backpressure 语言和 ROB 支撑的串行 local-main retire。
+- [x] Stage B 父方案修订：将固定 Phase 数量 cap 替换为 Work-Conserving all-eligible session admission、hotspot lease、resource backpressure 语言和 ROB 支撑的串行 local-main retire。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -383,7 +384,7 @@ Stage A 验收条件：
 - 英文主版父方案存在且为 ASCII-only。
 - 中文对照父方案存在。
 - `docs_bilingual/docs_registry.yaml` 将这对文件登记为 `doc_class: implementation_plan` 和 `status: active`。
-- 父方案列出阶段、候选子方案、依赖顺序、session 上限和热点文件串行规则。
+- 父方案列出阶段、候选子方案、依赖顺序、Work-Conserving 准入、hotspot lease和热点文件串行规则。
 - Stage A 使用中文提交信息。
 - Stage A 合入本地 `main`。
 - Stage A 不修改 runtime、checker、helper 或测试行为。
@@ -393,7 +394,7 @@ Stage B 后续确认后的验收条件：
 
 - 子方案被创建为独立认领单元。
 - 没有子方案缺少双语配对或 registry 登记。
-- 每个子方案声明文件归属、session 上限和验证门禁。
+- 每个子方案声明文件归属、Work-Conserving 准入、hotspot lease和验证门禁。
 - 相关子方案未确认前，不开始非文档实现。
 - Phase 1A 在后续多 session runtime 执行前先记录 scheduler/ROB 治理。
 - 本父方案明确只约束本方案族；无关 implementation_plan 可以无父方案或属于其他父方案。

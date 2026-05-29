@@ -13,7 +13,7 @@ zh_cn_path: docs_bilingual/implementation_plans/multi_plan_parallel_session_orch
 Create the parent orchestration plan for this plan family, rebuilding the covered implementation plans into smaller, claimable work packages. This file is not the global parent plan for every plan under `docs_bilingual/implementation_plans/`.
 The target execution model is:
 
-- this parent plan owns phase ordering, dependencies, integration gates, and session limits only inside its plan family;
+- this parent plan owns phase ordering, dependencies, integration gates, Work-Conserving admission, and hotspot leases only inside its plan family;
 - each related child `implementation_plan` owns one executable slice;
 - the same `implementation_plan` can have only one active session claim at a time;
 - different plans can run in parallel when write scopes do not conflict or have explicit serialization, even when they do not share the same parent plan;
@@ -100,11 +100,12 @@ This hierarchy diagram applies only to this plan family; it is not the global hi
 - This parent plan does not give one main session runtime control over other sessions.
 - Local `main` writes must remain serial; the later target is to protect each merge with a `local-main-retire` lock, where the lock holder merges only its own ready candidate package.
 
-### Default Parallelism
+### Work-Conserving Session Admission
 
-- Default maximum parallel sessions per phase: 4.
-- Burst maximum parallel sessions per phase: 6.
-- A phase may use fewer sessions when write scopes overlap.
+- Do not encode a fixed per-phase session cap as governance.
+- A phase admits every eligible implementation_plan/session: active status, no active claim, dependencies satisfied, clean worktree, and either a disjoint write set or an explicit hotspot lease.
+- Provider pacing, CPU, memory, terminal count, failed gates, stale bases, and retire queues are resource backpressure. They throttle runtime scheduling but do not lower the governance admission rule.
+- Hotspot leases and the local-main retire lock serialize shared writes; they are leases/locks, not global phase caps.
 - Phase 1A has added a commit reorder-buffer rule: sessions may finish out of order; the later target is to move local `main` retirement from fixed leader ownership to session-owned self-retire protected by the `local-main-retire` lock.
 - A phase must pause before crossing into the next phase if child plans have unresolved claims, dirty worktrees, failed local gates, unretired ROB entries, or unmerged local-main integration.
 
@@ -235,7 +236,7 @@ Candidate child plans:
 
 Conditional follow-up: create a canary registry recovery child plan only if the inventory child plan finds a real canary registry, bilingual pairing, anchor, or evidence-index defect.
 
-Parallelism: up to 2 sessions after this parent plan is confirmed.
+Admission: all eligible sessions may run after this parent plan is confirmed; registry and hierarchy hotspots require a single hotspot lease owner at a time.
 
 ### Phase 1: Construction Safety Base
 
@@ -249,7 +250,7 @@ Candidate child plans:
 4. `implementation_plan_registry_active_state_plan` - enforce active status, bilingual pairing, and docs registry consistency.
 5. `main_session_escalation_visibility_plan` - add visible pending-approval/preflight surfaces for main-session escalation.
 
-Parallelism: up to 3 sessions, with `docs_bilingual/docs_registry.yaml` owned by one session per batch.
+Admission: all eligible child plans may run; `docs_bilingual/docs_registry.yaml` requires one hotspot lease owner per batch.
 
 ### Phase 2: Context and UTF-8 Safety
 
@@ -262,7 +263,7 @@ Candidate child plans:
 3. `session_replay_context_filtering_plan` - filter assistant/session replay surfaces so stale canary or mojibake does not re-enter prompts.
 4. `launcher_payload_context_boundary_plan` - preserve launcher payload boundaries without mutating user-level config in this phase.
 
-Parallelism: up to 2 sessions, with startup summary files serialized.
+Admission: all eligible child plans may run; startup summary files require a hotspot lease and serialized writes.
 
 ### Phase 3: Durable State and Cross-Session Isolation
 
@@ -277,7 +278,7 @@ Candidate child plans:
 5. `worktree_receipt_claim_lifecycle_plan` - define active, paused, completed, stale, and cleaned claim/receipt lifecycle.
 6. `portable_no_backend_parallel_session_plan` - support Git/Python-only parallel sessions when OMX and LangGraph are unavailable.
 
-Parallelism: up to 3 sessions, with `.omx/state` write scopes serialized by repository/worktree.
+Admission: all eligible child plans may run; `.omx/state` write scopes are serialized by repository and worktree hotspot lease.
 
 ### Phase 4: Automatic Routing and Chinese Visibility
 
@@ -293,7 +294,7 @@ Candidate child plans:
 6. `role_routing_fanout_write_ownership_plan` - enforce smallest-sufficient role selection and write ownership for fan-out.
 7. `collaboration_evidenceguard_and_bilingual_openspec_surface_plan` - give the evidenceguard, fixtures, CI registration, and bilingual OpenSpec stable spec surface one serialized owner.
 
-Parallelism: up to 3 sessions, with shared routing checkers and OpenSpec spec surfaces serialized.
+Admission: all eligible child plans may run; shared routing checkers and OpenSpec spec surfaces require hotspot leases.
 
 ### Phase 5: Comet Runtime Agile Management Loop
 
@@ -307,7 +308,7 @@ Candidate child plans:
 4. `comet_superpowers_visibility_plan` - make Superpowers HOW-layer skill usage explicit in Comet phases.
 5. `comet_runtime_policy_checker_alignment_plan` - align policy, OpenSpec specs, checker coverage, and integration gates.
 
-Parallelism: up to 2 sessions. `comet-state.sh` and `comet-guard.sh` must have one owner at a time.
+Admission: all eligible child plans may run. `comet-state.sh` and `comet-guard.sh` require one hotspot lease owner at a time.
 
 ### Phase 6: Spec Kit Boundary
 
@@ -318,7 +319,7 @@ Candidate child plans:
 1. `spec_kit_subordinate_adapter_governance_plan` - document Spec Kit as an optional subordinate adapter or template source.
 2. `spec_kit_authority_guard_plan` - block `specify init --force`, `.specify/`, or governance-authority migration without a separate active plan.
 
-Parallelism: up to 2 sessions.
+Admission: all eligible child plans may run when their write sets are disjoint or their hotspots are leased.
 
 ### Phase 7: Integration, Verification, and Archive
 
@@ -332,7 +333,7 @@ Candidate child plans:
 
 Delayed follow-up: publication readiness is not created as a Stage B child plan because remote publication is outside this scope until the user explicitly approves it.
 
-Parallelism: validation may prepare evidence in parallel, but Phase 7 ownership and local `main` merge remain serial.
+Admission: all eligible validation sessions may prepare evidence in parallel, but Phase 7 integration hotspots and every local-main retire remain serial through their leases/locks.
 
 ## Stage B Creation Rules
 
@@ -349,7 +350,7 @@ Each child plan must include:
 - YAML front matter with `doc_id`, `lang`, `status: active`, `doc_class: implementation_plan`, and bilingual companion metadata.
 - CURRENT_STATUS anchors record the current stage/checkpoint, TASK_BACKLOG anchors record checkbox work items, and EVIDENCE_INDEX anchors record lightweight commit/report references; these anchors are stable HTML comments used by scripts for targeted updates.
 - Explicit file ownership and hotspot serialization notes.
-- Maximum parallel session count for that child or phase.
+- Work-Conserving admission rule, hotspot lease requirements, resource backpressure notes, and validation gates for that child or phase.
 - Local validation commands and expected gating behavior.
 
 ## Task Backlog
@@ -372,7 +373,7 @@ Each child plan must include:
 - [x] Stage B parent-scope revision: narrow this parent plan semantics so it governs only this plan family and does not control unrelated implementation plans.
 - [x] Stage B parent-scope revision: clarify that `parent_plan` is an optional local relationship and that new sessions do not read this file by default.
 - [x] Stage B parent-scope revision: structurally record the same-machine peer session self-retire target, lock contract, checker targets, verification targets, and assumptions.
-- [ ] Later stages: run child-plan work with at most six parallel sessions per phase and ROB-backed serial local-main retirement.
+- [x] Stage B parent revision: replace fixed per-phase session caps with Work-Conserving all-eligible session admission, hotspot leases, resource backpressure language, and ROB-backed serial local-main retire.
 - [ ] Later stages: implement `local-main-retire` locking, session-owned self-retire, ROB ownership field `retire_mode=self_retire_lock` meaning the lock holder retires only its own branch, and checker/local-gate wiring.
 <!-- TASK_BACKLOG_END -->
 
@@ -383,7 +384,7 @@ Stage A acceptance:
 - English primary parent plan exists and is ASCII-only.
 - Chinese companion parent plan exists.
 - `docs_bilingual/docs_registry.yaml` registers the pair as `doc_class: implementation_plan` and `status: active`.
-- The parent plan lists phases, candidate child plans, dependency order, session limits, and hotspot serialization rules.
+- The parent plan lists phases, candidate child plans, dependency order, Work-Conserving admission, and hotspot serialization rules.
 - Stage A uses a Chinese commit message.
 - Stage A integrates into local `main`.
 - Stage A does not change runtime, checker, helper, or test behavior.
@@ -393,7 +394,7 @@ Stage B acceptance after later confirmation:
 
 - Child plans are created as independent claim units.
 - No child plan is left without bilingual pairing or registry entry.
-- Each child plan declares file ownership, session limit, and validation gates.
+- Each child plan declares file ownership, Work-Conserving admission constraints, hotspot lease requirements, and validation gates.
 - No non-document implementation starts before the relevant child plan is confirmed.
 - Phase 1A records scheduler/ROB governance before later multi-session runtime execution.
 - This parent plan explicitly governs only this plan family; unrelated implementation plans may have no parent or belong to another parent.

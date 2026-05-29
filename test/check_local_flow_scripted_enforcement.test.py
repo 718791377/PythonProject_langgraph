@@ -89,6 +89,41 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def write_parent_parallel_plan(self, root: Path, *, fixed_cap: bool = False) -> None:
+        plan_dir = root / "docs_bilingual/implementation_plans"
+        plan_dir.mkdir(parents=True, exist_ok=True)
+        if fixed_cap:
+            body_en = (
+                "# Parent Plan\n"
+                "Work-Conserving eligible hotspot lease resource backpressure local-main retire\n"
+                "Default maximum parallel sessions per phase: 4.\n"
+                "Burst maximum parallel sessions per phase: 6.\n"
+                "Later stages: run child-plan work with at most six parallel sessions per phase.\n"
+            )
+            body_zh = (
+                "# 父方案\n"
+                "Work-Conserving eligible hotspot lease resource backpressure local-main retire\n"
+                "每阶段默认最多 4 个并行 session。\n"
+                "每阶段突发上限最多 6 个并行 session。\n"
+            )
+        else:
+            body_en = (
+                "# Parent Plan\n"
+                "Work-Conserving admission admits every eligible session.\n"
+                "A hotspot lease serializes shared write surfaces.\n"
+                "resource backpressure throttles runtime scheduling only.\n"
+                "local-main retire remains serial through a lock.\n"
+            )
+            body_zh = (
+                "# 父方案\n"
+                "Work-Conserving 准入允许每个 eligible session 入场。\n"
+                "hotspot lease 串行化共享写入表面。\n"
+                "resource backpressure 只做运行时节流。\n"
+                "local-main retire 仍由 lock 串行化。\n"
+            )
+        (plan_dir / "multi_plan_parallel_session_orchestration_plan.md").write_text(body_en, encoding="utf-8")
+        (plan_dir / "multi_plan_parallel_session_orchestration_plan.zh-CN.md").write_text(body_zh, encoding="utf-8")
+
     def run_check(self, root: Path, *extra: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(SCRIPT), "--root", str(root), "--json", *extra],
@@ -116,6 +151,26 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
         self.assertTrue(any("complete_local_flow_to_remote_gate.py" in error for error in payload["errors"]))
+
+    def test_parent_parallel_plan_passes_with_work_conserving_terms(self) -> None:
+        root = self.make_root("local-flow-parent-pass")
+        self.write_required_surfaces(root)
+        self.write_parent_parallel_plan(root)
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_parent_parallel_plan_rejects_fixed_phase_caps(self) -> None:
+        root = self.make_root("local-flow-parent-fixed-cap")
+        self.write_required_surfaces(root)
+        self.write_parent_parallel_plan(root, fixed_cap=True)
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(
+            any("fixed phase-cap" in error for error in payload["errors"]),
+            payload["errors"],
+        )
 
 
 if __name__ == "__main__":
