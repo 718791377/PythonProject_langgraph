@@ -19,7 +19,8 @@ confirmation_required: true
 
 ## Goal
 
-Make multi-session local commit flow safe by allowing sessions to execute in isolated worktrees while requiring leader-owned ROB-style serial retirement into local `main`.
+Make multi-session local commit flow safe by allowing sessions to execute in isolated worktrees while requiring ROB-style serial retirement into local `main`.
+The retirement actor can be the session that owns the candidate package when it holds the repository-local local-main retire lock.
 
 ## Source Plans
 
@@ -41,9 +42,9 @@ Make multi-session local commit flow safe by allowing sessions to execute in iso
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C runtime/checker implementation integrated into local main and verified
-Owner session: main Codex leader session
-Current gate: remote publication is authorized after Phase 1 closure records are committed and locally integrated
+Stage: self-retire lock and work-conserving admission extension in progress
+Owner session: current Codex session that owns the peer-session self-retirement update
+Current gate: update ROB retirement semantics, all-eligible admission policy, lock-backed helper wiring, and evidence before local-main integration
 Implementation entry condition: user confirmed continued implementation of this child plan on 2026-05-29
 Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
@@ -59,10 +60,13 @@ Current documentation package owns:
 - `docs_bilingual/implementation_plans/complete_local_commit_flow_scheduler_reorder_buffer_plan.zh-CN.md` - keeps the Chinese companion for this child plan.
 - `docs_bilingual/docs_registry.yaml` - registers the bilingual child-plan pair.
 
-Later runtime/checker implementation may own:
+Runtime/checker implementation owns:
 
 - `tools/commit_reorder_buffer.py` - will manage ROB entry prediction, queueing, status, retirement, and flushing.
 - `tools/check_commit_reorder_buffer.py` - will validate ROB readiness, hotspot fences, and retirement evidence.
+- `tools/local_main_retire_lock.py` - will serialize peer-session local-main writes with a nonce lock.
+- `tools/check_local_main_retire_lock.py` - will validate active lock schema and stale-lock status.
+- `tools/complete_local_flow_to_remote_gate.py` - will acquire/release the lock around local-main mutation and record ROB self-retirement evidence.
 - local CI or local MR review wiring
 - focused tests for ROB entry state, hotspot fences, and serial retirement
 
@@ -80,14 +84,23 @@ Only one session may own each hotspot at a time:
 
 This child plan adapts scheduler and CPU commit principles into repository governance:
 
+- Work-Conserving admission: every eligible session can enter when its claim, dependency, hotspot lease, resource backpressure, and local-main retire gates allow it.
 - Reorder Buffer: candidate packages are buffered before local `main` retirement.
 - Out-of-order execution: disjoint sessions may finish in any order.
-- In-order retirement: local `main` integration is serial and leader-owned.
+- In-order retirement: local `main` integration is serial and lock-owned by the retiring session.
 - Scoreboarding and Tomasulo-style readiness: dependencies, claims, receipts, write sets, and gates decide whether an entry is ready.
 - Load/store queue and memory fences: shared governance files and schema surfaces force serialization.
 - Branch prediction and speculation: sessions predict write sets and dependencies before work starts; failed predictions are blocked, flushed, split, or requeued.
 - Backpressure and priority aging: concurrency is reduced when gates fail or retire queues grow, and long-ready entries must be surfaced.
 - Checkpoint and rollback: every retire step needs rollback refs and evidence.
+
+## Parallel Admission Terms
+
+- Work-Conserving: the scheduler admits every `eligible` plan/session rather than enforcing a fixed phase cap.
+- eligible: active, unclaimed, dependency-satisfied, clean-worktree work with either a disjoint write set or a valid `hotspot lease`.
+- hotspot lease: the single-owner write permission for shared governance files, registries, CI manifests, checker scripts, and runtime state surfaces.
+- resource backpressure: provider pacing, CPU, memory, terminals, failed gates, stale bases, and retire queues throttle runtime execution without changing the governance rule.
+- local-main retire: serial lock-owned retirement of the current session's own ready package into local `main`.
 
 ## Task Backlog
 
@@ -103,6 +116,11 @@ This child plan adapts scheduler and CPU commit principles into repository gover
 - [x] Implement `tools/check_commit_reorder_buffer.py` for claim uniqueness, hotspot fences, ready entry validation, and retired evidence.
 - [x] Add focused tests for disjoint ready entries, hotspot conflicts, branch-prediction failures, gate failures, and backpressure.
 - [x] Wire the checker into local gate or local MR review after the runtime helper is implemented.
+- [x] Extend ROB retirement with `retire_mode=self_retire_lock`, `retire_owner_session_id`, and `retire_lock_nonce` fields.
+- [x] Add the repository-local local-main retire-lock helper and checker.
+- [x] Update the complete local flow helper so an owning session can self-retire its own ready package while holding the local-main lock.
+- [x] Replace fixed per-phase parallel caps with work-conserving all-eligible session admission in the parent plan and complete-flow governance.
+- [x] Add checker/test coverage so future governance cannot reintroduce fixed 2/3/4/6 phase caps as hard limits.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -119,15 +137,17 @@ If available in the active branch, also run the shared local gate and local MR r
 
 ## Acceptance Criteria
 
-- the repository-root complete local commit-flow document explains ROB buffering, out-of-order execution, serial retirement, hotspot fences, branch-prediction failure handling, backpressure, and rollback evidence.
+- the repository-root complete local commit-flow document explains ROB buffering, out-of-order execution, serial retirement, hotspot fences, branch-prediction failure handling, backpressure, rollback evidence, and peer-session self-retirement through the local-main lock.
 - The parent plan lists this child plan under Phase 1A / Batch 1 supplemental safety-foundation work.
 - Portable no-backend and receipt lifecycle plans reference this plan as an upstream scheduling contract.
 - The English primary file remains ASCII-only and the Chinese companion is registered.
-- No runtime/checker implementation starts before this child plan is confirmed after local-main integration.
+- No fixed controller session is required for every local-main retirement; each session can retire its own ready package when the lock and gates allow it.
+- No fixed per-phase 2/3/4/6 session cap is treated as a governance hard limit; every eligible child plan can be admitted, with only claim, hotspot, resource-backpressure, and local-main retire locks serializing work.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-29 runtime/checker implementation: added `tools/commit_reorder_buffer.py`, `tools/check_commit_reorder_buffer.py`, focused tests, local gate manifest registration, and OpenSpec guard wiring; focused tests, Python manifest, precommit/update-archive, OpenSpec guard JSON, local MR review, and local gate passed; integrated into local `main` at `4479593` with rollback ref `refs/backup/local-main/20260529-1259-before-complete-flow-rob-runtime`, then post-merge local gate passed and the ROB entry was retired.
 - 2026-05-29 documentation-governance package: created this active Phase 1A child plan and updated complete-flow/parent/consumer plan references; integrated into local `main` at `ebe5f69` before runtime/checker implementation.
+- 2026-05-29 self-retire extension: added lock-backed peer-session local-main retirement semantics and linked to `self_retiring_peer_session_local_main_plan`; pending final local validation and integration evidence.
 <!-- EVIDENCE_INDEX_END -->

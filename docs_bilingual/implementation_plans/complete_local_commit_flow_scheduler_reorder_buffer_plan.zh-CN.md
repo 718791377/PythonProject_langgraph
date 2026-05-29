@@ -19,7 +19,8 @@ confirmation_required: true
 
 ## 目标
 
-通过允许 session 在隔离 worktree 中并行执行、但要求 main Codex leader 按 ROB 风格串行 retire 到本地 `main`，让多 session 本地提交流程变得安全。
+通过允许 session 在隔离 worktree 中并行执行、但要求 ROB 风格串行 retire 到本地 `main`，让多 session 本地提交流程变得安全。
+当拥有候选包的 session 持有仓库本地 local-main retire lock 时，退休执行者可以是该 session 自己。
 
 ## 来源方案
 
@@ -41,9 +42,9 @@ confirmation_required: true
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage C runtime/checker 实现已合入本地 main 并已验证
-责任会话：main Codex leader session
-当前门禁：Phase 1 收口记录提交并合入本地 main 后，远端发布已获授权
+阶段：self-retire lock 与 work-conserving admission 扩展进行中
+责任会话：当前 Codex session，拥有 peer-session self-retirement 更新
+当前门禁：更新 ROB retirement 语义、all-eligible admission 策略、lock-backed helper 接线和证据，然后本地合入
 实现进入条件：已由用户在 2026-05-29 确认继续实施本子 implementation plan
 最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
@@ -59,10 +60,13 @@ confirmation_required: true
 - `docs_bilingual/implementation_plans/complete_local_commit_flow_scheduler_reorder_buffer_plan.zh-CN.md` - 定义本子方案中文对照版。
 - `docs_bilingual/docs_registry.yaml` - 登记本双语子方案。
 
-后续 runtime/checker 实现可能拥有：
+runtime/checker 实现拥有：
 
 - `tools/commit_reorder_buffer.py` - 后续管理 ROB entry 预测、入队、状态、退休和 flush。
 - `tools/check_commit_reorder_buffer.py` - 后续验证 ROB 就绪、热点 fence 和退休证据。
+- `tools/local_main_retire_lock.py` - 使用 nonce lock 串行化对等 session 本地 main 写入。
+- `tools/check_local_main_retire_lock.py` - 验证 active lock schema 和 stale-lock 状态。
+- `tools/complete_local_flow_to_remote_gate.py` - 在本地 main 写入前后 acquire/release lock，并记录 ROB 自退休证据。
 - local CI 或 local MR review 接线
 - ROB entry 状态、热点 fence、串行 retire 的聚焦测试
 
@@ -80,9 +84,10 @@ confirmation_required: true
 
 本子方案把调度器和 CPU 提交原则转换为仓库治理：
 
+- Work-Conserving admission：每个 eligible session 在 claim、dependency、hotspot lease、resource backpressure 和 local-main retire gate 允许时均可入场。
 - Reorder Buffer：候选包在进入 local `main` 前先缓冲。
 - Out-of-order execution：写集互不重叠的 session 可以乱序完成。
-- In-order retirement：local `main` 集成必须由 leader 串行执行。
+- In-order retirement：local `main` 集成必须串行执行，lock owner 是执行退休的 session。
 - Scoreboarding / Tomasulo 就绪判断：依赖、claim、receipt、写集和 gate 共同决定 entry 是否 ready。
 - Load/store queue 与 memory fence：共享治理文件和 schema 表面强制串行化。
 - Branch prediction / speculation：session 开始前预测写集和依赖；预测失败则 blocked、flushed、split 或 requeued。
@@ -103,6 +108,11 @@ confirmation_required: true
 - [x] 实现 `tools/check_commit_reorder_buffer.py`，检查 claim 唯一性、热点 fence、ready entry 可 retire 和 retired evidence。
 - [x] 增加聚焦测试：互不重叠 ready entry、热点冲突、分支预测失败、gate 失败和 backpressure。
 - [x] runtime helper 实现后，把 checker 接入 local gate 或 local MR review。
+- [x] 扩展 `retire_mode=self_retire_lock`、`retire_owner_session_id` 和 `retire_lock_nonce` 字段。
+- [x] 增加仓库本地 local-main retire-lock helper 和 checker。
+- [x] 更新完整本地流程 helper，使拥有候选包的 session 在持有 local-main lock 时自退休 ready package。
+- [x] 将固定 Phase 级并行上限替换为 work-conserving all-eligible session admission。
+- [x] 增加 checker/test 覆盖，防止后续治理重新把 2/3/4/6 Phase cap 写成硬上限。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -119,15 +129,17 @@ python tools/check_local_flow_scripted_enforcement.py --root . --json
 
 ## 验收标准
 
-- `完整提交流程.md` - 记录完整本地提交流程的 ROB 并发治理规则。 说明 ROB 缓冲、乱序执行、串行 retire、热点 fence、分支预测失败处理、backpressure 和 rollback evidence。
+- `完整提交流程.md` - 记录完整本地提交流程的 ROB 并发治理规则，说明 ROB 缓冲、乱序执行、串行 retire、热点 fence、分支预测失败处理、backpressure、rollback evidence，以及通过 local-main lock 执行对等 session 自退休。
 - 父方案把本子方案列入 Phase 1A / Batch 1 补充安全底座工作。
 - portable no-backend 与 receipt lifecycle 方案引用本方案作为上游调度契约。
 - 英文主版保持 ASCII-only，中文对照版已登记。
-- 本地 main 合入后、用户确认本子方案前，不进入 runtime/checker 实现。
+- 不要求一个固定控制 session 负责每次 local-main retirement；每个 session 可在 lock 和 gate 允许时退休自己的 ready package。
+- 不把固定 Phase 级 2/3/4/6 session cap 视为治理硬上限；每个 eligible child plan 都可入场，只有 claim、hotspot、resource-backpressure 和 local-main retire lock 会串行化工作。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-29 runtime/checker 实现：新增 `tools/commit_reorder_buffer.py`、`tools/check_commit_reorder_buffer.py`、聚焦测试、local gate manifest 登记和 OpenSpec guard 接线；聚焦测试、Python manifest、precommit/update-archive、OpenSpec guard JSON、local MR review 与 local gate 已通过；已在 `4479593` 合入本地 `main`，rollback ref 为 `refs/backup/local-main/20260529-1259-before-complete-flow-rob-runtime`，合入后 local gate 已通过，ROB entry 已 retired。
 - 2026-05-29 文档治理包：创建 active Phase 1A 子方案，并更新 complete-flow、父方案和消费者方案引用；已在 `ebe5f69` 合入本地 `main`，随后才进入 runtime/checker 实现。
+- 2026-05-29 self-retire 扩展：增加 lock-backed peer-session local-main retirement 语义，并链接到 `self_retiring_peer_session_local_main_plan`；等待最终本地验证和集成证据。
 <!-- EVIDENCE_INDEX_END -->
