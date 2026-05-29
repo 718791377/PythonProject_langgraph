@@ -59,10 +59,10 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Phase 1 已发布；本次 Stage B 父方案范围修订正在本地集成
-责任边界：本文件只治理本方案族；后续同机多 session 目标是不以固定主会话控制其他 session
-当前门禁：将本次父方案范围与 self-retire 治理文档更新合入本地 main；远端发布仍需用户明确请求
-Phase 1 收口：complete-flow ROB、正式方案确认门禁、portable claim lock、registry active-state validation 与主会话提权可见性均已进入本地 main
+阶段：self-retiring peer-session runtime 的 Stage A 恢复治理文档包
+归属边界：本文件只治理本方案族；无关 implementation_plan 不会被强制挂到本父方案下。
+当前门禁：合入漂移恢复文档更新后停止，等待用户确认再从 `867f882` 恢复 runtime。
+Phase 1 说明：self-retire runtime 来源提交存在，但当前本地 `main`=`b4af80f` 缺少 runtime helper/checker 文件，因此按待恢复处理。
 最后更新：2026-05-29
 <!-- CURRENT_STATUS_END -->
 
@@ -375,6 +375,7 @@ python tools/local_main_retire_lock.py status --root . --json
 - [x] Stage B 父方案范围修订：结构化记录同机 peer session self-retire 目标、锁契约、checker 目标、验证目标和假设。
 - [x] Stage B 父方案修订：将固定 Phase 数量 cap 替换为 Work-Conserving all-eligible session admission、hotspot lease、resource backpressure 语言和 ROB 支撑的串行 local-main retire。
 - [x] Stage B 父方案修订：将固定 Phase 数量 cap 替换为 Work-Conserving all-eligible session admission、hotspot lease、resource backpressure 语言和 ROB 支撑的串行 local-main retire。
+- [x] Stage A 恢复：记录 self-retire runtime 来源提交存在，但当前本地 `main` 缺少 runtime 文件；非文档恢复前必须停止等待确认。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -404,6 +405,7 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 Stage A 恢复文档包：记录当前本地 `main`=`b4af80f` 尚未包含 self-retire runtime helper/checker，虽然来源提交 `867f882` 存在于 `decentralize-session-self-retire-20260529`；Stage B runtime 恢复必须等待用户确认。
 - 2026-05-29 父方案范围修订：结构化吸收同机多 session 自主合入治理对话，明确本文件仍是本方案族父方案，但不控制无关 implementation_plan；新增 `parent_plan` 可选局部生效、新 session 非默认读取、session-owned self-retire 与 `local-main-retire` lock 后续目标。
 - 2026-05-29 Phase 1 收口：Phase 1 子方案均已实现、合入本地 `main` 并完成验证；证据提交包括 `4479593`、`e81d840`、`fb3ad75`、`54a965d` 和 `e23c40b`；ROB 合入后 local gate 已通过；用户现已明确授权远端发布。
 - 2026-05-29 Stage B Batch 1 补充：新增 Phase 1A complete-flow 调度器/ROB 子方案，更新 `完整提交流程.md`，并把 portable claim / receipt 子方案标为下游消费者；随后 ROB runtime/checker 包已在 `4479593` 合入本地 `main`。

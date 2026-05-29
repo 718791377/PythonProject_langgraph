@@ -59,10 +59,10 @@ This parent plan coordinates the following existing plans inside this plan famil
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Phase 1 published; this Stage B parent-scope revision is being locally integrated
-Ownership boundary: this file governs only this plan family; the later same-machine multi-session target avoids fixed main-session control over other sessions
-Current gate: integrate this parent-scope and self-retire-governance documentation update into local main; remote publication still requires an explicit user request
-Phase 1 closure: complete-flow ROB, formal plan confirmation, portable claim lock, registry active-state validation, and main-session escalation visibility are all in local main
+Stage: Stage A recovery governance package for self-retiring peer-session runtime
+Ownership boundary: this file governs only this plan family; unrelated implementation plans are not forced under this parent.
+Current gate: integrate the drift-recovery documentation update into local `main`, then stop for user confirmation before restoring the non-document runtime from source commit `867f882`.
+Phase 1 note: the self-retire runtime source commit exists, but current local `main` at `b4af80f` lacks the runtime helper/checker files, so it is treated as recovery-pending rather than implemented.
 Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
@@ -375,6 +375,7 @@ Each child plan must include:
 - [x] Stage B parent-scope revision: structurally record the same-machine peer session self-retire target, lock contract, checker targets, verification targets, and assumptions.
 - [x] Stage B parent revision: replace fixed per-phase session caps with Work-Conserving all-eligible session admission, hotspot leases, resource backpressure language, and ROB-backed serial local-main retire.
 - [ ] Later stages: implement `local-main-retire` locking, session-owned self-retire, ROB ownership field `retire_mode=self_retire_lock` meaning the lock holder retires only its own branch, and checker/local-gate wiring.
+- [x] Stage A recovery: record that the self-retire runtime source commit exists but current local `main` is missing the runtime files; stop before non-document recovery.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -404,6 +405,7 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-29 Stage A recovery package: recorded that current local `main` at `b4af80f` does not contain the self-retire runtime helper/checker even though source commit `867f882` exists on `decentralize-session-self-retire-20260529`; Stage B runtime recovery must wait for user confirmation.
 - 2026-05-29 parent-scope revision: structurally absorbed the same-machine multi-session self-retire governance conversation, clarifying that this file remains this plan family's parent plan but does not control unrelated implementation plans; added optional local `parent_plan`, non-default new-session reading, session-owned self-retire, and `local-main-retire` lock follow-up targets.
 - 2026-05-29 Phase 1 closure: Phase 1 child plans are implemented, integrated into local `main`, and verified; evidence commits include `4479593`, `e81d840`, `fb3ad75`, `54a965d`, and `e23c40b`; post-ROB local gate passed before this closure update; remote publication is now explicitly authorized by the user.
 - 2026-05-29 Stage B Batch 1 supplement: added the Phase 1A complete-flow scheduler/ROB child plan, updated the repository-root complete local commit-flow document, linked portable claim/receipt child plans as downstream consumers, and later integrated the ROB runtime/checker package into local `main` at `4479593`.

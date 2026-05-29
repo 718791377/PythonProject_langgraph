@@ -4,7 +4,7 @@ lang: en
 status: active
 doc_class: implementation_plan
 zh_cn_path: docs_bilingual/implementation_plans/self_retiring_peer_session_local_main_plan.zh-CN.md
-stage: Stage C runtime/checker implementation
+stage: Stage A recovery governance package
 priority: early-foundation
 confirmation_required: true
 ---
@@ -28,9 +28,10 @@ Local `main` mutation remains serial through a repository-local nonce lock.
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: pre-commit validation passed; local MR review and local gate remain post-commit gates
-Owner session: current Codex session that owns branch `decentralize-session-self-retire-20260529`
-Current gate: commit the runtime/checker/docs package with a Chinese message, run post-commit local MR review and local gate, then integrate to local `main` and stop at the remote publication gate
+Stage: Stage A recovery governance package
+Owner session: `recover-self-retire-runtime-20260529`
+Current gate: commit the docs_bilingual drift-recovery status update, run document governance gates, integrate to local `main`, then stop for user confirmation before runtime recovery.
+Runtime drift: source commit `867f882` contains the local-main retire runtime, but current local `main` at `b4af80f` does not contain `tools/local_main_retire_lock.py` or `tools/check_local_main_retire_lock.py`.
 Last updated: 2026-05-29
 <!-- CURRENT_STATUS_END -->
 
@@ -68,29 +69,28 @@ Last updated: 2026-05-29
 <!-- TASK_BACKLOG_START -->
 - [x] Create this active English primary implementation plan and Chinese companion so implementation has a confirmed governance surface.
 - [x] Register this implementation plan pair in `docs_bilingual/docs_registry.yaml`.
-- [x] Implement `tools/local_main_retire_lock.py` with acquire, status, release, nonce, TTL, and stale reclaim behavior.
-- [x] Implement `tools/check_local_main_retire_lock.py` so stale locks warn and absent locks pass.
-- [x] Extend `tools/complete_local_flow_to_remote_gate.py` with peer-session `--self-retire`, `--session-id`, `--rob-entry-id`, `--acquire-retire-lock`, and `--lock-ttl-minutes` controls.
-- [x] Extend ROB helper/checker support for `retire_mode`, `retire_owner_session_id`, and `retire_lock_nonce`.
-- [x] Wire the local-main retire-lock checker into the OpenSpec guard and local scripted-enforcement checker.
-- [x] Add focused tests and local CI manifest registration.
-- [x] Update governance documents to state that parent plans are optional and local-main writes are peer-session self-retired through the lock.
-- [x] Run focused tests, local CI manifest tests, and OpenSpec guard before commit.
-- [ ] Commit with a Chinese message, run post-commit local MR review and local gate, integrate into local `main`, and stop at the remote publication gate.
+- [x] Stage A recovery: record that source commit `867f882` exists but the runtime files are not present on current local `main`.
+- [ ] Stage B recovery: reapply `tools/local_main_retire_lock.py` with acquire, status, release, nonce, TTL, and stale reclaim behavior.
+- [ ] Stage B recovery: reapply `tools/check_local_main_retire_lock.py` so stale locks warn and absent locks pass.
+- [ ] Stage B recovery: extend `tools/complete_local_flow_to_remote_gate.py` with peer-session `--self-retire`, `--session-id`, `--rob-entry-id`, `--acquire-retire-lock`, and `--lock-ttl-minutes` controls.
+- [ ] Stage B recovery: extend ROB helper/checker support for `retire_mode`, `retire_owner_session_id`, and `retire_lock_nonce`.
+- [ ] Stage B recovery: wire the local-main retire-lock checker into the OpenSpec guard and local scripted-enforcement checker.
+- [ ] Stage B recovery: add focused tests and local CI manifest registration.
+- [ ] Stage B recovery: run focused tests, local MR review, local gate, integrate into local `main`, and stop at the remote publication gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Checklist
 
-- [x] A peer session can acquire the local-main retire lock and another session is denied while it is active.
-- [x] A peer session cannot release another session's lock because release requires the matching nonce.
-- [x] Stale lock reclaim requires an explicit operator-controlled flag.
-- [x] ROB retired entries can record `retire_mode=self_retire_lock` with `retire_owner_session_id` session-owner evidence and `retire_lock_nonce` lock-token evidence.
-- [x] The complete local flow helper can acquire the lock before local `main` mutation, release it in a `finally` block, and record ROB self-retirement evidence after a successful merge.
-- [x] The implementation-plan checker allows missing `parent_plan` and rejects unsafe or missing declared `parent_plan` paths.
-- [x] Documentation no longer implies that all local `main` integration must be controlled by one fixed main session.
+- [ ] After Stage B recovery, a peer session can acquire the local-main retire lock and another session is denied while it is active.
+- [ ] After Stage B recovery, a peer session cannot release another session's lock because release requires the matching nonce.
+- [ ] After Stage B recovery, stale lock reclaim requires an explicit operator-controlled flag.
+- [ ] After Stage B recovery, ROB retired entries can record `retire_mode=self_retire_lock` with owner and nonce evidence.
+- [ ] After Stage B recovery, the complete local flow helper acquires and releases the lock around local `main` mutation and records ROB evidence.
+- [ ] Documentation no longer implies that all local `main` integration must be controlled by one fixed main session.
 
 ## Completed Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-29 self-retiring peer-session implementation pre-commit validation: focused tests passed, local CI manifest passed, local-main retire-lock checker passed, commit ROB checker passed, implementation-plan checker passed, local scripted-enforcement checker passed, precommit update/archive checker passed, and OpenSpec guard passed with `--skip-validate`; local MR review and local gate remain post-commit gates.
+- 2026-05-29 Stage A recovery package: current local `main` at `b4af80f` lacks the self-retire runtime files; source commit `867f882` is the recovery source; Stage B runtime recovery must wait for user confirmation after this docs package is integrated.
+- 2026-05-29 self-retiring peer-session implementation pre-commit validation: focused tests passed in source branch `decentralize-session-self-retire-20260529`, but that runtime commit was not merged into current local `main`; use it as recovery evidence, not as current-main runtime evidence.
 <!-- EVIDENCE_INDEX_END -->
