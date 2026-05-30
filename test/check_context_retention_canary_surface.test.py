@@ -109,6 +109,24 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("AGENTS.md" in error for error in payload["errors"]))
 
+    def test_fails_when_config_surface_duplicates_canary(self) -> None:
+        root = self.make_root("canary-config-duplicate")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+        self.write_file(root, ".codex/config.toml", f'model_instructions = "{START_CANARY}"\n')
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any(".codex/config.toml" in error for error in payload["errors"]))
+        config_findings = [
+            finding
+            for finding in payload["findings"]
+            if finding.get("path") == ".codex/config.toml"
+        ]
+        self.assertEqual(config_findings[0]["surface"], "config_or_launcher_surface")
+
     def test_fails_when_agents_contains_mojibake_canary(self) -> None:
         root = self.make_root("canary-agents-mojibake")
         self.write_startup_pair(root)

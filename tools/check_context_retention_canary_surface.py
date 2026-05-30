@@ -49,6 +49,8 @@ TEXT_SUFFIXES = {
     ".py",
     ".ps1",
     ".psm1",
+    ".cmd",
+    ".bat",
     ".sh",
 }
 
@@ -62,6 +64,19 @@ AGENTS_PATH = Path("AGENTS.md")
 RECOVERY_ANCHORS = (
     "Recovery action:",
     "恢复动作：",
+)
+
+CONFIG_OR_LAUNCHER_PATTERNS = (
+    ".codex/*.toml",
+    ".codex/**/*.toml",
+    "config.toml",
+    "*launcher*",
+    "*payload*",
+    "*.ps1",
+    "*.psm1",
+    "*.cmd",
+    "*.bat",
+    "*.sh",
 )
 
 
@@ -202,6 +217,17 @@ def find_mojibake_canary_lines(text: str) -> list[dict]:
                 }
             )
     return findings
+
+
+def classify_surface(relative_path: Path) -> str:
+    path_text = relative_path.as_posix()
+    if relative_path == AGENTS_PATH:
+        return "agents_instruction_surface"
+    if any(fnmatch.fnmatchcase(path_text, pattern) for pattern in CONFIG_OR_LAUNCHER_PATTERNS):
+        return "config_or_launcher_surface"
+    if relative_path.parts and relative_path.parts[0] == "docs_bilingual":
+        return "documentation_surface"
+    return "active_text_surface"
 
 
 def sanitize_mojibake_canary_lines(mojibake_lines: list[dict]) -> list[dict]:
@@ -504,6 +530,7 @@ def run_check(
         if start_lines or end_lines:
             finding = {
                 "path": relative_path.as_posix(),
+                "surface": classify_surface(relative_path),
                 "start_marker_lines": start_lines,
                 "end_marker_lines": end_lines,
             }
