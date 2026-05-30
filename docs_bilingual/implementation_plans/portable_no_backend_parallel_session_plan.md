@@ -35,12 +35,12 @@ Support multi-session parallel implementation using only Git worktrees, registry
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-29
+Status: implementation-in-progress
+Stage: Stage C portable no-backend implementation package
+Owner session: codex-portable-no-backend-parallel-session-20260530
+Current gate: focused tests, claim-lock/receipt checks, and local gate passed; commit the package, run local MR review, and merge into local main. Remote publication remains out of scope.
+Stage C entry condition: satisfied by the 2026-05-30 user request to continue and locally merge this child plan implementation
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -48,7 +48,7 @@ Last updated: 2026-05-29
 - tools/claim_implementation_plan.py
 - tools/check_implementation_plan_claim_lock.py
 - docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md
-- test/*portable_parallel*
+- test/check_implementation_plan_claim_lock.test.py
 
 ## Upstream Scheduling Contract
 
@@ -72,12 +72,12 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Define no-backend session startup, claim, release, and cleanup steps.
-- [ ] Add tests proving two sessions cannot claim the same child plan but can claim different child plans.
-- [ ] Update governance docs with the portable fallback path.
-- [ ] Run claim lock, worktree receipt, and local gate checks.
-- [ ] Align portable claim startup/status output with the Phase 1A scheduler/ROB entry model before runtime integration.
+- [x] Confirm this child plan after local main integration.
+- [x] Define no-backend session startup, claim, release, and cleanup steps.
+- [x] Add tests proving two sessions cannot claim the same child plan but can claim different child plans.
+- [x] Update governance docs with the portable fallback path.
+- [x] Run claim lock, worktree receipt, and local gate checks.
+- [x] Align portable claim startup/status output with the Phase 1A scheduler/ROB entry model before runtime integration.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -101,6 +101,9 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 local MR review repair: portable startup now preserves Stage A confirmation metadata in claim and receipt so non-document implementation can satisfy the confirmed-plan gate.
+- 2026-05-30 validation before commit: focused claim-lock tests, implementation-plan rules, precommit update/archive, ROB checker, worktree receipt checker, diff whitespace check, py_compile, worktree hygiene, and full local gate passed in the feature worktree.
+- 2026-05-30 Stage C implementation: added portable `start`, `status`, and metadata-only `release` surfaces to `tools/claim_implementation_plan.py`; startup now writes an active claim, worktree receipt, and predicted ROB entry, and focused tests cover same-plan denial, different-plan parallel claims, and safe release without file deletion.
 - 2026-05-30 complete-flow alignment: no-OMX/LangGraph execution no longer depends on a fixed leader retirement queue; later runtime should use portable claims, ROB entries, and `local-main-retire.lock` for session-owned self-retire.
 - 2026-05-29 upstream contract supplement: referenced the Phase 1A scheduler/ROB model as the later portable/receipt runtime alignment source.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
