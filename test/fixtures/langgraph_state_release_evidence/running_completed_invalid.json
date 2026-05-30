@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "case_type": "langgraph_state_release",
+  "case_id": "running_completed_invalid",
+  "task_completed": true,
+  "thread_state": {
+    "thread_id": "repo:worktree:running",
+    "status": "running",
+    "completed_at": "2026-05-30T00:00:00Z",
+    "final_phase": "verify-accept",
+    "result_summary": "work was reported complete but state was not released",
+    "released_by": "codex-main-session"
+  }
+}

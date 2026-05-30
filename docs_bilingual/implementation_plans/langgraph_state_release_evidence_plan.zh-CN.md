@@ -35,12 +35,12 @@ Reject stale running LangGraph state after completed work and require explicit c
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：已实施并完成本地验证
+阶段：Stage C 实施包
+负责人会话：`codex-langgraph-state-release-evidence-20260530`
+当前门禁：本地验证已完成，等待合入本地 main；远端发布仍不在范围内
+Stage C 进入条件：用户于 2026-05-30 确认继续实施，且该子方案已在本地 `main`
+最后更新：2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -66,11 +66,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for completed, running, released, and handoff LangGraph states.
-- [ ] Update durable state checker to flag stale running state after completion.
-- [ ] Document safe backend-family handoff requirements.
-- [ ] Run durable state and LangGraph checks plus local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for completed, running, released, and handoff LangGraph states.
+- [x] Update durable state checker to flag stale running state after completion.
+- [x] Document safe backend-family handoff requirements.
+- [x] Run durable state and LangGraph checks plus local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -94,5 +94,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Stage C 实施：分支 `implement-langgraph-state-release-evidence-20260530` 新增结构化 LangGraph state-release fixtures，扩展 `tools/check_durable_artifact_state_surfaces.py` 以拒绝 completed work 仍处于 `running` state 以及缺失 release/handoff 字段的情况，登记 `test/check_langgraph_state_release_evidence.test.py`，并记录 backend-family handoff 要求；最终 local-main commit 将在集成后记录。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

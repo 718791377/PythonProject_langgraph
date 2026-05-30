@@ -35,12 +35,12 @@ Reject stale running LangGraph state after completed work and require explicit c
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented and locally validated
+Stage: Stage C implementation package
+Owner session: `codex-langgraph-state-release-evidence-20260530`
+Current gate: local validation complete before local main integration; remote publication remains out of scope
+Stage C entry condition: satisfied by user confirmation message on 2026-05-30 after the child plan was already on local `main`
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -66,11 +66,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for completed, running, released, and handoff LangGraph states.
-- [ ] Update durable state checker to flag stale running state after completion.
-- [ ] Document safe backend-family handoff requirements.
-- [ ] Run durable state and LangGraph checks plus local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for completed, running, released, and handoff LangGraph states.
+- [x] Update durable state checker to flag stale running state after completion.
+- [x] Document safe backend-family handoff requirements.
+- [x] Run durable state and LangGraph checks plus local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -94,5 +94,6 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Stage C implementation: branch `implement-langgraph-state-release-evidence-20260530` adds structured LangGraph state-release fixtures, extends `tools/check_durable_artifact_state_surfaces.py` to reject completed `running` state and missing release/handoff fields, registers `test/check_langgraph_state_release_evidence.test.py`, and documents backend-family handoff requirements; final local-main commit will be recorded after integration.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

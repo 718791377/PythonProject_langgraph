@@ -65,7 +65,7 @@
 
 ### Requirement: Activation traces SHALL expose full orchestration state / Activation trace 必须暴露完整 orchestration 状态
 
-用户级 orchestration activation policy 必须要求 activation trace 报告 task phase、capability-chain state、default durable backend、backend readiness、expert selection、durable workflow state、persistent-team state 与具体 reason。Trace vocabulary 必须区分 `not_needed`、`candidate`、`selected`、`blocked` 与 `running`。
+用户级 orchestration activation policy 必须要求 activation trace 报告 task phase、capability-chain state、default durable backend、backend readiness、expert selection、durable workflow state、persistent-team state 与具体 reason。Trace vocabulary 必须区分 state meaning：`not_needed`（threshold 未满足或无需 lane）、`candidate`（具备候选资格但未采用）、`selected`（已选择但尚未运行）、`blocked`（因具名 blocker 或未满足 threshold 而无法继续）与 `running`（durable 或 persistent execution 正在运行）。
 
 仓库必须提供可执行 trace-evidence validator，检查保存的 activation trace text 是否具备 required fields、capability-chain consistency、backend readiness semantics、durable workflow 与 persistent-team vocabulary、forbidden missing-reminder reasons、expert-timeout evidence labels，以及 `why` 字段中的 durable-team threshold evidence。仓库也必须提供 `tools/check_expert_lifecycle_wait_pacing_evidence.py`，用于检查 completed-expert closure、preserved-thread exceptions、bounded wait windows、liveness/stall actions 与 provider pacing as backpressure。
 

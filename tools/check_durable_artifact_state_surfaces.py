@@ -141,6 +141,14 @@ TRANSIENT_ONLY_PATTERNS = (
     re.compile(r"只存在于\s*transient chat context", re.IGNORECASE),
 )
 
+LANGGRAPH_RELEASE_CASE_TYPE = "langgraph_state_release"
+LANGGRAPH_ACTIVE_THREAD_STATUSES = {"running", "resumed", "waiting_for_approval", "pending", "in_progress"}
+LANGGRAPH_RELEASED_THREAD_STATUSES = {"released", "closed"}
+LANGGRAPH_HANDOFF_THREAD_STATUSES = {"handoff", "handed_off"}
+LANGGRAPH_COMPLETION_FIELDS = ("completed_at", "final_phase", "result_summary", "released_by")
+LANGGRAPH_RELEASE_FIELDS = ("released_at", "released_by")
+LANGGRAPH_HANDOFF_FIELDS = ("handoff_at", "handoff_target", "reason")
+
 RESEARCH_MARKERS = ("open-ended research", "research fan-in", "开放式 research", "研究 fan-in")
 IMPLEMENTATION_MARKERS = ("implementation starts", "implementation phase", "开始 implementation", "执行阶段")
 BRIEF_FIELDS = ("scope", "non-goals", "acceptance evidence", "ownership boundaries", "unresolved risks")
@@ -164,8 +172,80 @@ def contains_any(text: str, markers: tuple[str, ...]) -> bool:
     return any(marker.lower() in lowered for marker in markers)
 
 
+def lower(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
 def matches_any(text: str, patterns: tuple[re.Pattern[str], ...]) -> bool:
     return any(pattern.search(text) for pattern in patterns)
+
+
+def load_json_object(text: str) -> dict[str, Any] | None:
+    stripped = text.strip()
+    if not stripped or not stripped.startswith("{"):
+        return None
+    try:
+        payload = json.loads(stripped)
+    except json.JSONDecodeError:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def has_non_empty_string(payload: dict[str, Any], key: str) -> bool:
+    return isinstance(payload.get(key), str) and bool(str(payload.get(key)).strip())
+
+
+def require_thread_state_fields(
+    state: dict[str, Any],
+    fields: tuple[str, ...],
+    errors: list[str],
+    *,
+    reason: str,
+) -> None:
+    for field in fields:
+        if not has_non_empty_string(state, field):
+            errors.append(f"LangGraph state release {reason} missing field: {field}")
+
+
+def validate_langgraph_state_release_evidence(payload: dict[str, Any], errors: list[str]) -> None:
+    state = payload.get("thread_state")
+    if not isinstance(state, dict):
+        errors.append("LangGraph state release evidence missing object field: thread_state")
+        return
+
+    status = str(state.get("status", "")).strip().lower()
+    task_completed = payload.get("task_completed") is True
+    handoff = payload.get("handoff") is True or status in LANGGRAPH_HANDOFF_THREAD_STATUSES
+
+    if task_completed:
+        if not status or status in LANGGRAPH_ACTIVE_THREAD_STATUSES:
+            rendered_status = status or "<missing>"
+            errors.append(
+                "Completed LangGraph task must not remain active "
+                f"status={rendered_status}; record close, release, or handoff evidence."
+            )
+        require_thread_state_fields(
+            state,
+            LANGGRAPH_COMPLETION_FIELDS,
+            errors,
+            reason="for completed work",
+        )
+
+    if status in LANGGRAPH_RELEASED_THREAD_STATUSES:
+        require_thread_state_fields(
+            state,
+            LANGGRAPH_RELEASE_FIELDS,
+            errors,
+            reason="for released or closed state",
+        )
+
+    if handoff:
+        require_thread_state_fields(
+            state,
+            LANGGRAPH_HANDOFF_FIELDS,
+            errors,
+            reason="for backend-family handoff",
+        )
 
 
 def has_repo_local_path(text: str) -> bool:
@@ -249,6 +329,11 @@ def run_evidence_check(evidence_path: Path) -> dict[str, Any]:
     if text is None:
         errors.append(f"Missing or unreadable durable artifact/state-surface evidence file: {evidence_path}")
         text = ""
+
+    json_payload = load_json_object(text)
+    if json_payload is not None and lower(json_payload.get("case_type")) == LANGGRAPH_RELEASE_CASE_TYPE:
+        detected.append("langgraph_state_release")
+        validate_langgraph_state_release_evidence(json_payload, errors)
 
     has_exploration = contains_any(text, EXPLORATION_MARKERS)
     has_code_change = contains_any(text, CODE_CHANGE_MARKERS)
