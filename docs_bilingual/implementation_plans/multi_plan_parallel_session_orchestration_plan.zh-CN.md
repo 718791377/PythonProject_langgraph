@@ -281,13 +281,13 @@ python tools/local_main_retire_lock.py status --root . --json
 
 准入规则：所有 eligible 子方案均可并行；`.omx/state` 写入按仓库和 worktree hotspot lease 串行化。
 
-### Phase 4：自动路由与中文可视化
+### Phase 4：自动路由与中文会话表面
 
-目的：让协同路由自动、可审计，并在对话中面向中文展示。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由当前 owner session 负责的最终 verification evidence。
+目的：让协同路由自动、可审计，并确保对话中面向用户展示的路由跟踪和更新计划都使用中文字段名、中文说明和中文状态表达。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由当前 owner session 负责的最终 verification evidence；保存版结构化 evidence 可继续保留 ASCII 阈值、blocker token、schema key、文件名和命令参数。
 
 候选子方案：
 
-1. `chinese_routing_trace_conversation_surface_plan` - 要求用户可见 routing trace 使用中文字段名和中文说明。
+1. `chinese_routing_trace_conversation_surface_plan` - 要求用户可见的路由跟踪和更新计划使用中文字段名、中文说明和中文状态表达。
 2. `routing_trace_structured_evidence_schema_plan` - 为保存版证据保留机器可读 ASCII 阈值和 blocker token。
 3. `prompt_independent_activation_parity_plan` - 确保路由不依赖用户是否说出“并行”或“专家”。
 4. `expert_lifecycle_timeout_pacing_evidence_plan` - 将 timeout、stall 和 pacing 视为非证据，并要求有界处理。
@@ -402,7 +402,8 @@ python tools/local_main_retire_lock.py status --root . --json
 - [x] Stage A 恢复：记录 self-retire runtime 来源提交存在，但当时本地 `main` 缺少 runtime 文件；非文档恢复前必须停止等待确认。
 - [x] Stage B runtime 恢复：恢复 self-retire runtime helper/checker 行为，并在 `898f9d0` 合入本地 `main`。
 - [x] Phase 0 收口：在 Phase 2 准入前收口 inventory registry alignment 子方案和 parent orchestration index 子方案。
-- [ ] 后续阶段：本 Phase 0 收口包合入本地 `main` 后，再执行 Phase 2 context 与 UTF-8 safety 子方案。
+- [x] 后续阶段：Phase 0 收口包已经合入本地 `main`；Phase 2 context 与 UTF-8 safety 子方案已按 Work-Conserving 模型启动，部分包已进入本地 `main`。
+- [x] Phase 4 父子方案治理更新：把中文会话表面从路由跟踪扩展到路由跟踪和更新计划，并保留保存版 evidence 的机器可读 ASCII token。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -428,10 +429,12 @@ Stage B 后续确认后的验收条件：
 - 本父方案明确只约束本方案族；无关 implementation_plan 可以无父方案或属于其他父方案。
 - 新 session 不默认读取本文件，除非处理本文件、其子方案或正文列出的相关方案。
 - 后续同机多 session 目标是 session 自主负责自己的提交和本地 `main` 合入，并用 `local-main-retire` lock 保持本地 `main` 写入串行。
+- Phase 4 子方案必须把面向用户的路由跟踪和更新计划示例写成中文；内部工具名、schema key、阈值 token、blocker token、文件名和 CLI 参数可保持 ASCII。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Phase 4 中文会话表面治理更新：分支 `chinese-routing-updated-plan-20260530` 更新父方案与 `chinese_routing_trace_conversation_surface_plan` 子方案，明确用户可见的路由跟踪和更新计划必须中文化，保存版结构化 evidence 继续允许机器可读 ASCII token；远端发布仍未授权。
 - 2026-05-30 完整提交流程对齐包：分支 `align-complete-flow-parent-plans-20260530` 由 `codex-align-complete-flow-parent-plans-20260530` 认领 `parent_parallel_orchestration_index_plan`，ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录父方案族文档候选包；本包把父方案和声明 `parent_plan` 指向本文件的子方案统一对齐到《完整提交流程.md》的 session-owned self-retire、`local-main-retire.lock` 和远端发布门模型。
 - 2026-05-30 Phase 0 收口包：在分支 `phase0-plan-index-closure-20260530` 收口 `plan_inventory_registry_alignment_plan` 和 `parent_parallel_orchestration_index_plan`；机器可读盘点证据为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；在本包完成本地门禁、local MR review 并合入本地 `main` 前，Phase 2 仍保持阻塞。
 - 2026-05-30 self-retire runtime 恢复：本地 `main` 已在 `898f9d0` 包含恢复后的 self-retire runtime helper/checker 包，替代早先 `b4af80f` 的待恢复说明。
