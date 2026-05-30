@@ -35,20 +35,22 @@ Give the orchestration collaboration evidenceguard and bilingual OpenSpec stable
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implementation-in-progress
+Stage: Stage C collaboration evidenceguard and bilingual OpenSpec surface package
+Owner session: codex-collaboration-evidenceguard-bilingual-openspec-20260530
+Current gate: user confirmation recorded; checker, fixture-registration, bilingual OpenSpec, CI-manifest, and focused regression-test updates are ready for local gate and local MR review before local main integration
+Stage C entry condition: satisfied by the 2026-05-30 user request to continue and locally merge this child plan implementation
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
 
 - tools/check_orchestration_collaboration_evidenceguard.py
 - test/fixtures/orchestration_*
+- test/check_orchestration_collaboration_evidenceguard.test.py
 - openspec/specs/codex-user-level-orchestration-activation-policy/spec.md
 - openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md
+- tools/ci/ci_test_manifest.json
 
 ## Hotspot Serialization
 
@@ -69,11 +71,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Inventory evidenceguard requirements that are not already owned by narrower Phase 4 child plans.
-- [ ] Add bilingual OpenSpec spec statements for evidenceguard authority and saved evidence requirements.
-- [ ] Register new evidenceguard fixtures and CI tests in one serialized update.
-- [ ] Run OpenSpec guard, evidenceguard tests, mirrored CI check, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Inventory evidenceguard requirements that are not already owned by narrower Phase 4 child plans.
+- [x] Add bilingual OpenSpec spec statements for evidenceguard authority and saved evidence requirements.
+- [x] Register new evidenceguard fixtures and CI tests in one serialized update.
+- [x] Run OpenSpec guard, evidenceguard tests, mirrored CI check, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -98,4 +100,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-30 Stage C implementation package: adds required evidenceguard fixture registration, a manifest-registered collaboration evidenceguard regression test, and bilingual OpenSpec fixture-surface requirements; local gate and local MR review evidence are recorded in the session response and worktree receipt.
 <!-- EVIDENCE_INDEX_END -->

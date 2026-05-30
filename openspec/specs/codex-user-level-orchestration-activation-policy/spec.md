@@ -83,6 +83,8 @@ Prompt-independent collaboration parity SHALL be checker-backed. The repository 
 
 The repository SHALL keep the Chinese OpenSpec companion for this policy structurally aligned with this English primary by preserving every source `### Requirement:` and `#### Scenario:` heading, and `tools/check_orchestration_collaboration_evidenceguard.py` SHALL fail repository checks when that bilingual OpenSpec heading parity is lost.
 
+Registered collaboration evidenceguard fixtures SHALL be checker-backed. The required fixture registry SHALL include prompt-independent parity, cold-start read order, durable/persistent claim, expert lifecycle audit, main-session escalation, and LangGraph state release coverage so repository-mode checks fail if any required evidenceguard fixture silently disappears.
+
 #### Scenario: Saved trace evidence is checked
 - **WHEN** a saved activation trace is passed to the repository trace-evidence validator
 - **THEN** the validator SHALL fail if any required trace field is missing
@@ -104,6 +106,12 @@ The repository SHALL keep the Chinese OpenSpec companion for this policy structu
 - **THEN** durable/persistent team claims SHALL fail without the required selector, manifest or thread-state, heartbeat, close, and leader absorption evidence
 - **AND** completed LangGraph tasks SHALL fail if the state remains `running` without release fields
 - **AND** released, closed, or backend-family handoff states SHALL fail when their release or handoff fields are missing
+
+#### Scenario: Registered collaboration evidenceguard fixture coverage is checked
+
+- **WHEN** repository-mode evidenceguard checks run
+- **THEN** the required fixture registry SHALL include prompt-independent parity, cold-start read-order, durable/persistent claim, expert lifecycle audit, main-session escalation, and LangGraph state release cases
+- **AND** the check SHALL fail if any required fixture is missing from the registered fixture directory
 
 ### Requirement: Main-session escalation visibility SHALL be explicit
 

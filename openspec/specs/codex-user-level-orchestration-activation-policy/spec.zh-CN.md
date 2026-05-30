@@ -71,6 +71,10 @@
 
 Prompt-independent collaboration parity 必须由 checker 背书。仓库必须提供 `tools/check_orchestration_collaboration_evidenceguard.py` 与 fixture pairs，证明同等任务在有无协同短语时产生同等 routing decisions。该 checker 还必须验证 cold-start read-order evidence、durable/persistent evidenceguard records、structured expert lifecycle audit events、落盘 JSONL expert lifecycle audit logs，并要求 `spawn`、`wait`、`timeout`、`result`、`absorbed` 与 `close` 事件具备各自必需字段；同时还必须要求 `spawn.scope` 与 `spawn.non_goals` 是非空的非空字符串列表，`result.changed_paths` 是非空字符串列表，并验证 LangGraph state release evidence。durable/persistent evidenceguard 必须拒绝缺少 active selector、backend family、preflight、ownership plan、manifest 或 LangGraph thread state、heartbeat、close 与 leader absorption 证据的 selected、running 或 complete durable-team claims。LangGraph state release 必须拒绝 completed work 仍停留在 stale `running` state 而未记录 `completed_at`、`final_phase`、`result_summary` 与 `released_by` 的状态。
 
+中文 OpenSpec companion 必须保留英文 primary 中每一个 `### Requirement:` 与 `#### Scenario:` 源标题，并明确记录双语 OpenSpec heading parity；`tools/check_orchestration_collaboration_evidenceguard.py` 必须在该 双语 OpenSpec heading parity 丢失时让 repository check 失败。
+
+Registered collaboration evidenceguard fixtures 必须由 checker 背书。required fixture registry 必须覆盖 prompt-independent parity、cold-start read order、durable/persistent claim、expert lifecycle audit、main-session escalation 与 LangGraph state release；如果任何 required evidenceguard fixture 静默消失，repository-mode check 必须失败。
+
 #### Scenario: Saved trace evidence is checked / 检查保存的 trace evidence
 
 - **WHEN** 保存的 activation trace 被传给 repository trace-evidence validator
@@ -93,6 +97,13 @@ Prompt-independent collaboration parity 必须由 checker 背书。仓库必须�
 - **THEN** durable/persistent team claims 缺少 required selector、manifest 或 thread-state、heartbeat、close 与 leader absorption evidence 时必须失败
 - **AND** completed LangGraph tasks 若 state 仍为 `running` 且没有 release fields，则必须失败
 
+
+
+#### Scenario: Registered collaboration evidenceguard fixture coverage is checked / 检查已登记的 collaboration evidenceguard fixture 覆盖
+
+- **WHEN** repository-mode evidenceguard check 运行
+- **THEN** required fixture registry 必须包含 prompt-independent parity、cold-start read-order、durable/persistent claim、expert lifecycle audit、main-session escalation 与 LangGraph state release cases
+- **AND** 如果 registered fixture directory 缺少任何 required fixture，checker 必须失败
 
 
 ### Requirement: Main-session escalation visibility SHALL be explicit / Main-session escalation visibility 必须显式可见

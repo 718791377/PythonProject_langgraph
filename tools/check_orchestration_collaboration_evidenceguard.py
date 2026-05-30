@@ -27,16 +27,20 @@ EXPERT_LIFECYCLE_REQUIRED_LIST_FIELDS: dict[str, tuple[str, ...]] = {
 }
 
 REQUIRED_FIXTURES = {
+    "cold_start_read_order_valid.json",
     "doc_update_without_collaboration_phrase.json",
     "doc_update_with_collaboration_phrase.json",
-    "multi_slice_without_collaboration_phrase.json",
-    "multi_slice_with_collaboration_phrase.json",
+    "durable_persistent_complete_valid.json",
+    "expert_lifecycle_audit_valid.json",
     "explicit_omx_without_threshold.json",
     "explicit_langgraph_single_slice.json",
+    "langgraph_state_release_valid.json",
     "main_session_escalation_pending.json",
     "main_session_escalation_granted.json",
     "main_session_escalation_timed_out.json",
     "main_session_escalation_not_needed.json",
+    "multi_slice_without_collaboration_phrase.json",
+    "multi_slice_with_collaboration_phrase.json",
 }
 
 REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
@@ -72,14 +76,17 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.md": [
         "Prompt-independent collaboration parity SHALL be checker-backed",
+        "Registered collaboration evidenceguard fixtures SHALL be checker-backed",
         "durable/persistent evidenceguard",
         "LangGraph state release",
         "tools/check_orchestration_collaboration_evidenceguard.py",
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md": [
         "prompt-independent collaboration parity",
+        "Registered collaboration evidenceguard fixtures",
         "durable/persistent evidenceguard",
         "LangGraph state release",
+        "双语 OpenSpec heading parity",
         "tools/check_orchestration_collaboration_evidenceguard.py",
     ],
 }

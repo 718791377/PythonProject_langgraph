@@ -35,20 +35,22 @@ Give the orchestration collaboration evidenceguard and bilingual OpenSpec stable
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：implementation-in-progress
+阶段：Stage C collaboration evidenceguard and bilingual OpenSpec surface package
+责任会话：codex-collaboration-evidenceguard-bilingual-openspec-20260530
+当前门禁：已记录用户确认；checker、fixture registration、双语 OpenSpec、CI manifest 与 focused regression test 更新已准备进入 local gate 和 local MR review，之后再合入本地 main
+Stage C 进入条件：已由 2026-05-30 用户请求继续并本地合入本子方案实现而满足
+最后更新：2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
 
 - tools/check_orchestration_collaboration_evidenceguard.py
 - test/fixtures/orchestration_*
+- test/check_orchestration_collaboration_evidenceguard.test.py
 - openspec/specs/codex-user-level-orchestration-activation-policy/spec.md
 - openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md
+- tools/ci/ci_test_manifest.json
 
 ## 热点串行规则
 
@@ -69,11 +71,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Inventory evidenceguard requirements that are not already owned by narrower Phase 4 child plans.
-- [ ] Add bilingual OpenSpec spec statements for evidenceguard authority and saved evidence requirements.
-- [ ] Register new evidenceguard fixtures and CI tests in one serialized update.
-- [ ] Run OpenSpec guard, evidenceguard tests, mirrored CI check, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Inventory evidenceguard requirements that are not already owned by narrower Phase 4 child plans.
+- [x] Add bilingual OpenSpec spec statements for evidenceguard authority and saved evidence requirements.
+- [x] Register new evidenceguard fixtures and CI tests in one serialized update.
+- [x] Run OpenSpec guard, evidenceguard tests, mirrored CI check, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -98,4 +100,5 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-30 Stage C 实现包：增加 required evidenceguard fixture registration、manifest-registered collaboration evidenceguard regression test 与双语 OpenSpec fixture-surface requirement；local gate 和 local MR review 证据记录在会话回复和 worktree receipt 中。
 <!-- EVIDENCE_INDEX_END -->
