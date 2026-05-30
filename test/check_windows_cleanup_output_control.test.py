@@ -9,6 +9,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "check_windows_cleanup_output_control.py"
+LAUNCHER_BOUNDARY_SCRIPT_PATH = REPO_ROOT / "tools" / "check_launcher_payload_context_boundary.py"
 INSTALLER_PATH = REPO_ROOT / "tools" / "install-codex-user-level-team-mode.ps1"
 
 
@@ -30,6 +31,17 @@ class WindowsCleanupOutputControlCheckTest(unittest.TestCase):
     def run_check(self, root: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(SCRIPT_PATH), "--root", str(root), "--json"],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=REPO_ROOT,
+        )
+
+
+    def run_launcher_boundary_check(self, root: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(LAUNCHER_BOUNDARY_SCRIPT_PATH), "--root", str(root), "--json"],
             check=False,
             capture_output=True,
             text=True,
@@ -154,6 +166,71 @@ class WindowsCleanupOutputControlCheckTest(unittest.TestCase):
         self.assertIn("return 0;", source)
         self.assertLess(source.index("if (process.ExitCode == 0)"), source.index("Console.Error.Write(stdout);"))
         self.assertTrue(chinese_success.startswith("成功: 已终止 PID "))
+
+
+    def test_launcher_payload_boundary_passes_for_current_repository(self) -> None:
+        result = self.run_launcher_boundary_check(REPO_ROOT)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["evidence"]["exactly_one_model_instructions_file_startup_arg"])
+        self.assertTrue(payload["evidence"]["startup_args_never_embed_developer_instructions"])
+
+    def test_launcher_payload_boundary_fails_when_model_file_override_is_removed(self) -> None:
+        root = self.make_root("launcher-payload-missing-model-file")
+        source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
+            "model_instructions_file=",
+            "removed_model_instructions_file=",
+        )
+        self.write_installer_copy(root, source)
+
+        result = self.run_launcher_boundary_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("model_instructions_file" in error for error in payload["errors"]))
+
+    def test_launcher_payload_boundary_fails_when_developer_instructions_are_inlined(self) -> None:
+        root = self.make_root("launcher-payload-inline-developer-instructions")
+        source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
+            "('model_instructions_file=' + (ConvertTo-CodexUserLevelTomlLiteralString -Value $modelInstructionsFilePath))",
+            "('developer_instructions=' + $DeveloperInstructions)",
+        )
+        self.write_installer_copy(root, source)
+
+        result = self.run_launcher_boundary_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("developer_instructions" in error for error in payload["errors"]))
+
+    def test_launcher_payload_boundary_requires_utf8_state_file_write(self) -> None:
+        root = self.make_root("launcher-payload-missing-utf8-write")
+        source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
+            "Set-Content -LiteralPath $path -Value $Content -Encoding UTF8 -NoNewline",
+            "Set-Content -LiteralPath $path -Value $Content -Encoding ASCII -NoNewline",
+        )
+        self.write_installer_copy(root, source)
+
+        result = self.run_launcher_boundary_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("model_instructions_utf8_write" in error for error in payload["errors"]))
+
+    def test_launcher_payload_boundary_requires_launcher_to_use_startup_arg_builder(self) -> None:
+        root = self.make_root("launcher-payload-missing-startup-arg-builder")
+        source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
+            "`$startupArgs = Get-CodexUserLevelTeamModeStartupArgs -Status `$status -DeveloperInstructions `$instructions",
+            "`$startupArgs = @('-c', 'notify=[]')",
+        )
+        self.write_installer_copy(root, source)
+
+        result = self.run_launcher_boundary_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("startup_args_builder" in error for error in payload["errors"]))
 
 
 if __name__ == "__main__":
