@@ -29,18 +29,18 @@ Create the durable smoke and adoption gate template before any live durable runt
 - 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
 - 批次：Stage B Batch 2。
 - 阶段：Phase 3。
-- 状态：本文件是 active 子 implementation_plan，但在本地 `main` 合入后仍必须等待用户确认，才能开始非文档实现。
+- 状态：本文件是 active 子 implementation_plan；用户已确认实施只读 gate-template 包。
 - 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+阶段：feature worktree 中已完成验证的实施包
+责任会话：main Codex leader session
+当前门禁：用户已确认继续实施；runtime exercise、live smoke 和 apply mode 仍延后，必须等本 gate 通过且后续 reviewed change 明确授权后才能进入
+Stage C 进入条件：本地验证已通过；下一步是只读 gate-template 包完成 local MR review 并合入本地 main
+最后更新：2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -67,11 +67,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Define R0.6.0 gate template fields and R0.6.1 gate field checker behavior.
-- [ ] Add negative tests that block R0.6.2 live smoke or apply-mode adoption without the gate template.
-- [ ] Document that runtime exercise, live smoke, and apply mode are delayed until after this gate passes.
-- [ ] Run durable gate tests and local gate.
+- [x] 确认本子方案进入实施。
+- [x] 定义 R0.6.0 gate template fields 和 R0.6.1 gate field checker behavior。
+- [x] 增加 negative checker fixtures，用于在缺少 gate template 时阻止 R0.6.2 live smoke 或 apply-mode adoption。
+- [x] 记录 runtime exercise、live smoke 和 apply mode 必须延后到本 gate 通过之后。
+- [x] Run durable gate tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,4 +96,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-30 实施：扩展 `tools/check_durable_routing_smoke_gate_template.py`，支持 candidate-template validation，并默认运行 `tools/fixtures/durable_routing_smoke_gate_template/` 下的只读 self-test fixtures；现有 OpenSpec guard 调用会覆盖这些 fixtures，因为该 checker 默认执行 self-test。
+- 2026-05-30 验证：`python tools\check_durable_routing_smoke_gate_template.py --root . --json`、`python tools\check_document_pair_policy.py --root . --json`、`python tools\check_name_clarity_rules.py --root . --json`、`python tools\check_precommit_update_archive.py --root . --json` 和 `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` 已在 feature worktree 中于提交前通过。Local MR review 是 feature commit 清洁后的合入前门禁。
 <!-- EVIDENCE_INDEX_END -->

@@ -29,18 +29,18 @@ Create the durable smoke and adoption gate template before any live durable runt
 - Parent: `docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`.
 - Batch: Stage B Batch 2.
 - Phase: Phase 3.
-- Status: this file is an active child implementation plan, but implementation must not start until the user confirms this child plan after local `main` integration.
+- Status: this file is an active child implementation plan; the user has confirmed implementation of the read-only gate-template package.
 - Remote publication: out of scope unless the user explicitly asks for remote publication.
 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Stage: implementation package validated in feature worktree
+Owner session: main Codex leader session
+Current gate: implementation confirmed by user; runtime exercise, live smoke, and apply mode remain delayed until this gate passes and a later reviewed change explicitly authorizes them
+Stage C entry condition: local validation is green; local MR review and local main integration of the read-only gate-template package remain next
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -67,11 +67,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Define R0.6.0 gate template fields and R0.6.1 gate field checker behavior.
-- [ ] Add negative tests that block R0.6.2 live smoke or apply-mode adoption without the gate template.
-- [ ] Document that runtime exercise, live smoke, and apply mode are delayed until after this gate passes.
-- [ ] Run durable gate tests and local gate.
+- [x] Confirm this child plan for implementation.
+- [x] Define R0.6.0 gate template fields and R0.6.1 gate field checker behavior.
+- [x] Add negative checker fixtures that block R0.6.2 live smoke or apply-mode adoption without the gate template.
+- [x] Document that runtime exercise, live smoke, and apply mode are delayed until after this gate passes.
+- [x] Run durable gate tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -96,4 +96,6 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-30 implementation: extended `tools/check_durable_routing_smoke_gate_template.py` with candidate-template validation and default read-only self-test fixtures under `tools/fixtures/durable_routing_smoke_gate_template/`; the existing OpenSpec guard invocation covers these fixtures because the checker runs self-test by default.
+- 2026-05-30 validation: `python tools\check_durable_routing_smoke_gate_template.py --root . --json`, `python tools\check_document_pair_policy.py --root . --json`, `python tools\check_name_clarity_rules.py --root . --json`, `python tools\check_precommit_update_archive.py --root . --json`, and `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` passed in the feature worktree before commit. Local MR review remains the pre-integration gate after the feature commit is clean.
 <!-- EVIDENCE_INDEX_END -->

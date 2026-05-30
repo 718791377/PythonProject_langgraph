@@ -510,6 +510,12 @@ Default R0.6 boundary:
 - no `.omx/state/` writes; `.omx/state/` is the repo-local durable-state directory
 - no `omx team` launch or shutdown; `omx team` is the durable worker-team runtime command
 
+R0.6.0/R0.6.1 durable routing smoke-gate evidence:
+
+- `tools/durable_routing_smoke_gate_template.json` - reviewed read-only template for future durable routing smoke/adoption gates.
+- `tools/check_durable_routing_smoke_gate_template.py --self-test` - static checker plus positive and negative fixtures that block missing required fields, apply mode without mutation consent, and missing read-only guards.
+- `tools/fixtures/durable_routing_smoke_gate_template/` - read-only fixture set for validating future gate-template behavior before any R0.6.2 live smoke or apply-mode adoption.
+
 R0.6.1 Codex native rollback gate evidence:
 
 - `codex --version` - local smoke command proving the native Codex entrypoint still launches.

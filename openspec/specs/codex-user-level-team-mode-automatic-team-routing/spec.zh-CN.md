@@ -137,33 +137,40 @@ automatic durable routing 必须从当前已启用的 orchestration capability s
 - **AND** routing result 必须解释为什么对该 task flow 选择或拒绝 `native_omx`、`langgraph` 或 no durable team
 
 
-### Requirement: Durable routing smoke gates SHALL use a script-backed template before runtime exercise / durable routing smoke gate ??? runtime exercise ??????????
+### Requirement: Durable routing smoke gates SHALL use a script-backed template before runtime exercise / durable routing smoke gate 必须在 runtime exercise 前使用脚本背书模板
 
-durable routing smoke gate ??? dry-run?????? adoption exercise ???? automatic durable routing ???????????? repository-local ???
+Durable routing smoke gates SHALL use a reviewed repository-local template before any later dry-run, read-only sampling, or adoption exercise claims to evaluate automatic durable routing.
 
-?????????????????
+在任何后续 dry-run、read-only sampling 或 adoption exercise 声称评估 automatic durable routing 之前，durable routing smoke gate 必须使用已经 review 的 repository-local 模板。
 
-- `target_repository`??????OpenSpec artifacts ? repo-local durable state ???????
-- `phase`??? durable routing thresholds ??????
-- `task`?? routing plan ??????????????
-- `operator_consent_boundary`??? planning ? mutation action ??????
-- `routing_mode`??? exercise ? read-only?dry-run??????? apply?
-- `mutation_allowed`?????? release ????? false?
-- `validation_path`??? exercise ???????????
-- `rollback_path`??? exercise ???????????
+The template SHALL remain read-only and SHALL describe, at minimum:
 
-???????????? checker ? OpenSpec guard ???checker ???? durable team????? `omx-team-auto.ps1 -Apply`???? `.omx/state/`?
+该模板必须保持只读，并且至少描述：
 
-#### Scenario: Guard validates the smoke gate template without mutating durable state / guard ???? durable state ?????? smoke gate ??
+- `target_repository` —— 拥有 source、OpenSpec artifacts 和 repo-local durable state 的仓库根目录。
+- `phase` —— 驱动 durable routing thresholds 的项目阶段。
+- `task` —— 正在评估的具体 work item 或 validation question。
+- `operator_consent_boundary` —— planning 与 mutation action 之间的显式授权边界。
+- `routing_mode` —— field that states whether the exercise stays read-only, runs as dry-run, or may apply only after explicit consent；该字段说明 exercise 是 read-only、dry-run，还是经显式授权后可 apply。
+- `mutation_allowed` —— 布尔授权标记；本 release 的默认值必须是 false。
+- `validation_path` —— 证明 future exercise 结果所需的 commands、checks 或 evidence。
+- `rollback_path` —— future exercise 配置错误或需要撤销时的 recovery steps。
 
-- **WHEN** repository OpenSpec guard ??
-- **THEN** ????? durable routing smoke gate template checker
-- **AND** checker ?????????????
-- **AND** checker ??????
-- **AND** ????? native_omx????? LangGraph????? `.omx/state/`
+The template SHALL be checked by an executable repository checker and by the OpenSpec guard. The checker SHALL include read-only positive and negative fixture coverage for the template shape, missing required fields, apply mode without mutation consent, and missing read-only guards. The checker SHALL NOT launch a durable team, run `omx-team-auto.ps1 -Apply`, or write `.omx/state/`.
 
-#### Scenario: Future smoke gate starts from explicit consent boundaries / ?? smoke gate ?????????
+模板必须由可执行的 repository checker 和 OpenSpec guard 校验。该 checker 必须包含只读正向和负向 fixture 覆盖，用于验证模板形状、缺少必填字段、未授权 mutation consent 的 apply mode，以及缺少 read-only guards 的情况。该 checker 不得 launch durable team，不得运行 `omx-team-auto.ps1 -Apply`，也不得写入 `.omx/state/`。
 
-- **WHEN** ?? R0.6.x smoke gate ??????????
-- **THEN** ?? gate ???? `target_repository`?`phase`?`task`?`operator_consent_boundary`?`routing_mode`?`mutation_allowed`?`validation_path` ? `rollback_path`
-- **AND** ???? reviewed change ? operator ?????`mutation_allowed` ???? false
+#### Scenario: Guard validates the smoke gate template without mutating durable state / guard 在不修改 durable state 的情况下验证 smoke gate 模板
+
+- **WHEN** the repository OpenSpec guard runs / repository OpenSpec guard 运行
+- **THEN** it SHALL execute the durable routing smoke gate template checker / 它必须执行 durable routing smoke gate template checker
+- **AND** the checker SHALL validate the required template fields and descriptions / checker 必须验证模板必填字段和字段说明
+- **AND** the checker SHALL validate read-only self-test fixtures, including negative fixtures for unsafe adoption-gate shapes / checker 必须验证只读 self-test fixtures，包括 unsafe adoption-gate shapes 的负向 fixtures
+- **AND** the checker SHALL remain read-only / checker 必须保持只读
+- **AND** it SHALL NOT launch native_omx, launch LangGraph, or mutate `.omx/state/` / 它不得 launch native_omx、launch LangGraph 或修改 `.omx/state/`
+
+#### Scenario: Future smoke gate starts from explicit consent boundaries / future smoke gate 从显式授权边界开始
+
+- **WHEN** a future R0.6.x smoke gate copies or references the reviewed template / future R0.6.x smoke gate 复制或引用已 review 的模板
+- **THEN** the future gate SHALL declare `target_repository`, `phase`, `task`, `operator_consent_boundary`, `routing_mode`, `mutation_allowed`, `validation_path`, and `rollback_path` / future gate 必须声明 `target_repository`、`phase`、`task`、`operator_consent_boundary`、`routing_mode`、`mutation_allowed`、`validation_path` 和 `rollback_path`；these fields describe the target, phase, task, consent boundary, routing mode, mutation flag, validation path, and rollback path controls
+- **AND** `mutation_allowed` SHALL remain false unless a reviewed change and the operator explicitly authorize mutation / 除非 reviewed change 和 operator 显式授权 mutation，否则 `mutation_allowed` 必须保持 false

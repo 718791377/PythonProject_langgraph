@@ -117,6 +117,8 @@ Immediate next slices:
 - `R0.6.0 Gate Template` - create the reusable smoke/adoption gate template before any command is run.
 - `R0.6.1 Gate Field Checker` - add checker-backed enforcement that future gates declare `target_repository`, `phase`, `task`, and `operator_consent_boundary`.
 
+Current R0.6.0/R0.6.1 state: the reusable template and checker fixtures now live in `tools/durable_routing_smoke_gate_template.json`, `tools/check_durable_routing_smoke_gate_template.py`, and `tools/fixtures/durable_routing_smoke_gate_template/`; later R0.6.2+ live smoke or apply-mode adoption still requires a separate reviewed change and explicit operator consent.
+
 Only after those two slices are landed should the roadmap proceed to:
 
 - `R0.6.2 Read-Only State Sampling` - inspect one repository with read-only state surfaces.

@@ -135,6 +135,9 @@ MR 6 readiness review 之后，下一条 active release slice 是 `R0.6 Durable 
 
 - `R0.6.0 Gate Template` —— 立即下一步，创建 reusable smoke/adoption gate template，在它落地前不运行任何 routing 命令。
 - `R0.6.1 Gate Field Checker` —— 立即下一步，增加 checker-backed enforcement，要求 future gates 声明 `target_repository`、`phase`、`task` 和 `operator_consent_boundary`。
+
+当前 R0.6.0/R0.6.1 状态：reusable template 与 checker fixtures 已落在 `tools/durable_routing_smoke_gate_template.json`、`tools/check_durable_routing_smoke_gate_template.py` 和 `tools/fixtures/durable_routing_smoke_gate_template/`；后续 R0.6.2+ live smoke 或 apply-mode adoption 仍必须另开 reviewed change，并获得 operator 显式授权。
+
 - `R0.6.2 Read-Only State Sampling` —— 后续只读切片，用 read-only state surfaces 检查一个 repository。
 - `R0.6.3 Dry-Run Routing Decision` —— 后续 dry-run 切片，解释 routing decision，但不执行 `-Apply`。
 - `R0.6.4 Expected-Result Fixture` —— 后续 fixture 切片，把预期 decision 固化成 regression fixture。
