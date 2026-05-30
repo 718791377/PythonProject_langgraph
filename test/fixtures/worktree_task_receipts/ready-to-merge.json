@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "session_id": "fixture-ready-to-merge",
+  "status": "ready-to-merge",
+  "branch": "feature/demo",
+  "worktree": "__WORKTREE__",
+  "task_type": "implementation",
+  "task_name": "ready-to-merge receipt fixture",
+  "task_summary": "Fixture covering the ready-to-merge lifecycle status.",
+  "document_plan_only": false,
+  "requires_code_implementation": true,
+  "created_at": "2026-05-30T00:00:00+00:00",
+  "expected_merge_or_pause": "fixture validation",
+  "next_action": "Handle ready-to-merge lifecycle according to policy.",
+  "requires_local_main_merge": true,
+  "requires_remote_sync": false,
+  "lifecycle_status": "ready-to-merge",
+  "paths": [
+    "tools/check_worktree_task_receipt.py"
+  ]
+}

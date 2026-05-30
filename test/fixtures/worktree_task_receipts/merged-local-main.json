@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "session_id": "fixture-merged-local-main",
+  "status": "merged-local-main",
+  "branch": "feature/demo",
+  "worktree": "__WORKTREE__",
+  "task_type": "implementation",
+  "task_name": "merged-local-main receipt fixture",
+  "task_summary": "Fixture covering the merged-local-main lifecycle status.",
+  "document_plan_only": false,
+  "requires_code_implementation": true,
+  "created_at": "2026-05-30T00:00:00+00:00",
+  "expected_merge_or_pause": "fixture validation",
+  "next_action": "Handle merged-local-main lifecycle according to policy.",
+  "requires_local_main_merge": true,
+  "requires_remote_sync": false,
+  "lifecycle_status": "merged-local-main",
+  "paths": [
+    "tools/check_worktree_task_receipt.py"
+  ],
+  "completion": {
+    "completed_at": "2026-05-30T00:30:00+00:00",
+    "rollback_ref": "refs/backup/local-main/20260530003000-before-feature-demo",
+    "local_main_commit": "0123456789abcdef0123456789abcdef01234567",
+    "cleaned_worktree": "not-cleaned-yet",
+    "deleted_branch": "not-deleted-yet",
+    "remote_sync_status": "not_required"
+  }
+}

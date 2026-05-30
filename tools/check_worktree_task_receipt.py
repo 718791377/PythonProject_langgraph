@@ -28,8 +28,10 @@ ALLOWED_LIFECYCLE_STATUSES = {
     "remote-sync-needed",
     "completed",
     "superseded",
+    "stale",
 }
 ALLOWED_CLAIM_STATUSES = ALLOWED_LIFECYCLE_STATUSES | {"inactive"}
+COMPLETION_REQUIRED_LIFECYCLE_STATUSES = {"merged-local-main", "cleaned", "remote-sync-needed", "completed"}
 REQUIRED_METADATA_FIELDS = {
     "schema_version": int,
     "session_id": str,
@@ -434,7 +436,7 @@ def validate_metadata(
         errors.append(f"{prefix}: document-plan-only work cannot also require code implementation")
     if data.get("document_plan_only") is True and data.get("requires_local_main_merge") is not True:
         warnings.append(f"{prefix}: document-plan-only work should normally merge to local main and cleanup promptly")
-    if require_completion or lifecycle in {"merged-local-main", "cleaned", "remote-sync-needed", "completed"}:
+    if require_completion or lifecycle in COMPLETION_REQUIRED_LIFECYCLE_STATUSES:
         completion = data.get("completion") if isinstance(data.get("completion"), dict) else data
         for field, expected_type in COMPLETION_FIELDS.items():
             if field not in completion:
@@ -453,7 +455,16 @@ def validate_metadata(
     }
 
 
-def matching_claims(worktree_path: Path, branch: str) -> list[Path]:
+def validate_claim_lifecycle(data: dict[str, Any], path: Path, errors: list[str]) -> None:
+    status = data.get("status", "active")
+    if status not in ALLOWED_CLAIM_STATUSES:
+        errors.append(f"{path}: `status` must be one of {sorted(ALLOWED_CLAIM_STATUSES)} when present")
+    lifecycle = data.get("lifecycle_status")
+    if lifecycle is not None and lifecycle not in ALLOWED_LIFECYCLE_STATUSES:
+        errors.append(f"{path}: `lifecycle_status` must be one of {sorted(ALLOWED_LIFECYCLE_STATUSES)} when present")
+
+
+def matching_claims(worktree_path: Path, branch: str, errors: list[str] | None = None) -> list[Path]:
     claim_dir = worktree_path / CLAIMS_RELATIVE
     if not claim_dir.exists():
         return []
@@ -464,6 +475,8 @@ def matching_claims(worktree_path: Path, branch: str) -> list[Path]:
         except (OSError, json.JSONDecodeError):
             continue
         if isinstance(data, dict) and data.get("branch") == branch:
+            if errors is not None:
+                validate_claim_lifecycle(data, path, errors)
             matches.append(path)
     return matches
 
@@ -520,7 +533,8 @@ def evaluate(root: Path, require_all_feature_worktrees: bool, require_completion
             )
             record.update(summary)
             record["classification"] = str(summary.get("lifecycle_status") or "unclassified_feature_worktree")
-        claims = matching_claims(worktree_path, branch)
+        claim_lifecycle_issues = errors if require_all_feature_worktrees or is_current_feature else warnings
+        claims = matching_claims(worktree_path, branch, claim_lifecycle_issues)
         record["claim_present"] = bool(claims)
         record["claim_paths"] = [str(path) for path in claims]
         if not claims:

@@ -317,7 +317,7 @@ The metadata SHALL exist in two local-only surfaces:
 
 Both surfaces SHALL record at least the worktree path, branch, creating or taking-over session, task name, task summary, document-plan-only flag, later-code-required flag, touched paths, next action, local-main merge requirement, remote-sync requirement, expected merge-or-pause point, and lifecycle status.
 
-Allowed lifecycle statuses SHALL include `active`, `paused`, `ready-to-merge`, `merged-local-main`, `cleaned`, `remote-sync-needed`, `completed`, and `superseded`. Completed or cleaned worktrees SHALL carry completion receipt fields including rollback ref, local-main commit, cleaned worktree path, deleted branch, and remote sync status.
+Allowed lifecycle statuses SHALL include `active`, `paused`, `ready-to-merge`, `merged-local-main`, `cleaned`, `remote-sync-needed`, `completed`, `superseded`, and `stale`. `stale` and `superseded` SHALL classify residual or obsolete work without asserting local-main integration, cleanup, branch deletion, or remote publication. `merged-local-main`, `cleaned`, `remote-sync-needed`, and `completed` worktrees SHALL carry completion receipt fields including rollback ref, local-main commit, cleaned worktree path, deleted branch, and remote sync status.
 
 #### Scenario: New feature worktree lacks a receipt
 
@@ -336,8 +336,20 @@ Allowed lifecycle statuses SHALL include `active`, `paused`, `ready-to-merge`, `
 #### Scenario: Strict audit is requested
 
 - **WHEN** the checker runs with `--require-all-feature-worktrees`
-- **THEN** every registered feature worktree SHALL have a receipt and branch-matching claim
-- **AND** missing metadata SHALL fail the check
+- **THEN** every registered non-main feature worktree SHALL have both a task receipt and a branch-matching claim
+- **AND** the checker SHALL fail if any feature worktree is missing either surface
+
+#### Scenario: Stale residual work is classified without completion evidence
+
+- **WHEN** a worktree task receipt or branch-matching claim records lifecycle status `stale`
+- **THEN** the worktree task receipt checker SHALL accept the status without requiring completion receipt fields
+- **AND** it SHALL preserve the next action so the operator can classify, migrate, supersede, or clean the residue later
+
+#### Scenario: Integration and completion states require completion evidence
+
+- **WHEN** a worktree task receipt records `merged-local-main`, `cleaned`, `remote-sync-needed`, or `completed`
+- **THEN** the worktree task receipt checker SHALL require completion fields for rollback ref, local-main commit, cleaned worktree path, deleted branch, and remote sync status
+- **AND** it SHALL fail closed when those fields are absent or empty
 
 ### Requirement: OpenSpec guard SHALL include worktree task receipt verification
 

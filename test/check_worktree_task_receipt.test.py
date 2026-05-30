@@ -9,6 +9,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "check_worktree_task_receipt.py"
+FIXTURE_DIR = REPO_ROOT / "test" / "fixtures" / "worktree_task_receipts"
 spec = importlib.util.spec_from_file_location("check_worktree_task_receipt", SCRIPT_PATH)
 receipt = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
@@ -16,13 +17,10 @@ spec.loader.exec_module(receipt)
 
 
 class WorktreeTaskReceiptTest(unittest.TestCase):
-    def test_validate_metadata_accepts_required_lifecycle_fields(self) -> None:
-        errors: list[str] = []
-        warnings: list[str] = []
-        data = {
+    def base_receipt(self, *, lifecycle_status: str = "active", status: str | None = "active") -> dict[str, object]:
+        data: dict[str, object] = {
             "schema_version": 1,
             "session_id": "s1",
-            "status": "active",
             "branch": "feature/demo",
             "worktree": str(Path.cwd()),
             "task_type": "docs",
@@ -35,12 +33,51 @@ class WorktreeTaskReceiptTest(unittest.TestCase):
             "next_action": "finish docs and cleanup",
             "requires_local_main_merge": True,
             "requires_remote_sync": False,
-            "lifecycle_status": "active",
+            "lifecycle_status": lifecycle_status,
             "paths": ["docs/example.md"],
         }
+        if status is not None:
+            data["status"] = status
+        return data
 
-        summary = receipt.validate_metadata(
+    def complete_receipt(self, *, lifecycle_status: str = "completed") -> dict[str, object]:
+        data = self.base_receipt(lifecycle_status=lifecycle_status, status=lifecycle_status)
+        data.update(
+            {
+                "document_plan_only": False,
+                "requires_code_implementation": True,
+                "paths": ["tools/example.py"],
+                "completion": {
+                    "completed_at": "2026-05-19T00:30:00+00:00",
+                    "rollback_ref": "refs/backup/local-main/demo-before-feature-demo",
+                    "local_main_commit": "abc123",
+                    "cleaned_worktree": "D:/repo/.worktrees/demo",
+                    "deleted_branch": "feature/demo",
+                    "remote_sync_status": "not_synced",
+                },
+            }
+        )
+        return data
+
+    def validate(self, data: dict[str, object], *, require_completion: bool = False) -> tuple[list[str], list[str]]:
+        errors: list[str] = []
+        warnings: list[str] = []
+        receipt.validate_metadata(
             data,
+            path=Path("receipt.json"),
+            branch="feature/demo",
+            worktree_path=Path.cwd(),
+            errors=errors,
+            warnings=warnings,
+            require_completion=require_completion,
+        )
+        return errors, warnings
+
+    def test_validate_metadata_accepts_required_lifecycle_fields(self) -> None:
+        errors: list[str] = []
+        warnings: list[str] = []
+        summary = receipt.validate_metadata(
+            self.base_receipt(),
             path=Path("receipt.json"),
             branch="feature/demo",
             worktree_path=Path.cwd(),
@@ -52,6 +89,37 @@ class WorktreeTaskReceiptTest(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(summary["task_name"], "demo task")
         self.assertEqual(summary["lifecycle_status"], "active")
+
+    def test_fixture_covers_every_allowed_lifecycle_state(self) -> None:
+        fixture_statuses = {path.stem for path in FIXTURE_DIR.glob("*.json")}
+        self.assertEqual(fixture_statuses, receipt.ALLOWED_LIFECYCLE_STATUSES)
+
+        for fixture in sorted(FIXTURE_DIR.glob("*.json")):
+            with self.subTest(fixture=fixture.name):
+                data = json.loads(fixture.read_text(encoding="utf-8"))
+                data["worktree"] = str(Path.cwd())
+                errors, _warnings = self.validate(data)
+                self.assertEqual(errors, [])
+
+    def test_stale_receipt_and_claim_status_are_allowed_without_completion_fields(self) -> None:
+        errors, _warnings = self.validate(self.base_receipt(lifecycle_status="stale", status="stale"))
+        self.assertEqual(errors, [])
+
+    def test_branch_matching_claim_accepts_stale_status(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            worktree = Path(tmp)
+            claim_dir = worktree / ".omx" / "session-claims"
+            claim_dir.mkdir(parents=True)
+            (claim_dir / "claim.json").write_text(
+                json.dumps({"schema_version": 1, "branch": "feature/demo", "status": "stale"}),
+                encoding="utf-8",
+            )
+            errors: list[str] = []
+
+            matches = receipt.matching_claims(worktree, "feature/demo", errors)
+
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(errors, [])
 
     def test_validate_metadata_rejects_missing_lifecycle_and_conflicting_plan_flags(self) -> None:
         errors: list[str] = []
@@ -89,55 +157,29 @@ class WorktreeTaskReceiptTest(unittest.TestCase):
         self.assertTrue(any("document-plan-only work should normally merge" in warning for warning in warnings))
 
     def test_completed_lifecycle_requires_completion_receipt(self) -> None:
-        errors: list[str] = []
-        data = {
-            "schema_version": 1,
-            "session_id": "s1",
-            "branch": "feature/demo",
-            "worktree": str(Path.cwd()),
-            "task_name": "demo task",
-            "task_summary": "records why this worktree exists",
-            "document_plan_only": False,
-            "requires_code_implementation": True,
-            "created_at": "2026-05-19T00:00:00+00:00",
-            "expected_merge_or_pause": "merge after local gate",
-            "next_action": "cleanup",
-            "requires_local_main_merge": True,
-            "requires_remote_sync": False,
-            "lifecycle_status": "completed",
-            "paths": ["tools/example.py"],
-            "completion": {
-                "completed_at": "2026-05-19T00:30:00+00:00",
-                "rollback_ref": "refs/backup/local-main/demo-before-feature-demo",
-                "local_main_commit": "abc123",
-                "cleaned_worktree": "D:/repo/.worktrees/demo",
-                "deleted_branch": "feature/demo",
-                "remote_sync_status": "not_synced",
-            },
-        }
-
-        receipt.validate_metadata(
-            data,
-            path=Path("receipt.json"),
-            branch="feature/demo",
-            worktree_path=Path.cwd(),
-            errors=errors,
-            warnings=[],
-            require_completion=True,
-        )
-
+        data = self.complete_receipt()
+        errors, _warnings = self.validate(data, require_completion=True)
         self.assertEqual(errors, [])
         del data["completion"]["rollback_ref"]
-        receipt.validate_metadata(
-            data,
-            path=Path("receipt.json"),
-            branch="feature/demo",
-            worktree_path=Path.cwd(),
-            errors=errors,
-            warnings=[],
-            require_completion=True,
-        )
+        errors, _warnings = self.validate(data, require_completion=True)
         self.assertIn("receipt.json: completion `rollback_ref` is required for lifecycle `completed`", errors)
+
+    def test_completion_evidence_required_only_for_integration_lifecycle_states(self) -> None:
+        completion_required = receipt.COMPLETION_REQUIRED_LIFECYCLE_STATUSES
+        no_completion_required = receipt.ALLOWED_LIFECYCLE_STATUSES - completion_required
+
+        for lifecycle in sorted(completion_required):
+            with self.subTest(lifecycle=lifecycle):
+                errors, _warnings = self.validate(self.base_receipt(lifecycle_status=lifecycle, status=lifecycle))
+                self.assertTrue(
+                    any("completion `completed_at` is required" in error for error in errors),
+                    errors,
+                )
+
+        for lifecycle in sorted(no_completion_required):
+            with self.subTest(lifecycle=lifecycle):
+                errors, _warnings = self.validate(self.base_receipt(lifecycle_status=lifecycle, status=lifecycle))
+                self.assertEqual(errors, [])
 
     def test_evaluate_reports_missing_receipt_as_warning_by_default(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -36,11 +36,11 @@ Define and enforce active, paused, ready-to-merge, merged-local-main, completed,
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-29
+Stage: Stage C local implementation package
+Owner session: implement-worktree-receipt-claim-lifecycle-20260530
+Current gate: implement, validate, archive, commit, and merge to local main; stop at remote publication gate
+Stage C entry condition: satisfied by explicit user request on 2026-05-30 to continue this plan
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -72,12 +72,12 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add schema fixtures for every allowed lifecycle state.
-- [ ] Require completion fields for merged or completed states.
-- [ ] Document cleanup and branch deletion evidence without forcing immediate cleanup.
-- [ ] Run receipt checker and local gate.
-- [ ] Align receipt lifecycle states with Phase 1A ROB entry states before runtime integration.
+- [x] Confirm this child plan after local main integration.
+- [x] Add schema fixtures for every allowed lifecycle state.
+- [x] Require completion fields for merged, completed, cleaned, and remote-sync-needed states.
+- [x] Document cleanup and branch deletion evidence without forcing immediate cleanup.
+- [x] Run receipt checker, local gate, local MR review, archive, and post-archive validation.
+- [x] Align receipt lifecycle states with Phase 1A ROB entry states before runtime integration.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -101,6 +101,8 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 validation package: focused receipt tests, receipt checker, implementation-plan checker, OpenSpec spec validation, pre-commit update/archive review, local gate, and local MR review all passed before local main integration.
+- 2026-05-30 implementation package: added `stale` receipt/claim lifecycle validation, all-state fixtures, and completion-evidence grouping; OpenSpec change `implement-worktree-receipt-claim-lifecycle-20260530` records stale as a classification state rather than cleanup or branch-deletion evidence.
 - 2026-05-30 complete-flow alignment: receipt lifecycle remains the ROB state source; `ready-to-merge` maps to a ready candidate package, and `merged-local-main` maps to retired evidence after lock-backed self-retire.
 - 2026-05-29 upstream contract supplement: referenced the Phase 1A scheduler/ROB model as the later portable/receipt runtime alignment source.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
