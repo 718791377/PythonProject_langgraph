@@ -118,6 +118,7 @@ def main() -> int:
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
     delegation_wait_discipline_evidence_script = root / "tools" / "check_delegation_wait_discipline_evidence.py"
     durable_artifact_state_surfaces_script = root / "tools" / "check_durable_artifact_state_surfaces.py"
+    repo_local_selector_ownership_script = root / "tools" / "check_repo_local_selector_ownership.py"
     orchestration_collaboration_evidenceguard_script = root / "tools" / "check_orchestration_collaboration_evidenceguard.py"
     leader_session_scope_evidence_script = root / "tools" / "check_leader_session_scope_evidence.py"
     capability_switch_chain_script = root / "tools" / "check_capability_switch_chain.py"
@@ -194,6 +195,8 @@ def main() -> int:
         raise SystemExit(f"Missing delegation/wait discipline evidence check script: {delegation_wait_discipline_evidence_script}")
     if not durable_artifact_state_surfaces_script.exists():
         raise SystemExit(f"Missing durable artifact/state-surface evidence check script: {durable_artifact_state_surfaces_script}")
+    if not repo_local_selector_ownership_script.exists():
+        raise SystemExit(f"Missing repo-local selector ownership check script: {repo_local_selector_ownership_script}")
     if not orchestration_collaboration_evidenceguard_script.exists():
         raise SystemExit(f"Missing orchestration collaboration evidenceguard script: {orchestration_collaboration_evidenceguard_script}")
     if not leader_session_scope_evidence_script.exists():
@@ -403,6 +406,11 @@ def main() -> int:
                 "check_durable_artifact_state_surfaces",
                 [str(python_exe), str(durable_artifact_state_surfaces_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during durable artifact/state-surface evidence verification.",
+            ),
+            (
+                "check_repo_local_selector_ownership",
+                [str(python_exe), str(repo_local_selector_ownership_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during repo-local selector ownership verification.",
             ),
             (
                 "check_orchestration_collaboration_evidenceguard",
@@ -741,6 +749,11 @@ def main() -> int:
         [str(python_exe), str(durable_artifact_state_surfaces_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during durable artifact/state-surface evidence verification.",
+    )
+    run_checked(
+        [str(python_exe), str(repo_local_selector_ownership_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during repo-local selector ownership verification.",
     )
     run_checked(
         [str(python_exe), str(orchestration_collaboration_evidenceguard_script), "--root", str(root)],

@@ -11,6 +11,7 @@ from typing import Any
 CHECK_NAME = "durable_artifact_state_surfaces"
 REGISTRY_RULE_ID = "durable-artifact-state-surfaces"
 GUARD_STEP = "check_durable_artifact_state_surfaces"
+SELECTOR_OWNERSHIP_GUARD_STEP = "check_repo_local_selector_ownership"
 
 REQUIRED_SNIPPETS: dict[str, list[str]] = {
     "AGENTS.md": [
@@ -40,6 +41,7 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "must not replace a bounded code-changing worker task",
         "LangGraph entrypoints and repo-local `.omx/state/langgraph/` state",
         "`.omx/state/selectors/active.json` remains the active selector authority",
+        "tools/check_repo_local_selector_ownership.py",
         "Durable artifacts, frozen briefs, and survivor queues",
         "tools/check_durable_artifact_state_surfaces.py",
     ],
@@ -48,6 +50,7 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "不得替代 bounded code-changing worker task",
         "LangGraph entrypoints 与 repo-local `.omx/state/langgraph/` state",
         "active selector authority",
+        "tools/check_repo_local_selector_ownership.py",
         "durable artifacts、frozen briefs 与 survivor queues",
         "tools/check_durable_artifact_state_surfaces.py",
     ],
@@ -111,6 +114,13 @@ LANGGRAPH_STATE_MARKERS = (".omx/state/langgraph/", ".omx\\state\\langgraph\\")
 SELECTOR_MARKERS = (".omx/state/selectors/active.json", ".omx\\state\\selectors\\active.json")
 COMPATIBILITY_MARKERS = ("compatibility record", "compatibility records", ".omx/state/team/", ".omx\\state\\team\\")
 DURABLE_ADOPTION_MARKERS = ("durable-team adoption", "automatic durable-team routing", "durable team adoption")
+SELECTOR_LOCALITY_MARKERS = (
+    "repo-local selector",
+    "repo-local active selector",
+    "repo-local .omx/state/selectors/active.json",
+    "current repository/worktree root",
+    "cross-repository selector adoption",
+)
 
 DURABLE_ARTIFACT_MARKERS = (
     "durable artifact",
@@ -188,6 +198,8 @@ def run_repository_check(root: Path) -> dict[str, Any]:
     guard_text = read_text(root / "tools/run_openspec_guard.py") or ""
     if GUARD_STEP not in guard_text:
         errors.append(f"tools/run_openspec_guard.py must run {GUARD_STEP}")
+    if SELECTOR_OWNERSHIP_GUARD_STEP not in guard_text:
+        errors.append(f"tools/run_openspec_guard.py must run {SELECTOR_OWNERSHIP_GUARD_STEP}")
 
     registry_text = read_text(root / "tools/safety_rule_script_backing_registry.json")
     if registry_text is None:
@@ -273,6 +285,10 @@ def run_evidence_check(evidence_path: Path) -> dict[str, Any]:
         if has_durable_adoption and not contains_any(text, SELECTOR_MARKERS):
             errors.append(
                 "Automatic durable-team adoption evidence must cite .omx/state/selectors/active.json as the active selector source."
+            )
+        if has_durable_adoption and not contains_any(text, SELECTOR_LOCALITY_MARKERS):
+            errors.append(
+                "Automatic durable-team adoption evidence must identify the repo-local selector boundary; cross-repository selector adoption is blocked."
             )
         if has_compatibility and has_durable_adoption and not contains_any(text, SELECTOR_MARKERS):
             errors.append(

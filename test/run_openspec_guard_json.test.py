@@ -41,6 +41,7 @@ GUARD_STEPS = [
     ("check_role_routing_directive_evidence", "check_role_routing_directive_evidence.py", "role_routing_directive_evidence"),
     ("check_delegation_wait_discipline_evidence", "check_delegation_wait_discipline_evidence.py", "delegation_wait_discipline_evidence"),
     ("check_durable_artifact_state_surfaces", "check_durable_artifact_state_surfaces.py", "durable_artifact_state_surfaces"),
+    ("check_repo_local_selector_ownership", "check_repo_local_selector_ownership.py", "repo_local_selector_ownership"),
     (
         "check_orchestration_collaboration_evidenceguard",
         "check_orchestration_collaboration_evidenceguard.py",
@@ -150,6 +151,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["steps"][12]["step"], "check_skills_audit_output_retention")
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
         self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_repo_local_selector_ownership", [step["step"] for step in payload["steps"]])
         self.assertIn("check_orchestration_collaboration_evidenceguard", [step["step"] for step in payload["steps"]])
         self.assertIn("check_local_main_retire_lock", [step["step"] for step in payload["steps"]])
         self.assertIn("check_launcher_payload_context_boundary", [step["step"] for step in payload["steps"]])

@@ -400,6 +400,24 @@
       "description": "Requires explorer/worker boundaries, LangGraph state surfaces, active selector authority, frozen briefs, survivor queues, and durable artifacts to be persisted outside transient chat context."
     },
     {
+      "id": "repo-local-selector-ownership",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/repo_local_selector_ownership_plan.md",
+        "docs_bilingual/implementation_plans/repo_local_selector_ownership_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_repo_local_selector_ownership.py"
+      ],
+      "guard_steps": [
+        "check_repo_local_selector_ownership"
+      ],
+      "description": "Ensures active durable selectors and selector leases are repo-local, blocks cross-repository selector adoption, and reports selector refresh gaps instead of auto-adopting from compatibility records."
+    },
+    {
       "id": "custom-agent-toml-schema",
       "owner_level": "user",
       "status": "implemented",

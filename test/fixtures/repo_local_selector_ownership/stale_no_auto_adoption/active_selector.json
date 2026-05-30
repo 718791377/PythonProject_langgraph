@@ -1,0 +1,20 @@
+{
+  "backend_family": "langgraph",
+  "selector_id": "selector-fixture",
+  "repo_root": "__ROOT__",
+  "worktree_id": "fixture-worktree",
+  "thread_id": "fixture-thread",
+  "session_scope_id": "fixture-session",
+  "leader_session_lineage": "fixture-session",
+  "acquired_at": "2026-05-30T07:55:00Z",
+  "last_heartbeat_at": "2026-05-29T00:00:00Z",
+  "released_at": "",
+  "generation": 1,
+  "routing_posture": "stale_no_auto_adoption",
+  "routing_eligible": false,
+  "layout": {
+    "root": "__ROOT__/.omx/state/selectors",
+    "active_selector": "__ROOT__/.omx/state/selectors/active.json",
+    "selector_leases": "__ROOT__/.omx/state/selectors/leases"
+  }
+}

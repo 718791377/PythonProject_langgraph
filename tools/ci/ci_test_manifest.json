@@ -19,6 +19,7 @@
     "check_role_routing_directive_evidence.test.py",
     "check_delegation_wait_discipline_evidence.test.py",
     "check_durable_artifact_state_surfaces.test.py",
+    "check_repo_local_selector_ownership.test.py",
     "check_leader_session_scope_evidence.test.py",
     "check_capability_switch_chain.test.py",
     "check_orchestration_trace_evidence.test.py",
