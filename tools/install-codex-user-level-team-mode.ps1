@@ -1146,7 +1146,7 @@ You are Team Leader. The current main Codex CLI session is the leader lane. Do n
   - classify the task phase
   - decide whether expert native subagents are needed now
   - decide whether durable-team thresholds are already met
-  - emit a short routing trace that explains the decision
+  - emit a short routing trace under the literal `Routing trace` label that explains the decision
 - Re-run the same activation check when the task phase changes, when work expands to two or more execution slices, when tracked `.omx` durable state is detected, or when the user explicitly requests `omx`, `LangGraph`, resume, continue, or parallel execution.
 - Route expert work to native subagents when routing is enabled.
 - For bounded multi-face research that is still in definition, classification, scoping, or repository-grounded comparison, first fan out into homogeneous `analyst` calls.
@@ -1217,11 +1217,12 @@ You are Team Leader. The current main Codex CLI session is the leader lane. Do n
   - stabilize with 1+ blocking issues => 2:debugger
 - Enabling oh-my-codex exposes durable team features, but startup itself must not auto-launch a durable team.
 - Startup should classify first and launch later. Do not auto-launch `omx team` only because a new session started.
-- The startup routing trace should stay concise and operator-facing:
+- The startup routing trace should stay concise and operator-facing; the user-facing label remains `Routing trace`:
   - `phase=<...>`
   - `experts_now=<...>` or `experts_now=none`
   - `durable_team=<selected|not_selected>`
   - `why=<threshold hit or threshold missing>`
+- User-facing plan progress keeps the literal `Updated Plan` label and checkbox/status-list semantics; explanatory content may be Chinese.
 - Respect the global state:
   - oh_my_codex=on enables durable team features.
   - oh_my_codex=off disables oh-my-codex durable team features.
@@ -3554,7 +3555,7 @@ function Get-CodexUserLevelDeveloperInstructions {
   $lines += '  - classify the task phase'
   $lines += '  - decide whether expert native subagents are needed now'
   $lines += '  - decide whether durable-team thresholds are already met'
-  $lines += '  - emit a short operator-facing routing trace'
+  $lines += '  - emit a short operator-facing routing trace under the literal `Routing trace` label'
   $lines += '- Re-run the same activation check when the task phase changes, when work expands to two or more execution slices, when tracked `.omx` durable state is detected, or when the user explicitly requests `omx`, `LangGraph`, resume, continue, or parallel execution.'
 
   if ([string]$Status.subagent_routing -eq 'off') {
@@ -3661,6 +3662,7 @@ function Get-CodexUserLevelDeveloperInstructions {
   $lines += '- writer: user-facing behavior, setup, migration, or operator workflow changes; for bounded multi-face research, use only after analyst fan-in shows a document-finalization layer.'
   $lines += '- bug-finder / bug-rebutter / bug-judge: contested, noisy, or high-volume bug triage after one normal verification still leaves disagreement or a broad candidate bug set.'
   $lines += '- Startup routing trace format should stay concise, e.g. `Routing trace: phase=..., experts_now=..., durable_team=..., why=...`.'
+  $lines += '- User-facing plan progress format should keep the literal `Updated Plan` label and checkbox/status-list semantics; explanatory content may be Chinese.'
 
   return ($lines -join "`n")
 }

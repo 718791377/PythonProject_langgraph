@@ -69,6 +69,8 @@ approval_receipt=<none|receipt id or repo-local artifact path>
 why=<concrete reason>
 ```
 
+User-facing conversation surfaces SHALL keep the literal labels `Routing trace` and `Updated Plan` stable. Explanatory content under those labels MAY be Chinese. `Updated Plan` SHALL remain a checklist/status-list surface and MUST NOT be replaced by prose-only text. Saved structured evidence keeps canonical field names and threshold or blocker tokens for checker compatibility.
+
 Do not use missing-reminder reasons such as "the user did not request parallelism" or "the user did not request subagents". Use task phase, scope, thresholds, blockers, or main-session takeover as the reason.
 
 Main-session escalation visibility is mandatory whenever an OMX, LangGraph, durable-worker, or local shell flow may need operator approval. `main_session_escalation` records whether the current main Codex CLI session has no escalation need, is running preflight, is waiting for approval, has received approval, has timed out, or is blocked. `approval_timeout_risk` records the visible risk level before a hidden worker wait can go stale. `approval_receipt` records `none` when no approval is needed, or a repo-local receipt, interrupt, checkpoint, or pending-approval artifact path when approval is pending, granted, timed out, or blocked. Worker contexts may record the receipt, but only the main session may request or receive escalation approval.

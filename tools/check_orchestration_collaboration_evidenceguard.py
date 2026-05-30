@@ -39,6 +39,10 @@ REQUIRED_FIXTURES = {
     "main_session_escalation_granted.json",
     "main_session_escalation_timed_out.json",
     "main_session_escalation_not_needed.json",
+    "conversation_surface_localized_routing_trace_invalid.json",
+    "conversation_surface_prose_only_updated_plan_invalid.json",
+    "conversation_surface_routing_trace_label_valid.json",
+    "conversation_surface_updated_plan_checklist_valid.json",
     "multi_slice_without_collaboration_phrase.json",
     "multi_slice_with_collaboration_phrase.json",
 }
@@ -121,6 +125,27 @@ FORBIDDEN_MISSING_REMINDERS = (
     "user did not ask for subagents",
 )
 COLLABORATION_PHRASES = ("experts", "durable_team", "persistent team", "subagents", "parallel")
+
+CONVERSATION_SURFACES = {"routing_trace", "updated_plan"}
+ROUTING_TRACE_FORBIDDEN_LABEL_PREFIXES = (
+    "\u8def\u7531\u8ddf\u8e2a",
+    "\u8def\u7531\u8ffd\u8e2a",
+    "\u8def\u7531\u8f68\u8ff9",
+)
+UPDATED_PLAN_FORBIDDEN_LABEL_PREFIXES = ("\u66f4\u65b0\u8ba1\u5212", "\u8ba1\u5212\u66f4\u65b0")
+UPDATED_PLAN_CHECKLIST_MARKERS = (
+    "\u25a1",
+    "\u2610",
+    "\u2611",
+    "\u2714",
+    "\u25e7",
+    "- [ ]",
+    "- [x]",
+    "- [X]",
+    "pending",
+    "in_progress",
+    "completed",
+)
 
 
 def utc_now() -> str:
@@ -515,6 +540,55 @@ def validate_expert_lifecycle_case(case: dict[str, Any], errors: list[str], labe
             errors.append(f"{label} wait evidence requires total_wait_bound_seconds.")
 
 
+def first_nonempty_line(text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return ""
+
+
+def conversation_surface_issues(surface: str, text: str) -> list[str]:
+    issues: list[str] = []
+    first_line = first_nonempty_line(text)
+    if surface == "routing_trace":
+        if not first_line.startswith("Routing trace"):
+            issues.append("routing trace surface must start with the literal `Routing trace` label.")
+        if any(first_line.startswith(prefix) for prefix in ROUTING_TRACE_FORBIDDEN_LABEL_PREFIXES):
+            issues.append("routing trace surface must not replace `Routing trace` with a localized label.")
+        return issues
+    if surface == "updated_plan":
+        if not first_line.startswith("Updated Plan"):
+            issues.append("updated plan surface must start with the literal `Updated Plan` label.")
+        if any(first_line.startswith(prefix) for prefix in UPDATED_PLAN_FORBIDDEN_LABEL_PREFIXES):
+            issues.append("updated plan surface must not replace `Updated Plan` with a localized label.")
+        text_lower = text.lower()
+        if not any(marker in text or marker in text_lower for marker in UPDATED_PLAN_CHECKLIST_MARKERS):
+            issues.append("updated plan surface must preserve checkbox/status-list semantics, not prose-only text.")
+        return issues
+    issues.append(f"unsupported conversation surface `{surface}`.")
+    return issues
+
+
+def validate_conversation_surface_case(case: dict[str, Any], errors: list[str], label: str) -> None:
+    require_string(case, "case_id", errors, label)
+    surface = lower(case.get("surface"))
+    if surface not in CONVERSATION_SURFACES:
+        errors.append(f"{label}.surface must be one of {sorted(CONVERSATION_SURFACES)}.")
+        return
+    text = require_string(case, "text", errors, label)
+    expected_valid = case.get("expected_valid")
+    if not isinstance(expected_valid, bool):
+        errors.append(f"{label}.expected_valid must be a boolean.")
+        return
+    issues = conversation_surface_issues(surface, text)
+    if expected_valid and issues:
+        for issue in issues:
+            errors.append(f"{label}: {issue}")
+    if not expected_valid and not issues:
+        errors.append(f"{label} is expected to be invalid but passed conversation surface validation.")
+
+
 CASE_VALIDATORS = {
     "activation_parity": validate_activation_parity_case,
     "cold_start_read_order": validate_cold_start_case,
@@ -522,6 +596,7 @@ CASE_VALIDATORS = {
     "langgraph_state_release": validate_langgraph_release_case,
     "main_session_escalation_visibility": validate_main_session_escalation_case,
     "expert_lifecycle_audit": validate_expert_lifecycle_case,
+    "conversation_surface": validate_conversation_surface_case,
 }
 
 

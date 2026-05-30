@@ -11,17 +11,17 @@ batch: 3
 confirmation_required: true
 ---
 
-# Chinese Routing Trace and Updated Plan Conversation Surface Plan
+# Routing trace and Updated Plan Conversation Surface Stability Plan
 
 > For agentic workers: REQUIRED SUB-SKILL: Use superpowers:executing-plans or superpowers:subagent-driven-development after this child plan is confirmed. Steps use checkbox syntax for tracking.
 
 ## Goal
 
-Require user-facing routing-trace and updated-plan conversation surfaces to use Chinese field labels, Chinese explanations, and Chinese status wording while saved structured evidence keeps machine-readable ASCII threshold tokens, blocker tokens, schema keys, file names, and CLI arguments.
+Require user-facing conversation surfaces to keep the fixed literal labels `Routing trace` and `Updated Plan`; those labels must not be replaced with localized headings. Explanatory content under the labels may be Chinese. `Updated Plan` must remain a checklist/status-list surface rather than prose-only text, while saved structured evidence keeps machine-readable ASCII threshold tokens, blocker tokens, schema keys, file names, and CLI arguments.
 
 ## Source Plans
 
-- `codex_governance_session_visibility_and_plan_lock_plan` - defines Chinese conversation visibility and plan-lock governance.
+- `codex_governance_session_visibility_and_plan_lock_plan` - defines conversation-surface visibility and plan-lock governance.
 - `automatic_orchestration_routing_enforcement_plan` - defines automatic routing evidence and activation parity requirements.
 - `multi_plan_parallel_session_orchestration_plan` - provides this Phase 4 child-plan family context.
 
@@ -31,17 +31,17 @@ Require user-facing routing-trace and updated-plan conversation surfaces to use 
 - Parent: `docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`.
 - Batch: Stage B Batch 3.
 - Phase: Phase 4.
-- Status: this file is an active child implementation plan; this update was confirmed by the user for parent/child plan edits only, and later non-document runtime implementation still requires confirming the concrete implementation slice.
+- Status: this file is an active child implementation plan; the user confirmed the fixed English labels and `Updated Plan` checklist semantics for this runtime/checker slice.
 - Remote publication: out of scope unless the user explicitly asks for remote publication.
 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan governance revision
+Stage: Stage B child-plan governance revision + runtime/checker hardening
 Owner session: `codex-chinese-routing-updated-plan-20260530`
-Current gate: this package updates only parent/child implementation plans; later runtime/checker implementation must proceed through a confirmed implementation slice
-Stage C entry condition: explicit user confirmation for this child implementation plan's non-document implementation scope
+Current gate: implement the fixed-label contract, run validation, commit in Chinese, integrate into local main, and stop at the remote publication gate
+Stage C entry condition: this runtime/checker slice passes validation, commits locally, integrates into local `main`, and stops at the remote publication gate
 Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
@@ -52,20 +52,19 @@ Last updated: 2026-05-30
 - `docs_bilingual/implementation_plans/chinese_routing_trace_conversation_surface_plan.md` - English primary child plan for this slice.
 - `docs_bilingual/implementation_plans/chinese_routing_trace_conversation_surface_plan.zh-CN.md` - Chinese companion child plan for this slice.
 
-A later runtime/checker implementation slice may extend ownership to:
+This runtime/checker implementation slice also owns:
 
-- `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md` - future English governance target for examples.
-- `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md` - future Chinese governance target for examples.
-- `tools/check_orchestration_collaboration_evidenceguard.py` - future checker target for conversation-surface fixtures.
-- `test/*routing_trace_chinese*` - future tests for user-facing routing-trace wording.
-- `test/*updated_plan_chinese*` - future tests for user-facing updated-plan wording.
+- `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md` - English governance target for fixed-label examples.
+- `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md` - Chinese governance target for fixed-label examples.
+- `tools/check_orchestration_collaboration_evidenceguard.py` - checker target for conversation-surface fixtures.
+- `test/fixtures/orchestration_prompt_independent_collaboration_parity/conversation_surface_*` - fixtures for stable labels and checklist semantics.
 
 ## Hotspot Serialization
 
 Only one session may own each hotspot at a time:
 
-- user-facing routing-trace wording
-- user-facing updated-plan wording
+- user-facing `Routing trace` label and explanatory wording
+- user-facing `Updated Plan` label and checklist semantics
 - routing evidence schema
 - plan-progress evidence schema
 
@@ -79,13 +78,13 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [x] Update the parent plan Phase 4 so Chinese conversation surfaces cover both routing traces and updated plans.
+- [x] Update the parent plan Phase 4 so conversation surfaces cover both `Routing trace` and `Updated Plan`.
 - [x] Update this child plan's goal, scope, hotspots, tasks, and acceptance criteria.
 - [x] Synchronize the English ASCII primary and Chinese companion files.
-- [ ] Later runtime/checker implementation: add fixtures rejecting English-only user-facing routing traces.
-- [ ] Later runtime/checker implementation: add fixtures rejecting English-only user-facing updated plans.
-- [ ] Later governance implementation: update activation-policy examples to use Chinese equivalents of routing trace and updated plan.
-- [ ] Later verification: run the routing evidence checker, implementation-plan checker, local gate, and local MR review.
+- [x] Record that localized replacement of the fixed `Routing trace` label is prohibited.
+- [x] Record that localized replacement of the fixed `Updated Plan` label is prohibited.
+- [x] Add checker/fixture coverage that rejects localized replacement of the fixed labels and rejects prose-only `Updated Plan` output.
+- [ ] Run the routing evidence checker, implementation-plan checker, local gate, and local MR review.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,21 +94,23 @@ Run these gates before local `main` integration unless this child plan later nar
 - `python tools/check_implementation_plan_rules.py --root . --json` - validates implementation-plan anchors, size limits, registry entries, and bilingual pairs.
 - `python tools/check_precommit_update_archive.py --root . --json` - reviews required existing-file updates, checker registration, and archive readiness before commit.
 - `python tools/check_worktree_task_receipt.py --root . --json` - validates worktree claim and receipt lifecycle metadata.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File .	ools\ci\local_gate.ps1 -StepTimeoutSeconds 600` - runs the shared local CI gate.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File .	ools\ci\local_mr_review.ps1` - runs local MR review before local main integration.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` - runs the shared local CI gate.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_mr_review.ps1` - runs local MR review before local main integration.
 
 ## Acceptance Criteria
 
-- Parent Phase 4 explicitly covers user-facing routing traces and user-facing updated plans.
-- This child plan distinguishes user-facing Chinese surfaces from saved machine-readable ASCII evidence.
-- Conversation output must not use English-only `Routing trace:` as the user-facing heading; use the Chinese routing-trace heading instead.
-- Conversation output must not use English-only `Updated Plan` as the user-facing heading; use the Chinese updated-plan heading instead.
+- Parent Phase 4 explicitly covers the fixed user-facing `Routing trace` and `Updated Plan` surfaces.
+- This child plan distinguishes user-facing fixed-label surfaces from saved machine-readable ASCII evidence.
+- Conversation output must keep `Routing trace` as the user-facing routing decision label; explanatory content may be Chinese.
+- Conversation output must keep `Updated Plan` as the user-facing plan-progress label.
+- `Updated Plan` must preserve checklist/status-list semantics, such as checkbox lines or pending / in_progress / completed items, rather than being replaced by ordinary prose.
 - English tool names, file names, schema keys, threshold tokens, blocker tokens, and CLI arguments may remain ASCII.
 - Evidence is recorded as a lightweight index instead of appending large evidence packages to this plan.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-30 Phase 4 Chinese conversation-surface governance update: branch `chinese-routing-updated-plan-20260530` updates this child plan and the parent plan to extend the user-facing Chinese requirement from routing traces to both routing traces and updated plans; this package updates implementation plans only and does not enter runtime/checker implementation.
+- 2026-05-30 stable-label correction: user confirmed that `Routing trace` and `Updated Plan` remain English user-facing labels; `Updated Plan` keeps checklist semantics. This slice updates the parent/child plan constraints and adds checker/fixture coverage for that corrected contract.
+- 2026-05-30 Phase 4 conversation-surface governance update: branch `chinese-routing-updated-plan-20260530` previously extended the surface scope from routing traces to both routing traces and updated plans; this correction supersedes the mistaken label-localization requirement.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

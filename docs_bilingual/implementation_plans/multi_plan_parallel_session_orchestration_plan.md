@@ -281,13 +281,13 @@ Candidate child plans:
 
 Admission: all eligible child plans may run; `.omx/state` write scopes are serialized by repository and worktree hotspot lease.
 
-### Phase 4: Automatic Routing and Chinese Conversation Surfaces
+### Phase 4: Automatic Routing and Stable Conversation Surfaces
 
 Purpose: make collaboration routing automatic and auditable, and require user-facing routing-trace and updated-plan conversation surfaces to use Chinese field labels, Chinese explanations, and Chinese status wording. Routing and evidence records must distinguish Pi/harness sidecar evidence from final verification evidence owned by the current owner session; saved structured evidence may keep ASCII threshold tokens, blocker tokens, schema keys, file names, and CLI arguments.
 
 Candidate child plans:
 
-1. `chinese_routing_trace_conversation_surface_plan` - require Chinese user-facing routing-trace and updated-plan labels, explanations, and status wording.
+1. `chinese_routing_trace_conversation_surface_plan` - require stable user-facing `Routing trace` and `Updated Plan` labels, allow Chinese explanatory content, and preserve `Updated Plan` checklist/status semantics.
 2. `routing_trace_structured_evidence_schema_plan` - keep machine-readable ASCII threshold/blocker tokens for saved evidence.
 3. `prompt_independent_activation_parity_plan` - ensure routing does not depend on the user saying "parallel" or "experts".
 4. `expert_lifecycle_timeout_pacing_evidence_plan` - treat timeout/stall/pacing as non-evidence and require bounded handling.
@@ -409,7 +409,7 @@ Each child plan must include:
 - [x] 2026-05-30 complete-flow alignment: align this parent-plan family and its child plans to session-owned self-retire, ROB, `local-main-retire.lock`, and the remote-publication gate after local-main integration.
 - [x] Phase 0 closure: close the inventory registry alignment child plan and the parent orchestration index child plan before Phase 2 admission.
 - [x] Later stages: the Phase 0 closure package has entered local `main`; Phase 2 context and UTF-8 safety child plans have started under the Work-Conserving model and several have entered local `main`.
-- [x] Phase 4 parent/child governance update: extend the Chinese conversation surface from routing traces to both routing traces and updated plans while preserving machine-readable ASCII tokens in saved evidence.
+- [x] Phase 4 parent/child governance update: extend conversation-surface coverage from routing traces to both `Routing trace` and `Updated Plan`, keep those labels stable, preserve `Updated Plan` checklist/status semantics, and preserve machine-readable ASCII tokens in saved evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -440,7 +440,8 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-30 Phase 4 Chinese conversation-surface governance update: branch `chinese-routing-updated-plan-20260530` updates this parent plan and the `chinese_routing_trace_conversation_surface_plan` child plan to require Chinese user-facing routing-trace and updated-plan surfaces while preserving machine-readable ASCII tokens in saved structured evidence; remote publication remains unauthorized.
+- 2026-05-30 Phase 4 stable-label correction: branch `implement-routing-updated-plan-fixed-labels-20260530c` updates this parent plan and the `chinese_routing_trace_conversation_surface_plan` child plan after user correction: `Routing trace` and `Updated Plan` remain English user-facing labels, `Updated Plan` remains checklist/status-based, and Chinese explanatory content remains allowed; remote publication remains unauthorized.
+- 2026-05-30 Phase 4 conversation-surface governance update: branch `chinese-routing-updated-plan-20260530` expanded coverage from routing traces to both routing traces and updated plans; its earlier label-localization wording is superseded by the stable-label correction above; remote publication remains unauthorized.
 - 2026-05-30 complete-flow alignment package: branch `align-complete-flow-parent-plans-20260530` is claimed by `codex-align-complete-flow-parent-plans-20260530` through `parent_parallel_orchestration_index_plan`, and ROB entry `rob-align-complete-flow-parent-plans-20260530` records the parent-plan-family documentation package; this package aligns the parent plan and child plans that declare `parent_plan` pointing here with the repository-root complete local commit flow: session-owned self-retire, `local-main-retire.lock`, and the remote publication gate.
 - 2026-05-30 Phase 0 closure package: closed `plan_inventory_registry_alignment_plan` and `parent_parallel_orchestration_index_plan` in branch `phase0-plan-index-closure-20260530`; machine-readable inventory evidence is `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`; Phase 2 remains blocked until this package is locally gated, locally reviewed, and merged to local `main`.
 - 2026-05-30 self-retire runtime restoration: local `main` includes the restored self-retire runtime helper/checker package at `898f9d0`, replacing the earlier recovery-pending note from `b4af80f`.

@@ -13,7 +13,7 @@ zh_cn_path: docs_bilingual/implementation_plans/codex_governance_session_visibil
 Convert the chat-approved governance direction into the formal implementation-plan gate required before any non-document implementation starts.
 This plan covers five related governance upgrades:
 
-1. User-facing `Routing trace` output must be fully Chinese in conversation.
+1. User-facing conversation surfaces must keep the literal `Routing trace` and `Updated Plan` labels stable; explanatory content may be Chinese, and `Updated Plan` must remain a checklist/status-list surface.
 2. OMX and LangGraph escalation needs must be visible in the main session before they can quietly time out.
 3. Multiple Codex sessions must be able to work in parallel only when each active `implementation_plan` is owned by at most one session.
 4. Comet must make its Superpowers HOW-layer usage visible instead of leaving it implicit.
@@ -50,12 +50,13 @@ Last updated: 2026-05-28
 
 ## Governance Decisions to Implement in Stage B
 
-### 1. Chinese Conversation Routing Trace
+### 1. Stable Conversation Surface Labels
 
-- Conversation-facing routing trace must use Chinese field labels and Chinese explanatory text.
+- Conversation-facing routing decisions must keep the literal `Routing trace` label; explanatory text may be Chinese.
+- User-facing plan-progress output must keep the literal `Updated Plan` label and preserve checkbox/status-list semantics instead of prose-only text.
 - Saved machine-checkable evidence may retain canonical ASCII tokens when they are needed by existing checkers, for example `threshold_not_met:no_frozen_plan`.
 - The checker should distinguish two surfaces:
-  - user-facing trace text: Chinese labels required;
+  - user-facing conversation text: fixed labels `Routing trace` and `Updated Plan` are required;
   - saved evidence trace: structured tokens allowed for validation.
 - The routing trace must still report the same decisions: phase, capability chain, backend default/readiness, experts, durable workflow, persistent team, and reason.
 
@@ -124,8 +125,8 @@ Stage B must stop again for a separate scope decision before editing user-level 
 - [x] Stage A: commit the documentation package with a Chinese commit message.
 - [x] Stage A: integrate the documentation package into local `main`.
 - [ ] Stage A: stop and ask the user to confirm this implementation-plan file before Stage B.
-- [ ] Stage B: update orchestration activation governance so user-facing `Routing trace` is Chinese.
-- [ ] Stage B: update trace checker or fixtures so Chinese conversation trace is enforced without breaking structured evidence tokens.
+- [ ] Stage B: update orchestration activation governance so user-facing `Routing trace` and `Updated Plan` labels remain stable while explanatory content may be Chinese.
+- [ ] Stage B: update trace/checker fixtures so localized label replacement and prose-only `Updated Plan` output fail without breaking structured evidence tokens.
 - [ ] Stage B: add pending-escalation receipt/preflight governance and checker coverage.
 - [ ] Stage B: add portable implementation-plan claim schema and overlap checker support.
 - [ ] Stage B: add tests proving same-plan active claims fail closed and different-plan claims may coexist.
@@ -149,7 +150,7 @@ Stage A acceptance:
 
 Stage B acceptance after later confirmation:
 
-- Conversation-facing routing trace uses Chinese labels and Chinese explanatory language.
+- Conversation-facing routing output keeps the literal `Routing trace` label; plan-progress output keeps the literal `Updated Plan` label and checklist/status-list semantics; explanatory language may be Chinese.
 - Saved trace evidence still validates required routing decisions and threshold/blocker labels.
 - Main-session escalation needs are summarized visibly before hidden worker waits can time out.
 - Same-plan active session claims fail closed on a normal local machine without OMX/LangGraph.
