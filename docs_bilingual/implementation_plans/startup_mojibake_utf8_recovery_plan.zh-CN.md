@@ -36,11 +36,11 @@ Detect mojibake in startup and instruction authority surfaces and recover from U
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+阶段：Stage C 实施包已准备进入本地验证、提交与本地 main 集成
+责任会话：main Codex leader session
+当前门禁：本地 CI 与本地 MR review；远端发布在用户明确授权前仍不在范围内
+Stage C 进入条件：用户已明确要求继续实施本子 implementation plan
+最后更新：2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -67,11 +67,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add mojibake fixtures covering Chinese startup text and corrupted canary markers.
-- [ ] Extend the checker to report exact recovery sources instead of copying corrupted text.
-- [ ] Update governance text to treat UTF-8 files as canonical.
-- [ ] Run mojibake checker and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add mojibake fixtures covering Chinese startup text and corrupted canary markers.
+- [x] Extend the checker to report exact recovery sources instead of copying corrupted text.
+- [x] Update governance text to treat UTF-8 files as canonical.
+- [x] Run mojibake checker and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,5 +95,8 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Stage C 实施：checker 输出现在报告 canonical UTF-8 recovery sources，并对 mojibake findings 做去污染摘要，避免回显损坏文本；startup summary pair 已记录恢复源。
+- 2026-05-30 Stage C 验证：在 `implement-startup-mojibake-utf8-recovery-20260530` 分支上，`python test/check_startup_instruction_mojibake.test.py`、`python tools/check_startup_instruction_mojibake.py --root . --json`、`python tools/check_implementation_plan_rules.py --root . --json`、`python tools/check_precommit_update_archive.py --root . --json` 和 `python tools/check_worktree_task_receipt.py --root . --json` 已通过；完整本地 CI 与本地 MR review 仍是当前集成门禁。
+- 2026-05-30 Stage C 进入：用户确认继续实施本子方案；runtime/checker 工作前已创建 active session claim。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

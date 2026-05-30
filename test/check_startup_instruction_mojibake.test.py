@@ -94,6 +94,17 @@ class StartupInstructionMojibakeCheckTest(unittest.TestCase):
         path.write_text("\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n", encoding="utf-8")
         return path
 
+    def assert_recovery_sources(self, payload: dict) -> None:
+        sources = payload["recovery_sources"]
+        self.assertEqual(
+            [source["path"] for source in sources],
+            [
+                "docs_bilingual/project_startup_summary.md",
+                "docs_bilingual/project_startup_summary.zh-CN.md",
+            ],
+        )
+        self.assertTrue(all(source["encoding"] == "utf-8-sig" for source in sources))
+
     def test_passes_clean_startup_instruction_surfaces(self) -> None:
         root = self.make_root("startup-mojibake-pass")
         self.write_clean_surfaces(root)
@@ -103,17 +114,42 @@ class StartupInstructionMojibakeCheckTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["counts"]["errors"], 0)
+        self.assert_recovery_sources(payload)
 
     def test_fails_when_agents_contains_legacy_encoding_variant(self) -> None:
         root = self.make_root("startup-mojibake-agents")
         self.write_clean_surfaces(root)
-        self.write_file(root, "AGENTS.md", f"Runtime rendered corrupted text: {mojibake_variant('乱码')}\n")
+        corrupted_text = mojibake_variant("乱码")
+        self.write_file(root, "AGENTS.md", f"Runtime rendered corrupted text: {corrupted_text}\n")
 
         result = self.run_check(root)
         self.assertNotEqual(result.returncode, 0)
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
+        self.assert_recovery_sources(payload)
         self.assertTrue(any("AGENTS.md contains mojibake" in error for error in payload["errors"]))
+        self.assertNotIn(corrupted_text, result.stdout)
+
+    def test_fails_when_chinese_startup_text_is_mojibake_and_reports_recovery_sources(self) -> None:
+        root = self.make_root("startup-mojibake-chinese-startup")
+        self.write_clean_surfaces(root)
+        corrupted_text = mojibake_variant("恢复动作")
+        self.write_file(
+            root,
+            "docs_bilingual/project_startup_summary.zh-CN.md",
+            f"# Startup\n\nContext-retention canary: `{START_CANARY}` / `{END_CANARY}`.\nBad text: {corrupted_text}\n",
+        )
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assert_recovery_sources(payload)
+        self.assertEqual(
+            payload["findings"][0]["recovery_sources"][0]["path"],
+            "docs_bilingual/project_startup_summary.md",
+        )
+        self.assertNotIn(corrupted_text, result.stdout)
 
     def test_fails_when_governance_surface_contains_question_mark_runs(self) -> None:
         root = self.make_root("startup-mojibake-question-runs")
@@ -159,6 +195,11 @@ class StartupInstructionMojibakeCheckTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
         self.assertEqual(payload["response_diagnostics"][0]["status"], "mojibake_canary")
+        self.assert_recovery_sources(payload)
+        self.assertEqual(
+            payload["response_diagnostics"][0]["recovery_sources"][1]["path"],
+            "docs_bilingual/project_startup_summary.zh-CN.md",
+        )
         self.assertNotIn(mojibake_variant(LEGACY_START_CANARY), result.stdout)
         self.assertNotIn(mojibake_variant(LEGACY_END_CANARY), result.stdout)
 

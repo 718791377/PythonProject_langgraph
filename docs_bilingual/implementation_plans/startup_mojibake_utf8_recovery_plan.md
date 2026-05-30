@@ -36,11 +36,11 @@ Detect mojibake in startup and instruction authority surfaces and recover from U
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Stage: Stage C implementation package ready for local validation, commit, and local-main integration
+Owner session: main Codex leader session
+Current gate: local CI and local MR review before local main integration; remote publication remains out of scope until explicit user approval
+Stage C entry condition: satisfied by explicit user request to continue this child implementation plan
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -67,11 +67,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add mojibake fixtures covering Chinese startup text and corrupted canary markers.
-- [ ] Extend the checker to report exact recovery sources instead of copying corrupted text.
-- [ ] Update governance text to treat UTF-8 files as canonical.
-- [ ] Run mojibake checker and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add mojibake fixtures covering Chinese startup text and corrupted canary markers.
+- [x] Extend the checker to report exact recovery sources instead of copying corrupted text.
+- [x] Update governance text to treat UTF-8 files as canonical.
+- [x] Run mojibake checker and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,5 +95,8 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Stage C implementation: checker output now reports canonical UTF-8 recovery sources and sanitizes mojibake findings instead of echoing corrupted text; startup summary pair documents the recovery sources.
+- 2026-05-30 Stage C validation: `python test/check_startup_instruction_mojibake.test.py`, `python tools/check_startup_instruction_mojibake.py --root . --json`, `python tools/check_implementation_plan_rules.py --root . --json`, `python tools/check_precommit_update_archive.py --root . --json`, and `python tools/check_worktree_task_receipt.py --root . --json` passed in branch `implement-startup-mojibake-utf8-recovery-20260530`; full local CI and local MR review remain the current integration gate.
+- 2026-05-30 Stage C entry: user confirmed continued implementation of this child plan; active session claim was created before runtime/checker work.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

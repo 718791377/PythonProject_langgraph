@@ -121,6 +121,10 @@ translation_of: docs_bilingual/project_startup_summary.md
 - 哨兵字面提示词是可见自检信号，用来判断 `/resume`、compaction 或长上下文后的模型是否仍理解冷启动权威；它属于用户可见 assistant 回复，不属于 wrapper payload、generated helper 或其他 authority surface。
 - 如果本 startup summary 本应已读取，但完整 assistant 回复缺少该哨兵，则视为可能发生上下文丢失或读取路径失败。
 - 恢复动作：重读 `AGENTS.md`，通过显式 UTF-8 路径重读这对 startup summary 文件，按上面的冷启动阅读顺序补读，然后只补读继续当前任务必须需要的任务相关文件。
+- 如果 startup 或 response 文本看起来是 mojibake / 乱码，必须把以下 UTF-8 文件当作 canonical recovery sources（规范恢复源）：
+  - `docs_bilingual/project_startup_summary.md` - canonical English startup recovery source.
+  - `docs_bilingual/project_startup_summary.zh-CN.md` - canonical Chinese startup recovery source.
+- `tools/check_startup_instruction_mojibake.py` 必须报告这些 recovery source 路径，且不得把已经损坏的 canary marker 文本回显成规范证据。
 
 ## 当前主线
 
