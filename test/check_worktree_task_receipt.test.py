@@ -158,6 +158,106 @@ class WorktreeTaskReceiptTest(unittest.TestCase):
         self.assertFalse(strict["ok"])
         self.assertGreaterEqual(strict["counts"]["errors"], 1)
 
+    def test_classifies_unmanaged_team_and_completed_langgraph_residue(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            team_dir = root / ".omx" / "state" / "team" / "legacy-team"
+            team_dir.mkdir(parents=True)
+            (team_dir / "state.json").write_text('{"status":"paused"}\n', encoding="utf-8")
+            langgraph_root = root / ".omx" / "state" / "langgraph"
+            (langgraph_root / "threads").mkdir(parents=True)
+            (langgraph_root / "backend.json").write_text(
+                json.dumps(
+                    {
+                        "backend": "langgraph",
+                        "thread_id": "legacy-thread",
+                        "repo_root": str(root),
+                        "status": "completed",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (langgraph_root / "threads" / "legacy-thread.json").write_text(
+                json.dumps({"thread_id": "legacy-thread", "status": "completed"}),
+                encoding="utf-8",
+            )
+
+            records = receipt.classify_durable_residue(root)
+
+        by_kind = {record["kind"]: record for record in records}
+        unmanaged = by_kind["non_empty_unmanaged_native_team_directory"]
+        self.assertEqual(unmanaged["state_class"], "protected_residue")
+        self.assertEqual(unmanaged["safe_next_action"], "manual-inspection-required")
+        self.assertFalse(unmanaged["auto_adopt_allowed"])
+        langgraph = by_kind["completed_langgraph_state"]
+        self.assertEqual(langgraph["state_class"], "legacy_completed_state")
+        self.assertEqual(langgraph["safe_next_action"], "inspect-or-archive; do-not-auto-resume")
+        self.assertFalse(langgraph["auto_adopt_allowed"])
+
+    def test_classifies_stale_and_active_selectors_without_auto_adoption(self) -> None:
+        with tempfile.TemporaryDirectory() as stale_tmp, tempfile.TemporaryDirectory() as active_tmp:
+            stale_root = Path(stale_tmp)
+            stale_selector = stale_root / ".omx" / "state" / "selectors" / "active.json"
+            stale_selector.parent.mkdir(parents=True)
+            stale_selector.write_text(
+                json.dumps(
+                    {
+                        "backend_family": "langgraph",
+                        "repo_root": str(stale_root / "other-repo"),
+                        "thread_id": "old-thread",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            active_root = Path(active_tmp)
+            active_selector = active_root / ".omx" / "state" / "selectors" / "active.json"
+            active_selector.parent.mkdir(parents=True)
+            active_selector.write_text(
+                json.dumps(
+                    {
+                        "backend_family": "native_omx",
+                        "repo_root": str(active_root),
+                        "team_name": "current-team",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            stale_records = receipt.classify_durable_residue(stale_root)
+            active_records = receipt.classify_durable_residue(active_root)
+
+        stale = {record["kind"]: record for record in stale_records}["stale_selector"]
+        self.assertEqual(stale["state_class"], "stale_selector")
+        self.assertEqual(stale["safe_next_action"], "refresh-selector-or-ignore-as-stale")
+        self.assertFalse(stale["auto_adopt_allowed"])
+
+        active = {record["kind"]: record for record in active_records}["active_current_selector"]
+        self.assertEqual(active["state_class"], "selector_authority")
+        self.assertEqual(active["safe_next_action"], "inspect-as-current-authority; do-not-auto-adopt-by-itself")
+        self.assertFalse(active["auto_adopt_allowed"])
+
+    def test_evaluate_includes_durable_residue_classification_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            subprocess.run(["git", "init", "-b", "main"], cwd=root, check=True, capture_output=True)
+            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+            (root / "README.md").write_text("demo\n", encoding="utf-8")
+            subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "init"], cwd=root, check=True, capture_output=True)
+            empty_team = root / ".omx" / "state" / "team" / "empty-team"
+            empty_team.mkdir(parents=True)
+
+            payload = receipt.evaluate(root, require_all_feature_worktrees=False, require_completion_for_completed=False)
+
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertIn("durable_residue_classification", payload)
+        self.assertIn("durable_residue_classification_summary", payload)
+        self.assertEqual(
+            payload["durable_residue_classification_summary"]["by_kind"]["empty_unmanaged_native_team_directory"], 1
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
