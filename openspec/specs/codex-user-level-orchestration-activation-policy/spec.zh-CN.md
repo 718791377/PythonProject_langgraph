@@ -153,7 +153,7 @@ Orchestration activation policy 必须禁止使用 "the user did not request par
 
 ### Requirement: Expert timeout SHALL NOT be accepted as verification evidence / Expert timeout 不得被接受为验证证据
 
-Orchestration activation policy 必须要求 final reports 区分 returned expert evidence 与 timed-out、stalled、abandoned 或 main-session-taken-over verification。仓库必须提供可执行 expert lifecycle/wait/pacing evidence checker，用来检查保存的 run-summary 或 transcript evidence。
+Orchestration activation policy 必须要求 final reports 区分 returned expert evidence 与 timed-out、stalled、abandoned 或 main-session-taken-over verification。仓库必须提供可执行 expert lifecycle/wait/pacing evidence checker，用来检查保存的 run-summary 或 transcript evidence。 The checker also validates saved JSON or JSONL evidence and same-agent wait/timeout/result/absorption/close/handling event linkage.
 
 #### Scenario: A key-path expert times out / 关键路径 expert 超时
 
@@ -167,6 +167,9 @@ Orchestration activation policy 必须要求 final reports 区分 returned exper
 - **THEN** checker 必须在 completed expert claims 缺少 closure evidence 或 preserved-thread reason 时失败
 - **AND** wait claims 缺少 bounded wait windows 或 total wait bound 时必须失败
 - **AND** liveness 或 stall claims 缺少 inspect、redirect、respawn、durable-handoff 或 main-session-takeover action 时必须失败
+- **AND** timeout events missing prior wait and handling event for the same `agent_id` MUST fail
+- **AND** result, absorbed, or close events not linked to the same `agent_id` MUST fail unless a preserved-thread reason is explicit
+- **AND** two quiet `progress_check` events without same-agent inspect, redirect, respawn, durable-handoff, or main-session-takeover action MUST fail
 - **AND** provider pacing claims 若把 upstream pacing 当作禁用 orchestration 的原因而非 backpressure 标签，则必须失败
 
 ### Requirement: Existing sessions SHALL retrofit activation policy at safe boundaries / 既有会话必须在安全边界 retrofit activation policy
@@ -318,6 +321,7 @@ Delegation 必须 concrete、bounded、self-contained 且 materially advancing�
 - **WHEN** saved evidence 提到 `wait_agent`、liveness checks、stalled experts 或 provider pacing
 - **THEN** expert lifecycle/wait/pacing checker 必须要求 bounded wait windows 与 total bound evidence
 - **AND** 必须要求 liveness/stall handling，例如 inspect、redirect、respawn、durable handoff 或 main-session takeover
+- **AND** structured lifecycle audit records MUST keep wait, timeout, result, absorption, close, and handling events tied to the same `agent_id`
 - **AND** 必须拒绝把 provider pacing 用于禁用 orchestration 而非标记 backpressure 的语言
 
 ### Requirement: Delegation and leader wait discipline SHALL be script-checkable / Delegation 与 leader wait discipline 必须可脚本检查

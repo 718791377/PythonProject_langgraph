@@ -122,6 +122,49 @@ INDEFINITE_WAIT_MARKERS = (
     "无界等待",
 )
 
+TIMEOUT_MARKERS = (
+    "expert timed out",
+    "agent timed out",
+    "subagent timed out",
+    "expert timeout",
+    "agent timeout",
+    "subagent timeout",
+    "timed-out expert",
+)
+
+TIMEOUT_NON_EVIDENCE_MARKERS = (
+    "not used as evidence",
+    "non-evidence",
+    "not verification evidence",
+    "not accepted as evidence",
+    "main session took over",
+    "main-session takeover",
+    "respawn",
+    "durable handoff",
+)
+
+TIMEOUT_RESULT_EVIDENCE_PATTERNS = (
+    re.compile(
+        r"(timed out|timeout)[^\n.]{0,100}(accepted|treated)[^\n.]{0,80}"
+        r"(valid|verification|expert result|evidence)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(accepted|treated)[^\n.]{0,100}(timed out|timeout)[^\n.]{0,80}"
+        r"(valid|verification|expert result|evidence)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(used|uses|using)[^\n.]{0,40}(timed out|timeout)[^\n.]{0,80}"
+        r"(valid|verification|expert result|evidence)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(timed out|timeout)[^\n.]{0,100}(proceed|accepted)[^\n.]{0,80}result",
+        re.IGNORECASE,
+    ),
+)
+
 STALL_MARKERS = (
     "stalled",
     "stall",
@@ -244,6 +287,9 @@ def run_check(evidence_path: Path) -> dict[str, Any]:
     has_bounded_wait = contains_any(text, BOUNDED_WAIT_MARKERS)
     has_total_bound = contains_any(text, TOTAL_BOUND_MARKERS)
     has_indefinite_wait = contains_any(text, INDEFINITE_WAIT_MARKERS)
+    has_timeout = contains_any(text, TIMEOUT_MARKERS)
+    has_timeout_non_evidence = contains_any(text, TIMEOUT_NON_EVIDENCE_MARKERS)
+    has_timeout_result_evidence = matches_any(text, TIMEOUT_RESULT_EVIDENCE_PATTERNS)
     has_stall = contains_any(text, STALL_MARKERS)
     has_stall_action = contains_any(text, STALL_ACTION_MARKERS)
     has_pacing = contains_any(text, PACING_MARKERS)
@@ -273,6 +319,23 @@ def run_check(evidence_path: Path) -> dict[str, Any]:
             errors.append("Wait evidence must include bounded wait windows such as 30s/60s/120s or bounded wait wording.")
         if not has_total_bound:
             errors.append("Wait evidence must include a total wait bound such as about 180s or an equivalent total bound.")
+
+    if has_timeout:
+        detected.append("timeout")
+        if has_timeout_result_evidence:
+            errors.append("Expert timeout must not be accepted as valid expert result or verification evidence.")
+        if not has_timeout_non_evidence:
+            errors.append(
+                "Expert timeout evidence must label the timeout as non-evidence or record respawn, "
+                "durable handoff, or main-session takeover."
+            )
+        if not has_wait:
+            errors.append("Expert timeout evidence requires a prior bounded wait record for that expert.")
+        if not has_stall_action:
+            errors.append(
+                "Expert timeout evidence must name handling such as inspect, redirect, respawn, "
+                "durable handoff, or main-session takeover."
+            )
 
     if has_stall:
         detected.append("stall")

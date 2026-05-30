@@ -80,7 +80,7 @@ Main-session escalation visibility 必须显式可见：在任何 OMX、LangGrap
 
 ## Expert 与 durable 证据规则
 
-Expert timeout、stalled workers、upstream pacing 或 abandoned lanes 都不是 verification evidence。Provider pacing 是 backpressure，不是禁用 orchestration 的理由。Completed experts 在结果被吸收后必须关闭，除非用户显式要求保留线程，或计划记录了 preserved-thread reason。Waits 必须使用 bounded windows 和可见 total bound；stalled 或 quiet experts 必须 inspect、redirect、respawn、durable handoff，或由 main-session takeover。
+Expert timeout、stalled workers、upstream pacing 或 abandoned lanes 都不是 verification evidence。Provider pacing 是 backpressure，不是禁用 orchestration 的理由。Completed experts 在结果被吸收后必须关闭，除非用户显式要求保留线程，或计划记录了 preserved-thread reason。Waits 必须使用 bounded windows 和可见 total bound；stalled 或 quiet experts 必须 inspect、redirect、respawn、durable handoff，或由 main-session takeover。 Structured lifecycle evidence must keep wait, timeout, result, absorption, closure, and handling events tied to the same `agent_id`; timeout requires prior bounded wait and a handling event for that agent, two quiet `progress_check` events require handling, and `provider_pacing` must be classified as `backpressure` without disabling LangGraph, OMX, subagents, experts, or orchestration.
 
 Final report 必须显式标注证据来源，例如：
 

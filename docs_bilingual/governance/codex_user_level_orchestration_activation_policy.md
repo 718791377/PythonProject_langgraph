@@ -79,7 +79,7 @@ Explicit `omx` and `LangGraph` requests are hard routing directives for the curr
 
 ## Expert and durable evidence rules
 
-Expert timeout, stalled workers, upstream pacing, or abandoned lanes are not verification evidence. Provider pacing is backpressure, not a reason to disable orchestration. Completed experts must be closed after their result is absorbed unless the user explicitly asks to preserve the thread or a plan records a preserved-thread reason. Waits must use bounded windows and a visible total bound; stalled or quiet experts require inspect, redirect, respawn, durable handoff, or main-session takeover.
+Expert timeout, stalled workers, upstream pacing, or abandoned lanes are not verification evidence. Provider pacing is backpressure, not a reason to disable orchestration. Completed experts must be closed after their result is absorbed unless the user explicitly asks to preserve the thread or a plan records a preserved-thread reason. Waits must use bounded windows and a visible total bound; stalled or quiet experts require inspect, redirect, respawn, durable handoff, or main-session takeover. Structured lifecycle evidence must keep wait, timeout, result, absorption, closure, and handling events tied to the same `agent_id`; a timeout requires a prior bounded wait and a handling event for that agent, two quiet `progress_check` events require handling, and `provider_pacing` must be classified as `backpressure` without disabling LangGraph, OMX, subagents, experts, or orchestration.
 
 Final reports must label evidence sources explicitly, for example:
 

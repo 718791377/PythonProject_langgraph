@@ -36,11 +36,11 @@ Treat expert timeout, stall, and upstream pacing as non-evidence and require bou
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Stage: Stage C implementation in progress
+Owner session: main-codex-leader-expert-lifecycle-timeout-pacing-evidence-20260530
+Current gate: focused checks, repository guards, OpenSpec guard, and local gate passed; ready for local commit and local main integration
+Stage C entry condition: satisfied by user confirmation on 2026-05-30 after governance package local main integration
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -65,11 +65,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for timed-out experts, quiet progress checks, respawn decisions, and absorbed results.
-- [ ] Reject final acceptance that treats timeout as a valid expert result.
-- [ ] Document bounded wait and closure behavior.
-- [ ] Run expert lifecycle tests and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for timed-out experts, quiet progress checks, respawn decisions, and absorbed results.
+- [x] Reject final acceptance that treats timeout as a valid expert result.
+- [x] Document bounded wait and closure behavior.
+- [x] Run expert lifecycle tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -94,4 +94,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-30 Stage C implementation: added timeout-as-non-evidence text checks, structured expert lifecycle audit handling events, same-agent absorption/closure validation, provider pacing backpressure validation, focused tests, repository guards, OpenSpec guard, and local gate evidence before local main integration.
 <!-- EVIDENCE_INDEX_END -->

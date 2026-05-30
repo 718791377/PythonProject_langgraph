@@ -162,7 +162,7 @@ The orchestration activation policy SHALL forbid using "the user did not request
 
 The orchestration activation policy SHALL require final reports to separate returned expert evidence from timed-out, stalled, abandoned, or main-session-taken-over verification.
 
-The repository SHALL provide an executable expert lifecycle/wait/pacing evidence checker that can inspect saved run-summary or transcript evidence for completed-expert closure, preserved-thread exceptions, bounded wait windows, liveness/stall actions, and provider backpressure labels.
+The repository SHALL provide executable expert lifecycle/wait/pacing evidence checkers that can inspect saved run-summary, transcript, JSON, or JSONL evidence for completed-expert closure, preserved-thread exceptions, bounded wait windows, same-agent timeout/result/absorption/closure event linkage, quiet progress checks, liveness/stall actions, and provider backpressure labels.
 
 #### Scenario: A key-path expert times out
 
@@ -175,7 +175,9 @@ The repository SHALL provide an executable expert lifecycle/wait/pacing evidence
 - **WHEN** saved expert lifecycle or wait evidence is passed to the expert lifecycle/wait/pacing evidence checker
 - **THEN** the checker SHALL fail completed expert claims that omit closure evidence or a preserved-thread reason
 - **AND** it SHALL fail wait claims that omit bounded wait windows or a total wait bound
-- **AND** it SHALL fail liveness or stall claims that omit inspect, redirect, respawn, durable-handoff, or main-session-takeover action
+- **AND** it SHALL fail timeout events that lack a prior wait and handling event for the same `agent_id`
+- **AND** it SHALL fail result, absorbed, or close events that are not linked to the same `agent_id` unless a preserved-thread reason is explicit
+- **AND** it SHALL fail two quiet `progress_check` events that omit inspect, redirect, respawn, durable-handoff, or main-session-takeover action for the same `agent_id`
 - **AND** it SHALL fail provider pacing claims that treat upstream pacing as a reason to disable orchestration instead of labeled backpressure
 
 ### Requirement: Existing sessions SHALL retrofit activation policy at safe boundaries
@@ -329,6 +331,7 @@ Delegation SHALL be concrete, bounded, self-contained, and materially advancing.
 - **WHEN** saved evidence mentions `wait_agent`, liveness checks, stalled experts, or provider pacing
 - **THEN** the expert lifecycle/wait/pacing checker SHALL require bounded wait windows and total bound evidence
 - **AND** it SHALL require liveness/stall handling such as inspect, redirect, respawn, durable handoff, or main-session takeover
+- **AND** it SHALL require structured lifecycle audit records to keep wait, timeout, result, absorption, close, and handling events tied to the same `agent_id`
 - **AND** it SHALL reject provider pacing language that disables orchestration rather than labeling backpressure
 
 ### Requirement: Delegation and leader wait discipline SHALL be script-checkable

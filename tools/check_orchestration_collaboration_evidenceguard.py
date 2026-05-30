@@ -12,14 +12,32 @@ CHECK_NAME = "orchestration_collaboration_evidenceguard"
 REGISTRY_RULE_ID = "orchestration-collaboration-evidenceguard"
 GUARD_STEP = "check_orchestration_collaboration_evidenceguard"
 DEFAULT_FIXTURE_DIR = Path("test/fixtures/orchestration_prompt_independent_collaboration_parity")
-EXPERT_LIFECYCLE_EVENT_NAMES = {"spawn", "wait", "timeout", "result", "absorbed", "close"}
+EXPERT_LIFECYCLE_HANDLING_EVENTS = {"inspect", "redirect", "respawn", "durable_handoff", "main_session_takeover"}
+EXPERT_LIFECYCLE_EVENT_NAMES = {
+    "spawn",
+    "wait",
+    "progress_check",
+    "timeout",
+    "provider_pacing",
+    "result",
+    "absorbed",
+    "close",
+    *EXPERT_LIFECYCLE_HANDLING_EVENTS,
+}
 EXPERT_LIFECYCLE_REQUIRED_STRING_FIELDS: dict[str, tuple[str, ...]] = {
     "spawn": ("role", "task_summary"),
     "wait": ("agent_id",),
+    "progress_check": ("agent_id", "status"),
     "timeout": ("agent_id", "classification"),
+    "provider_pacing": ("classification", "handling"),
     "result": ("agent_id", "summary"),
     "absorbed": ("agent_id", "leader_decision"),
     "close": ("agent_id", "retention_policy"),
+    "inspect": ("agent_id", "summary"),
+    "redirect": ("agent_id", "summary"),
+    "respawn": ("agent_id", "summary"),
+    "durable_handoff": ("agent_id", "summary"),
+    "main_session_takeover": ("agent_id", "summary"),
 }
 EXPERT_LIFECYCLE_REQUIRED_LIST_FIELDS: dict[str, tuple[str, ...]] = {
     "spawn": ("scope", "non_goals"),
@@ -43,6 +61,7 @@ REQUIRED_FIXTURES = {
     "conversation_surface_prose_only_updated_plan_invalid.json",
     "conversation_surface_routing_trace_label_valid.json",
     "conversation_surface_updated_plan_checklist_valid.json",
+    "expert_lifecycle_timeout_pacing_valid.json",
     "multi_slice_without_collaboration_phrase.json",
     "multi_slice_with_collaboration_phrase.json",
 }
@@ -499,12 +518,22 @@ def validate_expert_lifecycle_case(case: dict[str, Any], errors: list[str], labe
     if not isinstance(events, list) or not events:
         errors.append(f"{label} missing non-empty events list.")
         return
+
     names: list[str] = []
+    waits_by_agent: dict[str, int] = {}
+    quiet_checks_by_agent: dict[str, int] = {}
+    handling_by_agent: dict[str, set[str]] = {}
+    result_agents: set[str] = set()
+    absorbed_agents: set[str] = set()
+    closed_agents: set[str] = set()
+    timeout_agents: set[str] = set()
+
     for index, event in enumerate(events, start=1):
         if not isinstance(event, dict):
             errors.append(f"{label}.events[{index}] must be an object.")
             continue
         name = lower(event.get("event"))
+        agent_id = str(event.get("agent_id") or "").strip()
         if not name:
             errors.append(f"{label}.events[{index}] missing event name.")
         elif name not in EXPERT_LIFECYCLE_EVENT_NAMES:
@@ -526,12 +555,60 @@ def validate_expert_lifecycle_case(case: dict[str, Any], errors: list[str], labe
                 require_non_empty=name == "spawn",
             )
         names.append(name)
-        if name == "timeout" and lower(event.get("classification")) != "non-evidence":
-            errors.append(f"{label}.events[{index}] timeout must be classified as non-evidence.")
-    if "result" in names and "absorbed" not in names:
-        errors.append(f"{label} result event requires absorbed event.")
-    if "absorbed" in names and "close" not in names and not case.get("preserved_thread_reason"):
-        errors.append(f"{label} absorbed expert requires close event or preserved_thread_reason.")
+
+        if name == "wait" and agent_id:
+            waits_by_agent[agent_id] = waits_by_agent.get(agent_id, 0) + 1
+        if name == "progress_check" and agent_id:
+            status = lower(event.get("status"))
+            if status in {"quiet", "silent", "no_progress", "no-progress", "stalled"}:
+                quiet_checks_by_agent[agent_id] = quiet_checks_by_agent.get(agent_id, 0) + 1
+        if name in EXPERT_LIFECYCLE_HANDLING_EVENTS and agent_id:
+            handling_by_agent.setdefault(agent_id, set()).add(name)
+        if name == "result" and agent_id:
+            result_agents.add(agent_id)
+        if name == "absorbed" and agent_id:
+            absorbed_agents.add(agent_id)
+        if name == "close" and agent_id:
+            closed_agents.add(agent_id)
+
+        if name == "timeout":
+            timeout_agents.add(agent_id)
+            if lower(event.get("classification")) != "non-evidence":
+                errors.append(f"{label}.events[{index}] timeout must be classified as non-evidence.")
+            if event.get("used_as_evidence") is True:
+                errors.append(f"{label}.events[{index}] timeout must not set used_as_evidence=true.")
+            decision = lower(event.get("leader_decision"))
+            if decision in {"accepted", "valid", "accepted_result", "used_as_evidence"}:
+                errors.append(f"{label}.events[{index}] timeout must not be accepted as valid result evidence.")
+            if not agent_id or waits_by_agent.get(agent_id, 0) == 0:
+                errors.append(f"{label}.events[{index}] timeout requires prior wait event for the same agent.")
+        if name == "provider_pacing":
+            if lower(event.get("classification")) != "backpressure":
+                errors.append(f"{label}.events[{index}] provider_pacing must be classified as backpressure.")
+            handling_text = lower(event.get("handling"))
+            has_disable = any(token in handling_text for token in ("disable", "avoid", "skip", "forbid", "not use"))
+            has_surface = any(token in handling_text for token in ("orchestration", "langgraph", "omx", "subagent", "expert"))
+            if has_disable and has_surface:
+                errors.append(
+                    f"{label}.events[{index}] provider_pacing handling must not disable orchestration, LangGraph, OMX, subagents, or experts."
+                )
+
+    for agent_id in sorted(result_agents):
+        if agent_id not in absorbed_agents:
+            errors.append(f"{label} result event for {agent_id} requires absorbed event for the same agent.")
+    for agent_id in sorted(absorbed_agents):
+        if agent_id not in closed_agents and not case.get("preserved_thread_reason"):
+            errors.append(f"{label} absorbed expert {agent_id} requires close event for the same agent or preserved_thread_reason.")
+    for agent_id in sorted(timeout_agents):
+        if not handling_by_agent.get(agent_id):
+            errors.append(
+                f"{label} timeout for {agent_id} requires inspect, redirect, respawn, durable_handoff, or main_session_takeover event for the same agent."
+            )
+    for agent_id, count in sorted(quiet_checks_by_agent.items()):
+        if count >= 2 and not handling_by_agent.get(agent_id):
+            errors.append(
+                f"{label} two quiet progress checks for {agent_id} require inspect, redirect, respawn, durable_handoff, or main_session_takeover."
+            )
     if "wait" in names:
         waits = [event for event in events if isinstance(event, dict) and lower(event.get("event")) == "wait"]
         if any(not isinstance(event.get("wait_seconds"), int) or event.get("wait_seconds") <= 0 for event in waits):

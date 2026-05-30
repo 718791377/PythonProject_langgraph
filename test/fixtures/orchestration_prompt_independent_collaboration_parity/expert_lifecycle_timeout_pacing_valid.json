@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "case_type": "expert_lifecycle_audit",
+  "case_id": "expert_lifecycle_timeout_pacing_valid",
+  "total_wait_bound_seconds": 90,
+  "events": [
+    {
+      "event": "spawn",
+      "agent_id": "agent-1",
+      "role": "verifier",
+      "task_summary": "Verify expert lifecycle timeout pacing evidence.",
+      "scope": [
+        "expert lifecycle audit evidence"
+      ],
+      "non_goals": [
+        "edit implementation files"
+      ]
+    },
+    {
+      "event": "wait",
+      "agent_id": "agent-1",
+      "wait_seconds": 30
+    },
+    {
+      "event": "progress_check",
+      "agent_id": "agent-1",
+      "status": "quiet"
+    },
+    {
+      "event": "wait",
+      "agent_id": "agent-1",
+      "wait_seconds": 60
+    },
+    {
+      "event": "progress_check",
+      "agent_id": "agent-1",
+      "status": "quiet"
+    },
+    {
+      "event": "timeout",
+      "agent_id": "agent-1",
+      "classification": "non-evidence",
+      "leader_decision": "main_session_takeover"
+    },
+    {
+      "event": "main_session_takeover",
+      "agent_id": "agent-1",
+      "summary": "Leader verified locally after timeout."
+    },
+    {
+      "event": "provider_pacing",
+      "classification": "backpressure",
+      "handling": "local-first bounded fan-out; wait for a slot without disabling orchestration"
+    },
+    {
+      "event": "result",
+      "agent_id": "agent-1",
+      "summary": "Verifier result absorbed after respawn-compatible local check.",
+      "changed_paths": []
+    },
+    {
+      "event": "absorbed",
+      "agent_id": "agent-1",
+      "leader_decision": "accepted after independent local verification"
+    },
+    {
+      "event": "close",
+      "agent_id": "agent-1",
+      "retention_policy": "close"
+    }
+  ]
+}

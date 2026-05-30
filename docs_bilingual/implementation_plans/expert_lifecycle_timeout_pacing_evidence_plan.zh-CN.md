@@ -35,12 +35,12 @@ Treat expert timeout, stall, and upstream pacing as non-evidence and require bou
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+Status: active
+Stage: Stage C implementation in progress
+Owner session: main-codex-leader-expert-lifecycle-timeout-pacing-evidence-20260530
+Current gate: focused checks, repository guards, OpenSpec guard, and local gate passed; ready for local commit and local main integration
+Stage C entry condition: satisfied by user confirmation on 2026-05-30 after governance package local main integration
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -65,11 +65,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for timed-out experts, quiet progress checks, respawn decisions, and absorbed results.
-- [ ] Reject final acceptance that treats timeout as a valid expert result.
-- [ ] Document bounded wait and closure behavior.
-- [ ] Run expert lifecycle tests and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for timed-out experts, quiet progress checks, respawn decisions, and absorbed results.
+- [x] Reject final acceptance that treats timeout as a valid expert result.
+- [x] Document bounded wait and closure behavior.
+- [x] Run expert lifecycle tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -93,5 +93,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-30 Stage C implementation: added timeout-as-non-evidence text checks, structured expert lifecycle audit handling events, same-agent absorption/closure validation, provider pacing backpressure validation, focused tests, repository guards, OpenSpec guard, and local gate evidence before local main integration.
 <!-- EVIDENCE_INDEX_END -->
