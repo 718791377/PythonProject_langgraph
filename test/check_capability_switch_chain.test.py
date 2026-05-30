@@ -90,6 +90,137 @@ class CapabilitySwitchChainCheckerTests(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("backend status is not ready" in item for item in payload["errors"]), payload["errors"])
 
+    def test_readiness_projection_accepts_distinct_states(self) -> None:
+        readiness = {
+            "selected_backend": "langgraph",
+            "readiness_fields": ["installed", "enabled", "selected", "ready"],
+            "native_omx": {
+                "installed": True,
+                "enabled": True,
+                "selected": False,
+                "ready": False,
+            },
+            "langgraph": {
+                "installed": True,
+                "enabled": True,
+                "selected": True,
+                "ready": True,
+            },
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "repo"
+            root.mkdir()
+            state_path = Path(temp_dir) / "state.json"
+            backend_path = root / ".omx" / "state" / "langgraph" / "backend.json"
+            readiness_path = Path(temp_dir) / "readiness.json"
+            state_path.write_text(json.dumps(VALID_STATE), encoding="utf-8")
+            backend_path.parent.mkdir(parents=True)
+            backend_path.write_text(json.dumps(VALID_BACKEND), encoding="utf-8")
+            readiness_path.write_text(json.dumps(readiness), encoding="utf-8")
+
+            payload = module.run_check(root, state_path, backend_path, readiness_path, require_readiness=True)
+
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertEqual(payload["counts"]["capability_readiness_loaded"], 1)
+        self.assertEqual(
+            payload["capability_readiness"]["readiness_fields"],
+            ["installed", "enabled", "selected", "ready"],
+        )
+
+    def test_readiness_projection_installed_only_is_not_ready(self) -> None:
+        readiness = {
+            "selected_backend": "native_omx",
+            "readiness_fields": ["installed", "enabled", "selected", "ready"],
+            "native_omx": {
+                "installed": True,
+                "enabled": False,
+                "selected": True,
+                "ready": False,
+            },
+            "langgraph": {
+                "installed": False,
+                "enabled": False,
+                "selected": False,
+                "ready": False,
+            },
+        }
+        payload = module.validate_capability_readiness_projection(
+            readiness,
+            errors := [],
+            [],
+            label="test readiness",
+        )
+        self.assertFalse(errors, errors)
+        self.assertFalse(payload["backends"]["native_omx"]["ready"])
+
+    def test_readiness_projection_enabled_not_selected_is_not_ready(self) -> None:
+        readiness = {
+            "selected_backend": "langgraph",
+            "readiness_fields": ["installed", "enabled", "selected", "ready"],
+            "native_omx": {
+                "installed": True,
+                "enabled": True,
+                "selected": False,
+                "ready": False,
+            },
+            "langgraph": {
+                "installed": True,
+                "enabled": True,
+                "selected": True,
+                "ready": True,
+            },
+        }
+        payload = module.validate_capability_readiness_projection(
+            readiness,
+            errors := [],
+            [],
+            label="test readiness",
+        )
+        self.assertFalse(errors, errors)
+        self.assertFalse(payload["backends"]["native_omx"]["ready"])
+
+    def test_readiness_projection_selected_not_ready_fails_if_ready_collapses_states(self) -> None:
+        readiness = {
+            "selected_backend": "langgraph",
+            "readiness_fields": ["installed", "enabled", "selected", "ready"],
+            "native_omx": {
+                "installed": True,
+                "enabled": True,
+                "selected": False,
+                "ready": False,
+            },
+            "langgraph": {
+                "installed": False,
+                "enabled": True,
+                "selected": True,
+                "ready": True,
+            },
+        }
+        errors: list[str] = []
+        module.validate_capability_readiness_projection(readiness, errors, [], label="test readiness")
+        self.assertTrue(any("ready must equal installed && enabled && selected" in item for item in errors), errors)
+
+    def test_readiness_projection_requires_all_distinct_fields(self) -> None:
+        readiness = {
+            "selected_backend": "langgraph",
+            "readiness_fields": ["installed", "selected", "ready"],
+            "native_omx": {
+                "installed": True,
+                "enabled": True,
+                "selected": False,
+                "ready": False,
+            },
+            "langgraph": {
+                "installed": True,
+                "enabled": True,
+                "selected": True,
+                "ready": True,
+            },
+        }
+        errors: list[str] = []
+        module.validate_capability_readiness_projection(readiness, errors, [], label="test readiness")
+        self.assertTrue(any("readiness_fields missing required distinct state field `enabled`" in item for item in errors), errors)
+
     def test_current_user_state_passes_when_available(self) -> None:
         state_path = module.default_state_file()
         if not state_path.exists():

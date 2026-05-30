@@ -36,11 +36,11 @@ Project durable lane state as installed, enabled, selected, and ready without co
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Stage: Stage C implementation package ready for local validation, commit, and local-main integration
+Owner session: main Codex leader session
+Current gate: local CI and local MR review before local main integration; remote publication remains out of scope until explicit user approval
+Stage C entry condition: satisfied by explicit user request to continue this child implementation plan
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -67,11 +67,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for installed-only, enabled-not-selected, selected-not-ready, and ready states.
-- [ ] Update evidence checks to require distinct state fields.
-- [ ] Document user-facing wording for backend_default and backend_ready.
-- [ ] Run capability switch and effective-lane checks plus local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for installed-only, enabled-not-selected, selected-not-ready, and ready states.
+- [x] Update evidence checks to require distinct state fields.
+- [x] Document user-facing wording for backend_default and backend_ready.
+- [x] Run capability switch and effective-lane checks plus local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,5 +95,8 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Stage C implementation: `tools/check_capability_switch_chain.py` now validates durable capability readiness projections with distinct `installed`, `enabled`, `selected`, and `ready` fields, including the invariant `ready == installed && enabled && selected`.
+- 2026-05-30 Stage C fixtures: `test/check_capability_switch_chain.test.py` covers installed-only, enabled-not-selected, selected-not-ready, ready, collapsed-ready, and missing-field readiness states.
+- 2026-05-30 Stage C documentation: `docs_bilingual/governance/langgraph_user_level_runtime_policy.md` and `.zh-CN.md` document `backend_default` / `backend_ready` wording and clarify that readiness does not imply an adopted durable workflow, tracked thread, or persistent team.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

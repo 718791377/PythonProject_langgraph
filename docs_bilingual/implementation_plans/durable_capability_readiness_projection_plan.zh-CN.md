@@ -36,11 +36,11 @@ Project durable lane state as installed, enabled, selected, and ready without co
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+阶段：Stage C implementation package ready for local validation, commit, and local-main integration
+责任会话：main Codex leader session
+当前门禁：本地 CI 与本地 MR review 通过后合入本地 main；远端发布仍不在范围内，除非用户明确批准
+Stage C 进入条件：用户已明确要求继续实施本子 implementation plan
+最后更新：2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -67,11 +67,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for installed-only, enabled-not-selected, selected-not-ready, and ready states.
-- [ ] Update evidence checks to require distinct state fields.
-- [ ] Document user-facing wording for backend_default and backend_ready.
-- [ ] Run capability switch and effective-lane checks plus local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for installed-only, enabled-not-selected, selected-not-ready, and ready states.
+- [x] Update evidence checks to require distinct state fields.
+- [x] Document user-facing wording for backend_default and backend_ready.
+- [x] Run capability switch and effective-lane checks plus local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,5 +95,8 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Stage C 实施：`tools/check_capability_switch_chain.py` 现在校验 durable capability readiness projections，要求区分 `installed`、`enabled`、`selected`、`ready` 四个字段，并强制 `ready == installed && enabled && selected` 不变量。
+- 2026-05-30 Stage C fixtures：`test/check_capability_switch_chain.test.py` 覆盖 installed-only、enabled-not-selected、selected-not-ready、ready、collapsed-ready 与 missing-field readiness 状态。
+- 2026-05-30 Stage C 文档：`docs_bilingual/governance/langgraph_user_level_runtime_policy.md` 与 `.zh-CN.md` 记录 `backend_default` / `backend_ready` 对外措辞，并澄清 readiness 不表示当前任务已经采用 durable workflow、tracked thread 或 persistent team。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

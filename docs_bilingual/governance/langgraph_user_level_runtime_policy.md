@@ -90,6 +90,12 @@ omx-langgraph-cli.ps1 dev --help
 - Do not treat generated helper copies under `C:\Users\lenovo\.codex\python\` as the source of truth.
 - Do not vendor or fork the official LangGraph package into `tools/langgraph_durable_orchestrator/`.
 - Keep user-facing state language explicit: `installed`, `enabled`, `selected`, and `ready` are different states.
+- Durable capability readiness projections must publish `readiness_fields = [installed, enabled, selected, ready]` and must not collapse those fields into one availability flag.
+  - `installed` means the lane's required helper or runtime artifact is present.
+  - `enabled` means the user-level capability switches allow that lane.
+  - `selected` means the user-level backend selector or repo-local tracked state points at that lane.
+  - `ready` means `installed && enabled && selected` for that lane; selected-but-not-installed and enabled-but-not-selected remain not ready.
+- `backend_default` is the user-level selected backend compatibility view, and `backend_ready` is the readiness result for that selected backend only. `backend_ready=true` does not mean a durable workflow, tracked LangGraph thread, or persistent team is already running or adopted for the current task.
 - On Windows terminals that still default to a non-UTF-8 console encoding, do not rely on direct `langgraph.exe --help` or `langgraph.exe dev --help`; use `omx-langgraph-cli.ps1` instead.
 
 ## 7. Project-Level Exception Rule
