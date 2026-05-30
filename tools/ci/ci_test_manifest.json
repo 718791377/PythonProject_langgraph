@@ -5,6 +5,7 @@
     "check_name_clarity_rules.test.py",
     "check_context_retention_canary_surface.test.py",
     "check_startup_instruction_mojibake.test.py",
+    "check_session_replay_context_filtering.test.py",
     "check_precommit_update_archive.test.py",
     "cleanup_integrated_worktree.test.py",
     "check_worktree_task_receipt.test.py",
