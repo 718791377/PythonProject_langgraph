@@ -59,11 +59,13 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：self-retiring peer-session runtime 的 Stage A 恢复治理文档包
+阶段：Phase 0 盘点与父级索引验证收口包
 归属边界：本文件只治理本方案族；无关 implementation_plan 不会被强制挂到本父方案下。
-当前门禁：合入漂移恢复文档更新后停止，等待用户确认再从 `867f882` 恢复 runtime。
-Phase 1 说明：self-retire runtime 来源提交存在，但当前本地 `main`=`b4af80f` 缺少 runtime helper/checker 文件，因此按待恢复处理。
-最后更新：2026-05-29
+当前门禁：完成 Phase 0 收口验证，将本收口包合入本地 `main`，然后停在远端发布门。
+Phase 0 说明：两个 Phase 0 子方案已在功能分支内收口；盘点未发现阻塞性的 registry 或双语配对缺陷。
+Phase 1 说明：Phase 1 runtime 与治理包已实现并合入本地 `main`，其中包括 `898f9d0` 的 self-retire runtime 恢复。
+Phase 2 准入：只有当本 Phase 0 收口包完成提交、本地门禁、local MR review，并快进合入本地 `main` 后，才允许进入 Phase 2。
+最后更新：2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -334,6 +336,29 @@ python tools/local_main_retire_lock.py status --root . --json
 延后后续：publication readiness 不作为 Stage B 子方案创建，因为远端发布不在本次范围内，除非用户明确批准。
 
 准入规则：所有 eligible 验证 session 都可以并行准备证据，但 Phase 7 集成热点和每次 local-main retire 必须通过 lease/lock 串行化。
+## 紧凑子方案状态索引
+
+<!-- CHILD_PLAN_STATUS_INDEX_START -->
+| Phase | 子方案 | 状态 | 当前证据 |
+| --- | --- | --- | --- |
+| Phase 0 | `plan_inventory_registry_alignment_plan` | 功能分支内已收口，等待本地合入 | `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；未发现缺失登记路径或缺失双语 companion 路径。 |
+| Phase 0 | `parent_parallel_orchestration_index_plan` | 功能分支内已收口，等待本地合入 | 父方案当前状态、Phase 0/Phase 1 证据、依赖说明和 Phase 2 准入文本已通过稳定锚点更新。 |
+| Phase 1A | `complete_local_commit_flow_scheduler_reorder_buffer_plan` | 已实现并合入 | ROB runtime/checker 包已合入本地 `main`；后续 self-retire runtime 恢复记录在 `898f9d0`。 |
+| Phase 1 | `formal_plan_confirmation_gate_runtime_plan` | 已实现并合入 | Phase 1 收口证据保留在本地 git 历史和现有证据索引中。 |
+| Phase 1 | `portable_implementation_plan_claim_lock_plan` | 已实现并合入 | Portable claim lock 已作为单方案单会话归属的基础能力。 |
+| Phase 1 | `implementation_plan_registry_active_state_plan` | 已实现并合入 | Registry active-state 与双语配对门禁由 implementation-plan rules 覆盖。 |
+| Phase 1 | `main_session_escalation_visibility_plan` | 已实现并合入 | 主会话提权可视化已属于 Phase 1 收口包。 |
+<!-- CHILD_PLAN_STATUS_INDEX_END -->
+
+## 依赖与 Phase 2 准入说明
+
+<!-- PHASE_ADMISSION_NOTES_START -->
+- Phase 0 是 Phase 2 的硬前置条件：盘点子方案和父级索引子方案都必须完成提交、本地门禁、local MR review，并合入本地 `main` 后，才能进入 Phase 2。
+- Phase 1 仍是后续阶段的安全底座：plan confirmation、claim locking、registry active-state checks、ROB ordering 和 self-retire lock 恢复能力必须在 Phase 2+ session 入场前保持可用。
+- Phase 2 子 session 只有在 Phase 0 收口包进入本地 `main` 后，才可按 Work-Conserving 规则并行运行；startup summary 或 UTF-8/mojibake 相关热点文件仍必须只有一个明确 hotspot lease owner。
+- 远端发布不是 Phase 2 准入的一部分；除非用户明确要求远端发布，否则保持阻塞。
+<!-- PHASE_ADMISSION_NOTES_END -->
+
 
 ## Stage B 创建规则
 
@@ -374,8 +399,10 @@ python tools/local_main_retire_lock.py status --root . --json
 - [x] Stage B 父方案范围修订：明确 `parent_plan` 是可选局部关系，新 session 不默认读取本文件。
 - [x] Stage B 父方案范围修订：结构化记录同机 peer session self-retire 目标、锁契约、checker 目标、验证目标和假设。
 - [x] Stage B 父方案修订：将固定 Phase 数量 cap 替换为 Work-Conserving all-eligible session admission、hotspot lease、resource backpressure 语言和 ROB 支撑的串行 local-main retire。
-- [x] Stage B 父方案修订：将固定 Phase 数量 cap 替换为 Work-Conserving all-eligible session admission、hotspot lease、resource backpressure 语言和 ROB 支撑的串行 local-main retire。
-- [x] Stage A 恢复：记录 self-retire runtime 来源提交存在，但当前本地 `main` 缺少 runtime 文件；非文档恢复前必须停止等待确认。
+- [x] Stage A 恢复：记录 self-retire runtime 来源提交存在，但当时本地 `main` 缺少 runtime 文件；非文档恢复前必须停止等待确认。
+- [x] Stage B runtime 恢复：恢复 self-retire runtime helper/checker 行为，并在 `898f9d0` 合入本地 `main`。
+- [x] Phase 0 收口：在 Phase 2 准入前收口 inventory registry alignment 子方案和 parent orchestration index 子方案。
+- [ ] 后续阶段：本 Phase 0 收口包合入本地 `main` 后，再执行 Phase 2 context 与 UTF-8 safety 子方案。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -405,9 +432,11 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-29 Stage A 恢复文档包：记录当前本地 `main`=`b4af80f` 尚未包含 self-retire runtime helper/checker，虽然来源提交 `867f882` 存在于 `decentralize-session-self-retire-20260529`；Stage B runtime 恢复必须等待用户确认。
+- 2026-05-30 Phase 0 收口包：在分支 `phase0-plan-index-closure-20260530` 收口 `plan_inventory_registry_alignment_plan` 和 `parent_parallel_orchestration_index_plan`；机器可读盘点证据为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；在本包完成本地门禁、local MR review 并合入本地 `main` 前，Phase 2 仍保持阻塞。
+- 2026-05-30 self-retire runtime 恢复：本地 `main` 已在 `898f9d0` 包含恢复后的 self-retire runtime helper/checker 包，替代早先 `b4af80f` 的待恢复说明。
+- 2026-05-29 Stage A 恢复文档包：记录当时本地 `main`=`b4af80f` 尚未包含 self-retire runtime helper/checker，虽然来源提交 `867f882` 存在于 `decentralize-session-self-retire-20260529`；该问题随后已由 `898f9d0` 解决。
 - 2026-05-29 父方案范围修订：结构化吸收同机多 session 自主合入治理对话，明确本文件仍是本方案族父方案，但不控制无关 implementation_plan；新增 `parent_plan` 可选局部生效、新 session 非默认读取、session-owned self-retire 与 `local-main-retire` lock 后续目标。
-- 2026-05-29 Phase 1 收口：Phase 1 子方案均已实现、合入本地 `main` 并完成验证；证据提交包括 `4479593`、`e81d840`、`fb3ad75`、`54a965d` 和 `e23c40b`；ROB 合入后 local gate 已通过；用户现已明确授权远端发布。
+- 2026-05-29 Phase 1 收口：Phase 1 子方案均已实现、合入本地 `main` 并完成验证；证据提交包括 `4479593`、`e81d840`、`fb3ad75`、`54a965d` 和 `e23c40b`；ROB 合入后 local gate 已通过。
 - 2026-05-29 Stage B Batch 1 补充：新增 Phase 1A complete-flow 调度器/ROB 子方案，更新 `完整提交流程.md`，并把 portable claim / receipt 子方案标为下游消费者；随后 ROB runtime/checker 包已在 `4479593` 合入本地 `main`。
 - 2026-05-28 Stage C 本地集成：portable child-plan claim lock 已快进合入本地 `main`；合入后 local gate 通过；远端发布尚未授权。
 - 2026-05-28 Stage C 验证：portable child-plan claim lock 在 `implement-portable-plan-claim-lock-20260528` 分支通过聚焦测试、local gate 和 local MR review；随后已按上一条记录串行合入本地 `main`。

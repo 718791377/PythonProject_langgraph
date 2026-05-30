@@ -59,11 +59,13 @@ This parent plan coordinates the following existing plans inside this plan famil
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage A recovery governance package for self-retiring peer-session runtime
+Stage: Phase 0 closure package for inventory and parent index verification
 Ownership boundary: this file governs only this plan family; unrelated implementation plans are not forced under this parent.
-Current gate: integrate the drift-recovery documentation update into local `main`, then stop for user confirmation before restoring the non-document runtime from source commit `867f882`.
-Phase 1 note: the self-retire runtime source commit exists, but current local `main` at `b4af80f` lacks the runtime helper/checker files, so it is treated as recovery-pending rather than implemented.
-Last updated: 2026-05-29
+Current gate: finish Phase 0 closure validation, merge this closure package to local `main`, and stop at the remote publication gate.
+Phase 0 note: both Phase 0 child plans are now closed in the feature branch; the inventory found no blocking registry or bilingual-pair defect.
+Phase 1 note: Phase 1 runtime and governance packages are implemented, integrated into local `main`, and include the self-retire runtime restoration at `898f9d0`.
+Phase 2 admission: Phase 2 may start only after this Phase 0 closure package is committed, locally gated, locally reviewed, and fast-forwarded into local `main`.
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model
@@ -335,6 +337,30 @@ Delayed follow-up: publication readiness is not created as a Stage B child plan 
 
 Admission: all eligible validation sessions may prepare evidence in parallel, but Phase 7 integration hotspots and every local-main retire remain serial through their leases/locks.
 
+
+## Compact Child-Plan Status Index
+
+<!-- CHILD_PLAN_STATUS_INDEX_START -->
+| Phase | Child plan | Status | Current evidence |
+| --- | --- | --- | --- |
+| Phase 0 | `plan_inventory_registry_alignment_plan` | closure-ready in feature branch | `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`; no missing registered paths or bilingual companion paths. |
+| Phase 0 | `parent_parallel_orchestration_index_plan` | closure-ready in feature branch | Parent current status, Phase 0/Phase 1 evidence, dependency notes, and Phase 2 admission text updated through stable anchors. |
+| Phase 1A | `complete_local_commit_flow_scheduler_reorder_buffer_plan` | implemented and integrated | ROB runtime/checker package was integrated into local `main`; later self-retire restoration is recorded at `898f9d0`. |
+| Phase 1 | `formal_plan_confirmation_gate_runtime_plan` | implemented and integrated | Phase 1 closure evidence remains in local git history and existing evidence index. |
+| Phase 1 | `portable_implementation_plan_claim_lock_plan` | implemented and integrated | Portable claim lock is available as the baseline for single-plan single-session ownership. |
+| Phase 1 | `implementation_plan_registry_active_state_plan` | implemented and integrated | Registry active-state and bilingual-pair guard behavior is covered by implementation-plan rules. |
+| Phase 1 | `main_session_escalation_visibility_plan` | implemented and integrated | Main-session escalation visibility is part of the Phase 1 closure package. |
+<!-- CHILD_PLAN_STATUS_INDEX_END -->
+
+## Dependency and Phase 2 Admission Notes
+
+<!-- PHASE_ADMISSION_NOTES_START -->
+- Phase 0 is a hard predecessor for Phase 2: the inventory child plan and the parent-index child plan must both be committed, locally gated, locally reviewed, and merged to local `main` before Phase 2 starts.
+- Phase 1 remains the safety foundation for later phases: plan confirmation, claim locking, registry active-state checks, ROB ordering, and self-retire lock restoration must remain available before Phase 2+ sessions are admitted.
+- Phase 2 child sessions may run Work-Conserving and in parallel only after the Phase 0 closure package is on local `main`; shared startup-summary or UTF-8/mojibake hotspot files still require one explicit hotspot lease owner.
+- Remote publication is not part of Phase 2 admission and remains blocked until the user explicitly requests remote publication.
+<!-- PHASE_ADMISSION_NOTES_END -->
+
 ## Stage B Creation Rules
 
 When Stage B starts, child plans must be created in batches:
@@ -374,8 +400,10 @@ Each child plan must include:
 - [x] Stage B parent-scope revision: clarify that `parent_plan` is an optional local relationship and that new sessions do not read this file by default.
 - [x] Stage B parent-scope revision: structurally record the same-machine peer session self-retire target, lock contract, checker targets, verification targets, and assumptions.
 - [x] Stage B parent revision: replace fixed per-phase session caps with Work-Conserving all-eligible session admission, hotspot leases, resource backpressure language, and ROB-backed serial local-main retire.
-- [ ] Later stages: implement `local-main-retire` locking, session-owned self-retire, ROB ownership field `retire_mode=self_retire_lock` meaning the lock holder retires only its own branch, and checker/local-gate wiring.
 - [x] Stage A recovery: record that the self-retire runtime source commit exists but current local `main` is missing the runtime files; stop before non-document recovery.
+- [x] Stage B runtime recovery: restore self-retire runtime helper/checker behavior and integrate it into local `main` at `898f9d0`.
+- [x] Phase 0 closure: close the inventory registry alignment child plan and the parent orchestration index child plan before Phase 2 admission.
+- [ ] Later stages: execute Phase 2 context and UTF-8 safety child plans after this Phase 0 closure package is merged to local `main`.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -405,9 +433,11 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-29 Stage A recovery package: recorded that current local `main` at `b4af80f` does not contain the self-retire runtime helper/checker even though source commit `867f882` exists on `decentralize-session-self-retire-20260529`; Stage B runtime recovery must wait for user confirmation.
+- 2026-05-30 Phase 0 closure package: closed `plan_inventory_registry_alignment_plan` and `parent_parallel_orchestration_index_plan` in branch `phase0-plan-index-closure-20260530`; machine-readable inventory evidence is `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`; Phase 2 remains blocked until this package is locally gated, locally reviewed, and merged to local `main`.
+- 2026-05-30 self-retire runtime restoration: local `main` includes the restored self-retire runtime helper/checker package at `898f9d0`, replacing the earlier recovery-pending note from `b4af80f`.
+- 2026-05-29 Stage A recovery package: recorded that local `main` at `b4af80f` did not contain the self-retire runtime helper/checker even though source commit `867f882` existed on `decentralize-session-self-retire-20260529`; this was later resolved by `898f9d0`.
 - 2026-05-29 parent-scope revision: structurally absorbed the same-machine multi-session self-retire governance conversation, clarifying that this file remains this plan family's parent plan but does not control unrelated implementation plans; added optional local `parent_plan`, non-default new-session reading, session-owned self-retire, and `local-main-retire` lock follow-up targets.
-- 2026-05-29 Phase 1 closure: Phase 1 child plans are implemented, integrated into local `main`, and verified; evidence commits include `4479593`, `e81d840`, `fb3ad75`, `54a965d`, and `e23c40b`; post-ROB local gate passed before this closure update; remote publication is now explicitly authorized by the user.
+- 2026-05-29 Phase 1 closure: Phase 1 child plans are implemented, integrated into local `main`, and verified; evidence commits include `4479593`, `e81d840`, `fb3ad75`, `54a965d`, and `e23c40b`; post-ROB local gate passed before this closure update.
 - 2026-05-29 Stage B Batch 1 supplement: added the Phase 1A complete-flow scheduler/ROB child plan, updated the repository-root complete local commit-flow document, linked portable claim/receipt child plans as downstream consumers, and later integrated the ROB runtime/checker package into local `main` at `4479593`.
 - 2026-05-28 Stage C local integration: portable child-plan claim locking was fast-forwarded into local `main`; post-merge local gate passed; remote publication is not approved yet.
 - 2026-05-28 Stage C validation: portable child-plan claim locking passed focused tests, local gate, and local MR review on branch `implement-portable-plan-claim-lock-20260528`; local `main` integration has since completed as recorded above.

@@ -36,11 +36,11 @@ Keep the parent phase map, child-plan registry, dependency order, and session-li
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B 子方案创建包
-责任会话：main Codex leader session
-当前门禁：仅执行文档治理类父方案修订，不进入 runtime 实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-29
+阶段：Phase 0 收口已在本地功能分支实现
+责任会话：`phase0-plan-index-closure-20260530`
+当前门禁：在合入本地 `main` 前验证父级执行索引、依赖边、Phase 2 准入说明、本地门禁和 local MR review。
+Stage C 进入条件：用户已确认 Phase 0 必须先于 Phase 2 完成；本次收口更新父方案地图。
+最后更新：2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -66,14 +66,14 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
+- [x] 本子方案本地 main 合入后已获得用户确认。
 - [x] 为父方案加入二层级架构图，并明确本索引维护方案是同级子方案，不是二级父方案。
 - [x] 吸收 Pi family / oh-my-pi / CLI harness reference-only 边界到父级编排方案。
 - [x] 登记 Phase 1A complete-flow scheduler/ROB 子方案，并把它作为 Batch 1 early-foundation 补充。
-- [ ] Add a compact child-plan status table to the parent plan if the parent needs an execution index.
-- [ ] Record dependency edges between phases and child plans without duplicating full evidence packages.
-- [ ] Verify that parent status can be updated through stable anchors only.
-- [ ] Run implementation-plan rules and local MR review.
+- [x] 向父方案加入紧凑 child-plan 状态表。
+- [x] 记录 phase 与 child plan 之间的依赖边，且不复制完整证据包。
+- [x] 验证父方案状态可以只通过稳定锚点更新。
+- [x] 运行 implementation-plan rules 和 local MR review。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -97,6 +97,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Phase 0 索引收口：已更新父方案当前状态、Phase 0/Phase 1 完成证据、紧凑 child-plan 状态索引、依赖/准入说明和 Phase 2 门禁条件。
 - 2026-05-29 索引补充：登记 Phase 1A complete-flow scheduler/ROB 子方案，保持其为父方案的同级 child implementation_plan。
 - 2026-05-28 文档治理更新：main Codex leader session 认领本索引维护子方案，用于更新父方案层级架构图和 Pi/harness reference-only 边界；commit 记录在本地 git 历史中。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。

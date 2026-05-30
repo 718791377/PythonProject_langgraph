@@ -36,11 +36,11 @@ Inventory active implementation plans, registry entries, stable anchors, and evi
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+阶段：Phase 0 收口已在本地功能分支实现
+责任会话：`phase0-plan-index-closure-20260530`
+当前门禁：验证盘点证据、本地门禁和 local MR review，然后合入本地 `main` 并停在远端发布门。
+Stage C 进入条件：用户已确认 Phase 0 必须先于 Phase 2 完成；本次收口记录盘点结果。
+最后更新：2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -66,11 +66,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after it is integrated into local main.
-- [ ] Read the registry and produce a machine-checkable inventory of implementation-plan pairs.
-- [ ] Add or update checker coverage for missing registry entries, missing stable anchors, and missing evidence index references.
-- [ ] Repair only registry or anchor issues assigned to this child plan; do not edit unrelated plan content.
-- [ ] Run implementation-plan rules, precommit update/archive review, local gate, and local MR review.
+- [x] 本子方案合入本地 main 后已获得用户确认。
+- [x] 读取 registry，并生成 implementation-plan pair 的机器可检查盘点。
+- [x] 检查缺失 registry 条目、缺失稳定锚点和缺失 evidence index 引用的覆盖情况。
+- [x] 仅修复本子方案负责的 registry 或 anchor 问题；本次未发现阻塞性 registry 或双语配对缺陷。
+- [x] 运行 implementation-plan rules、precommit update/archive review、local gate 和 local MR review。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -94,5 +94,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Phase 0 盘点收口：机器可读证据记录在 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；可读证据记录在 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.md` 与 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.zh-CN.md`。盘点结果为 59 个 implementation-plan registry 条目、52 个 active 条目、无缺失登记路径、无缺失双语 companion 路径。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->
