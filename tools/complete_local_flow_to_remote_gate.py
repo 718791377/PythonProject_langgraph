@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,90 @@ DOC_EXACT_PATHS = {"完整提交流程.md"}
 DOCS_BILINGUAL_PREFIX = "docs_bilingual/"
 IMPLEMENTATION_PLAN_PREFIX = "docs_bilingual/implementation_plans/"
 DEFAULT_RECEIPT = ".omx/worktree-task-receipt.json"
+
+
+def run_json_tool(args: list[str], *, cwd: Path) -> dict[str, Any]:
+    completed = subprocess.run(
+        [sys.executable, *args],
+        cwd=str(cwd),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("JSON tool returned invalid output: " + completed.stdout + completed.stderr) from exc
+    if completed.returncode != 0 or not payload.get("ok"):
+        raise RuntimeError(json.dumps(payload, ensure_ascii=False))
+    return payload
+
+
+def acquire_retire_lock(root: Path, *, session_id: str, branch: str, worktree: Path, entry_id: str, ttl_minutes: int) -> str:
+    payload = run_json_tool(
+        [
+            str(Path(__file__).resolve().parent / "local_main_retire_lock.py"),
+            "acquire",
+            "--root",
+            str(root),
+            "--session-id",
+            session_id,
+            "--branch",
+            branch,
+            "--worktree",
+            str(worktree),
+            "--entry-id",
+            entry_id,
+            "--ttl-minutes",
+            str(ttl_minutes),
+        ],
+        cwd=root,
+    )
+    nonce = str(payload.get("nonce") or payload.get("lock", {}).get("nonce") or "")
+    if not nonce:
+        raise RuntimeError("local-main retire lock acquire succeeded without returning a nonce")
+    return nonce
+
+
+def release_retire_lock(root: Path, nonce: str) -> None:
+    run_json_tool(
+        [
+            str(Path(__file__).resolve().parent / "local_main_retire_lock.py"),
+            "release",
+            "--root",
+            str(root),
+            "--nonce",
+            nonce,
+        ],
+        cwd=root,
+    )
+
+
+def record_self_retired_rob(root: Path, *, entry_id: str, rollback_ref: str, local_main_commit: str, session_id: str, lock_nonce: str) -> None:
+    run_json_tool(
+        [
+            str(Path(__file__).resolve().parent / "commit_reorder_buffer.py"),
+            "retire",
+            "--root",
+            str(root),
+            "--entry-id",
+            entry_id,
+            "--rollback-ref",
+            rollback_ref,
+            "--local-main-commit",
+            local_main_commit,
+            "--retire-mode",
+            "self_retire_lock",
+            "--retire-owner-session-id",
+            session_id,
+            "--retire-lock-nonce",
+            lock_nonce,
+            "--evidence",
+            "self-retired via tools/complete_local_flow_to_remote_gate.py",
+        ],
+        cwd=root,
+    )
 
 
 def run_git(root: Path, args: list[str], *, check: bool = False) -> subprocess.CompletedProcess[str]:
@@ -192,6 +277,11 @@ def main() -> int:
     parser.add_argument("--receipt", default=DEFAULT_RECEIPT, help="Receipt JSON path relative to the feature worktree.")
     parser.add_argument("--skip-local-gate", action="store_true", help="Do not run local_gate.ps1; intended only when another checker already explains why the full gate cannot run.")
     parser.add_argument("--skip-local-mr-review", action="store_true", help="Do not run local_mr_review.ps1; intended only for explicitly justified diagnostics.")
+    parser.add_argument("--self-retire", action="store_true", help="Allow this session to acquire the local-main retire lock and retire its own ready ROB entry.")
+    parser.add_argument("--session-id", default=None, help="Session id required for --self-retire or --acquire-retire-lock.")
+    parser.add_argument("--rob-entry-id", default=None, help="ROB entry id required for --self-retire or --acquire-retire-lock.")
+    parser.add_argument("--acquire-retire-lock", action="store_true", help="Acquire the local-main retire lock around the local-main mutation.")
+    parser.add_argument("--lock-ttl-minutes", type=int, default=120, help="TTL for the local-main retire lock.")
     parser.add_argument("--execute", action="store_true", help="Actually create backup ref, merge, and optionally run gates. Without this flag, print the planned actions only.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")
     args = parser.parse_args()
@@ -210,10 +300,16 @@ def main() -> int:
     changed_paths: list[str] = []
     governance_package_commit: str | None = None
     implementation_plan: str | None = None
+    use_retire_lock = bool(args.self_retire or args.acquire_retire_lock)
+    retire_lock_nonce: str | None = None
 
     try:
         if branch == args.main:
             raise RuntimeError("Feature branch must not be local main.")
+        if use_retire_lock and not args.session_id:
+            raise RuntimeError("--session-id is required when acquiring the local-main retire lock.")
+        if use_retire_lock and not args.rob_entry_id:
+            raise RuntimeError("--rob-entry-id is required when acquiring the local-main retire lock.")
         if not is_clean(worktree):
             raise RuntimeError("Feature worktree is not clean; commit or remove drift before completing local flow.")
         main_branch = current_branch(root)
@@ -251,6 +347,11 @@ def main() -> int:
             f"merge --ff-only {branch} into {args.main}",
             "stop before GitLab/GitHub remote publication",
         ])
+        if use_retire_lock:
+            actions.insert(3, "acquire .omx/locks/local-main-retire.lock before mutating local main")
+            actions.append("release .omx/locks/local-main-retire.lock after retire attempt")
+            if args.self_retire:
+                actions.append("record ROB entry as retired with self_retire_lock evidence")
         if args.stage == "governance-confirmation":
             actions.append("record receipt as awaiting implementation confirmation for " + str(implementation_plan))
         if not args.skip_local_gate:
@@ -265,19 +366,49 @@ def main() -> int:
                 run_local_gate(worktree, "feature")
             if not args.skip_local_mr_review:
                 run_local_mr_review(worktree, args.main, branch)
-            run_git(root, ["update-ref", backup_ref, args.main], check=True)
-            run_git(root, ["merge", "--ff-only", branch], check=True)
-            if args.stage == "governance-confirmation":
-                assert governance_package_commit is not None
-                assert implementation_plan is not None
-                record_governance_receipt(
-                    receipt_path,
-                    branch=branch,
-                    commit=governance_package_commit,
-                    implementation_plan=implementation_plan,
-                )
-            if not args.skip_local_gate:
-                run_local_gate(root, "main")
+            try:
+                if use_retire_lock:
+                    assert args.session_id is not None
+                    assert args.rob_entry_id is not None
+                    retire_lock_nonce = acquire_retire_lock(
+                        root,
+                        session_id=args.session_id,
+                        branch=branch,
+                        worktree=worktree,
+                        entry_id=args.rob_entry_id,
+                        ttl_minutes=args.lock_ttl_minutes,
+                    )
+                    if not is_clean(root):
+                        raise RuntimeError("Primary root became dirty after acquiring the local-main retire lock.")
+                run_git(root, ["update-ref", backup_ref, args.main], check=True)
+                run_git(root, ["merge", "--ff-only", branch], check=True)
+                if args.stage == "governance-confirmation":
+                    assert governance_package_commit is not None
+                    assert implementation_plan is not None
+                    record_governance_receipt(
+                        receipt_path,
+                        branch=branch,
+                        commit=governance_package_commit,
+                        implementation_plan=implementation_plan,
+                    )
+                if not args.skip_local_gate:
+                    run_local_gate(root, "main")
+                if args.self_retire:
+                    assert args.session_id is not None
+                    assert args.rob_entry_id is not None
+                    assert retire_lock_nonce is not None
+                    local_main_commit = run_git(root, ["rev-parse", args.main], check=True).stdout.strip()
+                    record_self_retired_rob(
+                        root,
+                        entry_id=args.rob_entry_id,
+                        rollback_ref=backup_ref,
+                        local_main_commit=local_main_commit,
+                        session_id=args.session_id,
+                        lock_nonce=retire_lock_nonce,
+                    )
+            finally:
+                if retire_lock_nonce:
+                    release_retire_lock(root, retire_lock_nonce)
     except Exception as exc:
         errors.append(str(exc))
 
@@ -296,6 +427,8 @@ def main() -> int:
         "implementation_plan": implementation_plan,
         "receipt": str(receipt_path),
         "remote_publication_performed": False,
+        "retire_lock_used": use_retire_lock,
+        "retire_lock_nonce": retire_lock_nonce,
         "stop_state": stop_state,
         "actions": actions,
         "errors": errors,

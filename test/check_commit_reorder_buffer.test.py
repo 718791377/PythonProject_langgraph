@@ -106,6 +106,24 @@ class CommitReorderBufferTest(unittest.TestCase):
         self.assertTrue(any("local_main_commit" in error for error in payload["errors"]))
         self.assertTrue(any("evidence" in error for error in payload["errors"]))
 
+    def test_self_retire_lock_entry_requires_owner_and_nonce(self) -> None:
+        root = self.make_root()
+        self.write_entry(
+            root,
+            "self-retired",
+            state="retired",
+            retire_mode="self_retire_lock",
+            rollback_ref="refs/backup/example",
+            local_main_commit="abc123",
+            evidence=["reports/self.md"],
+        )
+
+        payload = commit_rob.evaluate(root)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("retire_owner_session_id" in error for error in payload["errors"]))
+        self.assertTrue(any("retire_lock_nonce" in error for error in payload["errors"]))
+
     def test_backpressure_is_warning_not_failure(self) -> None:
         root = self.make_root()
         for index in range(3):
@@ -190,6 +208,60 @@ class CommitReorderBufferTest(unittest.TestCase):
             root,
             "predict",
             "--entry-id",
+            "self-retire",
+            "--session-id",
+            "session-self",
+            "--implementation-plan",
+            "docs_bilingual/implementation_plans/self.md",
+            "--branch",
+            "feature/self",
+            "--base-main",
+            "base123",
+            "--write-set",
+            "docs/self.md",
+        )
+        self.run_helper(
+            root,
+            "enqueue",
+            "--entry-id",
+            "self-retire",
+            "--actual-write-set",
+            "docs/self.md",
+            "--gate",
+            "precommit_update_archive=passed",
+            "--gate",
+            "local_gate=passed",
+            "--gate",
+            "local_mr_review=passed",
+            "--evidence",
+            "reports/self.md",
+        )
+        self_retired = self.run_helper(
+            root,
+            "retire",
+            "--entry-id",
+            "self-retire",
+            "--rollback-ref",
+            "refs/backup/self",
+            "--local-main-commit",
+            "def789",
+            "--retire-mode",
+            "self_retire_lock",
+            "--retire-owner-session-id",
+            "session-self",
+            "--retire-lock-nonce",
+            "nonce-123",
+            "--evidence",
+            "reports/self-retired.md",
+        )
+        self.assertTrue(self_retired["ok"])
+        self.assertEqual(self_retired["entry"]["retire_mode"], "self_retire_lock")
+        self.assertTrue(commit_rob.evaluate(root)["ok"])
+
+        self.run_helper(
+            root,
+            "predict",
+            "--entry-id",
             "flush-me",
             "--session-id",
             "session-flush",
@@ -205,7 +277,7 @@ class CommitReorderBufferTest(unittest.TestCase):
         flushed = self.run_helper(root, "flush", "--entry-id", "flush-me", "--reason", "cancelled-by-user")
         self.assertTrue(flushed["ok"])
         final_status = self.run_helper(root, "status")
-        self.assertEqual(final_status["counts"]["retired"], 1)
+        self.assertEqual(final_status["counts"]["retired"], 2)
         self.assertEqual(final_status["counts"]["flushed"], 1)
 
 

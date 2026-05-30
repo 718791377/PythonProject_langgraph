@@ -66,10 +66,12 @@ Script-backed enforcement:
 
 - `tools/check_plan_exit_execution_governance.py` - checks that a range containing non-document execution starts with a docs-only local governance package and that the first package touches `docs_bilingual/`.
 - `tools/complete_local_flow_to_remote_gate.py` - executes or dry-runs the local flow from a clean feature branch through ff-only local `main` integration and stops before remote publication.
+- `tools/local_main_retire_lock.py` - protects peer-session self-retirement writes to local `main` with a repository-local nonce lock.
+- `tools/check_local_main_retire_lock.py` - validates active local-main retire-lock schema while allowing the normal no-lock idle state.
 - `tools/check_local_flow_scripted_enforcement.py` - verifies that this policy, the repository-root complete local flow document, and the local-flow scripts remain present and mutually linked.
 - `tools/ci/local_mr_review.ps1` - runs the post-plan range checker before local `main` integration so non-document execution cannot bypass the governance package.
 
-Implementation plan updates or creations are governed by the same complete local commit flow. After a plan pair is updated and committed, the default local action is not to wait on a feature branch; it is to finish the local integration package into local `main`, then stop at the remote publication gate.
+Implementation plan updates or creations are governed by the same complete local commit flow. After a plan pair is updated and committed, the default local action is not to wait on a feature branch; it is to finish the local integration package into local `main`, then stop at the remote publication gate. This local integration can be self-retired by the session that owns the package when it holds the repository-local lock; it does not require one fixed main-controller session for every plan.
 
 ## 4. Five-Phase Workflow
 
@@ -129,7 +131,7 @@ A guard must fail closed for:
 - missing build_mode or isolation decisions before leaving Build;
 - `build_mode: direct` in the full workflow without `direct_override` or an equivalent explicit exception;
 - missing `verification_report` before Verify passes;
-- `branch_status` not handled before Verify passes;
+- `branch_status` (the persisted branch-state field that records whether the feature branch is clean, merged, blocked, or still awaiting integration) not handled before Verify passes;
 - archive attempts before verification evidence exists.
 
 Guard failures should use a hard-stop style such as `[HARD STOP]` plus actionable remediation.

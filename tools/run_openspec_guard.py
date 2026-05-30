@@ -137,6 +137,7 @@ def main() -> int:
     session_ownership_claims_script = root / "tools" / "check_session_ownership_claims.py"
     implementation_plan_claim_lock_script = root / "tools" / "check_implementation_plan_claim_lock.py"
     commit_reorder_buffer_script = root / "tools" / "check_commit_reorder_buffer.py"
+    local_main_retire_lock_script = root / "tools" / "check_local_main_retire_lock.py"
     orchestration_activation_policy_script = root / "tools" / "check_orchestration_activation_policy.py"
     custom_agent_toml_schema_script = root / "tools" / "check_custom_agent_toml_schema.py"
     agent_skill_profile_surface_boundaries_script = root / "tools" / "check_agent_skill_profile_surface_boundaries.py"
@@ -224,6 +225,8 @@ def main() -> int:
         raise SystemExit(f"Missing implementation plan claim-lock check script: {implementation_plan_claim_lock_script}")
     if not commit_reorder_buffer_script.exists():
         raise SystemExit(f"Missing commit reorder-buffer check script: {commit_reorder_buffer_script}")
+    if not local_main_retire_lock_script.exists():
+        raise SystemExit(f"Missing local-main retire-lock check script: {local_main_retire_lock_script}")
     if not orchestration_activation_policy_script.exists():
         raise SystemExit(f"Missing orchestration activation policy check script: {orchestration_activation_policy_script}")
     if not custom_agent_toml_schema_script.exists():
@@ -492,6 +495,11 @@ def main() -> int:
                 "check_commit_reorder_buffer",
                 [str(python_exe), str(commit_reorder_buffer_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during commit reorder-buffer verification.",
+            ),
+            (
+                "check_local_main_retire_lock",
+                [str(python_exe), str(local_main_retire_lock_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during local-main retire-lock verification.",
             ),
             (
                 "check_orchestration_activation_policy",
@@ -832,6 +840,12 @@ def main() -> int:
         [str(python_exe), str(commit_reorder_buffer_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during commit reorder-buffer verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(local_main_retire_lock_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during local-main retire-lock verification.",
     )
 
     run_checked(

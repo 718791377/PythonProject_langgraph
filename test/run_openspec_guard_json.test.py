@@ -64,6 +64,7 @@ GUARD_STEPS = [
     ("check_session_ownership_claims", "check_session_ownership_claims.py", "session_ownership_claims"),
     ("check_implementation_plan_claim_lock", "check_implementation_plan_claim_lock.py", "implementation_plan_claim_lock"),
     ("check_commit_reorder_buffer", "check_commit_reorder_buffer.py", "commit_reorder_buffer"),
+    ("check_local_main_retire_lock", "check_local_main_retire_lock.py", "local_main_retire_lock"),
     ("check_orchestration_activation_policy", "check_orchestration_activation_policy.py", "orchestration_activation_policy"),
     ("check_codex_skills_governance", "check_codex_skills_governance.py", "codex_skills_governance"),
     ("check_custom_agent_toml_schema", "check_custom_agent_toml_schema.py", "custom_agent_toml_schema"),
@@ -145,6 +146,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
         self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
         self.assertIn("check_orchestration_collaboration_evidenceguard", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_local_main_retire_lock", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:
         root = self.make_root("guard-json-fail")

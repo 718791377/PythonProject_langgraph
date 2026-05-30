@@ -12,6 +12,7 @@ ACTIVE_STATES = {"predicted", "executing", "ready", "blocked", "retiring"}
 ALLOWED_STATES = ACTIVE_STATES | {"retired", "flushed", "superseded"}
 READY_GATE_REQUIREMENTS = ("precommit_update_archive", "local_gate", "local_mr_review")
 PREDICTION_RESOLUTIONS = {"accepted", "reconciled", "split"}
+RETIRE_MODES = {"legacy_leader_serial", "self_retire_lock"}
 
 
 def utc_now() -> str:
@@ -153,6 +154,12 @@ def evaluate(root: Path, max_ready: int = 6) -> dict[str, Any]:
         if state == "retired":
             string_field(entry, "rollback_ref", errors)
             string_field(entry, "local_main_commit", errors)
+            retire_mode = entry.get("retire_mode", "legacy_leader_serial")
+            if retire_mode not in RETIRE_MODES:
+                errors.append(f"{path}: `retire_mode` must be one of {sorted(RETIRE_MODES)} when present.")
+            if retire_mode == "self_retire_lock":
+                string_field(entry, "retire_owner_session_id", errors)
+                string_field(entry, "retire_lock_nonce", errors)
             evidence = normalize_list(entry.get("evidence"))
             if not evidence:
                 errors.append(f"{path}: retired ROB entry must keep non-empty `evidence`.")

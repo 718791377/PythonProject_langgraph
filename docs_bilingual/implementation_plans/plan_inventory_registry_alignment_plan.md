@@ -36,11 +36,11 @@ Inventory active implementation plans, registry entries, stable anchors, and evi
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Stage: Phase 0 closure implemented in local feature branch
+Owner session: `phase0-plan-index-closure-20260530`
+Current gate: validate inventory evidence, local gates, local MR review, then merge to local `main` and stop at the remote publication gate.
+Stage C entry condition: user confirmed Phase 0 must complete before Phase 2; this closure records the inventory result.
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -66,11 +66,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after it is integrated into local main.
-- [ ] Read the registry and produce a machine-checkable inventory of implementation-plan pairs.
-- [ ] Add or update checker coverage for missing registry entries, missing stable anchors, and missing evidence index references.
-- [ ] Repair only registry or anchor issues assigned to this child plan; do not edit unrelated plan content.
-- [ ] Run implementation-plan rules, precommit update/archive review, local gate, and local MR review.
+- [x] Confirm this child plan after it is integrated into local main.
+- [x] Read the registry and produce a machine-checkable inventory of implementation-plan pairs.
+- [x] Add or update checker coverage for missing registry entries, missing stable anchors, and missing evidence index references.
+- [x] Repair only registry or anchor issues assigned to this child plan; no blocking registry or bilingual-pair defect was found.
+- [x] Run implementation-plan rules, precommit update/archive review, local gate, and local MR review.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -94,5 +94,6 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Phase 0 inventory closure: machine-readable evidence is recorded in `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`; readable evidence is recorded in `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.md`. The inventory found 59 implementation-plan registry entries, 52 active entries, no missing registered paths, and no missing bilingual companion paths.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->
