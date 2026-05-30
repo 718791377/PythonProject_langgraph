@@ -58,14 +58,13 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Phase 0 盘点与父级索引验证收口包
-归属边界：本文件只治理本方案族；无关 implementation_plan 不会被强制挂到本父方案下。
-当前门禁：完成 Phase 0 收口验证，将本收口包合入本地 `main`，然后停在远端发布门。
-Phase 0 说明：两个 Phase 0 子方案已在功能分支内收口；盘点未发现阻塞性的 registry 或双语配对缺陷。
-Phase 1 说明：Phase 1 runtime 与治理包已实现并合入本地 `main`，其中包括 `898f9d0` 的 self-retire runtime 恢复。
-Phase 2 准入：只有当本 Phase 0 收口包完成提交、本地门禁、local MR review，并快进合入本地 `main` 后，才允许进入 Phase 2。
-最后更新：2026-05-30
+阶段：Phase 2+ 并行执行治理对齐
+责任会话：`codex-align-complete-flow-parent-plans-20260530`，认领父级索引维护子方案来更新本父方案族的执行语义。
+当前门禁：本次只同步治理文档；完成 checker、本地提交和本地 `main` 合入后，必须停在远端发布门。
+Phase 0 说明：盘点与父级索引收口已完成并进入本地 `main`，远端基线 `014b0bf` 已包含 Phase 0 发布状态。
+Phase 1 说明：施工安全底座、ROB runtime/checker、自退休 helper 和完整提交流程治理已进入本地 `main`；`7e47af8` 使《完整提交流程.md》成为多 session 自动本地提交与合入的 HOW 层契约。
+Phase 2+ 准入：Phase 0 不再阻塞 Phase 2；所有 eligible session 都可以按 Work-Conserving 规则并行进入，热点文件通过 hotspot lease 串行化，本地 `main` 写入通过 `local-main-retire.lock` 串行化。
+远端状态：本地 `main` 当前领先 GitLab/GitHub 远端；远端发布、MR、merge 或 GitHub sync 仍必须等待用户显式授权。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -353,10 +352,11 @@ python tools/local_main_retire_lock.py status --root . --json
 ## 依赖与 Phase 2 准入说明
 
 <!-- PHASE_ADMISSION_NOTES_START -->
-- Phase 0 是 Phase 2 的硬前置条件：盘点子方案和父级索引子方案都必须完成提交、本地门禁、local MR review，并合入本地 `main` 后，才能进入 Phase 2。
-- Phase 1 仍是后续阶段的安全底座：plan confirmation、claim locking、registry active-state checks、ROB ordering 和 self-retire lock 恢复能力必须在 Phase 2+ session 入场前保持可用。
-- Phase 2 子 session 只有在 Phase 0 收口包进入本地 `main` 后，才可按 Work-Conserving 规则并行运行；startup summary 或 UTF-8/mojibake 相关热点文件仍必须只有一个明确 hotspot lease owner。
-- 远端发布不是 Phase 2 准入的一部分；除非用户明确要求远端发布，否则保持阻塞。
+- Phase 0 已完成，不再作为 Phase 2 的当前阻塞门；后续 Phase 2+ session 只需确认自己的 implementation plan 为 `status: active`、没有其他 active claim、依赖满足、worktree 干净，且写集不冲突或已取得 hotspot lease。
+- Phase 1 仍是后续阶段的安全底座：plan confirmation、claim locking、registry active-state checks、ROB ordering、self-retire lock 和《完整提交流程.md》必须保持可用。
+- Phase 2+ 子 session 按 Work-Conserving 规则并行运行；startup summary、UTF-8/mojibake、docs registry、OpenSpec stable spec、CI manifest、checker schema 等热点文件必须由明确 owner 串行写入。
+- 本地 `main` 合入不是固定 main session 总控；持有 `local-main-retire.lock` 的 session 只可自退休自己拥有且已 ready 的候选包。
+- 远端发布不是 Phase 准入条件；除非用户明确要求远端发布，否则所有 session 在本地 `main` 合入后停止在远端发布门。
 <!-- PHASE_ADMISSION_NOTES_END -->
 
 
@@ -432,6 +432,7 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 完整提交流程对齐包：分支 `align-complete-flow-parent-plans-20260530` 由 `codex-align-complete-flow-parent-plans-20260530` 认领 `parent_parallel_orchestration_index_plan`，ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录父方案族文档候选包；本包把父方案和声明 `parent_plan` 指向本文件的子方案统一对齐到《完整提交流程.md》的 session-owned self-retire、`local-main-retire.lock` 和远端发布门模型。
 - 2026-05-30 Phase 0 收口包：在分支 `phase0-plan-index-closure-20260530` 收口 `plan_inventory_registry_alignment_plan` 和 `parent_parallel_orchestration_index_plan`；机器可读盘点证据为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；在本包完成本地门禁、local MR review 并合入本地 `main` 前，Phase 2 仍保持阻塞。
 - 2026-05-30 self-retire runtime 恢复：本地 `main` 已在 `898f9d0` 包含恢复后的 self-retire runtime helper/checker 包，替代早先 `b4af80f` 的待恢复说明。
 - 2026-05-29 Stage A 恢复文档包：记录当时本地 `main`=`b4af80f` 尚未包含 self-retire runtime helper/checker，虽然来源提交 `867f882` 存在于 `decentralize-session-self-retire-20260529`；该问题随后已由 `898f9d0` 解决。

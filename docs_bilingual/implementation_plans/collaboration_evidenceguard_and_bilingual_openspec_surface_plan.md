@@ -64,7 +64,7 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 3.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 

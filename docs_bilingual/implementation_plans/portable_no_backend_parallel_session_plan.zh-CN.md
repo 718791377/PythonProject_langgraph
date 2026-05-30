@@ -52,7 +52,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 ## 上游调度契约
 
-Portable no-backend session 消费 Phase 1A scheduler/ROB 契约：无后端 claim 只有在预测写集和实际写集后续能通过 leader-owned ROB queue retire 时，才允许并行执行。
+Portable no-backend session 消费 Phase 1A scheduler/ROB 契约：无后端 claim 只有在预测写集和实际写集后续能通过 `local-main-retire.lock` 保护的 session-owned ROB 流程自退休时，才允许并行执行。
 
 
 ## 热点串行规则
@@ -67,7 +67,7 @@ Portable no-backend session 消费 Phase 1A scheduler/ROB 契约：无后端 cla
 - 本阶段最大并行 session 数：3。
 - 本子方案是一个认领单元：同一时间只能有一个 active session 认领。
 - 只有认领不同子方案且写入范围互不重叠时，才允许并行实施。
-- 本地 `main` 合入仍由 leader 串行执行。
+- 本地 `main` 写入仍然串行，但由 `local-main-retire.lock` 保护；持锁 session 只能自退休自己拥有且已 ready 的候选包，并在远端发布门停止。
 
 ## 任务清单
 
@@ -101,6 +101,7 @@ Portable no-backend session 消费 Phase 1A scheduler/ROB 契约：无后端 cla
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 完整提交流程对齐：无 OMX/LangGraph 后端场景不再依赖固定 leader 退休队列；后续 runtime 应使用 portable claim、ROB entry 和 `local-main-retire.lock` 实现 session-owned self-retire。
 - 2026-05-29 上游契约补充：引用 Phase 1A scheduler/ROB 模型，作为后续 portable/receipt runtime 对齐依据。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

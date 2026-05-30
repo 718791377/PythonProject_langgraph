@@ -52,7 +52,7 @@ Last updated: 2026-05-29
 
 ## Upstream Scheduling Contract
 
-Portable no-backend sessions consume the Phase 1A scheduler/ROB contract: no-backend claims may execute in parallel only when their predicted and actual write sets can later retire through the leader-owned ROB queue.
+Portable no-backend sessions consume the Phase 1A scheduler/ROB contract: no-backend claims may execute in parallel only when their predicted and actual write sets can later retire through the session-owned ROB flow protected by `local-main-retire.lock`.
 
 
 ## Hotspot Serialization
@@ -67,7 +67,7 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 3.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 
@@ -101,6 +101,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 complete-flow alignment: no-OMX/LangGraph execution no longer depends on a fixed leader retirement queue; later runtime should use portable claims, ROB entries, and `local-main-retire.lock` for session-owned self-retire.
 - 2026-05-29 upstream contract supplement: referenced the Phase 1A scheduler/ROB model as the later portable/receipt runtime alignment source.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

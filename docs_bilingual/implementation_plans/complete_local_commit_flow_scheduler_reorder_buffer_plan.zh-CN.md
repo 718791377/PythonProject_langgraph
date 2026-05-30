@@ -41,12 +41,9 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：self-retire lock 与 work-conserving admission 扩展进行中
-责任会话：当前 Codex session，拥有 peer-session self-retirement 更新
-当前门禁：更新 ROB retirement 语义、all-eligible admission 策略、lock-backed helper 接线和证据，然后本地合入
-实现进入条件：已由用户在 2026-05-29 确认继续实施本子 implementation plan
-最后更新：2026-05-29
+阶段：Phase 1A 安全底座已实现，并作为《完整提交流程.md》的运行契约继续被下游子方案消费。
+责任会话：本次由 `codex-align-complete-flow-parent-plans-20260530` 仅做治理状态对齐，不重新打开 runtime 实现。
+当前门禁：父方案族和下游子方案已对齐到 `7e47af8` 的完整提交流程；后续变更必须继续用 ROB、claim/receipt、`local-main-retire.lock` 和远端发布门约束本地合入。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -139,6 +136,7 @@ python tools/check_local_flow_scripted_enforcement.py --root . --json
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 完整提交流程对齐：`7e47af8` 已把《完整提交流程.md》更新为多 session 自动本地提交与本地 `main` 合入的 HOW 层契约；本次父方案族对齐包把下游子方案的固定 leader 串行语义替换为 session-owned self-retire。
 - 2026-05-29 runtime/checker 实现：新增 `tools/commit_reorder_buffer.py`、`tools/check_commit_reorder_buffer.py`、聚焦测试、local gate manifest 登记和 OpenSpec guard 接线；聚焦测试、Python manifest、precommit/update-archive、OpenSpec guard JSON、local MR review 与 local gate 已通过；已在 `4479593` 合入本地 `main`，rollback ref 为 `refs/backup/local-main/20260529-1259-before-complete-flow-rob-runtime`，合入后 local gate 已通过，ROB entry 已 retired。
 - 2026-05-29 文档治理包：创建 active Phase 1A 子方案，并更新 complete-flow、父方案和消费者方案引用；已在 `ebe5f69` 合入本地 `main`，随后才进入 runtime/checker 实现。
 - 2026-05-29 self-retire 扩展：增加 lock-backed peer-session local-main retirement 语义，并链接到 `self_retiring_peer_session_local_main_plan`；等待最终本地验证和集成证据。

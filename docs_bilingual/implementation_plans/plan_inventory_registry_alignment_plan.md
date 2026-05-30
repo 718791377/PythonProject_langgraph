@@ -61,7 +61,7 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 2.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 
@@ -94,6 +94,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 complete-flow alignment: the Phase 0 inventory result remains valid; this update only aligns later session reading and integration semantics to optional parent plans, child-session ownership, and `local-main-retire.lock` serial local-main writes.
 - 2026-05-30 Phase 0 inventory closure: machine-readable evidence is recorded in `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`; readable evidence is recorded in `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.md`. The inventory found 59 implementation-plan registry entries, 52 active entries, no missing registered paths, and no missing bilingual companion paths.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->
