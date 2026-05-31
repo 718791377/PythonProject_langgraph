@@ -29,18 +29,19 @@ Align Comet runtime behavior, governance policy, OpenSpec specs, checker coverag
 - 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
 - 批次：Stage B Batch 4。
 - 阶段：Phase 5。
-- 状态：本文件是 active 子 implementation_plan，但在本地 `main` 合入后仍必须等待用户确认，才能开始非文档实现。
+- 状态：已确认并以最小 closeout/alignment 包实施；现有 Comet policy、stable spec、checker、runtime test 与 CI 注册证据已经一致，因此本包不需要修改 runtime/test 源文件。
 - 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：已实施、已本地验证，准备合入本地 `main`
+阶段：Stage C 最小 policy/checker alignment closeout 包
+责任会话：`main-codex-leader-comet-runtime-policy-checker-alignment-20260531`
+当前门禁：feature branch 验证与本地 `main` 合入；之后停在远端发布批准门
+Stage C 进入条件：2026-05-31 用户在 Stage B 子方案包已合入本地 `main` 后确认实施
+范围说明：已验证 source checker/test/spec/policy 表面一致；写入范围收窄到本计划对，以避让 active Comet runtime/test 热点
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -68,11 +69,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Map Comet runtime requirements to stable OpenSpec spec statements.
-- [ ] Add checker coverage for policy/runtime drift.
-- [ ] Update CI/local gate registration if new checker or tests are added.
-- [ ] Run verify_official_openspec, run_openspec_guard, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Map Comet runtime requirements to stable OpenSpec spec statements.
+- [x] Add checker coverage for policy/runtime drift.
+- [x] Update CI/local gate registration if new checker or tests are added.
+- [x] Run verify_official_openspec, run_openspec_guard, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,5 +97,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C 最小 closeout：用户已确认实施；现有对齐证据通过 `python tools/check_openspec_comet_superpowers_policy.py --root . --json`、`python test/comet_runtime_management_flow.test.py`、`python tools/check_implementation_plan_rules.py --root . --json` 和 `python tools/check_worktree_task_receipt.py --root . --json`；checker 报告 `Spec source: stable` 且没有 policy/spec/runtime 术语缺口，因此除本计划对之外不需要源文件修改。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

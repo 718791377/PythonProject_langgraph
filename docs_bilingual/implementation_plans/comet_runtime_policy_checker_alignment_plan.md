@@ -29,18 +29,19 @@ Align Comet runtime behavior, governance policy, OpenSpec specs, checker coverag
 - Parent: `docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`.
 - Batch: Stage B Batch 4.
 - Phase: Phase 5.
-- Status: this file is an active child implementation plan, but implementation must not start until the user confirms this child plan after local `main` integration.
+- Status: confirmed and implemented as a minimal closeout/alignment package; existing Comet policy, stable spec, checker, runtime test, and CI registration evidence already agree, so no runtime/test source edits are needed in this package.
 - Remote publication: out of scope unless the user explicitly asks for remote publication.
 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented, locally validated, and ready for local `main` integration
+Stage: Stage C minimal policy/checker alignment closeout package
+Owner session: `main-codex-leader-comet-runtime-policy-checker-alignment-20260531`
+Current gate: feature-branch validation and local `main` integration; stop at the remote-publication approval gate afterward
+Stage C entry condition: satisfied by user confirmation on 2026-05-31 after the Stage B child-plan package was merged to local `main`
+Scope note: source checker/test/spec/policy surfaces were verified already aligned; write scope narrowed to this plan pair to avoid active Comet runtime/test hotspots
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -68,11 +69,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Map Comet runtime requirements to stable OpenSpec spec statements.
-- [ ] Add checker coverage for policy/runtime drift.
-- [ ] Update CI/local gate registration if new checker or tests are added.
-- [ ] Run verify_official_openspec, run_openspec_guard, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Map Comet runtime requirements to stable OpenSpec spec statements.
+- [x] Add checker coverage for policy/runtime drift.
+- [x] Update CI/local gate registration if new checker or tests are added.
+- [x] Run verify_official_openspec, run_openspec_guard, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -96,5 +97,6 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C minimal closeout: user confirmed implementation; existing alignment evidence passed `python tools/check_openspec_comet_superpowers_policy.py --root . --json`, `python test/comet_runtime_management_flow.test.py`, `python tools/check_implementation_plan_rules.py --root . --json`, and `python tools/check_worktree_task_receipt.py --root . --json`; source edits were not needed beyond this plan pair because the checker reported `Spec source: stable` and no missing policy/spec/runtime terms.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->
