@@ -58,13 +58,13 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 4 full closeout complete; Phase 5 is admissible under the strict sequential gate and Work-Conserving admission.
-Owner session: `codex-close-phase4-final-20260531` performed the final parent/child status and evidence synchronization.
-Current gate: Phase 4 child plans are implemented, locally validated, integrated into local `main`, and stopped at the remote publication gate; GitLab/GitHub publication remains unauthorized.
+Stage: Phase 4 full closeout complete; Phase 5 is admissible under the strict sequential gate and Work-Conserving admission, but the Phase 1A self-retire helper has one safety regression that must be hardened first.
+Owner session: `harden-rob-retire-preflight-20260531` owns this ROB retire preflight governance and runtime hardening pass.
+Current gate: `complete_local_flow_to_remote_gate.py --self-retire --execute` must verify that the matching ROB entry exists, is ready, matches session/branch/implementation plan ownership, and has the required passed gates before it may acquire the local-main-retire lock, create a rollback ref, or fast-forward merge.
 Phase 0 note: inventory and parent-index closure has completed and entered local `main`; remote baseline `014b0bf` includes the Phase 0 publication state.
-Phase 1 note: the construction safety base, ROB runtime/checker, self-retire helper, and complete-flow governance have entered local `main`; `7e47af8` makes the repository-root complete local commit flow the HOW contract for multi-session automatic local commit and local-main integration.
+Phase 1 note: the construction safety base, ROB runtime/checker, self-retire helper, and complete-flow governance have entered local `main`; this hardening pass promotes ROB retire metadata from post-merge best-effort into a merge-before hard gate.
 Phase 4 closeout note: all Phase 4 child plans have no open checklist items, have local-main implementation or closeout evidence, and preserve the fixed user-facing `Routing trace` and `Updated Plan` labels.
-Phase 5 admission: Phase 5 Comet runtime child plans may now be claimed and executed; `comet-state.sh` and `comet-guard.sh` remain hotspot-serialized.
+Phase 5 admission: Phase 5 Comet runtime child plans may be claimed, but sessions that use local-main self-retire must use the fixed ROB preflight gate first.
 Remote state: local `main` currently leads the GitLab/GitHub remotes; remote publication, MR, merge, or GitHub sync still requires explicit user approval.
 <!-- CURRENT_STATUS_END -->
 
@@ -184,16 +184,17 @@ Required execution order:
 2. Confirm the feature worktree is clean.
 3. Run the feature local gate.
 4. Run local MR review.
-5. Acquire `local-main-retire.lock`.
-6. After acquiring the lock, re-check that the primary root is clean and on local `main`.
-7. Fetch and confirm local `main` is not behind `gitlab/main`.
-8. Run claim, receipt, and ROB checkers.
-9. Create a rollback backup ref.
-10. Run `git merge --ff-only <feature-branch>`.
-11. Run the post-merge local gate.
-12. Update the ROB entry to `retired`, recording lock nonce, rollback ref, local main commit, and evidence.
-13. Release the retire lock.
-14. Stop at the remote publication gate.
+5. For `--self-retire`, run the ROB entry preflight hard gate: the entry must exist, have `state=ready`, match session/branch/implementation plan ownership, and have `precommit_update_archive`, `local_gate`, and `local_mr_review` set to `passed`; gate condition: these fields prove the package is eligible before local-main mutation.
+6. Acquire `local-main-retire.lock`.
+7. After acquiring the lock, re-check that the primary root is clean and on local `main`.
+8. Fetch and confirm local `main` is not behind `gitlab/main`.
+9. Run claim, receipt, and ROB checkers.
+10. Create a rollback backup ref.
+11. Run `git merge --ff-only <feature-branch>`.
+12. Run the post-merge local gate.
+13. Update the ROB entry to `retired`, recording lock nonce, rollback ref, local main commit, and evidence.
+14. Release the retire lock.
+15. Stop at the remote publication gate.
 
 #### Checker and gate targets
 
@@ -213,7 +214,9 @@ Required execution order:
 - Two active claims for the same implementation plan fail validation.
 - Two active claims for different implementation plans pass validation.
 - A retired `self_retire_lock` ROB entry missing lock nonce fails validation.
-- `complete_local_flow_to_remote_gate.py --self-retire --execute` acquires the lock before merge and releases it after merge.
+- `complete_local_flow_to_remote_gate.py --self-retire --execute` runs ROB entry preflight before acquiring the lock, creating the rollback ref, or merging.
+- Missing ROB entry, non-ready entry, session/branch/implementation-plan mismatch, or missing required passed gates must fail before lock acquisition, rollback-ref creation, or merge.
+- `complete_local_flow_to_remote_gate.py --self-retire --execute` acquires the lock after preflight passes and releases it after merge.
 - Merge failure releases the lock or records a clear failed/stale state; it must not silently leave an active lock behind.
 - Local-main integration does not push GitLab, create MRs, or sync GitHub.
 
@@ -412,6 +415,7 @@ Each child plan must include:
 - [x] Later stages: the Phase 0 closure package has entered local `main`; Phase 2 context and UTF-8 safety child plans have started under the Work-Conserving model and several have entered local `main`.
 - [x] Phase 4 parent/child governance update: extend conversation-surface coverage from routing traces to both `Routing trace` and `Updated Plan`, keep those labels stable, preserve `Updated Plan` checklist/status semantics, and preserve machine-readable ASCII tokens in saved evidence.
 - [x] Phase 4 final closeout: verify all Phase 4 child plans are implemented, locally validated, integrated into local `main`, and stopped at the remote publication gate.
+- [ ] Phase 1A hardening: promote `--self-retire` ROB entry validation from post-merge metadata recording into a merge-before hard gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -437,11 +441,13 @@ Stage B acceptance after later confirmation:
 - This parent plan explicitly governs only this plan family; unrelated implementation plans may have no parent or belong to another parent.
 - New sessions do not read this file by default unless they handle this file, its child plans, or plans listed by this file.
 - The later same-machine multi-session target is for sessions to own their own commits and local `main` integration while `local-main-retire` locking keeps local `main` writes serial.
+- `--self-retire` must fail before merge when no valid ready ROB entry exists; ROB retire metadata must not remain a post-merge best-effort action.
 - Phase 4 child plans must write user-facing routing-trace and updated-plan examples in Chinese; internal tool names, schema keys, threshold tokens, blocker tokens, file names, and CLI arguments may remain ASCII.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 ROB retire preflight governance: found that the old helper could fast-forward merge before failing retire metadata when `--self-retire` lacked the matching ROB entry; this reopens Phase 1A hardening and requires ready ROB entry plus gate state to fail closed before lock acquisition, rollback-ref creation, or merge.
 - 2026-05-31 Phase 4 final closeout: branch `close-phase4-final-20260531` synchronized the parent plan and all Phase 4 child plans so every Phase 4 checklist is closed, stale local-integration gates are replaced by the remote-publication gate, and Phase 5 is admissible without treating remote publication as authorized.
 - 2026-05-30 Phase 4 stable-label correction: branch `implement-routing-updated-plan-fixed-labels-20260530c` updates this parent plan and the `chinese_routing_trace_conversation_surface_plan` child plan after user correction: `Routing trace` and `Updated Plan` remain English user-facing labels, `Updated Plan` remains checklist/status-based, and Chinese explanatory content remains allowed; remote publication remains unauthorized.
 - 2026-05-30 Phase 4 conversation-surface governance update: branch `chinese-routing-updated-plan-20260530` expanded coverage from routing traces to both routing traces and updated plans; its earlier label-localization wording is superseded by the stable-label correction above; remote publication remains unauthorized.

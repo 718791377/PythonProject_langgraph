@@ -41,9 +41,9 @@ The retirement actor can be the session that owns the candidate package when it 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 1A safety base is implemented and remains the downstream runtime contract through the repository-root complete local commit flow
-Owner session: this update by `codex-align-complete-flow-parent-plans-20260530` only aligns governance status and does not reopen runtime implementation.
-Current gate: the parent-plan family and downstream child plans are aligned to the complete-flow contract from `7e47af8`; later changes must continue to use ROB, claim/receipt state, `local-main-retire.lock`, and the remote-publication gate for local integration.
+Stage: Phase 1A hardening active; the safety base is implemented, but the post-merge failure path for missing `--self-retire` ROB entries must be fixed.
+Owner session: `harden-rob-retire-preflight-20260531`.
+Current gate: this child plan is reopened before implementation; after implementation, `complete_local_flow_to_remote_gate.py --self-retire --execute` must validate the ROB entry and required gate state before lock acquisition, rollback-ref creation, or merge.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -118,6 +118,14 @@ This child plan adapts scheduler and CPU commit principles into repository gover
 - [x] Update the complete local flow helper so an owning session can self-retire its own ready package while holding the local-main lock.
 - [x] Replace fixed per-phase parallel caps with work-conserving all-eligible session admission in the parent plan and complete-flow governance.
 - [x] Add checker/test coverage so future governance cannot reintroduce fixed 2/3/4/6 phase caps as hard limits.
+- [ ] Reopen hardening: record that missing `--self-retire` ROB entries must not fail only after merge.
+- [ ] Add ROB entry loading and `preflight_self_retire_rob_entry(...)` to `complete_local_flow_to_remote_gate.py`.
+- [ ] Missing ROB entry must fail closed before lock acquisition, rollback-ref creation, or merge.
+- [ ] `state != ready` must fail closed before lock acquisition, rollback-ref creation, or merge.
+- [ ] Session, branch, or implementation-plan mismatch must fail closed before merge.
+- [ ] Missing `precommit_update_archive`, `local_gate`, or `local_mr_review` passed status must fail closed before merge; gate condition: these fields record the required pre-merge evidence.
+- [ ] Ready-entry success path still records `self_retire_lock` retired metadata after merge.
+- [ ] Add focused tests and register/run the related checker coverage.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -139,11 +147,13 @@ If available in the active branch, also run the shared local gate and local MR r
 - Portable no-backend and receipt lifecycle plans reference this plan as an upstream scheduling contract.
 - The English primary file remains ASCII-only and the Chinese companion is registered.
 - No fixed controller session is required for every local-main retirement; each session can retire its own ready package when the lock and gates allow it.
+- `--self-retire` must fail before lock acquisition, rollback-ref creation, or merge when the ready ROB entry is missing, owner metadata mismatches, or required gates are not passed.
 - No fixed per-phase 2/3/4/6 session cap is treated as a governance hard limit; every eligible child plan can be admitted, with only claim, hotspot, resource-backpressure, and local-main retire locks serializing work.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 ROB retire preflight reopening: confirmed the old helper recorded ROB retire metadata after merge; this pass requires ready ROB entry, owner, and gate-state validation before any local `main` mutation.
 - 2026-05-30 complete-flow alignment: `7e47af8` updated the repository-root complete local commit flow into the HOW contract for multi-session automatic local commit and local-main integration; this parent-plan-family alignment package replaces downstream fixed-leader serial semantics with session-owned self-retire.
 - 2026-05-29 runtime/checker implementation: added `tools/commit_reorder_buffer.py`, `tools/check_commit_reorder_buffer.py`, focused tests, local gate manifest registration, and OpenSpec guard wiring; focused tests, Python manifest, precommit/update-archive, OpenSpec guard JSON, local MR review, and local gate passed; integrated into local `main` at `4479593` with rollback ref `refs/backup/local-main/20260529-1259-before-complete-flow-rob-runtime`, then post-merge local gate passed and the ROB entry was retired.
 - 2026-05-29 documentation-governance package: created this active Phase 1A child plan and updated complete-flow/parent/consumer plan references; integrated into local `main` at `ebe5f69` before runtime/checker implementation.
