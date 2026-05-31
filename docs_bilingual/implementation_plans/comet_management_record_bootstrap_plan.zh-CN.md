@@ -35,12 +35,13 @@ Create and validate Comet management records that capture focus-area checklist e
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：已实施并已完成本地验证，可合入本地 `main`
+阶段：Stage C 实施包
+责任会话：`codex-implement-comet-management-record-bootstrap-20260531`
+当前门禁：本地 `main` fast-forward 集成，随后进入远端发布批准门；远端发布仍不在范围内且未授权
+Stage C 进入条件：当前用户在 2026-05-31 对 Stage B 子方案创建后的继续实施请求已满足该条件
+本地集成包：分支 `implement-comet-management-record-bootstrap-20260531`；最终 local-main commit 与验证证据记录在 assistant 回复和本地 git 历史中
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -67,11 +68,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add management-record fixture examples for Open, Design, Build, Verify, Archive, and Monitoring.
-- [ ] Implement bootstrap behavior only after script ownership is clear.
-- [ ] Validate required management record path fields and safe path constraints.
-- [ ] Run Comet script tests, OpenSpec guard, and local gate.
+- [x] 在本地 main 集成后确认本子方案。
+- [x] 为 Open、Design、Build、Verify、Archive 和 Monitoring 增加 management-record fixture 示例。
+- [x] 在脚本归属明确后实现 bootstrap 行为。
+- [x] 验证必需 management record 路径字段和安全路径约束。
+- [x] 运行 Comet 脚本测试、OpenSpec guard 和 local gate。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,5 +96,8 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C 实施收口：当前用户确认已授权本子方案实施；分支 `implement-comet-management-record-bootstrap-20260531` 通过确认 Comet runtime management record、阶段 checklist gate、Monitoring return state、路径校验和 archive closing evidence 已实现并由聚焦测试覆盖来关闭本方案。最终 local-main commit 与验证证据记录在 assistant 回复和本地 git 历史中。
+- 2026-05-28 runtime 基线：`.codex/skills/comet/scripts/comet-state.sh` 会创建 `management.md` 并记录 `management_record`、`monitoring_status`、`control_decision`、`target_phase`、`rework_reason` 和 `iteration_count`；`.codex/skills/comet/scripts/comet-yaml-validate.sh`、`comet-guard.sh` 与 `comet-archive.sh` 会校验 management-record 路径、checklist evidence、Monitoring-loop clearance 和 closing evidence。
+- 2026-05-28 测试覆盖基线：`test/comet_runtime_management_flow.test.py` 覆盖 Open、Design、Build、Verify、Archive 与 Monitoring 的 management evidence、return-transition invariants、UTF-8/legacy label 兼容性、必需字段校验和安全路径约束；该测试已登记在 `tools/ci/ci_test_manifest.json`。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

@@ -179,6 +179,96 @@ class CometRuntimeManagementStaticTests(unittest.TestCase):
         self.assertIn('"Open / Initiating" "Value and why are stated."', text)
         self.assertIn('"Monitoring Loop" "Current facts are checked."', text)
 
+    def test_guard_declares_required_checklist_items_for_every_forward_phase(self) -> None:
+        text = read(GUARD_SCRIPT)
+
+        required_phase_items = [
+            ("open", "Open / Initiating", "Value and why are stated.", "价值/Why 已说明"),
+            ("open", "Open / Initiating", "Success criteria are measurable.", "成功标准已说明"),
+            (
+                "open",
+                "Open / Initiating",
+                "Stakeholders, constraints, or operating boundaries are identified.",
+                "stakeholders 或 constraints 已识别",
+            ),
+            (
+                "design",
+                "Design / Planning",
+                "Delivery approach is tailored: predictive, agile, or hybrid.",
+                "交付方式已裁剪",
+            ),
+            ("design", "Design / Planning", "Major risks and assumptions are recorded.", "风险与关键假设已记录"),
+            ("design", "Design / Planning", "Acceptance evidence path is defined.", "验收证据路径已定义"),
+            ("build", "Build / Executing", "Execution mode is selected.", "execution mode 已选择"),
+            (
+                "build",
+                "Build / Executing",
+                "Quality evidence is recorded: TDD, review, test, or equivalent.",
+                "TDD / review / quality evidence 已记录",
+            ),
+            (
+                "build",
+                "Build / Executing",
+                "Blockers are cleared or have an explicit decision.",
+                "当前阻塞项已清空或已有处理决策",
+            ),
+            (
+                "verify",
+                "Verify / Controlling",
+                "Variance from scope, design, and acceptance criteria is checked.",
+                "偏差检查完成",
+            ),
+            ("verify", "Verify / Controlling", "Risk and change impact are assessed.", "风险/变更影响已评估"),
+            ("verify", "Verify / Controlling", "Control decision is recorded.", "control decision 已记录"),
+            ("archive", "Archive / Closing", "Value outcome is summarized.", "价值结果已总结"),
+            (
+                "archive",
+                "Archive / Closing",
+                "Lessons learned or reusable guidance are recorded.",
+                "经验沉淀已记录",
+            ),
+            (
+                "archive",
+                "Archive / Closing",
+                "Delta spec sync, verification evidence, and archive path are confirmed.",
+                "delta spec sync / verification evidence / archive path 已确认",
+            ),
+        ]
+
+        for phase, section, english_item, chinese_item in required_phase_items:
+            self.assertIn(f'checklist_done_named "{section}" "{english_item}"', text)
+            self.assertIn(f'"{chinese_item}"', text)
+            self.assertIn(f'"{english_item}"', text)
+            self.assertIn(f'management_phase_complete {phase}', text)
+
+        required_monitoring_items = [
+            ("Monitoring Loop", "Current facts are checked.", "当前阶段事实已检查"),
+            ("Monitoring Loop", "Continue, adjust, stop, or return decision is made.", "是否需要回退已判断"),
+        ]
+        for section, english_item, chinese_item in required_monitoring_items:
+            self.assertIn(f'checklist_done_named "{section}" "{english_item}"', text)
+            self.assertIn(f'"{chinese_item}"', text)
+            self.assertIn(f'"{english_item}"', text)
+
+        for phase_name in ["Open", "Design", "Build", "Verify", "Archive"]:
+            self.assertIn(f'check "{phase_name} management checklist complete"', text)
+        self.assertEqual(text.count('check "Monitoring allows forward progress" monitoring_allows_forward'), 5)
+
+    def test_state_script_keeps_monitor_return_events_outside_forward_gate_checks(self) -> None:
+        text = read(STATE_SCRIPT)
+
+        for event, target, decision in [
+            ("monitor-return-open", "open", "return-open"),
+            ("monitor-return-design", "design", "return-design"),
+            ("monitor-return-build", "build", "return-build"),
+            ("monitor-return-verify", "verify", "return-verify"),
+        ]:
+            match = re.search(rf"{re.escape(event)}\)(?P<body>.*?)\s+;;", text, flags=re.DOTALL)
+            self.assertIsNotNone(match, f"missing transition case for {event}")
+            body = match.group("body")
+            self.assertIn(f'apply_monitor_return "$change_name" "{target}" "{decision}"', body)
+            self.assertNotIn("require_forward_monitoring_clear", body)
+
     def test_archive_accepts_english_and_chinese_closing_and_monitoring_labels(self) -> None:
         text = read(ARCHIVE_SCRIPT)
 
@@ -232,7 +322,19 @@ class CometRuntimeManagementBehaviorTests(unittest.TestCase):
             shutil.copy2(source, scripts / source.name)
         return temp
 
-    def run_bash(self, root: Path, script: str, *args: str) -> subprocess.CompletedProcess[str]:
+    def run_bash(
+        self,
+        root: Path,
+        script: str,
+        *args: str,
+        env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        run_env = None
+        if env is not None:
+            import os
+
+            run_env = os.environ.copy()
+            run_env.update(env)
         return subprocess.run(
             ["bash", str(root / ".codex" / "skills" / "comet" / "scripts" / script), *args],
             cwd=root,
@@ -241,6 +343,7 @@ class CometRuntimeManagementBehaviorTests(unittest.TestCase):
             text=True,
             encoding="utf-8",
             errors="replace",
+            env=run_env,
         )
 
     def write_minimal_change(self, root: Path, name: str) -> Path:
@@ -454,6 +557,74 @@ class CometRuntimeManagementBehaviorTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("Missing management checklist section: Open / Initiating", result.stderr)
             self.assertIn("Missing management checklist item: Value and why are stated.", result.stderr)
+            self.assertIn("Missing management checklist section: Monitoring Loop", result.stderr)
+            self.assertIn("Missing management checklist item: Current facts are checked.", result.stderr)
+
+    def test_guard_rejects_unchecked_management_checklists_for_all_forward_phases(self) -> None:
+        cases = [
+            ("design", "Design / Planning", "Delivery approach is tailored: predictive, agile, or hybrid."),
+            ("build", "Build / Executing", "Execution mode is selected."),
+            ("verify", "Verify / Controlling", "Variance from scope, design, and acceptance criteria is checked."),
+            ("archive", "Archive / Closing", "Value outcome is summarized."),
+        ]
+
+        for phase, section, first_item in cases:
+            with self.subTest(phase=phase):
+                with self.make_root() as temp:
+                    root = Path(temp)
+                    self.write_minimal_change(root, "demo")
+                    self.run_bash(root, "comet-state.sh", "init", "demo", "full")
+                    self.run_bash(root, "comet-state.sh", "set", "demo", "phase", phase)
+                    self.run_bash(root, "comet-state.sh", "set", "demo", "isolation", "worktree")
+                    self.run_bash(root, "comet-state.sh", "set", "demo", "build_mode", "executing-plans")
+                    report = root / "openspec" / "changes" / "demo" / "verification.md"
+                    report.write_text("# Verification\n", encoding="utf-8")
+                    self.run_bash(
+                        root,
+                        "comet-state.sh",
+                        "set",
+                        "demo",
+                        "verification_report",
+                        "openspec/changes/demo/verification.md",
+                    )
+                    self.run_bash(root, "comet-state.sh", "set", "demo", "branch_status", "handled")
+                    self.run_bash(root, "comet-state.sh", "set", "demo", "archived", "true")
+
+                    result = self.run_bash(root, "comet-guard.sh", "demo", phase, env={"COMET_SKIP_BUILD": "1"})
+
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(f"Missing management checklist section: {section}", result.stderr)
+                    self.assertIn(f"Missing management checklist item: {first_item}", result.stderr)
+
+    def test_guard_rejects_missing_monitoring_checklist_after_phase_items_complete(self) -> None:
+        with self.make_root() as temp:
+            root = Path(temp)
+            change = self.write_minimal_change(root, "demo")
+            self.run_bash(root, "comet-state.sh", "init", "demo", "full")
+            (change / "management.md").write_text(
+                "\n".join(
+                    [
+                        "# Comet Management Record",
+                        "",
+                        "## Open / Initiating",
+                        "- [x] Value and why are stated.",
+                        "- [x] Success criteria are measurable.",
+                        "- [x] Stakeholders, constraints, or operating boundaries are identified.",
+                        "",
+                        "## Monitoring Loop",
+                        "- [ ] Current facts are checked.",
+                        "- [ ] Continue, adjust, stop, or return decision is made.",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = self.run_bash(root, "comet-guard.sh", "demo", "open")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Missing management checklist section: Monitoring Loop", result.stderr)
+            self.assertIn("Missing management checklist item: Current facts are checked.", result.stderr)
 
     def test_guard_accepts_english_management_template_for_open_gate(self) -> None:
         with self.make_root() as temp:
