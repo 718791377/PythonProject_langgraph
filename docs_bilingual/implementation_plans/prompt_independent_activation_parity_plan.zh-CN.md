@@ -29,18 +29,18 @@ Ensure automatic collaboration routing does not depend on the user saying parall
 - 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
 - 批次：Stage B Batch 3。
 - 阶段：Phase 4。
-- 状态：本文件是 active 子 implementation_plan，但在本地 `main` 合入后仍必须等待用户确认，才能开始非文档实现。
+- Status: implementation has been confirmed, completed through checker, fixture, documentation, and CI-manifest updates on local `main`, and this file now records the closeout package.
 - 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage C implementation package
-Owner session: main-codex-leader-prompt-independent-activation-parity-20260530
-Current gate: implement checker/docs/tests package, then run local validation and merge to local main
-Stage C entry condition: met on 2026-05-30 after user confirmation
-Last updated: 2026-05-30
+Status: implemented and locally validated
+Stage: Stage C closeout package
+Owner session: `codex-close-prompt-independent-activation-parity-20260531`
+Current gate: closeout documentation pending local validation, local commit, and local `main` integration; remote publication remains out of scope
+Stage C entry condition: satisfied on 2026-05-30 after user confirmation
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -70,7 +70,7 @@ Last updated: 2026-05-30
 - [x] Add fixtures for qualified tasks with and without user collaboration keywords.
 - [x] Require concrete blockers instead of missing-user-reminder excuses.
 - [x] Update checker messages and policy docs.
-- [ ] Run role routing and orchestration evidence checks plus local gate.
+- [x] Run role routing and orchestration evidence checks plus local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -94,6 +94,7 @@ Last updated: 2026-05-30
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C closeout: branch `close-prompt-independent-activation-parity-20260531` records that prompt-independent activation parity is implemented through the role-routing checker, collaboration evidence guard, prompt-independent fixtures, activation-policy documentation, CI manifest registration, and local validation gates; final local-main commit is recorded in the assistant response and local git history.
 - 2026-05-30 Stage C implementation: added qualified prompt-independent parity fixtures, missing-reminder negative fixture handling, role evidence rejection, policy doc notes, and CI manifest registration; final validation evidence is recorded in local gate and commit output.
-- 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->
