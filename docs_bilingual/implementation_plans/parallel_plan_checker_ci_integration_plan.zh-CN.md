@@ -41,6 +41,7 @@ Ensure every new checker, test, and helper introduced by child plans is register
 当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
 最后更新：2026-05-28
+Status update: MCP/skills/browser/CLI decomposition 保持 baseline checker 为 required guard，并把提取后的子方案纳入后续 checker/CI ownership。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -72,6 +73,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - [ ] Add missing local gate registrations and mirrored CI checks.
 - [ ] Detect divergence between local and remote CI command sequences.
 - [ ] Run local gate and local MR review.
+- [ ] 当提取后的 lane 改变 runtime 行为时，验证 MCP baseline、receipt/redaction、browser-owner、MCP/skills discovery 与 adapter guard 检查均已注册。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁

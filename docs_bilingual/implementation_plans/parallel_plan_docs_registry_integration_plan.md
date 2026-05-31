@@ -41,6 +41,7 @@ Owner session: unclaimed until implementation begins
 Current gate: wait for explicit user confirmation of this child plan before non-document implementation
 Stage C entry condition: user confirms this child implementation plan after local main integration
 Last updated: 2026-05-28
+Status update: MCP/skills/browser/CLI decomposition adds four active child-plan registrations and keeps the old source plan registered as a baseline source, not as a direct child.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -71,6 +72,7 @@ Only one session may own each hotspot at a time:
 - [ ] Run and, if needed, harden implementation-plan rules for bilingual pair consistency.
 - [ ] Ensure completed child plans record lightweight evidence indexes instead of large evidence packages.
 - [ ] Run implementation-plan checker and local gate.
+- [ ] Include extracted MCP/skills/browser/CLI child plans in docs registry and bilingual implementation-plan rule validation.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates

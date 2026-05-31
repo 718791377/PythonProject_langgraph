@@ -41,6 +41,7 @@ Validate OpenSpec and Comet guard health and archive completed changes as one se
 当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
 最后更新：2026-05-28
+Status update: MCP/skills/browser/CLI decomposition 要求在相关 OpenSpec surface 归档前先记录来源方案提取证据。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -72,6 +73,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - [ ] Run official OpenSpec verification and Comet guard checks.
 - [ ] Promote stable spec deltas only after implementation validation is complete.
 - [ ] Run archive validation and local gate.
+- [ ] 归档 MCP/skills/browser/CLI OpenSpec 工作前，记录每个提取后 child lane 是 implemented、deferred 还是仍 active。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁

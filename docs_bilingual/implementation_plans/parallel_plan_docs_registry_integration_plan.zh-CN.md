@@ -41,6 +41,7 @@ Validate docs registry, bilingual pairs, active statuses, anchors, and evidence-
 当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
 最后更新：2026-05-28
+Status update: MCP/skills/browser/CLI decomposition 新增 4 个 active 子方案登记，并保留旧来源方案作为 baseline source，而不是直接子方案。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -71,6 +72,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - [ ] Run and, if needed, harden implementation-plan rules for bilingual pair consistency.
 - [ ] Ensure completed child plans record lightweight evidence indexes instead of large evidence packages.
 - [ ] Run implementation-plan checker and local gate.
+- [ ] 将提取后的 MCP/skills/browser/CLI 子方案纳入 docs registry 与双语 implementation-plan rule 验证。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁

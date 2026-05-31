@@ -32,6 +32,34 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
 
+
+  - doc_id: user_level_capability_receipt_rollback_redaction_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/user_level_capability_receipt_rollback_redaction_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/user_level_capability_receipt_rollback_redaction_plan.zh-CN.md
+
+
+  - doc_id: user_level_port_browser_owner_isolation_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/user_level_port_browser_owner_isolation_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/user_level_port_browser_owner_isolation_plan.zh-CN.md
+
+
+  - doc_id: user_level_mcp_skills_discovery_facade_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/user_level_mcp_skills_discovery_facade_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/user_level_mcp_skills_discovery_facade_plan.zh-CN.md
+
+
+  - doc_id: user_level_browser_cli_adapter_boundary_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/user_level_browser_cli_adapter_boundary_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/user_level_browser_cli_adapter_boundary_plan.zh-CN.md
+
   - doc_id: implementation_plan_confirmation_gate
     doc_class: implementation_plan
     status: active

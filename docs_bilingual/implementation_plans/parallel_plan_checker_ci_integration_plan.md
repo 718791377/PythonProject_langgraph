@@ -41,6 +41,7 @@ Owner session: unclaimed until implementation begins
 Current gate: wait for explicit user confirmation of this child plan before non-document implementation
 Stage C entry condition: user confirms this child implementation plan after local main integration
 Last updated: 2026-05-28
+Status update: MCP/skills/browser/CLI decomposition keeps the baseline checker as a required guard and adds extracted child plans to future checker/CI ownership.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -72,6 +73,7 @@ Only one session may own each hotspot at a time:
 - [ ] Add missing local gate registrations and mirrored CI checks.
 - [ ] Detect divergence between local and remote CI command sequences.
 - [ ] Run local gate and local MR review.
+- [ ] Verify MCP baseline, receipt/redaction, browser-owner, MCP/skills discovery, and adapter guard checks are registered when their extracted lanes change runtime behavior.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates

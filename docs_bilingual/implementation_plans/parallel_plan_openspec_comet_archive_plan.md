@@ -41,6 +41,7 @@ Owner session: unclaimed until implementation begins
 Current gate: wait for explicit user confirmation of this child plan before non-document implementation
 Stage C entry condition: user confirms this child implementation plan after local main integration
 Last updated: 2026-05-28
+Status update: MCP/skills/browser/CLI decomposition requires source-plan extraction evidence before any archive decision for the related OpenSpec surfaces.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -72,6 +73,7 @@ Only one session may own each hotspot at a time:
 - [ ] Run official OpenSpec verification and Comet guard checks.
 - [ ] Promote stable spec deltas only after implementation validation is complete.
 - [ ] Run archive validation and local gate.
+- [ ] Before archiving MCP/skills/browser/CLI OpenSpec work, record whether each extracted child lane is implemented, deferred, or still active.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
