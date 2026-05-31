@@ -35,12 +35,13 @@ Treat expert timeout, stall, and upstream pacing as non-evidence and require bou
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage C implementation in progress
-Owner session: main-codex-leader-expert-lifecycle-timeout-pacing-evidence-20260530
-Current gate: focused checks, repository guards, OpenSpec guard, and local gate passed; ready for local commit and local main integration
+Status: implemented, locally validated, and merged into local `main`
+Stage: Stage C implementation package locally integrated
+Owner session: `main-codex-leader-expert-lifecycle-timeout-pacing-evidence-20260530`
+Current gate: remote-publication approval gate; no GitLab/GitHub mutation is authorized by this closeout update
 Stage C entry condition: satisfied by user confirmation on 2026-05-30 after governance package local main integration
-Last updated: 2026-05-30
+Local main integration: completed at `e0aace6` and preserved in current local `main`
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -93,6 +94,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 final closeout: `close-phase4-final-20260531` confirms this child plan has no open checklist items, its implementation evidence is preserved in current local `main`, and its remaining gate is explicit remote-publication approval.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-30 Stage C implementation: added timeout-as-non-evidence text checks, structured expert lifecycle audit handling events, same-agent absorption/closure validation, provider pacing backpressure validation, focused tests, repository guards, OpenSpec guard, and local gate evidence before local main integration.
 <!-- EVIDENCE_INDEX_END -->

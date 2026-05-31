@@ -37,11 +37,12 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：implemented and locally validated
-阶段：Stage C 收口包
+状态：已实施、已完成本地验证，并已合入本地 `main`
+阶段：Stage C 收口包已完成本地集成
 责任会话：`codex-close-chinese-routing-trace-conversation-surface-plan-20260531`
-当前门禁：收口文档等待本地校验、本地提交、local MR review、本地 `main` 集成，并在远端发布门停止
+当前门禁：远端发布批准门；远端发布仍不在范围内且未授权
 Stage C 进入条件：固定标签 runtime/checker 切片已合入本地 `main`，条件已满足；本包关闭剩余验证清单项
+本地 main 集成：fixed-label 实现提交 `9d6d18a` 与收口提交 `e529108` 均已保留在当前本地 `main`
 最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
@@ -110,6 +111,7 @@ Stage C 进入条件：固定标签 runtime/checker 切片已合入本地 `main`
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 最终收口：`close-phase4-final-20260531` 确认本子方案无未完成 checklist，fixed-label 实现与收口证据已保留在当前本地 `main`，剩余门禁为显式远端发布批准。
 - 2026-05-31 Stage C 收口：分支 `close-chinese-routing-trace-conversation-surface-plan-20260531` 将已实现的固定 `Routing trace` 与 `Updated Plan` 会话表面契约的最后验证清单项记录为完成；最终 local-main commit 与验证证据记录在 assistant 回复和本地 git 历史中。
 - 2026-05-30 实施基线：本地 `main` 已包含 `implement-routing-updated-plan-fixed-labels-20260530c` 中的 fixed-label runtime/checker 包，包括稳定 `Routing trace` 和 `Updated Plan` 标签以及清单语义的 checker/fixture 覆盖。
 - 2026-05-30 固定标签修正：用户确认 `Routing trace` 和 `Updated Plan` 保持英文用户可见标签，`Updated Plan` 保持清单语义；本切片更新父子方案约束，并增加 checker/fixture 覆盖。

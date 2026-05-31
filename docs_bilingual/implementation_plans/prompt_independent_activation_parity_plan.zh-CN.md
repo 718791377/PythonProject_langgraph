@@ -35,12 +35,13 @@ Ensure automatic collaboration routing does not depend on the user saying parall
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented and locally validated
-Stage: Stage C closeout package
-Owner session: `codex-close-prompt-independent-activation-parity-20260531`
-Current gate: closeout documentation pending local validation, local commit, and local `main` integration; remote publication remains out of scope
-Stage C entry condition: satisfied on 2026-05-30 after user confirmation
-Last updated: 2026-05-31
+状态：已实施、已完成本地验证，并已合入本地 `main`
+阶段：Stage C 收口包已完成本地集成
+责任会话：`codex-close-prompt-independent-activation-parity-20260531`
+当前门禁：远端发布批准门；远端发布仍不在范围内且未授权
+Stage C 进入条件：用户于 2026-05-30 确认继续实施，条件已满足
+本地 main 集成：实现提交 `453dba4` 与收口提交 `517d816` 均已保留在当前本地 `main`
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -94,6 +95,7 @@ Last updated: 2026-05-31
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 最终收口：`close-phase4-final-20260531` 确认本子方案无未完成 checklist，相关实现与收口证据已保留在当前本地 `main`，剩余门禁为显式远端发布批准。
 - 2026-05-31 Stage C closeout: branch `close-prompt-independent-activation-parity-20260531` records that prompt-independent activation parity is implemented through the role-routing checker, collaboration evidence guard, prompt-independent fixtures, activation-policy documentation, CI manifest registration, and local validation gates; final local-main commit is recorded in the assistant response and local git history.
 - 2026-05-30 Stage C implementation: added qualified prompt-independent parity fixtures, missing-reminder negative fixture handling, role evidence rejection, policy doc notes, and CI manifest registration; final validation evidence is recorded in local gate and commit output.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.

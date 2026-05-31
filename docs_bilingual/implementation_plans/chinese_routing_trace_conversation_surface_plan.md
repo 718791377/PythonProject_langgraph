@@ -37,11 +37,12 @@ Require user-facing conversation surfaces to keep the fixed literal labels `Rout
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented and locally validated
-Stage: Stage C closeout package
+Status: implemented, locally validated, and merged into local `main`
+Stage: Stage C closeout package locally integrated
 Owner session: `codex-close-chinese-routing-trace-conversation-surface-plan-20260531`
-Current gate: closeout documentation pending local validation, local commit, local MR review, local `main` integration, and stop at the remote publication gate
+Current gate: remote-publication approval gate; remote publication remains out of scope and unauthorized
 Stage C entry condition: satisfied by the fixed-label runtime/checker slice already merged to local `main`; this package closes the remaining validation checklist item
+Local main integration: fixed-label implementation commit `9d6d18a` and closeout commit `e529108` are preserved in current local `main`
 Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
@@ -110,6 +111,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 final closeout: `close-phase4-final-20260531` confirms this child plan has no open checklist items, its fixed-label implementation and closeout evidence are preserved in current local `main`, and its remaining gate is explicit remote-publication approval.
 - 2026-05-31 Stage C closeout: branch `close-chinese-routing-trace-conversation-surface-plan-20260531` records the final validation checklist item as complete for the already-implemented fixed `Routing trace` and `Updated Plan` conversation surface contract; final local-main commit and validation evidence are recorded in the assistant response and local git history.
 - 2026-05-30 implementation baseline: local `main` contains the fixed-label runtime/checker package in `implement-routing-updated-plan-fixed-labels-20260530c`, including checker/fixture coverage for stable `Routing trace` and `Updated Plan` labels and checklist semantics.
 - 2026-05-30 stable-label correction: user confirmed that `Routing trace` and `Updated Plan` remain English user-facing labels; `Updated Plan` keeps checklist semantics. This slice updates the parent/child plan constraints and adds checker/fixture coverage for that corrected contract.

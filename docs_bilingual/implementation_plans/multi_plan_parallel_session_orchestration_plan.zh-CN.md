@@ -58,12 +58,13 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-阶段：Phase 2+ 并行执行治理对齐
-责任会话：`codex-align-complete-flow-parent-plans-20260530`，认领父级索引维护子方案来更新本父方案族的执行语义。
-当前门禁：本次只同步治理文档；完成 checker、本地提交和本地 `main` 合入后，必须停在远端发布门。
+阶段：Phase 4 全量收口完成；严格顺序门和 Work-Conserving 准入下均可进入 Phase 5。
+责任会话：`codex-close-phase4-final-20260531` 执行最终父子方案状态与证据同步。
+当前门禁：Phase 4 子方案均已实现、已本地验证、已集成本地 `main`，并停在远端发布门；GitLab/GitHub 远端发布仍未授权。
 Phase 0 说明：盘点与父级索引收口已完成并进入本地 `main`，远端基线 `014b0bf` 已包含 Phase 0 发布状态。
 Phase 1 说明：施工安全底座、ROB runtime/checker、自退休 helper 和完整提交流程治理已进入本地 `main`；`7e47af8` 使《完整提交流程.md》成为多 session 自动本地提交与合入的 HOW 层契约。
-Phase 2+ 准入：Phase 0 不再阻塞 Phase 2；所有 eligible session 都可以按 Work-Conserving 规则并行进入，热点文件通过 hotspot lease 串行化，本地 `main` 写入通过 `local-main-retire.lock` 串行化。
+Phase 4 收口说明：所有 Phase 4 子方案均无未完成清单项，均具备本地 main 实现或收口证据，并保持用户可见固定标签 `Routing trace` 与 `Updated Plan` 不被本地化替换。
+Phase 5 准入：Phase 5 Comet runtime 子方案现在可以被认领并进入执行；`comet-state.sh` 和 `comet-guard.sh` 仍按 hotspot 串行化。
 远端状态：本地 `main` 当前领先 GitLab/GitHub 远端；远端发布、MR、merge 或 GitHub sync 仍必须等待用户显式授权。
 <!-- CURRENT_STATUS_END -->
 
@@ -404,6 +405,7 @@ python tools/local_main_retire_lock.py status --root . --json
 - [x] Phase 0 收口：在 Phase 2 准入前收口 inventory registry alignment 子方案和 parent orchestration index 子方案。
 - [x] 后续阶段：Phase 0 收口包已经合入本地 `main`；Phase 2 context 与 UTF-8 safety 子方案已按 Work-Conserving 模型启动，部分包已进入本地 `main`。
 - [x] Phase 4 父子方案治理更新：把会话表面覆盖从 routing trace 扩展到 `Routing trace` 与 `Updated Plan`，保持这两个标签稳定，保留 `Updated Plan` 复选框/状态清单语义，并保留保存版 evidence 的机器可读 ASCII token。
+- [x] Phase 4 最终收口：确认全部 Phase 4 子方案已实现、已本地验证、已合入本地 `main`，并停在远端发布门。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -434,6 +436,7 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 最终收口：分支 `close-phase4-final-20260531` 同步父方案与全部 Phase 4 子方案状态，确认所有 Phase 4 checklist 已关闭，过期的本地集成门已替换为远端发布门，并且 Phase 5 已可准入但不代表授权远端发布。
 - 2026-05-30 Phase 4 固定标签修正：分支 `implement-routing-updated-plan-fixed-labels-20260530c` 更新本父方案与 `chinese_routing_trace_conversation_surface_plan` 子方案；`Routing trace` 与 `Updated Plan` 保持英文用户可见标签，`Updated Plan` 保持复选框/状态清单语义，中文解释内容仍允许；远端发布仍未授权。
 - 2026-05-30 Phase 4 会话表面治理更新：分支 `chinese-routing-updated-plan-20260530` 曾把会话表面覆盖从 routing trace 扩展到 updated plan；其中“固定标签应替换为中文标题”的旧表述已由上一条固定标签修正取代；远端发布仍未授权。
 - 2026-05-30 完整提交流程对齐包：分支 `align-complete-flow-parent-plans-20260530` 由 `codex-align-complete-flow-parent-plans-20260530` 认领 `parent_parallel_orchestration_index_plan`，ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录父方案族文档候选包；本包把父方案和声明 `parent_plan` 指向本文件的子方案统一对齐到《完整提交流程.md》的 session-owned self-retire、`local-main-retire.lock` 和远端发布门模型。

@@ -35,12 +35,13 @@ Enforce smallest-sufficient expert roles, analyst-only first fan-out for bounded
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented
+Status: implemented, locally validated, and merged into local `main`
 Stage: Stage C local implementation package
-Owner session: main-codex-leader-role-routing-fanout-write-ownership-20260530
-Current gate: local validation and local `main` fast-forward integration; remote publication remains out of scope
+Owner session: `main-codex-leader-role-routing-fanout-write-ownership-20260530`
+Current gate: remote-publication approval gate; remote publication remains out of scope and unauthorized
 Stage C entry condition: satisfied by user confirmation to continue this child implementation plan
-Last updated: 2026-05-30
+Local main integration: local closeout commit `eeccff9` is preserved in current local `main`
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -95,6 +96,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 final closeout: `close-phase4-final-20260531` confirms this child plan has no open checklist items, its closeout evidence is preserved in current local `main`, and its remaining gate is explicit remote-publication approval.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-14 role routing implementation evidence: commit `1a45e87` added `tools/check_role_routing_directive_evidence.py` and `test/check_role_routing_directive_evidence.test.py`; commit `4814802` archived the OpenSpec change and promoted the stable spec requirements.
 - 2026-05-14 fan-out/write-ownership implementation evidence: commit `1902d35` added `tools/check_fanout_write_ownership_evidence.py` and `test/check_fanout_write_ownership_evidence.test.py`; commit `43b4500` archived the OpenSpec change and kept the stable spec aligned.

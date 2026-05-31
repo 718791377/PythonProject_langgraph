@@ -35,12 +35,13 @@ Enforce smallest-sufficient expert roles, analyst-only first fan-out for bounded
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：implemented
+状态：已实施、已完成本地验证，并已合入本地 `main`
 阶段：Stage C 本地实施包
-责任会话：main-codex-leader-role-routing-fanout-write-ownership-20260530
-当前门禁：本地验证并 fast-forward 合入本地 `main`；远端发布仍不在范围内
+责任会话：`main-codex-leader-role-routing-fanout-write-ownership-20260530`
+当前门禁：远端发布批准门；远端发布仍不在范围内且未授权
 Stage C 进入条件：用户已确认继续本子 implementation plan
-最后更新：2026-05-30
+本地 main 集成：本地收口提交 `eeccff9` 已保留在当前本地 `main`
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -95,6 +96,7 @@ Stage C 进入条件：用户已确认继续本子 implementation plan
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 最终收口：`close-phase4-final-20260531` 确认本子方案无未完成 checklist，相关收口证据已保留在当前本地 `main`，剩余门禁为显式远端发布批准。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-14 role routing 实施证据：commit `1a45e87` 添加 `tools/check_role_routing_directive_evidence.py` 与 `test/check_role_routing_directive_evidence.test.py`；commit `4814802` 已归档 OpenSpec change 并提升 stable spec 要求。
 - 2026-05-14 fan-out/write-ownership 实施证据：commit `1902d35` 添加 `tools/check_fanout_write_ownership_evidence.py` 与 `test/check_fanout_write_ownership_evidence.test.py`；commit `43b4500` 已归档 OpenSpec change 并保持 stable spec 对齐。

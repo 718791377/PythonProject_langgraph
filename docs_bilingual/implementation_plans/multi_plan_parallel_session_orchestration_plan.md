@@ -58,12 +58,13 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 2+ parallel-execution governance alignment
-Owner session: `codex-align-complete-flow-parent-plans-20260530`, claiming the parent-index child plan to update this parent-plan family execution semantics.
-Current gate: this package only synchronizes governance documents; after checker runs, local commit, and local `main` integration, it must stop at the remote publication gate.
+Stage: Phase 4 full closeout complete; Phase 5 is admissible under the strict sequential gate and Work-Conserving admission.
+Owner session: `codex-close-phase4-final-20260531` performed the final parent/child status and evidence synchronization.
+Current gate: Phase 4 child plans are implemented, locally validated, integrated into local `main`, and stopped at the remote publication gate; GitLab/GitHub publication remains unauthorized.
 Phase 0 note: inventory and parent-index closure has completed and entered local `main`; remote baseline `014b0bf` includes the Phase 0 publication state.
 Phase 1 note: the construction safety base, ROB runtime/checker, self-retire helper, and complete-flow governance have entered local `main`; `7e47af8` makes the repository-root complete local commit flow the HOW contract for multi-session automatic local commit and local-main integration.
-Phase 2+ admission: Phase 0 no longer blocks Phase 2; every eligible session may enter in Work-Conserving fashion, hotspot files serialize through hotspot leases, and local `main` writes serialize through `local-main-retire.lock`.
+Phase 4 closeout note: all Phase 4 child plans have no open checklist items, have local-main implementation or closeout evidence, and preserve the fixed user-facing `Routing trace` and `Updated Plan` labels.
+Phase 5 admission: Phase 5 Comet runtime child plans may now be claimed and executed; `comet-state.sh` and `comet-guard.sh` remain hotspot-serialized.
 Remote state: local `main` currently leads the GitLab/GitHub remotes; remote publication, MR, merge, or GitHub sync still requires explicit user approval.
 <!-- CURRENT_STATUS_END -->
 
@@ -410,6 +411,7 @@ Each child plan must include:
 - [x] Phase 0 closure: close the inventory registry alignment child plan and the parent orchestration index child plan before Phase 2 admission.
 - [x] Later stages: the Phase 0 closure package has entered local `main`; Phase 2 context and UTF-8 safety child plans have started under the Work-Conserving model and several have entered local `main`.
 - [x] Phase 4 parent/child governance update: extend conversation-surface coverage from routing traces to both `Routing trace` and `Updated Plan`, keep those labels stable, preserve `Updated Plan` checklist/status semantics, and preserve machine-readable ASCII tokens in saved evidence.
+- [x] Phase 4 final closeout: verify all Phase 4 child plans are implemented, locally validated, integrated into local `main`, and stopped at the remote publication gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -440,6 +442,7 @@ Stage B acceptance after later confirmation:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 final closeout: branch `close-phase4-final-20260531` synchronized the parent plan and all Phase 4 child plans so every Phase 4 checklist is closed, stale local-integration gates are replaced by the remote-publication gate, and Phase 5 is admissible without treating remote publication as authorized.
 - 2026-05-30 Phase 4 stable-label correction: branch `implement-routing-updated-plan-fixed-labels-20260530c` updates this parent plan and the `chinese_routing_trace_conversation_surface_plan` child plan after user correction: `Routing trace` and `Updated Plan` remain English user-facing labels, `Updated Plan` remains checklist/status-based, and Chinese explanatory content remains allowed; remote publication remains unauthorized.
 - 2026-05-30 Phase 4 conversation-surface governance update: branch `chinese-routing-updated-plan-20260530` expanded coverage from routing traces to both routing traces and updated plans; its earlier label-localization wording is superseded by the stable-label correction above; remote publication remains unauthorized.
 - 2026-05-30 complete-flow alignment package: branch `align-complete-flow-parent-plans-20260530` is claimed by `codex-align-complete-flow-parent-plans-20260530` through `parent_parallel_orchestration_index_plan`, and ROB entry `rob-align-complete-flow-parent-plans-20260530` records the parent-plan-family documentation package; this package aligns the parent plan and child plans that declare `parent_plan` pointing here with the repository-root complete local commit flow: session-owned self-retire, `local-main-retire.lock`, and the remote publication gate.

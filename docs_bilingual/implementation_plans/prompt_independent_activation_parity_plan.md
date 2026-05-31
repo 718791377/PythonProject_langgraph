@@ -35,11 +35,12 @@ Ensure automatic collaboration routing does not depend on the user saying parall
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented and locally validated
-Stage: Stage C closeout package
+Status: implemented, locally validated, and merged into local `main`
+Stage: Stage C closeout package locally integrated
 Owner session: `codex-close-prompt-independent-activation-parity-20260531`
-Current gate: closeout documentation pending local validation, local commit, and local `main` integration; remote publication remains out of scope
+Current gate: remote-publication approval gate; remote publication remains out of scope and unauthorized
 Stage C entry condition: satisfied on 2026-05-30 after user confirmation
+Local main integration: implementation commit `453dba4` and closeout commit `517d816` are preserved in current local `main`
 Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
@@ -94,6 +95,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 final closeout: `close-phase4-final-20260531` confirms this child plan has no open checklist items, its implementation and closeout evidence are preserved in current local `main`, and its remaining gate is explicit remote-publication approval.
 - 2026-05-31 Stage C closeout: branch `close-prompt-independent-activation-parity-20260531` records that prompt-independent activation parity is implemented through the role-routing checker, collaboration evidence guard, prompt-independent fixtures, activation-policy documentation, CI manifest registration, and local validation gates; final local-main commit is recorded in the assistant response and local git history.
 - 2026-05-30 Stage C implementation: added qualified prompt-independent parity fixtures, missing-reminder negative fixture handling, role evidence rejection, policy doc notes, and CI manifest registration; final validation evidence is recorded in local gate and commit output.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.

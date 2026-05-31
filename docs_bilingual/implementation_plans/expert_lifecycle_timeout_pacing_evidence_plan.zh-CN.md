@@ -35,12 +35,13 @@ Treat expert timeout, stall, and upstream pacing as non-evidence and require bou
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage C implementation in progress
-Owner session: main-codex-leader-expert-lifecycle-timeout-pacing-evidence-20260530
-Current gate: focused checks, repository guards, OpenSpec guard, and local gate passed; ready for local commit and local main integration
-Stage C entry condition: satisfied by user confirmation on 2026-05-30 after governance package local main integration
-Last updated: 2026-05-30
+状态：已实施、已完成本地验证，并已合入本地 `main`
+阶段：Stage C 实施包已完成本地集成
+责任会话：`main-codex-leader-expert-lifecycle-timeout-pacing-evidence-20260530`
+当前门禁：远端发布批准门；本次收口更新不授权任何 GitLab/GitHub 远端变更
+Stage C 进入条件：用户于 2026-05-30 确认继续实施，条件已满足
+本地 main 集成：已在 `e0aace6`（`治理：强化专家生命周期超时节奏证据`）完成，并保留在当前本地 `main`
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -93,6 +94,7 @@ Last updated: 2026-05-30
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 最终收口：`close-phase4-final-20260531` 确认本子方案无未完成 checklist，相关实现证据已保留在当前本地 `main`，剩余门禁为显式远端发布批准。
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-30 Stage C implementation: added timeout-as-non-evidence text checks, structured expert lifecycle audit handling events, same-agent absorption/closure validation, provider pacing backpressure validation, focused tests, repository guards, OpenSpec guard, and local gate evidence before local main integration.
 <!-- EVIDENCE_INDEX_END -->
