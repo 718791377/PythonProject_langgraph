@@ -35,12 +35,11 @@ Align Comet runtime behavior, governance policy, OpenSpec specs, checker coverag
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented, locally validated, and ready for local `main` integration
-Stage: Stage C minimal policy/checker alignment closeout package
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
 Owner session: `main-codex-leader-comet-runtime-policy-checker-alignment-20260531`
-Current gate: feature-branch validation and local `main` integration; stop at the remote-publication approval gate afterward
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
 Stage C entry condition: satisfied by user confirmation on 2026-05-31 after the Stage B child-plan package was merged to local `main`
-Scope note: source checker/test/spec/policy surfaces were verified already aligned; write scope narrowed to this plan pair to avoid active Comet runtime/test hotspots
 Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
@@ -99,4 +98,5 @@ Run these gates before local `main` integration unless this child plan later nar
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-31 Stage C minimal closeout: user confirmed implementation; existing alignment evidence passed `python tools/check_openspec_comet_superpowers_policy.py --root . --json`, `python test/comet_runtime_management_flow.test.py`, `python tools/check_implementation_plan_rules.py --root . --json`, and `python tools/check_worktree_task_receipt.py --root . --json`; source edits were not needed beyond this plan pair because the checker reported `Spec source: stable` and no missing policy/spec/runtime terms.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->

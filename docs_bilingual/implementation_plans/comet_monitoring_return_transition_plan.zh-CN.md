@@ -35,13 +35,12 @@ Support Monitoring decisions that return to Open, Design, Build, or Verify rathe
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：已验证并完成本地收口，准备合入本地 `main`
-阶段：Stage C 实施收口包
-责任会话：`main-codex-leader-comet-monitoring-return-transition-20260531`（当前执行本收口的主 Codex 会话标识，用于本地 claim/receipt 对账）
-当前门禁：本地验证已完成；等待本地 `main` 串行合入，远端发布不在范围内且未授权
-Stage C 进入条件：用户于 2026-05-31 要求继续实施本已确认子方案，条件已满足
-本地 main 集成：待本分支合入本地 `main`
-最后更新：2026-05-31
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
+Owner session: main-codex-leader-comet-monitoring-return-transition-20260531
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Stage C entry condition: satisfied by the 2026-05-31 user instruction to continue this confirmed child plan
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -99,4 +98,5 @@ Stage C 进入条件：用户于 2026-05-31 要求继续实施本已确认子方
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-31 Stage C 实施收口：当前用户指令已确认继续本子方案；现有 Comet runtime 已包含 `monitor-return-open`、`monitor-return-design`、`monitor-return-build` 和 `monitor-return-verify`，schema validation 已要求 `target_phase` 与非空 `rework_reason`，forward transition guard 已阻断 `monitoring_status=blocked|needs_decision` 或非 `continue` 决策。证据命令：`python test\comet_runtime_management_flow.test.py` 通过 25 个测试（其中 12 个 bash 依赖用例在该调用中按条件跳过）。由于相邻 Comet 子方案 active claims 已覆盖 runtime/test 热点，本收口不重复覆盖热点代码，只记录已验证行为；远端发布不在范围内。
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->

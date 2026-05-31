@@ -35,13 +35,12 @@ Align Comet runtime behavior, governance policy, OpenSpec specs, checker coverag
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：已实施、已本地验证，准备合入本地 `main`
-阶段：Stage C 最小 policy/checker alignment closeout 包
-责任会话：`main-codex-leader-comet-runtime-policy-checker-alignment-20260531`
-当前门禁：feature branch 验证与本地 `main` 合入；之后停在远端发布批准门
-Stage C 进入条件：2026-05-31 用户在 Stage B 子方案包已合入本地 `main` 后确认实施
-范围说明：已验证 source checker/test/spec/policy 表面一致；写入范围收窄到本计划对，以避让 active Comet runtime/test 热点
-最后更新：2026-05-31
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
+Owner session: `main-codex-leader-comet-runtime-policy-checker-alignment-20260531`
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Stage C entry condition: satisfied by user confirmation on 2026-05-31 after the Stage B child-plan package was merged to local `main`
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -99,4 +98,5 @@ Stage C 进入条件：2026-05-31 用户在 Stage B 子方案包已合入本地 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-31 Stage C 最小 closeout：用户已确认实施；现有对齐证据通过 `python tools/check_openspec_comet_superpowers_policy.py --root . --json`、`python test/comet_runtime_management_flow.test.py`、`python tools/check_implementation_plan_rules.py --root . --json` 和 `python tools/check_worktree_task_receipt.py --root . --json`；checker 报告 `Spec source: stable` 且没有 policy/spec/runtime 术语缺口，因此除本计划对之外不需要源文件修改。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->

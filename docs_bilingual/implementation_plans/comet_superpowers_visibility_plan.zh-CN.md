@@ -35,12 +35,12 @@ Make Superpowers HOW-layer skill usage explicit in Comet Design, Build, Verify, 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage C 实施与本地 main 集成包
-责任会话：main-codex-leader-comet-superpowers-visibility-20260531
-当前门禁：本地 `main` 集成前运行目标检查、共享 local gate 和本地 MR review
-Stage C 进入条件：已由用户 2026-05-31 的冷启动继续实施请求满足
-最后更新：2026-05-31
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
+Owner session: main-codex-leader-comet-superpowers-visibility-20260531
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Stage C entry condition: satisfied by the user's 2026-05-31 cold-start continuation request
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -104,4 +104,5 @@ Stage C 进入条件：已由用户 2026-05-31 的冷启动继续实施请求满
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-31 Stage C 启动：用户已确认实施；认领 `main-codex-leader-comet-superpowers-visibility-20260531` 串行拥有 Comet/Superpowers 可见性热点。
+- 2026-05-31 local-main closeout: branch `implement-comet-superpowers-visibility-20260531` entered local `main` at `407e5eb`; `python tools/check_openspec_comet_superpowers_policy.py --root . --json`, `python tools/check_comet_superpowers_visibility.py --root . --json`, `python tools/check_implementation_plan_rules.py --root . --json`, and the shared local gate evidence are captured in local history and the publication carrier.
 <!-- EVIDENCE_INDEX_END -->

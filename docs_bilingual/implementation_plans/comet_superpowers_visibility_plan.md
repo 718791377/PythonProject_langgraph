@@ -35,10 +35,10 @@ Make Superpowers HOW-layer skill usage explicit in Comet Design, Build, Verify, 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage C implementation and local-main integration package
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
 Owner session: main-codex-leader-comet-superpowers-visibility-20260531
-Current gate: run target checks, shared local gate, and local MR review before local `main` integration
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
 Stage C entry condition: satisfied by the user's 2026-05-31 cold-start continuation request
 Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
@@ -78,7 +78,7 @@ Only one session may own each hotspot at a time:
 - [x] Add evidence expectations for using-superpowers, writing-plans, executing-plans, test-driven-development, verification-before-completion, and finishing-a-development-branch.
 - [x] Update Comet skill docs so OpenSpec remains WHAT and Superpowers remains HOW.
 - [x] Add checker or test coverage for missing HOW-layer evidence when Comet claims Superpowers usage.
-- [ ] Run skill boundary, Superpowers visibility, and local gate checks.
+- [x] Run skill boundary, Superpowers visibility, and local gate checks.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -104,4 +104,5 @@ Run these gates before local `main` integration unless this child plan later nar
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-31 Stage C start: user confirmed implementation; claim `main-codex-leader-comet-superpowers-visibility-20260531` owns the serialized Comet/Superpowers visibility hotspot.
+- 2026-05-31 local-main closeout: branch `implement-comet-superpowers-visibility-20260531` entered local `main` at `407e5eb`; `python tools/check_openspec_comet_superpowers_policy.py --root . --json`, `python tools/check_comet_superpowers_visibility.py --root . --json`, `python tools/check_implementation_plan_rules.py --root . --json`, and the shared local gate evidence are captured in local history and the publication carrier.
 <!-- EVIDENCE_INDEX_END -->

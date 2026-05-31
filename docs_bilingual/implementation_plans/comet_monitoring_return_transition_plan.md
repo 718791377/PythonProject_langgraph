@@ -35,10 +35,10 @@ Support Monitoring decisions that return to Open, Design, Build, or Verify rathe
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: completed
-Stage: Stage C implementation closeout package
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
 Owner session: main-codex-leader-comet-monitoring-return-transition-20260531
-Current gate: local validation complete; ready for local main integration, remote publication out of scope
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
 Stage C entry condition: satisfied by the 2026-05-31 user instruction to continue this confirmed child plan
 Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
@@ -98,4 +98,5 @@ Run these gates before local `main` integration unless this child plan later nar
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-31 Stage C implementation closeout: confirmed by the current user instruction; existing Comet runtime already contains `monitor-return-open`, `monitor-return-design`, `monitor-return-build`, and `monitor-return-verify`, schema validation requires `target_phase` plus non-null `rework_reason`, and forward transition guards block `monitoring_status=blocked|needs_decision` or non-`continue` decisions. Evidence command: `python test\comet_runtime_management_flow.test.py` passed with 25 tests (12 skipped because bash-dependent cases are skipped when unavailable in that invocation). Code hotspot edits were not duplicated because active neighboring Comet child-plan claims already overlap the runtime/test hotspot; this closeout records the verified existing behavior and keeps remote publication out of scope.
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->

@@ -35,13 +35,12 @@ Require phase-specific management checklist evidence before Comet forward transi
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：已实施并完成本地验证，准备本地 main 集成
-阶段：Stage C 实施/收口包
-责任会话：当前主 Codex leader session；精确 claim ID 存在 `.omx/session-claims/`
-当前门禁：本地 main 集成，然后停在远端发布批准门；远端发布仍未授权
-Stage C 进入条件：用户于 2026-05-31 确认继续实施，条件已满足
-本地验证：Comet runtime management 测试、OpenSpec Comet/Superpowers policy check、implementation-plan rules 与 run_openspec_guard 已通过；local_gate 和 local_mr_review 在本地 main 集成前运行
-最后更新：2026-05-31
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
+Owner session: current main Codex leader session; exact claim ID is stored in `.omx/session-claims/`
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Stage C entry condition: satisfied on 2026-05-31 after user confirmation to continue implementation
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -97,4 +96,5 @@ Stage C 进入条件：用户于 2026-05-31 确认继续实施，条件已满足
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-31 Stage C closeout: user confirmation is recorded; branch `implement-comet-phase-checklist-gate-20260531` adds explicit static and behavior regression coverage for Open, Design, Build, Verify, Archive, and Monitoring checklist gates; existing runtime transition guard, state, archive, and monitoring-return behavior is validated without duplicating script churn; local validation and local-main integration evidence are recorded in local git history and the assistant response.
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->

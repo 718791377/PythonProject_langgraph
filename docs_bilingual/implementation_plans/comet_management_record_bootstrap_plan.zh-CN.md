@@ -35,13 +35,12 @@ Create and validate Comet management records that capture focus-area checklist e
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：已实施并已完成本地验证，可合入本地 `main`
-阶段：Stage C 实施包
-责任会话：`codex-implement-comet-management-record-bootstrap-20260531`
-当前门禁：本地 `main` fast-forward 集成，随后进入远端发布批准门；远端发布仍不在范围内且未授权
-Stage C 进入条件：当前用户在 2026-05-31 对 Stage B 子方案创建后的继续实施请求已满足该条件
-本地集成包：分支 `implement-comet-management-record-bootstrap-20260531`；最终 local-main commit 与验证证据记录在 assistant 回复和本地 git 历史中
-最后更新：2026-05-31
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
+Owner session: `codex-implement-comet-management-record-bootstrap-20260531`
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Stage C entry condition: satisfied by current user confirmation on 2026-05-31 after Stage B child-plan creation
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -100,4 +99,5 @@ Stage C 进入条件：当前用户在 2026-05-31 对 Stage B 子方案创建后
 - 2026-05-28 runtime 基线：`.codex/skills/comet/scripts/comet-state.sh` 会创建 `management.md` 并记录 `management_record`、`monitoring_status`、`control_decision`、`target_phase`、`rework_reason` 和 `iteration_count`；`.codex/skills/comet/scripts/comet-yaml-validate.sh`、`comet-guard.sh` 与 `comet-archive.sh` 会校验 management-record 路径、checklist evidence、Monitoring-loop clearance 和 closing evidence。
 - 2026-05-28 测试覆盖基线：`test/comet_runtime_management_flow.test.py` 覆盖 Open、Design、Build、Verify、Archive 与 Monitoring 的 management evidence、return-transition invariants、UTF-8/legacy label 兼容性、必需字段校验和安全路径约束；该测试已登记在 `tools/ci/ci_test_manifest.json`。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->

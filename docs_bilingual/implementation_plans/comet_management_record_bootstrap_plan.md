@@ -35,12 +35,11 @@ Create and validate Comet management records that capture focus-area checklist e
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented and locally validated for local `main` integration
-Stage: Stage C implementation package
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
 Owner session: `codex-implement-comet-management-record-bootstrap-20260531`
-Current gate: local `main` fast-forward integration, then remote-publication approval gate; remote publication remains out of scope and unauthorized
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
 Stage C entry condition: satisfied by current user confirmation on 2026-05-31 after Stage B child-plan creation
-Local integration package: branch `implement-comet-management-record-bootstrap-20260531`; final local-main commit and validation evidence are recorded in the assistant response and local git history
 Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
@@ -100,4 +99,5 @@ Run these gates before local `main` integration unless this child plan later nar
 - 2026-05-28 runtime baseline: `.codex/skills/comet/scripts/comet-state.sh` creates `management.md` and records `management_record`, `monitoring_status`, `control_decision`, `target_phase`, `rework_reason`, and `iteration_count`; `.codex/skills/comet/scripts/comet-yaml-validate.sh`, `comet-guard.sh`, and `comet-archive.sh` validate management-record paths, checklist evidence, Monitoring-loop clearance, and closing evidence.
 - 2026-05-28 test coverage baseline: `test/comet_runtime_management_flow.test.py` covers Open, Design, Build, Verify, Archive, and Monitoring management evidence, return-transition invariants, UTF-8/legacy label compatibility, required field validation, and safe path constraints; the test is registered in `tools/ci/ci_test_manifest.json`.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->
