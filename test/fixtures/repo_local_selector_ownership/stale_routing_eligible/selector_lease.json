@@ -1,0 +1,6 @@
+{
+  "selector_id": "selector-fixture",
+  "repo_root": "__ROOT__",
+  "status": "active",
+  "selector_root": "__ROOT__/.omx/state/selectors"
+}

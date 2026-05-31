@@ -41,12 +41,9 @@ The retirement actor can be the session that owns the candidate package when it 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: self-retire lock and work-conserving admission extension in progress
-Owner session: current Codex session that owns the peer-session self-retirement update
-Current gate: update ROB retirement semantics, all-eligible admission policy, lock-backed helper wiring, and evidence before local-main integration
-Implementation entry condition: user confirmed continued implementation of this child plan on 2026-05-29
-Last updated: 2026-05-29
+Stage: Phase 1A safety base is implemented and remains the downstream runtime contract through the repository-root complete local commit flow
+Owner session: this update by `codex-align-complete-flow-parent-plans-20260530` only aligns governance status and does not reopen runtime implementation.
+Current gate: the parent-plan family and downstream child plans are aligned to the complete-flow contract from `7e47af8`; later changes must continue to use ROB, claim/receipt state, `local-main-retire.lock`, and the remote-publication gate for local integration.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -147,6 +144,7 @@ If available in the active branch, also run the shared local gate and local MR r
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 complete-flow alignment: `7e47af8` updated the repository-root complete local commit flow into the HOW contract for multi-session automatic local commit and local-main integration; this parent-plan-family alignment package replaces downstream fixed-leader serial semantics with session-owned self-retire.
 - 2026-05-29 runtime/checker implementation: added `tools/commit_reorder_buffer.py`, `tools/check_commit_reorder_buffer.py`, focused tests, local gate manifest registration, and OpenSpec guard wiring; focused tests, Python manifest, precommit/update-archive, OpenSpec guard JSON, local MR review, and local gate passed; integrated into local `main` at `4479593` with rollback ref `refs/backup/local-main/20260529-1259-before-complete-flow-rob-runtime`, then post-merge local gate passed and the ROB entry was retired.
 - 2026-05-29 documentation-governance package: created this active Phase 1A child plan and updated complete-flow/parent/consumer plan references; integrated into local `main` at `ebe5f69` before runtime/checker implementation.
 - 2026-05-29 self-retire extension: added lock-backed peer-session local-main retirement semantics and linked to `self_retiring_peer_session_local_main_plan`; pending final local validation and integration evidence.

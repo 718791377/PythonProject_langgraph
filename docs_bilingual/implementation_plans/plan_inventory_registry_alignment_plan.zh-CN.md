@@ -61,7 +61,7 @@ Stage C 进入条件：用户已确认 Phase 0 必须先于 Phase 2 完成；本
 - 本阶段最大并行 session 数：2。
 - 本子方案是一个认领单元：同一时间只能有一个 active session 认领。
 - 只有认领不同子方案且写入范围互不重叠时，才允许并行实施。
-- 本地 `main` 合入仍由 leader 串行执行。
+- 本地 `main` 写入仍然串行，但由 `local-main-retire.lock` 保护；持锁 session 只能自退休自己拥有且已 ready 的候选包，并在远端发布门停止。
 
 ## 任务清单
 
@@ -94,6 +94,7 @@ Stage C 进入条件：用户已确认 Phase 0 必须先于 Phase 2 完成；本
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 完整提交流程对齐：Phase 0 盘点结果保持有效；本次仅把后续 session 读取和合入语义对齐为父方案可选、子方案自负责、`local-main-retire.lock` 串行本地 `main` 写入。
 - 2026-05-30 Phase 0 盘点收口：机器可读证据记录在 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；可读证据记录在 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.md` 与 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.zh-CN.md`。盘点结果为 59 个 implementation-plan registry 条目、52 个 active 条目、无缺失登记路径、无缺失双语 companion 路径。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

@@ -36,11 +36,11 @@ Keep context-retention canary literals in canonical startup summaries only and p
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+阶段：Stage C 实施包
+责任会话：implement-context-retention-canary-literal-boundary-20260530
+当前门禁：本地验证与本地 main 集成
+Stage C 进入条件：已由用户在 2026-05-30 明确确认
+最后更新：2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -62,16 +62,16 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - 本阶段最大并行 session 数：2。
 - 本子方案是一个认领单元：同一时间只能有一个 active session 认领。
 - 只有认领不同子方案且写入范围互不重叠时，才允许并行实施。
-- 本地 `main` 合入仍由 leader 串行执行。
+- 本地 `main` 写入仍然串行，但由 `local-main-retire.lock` 保护；持锁 session 只能自退休自己拥有且已 ready 的候选包，并在远端发布门停止。
 
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for allowed startup-summary canary placement and disallowed AGENTS/config duplication.
-- [ ] Update the canary checker so literal duplication fails closed.
-- [ ] Document the recovery action when the canary disappears or appears corrupted.
-- [ ] Run canary checker, startup mojibake checker, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for allowed startup-summary canary placement and disallowed AGENTS/config duplication.
+- [x] Update the canary checker so literal duplication fails closed.
+- [x] Document the recovery action when the canary disappears or appears corrupted.
+- [x] Run canary checker, startup mojibake checker, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,4 +96,5 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-30 Stage C 实施：用户已确认，`implement-context-retention-canary-literal-boundary-20260530` 已认领；新增 config surface 复制 fixture 与 checker surface 分类，并在合入本地 `main` 前通过目标 canary/startup checker 与 local gate 验证。
 <!-- EVIDENCE_INDEX_END -->

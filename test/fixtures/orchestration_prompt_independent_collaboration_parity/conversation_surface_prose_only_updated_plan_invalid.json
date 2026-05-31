@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "case_type": "conversation_surface",
+  "case_id": "conversation-surface-prose-only-updated-plan-invalid",
+  "surface": "updated_plan",
+  "text": "Updated Plan\n\u5f53\u524d\u6240\u6709\u4efb\u52a1\u90fd\u5df2\u7ecf\u5b89\u6392\u597d\uff0c\u540e\u7eed\u7ee7\u7eed\u6267\u884c\u3002",
+  "expected_valid": false
+}

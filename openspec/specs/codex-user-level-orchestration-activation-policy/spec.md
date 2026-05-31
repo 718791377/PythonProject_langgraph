@@ -75,13 +75,15 @@ The user-level orchestration policy SHALL support retrofit for:
 ### Requirement: Activation traces SHALL expose full orchestration state
 The user-level orchestration activation policy SHALL require activation traces to report task phase, capability-chain state, default durable backend, backend readiness, expert selection, durable workflow state, persistent-team state, and a concrete reason.
 
-The trace vocabulary SHALL distinguish `not_needed`, `candidate`, `selected`, `blocked`, and `running`.
+The trace vocabulary SHALL distinguish state meanings for `not_needed` (threshold not met or no lane needed), `candidate` (eligible for consideration but not adopted), `selected` (chosen but not yet running), `blocked` (cannot proceed because of a named blocker or unmet threshold), and `running` (active durable or persistent execution is underway).
 
 The repository SHALL provide an executable trace-evidence validator that can inspect saved activation trace text for required fields, capability-chain consistency, backend readiness semantics, durable workflow and persistent-team vocabulary, forbidden missing-reminder reasons, expert-timeout evidence labels, and durable-team threshold evidence in the `why` field. It SHALL also provide `tools/check_expert_lifecycle_wait_pacing_evidence.py` for saved run-summary evidence covering completed-expert closure, preserved-thread exceptions, bounded wait windows, liveness/stall actions, and provider pacing as backpressure.
 
-Prompt-independent collaboration parity SHALL be checker-backed. The repository SHALL provide `tools/check_orchestration_collaboration_evidenceguard.py` and fixture pairs that prove equivalent tasks produce equivalent routing decisions with or without collaboration phrases. The same checker SHALL validate cold-start read-order evidence, durable/persistent evidenceguard records, structured expert lifecycle audit events, persisted JSONL expert lifecycle audit logs with required per-event fields for `spawn`, `wait`, `timeout`, `result`, `absorbed`, and `close`, list-content rules that require `spawn.scope` and `spawn.non_goals` to be non-empty lists of non-empty strings and `result.changed_paths` to be a list of non-empty strings, and LangGraph state release evidence. Durable/persistent evidenceguard SHALL reject selected, running, or complete durable-team claims unless active selector, backend family, preflight, ownership plan, manifest or LangGraph thread state, heartbeat, close, and leader absorption evidence are present as required by the claimed state. LangGraph state release SHALL reject completed work that remains in stale `running` state instead of recording `completed_at`, `final_phase`, `result_summary`, and `released_by`.
+Prompt-independent collaboration parity SHALL be checker-backed. The repository SHALL provide `tools/check_orchestration_collaboration_evidenceguard.py` and fixture pairs that prove equivalent tasks produce equivalent routing decisions with or without collaboration phrases. The same checker SHALL validate cold-start read-order evidence, durable/persistent evidenceguard records, structured expert lifecycle audit events, persisted JSONL expert lifecycle audit logs with required per-event fields for `spawn`, `wait`, `timeout`, `result`, `absorbed`, and `close`, list-content rules that require `spawn.scope` and `spawn.non_goals` to be non-empty lists of non-empty strings and `result.changed_paths` to be a list of non-empty strings, and LangGraph state release evidence. Durable/persistent evidenceguard SHALL reject selected, running, or complete durable-team claims unless active selector, backend family, preflight, ownership plan, manifest or LangGraph thread state, heartbeat, close, and leader absorption evidence are present as required by the claimed state. LangGraph state release SHALL reject completed work that remains in stale `running` state instead of recording `completed_at`, `final_phase`, `result_summary`, and `released_by`. `tools/check_durable_artifact_state_surfaces.py` SHALL also validate structured LangGraph state-release evidence for durable handoffs: completed thread state SHALL NOT remain in active statuses such as `running`; released or closed thread state SHALL record `released_at` and `released_by`; and backend-family handoff state SHALL record `handoff_at`, `handoff_target`, and `reason`.
 
 The repository SHALL keep the Chinese OpenSpec companion for this policy structurally aligned with this English primary by preserving every source `### Requirement:` and `#### Scenario:` heading, and `tools/check_orchestration_collaboration_evidenceguard.py` SHALL fail repository checks when that bilingual OpenSpec heading parity is lost.
+
+Registered collaboration evidenceguard fixtures SHALL be checker-backed. The required fixture registry SHALL include prompt-independent parity, cold-start read order, durable/persistent claim, expert lifecycle audit, main-session escalation, and LangGraph state release coverage so repository-mode checks fail if any required evidenceguard fixture silently disappears.
 
 #### Scenario: Saved trace evidence is checked
 - **WHEN** a saved activation trace is passed to the repository trace-evidence validator
@@ -103,6 +105,13 @@ The repository SHALL keep the Chinese OpenSpec companion for this policy structu
 - **WHEN** saved durable/persistent or LangGraph evidence is checked
 - **THEN** durable/persistent team claims SHALL fail without the required selector, manifest or thread-state, heartbeat, close, and leader absorption evidence
 - **AND** completed LangGraph tasks SHALL fail if the state remains `running` without release fields
+- **AND** released, closed, or backend-family handoff states SHALL fail when their release or handoff fields are missing
+
+#### Scenario: Registered collaboration evidenceguard fixture coverage is checked
+
+- **WHEN** repository-mode evidenceguard checks run
+- **THEN** the required fixture registry SHALL include prompt-independent parity, cold-start read-order, durable/persistent claim, expert lifecycle audit, main-session escalation, and LangGraph state release cases
+- **AND** the check SHALL fail if any required fixture is missing from the registered fixture directory
 
 ### Requirement: Main-session escalation visibility SHALL be explicit
 
@@ -153,7 +162,7 @@ The orchestration activation policy SHALL forbid using "the user did not request
 
 The orchestration activation policy SHALL require final reports to separate returned expert evidence from timed-out, stalled, abandoned, or main-session-taken-over verification.
 
-The repository SHALL provide an executable expert lifecycle/wait/pacing evidence checker that can inspect saved run-summary or transcript evidence for completed-expert closure, preserved-thread exceptions, bounded wait windows, liveness/stall actions, and provider backpressure labels.
+The repository SHALL provide executable expert lifecycle/wait/pacing evidence checkers that can inspect saved run-summary, transcript, JSON, or JSONL evidence for completed-expert closure, preserved-thread exceptions, bounded wait windows, same-agent timeout/result/absorption/closure event linkage, quiet progress checks, liveness/stall actions, and provider backpressure labels.
 
 #### Scenario: A key-path expert times out
 
@@ -166,7 +175,9 @@ The repository SHALL provide an executable expert lifecycle/wait/pacing evidence
 - **WHEN** saved expert lifecycle or wait evidence is passed to the expert lifecycle/wait/pacing evidence checker
 - **THEN** the checker SHALL fail completed expert claims that omit closure evidence or a preserved-thread reason
 - **AND** it SHALL fail wait claims that omit bounded wait windows or a total wait bound
-- **AND** it SHALL fail liveness or stall claims that omit inspect, redirect, respawn, durable-handoff, or main-session-takeover action
+- **AND** it SHALL fail timeout events that lack a prior wait and handling event for the same `agent_id`
+- **AND** it SHALL fail result, absorbed, or close events that are not linked to the same `agent_id` unless a preserved-thread reason is explicit
+- **AND** it SHALL fail two quiet `progress_check` events that omit inspect, redirect, respawn, durable-handoff, or main-session-takeover action for the same `agent_id`
 - **AND** it SHALL fail provider pacing claims that treat upstream pacing as a reason to disable orchestration instead of labeled backpressure
 
 ### Requirement: Existing sessions SHALL retrofit activation policy at safe boundaries
@@ -320,6 +331,7 @@ Delegation SHALL be concrete, bounded, self-contained, and materially advancing.
 - **WHEN** saved evidence mentions `wait_agent`, liveness checks, stalled experts, or provider pacing
 - **THEN** the expert lifecycle/wait/pacing checker SHALL require bounded wait windows and total bound evidence
 - **AND** it SHALL require liveness/stall handling such as inspect, redirect, respawn, durable handoff, or main-session takeover
+- **AND** it SHALL require structured lifecycle audit records to keep wait, timeout, result, absorption, close, and handling events tied to the same `agent_id`
 - **AND** it SHALL reject provider pacing language that disables orchestration rather than labeling backpressure
 
 ### Requirement: Delegation and leader wait discipline SHALL be script-checkable

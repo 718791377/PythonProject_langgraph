@@ -35,12 +35,13 @@ Reject stale running LangGraph state after completed work and require explicit c
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented, locally validated, and merged into local `main`
+Stage: Stage C implementation package locally integrated
+Owner session: `codex-langgraph-state-release-evidence-20260530`
+Current gate: remote-publication approval gate; no GitLab/GitHub mutation is authorized by this plan status update
+Stage C entry condition: satisfied by user confirmation message on 2026-05-30 after the child plan was already on local `main`
+Local main integration: completed at `32a5cfff3b977ba13ed6e215b4efb887679019b9`; completed claim preserved at `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -61,16 +62,16 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 3.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for completed, running, released, and handoff LangGraph states.
-- [ ] Update durable state checker to flag stale running state after completion.
-- [ ] Document safe backend-family handoff requirements.
-- [ ] Run durable state and LangGraph checks plus local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for completed, running, released, and handoff LangGraph states.
+- [x] Update durable state checker to flag stale running state after completion.
+- [x] Document safe backend-family handoff requirements.
+- [x] Run durable state and LangGraph checks plus local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -94,5 +95,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 local-main status sync: recorded that the Stage C implementation is merged into local `main` at `32a5cfff3b977ba13ed6e215b4efb887679019b9`, the completed claim is preserved at `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`, and the remaining gate is explicit remote-publication approval.
+- 2026-05-30 Stage C implementation: branch `implement-langgraph-state-release-evidence-20260530` added structured LangGraph state-release fixtures, extended `tools/check_durable_artifact_state_surfaces.py` to reject completed `running` state and missing release/handoff fields, registered `test/check_langgraph_state_release_evidence.test.py`, documented backend-family handoff requirements, and was integrated into local `main` at `32a5cfff3b977ba13ed6e215b4efb887679019b9`.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

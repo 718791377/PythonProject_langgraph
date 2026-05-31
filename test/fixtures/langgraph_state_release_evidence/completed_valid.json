@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "case_type": "langgraph_state_release",
+  "case_id": "completed_valid",
+  "task_completed": true,
+  "thread_state": {
+    "thread_id": "repo:worktree:completed",
+    "status": "complete",
+    "completed_at": "2026-05-30T00:00:00Z",
+    "final_phase": "verify-accept",
+    "result_summary": "local gates passed and leader absorbed the result",
+    "released_by": "codex-main-session"
+  }
+}

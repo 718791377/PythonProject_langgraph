@@ -254,6 +254,26 @@
       "description": "Keeps legacy resumed sessions compatibility-scoped, preserves direct Codex MCP servers, and requires current session ownership checks before old sessions affect new governance work."
     },
     {
+      "id": "user-level-launcher-payload-boundary",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "AGENTS.md",
+        "docs_bilingual/governance/user_level_launcher_payload_policy.md",
+        "docs_bilingual/governance/user_level_launcher_payload_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/launcher_payload_context_boundary_plan.md",
+        "docs_bilingual/implementation_plans/launcher_payload_context_boundary_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_launcher_payload_context_boundary.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_launcher_payload_context_boundary"
+      ],
+      "description": "Keeps generated user-level Codex launcher startup payloads short by writing large model instructions to a UTF-8 state file and passing only a model_instructions_file reference on the command line."
+    },
+    {
       "id": "local-mirrored-ci-mr-gate",
       "owner_level": "project",
       "status": "implemented",
@@ -378,6 +398,24 @@
         "check_durable_artifact_state_surfaces"
       ],
       "description": "Requires explorer/worker boundaries, LangGraph state surfaces, active selector authority, frozen briefs, survivor queues, and durable artifacts to be persisted outside transient chat context."
+    },
+    {
+      "id": "repo-local-selector-ownership",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md",
+        "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/repo_local_selector_ownership_plan.md",
+        "docs_bilingual/implementation_plans/repo_local_selector_ownership_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_repo_local_selector_ownership.py"
+      ],
+      "guard_steps": [
+        "check_repo_local_selector_ownership"
+      ],
+      "description": "Ensures active durable selectors and selector leases are repo-local, blocks cross-repository selector adoption, and reports selector refresh gaps instead of auto-adopting from compatibility records."
     },
     {
       "id": "custom-agent-toml-schema",

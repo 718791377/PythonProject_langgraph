@@ -35,12 +35,13 @@ Treat expert timeout, stall, and upstream pacing as non-evidence and require bou
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented, locally validated, and merged into local `main`
+Stage: Stage C implementation package locally integrated
+Owner session: `main-codex-leader-expert-lifecycle-timeout-pacing-evidence-20260530`
+Current gate: remote-publication approval gate; no GitLab/GitHub mutation is authorized by this closeout update
+Stage C entry condition: satisfied by user confirmation on 2026-05-30 after governance package local main integration
+Local main integration: completed at `e0aace6` and preserved in current local `main`
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -60,16 +61,16 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 3.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for timed-out experts, quiet progress checks, respawn decisions, and absorbed results.
-- [ ] Reject final acceptance that treats timeout as a valid expert result.
-- [ ] Document bounded wait and closure behavior.
-- [ ] Run expert lifecycle tests and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for timed-out experts, quiet progress checks, respawn decisions, and absorbed results.
+- [x] Reject final acceptance that treats timeout as a valid expert result.
+- [x] Document bounded wait and closure behavior.
+- [x] Run expert lifecycle tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -93,5 +94,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 final closeout: `close-phase4-final-20260531` confirms this child plan has no open checklist items, its implementation evidence is preserved in current local `main`, and its remaining gate is explicit remote-publication approval.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-30 Stage C implementation: added timeout-as-non-evidence text checks, structured expert lifecycle audit handling events, same-agent absorption/closure validation, provider pacing backpressure validation, focused tests, repository guards, OpenSpec guard, and local gate evidence before local main integration.
 <!-- EVIDENCE_INDEX_END -->

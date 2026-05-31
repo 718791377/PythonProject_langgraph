@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "session_id": "fixture-active",
+  "status": "active",
+  "branch": "feature/demo",
+  "worktree": "__WORKTREE__",
+  "task_type": "implementation",
+  "task_name": "active receipt fixture",
+  "task_summary": "Fixture covering the active lifecycle status.",
+  "document_plan_only": false,
+  "requires_code_implementation": true,
+  "created_at": "2026-05-30T00:00:00+00:00",
+  "expected_merge_or_pause": "fixture validation",
+  "next_action": "Handle active lifecycle according to policy.",
+  "requires_local_main_merge": true,
+  "requires_remote_sync": false,
+  "lifecycle_status": "active",
+  "paths": [
+    "tools/check_worktree_task_receipt.py"
+  ]
+}

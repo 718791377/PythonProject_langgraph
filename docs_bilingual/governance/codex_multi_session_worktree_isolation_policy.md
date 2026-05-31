@@ -118,6 +118,20 @@ After each local `main` merge or remote publication/sync, the operator workflow 
 
 The checker `tools/check_worktree_task_receipt.py` is the script-backed control for this lifecycle. In normal guard mode it reports missing receipts as warnings for legacy worktrees, while new worktrees created by the current workflow must write the receipt immediately. In strict mode (`--require-all-feature-worktrees`) it can be used to migrate or audit all residual worktrees.
 
+## 5.3 Portable No-Backend Parallel Session Fallback
+
+When OMX, LangGraph, or any durable backend is unavailable, a session may still start a bounded parallel implementation slice with only portable repository-local files. The fallback startup surface is `python tools/claim_implementation_plan.py start ...`; it must write all three metadata surfaces before tracked implementation edits begin:
+
+1. an active `.omx/session-claims/<session>.json` implementation-plan claim, where the claim helper and `tools/check_implementation_plan_claim_lock.py` enforce one active session per child implementation plan;
+2. `.omx/worktree-task-receipt.json`, so resumed sessions can read the task name, branch, write scope, lifecycle status, next action, and remote-publication boundary without relying on a durable backend;
+3. a predicted `.omx/commit-rob/entries/<entry>.json` entry, so the Phase 1A scheduler/ROB contract can later compare predicted and actual write sets before any local-main retire attempt.
+
+The portable status surface is `python tools/claim_implementation_plan.py status ...`. Its output must keep the claim status, receipt lifecycle status, ROB state, and `local-main-retire.lock` serialization boundary visible in one JSON payload. This status output is diagnostic evidence only; it does not grant permission to mutate `main`.
+
+For non-document implementation, the portable startup metadata must also preserve the Stage A confirmation gate: `requires_user_confirmation_before_implementation=true`, the docs-only `governance_package_commit`, `governance_package_merged_to_local_main=true`, `implementation_confirmed_by_user=true`, and `implementation_confirmation_recorded_at`. The local MR review gate reads the receipt and claim to verify that the confirmed implementation plan already exists on local `main`.
+
+Portable release is metadata-only. `python tools/claim_implementation_plan.py release ...` may mark the claim released, update the receipt lifecycle, and optionally flush or supersede the predicted ROB entry. It must not delete files, remove worktrees, delete branches, mutate remotes, or bypass `tools/cleanup_integrated_worktree.py`. Destructive local cleanup remains allowed only through the guarded cleanup helper after local `main` contains the branch result, a rollback ref exists, the feature worktree is clean, and the completed claim or receipt has been preserved.
+
 ## 6. Script Control
 
 Prompt reminders are not sufficient for this safety boundary.

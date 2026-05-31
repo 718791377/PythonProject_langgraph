@@ -35,12 +35,13 @@ Enforce smallest-sufficient expert roles, analyst-only first fan-out for bounded
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented, locally validated, and merged into local `main`
+Stage: Stage C local implementation package
+Owner session: `main-codex-leader-role-routing-fanout-write-ownership-20260530`
+Current gate: remote-publication approval gate; remote publication remains out of scope and unauthorized
+Stage C entry condition: satisfied by user confirmation to continue this child implementation plan
+Local main integration: local closeout commit `eeccff9` is preserved in current local `main`
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -62,16 +63,16 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 3.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for analyst-first research, over-broad role sets, and write-heavy fan-out with missing ownership.
-- [ ] Update checkers to reject unowned write scopes and hotspot collisions.
-- [ ] Document leader-owned fan-in and changed-path reporting.
-- [ ] Run role routing, fan-out ownership, and local gate checks.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for analyst-first research, over-broad role sets, and write-heavy fan-out with missing ownership.
+- [x] Update checkers to reject unowned write scopes and hotspot collisions.
+- [x] Document leader-owned fan-in and changed-path reporting.
+- [x] Run role routing, fan-out ownership, and local gate checks.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,5 +96,9 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 final closeout: `close-phase4-final-20260531` confirms this child plan has no open checklist items, its closeout evidence is preserved in current local `main`, and its remaining gate is explicit remote-publication approval.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-14 role routing implementation evidence: commit `1a45e87` added `tools/check_role_routing_directive_evidence.py` and `test/check_role_routing_directive_evidence.test.py`; commit `4814802` archived the OpenSpec change and promoted the stable spec requirements.
+- 2026-05-14 fan-out/write-ownership implementation evidence: commit `1902d35` added `tools/check_fanout_write_ownership_evidence.py` and `test/check_fanout_write_ownership_evidence.test.py`; commit `43b4500` archived the OpenSpec change and kept the stable spec aligned.
+- 2026-05-30 Stage C local closure package: session `main-codex-leader-role-routing-fanout-write-ownership-20260530` recorded claim/receipt/ROB metadata before writing, confirmed existing repository checks pass for role-routing and fan-out/write-ownership surfaces, and limits this package to plan closure before local `main` integration.
 <!-- EVIDENCE_INDEX_END -->

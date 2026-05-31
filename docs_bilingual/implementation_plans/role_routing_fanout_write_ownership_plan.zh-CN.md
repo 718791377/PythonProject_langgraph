@@ -35,12 +35,13 @@ Enforce smallest-sufficient expert roles, analyst-only first fan-out for bounded
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：已实施、已完成本地验证，并已合入本地 `main`
+阶段：Stage C 本地实施包
+责任会话：`main-codex-leader-role-routing-fanout-write-ownership-20260530`
+当前门禁：远端发布批准门；远端发布仍不在范围内且未授权
+Stage C 进入条件：用户已确认继续本子 implementation plan
+本地 main 集成：本地收口提交 `eeccff9` 已保留在当前本地 `main`
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -62,16 +63,16 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - 本阶段最大并行 session 数：3。
 - 本子方案是一个认领单元：同一时间只能有一个 active session 认领。
 - 只有认领不同子方案且写入范围互不重叠时，才允许并行实施。
-- 本地 `main` 合入仍由 leader 串行执行。
+- 本地 `main` 写入仍然串行，但由 `local-main-retire.lock` 保护；持锁 session 只能自退休自己拥有且已 ready 的候选包，并在远端发布门停止。
 
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for analyst-first research, over-broad role sets, and write-heavy fan-out with missing ownership.
-- [ ] Update checkers to reject unowned write scopes and hotspot collisions.
-- [ ] Document leader-owned fan-in and changed-path reporting.
-- [ ] Run role routing, fan-out ownership, and local gate checks.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for analyst-first research, over-broad role sets, and write-heavy fan-out with missing ownership.
+- [x] Update checkers to reject unowned write scopes and hotspot collisions.
+- [x] Document leader-owned fan-in and changed-path reporting.
+- [x] Run role routing, fan-out ownership, and local gate checks.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,5 +96,9 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 最终收口：`close-phase4-final-20260531` 确认本子方案无未完成 checklist，相关收口证据已保留在当前本地 `main`，剩余门禁为显式远端发布批准。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-14 role routing 实施证据：commit `1a45e87` 添加 `tools/check_role_routing_directive_evidence.py` 与 `test/check_role_routing_directive_evidence.test.py`；commit `4814802` 已归档 OpenSpec change 并提升 stable spec 要求。
+- 2026-05-14 fan-out/write-ownership 实施证据：commit `1902d35` 添加 `tools/check_fanout_write_ownership_evidence.py` 与 `test/check_fanout_write_ownership_evidence.test.py`；commit `43b4500` 已归档 OpenSpec change 并保持 stable spec 对齐。
+- 2026-05-30 Stage C 本地闭环包：session `main-codex-leader-role-routing-fanout-write-ownership-20260530` 在写入前记录 claim/receipt/ROB 元数据，确认 role-routing 与 fan-out/write-ownership repository surface 检查通过，并把本包范围限制为本地 `main` 合入前的子方案闭环。
 <!-- EVIDENCE_INDEX_END -->

@@ -191,13 +191,14 @@ The template SHALL remain read-only and SHALL describe, at minimum:
 - `validation_path` - the commands or checks that prove the exercise result.
 - `rollback_path` - the recovery steps if a future exercise is misconfigured.
 
-The template SHALL be checked by an executable repository checker and by the OpenSpec guard. The checker SHALL NOT launch a durable team, run `omx-team-auto.ps1 -Apply`, or write `.omx/state/`.
+The template SHALL be checked by an executable repository checker and by the OpenSpec guard. The checker SHALL include read-only positive and negative fixture coverage for the template shape, missing required fields, apply mode without mutation consent, and missing read-only guards. The checker SHALL NOT launch a durable team, run `omx-team-auto.ps1 -Apply`, or write `.omx/state/`.
 
 #### Scenario: Guard validates the smoke gate template without mutating durable state
 
 - **WHEN** the repository OpenSpec guard runs
 - **THEN** it SHALL execute the durable routing smoke gate template checker
 - **AND** the checker SHALL validate the required template fields and descriptions
+- **AND** the checker SHALL validate read-only self-test fixtures, including negative fixtures for unsafe adoption-gate shapes
 - **AND** the checker SHALL remain read-only
 - **AND** it SHALL NOT launch native_omx, launch LangGraph, or mutate `.omx/state/`
 

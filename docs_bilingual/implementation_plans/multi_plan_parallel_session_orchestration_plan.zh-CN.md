@@ -58,14 +58,14 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Phase 0 盘点与父级索引验证收口包
-归属边界：本文件只治理本方案族；无关 implementation_plan 不会被强制挂到本父方案下。
-当前门禁：完成 Phase 0 收口验证，将本收口包合入本地 `main`，然后停在远端发布门。
-Phase 0 说明：两个 Phase 0 子方案已在功能分支内收口；盘点未发现阻塞性的 registry 或双语配对缺陷。
-Phase 1 说明：Phase 1 runtime 与治理包已实现并合入本地 `main`，其中包括 `898f9d0` 的 self-retire runtime 恢复。
-Phase 2 准入：只有当本 Phase 0 收口包完成提交、本地门禁、local MR review，并快进合入本地 `main` 后，才允许进入 Phase 2。
-最后更新：2026-05-30
+阶段：Phase 4 全量收口完成；严格顺序门和 Work-Conserving 准入下均可进入 Phase 5。
+责任会话：`codex-close-phase4-final-20260531` 执行最终父子方案状态与证据同步。
+当前门禁：Phase 4 子方案均已实现、已本地验证、已集成本地 `main`，并停在远端发布门；GitLab/GitHub 远端发布仍未授权。
+Phase 0 说明：盘点与父级索引收口已完成并进入本地 `main`，远端基线 `014b0bf` 已包含 Phase 0 发布状态。
+Phase 1 说明：施工安全底座、ROB runtime/checker、自退休 helper 和完整提交流程治理已进入本地 `main`；`7e47af8` 使《完整提交流程.md》成为多 session 自动本地提交与合入的 HOW 层契约。
+Phase 4 收口说明：所有 Phase 4 子方案均无未完成清单项，均具备本地 main 实现或收口证据，并保持用户可见固定标签 `Routing trace` 与 `Updated Plan` 不被本地化替换。
+Phase 5 准入：Phase 5 Comet runtime 子方案现在可以被认领并进入执行；`comet-state.sh` 和 `comet-guard.sh` 仍按 hotspot 串行化。
+远端状态：本地 `main` 当前领先 GitLab/GitHub 远端；远端发布、MR、merge 或 GitHub sync 仍必须等待用户显式授权。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -282,13 +282,13 @@ python tools/local_main_retire_lock.py status --root . --json
 
 准入规则：所有 eligible 子方案均可并行；`.omx/state` 写入按仓库和 worktree hotspot lease 串行化。
 
-### Phase 4：自动路由与中文可视化
+### Phase 4：自动路由与稳定会话表面
 
-目的：让协同路由自动、可审计，并在对话中面向中文展示。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由当前 owner session 负责的最终 verification evidence。
+目的：让协同路由自动、可审计，并确保对话中面向用户展示的固定标签保持为 `Routing trace` 和 `Updated Plan`。标签下的解释内容可以使用中文；`Updated Plan` 必须保持复选框/状态清单语义，不能退化为纯段落。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由当前 owner session 负责的最终 verification evidence；保存版结构化 evidence 可继续保留 ASCII 阈值、blocker token、schema key、文件名和命令参数。
 
 候选子方案：
 
-1. `chinese_routing_trace_conversation_surface_plan` - 要求用户可见 routing trace 使用中文字段名和中文说明。
+1. `chinese_routing_trace_conversation_surface_plan` - 要求用户可见的 `Routing trace` 与 `Updated Plan` 标签保持稳定，允许中文解释内容，并保留 `Updated Plan` 复选框/状态清单语义。
 2. `routing_trace_structured_evidence_schema_plan` - 为保存版证据保留机器可读 ASCII 阈值和 blocker token。
 3. `prompt_independent_activation_parity_plan` - 确保路由不依赖用户是否说出“并行”或“专家”。
 4. `expert_lifecycle_timeout_pacing_evidence_plan` - 将 timeout、stall 和 pacing 视为非证据，并要求有界处理。
@@ -353,10 +353,11 @@ python tools/local_main_retire_lock.py status --root . --json
 ## 依赖与 Phase 2 准入说明
 
 <!-- PHASE_ADMISSION_NOTES_START -->
-- Phase 0 是 Phase 2 的硬前置条件：盘点子方案和父级索引子方案都必须完成提交、本地门禁、local MR review，并合入本地 `main` 后，才能进入 Phase 2。
-- Phase 1 仍是后续阶段的安全底座：plan confirmation、claim locking、registry active-state checks、ROB ordering 和 self-retire lock 恢复能力必须在 Phase 2+ session 入场前保持可用。
-- Phase 2 子 session 只有在 Phase 0 收口包进入本地 `main` 后，才可按 Work-Conserving 规则并行运行；startup summary 或 UTF-8/mojibake 相关热点文件仍必须只有一个明确 hotspot lease owner。
-- 远端发布不是 Phase 2 准入的一部分；除非用户明确要求远端发布，否则保持阻塞。
+- Phase 0 已完成，不再作为 Phase 2 的当前阻塞门；后续 Phase 2+ session 只需确认自己的 implementation plan 为 `status: active`、没有其他 active claim、依赖满足、worktree 干净，且写集不冲突或已取得 hotspot lease。
+- Phase 1 仍是后续阶段的安全底座：plan confirmation、claim locking、registry active-state checks、ROB ordering、self-retire lock 和《完整提交流程.md》必须保持可用。
+- Phase 2+ 子 session 按 Work-Conserving 规则并行运行；startup summary、UTF-8/mojibake、docs registry、OpenSpec stable spec、CI manifest、checker schema 等热点文件必须由明确 owner 串行写入。
+- 本地 `main` 合入不是固定 main session 总控；持有 `local-main-retire.lock` 的 session 只可自退休自己拥有且已 ready 的候选包。
+- 远端发布不是 Phase 准入条件；除非用户明确要求远端发布，否则所有 session 在本地 `main` 合入后停止在远端发布门。
 <!-- PHASE_ADMISSION_NOTES_END -->
 
 
@@ -402,7 +403,9 @@ python tools/local_main_retire_lock.py status --root . --json
 - [x] Stage A 恢复：记录 self-retire runtime 来源提交存在，但当时本地 `main` 缺少 runtime 文件；非文档恢复前必须停止等待确认。
 - [x] Stage B runtime 恢复：恢复 self-retire runtime helper/checker 行为，并在 `898f9d0` 合入本地 `main`。
 - [x] Phase 0 收口：在 Phase 2 准入前收口 inventory registry alignment 子方案和 parent orchestration index 子方案。
-- [ ] 后续阶段：本 Phase 0 收口包合入本地 `main` 后，再执行 Phase 2 context 与 UTF-8 safety 子方案。
+- [x] 后续阶段：Phase 0 收口包已经合入本地 `main`；Phase 2 context 与 UTF-8 safety 子方案已按 Work-Conserving 模型启动，部分包已进入本地 `main`。
+- [x] Phase 4 父子方案治理更新：把会话表面覆盖从 routing trace 扩展到 `Routing trace` 与 `Updated Plan`，保持这两个标签稳定，保留 `Updated Plan` 复选框/状态清单语义，并保留保存版 evidence 的机器可读 ASCII token。
+- [x] Phase 4 最终收口：确认全部 Phase 4 子方案已实现、已本地验证、已合入本地 `main`，并停在远端发布门。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -428,10 +431,15 @@ Stage B 后续确认后的验收条件：
 - 本父方案明确只约束本方案族；无关 implementation_plan 可以无父方案或属于其他父方案。
 - 新 session 不默认读取本文件，除非处理本文件、其子方案或正文列出的相关方案。
 - 后续同机多 session 目标是 session 自主负责自己的提交和本地 `main` 合入，并用 `local-main-retire` lock 保持本地 `main` 写入串行。
+- Phase 4 子方案必须保持面向用户的 `Routing trace` 与 `Updated Plan` 固定标签；解释内容可以使用中文；`Updated Plan` 必须保留复选框/状态清单语义；内部工具名、schema key、阈值 token、blocker token、文件名和 CLI 参数可保持 ASCII。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Phase 4 最终收口：分支 `close-phase4-final-20260531` 同步父方案与全部 Phase 4 子方案状态，确认所有 Phase 4 checklist 已关闭，过期的本地集成门已替换为远端发布门，并且 Phase 5 已可准入但不代表授权远端发布。
+- 2026-05-30 Phase 4 固定标签修正：分支 `implement-routing-updated-plan-fixed-labels-20260530c` 更新本父方案与 `chinese_routing_trace_conversation_surface_plan` 子方案；`Routing trace` 与 `Updated Plan` 保持英文用户可见标签，`Updated Plan` 保持复选框/状态清单语义，中文解释内容仍允许；远端发布仍未授权。
+- 2026-05-30 Phase 4 会话表面治理更新：分支 `chinese-routing-updated-plan-20260530` 曾把会话表面覆盖从 routing trace 扩展到 updated plan；其中“固定标签应替换为中文标题”的旧表述已由上一条固定标签修正取代；远端发布仍未授权。
+- 2026-05-30 完整提交流程对齐包：分支 `align-complete-flow-parent-plans-20260530` 由 `codex-align-complete-flow-parent-plans-20260530` 认领 `parent_parallel_orchestration_index_plan`，ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录父方案族文档候选包；本包把父方案和声明 `parent_plan` 指向本文件的子方案统一对齐到《完整提交流程.md》的 session-owned self-retire、`local-main-retire.lock` 和远端发布门模型。
 - 2026-05-30 Phase 0 收口包：在分支 `phase0-plan-index-closure-20260530` 收口 `plan_inventory_registry_alignment_plan` 和 `parent_parallel_orchestration_index_plan`；机器可读盘点证据为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；在本包完成本地门禁、local MR review 并合入本地 `main` 前，Phase 2 仍保持阻塞。
 - 2026-05-30 self-retire runtime 恢复：本地 `main` 已在 `898f9d0` 包含恢复后的 self-retire runtime helper/checker 包，替代早先 `b4af80f` 的待恢复说明。
 - 2026-05-29 Stage A 恢复文档包：记录当时本地 `main`=`b4af80f` 尚未包含 self-retire runtime helper/checker，虽然来源提交 `867f882` 存在于 `decentralize-session-self-retire-20260529`；该问题随后已由 `898f9d0` 解决。

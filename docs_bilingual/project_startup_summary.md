@@ -142,6 +142,10 @@ Context-retention canary:
 - The literal canary prompt is a visible self-check for whether a resumed or compacted session still understands the cold-start authority. It belongs in user-visible assistant responses, not in wrapper payloads, generated helpers, or other authority surfaces.
 - If a complete assistant response misses that canary after this startup summary should have been read, treat that as possible context loss or a read-path failure.
 - Recovery action: reread `AGENTS.md`, reread this startup summary pair through an explicit UTF-8 path, follow the cold-start read order above, then reread only the task-specific files needed to continue safely.
+- If startup or response text appears as mojibake, treat these UTF-8 files as the canonical recovery sources:
+  - `docs_bilingual/project_startup_summary.md` - canonical English startup recovery source.
+  - `docs_bilingual/project_startup_summary.zh-CN.md` - canonical Chinese startup recovery source.
+- `tools/check_startup_instruction_mojibake.py` must report those recovery source paths and must not echo corrupted canary marker text as canonical evidence.
 
 ## Current Mainline
 

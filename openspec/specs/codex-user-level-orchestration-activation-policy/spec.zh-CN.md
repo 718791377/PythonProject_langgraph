@@ -65,11 +65,15 @@
 
 ### Requirement: Activation traces SHALL expose full orchestration state / Activation trace 必须暴露完整 orchestration 状态
 
-用户级 orchestration activation policy 必须要求 activation trace 报告 task phase、capability-chain state、default durable backend、backend readiness、expert selection、durable workflow state、persistent-team state 与具体 reason。Trace vocabulary 必须区分 `not_needed`、`candidate`、`selected`、`blocked` 与 `running`。
+用户级 orchestration activation policy 必须要求 activation trace 报告 task phase、capability-chain state、default durable backend、backend readiness、expert selection、durable workflow state、persistent-team state 与具体 reason。Trace vocabulary 必须区分 state meaning：`not_needed`（threshold 未满足或无需 lane）、`candidate`（具备候选资格但未采用）、`selected`（已选择但尚未运行）、`blocked`（因具名 blocker 或未满足 threshold 而无法继续）与 `running`（durable 或 persistent execution 正在运行）。
 
 仓库必须提供可执行 trace-evidence validator，检查保存的 activation trace text 是否具备 required fields、capability-chain consistency、backend readiness semantics、durable workflow 与 persistent-team vocabulary、forbidden missing-reminder reasons、expert-timeout evidence labels，以及 `why` 字段中的 durable-team threshold evidence。仓库也必须提供 `tools/check_expert_lifecycle_wait_pacing_evidence.py`，用于检查 completed-expert closure、preserved-thread exceptions、bounded wait windows、liveness/stall actions 与 provider pacing as backpressure。
 
 Prompt-independent collaboration parity 必须由 checker 背书。仓库必须提供 `tools/check_orchestration_collaboration_evidenceguard.py` 与 fixture pairs，证明同等任务在有无协同短语时产生同等 routing decisions。该 checker 还必须验证 cold-start read-order evidence、durable/persistent evidenceguard records、structured expert lifecycle audit events、落盘 JSONL expert lifecycle audit logs，并要求 `spawn`、`wait`、`timeout`、`result`、`absorbed` 与 `close` 事件具备各自必需字段；同时还必须要求 `spawn.scope` 与 `spawn.non_goals` 是非空的非空字符串列表，`result.changed_paths` 是非空字符串列表，并验证 LangGraph state release evidence。durable/persistent evidenceguard 必须拒绝缺少 active selector、backend family、preflight、ownership plan、manifest 或 LangGraph thread state、heartbeat、close 与 leader absorption 证据的 selected、running 或 complete durable-team claims。LangGraph state release 必须拒绝 completed work 仍停留在 stale `running` state 而未记录 `completed_at`、`final_phase`、`result_summary` 与 `released_by` 的状态。
+
+中文 OpenSpec companion 必须保留英文 primary 中每一个 `### Requirement:` 与 `#### Scenario:` 源标题，并明确记录双语 OpenSpec heading parity；`tools/check_orchestration_collaboration_evidenceguard.py` 必须在该 双语 OpenSpec heading parity 丢失时让 repository check 失败。
+
+Registered collaboration evidenceguard fixtures 必须由 checker 背书。required fixture registry 必须覆盖 prompt-independent parity、cold-start read order、durable/persistent claim、expert lifecycle audit、main-session escalation 与 LangGraph state release；如果任何 required evidenceguard fixture 静默消失，repository-mode check 必须失败。
 
 #### Scenario: Saved trace evidence is checked / 检查保存的 trace evidence
 
@@ -93,6 +97,13 @@ Prompt-independent collaboration parity 必须由 checker 背书。仓库必须�
 - **THEN** durable/persistent team claims 缺少 required selector、manifest 或 thread-state、heartbeat、close 与 leader absorption evidence 时必须失败
 - **AND** completed LangGraph tasks 若 state 仍为 `running` 且没有 release fields，则必须失败
 
+
+
+#### Scenario: Registered collaboration evidenceguard fixture coverage is checked / 检查已登记的 collaboration evidenceguard fixture 覆盖
+
+- **WHEN** repository-mode evidenceguard check 运行
+- **THEN** required fixture registry 必须包含 prompt-independent parity、cold-start read-order、durable/persistent claim、expert lifecycle audit、main-session escalation 与 LangGraph state release cases
+- **AND** 如果 registered fixture directory 缺少任何 required fixture，checker 必须失败
 
 
 ### Requirement: Main-session escalation visibility SHALL be explicit / Main-session escalation visibility 必须显式可见
@@ -142,7 +153,7 @@ Orchestration activation policy 必须禁止使用 "the user did not request par
 
 ### Requirement: Expert timeout SHALL NOT be accepted as verification evidence / Expert timeout 不得被接受为验证证据
 
-Orchestration activation policy 必须要求 final reports 区分 returned expert evidence 与 timed-out、stalled、abandoned 或 main-session-taken-over verification。仓库必须提供可执行 expert lifecycle/wait/pacing evidence checker，用来检查保存的 run-summary 或 transcript evidence。
+Orchestration activation policy 必须要求 final reports 区分 returned expert evidence 与 timed-out、stalled、abandoned 或 main-session-taken-over verification。仓库必须提供可执行 expert lifecycle/wait/pacing evidence checker，用来检查保存的 run-summary 或 transcript evidence。 The checker also validates saved JSON or JSONL evidence and same-agent wait/timeout/result/absorption/close/handling event linkage.
 
 #### Scenario: A key-path expert times out / 关键路径 expert 超时
 
@@ -156,6 +167,9 @@ Orchestration activation policy 必须要求 final reports 区分 returned exper
 - **THEN** checker 必须在 completed expert claims 缺少 closure evidence 或 preserved-thread reason 时失败
 - **AND** wait claims 缺少 bounded wait windows 或 total wait bound 时必须失败
 - **AND** liveness 或 stall claims 缺少 inspect、redirect、respawn、durable-handoff 或 main-session-takeover action 时必须失败
+- **AND** timeout events missing prior wait and handling event for the same `agent_id` MUST fail
+- **AND** result, absorbed, or close events not linked to the same `agent_id` MUST fail unless a preserved-thread reason is explicit
+- **AND** two quiet `progress_check` events without same-agent inspect, redirect, respawn, durable-handoff, or main-session-takeover action MUST fail
 - **AND** provider pacing claims 若把 upstream pacing 当作禁用 orchestration 的原因而非 backpressure 标签，则必须失败
 
 ### Requirement: Existing sessions SHALL retrofit activation policy at safe boundaries / 既有会话必须在安全边界 retrofit activation policy
@@ -307,6 +321,7 @@ Delegation 必须 concrete、bounded、self-contained 且 materially advancing�
 - **WHEN** saved evidence 提到 `wait_agent`、liveness checks、stalled experts 或 provider pacing
 - **THEN** expert lifecycle/wait/pacing checker 必须要求 bounded wait windows 与 total bound evidence
 - **AND** 必须要求 liveness/stall handling，例如 inspect、redirect、respawn、durable handoff 或 main-session takeover
+- **AND** structured lifecycle audit records MUST keep wait, timeout, result, absorption, close, and handling events tied to the same `agent_id`
 - **AND** 必须拒绝把 provider pacing 用于禁用 orchestration 而非标记 backpressure 的语言
 
 ### Requirement: Delegation and leader wait discipline SHALL be script-checkable / Delegation 与 leader wait discipline 必须可脚本检查

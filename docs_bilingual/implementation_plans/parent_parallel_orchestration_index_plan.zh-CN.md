@@ -35,12 +35,9 @@ Keep the parent phase map, child-plan registry, dependency order, and session-li
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Phase 0 收口已在本地功能分支实现
-责任会话：`phase0-plan-index-closure-20260530`
-当前门禁：在合入本地 `main` 前验证父级执行索引、依赖边、Phase 2 准入说明、本地门禁和 local MR review。
-Stage C 进入条件：用户已确认 Phase 0 必须先于 Phase 2 完成；本次收口更新父方案地图。
-最后更新：2026-05-30
+阶段：Phase 0 已收口；当前作为父方案族索引维护子方案继续 active
+责任会话：`codex-align-complete-flow-parent-plans-20260530`，用于本次父方案族完整提交流程对齐。
+当前门禁：更新父方案当前状态、Phase 2+ 准入说明、子方案状态索引和所有子方案的 local-main 合入语义；通过 checker 后提交并合入本地 `main`，然后停在远端发布门。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -61,11 +58,12 @@ Stage C 进入条件：用户已确认 Phase 0 必须先于 Phase 2 完成；本
 - 本阶段最大并行 session 数：2。
 - 本子方案是一个认领单元：同一时间只能有一个 active session 认领。
 - 只有认领不同子方案且写入范围互不重叠时，才允许并行实施。
-- 本地 `main` 合入仍由 leader 串行执行。
+- 本地 `main` 写入仍然串行，但由 `local-main-retire.lock` 保护；持锁 session 只能自退休自己拥有且已 ready 的候选包，并在远端发布门停止。
 
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
+- [x] 2026-05-30 完整提交流程对齐：维护父方案索引，把父方案族子方案从固定 leader 合入语义更新为 `local-main-retire.lock` 保护的 session-owned self-retire。
 - [x] 本子方案本地 main 合入后已获得用户确认。
 - [x] 为父方案加入二层级架构图，并明确本索引维护方案是同级子方案，不是二级父方案。
 - [x] 吸收 Pi family / oh-my-pi / CLI harness reference-only 边界到父级编排方案。
@@ -97,6 +95,7 @@ Stage C 进入条件：用户已确认 Phase 0 必须先于 Phase 2 完成；本
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 完整提交流程对齐：`codex-align-complete-flow-parent-plans-20260530` 认领本索引子方案，更新父方案和子方案状态；ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录本地候选包。
 - 2026-05-30 Phase 0 索引收口：已更新父方案当前状态、Phase 0/Phase 1 完成证据、紧凑 child-plan 状态索引、依赖/准入说明和 Phase 2 门禁条件。
 - 2026-05-29 索引补充：登记 Phase 1A complete-flow scheduler/ROB 子方案，保持其为父方案的同级 child implementation_plan。
 - 2026-05-28 文档治理更新：main Codex leader session 认领本索引维护子方案，用于更新父方案层级架构图和 Pi/harness reference-only 边界；commit 记录在本地 git 历史中。

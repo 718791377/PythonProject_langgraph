@@ -35,12 +35,13 @@ Treat expert timeout, stall, and upstream pacing as non-evidence and require bou
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：已实施、已完成本地验证，并已合入本地 `main`
+阶段：Stage C 实施包已完成本地集成
+责任会话：`main-codex-leader-expert-lifecycle-timeout-pacing-evidence-20260530`
+当前门禁：远端发布批准门；本次收口更新不授权任何 GitLab/GitHub 远端变更
+Stage C 进入条件：用户于 2026-05-30 确认继续实施，条件已满足
+本地 main 集成：已在 `e0aace6`（`治理：强化专家生命周期超时节奏证据`）完成，并保留在当前本地 `main`
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -60,16 +61,16 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - 本阶段最大并行 session 数：3。
 - 本子方案是一个认领单元：同一时间只能有一个 active session 认领。
 - 只有认领不同子方案且写入范围互不重叠时，才允许并行实施。
-- 本地 `main` 合入仍由 leader 串行执行。
+- 本地 `main` 写入仍然串行，但由 `local-main-retire.lock` 保护；持锁 session 只能自退休自己拥有且已 ready 的候选包，并在远端发布门停止。
 
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for timed-out experts, quiet progress checks, respawn decisions, and absorbed results.
-- [ ] Reject final acceptance that treats timeout as a valid expert result.
-- [ ] Document bounded wait and closure behavior.
-- [ ] Run expert lifecycle tests and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for timed-out experts, quiet progress checks, respawn decisions, and absorbed results.
+- [x] Reject final acceptance that treats timeout as a valid expert result.
+- [x] Document bounded wait and closure behavior.
+- [x] Run expert lifecycle tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -93,5 +94,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-31 Phase 4 最终收口：`close-phase4-final-20260531` 确认本子方案无未完成 checklist，相关实现证据已保留在当前本地 `main`，剩余门禁为显式远端发布批准。
+- 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-30 Stage C implementation: added timeout-as-non-evidence text checks, structured expert lifecycle audit handling events, same-agent absorption/closure validation, provider pacing backpressure validation, focused tests, repository guards, OpenSpec guard, and local gate evidence before local main integration.
 <!-- EVIDENCE_INDEX_END -->

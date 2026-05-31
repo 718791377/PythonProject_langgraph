@@ -35,20 +35,23 @@ Give the orchestration collaboration evidenceguard and bilingual OpenSpec stable
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented
+Stage: Stage C collaboration evidenceguard and bilingual OpenSpec surface package
+Owner session: codex-collaboration-evidenceguard-bilingual-openspec-20260530
+Current gate: implemented, locally validated, fast-forward merged into local `main`, and locally closed out; remote publication remains out of scope and is not authorized.
+Stage C entry condition: satisfied by the 2026-05-30 user request to continue and locally merge this child plan implementation.
+Local main integration: implementation commit `5506185310411a8b63c5c59c90365fc68ded57d1` is contained in current local `main`; the local feature worktree and feature branch were removed, and the completed claim was archived at `.omx/session-claims/completed/implement-collaboration-evidenceguard-bilingual-openspec-20260530.json`.
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
 
 - tools/check_orchestration_collaboration_evidenceguard.py
 - test/fixtures/orchestration_*
+- test/check_orchestration_collaboration_evidenceguard.test.py
 - openspec/specs/codex-user-level-orchestration-activation-policy/spec.md
 - openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md
+- tools/ci/ci_test_manifest.json
 
 ## Hotspot Serialization
 
@@ -64,16 +67,16 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 3.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Inventory evidenceguard requirements that are not already owned by narrower Phase 4 child plans.
-- [ ] Add bilingual OpenSpec spec statements for evidenceguard authority and saved evidence requirements.
-- [ ] Register new evidenceguard fixtures and CI tests in one serialized update.
-- [ ] Run OpenSpec guard, evidenceguard tests, mirrored CI check, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Inventory evidenceguard requirements that are not already owned by narrower Phase 4 child plans.
+- [x] Add bilingual OpenSpec spec statements for evidenceguard authority and saved evidence requirements.
+- [x] Register new evidenceguard fixtures and CI tests in one serialized update.
+- [x] Run OpenSpec guard, evidenceguard tests, mirrored CI check, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -98,4 +101,6 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-30 Stage C implementation package: adds required evidenceguard fixture registration, a manifest-registered collaboration evidenceguard regression test, and bilingual OpenSpec fixture-surface requirements; local gate and local MR review evidence are recorded in the session response and worktree receipt.
+- 2026-05-31 local status closeout: confirmed implementation commit `5506185310411a8b63c5c59c90365fc68ded57d1` is contained in local `main`, removed the local feature worktree and feature branch, archived the completed claim under `.omx/session-claims/completed/`, retained rollback refs, and kept the remote-publication gate closed.
 <!-- EVIDENCE_INDEX_END -->

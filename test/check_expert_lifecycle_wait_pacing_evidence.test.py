@@ -156,6 +156,38 @@ class ExpertLifecycleWaitPacingEvidenceCheckTest(unittest.TestCase):
             payload["errors"],
         )
 
+    def test_timeout_accepted_as_result_evidence_fails(self) -> None:
+        root = self.make_root("timeout-as-result")
+        path = self.write_evidence(
+            root,
+            "expert timed out after bounded wait and accepted as valid expert result evidence. "
+            "wait_agent used bounded wait windows: 30s; total wait bound about 180s. "
+            "main session took over verification.\n",
+        )
+
+        payload = module.run_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertIn("timeout", payload["detected"])
+        self.assertTrue(
+            any("valid expert result" in error or "verification evidence" in error for error in payload["errors"]),
+            payload["errors"],
+        )
+
+    def test_timeout_non_evidence_with_takeover_passes(self) -> None:
+        root = self.make_root("timeout-non-evidence")
+        path = self.write_evidence(
+            root,
+            "expert timed out; not used as evidence. "
+            "wait_agent used bounded wait windows: 30s; total wait bound about 180s. "
+            "main session took over verification.\n",
+        )
+
+        payload = module.run_check(path)
+
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertIn("timeout", payload["detected"])
+
     def test_no_markers_warns_without_failing(self) -> None:
         root = self.make_root("no-markers")
         path = self.write_evidence(root, "No delegated expert work occurred in this local-only task.\n")

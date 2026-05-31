@@ -36,11 +36,11 @@ Filter resumed session context so stale canary text, mojibake, and legacy runtim
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Stage: Stage C implementation package
+Owner session: implement-session-replay-context-filtering-20260530
+Current gate: local validation and local main integration in progress
+Stage C entry condition: satisfied by the 2026-05-30 user request to continue, commit locally, and merge into local main
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -62,16 +62,16 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 2.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Define replay filtering inputs and outputs for resumed legacy sessions.
-- [ ] Add tests for stale canary, mojibake, and stale MCP assumptions.
-- [ ] Implement or update filtering helper/checker boundaries.
-- [ ] Run context canary, mojibake, and local gate checks.
+- [x] Confirm this child plan after local main integration.
+- [x] Define replay filtering inputs and outputs for resumed legacy sessions.
+- [x] Add tests for stale canary, mojibake, and stale MCP assumptions.
+- [x] Implement or update filtering helper/checker boundaries.
+- [x] Run context canary, mojibake, and local gate checks.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,5 +95,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Stage C implementation: added `tools/session_replay_context_filtering.py`, replay-filtering tests, CI manifest registration, and governance contract text; local validation evidence is kept in command output and git history.
+- 2026-05-30 Local validation: `tools/session_replay_context_filtering.py`, context-retention canary, startup mojibake, replay-filtering tests, and `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` passed before commit.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

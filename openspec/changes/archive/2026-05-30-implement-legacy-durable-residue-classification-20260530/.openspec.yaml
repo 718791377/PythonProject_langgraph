@@ -1,0 +1,6 @@
+name: implement-legacy-durable-residue-classification-20260530
+status: archived
+x_change_class: tooling
+x_code_evidence_paths:
+  - tools/check_worktree_task_receipt.py
+  - test/check_worktree_task_receipt.test.py

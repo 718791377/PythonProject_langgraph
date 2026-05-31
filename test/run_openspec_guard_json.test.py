@@ -41,6 +41,7 @@ GUARD_STEPS = [
     ("check_role_routing_directive_evidence", "check_role_routing_directive_evidence.py", "role_routing_directive_evidence"),
     ("check_delegation_wait_discipline_evidence", "check_delegation_wait_discipline_evidence.py", "delegation_wait_discipline_evidence"),
     ("check_durable_artifact_state_surfaces", "check_durable_artifact_state_surfaces.py", "durable_artifact_state_surfaces"),
+    ("check_repo_local_selector_ownership", "check_repo_local_selector_ownership.py", "repo_local_selector_ownership"),
     (
         "check_orchestration_collaboration_evidenceguard",
         "check_orchestration_collaboration_evidenceguard.py",
@@ -49,6 +50,11 @@ GUARD_STEPS = [
     ("check_leader_session_scope_evidence", "check_leader_session_scope_evidence.py", "leader_session_scope_evidence"),
     ("check_capability_switch_chain", "check_capability_switch_chain.py", "capability_switch_chain"),
     ("check_windows_cleanup_output_control", "check_windows_cleanup_output_control.py", "windows_cleanup_output_control"),
+    (
+        "check_launcher_payload_context_boundary",
+        "check_launcher_payload_context_boundary.py",
+        "launcher_payload_context_boundary",
+    ),
     ("check_plugin_modules_skill", "check_plugin_modules_skill.py", "plugin_modules_skill"),
     ("check_pyside6_shared_runtime_contract", "check_pyside6_shared_runtime_contract.py", "pyside6_shared_runtime_contract"),
     ("check_pyside6_gui_template_contract", "check_pyside6_gui_template_contract.py", "pyside6_gui_template_contract"),
@@ -145,8 +151,10 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["steps"][12]["step"], "check_skills_audit_output_retention")
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
         self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_repo_local_selector_ownership", [step["step"] for step in payload["steps"]])
         self.assertIn("check_orchestration_collaboration_evidenceguard", [step["step"] for step in payload["steps"]])
         self.assertIn("check_local_main_retire_lock", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_launcher_payload_context_boundary", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:
         root = self.make_root("guard-json-fail")

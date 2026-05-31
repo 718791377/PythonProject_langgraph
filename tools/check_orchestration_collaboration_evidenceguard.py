@@ -12,14 +12,32 @@ CHECK_NAME = "orchestration_collaboration_evidenceguard"
 REGISTRY_RULE_ID = "orchestration-collaboration-evidenceguard"
 GUARD_STEP = "check_orchestration_collaboration_evidenceguard"
 DEFAULT_FIXTURE_DIR = Path("test/fixtures/orchestration_prompt_independent_collaboration_parity")
-EXPERT_LIFECYCLE_EVENT_NAMES = {"spawn", "wait", "timeout", "result", "absorbed", "close"}
+EXPERT_LIFECYCLE_HANDLING_EVENTS = {"inspect", "redirect", "respawn", "durable_handoff", "main_session_takeover"}
+EXPERT_LIFECYCLE_EVENT_NAMES = {
+    "spawn",
+    "wait",
+    "progress_check",
+    "timeout",
+    "provider_pacing",
+    "result",
+    "absorbed",
+    "close",
+    *EXPERT_LIFECYCLE_HANDLING_EVENTS,
+}
 EXPERT_LIFECYCLE_REQUIRED_STRING_FIELDS: dict[str, tuple[str, ...]] = {
     "spawn": ("role", "task_summary"),
     "wait": ("agent_id",),
+    "progress_check": ("agent_id", "status"),
     "timeout": ("agent_id", "classification"),
+    "provider_pacing": ("classification", "handling"),
     "result": ("agent_id", "summary"),
     "absorbed": ("agent_id", "leader_decision"),
     "close": ("agent_id", "retention_policy"),
+    "inspect": ("agent_id", "summary"),
+    "redirect": ("agent_id", "summary"),
+    "respawn": ("agent_id", "summary"),
+    "durable_handoff": ("agent_id", "summary"),
+    "main_session_takeover": ("agent_id", "summary"),
 }
 EXPERT_LIFECYCLE_REQUIRED_LIST_FIELDS: dict[str, tuple[str, ...]] = {
     "spawn": ("scope", "non_goals"),
@@ -27,16 +45,28 @@ EXPERT_LIFECYCLE_REQUIRED_LIST_FIELDS: dict[str, tuple[str, ...]] = {
 }
 
 REQUIRED_FIXTURES = {
+    "cold_start_read_order_valid.json",
     "doc_update_without_collaboration_phrase.json",
     "doc_update_with_collaboration_phrase.json",
-    "multi_slice_without_collaboration_phrase.json",
-    "multi_slice_with_collaboration_phrase.json",
+    "durable_persistent_complete_valid.json",
+    "expert_lifecycle_audit_valid.json",
+    "qualified_governance_update_without_collaboration_phrase.json",
+    "qualified_governance_update_with_collaboration_phrase.json",
+    "missing_reminder_excuse_invalid.json",
     "explicit_omx_without_threshold.json",
     "explicit_langgraph_single_slice.json",
+    "langgraph_state_release_valid.json",
     "main_session_escalation_pending.json",
     "main_session_escalation_granted.json",
     "main_session_escalation_timed_out.json",
     "main_session_escalation_not_needed.json",
+    "conversation_surface_localized_routing_trace_invalid.json",
+    "conversation_surface_prose_only_updated_plan_invalid.json",
+    "conversation_surface_routing_trace_label_valid.json",
+    "conversation_surface_updated_plan_checklist_valid.json",
+    "expert_lifecycle_timeout_pacing_valid.json",
+    "multi_slice_without_collaboration_phrase.json",
+    "multi_slice_with_collaboration_phrase.json",
 }
 
 REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
@@ -72,14 +102,17 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.md": [
         "Prompt-independent collaboration parity SHALL be checker-backed",
+        "Registered collaboration evidenceguard fixtures SHALL be checker-backed",
         "durable/persistent evidenceguard",
         "LangGraph state release",
         "tools/check_orchestration_collaboration_evidenceguard.py",
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md": [
         "prompt-independent collaboration parity",
+        "Registered collaboration evidenceguard fixtures",
         "durable/persistent evidenceguard",
         "LangGraph state release",
+        "双语 OpenSpec heading parity",
         "tools/check_orchestration_collaboration_evidenceguard.py",
     ],
 }
@@ -107,13 +140,73 @@ APPROVAL_TIMEOUT_RISKS = {"none", "low", "medium", "high", "expired"}
 NO_APPROVAL_RECEIPT_VALUES = {"", "none", "not_needed", "n/a", "na", "-"}
 FORBIDDEN_MISSING_REMINDERS = (
     "the user did not request parallelism",
+    "the user did not request experts",
+    "the user did not request expert",
     "the user did not request subagents",
+    "the user did not request omx",
+    "the user did not request langgraph",
+    "the user did not request durable_team",
+    "the user did not request durable team",
+    "the user did not request persistent team",
     "user did not request parallelism",
+    "user did not request experts",
+    "user did not request expert",
     "user did not request subagents",
+    "user did not request omx",
+    "user did not request langgraph",
+    "user did not request durable_team",
+    "user did not request durable team",
+    "user did not request persistent team",
     "user did not ask for parallelism",
+    "user did not ask for experts",
+    "user did not ask for expert",
     "user did not ask for subagents",
+    "user did not ask for omx",
+    "user did not ask for langgraph",
+    "user did not ask for durable_team",
+    "user did not ask for durable team",
+    "user did not ask for persistent team",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42\u5e76\u884c",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42\u4e13\u5bb6",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42\u5b50\u4ee3\u7406",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42omx",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42langgraph",
+    "\u7528\u6237\u6ca1\u6709\u63d0\u5230\u5e76\u884c",
+    "\u7528\u6237\u672a\u8981\u6c42\u5e76\u884c",
+    "\u7528\u6237\u672a\u8981\u6c42\u4e13\u5bb6",
+    "\u7528\u6237\u672a\u8981\u6c42\u5b50\u4ee3\u7406",
 )
-COLLABORATION_PHRASES = ("experts", "durable_team", "persistent team", "subagents", "parallel")
+COLLABORATION_PHRASES = (
+    "experts",
+    "expert",
+    "durable_team",
+    "durable team",
+    "persistent team",
+    "subagents",
+    "subagent",
+    "parallel",
+)
+
+CONVERSATION_SURFACES = {"routing_trace", "updated_plan"}
+ROUTING_TRACE_FORBIDDEN_LABEL_PREFIXES = (
+    "\u8def\u7531\u8ddf\u8e2a",
+    "\u8def\u7531\u8ffd\u8e2a",
+    "\u8def\u7531\u8f68\u8ff9",
+)
+UPDATED_PLAN_FORBIDDEN_LABEL_PREFIXES = ("\u66f4\u65b0\u8ba1\u5212", "\u8ba1\u5212\u66f4\u65b0")
+UPDATED_PLAN_CHECKLIST_MARKERS = (
+    "\u25a1",
+    "\u2610",
+    "\u2611",
+    "\u2714",
+    "\u25e7",
+    "- [ ]",
+    "- [x]",
+    "- [X]",
+    "pending",
+    "in_progress",
+    "completed",
+)
 
 
 def utc_now() -> str:
@@ -467,12 +560,22 @@ def validate_expert_lifecycle_case(case: dict[str, Any], errors: list[str], labe
     if not isinstance(events, list) or not events:
         errors.append(f"{label} missing non-empty events list.")
         return
+
     names: list[str] = []
+    waits_by_agent: dict[str, int] = {}
+    quiet_checks_by_agent: dict[str, int] = {}
+    handling_by_agent: dict[str, set[str]] = {}
+    result_agents: set[str] = set()
+    absorbed_agents: set[str] = set()
+    closed_agents: set[str] = set()
+    timeout_agents: set[str] = set()
+
     for index, event in enumerate(events, start=1):
         if not isinstance(event, dict):
             errors.append(f"{label}.events[{index}] must be an object.")
             continue
         name = lower(event.get("event"))
+        agent_id = str(event.get("agent_id") or "").strip()
         if not name:
             errors.append(f"{label}.events[{index}] missing event name.")
         elif name not in EXPERT_LIFECYCLE_EVENT_NAMES:
@@ -494,18 +597,115 @@ def validate_expert_lifecycle_case(case: dict[str, Any], errors: list[str], labe
                 require_non_empty=name == "spawn",
             )
         names.append(name)
-        if name == "timeout" and lower(event.get("classification")) != "non-evidence":
-            errors.append(f"{label}.events[{index}] timeout must be classified as non-evidence.")
-    if "result" in names and "absorbed" not in names:
-        errors.append(f"{label} result event requires absorbed event.")
-    if "absorbed" in names and "close" not in names and not case.get("preserved_thread_reason"):
-        errors.append(f"{label} absorbed expert requires close event or preserved_thread_reason.")
+
+        if name == "wait" and agent_id:
+            waits_by_agent[agent_id] = waits_by_agent.get(agent_id, 0) + 1
+        if name == "progress_check" and agent_id:
+            status = lower(event.get("status"))
+            if status in {"quiet", "silent", "no_progress", "no-progress", "stalled"}:
+                quiet_checks_by_agent[agent_id] = quiet_checks_by_agent.get(agent_id, 0) + 1
+        if name in EXPERT_LIFECYCLE_HANDLING_EVENTS and agent_id:
+            handling_by_agent.setdefault(agent_id, set()).add(name)
+        if name == "result" and agent_id:
+            result_agents.add(agent_id)
+        if name == "absorbed" and agent_id:
+            absorbed_agents.add(agent_id)
+        if name == "close" and agent_id:
+            closed_agents.add(agent_id)
+
+        if name == "timeout":
+            timeout_agents.add(agent_id)
+            if lower(event.get("classification")) != "non-evidence":
+                errors.append(f"{label}.events[{index}] timeout must be classified as non-evidence.")
+            if event.get("used_as_evidence") is True:
+                errors.append(f"{label}.events[{index}] timeout must not set used_as_evidence=true.")
+            decision = lower(event.get("leader_decision"))
+            if decision in {"accepted", "valid", "accepted_result", "used_as_evidence"}:
+                errors.append(f"{label}.events[{index}] timeout must not be accepted as valid result evidence.")
+            if not agent_id or waits_by_agent.get(agent_id, 0) == 0:
+                errors.append(f"{label}.events[{index}] timeout requires prior wait event for the same agent.")
+        if name == "provider_pacing":
+            if lower(event.get("classification")) != "backpressure":
+                errors.append(f"{label}.events[{index}] provider_pacing must be classified as backpressure.")
+            handling_text = lower(event.get("handling"))
+            has_disable = any(token in handling_text for token in ("disable", "avoid", "skip", "forbid", "not use"))
+            has_surface = any(token in handling_text for token in ("orchestration", "langgraph", "omx", "subagent", "expert"))
+            if has_disable and has_surface:
+                errors.append(
+                    f"{label}.events[{index}] provider_pacing handling must not disable orchestration, LangGraph, OMX, subagents, or experts."
+                )
+
+    for agent_id in sorted(result_agents):
+        if agent_id not in absorbed_agents:
+            errors.append(f"{label} result event for {agent_id} requires absorbed event for the same agent.")
+    for agent_id in sorted(absorbed_agents):
+        if agent_id not in closed_agents and not case.get("preserved_thread_reason"):
+            errors.append(f"{label} absorbed expert {agent_id} requires close event for the same agent or preserved_thread_reason.")
+    for agent_id in sorted(timeout_agents):
+        if not handling_by_agent.get(agent_id):
+            errors.append(
+                f"{label} timeout for {agent_id} requires inspect, redirect, respawn, durable_handoff, or main_session_takeover event for the same agent."
+            )
+    for agent_id, count in sorted(quiet_checks_by_agent.items()):
+        if count >= 2 and not handling_by_agent.get(agent_id):
+            errors.append(
+                f"{label} two quiet progress checks for {agent_id} require inspect, redirect, respawn, durable_handoff, or main_session_takeover."
+            )
     if "wait" in names:
         waits = [event for event in events if isinstance(event, dict) and lower(event.get("event")) == "wait"]
         if any(not isinstance(event.get("wait_seconds"), int) or event.get("wait_seconds") <= 0 for event in waits):
             errors.append(f"{label} wait events must include positive integer wait_seconds.")
         if not isinstance(case.get("total_wait_bound_seconds"), int) or int(case.get("total_wait_bound_seconds")) <= 0:
             errors.append(f"{label} wait evidence requires total_wait_bound_seconds.")
+
+
+def first_nonempty_line(text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return ""
+
+
+def conversation_surface_issues(surface: str, text: str) -> list[str]:
+    issues: list[str] = []
+    first_line = first_nonempty_line(text)
+    if surface == "routing_trace":
+        if not first_line.startswith("Routing trace"):
+            issues.append("routing trace surface must start with the literal `Routing trace` label.")
+        if any(first_line.startswith(prefix) for prefix in ROUTING_TRACE_FORBIDDEN_LABEL_PREFIXES):
+            issues.append("routing trace surface must not replace `Routing trace` with a localized label.")
+        return issues
+    if surface == "updated_plan":
+        if not first_line.startswith("Updated Plan"):
+            issues.append("updated plan surface must start with the literal `Updated Plan` label.")
+        if any(first_line.startswith(prefix) for prefix in UPDATED_PLAN_FORBIDDEN_LABEL_PREFIXES):
+            issues.append("updated plan surface must not replace `Updated Plan` with a localized label.")
+        text_lower = text.lower()
+        if not any(marker in text or marker in text_lower for marker in UPDATED_PLAN_CHECKLIST_MARKERS):
+            issues.append("updated plan surface must preserve checkbox/status-list semantics, not prose-only text.")
+        return issues
+    issues.append(f"unsupported conversation surface `{surface}`.")
+    return issues
+
+
+def validate_conversation_surface_case(case: dict[str, Any], errors: list[str], label: str) -> None:
+    require_string(case, "case_id", errors, label)
+    surface = lower(case.get("surface"))
+    if surface not in CONVERSATION_SURFACES:
+        errors.append(f"{label}.surface must be one of {sorted(CONVERSATION_SURFACES)}.")
+        return
+    text = require_string(case, "text", errors, label)
+    expected_valid = case.get("expected_valid")
+    if not isinstance(expected_valid, bool):
+        errors.append(f"{label}.expected_valid must be a boolean.")
+        return
+    issues = conversation_surface_issues(surface, text)
+    if expected_valid and issues:
+        for issue in issues:
+            errors.append(f"{label}: {issue}")
+    if not expected_valid and not issues:
+        errors.append(f"{label} is expected to be invalid but passed conversation surface validation.")
 
 
 CASE_VALIDATORS = {
@@ -515,6 +715,7 @@ CASE_VALIDATORS = {
     "langgraph_state_release": validate_langgraph_release_case,
     "main_session_escalation_visibility": validate_main_session_escalation_case,
     "expert_lifecycle_audit": validate_expert_lifecycle_case,
+    "conversation_surface": validate_conversation_surface_case,
 }
 
 
@@ -550,14 +751,17 @@ def run_fixture_check(root: Path, fixture_dir: Path | None = None) -> dict[str, 
         if payload is None:
             continue
         checked_cases.append(path.name)
-        before = len(errors)
-        route = validate_case(payload, errors, path.name)
-        if route is not None and lower(payload.get("case_type")) == "activation_parity":
+        case_errors: list[str] = []
+        route = validate_case(payload, case_errors, path.name)
+        if payload.get("expected_failure") is True:
+            if not case_errors:
+                errors.append(f"{path.name} is marked expected_failure but passed validation.")
+            continue
+        errors.extend(case_errors)
+        if route is not None and not case_errors and lower(payload.get("case_type")) == "activation_parity":
             group = str(payload.get("parity_group")).strip()
             if not group.startswith("explicit_"):
                 parity_routes.setdefault(group, []).append((bool(payload.get("collaboration_phrase_present")), route, path.name))
-        if len(errors) == before and payload.get("expected_failure") is True:
-            errors.append(f"{path.name} is marked expected_failure but passed validation.")
 
     for group, entries in sorted(parity_routes.items()):
         if len(entries) < 2:

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "template_id": "durable-routing-smoke-gate-template",
+  "release_floor": "R0.6.0",
+  "purpose": "Negative fixture missing durable read-only guard text.",
+  "defaults": {
+    "routing_mode": "read_only",
+    "mutation_allowed": false
+  },
+  "allowed_routing_modes": [
+    "read_only",
+    "dry_run",
+    "apply"
+  ],
+  "required_fields": [
+    "target_repository",
+    "phase",
+    "task",
+    "operator_consent_boundary",
+    "routing_mode",
+    "mutation_allowed",
+    "validation_path",
+    "rollback_path"
+  ],
+  "field_descriptions": {
+    "target_repository": "Repository root that owns source, OpenSpec artifacts, and repo-local durable state for the exercise.",
+    "phase": "Project phase that drives routing thresholds, such as read-context, verify-accept, execute-parallel, integrate-converge, or stabilize.",
+    "task": "Concrete work item or validation question evaluated by the routing plan.",
+    "operator_consent_boundary": "Explicit boundary between read-only planning and mutating actions such as -Apply, .omx/state writes, or durable-team launch.",
+    "routing_mode": "Whether the future exercise is read-only, dry-run, or explicitly apply-capable.",
+    "mutation_allowed": "Boolean consent flag; default is false and may become true only through reviewed change plus explicit operator consent.",
+    "validation_path": "Commands, checks, or evidence required to prove the future exercise result.",
+    "rollback_path": "Recovery steps if a future exercise is misconfigured or must be reverted."
+  },
+  "read_only_guards": [
+    "Keep this checker static and read-only."
+  ]
+}

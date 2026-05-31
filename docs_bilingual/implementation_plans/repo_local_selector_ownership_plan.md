@@ -36,11 +36,11 @@ Ensure active durable selectors are repository-local and cannot leak across repo
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Stage: Stage C implementation package
+Owner session: main-codex-repo-local-selector-ownership-20260530
+Current gate: local validation passed; ready for local MR review and local main integration; remote publication remains out of scope
+Stage C entry condition: satisfied by user confirmation to continue repo_local_selector_ownership_plan on 2026-05-30
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -62,16 +62,16 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 3.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for same-repo, cross-repo, and stale selector ownership.
-- [ ] Update checker logic to fail closed on cross-repository selector adoption.
-- [ ] Document safe selector inspection and no-auto-adoption behavior.
-- [ ] Run durable state surface checks and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for same-repo, cross-repo, and stale selector ownership.
+- [x] Update checker logic to fail closed on cross-repository selector adoption.
+- [x] Document safe selector inspection and no-auto-adoption behavior.
+- [x] Run durable state surface checks and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -96,4 +96,6 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-30 Stage C implementation start: active session claim `main-codex-repo-local-selector-ownership-20260530` created before tracked write work; implementation adds repo-local selector fixtures, checker, guard wiring, and governance documentation.
+- 2026-05-30 Local validation: selector ownership checker, durable artifact surface tests, OpenSpec guard JSON tests, precommit review checks, worktree receipt check, and `tools/ci/local_gate.ps1` passed before feature commit.
 <!-- EVIDENCE_INDEX_END -->

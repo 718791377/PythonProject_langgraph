@@ -118,10 +118,12 @@ def main() -> int:
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
     delegation_wait_discipline_evidence_script = root / "tools" / "check_delegation_wait_discipline_evidence.py"
     durable_artifact_state_surfaces_script = root / "tools" / "check_durable_artifact_state_surfaces.py"
+    repo_local_selector_ownership_script = root / "tools" / "check_repo_local_selector_ownership.py"
     orchestration_collaboration_evidenceguard_script = root / "tools" / "check_orchestration_collaboration_evidenceguard.py"
     leader_session_scope_evidence_script = root / "tools" / "check_leader_session_scope_evidence.py"
     capability_switch_chain_script = root / "tools" / "check_capability_switch_chain.py"
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
+    launcher_payload_context_boundary_script = root / "tools" / "check_launcher_payload_context_boundary.py"
     plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
     pyside6_shared_runtime_contract_script = root / "tools" / "check_pyside6_shared_runtime_contract.py"
     pyside6_gui_template_contract_script = root / "tools" / "check_pyside6_gui_template_contract.py"
@@ -193,6 +195,8 @@ def main() -> int:
         raise SystemExit(f"Missing delegation/wait discipline evidence check script: {delegation_wait_discipline_evidence_script}")
     if not durable_artifact_state_surfaces_script.exists():
         raise SystemExit(f"Missing durable artifact/state-surface evidence check script: {durable_artifact_state_surfaces_script}")
+    if not repo_local_selector_ownership_script.exists():
+        raise SystemExit(f"Missing repo-local selector ownership check script: {repo_local_selector_ownership_script}")
     if not orchestration_collaboration_evidenceguard_script.exists():
         raise SystemExit(f"Missing orchestration collaboration evidenceguard script: {orchestration_collaboration_evidenceguard_script}")
     if not leader_session_scope_evidence_script.exists():
@@ -201,6 +205,8 @@ def main() -> int:
         raise SystemExit(f"Missing capability-switch chain check script: {capability_switch_chain_script}")
     if not windows_cleanup_output_control_script.exists():
         raise SystemExit(f"Missing Windows cleanup-output control check script: {windows_cleanup_output_control_script}")
+    if not launcher_payload_context_boundary_script.exists():
+        raise SystemExit(f"Missing launcher payload context-boundary check script: {launcher_payload_context_boundary_script}")
     if not plugin_modules_skill_script.exists():
         raise SystemExit(f"Missing plugin-modules skill check script: {plugin_modules_skill_script}")
     if not pyside6_shared_runtime_contract_script.exists():
@@ -402,6 +408,11 @@ def main() -> int:
                 "OpenSpec guard failed during durable artifact/state-surface evidence verification.",
             ),
             (
+                "check_repo_local_selector_ownership",
+                [str(python_exe), str(repo_local_selector_ownership_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during repo-local selector ownership verification.",
+            ),
+            (
                 "check_orchestration_collaboration_evidenceguard",
                 [str(python_exe), str(orchestration_collaboration_evidenceguard_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during orchestration collaboration evidenceguard verification.",
@@ -420,6 +431,11 @@ def main() -> int:
                 "check_windows_cleanup_output_control",
                 [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Windows cleanup-output control verification.",
+            ),
+            (
+                "check_launcher_payload_context_boundary",
+                [str(python_exe), str(launcher_payload_context_boundary_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during launcher payload context-boundary verification.",
             ),
             (
                 "check_plugin_modules_skill",
@@ -735,6 +751,11 @@ def main() -> int:
         failure_message="OpenSpec guard failed during durable artifact/state-surface evidence verification.",
     )
     run_checked(
+        [str(python_exe), str(repo_local_selector_ownership_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during repo-local selector ownership verification.",
+    )
+    run_checked(
         [str(python_exe), str(orchestration_collaboration_evidenceguard_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during orchestration collaboration evidenceguard verification.",
@@ -750,6 +771,12 @@ def main() -> int:
         [str(python_exe), str(windows_cleanup_output_control_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Windows cleanup-output control verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(launcher_payload_context_boundary_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during launcher payload context-boundary verification.",
     )
 
     run_checked(

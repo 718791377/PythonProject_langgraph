@@ -35,12 +35,9 @@ Keep the parent phase map, child-plan registry, dependency order, and session-li
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Phase 0 closure implemented in local feature branch
-Owner session: `phase0-plan-index-closure-20260530`
-Current gate: validate the parent execution index, dependency edges, Phase 2 admission statement, local gates, and local MR review before local `main` integration.
-Stage C entry condition: user confirmed Phase 0 must complete before Phase 2; this closure updates the parent map.
-Last updated: 2026-05-30
+Stage: Phase 0 is closed; this file remains active as the parent-plan-family index-maintenance child plan
+Owner session: `codex-align-complete-flow-parent-plans-20260530` for this complete-flow alignment of the parent-plan family.
+Current gate: update parent current status, Phase 2+ admission notes, child-plan status index, and every child plan's local-main integration semantics; after checkers pass, commit and merge to local `main`, then stop at the remote publication gate.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -61,11 +58,12 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 2.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
+- [x] 2026-05-30 complete-flow alignment: maintain the parent index and update child-plan semantics from fixed-leader integration to session-owned self-retire protected by `local-main-retire.lock`.
 - [x] Confirm this child plan after local main integration.
 - [x] Add the two-level hierarchy diagram to the parent plan and clarify that this index plan is a sibling child plan, not a second-level parent.
 - [x] Absorb Pi family / oh-my-pi / CLI harness reference-only boundaries into the parent plan.
@@ -97,6 +95,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 complete-flow alignment: `codex-align-complete-flow-parent-plans-20260530` claimed this index child plan to update parent and child-plan status; ROB entry `rob-align-complete-flow-parent-plans-20260530` records the local candidate package.
 - 2026-05-30 Phase 0 index closure: updated the parent plan current status, Phase 0/Phase 1 completion evidence, compact child-plan status index, dependency/admission statement, and Phase 2 gate condition.
 - 2026-05-29 index supplement: registered the Phase 1A complete-flow scheduler/ROB child plan as a sibling child implementation_plan under the parent map.
 - 2026-05-28 document-governance update: main Codex leader session claimed this index child plan to update the parent hierarchy diagram and Pi/harness reference-only boundary; commit recorded in local git history.

@@ -14,6 +14,8 @@ ALLOWED_ON_OFF = {"on", "off"}
 ALLOWED_DURABLE_BACKENDS = {"langgraph", "native_omx", "none", ""}
 READY_BACKEND_STATUSES = {"ready", "running", "selected", "ok"}
 UNREADY_BACKEND_STATUSES = {"blocked", "failed", "error", "unavailable", "missing"}
+READINESS_FIELDS = ("installed", "enabled", "selected", "ready")
+READINESS_BACKENDS = ("native_omx", "langgraph")
 
 
 def default_state_file() -> Path:
@@ -162,17 +164,95 @@ def validate_backend_context(
     }
 
 
+def as_bool_field(data: dict[str, Any], key: str, errors: list[str], label: str) -> bool | None:
+    if key not in data:
+        errors.append(f"{label} missing required boolean field `{key}`.")
+        return None
+    value = data.get(key)
+    if type(value) is not bool:
+        errors.append(f"{label} field `{key}` must be boolean, not {type(value).__name__}.")
+        return None
+    return value
+
+
+def validate_capability_readiness_projection(
+    data: dict[str, Any] | None,
+    errors: list[str],
+    warnings: list[str],
+    *,
+    label: str,
+) -> dict[str, Any] | None:
+    if data is None:
+        return None
+
+    readiness = data.get("capability_readiness") if isinstance(data.get("capability_readiness"), dict) else data
+    if not isinstance(readiness, dict):
+        errors.append(f"{label} must be an object or contain an object-valued `capability_readiness` field.")
+        return None
+
+    readiness_fields = readiness.get("readiness_fields")
+    normalized_fields: list[str] = []
+    if not isinstance(readiness_fields, list):
+        errors.append(f"{label} must publish `readiness_fields` as an array.")
+    else:
+        normalized_fields = [str(item) for item in readiness_fields]
+        for field in READINESS_FIELDS:
+            if field not in normalized_fields:
+                errors.append(f"{label} readiness_fields missing required distinct state field `{field}`.")
+
+    selected_backend = as_string(readiness, "selected_backend")
+    if selected_backend and selected_backend not in (ALLOWED_DURABLE_BACKENDS - {""}):
+        add_value_error(errors, "capability_readiness.selected_backend", selected_backend, ALLOWED_DURABLE_BACKENDS)
+
+    backends: dict[str, Any] = {}
+    for backend_name in READINESS_BACKENDS:
+        record = readiness.get(backend_name)
+        record_label = f"{label}.{backend_name}"
+        if not isinstance(record, dict):
+            errors.append(f"{record_label} must be an object with installed/enabled/selected/ready booleans.")
+            continue
+        values: dict[str, bool | None] = {}
+        for field in READINESS_FIELDS:
+            values[field] = as_bool_field(record, field, errors, record_label)
+
+        if all(values[field] is not None for field in READINESS_FIELDS):
+            expected_ready = bool(values["installed"] and values["enabled"] and values["selected"])
+            if values["ready"] is not expected_ready:
+                errors.append(
+                    f"{record_label}.ready must equal installed && enabled && selected; "
+                    f"got installed={values['installed']}, enabled={values['enabled']}, "
+                    f"selected={values['selected']}, ready={values['ready']}."
+                )
+            if selected_backend == backend_name and values["selected"] is not True:
+                errors.append(
+                    f"{label}.selected_backend={backend_name} requires {record_label}.selected=true."
+                )
+
+        backends[backend_name] = {
+            field: values.get(field) for field in READINESS_FIELDS
+        }
+
+    return {
+        "selected_backend": selected_backend,
+        "readiness_fields": normalized_fields,
+        "backends": backends,
+    }
+
+
 def run_check(
     root: Path,
     state_file: Path | None = None,
     backend_file: Path | None = None,
+    readiness_file: Path | None = None,
     *,
     require_state: bool = False,
     require_backend: bool = False,
+    require_readiness: bool = False,
 ) -> dict[str, Any]:
     root = root.resolve()
     state_path = (state_file or default_state_file()).expanduser()
     backend_path = backend_file or default_backend_file(root)
+    readiness_path = readiness_file.expanduser() if readiness_file is not None else None
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -180,6 +260,27 @@ def run_check(
     state_summary = validate_state(state_data, errors, warnings) if state_data is not None else None
     backend_data = load_json(backend_path, errors, warnings, "repo-local LangGraph backend context", required=require_backend)
     backend_summary = validate_backend_context(backend_data, state_summary, errors, warnings)
+    readiness_data = (
+        load_json(readiness_path, errors, warnings, "durable capability readiness projection", required=require_readiness)
+        if readiness_path is not None
+        else None
+    )
+    if readiness_data is None and require_readiness and readiness_path is None:
+        errors.append("durable capability readiness projection JSON file is required but no --readiness-file was provided.")
+    readiness_source = readiness_data
+    readiness_label = "durable capability readiness projection"
+    if readiness_source is None and backend_data is not None and isinstance(backend_data.get("capability_readiness"), dict):
+        readiness_source = backend_data
+        readiness_label = "repo-local backend capability_readiness"
+    if readiness_source is None and state_data is not None and isinstance(state_data.get("capability_readiness"), dict):
+        readiness_source = state_data
+        readiness_label = "user-level state capability_readiness"
+    readiness_summary = validate_capability_readiness_projection(
+        readiness_source,
+        errors,
+        warnings,
+        label=readiness_label,
+    ) if readiness_source is not None else None
 
     return {
         "schema_version": 1,
@@ -189,8 +290,10 @@ def run_check(
         "root": str(root),
         "state_file": str(state_path),
         "backend_file": str(backend_path),
+        "readiness_file": str(readiness_path) if readiness_path is not None else None,
         "state": state_summary,
         "backend_context": backend_summary,
+        "capability_readiness": readiness_summary,
         "errors": errors,
         "warnings": warnings,
         "counts": {
@@ -198,6 +301,7 @@ def run_check(
             "warnings": len(warnings),
             "state_loaded": 1 if state_data is not None else 0,
             "backend_context_loaded": 1 if backend_data is not None else 0,
+            "capability_readiness_loaded": 1 if readiness_source is not None else 0,
         },
     }
 
@@ -207,8 +311,10 @@ def main() -> int:
     parser.add_argument("--root", default=".", help="Repository root; repo-local LangGraph backend context defaults under <root>/.omx/state/langgraph/backend.json.")
     parser.add_argument("--state-file", default=None, help="Override the user-level team-mode capability state JSON file.")
     parser.add_argument("--backend-file", default=None, help="Override the repo-local LangGraph backend context JSON file.")
+    parser.add_argument("--readiness-file", default=None, help="Validate a durable capability readiness projection JSON file.")
     parser.add_argument("--require-state", action="store_true", help="Fail when the capability state JSON file is missing.")
     parser.add_argument("--require-backend", action="store_true", help="Fail when the repo-local LangGraph backend context JSON file is missing.")
+    parser.add_argument("--require-readiness", action="store_true", help="Fail when no durable capability readiness projection is loaded.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")
     args = parser.parse_args()
 
@@ -216,8 +322,10 @@ def main() -> int:
         Path(args.root),
         Path(args.state_file) if args.state_file else None,
         Path(args.backend_file) if args.backend_file else None,
+        Path(args.readiness_file) if args.readiness_file else None,
         require_state=args.require_state,
         require_backend=args.require_backend,
+        require_readiness=args.require_readiness,
     )
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))

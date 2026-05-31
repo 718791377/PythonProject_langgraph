@@ -35,12 +35,12 @@ Support multi-session parallel implementation using only Git worktrees, registry
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-29
+Status: implementation-in-progress
+Stage: Stage C portable no-backend implementation package
+Owner session: codex-portable-no-backend-parallel-session-20260530
+Current gate: focused tests, claim-lock and receipt checks, and local gate passed; commit the package, run local MR review, then merge into local main. Remote publication remains out of scope.
+Stage C entry condition: satisfied by the 2026-05-30 user request to continue and locally merge this child-plan implementation
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -48,11 +48,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - tools/claim_implementation_plan.py
 - tools/check_implementation_plan_claim_lock.py
 - docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md
-- test/*portable_parallel*
+- test/check_implementation_plan_claim_lock.test.py
 
 ## 上游调度契约
 
-Portable no-backend session 消费 Phase 1A scheduler/ROB 契约：无后端 claim 只有在预测写集和实际写集后续能通过 leader-owned ROB queue retire 时，才允许并行执行。
+Portable no-backend session 消费 Phase 1A scheduler/ROB 契约：无后端 claim 只有在预测写集和实际写集后续能通过 `local-main-retire.lock` 保护的 session-owned ROB 流程自退休时，才允许并行执行。
 
 
 ## 热点串行规则
@@ -67,17 +67,17 @@ Portable no-backend session 消费 Phase 1A scheduler/ROB 契约：无后端 cla
 - 本阶段最大并行 session 数：3。
 - 本子方案是一个认领单元：同一时间只能有一个 active session 认领。
 - 只有认领不同子方案且写入范围互不重叠时，才允许并行实施。
-- 本地 `main` 合入仍由 leader 串行执行。
+- 本地 `main` 写入仍然串行，但由 `local-main-retire.lock` 保护；持锁 session 只能自退休自己拥有且已 ready 的候选包，并在远端发布门停止。
 
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Define no-backend session startup, claim, release, and cleanup steps.
-- [ ] Add tests proving two sessions cannot claim the same child plan but can claim different child plans.
-- [ ] Update governance docs with the portable fallback path.
-- [ ] Run claim lock, worktree receipt, and local gate checks.
-- [ ] runtime 集成前，将 portable claim 启动和状态输出对齐 Phase 1A scheduler/ROB entry 模型。
+- [x] Confirm this child plan for current local implementation.
+- [x] Define no-backend session startup, claim, release, and cleanup steps.
+- [x] Add tests proving the same child plan cannot have two active sessions while different child plans can be claimed in parallel.
+- [x] Update governance docs with the portable fallback path.
+- [x] Run claim lock, worktree receipt, and local gate checks.
+- [x] Align portable claim startup and status output with the Phase 1A scheduler/ROB entry model before runtime integration.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -101,6 +101,10 @@ Portable no-backend session 消费 Phase 1A scheduler/ROB 契约：无后端 cla
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 local MR review repair: portable startup now preserves Stage A confirmation metadata in claim and receipt so non-document implementation can satisfy the confirmed-plan gate.
+- 2026-05-30 validation before commit: focused claim-lock tests, implementation-plan rules, precommit update/archive, ROB checker, worktree receipt checker, diff whitespace check, py_compile, worktree hygiene, and full local gate passed in the feature worktree.
+- 2026-05-30 Stage C implementation: added portable `start`, `status`, and metadata-only `release` surfaces to `tools/claim_implementation_plan.py`; startup writes an active claim, worktree receipt, and predicted ROB entry, while focused tests cover same-plan denial, different-plan parallel claims, and safe release without file deletion.
+- 2026-05-30 完整提交流程对齐：无 OMX/LangGraph 后端场景不再依赖固定 leader 退休队列；后续 runtime 应使用 portable claim、ROB entry 和 `local-main-retire.lock` 实现 session-owned self-retire。
 - 2026-05-29 上游契约补充：引用 Phase 1A scheduler/ROB 模型，作为后续 portable/receipt runtime 对齐依据。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

@@ -90,6 +90,12 @@ omx-langgraph-cli.ps1 dev --help
 - 不要把 `C:\Users\lenovo\.codex\python\` 下生成的 helper 副本当成源码真相。
 - 不要在 `tools/langgraph_durable_orchestrator/` 中 vendor 或 fork 官方 LangGraph 包。
 - 对外状态语言必须显式区分：`installed`、`enabled`、`selected`、`ready` 不是同一个状态。
+- Durable capability readiness projection 必须发布 `readiness_fields = [installed, enabled, selected, ready]`，不得把这些字段折叠成一个 availability flag。
+  - `installed` 表示该 lane 所需的 helper 或 runtime artifact 已存在。
+  - `enabled` 表示用户级 capability switches 允许使用该 lane。
+  - `selected` 表示用户级 backend selector 或 repo-local tracked state 指向该 lane。
+  - `ready` 表示该 lane 满足 `installed && enabled && selected`；selected-but-not-installed 与 enabled-but-not-selected 都仍然不是 ready。
+- `backend_default` 是用户级 selected backend 的兼容视图，`backend_ready` 只表示该 selected backend 的 readiness 结果。`backend_ready=true` 不表示当前任务已经运行或采用 durable workflow、tracked LangGraph thread 或 persistent team。
 - 对于仍然默认非 UTF-8 控制台编码的 Windows 终端，不要直接依赖 `langgraph.exe --help` 或 `langgraph.exe dev --help`；应改用 `omx-langgraph-cli.ps1`。
 
 ## 7. 项目级例外规则

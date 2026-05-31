@@ -22,7 +22,7 @@ VALID_EVIDENCE = """Run summary:
 Explorer question was specific, well-scoped, and read-only file discovery; it did not replace implementation.
 When the implementation patch became clear, a bounded code-changing worker task handled the patch.
 Graph phases and checkpoint gates used LangGraph entrypoints through omx-langgraph-cli with repo-local .omx/state/langgraph/thread-42 state.
-Automatic durable-team adoption read .omx/state/selectors/active.json; compatibility records under .omx/state/team/codex-auto-managed-team.json were context only.
+Automatic durable-team adoption read repo-local .omx/state/selectors/active.json for the current repository/worktree root; cross-repository selector adoption is blocked, and compatibility records under .omx/state/team/codex-auto-managed-team.json were context only.
 Open-ended research fan-in happened before implementation starts; frozen implementation brief persisted at .omx/state/langgraph/briefs/feature.json with scope, non-goals, acceptance evidence, ownership boundaries, and unresolved risks.
 Bug-finder, bug-rebutter, and bug-judge stayed burst read-only leader-side roles; unresolved candidates went to a survivor queue at .omx/state/langgraph/survivors/bug.json for debugger-lane follow-up.
 Durable artifacts are documented at .omx/state/langgraph/artifacts/run.json.

@@ -188,6 +188,12 @@ Release 0.6 默认边界：
 - `R0.6.4 Expected-Result Fixture` —— fixture 切片，用来把预期 dry-run decisions 固化为 regression evidence。
 - `R0.6.5 Cross-Project Read-Only Review` —— 跨项目只读复核切片，用来证明 consumer repositories 不会继承本仓库 durable truth。
 
+R0.6.0/R0.6.1 durable routing smoke-gate evidence：
+
+- `tools/durable_routing_smoke_gate_template.json` —— 已 review 的只读模板，用于未来 durable routing smoke/adoption gates。
+- `tools/check_durable_routing_smoke_gate_template.py --self-test` —— 静态 checker 加正向/负向 fixtures，用于阻止缺少必填字段、未授权 mutation 的 apply mode，以及缺少 read-only guards 的 gate。
+- `tools/fixtures/durable_routing_smoke_gate_template/` —— 只读 fixture 集，用于在任何 R0.6.2 live smoke 或 apply-mode adoption 前验证 future gate-template behavior。
+
 R0.6.1 Codex native rollback gate evidence：
 
 - `codex --version` —— 本地 smoke command，用来证明 native Codex entrypoint 仍可启动。

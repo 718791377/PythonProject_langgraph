@@ -36,6 +36,19 @@ AUTHORITY_SURFACES = (
     Path("docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md"),
 )
 
+RECOVERY_SOURCES = (
+    {
+        "path": "docs_bilingual/project_startup_summary.md",
+        "encoding": "utf-8-sig",
+        "role": "canonical_startup_summary_primary",
+    },
+    {
+        "path": "docs_bilingual/project_startup_summary.zh-CN.md",
+        "encoding": "utf-8-sig",
+        "role": "canonical_startup_summary_companion",
+    },
+)
+
 QUESTION_REPLACEMENT_RUN_RE = re.compile(r"\?{3,}")
 
 
@@ -114,6 +127,29 @@ def find_mojibake_lines(text: str) -> list[dict]:
         if line_findings:
             findings.append({"line": line_number, "findings": line_findings})
     return findings
+
+
+def recovery_sources() -> list[dict]:
+    return [dict(source) for source in RECOVERY_SOURCES]
+
+
+def sanitize_mojibake_lines(mojibake_lines: list[dict]) -> list[dict]:
+    sanitized_lines: list[dict] = []
+    for line in mojibake_lines:
+        sanitized_findings: list[dict] = []
+        for finding in line.get("findings", []):
+            sanitized: dict = {"kind": finding.get("kind")}
+            if "token" in finding:
+                sanitized["token"] = finding.get("token")
+            markers = finding.get("markers")
+            if isinstance(markers, list):
+                sanitized["marker_count"] = len(markers)
+                sanitized["max_marker_length"] = max((len(marker) for marker in markers if isinstance(marker, str)), default=0)
+            elif "marker" in finding:
+                sanitized["marker_kind"] = finding.get("kind")
+            sanitized_findings.append(sanitized)
+        sanitized_lines.append({"line": line.get("line"), "findings": sanitized_findings})
+    return sanitized_lines
 
 
 def resolve_input_path(root: Path, raw_path: str) -> Path:
@@ -238,11 +274,12 @@ def diagnose_response_text(source: str, text: str, *, path: str | None = None, l
         "source": source,
         "status": status,
         "mojibake_canary_lines": mojibake_lines,
-        "recovery": (
+        "recovery_action": (
             "reread docs_bilingual/project_startup_summary.md and "
             "docs_bilingual/project_startup_summary.zh-CN.md through an explicit UTF-8 path; "
             "do not preserve terminal mojibake as canonical startup instructions"
         ),
+        "recovery_sources": recovery_sources(),
     }
     if path is not None:
         diagnostic["path"] = path
@@ -333,9 +370,15 @@ def run_check(
         if mojibake_lines:
             errors.append(
                 f"{relative_path.as_posix()} contains mojibake or lossy replacement text; "
-                "read the source as UTF-8 and repair the launcher/payload boundary before preserving it."
+                "read the configured recovery sources as UTF-8 and repair the launcher/payload boundary before preserving it."
             )
-            findings.append({"path": relative_path.as_posix(), "mojibake_lines": mojibake_lines})
+            findings.append(
+                {
+                    "path": relative_path.as_posix(),
+                    "mojibake_lines": sanitize_mojibake_lines(mojibake_lines),
+                    "recovery_sources": recovery_sources(),
+                }
+            )
 
     response_diagnostics, response_errors, response_warnings = collect_response_diagnostics(
         root,
@@ -364,6 +407,7 @@ def run_check(
         "ok": not errors,
         "root": str(root),
         "authority_surfaces": [path.as_posix() for path in AUTHORITY_SURFACES],
+        "recovery_sources": recovery_sources(),
         "findings": findings,
         "response_diagnostics": response_diagnostics,
         "errors": errors,

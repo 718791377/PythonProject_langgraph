@@ -35,12 +35,12 @@ Classify stale .omx durable residue as inspectable evidence without auto-adoptin
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented
+Stage: Stage C local implementation package
+Owner session: implement-legacy-durable-residue-classification-20260530
+Current gate: local validation and local `main` fast-forward integration; remote publication remains out of scope
+Stage C entry condition: satisfied by user confirmation to continue this child implementation plan
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -63,16 +63,16 @@ Only one session may own each hotspot at a time:
 - Maximum parallel sessions for this phase: 3.
 - This child plan is one claim unit: exactly one active session may claim it at a time.
 - Parallel work is allowed only with different child plans and disjoint write scopes.
-- Local `main` integration remains serial and leader-owned.
+- Local `main` integration remains serial through `local-main-retire.lock`; the owning session may self-retire only its own ready package and must stop at the remote publication gate.
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for unmanaged team, completed LangGraph state, stale selector, and active current selector.
-- [ ] Update classification output with safe next actions.
-- [ ] Ensure no checker auto-adopts unmanaged state.
-- [ ] Run durable artifact and receipt checkers plus local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for unmanaged team, completed LangGraph state, stale selector, and active current selector.
+- [x] Update classification output with safe next actions.
+- [x] Ensure no checker auto-adopts unmanaged state.
+- [x] Run durable artifact and receipt checkers plus local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -97,4 +97,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-30 Stage C local implementation package: `openspec/changes/archive/2026-05-30-implement-legacy-durable-residue-classification-20260530/verification.md` records the local validation path for the read-only durable residue classification checker.
 <!-- EVIDENCE_INDEX_END -->
