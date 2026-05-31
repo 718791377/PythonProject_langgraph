@@ -29,26 +29,32 @@ Make Superpowers HOW-layer skill usage explicit in Comet Design, Build, Verify, 
 - 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
 - 批次：Stage B Batch 4。
 - 阶段：Phase 5。
-- 状态：本文件是 active 子 implementation_plan，但在本地 `main` 合入后仍必须等待用户确认，才能开始非文档实现。
+- 状态：本文件是 active 子 implementation_plan；用户已在 2026-05-31 的冷启动继续实施请求中确认执行。
 - 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
+Owner session: main-codex-leader-comet-superpowers-visibility-20260531
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Stage C entry condition: satisfied by the user's 2026-05-31 cold-start continuation request
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
 
 - .codex/skills/comet/SKILL.md
+- .codex/skills/comet-design/SKILL.md
 - .codex/skills/comet-build/SKILL.md
 - .codex/skills/comet-verify/SKILL.md
-- docs_bilingual/governance/openspec_official_workflow_policy.md
+- docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md
+- docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.zh-CN.md
+- tools/check_comet_superpowers_visibility.py
+- tools/run_openspec_guard.py
+- tools/safety_rule_script_backing_registry.json
+- tools/ci/ci_test_manifest.json
 - test/*superpowers*visibility*
 
 ## 热点串行规则
@@ -68,10 +74,10 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add evidence expectations for using-superpowers, writing-plans, executing-plans, test-driven-development, verification-before-completion, and finishing-a-development-branch.
-- [ ] Update Comet skill docs so OpenSpec remains WHAT and Superpowers remains HOW.
-- [ ] Add checker or test coverage for missing HOW-layer evidence when Comet claims Superpowers usage.
+- [x] 通过用户 2026-05-31 的冷启动继续实施请求确认本子方案进入实施。
+- [x] 增加 using-superpowers、writing-plans、executing-plans、test-driven-development、verification-before-completion 和 finishing-a-development-branch 的证据预期。
+- [x] 更新 Comet skill 文档，使 OpenSpec remains WHAT 且 Superpowers remains HOW。
+- [x] 增加 checker 或测试覆盖，确保 Comet 声明 Superpowers 使用时不能缺少 HOW-layer evidence。
 - [ ] Run skill boundary, Superpowers visibility, and local gate checks.
 <!-- TASK_BACKLOG_END -->
 
@@ -87,7 +93,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 ## 验收标准
 
-- 本地 `main` 合入后，用户已确认本子方案。
+- 用户已在 2026-05-31 的继续实施请求中确认本子方案，且该确认发生在非文档实施前。
 - active session claim 在写入工作开始前明确指向本子方案路径。
 - 行为变更必须先有失败测试或 checker fixture。
 - 治理文档、runtime helper、checker、测试和 CI 注册保持一致。
@@ -97,4 +103,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-31 Stage C 启动：用户已确认实施；认领 `main-codex-leader-comet-superpowers-visibility-20260531` 串行拥有 Comet/Superpowers 可见性热点。
+- 2026-05-31 local-main closeout: branch `implement-comet-superpowers-visibility-20260531` entered local `main` at `407e5eb`; `python tools/check_openspec_comet_superpowers_policy.py --root . --json`, `python tools/check_comet_superpowers_visibility.py --root . --json`, `python tools/check_implementation_plan_rules.py --root . --json`, and the shared local gate evidence are captured in local history and the publication carrier.
 <!-- EVIDENCE_INDEX_END -->

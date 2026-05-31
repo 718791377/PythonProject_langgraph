@@ -29,18 +29,18 @@ Require phase-specific management checklist evidence before Comet forward transi
 - Parent: `docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`.
 - Batch: Stage B Batch 4.
 - Phase: Phase 5.
-- Status: this file is an active child implementation plan, but implementation must not start until the user confirms this child plan after local `main` integration.
+- Status: implementation has been confirmed; this Stage C package adds explicit regression coverage and closeout evidence while validating the existing Comet runtime guard behavior.
 - Remote publication: out of scope unless the user explicitly asks for remote publication.
 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
+Owner session: current main Codex leader session; exact claim ID is stored in `.omx/session-claims/`
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Stage C entry condition: satisfied on 2026-05-31 after user confirmation to continue implementation
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -66,11 +66,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add failing tests for missing Open, Design, Build, Verify, Archive, and Monitoring checklist items.
-- [ ] Update transition guards to require checked evidence before forward movement.
-- [ ] Keep return transitions separate from forward transitions.
-- [ ] Run Comet tests, run_openspec_guard, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add failing tests for missing Open, Design, Build, Verify, Archive, and Monitoring checklist items.
+- [x] Update transition guards to require checked evidence before forward movement.
+- [x] Keep return transitions separate from forward transitions.
+- [x] Run Comet tests, run_openspec_guard, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -94,5 +94,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C implementation closeout: user confirmation is recorded for this child plan; branch `implement-comet-phase-checklist-gate-20260531` adds explicit static and behavior regression coverage for Open, Design, Build, Verify, Archive, and Monitoring checklist gates; existing runtime transition guard, state, archive, and monitoring-return behavior is validated without duplicating script churn; local validation and local-main integration evidence are recorded in local git history and the assistant response.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->

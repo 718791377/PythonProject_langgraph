@@ -37,13 +37,29 @@ Use this layer map for all Comet-style OpenSpec work:
 
 Skills remain workflow instruction surfaces. A Comet skill, OpenSpec skill, Superpowers skill, or profile is not native subagent evidence. Native subagents remain leader-side spawned roles under the repository orchestration policy.
 
+## 3A. Superpowers HOW-Layer Visibility Contract
+
+Comet MUST expose Superpowers HOW-layer evidence. OpenSpec remains the WHAT layer. Superpowers remains the HOW layer.
+
+The workflow surface records the applicable Superpowers procedure:
+
+- workflow entry: `superpowers:using-superpowers`
+- design: `superpowers:brainstorming`
+- planning: `superpowers:writing-plans`
+- execution: `superpowers:executing-plans`
+- behavior-changing implementation: `superpowers:test-driven-development`
+- acceptance claims: `superpowers:verification-before-completion`
+- branch handling: `superpowers:finishing-a-development-branch`
+
+Skill invocation is HOW-layer procedural evidence, not native subagent evidence. Native expert evidence still requires leader-side spawning, bounded lifecycle handling, and leader-owned fan-in.
+
 Document directory boundary:
 
 - `docs_bilingual/` is the formal durable documentation library for governance, implementation plans, product notes, startup summaries, and registered bilingual document pairs.
 - `docs/superpowers/` is reserved for Superpowers runtime artifacts referenced by Comet state, such as design documents under `docs/superpowers/specs/` and implementation plans under `docs/superpowers/plans/`.
 - Do not duplicate `docs_bilingual/` documents into `docs/`; only place Superpowers runtime artifacts under `docs/superpowers/` when the workflow explicitly records those paths.
 
-## 3A. Post-Plan Local Governance Package
+## 3B. Post-Plan Local Governance Package
 
 When a session exits `/plan` and the next task is not a documentation-only task, the first executable slice is a local governance package, not direct runtime or code implementation.
 
@@ -182,6 +198,8 @@ Before treating this upgrade as complete, run:
 
 ```powershell
 python tools/check_openspec_comet_superpowers_policy.py --root . --json
+python tools/check_comet_superpowers_visibility.py --root . --json
+python test/check_comet_superpowers_visibility.test.py
 python test/run_openspec_guard_json.test.py
 python tools/check_document_governance_rules.py --root . --json
 openspec validate --all

@@ -62,7 +62,9 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
             "--self-retire\n"
             "--acquire-retire-lock\n"
             "local_main_retire_lock.py\n"
-            "self_retire_lock\n",
+            "self_retire_lock\n"
+            "preflight_self_retire_rob_entry\n"
+            "REQUIRED_SELF_RETIRE_GATES\n",
             encoding="utf-8",
         )
         (root / "tools/ci/local_mr_review.ps1").write_text("check_plan_exit_execution_governance.py\n", encoding="utf-8")
@@ -73,6 +75,7 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
                         "check_plan_exit_execution_governance.test.py",
                         "check_local_flow_scripted_enforcement.test.py",
                         "check_local_main_retire_lock.test.py",
+                        "check_complete_local_flow_self_retire_preflight.test.py",
                     ]
                 }
             ),

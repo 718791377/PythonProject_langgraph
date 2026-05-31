@@ -34,6 +34,7 @@ GUARD_STEPS = [
     ("check_skills_audit_output_retention", "check_skills_audit_output_retention.py", "skills_audit_output_retention"),
     ("check_openspec_code_archive_evidence", "check_openspec_code_archive_evidence.py", "openspec_code_archive_evidence"),
     ("check_openspec_comet_superpowers_policy", "check_openspec_comet_superpowers_policy.py", "openspec_comet_superpowers_policy"),
+    ("check_comet_superpowers_visibility", "check_comet_superpowers_visibility.py", "comet_superpowers_visibility"),
     ("check_mcp_router_scope_policy", "check_mcp_router_scope_policy.py", "mcp_router_scope_policy"),
     ("check_user_level_mcp_skills_browser_cli_baseline", "check_user_level_mcp_skills_browser_cli_baseline.py", "user_level_mcp_skills_browser_cli_baseline"),
     ("check_local_mirrored_ci_gate", "check_local_mirrored_ci_gate.py", "local_mirrored_ci_gate"),
@@ -151,6 +152,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["steps"][12]["step"], "check_skills_audit_output_retention")
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
         self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_comet_superpowers_visibility", [step["step"] for step in payload["steps"]])
         self.assertIn("check_repo_local_selector_ownership", [step["step"] for step in payload["steps"]])
         self.assertIn("check_orchestration_collaboration_evidenceguard", [step["step"] for step in payload["steps"]])
         self.assertIn("check_local_main_retire_lock", [step["step"] for step in payload["steps"]])

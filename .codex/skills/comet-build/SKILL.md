@@ -10,6 +10,12 @@ description: "Comet Phase 3: Plan and Build. Invoke with /comet-build. Create pl
 - Design Doc has been created (Phase 2 complete)
 - Active change exists
 
+### Superpowers HOW-layer evidence
+
+Load `superpowers:using-superpowers` before Build work, use `superpowers:writing-plans` to create the implementation plan, and record the selected build_mode. For plan execution, load `superpowers:executing-plans`; for behavior-changing implementation, also load `superpowers:test-driven-development`. Before completion claims, load `superpowers:verification-before-completion`.
+
+Skill invocation is HOW-layer procedural evidence only, not native subagent evidence.
+
 ## Steps
 
 ### 0. Entry State Verification (Entry Check)

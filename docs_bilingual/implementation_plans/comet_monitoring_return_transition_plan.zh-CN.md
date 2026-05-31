@@ -35,12 +35,12 @@ Support Monitoring decisions that return to Open, Design, Build, or Verify rathe
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
+Owner session: main-codex-leader-comet-monitoring-return-transition-20260531
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Stage C entry condition: satisfied by the 2026-05-31 user instruction to continue this confirmed child plan
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -68,11 +68,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add tests for monitor-return-open, monitor-return-design, monitor-return-build, and monitor-return-verify.
-- [ ] Require target_phase and rework_reason for return decisions.
-- [ ] Block forward transitions when monitoring_status is blocked or needs_decision without a valid return decision.
-- [ ] Run Comet transition tests and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add tests for monitor-return-open, monitor-return-design, monitor-return-build, and monitor-return-verify.
+- [x] Require target_phase and rework_reason for return decisions.
+- [x] Block forward transitions when monitoring_status is blocked or needs_decision without a valid return decision.
+- [x] Run Comet transition tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -97,4 +97,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-31 Stage C 实施收口：当前用户指令已确认继续本子方案；现有 Comet runtime 已包含 `monitor-return-open`、`monitor-return-design`、`monitor-return-build` 和 `monitor-return-verify`，schema validation 已要求 `target_phase` 与非空 `rework_reason`，forward transition guard 已阻断 `monitoring_status=blocked|needs_decision` 或非 `continue` 决策。证据命令：`python test\comet_runtime_management_flow.test.py` 通过 25 个测试（其中 12 个 bash 依赖用例在该调用中按条件跳过）。由于相邻 Comet 子方案 active claims 已覆盖 runtime/test 热点，本收口不重复覆盖热点代码，只记录已验证行为；远端发布不在范围内。
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->

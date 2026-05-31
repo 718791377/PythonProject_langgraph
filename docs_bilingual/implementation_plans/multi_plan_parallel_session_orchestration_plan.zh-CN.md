@@ -58,14 +58,15 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-阶段：Phase 4 全量收口完成；严格顺序门和 Work-Conserving 准入下均可进入 Phase 5。
-责任会话：`codex-close-phase4-final-20260531` 执行最终父子方案状态与证据同步。
-当前门禁：Phase 4 子方案均已实现、已本地验证、已集成本地 `main`，并停在远端发布门；GitLab/GitHub 远端发布仍未授权。
-Phase 0 说明：盘点与父级索引收口已完成并进入本地 `main`，远端基线 `014b0bf` 已包含 Phase 0 发布状态。
-Phase 1 说明：施工安全底座、ROB runtime/checker、自退休 helper 和完整提交流程治理已进入本地 `main`；`7e47af8` 使《完整提交流程.md》成为多 session 自动本地提交与合入的 HOW 层契约。
-Phase 4 收口说明：所有 Phase 4 子方案均无未完成清单项，均具备本地 main 实现或收口证据，并保持用户可见固定标签 `Routing trace` 与 `Updated Plan` 不被本地化替换。
-Phase 5 准入：Phase 5 Comet runtime 子方案现在可以被认领并进入执行；`comet-state.sh` 和 `comet-guard.sh` 仍按 hotspot 串行化。
-远端状态：本地 `main` 当前领先 GitLab/GitHub 远端；远端发布、MR、merge 或 GitHub sync 仍必须等待用户显式授权。
+Stage: Phase 5 final closeout complete; Phase 6 is admissible under the strict sequential gate and Work-Conserving admission.
+Owner session: main Codex leader owns this Phase 5 closeout and remote-publication carrier after the 2026-05-31 explicit remote-push instruction.
+Current gate: publish the already integrated local `main` package through GitLab remote CI/MR and then sync the exact intended commit to GitHub; no further Phase 5 local implementation work is pending.
+Phase 0 note: inventory and parent-index closure has completed and entered local `main`; remote baseline `014b0bf` includes the Phase 0 publication state.
+Phase 1 note: the construction safety base, ROB runtime/checker, self-retire helper, complete-flow governance, and ROB retire preflight hard gate have entered local `main`; self-retire now fails before lock acquisition, rollback-ref creation, or merge unless the matching ROB entry is ready and gate-verified.
+Phase 4 closeout note: all Phase 4 child plans have no open checklist items, have local-main implementation or closeout evidence, and preserve the fixed user-facing `Routing trace` and `Updated Plan` labels.
+Phase 5 closeout note: all Phase 5 Comet runtime child plans have local-main closeout evidence in this publication package: `8b8bfd6`, `3335b67`, `05d22bd`, `407e5eb`, and `4b6033a`.
+Phase 6 admission: Phase 6 Spec Kit boundary child plans may be confirmed and claimed next; their non-document implementation still requires child-plan confirmation, claim ownership, clean worktree state, and hotspot serialization.
+Remote state: the current user message explicitly authorizes remote publication, so this local `main` package is being carried to GitLab and then mirrored to GitHub after remote CI/merge succeeds.
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -184,16 +185,17 @@ python tools/local_main_retire_lock.py status --root . --json
 2. 确认 feature worktree clean。
 3. 运行 feature local gate。
 4. 运行 local MR review。
-5. 获取 `local-main-retire.lock`。
-6. 拿到锁后重新确认 primary root clean 且位于本地 `main`。
-7. fetch 并确认本地 `main` 不落后 `gitlab/main`。
-8. 运行 claim / receipt / ROB checker。
-9. 创建 rollback backup ref。
-10. 执行 `git merge --ff-only <feature-branch>`。
-11. 运行 post-merge local gate。
-12. 将 ROB entry 更新为 `retired`，记录 lock nonce、rollback ref、local main commit 和 evidence。
-13. 释放 retire lock。
-14. 停在远端发布门。
+5. 对 `--self-retire` 执行 ROB entry 前置硬门：entry 必须存在、`state=ready`、session/branch/implementation plan 匹配，且 `precommit_update_archive`、`local_gate`、`local_mr_review` 均为 `passed`。; gate condition: these fields prove the package is eligible before local-main mutation.
+6. 获取 `local-main-retire.lock`。
+7. 拿到锁后重新确认 primary root clean 且位于本地 `main`。
+8. fetch 并确认本地 `main` 不落后 `gitlab/main`。
+9. 运行 claim / receipt / ROB checker。
+10. 创建 rollback backup ref。
+11. 执行 `git merge --ff-only <feature-branch>`。
+12. 运行 post-merge local gate。
+13. 将 ROB entry 更新为 `retired`，记录 lock nonce、rollback ref、local main commit 和 evidence。
+14. 释放 retire lock。
+15. 停在远端发布门。
 
 #### Checker 与 Gate 目标
 
@@ -213,7 +215,9 @@ python tools/local_main_retire_lock.py status --root . --json
 - 两个 active claim 指向同一个 implementation plan：checker 失败。
 - 两个 active claim 指向不同 implementation plan：checker 通过。
 - `self_retire_lock` 模式的 retired ROB entry 缺少 lock nonce：checker 失败。
-- `complete_local_flow_to_remote_gate.py --self-retire --execute` 在合入前获取锁、合入后释放锁。
+- `complete_local_flow_to_remote_gate.py --self-retire --execute` 在获取锁、创建 rollback ref 或合入前先执行 ROB entry 前置硬门。
+- 缺少 ROB entry、entry 非 ready、session/branch/implementation plan 不匹配或必要 gate 未通过时，不得 acquire lock，不得创建 rollback ref，不得 merge。
+- `complete_local_flow_to_remote_gate.py --self-retire --execute` 在前置硬门通过后获取锁、合入后释放锁。
 - 合入失败时必须释放锁或记录明确 failed/stale 状态，不能静默遗留 active lock。
 - local-main 合入流程不得 push GitLab、不得创建 MR、不得同步 GitHub。
 
@@ -343,11 +347,18 @@ python tools/local_main_retire_lock.py status --root . --json
 | --- | --- | --- | --- |
 | Phase 0 | `plan_inventory_registry_alignment_plan` | 功能分支内已收口，等待本地合入 | `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；未发现缺失登记路径或缺失双语 companion 路径。 |
 | Phase 0 | `parent_parallel_orchestration_index_plan` | 功能分支内已收口，等待本地合入 | 父方案当前状态、Phase 0/Phase 1 证据、依赖说明和 Phase 2 准入文本已通过稳定锚点更新。 |
-| Phase 1A | `complete_local_commit_flow_scheduler_reorder_buffer_plan` | 已实现并合入 | ROB runtime/checker 包已合入本地 `main`；后续 self-retire runtime 恢复记录在 `898f9d0`。 |
 | Phase 1 | `formal_plan_confirmation_gate_runtime_plan` | 已实现并合入 | Phase 1 收口证据保留在本地 git 历史和现有证据索引中。 |
 | Phase 1 | `portable_implementation_plan_claim_lock_plan` | 已实现并合入 | Portable claim lock 已作为单方案单会话归属的基础能力。 |
 | Phase 1 | `implementation_plan_registry_active_state_plan` | 已实现并合入 | Registry active-state 与双语配对门禁由 implementation-plan rules 覆盖。 |
 | Phase 1 | `main_session_escalation_visibility_plan` | 已实现并合入 | 主会话提权可视化已属于 Phase 1 收口包。 |
+| Phase 1A | `complete_local_commit_flow_scheduler_reorder_buffer_plan` | ROB retire preflight hard gate implemented and locally integrated | Governance package `a259d91` and runtime hard gate `7087b31` verify self-retire ROB metadata before lock acquisition, rollback ref creation, or merge. |
+| Phase 5 | `comet_management_record_bootstrap_plan` | implemented and locally integrated | Local `main` includes closeout commit `8b8bfd6`; management records, checklist gates, monitoring return state, safe paths, and archive evidence are covered by focused Comet runtime tests. |
+| Phase 5 | `comet_runtime_policy_checker_alignment_plan` | implemented and locally integrated | Local `main` includes closeout commit `3335b67`; stable specs, policy checker, runtime tests, and CI registration are aligned. |
+| Phase 5 | `comet_monitoring_return_transition_plan` | implemented and locally integrated | Local `main` includes closeout commit `05d22bd`; return transitions and monitoring blocked/needs-decision gates are verified. |
+| Phase 5 | `comet_superpowers_visibility_plan` | implemented and locally integrated | Local `main` includes closeout commit `407e5eb`; Comet/OpenSpec WHAT and Superpowers HOW evidence boundaries are explicit. |
+| Phase 5 | `comet_phase_checklist_gate_plan` | implemented and locally integrated | Local `main` includes closeout commit `4b6033a`; phase checklist gate regression coverage is recorded. |
+| Phase 6 | `spec_kit_subordinate_adapter_governance_plan` | admissible and unclaimed | May enter Stage C after explicit child-plan confirmation; Phase 5 closeout and fixed ROB preflight gate remove the current sequential blocker. |
+| Phase 6 | `spec_kit_authority_guard_plan` | admissible and unclaimed | May enter Stage C after explicit child-plan confirmation; write scopes and hotspots remain serialized by claim/lease rules. |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
 ## 依赖与 Phase 2 准入说明
@@ -406,6 +417,7 @@ python tools/local_main_retire_lock.py status --root . --json
 - [x] 后续阶段：Phase 0 收口包已经合入本地 `main`；Phase 2 context 与 UTF-8 safety 子方案已按 Work-Conserving 模型启动，部分包已进入本地 `main`。
 - [x] Phase 4 父子方案治理更新：把会话表面覆盖从 routing trace 扩展到 `Routing trace` 与 `Updated Plan`，保持这两个标签稳定，保留 `Updated Plan` 复选框/状态清单语义，并保留保存版 evidence 的机器可读 ASCII token。
 - [x] Phase 4 最终收口：确认全部 Phase 4 子方案已实现、已本地验证、已合入本地 `main`，并停在远端发布门。
+- [x] Phase 1A hardening：将 `--self-retire` ROB entry 校验从 post-merge metadata 记录提升为合入前硬门。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -431,11 +443,14 @@ Stage B 后续确认后的验收条件：
 - 本父方案明确只约束本方案族；无关 implementation_plan 可以无父方案或属于其他父方案。
 - 新 session 不默认读取本文件，除非处理本文件、其子方案或正文列出的相关方案。
 - 后续同机多 session 目标是 session 自主负责自己的提交和本地 `main` 合入，并用 `local-main-retire` lock 保持本地 `main` 写入串行。
+- `--self-retire` 缺少有效 ready ROB entry 时必须 fail before merge，不能把 ROB retire metadata 当作 post-merge best-effort。
 - Phase 4 子方案必须保持面向用户的 `Routing trace` 与 `Updated Plan` 固定标签；解释内容可以使用中文；`Updated Plan` 必须保留复选框/状态清单语义；内部工具名、schema key、阈值 token、blocker token、文件名和 CLI 参数可保持 ASCII。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 ROB retire preflight implementation: 分支 `harden-rob-retire-preflight-20260531` 已新增 self-retire ROB 前置硬门、focused RED/GREEN 覆盖和 CI manifest 登记；更广本地门禁仍需在 local-main 集成前运行。
+- 2026-05-31 ROB retire 前置硬门治理：发现 `--self-retire` 缺少对应 ROB entry 时，旧 helper 会在 fast-forward merge 后才因 retire metadata 报错；本次重开 Phase 1A hardening，要求 ROB entry ready 与 gate 状态在 acquire lock / rollback ref / merge 前 fail closed。
 - 2026-05-31 Phase 4 最终收口：分支 `close-phase4-final-20260531` 同步父方案与全部 Phase 4 子方案状态，确认所有 Phase 4 checklist 已关闭，过期的本地集成门已替换为远端发布门，并且 Phase 5 已可准入但不代表授权远端发布。
 - 2026-05-30 Phase 4 固定标签修正：分支 `implement-routing-updated-plan-fixed-labels-20260530c` 更新本父方案与 `chinese_routing_trace_conversation_surface_plan` 子方案；`Routing trace` 与 `Updated Plan` 保持英文用户可见标签，`Updated Plan` 保持复选框/状态清单语义，中文解释内容仍允许；远端发布仍未授权。
 - 2026-05-30 Phase 4 会话表面治理更新：分支 `chinese-routing-updated-plan-20260530` 曾把会话表面覆盖从 routing trace 扩展到 updated plan；其中“固定标签应替换为中文标题”的旧表述已由上一条固定标签修正取代；远端发布仍未授权。
@@ -452,4 +467,5 @@ Stage B 后续确认后的验收条件：
 - 2026-05-28 Stage B 父方案修订：加入二层级架构图，并从 `pi_plugin_codex_user_level_sidecar_plan` 与 `user_level_mcp_skills_browser_cli_governance_plan` 吸收 Pi family / oh-my-pi / CLI harness reference-only 边界；commit 记录在本地 git 历史中。
 - 2026-05-28 Stage B 子方案创建包：创建并登记 33 个 active 子 implementation_plan 的英文主版和中文对照版；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-28 Stage A 父级方案包：已用 `ac867ff` 提交并合入本地 `main`；验证包括 `check_implementation_plan_rules.py --root . --json`、`check_precommit_update_archive.py --root . --json`、`tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` 和 `tools/ci/local_mr_review.ps1`。
+- 2026-05-31 Phase 5 final closeout and Phase 6 admission: local `main` includes all Phase 5 Comet runtime closeout commits (`8b8bfd6`, `3335b67`, `05d22bd`, `407e5eb`, `4b6033a`) plus ROB retire preflight hardening (`a259d91`, `7087b31`). Post-merge `tools/ci/local_gate.ps1` passed, the ROB entry retired with `self_retire_lock`, and the feature worktree was cleaned with preserved claim evidence. Phase 6 child plans are admissible next, while non-document implementation still requires explicit child-plan confirmation and serialized ownership.
 <!-- EVIDENCE_INDEX_END -->

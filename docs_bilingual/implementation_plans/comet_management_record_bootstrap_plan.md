@@ -35,12 +35,12 @@ Create and validate Comet management records that capture focus-area checklist e
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
+Owner session: `codex-implement-comet-management-record-bootstrap-20260531`
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Stage C entry condition: satisfied by current user confirmation on 2026-05-31 after Stage B child-plan creation
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -67,11 +67,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add management-record fixture examples for Open, Design, Build, Verify, Archive, and Monitoring.
-- [ ] Implement bootstrap behavior only after script ownership is clear.
-- [ ] Validate required management record path fields and safe path constraints.
-- [ ] Run Comet script tests, OpenSpec guard, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add management-record fixture examples for Open, Design, Build, Verify, Archive, and Monitoring.
+- [x] Implement bootstrap behavior only after script ownership is clear.
+- [x] Validate required management record path fields and safe path constraints.
+- [x] Run Comet script tests, OpenSpec guard, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,5 +95,9 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C implementation closeout: current user confirmation authorized this child-plan implementation; branch `implement-comet-management-record-bootstrap-20260531` closes the plan by confirming that Comet runtime management records, checklist gates, monitoring return state, path validation, and archive closing evidence are already implemented and covered by focused tests. Final local-main commit and validation evidence are recorded in the assistant response and local git history.
+- 2026-05-28 runtime baseline: `.codex/skills/comet/scripts/comet-state.sh` creates `management.md` and records `management_record`, `monitoring_status`, `control_decision`, `target_phase`, `rework_reason`, and `iteration_count`; `.codex/skills/comet/scripts/comet-yaml-validate.sh`, `comet-guard.sh`, and `comet-archive.sh` validate management-record paths, checklist evidence, Monitoring-loop clearance, and closing evidence.
+- 2026-05-28 test coverage baseline: `test/comet_runtime_management_flow.test.py` covers Open, Design, Build, Verify, Archive, and Monitoring management evidence, return-transition invariants, UTF-8/legacy label compatibility, required field validation, and safe path constraints; the test is registered in `tools/ci/ci_test_manifest.json`.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->

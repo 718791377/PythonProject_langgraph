@@ -41,9 +41,9 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-阶段：Phase 1A 安全底座已实现，并作为《完整提交流程.md》的运行契约继续被下游子方案消费。
-责任会话：本次由 `codex-align-complete-flow-parent-plans-20260530` 仅做治理状态对齐，不重新打开 runtime 实现。
-当前门禁：父方案族和下游子方案已对齐到 `7e47af8` 的完整提交流程；后续变更必须继续用 ROB、claim/receipt、`local-main-retire.lock` 和远端发布门约束本地合入。
+阶段：Phase 1A hardening active；安全底座已实现，但 `--self-retire` 缺失 ROB entry 时的 post-merge 报错路径必须修复。
+责任会话：`harden-rob-retire-preflight-20260531`。
+当前门禁：实现前先记录本子方案重开；实现后 `complete_local_flow_to_remote_gate.py --self-retire --execute` 必须在 acquire lock、rollback ref 和 merge 之前验证 ROB entry 与必要 gate 状态。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -110,6 +110,14 @@ runtime/checker 实现拥有：
 - [x] 更新完整本地流程 helper，使拥有候选包的 session 在持有 local-main lock 时自退休 ready package。
 - [x] 将固定 Phase 级并行上限替换为 work-conserving all-eligible session admission。
 - [x] 增加 checker/test 覆盖，防止后续治理重新把 2/3/4/6 Phase cap 写成硬上限。
+- [x] 重新打开 hardening：记录 `--self-retire` 缺少 ROB entry 不能在 merge 后才失败。
+- [x] 在 `complete_local_flow_to_remote_gate.py` 中增加 ROB entry 读取与 `preflight_self_retire_rob_entry(...)`。
+- [x] 缺少 ROB entry 时必须在 acquire lock、rollback ref 和 merge 前 fail closed。
+- [x] `state != ready` 时必须在 acquire lock、rollback ref 和 merge 前 fail closed。
+- [x] session、branch 或 implementation plan 与 ROB entry 不匹配时必须在 merge 前 fail closed。
+- [x] `precommit_update_archive`、`local_gate` 或 `local_mr_review` 未通过时必须在 merge 前 fail closed。; gate condition: these fields record required pre-merge evidence.
+- [x] ready entry 成功路径仍允许 merge 后记录 `self_retire_lock` retired metadata。
+- [x] 增加聚焦测试并登记/运行相关 checker。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -131,11 +139,14 @@ python tools/check_local_flow_scripted_enforcement.py --root . --json
 - portable no-backend 与 receipt lifecycle 方案引用本方案作为上游调度契约。
 - 英文主版保持 ASCII-only，中文对照版已登记。
 - 不要求一个固定控制 session 负责每次 local-main retirement；每个 session 可在 lock 和 gate 允许时退休自己的 ready package。
+- `--self-retire` 在缺少 ready ROB entry、owner 不匹配或必要 gate 未通过时，必须在 acquire lock、rollback ref 和 merge 前失败。
 - 不把固定 Phase 级 2/3/4/6 session cap 视为治理硬上限；每个 eligible child plan 都可入场，只有 claim、hotspot、resource-backpressure 和 local-main retire lock 会串行化工作。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 ROB retire preflight implementation: 已新增 `preflight_self_retire_rob_entry(...)`、`REQUIRED_SELF_RETIRE_GATES` 与 `test/check_complete_local_flow_self_retire_preflight.test.py`；RED 证明旧 helper 可能先改动本地 `main` 或接受不匹配 metadata，随后 focused GREEN 已通过，等待更广验证。
+- 2026-05-31 ROB retire 前置硬门重开：确认旧 helper 会把 ROB retire metadata 放在 merge 后记录；本次要求先校验 ready ROB entry、owner 和 gate 状态，再允许本地 `main` 变更。
 - 2026-05-30 完整提交流程对齐：`7e47af8` 已把《完整提交流程.md》更新为多 session 自动本地提交与本地 `main` 合入的 HOW 层契约；本次父方案族对齐包把下游子方案的固定 leader 串行语义替换为 session-owned self-retire。
 - 2026-05-29 runtime/checker 实现：新增 `tools/commit_reorder_buffer.py`、`tools/check_commit_reorder_buffer.py`、聚焦测试、local gate manifest 登记和 OpenSpec guard 接线；聚焦测试、Python manifest、precommit/update-archive、OpenSpec guard JSON、local MR review 与 local gate 已通过；已在 `4479593` 合入本地 `main`，rollback ref 为 `refs/backup/local-main/20260529-1259-before-complete-flow-rob-runtime`，合入后 local gate 已通过，ROB entry 已 retired。
 - 2026-05-29 文档治理包：创建 active Phase 1A 子方案，并更新 complete-flow、父方案和消费者方案引用；已在 `ebe5f69` 合入本地 `main`，随后才进入 runtime/checker 实现。

@@ -29,18 +29,18 @@ Align Comet runtime behavior, governance policy, OpenSpec specs, checker coverag
 - 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
 - 批次：Stage B Batch 4。
 - 阶段：Phase 5。
-- 状态：本文件是 active 子 implementation_plan，但在本地 `main` 合入后仍必须等待用户确认，才能开始非文档实现。
+- 状态：已确认并以最小 closeout/alignment 包实施；现有 Comet policy、stable spec、checker、runtime test 与 CI 注册证据已经一致，因此本包不需要修改 runtime/test 源文件。
 - 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+Status: completed and locally integrated; included in the current remote-publication carrier
+Stage: Phase 5 final closeout package
+Owner session: `main-codex-leader-comet-runtime-policy-checker-alignment-20260531`
+Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Stage C entry condition: satisfied by user confirmation on 2026-05-31 after the Stage B child-plan package was merged to local `main`
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -68,11 +68,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Map Comet runtime requirements to stable OpenSpec spec statements.
-- [ ] Add checker coverage for policy/runtime drift.
-- [ ] Update CI/local gate registration if new checker or tests are added.
-- [ ] Run verify_official_openspec, run_openspec_guard, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Map Comet runtime requirements to stable OpenSpec spec statements.
+- [x] Add checker coverage for policy/runtime drift.
+- [x] Update CI/local gate registration if new checker or tests are added.
+- [x] Run verify_official_openspec, run_openspec_guard, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,5 +96,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C 最小 closeout：用户已确认实施；现有对齐证据通过 `python tools/check_openspec_comet_superpowers_policy.py --root . --json`、`python test/comet_runtime_management_flow.test.py`、`python tools/check_implementation_plan_rules.py --root . --json` 和 `python tools/check_worktree_task_receipt.py --root . --json`；checker 报告 `Spec source: stable` 且没有 policy/spec/runtime 术语缺口，因此除本计划对之外不需要源文件修改。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.
 <!-- EVIDENCE_INDEX_END -->
