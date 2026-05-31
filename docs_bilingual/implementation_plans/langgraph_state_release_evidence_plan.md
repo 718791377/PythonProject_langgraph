@@ -35,12 +35,13 @@ Reject stale running LangGraph state after completed work and require explicit c
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented and locally validated
-Stage: Stage C implementation package
+Status: implemented, locally validated, and merged into local `main`
+Stage: Stage C implementation package locally integrated
 Owner session: `codex-langgraph-state-release-evidence-20260530`
-Current gate: local validation complete before local main integration; remote publication remains out of scope
+Current gate: remote-publication approval gate; no GitLab/GitHub mutation is authorized by this plan status update
 Stage C entry condition: satisfied by user confirmation message on 2026-05-30 after the child plan was already on local `main`
-Last updated: 2026-05-30
+Local main integration: completed at `32a5cfff3b977ba13ed6e215b4efb887679019b9`; completed claim preserved at `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -94,6 +95,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-30 Stage C implementation: branch `implement-langgraph-state-release-evidence-20260530` adds structured LangGraph state-release fixtures, extends `tools/check_durable_artifact_state_surfaces.py` to reject completed `running` state and missing release/handoff fields, registers `test/check_langgraph_state_release_evidence.test.py`, and documents backend-family handoff requirements; final local-main commit will be recorded after integration.
+- 2026-05-31 local-main status sync: recorded that the Stage C implementation is merged into local `main` at `32a5cfff3b977ba13ed6e215b4efb887679019b9`, the completed claim is preserved at `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`, and the remaining gate is explicit remote-publication approval.
+- 2026-05-30 Stage C implementation: branch `implement-langgraph-state-release-evidence-20260530` added structured LangGraph state-release fixtures, extended `tools/check_durable_artifact_state_surfaces.py` to reject completed `running` state and missing release/handoff fields, registered `test/check_langgraph_state_release_evidence.test.py`, documented backend-family handoff requirements, and was integrated into local `main` at `32a5cfff3b977ba13ed6e215b4efb887679019b9`.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

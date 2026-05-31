@@ -35,12 +35,13 @@ Reject stale running LangGraph state after completed work and require explicit c
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：已实施并完成本地验证
-阶段：Stage C 实施包
+状态：已实施、已完成本地验证，并已合入本地 `main`
+阶段：Stage C 实施包已完成本地集成
 负责人会话：`codex-langgraph-state-release-evidence-20260530`
-当前门禁：本地验证已完成，等待合入本地 main；远端发布仍不在范围内
+当前门禁：远端发布批准门；本次状态更新不授权任何 GitLab/GitHub 远端变更
 Stage C 进入条件：用户于 2026-05-30 确认继续实施，且该子方案已在本地 `main`
-最后更新：2026-05-30
+本地 main 集成：已在 `32a5cfff3b977ba13ed6e215b4efb887679019b9`（`强化 LangGraph 状态释放证据检查`）完成；completed claim 已保存在 `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -94,6 +95,7 @@ Stage C 进入条件：用户于 2026-05-30 确认继续实施，且该子方案
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-05-30 Stage C 实施：分支 `implement-langgraph-state-release-evidence-20260530` 新增结构化 LangGraph state-release fixtures，扩展 `tools/check_durable_artifact_state_surfaces.py` 以拒绝 completed work 仍处于 `running` state 以及缺失 release/handoff 字段的情况，登记 `test/check_langgraph_state_release_evidence.test.py`，并记录 backend-family handoff 要求；最终 local-main commit 将在集成后记录。
+- 2026-05-31 本地 main 状态同步：记录 Stage C 实施已合入本地 `main`，集成提交为 `32a5cfff3b977ba13ed6e215b4efb887679019b9`，completed claim 已保存在 `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`，剩余门禁为显式远端发布批准。
+- 2026-05-30 Stage C 实施：分支 `implement-langgraph-state-release-evidence-20260530` 新增结构化 LangGraph state-release fixtures，扩展 `tools/check_durable_artifact_state_surfaces.py` 以拒绝 completed work 仍处于 `running` state 以及缺失 release/handoff 字段的情况，登记 `test/check_langgraph_state_release_evidence.test.py`，记录 backend-family handoff 要求，并已在 `32a5cfff3b977ba13ed6e215b4efb887679019b9` 合入本地 `main`。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->
