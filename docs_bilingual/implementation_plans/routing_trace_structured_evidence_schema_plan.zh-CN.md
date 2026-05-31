@@ -29,22 +29,24 @@ Separate Chinese conversation display from structured ASCII evidence fields for 
 - 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
 - 批次：Stage B Batch 3。
 - 阶段：Phase 4。
-- 状态：本文件是 active 子 implementation_plan，但在本地 `main` 合入后仍必须等待用户确认，才能开始非文档实现。
+- 状态：本子方案已获确认，并已通过本地 `main` 上既有 checker 与文档包完成实现；本文现在记录收口包。
 - 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：implemented and locally validated
+阶段：Stage C 收口包
+责任会话：`codex-close-routing-trace-structured-evidence-schema-20260531`
+当前门禁：收口文档等待本地校验、本地提交与本地 `main` 集成；远端发布仍不在范围内
+Stage C 进入条件：本子方案已在本地 `main` 后由用户确认，条件已满足
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
 
+- tools/check_orchestration_trace_evidence.py
+- test/check_orchestration_trace_evidence.test.py
 - tools/check_orchestration_collaboration_evidenceguard.py
 - test/fixtures/orchestration_*
 - docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md
@@ -66,11 +68,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Define required structured fields for phase, capability_chain, backend_default, backend_ready, experts, durable workflow, persistent team, and reason.
-- [ ] Add invalid fixtures with missing blockers or collapsed capability states.
-- [ ] Update checker logic and docs examples.
-- [ ] Run orchestration evidence tests and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Define required structured fields for phase, capability_chain, backend_default, backend_ready, experts, durable workflow, persistent team, and reason.
+- [x] Add invalid checker cases/fixtures with missing blockers or collapsed capability states.
+- [x] Update checker logic and docs examples.
+- [x] Run orchestration evidence tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -94,5 +96,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C 收口：分支 `close-routing-trace-structured-evidence-schema-20260531` 记录 structured routing trace schema 已通过 `tools/check_orchestration_trace_evidence.py`、`test/check_orchestration_trace_evidence.test.py`、`tools/check_orchestration_collaboration_evidenceguard.py` 与 activation-policy 文档表面完成实现；最终 local-main commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-05-30 实施基线：本地 `main` 已包含 structured trace 与 collaboration evidence 包，包括固定 `Routing trace` / `Updated Plan` 标签证据以及 expert lifecycle non-evidence handling；验证证据见 checker 测试历史和 local CI 记录。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

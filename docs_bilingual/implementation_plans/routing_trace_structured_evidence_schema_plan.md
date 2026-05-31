@@ -29,22 +29,24 @@ Separate Chinese conversation display from structured ASCII evidence fields for 
 - Parent: `docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`.
 - Batch: Stage B Batch 3.
 - Phase: Phase 4.
-- Status: this file is an active child implementation plan, but implementation must not start until the user confirms this child plan after local `main` integration.
+- Status: implementation has been confirmed, completed through existing checker and documentation packages on local `main`, and this file now records the closeout package.
 - Remote publication: out of scope unless the user explicitly asks for remote publication.
 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented and locally validated
+Stage: Stage C closeout package
+Owner session: `codex-close-routing-trace-structured-evidence-schema-20260531`
+Current gate: closeout documentation pending local validation, local commit, and local `main` integration; remote publication remains out of scope
+Stage C entry condition: satisfied by user confirmation after the child plan was already on local `main`
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
 
+- tools/check_orchestration_trace_evidence.py
+- test/check_orchestration_trace_evidence.test.py
 - tools/check_orchestration_collaboration_evidenceguard.py
 - test/fixtures/orchestration_*
 - docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md
@@ -66,11 +68,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Define required structured fields for phase, capability_chain, backend_default, backend_ready, experts, durable workflow, persistent team, and reason.
-- [ ] Add invalid fixtures with missing blockers or collapsed capability states.
-- [ ] Update checker logic and docs examples.
-- [ ] Run orchestration evidence tests and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Define required structured fields for phase, capability_chain, backend_default, backend_ready, experts, durable workflow, persistent team, and reason.
+- [x] Add invalid checker cases/fixtures with missing blockers or collapsed capability states.
+- [x] Update checker logic and docs examples.
+- [x] Run orchestration evidence tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -94,5 +96,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C closeout: branch `close-routing-trace-structured-evidence-schema-20260531` records that the structured routing trace schema is implemented through `tools/check_orchestration_trace_evidence.py`, `test/check_orchestration_trace_evidence.test.py`, `tools/check_orchestration_collaboration_evidenceguard.py`, and the activation-policy documentation surface; final local-main commit is recorded in the assistant response and local git history.
+- 2026-05-30 implementation baseline: local `main` contains the structured trace and collaboration evidence packages, including fixed `Routing trace` / `Updated Plan` label evidence and expert lifecycle non-evidence handling; validation evidence is in the checker test history and local CI records.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->
