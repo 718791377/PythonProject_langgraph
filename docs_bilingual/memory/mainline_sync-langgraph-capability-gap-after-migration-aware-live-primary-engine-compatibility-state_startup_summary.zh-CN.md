@@ -47,6 +47,15 @@ translation_of: docs_bilingual/memory/mainline_sync-langgraph-capability-gap-aft
 - `omx_state`、`omx_memory`、`omx_code_intel` 和 `omx_trace` 仍是 Codex-direct MCP entries；MCP Router 不托管这些 Codex 专属工具。
 - 新会话不应再把旧 MCP-scope、MR 5 helper mirror、MR 6 readiness 或 Windows cleanup-output 工作当成当前必须实施目标。
 
+## 2026-06-01 Phase 5 远端发布修复记录
+
+本节记录 Phase 5 远端发布修复状态.
+
+- GitLab MR `!126` 已合并 Phase 5 收口内容.
+- GitLab `main` pipeline 因 merge commit subject 被保存成问号而失败; 内容验证已在分支 pipeline 通过.
+- 修复必须前向进行: 不改写历史, 不 force-push; 用 UTF-8 安全的 merge subject 合并前向修复提交.
+- GitLab `main` CI 通过前, 不同步 GitHub; 此时仍报告为发布进行中.
+
 ## MCP Scope Routing Reminder（MCP 范围路由提醒）
 
 当问题涉及 MCP server placement（MCP 服务器放在哪里）时，使用以下路由：

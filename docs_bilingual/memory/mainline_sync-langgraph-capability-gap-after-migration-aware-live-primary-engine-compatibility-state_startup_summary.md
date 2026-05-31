@@ -46,6 +46,16 @@ Current interpretation:
 - `omx_state`, `omx_memory`, `omx_code_intel`, and `omx_trace` remain Codex-direct MCP entries; MCP Router remains outside those Codex-dedicated tools.
 - A new session should not treat old MCP-scope, MR 5 helper mirror, MR 6 readiness, or Windows cleanup-output work as the current required implementation target.
 
+## 2026-06-01 Phase 5 Remote Publication Repair Note
+
+Use this note ahead of older publication state when closing the Phase 5 remote publication.
+
+- GitLab MR `!126` merged the Phase 5 closeout content from commit `41b0e694da6838a8da4b52113150630dc423fa65` into GitLab `main`.
+- The MR branch pipeline passed before merge.
+- GitLab `main` then advanced to merge commit `748882f8183be7620c0e357ba7189f8255bd8141`, but the main pipeline failed only because the generated merge commit subject was stored as question marks and failed `tools/check_git_commit_language.py`.
+- The repair path is forward-only: do not rewrite GitLab history, do not force-push, and do not bypass the shared local/remote gate. Add a valid forward repair commit, merge it through GitLab with a UTF-8-safe merge subject, then require GitLab `main` CI to pass before mirroring to GitHub.
+- Until that repair lands and GitHub is synced, `github/main` may still lag behind GitLab `main`; report that as publication-in-progress rather than Phase 6-ready remote closure.
+
 ## MCP Scope Routing Reminder
 
 When a question involves MCP server placement, use this routing:
