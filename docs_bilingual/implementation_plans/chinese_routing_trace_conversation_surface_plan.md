@@ -31,18 +31,18 @@ Require user-facing conversation surfaces to keep the fixed literal labels `Rout
 - Parent: `docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`.
 - Batch: Stage B Batch 3.
 - Phase: Phase 4.
-- Status: this file is an active child implementation plan; the user confirmed the fixed English labels and `Updated Plan` checklist semantics for this runtime/checker slice.
+- Status: this child implementation plan has completed the fixed English labels and `Updated Plan` checklist semantics runtime/checker slice; this file now records the closeout package for the final validation checklist item.
 - Remote publication: out of scope unless the user explicitly asks for remote publication.
 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan governance revision + runtime/checker hardening
-Owner session: `codex-chinese-routing-updated-plan-20260530`
-Current gate: implement the fixed-label contract, run validation, commit in Chinese, integrate into local main, and stop at the remote publication gate
-Stage C entry condition: this runtime/checker slice passes validation, commits locally, integrates into local `main`, and stops at the remote publication gate
-Last updated: 2026-05-30
+Status: implemented and locally validated
+Stage: Stage C closeout package
+Owner session: `codex-close-chinese-routing-trace-conversation-surface-plan-20260531`
+Current gate: closeout documentation pending local validation, local commit, local MR review, local `main` integration, and stop at the remote publication gate
+Stage C entry condition: satisfied by the fixed-label runtime/checker slice already merged to local `main`; this package closes the remaining validation checklist item
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -84,7 +84,7 @@ Only one session may own each hotspot at a time:
 - [x] Record that localized replacement of the fixed `Routing trace` label is prohibited.
 - [x] Record that localized replacement of the fixed `Updated Plan` label is prohibited.
 - [x] Add checker/fixture coverage that rejects localized replacement of the fixed labels and rejects prose-only `Updated Plan` output.
-- [ ] Run the routing evidence checker, implementation-plan checker, local gate, and local MR review.
+- [x] Run the routing evidence checker, implementation-plan checker, local gate, and local MR review.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -110,6 +110,8 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C closeout: branch `close-chinese-routing-trace-conversation-surface-plan-20260531` records the final validation checklist item as complete for the already-implemented fixed `Routing trace` and `Updated Plan` conversation surface contract; final local-main commit and validation evidence are recorded in the assistant response and local git history.
+- 2026-05-30 implementation baseline: local `main` contains the fixed-label runtime/checker package in `implement-routing-updated-plan-fixed-labels-20260530c`, including checker/fixture coverage for stable `Routing trace` and `Updated Plan` labels and checklist semantics.
 - 2026-05-30 stable-label correction: user confirmed that `Routing trace` and `Updated Plan` remain English user-facing labels; `Updated Plan` keeps checklist semantics. This slice updates the parent/child plan constraints and adds checker/fixture coverage for that corrected contract.
 - 2026-05-30 Phase 4 conversation-surface governance update: branch `chinese-routing-updated-plan-20260530` previously extended the surface scope from routing traces to both routing traces and updated plans; this correction supersedes the mistaken label-localization requirement.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
