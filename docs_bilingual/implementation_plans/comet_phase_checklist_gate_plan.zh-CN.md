@@ -29,18 +29,19 @@ Require phase-specific management checklist evidence before Comet forward transi
 - 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
 - 批次：Stage B Batch 4。
 - 阶段：Phase 5。
-- 状态：本文件是 active 子 implementation_plan，但在本地 `main` 合入后仍必须等待用户确认，才能开始非文档实现。
+- 状态：用户已确认继续实施；本 Stage C 包补充显式回归覆盖和收口证据，并验证既有 Comet runtime 门禁行为。
 - 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：已实施并完成本地验证，准备本地 main 集成
+阶段：Stage C 实施/收口包
+责任会话：当前主 Codex leader session；精确 claim ID 存在 `.omx/session-claims/`
+当前门禁：本地 main 集成，然后停在远端发布批准门；远端发布仍未授权
+Stage C 进入条件：用户于 2026-05-31 确认继续实施，条件已满足
+本地验证：Comet runtime management 测试、OpenSpec Comet/Superpowers policy check、implementation-plan rules 与 run_openspec_guard 已通过；local_gate 和 local_mr_review 在本地 main 集成前运行
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -66,11 +67,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add failing tests for missing Open, Design, Build, Verify, Archive, and Monitoring checklist items.
-- [ ] Update transition guards to require checked evidence before forward movement.
-- [ ] Keep return transitions separate from forward transitions.
-- [ ] Run Comet tests, run_openspec_guard, and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add failing tests for missing Open, Design, Build, Verify, Archive, and Monitoring checklist items.
+- [x] Update transition guards to require checked evidence before forward movement.
+- [x] Keep return transitions separate from forward transitions.
+- [x] Run Comet tests, run_openspec_guard, and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -94,5 +95,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 Stage C closeout: user confirmation is recorded; branch `implement-comet-phase-checklist-gate-20260531` adds explicit static and behavior regression coverage for Open, Design, Build, Verify, Archive, and Monitoring checklist gates; existing runtime transition guard, state, archive, and monitoring-return behavior is validated without duplicating script churn; local validation and local-main integration evidence are recorded in local git history and the assistant response.
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->
