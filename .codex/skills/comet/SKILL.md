@@ -14,6 +14,21 @@ Superpowers handles HOW — technical design, planning, execution, closing
 
 **Core principle: brainstorming cannot be skipped. Every change must undergo deep design (except hotfix and tweak presets).**
 
+### Superpowers HOW-layer visibility
+
+OpenSpec remains WHAT. Superpowers remains HOW. Comet must make the selected Superpowers procedure visible instead of treating HOW-layer execution as an implicit implementation detail.
+
+For the full workflow, record the applicable procedural invocation evidence:
+
+- workflow entry: `superpowers:using-superpowers`
+- planning: `superpowers:writing-plans`
+- execution: `superpowers:executing-plans`
+- behavior-changing implementation: `superpowers:test-driven-development`
+- acceptance claims: `superpowers:verification-before-completion`
+- branch closure: `superpowers:finishing-a-development-branch`
+
+Skill invocation is HOW-layer procedural evidence only, not native subagent evidence. Native subagent evidence still requires leader-side spawning and leader-owned fan-in.
+
 ---
 
 ## Decision Core

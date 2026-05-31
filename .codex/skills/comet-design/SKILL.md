@@ -10,6 +10,12 @@ description: "Comet Phase 2: Deep Design. Invoke with /comet-design. Produce Des
 - Active change exists (proposal.md, design.md, tasks.md)
 - No Design Doc (no corresponding file under `docs/superpowers/specs/`)
 
+### Superpowers HOW-layer evidence
+
+Load `superpowers:using-superpowers` before Design work and load `superpowers:brainstorming` for the actual deep-design pass. Record the resulting design document path in `.comet.yaml` so the Comet handoff exposes the selected HOW-layer procedure and its durable artifact.
+
+Skill invocation is HOW-layer procedural evidence only, not native subagent evidence.
+
 ## Steps
 
 ### 0. Entry State Verification (Entry Check)

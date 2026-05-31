@@ -594,6 +594,27 @@
       "description": "Requires any implementation plan referenced by an active Comet change in build, verify, or archive phase to be registered with status active before implementation continues."
     },
     {
+      "id": "comet-superpowers-how-layer-visibility",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        ".codex/skills/comet/SKILL.md",
+        ".codex/skills/comet-design/SKILL.md",
+        ".codex/skills/comet-build/SKILL.md",
+        ".codex/skills/comet-verify/SKILL.md",
+        "docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md",
+        "docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_comet_superpowers_visibility.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_comet_superpowers_visibility"
+      ],
+      "description": "Requires Comet-controlled Design, Build, Verify, and branch-finishing surfaces to expose Superpowers HOW-layer skill evidence while preserving the OpenSpec WHAT / Superpowers HOW / native-subagent evidence boundary."
+    },
+    {
       "id": "post-plan-execution-governance-package",
       "owner_level": "project",
       "status": "implemented",

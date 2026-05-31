@@ -10,6 +10,12 @@ description: "Comet Phase 4: Verify and Complete. Invoke with /comet-verify. Ver
 - Code has been committed (Phase 3 complete)
 - All tasks in tasks.md are complete
 
+### Superpowers HOW-layer evidence
+
+Load `superpowers:using-superpowers` before Verify work, use `superpowers:verification-before-completion` before acceptance claims, and use `superpowers:finishing-a-development-branch` for the local branch decision. Record branch handling evidence before transitioning to Archive.
+
+Skill invocation is HOW-layer procedural evidence only, not native subagent evidence.
+
 ## Steps
 
 ### 0. Entry State Verification (Entry Check)

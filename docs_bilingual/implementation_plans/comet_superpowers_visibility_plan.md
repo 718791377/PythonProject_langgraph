@@ -29,26 +29,32 @@ Make Superpowers HOW-layer skill usage explicit in Comet Design, Build, Verify, 
 - Parent: `docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`.
 - Batch: Stage B Batch 4.
 - Phase: Phase 5.
-- Status: this file is an active child implementation plan, but implementation must not start until the user confirms this child plan after local `main` integration.
+- Status: this file is an active child implementation plan; the user confirmed implementation in the 2026-05-31 cold-start continuation request.
 - Remote publication: out of scope unless the user explicitly asks for remote publication.
 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Stage: Stage C implementation and local-main integration package
+Owner session: main-codex-leader-comet-superpowers-visibility-20260531
+Current gate: run target checks, shared local gate, and local MR review before local `main` integration
+Stage C entry condition: satisfied by the user's 2026-05-31 cold-start continuation request
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
 
 - .codex/skills/comet/SKILL.md
+- .codex/skills/comet-design/SKILL.md
 - .codex/skills/comet-build/SKILL.md
 - .codex/skills/comet-verify/SKILL.md
-- docs_bilingual/governance/openspec_official_workflow_policy.md
+- docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md
+- docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.zh-CN.md
+- tools/check_comet_superpowers_visibility.py
+- tools/run_openspec_guard.py
+- tools/safety_rule_script_backing_registry.json
+- tools/ci/ci_test_manifest.json
 - test/*superpowers*visibility*
 
 ## Hotspot Serialization
@@ -68,10 +74,10 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add evidence expectations for using-superpowers, writing-plans, executing-plans, test-driven-development, verification-before-completion, and finishing-a-development-branch.
-- [ ] Update Comet skill docs so OpenSpec remains WHAT and Superpowers remains HOW.
-- [ ] Add checker or test coverage for missing HOW-layer evidence when Comet claims Superpowers usage.
+- [x] Confirm this child plan for implementation through the user's 2026-05-31 cold-start continuation request.
+- [x] Add evidence expectations for using-superpowers, writing-plans, executing-plans, test-driven-development, verification-before-completion, and finishing-a-development-branch.
+- [x] Update Comet skill docs so OpenSpec remains WHAT and Superpowers remains HOW.
+- [x] Add checker or test coverage for missing HOW-layer evidence when Comet claims Superpowers usage.
 - [ ] Run skill boundary, Superpowers visibility, and local gate checks.
 <!-- TASK_BACKLOG_END -->
 
@@ -87,7 +93,7 @@ Run these gates before local `main` integration unless this child plan later nar
 
 ## Acceptance Criteria
 
-- The child plan is confirmed by the user after local `main` integration.
+- The child plan is confirmed by the user's 2026-05-31 continuation request before non-document implementation.
 - The active session claim names this child plan path before write work starts.
 - Tests or checker fixtures fail before the implementation when the change is behavior-changing.
 - Governance docs, runtime helpers, checkers, tests, and CI registration stay aligned.
@@ -97,4 +103,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-31 Stage C start: user confirmed implementation; claim `main-codex-leader-comet-superpowers-visibility-20260531` owns the serialized Comet/Superpowers visibility hotspot.
 <!-- EVIDENCE_INDEX_END -->

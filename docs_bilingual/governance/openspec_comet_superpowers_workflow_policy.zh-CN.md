@@ -38,13 +38,29 @@ Comet 不替代 OpenSpec、Superpowers、native Codex subagents、native_omx 或
 
 Skills 仍然是 workflow instruction surfaces。Comet skill、OpenSpec skill、Superpowers skill 或 profile 调用不是 native subagent 证据。Native subagents 仍然是由主会话 leader 侧显式生成并 fan-in 的角色。
 
+## 3A. Superpowers HOW-layer 可见性契约
+
+Comet 必须显式记录 Superpowers HOW-layer evidence。OpenSpec 仍然是 WHAT layer。Superpowers 仍然是 HOW layer。
+
+工作流表面需要记录适用的 Superpowers procedure：
+
+- workflow entry：`superpowers:using-superpowers`
+- design：`superpowers:brainstorming`
+- planning：`superpowers:writing-plans`
+- execution：`superpowers:executing-plans`
+- behavior-changing implementation：`superpowers:test-driven-development`
+- acceptance claims：`superpowers:verification-before-completion`
+- branch handling：`superpowers:finishing-a-development-branch`
+
+Skill invocation 是 HOW-layer procedural evidence，不是 native subagent evidence。Native expert evidence 仍然要求 leader 侧显式生成、受限生命周期处理和 leader-owned fan-in。
+
 文档目录边界：
 
 - `docs_bilingual/` 是正式、持久化的文档库，用于 governance、implementation plans、product notes、startup summaries，以及已登记的中英文文档对。
 - `docs/superpowers/` 只保留给 Comet state 引用的 Superpowers runtime artifacts，例如 `docs/superpowers/specs/` 下的设计文档，以及 `docs/superpowers/plans/` 下的实施计划。
 - 不要把 `docs_bilingual/` 的正式文档复制到 `docs/`；只有当 workflow 明确记录这些路径时，才把 Superpowers runtime artifacts 放入 `docs/superpowers/`。
 
-## 3A. `/plan` 之后的本地治理包
+## 3B. `/plan` 之后的本地治理包
 
 当会话退出 `/plan` 且后续任务不是纯文档任务时，第一个可执行切片是本地治理包，而不是直接进入 runtime 或代码实现。
 
@@ -183,6 +199,8 @@ Comet runtime 治理文本在新增或修改 runtime 字段、状态值、contro
 
 ```powershell
 python tools/check_openspec_comet_superpowers_policy.py --root . --json
+python tools/check_comet_superpowers_visibility.py --root . --json
+python test/check_comet_superpowers_visibility.test.py
 python test/run_openspec_guard_json.test.py
 python tools/check_document_governance_rules.py --root . --json
 openspec validate --all
