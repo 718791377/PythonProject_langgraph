@@ -35,12 +35,13 @@ Give the orchestration collaboration evidenceguard and bilingual OpenSpec stable
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implementation-in-progress
+Status: implemented
 Stage: Stage C collaboration evidenceguard and bilingual OpenSpec surface package
 Owner session: codex-collaboration-evidenceguard-bilingual-openspec-20260530
-Current gate: user confirmation recorded; checker, fixture-registration, bilingual OpenSpec, CI-manifest, and focused regression-test updates are ready for local gate and local MR review before local main integration
-Stage C entry condition: satisfied by the 2026-05-30 user request to continue and locally merge this child plan implementation
-Last updated: 2026-05-30
+Current gate: implemented, locally validated, fast-forward merged into local `main`, and locally closed out; remote publication remains out of scope and is not authorized.
+Stage C entry condition: satisfied by the 2026-05-30 user request to continue and locally merge this child plan implementation.
+Local main integration: implementation commit `5506185310411a8b63c5c59c90365fc68ded57d1` is contained in current local `main`; the local feature worktree and feature branch were removed, and the completed claim was archived at `.omx/session-claims/completed/implement-collaboration-evidenceguard-bilingual-openspec-20260530.json`.
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -101,4 +102,5 @@ Run these gates before local `main` integration unless this child plan later nar
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-30 Stage C implementation package: adds required evidenceguard fixture registration, a manifest-registered collaboration evidenceguard regression test, and bilingual OpenSpec fixture-surface requirements; local gate and local MR review evidence are recorded in the session response and worktree receipt.
+- 2026-05-31 local status closeout: confirmed implementation commit `5506185310411a8b63c5c59c90365fc68ded57d1` is contained in local `main`, removed the local feature worktree and feature branch, archived the completed claim under `.omx/session-claims/completed/`, retained rollback refs, and kept the remote-publication gate closed.
 <!-- EVIDENCE_INDEX_END -->

@@ -35,12 +35,13 @@ Give the orchestration collaboration evidenceguard and bilingual OpenSpec stable
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：implementation-in-progress
+状态：implemented
 阶段：Stage C collaboration evidenceguard and bilingual OpenSpec surface package
 责任会话：codex-collaboration-evidenceguard-bilingual-openspec-20260530
-当前门禁：已记录用户确认；checker、fixture registration、双语 OpenSpec、CI manifest 与 focused regression test 更新已准备进入 local gate 和 local MR review，之后再合入本地 main
-Stage C 进入条件：已由 2026-05-30 用户请求继续并本地合入本子方案实现而满足
-最后更新：2026-05-30
+当前门禁：已实现、已本地验证、已 fast-forward 合入本地 `main`，并完成本地收口；远端发布仍不在范围内且未授权。
+Stage C 进入条件：已由 2026-05-30 用户请求继续并本地合入本子方案实现而满足。
+本地 main 集成：实现提交 `5506185310411a8b63c5c59c90365fc68ded57d1` 已包含在当前本地 `main`；本地 feature worktree 和 feature branch 已删除，completed claim 已归档到 `.omx/session-claims/completed/implement-collaboration-evidenceguard-bilingual-openspec-20260530.json`。
+最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -101,4 +102,5 @@ Stage C 进入条件：已由 2026-05-30 用户请求继续并本地合入本子
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-30 Stage C 实现包：增加 required evidenceguard fixture registration、manifest-registered collaboration evidenceguard regression test 与双语 OpenSpec fixture-surface requirement；local gate 和 local MR review 证据记录在会话回复和 worktree receipt 中。
+- 2026-05-31 本地状态收口：确认实现提交 `5506185310411a8b63c5c59c90365fc68ded57d1` 已包含在本地 `main`，已删除本地 feature worktree 和 feature branch，completed claim 已归档到 `.omx/session-claims/completed/`，rollback refs 已保留，远端发布门禁保持关闭。
 <!-- EVIDENCE_INDEX_END -->
