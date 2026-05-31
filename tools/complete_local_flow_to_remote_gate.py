@@ -10,12 +10,14 @@ from pathlib import Path
 from typing import Any
 
 import check_plan_exit_execution_governance as plan_exit
+import commit_reorder_buffer as commit_rob
 
 DOC_PREFIXES = ("docs_bilingual/", "openspec/", "docs/")
 DOC_EXACT_PATHS = {"完整提交流程.md"}
 DOCS_BILINGUAL_PREFIX = "docs_bilingual/"
 IMPLEMENTATION_PLAN_PREFIX = "docs_bilingual/implementation_plans/"
 DEFAULT_RECEIPT = ".omx/worktree-task-receipt.json"
+REQUIRED_SELF_RETIRE_GATES = ("precommit_update_archive", "local_gate", "local_mr_review")
 
 
 def run_json_tool(args: list[str], *, cwd: Path) -> dict[str, Any]:
@@ -227,6 +229,93 @@ def require_implementation_confirmation(path: Path, *, root: Path, main_ref: str
         )
 
 
+def resolved_path_key(root: Path, value: str | None) -> str:
+    path = Path(value or ".")
+    if not path.is_absolute():
+        path = root / path
+    return str(path.resolve()).casefold()
+
+
+def load_self_retire_rob_entry(root: Path, entry_id: str) -> dict[str, Any]:
+    path = commit_rob.entry_path(root, entry_id)
+    try:
+        entry = json.loads(path.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"ROB entry not found: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"ROB entry is not valid JSON: {path}: {exc}") from exc
+    if not isinstance(entry, dict):
+        raise RuntimeError(f"ROB entry must be a JSON object: {path}")
+    return entry
+
+
+def expected_self_retire_implementation_plan(receipt_path: Path, implementation_plan: str | None) -> str:
+    if implementation_plan:
+        return normalize_path(implementation_plan)
+    receipt = load_receipt(receipt_path)
+    plan = str(receipt.get("implementation_plan") or "").strip()
+    if not plan:
+        raise RuntimeError(
+            "--self-retire requires --implementation-plan or receipt implementation_plan before ROB preflight."
+        )
+    return normalize_path(plan)
+
+
+def preflight_self_retire_rob_entry(
+    root: Path,
+    *,
+    worktree: Path,
+    branch: str,
+    session_id: str,
+    entry_id: str,
+    receipt_path: Path,
+    implementation_plan: str | None,
+) -> dict[str, Any]:
+    entry = load_self_retire_rob_entry(root, entry_id)
+    expected_plan = expected_self_retire_implementation_plan(receipt_path, implementation_plan)
+    errors: list[str] = []
+
+    state = str(entry.get("state") or "")
+    if state != "ready":
+        errors.append(f"ROB entry {entry_id} state must be ready before self-retire; got {state!r}")
+    actual_session = str(entry.get("session_id") or "")
+    if actual_session != session_id:
+        errors.append(f"ROB entry {entry_id} session_id mismatch: expected {session_id!r}, got {actual_session!r}")
+    actual_branch = str(entry.get("branch") or "")
+    if actual_branch != branch:
+        errors.append(f"ROB entry {entry_id} branch mismatch: expected {branch!r}, got {actual_branch!r}")
+    actual_plan = normalize_path(str(entry.get("implementation_plan") or ""))
+    if actual_plan != expected_plan:
+        errors.append(
+            f"ROB entry {entry_id} implementation_plan mismatch: expected {expected_plan!r}, got {actual_plan!r}"
+        )
+    actual_worktree = str(entry.get("worktree") or "")
+    if actual_worktree and resolved_path_key(root, actual_worktree) != resolved_path_key(root, str(worktree)):
+        errors.append(
+            f"ROB entry {entry_id} worktree mismatch: expected {str(worktree)!r}, got {actual_worktree!r}"
+        )
+
+    gate_status = entry.get("gate_status") or {}
+    if not isinstance(gate_status, dict):
+        errors.append(f"ROB entry {entry_id} gate_status must be a JSON object")
+        gate_status = {}
+    for gate in REQUIRED_SELF_RETIRE_GATES:
+        status = str(gate_status.get(gate) or "")
+        if status != "passed":
+            errors.append(f"ROB entry {entry_id} gate_status.{gate} must be passed before self-retire; got {status!r}")
+
+    if errors:
+        raise RuntimeError("; ".join(errors))
+    return {
+        "entry_id": entry_id,
+        "state": state,
+        "session_id": actual_session,
+        "branch": actual_branch,
+        "implementation_plan": actual_plan,
+        "required_gate_status": {gate: str(gate_status.get(gate) or "") for gate in REQUIRED_SELF_RETIRE_GATES},
+    }
+
+
 def run_local_gate(script_root: Path, label: str) -> None:
     gate = subprocess.run(
         ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script_root / "tools/ci/local_gate.ps1")],
@@ -302,6 +391,7 @@ def main() -> int:
     implementation_plan: str | None = None
     use_retire_lock = bool(args.self_retire or args.acquire_retire_lock)
     retire_lock_nonce: str | None = None
+    self_retire_rob_preflight: dict[str, Any] | None = None
 
     try:
         if branch == args.main:
@@ -320,6 +410,18 @@ def main() -> int:
         merge_base = run_git(root, ["merge-base", args.main, branch], check=True).stdout.strip()
         if not merge_base:
             raise RuntimeError("Unable to find merge base between local main and feature branch.")
+        if args.self_retire:
+            assert args.session_id is not None
+            assert args.rob_entry_id is not None
+            self_retire_rob_preflight = preflight_self_retire_rob_entry(
+                root,
+                worktree=worktree,
+                branch=branch,
+                session_id=args.session_id,
+                entry_id=args.rob_entry_id,
+                receipt_path=receipt_path,
+                implementation_plan=args.implementation_plan,
+            )
 
         changed_paths = diff_paths(root, args.main, branch)
         if args.stage == "governance-confirmation":
@@ -429,6 +531,7 @@ def main() -> int:
         "remote_publication_performed": False,
         "retire_lock_used": use_retire_lock,
         "retire_lock_nonce": retire_lock_nonce,
+        "self_retire_rob_preflight": self_retire_rob_preflight,
         "stop_state": stop_state,
         "actions": actions,
         "errors": errors,

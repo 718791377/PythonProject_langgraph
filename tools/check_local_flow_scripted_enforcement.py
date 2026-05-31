@@ -54,6 +54,7 @@ REQUIRED_TESTS = {
     "check_plan_exit_execution_governance.test.py",
     "check_local_flow_scripted_enforcement.test.py",
     "check_local_main_retire_lock.test.py",
+    "check_complete_local_flow_self_retire_preflight.test.py",
 }
 REQUIRED_PLAN_EXIT_TERMS = [
     "requires_user_confirmation_before_implementation",
@@ -75,6 +76,8 @@ REQUIRED_LOCAL_FLOW_HELPER_TERMS = [
     "--acquire-retire-lock",
     "local_main_retire_lock.py",
     "self_retire_lock",
+    "preflight_self_retire_rob_entry",
+    "REQUIRED_SELF_RETIRE_GATES",
 ]
 REQUIRED_RETIRE_LOCK_TERMS = [
     "local-main-retire",

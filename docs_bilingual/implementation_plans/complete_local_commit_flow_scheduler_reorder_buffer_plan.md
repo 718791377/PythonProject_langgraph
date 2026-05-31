@@ -118,14 +118,14 @@ This child plan adapts scheduler and CPU commit principles into repository gover
 - [x] Update the complete local flow helper so an owning session can self-retire its own ready package while holding the local-main lock.
 - [x] Replace fixed per-phase parallel caps with work-conserving all-eligible session admission in the parent plan and complete-flow governance.
 - [x] Add checker/test coverage so future governance cannot reintroduce fixed 2/3/4/6 phase caps as hard limits.
-- [ ] Reopen hardening: record that missing `--self-retire` ROB entries must not fail only after merge.
-- [ ] Add ROB entry loading and `preflight_self_retire_rob_entry(...)` to `complete_local_flow_to_remote_gate.py`.
-- [ ] Missing ROB entry must fail closed before lock acquisition, rollback-ref creation, or merge.
-- [ ] `state != ready` must fail closed before lock acquisition, rollback-ref creation, or merge.
-- [ ] Session, branch, or implementation-plan mismatch must fail closed before merge.
-- [ ] Missing `precommit_update_archive`, `local_gate`, or `local_mr_review` passed status must fail closed before merge; gate condition: these fields record the required pre-merge evidence.
-- [ ] Ready-entry success path still records `self_retire_lock` retired metadata after merge.
-- [ ] Add focused tests and register/run the related checker coverage.
+- [x] Reopen hardening: record that missing `--self-retire` ROB entries must not fail only after merge.
+- [x] Add ROB entry loading and `preflight_self_retire_rob_entry(...)` to `complete_local_flow_to_remote_gate.py`.
+- [x] Missing ROB entry must fail closed before lock acquisition, rollback-ref creation, or merge.
+- [x] `state != ready` must fail closed before lock acquisition, rollback-ref creation, or merge.
+- [x] Session, branch, or implementation-plan mismatch must fail closed before merge.
+- [x] Missing `precommit_update_archive`, `local_gate`, or `local_mr_review` passed status must fail closed before merge; gate condition: these fields record the required pre-merge evidence.
+- [x] Ready-entry success path still records `self_retire_lock` retired metadata after merge.
+- [x] Add focused tests and register/run the related checker coverage.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -153,6 +153,7 @@ If available in the active branch, also run the shared local gate and local MR r
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 ROB retire preflight implementation: added `preflight_self_retire_rob_entry(...)`, `REQUIRED_SELF_RETIRE_GATES`, and `test/check_complete_local_flow_self_retire_preflight.test.py`; RED showed the old helper could mutate local `main` or accept mismatched metadata, then focused GREEN passed before broader gates.
 - 2026-05-31 ROB retire preflight reopening: confirmed the old helper recorded ROB retire metadata after merge; this pass requires ready ROB entry, owner, and gate-state validation before any local `main` mutation.
 - 2026-05-30 complete-flow alignment: `7e47af8` updated the repository-root complete local commit flow into the HOW contract for multi-session automatic local commit and local-main integration; this parent-plan-family alignment package replaces downstream fixed-leader serial semantics with session-owned self-retire.
 - 2026-05-29 runtime/checker implementation: added `tools/commit_reorder_buffer.py`, `tools/check_commit_reorder_buffer.py`, focused tests, local gate manifest registration, and OpenSpec guard wiring; focused tests, Python manifest, precommit/update-archive, OpenSpec guard JSON, local MR review, and local gate passed; integrated into local `main` at `4479593` with rollback ref `refs/backup/local-main/20260529-1259-before-complete-flow-rob-runtime`, then post-merge local gate passed and the ROB entry was retired.

@@ -12,6 +12,7 @@
     "check_implementation_plan_claim_lock.test.py",
     "check_commit_reorder_buffer.test.py",
     "check_local_main_retire_lock.test.py",
+    "check_complete_local_flow_self_retire_preflight.test.py",
     "check_skills_audit_output_retention.test.py",
     "run_openspec_guard_json.test.py",
     "check_local_mirrored_ci_gate.test.py",
