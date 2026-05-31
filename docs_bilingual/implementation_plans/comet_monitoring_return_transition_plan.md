@@ -35,12 +35,12 @@ Support Monitoring decisions that return to Open, Design, Build, or Verify rathe
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: completed
+Stage: Stage C implementation closeout package
+Owner session: main-codex-leader-comet-monitoring-return-transition-20260531
+Current gate: local validation complete; ready for local main integration, remote publication out of scope
+Stage C entry condition: satisfied by the 2026-05-31 user instruction to continue this confirmed child plan
+Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -68,11 +68,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add tests for monitor-return-open, monitor-return-design, monitor-return-build, and monitor-return-verify.
-- [ ] Require target_phase and rework_reason for return decisions.
-- [ ] Block forward transitions when monitoring_status is blocked or needs_decision without a valid return decision.
-- [ ] Run Comet transition tests and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add tests for monitor-return-open, monitor-return-design, monitor-return-build, and monitor-return-verify.
+- [x] Require target_phase and rework_reason for return decisions.
+- [x] Block forward transitions when monitoring_status is blocked or needs_decision without a valid return decision.
+- [x] Run Comet transition tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -97,4 +97,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-05-31 Stage C implementation closeout: confirmed by the current user instruction; existing Comet runtime already contains `monitor-return-open`, `monitor-return-design`, `monitor-return-build`, and `monitor-return-verify`, schema validation requires `target_phase` plus non-null `rework_reason`, and forward transition guards block `monitoring_status=blocked|needs_decision` or non-`continue` decisions. Evidence command: `python test\comet_runtime_management_flow.test.py` passed with 25 tests (12 skipped because bash-dependent cases are skipped when unavailable in that invocation). Code hotspot edits were not duplicated because active neighboring Comet child-plan claims already overlap the runtime/test hotspot; this closeout records the verified existing behavior and keeps remote publication out of scope.
 <!-- EVIDENCE_INDEX_END -->
