@@ -36,10 +36,10 @@ Separate Chinese conversation display from structured ASCII evidence fields for 
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented and locally validated
-Stage: Stage C closeout package
-Owner session: `codex-close-routing-trace-structured-evidence-schema-20260531`
-Current gate: closeout documentation pending local validation, local commit, and local `main` integration; remote publication remains out of scope
-Stage C entry condition: satisfied by user confirmation after the child plan was already on local `main`
+Stage: Stage C closeout package merged to local `main`
+Owner session: `codex-update-routing-trace-structured-evidence-schema-status-20260531` means the local status-only closeout session claim for this plan update.
+Current gate: closeout documentation is integrated into local `main`; stop at the remote publication gate until the user explicitly authorizes GitLab/GitHub publication
+Stage C entry condition: satisfied by user confirmation and by local `main` integration of the closeout documentation
 Last updated: 2026-05-31
 <!-- CURRENT_STATUS_END -->
 
@@ -96,6 +96,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 local-main status closeout: branch `update-routing-trace-structured-evidence-schema-status-20260531` means the status-only closeout branch used to record the transition from pending local integration to the remote-publication gate after the closeout documentation was integrated into local `main`.
 - 2026-05-31 Stage C closeout: branch `close-routing-trace-structured-evidence-schema-20260531` records that the structured routing trace schema is implemented through `tools/check_orchestration_trace_evidence.py`, `test/check_orchestration_trace_evidence.test.py`, `tools/check_orchestration_collaboration_evidenceguard.py`, and the activation-policy documentation surface; final local-main commit is recorded in the assistant response and local git history.
 - 2026-05-30 implementation baseline: local `main` contains the structured trace and collaboration evidence packages, including fixed `Routing trace` / `Updated Plan` label evidence and expert lifecycle non-evidence handling; validation evidence is in the checker test history and local CI records.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.

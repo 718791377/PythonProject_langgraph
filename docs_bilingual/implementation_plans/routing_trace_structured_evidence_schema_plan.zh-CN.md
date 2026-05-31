@@ -36,10 +36,10 @@ Separate Chinese conversation display from structured ASCII evidence fields for 
 
 <!-- CURRENT_STATUS_START -->
 状态：implemented and locally validated
-阶段：Stage C 收口包
-责任会话：`codex-close-routing-trace-structured-evidence-schema-20260531`
-当前门禁：收口文档等待本地校验、本地提交与本地 `main` 集成；远端发布仍不在范围内
-Stage C 进入条件：本子方案已在本地 `main` 后由用户确认，条件已满足
+阶段：Stage C 收口包已合入本地 `main`
+责任会话：`codex-update-routing-trace-structured-evidence-schema-status-20260531` 表示本次仅更新状态收口的本地会话认领标识。
+当前门禁：收口文档已集成本地 `main`；在用户明确授权 GitLab/GitHub 发布前停在远端发布门
+Stage C 进入条件：用户确认与收口文档本地 `main` 集成均已满足
 最后更新：2026-05-31
 <!-- CURRENT_STATUS_END -->
 
@@ -96,6 +96,7 @@ Stage C 进入条件：本子方案已在本地 `main` 后由用户确认，条�
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-31 local-main 状态收口：分支 `update-routing-trace-structured-evidence-schema-status-20260531` 表示仅用于记录状态收口的本地分支，在收口文档已集成本地 `main` 后把过期的“等待本地集成”门禁替换为远端发布门。
 - 2026-05-31 Stage C 收口：分支 `close-routing-trace-structured-evidence-schema-20260531` 记录 structured routing trace schema 已通过 `tools/check_orchestration_trace_evidence.py`、`test/check_orchestration_trace_evidence.test.py`、`tools/check_orchestration_collaboration_evidenceguard.py` 与 activation-policy 文档表面完成实现；最终 local-main commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-30 实施基线：本地 `main` 已包含 structured trace 与 collaboration evidence 包，包括固定 `Routing trace` / `Updated Plan` 标签证据以及 expert lifecycle non-evidence handling；验证证据见 checker 测试历史和 local CI 记录。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
