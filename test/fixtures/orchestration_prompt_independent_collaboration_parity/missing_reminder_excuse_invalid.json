@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "case_type": "activation_parity",
+  "case_id": "missing_reminder_excuse_invalid",
+  "parity_group": "negative_missing_reminder_excuse",
+  "expected_failure": true,
+  "collaboration_phrase_present": false,
+  "prompt": "Implement the confirmed single-slice checker update and merge it into local main.",
+  "input": {
+    "task_phase": "verify-accept",
+    "frozen_plan": true,
+    "execution_slices": 1,
+    "explicit_directive": null
+  },
+  "expected": {
+    "phase": "verify-accept",
+    "capability_chain": "subagent:auto > omx:on > langgraph:on",
+    "backend_default": "langgraph",
+    "backend_ready": "true",
+    "experts": "none",
+    "durable_workflow": "not_needed",
+    "persistent_team": "not_needed",
+    "why": "threshold_not_met:single_execution_slice; the user did not request parallelism or subagents.",
+    "main_session_escalation": "not_needed",
+    "approval_timeout_risk": "none",
+    "approval_receipt": "none"
+  }
+}

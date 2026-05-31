@@ -36,11 +36,11 @@ Ensure automatic collaboration routing does not depend on the user saying parall
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Stage: Stage C implementation package
+Owner session: main-codex-leader-prompt-independent-activation-parity-20260530
+Current gate: implement checker/docs/tests package, then run local validation and merge to local main
+Stage C entry condition: met on 2026-05-30 after user confirmation
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -66,10 +66,10 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for qualified tasks with and without user collaboration keywords.
-- [ ] Require concrete blockers instead of missing-user-reminder excuses.
-- [ ] Update checker messages and policy docs.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for qualified tasks with and without user collaboration keywords.
+- [x] Require concrete blockers instead of missing-user-reminder excuses.
+- [x] Update checker messages and policy docs.
 - [ ] Run role routing and orchestration evidence checks plus local gate.
 <!-- TASK_BACKLOG_END -->
 
@@ -94,5 +94,6 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Stage C implementation: added qualified prompt-independent parity fixtures, missing-reminder negative fixture handling, role evidence rejection, policy doc notes, and CI manifest registration; final validation evidence is recorded in local gate and commit output.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

@@ -97,6 +97,44 @@ BLOCKER_MARKERS = (
     "具名 blocker",
 )
 OPTIONAL_PREFERENCE_MARKERS = ("optional preference", "soft preference", "软偏好", "可选偏好")
+MISSING_REMINDER_SKIP_MARKERS = (
+    "the user did not request parallelism",
+    "the user did not request experts",
+    "the user did not request expert",
+    "the user did not request subagents",
+    "the user did not request omx",
+    "the user did not request langgraph",
+    "the user did not request durable_team",
+    "the user did not request durable team",
+    "the user did not request persistent team",
+    "user did not request parallelism",
+    "user did not request experts",
+    "user did not request expert",
+    "user did not request subagents",
+    "user did not request omx",
+    "user did not request langgraph",
+    "user did not request durable_team",
+    "user did not request durable team",
+    "user did not request persistent team",
+    "user did not ask for parallelism",
+    "user did not ask for experts",
+    "user did not ask for expert",
+    "user did not ask for subagents",
+    "user did not ask for omx",
+    "user did not ask for langgraph",
+    "user did not ask for durable_team",
+    "user did not ask for durable team",
+    "user did not ask for persistent team",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42\u5e76\u884c",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42\u4e13\u5bb6",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42\u5b50\u4ee3\u7406",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42omx",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42langgraph",
+    "\u7528\u6237\u6ca1\u6709\u63d0\u5230\u5e76\u884c",
+    "\u7528\u6237\u672a\u8981\u6c42\u5e76\u884c",
+    "\u7528\u6237\u672a\u8981\u6c42\u4e13\u5bb6",
+    "\u7528\u6237\u672a\u8981\u6c42\u5b50\u4ee3\u7406",
+)
 THRESHOLDS_SATISFIED_MARKERS = (
     "capability chain, preflight, and task thresholds are satisfied",
     "thresholds satisfied",
@@ -264,9 +302,17 @@ def run_evidence_check(evidence_path: Path) -> dict[str, Any]:
     has_blocker = contains_any(text, BLOCKER_MARKERS)
     has_thresholds_satisfied = contains_any(text, THRESHOLDS_SATISFIED_MARKERS)
     has_explanation_only = contains_any(text, EXPLANATION_ONLY_MARKERS)
+    has_missing_reminder_skip = contains_any(text, MISSING_REMINDER_SKIP_MARKERS)
     roles = find_roles(text)
     has_role_context = bool(roles) and contains_any(text, ROLE_HEADER_MARKERS)
     has_multiface = contains_any(text, MULTIFACE_RESEARCH_MARKERS)
+
+    if has_missing_reminder_skip:
+        detected.append("missing_reminder_excuse")
+        errors.append(
+            "Routing evidence must not cite missing user collaboration reminders as a reason to skip "
+            "experts, durable workflow, persistent team, OMX, or LangGraph adoption."
+        )
 
     if has_directive:
         detected.append("hard_directive")

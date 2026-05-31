@@ -50,6 +50,9 @@ REQUIRED_FIXTURES = {
     "doc_update_with_collaboration_phrase.json",
     "durable_persistent_complete_valid.json",
     "expert_lifecycle_audit_valid.json",
+    "qualified_governance_update_without_collaboration_phrase.json",
+    "qualified_governance_update_with_collaboration_phrase.json",
+    "missing_reminder_excuse_invalid.json",
     "explicit_omx_without_threshold.json",
     "explicit_langgraph_single_slice.json",
     "langgraph_state_release_valid.json",
@@ -137,13 +140,52 @@ APPROVAL_TIMEOUT_RISKS = {"none", "low", "medium", "high", "expired"}
 NO_APPROVAL_RECEIPT_VALUES = {"", "none", "not_needed", "n/a", "na", "-"}
 FORBIDDEN_MISSING_REMINDERS = (
     "the user did not request parallelism",
+    "the user did not request experts",
+    "the user did not request expert",
     "the user did not request subagents",
+    "the user did not request omx",
+    "the user did not request langgraph",
+    "the user did not request durable_team",
+    "the user did not request durable team",
+    "the user did not request persistent team",
     "user did not request parallelism",
+    "user did not request experts",
+    "user did not request expert",
     "user did not request subagents",
+    "user did not request omx",
+    "user did not request langgraph",
+    "user did not request durable_team",
+    "user did not request durable team",
+    "user did not request persistent team",
     "user did not ask for parallelism",
+    "user did not ask for experts",
+    "user did not ask for expert",
     "user did not ask for subagents",
+    "user did not ask for omx",
+    "user did not ask for langgraph",
+    "user did not ask for durable_team",
+    "user did not ask for durable team",
+    "user did not ask for persistent team",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42\u5e76\u884c",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42\u4e13\u5bb6",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42\u5b50\u4ee3\u7406",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42omx",
+    "\u7528\u6237\u6ca1\u6709\u8981\u6c42langgraph",
+    "\u7528\u6237\u6ca1\u6709\u63d0\u5230\u5e76\u884c",
+    "\u7528\u6237\u672a\u8981\u6c42\u5e76\u884c",
+    "\u7528\u6237\u672a\u8981\u6c42\u4e13\u5bb6",
+    "\u7528\u6237\u672a\u8981\u6c42\u5b50\u4ee3\u7406",
 )
-COLLABORATION_PHRASES = ("experts", "durable_team", "persistent team", "subagents", "parallel")
+COLLABORATION_PHRASES = (
+    "experts",
+    "expert",
+    "durable_team",
+    "durable team",
+    "persistent team",
+    "subagents",
+    "subagent",
+    "parallel",
+)
 
 CONVERSATION_SURFACES = {"routing_trace", "updated_plan"}
 ROUTING_TRACE_FORBIDDEN_LABEL_PREFIXES = (
@@ -709,14 +751,17 @@ def run_fixture_check(root: Path, fixture_dir: Path | None = None) -> dict[str, 
         if payload is None:
             continue
         checked_cases.append(path.name)
-        before = len(errors)
-        route = validate_case(payload, errors, path.name)
-        if route is not None and lower(payload.get("case_type")) == "activation_parity":
+        case_errors: list[str] = []
+        route = validate_case(payload, case_errors, path.name)
+        if payload.get("expected_failure") is True:
+            if not case_errors:
+                errors.append(f"{path.name} is marked expected_failure but passed validation.")
+            continue
+        errors.extend(case_errors)
+        if route is not None and not case_errors and lower(payload.get("case_type")) == "activation_parity":
             group = str(payload.get("parity_group")).strip()
             if not group.startswith("explicit_"):
                 parity_routes.setdefault(group, []).append((bool(payload.get("collaboration_phrase_present")), route, path.name))
-        if len(errors) == before and payload.get("expected_failure") is True:
-            errors.append(f"{path.name} is marked expected_failure but passed validation.")
 
     for group, entries in sorted(parity_routes.items()):
         if len(entries) < 2:

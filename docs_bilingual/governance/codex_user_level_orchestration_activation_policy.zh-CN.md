@@ -76,6 +76,8 @@ Main-session escalation visibility 必须显式可见：在任何 OMX、LangGrap
 
 不得使用“用户没有要求并行”或“用户没有要求子代理”等 missing-reminder reasons。必须用任务阶段、范围、阈值、blocker 或 main-session takeover 作为原因。
 
+Prompt-independent activation parity MUST be checker-backed evidence: qualified task fixtures with and without experts/parallel/subagents/durable_team/persistent team wording must keep the same routing decision, and missing-user-reminder excuses must fail in favor of concrete blockers, unmet thresholds, or main-session takeover.
+
 显式 `omx` 与 `LangGraph` 请求是当前 task flow 的 hard routing directives。若 capability chain、preflight 与 task thresholds 均满足，trace 必须把所选 lane 报告为 `selected` 或 `running`，不得停留在 explanation-only mode。若请求 lane 未被采用，trace 必须报告具名 blocker 或未满足阈值，例如 `blocked:backend_not_ready`、`blocked:preflight_failed`、`blocked:helper_missing`、`blocked:write_ownership_conflict` 或 `threshold_not_met:no_frozen_plan`。trace 不得把显式 directive 描述为 optional preference。已保存的 hard-directive adoption evidence 由 `tools/check_role_routing_directive_evidence.py` 检查。
 
 ## Expert 与 durable 证据规则

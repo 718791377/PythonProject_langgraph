@@ -35,12 +35,12 @@ Ensure automatic collaboration routing does not depend on the user saying parall
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+Status: active
+Stage: Stage C implementation package
+Owner session: main-codex-leader-prompt-independent-activation-parity-20260530
+Current gate: implement checker/docs/tests package, then run local validation and merge to local main
+Stage C entry condition: met on 2026-05-30 after user confirmation
+Last updated: 2026-05-30
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -66,10 +66,10 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add fixtures for qualified tasks with and without user collaboration keywords.
-- [ ] Require concrete blockers instead of missing-user-reminder excuses.
-- [ ] Update checker messages and policy docs.
+- [x] Confirm this child plan after local main integration.
+- [x] Add fixtures for qualified tasks with and without user collaboration keywords.
+- [x] Require concrete blockers instead of missing-user-reminder excuses.
+- [x] Update checker messages and policy docs.
 - [ ] Run role routing and orchestration evidence checks plus local gate.
 <!-- TASK_BACKLOG_END -->
 
@@ -94,5 +94,6 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-05-30 Stage C implementation: added qualified prompt-independent parity fixtures, missing-reminder negative fixture handling, role evidence rejection, policy doc notes, and CI manifest registration; final validation evidence is recorded in local gate and commit output.
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->
