@@ -100,4 +100,5 @@ Status update: MCP/skills/browser/CLI decomposition 要求在相关 OpenSpec sur
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 receipt/redaction archive note: `user_level_capability_receipt_rollback_redaction_plan` is implemented-local; no live user-level install or sensitive runtime action was performed, and the related stable spec already contains the generic receipt governance requirement. Archive timing remains a Phase 7 decision for the broader MCP/skills/browser/CLI source surface.
 - 2026-06-01 port/browser-owner archive note: `user_level_port_browser_owner_isolation_plan` 已 implemented-local；本包仅补强仓库本地 guard 与测试，不执行 live browser start 或 sensitive runtime action；archive timing 仍由更广 MCP/skills/browser/CLI source surface 的 Phase 7 决策处理。
+- 2026-06-01 discovery facade archive note: `user_level_mcp_skills_discovery_facade_plan` 已 implemented-local；仅修改 repo-local facade helpers/tests，不执行 live MCP/browser/runtime action，source surface archive timing 仍交由 Phase 7 处理。
 <!-- EVIDENCE_INDEX_END -->

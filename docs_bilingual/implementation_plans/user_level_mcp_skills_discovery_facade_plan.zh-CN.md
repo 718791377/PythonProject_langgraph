@@ -31,10 +31,11 @@ source_plan: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_c
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: active and unclaimed for implementation.
-Current gate: 非文档实现前必须完成 child-plan confirmation、clean feature worktree、branch-matching claim 与 hotspot declaration。
-Source relation: 从 `user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md` 提取；不要把旧来源方案直接挂成父方案子方案。
-Runtime boundary: 本次创建方案不安装工具、不启动浏览器、不调用 sensitive MCP、不修改用户级 runtime state。
+Status: implemented-local；远端发布仍未授权。
+Current gate: 本地验证证据绑定到 `implement-mcp-skills-discovery-facade-20260601` 分支；串行合入本地 `main` 后，仅剩远端发布授权门。
+Source relation: 从 `user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md` 提取；旧来源方案继续作为 baseline/history 索引，不作为直接子执行包。
+Runtime boundary: 本实现只新增/扩展仓库本地 compact discovery facade 与测试；不安装工具、不启动浏览器、不调用 live MCP server、不修改用户级 runtime state、不授权远端发布。
+Implementation evidence: `skills2cli` 已提供 compact index/search/show/audit/profile-suggest JSON，并在 profile-suggest 中记录 skill/profile surface 不是 native subagent 的 routing evidence；`mcp2cli` 已提供 compact list/search/show/risk-profile/call JSON，保持 Codex direct MCP entries 直连，并在缺少 receipt evidence 时 fail close sensitive call。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -52,14 +53,14 @@ Runtime boundary: 本次创建方案不安装工具、不启动浏览器、不�
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] 定义 compact `skills2cli` index、search、show、audit 与 profile-suggest JSON 输出。
-- [ ] 默认输出不得包含完整 skill bodies；warning audit 必须摘要化并 redacted。
-- [ ] 定义 compact `mcp2cli` list、search、show 与 risk profile 输出。
-- [ ] 缺少 authorization receipt evidence 的 sensitive `mcp2cli call` 必须 fail closed。
-- [ ] 保持 Codex direct MCP entries 直连，不把 MCP Router 当作 Codex 默认 bridge。
-- [ ] 记录 routing evidence，避免把 skills/profile 误标为 native subagents。
-- [ ] 运行本 child lane 的聚焦验证。
-- [ ] 产生实现证据后更新父方案 evidence index 与 Phase 7 集成方案。
+- [x] 定义 compact `skills2cli` index、search、show、audit 与 profile-suggest JSON 输出。
+- [x] 默认输出不得包含完整 skill bodies；warning audit 必须摘要化并 redacted。
+- [x] 定义 compact `mcp2cli` list、search、show 与 risk profile 输出。
+- [x] 缺少 authorization receipt evidence 的 sensitive `mcp2cli call` 必须 fail closed。
+- [x] 保持 Codex direct MCP entries 直连，不把 MCP Router 当作 Codex 默认 bridge。
+- [x] 记录 routing evidence，避免把 skills/profile 误标为 native subagents。
+- [x] 运行本 child lane 的聚焦验证。
+- [x] 产生实现证据后更新父方案 evidence index 与 Phase 7 集成方案。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -80,4 +81,5 @@ Runtime boundary: 本次创建方案不安装工具、不启动浏览器、不�
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-01：由 MCP/skills/browser/CLI decomposition package 创建子方案；实现证据等待后续 claim。
+- 2026-06-01：分支 `implement-mcp-skills-discovery-facade-20260601` 实现 compact discovery facade lane。证据包括 `tools/skills2cli.py`、`tools/mcp2cli.py`、`tools/mcp2cli_allowed_profiles.json`、聚焦测试 `test/skills2cli.test.py` 与 `test/mcp2cli.test.py`、MCP risk-profile 输出和 skill/profile routing evidence 的 RED/GREEN 覆盖；未执行 live MCP/browser/user-level runtime mutation。
 <!-- EVIDENCE_INDEX_END -->

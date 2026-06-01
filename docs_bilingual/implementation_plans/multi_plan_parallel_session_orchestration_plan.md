@@ -58,9 +58,9 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 6 remains admissible; the Phase 3 port/browser-owner extracted lane is implemented-local and preparing repository local-main-first integration.
-Owner session: main Codex leader owns implementation package id `codex-port-browser-owner-isolation-20260601`; package id means the isolated feature-worktree implementation item for this update.
-Current gate: run focused tests, repository checkers, shared local gate, and local MR review; then self-retire this ready package into local `main` and stop at the remote-publication approval gate.
+Stage: Phase 4 discovery-facade extracted lane is implemented-local; Phase 6 remains admissible for other lanes.
+Owner session: main Codex leader owns implementation package id `implement-mcp-skills-discovery-facade-20260601`; package id means the isolated feature-worktree implementation item for this update.
+Current gate: local validation evidence is bound to this ready package; after serial local-main integration, only the remote-publication approval gate remains.
 Phase 5 note: Comet runtime closeout is already local-main integrated; this package does not reopen Phase 5 runtime work.
 MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` remains a source and baseline index, not a direct child of this parent.
 Parallel model: extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
@@ -380,7 +380,7 @@ Admission: all eligible validation sessions may prepare evidence in parallel, bu
 | Phase 6 | `spec_kit_authority_guard_plan` | admissible and unclaimed | May enter Stage C after explicit child-plan confirmation; write scopes and hotspots remain serialized by claim/lease rules. |
 | Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Receipt helper hotspot is closed: authorization/update schemas, hash-first rollback output, explicit local-only authorized raw path evidence, redaction fail-closed tests, and Phase 6 handoff gates are in the local integration package. |
 | Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local; ready for repository local-main-first integration | Existing range, `pending_bind`, revision, cleanup, and sanitized-receipt controls are confirmed; CDP Bridge and OpenCLI consumers now reject ambiguous owner leases with `owner_lease_ambiguous`. |
-| Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | active and unclaimed | Extracted compact `skills2cli` / `mcp2cli` discovery lane; sensitive calls remain blocked behind receipt evidence. |
+| Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | implemented-local | Compact `skills2cli` and `mcp2cli` discovery facades are implemented with summarized/redacted skill discovery, MCP risk-profile output, receipt-gated sensitive calls, direct-MCP bridge policy evidence, and focused RED/GREEN tests. |
 | Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | active and unclaimed | Extracted browser/CLI adapter boundary lane; live install/start, GUI write, cookies, and sensitive browser actions remain blocked without receipts and owner evidence. |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
@@ -496,4 +496,6 @@ Stage B acceptance after later confirmation:
 - 2026-06-01 MCP/skills/browser/CLI decomposition: Documentation package id `decompose-mcp-control-plane-20260601` means this isolated update package; it treats `user_level_mcp_skills_browser_cli_governance_plan` as a source-to-decompose, creates four extracted child plans, and updates Phase 7 integration plans. No user-level install, live browser start, GUI automation, sensitive MCP call, or remote publication is authorized by this package.
 - 2026-06-01 receipt/rollback/redaction implementation: branch `implement-capability-receipt-rollback-redaction-20260601` implements the Phase 1 extracted receipt lane by closing the `tools/user_level_receipt_governance.py` hotspot, adding explicit local-only authorized raw path evidence, keeping default output hash-first, extending focused regression coverage, updating Phase 7 handoff evidence, and keeping remote publication behind the explicit approval gate.
 - 2026-06-01 port/browser-owner isolation implementation: branch `implement-port-browser-owner-isolation-20260601` confirms existing `codex-port` range ordering, `pending_bind`, monotonic registry revision, owner-class separation, cleanup protection, sanitized receipt, and OpenCLI `--port auto` controls; adds `owner_lease_ambiguous` fail-closed enforcement to CDP Bridge and OpenCLI consumers; extends focused RED/GREEN regression coverage; and keeps remote publication behind the explicit approval gate.
+
+- 2026-06-01 discovery-facade implementation: branch `implement-mcp-skills-discovery-facade-20260601` implements the Phase 4 extracted compact `skills2cli` / `mcp2cli` lane, adds MCP risk-profile output, explicit direct-MCP/no-default-Router evidence, skill/profile routing evidence that is not native-subagent evidence, and focused tests while leaving remote publication unauthorized.
 <!-- EVIDENCE_INDEX_END -->

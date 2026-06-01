@@ -31,10 +31,11 @@ This file is a decomposed child implementation plan under `multi_plan_parallel_s
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active and unclaimed for implementation.
-Current gate: child-plan confirmation, clean feature worktree, branch-matching claim, and hotspot declaration before any non-document implementation.
-Source relation: extracted from `user_level_mcp_skills_browser_cli_governance_plan.md`; do not add the source plan as a direct child of the parent.
-Runtime boundary: this plan creation does not install tools, start browsers, call sensitive MCP methods, or mutate user-level runtime state.
+Status: implemented-local; remote publication remains unauthorized.
+Current gate: local validation evidence is bound to branch `implement-mcp-skills-discovery-facade-20260601`; after serial local-main integration, only the remote-publication approval gate remains.
+Source relation: extracted from `user_level_mcp_skills_browser_cli_governance_plan.md`; the source plan remains a baseline/history index, not a direct child execution package.
+Runtime boundary: the implementation only adds/extends repo-local compact discovery facades and tests; it does not install tools, start browsers, invoke live MCP servers, mutate user-level runtime state, or authorize remote publication.
+Implementation evidence: `skills2cli` now emits compact index/search/show/audit/profile-suggest JSON with routing evidence that skill/profile surfaces are not native subagents; `mcp2cli` now emits compact list/search/show/risk-profile/call JSON, keeps Codex direct MCP entries direct, and fail-closes sensitive calls without receipt evidence.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -52,14 +53,14 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Define compact `skills2cli` index, search, show, audit, and profile-suggest JSON outputs.
-- [ ] Keep full skill bodies out of default output and summarize warning audits with redaction.
-- [ ] Define compact `mcp2cli` list, search, show, and risk profile output.
-- [ ] Make `mcp2cli call` fail closed for sensitive calls without authorization receipt evidence.
-- [ ] Keep direct Codex MCP entries direct and do not use MCP Router as the default Codex bridge.
-- [ ] Record routing evidence so skills and profiles are not mislabeled as native subagents.
-- [ ] Run focused validation for this child lane.
-- [ ] Update the parent evidence index and Phase 7 integration plans after implementation evidence exists.
+- [x] Define compact `skills2cli` index, search, show, audit, and profile-suggest JSON outputs.
+- [x] Keep full skill bodies out of default output and summarize warning audits with redaction.
+- [x] Define compact `mcp2cli` list, search, show, and risk profile output.
+- [x] Make `mcp2cli call` fail closed for sensitive calls without authorization receipt evidence.
+- [x] Keep direct Codex MCP entries direct and do not use MCP Router as the default Codex bridge.
+- [x] Record routing evidence so skills and profiles are not mislabeled as native subagents.
+- [x] Run focused validation for this child lane.
+- [x] Update the parent evidence index and Phase 7 integration plans after implementation evidence exists.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -80,4 +81,5 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-01: child plan created by the MCP/skills/browser/CLI decomposition package; implementation evidence is pending future claims.
+- 2026-06-01: branch `implement-mcp-skills-discovery-facade-20260601` implements the compact discovery facade lane. Evidence includes `tools/skills2cli.py`, `tools/mcp2cli.py`, `tools/mcp2cli_allowed_profiles.json`, focused tests `test/skills2cli.test.py` and `test/mcp2cli.test.py`, RED/GREEN coverage for MCP risk-profile output and skill/profile routing evidence, and no live MCP/browser/user-level runtime mutation.
 <!-- EVIDENCE_INDEX_END -->

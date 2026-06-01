@@ -58,9 +58,9 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 6 仍可准入；Phase 3 port/browser-owner 提取 lane 已 implemented-local，正在准备仓库 local-main-first 集成。
-Owner session: main Codex leader owns implementation package id `codex-port-browser-owner-isolation-20260601`; package id means the isolated feature-worktree implementation item for this update.
-Current gate: 运行聚焦测试、仓库 checker、共享 local gate 与 local MR review；随后通过 self-retire 把本 ready package 合入本地 `main`，并停在远端发布授权门。
+Stage: Phase 4 discovery-facade 提取 lane 已 implemented-local；其他 Phase 6 lane 仍可准入。
+Owner session: main Codex leader owns implementation package id `implement-mcp-skills-discovery-facade-20260601`; package id means the isolated feature-worktree implementation item for this update.
+Current gate: 本地验证证据绑定到本 ready package；串行合入本地 `main` 后，仅剩远端发布授权门。
 Phase 5 note: Comet runtime closeout 已进入本地 main；本包不重开 Phase 5 runtime 工作。
 MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` 保留为来源与 baseline 索引，不作为本父方案直接子方案。
 Parallel model: 提取后的 lane 可按多阶段、多会话执行，但每个 session 必须拥有互斥写集或声明已串行化 hotspot。
@@ -377,7 +377,7 @@ python tools/local_main_retire_lock.py status --root . --json
 | Phase 6 | `spec_kit_authority_guard_plan` | admissible and unclaimed | May enter Stage C after explicit child-plan confirmation; write scopes and hotspots remain serialized by claim/lease rules. |
 | Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Receipt helper hotspot closed: authorization/update schemas, hash-first rollback output, explicit local-only authorized raw path evidence, redaction fail-closed tests, and Phase 6 handoff gates are in the local integration package. |
 | Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local；已具备仓库 local-main-first 集成候选条件 | 已确认既有范围、`pending_bind`、revision、cleanup 与 sanitized-receipt 控制；CDP Bridge 和 OpenCLI consumer 现在使用 `owner_lease_ambiguous` 拒绝 owner lease 歧义。 |
-| Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | active and unclaimed | 提取 compact `skills2cli` / `mcp2cli` discovery lane；sensitive call 继续被 receipt evidence 阻塞。 |
+| Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | implemented-local | Compact `skills2cli` / `mcp2cli` discovery facade 已实现：skill discovery 摘要化/脱敏，MCP risk-profile 输出、sensitive call receipt gate、direct-MCP bridge policy evidence 与聚焦 RED/GREEN 测试均已覆盖。 |
 | Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | active and unclaimed | 提取 browser/CLI adapter boundary lane；缺少 receipt 与 owner evidence 时，live install/start、GUI write、cookies 与 sensitive browser action 均保持 blocked。 |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
@@ -493,4 +493,6 @@ Stage B 后续确认后的验收条件：
 - 2026-06-01 MCP/skills/browser/CLI decomposition: package id `decompose-mcp-control-plane-20260601` means this isolated documentation update; it treats `user_level_mcp_skills_browser_cli_governance_plan` as source-to-decompose, creates four extracted child plans, and updates Phase 7 integration plans. This package authorizes no user-level install, live browser start, GUI automation, sensitive MCP call, or remote publication.
 - 2026-06-01 receipt/rollback/redaction implementation: branch `implement-capability-receipt-rollback-redaction-20260601` implements the Phase 1 extracted receipt lane by closing the `tools/user_level_receipt_governance.py` hotspot, adding explicit local-only authorized raw path evidence, keeping default output hash-first, extending focused regression coverage, updating Phase 7 handoff evidence, and keeping remote publication behind the explicit approval gate.
 - 2026-06-01 port/browser-owner isolation implementation: 分支 `implement-port-browser-owner-isolation-20260601` 确认既有 `codex-port` 范围顺序、`pending_bind`、单调 registry revision、owner class 隔离、cleanup 保护、sanitized receipt 与 OpenCLI `--port auto` 控制；向 CDP Bridge 和 OpenCLI consumer 增加 `owner_lease_ambiguous` fail-closed 门禁；扩展 RED/GREEN 聚焦回归覆盖；并保持远端发布在显式授权门之后。
+
+- 2026-06-01 discovery-facade implementation: 分支 `implement-mcp-skills-discovery-facade-20260601` 实现 Phase 4 提取出的 compact `skills2cli` / `mcp2cli` lane，新增 MCP risk-profile 输出、direct-MCP/no-default-Router evidence、skill/profile 非 native-subagent 的 routing evidence 与聚焦测试；远端发布仍未授权。
 <!-- EVIDENCE_INDEX_END -->

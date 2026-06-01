@@ -100,4 +100,5 @@ Status update: MCP/skills/browser/CLI decomposition keeps the baseline checker a
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 receipt/redaction lane handoff: `user_level_capability_receipt_rollback_redaction_plan` confirms `tools/user_level_receipt_governance.py`, `test/user_level_receipt_governance.test.py`, the MCP baseline checker, OpenSpec guard registration, and `tools/ci/ci_test_manifest.json` coverage for the receipt lane; future sibling lane changes still need their own registration review.
 - 2026-06-01 port/browser-owner lane handoff: `user_level_port_browser_owner_isolation_plan` 确认 `test/codex_port.test.py`、`test/browser_owner_registry.test.py`、`test/cdp_bridge_governance.test.py` 与 `test/chrome_devtools_mcp_managed.test.py` 已登记进 CI manifest；CDP/OpenCLI owner 歧义回归覆盖扩展了既有已登记测试文件，因此无需编辑 CI manifest。
+- 2026-06-01 discovery facade lane handoff: `skills2cli.test.py` 与 `mcp2cli.test.py` 已登记进 CI manifest；本包扩展这些已登记聚焦测试以覆盖 risk-profile 与 routing-evidence 行为，并确认 baseline/MCP-scope/agent-surface checker 仍适用。
 <!-- EVIDENCE_INDEX_END -->
