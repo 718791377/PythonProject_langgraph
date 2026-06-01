@@ -30,6 +30,7 @@ GUARD_STEPS = [
     ("check_context_retention_canary_surface", "check_context_retention_canary_surface.py", "context_retention_canary_surface"),
     ("check_startup_instruction_mojibake", "check_startup_instruction_mojibake.py", "startup_instruction_mojibake"),
     ("check_safety_rule_script_backing", "check_safety_rule_script_backing.py", "safety_rule_script_backing"),
+    ("check_spec_kit_authority_guard", "check_spec_kit_authority_guard.py", "spec_kit_authority_guard"),
     ("check_precommit_update_archive", "check_precommit_update_archive.py", "precommit_update_archive"),
     ("check_skills_audit_output_retention", "check_skills_audit_output_retention.py", "skills_audit_output_retention"),
     ("check_openspec_code_archive_evidence", "check_openspec_code_archive_evidence.py", "openspec_code_archive_evidence"),
@@ -148,8 +149,9 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["steps"][5]["step"], "check_git_commit_language")
         self.assertEqual(payload["steps"][6]["step"], "check_local_flow_scripted_enforcement")
         self.assertEqual(payload["steps"][9]["step"], "check_startup_instruction_mojibake")
-        self.assertEqual(payload["steps"][11]["step"], "check_precommit_update_archive")
-        self.assertEqual(payload["steps"][12]["step"], "check_skills_audit_output_retention")
+        self.assertEqual(payload["steps"][11]["step"], "check_spec_kit_authority_guard")
+        self.assertEqual(payload["steps"][12]["step"], "check_precommit_update_archive")
+        self.assertEqual(payload["steps"][13]["step"], "check_skills_audit_output_retention")
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
         self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
         self.assertIn("check_comet_superpowers_visibility", [step["step"] for step in payload["steps"]])

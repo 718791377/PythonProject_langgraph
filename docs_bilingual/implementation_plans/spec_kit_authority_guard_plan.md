@@ -35,12 +35,12 @@ Block Spec Kit authority migration commands such as specify init --force, .speci
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented; validating local integration package
+Stage: Stage C implementation package
+Owner session: codex-20260601-spec-kit-authority-guard
+Current gate: run focused checks, local gate, and local MR review before local main integration
+Stage C entry condition: satisfied by current user implementation request on 2026-06-01
+Last updated: 2026-06-01
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -66,11 +66,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add tests for safe references to Spec Kit docs and unsafe authority-changing operations.
-- [ ] Implement a checker that fails closed on .specify governance takeover without an active plan.
-- [ ] Register the checker in the local gate only after implementation confirmation.
-- [ ] Run Spec Kit guard tests and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add tests for safe references to Spec Kit docs and unsafe authority-changing operations.
+- [x] Implement a checker that fails closed on .specify governance takeover without an active plan.
+- [x] Register the checker in the local gate only after implementation confirmation.
+- [x] Run Spec Kit guard tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,4 +95,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-06-01 implementation package: added `tools/check_spec_kit_authority_guard.py`, `test/spec_kit_authority_guard.test.py`, subordinate-adapter governance docs, CI manifest registration, safety-rule registry backing, and OpenSpec guard integration; focused tests passed before local gate.
 <!-- EVIDENCE_INDEX_END -->

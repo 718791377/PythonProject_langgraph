@@ -107,6 +107,7 @@ def main() -> int:
     canary_surface_script = root / "tools" / "check_context_retention_canary_surface.py"
     startup_instruction_mojibake_script = root / "tools" / "check_startup_instruction_mojibake.py"
     safety_rule_script_backing_script = root / "tools" / "check_safety_rule_script_backing.py"
+    spec_kit_authority_guard_script = root / "tools" / "check_spec_kit_authority_guard.py"
     precommit_update_archive_script = root / "tools" / "check_precommit_update_archive.py"
     skills_audit_output_retention_script = root / "tools" / "check_skills_audit_output_retention.py"
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
@@ -171,6 +172,8 @@ def main() -> int:
         raise SystemExit(f"Missing startup instruction mojibake check script: {startup_instruction_mojibake_script}")
     if not safety_rule_script_backing_script.exists():
         raise SystemExit(f"Missing safety rule script-backing check script: {safety_rule_script_backing_script}")
+    if not spec_kit_authority_guard_script.exists():
+        raise SystemExit(f"Missing Spec Kit authority guard check script: {spec_kit_authority_guard_script}")
     if not precommit_update_archive_script.exists():
         raise SystemExit(f"Missing pre-commit update/archive check script: {precommit_update_archive_script}")
     if not skills_audit_output_retention_script.exists():
@@ -354,6 +357,11 @@ def main() -> int:
                 "check_safety_rule_script_backing",
                 [str(python_exe), str(safety_rule_script_backing_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during safety rule script-backing verification.",
+            ),
+            (
+                "check_spec_kit_authority_guard",
+                [str(python_exe), str(spec_kit_authority_guard_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Spec Kit authority guard verification.",
             ),
             (
                 "check_precommit_update_archive",
@@ -700,6 +708,11 @@ def main() -> int:
         [str(python_exe), str(safety_rule_script_backing_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during safety rule script-backing verification.",
+    )
+    run_checked(
+        [str(python_exe), str(spec_kit_authority_guard_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Spec Kit authority guard verification.",
     )
     run_checked(
         [str(python_exe), str(precommit_update_archive_script), "--root", str(root)],
