@@ -70,7 +70,7 @@ approval_receipt=<none|receipt id or repo-local artifact path>
 why=<concrete reason>
 ```
 
-用户可见会话表面必须保留字面标签 `Routing trace` 和 `Updated Plan`。这些标签下的解释内容可以使用中文。`Updated Plan` 必须继续是复选框/状态清单表面，不得被替换为纯自然语言段落。保存版结构化 evidence 继续保留 canonical field name、threshold token 和 blocker token，以保持 checker 兼容。
+用户可见会话表面必须保留字面标签 `Routing trace` 和 `Updated Plan`。这些标签下的解释内容可以使用中文。`Routing trace` 是普通文本诊断行或短块，使用固定 key=value 字段；它不是进度面板。`Updated Plan` 是进度面板，必须保持为用户可见的 CLI/tree 状态清单表面，使用勾选/空方框语义，而不是纯自然语言段落。Markdown checkbox syntax 仍然只属于 implementation-plan-internal 任务追踪，不能作为用户可见的 `Updated Plan` 会话表面。保存版结构化 evidence 继续保留 canonical field name、threshold token 和 blocker token，以保持 checker 兼容。
 
 Main-session escalation visibility 必须显式可见：在任何 OMX、LangGraph、durable-worker 或 shell flow 等待主会话审批前，trace 必须暴露 `main_session_escalation`、`approval_timeout_risk` 和 `approval_receipt`。`main_session_escalation` 的状态为 `not_needed`、`preflight`、`pending_approval`、`granted`、`timed_out` 或 `blocked`；`approval_timeout_risk` 的状态为 `none`、`low`、`medium`、`high` 或 `expired`；`approval_receipt` 在无需审批时为 `none`，否则必须指向 repo-local receipt、interrupt、checkpoint 或 pending-approval artifact path。Worker context 必须收到同一个 receipt 或 blocked state，不得把 approval wait 隐藏在 main session 之外。
 

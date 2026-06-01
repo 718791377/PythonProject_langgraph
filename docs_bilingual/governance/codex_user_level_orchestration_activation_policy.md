@@ -69,7 +69,7 @@ approval_receipt=<none|receipt id or repo-local artifact path>
 why=<concrete reason>
 ```
 
-User-facing conversation surfaces SHALL keep the literal labels `Routing trace` and `Updated Plan` stable. Explanatory content under those labels MAY be Chinese. `Updated Plan` SHALL remain a checklist/status-list surface and MUST NOT be replaced by prose-only text. Saved structured evidence keeps canonical field names and threshold or blocker tokens for checker compatibility.
+User-facing conversation surfaces SHALL keep the literal labels `Routing trace` and `Updated Plan` stable. Explanatory content under those labels MAY be Chinese. `Routing trace` is a plain text diagnostic line or short block with fixed key=value fields; it is not a progress panel. `Updated Plan` is the progress panel and SHALL remain a user-visible CLI/tree status-list surface using checkmark/open-square semantics rather than prose-only text. Markdown checkbox syntax remains implementation-plan-internal and MUST NOT be used as the user-visible `Updated Plan` conversation surface. Saved structured evidence keeps canonical field names and threshold or blocker tokens for checker compatibility.
 
 Do not use missing-reminder reasons such as "the user did not request parallelism" or "the user did not request subagents". Use task phase, scope, thresholds, blockers, or main-session takeover as the reason.
 

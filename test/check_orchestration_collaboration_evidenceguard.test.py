@@ -66,6 +66,35 @@ class CollaborationEvidenceguardBilingualSurfaceTest(unittest.TestCase):
             payload["errors"],
         )
 
+    def test_updated_plan_conversation_rejects_markdown_checkboxes(self) -> None:
+        issues = module.conversation_surface_issues(
+            "updated_plan",
+            "Updated Plan\n- [x] read startup files\n- [ ] run local gate",
+        )
+
+        self.assertTrue(any("Markdown checkbox" in issue for issue in issues), issues)
+
+    def test_updated_plan_conversation_accepts_tree_status_panel(self) -> None:
+        issues = module.conversation_surface_issues(
+            "updated_plan",
+            "Updated Plan\n\u2514 \u672c\u5730\u9a8c\u8bc1\u540e\u5408\u5165 main\n  \u2714 \u66f4\u65b0\u65b9\u6848\n  \u25a1 \u8fd0\u884c\u95e8\u7981",
+        )
+
+        self.assertEqual([], issues)
+
+    def test_routing_trace_conversation_requires_key_value_fields(self) -> None:
+        valid = module.conversation_surface_issues(
+            "routing_trace",
+            "Routing trace: phase=execute, experts=blocked:platform_subagent_invocation_constraint, why=threshold_not_met:single_execution_slice",
+        )
+        invalid = module.conversation_surface_issues(
+            "routing_trace",
+            "Routing trace\nThis is only prose without diagnostic fields.",
+        )
+
+        self.assertEqual([], valid)
+        self.assertTrue(any("key=value" in issue for issue in invalid), invalid)
+
 
 if __name__ == "__main__":
     unittest.main()
