@@ -41,7 +41,7 @@ Owner session: unclaimed until implementation begins
 Current gate: wait for explicit user confirmation of this child plan before non-document implementation
 Stage C entry condition: user confirms this child implementation plan after local main integration
 Last updated: 2026-05-28
-Status update: MCP/skills/browser/CLI decomposition requires source-plan extraction evidence before any archive decision for the related OpenSpec surfaces. The receipt/redaction child lane is implemented-local with stable-spec coverage already present; remaining archive decisions wait for sibling extracted lanes or a future source-plan archive package.
+Status update: MCP/skills/browser/CLI decomposition requires source-plan extraction evidence before any archive decision for the related OpenSpec surfaces. The receipt/redaction and port/browser-owner child lanes are implemented-local with stable-spec coverage already present; remaining archive decisions wait for sibling extracted lanes or a future source-plan archive package.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -73,7 +73,7 @@ Only one session may own each hotspot at a time:
 - [ ] Run official OpenSpec verification and Comet guard checks.
 - [ ] Promote stable spec deltas only after implementation validation is complete.
 - [ ] Run archive validation and local gate.
-- [ ] Before archiving MCP/skills/browser/CLI OpenSpec work, record whether each extracted child lane is implemented, deferred, or still active. Current receipt/redaction lane state: implemented-local; local integration evidence is recorded by the repository completion flow.
+- [ ] Before archiving MCP/skills/browser/CLI OpenSpec work, record whether each extracted child lane is implemented, deferred, or still active. Current receipt/redaction and port/browser-owner lane states: implemented-local; local integration evidence is recorded by the repository completion flow.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -99,4 +99,5 @@ Run these gates before local `main` integration unless this child plan later nar
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-06-01 receipt/redaction archive note: `user_level_capability_receipt_rollback_redaction_plan` is implemented-local; no live user-level install or sensitive runtime action was performed, and the related stable spec already contains the generic receipt governance requirement. Archive timing remains a Phase 7 decision for the broader MCP/skills/browser/CLI source surface.
+- 2026-06-01 port/browser-owner archive note: `user_level_port_browser_owner_isolation_plan` is implemented-local; the package hardens repository-local guards and tests only, performs no live browser start or sensitive runtime action, and leaves archive timing as a Phase 7 decision for the broader MCP/skills/browser/CLI source surface.
 <!-- EVIDENCE_INDEX_END -->

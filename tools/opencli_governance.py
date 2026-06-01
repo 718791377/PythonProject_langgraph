@@ -214,6 +214,9 @@ def find_owner_lease(registry: dict[str, Any], *, target: str, session: str, lea
     if not matches:
         blockers.append("owner_lease_required")
         return None, blockers
+    if len(matches) > 1:
+        blockers.append("owner_lease_ambiguous")
+        return None, blockers
     lease = matches[0]
     if str(lease.get("owner_class", "")) not in ALLOWED_OWNER_CLASSES:
         blockers.append("owner_class_not_allowed_for_opencli")

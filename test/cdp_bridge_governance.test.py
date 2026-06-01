@@ -171,6 +171,34 @@ def reserve_opencli_owner(owner_state: Path, *, target: str = "tab:opencli-1", s
     )
 
 
+def write_duplicate_owner_registry(owner_state: Path, *, target: str, session: str) -> Path:
+    owner_state.mkdir(parents=True, exist_ok=True)
+    expiry = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(timespec="seconds")
+    leases = []
+    for index in range(2):
+        leases.append(
+            {
+                "lease_id": f"duplicate-owner-{index}",
+                "owner_class": "codex-managed-isolated",
+                "project_slug": "pythonproject-langgraph",
+                "session_id": session,
+                "target": target,
+                "profile_path_hash": f"hash-{index}",
+                "lease_expiry": expiry,
+                "status": "active",
+                "purpose": "ambiguous owner regression fixture",
+            }
+        )
+    registry = {
+        "schema_version": 1,
+        "registry_revision": 2,
+        "leases": leases,
+    }
+    path = owner_state / "registry.json"
+    path.write_text(json.dumps(registry, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
 class CdpBridgeGovernanceTests(unittest.TestCase):
     def test_read_only_tab_inventory_is_allowed_without_owner_or_receipt(self):
         with tempfile.TemporaryDirectory() as td:
@@ -319,6 +347,35 @@ class CdpBridgeGovernanceTests(unittest.TestCase):
             self.assertEqual(result["action_kind"], "unknown")
             self.assertIn("unknown_action", result["blockers"])
             self.assertIn("owner_lease_required", result["blockers"])
+
+    def test_sensitive_action_fails_closed_when_owner_lease_is_ambiguous(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            target = "tab:ambiguous-1"
+            session = "session-a"
+            write_duplicate_owner_registry(state / "owner-registry", target=target, session=session)
+            receipt = write_authorization_receipt(state / "auth.json", target=target, session=session, action="cookie.read")
+            result = run_cdp(
+                [
+                    "check",
+                    "--action",
+                    "cookie.read",
+                    "--target",
+                    target,
+                    "--session",
+                    session,
+                    "--authorization-receipt",
+                    str(receipt),
+                ],
+                state,
+                expect=3,
+            )
+            self.assertFalse(result["ok"])
+            self.assertFalse(result["dispatch_allowed"])
+            self.assertIn("owner_lease_ambiguous", result["blockers"])
+            self.assertNotIn("owner_lease_required", result["blockers"])
+            self.assertFalse(result["owner_verified"])
+            self.assertIsNone(result["owner_lease"])
 
 
 class OpenCliGovernanceTests(unittest.TestCase):
@@ -671,6 +728,71 @@ class OpenCliGovernanceTests(unittest.TestCase):
                 self.assertIn("authorization_receipt_required", result["blockers"], action)
                 if action.startswith("experimental"):
                     self.assertIn("unknown_action", result["blockers"])
+
+    def test_opencli_dispatch_fails_closed_when_owner_lease_is_ambiguous(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            owner_state = state / "owner-registry"
+            target = "tab:ambiguous-opencli-1"
+            session = "session-a"
+            write_duplicate_owner_registry(owner_state, target=target, session=session)
+            port_receipt = write_opencli_port_lease_receipt(state / "port-lease.json")
+            result = run_opencli(
+                [
+                    "--owner-state-dir",
+                    str(owner_state),
+                    "check",
+                    "--action",
+                    "session.inspect",
+                    "--target",
+                    target,
+                    "--session",
+                    session,
+                    "--port-lease-receipt",
+                    str(port_receipt),
+                ],
+                state,
+                expect=3,
+            )
+            self.assertFalse(result["ok"])
+            self.assertFalse(result["dispatch_allowed"])
+            self.assertIn("owner_lease_ambiguous", result["blockers"])
+            self.assertNotIn("owner_lease_required", result["blockers"])
+            self.assertFalse(result["owner_verified"])
+            self.assertIsNone(result["owner_lease"])
+
+    def test_opencli_start_fails_closed_when_owner_lease_is_ambiguous(self):
+        with tempfile.TemporaryDirectory() as td:
+            state = Path(td)
+            owner_state = state / "owner-registry"
+            target = "tab:ambiguous-opencli-start"
+            session = "session-a"
+            write_duplicate_owner_registry(owner_state, target=target, session=session)
+            install_receipt = write_opencli_install_receipt(state / "install.json")
+            port_receipt = write_opencli_port_lease_receipt(state / "port-lease.json")
+            result = run_opencli(
+                [
+                    "--owner-state-dir",
+                    str(owner_state),
+                    "start",
+                    "--target",
+                    target,
+                    "--session",
+                    session,
+                    "--install-receipt",
+                    str(install_receipt),
+                    "--port-lease-receipt",
+                    str(port_receipt),
+                ],
+                state,
+                expect=3,
+            )
+            self.assertFalse(result["ok"])
+            self.assertFalse(result["start_performed"])
+            self.assertIn("owner_lease_ambiguous", result["blockers"])
+            self.assertNotIn("owner_lease_required", result["blockers"])
+            self.assertFalse(result["owner_verified"])
+            self.assertIsNone(result["owner_lease"])
 
 
     def test_cli_anything_install_record_writes_pinned_receipt_with_sanitized_output(self):

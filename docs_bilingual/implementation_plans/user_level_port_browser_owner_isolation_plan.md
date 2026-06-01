@@ -31,10 +31,11 @@ This file is a decomposed child implementation plan under `multi_plan_parallel_s
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active and unclaimed for implementation.
-Current gate: child-plan confirmation, clean feature worktree, branch-matching claim, and hotspot declaration before any non-document implementation.
+Status: implemented-local; ready for repository local-main-first integration.
+Current gate: run focused tests, repository checkers, shared local gate, and local MR review; then self-retire this ready package into local `main` and stop at the remote-publication approval gate.
 Source relation: extracted from `user_level_mcp_skills_browser_cli_governance_plan.md`; do not add the source plan as a direct child of the parent.
-Runtime boundary: this plan creation does not install tools, start browsers, call sensitive MCP methods, or mutate user-level runtime state.
+Runtime boundary: this repository-local safety hardening does not install tools, start browsers, call sensitive MCP methods, mutate user-level runtime state, or authorize remote publication.
+Implementation evidence: existing `codex-port` and browser-owner registry helpers already cover range ordering, `--port auto`, atomic writes, `pending_bind`, monotonic revision, owner classes, cleanup protection, and sanitized receipts; this package adds fail-closed ambiguous-owner rejection in CDP Bridge and OpenCLI consumer guards with RED/GREEN regression coverage.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -52,14 +53,14 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Keep Codex user-level port ranges before downstream consumer project ranges and require `--port auto` for OpenCLI-style adapters.
-- [ ] Define atomic registry writes for `codex-port`, including recoverable `pending_bind` and monotonic `registry_revision`.
-- [ ] Separate isolated-session-managed, project-profile, and human-owned browser assets in the owner registry.
-- [ ] Require exactly one owner for an automated browser target and fail closed on ambiguous ownership.
-- [ ] Block automated cleanup of project-profile and human-owned browser assets unless a later plan supplies explicit authorization evidence.
-- [ ] Expose sanitized lease evidence for Phase 6 adapter plans without leaking cookies, tokens, or raw browser data.
-- [ ] Run focused validation for this child lane.
-- [ ] Update the parent evidence index and Phase 7 integration plans after implementation evidence exists.
+- [x] Keep Codex user-level port ranges before downstream consumer project ranges and require `--port auto` for OpenCLI-style adapters.
+- [x] Define atomic registry writes for `codex-port`, including recoverable `pending_bind` and monotonic `registry_revision`.
+- [x] Separate isolated-session-managed, project-profile, and human-owned browser assets in the owner registry.
+- [x] Require exactly one owner for an automated browser target and fail closed on ambiguous ownership.
+- [x] Block automated cleanup of project-profile and human-owned browser assets unless a later plan supplies explicit authorization evidence.
+- [x] Expose sanitized lease evidence for Phase 6 adapter plans without leaking cookies, tokens, or raw browser data.
+- [x] Run focused validation for this child lane.
+- [x] Update the parent evidence index and Phase 7 integration plans after implementation evidence exists.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -80,4 +81,5 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-01: child plan created by the MCP/skills/browser/CLI decomposition package; implementation evidence is pending future claims.
+- 2026-06-01: branch `implement-port-browser-owner-isolation-20260601` confirms the existing `codex-port`, browser-owner registry, and OpenCLI `--port auto` controls, adds `owner_lease_ambiguous` fail-closed enforcement to CDP Bridge and OpenCLI consumers, adds RED/GREEN regression coverage in `test/cdp_bridge_governance.test.py`, updates the parent and Phase 7 handoff indexes, and remains local-only pending repository gates and local-main integration.
 <!-- EVIDENCE_INDEX_END -->
