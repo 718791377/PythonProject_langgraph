@@ -2124,6 +2124,28 @@ def bootstrap_plan_item(root: Path, rel: Path, role: str, content: str, *, exist
     }
 
 
+def phase1_bootstrap_templates(
+    agent_name: str,
+    namespace: str,
+    mode_cli: Path = DEFAULT_MODE_CLI,
+    private_prompt_source: Path = DEFAULT_PRIVATE_PROMPT_SOURCE,
+    on_wrapper: Path = DEFAULT_ON_WRAPPER,
+    off_wrapper: Path = DEFAULT_OFF_WRAPPER,
+    startup_hook: Path = DEFAULT_BOOTSTRAP_STARTUP_HOOK,
+    operator_doc: Path = DEFAULT_BOOTSTRAP_OPERATOR_DOC,
+) -> dict[Path, tuple[str, str, str]]:
+    agent_rel = Path(".codex") / "agents" / f"{agent_name}.toml"
+    return {
+        agent_rel: ("agent_toml", phase1_agent_toml_template(agent_name, namespace, private_prompt_source), "manual-review-existing"),
+        private_prompt_source: ("private_prompt_source", phase1_private_prompt_placeholder(agent_name, namespace), "preserve-existing-private-prompt"),
+        mode_cli: ("mode_cli", phase1_mode_cli_template(agent_name, namespace), "manual-review-existing"),
+        on_wrapper: ("phase1_wrapper_on", phase1_wrapper_template(mode_cli, "project-on"), "manual-review-existing"),
+        off_wrapper: ("phase1_wrapper_off", phase1_wrapper_template(mode_cli, "project-off"), "manual-review-existing"),
+        startup_hook: ("startup_activation_hook", phase1_startup_hook_template(mode_cli), "manual-update-existing"),
+        operator_doc: ("operator_docs", phase1_operator_doc_template(mode_cli, on_wrapper, off_wrapper), "manual-update-existing"),
+    }
+
+
 def phase1_bootstrap_operator_next_steps(planned_writes: list[dict[str, Any]], git_status: dict[str, Any]) -> list[dict[str, Any]]:
     create_items = [item for item in planned_writes if item.get("action") == "create"]
     manual_items = [item for item in planned_writes if str(item.get("action", "")).startswith("manual")]
@@ -2212,16 +2234,7 @@ def phase1_bootstrap_scaffold_plan(
     if git_status["token"] == "blocked:git_status_unavailable":
         errors.append(blocker("blocked:git_status_unavailable", "Cannot run git status in target project.", stderr=git_status["stderr"]))
 
-    agent_rel = Path(".codex") / "agents" / f"{agent_name}.toml"
-    templates = {
-        agent_rel: ("agent_toml", phase1_agent_toml_template(agent_name, namespace, private_prompt_source), "manual-review-existing"),
-        private_prompt_source: ("private_prompt_source", phase1_private_prompt_placeholder(agent_name, namespace), "preserve-existing-private-prompt"),
-        mode_cli: ("mode_cli", phase1_mode_cli_template(agent_name, namespace), "manual-review-existing"),
-        on_wrapper: ("phase1_wrapper_on", phase1_wrapper_template(mode_cli, "project-on"), "manual-review-existing"),
-        off_wrapper: ("phase1_wrapper_off", phase1_wrapper_template(mode_cli, "project-off"), "manual-review-existing"),
-        startup_hook: ("startup_activation_hook", phase1_startup_hook_template(mode_cli), "manual-update-existing"),
-        operator_doc: ("operator_docs", phase1_operator_doc_template(mode_cli, on_wrapper, off_wrapper), "manual-update-existing"),
-    }
+    templates = phase1_bootstrap_templates(agent_name, namespace, mode_cli, private_prompt_source, on_wrapper, off_wrapper, startup_hook, operator_doc)
     planned_writes = [
         bootstrap_plan_item(root, rel, role, content, existing_action=existing_action)
         for rel, (role, content, existing_action) in templates.items()
@@ -2231,6 +2244,7 @@ def phase1_bootstrap_scaffold_plan(
     create_count = sum(1 for item in planned_writes if item.get("action") == "create")
     manual_review_count = sum(1 for item in planned_writes if str(item.get("action", "")).startswith("manual"))
     preserve_count = sum(1 for item in planned_writes if str(item.get("action", "")).startswith("preserve"))
+    apply_blockers = phase1_bootstrap_apply_blockers(planned_writes, git_status, errors)
     operator_next_steps = phase1_bootstrap_operator_next_steps(planned_writes, git_status)
     return {
         "schema_version": SCHEMA_VERSION,
@@ -2240,8 +2254,8 @@ def phase1_bootstrap_scaffold_plan(
         "token": "ok" if not errors else errors[0]["code"],
         "read_only": True,
         "writes_target_project": False,
-        "apply_supported": False,
-        "target_project_write_allowed_by_checker": False,
+        "apply_supported": True,
+        "target_project_write_allowed_by_checker": not apply_blockers,
         "control_mode_allowed": False,
         "bootstrap_required": True,
         "adaptation_lane": "bootstrap",
@@ -2259,10 +2273,12 @@ def phase1_bootstrap_scaffold_plan(
             "preserve_existing_count": preserve_count,
             "blocked_count": len(plan_blockers),
             "next_step_count": len(operator_next_steps),
+            "apply_blocked_count": len(apply_blockers),
         },
         "git_status": git_status,
         "project_root_evidence": evidence,
         "blockers": errors,
+        "apply_blockers": apply_blockers,
         "next_actions": [
             "review_dry_run_plan",
             "obtain_explicit_target_project_write_approval",
@@ -2275,6 +2291,152 @@ def phase1_bootstrap_scaffold_plan(
             "template_content_included_in_payload": False,
             "copies_other_project_private_prompt": False,
         },
+    }
+
+
+def phase1_bootstrap_apply_blockers(planned_writes: list[dict[str, Any]], git_status: dict[str, Any], existing_errors: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    errors = list(existing_errors or [])
+    git_token = str(git_status.get("token") or "")
+    if git_token != "ok":
+        errors.append(
+            blocker(
+                "blocked:dirty_target_project" if git_token == "blocked:dirty_target_project" else "blocked:git_status_unavailable",
+                "Target project must be a clean Git worktree before applying Phase 1 scaffold files.",
+                git_status=git_status,
+            )
+        )
+    non_create = [item for item in planned_writes if item.get("action") != "create"]
+    if non_create:
+        errors.append(
+            blocker(
+                "blocked:existing_phase1_surface_requires_manual_review",
+                "Scaffold --apply only creates missing Phase 1 files and never overwrites existing private or operator surfaces.",
+                paths=[item.get("path") for item in non_create if item.get("path")],
+                actions=[item.get("action") for item in non_create if item.get("action")],
+            )
+        )
+    return errors
+
+
+def phase1_bootstrap_scaffold_apply(
+    root: Path,
+    agent_name: str,
+    namespace: str,
+    mode_cli: Path = DEFAULT_MODE_CLI,
+    private_prompt_source: Path = DEFAULT_PRIVATE_PROMPT_SOURCE,
+    on_wrapper: Path = DEFAULT_ON_WRAPPER,
+    off_wrapper: Path = DEFAULT_OFF_WRAPPER,
+    startup_hook: Path = DEFAULT_BOOTSTRAP_STARTUP_HOOK,
+    operator_doc: Path = DEFAULT_BOOTSTRAP_OPERATOR_DOC,
+) -> dict[str, Any]:
+    plan = phase1_bootstrap_scaffold_plan(root, agent_name, namespace, mode_cli, private_prompt_source, on_wrapper, off_wrapper, startup_hook, operator_doc)
+    templates = phase1_bootstrap_templates(agent_name, namespace, mode_cli, private_prompt_source, on_wrapper, off_wrapper, startup_hook, operator_doc)
+    planned_writes = list(plan.get("planned_writes") or [])
+    errors = phase1_bootstrap_apply_blockers(planned_writes, dict(plan.get("git_status") or {}), list(plan.get("blockers") or []))
+    if errors:
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "command": "scaffold_project_moe_phase1",
+            "mode": "apply",
+            "ok": False,
+            "token": errors[0]["code"],
+            "exit_code": 4,
+            "read_only": False,
+            "writes_target_project": False,
+            "apply_supported": True,
+            "target_project_write_allowed_by_checker": False,
+            "control_mode_allowed": False,
+            "bootstrap_required": True,
+            "adaptation_lane": "bootstrap",
+            "target_project_root": str(root),
+            "agent_name": agent_name,
+            "state_namespace": namespace,
+            "planned_writes": planned_writes,
+            "git_status": plan.get("git_status"),
+            "blockers": errors,
+            "privacy_boundary": plan.get("privacy_boundary"),
+        }
+
+    applied: list[dict[str, Any]] = []
+    for rel, (role, content, _existing_action) in templates.items():
+        full, err = safe_relative(root, rel)
+        if err:
+            return {
+                "schema_version": SCHEMA_VERSION,
+                "command": "scaffold_project_moe_phase1",
+                "mode": "apply",
+                "ok": False,
+                "token": err["code"],
+                "exit_code": 4,
+                "read_only": False,
+                "writes_target_project": False,
+                "apply_supported": True,
+                "target_project_write_allowed_by_checker": False,
+                "control_mode_allowed": False,
+                "bootstrap_required": True,
+                "adaptation_lane": "bootstrap",
+                "target_project_root": str(root),
+                "agent_name": agent_name,
+                "state_namespace": namespace,
+                "blockers": [err],
+                "privacy_boundary": plan.get("privacy_boundary"),
+            }
+        assert full is not None
+        if full.exists():
+            err = blocker("blocked:scaffold_target_changed_before_apply", "Target scaffold path appeared before apply completed; refusing to overwrite.", path=norm(rel))
+            return {
+                "schema_version": SCHEMA_VERSION,
+                "command": "scaffold_project_moe_phase1",
+                "mode": "apply",
+                "ok": False,
+                "token": err["code"],
+                "exit_code": 4,
+                "read_only": False,
+                "writes_target_project": False,
+                "apply_supported": True,
+                "target_project_write_allowed_by_checker": False,
+                "control_mode_allowed": False,
+                "bootstrap_required": True,
+                "adaptation_lane": "bootstrap",
+                "target_project_root": str(root),
+                "agent_name": agent_name,
+                "state_namespace": namespace,
+                "blockers": [err],
+                "privacy_boundary": plan.get("privacy_boundary"),
+            }
+        status = write_text_if_changed(full, content)
+        applied.append({"path": norm(rel), "role": role, "status": status, "sha256": sha256_bytes(content.encode("utf-8")), "managed": False, "scaffold_owned": True})
+
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "command": "scaffold_project_moe_phase1",
+        "mode": "apply",
+        "ok": True,
+        "token": "ok",
+        "read_only": False,
+        "writes_target_project": True,
+        "apply_supported": True,
+        "target_project_write_allowed_by_checker": True,
+        "control_mode_allowed": False,
+        "bootstrap_required": True,
+        "adaptation_lane": "bootstrap",
+        "lane_reason": "phase1_bootstrap_scaffold_applied_missing_files_only",
+        "target_project_root": str(root),
+        "agent_name": agent_name,
+        "state_namespace": namespace,
+        "mode_cli": norm(mode_cli),
+        "private_prompt_source": norm(private_prompt_source),
+        "applied_writes": applied,
+        "summary": {"created_count": len(applied), "blocked_count": 0},
+        "git_status_before": plan.get("git_status"),
+        "blockers": [],
+        "next_actions": [
+            "review_target_project_git_diff",
+            "complete_placeholder_cli_and_private_prompt",
+            "run_phase1_readiness_checker_static_only",
+            "run_phase1_readiness_checker_execute_read_contract",
+        ],
+        "privacy_boundary": plan.get("privacy_boundary"),
     }
 
 

@@ -61,6 +61,7 @@ related_docs:
 - 2026-06-01 纠偏证据：发现 A 已安装 `toolchain_source_root` 仍指向已删除的 B feature worktree，导致 A launcher preflight 返回 `blocked:phase1_readiness_gate_unavailable / No module named 'project_moe_gui'`；旧的“launcher preflight ok”只能视为历史证据，不能代表当前可用状态。
 - 2026-06-01 Phase 2 修复切片：B toolchain `0.2.23` 将目标安装配置写入稳定 source root `D:\PythonProject_langgraph\tools\project_moe_gui_toolchain`，新增 `toolchain_source_root` 存在性/import checker，并允许 updater 修复 manifest 仍匹配但 source root 失效的可恢复安装状态。
 - 2026-06-01 验收边界：A 仍是 Ready Lane 目标，但必须在 0.2.23 更新 A managed artifacts 并重新获得 install check、readiness 与 launcher preflight `token=ok` 后，才能重新声称“当前 GUI preflight 可用”；可见 GUI 启动仍是显式交互动作，并需要 `--allow-visible`。
+- 2026-06-01 scaffold apply 切片：B toolchain `0.2.24` 新增受保护的 `scaffold_project_moe_phase1.py --apply`。它只在项目证据与干净 Git dirty-state 检查通过后创建缺失的 Bootstrap Lane 文件，拒绝覆盖既有私有提示源或 operator surfaces，并且在后续 readiness 返回 Ready Lane 之前保持 GUI 控制禁用。
 - 当前 Comet change 是 `refine-project-moe-gui-plan-comet-structure`。如果 bash 不可用，只能用 OpenSpec artifacts、repo-local guard 与本地验证作为 fallback evidence。
 
 就地字段解释：
@@ -552,7 +553,8 @@ A 已完成的收敛顺序：
 
 - [x] 固化 `scaffold_project_moe_phase1.py --dry-run --json` 输出。
 - [x] 默认只生成 bootstrap actions，不写目标文件。
-- [ ] 只有在目标 ownership 和 dirty-state 检查通过后，才提供显式 `--apply` 路径。
+- [x] 只有在目标 ownership 和 dirty-state 检查通过后，才提供显式 `--apply` 路径。
+- 证据（2026-06-01）：toolchain `0.2.24` 新增受保护 scaffold `--apply`；回归测试证明 clean target 只创建缺失 Phase 1 文件、dirty target 在写入前 fail closed、既有私有提示源 / agent surface 不会被覆盖。
 - [x] 为部分实现 Phase 1 的项目输出 repair-lane report。
 - [x] 在新 checker 证据证明之前，保持 `D:\PythonProject_paper_suggest` 为 repair-lane；只有产生真实 Ready Lane 证据后才晋级。
 
@@ -735,6 +737,7 @@ python .\tools\run_openspec_guard.py --root .
 - [x] 明确 Comet 管理记录、阶段门禁、Monitoring 回退语义和证据留存。
 - [x] 明确实施切片、文件职责图和本地集成顺序。
 - [ ] 后续代码实现完成并完成 A/B 验收后归档对应 OpenSpec change。
+  - 延期（2026-06-01）：本次 scaffold `--apply` 是本地工具链补齐切片；归档仍延期到当前本地集成包完成验证，并由 operator 明确选择 Project MOE GUI 已完成 change set 的 OpenSpec 归档范围。
 - [x] 目标项目真实 Ready Lane 证据生成后，再允许受保护 GUI 控制。
 
 ## 19. 参考源

@@ -61,6 +61,7 @@ Status interpretation:
 - 2026-06-01 correction evidence: A later showed an installed `toolchain_source_root` still pointing at a deleted B feature worktree, so A launcher preflight returned `blocked:phase1_readiness_gate_unavailable / No module named 'project_moe_gui'`; the previous "launcher preflight ok" is historical evidence, not current availability.
 - 2026-06-01 Phase 2 fix slice: B toolchain `0.2.23` writes stable source root `D:\PythonProject_langgraph\tools\project_moe_gui_toolchain`, adds a source-root existence/import checker, and lets updater repair recoverable installs whose manifest still matches but source root is unavailable.
 - 2026-06-01 acceptance boundary: A remains a Ready Lane target, but current GUI preflight availability must be re-established by updating A managed artifacts to 0.2.23 and rerunning install check, readiness, and launcher preflight; visible launch remains explicit and requires `--allow-visible`.
+- 2026-06-01 scaffold apply slice: B toolchain `0.2.24` adds protected `scaffold_project_moe_phase1.py --apply`. It creates only missing Bootstrap Lane files after project-evidence and clean Git dirty-state checks pass, refuses to overwrite existing private or operator surfaces, and keeps GUI control disabled until later readiness evidence returns Ready Lane.
 - Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, only OpenSpec artifacts, repo-local guards, and local validation can be used as fallback evidence.
 
 Inline field definitions:
@@ -550,7 +551,8 @@ The completed A convergence order was:
 
 - [x] Freeze `scaffold_project_moe_phase1.py --dry-run --json` output.
 - [x] Generate bootstrap actions without writing target files by default.
-- [ ] Add an explicit `--apply` path only after target ownership and dirty-state checks pass.
+- [x] Add an explicit `--apply` path only after target ownership and dirty-state checks pass.
+- Evidence (2026-06-01): toolchain `0.2.24` adds protected scaffold `--apply`; regression coverage proves clean targets create only missing Phase 1 files, dirty targets fail closed before writing, and existing private prompt / agent surfaces are not overwritten.
 - [x] Produce a repair-lane report for partially implemented Phase 1 projects.
 - [x] Preserve `D:\PythonProject_paper_suggest` as repair-lane until fresh checker evidence proves otherwise, then promote it only after real Ready Lane evidence exists.
 
@@ -732,6 +734,7 @@ When implementation moves from docs to code, also update/check:
 - [x] Comet management record, phase gates, Monitoring return semantics, and evidence retention are explicit.
 - [x] Implementation slices, file ownership map, and local integration order are explicit.
 - [ ] Archive the corresponding OpenSpec change after follow-up code implementation and A/B acceptance are complete.
+  - Deferral (2026-06-01): this scaffold `--apply` slice is a local toolchain completion slice. Archive remains deferred until the current local integration package is validated and the operator explicitly chooses the OpenSpec archival scope for the completed Project MOE GUI change set.
 - [x] Once real Ready Lane evidence exists for a target project, allow guarded GUI control.
 
 ## 19. References

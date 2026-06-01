@@ -939,8 +939,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(payload["mode"], "dry-run")
             self.assertTrue(payload["read_only"])
             self.assertFalse(payload["writes_target_project"])
-            self.assertFalse(payload["apply_supported"])
-            self.assertFalse(payload["target_project_write_allowed_by_checker"])
+            self.assertTrue(payload["apply_supported"])
+            self.assertTrue(payload["target_project_write_allowed_by_checker"])
             self.assertFalse(payload["control_mode_allowed"])
             self.assertEqual(payload["adaptation_lane"], "bootstrap")
             planned = {item["role"]: item for item in payload["planned_writes"]}
@@ -971,6 +971,80 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             ready_step = payload["operator_next_steps"][-1]
             self.assertEqual(ready_step["control_mode_allowed_after_step"], "only_after_readiness_status_ready")
             self.assertFalse(payload["privacy_boundary"]["private_prompt_body_read"])
+            self.assertFalse((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
+            self.assertFalse((project / "MOE.md").exists())
+            self.assertFalse((project / "tools" / "thesis_moe_mode.py").exists())
+
+    def test_phase1_bootstrap_scaffold_apply_creates_only_missing_files_in_clean_target(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-bootstrap-apply"
+            project.mkdir()
+            (project / "README.md").write_text("# bootstrap target\n", encoding="utf-8")
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_SCAFFOLD),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--apply",
+            )
+
+            self.assertEqual(payload["command"], "scaffold_project_moe_phase1")
+            self.assertEqual(payload["mode"], "apply")
+            self.assertFalse(payload["read_only"])
+            self.assertTrue(payload["writes_target_project"])
+            self.assertTrue(payload["apply_supported"])
+            self.assertTrue(payload["target_project_write_allowed_by_checker"])
+            self.assertFalse(payload["control_mode_allowed"])
+            created_paths = {item["path"] for item in payload["applied_writes"]}
+            self.assertEqual(
+                created_paths,
+                {
+                    ".codex/agents/thesis-moe-mentor.toml",
+                    "MOE.md",
+                    "tools/thesis_moe_mode.py",
+                    "thesis-moe-on.cmd",
+                    "thesis-moe-off.cmd",
+                    "AGENTS.md",
+                    "docs_bilingual/operations/thesis_moe_mode_usage.zh-CN.md",
+                },
+            )
+            self.assertTrue((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
+            self.assertTrue((project / "MOE.md").exists())
+            self.assertTrue((project / "tools" / "thesis_moe_mode.py").exists())
+            self.assertIn("blocked:bootstrap_placeholder", (project / "tools" / "thesis_moe_mode.py").read_text(encoding="utf-8"))
+            self.assertIn("Project MOE private prompt placeholder", (project / "MOE.md").read_text(encoding="utf-8"))
+            self.assertTrue(all(item["scaffold_owned"] is True and item["managed"] is False for item in payload["applied_writes"]))
+
+    def test_phase1_bootstrap_scaffold_apply_blocks_dirty_target_without_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-bootstrap-apply-dirty"
+            project.mkdir()
+            (project / "README.md").write_text("# bootstrap target\n", encoding="utf-8")
+            self.git_commit_all(project)
+            (project / "uncommitted.txt").write_text("dirty\n", encoding="utf-8")
+
+            _, payload = self.run_tool(
+                str(PHASE1_SCAFFOLD),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--apply",
+                expect_success=False,
+            )
+
+            self.assertEqual(payload["mode"], "apply")
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["token"], "blocked:dirty_target_project")
+            self.assertFalse(payload["writes_target_project"])
+            self.assertFalse(payload["target_project_write_allowed_by_checker"])
             self.assertFalse((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
             self.assertFalse((project / "MOE.md").exists())
             self.assertFalse((project / "tools" / "thesis_moe_mode.py").exists())
@@ -1010,6 +1084,43 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(self.file_digest(project / "MOE.md"), before_moe)
             self.assertEqual(self.file_digest(project / ".codex" / "agents" / "thesis-moe-mentor.toml"), before_agent)
             self.assertFalse(payload["privacy_boundary"]["private_prompt_body_read"])
+
+    def test_phase1_bootstrap_scaffold_apply_blocks_existing_private_surfaces_without_overwrite(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-bootstrap-existing-apply"
+            project.mkdir()
+            (project / ".codex" / "agents").mkdir(parents=True)
+            (project / "README.md").write_text("# existing target\n", encoding="utf-8")
+            (project / "MOE.md").write_text("# real private prompt fixture\n", encoding="utf-8")
+            (project / ".codex" / "agents" / "thesis-moe-mentor.toml").write_text(
+                'name = "thesis-moe-mentor"\n'
+                'description = "Existing private agent."\n'
+                'developer_instructions = "Existing private instructions must not be overwritten."\n',
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+            before_moe = self.file_digest(project / "MOE.md")
+            before_agent = self.file_digest(project / ".codex" / "agents" / "thesis-moe-mentor.toml")
+
+            _, payload = self.run_tool(
+                str(PHASE1_SCAFFOLD),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--apply",
+                expect_success=False,
+            )
+
+            self.assertEqual(payload["mode"], "apply")
+            self.assertEqual(payload["token"], "blocked:existing_phase1_surface_requires_manual_review")
+            self.assertFalse(payload["writes_target_project"])
+            self.assertFalse(payload["target_project_write_allowed_by_checker"])
+            self.assertEqual(self.file_digest(project / "MOE.md"), before_moe)
+            self.assertEqual(self.file_digest(project / ".codex" / "agents" / "thesis-moe-mentor.toml"), before_agent)
+            self.assertFalse((project / "tools" / "thesis_moe_mode.py").exists())
 
     def test_phase1_readiness_checker_blocks_missing_operator_docs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
