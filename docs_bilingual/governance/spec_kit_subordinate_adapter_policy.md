@@ -31,6 +31,12 @@ Spec Kit is not a project governance authority for this repository unless a sepa
 - Describing Spec Kit as the primary source of truth, primary governance authority, or replacement for Comet/OpenSpec/Superpowers.
 - Moving repository workflow ownership from OpenSpec or Comet into Spec Kit by prompt text alone.
 
+## Future `specify` Command Boundary
+
+A future command named `specify` is safe only when a separate active implementation plan names the exact command, target paths, expected outputs, rollback path, and validation gates. The command must run in an isolated feature worktree, its output must be reviewed as subordinate input, and any accepted result must be converted into repository-owned surfaces such as `docs_bilingual/`, `openspec/`, or Superpowers planning artifacts.
+
+If those conditions are missing, stop before running the command and report `blocked:spec_kit_scope_not_authorized`.
+
 ## Script Backing
 
 `tools/check_spec_kit_authority_guard.py` - fail-closed checker that scans committed and working-tree surfaces for unsafe Spec Kit initialization, `.specify` path creation, and authority-takeover wording.

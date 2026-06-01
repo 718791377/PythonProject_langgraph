@@ -31,6 +31,12 @@ translation_of: docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md
 - 将 Spec Kit 描述为 primary source of truth、primary governance authority 或 Comet/OpenSpec/Superpowers 的替代者。
 - 仅靠提示词把仓库工作流所有权从 OpenSpec 或 Comet 转移到 Spec Kit。
 
+## 未来 `specify` 命令边界
+
+未来名为 `specify` 的命令只有在单独 active implementation plan 明确列出精确命令、目标路径、预期输出、回滚路径和验证门禁时才安全。该命令必须在隔离 feature worktree 中运行，输出必须先作为从属输入审查，任何被接受的结果都必须转换到仓库拥有的 surface，例如 `docs_bilingual/`、`openspec/` 或 Superpowers planning artifact。
+
+如果这些条件缺失，在运行命令前停止，并报告 `blocked:spec_kit_scope_not_authorized`。
+
 ## 脚本支撑
 
 `tools/check_spec_kit_authority_guard.py` - fail-closed checker，用来扫描已提交和工作区表面中的不安全 Spec Kit 初始化、`.specify` 路径创建和权威接管措辞。

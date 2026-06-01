@@ -35,12 +35,12 @@ Document GitHub Spec Kit as an optional subordinate adapter or template source, 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：implemented-local
+阶段：Stage C 实施包
+责任会话：codex-implement-spec-kit-subordinate-adapter-governance-20260601
+当前门禁：完成本地验证、提交、本地 main 合入，然后停在远端发布授权门
+Stage C 进入条件：已由当前用户继续实施本子方案的指令满足
+最后更新：2026-06-01
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -65,11 +65,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Document authority order: Comet controls OpenSpec WHAT and Superpowers HOW; Spec Kit may only provide subordinate templates unless a separate plan changes that.
-- [ ] Add usage boundaries for any future specify command.
-- [ ] Register the new governance pair if created.
-- [ ] Run docs registry and implementation-plan checks.
+- [x] Confirm this child plan after local main integration.
+- [x] Document authority order: Comet controls OpenSpec WHAT and Superpowers HOW; Spec Kit may only provide subordinate templates unless a separate plan changes that.
+- [x] Add usage boundaries for any future specify command.
+- [x] Register the new governance pair if created.
+- [x] Run docs registry and implementation-plan checks.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -94,4 +94,5 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-01 Stage C 实施：复用已注册的 `docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md` 与 `.zh-CN.md` 治理文档对，补充未来 `specify` 命令边界措辞，并将本子方案标记为 implemented-local；验证证据记录在本地命令输出和最终 assistant 回复中。
 <!-- EVIDENCE_INDEX_END -->

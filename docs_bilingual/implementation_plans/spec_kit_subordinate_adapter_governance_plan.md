@@ -35,12 +35,12 @@ Document GitHub Spec Kit as an optional subordinate adapter or template source, 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented-local
+Stage: Stage C implementation package
+Owner session: codex-implement-spec-kit-subordinate-adapter-governance-20260601
+Current gate: local validation, commit, local main integration, then stop at the remote-publication approval gate
+Stage C entry condition: satisfied by current user instruction to continue this child plan
+Last updated: 2026-06-01
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -65,11 +65,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Document authority order: Comet controls OpenSpec WHAT and Superpowers HOW; Spec Kit may only provide subordinate templates unless a separate plan changes that.
-- [ ] Add usage boundaries for any future specify command.
-- [ ] Register the new governance pair if created.
-- [ ] Run docs registry and implementation-plan checks.
+- [x] Confirm this child plan after local main integration.
+- [x] Document authority order: Comet controls OpenSpec WHAT and Superpowers HOW; Spec Kit may only provide subordinate templates unless a separate plan changes that.
+- [x] Add usage boundaries for any future specify command.
+- [x] Register the new governance pair if created.
+- [x] Run docs registry and implementation-plan checks.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -94,4 +94,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-06-01 Stage C implementation: reused the registered `docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md` and `.zh-CN.md` governance pair, added future `specify` command boundary wording, and marked this child plan implemented-local; validation evidence is recorded in local command output and final assistant response.
 <!-- EVIDENCE_INDEX_END -->
