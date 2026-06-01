@@ -51,15 +51,16 @@ related_docs:
 
 - `status: active`：本文是当前可执行实施方案；它不等于 Project MOE GUI 运行时能力已经全部完成。
 - `plan_readiness: full-comet-structure-ready-for-implementation-slicing`：结构、边界、任务颗粒度已满足继续切分代码实施的入口要求。
-- `D:\PythonProject_paper_suggest`：A 仍是 Phase 1 owner，不在 B 重新实现一套 A 业务 Phase 1。A 本地 `main` 现在已有真实 Project MOE GUI install/update receipt、rollback refs 和 launcher preflight 证据。
+- `D:\PythonProject_paper_suggest`：A 仍是 Phase 1 owner，不在 B 重新实现一套 A 业务 Phase 1。A 本地 `main` 已有 Phase 1、install/update receipt 与 rollback refs；但当前 GUI preflight 可用性必须以最新 0.2.23 更新后的重新验证为准。
 - 2026-06-01 决策：A=`D:\PythonProject_paper_suggest` 保留为真实 Phase 1 owner，B=`D:\PythonProject_langgraph` 保留为 Phase 2 toolchain source of truth；修复 worktree dry-run 路线已收敛为 A 本地 main 真实安装/更新验证路线。不得为了验证方便在 B 重新实现一套完整 A 业务 Phase 1 来替代目标项目证据。
 - 2026-06-01 证据：旧 worktree `paper_suggest-thesis-moe-phase1` 已判定为陈旧证据，不再作为 A 现状；新 A 修复 worktree `D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601` 提交 `560da0e 功能：修复论文 MOE 阶段一就绪契约`。
 - 2026-06-01 隐私边界：A 的 `MOE.md` 是 ignored/private 文件，仅为 readiness validation 被复制到 A 修复 worktree；不得提交、不得复制全文到 B 文档或工具链。
 - 2026-06-01 readiness 证据：A 修复 worktree static-only 输出 `ok=true / readiness_status=static-ready-candidate / adaptation_lane=ready-candidate / control_mode_allowed=false`，其中 `readiness_status` 表示 Phase 1 契约分类，`adaptation_lane` 表示后续处理 lane，`control_mode_allowed=false` 表示只能展示或 dry-run；execute-read-contract 输出 `ok=true / token=ok / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true`，其中 `token=ok` 是稳定机器可读成功 token，`control_mode_allowed=true` 表示在具备 receipt 与 rollback 证据后可进入受控安装/控制路径，已校验 `project-status`、`list-sessions`、`status`、`assert-on`。
 - 2026-06-01 A 本地 main 证据：A 已集成 `560da0e 功能：修复论文 MOE 阶段一就绪契约`、`c6b92ae 功能：安装论文 Project MOE GUI 控制面`、`ce23931 修复：使用共享运行时启动论文 Project MOE GUI`。回滚 refs 为 `refs/backup/local-main/20260601-125126-before-thesis-moe-phase1-repair-20260601` 和 `refs/backup/local-main/20260601-215213-before-project-moe-gui-runtime-entry-update`。
 - 2026-06-01 Phase 2 证据：B toolchain `0.2.22` 修复目标 launcher 的 runtime 入口：按配置的 `runtime_python` 重新执行，使用 `PROJECT_MOE_GUI_RUNTIME_REEXEC` 防止递归，并设置 `PYTHONUTF8=1`。已安装 preflight payload 记录 `launcher_runtime_python` 与 `launcher_runtime_reexec`。
-- 2026-06-01 A 真实安装/更新证据：install check 输出 `ok=true / status=up_to_date / installed_toolchain_version=0.2.22 / runtime_status=import_ok / blockers=[]`；readiness 输出 `ok=true / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true`；已安装 launcher preflight 输出 `ok=true / token=ok / pyside6_status=import_ok / launcher_runtime_reexec=true`；A 测试输出 `Ran 6 tests ... OK`。
-- 2026-06-01 验收边界：A 现在是有真实已安装 GUI preflight 证据的 Ready Lane 目标；本次没有启动可见 GUI 窗口，可见启动仍是显式交互动作，并需要 `--allow-visible`。
+- 2026-06-01 纠偏证据：发现 A 已安装 `toolchain_source_root` 仍指向已删除的 B feature worktree，导致 A launcher preflight 返回 `blocked:phase1_readiness_gate_unavailable / No module named 'project_moe_gui'`；旧的“launcher preflight ok”只能视为历史证据，不能代表当前可用状态。
+- 2026-06-01 Phase 2 修复切片：B toolchain `0.2.23` 将目标安装配置写入稳定 source root `D:\PythonProject_langgraph\tools\project_moe_gui_toolchain`，新增 `toolchain_source_root` 存在性/import checker，并允许 updater 修复 manifest 仍匹配但 source root 失效的可恢复安装状态。
+- 2026-06-01 验收边界：A 仍是 Ready Lane 目标，但必须在 0.2.23 更新 A managed artifacts 并重新获得 install check、readiness 与 launcher preflight `token=ok` 后，才能重新声称“当前 GUI preflight 可用”；可见 GUI 启动仍是显式交互动作，并需要 `--allow-visible`。
 - 当前 Comet change 是 `refine-project-moe-gui-plan-comet-structure`。如果 bash 不可用，只能用 OpenSpec artifacts、repo-local guard 与本地验证作为 fallback evidence。
 
 就地字段解释：
@@ -495,7 +496,7 @@ readiness payload 必须包含：
 }
 ```
 
-`D:\PythonProject_paper_suggest` 当前归类：Ready Lane，并且 A 本地 `main` 已有真实已安装 GUI preflight 证据：readiness 返回 `control_mode_allowed=true`，install check 返回 `status=up_to_date`，launcher preflight 返回 `token=ok`。
+`D:\PythonProject_paper_suggest` 当前归类：Ready Lane，但当前已安装 GUI preflight 曾因 stale `toolchain_source_root` 指向已删除 feature worktree 而阻断。A 必须更新到 B toolchain `0.2.23` 并重新通过 install check、readiness 与 launcher preflight，才可重新视为“当前 GUI preflight 可用”。
 
 A 已完成的收敛顺序：
 
@@ -504,7 +505,9 @@ A 已完成的收敛顺序：
 3. 将 A Phase 1 修复集成为 `560da0e`。
 4. 将 B 的 Project MOE GUI 安装到 A，并将安装集成为 `c6b92ae`。
 5. 修复 B 已安装 launcher 的 runtime 入口，把 A 更新到 toolchain `0.2.22`，并将 A launcher 更新集成为 `ce23931`。
-6. 重新运行 install check、readiness、已安装 launcher preflight 与 A 测试；这解锁受保护 GUI 使用，但不表示已启动可见 GUI 窗口。
+6. 发现 stale `toolchain_source_root` 会让 install check 误报正常但 launcher preflight 失败。
+7. 在 B toolchain `0.2.23` 增加稳定 source-root 写入、source-root checker 与 updater 自修复逻辑。
+8. 后续必须重新更新 A managed artifacts 并重新运行 install check、readiness、已安装 launcher preflight 与 A 测试；这解锁受保护 GUI 使用，但不表示已启动可见 GUI 窗口。
 
 ## 14. 实施事项清单（按顺序，细颗粒度）
 
@@ -561,6 +564,9 @@ A 已完成的收敛顺序：
 - [x] 通过 manifest hash 与 source version 比较实现 update。
 - [x] 通过 manifest 只删除自身 owned managed files 实现受保护 uninstall apply。
 - [x] 覆盖或删除任何 managed target artifact 前，先依赖 manifest hash / receipt / rollback hint 形成本地可追溯证据。
+- [x] 安装/更新目标项目时写入稳定 `toolchain_source_root`，不把 feature worktree 路径固化进目标项目长期配置。
+- [x] `check_project_moe_gui_install.py` fail-closed 校验 `toolchain_source_root` 是否存在且可 import `project_moe_gui`。
+- [x] `update_project_moe_gui.py` 可修复 manifest 仍匹配但 `toolchain_source_root` 已失效的可恢复安装状态。
 
 #### Slice 4：Phase 2 PySide6 GUI shell
 
@@ -574,11 +580,19 @@ A 已完成的收敛顺序：
 
 #### Slice 5：治理、文档与 checker 集成
 
-- [ ] 新增 checker 时同步注册到仓库 guard 和 CI manifest。
-- [ ] 只在共享 runtime 与 launcher 边界变化时更新 PySide6 跨项目能力方案。
-- [ ] 只在 MOE GUI 状态、readiness 与 installer 行为变化时更新 Project MOE 专属文档。
-- [ ] 不把 workflow skills、plugin profiles 或 GUI profile loading 写成 native-expert evidence。
-- [ ] 私有提示源只引用，不复制正文。
+以下是常驻治理规则，不再作为“未完成实施项”使用空 checkbox 表示：
+
+- 新增 checker 时同步注册到仓库 guard 和 CI manifest。
+- 只在共享 runtime 与 launcher 边界变化时更新 PySide6 跨项目能力方案。
+- 只在 MOE GUI 状态、readiness 与 installer 行为变化时更新 Project MOE 专属文档。
+- 不把 workflow skills、plugin profiles 或 GUI profile loading 写成 native-expert evidence。
+- 私有提示源只引用，不复制正文。
+
+本切片已完成的专属文档/checker 收口：
+
+- [x] 将 stale `toolchain_source_root` 风险写入 Project MOE 专属方案。
+- [x] 将长期治理规则从待办 checkbox 中拆出，避免被误读为未完成产品功能。
+- [x] 为 source-root checker 与 updater 自修复补充回归测试。
 
 #### Slice 6：目标项目验收与推广
 
@@ -609,22 +623,27 @@ A 已完成的收敛顺序：
 
 ### 14.4 本地集成顺序与证据留存
 
-- [ ] 从当前本地 `main` 创建 feature branch 或 feature worktree。
-- [ ] 主目录保持在本地 `main`，不要变成 feature workspace。
-- [ ] 只有 precommit update/archive review 通过后才提交。
-- [ ] 本地 `main` 合入前运行 local gate 和 local MR review。
-- [ ] feature 分支干净且用户已批准本地集成后，才合入本地 `main`。
-- [ ] 远端发布保持独立；除非当前用户消息明确批准远端发布，否则不推 GitLab/GitHub。
-- [ ] 留存证据：命令输出摘要、changed paths、worktree receipt、如已创建则记录 rollback ref、如无法 archive 则记录 archive deferral reason。
+以下是每次实施必须遵守的本地集成常驻规则，不再作为方案剩余产品功能计数：
+
+- 从当前本地 `main` 创建 feature branch 或 feature worktree。
+- 主目录保持在本地 `main`，不要变成 feature workspace。
+- 只有 precommit update/archive review 通过后才提交。
+- 本地 `main` 合入前运行 local gate 和 local MR review。
+- feature 分支干净且用户已授权本地集成边界后，才合入本地 `main`。
+- 远端发布保持独立；除非当前用户消息明确批准远端发布，否则不推 GitLab/GitHub。
+- 留存证据：命令输出摘要、changed paths、worktree receipt、如已创建则记录 rollback ref、如无法 archive 则记录 archive deferral reason。
 
 ### 14.5 不得跳过的执行规则
 
-- [ ] 每次目标项目写入前先确认 dirty/ownership preflight。
-- [ ] 每次新增 checker 同步注册到仓库 guard。
-- [ ] 每次完成 OpenSpec change 后要 archive；若 Comet bash 不可用，必须记录 `x_archive_deferred_reason` 和 `x_archive_follow_up`。
-- [ ] 每次本地提交前运行 precommit update/archive review。
-- [ ] 每次本地 main 合入前运行 local gate 与 local MR review。
-- [ ] 如果 expert、durable worker、GUI action 或目标 CLI 超时，必须视为缺失证据；只能重试、缩小范围、转交合格 durable lane，或记录主会话显式接管。
+以下是持续执行规则，不用空 checkbox 表示“尚未实施”：
+
+- 每次目标项目写入前先确认 dirty/ownership preflight。
+- 每次新增 checker 同步注册到仓库 guard。
+- 每次完成 OpenSpec change 后要 archive；若 Comet bash 不可用，必须记录归档延期原因字段和归档后续动作字段。
+- 字段解释：`x_archive_deferred_reason` 记录“为什么本轮不能立即归档”的稳定原因；`x_archive_follow_up` 记录“下一次由谁、在什么条件下继续归档”的后续动作。
+- 每次本地提交前运行 precommit update/archive review。
+- 每次本地 main 合入前运行 local gate 与 local MR review。
+- 如果 expert、durable worker、GUI action 或目标 CLI 超时，必须视为缺失证据；只能重试、缩小范围、转交合格 durable lane，或记录主会话显式接管。
 
 ## 15. 验证计划
 
@@ -708,14 +727,14 @@ python .\tools\run_openspec_guard.py --root .
 - [x] 明确 GUI source of truth 在本仓库，目标项目状态 source of truth 在目标项目。
 - [x] 明确 GUI 不直接编辑 JSON。
 - [x] 明确 Ready / Ready-candidate / Bootstrap / Repair lane。
-- [x] 明确 `D:\PythonProject_paper_suggest` 已有真实安装 GUI preflight 证据，但可见 GUI 启动仍是单独显式验收动作。
+- [x] 明确 `D:\PythonProject_paper_suggest` 的历史安装证据与当前 stale source-root 阻断状态，要求 0.2.23 更新后重新验收 preflight。
 - [x] 明确私有提示源只引用不复制。
 - [x] 明确安装、更新、卸载、rollback 的 managed artifact 边界。
 - [x] 明确受保护卸载 `--apply` 只能删除白名单内且 hash 已验证的受管文件。
 - [x] 明确验证命令和本地 main / 远端发布边界。
 - [x] 明确 Comet 管理记录、阶段门禁、Monitoring 回退语义和证据留存。
 - [x] 明确实施切片、文件职责图和本地集成顺序。
-- [ ] 后续代码实现完成后归档对应 OpenSpec change。
+- [ ] 后续代码实现完成并完成 A/B 验收后归档对应 OpenSpec change。
 - [x] 目标项目真实 Ready Lane 证据生成后，再允许受保护 GUI 控制。
 
 ## 19. 参考源

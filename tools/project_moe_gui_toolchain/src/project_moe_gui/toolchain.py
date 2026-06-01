@@ -22,6 +22,45 @@ from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT
 SCHEMA_VERSION = 1
 DEFAULT_MODE_CLI = Path("tools/thesis_moe_mode.py")
 DEFAULT_SHARED_RUNTIME_ROOT = Path(r"D:\PythonProject_langgraph\.shared_runtimes\pyside6")
+DEFAULT_TOOLCHAIN_SOURCE_ROOT = Path(r"D:\PythonProject_langgraph\tools\project_moe_gui_toolchain")
+
+
+def current_toolchain_source_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def stable_toolchain_source_root() -> Path:
+    configured = os.environ.get("PROJECT_MOE_GUI_TOOLCHAIN_SOURCE_ROOT")
+    if configured:
+        return Path(configured).expanduser().resolve(strict=False)
+    if DEFAULT_TOOLCHAIN_SOURCE_ROOT.exists():
+        return DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False)
+    return current_toolchain_source_root().resolve(strict=False)
+
+
+def validate_toolchain_source_root(source_root: Path) -> tuple[str, list[dict[str, Any]]]:
+    errors: list[dict[str, Any]] = []
+    root = source_root.resolve(strict=False)
+    package_root = root / "src" / "project_moe_gui"
+    init_py = package_root / "__init__.py"
+    status = "import_skipped"
+    if not root.exists():
+        errors.append(blocker("blocked:toolchain_source_root_unavailable", "Configured Project MOE GUI toolchain source root is missing.", toolchain_source_root=str(root)))
+        return "missing", errors
+    if not init_py.exists():
+        errors.append(blocker("blocked:toolchain_source_root_invalid", "Configured Project MOE GUI toolchain source root does not contain src/project_moe_gui.", toolchain_source_root=str(root), expected=str(init_py)))
+        return "invalid", errors
+    code = "import project_moe_gui, project_moe_gui.toolchain; print(project_moe_gui.TOOLCHAIN_NAME)"
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(root / "src") + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, env=env)
+    if result.returncode != 0:
+        errors.append(blocker("blocked:toolchain_source_root_import_failed", "Configured Project MOE GUI toolchain source root cannot import project_moe_gui.", toolchain_source_root=str(root), stderr=result.stderr[-800:]))
+        status = "import_failed"
+    else:
+        status = "import_ok"
+    return status, errors
+
 CONFIG_RELATIVE = Path("tools/project_moe_gui/project_moe_gui.config.json")
 MANIFEST_RELATIVE = Path("tools/project_moe_gui/project_moe_gui.install-manifest.json")
 LAUNCHER_RELATIVE = Path("tools/project_moe_gui/launcher.py")
@@ -34,6 +73,11 @@ UNINSTALL_MANAGED_ALLOWLIST = {
     "tools/project_moe_gui/project_moe_gui.install-manifest.json",
     "tools/project_moe_gui/README.md",
     "project-moe-gui.cmd",
+}
+RECOVERABLE_UPDATE_BLOCKER_CODES = {
+    "blocked:toolchain_source_root_unavailable",
+    "blocked:toolchain_source_root_invalid",
+    "blocked:toolchain_source_root_import_failed",
 }
 PRIVATE_PROMPT_AGENT_DIR = Path(".codex/agents")
 PRIVATE_PROMPT_STATE_DIR = Path(".omx/state")
@@ -1737,7 +1781,7 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "shared_runtime_root": str(runtime_root),
             "runtime_python": str(runtime_python),
             "installed_target_project_root": str(root),
-            "toolchain_source_root": str(Path(__file__).resolve().parents[2]),
+            "toolchain_source_root": str(stable_toolchain_source_root()),
             "gui_shell_contract": GUI_SHELL_CONTRACT,
         }
     )
@@ -2480,6 +2524,9 @@ def check_install(root: Path, skip_runtime_import: bool = False) -> dict[str, An
         namespace = str(config.get("state_namespace") or manifest.get("state_namespace") or "")
         mode_cli = Path(str(config.get("mode_cli") or manifest.get("mode_cli") or DEFAULT_MODE_CLI))
         errors.extend(preflight(root, agent, namespace, mode_cli, True)[0])
+        source_root = Path(str(config.get("toolchain_source_root") or ""))
+        toolchain_source_status, toolchain_source_errors = validate_toolchain_source_root(source_root)
+        errors.extend(toolchain_source_errors)
         runtime_status = "skipped_by_flag"
         if not skip_runtime_import:
             runtime_python = Path(str(config.get("runtime_python") or ""))
@@ -2508,6 +2555,8 @@ def check_install(root: Path, skip_runtime_import: bool = False) -> dict[str, An
         "cli_contract": config.get("cli_contract") if config else CLI_CONTRACT,
         "migration_actions": [],
         "runtime_status": locals().get("runtime_status", "unknown"),
+        "toolchain_source_root": str(config.get("toolchain_source_root")) if config else None,
+        "toolchain_source_status": locals().get("toolchain_source_status", "unknown"),
         "blockers": errors,
         "rollback_hint": (manifest or {}).get("rollback_hint"),
     }
@@ -2515,7 +2564,9 @@ def check_install(root: Path, skip_runtime_import: bool = False) -> dict[str, An
 
 def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[str, Any]:
     current = check_install(root, skip_runtime_import=skip_runtime_import)
-    if current.get("blockers"):
+    current_blockers = list(current.get("blockers") or [])
+    unrecoverable_blockers = [item for item in current_blockers if item.get("code") not in RECOVERABLE_UPDATE_BLOCKER_CODES]
+    if unrecoverable_blockers:
         return {**current, "command": "update_project_moe_gui", "mode": "dry-run" if dry_run else "apply"}
     errors: list[dict[str, Any]] = []
     manifest = load_json(root / MANIFEST_RELATIVE, "blocked:not_installed", errors) or {}
@@ -2541,6 +2592,7 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
         "cli_contract": config.get("cli_contract"),
         "migration_actions": changes,
         "no_op": not changed,
+        "recoverable_blockers": current_blockers,
         "blockers": errors,
         "rollback_hint": new_manifest["rollback_hint"],
     }

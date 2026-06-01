@@ -13,6 +13,7 @@ from unittest.mock import patch
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TOOLCHAIN_SRC = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "src"
 sys.path.insert(0, str(TOOLCHAIN_SRC))
+from project_moe_gui.toolchain import DEFAULT_TOOLCHAIN_SOURCE_ROOT, current_toolchain_source_root
 INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_moe_gui.py"
 CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_gui_install.py"
 UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_moe_gui.py"
@@ -1662,6 +1663,78 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             )
             self.assertEqual(payload["token"], "blocked:path_traversal")
 
+    def test_check_install_fails_closed_when_toolchain_source_root_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "fixture-stale-source-root"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-stale-source-root", session_id="session-stale-source")
+            _, install_payload = self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            self.assertTrue(install_payload["ok"], install_payload)
+            config_path = project / "tools" / "project_moe_gui" / "project_moe_gui.config.json"
+            config = json.loads(config_path.read_text(encoding="utf-8-sig"))
+            stale_root = project / ".deleted-worktree" / "tools" / "project_moe_gui_toolchain"
+            config["toolchain_source_root"] = str(stale_root)
+            config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import", expect_success=False)
+
+            self.assertEqual(payload["token"], "blocked:managed_file_hash_mismatch", payload)
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:toolchain_source_root_unavailable", blocker_codes)
+            self.assertEqual(payload["toolchain_source_status"], "missing")
+
+
+    def test_update_repairs_manifest_matching_stale_toolchain_source_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "fixture-update-stale-source-root"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-update-stale-source-root", session_id="session-update-stale")
+            _, install_payload = self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            self.assertTrue(install_payload["ok"], install_payload)
+            config_path = project / "tools" / "project_moe_gui" / "project_moe_gui.config.json"
+            config = json.loads(config_path.read_text(encoding="utf-8-sig"))
+            config["toolchain_source_root"] = str(project / ".deleted-worktree" / "tools" / "project_moe_gui_toolchain")
+            config_text = json.dumps(config, ensure_ascii=False, indent=2) + "\n"
+            config_path.write_text(config_text, encoding="utf-8")
+            manifest_path = project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+            for item in manifest["managed_files"]:
+                if item.get("path") == "tools/project_moe_gui/project_moe_gui.config.json":
+                    item["sha256"] = hashlib.sha256(config_path.read_bytes()).hexdigest()
+            manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            self.git_commit_all(project)
+
+            _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import", expect_success=False)
+            self.assertEqual(check_payload["token"], "blocked:toolchain_source_root_unavailable", check_payload)
+
+            _, update_payload = self.run_tool(str(UPDATER), "--target-project", str(project), expect_success=True)
+            self.assertEqual(update_payload["token"], "ok", update_payload)
+            self.assertFalse(update_payload["no_op"], update_payload)
+            repaired = json.loads(config_path.read_text(encoding="utf-8-sig"))
+            self.assertNotIn(".deleted-worktree", repaired["toolchain_source_root"])
+
+            _, final_check = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
+            self.assertEqual(final_check["status"], "up_to_date", final_check)
+            self.assertEqual(final_check["toolchain_source_status"], "import_ok", final_check)
+
+
     def test_update_dry_run_reports_noop_after_apply(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp) / "target"
@@ -2220,6 +2293,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertNotIn("target_project_root", installed_config)
             self.assertEqual(installed_config["installed_target_project_root"], str(project.resolve()))
             self.assertIn("runtime_python", installed_config)
+            expected_source_root = DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False) if DEFAULT_TOOLCHAIN_SOURCE_ROOT.exists() else current_toolchain_source_root().resolve(strict=False)
+            self.assertEqual(installed_config["toolchain_source_root"], str(expected_source_root))
 
             launcher_text = (project / "tools" / "project_moe_gui" / "launcher.py").read_text(encoding="utf-8")
             command_text = (project / "project-moe-gui.cmd").read_text(encoding="utf-8")
