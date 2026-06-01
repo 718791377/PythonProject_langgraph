@@ -15,6 +15,16 @@ CHECK_NAME = "local_ci_gate"
 MANIFEST_RELATIVE = Path("tools/ci/ci_test_manifest.json")
 
 
+def configure_utf8_stdio() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+
 def read_manifest(root: Path) -> dict[str, Any]:
     path = root / MANIFEST_RELATIVE
     if not path.exists():
@@ -85,6 +95,7 @@ def powershell_command() -> str | None:
 
 
 def main() -> int:
+    configure_utf8_stdio()
     parser = argparse.ArgumentParser(description="Run the shared local/remote repository CI gate.")
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")

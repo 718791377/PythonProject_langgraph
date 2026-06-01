@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -67,7 +68,9 @@ class CometSuperpowersVisibilityTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
+                errors="replace",
                 cwd=REPO_ROOT,
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             )
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
