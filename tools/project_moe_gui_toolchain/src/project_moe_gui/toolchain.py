@@ -1499,6 +1499,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -1510,6 +1511,34 @@ def emit(payload: dict, json_mode: bool) -> int:
     else:
         print(f"{payload.get('token')}: {payload.get('message')}")
     return int(payload.get("exit_code", 0))
+
+
+def maybe_reexec_with_runtime(config: dict, args: argparse.Namespace, launcher: Path, project_root: Path) -> int | None:
+    if os.environ.get("PROJECT_MOE_GUI_RUNTIME_REEXEC") == "1":
+        return None
+    runtime_python = Path(str(config.get("runtime_python") or ""))
+    if not runtime_python:
+        return None
+    try:
+        current_python = Path(sys.executable).resolve(strict=False)
+        configured_python = runtime_python.resolve(strict=False)
+    except Exception:
+        current_python = Path(sys.executable)
+        configured_python = runtime_python
+    if current_python == configured_python:
+        return None
+    if not runtime_python.exists():
+        return None
+    env = os.environ.copy()
+    env["PROJECT_MOE_GUI_RUNTIME_REEXEC"] = "1"
+    env.setdefault("PYTHONUTF8", "1")
+    result = subprocess.run(
+        [str(runtime_python), str(launcher), *sys.argv[1:]],
+        cwd=str(project_root),
+        env=env,
+        check=False,
+    )
+    return int(result.returncode)
 
 
 def main() -> int:
@@ -1532,6 +1561,9 @@ def main() -> int:
         sys.path.insert(0, str(source_root / "src"))
     mode_cli_value = str(config.get("mode_cli", "tools/thesis_moe_mode.py"))
     mode_cli = project_root / mode_cli_value
+    runtime_reexec = maybe_reexec_with_runtime(config, args, launcher, project_root)
+    if runtime_reexec is not None:
+        return runtime_reexec
     if not mode_cli.exists():
         bootstrap_plan = None
         bootstrap_error = None
@@ -1639,6 +1671,8 @@ def main() -> int:
     runtime_config = dict(config)
     runtime_config["runtime_project_root"] = str(project_root)
     preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root)
+    preflight["launcher_runtime_python"] = sys.executable
+    preflight["launcher_runtime_reexec"] = os.environ.get("PROJECT_MOE_GUI_RUNTIME_REEXEC") == "1"
     preflight["phase1_readiness_gate"] = {
         "readiness_status": readiness.get("readiness_status"),
         "adaptation_lane": readiness.get("adaptation_lane"),
@@ -1664,7 +1698,7 @@ if __name__ == "__main__":
 
 
 def cmd_text() -> str:
-    return '@echo off\nsetlocal\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
+    return '@echo off\nsetlocal\nset PYTHONUTF8=1\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
 
 
 def readme_text(agent_name: str, namespace: str) -> str:
