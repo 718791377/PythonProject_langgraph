@@ -55,6 +55,7 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
         (root / "tools/complete_local_flow_to_remote_gate.py").write_text(
             "governance-confirmation\n"
             "--implementation-plan\n"
+            "--preserve-carrier\n"
             "implementation_confirmed_by_user\n"
             "implementation_plan\n"
             "awaiting_implementation_confirmation\n"
@@ -64,7 +65,18 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
             "local_main_retire_lock.py\n"
             "self_retire_lock\n"
             "preflight_self_retire_rob_entry\n"
-            "REQUIRED_SELF_RETIRE_GATES\n",
+            "REQUIRED_SELF_RETIRE_GATES\n"
+            "record_local_main_completion\n"
+            "run_integrated_worktree_cleanup\n"
+            "cleanup_integrated_worktree.py\n"
+            "remote_publication_gate_closed\n",
+            encoding="utf-8",
+        )
+        (root / "tools/install-codex-user-level-team-mode.ps1").write_text(
+            "implementation authorization plus passing local gates is sufficient for automatic local `main` integration\n"
+            "Automatic local `main` integration is not remote publication approval\n"
+            "project safe-cleanup helper\n"
+            "explicit preserve flag\n",
             encoding="utf-8",
         )
         (root / "tools/ci/local_mr_review.ps1").write_text("check_plan_exit_execution_governance.py\n", encoding="utf-8")
@@ -83,11 +95,15 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
         )
         (root / "完整提交流程.md").write_text(
             "# 完整本地提交流程\n"
+            "默认本地动作不是停在 feature branch 等待\n"
+            "合入后默认执行安全清理\n"
+            "--preserve-carrier\n"
             "提交前必须检查 Git 状态和 worktree\n"
             "git merge --ff-only <feature-branch>\n"
             "远端发布门\n"
             "tools/check_plan_exit_execution_governance.py\n"
             "tools/complete_local_flow_to_remote_gate.py\n"
+            "tools/cleanup_integrated_worktree.py\n"
             "local-main-retire.lock\n"
             "Work-Conserving eligible hotspot lease resource backpressure local-main retire\n",
             encoding="utf-8",

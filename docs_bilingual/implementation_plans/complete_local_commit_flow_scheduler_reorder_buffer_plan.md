@@ -41,9 +41,9 @@ The retirement actor can be the session that owns the candidate package when it 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 1A hardening active; the safety base is implemented, but the post-merge failure path for missing `--self-retire` ROB entries must be fixed.
-Owner session: `harden-rob-retire-preflight-20260531`.
-Current gate: this child plan is reopened before implementation; after implementation, `complete_local_flow_to_remote_gate.py --self-retire --execute` must validate the ROB entry and required gate state before lock acquisition, rollback-ref creation, or merge.
+Stage: Phase 1A follow-up active; ROB retire preflight is implemented, and this pass implements automatic local `main` integration after implementation authorization plus passing local gates, with default safe cleanup and a stop at the remote publication gate.
+Owner session: `automate-local-main-integration-20260601`.
+Current gate: focused tests and scripted governance checks now cover completed claim/receipt recording, default `cleanup_integrated_worktree.py --execute` cleanup, `--preserve-carrier`, and the remote-publication gate. Before final closure, run precommit/update-archive, OpenSpec guard, local gate, and local MR review, then invoke `complete_local_flow_to_remote_gate.py --execute` from the primary root so the target feature worktree can be removed safely.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -126,6 +126,11 @@ This child plan adapts scheduler and CPU commit principles into repository gover
 - [x] Missing `precommit_update_archive`, `local_gate`, or `local_mr_review` passed status must fail closed before merge; gate condition: these fields record the required pre-merge evidence.
 - [x] Ready-entry success path still records `self_retire_lock` retired metadata after merge.
 - [x] Add focused tests and register/run the related checker coverage.
+- [x] Treat implementation authorization plus passing local gates as sufficient for automatic local `main` integration; do not ask for another local-merge confirmation when the guarded helper can complete the flow.
+- [x] Extend `complete_local_flow_to_remote_gate.py --execute` to record completed claim/receipt evidence, stop at `remote_publication_gate_closed`, and run default safe cleanup of the integrated feature worktree and local branch.
+- [x] Add `--preserve-carrier` as the explicit exception that keeps the local feature worktree/branch after local `main` integration.
+- [x] Update user-level startup/installer instruction surfaces so projects that adopt the local-main-first template inherit the same automatic-local-integration default while still requiring explicit remote publication approval.
+- [x] Add focused coverage for default cleanup, carrier preservation, and completed claim preservation.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -153,6 +158,7 @@ If available in the active branch, also run the shared local gate and local MR r
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-01 automatic local integration follow-up: updated `complete_local_flow_to_remote_gate.py` to record completed claim/receipt evidence, close the remote-publication gate, and call `cleanup_integrated_worktree.py --execute` by default unless `--preserve-carrier` is explicit; added focused tests for default cleanup and carrier preservation; updated project and user-level instruction/checker surfaces.
 - 2026-05-31 ROB retire preflight implementation: added `preflight_self_retire_rob_entry(...)`, `REQUIRED_SELF_RETIRE_GATES`, and `test/check_complete_local_flow_self_retire_preflight.test.py`; RED showed the old helper could mutate local `main` or accept mismatched metadata, then focused GREEN passed before broader gates.
 - 2026-05-31 ROB retire preflight reopening: confirmed the old helper recorded ROB retire metadata after merge; this pass requires ready ROB entry, owner, and gate-state validation before any local `main` mutation.
 - 2026-05-30 complete-flow alignment: `7e47af8` updated the repository-root complete local commit flow into the HOW contract for multi-session automatic local commit and local-main integration; this parent-plan-family alignment package replaces downstream fixed-leader serial semantics with session-owned self-retire.

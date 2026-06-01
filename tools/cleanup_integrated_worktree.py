@@ -123,8 +123,9 @@ def backup_refs_for_branch(root: Path, branch: str) -> list[str]:
     result = run_git(root, ["for-each-ref", "--format=%(refname)", "refs/backup/local-main"])
     if result.returncode != 0:
         return []
-    suffix = f"-before-{branch}"
-    return sorted(ref.strip() for ref in result.stdout.splitlines() if ref.strip().endswith(suffix))
+    safe_branch = branch.replace("/", "-").replace("\\", "-")
+    suffixes = {f"-before-{branch}", f"-before-{safe_branch}"}
+    return sorted(ref.strip() for ref in result.stdout.splitlines() if ref.strip() and any(ref.strip().endswith(suffix) for suffix in suffixes))
 
 
 def find_worktree(root: Path, branch: str, worktree_path: Path | None) -> dict[str, str] | None:

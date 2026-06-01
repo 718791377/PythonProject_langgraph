@@ -59,6 +59,8 @@ class Mcp2CliTest(unittest.TestCase):
         self.assertTrue(listed["ok"])
         self.assertTrue(listed["safety"]["compact_output"])
         self.assertFalse(listed["safety"]["full_schema_included_by_default"])
+        self.assertFalse(listed["safety"]["mcp_router_bridge_default"])
+        self.assertTrue(listed["safety"]["codex_direct_mcp_entries_remain_direct"])
         self.assertNotIn("schema_summary", serialized)
         self.assertIn("browser.tabs.list", serialized)
 
@@ -71,6 +73,22 @@ class Mcp2CliTest(unittest.TestCase):
         self.assertEqual(show["command"], "show")
         self.assertFalse(show["tool"]["full_metadata_included"])
         self.assertNotIn("schema_summary", json.dumps(show, ensure_ascii=False))
+
+    def test_risk_profile_summarizes_sensitive_calls_without_schema_dump(self) -> None:
+        payload = self.parse(self.run_cli("risk-profile", "--profile", "browser-readonly", "--json"))
+        serialized = json.dumps(payload, ensure_ascii=False)
+
+        self.assertEqual(payload["command"], "risk-profile")
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["profile_id"], "browser-readonly")
+        self.assertEqual(payload["highest_risk_level"], "medium")
+        self.assertEqual(payload["risk_counts"]["medium"], 2)
+        self.assertEqual(payload["receipt_required_count"], 2)
+        self.assertIn("browser.tabs.list", payload["receipt_required_tool_ids"])
+        self.assertIn("browser_state", payload["sensitive_categories"])
+        self.assertFalse(payload["external_mcp_invoked"])
+        self.assertFalse(payload["safety"]["full_schema_included_by_default"])
+        self.assertNotIn("schema_summary", serialized)
 
     def test_sensitive_call_without_receipt_fails_closed(self) -> None:
         completed = self.run_cli(

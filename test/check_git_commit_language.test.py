@@ -15,16 +15,27 @@ SCRIPT_PATH = REPO_ROOT / "tools" / "check_git_commit_language.py"
 class GitCommitLanguageCheckTest(unittest.TestCase):
     maxDiff = None
 
+    def run_git(self, root: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["git", *args],
+            cwd=root,
+            check=check,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+
     def make_root(self, name: str) -> Path:
         root = REPO_ROOT / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}"
         root.mkdir(parents=True, exist_ok=True)
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
-        subprocess.run(["git", "init", "-b", "main"], cwd=root, check=True, capture_output=True, text=True)
-        subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=root, check=True)
-        subprocess.run(["git", "config", "user.name", "Test User"], cwd=root, check=True)
+        self.run_git(root, "init", "-b", "main")
+        self.run_git(root, "config", "user.email", "test@example.invalid")
+        self.run_git(root, "config", "user.name", "Test User")
         (root / "README.md").write_text("# Test\n", encoding="utf-8")
-        subprocess.run(["git", "add", "."], cwd=root, check=True)
-        subprocess.run(["git", "commit", "-m", "初始提交"], cwd=root, check=True, capture_output=True, text=True)
+        self.run_git(root, "add", ".")
+        self.run_git(root, "commit", "-m", "初始提交")
         return root
 
     def run_check_json(self, root: Path, *args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -34,8 +45,9 @@ class GitCommitLanguageCheckTest(unittest.TestCase):
             capture_output=True,
             text=True,
             encoding="utf-8",
+            errors="replace",
             cwd=REPO_ROOT,
-            env={**os.environ, **(env or {})},
+            env={**os.environ, "PYTHONIOENCODING": "utf-8", **(env or {})},
         )
 
     def test_accepts_chinese_subject_with_ascii_prefix(self) -> None:
@@ -54,10 +66,10 @@ class GitCommitLanguageCheckTest(unittest.TestCase):
 
     def test_checks_commit_range(self) -> None:
         root = self.make_root("commit-lang-range")
-        subprocess.run(["git", "checkout", "-b", "feature"], cwd=root, check=True, capture_output=True, text=True)
+        self.run_git(root, "checkout", "-b", "feature")
         (root / "feature.txt").write_text("feature\n", encoding="utf-8")
-        subprocess.run(["git", "add", "."], cwd=root, check=True)
-        subprocess.run(["git", "commit", "-m", "feat: add feature"], cwd=root, check=True, capture_output=True, text=True)
+        self.run_git(root, "add", ".")
+        self.run_git(root, "commit", "-m", "feat: add feature")
         result = self.run_check_json(root, "--base-ref", "main", "--head-ref", "HEAD")
         self.assertNotEqual(result.returncode, 0)
         payload = json.loads(result.stdout)
@@ -65,18 +77,12 @@ class GitCommitLanguageCheckTest(unittest.TestCase):
 
     def test_ci_before_sha_fallback_when_main_ref_missing(self) -> None:
         root = self.make_root("commit-lang-ci-before")
-        base_sha = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=root,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        subprocess.run(["git", "checkout", "-b", "feature"], cwd=root, check=True, capture_output=True, text=True)
-        subprocess.run(["git", "branch", "-D", "main"], cwd=root, check=True, capture_output=True, text=True)
+        base_sha = self.run_git(root, "rev-parse", "HEAD").stdout.strip()
+        self.run_git(root, "checkout", "-b", "feature")
+        self.run_git(root, "branch", "-D", "main")
         (root / "feature.txt").write_text("feature\n", encoding="utf-8")
-        subprocess.run(["git", "add", "."], cwd=root, check=True)
-        subprocess.run(["git", "commit", "-m", "测试：新增功能"], cwd=root, check=True, capture_output=True, text=True)
+        self.run_git(root, "add", ".")
+        self.run_git(root, "commit", "-m", "测试：新增功能")
 
         result = self.run_check_json(root, "--base-ref", "main", "--head-ref", "HEAD", env={"CI_COMMIT_BEFORE_SHA": base_sha})
 

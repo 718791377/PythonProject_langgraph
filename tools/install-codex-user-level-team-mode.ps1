@@ -1140,6 +1140,9 @@ You are Team Leader. The current main Codex CLI session is the leader lane. Do n
 - Wrapped `codex` startup reads user-level global state before forwarding into native Codex.
 - `codex-native` is the explicit bypass path for direct native Codex startup.
 - Automatic collaboration is the default for all projects and all user-level Codex sessions. The user does not need to repeat phrases such as `use experts`, `use durable_team`, `use persistent team`, `parallel`, or `subagents`.
+- For repositories that adopt the local-main-first project template, implementation authorization plus passing local gates is sufficient for automatic local `main` integration; do not ask for another local-merge confirmation when the guarded project helper can merge and stop at the remote-publication gate.
+- Automatic local `main` integration is not remote publication approval. Do not push GitLab, create/update/merge GitLab MRs, sync GitHub, delete remote refs, or mutate any remote publication state unless the current user message explicitly names the remote action.
+- After automatic local integration, prefer the project safe-cleanup helper to preserve completed claims and rollback evidence, then remove the integrated local feature worktree/branch; preserve carriers only when the project helper exposes and receives an explicit preserve flag.
 - Do not cite missing user reminders such as `the user did not request parallelism/subagents/experts` as the reason to skip orchestration.
 - If native `spawn_agent` invocation is blocked by the current platform/tool contract, report `experts=blocked:platform_subagent_invocation_constraint` and continue with an eligible durable lane, a narrower available expert path, or explicit main-session takeover.
 - On the first substantive turn of a new wrapped session, and on every session reload or Codex restart, run an orchestration activation check before deep execution resumes:
@@ -3548,6 +3551,9 @@ function Get-CodexUserLevelDeveloperInstructions {
   $lines += '- Treat the current main Codex CLI session as the team leader.'
   $lines += '- Automatic collaboration is the default for all projects and all user-level Codex sessions.'
   $lines += '- The user does not need to repeat phrases such as `use experts`, `use durable_team`, `use persistent team`, `parallel`, or `subagents` for routing to evaluate collaboration.'
+  $lines += '- For repositories that adopt the local-main-first project template, implementation authorization plus passing local gates is sufficient for automatic local `main` integration; do not ask for another local-merge confirmation when the guarded project helper can merge and stop at the remote-publication gate.'
+  $lines += '- Automatic local `main` integration is not remote publication approval. Do not push GitLab, create/update/merge GitLab MRs, sync GitHub, delete remote refs, or mutate any remote publication state unless the current user message explicitly names the remote action.'
+  $lines += '- After automatic local integration, prefer the project safe-cleanup helper to preserve completed claims and rollback evidence, then remove the integrated local feature worktree/branch; preserve carriers only when the project helper exposes and receives an explicit preserve flag.'
   $lines += '- Do not cite missing user reminders such as `the user did not request parallelism/subagents/experts` as the reason to skip orchestration.'
   $lines += '- If native `spawn_agent` invocation is blocked by the current platform/tool contract, report `experts=blocked:platform_subagent_invocation_constraint` and continue with an eligible durable lane, a narrower available expert path, or explicit main-session takeover.'
   $lines += '- On the first substantive turn of a new wrapped session, and on every session reload or Codex restart, run an orchestration activation check before deep execution resumes.'

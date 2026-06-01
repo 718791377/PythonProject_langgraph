@@ -41,6 +41,25 @@ related_docs:
 
 Task 5 的 `live start 需要 install receipt 和 owner evidence` 已补齐为 repo-local OpenCLI guard：它只执行非启动、非安装、非浏览器连接的 fail-closed 检查，要求 install receipt、browser owner lease evidence 与 `codex-port --port auto` lease evidence 后仍停在 repo-local MVP deferral，不修改用户级运行时。
 
+
+## 0A. 拆分交接到父方案族
+
+本方案现在是 `multi_plan_parallel_session_orchestration_plan.zh-CN.md` 的 source-to-decompose。它仍保持 active，因为它承载 `check_user_level_mcp_skills_browser_cli_baseline.py` 所需的 baseline marker、lane inventory、状态历史与 stable OpenSpec 对齐；但未来执行必须认领提取后的某个子方案，而不是把本文件当作一个大型实现包。
+
+| 既有切片 | 提取后的执行 owner | 父方案阶段 | 默认实现姿态 |
+| --- | --- | --- | --- |
+| Slice 0 | 既有 OpenSpec / Comet 控制面 | Phase 5 / Phase 7 | 保持 source/spec sync 或显式 archive deferral。 |
+| Slice 1 | `user_level_mcp_skills_discovery_facade_plan` | Phase 4 | Compact discovery，默认不输出完整 skill bodies。 |
+| Slice 2 | `user_level_mcp_skills_discovery_facade_plan` 与 `user_level_capability_receipt_rollback_redaction_plan` | Phase 4 / Phase 1 | Discovery 可推进；sensitive call 等待 receipt。 |
+| Slice 3 | `user_level_port_browser_owner_isolation_plan` | Phase 3 | port lease 与 registry revision 按 session/worktree 隔离。 |
+| Slice 4 | `user_level_port_browser_owner_isolation_plan` | Phase 3 | browser ownership 显式；human-owned assets 保持 disabled。 |
+| Slice 5 | `user_level_browser_cli_adapter_boundary_plan` 及 receipt/port 子方案 | Phase 6 / Phase 1 / Phase 3 | 仅保留 read-only default；live start 等待 install receipt 与 owner evidence。 |
+| Slice 6 | `user_level_browser_cli_adapter_boundary_plan` 及 receipt 子方案 | Phase 6 / Phase 1 | Generation-first 与 API/Webhook-first；GUI write 保持 gated。 |
+| Slice 7 | `user_level_capability_receipt_rollback_redaction_plan` | Phase 1 | 共享 receipt、rollback 与 redaction contract。 |
+| Slice 8 | 既有 Phase 7 集成方案 | Phase 7 | validation evidence 可并行；local-main retire 仍串行。 |
+
+不要给本来源方案添加 `parent_plan` front matter。提取后的子方案携带 `parent_plan`；本文件保留 source 与 baseline continuity。
+
 ## 1. 关系模型与命名边界
 
 | 名称 | 责任边界 | 默认状态 | 边界说明 |

@@ -99,6 +99,10 @@ class Skills2CliTest(unittest.TestCase):
         self.assertFalse(payload["edits_plugin_cache"])
         self.assertFalse(payload["profile_apply_performed"])
         self.assertTrue(payload["approval_required_for_apply"])
+        self.assertEqual(payload["routing_evidence"]["surface_type"], "skill_profile_suggestion")
+        self.assertFalse(payload["routing_evidence"]["native_subagent_evidence"])
+        self.assertFalse(payload["routing_evidence"]["expert_evidence"])
+        self.assertTrue(payload["routing_evidence"]["separate_native_agent_required_for_expert_claims"])
         self.assertTrue(any(item["profile"] == "browser-automation" for item in payload["suggestions"]))
 
     def test_warning_audit_summarizes_and_redacts_warning_text(self) -> None:

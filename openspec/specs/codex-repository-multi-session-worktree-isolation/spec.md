@@ -164,7 +164,7 @@ The repository publication workflow SHALL conserve GitLab runner minutes by defa
 - **GIVEN** a maintainer has related changes on one feature branch
 - **AND** the changes share one topic, validation surface, and rollback boundary
 - **WHEN** local validation and local MR review pass
-- **THEN** the maintainer MAY recommend integrating the branch into local `main` first after explicit user approval
+- **THEN** the maintainer MAY integrate the branch into local `main` automatically after local validation and local MR review pass, without another local-merge prompt
 - **AND** the maintainer MAY publish the resulting local-main commit to GitLab once for remote confirmation and audit
 
 #### Scenario: Unrelated changes would be batched only to save runner minutes
@@ -275,7 +275,7 @@ Two-step publication is allowed only when the implementation is large or risky, 
 
 The repository SHALL treat a feature worktree and its local feature branch as temporary local execution surfaces after their result is integrated into local `main`.
 
-A feature worktree and local feature branch MAY be cleaned automatically before remote publication only when a guarded helper proves that local `main` contains the feature branch result, the worktree is clean, all untracked or local-only artifacts have been classified, a completed claim has been preserved, and a local rollback backup ref exists under `refs/backup/local-main/*-before-<branch>`.
+A feature worktree and local feature branch SHOULD be cleaned automatically before remote publication unless `--preserve-carrier` is explicit, and only when a guarded helper proves that local `main` contains the feature branch result, the worktree is clean, all untracked or local-only artifacts have been classified, a completed claim has been preserved, and a local rollback backup ref exists under `refs/backup/local-main/*-before-<branch>`.
 
 The cleanup helper SHALL use Git worktree commands to remove the local `.worktrees/` worktree and `git branch -d` to delete the merged local branch. It SHALL NOT use force branch deletion, delete backup refs, delete remote refs, reset local `main`, discard dirty files, or mutate GitLab/GitHub publication state. Remote publication branches, remote refs, and backup refs remain separate approval boundaries.
 
@@ -451,9 +451,9 @@ Local-first batching SHALL NOT be used as permission to continue from a stale re
 - **AND** it SHALL not treat that state as a failure by itself
 
 ### Requirement: Remote publication SHALL require fresh explicit user approval
-The repository publication workflow SHALL treat local `main` integration approval and remote publication approval as separate release decisions.
+The repository publication workflow SHALL treat automatic local `main` integration and remote publication approval as separate release decisions.
 
-After local `main` integration, the session SHALL report any intentional remote lag and SHALL NOT push to GitLab, create or update a GitLab MR, merge a GitLab MR, sync GitHub, delete a remote publication branch, or otherwise mutate remote refs unless the current user message or an approved release record explicitly authorizes that remote publication action.
+After automatic local `main` integration, the session SHALL report any intentional remote lag and SHALL NOT push to GitLab, create or update a GitLab MR, merge a GitLab MR, sync GitHub, delete a remote publication branch, or otherwise mutate remote refs unless the current user message or an approved release record explicitly authorizes that remote publication action.
 
 Generic continuation language such as `continue`, `go on`, `proceed`, or a localized equivalent SHALL NOT be treated as remote publication approval unless it explicitly names remote publication, GitLab push/MR/merge, GitHub sync/mirror, or an equivalent remote action.
 

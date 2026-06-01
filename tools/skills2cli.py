@@ -341,6 +341,13 @@ def command_profile_suggest(args: argparse.Namespace) -> int:
             "profile_apply_performed": False,
             "approval_required_for_apply": True,
             "apply_policy": "preview_only_do_not_apply_without_explicit_profile_apply_authorization",
+            "routing_evidence": {
+                "surface_type": "skill_profile_suggestion",
+                "native_subagent_evidence": False,
+                "expert_evidence": False,
+                "separate_native_agent_required_for_expert_claims": True,
+                "reason": "Skills and profile suggestions are workflow/context surfaces, not native Codex subagent results.",
+            },
         },
     )
     emit(payload, args.json)

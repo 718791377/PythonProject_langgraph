@@ -162,6 +162,85 @@ class UserLevelReceiptGovernanceTests(unittest.TestCase):
         self.assertNotIn(r"C:\Users\lenovo\.codex\tools\mcp2cli", output)
         self.assertNotIn(r"C:\Users\lenovo\.codex\backup\mcp2cli-prev", output)
 
+    def test_update_receipt_local_path_evidence_requires_explicit_authorization(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            raw_install_path = r"C:\Users\lenovo\.codex\tools\mcp2cli"
+            receipt = self.write_json(
+                Path(tmp),
+                "update.json",
+                {
+                    "tool_name": "mcp2cli",
+                    "installed_version": "v1.0.0",
+                    "source_url": "https://example.invalid/mcp2cli.git",
+                    "install_path": raw_install_path,
+                    "wrapper_path": r"C:\Users\lenovo\.codex\bin\mcp2cli.cmd",
+                    "state_path": r"C:\Users\lenovo\.codex\state\mcp2cli",
+                    "smoke_test_command": "mcp2cli list --json",
+                    "smoke_test_result": {"status": "pass"},
+                    "updater_command": "mcp2cli-update --pin v1.0.0",
+                    "rollback_pointer": r"C:\Users\lenovo\.codex\backup\mcp2cli-prev",
+                    "owner_lane": "mcp2cli",
+                    "redaction_status": "no_secrets",
+                },
+            )
+            code, payload = run_cli(
+                "update-check",
+                "--receipt",
+                str(receipt),
+                "--tool-name",
+                "mcp2cli",
+                "--owner-lane",
+                "mcp2cli",
+                "--include-local-path-evidence",
+            )
+            output = json.dumps(payload, ensure_ascii=False)
+
+        self.assertEqual(code, 3)
+        self.assertIn("local_path_evidence_requires_explicit_authorization", payload["blockers"])
+        self.assertFalse(payload["contains_raw_private_paths_in_output"])
+        self.assertNotIn(raw_install_path, output)
+
+    def test_update_receipt_local_path_evidence_can_be_explicitly_authorized_for_local_only_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            raw_install_path = r"C:\Users\lenovo\.codex\tools\mcp2cli"
+            raw_rollback_pointer = r"C:\Users\lenovo\.codex\backup\mcp2cli-prev"
+            receipt = self.write_json(
+                Path(tmp),
+                "update.json",
+                {
+                    "tool_name": "mcp2cli",
+                    "installed_version": "v1.0.0",
+                    "source_url": "https://example.invalid/mcp2cli.git",
+                    "install_path": raw_install_path,
+                    "wrapper_path": r"C:\Users\lenovo\.codex\bin\mcp2cli.cmd",
+                    "state_path": r"C:\Users\lenovo\.codex\state\mcp2cli",
+                    "smoke_test_command": "mcp2cli list --json",
+                    "smoke_test_result": {"status": "pass"},
+                    "updater_command": "mcp2cli-update --pin v1.0.0",
+                    "rollback_pointer": raw_rollback_pointer,
+                    "owner_lane": "mcp2cli",
+                    "redaction_status": "no_secrets",
+                },
+            )
+            code, payload = run_cli(
+                "update-check",
+                "--receipt",
+                str(receipt),
+                "--tool-name",
+                "mcp2cli",
+                "--owner-lane",
+                "mcp2cli",
+                "--include-local-path-evidence",
+                "--local-evidence-authorized",
+            )
+
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["local_path_evidence_scope"], "local-only")
+        self.assertTrue(payload["local_path_evidence_authorized"])
+        self.assertTrue(payload["contains_raw_private_paths_in_output"])
+        self.assertEqual(payload["local_path_evidence"]["install_path"], raw_install_path)
+        self.assertEqual(payload["local_path_evidence"]["rollback_pointer"], raw_rollback_pointer)
+
     def test_redaction_check_blocks_raw_sensitive_payloads(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             receipt = self.write_json(
@@ -171,6 +250,7 @@ class UserLevelReceiptGovernanceTests(unittest.TestCase):
                     "tool_name": "browser",
                     "cookies": "sessionid=abc",
                     "plugin_description_dump": "large raw plugin description",
+                    "message_contents": "raw WeCom message body",
                     "note": "token=raw-value",
                 },
             )
@@ -178,7 +258,7 @@ class UserLevelReceiptGovernanceTests(unittest.TestCase):
 
         self.assertEqual(code, 3)
         self.assertFalse(payload["redaction_valid"])
-        self.assertGreaterEqual(payload["finding_count"], 3)
+        self.assertGreaterEqual(payload["finding_count"], 4)
         self.assertIn("cookies", json.dumps(payload["blockers"]))
         self.assertFalse(payload["reads_browser_data"])
 

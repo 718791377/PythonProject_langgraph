@@ -59,3 +59,10 @@ Allowed lifecycle statuses now include `active`, `paused`, `ready-to-merge`, `me
 - **WHEN** a worktree task receipt records `merged-local-main`, `cleaned`, `remote-sync-needed`, or `completed`
 - **THEN** the worktree task receipt checker SHALL require completion fields for rollback ref, local-main commit, cleaned worktree path, deleted branch, and remote sync status
 - **AND** it SHALL fail closed when those fields are absent or empty
+## 2026-06-01 update: automatic local integration and default cleanup
+
+This companion mirrors the English stable spec update for the local-main-first flow. After implementation authorization and passing local gates, the session may continue through automatic local `main` integration without asking for another local-merge prompt. This local authorization remains separate from remote publication approval.
+
+Feature worktrees and local feature branches should be cleaned automatically before remote publication unless `--preserve-carrier` is explicit. The guarded helper must prove that local `main` contains the branch result, the worktree is clean, a completed claim can be preserved, and a rollback backup ref exists before removing the `.worktrees/` worktree and deleting the merged local branch with `git branch -d`.
+
+After automatic local `main` integration, the session must report intentional remote lag and stop at the remote-publication approval gate. It must not push GitLab, create/update/merge GitLab MRs, sync GitHub, delete remote publication branches, or mutate remote refs unless the current user message or approved release record explicitly authorizes that remote publication action.

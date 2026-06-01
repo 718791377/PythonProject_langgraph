@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -131,6 +132,14 @@ def normalize_path(value: str) -> str:
     return value
 
 
+def path_is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve().relative_to(parent.resolve())
+        return True
+    except ValueError:
+        return False
+
+
 def diff_paths(root: Path, base_ref: str, head_ref: str) -> list[str]:
     result = run_git(root, ["diff", "--name-only", f"{base_ref}..{head_ref}"], check=True)
     return [normalize_path(line) for line in result.stdout.splitlines() if line.strip()]
@@ -178,6 +187,103 @@ def load_receipt(path: Path) -> dict[str, Any]:
 def write_receipt(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def safe_claim_name(branch: str) -> str:
+    return branch.replace("/", "__").replace("\\", "__")
+
+
+def load_json_object(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return {}
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"JSON payload must be an object: {path}")
+    return payload
+
+
+def write_json_object(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def claim_path_for_branch(worktree: Path, branch: str) -> Path:
+    claim_root = worktree / ".omx" / "session-claims"
+    exact = claim_root / f"{safe_claim_name(branch)}.json"
+    if exact.exists():
+        return exact
+    if claim_root.exists():
+        for path in sorted(claim_root.glob("*.json")):
+            data = load_json_object(path)
+            if data.get("branch") == branch:
+                return path
+    return exact
+
+
+def record_local_main_completion(
+    *,
+    worktree: Path,
+    branch: str,
+    receipt_path: Path,
+    rollback_ref: str,
+    local_main_commit: str,
+    local_feature_commit: str,
+    preserve_carrier: bool,
+) -> dict[str, str]:
+    now = datetime.now(timezone.utc).isoformat()
+    completion = {
+        "completed_at": now,
+        "rollback_ref": rollback_ref,
+        "local_main_commit": local_main_commit,
+        "cleaned_worktree": "preserved-for-audit" if preserve_carrier else "pending-automatic-safe-cleanup",
+        "deleted_branch": "preserved-as-local-publication-carrier" if preserve_carrier else "pending-automatic-safe-cleanup",
+        "remote_sync_status": "not_authorized:remote_publication_gate_closed",
+    }
+    common_updates: dict[str, Any] = {
+        "branch": branch,
+        "worktree": str(worktree),
+        "updated_at": now,
+        "completed_at": now,
+        "local_feature_commit": local_feature_commit,
+        "local_main_commit": local_main_commit,
+        "merged_local_main_commit": local_main_commit,
+        "rollback_ref": rollback_ref,
+        "remote_publication_authorized": False,
+        "remote_publication_performed": False,
+        "remote_publication_status": "not_authorized",
+        "remote_sync_status": "not_authorized:remote_publication_gate_closed",
+        "next_action": "Local main integration and post-merge local gate complete; stopped at the remote publication gate until explicit GitLab/GitHub publication approval.",
+        "completion": completion,
+    }
+
+    claim_path = claim_path_for_branch(worktree, branch)
+    claim = load_json_object(claim_path)
+    claim.update(
+        {
+            "schema_version": claim.get("schema_version", 1),
+            "session_id": claim.get("session_id") or safe_claim_name(branch),
+            "status": "completed",
+            "lifecycle_status": "completed",
+            **common_updates,
+        }
+    )
+    write_json_object(claim_path, claim)
+
+    receipt = load_receipt(receipt_path)
+    receipt.update(
+        {
+            "schema_version": receipt.get("schema_version", 1),
+            "session_id": receipt.get("session_id") or claim.get("session_id") or safe_claim_name(branch),
+            "status": "merged-local-main",
+            "lifecycle_status": "merged-local-main",
+            "requires_local_main_merge": False,
+            "requires_remote_sync": False,
+            **common_updates,
+        }
+    )
+    write_receipt(receipt_path, receipt)
+    return {"claim_path": str(claim_path), "receipt_path": str(receipt_path)}
 
 
 def record_governance_receipt(path: Path, *, branch: str, commit: str, implementation_plan: str) -> None:
@@ -316,9 +422,18 @@ def preflight_self_retire_rob_entry(
     }
 
 
-def run_local_gate(script_root: Path, label: str) -> None:
+def run_local_gate(script_root: Path, label: str, *, step_timeout_seconds: int) -> None:
     gate = subprocess.run(
-        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script_root / "tools/ci/local_gate.ps1")],
+        [
+            "powershell",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(script_root / "tools/ci/local_gate.ps1"),
+            "-StepTimeoutSeconds",
+            str(step_timeout_seconds),
+        ],
         cwd=str(script_root),
         capture_output=True,
         text=True,
@@ -355,6 +470,40 @@ def run_local_mr_review(worktree: Path, main_ref: str, branch: str) -> None:
         raise RuntimeError("feature local_mr_review.ps1 failed\n" + review.stdout + review.stderr)
 
 
+def run_integrated_worktree_cleanup(root: Path, *, branch: str, worktree: Path, main_ref: str) -> dict[str, Any]:
+    cleanup_script = root / "tools" / "cleanup_integrated_worktree.py"
+    if not cleanup_script.exists():
+        cleanup_script = Path(__file__).resolve().with_name("cleanup_integrated_worktree.py")
+    cleanup = subprocess.run(
+        [
+            sys.executable,
+            str(cleanup_script),
+            "--root",
+            str(root),
+            "--branch",
+            branch,
+            "--worktree",
+            str(worktree),
+            "--main-branch",
+            main_ref,
+            "--execute",
+            "--json",
+        ],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    try:
+        payload = json.loads(cleanup.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("cleanup_integrated_worktree.py returned invalid JSON: " + cleanup.stdout + cleanup.stderr) from exc
+    if cleanup.returncode != 0 or not payload.get("ok"):
+        raise RuntimeError(json.dumps(payload, ensure_ascii=False))
+    return payload
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Complete a local feature branch flow through local main and stop at the remote publication gate.")
     parser.add_argument("--root", default=".", help="Primary repository root, normally D:\\PythonProject_langgraph.")
@@ -371,6 +520,8 @@ def main() -> int:
     parser.add_argument("--rob-entry-id", default=None, help="ROB entry id required for --self-retire or --acquire-retire-lock.")
     parser.add_argument("--acquire-retire-lock", action="store_true", help="Acquire the local-main retire lock around the local-main mutation.")
     parser.add_argument("--lock-ttl-minutes", type=int, default=120, help="TTL for the local-main retire lock.")
+    parser.add_argument("--preserve-carrier", action="store_true", help="After local main integration, preserve the local feature worktree and branch instead of running safe cleanup.")
+    parser.add_argument("--local-gate-step-timeout-seconds", type=int, default=600, help="Per-step timeout passed to tools/ci/local_gate.ps1 for feature and post-merge gates.")
     parser.add_argument("--execute", action="store_true", help="Actually create backup ref, merge, and optionally run gates. Without this flag, print the planned actions only.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")
     args = parser.parse_args()
@@ -392,6 +543,8 @@ def main() -> int:
     use_retire_lock = bool(args.self_retire or args.acquire_retire_lock)
     retire_lock_nonce: str | None = None
     self_retire_rob_preflight: dict[str, Any] | None = None
+    completion_records: dict[str, str] | None = None
+    cleanup_result: dict[str, Any] | None = None
 
     try:
         if branch == args.main:
@@ -402,6 +555,11 @@ def main() -> int:
             raise RuntimeError("--rob-entry-id is required when acquiring the local-main retire lock.")
         if not is_clean(worktree):
             raise RuntimeError("Feature worktree is not clean; commit or remove drift before completing local flow.")
+        if args.execute and not args.preserve_carrier and path_is_relative_to(Path.cwd(), worktree):
+            raise RuntimeError(
+                "Automatic cleanup cannot remove the process current worktree safely; "
+                "rerun this helper from the primary root or pass --preserve-carrier."
+            )
         main_branch = current_branch(root)
         if main_branch != args.main:
             raise RuntimeError(f"Primary root must be on {args.main}; current branch is {main_branch!r}.")
@@ -447,6 +605,7 @@ def main() -> int:
             f"validate stage: {args.stage}",
             f"create rollback backup ref {backup_ref} -> {args.main}",
             f"merge --ff-only {branch} into {args.main}",
+            "record completed claim and worktree receipt for local main integration",
             "stop before GitLab/GitHub remote publication",
         ])
         if use_retire_lock:
@@ -456,16 +615,20 @@ def main() -> int:
                 actions.append("record ROB entry as retired with self_retire_lock evidence")
         if args.stage == "governance-confirmation":
             actions.append("record receipt as awaiting implementation confirmation for " + str(implementation_plan))
+        if args.preserve_carrier:
+            actions.append("preserve feature worktree and local feature branch by explicit --preserve-carrier")
+        else:
+            actions.append("run safe cleanup for the integrated local feature worktree and branch")
         if not args.skip_local_gate:
-            actions.insert(3, "run tools/ci/local_gate.ps1 in feature worktree")
-            actions.append("run tools/ci/local_gate.ps1 in primary root after merge")
+            actions.insert(3, f"run tools/ci/local_gate.ps1 in feature worktree (step timeout {args.local_gate_step_timeout_seconds}s)")
+            actions.append(f"run tools/ci/local_gate.ps1 in primary root after merge (step timeout {args.local_gate_step_timeout_seconds}s)")
         if not args.skip_local_mr_review:
             insert_at = 4 if not args.skip_local_gate else 3
             actions.insert(insert_at, "run tools/ci/local_mr_review.ps1 in feature worktree")
 
         if args.execute:
             if not args.skip_local_gate:
-                run_local_gate(worktree, "feature")
+                run_local_gate(worktree, "feature", step_timeout_seconds=args.local_gate_step_timeout_seconds)
             if not args.skip_local_mr_review:
                 run_local_mr_review(worktree, args.main, branch)
             try:
@@ -494,12 +657,22 @@ def main() -> int:
                         implementation_plan=implementation_plan,
                     )
                 if not args.skip_local_gate:
-                    run_local_gate(root, "main")
+                    run_local_gate(root, "main", step_timeout_seconds=args.local_gate_step_timeout_seconds)
+                local_main_commit = run_git(root, ["rev-parse", args.main], check=True).stdout.strip()
+                local_feature_commit = run_git(root, ["rev-parse", branch], check=True).stdout.strip()
+                completion_records = record_local_main_completion(
+                    worktree=worktree,
+                    branch=branch,
+                    receipt_path=receipt_path,
+                    rollback_ref=backup_ref,
+                    local_main_commit=local_main_commit,
+                    local_feature_commit=local_feature_commit,
+                    preserve_carrier=args.preserve_carrier,
+                )
                 if args.self_retire:
                     assert args.session_id is not None
                     assert args.rob_entry_id is not None
                     assert retire_lock_nonce is not None
-                    local_main_commit = run_git(root, ["rev-parse", args.main], check=True).stdout.strip()
                     record_self_retired_rob(
                         root,
                         entry_id=args.rob_entry_id,
@@ -507,6 +680,14 @@ def main() -> int:
                         local_main_commit=local_main_commit,
                         session_id=args.session_id,
                         lock_nonce=retire_lock_nonce,
+                    )
+                if not args.preserve_carrier:
+                    os.chdir(root)
+                    cleanup_result = run_integrated_worktree_cleanup(
+                        root,
+                        branch=branch,
+                        worktree=worktree,
+                        main_ref=args.main,
                     )
             finally:
                 if retire_lock_nonce:
@@ -529,6 +710,10 @@ def main() -> int:
         "implementation_plan": implementation_plan,
         "receipt": str(receipt_path),
         "remote_publication_performed": False,
+        "preserve_carrier": args.preserve_carrier,
+        "automatic_cleanup_enabled": not args.preserve_carrier,
+        "completion_records": completion_records,
+        "cleanup_result": cleanup_result,
         "retire_lock_used": use_retire_lock,
         "retire_lock_nonce": retire_lock_nonce,
         "self_retire_rob_preflight": self_retire_rob_preflight,

@@ -25,6 +25,7 @@ TOKEN_RE = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie|pass
 STANDALONE_SECRET_RE = re.compile(r"(?i)\b(?:sk-[a-z0-9_-]{6,}|xox[baprs]-[a-z0-9_-]{6,}|gh[pousr]_[a-z0-9_]{8,})\b")
 SENSITIVE_RISK_LEVELS = {"medium", "high", "critical"}
 REQUIRED_RECEIPT_FIELDS = ("action", "target", "scope", "expiry", "session", "operator_confirmation")
+RISK_ORDER = {"unknown": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
 
 
 def repo_root() -> Path:
@@ -120,6 +121,8 @@ def envelope(command: str, payload: dict[str, Any]) -> dict[str, Any]:
             "invokes_live_mcp_servers": False,
             "mutates_config": False,
             "edits_user_codex_config": False,
+            "mcp_router_bridge_default": False,
+            "codex_direct_mcp_entries_remain_direct": True,
         },
     }
     base.update(payload)
@@ -184,6 +187,59 @@ def command_show(args: argparse.Namespace) -> int:
         emit(envelope("show", {"ok": False, "error": "tool_not_found", "tool_id": sanitize_text(args.tool, limit=120)}), args.json)
         return 2
     emit(envelope("show", {"ok": True, "profile": sanitize_text(args.profile, limit=120), "tool": compact_tool(tool, full=args.full)}), args.json)
+    return 0
+
+
+def risk_rank(risk_level: Any) -> int:
+    return RISK_ORDER.get(sanitize_text(risk_level, limit=40).lower(), RISK_ORDER["unknown"])
+
+
+def command_risk_profile(args: argparse.Namespace) -> int:
+    registry = load_registry(Path(args.registry))
+    profile = find_profile(registry, args.profile)
+    if profile is None:
+        emit(envelope("risk-profile", {"ok": False, "error": "profile_not_found", "profile": sanitize_text(args.profile, limit=120)}), args.json)
+        return 2
+    risk_counts = {level: 0 for level in RISK_ORDER}
+    sensitive_categories: set[str] = set()
+    receipt_required_tool_ids: list[str] = []
+    tools = [tool for tool in profile.get("tools", []) if isinstance(tool, dict)]
+    highest_risk = "unknown"
+    for tool in tools:
+        risk_level = sanitize_text(tool.get("risk_level", "unknown"), limit=40).lower()
+        if risk_level not in risk_counts:
+            risk_level = "unknown"
+        risk_counts[risk_level] += 1
+        if risk_rank(risk_level) > risk_rank(highest_risk):
+            highest_risk = risk_level
+        for category in tool.get("sensitive_categories", []):
+            if isinstance(category, str) and category.strip():
+                sensitive_categories.add(sanitize_text(category, limit=80))
+        if call_requires_receipt(tool):
+            receipt_required_tool_ids.append(sanitize_text(tool.get("tool_id", ""), limit=120))
+    payload = envelope(
+        "risk-profile",
+        {
+            "ok": True,
+            "profile_id": sanitize_text(profile.get("profile_id", ""), limit=120),
+            "profile_status": sanitize_text(profile.get("status", ""), limit=80),
+            "summary": sanitize_text(profile.get("summary", ""), limit=SUMMARY_LIMIT),
+            "tool_count": len(tools),
+            "risk_counts": risk_counts,
+            "highest_risk_level": highest_risk,
+            "sensitive_categories": sorted(sensitive_categories),
+            "receipt_required_count": len(receipt_required_tool_ids),
+            "receipt_required_tool_ids": receipt_required_tool_ids,
+            "external_mcp_invoked": False,
+            "call_performed": False,
+            "profile_bridge_policy": {
+                "codex_direct_mcp_entries_remain_direct": True,
+                "mcp_router_bridge_default": False,
+                "live_mcp_calls_require_separate_authorized_adapter": True,
+            },
+        },
+    )
+    emit(payload, args.json)
     return 0
 
 
@@ -354,6 +410,10 @@ def build_parser() -> argparse.ArgumentParser:
     show.add_argument("--full", action="store_true", help="Explicitly include sanitized full registry metadata.")
     add_common(show)
     show.set_defaults(func=command_show)
+
+    risk_profile = subparsers.add_parser("risk-profile", help="Summarize MCP profile risk without dumping schemas.")
+    add_common(risk_profile)
+    risk_profile.set_defaults(func=command_risk_profile)
 
     call = subparsers.add_parser("call", help="Run the guarded repo-local call facade.")
     call.add_argument("tool")

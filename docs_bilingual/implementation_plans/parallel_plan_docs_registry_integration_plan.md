@@ -41,6 +41,7 @@ Owner session: unclaimed until implementation begins
 Current gate: wait for explicit user confirmation of this child plan before non-document implementation
 Stage C entry condition: user confirms this child implementation plan after local main integration
 Last updated: 2026-05-28
+Status update: MCP/skills/browser/CLI decomposition adds four active child-plan registrations and keeps the old source plan registered as a baseline source, not as a direct child. The port/browser-owner lane is implemented-local; its existing bilingual child-plan registration remains valid and no registry schema change is required.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -71,6 +72,7 @@ Only one session may own each hotspot at a time:
 - [ ] Run and, if needed, harden implementation-plan rules for bilingual pair consistency.
 - [ ] Ensure completed child plans record lightweight evidence indexes instead of large evidence packages.
 - [ ] Run implementation-plan checker and local gate.
+- [ ] Include extracted MCP/skills/browser/CLI child plans in docs registry and bilingual implementation-plan rule validation.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,4 +97,6 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-06-01 port/browser-owner registry handoff: `user_level_port_browser_owner_isolation_plan` is implemented-local; its bilingual docs-registry entry already exists, the plan/status/evidence anchors are updated in place, and no docs-registry schema change is required for the local integration package.
+- 2026-06-01 discovery facade lane handoff: `user_level_mcp_skills_discovery_facade_plan` is implemented-local; its bilingual docs-registry entries already exist, so this package updates status/evidence anchors without changing registry schema.
 <!-- EVIDENCE_INDEX_END -->

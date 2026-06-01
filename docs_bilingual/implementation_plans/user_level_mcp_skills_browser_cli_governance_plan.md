@@ -41,6 +41,25 @@ This version is reworked into the modern structure family used by the Pi sidecar
 
 Task 5 `live start requires install receipt and owner evidence` is now covered by the repo-local OpenCLI guard. It only performs non-starting, non-installing, non-browser-connecting fail-closed checks; it requires install receipt, browser owner lease evidence, and `codex-port --port auto` lease evidence before still deferring live start in the repo-local MVP.
 
+
+## 0A. Decomposition handoff to the parent plan family
+
+This plan is now a source-to-decompose for `multi_plan_parallel_session_orchestration_plan.md`. It remains active because it carries the baseline markers, lane inventory, status history, and stable OpenSpec alignment for `check_user_level_mcp_skills_browser_cli_baseline.py`, but future execution must claim one of the extracted child plans instead of treating this file as one large implementation package.
+
+| Existing slice | Extracted execution owner | Parent phase | Default implementation posture |
+| --- | --- | --- | --- |
+| Slice 0 | Existing OpenSpec / Comet control surfaces | Phase 5 / Phase 7 | Keep source/spec sync or explicit archive deferral. |
+| Slice 1 | `user_level_mcp_skills_discovery_facade_plan` | Phase 4 | Compact discovery, no default full skill bodies. |
+| Slice 2 | `user_level_mcp_skills_discovery_facade_plan` plus `user_level_capability_receipt_rollback_redaction_plan` | Phase 4 / Phase 1 | Discovery can proceed; sensitive calls wait for receipts. |
+| Slice 3 | `user_level_port_browser_owner_isolation_plan` | Phase 3 | Port leases and registry revisions are isolated by session/worktree. |
+| Slice 4 | `user_level_port_browser_owner_isolation_plan` | Phase 3 | Browser ownership is explicit; human-owned assets remain disabled. |
+| Slice 5 | `user_level_browser_cli_adapter_boundary_plan` plus receipt and port child plans | Phase 6 / Phase 1 / Phase 3 | Read-only defaults only; live start waits for install receipt and owner evidence. |
+| Slice 6 | `user_level_browser_cli_adapter_boundary_plan` plus receipt child plan | Phase 6 / Phase 1 | Generation-first and API/Webhook-first; GUI write remains gated. |
+| Slice 7 | `user_level_capability_receipt_rollback_redaction_plan` | Phase 1 | Shared receipt, rollback, and redaction contract. |
+| Slice 8 | Existing Phase 7 integration plans | Phase 7 | Validation evidence may be parallel; local-main retire remains serial. |
+
+Do not add `parent_plan` front matter to this source plan. The extracted child plans carry `parent_plan`; this file carries source and baseline continuity.
+
 ## 1. Relationship model and naming boundary
 
 | Name | Responsibility | Default state | Boundary |

@@ -41,6 +41,7 @@ Validate OpenSpec and Comet guard health and archive completed changes as one se
 当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
 最后更新：2026-05-28
+Status update: MCP/skills/browser/CLI decomposition 要求在相关 OpenSpec surface 做任何 archive 决策前先保留 source-plan extraction evidence。receipt/redaction 与 port/browser-owner 子 lane 已 implemented-local，且既有 stable-spec coverage 已存在；其余 archive 决策等待 sibling 提取 lane 或未来 source-plan archive package。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -72,6 +73,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - [ ] Run official OpenSpec verification and Comet guard checks.
 - [ ] Promote stable spec deltas only after implementation validation is complete.
 - [ ] Run archive validation and local gate.
+- [ ] Before archiving MCP/skills/browser/CLI OpenSpec work, record whether each extracted child lane is implemented, deferred, or still active. Current receipt/redaction 与 port/browser-owner lane states: implemented-local；local integration evidence 由 repository completion flow 记录。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,4 +98,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-01 receipt/redaction archive note: `user_level_capability_receipt_rollback_redaction_plan` is implemented-local; no live user-level install or sensitive runtime action was performed, and the related stable spec already contains the generic receipt governance requirement. Archive timing remains a Phase 7 decision for the broader MCP/skills/browser/CLI source surface.
+- 2026-06-01 port/browser-owner archive note: `user_level_port_browser_owner_isolation_plan` 已 implemented-local；本包仅补强仓库本地 guard 与测试，不执行 live browser start 或 sensitive runtime action；archive timing 仍由更广 MCP/skills/browser/CLI source surface 的 Phase 7 决策处理。
+- 2026-06-01 discovery facade archive note: `user_level_mcp_skills_discovery_facade_plan` 已 implemented-local；仅修改 repo-local facade helpers/tests，不执行 live MCP/browser/runtime action，source surface archive timing 仍交由 Phase 7 处理。
 <!-- EVIDENCE_INDEX_END -->

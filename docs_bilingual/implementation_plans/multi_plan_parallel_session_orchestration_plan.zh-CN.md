@@ -42,7 +42,7 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 5. implementation_plan_confirmation_gate - 要求非文档实现开始前必须有已提交的 active implementation-plan 文件；这里的 confirmation gate 指阻塞检查点，必须等用户确认已提交的方案文件后才能继续执行。
 6. codex_governance_session_visibility_and_plan_lock_plan - 增加中文 routing trace 可视化、主会话提权可视化、Superpowers 证据、Spec Kit 边界和 plan lock。
 7. pi_plugin_codex_user_level_sidecar_plan - 提供 Pi family、Codex -> Pi sidecar 与 oh-my-pi reference-only 边界。
-8. user_level_mcp_skills_browser_cli_governance_plan - 提供 MCP、skills、browser、OpenCLI 与 CLI harness 的低 token、receipt-first 治理边界。
+8. user_level_mcp_skills_browser_cli_governance_plan - MCP、skills、browser、OpenCLI 与 CLI harness governance 的 source-to-decompose；其 lane 会被提取到分阶段子方案，而不是作为单一直接子方案挂入父方案。
 
 ## 非目标
 
@@ -58,15 +58,13 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 5 final closeout complete; Phase 6 is admissible under the strict sequential gate and Work-Conserving admission.
-Owner session: main Codex leader owns this Phase 5 closeout and remote-publication carrier after the 2026-05-31 explicit remote-push instruction.
-Current gate: publish the already integrated local `main` package through GitLab remote CI/MR and then sync the exact intended commit to GitHub; no further Phase 5 local implementation work is pending.
-Phase 0 note: inventory and parent-index closure has completed and entered local `main`; remote baseline `014b0bf` includes the Phase 0 publication state.
-Phase 1 note: the construction safety base, ROB runtime/checker, self-retire helper, complete-flow governance, and ROB retire preflight hard gate have entered local `main`; self-retire now fails before lock acquisition, rollback-ref creation, or merge unless the matching ROB entry is ready and gate-verified.
-Phase 4 closeout note: all Phase 4 child plans have no open checklist items, have local-main implementation or closeout evidence, and preserve the fixed user-facing `Routing trace` and `Updated Plan` labels.
-Phase 5 closeout note: all Phase 5 Comet runtime child plans have local-main closeout evidence in this publication package: `8b8bfd6`, `3335b67`, `05d22bd`, `407e5eb`, and `4b6033a`.
-Phase 6 admission: Phase 6 Spec Kit boundary child plans may be confirmed and claimed next; their non-document implementation still requires child-plan confirmation, claim ownership, clean worktree state, and hotspot serialization.
-Remote state: the current user message explicitly authorizes remote publication, so this local `main` package is being carried to GitLab and then mirrored to GitHub after remote CI/merge succeeds.
+Stage: Phase 4 discovery-facade 提取 lane 已 implemented-local；其他 Phase 6 lane 仍可准入。
+Owner session: main Codex leader owns implementation package id `implement-mcp-skills-discovery-facade-20260601`; package id means the isolated feature-worktree implementation item for this update.
+Current gate: 本地验证证据绑定到本 ready package；串行合入本地 `main` 后，仅剩远端发布授权门。
+Phase 5 note: Comet runtime closeout 已进入本地 main；本包不重开 Phase 5 runtime 工作。
+MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` 保留为来源与 baseline 索引，不作为本父方案直接子方案。
+Parallel model: 提取后的 lane 可按多阶段、多会话执行，但每个 session 必须拥有互斥写集或声明已串行化 hotspot。
+Remote state: 本 local-only implementation branch 不授权远端发布。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -229,6 +227,20 @@ python tools/local_main_retire_lock.py status --root . --json
 - 远端发布仍是用户明确授权步骤。
 
 
+## MCP / Skills / Browser / CLI 提取模型
+
+`user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md` 被视为 source-to-decompose，而不是一个直接子 implementation plan。它的 lane 会重组为分阶段子方案，以便在写集安全时按多阶段、多会话执行。
+
+| 来源切片 | 提取后的子方案 | 父方案阶段 | 并行规则 | Hotspot |
+| --- | --- | --- | --- | --- |
+| Slice 7 及敏感门禁 | `user_level_capability_receipt_rollback_redaction_plan` | Phase 1 | 未编辑共享 receipt helper 前，可与 port/discovery 工作并行。 | receipt helper、redaction schema、rollback evidence |
+| Slice 3-4 及 OpenCLI lease | `user_level_port_browser_owner_isolation_plan` | Phase 3 | port 与 browser-owner 文件互斥时，可与 receipt/discovery 工作并行。 | port registry、browser owner registry、cleanup rules |
+| Slice 1-2 | `user_level_mcp_skills_discovery_facade_plan` | Phase 4 | 低风险 discovery 可并行；sensitive call 等待 receipt evidence。 | skills facade、MCP facade、risk profile fixtures |
+| Slice 5-6 | `user_level_browser_cli_adapter_boundary_plan` | Phase 6 | adapter lane 仅在写集互斥且不执行 live sensitive action 时可并行。 | adapter guard、browser/GUI authorization、WeCom guard |
+| Slice 8 | 既有 Phase 7 集成方案 | Phase 7 | evidence collection 可并行；registry、OpenSpec 与 local-main retire 保持串行。 | docs registry、stable specs、CI manifest、local-main lock |
+
+旧来源方案继续保留 baseline marker 和 implementation-state 历史，供 `check_user_level_mcp_skills_browser_cli_baseline.py` 使用。未来 runtime 实现必须认领拥有对应 lane 的提取后子方案。
+
 ## 阶段与子方案拆分
 
 ### Phase 0：盘点与父级编排
@@ -255,6 +267,7 @@ python tools/local_main_retire_lock.py status --root . --json
 3. `portable_implementation_plan_claim_lock_plan` - 实现不依赖 OMX 或 LangGraph 的子方案单 active session 锁。
 4. `implementation_plan_registry_active_state_plan` - 强制 active 状态、双语配对和 docs registry 一致。
 5. `main_session_escalation_visibility_plan` - 增加主会话可见的待授权和提权预检表面。
+6. `user_level_capability_receipt_rollback_redaction_plan` - 在任何 MCP/browser/CLI lane 成为 active runtime 前，提取 authorization receipt、update receipt、rollback pointer 与 redaction gate。
 
 准入规则：所有 eligible 子方案均可并行；`docs_bilingual/docs_registry.yaml` 每批只能由一个 hotspot lease owner 写入。
 
@@ -283,6 +296,7 @@ python tools/local_main_retire_lock.py status --root . --json
 4. `legacy_durable_residue_classification_plan` - 对陈旧 `.omx/state` residue 分类，但不自动接管。
 5. `worktree_receipt_claim_lifecycle_plan` - 定义 active、paused、completed、stale 和 cleaned claim/receipt 生命周期。
 6. `portable_no_backend_parallel_session_plan` - 在没有 OMX 和 LangGraph 时支持 Git/Python-only 并行 session。
+7. `user_level_port_browser_owner_isolation_plan` - 提取 `codex-port`、port lease、`pending_bind`、`registry_revision` 与 browser owner isolation。
 
 准入规则：所有 eligible 子方案均可并行；`.omx/state` 写入按仓库和 worktree hotspot lease 串行化。
 
@@ -299,6 +313,7 @@ python tools/local_main_retire_lock.py status --root . --json
 5. `langgraph_state_release_evidence_plan` - 拒绝 LangGraph 工作完成后仍保留 stale `running` 状态。
 6. `role_routing_fanout_write_ownership_plan` - 强制最小充分角色选择和 fan-out 写入归属。
 7. `collaboration_evidenceguard_and_bilingual_openspec_surface_plan` - 让 evidenceguard、fixtures、CI 注册和双语 OpenSpec stable spec surface 由一个 owner 串行处理。
+8. `user_level_mcp_skills_discovery_facade_plan` - 提取 compact `skills2cli` 与 `mcp2cli` discovery/risk-gated call surface，默认不加载完整 skill bodies。
 
 准入规则：所有 eligible 子方案均可并行；共享 routing checker 和 OpenSpec spec surface 必须通过 hotspot lease 串行化。
 
@@ -324,6 +339,7 @@ python tools/local_main_retire_lock.py status --root . --json
 
 1. `spec_kit_subordinate_adapter_governance_plan` - 将 Spec Kit 文档化为可选从属 adapter 或模板来源。
 2. `spec_kit_authority_guard_plan` - 没有单独 active plan 时阻止 `specify init --force`、`.specify/` 或治理权威迁移。
+3. `user_level_browser_cli_adapter_boundary_plan` - 将 chrome-devtools-mcp、CDP Bridge、OpenCLI、CLI-Anything 与 `wecom-cli` 等 browser/CLI harness adapter 提取为 subordinate/on-demand surface。
 
 准入规则：写集互不冲突或已取得 hotspot lease 的所有 eligible 子方案均可并行。
 
@@ -333,9 +349,9 @@ python tools/local_main_retire_lock.py status --root . --json
 
 候选子方案：
 
-1. `parallel_plan_docs_registry_integration_plan` - 验证 docs registry、双语配对和 implementation-plan rules。
-2. `parallel_plan_checker_ci_integration_plan` - 验证 checker、unit 和 local CI 覆盖。
-3. `parallel_plan_openspec_comet_archive_plan` - 验证 OpenSpec/Comet guard 健康，并归档已完成变更。
+1. `parallel_plan_docs_registry_integration_plan` - 验证 docs registry、双语配对、implementation-plan rules，以及新提取 MCP/skills/browser/CLI 子方案登记。
+2. `parallel_plan_checker_ci_integration_plan` - 验证 checker、unit、local CI 覆盖，以及 MCP baseline/receipt/browser/adapter guard 注册。
+3. `parallel_plan_openspec_comet_archive_plan` - 验证 OpenSpec/Comet guard 健康，记录来源方案提取，并仅在 stable spec 与 deferral 同步后归档已完成变更。
 
 延后后续：publication readiness 不作为 Stage B 子方案创建，因为远端发布不在本次范围内，除非用户明确批准。
 
@@ -359,6 +375,10 @@ python tools/local_main_retire_lock.py status --root . --json
 | Phase 5 | `comet_phase_checklist_gate_plan` | implemented and locally integrated | Local `main` includes closeout commit `4b6033a`; phase checklist gate regression coverage is recorded. |
 | Phase 6 | `spec_kit_subordinate_adapter_governance_plan` | admissible and unclaimed | May enter Stage C after explicit child-plan confirmation; Phase 5 closeout and fixed ROB preflight gate remove the current sequential blocker. |
 | Phase 6 | `spec_kit_authority_guard_plan` | admissible and unclaimed | May enter Stage C after explicit child-plan confirmation; write scopes and hotspots remain serialized by claim/lease rules. |
+| Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Receipt helper hotspot closed: authorization/update schemas, hash-first rollback output, explicit local-only authorized raw path evidence, redaction fail-closed tests, and Phase 6 handoff gates are in the local integration package. |
+| Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local；已具备仓库 local-main-first 集成候选条件 | 已确认既有范围、`pending_bind`、revision、cleanup 与 sanitized-receipt 控制；CDP Bridge 和 OpenCLI consumer 现在使用 `owner_lease_ambiguous` 拒绝 owner lease 歧义。 |
+| Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | implemented-local | Compact `skills2cli` / `mcp2cli` discovery facade 已实现：skill discovery 摘要化/脱敏，MCP risk-profile 输出、sensitive call receipt gate、direct-MCP bridge policy evidence 与聚焦 RED/GREEN 测试均已覆盖。 |
+| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | active and unclaimed | 提取 browser/CLI adapter boundary lane；缺少 receipt 与 owner evidence 时，live install/start、GUI write、cookies 与 sensitive browser action 均保持 blocked。 |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
 ## 依赖与 Phase 2 准入说明
@@ -418,6 +438,8 @@ python tools/local_main_retire_lock.py status --root . --json
 - [x] Phase 4 父子方案治理更新：把会话表面覆盖从 routing trace 扩展到 `Routing trace` 与 `Updated Plan`，保持这两个标签稳定，保留 `Updated Plan` 复选框/状态清单语义，并保留保存版 evidence 的机器可读 ASCII token。
 - [x] Phase 4 最终收口：确认全部 Phase 4 子方案已实现、已本地验证、已合入本地 `main`，并停在远端发布门。
 - [x] Phase 1A hardening：将 `--self-retire` ROB entry 校验从 post-merge metadata 记录提升为合入前硬门。
+- [x] Stage B decomposition：把 MCP/skills/browser/CLI 来源 lane 提取为分阶段子 implementation_plan，而不是把旧来源方案直接挂成父方案子方案。
+- [x] Stage B decomposition：更新 Phase 7 集成子方案，使其覆盖提取后 MCP lane 的 docs registry、checker/CI 与 OpenSpec/Comet archive 职责。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -468,4 +490,9 @@ Stage B 后续确认后的验收条件：
 - 2026-05-28 Stage B 子方案创建包：创建并登记 33 个 active 子 implementation_plan 的英文主版和中文对照版；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-28 Stage A 父级方案包：已用 `ac867ff` 提交并合入本地 `main`；验证包括 `check_implementation_plan_rules.py --root . --json`、`check_precommit_update_archive.py --root . --json`、`tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` 和 `tools/ci/local_mr_review.ps1`。
 - 2026-05-31 Phase 5 final closeout and Phase 6 admission: local `main` includes all Phase 5 Comet runtime closeout commits (`8b8bfd6`, `3335b67`, `05d22bd`, `407e5eb`, `4b6033a`) plus ROB retire preflight hardening (`a259d91`, `7087b31`). Post-merge `tools/ci/local_gate.ps1` passed, the ROB entry retired with `self_retire_lock`, and the feature worktree was cleaned with preserved claim evidence. Phase 6 child plans are admissible next, while non-document implementation still requires explicit child-plan confirmation and serialized ownership.
+- 2026-06-01 MCP/skills/browser/CLI decomposition: package id `decompose-mcp-control-plane-20260601` means this isolated documentation update; it treats `user_level_mcp_skills_browser_cli_governance_plan` as source-to-decompose, creates four extracted child plans, and updates Phase 7 integration plans. This package authorizes no user-level install, live browser start, GUI automation, sensitive MCP call, or remote publication.
+- 2026-06-01 receipt/rollback/redaction implementation: branch `implement-capability-receipt-rollback-redaction-20260601` implements the Phase 1 extracted receipt lane by closing the `tools/user_level_receipt_governance.py` hotspot, adding explicit local-only authorized raw path evidence, keeping default output hash-first, extending focused regression coverage, updating Phase 7 handoff evidence, and keeping remote publication behind the explicit approval gate.
+- 2026-06-01 port/browser-owner isolation implementation: 分支 `implement-port-browser-owner-isolation-20260601` 确认既有 `codex-port` 范围顺序、`pending_bind`、单调 registry revision、owner class 隔离、cleanup 保护、sanitized receipt 与 OpenCLI `--port auto` 控制；向 CDP Bridge 和 OpenCLI consumer 增加 `owner_lease_ambiguous` fail-closed 门禁；扩展 RED/GREEN 聚焦回归覆盖；并保持远端发布在显式授权门之后。
+
+- 2026-06-01 discovery-facade implementation: 分支 `implement-mcp-skills-discovery-facade-20260601` 实现 Phase 4 提取出的 compact `skills2cli` / `mcp2cli` lane，新增 MCP risk-profile 输出、direct-MCP/no-default-Router evidence、skill/profile 非 native-subagent 的 routing evidence 与聚焦测试；远端发布仍未授权。
 <!-- EVIDENCE_INDEX_END -->

@@ -41,6 +41,7 @@ Ensure every new checker, test, and helper introduced by child plans is register
 当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
 最后更新：2026-05-28
+Status update: MCP/skills/browser/CLI decomposition keeps the baseline checker as a required guard. receipt/redaction lane 与 port/browser-owner lane 的 helper/test coverage 已注册进 CI manifest 和 OpenSpec aggregate guard；其他提取出的 sibling lane 如果修改 runtime behavior，仍需分别复核登记。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -72,6 +73,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 - [ ] Add missing local gate registrations and mirrored CI checks.
 - [ ] Detect divergence between local and remote CI command sequences.
 - [ ] Run local gate and local MR review.
+- [x] Verify MCP baseline, receipt/redaction, browser-owner, MCP/skills discovery, and adapter guard checks are registered when their extracted lanes change runtime behavior.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,4 +98,7 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-01 receipt/redaction lane handoff: `user_level_capability_receipt_rollback_redaction_plan` confirms `tools/user_level_receipt_governance.py`, `test/user_level_receipt_governance.test.py`, the MCP baseline checker, OpenSpec guard registration, and `tools/ci/ci_test_manifest.json` coverage for the receipt lane; future sibling lane changes still need their own registration review.
+- 2026-06-01 port/browser-owner lane handoff: `user_level_port_browser_owner_isolation_plan` 确认 `test/codex_port.test.py`、`test/browser_owner_registry.test.py`、`test/cdp_bridge_governance.test.py` 与 `test/chrome_devtools_mcp_managed.test.py` 已登记进 CI manifest；CDP/OpenCLI owner 歧义回归覆盖扩展了既有已登记测试文件，因此无需编辑 CI manifest。
+- 2026-06-01 discovery facade lane handoff: `skills2cli.test.py` 与 `mcp2cli.test.py` 已登记进 CI manifest；本包扩展这些已登记聚焦测试以覆盖 risk-profile 与 routing-evidence 行为，并确认 baseline/MCP-scope/agent-surface checker 仍适用。
 <!-- EVIDENCE_INDEX_END -->

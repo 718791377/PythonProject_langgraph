@@ -6,8 +6,8 @@ plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
 created_at: 2026-05-20
-updated_at: 2026-05-28
-last_reviewed_at: 2026-05-28
+updated_at: 2026-06-01
+last_reviewed_at: 2026-06-01
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -41,6 +41,7 @@ related_docs:
 | Ready / Bootstrap / Repair lane | 已补齐 | 第 13 节 |
 | Phase 1 CLI / readiness contract | 已补齐 | 第 9 节 |
 | Phase 2 PySide6 GUI contract | 已补齐 | 第 10 节 |
+| A/B 验证路线 | 已确认 | 第 0、1、13、14、15 节 |
 | JSON state model | 已补齐 | 第 11 节 |
 | 安全、隐私、回滚、卸载 | 已补齐 | 第 12 节 |
 | 实施事项颗粒度 | 已重排 | 第 14 节 |
@@ -48,10 +49,23 @@ related_docs:
 
 状态解释：
 
-- `status: draft`：本文仍是实施方案，不是已完成运行时能力声明。
+- `status: active`：本文是当前可执行实施方案；它不等于 Project MOE GUI 运行时能力已经全部完成。
 - `plan_readiness: full-comet-structure-ready-for-implementation-slicing`：结构、边界、任务颗粒度已满足继续切分代码实施的入口要求。
-- `D:\PythonProject_paper_suggest`：当前只能视为 Phase 1 候选项目；截至已记录的 static-only evidence，仍是 `blocked / repair-lane / control_mode_allowed=false`，不得被误标为 GUI ready。
+- `D:\PythonProject_paper_suggest`：A 仍是 Phase 1 owner，不在 B 重新实现一套 A 业务 Phase 1。A 的主目录是否 GUI-ready，必须以后续 A 本地 main 集成、真实安装 receipt 与 rollback pointer 为准。
+- 2026-06-01 决策：A=`D:\PythonProject_paper_suggest` 保留为真实 Phase 1 owner，B=`D:\PythonProject_langgraph` 保留为 Phase 2 toolchain source of truth；本次先在 A 当前 main 基线派生的修复 worktree 修 Phase 1 contract blockers，再用 B 的 Phase 2 installer dry-run 验证。不得为了验证方便在 B 重新实现一套完整 A 业务 Phase 1 来替代目标项目证据。
+- 2026-06-01 证据：旧 worktree `paper_suggest-thesis-moe-phase1` 已判定为陈旧证据，不再作为 A 现状；新 A 修复 worktree `D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601` 提交 `560da0e 功能：修复论文 MOE 阶段一就绪契约`。
+- 2026-06-01 隐私边界：A 的 `MOE.md` 是 ignored/private 文件，仅为 readiness validation 被复制到 A 修复 worktree；不得提交、不得复制全文到 B 文档或工具链。
+- 2026-06-01 readiness 证据：A 修复 worktree static-only 输出 `ok=true / readiness_status=static-ready-candidate / adaptation_lane=ready-candidate / control_mode_allowed=false`，其中 `readiness_status` 表示 Phase 1 契约分类，`adaptation_lane` 表示后续处理 lane，`control_mode_allowed=false` 表示只能展示或 dry-run；execute-read-contract 输出 `ok=true / token=ok / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true`，其中 `token=ok` 是稳定机器可读成功 token，`control_mode_allowed=true` 表示在具备 receipt 与 rollback 证据后可进入受控安装/控制路径，已校验 `project-status`、`list-sessions`、`status`、`assert-on`。
+- 2026-06-01 Phase 2 证据：B installer dry-run 对 A 修复 worktree 输出 `ok=true / token=ok / mode=dry-run / toolchain_version=0.2.20 / cli_contract=project-moe-cli-v1 / blockers=[]`，planned writes 为 `tools/project_moe_gui/launcher.py`、`project_moe_gui.config.json`、`README.md` 与 `project-moe-gui.cmd`。
 - 当前 Comet change 是 `refine-project-moe-gui-plan-comet-structure`。如果 bash 不可用，只能用 OpenSpec artifacts、repo-local guard 与本地验证作为 fallback evidence。
+
+就地字段解释：
+
+- `readiness_status` 表示目标项目 Phase 1 契约的最终 readiness 分类；`static-ready-candidate` 表示只读静态检查已满足候选条件但尚未执行目标 CLI 读契约，`ready` 表示读契约已通过。
+- `adaptation_lane` 表示目标项目后续处理 lane；`ready-candidate` 只能继续验证，`ready` 才允许进入安装或 GUI 控制的下一步。
+- `control_mode_allowed` 表示 GUI 写入/控制是否允许；`false` 只能展示或 dry-run，`true` 仍需安装 receipt、rollback pointer 与目标项目验收后才代表可实际操作。
+- `token=ok` 是目标 CLI 或安装器返回的稳定机器可读结果 token，用于避免仅凭自然语言判断成功。
+- `blockers=[]` 表示当前 dry-run 没有阻断项；它不是实际安装完成证据。
 
 ## 1. 关系模型与命名边界
 
@@ -63,6 +77,13 @@ related_docs:
 | Phase 2 GUI | 本仓库维护的 PySide6 控制面 | `tools/project_moe_gui_toolchain/` | 安装后只控制被安装的目标项目 |
 | Readiness checker | 安装/控制前只读 gate | 本仓库工具链 | 只输出 go/no-go 与 blockers，不授权写目标项目 |
 | `.omx/state/<namespace>/` | 目标项目 MOE 状态 | 目标项目 repo-local state | 不跨项目扫描，不写其他项目 |
+
+### 1.1 MOE 专家、subagent 与 skills 边界
+
+- MOE 专家是专家镜头 / 路由语义，例如盲审专家、导师质询专家、AIGC 风险专家、创新性把关专家；它描述“按什么专业视角判断”，不是独立执行载体。
+- subagent / native agent 是执行载体或角色线程，例如 Codex 内置角色、用户级 agent TOML、项目本地 `.codex/agents/*.toml`。一个 subagent 可以内含多个 MOE 专家镜头，主会话也可以直接使用 MOE 专家镜头。
+- 因此 MOE 专家与 subagent 是可组合矩阵关系，不是同义词，也不是互斥关系；不能把“调用了 MOE 镜头”写成 native subagent evidence。
+- 调用 MOE 专家不要求专门 skills。`MOE.md`、agent TOML 或主会话上下文即可承载 MOE 调度规则；skills 只可作为可选 workflow 封装，且 skill/profile invocation 不能替代 native expert evidence。
 
 默认命名：
 
@@ -106,8 +127,9 @@ related_docs:
 
 当前策略：
 
-- 初始切片是文档/方案重构；当前延续切片包含一项受保护卸载 `--apply` 的有界 runtime 实现。
-- 本次不安装 PySide6、不向真实目标项目投放、不写 user-level 目录。
+- 初始切片是文档/方案重构；当前延续切片包含 Project MOE GUI toolchain 的有界 runtime 实现与目标项目 readiness 证据收敛。
+- 下一步验证路线是“修 A 的真实 Phase 1，再用 B 的 Phase 2 安装验证”，不是在 B 复制 A 的业务 Phase 1。
+- 在 A readiness checker 输出 `control_mode_allowed=true` 之前，不安装 PySide6 GUI 到 A、不启动真实 GUI 控制、不写 user-level 目录。
 - 用户已授权本地 feature 提交与本地 `main` 合入；远端发布仍需用户后续明确指令。
 
 ### 3.1 Comet 管理记录、阶段门禁与 Monitoring 语义
@@ -469,7 +491,15 @@ readiness payload 必须包含：
 }
 ```
 
-`D:\PythonProject_paper_suggest` 当前归类：Ready Lane 候选，但最新静态证据仍是 blocked / Repair Lane；只有 readiness checker 正式输出 ready 后才允许真实 GUI 安装和控制。
+`D:\PythonProject_paper_suggest` 当前归类：Ready Lane 候选，但 2026-06-01 只读复核仍是 blocked，`control_mode_allowed=false`；只有 readiness checker 正式输出 ready 后才允许真实 GUI 安装和控制。
+
+当前 A 阻断项按修复顺序处理：
+
+1. 补齐 A 的 `.codex/agents/thesis-moe-mentor.toml` 标准 `[project]`、`[moe]`、`[dispatch]`、`[extensions]` 扩展段，并对齐 `state_namespace=thesis_moe`、repo-local scope、manual-enable、brief-based dispatch 与 fallback 边界。
+2. 修复 A 的 `thesis-moe-on.cmd` / `thesis-moe-off.cmd`：稳定传 `--json`，去掉任意参数透传、重定向、shell chaining 等不安全 surface。
+3. 在 A 的 startup / launcher surface 中加入 MOE `status --json` 激活检查，覆盖 startup、resume、continue、reload、phase change 等触发语义。
+4. 修复 A 的 `tools/thesis_moe_mode.py list-sessions --json` envelope：输出 `cli_contract=project-moe-cli-v1`，并让每个 session row 包含稳定 `token`。
+5. A 通过 static-only 与 execute-read-contract readiness 后，才允许在 A 上执行 B 的 `install_project_moe_gui.py --dry-run --json`；dry-run 无 blocker 后，才允许真实安装与 GUI 验收。
 
 ## 14. 实施事项清单（按顺序，细颗粒度）
 
@@ -481,6 +511,8 @@ readiness payload 必须包含：
 - [x] 明确 GUI 不直接编辑状态 JSON，只调用目标项目 CLI。
 - [x] 明确 Ready / Ready-candidate / Bootstrap / Repair lane。
 - [x] 明确 `D:\PythonProject_paper_suggest` 不能因存在 Phase 1 候选就直接进入 GUI 控制。
+- [x] 明确下一步路线：先修 A 的真实 Phase 1 contract，再用 B 的 Phase 2 dry-run、安装和 GUI 验收；不在 B 重新实现完整 A 业务 Phase 1 替代目标项目证据。
+- [x] 明确 MOE 专家、subagent 与 skills 的边界：MOE 是专家镜头，subagent 是执行载体，skills 是可选 workflow 封装。
 - [x] 明确 Comet bash 不可用时不得伪造脚本状态。
 - [x] 将本文重构为完整 Comet 可执行方案结构。
 - [x] 将 Comet 管理记录、阶段门禁、Monitoring 回退、证据留存和授权边界语义补入本文。
@@ -545,11 +577,20 @@ readiness payload 必须包含：
 
 #### Slice 6：目标项目验收与推广
 
-- [ ] 记录目标项目 static-only 证据。
-- [ ] 记录目标项目 read-contract 证据。
+- [x] 判定旧 A worktree `paper_suggest-thesis-moe-phase1` 为陈旧证据，不再作为当前 A 现状。
+- [x] 从 A 当前 `main` 派生新的修复 worktree：`D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601`。
+- [x] 保持 A 的 `MOE.md` 为 ignored/private 文件，仅在 A 修复 worktree 本地用于 readiness validation，不提交、不复制全文到 B。
+- [x] 在 A 修复 worktree 修复 Agent TOML 扩展段：`[project]`、`[moe]`、`[dispatch]`、`[extensions]`。
+- [x] 在 A 修复 worktree 修复 wrapper JSON/安全边界：`thesis-moe-on.cmd` 与 `thesis-moe-off.cmd` 收敛为单条 JSON CLI 调用，去除噪声、等待与暂停。
+- [x] 在 A 修复 worktree修复 `list-sessions` CLI contract 与 session row stable token，并为 corrupt-state token 增加稳定归一化。
+- [x] 提交 A 修复分支：`560da0e 功能：修复论文 MOE 阶段一就绪契约`。
+- [x] 记录 A 修复后的 static-only readiness 证据：`ok=true / static-ready-candidate / ready-candidate / control_mode_allowed=false`。
+- [x] 记录 A 修复后的 read-contract readiness 证据：`ok=true / token=ok / ready / control_mode_allowed=true`。
+- [x] A readiness 输出 `control_mode_allowed=true` 后，记录 B 的 Phase 2 installer dry-run 证据：`ok=true / token=ok / blockers=[] / mode=dry-run`。
+- [ ] 如 A 后续策略要求 startup activation hook，把 hook 作为 A 单独修复项补齐并重新运行 readiness；本次 read-contract acceptance 未把 hook 当作通过前提。
+- [ ] installer dry-run 无 blocker 后，再记录 A 的真实安装 receipt 与 rollback pointer。
 - [ ] 记录写入 fixture 证据：project on/off、session on/off、no-op、invalid record skip、lock timeout、atomic write。
 - [ ] 只有产生新的 Ready Lane 证据后，才允许该目标项目进入 GUI 控制。
-- [ ] 记录目标项目安装 receipt 与 rollback pointer。
 
 ### 14.3 文件职责图
 
@@ -606,6 +647,17 @@ python .\tools\run_openspec_guard.py --root .
 - static-only 模式不得执行目标 CLI。
 - no-exec-cli 模式不得产生目标状态副作用。
 - 执行读契约模式必须检查 `project-status`、`list-sessions`、`status`、`assert-on`。
+- 2026-06-01 对 A 修复 worktree 已执行的命令：
+  - static-only A readiness 证据：`python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --json --static-only`
+  - execute-read-contract A readiness 证据：`python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --json`
+  - B Phase 2 installer dry-run 证据：`python .\tools\project_moe_gui_toolchain\install_project_moe_gui.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --dry-run --json`
+- 2026-06-01 对 A 修复 worktree 已记录的结果：
+  - A 修复提交：`560da0e 功能：修复论文 MOE 阶段一就绪契约`。
+  - static-only：`ok=true / static-ready-candidate / ready-candidate / control_mode_allowed=false`。
+  - execute-read-contract：`ok=true / token=ok / ready / control_mode_allowed=true`。
+  - installer dry-run：`ok=true / token=ok / blockers=[] / planned_writes=4`。
+- 字段含义：`static-ready-candidate` 是只读静态候选，`ready` 是读契约通过，`control_mode_allowed=true` 只代表可进入受控安装/控制路径，`planned_writes=4` 只代表 dry-run 将创建 4 个受管文件而非已经写入。
+- 对 A 主目录或 A 本地 main 的后续验收必须重新运行上述命令，不得把修复 worktree 的结果直接当作已安装主目录 receipt。
 - 写入 fixture 必须覆盖 project on/off、session on/off、manual override 保留、invalid record skip、no-op、lock timeout、atomic write。
 
 人工验收：
@@ -629,6 +681,7 @@ python .\tools\run_openspec_guard.py --root .
 
 | 风险 | 默认决策 |
 | --- | --- |
+| 为验证方便在 B 复制 A 的业务 Phase 1 | 禁止作为 A 的替代证据；只能把 B fixture 当 checker/installer 回归，不当真实目标项目验收 |
 | 目标项目已有 Phase 1 但不完整 | 进入 Repair Lane，不允许 GUI 控制 |
 | 目标 CLI 读命令可能有副作用 | 先用 `--static-only` / `--no-exec-cli` |
 | session id 只能 generated | GUI 标低置信度，不当作强隔离身份 |

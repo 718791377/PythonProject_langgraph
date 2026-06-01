@@ -41,9 +41,9 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-阶段：Phase 1A hardening active；安全底座已实现，但 `--self-retire` 缺失 ROB entry 时的 post-merge 报错路径必须修复。
-责任会话：`harden-rob-retire-preflight-20260531`。
-当前门禁：实现前先记录本子方案重开；实现后 `complete_local_flow_to_remote_gate.py --self-retire --execute` 必须在 acquire lock、rollback ref 和 merge 之前验证 ROB entry 与必要 gate 状态。
+Stage: Phase 1A follow-up active. This pass implements automatic local `main` integration after implementation authorization plus passing local gates, default safe cleanup, and a mandatory stop at the remote publication gate.
+Owner session: `automate-local-main-integration-20260601`.
+Current gate: focused tests and scripted governance checks now cover completed claim/receipt recording, default `cleanup_integrated_worktree.py --execute` cleanup, `--preserve-carrier`, and the remote-publication gate. Before final closure, run precommit/update-archive, OpenSpec guard, local gate, and local MR review, then invoke `complete_local_flow_to_remote_gate.py --execute` from the primary root so the target feature worktree can be removed safely.
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -118,6 +118,9 @@ runtime/checker 实现拥有：
 - [x] `precommit_update_archive`、`local_gate` 或 `local_mr_review` 未通过时必须在 merge 前 fail closed。; gate condition: these fields record required pre-merge evidence.
 - [x] ready entry 成功路径仍允许 merge 后记录 `self_retire_lock` retired metadata。
 - [x] 增加聚焦测试并登记/运行相关 checker。
+- [x] Automatic local `main` integration: implementation authorization plus passing local gates is sufficient; no extra local-merge confirmation is required when the guarded helper can complete the flow.
+- [x] Default safe cleanup: `complete_local_flow_to_remote_gate.py --execute` records completed claim/receipt evidence, closes the remote-publication gate, and runs `cleanup_integrated_worktree.py --execute` unless `--preserve-carrier` is explicit.
+- [x] User-level default: installer/startup instruction surfaces now carry the same project-template default while keeping remote publication as a separate explicit approval gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -145,6 +148,8 @@ python tools/check_local_flow_scripted_enforcement.py --root . --json
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-01 automatic local integration follow-up: updated `complete_local_flow_to_remote_gate.py` to record completed claim/receipt evidence, close the remote-publication gate, and call `cleanup_integrated_worktree.py --execute` by default unless `--preserve-carrier` is explicit; added focused tests for default cleanup and carrier preservation; updated project and user-level instruction/checker surfaces.
+
 - 2026-05-31 ROB retire preflight implementation: 已新增 `preflight_self_retire_rob_entry(...)`、`REQUIRED_SELF_RETIRE_GATES` 与 `test/check_complete_local_flow_self_retire_preflight.test.py`；RED 证明旧 helper 可能先改动本地 `main` 或接受不匹配 metadata，随后 focused GREEN 已通过，等待更广验证。
 - 2026-05-31 ROB retire 前置硬门重开：确认旧 helper 会把 ROB retire metadata 放在 merge 后记录；本次要求先校验 ready ROB entry、owner 和 gate 状态，再允许本地 `main` 变更。
 - 2026-05-30 完整提交流程对齐：`7e47af8` 已把《完整提交流程.md》更新为多 session 自动本地提交与本地 `main` 合入的 HOW 层契约；本次父方案族对齐包把下游子方案的固定 leader 串行语义替换为 session-owned self-retire。

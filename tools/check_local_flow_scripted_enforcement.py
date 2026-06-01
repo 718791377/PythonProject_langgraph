@@ -15,6 +15,7 @@ POLICY_ZH = Path("docs_bilingual/governance/openspec_comet_superpowers_workflow_
 PLAN_EXIT_CHECKER = Path("tools/check_plan_exit_execution_governance.py")
 LOCAL_FLOW_CHECKER = Path("tools/check_local_flow_scripted_enforcement.py")
 LOCAL_FLOW_HELPER = Path("tools/complete_local_flow_to_remote_gate.py")
+USER_LEVEL_INSTALLER = Path("tools/install-codex-user-level-team-mode.ps1")
 LOCAL_RETIRE_LOCK = Path("tools/local_main_retire_lock.py")
 LOCAL_RETIRE_LOCK_CHECKER = Path("tools/check_local_main_retire_lock.py")
 SCHEDULER_ROB_PLAN_EN = Path("docs_bilingual/implementation_plans/complete_local_commit_flow_scheduler_reorder_buffer_plan.md")
@@ -26,10 +27,14 @@ CI_MANIFEST = Path("tools/ci/ci_test_manifest.json")
 REQUIRED_DOC_TERMS = [
     "完整本地提交流程",
     "git merge --ff-only <feature-branch>",
+    "默认本地动作不是停在 feature branch 等待",
+    "合入后默认执行安全清理",
+    "--preserve-carrier",
     "提交前必须检查 Git 状态和 worktree",
     "远端发布门",
     "tools/check_plan_exit_execution_governance.py",
     "tools/complete_local_flow_to_remote_gate.py",
+    "tools/cleanup_integrated_worktree.py",
     "local-main-retire.lock",
 ]
 REQUIRED_POLICY_EN_TERMS = [
@@ -68,6 +73,7 @@ REQUIRED_PLAN_EXIT_TERMS = [
 REQUIRED_LOCAL_FLOW_HELPER_TERMS = [
     "governance-confirmation",
     "--implementation-plan",
+    "--preserve-carrier",
     "implementation_confirmed_by_user",
     "implementation_plan",
     "awaiting_implementation_confirmation",
@@ -78,6 +84,16 @@ REQUIRED_LOCAL_FLOW_HELPER_TERMS = [
     "self_retire_lock",
     "preflight_self_retire_rob_entry",
     "REQUIRED_SELF_RETIRE_GATES",
+    "record_local_main_completion",
+    "run_integrated_worktree_cleanup",
+    "cleanup_integrated_worktree.py",
+    "remote_publication_gate_closed",
+]
+REQUIRED_USER_LEVEL_INSTALLER_TERMS = [
+    "implementation authorization plus passing local gates is sufficient for automatic local `main` integration",
+    "Automatic local `main` integration is not remote publication approval",
+    "project safe-cleanup helper",
+    "explicit preserve flag",
 ]
 REQUIRED_RETIRE_LOCK_TERMS = [
     "local-main-retire",
@@ -142,6 +158,7 @@ def evaluate(root: Path, base_ref: str | None, head_ref: str | None, require_mai
     manifest_text = read_text(root, CI_MANIFEST, errors)
     plan_exit_checker = read_text(root, PLAN_EXIT_CHECKER, errors)
     local_flow_helper = read_text(root, LOCAL_FLOW_HELPER, errors)
+    user_level_installer = read_text(root, USER_LEVEL_INSTALLER, errors)
     retire_lock = read_text(root, LOCAL_RETIRE_LOCK, errors)
     retire_lock_checker = read_text(root, LOCAL_RETIRE_LOCK_CHECKER, errors)
     scheduler_plan_en = read_text(root, SCHEDULER_ROB_PLAN_EN, errors)
@@ -155,6 +172,7 @@ def evaluate(root: Path, base_ref: str | None, head_ref: str | None, require_mai
     require_terms(RUN_GUARD.as_posix(), run_guard, ["check_local_flow_scripted_enforcement"], errors)
     require_terms(PLAN_EXIT_CHECKER.as_posix(), plan_exit_checker, REQUIRED_PLAN_EXIT_TERMS, errors)
     require_terms(LOCAL_FLOW_HELPER.as_posix(), local_flow_helper, REQUIRED_LOCAL_FLOW_HELPER_TERMS, errors)
+    require_terms(USER_LEVEL_INSTALLER.as_posix(), user_level_installer, REQUIRED_USER_LEVEL_INSTALLER_TERMS, errors)
     require_terms(LOCAL_RETIRE_LOCK.as_posix(), retire_lock, REQUIRED_RETIRE_LOCK_TERMS, errors)
     require_terms(LOCAL_RETIRE_LOCK_CHECKER.as_posix(), retire_lock_checker, REQUIRED_RETIRE_LOCK_TERMS, errors)
     for plan_path, plan_text in (
@@ -178,7 +196,7 @@ def evaluate(root: Path, base_ref: str | None, head_ref: str | None, require_mai
     for test_name in sorted(REQUIRED_TESTS - registered_tests):
         errors.append(f"{CI_MANIFEST.as_posix()} is missing required test registration: {test_name}")
 
-    for relative in (PLAN_EXIT_CHECKER, LOCAL_FLOW_CHECKER, LOCAL_FLOW_HELPER, LOCAL_RETIRE_LOCK, LOCAL_RETIRE_LOCK_CHECKER):
+    for relative in (PLAN_EXIT_CHECKER, LOCAL_FLOW_CHECKER, LOCAL_FLOW_HELPER, USER_LEVEL_INSTALLER, LOCAL_RETIRE_LOCK, LOCAL_RETIRE_LOCK_CHECKER):
         path = root / relative
         if not path.exists():
             errors.append(f"Missing required script/checker: {relative.as_posix()}")
