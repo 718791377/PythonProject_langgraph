@@ -378,7 +378,7 @@ python tools/local_main_retire_lock.py status --root . --json
 | Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Receipt helper hotspot closed: authorization/update schemas, hash-first rollback output, explicit local-only authorized raw path evidence, redaction fail-closed tests, and Phase 6 handoff gates are in the local integration package. |
 | Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local；已具备仓库 local-main-first 集成候选条件 | 已确认既有范围、`pending_bind`、revision、cleanup 与 sanitized-receipt 控制；CDP Bridge 和 OpenCLI consumer 现在使用 `owner_lease_ambiguous` 拒绝 owner lease 歧义。 |
 | Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | implemented-local | Compact `skills2cli` / `mcp2cli` discovery facade 已实现：skill discovery 摘要化/脱敏，MCP risk-profile 输出、sensitive call receipt gate、direct-MCP bridge policy evidence 与聚焦 RED/GREEN 测试均已覆盖。 |
-| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | active and unclaimed | 提取 browser/CLI adapter boundary lane；缺少 receipt 与 owner evidence 时，live install/start、GUI write、cookies 与 sensitive browser action 均保持 blocked。 |
+| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | implemented-local；已具备仓库 local-main-first 集成候选条件 | Adapter boundary 子 lane 已脚本化：chrome-devtools-mcp、CDP Bridge、OpenCLI、CLI-Anything 与 `wecom-cli` 继续保持 on-demand/reference-only，并由 receipt、owner、lease、dry-run 与 no-live-runtime gates 约束。 |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
 ## 依赖与 Phase 2 准入说明
@@ -496,4 +496,5 @@ Stage B 后续确认后的验收条件：
 - 2026-06-01 port/browser-owner isolation implementation: 分支 `implement-port-browser-owner-isolation-20260601` 确认既有 `codex-port` 范围顺序、`pending_bind`、单调 registry revision、owner class 隔离、cleanup 保护、sanitized receipt 与 OpenCLI `--port auto` 控制；向 CDP Bridge 和 OpenCLI consumer 增加 `owner_lease_ambiguous` fail-closed 门禁；扩展 RED/GREEN 聚焦回归覆盖；并保持远端发布在显式授权门之后。
 
 - 2026-06-01 discovery-facade implementation: 分支 `implement-mcp-skills-discovery-facade-20260601` 实现 Phase 4 提取出的 compact `skills2cli` / `mcp2cli` lane，新增 MCP risk-profile 输出、direct-MCP/no-default-Router evidence、skill/profile 非 native-subagent 的 routing evidence 与聚焦测试；远端发布仍未授权。
+- 2026-06-01 browser/CLI adapter boundary implementation: 分支 `implement-user-level-browser-cli-adapter-boundary-20260601` 关闭提取后的 Phase 6 adapter boundary lane；本包脚本化 implemented-local 子方案状态，确认 chrome-devtools-mcp/CDP Bridge/OpenCLI/CLI-Anything/`wecom-cli` 的 on-demand 或 reference-only 门禁，并保持 live browser/GUI/install/cookie/runtime mutation 不在本地包范围内。
 <!-- EVIDENCE_INDEX_END -->

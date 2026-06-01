@@ -41,7 +41,7 @@ Validate docs registry, bilingual pairs, active statuses, anchors, and evidence-
 当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
 最后更新：2026-05-28
-Status update: MCP/skills/browser/CLI decomposition 新增 4 个 active 子方案登记，并保留旧来源方案作为 baseline source，而不是直接子方案。port/browser-owner lane 已 implemented-local；其既有双语子方案登记继续有效，无需修改 registry schema。
+Status update: MCP/skills/browser/CLI decomposition 新增 4 个 active 子方案登记，并保留旧来源方案作为 baseline source，而不是直接子方案。port/browser-owner、discovery facade 与 browser/CLI adapter boundary lane 已 implemented-local；其既有双语子方案登记继续有效，无需修改 registry schema。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -99,4 +99,5 @@ Status update: MCP/skills/browser/CLI decomposition 新增 4 个 active 子方�
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 port/browser-owner registry handoff: `user_level_port_browser_owner_isolation_plan` 已 implemented-local；其双语 docs-registry entry 已存在，plan/status/evidence 锚点已原位更新，本地集成包无需修改 docs-registry schema。
 - 2026-06-01 discovery facade lane handoff: `user_level_mcp_skills_discovery_facade_plan` 已 implemented-local；其双语 docs-registry entry 已存在，本包只更新 status/evidence 锚点，不修改 registry schema。
+- 2026-06-01 browser/CLI adapter boundary handoff: `user_level_browser_cli_adapter_boundary_plan` 已 implemented-local；其双语 docs-registry entry 已存在，本包只更新 status/evidence anchors，不修改 registry schema。
 <!-- EVIDENCE_INDEX_END -->
