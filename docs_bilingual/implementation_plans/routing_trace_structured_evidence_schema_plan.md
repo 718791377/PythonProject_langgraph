@@ -17,7 +17,7 @@ confirmation_required: true
 
 ## Goal
 
-Separate Chinese conversation display from structured ASCII evidence fields for routing traces.
+Separate conversation display from structured ASCII evidence fields for routing traces. User-visible `Routing trace` remains a plain-text diagnostic line with the fixed label and `key=value` fields; the structured evidence schema and checkers are saved-evidence contracts, not a Codex CLI progress-panel API.
 
 ## Source Plans
 
@@ -96,6 +96,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-01 progress-surface boundary confirmation: branch `document-progress-surface-boundary-20260601` records that routing trace structured evidence/checker data does not imply a user-visible Codex CLI panel; `Routing trace` remains the plain-text diagnostic line.
 - 2026-05-31 local-main status closeout: branch `update-routing-trace-structured-evidence-schema-status-20260531` means the status-only closeout branch used to record the transition from pending local integration to the remote-publication gate after the closeout documentation was integrated into local `main`.
 - 2026-05-31 Stage C closeout: branch `close-routing-trace-structured-evidence-schema-20260531` records that the structured routing trace schema is implemented through `tools/check_orchestration_trace_evidence.py`, `test/check_orchestration_trace_evidence.test.py`, `tools/check_orchestration_collaboration_evidenceguard.py`, and the activation-policy documentation surface; final local-main commit is recorded in the assistant response and local git history.
 - 2026-05-30 implementation baseline: local `main` contains the structured trace and collaboration evidence packages, including fixed `Routing trace` / `Updated Plan` label evidence and expert lifecycle non-evidence handling; validation evidence is in the checker test history and local CI records.

@@ -302,12 +302,12 @@ python tools/local_main_retire_lock.py status --root . --json
 
 ### Phase 4：自动路由与稳定会话表面
 
-目的：让协同路由自动、可审计，并确保对话中面向用户展示的固定标签保持为 `Routing trace` 和 `Updated Plan`。标签下的解释内容可以使用中文；`Updated Plan` 必须保持复选框/状态清单语义，不能退化为纯段落。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由当前 owner session 负责的最终 verification evidence；保存版结构化 evidence 可继续保留 ASCII 阈值、blocker token、schema key、文件名和命令参数。
+目的：让协同路由自动、可审计，并锁定操作者确认的三类会话表面边界。`Routing trace` 保持普通文本诊断行，使用固定标签加 `key=value` 字段；`Updated Plan` 保持用户可见进度面板，统一由 CLI/tree 风格的 `✔` 与 `□` 状态标记呈现；Markdown checkbox 语法只继续用于 implementation plan 文件内部任务追踪，不再作为用户可见 `Updated Plan` 表面。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由当前 owner session 负责的最终 verification evidence；保存版结构化 evidence 可继续保留 ASCII 阈值、blocker token、schema key、文件名和命令参数。
 
 候选子方案：
 
-1. `chinese_routing_trace_conversation_surface_plan` - 要求用户可见的 `Routing trace` 与 `Updated Plan` 标签保持稳定，允许中文解释内容，并保留 `Updated Plan` 复选框/状态清单语义。
-2. `routing_trace_structured_evidence_schema_plan` - 为保存版证据保留机器可读 ASCII 阈值和 blocker token。
+1. `chinese_routing_trace_conversation_surface_plan` - 要求用户可见的 `Routing trace` 与 `Updated Plan` 标签保持稳定，允许中文解释内容，保持 `Routing trace` 为普通文本 `key=value` 诊断行，保持 `Updated Plan` 为树状 `✔`/`□` 进度面板，并把 Markdown checkbox 仅留给 implementation plan 内部任务追踪。
+2. `routing_trace_structured_evidence_schema_plan` - 为保存版证据保留机器可读 ASCII 阈值和 blocker token，同时记录结构化 trace evidence/checker 数据并不是 Codex CLI 进度面板 API。
 3. `prompt_independent_activation_parity_plan` - 确保路由不依赖用户是否说出“并行”或“专家”。
 4. `expert_lifecycle_timeout_pacing_evidence_plan` - 将 timeout、stall 和 pacing 视为非证据，并要求有界处理。
 5. `langgraph_state_release_evidence_plan` - 拒绝 LangGraph 工作完成后仍保留 stale `running` 状态。
@@ -466,11 +466,12 @@ Stage B 后续确认后的验收条件：
 - 新 session 不默认读取本文件，除非处理本文件、其子方案或正文列出的相关方案。
 - 后续同机多 session 目标是 session 自主负责自己的提交和本地 `main` 合入，并用 `local-main-retire` lock 保持本地 `main` 写入串行。
 - `--self-retire` 缺少有效 ready ROB entry 时必须 fail before merge，不能把 ROB retire metadata 当作 post-merge best-effort。
-- Phase 4 子方案必须保持面向用户的 `Routing trace` 与 `Updated Plan` 固定标签；解释内容可以使用中文；`Updated Plan` 必须保留复选框/状态清单语义；内部工具名、schema key、阈值 token、blocker token、文件名和 CLI 参数可保持 ASCII。
+- Phase 4 子方案必须保持已确认的会话表面分工：`Routing trace` 是固定标签加 `key=value` 字段的普通文本诊断行；`Updated Plan` 是用户可见的树状 `✔`/`□` 进度面板；Markdown `- [x]` / `- [ ]` checkbox 只保留在 implementation plan 文件内部做任务追踪。解释内容可以使用中文；内部工具名、schema key、阈值 token、blocker token、文件名和 CLI 参数可保持 ASCII。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-01 progress-surface boundary confirmation：分支 `document-progress-surface-boundary-20260601` 记录操作者确认的分工：`Routing trace` 保持普通文本 `key=value` 诊断行；`Updated Plan` 是唯一用户可见进度面板，使用树状 `✔`/`□`；Markdown checkbox 继续作为 implementation plan 内部任务追踪模式。
 - 2026-05-31 ROB retire preflight implementation: 分支 `harden-rob-retire-preflight-20260531` 已新增 self-retire ROB 前置硬门、focused RED/GREEN 覆盖和 CI manifest 登记；更广本地门禁仍需在 local-main 集成前运行。
 - 2026-05-31 ROB retire 前置硬门治理：发现 `--self-retire` 缺少对应 ROB entry 时，旧 helper 会在 fast-forward merge 后才因 retire metadata 报错；本次重开 Phase 1A hardening，要求 ROB entry ready 与 gate 状态在 acquire lock / rollback ref / merge 前 fail closed。
 - 2026-05-31 Phase 4 最终收口：分支 `close-phase4-final-20260531` 同步父方案与全部 Phase 4 子方案状态，确认所有 Phase 4 checklist 已关闭，过期的本地集成门已替换为远端发布门，并且 Phase 5 已可准入但不代表授权远端发布。

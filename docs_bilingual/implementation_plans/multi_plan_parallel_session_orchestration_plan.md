@@ -300,12 +300,12 @@ Admission: all eligible child plans may run; `.omx/state` write scopes are seria
 
 ### Phase 4: Automatic Routing and Stable Conversation Surfaces
 
-Purpose: make collaboration routing automatic and auditable, and require user-facing routing-trace and updated-plan conversation surfaces to use Chinese field labels, Chinese explanations, and Chinese status wording. Routing and evidence records must distinguish Pi/harness sidecar evidence from final verification evidence owned by the current owner session; saved structured evidence may keep ASCII threshold tokens, blocker tokens, schema keys, file names, and CLI arguments.
+Purpose: make collaboration routing automatic and auditable, and lock the three conversation-surface boundaries confirmed by the operator. `Routing trace` remains a plain-text diagnostic line with the fixed label plus `key=value` fields. `Updated Plan` remains the user-visible progress panel rendered in the CLI/tree style with checkmark and open-square status markers (U+2714 and U+25A1). Markdown checkbox syntax remains available only inside implementation-plan files for task tracking and must not be reused as the user-facing `Updated Plan` surface. Routing and evidence records must distinguish Pi/harness sidecar evidence from final verification evidence owned by the current owner session; saved structured evidence may keep ASCII threshold tokens, blocker tokens, schema keys, file names, and CLI arguments.
 
 Candidate child plans:
 
-1. `chinese_routing_trace_conversation_surface_plan` - require stable user-facing `Routing trace` and `Updated Plan` labels, allow Chinese explanatory content, and preserve `Updated Plan` checklist/status semantics.
-2. `routing_trace_structured_evidence_schema_plan` - keep machine-readable ASCII threshold/blocker tokens for saved evidence.
+1. `chinese_routing_trace_conversation_surface_plan` - require stable user-facing `Routing trace` and `Updated Plan` labels, allow Chinese explanatory content, keep `Routing trace` as a plain-text `key=value` diagnostic line, keep `Updated Plan` as the tree-style checkmark/open-square progress panel, and leave Markdown checkboxes only for implementation-plan task tracking.
+2. `routing_trace_structured_evidence_schema_plan` - keep machine-readable ASCII threshold/blocker tokens for saved evidence, while recording that structured trace evidence/checker data is not a Codex CLI progress-panel API.
 3. `prompt_independent_activation_parity_plan` - ensure routing does not depend on the user saying "parallel" or "experts".
 4. `expert_lifecycle_timeout_pacing_evidence_plan` - treat timeout/stall/pacing as non-evidence and require bounded handling.
 5. `langgraph_state_release_evidence_plan` - reject stale `running` state after completed LangGraph work.
@@ -469,11 +469,12 @@ Stage B acceptance after later confirmation:
 - New sessions do not read this file by default unless they handle this file, its child plans, or plans listed by this file.
 - The later same-machine multi-session target is for sessions to own their own commits and local `main` integration while `local-main-retire` locking keeps local `main` writes serial.
 - `--self-retire` must fail before merge when no valid ready ROB entry exists; ROB retire metadata must not remain a post-merge best-effort action.
-- Phase 4 child plans must write user-facing routing-trace and updated-plan examples in Chinese; internal tool names, schema keys, threshold tokens, blocker tokens, file names, and CLI arguments may remain ASCII.
+- Phase 4 child plans must preserve the confirmed conversation-surface split: `Routing trace` is a plain-text diagnostic line with fixed label plus `key=value` fields; `Updated Plan` is the user-visible tree-style progress panel with checkmark/open-square status markers; Markdown `- [x]` / `- [ ]` checkboxes stay only inside implementation-plan files for task tracking. Explanatory text may be Chinese, while internal tool names, schema keys, threshold tokens, blocker tokens, file names, and CLI arguments may remain ASCII.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-01 progress-surface boundary confirmation: branch `document-progress-surface-boundary-20260601` records the operator-confirmed split: `Routing trace` stays a plain-text `key=value` diagnostic line, `Updated Plan` is the only user-visible progress panel rendered with tree-style checkmark/open-square status markers, and Markdown checkboxes remain the implementation-plan-internal task tracking mode.
 - 2026-05-31 ROB retire preflight implementation: branch `harden-rob-retire-preflight-20260531` adds the self-retire ROB preflight hard gate, focused RED/GREEN coverage, and CI manifest registration; broader local gates remain pending before local-main integration.
 - 2026-05-31 ROB retire preflight governance: found that the old helper could fast-forward merge before failing retire metadata when `--self-retire` lacked the matching ROB entry; this reopens Phase 1A hardening and requires ready ROB entry plus gate state to fail closed before lock acquisition, rollback-ref creation, or merge.
 - 2026-05-31 Phase 4 final closeout: branch `close-phase4-final-20260531` synchronized the parent plan and all Phase 4 child plans so every Phase 4 checklist is closed, stale local-integration gates are replaced by the remote-publication gate, and Phase 5 is admissible without treating remote publication as authorized.
