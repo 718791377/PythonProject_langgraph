@@ -47,6 +47,7 @@ UPDATE_REQUIRED_FIELDS = (
 )
 
 PATH_FIELDS = {"install_path", "wrapper_path", "state_path", "rollback_pointer"}
+LOCAL_PATH_EVIDENCE_FIELDS = ("install_path", "wrapper_path", "state_path", "rollback_pointer")
 ALLOWED_REDACTION_STATUS = {"pass", "passed", "redacted", "no_secrets", "no-sensitive-data"}
 SENSITIVE_KEY_PARTS = (
     "cookie",
@@ -262,7 +263,23 @@ def update_summary(receipt: dict[str, Any], *, receipt_path: Path) -> dict[str, 
     }
 
 
-def response(ok: bool, action: str, *, blockers: list[str], **extra: Any) -> dict[str, Any]:
+def local_path_evidence(receipt: dict[str, Any]) -> dict[str, str]:
+    evidence: dict[str, str] = {}
+    for field in LOCAL_PATH_EVIDENCE_FIELDS:
+        value = receipt.get(field)
+        if isinstance(value, str) and value.strip():
+            evidence[field] = value
+    return evidence
+
+
+def response(
+    ok: bool,
+    action: str,
+    *,
+    blockers: list[str],
+    contains_raw_private_paths_in_output: bool = False,
+    **extra: Any,
+) -> dict[str, Any]:
     payload = {
         "schema_version": 1,
         "generated_at": now_iso(),
@@ -273,7 +290,7 @@ def response(ok: bool, action: str, *, blockers: list[str], **extra: Any) -> dic
         "mutates_user_level_state": False,
         "runs_external_tool": False,
         "reads_browser_data": False,
-        "contains_raw_private_paths_in_output": False,
+        "contains_raw_private_paths_in_output": contains_raw_private_paths_in_output,
         "contains_raw_secrets_in_output": False,
     }
     payload.update(extra)
@@ -302,14 +319,25 @@ def command_update_check(args: argparse.Namespace) -> dict[str, Any]:
     blockers = list(load_blockers)
     if receipt is not None:
         blockers.extend(validate_update_receipt(receipt, tool_name=args.tool_name, owner_lane=args.owner_lane))
+    if args.include_local_path_evidence and not args.local_evidence_authorized:
+        blockers.append("local_path_evidence_requires_explicit_authorization")
     ok = not blockers
+    include_local_evidence = bool(ok and receipt and args.include_local_path_evidence and args.local_evidence_authorized)
+    extra: dict[str, Any] = {}
+    if include_local_evidence and receipt is not None:
+        extra["local_path_evidence_scope"] = "local-only"
+        extra["local_path_evidence"] = local_path_evidence(receipt)
     return response(
         ok,
         "update-check",
         blockers=sorted(set(blockers)),
+        contains_raw_private_paths_in_output=include_local_evidence,
         update_receipt_valid=ok,
         rollback_ready=bool(ok and receipt and receipt.get("rollback_pointer")),
         update_summary=update_summary(receipt, receipt_path=receipt_path) if receipt else {},
+        local_path_evidence_requested=bool(args.include_local_path_evidence),
+        local_path_evidence_authorized=bool(args.local_evidence_authorized),
+        **extra,
     )
 
 
@@ -356,6 +384,16 @@ def build_parser() -> argparse.ArgumentParser:
     update.add_argument("--receipt", required=True)
     update.add_argument("--tool-name", default=None)
     update.add_argument("--owner-lane", default=None)
+    update.add_argument(
+        "--include-local-path-evidence",
+        action="store_true",
+        help="Include raw local install/wrapper/state/rollback paths for explicitly authorized local-only evidence.",
+    )
+    update.add_argument(
+        "--local-evidence-authorized",
+        action="store_true",
+        help="Explicitly authorize raw local path evidence in output for a local-only evidence artifact.",
+    )
     update.add_argument("--json", action="store_true")
 
     redact = sub.add_parser("redact-check", help="Validate that a receipt does not carry raw sensitive payloads.")

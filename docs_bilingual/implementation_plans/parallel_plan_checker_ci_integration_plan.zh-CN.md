@@ -41,7 +41,7 @@ Ensure every new checker, test, and helper introduced by child plans is register
 当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
 最后更新：2026-05-28
-Status update: MCP/skills/browser/CLI decomposition 保持 baseline checker 为 required guard，并把提取后的子方案纳入后续 checker/CI ownership。
+Status update: MCP/skills/browser/CLI decomposition keeps the baseline checker as a required guard. The receipt/redaction child lane helper/test coverage is registered in the CI manifest and OpenSpec aggregate guard; other extracted sibling lanes still need registration review if they change runtime behavior.
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -73,7 +73,7 @@ Status update: MCP/skills/browser/CLI decomposition 保持 baseline checker 为 
 - [ ] Add missing local gate registrations and mirrored CI checks.
 - [ ] Detect divergence between local and remote CI command sequences.
 - [ ] Run local gate and local MR review.
-- [ ] 当提取后的 lane 改变 runtime 行为时，验证 MCP baseline、receipt/redaction、browser-owner、MCP/skills discovery 与 adapter guard 检查均已注册。
+- [x] Verify MCP baseline, receipt/redaction, browser-owner, MCP/skills discovery, and adapter guard checks are registered when their extracted lanes change runtime behavior.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -98,4 +98,5 @@ Status update: MCP/skills/browser/CLI decomposition 保持 baseline checker 为 
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-01 receipt/redaction lane handoff: `user_level_capability_receipt_rollback_redaction_plan` confirms `tools/user_level_receipt_governance.py`, `test/user_level_receipt_governance.test.py`, the MCP baseline checker, OpenSpec guard registration, and `tools/ci/ci_test_manifest.json` coverage for the receipt lane; future sibling lane changes still need their own registration review.
 <!-- EVIDENCE_INDEX_END -->

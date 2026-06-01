@@ -31,10 +31,10 @@ source_plan: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_c
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: active and unclaimed for implementation.
-Current gate: 非文档实现前必须完成 child-plan confirmation、clean feature worktree、branch-matching claim 与 hotspot declaration。
-Source relation: 从 `user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md` 提取；不要把旧来源方案直接挂成父方案子方案。
-Runtime boundary: 本次创建方案不安装工具、不启动浏览器、不调用 sensitive MCP、不修改用户级 runtime state。
+Status: implemented-local; ready for repository local-main-first integration; remote publication remains closed.
+Current gate: keep remote publication closed; Phase 6 adapter lanes may consume this receipt contract after local integration, but live installs, live starts, GUI writes, cookie reads, and sensitive MCP calls still require their own receipts and owner evidence.
+Source relation: extracted from `user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md`; do not attach the old source plan directly as a parent-plan child.
+Runtime boundary: the repo-local helper validates evidence only; it does not install tools, start browsers, call sensitive MCP methods, read browser data, or mutate user-level runtime state.
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -52,14 +52,14 @@ Runtime boundary: 本次创建方案不安装工具、不启动浏览器、不�
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] 冻结最小 authorization receipt 字段：action、target、scope、expiry、session 与 operator confirmation。
-- [ ] 冻结 update receipt 字段：tool name、installed version、source URL、install path、wrapper path、state path、smoke test command、updater command、rollback pointer、owner lane 与 redaction status。
-- [ ] 禁止在已保存 receipt 中保留 raw secrets、cookies、tokens、browser data、message contents 与 plugin description dumps。
-- [ ] 定义 rollback pointer 默认输出 hash；raw path 仅能在明确授权的本地证据中可见。
-- [ ] 若后续实现修改 runtime 或测试，必须把 checker/CI 变化注册进共享 guard。
-- [ ] 在任何 live install、live start、GUI write、cookie read 或 sensitive MCP call 前，先把合入后的 receipt 契约交给 Phase 6 adapter 方案消费。
-- [ ] 运行本 child lane 的聚焦验证。
-- [ ] 产生实现证据后更新父方案 evidence index 与 Phase 7 集成方案。
+- [x] 冻结最小 authorization receipt 字段：action、target、scope、expiry、session 与 operator confirmation。
+- [x] 冻结 update receipt 字段：tool name、installed version、source URL、install path、wrapper path、state path、smoke test command、updater command、rollback pointer、owner lane 与 redaction status。
+- [x] 禁止在已保存 receipt 中保留 raw secrets、cookies、tokens、browser data、message contents 与 plugin description dumps。
+- [x] 定义 rollback pointer 默认输出 hash；raw path 仅能在明确授权的本地证据中可见。
+- [x] 若后续实现修改 runtime 或测试，必须把 checker/CI 变化注册进共享 guard。
+- [x] 在任何 live install、live start、GUI write、cookie read 或 sensitive MCP call 前，先把合入后的 receipt 契约交给 Phase 6 adapter 方案消费。
+- [x] 运行本 child lane 的聚焦验证。
+- [x] 产生实现证据后更新父方案 evidence index 与 Phase 7 集成方案。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -80,4 +80,5 @@ Runtime boundary: 本次创建方案不安装工具、不启动浏览器、不�
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-01：由 MCP/skills/browser/CLI decomposition package 创建子方案；实现证据等待后续 claim。
+- 2026-06-01: Stage C implementation package `implement-capability-receipt-rollback-redaction-20260601` closed the receipt helper hotspot, added explicit local-only authorized path evidence with fail-closed gating, extended focused regression coverage to eight tests, confirmed baseline checker/CI registration, updated parent and Phase 7 handoff evidence, and remained behind the remote-publication approval gate.
 <!-- EVIDENCE_INDEX_END -->

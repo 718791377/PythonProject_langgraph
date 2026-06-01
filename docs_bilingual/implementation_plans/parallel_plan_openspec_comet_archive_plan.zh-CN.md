@@ -41,7 +41,7 @@ Validate OpenSpec and Comet guard health and archive completed changes as one se
 当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
 Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
 最后更新：2026-05-28
-Status update: MCP/skills/browser/CLI decomposition 要求在相关 OpenSpec surface 归档前先记录来源方案提取证据。
+Status update: MCP/skills/browser/CLI decomposition requires source-plan extraction evidence before any archive decision for the related OpenSpec surfaces. The receipt/redaction child lane is implemented-local with stable-spec coverage already present; remaining archive decisions wait for sibling extracted lanes or a future source-plan archive package.
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -73,7 +73,7 @@ Status update: MCP/skills/browser/CLI decomposition 要求在相关 OpenSpec sur
 - [ ] Run official OpenSpec verification and Comet guard checks.
 - [ ] Promote stable spec deltas only after implementation validation is complete.
 - [ ] Run archive validation and local gate.
-- [ ] 归档 MCP/skills/browser/CLI OpenSpec 工作前，记录每个提取后 child lane 是 implemented、deferred 还是仍 active。
+- [ ] Before archiving MCP/skills/browser/CLI OpenSpec work, record whether each extracted child lane is implemented, deferred, or still active. Current receipt/redaction lane state: implemented-local; local integration evidence is recorded by the repository completion flow.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -98,4 +98,5 @@ Status update: MCP/skills/browser/CLI decomposition 要求在相关 OpenSpec sur
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-01 receipt/redaction archive note: `user_level_capability_receipt_rollback_redaction_plan` is implemented-local; no live user-level install or sensitive runtime action was performed, and the related stable spec already contains the generic receipt governance requirement. Archive timing remains a Phase 7 decision for the broader MCP/skills/browser/CLI source surface.
 <!-- EVIDENCE_INDEX_END -->

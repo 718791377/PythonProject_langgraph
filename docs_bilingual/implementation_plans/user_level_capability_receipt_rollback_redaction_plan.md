@@ -31,10 +31,10 @@ This file is a decomposed child implementation plan under `multi_plan_parallel_s
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active and unclaimed for implementation.
-Current gate: child-plan confirmation, clean feature worktree, branch-matching claim, and hotspot declaration before any non-document implementation.
+Status: implemented-local; ready for repository local-main-first integration, with remote publication still closed.
+Current gate: keep remote publication closed; Phase 6 adapter lanes may consume this receipt contract after local integration but still cannot perform live installs, live starts, GUI writes, cookie reads, or sensitive MCP calls without their own receipts and owner evidence.
 Source relation: extracted from `user_level_mcp_skills_browser_cli_governance_plan.md`; do not add the source plan as a direct child of the parent.
-Runtime boundary: this plan creation does not install tools, start browsers, call sensitive MCP methods, or mutate user-level runtime state.
+Runtime boundary: the repo-local helper validates evidence only; it does not install tools, start browsers, call sensitive MCP methods, read browser data, or mutate user-level runtime state.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -52,15 +52,24 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Freeze the minimal authorization receipt fields: action, target, scope, expiry, session, and operator confirmation.
-- [ ] Freeze the update receipt fields for tool name, installed version, source URL, install path, wrapper path, state path, smoke test command, updater command, rollback pointer, owner lane, and redaction status.
-- [ ] Keep raw secrets, cookies, tokens, browser data, message contents, and plugin description dumps out of stored receipts.
-- [ ] Define rollback pointer output as hash-first by default, with raw paths visible only in local evidence under explicit authorization.
-- [ ] Register any checker or CI changes in the shared guard if implementation later changes runtime or tests.
-- [ ] Hand Phase 6 adapter plans the merged receipt contract before any live install, live start, GUI write, cookie read, or sensitive MCP call is allowed.
-- [ ] Run focused validation for this child lane.
-- [ ] Update the parent evidence index and Phase 7 integration plans after implementation evidence exists.
+- [x] Freeze the minimal authorization receipt fields: action, target, scope, expiry, session, and operator confirmation.
+- [x] Freeze the update receipt fields for tool name, installed version, source URL, install path, wrapper path, state path, smoke test command, updater command, rollback pointer, owner lane, and redaction status.
+- [x] Keep raw secrets, cookies, tokens, browser data, message contents, and plugin description dumps out of stored receipts.
+- [x] Define rollback pointer output as hash-first by default, with raw paths visible only in local evidence under explicit authorization.
+- [x] Register any checker or CI changes in the shared guard if implementation later changes runtime or tests.
+- [x] Hand Phase 6 adapter plans this receipt contract before any live install, live start, GUI write, cookie read, or sensitive MCP call is allowed.
+- [x] Run focused validation for this child lane.
+- [x] Update the parent evidence index and Phase 7 integration plans after implementation evidence exists.
 <!-- TASK_BACKLOG_END -->
+
+## Implemented Contract
+
+- `tools/user_level_receipt_governance.py auth-check` validates the six minimal one-task authorization fields and fails closed for mismatched action, target, session, scope, expiry, or operator confirmation.
+- `tools/user_level_receipt_governance.py update-check` validates pinned install/update evidence, smoke status, rollback pointer, owner lane, and redaction status.
+- Default JSON output is hash-first for receipt paths, install paths, wrapper paths, state paths, and rollback pointers.
+- Raw install/wrapper/state/rollback paths are exposed only when a local-only evidence artifact explicitly requests both `--include-local-path-evidence` and `--local-evidence-authorized`; requesting raw local path evidence without the authorization flag fails closed.
+- `tools/user_level_receipt_governance.py redact-check` fails closed for raw secret, cookie, token, browser-data, message-content, password, API-key, and plugin-description-dump payloads.
+- Phase 6 adapter lanes consume this contract as a prerequisite. This child lane does not authorize any live user-level mutation or browser action.
 
 ## Validation Gates
 
@@ -80,4 +89,5 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-01: child plan created by the MCP/skills/browser/CLI decomposition package; implementation evidence is pending future claims.
+- 2026-06-01: Stage C implementation package `implement-capability-receipt-rollback-redaction-20260601` closed the receipt helper hotspot, added explicit local-only authorized path evidence with fail-closed gating, extended focused regression coverage to eight tests, confirmed baseline checker/CI registration, updated parent and Phase 7 handoff evidence, and remained behind the remote-publication approval gate.
 <!-- EVIDENCE_INDEX_END -->

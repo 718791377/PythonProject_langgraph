@@ -41,7 +41,7 @@ Owner session: unclaimed until implementation begins
 Current gate: wait for explicit user confirmation of this child plan before non-document implementation
 Stage C entry condition: user confirms this child implementation plan after local main integration
 Last updated: 2026-05-28
-Status update: MCP/skills/browser/CLI decomposition keeps the baseline checker as a required guard and adds extracted child plans to future checker/CI ownership.
+Status update: MCP/skills/browser/CLI decomposition keeps the baseline checker as a required guard. The receipt/redaction child lane helper/test coverage is registered in the CI manifest and OpenSpec aggregate guard; other extracted sibling lanes still need registration review if they change runtime behavior.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -73,7 +73,7 @@ Only one session may own each hotspot at a time:
 - [ ] Add missing local gate registrations and mirrored CI checks.
 - [ ] Detect divergence between local and remote CI command sequences.
 - [ ] Run local gate and local MR review.
-- [ ] Verify MCP baseline, receipt/redaction, browser-owner, MCP/skills discovery, and adapter guard checks are registered when their extracted lanes change runtime behavior.
+- [x] Verify MCP baseline, receipt/redaction, browser-owner, MCP/skills discovery, and adapter guard checks are registered when their extracted lanes change runtime behavior.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -98,4 +98,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-06-01 receipt/redaction lane handoff: `user_level_capability_receipt_rollback_redaction_plan` confirms `tools/user_level_receipt_governance.py`, `test/user_level_receipt_governance.test.py`, the MCP baseline checker, OpenSpec guard registration, and `tools/ci/ci_test_manifest.json` coverage for the receipt lane; future sibling lane changes still need their own registration review.
 <!-- EVIDENCE_INDEX_END -->
