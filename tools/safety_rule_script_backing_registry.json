@@ -311,7 +311,7 @@
       "guard_steps": [
         "check_remote_publication_approval_policy"
       ],
-      "description": "Keeps local integration approval separate from remote publication approval, prevents generic continue wording from authorizing GitLab/GitHub mutations, and treats explicit remote-publication wording as one approval for the normal GitLab MR/CI/merge plus GitHub sync green path while requiring new approval for exceptional remote operations."
+      "description": "Keeps automatic local integration separate from remote publication approval, prevents generic continue wording from authorizing GitLab/GitHub mutations, and treats explicit remote-publication wording as one approval for the normal GitLab MR/CI/merge plus GitHub sync green path while requiring new approval for exceptional remote operations."
     },
     {
       "id": "orchestration-activation-policy",
@@ -648,12 +648,14 @@
       "script_controls": [
         "tools/complete_local_flow_to_remote_gate.py",
         "tools/check_local_flow_scripted_enforcement.py",
+        "tools/cleanup_integrated_worktree.py",
+        "tools/install-codex-user-level-team-mode.ps1",
         "tools/run_openspec_guard.py"
       ],
       "guard_steps": [
         "check_local_flow_scripted_enforcement"
       ],
-      "description": "Backs the complete local flow through local main integration with a helper that runs local gates, creates a rollback ref, fast-forwards local main, and stops at the remote publication gate."
+      "description": "Backs automatic local-main integration with a helper that runs local gates, creates a rollback ref, fast-forwards local main, records completion evidence, safely cleans integrated local worktrees/branches by default, and stops at the remote publication gate."
     }
   ]
 }

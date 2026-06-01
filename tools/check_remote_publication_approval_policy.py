@@ -13,7 +13,8 @@ GUARD_STEP = "check_remote_publication_approval_policy"
 
 REQUIRED_SNIPPETS: dict[str, list[str]] = {
     "AGENTS.md": [
-        "Local `main` integration approval is not remote publication approval",
+        "implementation authorization plus passing local gates is sufficient for automatic local `main` integration",
+        "Automatic local `main` integration is not remote publication approval",
         "Generic continuation such as `continue`, `go on`, `proceed`, or a localized equivalent is not remote publication approval",
         "push to GitLab",
         "sync GitHub",
@@ -28,7 +29,8 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "protected-branch setting changes",
     ],
     "docs_bilingual/project_startup_summary.md": [
-        "Local integration approval does not authorize remote publication",
+        "Implementation authorization plus passing local gates is sufficient for automatic local `main` integration",
+        "Automatic local integration does not authorize remote publication",
         "remote-publication approval gate",
         "Generic `continue` / `go on` / `proceed` wording, including localized equivalents, is not enough",
         "push GitLab",
@@ -43,9 +45,10 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "protected-branch setting changes",
     ],
     "docs_bilingual/project_startup_summary.zh-CN.md": [
-        "本地集成批准不等于远端发布批准",
+        "Automatic local integration does not authorize remote publication",
+        "automatic local `main` integration",
         "remote-publication approval gate",
-        "泛化的 `continue` / `继续` 不足以授权远端发布",
+        "Generic continue/go on/proceed or localized equivalents are not remote publication approval",
         "推送 GitLab",
         "同步 GitHub",
         "一次性批准正常绿色路径的完整远端发布流程",
@@ -58,7 +61,8 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "修改 protected branch 设置",
     ],
     "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md": [
-        "local integration approval and remote publication approval as separate release decisions",
+        "tools/complete_local_flow_to_remote_gate.py --execute",
+        "automatic local integration and remote publication approval as separate release decisions",
         "remote-publication approval gate",
         "Generic continuation such as `continue`, `go on`, `proceed`, or a localized equivalent is not remote publication approval",
         "approved release record explicitly authorizes",
@@ -73,11 +77,12 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
         "protected-branch setting changes",
     ],
     "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md": [
-        "本地集成批准和远端发布批准是两个独立 release decisions",
+        "Automatic local integration and remote publication approval are separate release decisions",
+        "tools/complete_local_flow_to_remote_gate.py --execute",
         "remote-publication approval gate",
-        "泛化的 `continue`、`继续`、`go on` 或 `proceed` 不是远端发布批准",
-        "approved release record 明确授权",
-        "不得把泛化的继续指令当作批准",
+        "Generic continuation such as continue, go on, proceed, or localized equivalents is not remote publication approval",
+        "approved release record explicitly authorizes",
+        "Do not treat generic continuation as approval",
         "一次性批准正常绿色路径的完整远端发布流程",
         "推送或更新 GitLab publication branch",
         "CI 绿色后合并 MR",
@@ -89,7 +94,7 @@ REQUIRED_SNIPPETS: dict[str, list[str]] = {
     ],
     "openspec/specs/codex-repository-multi-session-worktree-isolation/spec.md": [
         "Remote publication SHALL require fresh explicit user approval",
-        "local `main` integration approval and remote publication approval as separate release decisions",
+        "automatic local `main` integration and remote publication approval as separate release decisions",
         "SHALL NOT push to GitLab",
         "Generic continuation language such as `continue`, `go on`, `proceed`, or a localized equivalent SHALL NOT be treated as remote publication approval",
         "Generic continuation after local integration",

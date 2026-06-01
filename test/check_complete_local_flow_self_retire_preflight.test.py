@@ -34,18 +34,18 @@ class CompleteLocalFlowSelfRetirePreflightTest(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         base_dir = Path(temp.name)
         root = base_dir / "repo"
-        worktree = base_dir / "feature-wt"
         root.mkdir()
         self.git_ok(root, "init", "-b", "main")
         self.git_ok(root, "config", "user.email", "codex@example.invalid")
         self.git_ok(root, "config", "user.name", "Codex Test")
         (root / "README.md").write_text("base\n", encoding="utf-8")
-        (root / ".gitignore").write_text(".omx/\n", encoding="utf-8")
+        (root / ".gitignore").write_text(".omx/\n.worktrees/\n", encoding="utf-8")
         self.git_ok(root, "add", "README.md", ".gitignore")
         self.git_ok(root, "commit", "-m", "base")
         base_main = self.git_ok(root, "rev-parse", "main")
 
         branch = "feature/self-retire"
+        worktree = root / ".worktrees" / "feature-self-retire"
         self.git_ok(root, "worktree", "add", "-b", branch, str(worktree), "main")
         (worktree / "feature.txt").write_text("feature\n", encoding="utf-8")
         self.git_ok(worktree, "add", "feature.txt")
@@ -123,7 +123,38 @@ class CompleteLocalFlowSelfRetirePreflightTest(unittest.TestCase):
             text=True,
             encoding="utf-8",
             errors="replace",
-            cwd=str(worktree),
+            cwd=str(root),
+        )
+
+    def run_standard_flow(
+        self,
+        root: Path,
+        worktree: Path,
+        branch: str,
+        *extra_args: str,
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--root",
+                str(root),
+                "--worktree",
+                str(worktree),
+                "--branch",
+                branch,
+                "--execute",
+                "--skip-local-gate",
+                "--skip-local-mr-review",
+                "--json",
+                *extra_args,
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            cwd=str(root),
         )
 
     def assert_failed_before_local_main_mutation(
@@ -188,6 +219,51 @@ class CompleteLocalFlowSelfRetirePreflightTest(unittest.TestCase):
         self.assertEqual(entry["retire_mode"], "self_retire_lock")
         self.assertEqual(entry["retire_owner_session_id"], "session-self")
         self.assertTrue(entry["retire_lock_nonce"])
+        self.assertFalse(worktree.exists())
+        deleted_branch = self.run_git(root, "rev-parse", "--verify", branch)
+        self.assertNotEqual(deleted_branch.returncode, 0)
+        preserved_claim = root / ".omx" / "session-claims" / "completed" / "feature__self-retire.json"
+        self.assertTrue(preserved_claim.exists())
+        preserved = json.loads(preserved_claim.read_text(encoding="utf-8"))
+        self.assertEqual(preserved["status"], "completed")
+        self.assertFalse(preserved["remote_publication_performed"])
+
+    def test_standard_execute_auto_cleans_integrated_worktree_by_default(self) -> None:
+        _temp, root, worktree, branch, _base_main, feature_head = self.make_repo_with_feature_worktree()
+        self.write_receipt(worktree)
+
+        result = self.run_standard_flow(root, worktree, branch)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"], payload)
+        self.assertTrue(payload["cleanup_result"]["executed"], payload)
+        self.assertEqual(self.git_ok(root, "rev-parse", "main"), feature_head)
+        self.assertFalse(worktree.exists())
+        deleted_branch = self.run_git(root, "rev-parse", "--verify", branch)
+        self.assertNotEqual(deleted_branch.returncode, 0)
+        preserved_claim = root / ".omx" / "session-claims" / "completed" / "feature__self-retire.json"
+        self.assertTrue(preserved_claim.exists())
+        preserved = json.loads(preserved_claim.read_text(encoding="utf-8"))
+        self.assertEqual(preserved["status"], "completed")
+        self.assertEqual(preserved["remote_sync_status"], "not_authorized:remote_publication_gate_closed")
+
+    def test_preserve_carrier_keeps_worktree_and_branch_after_local_merge(self) -> None:
+        _temp, root, worktree, branch, _base_main, feature_head = self.make_repo_with_feature_worktree()
+        self.write_receipt(worktree)
+
+        result = self.run_standard_flow(root, worktree, branch, "--preserve-carrier")
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"], payload)
+        self.assertIsNone(payload["cleanup_result"])
+        self.assertEqual(self.git_ok(root, "rev-parse", "main"), feature_head)
+        self.assertTrue(worktree.exists())
+        self.assertEqual(self.git_ok(root, "rev-parse", "--verify", branch), feature_head)
+        claim = json.loads((worktree / ".omx" / "session-claims" / "feature__self-retire.json").read_text(encoding="utf-8"))
+        self.assertEqual(claim["status"], "completed")
+        self.assertEqual(claim["completion"]["cleaned_worktree"], "preserved-for-audit")
 
 
 if __name__ == "__main__":
