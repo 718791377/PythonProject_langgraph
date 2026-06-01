@@ -271,7 +271,7 @@ def load_config(config_path: str | Path) -> tuple[dict[str, Any] | None, dict[st
 
 
 def configured_project_root(config: dict[str, Any], fallback: str | Path | None = None) -> Path:
-    value = config.get("target_project_root") or fallback or "."
+    value = config.get("runtime_project_root") or fallback or config.get("target_project_root") or "."
     return Path(str(value)).expanduser().resolve(strict=False)
 
 
@@ -545,6 +545,7 @@ def build_project_default_card(
     status_payload: dict[str, Any] | None,
     config: dict[str, Any],
     *,
+    project_root: str | Path | None = None,
     pending_scope: str | None = None,
     pending_scope_key: str | None = None,
 ) -> dict[str, Any]:
@@ -563,12 +564,12 @@ def build_project_default_card(
         "effective_label": state_label(effective),
         "actions": {
             "enable_project_default": decorate_action_for_button(
-                build_action_plan(config, "project-on"),
+                build_action_plan(config, "project-on", project_root=project_root),
                 pending_scope=pending_scope,
                 pending_scope_key=pending_scope_key,
             ),
             "disable_project_default": decorate_action_for_button(
-                build_action_plan(config, "project-off"),
+                build_action_plan(config, "project-off", project_root=project_root),
                 pending_scope=pending_scope,
                 pending_scope_key=pending_scope_key,
             ),
@@ -587,6 +588,7 @@ def normalize_session_row(
     row: Any,
     index: int,
     *,
+    project_root: str | Path | None = None,
     pending_scope: str | None = None,
     pending_scope_key: str | None = None,
 ) -> dict[str, Any]:
@@ -611,12 +613,12 @@ def normalize_session_row(
         raw_id = str(session_id)
         actions = {
             "enable_session": decorate_action_for_button(
-                build_action_plan(config, "session-on", session_id=raw_id),
+                build_action_plan(config, "session-on", session_id=raw_id, project_root=project_root),
                 pending_scope=pending_scope,
                 pending_scope_key=pending_scope_key,
             ),
             "disable_session": decorate_action_for_button(
-                build_action_plan(config, "session-off", session_id=raw_id),
+                build_action_plan(config, "session-off", session_id=raw_id, project_root=project_root),
                 pending_scope=pending_scope,
                 pending_scope_key=pending_scope_key,
             ),
@@ -645,6 +647,7 @@ def build_session_table(
     config: dict[str, Any],
     sessions_payload: dict[str, Any] | None,
     *,
+    project_root: str | Path | None = None,
     pending_scope: str | None = None,
     pending_scope_key: str | None = None,
 ) -> dict[str, Any]:
@@ -675,6 +678,7 @@ def build_session_table(
             config,
             row,
             index,
+            project_root=project_root,
             pending_scope=pending_scope,
             pending_scope_key=pending_scope_key,
         )
@@ -725,14 +729,16 @@ def build_view_model(
     status_payload: dict[str, Any] | None = None,
     pyside6_available: bool | None = None,
     pending_scope: str | None = None,
+    project_root: str | Path | None = None,
 ) -> dict[str, Any]:
-    root = configured_project_root(config)
+    root = configured_project_root(config, project_root)
     pyside6_status = "import_ok" if (is_pyside6_available() if pyside6_available is None else pyside6_available) else "pyside6_unavailable"
     pending_scope_key = str(pending_scope) if pending_scope and ":" in pending_scope else None
     pending_scope_name = pending_scope.split(":", 1)[0] if pending_scope and ":" in pending_scope else pending_scope
     session_table = build_session_table(
         config,
         sessions_payload,
+        project_root=root,
         pending_scope=pending_scope_name,
         pending_scope_key=pending_scope_key,
     )
@@ -766,11 +772,12 @@ def build_view_model(
             project_status,
             status_payload,
             config,
+            project_root=root,
             pending_scope=pending_scope_name,
             pending_scope_key=pending_scope_key,
         ),
         "session_table": session_table,
-        "refresh_action": build_refresh_plan(config),
+        "refresh_action": build_refresh_plan(config, project_root=root),
         "runtime": {
             "pyside6_status": pyside6_status,
             "shared_runtime_root": config.get("shared_runtime_root"),
@@ -805,9 +812,11 @@ def build_gui_preflight(
     sessions_payload: dict[str, Any] | None = None,
     status_payload: dict[str, Any] | None = None,
     pyside6_available: bool | None = None,
+    project_root: str | Path | None = None,
 ) -> dict[str, Any]:
     view_model = build_view_model(
         config,
+        project_root=project_root,
         project_status=project_status,
         sessions_payload=sessions_payload,
         status_payload=status_payload,
@@ -834,14 +843,15 @@ def run_cli_json(
     *,
     session_id: str | None = None,
     timeout: int = 20,
+    project_root: str | Path | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-    plan = build_action_plan(config, action, session_id=session_id)
+    plan = build_action_plan(config, action, session_id=session_id, project_root=project_root)
     if not plan.get("ok"):
         return None, stable_blocker(str(plan["token"]), str(plan.get("message") or "Cannot build action plan."))
     try:
         result = subprocess.run(
             plan["argv"],
-            cwd=str(configured_project_root(config)),
+            cwd=str(configured_project_root(config, project_root)),
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -876,8 +886,10 @@ def execute_write_action_with_readback(
     *,
     session_id: str | None = None,
     timeout: int = 20,
+    project_root: str | Path | None = None,
 ) -> dict[str, Any]:
-    plan = build_action_plan(config, action, session_id=session_id)
+    root = configured_project_root(config, project_root)
+    plan = build_action_plan(config, action, session_id=session_id, project_root=root)
     if not plan.get("ok"):
         return {
             "schema_version": SCHEMA_VERSION,
@@ -901,8 +913,8 @@ def execute_write_action_with_readback(
             "button_state_during_command": {},
         }
     pending_key = str(plan.get("scope_key") or plan.get("scope") or "")
-    pending_view_model = build_view_model(config, pending_scope=pending_key)
-    write_payload, write_error = run_cli_json(config, action, session_id=session_id, timeout=timeout)
+    pending_view_model = build_view_model(config, pending_scope=pending_key, project_root=root)
+    write_payload, write_error = run_cli_json(config, action, session_id=session_id, timeout=timeout, project_root=root)
     write_contract_errors: list[dict[str, Any]] = []
     if write_error is None:
         write_contract_errors = validate_write_cli_payload(action, write_payload)
@@ -911,7 +923,7 @@ def execute_write_action_with_readback(
     for read_plan in plan.get("readback_after_write", []):
         read_action = str(read_plan.get("action"))
         read_session_id = session_id if read_action == "status" and action.startswith("session-") else None
-        payload, err = run_cli_json(config, read_action, session_id=read_session_id, timeout=timeout)
+        payload, err = run_cli_json(config, read_action, session_id=read_session_id, timeout=timeout, project_root=root)
         readback[read_action] = payload
         if err:
             readback_errors.append(err)

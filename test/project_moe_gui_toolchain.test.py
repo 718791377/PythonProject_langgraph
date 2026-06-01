@@ -2201,7 +2201,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         from project_moe_gui import gui_shell
 
         config = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").read_text(encoding="utf-8-sig"))
-        return gui_shell.execute_write_action_with_readback(config, action, session_id=session_id)
+        return gui_shell.execute_write_action_with_readback(config, action, session_id=session_id, project_root=project)
 
     def test_phase2c_fixture_a_full_install_check_update_status_flow(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -2216,6 +2216,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.git_commit_all(project)
             self.assertEqual(install_payload["mode"], "apply")
             self.assertEqual(install_payload["target_project_root"], str(project.resolve()))
+            installed_config = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").read_text(encoding="utf-8-sig"))
+            self.assertNotIn("target_project_root", installed_config)
+            self.assertEqual(installed_config["installed_target_project_root"], str(project.resolve()))
 
             _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
             self.assertEqual(check_payload["status"], "up_to_date")
