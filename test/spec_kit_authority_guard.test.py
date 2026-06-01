@@ -62,6 +62,20 @@ class SpecKitAuthorityGuardTest(unittest.TestCase):
         self.assertEqual(payload["check_name"], "spec_kit_authority_guard")
         self.assertEqual(payload["counts"]["findings"], 0)
 
+    def test_ignores_linked_worktree_carrier_directory(self) -> None:
+        root = self.make_root("spec-kit-worktrees-excluded")
+        self.write(
+            root,
+            ".worktrees/old-branch/docs_bilingual/governance/usage.md",
+            "Spec Kit is the primary governance authority for this repository.\n",
+        )
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["findings"], 0)
+
     def test_blocks_specify_init_force_even_when_mentioned_in_scripts(self) -> None:
         root = self.make_root("spec-kit-force")
         self.write(root, "tools/bootstrap.ps1", "specify init --force\n")

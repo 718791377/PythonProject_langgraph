@@ -37,6 +37,7 @@ SPECIFY_FORCE_RE = re.compile(r"\bspecify(?:\.exe|\.cmd)?\s+init\b[^\n]*\s--forc
 
 EXCLUDED_DIR_NAMES = {
     ".git",
+    ".worktrees",
     ".hg",
     ".svn",
     "__pycache__",
