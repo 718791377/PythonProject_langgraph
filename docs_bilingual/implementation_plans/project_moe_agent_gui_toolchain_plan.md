@@ -6,8 +6,8 @@ status: active
 plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 created_at: 2026-05-20
-updated_at: 2026-05-28
-last_reviewed_at: 2026-05-28
+updated_at: 2026-06-01
+last_reviewed_at: 2026-06-01
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -41,6 +41,7 @@ This document has been refactored from a loose status note plus scattered task l
 | Ready / Bootstrap / Repair lane | complete | Section 13 |
 | Phase 1 CLI / readiness contract | complete | Section 9 |
 | Phase 2 PySide6 GUI contract | complete | Section 10 |
+| A/B validation route | confirmed | Sections 0, 1, 13, 14, 15 |
 | JSON state model | complete | Section 11 |
 | Security, privacy, rollback, uninstall | complete | Section 12 |
 | Implementation item granularity | reordered | Section 14 |
@@ -51,6 +52,7 @@ Status interpretation:
 - `status: draft`: this is still an implementation plan, not a completed runtime capability claim.
 - `plan_readiness: full-comet-structure-ready-for-implementation-slicing`: the structure, boundaries, and task granularity are ready for code implementation slicing.
 - `D:\PythonProject_paper_suggest`: still only a Phase 1 candidate project; the latest recorded static-only evidence is `blocked / repair-lane / control_mode_allowed=false`, so it must not be labeled GUI-ready.
+- 2026-06-01 decision: A=`D:\PythonProject_paper_suggest` remains the real Phase 1 owner, and B=`D:\PythonProject_langgraph` remains the Phase 2 toolchain source of truth. Next, repair A's real Phase 1 contract blockers, then use B's Phase 2 dry-run, install, and GUI acceptance evidence. Do not reimplement a full A business Phase 1 inside B as a substitute for target-project evidence.
 - Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, only OpenSpec artifacts, repo-local guards, and local validation can be used as fallback evidence.
 
 ## 1. Relationship Model and Naming Boundary
@@ -63,6 +65,13 @@ Status interpretation:
 | Phase 2 GUI | PySide6 control surface maintained by this repository | `tools/project_moe_gui_toolchain/` | After installation it controls only the installed target project |
 | Readiness checker | Read-only gate before install/control | This repository's toolchain | Emits go/no-go and blockers only |
 | `.omx/state/<namespace>/` | Target-project MOE state | Target-project repo-local state | No cross-project scanning, no writes to other projects |
+
+### 1.1 MOE experts, subagents, and skills boundary
+
+- A MOE expert is an expert lens / routing semantic, such as blind-review expert, advisor interrogation expert, AIGC-risk expert, or novelty gatekeeper. It describes which professional perspective is used; it is not an execution carrier by itself.
+- A subagent / native agent is an execution carrier or role thread, such as Codex built-in roles, user-level agent TOMLs, or project-local `.codex/agents/*.toml`. One subagent may contain multiple MOE expert lenses, and the main session may also use MOE expert lenses directly.
+- Therefore MOE experts and subagents form a composable matrix relationship. They are not synonyms and are not mutually exclusive; calling a MOE lens must not be recorded as native subagent evidence.
+- Calling MOE experts does not require dedicated skills. `MOE.md`, agent TOML, or main-session context can carry MOE routing rules; skills are optional workflow wrappers only, and skill/profile invocation cannot replace native expert evidence.
 
 Default names:
 
@@ -104,8 +113,9 @@ Non-goals:
 
 Current strategy:
 
-- The initial slice was documentation / plan work; the current continuation includes one bounded runtime slice for guarded uninstall `--apply`.
-- This work does not install PySide6, roll out to real target projects, or write user-level directories.
+- The initial slice was documentation / plan work; the current continuation includes bounded Project MOE GUI toolchain runtime work and target-project readiness evidence closure.
+- The next validation route is "repair A's real Phase 1, then validate B's Phase 2 installation", not "copy A's business Phase 1 into B".
+- Until A's readiness checker outputs `control_mode_allowed=true`, do not install the PySide6 GUI into A, start real GUI control, or write user-level directories.
 - This work is authorized for local feature commit and local `main` integration only; remote publication still requires a later explicit user instruction.
 
 ### 3.1 Comet management record, phase-gate, and Monitoring semantics
@@ -467,7 +477,15 @@ The readiness payload must include:
 }
 ```
 
-`D:\PythonProject_paper_suggest` is still categorized as a Ready Lane candidate, but the latest static evidence is still blocked / Repair Lane; only a readiness checker that explicitly outputs ready may unlock real GUI installation and control.
+`D:\PythonProject_paper_suggest` is still categorized as a Ready Lane candidate, but the 2026-06-01 read-only recheck is still blocked with `control_mode_allowed=false`; only a readiness checker that explicitly outputs ready may unlock real GUI installation and control.
+
+Current A blockers must be fixed in this order:
+
+1. Add the standard `[project]`, `[moe]`, `[dispatch]`, and `[extensions]` sections to A's `.codex/agents/thesis-moe-mentor.toml`, aligned to `state_namespace=thesis_moe`, repo-local scope, manual-enable behavior, brief-based dispatch, and fallback boundaries.
+2. Repair A's `thesis-moe-on.cmd` / `thesis-moe-off.cmd`: pass `--json` consistently and remove arbitrary argument passthrough, redirection, shell chaining, and other unsafe surfaces.
+3. Add a MOE `status --json` activation checkpoint to A's startup / launcher surface, covering startup, resume, continue, reload, and phase-change semantics.
+4. Repair A's `tools/thesis_moe_mode.py list-sessions --json` envelope: emit `cli_contract=project-moe-cli-v1` and include a stable `token` in every session row.
+5. Only after A passes static-only and execute-read-contract readiness may B's `install_project_moe_gui.py --dry-run --json` be run against A; only a blocker-free dry-run may unlock real install and GUI acceptance.
 
 ## 14. Implementation Items (ordered, fine-grained)
 
@@ -479,6 +497,8 @@ The readiness payload must include:
 - [x] Define that the GUI never edits state JSON directly.
 - [x] Define the Ready / Ready-candidate / Bootstrap / Repair lane model.
 - [x] Define that `D:\PythonProject_paper_suggest` cannot jump into GUI control just because a Phase 1 candidate exists.
+- [x] Define the next route: repair A's real Phase 1 contract first, then use B's Phase 2 dry-run, install, and GUI acceptance; do not reimplement a full A business Phase 1 inside B as substitute evidence.
+- [x] Define the MOE expert / subagent / skills boundary: MOE is an expert lens, subagent is an execution carrier, and skills are optional workflow wrappers.
 - [x] Define that missing Comet bash scripts must not be faked.
 - [x] Recast this document into the new Comet executable-plan structure.
 - [x] Add Comet management-record, phase-gate, Monitoring-return, evidence-retention, and approval-boundary semantics to this plan.
@@ -543,11 +563,13 @@ The readiness payload must include:
 
 #### Slice 6: target-project acceptance and rollout
 
-- [ ] Record static-only evidence for the target project.
-- [ ] Record read-contract evidence for the target project.
+- [ ] Repair Phase 1 blockers in an A target-project adaptation worktree: Agent TOML extension sections, wrapper JSON/safety boundary, startup activation hook, `list-sessions` CLI contract, and session row tokens.
+- [ ] Record A's repaired static-only readiness evidence.
+- [ ] Record A's repaired read-contract readiness evidence.
+- [ ] After A readiness outputs `control_mode_allowed=true`, record B's Phase 2 installer dry-run evidence.
+- [ ] After installer dry-run has no blockers, record A's real install receipt and rollback pointer.
 - [ ] Record write-fixture evidence for project on/off, session on/off, no-op, invalid record skip, lock timeout, and atomic write.
 - [ ] Only after fresh Ready Lane evidence exists, allow GUI control for that target project.
-- [ ] Record the target install receipt and rollback pointer.
 
 ### 14.3 File ownership map
 
@@ -604,6 +626,10 @@ Target-project readiness verification:
 - static-only mode must never execute the target CLI.
 - no-exec-cli mode must not create side effects in target state.
 - read-contract execution mode must check `project-status`, `list-sessions`, `status`, and `assert-on`.
+- Current required A commands:
+  - static-only A readiness evidence: `python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --startup-hook project-background.cmd --json --static-only`
+  - execute-read-contract A readiness evidence: `python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --startup-hook project-background.cmd --json`
+  - B Phase 2 installer dry-run evidence: `python .\tools\project_moe_gui_toolchain\install_project_moe_gui.py --target-project D:\PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --dry-run --json`
 - write fixtures must cover project on/off, session on/off, manual override retention, invalid-record skip, no-op, lock timeout, and atomic write.
 
 Human acceptance:
@@ -627,6 +653,7 @@ When implementation moves from docs to code, also update/check:
 
 | Risk | Default decision |
 | --- | --- |
+| Copying A's business Phase 1 into B for convenient validation | Forbidden as substitute evidence for A; B fixtures may only validate checker/installer regressions, not real target-project acceptance |
 | Target project has Phase 1 but it is incomplete | Enter Repair Lane; do not allow GUI control |
 | Target CLI read commands may have side effects | Use `--static-only` / `--no-exec-cli` first |
 | Session ids can only be generated | Treat them as low-confidence and do not use them as hard identity isolation |
