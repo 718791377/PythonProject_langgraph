@@ -49,11 +49,23 @@ related_docs:
 
 状态解释：
 
-- `status: draft`：本文仍是实施方案，不是已完成运行时能力声明。
+- `status: active`：本文是当前可执行实施方案；它不等于 Project MOE GUI 运行时能力已经全部完成。
 - `plan_readiness: full-comet-structure-ready-for-implementation-slicing`：结构、边界、任务颗粒度已满足继续切分代码实施的入口要求。
-- `D:\PythonProject_paper_suggest`：当前只能视为 Phase 1 候选项目；截至已记录的 static-only evidence，仍是 `blocked / repair-lane / control_mode_allowed=false`，不得被误标为 GUI ready。
-- 2026-06-01 决策：A=`D:\PythonProject_paper_suggest` 保留为真实 Phase 1 owner，B=`D:\PythonProject_langgraph` 保留为 Phase 2 toolchain source of truth；下一步先修 A 的真实 Phase 1 contract blockers，再用 B 的 Phase 2 dry-run、安装和 GUI 验收。不得为了验证方便在 B 重新实现一套完整 A 业务 Phase 1 来替代目标项目证据。
+- `D:\PythonProject_paper_suggest`：A 仍是 Phase 1 owner，不在 B 重新实现一套 A 业务 Phase 1。A 的主目录是否 GUI-ready，必须以后续 A 本地 main 集成、真实安装 receipt 与 rollback pointer 为准。
+- 2026-06-01 决策：A=`D:\PythonProject_paper_suggest` 保留为真实 Phase 1 owner，B=`D:\PythonProject_langgraph` 保留为 Phase 2 toolchain source of truth；本次先在 A 当前 main 基线派生的修复 worktree 修 Phase 1 contract blockers，再用 B 的 Phase 2 installer dry-run 验证。不得为了验证方便在 B 重新实现一套完整 A 业务 Phase 1 来替代目标项目证据。
+- 2026-06-01 证据：旧 worktree `paper_suggest-thesis-moe-phase1` 已判定为陈旧证据，不再作为 A 现状；新 A 修复 worktree `D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601` 提交 `560da0e 功能：修复论文 MOE 阶段一就绪契约`。
+- 2026-06-01 隐私边界：A 的 `MOE.md` 是 ignored/private 文件，仅为 readiness validation 被复制到 A 修复 worktree；不得提交、不得复制全文到 B 文档或工具链。
+- 2026-06-01 readiness 证据：A 修复 worktree static-only 输出 `ok=true / readiness_status=static-ready-candidate / adaptation_lane=ready-candidate / control_mode_allowed=false`，其中 `readiness_status` 表示 Phase 1 契约分类，`adaptation_lane` 表示后续处理 lane，`control_mode_allowed=false` 表示只能展示或 dry-run；execute-read-contract 输出 `ok=true / token=ok / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true`，其中 `token=ok` 是稳定机器可读成功 token，`control_mode_allowed=true` 表示在具备 receipt 与 rollback 证据后可进入受控安装/控制路径，已校验 `project-status`、`list-sessions`、`status`、`assert-on`。
+- 2026-06-01 Phase 2 证据：B installer dry-run 对 A 修复 worktree 输出 `ok=true / token=ok / mode=dry-run / toolchain_version=0.2.20 / cli_contract=project-moe-cli-v1 / blockers=[]`，planned writes 为 `tools/project_moe_gui/launcher.py`、`project_moe_gui.config.json`、`README.md` 与 `project-moe-gui.cmd`。
 - 当前 Comet change 是 `refine-project-moe-gui-plan-comet-structure`。如果 bash 不可用，只能用 OpenSpec artifacts、repo-local guard 与本地验证作为 fallback evidence。
+
+就地字段解释：
+
+- `readiness_status` 表示目标项目 Phase 1 契约的最终 readiness 分类；`static-ready-candidate` 表示只读静态检查已满足候选条件但尚未执行目标 CLI 读契约，`ready` 表示读契约已通过。
+- `adaptation_lane` 表示目标项目后续处理 lane；`ready-candidate` 只能继续验证，`ready` 才允许进入安装或 GUI 控制的下一步。
+- `control_mode_allowed` 表示 GUI 写入/控制是否允许；`false` 只能展示或 dry-run，`true` 仍需安装 receipt、rollback pointer 与目标项目验收后才代表可实际操作。
+- `token=ok` 是目标 CLI 或安装器返回的稳定机器可读结果 token，用于避免仅凭自然语言判断成功。
+- `blockers=[]` 表示当前 dry-run 没有阻断项；它不是实际安装完成证据。
 
 ## 1. 关系模型与命名边界
 
@@ -565,10 +577,17 @@ readiness payload 必须包含：
 
 #### Slice 6：目标项目验收与推广
 
-- [ ] 在 A 目标项目适配 worktree 中修复 Phase 1 blockers：Agent TOML 扩展段、wrapper JSON/安全边界、startup activation hook、`list-sessions` CLI contract 与 session row token。
-- [ ] 记录 A 修复后的 static-only readiness 证据。
-- [ ] 记录 A 修复后的 read-contract readiness 证据。
-- [ ] A readiness 输出 `control_mode_allowed=true` 后，记录 B 的 Phase 2 installer dry-run 证据。
+- [x] 判定旧 A worktree `paper_suggest-thesis-moe-phase1` 为陈旧证据，不再作为当前 A 现状。
+- [x] 从 A 当前 `main` 派生新的修复 worktree：`D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601`。
+- [x] 保持 A 的 `MOE.md` 为 ignored/private 文件，仅在 A 修复 worktree 本地用于 readiness validation，不提交、不复制全文到 B。
+- [x] 在 A 修复 worktree 修复 Agent TOML 扩展段：`[project]`、`[moe]`、`[dispatch]`、`[extensions]`。
+- [x] 在 A 修复 worktree 修复 wrapper JSON/安全边界：`thesis-moe-on.cmd` 与 `thesis-moe-off.cmd` 收敛为单条 JSON CLI 调用，去除噪声、等待与暂停。
+- [x] 在 A 修复 worktree修复 `list-sessions` CLI contract 与 session row stable token，并为 corrupt-state token 增加稳定归一化。
+- [x] 提交 A 修复分支：`560da0e 功能：修复论文 MOE 阶段一就绪契约`。
+- [x] 记录 A 修复后的 static-only readiness 证据：`ok=true / static-ready-candidate / ready-candidate / control_mode_allowed=false`。
+- [x] 记录 A 修复后的 read-contract readiness 证据：`ok=true / token=ok / ready / control_mode_allowed=true`。
+- [x] A readiness 输出 `control_mode_allowed=true` 后，记录 B 的 Phase 2 installer dry-run 证据：`ok=true / token=ok / blockers=[] / mode=dry-run`。
+- [ ] 如 A 后续策略要求 startup activation hook，把 hook 作为 A 单独修复项补齐并重新运行 readiness；本次 read-contract acceptance 未把 hook 当作通过前提。
 - [ ] installer dry-run 无 blocker 后，再记录 A 的真实安装 receipt 与 rollback pointer。
 - [ ] 记录写入 fixture 证据：project on/off、session on/off、no-op、invalid record skip、lock timeout、atomic write。
 - [ ] 只有产生新的 Ready Lane 证据后，才允许该目标项目进入 GUI 控制。
@@ -628,10 +647,17 @@ python .\tools\run_openspec_guard.py --root .
 - static-only 模式不得执行目标 CLI。
 - no-exec-cli 模式不得产生目标状态副作用。
 - 执行读契约模式必须检查 `project-status`、`list-sessions`、`status`、`assert-on`。
-- 对 A 的当前必查命令：
-  - static-only A readiness 证据：`python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --startup-hook project-background.cmd --json --static-only`
-  - execute-read-contract A readiness 证据：`python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --startup-hook project-background.cmd --json`
-  - B Phase 2 installer dry-run 证据：`python .\tools\project_moe_gui_toolchain\install_project_moe_gui.py --target-project D:\PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --dry-run --json`
+- 2026-06-01 对 A 修复 worktree 已执行的命令：
+  - static-only A readiness 证据：`python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --json --static-only`
+  - execute-read-contract A readiness 证据：`python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --json`
+  - B Phase 2 installer dry-run 证据：`python .\tools\project_moe_gui_toolchain\install_project_moe_gui.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --dry-run --json`
+- 2026-06-01 对 A 修复 worktree 已记录的结果：
+  - A 修复提交：`560da0e 功能：修复论文 MOE 阶段一就绪契约`。
+  - static-only：`ok=true / static-ready-candidate / ready-candidate / control_mode_allowed=false`。
+  - execute-read-contract：`ok=true / token=ok / ready / control_mode_allowed=true`。
+  - installer dry-run：`ok=true / token=ok / blockers=[] / planned_writes=4`。
+- 字段含义：`static-ready-candidate` 是只读静态候选，`ready` 是读契约通过，`control_mode_allowed=true` 只代表可进入受控安装/控制路径，`planned_writes=4` 只代表 dry-run 将创建 4 个受管文件而非已经写入。
+- 对 A 主目录或 A 本地 main 的后续验收必须重新运行上述命令，不得把修复 worktree 的结果直接当作已安装主目录 receipt。
 - 写入 fixture 必须覆盖 project on/off、session on/off、manual override 保留、invalid record skip、no-op、lock timeout、atomic write。
 
 人工验收：

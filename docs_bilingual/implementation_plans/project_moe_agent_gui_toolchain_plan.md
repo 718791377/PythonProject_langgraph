@@ -49,11 +49,23 @@ This document has been refactored from a loose status note plus scattered task l
 
 Status interpretation:
 
-- `status: draft`: this is still an implementation plan, not a completed runtime capability claim.
+- `status: active`: this is the current executable implementation plan; it is not a claim that the Project MOE GUI runtime is fully complete.
 - `plan_readiness: full-comet-structure-ready-for-implementation-slicing`: the structure, boundaries, and task granularity are ready for code implementation slicing.
-- `D:\PythonProject_paper_suggest`: still only a Phase 1 candidate project; the latest recorded static-only evidence is `blocked / repair-lane / control_mode_allowed=false`, so it must not be labeled GUI-ready.
-- 2026-06-01 decision: A=`D:\PythonProject_paper_suggest` remains the real Phase 1 owner, and B=`D:\PythonProject_langgraph` remains the Phase 2 toolchain source of truth. Next, repair A's real Phase 1 contract blockers, then use B's Phase 2 dry-run, install, and GUI acceptance evidence. Do not reimplement a full A business Phase 1 inside B as a substitute for target-project evidence.
+- `D:\PythonProject_paper_suggest`: A remains the Phase 1 owner; do not reimplement A's business Phase 1 inside B. Whether A's primary directory is GUI-ready must be judged later by A local `main` integration, a real install receipt, and a rollback pointer.
+- 2026-06-01 decision: A=`D:\PythonProject_paper_suggest` remains the real Phase 1 owner, and B=`D:\PythonProject_langgraph` remains the Phase 2 toolchain source of truth. This pass repairs Phase 1 contract blockers in an A repair worktree derived from A's current `main`, then validates B's Phase 2 installer dry-run. Do not reimplement a full A business Phase 1 inside B as substitute target-project evidence.
+- 2026-06-01 evidence: old worktree `paper_suggest-thesis-moe-phase1` is stale and must not be used as current A truth; the new A repair worktree is `D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601`, committed as `560da0e` (A Phase 1 readiness-contract repair commit; the Chinese commit subject is kept only in the zh-CN companion).
+- 2026-06-01 privacy boundary: A's `MOE.md` is ignored/private and was copied only into the A repair worktree for readiness validation; do not commit it and do not copy its full content into B documentation or tooling.
+- 2026-06-01 readiness evidence: A repair worktree static-only output is `ok=true / readiness_status=static-ready-candidate / adaptation_lane=ready-candidate / control_mode_allowed=false`, where `readiness_status` is the Phase 1 contract classification, `adaptation_lane` is the next handling lane, and `control_mode_allowed=false` means display/dry-run only; execute-read-contract output is `ok=true / token=ok / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true`, where `token=ok` is the stable machine-readable success token and `control_mode_allowed=true` means the guarded install/control path may proceed after receipt and rollback evidence, with `project-status`, `list-sessions`, `status`, and `assert-on` checked.
+- 2026-06-01 Phase 2 evidence: B installer dry-run against the A repair worktree outputs `ok=true / token=ok / mode=dry-run / toolchain_version=0.2.20 / cli_contract=project-moe-cli-v1 / blockers=[]`, with planned writes for `tools/project_moe_gui/launcher.py`, `project_moe_gui.config.json`, `README.md`, and `project-moe-gui.cmd`.
 - Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, only OpenSpec artifacts, repo-local guards, and local validation can be used as fallback evidence.
+
+Inline field definitions:
+
+- `readiness_status` is the target project's final Phase 1 contract readiness classification; `static-ready-candidate` means the read-only static checks satisfy candidate conditions but the target CLI read contract has not run yet, and `ready` means the read contract passed.
+- `adaptation_lane` is the target project's next handling lane; `ready-candidate` may only proceed to further validation, while `ready` may enter the next install or GUI-control step.
+- `control_mode_allowed` says whether GUI write/control is allowed; `false` permits display or dry-run only, while `true` still requires an install receipt, rollback pointer, and target-project acceptance before real operation.
+- `token=ok` is the stable machine-readable success token returned by the target CLI or installer, so success is not inferred from prose output.
+- `blockers=[]` means the dry-run found no blockers; it is not evidence that a real installation has completed.
 
 ## 1. Relationship Model and Naming Boundary
 
@@ -563,10 +575,17 @@ Current A blockers must be fixed in this order:
 
 #### Slice 6: target-project acceptance and rollout
 
-- [ ] Repair Phase 1 blockers in an A target-project adaptation worktree: Agent TOML extension sections, wrapper JSON/safety boundary, startup activation hook, `list-sessions` CLI contract, and session row tokens.
-- [ ] Record A's repaired static-only readiness evidence.
-- [ ] Record A's repaired read-contract readiness evidence.
-- [ ] After A readiness outputs `control_mode_allowed=true`, record B's Phase 2 installer dry-run evidence.
+- [x] Classify old A worktree `paper_suggest-thesis-moe-phase1` as stale evidence and stop using it as current A truth.
+- [x] Create a new repair worktree from A's current `main`: `D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601`.
+- [x] Keep A's `MOE.md` as an ignored/private file, copied only into the A repair worktree for readiness validation; do not commit it and do not copy full content into B.
+- [x] Repair A Agent TOML extension sections: `[project]`, `[moe]`, `[dispatch]`, and `[extensions]`.
+- [x] Repair wrapper JSON/safety boundaries: `thesis-moe-on.cmd` and `thesis-moe-off.cmd` now converge to single JSON CLI calls without echo noise, waits, or pauses.
+- [x] Repair A `list-sessions` CLI contract and session row stable token, including stable corrupt-state token normalization.
+- [x] Commit the A repair branch: `560da0e` (A Phase 1 readiness-contract repair commit; Chinese subject is documented in the zh-CN companion).
+- [x] Record A's repaired static-only readiness evidence: `ok=true / static-ready-candidate / ready-candidate / control_mode_allowed=false`.
+- [x] Record A's repaired read-contract readiness evidence: `ok=true / token=ok / ready / control_mode_allowed=true`.
+- [x] After A readiness outputs `control_mode_allowed=true`, record B's Phase 2 installer dry-run evidence: `ok=true / token=ok / blockers=[] / mode=dry-run`.
+- [ ] If A later requires a startup activation hook, handle that as a separate A repair item and rerun readiness; this read-contract acceptance did not require the hook.
 - [ ] After installer dry-run has no blockers, record A's real install receipt and rollback pointer.
 - [ ] Record write-fixture evidence for project on/off, session on/off, no-op, invalid record skip, lock timeout, and atomic write.
 - [ ] Only after fresh Ready Lane evidence exists, allow GUI control for that target project.
@@ -626,10 +645,17 @@ Target-project readiness verification:
 - static-only mode must never execute the target CLI.
 - no-exec-cli mode must not create side effects in target state.
 - read-contract execution mode must check `project-status`, `list-sessions`, `status`, and `assert-on`.
-- Current required A commands:
-  - static-only A readiness evidence: `python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --startup-hook project-background.cmd --json --static-only`
-  - execute-read-contract A readiness evidence: `python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --startup-hook project-background.cmd --json`
-  - B Phase 2 installer dry-run evidence: `python .\tools\project_moe_gui_toolchain\install_project_moe_gui.py --target-project D:\PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --dry-run --json`
+- Commands executed against the 2026-06-01 A repair worktree:
+  - static-only A readiness evidence: `python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --json --static-only`
+  - execute-read-contract A readiness evidence: `python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --json`
+  - B Phase 2 installer dry-run evidence: `python .\tools\project_moe_gui_toolchain\install_project_moe_gui.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --dry-run --json`
+- Results recorded for the 2026-06-01 A repair worktree:
+  - A repair commit: `560da0e` (A Phase 1 readiness-contract repair commit; Chinese subject is documented in the zh-CN companion).
+  - static-only: `ok=true / static-ready-candidate / ready-candidate / control_mode_allowed=false`.
+  - execute-read-contract: `ok=true / token=ok / ready / control_mode_allowed=true`.
+  - installer dry-run: `ok=true / token=ok / blockers=[] / planned_writes=4`.
+- Field meaning: `static-ready-candidate` is a read-only static candidate state, `ready` means the read contract passed, `control_mode_allowed=true` only permits the guarded install/control path, and `planned_writes=4` means dry-run would create four managed files rather than having written them.
+- Future acceptance for A's primary directory or A local `main` must rerun these commands; repair-worktree evidence is not a real installed primary-directory receipt.
 - write fixtures must cover project on/off, session on/off, manual override retention, invalid-record skip, no-op, lock timeout, and atomic write.
 
 Human acceptance:
