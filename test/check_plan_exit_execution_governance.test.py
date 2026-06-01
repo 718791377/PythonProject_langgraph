@@ -110,6 +110,29 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
             payload["implementation_plan"] = plan
         receipt.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    def write_completed_claim(
+        self,
+        root: Path,
+        commit: str,
+        *,
+        confirmed: bool = True,
+        merged: bool = True,
+        include_plan: bool = True,
+        plan: str = "docs_bilingual/implementation_plans/example_plan.md",
+    ) -> None:
+        claim = root / ".omx/session-claims/completed/completed-claim.json"
+        claim.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "requires_user_confirmation_before_implementation": True,
+            "implementation_confirmed_by_user": confirmed,
+            "implementation_confirmation_recorded_at": "2026-05-28T08:00:00+08:00" if confirmed else None,
+            "governance_package_commit": commit,
+            "governance_package_merged_to_local_main": merged,
+        }
+        if include_plan:
+            payload["implementation_plan"] = plan
+        claim.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
     def test_fails_when_non_doc_range_only_has_same_range_docs_bilingual_governance_commit(self) -> None:
         root = self.make_repo("plan-exit-same-range")
         base = self.rev_parse(root)
@@ -160,6 +183,23 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
         self.assertFalse(payload["legacy_same_range_governance"])
         self.assertEqual(payload["counts"]["valid_staged_confirmations"], 1)
         self.assertEqual(payload["staged_confirmations"][0]["implementation_plan"], "docs_bilingual/implementation_plans/example_plan.md")
+
+    def test_passes_with_confirmed_completed_claim_for_publication_range(self) -> None:
+        root = self.make_repo("plan-exit-completed-claim-pass")
+        governance_commit = self.commit_plan_package(root)
+        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, text=True)
+        self.commit_file(root, "tools/example.py", "print('ok')\n", "添加受控代码")
+        self.write_completed_claim(root, governance_commit, confirmed=True, merged=True)
+
+        result = self.run_check(root, "main", "HEAD")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["counts"]["valid_staged_confirmations"], 1)
+        self.assertEqual(payload["staged_confirmations"][0]["source_kind"], "completed_claim")
+        self.assertEqual(
+            payload["staged_confirmations"][0]["path"],
+            ".omx/session-claims/completed/completed-claim.json",
+        )
 
     def test_fails_when_stage_a_receipt_is_not_confirmed(self) -> None:
         root = self.make_repo("plan-exit-staged-unconfirmed")

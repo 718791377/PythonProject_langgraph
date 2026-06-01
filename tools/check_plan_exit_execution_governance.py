@@ -159,6 +159,11 @@ def iter_confirmation_sources(root: Path, receipt: str, claims_subdir: str) -> l
         for claim_path in sorted(claims_path.glob("*.json")):
             payload, error = read_json_file(claim_path)
             sources.append(("claim", claim_path, payload, error))
+        completed_claims_path = claims_path / "completed"
+        if completed_claims_path.exists():
+            for claim_path in sorted(completed_claims_path.glob("*.json")):
+                payload, error = read_json_file(claim_path)
+                sources.append(("completed_claim", claim_path, payload, error))
     return sources
 
 
