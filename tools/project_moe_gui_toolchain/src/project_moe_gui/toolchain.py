@@ -1636,7 +1636,9 @@ def main() -> int:
     except Exception as exc:
         return emit({"schema_version": 1, "ok": False, "token": "blocked:gui_shell_unavailable", "exit_code": 5, "message": "Cannot import central Project MOE GUI shell.", "toolchain_source_root": str(source_root), "error": str(exc)}, args.json)
 
-    preflight = gui_shell.build_gui_preflight(config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload)
+    runtime_config = dict(config)
+    runtime_config["runtime_project_root"] = str(project_root)
+    preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root)
     preflight["phase1_readiness_gate"] = {
         "readiness_status": readiness.get("readiness_status"),
         "adaptation_lane": readiness.get("adaptation_lane"),
@@ -1682,6 +1684,8 @@ Phase 2B provides an import-safe GUI shell and guarded visible-launch path throu
 
 def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, runtime_root: Path, existing: dict[str, Any] | None = None) -> dict[str, Any]:
     data = dict(existing or {})
+    data.pop("target_project_root", None)
+    data.pop("runtime_project_root", None)
     runtime_python = runtime_root / ".venv" / "Scripts" / "python.exe"
     data.update(
         {
@@ -1698,7 +1702,7 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "python_utf8": True,
             "shared_runtime_root": str(runtime_root),
             "runtime_python": str(runtime_python),
-            "target_project_root": str(root),
+            "installed_target_project_root": str(root),
             "toolchain_source_root": str(Path(__file__).resolve().parents[2]),
             "gui_shell_contract": GUI_SHELL_CONTRACT,
         }
