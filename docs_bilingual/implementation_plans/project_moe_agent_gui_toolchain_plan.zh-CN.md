@@ -60,8 +60,9 @@ related_docs:
 - 2026-06-01 Phase 2 证据：B toolchain `0.2.22` 修复目标 launcher 的 runtime 入口：按配置的 `runtime_python` 重新执行，使用 `PROJECT_MOE_GUI_RUNTIME_REEXEC` 防止递归，并设置 `PYTHONUTF8=1`。已安装 preflight payload 记录 `launcher_runtime_python` 与 `launcher_runtime_reexec`。
 - 2026-06-01 纠偏证据：发现 A 已安装 `toolchain_source_root` 仍指向已删除的 B feature worktree，导致 A launcher preflight 返回 `blocked:phase1_readiness_gate_unavailable / No module named 'project_moe_gui'`；旧的“launcher preflight ok”只能视为历史证据，不能代表当前可用状态。
 - 2026-06-01 Phase 2 修复切片：B toolchain `0.2.23` 将目标安装配置写入稳定 source root `D:\PythonProject_langgraph\tools\project_moe_gui_toolchain`，新增 `toolchain_source_root` 存在性/import checker，并允许 updater 修复 manifest 仍匹配但 source root 失效的可恢复安装状态。
-- 2026-06-01 验收边界：A 仍是 Ready Lane 目标，但必须在 0.2.23 更新 A managed artifacts 并重新获得 install check、readiness 与 launcher preflight `token=ok` 后，才能重新声称“当前 GUI preflight 可用”；可见 GUI 启动仍是显式交互动作，并需要 `--allow-visible`。
+- 2026-06-01 验收边界：A 仍是 Ready Lane 目标，但必须在 0.2.23 更新 A managed artifacts 并重新获得 install check、readiness 与 launcher preflight `token=ok` 后，才能重新声称“当前 GUI preflight 可用”；0.2.25 之后，无参 / 双击启动是人工可见启动路径，`--preflight --json` 仍是自动化路径。
 - 2026-06-01 scaffold apply 切片：B toolchain `0.2.24` 新增受保护的 `scaffold_project_moe_phase1.py --apply`。它只在项目证据与干净 Git dirty-state 检查通过后创建缺失的 Bootstrap Lane 文件，拒绝覆盖既有私有提示源或 operator surfaces，并且在后续 readiness 返回 Ready Lane 之前保持 GUI 控制禁用。
+- 2026-06-02 人类友好 launcher 切片：B toolchain `0.2.25` 将已安装的无参 / 双击 `project-moe-gui.cmd` 改为默认打开可见 PySide6 GUI，供人工 operator 使用；同时保留 `--preflight --json` 作为不弹窗自动化接口，并阻断未带 `--preflight` 的 `--json` 调用成为误触发的机器可见启动路径。
 - 当前 Comet change 是 `refine-project-moe-gui-plan-comet-structure`。如果 bash 不可用，只能用 OpenSpec artifacts、repo-local guard 与本地验证作为 fallback evidence。
 
 就地字段解释：
@@ -611,7 +612,7 @@ A 已完成的收敛顺序：
 - [x] 补齐 A 的 startup activation hook（启动/恢复/继续/重载/阶段变化时运行 `status --json` 的激活检查入口），并针对 A 本地 `main` 重新运行 readiness。
 - [x] installer dry-run 无 blocker 后，记录 A 的真实安装 receipt 与 rollback pointer。
 - [x] 记录写入 fixture 证据：project on/off、session on/off、no-op、invalid record skip、lock timeout、atomic write。
-- [x] 只有产生新的 Ready Lane 证据后，才允许该目标项目进入受保护 GUI 控制；可见 GUI 启动仍是显式交互验收动作。
+- [x] 只有产生新的 Ready Lane 证据后，才允许该目标项目进入受保护 GUI 控制；产生 Ready Lane 证据后，无参 / 双击启动就是人工 operator 的可见 GUI 启动动作；自动化仍使用 `--preflight --json`。
 
 ### 14.3 文件职责图
 

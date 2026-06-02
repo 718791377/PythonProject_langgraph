@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -2249,6 +2250,50 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(payload["gui_shell_contract"], "project-moe-gui-shell-v1")
             self.assertNotEqual(payload["token"], "blocked:gui_not_implemented_phase2a")
             self.assertNotIn("Interactive PySide6 GUI is implemented in Phase 2B.", result.stdout)
+
+    def test_installed_launcher_no_args_defaults_to_visible_human_launch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
+
+            env = dict(os.environ)
+            env["PROJECT_MOE_GUI_DRY_RUN_VISIBLE"] = "1"
+            result = subprocess.run(
+                [sys.executable, str(project / "tools" / "project_moe_gui" / "launcher.py")],
+                cwd=project,
+                env=env,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("ok: Visible GUI launch dry-run passed.", result.stdout)
+            self.assertNotIn("blocked:visible_gui_launch_requires_explicit_approval", result.stdout)
+
+    def test_installed_launcher_json_without_preflight_stays_machine_safe(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
+
+            payload = self.run_installed_launcher(project)
+
+            self.assertFalse(payload["ok"], payload)
+            self.assertEqual(payload["token"], "blocked:json_requires_preflight_for_non_visible_automation")
+            self.assertEqual(payload["exit_code"], 2)
+            self.assertIn("Use --preflight --json", payload["message"])
 
     def test_installed_launcher_missing_mode_cli_returns_bootstrap_scaffold_plan(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -1588,7 +1588,7 @@ def maybe_reexec_with_runtime(config: dict, args: argparse.Namespace, launcher: 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Launch or preflight the project-local MOE GUI.")
     parser.add_argument("--preflight", action="store_true")
-    parser.add_argument("--allow-visible", action="store_true", help="Launch a visible PySide6 window. Use only in an interactive session.")
+    parser.add_argument("--allow-visible", action="store_true", help="Launch a visible PySide6 window. Kept for compatibility; no-argument human launches are visible by default.")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -1726,10 +1726,12 @@ def main() -> int:
     }
     if args.preflight:
         return emit(preflight, args.json)
-    if not args.allow_visible:
-        return emit({**preflight, "ok": False, "token": "blocked:visible_gui_launch_requires_explicit_approval", "exit_code": 2, "message": "GUI shell is available. Visible PySide6 launch requires --allow-visible in an interactive session."}, args.json)
+    if args.json and not args.allow_visible:
+        return emit({**preflight, "ok": False, "token": "blocked:json_requires_preflight_for_non_visible_automation", "exit_code": 2, "message": "Use --preflight --json for machine-readable automation, or run without --json to open the visible GUI."}, args.json)
     if not preflight.get("ok"):
         return emit(preflight, args.json)
+    if os.environ.get("PROJECT_MOE_GUI_DRY_RUN_VISIBLE") == "1":
+        return emit({**preflight, "ok": True, "token": "ok", "exit_code": 0, "message": "Visible GUI launch dry-run passed.", "visible_launch": {"dry_run": True, "default_visible_on_no_args": True, "allow_visible_argument": bool(args.allow_visible)}}, args.json)
     try:
         return gui_shell.launch_visible(preflight["view_model"])
     except RuntimeError as exc:
@@ -1756,7 +1758,7 @@ This directory is managed by `D:\\PythonProject_langgraph` Project MOE GUI toolc
 - GUI shell contract: `{GUI_SHELL_CONTRACT}`
 
 Do not place private `MOE.md` content or project state files in this directory.
-Phase 2B provides an import-safe GUI shell and guarded visible-launch path through the central toolchain source. Automated checks must use `--preflight`; visible PySide6 launch requires an explicit interactive command.
+Phase 2B provides an import-safe GUI shell and guarded visible-launch path through the central toolchain source. Human double-click or no-argument launches open the visible PySide6 GUI by default; automated checks must use `--preflight --json` and never rely on the no-argument human launcher as a machine interface.
 """
 
 
