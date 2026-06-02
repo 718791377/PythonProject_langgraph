@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -69,7 +70,10 @@ class SessionOwnershipClaimsCheckTest(unittest.TestCase):
         )
         return claim_path
 
-    def run_check(self, root: Path, *extra: str) -> subprocess.CompletedProcess[str]:
+    def run_check(self, root: Path, *extra: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+        process_env = os.environ.copy()
+        if env:
+            process_env.update(env)
         return subprocess.run(
             [sys.executable, str(SCRIPT_PATH), "--root", str(root), "--json", *extra],
             check=False,
@@ -77,6 +81,7 @@ class SessionOwnershipClaimsCheckTest(unittest.TestCase):
             text=True,
             encoding="utf-8",
             cwd=REPO_ROOT,
+            env=process_env,
         )
 
     def test_passes_without_claims_for_clean_repo(self) -> None:
@@ -109,6 +114,29 @@ class SessionOwnershipClaimsCheckTest(unittest.TestCase):
         claimed_payload = json.loads(claimed.stdout)
         self.assertTrue(claimed_payload["ok"])
         self.assertEqual(claimed_payload["counts"]["active_claims"], 1)
+
+    def test_allows_gitlab_ci_detached_dirty_checkout_without_local_claim(self) -> None:
+        root = self.make_repo("claims-gitlab-ci-detached")
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        subprocess.run(["git", "checkout", "--detach", "HEAD"], cwd=root, check=True, capture_output=True, text=True)
+        (root / "managed-refresh.txt").write_text("dirty after remote refresh\n", encoding="utf-8")
+
+        result = self.run_check(
+            root,
+            "--allow-current-dirty",
+            env={"GITLAB_CI": "true", "CI_COMMIT_SHA": head},
+        )
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertTrue(any("GitLab CI detached checkout" in item for item in payload["info"]))
 
     def test_fails_for_duplicate_openspec_change_claims(self) -> None:
         root = self.make_repo("claims-duplicate-change")
