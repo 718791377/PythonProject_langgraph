@@ -207,7 +207,8 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         fake_bin = root / "fake-bin"
         self.write_fake_npx(fake_bin)
         env = os.environ.copy()
-        env["PATH"] = str(fake_bin)
+        original_path = env.get("PATH", "")
+        env["PATH"] = str(fake_bin) + (os.pathsep + original_path if original_path else "")
 
         result = self.run_guard_json(root, extra_args=["--refresh-managed-files"], env=env)
 
