@@ -35,12 +35,12 @@ Preserve short launcher payload boundaries while passing startup context through
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：implemented-local
+阶段：Phase 2 状态对账已收口；launcher payload context-boundary 包已合入本地 `main`。
+责任会话：reconcile-context-retention-canary-status-20260602（仅状态对账）
+当前门禁：本子方案已无剩余本地实现门禁；除非用户明确要求，否则远端发布仍未授权。
+证据：本地 `main` 包含 `6f1ef48`，当前 launcher payload context-boundary checker 报告 `ok: true`，并仅保留一条关于 native-agent TOML 字段的已记录允许 warning。
+最后更新：2026-06-02
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -67,11 +67,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Inventory current launcher payload references without editing user-level config in this child-plan creation stage.
-- [ ] Add tests for file-backed instruction references and command-line length safety.
-- [ ] Update helper generation only after explicit child-plan confirmation.
-- [ ] Run launcher payload checker and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Inventory current launcher payload references without editing user-level config in this child-plan creation stage.
+- [x] Add tests for file-backed instruction references and command-line length safety.
+- [x] Update helper generation only after explicit child-plan confirmation.
+- [x] Run launcher payload checker and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,4 +96,5 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-02 状态对账：本地 `main` ancestry 确认包含 `6f1ef48`；`python tools/check_launcher_payload_context_boundary.py --root . --json` 报告 `ok: true`，仅有已记录的 native-agent TOML warning；此前未勾选 backlog 已同步到 implemented-local 证据。
 <!-- EVIDENCE_INDEX_END -->

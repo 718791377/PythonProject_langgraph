@@ -58,13 +58,13 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 4 discovery-facade 提取 lane 已 implemented-local；其他 Phase 6 lane 仍可准入。
-Owner session: main Codex leader owns implementation package id `implement-mcp-skills-discovery-facade-20260601`; package id means the isolated feature-worktree implementation item for this update.
-Current gate: 本地验证证据绑定到本 ready package；串行合入本地 `main` 后，仅剩远端发布授权门。
-Phase 5 note: Comet runtime closeout 已进入本地 main；本包不重开 Phase 5 runtime 工作。
+Stage: Phase 2 prompt-canary status reconciliation 已 implemented-local；其他 Phase 6 lane 仍可准入。
+Owner session: main Codex leader owns status-only package id `reconcile-context-retention-canary-status-20260602`; package id 表示本隔离 worktree 的文档状态对账项，不是 durable-team worker 或远端发布分支。
+Current gate: prompt-canary Phase 2 本地实现门禁已收口；除非用户明确要求远端发布，否则停在远端发布门。
+Phase 2 note: 四个 context/UTF-8 safety 子方案均已合入本地 `main`：`cbc73c7`、`b779d51`、`6f1ef48`、`43d3ae9`。
 MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` 保留为来源与 baseline 索引，不作为本父方案直接子方案。
-Parallel model: 提取后的 lane 可按多阶段、多会话执行，但每个 session 必须拥有互斥写集或声明已串行化 hotspot。
-Remote state: 本 local-only implementation branch 不授权远端发布。
+Parallel model: 后续 lane 可按多阶段、多会话执行，但每个 session 必须拥有互斥写集或声明已串行化 hotspot。
+Remote state: 本状态对账包不授权远端发布。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -368,6 +368,10 @@ python tools/local_main_retire_lock.py status --root . --json
 | Phase 1 | `implementation_plan_registry_active_state_plan` | 已实现并合入 | Registry active-state 与双语配对门禁由 implementation-plan rules 覆盖。 |
 | Phase 1 | `main_session_escalation_visibility_plan` | 已实现并合入 | 主会话提权可视化已属于 Phase 1 收口包。 |
 | Phase 1A | `complete_local_commit_flow_scheduler_reorder_buffer_plan` | ROB retire preflight hard gate implemented and locally integrated | Governance package `a259d91` and runtime hard gate `7087b31` verify self-retire ROB metadata before lock acquisition, rollback ref creation, or merge. |
+| Phase 2 | `session_replay_context_filtering_plan` | implemented and locally integrated | Legacy session replay context filtering entered local `main` at `cbc73c7`. |
+| Phase 2 | `context_retention_canary_literal_boundary_plan` | implemented and locally integrated | Context-retention canary literal-boundary checking entered local `main` at `b779d51`. |
+| Phase 2 | `launcher_payload_context_boundary_plan` | implemented and locally integrated | Launcher payload file-backed boundary hardening entered local `main` at `6f1ef48`. |
+| Phase 2 | `startup_mojibake_utf8_recovery_plan` | implemented and locally integrated | Startup mojibake recovery source-report repair entered local `main` at `43d3ae9`. |
 | Phase 5 | `comet_management_record_bootstrap_plan` | implemented and locally integrated | Local `main` includes closeout commit `8b8bfd6`; management records, checklist gates, monitoring return state, safe paths, and archive evidence are covered by focused Comet runtime tests. |
 | Phase 5 | `comet_runtime_policy_checker_alignment_plan` | implemented and locally integrated | Local `main` includes closeout commit `3335b67`; stable specs, policy checker, runtime tests, and CI registration are aligned. |
 | Phase 5 | `comet_monitoring_return_transition_plan` | implemented and locally integrated | Local `main` includes closeout commit `05d22bd`; return transitions and monitoring blocked/needs-decision gates are verified. |
@@ -497,4 +501,5 @@ Stage B 后续确认后的验收条件：
 
 - 2026-06-01 discovery-facade implementation: 分支 `implement-mcp-skills-discovery-facade-20260601` 实现 Phase 4 提取出的 compact `skills2cli` / `mcp2cli` lane，新增 MCP risk-profile 输出、direct-MCP/no-default-Router evidence、skill/profile 非 native-subagent 的 routing evidence 与聚焦测试；远端发布仍未授权。
 - 2026-06-01 browser/CLI adapter boundary implementation: 分支 `implement-user-level-browser-cli-adapter-boundary-20260601` 关闭提取后的 Phase 6 adapter boundary lane；本包脚本化 implemented-local 子方案状态，确认 chrome-devtools-mcp/CDP Bridge/OpenCLI/CLI-Anything/`wecom-cli` 的 on-demand 或 reference-only 门禁，并保持 live browser/GUI/install/cookie/runtime mutation 不在本地包范围内。
+- 2026-06-02 prompt-canary 状态对账：同步父方案中文索引与四个 Phase 2 子方案状态；本地 `main` ancestry 确认 `cbc73c7`、`b779d51`、`6f1ef48`、`43d3ae9` 均已包含；远端发布未授权。
 <!-- EVIDENCE_INDEX_END -->

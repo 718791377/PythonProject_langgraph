@@ -35,12 +35,12 @@ Detect mojibake in startup and instruction authority surfaces and recover from U
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage C implementation package ready for local validation, commit, and local-main integration
-Owner session: main Codex leader session
-Current gate: local CI and local MR review before local main integration; remote publication remains out of scope until explicit user approval
-Stage C entry condition: satisfied by explicit user request to continue this child implementation plan
-Last updated: 2026-05-30
+Status: implemented-local
+Stage: Phase 2 status reconciliation closed; the startup mojibake UTF-8 recovery package is already integrated into local `main`.
+Owner session: reconcile-context-retention-canary-status-20260602 (status-only reconciliation)
+Current gate: no remaining local implementation gate for this child plan; remote publication remains unauthorized unless the user explicitly requests it.
+Evidence: local `main` contains `43d3ae9`, and the current startup mojibake checker reports `ok: true`.
+Last updated: 2026-06-02
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -99,4 +99,5 @@ Run these gates before local `main` integration unless this child plan later nar
 - 2026-05-30 Stage C validation: `python test/check_startup_instruction_mojibake.test.py`, `python tools/check_startup_instruction_mojibake.py --root . --json`, `python tools/check_implementation_plan_rules.py --root . --json`, `python tools/check_precommit_update_archive.py --root . --json`, and `python tools/check_worktree_task_receipt.py --root . --json` passed in branch `implement-startup-mojibake-utf8-recovery-20260530`; full local CI and local MR review remain the current integration gate.
 - 2026-05-30 Stage C entry: user confirmed continued implementation of this child plan; active session claim was created before runtime/checker work.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-06-02 status reconciliation: local `main` ancestry confirms `43d3ae9`; `python tools/check_startup_instruction_mojibake.py --root . --json` reports `ok: true`; stale local-validation gate text was replaced with implemented-local status.
 <!-- EVIDENCE_INDEX_END -->

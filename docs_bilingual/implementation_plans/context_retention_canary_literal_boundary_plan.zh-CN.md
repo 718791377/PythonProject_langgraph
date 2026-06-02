@@ -35,12 +35,12 @@ Keep context-retention canary literals in canonical startup summaries only and p
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage C 实施包
-责任会话：implement-context-retention-canary-literal-boundary-20260530
-当前门禁：本地验证与本地 main 集成
-Stage C 进入条件：已由用户在 2026-05-30 明确确认
-最后更新：2026-05-30
+状态：implemented-local
+阶段：Phase 2 状态对账已收口；context-retention canary 字面边界包已合入本地 `main`。
+责任会话：reconcile-context-retention-canary-status-20260602（仅状态对账）
+当前门禁：本子方案已无剩余本地实现门禁；除非用户明确要求，否则远端发布仍未授权。
+证据：本地 `main` 包含 `b779d51`，当前 focused canary-surface checker 报告 `ok: true`。
+最后更新：2026-06-02
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -97,4 +97,5 @@ Stage C 进入条件：已由用户在 2026-05-30 明确确认
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-30 Stage C 实施：用户已确认，`implement-context-retention-canary-literal-boundary-20260530` 已认领；新增 config surface 复制 fixture 与 checker surface 分类，并在合入本地 `main` 前通过目标 canary/startup checker 与 local gate 验证。
+- 2026-06-02 状态对账：本地 `main` ancestry 确认包含 `b779d51`；`python tools/check_context_retention_canary_surface.py --root . --json` 报告 `ok: true`；旧 Stage C 门禁文本已替换为 implemented-local 状态。
 <!-- EVIDENCE_INDEX_END -->

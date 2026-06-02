@@ -35,12 +35,12 @@ Filter resumed session context so stale canary text, mojibake, and legacy runtim
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage C implementation package
-Owner session: implement-session-replay-context-filtering-20260530
-Current gate: local validation and local main integration in progress
-Stage C entry condition: satisfied by the 2026-05-30 user request to continue, commit locally, and merge into local main
-Last updated: 2026-05-30
+Status: implemented-local
+Stage: Phase 2 status reconciliation closed; the session replay context-filtering package is already integrated into local `main`.
+Owner session: reconcile-context-retention-canary-status-20260602 (status-only reconciliation)
+Current gate: no remaining local implementation gate for this child plan; remote publication remains unauthorized unless the user explicitly requests it.
+Evidence: local `main` contains `cbc73c7`, and focused replay-filtering coverage remains registered in local CI manifest.
+Last updated: 2026-06-02
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -98,4 +98,5 @@ Run these gates before local `main` integration unless this child plan later nar
 - 2026-05-30 Stage C implementation: added `tools/session_replay_context_filtering.py`, replay-filtering tests, CI manifest registration, and governance contract text; local validation evidence is kept in command output and git history.
 - 2026-05-30 Local validation: `tools/session_replay_context_filtering.py`, context-retention canary, startup mojibake, replay-filtering tests, and `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` passed before commit.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-06-02 status reconciliation: local `main` ancestry confirms `cbc73c7`; `test/check_session_replay_context_filtering.test.py` is present and CI-manifest registered; stale local-main-in-progress gate text was replaced with implemented-local status.
 <!-- EVIDENCE_INDEX_END -->

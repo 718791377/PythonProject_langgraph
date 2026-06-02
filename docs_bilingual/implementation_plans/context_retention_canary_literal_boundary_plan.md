@@ -35,12 +35,12 @@ Keep context-retention canary literals in canonical startup summaries only and p
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage C implementation package
-Owner session: implement-context-retention-canary-literal-boundary-20260530
-Current gate: local validation and local-main integration
-Stage C entry condition: satisfied by explicit user confirmation on 2026-05-30
-Last updated: 2026-05-30
+Status: implemented-local
+Stage: Phase 2 status reconciliation closed; the context-retention canary literal-boundary package is already integrated into local `main`.
+Owner session: reconcile-context-retention-canary-status-20260602 (status-only reconciliation)
+Current gate: no remaining local implementation gate for this child plan; remote publication remains unauthorized unless the user explicitly requests it.
+Evidence: local `main` contains `b779d51`, and the current focused canary-surface checker reports `ok: true`.
+Last updated: 2026-06-02
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -97,4 +97,5 @@ Run these gates before local `main` integration unless this child plan later nar
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-30 Stage C implementation: confirmed by user, claimed by `implement-context-retention-canary-literal-boundary-20260530`, added config-surface duplication fixture plus checker surface classification, and validated with the target canary/startup checkers and local gate before local `main` integration.
+- 2026-06-02 status reconciliation: local `main` ancestry confirms `b779d51`; `python tools/check_context_retention_canary_surface.py --root . --json` reports `ok: true`; stale Stage C gate text was replaced with implemented-local status.
 <!-- EVIDENCE_INDEX_END -->

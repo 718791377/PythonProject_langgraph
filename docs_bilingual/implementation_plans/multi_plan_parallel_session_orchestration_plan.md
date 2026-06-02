@@ -58,13 +58,13 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 4 discovery-facade extracted lane is implemented-local; Phase 6 remains admissible for other lanes.
-Owner session: main Codex leader owns implementation package id `implement-mcp-skills-discovery-facade-20260601`; package id means the isolated feature-worktree implementation item for this update.
-Current gate: local validation evidence is bound to this ready package; after serial local-main integration, only the remote-publication approval gate remains.
-Phase 5 note: Comet runtime closeout is already local-main integrated; this package does not reopen Phase 5 runtime work.
+Stage: Phase 2 prompt-canary status reconciliation is implemented-local; Phase 6 remains admissible for other lanes.
+Owner session: main Codex leader owns status-only package id `reconcile-context-retention-canary-status-20260602`; package id means this isolated worktree documentation-status reconciliation item, not a durable-team worker or remote publication branch.
+Current gate: prompt-canary Phase 2 local implementation gates are closed; remote publication remains unauthorized unless the user explicitly requests it.
+Phase 2 note: all four context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`.
 MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` remains a source and baseline index, not a direct child of this parent.
-Parallel model: extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
-Remote state: remote publication is not authorized by this local-only implementation branch.
+Parallel model: later extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
+Remote state: this status reconciliation package does not authorize remote publication.
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model
@@ -437,7 +437,7 @@ Each child plan must include:
 - [x] Stage B runtime recovery: restore self-retire runtime helper/checker behavior and integrate it into local `main` at `898f9d0`.
 - [x] 2026-05-30 complete-flow alignment: align this parent-plan family and its child plans to session-owned self-retire, ROB, `local-main-retire.lock`, and the remote-publication gate after local-main integration.
 - [x] Phase 0 closure: close the inventory registry alignment child plan and the parent orchestration index child plan before Phase 2 admission.
-- [x] Later stages: the Phase 0 closure package has entered local `main`; Phase 2 context and UTF-8 safety child plans have started under the Work-Conserving model and several have entered local `main`.
+- [x] Later stages: the Phase 0 closure package has entered local `main`; all four tracked Phase 2 context and UTF-8 safety child plans have entered local `main` under the Work-Conserving model and now stop at the remote-publication gate.
 - [x] Phase 4 parent/child governance update: extend conversation-surface coverage from routing traces to both `Routing trace` and `Updated Plan`, keep those labels stable, preserve `Updated Plan` checklist/status semantics, and preserve machine-readable ASCII tokens in saved evidence.
 - [x] Phase 4 final closeout: verify all Phase 4 child plans are implemented, locally validated, integrated into local `main`, and stopped at the remote publication gate.
 - [x] Phase 1A hardening: promote `--self-retire` ROB entry validation from post-merge metadata recording into a merge-before hard gate.
@@ -500,4 +500,5 @@ Stage B acceptance after later confirmation:
 
 - 2026-06-01 discovery-facade implementation: branch `implement-mcp-skills-discovery-facade-20260601` implements the Phase 4 extracted compact `skills2cli` / `mcp2cli` lane, adds MCP risk-profile output, explicit direct-MCP/no-default-Router evidence, skill/profile routing evidence that is not native-subagent evidence, and focused tests while leaving remote publication unauthorized.
 - 2026-06-01 browser/CLI adapter boundary implementation: branch `implement-user-level-browser-cli-adapter-boundary-20260601` closes the extracted Phase 6 adapter boundary lane by checker-backing the implemented-local child-plan status, confirming chrome-devtools-mcp/CDP Bridge/OpenCLI/CLI-Anything/`wecom-cli` on-demand or reference-only gates, and keeping live browser/GUI/install/cookie/runtime mutation outside this local package.
+- 2026-06-02 prompt-canary status reconciliation: synchronized the parent status with the four Phase 2 child plans; local `main` ancestry confirms `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; remote publication remains unauthorized.
 <!-- EVIDENCE_INDEX_END -->

@@ -35,12 +35,12 @@ Preserve short launcher payload boundaries while passing startup context through
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
+Status: implemented-local
+Stage: Phase 2 status reconciliation closed; the launcher payload context-boundary package is already integrated into local `main`.
+Owner session: reconcile-context-retention-canary-status-20260602 (status-only reconciliation)
+Current gate: no remaining local implementation gate for this child plan; remote publication remains unauthorized unless the user explicitly requests it.
+Evidence: local `main` contains `6f1ef48`, and the current launcher payload context-boundary checker reports `ok: true` with one documented allowed warning about native-agent TOML fields.
+Last updated: 2026-06-02
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -67,11 +67,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Inventory current launcher payload references without editing user-level config in this child-plan creation stage.
-- [ ] Add tests for file-backed instruction references and command-line length safety.
-- [ ] Update helper generation only after explicit child-plan confirmation.
-- [ ] Run launcher payload checker and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Inventory current launcher payload references without editing user-level config in this child-plan creation stage.
+- [x] Add tests for file-backed instruction references and command-line length safety.
+- [x] Update helper generation only after explicit child-plan confirmation.
+- [x] Run launcher payload checker and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -96,4 +96,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
+- 2026-06-02 status reconciliation: local `main` ancestry confirms `6f1ef48`; `python tools/check_launcher_payload_context_boundary.py --root . --json` reports `ok: true` with the documented native-agent TOML warning; previously unchecked backlog rows are now synchronized to the implemented-local evidence.
 <!-- EVIDENCE_INDEX_END -->
