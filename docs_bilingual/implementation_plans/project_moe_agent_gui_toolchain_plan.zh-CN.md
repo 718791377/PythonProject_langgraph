@@ -12,6 +12,7 @@ scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
 related_docs:
+  - docs_bilingual/implementation_plans/project_moe_gui_double_click_launch_repair_plan.zh-CN.md
   - docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.zh-CN.md
   - docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.zh-CN.md
   - docs_bilingual/memory/project_moe_paper_suggest_static_readiness_evidence_2026-05-24.zh-CN.md
@@ -31,6 +32,7 @@ related_docs:
 
 ## 0. 本次完整 Comet 重构结论
 
+- 2026-06-02 双击启动修复：独立方案 `project_moe_gui_double_click_launch_repair_plan.zh-CN.md` 约束本次 B+A 本地修复，目标是处理 `D:\PythonProject_paper_suggest\project-moe-gui.cmd` CMD 退出后 GUI 不可见的问题。
 本文从“状态说明 + 零散任务清单”重构为“可执行实施方案 + Comet 追踪证据 + readiness lane 合同”。它与 `pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 采用同级组织方式，但不复用 Pi sidecar 的运行时边界。
 
 | 检查项 | 结论 | 落点 |

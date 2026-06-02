@@ -12,6 +12,7 @@ scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
 related_docs:
+  - docs_bilingual/implementation_plans/project_moe_gui_double_click_launch_repair_plan.md
   - docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md
   - docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.md
   - docs_bilingual/implementation_plans/pi_plugin_codex_user_level_sidecar_plan.md
@@ -31,6 +32,7 @@ related_docs:
 
 ## 0. Full Comet Refactor Conclusion
 
+- 2026-06-02 double-click launch repair: the standalone plan `project_moe_gui_double_click_launch_repair_plan.md` governs the B+A local fix for `D:\PythonProject_paper_suggest\project-moe-gui.cmd` closing without a visible GUI.
 This document has been refactored from a loose status note plus scattered task list into an executable implementation plan with Comet trace evidence and readiness-lane contracts. It follows the same top-level pattern as `pi_plugin_codex_user_level_sidecar_plan.zh-CN.md`, but it does not reuse Pi sidecar runtime boundaries.
 
 | Check | Result | Where it lands |
