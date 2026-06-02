@@ -9,10 +9,16 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "check_context_retention_canary_surface.py"
-START_CANARY = "CODEX_CTX_" + "CANARY_START"
-END_CANARY = "CODEX_CTX_" + "CANARY_END"
-LEGACY_START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
-LEGACY_END_CANARY = chr(21941) + "~"
+
+
+def from_codepoints(*codepoints: int) -> str:
+    return "".join(chr(codepoint) for codepoint in codepoints)
+
+
+START_CANARY = from_codepoints(25351, 25381, 23448)
+END_CANARY = from_codepoints(21941) + "~"
+LEGACY_START_CANARY = "CODEX_CTX_" + "CANARY_START"
+LEGACY_END_CANARY = "CODEX_CTX_" + "CANARY_END"
 
 
 def mojibake_variant(text: str) -> str:
@@ -133,7 +139,7 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         self.write_file(
             root,
             "AGENTS.md",
-            f"Corrupted runtime instruction marker: `{mojibake_variant(LEGACY_START_CANARY)}`.\n",
+            f"Corrupted runtime instruction marker: `{mojibake_variant(START_CANARY)}`.\n",
         )
 
         result = self.run_check(root)
@@ -142,20 +148,20 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("mojibake canary marker" in error for error in payload["errors"]))
 
-    def test_fails_when_agents_contains_legacy_non_ascii_canary(self) -> None:
-        root = self.make_root("canary-agents-legacy-marker")
+    def test_fails_when_agents_contains_canonical_non_ascii_canary(self) -> None:
+        root = self.make_root("canary-agents-canonical-marker")
         self.write_startup_pair(root)
         self.write_file(
             root,
             "AGENTS.md",
-            f"Legacy runtime instruction marker: `{LEGACY_START_CANARY}`.\n",
+            f"Canonical runtime instruction marker: `{START_CANARY}`.\n",
         )
 
         result = self.run_check(root)
         self.assertNotEqual(result.returncode, 0)
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
-        self.assertTrue(any("mojibake canary marker" in error for error in payload["errors"]))
+        self.assertTrue(any("must not duplicate the literal canary prompt" in error for error in payload["errors"]))
 
     def test_fails_when_startup_summary_contains_mojibake_canary(self) -> None:
         root = self.make_root("canary-startup-mojibake")
@@ -167,7 +173,7 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
                 "# Startup\n\nContext-retention canary:\n\n"
                 f"Start `{START_CANARY}` and end `{END_CANARY}`.\n"
                 "Recovery action: reread AGENTS.md before continuing.\n"
-                f"Corrupted runtime copy: `{mojibake_variant(LEGACY_END_CANARY)}`.\n"
+                f"Corrupted runtime copy: `{mojibake_variant(END_CANARY)}`.\n"
             ),
         )
         self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
@@ -249,14 +255,14 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         self.write_startup_pair(root)
         self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
 
-        result = self.run_check_args(root, "--response-text", f"{mojibake_variant(LEGACY_START_CANARY)} bad {mojibake_variant(LEGACY_END_CANARY)}")
+        result = self.run_check_args(root, "--response-text", f"{mojibake_variant(START_CANARY)} bad {mojibake_variant(END_CANARY)}")
 
         self.assertNotEqual(result.returncode, 0)
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
         self.assertEqual(payload["response_diagnostics"][0]["status"], "mojibake_canary")
 
-    def test_response_text_mode_fails_when_user_visible_response_has_legacy_non_ascii_canary(self) -> None:
+    def test_response_text_mode_fails_when_user_visible_response_has_legacy_ascii_canary(self) -> None:
         root = self.make_root("canary-response-legacy-marker")
         self.write_startup_pair(root)
         self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
@@ -266,7 +272,7 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
-        self.assertEqual(payload["response_diagnostics"][0]["status"], "mojibake_canary")
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "legacy_canary")
 
     def test_session_mode_filters_tool_output_and_checks_latest_assistant_response(self) -> None:
         root = self.make_root("canary-session-filter")

@@ -35,11 +35,11 @@ Restore the startup-summary-defined canonical visible canary to the operator-con
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active-confirmed-for-implementation
-Stage: plan package records the follow-up scope; runtime/checker implementation must start in a separate worktree after this plan package is merged to local `main`.
-Owner session: plan-restore-nonascii-canary-20260602 (plan package)
-Current gate: update plan package, merge to local `main`, then open the implementation package; remote publication remains unauthorized unless the operator explicitly requests it.
-Evidence: this plan defines the follow-up lane that restores the canonical visible canary and blocks marker copies in model-readable session context.
+Status: implementation-complete-local-candidate
+Stage: implementation package restored the startup-summary-defined canonical visible canary, updated AGENTS/spec/governance wording, and hardened checkers/tests/session replay filtering before local `main` integration.
+Owner session: implement-restore-nonascii-canary-20260602 (implementation package)
+Current gate: run full repository validation, commit the implementation package, merge to local `main`, and stop at the remote-publication approval gate.
+Evidence: focused RED tests failed before checker changes; focused tests and focused checkers now pass for canonical response evidence, legacy ASCII classification, and model-readable replay blocking without echoing marker literals.
 Last updated: 2026-06-02
 <!-- CURRENT_STATUS_END -->
 
@@ -76,13 +76,13 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [x] Confirm this follow-up child plan request from the operator.
-- [ ] Update the startup summary pair so the operator-confirmed non-ASCII start/end markers are canonical again and the previous ASCII tokens become legacy/stale compatibility input.
-- [ ] Update `AGENTS.md` so complete user-visible assistant responses proactively use the startup-summary-defined canonical visible canary without copying marker literals into `AGENTS.md`.
-- [ ] Add failing tests proving the restored canonical marker is accepted in user-visible responses and blocked from model-readable session/replay context.
-- [ ] Update canary surface, mojibake, and session replay helpers so canonical marker literals are derived by codepoint or variable surfaces instead of direct source literals.
-- [ ] Update the stable OpenSpec canary spec and related plan status/evidence text.
-- [ ] Run focused tests, focused checkers, OpenSpec guard, local gate, and local MR review before local `main` integration.
+- [x] Confirm this follow-up child plan request from the user/operator.
+- [x] Update the startup summary pair so the requested non-ASCII start/end markers are canonical again and the previous ASCII tokens become legacy/stale compatibility input.
+- [x] Update `AGENTS.md` so complete user-visible assistant responses proactively use the startup-summary-defined canonical visible canary without copying marker literals into `AGENTS.md`.
+- [x] Add failing tests proving the restored canonical marker is accepted in user-visible responses and blocked from model-readable session/replay context.
+- [x] Update canary surface, mojibake, and session replay helpers so canonical marker literals are derived by codepoint or variable surfaces instead of direct source literals.
+- [x] Update the stable OpenSpec canary spec and related plan status/evidence text.
+- [x] Run focused tests and focused checkers before repository-level gates; full local gate and local MR review remain the final pre-integration evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -112,4 +112,5 @@ Run these gates before local `main` integration unless this child plan later nar
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-02 plan package: created as a Phase 2 follow-up child plan to restore the startup-summary-defined canonical visible canary and add explicit model-readable session context blocking.
+- 2026-06-02 implementation package: restored canonical marker authority to the startup summary pair, made legacy ASCII markers stale compatibility input, updated AGENTS/spec/governance text, and added checker/replay tests for canonical response acceptance plus replay/model-context blocking.
 <!-- EVIDENCE_INDEX_END -->

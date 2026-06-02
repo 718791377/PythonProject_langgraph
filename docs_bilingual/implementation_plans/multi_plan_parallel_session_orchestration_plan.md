@@ -59,13 +59,13 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 2 prompt-canary status reconciliation is implemented-local; a confirmed Phase 2 follow-up now plans canonical visible canary restoration before runtime/checker implementation.
-Owner session: main Codex leader owns plan package id `plan-restore-nonascii-canary-20260602`; package id means this isolated worktree documentation-plan item, not a durable-team worker or remote publication branch.
-Current gate: plan package updates parent/child plans first, then a separate implementation package may restore the startup-summary-defined canonical visible canary; remote publication remains unauthorized unless the user explicitly requests it.
-Phase 2 note: all four context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; the new follow-up reopens only the marker canonicalization and session-context blocking contract.
+Stage: Phase 2 prompt-canary canonical visible marker restoration is implemented in the current local candidate; the follow-up now verifies repository gates before local `main` integration.
+Owner session: main Codex leader owns implementation package id `implement-restore-nonascii-canary-20260602`; this is a serialized canary-hotspot implementation worktree, not a durable-team worker or remote publication branch.
+Current gate: commit the implementation package, merge through the local-main-first helper, then stop at the remote-publication approval gate; remote publication remains unauthorized unless the user explicitly requests it.
+Phase 2 note: all four earlier context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; this follow-up closes the reopened marker canonicalization and session-context blocking contract.
 MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` remains a source and baseline index, not a direct child of this parent.
-Parallel model: later extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
-Remote state: this status reconciliation package does not authorize remote publication.
+Parallel model: canary hotspots stayed serialized; other extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
+Remote state: this implementation package does not authorize remote publication.
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model
@@ -231,7 +231,7 @@ Required execution order:
 
 ## Phase 2 Follow-up: Canonical Visible Canary Restore
 
-The `prompt_canary_canonical_visible_marker_restore_plan` child plan is a confirmed follow-up to the implemented-local context canary safety family. It does not reopen the whole Phase 2 queue. Its scope is limited to restoring the startup-summary-defined canonical visible canary to the requested non-ASCII marker pair while preserving the original safety boundary: only the startup summary pair may hold canonical marker literals, non-startup files must use indirect references or derived variables, and model-readable session/replay/compaction/handoff context must block marker copies before prompt-authority handoff.
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implementation-complete local candidate | Restored startup-summary-defined canonical visible canary semantics, legacy ASCII classification, and replay/model-context blocking; final repository gates precede local `main` integration. |
 
 This follow-up is a serialized hotspot package. It touches startup summaries, `AGENTS.md`, canary checkers, session replay filtering, tests, and the stable canary OpenSpec spec, so it must not run in parallel with other canary-surface writer sessions.
 
@@ -378,6 +378,7 @@ Admission: all eligible validation sessions may prepare evidence in parallel, bu
 | Phase 2 | `context_retention_canary_literal_boundary_plan` | implemented and locally integrated | Context-retention canary literal-boundary checking entered local `main` at `b779d51`. |
 | Phase 2 | `launcher_payload_context_boundary_plan` | implemented and locally integrated | Launcher payload file-backed boundary hardening entered local `main` at `6f1ef48`. |
 | Phase 2 | `startup_mojibake_utf8_recovery_plan` | implemented and locally integrated | Startup mojibake recovery source-report repair entered local `main` at `43d3ae9`. |
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implementation-complete local candidate | Restored startup-summary-defined canonical visible canary semantics, legacy ASCII classification, and replay/model-context blocking; final repository gates precede local `main` integration. |
 | Phase 1A | `complete_local_commit_flow_scheduler_reorder_buffer_plan` | ROB retire preflight hard gate implemented and locally integrated | Governance package `a259d91` and runtime hard gate `7087b31` verify self-retire ROB metadata before lock acquisition, rollback ref creation, or merge. |
 | Phase 5 | `comet_management_record_bootstrap_plan` | implemented and locally integrated | Local `main` includes closeout commit `8b8bfd6`; management records, checklist gates, monitoring return state, safe paths, and archive evidence are covered by focused Comet runtime tests. |
 | Phase 5 | `comet_runtime_policy_checker_alignment_plan` | implemented and locally integrated | Local `main` includes closeout commit `3335b67`; stable specs, policy checker, runtime tests, and CI registration are aligned. |

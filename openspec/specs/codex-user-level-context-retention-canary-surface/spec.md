@@ -22,7 +22,7 @@ Other active instruction surfaces MAY refer to the startup-summary canary and MA
 
 The repository SHALL provide an executable checker that validates active canary placement, canary encoding integrity, recovery wording, and optional user-provided response/session evidence without relying on model memory alone.
 
-The visible startup canary markers SHALL be ASCII-only tokens defined by the startup summary pair. Historical non-ASCII canary markers SHALL NOT be accepted as current canonical response evidence; they MAY remain only as checker-internal legacy/corruption detection inputs.
+The visible startup canary markers SHALL be the non-ASCII/cat-sound marker pair defined only by the startup summary pair. The previous ASCII transport-stable markers SHALL NOT be accepted as current canonical response evidence; they MAY remain only as checker-internal legacy/stale compatibility inputs and replay-filtering signals.
 
 The checker SHALL continue to enforce static placement rules for repository files.
 
@@ -30,18 +30,19 @@ When response or session evidence is explicitly provided, the checker SHALL insp
 
 When session JSONL evidence is narrowed to a specific turn or latest assistant response, the checker SHALL apply that selection only to eligible assistant messages and SHALL continue to ignore non-user-visible context sources.
 
-#### Scenario: Startup summary defines transport-stable canary markers
+#### Scenario: Startup summary defines canonical visible canary markers
 
 - **WHEN** the startup summary pair defines the current visible canary markers
-- **THEN** the markers SHALL be ASCII-only and safe to render through legacy Windows console or launcher payload boundaries
+- **THEN** the markers SHALL be the startup-summary-defined non-ASCII/cat-sound marker pair
 - **AND** no active source file outside the startup summary pair SHALL contain the literal marker text
 
-#### Scenario: User-visible assistant response uses historical non-ASCII canary text
+#### Scenario: User-visible assistant response uses legacy ASCII canary text
 
 - **WHEN** the checker receives response text or session JSONL with an eligible assistant response
-- **AND** that response contains a historical non-ASCII canary marker instead of the current startup-summary-defined marker
+- **AND** that response contains a legacy ASCII canary marker instead of the current startup-summary-defined marker
 - **THEN** the checker SHALL return a non-zero exit code
-- **AND** it SHALL report the response as invalid canary evidence requiring cold-start recovery
+- **AND** it SHALL report `legacy_canary`
+- **AND** it SHALL treat that response as stale compatibility input rather than canonical response evidence
 
 #### Scenario: Startup recovery omits repository instructions
 
@@ -90,6 +91,13 @@ When session JSONL evidence is narrowed to a specific turn or latest assistant r
 - **AND** the selected assistant response contains the startup-summary-defined canary markers
 - **THEN** the checker SHALL report `canonical_present`
 - **AND** it SHALL ignore other turns' context copies and assistant messages outside the selected turn scope
+
+#### Scenario: Model-readable replay context contains canary marker copies
+
+- **WHEN** session replay context filtering receives assistant-visible transcript text, tool/function output, raw startup-summary copies, or compacted handoff text
+- **AND** the candidate model-readable context contains startup-summary-defined canonical marker copies or legacy ASCII marker text
+- **THEN** the replay filtering helper SHALL block or filter that item before prompt-authority handoff
+- **AND** it SHALL report only reason labels and text summaries, not the marker literals
 
 #### Scenario: Assistant response contains mojibake canary text
 

@@ -10,10 +10,15 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "session_replay_context_filtering.py"
 
-START_CANARY = "CODEX_CTX_" + "CANARY_START"
-END_CANARY = "CODEX_CTX_" + "CANARY_END"
-LEGACY_START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
-LEGACY_END_CANARY = chr(21941) + "~"
+
+def from_codepoints(*codepoints: int) -> str:
+    return "".join(chr(codepoint) for codepoint in codepoints)
+
+
+START_CANARY = from_codepoints(25351, 25381, 23448)
+END_CANARY = from_codepoints(21941) + "~"
+LEGACY_START_CANARY = "CODEX_CTX_" + "CANARY_START"
+LEGACY_END_CANARY = "CODEX_CTX_" + "CANARY_END"
 
 
 def mojibake_variant(text: str) -> str:
@@ -151,10 +156,40 @@ class SessionReplayContextFilteringTest(unittest.TestCase):
         self.assertNotIn(START_CANARY, result.stdout)
         self.assertNotIn(END_CANARY, result.stdout)
 
+    def test_assistant_replay_with_canonical_canary_is_blocked_from_model_context(self) -> None:
+        root = self.make_root("session-replay-canonical-block")
+        self.write_minimal_surfaces(root)
+        bad_text = f"Replay copied user-visible canary {START_CANARY} / {END_CANARY} into model context."
+
+        result = self.run_check(root, "--response-text", bad_text)
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        reasons = {reason for item in payload["blocked_authority_items"] for reason in item["reasons"]}
+        self.assertIn("canonical_canary", reasons)
+        self.assertNotIn(START_CANARY, result.stdout)
+        self.assertNotIn(END_CANARY, result.stdout)
+
+    def test_assistant_replay_with_legacy_ascii_canary_is_blocked(self) -> None:
+        root = self.make_root("session-replay-legacy-ascii-block")
+        self.write_minimal_surfaces(root)
+        bad_text = f"Replay copied stale canary {LEGACY_START_CANARY} / {LEGACY_END_CANARY}."
+
+        result = self.run_check(root, "--response-text", bad_text)
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        reasons = {reason for item in payload["blocked_authority_items"] for reason in item["reasons"]}
+        self.assertIn("legacy_canary", reasons)
+        self.assertNotIn(LEGACY_START_CANARY, result.stdout)
+        self.assertNotIn(LEGACY_END_CANARY, result.stdout)
+
     def test_assistant_replay_with_mojibake_canary_is_blocked(self) -> None:
         root = self.make_root("session-replay-mojibake-block")
         self.write_minimal_surfaces(root)
-        bad_text = f"Replay copied corrupted canary {mojibake_variant(LEGACY_START_CANARY)} / {mojibake_variant(LEGACY_END_CANARY)}."
+        bad_text = f"Replay copied corrupted canary {mojibake_variant(START_CANARY)} / {mojibake_variant(END_CANARY)}."
 
         result = self.run_check(root, "--response-text", bad_text)
 

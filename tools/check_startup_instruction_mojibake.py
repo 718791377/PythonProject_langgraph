@@ -13,10 +13,10 @@ CHECK_NAME = "startup_instruction_mojibake"
 
 LEGACY_ENCODINGS_FOR_MOJIBAKE = ("gbk", "gb18030", "cp936", "latin-1")
 
-START_CANARY = "CODEX_CTX_" + "CANARY_START"
-END_CANARY = "CODEX_CTX_" + "CANARY_END"
-LEGACY_START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
-LEGACY_END_CANARY = chr(21941) + "~"
+START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
+END_CANARY = chr(21941) + "~"
+LEGACY_START_CANARY = "CODEX_CTX_" + "CANARY_START"
+LEGACY_END_CANARY = "CODEX_CTX_" + "CANARY_END"
 
 AUTHORITY_SURFACES = (
     Path("AGENTS.md"),
@@ -57,8 +57,8 @@ def from_codepoints(*codepoints: int) -> str:
 
 
 CANONICAL_CHINESE_TOKENS = {
-    "canary_start_marker": LEGACY_START_CANARY,
-    "canary_end_marker": LEGACY_END_CANARY,
+    "canary_start_marker": START_CANARY,
+    "canary_end_marker": END_CANARY,
     "mojibake": from_codepoints(20081, 30721),
     "prompt_sentinel": from_codepoints(25552, 31034, 35789, 21736, 20853),
     "startup_instructions": from_codepoints(21551, 21160, 35828, 26126),
@@ -85,9 +85,7 @@ def derive_mojibake_variants(text: str) -> tuple[str, ...]:
 
 
 def configured_mojibake_variants(token_name: str, token_text: str) -> tuple[str, ...]:
-    variants = set(derive_mojibake_variants(token_text))
-    if token_name in {"canary_start_marker", "canary_end_marker"}:
-        variants.add(token_text)
+    variants = {variant for variant in derive_mojibake_variants(token_text) if variant != token_text}
     return tuple(sorted(variants, key=lambda value: (-len(value), value)))
 
 
@@ -264,15 +262,21 @@ def filter_canary_mojibake_lines(mojibake_lines: list[dict]) -> list[dict]:
 
 def diagnose_response_text(source: str, text: str, *, path: str | None = None, line: int | None = None) -> dict:
     mojibake_lines = filter_canary_mojibake_lines(find_mojibake_lines(text))
+    canonical_present = START_CANARY in text and END_CANARY in text
+    legacy_present = LEGACY_START_CANARY in text or LEGACY_END_CANARY in text
     if mojibake_lines:
         status = "mojibake_canary"
-    elif START_CANARY in text and END_CANARY in text:
+    elif canonical_present:
         status = "canonical_present"
+    elif legacy_present:
+        status = "legacy_canary"
     else:
         status = "no_mojibake_detected"
     diagnostic = {
         "source": source,
         "status": status,
+        "canonical_marker_present": canonical_present,
+        "legacy_marker_present": legacy_present,
         "mojibake_canary_lines": mojibake_lines,
         "recovery_action": (
             "reread docs_bilingual/project_startup_summary.md and "
@@ -395,6 +399,11 @@ def run_check(
             errors.append(
                 "Response/session startup diagnostic reported mojibake_canary; "
                 "reread the startup summary pair through an explicit UTF-8 path before continuing."
+            )
+        elif diagnostic.get("status") == "legacy_canary":
+            errors.append(
+                "Response/session startup diagnostic reported legacy_canary; "
+                "legacy marker text is stale compatibility input and must not be treated as canonical."
             )
 
     if not errors:
