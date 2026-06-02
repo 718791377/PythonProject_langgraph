@@ -135,6 +135,8 @@ persistent_team=<not_selected|not_needed|candidate|selected|running|complete|blo
 why=<task-shape, threshold, blocker, or evidence reason>
 ```
 
+This recommended activation trace is a plain-text diagnostic line/block for user visibility and log/checker stability. It is not a Codex CLI progress panel. `Updated Plan` is the progress-panel surface; Markdown checkboxes remain implementation-plan-internal task tracking only.
+
 ## 4. Codex usage
 
 Natural-language triggers:

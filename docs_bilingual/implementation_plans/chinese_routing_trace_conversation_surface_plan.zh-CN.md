@@ -17,7 +17,7 @@ confirmation_required: true
 
 ## 目标
 
-要求对话中面向用户展示的固定标签保持为 `Routing trace` 和 `Updated Plan`，不得翻译成中文标题；标签下的解释性内容可以使用中文。`Updated Plan` 必须继续保持复选框/状态清单语义，不能改成纯自然语言段落；保存版结构化 evidence 继续保留机器可读 ASCII 阈值、blocker token、schema key、文件名和命令参数。
+要求对话中面向用户展示的固定标签保持为 `Routing trace` 和 `Updated Plan`，不得翻译成中文标题。`Routing trace` 是普通文本路由诊断行，使用固定标签加 `key=value` 字段；`Updated Plan` 是用户可见进度面板，必须使用树状 `✔`/`□` 状态呈现，而不是手写 Markdown checklist。Markdown checkbox 语法只继续用于 implementation plan 文件内部任务追踪。标签下的解释性内容可以使用中文；保存版结构化 evidence 继续保留机器可读 ASCII 阈值、blocker token、schema key、文件名和命令参数。
 
 ## 来源方案
 
@@ -102,15 +102,16 @@ Stage C 进入条件：固定标签 runtime/checker 切片已合入本地 `main`
 
 - 父方案 Phase 4 明确覆盖固定用户可见 `Routing trace` 和 `Updated Plan` 表面。
 - 本子方案明确区分用户可见固定标签表面与保存版机器可读 ASCII evidence。
-- 对话中必须保留 `Routing trace` 作为用户可见路由决策标签；解释内容可以使用中文。
-- 对话中必须保留 `Updated Plan` 作为用户可见计划进度标签。
-- `Updated Plan` 必须保留复选框/状态清单语义，例如复选框行或 pending / in_progress / completed 项，不能被替换为普通段落。
+- 对话中必须保留 `Routing trace` 作为用户可见路由决策标签，并把它呈现为带 `key=value` 字段的普通文本诊断行；解释内容可以使用中文。
+- 对话中必须保留 `Updated Plan` 作为用户可见计划进度标签，并使用树状 `✔`/`□` 进度面板。
+- 对话中不得把 `Updated Plan` 额外重复为手写 Markdown `- [x]` / `- [ ]` checklist；该 checkbox 语法只继续用于 implementation plan 文件内部任务追踪。
 - 英文工具名、文件名、schema key、阈值 token、blocker token 和 CLI 参数允许保持 ASCII。
 - Evidence 以轻量索引记录，不向本方案正文追加大型证据包。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-01 progress-surface boundary confirmation：分支 `document-progress-surface-boundary-20260601` 收窄此前“复选框/状态清单”措辞：用户可见 `Updated Plan` 只表示树状 `✔`/`□` 进度面板；Markdown checkbox 继续作为 implementation plan 内部任务追踪模式；`Routing trace` 保持普通文本 `key=value` 诊断行。
 - 2026-05-31 Phase 4 最终收口：`close-phase4-final-20260531` 确认本子方案无未完成 checklist，fixed-label 实现与收口证据已保留在当前本地 `main`，剩余门禁为显式远端发布批准。
 - 2026-05-31 Stage C 收口：分支 `close-chinese-routing-trace-conversation-surface-plan-20260531` 将已实现的固定 `Routing trace` 与 `Updated Plan` 会话表面契约的最后验证清单项记录为完成；最终 local-main commit 与验证证据记录在 assistant 回复和本地 git 历史中。
 - 2026-05-30 实施基线：本地 `main` 已包含 `implement-routing-updated-plan-fixed-labels-20260530c` 中的 fixed-label runtime/checker 包，包括稳定 `Routing trace` 和 `Updated Plan` 标签以及清单语义的 checker/fixture 覆盖。

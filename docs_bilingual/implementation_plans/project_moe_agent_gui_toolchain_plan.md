@@ -6,8 +6,8 @@ status: active
 plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 created_at: 2026-05-20
-updated_at: 2026-06-01
-last_reviewed_at: 2026-06-01
+updated_at: 2026-06-02
+last_reviewed_at: 2026-06-02
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -51,12 +51,19 @@ Status interpretation:
 
 - `status: active`: this is the current executable implementation plan; it is not a claim that the Project MOE GUI runtime is fully complete.
 - `plan_readiness: full-comet-structure-ready-for-implementation-slicing`: the structure, boundaries, and task granularity are ready for code implementation slicing.
-- `D:\PythonProject_paper_suggest`: A remains the Phase 1 owner; do not reimplement A's business Phase 1 inside B. Whether A's primary directory is GUI-ready must be judged later by A local `main` integration, a real install receipt, and a rollback pointer.
-- 2026-06-01 decision: A=`D:\PythonProject_paper_suggest` remains the real Phase 1 owner, and B=`D:\PythonProject_langgraph` remains the Phase 2 toolchain source of truth. This pass repairs Phase 1 contract blockers in an A repair worktree derived from A's current `main`, then validates B's Phase 2 installer dry-run. Do not reimplement a full A business Phase 1 inside B as substitute target-project evidence.
+- `D:\PythonProject_paper_suggest`: A remains the Phase 1 owner; B must not reimplement A business Phase 1. A local `main` has Phase 1, install/update receipt, and rollback refs, but current GUI preflight availability must be based on fresh validation after the 0.2.23 update.
+- 2026-06-01 decision: A=`D:\PythonProject_paper_suggest` remains the real Phase 1 owner, and B=`D:\PythonProject_langgraph` remains the Phase 2 toolchain source of truth. The repair-worktree dry-run route has converged into a real A local-main install/update verification route. Do not reimplement a full A business Phase 1 inside B as substitute target-project evidence.
 - 2026-06-01 evidence: old worktree `paper_suggest-thesis-moe-phase1` is stale and must not be used as current A truth; the new A repair worktree is `D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601`, committed as `560da0e` (A Phase 1 readiness-contract repair commit; the Chinese commit subject is kept only in the zh-CN companion).
 - 2026-06-01 privacy boundary: A's `MOE.md` is ignored/private and was copied only into the A repair worktree for readiness validation; do not commit it and do not copy its full content into B documentation or tooling.
 - 2026-06-01 readiness evidence: A repair worktree static-only output is `ok=true / readiness_status=static-ready-candidate / adaptation_lane=ready-candidate / control_mode_allowed=false`, where `readiness_status` is the Phase 1 contract classification, `adaptation_lane` is the next handling lane, and `control_mode_allowed=false` means display/dry-run only; execute-read-contract output is `ok=true / token=ok / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true`, where `token=ok` is the stable machine-readable success token and `control_mode_allowed=true` means the guarded install/control path may proceed after receipt and rollback evidence, with `project-status`, `list-sessions`, `status`, and `assert-on` checked.
-- 2026-06-01 Phase 2 evidence: B installer dry-run against the A repair worktree outputs `ok=true / token=ok / mode=dry-run / toolchain_version=0.2.20 / cli_contract=project-moe-cli-v1 / blockers=[]`, with planned writes for `tools/project_moe_gui/launcher.py`, `project_moe_gui.config.json`, `README.md`, and `project-moe-gui.cmd`.
+- 2026-06-01 A local-main evidence: A integrated `560da0e` (Phase 1 readiness-contract repair), `c6b92ae` (real Project MOE GUI install), and `ce23931` (shared-runtime launcher update). Rollback refs are `refs/backup/local-main/20260601-125126-before-thesis-moe-phase1-repair-20260601` and `refs/backup/local-main/20260601-215213-before-project-moe-gui-runtime-entry-update`.
+- 2026-06-01 Phase 2 evidence: B toolchain `0.2.22` repairs target-launcher runtime entry by re-executing through configured `runtime_python`, guarding recursion with `PROJECT_MOE_GUI_RUNTIME_REEXEC`, and setting `PYTHONUTF8=1`. The installed preflight payload records `launcher_runtime_python` and `launcher_runtime_reexec`.
+- 2026-06-01 correction evidence: A later showed an installed `toolchain_source_root` still pointing at a deleted B feature worktree, so A launcher preflight returned `blocked:phase1_readiness_gate_unavailable / No module named 'project_moe_gui'`; the previous "launcher preflight ok" is historical evidence, not current availability.
+- 2026-06-01 Phase 2 fix slice: B toolchain `0.2.23` writes stable source root `D:\PythonProject_langgraph\tools\project_moe_gui_toolchain`, adds a source-root existence/import checker, and lets updater repair recoverable installs whose manifest still matches but source root is unavailable.
+- 2026-06-01 acceptance boundary: A remains a Ready Lane target, but current GUI preflight availability must be re-established by updating A managed artifacts to 0.2.23 and rerunning install check, readiness, and launcher preflight; no-argument / double-click launch is now the human-visible path after `0.2.25`; `--preflight --json` remains the automation path.
+- 2026-06-01 scaffold apply slice: B toolchain `0.2.24` adds protected `scaffold_project_moe_phase1.py --apply`. It creates only missing Bootstrap Lane files after project-evidence and clean Git dirty-state checks pass, refuses to overwrite existing private or operator surfaces, and keeps GUI control disabled until later readiness evidence returns Ready Lane.
+- 2026-06-02 human-friendly launcher slice: B toolchain `0.2.25` makes installed no-argument / double-click `project-moe-gui.cmd` open the visible PySide6 GUI by default for human operators, while preserving `--preflight --json` as the non-visible automation interface and blocking `--json` without `--preflight` from becoming an accidental machine-visible launch path.
+- 2026-06-02 QFluentWidgets / daemon / close-confirmation decision: the next implementation package must introduce `PySide6-Fluent-Widgets` as the default Project MOE GUI visual library through shared PySide6 runtime dependency checks, add a GUI dependency license manifest with package/version/source/license/review result, replace the minimal label-only window with a card/sidebar/status/diagnostics UI, start visible no-argument launch through a project-level daemon/watchdog using Windows no-console process flags such as `CREATE_NO_WINDOW` / `DETACHED_PROCESS`, and ask on close whether to exit or hide to tray. The phrase "GUI does not hide to tray" means it must not hide automatically; operator-selected tray hide from the close confirmation is allowed.
 - Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, only OpenSpec artifacts, repo-local guards, and local validation can be used as fallback evidence.
 
 Inline field definitions:
@@ -66,6 +73,7 @@ Inline field definitions:
 - `control_mode_allowed` says whether GUI write/control is allowed; `false` permits display or dry-run only, while `true` still requires an install receipt, rollback pointer, and target-project acceptance before real operation.
 - `token=ok` is the stable machine-readable success token returned by the target CLI or installer, so success is not inferred from prose output.
 - `blockers=[]` means the dry-run found no blockers; it is not evidence that a real installation has completed.
+- `launcher_runtime_python` records the interpreter that actually runs the installed launcher; `launcher_runtime_reexec=true` proves that an ambient Python invocation re-entered through the configured shared PySide6 runtime.
 
 ## 1. Relationship Model and Naming Boundary
 
@@ -365,6 +373,28 @@ GUI behavior rules:
 - Error display must include a stable token, a short explanation, and a recommended next action.
 - State badges must use both text and color, not color alone.
 
+### 10.1 QFluentWidgets visual contract
+
+The next Project MOE GUI visual shell must use QFluentWidgets by default:
+
+- The shared PySide6 runtime check must verify `PySide6-Fluent-Widgets` importability before enabling the styled shell.
+- A GUI dependency license manifest must record package name, import name, version, source URL, declared license, license-review status, allowed local use, and whether commercial/public redistribution requires a new review.
+- The GUI must fail closed to the plain PySide6 shell or a preflight blocker if QFluentWidgets is missing or the license manifest is absent; it must not silently claim the styled shell is ready.
+- The visible shell must render a left sidebar, top status banner, cards, session table, diagnostics panel, and footer/status area from the existing view model.
+- The shell must keep all state-changing actions routed through `execute_write_action_with_readback()` and target Phase 1 CLI contracts.
+
+### 10.2 Project-level daemon and close interaction contract
+
+The next human launcher must avoid persistent CMD windows:
+
+- No-argument / double-click `project-moe-gui.cmd` starts a project-level daemon/watchdog and then returns quickly.
+- Windows detached startup may use `subprocess` flags such as `CREATE_NO_WINDOW`, `DETACHED_PROCESS`, or an equivalent no-console combination; this is for the visible human path only.
+- `--preflight --json` remains a foreground, non-visible, machine-readable path and must not spawn a daemon.
+- The daemon records project-local lock / pid / status evidence and prevents duplicate GUI instances for the same target project.
+- Closing the GUI window shows a confirmation dialog with `Exit`, `Hide to tray`, and cancel/close options.
+- `Exit` terminates the GUI and lets the daemon exit; `Hide to tray` hides only after the operator explicitly chooses it and exposes tray actions `Show` and `Exit`; cancel keeps the window visible.
+- If the system tray is unavailable, the hide option is disabled or reported as a stable blocker, while normal exit remains available.
+
 ## 11. JSON Contract and State Model
 
 Unified envelope:
@@ -489,15 +519,18 @@ The readiness payload must include:
 }
 ```
 
-`D:\PythonProject_paper_suggest` is still categorized as a Ready Lane candidate, but the 2026-06-01 read-only recheck is still blocked with `control_mode_allowed=false`; only a readiness checker that explicitly outputs ready may unlock real GUI installation and control.
+`D:\PythonProject_paper_suggest` current classification: Ready Lane, but its installed GUI preflight was blocked by a stale `toolchain_source_root` pointing at a deleted feature worktree. A must be updated to B toolchain `0.2.23` and must pass install check, readiness, and launcher preflight again before current GUI preflight availability can be claimed.
 
-Current A blockers must be fixed in this order:
+The completed A convergence order was:
 
-1. Add the standard `[project]`, `[moe]`, `[dispatch]`, and `[extensions]` sections to A's `.codex/agents/thesis-moe-mentor.toml`, aligned to `state_namespace=thesis_moe`, repo-local scope, manual-enable behavior, brief-based dispatch, and fallback boundaries.
-2. Repair A's `thesis-moe-on.cmd` / `thesis-moe-off.cmd`: pass `--json` consistently and remove arbitrary argument passthrough, redirection, shell chaining, and other unsafe surfaces.
-3. Add a MOE `status --json` activation checkpoint to A's startup / launcher surface, covering startup, resume, continue, reload, and phase-change semantics.
-4. Repair A's `tools/thesis_moe_mode.py list-sessions --json` envelope: emit `cli_contract=project-moe-cli-v1` and include a stable `token` in every session row.
-5. Only after A passes static-only and execute-read-contract readiness may B's `install_project_moe_gui.py --dry-run --json` be run against A; only a blocker-free dry-run may unlock real install and GUI acceptance.
+1. Repair the A agent TOML standard sections and wrapper / CLI JSON safety boundaries.
+2. Add the startup activation hook and verify `project-status`, `list-sessions`, `status`, and `assert-on`.
+3. Integrate A Phase 1 repair as `560da0e`.
+4. Install B's Project MOE GUI into A and integrate the install as `c6b92ae`.
+5. Repair B's installed-launcher runtime entry, update A to toolchain `0.2.22`, and integrate the A launcher update as `ce23931`.
+6. Discover that stale `toolchain_source_root` can make install check look normal while launcher preflight fails.
+7. Add stable source-root writing, source-root checker, and updater self-repair in B toolchain `0.2.23`.
+8. Next, update A managed artifacts again and rerun install check, readiness, installed-launcher preflight, and A tests. This unlocks guarded GUI use but does not claim that a visible GUI window was launched.
 
 ## 14. Implementation Items (ordered, fine-grained)
 
@@ -520,7 +553,7 @@ Current A blockers must be fixed in this order:
 #### Slice 0: plan and OpenSpec evidence closure
 
 - [x] Reuse the existing OpenSpec change `refine-project-moe-gui-plan-comet-structure`; do not open an unrelated duplicate change.
-- [x] Keep `status: draft` and use `plan_readiness` for implementation-slicing readiness, not runtime completion.
+- [x] Keep `status: active` and use `plan_readiness` for implementation-slicing readiness, not runtime completion.
 - [x] Keep the bilingual implementation-plan pair synchronized.
 - [x] Keep `.comet.yaml` honest about Windows Comet bash unavailability.
 - [x] Replace any corrupted Chinese OpenSpec / Superpowers support artifacts for this change with valid UTF-8 Chinese text.
@@ -540,38 +573,63 @@ Current A blockers must be fixed in this order:
 
 #### Slice 2: Bootstrap and repair lane tooling
 
-- [ ] Freeze `scaffold_project_moe_phase1.py --dry-run --json` output.
-- [ ] Generate bootstrap actions without writing target files by default.
-- [ ] Add an explicit `--apply` path only after target ownership and dirty-state checks pass.
-- [ ] Produce a repair-lane report for partially implemented Phase 1 projects.
-- [ ] Preserve `D:\PythonProject_paper_suggest` as repair-lane until fresh checker evidence proves otherwise.
+- [x] Freeze `scaffold_project_moe_phase1.py --dry-run --json` output.
+- [x] Generate bootstrap actions without writing target files by default.
+- [x] Add an explicit `--apply` path only after target ownership and dirty-state checks pass.
+- Evidence (2026-06-01): toolchain `0.2.24` adds protected scaffold `--apply`; regression coverage proves clean targets create only missing Phase 1 files, dirty targets fail closed before writing, and existing private prompt / agent surfaces are not overwritten.
+- [x] Produce a repair-lane report for partially implemented Phase 1 projects.
+- [x] Preserve `D:\PythonProject_paper_suggest` as repair-lane until fresh checker evidence proves otherwise, then promote it only after real Ready Lane evidence exists.
 
 #### Slice 3: target install, update, uninstall, and rollback manifest
 
-- [ ] Implement install artifact generation under `<project>/tools/project_moe_gui/`.
-- [ ] Generate `<project>/project-moe-gui.cmd` as a narrow launcher, not an arbitrary command passthrough.
-- [ ] Write `project_moe_gui.install-manifest.json` with source commit, managed files, hashes, target root, agent name, namespace, readiness result, and rollback pointer.
-- [ ] Implement update by comparing manifest hashes and source version.
+- [x] Implement install artifact generation under `<project>/tools/project_moe_gui/`.
+- [x] Generate `<project>/project-moe-gui.cmd` as a narrow launcher, not an arbitrary command passthrough.
+- [x] Write `project_moe_gui.install-manifest.json` with source commit, managed files, hashes, target root, agent name, namespace, readiness result, and rollback pointer.
+- [x] Implement update by comparing manifest hashes and source version.
 - [x] Implement uninstall by deleting only manifest-owned managed files.
 - [x] Create local uninstall receipts before deleting any managed target artifact and keep rollback hints in the JSON payload.
+- [x] Write stable `toolchain_source_root` during target install/update instead of persisting feature worktree paths.
+- [x] Make `check_project_moe_gui_install.py` fail closed when `toolchain_source_root` is missing or cannot import `project_moe_gui`.
+- [x] Allow `update_project_moe_gui.py` to repair recoverable installs whose manifest still matches but `toolchain_source_root` is stale.
 
 #### Slice 4: Phase 2 PySide6 GUI shell
 
-- [ ] Build the launcher preflight: target root selection, readiness check, read-contract check, and fail-closed blocker display.
-- [ ] Implement the project-default status card.
-- [ ] Implement the session table with desensitized session identifiers and lifecycle fields.
-- [ ] Implement project default on/off actions through target CLI only.
-- [ ] Implement selected-session on/off actions through target CLI only.
-- [ ] Disable same-scope write controls during writes and refresh state after every write.
-- [ ] Display stable failure tokens, concise explanations, suggested next actions, and redacted stdout/stderr summaries.
+- [x] Build the launcher preflight: target root selection, readiness check, read-contract check, and fail-closed blocker display.
+- [x] Implement the project-default status card.
+- [x] Implement the session table with desensitized session identifiers and lifecycle fields.
+- [x] Implement project default on/off actions through target CLI only.
+- [x] Implement selected-session on/off actions through target CLI only.
+- [x] Disable same-scope write controls during writes and refresh state after every write.
+- [x] Display stable failure tokens, concise explanations, suggested next actions, and redacted stdout/stderr summaries.
 
-#### Slice 5: governance, docs, and checker integration
+#### Slice 4A: QFluentWidgets visual shell, project daemon, and close confirmation
 
-- [ ] Register any new checker in the repository guard and CI manifest.
-- [ ] Update the PySide6 cross-project capability plan only for shared runtime and launcher boundary changes.
-- [ ] Update Project MOE-specific docs only for MOE GUI state, readiness, and installer behavior.
-- [ ] Keep workflow skills, plugin profiles, and GUI profile loading out of native-expert evidence claims.
-- [ ] Keep private prompt source content referenced, not copied.
+- [ ] Add shared-runtime dependency verification for `PySide6-Fluent-Widgets` / QFluentWidgets.
+- [ ] Add a GUI dependency license manifest and checker evidence for QFluentWidgets package/version/source/license/review result.
+- [ ] Replace the minimal label-only window with a QFluentWidgets-styled sidebar, top banner, cards, session table, diagnostics panel, and footer.
+- [ ] Preserve the existing view-model and target CLI read/write contract; no direct state JSON writes are allowed.
+- [ ] Implement a project-level daemon/watchdog path for no-argument / double-click launch so CMD exits quickly on Windows.
+- [ ] Use Windows no-console process flags such as `CREATE_NO_WINDOW` / `DETACHED_PROCESS` or equivalent guarded logic for the human visible launcher path.
+- [ ] Keep `--preflight --json` foreground and non-visible for automation.
+- [ ] Add project-local lock / pid / status handling to avoid duplicate GUI instances.
+- [ ] Add close confirmation with `Exit`, `Hide to tray`, and cancel behavior.
+- [ ] Add tray `Show` / `Exit` actions only after the operator explicitly chooses hide; do not auto-hide to tray.
+
+#### Slice 5: Governance, Docs, and Checker Integration
+
+The following are standing governance rules, not remaining product checkboxes:
+
+- Register new checkers in repository guard and CI manifest at the same time.
+- Update the PySide6 cross-project capability plan only when shared runtime and launcher boundaries change.
+- Update Project MOE-specific docs only when MOE GUI state, readiness, and installer behavior change.
+- Do not treat workflow skills, plugin profiles, or GUI profile loading as native-expert evidence.
+- Reference private prompt sources only; do not copy body text.
+
+Dedicated docs/checker closeout completed in this slice:
+
+- [x] Record the stale `toolchain_source_root` risk in the Project MOE-specific plan.
+- [x] Move standing governance rules out of empty todo checkboxes to avoid treating them as incomplete product work.
+- [x] Add regression coverage for the source-root checker and updater self-repair.
 
 #### Slice 6: target-project acceptance and rollout
 
@@ -585,10 +643,10 @@ Current A blockers must be fixed in this order:
 - [x] Record A's repaired static-only readiness evidence: `ok=true / static-ready-candidate / ready-candidate / control_mode_allowed=false`.
 - [x] Record A's repaired read-contract readiness evidence: `ok=true / token=ok / ready / control_mode_allowed=true`.
 - [x] After A readiness outputs `control_mode_allowed=true`, record B's Phase 2 installer dry-run evidence: `ok=true / token=ok / blockers=[] / mode=dry-run`.
-- [ ] If A later requires a startup activation hook, handle that as a separate A repair item and rerun readiness; this read-contract acceptance did not require the hook.
-- [ ] After installer dry-run has no blockers, record A's real install receipt and rollback pointer.
-- [ ] Record write-fixture evidence for project on/off, session on/off, no-op, invalid record skip, lock timeout, and atomic write.
-- [ ] Only after fresh Ready Lane evidence exists, allow GUI control for that target project.
+- [x] Add A's startup activation hook and rerun readiness against A local `main`.
+- [x] After installer dry-run has no blockers, record A's real install receipt and rollback pointer.
+- [x] Record write-fixture evidence for project on/off, session on/off, no-op, invalid record skip, lock timeout, and atomic write.
+- [x] Only after fresh Ready Lane evidence exists, allow guarded GUI control for that target project; visible GUI launch is now the default no-argument / double-click human operator action once Ready Lane evidence exists; automation remains on `--preflight --json`.
 
 ### 14.3 File ownership map
 
@@ -602,22 +660,27 @@ Current A blockers must be fixed in this order:
 
 ### 14.4 Local integration order and evidence retention
 
-- [ ] Start implementation from a feature branch or feature worktree based on current local `main`.
-- [ ] Keep the primary worktree on local `main`; do not turn it into a feature workspace.
-- [ ] Commit only after the precommit update/archive review passes.
-- [ ] Run local gate and local MR review before local `main` integration.
-- [ ] Merge into local `main` only after the feature branch is clean and user approval for local integration is present.
-- [ ] Keep remote publication separate; do not push GitLab/GitHub unless the current user message explicitly approves remote publication.
-- [ ] Retain evidence: command output summaries, changed paths, worktree receipt, rollback ref if created, and archive deferral reason if archive cannot run.
+The following are standing local-integration rules for every implementation pass, not remaining product features:
+
+- Create a feature branch or feature worktree from current local `main`.
+- Keep the primary directory on local `main`; do not turn it into a feature workspace.
+- Commit only after precommit update/archive review passes.
+- Run local gate and local MR review before local `main` integration.
+- Merge to local `main` only after the feature branch is clean and the local-integration authorization boundary is satisfied.
+- Keep remote publication separate; do not push GitLab/GitHub unless the current user message explicitly approves remote publication.
+- Preserve evidence: command output summary, changed paths, worktree receipt, rollback ref if created, and archive deferral reason if archive cannot run.
 
 ### 14.5 Never-skip execution rules
 
-- [ ] Before every target-project write, confirm dirty/ownership preflight.
-- [ ] Whenever a new checker is added, register it in the repo guard.
-- [ ] After every completed OpenSpec change, archive it; if Comet bash is unavailable, record `x_archive_deferred_reason` and `x_archive_follow_up`.
-- [ ] Before every local commit, run the precommit update/archive review.
-- [ ] Before every local `main` integration, run the local gate and local MR review.
-- [ ] If an expert, durable worker, GUI action, or target CLI times out, treat the result as missing evidence; retry, narrow, hand off, or record explicit main-session takeover.
+The following are standing execution rules; empty checkboxes are not used to represent them as incomplete implementation work:
+
+- Confirm dirty/ownership preflight before every target-project write.
+- Register every new checker in repository guard.
+- Archive each completed OpenSpec change; if Comet bash is unavailable, record `x_archive_deferred_reason` and `x_archive_follow_up`.
+- Field definitions: `x_archive_deferred_reason` records the stable reason why immediate archive cannot happen in this pass; `x_archive_follow_up` records who continues the archive and under what condition.
+- Run precommit update/archive review before every local commit.
+- Run local gate and local MR review before every local main merge.
+- Treat expert, durable worker, GUI action, or target CLI timeout as missing evidence; only retry, narrow scope, hand off to an eligible durable lane, or record explicit main-session takeover.
 
 ## 15. Verification Plan
 
@@ -655,13 +718,20 @@ Target-project readiness verification:
   - execute-read-contract: `ok=true / token=ok / ready / control_mode_allowed=true`.
   - installer dry-run: `ok=true / token=ok / blockers=[] / planned_writes=4`.
 - Field meaning: `static-ready-candidate` is a read-only static candidate state, `ready` means the read contract passed, `control_mode_allowed=true` only permits the guarded install/control path, and `planned_writes=4` means dry-run would create four managed files rather than having written them.
-- Future acceptance for A's primary directory or A local `main` must rerun these commands; repair-worktree evidence is not a real installed primary-directory receipt.
-- write fixtures must cover project on/off, session on/off, manual override retention, invalid-record skip, no-op, lock timeout, and atomic write.
+- Additional results recorded for A local `main` after real install/update:
+  - A commits: `560da0e` Phase 1 repair, `c6b92ae` GUI install, `ce23931` shared-runtime launcher update.
+  - install/update check: `ok=true / status=up_to_date / installed_toolchain_version=0.2.22 / target_toolchain_version=0.2.22 / runtime_status=import_ok / blockers=[]`.
+  - readiness recheck: `ok=true / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true / git_status.dirty=false`.
+  - installed launcher preflight: `ok=true / token=ok / pyside6_status=import_ok / launcher_runtime_reexec=true`.
+  - target tests: `python -m unittest discover -s test -p "test_thesis_moe_mode.py"` => `Ran 6 tests ... OK`.
+  - visible GUI launch: not executed in this pass.
+- write fixtures cover project on/off, session on/off, manual override retention, invalid-record skip, no-op, lock timeout, and atomic write in `test/project_moe_gui_toolchain.test.py`.
+- QFluentWidgets / daemon follow-up verification must cover: QFluentWidgets import or fail-closed blocker, license manifest presence, GUI view-model render smoke, daemon dry-run/no-console launch plan, duplicate lock handling, `--preflight --json` foreground behavior, close-confirmation exit/hide/cancel behavior, tray-unavailable fail-closed handling, and no direct state writes.
 
 Human acceptance:
 
 - The document structure is same-level with the newer Pi sidecar plan: goal, architecture, source of truth, contracts, gates, rollback, risks, and self-checks are all present.
-- `D:\PythonProject_paper_suggest` is not mislabeled as ready.
+- `D:\PythonProject_paper_suggest` is labeled as Ready Lane only with real installed preflight evidence, not as visibly launched or fully manually accepted.
 - GUI control is never extended to uninstalled target projects.
 - Private prompt full text and raw session ids are not written into this repository's documentation.
 
@@ -691,18 +761,19 @@ When implementation moves from docs to code, also update/check:
 ## 18. Self-checklist
 
 - [x] This document uses the full Comet implementation-plan structure.
-- [x] `status: draft` is preserved and `plan_readiness` is used to separate structure readiness from runtime completion.
+- [x] `status: active` is preserved and `plan_readiness` is used to separate structure readiness from runtime completion.
 - [x] GUI source of truth stays in this repository and target-project state source of truth stays in the target project.
 - [x] GUI does not edit JSON directly.
 - [x] Ready / Ready-candidate / Bootstrap / Repair lane is explicit.
-- [x] `D:\PythonProject_paper_suggest` is still not GUI ready.
+- [x] State the historical install evidence and current stale source-root blocker for `D:\PythonProject_paper_suggest`, requiring 0.2.23 update before preflight can be claimed current again.
 - [x] Private prompt sources are referenced, not copied.
 - [x] Install, update, uninstall, and rollback managed-artifact boundaries are explicit.
 - [x] Verification commands and local-main / remote-publication boundaries are explicit.
 - [x] Comet management record, phase gates, Monitoring return semantics, and evidence retention are explicit.
 - [x] Implementation slices, file ownership map, and local integration order are explicit.
-- [ ] Once the code implementation is complete, archive the corresponding OpenSpec change.
-- [ ] Once real Ready Lane evidence exists for a target project, allow GUI control.
+- [ ] Archive the corresponding OpenSpec change after follow-up code implementation and A/B acceptance are complete.
+  - Deferral (2026-06-01): this scaffold `--apply` slice is a local toolchain completion slice. Archive remains deferred until the current local integration package is validated and the operator explicitly chooses the OpenSpec archival scope for the completed Project MOE GUI change set.
+- [x] Once real Ready Lane evidence exists for a target project, allow guarded GUI control.
 
 ## 19. References
 

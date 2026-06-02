@@ -152,6 +152,13 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/launcher_payload_context_boundary_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/launcher_payload_context_boundary_plan.zh-CN.md
 
+
+  - doc_id: prompt_canary_canonical_visible_marker_restore_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/prompt_canary_canonical_visible_marker_restore_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/prompt_canary_canonical_visible_marker_restore_plan.zh-CN.md
+
   - doc_id: repo_local_selector_ownership_plan
     doc_class: implementation_plan
     status: active
@@ -485,6 +492,13 @@ documents:
     status: active
     canonical_path: docs_bilingual/governance/openspec_official_workflow_policy.md
     zh_cn_path: docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md
+
+
+  - doc_id: spec_kit_subordinate_adapter_policy
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md
+    zh_cn_path: docs_bilingual/governance/spec_kit_subordinate_adapter_policy.zh-CN.md
 
   - doc_id: openspec_comet_superpowers_workflow_policy
     doc_class: governance

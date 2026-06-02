@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -13,12 +14,14 @@ from unittest.mock import patch
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TOOLCHAIN_SRC = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "src"
 sys.path.insert(0, str(TOOLCHAIN_SRC))
+from project_moe_gui.toolchain import DEFAULT_TOOLCHAIN_SOURCE_ROOT, current_toolchain_source_root
 INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_moe_gui.py"
 CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_gui_install.py"
 UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_moe_gui.py"
 UNINSTALL_PLANNER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "plan_project_moe_gui_uninstall.py"
 PHASE1_READINESS = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_phase1_readiness.py"
 PHASE1_SCAFFOLD = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "scaffold_project_moe_phase1.py"
+GUI_PREFLIGHT_ALLOWED_TOKENS = {"ok", "blocked:pyside6_unavailable", "blocked:qfluentwidgets_unavailable"}
 
 
 STATEFUL_MODE_CLI_TEMPLATE = r'''
@@ -938,8 +941,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(payload["mode"], "dry-run")
             self.assertTrue(payload["read_only"])
             self.assertFalse(payload["writes_target_project"])
-            self.assertFalse(payload["apply_supported"])
-            self.assertFalse(payload["target_project_write_allowed_by_checker"])
+            self.assertTrue(payload["apply_supported"])
+            self.assertTrue(payload["target_project_write_allowed_by_checker"])
             self.assertFalse(payload["control_mode_allowed"])
             self.assertEqual(payload["adaptation_lane"], "bootstrap")
             planned = {item["role"]: item for item in payload["planned_writes"]}
@@ -970,6 +973,80 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             ready_step = payload["operator_next_steps"][-1]
             self.assertEqual(ready_step["control_mode_allowed_after_step"], "only_after_readiness_status_ready")
             self.assertFalse(payload["privacy_boundary"]["private_prompt_body_read"])
+            self.assertFalse((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
+            self.assertFalse((project / "MOE.md").exists())
+            self.assertFalse((project / "tools" / "thesis_moe_mode.py").exists())
+
+    def test_phase1_bootstrap_scaffold_apply_creates_only_missing_files_in_clean_target(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-bootstrap-apply"
+            project.mkdir()
+            (project / "README.md").write_text("# bootstrap target\n", encoding="utf-8")
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(
+                str(PHASE1_SCAFFOLD),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--apply",
+            )
+
+            self.assertEqual(payload["command"], "scaffold_project_moe_phase1")
+            self.assertEqual(payload["mode"], "apply")
+            self.assertFalse(payload["read_only"])
+            self.assertTrue(payload["writes_target_project"])
+            self.assertTrue(payload["apply_supported"])
+            self.assertTrue(payload["target_project_write_allowed_by_checker"])
+            self.assertFalse(payload["control_mode_allowed"])
+            created_paths = {item["path"] for item in payload["applied_writes"]}
+            self.assertEqual(
+                created_paths,
+                {
+                    ".codex/agents/thesis-moe-mentor.toml",
+                    "MOE.md",
+                    "tools/thesis_moe_mode.py",
+                    "thesis-moe-on.cmd",
+                    "thesis-moe-off.cmd",
+                    "AGENTS.md",
+                    "docs_bilingual/operations/thesis_moe_mode_usage.zh-CN.md",
+                },
+            )
+            self.assertTrue((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
+            self.assertTrue((project / "MOE.md").exists())
+            self.assertTrue((project / "tools" / "thesis_moe_mode.py").exists())
+            self.assertIn("blocked:bootstrap_placeholder", (project / "tools" / "thesis_moe_mode.py").read_text(encoding="utf-8"))
+            self.assertIn("Project MOE private prompt placeholder", (project / "MOE.md").read_text(encoding="utf-8"))
+            self.assertTrue(all(item["scaffold_owned"] is True and item["managed"] is False for item in payload["applied_writes"]))
+
+    def test_phase1_bootstrap_scaffold_apply_blocks_dirty_target_without_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-bootstrap-apply-dirty"
+            project.mkdir()
+            (project / "README.md").write_text("# bootstrap target\n", encoding="utf-8")
+            self.git_commit_all(project)
+            (project / "uncommitted.txt").write_text("dirty\n", encoding="utf-8")
+
+            _, payload = self.run_tool(
+                str(PHASE1_SCAFFOLD),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--apply",
+                expect_success=False,
+            )
+
+            self.assertEqual(payload["mode"], "apply")
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["token"], "blocked:dirty_target_project")
+            self.assertFalse(payload["writes_target_project"])
+            self.assertFalse(payload["target_project_write_allowed_by_checker"])
             self.assertFalse((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
             self.assertFalse((project / "MOE.md").exists())
             self.assertFalse((project / "tools" / "thesis_moe_mode.py").exists())
@@ -1009,6 +1086,43 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(self.file_digest(project / "MOE.md"), before_moe)
             self.assertEqual(self.file_digest(project / ".codex" / "agents" / "thesis-moe-mentor.toml"), before_agent)
             self.assertFalse(payload["privacy_boundary"]["private_prompt_body_read"])
+
+    def test_phase1_bootstrap_scaffold_apply_blocks_existing_private_surfaces_without_overwrite(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "phase1-bootstrap-existing-apply"
+            project.mkdir()
+            (project / ".codex" / "agents").mkdir(parents=True)
+            (project / "README.md").write_text("# existing target\n", encoding="utf-8")
+            (project / "MOE.md").write_text("# real private prompt fixture\n", encoding="utf-8")
+            (project / ".codex" / "agents" / "thesis-moe-mentor.toml").write_text(
+                'name = "thesis-moe-mentor"\n'
+                'description = "Existing private agent."\n'
+                'developer_instructions = "Existing private instructions must not be overwritten."\n',
+                encoding="utf-8",
+            )
+            self.git_commit_all(project)
+            before_moe = self.file_digest(project / "MOE.md")
+            before_agent = self.file_digest(project / ".codex" / "agents" / "thesis-moe-mentor.toml")
+
+            _, payload = self.run_tool(
+                str(PHASE1_SCAFFOLD),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                "--apply",
+                expect_success=False,
+            )
+
+            self.assertEqual(payload["mode"], "apply")
+            self.assertEqual(payload["token"], "blocked:existing_phase1_surface_requires_manual_review")
+            self.assertFalse(payload["writes_target_project"])
+            self.assertFalse(payload["target_project_write_allowed_by_checker"])
+            self.assertEqual(self.file_digest(project / "MOE.md"), before_moe)
+            self.assertEqual(self.file_digest(project / ".codex" / "agents" / "thesis-moe-mentor.toml"), before_agent)
+            self.assertFalse((project / "tools" / "thesis_moe_mode.py").exists())
 
     def test_phase1_readiness_checker_blocks_missing_operator_docs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1662,6 +1776,78 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             )
             self.assertEqual(payload["token"], "blocked:path_traversal")
 
+    def test_check_install_fails_closed_when_toolchain_source_root_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "fixture-stale-source-root"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-stale-source-root", session_id="session-stale-source")
+            _, install_payload = self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            self.assertTrue(install_payload["ok"], install_payload)
+            config_path = project / "tools" / "project_moe_gui" / "project_moe_gui.config.json"
+            config = json.loads(config_path.read_text(encoding="utf-8-sig"))
+            stale_root = project / ".deleted-worktree" / "tools" / "project_moe_gui_toolchain"
+            config["toolchain_source_root"] = str(stale_root)
+            config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            self.git_commit_all(project)
+
+            _, payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import", expect_success=False)
+
+            self.assertEqual(payload["token"], "blocked:managed_file_hash_mismatch", payload)
+            blocker_codes = {item["code"] for item in payload["blockers"]}
+            self.assertIn("blocked:toolchain_source_root_unavailable", blocker_codes)
+            self.assertEqual(payload["toolchain_source_status"], "missing")
+
+
+    def test_update_repairs_manifest_matching_stale_toolchain_source_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "fixture-update-stale-source-root"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-update-stale-source-root", session_id="session-update-stale")
+            _, install_payload = self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            self.assertTrue(install_payload["ok"], install_payload)
+            config_path = project / "tools" / "project_moe_gui" / "project_moe_gui.config.json"
+            config = json.loads(config_path.read_text(encoding="utf-8-sig"))
+            config["toolchain_source_root"] = str(project / ".deleted-worktree" / "tools" / "project_moe_gui_toolchain")
+            config_text = json.dumps(config, ensure_ascii=False, indent=2) + "\n"
+            config_path.write_text(config_text, encoding="utf-8")
+            manifest_path = project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+            for item in manifest["managed_files"]:
+                if item.get("path") == "tools/project_moe_gui/project_moe_gui.config.json":
+                    item["sha256"] = hashlib.sha256(config_path.read_bytes()).hexdigest()
+            manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            self.git_commit_all(project)
+
+            _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import", expect_success=False)
+            self.assertEqual(check_payload["token"], "blocked:toolchain_source_root_unavailable", check_payload)
+
+            _, update_payload = self.run_tool(str(UPDATER), "--target-project", str(project), expect_success=True)
+            self.assertEqual(update_payload["token"], "ok", update_payload)
+            self.assertFalse(update_payload["no_op"], update_payload)
+            repaired = json.loads(config_path.read_text(encoding="utf-8-sig"))
+            self.assertNotIn(".deleted-worktree", repaired["toolchain_source_root"])
+
+            _, final_check = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
+            self.assertEqual(final_check["status"], "up_to_date", final_check)
+            self.assertEqual(final_check["toolchain_source_status"], "import_ok", final_check)
+
+
     def test_update_dry_run_reports_noop_after_apply(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp) / "target"
@@ -2061,10 +2247,120 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 check=False,
             )
             payload = json.loads(result.stdout)
-            self.assertIn(payload["token"], {"ok", "blocked:pyside6_unavailable"}, payload)
+            self.assertIn(payload["token"], GUI_PREFLIGHT_ALLOWED_TOKENS, payload)
             self.assertEqual(payload["gui_shell_contract"], "project-moe-gui-shell-v1")
             self.assertNotEqual(payload["token"], "blocked:gui_not_implemented_phase2a")
             self.assertNotIn("Interactive PySide6 GUI is implemented in Phase 2B.", result.stdout)
+
+    def test_installed_launcher_no_args_defaults_to_visible_human_launch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
+
+            env = dict(os.environ)
+            env["PROJECT_MOE_GUI_DRY_RUN_VISIBLE"] = "1"
+            result = subprocess.run(
+                [sys.executable, str(project / "tools" / "project_moe_gui" / "launcher.py")],
+                cwd=project,
+                env=env,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+            self.assertIn("ok: Visible GUI launch dry-run passed.", result.stdout)
+            self.assertNotIn("blocked:visible_gui_launch_requires_explicit_approval", result.stdout)
+
+    def test_installed_launcher_visible_dry_run_does_not_require_pyside6_import(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
+
+            fake_source = Path(tmp) / "fake-source"
+            fake_package = fake_source / "src" / "project_moe_gui"
+            fake_package.mkdir(parents=True)
+            (fake_package / "__init__.py").write_text("", encoding="utf-8")
+            (fake_package / "toolchain.py").write_text(
+                "def check_phase1_readiness(*args, **kwargs):\n"
+                "    return {\n"
+                "        'ok': True,\n"
+                "        'token': 'ok',\n"
+                "        'readiness_status': 'ready',\n"
+                "        'adaptation_lane': 'installed',\n"
+                "        'bootstrap_required': False,\n"
+                "        'repair_required': False,\n"
+                "        'control_mode_allowed': True,\n"
+                "        'cli_execution_mode': 'read-only',\n"
+                "        'git_status': {'token': 'ok'},\n"
+                "        'blockers': [],\n"
+                "    }\n",
+                encoding="utf-8",
+            )
+            (fake_package / "gui_shell.py").write_text(
+                "def build_gui_preflight(*args, **kwargs):\n"
+                "    return {\n"
+                "        'schema_version': 1,\n"
+                "        'ok': False,\n"
+                "        'token': 'blocked:pyside6_unavailable',\n"
+                "        'exit_code': 5,\n"
+                "        'message': 'PySide6 is unavailable in this test fixture.',\n"
+                "        'view_model': {'window_structure': {}},\n"
+                "    }\n"
+                "def launch_visible(view_model):\n"
+                "    raise RuntimeError('should_not_launch_in_dry_run')\n",
+                encoding="utf-8",
+            )
+            config_path = project / "tools" / "project_moe_gui" / "project_moe_gui.config.json"
+            config = json.loads(config_path.read_text(encoding="utf-8-sig"))
+            config["toolchain_source_root"] = str(fake_source)
+            config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+            env = dict(os.environ)
+            env["PROJECT_MOE_GUI_DRY_RUN_VISIBLE"] = "1"
+            result = subprocess.run(
+                [sys.executable, str(project / "tools" / "project_moe_gui" / "launcher.py")],
+                cwd=project,
+                env=env,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+            self.assertIn("ok: Visible GUI launch dry-run passed.", result.stdout)
+            self.assertNotIn("blocked:pyside6_unavailable", result.stdout)
+
+    def test_installed_launcher_json_without_preflight_stays_machine_safe(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
+
+            payload = self.run_installed_launcher(project)
+
+            self.assertFalse(payload["ok"], payload)
+            self.assertEqual(payload["token"], "blocked:json_requires_preflight_for_non_visible_automation")
+            self.assertEqual(payload["exit_code"], 2)
+            self.assertIn("Use --preflight --json", payload["message"])
 
     def test_installed_launcher_missing_mode_cli_returns_bootstrap_scaffold_plan(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -2162,7 +2458,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
 
             payload = self.run_installed_launcher(project, "--preflight")
 
-            self.assertIn(payload["token"], {"ok", "blocked:pyside6_unavailable"}, payload)
+            self.assertIn(payload["token"], GUI_PREFLIGHT_ALLOWED_TOKENS, payload)
             gate = payload["phase1_readiness_gate"]
             self.assertEqual(gate["readiness_status"], "ready")
             self.assertEqual(gate["git_status"]["token"], "ok:runtime_state_dirty_allowed")
@@ -2219,6 +2515,15 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             installed_config = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").read_text(encoding="utf-8-sig"))
             self.assertNotIn("target_project_root", installed_config)
             self.assertEqual(installed_config["installed_target_project_root"], str(project.resolve()))
+            self.assertIn("runtime_python", installed_config)
+            expected_source_root = DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False) if DEFAULT_TOOLCHAIN_SOURCE_ROOT.exists() else current_toolchain_source_root().resolve(strict=False)
+            self.assertEqual(installed_config["toolchain_source_root"], str(expected_source_root))
+
+            launcher_text = (project / "tools" / "project_moe_gui" / "launcher.py").read_text(encoding="utf-8")
+            command_text = (project / "project-moe-gui.cmd").read_text(encoding="utf-8")
+            self.assertIn("maybe_reexec_with_runtime", launcher_text)
+            self.assertIn("PROJECT_MOE_GUI_RUNTIME_REEXEC", launcher_text)
+            self.assertIn("set PYTHONUTF8=1", command_text)
 
             _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
             self.assertEqual(check_payload["status"], "up_to_date")
@@ -2229,7 +2534,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(update_payload["status"], "up_to_date")
 
             preflight = self.run_installed_launcher(project, "--preflight")
-            self.assertIn(preflight["token"], {"ok", "blocked:pyside6_unavailable"}, preflight)
+            self.assertIn(preflight["token"], GUI_PREFLIGHT_ALLOWED_TOKENS, preflight)
+            self.assertIn("launcher_runtime_python", preflight)
+            self.assertIn("launcher_runtime_reexec", preflight)
             self.assertEqual(preflight["view_model"]["top_banner"]["project_root"], str(project.resolve()))
             self.assertEqual(preflight["view_model"]["top_banner"]["current_branch"], "main")
             self.assertNotEqual(preflight["view_model"]["session_table"]["rows"][0]["display_id"], "session-fixture-a")
@@ -2396,6 +2703,131 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             _, update_payload = self.run_tool(str(UPDATER), "--target-project", str(project), "--dry-run", expect_success=False)
             self.assertEqual(update_payload["token"], "blocked:managed_file_hash_mismatch")
             self.assertEqual(private_before, self.private_project_digests(project))
+
+
+    def test_qfluent_visual_dependency_contract_requires_license_review(self) -> None:
+        from project_moe_gui.qfluent_runtime import check_qfluent_runtime, expected_qfluent_dependency, qfluent_license_manifest
+
+        dependency = expected_qfluent_dependency()
+        self.assertEqual(dependency["package_name"], "PySide6-Fluent-Widgets")
+        self.assertEqual(dependency["import_name"], "qfluentwidgets")
+        self.assertEqual(dependency["license_family"], "GPLv3-or-commercial-dual-license")
+        self.assertTrue(dependency["fail_closed_if_missing"])
+
+        manifest = qfluent_license_manifest()
+        self.assertEqual(manifest["package_name"], "PySide6-Fluent-Widgets")
+        self.assertEqual(manifest["import_name"], "qfluentwidgets")
+        self.assertEqual(manifest["noncommercial_license"], "GPLv3")
+        self.assertTrue(manifest["commercial_use_requires_review"])
+        self.assertTrue(manifest["redistribution_requires_license_review"])
+        self.assertTrue(any("pypi.org/project/PySide6-Fluent-Widgets" in url for url in manifest["evidence_urls"]))
+
+        ok_payload = check_qfluent_runtime(
+            import_probe=lambda import_name: object(),
+            metadata_probe=lambda package_name: {"version": "1.11.2", "license": "GPLv3"},
+        )
+        self.assertTrue(ok_payload["ok"], ok_payload)
+        self.assertEqual(ok_payload["token"], "ok")
+        self.assertEqual(ok_payload["import_status"], "import_ok")
+        self.assertEqual(ok_payload["installed_version"], "1.11.2")
+        self.assertTrue(ok_payload["license_manifest"]["commercial_use_requires_review"])
+
+        def missing_import(_name: str) -> object:
+            raise ModuleNotFoundError(_name)
+
+        missing_payload = check_qfluent_runtime(import_probe=missing_import)
+        self.assertFalse(missing_payload["ok"], missing_payload)
+        self.assertEqual(missing_payload["token"], "blocked:qfluentwidgets_unavailable")
+        self.assertEqual(missing_payload["import_status"], "missing")
+
+    def test_gui_view_model_declares_fluent_cards_sidebar_and_license_gate(self) -> None:
+        from project_moe_gui.gui_shell import build_view_model
+        from project_moe_gui.qfluent_runtime import check_qfluent_runtime
+
+        qfluent_status = check_qfluent_runtime(
+            import_probe=lambda import_name: object(),
+            metadata_probe=lambda package_name: {"version": "1.11.2", "license": "GPLv3"},
+        )
+        config = {
+            "agent_name": "thesis-moe-mentor",
+            "state_namespace": "thesis_moe",
+            "runtime_project_root": "D:/target",
+            "cli_contract": "project-moe-cli-v1",
+        }
+        project_status = {"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"}
+        status_payload = {"ok": True, "token": "ok", "effective_enabled": True, "effective_source": "project-default"}
+        sessions_payload = {
+            "ok": True,
+            "token": "ok",
+            "sessions": [{"session_id": "session-1234567890abcdef", "effective_enabled": True, "token": "ok", "valid": True}],
+        }
+
+        view_model = build_view_model(
+            config,
+            project_status=project_status,
+            sessions_payload=sessions_payload,
+            status_payload=status_payload,
+            pyside6_available=True,
+            qfluent_status=qfluent_status,
+        )
+
+        region_ids = [region["id"] for region in view_model["window_structure"]["regions"]]
+        self.assertIn("navigation_sidebar", region_ids)
+        self.assertIn("status_overview_cards", region_ids)
+        self.assertIn("diagnostics_card", region_ids)
+        self.assertIn("session_table", region_ids)
+        self.assertEqual(view_model["visual"]["library"], "QFluentWidgets")
+        self.assertEqual(view_model["visual"]["qfluentwidgets_status"]["token"], "ok")
+        self.assertTrue(view_model["visual"]["license_manifest"]["commercial_use_requires_review"])
+        self.assertIn("Project", [item["label"] for item in view_model["navigation_sidebar"]["items"]])
+        self.assertGreaterEqual(len(view_model["status_cards"]), 3)
+        self.assertEqual(view_model["close_behavior"]["default_close_action"], "ask")
+
+    def test_close_behavior_requires_dialog_and_explicit_tray_hide(self) -> None:
+        from project_moe_gui.gui_shell import close_behavior_contract
+
+        contract = close_behavior_contract()
+        self.assertFalse(contract["auto_hide_to_tray"])
+        self.assertEqual(contract["default_close_action"], "ask")
+        self.assertEqual([option["id"] for option in contract["dialog_options"]], ["exit", "hide_to_tray", "cancel"])
+        self.assertTrue(contract["tray_icon_created_only_after_explicit_hide"])
+        self.assertEqual([item["id"] for item in contract["tray_menu_items"]], ["show", "exit"])
+
+    def test_daemon_launch_plan_hides_cmd_window_and_uses_duplicate_lock(self) -> None:
+        from project_moe_gui.daemon import build_daemon_launch_plan, windows_process_flags
+
+        launcher = Path("tools/project_moe_gui/launcher.py")
+        plan = build_daemon_launch_plan(launcher, no_args=True, platform_name="win32")
+        self.assertTrue(plan["uses_daemon"])
+        self.assertTrue(plan["duplicate_instance_guard"]["enabled"])
+        self.assertEqual(plan["cmd_window_policy"], "no_persistent_cmd")
+        self.assertIn(plan["windows_creation_flags_label"], {"CREATE_NO_WINDOW", "DETACHED_PROCESS", "CREATE_NO_WINDOW|DETACHED_PROCESS"})
+        self.assertGreater(windows_process_flags(platform_name="win32"), 0)
+        self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", plan["environment_overrides"])
+
+        foreground = build_daemon_launch_plan(launcher, preflight=True, json_mode=True, platform_name="win32")
+        self.assertFalse(foreground["uses_daemon"])
+        self.assertEqual(foreground["reason"], "preflight_json_runs_in_foreground")
+
+    def test_installer_config_and_launcher_include_daemon_and_qfluent_metadata(self) -> None:
+        from project_moe_gui.toolchain import cmd_text, config_payload, launcher_text
+
+        cfg = config_payload(Path("D:/target"), "thesis-moe-mentor", "thesis_moe", Path("tools/thesis_moe_mode.py"), Path("D:/runtime"))
+        self.assertEqual(cfg["visual_dependency"]["package_name"], "PySide6-Fluent-Widgets")
+        self.assertEqual(cfg["visual_dependency"]["import_name"], "qfluentwidgets")
+        self.assertTrue(cfg["gui_dependency_license_manifest"]["commercial_use_requires_review"])
+        self.assertTrue(cfg["daemon_launch"]["duplicate_instance_guard"]["enabled"])
+        self.assertEqual(cfg["close_behavior"]["default_close_action"], "ask")
+
+        launcher = launcher_text()
+        self.assertIn("build_daemon_launch_plan", launcher)
+        self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", launcher)
+        self.assertIn("CREATE_NO_WINDOW", launcher)
+        self.assertIn("qfluent_runtime", launcher)
+
+        command_text = cmd_text()
+        self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", command_text)
+        self.assertIn("python", command_text.lower())
 
 
 if __name__ == "__main__":

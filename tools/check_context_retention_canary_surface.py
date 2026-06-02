@@ -12,10 +12,15 @@ from pathlib import Path
 
 CHECK_NAME = "context_retention_canary_surface"
 
-START_CANARY = "CODEX_CTX_" + "CANARY_START"
-END_CANARY = "CODEX_CTX_" + "CANARY_END"
-LEGACY_START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
-LEGACY_END_CANARY = chr(21941) + "~"
+
+def from_codepoints(*codepoints: int) -> str:
+    return "".join(chr(codepoint) for codepoint in codepoints)
+
+
+START_CANARY = from_codepoints(25351, 25381, 23448)
+END_CANARY = from_codepoints(21941) + "~"
+LEGACY_START_CANARY = "CODEX_CTX_" + "CANARY_START"
+LEGACY_END_CANARY = "CODEX_CTX_" + "CANARY_END"
 LEGACY_ENCODINGS_FOR_MOJIBAKE = ("gbk", "gb18030", "cp936", "latin-1")
 
 ALLOWED_CANARY_PROMPT_PATHS = {
@@ -98,8 +103,9 @@ MOJIBAKE_CANARY_MARKERS = tuple(
     sorted(
         {
             marker_or_variant
-            for marker in (LEGACY_START_CANARY, LEGACY_END_CANARY)
-            for marker_or_variant in (marker, *derive_mojibake_variants(marker))
+            for marker in (START_CANARY, END_CANARY)
+            for marker_or_variant in derive_mojibake_variants(marker)
+            if marker_or_variant != marker
         }
     )
 )
@@ -349,10 +355,14 @@ def diagnose_response_text(source: str, text: str, *, path: str | None = None, l
     mojibake_lines = sanitize_mojibake_canary_lines(raw_mojibake_lines)
     start_present = START_CANARY in text
     end_present = END_CANARY in text
+    legacy_start_present = LEGACY_START_CANARY in text
+    legacy_end_present = LEGACY_END_CANARY in text
     if raw_mojibake_lines:
         status = "mojibake_canary"
     elif start_present and end_present:
         status = "canonical_present"
+    elif legacy_start_present or legacy_end_present:
+        status = "legacy_canary"
     else:
         status = "missing_canary"
 
@@ -367,6 +377,8 @@ def diagnose_response_text(source: str, text: str, *, path: str | None = None, l
         "status": status,
         "start_marker_present": start_present,
         "end_marker_present": end_present,
+        "legacy_start_marker_present": legacy_start_present,
+        "legacy_end_marker_present": legacy_end_present,
         "missing_parts": missing_parts,
         "mojibake_canary_lines": mojibake_lines,
         "recovery": (
@@ -489,7 +501,7 @@ def run_check(
             findings.append(
                 {
                     "path": relative_path.as_posix(),
-                    "mojibake_canary_lines": mojibake_lines,
+                    "mojibake_canary_lines": sanitize_mojibake_canary_lines(mojibake_lines),
                 }
             )
         if not recovery_mentions_agents(text):
@@ -505,6 +517,10 @@ def run_check(
         errors.append(
             "AGENTS.md must remain a recovery reread target but must not duplicate the literal canary prompt."
         )
+    elif LEGACY_START_CANARY in agents_text or LEGACY_END_CANARY in agents_text:
+        errors.append(
+            "AGENTS.md must point to the startup summary pair instead of preserving legacy canary marker text."
+        )
     elif (agents_mojibake_lines := find_mojibake_canary_lines(agents_text)):
         errors.append(
             "AGENTS.md contains mojibake canary marker text; keep AGENTS.md UTF-8-clean and "
@@ -513,7 +529,7 @@ def run_check(
         findings.append(
             {
                 "path": AGENTS_PATH.as_posix(),
-                "mojibake_canary_lines": agents_mojibake_lines,
+                "mojibake_canary_lines": sanitize_mojibake_canary_lines(agents_mojibake_lines),
             }
         )
 
@@ -527,6 +543,8 @@ def run_check(
             continue
         start_lines = find_line_numbers(text, START_CANARY)
         end_lines = find_line_numbers(text, END_CANARY)
+        legacy_start_lines = find_line_numbers(text, LEGACY_START_CANARY)
+        legacy_end_lines = find_line_numbers(text, LEGACY_END_CANARY)
         if start_lines or end_lines:
             finding = {
                 "path": relative_path.as_posix(),
@@ -539,12 +557,25 @@ def run_check(
                 "Context-retention canary prompt text must live only in "
                 f"project_startup_summary.*; duplicate marker found in {relative_path.as_posix()}."
             )
+        if legacy_start_lines or legacy_end_lines:
+            findings.append(
+                {
+                    "path": relative_path.as_posix(),
+                    "surface": classify_surface(relative_path),
+                    "legacy_start_marker_lines": legacy_start_lines,
+                    "legacy_end_marker_lines": legacy_end_lines,
+                }
+            )
+            errors.append(
+                "Legacy context-retention canary marker text must not be preserved in active "
+                f"non-startup surfaces; legacy marker found in {relative_path.as_posix()}."
+            )
         mojibake_lines = find_mojibake_canary_lines(text)
         if mojibake_lines:
             findings.append(
                 {
                     "path": relative_path.as_posix(),
-                    "mojibake_canary_lines": mojibake_lines,
+                    "mojibake_canary_lines": sanitize_mojibake_canary_lines(mojibake_lines),
                 }
             )
             errors.append(
@@ -573,6 +604,11 @@ def run_check(
             errors.append(
                 "Response/session canary diagnostic reported mojibake_canary; "
                 "use the UTF-8 startup summary pair as canonical and rerun cold-start recovery."
+            )
+        elif status == "legacy_canary":
+            errors.append(
+                "Response/session canary diagnostic reported legacy_canary; "
+                "legacy marker text is stale compatibility input and does not satisfy the startup-summary canary."
             )
 
     if not findings and not errors:

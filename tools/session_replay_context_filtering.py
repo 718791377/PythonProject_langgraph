@@ -12,10 +12,10 @@ from typing import Any
 
 CHECK_NAME = "session_replay_context_filtering"
 
-START_CANARY = "CODEX_CTX_" + "CANARY_START"
-END_CANARY = "CODEX_CTX_" + "CANARY_END"
-LEGACY_START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
-LEGACY_END_CANARY = chr(21941) + "~"
+START_CANARY = "".join(chr(codepoint) for codepoint in (25351, 25381, 23448))
+END_CANARY = chr(21941) + "~"
+LEGACY_START_CANARY = "CODEX_CTX_" + "CANARY_START"
+LEGACY_END_CANARY = "CODEX_CTX_" + "CANARY_END"
 LEGACY_ENCODINGS_FOR_MOJIBAKE = ("gbk", "gb18030", "cp936", "latin-1")
 
 POLICY_PATHS = (
@@ -51,6 +51,7 @@ OUTPUT_CONTRACT = {
     ],
     "blocked_reasons": [
         "canonical_canary",
+        "legacy_canary",
         "mojibake_canary",
         "raw_startup_summary_copy",
         "stale_mcp_global_disable",
@@ -129,8 +130,9 @@ MOJIBAKE_CANARY_MARKERS = tuple(
     sorted(
         {
             marker_or_variant
-            for marker in (LEGACY_START_CANARY, LEGACY_END_CANARY)
-            for marker_or_variant in (marker, *derive_mojibake_variants(marker))
+            for marker in (START_CANARY, END_CANARY)
+            for marker_or_variant in derive_mojibake_variants(marker)
+            if marker_or_variant != marker
         }
     )
 )
@@ -250,6 +252,8 @@ def detect_block_reasons(text: str) -> list[str]:
     reasons: list[str] = []
     if START_CANARY in text or END_CANARY in text:
         reasons.append("canonical_canary")
+    if LEGACY_START_CANARY in text or LEGACY_END_CANARY in text:
+        reasons.append("legacy_canary")
     if contains_mojibake_canary(text):
         reasons.append("mojibake_canary")
     if any(pattern.search(text) for pattern in RAW_STARTUP_PATTERNS):

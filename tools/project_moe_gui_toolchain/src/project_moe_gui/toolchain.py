@@ -16,12 +16,53 @@ except ModuleNotFoundError:  # pragma: no cover
     tomllib = None  # type: ignore[assignment]
 
 from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
+from project_moe_gui.daemon import build_daemon_launch_plan
 from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT
+from project_moe_gui.qfluent_runtime import expected_qfluent_dependency, qfluent_license_manifest
 
 
 SCHEMA_VERSION = 1
 DEFAULT_MODE_CLI = Path("tools/thesis_moe_mode.py")
 DEFAULT_SHARED_RUNTIME_ROOT = Path(r"D:\PythonProject_langgraph\.shared_runtimes\pyside6")
+DEFAULT_TOOLCHAIN_SOURCE_ROOT = Path(r"D:\PythonProject_langgraph\tools\project_moe_gui_toolchain")
+
+
+def current_toolchain_source_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def stable_toolchain_source_root() -> Path:
+    configured = os.environ.get("PROJECT_MOE_GUI_TOOLCHAIN_SOURCE_ROOT")
+    if configured:
+        return Path(configured).expanduser().resolve(strict=False)
+    if DEFAULT_TOOLCHAIN_SOURCE_ROOT.exists():
+        return DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False)
+    return current_toolchain_source_root().resolve(strict=False)
+
+
+def validate_toolchain_source_root(source_root: Path) -> tuple[str, list[dict[str, Any]]]:
+    errors: list[dict[str, Any]] = []
+    root = source_root.resolve(strict=False)
+    package_root = root / "src" / "project_moe_gui"
+    init_py = package_root / "__init__.py"
+    status = "import_skipped"
+    if not root.exists():
+        errors.append(blocker("blocked:toolchain_source_root_unavailable", "Configured Project MOE GUI toolchain source root is missing.", toolchain_source_root=str(root)))
+        return "missing", errors
+    if not init_py.exists():
+        errors.append(blocker("blocked:toolchain_source_root_invalid", "Configured Project MOE GUI toolchain source root does not contain src/project_moe_gui.", toolchain_source_root=str(root), expected=str(init_py)))
+        return "invalid", errors
+    code = "import project_moe_gui, project_moe_gui.toolchain; print(project_moe_gui.TOOLCHAIN_NAME)"
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(root / "src") + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, env=env)
+    if result.returncode != 0:
+        errors.append(blocker("blocked:toolchain_source_root_import_failed", "Configured Project MOE GUI toolchain source root cannot import project_moe_gui.", toolchain_source_root=str(root), stderr=result.stderr[-800:]))
+        status = "import_failed"
+    else:
+        status = "import_ok"
+    return status, errors
+
 CONFIG_RELATIVE = Path("tools/project_moe_gui/project_moe_gui.config.json")
 MANIFEST_RELATIVE = Path("tools/project_moe_gui/project_moe_gui.install-manifest.json")
 LAUNCHER_RELATIVE = Path("tools/project_moe_gui/launcher.py")
@@ -34,6 +75,11 @@ UNINSTALL_MANAGED_ALLOWLIST = {
     "tools/project_moe_gui/project_moe_gui.install-manifest.json",
     "tools/project_moe_gui/README.md",
     "project-moe-gui.cmd",
+}
+RECOVERABLE_UPDATE_BLOCKER_CODES = {
+    "blocked:toolchain_source_root_unavailable",
+    "blocked:toolchain_source_root_invalid",
+    "blocked:toolchain_source_root_import_failed",
 }
 PRIVATE_PROMPT_AGENT_DIR = Path(".codex/agents")
 PRIVATE_PROMPT_STATE_DIR = Path(".omx/state")
@@ -1499,10 +1545,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
+# Windows no-CMD daemon policy is delegated to project_moe_gui.daemon:
+# CREATE_NO_WINDOW / DETACHED_PROCESS flags plus a duplicate-instance lock.
 
 def emit(payload: dict, json_mode: bool) -> int:
     if json_mode:
@@ -1512,10 +1561,170 @@ def emit(payload: dict, json_mode: bool) -> int:
     return int(payload.get("exit_code", 0))
 
 
+def maybe_reexec_with_runtime(config: dict, args: argparse.Namespace, launcher: Path, project_root: Path) -> int | None:
+    if os.environ.get("PROJECT_MOE_GUI_RUNTIME_REEXEC") == "1":
+        return None
+    runtime_python = Path(str(config.get("runtime_python") or ""))
+    if not runtime_python:
+        return None
+    try:
+        current_python = Path(sys.executable).resolve(strict=False)
+        configured_python = runtime_python.resolve(strict=False)
+    except Exception:
+        current_python = Path(sys.executable)
+        configured_python = runtime_python
+    if current_python == configured_python:
+        return None
+    if not runtime_python.exists():
+        return None
+    env = os.environ.copy()
+    env["PROJECT_MOE_GUI_RUNTIME_REEXEC"] = "1"
+    env.setdefault("PYTHONUTF8", "1")
+    result = subprocess.run(
+        [str(runtime_python), str(launcher), *sys.argv[1:]],
+        cwd=str(project_root),
+        env=env,
+        check=False,
+    )
+    return int(result.returncode)
+
+
+def qfluent_status_summary() -> dict:
+    try:
+        from project_moe_gui import qfluent_runtime
+        return qfluent_runtime.check_qfluent_runtime()
+    except Exception as exc:
+        return {
+            "schema_version": 1,
+            "ok": False,
+            "token": "blocked:qfluentwidgets_unavailable",
+            "import_status": "missing",
+            "message": "QFluentWidgets runtime check failed.",
+            "error": str(exc),
+            "blockers": [{"code": "blocked:qfluentwidgets_unavailable", "message": "QFluentWidgets is unavailable."}],
+        }
+
+
+def _windows_process_flags() -> int:
+    if not sys.platform.startswith("win"):
+        return 0
+    return int(getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)) | int(getattr(subprocess, "DETACHED_PROCESS", 0x00000008))
+
+
+def _windows_process_flags_label(flags: int) -> str:
+    if not flags:
+        return "none"
+    labels = []
+    if flags & int(getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)):
+        labels.append("CREATE_NO_WINDOW")
+    if flags & int(getattr(subprocess, "DETACHED_PROCESS", 0x00000008)):
+        labels.append("DETACHED_PROCESS")
+    return "|".join(labels) if labels else str(flags)
+
+
+def _fallback_daemon_launch_plan(launcher: Path, args: argparse.Namespace, config: dict, project_root: Path) -> dict:
+    no_args = not args.preflight and not args.json and not args.allow_visible
+    if args.preflight and args.json:
+        return {
+            "schema_version": 1,
+            "uses_daemon": False,
+            "reason": "preflight_json_runs_in_foreground",
+            "launcher": str(launcher),
+            "cmd_window_policy": "foreground_machine_output",
+            "fallback_embedded_daemon": True,
+        }
+    should_daemon = bool(no_args)
+    flags = _windows_process_flags()
+    return {
+        "schema_version": 1,
+        "uses_daemon": should_daemon,
+        "reason": "no_argument_human_launch_uses_project_daemon" if should_daemon else "foreground_launch_requested",
+        "launcher": str(launcher),
+        "project_root": str(project_root),
+        "argv": [str(config.get("runtime_python") or sys.executable), str(launcher), "--allow-visible"],
+        "shell": False,
+        "cmd_window_policy": "no_persistent_cmd" if should_daemon else "foreground",
+        "windows_creation_flags": flags,
+        "windows_creation_flags_label": _windows_process_flags_label(flags),
+        "duplicate_instance_guard": {
+            "enabled": True,
+            "lock_path": str(launcher.with_name("project_moe_gui.daemon.lock")),
+            "pid_field": "pid",
+            "stale_lock_cleanup": True,
+        },
+        "environment_overrides": {"PROJECT_MOE_GUI_DAEMON_CHILD": "1", "PYTHONUTF8": "1"},
+        "fallback_embedded_daemon": True,
+    }
+
+
+def daemon_launch_plan(launcher: Path, args: argparse.Namespace, config: dict, project_root: Path) -> dict:
+    try:
+        from project_moe_gui.daemon import build_daemon_launch_plan
+        return build_daemon_launch_plan(
+            launcher,
+            no_args=not args.preflight and not args.json and not args.allow_visible,
+            preflight=args.preflight,
+            json_mode=args.json,
+            allow_visible=args.allow_visible,
+            runtime_python=str(config.get("runtime_python") or sys.executable),
+            project_root=project_root,
+        )
+    except Exception:
+        return _fallback_daemon_launch_plan(launcher, args, config, project_root)
+
+
+def _pid_running(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if sys.platform.startswith("win"):
+        result = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"], capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
+        return str(pid) in result.stdout
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def _fallback_spawn_daemon_child(plan: dict) -> dict:
+    lock_info = plan.get("duplicate_instance_guard") or {}
+    lock_path = Path(str(lock_info.get("lock_path") or ""))
+    if lock_path.exists():
+        try:
+            payload = json.loads(lock_path.read_text(encoding="utf-8-sig"))
+            pid = int(payload.get("pid") or 0)
+        except Exception:
+            pid = 0
+        if _pid_running(pid):
+            return {"schema_version": 1, "ok": True, "token": "ok:already_running", "exit_code": 0, "message": "Project MOE GUI daemon already appears to be running.", "daemon_launch": plan, "existing_pid": pid}
+        try:
+            lock_path.unlink()
+        except Exception:
+            pass
+    env = os.environ.copy()
+    env.update({str(k): str(v) for k, v in (plan.get("environment_overrides") or {}).items()})
+    kwargs = {"cwd": plan.get("project_root") or None, "env": env, "stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, "shell": False}
+    flags = int(plan.get("windows_creation_flags") or 0)
+    if flags:
+        kwargs["creationflags"] = flags
+    process = subprocess.Popen([str(item) for item in plan.get("argv", [])], **kwargs)
+    return {"schema_version": 1, "ok": True, "token": "ok", "exit_code": 0, "message": "Project MOE GUI daemon launch requested; launcher parent can exit without a persistent CMD window.", "daemon_launch": plan, "spawned_pid": process.pid}
+
+
+def spawn_daemon_if_needed(plan: dict) -> dict:
+    if not plan.get("uses_daemon"):
+        return {"schema_version": 1, "ok": False, "token": "blocked:daemon_not_selected", "exit_code": 2, "message": "Daemon launch was not selected for this invocation.", "daemon_launch": plan}
+    try:
+        from project_moe_gui.daemon import spawn_daemon_child
+        return spawn_daemon_child(plan)
+    except Exception:
+        return _fallback_spawn_daemon_child(plan)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Launch or preflight the project-local MOE GUI.")
     parser.add_argument("--preflight", action="store_true")
-    parser.add_argument("--allow-visible", action="store_true", help="Launch a visible PySide6 window. Use only in an interactive session.")
+    parser.add_argument("--allow-visible", action="store_true", help="Launch a visible PySide6 window. Kept for compatibility; no-argument human launches are visible by default.")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -1532,6 +1741,12 @@ def main() -> int:
         sys.path.insert(0, str(source_root / "src"))
     mode_cli_value = str(config.get("mode_cli", "tools/thesis_moe_mode.py"))
     mode_cli = project_root / mode_cli_value
+    daemon_plan = daemon_launch_plan(launcher, args, config, project_root)
+    if daemon_plan.get("uses_daemon") and os.environ.get("PROJECT_MOE_GUI_DAEMON_CHILD") != "1" and os.environ.get("PROJECT_MOE_GUI_DRY_RUN_VISIBLE") != "1":
+        return emit(spawn_daemon_if_needed(daemon_plan), args.json)
+    runtime_reexec = maybe_reexec_with_runtime(config, args, launcher, project_root)
+    if runtime_reexec is not None:
+        return runtime_reexec
     if not mode_cli.exists():
         bootstrap_plan = None
         bootstrap_error = None
@@ -1638,7 +1853,19 @@ def main() -> int:
 
     runtime_config = dict(config)
     runtime_config["runtime_project_root"] = str(project_root)
-    preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root)
+    qfluent_status = qfluent_status_summary()
+    try:
+        preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root, qfluent_status=qfluent_status)
+    except TypeError:
+        preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root)
+        view_model = preflight.get("view_model") if isinstance(preflight, dict) else None
+        if isinstance(view_model, dict):
+            view_model.setdefault("visual", {"library": "QFluentWidgets", "package_name": "PySide6-Fluent-Widgets", "import_name": "qfluentwidgets", "qfluentwidgets_status": qfluent_status})
+            view_model.setdefault("close_behavior", {"default_close_action": "ask", "auto_hide_to_tray": False, "dialog_options": ["exit", "hide_to_tray", "cancel"], "tray_menu_items": ["show", "exit"]})
+    preflight["launcher_runtime_python"] = sys.executable
+    preflight["launcher_runtime_reexec"] = os.environ.get("PROJECT_MOE_GUI_RUNTIME_REEXEC") == "1"
+    preflight["daemon_launch"] = daemon_plan
+    preflight["qfluentwidgets_status"] = qfluent_status
     preflight["phase1_readiness_gate"] = {
         "readiness_status": readiness.get("readiness_status"),
         "adaptation_lane": readiness.get("adaptation_lane"),
@@ -1648,8 +1875,10 @@ def main() -> int:
     }
     if args.preflight:
         return emit(preflight, args.json)
-    if not args.allow_visible:
-        return emit({**preflight, "ok": False, "token": "blocked:visible_gui_launch_requires_explicit_approval", "exit_code": 2, "message": "GUI shell is available. Visible PySide6 launch requires --allow-visible in an interactive session."}, args.json)
+    if args.json and not args.allow_visible:
+        return emit({**preflight, "ok": False, "token": "blocked:json_requires_preflight_for_non_visible_automation", "exit_code": 2, "message": "Use --preflight --json for machine-readable automation, or run without --json to open the visible GUI."}, args.json)
+    if os.environ.get("PROJECT_MOE_GUI_DRY_RUN_VISIBLE") == "1":
+        return emit({**preflight, "ok": True, "token": "ok", "exit_code": 0, "message": "Visible GUI launch dry-run passed.", "visible_launch": {"dry_run": True, "default_visible_on_no_args": True, "allow_visible_argument": bool(args.allow_visible)}}, args.json)
     if not preflight.get("ok"):
         return emit(preflight, args.json)
     try:
@@ -1664,7 +1893,7 @@ if __name__ == "__main__":
 
 
 def cmd_text() -> str:
-    return '@echo off\nsetlocal\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
+    return '@echo off\nsetlocal\nset PYTHONUTF8=1\nif not defined PROJECT_MOE_GUI_DAEMON_CHILD set PROJECT_MOE_GUI_DAEMON_CHILD=\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
 
 
 def readme_text(agent_name: str, namespace: str) -> str:
@@ -1678,7 +1907,7 @@ This directory is managed by `D:\\PythonProject_langgraph` Project MOE GUI toolc
 - GUI shell contract: `{GUI_SHELL_CONTRACT}`
 
 Do not place private `MOE.md` content or project state files in this directory.
-Phase 2B provides an import-safe GUI shell and guarded visible-launch path through the central toolchain source. Automated checks must use `--preflight`; visible PySide6 launch requires an explicit interactive command.
+Phase 2B provides an import-safe GUI shell and guarded visible-launch path through the central toolchain source. Human double-click or no-argument launches open the visible PySide6 GUI by default; automated checks must use `--preflight --json` and never rely on the no-argument human launcher as a machine interface.
 """
 
 
@@ -1700,10 +1929,19 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "pyside6_runtime": "shared-runtime",
             "python_runtime_strategy": "shared-gui-runtime",
             "python_utf8": True,
+            "visual_dependency": expected_qfluent_dependency(),
+            "gui_dependency_license_manifest": qfluent_license_manifest(),
+            "daemon_launch": build_daemon_launch_plan(Path("tools/project_moe_gui/launcher.py"), no_args=True),
+            "close_behavior": {
+                "default_close_action": "ask",
+                "auto_hide_to_tray": False,
+                "dialog_options": ["exit", "hide_to_tray", "cancel"],
+                "tray_menu_items": ["show", "exit"],
+            },
             "shared_runtime_root": str(runtime_root),
             "runtime_python": str(runtime_python),
             "installed_target_project_root": str(root),
-            "toolchain_source_root": str(Path(__file__).resolve().parents[2]),
+            "toolchain_source_root": str(stable_toolchain_source_root()),
             "gui_shell_contract": GUI_SHELL_CONTRACT,
         }
     )
@@ -2046,6 +2284,28 @@ def bootstrap_plan_item(root: Path, rel: Path, role: str, content: str, *, exist
     }
 
 
+def phase1_bootstrap_templates(
+    agent_name: str,
+    namespace: str,
+    mode_cli: Path = DEFAULT_MODE_CLI,
+    private_prompt_source: Path = DEFAULT_PRIVATE_PROMPT_SOURCE,
+    on_wrapper: Path = DEFAULT_ON_WRAPPER,
+    off_wrapper: Path = DEFAULT_OFF_WRAPPER,
+    startup_hook: Path = DEFAULT_BOOTSTRAP_STARTUP_HOOK,
+    operator_doc: Path = DEFAULT_BOOTSTRAP_OPERATOR_DOC,
+) -> dict[Path, tuple[str, str, str]]:
+    agent_rel = Path(".codex") / "agents" / f"{agent_name}.toml"
+    return {
+        agent_rel: ("agent_toml", phase1_agent_toml_template(agent_name, namespace, private_prompt_source), "manual-review-existing"),
+        private_prompt_source: ("private_prompt_source", phase1_private_prompt_placeholder(agent_name, namespace), "preserve-existing-private-prompt"),
+        mode_cli: ("mode_cli", phase1_mode_cli_template(agent_name, namespace), "manual-review-existing"),
+        on_wrapper: ("phase1_wrapper_on", phase1_wrapper_template(mode_cli, "project-on"), "manual-review-existing"),
+        off_wrapper: ("phase1_wrapper_off", phase1_wrapper_template(mode_cli, "project-off"), "manual-review-existing"),
+        startup_hook: ("startup_activation_hook", phase1_startup_hook_template(mode_cli), "manual-update-existing"),
+        operator_doc: ("operator_docs", phase1_operator_doc_template(mode_cli, on_wrapper, off_wrapper), "manual-update-existing"),
+    }
+
+
 def phase1_bootstrap_operator_next_steps(planned_writes: list[dict[str, Any]], git_status: dict[str, Any]) -> list[dict[str, Any]]:
     create_items = [item for item in planned_writes if item.get("action") == "create"]
     manual_items = [item for item in planned_writes if str(item.get("action", "")).startswith("manual")]
@@ -2134,16 +2394,7 @@ def phase1_bootstrap_scaffold_plan(
     if git_status["token"] == "blocked:git_status_unavailable":
         errors.append(blocker("blocked:git_status_unavailable", "Cannot run git status in target project.", stderr=git_status["stderr"]))
 
-    agent_rel = Path(".codex") / "agents" / f"{agent_name}.toml"
-    templates = {
-        agent_rel: ("agent_toml", phase1_agent_toml_template(agent_name, namespace, private_prompt_source), "manual-review-existing"),
-        private_prompt_source: ("private_prompt_source", phase1_private_prompt_placeholder(agent_name, namespace), "preserve-existing-private-prompt"),
-        mode_cli: ("mode_cli", phase1_mode_cli_template(agent_name, namespace), "manual-review-existing"),
-        on_wrapper: ("phase1_wrapper_on", phase1_wrapper_template(mode_cli, "project-on"), "manual-review-existing"),
-        off_wrapper: ("phase1_wrapper_off", phase1_wrapper_template(mode_cli, "project-off"), "manual-review-existing"),
-        startup_hook: ("startup_activation_hook", phase1_startup_hook_template(mode_cli), "manual-update-existing"),
-        operator_doc: ("operator_docs", phase1_operator_doc_template(mode_cli, on_wrapper, off_wrapper), "manual-update-existing"),
-    }
+    templates = phase1_bootstrap_templates(agent_name, namespace, mode_cli, private_prompt_source, on_wrapper, off_wrapper, startup_hook, operator_doc)
     planned_writes = [
         bootstrap_plan_item(root, rel, role, content, existing_action=existing_action)
         for rel, (role, content, existing_action) in templates.items()
@@ -2153,6 +2404,7 @@ def phase1_bootstrap_scaffold_plan(
     create_count = sum(1 for item in planned_writes if item.get("action") == "create")
     manual_review_count = sum(1 for item in planned_writes if str(item.get("action", "")).startswith("manual"))
     preserve_count = sum(1 for item in planned_writes if str(item.get("action", "")).startswith("preserve"))
+    apply_blockers = phase1_bootstrap_apply_blockers(planned_writes, git_status, errors)
     operator_next_steps = phase1_bootstrap_operator_next_steps(planned_writes, git_status)
     return {
         "schema_version": SCHEMA_VERSION,
@@ -2162,8 +2414,8 @@ def phase1_bootstrap_scaffold_plan(
         "token": "ok" if not errors else errors[0]["code"],
         "read_only": True,
         "writes_target_project": False,
-        "apply_supported": False,
-        "target_project_write_allowed_by_checker": False,
+        "apply_supported": True,
+        "target_project_write_allowed_by_checker": not apply_blockers,
         "control_mode_allowed": False,
         "bootstrap_required": True,
         "adaptation_lane": "bootstrap",
@@ -2181,10 +2433,12 @@ def phase1_bootstrap_scaffold_plan(
             "preserve_existing_count": preserve_count,
             "blocked_count": len(plan_blockers),
             "next_step_count": len(operator_next_steps),
+            "apply_blocked_count": len(apply_blockers),
         },
         "git_status": git_status,
         "project_root_evidence": evidence,
         "blockers": errors,
+        "apply_blockers": apply_blockers,
         "next_actions": [
             "review_dry_run_plan",
             "obtain_explicit_target_project_write_approval",
@@ -2197,6 +2451,152 @@ def phase1_bootstrap_scaffold_plan(
             "template_content_included_in_payload": False,
             "copies_other_project_private_prompt": False,
         },
+    }
+
+
+def phase1_bootstrap_apply_blockers(planned_writes: list[dict[str, Any]], git_status: dict[str, Any], existing_errors: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    errors = list(existing_errors or [])
+    git_token = str(git_status.get("token") or "")
+    if git_token != "ok":
+        errors.append(
+            blocker(
+                "blocked:dirty_target_project" if git_token == "blocked:dirty_target_project" else "blocked:git_status_unavailable",
+                "Target project must be a clean Git worktree before applying Phase 1 scaffold files.",
+                git_status=git_status,
+            )
+        )
+    non_create = [item for item in planned_writes if item.get("action") != "create"]
+    if non_create:
+        errors.append(
+            blocker(
+                "blocked:existing_phase1_surface_requires_manual_review",
+                "Scaffold --apply only creates missing Phase 1 files and never overwrites existing private or operator surfaces.",
+                paths=[item.get("path") for item in non_create if item.get("path")],
+                actions=[item.get("action") for item in non_create if item.get("action")],
+            )
+        )
+    return errors
+
+
+def phase1_bootstrap_scaffold_apply(
+    root: Path,
+    agent_name: str,
+    namespace: str,
+    mode_cli: Path = DEFAULT_MODE_CLI,
+    private_prompt_source: Path = DEFAULT_PRIVATE_PROMPT_SOURCE,
+    on_wrapper: Path = DEFAULT_ON_WRAPPER,
+    off_wrapper: Path = DEFAULT_OFF_WRAPPER,
+    startup_hook: Path = DEFAULT_BOOTSTRAP_STARTUP_HOOK,
+    operator_doc: Path = DEFAULT_BOOTSTRAP_OPERATOR_DOC,
+) -> dict[str, Any]:
+    plan = phase1_bootstrap_scaffold_plan(root, agent_name, namespace, mode_cli, private_prompt_source, on_wrapper, off_wrapper, startup_hook, operator_doc)
+    templates = phase1_bootstrap_templates(agent_name, namespace, mode_cli, private_prompt_source, on_wrapper, off_wrapper, startup_hook, operator_doc)
+    planned_writes = list(plan.get("planned_writes") or [])
+    errors = phase1_bootstrap_apply_blockers(planned_writes, dict(plan.get("git_status") or {}), list(plan.get("blockers") or []))
+    if errors:
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "command": "scaffold_project_moe_phase1",
+            "mode": "apply",
+            "ok": False,
+            "token": errors[0]["code"],
+            "exit_code": 4,
+            "read_only": False,
+            "writes_target_project": False,
+            "apply_supported": True,
+            "target_project_write_allowed_by_checker": False,
+            "control_mode_allowed": False,
+            "bootstrap_required": True,
+            "adaptation_lane": "bootstrap",
+            "target_project_root": str(root),
+            "agent_name": agent_name,
+            "state_namespace": namespace,
+            "planned_writes": planned_writes,
+            "git_status": plan.get("git_status"),
+            "blockers": errors,
+            "privacy_boundary": plan.get("privacy_boundary"),
+        }
+
+    applied: list[dict[str, Any]] = []
+    for rel, (role, content, _existing_action) in templates.items():
+        full, err = safe_relative(root, rel)
+        if err:
+            return {
+                "schema_version": SCHEMA_VERSION,
+                "command": "scaffold_project_moe_phase1",
+                "mode": "apply",
+                "ok": False,
+                "token": err["code"],
+                "exit_code": 4,
+                "read_only": False,
+                "writes_target_project": False,
+                "apply_supported": True,
+                "target_project_write_allowed_by_checker": False,
+                "control_mode_allowed": False,
+                "bootstrap_required": True,
+                "adaptation_lane": "bootstrap",
+                "target_project_root": str(root),
+                "agent_name": agent_name,
+                "state_namespace": namespace,
+                "blockers": [err],
+                "privacy_boundary": plan.get("privacy_boundary"),
+            }
+        assert full is not None
+        if full.exists():
+            err = blocker("blocked:scaffold_target_changed_before_apply", "Target scaffold path appeared before apply completed; refusing to overwrite.", path=norm(rel))
+            return {
+                "schema_version": SCHEMA_VERSION,
+                "command": "scaffold_project_moe_phase1",
+                "mode": "apply",
+                "ok": False,
+                "token": err["code"],
+                "exit_code": 4,
+                "read_only": False,
+                "writes_target_project": False,
+                "apply_supported": True,
+                "target_project_write_allowed_by_checker": False,
+                "control_mode_allowed": False,
+                "bootstrap_required": True,
+                "adaptation_lane": "bootstrap",
+                "target_project_root": str(root),
+                "agent_name": agent_name,
+                "state_namespace": namespace,
+                "blockers": [err],
+                "privacy_boundary": plan.get("privacy_boundary"),
+            }
+        status = write_text_if_changed(full, content)
+        applied.append({"path": norm(rel), "role": role, "status": status, "sha256": sha256_bytes(content.encode("utf-8")), "managed": False, "scaffold_owned": True})
+
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "command": "scaffold_project_moe_phase1",
+        "mode": "apply",
+        "ok": True,
+        "token": "ok",
+        "read_only": False,
+        "writes_target_project": True,
+        "apply_supported": True,
+        "target_project_write_allowed_by_checker": True,
+        "control_mode_allowed": False,
+        "bootstrap_required": True,
+        "adaptation_lane": "bootstrap",
+        "lane_reason": "phase1_bootstrap_scaffold_applied_missing_files_only",
+        "target_project_root": str(root),
+        "agent_name": agent_name,
+        "state_namespace": namespace,
+        "mode_cli": norm(mode_cli),
+        "private_prompt_source": norm(private_prompt_source),
+        "applied_writes": applied,
+        "summary": {"created_count": len(applied), "blocked_count": 0},
+        "git_status_before": plan.get("git_status"),
+        "blockers": [],
+        "next_actions": [
+            "review_target_project_git_diff",
+            "complete_placeholder_cli_and_private_prompt",
+            "run_phase1_readiness_checker_static_only",
+            "run_phase1_readiness_checker_execute_read_contract",
+        ],
+        "privacy_boundary": plan.get("privacy_boundary"),
     }
 
 
@@ -2446,6 +2846,9 @@ def check_install(root: Path, skip_runtime_import: bool = False) -> dict[str, An
         namespace = str(config.get("state_namespace") or manifest.get("state_namespace") or "")
         mode_cli = Path(str(config.get("mode_cli") or manifest.get("mode_cli") or DEFAULT_MODE_CLI))
         errors.extend(preflight(root, agent, namespace, mode_cli, True)[0])
+        source_root = Path(str(config.get("toolchain_source_root") or ""))
+        toolchain_source_status, toolchain_source_errors = validate_toolchain_source_root(source_root)
+        errors.extend(toolchain_source_errors)
         runtime_status = "skipped_by_flag"
         if not skip_runtime_import:
             runtime_python = Path(str(config.get("runtime_python") or ""))
@@ -2474,6 +2877,8 @@ def check_install(root: Path, skip_runtime_import: bool = False) -> dict[str, An
         "cli_contract": config.get("cli_contract") if config else CLI_CONTRACT,
         "migration_actions": [],
         "runtime_status": locals().get("runtime_status", "unknown"),
+        "toolchain_source_root": str(config.get("toolchain_source_root")) if config else None,
+        "toolchain_source_status": locals().get("toolchain_source_status", "unknown"),
         "blockers": errors,
         "rollback_hint": (manifest or {}).get("rollback_hint"),
     }
@@ -2481,7 +2886,9 @@ def check_install(root: Path, skip_runtime_import: bool = False) -> dict[str, An
 
 def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[str, Any]:
     current = check_install(root, skip_runtime_import=skip_runtime_import)
-    if current.get("blockers"):
+    current_blockers = list(current.get("blockers") or [])
+    unrecoverable_blockers = [item for item in current_blockers if item.get("code") not in RECOVERABLE_UPDATE_BLOCKER_CODES]
+    if unrecoverable_blockers:
         return {**current, "command": "update_project_moe_gui", "mode": "dry-run" if dry_run else "apply"}
     errors: list[dict[str, Any]] = []
     manifest = load_json(root / MANIFEST_RELATIVE, "blocked:not_installed", errors) or {}
@@ -2507,6 +2914,7 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
         "cli_contract": config.get("cli_contract"),
         "migration_actions": changes,
         "no_op": not changed,
+        "recoverable_blockers": current_blockers,
         "blockers": errors,
         "rollback_hint": new_manifest["rollback_hint"],
     }

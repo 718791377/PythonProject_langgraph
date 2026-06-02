@@ -108,6 +108,25 @@
       "description": "Keeps official OpenSpec bootstrap, refresh, validation, and CI guard behavior executable."
     },
     {
+      "id": "spec-kit-authority-guard",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md",
+        "docs_bilingual/governance/spec_kit_subordinate_adapter_policy.zh-CN.md",
+        "docs_bilingual/implementation_plans/spec_kit_authority_guard_plan.md",
+        "docs_bilingual/implementation_plans/spec_kit_authority_guard_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_spec_kit_authority_guard.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_spec_kit_authority_guard"
+      ],
+      "description": "Blocks Spec Kit authority migration surfaces such as specify init --force, .specify path creation, or governance takeover language unless a separate active plan owns the change."
+    },
+    {
       "id": "codex-skills-governance",
       "owner_level": "user",
       "status": "implemented",

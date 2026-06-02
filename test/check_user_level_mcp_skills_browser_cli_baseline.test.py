@@ -83,6 +83,48 @@ Slice completion rule
             en = en.replace("pending_bind", "")
         (plan_dir / "user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md").write_text(zh, encoding="utf-8")
         (plan_dir / "user_level_mcp_skills_browser_cli_governance_plan.md").write_text(en, encoding="utf-8")
+        adapter_shared = """
+## Current Status
+
+<!-- CURRENT_STATUS_START -->
+Status: implemented-local; remote publication remains closed.
+Implementation evidence: tools/chrome_devtools_mcp_managed.py, tools/cdp_bridge_governance.py, tools/opencli_governance.py, tools/cli_anything_governance.py, and tools/wecom_cli_governance.py keep the adapter boundary repo-local.
+Runtime boundary: no live browser start, GUI write, cookie read, raw browser data access, JavaScript execution, install, or user-level runtime mutation is performed.
+<!-- CURRENT_STATUS_END -->
+
+## Task Backlog
+
+<!-- TASK_BACKLOG_START -->
+- [x] Keep read-only tab inventory allowed without sensitive authorization.
+- [x] Require authorization receipt for click, type, navigate, JavaScript execution, cookie read, and raw browser data access.
+- [x] Require OpenCLI-style adapters to use `--port auto` and sanitized `codex-port` lease evidence.
+- [x] Keep CLI-Anything generation-first and block hard-load skills until receipt plus smoke evidence exists.
+- [x] Keep `wecom-cli` API/Webhook-first and require global lease, operator confirmation, timeout release, and dry-run evidence for WXWork GUI dispatch.
+- [x] Report every adapter lane as `reference-only`, `planned`, `on-demand`, or `active-candidate` before integration.
+- [x] Run focused validation for this child lane.
+- [x] Update the parent evidence index and Phase 7 integration plans after implementation evidence exists.
+<!-- TASK_BACKLOG_END -->
+
+## Adapter lane status
+
+| Adapter lane | Status | Evidence |
+| --- | --- | --- |
+| chrome-devtools-mcp | on-demand | wrapper guard only |
+| CDP Bridge | on-demand | read-only default, receipt-gated sensitive actions |
+| OpenCLI | on-demand | `--port auto` and `codex-port` lease evidence |
+| CLI-Anything | reference-only | generation-first, no hard-load skills |
+| wecom-cli | on-demand | API/Webhook-first, global lease, operator confirmation, timeout release, dry-run evidence |
+
+## Evidence Index
+
+<!-- EVIDENCE_INDEX_START -->
+- 2026-06-01: user_level_browser_cli_adapter_boundary_plan implementation evidence recorded.
+<!-- EVIDENCE_INDEX_END -->
+"""
+        if omit == "adapter-status":
+            adapter_shared = adapter_shared.replace("Status: implemented-local", "Status: active")
+        (plan_dir / "user_level_browser_cli_adapter_boundary_plan.zh-CN.md").write_text(adapter_shared, encoding="utf-8")
+        (plan_dir / "user_level_browser_cli_adapter_boundary_plan.md").write_text(adapter_shared, encoding="utf-8")
         spec_text = "Token/risk priority authorization receipt update receipt evidence redaction port registry/lease codex-port allocator pending_bind registry_revision 39000-39299 40000-40999 OpenSpec slice fail closed"
         if omit == "spec":
             spec_text = "Token/risk priority only"
@@ -149,6 +191,15 @@ Slice completion rule
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
         self.assertTrue(any("spec candidate" in error for error in payload["errors"]))
+
+    def test_adapter_child_plan_must_be_implemented_local(self) -> None:
+        root = self.make_root("adapter-child-plan-fail")
+        self.write_minimal_repo(root, omit="adapter-status")
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("implemented-local" in error for error in payload["errors"]))
 
 
 if __name__ == "__main__":

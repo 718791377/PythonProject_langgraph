@@ -41,7 +41,7 @@ Owner session: unclaimed until implementation begins
 Current gate: wait for explicit user confirmation of this child plan before non-document implementation
 Stage C entry condition: user confirms this child implementation plan after local main integration
 Last updated: 2026-05-28
-Status update: MCP/skills/browser/CLI decomposition keeps the baseline checker as a required guard. The receipt/redaction lane and port/browser-owner lane helper/test coverage are registered in the CI manifest and OpenSpec aggregate guard; other extracted sibling lanes still need registration review if they change runtime behavior.
+Status update: MCP/skills/browser/CLI decomposition keeps the baseline checker as a required guard. Receipt/redaction, port/browser-owner, discovery facade, and browser/CLI adapter boundary helper/test coverage are registered in the CI manifest and OpenSpec aggregate guard; future sibling lane changes still need registration review if they change runtime behavior.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -101,4 +101,5 @@ Run these gates before local `main` integration unless this child plan later nar
 - 2026-06-01 receipt/redaction lane handoff: `user_level_capability_receipt_rollback_redaction_plan` confirms `tools/user_level_receipt_governance.py`, `test/user_level_receipt_governance.test.py`, the MCP baseline checker, OpenSpec guard registration, and `tools/ci/ci_test_manifest.json` coverage for the receipt lane; future sibling lane changes still need their own registration review.
 - 2026-06-01 port/browser-owner lane handoff: `user_level_port_browser_owner_isolation_plan` confirms existing CI-manifest registration for `test/codex_port.test.py`, `test/browser_owner_registry.test.py`, `test/cdp_bridge_governance.test.py`, and `test/chrome_devtools_mcp_managed.test.py`; the CDP/OpenCLI ambiguity regression coverage extends an already registered test file, so no CI-manifest edit is required.
 - 2026-06-01 discovery facade lane handoff: `skills2cli.test.py` and `mcp2cli.test.py` are already registered in the CI manifest; this package extends those registered focused tests for risk-profile and routing-evidence behavior and confirms baseline/MCP-scope/agent-surface checkers remain applicable.
+- 2026-06-01 browser/CLI adapter boundary lane handoff: `user_level_browser_cli_adapter_boundary_plan` extends the already registered MCP baseline checker to validate child-plan implemented-local status and lane-state evidence; focused coverage remains in registered tests `chrome_devtools_mcp_managed.test.py`, `cdp_bridge_governance.test.py`, `wecom_cli_governance.test.py`, `user_level_receipt_governance.test.py`, and `check_user_level_mcp_skills_browser_cli_baseline.test.py`, so no CI-manifest edit is required.
 <!-- EVIDENCE_INDEX_END -->

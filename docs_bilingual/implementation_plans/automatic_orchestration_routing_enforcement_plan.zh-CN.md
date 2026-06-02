@@ -135,6 +135,8 @@ persistent_team=<not_selected|not_needed|candidate|selected|running|complete|blo
 why=<task-shape, threshold, blocker, or evidence reason>
 ```
 
+该 recommended activation trace 是用于用户可见性与日志/checker 稳定性的普通文本诊断行/块，不是 Codex CLI 进度面板。`Updated Plan` 才是进度面板表面；Markdown checkbox 只继续作为 implementation plan 内部任务追踪。
+
 ## 4. Codex 中的使用方式
 
 自然语言触发示例：

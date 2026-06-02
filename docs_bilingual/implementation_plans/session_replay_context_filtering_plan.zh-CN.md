@@ -35,13 +35,17 @@ Filter resumed session context so stale canary text, mojibake, and legacy runtim
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage C implementation package
-Owner session: implement-session-replay-context-filtering-20260530
-Current gate: local validation and local main integration in progress
-Stage C entry condition: satisfied by the 2026-05-30 user request to continue, commit locally, and merge into local main
-Last updated: 2026-05-30
+状态：implemented-local
+阶段：Phase 2 状态对账已收口；session replay context-filtering 包已合入本地 `main`。
+责任会话：reconcile-context-retention-canary-status-20260602（仅状态对账）
+当前门禁：本子方案已无剩余本地实现门禁；除非用户明确要求，否则远端发布仍未授权。
+证据：本地 `main` 包含 `cbc73c7`，focused replay-filtering 覆盖仍在本地 CI manifest 中登记。
+最后更新：2026-06-02
 <!-- CURRENT_STATUS_END -->
+
+## Confirmed Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` extends this implemented-local replay filtering baseline. The follow-up must block restored canonical marker copies in model-readable session, replay, compaction, and handoff context, while preserving user-visible transcript semantics and deriving marker values by codepoint or variable surfaces.
 
 ## 文件归属
 
@@ -98,4 +102,6 @@ Last updated: 2026-05-30
 - 2026-05-30 Stage C implementation: added `tools/session_replay_context_filtering.py`, replay-filtering tests, CI manifest registration, and governance contract text; local validation evidence is kept in command output and git history.
 - 2026-05-30 Local validation: `tools/session_replay_context_filtering.py`, context-retention canary, startup mojibake, replay-filtering tests, and `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` passed before commit.
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-02 状态对账：本地 `main` ancestry 确认包含 `cbc73c7`；`test/check_session_replay_context_filtering.test.py` 存在并已在 CI manifest 登记；旧 local-main-in-progress 门禁文本已替换为 implemented-local 状态。
+- 2026-06-02 canonical visible canary restore follow-up: this implemented-local replay-filtering child plan is extended by `prompt_canary_canonical_visible_marker_restore_plan` to block restored canonical marker copies in model-readable session, replay, compaction, and handoff context.
 <!-- EVIDENCE_INDEX_END -->

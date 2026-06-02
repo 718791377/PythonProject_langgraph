@@ -51,6 +51,8 @@ payload = {
     "runtime_python": sys.executable,
     "pyside6_version": None,
     "qt_version": None,
+    "qfluentwidgets_version": None,
+    "qfluentwidgets_import_status": None,
     "import_only_verified": False,
 }
 try:
@@ -59,9 +61,13 @@ try:
     from PySide6.QtWidgets import QApplication
     payload["pyside6_version"] = getattr(PySide6, "__version__", "")
     payload["qt_version"] = qVersion()
+    import qfluentwidgets
+    payload["qfluentwidgets_version"] = getattr(qfluentwidgets, "__version__", None)
+    payload["qfluentwidgets_import_status"] = "import_ok"
     payload["import_only_verified"] = True
 except Exception as exc:
     payload["error"] = str(exc)
+    payload.setdefault("qfluentwidgets_import_status", "missing")
 print(json.dumps(payload, ensure_ascii=False))
 '@
     $probePath = [System.IO.Path]::ChangeExtension([System.IO.Path]::GetTempFileName(), ".py")
@@ -71,11 +77,11 @@ print(json.dumps(payload, ensure_ascii=False))
         $exitCode = $LASTEXITCODE
         $combinedOutput = ($output | Out-String).Trim()
         if ($exitCode -ne 0) {
-            throw "PySide6 import-only probe failed with exit code ${exitCode}: $combinedOutput"
+            throw "PySide6 and qfluentwidgets import-only probe failed with exit code ${exitCode}: $combinedOutput"
         }
         $jsonLine = $output | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Select-Object -Last 1
         if ([string]::IsNullOrWhiteSpace([string]$jsonLine)) {
-            throw "PySide6 import-only probe did not emit JSON output."
+            throw "PySide6 and qfluentwidgets import-only probe did not emit JSON output."
         }
         return ([string]$jsonLine | ConvertFrom-Json)
     } finally {
@@ -114,7 +120,7 @@ if ($resolvedRuntimeRoot -ne $defaultRuntimeRoot -and ($resolvedRuntimeRoot -not
 
 if ($Mode -eq "preview") {
     $plannedCommands += "Create $resolvedRuntimeRoot only if the operator approves shared runtime provisioning."
-    $plannedCommands += "Create .venv under $resolvedRuntimeRoot and install packages from requirements-pyside6.txt."
+    $plannedCommands += "Create .venv under $resolvedRuntimeRoot and install PySide6 plus PySide6-Fluent-Widgets from requirements-pyside6.txt."
     $plannedCommands += "Run verify mode for import_only_verified evidence; no visible GUI launch is allowed."
 }
 
@@ -130,7 +136,7 @@ if ($Mode -eq "provision" -and $blockers.Count -eq 0) {
         $requirementsContent = if (Test-Path -LiteralPath $templateRequirements -PathType Leaf) {
             [System.IO.File]::ReadAllText($templateRequirements, [System.Text.Encoding]::UTF8)
         } else {
-            "PySide6`r`n"
+            "PySide6`r`nPySide6-Fluent-Widgets`r`n"
         }
         Write-TextIfChanged $requirementsFile $requirementsContent
     }
@@ -147,7 +153,7 @@ if ($Mode -eq "provision" -and $blockers.Count -eq 0) {
     }
     if ($blockers.Count -eq 0) {
         & $runtimePython -m pip install -r $requirementsFile
-        if ($LASTEXITCODE -ne 0) { $blockers += New-Blocker "pyside6_install_failed" "Failed to install PySide6 from requirements-pyside6.txt inside the shared runtime." }
+        if ($LASTEXITCODE -ne 0) { $blockers += New-Blocker "pyside6_install_failed" "Failed to install PySide6 and PySide6-Fluent-Widgets from requirements-pyside6.txt inside the shared runtime." }
     }
 }
 
@@ -171,6 +177,12 @@ if ($blockers.Count -eq 0 -and $Mode -eq "provision" -and $probePayload) {
         python_version = $probePayload.python_version
         pyside6_version = $probePayload.pyside6_version
         qt_version = $probePayload.qt_version
+        qfluentwidgets_version = $probePayload.qfluentwidgets_version
+        qfluentwidgets_import_status = $probePayload.qfluentwidgets_import_status
+        qfluentwidgets_package = "PySide6-Fluent-Widgets"
+        qfluentwidgets_import_name = "qfluentwidgets"
+        qfluentwidgets_license_family = "GPLv3-or-commercial-dual-license"
+        qfluentwidgets_license_review_required_before_redistribution = $true
         requirements_file = $requirementsFile
         runtime_json = $runtimeJson
         updated_at = $now
@@ -199,6 +211,10 @@ $payload = [ordered]@{
     python_version = if ($probePayload) { $probePayload.python_version } else { $null }
     pyside6_version = if ($probePayload) { $probePayload.pyside6_version } else { $null }
     qt_version = if ($probePayload) { $probePayload.qt_version } else { $null }
+    qfluentwidgets_version = if ($probePayload) { $probePayload.qfluentwidgets_version } else { $null }
+    qfluentwidgets_import_status = if ($probePayload) { $probePayload.qfluentwidgets_import_status } else { $null }
+    qfluentwidgets_package = "PySide6-Fluent-Widgets"
+    qfluentwidgets_import_name = "qfluentwidgets"
     import_only_verified = if ($probePayload) { [bool]$probePayload.import_only_verified } else { $false }
     requirements_file = $requirementsFile
     runtime_json = $runtimeJson

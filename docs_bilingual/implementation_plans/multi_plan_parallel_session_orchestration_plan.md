@@ -43,6 +43,7 @@ This parent plan coordinates the following existing plans inside this plan famil
 6. codex_governance_session_visibility_and_plan_lock_plan - adds Chinese routing trace visibility, main-session escalation visibility, Superpowers evidence, Spec Kit boundaries, and plan locks.
 7. pi_plugin_codex_user_level_sidecar_plan - provides the Pi family, Codex-to-Pi sidecar, and oh-my-pi reference-only boundary.
 8. user_level_mcp_skills_browser_cli_governance_plan - provides the low-token, receipt-first governance boundary for MCP, skills, browser, OpenCLI, and CLI harness lanes.
+9. prompt_canary_canonical_visible_marker_restore_plan - restores the startup-summary-defined canonical visible canary to the requested non-ASCII marker pair and blocks marker copies from model-readable session context.
 
 ## Non-Goals
 
@@ -58,13 +59,13 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 4 discovery-facade extracted lane is implemented-local; Phase 6 remains admissible for other lanes.
-Owner session: main Codex leader owns implementation package id `implement-mcp-skills-discovery-facade-20260601`; package id means the isolated feature-worktree implementation item for this update.
-Current gate: local validation evidence is bound to this ready package; after serial local-main integration, only the remote-publication approval gate remains.
-Phase 5 note: Comet runtime closeout is already local-main integrated; this package does not reopen Phase 5 runtime work.
+Stage: Phase 2 prompt-canary canonical visible marker restoration is implemented in the current local candidate; the follow-up now verifies repository gates before local `main` integration.
+Owner session: main Codex leader owns implementation package id `implement-restore-nonascii-canary-20260602`; this is a serialized canary-hotspot implementation worktree, not a durable-team worker or remote publication branch.
+Current gate: commit the implementation package, merge through the local-main-first helper, then stop at the remote-publication approval gate; remote publication remains unauthorized unless the user explicitly requests it.
+Phase 2 note: all four earlier context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; this follow-up closes the reopened marker canonicalization and session-context blocking contract.
 MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` remains a source and baseline index, not a direct child of this parent.
-Parallel model: extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
-Remote state: remote publication is not authorized by this local-only implementation branch.
+Parallel model: canary hotspots stayed serialized; other extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
+Remote state: this implementation package does not authorize remote publication.
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model
@@ -81,6 +82,7 @@ Level 1: parent plan / master map
     |   `-- note: index-maintenance child plan; it owns no lower-level implementation_plan files.
     |-- Phase 1A / Batch 1 child: complete_local_commit_flow_scheduler_reorder_buffer_plan.md
     |-- Phase 1-6 children: other sibling child implementation plans
+    |-- Phase 2 follow-up child: prompt_canary_canonical_visible_marker_restore_plan.md
     |-- Phase 7 / Batch 5 child: parallel_plan_docs_registry_integration_plan.md
     |-- Phase 7 / Batch 5 child: parallel_plan_checker_ci_integration_plan.md
     `-- Phase 7 / Batch 5 child: parallel_plan_openspec_comet_archive_plan.md
@@ -227,6 +229,12 @@ Required execution order:
 - Remote publication remains an explicit user-authorized step.
 
 
+## Phase 2 Follow-up: Canonical Visible Canary Restore
+
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implementation-complete local candidate | Restored startup-summary-defined canonical visible canary semantics, legacy ASCII classification, and replay/model-context blocking; final repository gates precede local `main` integration. |
+
+This follow-up is a serialized hotspot package. It touches startup summaries, `AGENTS.md`, canary checkers, session replay filtering, tests, and the stable canary OpenSpec spec, so it must not run in parallel with other canary-surface writer sessions.
+
 ## MCP / Skills / Browser / CLI Extraction Model
 
 `user_level_mcp_skills_browser_cli_governance_plan.md` is treated as a source-to-decompose, not as one direct child implementation plan. Its lanes are reorganized into phase-specific child plans so execution can be multi-phase and multi-session when the write sets are safe.
@@ -300,12 +308,12 @@ Admission: all eligible child plans may run; `.omx/state` write scopes are seria
 
 ### Phase 4: Automatic Routing and Stable Conversation Surfaces
 
-Purpose: make collaboration routing automatic and auditable, and require user-facing routing-trace and updated-plan conversation surfaces to use Chinese field labels, Chinese explanations, and Chinese status wording. Routing and evidence records must distinguish Pi/harness sidecar evidence from final verification evidence owned by the current owner session; saved structured evidence may keep ASCII threshold tokens, blocker tokens, schema keys, file names, and CLI arguments.
+Purpose: make collaboration routing automatic and auditable, and lock the three conversation-surface boundaries confirmed by the operator. `Routing trace` remains a plain-text diagnostic line with the fixed label plus `key=value` fields. `Updated Plan` remains the user-visible progress panel rendered in the CLI/tree style with checkmark and open-square status markers (U+2714 and U+25A1). Markdown checkbox syntax remains available only inside implementation-plan files for task tracking and must not be reused as the user-facing `Updated Plan` surface. Routing and evidence records must distinguish Pi/harness sidecar evidence from final verification evidence owned by the current owner session; saved structured evidence may keep ASCII threshold tokens, blocker tokens, schema keys, file names, and CLI arguments.
 
 Candidate child plans:
 
-1. `chinese_routing_trace_conversation_surface_plan` - require stable user-facing `Routing trace` and `Updated Plan` labels, allow Chinese explanatory content, and preserve `Updated Plan` checklist/status semantics.
-2. `routing_trace_structured_evidence_schema_plan` - keep machine-readable ASCII threshold/blocker tokens for saved evidence.
+1. `chinese_routing_trace_conversation_surface_plan` - require stable user-facing `Routing trace` and `Updated Plan` labels, allow Chinese explanatory content, keep `Routing trace` as a plain-text `key=value` diagnostic line, keep `Updated Plan` as the tree-style checkmark/open-square progress panel, and leave Markdown checkboxes only for implementation-plan task tracking.
+2. `routing_trace_structured_evidence_schema_plan` - keep machine-readable ASCII threshold/blocker tokens for saved evidence, while recording that structured trace evidence/checker data is not a Codex CLI progress-panel API.
 3. `prompt_independent_activation_parity_plan` - ensure routing does not depend on the user saying "parallel" or "experts".
 4. `expert_lifecycle_timeout_pacing_evidence_plan` - treat timeout/stall/pacing as non-evidence and require bounded handling.
 5. `langgraph_state_release_evidence_plan` - reject stale `running` state after completed LangGraph work.
@@ -370,6 +378,7 @@ Admission: all eligible validation sessions may prepare evidence in parallel, bu
 | Phase 2 | `context_retention_canary_literal_boundary_plan` | implemented and locally integrated | Context-retention canary literal-boundary checking entered local `main` at `b779d51`. |
 | Phase 2 | `launcher_payload_context_boundary_plan` | implemented and locally integrated | Launcher payload file-backed boundary hardening entered local `main` at `6f1ef48`. |
 | Phase 2 | `startup_mojibake_utf8_recovery_plan` | implemented and locally integrated | Startup mojibake recovery source-report repair entered local `main` at `43d3ae9`. |
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implementation-complete local candidate | Restored startup-summary-defined canonical visible canary semantics, legacy ASCII classification, and replay/model-context blocking; final repository gates precede local `main` integration. |
 | Phase 1A | `complete_local_commit_flow_scheduler_reorder_buffer_plan` | ROB retire preflight hard gate implemented and locally integrated | Governance package `a259d91` and runtime hard gate `7087b31` verify self-retire ROB metadata before lock acquisition, rollback ref creation, or merge. |
 | Phase 5 | `comet_management_record_bootstrap_plan` | implemented and locally integrated | Local `main` includes closeout commit `8b8bfd6`; management records, checklist gates, monitoring return state, safe paths, and archive evidence are covered by focused Comet runtime tests. |
 | Phase 5 | `comet_runtime_policy_checker_alignment_plan` | implemented and locally integrated | Local `main` includes closeout commit `3335b67`; stable specs, policy checker, runtime tests, and CI registration are aligned. |
@@ -381,7 +390,7 @@ Admission: all eligible validation sessions may prepare evidence in parallel, bu
 | Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Receipt helper hotspot is closed: authorization/update schemas, hash-first rollback output, explicit local-only authorized raw path evidence, redaction fail-closed tests, and Phase 6 handoff gates are in the local integration package. |
 | Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local; ready for repository local-main-first integration | Existing range, `pending_bind`, revision, cleanup, and sanitized-receipt controls are confirmed; CDP Bridge and OpenCLI consumers now reject ambiguous owner leases with `owner_lease_ambiguous`. |
 | Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | implemented-local | Compact `skills2cli` and `mcp2cli` discovery facades are implemented with summarized/redacted skill discovery, MCP risk-profile output, receipt-gated sensitive calls, direct-MCP bridge policy evidence, and focused RED/GREEN tests. |
-| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | active and unclaimed | Extracted browser/CLI adapter boundary lane; live install/start, GUI write, cookies, and sensitive browser actions remain blocked without receipts and owner evidence. |
+| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | implemented-local; ready for repository local-main-first integration | Adapter boundary child lane is now checker-backed: chrome-devtools-mcp, CDP Bridge, OpenCLI, CLI-Anything, and `wecom-cli` remain on-demand/reference-only with receipt, owner, lease, dry-run, and no-live-runtime gates. |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
 ## Dependency and Phase 2 Admission Notes
@@ -437,12 +446,13 @@ Each child plan must include:
 - [x] Stage B runtime recovery: restore self-retire runtime helper/checker behavior and integrate it into local `main` at `898f9d0`.
 - [x] 2026-05-30 complete-flow alignment: align this parent-plan family and its child plans to session-owned self-retire, ROB, `local-main-retire.lock`, and the remote-publication gate after local-main integration.
 - [x] Phase 0 closure: close the inventory registry alignment child plan and the parent orchestration index child plan before Phase 2 admission.
-- [x] Later stages: the Phase 0 closure package has entered local `main`; Phase 2 context and UTF-8 safety child plans have started under the Work-Conserving model and several have entered local `main`.
+- [x] Later stages: the Phase 0 closure package has entered local `main`; all four tracked Phase 2 context and UTF-8 safety child plans have entered local `main` under the Work-Conserving model and now stop at the remote-publication gate.
 - [x] Phase 4 parent/child governance update: extend conversation-surface coverage from routing traces to both `Routing trace` and `Updated Plan`, keep those labels stable, preserve `Updated Plan` checklist/status semantics, and preserve machine-readable ASCII tokens in saved evidence.
 - [x] Phase 4 final closeout: verify all Phase 4 child plans are implemented, locally validated, integrated into local `main`, and stopped at the remote publication gate.
 - [x] Phase 1A hardening: promote `--self-retire` ROB entry validation from post-merge metadata recording into a merge-before hard gate.
 - [x] Stage B decomposition: extract MCP/skills/browser/CLI source lanes into phase-specific child implementation plans instead of attaching the old source plan directly.
 - [x] Stage B decomposition: update Phase 7 integration child plans to include docs registry, checker/CI, and OpenSpec/Comet archive responsibilities for the extracted MCP lanes.
+- [x] Stage B follow-up: create and register the Phase 2 prompt-canary canonical visible marker restore child plan before implementation.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -469,11 +479,12 @@ Stage B acceptance after later confirmation:
 - New sessions do not read this file by default unless they handle this file, its child plans, or plans listed by this file.
 - The later same-machine multi-session target is for sessions to own their own commits and local `main` integration while `local-main-retire` locking keeps local `main` writes serial.
 - `--self-retire` must fail before merge when no valid ready ROB entry exists; ROB retire metadata must not remain a post-merge best-effort action.
-- Phase 4 child plans must write user-facing routing-trace and updated-plan examples in Chinese; internal tool names, schema keys, threshold tokens, blocker tokens, file names, and CLI arguments may remain ASCII.
+- Phase 4 child plans must preserve the confirmed conversation-surface split: `Routing trace` is a plain-text diagnostic line with fixed label plus `key=value` fields; `Updated Plan` is the user-visible tree-style progress panel with checkmark/open-square status markers; Markdown `- [x]` / `- [ ]` checkboxes stay only inside implementation-plan files for task tracking. Explanatory text may be Chinese, while internal tool names, schema keys, threshold tokens, blocker tokens, file names, and CLI arguments may remain ASCII.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-01 progress-surface boundary confirmation: branch `document-progress-surface-boundary-20260601` records the operator-confirmed split: `Routing trace` stays a plain-text `key=value` diagnostic line, `Updated Plan` is the only user-visible progress panel rendered with tree-style checkmark/open-square status markers, and Markdown checkboxes remain the implementation-plan-internal task tracking mode.
 - 2026-05-31 ROB retire preflight implementation: branch `harden-rob-retire-preflight-20260531` adds the self-retire ROB preflight hard gate, focused RED/GREEN coverage, and CI manifest registration; broader local gates remain pending before local-main integration.
 - 2026-05-31 ROB retire preflight governance: found that the old helper could fast-forward merge before failing retire metadata when `--self-retire` lacked the matching ROB entry; this reopens Phase 1A hardening and requires ready ROB entry plus gate state to fail closed before lock acquisition, rollback-ref creation, or merge.
 - 2026-05-31 Phase 4 final closeout: branch `close-phase4-final-20260531` synchronized the parent plan and all Phase 4 child plans so every Phase 4 checklist is closed, stale local-integration gates are replaced by the remote-publication gate, and Phase 5 is admissible without treating remote publication as authorized.
@@ -498,4 +509,7 @@ Stage B acceptance after later confirmation:
 - 2026-06-01 port/browser-owner isolation implementation: branch `implement-port-browser-owner-isolation-20260601` confirms existing `codex-port` range ordering, `pending_bind`, monotonic registry revision, owner-class separation, cleanup protection, sanitized receipt, and OpenCLI `--port auto` controls; adds `owner_lease_ambiguous` fail-closed enforcement to CDP Bridge and OpenCLI consumers; extends focused RED/GREEN regression coverage; and keeps remote publication behind the explicit approval gate.
 
 - 2026-06-01 discovery-facade implementation: branch `implement-mcp-skills-discovery-facade-20260601` implements the Phase 4 extracted compact `skills2cli` / `mcp2cli` lane, adds MCP risk-profile output, explicit direct-MCP/no-default-Router evidence, skill/profile routing evidence that is not native-subagent evidence, and focused tests while leaving remote publication unauthorized.
+- 2026-06-01 browser/CLI adapter boundary implementation: branch `implement-user-level-browser-cli-adapter-boundary-20260601` closes the extracted Phase 6 adapter boundary lane by checker-backing the implemented-local child-plan status, confirming chrome-devtools-mcp/CDP Bridge/OpenCLI/CLI-Anything/`wecom-cli` on-demand or reference-only gates, and keeping live browser/GUI/install/cookie/runtime mutation outside this local package.
+- 2026-06-02 prompt-canary status reconciliation: synchronized the parent status with the four Phase 2 child plans; local `main` ancestry confirms `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; remote publication remains unauthorized.
+- 2026-06-02 prompt-canary canonical restore plan package: branch `plan-restore-nonascii-canary-20260602` records a confirmed Phase 2 follow-up child plan, keeps marker literals out of non-startup plans, and requires model-readable session context to block restored canonical marker copies before implementation.
 <!-- EVIDENCE_INDEX_END -->

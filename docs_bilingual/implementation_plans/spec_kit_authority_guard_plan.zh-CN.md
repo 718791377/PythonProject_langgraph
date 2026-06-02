@@ -35,12 +35,12 @@ Block Spec Kit authority migration commands such as specify init --force, .speci
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
+状态：已实现，正在验证本地集成包
+阶段：Stage C implementation package
+责任会话：codex-20260601-spec-kit-authority-guard
+当前门禁：本地 main 合入前运行聚焦检查、本地门禁和本地 MR review
+Stage C 进入条件：已由 2026-06-01 当前用户实施请求满足
+最后更新：2026-06-01
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -66,11 +66,11 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add tests for safe references to Spec Kit docs and unsafe authority-changing operations.
-- [ ] Implement a checker that fails closed on .specify governance takeover without an active plan.
-- [ ] Register the checker in the local gate only after implementation confirmation.
-- [ ] Run Spec Kit guard tests and local gate.
+- [x] Confirm this child plan after local main integration.
+- [x] Add tests for safe references to Spec Kit docs and unsafe authority-changing operations.
+- [x] Implement a checker that fails closed on .specify governance takeover without an active plan.
+- [x] Register the checker in the local gate only after implementation confirmation.
+- [x] Run Spec Kit guard tests and local gate.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,4 +95,5 @@ Stage C 进入条件：本地 main 合入后，用户明确确认本子 implemen
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-01 implementation package：新增 `tools/check_spec_kit_authority_guard.py`、`test/spec_kit_authority_guard.test.py`、从属适配器治理文档、CI manifest 注册、安全规则脚本支撑登记，以及 OpenSpec guard 集成；本地门禁前聚焦测试已通过。
 <!-- EVIDENCE_INDEX_END -->

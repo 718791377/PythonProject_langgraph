@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from project_moe_gui import CLI_CONTRACT
+from project_moe_gui.qfluent_runtime import check_qfluent_runtime, qfluent_license_manifest
 
 
 SCHEMA_VERSION = 1
@@ -77,6 +78,26 @@ KEYBOARD_SHORTCUTS = {
     "session-on": "Alt+S",
     "session-off": "Alt+Shift+S",
 }
+
+
+def close_behavior_contract() -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "default_close_action": "ask",
+        "auto_hide_to_tray": False,
+        "dialog_title": "Close Project MOE GUI?",
+        "dialog_message": "Choose whether to exit the Project MOE GUI or keep it available in the system tray.",
+        "dialog_options": [
+            {"id": "exit", "label": "Exit", "effect": "quit_application"},
+            {"id": "hide_to_tray", "label": "Hide to tray", "effect": "hide_window_create_tray"},
+            {"id": "cancel", "label": "Cancel", "effect": "ignore_close_event"},
+        ],
+        "tray_icon_created_only_after_explicit_hide": True,
+        "tray_menu_items": [
+            {"id": "show", "label": "Show", "effect": "show_window"},
+            {"id": "exit", "label": "Exit", "effect": "quit_application"},
+        ],
+    }
 
 
 def expected_cli_command_for_action(action: str) -> str:
@@ -699,10 +720,13 @@ def describe_window_structure() -> dict[str, Any]:
         "gui_shell_contract": GUI_SHELL_CONTRACT,
         "window_title": WINDOW_TITLE,
         "regions": [
+            {"id": "navigation_sidebar", "purpose": "primary navigation between overview, sessions, diagnostics, and settings"},
             {"id": "top_banner", "purpose": "project root, branch, agent name, and state namespace"},
             {"id": "error_banner", "purpose": "stable token, short message, and redacted diagnostics"},
+            {"id": "status_overview_cards", "purpose": "Fluent cards for project status, effective state, runtime, and license gate"},
             {"id": "project_default_card", "purpose": "project-default effective state and explicit on/off controls"},
             {"id": "session_table", "purpose": "session effective state, invalid/empty/load-failed states, and selected-session controls"},
+            {"id": "diagnostics_card", "purpose": "readiness blockers, QFluentWidgets dependency/license status, and suggested next actions"},
             {"id": "footer", "purpose": "read-only refresh status and GUI/runtime readiness"},
         ],
         "accessibility_contract": {
@@ -718,6 +742,12 @@ def describe_window_structure() -> dict[str, Any]:
             "automated_tests_do_not_show_windows": True,
             "visible_launch_requires_explicit_interactive_command": True,
         },
+        "visual_contract": {
+            "library": "QFluentWidgets",
+            "package_name": "PySide6-Fluent-Widgets",
+            "import_name": "qfluentwidgets",
+            "qfluentwidgets_required": True,
+        },
     }
 
 
@@ -728,11 +758,21 @@ def build_view_model(
     sessions_payload: dict[str, Any] | None = None,
     status_payload: dict[str, Any] | None = None,
     pyside6_available: bool | None = None,
+    qfluent_status: dict[str, Any] | None = None,
     pending_scope: str | None = None,
     project_root: str | Path | None = None,
 ) -> dict[str, Any]:
     root = configured_project_root(config, project_root)
     pyside6_status = "import_ok" if (is_pyside6_available() if pyside6_available is None else pyside6_available) else "pyside6_unavailable"
+    if qfluent_status is None:
+        qfluent_status = check_qfluent_runtime() if pyside6_status == "import_ok" else {
+            "schema_version": SCHEMA_VERSION,
+            "ok": False,
+            "token": "blocked:qfluentwidgets_not_checked",
+            "import_status": "not_checked",
+            "license_manifest": qfluent_license_manifest(),
+            "blockers": [],
+        }
     pending_scope_key = str(pending_scope) if pending_scope and ":" in pending_scope else None
     pending_scope_name = pending_scope.split(":", 1)[0] if pending_scope and ":" in pending_scope else pending_scope
     session_table = build_session_table(
@@ -755,8 +795,13 @@ def build_view_model(
             banners.append({"token": token, "message": message})
     if pyside6_status != "import_ok":
         banners.append({"token": "blocked:pyside6_unavailable", "message": "PySide6 is not importable from the configured GUI runtime."})
+    if pyside6_status == "import_ok" and qfluent_status.get("token") != "ok":
+        banners.append({"token": str(qfluent_status.get("token") or "blocked:qfluentwidgets_unavailable"), "message": "QFluentWidgets is not importable from the configured GUI runtime."})
     if session_table["invalid_count"]:
         banners.append({"token": "blocked:invalid_session_record", "message": f"{session_table['invalid_count']} session row(s) need review."})
+    project_default = extract_project_default(project_status, status_payload)
+    effective = extract_effective(status_payload, project_status)
+    session_rows = session_table.get("rows", [])
     return {
         "schema_version": SCHEMA_VERSION,
         "gui_shell_contract": GUI_SHELL_CONTRACT,
@@ -768,6 +813,44 @@ def build_view_model(
             "state_namespace": config.get("state_namespace"),
             "cli_contract": config.get("cli_contract"),
         },
+        "navigation_sidebar": {
+            "items": [
+                {"id": "overview", "label": "Project", "icon": "Home", "target_region": "status_overview_cards"},
+                {"id": "sessions", "label": "Sessions", "icon": "People", "target_region": "session_table"},
+                {"id": "diagnostics", "label": "Diagnostics", "icon": "Info", "target_region": "diagnostics_card"},
+                {"id": "settings", "label": "Settings", "icon": "Setting", "target_region": "footer"},
+            ]
+        },
+        "status_cards": [
+            {
+                "id": "project-default",
+                "title": "Project default",
+                "value": state_label(project_default),
+                "token": project_token,
+                "style": "fluent-card",
+            },
+            {
+                "id": "effective-status",
+                "title": "Effective status",
+                "value": state_label(effective),
+                "token": status_token,
+                "style": "fluent-card",
+            },
+            {
+                "id": "session-count",
+                "title": "Sessions",
+                "value": str(len(session_rows)),
+                "token": table_token,
+                "style": "fluent-card",
+            },
+            {
+                "id": "runtime",
+                "title": "GUI runtime",
+                "value": pyside6_status,
+                "token": "ok" if pyside6_status == "import_ok" else "blocked:pyside6_unavailable",
+                "style": "fluent-card",
+            },
+        ],
         "project_default_card": build_project_default_card(
             project_status,
             status_payload,
@@ -782,6 +865,24 @@ def build_view_model(
             "pyside6_status": pyside6_status,
             "shared_runtime_root": config.get("shared_runtime_root"),
             "runtime_python": config.get("runtime_python"),
+        },
+        "visual": {
+            "library": "QFluentWidgets",
+            "package_name": "PySide6-Fluent-Widgets",
+            "import_name": "qfluentwidgets",
+            "qfluentwidgets_status": qfluent_status,
+            "license_manifest": qfluent_status.get("license_manifest") or qfluent_license_manifest(),
+            "fail_closed_if_missing": True,
+        },
+        "diagnostics_card": {
+            "title": "Diagnostics",
+            "blockers": banners,
+            "qfluentwidgets": qfluent_status,
+            "suggested_next_actions": [
+                "Use --preflight --json for automation.",
+                "Provision shared runtime dependencies before visible GUI launch.",
+                "Review QFluentWidgets license before commercial redistribution or packaging.",
+            ],
         },
         "banners": banners,
         "button_state": {
@@ -801,6 +902,7 @@ def build_view_model(
             "high_contrast_text_required": True,
             "badge_text_fields": ["text", "effective_text", "token_text", "high_contrast_text"],
         },
+        "close_behavior": close_behavior_contract(),
         "direct_state_write": False,
     }
 
@@ -812,6 +914,7 @@ def build_gui_preflight(
     sessions_payload: dict[str, Any] | None = None,
     status_payload: dict[str, Any] | None = None,
     pyside6_available: bool | None = None,
+    qfluent_status: dict[str, Any] | None = None,
     project_root: str | Path | None = None,
 ) -> dict[str, Any]:
     view_model = build_view_model(
@@ -821,10 +924,12 @@ def build_gui_preflight(
         sessions_payload=sessions_payload,
         status_payload=status_payload,
         pyside6_available=pyside6_available,
+        qfluent_status=qfluent_status,
     )
     pyside6_ok = view_model["runtime"]["pyside6_status"] == "import_ok"
+    qfluent_ok = pyside6_ok and view_model["visual"]["qfluentwidgets_status"].get("token") == "ok"
     blockers = [banner for banner in view_model["banners"] if banner["token"] != "ok"]
-    token = "ok" if pyside6_ok and not blockers else ("blocked:pyside6_unavailable" if not pyside6_ok else blockers[0]["token"])
+    token = "ok" if pyside6_ok and qfluent_ok and not blockers else ("blocked:pyside6_unavailable" if not pyside6_ok else blockers[0]["token"])
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": token == "ok",
@@ -948,22 +1053,65 @@ def execute_write_action_with_readback(
 
 def launch_visible(view_model: dict[str, Any]) -> int:
     try:
-        from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWidget
+        from PySide6.QtCore import Qt
+        from PySide6.QtGui import QCloseEvent
+        from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox, QSystemTrayIcon, QVBoxLayout, QWidget
+        from qfluentwidgets import CardWidget, NavigationInterface, setTheme
     except Exception as exc:  # pragma: no cover - depends on optional runtime
-        raise RuntimeError("blocked:pyside6_unavailable") from exc
+        raise RuntimeError("blocked:qfluentwidgets_unavailable") from exc
+
+    class MoeMainWindow(QMainWindow):  # pragma: no cover - visible GUI path
+        def __init__(self) -> None:
+            super().__init__()
+            self._tray: QSystemTrayIcon | None = None
+
+        def closeEvent(self, event: QCloseEvent) -> None:
+            box = QMessageBox(self)
+            box.setWindowTitle("Close Project MOE GUI?")
+            box.setText("Choose whether to exit the Project MOE GUI or keep it available in the system tray.")
+            exit_button = box.addButton("Exit", QMessageBox.ButtonRole.AcceptRole)
+            hide_button = box.addButton("Hide to tray", QMessageBox.ButtonRole.ActionRole)
+            box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+            box.exec()
+            clicked = box.clickedButton()
+            if clicked is exit_button:
+                event.accept()
+            elif clicked is hide_button:
+                self.hide()
+                if QSystemTrayIcon.isSystemTrayAvailable() and self._tray is None:
+                    self._tray = QSystemTrayIcon(self)
+                    self._tray.setToolTip(WINDOW_TITLE)
+                    self._tray.activated.connect(lambda *_: self.showNormal())
+                    self._tray.show()
+                event.ignore()
+            else:
+                event.ignore()
 
     app = QApplication.instance() or QApplication(sys.argv)
-    window = QMainWindow()
+    setTheme("AUTO")
+    window = MoeMainWindow()
     window.setWindowTitle(WINDOW_TITLE)
     central = QWidget()
     layout = QVBoxLayout(central)
+    navigation = NavigationInterface(window, showMenuButton=True)
+    navigation.setFixedWidth(220)
     banner = view_model.get("top_banner", {})
     project_card = view_model.get("project_default_card", {})
-    layout.addWidget(QLabel(f"Project: {banner.get('project_root')}"))
-    layout.addWidget(QLabel(f"Branch: {banner.get('current_branch')}"))
-    layout.addWidget(QLabel(f"Agent: {banner.get('agent_name')} / namespace: {banner.get('state_namespace')}"))
-    layout.addWidget(QLabel(f"Project default: {project_card.get('label')} (effective: {project_card.get('effective_label')})"))
-    layout.addWidget(QLabel(f"Sessions: {len(view_model.get('session_table', {}).get('rows', []))}"))
+    layout.addWidget(navigation)
+    for card in view_model.get("status_cards", []):
+        widget = CardWidget()
+        card_layout = QVBoxLayout(widget)
+        card_layout.addWidget(QLabel(f"{card.get('title')}: {card.get('value')}"))
+        card_layout.addWidget(QLabel(f"Token: {card.get('token')}"))
+        layout.addWidget(widget)
+    diagnostics = CardWidget()
+    diagnostics_layout = QVBoxLayout(diagnostics)
+    diagnostics_layout.addWidget(QLabel(f"Project: {banner.get('project_root')}"))
+    diagnostics_layout.addWidget(QLabel(f"Branch: {banner.get('current_branch')}"))
+    diagnostics_layout.addWidget(QLabel(f"Agent: {banner.get('agent_name')} / namespace: {banner.get('state_namespace')}"))
+    diagnostics_layout.addWidget(QLabel(f"Project default: {project_card.get('label')} (effective: {project_card.get('effective_label')})"))
+    diagnostics_layout.addWidget(QLabel(f"Sessions: {len(view_model.get('session_table', {}).get('rows', []))}"))
+    layout.addWidget(diagnostics)
     window.setCentralWidget(central)
     window.resize(960, 540)
     window.show()

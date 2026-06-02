@@ -6,7 +6,7 @@ plan_readiness: full-comet-structure-ready-for-maintenance-slicing
 doc_class: implementation_plan
 translation_of: null
 created_at: 2026-05-20
-updated_at: 2026-05-27
+updated_at: 2026-06-02
 comet_change: refine-pyside6-gui-plan-comet-structure
 related_docs:
   - docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
@@ -236,6 +236,29 @@ Minimum shared runtime metadata:
 
 The runtime receipt must never contain API keys, business data, private project paths beyond the runtime path, or large log excerpts.
 
+### 7.1 Optional visual dependency and license receipt
+
+When a consumer GUI or repository toolchain introduces a shared-runtime visual library such as QFluentWidgets, the shared runtime must also carry a sanitized GUI dependency license receipt. Minimum fields are:
+
+```json
+{
+  "schema_version": 1,
+  "dependency_type": "gui-visual-library",
+  "package_name": "PySide6-Fluent-Widgets",
+  "import_names": ["qfluentwidgets"],
+  "version": "<installed-version>",
+  "source_url": "https://pypi.org/project/PySide6-Fluent-Widgets/",
+  "declared_license": "GPLv3 / commercial-license review required for commercial redistribution",
+  "license_review_status": "reviewed-for-local-use|blocked|needs-review",
+  "allowed_use": "local-personal-operator-gui",
+  "commercial_or_public_distribution_requires_recheck": true,
+  "reviewed_at": "<iso8601>",
+  "review_notes": "No secrets, keys, or private project data."
+}
+```
+
+The Project MOE GUI plan currently selects QFluentWidgets for a fast visual upgrade; generic PySide6 consumers do not inherit that dependency unless their own plan or helper output explicitly opts in.
+
 ## 8. Helper CLI / PowerShell / JSON Contracts
 
 Shared runtime helper:
@@ -278,6 +301,8 @@ Required helper output fields:
 | `smoke_test_command` | The import-only verification command using the selected runtime. |
 | `visible_gui_requires_explicit_request` | A boolean gate that prevents interactive windows from launching by default. |
 | `packaging_requires_explicit_request` | A boolean gate that prevents executable packaging from running by default. |
+| `visual_dependency_status` | Optional visual-library dependency state, such as none, ready, missing, blocked, or needs-license-review. |
+| `license_manifest_path` | Optional sanitized dependency license manifest path when a visual library is used. |
 
 Fail-closed conditions:
 
@@ -304,7 +329,9 @@ Default consumer contract:
   "import_only_smoke": "required",
   "visible_gui_requires_explicit_request": true,
   "packaging_requires_explicit_request": true,
-  "project_local_override_reason": null
+  "project_local_override_reason": null,
+  "visual_dependencies": [],
+  "license_manifest_path": null
 }
 ```
 
@@ -402,6 +429,7 @@ This checklist lists concrete implementation items only. It intentionally does n
 
 - [ ] Reopen the cross-project launcher decision only after at least two consumer projects show repeated launcher logic that per-project wrappers cannot absorb.
 - [ ] Add a sanitized shared-runtime upgrade receipt when PySide6/Qt/Python is intentionally upgraded.
+- [ ] Add a sanitized GUI visual dependency license receipt when QFluentWidgets or another shared-runtime UI add-on is introduced.
 - [ ] Add consumer-project compatibility notes when more than one project depends on the shared runtime.
 - [ ] Promote repeated failure patterns into checkers rather than relying on chat reminders.
 
@@ -479,6 +507,7 @@ This checklist lists concrete implementation items only. It intentionally does n
 - `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_mr_review.ps1` - runs the local MR review gate before local main integration.
 
 For future consumer-project opt-in, add target-specific preview JSON and import-only smoke JSON. For visible GUI and packaging, add explicit request evidence and receipts.
+When a visual library is introduced, add dependency import smoke, license manifest validation, and fail-closed evidence for missing or unreviewed packages.
 
 ## 17. Related Governance / Plan Update Requirements
 

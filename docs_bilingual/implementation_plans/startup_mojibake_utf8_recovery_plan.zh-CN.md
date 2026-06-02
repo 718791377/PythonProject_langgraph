@@ -35,13 +35,17 @@ Detect mojibake in startup and instruction authority surfaces and recover from U
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage C 实施包已准备进入本地验证、提交与本地 main 集成
-责任会话：main Codex leader session
-当前门禁：本地 CI 与本地 MR review；远端发布在用户明确授权前仍不在范围内
-Stage C 进入条件：用户已明确要求继续实施本子 implementation plan
-最后更新：2026-05-30
+状态：implemented-local
+阶段：Phase 2 状态对账已收口；startup mojibake UTF-8 recovery 包已合入本地 `main`。
+责任会话：reconcile-context-retention-canary-status-20260602（仅状态对账）
+当前门禁：本子方案已无剩余本地实现门禁；除非用户明确要求，否则远端发布仍未授权。
+证据：本地 `main` 包含 `43d3ae9`，当前 startup mojibake checker 报告 `ok: true`。
+最后更新：2026-06-02
 <!-- CURRENT_STATUS_END -->
+
+## Confirmed Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` reuses this implemented-local UTF-8 recovery baseline. The follow-up must treat the startup summary pair as the only canonical literal surface, derive restored marker values outside startup files, keep diagnostics from echoing marker literals, and block marker copies from model-readable session context.
 
 ## 文件归属
 
@@ -99,4 +103,6 @@ Stage C 进入条件：用户已明确要求继续实施本子 implementation pl
 - 2026-05-30 Stage C 验证：在 `implement-startup-mojibake-utf8-recovery-20260530` 分支上，`python test/check_startup_instruction_mojibake.test.py`、`python tools/check_startup_instruction_mojibake.py --root . --json`、`python tools/check_implementation_plan_rules.py --root . --json`、`python tools/check_precommit_update_archive.py --root . --json` 和 `python tools/check_worktree_task_receipt.py --root . --json` 已通过；完整本地 CI 与本地 MR review 仍是当前集成门禁。
 - 2026-05-30 Stage C 进入：用户确认继续实施本子方案；runtime/checker 工作前已创建 active session claim。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-02 状态对账：本地 `main` ancestry 确认包含 `43d3ae9`；`python tools/check_startup_instruction_mojibake.py --root . --json` 报告 `ok: true`；旧本地验证门文本已替换为 implemented-local 状态。
+- 2026-06-02 canonical visible canary restore follow-up: this implemented-local UTF-8 recovery child plan supplies the baseline for restoring the startup-summary-defined canonical visible canary while keeping diagnostics literal-free and model-readable context filtered.
 <!-- EVIDENCE_INDEX_END -->

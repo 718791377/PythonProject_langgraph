@@ -25,7 +25,7 @@
 
 仓库 SHALL 提供可执行检查器，用于验证活动 canary 放置位置、canary 编码完整性、恢复措辞，以及可选的用户提供响应/session 证据，而不是只依赖模型记忆。
 
-启动摘要双文件中定义的当前可见 canary 标记 SHALL 为 ASCII-only token。历史非 ASCII canary 标记 SHALL NOT 被接受为当前规范响应证据；它们 MAY 仅作为检查器内部的历史/损坏检测输入保留。
+启动摘要双文件中定义的当前可见 canary 标记 SHALL 为 startup-summary-defined non-ASCII/cat-sound marker pair。之前的 ASCII transport-stable markers SHALL NOT 被接受为当前规范响应证据；它们 MAY 仅作为检查器内部的 legacy/stale compatibility inputs 与 replay-filtering signals 保留。
 
 检查器 SHALL 继续强制执行仓库文件的静态放置规则。
 
@@ -33,18 +33,19 @@
 
 当 session JSONL 证据被缩小到指定 turn 或 latest assistant response 时，检查器 SHALL 只把该选择应用于合格 assistant 消息，并继续忽略非用户可见上下文来源。
 
-#### Scenario: Startup summary defines transport-stable canary markers
+#### Scenario: Startup summary defines canonical visible canary markers
 
 - **WHEN** 启动摘要双文件定义当前可见 canary 标记
-- **THEN** 这些标记 SHALL 为 ASCII-only，并能安全通过旧 Windows 控制台或启动器 payload 边界渲染
+- **THEN** 这些标记 SHALL 为 startup-summary-defined non-ASCII/cat-sound marker pair
 - **AND** 启动摘要双文件之外的活动源文件 SHALL NOT 包含完整字面标记文本
 
-#### Scenario: User-visible assistant response uses historical non-ASCII canary text
+#### Scenario: User-visible assistant response uses legacy ASCII canary text
 
 - **WHEN** 检查器收到包含合格 assistant 响应的 response text 或 session JSONL
-- **AND** 该响应包含历史非 ASCII canary 标记而不是启动摘要定义的当前标记
+- **AND** 该响应包含 legacy ASCII canary marker 而不是启动摘要定义的当前标记
 - **THEN** 检查器 SHALL 返回非零退出码
-- **AND** SHALL 将该响应报告为无效 canary 证据并要求冷启动恢复
+- **AND** SHALL 报告 `legacy_canary`
+- **AND** SHALL 将该响应视为 stale compatibility input，而不是 canonical response evidence
 
 #### Scenario: Startup recovery omits repository instructions
 
@@ -93,6 +94,13 @@
 - **AND** 被选择的 assistant 响应包含启动摘要定义的当前 canary 标记
 - **THEN** 检查器 SHALL 报告 `canonical_present`
 - **AND** SHALL 忽略其他 turn 的上下文副本和选择范围外的 assistant 消息
+
+#### Scenario: Model-readable replay context contains canary marker copies
+
+- **WHEN** session replay context filtering receives assistant-visible transcript text, tool/function output, raw startup-summary copies, or compacted handoff text
+- **AND** candidate model-readable context contains startup-summary-defined canonical marker copies or legacy ASCII marker text
+- **THEN** replay filtering helper SHALL block or filter that item before prompt-authority handoff
+- **AND** it SHALL report only reason labels and text summaries, not marker literals
 
 #### Scenario: Assistant response contains mojibake canary text
 

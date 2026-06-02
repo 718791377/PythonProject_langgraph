@@ -17,7 +17,7 @@ confirmation_required: true
 
 ## 目标
 
-Separate Chinese conversation display from structured ASCII evidence fields for routing traces.
+区分 routing trace 的会话展示与保存版 ASCII 结构化 evidence 字段。用户可见 `Routing trace` 保持固定标签加 `key=value` 字段的普通文本诊断行；结构化 evidence schema 与 checker 是保存版证据契约，不是 Codex CLI 进度面板 API。
 
 ## 来源方案
 
@@ -96,6 +96,7 @@ Stage C 进入条件：用户确认与收口文档本地 `main` 集成均已满�
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-01 progress-surface boundary confirmation：分支 `document-progress-surface-boundary-20260601` 记录 routing trace 的结构化 evidence/checker 数据并不意味着用户可见 Codex CLI 面板；`Routing trace` 继续保持普通文本诊断行。
 - 2026-05-31 local-main 状态收口：分支 `update-routing-trace-structured-evidence-schema-status-20260531` 表示仅用于记录状态收口的本地分支，在收口文档已集成本地 `main` 后把过期的“等待本地集成”门禁替换为远端发布门。
 - 2026-05-31 Stage C 收口：分支 `close-routing-trace-structured-evidence-schema-20260531` 记录 structured routing trace schema 已通过 `tools/check_orchestration_trace_evidence.py`、`test/check_orchestration_trace_evidence.test.py`、`tools/check_orchestration_collaboration_evidenceguard.py` 与 activation-policy 文档表面完成实现；最终 local-main commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-30 实施基线：本地 `main` 已包含 structured trace 与 collaboration evidence 包，包括固定 `Routing trace` / `Updated Plan` 标签证据以及 expert lifecycle non-evidence handling；验证证据见 checker 测试历史和 local CI 记录。

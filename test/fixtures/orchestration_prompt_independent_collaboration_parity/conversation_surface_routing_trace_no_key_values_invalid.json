@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "case_type": "conversation_surface",
+  "case_id": "conversation-surface-routing-trace-no-key-values-invalid",
+  "surface": "routing_trace",
+  "text": "Routing trace\nThis is only prose and does not expose key=value diagnostic fields.",
+  "expected_valid": false
+}

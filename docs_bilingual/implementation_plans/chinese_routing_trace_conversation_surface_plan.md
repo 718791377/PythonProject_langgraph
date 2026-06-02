@@ -17,7 +17,7 @@ confirmation_required: true
 
 ## Goal
 
-Require user-facing conversation surfaces to keep the fixed literal labels `Routing trace` and `Updated Plan`; those labels must not be replaced with localized headings. Explanatory content under the labels may be Chinese. `Updated Plan` must remain a checklist/status-list surface rather than prose-only text, while saved structured evidence keeps machine-readable ASCII threshold tokens, blocker tokens, schema keys, file names, and CLI arguments.
+Require user-facing conversation surfaces to keep the fixed literal labels `Routing trace` and `Updated Plan`; those labels must not be replaced with localized headings. `Routing trace` is a plain-text routing diagnostic line with fixed label plus `key=value` fields. `Updated Plan` is the user-visible progress panel and must use the tree-style checkmark/open-square status presentation instead of a handwritten Markdown checklist. Markdown checkbox syntax remains valid only inside implementation-plan files for task tracking. Explanatory content may be Chinese, while saved structured evidence keeps machine-readable ASCII threshold tokens, blocker tokens, schema keys, file names, and CLI arguments.
 
 ## Source Plans
 
@@ -102,15 +102,16 @@ Run these gates before local `main` integration unless this child plan later nar
 
 - Parent Phase 4 explicitly covers the fixed user-facing `Routing trace` and `Updated Plan` surfaces.
 - This child plan distinguishes user-facing fixed-label surfaces from saved machine-readable ASCII evidence.
-- Conversation output must keep `Routing trace` as the user-facing routing decision label; explanatory content may be Chinese.
-- Conversation output must keep `Updated Plan` as the user-facing plan-progress label.
-- `Updated Plan` must preserve checklist/status-list semantics, such as checkbox lines or pending / in_progress / completed items, rather than being replaced by ordinary prose.
+- Conversation output must keep `Routing trace` as the user-facing routing decision label and render it as a plain-text diagnostic line with `key=value` fields; explanatory content may be Chinese.
+- Conversation output must keep `Updated Plan` as the user-facing plan-progress label and use the tree-style checkmark/open-square progress panel.
+- Conversation output must not duplicate `Updated Plan` as a handwritten Markdown `- [x]` / `- [ ]` checklist; that checkbox syntax remains valid only inside implementation-plan files for task tracking.
 - English tool names, file names, schema keys, threshold tokens, blocker tokens, and CLI arguments may remain ASCII.
 - Evidence is recorded as a lightweight index instead of appending large evidence packages to this plan.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-01 progress-surface boundary confirmation: branch `document-progress-surface-boundary-20260601` narrows the earlier checklist/status wording so user-facing `Updated Plan` means the tree-style checkmark/open-square progress panel only; Markdown checkbox syntax remains the implementation-plan-internal task tracking mode, and `Routing trace` stays a plain-text `key=value` diagnostic line.
 - 2026-05-31 Phase 4 final closeout: `close-phase4-final-20260531` confirms this child plan has no open checklist items, its fixed-label implementation and closeout evidence are preserved in current local `main`, and its remaining gate is explicit remote-publication approval.
 - 2026-05-31 Stage C closeout: branch `close-chinese-routing-trace-conversation-surface-plan-20260531` records the final validation checklist item as complete for the already-implemented fixed `Routing trace` and `Updated Plan` conversation surface contract; final local-main commit and validation evidence are recorded in the assistant response and local git history.
 - 2026-05-30 implementation baseline: local `main` contains the fixed-label runtime/checker package in `implement-routing-updated-plan-fixed-labels-20260530c`, including checker/fixture coverage for stable `Routing trace` and `Updated Plan` labels and checklist semantics.

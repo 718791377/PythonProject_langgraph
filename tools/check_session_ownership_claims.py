@@ -79,6 +79,10 @@ def branch_name(worktree: dict[str, str]) -> str | None:
     return branch[len(prefix) :] if branch.startswith(prefix) else branch
 
 
+def is_gitlab_ci_detached_checkout() -> bool:
+    return bool(os.environ.get("GITLAB_CI") and os.environ.get("CI_COMMIT_SHA"))
+
+
 def normalize_repo_path(value: str) -> str:
     value = value.strip().replace("\\", "/")
     while value.startswith("./"):
@@ -590,10 +594,16 @@ def run_check(
     current_claims = [claim for claim in claims if claim.containing_worktree.resolve() == current_root]
 
     if allow_current_dirty and current_dirty_paths and current_branch != main_branch and not current_claims:
-        errors.append(
-            f"Current dirty feature worktree {current_root} has no active session ownership claim under "
-            f"{(current_root / claims_subdir).as_posix()}. Declare the OpenSpec change or path scope before continuing."
-        )
+        if is_gitlab_ci_detached_checkout() and current_branch is None:
+            info.append(
+                "GitLab CI detached checkout is dirty after managed refresh; local session ownership "
+                "claims are not required for this ephemeral remote CI worktree."
+            )
+        else:
+            errors.append(
+                f"Current dirty feature worktree {current_root} has no active session ownership claim under "
+                f"{(current_root / claims_subdir).as_posix()}. Declare the OpenSpec change or path scope before continuing."
+            )
 
     task_ownership_precheck: dict[str, object] | None = None
     if precheck_enabled(

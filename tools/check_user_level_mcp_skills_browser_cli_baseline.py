@@ -12,6 +12,8 @@ CHECK_NAME = "user_level_mcp_skills_browser_cli_baseline"
 SPEC_DIR = "codex-user-level-mcp-skills-browser-cli-governance"
 PLAN_ZH = Path("docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md")
 PLAN_EN = Path("docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md")
+ADAPTER_PLAN_ZH = Path("docs_bilingual/implementation_plans/user_level_browser_cli_adapter_boundary_plan.zh-CN.md")
+ADAPTER_PLAN_EN = Path("docs_bilingual/implementation_plans/user_level_browser_cli_adapter_boundary_plan.md")
 STABLE_SPEC = Path("openspec/specs") / SPEC_DIR / "spec.md"
 CHANGE_SPEC_GLOB = f"openspec/changes/*/specs/{SPEC_DIR}/spec.md"
 SAFETY_REGISTRY = Path("tools/safety_rule_script_backing_registry.json")
@@ -21,6 +23,76 @@ WECOM_HELPER = Path("tools/wecom_cli_governance.py")
 WECOM_TEST = "wecom_cli_governance.test.py"
 RECEIPT_HELPER = Path("tools/user_level_receipt_governance.py")
 RECEIPT_TEST = "user_level_receipt_governance.test.py"
+ADAPTER_PLAN_STATUS_VALUES = {"reference-only", "planned", "on-demand", "active-candidate"}
+ADAPTER_PLAN_LANES = {
+    "chrome-devtools-mcp": {"on-demand"},
+    "CDP Bridge": {"on-demand"},
+    "OpenCLI": {"on-demand"},
+    "CLI-Anything": {"reference-only"},
+    "wecom-cli": {"on-demand"},
+}
+ADAPTER_PLAN_REQUIRED: dict[str, list[str]] = {
+    "zh": [
+        "Status: implemented-local",
+        "Implementation evidence:",
+        "read-only tab inventory",
+        "authorization receipt",
+        "JavaScript execution",
+        "cookie read",
+        "raw browser data access",
+        "--port auto",
+        "codex-port",
+        "CLI-Anything",
+        "generation-first",
+        "hard-load skills",
+        "wecom-cli",
+        "API/Webhook-first",
+        "global lease",
+        "operator confirmation",
+        "timeout release",
+        "dry-run evidence",
+        "Adapter lane status",
+        "reference-only",
+        "planned",
+        "on-demand",
+        "active-candidate",
+        "tools/chrome_devtools_mcp_managed.py",
+        "tools/cdp_bridge_governance.py",
+        "tools/opencli_governance.py",
+        "tools/cli_anything_governance.py",
+        "tools/wecom_cli_governance.py",
+    ],
+    "en": [
+        "Status: implemented-local",
+        "Implementation evidence:",
+        "read-only tab inventory",
+        "authorization receipt",
+        "JavaScript execution",
+        "cookie read",
+        "raw browser data access",
+        "--port auto",
+        "codex-port",
+        "CLI-Anything",
+        "generation-first",
+        "hard-load skills",
+        "wecom-cli",
+        "API/Webhook-first",
+        "global lease",
+        "operator confirmation",
+        "timeout release",
+        "dry-run evidence",
+        "Adapter lane status",
+        "reference-only",
+        "planned",
+        "on-demand",
+        "active-candidate",
+        "tools/chrome_devtools_mcp_managed.py",
+        "tools/cdp_bridge_governance.py",
+        "tools/opencli_governance.py",
+        "tools/cli_anything_governance.py",
+        "tools/wecom_cli_governance.py",
+    ],
+}
 
 PLAN_REQUIRED: dict[str, list[str]] = {
     "zh": [
@@ -188,6 +260,58 @@ def check_plan(root: Path, rel_path: Path, lang: str, errors: list[str], info: l
     }
 
 
+def extract_between(text: str, start_marker: str, end_marker: str) -> str:
+    if start_marker not in text or end_marker not in text:
+        return ""
+    return text.split(start_marker, 1)[1].split(end_marker, 1)[0]
+
+
+def check_adapter_child_plan(root: Path, rel_path: Path, lang: str, errors: list[str], info: list[str]) -> dict[str, Any]:
+    path = root / rel_path
+    text = read_text(path, errors)
+    headings = sum(1 for line in text.splitlines() if line.startswith("#"))
+    require_markers(str(rel_path), text, ADAPTER_PLAN_REQUIRED[lang], errors)
+
+    current_status = extract_between(text, "<!-- CURRENT_STATUS_START -->", "<!-- CURRENT_STATUS_END -->")
+    backlog = extract_between(text, "<!-- TASK_BACKLOG_START -->", "<!-- TASK_BACKLOG_END -->")
+    evidence = extract_between(text, "<!-- EVIDENCE_INDEX_START -->", "<!-- EVIDENCE_INDEX_END -->")
+    if "implemented-local" not in current_status:
+        errors.append(f"{rel_path} CURRENT_STATUS must report `implemented-local` after adapter-boundary implementation.")
+    current_status_lower = current_status.lower()
+    if not any(marker in current_status_lower for marker in ("remote publication", "remote-publication", "远端发布")):
+        errors.append(f"{rel_path} CURRENT_STATUS must keep remote publication explicitly closed.")
+    unchecked = [line for line in backlog.splitlines() if line.strip().startswith("- [ ]")]
+    if unchecked:
+        errors.append(f"{rel_path} TASK_BACKLOG must be closed before local integration; unchecked items: {len(unchecked)}.")
+    if "implementation evidence" not in evidence.lower() or "user_level_browser_cli_adapter_boundary_plan" not in evidence:
+        errors.append(f"{rel_path} EVIDENCE_INDEX must record adapter-boundary implementation evidence.")
+
+    lane_status: dict[str, list[str]] = {}
+    status_section = extract_between(text, "## Adapter lane status", "\n## ")
+    if not status_section:
+        status_section = extract_between(text, "## Adapter lane status", "<!-- EVIDENCE_INDEX_START -->")
+    if not status_section:
+        errors.append(f"{rel_path} must include an `Adapter lane status` table before integration.")
+    for lane, allowed in ADAPTER_PLAN_LANES.items():
+        lane_lines = [line for line in status_section.splitlines() if lane.lower() in line.lower()]
+        statuses = sorted({status for line in lane_lines for status in ADAPTER_PLAN_STATUS_VALUES if status in line})
+        lane_status[lane] = statuses
+        if not statuses:
+            errors.append(f"{rel_path} must report adapter lane `{lane}` as one of {sorted(ADAPTER_PLAN_STATUS_VALUES)}.")
+        elif not set(statuses).issubset(allowed):
+            errors.append(f"{rel_path} lane `{lane}` has unexpected status {statuses}; allowed for this local package: {sorted(allowed)}.")
+
+    info.append(f"{rel_path}: adapter child plan headings={headings}, lane_status={lane_status}")
+    return {
+        "path": str(rel_path),
+        "present": bool(text),
+        "headings": headings,
+        "implemented_local": "implemented-local" in current_status,
+        "unchecked_backlog_items": len(unchecked),
+        "lane_status": lane_status,
+    }
+
+
 def spec_candidates(root: Path) -> list[Path]:
     candidates: list[Path] = []
     stable = root / STABLE_SPEC
@@ -279,6 +403,8 @@ def evaluate(root: Path) -> dict[str, Any]:
     info: list[str] = []
     zh = check_plan(root, PLAN_ZH, "zh", errors, info)
     en = check_plan(root, PLAN_EN, "en", errors, info)
+    adapter_zh = check_adapter_child_plan(root, ADAPTER_PLAN_ZH, "zh", errors, info)
+    adapter_en = check_adapter_child_plan(root, ADAPTER_PLAN_EN, "en", errors, info)
     spec = check_spec(root, errors, info)
     safety = check_safety_registry(root, errors)
     ci_guard = check_ci_and_guard(root, errors)
@@ -292,6 +418,7 @@ def evaluate(root: Path) -> dict[str, Any]:
         "warnings": warnings,
         "info": info,
         "plans": {"zh": zh, "en": en},
+        "adapter_child_plan": {"zh": adapter_zh, "en": adapter_en},
         "spec": spec,
         "safety_rule": safety,
         "ci_guard": ci_guard,

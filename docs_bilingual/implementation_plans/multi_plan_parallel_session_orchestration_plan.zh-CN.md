@@ -43,6 +43,7 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 6. codex_governance_session_visibility_and_plan_lock_plan - 增加中文 routing trace 可视化、主会话提权可视化、Superpowers 证据、Spec Kit 边界和 plan lock。
 7. pi_plugin_codex_user_level_sidecar_plan - 提供 Pi family、Codex -> Pi sidecar 与 oh-my-pi reference-only 边界。
 8. user_level_mcp_skills_browser_cli_governance_plan - MCP、skills、browser、OpenCLI 与 CLI harness governance 的 source-to-decompose；其 lane 会被提取到分阶段子方案，而不是作为单一直接子方案挂入父方案。
+9. prompt_canary_canonical_visible_marker_restore_plan - Restores the startup-summary-defined canonical visible canary to the operator-confirmed non-ASCII marker pair and blocks marker copies from model-readable session context.
 
 ## 非目标
 
@@ -58,13 +59,13 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 4 discovery-facade 提取 lane 已 implemented-local；其他 Phase 6 lane 仍可准入。
-Owner session: main Codex leader owns implementation package id `implement-mcp-skills-discovery-facade-20260601`; package id means the isolated feature-worktree implementation item for this update.
-Current gate: 本地验证证据绑定到本 ready package；串行合入本地 `main` 后，仅剩远端发布授权门。
-Phase 5 note: Comet runtime closeout 已进入本地 main；本包不重开 Phase 5 runtime 工作。
-MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` 保留为来源与 baseline 索引，不作为本父方案直接子方案。
-Parallel model: 提取后的 lane 可按多阶段、多会话执行，但每个 session 必须拥有互斥写集或声明已串行化 hotspot。
-Remote state: 本 local-only implementation branch 不授权远端发布。
+Stage: Phase 2 prompt-canary canonical visible marker restoration is implemented in the current local candidate; the follow-up now verifies repository gates before local `main` integration.
+Owner session: main Codex leader owns implementation package id `implement-restore-nonascii-canary-20260602`; this is a serialized canary-hotspot implementation worktree, not a durable-team worker or remote publication branch.
+Current gate: commit the implementation package, merge through the local-main-first helper, then stop at the remote-publication approval gate; remote publication remains unauthorized unless the user explicitly requests it.
+Phase 2 note: all four earlier context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; this follow-up closes the reopened marker canonicalization and session-context blocking contract.
+MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` remains a source and baseline index, not a direct child of this parent.
+Parallel model: canary hotspots stayed serialized; other extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
+Remote state: this implementation package does not authorize remote publication.
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -81,6 +82,7 @@ Remote state: 本 local-only implementation branch 不授权远端发布。
    │  └─ 说明：这是索引维护子方案，不拥有下级 implementation_plan 文件。
    ├─ Phase 1A / Batch 1 子方案：complete_local_commit_flow_scheduler_reorder_buffer_plan.zh-CN.md
    ├─ Phase 1-6 子方案：其他同级 child implementation plans
+   |-- Phase 2 follow-up child: prompt_canary_canonical_visible_marker_restore_plan.md
    ├─ Phase 7 / Batch 5 子方案：parallel_plan_docs_registry_integration_plan.zh-CN.md
    ├─ Phase 7 / Batch 5 子方案：parallel_plan_checker_ci_integration_plan.zh-CN.md
    └─ Phase 7 / Batch 5 子方案：parallel_plan_openspec_comet_archive_plan.zh-CN.md
@@ -227,6 +229,12 @@ python tools/local_main_retire_lock.py status --root . --json
 - 远端发布仍是用户明确授权步骤。
 
 
+## Phase 2 Follow-up: Canonical Visible Canary Restore
+
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implementation-complete local candidate | Restored startup-summary-defined canonical visible canary semantics, legacy ASCII classification, and replay/model-context blocking; final repository gates precede local `main` integration. |
+
+This follow-up is a serialized hotspot package. It touches startup summaries, `AGENTS.md`, canary checkers, session replay filtering, tests, and the stable canary OpenSpec spec, so it must not run in parallel with other canary-surface writer sessions.
+
 ## MCP / Skills / Browser / CLI 提取模型
 
 `user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md` 被视为 source-to-decompose，而不是一个直接子 implementation plan。它的 lane 会重组为分阶段子方案，以便在写集安全时按多阶段、多会话执行。
@@ -302,12 +310,12 @@ python tools/local_main_retire_lock.py status --root . --json
 
 ### Phase 4：自动路由与稳定会话表面
 
-目的：让协同路由自动、可审计，并确保对话中面向用户展示的固定标签保持为 `Routing trace` 和 `Updated Plan`。标签下的解释内容可以使用中文；`Updated Plan` 必须保持复选框/状态清单语义，不能退化为纯段落。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由当前 owner session 负责的最终 verification evidence；保存版结构化 evidence 可继续保留 ASCII 阈值、blocker token、schema key、文件名和命令参数。
+目的：让协同路由自动、可审计，并锁定操作者确认的三类会话表面边界。`Routing trace` 保持普通文本诊断行，使用固定标签加 `key=value` 字段；`Updated Plan` 保持用户可见进度面板，统一由 CLI/tree 风格的 `✔` 与 `□` 状态标记呈现；Markdown checkbox 语法只继续用于 implementation plan 文件内部任务追踪，不再作为用户可见 `Updated Plan` 表面。Routing 与 evidence 记录必须区分 Pi/harness sidecar evidence 和由当前 owner session 负责的最终 verification evidence；保存版结构化 evidence 可继续保留 ASCII 阈值、blocker token、schema key、文件名和命令参数。
 
 候选子方案：
 
-1. `chinese_routing_trace_conversation_surface_plan` - 要求用户可见的 `Routing trace` 与 `Updated Plan` 标签保持稳定，允许中文解释内容，并保留 `Updated Plan` 复选框/状态清单语义。
-2. `routing_trace_structured_evidence_schema_plan` - 为保存版证据保留机器可读 ASCII 阈值和 blocker token。
+1. `chinese_routing_trace_conversation_surface_plan` - 要求用户可见的 `Routing trace` 与 `Updated Plan` 标签保持稳定，允许中文解释内容，保持 `Routing trace` 为普通文本 `key=value` 诊断行，保持 `Updated Plan` 为树状 `✔`/`□` 进度面板，并把 Markdown checkbox 仅留给 implementation plan 内部任务追踪。
+2. `routing_trace_structured_evidence_schema_plan` - 为保存版证据保留机器可读 ASCII 阈值和 blocker token，同时记录结构化 trace evidence/checker 数据并不是 Codex CLI 进度面板 API。
 3. `prompt_independent_activation_parity_plan` - 确保路由不依赖用户是否说出“并行”或“专家”。
 4. `expert_lifecycle_timeout_pacing_evidence_plan` - 将 timeout、stall 和 pacing 视为非证据，并要求有界处理。
 5. `langgraph_state_release_evidence_plan` - 拒绝 LangGraph 工作完成后仍保留 stale `running` 状态。
@@ -368,6 +376,11 @@ python tools/local_main_retire_lock.py status --root . --json
 | Phase 1 | `implementation_plan_registry_active_state_plan` | 已实现并合入 | Registry active-state 与双语配对门禁由 implementation-plan rules 覆盖。 |
 | Phase 1 | `main_session_escalation_visibility_plan` | 已实现并合入 | 主会话提权可视化已属于 Phase 1 收口包。 |
 | Phase 1A | `complete_local_commit_flow_scheduler_reorder_buffer_plan` | ROB retire preflight hard gate implemented and locally integrated | Governance package `a259d91` and runtime hard gate `7087b31` verify self-retire ROB metadata before lock acquisition, rollback ref creation, or merge. |
+| Phase 2 | `session_replay_context_filtering_plan` | implemented and locally integrated | Legacy session replay context filtering entered local `main` at `cbc73c7`. |
+| Phase 2 | `context_retention_canary_literal_boundary_plan` | implemented and locally integrated | Context-retention canary literal-boundary checking entered local `main` at `b779d51`. |
+| Phase 2 | `launcher_payload_context_boundary_plan` | implemented and locally integrated | Launcher payload file-backed boundary hardening entered local `main` at `6f1ef48`. |
+| Phase 2 | `startup_mojibake_utf8_recovery_plan` | implemented and locally integrated | Startup mojibake recovery source-report repair entered local `main` at `43d3ae9`. |
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implementation-complete local candidate | Restored startup-summary-defined canonical visible canary semantics, legacy ASCII classification, and replay/model-context blocking; final repository gates precede local `main` integration. |
 | Phase 5 | `comet_management_record_bootstrap_plan` | implemented and locally integrated | Local `main` includes closeout commit `8b8bfd6`; management records, checklist gates, monitoring return state, safe paths, and archive evidence are covered by focused Comet runtime tests. |
 | Phase 5 | `comet_runtime_policy_checker_alignment_plan` | implemented and locally integrated | Local `main` includes closeout commit `3335b67`; stable specs, policy checker, runtime tests, and CI registration are aligned. |
 | Phase 5 | `comet_monitoring_return_transition_plan` | implemented and locally integrated | Local `main` includes closeout commit `05d22bd`; return transitions and monitoring blocked/needs-decision gates are verified. |
@@ -378,7 +391,7 @@ python tools/local_main_retire_lock.py status --root . --json
 | Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Receipt helper hotspot closed: authorization/update schemas, hash-first rollback output, explicit local-only authorized raw path evidence, redaction fail-closed tests, and Phase 6 handoff gates are in the local integration package. |
 | Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local；已具备仓库 local-main-first 集成候选条件 | 已确认既有范围、`pending_bind`、revision、cleanup 与 sanitized-receipt 控制；CDP Bridge 和 OpenCLI consumer 现在使用 `owner_lease_ambiguous` 拒绝 owner lease 歧义。 |
 | Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | implemented-local | Compact `skills2cli` / `mcp2cli` discovery facade 已实现：skill discovery 摘要化/脱敏，MCP risk-profile 输出、sensitive call receipt gate、direct-MCP bridge policy evidence 与聚焦 RED/GREEN 测试均已覆盖。 |
-| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | active and unclaimed | 提取 browser/CLI adapter boundary lane；缺少 receipt 与 owner evidence 时，live install/start、GUI write、cookies 与 sensitive browser action 均保持 blocked。 |
+| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | implemented-local；已具备仓库 local-main-first 集成候选条件 | Adapter boundary 子 lane 已脚本化：chrome-devtools-mcp、CDP Bridge、OpenCLI、CLI-Anything 与 `wecom-cli` 继续保持 on-demand/reference-only，并由 receipt、owner、lease、dry-run 与 no-live-runtime gates 约束。 |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
 ## 依赖与 Phase 2 准入说明
@@ -440,6 +453,7 @@ python tools/local_main_retire_lock.py status --root . --json
 - [x] Phase 1A hardening：将 `--self-retire` ROB entry 校验从 post-merge metadata 记录提升为合入前硬门。
 - [x] Stage B decomposition：把 MCP/skills/browser/CLI 来源 lane 提取为分阶段子 implementation_plan，而不是把旧来源方案直接挂成父方案子方案。
 - [x] Stage B decomposition：更新 Phase 7 集成子方案，使其覆盖提取后 MCP lane 的 docs registry、checker/CI 与 OpenSpec/Comet archive 职责。
+- [x] Stage B follow-up: create and register the Phase 2 prompt-canary canonical visible marker restore child plan before runtime/checker implementation.
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -466,11 +480,12 @@ Stage B 后续确认后的验收条件：
 - 新 session 不默认读取本文件，除非处理本文件、其子方案或正文列出的相关方案。
 - 后续同机多 session 目标是 session 自主负责自己的提交和本地 `main` 合入，并用 `local-main-retire` lock 保持本地 `main` 写入串行。
 - `--self-retire` 缺少有效 ready ROB entry 时必须 fail before merge，不能把 ROB retire metadata 当作 post-merge best-effort。
-- Phase 4 子方案必须保持面向用户的 `Routing trace` 与 `Updated Plan` 固定标签；解释内容可以使用中文；`Updated Plan` 必须保留复选框/状态清单语义；内部工具名、schema key、阈值 token、blocker token、文件名和 CLI 参数可保持 ASCII。
+- Phase 4 子方案必须保持已确认的会话表面分工：`Routing trace` 是固定标签加 `key=value` 字段的普通文本诊断行；`Updated Plan` 是用户可见的树状 `✔`/`□` 进度面板；Markdown `- [x]` / `- [ ]` checkbox 只保留在 implementation plan 文件内部做任务追踪。解释内容可以使用中文；内部工具名、schema key、阈值 token、blocker token、文件名和 CLI 参数可保持 ASCII。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-01 progress-surface boundary confirmation：分支 `document-progress-surface-boundary-20260601` 记录操作者确认的分工：`Routing trace` 保持普通文本 `key=value` 诊断行；`Updated Plan` 是唯一用户可见进度面板，使用树状 `✔`/`□`；Markdown checkbox 继续作为 implementation plan 内部任务追踪模式。
 - 2026-05-31 ROB retire preflight implementation: 分支 `harden-rob-retire-preflight-20260531` 已新增 self-retire ROB 前置硬门、focused RED/GREEN 覆盖和 CI manifest 登记；更广本地门禁仍需在 local-main 集成前运行。
 - 2026-05-31 ROB retire 前置硬门治理：发现 `--self-retire` 缺少对应 ROB entry 时，旧 helper 会在 fast-forward merge 后才因 retire metadata 报错；本次重开 Phase 1A hardening，要求 ROB entry ready 与 gate 状态在 acquire lock / rollback ref / merge 前 fail closed。
 - 2026-05-31 Phase 4 最终收口：分支 `close-phase4-final-20260531` 同步父方案与全部 Phase 4 子方案状态，确认所有 Phase 4 checklist 已关闭，过期的本地集成门已替换为远端发布门，并且 Phase 5 已可准入但不代表授权远端发布。
@@ -495,4 +510,7 @@ Stage B 后续确认后的验收条件：
 - 2026-06-01 port/browser-owner isolation implementation: 分支 `implement-port-browser-owner-isolation-20260601` 确认既有 `codex-port` 范围顺序、`pending_bind`、单调 registry revision、owner class 隔离、cleanup 保护、sanitized receipt 与 OpenCLI `--port auto` 控制；向 CDP Bridge 和 OpenCLI consumer 增加 `owner_lease_ambiguous` fail-closed 门禁；扩展 RED/GREEN 聚焦回归覆盖；并保持远端发布在显式授权门之后。
 
 - 2026-06-01 discovery-facade implementation: 分支 `implement-mcp-skills-discovery-facade-20260601` 实现 Phase 4 提取出的 compact `skills2cli` / `mcp2cli` lane，新增 MCP risk-profile 输出、direct-MCP/no-default-Router evidence、skill/profile 非 native-subagent 的 routing evidence 与聚焦测试；远端发布仍未授权。
+- 2026-06-01 browser/CLI adapter boundary implementation: 分支 `implement-user-level-browser-cli-adapter-boundary-20260601` 关闭提取后的 Phase 6 adapter boundary lane；本包脚本化 implemented-local 子方案状态，确认 chrome-devtools-mcp/CDP Bridge/OpenCLI/CLI-Anything/`wecom-cli` 的 on-demand 或 reference-only 门禁，并保持 live browser/GUI/install/cookie/runtime mutation 不在本地包范围内。
+- 2026-06-02 prompt-canary 状态对账：同步父方案中文索引与四个 Phase 2 子方案状态；本地 `main` ancestry 确认 `cbc73c7`、`b779d51`、`6f1ef48`、`43d3ae9` 均已包含；远端发布未授权。
+- 2026-06-02 prompt-canary canonical restore plan package: branch `plan-restore-nonascii-canary-20260602` records a confirmed Phase 2 follow-up child plan, keeps marker literals out of non-startup plans, and requires model-readable session context to block restored canonical marker copies before implementation.
 <!-- EVIDENCE_INDEX_END -->
