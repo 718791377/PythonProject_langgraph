@@ -43,6 +43,10 @@ Evidence: local `main` contains `b779d51`, and the current focused canary-surfac
 Last updated: 2026-06-02
 <!-- CURRENT_STATUS_END -->
 
+## Confirmed Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` reuses this implemented-local baseline without reopening the original literal-boundary work. The follow-up keeps canonical marker literals out of non-startup files, derives marker values through codepoint or variable surfaces for checkers/tests, and blocks marker copies in model-readable session context before prompt-authority handoff.
+
 ## File Ownership
 
 - docs_bilingual/project_startup_summary.md
@@ -98,4 +102,5 @@ Run these gates before local `main` integration unless this child plan later nar
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-30 Stage C implementation: confirmed by user, claimed by `implement-context-retention-canary-literal-boundary-20260530`, added config-surface duplication fixture plus checker surface classification, and validated with the target canary/startup checkers and local gate before local `main` integration.
 - 2026-06-02 status reconciliation: local `main` ancestry confirms `b779d51`; `python tools/check_context_retention_canary_surface.py --root . --json` reports `ok: true`; stale Stage C gate text was replaced with implemented-local status.
+- 2026-06-02 canonical visible canary restore follow-up: this implemented-local child plan is now a baseline dependency for `prompt_canary_canonical_visible_marker_restore_plan`; the follow-up must preserve non-startup literal exclusion and add model-readable session-context blocking.
 <!-- EVIDENCE_INDEX_END -->

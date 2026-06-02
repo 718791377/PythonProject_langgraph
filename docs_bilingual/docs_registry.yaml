@@ -152,6 +152,13 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/launcher_payload_context_boundary_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/launcher_payload_context_boundary_plan.zh-CN.md
 
+
+  - doc_id: prompt_canary_canonical_visible_marker_restore_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/prompt_canary_canonical_visible_marker_restore_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/prompt_canary_canonical_visible_marker_restore_plan.zh-CN.md
+
   - doc_id: repo_local_selector_ownership_plan
     doc_class: implementation_plan
     status: active

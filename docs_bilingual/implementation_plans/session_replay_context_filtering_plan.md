@@ -43,6 +43,10 @@ Evidence: local `main` contains `cbc73c7`, and focused replay-filtering coverage
 Last updated: 2026-06-02
 <!-- CURRENT_STATUS_END -->
 
+## Confirmed Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` extends this implemented-local replay filtering baseline. The follow-up must block restored canonical marker copies in model-readable session, replay, compaction, and handoff context, while preserving user-visible transcript semantics and deriving marker values by codepoint or variable surfaces.
+
 ## File Ownership
 
 - tools/*session*replay*
@@ -99,4 +103,5 @@ Run these gates before local `main` integration unless this child plan later nar
 - 2026-05-30 Local validation: `tools/session_replay_context_filtering.py`, context-retention canary, startup mojibake, replay-filtering tests, and `tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` passed before commit.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-06-02 status reconciliation: local `main` ancestry confirms `cbc73c7`; `test/check_session_replay_context_filtering.test.py` is present and CI-manifest registered; stale local-main-in-progress gate text was replaced with implemented-local status.
+- 2026-06-02 canonical visible canary restore follow-up: this implemented-local replay-filtering child plan is extended by `prompt_canary_canonical_visible_marker_restore_plan` to block restored canonical marker copies in model-readable session, replay, compaction, and handoff context.
 <!-- EVIDENCE_INDEX_END -->

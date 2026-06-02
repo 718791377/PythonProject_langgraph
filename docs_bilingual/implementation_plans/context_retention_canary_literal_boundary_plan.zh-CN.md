@@ -43,6 +43,10 @@ Keep context-retention canary literals in canonical startup summaries only and p
 最后更新：2026-06-02
 <!-- CURRENT_STATUS_END -->
 
+## Confirmed Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` reuses this implemented-local baseline without reopening the original literal-boundary work. The follow-up keeps canonical marker literals out of non-startup files, derives marker values through codepoint or variable surfaces for checkers/tests, and blocks marker copies in model-readable session context before prompt-authority handoff.
+
 ## 文件归属
 
 - docs_bilingual/project_startup_summary.md
@@ -98,4 +102,5 @@ Keep context-retention canary literals in canonical startup summaries only and p
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-30 Stage C 实施：用户已确认，`implement-context-retention-canary-literal-boundary-20260530` 已认领；新增 config surface 复制 fixture 与 checker surface 分类，并在合入本地 `main` 前通过目标 canary/startup checker 与 local gate 验证。
 - 2026-06-02 状态对账：本地 `main` ancestry 确认包含 `b779d51`；`python tools/check_context_retention_canary_surface.py --root . --json` 报告 `ok: true`；旧 Stage C 门禁文本已替换为 implemented-local 状态。
+- 2026-06-02 canonical visible canary restore follow-up: this implemented-local child plan is now a baseline dependency for `prompt_canary_canonical_visible_marker_restore_plan`; the follow-up must preserve non-startup literal exclusion and add model-readable session-context blocking.
 <!-- EVIDENCE_INDEX_END -->

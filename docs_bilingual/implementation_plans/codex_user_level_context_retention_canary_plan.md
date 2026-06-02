@@ -36,12 +36,16 @@ As of 2026-06-02, this source plan's core local implementation is closed through
 - `launcher_payload_context_boundary_plan`: `6f1ef48`, file-backed launcher payload boundary checking entered local `main`.
 
 The legacy task breakdown below remains the task-tracking record; this reconciliation synchronizes rows that are proved by child-plan evidence and local `main` ancestry. Remote publication is not authorized by this status update.
+## 0.1 Confirmed Follow-up: Canonical Visible Canary Restore
+
+A 2026-06-02 follow-up child plan, `prompt_canary_canonical_visible_marker_restore_plan`, is confirmed for implementation after the plan package enters local `main`. It restores the startup-summary-defined canonical visible canary to the requested non-ASCII marker pair, treats the current ASCII tokens as legacy/stale compatibility input, and extends filtering expectations so model-readable session, replay, compaction, and handoff context block marker copies before prompt-authority handoff.
+
 ## 1. Ground Rules
 
 1. **Purpose:** the canary checks whether the model still understands cold-start authority, user-level rules, project-level rules, and safety boundaries after session resume, context compaction, or long-context pressure.
 2. **Not a response gate:** do not implement it as wrapper appending, response post-processing, transport injection, or automatic rewriting when a response lacks the marker.
 3. **Only literal source:** the bilingual startup summary files are the only repository files allowed to store the marker literal; every other file must use indirect wording such as "startup-summary-defined start marker / end marker."
-4. **User-visible but not model-relearned:** the canary may appear in user-visible assistant responses. Session replay, launcher payloads, compaction summaries, tool-output injection, and worker handoff must filter or downgrade marker copies so the model cannot learn a wrong or corrupted marker from history.
+4. **User-visible but not model-relearned:** the canary may appear in user-visible assistant responses. Model-readable session, replay, compaction, launcher payload, tool-output injection, and worker handoff context must filter, block, or downgrade marker copies so the model cannot learn a wrong, stale, restored, or corrupted marker from history.
 5. **UTF-8 canonical:** the UTF-8 startup summary pair is the only canonical source; corrupted runtime output must never be copied into responses, docs, fixtures, or launcher payload as authority.
 6. **Script controls first:** rules affecting publication, durable state, cross-project scope, launcher payloads, context filtering, or session diagnostics need checkers, guarded helpers, CI gates, or generated launcher logic.
 7. **Recovery:** if a complete assistant response misses the startup-summary-defined canary or shows a corrupted canary, reread `AGENTS.md`, reread the startup summary pair through explicit UTF-8 paths, follow the cold-start read order, and then reread only task-specific files needed to continue.

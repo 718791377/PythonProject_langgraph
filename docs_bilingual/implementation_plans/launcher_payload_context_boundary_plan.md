@@ -43,6 +43,10 @@ Evidence: local `main` contains `6f1ef48`, and the current launcher payload cont
 Last updated: 2026-06-02
 <!-- CURRENT_STATUS_END -->
 
+## Confirmed Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` reuses this implemented-local launcher payload boundary. The follow-up must keep restored marker copies out of launcher payloads and model-readable handoff surfaces, and must use file-backed or variable-derived references instead of copying marker literals into generated payloads.
+
 ## File Ownership
 
 - docs_bilingual/governance/user_level_launcher_payload_policy.md
@@ -97,4 +101,5 @@ Run these gates before local `main` integration unless this child plan later nar
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-06-02 status reconciliation: local `main` ancestry confirms `6f1ef48`; `python tools/check_launcher_payload_context_boundary.py --root . --json` reports `ok: true` with the documented native-agent TOML warning; previously unchecked backlog rows are now synchronized to the implemented-local evidence.
+- 2026-06-02 canonical visible canary restore follow-up: this implemented-local launcher-payload child plan remains the boundary for keeping restored marker copies out of launcher payloads and model-readable handoff surfaces.
 <!-- EVIDENCE_INDEX_END -->

@@ -43,6 +43,10 @@ Preserve short launcher payload boundaries while passing startup context through
 最后更新：2026-06-02
 <!-- CURRENT_STATUS_END -->
 
+## Confirmed Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` reuses this implemented-local launcher payload boundary. The follow-up must keep restored marker copies out of launcher payloads and model-readable handoff surfaces, and must use file-backed or variable-derived references instead of copying marker literals into generated payloads.
+
 ## 文件归属
 
 - docs_bilingual/governance/user_level_launcher_payload_policy.md
@@ -97,4 +101,5 @@ Preserve short launcher payload boundaries while passing startup context through
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-02 状态对账：本地 `main` ancestry 确认包含 `6f1ef48`；`python tools/check_launcher_payload_context_boundary.py --root . --json` 报告 `ok: true`，仅有已记录的 native-agent TOML warning；此前未勾选 backlog 已同步到 implemented-local 证据。
+- 2026-06-02 canonical visible canary restore follow-up: this implemented-local launcher-payload child plan remains the boundary for keeping restored marker copies out of launcher payloads and model-readable handoff surfaces.
 <!-- EVIDENCE_INDEX_END -->

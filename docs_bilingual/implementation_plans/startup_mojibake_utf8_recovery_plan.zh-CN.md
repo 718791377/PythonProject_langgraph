@@ -43,6 +43,10 @@ Detect mojibake in startup and instruction authority surfaces and recover from U
 最后更新：2026-06-02
 <!-- CURRENT_STATUS_END -->
 
+## Confirmed Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` reuses this implemented-local UTF-8 recovery baseline. The follow-up must treat the startup summary pair as the only canonical literal surface, derive restored marker values outside startup files, keep diagnostics from echoing marker literals, and block marker copies from model-readable session context.
+
 ## 文件归属
 
 - tools/check_startup_instruction_mojibake.py
@@ -100,4 +104,5 @@ Detect mojibake in startup and instruction authority surfaces and recover from U
 - 2026-05-30 Stage C 进入：用户确认继续实施本子方案；runtime/checker 工作前已创建 active session claim。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-02 状态对账：本地 `main` ancestry 确认包含 `43d3ae9`；`python tools/check_startup_instruction_mojibake.py --root . --json` 报告 `ok: true`；旧本地验证门文本已替换为 implemented-local 状态。
+- 2026-06-02 canonical visible canary restore follow-up: this implemented-local UTF-8 recovery child plan supplies the baseline for restoring the startup-summary-defined canonical visible canary while keeping diagnostics literal-free and model-readable context filtered.
 <!-- EVIDENCE_INDEX_END -->

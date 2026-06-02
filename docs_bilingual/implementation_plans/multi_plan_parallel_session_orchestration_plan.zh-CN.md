@@ -43,6 +43,7 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 6. codex_governance_session_visibility_and_plan_lock_plan - 增加中文 routing trace 可视化、主会话提权可视化、Superpowers 证据、Spec Kit 边界和 plan lock。
 7. pi_plugin_codex_user_level_sidecar_plan - 提供 Pi family、Codex -> Pi sidecar 与 oh-my-pi reference-only 边界。
 8. user_level_mcp_skills_browser_cli_governance_plan - MCP、skills、browser、OpenCLI 与 CLI harness governance 的 source-to-decompose；其 lane 会被提取到分阶段子方案，而不是作为单一直接子方案挂入父方案。
+9. prompt_canary_canonical_visible_marker_restore_plan - Restores the startup-summary-defined canonical visible canary to the operator-confirmed non-ASCII marker pair and blocks marker copies from model-readable session context.
 
 ## 非目标
 
@@ -58,13 +59,13 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 2 prompt-canary status reconciliation 已 implemented-local；其他 Phase 6 lane 仍可准入。
-Owner session: main Codex leader owns status-only package id `reconcile-context-retention-canary-status-20260602`; package id 表示本隔离 worktree 的文档状态对账项，不是 durable-team worker 或远端发布分支。
-Current gate: prompt-canary Phase 2 本地实现门禁已收口；除非用户明确要求远端发布，否则停在远端发布门。
-Phase 2 note: 四个 context/UTF-8 safety 子方案均已合入本地 `main`：`cbc73c7`、`b779d51`、`6f1ef48`、`43d3ae9`。
-MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` 保留为来源与 baseline 索引，不作为本父方案直接子方案。
-Parallel model: 后续 lane 可按多阶段、多会话执行，但每个 session 必须拥有互斥写集或声明已串行化 hotspot。
-Remote state: 本状态对账包不授权远端发布。
+Stage: Phase 2 prompt-canary status reconciliation is implemented-local; a confirmed Phase 2 follow-up now plans canonical visible canary restoration before runtime/checker implementation.
+Owner session: main Codex leader owns plan package id `plan-restore-nonascii-canary-20260602`; this is an isolated worktree documentation-plan package, not a durable-team worker or remote publication branch.
+Current gate: update parent/child plans first, merge the plan package into local `main`, then use a separate implementation package to restore the startup-summary-defined canonical visible canary; remote publication remains unauthorized unless the user explicitly requests it.
+Phase 2 note: all four context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; the new follow-up reopens only the marker canonicalization and session-context blocking contract.
+MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` remains a source and baseline index, not a direct child of this parent.
+Parallel model: later extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
+Remote state: this plan package does not authorize remote publication.
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -81,6 +82,7 @@ Remote state: 本状态对账包不授权远端发布。
    │  └─ 说明：这是索引维护子方案，不拥有下级 implementation_plan 文件。
    ├─ Phase 1A / Batch 1 子方案：complete_local_commit_flow_scheduler_reorder_buffer_plan.zh-CN.md
    ├─ Phase 1-6 子方案：其他同级 child implementation plans
+   |-- Phase 2 follow-up child: prompt_canary_canonical_visible_marker_restore_plan.md
    ├─ Phase 7 / Batch 5 子方案：parallel_plan_docs_registry_integration_plan.zh-CN.md
    ├─ Phase 7 / Batch 5 子方案：parallel_plan_checker_ci_integration_plan.zh-CN.md
    └─ Phase 7 / Batch 5 子方案：parallel_plan_openspec_comet_archive_plan.zh-CN.md
@@ -226,6 +228,12 @@ python tools/local_main_retire_lock.py status --root . --json
 - 去掉固定主会话总控，不等于去掉本地 `main` 写入串行保护。
 - 远端发布仍是用户明确授权步骤。
 
+
+## Phase 2 Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` child plan is a confirmed follow-up to the implemented-local context canary safety family. It does not reopen the whole Phase 2 queue. Its scope is limited to restoring the startup-summary-defined canonical visible canary to the operator-confirmed non-ASCII marker pair while preserving the original safety boundary: only the startup summary pair may hold canonical marker literals, non-startup files must use indirect references or derived variables, and model-readable session/replay/compaction/handoff context must block marker copies before prompt-authority handoff.
+
+This follow-up is a serialized hotspot package. It touches startup summaries, `AGENTS.md`, canary checkers, session replay filtering, tests, and the stable canary OpenSpec spec, so it must not run in parallel with other canary-surface writer sessions.
 
 ## MCP / Skills / Browser / CLI 提取模型
 
@@ -444,6 +452,7 @@ python tools/local_main_retire_lock.py status --root . --json
 - [x] Phase 1A hardening：将 `--self-retire` ROB entry 校验从 post-merge metadata 记录提升为合入前硬门。
 - [x] Stage B decomposition：把 MCP/skills/browser/CLI 来源 lane 提取为分阶段子 implementation_plan，而不是把旧来源方案直接挂成父方案子方案。
 - [x] Stage B decomposition：更新 Phase 7 集成子方案，使其覆盖提取后 MCP lane 的 docs registry、checker/CI 与 OpenSpec/Comet archive 职责。
+- [x] Stage B follow-up: create and register the Phase 2 prompt-canary canonical visible marker restore child plan before runtime/checker implementation.
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -502,4 +511,5 @@ Stage B 后续确认后的验收条件：
 - 2026-06-01 discovery-facade implementation: 分支 `implement-mcp-skills-discovery-facade-20260601` 实现 Phase 4 提取出的 compact `skills2cli` / `mcp2cli` lane，新增 MCP risk-profile 输出、direct-MCP/no-default-Router evidence、skill/profile 非 native-subagent 的 routing evidence 与聚焦测试；远端发布仍未授权。
 - 2026-06-01 browser/CLI adapter boundary implementation: 分支 `implement-user-level-browser-cli-adapter-boundary-20260601` 关闭提取后的 Phase 6 adapter boundary lane；本包脚本化 implemented-local 子方案状态，确认 chrome-devtools-mcp/CDP Bridge/OpenCLI/CLI-Anything/`wecom-cli` 的 on-demand 或 reference-only 门禁，并保持 live browser/GUI/install/cookie/runtime mutation 不在本地包范围内。
 - 2026-06-02 prompt-canary 状态对账：同步父方案中文索引与四个 Phase 2 子方案状态；本地 `main` ancestry 确认 `cbc73c7`、`b779d51`、`6f1ef48`、`43d3ae9` 均已包含；远端发布未授权。
+- 2026-06-02 prompt-canary canonical restore plan package: branch `plan-restore-nonascii-canary-20260602` records a confirmed Phase 2 follow-up child plan, keeps marker literals out of non-startup plans, and requires model-readable session context to block restored canonical marker copies before implementation.
 <!-- EVIDENCE_INDEX_END -->

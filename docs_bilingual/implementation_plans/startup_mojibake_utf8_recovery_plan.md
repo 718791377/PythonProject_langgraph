@@ -43,6 +43,10 @@ Evidence: local `main` contains `43d3ae9`, and the current startup mojibake chec
 Last updated: 2026-06-02
 <!-- CURRENT_STATUS_END -->
 
+## Confirmed Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` reuses this implemented-local UTF-8 recovery baseline. The follow-up must treat the startup summary pair as the only canonical literal surface, derive restored marker values outside startup files, keep diagnostics from echoing marker literals, and block marker copies from model-readable session context.
+
 ## File Ownership
 
 - tools/check_startup_instruction_mojibake.py
@@ -100,4 +104,5 @@ Run these gates before local `main` integration unless this child plan later nar
 - 2026-05-30 Stage C entry: user confirmed continued implementation of this child plan; active session claim was created before runtime/checker work.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-06-02 status reconciliation: local `main` ancestry confirms `43d3ae9`; `python tools/check_startup_instruction_mojibake.py --root . --json` reports `ok: true`; stale local-validation gate text was replaced with implemented-local status.
+- 2026-06-02 canonical visible canary restore follow-up: this implemented-local UTF-8 recovery child plan supplies the baseline for restoring the startup-summary-defined canonical visible canary while keeping diagnostics literal-free and model-readable context filtered.
 <!-- EVIDENCE_INDEX_END -->

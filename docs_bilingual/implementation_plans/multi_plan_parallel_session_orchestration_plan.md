@@ -43,6 +43,7 @@ This parent plan coordinates the following existing plans inside this plan famil
 6. codex_governance_session_visibility_and_plan_lock_plan - adds Chinese routing trace visibility, main-session escalation visibility, Superpowers evidence, Spec Kit boundaries, and plan locks.
 7. pi_plugin_codex_user_level_sidecar_plan - provides the Pi family, Codex-to-Pi sidecar, and oh-my-pi reference-only boundary.
 8. user_level_mcp_skills_browser_cli_governance_plan - provides the low-token, receipt-first governance boundary for MCP, skills, browser, OpenCLI, and CLI harness lanes.
+9. prompt_canary_canonical_visible_marker_restore_plan - restores the startup-summary-defined canonical visible canary to the requested non-ASCII marker pair and blocks marker copies from model-readable session context.
 
 ## Non-Goals
 
@@ -58,10 +59,10 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 2 prompt-canary status reconciliation is implemented-local; Phase 6 remains admissible for other lanes.
-Owner session: main Codex leader owns status-only package id `reconcile-context-retention-canary-status-20260602`; package id means this isolated worktree documentation-status reconciliation item, not a durable-team worker or remote publication branch.
-Current gate: prompt-canary Phase 2 local implementation gates are closed; remote publication remains unauthorized unless the user explicitly requests it.
-Phase 2 note: all four context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`.
+Stage: Phase 2 prompt-canary status reconciliation is implemented-local; a confirmed Phase 2 follow-up now plans canonical visible canary restoration before runtime/checker implementation.
+Owner session: main Codex leader owns plan package id `plan-restore-nonascii-canary-20260602`; package id means this isolated worktree documentation-plan item, not a durable-team worker or remote publication branch.
+Current gate: plan package updates parent/child plans first, then a separate implementation package may restore the startup-summary-defined canonical visible canary; remote publication remains unauthorized unless the user explicitly requests it.
+Phase 2 note: all four context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; the new follow-up reopens only the marker canonicalization and session-context blocking contract.
 MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` remains a source and baseline index, not a direct child of this parent.
 Parallel model: later extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
 Remote state: this status reconciliation package does not authorize remote publication.
@@ -81,6 +82,7 @@ Level 1: parent plan / master map
     |   `-- note: index-maintenance child plan; it owns no lower-level implementation_plan files.
     |-- Phase 1A / Batch 1 child: complete_local_commit_flow_scheduler_reorder_buffer_plan.md
     |-- Phase 1-6 children: other sibling child implementation plans
+    |-- Phase 2 follow-up child: prompt_canary_canonical_visible_marker_restore_plan.md
     |-- Phase 7 / Batch 5 child: parallel_plan_docs_registry_integration_plan.md
     |-- Phase 7 / Batch 5 child: parallel_plan_checker_ci_integration_plan.md
     `-- Phase 7 / Batch 5 child: parallel_plan_openspec_comet_archive_plan.md
@@ -226,6 +228,12 @@ Required execution order:
 - Removing fixed main-session control does not remove serial protection for local `main` writes.
 - Remote publication remains an explicit user-authorized step.
 
+
+## Phase 2 Follow-up: Canonical Visible Canary Restore
+
+The `prompt_canary_canonical_visible_marker_restore_plan` child plan is a confirmed follow-up to the implemented-local context canary safety family. It does not reopen the whole Phase 2 queue. Its scope is limited to restoring the startup-summary-defined canonical visible canary to the requested non-ASCII marker pair while preserving the original safety boundary: only the startup summary pair may hold canonical marker literals, non-startup files must use indirect references or derived variables, and model-readable session/replay/compaction/handoff context must block marker copies before prompt-authority handoff.
+
+This follow-up is a serialized hotspot package. It touches startup summaries, `AGENTS.md`, canary checkers, session replay filtering, tests, and the stable canary OpenSpec spec, so it must not run in parallel with other canary-surface writer sessions.
 
 ## MCP / Skills / Browser / CLI Extraction Model
 
@@ -443,6 +451,7 @@ Each child plan must include:
 - [x] Phase 1A hardening: promote `--self-retire` ROB entry validation from post-merge metadata recording into a merge-before hard gate.
 - [x] Stage B decomposition: extract MCP/skills/browser/CLI source lanes into phase-specific child implementation plans instead of attaching the old source plan directly.
 - [x] Stage B decomposition: update Phase 7 integration child plans to include docs registry, checker/CI, and OpenSpec/Comet archive responsibilities for the extracted MCP lanes.
+- [x] Stage B follow-up: create and register the Phase 2 prompt-canary canonical visible marker restore child plan before implementation.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -501,4 +510,5 @@ Stage B acceptance after later confirmation:
 - 2026-06-01 discovery-facade implementation: branch `implement-mcp-skills-discovery-facade-20260601` implements the Phase 4 extracted compact `skills2cli` / `mcp2cli` lane, adds MCP risk-profile output, explicit direct-MCP/no-default-Router evidence, skill/profile routing evidence that is not native-subagent evidence, and focused tests while leaving remote publication unauthorized.
 - 2026-06-01 browser/CLI adapter boundary implementation: branch `implement-user-level-browser-cli-adapter-boundary-20260601` closes the extracted Phase 6 adapter boundary lane by checker-backing the implemented-local child-plan status, confirming chrome-devtools-mcp/CDP Bridge/OpenCLI/CLI-Anything/`wecom-cli` on-demand or reference-only gates, and keeping live browser/GUI/install/cookie/runtime mutation outside this local package.
 - 2026-06-02 prompt-canary status reconciliation: synchronized the parent status with the four Phase 2 child plans; local `main` ancestry confirms `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; remote publication remains unauthorized.
+- 2026-06-02 prompt-canary canonical restore plan package: branch `plan-restore-nonascii-canary-20260602` records a confirmed Phase 2 follow-up child plan, keeps marker literals out of non-startup plans, and requires model-readable session context to block restored canonical marker copies before implementation.
 <!-- EVIDENCE_INDEX_END -->

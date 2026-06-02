@@ -37,6 +37,10 @@ doc_class: implementation_plan
 - `launcher_payload_context_boundary_plan`：`6f1ef48`，file-backed launcher payload 边界 checker 已进入本地 `main`。
 
 下面的 legacy task breakdown 继续作为任务追踪记录；本次状态对账将已由子方案证明并合入本地 `main` 的行同步为已勾选。远端发布不由本状态对账授权。
+## 0.1 Confirmed Follow-up: Canonical Visible Canary Restore
+
+A 2026-06-02 follow-up child plan, `prompt_canary_canonical_visible_marker_restore_plan`, is confirmed for implementation after the plan package enters local `main`. It restores the startup-summary-defined canonical visible canary to the operator-confirmed non-ASCII marker pair, treats the current ASCII tokens as legacy/stale compatibility input, and extends filtering expectations so model-readable session, replay, compaction, and handoff context block marker copies before prompt-authority handoff.
+
 ## 1. Ground Rules
 
 1. **目的**：提示词哨兵用于判断模型是否在恢复会话、压缩上下文、长上下文后仍理解冷启动权威、用户级规则、项目级规则与安全边界。
