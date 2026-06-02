@@ -21,6 +21,7 @@ UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_mo
 UNINSTALL_PLANNER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "plan_project_moe_gui_uninstall.py"
 PHASE1_READINESS = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_phase1_readiness.py"
 PHASE1_SCAFFOLD = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "scaffold_project_moe_phase1.py"
+GUI_PREFLIGHT_ALLOWED_TOKENS = {"ok", "blocked:pyside6_unavailable", "blocked:qfluentwidgets_unavailable"}
 
 
 STATEFUL_MODE_CLI_TEMPLATE = r'''
@@ -2246,7 +2247,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 check=False,
             )
             payload = json.loads(result.stdout)
-            self.assertIn(payload["token"], {"ok", "blocked:pyside6_unavailable"}, payload)
+            self.assertIn(payload["token"], GUI_PREFLIGHT_ALLOWED_TOKENS, payload)
             self.assertEqual(payload["gui_shell_contract"], "project-moe-gui-shell-v1")
             self.assertNotEqual(payload["token"], "blocked:gui_not_implemented_phase2a")
             self.assertNotIn("Interactive PySide6 GUI is implemented in Phase 2B.", result.stdout)
@@ -2457,7 +2458,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
 
             payload = self.run_installed_launcher(project, "--preflight")
 
-            self.assertIn(payload["token"], {"ok", "blocked:pyside6_unavailable"}, payload)
+            self.assertIn(payload["token"], GUI_PREFLIGHT_ALLOWED_TOKENS, payload)
             gate = payload["phase1_readiness_gate"]
             self.assertEqual(gate["readiness_status"], "ready")
             self.assertEqual(gate["git_status"]["token"], "ok:runtime_state_dirty_allowed")
@@ -2533,7 +2534,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(update_payload["status"], "up_to_date")
 
             preflight = self.run_installed_launcher(project, "--preflight")
-            self.assertIn(preflight["token"], {"ok", "blocked:pyside6_unavailable"}, preflight)
+            self.assertIn(preflight["token"], GUI_PREFLIGHT_ALLOWED_TOKENS, preflight)
             self.assertIn("launcher_runtime_python", preflight)
             self.assertIn("launcher_runtime_reexec", preflight)
             self.assertEqual(preflight["view_model"]["top_banner"]["project_root"], str(project.resolve()))
