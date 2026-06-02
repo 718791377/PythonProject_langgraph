@@ -2704,5 +2704,130 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(private_before, self.private_project_digests(project))
 
 
+    def test_qfluent_visual_dependency_contract_requires_license_review(self) -> None:
+        from project_moe_gui.qfluent_runtime import check_qfluent_runtime, expected_qfluent_dependency, qfluent_license_manifest
+
+        dependency = expected_qfluent_dependency()
+        self.assertEqual(dependency["package_name"], "PySide6-Fluent-Widgets")
+        self.assertEqual(dependency["import_name"], "qfluentwidgets")
+        self.assertEqual(dependency["license_family"], "GPLv3-or-commercial-dual-license")
+        self.assertTrue(dependency["fail_closed_if_missing"])
+
+        manifest = qfluent_license_manifest()
+        self.assertEqual(manifest["package_name"], "PySide6-Fluent-Widgets")
+        self.assertEqual(manifest["import_name"], "qfluentwidgets")
+        self.assertEqual(manifest["noncommercial_license"], "GPLv3")
+        self.assertTrue(manifest["commercial_use_requires_review"])
+        self.assertTrue(manifest["redistribution_requires_license_review"])
+        self.assertTrue(any("pypi.org/project/PySide6-Fluent-Widgets" in url for url in manifest["evidence_urls"]))
+
+        ok_payload = check_qfluent_runtime(
+            import_probe=lambda import_name: object(),
+            metadata_probe=lambda package_name: {"version": "1.11.2", "license": "GPLv3"},
+        )
+        self.assertTrue(ok_payload["ok"], ok_payload)
+        self.assertEqual(ok_payload["token"], "ok")
+        self.assertEqual(ok_payload["import_status"], "import_ok")
+        self.assertEqual(ok_payload["installed_version"], "1.11.2")
+        self.assertTrue(ok_payload["license_manifest"]["commercial_use_requires_review"])
+
+        def missing_import(_name: str) -> object:
+            raise ModuleNotFoundError(_name)
+
+        missing_payload = check_qfluent_runtime(import_probe=missing_import)
+        self.assertFalse(missing_payload["ok"], missing_payload)
+        self.assertEqual(missing_payload["token"], "blocked:qfluentwidgets_unavailable")
+        self.assertEqual(missing_payload["import_status"], "missing")
+
+    def test_gui_view_model_declares_fluent_cards_sidebar_and_license_gate(self) -> None:
+        from project_moe_gui.gui_shell import build_view_model
+        from project_moe_gui.qfluent_runtime import check_qfluent_runtime
+
+        qfluent_status = check_qfluent_runtime(
+            import_probe=lambda import_name: object(),
+            metadata_probe=lambda package_name: {"version": "1.11.2", "license": "GPLv3"},
+        )
+        config = {
+            "agent_name": "thesis-moe-mentor",
+            "state_namespace": "thesis_moe",
+            "runtime_project_root": "D:/target",
+            "cli_contract": "project-moe-cli-v1",
+        }
+        project_status = {"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"}
+        status_payload = {"ok": True, "token": "ok", "effective_enabled": True, "effective_source": "project-default"}
+        sessions_payload = {
+            "ok": True,
+            "token": "ok",
+            "sessions": [{"session_id": "session-1234567890abcdef", "effective_enabled": True, "token": "ok", "valid": True}],
+        }
+
+        view_model = build_view_model(
+            config,
+            project_status=project_status,
+            sessions_payload=sessions_payload,
+            status_payload=status_payload,
+            pyside6_available=True,
+            qfluent_status=qfluent_status,
+        )
+
+        region_ids = [region["id"] for region in view_model["window_structure"]["regions"]]
+        self.assertIn("navigation_sidebar", region_ids)
+        self.assertIn("status_overview_cards", region_ids)
+        self.assertIn("diagnostics_card", region_ids)
+        self.assertIn("session_table", region_ids)
+        self.assertEqual(view_model["visual"]["library"], "QFluentWidgets")
+        self.assertEqual(view_model["visual"]["qfluentwidgets_status"]["token"], "ok")
+        self.assertTrue(view_model["visual"]["license_manifest"]["commercial_use_requires_review"])
+        self.assertIn("Project", [item["label"] for item in view_model["navigation_sidebar"]["items"]])
+        self.assertGreaterEqual(len(view_model["status_cards"]), 3)
+        self.assertEqual(view_model["close_behavior"]["default_close_action"], "ask")
+
+    def test_close_behavior_requires_dialog_and_explicit_tray_hide(self) -> None:
+        from project_moe_gui.gui_shell import close_behavior_contract
+
+        contract = close_behavior_contract()
+        self.assertFalse(contract["auto_hide_to_tray"])
+        self.assertEqual(contract["default_close_action"], "ask")
+        self.assertEqual([option["id"] for option in contract["dialog_options"]], ["exit", "hide_to_tray", "cancel"])
+        self.assertTrue(contract["tray_icon_created_only_after_explicit_hide"])
+        self.assertEqual([item["id"] for item in contract["tray_menu_items"]], ["show", "exit"])
+
+    def test_daemon_launch_plan_hides_cmd_window_and_uses_duplicate_lock(self) -> None:
+        from project_moe_gui.daemon import build_daemon_launch_plan, windows_process_flags
+
+        launcher = Path("tools/project_moe_gui/launcher.py")
+        plan = build_daemon_launch_plan(launcher, no_args=True, platform_name="win32")
+        self.assertTrue(plan["uses_daemon"])
+        self.assertTrue(plan["duplicate_instance_guard"]["enabled"])
+        self.assertEqual(plan["cmd_window_policy"], "no_persistent_cmd")
+        self.assertIn(plan["windows_creation_flags_label"], {"CREATE_NO_WINDOW", "DETACHED_PROCESS", "CREATE_NO_WINDOW|DETACHED_PROCESS"})
+        self.assertGreater(windows_process_flags(platform_name="win32"), 0)
+        self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", plan["environment_overrides"])
+
+        foreground = build_daemon_launch_plan(launcher, preflight=True, json_mode=True, platform_name="win32")
+        self.assertFalse(foreground["uses_daemon"])
+        self.assertEqual(foreground["reason"], "preflight_json_runs_in_foreground")
+
+    def test_installer_config_and_launcher_include_daemon_and_qfluent_metadata(self) -> None:
+        from project_moe_gui.toolchain import cmd_text, config_payload, launcher_text
+
+        cfg = config_payload(Path("D:/target"), "thesis-moe-mentor", "thesis_moe", Path("tools/thesis_moe_mode.py"), Path("D:/runtime"))
+        self.assertEqual(cfg["visual_dependency"]["package_name"], "PySide6-Fluent-Widgets")
+        self.assertEqual(cfg["visual_dependency"]["import_name"], "qfluentwidgets")
+        self.assertTrue(cfg["gui_dependency_license_manifest"]["commercial_use_requires_review"])
+        self.assertTrue(cfg["daemon_launch"]["duplicate_instance_guard"]["enabled"])
+        self.assertEqual(cfg["close_behavior"]["default_close_action"], "ask")
+
+        launcher = launcher_text()
+        self.assertIn("build_daemon_launch_plan", launcher)
+        self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", launcher)
+        self.assertIn("CREATE_NO_WINDOW", launcher)
+        self.assertIn("qfluent_runtime", launcher)
+
+        command_text = cmd_text()
+        self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", command_text)
+        self.assertIn("python", command_text.lower())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -16,7 +16,9 @@ except ModuleNotFoundError:  # pragma: no cover
     tomllib = None  # type: ignore[assignment]
 
 from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
+from project_moe_gui.daemon import build_daemon_launch_plan
 from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT
+from project_moe_gui.qfluent_runtime import expected_qfluent_dependency, qfluent_license_manifest
 
 
 SCHEMA_VERSION = 1
@@ -1548,6 +1550,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Windows no-CMD daemon policy is delegated to project_moe_gui.daemon:
+# CREATE_NO_WINDOW / DETACHED_PROCESS flags plus a duplicate-instance lock.
 
 def emit(payload: dict, json_mode: bool) -> int:
     if json_mode:
@@ -1585,6 +1589,138 @@ def maybe_reexec_with_runtime(config: dict, args: argparse.Namespace, launcher: 
     return int(result.returncode)
 
 
+def qfluent_status_summary() -> dict:
+    try:
+        from project_moe_gui import qfluent_runtime
+        return qfluent_runtime.check_qfluent_runtime()
+    except Exception as exc:
+        return {
+            "schema_version": 1,
+            "ok": False,
+            "token": "blocked:qfluentwidgets_unavailable",
+            "import_status": "missing",
+            "message": "QFluentWidgets runtime check failed.",
+            "error": str(exc),
+            "blockers": [{"code": "blocked:qfluentwidgets_unavailable", "message": "QFluentWidgets is unavailable."}],
+        }
+
+
+def _windows_process_flags() -> int:
+    if not sys.platform.startswith("win"):
+        return 0
+    return int(getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)) | int(getattr(subprocess, "DETACHED_PROCESS", 0x00000008))
+
+
+def _windows_process_flags_label(flags: int) -> str:
+    if not flags:
+        return "none"
+    labels = []
+    if flags & int(getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)):
+        labels.append("CREATE_NO_WINDOW")
+    if flags & int(getattr(subprocess, "DETACHED_PROCESS", 0x00000008)):
+        labels.append("DETACHED_PROCESS")
+    return "|".join(labels) if labels else str(flags)
+
+
+def _fallback_daemon_launch_plan(launcher: Path, args: argparse.Namespace, config: dict, project_root: Path) -> dict:
+    no_args = not args.preflight and not args.json and not args.allow_visible
+    if args.preflight and args.json:
+        return {
+            "schema_version": 1,
+            "uses_daemon": False,
+            "reason": "preflight_json_runs_in_foreground",
+            "launcher": str(launcher),
+            "cmd_window_policy": "foreground_machine_output",
+            "fallback_embedded_daemon": True,
+        }
+    should_daemon = bool(no_args)
+    flags = _windows_process_flags()
+    return {
+        "schema_version": 1,
+        "uses_daemon": should_daemon,
+        "reason": "no_argument_human_launch_uses_project_daemon" if should_daemon else "foreground_launch_requested",
+        "launcher": str(launcher),
+        "project_root": str(project_root),
+        "argv": [str(config.get("runtime_python") or sys.executable), str(launcher), "--allow-visible"],
+        "shell": False,
+        "cmd_window_policy": "no_persistent_cmd" if should_daemon else "foreground",
+        "windows_creation_flags": flags,
+        "windows_creation_flags_label": _windows_process_flags_label(flags),
+        "duplicate_instance_guard": {
+            "enabled": True,
+            "lock_path": str(launcher.with_name("project_moe_gui.daemon.lock")),
+            "pid_field": "pid",
+            "stale_lock_cleanup": True,
+        },
+        "environment_overrides": {"PROJECT_MOE_GUI_DAEMON_CHILD": "1", "PYTHONUTF8": "1"},
+        "fallback_embedded_daemon": True,
+    }
+
+
+def daemon_launch_plan(launcher: Path, args: argparse.Namespace, config: dict, project_root: Path) -> dict:
+    try:
+        from project_moe_gui.daemon import build_daemon_launch_plan
+        return build_daemon_launch_plan(
+            launcher,
+            no_args=not args.preflight and not args.json and not args.allow_visible,
+            preflight=args.preflight,
+            json_mode=args.json,
+            allow_visible=args.allow_visible,
+            runtime_python=str(config.get("runtime_python") or sys.executable),
+            project_root=project_root,
+        )
+    except Exception:
+        return _fallback_daemon_launch_plan(launcher, args, config, project_root)
+
+
+def _pid_running(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if sys.platform.startswith("win"):
+        result = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"], capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
+        return str(pid) in result.stdout
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def _fallback_spawn_daemon_child(plan: dict) -> dict:
+    lock_info = plan.get("duplicate_instance_guard") or {}
+    lock_path = Path(str(lock_info.get("lock_path") or ""))
+    if lock_path.exists():
+        try:
+            payload = json.loads(lock_path.read_text(encoding="utf-8-sig"))
+            pid = int(payload.get("pid") or 0)
+        except Exception:
+            pid = 0
+        if _pid_running(pid):
+            return {"schema_version": 1, "ok": True, "token": "ok:already_running", "exit_code": 0, "message": "Project MOE GUI daemon already appears to be running.", "daemon_launch": plan, "existing_pid": pid}
+        try:
+            lock_path.unlink()
+        except Exception:
+            pass
+    env = os.environ.copy()
+    env.update({str(k): str(v) for k, v in (plan.get("environment_overrides") or {}).items()})
+    kwargs = {"cwd": plan.get("project_root") or None, "env": env, "stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, "shell": False}
+    flags = int(plan.get("windows_creation_flags") or 0)
+    if flags:
+        kwargs["creationflags"] = flags
+    process = subprocess.Popen([str(item) for item in plan.get("argv", [])], **kwargs)
+    return {"schema_version": 1, "ok": True, "token": "ok", "exit_code": 0, "message": "Project MOE GUI daemon launch requested; launcher parent can exit without a persistent CMD window.", "daemon_launch": plan, "spawned_pid": process.pid}
+
+
+def spawn_daemon_if_needed(plan: dict) -> dict:
+    if not plan.get("uses_daemon"):
+        return {"schema_version": 1, "ok": False, "token": "blocked:daemon_not_selected", "exit_code": 2, "message": "Daemon launch was not selected for this invocation.", "daemon_launch": plan}
+    try:
+        from project_moe_gui.daemon import spawn_daemon_child
+        return spawn_daemon_child(plan)
+    except Exception:
+        return _fallback_spawn_daemon_child(plan)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Launch or preflight the project-local MOE GUI.")
     parser.add_argument("--preflight", action="store_true")
@@ -1605,6 +1741,9 @@ def main() -> int:
         sys.path.insert(0, str(source_root / "src"))
     mode_cli_value = str(config.get("mode_cli", "tools/thesis_moe_mode.py"))
     mode_cli = project_root / mode_cli_value
+    daemon_plan = daemon_launch_plan(launcher, args, config, project_root)
+    if daemon_plan.get("uses_daemon") and os.environ.get("PROJECT_MOE_GUI_DAEMON_CHILD") != "1" and os.environ.get("PROJECT_MOE_GUI_DRY_RUN_VISIBLE") != "1":
+        return emit(spawn_daemon_if_needed(daemon_plan), args.json)
     runtime_reexec = maybe_reexec_with_runtime(config, args, launcher, project_root)
     if runtime_reexec is not None:
         return runtime_reexec
@@ -1714,9 +1853,19 @@ def main() -> int:
 
     runtime_config = dict(config)
     runtime_config["runtime_project_root"] = str(project_root)
-    preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root)
+    qfluent_status = qfluent_status_summary()
+    try:
+        preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root, qfluent_status=qfluent_status)
+    except TypeError:
+        preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root)
+        view_model = preflight.get("view_model") if isinstance(preflight, dict) else None
+        if isinstance(view_model, dict):
+            view_model.setdefault("visual", {"library": "QFluentWidgets", "package_name": "PySide6-Fluent-Widgets", "import_name": "qfluentwidgets", "qfluentwidgets_status": qfluent_status})
+            view_model.setdefault("close_behavior", {"default_close_action": "ask", "auto_hide_to_tray": False, "dialog_options": ["exit", "hide_to_tray", "cancel"], "tray_menu_items": ["show", "exit"]})
     preflight["launcher_runtime_python"] = sys.executable
     preflight["launcher_runtime_reexec"] = os.environ.get("PROJECT_MOE_GUI_RUNTIME_REEXEC") == "1"
+    preflight["daemon_launch"] = daemon_plan
+    preflight["qfluentwidgets_status"] = qfluent_status
     preflight["phase1_readiness_gate"] = {
         "readiness_status": readiness.get("readiness_status"),
         "adaptation_lane": readiness.get("adaptation_lane"),
@@ -1744,7 +1893,7 @@ if __name__ == "__main__":
 
 
 def cmd_text() -> str:
-    return '@echo off\nsetlocal\nset PYTHONUTF8=1\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
+    return '@echo off\nsetlocal\nset PYTHONUTF8=1\nif not defined PROJECT_MOE_GUI_DAEMON_CHILD set PROJECT_MOE_GUI_DAEMON_CHILD=\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
 
 
 def readme_text(agent_name: str, namespace: str) -> str:
@@ -1780,6 +1929,15 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "pyside6_runtime": "shared-runtime",
             "python_runtime_strategy": "shared-gui-runtime",
             "python_utf8": True,
+            "visual_dependency": expected_qfluent_dependency(),
+            "gui_dependency_license_manifest": qfluent_license_manifest(),
+            "daemon_launch": build_daemon_launch_plan(Path("tools/project_moe_gui/launcher.py"), no_args=True),
+            "close_behavior": {
+                "default_close_action": "ask",
+                "auto_hide_to_tray": False,
+                "dialog_options": ["exit", "hide_to_tray", "cancel"],
+                "tray_menu_items": ["show", "exit"],
+            },
             "shared_runtime_root": str(runtime_root),
             "runtime_python": str(runtime_python),
             "installed_target_project_root": str(root),

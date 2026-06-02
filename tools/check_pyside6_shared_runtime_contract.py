@@ -23,6 +23,8 @@ REQUIRED_HELPER_SNIPPETS = [
     "requirements-pyside6.txt",
     "runtime.json",
     "PySide6",
+    "PySide6-Fluent-Widgets",
+    "qfluentwidgets",
     "import_only_verified",
     "runtime_root",
     "runtime_python",
@@ -95,8 +97,12 @@ def validate(root: Path) -> dict[str, Any]:
             errors.append(f"Missing shared runtime template: {template.as_posix()}")
 
     requirements = root / REQUIREMENTS_TEMPLATE
-    if requirements.exists() and "PySide6" not in read_text(requirements):
-        errors.append(f"{REQUIREMENTS_TEMPLATE.as_posix()} must declare PySide6.")
+    if requirements.exists():
+        requirements_text = read_text(requirements)
+        if "PySide6" not in requirements_text:
+            errors.append(f"{REQUIREMENTS_TEMPLATE.as_posix()} must declare PySide6.")
+        if "PySide6-Fluent-Widgets" not in requirements_text:
+            errors.append(f"{REQUIREMENTS_TEMPLATE.as_posix()} must declare PySide6-Fluent-Widgets for QFluentWidgets visual shell support.")
 
     runtime_json = root / RUNTIME_JSON_TEMPLATE
     if runtime_json.exists():
