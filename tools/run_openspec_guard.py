@@ -80,6 +80,18 @@ def require_git_root(root: Path, git: str) -> None:
         raise SystemExit("OpenSpec guard cannot require a clean git tree because this root is not inside a git work tree.")
 
 
+def openspec_refresh_command(args: list[str]) -> list[str]:
+    npx = shutil.which("npx") or shutil.which("npx.cmd")
+    if npx:
+        return [npx, "--yes", "@fission-ai/openspec@latest", *args]
+
+    openspec = shutil.which("openspec") or shutil.which("openspec.cmd")
+    if openspec:
+        return [openspec, *args]
+
+    return []
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the repository OpenSpec guard sequence.")
     parser.add_argument("--root", default=".", help="Repository root.")
@@ -251,6 +263,8 @@ def main() -> int:
         raise SystemExit(f"Missing fan-out/write-ownership evidence check script: {fanout_write_ownership_evidence_script}")
 
     openspec = shutil.which("openspec") or shutil.which("openspec.cmd")
+    refresh_init_command = openspec_refresh_command(["init", "--tools", args.tool, "--force"])
+    refresh_update_command = openspec_refresh_command(["update", "--force"])
     if args.json:
         payload: dict = {
             "schema_version": 1,
@@ -274,17 +288,17 @@ def main() -> int:
         }
 
         if args.refresh_managed_files:
-            if not openspec:
+            if not refresh_init_command or not refresh_update_command:
                 payload["ok"] = False
                 payload["failed_step"] = "refresh_managed_files"
-                payload["error"] = "OpenSpec guard cannot refresh managed files because `openspec` is not in PATH."
+                payload["error"] = "OpenSpec guard cannot refresh managed files because neither `npx` nor `openspec` is in PATH."
                 payload["errors"].append(payload["error"])
                 print(json.dumps(payload, ensure_ascii=False, indent=2))
                 return 1
 
             for step_name, command in [
-                ("openspec_init", [openspec, "init", "--tools", args.tool, "--force"]),
-                ("openspec_update", [openspec, "update", "--force"]),
+                ("openspec_init", refresh_init_command),
+                ("openspec_update", refresh_update_command),
             ]:
                 step_payload = run_json_command(command, cwd=root, step_name=step_name)
                 payload["steps"].append(step_payload)
@@ -639,16 +653,16 @@ def main() -> int:
         return 0
 
     if args.refresh_managed_files:
-        if not openspec:
-            raise SystemExit("OpenSpec guard cannot refresh managed files because `openspec` is not in PATH.")
+        if not refresh_init_command or not refresh_update_command:
+            raise SystemExit("OpenSpec guard cannot refresh managed files because neither `npx` nor `openspec` is in PATH.")
 
         run_checked(
-            [openspec, "init", "--tools", args.tool, "--force"],
+            refresh_init_command,
             cwd=root,
             failure_message="OpenSpec guard failed while refreshing the official tool integration.",
         )
         run_checked(
-            [openspec, "update", "--force"],
+            refresh_update_command,
             cwd=root,
             failure_message="OpenSpec guard failed while updating official OpenSpec instruction files.",
         )

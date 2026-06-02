@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -96,15 +97,24 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
 
-    def run_guard_json(self, root: Path) -> subprocess.CompletedProcess[str]:
+    def run_guard_json(
+        self,
+        root: Path,
+        extra_args: list[str] | None = None,
+        env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        command = [sys.executable, str(SCRIPT_PATH), "--root", str(root), "--tool", "codex", "--skip-validate", "--json"]
+        if extra_args:
+            command.extend(extra_args)
         return subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--root", str(root), "--tool", "codex", "--skip-validate", "--json"],
+            command,
             check=False,
             capture_output=True,
             text=True,
             encoding="utf-8",
             errors="replace",
             cwd=REPO_ROOT,
+            env=env,
         )
 
     def make_json_script(self, ok: bool, payload: dict) -> str:
@@ -127,6 +137,16 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
             if failure:
                 payload.update(failure)
             self.write_file(root, f"tools/{script_name}", self.make_json_script(ok, payload))
+
+    def write_fake_npx(self, fake_bin: Path) -> None:
+        fake_bin.mkdir(parents=True, exist_ok=True)
+        if os.name == "nt":
+            npx_path = fake_bin / "npx.cmd"
+            npx_path.write_text("@echo off\r\necho fake npx %*\r\nexit /B 0\r\n", encoding="utf-8")
+        else:
+            npx_path = fake_bin / "npx"
+            npx_path.write_text("#!/usr/bin/env sh\necho \"fake npx $@\"\nexit 0\n", encoding="utf-8")
+            npx_path.chmod(0o755)
 
     def test_guard_json_passes_and_aggregates_steps(self) -> None:
         root = self.make_root("guard-json-pass")
@@ -180,6 +200,27 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["failed_step"], "check_current_repo_authority_language")
         self.assertEqual(payload["steps"][1]["data"]["check_name"], "authority")
         self.assertEqual(payload["counts"]["steps_failed"], 1)
+
+    def test_refresh_managed_files_uses_latest_npm_package(self) -> None:
+        root = self.make_root("guard-json-refresh")
+        self.write_guard_scripts(root)
+        fake_bin = root / "fake-bin"
+        self.write_fake_npx(fake_bin)
+        env = os.environ.copy()
+        env["PATH"] = str(fake_bin)
+
+        result = self.run_guard_json(root, extra_args=["--refresh-managed-files"], env=env)
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["steps"][0]["step"], "openspec_init")
+        self.assertEqual(payload["steps"][1]["step"], "openspec_update")
+        self.assertIn("@fission-ai/openspec@latest", payload["steps"][0]["command"])
+        self.assertIn("@fission-ai/openspec@latest", payload["steps"][1]["command"])
+        self.assertIn("--yes", payload["steps"][0]["command"])
+        self.assertEqual(payload["counts"]["steps_total"], len(GUARD_STEPS) + 2)
+        self.assertEqual(payload["counts"]["steps_passed"], len(GUARD_STEPS) + 2)
 
 
 class CheckOpenSpecCometSuperpowersPolicyTest(unittest.TestCase):
