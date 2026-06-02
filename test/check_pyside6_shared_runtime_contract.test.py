@@ -39,6 +39,13 @@ class PySide6SharedRuntimeContractTest(unittest.TestCase):
         self.assertIn("Out-String", helper)
         self.assertNotIn("-c $probe", helper)
 
+    def test_runtime_helper_merges_requirements_and_fails_closed_for_qfluent(self) -> None:
+        helper = HELPER_PATH.read_text(encoding="utf-8")
+        self.assertIn("Get-TemplateRequirementsContent", helper)
+        self.assertIn("Merge-RequirementsContent", helper)
+        self.assertIn("requirements_backfilled_from_template", helper)
+        self.assertIn("qfluentwidgets_import_missing", helper)
+
 
 if __name__ == "__main__":
     unittest.main()

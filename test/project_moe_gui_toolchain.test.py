@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -14,7 +16,7 @@ from unittest.mock import patch
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TOOLCHAIN_SRC = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "src"
 sys.path.insert(0, str(TOOLCHAIN_SRC))
-from project_moe_gui.toolchain import DEFAULT_TOOLCHAIN_SOURCE_ROOT, current_toolchain_source_root
+from project_moe_gui.toolchain import stable_toolchain_source_root
 INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_moe_gui.py"
 CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_gui_install.py"
 UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_moe_gui.py"
@@ -2516,7 +2518,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertNotIn("target_project_root", installed_config)
             self.assertEqual(installed_config["installed_target_project_root"], str(project.resolve()))
             self.assertIn("runtime_python", installed_config)
-            expected_source_root = DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False) if DEFAULT_TOOLCHAIN_SOURCE_ROOT.exists() else current_toolchain_source_root().resolve(strict=False)
+            expected_source_root = stable_toolchain_source_root()
             self.assertEqual(installed_config["toolchain_source_root"], str(expected_source_root))
 
             launcher_text = (project / "tools" / "project_moe_gui" / "launcher.py").read_text(encoding="utf-8")
@@ -2739,6 +2741,36 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertFalse(missing_payload["ok"], missing_payload)
         self.assertEqual(missing_payload["token"], "blocked:qfluentwidgets_unavailable")
         self.assertEqual(missing_payload["import_status"], "missing")
+
+    def test_qfluent_default_import_probe_suppresses_import_chatter(self) -> None:
+        from project_moe_gui.qfluent_runtime import _default_import_probe
+
+        with tempfile.TemporaryDirectory() as tmp:
+            module_path = Path(tmp) / "noisy_import_probe.py"
+            module_path.write_text(
+                "print('third party stdout chatter')\n"
+                "import sys\n"
+                "print('third party stderr chatter', file=sys.stderr)\n"
+                "VALUE = 'loaded'\n",
+                encoding="utf-8",
+            )
+            sys.path.insert(0, tmp)
+            sys.modules.pop("noisy_import_probe", None)
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                    module = _default_import_probe("noisy_import_probe")
+            finally:
+                sys.modules.pop("noisy_import_probe", None)
+                try:
+                    sys.path.remove(tmp)
+                except ValueError:
+                    pass
+
+        self.assertEqual(getattr(module, "VALUE"), "loaded")
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "")
 
     def test_gui_view_model_declares_fluent_cards_sidebar_and_license_gate(self) -> None:
         from project_moe_gui.gui_shell import build_view_model

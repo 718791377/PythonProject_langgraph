@@ -35,9 +35,13 @@ def stable_toolchain_source_root() -> Path:
     configured = os.environ.get("PROJECT_MOE_GUI_TOOLCHAIN_SOURCE_ROOT")
     if configured:
         return Path(configured).expanduser().resolve(strict=False)
+    current_root = current_toolchain_source_root().resolve(strict=False)
+    default_root = DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False)
+    if current_root != default_root and ".worktrees" in current_root.parts:
+        return current_root
     if DEFAULT_TOOLCHAIN_SOURCE_ROOT.exists():
-        return DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False)
-    return current_toolchain_source_root().resolve(strict=False)
+        return default_root
+    return current_root
 
 
 def validate_toolchain_source_root(source_root: Path) -> tuple[str, list[dict[str, Any]]]:
