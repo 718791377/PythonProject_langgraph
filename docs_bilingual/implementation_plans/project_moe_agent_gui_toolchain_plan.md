@@ -6,8 +6,8 @@ status: active
 plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 created_at: 2026-05-20
-updated_at: 2026-06-01
-last_reviewed_at: 2026-06-01
+updated_at: 2026-06-02
+last_reviewed_at: 2026-06-02
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -63,6 +63,7 @@ Status interpretation:
 - 2026-06-01 acceptance boundary: A remains a Ready Lane target, but current GUI preflight availability must be re-established by updating A managed artifacts to 0.2.23 and rerunning install check, readiness, and launcher preflight; no-argument / double-click launch is now the human-visible path after `0.2.25`; `--preflight --json` remains the automation path.
 - 2026-06-01 scaffold apply slice: B toolchain `0.2.24` adds protected `scaffold_project_moe_phase1.py --apply`. It creates only missing Bootstrap Lane files after project-evidence and clean Git dirty-state checks pass, refuses to overwrite existing private or operator surfaces, and keeps GUI control disabled until later readiness evidence returns Ready Lane.
 - 2026-06-02 human-friendly launcher slice: B toolchain `0.2.25` makes installed no-argument / double-click `project-moe-gui.cmd` open the visible PySide6 GUI by default for human operators, while preserving `--preflight --json` as the non-visible automation interface and blocking `--json` without `--preflight` from becoming an accidental machine-visible launch path.
+- 2026-06-02 QFluentWidgets / daemon / close-confirmation decision: the next implementation package must introduce `PySide6-Fluent-Widgets` as the default Project MOE GUI visual library through shared PySide6 runtime dependency checks, add a GUI dependency license manifest with package/version/source/license/review result, replace the minimal label-only window with a card/sidebar/status/diagnostics UI, start visible no-argument launch through a project-level daemon/watchdog using Windows no-console process flags such as `CREATE_NO_WINDOW` / `DETACHED_PROCESS`, and ask on close whether to exit or hide to tray. The phrase "GUI does not hide to tray" means it must not hide automatically; operator-selected tray hide from the close confirmation is allowed.
 - Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, only OpenSpec artifacts, repo-local guards, and local validation can be used as fallback evidence.
 
 Inline field definitions:
@@ -372,6 +373,28 @@ GUI behavior rules:
 - Error display must include a stable token, a short explanation, and a recommended next action.
 - State badges must use both text and color, not color alone.
 
+### 10.1 QFluentWidgets visual contract
+
+The next Project MOE GUI visual shell must use QFluentWidgets by default:
+
+- The shared PySide6 runtime check must verify `PySide6-Fluent-Widgets` importability before enabling the styled shell.
+- A GUI dependency license manifest must record package name, import name, version, source URL, declared license, license-review status, allowed local use, and whether commercial/public redistribution requires a new review.
+- The GUI must fail closed to the plain PySide6 shell or a preflight blocker if QFluentWidgets is missing or the license manifest is absent; it must not silently claim the styled shell is ready.
+- The visible shell must render a left sidebar, top status banner, cards, session table, diagnostics panel, and footer/status area from the existing view model.
+- The shell must keep all state-changing actions routed through `execute_write_action_with_readback()` and target Phase 1 CLI contracts.
+
+### 10.2 Project-level daemon and close interaction contract
+
+The next human launcher must avoid persistent CMD windows:
+
+- No-argument / double-click `project-moe-gui.cmd` starts a project-level daemon/watchdog and then returns quickly.
+- Windows detached startup may use `subprocess` flags such as `CREATE_NO_WINDOW`, `DETACHED_PROCESS`, or an equivalent no-console combination; this is for the visible human path only.
+- `--preflight --json` remains a foreground, non-visible, machine-readable path and must not spawn a daemon.
+- The daemon records project-local lock / pid / status evidence and prevents duplicate GUI instances for the same target project.
+- Closing the GUI window shows a confirmation dialog with `Exit`, `Hide to tray`, and cancel/close options.
+- `Exit` terminates the GUI and lets the daemon exit; `Hide to tray` hides only after the operator explicitly chooses it and exposes tray actions `Show` and `Exit`; cancel keeps the window visible.
+- If the system tray is unavailable, the hide option is disabled or reported as a stable blocker, while normal exit remains available.
+
 ## 11. JSON Contract and State Model
 
 Unified envelope:
@@ -579,6 +602,19 @@ The completed A convergence order was:
 - [x] Disable same-scope write controls during writes and refresh state after every write.
 - [x] Display stable failure tokens, concise explanations, suggested next actions, and redacted stdout/stderr summaries.
 
+#### Slice 4A: QFluentWidgets visual shell, project daemon, and close confirmation
+
+- [ ] Add shared-runtime dependency verification for `PySide6-Fluent-Widgets` / QFluentWidgets.
+- [ ] Add a GUI dependency license manifest and checker evidence for QFluentWidgets package/version/source/license/review result.
+- [ ] Replace the minimal label-only window with a QFluentWidgets-styled sidebar, top banner, cards, session table, diagnostics panel, and footer.
+- [ ] Preserve the existing view-model and target CLI read/write contract; no direct state JSON writes are allowed.
+- [ ] Implement a project-level daemon/watchdog path for no-argument / double-click launch so CMD exits quickly on Windows.
+- [ ] Use Windows no-console process flags such as `CREATE_NO_WINDOW` / `DETACHED_PROCESS` or equivalent guarded logic for the human visible launcher path.
+- [ ] Keep `--preflight --json` foreground and non-visible for automation.
+- [ ] Add project-local lock / pid / status handling to avoid duplicate GUI instances.
+- [ ] Add close confirmation with `Exit`, `Hide to tray`, and cancel behavior.
+- [ ] Add tray `Show` / `Exit` actions only after the operator explicitly chooses hide; do not auto-hide to tray.
+
 #### Slice 5: Governance, Docs, and Checker Integration
 
 The following are standing governance rules, not remaining product checkboxes:
@@ -690,6 +726,7 @@ Target-project readiness verification:
   - target tests: `python -m unittest discover -s test -p "test_thesis_moe_mode.py"` => `Ran 6 tests ... OK`.
   - visible GUI launch: not executed in this pass.
 - write fixtures cover project on/off, session on/off, manual override retention, invalid-record skip, no-op, lock timeout, and atomic write in `test/project_moe_gui_toolchain.test.py`.
+- QFluentWidgets / daemon follow-up verification must cover: QFluentWidgets import or fail-closed blocker, license manifest presence, GUI view-model render smoke, daemon dry-run/no-console launch plan, duplicate lock handling, `--preflight --json` foreground behavior, close-confirmation exit/hide/cancel behavior, tray-unavailable fail-closed handling, and no direct state writes.
 
 Human acceptance:
 

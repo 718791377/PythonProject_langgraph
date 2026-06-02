@@ -6,7 +6,7 @@ plan_readiness: full-comet-structure-ready-for-maintenance-slicing
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.md
 created_at: 2026-05-20
-updated_at: 2026-05-27
+updated_at: 2026-06-02
 comet_change: refine-pyside6-gui-plan-comet-structure
 related_docs:
   - docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md
@@ -304,7 +304,9 @@ Fail-closed 条件：
   "import_only_smoke": "required",
   "visible_gui_requires_explicit_request": true,
   "packaging_requires_explicit_request": true,
-  "project_local_override_reason": null
+  "project_local_override_reason": null,
+  "visual_dependencies": [],
+  "license_manifest_path": null
 }
 ```
 
