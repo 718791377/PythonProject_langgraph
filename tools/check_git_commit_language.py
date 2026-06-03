@@ -13,6 +13,7 @@ from typing import Any
 CHECK_NAME = "git_commit_language"
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 ZERO_SHA_RE = re.compile(r"^0{40}$")
+GITLAB_GENERATED_MERGE_SUBJECT_RE = re.compile(r"^Merge branch ['\"].+['\"] into ['\"].+['\"]$")
 
 
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -57,7 +58,7 @@ def fallback_base_refs(base_ref: str) -> list[str]:
     return candidates
 
 
-def subjects_from_range(root: Path, base_ref: str, head_ref: str) -> tuple[list[str], list[str]]:
+def records_from_range(root: Path, base_ref: str, head_ref: str) -> tuple[list[dict[str, Any]], list[str]]:
     errors: list[str] = []
     candidates = [base_ref]
     if not commit_ref_exists(root, base_ref):
@@ -70,9 +71,34 @@ def subjects_from_range(root: Path, base_ref: str, head_ref: str) -> tuple[list[
         seen.add(candidate)
         if not commit_ref_exists(root, candidate):
             continue
-        result = run_git(root, ["log", "--format=%s", f"{candidate}..{head_ref}"])
+        result = run_git(root, ["log", "--format=%H%x00%P%x00%s", f"{candidate}..{head_ref}"])
         if result.returncode == 0:
-            return [line.strip() for line in result.stdout.splitlines() if line.strip()], errors
+            records: list[dict[str, Any]] = []
+            for line in result.stdout.splitlines():
+                if not line.strip():
+                    continue
+                parts = line.split("\x00", 2)
+                if len(parts) == 3:
+                    commit, parents, subject = parts
+                    parent_list = [parent for parent in parents.split() if parent]
+                    records.append(
+                        {
+                            "commit": commit,
+                            "parents": parent_list,
+                            "subject": subject.strip(),
+                            "is_merge_commit": len(parent_list) >= 2,
+                        }
+                    )
+                else:
+                    records.append(
+                        {
+                            "commit": "",
+                            "parents": [],
+                            "subject": line.strip(),
+                            "is_merge_commit": False,
+                        }
+                    )
+            return records, errors
         last_error = result.stderr.strip() or result.stdout.strip() or f"git log failed for {candidate}..{head_ref}"
     if last_error:
         errors.append(last_error)
@@ -84,12 +110,25 @@ def subjects_from_range(root: Path, base_ref: str, head_ref: str) -> tuple[list[
     return [], errors
 
 
-def evaluate_subjects(root: Path, subjects: list[str], source: str) -> dict[str, Any]:
+def is_allowed_generated_merge_commit(record: dict[str, Any]) -> bool:
+    subject = str(record.get("subject", ""))
+    return bool(record.get("is_merge_commit")) and bool(GITLAB_GENERATED_MERGE_SUBJECT_RE.fullmatch(subject))
+
+
+def evaluate_records(root: Path, records: list[dict[str, Any]], source: str) -> dict[str, Any]:
     errors: list[str] = []
     checked: list[dict[str, Any]] = []
-    for subject in subjects:
-        ok = subject_has_chinese(subject)
-        checked.append({"subject": subject, "ok": ok})
+    for record in records:
+        subject = str(record.get("subject", ""))
+        generated_merge_commit = is_allowed_generated_merge_commit(record)
+        ok = subject_has_chinese(subject) or generated_merge_commit
+        checked_record: dict[str, Any] = {"subject": subject, "ok": ok}
+        if source == "range" and record.get("commit"):
+            checked_record["commit"] = record.get("commit")
+            checked_record["is_merge_commit"] = bool(record.get("is_merge_commit"))
+        if generated_merge_commit:
+            checked_record["allowed_reason"] = "gitlab_generated_merge_commit"
+        checked.append(checked_record)
         if not ok:
             errors.append(f"Commit subject must contain Chinese text: {subject}")
     return {
@@ -102,7 +141,10 @@ def evaluate_subjects(root: Path, subjects: list[str], source: str) -> dict[str,
         "commits": checked,
         "errors": errors,
         "warnings": [],
-        "info": ["Commit subjects may use ASCII conventional prefixes, but the subject must contain Chinese text."],
+        "info": [
+            "Commit subjects may use ASCII conventional prefixes, but the subject must contain Chinese text.",
+            "GitLab-generated merge commit subjects are accepted only when the checked range proves they are merge commits.",
+        ],
         "counts": {"commits": len(checked), "errors": len(errors)},
     }
 
@@ -118,18 +160,28 @@ def main() -> int:
     args = parser.parse_args()
     root = Path(args.root)
     source = "range"
-    subjects: list[str]
+    records: list[dict[str, Any]]
     range_errors: list[str] = []
     if args.message_file:
         source = "message_file"
         text = Path(args.message_file).read_text(encoding="utf-8", errors="replace")
-        subjects = [next((line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")), "")]
+        records = [
+            {
+                "subject": next((line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")), ""),
+                "is_merge_commit": False,
+            }
+        ]
     elif args.message is not None:
         source = "message"
-        subjects = [next((line.strip() for line in args.message.splitlines() if line.strip()), "")]
+        records = [
+            {
+                "subject": next((line.strip() for line in args.message.splitlines() if line.strip()), ""),
+                "is_merge_commit": False,
+            }
+        ]
     else:
-        subjects, range_errors = subjects_from_range(root, args.base_ref, args.head_ref)
-    payload = evaluate_subjects(root, subjects, source)
+        records, range_errors = records_from_range(root, args.base_ref, args.head_ref)
+    payload = evaluate_records(root, records, source)
     if range_errors:
         payload["ok"] = False
         payload["errors"].extend(range_errors)
