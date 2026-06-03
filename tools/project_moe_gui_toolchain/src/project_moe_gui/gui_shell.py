@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -1053,10 +1054,10 @@ def execute_write_action_with_readback(
 
 def launch_visible(view_model: dict[str, Any]) -> int:
     try:
-        from PySide6.QtCore import Qt
+        from PySide6.QtCore import Qt, QTimer
         from PySide6.QtGui import QCloseEvent
         from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox, QSystemTrayIcon, QVBoxLayout, QWidget
-        from qfluentwidgets import CardWidget, NavigationInterface, setTheme
+        from qfluentwidgets import CardWidget, NavigationInterface, Theme, setTheme
     except Exception as exc:  # pragma: no cover - depends on optional runtime
         raise RuntimeError("blocked:qfluentwidgets_unavailable") from exc
 
@@ -1088,7 +1089,7 @@ def launch_visible(view_model: dict[str, Any]) -> int:
                 event.ignore()
 
     app = QApplication.instance() or QApplication(sys.argv)
-    setTheme("AUTO")
+    setTheme(Theme.AUTO)
     window = MoeMainWindow()
     window.setWindowTitle(WINDOW_TITLE)
     central = QWidget()
@@ -1115,4 +1116,11 @@ def launch_visible(view_model: dict[str, Any]) -> int:
     window.setCentralWidget(central)
     window.resize(960, 540)
     window.show()
+    smoke_exit_ms = int(os.environ.get("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS") or "0")
+    if smoke_exit_ms > 0:
+        smoke_timer = QTimer(window)
+        smoke_timer.setSingleShot(True)
+        smoke_timer.timeout.connect(lambda: app.exit(0))
+        window._project_moe_gui_smoke_timer = smoke_timer  # type: ignore[attr-defined]
+        smoke_timer.start(smoke_exit_ms)
     return int(app.exec())

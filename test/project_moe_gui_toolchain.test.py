@@ -2829,17 +2829,38 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         from project_moe_gui.daemon import build_daemon_launch_plan, windows_process_flags
 
         launcher = Path("tools/project_moe_gui/launcher.py")
-        plan = build_daemon_launch_plan(launcher, no_args=True, platform_name="win32")
+        plan = build_daemon_launch_plan(
+            launcher,
+            no_args=True,
+            platform_name="win32",
+            runtime_python="D:/runtime/.venv/Scripts/python.exe",
+            project_root="D:/target",
+        )
         self.assertTrue(plan["uses_daemon"])
         self.assertTrue(plan["duplicate_instance_guard"]["enabled"])
         self.assertEqual(plan["cmd_window_policy"], "no_persistent_cmd")
         self.assertIn(plan["windows_creation_flags_label"], {"CREATE_NO_WINDOW", "DETACHED_PROCESS", "CREATE_NO_WINDOW|DETACHED_PROCESS"})
         self.assertGreater(windows_process_flags(platform_name="win32"), 0)
         self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", plan["environment_overrides"])
+        self.assertEqual(plan["argv"][0], "D:/runtime/.venv/Scripts/python.exe")
+        self.assertEqual(plan["project_root"], str(Path("D:/target").resolve(strict=False)))
+        self.assertTrue(plan["diagnostics_log"].endswith("project_moe_gui.daemon.log"))
+        self.assertEqual(plan["stdout_stderr_policy"], "append_to_diagnostics_log")
 
         foreground = build_daemon_launch_plan(launcher, preflight=True, json_mode=True, platform_name="win32")
         self.assertFalse(foreground["uses_daemon"])
         self.assertEqual(foreground["reason"], "preflight_json_runs_in_foreground")
+
+    def test_visible_launch_uses_qfluent_theme_enum_and_smoke_timer(self) -> None:
+        import inspect
+        from project_moe_gui import gui_shell
+
+        source = inspect.getsource(gui_shell.launch_visible)
+        self.assertIn("Theme.AUTO", source)
+        self.assertNotIn('setTheme("AUTO")', source)
+        self.assertIn("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS", source)
+        self.assertIn("QTimer(window)", source)
+        self.assertIn("app.exit(0)", source)
 
     def test_installer_config_and_launcher_include_daemon_and_qfluent_metadata(self) -> None:
         from project_moe_gui.toolchain import cmd_text, config_payload, launcher_text
@@ -2849,6 +2870,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertEqual(cfg["visual_dependency"]["import_name"], "qfluentwidgets")
         self.assertTrue(cfg["gui_dependency_license_manifest"]["commercial_use_requires_review"])
         self.assertTrue(cfg["daemon_launch"]["duplicate_instance_guard"]["enabled"])
+        self.assertEqual(cfg["daemon_launch"]["argv"][0], "D:\\runtime\\.venv\\Scripts\\python.exe")
+        self.assertEqual(cfg["daemon_launch"]["project_root"], "D:\\target")
+        self.assertTrue(cfg["daemon_launch"]["diagnostics_log"].endswith("project_moe_gui.daemon.log"))
         self.assertEqual(cfg["close_behavior"]["default_close_action"], "ask")
 
         launcher = launcher_text()
@@ -2856,6 +2880,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", launcher)
         self.assertIn("CREATE_NO_WINDOW", launcher)
         self.assertIn("qfluent_runtime", launcher)
+        self.assertIn("blocked:visible_gui_launch_failed", launcher)
+        self.assertIn("append_to_diagnostics_log", launcher)
 
         command_text = cmd_text()
         self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", command_text)

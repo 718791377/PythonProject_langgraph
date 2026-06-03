@@ -1639,6 +1639,7 @@ def _fallback_daemon_launch_plan(launcher: Path, args: argparse.Namespace, confi
         }
     should_daemon = bool(no_args)
     flags = _windows_process_flags()
+    log_path = launcher.with_name("project_moe_gui.daemon.log")
     return {
         "schema_version": 1,
         "uses_daemon": should_daemon,
@@ -1656,6 +1657,8 @@ def _fallback_daemon_launch_plan(launcher: Path, args: argparse.Namespace, confi
             "pid_field": "pid",
             "stale_lock_cleanup": True,
         },
+        "diagnostics_log": str(log_path),
+        "stdout_stderr_policy": "append_to_diagnostics_log",
         "environment_overrides": {"PROJECT_MOE_GUI_DAEMON_CHILD": "1", "PYTHONUTF8": "1"},
         "fallback_embedded_daemon": True,
     }
@@ -1707,12 +1710,18 @@ def _fallback_spawn_daemon_child(plan: dict) -> dict:
             pass
     env = os.environ.copy()
     env.update({str(k): str(v) for k, v in (plan.get("environment_overrides") or {}).items()})
-    kwargs = {"cwd": plan.get("project_root") or None, "env": env, "stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, "shell": False}
-    flags = int(plan.get("windows_creation_flags") or 0)
-    if flags:
-        kwargs["creationflags"] = flags
-    process = subprocess.Popen([str(item) for item in plan.get("argv", [])], **kwargs)
-    return {"schema_version": 1, "ok": True, "token": "ok", "exit_code": 0, "message": "Project MOE GUI daemon launch requested; launcher parent can exit without a persistent CMD window.", "daemon_launch": plan, "spawned_pid": process.pid}
+    log_path = Path(str(plan.get("diagnostics_log") or lock_path.with_name("project_moe_gui.daemon.log")))
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8", errors="replace") as log_handle:
+        log_handle.write("\\n=== Project MOE GUI daemon launch ===\\n")
+        log_handle.write(f"argv={plan.get('argv')}\\n")
+        log_handle.flush()
+        kwargs = {"cwd": plan.get("project_root") or None, "env": env, "stdin": subprocess.DEVNULL, "stdout": log_handle, "stderr": subprocess.STDOUT, "shell": False}
+        flags = int(plan.get("windows_creation_flags") or 0)
+        if flags:
+            kwargs["creationflags"] = flags
+        process = subprocess.Popen([str(item) for item in plan.get("argv", [])], **kwargs)
+    return {"schema_version": 1, "ok": True, "token": "ok", "exit_code": 0, "message": "Project MOE GUI daemon launch requested; launcher parent can exit without a persistent CMD window.", "daemon_launch": plan, "spawned_pid": process.pid, "diagnostics_log": str(log_path)}
 
 
 def spawn_daemon_if_needed(plan: dict) -> dict:
@@ -1888,7 +1897,9 @@ def main() -> int:
     try:
         return gui_shell.launch_visible(preflight["view_model"])
     except RuntimeError as exc:
-        return emit({"schema_version": 1, "ok": False, "token": str(exc), "exit_code": 5, "message": "Visible GUI launch failed."}, args.json)
+        return emit({"schema_version": 1, "ok": False, "token": str(exc), "exit_code": 5, "message": "Visible GUI launch failed.", "error": str(exc)}, args.json)
+    except Exception as exc:
+        return emit({"schema_version": 1, "ok": False, "token": "blocked:visible_gui_launch_failed", "exit_code": 5, "message": "Visible GUI launch failed.", "error": str(exc)}, args.json)
 
 
 if __name__ == "__main__":
@@ -1935,7 +1946,7 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "python_utf8": True,
             "visual_dependency": expected_qfluent_dependency(),
             "gui_dependency_license_manifest": qfluent_license_manifest(),
-            "daemon_launch": build_daemon_launch_plan(Path("tools/project_moe_gui/launcher.py"), no_args=True),
+            "daemon_launch": build_daemon_launch_plan(root / "tools" / "project_moe_gui" / "launcher.py", no_args=True, runtime_python=runtime_python, project_root=root),
             "close_behavior": {
                 "default_close_action": "ask",
                 "auto_hide_to_tray": False,

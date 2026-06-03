@@ -11,6 +11,7 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 LOCK_FILE_NAME = "project_moe_gui.daemon.lock"
+LOG_FILE_NAME = "project_moe_gui.daemon.log"
 
 
 def windows_process_flags(*, platform_name: str | None = None) -> int:
@@ -38,6 +39,10 @@ def daemon_lock_path(launcher: str | Path) -> Path:
     return Path(launcher).resolve(strict=False).with_name(LOCK_FILE_NAME)
 
 
+def daemon_log_path(launcher: str | Path) -> Path:
+    return Path(launcher).resolve(strict=False).with_name(LOG_FILE_NAME)
+
+
 def build_daemon_launch_plan(
     launcher: str | Path,
     *,
@@ -63,6 +68,7 @@ def build_daemon_launch_plan(
     python_executable = str(runtime_python or sys.executable)
     argv = [python_executable, str(launcher_path), "--allow-visible"]
     lock_path = daemon_lock_path(launcher_path)
+    log_path = daemon_log_path(launcher_path)
     return {
         "schema_version": SCHEMA_VERSION,
         "uses_daemon": should_daemon,
@@ -80,6 +86,8 @@ def build_daemon_launch_plan(
             "pid_field": "pid",
             "stale_lock_cleanup": True,
         },
+        "diagnostics_log": str(log_path),
+        "stdout_stderr_policy": "append_to_diagnostics_log",
         "environment_overrides": {
             "PROJECT_MOE_GUI_DAEMON_CHILD": "1",
             "PYTHONUTF8": "1",
@@ -186,18 +194,24 @@ def spawn_daemon_child(plan: dict[str, Any]) -> dict[str, Any]:
             pass
     env = os.environ.copy()
     env.update({str(k): str(v) for k, v in (plan.get("environment_overrides") or {}).items()})
-    kwargs: dict[str, Any] = {
-        "cwd": plan.get("project_root") or None,
-        "env": env,
-        "stdin": subprocess.DEVNULL,
-        "stdout": subprocess.DEVNULL,
-        "stderr": subprocess.DEVNULL,
-        "shell": False,
-    }
-    creationflags = int(plan.get("windows_creation_flags") or 0)
-    if creationflags:
-        kwargs["creationflags"] = creationflags
-    process = subprocess.Popen([str(item) for item in plan.get("argv", [])], **kwargs)
+    log_path = Path(str(plan.get("diagnostics_log") or daemon_log_path(str(plan.get("launcher") or "launcher.py"))))
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8", errors="replace") as log_handle:
+        log_handle.write("\n=== Project MOE GUI daemon launch ===\n")
+        log_handle.write(f"argv={plan.get('argv')}\n")
+        log_handle.flush()
+        kwargs: dict[str, Any] = {
+            "cwd": plan.get("project_root") or None,
+            "env": env,
+            "stdin": subprocess.DEVNULL,
+            "stdout": log_handle,
+            "stderr": subprocess.STDOUT,
+            "shell": False,
+        }
+        creationflags = int(plan.get("windows_creation_flags") or 0)
+        if creationflags:
+            kwargs["creationflags"] = creationflags
+        process = subprocess.Popen([str(item) for item in plan.get("argv", [])], **kwargs)
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
@@ -206,4 +220,5 @@ def spawn_daemon_child(plan: dict[str, Any]) -> dict[str, Any]:
         "message": "Project MOE GUI daemon launch requested; launcher parent can exit without a persistent CMD window.",
         "daemon_launch": plan,
         "spawned_pid": process.pid,
+        "diagnostics_log": str(log_path),
     }
