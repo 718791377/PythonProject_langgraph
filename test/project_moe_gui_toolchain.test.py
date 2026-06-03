@@ -2281,6 +2281,73 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertIn("ok: Visible GUI launch dry-run passed.", result.stdout)
             self.assertNotIn("blocked:visible_gui_launch_requires_explicit_approval", result.stdout)
 
+    def test_installed_launcher_visible_launch_allows_diagnostic_preflight_blockers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
+
+            fake_source = Path(tmp) / "fake-source"
+            fake_package = fake_source / "src" / "project_moe_gui"
+            fake_package.mkdir(parents=True)
+            marker = project / "visible-launch-called.marker"
+            (fake_package / "__init__.py").write_text("", encoding="utf-8")
+            (fake_package / "toolchain.py").write_text(
+                "def check_phase1_readiness(*args, **kwargs):\n"
+                "    return {\n"
+                "        'ok': True,\n"
+                "        'token': 'ok',\n"
+                "        'readiness_status': 'ready',\n"
+                "        'adaptation_lane': 'ready',\n"
+                "        'bootstrap_required': False,\n"
+                "        'repair_required': False,\n"
+                "        'control_mode_allowed': True,\n"
+                "        'cli_execution_mode': 'execute-read-contract',\n"
+                "        'git_status': {'token': 'ok'},\n"
+                "        'blockers': [],\n"
+                "    }\n",
+                encoding="utf-8",
+            )
+            (fake_package / "gui_shell.py").write_text(
+                "from pathlib import Path\n"
+                "def build_gui_preflight(*args, **kwargs):\n"
+                "    return {\n"
+                "        'schema_version': 1,\n"
+                "        'ok': False,\n"
+                "        'token': 'blocked:invalid_session_record',\n"
+                "        'exit_code': 5,\n"
+                "        'message': 'Historical session records need review.',\n"
+                "        'view_model': {'window_structure': {}, 'diagnostics_card': {'blockers': [{'token': 'blocked:invalid_session_record'}]}},\n"
+                "        'blockers': [{'token': 'blocked:invalid_session_record', 'message': 'diagnostic only'}],\n"
+                "    }\n"
+                "def launch_visible(view_model):\n"
+                f"    Path({str(marker)!r}).write_text('called', encoding='utf-8')\n"
+                "    return 0\n",
+                encoding="utf-8",
+            )
+            config_path = project / "tools" / "project_moe_gui" / "project_moe_gui.config.json"
+            config = json.loads(config_path.read_text(encoding="utf-8-sig"))
+            config["toolchain_source_root"] = str(fake_source)
+            config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(project / "tools" / "project_moe_gui" / "launcher.py"), "--allow-visible", "--json"],
+                cwd=project,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+            self.assertEqual(marker.read_text(encoding="utf-8"), "called")
+            self.assertNotIn("blocked:invalid_session_record", result.stdout)
+
     def test_installed_launcher_visible_dry_run_does_not_require_pyside6_import(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp) / "target"

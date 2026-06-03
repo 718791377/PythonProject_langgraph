@@ -1892,10 +1892,11 @@ def main() -> int:
         return emit({**preflight, "ok": False, "token": "blocked:json_requires_preflight_for_non_visible_automation", "exit_code": 2, "message": "Use --preflight --json for machine-readable automation, or run without --json to open the visible GUI."}, args.json)
     if os.environ.get("PROJECT_MOE_GUI_DRY_RUN_VISIBLE") == "1":
         return emit({**preflight, "ok": True, "token": "ok", "exit_code": 0, "message": "Visible GUI launch dry-run passed.", "visible_launch": {"dry_run": True, "default_visible_on_no_args": True, "allow_visible_argument": bool(args.allow_visible)}}, args.json)
-    if not preflight.get("ok"):
+    view_model = preflight.get("view_model") if isinstance(preflight, dict) else None
+    if not preflight.get("ok") and not isinstance(view_model, dict):
         return emit(preflight, args.json)
     try:
-        return gui_shell.launch_visible(preflight["view_model"])
+        return gui_shell.launch_visible(view_model)
     except RuntimeError as exc:
         return emit({"schema_version": 1, "ok": False, "token": str(exc), "exit_code": 5, "message": "Visible GUI launch failed.", "error": str(exc)}, args.json)
     except Exception as exc:
