@@ -1,7 +1,8 @@
 ---
 change: refactor-user-level-mcp-governance-modern-structure
-status: implemented
+status: archived
 created_at: 2026-05-27
+archived-with: openspec/changes/archive/2026-06-03-refactor-user-level-mcp-governance-modern-structure
 ---
 
 # Modern Structure Design for User-Level MCP/Skills/Browser/CLI Governance

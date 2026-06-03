@@ -1,8 +1,9 @@
 ---
 change: refactor-user-level-mcp-governance-modern-structure
-status: implemented
+status: archived
 created_at: 2026-05-27
 translation_of: docs/superpowers/specs/2026-05-27-refactor-user-level-mcp-governance-modern-structure-design.md
+archived-with: openspec/changes/archive/2026-06-03-refactor-user-level-mcp-governance-modern-structure
 ---
 
 # 用户级 MCP/Skills/Browser/CLI 治理的新版结构设计

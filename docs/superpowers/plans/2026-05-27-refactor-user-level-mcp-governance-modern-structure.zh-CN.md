@@ -3,6 +3,8 @@ change: refactor-user-level-mcp-governance-modern-structure
 design-doc: docs/superpowers/specs/2026-05-27-refactor-user-level-mcp-governance-modern-structure-design.zh-CN.md
 translation_of: docs/superpowers/plans/2026-05-27-refactor-user-level-mcp-governance-modern-structure.md
 base-ref: 41ac79168fea6fb87e108661a6b5e45bf7feb305
+status: archived
+archived-with: openspec/changes/archive/2026-06-03-refactor-user-level-mcp-governance-modern-structure
 ---
 
 # 实施计划：新版结构重构

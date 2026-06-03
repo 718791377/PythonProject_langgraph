@@ -35,13 +35,13 @@ Validate OpenSpec and Comet guard health and archive completed changes as one se
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
-Status update: MCP/skills/browser/CLI decomposition requires source-plan extraction evidence before any archive decision for the related OpenSpec surfaces. The receipt/redaction, port/browser-owner, discovery facade, and browser/CLI adapter boundary child lanes are implemented-local with stable-spec coverage already present; archive decisions wait for a future source-plan archive package.
+Status: archive package implemented locally; local `main` integration is handled by this package's complete local flow
+Stage: Stage C Phase 7 OpenSpec/Comet archive package
+Owner session: `codex-20260603-parallel-plan-openspec-comet-archive`
+Current gate: local-main integration through `tools/complete_local_flow_to_remote_gate.py`; after local integration, stop at the remote-publication approval gate
+Stage C entry condition: satisfied; the user confirmed this child implementation plan and requested local commit plus local `main` integration on 2026-06-03
+Last updated: 2026-06-03
+Status update: `refactor-user-level-mcp-governance-modern-structure` is archived to `openspec/changes/archive/2026-06-03-refactor-user-level-mcp-governance-modern-structure/`. Stable-spec sync is intentionally skipped because the current stable MCP/skills/browser/CLI specification already carries broader current coverage; overwriting it with the older narrow delta would regress stable coverage. Remaining complete active changes are deferred to later archive packages because their verify, branch-handling, source-plan, or archive-readiness evidence is not owned by this single serial archive package.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -68,12 +68,12 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Identify completed active OpenSpec changes that must archive before final integration.
-- [ ] Run official OpenSpec verification and Comet guard checks.
-- [ ] Promote stable spec deltas only after implementation validation is complete.
-- [ ] Run archive validation and local gate.
-- [ ] Before archiving MCP/skills/browser/CLI OpenSpec work, record whether each extracted child lane is implemented, deferred, or still active. Current receipt/redaction, port/browser-owner, discovery facade, and browser/CLI adapter boundary lane states: implemented-local; local integration evidence is recorded by the repository completion flow.
+- [x] Confirm this child plan after local main integration; the current user request is the implementation confirmation for this child plan.
+- [x] Identify completed active OpenSpec changes that must archive before final integration; selected the eligible completed `refactor-user-level-mcp-governance-modern-structure` change.
+- [x] Run official OpenSpec verification and Comet guard checks for the selected archive package.
+- [x] Promote stable spec deltas only after implementation validation is complete; stable-spec sync is skipped because existing stable coverage is broader than the historical delta.
+- [x] Run archive validation and local gate before local `main` integration.
+- [x] Before archiving MCP/skills/browser/CLI OpenSpec work, record whether each extracted child lane is implemented, deferred, or still active. Receipt/redaction, port/browser-owner, discovery facade, and browser/CLI adapter boundary lane states are implemented-local; the broader source surface is partially archived by `refactor-user-level-mcp-governance-modern-structure`, while remaining complete active changes stay deferred for later evidence-owned archive packages.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -97,6 +97,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-03 Phase 7 archive implementation: archived `refactor-user-level-mcp-governance-modern-structure` to `openspec/changes/archive/2026-06-03-refactor-user-level-mcp-governance-modern-structure/`; stable-spec sync was skipped to avoid replacing broader current stable MCP/skills/browser/CLI coverage with the older narrow delta; remaining complete active changes are deferred because their verify/branch/archive evidence is outside this package's write ownership.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-06-01 receipt/redaction archive note: `user_level_capability_receipt_rollback_redaction_plan` is implemented-local; no live user-level install or sensitive runtime action was performed, and the related stable spec already contains the generic receipt governance requirement. Archive timing remains a Phase 7 decision for the broader MCP/skills/browser/CLI source surface.
 - 2026-06-01 port/browser-owner archive note: `user_level_port_browser_owner_isolation_plan` is implemented-local; the package hardens repository-local guards and tests only, performs no live browser start or sensitive runtime action, and leaves archive timing as a Phase 7 decision for the broader MCP/skills/browser/CLI source surface.

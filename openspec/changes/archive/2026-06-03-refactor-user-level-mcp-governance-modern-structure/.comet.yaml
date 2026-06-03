@@ -9,9 +9,8 @@ verify_result: pass
 verification_report: docs/superpowers/reports/2026-05-27-refactor-user-level-mcp-governance-modern-structure-verification.md
 branch_status: handled
 verified_at: 2026-05-27
-archived: false
-archive_deferral: local-main-integration-first-for-document-structure-refactor
-management_record: openspec/changes/refactor-user-level-mcp-governance-modern-structure/management.md
+archived: true
+management_record: openspec/changes/archive/2026-06-03-refactor-user-level-mcp-governance-modern-structure/management.md
 monitoring_status: clear
 control_decision: continue
 target_phase: null
