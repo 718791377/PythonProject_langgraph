@@ -1639,7 +1639,9 @@ def _fallback_daemon_launch_plan(launcher: Path, args: argparse.Namespace, confi
         }
     should_daemon = bool(no_args)
     flags = _windows_process_flags()
-    log_path = launcher.with_name("project_moe_gui.daemon.log")
+    runtime_dir = project_root / ".project-runtime" / "project_moe_gui"
+    log_path = runtime_dir / "project_moe_gui.daemon.log"
+    lock_path = runtime_dir / "project_moe_gui.daemon.lock"
     return {
         "schema_version": 1,
         "uses_daemon": should_daemon,
@@ -1653,7 +1655,7 @@ def _fallback_daemon_launch_plan(launcher: Path, args: argparse.Namespace, confi
         "windows_creation_flags_label": _windows_process_flags_label(flags),
         "duplicate_instance_guard": {
             "enabled": True,
-            "lock_path": str(launcher.with_name("project_moe_gui.daemon.lock")),
+            "lock_path": str(lock_path),
             "pid_field": "pid",
             "stale_lock_cleanup": True,
         },

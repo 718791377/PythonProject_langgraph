@@ -2911,7 +2911,10 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", plan["environment_overrides"])
         self.assertEqual(plan["argv"][0], "D:/runtime/.venv/Scripts/python.exe")
         self.assertEqual(plan["project_root"], str(Path("D:/target").resolve(strict=False)))
-        self.assertTrue(plan["diagnostics_log"].endswith("project_moe_gui.daemon.log"))
+        runtime_dir = Path("D:/target").resolve(strict=False) / ".project-runtime" / "project_moe_gui"
+        self.assertEqual(Path(plan["diagnostics_log"]), runtime_dir / "project_moe_gui.daemon.log")
+        self.assertEqual(Path(plan["duplicate_instance_guard"]["lock_path"]), runtime_dir / "project_moe_gui.daemon.lock")
+        self.assertNotIn("tools", Path(plan["diagnostics_log"]).parts)
         self.assertEqual(plan["stdout_stderr_policy"], "append_to_diagnostics_log")
 
         foreground = build_daemon_launch_plan(launcher, preflight=True, json_mode=True, platform_name="win32")
@@ -2939,7 +2942,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertTrue(cfg["daemon_launch"]["duplicate_instance_guard"]["enabled"])
         self.assertEqual(cfg["daemon_launch"]["argv"][0], "D:\\runtime\\.venv\\Scripts\\python.exe")
         self.assertEqual(cfg["daemon_launch"]["project_root"], "D:\\target")
-        self.assertTrue(cfg["daemon_launch"]["diagnostics_log"].endswith("project_moe_gui.daemon.log"))
+        runtime_dir = Path("D:/target").resolve(strict=False) / ".project-runtime" / "project_moe_gui"
+        self.assertEqual(Path(cfg["daemon_launch"]["diagnostics_log"]), runtime_dir / "project_moe_gui.daemon.log")
+        self.assertEqual(Path(cfg["daemon_launch"]["duplicate_instance_guard"]["lock_path"]), runtime_dir / "project_moe_gui.daemon.lock")
         self.assertEqual(cfg["close_behavior"]["default_close_action"], "ask")
 
         launcher = launcher_text()

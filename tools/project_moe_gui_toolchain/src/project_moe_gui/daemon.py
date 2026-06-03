@@ -12,6 +12,7 @@ from typing import Any
 SCHEMA_VERSION = 1
 LOCK_FILE_NAME = "project_moe_gui.daemon.lock"
 LOG_FILE_NAME = "project_moe_gui.daemon.log"
+RUNTIME_DIR = Path(".project-runtime") / "project_moe_gui"
 
 
 def windows_process_flags(*, platform_name: str | None = None) -> int:
@@ -35,12 +36,17 @@ def windows_process_flags_label(*, platform_name: str | None = None) -> str:
     return "|".join(labels) if labels else str(flags)
 
 
-def daemon_lock_path(launcher: str | Path) -> Path:
-    return Path(launcher).resolve(strict=False).with_name(LOCK_FILE_NAME)
+def daemon_runtime_dir(launcher: str | Path, project_root: str | Path | None = None) -> Path:
+    root = Path(project_root).resolve(strict=False) if project_root else Path(launcher).resolve(strict=False).parents[2]
+    return root / RUNTIME_DIR
 
 
-def daemon_log_path(launcher: str | Path) -> Path:
-    return Path(launcher).resolve(strict=False).with_name(LOG_FILE_NAME)
+def daemon_lock_path(launcher: str | Path, project_root: str | Path | None = None) -> Path:
+    return daemon_runtime_dir(launcher, project_root) / LOCK_FILE_NAME
+
+
+def daemon_log_path(launcher: str | Path, project_root: str | Path | None = None) -> Path:
+    return daemon_runtime_dir(launcher, project_root) / LOG_FILE_NAME
 
 
 def build_daemon_launch_plan(
@@ -67,8 +73,8 @@ def build_daemon_launch_plan(
     should_daemon = bool(no_args and not preflight and not json_mode and not allow_visible)
     python_executable = str(runtime_python or sys.executable)
     argv = [python_executable, str(launcher_path), "--allow-visible"]
-    lock_path = daemon_lock_path(launcher_path)
-    log_path = daemon_log_path(launcher_path)
+    lock_path = daemon_lock_path(launcher_path, project_root)
+    log_path = daemon_log_path(launcher_path, project_root)
     return {
         "schema_version": SCHEMA_VERSION,
         "uses_daemon": should_daemon,
@@ -194,7 +200,7 @@ def spawn_daemon_child(plan: dict[str, Any]) -> dict[str, Any]:
             pass
     env = os.environ.copy()
     env.update({str(k): str(v) for k, v in (plan.get("environment_overrides") or {}).items()})
-    log_path = Path(str(plan.get("diagnostics_log") or daemon_log_path(str(plan.get("launcher") or "launcher.py"))))
+    log_path = Path(str(plan.get("diagnostics_log") or daemon_log_path(str(plan.get("launcher") or "launcher.py"), plan.get("project_root"))))
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("a", encoding="utf-8", errors="replace") as log_handle:
         log_handle.write("\n=== Project MOE GUI daemon launch ===\n")
