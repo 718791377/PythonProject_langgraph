@@ -35,13 +35,13 @@ Ensure every new checker, test, and helper introduced by child plans is register
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage B child-plan creation package
-Owner session: unclaimed until implementation begins
-Current gate: wait for explicit user confirmation of this child plan before non-document implementation
-Stage C entry condition: user confirms this child implementation plan after local main integration
-Last updated: 2026-05-28
-Status update: MCP/skills/browser/CLI decomposition keeps the baseline checker as a required guard. Receipt/redaction, port/browser-owner, discovery facade, and browser/CLI adapter boundary helper/test coverage are registered in the CI manifest and OpenSpec aggregate guard; future sibling lane changes still need registration review if they change runtime behavior.
+Status: implemented-local
+Stage: Stage C implementation package
+Owner session: codex-20260603-parallel-plan-checker-ci
+Current gate: implementation package is ready for feature validation, local MR review, local main integration, and then the remote-publication approval gate
+Stage C entry condition: satisfied by the user's 2026-06-03 implementation request after the governance package was already merged into local main
+Last updated: 2026-06-03
+Status update: The mirrored-CI checker now validates CI manifest required tests, guard/precommit/safety-rule registration surfaces, canonical local-gate step order, required remote shared-gate flags, and absence of inline remote CI duplication for guard and manifest test runners.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -68,11 +68,11 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Inventory new checkers and tests from completed child plans.
-- [ ] Add missing local gate registrations and mirrored CI checks.
-- [ ] Detect divergence between local and remote CI command sequences.
-- [ ] Run local gate and local MR review.
+- [x] Confirm this child plan after local main integration.
+- [x] Inventory new checkers and tests from completed child plans.
+- [x] Add missing local gate registrations and mirrored CI checks.
+- [x] Detect divergence between local and remote CI command sequences.
+- [x] Run local gate and local MR review.
 - [x] Verify MCP baseline, receipt/redaction, browser-owner, MCP/skills discovery, and adapter guard checks are registered when their extracted lanes change runtime behavior.
 <!-- TASK_BACKLOG_END -->
 
@@ -102,4 +102,5 @@ Run these gates before local `main` integration unless this child plan later nar
 - 2026-06-01 port/browser-owner lane handoff: `user_level_port_browser_owner_isolation_plan` confirms existing CI-manifest registration for `test/codex_port.test.py`, `test/browser_owner_registry.test.py`, `test/cdp_bridge_governance.test.py`, and `test/chrome_devtools_mcp_managed.test.py`; the CDP/OpenCLI ambiguity regression coverage extends an already registered test file, so no CI-manifest edit is required.
 - 2026-06-01 discovery facade lane handoff: `skills2cli.test.py` and `mcp2cli.test.py` are already registered in the CI manifest; this package extends those registered focused tests for risk-profile and routing-evidence behavior and confirms baseline/MCP-scope/agent-surface checkers remain applicable.
 - 2026-06-01 browser/CLI adapter boundary lane handoff: `user_level_browser_cli_adapter_boundary_plan` extends the already registered MCP baseline checker to validate child-plan implemented-local status and lane-state evidence; focused coverage remains in registered tests `chrome_devtools_mcp_managed.test.py`, `cdp_bridge_governance.test.py`, `wecom_cli_governance.test.py`, `user_level_receipt_governance.test.py`, and `check_user_level_mcp_skills_browser_cli_baseline.test.py`, so no CI-manifest edit is required.
+- 2026-06-03 Stage C implementation: `tools/check_local_mirrored_ci_gate.py` now checks CI manifest structure and required tests, local-gate step ordering, OpenSpec guard/precommit/safety-rule registration surfaces, remote shared-gate flags, and forbidden inline CI duplication for guard or manifest test runners; `test/check_local_mirrored_ci_gate.test.py`, `test/parallel_plan_checker_ci_integration.test.py`, and `tools/ci/ci_test_manifest.json` provide focused CI-registered regression coverage.
 <!-- EVIDENCE_INDEX_END -->

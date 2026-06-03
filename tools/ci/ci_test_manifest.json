@@ -17,6 +17,7 @@
     "spec_kit_authority_guard.test.py",
     "run_openspec_guard_json.test.py",
     "check_local_mirrored_ci_gate.test.py",
+    "parallel_plan_checker_ci_integration.test.py",
     "check_remote_publication_approval_policy.test.py",
     "check_role_routing_directive_evidence.test.py",
     "check_delegation_wait_discipline_evidence.test.py",
