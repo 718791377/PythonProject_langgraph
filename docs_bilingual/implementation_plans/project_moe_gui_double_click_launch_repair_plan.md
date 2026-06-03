@@ -4,7 +4,7 @@ lang: en
 status: active
 doc_class: implementation_plan
 created_at: 2026-06-02
-updated_at: 2026-06-02
+updated_at: 2026-06-03
 related_docs:
   - docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
   - docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.md
@@ -27,10 +27,13 @@ Remote publication is out of scope unless a later user message explicitly names 
 
 <!-- CURRENT_STATUS_START -->
 
-- Status: active repair plan.
-- Current package: plan-only documentation package in B (`D:\PythonProject_langgraph`).
-- Next package: implementation package in B, followed by a managed-artifact refresh and local commit in A (`D:\PythonProject_paper_suggest`).
-- Local integration rule: merge into local `main` after required local checks pass; stop before remote publication.
+- Status: completed locally.
+- Plan package in B (`D:\PythonProject_langgraph`) merged into local `main` at `662c2de`.
+- Runtime/helper implementation package in B merged into local `main` at `c66209e`.
+- Target A (`D:\PythonProject_paper_suggest`) managed-artifact refresh merged into local `main` at `0c3b49d`.
+- A rollback ref: `refs/backup/local-main/20260603-083632-before-project-moe-gui-double-click-refresh` -> `958f003`.
+- A feature worktree and local feature branch were cleaned after local main integration.
+- Remote publication remains out of scope and was not performed.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -42,12 +45,14 @@ Remote publication is out of scope unless a later user message explicitly names 
 - [x] Confirm target preflight still succeeds through the shared runtime.
 - [x] Confirm visible-launch dry-run succeeds when explicitly enabled.
 - [x] Record the two-package repair plan and cross-link it from the parent MOE GUI toolchain plan.
-- [ ] Merge this plan package into B local `main`.
-- [ ] Implement the shared runtime helper and launcher-refresh fix in B.
-- [ ] Verify B toolchain tests, shared-runtime checks, OpenSpec guard, local gate, and local MR review.
-- [ ] Refresh A managed Project MOE GUI artifacts from B.
-- [ ] Verify A preflight, visible dry-run, and existing thesis MOE tests.
-- [ ] Commit and merge A local `main`.
+- [x] Merge this plan package into B local `main`.
+- [x] Implement the shared runtime helper and launcher-refresh fix in B.
+- [x] Verify B toolchain tests, shared-runtime checks, OpenSpec guard, local gate, and local MR review.
+- [x] Refresh A managed Project MOE GUI artifacts from B.
+- [x] Verify A preflight, visible dry-run, and existing thesis MOE tests.
+- [x] Commit and merge A local `main`.
+- [x] Preserve A local rollback evidence and completed receipt.
+- [x] Clean the integrated A feature worktree and local feature branch.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -55,11 +60,17 @@ Remote publication is out of scope unless a later user message explicitly names 
 
 <!-- EVIDENCE_INDEX_START -->
 
-- Target foreground launcher evidence: `D:\PythonProject_paper_suggest\project-moe-gui.cmd`.
-- A preflight evidence command: `cmd /c "D:\PythonProject_paper_suggest\project-moe-gui.cmd --preflight --json"`.
-- A visible dry-run evidence command: `cmd /c "set PROJECT_MOE_GUI_DRY_RUN_VISIBLE=1&& D:\PythonProject_paper_suggest\project-moe-gui.cmd --allow-visible --json"`.
+- B plan package local-main commit: 662c2de (docs: record MOE GUI double-click launch repair plan).
+- B runtime/helper package local-main commit: c66209e (fix: complete MOE GUI double-click launch runtime).
+- A managed-artifact refresh local-main commit: `0c3b49d861b8fd0ae7e6bf9f81405bca48f56f2a`.
+- A rollback ref: `refs/backup/local-main/20260603-083632-before-project-moe-gui-double-click-refresh` -> `958f003a0a82dc2c15ecb8ca6fe4b263efbfdd02`.
+- A completed receipt: `D:\PythonProject_paper_suggest\.omx\session-claims\paper-suggest-project-moe-gui-double-click-refresh-20260603.json`.
+- A preflight evidence command: `cmd /c "D:\PythonProject_paper_suggest\project-moe-gui.cmd --preflight --json"` returned exit 0, `ok: true`, `token: ok`, `launcher_runtime_reexec: true`, `qfluentwidgets_status.ok: true`, and `phase1_readiness_gate.readiness_status: ready`.
+- A visible dry-run evidence command: `cmd /c "set PROJECT_MOE_GUI_DRY_RUN_VISIBLE=1&& D:\PythonProject_paper_suggest\project-moe-gui.cmd --allow-visible --json"` returned exit 0, `ok: true`, `token: ok`, and `message: Visible GUI launch dry-run passed.`
+- A regression evidence command: `python -m unittest discover -s test -p "test_thesis_moe_mode.py"` returned `Ran 6 tests` and `OK`.
 - B source surfaces: `tools/project_moe_gui_toolchain/src/project_moe_gui/toolchain.py` and `tools/project_moe_gui_toolchain/src/project_moe_gui/daemon.py`.
 - Shared runtime helper surface: `tools/pyside6_gui_helpers/ensure-shared-pyside6-runtime.ps1`.
+- Remote publication evidence: not authorized and not performed.
 
 <!-- EVIDENCE_INDEX_END -->
 

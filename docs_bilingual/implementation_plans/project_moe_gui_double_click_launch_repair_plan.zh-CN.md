@@ -5,7 +5,7 @@ status: active
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/project_moe_gui_double_click_launch_repair_plan.md
 created_at: 2026-06-02
-updated_at: 2026-06-02
+updated_at: 2026-06-03
 related_docs:
   - docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md
   - docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.zh-CN.md
@@ -28,10 +28,13 @@ related_docs:
 
 <!-- CURRENT_STATUS_START -->
 
-- Status: active repair plan.
-- Current package: plan-only documentation package in B (`D:\PythonProject_langgraph`).
-- Next package: implement the runtime helper and launcher-refresh fix in B, then refresh managed artifacts in A (`D:\PythonProject_paper_suggest`).
-- Local integration rule: merge into local `main` after required local checks pass; stop before remote publication.
+- 状态：已完成本地落地。
+- B（`D:\PythonProject_langgraph`）方案文档包已合入本地 `main`：`662c2de`。
+- B 运行时/helper 实现包已合入本地 `main`：`c66209e`。
+- A（`D:\PythonProject_paper_suggest`）受管安装产物刷新已合入本地 `main`：`0c3b49d`。
+- A 回滚 ref：`refs/backup/local-main/20260603-083632-before-project-moe-gui-double-click-refresh` -> `958f003`。
+- A feature worktree 与本地 feature branch 已在本地 main 合入后清理。
+- 远端发布仍不在本方案范围内，本轮没有推送 GitLab/GitHub。
 
 <!-- CURRENT_STATUS_END -->
 
@@ -39,16 +42,18 @@ related_docs:
 
 <!-- TASK_BACKLOG_START -->
 
-- [x] Reproduce and classify the target launcher symptom.
-- [x] Confirm target preflight still succeeds through the shared runtime.
-- [x] Confirm visible-launch dry-run succeeds when explicitly enabled.
-- [x] Record the two-package repair plan and cross-link it from the parent MOE GUI toolchain plan.
-- [ ] Merge this plan package into B local `main`.
-- [ ] Implement the shared runtime helper and launcher-refresh fix in B.
-- [ ] Verify B toolchain tests, shared-runtime checks, OpenSpec guard, local gate, and local MR review.
-- [ ] Refresh A managed Project MOE GUI artifacts from B.
-- [ ] Verify A preflight, visible dry-run, and existing thesis MOE tests.
-- [ ] Commit and merge A local `main`.
+- [x] 复现并归类目标 launcher 症状。
+- [x] 确认目标 preflight 仍可通过共享 runtime 成功执行。
+- [x] 确认显式启用时 visible-launch dry-run 成功。
+- [x] 记录两包修复方案，并从父级 MOE GUI toolchain 方案交叉引用。
+- [x] 将方案文档包合入 B 本地 `main`。
+- [x] 在 B 实施共享 runtime helper 与 launcher-refresh 修复。
+- [x] 验证 B toolchain 测试、共享 runtime 检查、OpenSpec guard、本地 gate 与本地 MR review。
+- [x] 从 B 刷新 A 的受管 Project MOE GUI 安装产物。
+- [x] 验证 A preflight、visible dry-run 与既有 thesis MOE 测试。
+- [x] 提交并合入 A 本地 `main`。
+- [x] 保留 A 本地 rollback evidence 与 completed receipt。
+- [x] 清理已集成的 A feature worktree 与本地 feature branch。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -56,11 +61,17 @@ related_docs:
 
 <!-- EVIDENCE_INDEX_START -->
 
-- Target foreground launcher evidence: `D:\PythonProject_paper_suggest\project-moe-gui.cmd`.
-- A preflight evidence command: `cmd /c "D:\PythonProject_paper_suggest\project-moe-gui.cmd --preflight --json"`.
-- A visible dry-run evidence command: `cmd /c "set PROJECT_MOE_GUI_DRY_RUN_VISIBLE=1&& D:\PythonProject_paper_suggest\project-moe-gui.cmd --allow-visible --json"`.
-- B source surfaces: `tools/project_moe_gui_toolchain/src/project_moe_gui/toolchain.py` and `tools/project_moe_gui_toolchain/src/project_moe_gui/daemon.py`.
-- Shared runtime helper surface: `tools/pyside6_gui_helpers/ensure-shared-pyside6-runtime.ps1`.
+- B 方案文档包本地 main commit：`662c2de`（`文档：记录 MOE GUI 双击启动修复方案`）。
+- B 运行时/helper 实现包本地 main commit：`c66209e`（`修复：补齐 MOE GUI 双击启动运行时`）。
+- A 受管安装产物刷新本地 main commit：`0c3b49d861b8fd0ae7e6bf9f81405bca48f56f2a`。
+- A 回滚 ref：`refs/backup/local-main/20260603-083632-before-project-moe-gui-double-click-refresh` -> `958f003a0a82dc2c15ecb8ca6fe4b263efbfdd02`。
+- A completed receipt：`D:\PythonProject_paper_suggest\.omx\session-claims\paper-suggest-project-moe-gui-double-click-refresh-20260603.json`。
+- A preflight 验证命令：`cmd /c "D:\PythonProject_paper_suggest\project-moe-gui.cmd --preflight --json"` 返回 exit 0，且包含 `ok: true`、`token: ok`、`launcher_runtime_reexec: true`、`qfluentwidgets_status.ok: true`、`phase1_readiness_gate.readiness_status: ready`。
+- A visible dry-run 验证命令：`cmd /c "set PROJECT_MOE_GUI_DRY_RUN_VISIBLE=1&& D:\PythonProject_paper_suggest\project-moe-gui.cmd --allow-visible --json"` 返回 exit 0，且包含 `ok: true`、`token: ok`、`message: Visible GUI launch dry-run passed.`。
+- A 回归验证命令：`python -m unittest discover -s test -p "test_thesis_moe_mode.py"` 返回 `Ran 6 tests` 与 `OK`。
+- B 源码面：`tools/project_moe_gui_toolchain/src/project_moe_gui/toolchain.py` 与 `tools/project_moe_gui_toolchain/src/project_moe_gui/daemon.py`。
+- 共享 runtime helper 面：`tools/pyside6_gui_helpers/ensure-shared-pyside6-runtime.ps1`。
+- 远端发布证据：未授权，未执行。
 
 <!-- EVIDENCE_INDEX_END -->
 
