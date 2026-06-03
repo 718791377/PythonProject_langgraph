@@ -4,9 +4,14 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 MOJIBAKE_MARKERS = ("????", "\ufffd")
 IMPLEMENTATION_PHASES = {"build", "verify", "archive"}
@@ -24,6 +29,15 @@ EVIDENCE_HEADING_RE = re.compile(r"^##\s+20\d\d-\d\d-\d\d\b.*(?:Evidence|证据)
 BACKTICK_PATH_RE = re.compile(r"`([^`]+)`")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 EVIDENCE_PATH_PREFIXES = ("docs/", "docs_bilingual/", "openspec/")
+IMPLEMENTED_STATUS_TOKENS = ("implemented", "completed", "merged-local-main")
+PENDING_EVIDENCE_TOKENS = (
+    "pending future claim",
+    "pending future claims",
+    "pending implementation",
+    "implementation evidence is pending",
+    "no completed evidence packages yet",
+    "evidence is pending",
+)
 
 
 def read_text_utf8(path: Path) -> str:
@@ -148,6 +162,14 @@ def evidence_index_section(text: str) -> str | None:
     return text[start:end]
 
 
+def current_status_section(text: str) -> str | None:
+    start = text.find("CURRENT_STATUS_START")
+    end = text.find("CURRENT_STATUS_END")
+    if start == -1 or end == -1 or end <= start:
+        return None
+    return text[start:end]
+
+
 def referenced_evidence_paths(section: str) -> list[str]:
     paths: set[str] = set()
     for value in [*BACKTICK_PATH_RE.findall(section), *MARKDOWN_LINK_RE.findall(section)]:
@@ -155,6 +177,35 @@ def referenced_evidence_paths(section: str) -> list[str]:
         if candidate.startswith(EVIDENCE_PATH_PREFIXES):
             paths.add(candidate)
     return sorted(paths)
+
+
+def evidence_index_items(section: str | None) -> list[str]:
+    if section is None:
+        return []
+    return [line.strip() for line in section.splitlines() if line.strip().startswith("- ")]
+
+
+def contains_implemented_status(text: str) -> bool:
+    section = current_status_section(text) or ""
+    lowered = section.lower()
+    return any(token in lowered for token in IMPLEMENTED_STATUS_TOKENS)
+
+
+def has_non_pending_evidence_index_item(section: str | None) -> bool:
+    for item in evidence_index_items(section):
+        lowered = item.lower()
+        if not any(token in lowered for token in PENDING_EVIDENCE_TOKENS):
+            return True
+    return False
+
+
+def zh_companion_path_for(path: str) -> str:
+    normalized = path.replace("\\", "/")
+    if normalized.endswith(".zh-CN.md"):
+        return normalized
+    if normalized.endswith(".md"):
+        return normalized[:-3] + ".zh-CN.md"
+    return normalized
 
 
 def add_or_allow_plan_finding(
@@ -312,6 +363,106 @@ def validate_on_disk_plan_registry_state(
     return disk_plan_count
 
 
+def registered_plan_front_matter(root: Path, entry: dict[str, str]) -> tuple[dict[str, str], dict[str, str]]:
+    canonical_path = entry.get("canonical_path", "")
+    zh_cn_path = entry.get("zh_cn_path", "")
+    canonical = parse_front_matter(root / canonical_path) if canonical_path and (root / canonical_path).exists() else {}
+    zh_cn = parse_front_matter(root / zh_cn_path) if zh_cn_path and (root / zh_cn_path).exists() else {}
+    return canonical, zh_cn
+
+
+def validate_child_plan_registry_integration(
+    root: Path,
+    impl_entries: list[dict[str, str]],
+    impl_by_path: dict[str, dict[str, str]],
+    errors: list[str],
+) -> tuple[dict[str, dict[str, object]], dict[str, dict[str, object]], int, int]:
+    parent_groups: dict[str, set[str]] = {}
+    source_groups: dict[str, set[str]] = {}
+    registered_child_plan_links = 0
+    implemented_child_plans = 0
+
+    for entry in impl_entries:
+        doc_id = entry.get("doc_id", "<unknown>")
+        canonical_path = entry.get("canonical_path", "").replace("\\", "/")
+        zh_cn_path = entry.get("zh_cn_path", "").replace("\\", "/")
+        if not canonical_path or not zh_cn_path:
+            continue
+
+        canonical_file = root / canonical_path
+        zh_file = root / zh_cn_path
+        if not canonical_file.exists() or not zh_file.exists():
+            continue
+
+        canonical_fm, zh_fm = registered_plan_front_matter(root, entry)
+        if not canonical_fm or not zh_fm:
+            continue
+
+        canonical_parent = canonical_fm.get("parent_plan", "").strip().replace("\\", "/")
+        canonical_source = canonical_fm.get("source_plan", "").strip().replace("\\", "/")
+        zh_parent = zh_fm.get("parent_plan", "").strip().replace("\\", "/")
+        zh_source = zh_fm.get("source_plan", "").strip().replace("\\", "/")
+
+        child_linked = False
+        if canonical_parent:
+            child_linked = True
+            registered_child_plan_links += 1
+            parent_groups.setdefault(canonical_parent, set()).add(doc_id)
+            parent_entry = impl_by_path.get(canonical_parent)
+            if parent_entry is None:
+                errors.append(
+                    f"Implementation child plan `{doc_id}` declares unregistered parent_plan `{canonical_parent}`."
+                )
+            expected_zh_parent = zh_companion_path_for(canonical_parent)
+            if zh_parent != expected_zh_parent:
+                errors.append(
+                    f"Implementation child plan `{doc_id}` parent_plan companion mismatch: expected `{expected_zh_parent}`, got `{zh_parent or '<missing>'}`."
+                )
+
+        if canonical_source:
+            child_linked = True
+            registered_child_plan_links += 1
+            source_groups.setdefault(canonical_source, set()).add(doc_id)
+            source_entry = impl_by_path.get(canonical_source)
+            if source_entry is None:
+                errors.append(
+                    f"Implementation child plan `{doc_id}` declares unregistered source_plan `{canonical_source}`."
+                )
+            expected_zh_source = zh_companion_path_for(canonical_source)
+            if zh_source != expected_zh_source:
+                errors.append(
+                    f"Implementation child plan `{doc_id}` source_plan companion mismatch: expected `{expected_zh_source}`, got `{zh_source or '<missing>'}`."
+                )
+
+        if not child_linked:
+            continue
+
+        canonical_text = read_text_utf8(canonical_file)
+        zh_text = read_text_utf8(zh_file)
+        canonical_implemented = contains_implemented_status(canonical_text)
+        zh_implemented = contains_implemented_status(zh_text)
+        if canonical_implemented or zh_implemented:
+            implemented_child_plans += 1
+            if not has_non_pending_evidence_index_item(evidence_index_section(canonical_text)):
+                errors.append(
+                    f"Implementation child plan `{doc_id}` implemented child plan lacks lightweight evidence index entries in `{canonical_path}`."
+                )
+            if not has_non_pending_evidence_index_item(evidence_index_section(zh_text)):
+                errors.append(
+                    f"Implementation child plan `{doc_id}` implemented child plan lacks lightweight evidence index entries in `{zh_cn_path}`."
+                )
+
+    parent_payload = {
+        parent_path: {"children": sorted(children), "count": len(children)}
+        for parent_path, children in sorted(parent_groups.items())
+    }
+    source_payload = {
+        source_path: {"children": sorted(children), "count": len(children)}
+        for source_path, children in sorted(source_groups.items())
+    }
+    return parent_payload, source_payload, registered_child_plan_links, implemented_child_plans
+
+
 def active_comet_plan_references(root: Path) -> list[dict[str, str]]:
     references: list[dict[str, str]] = []
     changes_root = root / "openspec" / "changes"
@@ -371,6 +522,14 @@ def main() -> int:
 
     disk_plan_files = validate_on_disk_plan_registry_state(root, impl_by_path, errors, warnings)
     infos.append(f"Implementation plan files with front matter: {disk_plan_files}")
+    (
+        parent_child_plan_groups,
+        source_child_plan_groups,
+        registered_child_plan_links,
+        implemented_child_plans,
+    ) = validate_child_plan_registry_integration(root, impl_entries, impl_by_path, errors)
+    infos.append(f"Registered implementation child-plan links: {registered_child_plan_links}")
+    infos.append(f"Implemented child plans with lightweight evidence-index gates: {implemented_child_plans}")
 
     for entry in impl_entries:
         doc_id = entry.get("doc_id", "<unknown>")
@@ -453,11 +612,15 @@ def main() -> int:
             "implementation_plan_entries": len(impl_entries),
             "implementation_plan_files": len(plan_files),
             "disk_implementation_plan_files": disk_plan_files,
+            "registered_child_plan_links": registered_child_plan_links,
+            "implemented_child_plans": implemented_child_plans,
             "active_comet_plan_references": len(active_plan_refs),
             "errors": len(errors),
             "warnings": len(warnings),
         },
         "implementation_plan_entries": len(impl_entries),
+        "parent_child_plan_groups": parent_child_plan_groups,
+        "source_child_plan_groups": source_child_plan_groups,
         "thresholds": {
             "plan_size_warning_bytes": PLAN_SIZE_WARNING_BYTES,
             "plan_size_fail_bytes": PLAN_SIZE_FAIL_BYTES,
