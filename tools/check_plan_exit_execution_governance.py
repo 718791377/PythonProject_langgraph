@@ -311,6 +311,92 @@ def evaluate_staged_confirmations(root: Path, main_ref: str, receipt: str, claim
     ]
 
 
+def evaluate_remote_ci_forward_fix_source(
+    root: Path,
+    source_kind: str,
+    source_path: Path,
+    payload: dict[str, Any] | None,
+    load_error: str | None,
+    head_ref: str,
+    head_sha: str,
+    non_doc_paths: list[str],
+) -> dict[str, Any] | None:
+    if payload is None:
+        if load_error:
+            return {
+                "source_kind": source_kind,
+                "path": source_relative(root, source_path),
+                "valid": False,
+                "errors": [load_error],
+            }
+        return None
+    if payload.get("task_type") != "remote-ci-forward-fix":
+        return None
+
+    errors: list[str] = []
+    if load_error:
+        errors.append(load_error)
+    if payload.get("requires_code_implementation") is not True:
+        errors.append("remote CI forward-fix receipt/claim must set requires_code_implementation=true.")
+    if payload.get("requires_local_main_merge") is not True:
+        errors.append("remote CI forward-fix receipt/claim must set requires_local_main_merge=true.")
+
+    branch = str(payload.get("branch") or "").strip()
+    if not branch:
+        errors.append("remote CI forward-fix receipt/claim must name the feature branch.")
+        branch_sha = ""
+    else:
+        branch_result = run_git(root, ["rev-parse", branch])
+        branch_sha = branch_result.stdout.strip() if branch_result.returncode == 0 else ""
+        if branch_result.returncode != 0:
+            errors.append(f"remote CI forward-fix branch does not resolve: {branch}")
+        elif branch != head_ref and branch_sha != head_sha:
+            errors.append(f"remote CI forward-fix branch must match checked head ref: {branch} != {head_ref}")
+
+    raw_paths = payload.get("paths")
+    if not isinstance(raw_paths, list) or not raw_paths:
+        declared_paths: list[str] = []
+        errors.append("remote CI forward-fix receipt/claim must list changed paths.")
+    else:
+        declared_paths = sorted({normalize_path(str(path)) for path in raw_paths if str(path).strip()})
+    missing_paths = sorted(set(non_doc_paths) - set(declared_paths))
+    if missing_paths:
+        errors.append(
+            "remote CI forward-fix paths must cover every non-document changed path: "
+            + ", ".join(missing_paths)
+        )
+
+    return {
+        "source_kind": source_kind,
+        "path": source_relative(root, source_path),
+        "valid": not errors,
+        "errors": errors,
+        "task_type": payload.get("task_type"),
+        "branch": branch,
+        "branch_sha": branch_sha,
+        "head_ref": head_ref,
+        "head_sha": head_sha,
+        "paths": declared_paths,
+    }
+
+
+def evaluate_remote_ci_forward_fix_records(
+    root: Path,
+    head_ref: str,
+    non_doc_paths: list[str],
+    receipt: str,
+    claims_subdir: str,
+) -> list[dict[str, Any]]:
+    head_result = run_git(root, ["rev-parse", head_ref])
+    head_sha = head_result.stdout.strip() if head_result.returncode == 0 else ""
+    records: list[dict[str, Any]] = []
+    for kind, path, payload, error in iter_confirmation_sources(root, receipt, claims_subdir):
+        record = evaluate_remote_ci_forward_fix_source(root, kind, path, payload, error, head_ref, head_sha, non_doc_paths)
+        if record is not None:
+            records.append(record)
+    return records
+
+
 def evaluate(
     root: Path,
     base_ref: str,
@@ -351,6 +437,8 @@ def evaluate(
     staged_confirmations = evaluate_staged_confirmations(root, base_ref, receipt, claims_subdir)
     valid_staged_confirmations = [record for record in staged_confirmations if record.get("valid")]
     requires_governance_package = bool(non_doc_paths)
+    remote_ci_forward_fix_records = evaluate_remote_ci_forward_fix_records(root, head_ref, non_doc_paths, receipt, claims_subdir)
+    valid_remote_ci_forward_fix_records = [record for record in remote_ci_forward_fix_records if record.get("valid")]
     legacy_same_range_governance = False
 
     if requires_governance_package:
@@ -374,6 +462,8 @@ def evaluate(
             info.append("Non-document execution authorized by confirmed Stage A receipt/claim.")
             if legacy_same_range_governance:
                 info.append("Same-range docs_bilingual-first governance was detected, but formal plan-file confirmation is the active authorization gate.")
+        elif valid_remote_ci_forward_fix_records:
+            info.append("Non-document execution authorized by remote CI forward-fix receipt/claim.")
         else:
             if legacy_governance_errors:
                 errors.extend(legacy_governance_errors)
@@ -402,12 +492,15 @@ def evaluate(
             "docs_or_openspec_paths": len(docs_or_openspec_paths),
             "staged_confirmation_records": len(staged_confirmations),
             "valid_staged_confirmations": len(valid_staged_confirmations),
+            "remote_ci_forward_fix_records": len(remote_ci_forward_fix_records),
+            "valid_remote_ci_forward_fix_records": len(valid_remote_ci_forward_fix_records),
             "errors": len(errors),
             "warnings": len(warnings),
         },
         "requires_governance_package": requires_governance_package,
         "legacy_same_range_governance": legacy_same_range_governance,
         "staged_confirmations": staged_confirmations,
+        "remote_ci_forward_fix_records": remote_ci_forward_fix_records,
         "non_doc_paths": non_doc_paths,
         "docs_bilingual_paths": docs_bilingual_paths,
         "docs_or_openspec_paths": docs_or_openspec_paths,
