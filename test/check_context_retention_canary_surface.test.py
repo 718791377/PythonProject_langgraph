@@ -40,7 +40,14 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         path.write_text(content, encoding="utf-8")
 
     def write_startup_pair(self, root: Path, include_canary: bool = True) -> None:
-        canary_sentence = (
+        english_canary_sentence = (
+            "Start marker codepoints `U+6307 U+6325 U+5B98`; "
+            "end marker codepoint `U+55B5` followed by ASCII tilde `U+007E`.\n"
+            "Recovery action: reread AGENTS.md before continuing.\n"
+            if include_canary
+            else "Recovery action: reread AGENTS.md before continuing.\n"
+        )
+        chinese_canary_sentence = (
             f"Start `{START_CANARY}` and end `{END_CANARY}`.\n"
             "Recovery action: reread AGENTS.md before continuing.\n"
             if include_canary
@@ -49,12 +56,12 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         self.write_file(
             root,
             "docs_bilingual/project_startup_summary.md",
-            "# Startup\n\nContext-retention canary:\n\n" + canary_sentence,
+            "# Startup\n\nContext-retention canary:\n\n" + english_canary_sentence,
         )
         self.write_file(
             root,
             "docs_bilingual/project_startup_summary.zh-CN.md",
-            "# Startup ZH\n\nContext-retention canary:\n\n" + canary_sentence,
+            "# Startup ZH\n\nContext-retention canary:\n\n" + chinese_canary_sentence,
         )
 
     def run_check(self, root: Path) -> subprocess.CompletedProcess[str]:

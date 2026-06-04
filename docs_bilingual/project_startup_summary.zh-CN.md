@@ -116,7 +116,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 上下文保留哨兵：
 
-- 哨兵的字面提示词只维护在这对 startup summary 文件中：`docs_bilingual/project_startup_summary.md` 与 `docs_bilingual/project_startup_summary.zh-CN.md`。其他 active instruction surface 可以指向这里，但不得重复字面开头/结尾短语。
+- 哨兵权威只维护在这对 startup summary 文件中：`docs_bilingual/project_startup_summary.md` 与 `docs_bilingual/project_startup_summary.zh-CN.md`。英文文件只保存 ASCII 码点间接描述；中文伴随文件保存字面可见开头/结尾短语。其他 active instruction surface 可以指向这里，但不得重复字面开头/结尾短语。
 - 本仓库的可见哨兵标记使用 startup-summary-defined canonical visible canary markers 稳定标记：开头 `指挥官` 与结尾 `喵~`； previous ASCII transport-stable tokens are legacy/stale compatibility input only, may be used for migration detection and replay filtering, and are not canonical response evidence.
 - 哨兵字面提示词是可见自检信号，用来判断 `/resume`、compaction 或长上下文后的模型是否仍理解冷启动权威；它属于用户可见 assistant 回复，不属于 wrapper payload、generated helper 或其他 authority surface。 Model-readable replay, compaction, launcher, tool-output, and worker-handoff contexts must block or filter canary copies before prompt-authority handoff.
 - 如果本 startup summary 本应已读取，但完整 assistant 回复缺少该哨兵，则视为可能发生上下文丢失或读取路径失败。

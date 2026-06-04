@@ -64,7 +64,7 @@ class DocumentPairPolicyCheckTest(unittest.TestCase):
         self.assertTrue(any("missing bilingual companion" in error for error in payload["errors"]))
         self.assertTrue(any("contains non-ASCII" in error for error in payload["errors"]))
 
-    def test_allows_startup_summary_primary_canary_literal_exception(self) -> None:
+    def test_fails_when_startup_summary_primary_contains_literal_canary(self) -> None:
         root = self.make_root("doc-pair-startup-canary")
         start_marker = from_codepoints(25351, 25381, 23448)
         end_marker = from_codepoints(21941) + "~"
@@ -81,9 +81,10 @@ class DocumentPairPolicyCheckTest(unittest.TestCase):
 
         result = self.run_check_json(root)
 
-        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        self.assertNotEqual(result.returncode, 0)
         payload = json.loads(result.stdout)
-        self.assertTrue(payload["ok"])
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("contains non-ASCII" in error for error in payload["errors"]))
 
     def test_fails_when_modified_file_omits_companion_update(self) -> None:
         root = self.make_root("doc-pair-companion")

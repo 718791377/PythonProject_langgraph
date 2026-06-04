@@ -59,9 +59,14 @@ class StartupInstructionMojibakeCheckTest(unittest.TestCase):
 
     def write_clean_surfaces(self, root: Path) -> None:
         for relative_path in AUTHORITY_SURFACES:
-            if relative_path.endswith("project_startup_summary.md") or relative_path.endswith(
-                "project_startup_summary.zh-CN.md"
-            ):
+            if relative_path.endswith("project_startup_summary.md"):
+                content = (
+                    "# Startup\n\n"
+                    "Context-retention canary: start marker codepoints `U+6307 U+6325 U+5B98`; "
+                    "end marker codepoint `U+55B5` followed by ASCII tilde `U+007E`.\n"
+                    "Recovery action: reread AGENTS.md before continuing.\n"
+                )
+            elif relative_path.endswith("project_startup_summary.zh-CN.md"):
                 content = (
                     "# Startup\n\n"
                     f"Context-retention canary: start `{START_CANARY}` and end `{END_CANARY}`.\n"

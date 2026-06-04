@@ -23,9 +23,15 @@ LEGACY_START_CANARY = "CODEX_CTX_" + "CANARY_START"
 LEGACY_END_CANARY = "CODEX_CTX_" + "CANARY_END"
 LEGACY_ENCODINGS_FOR_MOJIBAKE = ("gbk", "gb18030", "cp936", "latin-1")
 
+ENGLISH_STARTUP_SUMMARY_PATH = Path("docs_bilingual/project_startup_summary.md")
+CHINESE_STARTUP_SUMMARY_PATH = Path("docs_bilingual/project_startup_summary.zh-CN.md")
+START_CANARY_CODEPOINT_DESCRIPTION = "U+6307 U+6325 U+5B98"
+END_CANARY_CODEPOINT_DESCRIPTION = "U+55B5"
+END_CANARY_TILDE_DESCRIPTION = "U+007E"
+
 ALLOWED_CANARY_PROMPT_PATHS = {
-    Path("docs_bilingual/project_startup_summary.md"),
-    Path("docs_bilingual/project_startup_summary.zh-CN.md"),
+    ENGLISH_STARTUP_SUMMARY_PATH,
+    CHINESE_STARTUP_SUMMARY_PATH,
 }
 
 SKIP_DIR_NAMES = {
@@ -205,6 +211,22 @@ def find_line_numbers(text: str, needle: str) -> list[int]:
         for line_number, line in enumerate(text.splitlines(), start=1)
         if needle in line
     ]
+
+
+def find_non_ascii_line_numbers(text: str) -> list[int]:
+    return [
+        line_number
+        for line_number, line in enumerate(text.splitlines(), start=1)
+        if any(ord(character) > 127 for character in line)
+    ]
+
+
+def english_canary_codepoint_description_complete(text: str) -> bool:
+    return (
+        START_CANARY_CODEPOINT_DESCRIPTION in text
+        and END_CANARY_CODEPOINT_DESCRIPTION in text
+        and END_CANARY_TILDE_DESCRIPTION in text
+    )
 
 
 def find_mojibake_canary_lines(text: str) -> list[dict]:
@@ -482,16 +504,55 @@ def run_check(
         if text is None:
             errors.append(f"Missing or unreadable startup summary canary source: {relative_path.as_posix()}")
             continue
-        missing_parts = []
-        if START_CANARY not in text:
-            missing_parts.append("start marker")
-        if END_CANARY not in text:
-            missing_parts.append("end marker")
-        if missing_parts:
-            errors.append(
-                f"{relative_path.as_posix()} is missing the startup-summary canary "
-                f"{', '.join(missing_parts)}."
-            )
+
+        if relative_path == ENGLISH_STARTUP_SUMMARY_PATH:
+            non_ascii_lines = find_non_ascii_line_numbers(text)
+            if non_ascii_lines:
+                errors.append(
+                    f"{relative_path.as_posix()} must remain ASCII-only and describe the "
+                    "startup-summary canary through codepoint indirection."
+                )
+                findings.append(
+                    {
+                        "path": relative_path.as_posix(),
+                        "non_ascii_lines": non_ascii_lines,
+                    }
+                )
+            literal_start_lines = find_line_numbers(text, START_CANARY)
+            literal_end_lines = find_line_numbers(text, END_CANARY)
+            if literal_start_lines or literal_end_lines:
+                errors.append(
+                    f"{relative_path.as_posix()} must not contain literal visible canary marker text; "
+                    "the literal marker source is the Chinese startup summary."
+                )
+                findings.append(
+                    {
+                        "path": relative_path.as_posix(),
+                        "start_marker_lines": literal_start_lines,
+                        "end_marker_lines": literal_end_lines,
+                    }
+                )
+            if LEGACY_START_CANARY in text or LEGACY_END_CANARY in text:
+                errors.append(
+                    f"{relative_path.as_posix()} must not preserve legacy ASCII canary marker tokens; "
+                    "describe historical markers indirectly instead."
+                )
+            if not english_canary_codepoint_description_complete(text):
+                errors.append(
+                    f"{relative_path.as_posix()} must describe the startup-summary canary markers with "
+                    "ASCII Unicode codepoints."
+                )
+        else:
+            missing_parts = []
+            if START_CANARY not in text:
+                missing_parts.append("start marker")
+            if END_CANARY not in text:
+                missing_parts.append("end marker")
+            if missing_parts:
+                errors.append(
+                    f"{relative_path.as_posix()} is missing the startup-summary canary "
+                    f"{', '.join(missing_parts)}."
+                )
         mojibake_lines = find_mojibake_canary_lines(text)
         if mojibake_lines:
             errors.append(
