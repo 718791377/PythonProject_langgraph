@@ -513,4 +513,18 @@ Stage B 后续确认后的验收条件：
 - 2026-06-01 browser/CLI adapter boundary implementation: 分支 `implement-user-level-browser-cli-adapter-boundary-20260601` 关闭提取后的 Phase 6 adapter boundary lane；本包脚本化 implemented-local 子方案状态，确认 chrome-devtools-mcp/CDP Bridge/OpenCLI/CLI-Anything/`wecom-cli` 的 on-demand 或 reference-only 门禁，并保持 live browser/GUI/install/cookie/runtime mutation 不在本地包范围内。
 - 2026-06-02 prompt-canary 状态对账：同步父方案中文索引与四个 Phase 2 子方案状态；本地 `main` ancestry 确认 `cbc73c7`、`b779d51`、`6f1ef48`、`43d3ae9` 均已包含；远端发布未授权。
 - 2026-06-02 prompt-canary canonical restore plan package: branch `plan-restore-nonascii-canary-20260602` records a confirmed Phase 2 follow-up child plan, keeps marker literals out of non-startup plans, and requires model-readable session context to block restored canonical marker copies before implementation.
+
+
+## Stage A：CLI-Anything / Browser Adapter / Codex Harnesses 拆分
+
+2026-06-04，本父方案将原 `user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md` 与 `user_level_mcp_skills_discovery_facade_plan.zh-CN.md` 的混合内容拆成三个子方案。Stage A 只做 docs-only 方案重建与参考源登记，不安装工具、不启动 GUI/browser runtime，也不删除旧方案；旧 checker 仍在 Stage B 迁移 checker/tests/OpenSpec wiring 前读取旧方案。
+
+| 治理 lane | 子 implementation_plan | 项目级治理 | 参考源 | 并行规则 |
+| --- | --- | --- | --- | --- |
+| CLI-Anything / WXWork_CLI | `user_level_cli_anything_wxwork_cli_governance_plan` | 先跑通 receipt-backed GUI control guard，再考虑用户级提升 | `https://github.com/HKUDS/CLI-Anything`；WXWork_CLI 通过 CLI-Anything 控制 `WXWork.exe` | 同一时间只能有一个 session 认领该 implementation_plan。 |
+| Browser / CLI adapters | `user_level_browser_cli_adapter_boundary_plan` | 先跑通 adapter guard 与 owner/port lease，再提升 wrapper | `https://github.com/ChromeDevTools/chrome-devtools-mcp`；`https://github.com/Unagi-cq/cdp-bridge-mcp`；`https://github.com/jackwener/OpenCLI` | 范围仅限 chrome-devtools-mcp、cdp-bridge-mcp/CDP Bridge、OpenCLI；不包含 CLI-Anything/WXWork_CLI 或 harnesses。 |
+| Codex harnesses | `codex_harnesses_governance_plan` | 先 fork Codex harness model，Pi/oh-my-pi 只作为参考与 sidecar runtime candidate | `https://blog.can.ac/2026/02/12/the-harness-problem`；`https://github.com/can1357/oh-my-pi`；`https://pi.dev/`；`https://pi.dev/packages` | 只有该 lane 使用 harnesses 名称，不替代 Codex、native_omx、LangGraph 或 `codex-ohmy`。 |
+
+Stage B 迁移 checker/test/spec 后，删除 `user_level_mcp_skills_discovery_facade_plan.*` 与 `user_level_mcp_skills_browser_cli_governance_plan.*`。
+
 <!-- EVIDENCE_INDEX_END -->

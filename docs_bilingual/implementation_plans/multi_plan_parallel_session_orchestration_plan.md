@@ -41,9 +41,11 @@ This parent plan coordinates the following existing plans inside this plan famil
 4. comet_runtime_agile_focus_area_plan - adds Comet management records, phase checklist gates, and Monitoring return transitions.
 5. implementation_plan_confirmation_gate - requires a committed active implementation-plan file before non-document implementation can start; here "confirmation gate" means a blocking checkpoint that stops execution until the user confirms the committed plan file.
 6. codex_governance_session_visibility_and_plan_lock_plan - adds Chinese routing trace visibility, main-session escalation visibility, Superpowers evidence, Spec Kit boundaries, and plan locks.
-7. pi_plugin_codex_user_level_sidecar_plan - provides the Pi family, Codex-to-Pi sidecar, and oh-my-pi reference-only boundary.
-8. user_level_mcp_skills_browser_cli_governance_plan - provides the low-token, receipt-first governance boundary for MCP, skills, browser, OpenCLI, and CLI harness lanes.
-9. prompt_canary_canonical_visible_marker_restore_plan - restores the startup-summary-defined canonical visible canary to the requested non-ASCII marker pair and blocks marker copies from model-readable session context.
+7. codex_harnesses_governance_plan - owns the Codex harnesses fork/governance lane derived from The Harness Problem, oh-my-pi, Pi, and Pi packages references.
+8. user_level_cli_anything_wxwork_cli_governance_plan - owns CLI-Anything plus WXWork_CLI control of enterprise WeChat WXWork.exe through CLI-Anything; this is not harnesses.
+9. user_level_browser_cli_adapter_boundary_plan - owns only Browser/CLI adapters: chrome-devtools-mcp, cdp-bridge-mcp / CDP Bridge, and OpenCLI.
+10. user_level_mcp_skills_browser_cli_governance_plan and user_level_mcp_skills_discovery_facade_plan - temporary migration sources that Stage B will delete after checker/test migration.
+11. prompt_canary_canonical_visible_marker_restore_plan - restores the startup-summary-defined canonical visible canary to the requested non-ASCII marker pair and blocks marker copies from model-readable session context.
 
 ## Non-Goals
 
@@ -63,7 +65,7 @@ Stage: Phase 2 prompt-canary canonical visible marker restoration is implemented
 Owner session: main Codex leader owns implementation package id `implement-restore-nonascii-canary-20260602`; this is a serialized canary-hotspot implementation worktree, not a durable-team worker or remote publication branch.
 Current gate: commit the implementation package, merge through the local-main-first helper, then stop at the remote-publication approval gate; remote publication remains unauthorized unless the user explicitly requests it.
 Phase 2 note: all four earlier context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; this follow-up closes the reopened marker canonicalization and session-context blocking contract.
-MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` remains a source and baseline index, not a direct child of this parent.
+MCP/adapter/harness rebuild note: `user_level_mcp_skills_browser_cli_governance_plan` and `user_level_mcp_skills_discovery_facade_plan` are now temporary migration sources only. Stage A keeps them so existing baseline checkers keep passing; Stage B migrates checkers/tests/specs to the three new child plans and then deletes the old source plans.
 Parallel model: canary hotspots stayed serialized; other extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
 Remote state: this implementation package does not authorize remote publication.
 <!-- CURRENT_STATUS_END -->
@@ -237,18 +239,15 @@ This follow-up is a serialized hotspot package. It touches startup summaries, `A
 
 ## MCP / Skills / Browser / CLI Extraction Model
 
-`user_level_mcp_skills_browser_cli_governance_plan.md` is treated as a source-to-decompose, not as one direct child implementation plan. Its lanes are reorganized into phase-specific child plans so execution can be multi-phase and multi-session when the write sets are safe.
+The older `user_level_mcp_skills_browser_cli_governance_plan.md` and `user_level_mcp_skills_discovery_facade_plan.md` are migration sources, not execution owners. The rebuild splits the user-level control surface into three claimable child implementation plans. Each implementation_plan can have only one active session claim at a time; different child plans may run in parallel only when their write sets are disjoint or shared hotspots are explicitly leased.
 
-| Source slice | Extracted child plan | Parent phase | Parallel rule | Hotspot |
-| --- | --- | --- | --- | --- |
-| Slice 7 plus sensitive gates | `user_level_capability_receipt_rollback_redaction_plan` | Phase 1 | Can run with port/discovery work until shared receipt helpers are edited. | receipt helpers, redaction schema, rollback evidence |
-| Slices 3-4 plus OpenCLI lease needs | `user_level_port_browser_owner_isolation_plan` | Phase 3 | Can run with receipt/discovery work when port and browser-owner files are disjoint. | port registry, browser owner registry, cleanup rules |
-| Slices 1-2 | `user_level_mcp_skills_discovery_facade_plan` | Phase 4 | Low-risk discovery can run in parallel; sensitive calls wait for receipt evidence. | skills facade, MCP facade, risk profile fixtures |
-| Slices 5-6 | `user_level_browser_cli_adapter_boundary_plan` | Phase 6 | Adapter lanes can run in parallel only with disjoint write sets and no live sensitive action. | adapter guards, browser/GUI authorization, WeCom guard |
-| Slice 8 | existing Phase 7 integration plans | Phase 7 | Evidence collection can run in parallel; registry, OpenSpec, and local-main retire stay serial. | docs registry, stable specs, CI manifest, local-main lock |
+| Rebuilt lane | Child implementation plan | Governance classification | Reference sources | Parallel rule | Stage B deletion/migration duty |
+| --- | --- | --- | --- | --- | --- |
+| CLI-Anything / WXWork_CLI | `user_level_cli_anything_wxwork_cli_governance_plan` | project-level first, reusable project-level next, user-level only after receipt/smoke/rollback evidence | `https://github.com/HKUDS/CLI-Anything`; local WXWork_CLI through CLI-Anything controlling `WXWork.exe` | Can run in parallel with adapter/harness work only if checker/test/spec files are disjoint. | Migrate CLI-Anything and WXWork_CLI checker/tests; rename active WeCom surfaces; delete old mixed source references. |
+| Browser / CLI adapters | `user_level_browser_cli_adapter_boundary_plan` | project-level adapter guards first, reusable project-level contracts next, user-level wrappers after install/update receipts | `https://github.com/ChromeDevTools/chrome-devtools-mcp`; `https://github.com/Unagi-cq/cdp-bridge-mcp`; `https://github.com/jackwener/OpenCLI` | Adapter-specific work can run in parallel when chrome-devtools, CDP Bridge, and OpenCLI write scopes are separated. | Remove CLI-Anything/WXWork/harness rows from adapter checker after Stage B migration. |
+| Codex harnesses | `codex_harnesses_governance_plan` | project-level harness model first, reusable project-level guard next, user-level Pi/oh-my-pi runtime only after receipt-backed promotion | `https://blog.can.ac/2026/02/12/the-harness-problem`; `https://github.com/can1357/oh-my-pi`; `https://pi.dev/`; `https://pi.dev/packages` | Can run in parallel with sibling plans only while avoiding docs registry, CI manifest, OpenSpec spec, and shared checker hotspots. | Add Codex harness checker/fixtures; migrate Pi/oh-my-pi reference-sidecar content; keep Codex as primary controller. |
 
-The source plan keeps baseline markers and implementation-state history for `check_user_level_mcp_skills_browser_cli_baseline.py`. Future runtime implementation must claim the extracted child plan that owns the relevant lane.
-
+Stage A is a docs-only governance confirmation package. It creates the new plan topology and records source links, but it does not delete old plans because current local gates still include checkers hardcoded to the historical source plan paths. Stage B owns checker/test/OpenSpec migration and the final deletion of the old source plan files.
 ## Phase and Child-Plan Breakdown
 
 ### Phase 0: Inventory and Parent Orchestration
@@ -365,32 +364,15 @@ Admission: all eligible validation sessions may prepare evidence in parallel, bu
 ## Compact Child-Plan Status Index
 
 <!-- CHILD_PLAN_STATUS_INDEX_START -->
-| Phase | Child plan | Status | Current evidence |
+| Phase | Child plan | Status | Notes |
 | --- | --- | --- | --- |
-| Phase 0 | `plan_inventory_registry_alignment_plan` | implemented and integrated | `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`; no missing registered paths or bilingual companion paths; Phase 0 publication baseline is recorded at `014b0bf`. |
-| Phase 0 | `parent_parallel_orchestration_index_plan` | implemented and continuing as index owner | Parent indexing is closed; this update uses the child plan to claim parent-family governance semantics and align later session integration to the repository-root complete local commit flow. |
-| Phase 1A | `complete_local_commit_flow_scheduler_reorder_buffer_plan` | implemented and integrated | ROB runtime/checker package was integrated into local `main`; self-retire restoration is recorded at `898f9d0`; complete-flow governance alignment is recorded at `7e47af8`. |
-| Phase 1 | `formal_plan_confirmation_gate_runtime_plan` | implemented and integrated | Phase 1 closure evidence remains in local git history and existing evidence index. |
-| Phase 1 | `portable_implementation_plan_claim_lock_plan` | implemented and integrated | Portable claim lock is available as the baseline for single-plan single-session ownership. |
-| Phase 1 | `implementation_plan_registry_active_state_plan` | implemented and integrated | Registry active-state and bilingual-pair guard behavior is covered by implementation-plan rules. |
-| Phase 1 | `main_session_escalation_visibility_plan` | implemented and integrated | Main-session escalation visibility is part of the Phase 1 closure package. |
-| Phase 2 | `session_replay_context_filtering_plan` | implemented and locally integrated | Legacy session replay context filtering entered local `main` at `cbc73c7`. |
-| Phase 2 | `context_retention_canary_literal_boundary_plan` | implemented and locally integrated | Context-retention canary literal-boundary checking entered local `main` at `b779d51`. |
-| Phase 2 | `launcher_payload_context_boundary_plan` | implemented and locally integrated | Launcher payload file-backed boundary hardening entered local `main` at `6f1ef48`. |
-| Phase 2 | `startup_mojibake_utf8_recovery_plan` | implemented and locally integrated | Startup mojibake recovery source-report repair entered local `main` at `43d3ae9`. |
-| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implementation-complete local candidate | Restored startup-summary-defined canonical visible canary semantics, legacy ASCII classification, and replay/model-context blocking; final repository gates precede local `main` integration. |
-| Phase 1A | `complete_local_commit_flow_scheduler_reorder_buffer_plan` | ROB retire preflight hard gate implemented and locally integrated | Governance package `a259d91` and runtime hard gate `7087b31` verify self-retire ROB metadata before lock acquisition, rollback ref creation, or merge. |
-| Phase 5 | `comet_management_record_bootstrap_plan` | implemented and locally integrated | Local `main` includes closeout commit `8b8bfd6`; management records, checklist gates, monitoring return state, safe paths, and archive evidence are covered by focused Comet runtime tests. |
-| Phase 5 | `comet_runtime_policy_checker_alignment_plan` | implemented and locally integrated | Local `main` includes closeout commit `3335b67`; stable specs, policy checker, runtime tests, and CI registration are aligned. |
-| Phase 5 | `comet_monitoring_return_transition_plan` | implemented and locally integrated | Local `main` includes closeout commit `05d22bd`; return transitions and monitoring blocked/needs-decision gates are verified. |
-| Phase 5 | `comet_superpowers_visibility_plan` | implemented and locally integrated | Local `main` includes closeout commit `407e5eb`; Comet/OpenSpec WHAT and Superpowers HOW evidence boundaries are explicit. |
-| Phase 5 | `comet_phase_checklist_gate_plan` | implemented and locally integrated | Local `main` includes closeout commit `4b6033a`; phase checklist gate regression coverage is recorded. |
-| Phase 6 | `spec_kit_subordinate_adapter_governance_plan` | admissible and unclaimed | May enter Stage C after explicit child-plan confirmation; Phase 5 closeout and fixed ROB preflight gate remove the current sequential blocker. |
-| Phase 6 | `spec_kit_authority_guard_plan` | admissible and unclaimed | May enter Stage C after explicit child-plan confirmation; write scopes and hotspots remain serialized by claim/lease rules. |
-| Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Receipt helper hotspot is closed: authorization/update schemas, hash-first rollback output, explicit local-only authorized raw path evidence, redaction fail-closed tests, and Phase 6 handoff gates are in the local integration package. |
-| Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local; ready for repository local-main-first integration | Existing range, `pending_bind`, revision, cleanup, and sanitized-receipt controls are confirmed; CDP Bridge and OpenCLI consumers now reject ambiguous owner leases with `owner_lease_ambiguous`. |
-| Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | implemented-local | Compact `skills2cli` and `mcp2cli` discovery facades are implemented with summarized/redacted skill discovery, MCP risk-profile output, receipt-gated sensitive calls, direct-MCP bridge policy evidence, and focused RED/GREEN tests. |
-| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | implemented-local; ready for repository local-main-first integration | Adapter boundary child lane is now checker-backed: chrome-devtools-mcp, CDP Bridge, OpenCLI, CLI-Anything, and `wecom-cli` remain on-demand/reference-only with receipt, owner, lease, dry-run, and no-live-runtime gates. |
+| Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Shared receipt/redaction/rollback contract remains the common promotion gate for user-level surfaces. |
+| Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local | Port and browser-owner primitives remain shared prerequisites for Browser/CLI adapters and OpenCLI. |
+| Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | migration-source; Stage B delete target | Existing mcp2cli/skills2cli implementation remains valid, but this plan file is no longer a child execution owner after the rebuild. |
+| Phase 6 | `user_level_cli_anything_wxwork_cli_governance_plan` | planned Stage A split target | Owns CLI-Anything and WXWork_CLI through CLI-Anything controlling `WXWork.exe`; not harnesses. |
+| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | implemented-local; Stage A reclassified | Owns only chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; temporary compatibility rows are removed in Stage B. |
+| Phase 6 | `codex_harnesses_governance_plan` | planned Stage A split target | Owns Codex harnesses fork/governance from The Harness Problem, oh-my-pi, Pi, and Pi packages references. |
+| Phase 7 | integration child plans | active | Registry, checker/CI, OpenSpec, and local-main integration hotspots remain serial. |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
 ## Dependency and Phase 2 Admission Notes
@@ -453,6 +435,8 @@ Each child plan must include:
 - [x] Stage B decomposition: extract MCP/skills/browser/CLI source lanes into phase-specific child implementation plans instead of attaching the old source plan directly.
 - [x] Stage B decomposition: update Phase 7 integration child plans to include docs registry, checker/CI, and OpenSpec/Comet archive responsibilities for the extracted MCP lanes.
 - [x] Stage B follow-up: create and register the Phase 2 prompt-canary canonical visible marker restore child plan before implementation.
+- [x] Stage A rebuild: create the CLI-Anything/WXWork_CLI child plan, Browser/CLI adapter reclassification, and Codex harnesses child plan.
+- [ ] Stage B rebuild: migrate checker/tests/OpenSpec wiring and delete `user_level_mcp_skills_discovery_facade_plan.*` plus `user_level_mcp_skills_browser_cli_governance_plan.*` after gates no longer depend on them.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -512,4 +496,5 @@ Stage B acceptance after later confirmation:
 - 2026-06-01 browser/CLI adapter boundary implementation: branch `implement-user-level-browser-cli-adapter-boundary-20260601` closes the extracted Phase 6 adapter boundary lane by checker-backing the implemented-local child-plan status, confirming chrome-devtools-mcp/CDP Bridge/OpenCLI/CLI-Anything/`wecom-cli` on-demand or reference-only gates, and keeping live browser/GUI/install/cookie/runtime mutation outside this local package.
 - 2026-06-02 prompt-canary status reconciliation: synchronized the parent status with the four Phase 2 child plans; local `main` ancestry confirms `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; remote publication remains unauthorized.
 - 2026-06-02 prompt-canary canonical restore plan package: branch `plan-restore-nonascii-canary-20260602` records a confirmed Phase 2 follow-up child plan, keeps marker literals out of non-startup plans, and requires model-readable session context to block restored canonical marker copies before implementation.
+- 2026-06-04 Stage A harness/adapters rebuild package: branch `rebuild-harness-governance-plan-20260604` records the three-way split requested by the operator: CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses. Old source plans stay only as checker-compatible migration inputs until Stage B deletes them with checker/test migration.
 <!-- EVIDENCE_INDEX_END -->
