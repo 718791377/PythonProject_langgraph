@@ -23,7 +23,12 @@ UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_mo
 UNINSTALL_PLANNER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "plan_project_moe_gui_uninstall.py"
 PHASE1_READINESS = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_phase1_readiness.py"
 PHASE1_SCAFFOLD = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "scaffold_project_moe_phase1.py"
-GUI_PREFLIGHT_ALLOWED_TOKENS = {"ok", "blocked:pyside6_unavailable", "blocked:qfluentwidgets_unavailable"}
+GUI_PREFLIGHT_ALLOWED_TOKENS = {
+    "ok",
+    "blocked:pyside6_unavailable",
+    "blocked:qfluentwidgets_unavailable",
+    "blocked:qt_quick_qml_unavailable",
+}
 
 
 STATEFUL_MODE_CLI_TEMPLATE = r'''
@@ -2587,6 +2592,12 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertIn("runtime_python", installed_config)
             expected_source_root = stable_toolchain_source_root()
             self.assertEqual(installed_config["toolchain_source_root"], str(expected_source_root))
+            self.assertEqual(installed_config["qml_shell"]["relative_path"], "tools/project_moe_gui/qml/ProjectMoeGui.qml")
+            self.assertTrue(installed_config["qml_shell"]["primary"])
+            self.assertTrue((project / "tools" / "project_moe_gui" / "qml" / "ProjectMoeGui.qml").exists())
+            installed_manifest = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json").read_text(encoding="utf-8-sig"))
+            managed_paths = {item["path"] for item in installed_manifest["managed_files"]}
+            self.assertIn("tools/project_moe_gui/qml/ProjectMoeGui.qml", managed_paths)
 
             launcher_text = (project / "tools" / "project_moe_gui" / "launcher.py").read_text(encoding="utf-8")
             command_text = (project / "project-moe-gui.cmd").read_text(encoding="utf-8")
@@ -2608,6 +2619,12 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertIn("launcher_runtime_reexec", preflight)
             self.assertEqual(preflight["view_model"]["top_banner"]["project_root"], str(project.resolve()))
             self.assertEqual(preflight["view_model"]["top_banner"]["current_branch"], "main")
+            self.assertEqual(preflight["view_model"]["visual"]["library"], "Qt Quick/QML")
+            self.assertEqual(preflight["view_model"]["visual"]["qml_source_status"]["source"], "target_project")
+            self.assertEqual(
+                Path(preflight["view_model"]["visual"]["qml_source_status"]["path"]),
+                (project / "tools" / "project_moe_gui" / "qml" / "ProjectMoeGui.qml").resolve(),
+            )
             self.assertNotEqual(preflight["view_model"]["session_table"]["rows"][0]["display_id"], "session-fixture-a")
             self.assertTrue(preflight["view_model"]["session_table"]["rows"][0]["display_id"].startswith("sessio"))
             self.assertEqual(preflight["view_model"]["session_table"]["rows"][0]["source"], "project-propagated")
@@ -2839,7 +2856,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertEqual(stdout.getvalue(), "")
         self.assertEqual(stderr.getvalue(), "")
 
-    def test_gui_view_model_declares_fluent_cards_sidebar_and_license_gate(self) -> None:
+    def test_gui_view_model_declares_qml_cards_sidebar_and_legacy_qfluent_gate(self) -> None:
         from project_moe_gui.gui_shell import build_view_model
         from project_moe_gui.qfluent_runtime import check_qfluent_runtime
 
@@ -2875,11 +2892,14 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("status_overview_cards", region_ids)
         self.assertIn("diagnostics_card", region_ids)
         self.assertIn("session_table", region_ids)
-        self.assertEqual(view_model["visual"]["library"], "QFluentWidgets")
-        self.assertEqual(view_model["visual"]["qfluentwidgets_status"]["token"], "ok")
-        self.assertTrue(view_model["visual"]["license_manifest"]["commercial_use_requires_review"])
+        self.assertEqual(view_model["visual"]["library"], "Qt Quick/QML")
+        self.assertEqual(view_model["visual"]["style"], "Material")
+        self.assertEqual(view_model["visual"]["qml_source_status"]["token"], "ok")
+        self.assertFalse(view_model["visual"]["external_template_copied"])
+        self.assertEqual(view_model["visual"]["legacy_qfluent"]["qfluentwidgets_status"]["token"], "ok")
+        self.assertTrue(view_model["visual"]["legacy_qfluent"]["license_manifest"]["commercial_use_requires_review"])
         self.assertIn("Project", [item["label"] for item in view_model["navigation_sidebar"]["items"]])
-        self.assertGreaterEqual(len(view_model["status_cards"]), 3)
+        self.assertGreaterEqual(len(view_model["status_cards"]), 4)
         self.assertEqual(view_model["close_behavior"]["default_close_action"], "ask")
 
     def test_close_behavior_requires_dialog_and_explicit_tray_hide(self) -> None:
@@ -2921,23 +2941,30 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertFalse(foreground["uses_daemon"])
         self.assertEqual(foreground["reason"], "preflight_json_runs_in_foreground")
 
-    def test_visible_launch_uses_qfluent_theme_enum_and_smoke_timer(self) -> None:
+    def test_visible_launch_uses_qml_engine_material_style_and_smoke_timer(self) -> None:
         import inspect
         from project_moe_gui import gui_shell
 
         source = inspect.getsource(gui_shell.launch_visible)
-        self.assertIn("Theme.AUTO", source)
-        self.assertNotIn('setTheme("AUTO")', source)
+        self.assertIn("QQmlApplicationEngine", source)
+        self.assertIn('QQuickStyle.setStyle("Material")', source)
+        self.assertIn("viewModelJson", source)
         self.assertIn("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS", source)
         self.assertIn("QTimer(window)", source)
         self.assertIn("app.exit(0)", source)
+        self.assertTrue(gui_shell.qml_shell_path().exists())
 
     def test_installer_config_and_launcher_include_daemon_and_qfluent_metadata(self) -> None:
         from project_moe_gui.toolchain import cmd_text, config_payload, launcher_text
 
         cfg = config_payload(Path("D:/target"), "thesis-moe-mentor", "thesis_moe", Path("tools/thesis_moe_mode.py"), Path("D:/runtime"))
-        self.assertEqual(cfg["visual_dependency"]["package_name"], "PySide6-Fluent-Widgets")
-        self.assertEqual(cfg["visual_dependency"]["import_name"], "qfluentwidgets")
+        self.assertEqual(cfg["visual_dependency"]["library"], "Qt Quick/QML")
+        self.assertEqual(cfg["visual_dependency"]["style"], "Material")
+        self.assertEqual(cfg["qml_shell"]["relative_path"], "tools/project_moe_gui/qml/ProjectMoeGui.qml")
+        self.assertEqual(cfg["qml_shell"]["style"], "Material")
+        self.assertTrue(cfg["qml_shell"]["managed_artifact"])
+        self.assertEqual(cfg["legacy_visual_dependency"]["package_name"], "PySide6-Fluent-Widgets")
+        self.assertEqual(cfg["legacy_visual_dependency"]["import_name"], "qfluentwidgets")
         self.assertTrue(cfg["gui_dependency_license_manifest"]["commercial_use_requires_review"])
         self.assertTrue(cfg["daemon_launch"]["duplicate_instance_guard"]["enabled"])
         self.assertEqual(cfg["daemon_launch"]["argv"][0], "D:\\runtime\\.venv\\Scripts\\python.exe")
@@ -2952,6 +2979,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", launcher)
         self.assertIn("CREATE_NO_WINDOW", launcher)
         self.assertIn("qfluent_runtime", launcher)
+        self.assertIn("gui_shell.launch_visible", launcher)
+        self.assertIn("build_gui_preflight", launcher)
         self.assertIn("blocked:visible_gui_launch_failed", launcher)
         self.assertIn("append_to_diagnostics_log", launcher)
 

@@ -15,6 +15,8 @@ from project_moe_gui.qfluent_runtime import check_qfluent_runtime, qfluent_licen
 SCHEMA_VERSION = 1
 GUI_SHELL_CONTRACT = "project-moe-gui-shell-v1"
 WINDOW_TITLE = "Project MOE Agent Console"
+QML_SHELL_RELATIVE = Path("qml/ProjectMoeGui.qml")
+TARGET_QML_SHELL_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
 DEFAULT_MODE_CLI = "tools/thesis_moe_mode.py"
 READ_ACTIONS = {"refresh", "project-status", "list-sessions", "status"}
 WRITE_ACTIONS = {"project-on", "project-off", "session-on", "session-off"}
@@ -98,6 +100,54 @@ def close_behavior_contract() -> dict[str, Any]:
             {"id": "show", "label": "Show", "effect": "show_window"},
             {"id": "exit", "label": "Exit", "effect": "quit_application"},
         ],
+    }
+
+
+def _configured_qml_shell_relative(config: dict[str, Any] | None) -> Path | None:
+    if not isinstance(config, dict):
+        return None
+    qml_shell = config.get("qml_shell")
+    value: Any = None
+    if isinstance(qml_shell, dict):
+        value = qml_shell.get("relative_path")
+    value = value or config.get("qml_shell_relative_path")
+    if not value:
+        return None
+    rel = Path(str(value).strip())
+    if rel.is_absolute():
+        return None
+    return rel
+
+
+def qml_shell_path(
+    config: dict[str, Any] | None = None,
+    project_root: str | Path | None = None,
+    *,
+    prefer_installed: bool = True,
+) -> Path:
+    if prefer_installed and isinstance(config, dict):
+        root = configured_project_root(config, project_root)
+        configured_rel = _configured_qml_shell_relative(config)
+        if configured_rel is not None:
+            return (root / configured_rel).resolve(strict=False)
+        target_path = (root / TARGET_QML_SHELL_RELATIVE).resolve(strict=False)
+        if project_root is not None and target_path.exists():
+            return target_path
+    return Path(__file__).resolve().parent / QML_SHELL_RELATIVE
+
+
+def qml_visual_contract() -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "library": "Qt Quick/QML",
+        "runtime_modules": ["PySide6.QtQml", "PySide6.QtQuick", "PySide6.QtQuickControls2"],
+        "style": "Material",
+        "theme_modes": ["system", "light", "dark"],
+        "source": str(QML_SHELL_RELATIVE).replace("\\", "/"),
+        "default_target_relative_path": str(TARGET_QML_SHELL_RELATIVE).replace("\\", "/"),
+        "license_family": "Qt/PySide6 runtime license",
+        "external_template_copied": False,
+        "reference_policy": "Official Qt Quick Controls patterns may be referenced; third-party templates require separate license review before copying.",
     }
 
 
@@ -724,10 +774,10 @@ def describe_window_structure() -> dict[str, Any]:
             {"id": "navigation_sidebar", "purpose": "primary navigation between overview, sessions, diagnostics, and settings"},
             {"id": "top_banner", "purpose": "project root, branch, agent name, and state namespace"},
             {"id": "error_banner", "purpose": "stable token, short message, and redacted diagnostics"},
-            {"id": "status_overview_cards", "purpose": "Fluent cards for project status, effective state, runtime, and license gate"},
+            {"id": "status_overview_cards", "purpose": "Qt Quick Material cards for project status, effective state, runtime, and visual shell status"},
             {"id": "project_default_card", "purpose": "project-default effective state and explicit on/off controls"},
             {"id": "session_table", "purpose": "session effective state, invalid/empty/load-failed states, and selected-session controls"},
-            {"id": "diagnostics_card", "purpose": "readiness blockers, QFluentWidgets dependency/license status, and suggested next actions"},
+            {"id": "diagnostics_card", "purpose": "readiness blockers, Qt Quick/QML shell status, optional QFluent legacy dependency status, and suggested next actions"},
             {"id": "footer", "purpose": "read-only refresh status and GUI/runtime readiness"},
         ],
         "accessibility_contract": {
@@ -744,10 +794,9 @@ def describe_window_structure() -> dict[str, Any]:
             "visible_launch_requires_explicit_interactive_command": True,
         },
         "visual_contract": {
-            "library": "QFluentWidgets",
-            "package_name": "PySide6-Fluent-Widgets",
-            "import_name": "qfluentwidgets",
-            "qfluentwidgets_required": True,
+            **qml_visual_contract(),
+            "qfluentwidgets_required": False,
+            "qfluentwidgets_legacy_optional": True,
         },
     }
 
@@ -796,8 +845,18 @@ def build_view_model(
             banners.append({"token": token, "message": message})
     if pyside6_status != "import_ok":
         banners.append({"token": "blocked:pyside6_unavailable", "message": "PySide6 is not importable from the configured GUI runtime."})
-    if pyside6_status == "import_ok" and qfluent_status.get("token") != "ok":
-        banners.append({"token": str(qfluent_status.get("token") or "blocked:qfluentwidgets_unavailable"), "message": "QFluentWidgets is not importable from the configured GUI runtime."})
+    qml_path = qml_shell_path(config, root)
+    central_qml_path = qml_shell_path(prefer_installed=False)
+    qml_source_status = {
+        "schema_version": SCHEMA_VERSION,
+        "ok": qml_path.exists(),
+        "token": "ok" if qml_path.exists() else "blocked:qml_shell_source_missing",
+        "path": str(qml_path),
+        "central_fallback_path": str(central_qml_path),
+        "source": "target_project" if root in qml_path.parents else "central_toolchain",
+    }
+    if not qml_source_status["ok"]:
+        banners.append({"token": "blocked:qml_shell_source_missing", "message": "Qt Quick/QML GUI shell source is missing from the installed target project and central fallback path."})
     if session_table["invalid_count"]:
         banners.append({"token": "blocked:invalid_session_record", "message": f"{session_table['invalid_count']} session row(s) need review."})
     project_default = extract_project_default(project_status, status_payload)
@@ -849,7 +908,14 @@ def build_view_model(
                 "title": "GUI runtime",
                 "value": pyside6_status,
                 "token": "ok" if pyside6_status == "import_ok" else "blocked:pyside6_unavailable",
-                "style": "fluent-card",
+                "style": "qml-material-card",
+            },
+            {
+                "id": "visual-shell",
+                "title": "Visual shell",
+                "value": "Qt Quick/QML",
+                "token": str(qml_source_status["token"]),
+                "style": "qml-material-card",
             },
         ],
         "project_default_card": build_project_default_card(
@@ -868,21 +934,29 @@ def build_view_model(
             "runtime_python": config.get("runtime_python"),
         },
         "visual": {
-            "library": "QFluentWidgets",
-            "package_name": "PySide6-Fluent-Widgets",
-            "import_name": "qfluentwidgets",
-            "qfluentwidgets_status": qfluent_status,
-            "license_manifest": qfluent_status.get("license_manifest") or qfluent_license_manifest(),
-            "fail_closed_if_missing": True,
+            **qml_visual_contract(),
+            "qml_source_status": qml_source_status,
+            "primary_shell": "qml",
+            "legacy_qfluent": {
+                "library": "QFluentWidgets",
+                "package_name": "PySide6-Fluent-Widgets",
+                "import_name": "qfluentwidgets",
+                "qfluentwidgets_status": qfluent_status,
+                "license_manifest": qfluent_status.get("license_manifest") or qfluent_license_manifest(),
+                "fail_closed_if_missing": False,
+                "status": "optional_legacy_visual_surface",
+            },
         },
         "diagnostics_card": {
             "title": "Diagnostics",
             "blockers": banners,
+            "qml": qml_source_status,
             "qfluentwidgets": qfluent_status,
             "suggested_next_actions": [
                 "Use --preflight --json for automation.",
-                "Provision shared runtime dependencies before visible GUI launch.",
-                "Review QFluentWidgets license before commercial redistribution or packaging.",
+                "Provision shared PySide6 Qt Quick runtime dependencies before visible GUI launch.",
+                "Use the Qt Quick/QML shell as the primary visual surface.",
+                "Review optional QFluentWidgets license only before re-enabling or redistributing the legacy QWidget visual surface.",
             ],
         },
         "banners": banners,
@@ -928,9 +1002,9 @@ def build_gui_preflight(
         qfluent_status=qfluent_status,
     )
     pyside6_ok = view_model["runtime"]["pyside6_status"] == "import_ok"
-    qfluent_ok = pyside6_ok and view_model["visual"]["qfluentwidgets_status"].get("token") == "ok"
+    qml_ok = view_model["visual"]["qml_source_status"].get("token") == "ok"
     blockers = [banner for banner in view_model["banners"] if banner["token"] != "ok"]
-    token = "ok" if pyside6_ok and qfluent_ok and not blockers else ("blocked:pyside6_unavailable" if not pyside6_ok else blockers[0]["token"])
+    token = "ok" if pyside6_ok and qml_ok and not blockers else ("blocked:pyside6_unavailable" if not pyside6_ok else blockers[0]["token"])
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": token == "ok",
@@ -1054,20 +1128,30 @@ def execute_write_action_with_readback(
 
 def launch_visible(view_model: dict[str, Any]) -> int:
     try:
-        from PySide6.QtCore import Qt, QTimer
-        from PySide6.QtGui import QCloseEvent
-        from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox, QSystemTrayIcon, QVBoxLayout, QWidget
-        from qfluentwidgets import CardWidget, NavigationInterface, Theme, setTheme
+        from PySide6.QtCore import QEvent, QObject, QTimer, QUrl
+        from PySide6.QtQml import QQmlApplicationEngine
+        from PySide6.QtQuickControls2 import QQuickStyle
+        from PySide6.QtWidgets import QApplication, QMessageBox, QStyle, QSystemTrayIcon
     except Exception as exc:  # pragma: no cover - depends on optional runtime
-        raise RuntimeError("blocked:qfluentwidgets_unavailable") from exc
+        raise RuntimeError("blocked:qt_quick_qml_unavailable") from exc
 
-    class MoeMainWindow(QMainWindow):  # pragma: no cover - visible GUI path
-        def __init__(self) -> None:
+    visual = view_model.get("visual") if isinstance(view_model, dict) else None
+    qml_status = visual.get("qml_source_status") if isinstance(visual, dict) else None
+    qml_path = Path(str(qml_status.get("path"))) if isinstance(qml_status, dict) and qml_status.get("path") else qml_shell_path()
+    if not qml_path.exists():  # pragma: no cover - defensive visible path
+        raise RuntimeError("blocked:qml_shell_source_missing")
+
+    class CloseEventFilter(QObject):  # pragma: no cover - visible GUI path
+        def __init__(self, window: object, app: QApplication) -> None:
             super().__init__()
+            self._window = window
+            self._app = app
             self._tray: QSystemTrayIcon | None = None
 
-        def closeEvent(self, event: QCloseEvent) -> None:
-            box = QMessageBox(self)
+        def eventFilter(self, watched: object, event: object) -> bool:
+            if getattr(event, "type", lambda: None)() != QEvent.Type.Close:
+                return False
+            box = QMessageBox()
             box.setWindowTitle("Close Project MOE GUI?")
             box.setText("Choose whether to exit the Project MOE GUI or keep it available in the system tray.")
             exit_button = box.addButton("Exit", QMessageBox.ButtonRole.AcceptRole)
@@ -1076,46 +1160,36 @@ def launch_visible(view_model: dict[str, Any]) -> int:
             box.exec()
             clicked = box.clickedButton()
             if clicked is exit_button:
-                event.accept()
+                return False
             elif clicked is hide_button:
-                self.hide()
+                if hasattr(self._window, "hide"):
+                    self._window.hide()
                 if QSystemTrayIcon.isSystemTrayAvailable() and self._tray is None:
-                    self._tray = QSystemTrayIcon(self)
+                    icon = self._app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
+                    self._tray = QSystemTrayIcon(icon, self)
                     self._tray.setToolTip(WINDOW_TITLE)
-                    self._tray.activated.connect(lambda *_: self.showNormal())
+                    self._tray.activated.connect(lambda *_: self._window.showNormal() if hasattr(self._window, "showNormal") else None)
                     self._tray.show()
-                event.ignore()
+                if hasattr(event, "ignore"):
+                    event.ignore()
+                return True
             else:
-                event.ignore()
+                if hasattr(event, "ignore"):
+                    event.ignore()
+                return True
 
+    QQuickStyle.setStyle("Material")
     app = QApplication.instance() or QApplication(sys.argv)
-    setTheme(Theme.AUTO)
-    window = MoeMainWindow()
-    window.setWindowTitle(WINDOW_TITLE)
-    central = QWidget()
-    layout = QVBoxLayout(central)
-    navigation = NavigationInterface(window, showMenuButton=True)
-    navigation.setFixedWidth(220)
-    banner = view_model.get("top_banner", {})
-    project_card = view_model.get("project_default_card", {})
-    layout.addWidget(navigation)
-    for card in view_model.get("status_cards", []):
-        widget = CardWidget()
-        card_layout = QVBoxLayout(widget)
-        card_layout.addWidget(QLabel(f"{card.get('title')}: {card.get('value')}"))
-        card_layout.addWidget(QLabel(f"Token: {card.get('token')}"))
-        layout.addWidget(widget)
-    diagnostics = CardWidget()
-    diagnostics_layout = QVBoxLayout(diagnostics)
-    diagnostics_layout.addWidget(QLabel(f"Project: {banner.get('project_root')}"))
-    diagnostics_layout.addWidget(QLabel(f"Branch: {banner.get('current_branch')}"))
-    diagnostics_layout.addWidget(QLabel(f"Agent: {banner.get('agent_name')} / namespace: {banner.get('state_namespace')}"))
-    diagnostics_layout.addWidget(QLabel(f"Project default: {project_card.get('label')} (effective: {project_card.get('effective_label')})"))
-    diagnostics_layout.addWidget(QLabel(f"Sessions: {len(view_model.get('session_table', {}).get('rows', []))}"))
-    layout.addWidget(diagnostics)
-    window.setCentralWidget(central)
-    window.resize(960, 540)
-    window.show()
+    engine = QQmlApplicationEngine()
+    engine.rootContext().setContextProperty("viewModelJson", json.dumps(view_model, ensure_ascii=False))
+    engine.load(QUrl.fromLocalFile(str(qml_path)))
+    if not engine.rootObjects():
+        raise RuntimeError("blocked:qml_shell_load_failed")
+    window = engine.rootObjects()[0]
+    close_filter = CloseEventFilter(window, app)
+    window.installEventFilter(close_filter)
+    window._project_moe_gui_close_filter = close_filter  # type: ignore[attr-defined]
+    engine._project_moe_gui_window = window  # type: ignore[attr-defined]
     smoke_exit_ms = int(os.environ.get("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS") or "0")
     if smoke_exit_ms > 0:
         smoke_timer = QTimer(window)

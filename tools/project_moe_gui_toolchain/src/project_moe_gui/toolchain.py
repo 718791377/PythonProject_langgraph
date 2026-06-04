@@ -17,7 +17,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
 from project_moe_gui.daemon import build_daemon_launch_plan
-from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT
+from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT, qml_shell_path, qml_visual_contract
 from project_moe_gui.qfluent_runtime import expected_qfluent_dependency, qfluent_license_manifest
 
 
@@ -72,12 +72,14 @@ MANIFEST_RELATIVE = Path("tools/project_moe_gui/project_moe_gui.install-manifest
 LAUNCHER_RELATIVE = Path("tools/project_moe_gui/launcher.py")
 README_RELATIVE = Path("tools/project_moe_gui/README.md")
 CMD_RELATIVE = Path("project-moe-gui.cmd")
-MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE]
+QML_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
+MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE, QML_RELATIVE]
 UNINSTALL_MANAGED_ALLOWLIST = {
     "tools/project_moe_gui/launcher.py",
     "tools/project_moe_gui/project_moe_gui.config.json",
     "tools/project_moe_gui/project_moe_gui.install-manifest.json",
     "tools/project_moe_gui/README.md",
+    "tools/project_moe_gui/qml/ProjectMoeGui.qml",
     "project-moe-gui.cmd",
 }
 RECOVERABLE_UPDATE_BLOCKER_CODES = {
@@ -1914,6 +1916,10 @@ def cmd_text() -> str:
     return '@echo off\nsetlocal\nset PYTHONUTF8=1\nif not defined PROJECT_MOE_GUI_DAEMON_CHILD set PROJECT_MOE_GUI_DAEMON_CHILD=\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
 
 
+def qml_shell_text() -> str:
+    return qml_shell_path(prefer_installed=False).read_text(encoding="utf-8")
+
+
 def readme_text(agent_name: str, namespace: str) -> str:
     return f"""# Project MOE GUI managed artifacts
 
@@ -1947,7 +1953,15 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "pyside6_runtime": "shared-runtime",
             "python_runtime_strategy": "shared-gui-runtime",
             "python_utf8": True,
-            "visual_dependency": expected_qfluent_dependency(),
+            "visual_dependency": qml_visual_contract(),
+            "qml_shell": {
+                "primary": True,
+                "relative_path": norm(QML_RELATIVE),
+                "style": "Material",
+                "managed_artifact": True,
+                "central_fallback_allowed": True,
+            },
+            "legacy_visual_dependency": expected_qfluent_dependency(),
             "gui_dependency_license_manifest": qfluent_license_manifest(),
             "daemon_launch": build_daemon_launch_plan(root / "tools" / "project_moe_gui" / "launcher.py", no_args=True, runtime_python=runtime_python, project_root=root),
             "close_behavior": {
@@ -1972,6 +1986,7 @@ def artifacts(root: Path, agent_name: str, namespace: str, mode_cli: Path, runti
         CONFIG_RELATIVE: json.dumps(config_payload(root, agent_name, namespace, mode_cli, runtime_root, existing_config), ensure_ascii=False, indent=2) + "\n",
         README_RELATIVE: readme_text(agent_name, namespace),
         CMD_RELATIVE: cmd_text(),
+        QML_RELATIVE: qml_shell_text(),
     }
 
 
