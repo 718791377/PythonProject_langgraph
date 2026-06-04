@@ -39,6 +39,7 @@ GUARD_STEPS = [
     ("check_comet_superpowers_visibility", "check_comet_superpowers_visibility.py", "comet_superpowers_visibility"),
     ("check_mcp_router_scope_policy", "check_mcp_router_scope_policy.py", "mcp_router_scope_policy"),
     ("check_user_level_mcp_skills_browser_cli_baseline", "check_user_level_mcp_skills_browser_cli_baseline.py", "user_level_mcp_skills_browser_cli_baseline"),
+    ("check_user_level_mcp_skills_cli_install", "check_user_level_mcp_skills_cli_install.py", "user_level_mcp_skills_cli_install"),
     ("check_local_mirrored_ci_gate", "check_local_mirrored_ci_gate.py", "local_mirrored_ci_gate"),
     ("check_remote_publication_approval_policy", "check_remote_publication_approval_policy.py", "remote_publication_approval_policy"),
     ("check_role_routing_directive_evidence", "check_role_routing_directive_evidence.py", "role_routing_directive_evidence"),

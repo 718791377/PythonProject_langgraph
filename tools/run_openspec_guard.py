@@ -127,6 +127,7 @@ def main() -> int:
     comet_superpowers_visibility_script = root / "tools" / "check_comet_superpowers_visibility.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     user_level_mcp_skills_browser_cli_baseline_script = root / "tools" / "check_user_level_mcp_skills_browser_cli_baseline.py"
+    user_level_mcp_skills_cli_install_script = root / "tools" / "check_user_level_mcp_skills_cli_install.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
@@ -203,6 +204,8 @@ def main() -> int:
             "Missing user-level MCP/skills/browser/CLI baseline check script: "
             f"{user_level_mcp_skills_browser_cli_baseline_script}"
         )
+    if not user_level_mcp_skills_cli_install_script.exists():
+        raise SystemExit(f"Missing user-level MCP/skills CLI install check script: {user_level_mcp_skills_cli_install_script}")
     if not local_mirrored_ci_gate_script.exists():
         raise SystemExit(f"Missing local mirrored CI/MR gate check script: {local_mirrored_ci_gate_script}")
     if not remote_publication_approval_policy_script.exists():
@@ -411,6 +414,11 @@ def main() -> int:
                 "check_user_level_mcp_skills_browser_cli_baseline",
                 [str(python_exe), str(user_level_mcp_skills_browser_cli_baseline_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during user-level MCP/skills/browser/CLI baseline verification.",
+            ),
+            (
+                "check_user_level_mcp_skills_cli_install",
+                [str(python_exe), str(user_level_mcp_skills_cli_install_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during user-level MCP/skills CLI install verification.",
             ),
             (
                 "check_local_mirrored_ci_gate",
@@ -763,6 +771,12 @@ def main() -> int:
         [str(python_exe), str(user_level_mcp_skills_browser_cli_baseline_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during user-level MCP/skills/browser/CLI baseline verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(user_level_mcp_skills_cli_install_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during user-level MCP/skills CLI install verification.",
     )
 
     run_checked(

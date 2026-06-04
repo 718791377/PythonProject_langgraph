@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation_of: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
 status: active
 plan_readiness: execution-ready
-implementation_state: opencli_live_start_guard_repo_local_implemented
+implementation_state: mcp_skills_upstream_runtime_installed_local
 last_reviewed_at: 2026-05-28
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -37,7 +37,7 @@ related_docs:
 
 本版已按 `pi_plugin_codex_user_level_sidecar_plan.zh-CN.md` 和 `comet_runtime_agile_focus_area_plan.zh-CN.md` 的新版结构返工：先给出 worker 指令、Goal、Architecture、Tech Stack，再给出关系模型、runtime 契约、文件职责图、实施前就绪定义、任务级执行 Backlog、验收标准、需要保留的证据和 rollback 规则。
 
-`status: active` 表示本双语文件现在是 repo-local governance-to-user-level capability lane 的执行权威；不表示完整用户级安装、真实 smoke test 或跨项目 rollout 已完成。`plan_readiness: execution-ready` 表示本文结构与执行颗粒度已经足够让 agentic worker 接手实现。当前 repo-local `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP、CDP Bridge read-only defaults、OpenCLI `--port auto` 租约门禁、`wecom-cli` guarded dry-run 和 receipt/redaction governance 均属于 implemented-local；完整用户级 `active` 仍取决于 installation receipt、update receipt、smoke test result 与 rollback pointer。2026-06-03 刷新新增待执行的 upstream-backed runtime lane：用户级 `mcp2cli` 必须从 `knowsuchagency/mcp2cli` 安装，用户级 `skills2cli` 必须从同一 upstream skill/CLI pattern fork/adapt，而不是被当作 generic alias。
+`status: active` 表示本双语文件现在是 repo-local governance-to-user-level capability lane 的执行权威；不表示每一条用户级 install、live smoke test 或跨项目 rollout lane 都已完成。`plan_readiness: execution-ready` 表示本文结构与执行颗粒度已经足够让 agentic worker 接手实现。当前 repo-local `skills2cli`、`mcp2cli`、`codex-port`、browser owner registry、`chrome-devtools-mcp` wrapper MVP、CDP Bridge read-only defaults、OpenCLI `--port auto` 租约门禁、`wecom-cli` guarded dry-run 和 receipt/redaction governance 均属于 implemented-local。用户级 runtime lane 只有在 installation receipt、update receipt、smoke test result 与 rollback pointer 均存在后才能标记 active。2026-06-04 Stage B package 已从 `knowsuchagency/mcp2cli` commit `3b7440196d620df29c13d3cfb8ad36ad4792e69f` 安装用户级 `mcp2cli 3.2.0`，将 upstream skill 安装到 `~\.agents\skills\mcp2cli`，并将用户级 `skills2cli` fork/adapt 到 `~\.codex\skills\skills2cli`，来源是同一 upstream skill/CLI pattern，而不是 generic alias。
 
 Task 5 的 `live start 需要 install receipt 和 owner evidence` 已补齐为 repo-local OpenCLI guard：它只执行非启动、非安装、非浏览器连接的 fail-closed 检查，要求 install receipt、browser owner lease evidence 与 `codex-port --port auto` lease evidence 后仍停在 repo-local MVP deferral，不修改用户级运行时。
 
@@ -64,8 +64,8 @@ Task 5 的 `live start 需要 install receipt 和 owner evidence` 已补齐为 r
 
 | 名称 | 责任边界 | 默认状态 | 边界说明 |
 | --- | --- | --- | --- |
-| `skills2cli` | skill index/search/show/audit/profile suggest，加上计划中的 upstream-style 用户级 wrapper/skill | implemented-local；upstream-style user-level fork pending | 不把完整 skill bodies 放入上下文；缓解 Token budget 压力。Stage B 必须 fork/adapt upstream `mcp2cli` skill/CLI pattern 来服务 skills discovery。 |
-| `mcp2cli` | MCP list/search/show/call facade，加上计划中的 upstream runtime install | implemented-local；upstream user-level install pending | discovery 低风险；真实 call 需按风险分层 fail closed。Stage B 必须带 receipts 与 rollback evidence install/wrap upstream `knowsuchagency/mcp2cli`。 |
+| `skills2cli` | skill index/search/show/audit/profile suggest，加上 upstream-style 用户级 wrapper/skill | implemented-local；upstream-style user-level fork installed | 不把完整 skill bodies 放入上下文；缓解 Token budget 压力。Stage B 已 fork/adapt upstream `mcp2cli` skill/CLI pattern 来服务 skills discovery，并记录 receipts。 |
+| `mcp2cli` | MCP list/search/show/call facade，加上 upstream runtime install | implemented-local；本机 upstream user-level install active | discovery 低风险；真实 call 需按风险分层 fail closed。Stage B 已带 receipts、rollback evidence 与 isolated uv cache evidence install/wrap upstream `knowsuchagency/mcp2cli`。 |
 | `codex-port` | port registry、lease、pending_bind、registry_revision | implemented-local | Codex 端口段在下游项目之前，避免冲突。 |
 | browser owner registry | 三类浏览器资产登记与 lease | implemented-local | 区分 isolated-session-managed、project-profile、human-owned。 |
 | `chrome-devtools-mcp` | 用户级 DevTools MCP wrapper | implemented-local | 低风险 read-only 优先；写操作需要 owner + authorization receipt。 |
@@ -110,7 +110,7 @@ Codex session
   -> user-level receipt / state / rollback evidence
 ```
 
-默认用户级产物根目录：`C:\Users\lenovo\.codex\tools\skills2cli\`、`C:\Users\lenovo\.codex\tools\mcp2cli\`、`C:\Users\lenovo\.codex\tools\codex-port\`、`C:\Users\lenovo\.codex\tools\browser-automation\`、`C:\Users\lenovo\.codex\tools\wecom-cli\`。runtime state 放在 `C:\Users\lenovo\.codex\state\`，repo-local source of truth 仍在本仓库。对于 upstream-backed refresh，`mcp2cli` source/version evidence 必须指向 `https://github.com/knowsuchagency/mcp2cli` 或等价 package metadata；`skills2cli` 必须记录其从 upstream `mcp2cli` skill/CLI pattern fork/adaptation 的来源。
+默认用户级产物根目录：`C:\Users\lenovo\.codex\tools\skills2cli\`、`C:\Users\lenovo\.codex\tools\mcp2cli\`、`C:\Users\lenovo\.codex\tools\codex-port\`、`C:\Users\lenovo\.codex\tools\browser-automation\`、`C:\Users\lenovo\.codex\tools\wecom-cli\`。runtime state 放在 `C:\Users\lenovo\.codex\state\`，repo-local source of truth 仍在本仓库。对于 upstream-backed refresh，`mcp2cli` source/version evidence 指向 `https://github.com/knowsuchagency/mcp2cli`、upstream commit `3b7440196d620df29c13d3cfb8ad36ad4792e69f` 和版本 `3.2.0`；`skills2cli` 记录其从 upstream `mcp2cli` skill/CLI pattern fork/adaptation 的来源，并继续以 compact discovery 为默认行为。
 
 ## 4. Codex 中的使用方式
 

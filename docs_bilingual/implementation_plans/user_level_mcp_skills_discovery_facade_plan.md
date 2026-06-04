@@ -31,12 +31,12 @@ This file is a decomposed child implementation plan under `multi_plan_parallel_s
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: Stage A plan refreshed for an upstream-backed user-level runtime; Stage B implementation remains pending and remote publication remains unauthorized.
-Current gate: merge this docs-only governance package into local `main`, then start a separate Stage B implementation worktree. The current operator request authorizes Stage B implementation after Stage A local-main integration; it does not authorize remote publication.
+Status: Stage B is implemented-local and installed in the user-level Codex home with upstream-backed `mcp2cli` evidence; remote publication remains unauthorized.
+Current gate: validate, commit, and merge this Stage B implementation branch into local `main`, then stop at the remote-publication approval gate.
 Source relation: extracted from `user_level_mcp_skills_browser_cli_governance_plan.md`; the source plan remains a baseline/history index, not a direct child execution package.
-Runtime boundary: existing repo-local `tools/skills2cli.py` and `tools/mcp2cli.py` stay as deterministic compact/fail-closed discovery facades. Stage B must add user-level runtime artifacts without replacing those repo-local tests or safety contracts.
+Runtime boundary: existing repo-local `tools/skills2cli.py` and `tools/mcp2cli.py` stay as deterministic compact/fail-closed discovery facades. Stage B added user-level runtime artifacts without replacing those repo-local tests or safety contracts.
 Upstream reference: use `https://github.com/knowsuchagency/mcp2cli` as the authority for installing user-level `mcp2cli`: `uvx mcp2cli --help` for direct smoke, `uv tool install mcp2cli` for user-level install, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli` for the upstream agent-skill surface. Its README documents `--mcp`, `--mcp-stdio`, `--spec`, `--graphql`, `bake`, `--compact`, `--toon`, OAuth, env/file secret indirection, cache directories, and generated wrapper behavior.
-Implementation target: install/wrap upstream `mcp2cli` under the user-level Codex tool boundary, then fork/adapt the upstream `mcp2cli` skill/CLI pattern into `skills2cli` so `skills2cli` remains a compact skill-discovery command backed by the installed skills ecosystem and this repository's redaction/profile-suggestion rules.
+Implementation result: upstream `mcp2cli` is installed as version `3.2.0` from upstream commit `3b7440196d620df29c13d3cfb8ad36ad4792e69f`, wrapped at `C:\Users\lenovo\.codex\bin\mcp2cli.cmd`, and verified with an isolated `UV_CACHE_DIR=C:\Users\lenovo\.codex\state\mcp-skills-cli\uv-cache`. The upstream skill is installed under `~\.agents\skills\mcp2cli`; the fork/adapted `skills2cli` wrapper and skill live under `C:\Users\lenovo\.codex\bin\skills2cli.cmd`, `C:\Users\lenovo\.codex\tools\skills2cli`, and `~\.codex\skills\skills2cli`. Latest valid update receipts are `C:\Users\lenovo\.codex\state\mcp-skills-cli\receipts\mcp2cli-20260604T000705Z.json` and `C:\Users\lenovo\.codex\state\mcp-skills-cli\receipts\skills2cli-20260604T000705Z.json`. Skill installation remains workflow context, not native-subagent evidence.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -62,12 +62,12 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 - [x] Record routing evidence so skills and profiles are not mislabeled as native subagents.
 - [x] Run focused validation for this child lane.
 - [x] Update the parent evidence index and Phase 7 integration plans after implementation evidence exists.
-- [ ] Stage A: record the upstream-backed user-level runtime plan and integrate it into local `main` as a docs-only governance package.
-- [ ] Stage B: install or wrap upstream `knowsuchagency/mcp2cli` as user-level `mcp2cli` using `uv tool install mcp2cli` when available, with `uvx mcp2cli --help` as the non-mutating preflight and a rollback pointer for the previous wrapper/tool state.
-- [ ] Stage B: install the upstream `mcp2cli` skill with `npx skills add knowsuchagency/mcp2cli --skill mcp2cli` only through a receipt-backed user-level update path; do not treat skill installation as native-subagent evidence.
-- [ ] Stage B: fork/adapt the upstream `mcp2cli` skill/CLI pattern into a user-level `skills2cli` wrapper/skill that delegates to the installed skills CLI or the repo-local compact facade, preserving compact JSON, redaction, profile-suggest preview-only behavior, and no full skill bodies by default.
-- [ ] Stage B: add or update tests/checkers for wrapper path existence, command smoke tests, rollback/update receipts, upstream version/help evidence, and fail-closed sensitive `mcp2cli` calls without authorization receipts.
-- [ ] Stage B: document the boundary between upstream runtime `mcp2cli`, repo-local fail-closed facade `tools/mcp2cli.py`, user-level `skills2cli`, and native Codex subagents.
+- [x] Stage A: record the upstream-backed user-level runtime plan and integrate it into local `main` as a docs-only governance package.
+- [x] Stage B: install or wrap upstream `knowsuchagency/mcp2cli` as user-level `mcp2cli` using `uv tool install mcp2cli` when available, with `uvx mcp2cli --help` as the non-mutating preflight and a rollback pointer for the previous wrapper/tool state.
+- [x] Stage B: install the upstream `mcp2cli` skill with `npx skills add knowsuchagency/mcp2cli --skill mcp2cli --global --agent codex --yes --copy` only through a receipt-backed user-level update path; do not treat skill installation as native-subagent evidence.
+- [x] Stage B: fork/adapt the upstream `mcp2cli` skill/CLI pattern into a user-level `skills2cli` wrapper/skill that delegates to the installed skills CLI or the repo-local compact facade, preserving compact JSON, redaction, profile-suggest preview-only behavior, and no full skill bodies by default.
+- [x] Stage B: add or update tests/checkers for wrapper path existence, command smoke tests, rollback/update receipts, upstream version/help evidence, and fail-closed sensitive `mcp2cli` calls without authorization receipts.
+- [x] Stage B: document the boundary between upstream runtime `mcp2cli`, repo-local fail-closed facade `tools/mcp2cli.py`, user-level `skills2cli`, and native Codex subagents.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -77,7 +77,7 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 - MCP scope checker: `python tools/check_mcp_router_scope_policy.py --root . --json` verifies Codex direct MCP boundaries and Router isolation.
 - Whitespace check: `git diff --check` verifies the patch has no whitespace errors.
 - Stage B upstream install preflight: `uvx mcp2cli --help` must succeed before mutating user-level install state; executing `uv tool install mcp2cli` must record version/source evidence.
-- Stage B skill install preflight: `npx skills add knowsuchagency/mcp2cli --skill mcp2cli --list` or equivalent dry listing must identify the upstream skill before any user-level skill installation.
+- Stage B skill install/update path: `npx skills add knowsuchagency/mcp2cli --skill mcp2cli --global --agent codex --yes --copy` must be receipt-backed and must not count as native-subagent evidence.
 - Stage B wrapper smoke: `mcp2cli --version` or `mcp2cli --help`, `skills2cli --help`, compact discovery JSON, and sensitive-call fail-closed checks must pass after installation.
 
 ## Acceptance Criteria
@@ -96,4 +96,5 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 - 2026-06-01: child plan created by the MCP/skills/browser/CLI decomposition package; implementation evidence is pending future claims.
 - 2026-06-01: branch `implement-mcp-skills-discovery-facade-20260601` implements the compact discovery facade lane. Evidence includes `tools/skills2cli.py`, `tools/mcp2cli.py`, `tools/mcp2cli_allowed_profiles.json`, focused tests `test/skills2cli.test.py` and `test/mcp2cli.test.py`, RED/GREEN coverage for MCP risk-profile output and skill/profile routing evidence, and no live MCP/browser/user-level runtime mutation.
 - 2026-06-03: Stage A plan refresh requires a separate Stage B implementation to install upstream `knowsuchagency/mcp2cli` as user-level `mcp2cli` and fork/adapt an upstream-style `skills2cli`; Stage A remains docs-only and does not install tools or mutate user-level runtime state.
+- 2026-06-04 UTC: branch `implement-upstream-mcp2cli-skills2cli-20260603` implements Stage B. Repo evidence includes `tools/install_user_level_mcp_skills_cli.py`, `tools/check_user_level_mcp_skills_cli_install.py`, `test/user_level_mcp_skills_cli_install.test.py`, CI manifest registration, and OpenSpec guard registration. User-level evidence uses upstream commit `3b7440196d620df29c13d3cfb8ad36ad4792e69f`, `mcp2cli 3.2.0`, isolated `UV_CACHE_DIR=C:\Users\lenovo\.codex\state\mcp-skills-cli\uv-cache`, receipts `C:\Users\lenovo\.codex\state\mcp-skills-cli\receipts\mcp2cli-20260604T000705Z.json` and `C:\Users\lenovo\.codex\state\mcp-skills-cli\receipts\skills2cli-20260604T000705Z.json`, upstream skill location `~\.agents\skills\mcp2cli`, and fork/adapted `skills2cli` location `~\.codex\skills\skills2cli`.
 <!-- EVIDENCE_INDEX_END -->

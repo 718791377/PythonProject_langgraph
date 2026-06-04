@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli
 translation: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
 status: active
 plan_readiness: execution-ready
-implementation_state: opencli_live_start_guard_repo_local_implemented
+implementation_state: mcp_skills_upstream_runtime_installed_local
 last_reviewed_at: 2026-05-28
 doc_class: implementation_plan
 created_at: 2026-05-22
@@ -37,7 +37,7 @@ related_docs:
 
 This version is reworked into the modern structure family used by the Pi sidecar plan and the Comet runtime plan: worker instructions, Goal, Architecture, Tech Stack, relationship boundaries, runtime contracts, file responsibility map, definition of ready, task-level backlog, acceptance criteria, required evidence, and rollback rules.
 
-`status: active` means this document pair is now the execution authority for the repo-local governance-to-user-level capability lane. It does not mean the full user-level install, live smoke tests, or cross-project rollout are complete. `plan_readiness: execution-ready` means the plan has enough structure and granularity for an agentic worker. Repo-local `skills2cli`, `mcp2cli`, `codex-port`, browser owner registry, `chrome-devtools-mcp` wrapper MVP, CDP Bridge read-only defaults, OpenCLI `--port auto` lease guard, OpenCLI live-start install/owner/port evidence guard, `wecom-cli` guarded dry-run, and receipt/redaction governance are implemented-local. A runtime lane becomes active only after installation receipt, update receipt, smoke test result, and rollback pointer evidence exist. The 2026-06-03 refresh adds a pending upstream-backed runtime lane: user-level `mcp2cli` must be installed from `knowsuchagency/mcp2cli`, and user-level `skills2cli` must be forked/adapted from the same upstream skill/CLI pattern rather than treated as a generic alias.
+`status: active` means this document pair is now the execution authority for the repo-local governance-to-user-level capability lane. It does not mean every user-level install, live smoke test, or cross-project rollout lane is complete. `plan_readiness: execution-ready` means the plan has enough structure and granularity for an agentic worker. Repo-local `skills2cli`, `mcp2cli`, `codex-port`, browser owner registry, `chrome-devtools-mcp` wrapper MVP, CDP Bridge read-only defaults, OpenCLI `--port auto` lease guard, OpenCLI live-start install/owner/port evidence guard, `wecom-cli` guarded dry-run, and receipt/redaction governance are implemented-local. A runtime lane becomes active only after installation receipt, update receipt, smoke test result, and rollback pointer evidence exist. The 2026-06-04 Stage B package installs user-level `mcp2cli 3.2.0` from `knowsuchagency/mcp2cli` commit `3b7440196d620df29c13d3cfb8ad36ad4792e69f`, installs the upstream skill under `~\.agents\skills\mcp2cli`, and fork/adapts user-level `skills2cli` under `~\.codex\skills\skills2cli` from the same upstream skill/CLI pattern rather than treating it as a generic alias.
 
 Task 5 `live start requires install receipt and owner evidence` is now covered by the repo-local OpenCLI guard. It only performs non-starting, non-installing, non-browser-connecting fail-closed checks; it requires install receipt, browser owner lease evidence, and `codex-port --port auto` lease evidence before still deferring live start in the repo-local MVP.
 
@@ -64,8 +64,8 @@ Do not add `parent_plan` front matter to this source plan. The extracted child p
 
 | Name | Responsibility | Default state | Boundary |
 | --- | --- | --- | --- |
-| `skills2cli` | skill index/search/show/audit/profile suggest plus planned upstream-style user-level wrapper/skill | implemented-local; upstream-style user-level fork pending | Keeps full skill bodies out of model context and reduces Token budget pressure; Stage B must fork/adapt the upstream `mcp2cli` skill/CLI pattern for skills discovery. |
-| `mcp2cli` | MCP list/search/show/call facade plus planned upstream runtime install | implemented-local; upstream user-level install pending | Discovery is low risk; real calls are risk-gated and fail closed. Stage B must install/wrap upstream `knowsuchagency/mcp2cli` with receipts and rollback evidence. |
+| `skills2cli` | skill index/search/show/audit/profile suggest plus upstream-style user-level wrapper/skill | implemented-local; upstream-style user-level fork installed | Keeps full skill bodies out of model context and reduces Token budget pressure; Stage B fork/adapted the upstream `mcp2cli` skill/CLI pattern for skills discovery and records receipts. |
+| `mcp2cli` | MCP list/search/show/call facade plus upstream runtime install | implemented-local; upstream user-level install active on this machine | Discovery is low risk; real calls are risk-gated and fail closed. Stage B installs/wraps upstream `knowsuchagency/mcp2cli` with receipts, rollback evidence, and isolated uv cache evidence. |
 | `codex-port` | port registry, lease, pending_bind, registry_revision | implemented-local | Codex ranges precede downstream project ranges. |
 | browser owner registry | browser asset registration and leases | implemented-local | Separates isolated-session-managed, project-profile, and human-owned assets. |
 | `chrome-devtools-mcp` | user-level DevTools MCP wrapper | implemented-local | Read-only first; writes need owner evidence and authorization receipt. |
@@ -110,7 +110,7 @@ Codex session
   -> user-level receipt / state / rollback evidence
 ```
 
-Default user-level artifact roots are `C:\Users\lenovo\.codex\tools\skills2cli\`, `C:\Users\lenovo\.codex\tools\mcp2cli\`, `C:\Users\lenovo\.codex\tools\codex-port\`, `C:\Users\lenovo\.codex\tools\browser-automation\`, and `C:\Users\lenovo\.codex\tools\wecom-cli\`. Runtime state lives under `C:\Users\lenovo\.codex\state\`; repo-local source stays canonical. For the upstream-backed refresh, `mcp2cli` source/version evidence must point to `https://github.com/knowsuchagency/mcp2cli` or equivalent package metadata, while `skills2cli` must record the fork/adaptation source from the upstream `mcp2cli` skill/CLI pattern.
+Default user-level artifact roots are `C:\Users\lenovo\.codex\tools\skills2cli\`, `C:\Users\lenovo\.codex\tools\mcp2cli\`, `C:\Users\lenovo\.codex\tools\codex-port\`, `C:\Users\lenovo\.codex\tools\browser-automation\`, and `C:\Users\lenovo\.codex\tools\wecom-cli\`. Runtime state lives under `C:\Users\lenovo\.codex\state\`; repo-local source stays canonical. For the upstream-backed refresh, `mcp2cli` source/version evidence points to `https://github.com/knowsuchagency/mcp2cli`, upstream commit `3b7440196d620df29c13d3cfb8ad36ad4792e69f`, and version `3.2.0`; `skills2cli` records the fork/adaptation source from the upstream `mcp2cli` skill/CLI pattern and keeps compact discovery as the default.
 
 ## 4. Codex usage model
 
