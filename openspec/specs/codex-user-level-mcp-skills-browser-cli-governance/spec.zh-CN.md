@@ -84,13 +84,13 @@ CDP Bridge 默认只允许 tab inventory 等低风险读取。JS 执行、cookie
 
 OpenCLI 必须使用 `--port auto` 和 `codex-port` lease；默认只做 discovery。JS、点击、输入、导航等敏感 adapter 执行必须要求 browser owner evidence 和 authorization receipt。
 
-### Requirement: CLI-Anything governance guard SHALL 要求 receipt evidence 和 harness-generation 边界
+### Requirement: CLI-Anything governance guard SHALL 要求 receipt evidence 和 adapter-generation 边界
 
-CLI-Anything 只能作为 harness-generation 支撑进入 repo-local MVP。安装、更新、pin 切换、rollback 和 harness plan 必须由 receipt、smoke evidence 和 rollback pointer 约束；不得 hard-load skills、运行 live control 或泄露私有路径。
+CLI-Anything 只能作为 adapter-generation 支撑进入 repo-local MVP。安装、更新、pin 切换、rollback 和 harness plan 必须由 receipt、smoke evidence 和 rollback pointer 约束；不得 hard-load skills、运行 live control 或泄露私有路径。
 
-### Requirement: WeCom CLI governance guard SHALL 优先 API/Webhook，并对 WXWork GUI 自动化 fail closed
+### Requirement: WXWork_CLI governance guard SHALL 优先 API/Webhook，并对 WXWork GUI 自动化 fail closed
 
-仓库必须提供 repo-local `wecom-cli` governance guard，用于建模企业微信 / WeCom / WXWork 控制边界；它不得 attach `WXWork.exe`、探测本地进程、调用 live API 或 webhook、读取消息内容、发送消息、修改用户级 Codex 配置或控制 GUI 状态。
+仓库必须提供 repo-local `WXWork_CLI` governance guard，用于建模企业微信 / WXWork_CLI / WXWork 控制边界；它不得 attach `WXWork.exe`、探测本地进程、调用 live API 或 webhook、读取消息内容、发送消息、修改用户级 Codex 配置或控制 GUI 状态。
 
 guard 至少必须支持：
 
@@ -103,28 +103,28 @@ WXWork GUI 动作必须要求 global WXWork lease receipt、operator authorizati
 
 #### Scenario: 请求 API/Webhook 状态
 
-- **WHEN** `python tools/wecom_cli_governance.py api-status --json` 运行
+- **WHEN** `python tools/wxwork_cli_governance.py api-status --json` 运行
 - **THEN** 命令必须返回 `ok=true`
 - **AND** 必须报告 `api_or_webhook_first`
 - **AND** 必须报告未探测进程、未控制 GUI、未读取消息正文、未调用 WeCom API
 
 #### Scenario: Webhook planning 收到 inline secret
 
-- **WHEN** `python tools/wecom_cli_governance.py webhook-plan --name ops --secret-ref "secret=<value>" --json` 运行
+- **WHEN** `python tools/wxwork_cli_governance.py webhook-plan --name ops --secret-ref "secret=<value>" --json` 运行
 - **THEN** 命令必须 fail closed
 - **AND** 不得调用 webhook
 - **AND** 默认输出不得保留 raw secret value
 
 #### Scenario: 请求 GUI planning
 
-- **WHEN** `python tools/wecom_cli_governance.py gui-plan --target-process WXWork.exe --json` 运行
+- **WHEN** `python tools/wxwork_cli_governance.py gui-plan --target-process WXWork.exe --json` 运行
 - **THEN** 命令必须返回 `ok=true`
 - **AND** 必须报告 global lease、operator confirmation 和 timeout release 要求
 - **AND** 必须报告 repo-local MVP 不允许 live GUI control
 
 #### Scenario: GUI attach 缺少 receipts
 
-- **WHEN** `python tools/wecom_cli_governance.py gui-check --action gui.attach --session session-a --json` 在无 receipt 情况下运行
+- **WHEN** `python tools/wxwork_cli_governance.py gui-check --action gui.attach --session session-a --json` 在无 receipt 情况下运行
 - **THEN** 命令必须 fail closed
 - **AND** 必须要求 operator authorization receipt 和 global WXWork lease receipt
 - **AND** 必须报告 `gui_control_performed=false`
@@ -290,3 +290,27 @@ repository-local OpenCLI governance guard 必须提供非变更型 live-start pr
 - **THEN** 命令必须以 `live_start_not_implemented_repo_local_mvp` fail closed
 - **AND** 必须报告 `start_performed=false`
 - **AND** 不得 install OpenCLI、start OpenCLI、launch browser、connect to browser target 或 mutate user-level Codex configuration
+
+
+### Requirement: Codex harnesses governance SHALL require pinned source ledger and no-takeover guards
+
+Codex harnesses governance SHALL be the only lane that owns harness wording. It SHALL derive future rules from these reference sources while keeping Codex as primary controller: The Harness Problem `https://blog.can.ac/2026/02/12/the-harness-problem`, oh-my-pi `https://github.com/can1357/oh-my-pi`, Pi `https://pi.dev/`, and Pi packages `https://pi.dev/packages`.
+
+The harness lane SHALL require source ledger rows with source pin, retrieved_at, license note, and rollback pointer before adopting any derived rule or helper. It SHALL reject no Codex takeover violations, unpinned Pi packages, missing read guard, missing write guard, missing job state, missing isolated worktree, or missing changed-path report evidence.
+
+#### Scenario: Harness governance checker runs
+
+- **WHEN** `python tools/check_codex_harnesses_governance.py --root . --json` runs
+- **THEN** it SHALL verify all four source URLs and the source-ledger fields
+- **AND** it SHALL verify no Codex takeover, read guard, write guard, job state, isolated worktree, changed-path report, and unpinned Pi packages boundaries
+
+
+### Requirement: Browser/CLI adapter boundary SHALL stay separate from sibling lanes
+
+Stage B split marker note: the Browser/CLI adapter lane contains only chrome-devtools-mcp, CDP Bridge / cdp-bridge-mcp, and OpenCLI. CLI-Anything/WXWork_CLI are handled by adapter-generation and adapter-plan governance; they are not Browser/CLI adapters. Codex harnesses governance is separate and not Browser/CLI adapters.
+
+#### Scenario: Adapter lane table is checked
+
+- **WHEN** `python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json` runs
+- **THEN** it SHALL accept only canonical Browser/CLI adapter rows.
+- **AND** it SHALL reject non-adapter lane entries.

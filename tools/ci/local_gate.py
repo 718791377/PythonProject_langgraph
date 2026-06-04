@@ -13,6 +13,7 @@ from typing import Any
 
 CHECK_NAME = "local_ci_gate"
 MANIFEST_RELATIVE = Path("tools/ci/ci_test_manifest.json")
+DEFAULT_STEP_TIMEOUT_SECONDS = 600
 
 
 def configure_utf8_stdio() -> None:
@@ -101,7 +102,7 @@ def main() -> int:
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")
     parser.add_argument("--refresh-managed-files", action="store_true", help="Refresh official OpenSpec managed files first.")
     parser.add_argument("--require-clean-git", action="store_true", help="Fail when the repository is dirty after refresh/checks.")
-    parser.add_argument("--step-timeout-seconds", type=int, default=180, help="Per-step timeout.")
+    parser.add_argument("--step-timeout-seconds", type=int, default=DEFAULT_STEP_TIMEOUT_SECONDS, help="Per-step timeout.")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()

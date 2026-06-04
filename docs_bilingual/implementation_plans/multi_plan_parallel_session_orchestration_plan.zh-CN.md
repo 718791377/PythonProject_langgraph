@@ -59,12 +59,11 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 2 prompt-canary canonical visible marker restoration is implemented in the current local candidate; the follow-up now verifies repository gates before local `main` integration.
-Owner session: main Codex leader owns implementation package id `implement-restore-nonascii-canary-20260602`; this is a serialized canary-hotspot implementation worktree, not a durable-team worker or remote publication branch.
-Current gate: commit the implementation package, merge through the local-main-first helper, then stop at the remote-publication approval gate; remote publication remains unauthorized unless the user explicitly requests it.
-Phase 2 note: all four earlier context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; this follow-up closes the reopened marker canonicalization and session-context blocking contract.
-MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` remains a source and baseline index, not a direct child of this parent.
-Parallel model: canary hotspots stayed serialized; other extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
+Stage: Stage B split governance implementation is implemented-local; validation and local-main integration are the current gate.
+Owner session: main Codex leader owns the serialized shared hotspots for this Stage B package: parent plan, child plans, stable spec, docs registry, CI manifest, safety registry, and OpenSpec guard wiring.
+Current gate: run focused split-governance tests, precommit/archive review, OpenSpec guard, shared local gate, and local MR review; then merge this package through the local-main-first helper and stop at the remote-publication approval gate.
+Split result: the historical mixed `user_level_mcp_skills_browser_cli_governance_plan` and `user_level_mcp_skills_discovery_facade_plan` files are deleted after their active checker/test/spec duties moved to three child plans: `user_level_cli_anything_wxwork_cli_governance_plan`, `user_level_browser_cli_adapter_boundary_plan`, and `codex_harnesses_governance_plan`.
+MCP/skills CLI carry-forward: `skills2cli` and `mcp2cli` remain implemented user-level install surfaces governed by `tools/install_user_level_mcp_skills_cli.py`; the upstream runtime source is `knowsuchagency/mcp2cli`, verified through markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`; rollback pointer, update receipt, and native-subagent=false boundaries stay checker-backed.
 Remote state: this implementation package does not authorize remote publication.
 <!-- CURRENT_STATUS_END -->
 
@@ -527,4 +526,8 @@ Stage B 后续确认后的验收条件：
 
 Stage B 迁移 checker/test/spec 后，删除 `user_level_mcp_skills_discovery_facade_plan.*` 与 `user_level_mcp_skills_browser_cli_governance_plan.*`。
 
+- 2026-06-04 Stage B implementation: split checkers/tests/spec wiring now back three child lanes; old mixed source plans are deleted from active docs registry and filesystem; remote publication remains closed.
 <!-- EVIDENCE_INDEX_END -->
+
+
+Stage B harness source marker: The Harness Problem https://blog.can.ac/2026/02/12/the-harness-problem; oh-my-pi https://github.com/can1357/oh-my-pi; Pi https://pi.dev/; Pi packages https://pi.dev/packages.

@@ -10,10 +10,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "tools" / "wecom_cli_governance.py"
+SCRIPT = ROOT / "tools" / "wxwork_cli_governance.py"
 
 
-def run_wecom(args: list[str], *, expect: int = 0) -> tuple[dict, str]:
+def run_wxwork(args: list[str], *, expect: int = 0) -> tuple[dict, str]:
     result = subprocess.run(
         [sys.executable, str(SCRIPT), *args, "--json"],
         cwd=ROOT,
@@ -33,25 +33,28 @@ def future_iso(minutes: int = 30) -> str:
     return (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
 
 
-class WeComCliGovernanceTests(unittest.TestCase):
+class WXWorkCliGovernanceTests(unittest.TestCase):
     def test_api_status_is_safe_and_does_not_probe_wxwork(self):
-        payload, stdout = run_wecom(["api-status"])
+        payload, stdout = run_wxwork(["api-status"])
         self.assertTrue(payload["ok"])
+        self.assertEqual(payload["tool"], "WXWork_CLI")
+        self.assertEqual(payload["control_surface"], "WXWork_CLI")
         self.assertEqual(payload["default_channel"], "api_or_webhook_first")
         self.assertFalse(payload["gui_automation_enabled"])
         self.assertFalse(payload["process_probe_performed"])
         self.assertFalse(payload["safety"]["attaches_to_wxwork"])
         self.assertFalse(payload["safety"]["reads_message_content"])
         self.assertNotIn("message text", stdout.lower())
+        self.assertNotIn("wecom-cli", stdout.lower())
 
     def test_webhook_plan_rejects_inline_secret_values(self):
-        allowed, _ = run_wecom(["webhook-plan", "--name", "ops-alerts", "--secret-ref", "env:WECOM_WEBHOOK_KEY"])
+        allowed, _ = run_wxwork(["webhook-plan", "--name", "ops-alerts", "--secret-ref", "env:WXWORK_WEBHOOK_KEY"])
         self.assertTrue(allowed["ok"])
         self.assertTrue(allowed["plan_allowed"])
         self.assertFalse(allowed["calls_webhook"])
-        self.assertNotIn("WECOM_WEBHOOK_KEY", json.dumps(allowed))
+        self.assertNotIn("WXWORK_WEBHOOK_KEY", json.dumps(allowed))
 
-        blocked, _ = run_wecom(
+        blocked, _ = run_wxwork(
             ["webhook-plan", "--name", "ops-alerts", "--secret-ref", "secret=raw-value"],
             expect=3,
         )
@@ -59,7 +62,7 @@ class WeComCliGovernanceTests(unittest.TestCase):
         self.assertIn("secret_ref_must_be_reference_not_value", blocked["blockers"])
 
     def test_gui_plan_is_dry_run_and_requires_operator_gates(self):
-        payload, _ = run_wecom(["gui-plan", "--target-process", "WXWork.exe"])
+        payload, _ = run_wxwork(["gui-plan", "--target-process", "WXWork.exe"])
         self.assertTrue(payload["ok"])
         self.assertFalse(payload["live_gui_control_allowed"])
         self.assertTrue(payload["global_lease_required"])
@@ -69,7 +72,7 @@ class WeComCliGovernanceTests(unittest.TestCase):
         self.assertFalse(payload["safety"]["controls_gui"])
 
     def test_gui_check_without_receipts_fails_closed(self):
-        payload, _ = run_wecom(["gui-check", "--action", "gui.attach", "--session", "session-a"], expect=3)
+        payload, _ = run_wxwork(["gui-check", "--action", "gui.attach", "--session", "session-a"], expect=3)
         self.assertFalse(payload["dispatch_allowed"])
         self.assertIn("operator_authorization_receipt_required", payload["blockers"])
         self.assertIn("global_wxwork_lease_required", payload["blockers"])
@@ -90,7 +93,7 @@ class WeComCliGovernanceTests(unittest.TestCase):
                         "expiry": future_iso(),
                         "session": "session-a",
                         "operator_confirmation": True,
-                        "owner_lane": "wecom-cli",
+                        "owner_lane": "wxwork_cli",
                         "redaction_policy": "no message contents, tokens, cookies, or private paths",
                         "rollback_pointer": "release-global-wxwork-lease",
                     }
@@ -101,7 +104,7 @@ class WeComCliGovernanceTests(unittest.TestCase):
                 json.dumps(
                     {
                         "schema_version": 1,
-                        "owner_lane": "wecom-cli",
+                        "owner_lane": "wxwork_cli",
                         "lease_scope": "global-wxwork-gui",
                         "target_process": "WXWork.exe",
                         "session": "session-a",
@@ -113,7 +116,7 @@ class WeComCliGovernanceTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            payload, stdout = run_wecom(
+            payload, stdout = run_wxwork(
                 [
                     "gui-check",
                     "--action",
@@ -147,7 +150,7 @@ class WeComCliGovernanceTests(unittest.TestCase):
                         "expiry": (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat(),
                         "session": "session-a",
                         "operator_confirmation": True,
-                        "owner_lane": "wecom-cli",
+                        "owner_lane": "wxwork_cli",
                         "redaction_policy": "no message contents",
                         "rollback_pointer": "release",
                     }
@@ -158,7 +161,7 @@ class WeComCliGovernanceTests(unittest.TestCase):
                 json.dumps(
                     {
                         "schema_version": 1,
-                        "owner_lane": "wecom-cli",
+                        "owner_lane": "wxwork_cli",
                         "lease_scope": "global-wxwork-gui",
                         "target_process": "WXWork.exe",
                         "session": "session-b",
@@ -170,7 +173,7 @@ class WeComCliGovernanceTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            payload, _ = run_wecom(
+            payload, _ = run_wxwork(
                 [
                     "gui-check",
                     "--action",

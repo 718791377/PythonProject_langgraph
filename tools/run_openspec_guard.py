@@ -126,7 +126,9 @@ def main() -> int:
     openspec_comet_superpowers_policy_script = root / "tools" / "check_openspec_comet_superpowers_policy.py"
     comet_superpowers_visibility_script = root / "tools" / "check_comet_superpowers_visibility.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
-    user_level_mcp_skills_browser_cli_baseline_script = root / "tools" / "check_user_level_mcp_skills_browser_cli_baseline.py"
+    user_level_browser_cli_adapter_boundary_script = root / "tools" / "check_user_level_browser_cli_adapter_boundary.py"
+    user_level_cli_anything_wxwork_cli_governance_script = root / "tools" / "check_user_level_cli_anything_wxwork_cli_governance.py"
+    codex_harnesses_governance_script = root / "tools" / "check_codex_harnesses_governance.py"
     user_level_mcp_skills_cli_install_script = root / "tools" / "check_user_level_mcp_skills_cli_install.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
@@ -199,11 +201,12 @@ def main() -> int:
         raise SystemExit(f"Missing Comet/Superpowers visibility check script: {comet_superpowers_visibility_script}")
     if not mcp_router_scope_policy_script.exists():
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
-    if not user_level_mcp_skills_browser_cli_baseline_script.exists():
-        raise SystemExit(
-            "Missing user-level MCP/skills/browser/CLI baseline check script: "
-            f"{user_level_mcp_skills_browser_cli_baseline_script}"
-        )
+    if not user_level_browser_cli_adapter_boundary_script.exists():
+        raise SystemExit(f"Missing Browser/CLI adapter boundary check script: {user_level_browser_cli_adapter_boundary_script}")
+    if not user_level_cli_anything_wxwork_cli_governance_script.exists():
+        raise SystemExit(f"Missing CLI-Anything/WXWork_CLI governance check script: {user_level_cli_anything_wxwork_cli_governance_script}")
+    if not codex_harnesses_governance_script.exists():
+        raise SystemExit(f"Missing Codex harnesses governance check script: {codex_harnesses_governance_script}")
     if not user_level_mcp_skills_cli_install_script.exists():
         raise SystemExit(f"Missing user-level MCP/skills CLI install check script: {user_level_mcp_skills_cli_install_script}")
     if not local_mirrored_ci_gate_script.exists():
@@ -411,9 +414,19 @@ def main() -> int:
                 "OpenSpec guard failed during MCP Router scope policy verification.",
             ),
             (
-                "check_user_level_mcp_skills_browser_cli_baseline",
-                [str(python_exe), str(user_level_mcp_skills_browser_cli_baseline_script), "--root", str(root), "--json"],
-                "OpenSpec guard failed during user-level MCP/skills/browser/CLI baseline verification.",
+                "check_user_level_browser_cli_adapter_boundary",
+                [str(python_exe), str(user_level_browser_cli_adapter_boundary_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Browser/CLI adapter boundary verification.",
+            ),
+            (
+                "check_user_level_cli_anything_wxwork_cli_governance",
+                [str(python_exe), str(user_level_cli_anything_wxwork_cli_governance_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during CLI-Anything/WXWork_CLI governance verification.",
+            ),
+            (
+                "check_codex_harnesses_governance",
+                [str(python_exe), str(codex_harnesses_governance_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Codex harnesses governance verification.",
             ),
             (
                 "check_user_level_mcp_skills_cli_install",
@@ -768,9 +781,19 @@ def main() -> int:
     )
 
     run_checked(
-        [str(python_exe), str(user_level_mcp_skills_browser_cli_baseline_script), "--root", str(root)],
+        [str(python_exe), str(user_level_browser_cli_adapter_boundary_script), "--root", str(root)],
         cwd=root,
-        failure_message="OpenSpec guard failed during user-level MCP/skills/browser/CLI baseline verification.",
+        failure_message="OpenSpec guard failed during Browser/CLI adapter boundary verification.",
+    )
+    run_checked(
+        [str(python_exe), str(user_level_cli_anything_wxwork_cli_governance_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during CLI-Anything/WXWork_CLI governance verification.",
+    )
+    run_checked(
+        [str(python_exe), str(codex_harnesses_governance_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Codex harnesses governance verification.",
     )
 
     run_checked(

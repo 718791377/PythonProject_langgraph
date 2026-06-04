@@ -29,20 +29,19 @@ Codex CLI, Git worktrees, JSON job state, Python guard/checker scripts, OpenSpec
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: planned Stage A split target; no Pi or oh-my-pi runtime is enabled by this document package.
-Owner session: the current main Codex session owns the parent-plan hotspot and this child-plan creation package.
-Remote publication: not authorized.
-Boundary: Codex harnesses must not replace Codex, native subagents, native_omx, LangGraph, `codex-ohmy`, or `apply_patch`.
+Status: implemented-local; Stage B source-ledger/checker/spec migration is complete and remote publication remains closed.
+Runtime boundary: Codex harnesses are governance wrappers around future harness jobs; they do not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, or local-main-first publication gates.
+Implementation evidence: `tools/check_codex_harnesses_governance.py` requires source ledger rows, source pin, retrieved_at, license note, rollback pointer, no Codex takeover, unpinned Pi packages rejection, read guard, write guard, job state, isolated worktree, and changed-path report markers.
 <!-- CURRENT_STATUS_END -->
 
-## Source References
+## Source Ledger
 
-| Reference | URL | What this Codex fork may reuse | What it must not do |
-| --- | --- | --- | --- |
-| The Harness Problem | https://blog.can.ac/2026/02/12/the-harness-problem | reliability ideas, recoverable editing, explicit failure surfacing | copy unknown code or bypass repo guards |
-| oh-my-pi | https://github.com/can1357/oh-my-pi | sidecar UX, update/rollback concepts, Pi-oriented runtime ergonomics | replace Codex launcher or own provider secrets |
-| Pi | https://pi.dev/ | Pi runtime/RPC reference and future smoke source | mutate current worktree without one-task authorization |
-| Pi packages | https://pi.dev/packages | package discovery/update reference | install packages without pin/receipt/rollback evidence |
+| Reference | URL | Source pin | retrieved_at | License note | Rollback pointer | What this Codex fork may reuse | What it must not do |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| The Harness Problem | https://blog.can.ac/2026/02/12/the-harness-problem | source pin: URL snapshot | retrieved_at: 2026-06-04 | license note: article reference only | rollback pointer: remove derived harness rules | reliability ideas, recoverable editing, explicit failure surfacing | copy unknown code or bypass repo guards |
+| oh-my-pi | https://github.com/can1357/oh-my-pi | source pin: commit/tag required before implementation | retrieved_at: 2026-06-04 | license note: inspect upstream license before reuse | rollback pointer: remove sidecar helper copy | sidecar UX, update/rollback concepts, Pi-oriented runtime ergonomics | replace Codex launcher or own provider secrets |
+| Pi | https://pi.dev/ | source pin: docs version or snapshot required | retrieved_at: 2026-06-04 | license note: docs reference only | rollback pointer: remove Pi runtime assumptions | Pi runtime/RPC reference and future smoke source | mutate current worktree without one-task authorization |
+| Pi packages | https://pi.dev/packages | source pin: package version required | retrieved_at: 2026-06-04 | license note: package license must be recorded per package | rollback pointer: remove package candidate | package discovery/update reference | install packages without pin/receipt/rollback evidence |
 
 ## Governance Level Split
 
@@ -65,20 +64,20 @@ One session may claim this implementation plan at a time. A separate session may
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [x] Stage A: register this bilingual child plan in `docs_bilingual/docs_registry.yaml`.
-- [x] Stage A: record all four harness source URLs for future refresh.
 - [x] Stage A: state that only this lane is called Codex harnesses.
-- [x] Stage A: keep Pi/oh-my-pi reference-sidecar content as migration input until Stage B checker migration.
+- [x] Stage A: record The Harness Problem, oh-my-pi, Pi, and Pi packages reference links.
+- [x] Stage A: state no Codex takeover, no replacement of native Codex/OMX/LangGraph/apply_patch, and no live Pi execution.
+- [x] Stage B: add source ledger requirements for source pin, retrieved_at, license note, and rollback pointer.
+- [x] Stage B: add checker/spec coverage for no Codex takeover, no unpinned Pi packages, read guard, write guard, job state, isolated worktree, and changed-path report.
+- [x] Stage B: wire checker/tests into CI manifest, safety registry, and OpenSpec guard.
 <!-- TASK_BACKLOG_END -->
 
-## Pending Stage B Migration Work
+## Stage B Closure Notes
 
-- Add `codex_harnesses_governance` checker/guard.
-- Require source URL, pin/ref, retrieved_at, license note, and rollback pointer for source refresh.
-- Require read-only guard and write guard evidence before any sidecar output is treated as actionable.
-- Add fake Pi/oh-my-pi fixture tests for no takeover and no current-worktree mutation.
-- Update CI manifest and OpenSpec guard registration.
-- Migrate old Pi/harness references out of the deleted source plans.
+- Stage B adds `codex_harnesses_governance` checker coverage for the harness-only lane.
+- Source refresh now requires source URL, source pin/ref, retrieved_at, license note, and rollback pointer.
+- Sidecar output remains non-actionable without read guard, write guard, job state, isolated worktree, and changed-path report evidence.
+- CI manifest, safety registry, and OpenSpec guard wiring now reference the split harness checker.
 
 ## Acceptance Criteria
 
@@ -90,5 +89,5 @@ One session may claim this implementation plan at a time. A separate session may
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- Pending Stage A evidence: this plan records the Codex harnesses split target and source links; implementation evidence is pending Stage B.
+- 2026-06-04 Stage B implementation evidence: `tools/check_codex_harnesses_governance.py` and `test/check_codex_harnesses_governance.test.py` verify the harness-only lane, source ledger, no-takeover boundary, read/write guards, job state, isolated worktree, changed-path report, and no unpinned Pi packages.
 <!-- EVIDENCE_INDEX_END -->

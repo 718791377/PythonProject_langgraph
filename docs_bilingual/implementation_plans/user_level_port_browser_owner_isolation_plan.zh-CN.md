@@ -5,7 +5,7 @@ status: active
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/user_level_port_browser_owner_isolation_plan.md
 parent_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md
-source_plan: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
+source_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md
 ---
 
 # 用户级端口与浏览器归属隔离实施方案
@@ -65,7 +65,7 @@ Implementation evidence: 既有 `codex-port` 与 browser-owner registry helper �
 
 ## 验证门禁
 
-- MCP baseline checker: `python tools/check_user_level_mcp_skills_browser_cli_baseline.py --root . --json` verifies source-plan baseline markers and guard registration.
+- MCP baseline checker: `python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json` verifies source-plan baseline markers and guard registration.
 - MCP scope checker: `python tools/check_mcp_router_scope_policy.py --root . --json` verifies Codex direct MCP boundaries and Router isolation.
 - OpenSpec aggregate guard: `python tools/run_openspec_guard.py --root . --json` verifies official workflow, document policy, and name clarity rules.
 - Whitespace check: `git diff --check` verifies the patch has no whitespace errors.

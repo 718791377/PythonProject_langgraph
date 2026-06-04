@@ -61,12 +61,11 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 2 prompt-canary canonical visible marker restoration is implemented in the current local candidate; the follow-up now verifies repository gates before local `main` integration.
-Owner session: main Codex leader owns implementation package id `implement-restore-nonascii-canary-20260602`; this is a serialized canary-hotspot implementation worktree, not a durable-team worker or remote publication branch.
-Current gate: commit the implementation package, merge through the local-main-first helper, then stop at the remote-publication approval gate; remote publication remains unauthorized unless the user explicitly requests it.
-Phase 2 note: all four earlier context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; this follow-up closes the reopened marker canonicalization and session-context blocking contract.
-MCP/adapter/harness rebuild note: `user_level_mcp_skills_browser_cli_governance_plan` and `user_level_mcp_skills_discovery_facade_plan` are now temporary migration sources only. Stage A keeps them so existing baseline checkers keep passing; Stage B migrates checkers/tests/specs to the three new child plans and then deletes the old source plans.
-Parallel model: canary hotspots stayed serialized; other extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
+Stage: Stage B split governance implementation is implemented-local; validation and local-main integration are the current gate.
+Owner session: main Codex leader owns the serialized shared hotspots for this Stage B package: parent plan, child plans, stable spec, docs registry, CI manifest, safety registry, and OpenSpec guard wiring.
+Current gate: run focused split-governance tests, precommit/archive review, OpenSpec guard, shared local gate, and local MR review; then merge this package through the local-main-first helper and stop at the remote-publication approval gate.
+Split result: the historical mixed `user_level_mcp_skills_browser_cli_governance_plan` and `user_level_mcp_skills_discovery_facade_plan` files are deleted after their active checker/test/spec duties moved to three child plans: `user_level_cli_anything_wxwork_cli_governance_plan`, `user_level_browser_cli_adapter_boundary_plan`, and `codex_harnesses_governance_plan`.
+MCP/skills CLI carry-forward: `skills2cli` and `mcp2cli` remain implemented user-level install surfaces governed by `tools/install_user_level_mcp_skills_cli.py`; the upstream runtime source is `knowsuchagency/mcp2cli`, verified through markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`; rollback pointer, update receipt, and native-subagent=false boundaries stay checker-backed.
 Remote state: this implementation package does not authorize remote publication.
 <!-- CURRENT_STATUS_END -->
 
@@ -436,7 +435,7 @@ Each child plan must include:
 - [x] Stage B decomposition: update Phase 7 integration child plans to include docs registry, checker/CI, and OpenSpec/Comet archive responsibilities for the extracted MCP lanes.
 - [x] Stage B follow-up: create and register the Phase 2 prompt-canary canonical visible marker restore child plan before implementation.
 - [x] Stage A rebuild: create the CLI-Anything/WXWork_CLI child plan, Browser/CLI adapter reclassification, and Codex harnesses child plan.
-- [ ] Stage B rebuild: migrate checker/tests/OpenSpec wiring and delete `user_level_mcp_skills_discovery_facade_plan.*` plus `user_level_mcp_skills_browser_cli_governance_plan.*` after gates no longer depend on them.
+- [x] Stage B rebuild: migrate checker/tests/OpenSpec wiring and delete `user_level_mcp_skills_discovery_facade_plan.*` plus `user_level_mcp_skills_browser_cli_governance_plan.*` after gates no longer depend on them.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -497,4 +496,5 @@ Stage B acceptance after later confirmation:
 - 2026-06-02 prompt-canary status reconciliation: synchronized the parent status with the four Phase 2 child plans; local `main` ancestry confirms `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; remote publication remains unauthorized.
 - 2026-06-02 prompt-canary canonical restore plan package: branch `plan-restore-nonascii-canary-20260602` records a confirmed Phase 2 follow-up child plan, keeps marker literals out of non-startup plans, and requires model-readable session context to block restored canonical marker copies before implementation.
 - 2026-06-04 Stage A harness/adapters rebuild package: branch `rebuild-harness-governance-plan-20260604` records the three-way split requested by the operator: CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses. Old source plans stay only as checker-compatible migration inputs until Stage B deletes them with checker/test migration.
+- 2026-06-04 Stage B implementation: split checkers/tests/spec wiring now back three child lanes; old mixed source plans are deleted from active docs registry and filesystem; remote publication remains closed.
 <!-- EVIDENCE_INDEX_END -->

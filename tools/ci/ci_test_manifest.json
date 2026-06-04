@@ -47,7 +47,6 @@
     "check_pyside6_packaging_opt_in_contract.test.py",
     "check_pyside6_operator_usage_guide.test.py",
     "project_moe_gui_toolchain.test.py",
-    "check_user_level_mcp_skills_browser_cli_baseline.test.py",
     "user_level_mcp_skills_cli_install.test.py",
     "skills2cli.test.py",
     "mcp2cli.test.py",
@@ -55,13 +54,17 @@
     "browser_owner_registry.test.py",
     "chrome_devtools_mcp_managed.test.py",
     "cdp_bridge_governance.test.py",
-    "wecom_cli_governance.test.py",
     "user_level_receipt_governance.test.py",
     "check_document_pair_policy.test.py",
     "check_git_commit_language.test.py",
     "check_plan_exit_execution_governance.test.py",
     "check_local_flow_scripted_enforcement.test.py",
-    "comet_runtime_management_flow.test.py"
+    "comet_runtime_management_flow.test.py",
+    "check_user_level_browser_cli_adapter_boundary.test.py",
+    "check_user_level_cli_anything_wxwork_cli_governance.test.py",
+    "check_codex_harnesses_governance.test.py",
+    "cli_anything_governance.test.py",
+    "wxwork_cli_governance.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []

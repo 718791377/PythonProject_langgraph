@@ -409,50 +409,6 @@
         "label": "shared_model_consumer_scope",
         "pattern": "D:\\\\PythonProject_OpenClaw"
       }
-    ],
-    "docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md": [
-      {
-        "label": "cross_project_port_registry_scope",
-        "pattern": "(?i)user-level port governance"
-      },
-      {
-        "label": "cross_project_port_registry_scope",
-        "pattern": "(?i)port registry/lease"
-      },
-      {
-        "label": "cross_project_port_registry_scope",
-        "pattern": "(?i)port-governance tests"
-      },
-      {
-        "label": "cross_project_port_registry_scope",
-        "pattern": "40000-40999"
-      },
-      {
-        "label": "cross_project_port_registry_scope",
-        "pattern": "39000-39999"
-      }
-    ],
-    "docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md": [
-      {
-        "label": "cross_project_port_registry_scope",
-        "pattern": "--port auto"
-      },
-      {
-        "label": "cross_project_port_registry_scope",
-        "pattern": "(?i)port registry"
-      },
-      {
-        "label": "cross_project_port_registry_scope",
-        "pattern": "(?i)port-governance"
-      },
-      {
-        "label": "cross_project_port_registry_scope",
-        "pattern": "40000-40999"
-      },
-      {
-        "label": "cross_project_port_registry_scope",
-        "pattern": "39000-39999"
-      }
     ]
   }
 }

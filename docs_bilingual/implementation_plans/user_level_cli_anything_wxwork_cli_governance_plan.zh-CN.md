@@ -29,10 +29,10 @@ Python guard scripts、JSON receipts、本地测试、CI manifest entries、docs
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: planned Stage A split target；本文档包不启用任何 runtime control。
-Owner session: 当前 main Codex session 拥有 parent-plan hotspot 与本 child-plan creation package。
-Remote publication: not authorized / 远端发布未授权。
-Migration note: Stage A 记录新 lane 与参考源；旧 baseline checker 仍读取 historical source plans。Stage B 必须先迁移 checker/tests，然后从 active governance 中移除旧 source plans。
+Status: implemented-local; Stage B checker/test/spec migration is complete and remote publication remains closed.
+Owner session: the main Codex leader owns this implementation package and the shared CI/spec/docs-registry hotspots.
+Runtime boundary: no helper installs, clones, runs CLI-Anything, probes WXWork.exe, reads message content, sends messages, controls GUI state, mutates user-level Codex config, or performs live API/Webhook calls.
+Implementation evidence: `tools/cli_anything_governance.py` now exposes `adapter-plan` and `adapter-generation` fields; `tools/wxwork_cli_governance.py` is the canonical WXWork_CLI guard; focused tests cover no hard-load skills, no message-content, global lease, operator authorization, timeout release, rollback pointer, and dry-run-only dispatch.
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -64,10 +64,14 @@ Migration note: Stage A 记录新 lane 与参考源；旧 baseline checker 仍�
 ## 任务 Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [x] Stage A：在 `docs_bilingual/docs_registry.yaml` 注册本双语 child plan。
-- [x] Stage A：记录 CLI-Anything source URL `https://github.com/HKUDS/CLI-Anything`。
-- [x] Stage A：说明 WXWork_CLI 通过 CLI-Anything 控制 `WXWork.exe`，且不是 harnesses。
-- [x] Stage A：保留旧 source plans 作为迁移输入，直到 Stage B checker migration 完成。
+- [x] Stage A: register this bilingual child plan in `docs_bilingual/docs_registry.yaml`.
+- [x] Stage A: record CLI-Anything source URL `https://github.com/HKUDS/CLI-Anything`.
+- [x] Stage A: state that WXWork_CLI controls `WXWork.exe` through CLI-Anything and is not Codex harnesses.
+- [x] Stage A: keep old source plans as migration inputs until Stage B checker migration.
+- [x] Stage B: split CLI-Anything tests out of generic CDP/OpenCLI coverage.
+- [x] Stage B: rename active WeCom helper/test surfaces to canonical `WXWork_CLI`.
+- [x] Stage B: add checker coverage for source URL, adapter-plan semantics, no-message-content, global lease, operator authorization, timeout release, rollback pointer, and dry-run boundaries.
+- [x] Stage B: update CI manifest, safety registry, and OpenSpec guard registration.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B 待迁移工作
@@ -89,5 +93,5 @@ Migration note: Stage A 记录新 lane 与参考源；旧 baseline checker 仍�
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-04 Stage A evidence: 本方案记录 CLI-Anything/WXWork_CLI split target、参考源链接与 Stage B 迁移边界；implementation evidence pending Stage B.
+- 2026-06-04 Stage B implementation evidence: `tools/check_user_level_cli_anything_wxwork_cli_governance.py`, `test/check_user_level_cli_anything_wxwork_cli_governance.test.py`, `test/cli_anything_governance.test.py`, and `test/wxwork_cli_governance.test.py` verify the CLI-Anything/WXWork_CLI split lane, adapter-plan semantics, no-message-content boundary, global lease, operator authorization, timeout release, rollback pointer, and dry-run-only dispatch.
 <!-- EVIDENCE_INDEX_END -->

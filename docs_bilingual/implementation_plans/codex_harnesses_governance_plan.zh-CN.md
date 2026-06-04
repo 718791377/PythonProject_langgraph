@@ -29,20 +29,19 @@ Codex CLI、Git worktrees、JSON job state、Python guard/checker scripts、Open
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: planned Stage A split target；本文档包不启用 Pi 或 oh-my-pi runtime。
-Owner session: 当前 main Codex session 拥有 parent-plan hotspot 与本 child-plan creation package。
-Remote publication: not authorized / 远端发布未授权。
-Boundary: Codex harnesses 不得替代 Codex、native subagents、native_omx、LangGraph、`codex-ohmy` 或 `apply_patch`。
+Status: implemented-local; Stage B source-ledger/checker/spec migration is complete and remote publication remains closed.
+Runtime boundary: Codex harnesses are governance wrappers around future harness jobs; they do not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, or local-main-first publication gates.
+Implementation evidence: `tools/check_codex_harnesses_governance.py` requires source ledger rows, source pin, retrieved_at, license note, rollback pointer, no Codex takeover, unpinned Pi packages rejection, read guard, write guard, job state, isolated worktree, and changed-path report markers.
 <!-- CURRENT_STATUS_END -->
 
-## 参考源
+## Source Ledger
 
-| Reference | URL | 本 Codex fork 可复用内容 | 禁止行为 |
-| --- | --- | --- | --- |
-| The Harness Problem | https://blog.can.ac/2026/02/12/the-harness-problem | reliability ideas、recoverable editing、explicit failure surfacing | 复制未知代码或绕过 repo guards |
-| oh-my-pi | https://github.com/can1357/oh-my-pi | sidecar UX、update/rollback concepts、Pi-oriented runtime ergonomics | 替代 Codex launcher 或持有 provider secrets |
-| Pi | https://pi.dev/ | Pi runtime/RPC reference 与未来 smoke source | 未经 one-task authorization 修改当前 worktree |
-| Pi packages | https://pi.dev/packages | package discovery/update reference | 没有 pin/receipt/rollback evidence 就安装 packages |
+| Reference | URL | Source pin | retrieved_at | License note | Rollback pointer | Reuse scope | Forbidden behavior |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| The Harness Problem | https://blog.can.ac/2026/02/12/the-harness-problem | source pin: URL snapshot | retrieved_at: 2026-06-04 | license note: article reference only | rollback pointer: remove derived harness rules | reliability ideas, recoverable editing, explicit failure surfacing | do not copy unknown code or bypass repo guards |
+| oh-my-pi | https://github.com/can1357/oh-my-pi | source pin: commit/tag required before implementation | retrieved_at: 2026-06-04 | license note: inspect upstream license before reuse | rollback pointer: remove sidecar helper copy | sidecar UX, update/rollback concepts, Pi-oriented runtime ergonomics | do not replace Codex launcher or own provider secrets |
+| Pi | https://pi.dev/ | source pin: docs version or snapshot required | retrieved_at: 2026-06-04 | license note: docs reference only | rollback pointer: remove Pi runtime assumptions | Pi runtime/RPC reference and future smoke source | do not mutate current worktree without one-task authorization |
+| Pi packages | https://pi.dev/packages | source pin: package version required | retrieved_at: 2026-06-04 | license note: package license must be recorded per package | rollback pointer: remove package candidate | package discovery/update reference | do not install packages without pin/receipt/rollback evidence |
 
 ## 治理层级拆分
 
@@ -65,10 +64,12 @@ Boundary: Codex harnesses 不得替代 Codex、native subagents、native_omx、L
 ## 任务 Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [x] Stage A：在 `docs_bilingual/docs_registry.yaml` 注册本双语 child plan。
-- [x] Stage A：记录全部四个 harness source URLs，便于后续 refresh。
-- [x] Stage A：说明只有本 lane 称为 Codex harnesses。
-- [x] Stage A：将 Pi/oh-my-pi reference-sidecar 内容作为迁移输入保留到 Stage B checker migration。
+- [x] Stage A: state that only this lane is called Codex harnesses.
+- [x] Stage A: record The Harness Problem, oh-my-pi, Pi, and Pi packages reference links.
+- [x] Stage A: state no Codex takeover, no replacement of native Codex/OMX/LangGraph/apply_patch, and no live Pi execution.
+- [x] Stage B: add source ledger requirements for source pin, retrieved_at, license note, and rollback pointer.
+- [x] Stage B: add checker/spec coverage for no Codex takeover, no unpinned Pi packages, read guard, write guard, job state, isolated worktree, and changed-path report.
+- [x] Stage B: wire checker/tests into CI manifest, safety registry, and OpenSpec guard.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B 待迁移工作
@@ -90,5 +91,5 @@ Boundary: Codex harnesses 不得替代 Codex、native subagents、native_omx、L
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-04 Stage A evidence: 本方案记录 Codex harnesses split target、四个参考源链接与 no-takeover boundary；implementation evidence pending Stage B.
+- 2026-06-04 Stage B implementation evidence: `tools/check_codex_harnesses_governance.py` and `test/check_codex_harnesses_governance.test.py` verify the harness-only lane, source ledger, no-takeover boundary, read/write guards, job state, isolated worktree, changed-path report, and no unpinned Pi packages.
 <!-- EVIDENCE_INDEX_END -->

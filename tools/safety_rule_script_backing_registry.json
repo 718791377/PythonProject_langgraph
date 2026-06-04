@@ -193,22 +193,6 @@
       "description": "Keeps Codex-dedicated MCP servers direct and reports MCP Router drift for dedicated or self-referential server entries."
     },
     {
-      "id": "user-level-mcp-skills-browser-cli-baseline",
-      "owner_level": "user",
-      "status": "implemented",
-      "prompt_reminders": [
-        "docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md",
-        "docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md"
-      ],
-      "script_controls": [
-        "tools/check_user_level_mcp_skills_browser_cli_baseline.py"
-      ],
-      "guard_steps": [
-        "check_user_level_mcp_skills_browser_cli_baseline"
-      ],
-      "description": "Keeps the user-level MCP, skills, browser automation, and CLI harness baseline script-backed: token/risk priority, sensitive authorization receipts, update receipts, evidence redaction, and slice readiness cannot drift silently."
-    },
-    {
       "id": "openspec-code-archive-evidence",
       "owner_level": "project",
       "status": "implemented",
@@ -675,6 +659,54 @@
         "check_local_flow_scripted_enforcement"
       ],
       "description": "Backs automatic local-main integration with a helper that runs local gates, creates a rollback ref, fast-forwards local main, records completion evidence, safely cleans integrated local worktrees/branches by default, and stops at the remote publication gate."
+    },
+    {
+      "id": "user-level-browser-cli-adapter-boundary",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/user_level_browser_cli_adapter_boundary_plan.md",
+        "docs_bilingual/implementation_plans/user_level_browser_cli_adapter_boundary_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_user_level_browser_cli_adapter_boundary.py"
+      ],
+      "guard_steps": [
+        "check_user_level_browser_cli_adapter_boundary"
+      ],
+      "description": "Keeps Browser/CLI adapters limited to chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; sibling CLI-Anything/WXWork_CLI and Codex harnesses must not enter adapter lane tables."
+    },
+    {
+      "id": "user-level-cli-anything-wxwork-cli-governance",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/user_level_cli_anything_wxwork_cli_governance_plan.md",
+        "docs_bilingual/implementation_plans/user_level_cli_anything_wxwork_cli_governance_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_user_level_cli_anything_wxwork_cli_governance.py"
+      ],
+      "guard_steps": [
+        "check_user_level_cli_anything_wxwork_cli_governance"
+      ],
+      "description": "Keeps CLI-Anything as adapter-generation support for future WXWork_CLI control through CLI-Anything, with no hard-load skills, no message content, global lease, operator authorization, timeout release, rollback, and dry-run evidence."
+    },
+    {
+      "id": "codex-harnesses-governance",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_harnesses_governance_plan.md",
+        "docs_bilingual/implementation_plans/codex_harnesses_governance_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_codex_harnesses_governance.py"
+      ],
+      "guard_steps": [
+        "check_codex_harnesses_governance"
+      ],
+      "description": "Keeps Codex harness governance separate from adapter lanes, requires pinned source ledger records for The Harness Problem, oh-my-pi, Pi, and Pi packages, and preserves no-takeover, read/write guard, job-state, isolated-worktree, and changed-path-report boundaries."
     }
   ]
 }

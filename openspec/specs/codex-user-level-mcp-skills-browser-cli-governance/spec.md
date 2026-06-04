@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This specification preserves the script-backed baseline governance requirements for user-level MCP, skills, browser automation, and CLI harness surfaces. It keeps Token/risk priority, authorization receipt, update receipt, evidence redaction, port registry/lease, OpenSpec slice, and fail closed rules visible before the later `skills2cli`, `mcp2cli`, browser, and `wecom-cli` implementation slices land.
+This specification preserves the script-backed baseline governance requirements for user-level MCP, skills, browser automation, and CLI adapter and Codex harness surfaces. It keeps Token/risk priority, authorization receipt, update receipt, evidence redaction, port registry/lease, OpenSpec slice, and fail closed rules visible before the later `skills2cli`, `mcp2cli`, browser, and `WXWork_CLI` implementation slices land.
 ## Requirements
 ### Requirement: User-level MCP skills browser CLI baseline SHALL be script-backed
 
@@ -13,7 +13,7 @@ The checker SHALL validate that repository-owned plan and OpenSpec surfaces pres
 #### Scenario: Baseline checker runs in the repository guard
 
 - **WHEN** `python tools/run_openspec_guard.py --root . --json` runs
-- **THEN** the aggregate guard SHALL include `check_user_level_mcp_skills_browser_cli_baseline`
+- **THEN** the aggregate guard SHALL include the split checks `check_user_level_browser_cli_adapter_boundary`, `check_user_level_cli_anything_wxwork_cli_governance`, and `check_codex_harnesses_governance`
 - **AND** the checker SHALL pass only when the baseline governance surfaces are present
 
 #### Scenario: Authorization receipt evidence is incomplete
@@ -504,7 +504,7 @@ The guard SHALL be non-mutating. It SHALL NOT install OpenCLI, start OpenCLI, la
 - **WHEN** `python tools/opencli_governance.py --state-dir <tmp> --owner-state-dir <owner-state> check --action session.inspect --target tab:opencli-1 --session session-a --owner-lease-id <lease> --json` runs with matching active owner lease evidence
 - **THEN** the command SHALL return `ok=true`
 - **AND** it SHALL report `dispatch_allowed=true`
-- **AND** it SHALL report `adapter_mode=on-demand`
+- **AND** it SHALL report `adapter_mode=on-demand` (meaning OpenCLI is available only when explicitly invoked for the current task, not as a persistent always-on browser adapter)
 - **AND** it SHALL report `owner_verified=true`
 - **AND** it SHALL report `connects_to_browser=false`
 
@@ -541,9 +541,22 @@ The guard SHALL be non-mutating. It SHALL NOT install OpenCLI, start OpenCLI, la
 - **AND** each check SHALL require owner lease evidence
 - **AND** each check SHALL require authorization receipt evidence
 
-### Requirement: CLI-Anything governance guard SHALL require receipt evidence and harness-generation boundaries
 
-The repository SHALL provide a repo-local CLI-Anything governance guard that validates install/update receipt evidence and harness-generation boundaries before any future user-level CLI-Anything or CLI Hub adaptation is treated as eligible.
+
+### Requirement: Browser/CLI adapter boundary SHALL stay separate from sibling lanes
+
+The Browser/CLI adapter lane SHALL contain exactly `chrome-devtools-mcp`, `cdp-bridge-mcp` / `CDP Bridge`, and `OpenCLI`. CLI-Anything/WXWork_CLI and Codex harnesses are sibling plans, not Browser/CLI adapters.
+
+#### Scenario: Adapter lane table is checked
+
+- **WHEN** `python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json` runs
+- **THEN** it SHALL accept only the three canonical adapter lane rows
+- **AND** it SHALL reject CLI-Anything, WXWork_CLI, WXWork.exe, legacy wecom-cli, or harness terms in adapter lane tables
+
+
+### Requirement: CLI-Anything governance guard SHALL require receipt evidence and adapter-generation boundaries
+
+The repository SHALL provide a repo-local CLI-Anything governance guard that validates install/update receipt evidence and adapter-generation boundaries before any future user-level CLI-Anything or CLI Hub adaptation is treated as eligible.
 
 The guard SHALL support at least:
 
@@ -552,9 +565,9 @@ The guard SHALL support at least:
 - `update-plan --current-receipt <path> --new-pin <pin> --staging-dir <path> --smoke-status <status> --json`;
 - `update-record --current-receipt <path> --receipt-dir <dir> --new-pin <pin> --staging-dir <path> --smoke-command <cmd> --smoke-status <status> --json`;
 - `rollback-plan --receipt <path> --json` - reports rollback evidence without executing rollback;
-- `harness-plan --capability <text> --output-dir <path> --target-process <process> --json` - reports harness-generation eligibility without generating or running a live harness.
+- `adapter-plan --capability <text> --output-dir <path> --target-process <process> --json` - reports adapter-generation eligibility without generating or running a live harness.
 
-The guard SHALL keep CLI-Anything as harness-generation support only until install/update receipts, smoke evidence, and rollback evidence exist. It SHALL NOT clone CLI-Anything, perform network fetches, install wrappers, run CLI-Anything, mutate user-level Codex configuration, hard-load bulk skills, control live applications, or emit raw private install/wrapper/state/output paths in default output.
+The guard SHALL keep CLI-Anything as adapter-generation support only until install/update receipts, smoke evidence, and rollback evidence exist. It SHALL NOT clone CLI-Anything, perform network fetches, install wrappers, run CLI-Anything, mutate user-level Codex configuration, hard-load bulk skills, control live applications, or emit raw private install/wrapper/state/output paths in default output.
 
 #### Scenario: Pinned CLI-Anything install receipt is written without installing the tool
 
@@ -562,7 +575,7 @@ The guard SHALL keep CLI-Anything as harness-generation support only until insta
 - **THEN** the command SHALL return `ok=true`
 - **AND** it SHALL write a `cli-anything.lock.json` receipt
 - **AND** it SHALL report path hashes instead of raw private paths
-- **AND** it SHALL report `installs_cli_anything=false`, `runs_cli_anything=false`, `hard_loads_skills=false`, and `harness_generation_boundary_only=true`
+- **AND** it SHALL report `installs_cli_anything=false`, `runs_cli_anything=false`, `hard_loads_skills=false`, and `adapter_generation_boundary_only=true`
 
 #### Scenario: CLI-Anything hard-load skill attempts are blocked
 
@@ -581,19 +594,19 @@ The guard SHALL keep CLI-Anything as harness-generation support only until insta
 - **THEN** it SHALL write an update receipt
 - **AND** the update receipt SHALL include previous receipt id and previous pin rollback evidence
 
-#### Scenario: CLI-Anything harness planning remains generation-only
+#### Scenario: CLI-Anything adapter planning remains generation-only
 
-- **WHEN** `harness-plan --capability <text> --output-dir <path> --target-process WXWork.exe --json` runs without hard-loaded skills
-- **THEN** it SHALL return `harness_generation_allowed=true`
+- **WHEN** `adapter-plan --capability <text> --output-dir <path> --target-process WXWork.exe --json` runs without hard-loaded skills
+- **THEN** it SHALL return `adapter_generation_allowed=true`
 - **AND** it SHALL report repo-local source and live-control authorization gates
 - **AND** it SHALL NOT run CLI-Anything, control WXWork, hard-load skills, or emit raw private output paths
 
-- **WHEN** `harness-plan` is asked to hard-load skills
+- **WHEN** `adapter-plan` is asked to hard-load skills
 - **THEN** it SHALL fail closed with `hard_load_skills_must_be_false`
 
-### Requirement: WeCom CLI governance guard SHALL prefer API/Webhook and fail closed for WXWork GUI automation
+### Requirement: WXWork_CLI governance guard SHALL prefer API/Webhook and fail closed for WXWork GUI automation
 
-The repository SHALL provide a repo-local `wecom-cli` governance guard that models Enterprise WeChat / WeCom / WXWork control boundaries without attaching to `WXWork.exe`, probing local processes, calling live APIs or webhooks, reading message content, sending messages, mutating user-level Codex configuration, or controlling GUI state.
+The repository SHALL provide a repo-local `WXWork_CLI` governance guard that models Enterprise WeChat / WXWork_CLI / WXWork control boundaries without attaching to `WXWork.exe`, probing local processes, calling live APIs or webhooks, reading message content, sending messages, mutating user-level Codex configuration, or controlling GUI state.
 
 The guard SHALL support at least:
 
@@ -606,28 +619,28 @@ WXWork GUI actions SHALL require a global WXWork lease receipt, operator authori
 
 #### Scenario: API/Webhook status is requested
 
-- **WHEN** `python tools/wecom_cli_governance.py api-status --json` runs
+- **WHEN** `python tools/wxwork_cli_governance.py api-status --json` runs
 - **THEN** the command SHALL return `ok=true`
 - **AND** it SHALL report `api_or_webhook_first`
 - **AND** it SHALL report no process probe, no GUI control, no message-content read, and no WeCom API call
 
 #### Scenario: Webhook planning receives an inline secret
 
-- **WHEN** `python tools/wecom_cli_governance.py webhook-plan --name ops --secret-ref "secret=<value>" --json` runs
+- **WHEN** `python tools/wxwork_cli_governance.py webhook-plan --name ops --secret-ref "secret=<value>" --json` runs
 - **THEN** the command SHALL fail closed
 - **AND** it SHALL not call a webhook
 - **AND** it SHALL not retain the raw secret value in default output
 
 #### Scenario: GUI planning is requested
 
-- **WHEN** `python tools/wecom_cli_governance.py gui-plan --target-process WXWork.exe --json` runs
+- **WHEN** `python tools/wxwork_cli_governance.py gui-plan --target-process WXWork.exe --json` runs
 - **THEN** the command SHALL return `ok=true`
 - **AND** it SHALL report global lease, operator confirmation, and timeout release requirements
 - **AND** it SHALL report live GUI control is not allowed by the repo-local MVP
 
 #### Scenario: GUI attach lacks receipts
 
-- **WHEN** `python tools/wecom_cli_governance.py gui-check --action gui.attach --session session-a --json` runs without receipts
+- **WHEN** `python tools/wxwork_cli_governance.py gui-check --action gui.attach --session session-a --json` runs without receipts
 - **THEN** the command SHALL fail closed
 - **AND** it SHALL require both operator authorization receipt and global WXWork lease receipt
 - **AND** it SHALL report `gui_control_performed=false`
@@ -793,3 +806,16 @@ Even when all evidence is present, the repo-local MVP SHALL NOT start OpenCLI. I
 - **THEN** the command SHALL fail closed with `live_start_not_implemented_repo_local_mvp`
 - **AND** it SHALL report `start_performed=false`
 - **AND** it SHALL NOT install OpenCLI, start OpenCLI, launch browsers, connect to browser targets, or mutate user-level Codex configuration
+
+
+### Requirement: Codex harnesses governance SHALL require pinned source ledger and no-takeover guards
+
+Codex harnesses governance SHALL be the only lane that owns harness wording. It SHALL derive future rules from these reference sources while keeping Codex as primary controller: The Harness Problem `https://blog.can.ac/2026/02/12/the-harness-problem`, oh-my-pi `https://github.com/can1357/oh-my-pi`, Pi `https://pi.dev/`, and Pi packages `https://pi.dev/packages`.
+
+The harness lane SHALL require source ledger rows with source pin, retrieved_at, license note, and rollback pointer before adopting any derived rule or helper. It SHALL reject no Codex takeover violations, unpinned Pi packages, missing read guard, missing write guard, missing job state, missing isolated worktree, or missing changed-path report evidence.
+
+#### Scenario: Harness governance checker runs
+
+- **WHEN** `python tools/check_codex_harnesses_governance.py --root . --json` runs
+- **THEN** it SHALL verify all four source URLs and the source-ledger fields
+- **AND** it SHALL verify no Codex takeover, read guard, write guard, job state, isolated worktree, changed-path report, and unpinned Pi packages boundaries

@@ -15,10 +15,10 @@ CHECK_NAME = "user_level_mcp_skills_cli_install"
 INSTALL_HELPER = Path("tools/install_user_level_mcp_skills_cli.py")
 CI_MANIFEST = Path("tools/ci/ci_test_manifest.json")
 GUARD_SCRIPT = Path("tools/run_openspec_guard.py")
-PLAN_EN = Path("docs_bilingual/implementation_plans/user_level_mcp_skills_discovery_facade_plan.md")
-PLAN_ZH = Path("docs_bilingual/implementation_plans/user_level_mcp_skills_discovery_facade_plan.zh-CN.md")
-PARENT_EN = Path("docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md")
-PARENT_ZH = Path("docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md")
+PLAN_EN = Path("docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md")
+PLAN_ZH = Path("docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md")
+PARENT_EN = PLAN_EN
+PARENT_ZH = PLAN_ZH
 TEST_NAME = "user_level_mcp_skills_cli_install.test.py"
 CHILD_PLAN_MARKERS = [
     "knowsuchagency/mcp2cli",

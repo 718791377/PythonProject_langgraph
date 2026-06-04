@@ -5,7 +5,7 @@ status: active
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/user_level_capability_receipt_rollback_redaction_plan.md
 parent_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md
-source_plan: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md
+source_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md
 ---
 
 # 用户级能力 Receipt、Rollback 与 Redaction 实施方案
@@ -64,7 +64,7 @@ Runtime boundary: the repo-local helper validates evidence only; it does not ins
 
 ## 验证门禁
 
-- MCP baseline checker: `python tools/check_user_level_mcp_skills_browser_cli_baseline.py --root . --json` verifies source-plan baseline markers and guard registration.
+- MCP baseline checker: `python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json` verifies source-plan baseline markers and guard registration.
 - OpenSpec aggregate guard: `python tools/run_openspec_guard.py --root . --json` verifies official workflow, document policy, and name clarity rules.
 - Pre-commit update/archive review: `python tools/check_precommit_update_archive.py --root . --json` verifies required related-file updates and archive state.
 - Whitespace check: `git diff --check` verifies the patch has no whitespace errors.

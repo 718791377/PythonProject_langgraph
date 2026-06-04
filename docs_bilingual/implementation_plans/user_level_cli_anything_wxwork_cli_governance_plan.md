@@ -29,10 +29,10 @@ Python guard scripts, JSON receipts, local tests, CI manifest entries, docs regi
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: planned Stage A split target; no runtime control is enabled by this document package.
-Owner session: the current main Codex session owns the parent-plan hotspot and this child-plan creation package.
-Remote publication: not authorized.
-Migration note: Stage A records the new lane and reference sources while old baseline checkers still read the historical source plans. Stage B must migrate checker/tests and then remove the old source plans from active governance.
+Status: implemented-local; Stage B checker/test/spec migration is complete and remote publication remains closed.
+Owner session: the main Codex leader owns this implementation package and the shared CI/spec/docs-registry hotspots.
+Runtime boundary: no helper installs, clones, runs CLI-Anything, probes WXWork.exe, reads message content, sends messages, controls GUI state, mutates user-level Codex config, or performs live API/Webhook calls.
+Implementation evidence: `tools/cli_anything_governance.py` now exposes `adapter-plan` and `adapter-generation` fields; `tools/wxwork_cli_governance.py` is the canonical WXWork_CLI guard; focused tests cover no hard-load skills, no message-content, global lease, operator authorization, timeout release, rollback pointer, and dry-run-only dispatch.
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -66,8 +66,12 @@ One session may claim this implementation plan at a time. Other sessions may wor
 <!-- TASK_BACKLOG_START -->
 - [x] Stage A: register this bilingual child plan in `docs_bilingual/docs_registry.yaml`.
 - [x] Stage A: record CLI-Anything source URL `https://github.com/HKUDS/CLI-Anything`.
-- [x] Stage A: state that WXWork_CLI controls `WXWork.exe` through CLI-Anything and is not harnesses.
+- [x] Stage A: state that WXWork_CLI controls `WXWork.exe` through CLI-Anything and is not Codex harnesses.
 - [x] Stage A: keep old source plans as migration inputs until Stage B checker migration.
+- [x] Stage B: split CLI-Anything tests out of generic CDP/OpenCLI coverage.
+- [x] Stage B: rename active WeCom helper/test surfaces to canonical `WXWork_CLI`.
+- [x] Stage B: add checker coverage for source URL, adapter-plan semantics, no-message-content, global lease, operator authorization, timeout release, rollback pointer, and dry-run boundaries.
+- [x] Stage B: update CI manifest, safety registry, and OpenSpec guard registration.
 <!-- TASK_BACKLOG_END -->
 
 ## Pending Stage B Migration Work
@@ -79,6 +83,14 @@ One session may claim this implementation plan at a time. Other sessions may wor
 - Update CI manifest and OpenSpec guard registration.
 - Remove old source plans after checkers no longer require them.
 
+## Implemented Contract
+
+- `tools/cli_anything_governance.py` is a repo-local receipt and adapter-generation boundary guard for CLI-Anything; it records the reference source `https://github.com/HKUDS/CLI-Anything`, requires pinned receipt/update evidence, and reports `adapter_generation_only=true`.
+- `adapter-plan` replaces the former harness wording for this lane; it is adapter-generation only and reports `wxwork_cli_control_surface=WXWork_CLI`.
+- `tools/wxwork_cli_governance.py` is the canonical WXWork_CLI guard for future `WXWork.exe` control through CLI-Anything.
+- WXWork_CLI GUI prechecks require global lease, operator authorization, session match, future expiry, timeout release, rollback pointer, and no message-content evidence.
+- Valid WXWork_CLI receipts allow dry-run dispatch eligibility only in this repo-local MVP; they never perform live GUI control.
+
 ## Acceptance Criteria
 
 - CLI-Anything/WXWork_CLI is never described as Codex harnesses.
@@ -89,5 +101,5 @@ One session may claim this implementation plan at a time. Other sessions may wor
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- Pending Stage A evidence: this plan records the split target and source links; implementation evidence is pending Stage B.
+- 2026-06-04 Stage B implementation evidence: `tools/cli_anything_governance.py`, `tools/wxwork_cli_governance.py`, `test/cli_anything_governance.test.py`, `test/wxwork_cli_governance.test.py`, and `tools/check_user_level_cli_anything_wxwork_cli_governance.py` implement and verify the split lane.
 <!-- EVIDENCE_INDEX_END -->

@@ -28,11 +28,11 @@ Python adapter guards, `codex-port`, browser owner registry, chrome-devtools-mcp
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local; Stage A reclassifies the adapter lane while keeping remote publication closed.
-Current gate: Stage B must migrate baseline checkers/tests away from the old mixed source plan before the old source plans are deleted.
-Source relation: split from the historical MCP/skills/browser/CLI source plan; the canonical adapter set is now exactly `chrome-devtools-mcp`, `cdp-bridge-mcp` / `CDP Bridge`, and `OpenCLI`.
+Status: implemented-local; Stage B checker/test/spec migration is complete and remote publication remains closed.
+Current gate: validate the new split adapter checker, focused adapter tests, precommit/archive review, OpenSpec guard, local gate, and local MR review before local `main` integration.
+Canonical adapter set: exactly `chrome-devtools-mcp`, `cdp-bridge-mcp` / `CDP Bridge`, and `OpenCLI`.
 Runtime boundary: this repo-local package does not install tools, start browsers, call sensitive MCP methods, read cookies, execute JavaScript, mutate browser/GUI state, or mutate user-level runtime state.
-Implementation evidence: existing repo-local guards keep chrome-devtools-mcp and OpenCLI as on-demand wrappers and CDP Bridge read-only by default. Temporary legacy references below exist only so Stage A remains compatible with the old baseline checker until Stage B migration.
+Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py` rejects CLI-Anything, WXWork_CLI, WXWork.exe, wecom-cli, and harness wording in adapter lane tables; `test/check_user_level_browser_cli_adapter_boundary.test.py` and existing chrome/CDP/OpenCLI tests cover the lane.
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -69,6 +69,9 @@ One session may claim this implementation plan at a time. Other sessions may wor
 - [x] Require OpenCLI-style adapters to use `--port auto` and sanitized `codex-port` lease evidence.
 - [x] Stage A: record the canonical Browser/CLI adapter set and reference source links.
 - [x] Stage A: state that CLI-Anything/WXWork_CLI and Codex harnesses are sibling plans, not adapters.
+- [x] Stage B: replace the old mixed baseline checker with the split adapter checker.
+- [x] Stage B: add negative coverage for CLI-Anything, WXWork_CLI, WXWork.exe, wecom-cli, and harness terms in adapter lane tables.
+- [x] Stage B: update CI manifest, safety registry, and OpenSpec guard wiring.
 <!-- TASK_BACKLOG_END -->
 
 ## Pending Stage B Migration Work
@@ -94,14 +97,10 @@ One session may claim this implementation plan at a time. Other sessions may wor
 | chrome-devtools-mcp | on-demand | `tools/chrome_devtools_mcp_managed.py`, `test/chrome_devtools_mcp_managed.test.py` | No live browser start without install receipt and owner evidence; repo-local MVP still defers actual start. |
 | CDP Bridge / cdp-bridge-mcp | on-demand | `tools/cdp_bridge_governance.py`, `test/cdp_bridge_governance.test.py` | Read-only tab inventory allowed; sensitive actions require owner lease plus authorization receipt. |
 | OpenCLI | on-demand | `tools/opencli_governance.py`, OpenCLI coverage in `test/cdp_bridge_governance.test.py` | Requires `--port auto`, sanitized `codex-port` lease evidence, owner evidence, and receipt-gated sensitive actions. |
-| CLI-Anything | reference-only | temporary Stage A baseline-checker compatibility row only | Not a Browser/CLI adapter; moving to `user_level_cli_anything_wxwork_cli_governance_plan`. |
-| wecom-cli | on-demand | temporary Stage A baseline-checker compatibility row only | Not a Browser/CLI adapter; active naming will move to `WXWork_CLI` in Stage B. |
-| future-live-adapter | planned | placeholder marker required only for Stage A baseline checker compatibility | Does not add a canonical adapter. |
-| future-active-candidate | active-candidate | placeholder marker required only for Stage A baseline checker compatibility | Does not represent current live runtime. |
 
 ## Validation Gates
 
-- Baseline checker: `python tools/check_user_level_mcp_skills_browser_cli_baseline.py --root . --json` remains required until Stage B migrates the checker.
+- Split checker: `python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json` verifies the canonical adapter boundary.
 - OpenSpec aggregate guard: `python tools/run_openspec_guard.py --root . --json` verifies official workflow, document policy, and name clarity rules.
 - Whitespace check: `git diff --check` verifies the patch has no whitespace errors.
 
@@ -116,5 +115,5 @@ One session may claim this implementation plan at a time. Other sessions may wor
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-01: `user_level_browser_cli_adapter_boundary_plan` implementation evidence recorded branch `implement-user-level-browser-cli-adapter-boundary-20260601` for the earlier mixed adapter package.
-- Pending Stage A evidence: this rewrite narrows the canonical Browser/CLI adapter scope to chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; checker migration is pending Stage B.
+- 2026-06-04 Stage B implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py` and `test/check_user_level_browser_cli_adapter_boundary.test.py` enforce the three-adapter boundary and reject sibling-lane terms in adapter tables.
 <!-- EVIDENCE_INDEX_END -->

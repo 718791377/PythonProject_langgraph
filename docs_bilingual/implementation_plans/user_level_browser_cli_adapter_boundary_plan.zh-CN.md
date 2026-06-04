@@ -28,12 +28,11 @@ Python adapter guard、`codex-port`、browser owner registry、chrome-devtools-m
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；Stage A 重新界定 adapter lane，并保持 remote publication 显式关闭。
-Current gate: Stage B 必须先迁移 baseline checker/tests，使其不再依赖旧的混合 source plan，然后才能删除旧 source plans。
-Source relation: 从历史 MCP/skills/browser/CLI source plan 拆分；canonical adapter set 现在只包含 `chrome-devtools-mcp`、`cdp-bridge-mcp` / `CDP Bridge` 与 `OpenCLI`。
-Runtime boundary: 本 repo-local 包不安装工具、不启动浏览器、不调用敏感 MCP 方法、不读取 cookies、不执行 JavaScript、不修改 browser/GUI 状态，也不修改用户级 runtime state。
-Implementation evidence: 现有 repo-local guard 将 chrome-devtools-mcp 与 OpenCLI 保持为 on-demand wrapper，并将 CDP Bridge 默认保持 read-only。下方 temporary legacy references 只用于 Stage A 兼容旧 baseline checker，Stage B 迁移后删除。
-Remote publication: not authorized / 远端发布未授权。
+Status: implemented-local; Stage B checker/test/spec migration is complete and remote publication remains closed.
+Current gate: validate the new split adapter checker, focused adapter tests, precommit/archive review, OpenSpec guard, local gate, and local MR review before local `main` integration.
+Canonical adapter set: exactly `chrome-devtools-mcp`, `cdp-bridge-mcp` / `CDP Bridge`, and `OpenCLI`.
+Runtime boundary: this repo-local package does not install tools, start browsers, call sensitive MCP methods, read cookies, execute JavaScript, mutate browser/GUI state, or mutate user-level runtime state.
+Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py` rejects CLI-Anything, WXWork_CLI, WXWork.exe, wecom-cli, and harness wording in adapter lane tables; `test/check_user_level_browser_cli_adapter_boundary.test.py` and existing chrome/CDP/OpenCLI tests cover the lane.
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -65,11 +64,14 @@ Remote publication: not authorized / 远端发布未授权。
 ## 任务 Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [x] 允许特定 guard 下的 read-only tab inventory 不需要敏感授权。
-- [x] click、type、navigate、JavaScript execution、cookie read 与 raw browser data access 必须有 authorization receipt。
-- [x] OpenCLI-style adapters 必须使用 `--port auto` 与 sanitized `codex-port` lease evidence。
-- [x] Stage A：记录 canonical Browser/CLI adapter set 与参考源链接。
-- [x] Stage A：说明 CLI-Anything/WXWork_CLI 与 Codex harnesses 是兄弟方案，不是 adapters。
+- [x] Keep read-only tab inventory allowed without sensitive authorization where the specific guard allows it.
+- [x] Require authorization receipt for click, type, navigate, JavaScript execution, cookie read, and raw browser data access.
+- [x] Require OpenCLI-style adapters to use `--port auto` and sanitized `codex-port` lease evidence.
+- [x] Stage A: record the canonical Browser/CLI adapter set and reference source links.
+- [x] Stage A: state that CLI-Anything/WXWork_CLI and Codex harnesses are sibling plans, not adapters.
+- [x] Stage B: replace the old mixed baseline checker with the split adapter checker.
+- [x] Stage B: add negative coverage for CLI-Anything, WXWork_CLI, WXWork.exe, wecom-cli, and harness terms in adapter lane tables.
+- [x] Stage B: update CI manifest, safety registry, and OpenSpec guard wiring.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B 待迁移工作
@@ -92,13 +94,9 @@ Remote publication: not authorized / 远端发布未授权。
 
 | Adapter lane | Status | Repo-local evidence | Live/runtime boundary |
 | --- | --- | --- | --- |
-| chrome-devtools-mcp | on-demand | `tools/chrome_devtools_mcp_managed.py`, `test/chrome_devtools_mcp_managed.test.py` | 没有 install receipt 与 owner evidence 不启动 live browser；repo-local MVP 仍推迟实际启动。 |
-| CDP Bridge / cdp-bridge-mcp | on-demand | `tools/cdp_bridge_governance.py`, `test/cdp_bridge_governance.test.py` | read-only tab inventory 允许；sensitive actions 需要 owner lease 与 authorization receipt。 |
-| OpenCLI | on-demand | `tools/opencli_governance.py`, OpenCLI coverage in `test/cdp_bridge_governance.test.py` | 要求 `--port auto`、sanitized `codex-port` lease evidence、owner evidence 与 receipt-gated sensitive actions。 |
-| CLI-Anything | reference-only | temporary Stage A baseline-checker compatibility row only | 不是 Browser/CLI adapter；迁移到 `user_level_cli_anything_wxwork_cli_governance_plan`。 |
-| wecom-cli | on-demand | temporary Stage A baseline-checker compatibility row only | 不是 Browser/CLI adapter；Stage B active naming 将迁移为 `WXWork_CLI`。 |
-| future-live-adapter | planned | placeholder marker required only for Stage A baseline checker compatibility | 不代表新增 canonical adapter。 |
-| future-active-candidate | active-candidate | placeholder marker required only for Stage A baseline checker compatibility | 不代表当前 live runtime。 |
+| chrome-devtools-mcp | on-demand | `tools/chrome_devtools_mcp_managed.py`, `test/chrome_devtools_mcp_managed.test.py` | No live browser start without install receipt and owner evidence; repo-local MVP still defers actual start. |
+| CDP Bridge / cdp-bridge-mcp | on-demand | `tools/cdp_bridge_governance.py`, `test/cdp_bridge_governance.test.py` | Read-only tab inventory allowed; sensitive actions require owner lease plus authorization receipt. |
+| OpenCLI | on-demand | `tools/opencli_governance.py`, OpenCLI coverage in `test/cdp_bridge_governance.test.py` | Requires `--port auto`, sanitized `codex-port` lease evidence, owner evidence, and receipt-gated sensitive actions. |
 
 ## 验证门禁
 
@@ -117,5 +115,5 @@ Remote publication: not authorized / 远端发布未授权。
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-01: `user_level_browser_cli_adapter_boundary_plan` implementation evidence recorded branch `implement-user-level-browser-cli-adapter-boundary-20260601` for the earlier mixed adapter package.
-- 2026-06-04 Stage A implementation evidence: this rewrite narrows the canonical Browser/CLI adapter scope to chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; checker migration is pending Stage B.
+- 2026-06-04 Stage B implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py`, `test/check_user_level_browser_cli_adapter_boundary.test.py`, and existing chrome/CDP/OpenCLI tests verify the Browser/CLI adapter lane and reject CLI-Anything/WXWork_CLI, WXWork.exe, wecom-cli, and harness wording in adapter lane tables.
 <!-- EVIDENCE_INDEX_END -->

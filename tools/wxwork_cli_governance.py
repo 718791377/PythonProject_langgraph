@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Repo-local WeCom/WXWork governance guard.
+"""Repo-local WXWork_CLI governance guard.
 
-This helper models the future ``wecom-cli`` control boundary without
-attaching to ``WXWork.exe``, probing local processes, reading message content,
-calling Webhook/API endpoints, mutating user-level Codex configuration, or
-starting GUI automation.
+This helper models the future ``WXWork_CLI`` control boundary through
+CLI-Anything without attaching to ``WXWork.exe``, probing local processes,
+reading message content, calling live API/Webhook endpoints, mutating
+user-level Codex configuration, or starting GUI automation.
 """
 from __future__ import annotations
 
@@ -18,8 +18,8 @@ from pathlib import Path
 from typing import Any
 
 
-TOOL_NAME = "wecom-cli"
-OWNER_LANE = "wecom-cli"
+TOOL_NAME = "WXWork_CLI"
+OWNER_LANE = "wxwork_cli"
 TARGET_PROCESS = "WXWork.exe"
 LEASE_SCOPE = "global-wxwork-gui"
 SENSITIVE_ACTIONS = {"gui.attach", "gui.click", "gui.type", "gui.read-message"}
@@ -89,7 +89,7 @@ def safety_payload() -> dict[str, Any]:
         "controls_gui": False,
         "reads_message_content": False,
         "sends_messages": False,
-        "calls_wecom_api": False,
+        "calls_enterprise_wechat_api": False,
         "calls_webhook": False,
         "mutates_user_level_codex_config": False,
         "raw_private_paths_in_output": False,
@@ -104,7 +104,7 @@ def validate_authorization(receipt: dict[str, Any] | None, blockers: list[str], 
     missing = sorted(field for field in required if field not in receipt)
     blockers.extend(f"authorization_missing_{field}" for field in missing)
     if receipt.get("owner_lane") != OWNER_LANE:
-        blockers.append("authorization_owner_lane_must_be_wecom_cli")
+        blockers.append("authorization_owner_lane_must_be_wxwork_cli")
     if receipt.get("action") != action:
         blockers.append("authorization_action_mismatch")
     if receipt.get("target") not in {TARGET_PROCESS, f"process:{TARGET_PROCESS}", "wecom-gui"}:
@@ -127,7 +127,7 @@ def validate_lease(receipt: dict[str, Any] | None, blockers: list[str], *, sessi
     missing = sorted(field for field in required if field not in receipt)
     blockers.extend(f"lease_missing_{field}" for field in missing)
     if receipt.get("owner_lane") != OWNER_LANE:
-        blockers.append("lease_owner_lane_must_be_wecom_cli")
+        blockers.append("lease_owner_lane_must_be_wxwork_cli")
     if receipt.get("lease_scope") != LEASE_SCOPE:
         blockers.append("lease_scope_must_be_global_wxwork_gui")
     if receipt.get("target_process") != TARGET_PROCESS:
@@ -154,6 +154,7 @@ def command_api_status(args: argparse.Namespace) -> dict[str, Any]:
         "ok": True,
         "tool": TOOL_NAME,
         "action": "api.status",
+        "control_surface": "WXWork_CLI",
         "default_channel": "api_or_webhook_first",
         "gui_automation_enabled": False,
         "target_process": TARGET_PROCESS,
@@ -174,6 +175,7 @@ def command_webhook_plan(args: argparse.Namespace) -> dict[str, Any]:
         "ok": not blockers,
         "tool": TOOL_NAME,
         "action": "webhook.plan",
+        "control_surface": "WXWork_CLI",
         "webhook_name": sanitize_text(args.name, limit=80),
         "secret_ref_hash": stable_hash(args.secret_ref) if args.secret_ref else "",
         "plan_allowed": not blockers,
@@ -246,13 +248,13 @@ def emit(payload: dict[str, Any]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="WeCom/WXWork repo-local governance guard.")
+    parser = argparse.ArgumentParser(description="WXWork_CLI repo-local governance guard.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     api = sub.add_parser("api-status", help="Report API/Webhook-first default posture without probing WXWork.")
     api.add_argument("--json", action="store_true")
 
-    webhook = sub.add_parser("webhook-plan", help="Plan webhook usage without calling WeCom.")
+    webhook = sub.add_parser("webhook-plan", help="Plan webhook usage without calling Enterprise WeChat.")
     webhook.add_argument("--name", required=True)
     webhook.add_argument("--secret-ref", default="")
     webhook.add_argument("--json", action="store_true")

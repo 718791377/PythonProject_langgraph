@@ -52,6 +52,7 @@ LOCAL_GATE_STEP_ORDER = (
     "powershell_ps1_tests",
     "git_diff_check",
 )
+REQUIRED_LOCAL_GATE_DEFAULT_TIMEOUT_SECONDS = 600
 
 LOCAL_GATE_MARKERS = {
     "check_name": "local_ci_gate",
@@ -160,6 +161,43 @@ def local_gate_step_append_order(text: str, steps: tuple[str, ...]) -> dict[str,
             in_order = False
         cursor = max(cursor, position)
     return {"in_order": in_order, "positions": positions}
+
+
+def validate_local_gate_default_timeout(
+    local_gate_text: str,
+    local_gate_impl_text: str,
+    errors: list[str],
+) -> dict[str, Any]:
+    ps1_match = re.search(r"\[int\]\s*\$StepTimeoutSeconds\s*=\s*(\d+)", local_gate_text)
+    py_const_match = re.search(r"DEFAULT_STEP_TIMEOUT_SECONDS\s*=\s*(\d+)", local_gate_impl_text)
+    py_default_marker_present = "default=DEFAULT_STEP_TIMEOUT_SECONDS" in local_gate_impl_text
+    ps1_value = int(ps1_match.group(1)) if ps1_match else None
+    py_value = int(py_const_match.group(1)) if py_const_match else None
+    evidence = {
+        "required_seconds": REQUIRED_LOCAL_GATE_DEFAULT_TIMEOUT_SECONDS,
+        "ps1_default_seconds": ps1_value,
+        "python_default_constant_seconds": py_value,
+        "python_argparse_uses_constant": py_default_marker_present,
+    }
+    if ps1_value is None:
+        errors.append(f"{LOCAL_GATE_PATH.as_posix()} must declare [int]$StepTimeoutSeconds default.")
+    elif ps1_value < REQUIRED_LOCAL_GATE_DEFAULT_TIMEOUT_SECONDS:
+        errors.append(
+            f"{LOCAL_GATE_PATH.as_posix()} StepTimeoutSeconds default must be at least "
+            f"{REQUIRED_LOCAL_GATE_DEFAULT_TIMEOUT_SECONDS}s for the shared manifest gate."
+        )
+    if py_value is None:
+        errors.append(f"{LOCAL_GATE_IMPL_PATH.as_posix()} must declare DEFAULT_STEP_TIMEOUT_SECONDS.")
+    elif py_value < REQUIRED_LOCAL_GATE_DEFAULT_TIMEOUT_SECONDS:
+        errors.append(
+            f"{LOCAL_GATE_IMPL_PATH.as_posix()} DEFAULT_STEP_TIMEOUT_SECONDS must be at least "
+            f"{REQUIRED_LOCAL_GATE_DEFAULT_TIMEOUT_SECONDS}s for the shared manifest gate."
+        )
+    if not py_default_marker_present:
+        errors.append(
+            f"{LOCAL_GATE_IMPL_PATH.as_posix()} argparse default must use DEFAULT_STEP_TIMEOUT_SECONDS."
+        )
+    return evidence
 
 
 def validate_manifest(root: Path, manifest: dict[str, Any], errors: list[str]) -> dict[str, Any]:
@@ -302,6 +340,11 @@ def run_check(root: Path) -> dict[str, Any]:
         if not present:
             errors.append(f"{LOCAL_GATE_PATH.as_posix()} and {LOCAL_GATE_IMPL_PATH.as_posix()} are missing required marker: {name}")
     evidence["local_gate"] = gate_evidence
+    evidence["local_gate_default_timeout"] = validate_local_gate_default_timeout(
+        local_gate_text,
+        local_gate_impl_text,
+        errors,
+    )
     local_gate_sequence = local_gate_step_append_order(local_gate_impl_text, LOCAL_GATE_STEP_ORDER)
     evidence["local_gate_step_order"] = local_gate_sequence
     if not local_gate_sequence["in_order"]:
