@@ -35,14 +35,16 @@ Reject stale running LangGraph state after completed work and require explicit c
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented, locally validated, and merged into local `main`
-Stage: Stage C implementation package locally integrated
-Owner session: `codex-langgraph-state-release-evidence-20260530`
-Current gate: remote-publication approval gate; no GitLab/GitHub mutation is authorized by this plan status update
-Stage C entry condition: satisfied by user confirmation message on 2026-05-30 after the child plan was already on local `main`
-Local main integration: completed at `32a5cfff3b977ba13ed6e215b4efb887679019b9`; completed claim preserved at `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`
-Last updated: 2026-05-31
-Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
+Status: Stage D/R4 runtime implementation complete, archived, and post-archive local gates pending
+Stage: Stage D real runtime package, archived before guarded local `main` integration
+Owner session: `implement-langgraph-state-release-r4-20260605`
+Current gate: run post-archive precommit/local gates, then use guarded local-main-first integration; remote publication remains unauthorized
+Stage D entry condition: satisfied by the 2026-06-05 user request to continue `langgraph_state_release_evidence_plan` through R4
+OpenSpec archive: `openspec/changes/archive/2026-06-05-implement-langgraph-state-release-runtime-r4/`
+Local main integration: pending via `tools/complete_local_flow_to_remote_gate.py --execute` after commit, local gate, and local MR review
+Prior Stage C local integration: completed at `32a5cfff3b977ba13ed6e215b4efb887679019b9`; completed claim preserved at `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`
+Companion refresh note: the zh-CN companion refresh from local `main` is preserved; this R4 update overlays runtime completion and archive status without reverting that Chinese cleanup.
+Last updated: 2026-06-05
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -69,7 +71,7 @@ Only one session may own each hotspot at a time:
 
 ## Real Runtime Implementation Gap
 
-State-release evidence is checker-backed, but automatic release/handoff runtime is not implemented. Real runtime work must close, release, or hand off LangGraph thread state and record receipts outside transient chat context.
+The earlier state-release runtime gap is closed by the Stage D/R4 package on this feature branch: the runtime now provides explicit close, release, and handoff receipts outside transient chat context. Until guarded local `main` integration finishes, treat the package as implemented and archived but still pending post-archive local gates.
 
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
@@ -77,9 +79,9 @@ State-release evidence is checker-backed, but automatic release/handoff runtime 
 - [x] Update durable state checker to flag stale running state after completion.
 - [x] Document safe backend-family handoff requirements.
 - [x] Run durable state and LangGraph checks plus local gate.
-- [ ] Stage D real runtime: implement LangGraph thread release helper that records thread id, backend family, previous state, release action, survivor queue, and handoff target.
-- [ ] Stage D real runtime: implement close/handoff receipts that prevent stale running state after completed work.
-- [ ] Stage D real runtime: add rollback/restore evidence for release mistakes without switching backend families implicitly.
+- [x] Stage D real runtime: implement LangGraph thread release helper that records thread id, backend family, previous state, release action, survivor queue, and handoff target.
+- [x] Stage D real runtime: implement close/handoff receipts that prevent stale running state after completed work.
+- [x] Stage D real runtime: add rollback/restore evidence for release mistakes without switching backend families implicitly.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -103,6 +105,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 Stage D/R4 runtime implementation: branch `implement-langgraph-state-release-r4-20260605` adds `release-thread` for `close`, `release`, and `handoff`, persists receipts under `.omx/state/langgraph/store/releases/`, exposes release projections in status/inspect/backend records, adds runtime release-helper coverage to `test/check_langgraph_state_release_evidence.test.py`, and preserves rollback/restore and timeout release evidence without implicitly switching backend families. Targeted validation: `python test\check_langgraph_state_release_evidence.test.py` and `python tools\check_durable_artifact_state_surfaces.py --root . --json`.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for LangGraph thread release and handoff helpers; this package updates plan governance only and does not run live runtime.
 - 2026-05-31 local-main status sync: recorded that the Stage C implementation is merged into local `main` at `32a5cfff3b977ba13ed6e215b4efb887679019b9`, the completed claim is preserved at `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`, and the remaining gate is explicit remote-publication approval.
 - 2026-05-30 Stage C implementation: branch `implement-langgraph-state-release-evidence-20260530` added structured LangGraph state-release fixtures, extended `tools/check_durable_artifact_state_surfaces.py` to reject completed `running` state and missing release/handoff fields, registered `test/check_langgraph_state_release_evidence.test.py`, documented backend-family handoff requirements, and was integrated into local `main` at `32a5cfff3b977ba13ed6e215b4efb887679019b9`.
