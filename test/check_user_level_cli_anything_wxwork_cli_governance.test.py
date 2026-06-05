@@ -36,6 +36,10 @@ class CLIAnythingWXWorkCheckerTests(unittest.TestCase):
         for plan in payload["plans"].values():
             self.assertTrue(plan["implemented_local"])
             self.assertTrue(plan["has_stage_b_evidence"])
+            self.assertTrue(all(plan["runtime_stage_markers"].values()))
+            self.assertTrue(all(plan["runtime_status_markers"].values()))
+            self.assertTrue(plan["send_allowed_only_r5"])
+            self.assertTrue(plan["not_installed_started_enabled"])
 
 
 if __name__ == "__main__":

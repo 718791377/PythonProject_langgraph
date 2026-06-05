@@ -38,6 +38,10 @@ class BrowserCliAdapterBoundaryCheckerTests(unittest.TestCase):
             self.assertTrue(plan["canonical_hits"]["CDP Bridge"])
             self.assertTrue(plan["canonical_hits"]["OpenCLI"])
             self.assertEqual(plan["forbidden_terms"], [])
+            self.assertTrue(all(plan["runtime_stage_markers"].values()))
+            self.assertTrue(all(plan["runtime_status_markers"].values()))
+            self.assertTrue(plan["not_installed_started_enabled"])
+            self.assertTrue(plan["r5_sensitive_gate"])
         self.assertFalse(any(payload["old_plan_presence"].values()))
 
 

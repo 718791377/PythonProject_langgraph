@@ -40,6 +40,19 @@ REQUIRED_PLAN_MARKERS = (
     "job state",
     "isolated worktree",
     "changed-path report",
+    "Runtime Promotion Ladder",
+    "R0 project-level preflight",
+    "R1 project-level fake/dry-run runtime",
+    "R2 reusable project-level helper/guard",
+    "R3 user-level install/update receipt",
+    "R4 user-level smoke runtime",
+    "R5 active-candidate / bounded live handoff",
+    "not installed/started/enabled in this package",
+    "installed-user-level",
+    "smoke-tested",
+    "active-candidate",
+    "fake Pi job",
+    "active sidecar",
 )
 REQUIRED_SPEC_MARKERS = (
     "Codex harnesses governance",
@@ -51,9 +64,29 @@ REQUIRED_SPEC_MARKERS = (
     "read guard",
     "write guard",
     "job state",
+    "Runtime promotion ladder",
+    "R0 project-level preflight",
+    "R1 project-level fake/dry-run runtime",
+    "R2 reusable project-level helper/guard",
+    "R3 user-level install/update receipt",
+    "R4 user-level smoke runtime",
+    "R5 active-candidate / bounded live handoff",
+    "installed-user-level",
+    "smoke-tested",
+    "active-candidate",
+    "not installed/started/enabled in this package",
 )
 FORBIDDEN_PLAN_LANE_TERMS = ("chrome-devtools-mcp", "cdp-bridge-mcp", "OpenCLI", "CLI-Anything", "WXWork_CLI")
 REQUIRED_TESTS = {"check_codex_harnesses_governance.test.py"}
+RUNTIME_STAGE_MARKERS = (
+    "R0 project-level preflight",
+    "R1 project-level fake/dry-run runtime",
+    "R2 reusable project-level helper/guard",
+    "R3 user-level install/update receipt",
+    "R4 user-level smoke runtime",
+    "R5 active-candidate / bounded live handoff",
+)
+RUNTIME_STATUS_MARKERS = ("installed-user-level", "smoke-tested", "active-candidate")
 
 
 def read_text(path: Path, errors: list[str]) -> str:
@@ -131,7 +164,20 @@ def check_plan_pair(root: Path, errors: list[str], info: list[str]) -> dict[str,
             for marker in ("source pin", "retrieved_at", "license note", "rollback pointer"):
                 if marker not in row:
                     errors.append(f"{rel.as_posix()}:source_ledger_row_missing:{url}:{marker}")
-        details[rel.as_posix()] = {"source_rows": len(rows)}
+        details[rel.as_posix()] = {
+            "source_rows": len(rows),
+            "runtime_stage_markers": {
+                marker: marker.lower() in text.lower()
+                for marker in RUNTIME_STAGE_MARKERS
+            },
+            "runtime_status_markers": {
+                marker: marker.lower() in text.lower()
+                for marker in RUNTIME_STATUS_MARKERS
+            },
+            "not_installed_started_enabled": "not installed/started/enabled in this package" in text.lower(),
+            "active_sidecar_guard": "active sidecar" in text.lower()
+            and "no codex takeover" in text.lower(),
+        }
         info.append(f"{rel.as_posix()}: Codex harness source ledger rows={len(rows)}")
     return details
 

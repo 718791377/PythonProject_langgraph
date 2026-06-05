@@ -38,6 +38,10 @@ class CodexHarnessesGovernanceCheckerTests(unittest.TestCase):
         })
         for plan in payload["plans"].values():
             self.assertGreaterEqual(plan["source_rows"], 4)
+            self.assertTrue(all(plan["runtime_stage_markers"].values()))
+            self.assertTrue(all(plan["runtime_status_markers"].values()))
+            self.assertTrue(plan["not_installed_started_enabled"])
+            self.assertTrue(plan["active_sidecar_guard"])
 
 
 if __name__ == "__main__":

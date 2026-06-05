@@ -48,6 +48,19 @@ REQUIRED_PLAN_MARKERS = (
     "codex-port",
     "--port auto",
     "not adapters",
+    "Runtime Promotion Ladder",
+    "R0 project-level preflight",
+    "R1 project-level fake/dry-run runtime",
+    "R2 reusable project-level helper/guard",
+    "R3 user-level install/update receipt",
+    "R4 user-level smoke runtime",
+    "R5 active-candidate / bounded live handoff",
+    "not installed/started/enabled in this package",
+    "installed-user-level",
+    "smoke-tested",
+    "active-candidate",
+    "owner lease + authorization receipt",
+    "target/action allowlist",
 )
 REQUIRED_SPEC_MARKERS = (
     "Browser/CLI adapter",
@@ -57,6 +70,18 @@ REQUIRED_SPEC_MARKERS = (
     "adapter lane",
     "CLI-Anything/WXWork_CLI",
     "not Browser/CLI adapters",
+    "Runtime promotion ladder",
+    "R0 project-level preflight",
+    "R1 project-level fake/dry-run runtime",
+    "R2 reusable project-level helper/guard",
+    "R3 user-level install/update receipt",
+    "R4 user-level smoke runtime",
+    "R5 active-candidate / bounded live handoff",
+    "installed-user-level",
+    "smoke-tested",
+    "active-candidate",
+    "not installed/started/enabled in this package",
+    "owner lease + authorization receipt",
 )
 REQUIRED_TESTS = {
     "check_user_level_browser_cli_adapter_boundary.test.py",
@@ -65,6 +90,15 @@ REQUIRED_TESTS = {
     "codex_port.test.py",
     "browser_owner_registry.test.py",
 }
+RUNTIME_STAGE_MARKERS = (
+    "R0 project-level preflight",
+    "R1 project-level fake/dry-run runtime",
+    "R2 reusable project-level helper/guard",
+    "R3 user-level install/update receipt",
+    "R4 user-level smoke runtime",
+    "R5 active-candidate / bounded live handoff",
+)
+RUNTIME_STATUS_MARKERS = ("installed-user-level", "smoke-tested", "active-candidate")
 
 
 def read_text(path: Path, errors: list[str]) -> str:
@@ -143,6 +177,17 @@ def check_plan_pair(root: Path, errors: list[str], info: list[str]) -> dict[str,
             "forbidden_terms": [
                 term for term in FORBIDDEN_LANE_TERMS if any(term.lower() in row.lower() for row in rows)
             ],
+            "runtime_stage_markers": {
+                marker: marker.lower() in text.lower()
+                for marker in RUNTIME_STAGE_MARKERS
+            },
+            "runtime_status_markers": {
+                marker: marker.lower() in text.lower()
+                for marker in RUNTIME_STATUS_MARKERS
+            },
+            "not_installed_started_enabled": "not installed/started/enabled in this package" in text.lower(),
+            "r5_sensitive_gate": "owner lease + authorization receipt" in text.lower()
+            and "target/action allowlist" in text.lower(),
         }
         info.append(f"{rel.as_posix()}: canonical adapter rows {canonical_hits}")
     return payload
