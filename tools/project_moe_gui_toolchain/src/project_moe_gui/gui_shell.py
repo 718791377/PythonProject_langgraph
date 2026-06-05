@@ -23,16 +23,19 @@ WINDOW_TITLE = "Project MOE Agent Console"
 QML_SHELL_RELATIVE = Path("qml/ProjectMoeGui.qml")
 TARGET_QML_SHELL_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
 DEFAULT_MODE_CLI = "tools/thesis_moe_mode.py"
-READ_ACTIONS = {"refresh", "project-status", "list-sessions", "status"}
-WRITE_ACTIONS = {"project-on", "project-off", "session-on", "session-off"}
+READ_ACTIONS = {"refresh", "project-status", "list-sessions", "list-lenses", "status"}
+WRITE_ACTIONS = {"project-on", "project-off", "session-on", "session-off", "session-set-lenses", "session-clear-lenses"}
 ACTION_COMMANDS = {
     "project-status": ["project-status", "--json"],
     "list-sessions": ["list-sessions", "--json"],
+    "list-lenses": ["list-lenses", "--json"],
     "status": ["status", "--json"],
     "project-on": ["project-on", "--json"],
     "project-off": ["project-off", "--json"],
     "session-on": ["on", "--json"],
     "session-off": ["off", "--json"],
+    "session-set-lenses": ["set-lenses", "--json"],
+    "session-clear-lenses": ["clear-lenses", "--json"],
 }
 WRITE_CLI_REQUIRED_FIELDS = (
     "schema_version",
@@ -85,6 +88,8 @@ KEYBOARD_SHORTCUTS = {
     "project-off": "Alt+Shift+P",
     "session-on": "Alt+S",
     "session-off": "Alt+Shift+S",
+    "session-set-lenses": "Alt+L",
+    "session-clear-lenses": "Alt+Shift+L",
 }
 
 DEFAULT_EXPERT_LENSES = [
@@ -127,6 +132,50 @@ DEFAULT_EXPERT_LENSES = [
         "id": "thinking_dispatcher",
         "label": "Thinking-model dispatcher",
         "description": "Chooses the most suitable lens combination and decomposes the review brief.",
+    },
+]
+
+DEFAULT_EXPERT_CATEGORIES = [
+    {
+        "id": "review",
+        "label": "Review",
+        "description": "Reviewer, advisor, novelty, literature, and expression lenses.",
+        "lens_ids": ["blind_review", "advisor_interrogation", "novelty", "literature_evidence", "structure_expression"],
+    },
+    {
+        "id": "risk",
+        "label": "Risk",
+        "description": "AIGC, evidence, blocker, and risk triage lenses.",
+        "lens_ids": ["aigc_risk", "literature_evidence"],
+    },
+    {
+        "id": "thinking",
+        "label": "Thinking",
+        "description": "Socratic and dispatch-oriented lenses for deciding next review steps.",
+        "lens_ids": ["socratic_cbt", "thinking_dispatcher"],
+    },
+]
+
+HANDOFF_TARGETS = [
+    {
+        "id": "main-session",
+        "label": "Main session",
+        "description": "The current leader session uses the selected MOE lenses directly.",
+    },
+    {
+        "id": "subagent",
+        "label": "Subagent",
+        "description": "The leader may paste this package into a native subagent task; GUI does not spawn it.",
+    },
+    {
+        "id": "durable-team",
+        "label": "Durable team",
+        "description": "The leader may hand this package to a durable team lane; GUI does not start workers.",
+    },
+    {
+        "id": "langgraph-workflow",
+        "label": "LangGraph workflow",
+        "description": "The leader may use this package as a LangGraph workflow brief; GUI does not invoke LangGraph.",
     },
 ]
 
@@ -216,6 +265,42 @@ def _structured_lenses_from_public_toml(payload: dict[str, Any]) -> list[dict[st
     return lenses
 
 
+def default_lens_categories(lenses: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    known_lens_ids = {str(item.get("id")) for item in (lenses or DEFAULT_EXPERT_LENSES) if item.get("id")}
+    categories: list[dict[str, Any]] = []
+    for category in DEFAULT_EXPERT_CATEGORIES:
+        lens_ids = [lens_id for lens_id in category.get("lens_ids", []) if lens_id in known_lens_ids]
+        categories.append({**category, "lens_ids": lens_ids})
+    return categories
+
+
+def _structured_categories_from_public_toml(payload: dict[str, Any], lenses: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    category_values: Any = None
+    for container_key in ("extensions", "moe"):
+        container = payload.get(container_key)
+        if isinstance(container, dict):
+            category_values = container.get("expert_categories") or container.get("categories")
+            if category_values:
+                break
+    categories: list[dict[str, Any]] = []
+    if isinstance(category_values, list):
+        for item in category_values:
+            if isinstance(item, dict):
+                category_id = _safe_short(item.get("id") or item.get("name") or item.get("label"), 80)
+                label = _safe_short(item.get("label") or item.get("name") or category_id, 120)
+                description = _safe_short(item.get("description") or item.get("purpose") or "", 220)
+                lens_ids = [str(value) for value in item.get("lens_ids", []) if isinstance(value, str)]
+            else:
+                category_id = _safe_short(item, 80)
+                label = category_id
+                description = ""
+                lens_ids = []
+            if not category_id or not label:
+                continue
+            categories.append({"id": category_id, "label": label, "description": description, "lens_ids": lens_ids})
+    return categories or default_lens_categories(lenses)
+
+
 def load_public_expert_lenses(root: Path, agent_name: str | None) -> dict[str, Any]:
     source = {
         "type": "safe_default",
@@ -225,7 +310,8 @@ def load_public_expert_lenses(root: Path, agent_name: str | None) -> dict[str, A
         "developer_instructions_copied": False,
     }
     if tomllib is None:
-        return {"lenses": list(DEFAULT_EXPERT_LENSES), "source": {**source, "token": "blocked:tomllib_unavailable"}}
+        lenses = list(DEFAULT_EXPERT_LENSES)
+        return {"lenses": lenses, "categories": default_lens_categories(lenses), "source": {**source, "token": "blocked:tomllib_unavailable"}}
     for path in _agent_toml_candidates(root, agent_name):
         try:
             payload = tomllib.loads(path.read_text(encoding="utf-8-sig"))
@@ -237,6 +323,8 @@ def load_public_expert_lenses(root: Path, agent_name: str | None) -> dict[str, A
         if agent_name and observed_name != agent_name and path.stem != agent_name:
             continue
         structured_lenses = _structured_lenses_from_public_toml(payload)
+        lenses = structured_lenses or list(DEFAULT_EXPERT_LENSES)
+        categories = _structured_categories_from_public_toml(payload, lenses)
         source.update(
             {
                 "type": "public_agent_toml" if structured_lenses else "public_agent_toml_with_safe_default_lenses",
@@ -249,20 +337,60 @@ def load_public_expert_lenses(root: Path, agent_name: str | None) -> dict[str, A
                 "developer_instructions_copied": False,
             }
         )
-        return {"lenses": structured_lenses or list(DEFAULT_EXPERT_LENSES), "source": source}
-    return {"lenses": list(DEFAULT_EXPERT_LENSES), "source": {**source, "token": "ok"}}
+        return {"lenses": lenses, "categories": categories, "source": source}
+    lenses = list(DEFAULT_EXPERT_LENSES)
+    return {"lenses": lenses, "categories": default_lens_categories(lenses), "source": {**source, "token": "ok"}}
 
 
-def generate_expert_brief_preview(config: dict[str, Any], lenses: list[dict[str, Any]], templates: list[dict[str, Any]]) -> str:
-    lens = lenses[0] if lenses else DEFAULT_EXPERT_LENSES[0]
+def normalize_lens_catalog(lenses_payload: dict[str, Any] | None, fallback_lenses: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    if isinstance(lenses_payload, dict) and lenses_payload.get("ok", True):
+        raw_lenses = lenses_payload.get("lenses")
+        raw_categories = lenses_payload.get("categories")
+        lenses = [item for item in raw_lenses if isinstance(item, dict) and item.get("id")] if isinstance(raw_lenses, list) else []
+        categories = [item for item in raw_categories if isinstance(item, dict) and item.get("id")] if isinstance(raw_categories, list) else []
+        if lenses:
+            return {
+                "schema_version": SCHEMA_VERSION,
+                "token": payload_token(lenses_payload, "ok"),
+                "source": "phase1-cli-list-lenses",
+                "lenses": lenses,
+                "categories": categories or default_lens_categories(lenses),
+                "selection_semantics": lenses_payload.get("selection_semantics")
+                if isinstance(lenses_payload.get("selection_semantics"), dict)
+                else {"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"},
+                "private_prompt_source_read": bool(lenses_payload.get("private_prompt_source_read", False)),
+            }
+    lenses = list(fallback_lenses or DEFAULT_EXPERT_LENSES)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "token": "ok",
+        "source": "safe-default",
+        "lenses": lenses,
+        "categories": default_lens_categories(lenses),
+        "selection_semantics": {"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"},
+        "private_prompt_source_read": False,
+    }
+
+
+def generate_expert_handoff_package_preview(
+    config: dict[str, Any],
+    lenses: list[dict[str, Any]],
+    templates: list[dict[str, Any]],
+    handoff_targets: list[dict[str, Any]],
+) -> str:
+    selected_lenses = lenses[:2] if len(lenses) > 1 else (lenses or [DEFAULT_EXPERT_LENSES[0]])
     template = templates[0] if templates else EXPERT_TASK_TEMPLATES[0]
+    target = handoff_targets[0] if handoff_targets else HANDOFF_TARGETS[0]
+    lens_lines = [f"- {item.get('id')}: {item.get('label')}" for item in selected_lenses]
     return "\n".join(
         [
-            "Project MOE Expert Brief (draft only; no model execution)",
+            "Project MOE Expert Workbench v2 Handoff Package (draft only; no GUI execution)",
             f"Project: {config.get('runtime_project_root') or config.get('target_project_root') or '<target-project>'}",
             f"Agent: {config.get('agent_name') or '<agent>'}",
             f"State namespace: {config.get('state_namespace') or '<namespace>'}",
-            f"Expert lens: {lens.get('label')}",
+            f"Handoff target: {target.get('id')} ({target.get('label')})",
+            "Selected MOE lenses:",
+            *lens_lines,
             f"Task template: {template.get('label')}",
             "",
             "Review target / objective:",
@@ -270,6 +398,10 @@ def generate_expert_brief_preview(config: dict[str, Any], lenses: list[dict[str,
             "",
             "Instructions:",
             str(template.get("prompt") or ""),
+            "",
+            "Carrier instructions:",
+            "- The GUI generated this package only; it did not start Codex, subagents, durable team, LangGraph, or model APIs.",
+            "- Main session may use one or more selected MOE lenses directly, paste this package to a native subagent, or hand it to a durable team / LangGraph workflow.",
             "",
             "Output format:",
             "1. Key finding",
@@ -280,23 +412,44 @@ def generate_expert_brief_preview(config: dict[str, Any], lenses: list[dict[str,
     )
 
 
-def build_expert_workbench(config: dict[str, Any], root: Path) -> dict[str, Any]:
+def build_expert_workbench(config: dict[str, Any], root: Path, lens_catalog: dict[str, Any] | None = None) -> dict[str, Any]:
     lens_payload = load_public_expert_lenses(root, str(config.get("agent_name") or ""))
-    lenses = list(lens_payload.get("lenses") or DEFAULT_EXPERT_LENSES)
+    if isinstance(lens_catalog, dict) and lens_catalog.get("source") == "phase1-cli-list-lenses":
+        catalog = lens_catalog
+        lenses = list(catalog.get("lenses") or lens_payload.get("lenses") or DEFAULT_EXPERT_LENSES)
+        categories = list(catalog.get("categories") or lens_payload.get("categories") or default_lens_categories(lenses))
+    else:
+        lenses = list(lens_payload.get("lenses") or DEFAULT_EXPERT_LENSES)
+        categories = list(lens_payload.get("categories") or default_lens_categories(lenses))
+        catalog = {
+            "schema_version": SCHEMA_VERSION,
+            "token": "ok",
+            "source": (lens_payload.get("source") or {}).get("type") or "safe-default",
+            "lenses": lenses,
+            "categories": categories,
+            "selection_semantics": {"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"},
+            "private_prompt_source_read": False,
+        }
     templates = list(EXPERT_TASK_TEMPLATES)
+    handoff_targets = list(HANDOFF_TARGETS)
+    package_preview = generate_expert_handoff_package_preview(config, lenses, templates, handoff_targets)
     return {
         "schema_version": SCHEMA_VERSION,
-        "mode": "brief_generation_only",
-        "title": "Expert Workbench",
-        "subtitle": "Generate a safe Project MOE expert brief without starting Codex, subagents, or model APIs.",
+        "mode": "handoff_package_generation_only",
+        "title": "Expert Workbench v2",
+        "subtitle": "Generate a safe Project MOE handoff package without starting Codex, subagents, durable teams, LangGraph, or model APIs.",
         "lenses": lenses,
+        "categories": categories,
         "task_templates": templates,
+        "handoff_targets": handoff_targets,
         "default_lens_id": lenses[0]["id"] if lenses else None,
         "default_template_id": templates[0]["id"] if templates else None,
-        "brief_preview": generate_expert_brief_preview(config, lenses, templates),
+        "default_handoff_target_id": handoff_targets[0]["id"] if handoff_targets else None,
+        "brief_preview": package_preview,
+        "handoff_package_preview": package_preview,
         "copy_action": {
-            "id": "copy_brief_to_clipboard",
-            "label": "Copy brief",
+            "id": "copy_handoff_package_to_clipboard",
+            "label": "Copy handoff package",
             "persistence": "clipboard_only",
             "writes_git": False,
             "writes_disk": False,
@@ -304,9 +457,19 @@ def build_expert_workbench(config: dict[str, Any], root: Path) -> dict[str, Any]
         "execution_policy": {
             "starts_codex": False,
             "starts_subagents": False,
+            "starts_durable_team": False,
+            "starts_langgraph_workflow": False,
             "calls_model_api": False,
             "writes_target_project_state": False,
             "gui_direct_state_write": False,
+        },
+        "handoff_policy": {
+            "targets_are_metadata_only": True,
+            "main_session_can_use_lenses_directly": True,
+            "main_session_can_send_to_subagent": True,
+            "main_session_can_send_to_durable_team": True,
+            "main_session_can_send_to_langgraph_workflow": True,
+            "gui_executes_handoff_target": False,
         },
         "persistence_policy": {
             "runtime_memory": True,
@@ -319,7 +482,9 @@ def build_expert_workbench(config: dict[str, Any], root: Path) -> dict[str, Any]
             "private_prompt_body_copied": False,
             "developer_instructions_copied": False,
             "raw_session_id_exposed": False,
+            "full_stdout_stderr_copied": False,
             "source": lens_payload.get("source"),
+            "lens_catalog_source": catalog.get("source"),
         },
     }
 
@@ -377,6 +542,10 @@ def expected_cli_command_for_action(action: str) -> str:
         return "on"
     if action == "session-off":
         return "off"
+    if action == "session-set-lenses":
+        return "set-lenses"
+    if action == "session-clear-lenses":
+        return "clear-lenses"
     return action
 
 
@@ -622,6 +791,29 @@ def state_label(value: bool | None) -> str:
     return "unknown"
 
 
+def string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if isinstance(item, (str, int, float)) and str(item).strip()]
+
+
+def lens_mode_for_selection(selected_lenses: list[str], selected_categories: list[str], observed: Any = None) -> str:
+    if observed in {"all", "selected"}:
+        return str(observed)
+    return "selected" if selected_lenses or selected_categories else "all"
+
+
+def lens_selection_summary(selected_lenses: list[str], selected_categories: list[str], mode: str) -> str:
+    if mode == "all" and not selected_lenses and not selected_categories:
+        return "All lenses"
+    parts: list[str] = []
+    if selected_lenses:
+        parts.append("lenses=" + ", ".join(selected_lenses))
+    if selected_categories:
+        parts.append("categories=" + ", ".join(selected_categories))
+    return "; ".join(parts) if parts else mode
+
+
 def action_scope_key(action: str, session_id: str | None = None) -> str:
     if action.startswith("session-"):
         return f"session:{redact_identifier(session_id)}"
@@ -635,11 +827,14 @@ def action_label(action: str) -> str:
         "refresh": "Refresh status",
         "project-status": "Read project status",
         "list-sessions": "Read sessions",
+        "list-lenses": "Read MOE lenses",
         "status": "Read effective status",
         "project-on": "Enable project default",
         "project-off": "Disable project default",
         "session-on": "Enable selected session",
         "session-off": "Disable selected session",
+        "session-set-lenses": "Apply session lenses",
+        "session-clear-lenses": "Clear session lenses",
     }.get(action, action)
 
 
@@ -699,6 +894,8 @@ def readback_specs_for_write_action(action: str, session_id: str | None = None) 
     if action not in WRITE_ACTIONS:
         return []
     specs: list[tuple[str, str | None]] = [("project-status", None), ("list-sessions", None)]
+    if action in {"session-set-lenses", "session-clear-lenses"}:
+        specs.append(("list-lenses", None))
     specs.append(("status", session_id if action.startswith("session-") else None))
     return specs
 
@@ -757,6 +954,8 @@ def build_action_plan(
     action: str,
     *,
     session_id: str | None = None,
+    selected_lenses: list[str] | None = None,
+    selected_categories: list[str] | None = None,
     project_root: str | Path | None = None,
     python_executable: str | None = None,
 ) -> dict[str, Any]:
@@ -772,7 +971,7 @@ def build_action_plan(
             "writes_state": False,
         }
 
-    if action in {"session-on", "session-off"} and not session_id:
+    if action.startswith("session-") and not session_id:
         return {
             "schema_version": SCHEMA_VERSION,
             "ok": False,
@@ -789,8 +988,13 @@ def build_action_plan(
     argv = [python_executable or sys.executable, str(mode_cli), *ACTION_COMMANDS[action]]
     scope = "session" if action.startswith("session-") else ("read" if action in READ_ACTIONS else "project-default")
     scope_key = action_scope_key(action, session_id)
-    if action in {"session-on", "session-off"}:
+    if action.startswith("session-") or (action == "status" and session_id):
         argv.extend(["--session-id", str(session_id)])
+    if action in {"session-on", "session-set-lenses"}:
+        for lens_id in selected_lenses or []:
+            argv.extend(["--lens", str(lens_id)])
+        for category_id in selected_categories or []:
+            argv.extend(["--category", str(category_id)])
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
@@ -806,6 +1010,8 @@ def build_action_plan(
         "writes_state": action in WRITE_ACTIONS,
         "direct_state_write": False,
         "keyboard_shortcut": KEYBOARD_SHORTCUTS.get(action),
+        "selected_lenses": list(selected_lenses or []),
+        "selected_categories": list(selected_categories or []),
         "requires_readback_after_write": action in WRITE_ACTIONS,
         "readback_after_write": [
             build_action_plan(config, read_action, session_id=read_session_id, project_root=root, python_executable=python_executable)
@@ -827,6 +1033,7 @@ def build_refresh_plan(config: dict[str, Any], *, project_root: str | Path | Non
         "commands": [
             build_action_plan(config, "project-status", project_root=project_root, python_executable=python_executable),
             build_action_plan(config, "list-sessions", project_root=project_root, python_executable=python_executable),
+            build_action_plan(config, "list-lenses", project_root=project_root, python_executable=python_executable),
             build_action_plan(config, "status", project_root=project_root, python_executable=python_executable),
         ],
         "keyboard_shortcut": KEYBOARD_SHORTCUTS["refresh"],
@@ -901,6 +1108,10 @@ def normalize_session_row(
     enabled = bool_state(row.get("effective_enabled"))
     if enabled is None:
         enabled = bool_state(row.get("enabled") if "enabled" in row else row.get("status"))
+    selected_lenses = string_list(row.get("selected_lenses"))
+    selected_categories = string_list(row.get("selected_categories"))
+    effective_lens_mode = lens_mode_for_selection(selected_lenses, selected_categories, row.get("effective_lens_mode"))
+    lens_selection_scope = str(row.get("lens_selection_scope") or "session")
     actions = {}
     if valid:
         raw_id = str(session_id)
@@ -915,6 +1126,23 @@ def normalize_session_row(
                 pending_scope=pending_scope,
                 pending_scope_key=pending_scope_key,
             ),
+            "apply_session_lenses": decorate_action_for_button(
+                build_action_plan(
+                    config,
+                    "session-set-lenses",
+                    session_id=raw_id,
+                    selected_lenses=selected_lenses,
+                    selected_categories=selected_categories,
+                    project_root=project_root,
+                ),
+                pending_scope=pending_scope,
+                pending_scope_key=pending_scope_key,
+            ),
+            "clear_session_lenses": decorate_action_for_button(
+                build_action_plan(config, "session-clear-lenses", session_id=raw_id, project_root=project_root),
+                pending_scope=pending_scope,
+                pending_scope_key=pending_scope_key,
+            ),
         }
     return {
         "row_index": index,
@@ -926,12 +1154,18 @@ def normalize_session_row(
         "enabled": enabled,
         "label": state_label(enabled),
         "source": row.get("source") or row.get("effective_source") or "unknown",
+        "selected_lenses": selected_lenses,
+        "selected_categories": selected_categories,
+        "effective_lens_mode": effective_lens_mode,
+        "lens_selection_scope": lens_selection_scope,
+        "lens_selection_summary": lens_selection_summary(selected_lenses, selected_categories, effective_lens_mode),
         "last_seen_at": row.get("last_seen_at"),
         "actions": actions,
         "status_badge": {
             "text": state_label(enabled),
             "token_text": token,
-            "high_contrast_text": f"Session {redact_identifier(session_id)}: {state_label(enabled)}; token: {token}",
+            "lens_text": lens_selection_summary(selected_lenses, selected_categories, effective_lens_mode),
+            "high_contrast_text": f"Session {redact_identifier(session_id)}: {state_label(enabled)}; lenses: {lens_selection_summary(selected_lenses, selected_categories, effective_lens_mode)}; token: {token}",
         },
     }
 
@@ -1028,6 +1262,7 @@ def build_view_model(
     *,
     project_status: dict[str, Any] | None = None,
     sessions_payload: dict[str, Any] | None = None,
+    lenses_payload: dict[str, Any] | None = None,
     status_payload: dict[str, Any] | None = None,
     pyside6_available: bool | None = None,
     qfluent_status: dict[str, Any] | None = None,
@@ -1054,14 +1289,17 @@ def build_view_model(
         pending_scope=pending_scope_name,
         pending_scope_key=pending_scope_key,
     )
+    lens_catalog = normalize_lens_catalog(lenses_payload)
     project_token = payload_token(project_status, "blocked:project_status_not_loaded")
     status_token = payload_token(status_payload, "blocked:status_not_loaded")
     table_token = session_table["token"]
+    lenses_token = str(lens_catalog.get("token") or "ok")
     banners = []
     for token, message in [
         (project_token, "Project status is not fully available."),
         (status_token, "Effective status is not fully available."),
         (table_token, "Session list is not fully available."),
+        (lenses_token, "MOE lens catalogue is not fully available."),
     ]:
         if token != "ok":
             banners.append({"token": token, "message": message})
@@ -1150,7 +1388,33 @@ def build_view_model(
             pending_scope_key=pending_scope_key,
         ),
         "session_table": session_table,
-        "expert_workbench": build_expert_workbench(config, root),
+        "lens_catalog": lens_catalog,
+        "session_lens_panel": {
+            "schema_version": SCHEMA_VERSION,
+            "scope": "session",
+            "title": "Session MOE lenses",
+            "empty_selection_means": "all",
+            "lenses": lens_catalog.get("lenses", []),
+            "categories": lens_catalog.get("categories", []),
+            "selection_semantics": lens_catalog.get("selection_semantics"),
+            "actions": {
+                "apply": {
+                    "action": "session-set-lenses",
+                    "requires_selected_session": True,
+                    "writes_state": True,
+                    "direct_state_write": False,
+                    "requires_readback_after_write": True,
+                },
+                "clear": {
+                    "action": "session-clear-lenses",
+                    "requires_selected_session": True,
+                    "writes_state": True,
+                    "direct_state_write": False,
+                    "requires_readback_after_write": True,
+                },
+            },
+        },
+        "expert_workbench": build_expert_workbench(config, root, lens_catalog),
         "refresh_action": build_refresh_plan(config, project_root=root),
         "runtime": {
             "pyside6_status": pyside6_status,
@@ -1191,7 +1455,7 @@ def build_view_model(
             "readback_required_after_write": True,
         },
         "keyboard_navigation": {
-            "tab_order": ["refresh", "project-on", "project-off", "session-table", "session-on", "session-off", "expert-workbench", "copy-brief"],
+            "tab_order": ["refresh", "project-on", "project-off", "session-table", "session-on", "session-off", "session-lenses", "expert-workbench", "copy-handoff-package"],
             "shortcuts": KEYBOARD_SHORTCUTS,
             "focus_policy": "buttons_and_session_table_are_keyboard_reachable",
         },
@@ -1211,6 +1475,7 @@ def build_gui_preflight(
     *,
     project_status: dict[str, Any] | None = None,
     sessions_payload: dict[str, Any] | None = None,
+    lenses_payload: dict[str, Any] | None = None,
     status_payload: dict[str, Any] | None = None,
     pyside6_available: bool | None = None,
     qfluent_status: dict[str, Any] | None = None,
@@ -1221,6 +1486,7 @@ def build_gui_preflight(
         project_root=project_root,
         project_status=project_status,
         sessions_payload=sessions_payload,
+        lenses_payload=lenses_payload,
         status_payload=status_payload,
         pyside6_available=pyside6_available,
         qfluent_status=qfluent_status,
@@ -1246,10 +1512,19 @@ def run_cli_json(
     action: str,
     *,
     session_id: str | None = None,
+    selected_lenses: list[str] | None = None,
+    selected_categories: list[str] | None = None,
     timeout: int = 20,
     project_root: str | Path | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-    plan = build_action_plan(config, action, session_id=session_id, project_root=project_root)
+    plan = build_action_plan(
+        config,
+        action,
+        session_id=session_id,
+        selected_lenses=selected_lenses,
+        selected_categories=selected_categories,
+        project_root=project_root,
+    )
     if not plan.get("ok"):
         return None, stable_blocker(str(plan["token"]), str(plan.get("message") or "Cannot build action plan."))
     try:
@@ -1289,11 +1564,20 @@ def execute_write_action_with_readback(
     action: str,
     *,
     session_id: str | None = None,
+    selected_lenses: list[str] | None = None,
+    selected_categories: list[str] | None = None,
     timeout: int = 20,
     project_root: str | Path | None = None,
 ) -> dict[str, Any]:
     root = configured_project_root(config, project_root)
-    plan = build_action_plan(config, action, session_id=session_id, project_root=root)
+    plan = build_action_plan(
+        config,
+        action,
+        session_id=session_id,
+        selected_lenses=selected_lenses,
+        selected_categories=selected_categories,
+        project_root=root,
+    )
     if not plan.get("ok"):
         return {
             "schema_version": SCHEMA_VERSION,
@@ -1318,7 +1602,15 @@ def execute_write_action_with_readback(
         }
     pending_key = str(plan.get("scope_key") or plan.get("scope") or "")
     pending_view_model = build_view_model(config, pending_scope=pending_key, project_root=root)
-    write_payload, write_error = run_cli_json(config, action, session_id=session_id, timeout=timeout, project_root=root)
+    write_payload, write_error = run_cli_json(
+        config,
+        action,
+        session_id=session_id,
+        selected_lenses=selected_lenses,
+        selected_categories=selected_categories,
+        timeout=timeout,
+        project_root=root,
+    )
     write_contract_errors: list[dict[str, Any]] = []
     if write_error is None:
         write_contract_errors = validate_write_cli_payload(action, write_payload)

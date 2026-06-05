@@ -95,9 +95,9 @@ PRIVATE_PROMPT_GUI_MANAGED_DIR = Path("tools/project_moe_gui")
 PROJECT_EVIDENCE = [".git", "AGENTS.md", "pyproject.toml", "requirements.txt", "README.md", "setup.cfg", "setup.py", "poetry.lock", "uv.lock"]
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 NAMESPACE_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
-READ_CLI_CONTRACT_COMMANDS = ("project-status", "list-sessions", "status")
+READ_CLI_CONTRACT_COMMANDS = ("project-status", "list-sessions", "list-lenses", "status")
 READ_ASSERTION_COMMANDS = ("assert-on",)
-PHASE1_EXPECTED_WRITE_COMMANDS = ("project-on", "project-off", "on", "off", "assert-on")
+PHASE1_EXPECTED_WRITE_COMMANDS = ("project-on", "project-off", "on", "off", "set-lenses", "clear-lenses", "assert-on")
 BOOTSTRAP_BLOCKER_CAPABILITIES = {
     "blocked:missing_agent_toml": "agent_toml",
     "blocked:missing_private_prompt_source": "private_prompt_source",
@@ -487,15 +487,19 @@ DEFAULT_BOOTSTRAP_OPERATOR_DOC = Path("docs_bilingual/operations/thesis_moe_mode
 COMMON_CLI_ENVELOPE_KEYS = ("schema_version", "command", "ok", "token", "cli_contract")
 STATUS_EFFECTIVE_SOURCES = {"session", "project-default", "fail-closed"}
 ASSERT_ON_TOKENS = {"ok", "disabled", "blocked:moe_disabled"}
+LENS_EFFECTIVE_MODES = {"all", "selected"}
 PHASE1_OPERATOR_DOC_REQUIRED_TOKENS = (
     "thesis_moe_mode.py",
     "project-on",
     "project-off",
     "project-status --json",
     "list-sessions --json",
+    "list-lenses --json",
     "status --json",
     "assert-on",
     "--session-id",
+    "set-lenses",
+    "clear-lenses",
     "thesis-moe-on.cmd",
     "thesis-moe-off.cmd",
 )
@@ -1219,6 +1223,50 @@ def validate_list_sessions_payload(payload: dict[str, Any]) -> list[dict[str, An
             errors.append(blocker("blocked:list_sessions_contract_invalid", "Each session row must include enabled or effective_enabled.", row_index=index))
         if "token" not in row:
             errors.append(blocker("blocked:list_sessions_contract_invalid", "Each session row must include a stable token.", row_index=index))
+        for field in ("selected_lenses", "selected_categories"):
+            if field in row and not isinstance(row.get(field), list):
+                errors.append(blocker("blocked:list_sessions_contract_invalid", f"Each session row {field} field must be an array when present.", row_index=index, field=field))
+        effective_lens_mode = row.get("effective_lens_mode", "all")
+        if effective_lens_mode not in LENS_EFFECTIVE_MODES:
+            errors.append(blocker("blocked:list_sessions_contract_invalid", "Each session row effective_lens_mode must be all or selected.", row_index=index, observed=effective_lens_mode))
+    return errors
+
+
+def _validate_public_string_id_list(command: str, owner: str, values: Any, *, required: bool = False) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
+    if required and not isinstance(values, list):
+        return [blocker(f"blocked:{command.replace('-', '_')}_contract_invalid", f"{command} --json must expose a {owner} array.")]
+    if values is None:
+        return errors
+    if not isinstance(values, list):
+        return [blocker(f"blocked:{command.replace('-', '_')}_contract_invalid", f"{owner} must be a JSON array.", owner=owner)]
+    seen: set[str] = set()
+    for index, item in enumerate(values):
+        item_id: Any = item.get("id") if isinstance(item, dict) else item
+        if not isinstance(item_id, str) or not item_id.strip():
+            errors.append(blocker(f"blocked:{command.replace('-', '_')}_contract_invalid", f"{owner} entries must expose a non-empty public id.", owner=owner, row_index=index))
+            continue
+        if item_id in seen:
+            errors.append(blocker(f"blocked:{command.replace('-', '_')}_contract_invalid", f"{owner} ids must be unique.", owner=owner, row_index=index, id=item_id))
+        seen.add(item_id)
+    return errors
+
+
+def validate_list_lenses_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
+    errors.extend(_validate_public_string_id_list("list-lenses", "lenses", payload.get("lenses"), required=True))
+    errors.extend(_validate_public_string_id_list("list-lenses", "categories", payload.get("categories"), required=True))
+    semantics = payload.get("selection_semantics")
+    if not isinstance(semantics, dict):
+        errors.append(blocker("blocked:list_lenses_contract_invalid", "list-lenses --json must describe selection_semantics."))
+    elif semantics.get("empty_selection") not in {"all", "all-lenses"}:
+        errors.append(
+            blocker(
+                "blocked:list_lenses_contract_invalid",
+                "list-lenses selection_semantics.empty_selection must say that empty selected_lenses and selected_categories mean all lenses.",
+                observed=semantics.get("empty_selection"),
+            )
+        )
     return errors
 
 
@@ -1231,6 +1279,17 @@ def validate_status_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
         errors.append(blocker("blocked:status_contract_invalid", "status --json must include a supported effective_source.", observed=source, supported=sorted(STATUS_EFFECTIVE_SOURCES)))
     if "session_id" in payload and payload.get("raw_session_id"):
         errors.append(blocker("blocked:cli_contract_private_field_exposed", "status --json must not expose raw_session_id."))
+    selected_lenses = payload.get("selected_lenses", [])
+    selected_categories = payload.get("selected_categories", [])
+    if not isinstance(selected_lenses, list):
+        errors.append(blocker("blocked:status_contract_invalid", "status --json selected_lenses must be an array.", observed_type=type(selected_lenses).__name__))
+    if not isinstance(selected_categories, list):
+        errors.append(blocker("blocked:status_contract_invalid", "status --json selected_categories must be an array.", observed_type=type(selected_categories).__name__))
+    effective_lens_mode = payload.get("effective_lens_mode")
+    if effective_lens_mode not in LENS_EFFECTIVE_MODES:
+        errors.append(blocker("blocked:status_contract_invalid", "status --json must include effective_lens_mode=all|selected.", observed=effective_lens_mode))
+    if payload.get("lens_selection_scope") not in {None, "session"}:
+        errors.append(blocker("blocked:status_contract_invalid", "status --json lens_selection_scope must be session when present.", observed=payload.get("lens_selection_scope")))
     return errors
 
 
@@ -1260,6 +1319,8 @@ def validate_cli_payload(command: str, payload: dict[str, Any] | None) -> list[d
         errors.extend(validate_project_status_payload(payload))
     elif command == "list-sessions":
         errors.extend(validate_list_sessions_payload(payload))
+    elif command == "list-lenses":
+        errors.extend(validate_list_lenses_payload(payload))
     elif command == "status":
         errors.extend(validate_status_payload(payload))
     elif command == "assert-on":
@@ -1873,8 +1934,9 @@ def main() -> int:
 
     project_status, project_error = run_mode("project-status")
     sessions_payload, sessions_error = run_mode("list-sessions")
+    lenses_payload, lenses_error = run_mode("list-lenses")
     status_payload, status_error = run_mode("status")
-    cli_errors = [err for err in [project_error, sessions_error, status_error] if err]
+    cli_errors = [err for err in [project_error, sessions_error, lenses_error, status_error] if err]
     if cli_errors:
         return emit({"schema_version": 1, "ok": False, "token": cli_errors[0]["token"], "exit_code": cli_errors[0].get("exit_code", 5), "message": cli_errors[0]["message"], "project_root": str(project_root), "blockers": cli_errors}, args.json)
 
@@ -1887,7 +1949,7 @@ def main() -> int:
     runtime_config["runtime_project_root"] = str(project_root)
     qfluent_status = qfluent_status_summary()
     try:
-        preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root, qfluent_status=qfluent_status)
+        preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, lenses_payload=lenses_payload, status_payload=status_payload, project_root=project_root, qfluent_status=qfluent_status)
     except TypeError:
         preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root)
         view_model = preflight.get("view_model") if isinstance(preflight, dict) else None
@@ -2254,6 +2316,14 @@ from datetime import datetime, timezone
 AGENT_NAME = "{agent_name}"
 STATE_NAMESPACE = "{namespace}"
 CLI_CONTRACT = "{CLI_CONTRACT}"
+PUBLIC_LENSES = [
+    {{"id": "blind_review", "label": "Blind-review expert", "description": "Public placeholder lens metadata only.", "category": "review"}},
+    {{"id": "aigc_risk", "label": "AIGC risk expert", "description": "Public placeholder lens metadata only.", "category": "risk"}},
+]
+PUBLIC_CATEGORIES = [
+    {{"id": "review", "label": "Review", "description": "Review-oriented public lenses."}},
+    {{"id": "risk", "label": "Risk", "description": "Risk-oriented public lenses."}},
+]
 
 
 def now() -> str:
@@ -2282,14 +2352,28 @@ def envelope(command: str, **extra: object) -> dict:
 def main() -> int:
     command = sys.argv[1] if len(sys.argv) > 1 else "status"
     # Command-surface tokens required by the readiness checker:
-    # project-on project-off project-status list-sessions status on off assert-on --json --session-id
+    # project-on project-off project-status list-sessions list-lenses status on off set-lenses clear-lenses assert-on --json --session-id --lens --category
     payload = envelope(command)
     if command == "project-status":
         payload.update(project_default_enabled=False, registered_session_count=0, valid_session_count=0, invalid_session_count=0)
     elif command == "list-sessions":
         payload.update(sessions=[], counts={{"total": 0, "valid": 0, "invalid": 0}})
+    elif command == "list-lenses":
+        payload.update(
+            lenses=PUBLIC_LENSES,
+            categories=PUBLIC_CATEGORIES,
+            selection_semantics={{"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"}},
+            private_prompt_source_read=False,
+        )
     elif command in {{"status", "assert-on"}}:
-        payload.update(effective_enabled=False, effective_source="fail-closed")
+        payload.update(
+            effective_enabled=False,
+            effective_source="fail-closed",
+            selected_lenses=[],
+            selected_categories=[],
+            effective_lens_mode="all",
+            lens_selection_scope="session",
+        )
     print(json.dumps(payload, ensure_ascii=False))
     return int(payload.get("exit_code", 5))
 
@@ -2329,10 +2413,13 @@ Required commands:
 - `python .\\{mode_cli_win} project-off`
 - `python .\\{mode_cli_win} project-status --json`
 - `python .\\{mode_cli_win} list-sessions --json`
+- `python .\\{mode_cli_win} list-lenses --json`
 - `python .\\{mode_cli_win} status --json`
 - `python .\\{mode_cli_win} assert-on`
 - `python .\\{mode_cli_win} on --session-id <id>`
 - `python .\\{mode_cli_win} off --session-id <id>`
+- `python .\\{mode_cli_win} set-lenses --session-id <id> --lens <lens-id> --category <category-id>`
+- `python .\\{mode_cli_win} clear-lenses --session-id <id>`
 - `{norm(on_wrapper)}`
 - `{norm(off_wrapper)}`
 

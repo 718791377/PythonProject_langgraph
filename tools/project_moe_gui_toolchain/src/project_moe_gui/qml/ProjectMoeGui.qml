@@ -16,8 +16,14 @@ ApplicationWindow {
     readonly property var banner: vm.top_banner || ({})
     readonly property var statusCards: vm.status_cards || []
     readonly property var sessionRows: ((vm.session_table || {}).rows || [])
+    readonly property var selectedSession: sessionRows.length ? sessionRows[0] : ({})
+    readonly property var sessionLensPanel: vm.session_lens_panel || ({})
+    readonly property var lensCatalog: vm.lens_catalog || ({})
+    readonly property var sessionLenses: sessionLensPanel.lenses || lensCatalog.lenses || []
+    readonly property var sessionCategories: sessionLensPanel.categories || lensCatalog.categories || []
     readonly property var expertWorkbench: vm.expert_workbench || ({})
     readonly property var expertLenses: expertWorkbench.lenses || []
+    readonly property var handoffTargets: expertWorkbench.handoff_targets || []
     readonly property var taskTemplates: expertWorkbench.task_templates || []
     readonly property var blockers: vm.banners || []
     property string selectedSection: "overview"
@@ -40,19 +46,28 @@ ApplicationWindow {
         return taskTemplates[Math.max(0, taskCombo.currentIndex)] || taskTemplates[0]
     }
 
-    function generatedBriefText() {
+    function selectedHandoffTarget() {
+        if (handoffTargets.length === 0)
+            return ({ "id": "main-session", "label": "Main session", "description": "" })
+        return handoffTargets[Math.max(0, handoffTargetCombo.currentIndex)] || handoffTargets[0]
+    }
+
+    function generatedHandoffPackageText() {
         var lens = selectedLens()
         var task = selectedTemplate()
+        var handoffTarget = selectedHandoffTarget()
         var target = reviewTarget.text.length ? reviewTarget.text : "<paste target text, file path, or revision objective here>"
-        return "Project MOE Expert Brief (draft only; no model execution)\n"
+        return "Project MOE Expert Workbench v2 Handoff Package (draft only; no model execution)\n"
             + "Project: " + (banner.project_root || "Unknown project") + "\n"
             + "Agent: " + (banner.agent_name || "agent") + "\n"
             + "Namespace: " + (banner.state_namespace || "unknown") + "\n"
+            + "Handoff target: " + (handoffTarget.id || "main-session") + " (" + (handoffTarget.label || "Main session") + ")\n"
             + "Expert lens: " + (lens.label || lens.id || "lens") + "\n"
             + "Task template: " + (task.label || task.id || "template") + "\n\n"
             + "Review target / objective:\n" + target + "\n\n"
             + "Instructions:\n" + (task.prompt || "Assess with the selected expert lens and return actionable next steps.") + "\n\n"
-            + "Execution boundary: generate brief only; do not start Codex, subagents, model APIs, or write project state."
+            + "Carrier instructions: main session may use selected MOE lenses directly, paste this package to a subagent, or hand it to a durable-team / langgraph-workflow.\n"
+            + "Execution boundary: generate handoff package only; do not start Codex, subagents, durable teams, LangGraph workflows, model APIs, or write project state."
     }
 
     component StatCard: Rectangle {
@@ -251,6 +266,63 @@ ApplicationWindow {
                             }
                         }
                     }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 178
+                        radius: 16
+                        border.width: 1
+                        border.color: darkMode ? "#334155" : "#e2e8f0"
+                        color: darkMode ? "#0f172a" : "#f8fafc"
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 14
+                            spacing: 8
+                            Label {
+                                text: "Session MOE lenses"
+                                font.pixelSize: 18
+                                font.bold: true
+                                color: darkMode ? "#f8fafc" : "#0f172a"
+                            }
+                            Label {
+                                text: "Selected session: " + (selectedSession.display_id || selectedSession.session_id || "(none)") + " · current: " + (selectedSession.lens_selection_summary || "All lenses")
+                                wrapMode: Text.Wrap
+                                color: darkMode ? "#cbd5e1" : "#475569"
+                                Layout.fillWidth: true
+                            }
+                            Label {
+                                text: "Empty selection = all lenses"
+                                color: "#14b8a6"
+                                font.bold: true
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 10
+                                ComboBox {
+                                    Layout.fillWidth: true
+                                    model: sessionLenses
+                                    textRole: "label"
+                                    enabled: sessionLenses.length > 0
+                                }
+                                ComboBox {
+                                    Layout.fillWidth: true
+                                    model: sessionCategories
+                                    textRole: "label"
+                                    enabled: sessionCategories.length > 0
+                                }
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Button { text: "Apply session lenses"; enabled: sessionRows.length > 0 }
+                                Button { text: "Clear session lenses"; enabled: sessionRows.length > 0 }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "Uses Phase 1 set-lenses / clear-lenses contracts and requires readback."
+                                    color: darkMode ? "#94a3b8" : "#64748b"
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -314,6 +386,22 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                             }
                         }
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Label { text: "Handoff target"; color: darkMode ? "#94a3b8" : "#64748b" }
+                            ComboBox {
+                                id: handoffTargetCombo
+                                Layout.fillWidth: true
+                                model: handoffTargets
+                                textRole: "label"
+                            }
+                            Label {
+                                text: "main-session / subagent / durable-team / langgraph-workflow"
+                                wrapMode: Text.Wrap
+                                color: darkMode ? "#cbd5e1" : "#475569"
+                                Layout.fillWidth: true
+                            }
+                        }
                     }
                     TextArea {
                         id: reviewTarget
@@ -323,27 +411,27 @@ ApplicationWindow {
                         wrapMode: TextEdit.Wrap
                     }
                     TextArea {
-                        id: briefPreview
+                        id: handoffPreview
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         readOnly: true
                         wrapMode: TextEdit.Wrap
-                        text: generatedBriefText()
+                        text: generatedHandoffPackageText()
                     }
                     RowLayout {
                         Layout.fillWidth: true
                         Button {
-                            text: "Copy brief"
+                            text: "Copy handoff package"
                             onClicked: {
-                                briefPreview.selectAll()
-                                briefPreview.copy()
+                                handoffPreview.selectAll()
+                                handoffPreview.copy()
                                 copyStatus.text = "Copied to clipboard; no disk or Git write."
                             }
                         }
                         Label {
                             id: copyStatus
                             Layout.fillWidth: true
-                            text: "Brief persistence: runtime + clipboard only."
+                            text: "Handoff package persistence: runtime + clipboard only."
                             color: darkMode ? "#94a3b8" : "#64748b"
                         }
                     }

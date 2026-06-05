@@ -58,6 +58,25 @@ def arg_value(name: str) -> str | None:
         return None
     return sys.argv[index + 1]
 
+def arg_values(name: str) -> list[str]:
+    values = []
+    for index, item in enumerate(sys.argv):
+        if item == name and index + 1 < len(sys.argv):
+            values.append(sys.argv[index + 1])
+    return values
+
+LENSES = [
+    {"id": "blind_review", "label": "Blind review", "description": "Review rigor and objections.", "category": "review"},
+    {"id": "aigc_risk", "label": "AIGC risk", "description": "Check AI-like wording and unsupported certainty.", "category": "risk"},
+    {"id": "novelty", "label": "Novelty", "description": "Check innovation and differentiation.", "category": "review"},
+]
+CATEGORIES = [
+    {"id": "review", "label": "Review", "description": "Review-oriented lenses.", "lens_ids": ["blind_review", "novelty"]},
+    {"id": "risk", "label": "Risk", "description": "Risk-oriented lenses.", "lens_ids": ["aigc_risk"]},
+]
+LENS_IDS = {item["id"] for item in LENSES}
+CATEGORY_IDS = {item["id"] for item in CATEGORIES}
+
 def read_json(path: Path, default: dict | None = None) -> dict:
     try:
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
@@ -82,6 +101,35 @@ def write_json(path: Path, payload: dict) -> None:
 
 def session_path(session_id: str) -> Path:
     return SESSIONS_ROOT / f"{session_id}.json"
+
+def selected_lists(payload: dict) -> tuple[list[str], list[str]]:
+    selected_lenses = payload.get("selected_lenses")
+    selected_categories = payload.get("selected_categories")
+    if not isinstance(selected_lenses, list):
+        selected_lenses = []
+    if not isinstance(selected_categories, list):
+        selected_categories = []
+    return [str(item) for item in selected_lenses], [str(item) for item in selected_categories]
+
+def effective_lens_mode(payload: dict) -> str:
+    selected_lenses, selected_categories = selected_lists(payload)
+    return "selected" if selected_lenses or selected_categories else "all"
+
+def invalid_selection(selected_lenses: list[str], selected_categories: list[str]) -> dict | None:
+    bad_lenses = [item for item in selected_lenses if item not in LENS_IDS]
+    bad_categories = [item for item in selected_categories if item not in CATEGORY_IDS]
+    if bad_lenses or bad_categories:
+        return {
+            "schema_version": 1,
+            "ok": False,
+            "token": "blocked:invalid_lens_selection",
+            "exit_code": 2,
+            "message": "invalid lens or category",
+            "invalid_lenses": bad_lenses,
+            "invalid_categories": bad_categories,
+            "cli_contract": "project-moe-cli-v1",
+        }
+    return None
 
 def project_default_enabled() -> bool:
     payload = read_json(PROJECT_DEFAULT)
@@ -125,11 +173,15 @@ def write_project(enabled: bool) -> tuple[dict, bool]:
         "atomic_write": True,
     }, bool(before) == enabled
 
-def write_session(session_id: str, enabled: bool) -> tuple[dict, bool]:
+def write_session(session_id: str, enabled: bool, selected_lenses: list[str] | None = None, selected_categories: list[str] | None = None) -> tuple[dict, bool]:
     path = session_path(session_id)
     before = read_json(path, {"enabled": False}).get("enabled", False)
     before_payload = read_json(path, {"enabled": False})
     payload = read_json(path)
+    if selected_lenses is None:
+        selected_lenses, _ = selected_lists(payload)
+    if selected_categories is None:
+        _, selected_categories = selected_lists(payload)
     payload.update({
         "schema_version": 1,
         "project_label": PROJECT_LABEL,
@@ -142,6 +194,10 @@ def write_session(session_id: str, enabled: bool) -> tuple[dict, bool]:
         "token": "ok",
         "updated_at": now(),
         "reason": "session-on" if enabled else "session-off",
+        "selected_lenses": list(selected_lenses or []),
+        "selected_categories": list(selected_categories or []),
+        "effective_lens_mode": "selected" if (selected_lenses or selected_categories) else "all",
+        "lens_selection_scope": "session",
     })
     write_json(path, payload)
     return {
@@ -153,6 +209,39 @@ def write_session(session_id: str, enabled: bool) -> tuple[dict, bool]:
         "audit_path": str(STATE_ROOT / "audit.log"),
         "atomic_write": True,
     }, bool(before) == enabled
+
+def write_lens_selection(session_id: str, selected_lenses: list[str], selected_categories: list[str]) -> tuple[dict, bool]:
+    path = session_path(session_id)
+    before_payload = read_json(path, {"enabled": False})
+    payload = read_json(path, {"enabled": False})
+    before_lenses, before_categories = selected_lists(payload)
+    payload.update({
+        "schema_version": 1,
+        "project_label": PROJECT_LABEL,
+        "agent_name": AGENT_NAME,
+        "state_namespace": NAMESPACE,
+        "scope": "session",
+        "session_id": session_id,
+        "enabled": bool(payload.get("enabled", False)),
+        "override_origin": "manual-session",
+        "token": "ok",
+        "updated_at": now(),
+        "reason": "set-lenses" if (selected_lenses or selected_categories) else "clear-lenses",
+        "selected_lenses": list(selected_lenses),
+        "selected_categories": list(selected_categories),
+        "effective_lens_mode": "selected" if (selected_lenses or selected_categories) else "all",
+        "lens_selection_scope": "session",
+    })
+    write_json(path, payload)
+    return {
+        "before": before_payload,
+        "after": read_json(path),
+        "changed_paths": [str(path)],
+        "skipped_invalid_records": [],
+        "lock_status": "not_locked_fixture",
+        "audit_path": str(STATE_ROOT / "audit.log"),
+        "atomic_write": True,
+    }, before_lenses == selected_lenses and before_categories == selected_categories
 
 def list_sessions() -> list[dict]:
     rows = []
@@ -185,6 +274,10 @@ def list_sessions() -> list[dict]:
             "source": source,
             "lifecycle_status": payload.get("lifecycle_status", "active"),
             "status_reason": "ok",
+            "selected_lenses": selected_lists(payload)[0],
+            "selected_categories": selected_lists(payload)[1],
+            "effective_lens_mode": effective_lens_mode(payload),
+            "lens_selection_scope": "session",
         })
     return rows
 
@@ -216,6 +309,8 @@ def main() -> int:
     elif command == "list-sessions":
         rows = list_sessions()
         payload = envelope(command, sessions=rows, counts={"total": len(rows), "valid": len(rows)})
+    elif command == "list-lenses":
+        payload = envelope(command, lenses=LENSES, categories=CATEGORIES, selection_semantics={"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"}, private_prompt_source_read=False)
     elif command == "status":
         session_payload = read_json(session_path(session_id), {})
         if "enabled" in session_payload:
@@ -224,7 +319,8 @@ def main() -> int:
         else:
             effective = project_default_enabled()
             effective_source = "project-default"
-        payload = envelope(command, session_id=session_id, effective_enabled=effective, effective_source=effective_source)
+        selected_lenses, selected_categories = selected_lists(session_payload)
+        payload = envelope(command, session_id=session_id, effective_enabled=effective, effective_source=effective_source, selected_lenses=selected_lenses, selected_categories=selected_categories, effective_lens_mode=effective_lens_mode(session_payload), lens_selection_scope="session")
     elif command == "assert-on":
         session_payload = read_json(session_path(session_id), {})
         effective = bool(session_payload.get("enabled", project_default_enabled()))
@@ -238,8 +334,26 @@ def main() -> int:
         changed, no_op = write_project(False)
         payload = envelope(command, project_default_enabled=False, changed_scope="project-default", no_op=no_op, changed=changed, **changed)
     elif command == "on":
-        changed, no_op = write_session(session_id, True)
-        payload = envelope(command, session_id=session_id, effective_enabled=True, changed_scope="session", no_op=no_op, changed=changed, **changed)
+        lens_values = arg_values("--lens")
+        category_values = arg_values("--category")
+        invalid = invalid_selection(lens_values, category_values)
+        if invalid:
+            payload = invalid
+        else:
+            changed, no_op = write_session(session_id, True, lens_values or None, category_values or None)
+            payload = envelope(command, session_id=session_id, effective_enabled=True, changed_scope="session", no_op=no_op, changed=changed, **changed)
+    elif command == "set-lenses":
+        lens_values = arg_values("--lens")
+        category_values = arg_values("--category")
+        invalid = invalid_selection(lens_values, category_values)
+        if invalid:
+            payload = invalid
+        else:
+            changed, no_op = write_lens_selection(session_id, lens_values, category_values)
+            payload = envelope(command, session_id=session_id, changed_scope="session", selected_lenses=lens_values, selected_categories=category_values, effective_lens_mode="selected" if (lens_values or category_values) else "all", lens_selection_scope="session", no_op=no_op, changed=changed, **changed)
+    elif command == "clear-lenses":
+        changed, no_op = write_lens_selection(session_id, [], [])
+        payload = envelope(command, session_id=session_id, changed_scope="session", selected_lenses=[], selected_categories=[], effective_lens_mode="all", lens_selection_scope="session", no_op=no_op, changed=changed, **changed)
     elif command == "off":
         changed, no_op = write_session(session_id, False)
         payload = envelope(command, session_id=session_id, effective_enabled=False, changed_scope="session", no_op=no_op, changed=changed, **changed)
@@ -359,8 +473,20 @@ if cmd == "assert-on":
 elif cmd == "list-sessions":
     payload["message"] = "session list read"
     payload["sessions"] = [
-        {{"session_id": "session-1234567890abcdef", "enabled": False, "effective_enabled": False, "valid": True, "token": "ok", "source": "manual-session", "lifecycle_status": "active"}}
+        {{"session_id": "session-1234567890abcdef", "enabled": False, "effective_enabled": False, "valid": True, "token": "ok", "source": "manual-session", "lifecycle_status": "active", "selected_lenses": [], "selected_categories": [], "effective_lens_mode": "all", "lens_selection_scope": "session"}}
     ]
+elif cmd == "list-lenses":
+    payload["message"] = "lens catalog read"
+    payload["lenses"] = [
+        {{"id": "blind_review", "label": "Blind review", "description": "Public fixture lens.", "category": "review"}},
+        {{"id": "aigc_risk", "label": "AIGC risk", "description": "Public fixture lens.", "category": "risk"}},
+    ]
+    payload["categories"] = [
+        {{"id": "review", "label": "Review", "description": "Review lenses.", "lens_ids": ["blind_review"]}},
+        {{"id": "risk", "label": "Risk", "description": "Risk lenses.", "lens_ids": ["aigc_risk"]}},
+    ]
+    payload["selection_semantics"] = {{"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"}}
+    payload["private_prompt_source_read"] = False
 elif cmd == "project-status":
     payload["message"] = "project status read"
     payload["project_default_enabled"] = False
@@ -373,6 +499,10 @@ elif cmd == "status":
     payload["effective_enabled"] = False
     payload["effective_source"] = "project-default"
     payload["session_id"] = "session-1234567890abcdef"
+    payload["selected_lenses"] = []
+    payload["selected_categories"] = []
+    payload["effective_lens_mode"] = "all"
+    payload["lens_selection_scope"] = "session"
 elif cmd == "project-on":
     payload["message"] = "project default enabled"
     payload["project_default_enabled"] = True
@@ -423,6 +553,38 @@ elif cmd == "off":
     payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
     payload["atomic_write"] = True
     payload["no_op"] = False
+elif cmd == "set-lenses":
+    payload["message"] = "session lens selection updated"
+    payload["session_id"] = "session-1234567890abcdef"
+    payload["before"] = {{"selected_lenses": [], "selected_categories": []}}
+    payload["after"] = {{"selected_lenses": ["blind_review"], "selected_categories": []}}
+    payload["selected_lenses"] = ["blind_review"]
+    payload["selected_categories"] = []
+    payload["effective_lens_mode"] = "selected"
+    payload["lens_selection_scope"] = "session"
+    payload["changed_scope"] = "session"
+    payload["changed_paths"] = [".omx/state/thesis_moe/sessions/session-1234567890abcdef.json"]
+    payload["skipped_invalid_records"] = []
+    payload["lock_status"] = "not_locked_fixture"
+    payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
+    payload["atomic_write"] = True
+    payload["no_op"] = False
+elif cmd == "clear-lenses":
+    payload["message"] = "session lens selection cleared"
+    payload["session_id"] = "session-1234567890abcdef"
+    payload["before"] = {{"selected_lenses": ["blind_review"], "selected_categories": []}}
+    payload["after"] = {{"selected_lenses": [], "selected_categories": []}}
+    payload["selected_lenses"] = []
+    payload["selected_categories"] = []
+    payload["effective_lens_mode"] = "all"
+    payload["lens_selection_scope"] = "session"
+    payload["changed_scope"] = "session"
+    payload["changed_paths"] = [".omx/state/thesis_moe/sessions/session-1234567890abcdef.json"]
+    payload["skipped_invalid_records"] = []
+    payload["lock_status"] = "not_locked_fixture"
+    payload["audit_path"] = ".omx/state/thesis_moe/audit.log"
+    payload["atomic_write"] = True
+    payload["no_op"] = False
 else:
     payload = {{"schema_version": 1, "command": cmd, "ok": False, "token": "usage_error", "exit_code": 2, "message": "unsupported", "cli_contract": "project-moe-cli-v1"}}
 {extra_payload}print(json.dumps(payload))
@@ -439,7 +601,7 @@ import sys
 from pathlib import Path
 
 # Surface tokens required by the static checker:
-# project-status list-sessions status assert-on project-on project-off on off
+# project-status list-sessions list-lenses status assert-on project-on project-off on off set-lenses clear-lenses --lens --category
 Path({marker_name!r}).write_text("executed", encoding="utf-8")
 cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
 payload = {{
@@ -464,9 +626,18 @@ payload = {{
     "invalid_session_count": 0,
     "sessions": [],
     "counts": {{"total": 0, "valid": 0}},
+    "lenses": [],
+    "categories": [],
+    "selection_semantics": {{"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"}},
+    "selected_lenses": [],
+    "selected_categories": [],
+    "effective_lens_mode": "all",
+    "lens_selection_scope": "session",
 }}
 if cmd == "assert-on":
     payload.update(ok=False, token="disabled", exit_code=1)
+elif cmd == "list-lenses":
+    payload.update(lenses=[{{"id": "blind_review", "label": "Blind review"}}], categories=[{{"id": "review", "label": "Review", "lens_ids": ["blind_review"]}}])
 print(json.dumps(payload))
 raise SystemExit(int(payload.get("exit_code", 0)))
 """.lstrip(),
@@ -563,9 +734,12 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             "- Use `python .\\tools\\thesis_moe_mode.py project-off` or `thesis-moe-off.cmd` to disable the project default.\n"
             "- Use `python .\\tools\\thesis_moe_mode.py project-status --json` for project-default state.\n"
             "- Use `python .\\tools\\thesis_moe_mode.py list-sessions --json` for redacted session rows.\n"
+            "- Use `python .\\tools\\thesis_moe_mode.py list-lenses --json` for public MOE lens and category metadata.\n"
             "- Use `python .\\tools\\thesis_moe_mode.py status --json` for the effective current session state.\n"
             "- Use `python .\\tools\\thesis_moe_mode.py assert-on` when a hard enabled assertion is required.\n"
-            "- Use `python .\\tools\\thesis_moe_mode.py on --session-id <id>` or `off --session-id <id>` for a single session override.\n",
+            "- Use `python .\\tools\\thesis_moe_mode.py on --session-id <id>` or `off --session-id <id>` for a single session override.\n"
+            "- Use `python .\\tools\\thesis_moe_mode.py set-lenses --session-id <id> --lens <lens-id> --category <category-id>` to set session-scoped MOE lenses.\n"
+            "- Use `python .\\tools\\thesis_moe_mode.py clear-lenses --session-id <id>` to clear session lens selection; empty selection means all lenses.\n",
             encoding="utf-8",
         )
 
@@ -675,7 +849,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 payload["agent_toml"]["required_extension_sections"],
                 ["project", "moe", "dispatch", "extensions"],
             )
-            self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "status"])
+            self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "list-lenses", "status"])
             self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], ["assert-on"])
             self.assertEqual(payload["cli_execution_mode"], "execute-read-contract")
             self.assertFalse(payload["cli_contract_check"]["execution_skipped"])
@@ -741,7 +915,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "from pathlib import Path\n"
                 "Path('cli-executed-marker.txt').write_text('executed', encoding='utf-8')\n"
                 "# static command surface tokens: project-on project-off on off assert-on\n"
-                "# read contract tokens: project-status list-sessions status --json\n"
+                "# read contract tokens: project-status list-sessions list-lenses status --json; write lens tokens: set-lenses clear-lenses --lens --category\n"
                 "raise SystemExit(99)\n",
                 encoding="utf-8",
             )
@@ -1621,7 +1795,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "--dry-run",
             )
             self.assertEqual(payload["token"], "ok", payload)
-            self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "status"])
+            self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "list-lenses", "status"])
             self.assertIn("effective_source", payload["cli_contract_check"]["validated_fields"]["status"])
             self.assertIn("registered_session_count", payload["cli_contract_check"]["validated_fields"]["project-status"])
 
@@ -2266,12 +2440,17 @@ raise SystemExit(int(payload.get("exit_code", 0)))
 
             self.assertIn("Expert Workbench", nav_labels)
             self.assertIn("expert_workbench", region_ids)
-            self.assertEqual(workbench["mode"], "brief_generation_only")
+            self.assertEqual(workbench["mode"], "handoff_package_generation_only")
             self.assertEqual(workbench["privacy_boundary"]["source"]["type"], "public_agent_toml")
             self.assertEqual(workbench["lenses"][0]["label"], "Public blind review")
             self.assertFalse(workbench["execution_policy"]["starts_codex"])
             self.assertFalse(workbench["execution_policy"]["starts_subagents"])
             self.assertFalse(workbench["execution_policy"]["calls_model_api"])
+            self.assertFalse(workbench["execution_policy"]["starts_durable_team"])
+            self.assertFalse(workbench["execution_policy"]["starts_langgraph_workflow"])
+            self.assertIn("handoff_targets", workbench)
+            self.assertEqual([item["id"] for item in workbench["handoff_targets"]], ["main-session", "subagent", "durable-team", "langgraph-workflow"])
+            self.assertIn("Handoff target:", workbench["handoff_package_preview"])
             self.assertFalse(workbench["persistence_policy"]["disk_default"])
             self.assertTrue(workbench["persistence_policy"]["clipboard"])
             self.assertFalse(workbench["privacy_boundary"]["private_prompt_source_read"])
@@ -2285,8 +2464,17 @@ raise SystemExit(int(payload.get("exit_code", 0)))
 
         qml = gui_shell.qml_shell_path().read_text(encoding="utf-8")
         self.assertIn("Expert Workbench", qml)
-        self.assertIn("Copy brief", qml)
-        self.assertIn("briefPreview.copy()", qml)
+        self.assertIn("Session MOE lenses", qml)
+        self.assertIn("Apply session lenses", qml)
+        self.assertIn("Clear session lenses", qml)
+        self.assertIn("Empty selection = all lenses", qml)
+        self.assertIn("Handoff target", qml)
+        self.assertIn("main-session", qml)
+        self.assertIn("subagent", qml)
+        self.assertIn("durable-team", qml)
+        self.assertIn("langgraph-workflow", qml)
+        self.assertIn("Copy handoff package", qml)
+        self.assertIn("handoffPreview.copy()", qml)
         self.assertIn("no model execution", qml)
 
     def test_installed_launcher_preflight_reports_gui_shell_contract(self) -> None:
