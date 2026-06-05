@@ -66,12 +66,19 @@ Stage C 进入条件：2026-05-30 用户确认继续实施 repo_local_selector_o
 
 ## 任务清单
 
+## Real Runtime Implementation Gap
+
+Selector ownership is checker-backed, but automatic selector refresh is not implemented. Real runtime work must write, renew, release, and audit repo-local active selectors under ownership and stale-lock rules.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
 - [x] Add fixtures for same-repo, cross-repo, and stale selector ownership.
 - [x] Update checker logic to fail closed on cross-repository selector adoption.
 - [x] Document safe selector inspection and no-auto-adoption behavior.
 - [x] Run durable state surface checks and local gate.
+- [ ] Stage D real runtime: implement selector write/refresh helper that records owner session, backend family, lease expiry, selector revision, and rollback pointer.
+- [ ] Stage D real runtime: implement selector release/stale-reclaim helper with explicit nonce matching and audit receipts.
+- [ ] Stage D real runtime: add dry-run and apply modes that fail closed on cross-repo selector adoption.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,6 +102,7 @@ Stage C 进入条件：2026-05-30 用户确认继续实施 repo_local_selector_o
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for active selector write, refresh, renewal, and release helpers; this package updates plan governance only and does not run live runtime.
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-30 Stage C 实施开始：在 tracked 写入前创建 active session claim `main-codex-repo-local-selector-ownership-20260530`；本实施新增 repo-local selector fixtures、checker、guard wiring 与治理文档。
 - 2026-05-30 本地验证：selector ownership checker、durable artifact surface tests、OpenSpec guard JSON tests、precommit review checks、worktree receipt check 与 `tools/ci/local_gate.ps1` 均已在 feature commit 前通过。

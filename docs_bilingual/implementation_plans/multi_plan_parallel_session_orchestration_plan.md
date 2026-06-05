@@ -61,11 +61,11 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Stage C runtime promotion governance is implemented-local for the three rebuilt lanes; validation and local-main integration are the current gate.
+Stage: Stage C runtime promotion governance is implemented-local for the rebuilt lanes; Stage D real-runtime gap classification now covers CLI-Anything/WXWork_CLI, Browser/CLI adapters, Codex harnesses, durable smoke/adoption, receipt/rollback/redaction, selector ownership, worktree claim lifecycle, readiness projection, LangGraph state release, and mcp2cli/skills2cli. Validation and local-main integration are the current gate.
 Owner session: main Codex leader owns the serialized shared hotspots for this Stage C package: parent plan, child plans, stable spec, checker/test updates, docs registry references, CI manifest references, safety registry references, and OpenSpec guard wiring.
 Current gate: run focused runtime-promotion checker tests, precommit/archive review, OpenSpec guard, shared local gate, and local MR review; then merge this package through the local-main-first helper and stop at the remote-publication approval gate.
 Runtime promotion result: CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses now share explicit R0 project-level preflight, R1 project-level fake/dry-run runtime, R2 reusable project-level helper/guard, R3 user-level install/update receipt, R4 user-level smoke runtime, and R5 active-candidate / bounded live handoff gates. This package does not install, start, enable, smoke-run, or live-run any of those runtimes.
-MCP/skills CLI carry-forward: `skills2cli` and `mcp2cli` remain implemented user-level install surfaces governed by `tools/install_user_level_mcp_skills_cli.py`; the upstream runtime source is `knowsuchagency/mcp2cli`, verified through markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`; rollback pointer, update receipt, and native-subagent=false boundaries stay checker-backed.
+MCP/skills CLI carry-forward: `user_level_mcp_skills_discovery_facade_plan` is a deleted/superseded source plan, not an active child plan. Runtime ownership is now `user_level_mcp_skills_cli_runtime_plan`; existing `skills2cli` and `mcp2cli` helpers/checkers/tests are R0-R2 carry-forward surfaces only until R3/R4/R5 receipts are produced. The upstream runtime source remains `knowsuchagency/mcp2cli`, with install markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`.
 Remote state: this implementation package does not authorize remote publication.
 <!-- CURRENT_STATUS_END -->
 
@@ -247,6 +247,21 @@ The older `user_level_mcp_skills_browser_cli_governance_plan.md` and `user_level
 | Codex harnesses | `codex_harnesses_governance_plan` | project-level harness model first, reusable project-level guard next, user-level Pi/oh-my-pi runtime only after receipt-backed promotion | `https://blog.can.ac/2026/02/12/the-harness-problem`; `https://github.com/can1357/oh-my-pi`; `https://pi.dev/`; `https://pi.dev/packages` | Can run in parallel with sibling plans only while avoiding docs registry, CI manifest, OpenSpec spec, and shared checker hotspots. | Add Codex harness checker/fixtures; migrate Pi/oh-my-pi reference-sidecar content; keep Codex as primary controller. |
 
 Stage A is a docs-only governance confirmation package. It creates the new plan topology and records source links, but it does not delete old plans because current local gates still include checkers hardcoded to the historical source plan paths. Stage B owns checker/test/OpenSpec migration and the final deletion of the old source plan files.
+## Real Runtime Gap Ledger
+
+| Lane | Active runtime owner plan | Current implemented level | Missing real runtime layer |
+| --- | --- | --- | --- |
+| Codex harnesses | `codex_harnesses_governance_plan` | governance/checker/test, R0-R2 | Pi/oh-my-pi sidecar, harness job runtime, executable read/write guards, R3/R4/R5 receipts |
+| Browser/CLI adapters | `user_level_browser_cli_adapter_boundary_plan` | adapter guard/checker/test, R0-R2 | install/start/probe chrome-devtools-mcp, cdp-bridge-mcp, OpenCLI; R4 smoke and R5 live handoff |
+| CLI-Anything/WXWork_CLI | `user_level_cli_anything_wxwork_cli_governance_plan` | CLI-Anything/WXWork_CLI guard/checker/test, R0-R2 | install/run CLI-Anything, fork/adapt/run WXWork_CLI, control WXWork.exe, R4 smoke, R5 send/action handoff |
+| Durable smoke/adoption | `durable_smoke_adoption_gate_template_plan` | template/checker/fixture, R0-R2 | real durable smoke runner, apply-mode adoption, live adoption execution receipts |
+| Receipt/rollback/redaction | `user_level_capability_receipt_rollback_redaction_plan` | governance helper/checker/test, R0-R2 | install/update/smoke/live receipt writer extensions and rollback executor receipts |
+| Selector ownership | `repo_local_selector_ownership_plan` | selector ownership checker/guard, R0-R2 | active selector write, renew, release, stale-reclaim helpers |
+| Worktree receipt/claim lifecycle | `worktree_receipt_claim_lifecycle_plan` | lifecycle validation/checker, R0-R2 | active -> ready -> merged-local-main -> completed -> cleaned state advancement helper |
+| Capability readiness projection | `durable_capability_readiness_projection_plan` | readiness checker/fixture, R0-R2 | runtime probe/refresh of installed/enabled/selected/ready projections |
+| LangGraph state release | `langgraph_state_release_evidence_plan` | state-release checker/fixture, R0-R2 | LangGraph thread close/release/handoff runtime helper and receipts |
+| MCP/skills CLI | `user_level_mcp_skills_cli_runtime_plan` | existing mcp2cli/skills2cli helper/checker/test carry-forward, R0-R2 | real user-level mcp2cli install, skills2cli install/update, R4 wrapper smoke, R5 direct MCP/skill handoff receipts |
+
 ## Runtime Promotion Ladder Matrix
 
 This package adds a runtime promotion ladder for the three rebuilt lanes. It updates governance, checkers, tests, and stable OpenSpec requirements only; it does not install, start, enable, smoke-run, or live-run CLI-Anything, WXWork_CLI, browser adapters, Pi, oh-my-pi, or any harness runtime in this package.
@@ -457,6 +472,7 @@ Each child plan must include:
 - [x] Stage A rebuild: create the CLI-Anything/WXWork_CLI child plan, Browser/CLI adapter reclassification, and Codex harnesses child plan.
 - [x] Stage B rebuild: migrate checker/tests/OpenSpec wiring and delete `user_level_mcp_skills_discovery_facade_plan.*` plus `user_level_mcp_skills_browser_cli_governance_plan.*` after gates no longer depend on them.
 - [x] Stage C runtime promotion: add the R0-R5 shared runtime ladder for CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses without installing, starting, enabling, smoke-running, or live-running any runtime.
+- [x] Stage D real-runtime classification: update ten runtime lanes, add `user_level_mcp_skills_cli_runtime_plan`, and mark all real install/start/smoke/live execution as pending future runtime work.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -485,10 +501,12 @@ Stage B acceptance after later confirmation:
 - `--self-retire` must fail before merge when no valid ready ROB entry exists; ROB retire metadata must not remain a post-merge best-effort action.
 - Phase 4 child plans must preserve the confirmed conversation-surface split: `Routing trace` is a plain-text diagnostic line with fixed label plus `key=value` fields; `Updated Plan` is the user-visible tree-style progress panel with checkmark/open-square status markers; Markdown `- [x]` / `- [ ]` checkboxes stay only inside implementation-plan files for task tracking. Explanatory text may be Chinese, while internal tool names, schema keys, threshold tokens, blocker tokens, file names, and CLI arguments may remain ASCII.
 - Stage C runtime promotion acceptance: the parent and three child plans must require R0 project-level preflight, R1 project-level fake/dry-run runtime, R2 reusable project-level helper/guard, R3 `installed-user-level`, R4 `smoke-tested`, and R5 `active-candidate`, while stating that this package does not install/start/enable/smoke/live-run runtimes.
+- Stage D real-runtime classification acceptance: the parent and ten lane plans must distinguish implemented governance/checker/test/helper surfaces from missing real runtime layers, and `user_level_mcp_skills_cli_runtime_plan` must replace the deleted discovery facade as active runtime owner without restoring the old source plan.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 Stage D real-runtime classification package: branch `runtime-plan-standard-20260605` updates ten runtime lanes, creates `user_level_mcp_skills_cli_runtime_plan` as the active mcp2cli/skills2cli runtime successor, records deleted source-plan boundaries, and keeps all real install/start/smoke/live work pending future runtime implementation.
 - 2026-06-05 Stage C runtime promotion package: branch `runtime-promotion-plan-20260605` adds the shared R0-R5 runtime promotion ladder, updates the three child plans, stable spec, checker markers, and tests, and keeps actual installation/start/enable/smoke/live runtime work out of this package.
 - 2026-06-01 progress-surface boundary confirmation: branch `document-progress-surface-boundary-20260601` records the operator-confirmed split: `Routing trace` stays a plain-text `key=value` diagnostic line, `Updated Plan` is the only user-visible progress panel rendered with tree-style checkmark/open-square status markers, and Markdown checkboxes remain the implementation-plan-internal task tracking mode.
 - 2026-05-31 ROB retire preflight implementation: branch `harden-rob-retire-preflight-20260531` adds the self-retire ROB preflight hard gate, focused RED/GREEN coverage, and CI manifest registration; broader local gates remain pending before local-main integration.

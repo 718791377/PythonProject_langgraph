@@ -28,11 +28,12 @@ Python adapter guard、`codex-port`、browser owner registry、chrome-devtools-m
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；Stage B checker/test/spec migration 已完成；Stage C runtime-promotion ladder 已文档化并 checker-backed；remote publication remains closed。
-Current gate: local `main` integration 前验证 split adapter checker、focused adapter tests、precommit/archive review、OpenSpec guard、local gate 与 local MR review。
-Canonical adapter set: exactly `chrome-devtools-mcp`、`cdp-bridge-mcp` / `CDP Bridge` 与 `OpenCLI`。
-Runtime boundary: 本 repo-local package 不 install tools、不 start browsers、不 call sensitive MCP methods、不 read cookies、不 execute JavaScript、不 mutate browser/GUI state、不 mutate user-level runtime state，也不把任何 adapter 标记为 installed-user-level/smoke-tested/active-candidate。Runtime promotion 保持 not installed/started/enabled in this package。
-Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py` 拒绝 adapter lane tables 里的 CLI-Anything、WXWork_CLI、WXWork.exe、wecom-cli 与 harness wording；`test/check_user_level_browser_cli_adapter_boundary.test.py` 以及既有 chrome/CDP/OpenCLI tests 覆盖该 lane 与 R0-R5 runtime promotion markers。
+Status: implemented-local; Stage B checker/test/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; Stage D real adapter runtime is planned but not executed; remote publication remains closed.
+Current gate: validate the split adapter checker, focused adapter tests, precommit/archive review, OpenSpec guard, local gate, and local MR review before local `main` integration.
+Canonical adapter set: exactly `chrome-devtools-mcp`, `cdp-bridge-mcp` / `CDP Bridge`, and `OpenCLI`.
+Runtime boundary: this repo-local package does not install tools, start browsers, call sensitive MCP methods, read cookies, execute JavaScript, mutate browser/GUI state, mutate user-level runtime state, or mark any adapter installed-user-level/smoke-tested/active-candidate. Runtime promotion remains not installed/started/enabled in this package.
+Runtime gap: real runtime work still requires actual user-level install/start/probe for chrome-devtools-mcp, cdp-bridge-mcp, and OpenCLI, plus R3 install/update receipts, R4 help/status/read-only smoke receipts, and R5 live handoff receipts where sensitive actions are owner-lease and authorization-gated.
+Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py` rejects CLI-Anything, WXWork_CLI, WXWork.exe, wecom-cli, and harness wording in adapter lane tables; `test/check_user_level_browser_cli_adapter_boundary.test.py` and existing chrome/CDP/OpenCLI tests cover the lane plus R0-R5 runtime promotion markers.
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -78,6 +79,14 @@ Sensitive browser actions 在 R5 之前保持 blocked。R5 中 click/type/naviga
 
 ## 任务 Backlog
 
+## Real Runtime Implementation Gap
+
+The adapter boundary is not yet a live adapter runtime. The next runtime package must install or resolve the selected adapter binaries/packages, start only bounded status/read-only probes, and record receipts without exposing browser cookies, raw page data, or GUI state. Required later evidence:
+
+- `chrome-devtools-mcp`, `cdp-bridge-mcp`, and `OpenCLI` install/update receipts with pinned source/package, wrapper path hashes, updater command, rollback pointer, owner lane, and redaction status.
+- R4 smoke receipts for help/status/read-only probe commands with timeouts and cleanup/release evidence.
+- R5 handoff receipts for any click/type/navigate/JavaScript/cookie/raw-browser-data action, including owner lease, explicit authorization receipt, target/action allowlist, transcript redaction, expiry, and rollback/cleanup evidence.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Keep read-only tab inventory allowed without sensitive authorization where the specific guard allows it.
 - [x] Require authorization receipt for click, type, navigate, JavaScript execution, cookie read, and raw browser data access.
@@ -88,6 +97,11 @@ Sensitive browser actions 在 R5 之前保持 blocked。R5 中 click/type/naviga
 - [x] Stage B: add negative coverage for CLI-Anything, WXWork_CLI, WXWork.exe, wecom-cli, and harness terms in adapter lane tables.
 - [x] Stage B: update CI manifest, safety registry, and OpenSpec guard wiring.
 - [x] Stage C runtime promotion：加入 R0-R5 Browser/CLI adapter ladder、installed-user-level/smoke-tested/active-candidate markers，以及 R5 sensitive actions 的 owner lease + authorization receipt gates。
+- [ ] Stage D real runtime: install or resolve chrome-devtools-mcp with pinned package/source, R3 receipt, updater command, wrapper hash, rollback pointer, and redaction evidence.
+- [ ] Stage D real runtime: install or resolve cdp-bridge-mcp with owner/port lease requirements, R3 receipt, updater command, wrapper hash, rollback pointer, and redaction evidence.
+- [ ] Stage D real runtime: install or resolve OpenCLI with `--port auto` enforcement, R3 receipt, updater command, wrapper hash, rollback pointer, and redaction evidence.
+- [ ] Stage D real runtime: run bounded R4 help/status/read-only smoke for each installed adapter and record `smoke-tested` receipts.
+- [ ] Stage D real runtime: define R5 live handoff wrapper for sensitive adapter actions with owner lease, authorization receipt, target/action allowlist, expiry, timeout release, transcript redaction, and cleanup evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
@@ -129,6 +143,7 @@ Sensitive browser actions 在 R5 之前保持 blocked。R5 中 click/type/naviga
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` classifies actual install/start/probe of chrome-devtools-mcp, cdp-bridge-mcp, and OpenCLI plus R3/R4/R5 receipts as pending Stage D runtime work; no adapter is installed, started, smoked, or live-run.
 - 2026-06-05 Stage C runtime promotion evidence：branch `runtime-promotion-plan-20260605` 记录 chrome-devtools-mcp、CDP Bridge 与 OpenCLI 的 R0-R5 promotion gates，同时保持本包 not installed/started/enabled。
 - 2026-06-01: `user_level_browser_cli_adapter_boundary_plan` implementation evidence recorded branch `implement-user-level-browser-cli-adapter-boundary-20260601` for the earlier mixed adapter package.
 - 2026-06-04 Stage B implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py`, `test/check_user_level_browser_cli_adapter_boundary.test.py`, and existing chrome/CDP/OpenCLI tests verify the Browser/CLI adapter lane and reject CLI-Anything/WXWork_CLI, WXWork.exe, wecom-cli, and harness wording in adapter lane tables.

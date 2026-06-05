@@ -66,12 +66,19 @@ Stage C 进入条件：用户于 2026-05-30 确认继续实施，且该子方案
 
 ## 任务清单
 
+## Real Runtime Implementation Gap
+
+State-release evidence is checker-backed, but automatic release/handoff runtime is not implemented. Real runtime work must close, release, or hand off LangGraph thread state and record receipts outside transient chat context.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
 - [x] Add fixtures for completed, running, released, and handoff LangGraph states.
 - [x] Update durable state checker to flag stale running state after completion.
 - [x] Document safe backend-family handoff requirements.
 - [x] Run durable state and LangGraph checks plus local gate.
+- [ ] Stage D real runtime: implement LangGraph thread release helper that records thread id, backend family, previous state, release action, survivor queue, and handoff target.
+- [ ] Stage D real runtime: implement close/handoff receipts that prevent stale running state after completed work.
+- [ ] Stage D real runtime: add rollback/restore evidence for release mistakes without switching backend families implicitly.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,6 +102,7 @@ Stage C 进入条件：用户于 2026-05-30 确认继续实施，且该子方案
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for LangGraph thread release and handoff helpers; this package updates plan governance only and does not run live runtime.
 - 2026-05-31 本地 main 状态同步：记录 Stage C 实施已合入本地 `main`，集成提交为 `32a5cfff3b977ba13ed6e215b4efb887679019b9`，completed claim 已保存在 `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`，剩余门禁为显式远端发布批准。
 - 2026-05-30 Stage C 实施：分支 `implement-langgraph-state-release-evidence-20260530` 新增结构化 LangGraph state-release fixtures，扩展 `tools/check_durable_artifact_state_surfaces.py` 以拒绝 completed work 仍处于 `running` state 以及缺失 release/handoff 字段的情况，登记 `test/check_langgraph_state_release_evidence.test.py`，记录 backend-family handoff 要求，并已在 `32a5cfff3b977ba13ed6e215b4efb887679019b9` 合入本地 `main`。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。

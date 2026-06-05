@@ -29,10 +29,10 @@ Python guard scripts, JSON receipts, local tests, CI manifest entries, docs regi
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local; Stage B checker/test/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; remote publication remains closed.
-Owner session: the main Codex leader owns this implementation package and the shared CI/spec/docs-registry hotspots.
-Runtime boundary: no helper installs, clones, runs CLI-Anything, probes WXWork.exe, reads message content, sends messages, controls GUI state, mutates user-level Codex config, or performs live API/Webhook calls in this package. Runtime promotion remains not installed/started/enabled in this package until R3/R4/R5 receipts are produced.
-Implementation evidence: `tools/cli_anything_governance.py` now exposes `adapter-plan` and `adapter-generation` fields; `tools/wxwork_cli_governance.py` is the canonical WXWork_CLI guard; focused tests cover no hard-load skills, no message-content, global lease, operator authorization, timeout release, rollback pointer, dry-run-only dispatch, and R0-R5 runtime promotion markers.
+Status: implemented-local; Stage B checker/test/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; Stage D real CLI-Anything/WXWork_CLI runtime is planned but not executed; remote publication remains closed.
+Runtime boundary: this repo-local package does not install CLI-Anything, fork or run WXWork_CLI, start or control `WXWork.exe`, send messages, click GUI controls, mutate enterprise WeChat state, mutate user-level runtime state, or mark the lane installed-user-level/smoke-tested/active-candidate.
+Runtime gap: real runtime work still requires CLI-Anything install/update, WXWork_CLI fork/adaptation, WXWork.exe discovery/start/control receipts, R4 smoke receipts, and R5 send/action handoff receipts guarded by current operator authorization, GUI owner lease, target/action allowlist, timeout, redaction, and rollback evidence.
+Implementation evidence: `tools/check_user_level_cli_anything_wxwork_cli_governance.py` and focused tests enforce CLI-Anything/WXWork_CLI naming, reject legacy WeCom/browser-adapter/harness ownership confusion, and keep live GUI automation disabled until R3/R4/R5 evidence exists.
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -68,6 +68,13 @@ This lane uses the shared R0-R5 ladder and remains not installed/started/enabled
 
 R5 send boundary: any WXWork_CLI send action remains forbidden before R5; even at R5 it must not expose raw message-content in repository evidence, must use a target/action allowlist, must keep message payloads ephemeral/redacted, and must preserve rollback/stop evidence.
 
+Stage D pending runtime work list:
+
+- Stage D real runtime: install CLI-Anything with source/package pin, R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence.
+- Stage D real runtime: fork/adapt WXWork_CLI from CLI-Anything with explicit source pin, delta notes, R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence.
+- Stage D real runtime: implement WXWork.exe discovery/start/status smoke that records R4 `smoke-tested` receipt without sending messages or mutating GUI state.
+- Stage D real runtime: define R5 WXWork_CLI send/action handoff guarded by operator authorization, GUI owner lease, target/action allowlist, expiry, timeout release, transcript redaction, and rollback/cleanup evidence.
+
 ## File Ownership
 
 This child plan owns future CLI-Anything and WXWork_CLI governance docs, guards, tests, receipts, and source-reference checks. It does not own chrome-devtools-mcp, cdp-bridge-mcp, OpenCLI, Pi, oh-my-pi, or Codex harnesses.
@@ -77,6 +84,15 @@ This child plan owns future CLI-Anything and WXWork_CLI governance docs, guards,
 One session may claim this implementation plan at a time. Other sessions may work on Browser/CLI adapters or Codex harnesses in parallel only when they do not edit this plan, its future checker, its tests, docs registry, CI manifest, or shared OpenSpec hotspots without a serialized hotspot lease.
 
 ## Task Backlog
+
+## Real Runtime Implementation Gap
+
+This lane is still governance-only for real GUI automation. The next runtime package must install CLI-Anything, create or pin the WXWork_CLI fork/adaptation that drives `WXWork.exe`, and record safe receipts before any enterprise WeChat interaction. Required later evidence:
+
+- CLI-Anything source/package pin, install/update command, wrapper path hash, updater command, rollback pointer, and sanitized R3 receipt.
+- WXWork_CLI fork/adaptation commit or package pin, clear delta from upstream CLI-Anything usage, wrapper path hash, rollback pointer, and sanitized R3 receipt.
+- WXWork.exe discovery/start/status receipts for R4 smoke that do not send messages or mutate enterprise WeChat state.
+- R5 send/action handoff receipts with current operator authorization, GUI owner lease, target/action allowlist, expiry, timeout release, transcript redaction, and rollback/cleanup evidence.
 
 <!-- TASK_BACKLOG_START -->
 - [x] Stage A: register this bilingual child plan in `docs_bilingual/docs_registry.yaml`.
@@ -118,6 +134,7 @@ One session may claim this implementation plan at a time. Other sessions may wor
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` classifies CLI-Anything install, WXWork_CLI fork/adaptation, WXWork.exe control, R4 smoke, and R5 send/action handoff as pending Stage D runtime work; no GUI runtime is installed, started, controlled, smoked, or live-run.
 - 2026-06-05 Stage C runtime promotion evidence: branch `runtime-promotion-plan-20260605` records R0-R5 promotion gates for CLI-Anything/WXWork_CLI, keeps this package not installed/started/enabled, and checker-backs R5-only send action controls.
 - 2026-06-04 Stage B implementation evidence: `tools/cli_anything_governance.py`, `tools/wxwork_cli_governance.py`, `test/cli_anything_governance.test.py`, `test/wxwork_cli_governance.test.py`, and `tools/check_user_level_cli_anything_wxwork_cli_governance.py` implement and verify the split lane.
 <!-- EVIDENCE_INDEX_END -->

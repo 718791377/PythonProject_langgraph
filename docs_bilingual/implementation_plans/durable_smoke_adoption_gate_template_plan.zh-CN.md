@@ -66,12 +66,19 @@ Stage C 进入条件：本地验证已通过；下一步是只读 gate-template 
 
 ## 任务清单
 
+## Real Runtime Implementation Gap
+
+Durable smoke/adoption is still template-only. Real runtime work must provide an executable durable smoke runner, apply-mode adoption helper, R3/R4/R5 receipts, and fail-closed evidence before any live adoption is claimed.
+
 <!-- TASK_BACKLOG_START -->
 - [x] 确认本子方案进入实施。
 - [x] 定义 R0.6.0 gate template fields 和 R0.6.1 gate field checker behavior。
 - [x] 增加 negative checker fixtures，用于在缺少 gate template 时阻止 R0.6.2 live smoke 或 apply-mode adoption。
 - [x] 记录 runtime exercise、live smoke 和 apply mode 必须延后到本 gate 通过之后。
 - [x] Run durable gate tests and local gate.
+- [ ] Stage D real runtime: implement executable durable smoke runner that writes sanitized R4 smoke receipts and never collapses smoke success into adoption.
+- [ ] Stage D real runtime: implement apply-mode adoption helper that writes selected/running/adopted/released receipts and fail-closed rollback evidence.
+- [ ] Stage D real runtime: add live adoption handoff receipts with operator authorization, backend-family ownership, timeout release, and cleanup evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,6 +102,7 @@ Stage C 进入条件：本地验证已通过；下一步是只读 gate-template 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for real durable smoke, apply-mode adoption, and live adoption; this package updates plan governance only and does not run live runtime.
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-30 实施：扩展 `tools/check_durable_routing_smoke_gate_template.py`，支持 candidate-template validation，并默认运行 `tools/fixtures/durable_routing_smoke_gate_template/` 下的只读 self-test fixtures；现有 OpenSpec guard 调用会覆盖这些 fixtures，因为该 checker 默认执行 self-test。
 - 2026-05-30 验证：`python tools\check_durable_routing_smoke_gate_template.py --root . --json`、`python tools\check_document_pair_policy.py --root . --json`、`python tools\check_name_clarity_rules.py --root . --json`、`python tools\check_precommit_update_archive.py --root . --json` 和 `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` 已在 feature worktree 中于提交前通过。Local MR review 是 feature commit 清洁后的合入前门禁。

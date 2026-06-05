@@ -40,6 +40,13 @@ documents:
     zh_cn_path: docs_bilingual/implementation_plans/user_level_port_browser_owner_isolation_plan.zh-CN.md
 
 
+
+  - doc_id: user_level_mcp_skills_cli_runtime_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/user_level_mcp_skills_cli_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/user_level_mcp_skills_cli_runtime_plan.zh-CN.md
+
   - doc_id: user_level_browser_cli_adapter_boundary_plan
     doc_class: implementation_plan
     status: active

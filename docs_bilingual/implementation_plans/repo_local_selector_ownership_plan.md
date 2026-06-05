@@ -66,12 +66,19 @@ Only one session may own each hotspot at a time:
 
 ## Task Backlog
 
+## Real Runtime Implementation Gap
+
+Selector ownership is checker-backed, but automatic selector refresh is not implemented. Real runtime work must write, renew, release, and audit repo-local active selectors under ownership and stale-lock rules.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
 - [x] Add fixtures for same-repo, cross-repo, and stale selector ownership.
 - [x] Update checker logic to fail closed on cross-repository selector adoption.
 - [x] Document safe selector inspection and no-auto-adoption behavior.
 - [x] Run durable state surface checks and local gate.
+- [ ] Stage D real runtime: implement selector write/refresh helper that records owner session, backend family, lease expiry, selector revision, and rollback pointer.
+- [ ] Stage D real runtime: implement selector release/stale-reclaim helper with explicit nonce matching and audit receipts.
+- [ ] Stage D real runtime: add dry-run and apply modes that fail closed on cross-repo selector adoption.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,6 +102,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for active selector write, refresh, renewal, and release helpers; this package updates plan governance only and does not run live runtime.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-30 Stage C implementation start: active session claim `main-codex-repo-local-selector-ownership-20260530` created before tracked write work; implementation adds repo-local selector fixtures, checker, guard wiring, and governance documentation.
 - 2026-05-30 Local validation: selector ownership checker, durable artifact surface tests, OpenSpec guard JSON tests, precommit review checks, worktree receipt check, and `tools/ci/local_gate.ps1` passed before feature commit.

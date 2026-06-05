@@ -66,12 +66,19 @@ Only one session may own each hotspot at a time:
 
 ## Task Backlog
 
+## Real Runtime Implementation Gap
+
+Durable smoke/adoption is still template-only. Real runtime work must provide an executable durable smoke runner, apply-mode adoption helper, R3/R4/R5 receipts, and fail-closed evidence before any live adoption is claimed.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan for implementation.
 - [x] Define R0.6.0 gate template fields and R0.6.1 gate field checker behavior.
 - [x] Add negative checker fixtures that block R0.6.2 live smoke or apply-mode adoption without the gate template.
 - [x] Document that runtime exercise, live smoke, and apply mode are delayed until after this gate passes.
 - [x] Run durable gate tests and local gate.
+- [ ] Stage D real runtime: implement executable durable smoke runner that writes sanitized R4 smoke receipts and never collapses smoke success into adoption.
+- [ ] Stage D real runtime: implement apply-mode adoption helper that writes selected/running/adopted/released receipts and fail-closed rollback evidence.
+- [ ] Stage D real runtime: add live adoption handoff receipts with operator authorization, backend-family ownership, timeout release, and cleanup evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,6 +102,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for real durable smoke, apply-mode adoption, and live adoption; this package updates plan governance only and does not run live runtime.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-30 implementation: extended `tools/check_durable_routing_smoke_gate_template.py` with candidate-template validation and default read-only self-test fixtures under `tools/fixtures/durable_routing_smoke_gate_template/`; the existing OpenSpec guard invocation covers these fixtures because the checker runs self-test by default.
 - 2026-05-30 validation: `python tools\check_durable_routing_smoke_gate_template.py --root . --json`, `python tools\check_document_pair_policy.py --root . --json`, `python tools\check_name_clarity_rules.py --root . --json`, `python tools\check_precommit_update_archive.py --root . --json`, and `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` passed in the feature worktree before commit. Local MR review remains the pre-integration gate after the feature commit is clean.

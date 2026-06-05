@@ -66,12 +66,19 @@ Stage C 进入条件：用户已明确要求继续实施本子 implementation pl
 
 ## 任务清单
 
+## Real Runtime Implementation Gap
+
+Readiness projection is checker-backed, but live installed/enabled/selected/ready refresh is not implemented. Real runtime work must probe user-level and repo-local state and refresh projections without collapsing fields.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
 - [x] Add fixtures for installed-only, enabled-not-selected, selected-not-ready, and ready states.
 - [x] Update evidence checks to require distinct state fields.
 - [x] Document user-facing wording for backend_default and backend_ready.
 - [x] Run capability switch and effective-lane checks plus local gate.
+- [ ] Stage D real runtime: implement readiness probe helper that refreshes installed, enabled, selected, and ready for native_omx and LangGraph without collapsing states.
+- [ ] Stage D real runtime: record probe source, timestamp, backend family, selector evidence, version evidence, and blockers in sanitized projection receipts.
+- [ ] Stage D real runtime: wire projection refresh into activation evidence without claiming durable workflow adoption or persistent-team launch.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -95,6 +102,7 @@ Stage C 进入条件：用户已明确要求继续实施本子 implementation pl
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for installed/enabled/selected/ready probe refresh; this package updates plan governance only and does not run live runtime.
 - 2026-05-30 Stage C 实施：`tools/check_capability_switch_chain.py` 现在校验 durable capability readiness projections，要求区分 `installed`、`enabled`、`selected`、`ready` 四个字段，并强制 `ready == installed && enabled && selected` 不变量。
 - 2026-05-30 Stage C fixtures：`test/check_capability_switch_chain.test.py` 覆盖 installed-only、enabled-not-selected、selected-not-ready、ready、collapsed-ready 与 missing-field readiness 状态。
 - 2026-05-30 Stage C 文档：`docs_bilingual/governance/langgraph_user_level_runtime_policy.md` 与 `.zh-CN.md` 记录 `backend_default` / `backend_ready` 对外措辞，并澄清 readiness 不表示当前任务已经采用 durable workflow、tracked thread 或 persistent team。

@@ -29,8 +29,9 @@ Codex CLI, Git worktrees, JSON job state, Python guard/checker scripts, OpenSpec
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local; Stage B source-ledger/checker/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; remote publication remains closed.
-Runtime boundary: Codex harnesses are governance wrappers around future harness jobs; they do not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, or local-main-first publication gates. This package does not install Pi/oh-my-pi, start a Pi runtime, enable a harness sidecar, or mark the lane installed-user-level/smoke-tested/active-candidate. Runtime promotion remains not installed/started/enabled in this package.
+Status: implemented-local; Stage B source-ledger/checker/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; Stage D real-runtime implementation is planned but not executed; remote publication remains closed.
+Runtime boundary: Codex harnesses are governance wrappers around future harness jobs; they do not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, or local-main-first publication gates. This package does not install Pi/oh-my-pi, start a Pi runtime, enable a harness sidecar, run a real harness job, or mark the lane installed-user-level/smoke-tested/active-candidate. Runtime promotion remains not installed/started/enabled in this package.
+Runtime gap: real runtime work still requires a Pi/oh-my-pi sidecar install or pinned package candidate, a harness job runner, executable read/write guards, R3 install/update receipts, R4 read-only smoke receipts, and R5 bounded live handoff receipts with isolated worktree evidence.
 Implementation evidence: `tools/check_codex_harnesses_governance.py` requires source ledger rows, source pin, retrieved_at, license note, rollback pointer, no Codex takeover, unpinned Pi packages rejection, read guard, write guard, job state, isolated worktree, changed-path report markers, and R0-R5 runtime promotion markers.
 <!-- CURRENT_STATUS_END -->
 
@@ -68,6 +69,13 @@ This lane uses the shared R0-R5 ladder and remains not installed/started/enabled
 
 A Codex harnesses active sidecar must not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, local-main-first publication gates, or the current main Codex CLI leader session.
 
+Stage D pending runtime work list:
+
+- Stage D real runtime: implement Pi/oh-my-pi sidecar install/update receipt with pinned source/package, rollback pointer, and no-Codex-takeover evidence.
+- Stage D real runtime: implement harness job runner receipts with executable read/write guards, isolated worktree evidence, changed-path reporting, cleanup, and rollback.
+- Stage D real runtime: run bounded R4 read-only smoke and record `smoke-tested` receipt before any R5 active-candidate handoff.
+- Stage D real runtime: gate any R5 live harness job behind current operator authorization, owner lease, target/action allowlist, timeout release, and post-run cleanup evidence.
+
 ## File Ownership
 
 This child plan owns Codex harness governance docs, future `codex_harnesses_governance` checker/guard, Pi/oh-my-pi source ledgers, job-state schemas, and read-only/write guard tests. It does not own CLI-Anything, WXWork_CLI, chrome-devtools-mcp, cdp-bridge-mcp, or OpenCLI.
@@ -75,6 +83,15 @@ This child plan owns Codex harness governance docs, future `codex_harnesses_gove
 ## Parallel Session Contract
 
 One session may claim this implementation plan at a time. A separate session may work on CLI-Anything/WXWork_CLI or Browser/CLI adapters only when it does not edit this plan, future harness checker/tests, docs registry, CI manifest, or shared OpenSpec hotspots without a serialized lease.
+
+## Real Runtime Implementation Gap
+
+This plan is not complete at the real-runtime level. The implemented-local package covers governance, checker, test, source-ledger, and R0-R2 dry-run contracts only. A later runtime package must provide:
+
+- Pi or oh-my-pi sidecar source pin, package/version pin, license record, install/update command, rollback pointer, and sanitized install/update receipt.
+- A harness job runtime that records job id, isolated worktree, requested read/write scope, read guard result, write guard result, changed paths, timeout, cleanup, and rollback evidence.
+- R3 receipt material for installed-user-level state, R4 smoke-tested read-only sidecar status/job fixture, and R5 active-candidate bounded live handoff evidence.
+- Proof that Codex remains the leader and no sidecar replaces Codex launchers, native subagents, native_omx, LangGraph, `codex-ohmy`, `apply_patch`, or local-main-first gates.
 
 ## Task Backlog
 
@@ -106,6 +123,7 @@ One session may claim this implementation plan at a time. A separate session may
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` reclassifies Pi/oh-my-pi sidecar, harness job runner, executable read/write guards, and R3/R4/R5 receipts as pending Stage D runtime work; no runtime is installed, started, smoked, or live-run.
 - 2026-06-05 Stage C runtime promotion evidence: branch `runtime-promotion-plan-20260605` records R0-R5 promotion gates for Codex harnesses, keeps Pi/oh-my-pi sidecar runtime not installed/started/enabled, and checker-backs no-takeover active sidecar constraints.
 - 2026-06-04 Stage B implementation evidence: `tools/check_codex_harnesses_governance.py` and `test/check_codex_harnesses_governance.test.py` verify the harness-only lane, source ledger, no-takeover boundary, read/write guards, job state, isolated worktree, changed-path report, and no unpinned Pi packages.
 <!-- EVIDENCE_INDEX_END -->

@@ -66,12 +66,19 @@ Only one session may own each hotspot at a time:
 
 ## Task Backlog
 
+## Real Runtime Implementation Gap
+
+Readiness projection is checker-backed, but live installed/enabled/selected/ready refresh is not implemented. Real runtime work must probe user-level and repo-local state and refresh projections without collapsing fields.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
 - [x] Add fixtures for installed-only, enabled-not-selected, selected-not-ready, and ready states.
 - [x] Update evidence checks to require distinct state fields.
 - [x] Document user-facing wording for backend_default and backend_ready.
 - [x] Run capability switch and effective-lane checks plus local gate.
+- [ ] Stage D real runtime: implement readiness probe helper that refreshes installed, enabled, selected, and ready for native_omx and LangGraph without collapsing states.
+- [ ] Stage D real runtime: record probe source, timestamp, backend family, selector evidence, version evidence, and blockers in sanitized projection receipts.
+- [ ] Stage D real runtime: wire projection refresh into activation evidence without claiming durable workflow adoption or persistent-team launch.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,6 +102,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for installed/enabled/selected/ready probe refresh; this package updates plan governance only and does not run live runtime.
 - 2026-05-30 Stage C implementation: `tools/check_capability_switch_chain.py` now validates durable capability readiness projections with distinct `installed`, `enabled`, `selected`, and `ready` fields, including the invariant `ready == installed && enabled && selected`.
 - 2026-05-30 Stage C fixtures: `test/check_capability_switch_chain.test.py` covers installed-only, enabled-not-selected, selected-not-ready, ready, collapsed-ready, and missing-field readiness states.
 - 2026-05-30 Stage C documentation: `docs_bilingual/governance/langgraph_user_level_runtime_policy.md` and `.zh-CN.md` document `backend_default` / `backend_ready` wording and clarify that readiness does not imply an adopted durable workflow, tracked thread, or persistent team.

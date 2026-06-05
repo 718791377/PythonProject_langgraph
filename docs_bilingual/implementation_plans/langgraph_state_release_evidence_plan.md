@@ -66,12 +66,19 @@ Only one session may own each hotspot at a time:
 
 ## Task Backlog
 
+## Real Runtime Implementation Gap
+
+State-release evidence is checker-backed, but automatic release/handoff runtime is not implemented. Real runtime work must close, release, or hand off LangGraph thread state and record receipts outside transient chat context.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
 - [x] Add fixtures for completed, running, released, and handoff LangGraph states.
 - [x] Update durable state checker to flag stale running state after completion.
 - [x] Document safe backend-family handoff requirements.
 - [x] Run durable state and LangGraph checks plus local gate.
+- [ ] Stage D real runtime: implement LangGraph thread release helper that records thread id, backend family, previous state, release action, survivor queue, and handoff target.
+- [ ] Stage D real runtime: implement close/handoff receipts that prevent stale running state after completed work.
+- [ ] Stage D real runtime: add rollback/restore evidence for release mistakes without switching backend families implicitly.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,6 +102,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for LangGraph thread release and handoff helpers; this package updates plan governance only and does not run live runtime.
 - 2026-05-31 local-main status sync: recorded that the Stage C implementation is merged into local `main` at `32a5cfff3b977ba13ed6e215b4efb887679019b9`, the completed claim is preserved at `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`, and the remaining gate is explicit remote-publication approval.
 - 2026-05-30 Stage C implementation: branch `implement-langgraph-state-release-evidence-20260530` added structured LangGraph state-release fixtures, extended `tools/check_durable_artifact_state_surfaces.py` to reject completed `running` state and missing release/handoff fields, registered `test/check_langgraph_state_release_evidence.test.py`, documented backend-family handoff requirements, and was integrated into local `main` at `32a5cfff3b977ba13ed6e215b4efb887679019b9`.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.

@@ -63,7 +63,7 @@ Stage: Stage C runtime promotion governance 已针对三个重建 lane implement
 Owner session: main Codex leader 拥有本 Stage C package 的 serialized shared hotspots：parent plan、child plans、stable spec、checker/test updates、docs registry references、CI manifest references、safety registry references 与 OpenSpec guard wiring。
 Current gate: 运行 focused runtime-promotion checker tests、precommit/archive review、OpenSpec guard、shared local gate 与 local MR review；之后通过 local-main-first helper 合入，并停在 remote-publication approval gate。
 Runtime promotion result: CLI-Anything/WXWork_CLI、Browser/CLI adapters 与 Codex harnesses 现在共享明确的 R0 project-level preflight、R1 project-level fake/dry-run runtime、R2 reusable project-level helper/guard、R3 user-level install/update receipt、R4 user-level smoke runtime、R5 active-candidate / bounded live handoff gates。本包不 install、start、enable、smoke-run 或 live-run 任何 runtime。
-MCP/skills CLI carry-forward: `skills2cli` and `mcp2cli` remain implemented user-level install surfaces governed by `tools/install_user_level_mcp_skills_cli.py`; the upstream runtime source is `knowsuchagency/mcp2cli`, verified through markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`; rollback pointer, update receipt, and native-subagent=false boundaries stay checker-backed.
+MCP/skills CLI carry-forward: `user_level_mcp_skills_discovery_facade_plan` is a deleted/superseded source plan, not an active child plan. Runtime ownership is now `user_level_mcp_skills_cli_runtime_plan`; existing `skills2cli` and `mcp2cli` helpers/checkers/tests are R0-R2 carry-forward surfaces only until R3/R4/R5 receipts are produced. The upstream runtime source remains `knowsuchagency/mcp2cli`, with install markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`.
 Remote state: 本 implementation package 不授权 remote publication。
 <!-- CURRENT_STATUS_END -->
 
@@ -247,6 +247,21 @@ This follow-up is a serialized hotspot package. It touches startup summaries, `A
 | Slice 8 | 既有 Phase 7 集成方案 | Phase 7 | evidence collection 可并行；registry、OpenSpec 与 local-main retire 保持串行。 | docs registry、stable specs、CI manifest、local-main lock |
 
 旧来源方案继续保留 baseline marker 和 implementation-state 历史，供 `check_user_level_mcp_skills_browser_cli_baseline.py` 使用。未来 runtime 实现必须认领拥有对应 lane 的提取后子方案。
+
+## Real Runtime Gap Ledger
+
+| Lane | Active runtime owner plan | Current implemented level | Missing real runtime layer |
+| --- | --- | --- | --- |
+| Codex harnesses | `codex_harnesses_governance_plan` | governance/checker/test, R0-R2 | Pi/oh-my-pi sidecar, harness job runtime, executable read/write guards, R3/R4/R5 receipts |
+| Browser/CLI adapters | `user_level_browser_cli_adapter_boundary_plan` | adapter guard/checker/test, R0-R2 | install/start/probe chrome-devtools-mcp, cdp-bridge-mcp, OpenCLI; R4 smoke and R5 live handoff |
+| CLI-Anything/WXWork_CLI | `user_level_cli_anything_wxwork_cli_governance_plan` | CLI-Anything/WXWork_CLI guard/checker/test, R0-R2 | install/run CLI-Anything, fork/adapt/run WXWork_CLI, control WXWork.exe, R4 smoke, R5 send/action handoff |
+| Durable smoke/adoption | `durable_smoke_adoption_gate_template_plan` | template/checker/fixture, R0-R2 | real durable smoke runner, apply-mode adoption, live adoption execution receipts |
+| Receipt/rollback/redaction | `user_level_capability_receipt_rollback_redaction_plan` | governance helper/checker/test, R0-R2 | install/update/smoke/live receipt writer extensions and rollback executor receipts |
+| Selector ownership | `repo_local_selector_ownership_plan` | selector ownership checker/guard, R0-R2 | active selector write, renew, release, stale-reclaim helpers |
+| Worktree receipt/claim lifecycle | `worktree_receipt_claim_lifecycle_plan` | lifecycle validation/checker, R0-R2 | active -> ready -> merged-local-main -> completed -> cleaned state advancement helper |
+| Capability readiness projection | `durable_capability_readiness_projection_plan` | readiness checker/fixture, R0-R2 | runtime probe/refresh of installed/enabled/selected/ready projections |
+| LangGraph state release | `langgraph_state_release_evidence_plan` | state-release checker/fixture, R0-R2 | LangGraph thread close/release/handoff runtime helper and receipts |
+| MCP/skills CLI | `user_level_mcp_skills_cli_runtime_plan` | existing mcp2cli/skills2cli helper/checker/test carry-forward, R0-R2 | real user-level mcp2cli install, skills2cli install/update, R4 wrapper smoke, R5 direct MCP/skill handoff receipts |
 
 ## Runtime Promotion Ladder Matrix
 
@@ -475,6 +490,7 @@ Lane-specific R5 约束：
 - [x] Stage B decomposition：更新 Phase 7 集成子方案，使其覆盖提取后 MCP lane 的 docs registry、checker/CI 与 OpenSpec/Comet archive 职责。
 - [x] Stage B follow-up: create and register the Phase 2 prompt-canary canonical visible marker restore child plan before runtime/checker implementation.
 - [x] Stage C runtime promotion：为 CLI-Anything/WXWork_CLI、Browser/CLI adapters 与 Codex harnesses 加入共享 R0-R5 runtime ladder，且不 install、start、enable、smoke-run 或 live-run 任何 runtime。
+- [x] Stage D real-runtime classification: update ten runtime lanes, add `user_level_mcp_skills_cli_runtime_plan`, and mark all real install/start/smoke/live execution as pending future runtime work.
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -507,6 +523,7 @@ Stage B 后续确认后的验收条件：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 Stage D real-runtime classification package: branch `runtime-plan-standard-20260605` updates ten runtime lanes, creates `user_level_mcp_skills_cli_runtime_plan` as the active mcp2cli/skills2cli runtime successor, records deleted source-plan boundaries, and keeps all real install/start/smoke/live work pending future runtime implementation.
 - 2026-06-05 Stage C runtime promotion package：branch `runtime-promotion-plan-20260605` 加入共享 R0-R5 runtime promotion ladder，更新三个 child plans、stable spec、checker markers 与 tests，并把实际 install/start/enable/smoke/live runtime work 留在本包之外。
 - 2026-06-01 progress-surface boundary confirmation：分支 `document-progress-surface-boundary-20260601` 记录操作者确认的分工：`Routing trace` 保持普通文本 `key=value` 诊断行；`Updated Plan` 是唯一用户可见进度面板，使用树状 `✔`/`□`；Markdown checkbox 继续作为 implementation plan 内部任务追踪模式。
 - 2026-05-31 ROB retire preflight implementation: 分支 `harden-rob-retire-preflight-20260531` 已新增 self-retire ROB 前置硬门、focused RED/GREEN 覆盖和 CI manifest 登记；更广本地门禁仍需在 local-main 集成前运行。

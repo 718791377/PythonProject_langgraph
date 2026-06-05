@@ -71,6 +71,10 @@ Only one session may own each hotspot at a time:
 
 ## Task Backlog
 
+## Real Runtime Implementation Gap
+
+Receipt/claim lifecycle validation is implemented, but lifecycle advancement is not automated. Real runtime work must safely advance active -> ready -> merged-local-main -> completed -> cleaned with receipts and rollback references.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
 - [x] Add schema fixtures for every allowed lifecycle state.
@@ -78,6 +82,9 @@ Only one session may own each hotspot at a time:
 - [x] Document cleanup and branch deletion evidence without forcing immediate cleanup.
 - [x] Run receipt checker, local gate, local MR review, archive, and post-archive validation.
 - [x] Align receipt lifecycle states with Phase 1A ROB entry states before runtime integration.
+- [ ] Stage D real runtime: implement lifecycle advancement helper for active, paused, ready-to-merge, merged-local-main, completed, stale, superseded, and cleaned states.
+- [ ] Stage D real runtime: require every state transition to record owner, previous state, next state, evidence paths, rollback ref, and cleanup decision.
+- [ ] Stage D real runtime: integrate lifecycle advancement with local-main retire evidence without authorizing remote publication.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -101,6 +108,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for active-to-ready-to-merged-to-cleaned lifecycle advancement; this package updates plan governance only and does not run live runtime.
 - 2026-05-30 validation package: focused receipt tests, receipt checker, implementation-plan checker, OpenSpec spec validation, pre-commit update/archive review, local gate, and local MR review all passed before local main integration.
 - 2026-05-30 implementation package: added `stale` receipt/claim lifecycle validation, all-state fixtures, and completion-evidence grouping; OpenSpec change `implement-worktree-receipt-claim-lifecycle-20260530` records stale as a classification state rather than cleanup or branch-deletion evidence.
 - 2026-05-30 complete-flow alignment: receipt lifecycle remains the ROB state source; `ready-to-merge` maps to a ready candidate package, and `merged-local-main` maps to retired evidence after lock-backed self-retire.

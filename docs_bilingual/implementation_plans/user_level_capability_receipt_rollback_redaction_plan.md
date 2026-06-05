@@ -51,6 +51,10 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 
 ## Task Backlog
 
+## Real Runtime Implementation Gap
+
+Receipt governance is implemented, but real user-level install/start/smoke/live lanes need richer runtime receipt writers and rollback executors for install, update, smoke, live handoff, cleanup, and rollback.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Freeze the minimal authorization receipt fields: action, target, scope, expiry, session, and operator confirmation.
 - [x] Freeze the update receipt fields for tool name, installed version, source URL, install path, wrapper path, state path, smoke test command, updater command, rollback pointer, owner lane, and redaction status.
@@ -60,6 +64,9 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 - [x] Hand Phase 6 adapter plans this receipt contract before any live install, live start, GUI write, cookie read, or sensitive MCP call is allowed.
 - [x] Run focused validation for this child lane.
 - [x] Update the parent evidence index and Phase 7 integration plans after implementation evidence exists.
+- [ ] Stage D real runtime: extend receipt helper schemas for install/update/smoke/live/cleanup/rollback runtime events.
+- [ ] Stage D real runtime: implement rollback executor receipts that prove dry-run, apply, and post-rollback verification behavior.
+- [ ] Stage D real runtime: require every promoted user-level runtime lane to emit redacted install/update/smoke/live receipts through this helper family.
 <!-- TASK_BACKLOG_END -->
 
 ## Implemented Contract
@@ -88,6 +95,7 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for install/update/smoke/live receipts and rollback executors; this package updates plan governance only and does not run live runtime.
 - 2026-06-01: child plan created by the MCP/skills/browser/CLI decomposition package; implementation evidence is pending future claims.
 - 2026-06-01: Stage C implementation package `implement-capability-receipt-rollback-redaction-20260601` closed the receipt helper hotspot, added explicit local-only authorized path evidence with fail-closed gating, extended focused regression coverage to eight tests, confirmed baseline checker/CI registration, updated parent and Phase 7 handoff evidence, and remained behind the remote-publication approval gate.
 <!-- EVIDENCE_INDEX_END -->
