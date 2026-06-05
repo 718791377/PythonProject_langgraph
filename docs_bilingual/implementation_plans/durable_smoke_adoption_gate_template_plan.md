@@ -41,6 +41,7 @@ Owner session: main Codex leader session
 Current gate: implementation confirmed by user; runtime exercise, live smoke, and apply mode remain delayed until this gate passes and a later reviewed change explicitly authorizes them
 Stage C entry condition: local validation is green; local MR review and local main integration of the read-only gate-template package remain next
 Last updated: 2026-05-30
+Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership

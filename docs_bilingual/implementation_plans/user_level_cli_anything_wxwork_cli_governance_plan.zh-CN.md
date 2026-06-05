@@ -12,121 +12,97 @@ supersedes:
 
 # 用户级 CLI-Anything 与 WXWork_CLI 治理方案
 
-> **For agentic workers:** 使用 `superpowers:executing-plans`。只有在分配互不重叠写入集合后才使用并行子代理。本方案只管理 CLI-Anything 与 WXWork_CLI surfaces；Browser/CLI adapters 与 Codex harnesses 是独立兄弟方案。
+> **给 agentic workers：** 使用 `superpowers:executing-plans`；只有写入集合互不重叠时才允许并行子代理。本方案只管理 CLI-Anything/WXWork_CLI，不是 Browser/CLI adapter，也不是 Codex harnesses；not Codex harnesses。
 
 ## 目标
 
-把 `CLI-Anything` 与 `WXWork_CLI` 治理为一个用户级 lane；未来 `WXWork_CLI` 可以通过 CLI-Anything 控制企业微信桌面进程 `WXWork.exe`。这个 lane 不是 Codex harnesses。
+把 `https://github.com/HKUDS/CLI-Anything` 作为参考源，约束通过 CLI-Anything 控制企业微信 `WXWork.exe` 的 `WXWork_CLI` lane，并把真实 send/action 限制到 R5。
 
 ## 架构
 
-Codex 先在本仓库保留项目级 guard source，只有 receipts、pins、smoke evidence、rollback pointers、redaction 与 operator authorization 完备后，才提升为用户级 wrapper。CLI-Anything generation/control 与 WXWork_CLI GUI actions 在相关 guard 证明请求安全前保持阻塞。
+repo-local 阶段只维护治理、checker、helper、adapter-generation 与 dry-run evidence。真实 runtime 阶段才允许安装 CLI-Anything、fork/adaptation `WXWork_CLI`、发现/控制 `WXWork.exe`，并且必须经过 global lease、operator authorization、timeout release 与 rollback pointer。
 
 ## 技术栈
 
-Python guard scripts、JSON receipts、本地测试、CI manifest entries、docs registry、OpenSpec requirements、`C:\Users\lenovo\.codex` 下的用户级 Codex state、CLI-Anything 参考源，以及未来 WXWork_CLI wrapper receipts。
+Python helper、CLI-Anything reference、`WXWork_CLI` adapter-plan、`WXWork.exe` 进程探测、JSON receipt、message redaction、ephemeral message handling、local CI 与 OpenSpec guard。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local; Stage B checker/test/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; Stage D real CLI-Anything/WXWork_CLI runtime is planned but not executed; remote publication remains closed.
-Runtime boundary: this repo-local package does not install CLI-Anything, fork or run WXWork_CLI, start or control `WXWork.exe`, send messages, click GUI controls, mutate enterprise WeChat state, mutate user-level runtime state, or mark the lane installed-user-level/smoke-tested/active-candidate.
-Runtime gap: real runtime work still requires CLI-Anything install/update, WXWork_CLI fork/adaptation, WXWork.exe discovery/start/control receipts, R4 smoke receipts, and R5 send/action handoff receipts guarded by current operator authorization, GUI owner lease, target/action allowlist, timeout, redaction, and rollback evidence.
-Implementation evidence: `tools/check_user_level_cli_anything_wxwork_cli_governance.py` and focused tests enforce CLI-Anything/WXWork_CLI naming, reject legacy WeCom/browser-adapter/harness ownership confusion, and keep live GUI automation disabled until R3/R4/R5 evidence exists.
+Status: implemented-local；Stage B checker/test/spec migration 已完成；Stage C runtime-promotion ladder 已记录并由 checker 支撑；Stage D real CLI-Anything/WXWork_CLI runtime 尚未安装、启动或启用。
+Runtime boundary：本 repo-local package 不安装 CLI-Anything，不 fork 或运行 WXWork_CLI，不启动或控制 `WXWork.exe`，不发送消息，不点击 GUI 控件，不修改企业微信状态，也不保存 no message-content。
+Runtime gap：真实 runtime 仍需要 CLI-Anything install/update、WXWork_CLI fork/adaptation、WXWork.exe discovery/start/control receipts、R4 smoke receipts，以及 R5 send/action handoff 的 target/action allowlist、message redaction、ephemeral message handling、operator authorization、global lease、timeout release 与 rollback pointer。
+Implementation evidence：`tools/check_user_level_cli_anything_wxwork_cli_governance.py` 和 focused tests 强制 CLI-Anything/WXWork_CLI 命名，拒绝旧混合边界，保留 adapter-plan 与 adapter-generation marker。
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
 
-| Surface | 参考源 | 后续更新证据要求 |
+| 项 | 参考源 | 本方案中的作用 |
 | --- | --- | --- |
-| CLI-Anything | https://github.com/HKUDS/CLI-Anything | source URL、immutable pin or commit、retrieved_at、license note、rollback pointer |
-| WXWork_CLI | 面向 WXWork.exe control through CLI-Anything 的本地 Codex governance fork | wrapper path hash、owner lane、operator receipt、dry-run smoke、rollback pointer |
-| WXWork.exe target | 只能通过 gated future WXWork_CLI lane 控制的企业微信桌面进程 | global lease、session match、expiry、no message-content evidence |
+| CLI-Anything | https://github.com/HKUDS/CLI-Anything | 用作 GUI/CLI adapter-generation 模式参考。 |
+| WXWork_CLI | repo-derived fork/adaptation | 用 CLI-Anything 控制 `WXWork.exe` 的用户级候选 runtime。 |
 
 ## 治理层级拆分
 
-| 阶段 | 治理层级 | 允许工作 | 提升门禁 |
-| --- | --- | --- | --- |
-| 0 | 项目级 | taxonomy、source references、docs registry、OpenSpec wording | local docs gate |
-| 1 | 项目级 | receipts、path redaction、no hard-load、no live control 的 guard/checker/tests | focused tests 与 local gate |
-| 2 | 可复用项目级 | 可供其他 repo 使用的 generic receipt 与 authorization schema | checker-backed evidence 与 examples |
-| 3 | 用户级 | CLI-Anything / WXWork_CLI install/update receipt 与 wrapper dry-run | 明确用户级授权、smoke pass、rollback pointer |
-| 4 | 用户级 active-candidate | 有界 WXWork.exe dry-run 或 live handoff candidate | operator confirmation、global lease、expiry、rollback、no message body exposure |
+- 项目级治理：命名、边界、checker、test、fixture、adapter-plan、adapter-generation。
+- 可复用项目级治理：helper schema、receipt schema、global lease schema、redaction 规则。
+- 用户级治理：真实安装、启动、探测、smoke 与 live handoff 证据。
 
 ## Runtime Promotion Ladder
 
-本 lane 使用共享 R0-R5 ladder；本包仍然 not installed/started/enabled in this package。
-
-| Runtime stage | 层级 | CLI-Anything/WXWork_CLI 范围 | 证据门禁 |
+| Runtime stage | Level | CLI-Anything/WXWork_CLI scope | Evidence gate |
 | --- | --- | --- | --- |
-| R0 project-level preflight | 项目级 | 盘点 CLI-Anything source、planned WXWork_CLI wrapper shape、Windows path assumptions 与 `WXWork.exe` 可用性；不 clone、不 install、不 probe process、不读取消息。 | Source URL、source pin plan、retrieved_at、non-mutating environment probe、no install/run transcript。 |
-| R1 project-level fake/dry-run runtime | 项目级 | 只使用 fake receipts 与 dry-run adapter-plan / gui-plan / gui-check fixtures。 | Dry-run dispatch evidence、`gui_control_performed=false`、`runs_cli_anything=false`、no message-content。 |
-| R2 reusable project-level helper/guard | 可复用项目级 | 将 `tools/cli_anything_governance.py` 与 `tools/wxwork_cli_governance.py` 保持为可复用 guard pattern，覆盖 redaction、lease、authorization、timeout release、rollback pointer。 | Focused tests、local gate、reusable receipt schema、changed-path report。 |
-| R3 user-level install/update receipt | 用户级 | 只有显式授权、immutable source pin、install/update receipt、smoke command、updater command、rollback pointer、owner lane 与 path hashes 齐备后，才记录 CLI-Anything 或 WXWork_CLI wrapper install/update。 | `installed-user-level` receipt；不输出 raw install/wrapper/state paths；不自动修改 Codex config。 |
-| R4 user-level smoke runtime | 用户级 | 只运行 bounded help/status/dry-run smoke。WXWork GUI 仍保持 no-send 与 no-message-content。 | `smoke-tested` receipt、bounded transcript、命名 GUI target 时需要 global lease、timeout release、rollback readiness。 |
-| R5 active-candidate / bounded live handoff | 用户级 active-candidate | one-task WXWork_CLI live handoff 才可包含 send action allowed only at R5。 | `active-candidate` receipt、global WXWork lease、explicit operator authorization、target/action allowlist、message redaction、ephemeral message handling、session match、future expiry、timeout release、rollback/stop evidence、post-run action report。 |
+| R0 project-level preflight | project-level | 只检查 CLI-Anything 参考源、`WXWork.exe` 目标、当前 helper 与平台约束。 | Source URL、no install/run evidence、sanitized transcript。 |
+| R1 project-level fake/dry-run runtime | project-level | 运行 fake WXWork_CLI fixture、adapter-plan 与 adapter-generation dry run。 | fake command result、no GUI mutation、no message-content。 |
+| R2 reusable project-level helper/guard | reusable project-level | 维护 CLI-Anything/WXWork_CLI guard、global lease、operator authorization、timeout release、rollback pointer 与 redaction schema。 | helper/checker tests、CI/OpenSpec guard。 |
+| R3 user-level install/update receipt | user-level | 明确授权后安装/更新 CLI-Anything，并生成/复制 `WXWork_CLI`。 | `installed-user-level` receipt、source pin、wrapper hash、rollback pointer。 |
+| R4 user-level smoke runtime | user-level | 只做 `WXWork.exe` discovery/help/status smoke，不发送消息。 | `smoke-tested` receipt、bounded transcript、timeout release。 |
+| R5 active-candidate / bounded live handoff | user-level active-candidate | 仅在 allowlist 和授权下执行一次 send/action。 | `active-candidate` receipt、target/action allowlist、message redaction、ephemeral message handling。 |
 
-R5 send boundary：任何 WXWork_CLI send action 在 R5 之前都禁止；即使到了 R5，也不得在仓库证据里暴露 raw message-content，必须使用 target/action allowlist，message payload 必须 ephemeral/redacted，并保留 rollback/stop evidence。
+本包保持 not installed/started/enabled in this package；send action allowed only at R5。
 
 ## 文件归属
 
-本子方案拥有未来 CLI-Anything 与 WXWork_CLI 治理文档、guards、tests、receipts 与 source-reference checks。它不拥有 chrome-devtools-mcp、cdp-bridge-mcp、OpenCLI、Pi、oh-my-pi 或 Codex harnesses。
+本方案拥有 CLI-Anything/WXWork_CLI plan、checker、helper 与测试。它不拥有 Browser/CLI adapters，也 not Codex harnesses。
 
 ## 并行 session 合约
 
-同一时间只能有一个 session 认领本 implementation_plan。其他 session 可以并行处理 Browser/CLI adapters 或 Codex harnesses，但不得在没有串行 hotspot lease 的情况下编辑本方案、未来 checker、tests、docs registry、CI manifest 或共享 OpenSpec 热点。
+一个 session 独占本 implementation_plan。其他 session 可处理 Browser/CLI adapters 或 Codex harnesses，但不得同时修改本方案、WXWork helper、global lease schema 或 shared OpenSpec hotspots。
 
-## 任务 Backlog
+## Real Runtime Implementation Gap（真实 runtime 缺口）
 
-## Real Runtime Implementation Gap
+后续 Stage D runtime 必须完成：
 
-This lane is still governance-only for real GUI automation. The next runtime package must install CLI-Anything, create or pin the WXWork_CLI fork/adaptation that drives `WXWork.exe`, and record safe receipts before any enterprise WeChat interaction. Required later evidence:
+- 固定 CLI-Anything source/ref，执行 install/update，并记录 `installed-user-level` receipt。
+- fork/adaptation `WXWork_CLI`，记录 adapter-plan、adapter-generation、wrapper hash、update command 与 rollback pointer。
+- 发现或启动 `WXWork.exe` 前先获取 operator authorization 与 global lease。
+- R4 只允许 help/status/discovery smoke；R5 才允许 send/action，且必须有 target/action allowlist、message redaction、ephemeral message handling、timeout release 与 rollback pointer。
 
-- CLI-Anything source/package pin, install/update command, wrapper path hash, updater command, rollback pointer, and sanitized R3 receipt.
-- WXWork_CLI fork/adaptation commit or package pin, clear delta from upstream CLI-Anything usage, wrapper path hash, rollback pointer, and sanitized R3 receipt.
-- WXWork.exe discovery/start/status receipts for R4 smoke that do not send messages or mutate enterprise WeChat state.
-- R5 send/action handoff receipts with current operator authorization, GUI owner lease, target/action allowlist, expiry, timeout release, transcript redaction, and rollback/cleanup evidence.
-
-
-Stage D pending runtime work list:
-
-- Stage D real runtime: install CLI-Anything with source/package pin, R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence.
-- Stage D real runtime: fork/adapt WXWork_CLI from CLI-Anything with explicit source pin, delta notes, R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence.
-- Stage D real runtime: implement WXWork.exe discovery/start/status smoke that records R4 `smoke-tested` receipt without sending messages or mutating GUI state.
-- Stage D real runtime: define R5 WXWork_CLI send/action handoff guarded by operator authorization, GUI owner lease, target/action allowlist, expiry, timeout release, transcript redaction, and rollback/cleanup evidence.
+## Task Backlog（任务 Backlog）
 
 <!-- TASK_BACKLOG_START -->
-- [x] Stage A: register this bilingual child plan in `docs_bilingual/docs_registry.yaml`.
-- [x] Stage A: record CLI-Anything source URL `https://github.com/HKUDS/CLI-Anything`.
-- [x] Stage A: state that WXWork_CLI controls `WXWork.exe` through CLI-Anything and is not Codex harnesses.
-- [x] Stage A: keep old source plans as migration inputs until Stage B checker migration.
-- [x] Stage B: split CLI-Anything tests out of generic CDP/OpenCLI coverage.
-- [x] Stage B: rename active WeCom helper/test surfaces to canonical `WXWork_CLI`.
-- [x] Stage B: add checker coverage for source URL, adapter-plan and adapter-generation semantics, no-message-content, global lease, operator authorization, timeout release, rollback pointer, and dry-run boundaries.
-- [x] Stage B: update CI manifest, safety registry, and OpenSpec guard registration.
-- [x] Stage C runtime promotion：加入 R0-R5 项目级优先/用户级 ladder、installed-user-level/smoke-tested/active-candidate markers，以及 R5-only WXWork_CLI send-action gates。
+- [x] Stage A：拆分 CLI-Anything/WXWork_CLI lane，明确它不是 Browser/CLI adapter，也不是 Codex harnesses；not Codex harnesses。
+- [x] Stage B：增加 checker/test/spec，强制 `WXWork_CLI`、`WXWork.exe`、adapter-plan 与 adapter-generation marker。
+- [x] Stage C：增加 R0-R5 runtime promotion ladder，并保持 not installed/started/enabled in this package。
+- [x] Stage C：把 R3/R4/R5 真实 runtime 工作移出已完成 backlog，列为 Stage D pending runtime work。
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
 
-- Dedicated CLI-Anything/WXWork_CLI surface checker coverage 已落地。
-- CLI-Anything tests 已从 generic CDP/OpenCLI coverage 中拆出。
-- Active WeCom surfaces 已迁移到 canonical `WXWork_CLI` 命名，同时保留 archive history。
-- No-message-content、global lease、operator authorization、timeout-release、rollback 与 dry-run checks 已 checker-backed。
-- CI manifest 与 OpenSpec guard registration 已更新。
-- Old source plans 已在 checkers 不再依赖后删除。
+- 旧混合方案已拆分，本方案只管理 CLI-Anything/WXWork_CLI。
+- checker 要求 `WXWork_CLI`、`WXWork.exe`、global lease、operator authorization、timeout release、rollback pointer、no message-content、send action allowed only at R5。
+- 真实消息内容必须采用 message redaction 与 ephemeral message handling。
+
 ## 验收标准
 
-- CLI-Anything/WXWork_CLI 永远不被描述为 Codex harnesses。
-- active docs 使用 `WXWork_CLI` 表示未来 WXWork.exe control lane。
-- 没有 receipt-backed authorization，不得安装、clone、运行、探测、读取消息、发送消息或控制 WXWork.exe。
-- 用户级提升在 project-level guards 本地通过前保持阻塞。
-- Runtime promotion 必须明确：R0/R1/R2 保持项目级或可复用项目级；R3 需要 `installed-user-level`；R4 需要 `smoke-tested`；R5 需要 `active-candidate`，且只有 R5 才可考虑 WXWork_CLI send action。
+- 中文对照版正文为中文。
+- `adapter-plan` 与 `adapter-generation` marker 保留，以满足 checker。
+- R5 之前不得执行 send/action。
+- remote publication 关闭，除非当前用户消息明确授权。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` classifies CLI-Anything install, WXWork_CLI fork/adaptation, WXWork.exe control, R4 smoke, and R5 send/action handoff as pending Stage D runtime work; no GUI runtime is installed, started, controlled, smoked, or live-run.
-- 2026-06-05 Stage C runtime promotion evidence：branch `runtime-promotion-plan-20260605` 记录 CLI-Anything/WXWork_CLI 的 R0-R5 promotion gates，保持本包 not installed/started/enabled，并 checker-back R5-only send action controls。
-- 2026-06-04 Stage B implementation evidence: `tools/check_user_level_cli_anything_wxwork_cli_governance.py`, `test/check_user_level_cli_anything_wxwork_cli_governance.test.py`, `test/cli_anything_governance.test.py`, and `test/wxwork_cli_governance.test.py` verify the CLI-Anything/WXWork_CLI split lane, adapter-plan and adapter-generation semantics, no-message-content boundary, global lease, operator authorization, timeout release, rollback pointer, and dry-run-only dispatch.
+- 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 CLI-Anything install/update、WXWork_CLI fork/adaptation、WXWork.exe control、R4 smoke 与 R5 send/action handoff 标记为 Stage D pending；未安装、未启动、未 live-run。
+- 2026-06-04 Stage B evidence：`tools/check_user_level_cli_anything_wxwork_cli_governance.py` 与 focused tests 已验证 CLI-Anything/WXWork_CLI lane。
 <!-- EVIDENCE_INDEX_END -->

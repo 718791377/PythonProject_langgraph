@@ -9,97 +9,93 @@ supersedes:
   - docs_bilingual/implementation_plans/user_level_mcp_skills_discovery_facade_plan.zh-CN.md
 ---
 
-# User-Level MCP and Skills CLI Runtime Plan (zh-CN companion)
+# 用户级 MCP 与 Skills CLI Runtime 方案
 
-> **For agentic workers:** use `superpowers:executing-plans`; use parallel subagents only for disjoint write sets. This plan owns the real-runtime path for `mcp2cli` and `skills2cli` only.
+> **给 agentic workers：** 使用 `superpowers:executing-plans`。本方案只拥有 `mcp2cli` 与 `skills2cli` 的真实 runtime 路径；并行 session 只能处理互不重叠的写入集合。
 
-## Goal
+## 目标
 
-Promote the existing compact `mcp2cli` / `skills2cli` discovery facade from repo-local helpers and checkers into a user-level runtime plan with explicit R0-R5 evidence gates.
+把已有的紧凑型 `mcp2cli` / `skills2cli` discovery facade，从 repo-local helper、checker 和 test，提升为带有 R0-R5 证据门的用户级 runtime 方案。
 
-## Architecture
+## 架构
 
-`mcp2cli` follows the upstream `knowsuchagency/mcp2cli` runtime pattern. `skills2cli` is a deliberate fork/adaptation of that CLI/skill pattern for local Codex skill discovery, not a native subagent and not an MCP server. Repo-local source remains authoritative for `tools/skills2cli.py`, `tools/mcp2cli.py`, and the installer/checker helpers; any user-level copy is an install artifact.
+`mcp2cli` 采用上游 `knowsuchagency/mcp2cli` 的 runtime 模式。`skills2cli` 是对该 CLI/skill 模式的有意 fork/adaptation，用于本地 Codex skill discovery；它不是 native-subagent，也不是 MCP server。repo-local 源码仍以 `tools/skills2cli.py`、`tools/mcp2cli.py` 和 installer/checker helper 为权威；任何复制到用户级目录的内容都是安装产物。
 
-## Tech Stack
+## 技术栈
 
-Python helper scripts, `uvx mcp2cli --help`, `uv tool install mcp2cli`, `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`, user-level Codex home wrappers under `C:/Users/lenovo/.codex`, JSON receipts, rollback backups, redaction helpers, OpenSpec guard wiring, and local CI.
+Python helper scripts、`uvx mcp2cli --help`、`uv tool install mcp2cli`、`npx skills add knowsuchagency/mcp2cli --skill mcp2cli`、`C:/Users/lenovo/.codex` 下的用户级 wrapper、JSON receipt、rollback backup、redaction helper、OpenSpec guard 与 local CI。
 
-## Current Status
+## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: active; this plan is the runtime successor to the deleted/superseded `user_level_mcp_skills_discovery_facade_plan`. Repo-local helpers/checkers/tests exist, but real user-level runtime promotion is not yet complete.
-Runtime boundary: this package does not install or update user-level `mcp2cli`, does not install upstream skills, does not copy or run `skills2cli` wrappers, does not smoke the installed wrappers, and does not mark either tool installed-user-level/smoke-tested/active-candidate.
-Runtime gap: real runtime work still requires R3 install/update receipts for upstream `mcp2cli` and repo-derived `skills2cli`, R4 wrapper help/status smoke receipts, and any R5 direct MCP call or skill action handoff to be guarded by risk profile, sensitive-call receipt, redaction, and rollback evidence.
-Carry-forward evidence: existing surfaces are `tools/mcp2cli.py`, `tools/skills2cli.py`, `tools/install_user_level_mcp_skills_cli.py`, `tools/check_user_level_mcp_skills_cli_install.py`, `test/mcp2cli.test.py`, `test/skills2cli.test.py`, and `test/user_level_mcp_skills_cli_install.test.py`.
+Status: active；本方案是已删除/被取代的 `user_level_mcp_skills_discovery_facade_plan` 的 runtime 后继。repo-local helper、checker 和 test 已存在，但真实用户级 runtime promotion 尚未完成。
+Runtime boundary：本包不会安装或更新用户级 `mcp2cli`，不会安装上游 skill，不会复制或运行 `skills2cli` wrapper，不会 smoke 已安装 wrapper，也不会把任一工具标记为 `installed-user-level`、`smoke-tested` 或 `active-candidate`。
+Runtime gap：真实 runtime 仍需要为上游 `mcp2cli` 与 repo-derived `skills2cli` 写入 R3 install/update receipt、执行 R4 wrapper help/status smoke receipt，并把任何 R5 direct MCP call 或 skill action handoff 放到 risk profile、sensitive-call receipt、redaction 与 rollback 证据之后。
+Carry-forward evidence：现有 R0-R2 证据面包括 `tools/mcp2cli.py`、`tools/skills2cli.py`、`tools/install_user_level_mcp_skills_cli.py`、`tools/check_user_level_mcp_skills_cli_install.py`、`test/mcp2cli.test.py`、`test/skills2cli.test.py` 与 `test/user_level_mcp_skills_cli_install.test.py`。
 <!-- CURRENT_STATUS_END -->
 
-## Source References
+## 参考源
 
-| Runtime lane | Reference source | Runtime role | Required pin/evidence before R3 |
+| Runtime lane | Reference source | Runtime role | R3 之前必须固定的证据 |
 | --- | --- | --- | --- |
-| mcp2cli | https://github.com/knowsuchagency/mcp2cli | Upstream MCP/OpenAPI/GraphQL discovery and call CLI pattern. | Source URL, immutable ref/version, install command, wrapper path hash, update command, rollback pointer, redaction status. |
-| skills2cli | https://github.com/knowsuchagency/mcp2cli plus repo-local `tools/skills2cli.py` | Fork/adaptation of the upstream low-token CLI/skill pattern for Codex skill discovery. | Repo source hash, upstream pattern ref, generated SKILL.md hash, wrapper path hash, update command, rollback pointer, redaction status. |
+| mcp2cli | https://github.com/knowsuchagency/mcp2cli | 上游 MCP/OpenAPI/GraphQL discovery 与 call CLI 模式。 | Source URL、immutable ref/version、install command、wrapper path hash、update command、rollback pointer、redaction status。 |
+| skills2cli | https://github.com/knowsuchagency/mcp2cli 加 repo-local `tools/skills2cli.py` | 按上游低 token CLI/skill 模式 fork/adaptation，用于 Codex skill discovery。 | Repo source hash、upstream pattern ref、generated SKILL.md hash、wrapper path hash、update command、rollback pointer、redaction status。 |
 
 ## Runtime Promotion Ladder
 
 | Runtime stage | Scope | Evidence gate |
 | --- | --- | --- |
-| R0 project-level preflight | Inspect upstream `mcp2cli` reference, repo-local `skills2cli` source, current `CODEX_HOME`, and available `uv`/`uvx`/`npx` without installing or copying artifacts. | Source URL, source pin plan, tool availability, no install/run evidence, sanitized transcript. |
-| R1 project-level fake/dry-run runtime | Run deterministic installer `plan` and simulated apply/check fixtures. | `apply_performed=false`, fake command results, no user-level state mutation, focused tests. |
-| R2 reusable project-level helper/guard | Maintain repo-owned installer/checker, receipt schema, rollback backup layout, redaction contract, and CI/OpenSpec guard registration. | Helper/checker tests, CI manifest registration, OpenSpec guard wiring, docs registry entry. |
-| R3 user-level install/update receipt | With explicit authorization, install/update upstream `mcp2cli`, copy repo-derived `skills2cli` wrappers/skill, and write sanitized receipts. | `installed-user-level` receipt per tool, source/package/ref pin, wrapper path hash, updater command, rollback pointer, redaction status. |
-| R4 user-level smoke runtime | Run bounded `--help` / `--version` / safe discovery smoke against installed wrappers. | `smoke-tested` receipt, bounded command transcript, timeout release, redaction, rollback readiness. |
-| R5 active-candidate / bounded live handoff | Run a direct MCP or skill-discovery handoff only under risk profile and sensitive-call receipt controls. | `active-candidate` receipt, risk profile, sensitive-call authorization when needed, action scope, rollback pointer, redacted result summary. |
+| R0 project-level preflight | 只检查上游 `mcp2cli`、repo-local `skills2cli` 源码、当前 `CODEX_HOME`、`uv`/`uvx`/`npx` 可用性；不安装、不复制。 | Source URL、source pin plan、tool availability、no install/run evidence、sanitized transcript。 |
+| R1 project-level fake/dry-run runtime | 运行 deterministic installer `plan` 与 simulated apply/check fixtures。 | `apply_performed=false`、fake command results、无用户级状态突变、focused tests。 |
+| R2 reusable project-level helper/guard | 维护 repo-owned installer/checker、receipt schema、rollback backup layout、redaction contract 与 CI/OpenSpec guard。 | Helper/checker tests、CI manifest registration、OpenSpec guard wiring、docs registry entry。 |
+| R3 user-level install/update receipt | 明确授权后安装/更新上游 `mcp2cli`，并复制 repo-derived `skills2cli` wrapper/skill，写入 sanitized receipts。 | 每个工具的 `installed-user-level` receipt、source/package/ref pin、wrapper path hash、updater command、rollback pointer、redaction status。 |
+| R4 user-level smoke runtime | 对已安装 wrapper 运行受限的 `--help` / `--version` / safe discovery smoke。 | `smoke-tested` receipt、bounded command transcript、timeout release、redaction、rollback readiness。 |
+| R5 active-candidate / bounded live handoff | 仅在 risk profile 与 sensitive-call receipt 控制下运行 direct MCP 或 skill-discovery handoff。 | `active-candidate` receipt、risk profile、必要的 sensitive-call authorization、action scope、rollback pointer、redacted result summary。 |
 
-## Runtime Promotion Ladder
+## Real Runtime Implementation Gap（真实 runtime 缺口）
 
-The previous discovery facade implementation is not enough to claim real runtime readiness. Required later work:
+旧 discovery facade 不能证明真实 runtime ready。后续必须完成：
 
-- Execute `tools/install_user_level_mcp_skills_cli.py apply --apply --operator-confirmation ...` only after explicit authorization and source pin review.
-- Capture separate install/update receipts for `mcp2cli` and `skills2cli`, including wrapper hashes, source hashes, updater commands, rollback backup paths, and redaction status.
-- Smoke installed wrappers with bounded `mcp2cli --help` or `--version` and `skills2cli --help` / safe discovery commands.
-- Keep direct MCP calls and sensitive skill-derived actions behind risk profile, sensitive-call receipt, no-native-subagent-evidence wording, redaction, and rollback rules.
+- 只有在明确授权并完成 source pin review 后，才执行 `tools/install_user_level_mcp_skills_cli.py apply --apply --operator-confirmation ...`。
+- 分别为 `mcp2cli` 与 `skills2cli` 捕获 install/update receipts，包含 wrapper hashes、source hashes、updater commands、rollback backup paths 与 redaction status。
+- 使用受限 `mcp2cli --help` 或 `--version`，以及 `skills2cli --help` / safe discovery command，smoke 已安装 wrapper。
+- direct MCP call 与 skill-derived sensitive action 必须受 risk profile、sensitive-call receipt、no-native-subagent-evidence wording、redaction 与 rollback 规则约束。
 
-## Real Runtime Implementation Gap
+## 文件归属
 
-This plan owns the runtime plan docs for `mcp2cli` and `skills2cli`, future installer/checker runtime receipt updates, and user-level MCP/skills CLI install tests. It does not own Browser/CLI adapters, CLI-Anything/WXWork_CLI, Codex harnesses, native agents, or MCP Router policy.
+本方案拥有 `mcp2cli` / `skills2cli` runtime 方案文本、repo-local installer/checker/test 证据和后续用户级 install/smoke/live receipt 约束。它不拥有 Browser/CLI adapters、CLI-Anything/WXWork_CLI 或 Codex harnesses。
 
-## File Ownership
-
-One session may claim this implementation plan at a time. Other sessions may work on Browser/CLI adapters, CLI-Anything/WXWork_CLI, Codex harnesses, selector ownership, or durable smoke only if they do not edit this plan, the `mcp2cli` / `skills2cli` installer/checker/test files, docs registry, CI manifest, or OpenSpec guard wiring without a serialized hotspot lease.
-
-## Task Backlog
+## Task Backlog（任务清单）
 
 <!-- TASK_BACKLOG_START -->
-- [x] Create runtime successor plan for the deleted/superseded discovery-facade source plan.
-- [x] Record `knowsuchagency/mcp2cli` as upstream runtime source and `skills2cli` as an upstream-pattern fork/adaptation.
-- [x] Preserve existing repo-local helper/checker/test carry-forward surfaces as R0-R2 evidence only.
-- [ ] Stage D real runtime: pin upstream `mcp2cli` version/ref and install/update it at user level with R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence.
-- [ ] Stage D real runtime: install/update repo-derived `skills2cli` wrapper and SKILL.md with R3 receipt, source hash, updater command, rollback pointer, and redaction evidence.
-- [ ] Stage D real runtime: run bounded R4 help/version/safe-discovery smoke for both wrappers and record `smoke-tested` receipts.
-- [ ] Stage D real runtime: gate any R5 direct MCP call or skill action handoff behind risk profile, sensitive-call authorization receipt, action scope, result redaction, and rollback evidence.
+- [x] 创建 discovery-facade 后继 runtime 方案。
+- [x] 记录 `knowsuchagency/mcp2cli` 为上游 runtime source，并记录 `skills2cli` 为 upstream-pattern fork/adaptation。
+- [x] 把现有 repo-local helper/checker/test 仅作为 R0-R2 证据保留。
 <!-- TASK_BACKLOG_END -->
 
-## Validation Gates
+## Stage D pending runtime work（待实施真实 runtime）
 
-- `python tools/check_user_level_mcp_skills_cli_install.py --root . --json` - validates MCP/skills CLI install surfaces and helper plan output.
-- `python tools/check_implementation_plan_rules.py --root . --json` - validates implementation-plan registry, bilingual pairing, anchors, and parent links.
-- `python tools/run_openspec_guard.py --root .` - validates OpenSpec workflow, governance policies, name clarity, and registered checkers.
-- `python tools/check_precommit_update_archive.py --root . --json` - reviews required existing-file updates, checker/test registration, and archive readiness before commit.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/ci/local_gate.ps1 -StepTimeoutSeconds 600` - runs the shared local CI gate before local integration.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/ci/local_mr_review.ps1` - runs the local MR review gate before local main integration.
+- Stage D real runtime：固定上游 `mcp2cli` version/ref，并以 R3 receipt、wrapper hash、updater command、rollback pointer 与 redaction evidence 完成用户级 install/update。
+- Stage D real runtime：安装/更新 repo-derived `skills2cli` wrapper 与 SKILL.md，并写入 R3 receipt、source hash、updater command、rollback pointer 与 redaction evidence。
+- Stage D real runtime：为两个 wrapper 运行受限 R4 help/version/safe-discovery smoke，并记录 `smoke-tested` receipts。
+- Stage D real runtime：任何 R5 direct MCP call 或 skill action handoff 都必须经过 risk profile、sensitive-call authorization receipt、action scope、result redaction 与 rollback evidence。
 
-## Acceptance Criteria
+## 验证门禁
 
-- The deleted/superseded `user_level_mcp_skills_discovery_facade_plan` is not restored as an active implementation plan.
-- `mcp2cli` and `skills2cli` runtime ownership is represented by this active child plan.
-- Existing helper/checker/test carry-forward evidence is clearly R0-R2 only, not proof of R3/R4/R5 real runtime completion.
-- Later R3/R4/R5 runtime claims require sanitized receipts and rollback evidence.
-- Remote publication remains behind explicit approval.
+- `python tools/check_user_level_mcp_skills_cli_install.py --root . --json`：验证 MCP/skills CLI install surfaces 与 helper plan output。
+- `python tools/check_precommit_update_archive.py --root . --json`：提交前检查。
+- `python tools/run_openspec_guard.py --root .`：OpenSpec 与治理 guard。
+- `tools/ci/local_gate.ps1` 与 `tools/ci/local_mr_review.ps1`：本地集成前的共享 gate。
 
-## Evidence Index
+## 验收标准
+
+- 本方案与英文主文件保持双语同步，正文为中文说明，技术 token 和 checker marker 保持原样。
+- R0-R2 仅能声明 repo-local helper/checker/test 完成，不声明用户级 installed/smoked/live。
+- R3/R4/R5 必须分别有 install/update、smoke 与 live handoff receipt 才能提升状态。
+- 远端发布保持关闭，除非当前用户消息明确授权 remote publication。
+
+## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-05 runtime successor plan: branch `runtime-plan-standard-20260605` creates this plan to carry `mcp2cli` / `skills2cli` real-runtime work after `user_level_mcp_skills_discovery_facade_plan` was deleted/superseded; no user-level install, smoke, direct MCP call, or live handoff is performed by this package.
+- 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 新增本 runtime 后继方案，记录 `mcp2cli` 与 `skills2cli` 的 R3/R4/R5 缺口；未安装、未 smoke、未 live-run。
 <!-- EVIDENCE_INDEX_END -->

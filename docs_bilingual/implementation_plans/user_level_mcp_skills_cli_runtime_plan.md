@@ -32,6 +32,7 @@ Status: active; this plan is the runtime successor to the deleted/superseded `us
 Runtime boundary: this package does not install or update user-level `mcp2cli`, does not install upstream skills, does not copy or run `skills2cli` wrappers, does not smoke the installed wrappers, and does not mark either tool installed-user-level/smoke-tested/active-candidate.
 Runtime gap: real runtime work still requires R3 install/update receipts for upstream `mcp2cli` and repo-derived `skills2cli`, R4 wrapper help/status smoke receipts, and any R5 direct MCP call or skill action handoff to be guarded by risk profile, sensitive-call receipt, redaction, and rollback evidence.
 Carry-forward evidence: existing surfaces are `tools/mcp2cli.py`, `tools/skills2cli.py`, `tools/install_user_level_mcp_skills_cli.py`, `tools/check_user_level_mcp_skills_cli_install.py`, `test/mcp2cli.test.py`, `test/skills2cli.test.py`, and `test/user_level_mcp_skills_cli_install.test.py`.
+Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
 <!-- CURRENT_STATUS_END -->
 
 ## Source References

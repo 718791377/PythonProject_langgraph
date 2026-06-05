@@ -35,6 +35,7 @@ Status: implemented-local; ready for repository local-main-first integration, wi
 Current gate: keep remote publication closed; Phase 6 adapter lanes may consume this receipt contract after local integration but still cannot perform live installs, live starts, GUI writes, cookie reads, or sensitive MCP calls without their own receipts and owner evidence.
 Source relation: extracted from `user_level_mcp_skills_browser_cli_governance_plan.md`; do not add the source plan as a direct child of the parent.
 Runtime boundary: the repo-local helper validates evidence only; it does not install tools, start browsers, call sensitive MCP methods, read browser data, or mutate user-level runtime state.
+Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership

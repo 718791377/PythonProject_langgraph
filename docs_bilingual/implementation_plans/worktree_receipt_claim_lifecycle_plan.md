@@ -41,6 +41,7 @@ Owner session: implement-worktree-receipt-claim-lifecycle-20260530
 Current gate: implement, validate, archive, commit, and merge to local main; stop at remote publication gate
 Stage C entry condition: satisfied by explicit user request on 2026-05-30 to continue this plan
 Last updated: 2026-05-30
+Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership

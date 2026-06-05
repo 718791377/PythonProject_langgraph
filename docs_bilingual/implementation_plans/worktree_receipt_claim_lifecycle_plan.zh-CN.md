@@ -11,107 +11,90 @@ batch: 2
 confirmation_required: true
 ---
 
-# Worktree Receipt Claim Lifecycle Plan（中文对照）
+# Worktree Receipt 与 Claim 生命周期方案
 
-> 面向 agentic worker：本子方案经用户确认后，实施时必须使用 superpowers:executing-plans 或 superpowers:subagent-driven-development；任务使用复选框跟踪。
+> **给 agentic workers：** 使用 `superpowers:executing-plans`；本方案拥有 worktree-task-receipt 与 session-claim lifecycle 状态机。
 
 ## 目标
 
-Define and enforce active, paused, ready-to-merge, merged-local-main, completed, superseded, stale, and cleaned lifecycle states for worktree receipts and session claims.
+定义并执行 `active`、`paused`、`ready-to-merge`、`merged-local-main`、`completed`、`superseded`、`stale` 与 `cleaned` 生命周期，覆盖 worktree receipt 与 session claim。
 
 ## 来源方案
 
-- codex_user_level_cross_session_durable_state_isolation_plan; codex_governance_session_visibility_and_plan_lock_plan
+- codex_user_level_cross_session_durable_state_isolation_plan；codex_governance_session_visibility_and_plan_lock_plan
+- 本方案为多 session worktree 隔离和本地 main 集成提供 lifecycle 证据层。
 
 ## 范围决策
 
-- 层级：`D:/PythonProject_langgraph` 项目级治理和 runtime 规划。
-- 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
-- 批次：Stage B Batch 2。
-- 阶段：Phase 3。
-- 状态：本文件是 active 子 implementation_plan，但在本地 `main` 合入后仍必须等待用户确认，才能开始非文档实现。
-- 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
+- 每个 feature worktree 必须有 `.omx/worktree-task-receipt.json`。
+- 每个 active branch 必须有 `.omx/session-claims/*.json` 中的 branch-matching claim。
+- 清理只能在 local main 包含 feature commit 且 rollback ref 存在后进行。
+- remote publication 不是本生命周期自动推进的一部分。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-status: active
-stage: Stage C local implementation package
-owner_session: implement-worktree-receipt-claim-lifecycle-20260530
-current_gate: implement, validate, archive, commit, and merge to local main; stop at remote publication gate
-stage_c_entry_condition: satisfied by explicit user request on 2026-05-30 to continue this plan
-last_updated: 2026-05-30
+Status: implemented-local；receipt/claim 生命周期校验已经存在，并能阻止未分类 feature worktree 直接进入集成。
+Current gate：本地提交、local gate、local MR review 与 guarded local-main helper；remote publication 关闭。
+Runtime boundary：当前 checker 能验证状态，但不会自动推进 active→ready→merged→cleaned，也不会自动删除 worktree 或 branch。
+Runtime gap：若要自动化 lifecycle，需要 runtime helper 执行 active→ready→merged→cleaned 状态变更，写入 completion receipt、rollback ref、local main commit、cleanup result 与 remote-sync-needed 状态。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
 
-- tools/check_worktree_task_receipt.py
-- .omx/worktree-task-receipt.json fixtures
-- .omx/session-claims fixtures
-- test/*worktree*receipt*
+- `tools/check_worktree_task_receipt.py` - 校验 worktree task receipt 与 lifecycle 状态。
+- `tools/complete_local_flow_to_remote_gate.py` - 执行本地合入到 remote gate 的受控流程。
+- `tools/cleanup_integrated_worktree.py` - 清理已集成本地 feature worktree 与分支。
+- `.omx/worktree-task-receipt.json` fixture
+- `.omx/session-claims/*.json` fixture
 
 ## 上游调度契约
 
-Worktree receipt lifecycle 是 Phase 1A scheduler/ROB 模型的状态来源：ready-to-merge 对应 ROB `ready`，merged-local-main 对应 `retired`，stale/superseded 对应 blocked 或 flushed entry。
-
+本方案消费 implementation_plan claim 与 local-main retire lock 的结果，不重新定义它们。上游调度器必须先保证同一 implementation_plan 同一时间只有一个 session 处理。
 
 ## 热点串行规则
 
-以下热点同一时间只能由一个 session 拥有：
-
-- receipt lifecycle schema
-- cleanup helper behavior
+receipt schema、claim schema、cleanup helper、complete local flow helper 与 local-main retire lock 必须串行修改。
 
 ## 并行会话契约
 
-- 本阶段最大并行 session 数：3。
-- 本子方案是一个认领单元：同一时间只能有一个 active session 认领。
-- 只有认领不同子方案且写入范围互不重叠时，才允许并行实施。
-- 本地 `main` 写入仍然串行，但由 `local-main-retire.lock` 保护；持锁 session 只能自退休自己拥有且已 ready 的候选包，并在远端发布门停止。
+一个 session 独占本 implementation_plan。其他 session 可并行处理独立 runtime lane，但不得同时改 lifecycle schema 或 cleanup helper。
 
 ## 任务清单
 
-## Real Runtime Implementation Gap
+## Real Runtime Implementation Gap（真实 runtime 缺口）
 
-Receipt/claim lifecycle validation is implemented, but lifecycle advancement is not automated. Real runtime work must safely advance active -> ready -> merged-local-main -> completed -> cleaned with receipts and rollback references.
+现有能力是校验，不是自动推进。后续 runtime 包需要：
 
 <!-- TASK_BACKLOG_START -->
-- [x] Confirm this child plan after local main integration.
-- [x] Add schema fixtures for every allowed lifecycle state.
-- [x] Require completion fields for merged, completed, cleaned, and remote-sync-needed states.
-- [x] Document cleanup and branch deletion evidence without forcing immediate cleanup.
-- [x] Run receipt checker, local gate, local MR review, archive, and post-archive validation.
-- [x] Align receipt lifecycle states with Phase 1A ROB entry states before runtime integration.
-- [ ] Stage D real runtime: implement lifecycle advancement helper for active, paused, ready-to-merge, merged-local-main, completed, stale, superseded, and cleaned states.
-- [ ] Stage D real runtime: require every state transition to record owner, previous state, next state, evidence paths, rollback ref, and cleanup decision.
-- [ ] Stage D real runtime: integrate lifecycle advancement with local-main retire evidence without authorizing remote publication.
+- [x] Stage B：定义 receipt/claim 生命周期状态。
+- [x] Stage B：实现 feature worktree receipt 与 branch-matching claim 检查。
+- [x] Stage C：记录自动 lifecycle helper 仍是 pending runtime。
 <!-- TASK_BACKLOG_END -->
+
+## Stage D pending runtime work（待实施真实 runtime）
+
+- Stage D real runtime：实现 active→ready-to-merge→merged-local-main→cleaned 推进 helper。
+- Stage D real runtime：写入 completed_at、rollback_ref、local_main_commit、cleaned_worktree、deleted_branch 与 remote_sync_status。
+- Stage D real runtime：为异常路径写入 paused、superseded 或 stale，并保留 rollback/cleanup evidence。
 
 ## 验证门禁
 
-除非后续经确认的子方案更新给出更窄且有理由的命令列表，否则本地 `main` 合入前运行：
-
-- `python tools/check_implementation_plan_rules.py --root . --json` - validates implementation-plan anchors, size limits, registry entries, and bilingual pairs.
-- `python tools/check_precommit_update_archive.py --root . --json` - reviews required existing-file updates, checker registration, and archive readiness before commit.
-- `python tools/check_worktree_task_receipt.py --root . --json` - validates worktree claim and receipt lifecycle metadata.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` - runs the shared local CI gate.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_mr_review.ps1` - runs local MR review before local main integration.
+- `python tools/check_worktree_task_receipt.py --root . --json` - 验证 worktree receipt lifecycle。
+- `python tools/check_precommit_update_archive.py --root . --json` - 执行提交前更新/归档检查。
+- `python tools/run_openspec_guard.py --root .` - 执行 OpenSpec 与治理 guard。
+- `tools/ci/local_gate.ps1` - 执行共享本地 CI gate。
+- `tools/ci/local_mr_review.ps1` - 执行本地 MR review gate。
 
 ## 验收标准
 
-- 本地 `main` 合入后，用户已确认本子方案。
-- active session claim 在写入工作开始前明确指向本子方案路径。
-- 行为变更必须先有失败测试或 checker fixture。
-- 治理文档、runtime helper、checker、测试和 CI 注册保持一致。
-- 证据以轻量索引记录，不向本方案正文追加大型证据包。
+- 中文对照版正文为中文。
+- 每个状态转换都有明确前置条件和证据输出。
+- Stage D 前不得声明自动 lifecycle 推进已经实现。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for active-to-ready-to-merged-to-cleaned lifecycle advancement; this package updates plan governance only and does not run live runtime.
-- 2026-05-30 validation package: focused receipt tests, receipt checker, implementation-plan checker, OpenSpec spec validation, pre-commit update/archive review, local gate, and local MR review all passed before local main integration.
-- 2026-05-30 implementation package: added `stale` receipt/claim lifecycle validation, all-state fixtures, and completion-evidence grouping; OpenSpec change `implement-worktree-receipt-claim-lifecycle-20260530` records stale as a classification state rather than cleanup or branch-deletion evidence.
-- 2026-05-30 完整提交流程对齐：receipt lifecycle 继续作为 ROB 状态来源；`ready-to-merge` 对应 ready 候选包，`merged-local-main` 对应持锁自退休后的 retired evidence。
-- 2026-05-29 上游契约补充：引用 Phase 1A scheduler/ROB 模型，作为后续 portable/receipt runtime 对齐依据。
-- 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 lifecycle 推进 helper 列为 Stage D pending。
+- 2026-05-30 Stage B evidence：已有 worktree task receipt 与 session claim checker 验证 active worktree 证据。
 <!-- EVIDENCE_INDEX_END -->

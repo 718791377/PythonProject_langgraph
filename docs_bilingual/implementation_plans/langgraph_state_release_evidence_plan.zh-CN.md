@@ -11,99 +11,85 @@ batch: 3
 confirmation_required: true
 ---
 
-# LangGraph State Release Evidence Plan（中文对照）
+# LangGraph 状态释放证据方案
 
-> 面向 agentic worker：本子方案经用户确认后，实施时必须使用 superpowers:executing-plans 或 superpowers:subagent-driven-development；任务使用复选框跟踪。
+> **给 agentic workers：** 使用 `superpowers:executing-plans`。本方案只处理 LangGraph thread state release / handoff evidence，不负责启动新的 durable team。
 
 ## 目标
 
-Reject stale running LangGraph state after completed work and require explicit close, release, or handoff evidence.
+在已完成 work 后拒绝继续依赖陈旧的 running LangGraph state，并要求明确的 close、release 或 handoff evidence。
 
 ## 来源方案
 
-- automatic_orchestration_routing_enforcement_plan; codex_user_level_cross_session_durable_state_isolation_plan
+- automatic_orchestration_routing_enforcement_plan；codex_user_level_cross_session_durable_state_isolation_plan
+- 本方案是 `multi_plan_parallel_session_orchestration_plan` 的子方案，只约束 LangGraph 状态释放证据。
 
 ## 范围决策
 
-- 层级：`D:/PythonProject_langgraph` 项目级治理和 runtime 规划。
-- 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
-- 批次：Stage B Batch 3。
-- 阶段：Phase 4。
-- 状态：本文件是 active 子 implementation_plan，但在本地 `main` 合入后仍必须等待用户确认，才能开始非文档实现。
-- 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
+- 必须区分 completed work、paused work、handoff work 与 stale running state。
+- completed work 不得继续冒充 running graph。
+- release/handoff 证据必须写在 repo-local `.omx/state/langgraph/` 或明确登记的 artifact path。
+- 不改变官方 `langgraph` package 的安装位置。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：已实施、已完成本地验证，并已合入本地 `main`
-阶段：Stage C 实施包已完成本地集成
-负责人会话：`codex-langgraph-state-release-evidence-20260530`
-当前门禁：远端发布批准门；本次状态更新不授权任何 GitLab/GitHub 远端变更
-Stage C 进入条件：用户于 2026-05-30 确认继续实施，且该子方案已在本地 `main`
-本地 main 集成：已在 `32a5cfff3b977ba13ed6e215b4efb887679019b9`（`强化 LangGraph 状态释放证据检查`）完成；completed claim 已保存在 `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`
-最后更新：2026-05-31
+Status: implemented-local；已有 state-release checker 与治理文本，能够阻止无证据的 running-state 声明。
+Current gate：保持本地检查、OpenSpec guard 与 local-main-first 集成；remote publication 关闭。
+Runtime boundary：当前 repo-local checker 只验证证据，不会自动 close LangGraph thread，不会迁移 graph state，也不会替用户执行 release/handoff。
+Runtime gap：若要自动完成 release/handoff，仍需 LangGraph thread state release runtime helper，写入 close/release/handoff receipt、thread id、artifact path、rollback/restore note 与 redaction status。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
 
-- tools/langgraph_durable_orchestrator/*
-- tools/check_durable_artifact_state_surfaces.py
-- test/*langgraph*state*release*
+- `tools/langgraph_durable_orchestrator/*` - 承载 repo-local LangGraph durable orchestrator 源码。
+- `tools/check_durable_artifact_state_surfaces.py` - 校验 LangGraph durable artifact 与 state surface。
+- `test/*langgraph*state*release*` - 覆盖 LangGraph state release fixture 与行为。
+- `.omx/state/langgraph/` 下的 fixture 或 evidence schema
 
 ## 热点串行规则
 
-以下热点同一时间只能由一个 session 拥有：
-
-- .omx/state/langgraph
-- LangGraph compatibility records
+LangGraph compatibility records、selector、active backend record 和 `.omx/state/langgraph/` schema 变更必须串行。
 
 ## 并行会话契约
 
-- 本阶段最大并行 session 数：3。
-- 本子方案是一个认领单元：同一时间只能有一个 active session 认领。
-- 只有认领不同子方案且写入范围互不重叠时，才允许并行实施。
-- 本地 `main` 写入仍然串行，但由 `local-main-retire.lock` 保护；持锁 session 只能自退休自己拥有且已 ready 的候选包，并在远端发布门停止。
+一个 session 可独占本 implementation_plan。其他 session 可并行处理 receipt、selector、readiness 或 smoke 方案，但不得同时改本方案的文件归属和共享 guard 注册。
 
 ## 任务清单
 
-## Real Runtime Implementation Gap
+## Real Runtime Implementation Gap（真实 runtime 缺口）
 
-State-release evidence is checker-backed, but automatic release/handoff runtime is not implemented. Real runtime work must close, release, or hand off LangGraph thread state and record receipts outside transient chat context.
+现有工作是治理/checker/test，不是自动 release runtime。后续 runtime 包需要提供：
 
 <!-- TASK_BACKLOG_START -->
-- [x] Confirm this child plan after local main integration.
-- [x] Add fixtures for completed, running, released, and handoff LangGraph states.
-- [x] Update durable state checker to flag stale running state after completion.
-- [x] Document safe backend-family handoff requirements.
-- [x] Run durable state and LangGraph checks plus local gate.
-- [ ] Stage D real runtime: implement LangGraph thread release helper that records thread id, backend family, previous state, release action, survivor queue, and handoff target.
-- [ ] Stage D real runtime: implement close/handoff receipts that prevent stale running state after completed work.
-- [ ] Stage D real runtime: add rollback/restore evidence for release mistakes without switching backend families implicitly.
+- [x] Stage B：记录 stale running LangGraph state 必须释放或交接。
+- [x] Stage B：把 release/handoff evidence 接入 durable artifact/state-surface 检查。
+- [x] Stage C：把真实 runtime gap 明确为 pending release helper，而不是已完成 runtime。
 <!-- TASK_BACKLOG_END -->
+
+## Stage D pending runtime work（待实施真实 runtime）
+
+- Stage D real runtime：实现 LangGraph thread close/release/handoff helper，写入 release receipt。
+- Stage D real runtime：记录 thread id、checkpoint/artifact path、handoff target、timeout release、rollback/restore note 与 redaction status。
+- Stage D real runtime：为 completed graph state 执行受限 smoke，并验证不会继续报告 running。
 
 ## 验证门禁
 
-除非后续经确认的子方案更新给出更窄且有理由的命令列表，否则本地 `main` 合入前运行：
-
-- `python tools/check_implementation_plan_rules.py --root . --json` - validates implementation-plan anchors, size limits, registry entries, and bilingual pairs.
-- `python tools/check_precommit_update_archive.py --root . --json` - reviews required existing-file updates, checker registration, and archive readiness before commit.
-- `python tools/check_worktree_task_receipt.py --root . --json` - validates worktree claim and receipt lifecycle metadata.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` - runs the shared local CI gate.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_mr_review.ps1` - runs local MR review before local main integration.
+- `python tools/check_durable_artifact_state_surfaces.py --root . --json` - 验证 durable artifact/state surfaces。
+- `python tools/check_orchestration_collaboration_evidenceguard.py --root . --json` - 验证协同证据 guard。
+- `python tools/check_precommit_update_archive.py --root . --json` - 执行提交前更新/归档检查。
+- `python tools/run_openspec_guard.py --root .` - 执行 OpenSpec 与治理 guard。
+- `tools/ci/local_gate.ps1` - 执行共享本地 CI gate。
 
 ## 验收标准
 
-- 本地 `main` 合入后，用户已确认本子方案。
-- active session claim 在写入工作开始前明确指向本子方案路径。
-- 行为变更必须先有失败测试或 checker fixture。
-- 治理文档、runtime helper、checker、测试和 CI 注册保持一致。
-- 证据以轻量索引记录，不向本方案正文追加大型证据包。
+- 中文对照版说明为中文；保留必要技术名词、路径和 checker token。
+- completed LangGraph work 没有 release/handoff evidence 时不得声明 running 或 completed runtime。
+- Stage D 前不声明自动 release helper 已经实现。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for LangGraph thread release and handoff helpers; this package updates plan governance only and does not run live runtime.
-- 2026-05-31 本地 main 状态同步：记录 Stage C 实施已合入本地 `main`，集成提交为 `32a5cfff3b977ba13ed6e215b4efb887679019b9`，completed claim 已保存在 `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`，剩余门禁为显式远端发布批准。
-- 2026-05-30 Stage C 实施：分支 `implement-langgraph-state-release-evidence-20260530` 新增结构化 LangGraph state-release fixtures，扩展 `tools/check_durable_artifact_state_surfaces.py` 以拒绝 completed work 仍处于 `running` state 以及缺失 release/handoff 字段的情况，登记 `test/check_langgraph_state_release_evidence.test.py`，记录 backend-family handoff 要求，并已在 `32a5cfff3b977ba13ed6e215b4efb887679019b9` 合入本地 `main`。
-- 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
+- 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 LangGraph thread state release runtime helper 标记为 Stage D pending；当前只具备 state-release checker。
+- 2026-05-31 Stage B evidence：已有 durable artifact/state-surface checker 约束 LangGraph state release evidence。
 <!-- EVIDENCE_INDEX_END -->

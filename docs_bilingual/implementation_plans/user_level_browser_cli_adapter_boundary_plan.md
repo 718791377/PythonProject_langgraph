@@ -34,6 +34,7 @@ Canonical adapter set: exactly `chrome-devtools-mcp`, `cdp-bridge-mcp` / `CDP Br
 Runtime boundary: this repo-local package does not install tools, start browsers, call sensitive MCP methods, read cookies, execute JavaScript, mutate browser/GUI state, mutate user-level runtime state, or mark any adapter installed-user-level/smoke-tested/active-candidate. Runtime promotion remains not installed/started/enabled in this package.
 Runtime gap: real runtime work still requires actual user-level install/start/probe for chrome-devtools-mcp, cdp-bridge-mcp, and OpenCLI, plus R3 install/update receipts, R4 help/status/read-only smoke receipts, and R5 live handoff receipts where sensitive actions are owner-lease and authorization-gated.
 Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py` rejects CLI-Anything, WXWork_CLI, WXWork.exe, wecom-cli, and harness wording in adapter lane tables; `test/check_user_level_browser_cli_adapter_boundary.test.py` and existing chrome/CDP/OpenCLI tests cover the lane plus R0-R5 runtime promotion markers.
+Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
 <!-- CURRENT_STATUS_END -->
 
 ## Source References

@@ -42,6 +42,7 @@ Current gate: remote-publication approval gate; no GitLab/GitHub mutation is aut
 Stage C entry condition: satisfied by user confirmation message on 2026-05-30 after the child plan was already on local `main`
 Local main integration: completed at `32a5cfff3b977ba13ed6e215b4efb887679019b9`; completed claim preserved at `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`
 Last updated: 2026-05-31
+Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership

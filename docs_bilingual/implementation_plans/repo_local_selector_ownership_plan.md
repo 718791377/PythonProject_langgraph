@@ -41,6 +41,7 @@ Owner session: main-codex-repo-local-selector-ownership-20260530
 Current gate: local validation passed; ready for local MR review and local main integration; remote publication remains out of scope
 Stage C entry condition: satisfied by user confirmation to continue repo_local_selector_ownership_plan on 2026-05-30
 Last updated: 2026-05-30
+Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
