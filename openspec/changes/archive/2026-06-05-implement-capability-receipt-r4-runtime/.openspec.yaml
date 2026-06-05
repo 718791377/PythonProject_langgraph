@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-06-05
+archived: 2026-06-05
+archive_reason: "R4 smoke-tested receipt and rollback receipt validation implemented, validated, and promoted into stable governance specs."

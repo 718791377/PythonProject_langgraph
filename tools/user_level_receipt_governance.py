@@ -46,9 +46,48 @@ UPDATE_REQUIRED_FIELDS = (
     "redaction_status",
 )
 
+SMOKE_REQUIRED_FIELDS = (
+    "tool_name",
+    "owner_lane",
+    "runtime_stage",
+    "install_receipt",
+    "smoke_command",
+    "smoke_type",
+    "smoke_result",
+    "timeout_release",
+    "rollback_pointer",
+    "rollback_ready",
+    "command_transcript",
+    "transcript_redaction",
+    "redaction_status",
+)
+
+ROLLBACK_REQUIRED_FIELDS = (
+    "rollback_target",
+    "rollback_pointer",
+    "rollback_mode",
+    "restore_command",
+    "dry_run_result",
+    "post_rollback_verification",
+    "owner_lane",
+    "operator_authorization",
+    "redaction_status",
+)
+
 PATH_FIELDS = {"install_path", "wrapper_path", "state_path", "rollback_pointer"}
 LOCAL_PATH_EVIDENCE_FIELDS = ("install_path", "wrapper_path", "state_path", "rollback_pointer")
 ALLOWED_REDACTION_STATUS = {"pass", "passed", "redacted", "no_secrets", "no-sensitive-data"}
+ALLOWED_R4_STAGES = {"r4", "smoke-tested", "smoke_tested"}
+ALLOWED_SMOKE_TYPES = {"help", "version", "status", "safe-discovery", "safe_discovery", "read-only", "readonly"}
+FORBIDDEN_SMOKE_MARKERS = (
+    "write_performed",
+    "live_action_performed",
+    "sensitive_action_performed",
+    "user_level_state_mutated",
+    "reads_browser_data",
+    "external_message_sent",
+)
+ALLOWED_ROLLBACK_MODES = {"dry-run", "dry_run", "apply"}
 SENSITIVE_KEY_PARTS = (
     "cookie",
     "token",
@@ -159,6 +198,33 @@ def redaction_pass(value: Any) -> bool:
     return False
 
 
+def timeout_release_pass(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() == "pass"
+    if isinstance(value, dict):
+        status_ok = str(value.get("status", "")).strip().lower() == "pass"
+        released = value.get("released", True)
+        return status_ok and released is not False
+    return False
+
+
+def normalize_runtime_stage(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    return "R4" if text in ALLOWED_R4_STAGES else sanitize_text(value)
+
+
+def normalize_smoke_type(value: Any) -> str:
+    text = str(value or "").strip().lower().replace("_", "-")
+    if text == "readonly":
+        return "read-only"
+    return text
+
+
+def normalize_rollback_mode(value: Any) -> str:
+    text = str(value or "").strip().lower().replace("_", "-")
+    return text
+
+
 def is_sensitive_key(key: str) -> bool:
     lowered = key.lower()
     if any(exception in lowered for exception in SAFE_KEY_EXCEPTIONS):
@@ -234,6 +300,70 @@ def validate_update_receipt(receipt: dict[str, Any], *, tool_name: str | None, o
     return sorted(set(blockers))
 
 
+def validate_smoke_receipt(receipt: dict[str, Any], *, tool_name: str | None, owner_lane: str | None) -> list[str]:
+    blockers: list[str] = []
+    for field in SMOKE_REQUIRED_FIELDS:
+        if field not in receipt:
+            blockers.append(f"smoke_receipt_missing_{field}")
+    if tool_name is not None and str(receipt.get("tool_name", "")) != tool_name:
+        blockers.append("smoke_receipt_tool_name_mismatch")
+    if owner_lane is not None and str(receipt.get("owner_lane", "")) != owner_lane:
+        blockers.append("smoke_receipt_owner_lane_mismatch")
+    for field in ("tool_name", "owner_lane", "install_receipt", "smoke_command", "smoke_type", "rollback_pointer"):
+        if not isinstance(receipt.get(field), str) or not str(receipt.get(field)).strip():
+            blockers.append(f"smoke_receipt_{field}_required")
+    if str(receipt.get("runtime_stage", "")).strip().lower() not in ALLOWED_R4_STAGES:
+        blockers.append("smoke_receipt_runtime_stage_must_be_r4")
+    if normalize_smoke_type(receipt.get("smoke_type")) not in {item.replace("_", "-") for item in ALLOWED_SMOKE_TYPES}:
+        blockers.append("smoke_receipt_smoke_type_not_read_only")
+    if not smoke_pass(receipt.get("smoke_result")):
+        blockers.append("smoke_receipt_smoke_result_must_pass")
+    if not timeout_release_pass(receipt.get("timeout_release")):
+        blockers.append("smoke_receipt_timeout_release_must_pass")
+    if receipt.get("rollback_ready") is not True:
+        blockers.append("smoke_receipt_rollback_ready_must_be_true")
+    if not redaction_pass(receipt.get("transcript_redaction")):
+        blockers.append("smoke_receipt_transcript_redaction_must_pass")
+    transcript_redaction = receipt.get("transcript_redaction")
+    if isinstance(transcript_redaction, dict) and not str(transcript_redaction.get("redacted_transcript_hash", "")).strip():
+        blockers.append("smoke_receipt_redacted_transcript_hash_required")
+    if not redaction_pass(receipt.get("redaction_status")):
+        blockers.append("smoke_receipt_redaction_status_must_pass")
+    for field in FORBIDDEN_SMOKE_MARKERS:
+        if receipt.get(field) is True:
+            blockers.append(f"smoke_receipt_forbidden_{field}")
+    blockers.extend(collect_redaction_findings(receipt))
+    return sorted(set(blockers))
+
+
+def validate_rollback_receipt(receipt: dict[str, Any], *, owner_lane: str | None) -> list[str]:
+    blockers: list[str] = []
+    for field in ROLLBACK_REQUIRED_FIELDS:
+        if field not in receipt:
+            blockers.append(f"rollback_receipt_missing_{field}")
+    if owner_lane is not None and str(receipt.get("owner_lane", "")) != owner_lane:
+        blockers.append("rollback_receipt_owner_lane_mismatch")
+    for field in ("rollback_target", "rollback_pointer", "rollback_mode", "restore_command", "owner_lane"):
+        if not isinstance(receipt.get(field), str) or not str(receipt.get(field)).strip():
+            blockers.append(f"rollback_receipt_{field}_required")
+    mode = normalize_rollback_mode(receipt.get("rollback_mode"))
+    if mode not in {"dry-run", "apply"}:
+        blockers.append("rollback_receipt_mode_invalid")
+    if not smoke_pass(receipt.get("dry_run_result")):
+        blockers.append("rollback_receipt_dry_run_result_must_pass")
+    if not smoke_pass(receipt.get("post_rollback_verification")):
+        blockers.append("rollback_receipt_post_rollback_verification_must_pass")
+    if mode == "apply":
+        if receipt.get("operator_authorization") is not True:
+            blockers.append("rollback_receipt_apply_requires_operator_authorization")
+        if not smoke_pass(receipt.get("apply_result")):
+            blockers.append("rollback_receipt_apply_result_must_pass")
+    if not redaction_pass(receipt.get("redaction_status")):
+        blockers.append("rollback_receipt_redaction_status_must_pass")
+    blockers.extend(collect_redaction_findings(receipt))
+    return sorted(set(blockers))
+
+
 def authorization_summary(receipt: dict[str, Any], *, receipt_path: Path) -> dict[str, Any]:
     return {
         "receipt_path_hash": stable_hash(str(receipt_path)),
@@ -259,6 +389,44 @@ def update_summary(receipt: dict[str, Any], *, receipt_path: Path) -> dict[str, 
         "smoke_status": "pass" if smoke_pass(receipt.get("smoke_test_result")) else "not-pass",
         "updater_command": sanitize_text(receipt.get("updater_command")),
         "rollback_pointer_hash": stable_hash(receipt.get("rollback_pointer")),
+        "redaction_status": sanitize_json(receipt.get("redaction_status")),
+    }
+
+
+def smoke_summary(receipt: dict[str, Any], *, receipt_path: Path) -> dict[str, Any]:
+    return {
+        "receipt_path_hash": stable_hash(str(receipt_path)),
+        "tool_name": sanitize_text(receipt.get("tool_name")),
+        "owner_lane": sanitize_text(receipt.get("owner_lane")),
+        "runtime_stage": normalize_runtime_stage(receipt.get("runtime_stage")),
+        "install_receipt_hash": stable_hash(receipt.get("install_receipt")),
+        "smoke_command_hash": stable_hash(receipt.get("smoke_command")),
+        "smoke_type": normalize_smoke_type(receipt.get("smoke_type")),
+        "smoke_status": "pass" if smoke_pass(receipt.get("smoke_result")) else "not-pass",
+        "timeout_release_status": "pass" if timeout_release_pass(receipt.get("timeout_release")) else "not-pass",
+        "rollback_pointer_hash": stable_hash(receipt.get("rollback_pointer")),
+        "rollback_ready": receipt.get("rollback_ready") is True,
+        "command_transcript_hash": stable_hash(receipt.get("command_transcript")),
+        "transcript_redaction": sanitize_json(receipt.get("transcript_redaction")),
+        "redaction_status": sanitize_json(receipt.get("redaction_status")),
+    }
+
+
+def rollback_summary(receipt: dict[str, Any], *, receipt_path: Path) -> dict[str, Any]:
+    mode = normalize_rollback_mode(receipt.get("rollback_mode"))
+    return {
+        "receipt_path_hash": stable_hash(str(receipt_path)),
+        "rollback_target": sanitize_text(receipt.get("rollback_target")),
+        "owner_lane": sanitize_text(receipt.get("owner_lane")),
+        "rollback_mode": mode,
+        "rollback_pointer_hash": stable_hash(receipt.get("rollback_pointer")),
+        "restore_command_hash": stable_hash(receipt.get("restore_command")),
+        "dry_run_status": "pass" if smoke_pass(receipt.get("dry_run_result")) else "not-pass",
+        "apply_status": "pass" if smoke_pass(receipt.get("apply_result")) else ("not-applicable" if mode != "apply" else "not-pass"),
+        "post_rollback_verification_status": "pass"
+        if smoke_pass(receipt.get("post_rollback_verification"))
+        else "not-pass",
+        "operator_authorized": receipt.get("operator_authorization") is True,
         "redaction_status": sanitize_json(receipt.get("redaction_status")),
     }
 
@@ -341,6 +509,41 @@ def command_update_check(args: argparse.Namespace) -> dict[str, Any]:
     )
 
 
+def command_smoke_check(args: argparse.Namespace) -> dict[str, Any]:
+    receipt_path = Path(args.receipt)
+    receipt, load_blockers = load_receipt(receipt_path)
+    blockers = list(load_blockers)
+    if receipt is not None:
+        blockers.extend(validate_smoke_receipt(receipt, tool_name=args.tool_name, owner_lane=args.owner_lane))
+    ok = not blockers
+    return response(
+        ok,
+        "smoke-check",
+        blockers=sorted(set(blockers)),
+        smoke_receipt_valid=ok,
+        runtime_stage="R4" if ok else "blocked",
+        rollback_ready=bool(ok and receipt and receipt.get("rollback_ready") is True and receipt.get("rollback_pointer")),
+        smoke_summary=smoke_summary(receipt, receipt_path=receipt_path) if receipt else {},
+    )
+
+
+def command_rollback_check(args: argparse.Namespace) -> dict[str, Any]:
+    receipt_path = Path(args.receipt)
+    receipt, load_blockers = load_receipt(receipt_path)
+    blockers = list(load_blockers)
+    if receipt is not None:
+        blockers.extend(validate_rollback_receipt(receipt, owner_lane=args.owner_lane))
+    ok = not blockers
+    return response(
+        ok,
+        "rollback-check",
+        blockers=sorted(set(blockers)),
+        rollback_receipt_valid=ok,
+        rollback_performed=False,
+        rollback_summary=rollback_summary(receipt, receipt_path=receipt_path) if receipt else {},
+    )
+
+
 def command_redact_check(args: argparse.Namespace) -> dict[str, Any]:
     receipt_path = Path(args.receipt)
     receipt, load_blockers = load_receipt(receipt_path)
@@ -364,8 +567,12 @@ def command_redact_check(args: argparse.Namespace) -> dict[str, Any]:
 def command_template(args: argparse.Namespace) -> dict[str, Any]:
     if args.kind == "authorization":
         fields = list(AUTHORIZATION_REQUIRED_FIELDS)
-    else:
+    elif args.kind == "update":
         fields = list(UPDATE_REQUIRED_FIELDS)
+    elif args.kind == "smoke":
+        fields = list(SMOKE_REQUIRED_FIELDS)
+    else:
+        fields = list(ROLLBACK_REQUIRED_FIELDS)
     return response(True, "template", blockers=[], kind=args.kind, required_fields=fields)
 
 
@@ -396,12 +603,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     update.add_argument("--json", action="store_true")
 
+    smoke = sub.add_parser("smoke-check", help="Validate R4 smoke-tested receipt and rollback readiness evidence.")
+    smoke.add_argument("--receipt", required=True)
+    smoke.add_argument("--tool-name", default=None)
+    smoke.add_argument("--owner-lane", default=None)
+    smoke.add_argument("--json", action="store_true")
+
+    rollback = sub.add_parser("rollback-check", help="Validate rollback executor receipt evidence without executing rollback.")
+    rollback.add_argument("--receipt", required=True)
+    rollback.add_argument("--owner-lane", default=None)
+    rollback.add_argument("--json", action="store_true")
+
     redact = sub.add_parser("redact-check", help="Validate that a receipt does not carry raw sensitive payloads.")
     redact.add_argument("--receipt", required=True)
     redact.add_argument("--json", action="store_true")
 
     template = sub.add_parser("template", help="Show required receipt fields.")
-    template.add_argument("--kind", choices=("authorization", "update"), required=True)
+    template.add_argument("--kind", choices=("authorization", "update", "smoke", "rollback"), required=True)
     template.add_argument("--json", action="store_true")
     return parser
 
@@ -412,6 +630,8 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {
         "auth-check": command_auth_check,
         "update-check": command_update_check,
+        "smoke-check": command_smoke_check,
+        "rollback-check": command_rollback_check,
         "redact-check": command_redact_check,
         "template": command_template,
     }

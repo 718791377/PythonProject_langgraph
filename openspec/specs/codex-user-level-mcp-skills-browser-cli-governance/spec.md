@@ -662,8 +662,12 @@ The guard SHALL support at least:
 - `auth-check --receipt <path> --action <action> --target <target> --session <id> --json` - validates one-task authorization evidence.
 - `update-check --receipt <path> --tool-name <name> --owner-lane <lane> --json` - validates install/update evidence.
 - `redact-check --receipt <path> --json` - validates sensitive-data redaction boundaries.
+- `smoke-check --receipt <path> --tool-name <name> --owner-lane <lane> --json` - validates R4 `smoke-tested` receipt evidence without running the smoke command.
+- `rollback-check --receipt <path> --owner-lane <lane> --json` - validates rollback dry-run/apply receipt evidence without executing rollback.
 - `template --kind authorization --json` - prints the authorization receipt field template.
 - `template --kind update --json` - prints the update receipt field template.
+- `template --kind smoke --json` - prints the R4 smoke receipt field template.
+- `template --kind rollback --json` - prints the rollback receipt field template.
 
 Receipt field glossary:
 
@@ -684,6 +688,15 @@ Receipt field glossary:
 | `rollback_pointer` | Previous version, backup directory, or rollback reference. |
 | `owner_lane` | Owning lane such as `skills2cli`, `mcp2cli`, or `browser`. |
 | `redaction_status` | Evidence that secrets, cookies, tokens, raw browser data, message contents, API keys, passwords, and plugin description dumps are absent or redacted. |
+| `runtime_stage` | R4 smoke stage marker, normally `R4` or `smoke-tested`. |
+| `install_receipt` | Prior install/update receipt evidence for the smoke-tested artifact. |
+| `smoke_command`, `smoke_type`, `smoke_result` | Bounded read-only smoke evidence and pass/fail result; the helper validates this evidence without running the command. |
+| `timeout_release` | Evidence that the smoke command released timeout or watchdog ownership cleanly. |
+| `rollback_ready` | Boolean proof that rollback evidence is present before R4 promotion. |
+| `command_transcript`, `transcript_redaction` | Smoke transcript evidence and proof that it was redacted before storage. |
+| `rollback_target`, `rollback_mode`, `restore_command` | Rollback executor receipt identity, dry-run/apply mode, and restore-command evidence. |
+| `dry_run_result`, `apply_result`, `post_rollback_verification` | Rollback dry-run, optional apply, and post-rollback verification evidence. |
+| `operator_authorization` | Boolean evidence required before an apply-mode rollback receipt can pass validation. |
 
 #### Scenario: Authorization receipt is missing required fields
 
@@ -718,6 +731,42 @@ Receipt field glossary:
 - **THEN** the command SHALL fail closed
 - **AND** it SHALL report redaction findings
 - **AND** it SHALL not read browser data or emit raw secrets in default output
+
+### Requirement: Receipt governance helper SHALL validate R4 smoke-tested receipts
+
+The repository-local receipt governance helper SHALL provide a read-only R4 smoke receipt validation surface for user-level runtime promotion lanes.
+
+A valid R4 smoke receipt SHALL include tool identity, owner lane, runtime stage `R4` or `smoke-tested`, prior install receipt evidence, bounded read-only smoke command evidence, passing smoke result, timeout release evidence, rollback pointer, rollback readiness, transcript redaction evidence, and redaction status. The helper SHALL emit hash-first summaries for receipt references, transcripts, and rollback pointers by default.
+
+The helper SHALL fail closed when a smoke receipt attempts to represent write-capable behavior, R5 live handoff, sensitive action execution, raw browser data reads, external message sends, or user-level state mutation.
+
+#### Scenario: Valid R4 smoke receipt is accepted without raw private paths
+
+- **GIVEN** a smoke receipt records R4 or `smoke-tested` stage evidence for a bounded help/status/version/safe-discovery/read-only command
+- **WHEN** `python tools/user_level_receipt_governance.py smoke-check --receipt <path> --json` runs
+- **THEN** the command SHALL report `ok=true`, `smoke_receipt_valid=true`, `runtime_stage=R4`, and `rollback_ready=true`
+- **AND** default output SHALL include hashes instead of raw install receipt paths, transcript contents, or rollback pointers
+- **AND** the command SHALL report that it does not mutate user-level state, run external tools, or read browser data.
+
+#### Scenario: R4 smoke receipt attempts live or write behavior
+
+- **GIVEN** a smoke receipt marks write behavior, live action, sensitive action execution, or user-level mutation
+- **WHEN** the smoke receipt checker runs
+- **THEN** the command SHALL fail closed with sanitized blocker codes
+- **AND** it SHALL NOT treat the lane as `smoke-tested`.
+
+### Requirement: Receipt governance helper SHALL validate rollback executor receipts without executing rollback
+
+The repository-local receipt governance helper SHALL validate rollback executor receipts for dry-run and apply evidence without executing rollback commands.
+
+A rollback receipt SHALL include rollback target, rollback pointer, rollback mode, restore command evidence, dry-run result, post-rollback verification evidence, owner lane, operator authorization status, and redaction status. Apply-mode receipts SHALL fail closed unless operator authorization is explicit.
+
+#### Scenario: Rollback apply receipt lacks operator authorization
+
+- **GIVEN** a rollback receipt requests apply mode without explicit operator authorization
+- **WHEN** `python tools/user_level_receipt_governance.py rollback-check --receipt <path> --json` runs
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL report `rollback_performed=false` because the helper validates receipts only and never executes rollback commands.
 
 ### Requirement: Governance plan SHALL use the executable modern Comet structure
 

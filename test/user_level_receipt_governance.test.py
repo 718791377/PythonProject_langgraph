@@ -262,11 +262,153 @@ class UserLevelReceiptGovernanceTests(unittest.TestCase):
         self.assertIn("cookies", json.dumps(payload["blockers"]))
         self.assertFalse(payload["reads_browser_data"])
 
+    def test_valid_r4_smoke_receipt_hashes_runtime_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            raw_install_receipt = r"C:\Users\lenovo\.codex\state\mcp2cli\install.json"
+            raw_rollback_pointer = r"C:\Users\lenovo\.codex\backup\mcp2cli-prev"
+            receipt = self.write_json(
+                Path(tmp),
+                "smoke.json",
+                {
+                    "tool_name": "mcp2cli",
+                    "owner_lane": "mcp2cli",
+                    "runtime_stage": "smoke-tested",
+                    "install_receipt": raw_install_receipt,
+                    "smoke_command": "mcp2cli --help",
+                    "smoke_type": "help",
+                    "smoke_result": {"status": "pass"},
+                    "timeout_release": {"status": "pass", "released": True},
+                    "rollback_pointer": raw_rollback_pointer,
+                    "rollback_ready": True,
+                    "command_transcript": "mcp2cli help output from local wrapper",
+                    "transcript_redaction": {"status": "pass", "redacted_transcript_hash": "abc123"},
+                    "redaction_status": "no_secrets",
+                    "write_performed": False,
+                    "live_action_performed": False,
+                    "sensitive_action_performed": False,
+                    "user_level_state_mutated": False,
+                    "reads_browser_data": False,
+                    "external_message_sent": False,
+                },
+            )
+            code, payload = run_cli("smoke-check", "--receipt", str(receipt))
+            output = json.dumps(payload, ensure_ascii=False)
+
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["smoke_receipt_valid"])
+        self.assertEqual(payload["smoke_summary"]["runtime_stage"], "R4")
+        self.assertTrue(payload["rollback_ready"])
+        self.assertFalse(payload["runs_external_tool"])
+        self.assertFalse(payload["mutates_user_level_state"])
+        self.assertIn("install_receipt_hash", payload["smoke_summary"])
+        self.assertIn("rollback_pointer_hash", payload["smoke_summary"])
+        self.assertNotIn(raw_install_receipt, output)
+        self.assertNotIn(raw_rollback_pointer, output)
+
+    def test_r4_smoke_receipt_blocks_write_live_or_sensitive_markers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt = self.write_json(
+                Path(tmp),
+                "bad-smoke.json",
+                {
+                    "tool_name": "WXWork_CLI",
+                    "owner_lane": "wxwork-cli",
+                    "runtime_stage": "R4",
+                    "install_receipt": "install-receipt-ref",
+                    "smoke_command": "WXWork_CLI send --to user --message hi",
+                    "smoke_type": "send",
+                    "smoke_result": {"status": "pass"},
+                    "timeout_release": {"status": "pass", "released": True},
+                    "rollback_pointer": "rollback-ref",
+                    "rollback_ready": True,
+                    "transcript_redaction": {"status": "pass", "redacted_transcript_hash": "abc123"},
+                    "redaction_status": "pass",
+                    "write_performed": True,
+                    "live_action_performed": True,
+                    "sensitive_action_performed": True,
+                },
+            )
+            code, payload = run_cli("smoke-check", "--receipt", str(receipt))
+
+        self.assertEqual(code, 3)
+        self.assertFalse(payload["smoke_receipt_valid"])
+        self.assertIn("smoke_receipt_smoke_type_not_read_only", payload["blockers"])
+        self.assertIn("smoke_receipt_forbidden_write_performed", payload["blockers"])
+        self.assertIn("smoke_receipt_forbidden_live_action_performed", payload["blockers"])
+        self.assertIn("smoke_receipt_forbidden_sensitive_action_performed", payload["blockers"])
+
+    def test_rollback_apply_receipt_requires_operator_authorization_without_executing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt = self.write_json(
+                Path(tmp),
+                "rollback.json",
+                {
+                    "rollback_target": "mcp2cli",
+                    "rollback_pointer": r"C:\Users\lenovo\.codex\backup\mcp2cli-prev",
+                    "rollback_mode": "apply",
+                    "restore_command": "restore-mcp2cli --from backup",
+                    "dry_run_result": {"status": "pass"},
+                    "apply_result": {"status": "pass"},
+                    "post_rollback_verification": {"status": "pass"},
+                    "owner_lane": "mcp2cli",
+                    "operator_authorization": False,
+                    "redaction_status": "pass",
+                },
+            )
+            code, payload = run_cli("rollback-check", "--receipt", str(receipt))
+
+        self.assertEqual(code, 3)
+        self.assertFalse(payload["rollback_receipt_valid"])
+        self.assertFalse(payload["rollback_performed"])
+        self.assertIn("rollback_receipt_apply_requires_operator_authorization", payload["blockers"])
+        self.assertFalse(payload["runs_external_tool"])
+
+    def test_valid_rollback_dry_run_receipt_hashes_restore_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            raw_rollback_pointer = r"C:\Users\lenovo\.codex\backup\skills2cli-prev"
+            raw_restore_command = r"C:\Users\lenovo\.codex\bin\restore-skills2cli.cmd --dry-run"
+            receipt = self.write_json(
+                Path(tmp),
+                "rollback-dry-run.json",
+                {
+                    "rollback_target": "skills2cli",
+                    "rollback_pointer": raw_rollback_pointer,
+                    "rollback_mode": "dry-run",
+                    "restore_command": raw_restore_command,
+                    "dry_run_result": {"status": "pass"},
+                    "post_rollback_verification": {"status": "pass"},
+                    "owner_lane": "skills2cli",
+                    "operator_authorization": False,
+                    "redaction_status": "no_secrets",
+                },
+            )
+            code, payload = run_cli("rollback-check", "--receipt", str(receipt))
+            output = json.dumps(payload, ensure_ascii=False)
+
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["rollback_receipt_valid"])
+        self.assertFalse(payload["rollback_performed"])
+        self.assertEqual(payload["rollback_summary"]["rollback_mode"], "dry-run")
+        self.assertIn("rollback_pointer_hash", payload["rollback_summary"])
+        self.assertIn("restore_command_hash", payload["rollback_summary"])
+        self.assertNotIn(raw_rollback_pointer, output)
+        self.assertNotIn(raw_restore_command, output)
+
     def test_templates_expose_required_fields(self) -> None:
         code, payload = run_cli("template", "--kind", "update")
         self.assertEqual(code, 0)
         self.assertIn("rollback_pointer", payload["required_fields"])
         self.assertIn("redaction_status", payload["required_fields"])
+
+        code, payload = run_cli("template", "--kind", "smoke")
+        self.assertEqual(code, 0)
+        self.assertIn("runtime_stage", payload["required_fields"])
+        self.assertIn("timeout_release", payload["required_fields"])
+
+        code, payload = run_cli("template", "--kind", "rollback")
+        self.assertEqual(code, 0)
+        self.assertIn("rollback_mode", payload["required_fields"])
+        self.assertIn("post_rollback_verification", payload["required_fields"])
 
 
 if __name__ == "__main__":
