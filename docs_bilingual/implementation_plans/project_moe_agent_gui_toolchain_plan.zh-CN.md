@@ -66,6 +66,7 @@ related_docs:
 - 2026-06-01 scaffold apply 切片：B toolchain `0.2.24` 新增受保护的 `scaffold_project_moe_phase1.py --apply`。它只在项目证据与干净 Git dirty-state 检查通过后创建缺失的 Bootstrap Lane 文件，拒绝覆盖既有私有提示源或 operator surfaces，并且在后续 readiness 返回 Ready Lane 之前保持 GUI 控制禁用。
 - 2026-06-02 人类友好 launcher 切片：B toolchain `0.2.25` 将已安装的无参 / 双击 `project-moe-gui.cmd` 改为默认打开可见 PySide6 GUI，供人工 operator 使用；同时保留 `--preflight --json` 作为不弹窗自动化接口，并阻断未带 `--preflight` 的 `--json` 调用成为误触发的机器可见启动路径。
 - 2026-06-05 静默启动与专家工作台切片：B toolchain `0.2.27` 新增 `project-moe-gui-silent.vbs` 作为无控制台双击入口，保留 `project-moe-gui.cmd` 作为诊断入口；daemon 人工 GUI 子进程在可用时优先使用 `pythonw.exe`，否则继续使用 `python.exe + CREATE_NO_WINDOW / DETACHED_PROCESS`；GUI 新增 `Expert Workbench`，只生成运行时/剪贴板任务 brief，不启动 Codex、subagent 或模型 API，不读取/复制目标项目私有 `MOE.md`。
+- 2026-06-05 下一切片冻结：Expert Workbench v2 与 session 级 MOE 镜头选择是未完成 runtime 工作。v2 必须支持主会话自选一个或多个 MOE 镜头、生成面向 main session / subagent / durable team / LangGraph workflow 的 handoff package，并在 session 侧栏按单个 session 开启/关闭 MOE、设置某几个 MOE 或某几类 MOE；GUI 仍不得直接启动 Codex、subagent、durable worker、LangGraph workflow 或模型 API。
 - 当前 Comet change 是 `refine-project-moe-gui-plan-comet-structure`。如果 bash 不可用，只能用 OpenSpec artifacts、repo-local guard 与本地验证作为 fallback evidence。
 
 就地字段解释：
@@ -94,6 +95,8 @@ related_docs:
 - subagent / native agent 是执行载体或角色线程，例如 Codex 内置角色、用户级 agent TOML、项目本地 `.codex/agents/*.toml`。一个 subagent 可以内含多个 MOE 专家镜头，主会话也可以直接使用 MOE 专家镜头。
 - 因此 MOE 专家与 subagent 是可组合矩阵关系，不是同义词，也不是互斥关系；不能把“调用了 MOE 镜头”写成 native subagent evidence。
 - 调用 MOE 专家不要求专门 skills。`MOE.md`、agent TOML 或主会话上下文即可承载 MOE 调度规则；skills 只可作为可选 workflow 封装，且 skill/profile invocation 不能替代 native expert evidence。
+- Expert Workbench v2 只能生成可复制的 handoff package / brief；handoff 目标可标注为 `main-session`、`subagent`、`durable-team` 或 `langgraph-workflow`，但 GUI 本身不执行这些 carrier。
+- session 级镜头选择只作用于当前选中 session，不修改项目默认镜头策略；`selected_lenses=[]` 且 `selected_categories=[]` 的语义是“该 session 启用全部可用镜头”，不是“未配置”或“关闭”。
 
 默认命名：
 
@@ -112,6 +115,8 @@ related_docs:
 4. 让已有 Phase 1 但不完整的项目走 Repair Lane，明确修复项后再允许 GUI 控制。
 5. 让完全满足 readiness gate 的项目进入 Ready Lane，允许安装和使用 GUI。
 6. 把安装、更新、回滚、卸载和验证全部做成 manifest/receipt 可追踪流程。
+7. 为每个 session 提供单独的 MOE 开关、镜头多选、类别多选、清空选择和回读确认。
+8. 为 Expert Workbench v2 提供多镜头 brief 生成和 execution-carrier handoff package 选择。
 
 非目标：
 
@@ -121,6 +126,7 @@ related_docs:
 - 不做跨项目总控制台，也不默认扫描所有项目。
 - 不让 GUI 直接编辑 `.omx/state` JSON。
 - 不把 workflow skills、plugin profiles 或 GUI profile loading 当成 native expert evidence。
+- 不让 Expert Workbench 直接启动主会话、subagent、durable team、LangGraph workflow 或任何模型 API；它只生成 handoff package。
 - 未获明确远端授权前，不推 GitLab/GitHub、不开 MR、不合并远端、不同步镜像。
 
 ## 3. Comet / OpenSpec 工作边界
@@ -342,10 +348,13 @@ Phase 1 是目标项目自己的最小 MOE 状态接口。
 | `project-on --json` | 是 | 开启项目默认值，并传播到非手动 session |
 | `project-off --json` | 是 | 关闭项目默认值，并传播到非手动 session |
 | `project-status --json` | 否 | 报告项目默认值、session counts、无效记录和路径摘要 |
-| `list-sessions --json` | 否 | 返回脱敏 session 列表 |
-| `on --session-id <id> --json` | 是 | 写入单 session 手动开启 override |
-| `off --session-id <id> --json` | 是 | 写入单 session 手动关闭 override |
-| `status --json` | 否 | 计算当前或显式 session 的有效状态 |
+| `list-sessions --json` | 否 | 返回脱敏 session 列表，包含 session 级镜头选择摘要 |
+| `list-lenses --json` | 否 | 返回公开可显示的 MOE 镜头与类别目录；不得读取/复制 `MOE.md` 正文 |
+| `on --session-id <id> [--lens <id> ...] [--category <id> ...] --json` | 是 | 写入单 session 手动开启 override；可同时设置 session 级镜头/类别选择 |
+| `off --session-id <id> --json` | 是 | 写入单 session 手动关闭 override，保留既有镜头选择供后续重新开启 |
+| `set-lenses --session-id <id> [--lens <id> ...] [--category <id> ...] --json` | 是 | 只更新该 session 的镜头/类别选择；不修改项目默认，不直接代表关闭 |
+| `clear-lenses --session-id <id> --json` | 是 | 清空该 session 的显式镜头/类别选择，使有效镜头模式回到 `all` |
+| `status --session-id <id> --json` | 否 | 计算当前或显式 session 的有效 MOE 开关与有效镜头模式 |
 | `assert-on --json` | 否 | 有效状态开启时返回成功，否则返回稳定 blocker |
 
 readiness checker 必查：
@@ -357,6 +366,7 @@ readiness checker 必查：
 - 写入命令 surface 是否声明 `atomic_write`、`lock_status`、`audit_path`、`no_op`、`before`、`after`、`changed_paths`。
 - `.cmd` wrapper 是否只转发受控命令、强制 `--json`、禁止任意 `%*` 透传和 shell 串联。
 - startup / resume / continue / reload / phase change 检查点是否会读取 `status --json`。
+- v2 镜头命令如 `list-lenses`、`set-lenses`、`clear-lenses` 的 envelope、合法值校验、隐私字段、写入 readback 与缺省兼容语义。
 
 ## 10. Phase 2 PySide6 GUI contract
 
@@ -366,6 +376,8 @@ GUI v1 必须包含：
 - 项目默认卡片：有效默认状态、最后更新时间、开启/关闭按钮。
 - session 表格：脱敏 session id、source、confidence、enabled、effective_enabled、validity、lifecycle status、branch、worktree、first/last seen、reason 摘要。
 - 操作面板：刷新、开启项目默认、关闭项目默认、开启选中 session、关闭选中 session。
+- session 镜头面板：只对当前选中 session 展示可用镜头/类别，支持多选、应用、清空、回读 `effective_lens_mode`。
+- Expert Workbench v2：支持选择一个或多个 MOE 镜头、选择 handoff 目标 `main-session|subagent|durable-team|langgraph-workflow`，并生成“未由 GUI 执行”的 handoff package。
 - 日志面板：实际调用命令、exit code、stable token、stdout/stderr 脱敏摘要。
 
 GUI 行为规则：
@@ -373,6 +385,7 @@ GUI 行为规则：
 - 刷新只调用只读命令，不触发写入、迁移或安装。
 - 写入期间禁用同一 scope 的按钮并显示 loading。
 - 写入完成后重新读取状态。
+- 镜头写入完成后必须重新读取 `status --session-id` 与 `list-sessions`，不能仅信任本地 UI 勾选状态。
 - 空 session 列表不能被解释为 MOE 已关闭。
 - 错误展示必须包含 stable token、简短说明和建议动作。
 - 状态徽标必须同时使用文字和颜色，不得只靠红/绿表达。
@@ -427,6 +440,10 @@ session state：
   "session_id_source": "argument|environment|generated",
   "session_confidence": "high|medium|low",
   "override_origin": "manual-session|project-propagated",
+  "selected_lenses": [],
+  "selected_categories": [],
+  "effective_lens_mode": "all|selected",
+  "lens_selection_scope": "session",
   "worktree": "D:/PythonProject_paper_suggest",
   "branch": "main",
   "first_seen_at": "2026-05-27T00:00:00Z",
@@ -441,6 +458,13 @@ session state：
 1. 有效 session override 优先。
 2. 否则使用有效项目默认值。
 3. 否则 fail closed，视为关闭。
+
+镜头选择兼容语义：
+
+1. 缺少 `selected_lenses` / `selected_categories` 的旧 session state 视为 `[]`。
+2. `selected_lenses=[]` 且 `selected_categories=[]` 时，`effective_lens_mode=all`，表示该 session 启用全部可用镜头。
+3. 任一列表非空时，`effective_lens_mode=selected`；`selected` 表示该 session 的有效范围收窄为显式镜头或显式类别展开后的镜头。
+4. `list-lenses --json` 只返回公开结构化 lens/category 元数据；禁止读取、复制或回显目标项目私有提示源正文。
 
 失败 token：
 
@@ -597,6 +621,18 @@ A 已完成的收敛顺序：
 - [x] brief 默认只保留在 GUI 运行时与剪贴板，不写磁盘、不写 Git。
 - [x] 增加回归测试覆盖 silent entry、`pythonw.exe` 选择、Expert Workbench 隐私边界与 QML 页面。
 
+#### Slice 4B-v2：session 级 MOE 镜头选择与 Expert Workbench v2
+
+- [ ] 扩展 Phase 1 CLI contract、scaffold template 与测试 fixture，加入 `list-lenses`、`set-lenses`、`clear-lenses`，并让 `on --session-id` 支持可选 `--lens` / `--category`。
+- [ ] 扩展 session state 兼容字段：`selected_lenses`、`selected_categories`、`effective_lens_mode`、`lens_selection_scope=session`；缺字段旧记录按 `all` 模式处理。
+- [ ] 扩展 GUI view model，使 session 表格存在明确 selected row，并为当前选中 session 暴露 lens/category 多选、apply、clear、readback token 与 blocker。
+- [ ] 扩展 QML Sessions 页面，支持对单个 session 开启/关闭 MOE、应用选定镜头、清空镜头选择，并清楚标注“空选择=全部镜头”。
+- [ ] 扩展 Expert Workbench v2，支持主会话选择一个或多个 MOE 镜头、选择 handoff 目标，并生成面向 main session / subagent / durable team / LangGraph workflow 的 handoff package。
+- [ ] 保持 Expert Workbench brief-only：不启动 Codex、subagent、durable worker、LangGraph workflow 或模型 API，不写磁盘，不写目标项目状态。
+- [ ] 扩展隐私检查，确保 lens catalogue、session 行、handoff package 不包含 `MOE.md` 正文、developer instructions、raw session id 或完整 stdout/stderr。
+- [ ] 扩展回归测试，覆盖镜头命令、空选择=all、非法 lens/category fail-closed、旧 state 兼容、GUI view-model、QML 静态控件与 Workbench handoff targets。
+- [ ] 将 toolchain 版本提升到下一 patch 版本，并用 updater 安装到 `D:\PythonProject_paper_suggest` 后重新运行 install check、readiness、launcher preflight 与目标项目测试。
+
 #### Slice 5：治理、文档与 checker 集成
 
 以下是常驻治理规则，不再作为“未完成实施项”使用空 checkbox 表示：
@@ -735,6 +771,9 @@ python .\tools\run_openspec_guard.py --root .
 | 目标 CLI 读命令可能有副作用 | 先用 `--static-only` / `--no-exec-cli` |
 | session id 只能 generated | GUI 标低置信度，不当作强隔离身份 |
 | 手动 session override 与项目默认冲突 | session 优先，GUI 显示冲突，不自动修复 |
+| session 镜头选择被误当成项目默认 | lens 写入只允许作用于当前 selected session，readback 中必须显示 `lens_selection_scope=session` |
+| 空镜头选择被误当成禁用 | 空选择统一解释为 `effective_lens_mode=all`，关闭仍由 `enabled=false` 表示 |
+| Expert Workbench 被误用为执行器 | 只生成 handoff package，GUI 不启动 carrier；handoff 目标只是文本元数据 |
 | manifest hash 不匹配 | update/uninstall fail closed |
 | Comet bash 不可用 | 记录 blocker 和 archive deferral，不伪造通过 |
 | 远端落后本地 main | 可报告 remote lag；未授权不推送 |
@@ -753,6 +792,7 @@ python .\tools\run_openspec_guard.py --root .
 - [x] 明确验证命令和本地 main / 远端发布边界。
 - [x] 明确 Comet 管理记录、阶段门禁、Monitoring 回退语义和证据留存。
 - [x] 明确实施切片、文件职责图和本地集成顺序。
+- [x] 明确 Expert Workbench v2 与 session 级镜头选择是下一未完成 runtime 切片，并写明 handoff-only、session-only、空选择=all 的规则。
 - [ ] 后续代码实现完成并完成 A/B 验收后归档对应 OpenSpec change。
   - 延期（2026-06-01）：本次 scaffold `--apply` 是本地工具链补齐切片；归档仍延期到当前本地集成包完成验证，并由 operator 明确选择 Project MOE GUI 已完成 change set 的 OpenSpec 归档范围。
 - [x] 目标项目真实 Ready Lane 证据生成后，再允许受保护 GUI 控制。

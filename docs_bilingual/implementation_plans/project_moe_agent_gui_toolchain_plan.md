@@ -53,11 +53,11 @@ Status interpretation:
 
 - `status: active`: this is the current executable implementation plan; it is not a claim that the Project MOE GUI runtime is fully complete.
 - `plan_readiness: full-comet-structure-ready-for-implementation-slicing`: the structure, boundaries, and task granularity are ready for code implementation slicing.
-- `D:\PythonProject_paper_suggest`: A remains the Phase 1 owner; B must not reimplement A business Phase 1. A local `main` has Phase 1, install/update receipt, and rollback refs, but current GUI preflight availability must be based on fresh validation after the 0.2.23 update.
-- 2026-06-01 decision: A=`D:\PythonProject_paper_suggest` remains the real Phase 1 owner, and B=`D:\PythonProject_langgraph` remains the Phase 2 toolchain source of truth. The repair-worktree dry-run route has converged into a real A local-main install/update verification route. Do not reimplement a full A business Phase 1 inside B as substitute target-project evidence.
+- `D:\PythonProject_paper_suggest`: A remains the Phase 1 owner; B must not reimplement A business Phase 1. Current GUI availability must always be based on fresh install/readiness/preflight evidence.
+- 2026-06-01 decision: A owns real Phase 1 and B owns Phase 2 toolchain; validation must update/install into A rather than recreate A business logic inside B.
 - 2026-06-01 evidence: old worktree `paper_suggest-thesis-moe-phase1` is stale and must not be used as current A truth; the new A repair worktree is `D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601`, committed as `560da0e` (A Phase 1 readiness-contract repair commit; the Chinese commit subject is kept only in the zh-CN companion).
 - 2026-06-01 privacy boundary: A's `MOE.md` is ignored/private and was copied only into the A repair worktree for readiness validation; do not commit it and do not copy its full content into B documentation or tooling.
-- 2026-06-01 readiness evidence: A repair worktree static-only output is `ok=true / readiness_status=static-ready-candidate / adaptation_lane=ready-candidate / control_mode_allowed=false`, where `readiness_status` is the Phase 1 contract classification, `adaptation_lane` is the next handling lane, and `control_mode_allowed=false` means display/dry-run only; execute-read-contract output is `ok=true / token=ok / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true`, where `token=ok` is the stable machine-readable success token and `control_mode_allowed=true` means the guarded install/control path may proceed after receipt and rollback evidence, with `project-status`, `list-sessions`, `status`, and `assert-on` checked.
+- 2026-06-01 readiness evidence: A repair worktree reached static `ready-candidate/control_mode_allowed=false` and read-contract `ready/control_mode_allowed=true` with stable `token=ok`; here `control_mode_allowed` means whether the Phase 1 readiness contract permits GUI write/control actions (`false` = read/static candidate only, `true` = control path may be exposed behind gates). Checked commands were `project-status`, `list-sessions`, `status`, and `assert-on`.
 - 2026-06-01 A local-main evidence: A integrated `560da0e` (Phase 1 readiness-contract repair), `c6b92ae` (real Project MOE GUI install), and `ce23931` (shared-runtime launcher update). Rollback refs are `refs/backup/local-main/20260601-125126-before-thesis-moe-phase1-repair-20260601` and `refs/backup/local-main/20260601-215213-before-project-moe-gui-runtime-entry-update`.
 - 2026-06-01 Phase 2 evidence: B toolchain `0.2.22` repairs target-launcher runtime entry by re-executing through configured `runtime_python`, guarding recursion with `PROJECT_MOE_GUI_RUNTIME_REEXEC`, and setting `PYTHONUTF8=1`. The installed preflight payload records `launcher_runtime_python` and `launcher_runtime_reexec`.
 - 2026-06-01 correction evidence: A later showed an installed `toolchain_source_root` still pointing at a deleted B feature worktree, so A launcher preflight returned `blocked:phase1_readiness_gate_unavailable / No module named 'project_moe_gui'`; the previous "launcher preflight ok" is historical evidence, not current availability.
@@ -65,8 +65,9 @@ Status interpretation:
 - 2026-06-01 acceptance boundary: A remains a Ready Lane target, but current GUI preflight availability must be re-established by updating A managed artifacts to 0.2.23 and rerunning install check, readiness, and launcher preflight; no-argument / double-click launch is now the human-visible path after `0.2.25`; `--preflight --json` remains the automation path.
 - 2026-06-01 scaffold apply slice: B toolchain `0.2.24` adds protected `scaffold_project_moe_phase1.py --apply`. It creates only missing Bootstrap Lane files after project-evidence and clean Git dirty-state checks pass, refuses to overwrite existing private or operator surfaces, and keeps GUI control disabled until later readiness evidence returns Ready Lane.
 - 2026-06-02 human-friendly launcher slice: B toolchain `0.2.25` makes installed no-argument / double-click `project-moe-gui.cmd` open the visible PySide6 GUI by default for human operators, while preserving `--preflight --json` as the non-visible automation interface and blocking `--json` without `--preflight` from becoming an accidental machine-visible launch path.
-- 2026-06-02 QFluentWidgets / daemon / close-confirmation decision: the next implementation package must introduce `PySide6-Fluent-Widgets` as the default Project MOE GUI visual library through shared PySide6 runtime dependency checks, add a GUI dependency license manifest with package/version/source/license/review result, replace the minimal label-only window with a card/sidebar/status/diagnostics UI, start visible no-argument launch through a project-level daemon/watchdog using Windows no-console process flags such as `CREATE_NO_WINDOW` / `DETACHED_PROCESS`, and ask on close whether to exit or hide to tray. The phrase "GUI does not hide to tray" means it must not hide automatically; operator-selected tray hide from the close confirmation is allowed.
+- 2026-06-02 visual/daemon decision: later packages must keep the styled card/sidebar/status UI, license metadata, no-console daemon launch, duplicate lock, and close confirmation with explicit Exit / Hide-to-tray / Cancel behavior.
 - 2026-06-05 silent launch and expert workbench slice: B toolchain `0.2.27` adds `project-moe-gui-silent.vbs` as a no-console double-click entry while keeping `project-moe-gui.cmd` as the diagnostic entry; the daemon human-GUI child prefers `pythonw.exe` when available and otherwise keeps the `python.exe + CREATE_NO_WINDOW / DETACHED_PROCESS` fallback; the GUI adds `Expert Workbench`, which only generates runtime/clipboard task briefs and never starts Codex, subagents, model APIs, or reads/copies target private `MOE.md`.
+- 2026-06-05 next slice freeze: Expert Workbench v2 and session-scoped MOE lens selection remain incomplete. v2 must support multi-lens selection, per-session MOE/lens/category controls, and handoff packages for `main-session`, `subagent`, `durable-team`, and `langgraph-workflow`; the GUI still must not execute those carriers or model APIs.
 - Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, only OpenSpec artifacts, repo-local guards, and local validation can be used as fallback evidence.
 
 Inline field definitions:
@@ -95,6 +96,8 @@ Inline field definitions:
 - A subagent / native agent is an execution carrier or role thread, such as Codex built-in roles, user-level agent TOMLs, or project-local `.codex/agents/*.toml`. One subagent may contain multiple MOE expert lenses, and the main session may also use MOE expert lenses directly.
 - Therefore MOE experts and subagents form a composable matrix relationship. They are not synonyms and are not mutually exclusive; calling a MOE lens must not be recorded as native subagent evidence.
 - Calling MOE experts does not require dedicated skills. `MOE.md`, agent TOML, or main-session context can carry MOE routing rules; skills are optional workflow wrappers only, and skill/profile invocation cannot replace native expert evidence.
+- Expert Workbench v2 may only generate a copyable handoff package / brief. The handoff target may be labelled `main-session`, `subagent`, `durable-team`, or `langgraph-workflow`, but the GUI itself does not execute those carriers.
+- Session-scoped lens selection applies only to the currently selected session and does not mutate project-default lens policy. `selected_lenses=[]` plus `selected_categories=[]` means "all available lenses are enabled for this session," not "unconfigured" or "off".
 
 Default names:
 
@@ -113,6 +116,8 @@ Goals:
 4. Route projects with partial Phase 1 into Repair Lane and require explicit fixes before GUI control is enabled.
 5. Allow GUI installation and use only for projects that satisfy all readiness gates.
 6. Make install, update, rollback, uninstall, and verification fully traceable through manifest/receipt records.
+7. Provide per-session MOE enable/disable, lens multi-select, category multi-select, clear-selection, and readback confirmation.
+8. Provide Expert Workbench v2 multi-lens brief generation and execution-carrier handoff package selection.
 
 Non-goals:
 
@@ -122,6 +127,7 @@ Non-goals:
 - Do not build a cross-project master console or default cross-project scanning.
 - Do not let the GUI edit `.omx/state` JSON directly.
 - Do not treat workflow skills, plugin profiles, or GUI profile loading as native expert evidence.
+- Do not let Expert Workbench directly start the main session, subagents, durable teams, LangGraph workflows, or any model API; it only generates handoff packages.
 - Do not push GitLab/GitHub, open MRs, merge remotes, or sync mirrors without explicit remote-publication approval.
 
 ## 3. Comet / OpenSpec Work Boundary
@@ -341,10 +347,13 @@ Phase 1 is the target project's minimal MOE state interface.
 | `project-on --json` | yes | Enable project defaults and propagate to non-manual sessions |
 | `project-off --json` | yes | Disable project defaults and propagate to non-manual sessions |
 | `project-status --json` | no | Report defaults, session counts, invalid records, and path summaries |
-| `list-sessions --json` | no | Return a redacted session list |
-| `on --session-id <id> --json` | yes | Write a single-session manual enable override |
-| `off --session-id <id> --json` | yes | Write a single-session manual disable override |
-| `status --json` | no | Compute the effective state for the current or explicit session |
+| `list-sessions --json` | no | Return a redacted session list with session-scoped lens-selection summaries |
+| `list-lenses --json` | no | Return a public MOE lens and category catalogue; never read/copy `MOE.md` body text |
+| `on --session-id <id> [--lens <id> ...] [--category <id> ...] --json` | yes | Write a single-session manual enable override; may also set session-scoped lens/category selection |
+| `off --session-id <id> --json` | yes | Write a single-session manual disable override while preserving existing lens selection for later re-enable |
+| `set-lenses --session-id <id> [--lens <id> ...] [--category <id> ...] --json` | yes | Update only that session's lens/category selection; it does not mutate project defaults and does not mean disabled |
+| `clear-lenses --session-id <id> --json` | yes | Clear that session's explicit lens/category selection so the effective lens mode returns to `all` |
+| `status --session-id <id> --json` | no | Compute the effective MOE toggle and effective lens mode for the current or explicit session |
 | `assert-on --json` | no | Succeed only when the effective state is on; otherwise return a stable blocker |
 
 Readiness checker requirements:
@@ -356,6 +365,7 @@ Readiness checker requirements:
 - Write-command surface declares `atomic_write`, `lock_status`, `audit_path`, `no_op`, `before`, `after`, `changed_paths`.
 - `.cmd` wrapper only forwards controlled commands, forces `--json`, and forbids arbitrary `%*` pass-through or shell chaining.
 - Startup / resume / continue / reload / phase-change checkpoints must read `status --json`.
+- v2 lens commands such as `list-lenses`, `set-lenses`, and `clear-lenses`: envelope, value validation, privacy fields, write readback, and default-compatible semantics.
 
 ## 10. Phase 2 PySide6 GUI Contract
 
@@ -365,6 +375,8 @@ GUI v1 must include:
 - Project-default card: effective default state, last update time, enable/disable buttons.
 - Session table: redacted session id, source, confidence, enabled, effective_enabled, validity, lifecycle status, branch, worktree, first/last seen, reason summary.
 - Action panel: refresh, enable project default, disable project default, enable selected session, disable selected session.
+- Session lens panel: show available lenses/categories only for the currently selected session; support multi-select, apply, clear, and `effective_lens_mode` readback.
+- Expert Workbench v2: support choosing one or more MOE lenses, choosing handoff target `main-session|subagent|durable-team|langgraph-workflow`, and generating a handoff package explicitly marked as not executed by the GUI.
 - Log panel: actual command invoked, exit code, stable token, and redacted stdout/stderr summary.
 
 GUI behavior rules:
@@ -372,6 +384,7 @@ GUI behavior rules:
 - Refresh calls read-only commands only and never triggers write/migration/install.
 - During a write, the same scope buttons are disabled and a loading state is shown.
 - After a write completes, the GUI re-reads state.
+- After lens writes complete, the GUI must re-read `status --session-id` and `list-sessions`; it must not trust local UI checkboxes alone.
 - An empty session list must not be interpreted as MOE being disabled.
 - Error display must include a stable token, a short explanation, and a recommended next action.
 - State badges must use both text and color, not color alone.
@@ -448,6 +461,10 @@ Session state:
   "session_id_source": "argument|environment|generated",
   "session_confidence": "high|medium|low",
   "override_origin": "manual-session|project-propagated",
+  "selected_lenses": [],
+  "selected_categories": [],
+  "effective_lens_mode": "all|selected",
+  "lens_selection_scope": "session",
   "worktree": "D:/PythonProject_paper_suggest",
   "branch": "main",
   "first_seen_at": "2026-05-27T00:00:00Z",
@@ -462,6 +479,13 @@ Effective-state calculation:
 1. A valid session override wins.
 2. Otherwise use the valid project-default state.
 3. Otherwise fail closed and treat the project as off.
+
+Lens-selection compatibility semantics:
+
+1. Legacy session state missing `selected_lenses` / `selected_categories` is treated as `[]`.
+2. `selected_lenses=[]` and `selected_categories=[]` means `effective_lens_mode=all`, i.e. all available lenses are enabled for that session.
+3. If either list is non-empty, `effective_lens_mode=selected`; `selected` means the effective session scope is narrowed to explicit lenses or lenses expanded from explicit categories only.
+4. `list-lenses --json` returns only public structured lens/category metadata; it must not read, copy, or echo target-project private prompt source body text.
 
 Failure tokens:
 
@@ -632,6 +656,18 @@ The current implemented visual path is Qt Quick/QML Material with optional legac
 - [x] Keep brief persistence runtime-and-clipboard-only by default; do not write disk or Git.
 - [x] Add regression tests for silent entry, `pythonw.exe` selection, Expert Workbench privacy boundary, and QML page evidence.
 
+#### Slice 4B-v2: session-scoped MOE lens selection and Expert Workbench v2
+
+- [ ] Extend the Phase 1 CLI contract, scaffold template, and test fixtures with `list-lenses`, `set-lenses`, `clear-lenses`, and optional `--lens` / `--category` support on `on --session-id`.
+- [ ] Extend compatible session-state fields: `selected_lenses`, `selected_categories`, `effective_lens_mode`, and `lens_selection_scope=session`; legacy records missing those fields use `all` mode.
+- [ ] Extend the GUI view model so the session table has an explicit selected row and exposes lens/category multi-select, apply, clear, readback token, and blockers for the currently selected session.
+- [ ] Extend the QML Sessions page to enable/disable MOE, apply selected lenses, and clear lens selection for exactly one session, with clear copy saying "empty selection = all lenses".
+- [ ] Extend Expert Workbench v2 so the main session can choose one or more MOE lenses, choose a handoff target, and generate a handoff package for main session / subagent / durable team / LangGraph workflow.
+- [ ] Keep Expert Workbench brief-only: do not start Codex, subagents, durable workers, LangGraph workflows, or model APIs; do not write disk; do not write target-project state.
+- [ ] Extend privacy checks so the lens catalogue, session rows, and handoff package cannot contain `MOE.md` body text, developer instructions, raw session ids, or full stdout/stderr.
+- [ ] Extend regression tests for lens commands, empty-selection=all, invalid lens/category fail-closed, legacy state compatibility, GUI view model, QML static controls, and Workbench handoff targets.
+- [ ] Bump the toolchain to the next patch version, install/update into `D:\PythonProject_paper_suggest`, then rerun install check, readiness, launcher preflight, and target-project tests.
+
 #### Slice 5: Governance, Docs, and Checker Integration
 
 The following are standing governance rules, not remaining product checkboxes:
@@ -725,23 +761,7 @@ Target-project readiness verification:
 - static-only mode must never execute the target CLI.
 - no-exec-cli mode must not create side effects in target state.
 - read-contract execution mode must check `project-status`, `list-sessions`, `status`, and `assert-on`.
-- Commands executed against the 2026-06-01 A repair worktree:
-  - static-only A readiness evidence: `python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --json --static-only`
-  - execute-read-contract A readiness evidence: `python .\tools\project_moe_gui_toolchain\check_project_moe_phase1_readiness.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --json`
-  - B Phase 2 installer dry-run evidence: `python .\tools\project_moe_gui_toolchain\install_project_moe_gui.py --target-project D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601 --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --dry-run --json`
-- Results recorded for the 2026-06-01 A repair worktree:
-  - A repair commit: `560da0e` (A Phase 1 readiness-contract repair commit; Chinese subject is documented in the zh-CN companion).
-  - static-only: `ok=true / static-ready-candidate / ready-candidate / control_mode_allowed=false`.
-  - execute-read-contract: `ok=true / token=ok / ready / control_mode_allowed=true`.
-  - installer dry-run: `ok=true / token=ok / blockers=[] / planned_writes=4`.
-- Field meaning: `static-ready-candidate` is a read-only static candidate state, `ready` means the read contract passed, `control_mode_allowed=true` only permits the guarded install/control path, and `planned_writes=4` means dry-run would create four managed files rather than having written them.
-- Additional results recorded for A local `main` after real install/update:
-  - A commits: `560da0e` Phase 1 repair, `c6b92ae` GUI install, `ce23931` shared-runtime launcher update.
-  - install/update check: `ok=true / status=up_to_date / installed_toolchain_version=0.2.22 / target_toolchain_version=0.2.22 / runtime_status=import_ok / blockers=[]`.
-  - readiness recheck: `ok=true / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true / git_status.dirty=false`.
-  - installed launcher preflight: `ok=true / token=ok / pyside6_status=import_ok / launcher_runtime_reexec=true`.
-  - target tests: `python -m unittest discover -s test -p "test_thesis_moe_mode.py"` => `Ran 6 tests ... OK`.
-  - visible GUI launch: not executed in this pass.
+- Historical A/B evidence summary: A repair commit `560da0e`, GUI install/update commits `c6b92ae` and `ce23931`, static readiness `ready-candidate/control_mode_allowed=false`, read-contract readiness `ready/control_mode_allowed=true`, installer dry-run `token=ok`, install check `up_to_date`, launcher preflight `token=ok`, and A target tests `OK`. Long historical command lines are omitted here to keep this active plan below the size gate; see the zh-CN companion and Git history for exact command strings.
 - write fixtures cover project on/off, session on/off, manual override retention, invalid-record skip, no-op, lock timeout, and atomic write in `test/project_moe_gui_toolchain.test.py`.
 - QFluentWidgets / daemon follow-up verification must cover: QFluentWidgets import or fail-closed blocker, license manifest presence, GUI view-model render smoke, daemon dry-run/no-console launch plan, duplicate lock handling, `--preflight --json` foreground behavior, close-confirmation exit/hide/cancel behavior, tray-unavailable fail-closed handling, and no direct state writes.
 
@@ -771,6 +791,9 @@ When implementation moves from docs to code, also update/check:
 | Target CLI read commands may have side effects | Use `--static-only` / `--no-exec-cli` first |
 | Session ids can only be generated | Treat them as low-confidence and do not use them as hard identity isolation |
 | Manual session override conflicts with project default | Session wins; show the conflict in the GUI; do not auto-fix |
+| Session lens selection is mistaken for project default | Lens writes are allowed only for the current selected session, and readback must show `lens_selection_scope=session` |
+| Empty lens selection is mistaken for disabled | Empty selection always means `effective_lens_mode=all`; disabled is represented only by `enabled=false` |
+| Expert Workbench is mistaken for an execution runner | It only generates handoff packages; the GUI does not start a carrier, and the handoff target is text metadata only |
 | Manifest hash mismatch | Update/uninstall fail closed |
 | Comet bash is unavailable | Record blocker and archive deferral; do not fake success |
 | Remote lags behind local `main` | Report remote lag; do not push without approval |
@@ -788,6 +811,7 @@ When implementation moves from docs to code, also update/check:
 - [x] Verification commands and local-main / remote-publication boundaries are explicit.
 - [x] Comet management record, phase gates, Monitoring return semantics, and evidence retention are explicit.
 - [x] Implementation slices, file ownership map, and local integration order are explicit.
+- [x] Expert Workbench v2 and session-scoped lens selection are identified as the next incomplete runtime slice, with handoff-only, session-only, and empty-selection=all rules documented.
 - [ ] Archive the corresponding OpenSpec change after follow-up code implementation and A/B acceptance are complete.
   - Deferral (2026-06-01): this scaffold `--apply` slice is a local toolchain completion slice. Archive remains deferred until the current local integration package is validated and the operator explicitly chooses the OpenSpec archival scope for the completed Project MOE GUI change set.
 - [x] Once real Ready Lane evidence exists for a target project, allow guarded GUI control.
