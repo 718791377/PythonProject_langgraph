@@ -6,8 +6,8 @@ status: active
 plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 created_at: 2026-05-20
-updated_at: 2026-06-02
-last_reviewed_at: 2026-06-02
+updated_at: 2026-06-05
+last_reviewed_at: 2026-06-05
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -66,6 +66,7 @@ Status interpretation:
 - 2026-06-01 scaffold apply slice: B toolchain `0.2.24` adds protected `scaffold_project_moe_phase1.py --apply`. It creates only missing Bootstrap Lane files after project-evidence and clean Git dirty-state checks pass, refuses to overwrite existing private or operator surfaces, and keeps GUI control disabled until later readiness evidence returns Ready Lane.
 - 2026-06-02 human-friendly launcher slice: B toolchain `0.2.25` makes installed no-argument / double-click `project-moe-gui.cmd` open the visible PySide6 GUI by default for human operators, while preserving `--preflight --json` as the non-visible automation interface and blocking `--json` without `--preflight` from becoming an accidental machine-visible launch path.
 - 2026-06-02 QFluentWidgets / daemon / close-confirmation decision: the next implementation package must introduce `PySide6-Fluent-Widgets` as the default Project MOE GUI visual library through shared PySide6 runtime dependency checks, add a GUI dependency license manifest with package/version/source/license/review result, replace the minimal label-only window with a card/sidebar/status/diagnostics UI, start visible no-argument launch through a project-level daemon/watchdog using Windows no-console process flags such as `CREATE_NO_WINDOW` / `DETACHED_PROCESS`, and ask on close whether to exit or hide to tray. The phrase "GUI does not hide to tray" means it must not hide automatically; operator-selected tray hide from the close confirmation is allowed.
+- 2026-06-05 silent launch and expert workbench slice: B toolchain `0.2.27` adds `project-moe-gui-silent.vbs` as a no-console double-click entry while keeping `project-moe-gui.cmd` as the diagnostic entry; the daemon human-GUI child prefers `pythonw.exe` when available and otherwise keeps the `python.exe + CREATE_NO_WINDOW / DETACHED_PROCESS` fallback; the GUI adds `Expert Workbench`, which only generates runtime/clipboard task briefs and never starts Codex, subagents, model APIs, or reads/copies target private `MOE.md`.
 - Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, only OpenSpec artifacts, repo-local guards, and local validation can be used as fallback evidence.
 
 Inline field definitions:
@@ -604,18 +605,32 @@ The completed A convergence order was:
 - [x] Disable same-scope write controls during writes and refresh state after every write.
 - [x] Display stable failure tokens, concise explanations, suggested next actions, and redacted stdout/stderr summaries.
 
-#### Slice 4A: QFluentWidgets visual shell, project daemon, and close confirmation
+#### Slice 4A: QML Material visual shell, project daemon, and close confirmation
 
-- [ ] Add shared-runtime dependency verification for `PySide6-Fluent-Widgets` / QFluentWidgets.
-- [ ] Add a GUI dependency license manifest and checker evidence for QFluentWidgets package/version/source/license/review result.
-- [ ] Replace the minimal label-only window with a QFluentWidgets-styled sidebar, top banner, cards, session table, diagnostics panel, and footer.
-- [ ] Preserve the existing view-model and target CLI read/write contract; no direct state JSON writes are allowed.
-- [ ] Implement a project-level daemon/watchdog path for no-argument / double-click launch so CMD exits quickly on Windows.
-- [ ] Use Windows no-console process flags such as `CREATE_NO_WINDOW` / `DETACHED_PROCESS` or equivalent guarded logic for the human visible launcher path.
-- [ ] Keep `--preflight --json` foreground and non-visible for automation.
-- [ ] Add project-local lock / pid / status handling to avoid duplicate GUI instances.
-- [ ] Add close confirmation with `Exit`, `Hide to tray`, and cancel behavior.
-- [ ] Add tray `Show` / `Exit` actions only after the operator explicitly chooses hide; do not auto-hide to tray.
+The current implemented visual path is Qt Quick/QML Material with optional legacy QFluentWidgets metadata, not a forced QFluentWidgets runtime dependency. Full QFluentWidgets adoption remains an optional future visual-library decision and is not a blocker for the current Project MOE GUI acceptance boundary.
+
+- [x] Add visual dependency metadata and license-review fields for the optional QFluentWidgets surface.
+- [x] Replace the minimal label-only window with a sidebar, top banner, cards, session table, diagnostics panel, and footer.
+- [x] Preserve the existing view-model and target CLI read/write contract; no direct state JSON writes are allowed.
+- [x] Implement a project-level daemon/watchdog path for no-argument / double-click launch so CMD exits quickly on Windows.
+- [x] Use Windows no-console process flags such as `CREATE_NO_WINDOW` / `DETACHED_PROCESS` or equivalent guarded logic for the human visible launcher path.
+- [x] Keep `--preflight --json` foreground and non-visible for automation.
+- [x] Add project-local lock / pid / status handling to avoid duplicate GUI instances.
+- [x] Add close confirmation with `Exit`, `Hide to tray`, and cancel behavior.
+- [x] Add tray `Show` / `Exit` actions only after the operator explicitly chooses hide; do not auto-hide to tray.
+
+#### Slice 4B: silent launch and Expert Workbench v1
+
+- [x] Generate `<project>/project-moe-gui-silent.vbs` as the no-console double-click entry.
+- [x] Keep `<project>/project-moe-gui.cmd` as the diagnostic entry, with `--preflight --json` still using foreground machine output.
+- [x] Prefer `pythonw.exe` for daemon no-argument human-GUI children when it exists.
+- [x] Keep `CREATE_NO_WINDOW / DETACHED_PROCESS` as the no-console fallback when `pythonw.exe` is unavailable.
+- [x] Include the silent entry in manifest / config / update / uninstall allowlist.
+- [x] Add an `Expert Workbench` GUI navigation page.
+- [x] Load expert lenses only from public Agent TOML structured fields or safe defaults; do not read/copy `MOE.md` body text.
+- [x] Generate briefs only; do not start Codex, subagents, durable workers, or model APIs.
+- [x] Keep brief persistence runtime-and-clipboard-only by default; do not write disk or Git.
+- [x] Add regression tests for silent entry, `pythonw.exe` selection, Expert Workbench privacy boundary, and QML page evidence.
 
 #### Slice 5: Governance, Docs, and Checker Integration
 

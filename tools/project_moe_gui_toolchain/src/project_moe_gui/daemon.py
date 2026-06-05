@@ -36,6 +36,19 @@ def windows_process_flags_label(*, platform_name: str | None = None) -> str:
     return "|".join(labels) if labels else str(flags)
 
 
+def select_gui_python_executable(runtime_python: str | Path | None, *, prefer_pythonw: bool) -> tuple[str, bool]:
+    configured_raw = str(runtime_python or sys.executable)
+    configured = Path(configured_raw)
+    if not prefer_pythonw:
+        return configured_raw, False
+    if configured.name.lower() != "python.exe":
+        return configured_raw, False
+    pythonw = configured.with_name("pythonw.exe")
+    if pythonw.exists():
+        return str(pythonw), True
+    return configured_raw, False
+
+
 def daemon_runtime_dir(launcher: str | Path, project_root: str | Path | None = None) -> Path:
     root = Path(project_root).resolve(strict=False) if project_root else Path(launcher).resolve(strict=False).parents[2]
     return root / RUNTIME_DIR
@@ -71,7 +84,8 @@ def build_daemon_launch_plan(
             "cmd_window_policy": "foreground_machine_output",
         }
     should_daemon = bool(no_args and not preflight and not json_mode and not allow_visible)
-    python_executable = str(runtime_python or sys.executable)
+    configured_python = str(runtime_python or sys.executable)
+    python_executable, pythonw_available = select_gui_python_executable(configured_python, prefer_pythonw=should_daemon)
     argv = [python_executable, str(launcher_path), "--allow-visible"]
     lock_path = daemon_lock_path(launcher_path, project_root)
     log_path = daemon_log_path(launcher_path, project_root)
@@ -81,6 +95,10 @@ def build_daemon_launch_plan(
         "reason": "no_argument_human_launch_uses_project_daemon" if should_daemon else "foreground_launch_requested",
         "launcher": str(launcher_path),
         "project_root": str(Path(project_root).resolve(strict=False)) if project_root else None,
+        "configured_python_executable": configured_python,
+        "selected_python_executable": python_executable,
+        "pythonw_available": pythonw_available,
+        "pythonw_policy": "prefer_pythonw_for_no_console_human_gui_daemon" if should_daemon else "foreground_keeps_configured_python",
         "argv": argv,
         "shell": False,
         "cmd_window_policy": "no_persistent_cmd" if should_daemon else "foreground",

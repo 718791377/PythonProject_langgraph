@@ -72,8 +72,9 @@ MANIFEST_RELATIVE = Path("tools/project_moe_gui/project_moe_gui.install-manifest
 LAUNCHER_RELATIVE = Path("tools/project_moe_gui/launcher.py")
 README_RELATIVE = Path("tools/project_moe_gui/README.md")
 CMD_RELATIVE = Path("project-moe-gui.cmd")
+SILENT_VBS_RELATIVE = Path("project-moe-gui-silent.vbs")
 QML_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
-MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE, QML_RELATIVE]
+MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE, SILENT_VBS_RELATIVE, QML_RELATIVE]
 UNINSTALL_MANAGED_ALLOWLIST = {
     "tools/project_moe_gui/launcher.py",
     "tools/project_moe_gui/project_moe_gui.config.json",
@@ -81,6 +82,7 @@ UNINSTALL_MANAGED_ALLOWLIST = {
     "tools/project_moe_gui/README.md",
     "tools/project_moe_gui/qml/ProjectMoeGui.qml",
     "project-moe-gui.cmd",
+    "project-moe-gui-silent.vbs",
 }
 RECOVERABLE_UPDATE_BLOCKER_CODES = {
     "blocked:toolchain_source_root_unavailable",
@@ -1644,13 +1646,26 @@ def _fallback_daemon_launch_plan(launcher: Path, args: argparse.Namespace, confi
     runtime_dir = project_root / ".project-runtime" / "project_moe_gui"
     log_path = runtime_dir / "project_moe_gui.daemon.log"
     lock_path = runtime_dir / "project_moe_gui.daemon.lock"
+    configured_python = str(config.get("runtime_python") or sys.executable)
+    selected_python = configured_python
+    pythonw_available = False
+    configured_path = Path(configured_python)
+    if should_daemon and configured_path.name.lower() == "python.exe":
+        pythonw = configured_path.with_name("pythonw.exe")
+        if pythonw.exists():
+            selected_python = str(pythonw)
+            pythonw_available = True
     return {
         "schema_version": 1,
         "uses_daemon": should_daemon,
         "reason": "no_argument_human_launch_uses_project_daemon" if should_daemon else "foreground_launch_requested",
         "launcher": str(launcher),
         "project_root": str(project_root),
-        "argv": [str(config.get("runtime_python") or sys.executable), str(launcher), "--allow-visible"],
+        "configured_python_executable": configured_python,
+        "selected_python_executable": selected_python,
+        "pythonw_available": pythonw_available,
+        "pythonw_policy": "prefer_pythonw_for_no_console_human_gui_daemon" if should_daemon else "foreground_keeps_configured_python",
+        "argv": [selected_python, str(launcher), "--allow-visible"],
         "shell": False,
         "cmd_window_policy": "no_persistent_cmd" if should_daemon else "foreground",
         "windows_creation_flags": flags,
@@ -1916,6 +1931,25 @@ def cmd_text() -> str:
     return '@echo off\nsetlocal\nset PYTHONUTF8=1\nif not defined PROJECT_MOE_GUI_DAEMON_CHILD set PROJECT_MOE_GUI_DAEMON_CHILD=\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
 
 
+def silent_vbs_text() -> str:
+    return '''Option Explicit
+Dim shell, fso, scriptDir, command, i
+Set shell = CreateObject("WScript.Shell")
+Set fso = CreateObject("Scripting.FileSystemObject")
+scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
+command = QuoteArg(scriptDir & "\\project-moe-gui.cmd")
+For i = 0 To WScript.Arguments.Count - 1
+  command = command & " " & QuoteArg(WScript.Arguments(i))
+Next
+shell.CurrentDirectory = scriptDir
+shell.Run command, 0, False
+
+Function QuoteArg(value)
+  QuoteArg = Chr(34) & Replace(CStr(value), Chr(34), Chr(34) & Chr(34)) & Chr(34)
+End Function
+'''
+
+
 def qml_shell_text() -> str:
     return qml_shell_path(prefer_installed=False).read_text(encoding="utf-8")
 
@@ -1932,6 +1966,11 @@ This directory is managed by `D:\\PythonProject_langgraph` Project MOE GUI toolc
 
 Do not place private `MOE.md` content or project state files in this directory.
 Phase 2B provides an import-safe GUI shell and guarded visible-launch path through the central toolchain source. Human double-click or no-argument launches open the visible PySide6 GUI by default; automated checks must use `--preflight --json` and never rely on the no-argument human launcher as a machine interface.
+
+Launch entries:
+
+- `project-moe-gui.cmd`: diagnostic entry. It may show CMD/PowerShell output and supports `--preflight --json`.
+- `project-moe-gui-silent.vbs`: no-console double-click entry for human GUI launch. It delegates to the diagnostic entry with a hidden parent window and leaves machine diagnostics on the `.cmd` path.
 """
 
 
@@ -1940,6 +1979,7 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
     data.pop("target_project_root", None)
     data.pop("runtime_project_root", None)
     runtime_python = runtime_root / ".venv" / "Scripts" / "python.exe"
+    daemon_plan = build_daemon_launch_plan(root / "tools" / "project_moe_gui" / "launcher.py", no_args=True, runtime_python=runtime_python, project_root=root)
     data.update(
         {
             "schema_version": SCHEMA_VERSION,
@@ -1963,7 +2003,16 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             },
             "legacy_visual_dependency": expected_qfluent_dependency(),
             "gui_dependency_license_manifest": qfluent_license_manifest(),
-            "daemon_launch": build_daemon_launch_plan(root / "tools" / "project_moe_gui" / "launcher.py", no_args=True, runtime_python=runtime_python, project_root=root),
+            "daemon_launch": daemon_plan,
+            "silent_launch": {
+                "entry": norm(SILENT_VBS_RELATIVE),
+                "diagnostic_entry": norm(CMD_RELATIVE),
+                "uses_wscript_hidden_window": True,
+                "keeps_preflight_on_cmd": True,
+                "configured_python_executable": daemon_plan.get("configured_python_executable"),
+                "selected_python_executable": daemon_plan.get("selected_python_executable"),
+                "pythonw_available": daemon_plan.get("pythonw_available"),
+            },
             "close_behavior": {
                 "default_close_action": "ask",
                 "auto_hide_to_tray": False,
@@ -1986,6 +2035,7 @@ def artifacts(root: Path, agent_name: str, namespace: str, mode_cli: Path, runti
         CONFIG_RELATIVE: json.dumps(config_payload(root, agent_name, namespace, mode_cli, runtime_root, existing_config), ensure_ascii=False, indent=2) + "\n",
         README_RELATIVE: readme_text(agent_name, namespace),
         CMD_RELATIVE: cmd_text(),
+        SILENT_VBS_RELATIVE: silent_vbs_text(),
         QML_RELATIVE: qml_shell_text(),
     }
 

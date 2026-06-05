@@ -16,6 +16,9 @@ ApplicationWindow {
     readonly property var banner: vm.top_banner || ({})
     readonly property var statusCards: vm.status_cards || []
     readonly property var sessionRows: ((vm.session_table || {}).rows || [])
+    readonly property var expertWorkbench: vm.expert_workbench || ({})
+    readonly property var expertLenses: expertWorkbench.lenses || []
+    readonly property var taskTemplates: expertWorkbench.task_templates || []
     readonly property var blockers: vm.banners || []
     property string selectedSection: "overview"
     property bool darkMode: true
@@ -24,6 +27,33 @@ ApplicationWindow {
     Material.accent: Material.Teal
 
     color: darkMode ? "#111827" : "#f6f8fb"
+
+    function selectedLens() {
+        if (expertLenses.length === 0)
+            return ({ "label": "No expert lens", "description": "" })
+        return expertLenses[Math.max(0, lensCombo.currentIndex)] || expertLenses[0]
+    }
+
+    function selectedTemplate() {
+        if (taskTemplates.length === 0)
+            return ({ "label": "Default task", "prompt": "" })
+        return taskTemplates[Math.max(0, taskCombo.currentIndex)] || taskTemplates[0]
+    }
+
+    function generatedBriefText() {
+        var lens = selectedLens()
+        var task = selectedTemplate()
+        var target = reviewTarget.text.length ? reviewTarget.text : "<paste target text, file path, or revision objective here>"
+        return "Project MOE Expert Brief (draft only; no model execution)\n"
+            + "Project: " + (banner.project_root || "Unknown project") + "\n"
+            + "Agent: " + (banner.agent_name || "agent") + "\n"
+            + "Namespace: " + (banner.state_namespace || "unknown") + "\n"
+            + "Expert lens: " + (lens.label || lens.id || "lens") + "\n"
+            + "Task template: " + (task.label || task.id || "template") + "\n\n"
+            + "Review target / objective:\n" + target + "\n\n"
+            + "Instructions:\n" + (task.prompt || "Assess with the selected expert lens and return actionable next steps.") + "\n\n"
+            + "Execution boundary: generate brief only; do not start Codex, subagents, model APIs, or write project state."
+    }
 
     component StatCard: Rectangle {
         id: statCard
@@ -112,6 +142,7 @@ ApplicationWindow {
                 Item { Layout.preferredHeight: 8 }
                 SideButton { text: "Project"; sectionId: "overview" }
                 SideButton { text: "Sessions"; sectionId: "sessions" }
+                SideButton { text: "Expert Workbench"; sectionId: "workbench" }
                 SideButton { text: "Diagnostics"; sectionId: "diagnostics" }
                 SideButton { text: "Settings"; sectionId: "settings" }
                 Item { Layout.fillHeight: true }
@@ -218,6 +249,102 @@ ApplicationWindow {
                                 Label { text: modelData.label || "unknown"; color: darkMode ? "#cbd5e1" : "#475569" }
                                 Label { text: modelData.token || ""; color: (modelData.token || "") === "ok" ? "#14b8a6" : "#f59e0b" }
                             }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                visible: selectedSection === "workbench"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                radius: 20
+                color: darkMode ? "#172033" : "#ffffff"
+                border.color: darkMode ? "#334155" : "#e2e8f0"
+                border.width: 1
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 12
+                    Label {
+                        text: expertWorkbench.title || "Expert Workbench"
+                        font.pixelSize: 22
+                        font.bold: true
+                        color: darkMode ? "#f8fafc" : "#0f172a"
+                    }
+                    Label {
+                        text: expertWorkbench.subtitle || "Generate a brief without executing a model."
+                        wrapMode: Text.Wrap
+                        color: darkMode ? "#cbd5e1" : "#475569"
+                        Layout.fillWidth: true
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Label { text: "Expert lens"; color: darkMode ? "#94a3b8" : "#64748b" }
+                            ComboBox {
+                                id: lensCombo
+                                Layout.fillWidth: true
+                                model: expertLenses
+                                textRole: "label"
+                            }
+                            Label {
+                                text: (selectedLens().description || "")
+                                wrapMode: Text.Wrap
+                                color: darkMode ? "#cbd5e1" : "#475569"
+                                Layout.fillWidth: true
+                            }
+                        }
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Label { text: "Task template"; color: darkMode ? "#94a3b8" : "#64748b" }
+                            ComboBox {
+                                id: taskCombo
+                                Layout.fillWidth: true
+                                model: taskTemplates
+                                textRole: "label"
+                            }
+                            Label {
+                                text: (selectedTemplate().objective || "")
+                                wrapMode: Text.Wrap
+                                color: darkMode ? "#cbd5e1" : "#475569"
+                                Layout.fillWidth: true
+                            }
+                        }
+                    }
+                    TextArea {
+                        id: reviewTarget
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 96
+                        placeholderText: "Paste target text, file path, or revision objective here. It stays in GUI runtime memory."
+                        wrapMode: TextEdit.Wrap
+                    }
+                    TextArea {
+                        id: briefPreview
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        readOnly: true
+                        wrapMode: TextEdit.Wrap
+                        text: generatedBriefText()
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Button {
+                            text: "Copy brief"
+                            onClicked: {
+                                briefPreview.selectAll()
+                                briefPreview.copy()
+                                copyStatus.text = "Copied to clipboard; no disk or Git write."
+                            }
+                        }
+                        Label {
+                            id: copyStatus
+                            Layout.fillWidth: true
+                            text: "Brief persistence: runtime + clipboard only."
+                            color: darkMode ? "#94a3b8" : "#64748b"
                         }
                     }
                 }

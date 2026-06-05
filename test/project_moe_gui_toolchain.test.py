@@ -1719,6 +1719,12 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertTrue((project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json").exists())
             self.assertTrue((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").exists())
             self.assertTrue((project / "project-moe-gui.cmd").exists())
+            self.assertTrue((project / "project-moe-gui-silent.vbs").exists())
+            config_payload = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").read_text(encoding="utf-8-sig"))
+            self.assertEqual(config_payload["silent_launch"]["entry"], "project-moe-gui-silent.vbs")
+            self.assertEqual(config_payload["silent_launch"]["diagnostic_entry"], "project-moe-gui.cmd")
+            manifest = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json").read_text(encoding="utf-8-sig"))
+            self.assertIn("project-moe-gui-silent.vbs", [item["path"] for item in manifest["managed_files"]])
 
             _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
             self.assertEqual(check_payload["status"], "up_to_date")
@@ -2225,6 +2231,63 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(table["rows"][1]["token"], "blocked:invalid_session_record")
             self.assertEqual(table["rows"][0]["actions"], {})
             self.assertEqual(table["rows"][1]["actions"], {})
+
+    def test_gui_expert_workbench_is_brief_only_and_uses_public_agent_toml(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            (project / ".codex" / "agents").mkdir(parents=True)
+            (project / "MOE.md").write_text("PRIVATE PROMPT MUST NOT BE READ", encoding="utf-8")
+            (project / ".codex" / "agents" / "thesis-moe-mentor.toml").write_text(
+                'name = "thesis-moe-mentor"\n'
+                'description = "Public MOE mentor metadata."\n'
+                'developer_instructions = "Public instructions should not be copied into GUI brief payloads."\n'
+                "\n[[extensions.expert_lenses]]\n"
+                'id = "public_blind_review"\n'
+                'label = "Public blind review"\n'
+                'description = "Public structured lens only."\n',
+                encoding="utf-8",
+            )
+            config = self.gui_config(project)
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"},
+                sessions_payload={"ok": True, "token": "ok", "sessions": []},
+                status_payload={"ok": True, "token": "ok", "effective_enabled": True},
+                pyside6_available=False,
+            )
+
+            nav_labels = [item["label"] for item in view_model["navigation_sidebar"]["items"]]
+            region_ids = [region["id"] for region in view_model["window_structure"]["regions"]]
+            workbench = view_model["expert_workbench"]
+            serialized = json.dumps(workbench, ensure_ascii=False)
+
+            self.assertIn("Expert Workbench", nav_labels)
+            self.assertIn("expert_workbench", region_ids)
+            self.assertEqual(workbench["mode"], "brief_generation_only")
+            self.assertEqual(workbench["privacy_boundary"]["source"]["type"], "public_agent_toml")
+            self.assertEqual(workbench["lenses"][0]["label"], "Public blind review")
+            self.assertFalse(workbench["execution_policy"]["starts_codex"])
+            self.assertFalse(workbench["execution_policy"]["starts_subagents"])
+            self.assertFalse(workbench["execution_policy"]["calls_model_api"])
+            self.assertFalse(workbench["persistence_policy"]["disk_default"])
+            self.assertTrue(workbench["persistence_policy"]["clipboard"])
+            self.assertFalse(workbench["privacy_boundary"]["private_prompt_source_read"])
+            self.assertFalse(workbench["privacy_boundary"]["developer_instructions_copied"])
+            self.assertNotIn("PRIVATE PROMPT MUST NOT BE READ", serialized)
+            self.assertNotIn("Public instructions should not be copied", serialized)
+            self.assertNotIn("secret-session-value", serialized)
+
+    def test_qml_source_contains_expert_workbench_page_and_clipboard_copy(self) -> None:
+        from project_moe_gui import gui_shell
+
+        qml = gui_shell.qml_shell_path().read_text(encoding="utf-8")
+        self.assertIn("Expert Workbench", qml)
+        self.assertIn("Copy brief", qml)
+        self.assertIn("briefPreview.copy()", qml)
+        self.assertIn("no model execution", qml)
 
     def test_installed_launcher_preflight_reports_gui_shell_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -2941,6 +3004,40 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertFalse(foreground["uses_daemon"])
         self.assertEqual(foreground["reason"], "preflight_json_runs_in_foreground")
 
+    def test_daemon_launch_plan_prefers_pythonw_for_no_console_gui_child(self) -> None:
+        from project_moe_gui.daemon import build_daemon_launch_plan
+
+        with tempfile.TemporaryDirectory() as tmp:
+            scripts = Path(tmp) / ".venv" / "Scripts"
+            scripts.mkdir(parents=True)
+            python = scripts / "python.exe"
+            pythonw = scripts / "pythonw.exe"
+            python.write_text("fixture", encoding="utf-8")
+            pythonw.write_text("fixture", encoding="utf-8")
+
+            plan = build_daemon_launch_plan(
+                Path("tools/project_moe_gui/launcher.py"),
+                no_args=True,
+                platform_name="win32",
+                runtime_python=python,
+                project_root=Path(tmp) / "target",
+            )
+            self.assertTrue(plan["uses_daemon"])
+            self.assertTrue(plan["pythonw_available"])
+            self.assertEqual(Path(plan["selected_python_executable"]), pythonw)
+            self.assertEqual(Path(plan["argv"][0]), pythonw)
+
+            foreground = build_daemon_launch_plan(
+                Path("tools/project_moe_gui/launcher.py"),
+                no_args=False,
+                allow_visible=True,
+                platform_name="win32",
+                runtime_python=python,
+                project_root=Path(tmp) / "target",
+            )
+            self.assertFalse(foreground["pythonw_available"])
+            self.assertEqual(Path(foreground["selected_python_executable"]), python)
+
     def test_visible_launch_uses_qml_engine_material_style_and_smoke_timer(self) -> None:
         import inspect
         from project_moe_gui import gui_shell
@@ -2955,7 +3052,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertTrue(gui_shell.qml_shell_path().exists())
 
     def test_installer_config_and_launcher_include_daemon_and_qfluent_metadata(self) -> None:
-        from project_moe_gui.toolchain import cmd_text, config_payload, launcher_text
+        from project_moe_gui.toolchain import cmd_text, config_payload, launcher_text, silent_vbs_text
 
         cfg = config_payload(Path("D:/target"), "thesis-moe-mentor", "thesis_moe", Path("tools/thesis_moe_mode.py"), Path("D:/runtime"))
         self.assertEqual(cfg["visual_dependency"]["library"], "Qt Quick/QML")
@@ -2973,6 +3070,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertEqual(Path(cfg["daemon_launch"]["diagnostics_log"]), runtime_dir / "project_moe_gui.daemon.log")
         self.assertEqual(Path(cfg["daemon_launch"]["duplicate_instance_guard"]["lock_path"]), runtime_dir / "project_moe_gui.daemon.lock")
         self.assertEqual(cfg["close_behavior"]["default_close_action"], "ask")
+        self.assertEqual(cfg["silent_launch"]["entry"], "project-moe-gui-silent.vbs")
+        self.assertTrue(cfg["silent_launch"]["uses_wscript_hidden_window"])
+        self.assertTrue(cfg["silent_launch"]["keeps_preflight_on_cmd"])
 
         launcher = launcher_text()
         self.assertIn("build_daemon_launch_plan", launcher)
@@ -2987,6 +3087,10 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         command_text = cmd_text()
         self.assertIn("PROJECT_MOE_GUI_DAEMON_CHILD", command_text)
         self.assertIn("python", command_text.lower())
+        silent_text = silent_vbs_text()
+        self.assertIn("WScript.Shell", silent_text)
+        self.assertIn("project-moe-gui.cmd", silent_text)
+        self.assertIn("shell.Run command, 0, False", silent_text)
 
 
 if __name__ == "__main__":

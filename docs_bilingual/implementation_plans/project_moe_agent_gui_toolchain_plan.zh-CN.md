@@ -6,8 +6,8 @@ plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
 created_at: 2026-05-20
-updated_at: 2026-06-02
-last_reviewed_at: 2026-06-02
+updated_at: 2026-06-05
+last_reviewed_at: 2026-06-05
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -65,6 +65,7 @@ related_docs:
 - 2026-06-01 验收边界：A 仍是 Ready Lane 目标，但必须在 0.2.23 更新 A managed artifacts 并重新获得 install check、readiness 与 launcher preflight `token=ok` 后，才能重新声称“当前 GUI preflight 可用”；0.2.25 之后，无参 / 双击启动是人工可见启动路径，`--preflight --json` 仍是自动化路径。
 - 2026-06-01 scaffold apply 切片：B toolchain `0.2.24` 新增受保护的 `scaffold_project_moe_phase1.py --apply`。它只在项目证据与干净 Git dirty-state 检查通过后创建缺失的 Bootstrap Lane 文件，拒绝覆盖既有私有提示源或 operator surfaces，并且在后续 readiness 返回 Ready Lane 之前保持 GUI 控制禁用。
 - 2026-06-02 人类友好 launcher 切片：B toolchain `0.2.25` 将已安装的无参 / 双击 `project-moe-gui.cmd` 改为默认打开可见 PySide6 GUI，供人工 operator 使用；同时保留 `--preflight --json` 作为不弹窗自动化接口，并阻断未带 `--preflight` 的 `--json` 调用成为误触发的机器可见启动路径。
+- 2026-06-05 静默启动与专家工作台切片：B toolchain `0.2.27` 新增 `project-moe-gui-silent.vbs` 作为无控制台双击入口，保留 `project-moe-gui.cmd` 作为诊断入口；daemon 人工 GUI 子进程在可用时优先使用 `pythonw.exe`，否则继续使用 `python.exe + CREATE_NO_WINDOW / DETACHED_PROCESS`；GUI 新增 `Expert Workbench`，只生成运行时/剪贴板任务 brief，不启动 Codex、subagent 或模型 API，不读取/复制目标项目私有 `MOE.md`。
 - 当前 Comet change 是 `refine-project-moe-gui-plan-comet-structure`。如果 bash 不可用，只能用 OpenSpec artifacts、repo-local guard 与本地验证作为 fallback evidence。
 
 就地字段解释：
@@ -582,6 +583,19 @@ A 已完成的收敛顺序：
 - [x] 通过目标 CLI 实现选中 session on/off。
 - [x] 写入期间禁用同 scope 控件，并在每次写入后刷新状态。
 - [x] 展示 stable failure token、简短解释、建议动作和脱敏 stdout/stderr 摘要。
+
+#### Slice 4A：静默启动与 Expert Workbench v1
+
+- [x] 生成 `<project>/project-moe-gui-silent.vbs`，作为无控制台双击入口。
+- [x] 保留 `<project>/project-moe-gui.cmd` 作为诊断入口，`--preflight --json` 继续走前台机器输出。
+- [x] daemon no-args 人工 GUI 子进程在存在 `pythonw.exe` 时优先使用 `pythonw.exe`。
+- [x] `pythonw.exe` 不存在时保留 `CREATE_NO_WINDOW / DETACHED_PROCESS` no-console 兜底。
+- [x] manifest / config / update / uninstall allowlist 纳入 silent entry。
+- [x] GUI navigation 新增 `Expert Workbench` 页面。
+- [x] 专家镜头只来自公开 Agent TOML 结构化字段或安全默认镜头，不读取/复制 `MOE.md` 正文。
+- [x] Expert Workbench 只生成 brief，不启动 Codex、subagent、durable worker 或模型 API。
+- [x] brief 默认只保留在 GUI 运行时与剪贴板，不写磁盘、不写 Git。
+- [x] 增加回归测试覆盖 silent entry、`pythonw.exe` 选择、Expert Workbench 隐私边界与 QML 页面。
 
 #### Slice 5：治理、文档与 checker 集成
 

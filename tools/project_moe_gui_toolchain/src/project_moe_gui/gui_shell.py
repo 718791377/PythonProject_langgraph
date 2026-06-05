@@ -8,6 +8,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover
+    tomllib = None  # type: ignore[assignment]
+
 from project_moe_gui import CLI_CONTRACT
 from project_moe_gui.qfluent_runtime import check_qfluent_runtime, qfluent_license_manifest
 
@@ -82,6 +87,70 @@ KEYBOARD_SHORTCUTS = {
     "session-off": "Alt+Shift+S",
 }
 
+DEFAULT_EXPERT_LENSES = [
+    {
+        "id": "blind_review",
+        "label": "Blind-review expert",
+        "description": "Checks contribution, rigor, evidence, and likely reviewer objections.",
+    },
+    {
+        "id": "advisor_interrogation",
+        "label": "Advisor interrogation expert",
+        "description": "Turns vague claims into hard advisor-style questions and required answers.",
+    },
+    {
+        "id": "aigc_risk",
+        "label": "AIGC / AI-like wording risk expert",
+        "description": "Flags generic wording, unsupported certainty, and suspiciously synthetic phrasing.",
+    },
+    {
+        "id": "novelty",
+        "label": "Novelty / innovation expert",
+        "description": "Tests whether the claimed innovation is explicit, defensible, and differentiated.",
+    },
+    {
+        "id": "literature_evidence",
+        "label": "Literature and evidence expert",
+        "description": "Checks source coverage, citation fit, evidence gaps, and over-claim risk.",
+    },
+    {
+        "id": "structure_expression",
+        "label": "Structure and expression expert",
+        "description": "Reviews organization, transitions, terminology, readability, and argument flow.",
+    },
+    {
+        "id": "socratic_cbt",
+        "label": "Socratic CBT-style questioning expert",
+        "description": "Uses calm Socratic questions to expose assumptions and improve revision decisions.",
+    },
+    {
+        "id": "thinking_dispatcher",
+        "label": "Thinking-model dispatcher",
+        "description": "Chooses the most suitable lens combination and decomposes the review brief.",
+    },
+]
+
+EXPERT_TASK_TEMPLATES = [
+    {
+        "id": "thesis_review",
+        "label": "Thesis review brief",
+        "objective": "Review the provided thesis section or objective and return actionable revision advice.",
+        "prompt": "Assess the target with the selected expert lens. Return strengths, risks, required fixes, and next revision steps.",
+    },
+    {
+        "id": "defense_questions",
+        "label": "Defense Q&A brief",
+        "objective": "Generate likely defense or advisor questions and concise answer requirements.",
+        "prompt": "Generate tough questions, explain why each matters, and list evidence needed for defensible answers.",
+    },
+    {
+        "id": "risk_triage",
+        "label": "Risk triage brief",
+        "objective": "Prioritize blocking issues before spending time on style or polish.",
+        "prompt": "Classify risks as blocker/high/medium/low and propose the smallest safe next step for each.",
+    },
+]
+
 
 def close_behavior_contract() -> dict[str, Any]:
     return {
@@ -100,6 +169,158 @@ def close_behavior_contract() -> dict[str, Any]:
             {"id": "show", "label": "Show", "effect": "show_window"},
             {"id": "exit", "label": "Exit", "effect": "quit_application"},
         ],
+    }
+
+
+def _safe_short(value: Any, limit: int = 220) -> str:
+    text = "" if value is None else str(value)
+    text = text.replace("\r\n", "\n").replace("\r", "\n").strip()
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "..."
+
+
+def _agent_toml_candidates(root: Path, agent_name: str | None) -> list[Path]:
+    agent_dir = root / ".codex" / "agents"
+    if not agent_dir.exists():
+        return []
+    candidates = sorted(agent_dir.glob("*.toml"))
+    if not agent_name:
+        return candidates
+    preferred = [path for path in candidates if path.stem == agent_name]
+    return preferred + [path for path in candidates if path not in preferred]
+
+
+def _structured_lenses_from_public_toml(payload: dict[str, Any]) -> list[dict[str, str]]:
+    lens_values: Any = None
+    for container_key in ("extensions", "moe"):
+        container = payload.get(container_key)
+        if isinstance(container, dict):
+            lens_values = container.get("expert_lenses") or container.get("lenses")
+            if lens_values:
+                break
+    lenses: list[dict[str, str]] = []
+    if isinstance(lens_values, list):
+        for item in lens_values:
+            if isinstance(item, dict):
+                lens_id = _safe_short(item.get("id") or item.get("name") or item.get("label"), 80)
+                label = _safe_short(item.get("label") or item.get("name") or lens_id, 120)
+                description = _safe_short(item.get("description") or item.get("purpose") or "", 220)
+            else:
+                lens_id = _safe_short(item, 80)
+                label = lens_id
+                description = ""
+            if not lens_id or not label:
+                continue
+            lenses.append({"id": lens_id, "label": label, "description": description})
+    return lenses
+
+
+def load_public_expert_lenses(root: Path, agent_name: str | None) -> dict[str, Any]:
+    source = {
+        "type": "safe_default",
+        "agent_toml_checked": False,
+        "agent_toml_path": None,
+        "private_prompt_source_read": False,
+        "developer_instructions_copied": False,
+    }
+    if tomllib is None:
+        return {"lenses": list(DEFAULT_EXPERT_LENSES), "source": {**source, "token": "blocked:tomllib_unavailable"}}
+    for path in _agent_toml_candidates(root, agent_name):
+        try:
+            payload = tomllib.loads(path.read_text(encoding="utf-8-sig"))
+        except Exception:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        observed_name = str(payload.get("name") or path.stem)
+        if agent_name and observed_name != agent_name and path.stem != agent_name:
+            continue
+        structured_lenses = _structured_lenses_from_public_toml(payload)
+        source.update(
+            {
+                "type": "public_agent_toml" if structured_lenses else "public_agent_toml_with_safe_default_lenses",
+                "token": "ok",
+                "agent_toml_checked": True,
+                "agent_toml_path": norm(path.relative_to(root)) if root in path.parents else str(path),
+                "agent_name": observed_name,
+                "agent_description": _safe_short(payload.get("description"), 220),
+                "private_prompt_source_read": False,
+                "developer_instructions_copied": False,
+            }
+        )
+        return {"lenses": structured_lenses or list(DEFAULT_EXPERT_LENSES), "source": source}
+    return {"lenses": list(DEFAULT_EXPERT_LENSES), "source": {**source, "token": "ok"}}
+
+
+def generate_expert_brief_preview(config: dict[str, Any], lenses: list[dict[str, Any]], templates: list[dict[str, Any]]) -> str:
+    lens = lenses[0] if lenses else DEFAULT_EXPERT_LENSES[0]
+    template = templates[0] if templates else EXPERT_TASK_TEMPLATES[0]
+    return "\n".join(
+        [
+            "Project MOE Expert Brief (draft only; no model execution)",
+            f"Project: {config.get('runtime_project_root') or config.get('target_project_root') or '<target-project>'}",
+            f"Agent: {config.get('agent_name') or '<agent>'}",
+            f"State namespace: {config.get('state_namespace') or '<namespace>'}",
+            f"Expert lens: {lens.get('label')}",
+            f"Task template: {template.get('label')}",
+            "",
+            "Review target / objective:",
+            "<paste target text, file path, or revision objective here>",
+            "",
+            "Instructions:",
+            str(template.get("prompt") or ""),
+            "",
+            "Output format:",
+            "1. Key finding",
+            "2. Evidence or missing evidence",
+            "3. Recommended revision",
+            "4. Follow-up question",
+        ]
+    )
+
+
+def build_expert_workbench(config: dict[str, Any], root: Path) -> dict[str, Any]:
+    lens_payload = load_public_expert_lenses(root, str(config.get("agent_name") or ""))
+    lenses = list(lens_payload.get("lenses") or DEFAULT_EXPERT_LENSES)
+    templates = list(EXPERT_TASK_TEMPLATES)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "mode": "brief_generation_only",
+        "title": "Expert Workbench",
+        "subtitle": "Generate a safe Project MOE expert brief without starting Codex, subagents, or model APIs.",
+        "lenses": lenses,
+        "task_templates": templates,
+        "default_lens_id": lenses[0]["id"] if lenses else None,
+        "default_template_id": templates[0]["id"] if templates else None,
+        "brief_preview": generate_expert_brief_preview(config, lenses, templates),
+        "copy_action": {
+            "id": "copy_brief_to_clipboard",
+            "label": "Copy brief",
+            "persistence": "clipboard_only",
+            "writes_git": False,
+            "writes_disk": False,
+        },
+        "execution_policy": {
+            "starts_codex": False,
+            "starts_subagents": False,
+            "calls_model_api": False,
+            "writes_target_project_state": False,
+            "gui_direct_state_write": False,
+        },
+        "persistence_policy": {
+            "runtime_memory": True,
+            "clipboard": True,
+            "disk_default": False,
+            "git_default": False,
+        },
+        "privacy_boundary": {
+            "private_prompt_source_read": False,
+            "private_prompt_body_copied": False,
+            "developer_instructions_copied": False,
+            "raw_session_id_exposed": False,
+            "source": lens_payload.get("source"),
+        },
     }
 
 
@@ -777,6 +998,7 @@ def describe_window_structure() -> dict[str, Any]:
             {"id": "status_overview_cards", "purpose": "Qt Quick Material cards for project status, effective state, runtime, and visual shell status"},
             {"id": "project_default_card", "purpose": "project-default effective state and explicit on/off controls"},
             {"id": "session_table", "purpose": "session effective state, invalid/empty/load-failed states, and selected-session controls"},
+            {"id": "expert_workbench", "purpose": "brief-only MOE expert lens selection, task-template drafting, runtime preview, and clipboard copy"},
             {"id": "diagnostics_card", "purpose": "readiness blockers, Qt Quick/QML shell status, optional QFluent legacy dependency status, and suggested next actions"},
             {"id": "footer", "purpose": "read-only refresh status and GUI/runtime readiness"},
         ],
@@ -877,6 +1099,7 @@ def build_view_model(
             "items": [
                 {"id": "overview", "label": "Project", "icon": "Home", "target_region": "status_overview_cards"},
                 {"id": "sessions", "label": "Sessions", "icon": "People", "target_region": "session_table"},
+                {"id": "workbench", "label": "Expert Workbench", "icon": "Edit", "target_region": "expert_workbench"},
                 {"id": "diagnostics", "label": "Diagnostics", "icon": "Info", "target_region": "diagnostics_card"},
                 {"id": "settings", "label": "Settings", "icon": "Setting", "target_region": "footer"},
             ]
@@ -927,6 +1150,7 @@ def build_view_model(
             pending_scope_key=pending_scope_key,
         ),
         "session_table": session_table,
+        "expert_workbench": build_expert_workbench(config, root),
         "refresh_action": build_refresh_plan(config, project_root=root),
         "runtime": {
             "pyside6_status": pyside6_status,
@@ -967,7 +1191,7 @@ def build_view_model(
             "readback_required_after_write": True,
         },
         "keyboard_navigation": {
-            "tab_order": ["refresh", "project-on", "project-off", "session-table", "session-on", "session-off"],
+            "tab_order": ["refresh", "project-on", "project-off", "session-table", "session-on", "session-off", "expert-workbench", "copy-brief"],
             "shortcuts": KEYBOARD_SHORTCUTS,
             "focus_policy": "buttons_and_session_table_are_keyboard_reachable",
         },
