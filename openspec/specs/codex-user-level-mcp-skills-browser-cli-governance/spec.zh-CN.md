@@ -314,3 +314,46 @@ Stage B split marker note: the Browser/CLI adapter lane contains only chrome-dev
 - **WHEN** `python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json` runs
 - **THEN** it SHALL accept only canonical Browser/CLI adapter rows.
 - **AND** it SHALL reject non-adapter lane entries.
+
+### Requirement: Runtime promotion ladder SHALL separate project-level governance from user-level runtime
+
+本治理族 SHALL 对 CLI-Anything/WXWork_CLI、Browser/CLI adapters 与 Codex harnesses 使用共享 R0-R5 runtime promotion ladder。该 ladder SHALL 保持本包 not installed/started/enabled in this package，并 SHALL 防止任何 lane 在缺少精确 marker evidence 时声明 runtime readiness。
+
+Runtime stages SHALL 含义如下：
+
+- R0 project-level preflight：仅非变异 source/environment/risk inventory。
+- R1 project-level fake/dry-run runtime：仅 deterministic fixture 或 dry-run behavior。
+- R2 reusable project-level helper/guard：repo-local reusable guard/helper pattern，不是 user-level global install。
+- R3 user-level install/update receipt：需要 `installed-user-level`、explicit authorization、immutable pin、install/update receipt、smoke command、updater command、rollback pointer、owner lane 与 redacted path evidence。
+- R4 user-level smoke runtime：需要 `smoke-tested`、bounded help/status/read-only smoke evidence、timeout release、redaction 与 rollback readiness。
+- R5 active-candidate / bounded live handoff：需要 `active-candidate`、current authorization receipt、owner/global lease、target/action allowlist、expiry、timeout release、rollback pointer、action 或 changed-path report 与 cleanup evidence。
+
+#### Scenario: Runtime promotion markers are missing
+
+- **WHEN** `python tools/check_user_level_cli_anything_wxwork_cli_governance.py --root . --json`、`python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json` 或 `python tools/check_codex_harnesses_governance.py --root . --json` 运行
+- **THEN** 如果 parent plan、child plan 或 stable spec 不再保留 R0/R1/R2/R3/R4/R5 stage markers，checker SHALL fail closed
+- **AND** 如果 promotion contract 移除了 `installed-user-level`、`smoke-tested` 或 `active-candidate` marker evidence，checker SHALL fail closed
+
+#### Scenario: Runtime work is attempted in the planning package
+
+- **WHEN** runtime promotion package 只更新 plans、checkers、tests 与 stable spec text
+- **THEN** 它 SHALL 声明 CLI-Anything、WXWork_CLI、browser adapters、Pi、oh-my-pi 与 harness runtime are not installed/started/enabled in this package
+- **AND** 它 SHALL NOT 在缺少 receipts 时声明 R3/R4/R5 runtime evidence
+
+#### Scenario: WXWork_CLI send action is requested before R5
+
+- **WHEN** 在 `active-candidate` R5 evidence 存在之前考虑 WXWork_CLI send behavior
+- **THEN** 该 lane SHALL fail closed
+- **AND** send action allowed only at R5 SHALL 要求 global WXWork lease、explicit operator authorization、target/action allowlist、message redaction、ephemeral message handling、session match、future expiry、timeout release、rollback/stop evidence 与 sanitized post-run action report
+
+#### Scenario: Browser adapter sensitive action is requested before R5
+
+- **WHEN** 在 R5 evidence 存在之前考虑 chrome-devtools-mcp、CDP Bridge 或 OpenCLI click/type/navigate/JavaScript/cookie/raw-browser-data behavior
+- **THEN** 该 lane SHALL fail closed
+- **AND** R5 SHALL 要求 owner lease + authorization receipt、target/action allowlist 与 sanitized action reporting
+
+#### Scenario: Codex harness sidecar attempts takeover
+
+- **WHEN** Pi 或 oh-my-pi sidecar behavior 试图替代 Codex、native subagents、native_omx、LangGraph、codex-ohmy、apply_patch、local-main-first gates 或 main Codex CLI leader session
+- **THEN** harness lane SHALL fail closed
+- **AND** R5 仍 SHALL 要求 isolated worktree、read guard、write guard、job state、no Codex takeover、changed-path report、rollback 与 cleanup evidence

@@ -59,12 +59,12 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: Stage B split governance implementation is implemented-local; validation and local-main integration are the current gate.
-Owner session: main Codex leader owns the serialized shared hotspots for this Stage B package: parent plan, child plans, stable spec, docs registry, CI manifest, safety registry, and OpenSpec guard wiring.
-Current gate: run focused split-governance tests, precommit/archive review, OpenSpec guard, shared local gate, and local MR review; then merge this package through the local-main-first helper and stop at the remote-publication approval gate.
-Split result: the historical mixed `user_level_mcp_skills_browser_cli_governance_plan` and `user_level_mcp_skills_discovery_facade_plan` files are deleted after their active checker/test/spec duties moved to three child plans: `user_level_cli_anything_wxwork_cli_governance_plan`, `user_level_browser_cli_adapter_boundary_plan`, and `codex_harnesses_governance_plan`.
+Stage: Stage C runtime promotion governance 已针对三个重建 lane implemented-local；validation 与 local-main integration 是当前 gate。
+Owner session: main Codex leader 拥有本 Stage C package 的 serialized shared hotspots：parent plan、child plans、stable spec、checker/test updates、docs registry references、CI manifest references、safety registry references 与 OpenSpec guard wiring。
+Current gate: 运行 focused runtime-promotion checker tests、precommit/archive review、OpenSpec guard、shared local gate 与 local MR review；之后通过 local-main-first helper 合入，并停在 remote-publication approval gate。
+Runtime promotion result: CLI-Anything/WXWork_CLI、Browser/CLI adapters 与 Codex harnesses 现在共享明确的 R0 project-level preflight、R1 project-level fake/dry-run runtime、R2 reusable project-level helper/guard、R3 user-level install/update receipt、R4 user-level smoke runtime、R5 active-candidate / bounded live handoff gates。本包不 install、start、enable、smoke-run 或 live-run 任何 runtime。
 MCP/skills CLI carry-forward: `skills2cli` and `mcp2cli` remain implemented user-level install surfaces governed by `tools/install_user_level_mcp_skills_cli.py`; the upstream runtime source is `knowsuchagency/mcp2cli`, verified through markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`; rollback pointer, update receipt, and native-subagent=false boundaries stay checker-backed.
-Remote state: this implementation package does not authorize remote publication.
+Remote state: 本 implementation package 不授权 remote publication。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -247,6 +247,27 @@ This follow-up is a serialized hotspot package. It touches startup summaries, `A
 | Slice 8 | 既有 Phase 7 集成方案 | Phase 7 | evidence collection 可并行；registry、OpenSpec 与 local-main retire 保持串行。 | docs registry、stable specs、CI manifest、local-main lock |
 
 旧来源方案继续保留 baseline marker 和 implementation-state 历史，供 `check_user_level_mcp_skills_browser_cli_baseline.py` 使用。未来 runtime 实现必须认领拥有对应 lane 的提取后子方案。
+
+## Runtime Promotion Ladder Matrix
+
+本次包只更新 runtime promotion ladder 的治理、checker、测试与稳定 OpenSpec 要求；本包不安装、不启动、不启用、不执行 smoke，也不 live-run CLI-Anything、WXWork_CLI、browser adapter、Pi、oh-my-pi 或任何 harness runtime。
+
+| Runtime stage | 治理层级 | 含义 | 并行/session 规则 | 进入下一阶段前证据 |
+| --- | --- | --- | --- | --- |
+| R0 project-level preflight | 项目级 | 非变异 source、环境、路径、风险与 lane-readiness 盘点。 | 每个 implementation_plan 同一时间一个 session；父方案、docs registry、CI manifest、safety registry、稳定 OpenSpec 是串行 hotspot。 | source URLs、source pin plan、retrieved_at、no install/run evidence、已脱敏 preflight transcript。 |
+| R1 project-level fake/dry-run runtime | 项目级 | 用 deterministic fixture 或 dry-run 证明 guard 行为，不产生真实 GUI/browser/Pi 副作用。 | lane session 只有在测试/checker 写入集不重叠时并行；共享 fixture schema 需要 lease。 | dry-run/fake receipt、no live process/browser/Pi mutation、focused tests。 |
+| R2 reusable project-level helper/guard | 可复用项目级 | repo-local helper/guard pattern 可被其他项目复用，但仍不是用户级全局安装。 | helper/checker ownership 归所属 child implementation_plan；共享 receipt/redaction primitives 串行。 | reusable schema、redaction contract、rollback model、local gate、changed-path report。 |
+| R3 user-level install/update receipt | 用户级 | 只有具备显式授权、immutable pin、install/update receipt、smoke command、updater command、rollback pointer、owner lane evidence 后，才可记录 installed-user-level。 | 用户级 install/update path 是全局 hotspot，需要显式 operator authorization 且同时只有一个 installer session。 | installed-user-level receipt、source pin、path hashes、smoke plan、update plan、rollback pointer、无 raw secret/private path output。 |
+| R4 user-level smoke runtime | 用户级 | smoke-tested runtime 只证明已安装 wrapper 可以响应安全 help/status/read-only probe。 | smoke run 需要所属 child plan claim；适用时还要 owner/global lease。 | smoke-tested receipt、bounded command transcript、timeout release、redaction evidence、rollback readiness。 |
+| R5 active-candidate / bounded live handoff | 用户级 active-candidate | 只有 R4 之后，且有当前 operator authorization、owner/global lease、target/action allowlist、expiry、timeout release、rollback 与 redaction evidence，才可 one-task live handoff。 | 同一 target 的 live handoff 不得并行；target owner/global lease 串行化。 | active-candidate receipt、lease id、authorization receipt、action scope、rollback pointer、changed-path 或 action report、post-run cleanup evidence。 |
+
+Lane-specific R5 约束：
+
+- CLI-Anything/WXWork_CLI：WXWork_CLI 的 send action allowed only at R5；必须有 global WXWork lease、explicit operator authorization、target/action allowlist、message redaction、ephemeral message handling、timeout release 与 rollback/stop evidence。更早阶段保持 no-send 与 no-message-content。
+- Browser/CLI adapters：chrome-devtools-mcp、CDP Bridge 与 OpenCLI 的 sensitive actions 必须有 owner lease + authorization receipt；R4 只允许 help/status/read-only smoke，R5 才是 one-task bounded live handoff。
+- Codex harnesses：Pi/oh-my-pi 只能作为 sidecar active-candidate；不得替代 Codex、native subagents、native_omx、LangGraph、codex-ohmy、apply_patch 或 local-main-first gates。
+
+状态标记是累积且精确的：R3 记录 `installed-user-level`，R4 记录 `smoke-tested`，R5 记录 `active-candidate`。缺少对应 marker evidence 的 lane 必须停留在该 runtime stage 以下。
 
 ## 阶段与子方案拆分
 
@@ -453,6 +474,7 @@ This follow-up is a serialized hotspot package. It touches startup summaries, `A
 - [x] Stage B decomposition：把 MCP/skills/browser/CLI 来源 lane 提取为分阶段子 implementation_plan，而不是把旧来源方案直接挂成父方案子方案。
 - [x] Stage B decomposition：更新 Phase 7 集成子方案，使其覆盖提取后 MCP lane 的 docs registry、checker/CI 与 OpenSpec/Comet archive 职责。
 - [x] Stage B follow-up: create and register the Phase 2 prompt-canary canonical visible marker restore child plan before runtime/checker implementation.
+- [x] Stage C runtime promotion：为 CLI-Anything/WXWork_CLI、Browser/CLI adapters 与 Codex harnesses 加入共享 R0-R5 runtime ladder，且不 install、start、enable、smoke-run 或 live-run 任何 runtime。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -480,10 +502,12 @@ Stage B 后续确认后的验收条件：
 - 后续同机多 session 目标是 session 自主负责自己的提交和本地 `main` 合入，并用 `local-main-retire` lock 保持本地 `main` 写入串行。
 - `--self-retire` 缺少有效 ready ROB entry 时必须 fail before merge，不能把 ROB retire metadata 当作 post-merge best-effort。
 - Phase 4 子方案必须保持已确认的会话表面分工：`Routing trace` 是固定标签加 `key=value` 字段的普通文本诊断行；`Updated Plan` 是用户可见的树状 `✔`/`□` 进度面板；Markdown `- [x]` / `- [ ]` checkbox 只保留在 implementation plan 文件内部做任务追踪。解释内容可以使用中文；内部工具名、schema key、阈值 token、blocker token、文件名和 CLI 参数可保持 ASCII。
+- Stage C runtime promotion 验收：父方案与三个子方案必须要求 R0 project-level preflight、R1 project-level fake/dry-run runtime、R2 reusable project-level helper/guard、R3 `installed-user-level`、R4 `smoke-tested`、R5 `active-candidate`，同时声明本包不 install/start/enable/smoke/live-run runtime。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 Stage C runtime promotion package：branch `runtime-promotion-plan-20260605` 加入共享 R0-R5 runtime promotion ladder，更新三个 child plans、stable spec、checker markers 与 tests，并把实际 install/start/enable/smoke/live runtime work 留在本包之外。
 - 2026-06-01 progress-surface boundary confirmation：分支 `document-progress-surface-boundary-20260601` 记录操作者确认的分工：`Routing trace` 保持普通文本 `key=value` 诊断行；`Updated Plan` 是唯一用户可见进度面板，使用树状 `✔`/`□`；Markdown checkbox 继续作为 implementation plan 内部任务追踪模式。
 - 2026-05-31 ROB retire preflight implementation: 分支 `harden-rob-retire-preflight-20260531` 已新增 self-retire ROB 前置硬门、focused RED/GREEN 覆盖和 CI manifest 登记；更广本地门禁仍需在 local-main 集成前运行。
 - 2026-05-31 ROB retire 前置硬门治理：发现 `--self-retire` 缺少对应 ROB entry 时，旧 helper 会在 fast-forward merge 后才因 retire metadata 报错；本次重开 Phase 1A hardening，要求 ROB entry ready 与 gate 状态在 acquire lock / rollback ref / merge 前 fail closed。

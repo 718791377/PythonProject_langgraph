@@ -61,10 +61,10 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Stage B split governance implementation is implemented-local; validation and local-main integration are the current gate.
-Owner session: main Codex leader owns the serialized shared hotspots for this Stage B package: parent plan, child plans, stable spec, docs registry, CI manifest, safety registry, and OpenSpec guard wiring.
-Current gate: run focused split-governance tests, precommit/archive review, OpenSpec guard, shared local gate, and local MR review; then merge this package through the local-main-first helper and stop at the remote-publication approval gate.
-Split result: the historical mixed `user_level_mcp_skills_browser_cli_governance_plan` and `user_level_mcp_skills_discovery_facade_plan` files are deleted after their active checker/test/spec duties moved to three child plans: `user_level_cli_anything_wxwork_cli_governance_plan`, `user_level_browser_cli_adapter_boundary_plan`, and `codex_harnesses_governance_plan`.
+Stage: Stage C runtime promotion governance is implemented-local for the three rebuilt lanes; validation and local-main integration are the current gate.
+Owner session: main Codex leader owns the serialized shared hotspots for this Stage C package: parent plan, child plans, stable spec, checker/test updates, docs registry references, CI manifest references, safety registry references, and OpenSpec guard wiring.
+Current gate: run focused runtime-promotion checker tests, precommit/archive review, OpenSpec guard, shared local gate, and local MR review; then merge this package through the local-main-first helper and stop at the remote-publication approval gate.
+Runtime promotion result: CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses now share explicit R0 project-level preflight, R1 project-level fake/dry-run runtime, R2 reusable project-level helper/guard, R3 user-level install/update receipt, R4 user-level smoke runtime, and R5 active-candidate / bounded live handoff gates. This package does not install, start, enable, smoke-run, or live-run any of those runtimes.
 MCP/skills CLI carry-forward: `skills2cli` and `mcp2cli` remain implemented user-level install surfaces governed by `tools/install_user_level_mcp_skills_cli.py`; the upstream runtime source is `knowsuchagency/mcp2cli`, verified through markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`; rollback pointer, update receipt, and native-subagent=false boundaries stay checker-backed.
 Remote state: this implementation package does not authorize remote publication.
 <!-- CURRENT_STATUS_END -->
@@ -247,6 +247,26 @@ The older `user_level_mcp_skills_browser_cli_governance_plan.md` and `user_level
 | Codex harnesses | `codex_harnesses_governance_plan` | project-level harness model first, reusable project-level guard next, user-level Pi/oh-my-pi runtime only after receipt-backed promotion | `https://blog.can.ac/2026/02/12/the-harness-problem`; `https://github.com/can1357/oh-my-pi`; `https://pi.dev/`; `https://pi.dev/packages` | Can run in parallel with sibling plans only while avoiding docs registry, CI manifest, OpenSpec spec, and shared checker hotspots. | Add Codex harness checker/fixtures; migrate Pi/oh-my-pi reference-sidecar content; keep Codex as primary controller. |
 
 Stage A is a docs-only governance confirmation package. It creates the new plan topology and records source links, but it does not delete old plans because current local gates still include checkers hardcoded to the historical source plan paths. Stage B owns checker/test/OpenSpec migration and the final deletion of the old source plan files.
+## Runtime Promotion Ladder Matrix
+
+This package adds a runtime promotion ladder for the three rebuilt lanes. It updates governance, checkers, tests, and stable OpenSpec requirements only; it does not install, start, enable, smoke-run, or live-run CLI-Anything, WXWork_CLI, browser adapters, Pi, oh-my-pi, or any harness runtime in this package.
+
+| Runtime stage | Governance level | Meaning | Parallel/session rule | Required evidence before next stage |
+| --- | --- | --- | --- | --- |
+| R0 project-level preflight | project-level | Non-mutating source, environment, path, risk, and lane-readiness inventory. | One session per implementation_plan; parent plan, docs registry, CI manifest, safety registry, and stable OpenSpec are serialized hotspots. | source URLs, source pin plan, retrieved_at, no install/run evidence, and preflight transcript with secrets redacted. |
+| R1 project-level fake/dry-run runtime | project-level | Deterministic fixtures or dry-run commands that prove guard behavior without real GUI/browser/Pi side effects. | Lane sessions may run in parallel only when tests/checkers are disjoint; shared fixture schemas are leased. | dry-run/fake receipt, no live process/browser/Pi mutation, and focused tests. |
+| R2 reusable project-level helper/guard | reusable project-level | Repo-local helper or guard pattern can be reused by other projects without becoming a user-level global install. | Helper/checker ownership is per child implementation_plan; shared receipt/redaction primitives remain serialized. | reusable schema, redaction contract, rollback model, local gate, and changed-path report. |
+| R3 user-level install/update receipt | user-level | A user-level wrapper or runtime is only recorded as installed-user-level after explicit authorization, immutable pin, install/update receipt, smoke command, updater command, rollback pointer, and owner lane evidence exist. | User-level install/update paths are global hotspots and require explicit operator authorization plus one active installer session. | installed-user-level receipt, source pin, path hashes, smoke plan, update plan, rollback pointer, and no raw secret/private path output. |
+| R4 user-level smoke runtime | user-level | Bounded smoke-tested runtime proves the installed wrapper can answer a safe help/status/read-only probe. | Smoke runs require the owning child plan claim plus owner/global lease where applicable. | smoke-tested receipt, bounded command transcript, timeout release, redaction evidence, and rollback readiness. |
+| R5 active-candidate / bounded live handoff | user-level active-candidate | One-task live handoff is eligible only after R4, with current operator authorization, owner/global lease, target/action allowlist, expiry, timeout release, rollback, and redaction evidence. | Live handoff is never parallel on the same target; the target owner/global lease serializes it. | active-candidate receipt, lease id, authorization receipt, action scope, rollback pointer, changed-path or action report, and post-run cleanup evidence. |
+
+Lane-specific R5 constraints:
+
+- CLI-Anything/WXWork_CLI: WXWork_CLI may consider a send action allowed only at R5, after global WXWork lease, explicit operator authorization, target/action allowlist, message redaction, ephemeral message handling, timeout release, and rollback/stop evidence. Earlier stages remain no-send and no-message-content.
+- Browser/CLI adapters: chrome-devtools-mcp, CDP Bridge, and OpenCLI sensitive actions require owner lease + authorization receipt; R4 may smoke only help/status/read-only probes, and R5 is one-task bounded live handoff.
+- Codex harnesses: Pi/oh-my-pi can become only a sidecar active-candidate; it must not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, or local-main-first gates.
+
+Status markers are cumulative and exact: R3 records `installed-user-level`, R4 records `smoke-tested`, and R5 records `active-candidate`. If a lane lacks the marker evidence, it must stay below that runtime stage.
 ## Phase and Child-Plan Breakdown
 
 ### Phase 0: Inventory and Parent Orchestration
@@ -368,9 +388,9 @@ Admission: all eligible validation sessions may prepare evidence in parallel, bu
 | Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Shared receipt/redaction/rollback contract remains the common promotion gate for user-level surfaces. |
 | Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local | Port and browser-owner primitives remain shared prerequisites for Browser/CLI adapters and OpenCLI. |
 | Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | migration-source; Stage B delete target | Existing mcp2cli/skills2cli implementation remains valid, but this plan file is no longer a child execution owner after the rebuild. |
-| Phase 6 | `user_level_cli_anything_wxwork_cli_governance_plan` | planned Stage A split target | Owns CLI-Anything and WXWork_CLI through CLI-Anything controlling `WXWork.exe`; not harnesses. |
-| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | implemented-local; Stage A reclassified | Owns only chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; temporary compatibility rows are removed in Stage B. |
-| Phase 6 | `codex_harnesses_governance_plan` | planned Stage A split target | Owns Codex harnesses fork/governance from The Harness Problem, oh-my-pi, Pi, and Pi packages references. |
+| Phase 6 | `user_level_cli_anything_wxwork_cli_governance_plan` | implemented-local; Stage C runtime promotion documented | Owns CLI-Anything and WXWork_CLI through CLI-Anything controlling `WXWork.exe`; not harnesses. |
+| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | implemented-local; Stage C runtime promotion documented | Owns only chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; temporary compatibility rows are removed in Stage B. |
+| Phase 6 | `codex_harnesses_governance_plan` | implemented-local; Stage C runtime promotion documented | Owns Codex harnesses fork/governance from The Harness Problem, oh-my-pi, Pi, and Pi packages references. |
 | Phase 7 | integration child plans | active | Registry, checker/CI, OpenSpec, and local-main integration hotspots remain serial. |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
@@ -436,6 +456,7 @@ Each child plan must include:
 - [x] Stage B follow-up: create and register the Phase 2 prompt-canary canonical visible marker restore child plan before implementation.
 - [x] Stage A rebuild: create the CLI-Anything/WXWork_CLI child plan, Browser/CLI adapter reclassification, and Codex harnesses child plan.
 - [x] Stage B rebuild: migrate checker/tests/OpenSpec wiring and delete `user_level_mcp_skills_discovery_facade_plan.*` plus `user_level_mcp_skills_browser_cli_governance_plan.*` after gates no longer depend on them.
+- [x] Stage C runtime promotion: add the R0-R5 shared runtime ladder for CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses without installing, starting, enabling, smoke-running, or live-running any runtime.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -463,10 +484,12 @@ Stage B acceptance after later confirmation:
 - The later same-machine multi-session target is for sessions to own their own commits and local `main` integration while `local-main-retire` locking keeps local `main` writes serial.
 - `--self-retire` must fail before merge when no valid ready ROB entry exists; ROB retire metadata must not remain a post-merge best-effort action.
 - Phase 4 child plans must preserve the confirmed conversation-surface split: `Routing trace` is a plain-text diagnostic line with fixed label plus `key=value` fields; `Updated Plan` is the user-visible tree-style progress panel with checkmark/open-square status markers; Markdown `- [x]` / `- [ ]` checkboxes stay only inside implementation-plan files for task tracking. Explanatory text may be Chinese, while internal tool names, schema keys, threshold tokens, blocker tokens, file names, and CLI arguments may remain ASCII.
+- Stage C runtime promotion acceptance: the parent and three child plans must require R0 project-level preflight, R1 project-level fake/dry-run runtime, R2 reusable project-level helper/guard, R3 `installed-user-level`, R4 `smoke-tested`, and R5 `active-candidate`, while stating that this package does not install/start/enable/smoke/live-run runtimes.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 Stage C runtime promotion package: branch `runtime-promotion-plan-20260605` adds the shared R0-R5 runtime promotion ladder, updates the three child plans, stable spec, checker markers, and tests, and keeps actual installation/start/enable/smoke/live runtime work out of this package.
 - 2026-06-01 progress-surface boundary confirmation: branch `document-progress-surface-boundary-20260601` records the operator-confirmed split: `Routing trace` stays a plain-text `key=value` diagnostic line, `Updated Plan` is the only user-visible progress panel rendered with tree-style checkmark/open-square status markers, and Markdown checkboxes remain the implementation-plan-internal task tracking mode.
 - 2026-05-31 ROB retire preflight implementation: branch `harden-rob-retire-preflight-20260531` adds the self-retire ROB preflight hard gate, focused RED/GREEN coverage, and CI manifest registration; broader local gates remain pending before local-main integration.
 - 2026-05-31 ROB retire preflight governance: found that the old helper could fast-forward merge before failing retire metadata when `--self-retire` lacked the matching ROB entry; this reopens Phase 1A hardening and requires ready ROB entry plus gate state to fail closed before lock acquisition, rollback-ref creation, or merge.

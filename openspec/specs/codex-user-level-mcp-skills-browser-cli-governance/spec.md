@@ -819,3 +819,46 @@ The harness lane SHALL require source ledger rows with source pin, retrieved_at,
 - **WHEN** `python tools/check_codex_harnesses_governance.py --root . --json` runs
 - **THEN** it SHALL verify all four source URLs and the source-ledger fields
 - **AND** it SHALL verify no Codex takeover, read guard, write guard, job state, isolated worktree, changed-path report, and unpinned Pi packages boundaries
+
+### Requirement: Runtime promotion ladder SHALL separate project-level governance from user-level runtime
+
+The governance family SHALL use the shared R0-R5 runtime promotion ladder for CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses. The ladder SHALL keep this package not installed/started/enabled in this package and SHALL prevent a lane from claiming runtime readiness without the exact marker evidence.
+
+Runtime stages SHALL mean:
+
+- R0 project-level preflight: non-mutating source/environment/risk inventory only.
+- R1 project-level fake/dry-run runtime: deterministic fixture or dry-run behavior only.
+- R2 reusable project-level helper/guard: repo-local reusable guard/helper pattern, not a user-level global install.
+- R3 user-level install/update receipt: requires `installed-user-level`, explicit authorization, immutable pin, install/update receipt, smoke command, updater command, rollback pointer, owner lane, and redacted path evidence.
+- R4 user-level smoke runtime: requires `smoke-tested`, bounded help/status/read-only smoke evidence, timeout release, redaction, and rollback readiness.
+- R5 active-candidate / bounded live handoff: requires `active-candidate`, current authorization receipt, owner/global lease, target/action allowlist, expiry, timeout release, rollback pointer, action or changed-path report, and cleanup evidence.
+
+#### Scenario: Runtime promotion markers are missing
+
+- **WHEN** `python tools/check_user_level_cli_anything_wxwork_cli_governance.py --root . --json`, `python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json`, or `python tools/check_codex_harnesses_governance.py --root . --json` runs
+- **THEN** the checker SHALL fail closed if the parent plan, child plan, or stable spec no longer preserves R0/R1/R2/R3/R4/R5 stage markers
+- **AND** the checker SHALL fail closed if `installed-user-level`, `smoke-tested`, or `active-candidate` marker evidence is removed from the promotion contract
+
+#### Scenario: Runtime work is attempted in the planning package
+
+- **WHEN** a runtime promotion package only updates plans, checkers, tests, and stable spec text
+- **THEN** it SHALL state that CLI-Anything, WXWork_CLI, browser adapters, Pi, oh-my-pi, and harness runtime are not installed/started/enabled in this package
+- **AND** it SHALL NOT claim R3/R4/R5 runtime evidence without receipts
+
+#### Scenario: WXWork_CLI send action is requested before R5
+
+- **WHEN** WXWork_CLI send behavior is considered before `active-candidate` R5 evidence exists
+- **THEN** the lane SHALL fail closed
+- **AND** a send action allowed only at R5 SHALL require global WXWork lease, explicit operator authorization, target/action allowlist, message redaction, ephemeral message handling, session match, future expiry, timeout release, rollback/stop evidence, and sanitized post-run action report
+
+#### Scenario: Browser adapter sensitive action is requested before R5
+
+- **WHEN** chrome-devtools-mcp, CDP Bridge, or OpenCLI click/type/navigate/JavaScript/cookie/raw-browser-data behavior is considered before R5 evidence exists
+- **THEN** the lane SHALL fail closed
+- **AND** R5 SHALL require owner lease + authorization receipt plus target/action allowlist and sanitized action reporting
+
+#### Scenario: Codex harness sidecar attempts takeover
+
+- **WHEN** Pi or oh-my-pi sidecar behavior attempts to replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, local-main-first gates, or the main Codex CLI leader session
+- **THEN** the harness lane SHALL fail closed
+- **AND** R5 SHALL still require isolated worktree, read guard, write guard, job state, no Codex takeover, changed-path report, rollback, and cleanup evidence

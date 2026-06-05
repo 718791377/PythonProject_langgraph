@@ -29,9 +29,9 @@ Codex CLI、Git worktrees、JSON job state、Python guard/checker scripts、Open
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local; Stage B source-ledger/checker/spec migration is complete and remote publication remains closed.
-Runtime boundary: Codex harnesses are governance wrappers around future harness jobs; they do not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, or local-main-first publication gates.
-Implementation evidence: `tools/check_codex_harnesses_governance.py` requires source ledger rows, source pin, retrieved_at, license note, rollback pointer, no Codex takeover, unpinned Pi packages rejection, read guard, write guard, job state, isolated worktree, and changed-path report markers.
+Status: implemented-local；Stage B source-ledger/checker/spec migration 已完成；Stage C runtime-promotion ladder 已文档化并 checker-backed；remote publication remains closed。
+Runtime boundary: Codex harnesses 是 future harness jobs 外围的 governance wrappers；它们不替代 Codex、native subagents、native_omx、LangGraph、codex-ohmy、apply_patch 或 local-main-first publication gates。本包不 install Pi/oh-my-pi、不 start Pi runtime、不 enable harness sidecar，也不把该 lane 标记为 installed-user-level/smoke-tested/active-candidate。Runtime promotion 保持 not installed/started/enabled in this package。
+Implementation evidence: `tools/check_codex_harnesses_governance.py` 要求 source ledger rows、source pin、retrieved_at、license note、rollback pointer、no Codex takeover、unpinned Pi packages rejection、read guard、write guard、job state、isolated worktree、changed-path report markers 与 R0-R5 runtime promotion markers。
 <!-- CURRENT_STATUS_END -->
 
 ## Source Ledger
@@ -53,6 +53,21 @@ Implementation evidence: `tools/check_codex_harnesses_governance.py` requires so
 | 3 | 用户级 | Pi/oh-my-pi install-record、update-record、rollback-plan、smoke plan | 明确用户授权并通过 project-level guard |
 | 4 | 用户级 active-candidate | 有界 read-only Pi/oh-my-pi smoke 或 sidecar handoff | isolated worktree、job state、no takeover、changed-path report |
 
+## Runtime Promotion Ladder
+
+本 lane 使用共享 R0-R5 ladder；本包仍然 not installed/started/enabled in this package。
+
+| Runtime stage | 层级 | Codex harnesses 范围 | 证据门禁 |
+| --- | --- | --- | --- |
+| R0 project-level preflight | 项目级 | 刷新 The Harness Problem、oh-my-pi、Pi、Pi packages source ledger；只检查 package/runtime assumptions，不 install Pi 或 oh-my-pi。 | Source URLs、source pin plan、retrieved_at、license note、rollback pointer、no Codex takeover。 |
+| R1 project-level fake/dry-run runtime | 项目级 | 只运行 fake Pi job fixtures 与 deterministic read guard/write guard checks。 | Fake job state、read guard、write guard、no live Pi runtime、no Codex launcher mutation。 |
+| R2 reusable project-level helper/guard | 可复用项目级 | 保持 job state、isolated worktree、changed-path report、redaction、rollback 的可复用 harness guard/checker schemas。 | Guard schema、local tests、local gate、changed-path report。 |
+| R3 user-level install/update receipt | 用户级 | 只有显式授权、immutable source/package pin、install/update receipt、smoke command、updater command、rollback pointer、owner lane 与 path hashes 齐备后，才记录 Pi/oh-my-pi install/update。 | `installed-user-level` receipt、package pin、no unpinned Pi packages、no launcher takeover。 |
+| R4 user-level smoke runtime | 用户级 | 只运行 bounded read-only Pi/oh-my-pi smoke 或 sidecar status probe；不运行 write-capable harness job。 | `smoke-tested` receipt、read guard、job state、timeout release、redaction、rollback readiness。 |
+| R5 active-candidate / bounded live handoff | 用户级 active-candidate | active sidecar candidate 只可在 Codex leader ownership 下运行一个 bounded harness job。 | `active-candidate` receipt、isolated worktree、read guard、write guard、job state、no Codex takeover、changed-path report、rollback/cleanup evidence。 |
+
+Codex harnesses active sidecar 不得替代 Codex、native subagents、native_omx、LangGraph、codex-ohmy、apply_patch、local-main-first publication gates 或当前 main Codex CLI leader session。
+
 ## 文件归属
 
 本子方案拥有 Codex harness governance docs、未来 `codex_harnesses_governance` checker/guard、Pi/oh-my-pi source ledgers、job-state schemas 与 read-only/write guard tests。它不拥有 CLI-Anything、WXWork_CLI、chrome-devtools-mcp、cdp-bridge-mcp 或 OpenCLI。
@@ -70,6 +85,7 @@ Implementation evidence: `tools/check_codex_harnesses_governance.py` requires so
 - [x] Stage B: add source ledger requirements for source pin, retrieved_at, license note, and rollback pointer.
 - [x] Stage B: add checker/spec coverage for no Codex takeover, no unpinned Pi packages, read guard, write guard, job state, isolated worktree, and changed-path report.
 - [x] Stage B: wire checker/tests into CI manifest, safety registry, and OpenSpec guard.
+- [x] Stage C runtime promotion：加入 R0-R5 Codex harnesses ladder、fake Pi job dry-run boundary、installed-user-level/smoke-tested/active-candidate markers，以及 no-takeover active sidecar gates。
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B 待迁移工作
@@ -87,9 +103,11 @@ Implementation evidence: `tools/check_codex_harnesses_governance.py` requires so
 - Pi/oh-my-pi 只能作为 reference 或 user-level sidecar candidate，永远不是 Codex launcher。
 - 没有 receipt、pin、smoke、rollback、redaction 与 no-takeover evidence，不启用任何 user-level runtime。
 - 未来任何 write-capable harness path 都需要 isolated worktree ownership 与 changed-path reporting。
+- Codex harnesses runtime promotion 必须明确：R0/R1/R2 保持项目级或可复用项目级；R3 需要 `installed-user-level`；R4 需要 `smoke-tested`；R5 需要 `active-candidate`、isolated worktree、job state、read/write guards、changed-path report 与 no Codex takeover。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 Stage C runtime promotion evidence：branch `runtime-promotion-plan-20260605` 记录 Codex harnesses 的 R0-R5 promotion gates，保持 Pi/oh-my-pi sidecar runtime not installed/started/enabled，并 checker-back no-takeover active sidecar constraints。
 - 2026-06-04 Stage B implementation evidence: `tools/check_codex_harnesses_governance.py` and `test/check_codex_harnesses_governance.test.py` verify the harness-only lane, source ledger, no-takeover boundary, read/write guards, job state, isolated worktree, changed-path report, and no unpinned Pi packages.
 <!-- EVIDENCE_INDEX_END -->

@@ -29,10 +29,10 @@ Python guard scripts, JSON receipts, local tests, CI manifest entries, docs regi
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local; Stage B checker/test/spec migration is complete and remote publication remains closed.
+Status: implemented-local; Stage B checker/test/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; remote publication remains closed.
 Owner session: the main Codex leader owns this implementation package and the shared CI/spec/docs-registry hotspots.
-Runtime boundary: no helper installs, clones, runs CLI-Anything, probes WXWork.exe, reads message content, sends messages, controls GUI state, mutates user-level Codex config, or performs live API/Webhook calls.
-Implementation evidence: `tools/cli_anything_governance.py` now exposes `adapter-plan` and `adapter-generation` fields; `tools/wxwork_cli_governance.py` is the canonical WXWork_CLI guard; focused tests cover no hard-load skills, no message-content, global lease, operator authorization, timeout release, rollback pointer, and dry-run-only dispatch.
+Runtime boundary: no helper installs, clones, runs CLI-Anything, probes WXWork.exe, reads message content, sends messages, controls GUI state, mutates user-level Codex config, or performs live API/Webhook calls in this package. Runtime promotion remains not installed/started/enabled in this package until R3/R4/R5 receipts are produced.
+Implementation evidence: `tools/cli_anything_governance.py` now exposes `adapter-plan` and `adapter-generation` fields; `tools/wxwork_cli_governance.py` is the canonical WXWork_CLI guard; focused tests cover no hard-load skills, no message-content, global lease, operator authorization, timeout release, rollback pointer, dry-run-only dispatch, and R0-R5 runtime promotion markers.
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -53,6 +53,21 @@ Implementation evidence: `tools/cli_anything_governance.py` now exposes `adapter
 | 3 | user-level | install/update receipt and wrapper dry-run for CLI-Anything / WXWork_CLI | explicit user-level authorization, smoke pass, rollback pointer |
 | 4 | user-level active-candidate | bounded WXWork.exe dry-run or live handoff candidate | operator confirmation, global lease, expiry, rollback, no message body exposure |
 
+## Runtime Promotion Ladder
+
+This lane uses the shared R0-R5 ladder and remains not installed/started/enabled in this package.
+
+| Runtime stage | Level | CLI-Anything/WXWork_CLI scope | Evidence gate |
+| --- | --- | --- | --- |
+| R0 project-level preflight | project-level | Inventory CLI-Anything source, planned WXWork_CLI wrapper shape, Windows path assumptions, and `WXWork.exe` availability without cloning, installing, probing processes, or reading messages. | Source URL, source pin plan, retrieved_at, non-mutating environment probe, no install/run transcript. |
+| R1 project-level fake/dry-run runtime | project-level | Use fake receipts and dry-run adapter-plan / gui-plan / gui-check fixtures only. | Dry-run dispatch evidence, `gui_control_performed=false`, `runs_cli_anything=false`, no message-content. |
+| R2 reusable project-level helper/guard | reusable project-level | Keep `tools/cli_anything_governance.py` and `tools/wxwork_cli_governance.py` as reusable guard patterns with redaction, lease, authorization, timeout release, and rollback pointer checks. | Focused tests, local gate, reusable receipt schema, changed-path report. |
+| R3 user-level install/update receipt | user-level | Record CLI-Anything or WXWork_CLI wrapper install/update only after explicit authorization, immutable source pin, install/update receipt, smoke command, updater command, rollback pointer, owner lane, and path hashes. | `installed-user-level` receipt; no raw install/wrapper/state paths; no automatic Codex config mutation. |
+| R4 user-level smoke runtime | user-level | Run only bounded help/status/dry-run smoke for the installed wrapper. WXWork GUI remains no-send and no-message-content. | `smoke-tested` receipt, bounded transcript, global lease if GUI target is named, timeout release, rollback readiness. |
+| R5 active-candidate / bounded live handoff | user-level active-candidate | A one-task WXWork_CLI live handoff may include a send action allowed only at R5. | `active-candidate` receipt, global WXWork lease, explicit operator authorization, target/action allowlist, message redaction, ephemeral message handling, session match, future expiry, timeout release, rollback/stop evidence, and post-run action report. |
+
+R5 send boundary: any WXWork_CLI send action remains forbidden before R5; even at R5 it must not expose raw message-content in repository evidence, must use a target/action allowlist, must keep message payloads ephemeral/redacted, and must preserve rollback/stop evidence.
+
 ## File Ownership
 
 This child plan owns future CLI-Anything and WXWork_CLI governance docs, guards, tests, receipts, and source-reference checks. It does not own chrome-devtools-mcp, cdp-bridge-mcp, OpenCLI, Pi, oh-my-pi, or Codex harnesses.
@@ -72,16 +87,17 @@ One session may claim this implementation plan at a time. Other sessions may wor
 - [x] Stage B: rename active WeCom helper/test surfaces to canonical `WXWork_CLI`.
 - [x] Stage B: add checker coverage for source URL, adapter-plan semantics, no-message-content, global lease, operator authorization, timeout release, rollback pointer, and dry-run boundaries.
 - [x] Stage B: update CI manifest, safety registry, and OpenSpec guard registration.
+- [x] Stage C runtime promotion: add R0-R5 project-first/user-level ladder, installed-user-level/smoke-tested/active-candidate markers, and R5-only WXWork_CLI send-action gates.
 <!-- TASK_BACKLOG_END -->
 
-## Pending Stage B Migration Work
+## Stage B Closure Notes
 
-- Add a dedicated CLI-Anything/WXWork_CLI surface checker.
-- Split CLI-Anything tests out of generic CDP/OpenCLI coverage.
-- Rename active WeCom surfaces to canonical `WXWork_CLI` while preserving archive history.
-- Add no-message-content, global lease, operator authorization, timeout-release, rollback, and dry-run checks.
-- Update CI manifest and OpenSpec guard registration.
-- Remove old source plans after checkers no longer require them.
+- Dedicated CLI-Anything/WXWork_CLI surface checker coverage is in place.
+- CLI-Anything tests are split out of generic CDP/OpenCLI coverage.
+- Active WeCom surfaces have moved to canonical `WXWork_CLI` naming while archive history remains preserved.
+- No-message-content, global lease, operator authorization, timeout-release, rollback, and dry-run checks are checker-backed.
+- CI manifest and OpenSpec guard registration are updated.
+- Old source plans have been removed after checkers no longer require them.
 
 ## Implemented Contract
 
@@ -97,9 +113,11 @@ One session may claim this implementation plan at a time. Other sessions may wor
 - Active docs use `WXWork_CLI` for the future WXWork.exe control lane.
 - No helper installs, clones, runs, probes, reads messages, sends messages, or controls WXWork.exe without receipt-backed authorization.
 - User-level promotion is blocked until project-level guards pass locally.
+- Runtime promotion is explicit: R0/R1/R2 stay project-level or reusable project-level; R3 requires `installed-user-level`; R4 requires `smoke-tested`; R5 requires `active-candidate` and is the only stage where a WXWork_CLI send action may be considered.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 Stage C runtime promotion evidence: branch `runtime-promotion-plan-20260605` records R0-R5 promotion gates for CLI-Anything/WXWork_CLI, keeps this package not installed/started/enabled, and checker-backs R5-only send action controls.
 - 2026-06-04 Stage B implementation evidence: `tools/cli_anything_governance.py`, `tools/wxwork_cli_governance.py`, `test/cli_anything_governance.test.py`, `test/wxwork_cli_governance.test.py`, and `tools/check_user_level_cli_anything_wxwork_cli_governance.py` implement and verify the split lane.
 <!-- EVIDENCE_INDEX_END -->

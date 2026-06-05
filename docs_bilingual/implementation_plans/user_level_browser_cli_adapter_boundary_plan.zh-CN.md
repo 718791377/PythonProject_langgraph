@@ -28,11 +28,11 @@ Python adapter guard、`codex-port`、browser owner registry、chrome-devtools-m
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local; Stage B checker/test/spec migration is complete and remote publication remains closed.
-Current gate: validate the new split adapter checker, focused adapter tests, precommit/archive review, OpenSpec guard, local gate, and local MR review before local `main` integration.
-Canonical adapter set: exactly `chrome-devtools-mcp`, `cdp-bridge-mcp` / `CDP Bridge`, and `OpenCLI`.
-Runtime boundary: this repo-local package does not install tools, start browsers, call sensitive MCP methods, read cookies, execute JavaScript, mutate browser/GUI state, or mutate user-level runtime state.
-Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py` rejects CLI-Anything, WXWork_CLI, WXWork.exe, wecom-cli, and harness wording in adapter lane tables; `test/check_user_level_browser_cli_adapter_boundary.test.py` and existing chrome/CDP/OpenCLI tests cover the lane.
+Status: implemented-local；Stage B checker/test/spec migration 已完成；Stage C runtime-promotion ladder 已文档化并 checker-backed；remote publication remains closed。
+Current gate: local `main` integration 前验证 split adapter checker、focused adapter tests、precommit/archive review、OpenSpec guard、local gate 与 local MR review。
+Canonical adapter set: exactly `chrome-devtools-mcp`、`cdp-bridge-mcp` / `CDP Bridge` 与 `OpenCLI`。
+Runtime boundary: 本 repo-local package 不 install tools、不 start browsers、不 call sensitive MCP methods、不 read cookies、不 execute JavaScript、不 mutate browser/GUI state、不 mutate user-level runtime state，也不把任何 adapter 标记为 installed-user-level/smoke-tested/active-candidate。Runtime promotion 保持 not installed/started/enabled in this package。
+Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py` 拒绝 adapter lane tables 里的 CLI-Anything、WXWork_CLI、WXWork.exe、wecom-cli 与 harness wording；`test/check_user_level_browser_cli_adapter_boundary.test.py` 以及既有 chrome/CDP/OpenCLI tests 覆盖该 lane 与 R0-R5 runtime promotion markers。
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -53,6 +53,21 @@ Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py
 | 3 | 用户级 | wrapper install/update receipt、smoke、rollback plan | 明确授权并通过项目级 guard |
 | 4 | 用户级 active-candidate | 有界 adapter live start 或 action handoff | owner lease、authorization receipt、expiry、redaction、rollback evidence |
 
+## Runtime Promotion Ladder
+
+本 lane 使用共享 R0-R5 ladder；本包仍然 not installed/started/enabled in this package。
+
+| Runtime stage | 层级 | Browser/CLI adapter 范围 | 证据门禁 |
+| --- | --- | --- | --- |
+| R0 project-level preflight | 项目级 | 盘点 chrome-devtools-mcp、cdp-bridge-mcp / CDP Bridge、OpenCLI sources、package managers、port ranges 与 owner-profile assumptions；不 install、不 launch、不 connect、不读取 browser data。 | Source URLs、source pin plan、non-mutating environment probe、owner/port risk notes。 |
+| R1 project-level fake/dry-run runtime | 项目级 | 运行 owner lease、codex-port、CDP action classification 与 OpenCLI start preflight 的 deterministic dry-run fixtures。 | `start_performed=false`、`connect_performed=false`、无 cookie/raw browser data、focused tests。 |
+| R2 reusable project-level helper/guard | 可复用项目级 | 保持 chrome-devtools-mcp、CDP Bridge、OpenCLI 的可复用项目级 guard，并强制 owner lease + authorization receipt。 | Guard schema、redaction contract、local gate、changed-path report。 |
+| R3 user-level install/update receipt | 用户级 | 每个 adapter 只有具备显式授权、immutable pin、package/source URL、install/update receipt、smoke command、updater command、rollback pointer、owner lane 与 path hashes 后才记录 install/update。 | `installed-user-level` receipt；没有显式用户级授权不得修改 Codex config。 |
+| R4 user-level smoke runtime | 用户级 | 只对已安装 adapter 运行 bounded help/status/read-only smoke；不执行 sensitive click/type/navigate/JavaScript/cookie/raw-browser-data action。 | `smoke-tested` receipt、命名 browser target 时需要 owner lease、timeout release、redaction、rollback readiness。 |
+| R5 active-candidate / bounded live handoff | 用户级 active-candidate | one-task live adapter handoff 才可在 owner lease + authorization receipt 下执行 sensitive actions。 | `active-candidate` receipt、owner lease + authorization receipt、target/action allowlist、expiry、rollback pointer、action transcript redaction、cleanup evidence。 |
+
+Sensitive browser actions 在 R5 之前保持 blocked。R5 中 click/type/navigate/JavaScript/cookie/raw-browser-data 操作必须有当前 owner evidence、explicit authorization receipt、target/action allowlist 与 sanitized action reporting。
+
 ## 文件归属
 
 本子方案拥有 Browser/CLI adapter 文档、未来 adapter scope checker 更新、chrome-devtools-mcp/CDP/OpenCLI guard 测试与 source-reference 检查。它不拥有 CLI-Anything、WXWork_CLI、企业微信、Pi、oh-my-pi 或 Codex harnesses。
@@ -72,23 +87,22 @@ Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py
 - [x] Stage B: replace the old mixed baseline checker with the split adapter checker.
 - [x] Stage B: add negative coverage for CLI-Anything, WXWork_CLI, WXWork.exe, wecom-cli, and harness terms in adapter lane tables.
 - [x] Stage B: update CI manifest, safety registry, and OpenSpec guard wiring.
+- [x] Stage C runtime promotion：加入 R0-R5 Browser/CLI adapter ladder、installed-user-level/smoke-tested/active-candidate markers，以及 R5 sensitive actions 的 owner lease + authorization receipt gates。
 <!-- TASK_BACKLOG_END -->
 
-## Stage B 待迁移工作
+## Stage B Closure Notes
 
-- 更新 adapter checker/tests，使其只接受三个 canonical adapters。
-- 为 CLI-Anything、WXWork_CLI、WXWork.exe、wecom-cli 与 harness wording 添加 adapter lane 负向覆盖。
-- 更新 CI manifest、safety registry 与 OpenSpec guard wiring。
-- checker 迁移后移除 temporary legacy compatibility markers。
-- planned Stage B checker migration remains pending outside this closed backlog。
-
+- Adapter checker/tests 现在只接受三个 canonical adapters。
+- Negative coverage 会拒绝 adapter lane tables 中的 CLI-Anything、WXWork_CLI、WXWork.exe、wecom-cli 与 harness wording。
+- CI manifest、safety registry 与 OpenSpec guard wiring 已更新。
+- Temporary legacy compatibility markers 已从 adapter lane ownership 中移除。
 ## 已实现合约
 
 - `tools/chrome_devtools_mcp_managed.py` 保持 chrome-devtools-mcp on-demand：isolated-session 与 project-profile plans 是 dry-run，live start 需要 install receipt evidence，repo-local MVP 仍推迟实际浏览器启动。
 - `tools/cdp_bridge_governance.py` 允许 read-only tab inventory 不带敏感授权，但 click、type、navigate、JavaScript execution、cookie read、raw browser data access 与 unknown actions 必须有 owner evidence 加 authorization receipt，否则 fail closed。
 - `tools/opencli_governance.py` 保持 OpenCLI on-demand，要求 `--port auto`，验证 sanitized `codex-port` lease evidence，target-bound actions 需要 owner evidence，sensitive actions 需要 authorization receipts，并且即使存在 install receipt evidence 也推迟 live start。
-- 临时迁移说明：`tools/cli_anything_governance.py` 保持 CLI-Anything generation-first、阻止 hard-load skills，并将迁移到 CLI-Anything/WXWork_CLI 子方案。
-- 临时迁移说明：`tools/wecom_cli_governance.py` 过去保持 `wecom-cli` API/Webhook-first，具备 global lease、operator confirmation、timeout release 与 dry-run evidence；Stage B 会把 active surfaces 重命名为 `WXWork_CLI` 并迁移到 CLI-Anything/WXWork_CLI 子方案。
+- Sibling-lane note：`tools/cli_anything_governance.py` 与 `tools/wxwork_cli_governance.py` 归 CLI-Anything/WXWork_CLI child plan，不归 Browser/CLI adapter lane。
+- Legacy note：`wecom-cli` active helper ownership 已移除；archive references 仅保留历史用途。
 
 ## Adapter lane status
 
@@ -110,10 +124,12 @@ Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py
 - CLI-Anything/WXWork_CLI 与 Codex harnesses 只作为 sibling plans 或 temporary migration inputs 出现。
 - 没有 receipt、owner、rollback 与 redaction evidence，不启用任何 sensitive runtime action。
 - 本地 main 集成保持串行，remote publication 仍需显式授权。
+- Browser/CLI adapter runtime promotion 必须明确：R0/R1/R2 保持项目级或可复用项目级；R3 需要 `installed-user-level`；R4 需要 `smoke-tested`；R5 需要 `active-candidate`、owner lease + authorization receipt 与 sensitive actions 的 target/action allowlist。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-05 Stage C runtime promotion evidence：branch `runtime-promotion-plan-20260605` 记录 chrome-devtools-mcp、CDP Bridge 与 OpenCLI 的 R0-R5 promotion gates，同时保持本包 not installed/started/enabled。
 - 2026-06-01: `user_level_browser_cli_adapter_boundary_plan` implementation evidence recorded branch `implement-user-level-browser-cli-adapter-boundary-20260601` for the earlier mixed adapter package.
 - 2026-06-04 Stage B implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py`, `test/check_user_level_browser_cli_adapter_boundary.test.py`, and existing chrome/CDP/OpenCLI tests verify the Browser/CLI adapter lane and reject CLI-Anything/WXWork_CLI, WXWork.exe, wecom-cli, and harness wording in adapter lane tables.
 <!-- EVIDENCE_INDEX_END -->
