@@ -416,8 +416,9 @@ Lane-specific R5 约束：
 | Phase 2 | `context_retention_canary_literal_boundary_plan` | implemented and locally integrated | Context-retention canary literal-boundary checking entered local `main` at `b779d51`. |
 | Phase 2 | `launcher_payload_context_boundary_plan` | implemented and locally integrated | Launcher payload file-backed boundary hardening entered local `main` at `6f1ef48`. |
 | Phase 2 | `startup_mojibake_utf8_recovery_plan` | implemented and locally integrated | Startup mojibake recovery source-report repair entered local `main` at `43d3ae9`. |
-| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implementation-complete local candidate | Restored startup-summary-defined canonical visible canary semantics, legacy ASCII classification, and replay/model-context blocking; final repository gates precede local `main` integration. |
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implemented-local | 恢复 canonical visible canary，并约束 replay/model-context blocking。 |
 | Phase 4 | `stop_slop_caveman_response_density_runtime_plan` | active；checker/runtime 待实现 | Stop-Slop/Caveman 响应密度检查器和受保护 rewrite runtime 方案。 |
+| Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | active；checker/runtime 待实现 | gstack 风格 Codex delivery-loop 检查器和受保护 dry-run runtime 方案。 |
 | Phase 5 | `comet_management_record_bootstrap_plan` | implemented and locally integrated | Local `main` includes closeout commit `8b8bfd6`; management records, checklist gates, monitoring return state, safe paths, and archive evidence are covered by focused Comet runtime tests. |
 | Phase 5 | `comet_runtime_policy_checker_alignment_plan` | implemented and locally integrated | Local `main` includes closeout commit `3335b67`; stable specs, policy checker, runtime tests, and CI registration are aligned. |
 | Phase 5 | `comet_monitoring_return_transition_plan` | implemented and locally integrated | Local `main` includes closeout commit `05d22bd`; return transitions and monitoring blocked/needs-decision gates are verified. |
@@ -494,7 +495,8 @@ Lane-specific R5 约束：
 - [x] Stage C runtime promotion：为 CLI-Anything/WXWork_CLI、Browser/CLI adapters 与 Codex harnesses 加入共享 R0-R5 runtime ladder，且不 install、start、enable、smoke-run 或 live-run 任何 runtime。
 - [x] Stage D real-runtime classification: update ten runtime lanes, add `user_level_mcp_skills_cli_runtime_plan`, and mark all real install/start/smoke/live execution as pending future runtime work.
 - [x] Stage A follow-up: record canary response-position contract in parent/child plans before runtime/checker work.
-- [x] Stage B follow-up: update startup summaries, stable spec, diagnostics, and tests to enforce first-visible start and last-visible end.
+- [x] Stage B follow-up: enforce first-visible start and last-visible end.
+- [x] Stage B follow-up: create and register the gstack Codex delivery-loop child plan before checker/runtime work.
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -528,6 +530,7 @@ Stage B 后续确认后的验收条件：
 
 - 2026-06-06 canary response-position Stage B package: branch `implement-hardcode-canary-response-position-20260606` implements startup-summary wording, spec, diagnostics, and RED/GREEN tests for first-visible start and last-visible end; Stage A is already in local `main`.
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 gstack delivery-loop 文档包：branch `plan-gstack-codex-delivery-loop-20260606` 记录 `garrytan/gstack` 作为 Phase 4 checker/runtime 目标，并延后 install/live runtime work。
 - 2026-06-05 Stage D real-runtime classification package: branch `runtime-plan-standard-20260605` updates ten runtime lanes, creates `user_level_mcp_skills_cli_runtime_plan` as the active mcp2cli/skills2cli runtime successor, records deleted source-plan boundaries, and keeps all real install/start/smoke/live work pending future runtime implementation.
 - 2026-06-05 Stage C runtime promotion package：branch `runtime-promotion-plan-20260605` 加入共享 R0-R5 runtime promotion ladder，更新三个 child plans、stable spec、checker markers 与 tests，并把实际 install/start/enable/smoke/live runtime work 留在本包之外。
 - 2026-06-01 progress-surface boundary confirmation：分支 `document-progress-surface-boundary-20260601` 记录操作者确认的分工：`Routing trace` 保持普通文本 `key=value` 诊断行；`Updated Plan` 是唯一用户可见进度面板，使用树状 `✔`/`□`；Markdown checkbox 继续作为 implementation plan 内部任务追踪模式。
@@ -568,12 +571,9 @@ Stage B 后续确认后的验收条件：
 | --- | --- | --- | --- | --- |
 | CLI-Anything / WXWork_CLI | `user_level_cli_anything_wxwork_cli_governance_plan` | 先跑通 receipt-backed GUI control guard，再考虑用户级提升 | `https://github.com/HKUDS/CLI-Anything`；WXWork_CLI 通过 CLI-Anything 控制 `WXWork.exe` | 同一时间只能有一个 session 认领该 implementation_plan。 |
 | Browser / CLI adapters | `user_level_browser_cli_adapter_boundary_plan` | 先跑通 adapter guard 与 owner/port lease，再提升 wrapper | `https://github.com/ChromeDevTools/chrome-devtools-mcp`；`https://github.com/Unagi-cq/cdp-bridge-mcp`；`https://github.com/jackwener/OpenCLI` | 范围仅限 chrome-devtools-mcp、cdp-bridge-mcp/CDP Bridge、OpenCLI；不包含 CLI-Anything/WXWork_CLI 或 harnesses。 |
-| Codex harnesses | `codex_harnesses_governance_plan` | 先 fork Codex harness model，Pi/oh-my-pi 只作为参考与 sidecar runtime candidate | `https://blog.can.ac/2026/02/12/the-harness-problem`；`https://github.com/can1357/oh-my-pi`；`https://pi.dev/`；`https://pi.dev/packages` | 只有该 lane 使用 harnesses 名称，不替代 Codex、native_omx、LangGraph 或 `codex-ohmy`。 |
+| Codex harnesses | `codex_harnesses_governance_plan` | 先 fork Codex harness model，Pi/oh-my-pi 只作为参考与 sidecar runtime candidate | The Harness Problem `https://blog.can.ac/2026/02/12/the-harness-problem`；`https://github.com/can1357/oh-my-pi`；`https://pi.dev/`；`https://pi.dev/packages` | 只有该 lane 使用 harnesses 名称，不替代 Codex、native_omx、LangGraph 或 `codex-ohmy`。 |
 
 Stage B 迁移 checker/test/spec 后，删除 `user_level_mcp_skills_discovery_facade_plan.*` 与 `user_level_mcp_skills_browser_cli_governance_plan.*`。
 
 - 2026-06-04 Stage B implementation: split checkers/tests/spec wiring now back three child lanes; old mixed source plans are deleted from active docs registry and filesystem; remote publication remains closed.
 <!-- EVIDENCE_INDEX_END -->
-
-
-Stage B harness source marker: The Harness Problem https://blog.can.ac/2026/02/12/the-harness-problem; oh-my-pi https://github.com/can1357/oh-my-pi; Pi https://pi.dev/; Pi packages https://pi.dev/packages.
