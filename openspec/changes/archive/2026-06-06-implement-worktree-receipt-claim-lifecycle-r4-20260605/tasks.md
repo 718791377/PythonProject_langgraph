@@ -1,0 +1,5 @@
+- [x] 1. Add RED tests for lifecycle helper transitions and fail-closed cases.
+- [x] 2. Implement `tools/advance_worktree_task_lifecycle.py` with transition ledger and CLI JSON output.
+- [x] 3. Integrate complete-flow and cleanup helpers with the transition helper.
+- [x] 4. Update implementation plan pair and OpenSpec delta/stable lifecycle wording.
+- [x] 5. Run focused tests, precommit review, OpenSpec guard, local gate, local MR review, archive, and local main integration.

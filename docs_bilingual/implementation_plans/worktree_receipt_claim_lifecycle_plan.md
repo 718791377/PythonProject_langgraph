@@ -36,12 +36,12 @@ Define and enforce active, paused, ready-to-merge, merged-local-main, completed,
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C local implementation package
-Owner session: implement-worktree-receipt-claim-lifecycle-20260530
-Current gate: implement, validate, archive, commit, and merge to local main; stop at remote publication gate
-Stage C entry condition: satisfied by explicit user request on 2026-05-30 to continue this plan
-Last updated: 2026-05-30
-Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
+Stage: Stage D/R4 local runtime implementation package
+Owner session: implement-worktree-receipt-claim-lifecycle-r4-20260605
+Current gate: rebased validation, local gate, local MR review, and merge to local main; stop at remote publication gate
+Stage D entry condition: satisfied by explicit user request to continue through R4 and local main integration
+Last updated: 2026-06-06
+Companion refresh note: the zh-CN companion was refreshed in the local main baseline to replace English or mixed prose with Chinese prose while preserving runtime tokens; this R4 package preserves that companion cleanup and adds runtime lifecycle advancement.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -83,9 +83,9 @@ Receipt/claim lifecycle validation is implemented, but lifecycle advancement is 
 - [x] Document cleanup and branch deletion evidence without forcing immediate cleanup.
 - [x] Run receipt checker, local gate, local MR review, archive, and post-archive validation.
 - [x] Align receipt lifecycle states with Phase 1A ROB entry states before runtime integration.
-- [ ] Stage D real runtime: implement lifecycle advancement helper for active, paused, ready-to-merge, merged-local-main, completed, stale, superseded, and cleaned states.
-- [ ] Stage D real runtime: require every state transition to record owner, previous state, next state, evidence paths, rollback ref, and cleanup decision.
-- [ ] Stage D real runtime: integrate lifecycle advancement with local-main retire evidence without authorizing remote publication.
+- [x] Stage D real runtime: implement lifecycle advancement helper for active, paused, ready-to-merge, merged-local-main, completed, stale, superseded, and cleaned states.
+- [x] Stage D real runtime: require every state transition to record owner, previous state, next state, evidence paths, rollback ref, and cleanup decision.
+- [x] Stage D real runtime: integrate lifecycle advancement with local-main retire evidence without authorizing remote publication.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -109,6 +109,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 R4 runtime implementation package: branch `implement-worktree-receipt-claim-lifecycle-r4-20260605` adds `tools/advance_worktree_task_lifecycle.py`, integrates local-main completion and guarded cleanup transition ledgers, covers lifecycle helper tests inside the already CI-managed `test/cleanup_integrated_worktree.test.py`, avoiding the shared CI manifest hotspot, and preserves remote publication as unauthorized until an explicit GitLab/GitHub action is requested.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for active-to-ready-to-merged-to-cleaned lifecycle advancement; this package updates plan governance only and does not run live runtime.
 - 2026-05-30 validation package: focused receipt tests, receipt checker, implementation-plan checker, OpenSpec spec validation, pre-commit update/archive review, local gate, and local MR review all passed before local main integration.
 - 2026-05-30 implementation package: added `stale` receipt/claim lifecycle validation, all-state fixtures, and completion-evidence grouping; OpenSpec change `implement-worktree-receipt-claim-lifecycle-20260530` records stale as a classification state rather than cleanup or branch-deletion evidence.

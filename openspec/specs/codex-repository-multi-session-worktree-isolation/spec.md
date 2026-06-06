@@ -319,6 +319,8 @@ Both surfaces SHALL record at least the worktree path, branch, creating or takin
 
 Allowed lifecycle statuses SHALL include `active`, `paused`, `ready-to-merge`, `merged-local-main`, `cleaned`, `remote-sync-needed`, `completed`, `superseded`, and `stale`. `stale` and `superseded` SHALL classify residual or obsolete work without asserting local-main integration, cleanup, branch deletion, or remote publication. `merged-local-main`, `cleaned`, `remote-sync-needed`, and `completed` worktrees SHALL carry completion receipt fields including rollback ref, local-main commit, cleaned worktree path, deleted branch, and remote sync status.
 
+Every runtime lifecycle transition SHALL append a transition-ledger entry that records owner, previous state, next state, transition timestamp, evidence paths, rollback ref when applicable, local-main commit when applicable, cleanup decision, reason when applicable, and remote-publication authorization status.
+
 #### Scenario: New feature worktree lacks a receipt
 
 - **WHEN** `tools/check_worktree_task_receipt.py --root . --json` scans the current feature worktree
@@ -350,6 +352,35 @@ Allowed lifecycle statuses SHALL include `active`, `paused`, `ready-to-merge`, `
 - **WHEN** a worktree task receipt records `merged-local-main`, `cleaned`, `remote-sync-needed`, or `completed`
 - **THEN** the worktree task receipt checker SHALL require completion fields for rollback ref, local-main commit, cleaned worktree path, deleted branch, and remote sync status
 - **AND** it SHALL fail closed when those fields are absent or empty
+
+
+#### Scenario: Runtime helper advances active work to ready-to-merge
+
+- **WHEN** the lifecycle helper advances a branch-matching receipt and claim from `active` to `ready-to-merge`
+- **THEN** it SHALL update both local-only metadata surfaces
+- **AND** it SHALL append a transition-ledger entry with owner, previous state, next state, timestamp, evidence paths, cleanup decision, and remote-publication authorization status
+- **AND** it SHALL NOT mutate local `main` or any remote ref
+
+#### Scenario: Runtime helper records local-main merge evidence
+
+- **WHEN** the local-main flow records `ready-to-merge` to `merged-local-main`
+- **THEN** the helper SHALL require rollback ref and local-main commit evidence
+- **AND** it SHALL keep `remote_publication_authorized=false`
+- **AND** completion fields SHALL satisfy the worktree task receipt checker
+
+#### Scenario: Runtime helper records cleaned evidence
+
+- **WHEN** guarded cleanup removes an integrated worktree and deletes its merged local branch
+- **THEN** the preserved completed claim SHALL record `lifecycle_status=cleaned`
+- **AND** it SHALL record removed worktree, deleted branch, rollback ref, local-main commit, and remote sync status
+- **AND** it SHALL preserve cleanup evidence without deleting backup refs or remote refs
+
+#### Scenario: Runtime helper records exceptional lifecycle states
+
+- **WHEN** a worktree is paused, superseded, or marked stale before local-main integration
+- **THEN** the helper SHALL require a reason or evidence path
+- **AND** it SHALL append a transition-ledger entry
+- **AND** it SHALL NOT require completion fields reserved for integration or cleanup states
 
 ### Requirement: OpenSpec guard SHALL include worktree task receipt verification
 
@@ -453,9 +484,14 @@ Local-first batching SHALL NOT be used as permission to continue from a stale re
 ### Requirement: Remote publication SHALL require fresh explicit user approval
 The repository publication workflow SHALL treat automatic local `main` integration and remote publication approval as separate release decisions.
 
+Glossary:
+
+- Remote publication approval - explicit operator authorization that names a remote GitLab or GitHub publication action before any remote ref or MR mutation.
+- Generic continuation language - ordinary progress wording such as `continue`, `go on`, `proceed`, or localized equivalents; this wording means keep doing already-authorized local work, not remote publication.
+
 After automatic local `main` integration, the session SHALL report any intentional remote lag and SHALL NOT push to GitLab, create or update a GitLab MR, merge a GitLab MR, sync GitHub, delete a remote publication branch, or otherwise mutate remote refs unless the current user message or an approved release record explicitly authorizes that remote publication action.
 
-Generic continuation language such as `continue`, `go on`, `proceed`, or a localized equivalent SHALL NOT be treated as remote publication approval unless it explicitly names remote publication, GitLab push/MR/merge, GitHub sync/mirror, or an equivalent remote action.
+Generic continuation language such as `continue`, `go on`, `proceed`, or a localized equivalent SHALL NOT be treated as remote publication approval unless it explicitly names remote publication, GitLab push/MR/merge, GitHub sync/mirror, or an equivalent remote action; this policy means ordinary progress wording only continues already-authorized local work.
 
 A current user message that explicitly requests remote publication, including `push remote` Chinese wording, `publish remote`, `push remote`, `remote publication`, or `use GitLab MR then sync GitHub` Chinese wording, SHALL authorize the normal green-path remote publication sequence as one approval: GitLab publication branch push/update, GitLab MR create/update, GitLab CI wait, GitLab MR merge after green CI, GitLab `main` confirmation, GitHub `main` sync of the same intended commit, and post-publication checks.
 
@@ -516,10 +552,15 @@ The checker SHALL verify at least:
 
 #### Scenario: Completed active OpenSpec change is not archived
 
+Archive-deferral fields:
+
+- `x_archive_deferred_reason` field - records why this completed change is intentionally not archived in the current integration package.
+- `x_archive_follow_up` field - records the explicit follow-up path or task that will archive the completed change later.
+
 - **WHEN** `tools/check_precommit_update_archive.py --root . --json` scans a branch or dirty worktree
 - **AND** an active OpenSpec change touched by the current diff has all task checkboxes checked
 - **AND** the same diff does not archive that change
-- **AND** the active change does not declare both `x_archive_deferred_reason` and `x_archive_follow_up`
+- **AND** the active change does not declare both archive-deferral fields
 - **THEN** the checker SHALL fail
 - **AND** it SHALL instruct the maintainer to archive the change or record the explicit two-step follow-up before commit
 

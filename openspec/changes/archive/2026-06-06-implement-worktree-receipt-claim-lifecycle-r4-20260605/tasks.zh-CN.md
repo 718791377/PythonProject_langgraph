@@ -1,0 +1,5 @@
+- [x] 1. 为 lifecycle helper transition（生命周期辅助脚本状态转换）和 fail-closed case（失败关闭场景）增加 RED tests（先失败测试）。
+- [x] 2. 实现带 transition ledger（状态转换账本）和 CLI JSON output（命令行 JSON 输出）的 `tools/advance_worktree_task_lifecycle.py`。
+- [x] 3. 将 complete-flow helper（完整本地流程辅助脚本）和 cleanup helper（清理辅助脚本）接入 transition helper。
+- [x] 4. 更新 implementation plan pair（实施方案双语文件）和 OpenSpec delta/stable lifecycle wording（变更规格与稳定规格生命周期表述）。
+- [x] 5. 运行 focused tests（聚焦测试）、precommit review（提交前审查）、OpenSpec guard、local gate、local MR review、archive 和 local main integration。

@@ -34,10 +34,13 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；receipt/claim 生命周期校验已经存在，并能阻止未分类 feature worktree 直接进入集成。
-Current gate：本地提交、local gate、local MR review 与 guarded local-main helper；remote publication 关闭。
-Runtime boundary：当前 checker 能验证状态，但不会自动推进 active→ready→merged→cleaned，也不会自动删除 worktree 或 branch。
-Runtime gap：若要自动化 lifecycle，需要 runtime helper 执行 active→ready→merged→cleaned 状态变更，写入 completion receipt、rollback ref、local main commit、cleanup result 与 remote-sync-needed 状态。
+Status: active
+Stage: Stage D/R4 本地 runtime 实现包
+Owner session: implement-worktree-receipt-claim-lifecycle-r4-20260605
+Current gate: 完成 rebase 后验证、local gate、本地 MR review，并合入本地 main；随后停在远程发布门。
+Stage D entry condition: 已由用户明确要求继续实现到 R4 并合入本地 main。
+Last updated: 2026-06-06
+Companion refresh note: zh-CN companion 已在本地 main 基线中刷新为中文表述，同时保留 runtime tokens；本 R4 包保留该清理结果，并新增 runtime lifecycle 自动推进。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -67,9 +70,12 @@ receipt schema、claim schema、cleanup helper、complete local flow helper 与 
 现有能力是校验，不是自动推进。后续 runtime 包需要：
 
 <!-- TASK_BACKLOG_START -->
-- [x] Stage B：定义 receipt/claim 生命周期状态。
-- [x] Stage B：实现 feature worktree receipt 与 branch-matching claim 检查。
-- [x] Stage C：记录自动 lifecycle helper 仍是 pending runtime。
+- [x] Stage B：定义 receipt/claim lifecycle 状态。
+- [x] Stage B：要求 feature worktree receipt 与 branch-matching claim 对齐。
+- [x] Stage C：把 lifecycle helper 的真实推进能力标记为 pending runtime。
+- [x] Stage D/R4：实现 `active`、`paused`、`ready-to-merge`、`merged-local-main`、`completed`、`stale`、`superseded` 与 `cleaned` 状态推进 helper。
+- [x] Stage D/R4：要求每次状态转换记录 owner、previous state、next state、evidence paths、rollback ref 与 cleanup decision。
+- [x] Stage D/R4：把 local-main retire evidence 与 guarded cleanup evidence 写入 lifecycle ledger，并且不授权远程发布。
 <!-- TASK_BACKLOG_END -->
 
 ## Stage D pending runtime work（待实施真实 runtime）
@@ -95,6 +101,12 @@ receipt schema、claim schema、cleanup helper、complete local flow helper 与 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 lifecycle 推进 helper 列为 Stage D pending。
-- 2026-05-30 Stage B evidence：已有 worktree task receipt 与 session claim checker 验证 active worktree 证据。
+- 2026-06-06 R4 runtime implementation package：branch `implement-worktree-receipt-claim-lifecycle-r4-20260605` 新增 `tools/advance_worktree_task_lifecycle.py`，把 local-main completion 与 guarded cleanup transition ledger 接入 helper；测试覆盖放入已由 CI 管理的 `test/cleanup_integrated_worktree.test.py`，避免共享 CI manifest hotspot，并在未明确请求 GitLab/GitHub 操作前保持远程发布未授权。
+- 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 记录 lifecycle 推进 helper 的 Stage D pending 工作；该包只更新计划治理，不执行 live runtime。
+- 2026-05-30 Stage B evidence：worktree task receipt 与 session claim checker 已覆盖 active worktree 基线。
+- 2026-05-30 validation package：focused receipt tests、receipt checker、implementation-plan checker、OpenSpec spec validation、pre-commit update/archive review、local gate 与 local MR review 均在本地 main 集成前通过。
+- 2026-05-30 implementation package：新增 `stale` receipt/claim lifecycle 校验、全状态 fixtures 与 completion-evidence 分组；OpenSpec change `implement-worktree-receipt-claim-lifecycle-20260530` 将 stale 记录为分类状态，而不是 cleanup 或 branch-deletion evidence。
+- 2026-05-30 complete-flow alignment：receipt lifecycle 继续作为 ROB 状态来源；`ready-to-merge` 映射为 ready 候选包，`merged-local-main` 映射为 lock-backed self-retire 后的 retired evidence。
+- 2026-05-29 upstream contract supplement：引用 Phase 1A scheduler/ROB 模型作为后续 portable/receipt runtime 对齐来源。
+- 2026-05-28 Stage B child-plan creation：作为 parent multi-plan orchestration child-plan package 的一部分创建，最终 commit 记录在 assistant response 和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

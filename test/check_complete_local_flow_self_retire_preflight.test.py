@@ -225,8 +225,12 @@ class CompleteLocalFlowSelfRetirePreflightTest(unittest.TestCase):
         preserved_claim = root / ".omx" / "session-claims" / "completed" / "feature__self-retire.json"
         self.assertTrue(preserved_claim.exists())
         preserved = json.loads(preserved_claim.read_text(encoding="utf-8"))
-        self.assertEqual(preserved["status"], "completed")
+        self.assertEqual(preserved["status"], "cleaned")
+        self.assertEqual(preserved["lifecycle_status"], "cleaned")
         self.assertFalse(preserved["remote_publication_performed"])
+        self.assertEqual(preserved["completion"]["cleaned_worktree"], str(worktree))
+        self.assertEqual(preserved["completion"]["deleted_branch"], branch)
+        self.assertEqual(preserved["lifecycle_transitions"][-1]["next_state"], "cleaned")
 
     def test_standard_execute_auto_cleans_integrated_worktree_by_default(self) -> None:
         _temp, root, worktree, branch, _base_main, feature_head = self.make_repo_with_feature_worktree()
@@ -245,8 +249,12 @@ class CompleteLocalFlowSelfRetirePreflightTest(unittest.TestCase):
         preserved_claim = root / ".omx" / "session-claims" / "completed" / "feature__self-retire.json"
         self.assertTrue(preserved_claim.exists())
         preserved = json.loads(preserved_claim.read_text(encoding="utf-8"))
-        self.assertEqual(preserved["status"], "completed")
+        self.assertEqual(preserved["status"], "cleaned")
+        self.assertEqual(preserved["lifecycle_status"], "cleaned")
         self.assertEqual(preserved["remote_sync_status"], "not_authorized:remote_publication_gate_closed")
+        self.assertEqual(preserved["completion"]["cleaned_worktree"], str(worktree))
+        self.assertEqual(preserved["completion"]["deleted_branch"], branch)
+        self.assertEqual(preserved["lifecycle_transitions"][-1]["next_state"], "cleaned")
 
     def test_preserve_carrier_keeps_worktree_and_branch_after_local_merge(self) -> None:
         _temp, root, worktree, branch, _base_main, feature_head = self.make_repo_with_feature_worktree()
