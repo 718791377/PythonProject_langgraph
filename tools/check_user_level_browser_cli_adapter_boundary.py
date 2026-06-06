@@ -26,6 +26,8 @@ SPEC_ZH = Path("openspec/specs/codex-user-level-mcp-skills-browser-cli-governanc
 CI_MANIFEST = Path("tools/ci/ci_test_manifest.json")
 SAFETY_REGISTRY = Path("tools/safety_rule_script_backing_registry.json")
 GUARD_SCRIPT = Path("tools/run_openspec_guard.py")
+R4_SMOKE_RUNNER = Path("tools/run_browser_cli_adapter_smoke.py")
+R4_SMOKE_CHECKER = Path("tools/check_browser_cli_adapter_smoke_receipts.py")
 
 CANONICAL_ADAPTERS = {
     "chrome-devtools-mcp": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
@@ -61,6 +63,11 @@ REQUIRED_PLAN_MARKERS = (
     "active-candidate",
     "owner lease + authorization receipt",
     "target/action allowlist",
+    "tools/run_browser_cli_adapter_smoke.py",
+    "tools/check_browser_cli_adapter_smoke_receipts.py",
+    "browser_cli_adapter_smoke_receipts.test.py",
+    "blocked receipts",
+    "not smoke-tested",
 )
 REQUIRED_SPEC_MARKERS = (
     "Browser/CLI adapter",
@@ -89,6 +96,7 @@ REQUIRED_TESTS = {
     "chrome_devtools_mcp_managed.test.py",
     "codex_port.test.py",
     "browser_owner_registry.test.py",
+    "browser_cli_adapter_smoke_receipts.test.py",
 }
 RUNTIME_STAGE_MARKERS = (
     "R0 project-level preflight",
@@ -188,6 +196,13 @@ def check_plan_pair(root: Path, errors: list[str], info: list[str]) -> dict[str,
             "not_installed_started_enabled": "not installed/started/enabled in this package" in text.lower(),
             "r5_sensitive_gate": "owner lease + authorization receipt" in text.lower()
             and "target/action allowlist" in text.lower(),
+            "r4_smoke_surfaces": {
+                "runner": R4_SMOKE_RUNNER.as_posix() in text,
+                "checker": R4_SMOKE_CHECKER.as_posix() in text,
+                "test": "browser_cli_adapter_smoke_receipts.test.py" in text,
+                "blocked_not_smoke_tested": "blocked receipts" in text.lower()
+                and "not smoke-tested" in text.lower(),
+            },
         }
         info.append(f"{rel.as_posix()}: canonical adapter rows {canonical_hits}")
     return payload
@@ -234,6 +249,8 @@ def check_registry_guard_ci(root: Path, errors: list[str]) -> dict[str, Any]:
     guard_text = read_text(root / GUARD_SCRIPT, errors)
     if "check_user_level_browser_cli_adapter_boundary" not in guard_text:
         errors.append("openspec_guard_missing:check_user_level_browser_cli_adapter_boundary")
+    if "check_browser_cli_adapter_smoke_receipts" not in guard_text:
+        errors.append("openspec_guard_missing:check_browser_cli_adapter_smoke_receipts")
     if "check_user_level_mcp_skills_browser_cli_baseline" in guard_text:
         errors.append("openspec_guard_still_runs_old_mixed_browser_cli_baseline")
 
@@ -250,8 +267,14 @@ def check_registry_guard_ci(root: Path, errors: list[str]) -> dict[str, Any]:
                     errors.append("safety_registry_adapter_rule_missing_plan_reminders")
                 if "tools/check_user_level_browser_cli_adapter_boundary.py" not in scripts:
                     errors.append("safety_registry_adapter_rule_missing_script")
+                if R4_SMOKE_RUNNER.as_posix() not in scripts:
+                    errors.append("safety_registry_adapter_rule_missing_r4_smoke_runner")
+                if R4_SMOKE_CHECKER.as_posix() not in scripts:
+                    errors.append("safety_registry_adapter_rule_missing_r4_smoke_checker")
                 if "check_user_level_browser_cli_adapter_boundary" not in steps:
                     errors.append("safety_registry_adapter_rule_missing_guard_step")
+                if "check_browser_cli_adapter_smoke_receipts" not in steps:
+                    errors.append("safety_registry_adapter_rule_missing_r4_smoke_guard_step")
     if not rule_found:
         errors.append("safety_registry_missing:user-level-browser-cli-adapter-boundary")
     return {"missing_tests": missing_tests, "rule_found": rule_found}

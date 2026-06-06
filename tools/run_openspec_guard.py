@@ -127,6 +127,7 @@ def main() -> int:
     comet_superpowers_visibility_script = root / "tools" / "check_comet_superpowers_visibility.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
     user_level_browser_cli_adapter_boundary_script = root / "tools" / "check_user_level_browser_cli_adapter_boundary.py"
+    browser_cli_adapter_smoke_receipts_script = root / "tools" / "check_browser_cli_adapter_smoke_receipts.py"
     user_level_cli_anything_wxwork_cli_governance_script = root / "tools" / "check_user_level_cli_anything_wxwork_cli_governance.py"
     codex_harnesses_governance_script = root / "tools" / "check_codex_harnesses_governance.py"
     user_level_mcp_skills_cli_install_script = root / "tools" / "check_user_level_mcp_skills_cli_install.py"
@@ -203,6 +204,8 @@ def main() -> int:
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
     if not user_level_browser_cli_adapter_boundary_script.exists():
         raise SystemExit(f"Missing Browser/CLI adapter boundary check script: {user_level_browser_cli_adapter_boundary_script}")
+    if not browser_cli_adapter_smoke_receipts_script.exists():
+        raise SystemExit(f"Missing Browser/CLI adapter R4 smoke receipt check script: {browser_cli_adapter_smoke_receipts_script}")
     if not user_level_cli_anything_wxwork_cli_governance_script.exists():
         raise SystemExit(f"Missing CLI-Anything/WXWork_CLI governance check script: {user_level_cli_anything_wxwork_cli_governance_script}")
     if not codex_harnesses_governance_script.exists():
@@ -417,6 +420,11 @@ def main() -> int:
                 "check_user_level_browser_cli_adapter_boundary",
                 [str(python_exe), str(user_level_browser_cli_adapter_boundary_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Browser/CLI adapter boundary verification.",
+            ),
+            (
+                "check_browser_cli_adapter_smoke_receipts",
+                [str(python_exe), str(browser_cli_adapter_smoke_receipts_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Browser/CLI adapter R4 smoke receipt verification.",
             ),
             (
                 "check_user_level_cli_anything_wxwork_cli_governance",
@@ -784,6 +792,11 @@ def main() -> int:
         [str(python_exe), str(user_level_browser_cli_adapter_boundary_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Browser/CLI adapter boundary verification.",
+    )
+    run_checked(
+        [str(python_exe), str(browser_cli_adapter_smoke_receipts_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Browser/CLI adapter R4 smoke receipt verification.",
     )
     run_checked(
         [str(python_exe), str(user_level_cli_anything_wxwork_cli_governance_script), "--root", str(root)],

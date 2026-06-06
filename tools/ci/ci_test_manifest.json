@@ -61,6 +61,7 @@
     "check_local_flow_scripted_enforcement.test.py",
     "comet_runtime_management_flow.test.py",
     "check_user_level_browser_cli_adapter_boundary.test.py",
+    "browser_cli_adapter_smoke_receipts.test.py",
     "check_user_level_cli_anything_wxwork_cli_governance.test.py",
     "check_codex_harnesses_governance.test.py",
     "cli_anything_governance.test.py",

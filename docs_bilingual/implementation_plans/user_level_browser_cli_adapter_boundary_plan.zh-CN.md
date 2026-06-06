@@ -28,12 +28,12 @@ repo-local 包只提供治理、checker、adapter guard 和 test。用户级 run
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；Stage B checker/test/spec migration 已完成；Stage C runtime-promotion ladder 已记录并由 checker 支撑；Stage D real adapter runtime 尚未安装、启动、探测或启用。
-Current gate：在本地 `main` 集成前验证 split adapter checker、focused adapter tests、precommit/archive review、OpenSpec guard、local gate 与 local MR review；remote publication 保持关闭。
-Canonical adapter set：exactly `chrome-devtools-mcp`、`cdp-bridge-mcp` / `CDP Bridge` 与 `OpenCLI`。
-Runtime boundary：本 repo-local package 不安装 tools、不启动 browsers、不 call sensitive MCP methods、不 read cookies、不 execute JavaScript、不 mutate browser/GUI state、不 mutate user-level runtime。
-Runtime gap：真实 runtime 仍需要对 chrome-devtools-mcp、cdp-bridge-mcp 与 OpenCLI 做用户级 install/start/probe，写入 R3 install/update receipts、R4 help/status/port smoke receipts，以及 R5 live adapter handoff 的 owner lease + authorization receipt、target/action allowlist、redaction 与 rollback evidence。
-Implementation evidence：`tools/check_user_level_browser_cli_adapter_boundary.py` 拒绝 CLI-Anything、WXWork_CLI、WXWork.exe、旧混合命名与 harness wording 出现在 adapter lane table。
+Status: implemented-local；Stage B checker/test/spec migration 已完成；Stage C runtime-promotion ladder 已由 checker 支撑；Stage D R4 smoke receipt runner/checker 已在本地实现；remote publication 保持关闭。
+Current gate：在本地 `main` 集成前，验证 split adapter checker、R4 smoke receipt checker、focused adapter tests、precommit/archive review、OpenSpec guard、local gate 和 local MR review。
+Canonical adapter set：exactly `chrome-devtools-mcp`、`cdp-bridge-mcp` / `CDP Bridge` 和 `OpenCLI`。
+Runtime boundary：本 repo-local package 不安装 tools、不启动 browsers、不 call sensitive MCP methods、不 read cookies、不 execute JavaScript、不 mutate browser/GUI state、不 mutate user-level runtime state，也不把任何 adapter 标记为 active-candidate。R4 正向 `smoke-tested` evidence 只允许在已有 R3 install/update receipt 且 wrapper 已解析时执行 help/status/read-only；blocked receipts 只是诚实阻塞证据，not smoke-tested。
+R4 implementation evidence：`tools/run_browser_cli_adapter_smoke.py` 只为 canonical adapters 写入脱敏 R4 smoke receipts；缺少或无法解析 R3 receipt 时写 blocked receipts，not smoke-tested。`tools/check_browser_cli_adapter_smoke_receipts.py` 校验每个 canonical adapter 一份 receipt，正向 receipt 委托通用 R4 smoke contract，拒绝 sibling adapters 和 sensitive/write/browser-data markers，且不启动 browser、不修改 user-level state。`browser_cli_adapter_smoke_receipts.test.py` 覆盖 blocked、positive、negative、forbidden-adapter 和 redaction 行为。
+Runtime gap：chrome-devtools-mcp、cdp-bridge-mcp 和 OpenCLI 的真实 R3 user-level install/update receipts 仍需由另行授权的 runtime package 提供；任何 click/type/navigate/JavaScript/cookie/raw-browser-data action 的 R5 live handoff receipts 仍待后续实现。
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -119,6 +119,7 @@ Implementation evidence：`tools/check_user_level_browser_cli_adapter_boundary.p
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 R4 local smoke tooling evidence?branch `implement-browser-cli-adapter-r4-20260606` adds `tools/run_browser_cli_adapter_smoke.py`, `tools/check_browser_cli_adapter_smoke_receipts.py`, and `browser_cli_adapter_smoke_receipts.test.py`; blocked receipts are not smoke-tested.
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 chrome-devtools-mcp、cdp-bridge-mcp 与 OpenCLI 的 install/start/probe、R4 smoke 与 R5 handoff 标记为 Stage D pending；未安装、未启动、未 live-run。
 - 2026-06-04 Stage B evidence：`tools/check_user_level_browser_cli_adapter_boundary.py` 与 focused tests 已验证 adapter boundary。
 <!-- EVIDENCE_INDEX_END -->

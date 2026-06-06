@@ -669,10 +669,13 @@
         "docs_bilingual/implementation_plans/user_level_browser_cli_adapter_boundary_plan.zh-CN.md"
       ],
       "script_controls": [
-        "tools/check_user_level_browser_cli_adapter_boundary.py"
+        "tools/check_user_level_browser_cli_adapter_boundary.py",
+        "tools/run_browser_cli_adapter_smoke.py",
+        "tools/check_browser_cli_adapter_smoke_receipts.py"
       ],
       "guard_steps": [
-        "check_user_level_browser_cli_adapter_boundary"
+        "check_user_level_browser_cli_adapter_boundary",
+        "check_browser_cli_adapter_smoke_receipts"
       ],
       "description": "Keeps Browser/CLI adapters limited to chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; sibling CLI-Anything/WXWork_CLI and Codex harnesses must not enter adapter lane tables."
     },

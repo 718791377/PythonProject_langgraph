@@ -39,6 +39,7 @@ GUARD_STEPS = [
     ("check_comet_superpowers_visibility", "check_comet_superpowers_visibility.py", "comet_superpowers_visibility"),
     ("check_mcp_router_scope_policy", "check_mcp_router_scope_policy.py", "mcp_router_scope_policy"),
     ("check_user_level_browser_cli_adapter_boundary", "check_user_level_browser_cli_adapter_boundary.py", "user_level_browser_cli_adapter_boundary"),
+    ("check_browser_cli_adapter_smoke_receipts", "check_browser_cli_adapter_smoke_receipts.py", "browser_cli_adapter_smoke_receipts"),
     ("check_user_level_cli_anything_wxwork_cli_governance", "check_user_level_cli_anything_wxwork_cli_governance.py", "user_level_cli_anything_wxwork_cli_governance"),
     ("check_codex_harnesses_governance", "check_codex_harnesses_governance.py", "codex_harnesses_governance"),
     ("check_user_level_mcp_skills_cli_install", "check_user_level_mcp_skills_cli_install.py", "user_level_mcp_skills_cli_install"),
@@ -181,6 +182,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertIn("check_repo_local_selector_ownership", [step["step"] for step in payload["steps"]])
         self.assertIn("check_orchestration_collaboration_evidenceguard", [step["step"] for step in payload["steps"]])
         self.assertIn("check_local_main_retire_lock", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_browser_cli_adapter_smoke_receipts", [step["step"] for step in payload["steps"]])
         self.assertIn("check_launcher_payload_context_boundary", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:
