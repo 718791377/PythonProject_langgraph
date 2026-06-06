@@ -16,24 +16,24 @@ supersedes:
 
 ## Goal
 
-Fork a Codex-specific harnesses governance model from the listed harness/Pi references while keeping Codex as the primary controller. The model emphasizes recoverable edits, explicit failures, stateful job handling, read-only/write guards, and isolated worktrees.
+Fork a Codex-specific harnesses governance model from the listed harness/Pi references while keeping Codex as the primary controller. The refreshed model treats Codex harnesses as a candidate-registry-driven runtime boundary rather than a Pi-only wrapper: candidates can be Pi runtime packages, oh-my-pi sidecars, team-architecture factories, discipline-agent layers, or terminal agent runtimes, but every candidate must remain subordinate to the current Codex leader, local-main-first publication gates, and checker-backed read/write guards.
 
 ## Architecture
 
-Project-level governance lands first in this repository as docs, guard contracts, tests, and state schemas. Reusable project-level helpers come next. User-level Pi or oh-my-pi runtime surfaces are allowed only after project-level guards pass and receipts prove pin, smoke, rollback, redaction, and no takeover of Codex launchers.
+Project-level governance lands first in this repository as docs, guard contracts, tests, state schemas, and candidate-registry requirements. Reusable project-level helpers come next. User-level runtime surfaces are allowed only after project-level guards pass and receipts prove candidate pin, license posture, install/update evidence, read-only smoke, rollback, redaction, sensitive-command policy, and no takeover of Codex launchers or durable lanes.
 
 ## Tech Stack
 
-Codex CLI, Git worktrees, JSON job state, Python guard/checker scripts, OpenSpec, docs registry, Pi reference runtime, oh-my-pi reference UX, and user-level Codex state only after receipt-backed promotion.
+Codex CLI, Git worktrees, JSON job state, Python guard/checker scripts, OpenSpec, docs registry, candidate registry, Pi reference runtime, oh-my-pi reference UX, revfactory/harness team-factory reference patterns, ohmyopenagent discipline-agent reference patterns, snow-cli terminal-agent runtime reference patterns, and user-level Codex state only after receipt-backed promotion.
 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local; Stage B source-ledger/checker/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; Stage D real-runtime implementation is planned but not executed; remote publication remains closed.
-Runtime boundary: Codex harnesses are governance wrappers around future harness jobs; they do not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, or local-main-first publication gates. This package does not install Pi/oh-my-pi, start a Pi runtime, enable a harness sidecar, run a real harness job, or mark the lane installed-user-level/smoke-tested/active-candidate. Runtime promotion remains not installed/started/enabled in this package.
-Runtime gap: real runtime work still requires a Pi/oh-my-pi sidecar install or pinned package candidate, a harness job runner, executable read/write guards, R3 install/update receipts, R4 read-only smoke receipts, and R5 bounded live handoff receipts with isolated worktree evidence. Current R4 helper/checker work does not install, start, or live-run Pi/oh-my-pi; blocked receipts remain not smoke-tested until an R3 receipt resolves a wrapper.
-Implementation evidence: `tools/check_codex_harnesses_governance.py` requires source ledger rows, source pin, retrieved_at, license note, rollback pointer, no Codex takeover, unpinned Pi packages rejection, read guard, write guard, job state, isolated worktree, changed-path report markers, and R0-R5 runtime promotion markers. R4 local tooling now adds `tools/run_codex_harnesses_smoke.py`, `tools/check_codex_harnesses_smoke_receipts.py`, and `codex_harnesses_smoke_receipts.test.py`; without R3 install/update receipts it writes honest blocked receipts that are accepted as evidence but are not smoke-tested.
-Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
+Status: implemented-local; Stage B source-ledger/checker/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; Stage D real-runtime implementation is planned but not executed; the 2026-06-06 source refresh adds three reference-only candidates and changes the next runtime design requirement from Pi/oh-my-pi-only to candidate-registry-driven; remote publication remains closed.
+Runtime boundary: Codex harnesses are governance wrappers around future harness jobs; they do not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, or local-main-first publication gates. This package does not install Pi/oh-my-pi, clone or vendor revfactory/harness, copy ohmyopenagent or snow-cli code/config, start any sidecar, run a real harness job, or mark the lane installed-user-level/smoke-tested/active-candidate. Runtime promotion remains not installed/started/enabled in this package.
+Runtime gap: real runtime work now requires a candidate registry, selected candidate source/package pin, license/usage note, candidate adapter kind, a harness job runner, executable read/write guards, R3 install/update receipts, R4 read-only smoke receipts, and R5 bounded live handoff receipts with isolated worktree evidence. Current R4 helper/checker work remains honest local tooling, but it is not the final candidate-registry runtime and it does not install, start, or live-run Pi/oh-my-pi or any newly referenced runtime.
+Implementation evidence: `tools/check_codex_harnesses_governance.py` currently requires source ledger rows, source pin, retrieved_at, license note, rollback pointer, no Codex takeover, unpinned Pi packages rejection, read guard, write guard, job state, isolated worktree, changed-path report markers, and R0-R5 runtime promotion markers. A later Checker + Runtime package must update that checker and the smoke runner to require all seven source rows and candidate-registry evidence; this docs-only package records that requirement but does not implement it.
+Companion refresh note: the zh-CN companion is updated in the same local package to record the same reference sources and next Checker + Runtime requirements while preserving runtime tokens; no runtime behavior changed.
 <!-- CURRENT_STATUS_END -->
 
 ## Source Ledger
@@ -41,19 +41,46 @@ Companion refresh note: the zh-CN companion was refreshed in this local package 
 | Reference | URL | Source pin | retrieved_at | License note | Rollback pointer | What this Codex fork may reuse | What it must not do |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | The Harness Problem | https://blog.can.ac/2026/02/12/the-harness-problem | source pin: URL snapshot | retrieved_at: 2026-06-04 | license note: article reference only | rollback pointer: remove derived harness rules | reliability ideas, recoverable editing, explicit failure surfacing | copy unknown code or bypass repo guards |
-| oh-my-pi | https://github.com/can1357/oh-my-pi | source pin: commit/tag required before implementation | retrieved_at: 2026-06-04 | license note: inspect upstream license before reuse | rollback pointer: remove sidecar helper copy | sidecar UX, update/rollback concepts, Pi-oriented runtime ergonomics | replace Codex launcher or own provider secrets |
-| Pi | https://pi.dev/ | source pin: docs version or snapshot required | retrieved_at: 2026-06-04 | license note: docs reference only | rollback pointer: remove Pi runtime assumptions | Pi runtime/RPC reference and future smoke source | mutate current worktree without one-task authorization |
-| Pi packages | https://pi.dev/packages | source pin: package version required | retrieved_at: 2026-06-04 | license note: package license must be recorded per package | rollback pointer: remove package candidate | package discovery/update reference | install packages without pin/receipt/rollback evidence |
+| oh-my-pi | https://github.com/can1357/oh-my-pi | source pin: `d9f5a8c7ac770b91d75d6df52459bd16042936fe` on `main` as observed 2026-06-06 | retrieved_at: 2026-06-04 and refreshed 2026-06-06 | license note: inspect upstream license before reuse | rollback pointer: remove sidecar helper copy and candidate receipt | sidecar UX, update/rollback concepts, Pi-oriented runtime ergonomics, hash-anchored edit ideas | replace Codex launcher or own provider secrets |
+| Pi | https://pi.dev/ | source pin: docs version or snapshot required before runtime implementation | retrieved_at: 2026-06-04 | license note: docs reference only | rollback pointer: remove Pi runtime assumptions | Pi runtime/RPC reference and future smoke source | mutate current worktree without one-task authorization |
+| Pi packages | https://pi.dev/packages | source pin: package version required for each candidate | retrieved_at: 2026-06-04 | license note: package license must be recorded per package | rollback pointer: remove package candidate and receipt | package discovery/update reference and package pin model | install packages without pin/receipt/rollback evidence |
+| revfactory/harness | https://github.com/revfactory/harness | source pin: `b8fb858ea9209d6b0d9000e551d3dedbbacb88aa` on `main` as observed 2026-06-06 | retrieved_at: 2026-06-06 | license note: GitHub reports Apache-2.0; keep reference-only unless a later change explicitly vendors code | rollback pointer: remove team-factory candidate and derived pattern rows | team-architecture factory, domain-specific agent-team design, specialized-agent/skill generation, pipeline/fan-out/expert-pool/supervisor patterns | import its agent definitions wholesale or let generated teams replace Codex leader routing |
+| ohmyopenagent | https://github.com/ymymssss/ohmyopenagent | source pin: `4b923aaa7e7660a57623a2cf59fd92e47fced772` on default branch `feat-zh-cn-system-prompts` as observed 2026-06-06 | retrieved_at: 2026-06-06 | license note: GitHub reports NOASSERTION/Other; reference-only, no code or config copying without later license review | rollback pointer: remove discipline-agent candidate and derived prompt-boundary rows | discipline agents, intent gate, hash-anchored edit discipline, tool/MCP/skill boundary ideas, uninstall/rollback posture | copy prompts/configs or treat its governance package as installed runtime |
+| snow-cli | https://github.com/MayDay-wpf/snow-cli | source pin: `f1846e27b655832f52b1e51c190a12b58219cc71` on `main` as observed 2026-06-06 | retrieved_at: 2026-06-06 | license note: GitHub reports NOASSERTION/Other; reference-only, no code or config copying without later license review | rollback pointer: remove terminal-agent candidate and derived CLI-runtime rows | terminal agent runtime, sub-agent config, hooks/MCP, sensitive-command governance, headless/async task governance, multi-provider CLI ergonomics | run as a sidecar, mutate user config, or execute sensitive commands without explicit future authorization |
+
+## Codex Harness Redesign From The Expanded Source Set
+
+| Source family | Governance lesson | Codex harness decision |
+| --- | --- | --- |
+| The Harness Problem + oh-my-pi | Harness reliability depends on hash-anchored edits, recoverable edit records, explicit failures, update receipts, rollback, and job-state visibility. | Every runtime candidate needs immutable source/package pins, hash/path receipt material, rollback pointer, timeout release, explicit failure states, and changed-path reporting. |
+| Pi + Pi packages | Runtime/package ecosystems require version pinning, install/update receipts, smoke commands, package license capture, and rollback before promotion. | R3 is not a generic install flag; it is an installed-user-level receipt for a selected candidate id and package/source pin. R4 smoke-tested evidence must point to that R3 receipt. |
+| revfactory/harness | A harness can be a team-architecture factory that generates domain-specific agent teams and skills, not just a package runner. | The registry must model factory/team-pattern candidates and require generated-team outputs to stay advisory until Codex leader accepts them. |
+| ohmyopenagent | Discipline agents and intent gates can protect edits, tool choice, MCP boundaries, and rollback/uninstall behavior. | The registry must model discipline-layer candidates separately from runtime runners and require intent-gate/read-write-guard evidence before any write-capable handoff. |
+| snow-cli | Terminal agent runtimes need sub-agent config, hooks, MCP integration, sensitive-command policy, and headless/async task governance. | The registry must model terminal-runtime candidates with sensitive-command allowlists, hook policy, async/headless lifecycle state, and no user-config mutation by default. |
+
+Candidate registry means a machine-checkable list of possible harness candidates with stable `candidate_id`, `source_url`, `source_pin`, `license_note`, `adapter_kind`, `runtime_stage`, `allowed_actions`, `guard_profile`, `rollback_pointer`, and `receipt_paths`. It prevents future Checker + Runtime work from hard-coding Pi/oh-my-pi as the only eligible runtime family.
+
+## R0-R4 Revision Impact
+
+The earlier R4-before implementation remains valid as local governance evidence, but it is too narrow for the expanded source set. Before any real Checker + Runtime implementation proceeds, R0-R4 must be reinterpreted as candidate-registry-driven:
+
+- R0 must collect all seven source rows and reject candidates without source pin, retrieved_at, license note, and rollback pointer.
+- R1 must use fake/dry-run fixtures per candidate kind: package runtime, sidecar UX, team-factory, discipline layer, and terminal agent runtime.
+- R2 must expose reusable registry/schema/checker helpers, not Pi-only field names.
+- R3 must record installed-user-level receipts per selected candidate id and refuse NOASSERTION/Other references for code copying or config vendoring.
+- R4 must run read-only smoke/status probes through the selected candidate adapter and accept blocked receipts only as honest non-smoke-tested evidence.
+
+No existing R4 local smoke receipt is retroactively promoted to real runtime evidence by this refresh.
 
 ## Governance Level Split
 
 | Stage | Governance level | Allowed work | Promotion gate |
 | --- | --- | --- | --- |
-| 0 | project-level | reference source ledger, taxonomy, no-takeover policy | docs/OpenSpec gate |
-| 1 | project-level | harness state schema, read-only guard, write guard, fake Pi fixtures | focused tests and local gate |
+| 0 | project-level | source ledger, candidate registry, taxonomy, no-takeover policy | docs/OpenSpec gate |
+| 1 | project-level | candidate-state schema, read-only guard, write guard, fake runtime fixtures | focused tests and local gate |
 | 2 | reusable project-level | portable harness guard/checker pattern for other repos | examples and redaction checks |
-| 3 | user-level | Pi/oh-my-pi install-record, update-record, rollback-plan, smoke plan | explicit user authorization and passing project-level guard |
-| 4 | user-level active-candidate | bounded read-only Pi/oh-my-pi smoke or sidecar handoff | isolated worktree, job state, no takeover, changed-path report |
+| 3 | user-level | selected candidate install-record, update-record, rollback-plan, smoke plan | explicit user authorization and passing project-level guard |
+| 4 | user-level active-candidate | bounded read-only smoke or sidecar/terminal/factory status probe | isolated worktree, job state, no takeover, changed-path report |
 
 ## Runtime Promotion Ladder
 
@@ -61,25 +88,36 @@ This lane uses the shared R0-R5 ladder and remains not installed/started/enabled
 
 | Runtime stage | Level | Codex harnesses scope | Evidence gate |
 | --- | --- | --- | --- |
-| R0 project-level preflight | project-level | Refresh the source ledger for The Harness Problem, oh-my-pi, Pi, and Pi packages; inspect package/runtime assumptions without installing Pi or oh-my-pi. | Source URLs, source pin plan, retrieved_at, license note, rollback pointer, no Codex takeover. |
-| R1 project-level fake/dry-run runtime | project-level | Run fake Pi job fixtures and deterministic read guard/write guard checks only. | Fake job state, read guard, write guard, no live Pi runtime, no Codex launcher mutation. |
-| R2 reusable project-level helper/guard | reusable project-level | Keep reusable harness guard/checker schemas for job state, isolated worktree, changed-path report, redaction, and rollback. | Guard schema, local tests, local gate, changed-path report. |
-| R3 user-level install/update receipt | user-level | Record Pi/oh-my-pi install/update only after explicit authorization, immutable source/package pin, install/update receipt, smoke command, updater command, rollback pointer, owner lane, and path hashes. | `installed-user-level` receipt, package pin, no unpinned Pi packages, no launcher takeover. |
-| R4 user-level smoke runtime | user-level | Run bounded read-only Pi/oh-my-pi smoke or sidecar status probe through `tools/run_codex_harnesses_smoke.py`; no write-capable harness job. | `smoke-tested` receipt validated by `tools/check_codex_harnesses_smoke_receipts.py`, read guard, job state, timeout release, redaction, rollback readiness; missing R3 install receipts produce blocked receipts that are not smoke-tested. |
-| R5 active-candidate / bounded live handoff | user-level active-candidate | Active sidecar candidate may run one bounded harness job only under Codex leader ownership. | `active-candidate` receipt, isolated worktree, read guard, write guard, job state, no Codex takeover, changed-path report, rollback/cleanup evidence. |
+| R0 project-level preflight | project-level | Refresh the source ledger for The Harness Problem, oh-my-pi, Pi, Pi packages, revfactory/harness, ohmyopenagent, and snow-cli; inspect package/runtime/factory/discipline/terminal assumptions without installing or running any candidate. | Source URLs, source pin, retrieved_at, license note, rollback pointer, no Codex takeover, candidate registry entry. |
+| R1 project-level fake/dry-run runtime | project-level | Run fake candidate job fixtures and deterministic read guard/write guard checks only. | Fake Pi job or fake candidate job state, read guard, write guard, no live runtime, no Codex launcher mutation. |
+| R2 reusable project-level helper/guard | reusable project-level | Keep reusable harness guard/checker schemas for candidate registry, job state, isolated worktree, changed-path report, redaction, sensitive-command policy, hook policy, async/headless policy, and rollback. | Guard schema, local tests, local gate, changed-path report. |
+| R3 user-level install/update receipt | user-level | Record selected candidate install/update only after explicit authorization, immutable source/package pin, install/update receipt, smoke command, updater command, rollback pointer, owner lane, and path hashes. | `installed-user-level` receipt, candidate id, package/source pin, no unpinned Pi packages or unpinned registry candidates, no launcher takeover. |
+| R4 user-level smoke runtime | user-level | Run bounded read-only candidate smoke or status probe through `tools/run_codex_harnesses_smoke.py` or its future registry-driven replacement; no write-capable harness job. | `smoke-tested` receipt validated by `tools/check_codex_harnesses_smoke_receipts.py` or future registry checker, read guard, job state, timeout release, redaction, rollback readiness; missing R3 install receipts produce blocked receipts that are not smoke-tested. |
+| R5 active-candidate / bounded live handoff | user-level active-candidate | Active candidate may run one bounded harness job only under Codex leader ownership. | `active-candidate` receipt, isolated worktree, read guard, write guard, job state, no Codex takeover, changed-path report, rollback/cleanup evidence. |
 
 A Codex harnesses active sidecar must not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, local-main-first publication gates, or the current main Codex CLI leader session.
 
-Stage D pending runtime work list:
+## Next Checker + Runtime Requirements (Not Implemented In This Package)
 
-- Stage D real runtime: implement Pi/oh-my-pi sidecar install/update receipt with pinned source/package, rollback pointer, and no-Codex-takeover evidence.
-- Stage D real runtime: implement harness job runner receipts with executable read/write guards, isolated worktree evidence, changed-path reporting, cleanup, and rollback.
-- Stage D real runtime: run bounded R4 read-only smoke through `tools/run_codex_harnesses_smoke.py` and record a `smoke-tested` receipt before any R5 active-candidate handoff.
+These are follow-up implementation requirements, not completed runtime work in this package:
+
+1. Extend `tools/check_codex_harnesses_governance.py` and tests to require all seven source URLs, source pins, retrieved_at values, license notes, rollback pointers, and candidate-registry markers.
+2. Add a candidate registry schema and fixture set with candidate kinds for `pi-runtime`, `oh-my-pi-sidecar`, `team-factory`, `discipline-layer`, and `terminal-agent-runtime`.
+3. Refactor `tools/run_codex_harnesses_smoke.py` and `tools/check_codex_harnesses_smoke_receipts.py` so R4 smoke receipts include `candidate_id`, `adapter_kind`, `guard_profile`, `source_pin`, `license_note`, `sensitive_command_policy`, `hook_policy`, and async/headless lifecycle state where relevant.
+4. Keep NOASSERTION/Other references (`ohmyopenagent`, `snow-cli`) reference-only until a later license review explicitly permits copying; Apache-2.0 reference patterns (`revfactory/harness`) still require a later vendoring decision before code copy.
+5. Preserve Codex leader ownership: generated teams, discipline agents, hooks, MCP surfaces, and terminal sub-agents can advise or run bounded jobs only after Codex-selected guards pass.
+6. Ensure every R5 live handoff has owner lease, isolated worktree, read/write guard, changed-path report, timeout release, rollback pointer, cleanup evidence, and no remote publication mutation.
+
+## Stage D Pending Runtime Work List
+
+- Stage D real runtime: implement candidate-registry-backed install/update receipt with pinned source/package, rollback pointer, license posture, and no-Codex-takeover evidence.
+- Stage D real runtime: implement harness job runner receipts with executable read/write guards, isolated worktree evidence, changed-path reporting, cleanup, sensitive-command policy, hook policy, async/headless state, and rollback.
+- Stage D real runtime: run bounded R4 read-only smoke/status through a registry-backed runner and record a `smoke-tested` receipt before any R5 active-candidate handoff.
 - Stage D real runtime: gate any R5 live harness job behind current operator authorization, owner lease, target/action allowlist, timeout release, and post-run cleanup evidence.
 
 ## File Ownership
 
-This child plan owns Codex harness governance docs, future `codex_harnesses_governance` checker/guard, Pi/oh-my-pi source ledgers, job-state schemas, and read-only/write guard tests. It does not own CLI-Anything, WXWork_CLI, chrome-devtools-mcp, cdp-bridge-mcp, or OpenCLI.
+This child plan owns Codex harness governance docs, future `codex_harnesses_governance` checker/guard, source ledgers, candidate registry schemas, job-state schemas, and read-only/write guard tests. It does not own CLI-Anything, WXWork_CLI, chrome-devtools-mcp, cdp-bridge-mcp, or OpenCLI.
 
 ## Parallel Session Contract
 
@@ -89,10 +127,10 @@ One session may claim this implementation plan at a time. A separate session may
 
 This plan is not complete at the real-runtime level. The implemented-local package covers governance, checker, test, source-ledger, and R0-R2 dry-run contracts only. A later runtime package must provide:
 
-- Pi or oh-my-pi sidecar source pin, package/version pin, license record, install/update command, rollback pointer, and sanitized install/update receipt.
-- A harness job runtime that records job id, isolated worktree, requested read/write scope, read guard result, write guard result, changed paths, timeout, cleanup, and rollback evidence.
-- R3 receipt material for installed-user-level state, R4 smoke-tested read-only sidecar status/job fixture, and R5 active-candidate bounded live handoff evidence.
-- Proof that Codex remains the leader and no sidecar replaces Codex launchers, native subagents, native_omx, LangGraph, `codex-ohmy`, `apply_patch`, or local-main-first gates.
+- Candidate registry entries for each selected source family with source pin, package/version pin when applicable, license record, adapter kind, install/update command, rollback pointer, and sanitized install/update receipt.
+- A harness job runtime that records job id, candidate id, isolated worktree, requested read/write scope, read guard result, write guard result, sensitive-command policy, hooks policy, async/headless lifecycle state, changed paths, timeout, cleanup, and rollback evidence.
+- R3 receipt material for installed-user-level state, R4 smoke-tested read-only sidecar/status/job fixture, and R5 active-candidate bounded live handoff evidence.
+- Proof that Codex remains the leader and no sidecar, generated team, discipline agent, terminal CLI, or hook replaces Codex launchers, native subagents, native_omx, LangGraph, `codex-ohmy`, `apply_patch`, or local-main-first gates.
 
 ## Task Backlog
 
@@ -105,6 +143,7 @@ This plan is not complete at the real-runtime level. The implemented-local packa
 - [x] Stage B: wire checker/tests into CI manifest, safety registry, and OpenSpec guard.
 - [x] Stage C runtime promotion: add R0-R5 Codex harnesses ladder, fake Pi job dry-run boundary, installed-user-level/smoke-tested/active-candidate markers, and no-takeover active sidecar gates.
 - [x] R4 local smoke receipt tooling: add `tools/run_codex_harnesses_smoke.py`, `tools/check_codex_harnesses_smoke_receipts.py`, and `codex_harnesses_smoke_receipts.test.py`; blocked receipts are accepted but remain not smoke-tested.
+- [x] 2026-06-06 source refresh: record revfactory/harness, ohmyopenagent, and snow-cli as reference-only sources; redesign the next runtime direction as candidate-registry-driven; record Checker + Runtime follow-up requirements without implementing them.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
@@ -115,17 +154,28 @@ This plan is not complete at the real-runtime level. The implemented-local packa
 - Sidecar output remains non-actionable without read guard, write guard, job state, isolated worktree, and changed-path report evidence.
 - CI manifest, safety registry, and OpenSpec guard wiring now reference the split harness checker.
 
+## Stage E Source Refresh Notes
+
+- The added references do not invalidate the existing R0-R4 governance/checker tooling, but they do require the next Checker + Runtime implementation to stop assuming Pi/oh-my-pi are the whole runtime universe.
+- `revfactory/harness` adds a team-factory candidate kind.
+- `ohmyopenagent` adds discipline-layer and intent-gate candidate kind.
+- `snow-cli` adds terminal-agent-runtime candidate kind with hooks, MCP, sensitive-command, and async/headless governance.
+- This package is docs-only: no checker code, runtime runner, user-level install, sidecar, package copy, or live harness job is changed here.
+
 ## Acceptance Criteria
 
 - Codex harnesses is a distinct lane from CLI-Anything/WXWork_CLI and Browser/CLI adapters.
+- All seven reference links are recorded with source pin, retrieved_at, license note, and rollback pointer.
 - Pi/oh-my-pi is reference or user-level sidecar candidate only, never the Codex launcher.
-- No user-level runtime is active without receipt, pin, smoke, rollback, redaction, and no-takeover evidence.
+- revfactory/harness, ohmyopenagent, and snow-cli remain reference-only until a later Checker + Runtime package explicitly implements candidate-registry checks and runtime adapters.
+- No user-level runtime is active without receipt, pin, smoke, rollback, redaction, license posture, sensitive-command policy, and no-takeover evidence.
 - Any future write-capable harness path requires isolated worktree ownership and changed-path reporting.
 - Codex harnesses runtime promotion is explicit: R0/R1/R2 remain project-level or reusable project-level; R3 requires `installed-user-level`; R4 requires `smoke-tested`; R5 requires `active-candidate`, isolated worktree, job state, read/write guards, changed-path report, and no Codex takeover.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 source refresh evidence: this docs-only package adds `https://github.com/revfactory/harness`, `https://github.com/ymymssss/ohmyopenagent`, and `https://github.com/MayDay-wpf/snow-cli` to the source ledger, records observed source pins/license posture, and changes the next Checker + Runtime requirement to candidate-registry-driven design; no Checker + Runtime implementation, install, sidecar start, live harness job, or Codex takeover occurs.
 - 2026-06-06 R4 local tooling evidence: `tools/run_codex_harnesses_smoke.py`, `tools/check_codex_harnesses_smoke_receipts.py`, and `codex_harnesses_smoke_receipts.test.py` implement bounded read-only smoke receipt generation and validation; absent R3 install receipts produce blocked receipts that are accepted as evidence but are not smoke-tested; no Pi/oh-my-pi install, sidecar start, live harness job, active-candidate handoff, or Codex takeover occurs.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` reclassifies Pi/oh-my-pi sidecar, harness job runner, executable read/write guards, and R3/R4/R5 receipts as pending Stage D runtime work; no runtime is installed, started, smoked, or live-run.
 - 2026-06-05 Stage C runtime promotion evidence: branch `runtime-promotion-plan-20260605` records R0-R5 promotion gates for Codex harnesses, keeps Pi/oh-my-pi sidecar runtime not installed/started/enabled, and checker-backs no-takeover active sidecar constraints.
