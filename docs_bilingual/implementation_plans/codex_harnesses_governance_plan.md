@@ -34,7 +34,12 @@ Runtime boundary: Codex harnesses are governance wrappers around future harness 
 Runtime gap: real runtime work now requires a candidate registry, selected candidate source/package pin, license/usage note, candidate adapter kind, a harness job runner, executable read/write guards, R3 install/update receipts, R4 read-only smoke receipts, and R5 bounded live handoff receipts with isolated worktree evidence. Current R4 helper/checker work remains honest local tooling, but it is not the final candidate-registry runtime and it does not install, start, or live-run Pi/oh-my-pi or any newly referenced runtime.
 Implementation evidence: `tools/check_codex_harnesses_governance.py` currently requires source ledger rows, source pin, retrieved_at, license note, rollback pointer, no Codex takeover, unpinned Pi packages rejection, read guard, write guard, job state, isolated worktree, changed-path report markers, and R0-R5 runtime promotion markers. A later Checker + Runtime package must update that checker and the smoke runner to require all seven source rows and candidate-registry evidence; this docs-only package records that requirement but does not implement it.
 Companion refresh note: the zh-CN companion is updated in the same local package to record the same reference sources and next Checker + Runtime requirements while preserving runtime tokens; no runtime behavior changed.
+Priority update: 2026-06-07 records Codex harnesses as subordinate runtime-safety governance below Comet, OpenSpec/Superpowers, and gstack advisory ordering; harness guards outrank Spec Kit only for runtime safety.
 <!-- CURRENT_STATUS_END -->
+
+## Conflict Priority
+
+Codex harnesses govern candidate runtime safety, job receipts, read/write guards, sidecar boundaries, and no-Codex-takeover evidence. They do not control Comet phase routing, OpenSpec WHAT authority, Superpowers HOW discipline, gstack advisory delivery-loop sequencing, implementation-plan claims, local-main-first gates, or remote-publication gates. When harness guards conflict with Spec Kit templates or probes, harness safety wins for runtime permission, write scope, receipts, rollback, timeout, and cleanup. Future checker/runtime work must emit `authority_decision` for each candidate allow/block/active-candidate result and must explain whether the decision came from Comet, OpenSpec/Superpowers, gstack advisory ordering, harness runtime safety, or Spec Kit subordinate-template status.
 
 ## Source Ledger
 
@@ -114,6 +119,7 @@ These are follow-up implementation requirements, not completed runtime work in t
 - Stage D real runtime: implement harness job runner receipts with executable read/write guards, isolated worktree evidence, changed-path reporting, cleanup, sensitive-command policy, hook policy, async/headless state, and rollback.
 - Stage D real runtime: run bounded R4 read-only smoke/status through a registry-backed runner and record a `smoke-tested` receipt before any R5 active-candidate handoff.
 - Stage D real runtime: gate any R5 live harness job behind current operator authorization, owner lease, target/action allowlist, timeout release, and post-run cleanup evidence.
+- Stage D Checker + Runtime: require `authority_decision` on candidate allow/block/active-candidate receipts and enforce the priority order Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit.
 
 ## File Ownership
 
@@ -144,6 +150,7 @@ This plan is not complete at the real-runtime level. The implemented-local packa
 - [x] Stage C runtime promotion: add R0-R5 Codex harnesses ladder, fake Pi job dry-run boundary, installed-user-level/smoke-tested/active-candidate markers, and no-takeover active sidecar gates.
 - [x] R4 local smoke receipt tooling: add `tools/run_codex_harnesses_smoke.py`, `tools/check_codex_harnesses_smoke_receipts.py`, and `codex_harnesses_smoke_receipts.test.py`; blocked receipts are accepted but remain not smoke-tested.
 - [x] 2026-06-06 source refresh: record revfactory/harness, ohmyopenagent, and snow-cli as reference-only sources; redesign the next runtime direction as candidate-registry-driven; record Checker + Runtime follow-up requirements without implementing them.
+- [x] 2026-06-07 conflict-priority refresh: record harnesses below Comet/OpenSpec/Superpowers/gstack and above Spec Kit only for runtime safety; require future `authority_decision` evidence without implementing scripts.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
@@ -175,6 +182,7 @@ This plan is not complete at the real-runtime level. The implemented-local packa
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority refresh: this docs-only package records Codex harnesses as subordinate runtime-safety governance below Comet/OpenSpec/Superpowers/gstack and above Spec Kit only for runtime safety; Checker + Runtime implementation remains deferred.
 - 2026-06-06 source refresh evidence: this docs-only package adds `https://github.com/revfactory/harness`, `https://github.com/ymymssss/ohmyopenagent`, and `https://github.com/MayDay-wpf/snow-cli` to the source ledger, records observed source pins/license posture, and changes the next Checker + Runtime requirement to candidate-registry-driven design; no Checker + Runtime implementation, install, sidecar start, live harness job, or Codex takeover occurs.
 - 2026-06-06 R4 local tooling evidence: `tools/run_codex_harnesses_smoke.py`, `tools/check_codex_harnesses_smoke_receipts.py`, and `codex_harnesses_smoke_receipts.test.py` implement bounded read-only smoke receipt generation and validation; absent R3 install receipts produce blocked receipts that are accepted as evidence but are not smoke-tested; no Pi/oh-my-pi install, sidecar start, live harness job, active-candidate handoff, or Codex takeover occurs.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` reclassifies Pi/oh-my-pi sidecar, harness job runner, executable read/write guards, and R3/R4/R5 receipts as pending Stage D runtime work; no runtime is installed, started, smoked, or live-run.

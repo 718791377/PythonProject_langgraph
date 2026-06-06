@@ -42,14 +42,18 @@ Status: active child-plan definition; code work is not started.
 Stage: documentation package records the checker plus runtime requirement and source links.
 Owner session: `plan-gstack-codex-delivery-loop-20260606` only owns this plan-document package.
 Current gate: validate implementation-plan rules, OpenSpec guard, precommit update/archive review, local gate, and local MR review before local main integration. Remote publication is not authorized.
-Runtime boundary: no gstack runtime is installed, cloned, enabled, invoked as a hook, registered as a skill, connected to browser QA, or promoted to user level by this package.
+Runtime boundary: no gstack runtime is installed, cloned, enabled, invoked as a hook, registered as a skill, connected to browser QA, or promoted to user level by this package. Priority boundary: gstack is subordinate delivery-loop advice below Comet and OpenSpec/Superpowers, but above harness candidate runtime selection and Spec Kit templates when only advisory sequencing is at issue.
 <!-- CURRENT_STATUS_END -->
+
+## 冲突优先级
+
+gstack 只提供 delivery-loop 结构：Think、Plan、Build、Review、Test、Ship 与 Reflect。它可以建议排序、review、QA 或 ship readiness，但不得覆盖 Comet control、OpenSpec WHAT authority、Superpowers HOW discipline、implementation-plan claims、local-main-first gates、remote-publication approval、user-level install receipts、browser/GUI authorization 或 telemetry opt-in。若它与 Codex harness candidate runtime governance 冲突，gstack 只在 advisory delivery-loop ordering 上优先；harness-specific read/write/runtime safety 仍归 harness plan。若它与 Spec Kit templates 冲突，gstack 在 delivery-loop sequencing 上优先，而 Spec Kit 仍只是 subordinate template/probe source。未来 runtime 必须为每个 allow/block/advisory 结果输出 `authority_decision`。
 
 ## Checker 与 Runtime 目标
 
 后续代码包必须先提供这些 repo-local 表面，才能声称达到 R2 readiness：
 
-- `tools/check_gstack_codex_delivery_loop.py --root . --json` 校验保存的 delivery-loop evidence、plan/checker/runtime 登记和参考源新鲜度。
+- `tools/check_gstack_codex_delivery_loop.py --root . --json` 校验保存的 delivery-loop evidence、plan/checker/runtime 登记、参考源新鲜度，以及与 Comet、OpenSpec/Superpowers、harnesses 或 Spec Kit 冲突时的 `authority_decision` 结果。
 - `tools/gstack_codex_delivery_loop_runtime.py analyze --root . --json` 报告当前 Codex delivery-loop 阶段与缺失 evidence，不写文件。
 - `tools/gstack_codex_delivery_loop_runtime.py plan-dry-run --root . --json` 给出 Think/Plan/Build/Review/Test/Ship/Reflect 下一步建议，不编辑方案或 durable state。
 - `tools/gstack_codex_delivery_loop_runtime.py review-dry-run --root . --json` 报告 reviewer、QA、security、documentation 和 release-readiness 缺口，不应用修复。
@@ -84,6 +88,7 @@ Runtime boundary: no gstack runtime is installed, cloned, enabled, invoked as a 
 - [x] 创建本子方案和中文 companion。
 - [x] 记录 gstack 参考链接和已核验 GitHub README source boundary。
 - [x] 要求后续实现达到 checker 加 runtime，而不是只做文本治理。
+- [x] 记录冲突优先级：低于 Comet/OpenSpec/Superpowers；只在 delivery-loop ordering 上作为 advisory 高于 harness runtime-candidate selection 与 Spec Kit templates。
 - [ ] 后续实现：新增 `check_gstack_codex_delivery_loop.py`，带 focused fixtures 和 JSON output。
 - [ ] 后续实现：新增 `gstack_codex_delivery_loop_runtime.py`，包含 `analyze`、dry-run stage checks，以及受保护的未来 apply/live 模式。
 - [ ] 后续实现：登记 focused tests、OpenSpec guard wiring 和 CI manifest 覆盖。
@@ -111,5 +116,6 @@ Runtime boundary: no gstack runtime is installed, cloned, enabled, invoked as a 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority refresh：本 docs-only package 记录 gstack 是低于 Comet/OpenSpec/Superpowers 的 subordinate delivery-loop advisory governance；仅在 advisory ordering 上高于 harness/Spec Kit；Checker + Runtime code 仍延后。
 - 2026-06-06 文档包：branch `plan-gstack-codex-delivery-loop-20260606` 创建本 active Phase 4 子方案，记录 `garrytan/gstack` 与 `gstack.lol` 参考源，并把 checker/runtime 代码留给后续实现包。
 <!-- EVIDENCE_INDEX_END -->

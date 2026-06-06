@@ -42,14 +42,18 @@ Status: active child-plan definition; code work is not started.
 Stage: documentation package records the checker plus runtime requirement and source links.
 Owner session: `plan-gstack-codex-delivery-loop-20260606` owns this plan-document package only.
 Current gate: validate implementation-plan rules, OpenSpec guard, precommit update/archive review, local gate, and local MR review before local main integration. Remote publication is not authorized.
-Runtime boundary: no gstack runtime is installed, cloned, enabled, invoked as a hook, registered as a skill, connected to browser QA, or promoted to user level by this package.
+Runtime boundary: no gstack runtime is installed, cloned, enabled, invoked as a hook, registered as a skill, connected to browser QA, or promoted to user level by this package. Priority boundary: gstack is subordinate delivery-loop advice below Comet and OpenSpec/Superpowers, but above harness candidate runtime selection and Spec Kit templates when only advisory sequencing is at issue.
 <!-- CURRENT_STATUS_END -->
+
+## Conflict Priority
+
+gstack contributes delivery-loop structure only: Think, Plan, Build, Review, Test, Ship, and Reflect. It may recommend sequencing, review, QA, or ship readiness, but must not override Comet control, OpenSpec WHAT authority, Superpowers HOW discipline, implementation-plan claims, local-main-first gates, remote-publication approval, user-level install receipts, browser/GUI authorization, or telemetry opt-in. If its advice conflicts with Codex harness candidate runtime governance, gstack wins only for advisory delivery-loop ordering; harness-specific read/write/runtime safety still belongs to the harness plan. If it conflicts with Spec Kit templates, gstack wins for delivery-loop sequencing while Spec Kit stays a subordinate template/probe source. Future runtime must emit `authority_decision` for each allow/block/advisory result.
 
 ## Checker and Runtime Target
 
 The later code package must provide these repo-local surfaces before the plan may claim R2 readiness:
 
-- `tools/check_gstack_codex_delivery_loop.py --root . --json` validates saved delivery-loop evidence, plan/checker/runtime registration, and source-reference freshness.
+- `tools/check_gstack_codex_delivery_loop.py --root . --json` validates saved delivery-loop evidence, plan/checker/runtime registration, source-reference freshness, and `authority_decision` results for conflicts with Comet, OpenSpec/Superpowers, harnesses, or Spec Kit.
 - `tools/gstack_codex_delivery_loop_runtime.py analyze --root . --json` reports the current Codex delivery-loop stage and missing evidence without writing files.
 - `tools/gstack_codex_delivery_loop_runtime.py plan-dry-run --root . --json` proposes Think/Plan/Build/Review/Test/Ship/Reflect next steps without editing plans or durable state.
 - `tools/gstack_codex_delivery_loop_runtime.py review-dry-run --root . --json` reports reviewer, QA, security, documentation, and release-readiness gaps without applying fixes.
@@ -84,6 +88,7 @@ One session may claim this implementation plan at a time. Later code work can ru
 - [x] Create this child plan and Chinese companion.
 - [x] Record gstack reference links and verified GitHub README source boundary.
 - [x] Require later implementation to reach checker plus runtime level rather than only text governance.
+- [x] Record conflict priority: subordinate to Comet/OpenSpec/Superpowers, advisory above harness runtime-candidate selection and Spec Kit templates only for delivery-loop ordering.
 - [ ] Later implementation: add `check_gstack_codex_delivery_loop.py` with focused fixtures and JSON output.
 - [ ] Later implementation: add `gstack_codex_delivery_loop_runtime.py` with `analyze`, dry-run stage checks, and guarded future apply/live modes.
 - [ ] Later implementation: register focused tests, OpenSpec guard wiring, and CI manifest coverage.
@@ -111,5 +116,6 @@ Later code work must also add focused checker and runtime helper tests.
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority refresh: this docs-only package records gstack as subordinate delivery-loop advisory governance below Comet/OpenSpec/Superpowers and above harness/Spec Kit only for advisory ordering; Checker + Runtime code remains deferred.
 - 2026-06-06 documentation package: branch `plan-gstack-codex-delivery-loop-20260606` creates this active Phase 4 child plan, records `garrytan/gstack` and `gstack.lol` references, and leaves checker/runtime code to a later implementation package.
 <!-- EVIDENCE_INDEX_END -->

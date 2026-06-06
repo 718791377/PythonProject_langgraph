@@ -46,8 +46,13 @@ Stage: Stage D documentation-only update package
 Owner session: update-spec-kit-runtime-plan-20260606
 Current gate: update this child plan and bilingual companion only; validate locally, merge to local `main`, and stop before remote publication
 Runtime boundary: this package records future dry-run/probe runtime requirements only; it does not install Spec Kit, run `specify init`, write `.specify/`, create `specs/`, or expose `/speckit.*`/`$speckit-*` commands
-Last updated: 2026-06-06
+Priority update: 2026-06-07 records Spec Kit as the lowest-priority subordinate adapter; Checker + Runtime work remains future-only.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
+
+## Conflict Priority
+
+This adapter never outranks Comet, OpenSpec, Superpowers, gstack delivery-loop advisory checks, Codex harness candidate runtime guards, implementation-plan claims, local-main-first gates, or remote-publication gates. It may translate Spec Kit artifacts into reviewable subordinate inputs only after authority checks pass. Guarded runtime modes must record `authority_decision`, `source_url`, `source_pin`, `dry_run_only`, receipt/rollback paths, and whether `specify init`/`.specify/`/`specs/`/`/speckit.*`/`$speckit-*` remains blocked/subordinate/do-not-run. Here `authority_decision` is the machine-readable allow/block/subordinate field for the winning authority layer and applied priority outcome.
 
 ## File Ownership
 
@@ -81,7 +86,8 @@ Only one session may own each hotspot at a time:
 - [x] Register the new governance pair if created.
 - [x] Run docs registry and implementation-plan checks.
 - [x] Record official `github/spec-kit` reference sources and future Checker + Runtime implementation requirements.
-- [ ] Future Checker implementation: verify subordinate adapter usage for Spec Kit artifacts, command files, skills-mode `$speckit-*` surfaces, generated templates, extensions, presets, and workflow outputs without allowing governance-authority migration.
+- [x] Record lowest-priority subordinate-adapter conflict handling behind Comet, OpenSpec/Superpowers, gstack, and Codex harnesses.
+- [ ] Future Checker implementation: verify subordinate adapter usage for Spec Kit artifacts, command files, skills-mode `$speckit-*` surfaces, generated templates, extensions, presets, and workflow outputs without allowing governance-authority migration. Require `authority_decision` evidence; here `authority_decision` is the allow/block/subordinate field with the winning authority layer and reason.
 - [ ] Future Runtime implementation: add `tools/spec_kit_subordinate_runtime.py` with `source-refresh`, `probe`, `plan-dry-run`, `init-dry-run`, and `self-check-dry-run` modes; all apply/live modes must require explicit authorization, receipts, rollback paths, redacted output, timeout controls, and local-main-first validation.
 <!-- TASK_BACKLOG_END -->
 
@@ -107,6 +113,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority refresh: this docs-only package records Spec Kit as subordinate adapter/template/probe only; live or apply modes remain deferred behind future Checker + Runtime implementation and explicit authorization.
 - 2026-06-06 Spec Kit reference refresh: branch `update-spec-kit-runtime-plan-20260606` records official `github/spec-kit` references and future Checker + Runtime helper requirements without installing or running Spec Kit.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-06-01 Stage C implementation: reused the registered `docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md` and `.zh-CN.md` governance pair, added future `specify` command boundary wording, and marked this child plan implemented-local; validation evidence is recorded in local command output and final assistant response.

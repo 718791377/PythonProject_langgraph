@@ -62,7 +62,7 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 Stage: implemented-local 治理已完成；真实 runtime lane 继续处于待刷新规划状态。
 Owner session: main Codex leader 串行拥有 parent/child plans、specs、registries、CI、安全规则与 OpenSpec guard wiring 等 shared hotspots。
 Current gate: 完成本地验证、合入本地 main，并停在 remote-publication gate。
-Runtime boundary: CLI-Anything/WXWork_CLI、Browser/CLI adapters、Codex harnesses、skills2cli/mcp2cli（`knowsuchagency/mcp2cli`、rollback pointer、update receipt）、gstack、canary 与 Spec Kit 条目仅记录未来 checker/runtime 要求；blocked：本包不 install、start、enable、smoke-run、live-run，也不运行 `specify init`。
+Runtime boundary: CLI-Anything/WXWork_CLI、Browser/CLI adapters、Codex harnesses、skills2cli/mcp2cli（`knowsuchagency/mcp2cli`、rollback pointer、update receipt）、gstack、canary 与 Spec Kit 条目仅记录未来 checker/runtime 要求。Priority: Comet > OpenSpec/Superpowers > gstack > harness guards > Spec Kit；blocked：本包不 install、start、enable、smoke-run、live-run，也不运行 `specify init`。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -495,6 +495,7 @@ Lane-specific R5 约束：
 - [x] Stage B follow-up: enforce first-visible start and last-visible end.
 - [x] Stage B follow-up: create and register the gstack Codex delivery-loop child plan before checker/runtime work.
 - [x] Stage D follow-up: 从官方 `github/spec-kit` 来源刷新 Spec Kit 子方案，并记录未来 Checker + Runtime 要求；本包不实现脚本。
+- [x] 2026-06-07 conflict-priority refresh: Comet-first priority; no Checker + Runtime implementation.
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -528,6 +529,7 @@ Stage B 后续确认后的验收条件：
 
 - 2026-06-06 canary response-position Stage B package: branch `implement-hardcode-canary-response-position-20260606` implements startup-summary wording, spec, diagnostics, and RED/GREEN tests for first-visible start and last-visible end; Stage A is already in local `main`.
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority documentation package: Comet-first priority; Checker + Runtime deferred.
 - 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 基于官方 `github/spec-kit` 来源更新 Phase 6 子方案，并延后 checker/runtime implementation。
 - 2026-06-06 gstack delivery-loop 文档包：branch `plan-gstack-codex-delivery-loop-20260606` 记录 `garrytan/gstack` 作为 Phase 4 checker/runtime 目标，并延后 install/live runtime work。
 - 2026-06-05 Stage D real-runtime classification package: branch `runtime-plan-standard-20260605` updates ten runtime lanes, creates `user_level_mcp_skills_cli_runtime_plan` as the active mcp2cli/skills2cli runtime successor, records deleted source-plan boundaries, and keeps all real install/start/smoke/live work pending future runtime implementation.

@@ -40,8 +40,13 @@ Stage: Phase 5 final closeout package
 Owner session: `main-codex-leader-comet-runtime-policy-checker-alignment-20260531`
 Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
 Stage C entry condition: satisfied by user confirmation on 2026-05-31 after the Stage B child-plan package was merged to local `main`
-Last updated: 2026-05-31
+Priority update: 2026-06-07 docs-only refresh records Comet-first control priority; no runtime code changes occur in this package.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
+
+## 冲突优先级
+
+Comet 继续作为 control layer 协调 OpenSpec WHAT 与 Superpowers HOW。若 gstack delivery-loop advice、Codex harness candidate runtime 或 Spec Kit templates 与 Comet routing 冲突，Comet wins。未来 checker/runtime 应输出 `authority_decision: comet_control_wins`。
 
 ## 文件归属
 
@@ -73,6 +78,7 @@ Last updated: 2026-05-31
 - [x] Add checker coverage for policy/runtime drift.
 - [x] Update CI/local gate registration if new checker or tests are added.
 - [x] Run verify_official_openspec, run_openspec_guard, and local gate.
+- [x] Record Comet-first conflict priority; no new scripts.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,6 +102,7 @@ Last updated: 2026-05-31
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority refresh: Comet-first priority; Checker + Runtime deferred.
 - 2026-05-31 Stage C 最小 closeout：用户已确认实施；现有对齐证据通过 `python tools/check_openspec_comet_superpowers_policy.py --root . --json`、`python test/comet_runtime_management_flow.test.py`、`python tools/check_implementation_plan_rules.py --root . --json` 和 `python tools/check_worktree_task_receipt.py --root . --json`；checker 报告 `Spec source: stable` 且没有 policy/spec/runtime 术语缺口，因此除本计划对之外不需要源文件修改。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.

@@ -64,7 +64,7 @@ This parent plan coordinates the following existing plans inside this plan famil
 Stage: implemented-local governance plus pending runtime-refresh planning for real-runtime lanes.
 Owner session: main Codex leader serializes shared hotspots: parent/child plans, specs, registries, CI, safety rules, and OpenSpec guard wiring.
 Current gate: validate, local-main integrate, and stop at remote-publication gate.
-Runtime boundary: CLI-Anything/WXWork_CLI, Browser/CLI adapters, Codex harnesses, skills2cli/mcp2cli (`knowsuchagency/mcp2cli`, rollback pointer, update receipt), gstack, canary, and Spec Kit entries record future checker/runtime requirements only; blocked: this package does not install, start, enable, smoke-run, live-run, or run `specify init`.
+Runtime boundary: CLI-Anything/WXWork_CLI, Browser/CLI adapters, Codex harnesses, skills2cli/mcp2cli (`knowsuchagency/mcp2cli`, rollback pointer, update receipt), gstack, canary, and Spec Kit entries record future checker/runtime requirements only. Priority: Comet > OpenSpec/Superpowers > gstack > harness guards > Spec Kit. Blocked: this package does not install, start, enable, smoke-run, live-run, or run `specify init`.
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model
@@ -402,10 +402,10 @@ Admission: all eligible validation sessions may prepare evidence in parallel, bu
 | Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local | Port and browser-owner primitives remain shared prerequisites for Browser/CLI adapters and OpenCLI. |
 | Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | migration-source; Stage B delete target | Existing mcp2cli/skills2cli implementation remains valid, but this plan file is no longer a child execution owner after the rebuild. |
 | Phase 4 | `stop_slop_caveman_response_density_runtime_plan` | active; checker/runtime pending | Stop-Slop/Caveman response-density checker and guarded rewrite runtime plan. |
-| Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | active; checker/runtime pending | gstack-inspired Codex delivery-loop checker and guarded dry-run runtime plan. |
+| Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | active; checker/runtime pending | Subordinate delivery-loop advisor/checker/runtime-dry-run; never overrides Comet, OpenSpec, Superpowers, plan claims, or local-main gates. |
 | Phase 6 | `user_level_cli_anything_wxwork_cli_governance_plan` | implemented-local; Stage C runtime promotion documented | Owns CLI-Anything and WXWork_CLI through CLI-Anything controlling `WXWork.exe`; not harnesses. |
 | Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | implemented-local; Stage C runtime promotion documented | Owns only chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; temporary compatibility rows are removed in Stage B. |
-| Phase 6 | `codex_harnesses_governance_plan` | implemented-local; Stage C runtime promotion documented | Owns Codex harnesses fork/governance from The Harness Problem, oh-my-pi, Pi, and Pi packages references. |
+| Phase 6 | `codex_harnesses_governance_plan` | implemented-local; Stage C runtime promotion documented | Owns subordinate candidate-registry-backed harness governance; below Comet/OpenSpec/Superpowers/gstack, above Spec Kit only for runtime safety. |
 | Phase 7 | integration child plans | active | Registry, checker/CI, OpenSpec, and local-main integration hotspots remain serial. |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
@@ -477,6 +477,7 @@ Each child plan must include:
 - [x] Stage B follow-up: enforce canary response-position diagnostics and tests.
 - [x] Stage B follow-up: create and register the gstack Codex delivery-loop child plan before checker/runtime implementation.
 - [x] Stage D follow-up: refresh Spec Kit child plans from official `github/spec-kit` sources and record future Checker + Runtime requirements without implementing scripts.
+- [x] 2026-06-07 conflict-priority refresh: record Comet-first priority across Comet, Spec Kit, gstack, and Codex harnesses child plans without implementing Checker + Runtime scripts.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -506,11 +507,13 @@ Stage B acceptance after later confirmation:
 - Phase 4 child plans must preserve the confirmed conversation-surface split: `Routing trace` is a plain-text diagnostic line with fixed label plus `key=value` fields; `Updated Plan` is the user-visible tree-style progress panel with checkmark/open-square status markers; Markdown `- [x]` / `- [ ]` checkboxes stay only inside implementation-plan files for task tracking. Explanatory text may be Chinese, while internal tool names, schema keys, threshold tokens, blocker tokens, file names, and CLI arguments may remain ASCII.
 - Stage C runtime promotion acceptance: the parent and three child plans must require R0 project-level preflight, R1 project-level fake/dry-run runtime, R2 reusable project-level helper/guard, R3 `installed-user-level`, R4 `smoke-tested`, and R5 `active-candidate`, while stating that this package does not install/start/enable/smoke/live-run runtimes.
 - Stage D real-runtime classification acceptance: the parent and ten lane plans must distinguish implemented governance/checker/test/helper surfaces from missing real runtime layers, and `user_level_mcp_skills_cli_runtime_plan` must replace the deleted discovery facade as active runtime owner without restoring the old source plan.
+- Conflict-priority acceptance: future Checker + Runtime surfaces must report `authority_decision` and apply priority Comet > OpenSpec/Superpowers > gstack > harness guards > Spec Kit.
 
 ## Evidence Index
 
 - 2026-06-06 canary response-position Stage B package: branch `implement-hardcode-canary-response-position-20260606` implements startup-summary wording, spec scenarios, diagnostics, and focused RED/GREEN tests for first-visible start and last-visible end response evidence; Stage A plan contract is already in local `main`.
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority documentation package: branch `update-comet-speckit-gstack-harness-priority-plan-20260607` records Comet-first conflict priority across Comet, Spec Kit, gstack, and Codex harnesses; Checker + Runtime implementation remains deferred.
 - 2026-06-06 Spec Kit reference refresh: branch `update-spec-kit-runtime-plan-20260606` updates Phase 6 child plans from official `github/spec-kit` sources and defers checker/runtime implementation.
 - 2026-06-06 gstack delivery-loop documentation package: branch `plan-gstack-codex-delivery-loop-20260606` records `garrytan/gstack` as a Phase 4 checker/runtime target and keeps install/live runtime work deferred.
 - 2026-06-05 Stage D real-runtime classification package: branch `runtime-plan-standard-20260605` updates ten runtime lanes, creates `user_level_mcp_skills_cli_runtime_plan` as the active mcp2cli/skills2cli runtime successor, records deleted source-plan boundaries, and keeps all real install/start/smoke/live work pending future runtime implementation.

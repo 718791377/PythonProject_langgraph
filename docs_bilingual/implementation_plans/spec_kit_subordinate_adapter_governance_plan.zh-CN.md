@@ -46,8 +46,13 @@ confirmation_required: true
 责任会话：update-spec-kit-runtime-plan-20260606
 当前门禁：只更新本子方案及其双语对照；本地验证、合入本地 `main`，并在远端发布前停止
 Runtime boundary：本包只记录未来 dry-run/probe runtime 要求；不安装 Spec Kit、不运行 `specify init`、不写入 `.specify/`、不创建 `specs/`，也不暴露 `/speckit.*`/`$speckit-*` 命令
-最后更新：2026-06-06
+Priority update：2026-06-07 记录 Spec Kit 是最低优先级 subordinate adapter；Checker + Runtime work 仍为 future-only。
+最后更新：2026-06-07
 <!-- CURRENT_STATUS_END -->
+
+## 冲突优先级
+
+本 adapter 不得高于 Comet、OpenSpec、Superpowers、gstack delivery-loop advisory checks、Codex harness candidate runtime guards、implementation-plan claims、local-main-first gates 或 remote-publication gates。它只能在 authority checks 通过后，把 Spec Kit artifacts 翻译为可审查的 subordinate inputs。受保护 runtime 模式必须记录 `authority_decision`、`source_url`、`source_pin`、`dry_run_only`、receipt/rollback paths，以及 `specify init`、`.specify/`、`specs/`、`/speckit.*`、`$speckit-*` 是否仍保持 blocked/subordinate/do-not-run。这里的 `authority_decision` 是机器可读 allow/block/subordinate 字段，用于记录胜出的 authority layer 与已应用的 priority outcome。
 
 ## 文件归属
 
@@ -81,7 +86,8 @@ Runtime boundary：本包只记录未来 dry-run/probe runtime 要求；不安�
 - [x] Register the new governance pair if created.
 - [x] Run docs registry and implementation-plan checks.
 - [x] 记录官方 `github/spec-kit` 参考源与未来 Checker + Runtime implementation 要求。
-- [ ] Future Checker implementation：校验 Spec Kit artifacts、command files、skills-mode `$speckit-*` surfaces、generated templates、extensions、presets 与 workflow outputs 的 subordinate adapter 用法，且不得允许 governance-authority migration。
+- [x] 记录最低优先级 subordinate-adapter 冲突处理：位于 Comet、OpenSpec/Superpowers、gstack 与 Codex harnesses 之后。
+- [ ] Future Checker implementation：校验 Spec Kit artifacts、command files、skills-mode `$speckit-*` surfaces、generated templates、extensions、presets 与 workflow outputs 的 subordinate adapter 用法，且不得允许 governance-authority migration；allow/block/subordinate 结果必须有机器可读 `authority_decision` evidence。 `authority_decision` 是记录胜出 authority layer 与原因的 allow/block/subordinate 字段。
 - [ ] Future Runtime implementation：新增 `tools/spec_kit_subordinate_runtime.py`，提供 `source-refresh`、`probe`、`plan-dry-run`、`init-dry-run` 与 `self-check-dry-run` 模式；所有 apply/live 模式都必须要求显式授权、receipts、rollback paths、redacted output、timeout controls 与 local-main-first validation。
 <!-- TASK_BACKLOG_END -->
 
@@ -106,6 +112,7 @@ Runtime boundary：本包只记录未来 dry-run/probe runtime 要求；不安�
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority refresh：本 docs-only package 记录 Spec Kit 只作为 subordinate adapter/template/probe；live 或 apply modes 仍延后到未来 Checker + Runtime implementation 与显式授权之后。
 - 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 记录官方 `github/spec-kit` references 与未来 Checker + Runtime helper 要求；未安装或运行 Spec Kit。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 Stage C 实施：复用已注册的 `docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md` 与 `.zh-CN.md` 治理文档对，补充未来 `specify` 命令边界措辞，并将本子方案标记为 implemented-local；验证证据记录在本地命令输出和最终 assistant 回复中。

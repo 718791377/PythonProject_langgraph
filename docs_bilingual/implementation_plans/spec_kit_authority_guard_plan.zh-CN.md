@@ -46,8 +46,13 @@ confirmation_required: true
 责任会话：update-spec-kit-runtime-plan-20260606
 当前门禁：只更新本方案及其双语对照；运行 plan/OpenSpec/precommit/local gates，然后本地 main 集成并停在 remote-publication gate
 Runtime boundary：本包不运行 `specify init`、不创建 `.specify/`、不安装或升级 Spec Kit、不生成命令文件，也不实现 checker/runtime 脚本
-最后更新：2026-06-06
+Priority update：2026-06-07 记录 Spec Kit 为最低优先级 subordinate template/probe surface；Checker + Runtime 仍是未来实现。
+最后更新：2026-06-07
 <!-- CURRENT_STATUS_END -->
+
+## 冲突优先级
+
+Spec Kit 不得高于 Comet、OpenSpec、Superpowers、gstack delivery-loop advisory checks、Codex harness candidate runtime guards、implementation-plan claims、本地 main 门禁或远端发布门。`specify init`、`.specify/`、`specs/`、`/speckit.*`、`$speckit-*` 继续保持 blocked/subordinate/do-not-run，除非未来 active implementation plan 与显式授权批准。未来 checker/runtime 必须输出 `authority_decision`。这里的 `authority_decision` 是机器可读 allow/block/subordinate 字段，用于记录胜出的 authority layer、原因与已应用的 priority outcome。
 
 ## 文件归属
 
@@ -81,7 +86,8 @@ Runtime boundary：本包不运行 `specify init`、不创建 `.specify/`、不�
 - [x] Register the checker in the local gate only after implementation confirmation.
 - [x] Run Spec Kit guard tests and local gate.
 - [x] 记录官方 `github/spec-kit` 参考源，以及未来 Checker + Runtime implementation boundary。
-- [ ] Future Checker implementation：扩展 `tools/check_spec_kit_authority_guard.py`，使其按照 subordinate-adapter authority rule 校验所有 `.specify/`、`specs/`、`/speckit.*`、`$speckit-*`、`specify init`、`specify self check`、extension 或 preset 证据。
+- [x] Record Spec Kit lowest-priority subordinate boundary; no Checker + Runtime scripts.
+- [ ] Future Checker implementation：扩展 `tools/check_spec_kit_authority_guard.py`，使其按照 subordinate-adapter authority rule 校验所有 `.specify/`、`specs/`、`/speckit.*`、`$speckit-*`、`specify init`、`specify self check`、extension 或 preset 证据。 `authority_decision` 是记录胜出 authority layer 与原因的 allow/block/subordinate 字段。
 - [ ] Future Runtime implementation：任何 live Spec Kit 命令前都必须先有受保护 dry-run/probe helper；live `specify init --here --force`、安装、升级、template 写入、agent-command 写入或 constitution 写入都必须具备显式操作者授权、receipt、rollback evidence 与单独 implementation approval。
 <!-- TASK_BACKLOG_END -->
 
@@ -106,6 +112,7 @@ Runtime boundary：本包不运行 `specify init`、不创建 `.specify/`、不�
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority refresh：本 docs-only 包记录 Spec Kit 的最低优先级从属边界；不运行 `specify init`，不创建 `.specify/`，不实现 Checker + Runtime 脚本。
 - 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 记录 `github/spec-kit` 官方来源与未来 Checker + Runtime 要求；未运行 `specify init`，也未实现脚本。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 implementation package：新增 `tools/check_spec_kit_authority_guard.py`、`test/spec_kit_authority_guard.test.py`、从属适配器治理文档、CI manifest 注册、安全规则脚本支撑登记，以及 OpenSpec guard 集成；本地门禁前聚焦测试已通过。

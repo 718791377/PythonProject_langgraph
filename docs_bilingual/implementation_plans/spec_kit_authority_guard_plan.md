@@ -46,8 +46,13 @@ Stage: Stage D documentation-only update package
 Owner session: update-spec-kit-runtime-plan-20260606
 Current gate: update this plan and its bilingual companion only; run plan/OpenSpec/precommit/local gates, then local-main integration and stop at the remote-publication gate
 Runtime boundary: this package does not run `specify init`, create `.specify/`, install or upgrade Spec Kit, generate command files, or implement checker/runtime scripts
-Last updated: 2026-06-06
+Priority update: 2026-06-07 records Spec Kit as the lowest-priority subordinate template/probe surface in conflicts with Comet, OpenSpec/Superpowers, gstack, or Codex harnesses.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
+
+## Conflict Priority
+
+Spec Kit is subordinate to this repository authority stack. Priority is: Comet control first; OpenSpec spec authority and Superpowers HOW remain binding; gstack may provide advisory delivery-loop checks; Codex harnesses may govern candidate runtime jobs; Spec Kit may only provide templates, SDD references, and guarded dry-run probes. Any live `specify init`, `.specify/`, `specs/`, `/speckit.*`, or `$speckit-*` write remains blocked/subordinate/do-not-run unless a separate active implementation plan and explicit operator authorization approve it. Future checker/runtime code must emit an `authority_decision` explaining why a Spec Kit surface is allowed, blocked, or subordinate. Here `authority_decision` means the machine-readable allow/block/subordinate field that records the winning authority layer, the reason, and the applied priority outcome.
 
 ## File Ownership
 
@@ -81,7 +86,8 @@ Only one session may own each hotspot at a time:
 - [x] Register the checker in the local gate only after implementation confirmation.
 - [x] Run Spec Kit guard tests and local gate.
 - [x] Record official `github/spec-kit` reference sources and the future Checker + Runtime implementation boundary.
-- [ ] Future Checker implementation: extend `tools/check_spec_kit_authority_guard.py` so it validates any `.specify/`, `specs/`, `/speckit.*`, `$speckit-*`, `specify init`, `specify self check`, extension, or preset evidence against the subordinate-adapter authority rule.
+- [x] Record conflict priority: Spec Kit is lowest-priority subordinate template/probe source behind Comet, OpenSpec/Superpowers, gstack, and Codex harnesses.
+- [ ] Future Checker implementation: extend `tools/check_spec_kit_authority_guard.py` so it validates any `.specify/`, `specs/`, `/speckit.*`, `$speckit-*`, `specify init`, `specify self check`, extension, or preset evidence against the subordinate-adapter authority rule and requires machine-readable `authority_decision` evidence for allow/block/subordinate outcomes. Here `authority_decision` is the allow/block/subordinate field with the winning authority layer and reason.
 - [ ] Future Runtime implementation: require a guarded dry-run/probe helper before any live Spec Kit command; live `specify init --here --force`, install, upgrade, template write, agent-command write, or constitution write requires explicit operator authorization, receipts, rollback evidence, and separate implementation approval.
 <!-- TASK_BACKLOG_END -->
 
@@ -107,6 +113,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority refresh: this docs-only package records Spec Kit as the lowest-priority subordinate surface and keeps any live `specify init` or generated `.specify/` write blocked without future authorization.
 - 2026-06-06 Spec Kit reference refresh: branch `update-spec-kit-runtime-plan-20260606` records `github/spec-kit` official sources and future Checker + Runtime requirements without running `specify init` or implementing scripts.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-06-01 implementation package: added `tools/check_spec_kit_authority_guard.py`, `test/spec_kit_authority_guard.test.py`, subordinate-adapter governance docs, CI manifest registration, safety-rule registry backing, and OpenSpec guard integration; focused tests passed before local gate.
