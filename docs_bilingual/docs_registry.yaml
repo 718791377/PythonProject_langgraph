@@ -244,6 +244,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/collaboration_evidenceguard_and_bilingual_openspec_surface_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/collaboration_evidenceguard_and_bilingual_openspec_surface_plan.zh-CN.md
 
+  - doc_id: stop_slop_caveman_response_density_runtime_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/stop_slop_caveman_response_density_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/stop_slop_caveman_response_density_runtime_plan.zh-CN.md
+
   - doc_id: comet_management_record_bootstrap_plan
     doc_class: implementation_plan
     status: active
