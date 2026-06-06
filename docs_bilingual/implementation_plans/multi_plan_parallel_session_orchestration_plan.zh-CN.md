@@ -59,13 +59,10 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: Stage C runtime promotion governance 已针对三个重建 lane implemented-local；validation 与 local-main integration 是当前 gate。
-Owner session: main Codex leader 拥有本 Stage C package 的 serialized shared hotspots：parent plan、child plans、stable spec、checker/test updates、docs registry references、CI manifest references、safety registry references 与 OpenSpec guard wiring。
-Current gate: 运行 focused runtime-promotion checker tests、precommit/archive review、OpenSpec guard、shared local gate 与 local MR review；之后通过 local-main-first helper 合入，并停在 remote-publication approval gate。
-Runtime promotion result: CLI-Anything/WXWork_CLI、Browser/CLI adapters 与 Codex harnesses 现在共享明确的 R0 project-level preflight、R1 project-level fake/dry-run runtime、R2 reusable project-level helper/guard、R3 user-level install/update receipt、R4 user-level smoke runtime、R5 active-candidate / bounded live handoff gates。本包不 install、start、enable、smoke-run 或 live-run 任何 runtime。
-MCP/skills CLI carry-forward: `user_level_mcp_skills_discovery_facade_plan` is a deleted/superseded source plan, not an active child plan. Runtime ownership is now `user_level_mcp_skills_cli_runtime_plan`; existing `skills2cli` and `mcp2cli` helpers/checkers/tests are R0-R2 carry-forward surfaces only until R3/R4/R5 receipts are produced. The upstream runtime source remains `knowsuchagency/mcp2cli`, with install markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`.
-Remote state: 本 implementation package 不授权 remote publication。
-Canary position follow-up: Stage B now hardens first-visible start and last-visible end for complete user-visible assistant responses.
+Stage: implemented-local 治理已完成；真实 runtime lane 继续处于待刷新规划状态。
+Owner session: main Codex leader 串行拥有 parent/child plans、specs、registries、CI、安全规则与 OpenSpec guard wiring 等 shared hotspots。
+Current gate: 完成本地验证、合入本地 main，并停在 remote-publication gate。
+Runtime boundary: CLI-Anything/WXWork_CLI、Browser/CLI adapters、Codex harnesses、skills2cli/mcp2cli（`knowsuchagency/mcp2cli`、rollback pointer、update receipt）、gstack、canary 与 Spec Kit 条目仅记录未来 checker/runtime 要求；blocked：本包不 install、start、enable、smoke-run、live-run，也不运行 `specify init`。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -497,6 +494,7 @@ Lane-specific R5 约束：
 - [x] Stage A follow-up: record canary response-position contract in parent/child plans before runtime/checker work.
 - [x] Stage B follow-up: enforce first-visible start and last-visible end.
 - [x] Stage B follow-up: create and register the gstack Codex delivery-loop child plan before checker/runtime work.
+- [x] Stage D follow-up: 从官方 `github/spec-kit` 来源刷新 Spec Kit 子方案，并记录未来 Checker + Runtime 要求；本包不实现脚本。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -530,6 +528,7 @@ Stage B 后续确认后的验收条件：
 
 - 2026-06-06 canary response-position Stage B package: branch `implement-hardcode-canary-response-position-20260606` implements startup-summary wording, spec, diagnostics, and RED/GREEN tests for first-visible start and last-visible end; Stage A is already in local `main`.
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 基于官方 `github/spec-kit` 来源更新 Phase 6 子方案，并延后 checker/runtime implementation。
 - 2026-06-06 gstack delivery-loop 文档包：branch `plan-gstack-codex-delivery-loop-20260606` 记录 `garrytan/gstack` 作为 Phase 4 checker/runtime 目标，并延后 install/live runtime work。
 - 2026-06-05 Stage D real-runtime classification package: branch `runtime-plan-standard-20260605` updates ten runtime lanes, creates `user_level_mcp_skills_cli_runtime_plan` as the active mcp2cli/skills2cli runtime successor, records deleted source-plan boundaries, and keeps all real install/start/smoke/live work pending future runtime implementation.
 - 2026-06-05 Stage C runtime promotion package：branch `runtime-promotion-plan-20260605` 加入共享 R0-R5 runtime promotion ladder，更新三个 child plans、stable spec、checker markers 与 tests，并把实际 install/start/enable/smoke/live runtime work 留在本包之外。

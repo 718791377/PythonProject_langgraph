@@ -17,11 +17,17 @@ confirmation_required: true
 
 ## 目标
 
-Block Spec Kit authority migration commands such as specify init --force, .specify creation, or governance takeover without a separate active plan.
+更新 Spec Kit 权威边界：未来 checker 与受保护 runtime helper 可以消费 GitHub Spec Kit，但不得让 `specify init`、`.specify/`、`specs/`、`/speckit.*` 或 `$speckit-*` 成为与本仓库既有治理并列或竞争的权威层。
 
 ## 来源方案
 
 - codex_governance_session_visibility_and_plan_lock_plan
+
+## 参考源
+
+- `https://github.com/github/spec-kit` - 官方 Spec Kit 仓库与 README；记录 `specify init`、`/speckit.constitution`、`/speckit.specify`、`/speckit.plan`、`/speckit.tasks`、`/speckit.implement` 以及 Codex skills-mode `$speckit-*` 命令表面。
+- `https://github.github.io/spec-kit/` - 官方文档首页；记录 Spec -> Plan -> Tasks -> Implement 的 SDD 流程与多 agent 集成模型。
+- `https://github.github.io/spec-kit/reference/core.html` - 官方 core command reference；记录 `specify init` 的 `--integration`、`--script`、`--here`、`--force`、`--no-git`、`--ignore-agent-tools` 等选项，以及 `specify self check` 边界。
 
 ## 范围决策
 
@@ -35,19 +41,20 @@ Block Spec Kit authority migration commands such as specify init --force, .speci
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：已实现，正在验证本地集成包
-阶段：Stage C implementation package
-责任会话：codex-20260601-spec-kit-authority-guard
-当前门禁：本地 main 合入前运行聚焦检查、本地门禁和本地 MR review
-Stage C 进入条件：已由 2026-06-01 当前用户实施请求满足
-最后更新：2026-06-01
+状态：plan-updated；checker/runtime implementation pending
+阶段：Stage D documentation-only update package
+责任会话：update-spec-kit-runtime-plan-20260606
+当前门禁：只更新本方案及其双语对照；运行 plan/OpenSpec/precommit/local gates，然后本地 main 集成并停在 remote-publication gate
+Runtime boundary：本包不运行 `specify init`、不创建 `.specify/`、不安装或升级 Spec Kit、不生成命令文件，也不实现 checker/runtime 脚本
+最后更新：2026-06-06
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
 
-- tools/check_spec_kit_authority_guard.py
-- test/*spec_kit*authority*
-- docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md
+- 未来扩展的既有 checker 目标：`tools/check_spec_kit_authority_guard.py`
+- 未来扩展的既有测试目标：`test/*spec_kit*authority*`
+- 由 subordinate adapter 方案拥有的未来 runtime 目标：`tools/spec_kit_subordinate_runtime.py`
+- 治理边界：`docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md`
 
 ## 热点串行规则
 
@@ -55,6 +62,8 @@ Stage C 进入条件：已由 2026-06-01 当前用户实施请求满足
 
 - Spec Kit guard checker
 - .specify path handling
+- `tools/spec_kit_subordinate_runtime.py` 的未来 helper contract
+- parent plan size edits 与 docs registry references
 
 ## 并行会话契约
 
@@ -71,6 +80,9 @@ Stage C 进入条件：已由 2026-06-01 当前用户实施请求满足
 - [x] Implement a checker that fails closed on .specify governance takeover without an active plan.
 - [x] Register the checker in the local gate only after implementation confirmation.
 - [x] Run Spec Kit guard tests and local gate.
+- [x] 记录官方 `github/spec-kit` 参考源，以及未来 Checker + Runtime implementation boundary。
+- [ ] Future Checker implementation：扩展 `tools/check_spec_kit_authority_guard.py`，使其按照 subordinate-adapter authority rule 校验所有 `.specify/`、`specs/`、`/speckit.*`、`$speckit-*`、`specify init`、`specify self check`、extension 或 preset 证据。
+- [ ] Future Runtime implementation：任何 live Spec Kit 命令前都必须先有受保护 dry-run/probe helper；live `specify init --here --force`、安装、升级、template 写入、agent-command 写入或 constitution 写入都必须具备显式操作者授权、receipt、rollback evidence 与单独 implementation approval。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -94,6 +106,7 @@ Stage C 进入条件：已由 2026-06-01 当前用户实施请求满足
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 记录 `github/spec-kit` 官方来源与未来 Checker + Runtime 要求；未运行 `specify init`，也未实现脚本。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 implementation package：新增 `tools/check_spec_kit_authority_guard.py`、`test/spec_kit_authority_guard.test.py`、从属适配器治理文档、CI manifest 注册、安全规则脚本支撑登记，以及 OpenSpec guard 集成；本地门禁前聚焦测试已通过。
 <!-- EVIDENCE_INDEX_END -->

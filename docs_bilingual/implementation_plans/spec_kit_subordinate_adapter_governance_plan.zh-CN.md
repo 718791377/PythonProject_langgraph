@@ -17,11 +17,17 @@ confirmation_required: true
 
 ## 目标
 
-Document GitHub Spec Kit as an optional subordinate adapter or template source, not a competing governance layer.
+将 GitHub Spec Kit 记录为可选的 subordinate adapter / template / runtime-probe 来源；任何 Spec Kit 命令或生成模板影响本仓库前，都必须先有未来 checker 与受保护 runtime implementation。
 
 ## 来源方案
 
 - codex_governance_session_visibility_and_plan_lock_plan
+
+## 参考源
+
+- `https://github.com/github/spec-kit` - 官方仓库与 README；记录 `specify init`、`/speckit.constitution` -> `/speckit.specify` -> `/speckit.plan` -> `/speckit.tasks` -> `/speckit.implement` 工作流、可选 `/speckit.clarify`、`/speckit.analyze`、`/speckit.checklist`，以及 Codex skills-mode `$speckit-*` 表面。
+- `https://github.github.io/spec-kit/` - 官方文档首页；记录 Spec Kit 作为 Spec-Driven Development toolkit，以及 Spec -> Plan -> Tasks -> Implement artifact chain。
+- `https://github.github.io/spec-kit/reference/core.html` - 官方 core command reference；记录 initialization、integration、PowerShell script selection、force/overwrite、no-git 与 self-check 命令边界。
 
 ## 范围决策
 
@@ -35,25 +41,29 @@ Document GitHub Spec Kit as an optional subordinate adapter or template source, 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：implemented-local
-阶段：Stage C 实施包
-责任会话：codex-implement-spec-kit-subordinate-adapter-governance-20260601
-当前门禁：完成本地验证、提交、本地 main 合入，然后停在远端发布授权门
-Stage C 进入条件：已由当前用户继续实施本子方案的指令满足
-最后更新：2026-06-01
+状态：plan-updated；checker/runtime implementation pending
+阶段：Stage D documentation-only update package
+责任会话：update-spec-kit-runtime-plan-20260606
+当前门禁：只更新本子方案及其双语对照；本地验证、合入本地 `main`，并在远端发布前停止
+Runtime boundary：本包只记录未来 dry-run/probe runtime 要求；不安装 Spec Kit、不运行 `specify init`、不写入 `.specify/`、不创建 `specs/`，也不暴露 `/speckit.*`/`$speckit-*` 命令
+最后更新：2026-06-06
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
 
-- docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md
-- docs_bilingual/governance/spec_kit_subordinate_adapter_policy.zh-CN.md
-- docs_bilingual/docs_registry.yaml
+- 治理文档：`docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md` 与 `.zh-CN.md`
+- 既有 authority checker consumer：`tools/check_spec_kit_authority_guard.py`
+- 未来 runtime helper 目标：`tools/spec_kit_subordinate_runtime.py`
+- 未来测试：`test/spec_kit_subordinate_runtime.test.py` 与既有 Spec Kit authority tests
+- 只有新增文档时才触碰 registry hotspot：`docs_bilingual/docs_registry.yaml`
 
 ## 热点串行规则
 
 以下热点同一时间只能由一个 session 拥有：
 
 - new governance doc registry entries
+- 未来 `tools/spec_kit_subordinate_runtime.py` helper 与 tests
+- `.specify/`、`specs/`、slash-command 与 skills-mode generated surfaces
 
 ## 并行会话契约
 
@@ -70,6 +80,9 @@ Stage C 进入条件：已由当前用户继续实施本子方案的指令满足
 - [x] Add usage boundaries for any future specify command.
 - [x] Register the new governance pair if created.
 - [x] Run docs registry and implementation-plan checks.
+- [x] 记录官方 `github/spec-kit` 参考源与未来 Checker + Runtime implementation 要求。
+- [ ] Future Checker implementation：校验 Spec Kit artifacts、command files、skills-mode `$speckit-*` surfaces、generated templates、extensions、presets 与 workflow outputs 的 subordinate adapter 用法，且不得允许 governance-authority migration。
+- [ ] Future Runtime implementation：新增 `tools/spec_kit_subordinate_runtime.py`，提供 `source-refresh`、`probe`、`plan-dry-run`、`init-dry-run` 与 `self-check-dry-run` 模式；所有 apply/live 模式都必须要求显式授权、receipts、rollback paths、redacted output、timeout controls 与 local-main-first validation。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -93,6 +106,7 @@ Stage C 进入条件：已由当前用户继续实施本子方案的指令满足
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 记录官方 `github/spec-kit` references 与未来 Checker + Runtime helper 要求；未安装或运行 Spec Kit。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 Stage C 实施：复用已注册的 `docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md` 与 `.zh-CN.md` 治理文档对，补充未来 `specify` 命令边界措辞，并将本子方案标记为 implemented-local；验证证据记录在本地命令输出和最终 assistant 回复中。
 <!-- EVIDENCE_INDEX_END -->

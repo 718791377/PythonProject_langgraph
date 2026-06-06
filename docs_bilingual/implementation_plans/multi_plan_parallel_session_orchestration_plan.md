@@ -61,13 +61,10 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: Stage C runtime promotion governance is implemented-local for the rebuilt lanes; Stage D real-runtime gap classification now covers CLI-Anything/WXWork_CLI, Browser/CLI adapters, Codex harnesses, durable smoke/adoption, receipt/rollback/redaction, selector ownership, worktree claim lifecycle, readiness projection, LangGraph state release, and mcp2cli/skills2cli. Validation and local-main integration are the current gate.
-Owner session: main Codex leader owns the serialized shared hotspots for this Stage C package: parent plan, child plans, stable spec, checker/test updates, docs registry references, CI manifest references, safety registry references, and OpenSpec guard wiring.
-Current gate: run focused runtime-promotion checker tests, precommit/archive review, OpenSpec guard, shared local gate, and local MR review; then merge this package through the local-main-first helper and stop at the remote-publication approval gate.
-Runtime promotion result: CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses now share explicit R0 project-level preflight, R1 project-level fake/dry-run runtime, R2 reusable project-level helper/guard, R3 user-level install/update receipt, R4 user-level smoke runtime, and R5 active-candidate / bounded live handoff gates. This package does not install, start, enable, smoke-run, or live-run any of those runtimes.
-MCP/skills CLI carry-forward: `user_level_mcp_skills_discovery_facade_plan` is a deleted/superseded source plan, not an active child plan. Runtime ownership is now `user_level_mcp_skills_cli_runtime_plan`; existing `skills2cli` and `mcp2cli` helpers/checkers/tests are R0-R2 carry-forward surfaces only until R3/R4/R5 receipts are produced. The upstream runtime source remains `knowsuchagency/mcp2cli`, with install markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`.
-Remote state: this implementation package does not authorize remote publication.
-Canary response-position follow-up: Stage B runtime package now hardens complete user-visible assistant responses so the startup-summary-defined start marker is first visible text and the end marker is last visible text.
+Stage: implemented-local governance plus pending runtime-refresh planning for real-runtime lanes.
+Owner session: main Codex leader serializes shared hotspots: parent/child plans, specs, registries, CI, safety rules, and OpenSpec guard wiring.
+Current gate: validate, local-main integrate, and stop at remote-publication gate.
+Runtime boundary: CLI-Anything/WXWork_CLI, Browser/CLI adapters, Codex harnesses, skills2cli/mcp2cli (`knowsuchagency/mcp2cli`, rollback pointer, update receipt), gstack, canary, and Spec Kit entries record future checker/runtime requirements only; blocked: this package does not install, start, enable, smoke-run, live-run, or run `specify init`.
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model
@@ -479,6 +476,7 @@ Each child plan must include:
 - [x] Stage A follow-up: record the canary response-position contract in the parent and child plans before runtime/checker implementation.
 - [x] Stage B follow-up: enforce canary response-position diagnostics and tests.
 - [x] Stage B follow-up: create and register the gstack Codex delivery-loop child plan before checker/runtime implementation.
+- [x] Stage D follow-up: refresh Spec Kit child plans from official `github/spec-kit` sources and record future Checker + Runtime requirements without implementing scripts.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -513,6 +511,7 @@ Stage B acceptance after later confirmation:
 
 - 2026-06-06 canary response-position Stage B package: branch `implement-hardcode-canary-response-position-20260606` implements startup-summary wording, spec scenarios, diagnostics, and focused RED/GREEN tests for first-visible start and last-visible end response evidence; Stage A plan contract is already in local `main`.
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 Spec Kit reference refresh: branch `update-spec-kit-runtime-plan-20260606` updates Phase 6 child plans from official `github/spec-kit` sources and defers checker/runtime implementation.
 - 2026-06-06 gstack delivery-loop documentation package: branch `plan-gstack-codex-delivery-loop-20260606` records `garrytan/gstack` as a Phase 4 checker/runtime target and keeps install/live runtime work deferred.
 - 2026-06-05 Stage D real-runtime classification package: branch `runtime-plan-standard-20260605` updates ten runtime lanes, creates `user_level_mcp_skills_cli_runtime_plan` as the active mcp2cli/skills2cli runtime successor, records deleted source-plan boundaries, and keeps all real install/start/smoke/live work pending future runtime implementation.
 - 2026-06-05 Stage C runtime promotion package: branch `runtime-promotion-plan-20260605` adds the shared R0-R5 runtime promotion ladder, updates the three child plans, stable spec, checker markers, and tests, and keeps actual installation/start/enable/smoke/live runtime work out of this package.

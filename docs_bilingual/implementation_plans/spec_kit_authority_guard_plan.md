@@ -17,11 +17,17 @@ confirmation_required: true
 
 ## Goal
 
-Block Spec Kit authority migration commands such as specify init --force, .specify creation, or governance takeover without a separate active plan.
+Update the Spec Kit authority boundary so future checkers and guarded runtime helpers can consume GitHub Spec Kit without letting `specify init`, `.specify/`, `specs/`, `/speckit.*`, or `$speckit-*` become a competing repository governance layer.
 
 ## Source Plans
 
 - codex_governance_session_visibility_and_plan_lock_plan
+
+## Reference Sources
+
+- `https://github.com/github/spec-kit` - official Spec Kit repository and README; records `specify init`, `/speckit.constitution`, `/speckit.specify`, `/speckit.plan`, `/speckit.tasks`, `/speckit.implement`, and Codex skills-mode `$speckit-*` command surfaces.
+- `https://github.github.io/spec-kit/` - official documentation home; records the Spec -> Plan -> Tasks -> Implement SDD flow and multi-agent integration model.
+- `https://github.github.io/spec-kit/reference/core.html` - official core command reference; records `specify init` options including `--integration`, `--script`, `--here`, `--force`, `--no-git`, `--ignore-agent-tools`, and `specify self check`.
 
 ## Scope Decision
 
@@ -35,19 +41,20 @@ Block Spec Kit authority migration commands such as specify init --force, .speci
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented; validating local integration package
-Stage: Stage C implementation package
-Owner session: codex-20260601-spec-kit-authority-guard
-Current gate: run focused checks, local gate, and local MR review before local main integration
-Stage C entry condition: satisfied by current user implementation request on 2026-06-01
-Last updated: 2026-06-01
+Status: plan-updated; checker/runtime implementation pending
+Stage: Stage D documentation-only update package
+Owner session: update-spec-kit-runtime-plan-20260606
+Current gate: update this plan and its bilingual companion only; run plan/OpenSpec/precommit/local gates, then local-main integration and stop at the remote-publication gate
+Runtime boundary: this package does not run `specify init`, create `.specify/`, install or upgrade Spec Kit, generate command files, or implement checker/runtime scripts
+Last updated: 2026-06-06
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
 
-- tools/check_spec_kit_authority_guard.py
-- test/*spec_kit*authority*
-- docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md
+- Existing checker target for future extension: `tools/check_spec_kit_authority_guard.py`
+- Existing test target for future extension: `test/*spec_kit*authority*`
+- Future runtime target owned by the subordinate adapter plan: `tools/spec_kit_subordinate_runtime.py`
+- Governance boundary: `docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md`
 
 ## Hotspot Serialization
 
@@ -55,6 +62,8 @@ Only one session may own each hotspot at a time:
 
 - Spec Kit guard checker
 - .specify path handling
+- `tools/spec_kit_subordinate_runtime.py` future helper contract
+- Parent plan size edits and docs registry references
 
 ## Parallel Session Contract
 
@@ -71,6 +80,9 @@ Only one session may own each hotspot at a time:
 - [x] Implement a checker that fails closed on .specify governance takeover without an active plan.
 - [x] Register the checker in the local gate only after implementation confirmation.
 - [x] Run Spec Kit guard tests and local gate.
+- [x] Record official `github/spec-kit` reference sources and the future Checker + Runtime implementation boundary.
+- [ ] Future Checker implementation: extend `tools/check_spec_kit_authority_guard.py` so it validates any `.specify/`, `specs/`, `/speckit.*`, `$speckit-*`, `specify init`, `specify self check`, extension, or preset evidence against the subordinate-adapter authority rule.
+- [ ] Future Runtime implementation: require a guarded dry-run/probe helper before any live Spec Kit command; live `specify init --here --force`, install, upgrade, template write, agent-command write, or constitution write requires explicit operator authorization, receipts, rollback evidence, and separate implementation approval.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -90,10 +102,12 @@ Run these gates before local `main` integration unless this child plan later nar
 - Tests or checker fixtures fail before the implementation when the change is behavior-changing.
 - Governance docs, runtime helpers, checkers, tests, and CI registration stay aligned.
 - Evidence is recorded as a lightweight index instead of appending large evidence packages to this plan.
+- The updated plan explicitly names official Spec Kit references and keeps all Checker + Runtime work pending future implementation.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 Spec Kit reference refresh: branch `update-spec-kit-runtime-plan-20260606` records `github/spec-kit` official sources and future Checker + Runtime requirements without running `specify init` or implementing scripts.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-06-01 implementation package: added `tools/check_spec_kit_authority_guard.py`, `test/spec_kit_authority_guard.test.py`, subordinate-adapter governance docs, CI manifest registration, safety-rule registry backing, and OpenSpec guard integration; focused tests passed before local gate.
 <!-- EVIDENCE_INDEX_END -->
