@@ -29,11 +29,11 @@ Python guard scripts, JSON receipts, local tests, CI manifest entries, docs regi
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local; Stage B checker/test/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; Stage D real CLI-Anything/WXWork_CLI runtime is planned but not executed; remote publication remains closed.
-Runtime boundary: this repo-local package does not install CLI-Anything, fork or run WXWork_CLI, start or control `WXWork.exe`, send messages, click GUI controls, mutate enterprise WeChat state, mutate user-level runtime state, or mark the lane installed-user-level/smoke-tested/active-candidate.
-Runtime gap: real runtime work still requires CLI-Anything install/update, WXWork_CLI fork/adaptation, WXWork.exe discovery/start/control receipts, R4 smoke receipts, and R5 send/action handoff receipts guarded by current operator authorization, GUI owner lease, target/action allowlist, timeout, redaction, and rollback evidence.
-Implementation evidence: `tools/check_user_level_cli_anything_wxwork_cli_governance.py` and focused tests enforce CLI-Anything/WXWork_CLI naming, reject legacy WeCom/browser-adapter/harness ownership confusion, and keep live GUI automation disabled until R3/R4/R5 evidence exists.
-Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
+Status: implemented-local; Stage B checker/test/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; Stage D R4 local smoke receipt tooling is implemented; real GUI/live WXWork runtime remains pending; remote publication remains closed.
+Runtime boundary: this repo-local package does not install CLI-Anything, fork or uncontrolled-run WXWork_CLI, start or control `WXWork.exe`, send messages, click GUI controls, mutate enterprise WeChat state, mutate user-level runtime state, or mark the lane active-candidate. R4 `smoke-tested` receipts are written only for bounded help/status/safe-discovery smoke after a prior `installed-user-level` receipt resolves an existing wrapper; if a GUI target is named, a valid global lease is required.
+Runtime gap: real live runtime work still requires CLI-Anything install/update, WXWork_CLI fork/adaptation, actual user-level R3 install receipts, authorized R4 smoke execution, and R5 send/action handoff receipts guarded by current operator authorization, GUI owner lease, target/action allowlist, timeout, redaction, and rollback evidence.
+Implementation evidence: `tools/wxwork_cli_governance.py smoke-record` writes sanitized R4 `smoke-tested` receipts without process probing, GUI control, send actions, or message body capture; `smoke-check` validates those receipts, and `tools/check_user_level_cli_anything_wxwork_cli_governance.py` checker-backs the R4 helper surface.
+Companion refresh note: the zh-CN companion is refreshed with the same R4 local smoke tooling status while preserving runtime tokens.
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -105,6 +105,7 @@ This lane is still governance-only for real GUI automation. The next runtime pac
 - [x] Stage B: add checker coverage for source URL, adapter-plan semantics, no-message-content, global lease, operator authorization, timeout release, rollback pointer, and dry-run boundaries.
 - [x] Stage B: update CI manifest, safety registry, and OpenSpec guard registration.
 - [x] Stage C runtime promotion: add R0-R5 project-first/user-level ladder, installed-user-level/smoke-tested/active-candidate markers, and R5-only WXWork_CLI send-action gates.
+- [x] Stage D R4 local smoke tooling: add `smoke-record` / `smoke-check` receipt support for bounded help/status/safe-discovery smoke with no GUI control, no send action, no message body, timeout release, redaction, rollback readiness, and global lease when `WXWork.exe` is named.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
@@ -135,6 +136,7 @@ This lane is still governance-only for real GUI automation. The next runtime pac
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 Stage D R4 local smoke tooling evidence: branch `implement-cli-anything-wxwork-r4-20260606` adds `tools/wxwork_cli_governance.py smoke-record` / `smoke-check` and focused tests; generated R4 receipts validate through both the WXWork helper and generic `tools/user_level_receipt_governance.py smoke-check`, remain sanitized, and record no GUI control, no send action, no message body, timeout release, rollback readiness, and global lease when `WXWork.exe` is named.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` classifies CLI-Anything install, WXWork_CLI fork/adaptation, WXWork.exe control, R4 smoke, and R5 send/action handoff as pending Stage D runtime work; no GUI runtime is installed, started, controlled, smoked, or live-run.
 - 2026-06-05 Stage C runtime promotion evidence: branch `runtime-promotion-plan-20260605` records R0-R5 promotion gates for CLI-Anything/WXWork_CLI, keeps this package not installed/started/enabled, and checker-backs R5-only send action controls.
 - 2026-06-04 Stage B implementation evidence: `tools/cli_anything_governance.py`, `tools/wxwork_cli_governance.py`, `test/cli_anything_governance.test.py`, `test/wxwork_cli_governance.test.py`, and `tools/check_user_level_cli_anything_wxwork_cli_governance.py` implement and verify the split lane.

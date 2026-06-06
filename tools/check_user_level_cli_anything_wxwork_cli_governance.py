@@ -64,6 +64,9 @@ REQUIRED_WXWORK_MARKERS = (
     "global-wxwork-gui",
     "operator_authorization_receipt_required",
     "global_wxwork_lease_required",
+    "smoke-record",
+    "smoke-check",
+    "SMOKE_FORBIDDEN_MARKERS",
 )
 REQUIRED_SPEC_MARKERS = (
     "CLI-Anything/WXWork_CLI",
@@ -157,11 +160,14 @@ def check_plan_pair(root: Path, errors: list[str], info: list[str]) -> dict[str,
             errors.append(f"{rel.as_posix()}:unchecked_task_backlog_items")
         if "2026-06-04 Stage B" not in evidence:
             errors.append(f"{rel.as_posix()}:missing_stage_b_evidence_index")
+        if "2026-06-06 Stage D R4 local smoke tooling evidence" not in evidence:
+            errors.append(f"{rel.as_posix()}:missing_stage_d_r4_smoke_evidence_index")
         if "wecom-cli" in status.lower() or "wecom-cli" in backlog.lower():
             errors.append(f"{rel.as_posix()}:active_status_or_backlog_uses_legacy_wecom_cli")
         details[rel.as_posix()] = {
             "implemented_local": "implemented-local" in status,
             "has_stage_b_evidence": "2026-06-04 Stage B" in evidence,
+            "has_stage_d_r4_smoke_evidence": "2026-06-06 Stage D R4 local smoke tooling evidence" in evidence,
             "runtime_stage_markers": {
                 marker: marker.lower() in text.lower()
                 for marker in RUNTIME_STAGE_MARKERS
@@ -186,10 +192,31 @@ def check_helpers(root: Path, errors: list[str]) -> dict[str, bool]:
         errors.append("cli_anything_helper_still_uses_harness_generation_wording")
     if (root / OLD_WECOM_HELPER).exists():
         errors.append("legacy_wecom_cli_helper_still_present")
+    r4_smoke_record_present = "smoke-record" in wx_text and "command_smoke_record" in wx_text
+    r4_smoke_check_present = "smoke-check" in wx_text and "command_smoke_check" in wx_text
+    r4_smoke_forbidden_markers_present = all(
+        marker in wx_text
+        for marker in (
+            "SMOKE_FORBIDDEN_MARKERS",
+            "gui_control_performed",
+            "sends_messages",
+            "message_body_included",
+            "external_message_sent",
+        )
+    )
+    if not r4_smoke_record_present:
+        errors.append("wxwork_helper_missing_r4_smoke_record")
+    if not r4_smoke_check_present:
+        errors.append("wxwork_helper_missing_r4_smoke_check")
+    if not r4_smoke_forbidden_markers_present:
+        errors.append("wxwork_helper_missing_r4_smoke_forbidden_markers")
     return {
         "cli_anything_helper_present": (root / CLI_HELPER).exists(),
         "wxwork_helper_present": (root / WXWORK_HELPER).exists(),
         "legacy_wecom_helper_present": (root / OLD_WECOM_HELPER).exists(),
+        "r4_smoke_record_present": r4_smoke_record_present,
+        "r4_smoke_check_present": r4_smoke_check_present,
+        "r4_smoke_forbidden_markers_present": r4_smoke_forbidden_markers_present,
     }
 
 

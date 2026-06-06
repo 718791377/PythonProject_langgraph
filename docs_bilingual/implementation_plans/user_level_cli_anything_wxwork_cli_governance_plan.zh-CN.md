@@ -29,10 +29,10 @@ Python helper、CLI-Anything reference、`WXWork_CLI` adapter-plan、`WXWork.exe
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；Stage B checker/test/spec migration 已完成；Stage C runtime-promotion ladder 已记录并由 checker 支撑；Stage D real CLI-Anything/WXWork_CLI runtime 尚未安装、启动或启用。
-Runtime boundary：本 repo-local package 不安装 CLI-Anything，不 fork 或运行 WXWork_CLI，不启动或控制 `WXWork.exe`，不发送消息，不点击 GUI 控件，不修改企业微信状态，也不保存 no message-content。
-Runtime gap：真实 runtime 仍需要 CLI-Anything install/update、WXWork_CLI fork/adaptation、WXWork.exe discovery/start/control receipts、R4 smoke receipts，以及 R5 send/action handoff 的 target/action allowlist、message redaction、ephemeral message handling、operator authorization、global lease、timeout release 与 rollback pointer。
-Implementation evidence：`tools/check_user_level_cli_anything_wxwork_cli_governance.py` 和 focused tests 强制 CLI-Anything/WXWork_CLI 命名，拒绝旧混合边界，保留 adapter-plan 与 adapter-generation marker。
+Status: implemented-local；Stage B checker/test/spec migration 已完成；Stage C runtime-promotion ladder 已记录并由 checker 支撑；Stage D R4 local smoke receipt tooling 已实现；真实 GUI/live WXWork runtime 仍未安装、启动或启用。
+Runtime boundary：本 repo-local package 不安装 CLI-Anything，不 fork 或 uncontrolled-run WXWork_CLI，不启动或控制 WXWork.exe，不发送消息，不点击 GUI 控件，不修改企业微信状态，也不保存 no message-content，不把 lane 标记为 active-candidate。R4 smoke-tested receipt 只允许在已有 installed-user-level receipt 且 wrapper 可解析时执行 bounded help/status/safe-discovery；若显式命名 WXWork.exe GUI target，则必须有 global lease。
+Runtime gap：真实 live runtime 仍需要 CLI-Anything install/update、WXWork_CLI fork/adaptation、实际 user-level R3 install receipts、授权 R4 smoke execution，以及 R5 send/action handoff 的 target/action allowlist、message redaction、ephemeral message handling、operator authorization、global lease、timeout release 与 rollback pointer。
+Implementation evidence：tools/wxwork_cli_governance.py smoke-record 可写入脱敏 R4 smoke-tested receipts，且不 process probe、不 GUI control、不 send action、不保存 message body；smoke-check 校验 receipt，tools/check_user_level_cli_anything_wxwork_cli_governance.py 对 R4 helper surface 做 checker-backed 验证。
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -82,9 +82,10 @@ Implementation evidence：`tools/check_user_level_cli_anything_wxwork_cli_govern
 
 <!-- TASK_BACKLOG_START -->
 - [x] Stage A：拆分 CLI-Anything/WXWork_CLI lane，明确它不是 Browser/CLI adapter，也不是 Codex harnesses；not Codex harnesses。
-- [x] Stage B：增加 checker/test/spec，强制 `WXWork_CLI`、`WXWork.exe`、adapter-plan 与 adapter-generation marker。
+- [x] Stage B：增加 checker/test/spec，强制 WXWork_CLI、WXWork.exe、adapter-plan 与 adapter-generation marker。
 - [x] Stage C：增加 R0-R5 runtime promotion ladder，并保持 not installed/started/enabled in this package。
 - [x] Stage C：把 R3/R4/R5 真实 runtime 工作移出已完成 backlog，列为 Stage D pending runtime work。
+- [x] Stage D R4 local smoke tooling：新增 smoke-record / smoke-check receipt 支持，只允许 bounded help/status/safe-discovery smoke；不 GUI control、不 send action、不保存 message body，并记录 timeout release、redaction、rollback readiness，命名 WXWork.exe 时要求 global lease。
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
@@ -103,6 +104,7 @@ Implementation evidence：`tools/check_user_level_cli_anything_wxwork_cli_govern
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 CLI-Anything install/update、WXWork_CLI fork/adaptation、WXWork.exe control、R4 smoke 与 R5 send/action handoff 标记为 Stage D pending；未安装、未启动、未 live-run。
-- 2026-06-04 Stage B evidence：`tools/check_user_level_cli_anything_wxwork_cli_governance.py` 与 focused tests 已验证 CLI-Anything/WXWork_CLI lane。
+- 2026-06-06 Stage D R4 local smoke tooling evidence：branch implement-cli-anything-wxwork-r4-20260606 新增 tools/wxwork_cli_governance.py smoke-record / smoke-check 与 focused tests；生成的 R4 receipts 同时通过 WXWork helper 与通用 tools/user_level_receipt_governance.py smoke-check，并保持 sanitized、no GUI control、no send action、no message body、timeout release、rollback readiness，命名 WXWork.exe 时要求 global lease。
+- 2026-06-05 real-runtime gap update：branch runtime-plan-standard-20260605 将 CLI-Anything install/update、WXWork_CLI fork/adaptation、WXWork.exe control、R4 smoke 与 R5 send/action handoff 标记为 Stage D pending；未安装、未启动、未 live-run。
+- 2026-06-04 Stage B evidence：tools/check_user_level_cli_anything_wxwork_cli_governance.py 与 focused tests 已验证 CLI-Anything/WXWork_CLI lane。
 <!-- EVIDENCE_INDEX_END -->

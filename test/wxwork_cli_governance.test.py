@@ -34,6 +34,27 @@ def future_iso(minutes: int = 30) -> str:
 
 
 class WXWorkCliGovernanceTests(unittest.TestCase):
+    def write_install_receipt(self, directory: Path) -> Path:
+        receipt = {
+            "schema_version": 1,
+            "tool_name": "WXWork_CLI",
+            "owner_lane": "wxwork_cli",
+            "status": "installed-user-level",
+            "source_url": "https://github.com/HKUDS/CLI-Anything",
+            "installed_version": "fixture-pin",
+            "wrapper_path": sys.executable,
+            "install_path": str(directory / "wxwork-cli"),
+            "state_path": str(directory / "state"),
+            "smoke_test_command": "WXWork_CLI --help",
+            "smoke_test_result": {"status": "pass"},
+            "updater_command": "wxwork-cli update --pin fixture-pin",
+            "rollback_pointer": str(directory / "rollback"),
+            "redaction_status": "no_secrets",
+        }
+        path = directory / "wxwork-cli-install.json"
+        path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2), encoding="utf-8")
+        return path
+
     def test_api_status_is_safe_and_does_not_probe_wxwork(self):
         payload, stdout = run_wxwork(["api-status"])
         self.assertTrue(payload["ok"])
@@ -189,6 +210,105 @@ class WXWorkCliGovernanceTests(unittest.TestCase):
             )
             self.assertIn("authorization_expired_or_invalid", payload["blockers"])
             self.assertIn("lease_session_mismatch", payload["blockers"])
+
+    def test_r4_help_smoke_record_writes_sanitized_smoke_tested_receipt(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            install = self.write_install_receipt(root)
+            receipt_dir = root / "smoke"
+            payload, stdout = run_wxwork(
+                [
+                    "smoke-record",
+                    "--install-receipt",
+                    str(install),
+                    "--receipt-dir",
+                    str(receipt_dir),
+                    "--smoke-type",
+                    "help",
+                    "--session",
+                    "session-a",
+                ]
+            )
+
+            self.assertTrue(payload["ok"])
+            self.assertTrue(payload["receipt_written"])
+            self.assertTrue(payload["smoke_tested"])
+            self.assertEqual(payload["r4_status"], "smoke-tested")
+            self.assertNotIn(str(root), stdout)
+            self.assertNotIn(sys.executable, stdout)
+
+            receipt_paths = list(receipt_dir.glob("*.json"))
+            self.assertEqual(len(receipt_paths), 1)
+            receipt = json.loads(receipt_paths[0].read_text(encoding="utf-8"))
+            self.assertEqual(receipt["tool_name"], "WXWork_CLI")
+            self.assertEqual(receipt["owner_lane"], "wxwork_cli")
+            self.assertEqual(receipt["runtime_stage"], "smoke-tested")
+            self.assertEqual(receipt["smoke_type"], "help")
+            self.assertEqual(receipt["smoke_result"]["status"], "pass")
+            self.assertTrue(receipt["timeout_release"]["released"])
+            self.assertTrue(receipt["rollback_ready"])
+            self.assertFalse(receipt["process_probe_performed"])
+            self.assertFalse(receipt["gui_control_performed"])
+            self.assertFalse(receipt["sends_messages"])
+            self.assertFalse(receipt["message_body_included"])
+            self.assertFalse(receipt["external_message_sent"])
+
+            checked, check_stdout = run_wxwork(["smoke-check", "--receipt", str(receipt_paths[0])])
+            self.assertTrue(checked["ok"])
+            self.assertTrue(checked["smoke_receipt_valid"])
+            self.assertNotIn(str(root), check_stdout)
+            self.assertNotIn(sys.executable, check_stdout)
+
+            generic = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools" / "user_level_receipt_governance.py"),
+                    "smoke-check",
+                    "--receipt",
+                    str(receipt_paths[0]),
+                    "--tool-name",
+                    "WXWork_CLI",
+                    "--owner-lane",
+                    "wxwork_cli",
+                    "--json",
+                ],
+                cwd=ROOT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                capture_output=True,
+            )
+            self.assertEqual(generic.returncode, 0, generic.stdout + "\n" + generic.stderr)
+            generic_payload = json.loads(generic.stdout)
+            self.assertTrue(generic_payload["smoke_receipt_valid"])
+            self.assertNotIn(str(root), generic.stdout)
+            self.assertNotIn(sys.executable, generic.stdout)
+
+    def test_r4_smoke_with_named_gui_target_requires_global_lease(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            install = self.write_install_receipt(root)
+            payload, _ = run_wxwork(
+                [
+                    "smoke-record",
+                    "--install-receipt",
+                    str(install),
+                    "--receipt-dir",
+                    str(root / "smoke"),
+                    "--smoke-type",
+                    "help",
+                    "--session",
+                    "session-a",
+                    "--target-process",
+                    "WXWork.exe",
+                ],
+                expect=3,
+            )
+
+            self.assertFalse(payload["smoke_tested"])
+            self.assertIn("global_wxwork_lease_required", payload["blockers"])
+            self.assertFalse(payload["gui_control_performed"])
+            self.assertFalse(payload["message_body_included"])
 
 
 if __name__ == "__main__":
