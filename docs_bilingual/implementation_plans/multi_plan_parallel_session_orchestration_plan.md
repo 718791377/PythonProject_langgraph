@@ -67,7 +67,7 @@ Current gate: run focused runtime-promotion checker tests, precommit/archive rev
 Runtime promotion result: CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses now share explicit R0 project-level preflight, R1 project-level fake/dry-run runtime, R2 reusable project-level helper/guard, R3 user-level install/update receipt, R4 user-level smoke runtime, and R5 active-candidate / bounded live handoff gates. This package does not install, start, enable, smoke-run, or live-run any of those runtimes.
 MCP/skills CLI carry-forward: `user_level_mcp_skills_discovery_facade_plan` is a deleted/superseded source plan, not an active child plan. Runtime ownership is now `user_level_mcp_skills_cli_runtime_plan`; existing `skills2cli` and `mcp2cli` helpers/checkers/tests are R0-R2 carry-forward surfaces only until R3/R4/R5 receipts are produced. The upstream runtime source remains `knowsuchagency/mcp2cli`, with install markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`.
 Remote state: this implementation package does not authorize remote publication.
-Canary response-position follow-up: Stage A records that the startup-summary-defined start marker must be the first visible text in a complete user-visible assistant response and the startup-summary-defined end marker must be the last visible text. This package updates plans only; runtime/checker implementation follows in a separate Stage B package.
+Canary response-position follow-up: Stage B runtime package now hardens complete user-visible assistant responses so the startup-summary-defined start marker is first visible text and the end marker is last visible text.
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model
@@ -233,7 +233,7 @@ Required execution order:
 
 ## Phase 2 Follow-up: Canonical Visible Canary Restore
 
-| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | response-position follow-up planned | Restored startup-summary-defined canonical visible canary semantics; a new serialized package will harden complete user-visible assistant responses so the start marker is first visible text and the end marker is last visible text. |
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | response-position runtime local candidate | Restored startup-summary-defined canonical visible canary semantics; Stage B hardens first-visible start and last-visible end response evidence. |
 
 This follow-up is a serialized hotspot package. It touches startup summaries, `AGENTS.md`, canary checkers, session replay filtering, tests, and the stable canary OpenSpec spec, so it must not run in parallel with other canary-surface writer sessions.
 
@@ -475,7 +475,7 @@ Each child plan must include:
 - [x] Stage C runtime promotion: add the R0-R5 shared runtime ladder for CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses without installing, starting, enabling, smoke-running, or live-running any runtime.
 - [x] Stage D real-runtime classification: update ten runtime lanes, add `user_level_mcp_skills_cli_runtime_plan`, and mark all real install/start/smoke/live execution as pending future runtime work.
 - [x] Stage A follow-up: record the canary response-position contract in the parent and child plans before runtime/checker implementation.
-- [ ] Stage B follow-up: update startup summaries, stable spec, canary response diagnostics, and focused tests so complete user-visible assistant responses require the startup-summary-defined start marker at the beginning and end marker at the end.
+- [x] Stage B follow-up: update startup summaries, stable spec, canary response diagnostics, and focused tests so complete user-visible assistant responses require the startup-summary-defined start marker at the beginning and end marker at the end.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -508,7 +508,7 @@ Stage B acceptance after later confirmation:
 
 ## Evidence Index
 
-- 2026-06-06 canary response-position Stage A package: branch `plan-hardcode-canary-response-position-20260606` records the parent/child-plan contract that complete user-visible assistant responses must place the startup-summary-defined start marker first and end marker last; runtime/checker implementation remains a separate Stage B package.
+- 2026-06-06 canary response-position Stage B package: branch `implement-hardcode-canary-response-position-20260606` implements startup-summary wording, spec scenarios, diagnostics, and focused RED/GREEN tests for first-visible start and last-visible end response evidence; Stage A plan contract is already in local `main`.
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-05 Stage D real-runtime classification package: branch `runtime-plan-standard-20260605` updates ten runtime lanes, creates `user_level_mcp_skills_cli_runtime_plan` as the active mcp2cli/skills2cli runtime successor, records deleted source-plan boundaries, and keeps all real install/start/smoke/live work pending future runtime implementation.
 - 2026-06-05 Stage C runtime promotion package: branch `runtime-promotion-plan-20260605` adds the shared R0-R5 runtime promotion ladder, updates the three child plans, stable spec, checker markers, and tests, and keeps actual installation/start/enable/smoke/live runtime work out of this package.

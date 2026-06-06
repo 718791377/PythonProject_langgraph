@@ -30,7 +30,7 @@ The visible startup canary markers SHALL remain the startup-summary-defined non-
 
 The checker SHALL continue to enforce static placement rules for repository files.
 
-When response or session evidence is explicitly provided, the checker SHALL inspect only user-visible assistant responses and SHALL NOT count tool output, compaction summaries, reasoning, developer/system payloads, startup-summary file reads, or other context copies as satisfying the canary.
+When response or session evidence is explicitly provided, the checker SHALL inspect only user-visible assistant responses and SHALL NOT count tool output, compaction summaries, reasoning, developer/system payloads, startup-summary file reads, or other context copies as satisfying the canary. Complete user-visible assistant responses SHALL count as canonical evidence only when the startup-summary-defined start marker is the first visible response text and the startup-summary-defined end marker is the last visible response text; if both markers are present but not in those positions, the checker SHALL fail closed with `mispositioned_canary` without echoing marker literals.
 
 When session JSONL evidence is narrowed to a specific turn or latest assistant response, the checker SHALL apply that selection only to eligible assistant messages and SHALL continue to ignore non-user-visible context sources.
 
@@ -101,10 +101,18 @@ When session JSONL evidence is narrowed to a specific turn or latest assistant r
 - **AND** it SHALL report `missing_canary`
 - **AND** it SHALL NOT treat the tool output as satisfying the response diagnostic
 
+#### Scenario: User-visible assistant response mispositions the canary
+
+- **WHEN** the checker receives response text or session JSONL containing an eligible assistant response
+- **AND** that response contains both startup-summary-defined markers
+- **AND** the start marker is not first visible text or the end marker is not last visible text
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report `mispositioned_canary` without echoing marker literals
+
 #### Scenario: Selected turn assistant response is the canonical evidence source
 
 - **WHEN** the checker receives session JSONL evidence together with a selected turn id or latest-assistant selector
-- **AND** the selected assistant response contains the startup-summary-defined canary markers
+- **AND** the selected assistant response contains the startup-summary-defined canary markers at the required response positions
 - **THEN** the checker SHALL report `canonical_present`
 - **AND** it SHALL ignore other turns' context copies and assistant messages outside the selected turn scope
 

@@ -295,7 +295,8 @@ def flatten_text(value: object) -> str:
             for child in item:
                 visit(child)
         elif isinstance(item, dict):
-            for child in item.values():
+            for key in ("text", "content", "message"):
+                child = item.get(key)
                 if isinstance(child, (str, list, dict)):
                     visit(child)
 
@@ -377,12 +378,17 @@ def diagnose_response_text(source: str, text: str, *, path: str | None = None, l
     mojibake_lines = sanitize_mojibake_canary_lines(raw_mojibake_lines)
     start_present = START_CANARY in text
     end_present = END_CANARY in text
+    stripped_text = text.strip()
+    start_at_response_start = stripped_text.startswith(START_CANARY)
+    end_at_response_end = stripped_text.endswith(END_CANARY)
     legacy_start_present = LEGACY_START_CANARY in text
     legacy_end_present = LEGACY_END_CANARY in text
     if raw_mojibake_lines:
         status = "mojibake_canary"
-    elif start_present and end_present:
+    elif start_present and end_present and start_at_response_start and end_at_response_end:
         status = "canonical_present"
+    elif start_present and end_present:
+        status = "mispositioned_canary"
     elif legacy_start_present or legacy_end_present:
         status = "legacy_canary"
     else:
@@ -393,15 +399,23 @@ def diagnose_response_text(source: str, text: str, *, path: str | None = None, l
         missing_parts.append("start_marker")
     if not end_present:
         missing_parts.append("end_marker")
+    mispositioned_parts = []
+    if start_present and not start_at_response_start:
+        mispositioned_parts.append("start_marker_position")
+    if end_present and not end_at_response_end:
+        mispositioned_parts.append("end_marker_position")
 
     diagnostic = {
         "source": source,
         "status": status,
         "start_marker_present": start_present,
         "end_marker_present": end_present,
+        "start_marker_at_response_start": start_at_response_start,
+        "end_marker_at_response_end": end_at_response_end,
         "legacy_start_marker_present": legacy_start_present,
         "legacy_end_marker_present": legacy_end_present,
         "missing_parts": missing_parts,
+        "mispositioned_parts": mispositioned_parts,
         "mojibake_canary_lines": mojibake_lines,
         "recovery": (
             "reread AGENTS.md, reread docs_bilingual/project_startup_summary.md and "
@@ -670,6 +684,12 @@ def run_check(
             errors.append(
                 "Response/session canary diagnostic reported legacy_canary; "
                 "legacy marker text is stale compatibility input and does not satisfy the startup-summary canary."
+            )
+        elif status == "mispositioned_canary":
+            errors.append(
+                "Response/session canary diagnostic reported mispositioned_canary; "
+                "the startup-summary-defined start marker must be first visible response text and "
+                "the end marker must be last visible response text."
             )
 
     if not findings and not errors:

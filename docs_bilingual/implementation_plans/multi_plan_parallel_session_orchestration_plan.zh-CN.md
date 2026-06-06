@@ -65,7 +65,7 @@ Current gate: 运行 focused runtime-promotion checker tests、precommit/archive
 Runtime promotion result: CLI-Anything/WXWork_CLI、Browser/CLI adapters 与 Codex harnesses 现在共享明确的 R0 project-level preflight、R1 project-level fake/dry-run runtime、R2 reusable project-level helper/guard、R3 user-level install/update receipt、R4 user-level smoke runtime、R5 active-candidate / bounded live handoff gates。本包不 install、start、enable、smoke-run 或 live-run 任何 runtime。
 MCP/skills CLI carry-forward: `user_level_mcp_skills_discovery_facade_plan` is a deleted/superseded source plan, not an active child plan. Runtime ownership is now `user_level_mcp_skills_cli_runtime_plan`; existing `skills2cli` and `mcp2cli` helpers/checkers/tests are R0-R2 carry-forward surfaces only until R3/R4/R5 receipts are produced. The upstream runtime source remains `knowsuchagency/mcp2cli`, with install markers `uvx mcp2cli --help`, `uv tool install mcp2cli`, and `npx skills add knowsuchagency/mcp2cli --skill mcp2cli`.
 Remote state: 本 implementation package 不授权 remote publication。
-Canary position follow-up: Stage A records first-visible start and last-visible end for complete user-visible assistant responses; runtime/checker work follows in Stage B.
+Canary position follow-up: Stage B now hardens first-visible start and last-visible end for complete user-visible assistant responses.
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -231,7 +231,7 @@ python tools/local_main_retire_lock.py status --root . --json
 
 ## Phase 2 Follow-up: Canonical Visible Canary Restore
 
-| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | response-position follow-up planned | Restored startup-summary-defined visible canary semantics; next package hardens first-visible start and last-visible end in complete user-visible assistant responses. |
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | response-position runtime local candidate | Restored startup-summary-defined visible canary semantics; Stage B hardens first-visible start and last-visible end response evidence. |
 
 This follow-up is a serialized hotspot package. It touches startup summaries, `AGENTS.md`, canary checkers, session replay filtering, tests, and the stable canary OpenSpec spec, so it must not run in parallel with other canary-surface writer sessions.
 
@@ -493,7 +493,7 @@ Lane-specific R5 约束：
 - [x] Stage C runtime promotion：为 CLI-Anything/WXWork_CLI、Browser/CLI adapters 与 Codex harnesses 加入共享 R0-R5 runtime ladder，且不 install、start、enable、smoke-run 或 live-run 任何 runtime。
 - [x] Stage D real-runtime classification: update ten runtime lanes, add `user_level_mcp_skills_cli_runtime_plan`, and mark all real install/start/smoke/live execution as pending future runtime work.
 - [x] Stage A follow-up: record canary response-position contract in parent/child plans before runtime/checker work.
-- [ ] Stage B follow-up: update startup summaries, stable spec, diagnostics, and tests to enforce first-visible start and last-visible end.
+- [x] Stage B follow-up: update startup summaries, stable spec, diagnostics, and tests to enforce first-visible start and last-visible end.
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -525,7 +525,7 @@ Stage B 后续确认后的验收条件：
 
 ## 证据索引
 
-- 2026-06-06 canary response-position Stage A package: branch `plan-hardcode-canary-response-position-20260606` records parent/child-plan first-visible start and last-visible end contract; runtime/checker work remains Stage B.
+- 2026-06-06 canary response-position Stage B package: branch `implement-hardcode-canary-response-position-20260606` implements startup-summary wording, spec, diagnostics, and RED/GREEN tests for first-visible start and last-visible end; Stage A is already in local `main`.
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-05 Stage D real-runtime classification package: branch `runtime-plan-standard-20260605` updates ten runtime lanes, creates `user_level_mcp_skills_cli_runtime_plan` as the active mcp2cli/skills2cli runtime successor, records deleted source-plan boundaries, and keeps all real install/start/smoke/live work pending future runtime implementation.
 - 2026-06-05 Stage C runtime promotion package：branch `runtime-promotion-plan-20260605` 加入共享 R0-R5 runtime promotion ladder，更新三个 child plans、stable spec、checker markers 与 tests，并把实际 install/start/enable/smoke/live runtime work 留在本包之外。

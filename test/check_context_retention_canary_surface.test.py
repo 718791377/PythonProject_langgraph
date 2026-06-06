@@ -245,6 +245,44 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         self.assertNotIn(START_CANARY, result.stdout)
         self.assertNotIn(END_CANARY, result.stdout)
 
+    def test_response_text_mode_fails_when_text_precedes_start_marker(self) -> None:
+        root = self.make_root("canary-response-prefix")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+
+        result = self.run_check_args(root, "--response-text", f"prefix {START_CANARY} response body {END_CANARY}")
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        diagnostic = payload["response_diagnostics"][0]
+        self.assertEqual(diagnostic["status"], "mispositioned_canary")
+        self.assertTrue(diagnostic["start_marker_present"])
+        self.assertTrue(diagnostic["end_marker_present"])
+        self.assertFalse(diagnostic["start_marker_at_response_start"])
+        self.assertTrue(diagnostic["end_marker_at_response_end"])
+        self.assertIn("start_marker_position", diagnostic["mispositioned_parts"])
+        self.assertNotIn(START_CANARY, result.stdout)
+        self.assertNotIn(END_CANARY, result.stdout)
+
+    def test_response_text_mode_fails_when_text_follows_end_marker(self) -> None:
+        root = self.make_root("canary-response-suffix")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+
+        result = self.run_check_args(root, "--response-text", f"{START_CANARY} response body {END_CANARY} suffix")
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        diagnostic = payload["response_diagnostics"][0]
+        self.assertEqual(diagnostic["status"], "mispositioned_canary")
+        self.assertTrue(diagnostic["start_marker_at_response_start"])
+        self.assertFalse(diagnostic["end_marker_at_response_end"])
+        self.assertIn("end_marker_position", diagnostic["mispositioned_parts"])
+        self.assertNotIn(START_CANARY, result.stdout)
+        self.assertNotIn(END_CANARY, result.stdout)
+
     def test_response_text_mode_fails_when_user_visible_response_missing_canary(self) -> None:
         root = self.make_root("canary-response-missing")
         self.write_startup_pair(root)
@@ -314,6 +352,71 @@ class ContextRetentionCanarySurfaceCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertEqual(payload["response_diagnostics"][0]["status"], "missing_canary")
         self.assertEqual(payload["response_diagnostics"][0]["source"], "session_latest_assistant")
+
+    def test_session_mode_fails_when_tool_output_has_canary_but_assistant_mispositions_it(self) -> None:
+        root = self.make_root("canary-session-tool-output-misposition")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+        session_path = self.write_session_jsonl(
+            root,
+            "session.jsonl",
+            [
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "function_call_output",
+                        "output": f"{START_CANARY} tool output has correctly positioned markers {END_CANARY}",
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": f"assistant prefix {START_CANARY} visible answer {END_CANARY}",
+                            }
+                        ],
+                    },
+                },
+            ],
+        )
+
+        result = self.run_check_args(root, "--session-jsonl", str(session_path), "--latest-assistant")
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "mispositioned_canary")
+        self.assertEqual(payload["response_diagnostics"][0]["source"], "session_latest_assistant")
+
+    def test_session_mode_ignores_content_type_metadata_when_checking_visible_position(self) -> None:
+        root = self.make_root("canary-session-content-type")
+        self.write_startup_pair(root)
+        self.write_file(root, "AGENTS.md", "Refer to the startup summary for context-loss recovery.\n")
+        session_path = self.write_session_jsonl(
+            root,
+            "session.jsonl",
+            [
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": [{"type": "output_text", "text": f"{START_CANARY} visible answer {END_CANARY}"}],
+                    },
+                },
+            ],
+        )
+
+        result = self.run_check_args(root, "--session-jsonl", str(session_path), "--latest-assistant")
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["response_diagnostics"][0]["status"], "canonical_present")
 
     def test_session_turn_id_tracks_task_range_without_response_item_turn_ids(self) -> None:
         root = self.make_root("canary-session-turn-id")

@@ -33,7 +33,7 @@
 
 检查器 SHALL 继续强制执行仓库文件的静态放置规则。
 
-当显式提供响应或 session 证据时，检查器 SHALL 只检查用户可见 assistant 响应，SHALL NOT 把工具输出、压缩摘要、推理、developer/system payload、启动摘要文件读取或其他上下文副本算作 canary。
+当显式提供响应或 session 证据时，检查器 SHALL 只检查用户可见 assistant 响应，SHALL NOT 把工具输出、压缩摘要、推理、developer/system payload、启动摘要文件读取或其他上下文副本算作 canary。完整用户可见 assistant 响应只有在 startup-summary-defined 开始标记是第一个可见响应文本且结束标记是最后一个可见响应文本时，才 SHALL 算作规范证据；若两个标记都存在但位置不正确，检查器 SHALL 以 `mispositioned_canary` fail closed 且不回显标记字面量。
 
 当 session JSONL 证据被缩小到指定 turn 或 latest assistant response 时，检查器 SHALL 只把该选择应用于合格 assistant 消息，并继续忽略非用户可见上下文来源。
 
@@ -104,10 +104,18 @@
 - **AND** SHALL 报告 `missing_canary`
 - **AND** SHALL NOT 把工具输出视为满足响应诊断
 
+#### Scenario: User-visible assistant response mispositions the canary
+
+- **WHEN** 检查器收到包含合格 assistant 响应的 response text 或 session JSONL
+- **AND** 该响应同时包含 startup-summary-defined 两个标记
+- **AND** 开始标记不是第一个可见文本，或结束标记不是最后一个可见文本
+- **THEN** 检查器 SHALL 返回非零退出码
+- **AND** SHALL 报告 `mispositioned_canary` 且不回显标记字面量
+
 #### Scenario: Selected turn assistant response is the canonical evidence source
 
 - **WHEN** 检查器收到 session JSONL 证据以及指定 turn id 或 latest-assistant selector
-- **AND** 被选择的 assistant 响应包含启动摘要定义的当前 canary 标记
+- **AND** 被选择的 assistant 响应在所需响应位置包含启动摘要定义的当前 canary 标记
 - **THEN** 检查器 SHALL 报告 `canonical_present`
 - **AND** SHALL 忽略其他 turn 的上下文副本和选择范围外的 assistant 消息
 
