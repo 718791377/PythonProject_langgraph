@@ -16,6 +16,8 @@ READY_BACKEND_STATUSES = {"ready", "running", "selected", "ok"}
 UNREADY_BACKEND_STATUSES = {"blocked", "failed", "error", "unavailable", "missing"}
 READINESS_FIELDS = ("installed", "enabled", "selected", "ready")
 READINESS_BACKENDS = ("native_omx", "langgraph")
+READINESS_RECEIPT_KIND = "durable_capability_readiness_projection"
+READINESS_PROMOTION_MARKER = "smoke-tested"
 
 
 def default_state_file() -> Path:
@@ -185,6 +187,7 @@ def validate_capability_readiness_projection(
     if data is None:
         return None
 
+    receipt_summary = validate_capability_readiness_receipt_metadata(data, errors, warnings, label=label)
     readiness = data.get("capability_readiness") if isinstance(data.get("capability_readiness"), dict) else data
     if not isinstance(readiness, dict):
         errors.append(f"{label} must be an object or contain an object-valued `capability_readiness` field.")
@@ -236,7 +239,65 @@ def validate_capability_readiness_projection(
         "selected_backend": selected_backend,
         "readiness_fields": normalized_fields,
         "backends": backends,
+        "receipt": receipt_summary,
     }
+
+
+def validate_capability_readiness_receipt_metadata(
+    data: dict[str, Any],
+    errors: list[str],
+    warnings: list[str],
+    *,
+    label: str,
+) -> dict[str, Any] | None:
+    receipt_kind = as_string(data, "receipt_kind")
+    if not receipt_kind:
+        return None
+    if receipt_kind != READINESS_RECEIPT_KIND:
+        errors.append(f"{label}.receipt_kind must be `{READINESS_RECEIPT_KIND}` when present; got `{receipt_kind}`.")
+    promotion_marker = as_string(data, "promotion_marker")
+    if promotion_marker != READINESS_PROMOTION_MARKER:
+        errors.append(f"{label}.promotion_marker must be `{READINESS_PROMOTION_MARKER}` for R4 readiness receipts.")
+    generated_at = as_string(data, "generated_at")
+    if not generated_at:
+        errors.append(f"{label}.generated_at is required for readiness receipts.")
+    if not isinstance(data.get("source_receipts"), dict):
+        errors.append(f"{label}.source_receipts must be an object.")
+    selector_evidence = data.get("selector_evidence")
+    if not isinstance(selector_evidence, dict):
+        errors.append(f"{label}.selector_evidence must be an object.")
+    else:
+        if as_string(selector_evidence, "selector_authority") != ".omx/state/selectors/active.json":
+            errors.append(f"{label}.selector_evidence.selector_authority must be `.omx/state/selectors/active.json`.")
+        if not as_string(selector_evidence, "active_selector_status"):
+            errors.append(f"{label}.selector_evidence.active_selector_status is required.")
+    version_evidence = data.get("version_evidence")
+    if not isinstance(version_evidence, dict):
+        errors.append(f"{label}.version_evidence must be an object.")
+    else:
+        for backend_name in READINESS_BACKENDS:
+            backend_evidence = version_evidence.get(backend_name)
+            if not isinstance(backend_evidence, dict):
+                errors.append(f"{label}.version_evidence.{backend_name} must be an object.")
+            elif not as_string(backend_evidence, "install_state"):
+                errors.append(f"{label}.version_evidence.{backend_name}.install_state is required.")
+    if not isinstance(data.get("blockers"), list):
+        errors.append(f"{label}.blockers must be an array.")
+    if data.get("durable_workflow_adopted") is not False:
+        errors.append(f"{label}.durable_workflow_adopted must be false for readiness refresh receipts.")
+    if data.get("persistent_team_launched") is not False:
+        errors.append(f"{label}.persistent_team_launched must be false for readiness refresh receipts.")
+    smoke = data.get("smoke")
+    if not isinstance(smoke, dict):
+        errors.append(f"{label}.smoke must be an object.")
+    else:
+        if as_string(smoke, "marker") != READINESS_PROMOTION_MARKER:
+            errors.append(f"{label}.smoke.marker must be `{READINESS_PROMOTION_MARKER}`.")
+        if smoke.get("launched_backend") is not False:
+            errors.append(f"{label}.smoke.launched_backend must be false.")
+        if smoke.get("launched_persistent_team") is not False:
+            errors.append(f"{label}.smoke.launched_persistent_team must be false.")
+    return {"receipt_kind": receipt_kind, "promotion_marker": promotion_marker, "generated_at": generated_at}
 
 
 def run_check(

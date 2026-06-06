@@ -36,12 +36,12 @@ Project durable lane state as installed, enabled, selected, and ready without co
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Stage C implementation package ready for local validation, commit, and local-main integration
+Stage: Stage D R4 runtime refresh implemented and ready for repository validation/OpenSpec archive/local-main integration
 Owner session: main Codex leader session
-Current gate: local CI and local MR review before local main integration; remote publication remains out of scope until explicit user approval
-Stage C entry condition: satisfied by explicit user request to continue this child implementation plan
-Last updated: 2026-05-30
-Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
+Current gate: repository guard, precommit review, local CI, OpenSpec archive, and local MR review before local main integration; remote publication remains out of scope until explicit user approval
+Stage D entry condition: satisfied by explicit user request to continue this child implementation plan through R4
+Last updated: 2026-06-06
+Companion refresh note: the zh-CN companion stays Chinese-first while preserving runtime tokens; this R4 package changes runtime refresh behavior only through explicit `-RefreshReadiness`.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -67,9 +67,9 @@ Only one session may own each hotspot at a time:
 
 ## Task Backlog
 
-## Real Runtime Implementation Gap
+## Runtime Refresh Scope
 
-Readiness projection is checker-backed, but live installed/enabled/selected/ready refresh is not implemented. Real runtime work must probe user-level and repo-local state and refresh projections without collapsing fields.
+Stage D/R4 implements explicit readiness projection refresh through `codex-durable-state-status.ps1 -RefreshReadiness`. The default status path remains read-only. Refresh receipts preserve installed/enabled/selected/ready as distinct fields and may be extended later with deeper source evidence without collapsing readiness states.
 
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
@@ -77,9 +77,9 @@ Readiness projection is checker-backed, but live installed/enabled/selected/read
 - [x] Update evidence checks to require distinct state fields.
 - [x] Document user-facing wording for backend_default and backend_ready.
 - [x] Run capability switch and effective-lane checks plus local gate.
-- [ ] Stage D real runtime: implement readiness probe helper that refreshes installed, enabled, selected, and ready for native_omx and LangGraph without collapsing states.
-- [ ] Stage D real runtime: record probe source, timestamp, backend family, selector evidence, version evidence, and blockers in sanitized projection receipts.
-- [ ] Stage D real runtime: wire projection refresh into activation evidence without claiming durable workflow adoption or persistent-team launch.
+- [x] Stage D real runtime: implement readiness probe helper that refreshes installed, enabled, selected, and ready for native_omx and LangGraph without collapsing states.
+- [x] Stage D real runtime: record probe source, timestamp, backend family, selector evidence, version evidence, and blockers in sanitized projection receipts.
+- [x] Stage D real runtime: wire projection refresh into activation evidence without claiming durable workflow adoption or persistent-team launch.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -103,6 +103,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 Stage D/R4 runtime refresh: branch `implement-durable-capability-readiness-r4-20260605` adds explicit `codex-durable-state-status.ps1 -RefreshReadiness -Json` receipt generation at `.omx/state/readiness/durable-capability-readiness-projection.json`, preserves distinct readiness fields and source/selector/version/blocker evidence, and records `durable_workflow_adopted=false` plus `persistent_team_launched=false`; targeted evidence: `python .\test\check_capability_switch_chain.test.py` and `powershell -NoProfile -ExecutionPolicy Bypass -File .\test\install-codex-user-level-team-mode.test.ps1` passed on 2026-06-06.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for installed/enabled/selected/ready probe refresh; this package updates plan governance only and does not run live runtime.
 - 2026-05-30 Stage C implementation: `tools/check_capability_switch_chain.py` now validates durable capability readiness projections with distinct `installed`, `enabled`, `selected`, and `ready` fields, including the invariant `ready == installed && enabled && selected`.
 - 2026-05-30 Stage C fixtures: `test/check_capability_switch_chain.test.py` covers installed-only, enabled-not-selected, selected-not-ready, ready, collapsed-ready, and missing-field readiness states.

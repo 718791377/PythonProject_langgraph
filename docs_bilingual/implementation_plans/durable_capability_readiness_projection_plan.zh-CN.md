@@ -13,7 +13,7 @@ confirmation_required: true
 
 # Durable 能力 Ready 状态投影方案
 
-> **给 agentic workers：** 使用 `superpowers:executing-plans`。本方案只定义 installed、enabled、selected、ready 的投影与刷新，不直接安装 runtime。
+> **给 agentic workers：** 使用 `superpowers:executing-plans`。本方案定义 installed、enabled、selected、ready 的投影与显式刷新，不直接安装 runtime。
 
 ## 目标
 
@@ -34,10 +34,13 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；已有 readiness checker 能检查能力链与状态词边界。
-Current gate：保持 local checks、OpenSpec guard 与 local-main-first 集成；remote publication 关闭。
-Runtime boundary：当前只做静态/fixture readiness 检查，不探测真实安装产物、不刷新 active selector，也不执行 smoke。
-Runtime gap：若要真实反映能力状态，需要 runtime probe/refresh helper 读取 installed/enabled/selected/ready 的实际证据，并写入 repo-local readiness projection receipt。
+状态：active
+阶段：Stage D R4 runtime refresh 已实现，等待 repository validation、OpenSpec 归档、本地 MR review 与本地 main 集成
+责任会话：main Codex leader session
+当前门禁：repository guard、precommit review、本地 CI、OpenSpec 归档与本地 MR review 通过后合入本地 main；远端发布仍不在范围内，除非用户明确批准
+Stage D 进入条件：用户已明确要求继续实施本子 implementation plan 至 R4
+Runtime boundary：默认 status path 保持只读；只有显式 `-RefreshReadiness` 才写入 repo-local readiness projection receipt。
+最后更新：2026-06-06
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -46,7 +49,7 @@ Runtime gap：若要真实反映能力状态，需要 runtime probe/refresh help
 - `tools/check_effective_lane_fit_evidence.py` - 校验 native_omx 与 LangGraph lane fit 证据。
 - `docs_bilingual/governance/langgraph_user_level_runtime_policy.zh-CN.md` - 说明用户级 LangGraph runtime 安装与 readiness 边界。
 - `test/*capability*readiness*` - 覆盖 capability readiness 投影与状态刷新行为。
-- 后续 `.omx/state/*readiness*` fixture 或 receipt schema
+- 后续 `.omx/state/*readiness*` fixture 或 receipt schema。
 
 ## 热点串行规则
 
@@ -58,21 +61,24 @@ capability switch chain、selector schema、readiness projection schema 与 CI g
 
 ## 任务清单
 
-## Real Runtime Implementation Gap（真实 runtime 缺口）
+## Runtime Refresh Scope（runtime refresh 范围）
 
-现有 checker 只能证明规则存在，不能证明 runtime 真实 ready。后续 runtime 包需要：
+Stage D/R4 已实现显式 readiness projection refresh：`codex-durable-state-status.ps1 -RefreshReadiness` 会写入 repo-local readiness projection receipt；默认 status path 仍保持只读。后续可以继续扩展更深的 source evidence，但不得折叠 installed/enabled/selected/ready 字段。
 
 <!-- TASK_BACKLOG_START -->
 - [x] Stage B：定义 installed/enabled/selected/ready 不能折叠。
 - [x] Stage B：把 capability switch chain 与 lane-fit evidence 接入检查。
 - [x] Stage C：记录 readiness projection 的真实 runtime gap。
+- [x] Stage D/R4：实现显式 readiness probe/refresh helper，刷新 native_omx 与 LangGraph 的 installed、enabled、selected、ready 字段且不折叠状态。
+- [x] Stage D/R4：记录 source receipt、timestamp、backend family、selector evidence、version evidence 与 blockers，写入 sanitized projection receipt。
+- [x] Stage D/R4：将 projection refresh metadata 接入 status/activation evidence，同时明确不声明 durable workflow adoption 或 persistent-team launch。
 <!-- TASK_BACKLOG_END -->
 
-## Stage D pending runtime work（待实施真实 runtime）
+## Stage D runtime work（已实现 runtime refresh）
 
-- Stage D real runtime：实现 probe/refresh helper，读取安装 receipt、selector、smoke/adoption gate 与 backend evidence。
-- Stage D real runtime：写入 readiness projection receipt，字段包含 installed、enabled、selected、ready、blockers、generated_at 与 source receipts。
-- Stage D real runtime：在本地 smoke 后刷新 projection，验证 blocker 清除路径。
+- Stage D/R4 runtime：通过显式 `-RefreshReadiness` 写入 readiness projection receipt。
+- Stage D/R4 runtime：receipt 字段包含 installed、enabled、selected、ready、blockers、generated_at 与 source receipts。
+- Stage D/R4 runtime：默认 status path 不创建 `.omx`，避免把只读状态检查变成 durable adoption 或 team launch。
 
 ## 验证门禁
 
@@ -86,11 +92,15 @@ capability switch chain、selector schema、readiness projection schema 与 CI g
 
 - 中文对照版正文为中文，保留必要 token。
 - readiness 报告必须能说明每个状态的来源和 blocker。
-- Stage D 前不得把静态 checker 说成真实 runtime probe。
+- Stage D/R4 refresh 不得被表述为 durable workflow adoption 或 persistent-team launch。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 runtime probe/refresh installed/enabled/selected/ready 投影列为 Stage D pending。
-- 2026-05-30 Stage B evidence：已有 capability switch chain 与 lane-fit checker 保护状态边界。
+- 2026-06-06 Stage D/R4 runtime refresh：分支 `implement-durable-capability-readiness-r4-20260605` 增加显式 `codex-durable-state-status.ps1 -RefreshReadiness -Json` receipt 生成，写入 `.omx/state/readiness/durable-capability-readiness-projection.json`；保留独立 readiness 字段以及 source/selector/version/blocker 证据，并记录 `durable_workflow_adopted=false` 与 `persistent_team_launched=false`；目标验证 `python .\test\check_capability_switch_chain.test.py`、`powershell -NoProfile -ExecutionPolicy Bypass -File .\test\install-codex-user-level-team-mode.test.ps1`、`python .\tools\run_openspec_guard.py --root .` 与 `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` 已于 2026-06-06 通过。
+- 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 runtime probe/refresh installed/enabled/selected/ready 投影列为 Stage D pending；本 R4 包补齐显式 refresh receipt runtime。
+- 2026-05-30 Stage C 实施：`tools/check_capability_switch_chain.py` 现在校验 durable capability readiness projections，要求区分 `installed`、`enabled`、`selected`、`ready` 四个字段，并强制 `ready == installed && enabled && selected` 不变量。
+- 2026-05-30 Stage C fixtures：`test/check_capability_switch_chain.test.py` 覆盖 installed-only、enabled-not-selected、selected-not-ready、ready、collapsed-ready 与 missing-field readiness 状态。
+- 2026-05-30 Stage C 文档：`docs_bilingual/governance/langgraph_user_level_runtime_policy.md` 与 `.zh-CN.md` 记录 `backend_default` / `backend_ready` 对外措辞，并澄清 readiness 不表示当前任务已经采用 durable workflow、tracked thread 或 persistent team。
+- 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->
