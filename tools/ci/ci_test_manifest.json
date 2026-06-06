@@ -24,6 +24,7 @@
     "check_durable_artifact_state_surfaces.test.py",
     "check_langgraph_state_release_evidence.test.py",
     "check_repo_local_selector_ownership.test.py",
+    "repo_local_selector_runtime.test.py",
     "check_leader_session_scope_evidence.test.py",
     "check_capability_switch_chain.test.py",
     "check_orchestration_trace_evidence.test.py",

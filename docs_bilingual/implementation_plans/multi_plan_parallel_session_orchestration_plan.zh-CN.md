@@ -257,7 +257,7 @@ This follow-up is a serialized hotspot package. It touches startup summaries, `A
 | CLI-Anything/WXWork_CLI | `user_level_cli_anything_wxwork_cli_governance_plan` | CLI-Anything/WXWork_CLI guard/checker/test, R0-R2 | install/run CLI-Anything, fork/adapt/run WXWork_CLI, control WXWork.exe, R4 smoke, R5 send/action handoff |
 | Durable smoke/adoption | `durable_smoke_adoption_gate_template_plan` | template/checker/fixture, R0-R2 | real durable smoke runner, apply-mode adoption, live adoption execution receipts |
 | Receipt/rollback/redaction | `user_level_capability_receipt_rollback_redaction_plan` | governance helper/checker/test, R0-R2 | install/update/smoke/live receipt writer extensions and rollback executor receipts |
-| Selector ownership | `repo_local_selector_ownership_plan` | selector ownership checker/guard, R0-R2 | active selector write, renew, release, stale-reclaim helpers |
+| Selector ownership | `repo_local_selector_ownership_plan` | selector ownership checker/guard plus R4 `smoke-tested` helper/receipt | R5 active adoption handoff remains gated behind current operator authorization and backend-family ownership evidence |
 | Worktree receipt/claim lifecycle | `worktree_receipt_claim_lifecycle_plan` | lifecycle validation/checker, R0-R2 | active -> ready -> merged-local-main -> completed -> cleaned state advancement helper |
 | Capability readiness projection | `durable_capability_readiness_projection_plan` | readiness checker/fixture, R0-R2 | runtime probe/refresh of installed/enabled/selected/ready projections |
 | LangGraph state release | `langgraph_state_release_evidence_plan` | state-release checker/fixture, R0-R2 | LangGraph thread close/release/handoff runtime helper and receipts |

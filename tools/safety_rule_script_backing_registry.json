@@ -413,12 +413,13 @@
         "docs_bilingual/implementation_plans/repo_local_selector_ownership_plan.zh-CN.md"
       ],
       "script_controls": [
-        "tools/check_repo_local_selector_ownership.py"
+        "tools/check_repo_local_selector_ownership.py",
+        "tools/repo_local_selector_runtime.py"
       ],
       "guard_steps": [
         "check_repo_local_selector_ownership"
       ],
-      "description": "Ensures active durable selectors and selector leases are repo-local, blocks cross-repository selector adoption, and reports selector refresh gaps instead of auto-adopting from compatibility records."
+      "description": "Ensures active durable selectors and selector leases are repo-local, blocks cross-repository selector adoption, reports selector refresh gaps instead of auto-adopting from compatibility records, and provides R4 selector write, release, stale-reclaim, and smoke-tested receipt controls."
     },
     {
       "id": "custom-agent-toml-schema",
