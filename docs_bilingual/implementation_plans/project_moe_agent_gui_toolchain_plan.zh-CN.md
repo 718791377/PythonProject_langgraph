@@ -6,8 +6,8 @@ plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
 created_at: 2026-05-20
-updated_at: 2026-06-05
-last_reviewed_at: 2026-06-05
+updated_at: 2026-06-06
+last_reviewed_at: 2026-06-06
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -623,15 +623,24 @@ A 已完成的收敛顺序：
 
 #### Slice 4B-v2：session 级 MOE 镜头选择与 Expert Workbench v2
 
-- [ ] 扩展 Phase 1 CLI contract、scaffold template 与测试 fixture，加入 `list-lenses`、`set-lenses`、`clear-lenses`，并让 `on --session-id` 支持可选 `--lens` / `--category`。
-- [ ] 扩展 session state 兼容字段：`selected_lenses`、`selected_categories`、`effective_lens_mode`、`lens_selection_scope=session`；缺字段旧记录按 `all` 模式处理。
-- [ ] 扩展 GUI view model，使 session 表格存在明确 selected row，并为当前选中 session 暴露 lens/category 多选、apply、clear、readback token 与 blocker。
-- [ ] 扩展 QML Sessions 页面，支持对单个 session 开启/关闭 MOE、应用选定镜头、清空镜头选择，并清楚标注“空选择=全部镜头”。
-- [ ] 扩展 Expert Workbench v2，支持主会话选择一个或多个 MOE 镜头、选择 handoff 目标，并生成面向 main session / subagent / durable team / LangGraph workflow 的 handoff package。
-- [ ] 保持 Expert Workbench brief-only：不启动 Codex、subagent、durable worker、LangGraph workflow 或模型 API，不写磁盘，不写目标项目状态。
-- [ ] 扩展隐私检查，确保 lens catalogue、session 行、handoff package 不包含 `MOE.md` 正文、developer instructions、raw session id 或完整 stdout/stderr。
-- [ ] 扩展回归测试，覆盖镜头命令、空选择=all、非法 lens/category fail-closed、旧 state 兼容、GUI view-model、QML 静态控件与 Workbench handoff targets。
-- [ ] 将 toolchain 版本提升到下一 patch 版本，并用 updater 安装到 `D:\PythonProject_paper_suggest` 后重新运行 install check、readiness、launcher preflight 与目标项目测试。
+- [x] 扩展 Phase 1 CLI contract、scaffold template 与测试 fixture，加入 `list-lenses`、`set-lenses`、`clear-lenses`，并让 `on --session-id` 支持可选 `--lens` / `--category`。
+- [x] 扩展 session state 兼容字段：`selected_lenses`、`selected_categories`、`effective_lens_mode`、`lens_selection_scope=session`；缺字段旧记录按 `all` 模式处理。
+- [x] 扩展 GUI view model，使 session 表格存在明确 selected row，并为当前选中 session 暴露 lens/category 多选、apply、clear、readback token 与 blocker。
+- [x] 扩展 QML Sessions 页面，支持对单个 session 开启/关闭 MOE、应用选定镜头、清空镜头选择，并清楚标注“空选择=全部镜头”。
+- [x] 扩展 Expert Workbench v2，支持主会话选择一个或多个 MOE 镜头、选择 handoff 目标，并生成面向 main session / subagent / durable team / LangGraph workflow 的 handoff package。
+- [x] 保持 Expert Workbench brief-only：不启动 Codex、subagent、durable worker、LangGraph workflow 或模型 API，不写磁盘，不写目标项目状态。
+- [x] 扩展隐私检查，确保 lens catalogue、session 行、handoff package 不包含 `MOE.md` 正文、developer instructions、raw session id 或完整 stdout/stderr。
+- [x] 扩展回归测试，覆盖镜头命令、空选择=all、非法 lens/category fail-closed、旧 state 兼容、GUI view-model、QML 静态控件与 Workbench handoff targets。
+- [x] B toolchain version was bumped to patch version 0.2.29 so install/update artifacts carry the new QML/launcher contract.
+Post-local-main target-project follow-up (not part of B Slice 4B-v2 local-main closure): install/update into `D:\PythonProject_paper_suggest` and rerun install check, readiness, launcher preflight, and target-project tests under the target project workflow.
+
+
+Slice 4B-v2 closure evidence (2026-06-06):
+- B runtime adds the QML `projectMoeBridge.executeWriteAction` bridge for `project-on`, `project-off`, `session-on`, `session-off`, `session-set-lenses`, and `session-clear-lenses`, plus `projectMoeBridge.refreshViewModel`, followed by mandatory readback for write actions.
+- The QML Sessions page now has clickable session rows, session MOE enable/disable buttons, lens/category checkbox selection, apply/clear buttons, and readback token/status display.
+- Expert Workbench v2 changes from a single-lens ComboBox to multi-lens checkboxes; its handoff package remains runtime/clipboard-only and does not execute any carrier.
+- Regression coverage now includes session lens action argv, lens write readback, QML button/bridge/checkbox wiring, multi-carrier handoff targets, and privacy boundaries.
+- Target-project reinstall/verification remains a separate follow-up after B local-main integration; this repository must not mark target-project writes complete before they are actually performed.
 
 #### Slice 5：治理、文档与 checker 集成
 

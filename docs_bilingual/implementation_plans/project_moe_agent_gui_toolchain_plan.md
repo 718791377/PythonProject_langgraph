@@ -6,8 +6,8 @@ status: active
 plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 created_at: 2026-05-20
-updated_at: 2026-06-05
-last_reviewed_at: 2026-06-05
+updated_at: 2026-06-06
+last_reviewed_at: 2026-06-06
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -658,15 +658,17 @@ The current implemented visual path is Qt Quick/QML Material with optional legac
 
 #### Slice 4B-v2: session-scoped MOE lens selection and Expert Workbench v2
 
-- [ ] Extend the Phase 1 CLI contract, scaffold template, and test fixtures with `list-lenses`, `set-lenses`, `clear-lenses`, and optional `--lens` / `--category` support on `on --session-id`.
-- [ ] Extend compatible session-state fields: `selected_lenses`, `selected_categories`, `effective_lens_mode`, and `lens_selection_scope=session`; legacy records missing those fields use `all` mode.
-- [ ] Extend the GUI view model so the session table has an explicit selected row and exposes lens/category multi-select, apply, clear, readback token, and blockers for the currently selected session.
-- [ ] Extend the QML Sessions page to enable/disable MOE, apply selected lenses, and clear lens selection for exactly one session, with clear copy saying "empty selection = all lenses".
-- [ ] Extend Expert Workbench v2 so the main session can choose one or more MOE lenses, choose a handoff target, and generate a handoff package for main session / subagent / durable team / LangGraph workflow.
-- [ ] Keep Expert Workbench brief-only: do not start Codex, subagents, durable workers, LangGraph workflows, or model APIs; do not write disk; do not write target-project state.
-- [ ] Extend privacy checks so the lens catalogue, session rows, and handoff package cannot contain `MOE.md` body text, developer instructions, raw session ids, or full stdout/stderr.
-- [ ] Extend regression tests for lens commands, empty-selection=all, invalid lens/category fail-closed, legacy state compatibility, GUI view model, QML static controls, and Workbench handoff targets.
-- [ ] Bump the toolchain to the next patch version, install/update into `D:\PythonProject_paper_suggest`, then rerun install check, readiness, launcher preflight, and target-project tests.
+- [x] Extend Phase 1 CLI, scaffold template, and fixtures with list-lenses, set-lenses, clear-lenses, plus optional session --lens / --category.
+- [x] Add compatible session fields: selected_lenses, selected_categories, effective_lens_mode, and lens_selection_scope=session; legacy records default to ll.
+- [x] Extend the GUI view model and QML Sessions page with selected row, session MOE on/off, lens/category multi-select, apply, clear, readback token, and blockers.
+- [x] Extend Expert Workbench v2 for multi-lens, target-labelled handoff packages for main session / subagent / durable team / LangGraph workflow.
+- [x] Keep Workbench brief-only: no Codex, subagent, durable worker, LangGraph workflow, model API, disk write, or target-state write.
+- [x] Extend privacy and regression coverage for lens commands, empty-selection=all, invalid selection fail-closed, legacy state, QML wiring, handoff targets, and private-surface exclusion.
+- [x] B toolchain version is 0.2.29 so install/update artifacts carry the new QML/launcher contract.
+
+Follow-up after B local-main closure: update D:\PythonProject_paper_suggest and rerun install, readiness, launcher preflight, and target-project tests there.
+
+Slice 4B-v2 evidence (2026-06-06): QML bridges project/session writes, refresh, and mandatory readback; Sessions has row selection plus MOE/lens controls; Workbench uses multi-lens clipboard-only handoff; tests cover argv, readback, QML, handoff, and privacy.
 
 #### Slice 5: Governance, Docs, and Checker Integration
 

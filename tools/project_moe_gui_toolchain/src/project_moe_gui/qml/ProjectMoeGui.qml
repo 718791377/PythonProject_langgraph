@@ -12,11 +12,12 @@ ApplicationWindow {
     visible: true
     title: "Project MOE Agent Console"
 
-    readonly property var vm: JSON.parse(viewModelJson || "{}")
+    property var vm: JSON.parse(viewModelJson || "{}")
     readonly property var banner: vm.top_banner || ({})
     readonly property var statusCards: vm.status_cards || []
     readonly property var sessionRows: ((vm.session_table || {}).rows || [])
-    readonly property var selectedSession: sessionRows.length ? sessionRows[0] : ({})
+    property int selectedSessionIndex: 0
+    readonly property var selectedSession: sessionRows.length ? sessionRows[Math.min(Math.max(selectedSessionIndex, 0), sessionRows.length - 1)] : ({})
     readonly property var sessionLensPanel: vm.session_lens_panel || ({})
     readonly property var lensCatalog: vm.lens_catalog || ({})
     readonly property var sessionLenses: sessionLensPanel.lenses || lensCatalog.lenses || []
@@ -26,18 +27,99 @@ ApplicationWindow {
     readonly property var handoffTargets: expertWorkbench.handoff_targets || []
     readonly property var taskTemplates: expertWorkbench.task_templates || []
     readonly property var blockers: vm.banners || []
+    readonly property var projectDefaultCard: vm.project_default_card || ({})
     property string selectedSection: "overview"
     property bool darkMode: true
+    property string lastActionToken: "ok"
+    property string lastActionMessage: "Ready"
+    property string selectedSessionLensIdsJson: "[]"
+    property string selectedSessionCategoryIdsJson: "[]"
+    property string selectedWorkbenchLensIdsJson: "[]"
 
     Material.theme: darkMode ? Material.Dark : Material.Light
     Material.accent: Material.Teal
 
     color: darkMode ? "#111827" : "#f6f8fb"
 
+    function checkedIdsFromModel(model) {
+        var values = []
+        for (var i = 0; i < model.count; i++) {
+            var row = model.get(i)
+            if (row.checked)
+                values.push(row.value || row.id)
+        }
+        return values
+    }
+
+    function syncSessionSelectionJson() {
+        selectedSessionLensIdsJson = JSON.stringify(checkedIdsFromModel(sessionLensCheckModel))
+        selectedSessionCategoryIdsJson = JSON.stringify(checkedIdsFromModel(sessionCategoryCheckModel))
+    }
+
+    function syncWorkbenchSelectionJson() {
+        selectedWorkbenchLensIdsJson = JSON.stringify(checkedIdsFromModel(workbenchLensCheckModel))
+    }
+
+    function modelFromItems(items, selectedIds) {
+        var selected = {}
+        for (var i = 0; i < selectedIds.length; i++)
+            selected[String(selectedIds[i])] = true
+        var rows = []
+        for (var j = 0; j < items.length; j++) {
+            var item = items[j] || ({})
+            var id = String(item.id || item.value || "")
+            rows.push({
+                "value": id,
+                "label": String(item.label || id),
+                "description": String(item.description || ""),
+                "checked": selected[id] === true
+            })
+        }
+        return rows
+    }
+
+    ListModel { id: sessionLensCheckModel }
+    ListModel { id: sessionCategoryCheckModel }
+    ListModel { id: workbenchLensCheckModel }
+
+    function resetCheckModel(model, rows) {
+        model.clear()
+        for (var i = 0; i < rows.length; i++)
+            model.append(rows[i])
+    }
+
+    function resetSessionSelectionModels() {
+        resetCheckModel(sessionLensCheckModel, modelFromItems(sessionLenses, selectedSession.selected_lenses || []))
+        resetCheckModel(sessionCategoryCheckModel, modelFromItems(sessionCategories, selectedSession.selected_categories || []))
+        syncSessionSelectionJson()
+    }
+
+    function resetWorkbenchLensModel() {
+        var defaults = []
+        if (expertLenses.length > 0)
+            defaults.push(expertLenses[0].id || expertLenses[0].value)
+        resetCheckModel(workbenchLensCheckModel, modelFromItems(expertLenses, defaults))
+        syncWorkbenchSelectionJson()
+    }
+
+    function selectedWorkbenchLenses() {
+        var ids = checkedIdsFromModel(workbenchLensCheckModel)
+        var selected = []
+        for (var i = 0; i < expertLenses.length; i++) {
+            var item = expertLenses[i] || ({})
+            if (ids.indexOf(String(item.id || item.value || "")) >= 0)
+                selected.push(item)
+        }
+        if (selected.length === 0 && expertLenses.length > 0)
+            selected.push(expertLenses[0])
+        return selected
+    }
+
     function selectedLens() {
-        if (expertLenses.length === 0)
+        var lenses = selectedWorkbenchLenses()
+        if (lenses.length === 0)
             return ({ "label": "No expert lens", "description": "" })
-        return expertLenses[Math.max(0, lensCombo.currentIndex)] || expertLenses[0]
+        return lenses[0]
     }
 
     function selectedTemplate() {
@@ -53,22 +135,66 @@ ApplicationWindow {
     }
 
     function generatedHandoffPackageText() {
-        var lens = selectedLens()
+        var lenses = selectedWorkbenchLenses()
         var task = selectedTemplate()
         var handoffTarget = selectedHandoffTarget()
         var target = reviewTarget.text.length ? reviewTarget.text : "<paste target text, file path, or revision objective here>"
+        var lensLines = ""
+        for (var i = 0; i < lenses.length; i++) {
+            var lens = lenses[i] || ({})
+            lensLines += "- " + (lens.id || lens.label || "lens") + ": " + (lens.label || lens.id || "lens") + "\n"
+        }
         return "Project MOE Expert Workbench v2 Handoff Package (draft only; no model execution)\n"
             + "Project: " + (banner.project_root || "Unknown project") + "\n"
             + "Agent: " + (banner.agent_name || "agent") + "\n"
             + "Namespace: " + (banner.state_namespace || "unknown") + "\n"
             + "Handoff target: " + (handoffTarget.id || "main-session") + " (" + (handoffTarget.label || "Main session") + ")\n"
-            + "Expert lens: " + (lens.label || lens.id || "lens") + "\n"
+            + "Selected MOE lenses:\n" + lensLines
             + "Task template: " + (task.label || task.id || "template") + "\n\n"
             + "Review target / objective:\n" + target + "\n\n"
             + "Instructions:\n" + (task.prompt || "Assess with the selected expert lens and return actionable next steps.") + "\n\n"
             + "Carrier instructions: main session may use selected MOE lenses directly, paste this package to a subagent, or hand it to a durable-team / langgraph-workflow.\n"
             + "Execution boundary: generate handoff package only; do not start Codex, subagents, durable teams, LangGraph workflows, model APIs, or write project state."
     }
+
+    function updateFromBridgeResult(raw) {
+        var payload = ({})
+        try {
+            payload = JSON.parse(raw || "{}")
+        } catch (error) {
+            lastActionToken = "blocked:invalid_bridge_json"
+            lastActionMessage = String(error)
+            return
+        }
+        lastActionToken = payload.token || "unknown"
+        lastActionMessage = payload.message || ""
+        if (payload.view_model) {
+            vm = payload.view_model
+            selectedSessionIndex = Math.min(Math.max(selectedSessionIndex, 0), Math.max(0, sessionRows.length - 1))
+            resetSessionSelectionModels()
+            resetWorkbenchLensModel()
+        }
+    }
+
+    function executeProjectAction(action) {
+        updateFromBridgeResult(projectMoeBridge.executeWriteAction(action, "", "[]", "[]"))
+    }
+
+    function executeSessionAction(action, lensesJson, categoriesJson) {
+        if (!selectedSession.session_id) {
+            lastActionToken = "blocked:missing_session_id"
+            lastActionMessage = "Select a valid session first."
+            return
+        }
+        updateFromBridgeResult(projectMoeBridge.executeWriteAction(action, selectedSession.session_id, lensesJson || "[]", categoriesJson || "[]"))
+    }
+
+    Component.onCompleted: {
+        resetSessionSelectionModels()
+        resetWorkbenchLensModel()
+    }
+
+    onSelectedSessionIndexChanged: resetSessionSelectionModels()
 
     component StatCard: Rectangle {
         id: statCard
@@ -230,6 +356,39 @@ ApplicationWindow {
             }
 
             Rectangle {
+                visible: selectedSection === "overview"
+                Layout.fillWidth: true
+                Layout.preferredHeight: 86
+                radius: 18
+                border.width: 1
+                border.color: darkMode ? "#334155" : "#e2e8f0"
+                color: darkMode ? "#172033" : "#ffffff"
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 10
+                    Button {
+                        text: "Refresh"
+                        onClicked: updateFromBridgeResult(projectMoeBridge.refreshViewModel())
+                    }
+                    Button {
+                        text: "Enable project default"
+                        onClicked: executeProjectAction("project-on")
+                    }
+                    Button {
+                        text: "Disable project default"
+                        onClicked: executeProjectAction("project-off")
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: "Project default: " + (projectDefaultCard.label || "unknown") + " / effective: " + (projectDefaultCard.effective_label || "unknown") + " / last action: " + lastActionToken
+                        color: darkMode ? "#94a3b8" : "#64748b"
+                        elide: Text.ElideRight
+                    }
+                }
+            }
+
+            Rectangle {
                 visible: selectedSection === "sessions"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -256,12 +415,17 @@ ApplicationWindow {
                             width: ListView.view.width
                             height: 62
                             radius: 12
-                            color: index % 2 === 0 ? (darkMode ? "#1f2937" : "#f8fafc") : "transparent"
+                            color: index === root.selectedSessionIndex ? (darkMode ? "#0f766e" : "#ccfbf1") : (index % 2 === 0 ? (darkMode ? "#1f2937" : "#f8fafc") : "transparent")
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.selectedSessionIndex = index
+                            }
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.margins: 10
                                 Label { text: modelData.display_id || modelData.session_id || "session"; Layout.fillWidth: true; color: darkMode ? "#e5e7eb" : "#0f172a" }
                                 Label { text: modelData.label || "unknown"; color: darkMode ? "#cbd5e1" : "#475569" }
+                                Label { text: modelData.lens_selection_summary || "All lenses"; color: darkMode ? "#cbd5e1" : "#475569" }
                                 Label { text: modelData.token || ""; color: (modelData.token || "") === "ok" ? "#14b8a6" : "#f59e0b" }
                             }
                         }
@@ -298,26 +462,62 @@ ApplicationWindow {
                             RowLayout {
                                 Layout.fillWidth: true
                                 spacing: 10
-                                ComboBox {
+                                ColumnLayout {
                                     Layout.fillWidth: true
-                                    model: sessionLenses
-                                    textRole: "label"
-                                    enabled: sessionLenses.length > 0
+                                    Label { text: "Lenses"; color: darkMode ? "#94a3b8" : "#64748b" }
+                                    Repeater {
+                                        model: sessionLensCheckModel
+                                        CheckBox {
+                                            text: model.label
+                                            checked: model.checked
+                                            onToggled: {
+                                                sessionLensCheckModel.setProperty(index, "checked", checked)
+                                                syncSessionSelectionJson()
+                                            }
+                                        }
+                                    }
                                 }
-                                ComboBox {
+                                ColumnLayout {
                                     Layout.fillWidth: true
-                                    model: sessionCategories
-                                    textRole: "label"
-                                    enabled: sessionCategories.length > 0
+                                    Label { text: "Categories"; color: darkMode ? "#94a3b8" : "#64748b" }
+                                    Repeater {
+                                        model: sessionCategoryCheckModel
+                                        CheckBox {
+                                            text: model.label
+                                            checked: model.checked
+                                            onToggled: {
+                                                sessionCategoryCheckModel.setProperty(index, "checked", checked)
+                                                syncSessionSelectionJson()
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             RowLayout {
                                 Layout.fillWidth: true
-                                Button { text: "Apply session lenses"; enabled: sessionRows.length > 0 }
-                                Button { text: "Clear session lenses"; enabled: sessionRows.length > 0 }
+                                Button {
+                                    text: "Enable session MOE"
+                                    enabled: sessionRows.length > 0
+                                    onClicked: executeSessionAction("session-on", selectedSessionLensIdsJson, selectedSessionCategoryIdsJson)
+                                }
+                                Button {
+                                    text: "Disable session MOE"
+                                    enabled: sessionRows.length > 0
+                                    onClicked: executeSessionAction("session-off", "[]", "[]")
+                                }
+                                Button {
+                                    text: "Apply session lenses"
+                                    enabled: sessionRows.length > 0
+                                    onClicked: executeSessionAction("session-set-lenses", selectedSessionLensIdsJson, selectedSessionCategoryIdsJson)
+                                }
+                                Button {
+                                    text: "Clear session lenses"
+                                    enabled: sessionRows.length > 0
+                                    onClicked: executeSessionAction("session-clear-lenses", "[]", "[]")
+                                }
                                 Label {
                                     Layout.fillWidth: true
-                                    text: "Uses Phase 1 set-lenses / clear-lenses contracts and requires readback."
+                                    text: lastActionToken + " - " + lastActionMessage
                                     color: darkMode ? "#94a3b8" : "#64748b"
                                 }
                             }
@@ -356,15 +556,20 @@ ApplicationWindow {
                         spacing: 12
                         ColumnLayout {
                             Layout.fillWidth: true
-                            Label { text: "Expert lens"; color: darkMode ? "#94a3b8" : "#64748b" }
-                            ComboBox {
-                                id: lensCombo
-                                Layout.fillWidth: true
-                                model: expertLenses
-                                textRole: "label"
+                            Label { text: "Expert lenses"; color: darkMode ? "#94a3b8" : "#64748b" }
+                            Repeater {
+                                model: workbenchLensCheckModel
+                                CheckBox {
+                                    text: model.label
+                                    checked: model.checked
+                                    onToggled: {
+                                        workbenchLensCheckModel.setProperty(index, "checked", checked)
+                                        syncWorkbenchSelectionJson()
+                                    }
+                                }
                             }
                             Label {
-                                text: (selectedLens().description || "")
+                                text: "Select one or more MOE lenses; the main session may use them directly or hand the brief to another carrier."
                                 wrapMode: Text.Wrap
                                 color: darkMode ? "#cbd5e1" : "#475569"
                                 Layout.fillWidth: true

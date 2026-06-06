@@ -2222,6 +2222,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(view_model["project_default_card"]["effective_label"], "enabled")
             self.assertTrue(view_model["session_table"]["empty_state"]["is_empty"])
             self.assertEqual(view_model["session_table"]["token"], "ok")
+            self.assertIsNone(view_model["session_lens_panel"]["selected_row_index"])
 
     def test_gui_shell_action_plans_use_argv_lists_not_shell_strings(self) -> None:
         from project_moe_gui import gui_shell
@@ -2241,6 +2242,22 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(plan["scope"], "session")
             self.assertTrue(plan["requires_readback_after_write"])
             self.assertEqual([item["action"] for item in plan["readback_after_write"]], ["project-status", "list-sessions", "status"])
+
+            lens_plan = gui_shell.build_action_plan(
+                config,
+                "session-set-lenses",
+                session_id="session-1234567890abcdef",
+                selected_lenses=["blind_review", "aigc_risk"],
+                selected_categories=["review"],
+            )
+            self.assertTrue(lens_plan["ok"], lens_plan)
+            self.assertIn("set-lenses", lens_plan["argv"])
+            self.assertEqual(lens_plan["argv"].count("--lens"), 2)
+            self.assertEqual(lens_plan["argv"].count("--category"), 1)
+            self.assertIn("blind_review", lens_plan["argv"])
+            self.assertIn("aigc_risk", lens_plan["argv"])
+            self.assertIn("review", lens_plan["argv"])
+            self.assertEqual([item["action"] for item in lens_plan["readback_after_write"]], ["project-status", "list-sessions", "list-lenses", "status"])
 
             refresh = gui_shell.build_refresh_plan(config)
             self.assertFalse(refresh["writes_state"])
@@ -2276,6 +2293,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertTrue(view_model["refresh_action"]["commands"][0]["ok"])
             self.assertEqual(view_model["button_state"]["pending_scope"], "session")
             self.assertEqual(view_model["button_state"]["pending_scope_key"], "session:sessio…cdef")
+            self.assertEqual(view_model["session_lens_panel"]["selected_row_index"], 0)
+            self.assertEqual(view_model["session_lens_panel"]["actions"]["apply"]["action"], "session-set-lenses")
+            self.assertEqual(view_model["session_lens_panel"]["actions"]["clear"]["action"], "session-clear-lenses")
 
     def test_gui_shell_exposes_keyboard_and_high_contrast_state_text(self) -> None:
         from project_moe_gui import gui_shell
@@ -2298,6 +2318,28 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertIn("Project default scope", enable_button["accessible_name"])
             self.assertTrue(view_model["theme_accessibility"]["status_not_color_only"])
             self.assertTrue(view_model["window_structure"]["accessibility_contract"]["write_buttons_disable_same_scope_while_pending"])
+
+    def test_gui_shell_session_lens_write_runs_readback_after_write(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            config = self.gui_config(project)
+            result = gui_shell.execute_write_action_with_readback(
+                config,
+                "session-set-lenses",
+                session_id="session-1234567890abcdef",
+                selected_lenses=["blind_review"],
+                selected_categories=["review"],
+            )
+            self.assertTrue(result["ok"], result)
+            self.assertEqual(result["token"], "ok")
+            self.assertEqual(result["write_payload"]["changed_scope"], "session")
+            self.assertEqual(result["readback_commands"], ["project-status", "list-sessions", "list-lenses", "status"])
+            self.assertIn("list-lenses", result["readback"])
+            self.assertEqual(result["button_state_during_command"]["pending_scope"], "session")
 
     def test_gui_shell_write_action_runs_readback_after_write(self) -> None:
         from project_moe_gui import gui_shell
@@ -2465,9 +2507,21 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         qml = gui_shell.qml_shell_path().read_text(encoding="utf-8")
         self.assertIn("Expert Workbench", qml)
         self.assertIn("Session MOE lenses", qml)
+        self.assertIn("Enable session MOE", qml)
+        self.assertIn("Disable session MOE", qml)
         self.assertIn("Apply session lenses", qml)
         self.assertIn("Clear session lenses", qml)
         self.assertIn("Empty selection = all lenses", qml)
+        self.assertIn("projectMoeBridge.executeWriteAction", qml)
+        self.assertIn("projectMoeBridge.refreshViewModel", qml)
+        self.assertIn("Enable project default", qml)
+        self.assertIn("Disable project default", qml)
+        self.assertIn('executeProjectAction("project-on")', qml)
+        self.assertIn('executeProjectAction("project-off")', qml)
+        self.assertIn("session-set-lenses", qml)
+        self.assertIn("session-clear-lenses", qml)
+        self.assertIn("CheckBox", qml)
+        self.assertIn("selectedWorkbenchLenses", qml)
         self.assertIn("Handoff target", qml)
         self.assertIn("main-session", qml)
         self.assertIn("subagent", qml)
@@ -2580,7 +2634,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "        'view_model': {'window_structure': {}, 'diagnostics_card': {'blockers': [{'token': 'blocked:invalid_session_record'}]}},\n"
                 "        'blockers': [{'token': 'blocked:invalid_session_record', 'message': 'diagnostic only'}],\n"
                 "    }\n"
-                "def launch_visible(view_model):\n"
+                "def launch_visible(view_model, config=None, project_root=None):\n"
                 f"    Path({str(marker)!r}).write_text('called', encoding='utf-8')\n"
                 "    return 0\n",
                 encoding="utf-8",
@@ -2644,7 +2698,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "        'message': 'PySide6 is unavailable in this test fixture.',\n"
                 "        'view_model': {'window_structure': {}},\n"
                 "    }\n"
-                "def launch_visible(view_model):\n"
+                "def launch_visible(view_model, config=None, project_root=None):\n"
                 "    raise RuntimeError('should_not_launch_in_dry_run')\n",
                 encoding="utf-8",
             )
@@ -3234,6 +3288,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("QQmlApplicationEngine", source)
         self.assertIn('QQuickStyle.setStyle("Material")', source)
         self.assertIn("viewModelJson", source)
+        self.assertIn("ProjectMoeBridge", source)
+        self.assertIn("executeWriteAction", source)
+        self.assertIn("projectMoeBridge", source)
         self.assertIn("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS", source)
         self.assertIn("QTimer(window)", source)
         self.assertIn("app.exit(0)", source)

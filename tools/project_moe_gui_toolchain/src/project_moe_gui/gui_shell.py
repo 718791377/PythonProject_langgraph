@@ -1393,6 +1393,8 @@ def build_view_model(
             "schema_version": SCHEMA_VERSION,
             "scope": "session",
             "title": "Session MOE lenses",
+            "selected_row_index": 0 if session_rows else None,
+            "selected_row_source": "qml-selected-row",
             "empty_selection_means": "all",
             "lenses": lens_catalog.get("lenses", []),
             "categories": lens_catalog.get("categories", []),
@@ -1642,9 +1644,52 @@ def execute_write_action_with_readback(
     }
 
 
-def launch_visible(view_model: dict[str, Any]) -> int:
+def parse_json_string_list(text: str | None) -> list[str]:
+    if not text:
+        return []
     try:
-        from PySide6.QtCore import QEvent, QObject, QTimer, QUrl
+        payload = json.loads(text)
+    except Exception:
+        return []
+    return string_list(payload)
+
+
+def build_runtime_view_model(config: dict[str, Any], *, project_root: str | Path | None = None) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    root = configured_project_root(config, project_root)
+    read_payloads: dict[str, dict[str, Any] | None] = {}
+    read_errors: list[dict[str, Any]] = []
+    for action in ["project-status", "list-sessions", "list-lenses", "status"]:
+        payload, error = run_cli_json(config, action, project_root=root)
+        read_payloads[action] = payload
+        if error:
+            read_errors.append(error)
+    qfluent_status = check_qfluent_runtime() if is_pyside6_available() else {
+        "schema_version": SCHEMA_VERSION,
+        "ok": False,
+        "token": "blocked:qfluentwidgets_not_checked",
+        "import_status": "not_checked",
+        "license_manifest": qfluent_license_manifest(),
+        "blockers": [],
+    }
+    refreshed = build_view_model(
+        config,
+        project_root=root,
+        project_status=read_payloads.get("project-status"),
+        sessions_payload=read_payloads.get("list-sessions"),
+        lenses_payload=read_payloads.get("list-lenses"),
+        status_payload=read_payloads.get("status"),
+        qfluent_status=qfluent_status,
+    )
+    if read_errors:
+        refreshed.setdefault("banners", []).extend(read_errors)
+        diagnostics = refreshed.setdefault("diagnostics_card", {})
+        diagnostics["blockers"] = refreshed.get("banners", [])
+    return refreshed, read_errors
+
+
+def launch_visible(view_model: dict[str, Any], config: dict[str, Any] | None = None, project_root: str | Path | None = None) -> int:
+    try:
+        from PySide6.QtCore import QEvent, QObject, QTimer, QUrl, Slot
         from PySide6.QtQml import QQmlApplicationEngine
         from PySide6.QtQuickControls2 import QQuickStyle
         from PySide6.QtWidgets import QApplication, QMessageBox, QStyle, QSystemTrayIcon
@@ -1656,6 +1701,71 @@ def launch_visible(view_model: dict[str, Any]) -> int:
     qml_path = Path(str(qml_status.get("path"))) if isinstance(qml_status, dict) and qml_status.get("path") else qml_shell_path()
     if not qml_path.exists():  # pragma: no cover - defensive visible path
         raise RuntimeError("blocked:qml_shell_source_missing")
+
+    runtime_config = dict(config or {})
+    if not runtime_config:
+        banner = view_model.get("top_banner") if isinstance(view_model, dict) else {}
+        if isinstance(banner, dict):
+            runtime_config = {
+                "runtime_project_root": banner.get("project_root"),
+                "agent_name": banner.get("agent_name"),
+                "state_namespace": banner.get("state_namespace"),
+                "mode_cli": DEFAULT_MODE_CLI,
+            }
+    runtime_root = configured_project_root(runtime_config, project_root)
+
+    class ProjectMoeBridge(QObject):  # pragma: no cover - visible GUI path
+        def __init__(self, runtime_config: dict[str, Any], runtime_root: Path) -> None:
+            super().__init__()
+            self._config = dict(runtime_config)
+            self._root = runtime_root
+
+        def _with_refreshed_model(self, payload: dict[str, Any]) -> str:
+            refreshed, read_errors = build_runtime_view_model(self._config, project_root=self._root)
+            result = dict(payload)
+            result["view_model"] = refreshed
+            result["view_model_json"] = json.dumps(refreshed, ensure_ascii=False)
+            if read_errors and result.get("ok"):
+                result["ok"] = False
+                result["token"] = read_errors[0].get("code") or read_errors[0].get("token") or "blocked:readback_failed"
+                result["errors"] = [*list(result.get("errors") or []), *read_errors]
+            return json.dumps(result, ensure_ascii=False)
+
+        @Slot(result=str)
+        def refreshViewModel(self) -> str:
+            return self._with_refreshed_model(
+                {
+                    "schema_version": SCHEMA_VERSION,
+                    "ok": True,
+                    "token": "ok",
+                    "action": "refresh",
+                    "message": "View model refreshed from the target Phase 1 CLI.",
+                }
+            )
+
+        @Slot(str, str, str, str, result=str)
+        def executeWriteAction(self, action: str, session_id: str, selected_lenses_json: str, selected_categories_json: str) -> str:
+            selected_lenses = parse_json_string_list(selected_lenses_json)
+            selected_categories = parse_json_string_list(selected_categories_json)
+            try:
+                payload = execute_write_action_with_readback(
+                    self._config,
+                    str(action),
+                    session_id=str(session_id or "") or None,
+                    selected_lenses=selected_lenses,
+                    selected_categories=selected_categories,
+                    project_root=self._root,
+                )
+            except Exception as exc:
+                payload = {
+                    "schema_version": SCHEMA_VERSION,
+                    "ok": False,
+                    "token": "blocked:gui_write_action_failed",
+                    "action": str(action),
+                    "message": "GUI write action failed before readback.",
+                    "errors": [{"code": "blocked:gui_write_action_failed", "message": str(exc)}],
+                }
+            return self._with_refreshed_model(payload)
 
     class CloseEventFilter(QObject):  # pragma: no cover - visible GUI path
         def __init__(self, window: object, app: QApplication) -> None:
@@ -1697,7 +1807,9 @@ def launch_visible(view_model: dict[str, Any]) -> int:
     QQuickStyle.setStyle("Material")
     app = QApplication.instance() or QApplication(sys.argv)
     engine = QQmlApplicationEngine()
+    bridge = ProjectMoeBridge(runtime_config, runtime_root)
     engine.rootContext().setContextProperty("viewModelJson", json.dumps(view_model, ensure_ascii=False))
+    engine.rootContext().setContextProperty("projectMoeBridge", bridge)
     engine.load(QUrl.fromLocalFile(str(qml_path)))
     if not engine.rootObjects():
         raise RuntimeError("blocked:qml_shell_load_failed")
@@ -1706,6 +1818,7 @@ def launch_visible(view_model: dict[str, Any]) -> int:
     window.installEventFilter(close_filter)
     window._project_moe_gui_close_filter = close_filter  # type: ignore[attr-defined]
     engine._project_moe_gui_window = window  # type: ignore[attr-defined]
+    engine._project_moe_gui_bridge = bridge  # type: ignore[attr-defined]
     smoke_exit_ms = int(os.environ.get("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS") or "0")
     if smoke_exit_ms > 0:
         smoke_timer = QTimer(window)

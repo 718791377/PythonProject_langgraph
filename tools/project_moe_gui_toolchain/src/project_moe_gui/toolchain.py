@@ -1977,7 +1977,10 @@ def main() -> int:
     if not preflight.get("ok") and not isinstance(view_model, dict):
         return emit(preflight, args.json)
     try:
-        return gui_shell.launch_visible(view_model)
+        try:
+            return gui_shell.launch_visible(view_model, runtime_config, project_root)
+        except TypeError:
+            return gui_shell.launch_visible(view_model)
     except RuntimeError as exc:
         return emit({"schema_version": 1, "ok": False, "token": str(exc), "exit_code": 5, "message": "Visible GUI launch failed.", "error": str(exc)}, args.json)
     except Exception as exc:
