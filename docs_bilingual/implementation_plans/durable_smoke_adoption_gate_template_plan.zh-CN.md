@@ -33,10 +33,13 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；smoke/adoption gate template 和自检 fixture 已存在。
-Current gate：本地检查、OpenSpec guard 与 local-main-first 集成；remote publication 关闭。
-Runtime boundary：当前模板不会启动真实 durable runtime，不执行 apply-mode adoption，也不会选择 live backend。
-Runtime gap：真实 durable smoke、apply-mode adoption 或 live adoption 执行层仍需 runtime helper，写入 smoke-tested receipt、adoption decision、selected backend、rollback pointer、selector state 与 timeout release evidence。
+Status: active
+Stage: Stage D R4 durable smoke helper 已作为 bounded local package 实现
+Owner session: main Codex leader session
+Current gate: 本 R4 package 必须通过 OpenSpec archive、local CI、local MR review 与 guarded local main integration，之后才可视为 R4 本地完成
+Runtime boundary: R4 helper 只写 sanitized `smoke-tested` receipts；不执行 apply-mode adoption、不 launch native_omx、不 start LangGraph、不写 durable backend state，也不授权 remote publication
+Runtime gap: apply-mode adoption 与 live adoption handoff receipt 仍需后续 reviewed change；R4 smoke success 不等同 selected/running/adopted durable workflow
+Last updated: 2026-06-06
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -62,8 +65,11 @@ smoke/adoption template、selector ownership、readiness projection 与 backend 
 
 <!-- TASK_BACKLOG_START -->
 - [x] Stage B：建立 durable smoke/adoption gate template。
-- [x] Stage B：添加自检 fixture，包含 negative adoption-gate fixture。
-- [x] Stage C：记录真实 durable smoke/adoption runtime 仍是 pending。
+- [x] Stage B：加入 template fixture 与 negative adoption-gate fixture。
+- [x] Stage C：记录真实 durable smoke/adoption runtime 仍为 pending。
+- [x] Stage D real runtime：实现 read-only durable smoke helper，写入 sanitized R4 `smoke-tested` receipt，并确保 smoke success 不等同 adoption。
+- [ ] Stage D real runtime：实现 apply-mode adoption helper，写入 selected/running/adopted/released receipts 与 fail-closed rollback evidence。
+- [ ] Stage D real runtime：增加 live adoption handoff receipts，包括 operator authorization、backend-family ownership、timeout release 与 cleanup evidence。
 <!-- TASK_BACKLOG_END -->
 
 ## Stage D pending runtime work（待实施真实 runtime）
@@ -89,6 +95,7 @@ smoke/adoption template、selector ownership、readiness projection 与 backend 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 R4 smoke runtime implementation：branch `implement-durable-smoke-adoption-r4-20260605` 增加 `tools/run_durable_routing_smoke.py` 与 `tools/check_durable_routing_smoke_receipts.py`；helper 只写 read-only `smoke-tested` receipt，checker 对 adoption、mutation、durable-team launch、LangGraph thread start 与 remote publication claim fail closed。
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将真实 durable smoke、apply-mode adoption 与 live adoption helper 标记为 Stage D pending。
 - 2026-05-30 Stage B evidence：durable smoke/adoption gate template 与 fixture 已通过本地 checker。
 <!-- EVIDENCE_INDEX_END -->

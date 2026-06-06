@@ -72,6 +72,7 @@ GUARD_STEPS = [
     ("check_pyside6_packaging_opt_in_contract", "check_pyside6_packaging_opt_in_contract.py", "pyside6_packaging_opt_in_contract"),
     ("check_pyside6_operator_usage_guide", "check_pyside6_operator_usage_guide.py", "pyside6_operator_usage_guide"),
     ("check_durable_routing_smoke_gate_template", "check_durable_routing_smoke_gate_template.py", "durable_routing_smoke_gate_template"),
+    ("check_durable_routing_smoke_receipts", "check_durable_routing_smoke_receipts.py", "durable_routing_smoke_receipts"),
     ("check_codex_native_rollback_release_gate_template", "check_codex_native_rollback_release_gate_template.py", "codex_native_rollback_release_gate_template"),
     ("check_worktree_session_hygiene", "check_worktree_session_hygiene.py", "worktree_session_hygiene"),
     ("check_worktree_task_receipt", "check_worktree_task_receipt.py", "worktree_task_receipt"),

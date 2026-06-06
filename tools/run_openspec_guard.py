@@ -152,6 +152,7 @@ def main() -> int:
     pyside6_packaging_opt_in_contract_script = root / "tools" / "check_pyside6_packaging_opt_in_contract.py"
     pyside6_operator_usage_guide_script = root / "tools" / "check_pyside6_operator_usage_guide.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
+    durable_routing_smoke_receipts_script = root / "tools" / "check_durable_routing_smoke_receipts.py"
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     worktree_task_receipt_script = root / "tools" / "check_worktree_task_receipt.py"
@@ -249,6 +250,8 @@ def main() -> int:
         raise SystemExit(f"Missing PySide6 operator usage guide check script: {pyside6_operator_usage_guide_script}")
     if not durable_routing_smoke_gate_template_script.exists():
         raise SystemExit(f"Missing durable routing smoke gate template check script: {durable_routing_smoke_gate_template_script}")
+    if not durable_routing_smoke_receipts_script.exists():
+        raise SystemExit(f"Missing durable routing smoke receipts check script: {durable_routing_smoke_receipts_script}")
     if not codex_native_rollback_release_gate_template_script.exists():
         raise SystemExit(f"Missing Codex native rollback release gate template check script: {codex_native_rollback_release_gate_template_script}")
     if not worktree_hygiene_script.exists():
@@ -548,6 +551,11 @@ def main() -> int:
                 "check_durable_routing_smoke_gate_template",
                 [str(python_exe), str(durable_routing_smoke_gate_template_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during durable routing smoke gate template verification.",
+            ),
+            (
+                "check_durable_routing_smoke_receipts",
+                [str(python_exe), str(durable_routing_smoke_receipts_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during durable routing smoke receipt verification.",
             ),
             (
                 "check_codex_native_rollback_release_gate_template",
@@ -934,6 +942,12 @@ def main() -> int:
         [str(python_exe), str(durable_routing_smoke_gate_template_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during durable routing smoke gate template verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(durable_routing_smoke_receipts_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during durable routing smoke receipt verification.",
     )
 
     run_checked(

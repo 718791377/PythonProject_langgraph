@@ -36,12 +36,12 @@ Create the durable smoke and adoption gate template before any live durable runt
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: implementation package validated in feature worktree
+Stage: Stage D R4 durable smoke helper implemented as a bounded local package
 Owner session: main Codex leader session
-Current gate: implementation confirmed by user; runtime exercise, live smoke, and apply mode remain delayed until this gate passes and a later reviewed change explicitly authorizes them
-Stage C entry condition: local validation is green; local MR review and local main integration of the read-only gate-template package remain next
-Last updated: 2026-05-30
-Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
+Current gate: this R4 package must pass OpenSpec archive, local CI, local MR review, and guarded local main integration before R4 is considered locally complete
+Runtime boundary: the R4 helper writes sanitized smoke-tested receipts only; it does not perform apply-mode adoption, launch native_omx, start LangGraph, write durable backend state, or authorize remote publication
+Last updated: 2026-06-06
+Companion refresh note: the zh-CN companion is refreshed in the same package to keep Stage D R4 status and pending adoption work aligned.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -77,7 +77,7 @@ Durable smoke/adoption is still template-only. Real runtime work must provide an
 - [x] Add negative checker fixtures that block R0.6.2 live smoke or apply-mode adoption without the gate template.
 - [x] Document that runtime exercise, live smoke, and apply mode are delayed until after this gate passes.
 - [x] Run durable gate tests and local gate.
-- [ ] Stage D real runtime: implement executable durable smoke runner that writes sanitized R4 smoke receipts and never collapses smoke success into adoption.
+- [x] Stage D real runtime: implement executable durable smoke runner that writes sanitized R4 smoke receipts and never collapses smoke success into adoption.
 - [ ] Stage D real runtime: implement apply-mode adoption helper that writes selected/running/adopted/released receipts and fail-closed rollback evidence.
 - [ ] Stage D real runtime: add live adoption handoff receipts with operator authorization, backend-family ownership, timeout release, and cleanup evidence.
 <!-- TASK_BACKLOG_END -->
@@ -86,6 +86,8 @@ Durable smoke/adoption is still template-only. Real runtime work must provide an
 
 Run these gates before local `main` integration unless this child plan later narrows the command list with a justified update:
 
+- `python test/check_durable_routing_smoke_receipts.test.py -v` - validates the R4 smoke runner/checker.
+- `python tools/check_durable_routing_smoke_receipts.py --root . --json` - validates the R4 smoke receipt checker self-test.
 - `python tools/check_implementation_plan_rules.py --root . --json` - validates implementation-plan anchors, size limits, registry entries, and bilingual pairs.
 - `python tools/check_precommit_update_archive.py --root . --json` - reviews required existing-file updates, checker registration, and archive readiness before commit.
 - `python tools/check_worktree_task_receipt.py --root . --json` - validates worktree claim and receipt lifecycle metadata.
@@ -103,6 +105,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 R4 smoke runtime implementation: branch `implement-durable-smoke-adoption-r4-20260605` adds `tools/run_durable_routing_smoke.py` and `tools/check_durable_routing_smoke_receipts.py`; the helper writes read-only `smoke-tested` receipts and the checker fails closed against adoption, mutation, durable-team launch, LangGraph thread start, and remote publication claims.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for real durable smoke, apply-mode adoption, and live adoption; this package updates plan governance only and does not run live runtime.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-30 implementation: extended `tools/check_durable_routing_smoke_gate_template.py` with candidate-template validation and default read-only self-test fixtures under `tools/fixtures/durable_routing_smoke_gate_template/`; the existing OpenSpec guard invocation covers these fixtures because the checker runs self-test by default.

@@ -22,6 +22,7 @@
     "check_role_routing_directive_evidence.test.py",
     "check_delegation_wait_discipline_evidence.test.py",
     "check_durable_artifact_state_surfaces.test.py",
+    "check_durable_routing_smoke_receipts.test.py",
     "check_langgraph_state_release_evidence.test.py",
     "check_repo_local_selector_ownership.test.py",
     "repo_local_selector_runtime.test.py",
