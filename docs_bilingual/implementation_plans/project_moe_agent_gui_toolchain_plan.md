@@ -68,6 +68,7 @@ Status interpretation:
 - 2026-06-02 visual/daemon decision: later packages must keep the styled card/sidebar/status UI, license metadata, no-console daemon launch, duplicate lock, and close confirmation with explicit Exit / Hide-to-tray / Cancel behavior.
 - 2026-06-05 silent launch and expert workbench slice: B toolchain `0.2.27` adds `project-moe-gui-silent.vbs` as a no-console double-click entry while keeping `project-moe-gui.cmd` as the diagnostic entry; the daemon human-GUI child prefers `pythonw.exe` when available and otherwise keeps the `python.exe + CREATE_NO_WINDOW / DETACHED_PROCESS` fallback; the GUI adds `Expert Workbench`, which only generates runtime/clipboard task briefs and never starts Codex, subagents, model APIs, or reads/copies target private `MOE.md`.
 - 2026-06-05 next slice freeze: Expert Workbench v2 and session-scoped MOE lens selection remain incomplete. v2 must support multi-lens selection, per-session MOE/lens/category controls, and handoff packages for `main-session`, `subagent`, `durable-team`, and `langgraph-workflow`; the GUI still must not execute those carriers or model APIs.
+- 2026-06-06 visual overflow correction: B toolchain `0.2.30` fixes the Sessions page overflow missed by earlier visual smoke checks, also fixes the Expert Workbench bottom-action overflow, and adds `visual_render_check.py` as a multi-page offscreen gate for `Project`, `Sessions`, `Expert Workbench`, `Diagnostics`, and `Settings` with visible-text and non-scroll-container overflow checks.
 - Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, only OpenSpec artifacts, repo-local guards, and local validation can be used as fallback evidence.
 
 Inline field definitions:
@@ -665,10 +666,13 @@ The current implemented visual path is Qt Quick/QML Material with optional legac
 - [x] Keep Workbench brief-only: no Codex, subagent, durable worker, LangGraph workflow, model API, disk write, or target-state write.
 - [x] Extend privacy and regression coverage for lens commands, empty-selection=all, invalid selection fail-closed, legacy state, QML wiring, handoff targets, and private-surface exclusion.
 - [x] B toolchain version is 0.2.29 so install/update artifacts carry the new QML/launcher contract.
+- [x] B toolchain version is 0.2.30 so install/update artifacts carry the Sessions/Workbench overflow fix and multi-page visual render checker.
 
 Follow-up after B local-main closure: update D:\PythonProject_paper_suggest and rerun install, readiness, launcher preflight, and target-project tests there.
 
 Slice 4B-v2 evidence (2026-06-06): QML bridges project/session writes, refresh, and mandatory readback; Sessions has row selection plus MOE/lens controls; Workbench uses multi-lens clipboard-only handoff; tests cover argv, readback, QML, handoff, and privacy.
+
+Visual overflow closure evidence (2026-06-06): `visual_render_check.py` must render `overview`, `sessions`, `workbench`, `diagnostics`, and `settings` at 1180x720; it requires key page text to be visible, rejects visible non-scroll-container overflow, allows scrollable TextArea/ScrollView content only inside its viewport, records screenshots, and fails on QML warnings.
 
 #### Slice 5: Governance, Docs, and Checker Integration
 
@@ -766,6 +770,7 @@ Target-project readiness verification:
 - Historical A/B evidence summary: A repair commit `560da0e`, GUI install/update commits `c6b92ae` and `ce23931`, static readiness `ready-candidate/control_mode_allowed=false`, read-contract readiness `ready/control_mode_allowed=true`, installer dry-run `token=ok`, install check `up_to_date`, launcher preflight `token=ok`, and A target tests `OK`. Long historical command lines are omitted here to keep this active plan below the size gate; see the zh-CN companion and Git history for exact command strings.
 - write fixtures cover project on/off, session on/off, manual override retention, invalid-record skip, no-op, lock timeout, and atomic write in `test/project_moe_gui_toolchain.test.py`.
 - QFluentWidgets / daemon follow-up verification must cover: QFluentWidgets import or fail-closed blocker, license manifest presence, GUI view-model render smoke, daemon dry-run/no-console launch plan, duplicate lock handling, `--preflight --json` foreground behavior, close-confirmation exit/hide/cancel behavior, tray-unavailable fail-closed handling, and no direct state writes.
+- Visual verification must not stop at a default-page smoke screenshot. It must render Project, Sessions, Expert Workbench, Diagnostics, and Settings, and fail closed on missing required text, QML warnings, or visible non-scroll-container overflow.
 
 Human acceptance:
 

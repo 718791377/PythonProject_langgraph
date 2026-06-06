@@ -251,6 +251,16 @@ ApplicationWindow {
         onClicked: root.selectedSection = sectionId
     }
 
+    component SectionCard: Rectangle {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        radius: 20
+        color: darkMode ? "#172033" : "#ffffff"
+        border.color: darkMode ? "#334155" : "#e2e8f0"
+        border.width: 1
+        clip: true
+    }
+
     RowLayout {
         anchors.fill: parent
         spacing: 0
@@ -388,137 +398,235 @@ ApplicationWindow {
                 }
             }
 
-            Rectangle {
+            SectionCard {
                 visible: selectedSection === "sessions"
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 20
-                color: darkMode ? "#172033" : "#ffffff"
-                border.color: darkMode ? "#334155" : "#e2e8f0"
-                border.width: 1
 
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 18
+                    spacing: 12
+
                     Label {
                         text: "Sessions"
                         font.pixelSize: 22
                         font.bold: true
                         color: darkMode ? "#f8fafc" : "#0f172a"
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
                     }
-                    ListView {
+
+                    RowLayout {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        clip: true
-                        model: sessionRows
-                        delegate: Rectangle {
-                            width: ListView.view.width
-                            height: 62
-                            radius: 12
-                            color: index === root.selectedSessionIndex ? (darkMode ? "#0f766e" : "#ccfbf1") : (index % 2 === 0 ? (darkMode ? "#1f2937" : "#f8fafc") : "transparent")
-                            MouseArea {
+                        spacing: 12
+
+                        Rectangle {
+                            Layout.preferredWidth: Math.min(340, Math.max(260, parent.width * 0.34))
+                            Layout.fillHeight: true
+                            radius: 16
+                            border.width: 1
+                            border.color: darkMode ? "#334155" : "#e2e8f0"
+                            color: darkMode ? "#0f172a" : "#f8fafc"
+                            clip: true
+
+                            ColumnLayout {
                                 anchors.fill: parent
-                                onClicked: root.selectedSessionIndex = index
-                            }
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: 10
-                                Label { text: modelData.display_id || modelData.session_id || "session"; Layout.fillWidth: true; color: darkMode ? "#e5e7eb" : "#0f172a" }
-                                Label { text: modelData.label || "unknown"; color: darkMode ? "#cbd5e1" : "#475569" }
-                                Label { text: modelData.lens_selection_summary || "All lenses"; color: darkMode ? "#cbd5e1" : "#475569" }
-                                Label { text: modelData.token || ""; color: (modelData.token || "") === "ok" ? "#14b8a6" : "#f59e0b" }
+                                anchors.margins: 12
+                                spacing: 8
+                                Label {
+                                    text: "Session list"
+                                    color: darkMode ? "#94a3b8" : "#64748b"
+                                    Layout.fillWidth: true
+                                    elide: Text.ElideRight
+                                }
+                                ListView {
+                                    id: sessionsList
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    clip: true
+                                    boundsBehavior: Flickable.StopAtBounds
+                                    model: sessionRows
+                                    delegate: Rectangle {
+                                        width: ListView.view.width
+                                        height: 58
+                                        radius: 12
+                                        color: index === root.selectedSessionIndex ? (darkMode ? "#0f766e" : "#ccfbf1") : (index % 2 === 0 ? (darkMode ? "#1f2937" : "#f8fafc") : "transparent")
+                                        clip: true
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: root.selectedSessionIndex = index
+                                        }
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 8
+                                            spacing: 2
+                                            Label {
+                                                text: modelData.display_id || modelData.session_id || "session"
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#e5e7eb" : "#0f172a"
+                                                elide: Text.ElideMiddle
+                                            }
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 6
+                                                Label {
+                                                    text: modelData.label || "unknown"
+                                                    Layout.fillWidth: true
+                                                    color: darkMode ? "#cbd5e1" : "#475569"
+                                                    elide: Text.ElideRight
+                                                }
+                                                Label {
+                                                    text: modelData.lens_selection_summary || "All lenses"
+                                                    Layout.preferredWidth: 96
+                                                    color: darkMode ? "#cbd5e1" : "#475569"
+                                                    elide: Text.ElideRight
+                                                }
+                                                Label {
+                                                    text: modelData.token || ""
+                                                    Layout.preferredWidth: 32
+                                                    color: (modelData.token || "") === "ok" ? "#14b8a6" : "#f59e0b"
+                                                    elide: Text.ElideRight
+                                                    horizontalAlignment: Text.AlignRight
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
-                    }
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 178
-                        radius: 16
-                        border.width: 1
-                        border.color: darkMode ? "#334155" : "#e2e8f0"
-                        color: darkMode ? "#0f172a" : "#f8fafc"
 
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 14
-                            spacing: 8
-                            Label {
-                                text: "Session MOE lenses"
-                                font.pixelSize: 18
-                                font.bold: true
-                                color: darkMode ? "#f8fafc" : "#0f172a"
-                            }
-                            Label {
-                                text: "Selected session: " + (selectedSession.display_id || selectedSession.session_id || "(none)") + " · current: " + (selectedSession.lens_selection_summary || "All lenses")
-                                wrapMode: Text.Wrap
-                                color: darkMode ? "#cbd5e1" : "#475569"
-                                Layout.fillWidth: true
-                            }
-                            Label {
-                                text: "Empty selection = all lenses"
-                                color: "#14b8a6"
-                                font.bold: true
-                            }
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 10
-                                ColumnLayout {
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            radius: 16
+                            border.width: 1
+                            border.color: darkMode ? "#334155" : "#e2e8f0"
+                            color: darkMode ? "#0f172a" : "#f8fafc"
+                            clip: true
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 14
+                                spacing: 8
+                                Label {
+                                    text: "Session MOE lenses"
+                                    font.pixelSize: 18
+                                    font.bold: true
+                                    color: darkMode ? "#f8fafc" : "#0f172a"
                                     Layout.fillWidth: true
-                                    Label { text: "Lenses"; color: darkMode ? "#94a3b8" : "#64748b" }
-                                    Repeater {
-                                        model: sessionLensCheckModel
-                                        CheckBox {
-                                            text: model.label
-                                            checked: model.checked
-                                            onToggled: {
-                                                sessionLensCheckModel.setProperty(index, "checked", checked)
-                                                syncSessionSelectionJson()
+                                    elide: Text.ElideRight
+                                }
+                                Label {
+                                    text: "Selected session: " + (selectedSession.display_id || selectedSession.session_id || "(none)") + " - current: " + (selectedSession.lens_selection_summary || "All lenses")
+                                    wrapMode: Text.Wrap
+                                    color: darkMode ? "#cbd5e1" : "#475569"
+                                    Layout.fillWidth: true
+                                    Layout.maximumHeight: 44
+                                    elide: Text.ElideRight
+                                }
+                                Label {
+                                    text: "Empty selection = all lenses"
+                                    color: "#14b8a6"
+                                    font.bold: true
+                                    Layout.fillWidth: true
+                                    elide: Text.ElideRight
+                                }
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    spacing: 12
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        Label { text: "Lenses"; color: darkMode ? "#94a3b8" : "#64748b"; Layout.fillWidth: true; elide: Text.ElideRight }
+                                        ScrollView {
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            clip: true
+                                            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                                            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                                            ColumnLayout {
+                                                width: parent.availableWidth
+                                                Repeater {
+                                                    model: sessionLensCheckModel
+                                                    CheckBox {
+                                                        Layout.fillWidth: true
+                                                        text: model.label
+                                                        checked: model.checked
+                                                        clip: true
+                                                        onToggled: {
+                                                            sessionLensCheckModel.setProperty(index, "checked", checked)
+                                                            syncSessionSelectionJson()
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        Label { text: "Categories"; color: darkMode ? "#94a3b8" : "#64748b"; Layout.fillWidth: true; elide: Text.ElideRight }
+                                        ScrollView {
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            clip: true
+                                            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                                            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                                            ColumnLayout {
+                                                width: parent.availableWidth
+                                                Repeater {
+                                                    model: sessionCategoryCheckModel
+                                                    CheckBox {
+                                                        Layout.fillWidth: true
+                                                        text: model.label
+                                                        checked: model.checked
+                                                        clip: true
+                                                        onToggled: {
+                                                            sessionCategoryCheckModel.setProperty(index, "checked", checked)
+                                                            syncSessionSelectionJson()
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
                                 }
-                                ColumnLayout {
+                                GridLayout {
                                     Layout.fillWidth: true
-                                    Label { text: "Categories"; color: darkMode ? "#94a3b8" : "#64748b" }
-                                    Repeater {
-                                        model: sessionCategoryCheckModel
-                                        CheckBox {
-                                            text: model.label
-                                            checked: model.checked
-                                            onToggled: {
-                                                sessionCategoryCheckModel.setProperty(index, "checked", checked)
-                                                syncSessionSelectionJson()
-                                            }
-                                        }
+                                    columns: 2
+                                    columnSpacing: 8
+                                    rowSpacing: 8
+                                    Button {
+                                        text: "Enable session MOE"
+                                        Layout.fillWidth: true
+                                        enabled: sessionRows.length > 0
+                                        onClicked: executeSessionAction("session-on", selectedSessionLensIdsJson, selectedSessionCategoryIdsJson)
                                     }
-                                }
-                            }
-                            RowLayout {
-                                Layout.fillWidth: true
-                                Button {
-                                    text: "Enable session MOE"
-                                    enabled: sessionRows.length > 0
-                                    onClicked: executeSessionAction("session-on", selectedSessionLensIdsJson, selectedSessionCategoryIdsJson)
-                                }
-                                Button {
-                                    text: "Disable session MOE"
-                                    enabled: sessionRows.length > 0
-                                    onClicked: executeSessionAction("session-off", "[]", "[]")
-                                }
-                                Button {
-                                    text: "Apply session lenses"
-                                    enabled: sessionRows.length > 0
-                                    onClicked: executeSessionAction("session-set-lenses", selectedSessionLensIdsJson, selectedSessionCategoryIdsJson)
-                                }
-                                Button {
-                                    text: "Clear session lenses"
-                                    enabled: sessionRows.length > 0
-                                    onClicked: executeSessionAction("session-clear-lenses", "[]", "[]")
+                                    Button {
+                                        text: "Disable session MOE"
+                                        Layout.fillWidth: true
+                                        enabled: sessionRows.length > 0
+                                        onClicked: executeSessionAction("session-off", "[]", "[]")
+                                    }
+                                    Button {
+                                        text: "Apply session lenses"
+                                        Layout.fillWidth: true
+                                        enabled: sessionRows.length > 0
+                                        onClicked: executeSessionAction("session-set-lenses", selectedSessionLensIdsJson, selectedSessionCategoryIdsJson)
+                                    }
+                                    Button {
+                                        text: "Clear session lenses"
+                                        Layout.fillWidth: true
+                                        enabled: sessionRows.length > 0
+                                        onClicked: executeSessionAction("session-clear-lenses", "[]", "[]")
+                                    }
                                 }
                                 Label {
                                     Layout.fillWidth: true
                                     text: lastActionToken + " - " + lastActionMessage
                                     color: darkMode ? "#94a3b8" : "#64748b"
+                                    elide: Text.ElideRight
                                 }
                             }
                         }
@@ -553,80 +661,143 @@ ApplicationWindow {
                     }
                     RowLayout {
                         Layout.fillWidth: true
+                        Layout.preferredHeight: 198
+                        Layout.maximumHeight: 210
                         spacing: 12
-                        ColumnLayout {
+                        Rectangle {
                             Layout.fillWidth: true
-                            Label { text: "Expert lenses"; color: darkMode ? "#94a3b8" : "#64748b" }
-                            Repeater {
-                                model: workbenchLensCheckModel
-                                CheckBox {
-                                    text: model.label
-                                    checked: model.checked
-                                    onToggled: {
-                                        workbenchLensCheckModel.setProperty(index, "checked", checked)
-                                        syncWorkbenchSelectionJson()
+                            Layout.fillHeight: true
+                            radius: 14
+                            clip: true
+                            color: darkMode ? "#0f172a" : "#f8fafc"
+                            border.color: darkMode ? "#334155" : "#e2e8f0"
+                            border.width: 1
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 6
+                                Label { text: "Expert lenses"; color: darkMode ? "#94a3b8" : "#64748b"; Layout.fillWidth: true; elide: Text.ElideRight }
+                                ScrollView {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    clip: true
+                                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                                    ColumnLayout {
+                                        width: parent.availableWidth
+                                        Repeater {
+                                            model: workbenchLensCheckModel
+                                            CheckBox {
+                                                Layout.fillWidth: true
+                                                text: model.label
+                                                checked: model.checked
+                                                clip: true
+                                                onToggled: {
+                                                    workbenchLensCheckModel.setProperty(index, "checked", checked)
+                                                    syncWorkbenchSelectionJson()
+                                                }
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                            Label {
-                                text: "Select one or more MOE lenses; the main session may use them directly or hand the brief to another carrier."
-                                wrapMode: Text.Wrap
-                                color: darkMode ? "#cbd5e1" : "#475569"
-                                Layout.fillWidth: true
+                                Label {
+                                    text: "Select one or more MOE lenses; brief only."
+                                    wrapMode: Text.Wrap
+                                    color: darkMode ? "#cbd5e1" : "#475569"
+                                    Layout.fillWidth: true
+                                    Layout.maximumHeight: 36
+                                    elide: Text.ElideRight
+                                }
                             }
                         }
-                        ColumnLayout {
+                        Rectangle {
                             Layout.fillWidth: true
-                            Label { text: "Task template"; color: darkMode ? "#94a3b8" : "#64748b" }
-                            ComboBox {
-                                id: taskCombo
-                                Layout.fillWidth: true
-                                model: taskTemplates
-                                textRole: "label"
-                            }
-                            Label {
-                                text: (selectedTemplate().objective || "")
-                                wrapMode: Text.Wrap
-                                color: darkMode ? "#cbd5e1" : "#475569"
-                                Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            radius: 14
+                            clip: true
+                            color: darkMode ? "#0f172a" : "#f8fafc"
+                            border.color: darkMode ? "#334155" : "#e2e8f0"
+                            border.width: 1
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 8
+                                Label { text: "Task template"; color: darkMode ? "#94a3b8" : "#64748b"; Layout.fillWidth: true; elide: Text.ElideRight }
+                                ComboBox {
+                                    id: taskCombo
+                                    Layout.fillWidth: true
+                                    model: taskTemplates
+                                    textRole: "label"
+                                }
+                                Label {
+                                    text: (selectedTemplate().objective || "")
+                                    wrapMode: Text.NoWrap
+                                    color: darkMode ? "#cbd5e1" : "#475569"
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 18
+                                    Layout.maximumHeight: 20
+                                    elide: Text.ElideRight
+                                }
                             }
                         }
-                        ColumnLayout {
+                        Rectangle {
                             Layout.fillWidth: true
-                            Label { text: "Handoff target"; color: darkMode ? "#94a3b8" : "#64748b" }
-                            ComboBox {
-                                id: handoffTargetCombo
-                                Layout.fillWidth: true
-                                model: handoffTargets
-                                textRole: "label"
-                            }
-                            Label {
-                                text: "main-session / subagent / durable-team / langgraph-workflow"
-                                wrapMode: Text.Wrap
-                                color: darkMode ? "#cbd5e1" : "#475569"
-                                Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            radius: 14
+                            clip: true
+                            color: darkMode ? "#0f172a" : "#f8fafc"
+                            border.color: darkMode ? "#334155" : "#e2e8f0"
+                            border.width: 1
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 8
+                                Label { text: "Handoff target"; color: darkMode ? "#94a3b8" : "#64748b"; Layout.fillWidth: true; elide: Text.ElideRight }
+                                ComboBox {
+                                    id: handoffTargetCombo
+                                    Layout.fillWidth: true
+                                    model: handoffTargets
+                                    textRole: "label"
+                                }
+                                Label {
+                                    text: "main-session / subagent / durable-team / langgraph-workflow"
+                                    wrapMode: Text.NoWrap
+                                    color: darkMode ? "#cbd5e1" : "#475569"
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 18
+                                    Layout.maximumHeight: 20
+                                    elide: Text.ElideRight
+                                }
                             }
                         }
-                    }
-                    TextArea {
-                        id: reviewTarget
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 96
-                        placeholderText: "Paste target text, file path, or revision objective here. It stays in GUI runtime memory."
-                        wrapMode: TextEdit.Wrap
-                    }
-                    TextArea {
-                        id: handoffPreview
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        readOnly: true
-                        wrapMode: TextEdit.Wrap
-                        text: generatedHandoffPackageText()
                     }
                     RowLayout {
                         Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        spacing: 12
+                        TextArea {
+                            id: reviewTarget
+                            Layout.preferredWidth: 300
+                            Layout.minimumWidth: 260
+                            Layout.fillHeight: true
+                            placeholderText: "Paste target text, file path, or revision objective here. It stays in GUI runtime memory."
+                            wrapMode: TextEdit.Wrap
+                        }
+                        TextArea {
+                            id: handoffPreview
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            readOnly: true
+                            wrapMode: TextEdit.Wrap
+                            text: generatedHandoffPackageText()
+                        }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 52
                         Button {
                             text: "Copy handoff package"
+                            Layout.preferredWidth: 210
                             onClicked: {
                                 handoffPreview.selectAll()
                                 handoffPreview.copy()
@@ -638,6 +809,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             text: "Handoff package persistence: runtime + clipboard only."
                             color: darkMode ? "#94a3b8" : "#64748b"
+                            elide: Text.ElideRight
                         }
                     }
                 }
@@ -659,7 +831,7 @@ ApplicationWindow {
                     Repeater {
                         model: blockers.length ? blockers : [{"token": "ok", "message": "No blockers."}]
                         Label {
-                            text: (modelData.token || "unknown") + " — " + (modelData.message || "")
+                            text: (modelData.token || "unknown") + " - " + (modelData.message || "")
                             wrapMode: Text.Wrap
                             color: (modelData.token || "") === "ok" ? "#14b8a6" : "#f59e0b"
                             Layout.fillWidth: true
@@ -688,7 +860,7 @@ ApplicationWindow {
 
             Label {
                 Layout.fillWidth: true
-                text: "F5 refresh · Alt+P project on · Alt+Shift+P project off · explicit tray hide only"
+                text: "F5 refresh - Alt+P project on - Alt+Shift+P project off - explicit tray hide only"
                 color: darkMode ? "#94a3b8" : "#64748b"
                 horizontalAlignment: Text.AlignRight
             }

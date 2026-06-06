@@ -23,6 +23,7 @@ UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_mo
 UNINSTALL_PLANNER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "plan_project_moe_gui_uninstall.py"
 PHASE1_READINESS = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_phase1_readiness.py"
 PHASE1_SCAFFOLD = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "scaffold_project_moe_phase1.py"
+VISUAL_RENDER_CHECK = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "visual_render_check.py"
 GUI_PREFLIGHT_ALLOWED_TOKENS = {
     "ok",
     "blocked:pyside6_unavailable",
@@ -2530,6 +2531,105 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("Copy handoff package", qml)
         self.assertIn("handoffPreview.copy()", qml)
         self.assertIn("no model execution", qml)
+        self.assertIn("SectionCard", qml)
+        self.assertIn("Session list", qml)
+        self.assertGreaterEqual(qml.count("ScrollView"), 3)
+        self.assertIn("columns: 2", qml)
+        self.assertIn("Layout.preferredHeight: 198", qml)
+        self.assertIn("Layout.preferredHeight: 52", qml)
+        self.assertIn("Text.NoWrap", qml)
+        self.assertNotIn("Layout.preferredHeight: 178", qml)
+        for forbidden in [chr(0x00B7), chr(0x2014), chr(0xFFFD), chr(0x8DEF), chr(0x9237)]:
+            self.assertNotIn(forbidden, qml)
+        self.assertFalse(any(ord(ch) > 127 for ch in qml), "ProjectMoeGui.qml must stay ASCII to avoid Windows mojibake in generated launch artifacts")
+
+    def test_visual_render_check_help_declares_multi_page_overflow_gate(self) -> None:
+        result = subprocess.run(
+            [sys.executable, str(VISUAL_RENDER_CHECK), "--help"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Render Project MOE GUI QML pages offscreen", result.stdout)
+        self.assertIn("--sections", result.stdout)
+        self.assertIn("--size", result.stdout)
+        self.assertIn("overflow", result.stdout.lower())
+
+    def test_visual_render_check_detects_visible_text_overflow(self) -> None:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("project_moe_gui_visual_render_check", VISUAL_RENDER_CHECK)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+
+        class FakeMetaObject:
+            def __init__(self, class_name: str) -> None:
+                self._class_name = class_name
+
+            def className(self) -> str:
+                return self._class_name
+
+        class FakeItem:
+            def __init__(self, class_name: str, **props: object) -> None:
+                self._class_name = class_name
+                self._props = {
+                    "visible": True,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "width": 0.0,
+                    "height": 0.0,
+                    "clip": False,
+                    **props,
+                }
+                self._children: list["FakeItem"] = []
+
+            def property(self, name: str) -> object:
+                return self._props.get(name)
+
+            def metaObject(self) -> FakeMetaObject:
+                return FakeMetaObject(self._class_name)
+
+            def objectName(self) -> str:
+                return str(self._props.get("objectName") or "")
+
+            def children(self) -> list["FakeItem"]:
+                return list(self._children)
+
+            def add(self, child: "FakeItem") -> "FakeItem":
+                self._children.append(child)
+                return child
+
+        root = FakeItem("QQuickRectangle", width=120.0, height=80.0, clip=True, objectName="root-card")
+        root.add(
+            FakeItem(
+                "QQuickText",
+                x=100.0,
+                y=10.0,
+                width=50.0,
+                height=18.0,
+                text="Sessions page overflowing label",
+                contentWidth=240.0,
+                contentHeight=18.0,
+                wrapMode=0,
+                elide=0,
+                objectName="overflow-label",
+            )
+        )
+
+        items, violations = module.collect_visible_items(root, module.Rect(0.0, 0.0, 120.0, 80.0))
+
+        self.assertTrue(items)
+        violation_kinds = {item["kind"] for item in violations}
+        self.assertIn("text_width_overflow", violation_kinds)
+        self.assertIn("visible_item_outside_clip", violation_kinds)
+        self.assertTrue(any("Sessions page overflowing label" in item.get("text", "") for item in violations))
 
     def test_installed_launcher_preflight_reports_gui_shell_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -634,6 +634,8 @@ A 已完成的收敛顺序：
 - [x] B toolchain version was bumped to patch version 0.2.29 so install/update artifacts carry the new QML/launcher contract.
 Post-local-main target-project follow-up (not part of B Slice 4B-v2 local-main closure): install/update into `D:\PythonProject_paper_suggest` and rerun install check, readiness, launcher preflight, and target-project tests under the target project workflow.
 
+Visual overflow closure evidence (2026-06-06): `visual_render_check.py` must render `overview`, `sessions`, `workbench`, `diagnostics`, and `settings` at 1180x720; it requires key page text to be visible, rejects visible non-scroll-container overflow, allows scrollable TextArea/ScrollView content only inside its viewport, records screenshots, and fails closed on QML warnings.
+
 
 Slice 4B-v2 closure evidence (2026-06-06):
 - B runtime adds the QML `projectMoeBridge.executeWriteAction` bridge for `project-on`, `project-off`, `session-on`, `session-off`, `session-set-lenses`, and `session-clear-lenses`, plus `projectMoeBridge.refreshViewModel`, followed by mandatory readback for write actions.
