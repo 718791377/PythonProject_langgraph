@@ -14,6 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INSTALL = ROOT / "tools" / "install_user_level_mcp_skills_cli.py"
 CHECK = ROOT / "tools" / "check_user_level_mcp_skills_cli_install.py"
+RECEIPT_GOVERNANCE = ROOT / "tools" / "user_level_receipt_governance.py"
 
 
 class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
@@ -162,6 +163,93 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["user_level_check"]["receipt_count"], 2)
+
+    def test_smoke_command_writes_r4_receipts_validated_by_receipt_governance(self) -> None:
+        home = self.make_home("smoke-receipts")
+        self.run_json(
+            INSTALL,
+            "apply",
+            "--apply",
+            "--operator-confirmation",
+            "--simulate-external",
+            "--codex-home",
+            str(home),
+        )
+
+        code, payload = self.run_json(
+            INSTALL,
+            "smoke",
+            "--record",
+            "--operator-confirmation",
+            "--codex-home",
+            str(home),
+            env=self.env_with_fake_mcp2cli(home),
+        )
+
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["receipt_write_performed"])
+        self.assertEqual(len(payload["smoke_receipt_paths"]), 2)
+        self.assertEqual(
+            {item["runtime_stage"] for item in payload["smoke_receipt_summaries"]},
+            {"R4"},
+        )
+        self.assertEqual(
+            {item["receipt_kind"] for item in payload["smoke_receipt_summaries"]},
+            {"smoke-tested"},
+        )
+
+        for receipt_path in payload["smoke_receipt_paths"]:
+            tool_name = "skills2cli" if "skills2cli" in Path(receipt_path).name else "mcp2cli"
+            check_code, check_payload = self.run_json(
+                RECEIPT_GOVERNANCE,
+                "smoke-check",
+                "--receipt",
+                receipt_path,
+                "--tool-name",
+                tool_name,
+                "--owner-lane",
+                tool_name,
+            )
+            self.assertEqual(check_code, 0)
+            self.assertTrue(check_payload["ok"])
+            self.assertTrue(check_payload["smoke_receipt_valid"])
+            self.assertTrue(check_payload["rollback_ready"])
+
+    def test_checker_can_require_smoke_tested_against_simulated_home(self) -> None:
+        home = self.make_home("checker-smoke-tested")
+        self.run_json(
+            INSTALL,
+            "apply",
+            "--apply",
+            "--operator-confirmation",
+            "--simulate-external",
+            "--codex-home",
+            str(home),
+        )
+        self.run_json(
+            INSTALL,
+            "smoke",
+            "--record",
+            "--operator-confirmation",
+            "--codex-home",
+            str(home),
+            env=self.env_with_fake_mcp2cli(home),
+        )
+
+        code, payload = self.run_json(
+            CHECK,
+            "--root",
+            str(ROOT),
+            "--require-user-level-installed",
+            "--require-smoke-tested",
+            "--codex-home",
+            str(home),
+            env=self.env_with_fake_mcp2cli(home),
+        )
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["user_level_check"]["smoke_receipt_count"], 2)
 
 
 if __name__ == "__main__":

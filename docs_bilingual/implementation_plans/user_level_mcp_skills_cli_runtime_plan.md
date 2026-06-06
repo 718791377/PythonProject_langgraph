@@ -28,11 +28,12 @@ Python helper scripts, `uvx mcp2cli --help`, `uv tool install mcp2cli`, `npx ski
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active; this plan is the runtime successor to the deleted/superseded `user_level_mcp_skills_discovery_facade_plan`. Repo-local helpers/checkers/tests exist, but real user-level runtime promotion is not yet complete.
-Runtime boundary: this package does not install or update user-level `mcp2cli`, does not install upstream skills, does not copy or run `skills2cli` wrappers, does not smoke the installed wrappers, and does not mark either tool installed-user-level/smoke-tested/active-candidate.
-Runtime gap: real runtime work still requires R3 install/update receipts for upstream `mcp2cli` and repo-derived `skills2cli`, R4 wrapper help/status smoke receipts, and any R5 direct MCP call or skill action handoff to be guarded by risk profile, sensitive-call receipt, redaction, and rollback evidence.
-Carry-forward evidence: existing surfaces are `tools/mcp2cli.py`, `tools/skills2cli.py`, `tools/install_user_level_mcp_skills_cli.py`, `tools/check_user_level_mcp_skills_cli_install.py`, `test/mcp2cli.test.py`, `test/skills2cli.test.py`, and `test/user_level_mcp_skills_cli_install.test.py`.
-Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
+Status: active; this plan is the runtime successor to the deleted/superseded `user_level_mcp_skills_discovery_facade_plan`. Repo-local helpers/checkers/tests now include R4 smoke receipt support, but real default user-level runtime promotion is still not performed by local validation.
+Runtime boundary: this package does not mutate the real default user-level `CODEX_HOME` during tests or local gates. R4 evidence in this package is fixture-backed: `tools/install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation --codex-home <temp-home>` runs bounded read-only wrapper smoke against an explicitly supplied Codex home that already has R3-style update receipts and wrappers, then writes separate `smoke-tested` receipts for `mcp2cli` and `skills2cli`.
+R4 helper evidence: `tools/check_user_level_mcp_skills_cli_install.py --require-smoke-tested --codex-home <home>` now requires valid R4 smoke receipts, and each receipt is compatible with `tools/user_level_receipt_governance.py smoke-check`.
+Runtime gap: real live user-level R3/R4 work still requires explicit live authorization, source pin review, actual user-level install/update receipts, live bounded smoke receipts, rollback evidence, and redaction evidence. R5 direct MCP calls or skill action handoffs remain gated by risk profile, sensitive-call receipt, action scope, result redaction, and rollback evidence.
+Carry-forward evidence: existing surfaces are `tools/mcp2cli.py`, `tools/skills2cli.py`, `tools/install_user_level_mcp_skills_cli.py`, `tools/check_user_level_mcp_skills_cli_install.py`, `tools/user_level_receipt_governance.py`, `test/mcp2cli.test.py`, `test/skills2cli.test.py`, and `test/user_level_mcp_skills_cli_install.test.py`.
+Companion refresh note: the zh-CN companion remains the Chinese companion while preserving runtime tokens; no remote publication is authorized by this plan.
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -76,10 +77,12 @@ One session may claim this implementation plan at a time. Other sessions may wor
 - [x] Create runtime successor plan for the deleted/superseded discovery-facade source plan.
 - [x] Record `knowsuchagency/mcp2cli` as upstream runtime source and `skills2cli` as an upstream-pattern fork/adaptation.
 - [x] Preserve existing repo-local helper/checker/test carry-forward surfaces as R0-R2 evidence only.
-- [ ] Stage D real runtime: pin upstream `mcp2cli` version/ref and install/update it at user level with R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence.
-- [ ] Stage D real runtime: install/update repo-derived `skills2cli` wrapper and SKILL.md with R3 receipt, source hash, updater command, rollback pointer, and redaction evidence.
-- [ ] Stage D real runtime: run bounded R4 help/version/safe-discovery smoke for both wrappers and record `smoke-tested` receipts.
-- [ ] Stage D real runtime: gate any R5 direct MCP call or skill action handoff behind risk profile, sensitive-call authorization receipt, action scope, result redaction, and rollback evidence.
+- [x] Implement repo-local R4 smoke command support that records `smoke-tested` receipts for `mcp2cli` and `skills2cli` against an explicitly supplied Codex home fixture.
+- [x] Extend the repo-local checker with `--require-smoke-tested` so R4 smoke receipt evidence can be required and validated through the generic receipt governance guard.
+- [ ] Stage D live runtime: pin upstream `mcp2cli` version/ref and install/update it at real user level with R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence after explicit live authorization.
+- [ ] Stage D live runtime: install/update repo-derived `skills2cli` wrapper and SKILL.md at real user level with R3 receipt, source hash, updater command, rollback pointer, and redaction evidence after explicit live authorization.
+- [ ] Stage D live runtime: run bounded R4 help/version/safe-discovery smoke for both real user-level wrappers using the implemented `smoke` command and record live `smoke-tested` receipts.
+- [ ] Stage D live runtime: gate any R5 direct MCP call or skill action handoff behind risk profile, sensitive-call authorization receipt, action scope, result redaction, and rollback evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -102,5 +105,6 @@ One session may claim this implementation plan at a time. Other sessions may wor
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-05 runtime successor plan: branch `runtime-plan-standard-20260605` creates this plan to carry `mcp2cli` / `skills2cli` real-runtime work after `user_level_mcp_skills_discovery_facade_plan` was deleted/superseded; no user-level install, smoke, direct MCP call, or live handoff is performed by this package.
+- 2026-06-05 runtime successor plan: branch `runtime-plan-standard-20260605` creates this plan to carry `mcp2cli` / `skills2cli` real-runtime work after `user_level_mcp_skills_discovery_facade_plan` was deleted/superseded; no user-level install, smoke, direct MCP call, or live handoff is performed by that package.
+- 2026-06-06 R4 repo-local smoke receipt support: branch `implement-mcp-skills-cli-runtime-r4-20260606` adds `install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation`, `check_user_level_mcp_skills_cli_install.py --require-smoke-tested`, and focused tests that validate generated R4 `smoke-tested` receipts through `user_level_receipt_governance.py smoke-check` against temporary Codex-home fixtures.
 <!-- EVIDENCE_INDEX_END -->

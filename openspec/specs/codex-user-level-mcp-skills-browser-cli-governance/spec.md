@@ -755,6 +755,29 @@ The helper SHALL fail closed when a smoke receipt attempts to represent write-ca
 - **THEN** the command SHALL fail closed with sanitized blocker codes
 - **AND** it SHALL NOT treat the lane as `smoke-tested`.
 
+
+### Requirement: Mcp2cli and Skills2cli runtime helper SHALL record fixture-backed R4 smoke receipts
+
+The repository-local `install_user_level_mcp_skills_cli.py` helper SHALL provide an explicit `smoke` command for `mcp2cli` and `skills2cli` runtime promotion evidence. The command SHALL run only bounded read-only help/version smoke commands against wrappers under an explicitly supplied Codex home and SHALL write R4 `smoke-tested` receipts only when `--record` and `--operator-confirmation` are both present.
+
+The repository-local `check_user_level_mcp_skills_cli_install.py` checker SHALL provide `--require-smoke-tested`, which requires valid R4 smoke receipts for both tools and fails closed when either tool lacks smoke evidence. These fixture-backed R4 receipts SHALL validate through `tools/user_level_receipt_governance.py smoke-check` and SHALL NOT imply that the real default user-level Codex home was installed, smoked, or promoted without separate live authorization.
+
+#### Scenario: Fixture-backed R4 smoke receipts are recorded
+
+- **GIVEN** a temporary Codex home contains R3-style update receipts and wrappers for `mcp2cli` and `skills2cli`
+- **WHEN** `python tools/install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation --codex-home <temp-home> --json` runs
+- **THEN** the command SHALL run bounded read-only wrapper smoke commands
+- **AND** it SHALL write one `smoke-tested` R4 receipt per tool
+- **AND** each receipt SHALL pass `python tools/user_level_receipt_governance.py smoke-check --receipt <receipt> --tool-name <tool> --owner-lane <tool> --json`
+- **AND** it SHALL NOT perform R5 live handoff, sensitive calls, browser reads, external message sends, or default user-level Codex-home mutation.
+
+#### Scenario: Checker requires smoke-tested receipts
+
+- **GIVEN** a Codex home is supplied for install-surface validation
+- **WHEN** `python tools/check_user_level_mcp_skills_cli_install.py --root . --require-user-level-installed --require-smoke-tested --codex-home <home> --json` runs
+- **THEN** the checker SHALL fail closed if either `mcp2cli` or `skills2cli` lacks a valid R4 `smoke-tested` receipt
+- **AND** it SHALL report the smoke receipt count and sanitized latest smoke receipt summaries when the evidence is present.
+
 ### Requirement: Receipt governance helper SHALL validate rollback executor receipts without executing rollback
 
 The repository-local receipt governance helper SHALL validate rollback executor receipts for dry-run and apply evidence without executing rollback commands.

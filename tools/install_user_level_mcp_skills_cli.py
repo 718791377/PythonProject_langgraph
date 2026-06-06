@@ -53,6 +53,24 @@ UPDATE_REQUIRED_FIELDS = (
     "owner_lane",
     "redaction_status",
 )
+SMOKE_REQUIRED_FIELDS = (
+    "tool_name",
+    "owner_lane",
+    "runtime_stage",
+    "install_receipt",
+    "smoke_command",
+    "smoke_type",
+    "smoke_result",
+    "timeout_release",
+    "rollback_pointer",
+    "rollback_ready",
+    "command_transcript",
+    "transcript_redaction",
+    "redaction_status",
+)
+ALLOWED_REDACTION_STATUS = {"pass", "passed", "redacted", "no_secrets", "no-sensitive-data"}
+ALLOWED_R4_STAGES = {"r4", "smoke-tested", "smoke_tested"}
+ALLOWED_SMOKE_TYPES = {"help", "version", "status", "safe-discovery", "safe_discovery", "read-only", "readonly"}
 
 
 @dataclass(frozen=True)
@@ -521,6 +539,77 @@ def save_receipt(paths: dict[str, Path], name: str, data: dict[str, Any]) -> Pat
     return path
 
 
+
+def command_display(command: list[str], *, tool_name: str) -> str:
+    if not command:
+        return tool_name
+    args = [str(item) for item in command[1:]]
+    return " ".join([tool_name, *args])
+
+
+def transcript(command: list[str], result: CommandResult, *, tool_name: str) -> dict[str, Any]:
+    safe = {
+        "command": command_display(command, tool_name=tool_name),
+        "command_hash": h("\0".join(command)),
+        "returncode": result.returncode,
+        "stdout_excerpt": sanitize(result.stdout, limit=800),
+        "stderr_excerpt": sanitize(result.stderr, limit=800),
+    }
+    safe["transcript_hash"] = h(safe)
+    return safe
+
+
+def smoke_receipt(
+    *,
+    tool_name: str,
+    owner_lane: str,
+    install_receipt: dict[str, Any],
+    smoke_command: list[str],
+    smoke_type: str,
+    smoke: CommandResult,
+    timeout: int,
+) -> dict[str, Any]:
+    command_transcript = transcript(smoke_command, smoke, tool_name=tool_name)
+    rollback_pointer = str(install_receipt.get("rollback_pointer", ""))
+    return {
+        "schema_version": 1,
+        "generated_at": now().isoformat(),
+        "receipt_kind": "smoke-tested",
+        "tool_name": tool_name,
+        "owner_lane": owner_lane,
+        "runtime_stage": "R4",
+        "install_receipt": str(install_receipt.get("_path", "")),
+        "smoke_command": command_display(smoke_command, tool_name=tool_name),
+        "smoke_type": smoke_type,
+        "smoke_result": {
+            "status": "pass" if smoke.returncode == 0 else "fail",
+            "returncode": smoke.returncode,
+            "stdout_excerpt": sanitize(smoke.stdout),
+            "stderr_excerpt": sanitize(smoke.stderr),
+        },
+        "timeout_release": {
+            "status": "pass",
+            "timeout_seconds": timeout,
+            "released": True,
+        },
+        "rollback_pointer": rollback_pointer,
+        "rollback_ready": bool(rollback_pointer),
+        "command_transcript": command_transcript,
+        "transcript_redaction": {
+            "status": "pass",
+            "redacted_transcript_hash": h(command_transcript),
+            "raw_private_paths_retained": False,
+            "raw_sensitive_values_retained": False,
+        },
+        "redaction_status": "no_secrets",
+        "write_performed": False,
+        "live_action_performed": False,
+        "sensitive_action_performed": False,
+        "user_level_state_mutated": False,
+        "reads_browser_data": False,
+        "external_message_sent": False,
+    }
+
 def command_apply(args: argparse.Namespace) -> dict[str, Any]:
     if not args.apply:
         return base("apply", False, mutates_user_level_state=False, blockers=["apply_flag_required"])
@@ -670,6 +759,89 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
     )
 
 
+
+def command_smoke(args: argparse.Namespace) -> dict[str, Any]:
+    if args.record and not args.operator_confirmation:
+        return base(
+            "smoke",
+            False,
+            mutates_user_level_state=False,
+            external_commands_run=False,
+            receipt_write_performed=False,
+            blockers=["operator_confirmation_required_for_record"],
+        )
+
+    paths = layout(Path(args.codex_home).resolve())
+    receipts = load_receipts(paths["receipt_dir"])
+    update_receipts = [item for item in receipts if is_update_receipt(item)]
+    install_receipts = {tool: latest(update_receipts, tool) for tool in ("mcp2cli", "skills2cli")}
+    blockers: list[str] = []
+    for tool, receipt_data in install_receipts.items():
+        if not receipt_data:
+            blockers.append(f"missing_update_receipt:{tool}")
+        elif not receipt_data.get("rollback_pointer"):
+            blockers.append(f"missing_rollback_pointer:{tool}")
+
+    smoke_results: dict[str, CommandResult] = {}
+    smoke_commands: dict[str, list[str]] = {}
+    smoke_types: dict[str, str] = {}
+
+    mcp_version = [str(paths["mcp2cli_cmd"]), "--version"]
+    smoke_commands["mcp2cli"] = mcp_version
+    smoke_types["mcp2cli"] = "version"
+    if paths["mcp2cli_cmd"].exists():
+        mcp_result = run(mcp_version, timeout=args.timeout)
+        if mcp_result.returncode != 0:
+            mcp_help = [str(paths["mcp2cli_cmd"]), "--help"]
+            mcp_result = run(mcp_help, timeout=args.timeout)
+            smoke_commands["mcp2cli"] = mcp_help
+            smoke_types["mcp2cli"] = "help"
+        smoke_results["mcp2cli"] = mcp_result
+        if mcp_result.returncode != 0:
+            blockers.append("mcp2cli_smoke_failed")
+    else:
+        blockers.append("missing_wrapper:mcp2cli_cmd")
+
+    skills_help = [str(paths["skills2cli_cmd"]), "--help"]
+    smoke_commands["skills2cli"] = skills_help
+    smoke_types["skills2cli"] = "help"
+    if paths["skills2cli_cmd"].exists():
+        skills_result = run(skills_help, timeout=args.timeout)
+        smoke_results["skills2cli"] = skills_result
+        if skills_result.returncode != 0:
+            blockers.append("skills2cli_smoke_failed")
+    else:
+        blockers.append("missing_wrapper:skills2cli_cmd")
+
+    smoke_receipts: list[dict[str, Any]] = []
+    smoke_receipt_paths: list[str] = []
+    if args.record and not blockers:
+        paths["receipt_dir"].mkdir(parents=True, exist_ok=True)
+        for tool in ("mcp2cli", "skills2cli"):
+            receipt_data = smoke_receipt(
+                tool_name=tool,
+                owner_lane=tool,
+                install_receipt=install_receipts[tool] or {},
+                smoke_command=smoke_commands[tool],
+                smoke_type=smoke_types[tool],
+                smoke=smoke_results[tool],
+                timeout=args.timeout,
+            )
+            smoke_receipts.append(receipt_data)
+            smoke_receipt_paths.append(str(save_receipt(paths, f"{tool}-smoke", receipt_data)))
+
+    return base(
+        "smoke",
+        not blockers,
+        mutates_user_level_state=bool(args.record and not blockers),
+        external_commands_run=True,
+        receipt_write_performed=bool(args.record and not blockers),
+        blockers=sorted(set(blockers)),
+        smoke_receipt_paths=smoke_receipt_paths,
+        smoke_receipt_summaries=[sanitize_json(item) for item in smoke_receipts],
+        command_results={tool: summarize_result(result) for tool, result in smoke_results.items()},
+    )
+
 def load_receipts(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
@@ -684,6 +856,14 @@ def load_receipts(path: Path) -> list[dict[str, Any]]:
             receipts.append(data)
     return receipts
 
+
+
+def is_update_receipt(data: dict[str, Any]) -> bool:
+    return all(field in data for field in UPDATE_REQUIRED_FIELDS) and "smoke_command" not in data
+
+
+def is_smoke_receipt(data: dict[str, Any]) -> bool:
+    return all(field in data for field in SMOKE_REQUIRED_FIELDS) or data.get("receipt_kind") == "smoke-tested"
 
 def latest(receipts: list[dict[str, Any]], tool_name: str) -> dict[str, Any] | None:
     matches = [item for item in receipts if item.get("tool_name") == tool_name]
@@ -704,6 +884,55 @@ def receipt_blockers(data: dict[str, Any], tool_name: str) -> list[str]:
     return blockers
 
 
+
+def pass_status(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() == "pass"
+    if isinstance(value, dict):
+        return str(value.get("status", "")).strip().lower() == "pass"
+    return False
+
+
+def smoke_receipt_blockers(data: dict[str, Any], tool_name: str) -> list[str]:
+    blockers = [f"missing_{field}" for field in SMOKE_REQUIRED_FIELDS if field not in data]
+    if data.get("tool_name") != tool_name:
+        blockers.append("tool_name_mismatch")
+    if data.get("owner_lane") != tool_name:
+        blockers.append("owner_lane_mismatch")
+    if str(data.get("runtime_stage", "")).strip().lower() not in ALLOWED_R4_STAGES:
+        blockers.append("runtime_stage_not_r4")
+    smoke_type = str(data.get("smoke_type", "")).strip().lower().replace("_", "-")
+    if smoke_type == "readonly":
+        smoke_type = "read-only"
+    allowed_types = {item.replace("_", "-") for item in ALLOWED_SMOKE_TYPES}
+    if smoke_type not in allowed_types:
+        blockers.append("smoke_type_not_read_only")
+    if not pass_status(data.get("smoke_result")):
+        blockers.append("smoke_result_not_pass")
+    if not pass_status(data.get("timeout_release")):
+        blockers.append("timeout_release_not_pass")
+    if data.get("rollback_ready") is not True or not data.get("rollback_pointer"):
+        blockers.append("rollback_not_ready")
+    if not pass_status(data.get("transcript_redaction")):
+        blockers.append("transcript_redaction_not_pass")
+    transcript_redaction = data.get("transcript_redaction")
+    if isinstance(transcript_redaction, dict) and not str(transcript_redaction.get("redacted_transcript_hash", "")).strip():
+        blockers.append("redacted_transcript_hash_missing")
+    redaction = str(data.get("redaction_status", "")).strip().lower()
+    if redaction not in ALLOWED_REDACTION_STATUS:
+        blockers.append("redaction_status_not_pass")
+    for field in (
+        "write_performed",
+        "live_action_performed",
+        "sensitive_action_performed",
+        "user_level_state_mutated",
+        "reads_browser_data",
+        "external_message_sent",
+    ):
+        if data.get(field) is True:
+            blockers.append(f"forbidden_{field}")
+    return blockers
+
 def command_check(args: argparse.Namespace) -> dict[str, Any]:
     paths = layout(Path(args.codex_home).resolve())
     errors: list[str] = []
@@ -715,12 +944,24 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
         if not paths[key].exists():
             (errors if args.require_installed else warnings).append(f"missing_artifact:{key}")
     receipts = load_receipts(paths["receipt_dir"])
+    update_receipts = [item for item in receipts if is_update_receipt(item)]
+    smoke_receipts = [item for item in receipts if is_smoke_receipt(item)]
     for tool in ("mcp2cli", "skills2cli"):
-        receipt_data = latest(receipts, tool)
+        receipt_data = latest(update_receipts, tool)
         if not receipt_data:
             (errors if args.require_installed else warnings).append(f"missing_update_receipt:{tool}")
             continue
         errors.extend(f"invalid_update_receipt:{tool}:{item}" for item in receipt_blockers(receipt_data, tool))
+    for tool in ("mcp2cli", "skills2cli"):
+        smoke_receipt_data = latest(smoke_receipts, tool)
+        if not smoke_receipt_data:
+            if args.require_smoke_tested:
+                errors.append(f"missing_smoke_receipt:{tool}")
+            continue
+        smoke_blockers = smoke_receipt_blockers(smoke_receipt_data, tool)
+        if smoke_blockers:
+            target = errors if args.require_smoke_tested else warnings
+            target.extend(f"invalid_smoke_receipt:{tool}:{item}" for item in smoke_blockers)
 
     smoke: dict[str, Any] = {}
     if args.smoke and paths["mcp2cli_cmd"].exists():
@@ -739,15 +980,18 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
         mutates_user_level_state=False,
         external_commands_run=bool(args.smoke),
         require_installed=bool(args.require_installed),
+        require_smoke_tested=bool(args.require_smoke_tested),
         errors=errors,
         warnings=warnings,
         wrapper_presence={key: paths[key].exists() for key in ("mcp2cli_cmd", "mcp2cli_ps1", "skills2cli_cmd", "skills2cli_ps1")},
         artifact_presence={key: paths[key].exists() for key in ("mcp2cli_tool_dir", "skills2cli_tool_dir", "skills2cli_skill_dir")},
-        receipt_count=len(receipts),
-        latest_receipts={tool: sanitize_json(latest(receipts, tool) or {}) for tool in ("mcp2cli", "skills2cli")},
+        receipt_count=len(update_receipts),
+        total_receipt_count=len(receipts),
+        smoke_receipt_count=len(smoke_receipts),
+        latest_receipts={tool: sanitize_json(latest(update_receipts, tool) or {}) for tool in ("mcp2cli", "skills2cli")},
+        latest_smoke_receipts={tool: sanitize_json(latest(smoke_receipts, tool) or {}) for tool in ("mcp2cli", "skills2cli")},
         smoke_results=smoke,
     )
-
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Install or inspect user-level mcp2cli / skills2cli artifacts.")
@@ -775,9 +1019,16 @@ def build_parser() -> argparse.ArgumentParser:
     apply.add_argument("--skip-upstream-skill-install", action="store_true")
     apply.set_defaults(func=command_apply)
 
+    smoke = sub.add_parser("smoke", help="Run bounded read-only R4 smoke checks and optionally write smoke-tested receipts.")
+    common(smoke)
+    smoke.add_argument("--record", action="store_true")
+    smoke.add_argument("--operator-confirmation", action="store_true")
+    smoke.set_defaults(func=command_smoke)
+
     check = sub.add_parser("check", help="Check wrapper/artifact/receipt state.")
     common(check)
     check.add_argument("--require-installed", action="store_true")
+    check.add_argument("--require-smoke-tested", action="store_true")
     check.add_argument("--smoke", action="store_true")
     check.set_defaults(func=command_check)
     return parser

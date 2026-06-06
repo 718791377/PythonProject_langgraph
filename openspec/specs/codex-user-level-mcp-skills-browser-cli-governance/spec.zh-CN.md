@@ -407,3 +407,26 @@ Runtime stages SHALL 含义如下：
 - **WHEN** Pi 或 oh-my-pi sidecar behavior 试图替代 Codex、native subagents、native_omx、LangGraph、codex-ohmy、apply_patch、local-main-first gates 或 main Codex CLI leader session
 - **THEN** harness lane SHALL fail closed
 - **AND** R5 仍 SHALL 要求 isolated worktree、read guard、write guard、job state、no Codex takeover、changed-path report、rollback 与 cleanup evidence
+
+
+### Requirement: Mcp2cli 与 Skills2cli runtime helper SHALL 记录 fixture-backed R4 smoke receipts
+
+repo-local `install_user_level_mcp_skills_cli.py` helper 必须为 `mcp2cli` 与 `skills2cli` runtime promotion evidence 提供显式 `smoke` 命令。该命令只能对显式传入的 Codex home 下的 wrappers 运行受限只读 help/version smoke commands；只有同时提供 `--record` 与 `--operator-confirmation` 时，才允许写入 R4 `smoke-tested` receipts。
+
+repo-local `check_user_level_mcp_skills_cli_install.py` checker 必须提供 `--require-smoke-tested`，用于强制要求两个工具都具备有效 R4 smoke receipts；任何一个工具缺少 smoke evidence 时都必须 fail closed。这类 fixture-backed R4 receipts 必须能通过 `tools/user_level_receipt_governance.py smoke-check` 校验；除非另有单独 live 授权，否则不得暗示真实默认用户级 Codex home 已安装、已 smoke 或已 promotion。
+
+#### Scenario: fixture-backed R4 smoke receipts 被记录
+
+- **GIVEN** 一个临时 Codex home 已包含 `mcp2cli` 与 `skills2cli` 的 R3-style update receipts 和 wrappers
+- **WHEN** `python tools/install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation --codex-home <temp-home> --json` 运行
+- **THEN** command 必须执行受限只读 wrapper smoke commands
+- **AND** 必须为每个 tool 写入一份 `smoke-tested` R4 receipt
+- **AND** 每份 receipt 必须通过 `python tools/user_level_receipt_governance.py smoke-check --receipt <receipt> --tool-name <tool> --owner-lane <tool> --json`
+- **AND** 不得执行 R5 live handoff、sensitive calls、browser reads、external message sends 或默认用户级 Codex-home mutation。
+
+#### Scenario: checker 强制要求 smoke-tested receipts
+
+- **GIVEN** install-surface validation 收到一个 Codex home
+- **WHEN** `python tools/check_user_level_mcp_skills_cli_install.py --root . --require-user-level-installed --require-smoke-tested --codex-home <home> --json` 运行
+- **THEN** 如果 `mcp2cli` 或 `skills2cli` 任一工具缺少有效 R4 `smoke-tested` receipt，checker 必须 fail closed
+- **AND** 当证据存在时，checker 必须报告 smoke receipt count 与脱敏后的最新 smoke receipt summaries。

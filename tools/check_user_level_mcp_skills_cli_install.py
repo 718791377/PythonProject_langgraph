@@ -15,10 +15,10 @@ CHECK_NAME = "user_level_mcp_skills_cli_install"
 INSTALL_HELPER = Path("tools/install_user_level_mcp_skills_cli.py")
 CI_MANIFEST = Path("tools/ci/ci_test_manifest.json")
 GUARD_SCRIPT = Path("tools/run_openspec_guard.py")
-PLAN_EN = Path("docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md")
-PLAN_ZH = Path("docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md")
-PARENT_EN = PLAN_EN
-PARENT_ZH = PLAN_ZH
+PLAN_EN = Path("docs_bilingual/implementation_plans/user_level_mcp_skills_cli_runtime_plan.md")
+PLAN_ZH = Path("docs_bilingual/implementation_plans/user_level_mcp_skills_cli_runtime_plan.zh-CN.md")
+PARENT_EN = Path("docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md")
+PARENT_ZH = Path("docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md")
 TEST_NAME = "user_level_mcp_skills_cli_install.test.py"
 CHILD_PLAN_MARKERS = [
     "knowsuchagency/mcp2cli",
@@ -29,6 +29,9 @@ CHILD_PLAN_MARKERS = [
     "update receipt",
     "skills2cli",
     "native-subagent",
+    "smoke-tested",
+    "--require-smoke-tested",
+    "user_level_receipt_governance.py smoke-check",
 ]
 PARENT_PLAN_MARKERS = [
     "knowsuchagency/mcp2cli",
@@ -81,7 +84,14 @@ def require_markers(label: str, text: str, markers: list[str], errors: list[str]
             errors.append(f"{label}:missing_marker:{marker}")
 
 
-def evaluate(root: Path, *, require_user_level_installed: bool, smoke: bool, codex_home: Path | None) -> dict[str, Any]:
+def evaluate(
+    root: Path,
+    *,
+    require_user_level_installed: bool,
+    require_smoke_tested: bool,
+    smoke: bool,
+    codex_home: Path | None,
+) -> dict[str, Any]:
     root = root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
@@ -126,17 +136,19 @@ def evaluate(root: Path, *, require_user_level_installed: bool, smoke: bool, cod
         info.append("install_helper_plan_ok")
 
     user_level_check: dict[str, Any] | None = None
-    if require_user_level_installed or smoke:
+    if require_user_level_installed or require_smoke_tested or smoke:
         cmd = [sys.executable, str(helper), "check", "--json"]
         if require_user_level_installed:
             cmd.append("--require-installed")
+        if require_smoke_tested:
+            cmd.append("--require-smoke-tested")
         if smoke:
             cmd.append("--smoke")
         if codex_home:
             cmd.extend(["--codex-home", str(codex_home)])
         check_code, user_level_check, check_stderr = run_json(cmd, root)
         if check_code != 0:
-            if require_user_level_installed:
+            if require_user_level_installed or require_smoke_tested:
                 errors.append(f"user_level_install_check_failed:{check_stderr.strip()}")
             else:
                 warnings.append("user_level_install_smoke_not_ok")
@@ -151,6 +163,7 @@ def evaluate(root: Path, *, require_user_level_installed: bool, smoke: bool, cod
         "warnings": warnings,
         "info": info,
         "require_user_level_installed": require_user_level_installed,
+        "require_smoke_tested": require_smoke_tested,
         "smoke": smoke,
         "user_level_check": user_level_check,
         "policy": {
@@ -169,12 +182,14 @@ def main() -> int:
     parser.add_argument("--root", default=".")
     parser.add_argument("--codex-home", default=None)
     parser.add_argument("--require-user-level-installed", action="store_true")
+    parser.add_argument("--require-smoke-tested", action="store_true")
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     payload = evaluate(
         Path(args.root),
         require_user_level_installed=args.require_user_level_installed,
+        require_smoke_tested=args.require_smoke_tested,
         smoke=args.smoke,
         codex_home=Path(args.codex_home).resolve() if args.codex_home else None,
     )
