@@ -130,6 +130,7 @@ def main() -> int:
     browser_cli_adapter_smoke_receipts_script = root / "tools" / "check_browser_cli_adapter_smoke_receipts.py"
     user_level_cli_anything_wxwork_cli_governance_script = root / "tools" / "check_user_level_cli_anything_wxwork_cli_governance.py"
     codex_harnesses_governance_script = root / "tools" / "check_codex_harnesses_governance.py"
+    codex_harnesses_smoke_receipts_script = root / "tools" / "check_codex_harnesses_smoke_receipts.py"
     user_level_mcp_skills_cli_install_script = root / "tools" / "check_user_level_mcp_skills_cli_install.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
@@ -210,6 +211,8 @@ def main() -> int:
         raise SystemExit(f"Missing CLI-Anything/WXWork_CLI governance check script: {user_level_cli_anything_wxwork_cli_governance_script}")
     if not codex_harnesses_governance_script.exists():
         raise SystemExit(f"Missing Codex harnesses governance check script: {codex_harnesses_governance_script}")
+    if not codex_harnesses_smoke_receipts_script.exists():
+        raise SystemExit(f"Missing Codex harnesses R4 smoke receipt check script: {codex_harnesses_smoke_receipts_script}")
     if not user_level_mcp_skills_cli_install_script.exists():
         raise SystemExit(f"Missing user-level MCP/skills CLI install check script: {user_level_mcp_skills_cli_install_script}")
     if not local_mirrored_ci_gate_script.exists():
@@ -435,6 +438,11 @@ def main() -> int:
                 "check_codex_harnesses_governance",
                 [str(python_exe), str(codex_harnesses_governance_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Codex harnesses governance verification.",
+            ),
+            (
+                "check_codex_harnesses_smoke_receipts",
+                [str(python_exe), str(codex_harnesses_smoke_receipts_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Codex harnesses R4 smoke receipt verification.",
             ),
             (
                 "check_user_level_mcp_skills_cli_install",
@@ -807,6 +815,11 @@ def main() -> int:
         [str(python_exe), str(codex_harnesses_governance_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Codex harnesses governance verification.",
+    )
+    run_checked(
+        [str(python_exe), str(codex_harnesses_smoke_receipts_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Codex harnesses R4 smoke receipt verification.",
     )
 
     run_checked(

@@ -19,6 +19,9 @@ SPEC_ZH = Path("openspec/specs/codex-user-level-mcp-skills-browser-cli-governanc
 CI_MANIFEST = Path("tools/ci/ci_test_manifest.json")
 SAFETY_REGISTRY = Path("tools/safety_rule_script_backing_registry.json")
 GUARD_SCRIPT = Path("tools/run_openspec_guard.py")
+R4_SMOKE_RUNNER = Path("tools/run_codex_harnesses_smoke.py")
+R4_SMOKE_CHECKER = Path("tools/check_codex_harnesses_smoke_receipts.py")
+R4_SMOKE_TEST = "codex_harnesses_smoke_receipts.test.py"
 
 SOURCE_URLS = (
     "https://blog.can.ac/2026/02/12/the-harness-problem",
@@ -53,6 +56,11 @@ REQUIRED_PLAN_MARKERS = (
     "active-candidate",
     "fake Pi job",
     "active sidecar",
+    "tools/run_codex_harnesses_smoke.py",
+    "tools/check_codex_harnesses_smoke_receipts.py",
+    "codex_harnesses_smoke_receipts.test.py",
+    "blocked receipts",
+    "not smoke-tested",
 )
 REQUIRED_SPEC_MARKERS = (
     "Codex harnesses governance",
@@ -75,9 +83,13 @@ REQUIRED_SPEC_MARKERS = (
     "smoke-tested",
     "active-candidate",
     "not installed/started/enabled in this package",
+    "tools/run_codex_harnesses_smoke.py",
+    "tools/check_codex_harnesses_smoke_receipts.py",
+    "blocked receipts",
+    "not smoke-tested",
 )
 FORBIDDEN_PLAN_LANE_TERMS = ("chrome-devtools-mcp", "cdp-bridge-mcp", "OpenCLI", "CLI-Anything", "WXWork_CLI")
-REQUIRED_TESTS = {"check_codex_harnesses_governance.test.py"}
+REQUIRED_TESTS = {"check_codex_harnesses_governance.test.py", R4_SMOKE_TEST}
 RUNTIME_STAGE_MARKERS = (
     "R0 project-level preflight",
     "R1 project-level fake/dry-run runtime",
@@ -177,6 +189,13 @@ def check_plan_pair(root: Path, errors: list[str], info: list[str]) -> dict[str,
             "not_installed_started_enabled": "not installed/started/enabled in this package" in text.lower(),
             "active_sidecar_guard": "active sidecar" in text.lower()
             and "no codex takeover" in text.lower(),
+            "r4_smoke_surfaces": {
+                "runner": R4_SMOKE_RUNNER.as_posix() in text,
+                "checker": R4_SMOKE_CHECKER.as_posix() in text,
+                "test": R4_SMOKE_TEST in text,
+                "blocked_not_smoke_tested": "blocked receipts" in text.lower()
+                and "not smoke-tested" in text.lower(),
+            },
         }
         info.append(f"{rel.as_posix()}: Codex harness source ledger rows={len(rows)}")
     return details
@@ -232,6 +251,8 @@ def check_registry_guard_ci(root: Path, errors: list[str]) -> dict[str, Any]:
     guard_text = read_text(root / GUARD_SCRIPT, errors)
     if "check_codex_harnesses_governance" not in guard_text:
         errors.append("openspec_guard_missing:check_codex_harnesses_governance")
+    if "check_codex_harnesses_smoke_receipts" not in guard_text:
+        errors.append("openspec_guard_missing:check_codex_harnesses_smoke_receipts")
 
     registry = read_json(root / SAFETY_REGISTRY, errors)
     rule_found = False
@@ -243,8 +264,14 @@ def check_registry_guard_ci(root: Path, errors: list[str]) -> dict[str, Any]:
                 steps = set(rule.get("guard_steps", [])) if isinstance(rule.get("guard_steps"), list) else set()
                 if "tools/check_codex_harnesses_governance.py" not in scripts:
                     errors.append("safety_registry_harness_rule_missing_script")
+                if R4_SMOKE_RUNNER.as_posix() not in scripts:
+                    errors.append("safety_registry_harness_rule_missing_r4_smoke_runner")
+                if R4_SMOKE_CHECKER.as_posix() not in scripts:
+                    errors.append("safety_registry_harness_rule_missing_r4_smoke_checker")
                 if "check_codex_harnesses_governance" not in steps:
                     errors.append("safety_registry_harness_rule_missing_guard_step")
+                if "codex_harnesses_smoke_receipts" not in steps:
+                    errors.append("safety_registry_harness_rule_missing_r4_smoke_guard_step")
     if not rule_found:
         errors.append("safety_registry_missing:codex-harnesses-governance")
     return {"missing_tests": missing_tests, "rule_found": rule_found}

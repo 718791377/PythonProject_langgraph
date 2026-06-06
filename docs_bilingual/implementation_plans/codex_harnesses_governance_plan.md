@@ -31,8 +31,8 @@ Codex CLI, Git worktrees, JSON job state, Python guard/checker scripts, OpenSpec
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local; Stage B source-ledger/checker/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; Stage D real-runtime implementation is planned but not executed; remote publication remains closed.
 Runtime boundary: Codex harnesses are governance wrappers around future harness jobs; they do not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, or local-main-first publication gates. This package does not install Pi/oh-my-pi, start a Pi runtime, enable a harness sidecar, run a real harness job, or mark the lane installed-user-level/smoke-tested/active-candidate. Runtime promotion remains not installed/started/enabled in this package.
-Runtime gap: real runtime work still requires a Pi/oh-my-pi sidecar install or pinned package candidate, a harness job runner, executable read/write guards, R3 install/update receipts, R4 read-only smoke receipts, and R5 bounded live handoff receipts with isolated worktree evidence.
-Implementation evidence: `tools/check_codex_harnesses_governance.py` requires source ledger rows, source pin, retrieved_at, license note, rollback pointer, no Codex takeover, unpinned Pi packages rejection, read guard, write guard, job state, isolated worktree, changed-path report markers, and R0-R5 runtime promotion markers.
+Runtime gap: real runtime work still requires a Pi/oh-my-pi sidecar install or pinned package candidate, a harness job runner, executable read/write guards, R3 install/update receipts, R4 read-only smoke receipts, and R5 bounded live handoff receipts with isolated worktree evidence. Current R4 helper/checker work does not install, start, or live-run Pi/oh-my-pi; blocked receipts remain not smoke-tested until an R3 receipt resolves a wrapper.
+Implementation evidence: `tools/check_codex_harnesses_governance.py` requires source ledger rows, source pin, retrieved_at, license note, rollback pointer, no Codex takeover, unpinned Pi packages rejection, read guard, write guard, job state, isolated worktree, changed-path report markers, and R0-R5 runtime promotion markers. R4 local tooling now adds `tools/run_codex_harnesses_smoke.py`, `tools/check_codex_harnesses_smoke_receipts.py`, and `codex_harnesses_smoke_receipts.test.py`; without R3 install/update receipts it writes honest blocked receipts that are accepted as evidence but are not smoke-tested.
 Companion refresh note: the zh-CN companion was refreshed in this local package to replace English or mixed prose with Chinese prose while preserving runtime tokens; no runtime behavior changed.
 <!-- CURRENT_STATUS_END -->
 
@@ -65,7 +65,7 @@ This lane uses the shared R0-R5 ladder and remains not installed/started/enabled
 | R1 project-level fake/dry-run runtime | project-level | Run fake Pi job fixtures and deterministic read guard/write guard checks only. | Fake job state, read guard, write guard, no live Pi runtime, no Codex launcher mutation. |
 | R2 reusable project-level helper/guard | reusable project-level | Keep reusable harness guard/checker schemas for job state, isolated worktree, changed-path report, redaction, and rollback. | Guard schema, local tests, local gate, changed-path report. |
 | R3 user-level install/update receipt | user-level | Record Pi/oh-my-pi install/update only after explicit authorization, immutable source/package pin, install/update receipt, smoke command, updater command, rollback pointer, owner lane, and path hashes. | `installed-user-level` receipt, package pin, no unpinned Pi packages, no launcher takeover. |
-| R4 user-level smoke runtime | user-level | Run bounded read-only Pi/oh-my-pi smoke or sidecar status probe; no write-capable harness job. | `smoke-tested` receipt, read guard, job state, timeout release, redaction, rollback readiness. |
+| R4 user-level smoke runtime | user-level | Run bounded read-only Pi/oh-my-pi smoke or sidecar status probe through `tools/run_codex_harnesses_smoke.py`; no write-capable harness job. | `smoke-tested` receipt validated by `tools/check_codex_harnesses_smoke_receipts.py`, read guard, job state, timeout release, redaction, rollback readiness; missing R3 install receipts produce blocked receipts that are not smoke-tested. |
 | R5 active-candidate / bounded live handoff | user-level active-candidate | Active sidecar candidate may run one bounded harness job only under Codex leader ownership. | `active-candidate` receipt, isolated worktree, read guard, write guard, job state, no Codex takeover, changed-path report, rollback/cleanup evidence. |
 
 A Codex harnesses active sidecar must not replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, local-main-first publication gates, or the current main Codex CLI leader session.
@@ -74,7 +74,7 @@ Stage D pending runtime work list:
 
 - Stage D real runtime: implement Pi/oh-my-pi sidecar install/update receipt with pinned source/package, rollback pointer, and no-Codex-takeover evidence.
 - Stage D real runtime: implement harness job runner receipts with executable read/write guards, isolated worktree evidence, changed-path reporting, cleanup, and rollback.
-- Stage D real runtime: run bounded R4 read-only smoke and record `smoke-tested` receipt before any R5 active-candidate handoff.
+- Stage D real runtime: run bounded R4 read-only smoke through `tools/run_codex_harnesses_smoke.py` and record a `smoke-tested` receipt before any R5 active-candidate handoff.
 - Stage D real runtime: gate any R5 live harness job behind current operator authorization, owner lease, target/action allowlist, timeout release, and post-run cleanup evidence.
 
 ## File Ownership
@@ -104,11 +104,13 @@ This plan is not complete at the real-runtime level. The implemented-local packa
 - [x] Stage B: add checker/spec coverage for no Codex takeover, no unpinned Pi packages, read guard, write guard, job state, isolated worktree, and changed-path report.
 - [x] Stage B: wire checker/tests into CI manifest, safety registry, and OpenSpec guard.
 - [x] Stage C runtime promotion: add R0-R5 Codex harnesses ladder, fake Pi job dry-run boundary, installed-user-level/smoke-tested/active-candidate markers, and no-takeover active sidecar gates.
+- [x] R4 local smoke receipt tooling: add `tools/run_codex_harnesses_smoke.py`, `tools/check_codex_harnesses_smoke_receipts.py`, and `codex_harnesses_smoke_receipts.test.py`; blocked receipts are accepted but remain not smoke-tested.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
 
 - Stage B adds `codex_harnesses_governance` checker coverage for the harness-only lane.
+- R4 adds `codex_harnesses_smoke_receipts` checker coverage for bounded smoke receipts, including blocked receipts that do not count as smoke-tested.
 - Source refresh now requires source URL, source pin/ref, retrieved_at, license note, and rollback pointer.
 - Sidecar output remains non-actionable without read guard, write guard, job state, isolated worktree, and changed-path report evidence.
 - CI manifest, safety registry, and OpenSpec guard wiring now reference the split harness checker.
@@ -124,6 +126,7 @@ This plan is not complete at the real-runtime level. The implemented-local packa
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 R4 local tooling evidence: `tools/run_codex_harnesses_smoke.py`, `tools/check_codex_harnesses_smoke_receipts.py`, and `codex_harnesses_smoke_receipts.test.py` implement bounded read-only smoke receipt generation and validation; absent R3 install receipts produce blocked receipts that are accepted as evidence but are not smoke-tested; no Pi/oh-my-pi install, sidecar start, live harness job, active-candidate handoff, or Codex takeover occurs.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` reclassifies Pi/oh-my-pi sidecar, harness job runner, executable read/write guards, and R3/R4/R5 receipts as pending Stage D runtime work; no runtime is installed, started, smoked, or live-run.
 - 2026-06-05 Stage C runtime promotion evidence: branch `runtime-promotion-plan-20260605` records R0-R5 promotion gates for Codex harnesses, keeps Pi/oh-my-pi sidecar runtime not installed/started/enabled, and checker-backs no-takeover active sidecar constraints.
 - 2026-06-04 Stage B implementation evidence: `tools/check_codex_harnesses_governance.py` and `test/check_codex_harnesses_governance.test.py` verify the harness-only lane, source ledger, no-takeover boundary, read/write guards, job state, isolated worktree, changed-path report, and no unpinned Pi packages.

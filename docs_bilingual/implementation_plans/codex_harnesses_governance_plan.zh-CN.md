@@ -31,8 +31,8 @@ Pi/oh-my-pi reference、JSON job state、read guard、write guard、isolated wor
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local；Stage B source-ledger/checker/spec migration 已完成；Stage C runtime-promotion ladder 已记录并由 checker 支撑；Stage D real-runtime implementation 尚未安装、启动、smoke 或 live-run。
 Runtime boundary：Codex harnesses 是未来 harness jobs 的治理包装；它们不会替代 Codex、native subagents、native_omx、LangGraph、codex-ohmy、apply_patch 或 local-main-first gates；no Codex takeover。
-Runtime gap：真实 runtime 仍需要 Pi/oh-my-pi sidecar install 或 pinned package candidate、harness job runner、executable read/write guards、R3 install/update receipt、R4 smoke receipt 与 R5 bounded live handoff evidence。
-Implementation evidence：`tools/check_codex_harnesses_governance.py` 要求 source ledger rows、source pin、retrieved_at、license note、rollback pointer、no Codex takeover、unpinned Pi packages check、read guard、write guard、job state、isolated worktree、changed-path report 与 fake Pi job marker。
+Runtime gap：真实 runtime 仍需要 Pi/oh-my-pi sidecar install 或 pinned package candidate、harness job runner、executable read/write guards、R3 install/update receipt、R4 smoke receipt 与 R5 bounded live handoff evidence；当前 R4 helper/checker 不安装、不启动、不 live-run Pi/oh-my-pi，缺少 R3 receipt 时只写 blocked receipts，且这些 blocked receipts 保持 not smoke-tested。
+Implementation evidence：`tools/check_codex_harnesses_governance.py` 要求 source ledger rows、source pin、retrieved_at、license note、rollback pointer、no Codex takeover、unpinned Pi packages check、read guard、write guard、job state、isolated worktree、changed-path report 与 fake Pi job marker；R4 本地工具新增 `tools/run_codex_harnesses_smoke.py`、`tools/check_codex_harnesses_smoke_receipts.py` 与 `codex_harnesses_smoke_receipts.test.py`，用于生成/校验只读 smoke 或 blocked receipts。
 <!-- CURRENT_STATUS_END -->
 
 ## Source Ledger
@@ -60,7 +60,7 @@ Implementation evidence：`tools/check_codex_harnesses_governance.py` 要求 sou
 | R1 project-level fake/dry-run runtime | project-level | 只运行 fake Pi job fixture 与 deterministic read guard/write guard。 | fake Pi job state、read guard、write guard、no live Pi runtime。 |
 | R2 reusable project-level helper/guard | reusable project-level | 维护 job state、isolated worktree、changed-path report、redaction、rollback 的 guard/checker schema。 | guard schema、local tests、local gate、changed-path report。 |
 | R3 user-level install/update receipt | user-level | 明确授权后记录 Pi/oh-my-pi install/update。 | `installed-user-level` receipt、package pin、no unpinned Pi packages、no Codex takeover。 |
-| R4 user-level smoke runtime | user-level | 运行受限 read-only Pi/oh-my-pi smoke 或 sidecar status probe；不运行 write-capable harness job。 | `smoke-tested` receipt、read guard、job state、timeout release、rollback readiness。 |
+| R4 user-level smoke runtime | user-level | 通过 `tools/run_codex_harnesses_smoke.py` 运行受限 read-only Pi/oh-my-pi smoke 或 sidecar status probe；不运行 write-capable harness job。 | `tools/check_codex_harnesses_smoke_receipts.py` 校验 `smoke-tested` receipt、read guard、job state、timeout release、rollback readiness；缺少 R3 install receipt 时生成 blocked receipts，且 not smoke-tested。 |
 | R5 active-candidate / bounded live handoff | user-level active-candidate | active sidecar 只能在 Codex leader ownership 下运行一个 bounded harness job。 | `active-candidate` receipt、isolated worktree、read guard、write guard、job state、changed-path report、rollback/cleanup evidence。 |
 
 本包保持 not installed/started/enabled in this package；active sidecar 必须有 no Codex takeover evidence。
@@ -79,7 +79,7 @@ Implementation evidence：`tools/check_codex_harnesses_governance.py` 要求 sou
 
 - 实现 Pi/oh-my-pi sidecar install/update receipt，包含 pinned source/package、rollback pointer 与 no-Codex-takeover evidence。
 - 实现 harness job runner receipts，包含 executable read/write guards、isolated worktree evidence、changed-path reporting、cleanup 与 rollback。
-- 在任何 R5 active-candidate handoff 之前，先运行 bounded R4 read-only smoke 并记录 `smoke-tested` receipt。
+- 在任何 R5 active-candidate handoff 之前，先通过 `tools/run_codex_harnesses_smoke.py` 运行 bounded R4 read-only smoke 并记录 `smoke-tested` receipt。
 - R5 live harness job 必须经过 current operator authorization、owner lease、target/action allowlist、timeout release 与 post-run cleanup evidence。
 
 ## Task Backlog（任务 Backlog）
@@ -90,11 +90,13 @@ Implementation evidence：`tools/check_codex_harnesses_governance.py` 要求 sou
 - [x] Stage B：增加 source ledger、source pin、retrieved_at、license note 与 rollback pointer 要求。
 - [x] Stage B：增加 checker/spec 覆盖 no Codex takeover、unpinned Pi packages、read guard、write guard、job state、isolated worktree 与 changed-path report。
 - [x] Stage C：增加 R0-R5 Codex harnesses ladder、fake Pi job dry-run boundary、installed-user-level/smoke-tested/active-candidate marker 与 no-takeover active sidecar gates。
+- [x] R4 local smoke receipt tooling：新增 `tools/run_codex_harnesses_smoke.py`、`tools/check_codex_harnesses_smoke_receipts.py` 与 `codex_harnesses_smoke_receipts.test.py`；blocked receipts 可作为诚实证据，但仍为 not smoke-tested。
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B 待迁移工作
 
 - Stage D real runtime 仍需单独实施，当前只完成治理/checker/test。
+- R4 本地 checker 覆盖 `codex_harnesses_smoke_receipts`，接受 blocked receipts 但不把它们当成 smoke-tested。
 - active sidecar 不得接管 Codex launcher、native agents、native_omx、LangGraph 或 apply_patch。
 
 ## 验收标准
@@ -106,6 +108,7 @@ Implementation evidence：`tools/check_codex_harnesses_governance.py` 要求 sou
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-06 R4 local tooling evidence：`tools/run_codex_harnesses_smoke.py`、`tools/check_codex_harnesses_smoke_receipts.py` 与 `codex_harnesses_smoke_receipts.test.py` 实现受限只读 smoke receipt 生成/校验；缺少 R3 install receipt 时写入 blocked receipts，作为证据可被接受但保持 not smoke-tested；不安装 Pi/oh-my-pi、不启动 sidecar、不运行 live harness job、不进入 active-candidate，也不发生 Codex takeover。
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 Pi/oh-my-pi sidecar、harness job runner、executable read/write guards 与 R3/R4/R5 receipts 标记为 pending Stage D runtime work；no runtime is installed, started, smoked, or live-run。
 - 2026-06-05 Stage C runtime promotion evidence：branch `runtime-promotion-plan-20260605` records R0-R5 promotion gates for Codex harnesses, keeps Pi/oh-my-pi sidecar runtime not installed/started/enabled, and checker-backs no-takeover active sidecar constraints。
 - 2026-06-04 Stage B implementation evidence：`tools/check_codex_harnesses_governance.py` 和 `test/check_codex_harnesses_governance.test.py` verify source ledger、no Codex takeover、read guard、write guard、job state、isolated worktree、changed-path report 与 no unpinned Pi packages。

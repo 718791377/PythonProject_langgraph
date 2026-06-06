@@ -886,11 +886,20 @@ Codex harnesses governance SHALL be the only lane that owns harness wording. It 
 
 The harness lane SHALL require source ledger rows with source pin, retrieved_at, license note, and rollback pointer before adopting any derived rule or helper. It SHALL reject no Codex takeover violations, unpinned Pi packages, missing read guard, missing write guard, missing job state, missing isolated worktree, or missing changed-path report evidence.
 
+For R4 user-level smoke runtime, `tools/run_codex_harnesses_smoke.py` SHALL generate bounded read-only Pi / oh-my-pi smoke receipts only from existing R3 install/update receipts, and `tools/check_codex_harnesses_smoke_receipts.py` SHALL validate those receipts without installing Pi, starting sidecars, running write-capable harness jobs, or replacing Codex surfaces. Missing or invalid R3 receipts may produce honest blocked receipts, but blocked receipts SHALL remain not smoke-tested and SHALL NOT satisfy `--require-smoke-tested`.
+
 #### Scenario: Harness governance checker runs
 
 - **WHEN** `python tools/check_codex_harnesses_governance.py --root . --json` runs
 - **THEN** it SHALL verify all four source URLs and the source-ledger fields
 - **AND** it SHALL verify no Codex takeover, read guard, write guard, job state, isolated worktree, changed-path report, and unpinned Pi packages boundaries
+
+#### Scenario: Harness R4 smoke receipts are blocked without install evidence
+
+- **WHEN** `python tools/run_codex_harnesses_smoke.py run --receipt-dir <dir> --json` runs without R3 install/update receipts
+- **THEN** the helper SHALL write blocked receipts for Pi and oh-my-pi
+- **AND** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --json` SHALL accept those blocked receipts as honest evidence
+- **AND** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --require-smoke-tested --json` SHALL fail closed because blocked receipts are not smoke-tested
 
 ### Requirement: Runtime promotion ladder SHALL separate project-level governance from user-level runtime
 
@@ -902,7 +911,7 @@ Runtime stages SHALL mean:
 - R1 project-level fake/dry-run runtime: deterministic fixture or dry-run behavior only.
 - R2 reusable project-level helper/guard: repo-local reusable guard/helper pattern, not a user-level global install.
 - R3 user-level install/update receipt: requires `installed-user-level`, explicit authorization, immutable pin, install/update receipt, smoke command, updater command, rollback pointer, owner lane, and redacted path evidence.
-- R4 user-level smoke runtime: requires `smoke-tested`, bounded help/status/read-only smoke evidence, timeout release, redaction, and rollback readiness.
+- R4 user-level smoke runtime: requires `smoke-tested`, bounded help/status/read-only smoke evidence, timeout release, redaction, and rollback readiness; blocked receipts from `tools/run_codex_harnesses_smoke.py` are evidence of why R4 did not run, not smoke-tested promotion evidence.
 - R5 active-candidate / bounded live handoff: requires `active-candidate`, current authorization receipt, owner/global lease, target/action allowlist, expiry, timeout release, rollback pointer, action or changed-path report, and cleanup evidence.
 
 #### Scenario: Runtime promotion markers are missing

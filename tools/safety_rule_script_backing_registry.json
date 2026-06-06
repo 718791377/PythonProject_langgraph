@@ -705,12 +705,15 @@
         "docs_bilingual/implementation_plans/codex_harnesses_governance_plan.zh-CN.md"
       ],
       "script_controls": [
-        "tools/check_codex_harnesses_governance.py"
+        "tools/check_codex_harnesses_governance.py",
+        "tools/run_codex_harnesses_smoke.py",
+        "tools/check_codex_harnesses_smoke_receipts.py"
       ],
       "guard_steps": [
-        "check_codex_harnesses_governance"
+        "check_codex_harnesses_governance",
+        "codex_harnesses_smoke_receipts"
       ],
-      "description": "Keeps Codex harness governance separate from adapter lanes, requires pinned source ledger records for The Harness Problem, oh-my-pi, Pi, and Pi packages, and preserves no-takeover, read/write guard, job-state, isolated-worktree, and changed-path-report boundaries."
+      "description": "Keeps Codex harness governance separate from adapter lanes, requires pinned source ledger records for The Harness Problem, oh-my-pi, Pi, and Pi packages, and preserves no-takeover, read/write guard, job-state, isolated-worktree, changed-path-report, and R4 smoke receipt boundaries."
     }
   ]
 }

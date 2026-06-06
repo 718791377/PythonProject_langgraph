@@ -348,11 +348,20 @@ Codex harnesses governance SHALL be the only lane that owns harness wording. It 
 
 The harness lane SHALL require source ledger rows with source pin, retrieved_at, license note, and rollback pointer before adopting any derived rule or helper. It SHALL reject no Codex takeover violations, unpinned Pi packages, missing read guard, missing write guard, missing job state, missing isolated worktree, or missing changed-path report evidence.
 
+对于 R4 user-level smoke runtime，`tools/run_codex_harnesses_smoke.py` 只能基于已有 R3 install/update receipts 生成受限 read-only Pi / oh-my-pi smoke receipts；`tools/check_codex_harnesses_smoke_receipts.py` 必须在不安装 Pi、不启动 sidecar、不运行 write-capable harness job、不替代 Codex surfaces 的前提下校验这些 receipts。缺失或无效 R3 receipts 可以生成诚实 blocked receipts，但 blocked receipts 必须保持 not smoke-tested，且不得满足 `--require-smoke-tested`。
+
 #### Scenario: Harness governance checker runs
 
 - **WHEN** `python tools/check_codex_harnesses_governance.py --root . --json` runs
 - **THEN** it SHALL verify all four source URLs and the source-ledger fields
 - **AND** it SHALL verify no Codex takeover, read guard, write guard, job state, isolated worktree, changed-path report, and unpinned Pi packages boundaries
+
+#### Scenario: Harness R4 smoke receipts 在缺少安装证据时被阻断
+
+- **WHEN** `python tools/run_codex_harnesses_smoke.py run --receipt-dir <dir> --json` 在没有 R3 install/update receipts 的情况下运行
+- **THEN** helper 必须为 Pi 与 oh-my-pi 写入 blocked receipts
+- **AND** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --json` 必须接受这些 blocked receipts 作为诚实 evidence
+- **AND** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --require-smoke-tested --json` 必须 fail closed，因为 blocked receipts 不是 smoke-tested
 
 
 ### Requirement: Browser/CLI adapter boundary SHALL stay separate from sibling lanes
@@ -375,7 +384,7 @@ Runtime stages SHALL 含义如下：
 - R1 project-level fake/dry-run runtime：仅 deterministic fixture 或 dry-run behavior。
 - R2 reusable project-level helper/guard：repo-local reusable guard/helper pattern，不是 user-level global install。
 - R3 user-level install/update receipt：需要 `installed-user-level`、explicit authorization、immutable pin、install/update receipt、smoke command、updater command、rollback pointer、owner lane 与 redacted path evidence。
-- R4 user-level smoke runtime：需要 `smoke-tested`、bounded help/status/read-only smoke evidence、timeout release、redaction 与 rollback readiness。
+- R4 user-level smoke runtime：需要 `smoke-tested`、bounded help/status/read-only smoke evidence、timeout release、redaction 与 rollback readiness；`tools/run_codex_harnesses_smoke.py` 生成的 blocked receipts 只是说明 R4 未运行原因的 evidence，不是 smoke-tested promotion evidence。
 - R5 active-candidate / bounded live handoff：需要 `active-candidate`、current authorization receipt、owner/global lease、target/action allowlist、expiry、timeout release、rollback pointer、action 或 changed-path report 与 cleanup evidence。
 
 #### Scenario: Runtime promotion markers are missing
