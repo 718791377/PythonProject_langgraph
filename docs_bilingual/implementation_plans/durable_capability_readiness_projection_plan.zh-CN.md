@@ -34,13 +34,15 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage D R4 runtime refresh 已实现，等待 repository validation、OpenSpec 归档、本地 MR review 与本地 main 集成
-责任会话：main Codex leader session
-当前门禁：repository guard、precommit review、本地 CI、OpenSpec 归档与本地 MR review 通过后合入本地 main；远端发布仍不在范围内，除非用户明确批准
-Stage D 进入条件：用户已明确要求继续实施本子 implementation plan 至 R4
-Runtime boundary：默认 status path 保持只读；只有显式 `-RefreshReadiness` 才写入 repo-local readiness projection receipt。
-最后更新：2026-06-06
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: durable capability readiness projection 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `active-candidate readiness projection marker and receipt linkage` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -97,6 +99,7 @@ Stage D/R4 已实现显式 readiness projection refresh：`codex-durable-state-s
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 durable capability readiness projection 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-06 Stage D/R4 runtime refresh：分支 `implement-durable-capability-readiness-r4-20260605` 增加显式 `codex-durable-state-status.ps1 -RefreshReadiness -Json` receipt 生成，写入 `.omx/state/readiness/durable-capability-readiness-projection.json`；保留独立 readiness 字段以及 source/selector/version/blocker 证据，并记录 `durable_workflow_adopted=false` 与 `persistent_team_launched=false`；目标验证 `python .\test\check_capability_switch_chain.test.py`、`powershell -NoProfile -ExecutionPolicy Bypass -File .\test\install-codex-user-level-team-mode.test.ps1`、`python .\tools\run_openspec_guard.py --root .` 与 `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` 已于 2026-06-06 通过。
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 runtime probe/refresh installed/enabled/selected/ready 投影列为 Stage D pending；本 R4 包补齐显式 refresh receipt runtime。
 - 2026-05-30 Stage C 实施：`tools/check_capability_switch_chain.py` 现在校验 durable capability readiness projections，要求区分 `installed`、`enabled`、`selected`、`ready` 四个字段，并强制 `ready == installed && enabled && selected` 不变量。

@@ -35,13 +35,15 @@ Project durable lane state as installed, enabled, selected, and ready without co
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage D R4 runtime refresh implemented and ready for repository validation/OpenSpec archive/local-main integration
-Owner session: main Codex leader session
-Current gate: repository guard, precommit review, local CI, OpenSpec archive, and local MR review before local main integration; remote publication remains out of scope until explicit user approval
-Stage D entry condition: satisfied by explicit user request to continue this child implementation plan through R4
-Last updated: 2026-06-06
-Companion refresh note: the zh-CN companion stays Chinese-first while preserving runtime tokens; this R4 package changes runtime refresh behavior only through explicit `-RefreshReadiness`.
+Status: implemented-local
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for durable capability readiness projection.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `active-candidate readiness projection marker and receipt linkage` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -103,6 +105,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for durable capability readiness projection. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-06 Stage D/R4 runtime refresh: branch `implement-durable-capability-readiness-r4-20260605` adds explicit `codex-durable-state-status.ps1 -RefreshReadiness -Json` receipt generation at `.omx/state/readiness/durable-capability-readiness-projection.json`, preserves distinct readiness fields and source/selector/version/blocker evidence, and records `durable_workflow_adopted=false` plus `persistent_team_launched=false`; targeted evidence: `python .\test\check_capability_switch_chain.test.py` and `powershell -NoProfile -ExecutionPolicy Bypass -File .\test\install-codex-user-level-team-mode.test.ps1` passed on 2026-06-06.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for installed/enabled/selected/ready probe refresh; this package updates plan governance only and does not run live runtime.
 - 2026-05-30 Stage C implementation: `tools/check_capability_switch_chain.py` now validates durable capability readiness projections with distinct `installed`, `enabled`, `selected`, and `ready` fields, including the invariant `ready == installed && enabled && selected`.

@@ -267,6 +267,63 @@ class CapabilitySwitchChainCheckerTests(unittest.TestCase):
         module.validate_capability_readiness_projection(receipt, errors, [], label="test receipt")
         self.assertTrue(any("durable_workflow_adopted must be false" in item for item in errors), errors)
 
+
+    def test_readiness_projection_r5_active_candidate_requires_receipt_link(self) -> None:
+        receipt = {
+            "receipt_kind": "durable_capability_readiness_projection",
+            "promotion_marker": "active-candidate",
+            "generated_at": "2026-06-07T00:00:00Z",
+            "capability_readiness": {
+                "selected_backend": "langgraph",
+                "readiness_fields": ["installed", "enabled", "selected", "ready"],
+                "native_omx": {"installed": True, "enabled": True, "selected": False, "ready": False},
+                "langgraph": {"installed": True, "enabled": True, "selected": True, "ready": True},
+            },
+            "blockers": [],
+            "source_receipts": {"status_helper": "codex-durable-state-status.ps1"},
+            "selector_evidence": {"selector_authority": ".omx/state/selectors/active.json", "active_selector_status": "active_scoped"},
+            "version_evidence": {"native_omx": {"install_state": "installed"}, "langgraph": {"install_state": "installed"}},
+            "durable_workflow_adopted": True,
+            "persistent_team_launched": False,
+            "smoke": {"marker": "smoke-tested", "launched_backend": False, "launched_persistent_team": False},
+        }
+        errors: list[str] = []
+        module.validate_capability_readiness_projection(receipt, errors, [], label="test r5 receipt")
+        self.assertTrue(any("active_candidate_receipt" in item for item in errors), errors)
+
+    def test_readiness_projection_r5_active_candidate_accepts_receipt_link(self) -> None:
+        receipt = {
+            "receipt_kind": "durable_capability_readiness_projection",
+            "promotion_marker": "active-candidate",
+            "generated_at": "2026-06-07T00:00:00Z",
+            "capability_readiness": {
+                "selected_backend": "langgraph",
+                "readiness_fields": ["installed", "enabled", "selected", "ready"],
+                "native_omx": {"installed": True, "enabled": True, "selected": False, "ready": False},
+                "langgraph": {"installed": True, "enabled": True, "selected": True, "ready": True},
+            },
+            "blockers": [],
+            "source_receipts": {"status_helper": "codex-durable-state-status.ps1"},
+            "selector_evidence": {"selector_authority": ".omx/state/selectors/active.json", "active_selector_status": "active_scoped"},
+            "version_evidence": {"native_omx": {"install_state": "installed"}, "langgraph": {"install_state": "installed"}},
+            "durable_workflow_adopted": True,
+            "persistent_team_launched": False,
+            "smoke": {"marker": "smoke-tested", "launched_backend": False, "launched_persistent_team": False},
+            "active_candidate_receipt": {
+                "status": "pass",
+                "runtime_stage": "active-candidate",
+                "receipt_path_hash": "abc123",
+                "authorization_receipt_hash": "auth123",
+                "owner_lease_hash": "lease123",
+                "rollback_pointer_hash": "rollback123",
+                "cleanup_status": "pass",
+                "remote_publication_mutated": False,
+            },
+        }
+        payload = module.validate_capability_readiness_projection(receipt, errors := [], [], label="test r5 receipt")
+        self.assertFalse(errors, errors)
+        self.assertEqual(payload["receipt"]["promotion_marker"], "active-candidate")
+
     def test_current_user_state_passes_when_available(self) -> None:
         state_path = module.default_state_file()
         if not state_path.exists():
