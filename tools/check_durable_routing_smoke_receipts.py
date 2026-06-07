@@ -11,10 +11,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from user_level_receipt_governance import (
+    active_candidate_summary,
+    validate_active_candidate_receipt,
+)
+
 
 CHECK_NAME = "durable_routing_smoke_receipts"
 ALLOWED_RUNTIME_STAGES = {"r4", "smoke-tested", "smoke_tested"}
 ALLOWED_CANDIDATE_BACKENDS = {"native_omx", "langgraph", "no_durable_team"}
+ALLOWED_ACTIVE_BACKENDS = {"native_omx", "langgraph"}
+ALLOWED_ACTIVE_DECISIONS = {"selected", "running", "adopted", "released"}
 ALLOWED_REDACTION_STATUS = {"pass", "passed", "redacted", "no_secrets", "not_required"}
 MAX_TRANSCRIPT_CHARS = 4000
 MAX_TIMEOUT_SECONDS = 120
@@ -239,6 +246,55 @@ def receipt_summary(receipt: dict[str, Any], *, receipt_path: Path | None = None
     }
 
 
+def validate_active_adoption_receipt(receipt: dict[str, Any]) -> list[str]:
+    blockers = list(validate_active_candidate_receipt(receipt, tool_name=None, owner_lane=None))
+    if receipt.get("receipt_type") != "durable-routing-adoption":
+        blockers.append("active_candidate_receipt_type_must_be_durable_routing_adoption")
+    backend_family = str(receipt.get("backend_family", "")).strip()
+    if backend_family not in ALLOWED_ACTIVE_BACKENDS:
+        blockers.append("active_candidate_backend_family_invalid")
+    adoption_decision = str(receipt.get("adoption_decision", "")).strip().lower()
+    if adoption_decision not in ALLOWED_ACTIVE_DECISIONS:
+        blockers.append("active_candidate_adoption_decision_invalid")
+    if receipt.get("selector_source") != ".omx/state/selectors/active.json":
+        blockers.append("active_candidate_selector_source_must_be_repo_local_active_selector")
+    if receipt.get("remote_publication_mutated") is not False:
+        blockers.append("active_candidate_remote_publication_must_not_mutate")
+    return sorted(set(blockers))
+
+
+def active_adoption_summary(
+    receipt: dict[str, Any] | None,
+    *,
+    receipt_path: Path | None = None,
+    blockers: list[str] | None = None,
+) -> dict[str, Any]:
+    if not receipt:
+        return {
+            "active_candidate_valid": False,
+            "receipt_path_hash": stable_hash(str(receipt_path))[:16] if receipt_path else "",
+            "blockers": sorted(set(blockers or [])),
+        }
+    summary = active_candidate_summary(receipt, receipt_path=receipt_path or Path("<inline>"))
+    summary.update(
+        {
+            "active_candidate_valid": not blockers,
+            "receipt_type": sanitize_short(receipt.get("receipt_type")),
+            "backend_family": sanitize_short(receipt.get("backend_family")),
+            "adoption_decision": sanitize_short(receipt.get("adoption_decision")),
+            "selector_source": sanitize_short(receipt.get("selector_source")),
+            "remote_publication_mutated": receipt.get("remote_publication_mutated") is True,
+            "blockers": sorted(set(blockers or [])),
+        }
+    )
+    return summary
+
+
+def sanitize_short(value: Any) -> str:
+    text = "" if value is None else str(value)
+    return text[:120]
+
+
 def valid_fixture() -> dict[str, Any]:
     return {
         "schema_version": 1,
@@ -357,7 +413,12 @@ def run_self_test() -> dict[str, Any]:
     }
 
 
-def run_check(root: Path, receipt_path: Path | None = None, self_test: bool = True) -> dict[str, Any]:
+def run_check(
+    root: Path,
+    receipt_path: Path | None = None,
+    self_test: bool = True,
+    active_candidate_receipt_path: Path | None = None,
+) -> dict[str, Any]:
     root = root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
@@ -370,6 +431,20 @@ def run_check(root: Path, receipt_path: Path | None = None, self_test: bool = Tr
         errors.extend(load_errors)
         if receipt is not None:
             errors.extend(validate_receipt(receipt))
+    active_candidate_receipt: dict[str, Any] | None = None
+    resolved_active_candidate_receipt_path: Path | None = None
+    active_candidate_blockers: list[str] = []
+    if active_candidate_receipt_path is not None:
+        resolved_active_candidate_receipt_path = (
+            active_candidate_receipt_path
+            if active_candidate_receipt_path.is_absolute()
+            else root / active_candidate_receipt_path
+        )
+        active_candidate_receipt, load_errors = read_json(resolved_active_candidate_receipt_path)
+        active_candidate_blockers.extend(load_errors)
+        if active_candidate_receipt is not None:
+            active_candidate_blockers.extend(validate_active_adoption_receipt(active_candidate_receipt))
+        errors.extend(active_candidate_blockers)
     self_test_result: dict[str, Any] | None = None
     if self_test:
         self_test_result = run_self_test()
@@ -384,6 +459,11 @@ def run_check(root: Path, receipt_path: Path | None = None, self_test: bool = Tr
         "root": str(root),
         "receipt_path_hash": stable_hash(str(resolved_receipt_path))[:16] if resolved_receipt_path else "",
         "receipt_summary": receipt_summary(receipt, receipt_path=resolved_receipt_path) if receipt else {},
+        "r5_apply_gate": active_adoption_summary(
+            active_candidate_receipt,
+            receipt_path=resolved_active_candidate_receipt_path,
+            blockers=active_candidate_blockers,
+        ),
         "self_test": self_test_result,
         "errors": sorted(set(errors)),
         "warnings": warnings,
@@ -405,10 +485,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Validate durable routing R4 smoke receipts.")
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument("--receipt", default=None, help="Optional receipt path to validate. If omitted, only self-tests run.")
+    parser.add_argument(
+        "--active-candidate-receipt",
+        default=None,
+        help="Optional R5 durable-routing active-candidate/adoption receipt to validate without mutating runtime state.",
+    )
     parser.add_argument("--skip-self-test", action="store_true", help="Skip built-in positive and negative receipt fixtures.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")
     args = parser.parse_args()
-    payload = run_check(Path(args.root), Path(args.receipt) if args.receipt else None, self_test=not args.skip_self_test)
+    payload = run_check(
+        Path(args.root),
+        Path(args.receipt) if args.receipt else None,
+        self_test=not args.skip_self_test,
+        active_candidate_receipt_path=Path(args.active_candidate_receipt) if args.active_candidate_receipt else None,
+    )
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:

@@ -33,13 +33,15 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage D R4 durable smoke helper 已作为 bounded local package 实现
-Owner session: main Codex leader session
-Current gate: 本 R4 package 必须通过 OpenSpec archive、local CI、local MR review 与 guarded local main integration，之后才可视为 R4 本地完成
-Runtime boundary: R4 helper 只写 sanitized `smoke-tested` receipts；不执行 apply-mode adoption、不 launch native_omx、不 start LangGraph、不写 durable backend state，也不授权 remote publication
-Runtime gap: apply-mode adoption 与 live adoption handoff receipt 仍需后续 reviewed change；R4 smoke success 不等同 selected/running/adopted durable workflow
-Last updated: 2026-06-06
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: durable smoke adoption gate template 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `durable-routing adoption active-candidate apply-gate receipt` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -95,6 +97,7 @@ smoke/adoption template、selector ownership、readiness projection 与 backend 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 durable smoke adoption gate template 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-06 R4 smoke runtime implementation：branch `implement-durable-smoke-adoption-r4-20260605` 增加 `tools/run_durable_routing_smoke.py` 与 `tools/check_durable_routing_smoke_receipts.py`；helper 只写 read-only `smoke-tested` receipt，checker 对 adoption、mutation、durable-team launch、LangGraph thread start 与 remote publication claim fail closed。
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将真实 durable smoke、apply-mode adoption 与 live adoption helper 标记为 Stage D pending。
 - 2026-05-30 Stage B evidence：durable smoke/adoption gate template 与 fixture 已通过本地 checker。

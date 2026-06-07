@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 import subprocess
 import sys
 import tempfile
@@ -198,6 +199,82 @@ class DurableRoutingSmokeReceiptTests(unittest.TestCase):
         self.assertFalse(receipt_payload["durable_team_launched"])
         self.assertFalse(receipt_payload["omx_apply_performed"])
         self.assertFalse(receipt_payload["langgraph_thread_started"])
+
+    def valid_active_candidate_receipt(self) -> dict:
+        return {
+            "schema_version": 1,
+            "receipt_type": "durable-routing-adoption",
+            "tool_name": "durable-routing-adoption",
+            "owner_lane": "durable-smoke-adoption-gate",
+            "runtime_stage": "active-candidate",
+            "action": "durable.adopt.apply",
+            "target": "repo:D:/PythonProject_langgraph",
+            "backend_family": "langgraph",
+            "adoption_decision": "selected",
+            "selector_source": ".omx/state/selectors/active.json",
+            "authorization_receipt": {
+                "status": "pass",
+                "action": "durable.adopt.apply",
+                "target": "repo:D:/PythonProject_langgraph",
+                "scope": ["durable.adopt.apply"],
+                "expiry": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+                "session": "main-session",
+                "operator_confirmation": True,
+            },
+            "owner_lease": {
+                "status": "pass",
+                "owner": "main-session",
+                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+            },
+            "target_action_allowlist": {
+                "targets": ["repo:D:/PythonProject_langgraph"],
+                "actions": ["durable.adopt.apply"],
+            },
+            "command_transcript": {"stdout_excerpt": "selected only", "stderr_excerpt": ""},
+            "transcript_redaction": {"status": "pass", "redacted_transcript_hash": "redacted"},
+            "redaction_status": "pass",
+            "timeout_release": {"status": "pass", "released": True, "timeout_seconds": 30},
+            "rollback_pointer": "rollback-ref",
+            "rollback_ready": True,
+            "cleanup_evidence": {"status": "pass", "cleaned": True},
+            "remote_publication_mutated": False,
+            "authority_decision": {
+                "decision": "selected",
+                "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+            },
+        }
+
+    def test_r5_active_candidate_receipt_passes_apply_gate_without_remote_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt = self.write_json(Path(tmp), "active.json", self.valid_active_candidate_receipt())
+            result = run_command([
+                str(CHECKER),
+                "--root", str(ROOT),
+                "--active-candidate-receipt", str(receipt),
+                "--json",
+            ])
+        payload = json.loads(result.stdout)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(payload["r5_apply_gate"]["active_candidate_valid"], payload["errors"])
+        self.assertEqual(payload["r5_apply_gate"]["backend_family"], "langgraph")
+        self.assertFalse(payload["r5_apply_gate"]["remote_publication_mutated"])
+        self.assertFalse(payload["mutates_user_level_state"])
+
+    def test_r5_active_candidate_receipt_rejects_remote_mutation(self) -> None:
+        payload = self.valid_active_candidate_receipt()
+        payload["remote_publication_mutated"] = True
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt = self.write_json(Path(tmp), "bad-active.json", payload)
+            result = run_command([
+                str(CHECKER),
+                "--root", str(ROOT),
+                "--active-candidate-receipt", str(receipt),
+                "--json",
+            ])
+        checked = json.loads(result.stdout)
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(checked["r5_apply_gate"]["active_candidate_valid"])
+        self.assertIn("active_candidate_remote_publication_must_not_mutate", checked["errors"])
 
 
 if __name__ == "__main__":

@@ -35,13 +35,15 @@ Create the durable smoke and adoption gate template before any live durable runt
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage D R4 durable smoke helper implemented as a bounded local package
-Owner session: main Codex leader session
-Current gate: this R4 package must pass OpenSpec archive, local CI, local MR review, and guarded local main integration before R4 is considered locally complete
-Runtime boundary: the R4 helper writes sanitized smoke-tested receipts only; it does not perform apply-mode adoption, launch native_omx, start LangGraph, write durable backend state, or authorize remote publication
-Last updated: 2026-06-06
-Companion refresh note: the zh-CN companion is refreshed in the same package to keep Stage D R4 status and pending adoption work aligned.
+Status: implemented-local
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for durable smoke adoption gate template.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `durable-routing adoption active-candidate apply-gate receipt` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -78,8 +80,8 @@ Durable smoke/adoption is still template-only. Real runtime work must provide an
 - [x] Document that runtime exercise, live smoke, and apply mode are delayed until after this gate passes.
 - [x] Run durable gate tests and local gate.
 - [x] Stage D real runtime: implement executable durable smoke runner that writes sanitized R4 smoke receipts and never collapses smoke success into adoption.
-- [ ] Stage D real runtime: implement apply-mode adoption helper that writes selected/running/adopted/released receipts and fail-closed rollback evidence.
-- [ ] Stage D real runtime: add live adoption handoff receipts with operator authorization, backend-family ownership, timeout release, and cleanup evidence.
+- [x] Stage D/R5 checker gate: implement apply-mode adoption helper that writes selected/running/adopted/released receipts and fail-closed rollback evidence.
+- [x] Stage D/R5 checker gate: add live adoption handoff receipts with operator authorization, backend-family ownership, timeout release, and cleanup evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -105,6 +107,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for durable smoke adoption gate template. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-06 R4 smoke runtime implementation: branch `implement-durable-smoke-adoption-r4-20260605` adds `tools/run_durable_routing_smoke.py` and `tools/check_durable_routing_smoke_receipts.py`; the helper writes read-only `smoke-tested` receipts and the checker fails closed against adoption, mutation, durable-team launch, LangGraph thread start, and remote publication claims.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for real durable smoke, apply-mode adoption, and live adoption; this package updates plan governance only and does not run live runtime.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
