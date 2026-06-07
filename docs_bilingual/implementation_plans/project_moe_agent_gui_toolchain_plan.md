@@ -12,6 +12,7 @@ scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
 related_docs:
+  - docs_bilingual/implementation_plans/project_moe_gui_enhancement_roadmap_plan.md
   - docs_bilingual/implementation_plans/project_moe_gui_double_click_launch_repair_plan.md
   - docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md
   - docs_bilingual/implementation_plans/pyside6_cross_project_gui_capability_plan.md
