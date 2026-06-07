@@ -30,11 +30,11 @@ change: implement-r5-runtime-governance-batch-20260607
 
 ## Archive
 
-- [ ] Value outcome checked.
-- [ ] Lessons learned checked.
-- [ ] Archive/sync evidence checked.
+- [x] Value outcome checked: all requested R5 plan lanes now have local commits and checker-backed active-candidate receipt evidence.
+- [x] Lessons learned checked: R5 remains fixture-backed until a current receipt explicitly authorizes a sensitive live action.
+- [x] Archive/sync evidence checked: focused tests, OpenSpec guard, precommit review, and local-only commit evidence are recorded; remote publication remains closed.
 
 ## Monitoring
 
 - [x] Current facts checked: local main is ahead of gitlab/main, primary worktree clean, precise precheck unclaimed.
-- [x] Return/no-return decision checked: continue to build; no earlier Comet phase return required.
+- [x] Return/no-return decision checked: continue through verify/archive; no earlier Comet phase return required.
