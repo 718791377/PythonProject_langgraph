@@ -34,13 +34,15 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage D/R4 本地 runtime 实现包
-Owner session: implement-worktree-receipt-claim-lifecycle-r4-20260605
-Current gate: 完成 rebase 后验证、local gate、本地 MR review，并合入本地 main；随后停在远程发布门。
-Stage D entry condition: 已由用户明确要求继续实现到 R4 并合入本地 main。
-Last updated: 2026-06-06
-Companion refresh note: zh-CN companion 已在本地 main 基线中刷新为中文表述，同时保留 runtime tokens；本 R4 包保留该清理结果，并新增 runtime lifecycle 自动推进。
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: worktree receipt 与 claim lifecycle 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `worktree-task lifecycle receipt fields plus generic active-candidate checker` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -101,6 +103,7 @@ receipt schema、claim schema、cleanup helper、complete local flow helper 与 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 worktree receipt 与 claim lifecycle 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-06 R4 runtime implementation package：branch `implement-worktree-receipt-claim-lifecycle-r4-20260605` 新增 `tools/advance_worktree_task_lifecycle.py`，把 local-main completion 与 guarded cleanup transition ledger 接入 helper；测试覆盖放入已由 CI 管理的 `test/cleanup_integrated_worktree.test.py`，避免共享 CI manifest hotspot，并在未明确请求 GitLab/GitHub 操作前保持远程发布未授权。
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 记录 lifecycle 推进 helper 的 Stage D pending 工作；该包只更新计划治理，不执行 live runtime。
 - 2026-05-30 Stage B evidence：worktree task receipt 与 session claim checker 已覆盖 active worktree 基线。

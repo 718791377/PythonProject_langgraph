@@ -57,6 +57,25 @@ COMPLETION_FIELDS = {
     "deleted_branch": str,
     "remote_sync_status": str,
 }
+R5_ACTIVE_CANDIDATE_RECEIPT_FIELDS = {
+    "runtime_stage": str,
+    "authorization_receipt": dict,
+    "owner_lease": dict,
+    "target_action_allowlist": dict,
+    "timeout_release": dict,
+    "rollback_pointer": str,
+    "cleanup_evidence": dict,
+    "changed_paths": list,
+    "remote_publication_mutated": bool,
+}
+
+
+def status_pass(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"pass", "passed", "ok"}
+    if isinstance(value, dict):
+        return str(value.get("status", "")).strip().lower() in {"pass", "passed", "ok"}
+    return False
 
 
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -436,6 +455,12 @@ def validate_metadata(
         errors.append(f"{prefix}: document-plan-only work cannot also require code implementation")
     if data.get("document_plan_only") is True and data.get("requires_local_main_merge") is not True:
         warnings.append(f"{prefix}: document-plan-only work should normally merge to local main and cleanup promptly")
+    r5_receipt = data.get("r5_active_candidate_receipt")
+    if r5_receipt is not None:
+        if not isinstance(r5_receipt, dict):
+            errors.append(f"{prefix}: `r5_active_candidate_receipt` must be an object when present")
+        else:
+            validate_r5_active_candidate_receipt(r5_receipt, prefix, errors)
     if require_completion or lifecycle in COMPLETION_REQUIRED_LIFECYCLE_STATUSES:
         completion = data.get("completion") if isinstance(data.get("completion"), dict) else data
         for field, expected_type in COMPLETION_FIELDS.items():
@@ -453,6 +478,37 @@ def validate_metadata(
         "next_action": data.get("next_action"),
         "requires_remote_sync": data.get("requires_remote_sync"),
     }
+
+
+def validate_r5_active_candidate_receipt(receipt: dict[str, Any], prefix: str, errors: list[str]) -> None:
+    for field, expected_type in R5_ACTIVE_CANDIDATE_RECEIPT_FIELDS.items():
+        if field not in receipt:
+            errors.append(f"{prefix}: r5_active_candidate_receipt `{field}` is required")
+            continue
+        value = receipt.get(field)
+        if expected_type is bool:
+            if type(value) is not bool:
+                errors.append(f"{prefix}: r5_active_candidate_receipt `{field}` must be boolean")
+        elif expected_type is list:
+            if not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value):
+                errors.append(f"{prefix}: r5_active_candidate_receipt `{field}` must be a non-empty string list or an empty list of strings")
+        elif not isinstance(value, expected_type) or (expected_type is str and not str(value).strip()):
+            errors.append(f"{prefix}: r5_active_candidate_receipt `{field}` must be {expected_type.__name__}")
+    if str(receipt.get("runtime_stage", "")).strip().lower().replace("_", "-") not in {"r5", "active-candidate"}:
+        errors.append(f"{prefix}: r5_active_candidate_receipt `runtime_stage` must be R5 or active-candidate")
+    for field in ("authorization_receipt", "owner_lease", "timeout_release", "cleanup_evidence"):
+        if field in receipt and not status_pass(receipt.get(field)):
+            errors.append(f"{prefix}: r5_active_candidate_receipt `{field}` must pass")
+    allowlist = receipt.get("target_action_allowlist")
+    if isinstance(allowlist, dict):
+        targets = allowlist.get("targets")
+        actions = allowlist.get("actions")
+        if not isinstance(targets, list) or not targets:
+            errors.append(f"{prefix}: r5_active_candidate_receipt allowlist `targets` must be non-empty")
+        if not isinstance(actions, list) or not actions:
+            errors.append(f"{prefix}: r5_active_candidate_receipt allowlist `actions` must be non-empty")
+    if receipt.get("remote_publication_mutated") is not False:
+        errors.append(f"{prefix}: r5_active_candidate_receipt must keep `remote_publication_mutated=false`")
 
 
 def validate_claim_lifecycle(data: dict[str, Any], path: Path, errors: list[str]) -> None:

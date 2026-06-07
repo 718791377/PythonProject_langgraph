@@ -181,6 +181,42 @@ class WorktreeTaskReceiptTest(unittest.TestCase):
                 errors, _warnings = self.validate(self.base_receipt(lifecycle_status=lifecycle, status=lifecycle))
                 self.assertEqual(errors, [])
 
+
+    def test_r5_active_candidate_receipt_requires_owner_allowlist_timeout_and_changed_paths(self) -> None:
+        data = self.base_receipt()
+        data["r5_active_candidate_receipt"] = {
+            "runtime_stage": "active-candidate",
+            "authorization_receipt": {"status": "pass", "operator_confirmation": True},
+            "target_action_allowlist": {"targets": ["worktree"], "actions": ["bounded-live-handoff"]},
+            "timeout_release": {"status": "pass", "released": True},
+            "rollback_pointer": "refs/backup/local-main/demo-before-r5",
+            "cleanup_evidence": {"status": "pass"},
+            "changed_paths": ["tools/example.py"],
+            "remote_publication_mutated": False,
+        }
+
+        errors, _warnings = self.validate(data)
+
+        self.assertIn("receipt.json: r5_active_candidate_receipt `owner_lease` is required", errors)
+
+    def test_r5_active_candidate_receipt_passes_with_required_handoff_fields(self) -> None:
+        data = self.base_receipt()
+        data["r5_active_candidate_receipt"] = {
+            "runtime_stage": "active-candidate",
+            "authorization_receipt": {"status": "pass", "operator_confirmation": True},
+            "owner_lease": {"status": "pass", "owner": "main-session"},
+            "target_action_allowlist": {"targets": ["worktree"], "actions": ["bounded-live-handoff"]},
+            "timeout_release": {"status": "pass", "released": True},
+            "rollback_pointer": "refs/backup/local-main/demo-before-r5",
+            "cleanup_evidence": {"status": "pass"},
+            "changed_paths": ["tools/example.py"],
+            "remote_publication_mutated": False,
+        }
+
+        errors, _warnings = self.validate(data)
+
+        self.assertEqual(errors, [])
+
     def test_evaluate_reports_missing_receipt_as_warning_by_default(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
