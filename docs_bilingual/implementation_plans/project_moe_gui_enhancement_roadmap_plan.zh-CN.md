@@ -3,7 +3,7 @@ doc_id: project_moe_gui_enhancement_roadmap_plan
 lang: zh-CN
 status: active
 plan_readiness: ready-for-implementation
-implementation_status: runtime-slice-0.2.31-local-complete-target-install-pending
+implementation_status: runtime-slice-0.2.31-local-and-target-acceptance-complete
 implementation_lane: project_moe_gui_enhancement
 parent_plan: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md
 doc_class: implementation_plan
@@ -31,7 +31,7 @@ related_docs:
 
 ## 0. 当前复核结论
 
-Project MOE GUI `0.2.30` 已经可以作为真实 PySide6 operator console 使用，但剩余缺口已经足够独立，应建立子方案，而不是继续把父方案无限膨胀。
+Project MOE GUI `0.2.30` 已经可以作为真实 PySide6 operator console 使用。首个路线图 runtime 批次已经在本仓库以 toolchain `0.2.31` 落地，关闭了本地视觉门禁、Workbench 产物、Sessions 可用性、UI 状态和只读多项目面板工作；目标项目 `D:/PythonProject_paper_suggest` 的安装与验收也已完成：目标项目提交 `47bfc62` 记录升级，安装检查显示 installed/source toolchain 均为 `0.2.31`，Phase 1 readiness、launcher preflight 与多尺寸视觉验证均通过。
 
 完整性基线：
 
@@ -46,7 +46,7 @@ Project MOE GUI `0.2.30` 已经可以作为真实 PySide6 operator console 使�
 状态解释：
 
 - `status: active` 表示这是 post-`0.2.30` GUI 增强的当前 active 子路线图。
-- `implementation_status: runtime-slice-0.2.31-local-complete-target-install-pending` 表示本文记录有序实施范围；不代表 runtime 已经交付。
+- `implementation_status: runtime-slice-0.2.31-local-and-target-acceptance-complete` 表示本子路线图已经具备 `0.2.31` 批次的本地 runtime 证据和目标项目验收证据；后续 GUI 增强必须另开新切片或新子方案。
 - 父方案继续负责 Project MOE GUI 的整体架构和 readiness lane 治理。
 - 本方案不授权远端发布；GitLab/GitHub 仍需用户后续明确授权。
 
@@ -56,7 +56,7 @@ Project MOE GUI `0.2.30` 已经可以作为真实 PySide6 operator console 使�
 - [x] 状态：post-0.2.30 Project MOE GUI 增强 active 子实施方案。
 - [x] 本地 runtime 批次完成：toolchain `0.2.31` 已在本仓库实现首个增强批次。
 - [x] runtime artifact 边界已记录：Workbench 草稿/历史/队列写入目标项目 `.project-runtime/project_moe_gui/`，且 `.project-runtime/` 已加入 Git 忽略。
-- [ ] 目标项目后续待执行：把新工具链更新/安装到 `D:/PythonProject_paper_suggest`，再在目标项目运行安装检查、readiness、launcher preflight 和视觉验证。
+- [x] 目标项目验收：已把 `0.2.31` 安装/更新到 `D:/PythonProject_paper_suggest`，并运行目标 preflight 与多尺寸视觉验证。
 
 <!-- CURRENT_STATUS_END -->
 
@@ -68,7 +68,7 @@ Project MOE GUI `0.2.30` 已经可以作为真实 PySide6 operator console 使�
 - [x] Slice C：Sessions 页增强搜索、筛选、排序和生效状态解释。
 - [x] Slice D：增加产品级 loading、empty、error、help 状态。
 - [x] Slice E：增加只读多项目安装/升级状态面板。
-- [ ] 目标项目验收：把 `0.2.31` 安装/更新到 `D:/PythonProject_paper_suggest`，并运行目标 preflight 与多尺寸视觉验证。
+- [x] 目标项目验收：已把 `0.2.31` 安装/更新到 `D:/PythonProject_paper_suggest`，并运行目标 preflight 与多尺寸视觉验证。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -80,7 +80,10 @@ Project MOE GUI `0.2.30` 已经可以作为真实 PySide6 operator console 使�
 - Workbench 产物证据：`workbench_artifacts.py` 生成 draft/history/handoff-queue 产物，但不执行 Codex、subagent、durable team、LangGraph workflow、模型 API 或目标状态写入。
 - GUI 证据：`gui_shell.py` 与 `ProjectMoeGui.qml` 暴露真实 Workbench 保存/导出 bridge、Sessions 搜索/筛选/排序/生效解释、UI 状态和只读多项目面板。
 - 测试证据：QML source coverage、visible launch smoke wiring、visual render checker 行为的目标测试已通过；提交前仍需重新运行完整回归。
-- 待补证据：本地 runtime 批次尚未对 `D:/PythonProject_paper_suggest` 执行目标项目安装/更新与验收验证。
+- 目标安装证据：`D:/PythonProject_paper_suggest` 提交 `47bfc62` 记录目标项目升级到 Project MOE GUI `0.2.31`；`check_project_moe_gui_install.py --target-project D:/PythonProject_paper_suggest --json` 报告 `ok=true`、`status=up_to_date`、`installed_toolchain_version=0.2.31`、`target_toolchain_version=0.2.31`。
+- 目标 readiness 证据：`check_project_moe_phase1_readiness.py --target-project D:/PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --json` 报告 `ok=true`、`readiness_status=ready`（meaning: 目标项目 Phase 1 adapter 已就绪）、`adaptation_lane=ready`（meaning: 不需要 bootstrap 或 repair 路径）、`control_mode_allowed=true`（meaning: GUI 写控制可以继续使用目标项目既有 gate）、`git_status.dirty=false`（meaning: 目标项目工作区干净，可作为验收证据）。
+- 目标 launcher 证据：`D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` 报告 `ok=true`、`token=ok`、`launcher_runtime_reexec=true`、`phase1_readiness_gate.readiness_status=ready`、`source_toolchain_version=0.2.31`。
+- 目标视觉证据：`visual_render_check.py --target-project D:/PythonProject_paper_suggest --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` 覆盖 `overview`、`sessions`、`workbench`、`diagnostics`、`settings`，且 `violations=[]`。
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -137,50 +140,50 @@ Project MOE GUI `0.2.30` 已经可以作为真实 PySide6 operator console 使�
 
 ### Slice A：视觉门禁 P0
 
-- [ ] 增加默认视觉尺寸：`1180x720`、`1366x768`、`1440x900`。
-- [ ] 为 visual render checker 增加 `--fixture-profile default|long-content|dense-sessions`。
-- [ ] 增加长 session 名、长 lens 名、多 session、多 category、多 lens 的生成 fixture。
-- [ ] 真实 PySide6 offscreen 渲染保持为显式命令，不作为每次单测默认重负载。
-- [ ] 增加 size parsing、default sizes、fixture generation、overflow detection 单测。
-- [ ] 如果轻量视觉 checker 测试尚未覆盖，则注册到本地 CI manifest。
-- [ ] 新工具链安装到 `D:/PythonProject_paper_suggest` 后运行目标项目视觉验证。
+- [x] 增加默认视觉尺寸：`1180x720`、`1366x768`、`1440x900`。
+- [x] 为 visual render checker 增加 `--fixture-profile default|long-content|dense-sessions`。
+- [x] 增加长 session 名、长 lens 名、多 session、多 category、多 lens 的生成 fixture。
+- [x] 真实 PySide6 offscreen 渲染保持为显式命令，不作为每次单测默认重负载。
+- [x] 增加 size parsing、default sizes、fixture generation、overflow detection 单测。
+- [x] 如果轻量视觉 checker 测试尚未覆盖，则注册到本地 CI manifest。
+- [x] 新工具链安装到 `D:/PythonProject_paper_suggest` 后运行目标项目视觉验证。
 
 ### Slice B：Expert Workbench P1
 
-- [ ] 增加 handoff package 草稿保存。
-- [ ] 增加 expert result history 记录和状态迁移。
-- [ ] 增加 brief 与 session 绑定。
-- [ ] 增加按 session、handoff target、lens、category、status 的筛选。
-- [ ] 为每个 handoff target 增加结构化导出动作。
-- [ ] 保持“导出”只代表 artifact 生成或 clipboard copy，不代表执行 carrier。
-- [ ] 增加 artifact schema、脱敏边界、draft/history 生命周期、carrier export shape 测试。
+- [x] 增加 handoff package 草稿保存。
+- [x] 增加 expert result history 记录和状态迁移。
+- [x] 增加 brief 与 session 绑定。
+- [x] 增加按 session、handoff target、lens、category、status 的筛选。
+- [x] 为每个 handoff target 增加结构化导出动作。
+- [x] 保持“导出”只代表 artifact 生成或 clipboard copy，不代表执行 carrier。
+- [x] 增加 artifact schema、脱敏边界、draft/history 生命周期、carrier export shape 测试。
 
 ### Slice C：Sessions 可用性 P1
 
-- [ ] 增加 Sessions 搜索文本框。
-- [ ] 增加 Sessions 过滤模式：all、enabled、disabled、blocked 或 invalid。
-- [ ] 增加 Sessions 排序键：last seen、display id、label、effective lens mode。
-- [ ] 展示选中 session 的 effective lens/category mode。
-- [ ] 展示 project default 与 session override 冲突提示。
-- [ ] 增加无 session、无搜索结果、readiness blocked 空状态。
-- [ ] 增加 view-model filtering、sorting、explanation text 测试。
+- [x] 增加 Sessions 搜索文本框。
+- [x] 增加 Sessions 过滤模式：all、enabled、disabled、blocked 或 invalid。
+- [x] 增加 Sessions 排序键：last seen、display id、label、effective lens mode。
+- [x] 展示选中 session 的 effective lens/category mode。
+- [x] 展示 project default 与 session override 冲突提示。
+- [x] 增加无 session、无搜索结果、readiness blocked 空状态。
+- [x] 增加 view-model filtering、sorting、explanation text 测试。
 
 ### Slice D：UI 产品化 P2
 
-- [ ] 为主 QML 页面增加 loading、empty、error、help 状态。
-- [ ] 在不引入新 GUI framework 的前提下收紧卡片间距和操作层级。
-- [ ] QFluentWidgets 在许可证审查完成前只保留为可评估的可选方向。
-- [ ] 如果继续把 QFluentWidgets 列为未来选项，增加许可证审查说明。
-- [ ] 扩展视觉 fixture 覆盖 empty/error/loading/help 状态。
+- [x] 为主 QML 页面增加 loading、empty、error、help 状态。
+- [x] 在不引入新 GUI framework 的前提下收紧卡片间距和操作层级。
+- [x] QFluentWidgets 在许可证审查完成前只保留为可评估的可选方向。
+- [x] 如果继续把 QFluentWidgets 列为未来选项，增加许可证审查说明。
+- [x] 扩展视觉 fixture 覆盖 empty/error/loading/help 状态。
 
 ### Slice E：多项目安装/升级面板 P2
 
-- [ ] 增加只读 project registry 输入契约。
-- [ ] 只对显式列出的项目做 install-status scanning。
-- [ ] 展示 installed GUI version、source toolchain version、dirty status、readiness status、version lag。
-- [ ] 生成 dry-run update plan 和 rollback hint，但不写目标项目。
-- [ ] 真实 update/apply 操作继续受既有 installer/updater gate 保护。
-- [ ] 增加 registry parsing、stale version detection、dirty fail-closed、dry-run output 测试。
+- [x] 增加只读 project registry 输入契约。
+- [x] 只对显式列出的项目做 install-status scanning。
+- [x] 展示 installed GUI version、source toolchain version、dirty status、readiness status、version lag。
+- [x] 生成 dry-run update plan 和 rollback hint，但不写目标项目。
+- [x] 真实 update/apply 操作继续受既有 installer/updater gate 保护。
+- [x] 增加 registry parsing、stale version detection、dirty fail-closed、dry-run output 测试。
 
 ## 4. 验证计划
 

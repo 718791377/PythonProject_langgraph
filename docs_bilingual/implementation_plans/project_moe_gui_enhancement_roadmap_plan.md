@@ -4,7 +4,7 @@ lang: en
 canonical: docs_bilingual/implementation_plans/project_moe_gui_enhancement_roadmap_plan.md
 status: active
 plan_readiness: ready-for-implementation
-implementation_status: runtime-slice-0.2.31-local-complete-target-install-pending
+implementation_status: runtime-slice-0.2.31-local-and-target-acceptance-complete
 implementation_lane: project_moe_gui_enhancement
 parent_plan: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
 doc_class: implementation_plan
@@ -31,7 +31,7 @@ related_docs:
 
 ## 0. Current Review Verdict
 
-Project MOE GUI `0.2.30` was usable as a real PySide6 operator console. The first roadmap runtime batch is now implemented locally as toolchain `0.2.31`, closing the local visual-gate, Workbench artifact, Sessions usability, UI-state, and read-only multi-project panel work. Target-project reinstall and acceptance validation for `D:/PythonProject_paper_suggest` remain a separate follow-up before claiming that target project is on the latest GUI.
+Project MOE GUI `0.2.30` was usable as a real PySide6 operator console. The first roadmap runtime batch is now implemented locally as toolchain `0.2.31`, closing the local visual-gate, Workbench artifact, Sessions usability, UI-state, and read-only multi-project panel work. Target-project installation and acceptance validation for `D:/PythonProject_paper_suggest` are also complete: the target project records commit `47bfc62`, reports installed/source toolchain `0.2.31`, passes Phase 1 readiness, passes launcher preflight, and passes multi-size visual validation.
 
 Completeness baseline:
 
@@ -46,7 +46,7 @@ Completeness baseline:
 Status interpretation:
 
 - `status: active` means this is the active child roadmap for post-`0.2.30` GUI enhancement.
-- `implementation_status: runtime-slice-0.2.31-local-complete-target-install-pending` means this file records the ordered implementation scope; it is not evidence that runtime work has already shipped.
+- `implementation_status: runtime-slice-0.2.31-local-and-target-acceptance-complete` means this child roadmap has local runtime evidence and target-project acceptance evidence for the `0.2.31` batch; future runtime enhancements require a new slice or child plan.
 - The parent plan remains the source of broad Project MOE GUI architecture and readiness-lane governance.
 - This plan does not authorize remote publication; remote GitLab/GitHub actions still require explicit user approval.
 
@@ -56,7 +56,7 @@ Status interpretation:
 - [x] Status: active child implementation plan for post-0.2.30 Project MOE GUI enhancements.
 - [x] Local runtime batch complete: toolchain `0.2.31` implements the first enhancement batch in this repository.
 - [x] Runtime artifact boundary recorded: Workbench drafts/history/queue are written under target `.project-runtime/project_moe_gui/`, and `.project-runtime/` is ignored by Git.
-- [ ] Target-project follow-up pending: update/install the new toolchain into `D:/PythonProject_paper_suggest`, then rerun install check, readiness, launcher preflight, and visual validation there.
+- [x] Target-project acceptance complete: `D:/PythonProject_paper_suggest` is updated to Project MOE GUI `0.2.31` in commit `47bfc62` and has fresh install, readiness, launcher preflight, and multi-size visual validation evidence.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -68,7 +68,7 @@ Status interpretation:
 - [x] Slice C: improve Sessions search, filter, sort, and effective-state explanations.
 - [x] Slice D: add product-grade loading, empty, error, and help states.
 - [x] Slice E: add read-only multi-project install and upgrade status panel.
-- [ ] Target-project acceptance: install/update `0.2.31` into `D:/PythonProject_paper_suggest` and run target preflight plus multi-size visual validation.
+- [x] Target-project acceptance: installed/updated `0.2.31` into `D:/PythonProject_paper_suggest` and ran target preflight plus multi-size visual validation.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -80,7 +80,10 @@ Status interpretation:
 - Workbench artifact evidence: `workbench_artifacts.py` creates draft/history/handoff-queue artifacts without executing Codex, subagents, durable teams, LangGraph workflows, model APIs, or target-state writes.
 - GUI evidence: `gui_shell.py` and `ProjectMoeGui.qml` expose real Workbench save/export bridge methods, Sessions search/filter/sort/effective-state explanations, UI states, and a read-only multi-project panel.
 - Test evidence: targeted checks passed for QML source coverage, visible launch smoke wiring, and visual render checker behavior; full regression must be rerun before commit.
-- Pending evidence: target-project install/update and acceptance validation for `D:/PythonProject_paper_suggest` have not been performed in this local runtime batch.
+- Target install evidence: `D:/PythonProject_paper_suggest` commit `47bfc62` records the target-project upgrade to Project MOE GUI `0.2.31`; `check_project_moe_gui_install.py --target-project D:/PythonProject_paper_suggest --json` reports `ok=true`, `status=up_to_date`, `installed_toolchain_version=0.2.31`, and `target_toolchain_version=0.2.31`.
+- Target readiness evidence: `check_project_moe_phase1_readiness.py --target-project D:/PythonProject_paper_suggest --agent-name thesis-moe-mentor --state-namespace thesis_moe --mode-cli tools/thesis_moe_mode.py --on-wrapper thesis-moe-on.cmd --off-wrapper thesis-moe-off.cmd --json` reports `ok=true`, `readiness_status=ready` (meaning the target Phase 1 adapter is ready), `adaptation_lane=ready` (meaning no bootstrap or repair lane is required), `control_mode_allowed=true` (meaning GUI-mediated write controls may use existing target gates), and `git_status.dirty=false` (meaning the target project is clean for acceptance evidence).
+- Target launcher evidence: `D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` reports `ok=true`, `token=ok`, `launcher_runtime_reexec=true`, `phase1_readiness_gate.readiness_status=ready`, and `source_toolchain_version=0.2.31`.
+- Target visual evidence: `visual_render_check.py --target-project D:/PythonProject_paper_suggest --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` covers `overview`, `sessions`, `workbench`, `diagnostics`, and `settings` with `violations=[]`.
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -143,7 +146,7 @@ Rules:
 - [x] Keep real PySide6 offscreen rendering as an explicit command, not a mandatory every-test default.
 - [x] Add unit tests for size parsing, default sizes, fixture generation, and overflow detection.
 - [x] Keep the light visual checker covered by the existing Project MOE GUI regression test suite; no separate heavy offscreen render was added to every-test defaults.
-- [ ] Run target-project visual validation against `D:/PythonProject_paper_suggest` after installing the new toolchain.
+- [x] Run target-project visual validation against `D:/PythonProject_paper_suggest` after installing the new toolchain.
 
 ### Slice B: Expert Workbench P1
 
