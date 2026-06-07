@@ -41,12 +41,14 @@ Document GitHub Spec Kit as an optional subordinate adapter/template/runtime-pro
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: R4 implemented as a dry-run checker/runtime package
-Stage: R4 Checker + Runtime implementation package
-Owner session: implement-spec-kit-authority-guard-r4-closeout-20260607
-Current gate: companion wording stays aligned while the owning authority-guard package archives, reruns validation, and integrates to local `main`
-Runtime boundary: dry-run only; this package records and implements dry-run/probe runtime support without installing Spec Kit, running `specify init`, writing `.specify/`, creating root `specs/`, or exposing `/speckit.*`/`$speckit-*` commands
-Priority update: 2026-06-07 keeps Spec Kit as the lowest-priority subordinate adapter behind Comet, OpenSpec/Superpowers, gstack, and harness runtime safety.
+Status: implemented-local
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for Spec Kit subordinate adapter governance.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `spec-kit-subordinate active-candidate lane profile` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
 Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
@@ -113,6 +115,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for Spec Kit subordinate adapter governance. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-07 R4 implementation package: implemented dry-run-only Spec Kit subordinate runtime receipts plus checker validation for generated Spec Kit surfaces and receipt authority decisions; no live Spec Kit command, install, `.specify/`, root `specs/`, `/speckit.*`, or `$speckit-*` surface was created.
 - 2026-06-07 R4 closeout package: aligned companion governance wording to the strict order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`; ownership remains with `spec_kit_authority_guard_plan`.
 - 2026-06-07 conflict-priority refresh: this docs-only package records Spec Kit as subordinate adapter/template/probe only; live or apply modes remain deferred behind future Checker + Runtime implementation and explicit authorization.
