@@ -28,12 +28,15 @@ Python helper scripts, `uvx mcp2cli --help`, `uv tool install mcp2cli`, `npx ski
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active; this plan is the runtime successor to the deleted/superseded `user_level_mcp_skills_discovery_facade_plan`. Repo-local helpers/checkers/tests now include R4 smoke receipt support, but real default user-level runtime promotion is still not performed by local validation.
-Runtime boundary: this package does not mutate the real default user-level `CODEX_HOME` during tests or local gates. R4 evidence in this package is fixture-backed: `tools/install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation --codex-home <temp-home>` runs bounded read-only wrapper smoke against an explicitly supplied Codex home that already has R3-style update receipts and wrappers, then writes separate `smoke-tested` receipts for `mcp2cli` and `skills2cli`.
-R4 helper evidence: `tools/check_user_level_mcp_skills_cli_install.py --require-smoke-tested --codex-home <home>` now requires valid R4 smoke receipts, and each receipt is compatible with `tools/user_level_receipt_governance.py smoke-check`.
-Runtime gap: real live user-level R3/R4 work still requires explicit live authorization, source pin review, actual user-level install/update receipts, live bounded smoke receipts, rollback evidence, and redaction evidence. R5 direct MCP calls or skill action handoffs remain gated by risk profile, sensitive-call receipt, action scope, result redaction, and rollback evidence.
-Carry-forward evidence: existing surfaces are `tools/mcp2cli.py`, `tools/skills2cli.py`, `tools/install_user_level_mcp_skills_cli.py`, `tools/check_user_level_mcp_skills_cli_install.py`, `tools/user_level_receipt_governance.py`, `test/mcp2cli.test.py`, `test/skills2cli.test.py`, and `test/user_level_mcp_skills_cli_install.test.py`.
-Companion refresh note: the zh-CN companion remains the Chinese companion while preserving runtime tokens; no remote publication is authorized by this plan.
+Status: implemented-local
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for MCP/skills CLI runtime handoff.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `mcp-skills-cli active-candidate lane profile` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -105,6 +108,7 @@ One session may claim this implementation plan at a time. Other sessions may wor
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for MCP/skills CLI runtime handoff. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-05 runtime successor plan: branch `runtime-plan-standard-20260605` creates this plan to carry `mcp2cli` / `skills2cli` real-runtime work after `user_level_mcp_skills_discovery_facade_plan` was deleted/superseded; no user-level install, smoke, direct MCP call, or live handoff is performed by that package.
 - 2026-06-06 R4 repo-local smoke receipt support: branch `implement-mcp-skills-cli-runtime-r4-20260606` adds `install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation`, `check_user_level_mcp_skills_cli_install.py --require-smoke-tested`, and focused tests that validate generated R4 `smoke-tested` receipts through `user_level_receipt_governance.py smoke-check` against temporary Codex-home fixtures.
 <!-- EVIDENCE_INDEX_END -->

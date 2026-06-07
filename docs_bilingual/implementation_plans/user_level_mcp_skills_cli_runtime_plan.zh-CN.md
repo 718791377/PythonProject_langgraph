@@ -28,11 +28,15 @@ Python helper scripts、`uvx mcp2cli --help`、`uv tool install mcp2cli`、`npx 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: active；本方案是已删除/被取代的 `user_level_mcp_skills_discovery_facade_plan` 的 runtime 后继。repo-local helper、checker 和 test 现在已经具备 R4 smoke receipt 支持，但本地验证仍不执行真实默认用户级 runtime promotion。
-Runtime boundary：本包在测试和本地 gate 中不修改真实默认用户级 `CODEX_HOME`。本包的 R4 证据是 fixture-backed：`tools/install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation --codex-home <temp-home>` 只对显式传入、且已经具备 R3-style update receipts 与 wrappers 的 Codex home 执行受限只读 wrapper smoke，然后分别为 `mcp2cli` 与 `skills2cli` 写入 `smoke-tested` receipts。
-R4 helper evidence：`tools/check_user_level_mcp_skills_cli_install.py --require-smoke-tested --codex-home <home>` 现在可以强制要求有效 R4 smoke receipts；每份 receipt 都可通过 `tools/user_level_receipt_governance.py smoke-check` 校验。
-Runtime gap：真实 live 用户级 R3/R4 仍需要显式 live 授权、source pin review、真实用户级 install/update receipts、真实受限 smoke receipts、rollback evidence 与 redaction evidence。R5 direct MCP call 或 skill action handoff 仍必须受 risk profile、sensitive-call receipt、action scope、result redaction 与 rollback evidence 约束。
-Carry-forward evidence：现有证据面包括 `tools/mcp2cli.py`、`tools/skills2cli.py`、`tools/install_user_level_mcp_skills_cli.py`、`tools/check_user_level_mcp_skills_cli_install.py`、`tools/user_level_receipt_governance.py`、`test/mcp2cli.test.py`、`test/skills2cli.test.py` 与 `test/user_level_mcp_skills_cli_install.test.py`。
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: MCP/skills CLI runtime handoff 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `mcp-skills-cli active-candidate lane profile` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -100,6 +104,7 @@ Carry-forward evidence：现有证据面包括 `tools/mcp2cli.py`、`tools/skill
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 MCP/skills CLI runtime handoff 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 新增本 runtime 后继方案，记录 `mcp2cli` 与 `skills2cli` 的 R3/R4/R5 缺口；未安装、未 smoke、未 live-run。
 - 2026-06-06 R4 repo-local smoke receipt support：branch `implement-mcp-skills-cli-runtime-r4-20260606` 新增 `install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation`、`check_user_level_mcp_skills_cli_install.py --require-smoke-tested`，并用 focused tests 验证临时 Codex-home fixtures 生成的 R4 `smoke-tested` receipts 可通过 `user_level_receipt_governance.py smoke-check`。
 <!-- EVIDENCE_INDEX_END -->
