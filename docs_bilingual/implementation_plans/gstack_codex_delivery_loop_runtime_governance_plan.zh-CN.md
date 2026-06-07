@@ -39,11 +39,15 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local R4 candidate.
-Stage: repo-local R0-R4 package adds checker, guarded helper, dry-run actions, fixture-backed R4 smoke receipts, focused tests, OpenSpec guard wiring, CI manifest registration, and safety-rule registry coverage.
-Owner session: `implement-gstack-delivery-loop-r4-20260607` owns this R4 implementation package until local main integration.
-Current gate: validate implementation-plan rules, OpenSpec guard, precommit update/archive review, local gate, and local MR review before local main integration. Remote publication is not authorized.
-Runtime boundary: upstream gstack is not installed, cloned, enabled, invoked as a hook, registered as a skill, connected to browser QA, promoted to user level, or made active-candidate by this package. The R4 smoke path is fixture-backed/read-only and accepts honest blocked receipts when no install receipt exists; `--require-smoke-tested` requires a positive simulated/receipt-backed smoke receipt. Priority boundary: gstack is subordinate delivery-loop advice below Comet and OpenSpec/Superpowers, but above harness candidate runtime selection and Spec Kit templates when only advisory sequencing is at issue.
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: gstack Codex delivery-loop runtime governance 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `gstack-delivery-loop active-candidate lane profile` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 冲突优先级
@@ -62,7 +66,7 @@ Authority priority string: `Comet > OpenSpec/Superpowers > gstack > harness runt
 - `tools/gstack_codex_delivery_loop_runtime.py review-dry-run --root . --json` 报告 reviewer、QA、security、documentation 和 release-readiness 缺口，不应用修复。
 - `tools/gstack_codex_delivery_loop_runtime.py qa-dry-run --root . --json` 检查 browser QA 是否可准入并记录 blocker，不启动浏览器。
 - `tools/gstack_codex_delivery_loop_runtime.py ship-dry-run --root . --json` 检查 local-main-first readiness 和 remote-publication gate 状态，不 push、不开 MR、不同步 GitHub。
-- `tools/gstack_codex_delivery_loop_runtime.py smoke --receipt-dir <dir> --json` 写入有边界的 R4 smoke receipt。没有 install receipt 时写 blocked/not-smoke-tested receipt；有显式 fixture install receipt 时运行 bounded help smoke，脱敏 JSON 输出中的原始路径/密钥，记录 timeout release 和 rollback-pointer hashes，并保持对 user-level state 只读。
+- `tools/gstack_codex_delivery_loop_runtime.py smoke --receipt-dir <dir> --json` 写入有边界的 R4 smoke receipt。没有 install receipt 时写 blocked receipts / not-smoke-tested receipt evidence；有显式 fixture install receipt 时运行 bounded help smoke，脱敏 JSON 输出中的原始路径/密钥，记录 timeout release 和 rollback-pointer hashes，并保持对 user-level state 只读。
 - `test/gstack_codex_delivery_loop_runtime.test.py` 与 `test/check_gstack_codex_delivery_loop.test.py` 覆盖 dry-run JSON、R4 blocked/positive receipts、authority priority、安全标志拦截和 redaction。
 - 未来 `--apply` 或 live 模式必须有显式 operator authorization、receipt/rollback evidence、timeout 控制，以及 local-main / remote-publication 边界检查。
 
@@ -121,6 +125,7 @@ Authority priority string: `Comet > OpenSpec/Superpowers > gstack > harness runt
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 gstack Codex delivery-loop runtime governance 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-07 R4 implementation package：branch `implement-gstack-delivery-loop-r4-20260607` 新增 `tools/gstack_codex_delivery_loop_runtime.py`、`tools/check_gstack_codex_delivery_loop.py`、focused tests、OpenSpec guard wiring、CI manifest registration 与 safety-rule registry backing。Dry-run actions 与 fixture-backed R4 smoke receipts 已实现；真实 user-level install/live/browser/hook/telemetry/R5 active-candidate work 仍延后。
 - 2026-06-07 conflict-priority refresh：本 docs-only package 记录 gstack 是低于 Comet/OpenSpec/Superpowers 的 subordinate delivery-loop advisory governance；仅在 advisory ordering 上高于 harness/Spec Kit；Checker + Runtime code 仍延后。
 - 2026-06-06 文档包：branch `plan-gstack-codex-delivery-loop-20260606` 创建本 active Phase 4 子方案，记录 `garrytan/gstack` 与 `gstack.lol` 参考源，并把 checker/runtime 代码留给后续实现包。

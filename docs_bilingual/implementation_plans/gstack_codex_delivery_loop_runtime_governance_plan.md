@@ -39,11 +39,15 @@ Add a Phase 4 child plan that forks `garrytan/gstack` workflow governance into C
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local R4 candidate.
-Stage: repo-local R0-R4 package adds checker, guarded helper, dry-run actions, fixture-backed R4 smoke receipts, focused tests, OpenSpec guard wiring, CI manifest registration, and safety-rule registry coverage.
-Owner session: `implement-gstack-delivery-loop-r4-20260607` owns this R4 implementation package until local main integration.
-Current gate: validate implementation-plan rules, OpenSpec guard, precommit update/archive review, local gate, and local MR review before local main integration. Remote publication is not authorized.
-Runtime boundary: upstream gstack is not installed, cloned, enabled, invoked as a hook, registered as a skill, connected to browser QA, promoted to user level, or made active-candidate by this package. The R4 smoke path is fixture-backed/read-only and accepts honest blocked receipts when no install receipt exists; `--require-smoke-tested` requires a positive simulated/receipt-backed smoke receipt. Priority boundary: gstack is subordinate delivery-loop advice below Comet and OpenSpec/Superpowers, but above harness candidate runtime selection and Spec Kit templates when only advisory sequencing is at issue.
+Status: implemented-local
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for gstack Codex delivery-loop runtime governance.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `gstack-delivery-loop active-candidate lane profile` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## Conflict Priority
@@ -62,7 +66,7 @@ The R4 code package provides these repo-local surfaces:
 - `tools/gstack_codex_delivery_loop_runtime.py review-dry-run --root . --json` reports reviewer, QA, security, documentation, and release-readiness gaps without applying fixes.
 - `tools/gstack_codex_delivery_loop_runtime.py qa-dry-run --root . --json` checks whether browser QA is eligible and records blockers without launching a browser.
 - `tools/gstack_codex_delivery_loop_runtime.py ship-dry-run --root . --json` checks local-main-first readiness and remote-publication gate state without pushing, opening MRs, or syncing GitHub.
-- `tools/gstack_codex_delivery_loop_runtime.py smoke --receipt-dir <dir> --json` writes a bounded R4 smoke receipt. Without an install receipt it writes a blocked/not-smoke-tested receipt. With an explicit fixture install receipt it runs a bounded help smoke, redacts raw paths/secrets from JSON output, records timeout release and rollback-pointer hashes, and remains read-only with respect to user-level state.
+- `tools/gstack_codex_delivery_loop_runtime.py smoke --receipt-dir <dir> --json` writes a bounded R4 smoke receipt. Without an install receipt it writes blocked receipts / not-smoke-tested receipt evidence. With an explicit fixture install receipt it runs a bounded help smoke, redacts raw paths/secrets from JSON output, records timeout release and rollback-pointer hashes, and remains read-only with respect to user-level state.
 - `test/gstack_codex_delivery_loop_runtime.test.py` and `test/check_gstack_codex_delivery_loop.test.py` cover dry-run JSON, R4 blocked/positive receipts, authority priority, safety flag blocking, and redaction.
 - Future `--apply` or live modes require explicit operator authorization, receipt/rollback evidence, timeout controls, and local-main / remote-publication boundary checks.
 
@@ -121,6 +125,7 @@ This R4 package adds focused checker and runtime helper tests.
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for gstack Codex delivery-loop runtime governance. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-07 R4 implementation package: branch `implement-gstack-delivery-loop-r4-20260607` adds `tools/gstack_codex_delivery_loop_runtime.py`, `tools/check_gstack_codex_delivery_loop.py`, focused tests, OpenSpec guard wiring, CI manifest registration, and safety-rule registry backing. Dry-run actions and fixture-backed R4 smoke receipts are implemented; real user-level install/live/browser/hook/telemetry/R5 active-candidate work remains deferred.
 - 2026-06-07 conflict-priority refresh: this docs-only package records gstack as subordinate delivery-loop advisory governance below Comet/OpenSpec/Superpowers and above harness/Spec Kit only for advisory ordering; Checker + Runtime code remains deferred.
 - 2026-06-06 documentation package: branch `plan-gstack-codex-delivery-loop-20260606` creates this active Phase 4 child plan, records `garrytan/gstack` and `gstack.lol` references, and leaves checker/runtime code to a later implementation package.
