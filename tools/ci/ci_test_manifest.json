@@ -69,7 +69,9 @@
     "codex_harnesses_smoke_receipts.test.py",
     "spec_kit_subordinate_runtime.test.py",
     "cli_anything_governance.test.py",
-    "wxwork_cli_governance.test.py"
+    "wxwork_cli_governance.test.py",
+    "gstack_codex_delivery_loop_runtime.test.py",
+    "check_gstack_codex_delivery_loop.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []

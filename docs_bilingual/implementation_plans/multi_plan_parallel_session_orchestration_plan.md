@@ -64,7 +64,7 @@ This parent plan coordinates the following existing plans inside this plan famil
 Stage: implemented-local governance plus pending runtime-refresh planning for real-runtime lanes.
 Owner session: main Codex leader serializes shared hotspots: parent/child plans, specs, registries, CI, safety rules, and OpenSpec guard wiring.
 Current gate: validate this Phase 0 local-main status refresh, integrate it into local `main`, and stop at the remote-publication gate.
-Runtime boundary: CLI-Anything/WXWork_CLI, Browser/CLI adapters, Codex harnesses, skills2cli/mcp2cli (`knowsuchagency/mcp2cli`, rollback pointer, update receipt), gstack, canary, and Spec Kit entries record future checker/runtime requirements only. Priority: Comet > OpenSpec/Superpowers > gstack > harness guards > Spec Kit. Blocked: this package does not install, start, enable, smoke-run, live-run, or run `specify init`.
+Runtime boundary: extracted lanes stay checker/runtime-only. Priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit. Existing `knowsuchagency/mcp2cli`, rollback pointer, update receipt, and Spec Kit initialization remain blocked/subordinate, so this package does not run `specify init`, install/start/enable/smoke/live runtime lanes, or promote live execution.
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model

@@ -714,6 +714,24 @@
         "codex_harnesses_smoke_receipts"
       ],
       "description": "Keeps Codex harness governance separate from adapter lanes, requires pinned source ledger records for The Harness Problem, oh-my-pi, Pi, and Pi packages, and preserves no-takeover, read/write guard, job-state, isolated-worktree, changed-path-report, and R4 smoke receipt boundaries."
+    },
+    {
+      "id": "gstack-codex-delivery-loop-runtime-governance",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/gstack_codex_delivery_loop_runtime_governance_plan.md",
+        "docs_bilingual/implementation_plans/gstack_codex_delivery_loop_runtime_governance_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/gstack_codex_delivery_loop_runtime.py",
+        "tools/check_gstack_codex_delivery_loop.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_gstack_codex_delivery_loop"
+      ],
+      "description": "Keeps gstack as subordinate Codex delivery-loop advice below Comet/OpenSpec/Superpowers, validates dry-run and fixture-backed R4 smoke receipt evidence, and blocks install/live/browser/hook/telemetry/remote-publication bypass without explicit authorization."
     }
   ]
 }

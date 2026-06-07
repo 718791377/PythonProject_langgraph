@@ -62,7 +62,7 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 Stage: implemented-local 治理已完成；真实 runtime lane 继续处于待刷新规划状态。
 Owner session: main Codex leader 串行拥有 parent/child plans、specs、registries、CI、安全规则与 OpenSpec guard wiring 等 shared hotspots。
 Current gate: 验证本次 Phase 0 本地合入状态刷新包、合入本地 `main`，并停在 remote-publication gate。
-Runtime boundary: CLI-Anything/WXWork_CLI、Browser/CLI adapters、Codex harnesses、skills2cli/mcp2cli（`knowsuchagency/mcp2cli`、rollback pointer、update receipt）、gstack、canary 与 Spec Kit 条目仅记录未来 checker/runtime 要求。Priority: Comet > OpenSpec/Superpowers > gstack > harness guards > Spec Kit；blocked：本包不 install、start、enable、smoke-run、live-run，也不运行 `specify init`。
+Runtime boundary: CLI-Anything/WXWork_CLI、Browser/CLI adapters、Codex harnesses、skills2cli/mcp2cli（`knowsuchagency/mcp2cli`、rollback pointer、update receipt）、gstack、canary 与 Spec Kit 条目仅记录未来 checker/runtime 要求。Priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit；blocked：本包不 install、start、enable、smoke-run、live-run，也不运行 `specify init`。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
