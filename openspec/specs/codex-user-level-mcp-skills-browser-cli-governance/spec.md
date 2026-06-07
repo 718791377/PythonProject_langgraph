@@ -882,24 +882,32 @@ Even when all evidence is present, the repo-local MVP SHALL NOT start OpenCLI. I
 
 ### Requirement: Codex harnesses governance SHALL require pinned source ledger and no-takeover guards
 
-Codex harnesses governance SHALL be the only lane that owns harness wording. It SHALL derive future rules from these reference sources while keeping Codex as primary controller: The Harness Problem `https://blog.can.ac/2026/02/12/the-harness-problem`, oh-my-pi `https://github.com/can1357/oh-my-pi`, Pi `https://pi.dev/`, and Pi packages `https://pi.dev/packages`.
+Codex harnesses governance SHALL be the only lane that owns harness wording. It SHALL derive future rules from these seven reference sources while keeping Codex as primary controller: The Harness Problem `https://blog.can.ac/2026/02/12/the-harness-problem`, oh-my-pi `https://github.com/can1357/oh-my-pi`, Pi `https://pi.dev/`, Pi packages `https://pi.dev/packages`, revfactory/harness `https://github.com/revfactory/harness`, ohmyopenagent `https://github.com/ymymssss/ohmyopenagent`, and snow-cli `https://github.com/MayDay-wpf/snow-cli`.
 
 The harness lane SHALL require source ledger rows with source pin, retrieved_at, license note, and rollback pointer before adopting any derived rule or helper. It SHALL reject no Codex takeover violations, unpinned Pi packages, missing read guard, missing write guard, missing job state, missing isolated worktree, or missing changed-path report evidence.
 
-For R4 user-level smoke runtime, `tools/run_codex_harnesses_smoke.py` SHALL generate bounded read-only Pi / oh-my-pi smoke receipts only from existing R3 install/update receipts, and `tools/check_codex_harnesses_smoke_receipts.py` SHALL validate those receipts without installing Pi, starting sidecars, running write-capable harness jobs, or replacing Codex surfaces. Missing or invalid R3 receipts may produce honest blocked receipts, but blocked receipts SHALL remain not smoke-tested and SHALL NOT satisfy `--require-smoke-tested`.
+For R4 user-level smoke runtime, `tools/run_codex_harnesses_smoke.py` SHALL expose a candidate registry and generate bounded read-only receipts only from existing R3 install/update receipts. The registry SHALL include `pi-runtime` as `package-runtime`, `oh-my-pi-sidecar` as `sidecar-ux`, `revfactory-harness-team-factory` as `team-factory`, `ohmyopenagent-discipline-layer` as `discipline-layer`, and `snow-cli-terminal-agent-runtime` as `terminal-agent-runtime`. `tools/check_codex_harnesses_smoke_receipts.py` SHALL validate those receipts without installing packages, starting sidecars, running write-capable harness jobs, mutating user config, or replacing Codex surfaces. Missing or invalid R3 receipts may produce honest blocked receipts, but blocked receipts SHALL remain not smoke-tested and SHALL NOT satisfy `--require-smoke-tested`.
+
+Every R4 candidate registry receipt SHALL include `candidate_id`, `adapter_kind`, `guard_profile`, source URL, `source_pin`, `license_note`, `sensitive_command_policy`, `hook_policy`, `async/headless` lifecycle evidence through `async_headless_lifecycle_state`, and `authority_decision`. The `authority_decision` SHALL identify the harness runtime safety decision and SHALL preserve the priority order Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit.
 
 #### Scenario: Harness governance checker runs
 
 - **WHEN** `python tools/check_codex_harnesses_governance.py --root . --json` runs
-- **THEN** it SHALL verify all four source URLs and the source-ledger fields
-- **AND** it SHALL verify no Codex takeover, read guard, write guard, job state, isolated worktree, changed-path report, and unpinned Pi packages boundaries
+- **THEN** it SHALL verify all seven source URLs and the source-ledger fields
+- **AND** it SHALL verify the five candidate ids, five adapter kinds, no Codex takeover, read guard, write guard, job state, isolated worktree, changed-path report, authority decision, and unpinned Pi packages boundaries
 
 #### Scenario: Harness R4 smoke receipts are blocked without install evidence
 
 - **WHEN** `python tools/run_codex_harnesses_smoke.py run --receipt-dir <dir> --json` runs without R3 install/update receipts
-- **THEN** the helper SHALL write blocked receipts for Pi and oh-my-pi
+- **THEN** the helper SHALL write blocked receipts for all five candidate registry entries
 - **AND** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --json` SHALL accept those blocked receipts as honest evidence
 - **AND** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --require-smoke-tested --json` SHALL fail closed because blocked receipts are not smoke-tested
+
+#### Scenario: Harness R4 candidate registry receipts omit policy fields
+
+- **WHEN** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --json` validates a receipt that lacks `candidate_id`, `adapter_kind`, `guard_profile`, `sensitive_command_policy`, `hook_policy`, `async/headless` lifecycle evidence, or `authority_decision`
+- **THEN** the checker SHALL fail closed
+- **AND** it SHALL NOT treat that candidate as `smoke-tested`
 
 ### Requirement: Runtime promotion ladder SHALL separate project-level governance from user-level runtime
 

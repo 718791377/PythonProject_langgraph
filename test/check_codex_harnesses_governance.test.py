@@ -35,13 +35,19 @@ class CodexHarnessesGovernanceCheckerTests(unittest.TestCase):
             "https://github.com/can1357/oh-my-pi",
             "https://pi.dev/",
             "https://pi.dev/packages",
+            "https://github.com/revfactory/harness",
+            "https://github.com/ymymssss/ohmyopenagent",
+            "https://github.com/MayDay-wpf/snow-cli",
         })
         for plan in payload["plans"].values():
-            self.assertGreaterEqual(plan["source_rows"], 4)
+            self.assertGreaterEqual(plan["source_rows"], 7)
             self.assertTrue(all(plan["runtime_stage_markers"].values()))
             self.assertTrue(all(plan["runtime_status_markers"].values()))
             self.assertTrue(plan["not_installed_started_enabled"])
             self.assertTrue(plan["active_sidecar_guard"])
+            self.assertTrue(all(plan["r4_smoke_surfaces"].values()))
+            self.assertTrue(all(plan["candidate_ids"].values()))
+            self.assertTrue(all(plan["adapter_kinds"].values()))
 
 
 if __name__ == "__main__":

@@ -5,6 +5,12 @@ Positive ``smoke-tested`` receipts are delegated to the generic
 ``user_level_receipt_governance`` R4 smoke contract and then tightened for the
 Codex harness lane.  Honest blocked/not-installed receipts are accepted as
 evidence, but they never count as smoke-tested runtime evidence.
+
+R4 is candidate-registry-driven: Pi and oh-my-pi are no longer the only
+recognized shapes.  The checker requires each receipt to carry the selected
+candidate id, adapter kind, guard profile, source pin, license note, sensitive
+command policy, hook policy, async/headless lifecycle state, and an authority
+decision explaining the harness runtime-safety decision.
 """
 from __future__ import annotations
 
@@ -34,18 +40,42 @@ CI_MANIFEST = Path("tools/ci/ci_test_manifest.json")
 SAFETY_REGISTRY = Path("tools/safety_rule_script_backing_registry.json")
 GUARD_SCRIPT = Path("tools/run_openspec_guard.py")
 TEST_NAME = "codex_harnesses_smoke_receipts.test.py"
-CANONICAL_HARNESSES = ("Pi", "oh-my-pi")
-CANONICAL_OWNER_LANES = {
-    "Pi": "codex-harnesses:pi",
-    "oh-my-pi": "codex-harnesses:oh-my-pi",
+CANDIDATE_REGISTRY = {
+    "pi-runtime": {
+        "owner_lane": "codex-harnesses:pi-runtime",
+        "adapter_kind": "package-runtime",
+        "source_url": "https://pi.dev/",
+        "aliases": {"Pi", "pi", "pi.dev", "pi-runtime"},
+    },
+    "oh-my-pi-sidecar": {
+        "owner_lane": "codex-harnesses:oh-my-pi-sidecar",
+        "adapter_kind": "sidecar-ux",
+        "source_url": "https://github.com/can1357/oh-my-pi",
+        "aliases": {"oh-my-pi", "oh_my_pi", "oh my pi", "oh-my-pi-sidecar"},
+    },
+    "revfactory-harness-team-factory": {
+        "owner_lane": "codex-harnesses:revfactory-harness-team-factory",
+        "adapter_kind": "team-factory",
+        "source_url": "https://github.com/revfactory/harness",
+        "aliases": {"revfactory", "revfactory/harness", "revfactory-harness", "revfactory-harness-team-factory"},
+    },
+    "ohmyopenagent-discipline-layer": {
+        "owner_lane": "codex-harnesses:ohmyopenagent-discipline-layer",
+        "adapter_kind": "discipline-layer",
+        "source_url": "https://github.com/ymymssss/ohmyopenagent",
+        "aliases": {"ohmyopenagent", "oh-my-openagent", "ohmyopenagent-discipline-layer"},
+    },
+    "snow-cli-terminal-agent-runtime": {
+        "owner_lane": "codex-harnesses:snow-cli-terminal-agent-runtime",
+        "adapter_kind": "terminal-agent-runtime",
+        "source_url": "https://github.com/MayDay-wpf/snow-cli",
+        "aliases": {"snow-cli", "snow cli", "snow-cli-terminal-agent-runtime"},
+    },
 }
 ALIASES = {
-    "pi": "Pi",
-    "pi.dev": "Pi",
-    "pi-runtime": "Pi",
-    "oh-my-pi": "oh-my-pi",
-    "oh_my_pi": "oh-my-pi",
-    "oh my pi": "oh-my-pi",
+    alias.lower(): candidate_id
+    for candidate_id, meta in CANDIDATE_REGISTRY.items()
+    for alias in set(meta["aliases"]) | {candidate_id}
 }
 FORBIDDEN_SIBLING_TERMS = (
     "CLI-Anything",
@@ -57,7 +87,7 @@ FORBIDDEN_SIBLING_TERMS = (
 )
 FORBIDDEN_COMMAND_PATTERNS = (
     re.compile(r"(?i)\b(write|send|post|delete|mutate|patch|apply|commit|merge|push)\b"),
-    re.compile(r"(?i)\b(start|sidecar|daemon|serve|attach|takeover|replace)\b"),
+    re.compile(r"(?i)\b(start|daemon|serve|attach|takeover|replace)\b"),
     re.compile(r"(?i)\b(job\.run|run[-_\s]?job|harness[-_\s]?job)\b"),
 )
 RAW_PRIVATE_PATH_PATTERNS = (
@@ -95,6 +125,13 @@ REQUIRED_PLAN_MARKERS = (
     "codex_harnesses_smoke_receipts.test.py",
     "blocked receipts",
     "not smoke-tested",
+    "candidate registry",
+    "candidate_id",
+    "adapter_kind",
+    "guard_profile",
+    "sensitive_command_policy",
+    "hook_policy",
+    "authority_decision",
 )
 
 
@@ -127,7 +164,7 @@ def read_json(path: Path, errors: list[str]) -> Any | None:
 
 def normalize_harness(value: Any) -> str | None:
     text = str(value or "").strip()
-    if text in CANONICAL_HARNESSES:
+    if text in CANDIDATE_REGISTRY:
         return text
     return ALIASES.get(text.lower())
 
@@ -246,17 +283,77 @@ def receipt_is_blocked(receipt: dict[str, Any]) -> bool:
     )
 
 
-def validate_harness_guards(receipt: dict[str, Any], harness: str) -> list[str]:
+def validate_authority_decision(receipt: dict[str, Any], candidate_id: str, *, blocked: bool) -> list[str]:
     errors: list[str] = []
+    decision = receipt.get("authority_decision")
+    if not isinstance(decision, dict):
+        return [f"{candidate_id}:authority_decision_required"]
+    if decision.get("candidate_id") not in {candidate_id, None}:
+        errors.append(f"{candidate_id}:authority_decision_candidate_id_mismatch")
+    source = str(decision.get("source", ""))
+    if source != "harness runtime safety":
+        errors.append(f"{candidate_id}:authority_decision_source_must_be_harness_runtime_safety")
+    priority = str(decision.get("priority_order", ""))
+    for marker in ("Comet", "OpenSpec/Superpowers", "gstack", "harness runtime safety", "Spec Kit"):
+        if marker not in priority:
+            errors.append(f"{candidate_id}:authority_decision_priority_missing:{marker}")
+    status = str(decision.get("status", "")).strip().lower()
+    if blocked:
+        if status != "blocked":
+            errors.append(f"{candidate_id}:blocked_authority_decision_must_be_blocked")
+    elif status != "allow-read-only-smoke":
+        errors.append(f"{candidate_id}:positive_authority_decision_must_allow_read_only_smoke")
+    return errors
+
+
+def validate_policy_fields(receipt: dict[str, Any], candidate_id: str) -> list[str]:
+    errors: list[str] = []
+    sensitive = receipt.get("sensitive_command_policy")
+    if not isinstance(sensitive, dict):
+        errors.append(f"{candidate_id}:sensitive_command_policy_required")
+    else:
+        if sensitive.get("writes_allowed") is not False:
+            errors.append(f"{candidate_id}:sensitive_command_policy_writes_must_be_false")
+        if sensitive.get("sensitive_commands_allowed") is not False:
+            errors.append(f"{candidate_id}:sensitive_command_policy_sensitive_commands_must_be_false")
+    hooks = receipt.get("hook_policy")
+    if not isinstance(hooks, dict):
+        errors.append(f"{candidate_id}:hook_policy_required")
+    else:
+        if hooks.get("mutation_hooks_allowed") is not False:
+            errors.append(f"{candidate_id}:hook_policy_mutation_hooks_must_be_false")
+    lifecycle = receipt.get("async_headless_lifecycle_state")
+    if not isinstance(lifecycle, dict):
+        errors.append(f"{candidate_id}:async_headless_lifecycle_state_required")
+    else:
+        mode = str(lifecycle.get("mode", ""))
+        if "read-only" not in mode:
+            errors.append(f"{candidate_id}:async_headless_lifecycle_state_must_be_read_only")
+    return errors
+
+
+def validate_harness_guards(receipt: dict[str, Any], candidate_id: str) -> list[str]:
+    errors: list[str] = []
+    meta = CANDIDATE_REGISTRY[candidate_id]
+    if receipt.get("candidate_id") != candidate_id:
+        errors.append(f"{candidate_id}:candidate_id_mismatch")
+    if receipt.get("adapter_kind") != meta["adapter_kind"]:
+        errors.append(f"{candidate_id}:adapter_kind_mismatch")
+    if receipt.get("source_url") != meta["source_url"]:
+        errors.append(f"{candidate_id}:source_url_mismatch")
+    for field in ("source_pin", "license_note", "guard_profile"):
+        if not isinstance(receipt.get(field), str) or not str(receipt.get(field)).strip():
+            errors.append(f"{candidate_id}:{field}_required")
+    errors.extend(validate_policy_fields(receipt, candidate_id))
     owner_lane = str(receipt.get("owner_lane", ""))
     if not owner_lane.startswith("codex-harnesses:"):
-        errors.append(f"{harness}:owner_lane_must_be_codex_harnesses")
-    expected_owner = CANONICAL_OWNER_LANES.get(harness)
-    if expected_owner and owner_lane != expected_owner:
-        errors.append(f"{harness}:owner_lane_mismatch")
+        errors.append(f"{candidate_id}:owner_lane_must_be_codex_harnesses")
+    expected_owner = meta["owner_lane"]
+    if owner_lane != expected_owner:
+        errors.append(f"{candidate_id}:owner_lane_mismatch")
     read_guard = receipt.get("read_guard")
     if not isinstance(read_guard, dict) or str(read_guard.get("status", "")).lower() != "pass" or read_guard.get("read_only") is not True:
-        errors.append(f"{harness}:read_guard_must_pass_read_only")
+        errors.append(f"{candidate_id}:read_guard_must_pass_read_only")
     write_guard = receipt.get("write_guard")
     if (
         not isinstance(write_guard, dict)
@@ -264,53 +361,55 @@ def validate_harness_guards(receipt: dict[str, Any], harness: str) -> list[str]:
         or write_guard.get("write_allowed") is not False
         or write_guard.get("write_performed") is not False
     ):
-        errors.append(f"{harness}:write_guard_must_block_writes")
+        errors.append(f"{candidate_id}:write_guard_must_block_writes")
     job_state = receipt.get("job_state")
     if not isinstance(job_state, dict):
-        errors.append(f"{harness}:job_state_required")
+        errors.append(f"{candidate_id}:job_state_required")
     else:
         if job_state.get("write_capable") is not False:
-            errors.append(f"{harness}:job_state_must_not_be_write_capable")
+            errors.append(f"{candidate_id}:job_state_must_not_be_write_capable")
         if job_state.get("sidecar_started") is True:
-            errors.append(f"{harness}:job_state_must_not_start_sidecar")
+            errors.append(f"{candidate_id}:job_state_must_not_start_sidecar")
     if receipt.get("no_codex_takeover") is not True:
-        errors.append(f"{harness}:no_codex_takeover_must_be_true")
+        errors.append(f"{candidate_id}:no_codex_takeover_must_be_true")
     for flag in GENERIC_SAFETY_FLAGS + HARNESS_TAKEOVER_FLAGS:
         if receipt.get(flag) is True:
-            errors.append(f"{harness}:smoke_receipt_forbidden_{flag}")
+            errors.append(f"{candidate_id}:smoke_receipt_forbidden_{flag}")
     return errors
 
 
-def validate_blocked_receipt(receipt: dict[str, Any], harness: str) -> list[str]:
-    errors = validate_harness_guards(receipt, harness)
+def validate_blocked_receipt(receipt: dict[str, Any], candidate_id: str) -> list[str]:
+    errors = validate_harness_guards(receipt, candidate_id)
+    errors.extend(validate_authority_decision(receipt, candidate_id, blocked=True))
     if receipt.get("smoke_tested") is True:
-        errors.append(f"{harness}:blocked_receipt_must_not_be_smoke_tested")
+        errors.append(f"{candidate_id}:blocked_receipt_must_not_be_smoke_tested")
     blockers = receipt.get("blockers")
     if not isinstance(blockers, list) or not blockers:
-        errors.append(f"{harness}:blocked_receipt_requires_blockers")
+        errors.append(f"{candidate_id}:blocked_receipt_requires_blockers")
     if receipt.get("rollback_ready") is True:
-        errors.append(f"{harness}:blocked_receipt_must_not_claim_rollback_ready")
+        errors.append(f"{candidate_id}:blocked_receipt_must_not_claim_rollback_ready")
     return errors
 
 
-def validate_positive_receipt(receipt: dict[str, Any], harness: str, path: Path) -> tuple[list[str], dict[str, Any]]:
+def validate_positive_receipt(receipt: dict[str, Any], candidate_id: str, path: Path) -> tuple[list[str], dict[str, Any]]:
     errors: list[str] = []
-    errors.extend(validate_smoke_receipt(receipt, tool_name=harness, owner_lane=CANONICAL_OWNER_LANES[harness]))
-    errors.extend(validate_harness_guards(receipt, harness))
+    errors.extend(validate_smoke_receipt(receipt, tool_name=candidate_id, owner_lane=CANDIDATE_REGISTRY[candidate_id]["owner_lane"]))
+    errors.extend(validate_harness_guards(receipt, candidate_id))
+    errors.extend(validate_authority_decision(receipt, candidate_id, blocked=False))
     if receipt.get("smoke_tested") is not True:
-        errors.append(f"{harness}:positive_receipt_must_set_smoke_tested_true")
-    errors.extend(f"{harness}:sensitive_command:{item}" for item in contains_sensitive_command(receipt.get("smoke_command")))
+        errors.append(f"{candidate_id}:positive_receipt_must_set_smoke_tested_true")
+    errors.extend(f"{candidate_id}:sensitive_command:{item}" for item in contains_sensitive_command(receipt.get("smoke_command")))
     for field in ("install_receipt", "rollback_pointer", "command_transcript"):
         findings = contains_raw_path_or_secret(receipt.get(field))
-        errors.extend(f"{harness}:{field}:{item}" for item in findings)
-    errors.extend(f"{harness}:redaction:{item}" for item in collect_redaction_findings(receipt))
+        errors.extend(f"{candidate_id}:{field}:{item}" for item in findings)
+    errors.extend(f"{candidate_id}:redaction:{item}" for item in collect_redaction_findings(receipt))
     return errors, smoke_summary(receipt, receipt_path=path)
 
 
 def validate_receipts(paths: list[Path], *, require_smoke_tested: bool) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
-    by_harness: dict[str, list[dict[str, Any]]] = {harness: [] for harness in CANONICAL_HARNESSES}
+    by_harness: dict[str, list[dict[str, Any]]] = {candidate_id: [] for candidate_id in CANDIDATE_REGISTRY}
     summaries: list[dict[str, Any]] = []
     positive_count = 0
     blocked_count = 0
@@ -323,9 +422,9 @@ def validate_receipts(paths: list[Path], *, require_smoke_tested: bool) -> dict[
         forbidden_terms = contains_forbidden_sibling_term(receipt)
         if forbidden_terms:
             errors.extend(f"forbidden_sibling_lane_term:{term}:{path.name}" for term in forbidden_terms)
-        harness = normalize_harness(receipt.get("tool_name"))
+        harness = normalize_harness(receipt.get("candidate_id") or receipt.get("tool_name"))
         if harness is None:
-            errors.append(f"unknown_or_noncanonical_harness:{path.name}:{receipt.get('tool_name')}")
+            errors.append(f"unknown_or_noncanonical_candidate:{path.name}:{receipt.get('tool_name')}")
             continue
         by_harness[harness].append(receipt)
         raw_findings = contains_raw_path_or_secret(receipt)
@@ -338,7 +437,8 @@ def validate_receipts(paths: list[Path], *, require_smoke_tested: bool) -> dict[
                 errors.append(f"{harness}:smoke_tested_required_but_receipt_blocked")
             summaries.append(
                 {
-                    "harness": harness,
+                    "candidate_id": harness,
+                    "adapter_kind": CANDIDATE_REGISTRY[harness]["adapter_kind"],
                     "receipt_path_hash": stable_hash(str(path)),
                     "r4_status": "blocked",
                     "smoke_tested": False,
@@ -349,7 +449,7 @@ def validate_receipts(paths: list[Path], *, require_smoke_tested: bool) -> dict[
         positive_count += 1
         positive_errors, summary = validate_positive_receipt(receipt, harness, path)
         errors.extend(positive_errors)
-        summaries.append({"harness": harness, "r4_status": "smoke-tested", "smoke_tested": True, "summary": summary})
+        summaries.append({"candidate_id": harness, "r4_status": "smoke-tested", "smoke_tested": True, "summary": summary})
 
     for harness, receipts in by_harness.items():
         if not receipts:
@@ -407,7 +507,10 @@ def evaluate(root: Path, args: argparse.Namespace) -> dict[str, Any]:
         "check_name": CHECK_NAME,
         "ok": not errors,
         "root_hash": hash_text(str(root)),
-        "canonical_harnesses": list(CANONICAL_HARNESSES),
+        "candidate_registry": {
+            "candidate_ids": list(CANDIDATE_REGISTRY),
+            "adapter_kinds": sorted({meta["adapter_kind"] for meta in CANDIDATE_REGISTRY.values()}),
+        },
         "repo_surfaces": surface,
         "runtime_receipts": runtime,
         "errors": sorted(set(errors)),

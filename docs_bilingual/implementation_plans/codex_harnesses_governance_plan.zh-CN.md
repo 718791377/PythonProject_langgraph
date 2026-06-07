@@ -29,11 +29,11 @@ Pi/oh-my-pi reference、JSON job state、read guard、write guard、isolated wor
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；Stage B source-ledger/checker/spec migration 已完成；Stage C runtime-promotion ladder 已记录并由 checker 支撑；Stage D real-runtime implementation 尚未安装、启动、smoke 或 live-run。
+Status: implemented-local；Stage B source-ledger/checker/spec migration 已完成；Stage C runtime-promotion ladder 已记录并由 checker 支撑；Stage D real-runtime implementation 尚未安装、启动、smoke 或 live-run；2026-06-07 R4 本地 checker/runtime tooling 已按五个 reference candidates 改为 candidate-registry-driven。
 Runtime boundary：Codex harnesses 是未来 harness jobs 的治理包装；它们不会替代 Codex、native subagents、native_omx、LangGraph、codex-ohmy、apply_patch 或 local-main-first gates；no Codex takeover。
-Runtime gap：真实 runtime 仍需要 Pi/oh-my-pi sidecar install 或 pinned package candidate、harness job runner、executable read/write guards、R3 install/update receipt、R4 smoke receipt 与 R5 bounded live handoff evidence；当前 R4 helper/checker 不安装、不启动、不 live-run Pi/oh-my-pi，缺少 R3 receipt 时只写 blocked receipts，且这些 blocked receipts 保持 not smoke-tested。
-Implementation evidence：`tools/check_codex_harnesses_governance.py` 要求 source ledger rows、source pin、retrieved_at、license note、rollback pointer、no Codex takeover、unpinned Pi packages check、read guard、write guard、job state、isolated worktree、changed-path report 与 fake Pi job marker；R4 本地工具新增 `tools/run_codex_harnesses_smoke.py`、`tools/check_codex_harnesses_smoke_receipts.py` 与 `codex_harnesses_smoke_receipts.test.py`，用于生成/校验只读 smoke 或 blocked receipts。
-Source refresh：2026-06-06 新增 revfactory/harness、ohmyopenagent 和 snow-cli 三个 reference-only 参考源；后续 Checker + Runtime 需改为 candidate-registry-driven，本包不实现 runtime。
+Runtime gap：真实 runtime 仍需要 selected candidate install/update path、executable write-capable harness job runner、R3 install/update receipt、positive R4 read-only smoke receipt 与 R5 bounded live handoff evidence；当前 R4 helper/checker 是诚实的本地 candidate-registry tooling，不安装、不启动、不 live-run Pi/oh-my-pi、revfactory/harness、ohmyopenagent、snow-cli 或其他新增 runtime。
+Implementation evidence：`tools/check_codex_harnesses_governance.py` 现在要求七个 source ledger rows、candidate registry markers、candidate ids、adapter kinds、source pin、retrieved_at、license note、rollback pointer、no Codex takeover、unpinned Pi packages check、read guard、write guard、job state、isolated worktree、changed-path report、R0-R5 runtime markers 与 `authority_decision`；`tools/run_codex_harnesses_smoke.py`、`tools/check_codex_harnesses_smoke_receipts.py` 与 `codex_harnesses_smoke_receipts.test.py` 用于生成/校验五类 candidate-registry R4 receipts。
+Source refresh：2026-06-06 新增 revfactory/harness、ohmyopenagent 和 snow-cli 三个 reference-only 参考源；2026-06-07 本地 R4 checker/runtime 已实现 registry-backed 证据面，但真实 install/start/live runtime 仍未实现。
 Priority update：2026-06-07 记录 Codex harnesses 是低于 Comet、OpenSpec/Superpowers 与 gstack advisory ordering 的 subordinate runtime-safety governance；harness guards 只在 runtime safety 上高于 Spec Kit。
 <!-- CURRENT_STATUS_END -->
 
@@ -67,13 +67,40 @@ Codex harnesses 负责 candidate runtime safety、job receipts、read/write guar
 
 新增参考源不会把已有 R4 本地 smoke receipt 追认为真实 runtime evidence；它们只要求后续 Checker + Runtime 实现改为 registry-backed 设计。
 
-## Next Checker + Runtime Requirements（本包不实现）
+## 已实现的 R4 Candidate Registry Tooling
 
-- 扩展 `tools/check_codex_harnesses_governance.py` 和测试，要求七个 source URL、source pin、retrieved_at、license note、rollback pointer 和 candidate-registry marker。
-- 新增 candidate registry schema/fixture，覆盖 `pi-runtime`、`oh-my-pi-sidecar`、`team-factory`、`discipline-layer` 和 `terminal-agent-runtime`。
-- 重构 `tools/run_codex_harnesses_smoke.py` 和 `tools/check_codex_harnesses_smoke_receipts.py`，让 R4 receipt 包含 `candidate_id`、`adapter_kind`、`guard_profile`、`source_pin`、`license_note`、`sensitive_command_policy`、`hook_policy` 和 async/headless lifecycle state。
+2026-06-07 R4 本地包实现了 candidate-registry-driven checker 和 smoke-receipt tooling，但不安装或启动任何 candidate runtime。`tools/run_codex_harnesses_smoke.py` 使用、`tools/check_codex_harnesses_smoke_receipts.py` 校验的本地 registry 包含：
+
+| candidate_id | adapter_kind | source_url | R4 本地姿态 |
+| --- | --- | --- | --- |
+| `pi-runtime` | `package-runtime` | `https://pi.dev/` 和 `https://pi.dev/packages` | 缺少 R3 install/update receipt 时 blocked；通过时也只能 read-only smoke。 |
+| `oh-my-pi-sidecar` | `sidecar-ux` | `https://github.com/can1357/oh-my-pi` | 缺少 R3 install/update receipt 时 blocked；不启动 sidecar，不接管 Codex。 |
+| `revfactory-harness-team-factory` | `team-factory` | `https://github.com/revfactory/harness` | reference-only team-factory candidate；generated teams 仍只能在 Codex leader ownership 下 advisory。 |
+| `ohmyopenagent-discipline-layer` | `discipline-layer` | `https://github.com/ymymssss/ohmyopenagent` | reference-only discipline-layer candidate；license review 前不复制 prompt/config。 |
+| `snow-cli-terminal-agent-runtime` | `terminal-agent-runtime` | `https://github.com/MayDay-wpf/snow-cli` | reference-only terminal-agent-runtime candidate；不改 user config，不启用 hooks，不执行 sensitive commands。 |
+
+每个 R4 receipt shape 必须携带 `candidate_id`、`adapter_kind`、`guard_profile`、`source_url`、`source_pin`、`license_note`、`sensitive_command_policy`、`hook_policy`、通过 `async_headless_lifecycle_state` 记录的 `async/headless` lifecycle evidence，以及 `authority_decision`。`authority_decision` 记录 Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit 的 runtime-safety priority order，并区分 blocked receipts 与 `allow-read-only-smoke` receipts。
+
+## R4 范围已实现与剩余真实 Runtime 要求
+
+- `tools/check_codex_harnesses_governance.py` 和测试现在要求七个 source URL、source pin、retrieved_at、license note、rollback pointer、candidate-registry marker、五个 `candidate_id` 与五个 `adapter_kind`。
+- `tools/run_codex_harnesses_smoke.py` 暴露 R4 本地 candidate registry：`pi-runtime`、`oh-my-pi-sidecar`、`revfactory-harness-team-factory`、`ohmyopenagent-discipline-layer`、`snow-cli-terminal-agent-runtime`。
+- `tools/check_codex_harnesses_smoke_receipts.py` 要求 R4 receipt 包含 `candidate_id`、`adapter_kind`、`guard_profile`、`source_pin`、`license_note`、`sensitive_command_policy`、`hook_policy`、`async/headless` lifecycle evidence 和 `authority_decision`。
 - NOASSERTION/Other 参考源（ohmyopenagent、snow-cli）在后续 license review 前只能 reference-only；Apache-2.0 参考源（revfactory/harness）也需要后续 vendoring 决策才能复用代码。
 - 保持 Codex leader ownership：generated teams、discipline agents、hooks、MCP surfaces 和 terminal sub-agents 只能在 Codex-selected guards 通过后做受限建议或受限任务。
+- 真实 user-level install、真实 sidecar/terminal/factory start、write-capable harness jobs 与 R5 live handoff 仍未实现。
+
+R4 receipt 字段解释：
+
+| 字段 | 作用 |
+| --- | --- |
+| `candidate_id` | 标识 registry 中的具体候选，例如 `pi-runtime` 或 `snow-cli-terminal-agent-runtime`。 |
+| `adapter_kind` | 标识候选适配形态，例如 `package-runtime`、`sidecar-ux`、`team-factory`、`discipline-layer` 或 `terminal-agent-runtime`。 |
+| `guard_profile` | 标识本次 R4 只读守卫配置，禁止写入、sidecar takeover 和 user-level config mutation。 |
+| `source_pin` / `license_note` | 记录来源 pin 与许可姿态，防止未审查代码或配置被复制。 |
+| `sensitive_command_policy` / `hook_policy` | 记录敏感命令与 hook 均不允许执行或修改的策略。 |
+| `async_headless_lifecycle_state` | 记录异步/无头（`async/headless`）生命周期状态；值必须表示 bounded read-only lifecycle，不能进入后台长期运行或 headless daemon。 |
+| `authority_decision` | 记录 blocked 或 `allow-read-only-smoke` 的运行时安全决策及 Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit 优先级。 |
 
 
 ## 治理层级拆分

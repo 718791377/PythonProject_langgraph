@@ -344,24 +344,32 @@ repository-local OpenCLI governance guard 必须提供非变更型 live-start pr
 
 ### Requirement: Codex harnesses governance SHALL require pinned source ledger and no-takeover guards
 
-Codex harnesses governance SHALL be the only lane that owns harness wording. It SHALL derive future rules from these reference sources while keeping Codex as primary controller: The Harness Problem `https://blog.can.ac/2026/02/12/the-harness-problem`, oh-my-pi `https://github.com/can1357/oh-my-pi`, Pi `https://pi.dev/`, and Pi packages `https://pi.dev/packages`.
+Codex harnesses governance SHALL be the only lane that owns harness wording. It SHALL derive future rules from seven reference sources while keeping Codex as primary controller: The Harness Problem `https://blog.can.ac/2026/02/12/the-harness-problem`, oh-my-pi `https://github.com/can1357/oh-my-pi`, Pi `https://pi.dev/`, Pi packages `https://pi.dev/packages`, revfactory/harness `https://github.com/revfactory/harness`, ohmyopenagent `https://github.com/ymymssss/ohmyopenagent`, and snow-cli `https://github.com/MayDay-wpf/snow-cli`.
 
 The harness lane SHALL require source ledger rows with source pin, retrieved_at, license note, and rollback pointer before adopting any derived rule or helper. It SHALL reject no Codex takeover violations, unpinned Pi packages, missing read guard, missing write guard, missing job state, missing isolated worktree, or missing changed-path report evidence.
 
-对于 R4 user-level smoke runtime，`tools/run_codex_harnesses_smoke.py` 只能基于已有 R3 install/update receipts 生成受限 read-only Pi / oh-my-pi smoke receipts；`tools/check_codex_harnesses_smoke_receipts.py` 必须在不安装 Pi、不启动 sidecar、不运行 write-capable harness job、不替代 Codex surfaces 的前提下校验这些 receipts。缺失或无效 R3 receipts 可以生成诚实 blocked receipts，但 blocked receipts 必须保持 not smoke-tested，且不得满足 `--require-smoke-tested`。
+对于 R4 user-level smoke runtime，`tools/run_codex_harnesses_smoke.py` 必须暴露 candidate registry，并且只能基于已有 R3 install/update receipts 生成受限 read-only receipts。该 registry 必须包含 `pi-runtime` / `package-runtime`、`oh-my-pi-sidecar` / `sidecar-ux`、`revfactory-harness-team-factory` / `team-factory`、`ohmyopenagent-discipline-layer` / `discipline-layer`、`snow-cli-terminal-agent-runtime` / `terminal-agent-runtime`。`tools/check_codex_harnesses_smoke_receipts.py` 必须在不安装 packages、不启动 sidecar、不运行 write-capable harness jobs、不修改 user config、不替代 Codex surfaces 的前提下校验这些 receipts。缺失或无效 R3 receipts 可以生成诚实 blocked receipts，但 blocked receipts 必须保持 not smoke-tested，且不得满足 `--require-smoke-tested`。
+
+每个 R4 candidate registry receipt 必须包含 `candidate_id`、`adapter_kind`、`guard_profile`、source URL、`source_pin`、`license_note`、`sensitive_command_policy`、`hook_policy`、通过 `async_headless_lifecycle_state` 记录的 `async/headless` lifecycle evidence，以及 `authority_decision`。`authority_decision` 必须标识 harness runtime safety decision，并保留 Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit 的 priority order。
 
 #### Scenario: Harness governance checker runs
 
 - **WHEN** `python tools/check_codex_harnesses_governance.py --root . --json` runs
-- **THEN** it SHALL verify all four source URLs and the source-ledger fields
-- **AND** it SHALL verify no Codex takeover, read guard, write guard, job state, isolated worktree, changed-path report, and unpinned Pi packages boundaries
+- **THEN** it SHALL verify all seven source URLs and the source-ledger fields
+- **AND** it SHALL verify the five candidate ids, five adapter kinds, no Codex takeover, read guard, write guard, job state, isolated worktree, changed-path report, authority decision, and unpinned Pi packages boundaries
 
 #### Scenario: Harness R4 smoke receipts 在缺少安装证据时被阻断
 
 - **WHEN** `python tools/run_codex_harnesses_smoke.py run --receipt-dir <dir> --json` 在没有 R3 install/update receipts 的情况下运行
-- **THEN** helper 必须为 Pi 与 oh-my-pi 写入 blocked receipts
+- **THEN** helper 必须为 all five candidate registry entries 写入 blocked receipts
 - **AND** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --json` 必须接受这些 blocked receipts 作为诚实 evidence
 - **AND** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --require-smoke-tested --json` 必须 fail closed，因为 blocked receipts 不是 smoke-tested
+
+#### Scenario: Harness R4 candidate registry receipts 缺少 policy fields
+
+- **WHEN** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --json` 校验缺少 `candidate_id`、`adapter_kind`、`guard_profile`、`sensitive_command_policy`、`hook_policy`、`async/headless` lifecycle evidence 或 `authority_decision` 的 receipt
+- **THEN** checker 必须 fail closed
+- **AND** 不得将该 candidate 视为 `smoke-tested`
 
 
 ### Requirement: Browser/CLI adapter boundary SHALL stay separate from sibling lanes

@@ -28,6 +28,23 @@ SOURCE_URLS = (
     "https://github.com/can1357/oh-my-pi",
     "https://pi.dev/",
     "https://pi.dev/packages",
+    "https://github.com/revfactory/harness",
+    "https://github.com/ymymssss/ohmyopenagent",
+    "https://github.com/MayDay-wpf/snow-cli",
+)
+CANDIDATE_IDS = (
+    "pi-runtime",
+    "oh-my-pi-sidecar",
+    "revfactory-harness-team-factory",
+    "ohmyopenagent-discipline-layer",
+    "snow-cli-terminal-agent-runtime",
+)
+ADAPTER_KINDS = (
+    "package-runtime",
+    "sidecar-ux",
+    "team-factory",
+    "discipline-layer",
+    "terminal-agent-runtime",
 )
 REQUIRED_PLAN_MARKERS = (
     "Status: implemented-local",
@@ -61,12 +78,26 @@ REQUIRED_PLAN_MARKERS = (
     "codex_harnesses_smoke_receipts.test.py",
     "blocked receipts",
     "not smoke-tested",
+    "candidate registry",
+    "candidate_id",
+    "adapter_kind",
+    "guard_profile",
+    "sensitive_command_policy",
+    "hook_policy",
+    "async/headless",
+    "authority_decision",
+    "revfactory/harness",
+    "ohmyopenagent",
+    "snow-cli",
 )
 REQUIRED_SPEC_MARKERS = (
     "Codex harnesses governance",
     "The Harness Problem",
     "oh-my-pi",
     "pi.dev/packages",
+    "revfactory/harness",
+    "ohmyopenagent",
+    "snow-cli",
     "no Codex takeover",
     "unpinned Pi packages",
     "read guard",
@@ -87,6 +118,14 @@ REQUIRED_SPEC_MARKERS = (
     "tools/check_codex_harnesses_smoke_receipts.py",
     "blocked receipts",
     "not smoke-tested",
+    "candidate registry",
+    "candidate_id",
+    "adapter_kind",
+    "guard_profile",
+    "sensitive_command_policy",
+    "hook_policy",
+    "async/headless",
+    "authority_decision",
 )
 FORBIDDEN_PLAN_LANE_TERMS = ("chrome-devtools-mcp", "cdp-bridge-mcp", "OpenCLI", "CLI-Anything", "WXWork_CLI")
 REQUIRED_TESTS = {"check_codex_harnesses_governance.test.py", R4_SMOKE_TEST}
@@ -195,8 +234,29 @@ def check_plan_pair(root: Path, errors: list[str], info: list[str]) -> dict[str,
                 "test": R4_SMOKE_TEST in text,
                 "blocked_not_smoke_tested": "blocked receipts" in text.lower()
                 and "not smoke-tested" in text.lower(),
+                "candidate_registry": "candidate registry" in text.lower(),
+                "candidate_fields": all(marker in text for marker in ("candidate_id", "adapter_kind", "guard_profile")),
+                "runtime_policy_fields": all(
+                    marker in text for marker in ("sensitive_command_policy", "hook_policy", "authority_decision")
+                ),
             },
+            "candidate_ids": {candidate_id: candidate_id in text for candidate_id in CANDIDATE_IDS},
+            "adapter_kinds": {adapter_kind: adapter_kind in text for adapter_kind in ADAPTER_KINDS},
         }
+        missing_candidate_ids = [
+            candidate_id
+            for candidate_id, present in details[rel.as_posix()]["candidate_ids"].items()
+            if not present
+        ]
+        if missing_candidate_ids:
+            errors.append(f"{rel.as_posix()}:missing_candidate_ids:{','.join(missing_candidate_ids)}")
+        missing_adapter_kinds = [
+            adapter_kind
+            for adapter_kind, present in details[rel.as_posix()]["adapter_kinds"].items()
+            if not present
+        ]
+        if missing_adapter_kinds:
+            errors.append(f"{rel.as_posix()}:missing_adapter_kinds:{','.join(missing_adapter_kinds)}")
         info.append(f"{rel.as_posix()}: Codex harness source ledger rows={len(rows)}")
     return details
 

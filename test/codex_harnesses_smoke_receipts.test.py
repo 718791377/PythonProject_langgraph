@@ -12,7 +12,27 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "tools" / "run_codex_harnesses_smoke.py"
 CHECKER = ROOT / "tools" / "check_codex_harnesses_smoke_receipts.py"
-HARNESSES = ("Pi", "oh-my-pi")
+CANDIDATES = (
+    "pi-runtime",
+    "oh-my-pi-sidecar",
+    "revfactory-harness-team-factory",
+    "ohmyopenagent-discipline-layer",
+    "snow-cli-terminal-agent-runtime",
+)
+ADAPTER_BY_CANDIDATE = {
+    "pi-runtime": "package-runtime",
+    "oh-my-pi-sidecar": "sidecar-ux",
+    "revfactory-harness-team-factory": "team-factory",
+    "ohmyopenagent-discipline-layer": "discipline-layer",
+    "snow-cli-terminal-agent-runtime": "terminal-agent-runtime",
+}
+SOURCE_BY_CANDIDATE = {
+    "pi-runtime": "https://pi.dev/",
+    "oh-my-pi-sidecar": "https://github.com/can1357/oh-my-pi",
+    "revfactory-harness-team-factory": "https://github.com/revfactory/harness",
+    "ohmyopenagent-discipline-layer": "https://github.com/ymymssss/ohmyopenagent",
+    "snow-cli-terminal-agent-runtime": "https://github.com/MayDay-wpf/snow-cli",
+}
 
 
 class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
@@ -36,40 +56,61 @@ class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
             self.fail(json.dumps(payload, ensure_ascii=False, indent=2) + "\n" + proc.stderr)
         return proc.returncode, payload, proc.stdout + proc.stderr
 
-    def write_install_receipt(self, directory: Path, harness: str) -> Path:
+    def write_install_receipt(self, directory: Path, candidate_id: str) -> Path:
         receipt = {
-            "tool_name": harness,
+            "tool_name": candidate_id,
+            "candidate_id": candidate_id,
+            "adapter_kind": ADAPTER_BY_CANDIDATE[candidate_id],
             "installed_version": "fixture-pin",
-            "source_pin": f"fixture-source-pin-{harness}",
-            "source_url": "https://pi.dev/" if harness == "Pi" else "https://github.com/can1357/oh-my-pi",
+            "source_pin": f"fixture-source-pin-{candidate_id}",
+            "license_note": "fixture license note: reference-only test fixture",
+            "source_url": SOURCE_BY_CANDIDATE[candidate_id],
             "install_path": "install-ref",
             "wrapper_path": sys.executable,
             "state_path": "state-ref",
-            "smoke_test_command": f"{harness} --help",
+            "smoke_test_command": f"{candidate_id} --help",
             "smoke_test_result": {"status": "pass"},
-            "updater_command": f"{harness} update --pin fixture-pin",
-            "rollback_pointer": f"rollback-ref-{harness}",
-            "owner_lane": f"codex-harnesses:{harness.lower()}",
+            "updater_command": f"{candidate_id} update --pin fixture-pin",
+            "rollback_pointer": f"rollback-ref-{candidate_id}",
+            "owner_lane": f"codex-harnesses:{candidate_id}",
+            "guard_profile": f"{ADAPTER_BY_CANDIDATE[candidate_id]}-r4-read-only",
+            "sensitive_command_policy": {"writes_allowed": False, "sensitive_commands_allowed": False},
+            "hook_policy": {"hooks_allowed": False, "mutation_hooks_allowed": False},
+            "async_headless_lifecycle_state": {"mode": "bounded-read-only", "headless": False, "async": False},
             "redaction_status": "no_secrets",
         }
-        path = directory / f"install-{harness.lower().replace(' ', '-')}.json"
+        path = directory / f"install-{candidate_id}.json"
         path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2), encoding="utf-8")
         return path
 
-    def valid_smoke_receipt(self, harness: str) -> dict:
+    def valid_smoke_receipt(self, candidate_id: str) -> dict:
         return {
-            "tool_name": harness,
-            "owner_lane": f"codex-harnesses:{harness.lower()}",
+            "tool_name": candidate_id,
+            "candidate_id": candidate_id,
+            "adapter_kind": ADAPTER_BY_CANDIDATE[candidate_id],
+            "guard_profile": f"{ADAPTER_BY_CANDIDATE[candidate_id]}-r4-read-only",
+            "source_url": SOURCE_BY_CANDIDATE[candidate_id],
+            "source_pin": f"fixture-source-pin-{candidate_id}",
+            "license_note": "fixture license note: reference-only test fixture",
+            "sensitive_command_policy": {"writes_allowed": False, "sensitive_commands_allowed": False},
+            "hook_policy": {"hooks_allowed": False, "mutation_hooks_allowed": False},
+            "async_headless_lifecycle_state": {"mode": "bounded-read-only", "headless": False, "async": False},
+            "authority_decision": {
+                "status": "allow-read-only-smoke",
+                "source": "harness runtime safety",
+                "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+            },
+            "owner_lane": f"codex-harnesses:{candidate_id}",
             "runtime_stage": "smoke-tested",
-            "install_receipt": f"receipt-sha256:{harness}",
-            "smoke_command": f"{harness} --help",
-            "smoke_type": "help",
+            "install_receipt": f"receipt-sha256:{candidate_id}",
+            "smoke_command": f"{candidate_id} --help",
+            "smoke_type": "read-only",
             "smoke_result": {"status": "pass"},
             "timeout_release": {"status": "pass", "released": True},
-            "rollback_pointer": f"rollback-sha256:{harness}",
+            "rollback_pointer": f"rollback-sha256:{candidate_id}",
             "rollback_ready": True,
-            "command_transcript": f"{harness} help output",
-            "transcript_redaction": {"status": "pass", "redacted_transcript_hash": f"hash-{harness}"},
+            "command_transcript": f"{candidate_id} help output",
+            "transcript_redaction": {"status": "pass", "redacted_transcript_hash": f"hash-{candidate_id}"},
             "redaction_status": "no_secrets",
             "smoke_tested": True,
             "read_guard": {
@@ -113,27 +154,50 @@ class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
     def write_smoke_receipts(self, directory: Path, overrides: dict[str, dict] | None = None) -> list[Path]:
         overrides = overrides or {}
         paths: list[Path] = []
-        for harness in HARNESSES:
-            payload = self.valid_smoke_receipt(harness)
-            payload.update(overrides.get(harness, {}))
-            path = directory / f"smoke-{harness.lower().replace(' ', '-')}.json"
+        for candidate_id in CANDIDATES:
+            payload = self.valid_smoke_receipt(candidate_id)
+            payload.update(overrides.get(candidate_id, {}))
+            path = directory / f"smoke-{candidate_id}.json"
             path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
             paths.append(path)
         return paths
 
-    def test_runner_without_install_receipts_writes_blocked_receipts_not_smoke_tested(self) -> None:
+    def test_runner_plan_exposes_candidate_registry_for_all_adapter_kinds(self) -> None:
+        code, payload, _ = self.run_json(RUNNER, "plan")
+
+        self.assertEqual(code, 0)
+        self.assertIn("candidate_registry", payload)
+        candidates = payload["candidate_registry"]["candidates"]
+        self.assertEqual({item["candidate_id"] for item in candidates}, set(CANDIDATES))
+        self.assertEqual({item["adapter_kind"] for item in candidates}, set(ADAPTER_BY_CANDIDATE.values()))
+        for item in candidates:
+            self.assertIn("source_pin", item)
+            self.assertIn("license_note", item)
+            self.assertIn("guard_profile", item)
+            self.assertIn("sensitive_command_policy", item)
+            self.assertIn("hook_policy", item)
+
+    def test_runner_without_install_receipts_writes_registry_blocked_receipts_not_smoke_tested(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             receipt_dir = Path(tmp) / "receipts"
             code, payload, output = self.run_json(RUNNER, "run", "--receipt-dir", str(receipt_dir))
 
             self.assertEqual(code, 0)
-            self.assertEqual(payload["counts"]["harnesses"], 2)
+            self.assertEqual(payload["counts"]["candidates"], len(CANDIDATES))
             self.assertEqual(payload["counts"]["smoke_tested"], 0)
-            self.assertEqual(payload["counts"]["blocked"], 2)
+            self.assertEqual(payload["counts"]["blocked"], len(CANDIDATES))
             self.assertNotIn(str(receipt_dir), output)
-            self.assertEqual(len(list(receipt_dir.glob("*.json"))), 2)
+            self.assertEqual(len(list(receipt_dir.glob("*.json"))), len(CANDIDATES))
             for path in receipt_dir.glob("*.json"):
                 receipt = json.loads(path.read_text(encoding="utf-8"))
+                self.assertIn(receipt["candidate_id"], CANDIDATES)
+                self.assertEqual(receipt["adapter_kind"], ADAPTER_BY_CANDIDATE[receipt["candidate_id"]])
+                self.assertIn("source_pin", receipt)
+                self.assertIn("license_note", receipt)
+                self.assertIn("sensitive_command_policy", receipt)
+                self.assertIn("hook_policy", receipt)
+                self.assertIn("async_headless_lifecycle_state", receipt)
+                self.assertEqual(receipt["authority_decision"]["status"], "blocked")
                 self.assertFalse(receipt["smoke_tested"])
                 self.assertNotEqual(receipt["r4_status"], "smoke-tested")
                 self.assertTrue(receipt["no_codex_takeover"])
@@ -142,21 +206,21 @@ class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
             check_code, check_payload, _ = self.run_json(CHECKER, "--root", str(ROOT), "--receipt-dir", str(receipt_dir))
             self.assertEqual(check_code, 0)
             self.assertTrue(check_payload["ok"])
-            self.assertEqual(check_payload["counts"]["blocked_or_not_installed"], 2)
+            self.assertEqual(check_payload["counts"]["blocked_or_not_installed"], len(CANDIDATES))
             self.assertEqual(check_payload["counts"]["positive_smoke_tested"], 0)
 
-    def test_valid_simulated_r4_help_receipts_for_all_harnesses_pass_checker(self) -> None:
+    def test_valid_simulated_r4_read_only_receipts_for_all_registry_candidates_pass_checker(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             receipt_dir = base / "smoke"
-            install_receipts = [self.write_install_receipt(base, harness) for harness in HARNESSES]
+            install_receipts = [self.write_install_receipt(base, candidate_id) for candidate_id in CANDIDATES]
             args = ["run", "--receipt-dir", str(receipt_dir)]
-            for harness, install_receipt in zip(HARNESSES, install_receipts):
-                args.extend(["--install-receipt", f"{harness}={install_receipt}"])
+            for candidate_id, install_receipt in zip(CANDIDATES, install_receipts):
+                args.extend(["--install-receipt", f"{candidate_id}={install_receipt}"])
 
             code, payload, output = self.run_json(RUNNER, *args)
             self.assertEqual(code, 0)
-            self.assertEqual(payload["counts"]["smoke_tested"], 2)
+            self.assertEqual(payload["counts"]["smoke_tested"], len(CANDIDATES))
             self.assertEqual(payload["counts"]["blocked"], 0)
             self.assertNotIn(str(base), output)
             self.assertNotIn(sys.executable, output)
@@ -171,7 +235,7 @@ class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
             )
             self.assertEqual(check_code, 0)
             self.assertTrue(check_payload["ok"])
-            self.assertEqual(check_payload["counts"]["positive_smoke_tested"], 2)
+            self.assertEqual(check_payload["counts"]["positive_smoke_tested"], len(CANDIDATES))
             self.assertNotIn(str(base), check_output)
             self.assertNotIn(sys.executable, check_output)
 
@@ -181,8 +245,8 @@ class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
             self.write_smoke_receipts(
                 receipt_dir,
                 {
-                    "Pi": {
-                        "smoke_command": "Pi run-job --write",
+                    "pi-runtime": {
+                        "smoke_command": "pi-runtime run-job --write",
                         "write_performed": True,
                         "write_capable_harness_job": True,
                         "native_codex_replaced": True,
@@ -210,7 +274,7 @@ class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
     def test_checker_rejects_forbidden_sibling_lanes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             receipt_dir = Path(tmp)
-            self.write_smoke_receipts(receipt_dir, {"oh-my-pi": {"tool_name": "OpenCLI"}})
+            self.write_smoke_receipts(receipt_dir, {"oh-my-pi-sidecar": {"tool_name": "OpenCLI"}})
 
             code, payload, _ = self.run_json(
                 CHECKER,
@@ -224,7 +288,7 @@ class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
             self.assertFalse(payload["ok"])
             errors = "\n".join(payload["errors"])
             self.assertIn("forbidden_sibling_lane_term:OpenCLI", errors)
-            self.assertIn("missing_receipt:oh-my-pi", errors)
+            self.assertIn("smoke_receipt_tool_name_mismatch", errors)
 
     def test_checker_output_does_not_echo_raw_paths_or_secret_values(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -233,7 +297,7 @@ class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
             self.write_smoke_receipts(
                 receipt_dir,
                 {
-                    "Pi": {
+                    "pi-runtime": {
                         "install_receipt": raw_path,
                         "command_transcript": "token=super-secret-value",
                     }
