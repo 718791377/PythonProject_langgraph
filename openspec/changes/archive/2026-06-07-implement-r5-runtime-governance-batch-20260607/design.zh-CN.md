@@ -1,7 +1,7 @@
 ---
 change: implement-r5-runtime-governance-batch-20260607
-status: active
-translation_of: openspec/changes/implement-r5-runtime-governance-batch-20260607/design.md
+status: archived
+translation_of: openspec/changes/archive/2026-06-07-implement-r5-runtime-governance-batch-20260607/design.md
 ---
 
 # 设计：R5 Runtime Governance Batch

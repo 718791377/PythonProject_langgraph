@@ -63,7 +63,14 @@ def changed_markdown(root: Path, base_ref: str) -> dict[str, str]:
             code = raw[:2]
             path_text = raw[3:] if len(raw) > 3 else ""
             if " -> " in path_text:
-                path_text = path_text.split(" -> ", 1)[1]
+                source_text, target_text = path_text.split(" -> ", 1)
+                source_path = normalize(source_text)
+                target_path = normalize(target_text)
+                if is_target_markdown(source_path):
+                    changed[source_path] = "D"
+                if is_target_markdown(target_path):
+                    changed[target_path] = "A"
+                continue
             path = normalize(path_text)
             if is_target_markdown(path):
                 if "D" in code:

@@ -1,7 +1,7 @@
 ---
 change: implement-r5-runtime-governance-batch-20260607
-status: active
-translation_of: openspec/changes/implement-r5-runtime-governance-batch-20260607/specs/codex-r5-runtime-governance/spec.md
+status: archived
+translation_of: openspec/changes/archive/2026-06-07-implement-r5-runtime-governance-batch-20260607/specs/codex-r5-runtime-governance/spec.md
 ---
 
 # R5 Runtime Governance Requirement Delta

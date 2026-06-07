@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-06-07
+x_change_class: code
+x_archived: true
+x_archive_note: "Archived after focused tests, OpenSpec guard, and precommit review; local gate/local MR review run after archive commit before local main integration."

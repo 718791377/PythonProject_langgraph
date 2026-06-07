@@ -1,5 +1,0 @@
-schema: spec-driven
-created: 2026-06-07
-x_change_class: code
-x_archive_deferred_reason: "R5 runtime-governance implementation is active in an isolated feature worktree; archive is deferred until all requested plan slices have committed code/test evidence and local validation passes."
-x_archive_follow_up: "Archive in the same integration package after focused tests, OpenSpec guard, local gate, and local MR review pass."

@@ -1,6 +1,6 @@
 ---
 change: implement-r5-runtime-governance-batch-20260607
-status: active
+status: archived
 ---
 
 # Tasks
@@ -38,6 +38,6 @@ status: active
 
 - [x] Run focused tests and affected checkers.
 - [x] Run OpenSpec validation/guard and precommit update/archive review.
-- [ ] Archive the OpenSpec change in the same integration package if ready.
+- [x] Archive the OpenSpec change in the same integration package if ready.
 - [ ] Run local gate and local MR review.
 - [ ] Merge into local `main` using the guarded helper and stop at remote-publication gate.

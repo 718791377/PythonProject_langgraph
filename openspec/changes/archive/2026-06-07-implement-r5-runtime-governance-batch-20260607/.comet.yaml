@@ -10,8 +10,8 @@ verify_result: pass
 verification_report: docs/superpowers/reports/2026-06-07-r5-runtime-governance-verification.md
 branch_status: handled
 verified_at: 2026-06-07T22:00:21Z
-archived: false
-management_record: openspec/changes/implement-r5-runtime-governance-batch-20260607/management.md
+archived: true
+management_record: openspec/changes/archive/2026-06-07-implement-r5-runtime-governance-batch-20260607/management.md
 monitoring_status: clear
 control_decision: continue
 target_phase: null

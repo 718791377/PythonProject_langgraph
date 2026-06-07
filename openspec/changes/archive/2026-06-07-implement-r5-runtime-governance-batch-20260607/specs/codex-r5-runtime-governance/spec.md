@@ -1,6 +1,6 @@
 ---
 change: implement-r5-runtime-governance-batch-20260607
-status: active
+status: archived
 ---
 
 # R5 Runtime Governance Requirement Delta

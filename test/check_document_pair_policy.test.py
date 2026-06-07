@@ -114,6 +114,30 @@ class DocumentPairPolicyCheckTest(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["counts"]["changed_target_markdown"], 2)
 
+    def test_passes_for_staged_archive_rename_pair(self) -> None:
+        root = self.make_root("doc-pair-archive-rename")
+        self.write_file(root, "openspec/changes/sample/tasks.md", "# Tasks\n- [x] Done.\n")
+        self.write_file(root, "openspec/changes/sample/tasks.zh-CN.md", "# 任务\n- [x] 完成。\n")
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-m", "initial commit"], cwd=root, check=True, capture_output=True, text=True)
+
+        archive_parent = root / "openspec" / "changes" / "archive"
+        archive_parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            ["git", "mv", "openspec/changes/sample", "openspec/changes/archive/2026-06-08-sample"],
+            cwd=root,
+            check=True,
+        )
+
+        result = self.run_check_json(root)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertIn("openspec/changes/sample/tasks.md", payload["checked_files"])
+        self.assertIn("openspec/changes/sample/tasks.zh-CN.md", payload["checked_files"])
+        self.assertIn("openspec/changes/archive/2026-06-08-sample/tasks.md", payload["checked_files"])
+        self.assertIn("openspec/changes/archive/2026-06-08-sample/tasks.zh-CN.md", payload["checked_files"])
+
     def test_fails_when_deleted_file_omits_companion_delete(self) -> None:
         root = self.make_root("doc-pair-delete-fail")
         self.write_file(root, "openspec/changes/sample/design.md", "# Design\nASCII only.\n")
