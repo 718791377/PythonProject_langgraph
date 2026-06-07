@@ -38,12 +38,15 @@ Add a Phase 4 child plan that turns the `stop-slop` and `caveman` references int
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: R4 implementation archived and ready for feature-branch commit on branch `implement-stop-slop-caveman-r4-20260607`.
-Stage: repo-local checker/runtime/smoke receipt surfaces are implemented and the OpenSpec change has been archived into stable spec `openspec/specs/codex-user-level-response-density-runtime/spec.md`; next gates are local commit, local CI, local MR review, and local `main` integration.
-Owner session: `stop-slop-caveman-r4-20260607` owns the R4 implementation package in the isolated feature worktree.
-Current gate: focused tests, response-density surface checks, smoke receipt checks, safety-rule backing, `openspec validate --all --strict`, aggregate OpenSpec guard, precommit update/archive review, startup mojibake, canary surface, and `git diff --check` have fresh passing evidence. Local gate and local MR review still need to run after the feature commit and clean worktree.
-Runtime boundary: no Stop-Slop or Caveman runtime is installed, enabled as a hook, or promoted to user level by this package. R3-R5 remain explicit-receipt gated.
-R4 surfaces: `tools/check_stop_slop_caveman_response_density.py`, `tools/stop_slop_caveman_runtime.py`, `tools/check_stop_slop_caveman_smoke_receipts.py`, and `check_stop_slop_caveman_response_density.test.py` now cover blocked receipts, smoke-tested receipt evidence, and real Unicode punctuation handling.
+Status: implemented-local
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for Stop-Slop/Caveman response-density runtime.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `stop-slop-caveman active-candidate lane profile` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## Checker and Runtime Target
@@ -110,6 +113,7 @@ Later code work must also add focused tests for the checker and runtime helper.
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for Stop-Slop/Caveman response-density runtime. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-06 documentation package: branch `plan-stop-slop-caveman-runtime-20260606` creates this active Phase 4 child plan, records `hardikpandya/stop-slop` and `JuliusBrussee/caveman` as references, and keeps checker/runtime code for a later implementation package.
 - 2026-06-07 R4 implementation package: branch `implement-stop-slop-caveman-r4-20260607` adds `tools/check_stop_slop_caveman_response_density.py`, `tools/stop_slop_caveman_runtime.py`, `tools/check_stop_slop_caveman_smoke_receipts.py`, focused test `check_stop_slop_caveman_response_density.test.py`, OpenSpec guard wiring, CI manifest registration, and safety-rule script backing. Focused RED/GREEN evidence: `python test\check_stop_slop_caveman_response_density.test.py` failed before scripts existed, then passed 8 tests after implementation, including real Unicode punctuation coverage.
 - 2026-06-07 focused validation evidence: `python tools\check_stop_slop_caveman_response_density.py --root . --json`, `python tools\check_stop_slop_caveman_smoke_receipts.py --root . --json`, `python tools\check_safety_rule_script_backing.py --root . --json`, `openspec validate implement-stop-slop-caveman-response-density-r4 --strict`, and `git diff --check` passed after LF normalization.

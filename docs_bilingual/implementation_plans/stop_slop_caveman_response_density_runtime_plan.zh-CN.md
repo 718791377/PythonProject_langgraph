@@ -38,12 +38,15 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：R4 实现已归档，当前分支为 `implement-stop-slop-caveman-r4-20260607`，准备进入 feature-branch commit。
-阶段：repo-local checker/runtime/smoke receipt 表面已实现；OpenSpec change 已归档到 stable spec `openspec/specs/codex-user-level-response-density-runtime/spec.md`；下一步是本地提交、local CI、local MR review 与本地 `main` 集成。
-Owner session：`stop-slop-caveman-r4-20260607` 在隔离 feature worktree 中拥有本 R4 implementation package；远端发布未授权。
-当前 gate：focused tests、response-density surface checks、smoke receipt checks、safety-rule backing、`openspec validate --all --strict`、aggregate OpenSpec guard、precommit update/archive review、startup mojibake、canary surface 与 `git diff --check` 均有 fresh passing evidence。local gate 与 local MR review 仍需在 feature commit 后、clean worktree 上运行。
-Runtime 边界：本包没有安装 Stop-Slop 或 Caveman runtime，没有启用 hook，也没有推广到用户级。R3-R5 继续受 explicit receipt gate 约束。
-R4 表面：`tools/check_stop_slop_caveman_response_density.py`、`tools/stop_slop_caveman_runtime.py`、`tools/check_stop_slop_caveman_smoke_receipts.py` 和 `check_stop_slop_caveman_response_density.test.py` 覆盖 blocked receipts、smoke-tested receipt evidence 与真实 Unicode 标点处理。
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: Stop-Slop/Caveman response-density runtime 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `stop-slop-caveman active-candidate lane profile` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## Checker 与 Runtime 目标
@@ -110,6 +113,7 @@ R4 表面：`tools/check_stop_slop_caveman_response_density.py`、`tools/stop_sl
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 Stop-Slop/Caveman response-density runtime 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-06 文档包：branch `plan-stop-slop-caveman-runtime-20260606` 创建本 active Phase 4 子方案，记录 `hardikpandya/stop-slop` 与 `JuliusBrussee/caveman` 作为参考源，并把 checker/runtime 代码留给后续实现包。
 - 2026-06-07 R4 implementation package：branch `implement-stop-slop-caveman-r4-20260607` 新增 `tools/check_stop_slop_caveman_response_density.py`、`tools/stop_slop_caveman_runtime.py`、`tools/check_stop_slop_caveman_smoke_receipts.py`、focused test `check_stop_slop_caveman_response_density.test.py`、OpenSpec guard wiring、CI manifest registration 与 safety-rule script backing。Focused RED/GREEN evidence：`python test\check_stop_slop_caveman_response_density.test.py` 在脚本不存在时先失败，随后实现后通过 8 个测试，并覆盖真实 Unicode 标点。
 - 2026-06-07 focused validation evidence：`python tools\check_stop_slop_caveman_response_density.py --root . --json`、`python tools\check_stop_slop_caveman_smoke_receipts.py --root . --json`、`python tools\check_safety_rule_script_backing.py --root . --json`、`openspec validate implement-stop-slop-caveman-response-density-r4 --strict` 与 `git diff --check` 在 LF 规范化后通过。
