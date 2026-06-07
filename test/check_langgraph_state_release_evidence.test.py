@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import importlib.util
 import json
@@ -263,6 +263,55 @@ class LangGraphStateReleaseEvidenceTest(unittest.TestCase):
         self.assertEqual(release_payload["backend_record"]["backend"], "langgraph")
         self.assertEqual(release_payload["backend_record"]["release_projection"]["handoff_target"], "native_omx:debugger-lane")
         self.assertFalse(release_payload["backend_record"]["release_projection"]["active_running_state"])
+
+    def test_runtime_release_thread_can_link_r5_active_candidate_receipt_without_adoption_claim(self) -> None:
+        repo_root = self.make_repo_root("release-active-candidate")
+        run_payload = self.invoke_runtime(repo_root, "run", "--task", "active candidate release", "--phase", "verify-accept")
+        thread_id = run_payload["thread_id"]
+        active_receipt = repo_root / "active-candidate.json"
+        active_receipt.write_text(
+            json.dumps(
+                {
+                    "runtime_stage": "active-candidate",
+                    "receipt_path_hash": "receipt-hash",
+                    "authorization_receipt_hash": "auth-hash",
+                    "owner_lease_hash": "lease-hash",
+                    "rollback_pointer_hash": "rollback-hash",
+                    "remote_publication_mutated": False,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        release_payload = self.invoke_runtime(
+            repo_root,
+            "release-thread",
+            "--thread-id",
+            thread_id,
+            "--release-action",
+            "close",
+            "--released-by",
+            "codex-main-session",
+            "--active-candidate-receipt",
+            str(active_receipt),
+            "--rollback-restore-note",
+            "restore from checkpoint before active-candidate release",
+            "--redaction-status",
+            "pass",
+        )
+
+        receipt = release_payload["release_receipt"]
+        self.assertEqual(receipt["active_candidate_receipt"]["runtime_stage"], "active-candidate")
+        self.assertEqual(receipt["active_candidate_receipt"]["authorization_receipt_hash"], "auth-hash")
+        self.assertFalse(receipt["active_candidate_receipt"]["remote_publication_mutated"])
+        self.assertFalse(receipt["remote_publication_mutated"])
+        self.assertEqual(release_payload["release_projection"]["active_candidate_receipt_linked"], True)
+        self.assertEqual(
+            release_payload["backend_record"]["release_projection"]["active_candidate_receipt_hash"],
+            "receipt-hash",
+        )
 
 
 if __name__ == "__main__":

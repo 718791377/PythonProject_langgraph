@@ -34,16 +34,15 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：Stage D/R4 真实 runtime implementation 已完成并已归档；归档后本地门禁待重跑。
-阶段：Stage D 真实 runtime package，已在 guarded local `main` 集成前完成 OpenSpec archive。
-Owner session：`implement-langgraph-state-release-r4-20260605`。
-当前门禁：重跑归档后的 precommit/local gates，然后通过 guarded local-main-first 集成；remote publication 仍未授权。
-Stage D 入口条件：已由 2026-06-05 用户要求继续 `langgraph_state_release_evidence_plan` 至 R4 的消息满足。
-OpenSpec 归档：`openspec/changes/archive/2026-06-05-implement-langgraph-state-release-runtime-r4/`。
-本地 main 集成：提交、local gate 与 local MR review 通过后，经 `tools/complete_local_flow_to_remote_gate.py --execute` 待执行。
-前置 Stage C 本地集成：已在 `32a5cfff3b977ba13ed6e215b4efb887679019b9` 完成；completed claim 保存在 `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`。
-中文 companion refresh note：保留 local `main` 上的中文化清理结果；本次 R4 只叠加 runtime 完成与归档状态，不回退该中文修复。
-Last updated：2026-06-05。
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: LangGraph state release evidence 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `release-thread active-candidate receipt linkage and release projection evidence` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -99,6 +98,7 @@ LangGraph compatibility records、selector、active backend record 和 `.omx/sta
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 LangGraph state release evidence 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-05 Stage D/R4 runtime implementation：branch `implement-langgraph-state-release-r4-20260605` 新增 `release-thread`，支持 `close`、`release` 与 `handoff`；receipt 写入 `.omx/state/langgraph/store/releases/`；status / inspect / backend records 暴露 release projections；`test/check_langgraph_state_release_evidence.test.py` 增加 runtime release-helper coverage；保留 rollback/restore 与 timeout release evidence，且不隐式切换 backend family。目标验证：`python test\check_langgraph_state_release_evidence.test.py` 与 `python tools\check_durable_artifact_state_surfaces.py --root . --json`。
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 LangGraph thread state release runtime helper 标记为 Stage D pending；当前只具备 state-release checker。
 - 2026-05-31 本地 main 状态同步：记录 Stage C 实施已合入本地 `main`，集成提交为 `32a5cfff3b977ba13ed6e215b4efb887679019b9`，completed claim 已保存在 `.omx/session-claims/completed/implement-langgraph-state-release-evidence-20260530.json`，剩余门禁为显式远端发布批准。

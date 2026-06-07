@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -236,6 +237,11 @@ def _emit(payload: dict[str, Any]) -> None:
 
 def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _short_hash(value: Any) -> str:
+    text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(text.encode("utf-8", errors="replace")).hexdigest()[:16]
 
 
 def _loop_projection(thread: dict[str, Any]) -> dict[str, Any]:
@@ -8314,6 +8320,7 @@ def _release_projection(repo_root: Any, thread_id: str, thread: dict[str, Any] |
     thread = thread or {}
     receipt = read_release_receipt(repo_root, thread_id)
     release_action = str(receipt.get("release_action", thread.get("release_action", ""))) if isinstance(receipt, dict) else ""
+    active_candidate = receipt.get("active_candidate_receipt") if isinstance(receipt.get("active_candidate_receipt"), dict) else {}
     receipt_path = release_receipt_path(repo_root, thread_id)
     status = str(thread.get("status", ""))
     return {
@@ -8328,6 +8335,11 @@ def _release_projection(repo_root: Any, thread_id: str, thread: dict[str, Any] |
         "handoff_target": str(receipt.get("handoff_target", thread.get("handoff_target", ""))) if isinstance(receipt, dict) else str(thread.get("handoff_target", "")),
         "reason": str(receipt.get("reason", thread.get("reason", ""))) if isinstance(receipt, dict) else str(thread.get("reason", "")),
         "timeout_release": bool(receipt.get("timeout_release", False)) if isinstance(receipt, dict) else False,
+        "active_candidate_receipt_linked": bool(active_candidate),
+        "active_candidate_receipt_hash": str(active_candidate.get("receipt_path_hash", "")) if active_candidate else "",
+        "active_candidate_remote_publication_mutated": (
+            active_candidate.get("remote_publication_mutated") is True if active_candidate else False
+        ),
         "active_running_state": status == "running" and not receipt,
     }
 
@@ -8340,6 +8352,38 @@ def _release_action_status(release_action: str) -> str:
     if release_action == "handoff":
         return "handoff"
     raise SystemExit(f"Unsupported release_action: {release_action}")
+
+
+def _read_active_candidate_receipt(path: str) -> dict[str, Any]:
+    if not path:
+        return {}
+    candidate_path = Path(path)
+    try:
+        payload = json.loads(candidate_path.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        raise SystemExit("active_candidate_receipt missing")
+    except json.JSONDecodeError:
+        raise SystemExit("active_candidate_receipt invalid json")
+    except OSError:
+        raise SystemExit("active_candidate_receipt unreadable")
+    if not isinstance(payload, dict):
+        raise SystemExit("active_candidate_receipt must be an object")
+    stage = str(payload.get("runtime_stage", "")).strip().lower().replace("_", "-")
+    if stage not in {"r5", "active-candidate"}:
+        raise SystemExit("active_candidate_receipt runtime_stage must be R5 or active-candidate")
+    for field in ("receipt_path_hash", "authorization_receipt_hash", "owner_lease_hash", "rollback_pointer_hash"):
+        if not str(payload.get(field, "")).strip():
+            raise SystemExit(f"active_candidate_receipt missing {field}")
+    if payload.get("remote_publication_mutated") is not False:
+        raise SystemExit("active_candidate_receipt remote_publication_mutated must be false")
+    return {
+        "runtime_stage": payload.get("runtime_stage"),
+        "receipt_path_hash": payload.get("receipt_path_hash") or _short_hash(str(candidate_path)),
+        "authorization_receipt_hash": payload.get("authorization_receipt_hash"),
+        "owner_lease_hash": payload.get("owner_lease_hash"),
+        "rollback_pointer_hash": payload.get("rollback_pointer_hash"),
+        "remote_publication_mutated": False,
+    }
 
 
 def _save_backend_projection(repo_root: Any, layout: dict[str, str], thread: dict[str, Any]) -> None:
@@ -11263,6 +11307,7 @@ def cmd_release_thread(args: argparse.Namespace) -> None:
     artifact_path = args.artifact_path or str(implementation_brief_path(repo_root, args.thread_id))
     if not Path(artifact_path).exists():
         artifact_path = str(thread_record_path(repo_root, args.thread_id))
+    active_candidate_receipt = _read_active_candidate_receipt(args.active_candidate_receipt)
 
     receipt = {
         "thread_id": args.thread_id,
@@ -11281,6 +11326,8 @@ def cmd_release_thread(args: argparse.Namespace) -> None:
         "timeout_release": bool(args.timeout_release),
         "rollback_restore_note": args.rollback_restore_note,
         "redaction_status": args.redaction_status,
+        "active_candidate_receipt": active_candidate_receipt,
+        "remote_publication_mutated": False,
         "final_phase": final_phase,
         "result_summary": args.result_summary,
     }
@@ -11298,6 +11345,7 @@ def cmd_release_thread(args: argparse.Namespace) -> None:
     thread["timeout_release"] = bool(args.timeout_release)
     thread["rollback_restore_note"] = args.rollback_restore_note
     thread["redaction_status"] = args.redaction_status
+    thread["active_candidate_receipt_hash"] = active_candidate_receipt.get("receipt_path_hash", "")
     thread["updated_at"] = now
     if args.release_action == "handoff":
         thread["handoff_at"] = now
@@ -11727,6 +11775,7 @@ def build_parser() -> argparse.ArgumentParser:
     release.add_argument("--rollback-restore-note", default="")
     release.add_argument("--redaction-status", default="unreviewed")
     release.add_argument("--artifact-path", default="")
+    release.add_argument("--active-candidate-receipt", default="")
     release.set_defaults(func=cmd_release_thread)
 
     brief = subparsers.add_parser("write-brief")
