@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 from dataclasses import asdict, dataclass
@@ -154,6 +155,40 @@ def path_is_excluded(relative: str) -> bool:
     return False
 
 
+def iter_pruned_paths(root: Path, target: Path) -> Iterable[Path]:
+    root_resolved = root.resolve()
+    target_resolved = target.resolve()
+    if not target_resolved.exists():
+        return
+    target_relative = relative_to_root(root_resolved, target_resolved)
+    if target_relative != "." and path_is_excluded(target_relative):
+        return
+    if target_resolved.is_file():
+        yield target_resolved
+        return
+    if not target_resolved.is_dir():
+        return
+    for dirpath, dirnames, filenames in os.walk(target_resolved):
+        current = Path(dirpath)
+        current_relative = relative_to_root(root_resolved, current)
+        if current_relative != "." and path_is_excluded(current_relative):
+            dirnames[:] = []
+            continue
+        dirnames[:] = [
+            dirname
+            for dirname in dirnames
+            if not path_is_excluded(relative_to_root(root_resolved, current / dirname))
+        ]
+        for dirname in dirnames:
+            yield current / dirname
+        for filename in filenames:
+            path = current / filename
+            relative = relative_to_root(root_resolved, path)
+            if path_is_excluded(relative):
+                continue
+            yield path
+
+
 def iter_scan_files(root: Path, scan_roots: Iterable[str]) -> list[Path]:
     files: set[Path] = set()
     root_resolved = root.resolve()
@@ -161,11 +196,7 @@ def iter_scan_files(root: Path, scan_roots: Iterable[str]) -> list[Path]:
         target = (root / raw_target).resolve()
         if not target.exists():
             continue
-        if target.is_file():
-            if target.suffix.lower() in SCANNED_SUFFIXES:
-                files.add(target)
-            continue
-        for path in target.rglob("*"):
+        for path in iter_pruned_paths(root_resolved, target):
             if not path.is_file():
                 continue
             relative = relative_to_root(root_resolved, path)
@@ -179,19 +210,14 @@ def iter_scan_files(root: Path, scan_roots: Iterable[str]) -> list[Path]:
 
 def iter_existing_paths(root: Path, scan_roots: Iterable[str]) -> list[str]:
     paths: set[str] = set()
+    root_resolved = root.resolve()
     for raw_target in scan_roots:
         target = (root / raw_target).resolve()
         if not target.exists():
             continue
-        if target.is_file() or target.is_dir():
-            relative = relative_to_root(root, target)
+        for path in iter_pruned_paths(root_resolved, target):
+            relative = relative_to_root(root_resolved, path)
             if relative != "." and not path_is_excluded(relative):
-                paths.add(normalize(relative))
-        if target.is_dir():
-            for path in target.rglob("*"):
-                relative = relative_to_root(root, path)
-                if path_is_excluded(relative):
-                    continue
                 paths.add(normalize(relative))
     return sorted(paths)
 

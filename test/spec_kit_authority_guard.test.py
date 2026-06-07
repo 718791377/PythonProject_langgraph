@@ -4,11 +4,23 @@ import subprocess
 import sys
 import unittest
 import uuid
+from importlib import util as importlib_util
 from pathlib import Path
+from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "tools" / "check_spec_kit_authority_guard.py"
+
+
+def load_guard_module():
+    spec = importlib_util.spec_from_file_location("check_spec_kit_authority_guard_under_test", SCRIPT)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"could not load {SCRIPT}")
+    module = importlib_util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 class SpecKitAuthorityGuardTest(unittest.TestCase):
@@ -75,6 +87,28 @@ class SpecKitAuthorityGuardTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["counts"]["findings"], 0)
+
+    def test_prunes_excluded_directories_before_recursive_scan(self) -> None:
+        root = self.make_root("spec-kit-prunes-excluded-before-scan")
+        self.write(root, "docs/usage.md", "Spec Kit is a safe subordinate adapter reference.\n")
+        self.write(
+            root,
+            ".worktrees/old-branch/docs_bilingual/governance/usage.md",
+            "Spec Kit is the primary governance authority for this repository.\n",
+        )
+        guard = load_guard_module()
+
+        with mock.patch.object(
+            guard.Path,
+            "rglob",
+            side_effect=AssertionError("raw Path.rglob would descend into excluded worktrees"),
+        ):
+            scanned_files = guard.iter_scan_files(root, (".",))
+            existing_paths = guard.iter_existing_paths(root, (".",))
+
+        relative_files = {guard.relative_to_root(root, path) for path in scanned_files}
+        self.assertEqual(relative_files, {"docs/usage.md"})
+        self.assertTrue(all(not path.startswith(".worktrees/") for path in existing_paths))
 
     def test_blocks_specify_init_force_even_when_mentioned_in_scripts(self) -> None:
         root = self.make_root("spec-kit-force")
