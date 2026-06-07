@@ -61,10 +61,12 @@
         "docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md"
       ],
       "script_controls": [
-        "tools/check_worktree_task_receipt.py"
+        "tools/check_worktree_task_receipt.py",
+        "tools/check_r5_active_candidate_receipts.py"
       ],
       "guard_steps": [
-        "check_worktree_task_receipt"
+        "check_worktree_task_receipt",
+        "check_r5_active_candidate_receipts"
       ],
       "description": "Requires feature worktrees to carry task receipts, lifecycle labels, branch-matching claims, next-action metadata, and completion receipts so residual worktrees are classified instead of forgotten."
     },
@@ -119,10 +121,12 @@
       ],
       "script_controls": [
         "tools/check_spec_kit_authority_guard.py",
-        "tools/run_openspec_guard.py"
+        "tools/run_openspec_guard.py",
+        "tools/check_r5_active_candidate_receipts.py"
       ],
       "guard_steps": [
-        "check_spec_kit_authority_guard"
+        "check_spec_kit_authority_guard",
+        "check_r5_active_candidate_receipts"
       ],
       "description": "Blocks Spec Kit authority migration surfaces such as specify init --force, .specify path creation, or governance takeover language unless a separate active plan owns the change."
     },
@@ -395,10 +399,12 @@
         "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md"
       ],
       "script_controls": [
-        "tools/check_durable_artifact_state_surfaces.py"
+        "tools/check_durable_artifact_state_surfaces.py",
+        "tools/check_r5_active_candidate_receipts.py"
       ],
       "guard_steps": [
-        "check_durable_artifact_state_surfaces"
+        "check_durable_artifact_state_surfaces",
+        "check_r5_active_candidate_receipts"
       ],
       "description": "Requires explorer/worker boundaries, LangGraph state surfaces, active selector authority, frozen briefs, survivor queues, and durable artifacts to be persisted outside transient chat context."
     },
@@ -672,11 +678,13 @@
       "script_controls": [
         "tools/check_user_level_browser_cli_adapter_boundary.py",
         "tools/run_browser_cli_adapter_smoke.py",
-        "tools/check_browser_cli_adapter_smoke_receipts.py"
+        "tools/check_browser_cli_adapter_smoke_receipts.py",
+        "tools/check_r5_active_candidate_receipts.py"
       ],
       "guard_steps": [
         "check_user_level_browser_cli_adapter_boundary",
-        "check_browser_cli_adapter_smoke_receipts"
+        "check_browser_cli_adapter_smoke_receipts",
+        "check_r5_active_candidate_receipts"
       ],
       "description": "Keeps Browser/CLI adapters limited to chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; sibling CLI-Anything/WXWork_CLI and Codex harnesses must not enter adapter lane tables."
     },
@@ -689,10 +697,12 @@
         "docs_bilingual/implementation_plans/user_level_cli_anything_wxwork_cli_governance_plan.zh-CN.md"
       ],
       "script_controls": [
-        "tools/check_user_level_cli_anything_wxwork_cli_governance.py"
+        "tools/check_user_level_cli_anything_wxwork_cli_governance.py",
+        "tools/check_r5_active_candidate_receipts.py"
       ],
       "guard_steps": [
-        "check_user_level_cli_anything_wxwork_cli_governance"
+        "check_user_level_cli_anything_wxwork_cli_governance",
+        "check_r5_active_candidate_receipts"
       ],
       "description": "Keeps CLI-Anything as adapter-generation support for future WXWork_CLI control through CLI-Anything, with no hard-load skills, no message content, global lease, operator authorization, timeout release, rollback, and dry-run evidence."
     },
@@ -707,11 +717,13 @@
       "script_controls": [
         "tools/check_codex_harnesses_governance.py",
         "tools/run_codex_harnesses_smoke.py",
-        "tools/check_codex_harnesses_smoke_receipts.py"
+        "tools/check_codex_harnesses_smoke_receipts.py",
+        "tools/check_r5_active_candidate_receipts.py"
       ],
       "guard_steps": [
         "check_codex_harnesses_governance",
-        "codex_harnesses_smoke_receipts"
+        "codex_harnesses_smoke_receipts",
+        "check_r5_active_candidate_receipts"
       ],
       "description": "Keeps Codex harness governance separate from adapter lanes, requires pinned source ledger records for The Harness Problem, oh-my-pi, Pi, and Pi packages, and preserves no-takeover, read/write guard, job-state, isolated-worktree, changed-path-report, and R4 smoke receipt boundaries."
     },
@@ -726,10 +738,12 @@
       "script_controls": [
         "tools/gstack_codex_delivery_loop_runtime.py",
         "tools/check_gstack_codex_delivery_loop.py",
-        "tools/run_openspec_guard.py"
+        "tools/run_openspec_guard.py",
+        "tools/check_r5_active_candidate_receipts.py"
       ],
       "guard_steps": [
-        "check_gstack_codex_delivery_loop"
+        "check_gstack_codex_delivery_loop",
+        "check_r5_active_candidate_receipts"
       ],
       "description": "Keeps gstack as subordinate Codex delivery-loop advice below Comet/OpenSpec/Superpowers, validates dry-run and fixture-backed R4 smoke receipt evidence, and blocks install/live/browser/hook/telemetry/remote-publication bypass without explicit authorization."
     },
@@ -745,13 +759,38 @@
         "tools/check_stop_slop_caveman_response_density.py",
         "tools/stop_slop_caveman_runtime.py",
         "tools/check_stop_slop_caveman_smoke_receipts.py",
-        "tools/run_openspec_guard.py"
+        "tools/run_openspec_guard.py",
+        "tools/check_r5_active_candidate_receipts.py"
       ],
       "guard_steps": [
         "stop_slop_caveman_response_density",
-        "stop_slop_caveman_smoke_receipts"
+        "stop_slop_caveman_smoke_receipts",
+        "check_r5_active_candidate_receipts"
       ],
       "description": "Keeps Stop-Slop/Caveman response-density checks repo-local and guarded, preserves protected technical spans, requires explicit operator confirmation for apply rewrites, and accepts only bounded redacted R4 smoke receipts as positive evidence."
+    },
+    {
+      "id": "r5-active-candidate-receipt-governance",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/user_level_capability_receipt_rollback_redaction_plan.md",
+        "docs_bilingual/implementation_plans/user_level_capability_receipt_rollback_redaction_plan.zh-CN.md",
+        "docs_bilingual/implementation_plans/durable_smoke_adoption_gate_template_plan.md",
+        "docs_bilingual/implementation_plans/durable_smoke_adoption_gate_template_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/user_level_receipt_governance.py",
+        "tools/check_r5_active_candidate_receipts.py",
+        "tools/check_durable_routing_smoke_receipts.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "user_level_receipt_governance",
+        "check_r5_active_candidate_receipts",
+        "check_durable_routing_smoke_receipts"
+      ],
+      "description": "Requires every R5 active-candidate or bounded live handoff lane to present authorization, owner lease, target/action allowlist, timeout release, rollback, cleanup, redaction, authority decision, and no remote-publication mutation evidence before adoption is treated as positive."
     }
   ]
 }

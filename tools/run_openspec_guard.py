@@ -154,8 +154,10 @@ def main() -> int:
     pyside6_project_opt_in_contract_script = root / "tools" / "check_pyside6_project_opt_in_contract.py"
     pyside6_packaging_opt_in_contract_script = root / "tools" / "check_pyside6_packaging_opt_in_contract.py"
     pyside6_operator_usage_guide_script = root / "tools" / "check_pyside6_operator_usage_guide.py"
+    user_level_receipt_governance_script = root / "tools" / "user_level_receipt_governance.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
     durable_routing_smoke_receipts_script = root / "tools" / "check_durable_routing_smoke_receipts.py"
+    r5_active_candidate_receipts_script = root / "tools" / "check_r5_active_candidate_receipts.py"
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     worktree_task_receipt_script = root / "tools" / "check_worktree_task_receipt.py"
@@ -257,10 +259,14 @@ def main() -> int:
         raise SystemExit(f"Missing PySide6 packaging opt-in contract check script: {pyside6_packaging_opt_in_contract_script}")
     if not pyside6_operator_usage_guide_script.exists():
         raise SystemExit(f"Missing PySide6 operator usage guide check script: {pyside6_operator_usage_guide_script}")
+    if not user_level_receipt_governance_script.exists():
+        raise SystemExit(f"Missing user-level receipt governance helper: {user_level_receipt_governance_script}")
     if not durable_routing_smoke_gate_template_script.exists():
         raise SystemExit(f"Missing durable routing smoke gate template check script: {durable_routing_smoke_gate_template_script}")
     if not durable_routing_smoke_receipts_script.exists():
         raise SystemExit(f"Missing durable routing smoke receipts check script: {durable_routing_smoke_receipts_script}")
+    if not r5_active_candidate_receipts_script.exists():
+        raise SystemExit(f"Missing R5 active-candidate receipt check script: {r5_active_candidate_receipts_script}")
     if not codex_native_rollback_release_gate_template_script.exists():
         raise SystemExit(f"Missing Codex native rollback release gate template check script: {codex_native_rollback_release_gate_template_script}")
     if not worktree_hygiene_script.exists():
@@ -572,6 +578,11 @@ def main() -> int:
                 "OpenSpec guard failed during PySide6 operator usage guide verification.",
             ),
             (
+                "user_level_receipt_governance",
+                [str(python_exe), str(user_level_receipt_governance_script), "template", "--kind", "active", "--json"],
+                "OpenSpec guard failed during user-level receipt governance template verification.",
+            ),
+            (
                 "check_durable_routing_smoke_gate_template",
                 [str(python_exe), str(durable_routing_smoke_gate_template_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during durable routing smoke gate template verification.",
@@ -580,6 +591,11 @@ def main() -> int:
                 "check_durable_routing_smoke_receipts",
                 [str(python_exe), str(durable_routing_smoke_receipts_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during durable routing smoke receipt verification.",
+            ),
+            (
+                "check_r5_active_candidate_receipts",
+                [str(python_exe), str(r5_active_candidate_receipts_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during R5 active-candidate receipt verification.",
             ),
             (
                 "check_codex_native_rollback_release_gate_template",
@@ -980,6 +996,12 @@ def main() -> int:
     )
 
     run_checked(
+        [str(python_exe), str(user_level_receipt_governance_script), "template", "--kind", "active"],
+        cwd=root,
+        failure_message="OpenSpec guard failed during user-level receipt governance template verification.",
+    )
+
+    run_checked(
         [str(python_exe), str(durable_routing_smoke_gate_template_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during durable routing smoke gate template verification.",
@@ -989,6 +1011,12 @@ def main() -> int:
         [str(python_exe), str(durable_routing_smoke_receipts_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during durable routing smoke receipt verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(r5_active_candidate_receipts_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during R5 active-candidate receipt verification.",
     )
 
     run_checked(

@@ -62,6 +62,26 @@ SMOKE_REQUIRED_FIELDS = (
     "redaction_status",
 )
 
+ACTIVE_CANDIDATE_REQUIRED_FIELDS = (
+    "tool_name",
+    "owner_lane",
+    "runtime_stage",
+    "action",
+    "target",
+    "authorization_receipt",
+    "owner_lease",
+    "target_action_allowlist",
+    "command_transcript",
+    "transcript_redaction",
+    "redaction_status",
+    "timeout_release",
+    "rollback_pointer",
+    "rollback_ready",
+    "cleanup_evidence",
+    "remote_publication_mutated",
+    "authority_decision",
+)
+
 ROLLBACK_REQUIRED_FIELDS = (
     "rollback_target",
     "rollback_pointer",
@@ -78,8 +98,16 @@ PATH_FIELDS = {"install_path", "wrapper_path", "state_path", "rollback_pointer"}
 LOCAL_PATH_EVIDENCE_FIELDS = ("install_path", "wrapper_path", "state_path", "rollback_pointer")
 ALLOWED_REDACTION_STATUS = {"pass", "passed", "redacted", "no_secrets", "no-sensitive-data"}
 ALLOWED_R4_STAGES = {"r4", "smoke-tested", "smoke_tested"}
+ALLOWED_R5_STAGES = {"r5", "active-candidate", "active_candidate"}
 ALLOWED_SMOKE_TYPES = {"help", "version", "status", "safe-discovery", "safe_discovery", "read-only", "readonly"}
+REQUIRED_PRIORITY_ORDER = "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit"
 FORBIDDEN_SMOKE_MARKERS = (
+    "active_candidate",
+    "runtime_adoption",
+    "adoption_performed",
+    "durable_workflow_selected",
+    "durable_workflow_running",
+    "durable_workflow_adopted",
     "write_performed",
     "live_action_performed",
     "sensitive_action_performed",
@@ -210,7 +238,11 @@ def timeout_release_pass(value: Any) -> bool:
 
 def normalize_runtime_stage(value: Any) -> str:
     text = str(value or "").strip().lower()
-    return "R4" if text in ALLOWED_R4_STAGES else sanitize_text(value)
+    if text in ALLOWED_R4_STAGES:
+        return "R4"
+    if text in ALLOWED_R5_STAGES:
+        return "R5"
+    return sanitize_text(value)
 
 
 def normalize_smoke_type(value: Any) -> str:
@@ -237,7 +269,7 @@ def collect_redaction_findings(value: Any, *, path: str = "$") -> list[str]:
     if isinstance(value, dict):
         for key, item in value.items():
             child_path = f"{path}.{key}"
-            if is_sensitive_key(str(key)) and item not in (None, "", [], {}):
+            if is_sensitive_key(str(key)) and item not in (None, "", [], {}, False):
                 findings.append(f"sensitive_field_present:{child_path}")
             findings.extend(collect_redaction_findings(item, path=child_path))
     elif isinstance(value, list):
@@ -336,6 +368,113 @@ def validate_smoke_receipt(receipt: dict[str, Any], *, tool_name: str | None, ow
     return sorted(set(blockers))
 
 
+def _scope_contains(scope: Any, action: str) -> bool:
+    if scope == "*":
+        return True
+    if isinstance(scope, str):
+        return scope == "*" or action == scope or action in scope
+    if isinstance(scope, list):
+        values = [str(item) for item in scope]
+        return "*" in values or action in values
+    return False
+
+
+def _list_contains(value: Any, expected: str) -> bool:
+    if value == "*":
+        return True
+    if isinstance(value, str):
+        return value == "*" or value == expected
+    if isinstance(value, list):
+        values = [str(item) for item in value]
+        return "*" in values or expected in values
+    return False
+
+
+def validate_active_candidate_receipt(
+    receipt: dict[str, Any], *, tool_name: str | None, owner_lane: str | None
+) -> list[str]:
+    blockers: list[str] = []
+    for field in ACTIVE_CANDIDATE_REQUIRED_FIELDS:
+        if field not in receipt:
+            blockers.append(f"active_candidate_missing_{field}")
+    if tool_name is not None and str(receipt.get("tool_name", "")) != tool_name:
+        blockers.append("active_candidate_tool_name_mismatch")
+    if owner_lane is not None and str(receipt.get("owner_lane", "")) != owner_lane:
+        blockers.append("active_candidate_owner_lane_mismatch")
+    for field in ("tool_name", "owner_lane", "action", "target", "rollback_pointer"):
+        if not isinstance(receipt.get(field), str) or not str(receipt.get(field)).strip():
+            blockers.append(f"active_candidate_{field}_required")
+
+    action = str(receipt.get("action", "")).strip()
+    target = str(receipt.get("target", "")).strip()
+    if str(receipt.get("runtime_stage", "")).strip().lower() not in ALLOWED_R5_STAGES:
+        blockers.append("active_candidate_runtime_stage_must_be_r5")
+
+    authorization = receipt.get("authorization_receipt")
+    if not isinstance(authorization, dict) or not smoke_pass(authorization):
+        blockers.append("active_candidate_authorization_receipt_must_pass")
+    else:
+        if authorization.get("operator_confirmation") is not True:
+            blockers.append("active_candidate_operator_confirmation_not_true")
+        if action and not _scope_contains(authorization.get("scope"), action):
+            blockers.append("active_candidate_authorization_scope_missing_action")
+        expiry = parse_expiry(authorization.get("expiry"))
+        if expiry is None:
+            blockers.append("active_candidate_authorization_expiry_invalid")
+        elif expiry <= datetime.now(timezone.utc):
+            blockers.append("active_candidate_authorization_expired")
+
+    owner_lease = receipt.get("owner_lease")
+    if not isinstance(owner_lease, dict) or not smoke_pass(owner_lease):
+        blockers.append("active_candidate_owner_lease_must_pass")
+    else:
+        if not str(owner_lease.get("owner", "")).strip():
+            blockers.append("active_candidate_owner_lease_owner_required")
+        lease_expiry = parse_expiry(owner_lease.get("expires_at"))
+        if lease_expiry is not None and lease_expiry <= datetime.now(timezone.utc):
+            blockers.append("active_candidate_owner_lease_expired")
+
+    allowlist = receipt.get("target_action_allowlist")
+    if not isinstance(allowlist, dict):
+        blockers.append("active_candidate_allowlist_required")
+    else:
+        if target and not _list_contains(allowlist.get("targets"), target):
+            blockers.append("active_candidate_target_not_allowlisted")
+        if action and not _list_contains(allowlist.get("actions"), action):
+            blockers.append("active_candidate_action_not_allowlisted")
+
+    if not timeout_release_pass(receipt.get("timeout_release")):
+        blockers.append("active_candidate_timeout_release_must_pass")
+    if receipt.get("rollback_ready") is not True:
+        blockers.append("active_candidate_rollback_ready_must_be_true")
+    if not redaction_pass(receipt.get("transcript_redaction")):
+        blockers.append("active_candidate_transcript_redaction_must_pass")
+    transcript_redaction = receipt.get("transcript_redaction")
+    if isinstance(transcript_redaction, dict) and not str(transcript_redaction.get("redacted_transcript_hash", "")).strip():
+        blockers.append("active_candidate_redacted_transcript_hash_required")
+    if not redaction_pass(receipt.get("redaction_status")):
+        blockers.append("active_candidate_redaction_status_must_pass")
+    if not smoke_pass(receipt.get("cleanup_evidence")):
+        blockers.append("active_candidate_cleanup_evidence_must_pass")
+    if receipt.get("remote_publication_mutated") is not False:
+        blockers.append("active_candidate_remote_publication_must_not_mutate")
+    if receipt.get("user_level_state_mutated") is True and receipt.get("user_level_state_mutation_authorized") is not True:
+        blockers.append("active_candidate_user_level_state_mutation_requires_authorization")
+
+    authority = receipt.get("authority_decision")
+    if not isinstance(authority, dict):
+        blockers.append("active_candidate_authority_decision_required")
+    else:
+        if authority.get("priority_order") != REQUIRED_PRIORITY_ORDER:
+            blockers.append("active_candidate_authority_priority_order_mismatch")
+        decision = str(authority.get("decision", "")).strip().lower()
+        if decision in {"", "blocked", "override", "takeover", "replace-openspec", "replace-comet"}:
+            blockers.append("active_candidate_authority_decision_not_allowed")
+
+    blockers.extend(collect_redaction_findings(receipt))
+    return sorted(set(blockers))
+
+
 def validate_rollback_receipt(receipt: dict[str, Any], *, owner_lane: str | None) -> list[str]:
     blockers: list[str] = []
     for field in ROLLBACK_REQUIRED_FIELDS:
@@ -409,6 +548,28 @@ def smoke_summary(receipt: dict[str, Any], *, receipt_path: Path) -> dict[str, A
         "command_transcript_hash": stable_hash(receipt.get("command_transcript")),
         "transcript_redaction": sanitize_json(receipt.get("transcript_redaction")),
         "redaction_status": sanitize_json(receipt.get("redaction_status")),
+    }
+
+
+def active_candidate_summary(receipt: dict[str, Any], *, receipt_path: Path) -> dict[str, Any]:
+    return {
+        "receipt_path_hash": stable_hash(str(receipt_path)),
+        "tool_name": sanitize_text(receipt.get("tool_name")),
+        "owner_lane": sanitize_text(receipt.get("owner_lane")),
+        "runtime_stage": normalize_runtime_stage(receipt.get("runtime_stage")),
+        "action": sanitize_text(receipt.get("action")),
+        "target": sanitize_text(receipt.get("target")),
+        "authorization_receipt_hash": stable_hash(receipt.get("authorization_receipt")),
+        "owner_lease_hash": stable_hash(receipt.get("owner_lease")),
+        "target_action_allowlist": sanitize_json(receipt.get("target_action_allowlist")),
+        "command_transcript_hash": stable_hash(receipt.get("command_transcript")),
+        "transcript_redaction": sanitize_json(receipt.get("transcript_redaction")),
+        "redaction_status": sanitize_json(receipt.get("redaction_status")),
+        "timeout_release_status": "pass" if timeout_release_pass(receipt.get("timeout_release")) else "not-pass",
+        "rollback_pointer_hash": stable_hash(receipt.get("rollback_pointer")),
+        "rollback_ready": receipt.get("rollback_ready") is True,
+        "cleanup_status": "pass" if smoke_pass(receipt.get("cleanup_evidence")) else "not-pass",
+        "authority_decision": sanitize_json(receipt.get("authority_decision")),
     }
 
 
@@ -527,6 +688,28 @@ def command_smoke_check(args: argparse.Namespace) -> dict[str, Any]:
     )
 
 
+def command_active_check(args: argparse.Namespace) -> dict[str, Any]:
+    receipt_path = Path(args.receipt)
+    receipt, load_blockers = load_receipt(receipt_path)
+    blockers = list(load_blockers)
+    if receipt is not None:
+        blockers.extend(validate_active_candidate_receipt(receipt, tool_name=args.tool_name, owner_lane=args.owner_lane))
+    ok = not blockers
+    return response(
+        ok,
+        "active-check",
+        blockers=sorted(set(blockers)),
+        active_candidate_valid=ok,
+        runtime_stage="R5" if ok else ("blocked" if receipt else "missing"),
+        authorization_valid=bool(ok),
+        owner_lease_valid=bool(ok),
+        allowlist_valid=bool(ok),
+        rollback_ready=bool(ok and receipt and receipt.get("rollback_ready") is True and receipt.get("rollback_pointer")),
+        remote_publication_mutated=bool(receipt.get("remote_publication_mutated")) if receipt else False,
+        active_candidate_summary=active_candidate_summary(receipt, receipt_path=receipt_path) if receipt else {},
+    )
+
+
 def command_rollback_check(args: argparse.Namespace) -> dict[str, Any]:
     receipt_path = Path(args.receipt)
     receipt, load_blockers = load_receipt(receipt_path)
@@ -571,6 +754,8 @@ def command_template(args: argparse.Namespace) -> dict[str, Any]:
         fields = list(UPDATE_REQUIRED_FIELDS)
     elif args.kind == "smoke":
         fields = list(SMOKE_REQUIRED_FIELDS)
+    elif args.kind == "active":
+        fields = list(ACTIVE_CANDIDATE_REQUIRED_FIELDS)
     else:
         fields = list(ROLLBACK_REQUIRED_FIELDS)
     return response(True, "template", blockers=[], kind=args.kind, required_fields=fields)
@@ -609,6 +794,12 @@ def build_parser() -> argparse.ArgumentParser:
     smoke.add_argument("--owner-lane", default=None)
     smoke.add_argument("--json", action="store_true")
 
+    active = sub.add_parser("active-check", help="Validate R5 active-candidate receipt evidence without performing actions.")
+    active.add_argument("--receipt", required=True)
+    active.add_argument("--tool-name", default=None)
+    active.add_argument("--owner-lane", default=None)
+    active.add_argument("--json", action="store_true")
+
     rollback = sub.add_parser("rollback-check", help="Validate rollback executor receipt evidence without executing rollback.")
     rollback.add_argument("--receipt", required=True)
     rollback.add_argument("--owner-lane", default=None)
@@ -619,7 +810,7 @@ def build_parser() -> argparse.ArgumentParser:
     redact.add_argument("--json", action="store_true")
 
     template = sub.add_parser("template", help="Show required receipt fields.")
-    template.add_argument("--kind", choices=("authorization", "update", "smoke", "rollback"), required=True)
+    template.add_argument("--kind", choices=("authorization", "update", "smoke", "active", "rollback"), required=True)
     template.add_argument("--json", action="store_true")
     return parser
 
@@ -631,6 +822,7 @@ def main(argv: list[str] | None = None) -> int:
         "auth-check": command_auth_check,
         "update-check": command_update_check,
         "smoke-check": command_smoke_check,
+        "active-check": command_active_check,
         "rollback-check": command_rollback_check,
         "redact-check": command_redact_check,
         "template": command_template,

@@ -337,6 +337,126 @@ class UserLevelReceiptGovernanceTests(unittest.TestCase):
         self.assertIn("smoke_receipt_forbidden_live_action_performed", payload["blockers"])
         self.assertIn("smoke_receipt_forbidden_sensitive_action_performed", payload["blockers"])
 
+
+    def test_valid_r5_active_candidate_receipt_requires_authorization_lease_allowlist_and_redaction(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt = self.write_json(
+                Path(tmp),
+                "active.json",
+                {
+                    "tool_name": "durable-smoke",
+                    "owner_lane": "durable-smoke-adoption-gate",
+                    "runtime_stage": "active-candidate",
+                    "action": "durable.adopt.apply",
+                    "target": "repo:D:/PythonProject_langgraph",
+                    "authorization_receipt": {
+                        "status": "pass",
+                        "operator_confirmation": True,
+                        "scope": ["durable.adopt.apply"],
+                        "expiry": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+                        "authorized_by": "main_session",
+                    },
+                    "owner_lease": {"status": "pass", "owner": "main-session", "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat()},
+                    "target_action_allowlist": {"targets": ["repo:D:/PythonProject_langgraph"], "actions": ["durable.adopt.apply"]},
+                    "command_transcript": "bounded active candidate transcript",
+                    "transcript_redaction": {"status": "pass", "redacted_transcript_hash": "abc123"},
+                    "redaction_status": "no_secrets",
+                    "timeout_release": {"status": "pass", "released": True},
+                    "rollback_pointer": r"C:\Users\lenovo\.codex\backup\durable-smoke-prev",
+                    "rollback_ready": True,
+                    "cleanup_evidence": {"status": "pass", "cleaned": True},
+                    "remote_publication_mutated": False,
+                    "user_level_state_mutated": False,
+                    "authority_decision": {
+                        "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+                        "decision": "allowed-subordinate",
+                    },
+                },
+            )
+            code, payload = run_cli(
+                "active-check",
+                "--receipt",
+                str(receipt),
+                "--tool-name",
+                "durable-smoke",
+                "--owner-lane",
+                "durable-smoke-adoption-gate",
+            )
+            output = json.dumps(payload, ensure_ascii=False)
+
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["active_candidate_valid"])
+        self.assertEqual(payload["runtime_stage"], "R5")
+        self.assertTrue(payload["authorization_valid"])
+        self.assertTrue(payload["owner_lease_valid"])
+        self.assertTrue(payload["allowlist_valid"])
+        self.assertFalse(payload["remote_publication_mutated"])
+        self.assertIn("rollback_pointer_hash", payload["active_candidate_summary"])
+        self.assertNotIn(r"C:\Users\lenovo\.codex\backup\durable-smoke-prev", output)
+
+    def test_blocked_r5_receipt_is_not_positive_active_candidate_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt = self.write_json(
+                Path(tmp),
+                "blocked-active.json",
+                {
+                    "tool_name": "browser-cli-adapter",
+                    "owner_lane": "browser-cli-adapter:chrome-devtools-mcp",
+                    "runtime_stage": "blocked",
+                    "blocked_reason": "blocked:operator_authorization_missing",
+                    "authorization_receipt": {"status": "blocked", "operator_confirmation": False},
+                    "remote_publication_mutated": False,
+                },
+            )
+            code, payload = run_cli("active-check", "--receipt", str(receipt))
+
+        self.assertEqual(code, 3)
+        self.assertFalse(payload["active_candidate_valid"])
+        self.assertEqual(payload["runtime_stage"], "blocked")
+        self.assertIn("active_candidate_runtime_stage_must_be_r5", payload["blockers"])
+        self.assertIn("active_candidate_authorization_receipt_must_pass", payload["blockers"])
+
+
+    def test_r4_smoke_receipt_blocks_active_candidate_or_adoption_aliases(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt = self.write_json(
+                Path(tmp),
+                "bad-r4-adoption.json",
+                {
+                    "tool_name": "durable-smoke",
+                    "owner_lane": "durable-smoke-adoption-gate",
+                    "runtime_stage": "R4",
+                    "install_receipt": "install-receipt-ref",
+                    "smoke_command": "python tools/check_durable_routing_smoke_gate_template.py --json",
+                    "smoke_type": "status",
+                    "smoke_result": {"status": "pass"},
+                    "timeout_release": {"status": "pass", "released": True},
+                    "rollback_pointer": "rollback-ref",
+                    "rollback_ready": True,
+                    "command_transcript": "read only smoke",
+                    "transcript_redaction": {"status": "pass", "redacted_transcript_hash": "abc123"},
+                    "redaction_status": "pass",
+                    "active_candidate": True,
+                    "runtime_adoption": True,
+                    "adoption_performed": True,
+                    "durable_workflow_selected": True,
+                    "durable_workflow_running": True,
+                    "durable_workflow_adopted": True,
+                },
+            )
+            code, payload = run_cli("smoke-check", "--receipt", str(receipt))
+
+        self.assertEqual(code, 3)
+        for field in (
+            "active_candidate",
+            "runtime_adoption",
+            "adoption_performed",
+            "durable_workflow_selected",
+            "durable_workflow_running",
+            "durable_workflow_adopted",
+        ):
+            self.assertIn(f"smoke_receipt_forbidden_{field}", payload["blockers"])
+
     def test_rollback_apply_receipt_requires_operator_authorization_without_executing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             receipt = self.write_json(
@@ -404,6 +524,12 @@ class UserLevelReceiptGovernanceTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("runtime_stage", payload["required_fields"])
         self.assertIn("timeout_release", payload["required_fields"])
+
+        code, payload = run_cli("template", "--kind", "active")
+        self.assertEqual(code, 0)
+        self.assertIn("authorization_receipt", payload["required_fields"])
+        self.assertIn("owner_lease", payload["required_fields"])
+        self.assertIn("target_action_allowlist", payload["required_fields"])
 
         code, payload = run_cli("template", "--kind", "rollback")
         self.assertEqual(code, 0)

@@ -28,10 +28,15 @@ source_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orc
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；ready for repository local-main-first integration；remote publication remains closed。
-Current gate：保持 remote publication 关闭；Phase 6 adapter lanes 可在本地集成后消费此 receipt contract，但 live installs、live starts、GUI writes、cookie reads、sensitive MCP calls 与 external message sends 仍未授权。
-Source relation：从 `user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md` 拆出；不要把旧 source plan 直接作为 parent-plan child。
-Runtime boundary：repo-local helper 只验证 evidence；它不 install tools、不 start browsers、不 call sensitive MCP methods、不 read browser data、不 mutate user-level runtime。
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: capability receipt / rollback / redaction 基础层 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `all generic active receipts through tools/user_level_receipt_governance.py active-check` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -79,6 +84,7 @@ Receipt governance 已实现，但真实用户级 install/start/smoke/live lane 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 capability receipt / rollback / redaction 基础层 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 install/update/smoke/live receipt writer 与 rollback executor 标记为 Stage D pending。
 - 2026-06-04 Stage B evidence：repo-local receipt governance helper 与 checker 已可验证 evidence 结构。
 <!-- EVIDENCE_INDEX_END -->
