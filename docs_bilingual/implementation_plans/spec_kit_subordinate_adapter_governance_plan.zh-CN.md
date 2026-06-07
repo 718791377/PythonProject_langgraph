@@ -41,13 +41,13 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：plan-updated；checker/runtime implementation pending
-阶段：Stage D documentation-only update package
-责任会话：update-spec-kit-runtime-plan-20260606
-当前门禁：只更新本子方案及其双语对照；本地验证、合入本地 `main`，并在远端发布前停止
-Runtime boundary：本包只记录未来 dry-run/probe runtime 要求；不安装 Spec Kit、不运行 `specify init`、不写入 `.specify/`、不创建 `specs/`，也不暴露 `/speckit.*`/`$speckit-*` 命令
-Priority update：2026-06-07 记录 Spec Kit 是最低优先级 subordinate adapter；Checker + Runtime work 仍为 future-only。
-最后更新：2026-06-07
+Status: R4 implemented as a dry-run checker/runtime package
+Stage: R4 Checker + Runtime implementation package
+Owner session: implement-spec-kit-authority-guard-r4-20260607
+Current gate: local-main-first validation and integration for this package; after local integration, stop at the remote-publication gate
+Runtime boundary: dry-run only; this package records and implements dry-run/probe runtime support without installing Spec Kit, running `specify init`, writing `.specify/`, creating root `specs/`, or exposing `/speckit.*`/`$speckit-*` commands
+Priority update: 2026-06-07 keeps Spec Kit as the lowest-priority subordinate adapter behind Comet, OpenSpec/Superpowers, gstack, and Codex harnesses.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 冲突优先级
@@ -85,10 +85,10 @@ Priority update：2026-06-07 记录 Spec Kit 是最低优先级 subordinate adap
 - [x] Add usage boundaries for any future specify command.
 - [x] Register the new governance pair if created.
 - [x] Run docs registry and implementation-plan checks.
-- [x] 记录官方 `github/spec-kit` 参考源与未来 Checker + Runtime implementation 要求。
-- [x] 记录最低优先级 subordinate-adapter 冲突处理：位于 Comet、OpenSpec/Superpowers、gstack 与 Codex harnesses 之后。
-- [ ] Future Checker implementation：校验 Spec Kit artifacts、command files、skills-mode `$speckit-*` surfaces、generated templates、extensions、presets 与 workflow outputs 的 subordinate adapter 用法，且不得允许 governance-authority migration；allow/block/subordinate 结果必须有机器可读 `authority_decision` evidence。 `authority_decision` 是记录胜出 authority layer 与原因的 allow/block/subordinate 字段。
-- [ ] Future Runtime implementation：新增 `tools/spec_kit_subordinate_runtime.py`，提供 `source-refresh`、`probe`、`plan-dry-run`、`init-dry-run` 与 `self-check-dry-run` 模式；所有 apply/live 模式都必须要求显式授权、receipts、rollback paths、redacted output、timeout controls 与 local-main-first validation。
+- [x] Record official `github/spec-kit` reference sources and future Checker + Runtime implementation requirements.
+- [x] Record lowest-priority subordinate-adapter conflict handling behind Comet, OpenSpec/Superpowers, gstack, and Codex harnesses.
+- [x] R4 Checker implementation: verify subordinate adapter usage for Spec Kit artifacts, command files, skills-mode `$speckit-*` surfaces, generated templates, extensions, presets, and workflow outputs without allowing governance-authority migration; require `authority_decision` evidence.
+- [x] R4 Runtime implementation: add `tools/spec_kit_subordinate_runtime.py` with `source-refresh`, `probe`, `plan-dry-run`, `init-dry-run`, and `self-check-dry-run` modes; live/apply mode names are rejected and all supported modes remain dry-run only with receipts, rollback pointers, redacted output, timeout controls, and local-main-first validation evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -112,6 +112,7 @@ Priority update：2026-06-07 记录 Spec Kit 是最低优先级 subordinate adap
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R4 implementation package: implemented dry-run-only Spec Kit subordinate runtime receipts plus checker validation for generated Spec Kit surfaces and receipt authority decisions; no live Spec Kit command, install, `.specify/`, root `specs/`, `/speckit.*`, or `$speckit-*` surface was created.
 - 2026-06-07 conflict-priority refresh：本 docs-only package 记录 Spec Kit 只作为 subordinate adapter/template/probe；live 或 apply modes 仍延后到未来 Checker + Runtime implementation 与显式授权之后。
 - 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 记录官方 `github/spec-kit` references 与未来 Checker + Runtime helper 要求；未安装或运行 Spec Kit。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。

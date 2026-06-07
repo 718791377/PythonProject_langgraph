@@ -21,13 +21,17 @@ Spec Kit is not a project governance authority for this repository unless a sepa
 ## Allowed Uses
 
 - Link to Spec Kit documentation as background when the text names it as a subordinate reference.
+- Run `tools/spec_kit_subordinate_runtime.py` only in dry-run modes (`source-refresh`, `probe`, `plan-dry-run`, `init-dry-run`, or `self-check-dry-run`) so it emits a reviewable receipt without invoking Spec Kit.
 - Compare Spec Kit templates with OpenSpec or Comet artifacts without copying authority.
 - Reuse a template idea only through a repository plan, checker, or OpenSpec change that preserves the authority order above.
 
 ## Blocked Uses Without A Separate Active Plan
 
-- Running `specify init --force` - this command can overwrite or migrate project specification authority.
+- Running `specify init` or `specify init --force` - these commands can initialize or overwrite project specification authority.
+- Running `specify self check` as a live command before a separate active plan authorizes its exact read/write boundary.
 - Adding `.specify/` - this path is treated as a governance/runtime takeover surface, not an ordinary docs folder.
+- Adding root `specs/` - this path is treated as a generated Spec Kit artifact surface unless a separate plan owns it.
+- Exposing generated `/speckit.*` slash commands, `$speckit-*` skills-mode commands, `.codex/commands/*speckit*`, `.codex/skills/*speckit*`, `.github/prompts/*speckit*`, root `speckit.*` or `speckit-*` files, extensions, presets, or workflow outputs.
 - Describing Spec Kit as the primary source of truth, primary governance authority, or replacement for Comet/OpenSpec/Superpowers.
 - Moving repository workflow ownership from OpenSpec or Comet into Spec Kit by prompt text alone.
 
@@ -39,8 +43,10 @@ If those conditions are missing, stop before running the command and report `blo
 
 ## Script Backing
 
-`tools/check_spec_kit_authority_guard.py` - fail-closed checker that scans committed and working-tree surfaces for unsafe Spec Kit initialization, `.specify` path creation, and authority-takeover wording.
+`tools/check_spec_kit_authority_guard.py` - fail-closed checker that scans committed and working-tree surfaces for unsafe Spec Kit initialization, generated `.specify/`, root `specs/`, `/speckit.*`, `$speckit-*`, extension, preset, workflow-output, and authority-takeover surfaces; it also validates dry-run runtime receipts.
+
+`tools/spec_kit_subordinate_runtime.py` - dry-run-only helper that emits receipts for `source-refresh`, `probe`, `plan-dry-run`, `init-dry-run`, and `self-check-dry-run` without installing Spec Kit, invoking `specify`, or writing generated Spec Kit surfaces.
 
 `tools/run_openspec_guard.py` - aggregate guard that runs the Spec Kit authority checker as part of the repository local gate.
 
-`tools/ci/ci_test_manifest.json` - local CI manifest that includes the Spec Kit authority guard regression tests.
+`tools/ci/ci_test_manifest.json` - local CI manifest that includes `spec_kit_authority_guard.test.py` and `spec_kit_subordinate_runtime.test.py` for authority-guard and subordinate-runtime regression coverage.

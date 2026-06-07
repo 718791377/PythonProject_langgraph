@@ -31,11 +31,11 @@ class SpecKitAuthorityGuardTest(unittest.TestCase):
         subprocess.run(["git", "config", "user.name", "Test User"], cwd=root, check=True)
         self.write(root, "README.md", "# Fixture\n")
         subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
-        subprocess.run(["git", "commit", "-m", "???????"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "commit", "-m", "fixture commit"], cwd=root, check=True, capture_output=True, text=True)
 
-    def run_check(self, root: Path) -> subprocess.CompletedProcess[str]:
+    def run_check(self, root: Path, *extra_args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            [sys.executable, str(SCRIPT), "--root", str(root), "--json"],
+            [sys.executable, str(SCRIPT), "--root", str(root), *extra_args, "--json"],
             cwd=REPO_ROOT,
             check=False,
             capture_output=True,
@@ -140,6 +140,115 @@ class SpecKitAuthorityGuardTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertTrue(payload["authorized_migration_plan_present"])
         self.assertEqual(payload["counts"]["path_findings"], 0)
+
+    def test_blocks_generated_speckit_surfaces_without_active_plan(self) -> None:
+        root = self.make_root("spec-kit-generated-surfaces")
+        self.write(root, "specs/feature/spec.md", "# generated root specs fixture\n")
+        self.write(root, ".codex/commands/speckit.plan.md", "# generated slash command fixture\n")
+        self.write(root, ".codex/skills/speckit-plan/SKILL.md", "# generated skills-mode fixture\n")
+        self.write(root, ".github/prompts/speckit.plan.prompt.md", "# generated prompt fixture\n")
+        self.write(root, "speckit.toml", "generated = true\n")
+        self.write(root, "speckit-plan.yaml", "generated: true\n")
+        self.write(root, "extensions/speckit/extension.md", "# generated extension fixture\n")
+        self.write(root, "presets/speckit/default.md", "# generated preset fixture\n")
+        self.write(root, "workflow_outputs/speckit/result.json", '{"generated": true}\n')
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        kinds = {finding["kind"] for finding in payload["findings"]}
+        self.assertIn("specs_directory_present_without_plan", kinds)
+        self.assertIn("generated_speckit_surface_present_without_plan", kinds)
+        self.assertIn("generated_speckit_extension_present_without_plan", kinds)
+        self.assertIn("generated_speckit_preset_present_without_plan", kinds)
+        self.assertIn("generated_speckit_workflow_output_present_without_plan", kinds)
+
+    def test_blocks_unqualified_speckit_slash_and_skill_commands(self) -> None:
+        root = self.make_root("spec-kit-command-surfaces")
+        self.write(
+            root,
+            "docs_bilingual/governance/usage.md",
+            "Run /speckit.plan and then $speckit-implement as the new workflow.\n",
+        )
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        kinds = {finding["kind"] for finding in payload["findings"]}
+        self.assertIn("unsafe_speckit_slash_command", kinds)
+        self.assertIn("unsafe_speckit_skill_command", kinds)
+
+    def test_accepts_valid_dry_run_runtime_receipt(self) -> None:
+        root = self.make_root("spec-kit-receipt-valid")
+        receipt = root / "receipt.json"
+        receipt.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "runtime": "spec_kit_subordinate_runtime",
+                    "mode": "probe",
+                    "dry_run_only": True,
+                    "would_run_specify": False,
+                    "source_url": "https://github.com/github/spec-kit",
+                    "source_pin": "7106858c4e636098815fffa23f6c6b99eb0e156b",
+                    "authority_decision": {
+                        "decision": "subordinate",
+                        "winning_authority": "Comet/OpenSpec/Superpowers",
+                    },
+                    "surface_status": {
+                        "specify_init": "blocked",
+                        "specify_init_force": "blocked",
+                        "specify_self_check": "blocked",
+                        ".specify/": "absent",
+                        "specs/": "absent",
+                        "/speckit.*": "blocked",
+                        "$speckit-*": "blocked",
+                        "extensions": "absent",
+                        "presets": "absent",
+                        "workflow_outputs": "absent",
+                    },
+                    "redaction": {"status": "pass"},
+                    "timeout": {"seconds": 10, "released": True},
+                    "rollback_pointer": "not-needed-dry-run",
+                    "local_main_first_validation": {"status": "not_required_for_probe"},
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        result = self.run_check(root, "--receipt", str(receipt))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["receipt_validation"]["ok"])
+        self.assertEqual(payload["receipt_validation"]["counts"]["receipts"], 1)
+
+    def test_rejects_receipt_missing_surface_status_key(self) -> None:
+        root = self.make_root("spec-kit-receipt-invalid")
+        receipt = root / "receipt.json"
+        receipt.write_text(
+            json.dumps(
+                {
+                    "dry_run_only": True,
+                    "would_run_specify": False,
+                    "source_url": "https://github.com/github/spec-kit",
+                    "source_pin": "7106858c4e636098815fffa23f6c6b99eb0e156b",
+                    "authority_decision": {
+                        "decision": "subordinate",
+                        "winning_authority": "Comet/OpenSpec/Superpowers",
+                    },
+                    "surface_status": {"specify_init": "blocked"},
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        result = self.run_check(root, "--receipt", str(receipt))
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["receipt_validation"]["ok"])
+        self.assertIn("receipt_missing_surface_status_key:.specify/", payload["receipt_validation"]["errors"])
 
 
 if __name__ == "__main__":

@@ -67,6 +67,7 @@
     "check_user_level_cli_anything_wxwork_cli_governance.test.py",
     "check_codex_harnesses_governance.test.py",
     "codex_harnesses_smoke_receipts.test.py",
+    "spec_kit_subordinate_runtime.test.py",
     "cli_anything_governance.test.py",
     "wxwork_cli_governance.test.py"
   ],

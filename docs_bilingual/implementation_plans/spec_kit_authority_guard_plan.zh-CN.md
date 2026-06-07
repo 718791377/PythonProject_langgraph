@@ -41,13 +41,13 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：plan-updated；checker/runtime implementation pending
-阶段：Stage D documentation-only update package
-责任会话：update-spec-kit-runtime-plan-20260606
-当前门禁：只更新本方案及其双语对照；运行 plan/OpenSpec/precommit/local gates，然后本地 main 集成并停在 remote-publication gate
-Runtime boundary：本包不运行 `specify init`、不创建 `.specify/`、不安装或升级 Spec Kit、不生成命令文件，也不实现 checker/runtime 脚本
-Priority update：2026-06-07 记录 Spec Kit 为最低优先级 subordinate template/probe surface；Checker + Runtime 仍是未来实现。
-最后更新：2026-06-07
+Status: R4 implemented as a dry-run checker/runtime package
+Stage: R4 Checker + Runtime implementation package
+Owner session: implement-spec-kit-authority-guard-r4-20260607
+Current gate: local-main-first validation and integration for this package; after local integration, stop at the remote-publication gate
+Runtime boundary: dry-run only; this package does not run `specify init`, does not create `.specify/` or root `specs/`, does not install or upgrade Spec Kit, and does not expose generated `/speckit.*` or `$speckit-*` command surfaces
+Priority update: 2026-06-07 keeps Spec Kit as the lowest-priority subordinate template/probe surface in conflicts with Comet, OpenSpec/Superpowers, gstack, or Codex harnesses.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 冲突优先级
@@ -57,8 +57,8 @@ Spec Kit 不得高于 Comet、OpenSpec、Superpowers、gstack delivery-loop advi
 ## 文件归属
 
 - 未来扩展的既有 checker 目标：`tools/check_spec_kit_authority_guard.py`
-- 未来扩展的既有测试目标：`test/*spec_kit*authority*`
-- 由 subordinate adapter 方案拥有的未来 runtime 目标：`tools/spec_kit_subordinate_runtime.py`
+- 既有 authority 测试目标：`test/spec_kit_authority_guard.test.py`
+- R4 runtime 目标：`tools/spec_kit_subordinate_runtime.py` 与 `test/spec_kit_subordinate_runtime.test.py`
 - 治理边界：`docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md`
 
 ## 热点串行规则
@@ -67,7 +67,7 @@ Spec Kit 不得高于 Comet、OpenSpec、Superpowers、gstack delivery-loop advi
 
 - Spec Kit guard checker
 - .specify path handling
-- `tools/spec_kit_subordinate_runtime.py` 的未来 helper contract
+- `tools/spec_kit_subordinate_runtime.py` 的 dry-run helper contract 与 runtime test coverage
 - parent plan size edits 与 docs registry references
 
 ## 并行会话契约
@@ -85,10 +85,10 @@ Spec Kit 不得高于 Comet、OpenSpec、Superpowers、gstack delivery-loop advi
 - [x] Implement a checker that fails closed on .specify governance takeover without an active plan.
 - [x] Register the checker in the local gate only after implementation confirmation.
 - [x] Run Spec Kit guard tests and local gate.
-- [x] 记录官方 `github/spec-kit` 参考源，以及未来 Checker + Runtime implementation boundary。
-- [x] Record Spec Kit lowest-priority subordinate boundary; no Checker + Runtime scripts.
-- [ ] Future Checker implementation：扩展 `tools/check_spec_kit_authority_guard.py`，使其按照 subordinate-adapter authority rule 校验所有 `.specify/`、`specs/`、`/speckit.*`、`$speckit-*`、`specify init`、`specify self check`、extension 或 preset 证据。 `authority_decision` 是记录胜出 authority layer 与原因的 allow/block/subordinate 字段。
-- [ ] Future Runtime implementation：任何 live Spec Kit 命令前都必须先有受保护 dry-run/probe helper；live `specify init --here --force`、安装、升级、template 写入、agent-command 写入或 constitution 写入都必须具备显式操作者授权、receipt、rollback evidence 与单独 implementation approval。
+- [x] Record official `github/spec-kit` reference sources and future Checker + Runtime implementation boundary.
+- [x] Record Spec Kit lowest-priority subordinate boundary.
+- [x] R4 Checker implementation: extend `tools/check_spec_kit_authority_guard.py` to validate `.specify/`, root `specs/`, generated `/speckit.*`, `$speckit-*`, `.codex/commands/*speckit*`, `.codex/skills/*speckit*`, `.github/prompts/*speckit*`, root `speckit.*`, root `speckit-*`, extension, preset, and workflow-output surfaces, plus machine-readable `authority_decision` receipt evidence.
+- [x] R4 Runtime implementation: add `tools/spec_kit_subordinate_runtime.py` with `source-refresh`, `probe`, `plan-dry-run`, `init-dry-run`, and `self-check-dry-run`; all modes are dry-run only and live/apply modes are rejected.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -112,6 +112,7 @@ Spec Kit 不得高于 Comet、OpenSpec、Superpowers、gstack delivery-loop advi
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R4 implementation package: added dry-run-only `tools/spec_kit_subordinate_runtime.py`, extended `tools/check_spec_kit_authority_guard.py` receipt and generated-surface validation, added `test/spec_kit_subordinate_runtime.test.py`, extended authority guard tests, and registered runtime/test/script backing before local gates.
 - 2026-06-07 conflict-priority refresh：本 docs-only 包记录 Spec Kit 的最低优先级从属边界；不运行 `specify init`，不创建 `.specify/`，不实现 Checker + Runtime 脚本。
 - 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 记录 `github/spec-kit` 官方来源与未来 Checker + Runtime 要求；未运行 `specify init`，也未实现脚本。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
