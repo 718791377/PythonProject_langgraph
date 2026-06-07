@@ -28,12 +28,15 @@ repo-local 包只提供治理、checker、adapter guard 和 test。用户级 run
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；Stage B checker/test/spec migration 已完成；Stage C runtime-promotion ladder 已由 checker 支撑；Stage D R4 smoke receipt runner/checker 已在本地实现；remote publication 保持关闭。
-Current gate：在本地 `main` 集成前，验证 split adapter checker、R4 smoke receipt checker、focused adapter tests、precommit/archive review、OpenSpec guard、local gate 和 local MR review。
-Canonical adapter set：exactly `chrome-devtools-mcp`、`cdp-bridge-mcp` / `CDP Bridge` 和 `OpenCLI`。
-Runtime boundary：本 repo-local package 不安装 tools、不启动 browsers、不 call sensitive MCP methods、不 read cookies、不 execute JavaScript、不 mutate browser/GUI state、不 mutate user-level runtime state，也不把任何 adapter 标记为 active-candidate。R4 正向 `smoke-tested` evidence 只允许在已有 R3 install/update receipt 且 wrapper 已解析时执行 help/status/read-only；blocked receipts 只是诚实阻塞证据，not smoke-tested。
-R4 implementation evidence：`tools/run_browser_cli_adapter_smoke.py` 只为 canonical adapters 写入脱敏 R4 smoke receipts；缺少或无法解析 R3 receipt 时写 blocked receipts，not smoke-tested。`tools/check_browser_cli_adapter_smoke_receipts.py` 校验每个 canonical adapter 一份 receipt，正向 receipt 委托通用 R4 smoke contract，拒绝 sibling adapters 和 sensitive/write/browser-data markers，且不启动 browser、不修改 user-level state。`browser_cli_adapter_smoke_receipts.test.py` 覆盖 blocked、positive、negative、forbidden-adapter 和 redaction 行为。
-Runtime gap：chrome-devtools-mcp、cdp-bridge-mcp 和 OpenCLI 的真实 R3 user-level install/update receipts 仍需由另行授权的 runtime package 提供；任何 click/type/navigate/JavaScript/cookie/raw-browser-data action 的 R5 live handoff receipts 仍待后续实现。
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: Browser/CLI adapter boundary 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `browser-cli-adapter active-candidate lane profile` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -119,6 +122,7 @@ Runtime gap：chrome-devtools-mcp、cdp-bridge-mcp 和 OpenCLI 的真实 R3 user
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 Browser/CLI adapter boundary 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-06 R4 local smoke tooling evidence?branch `implement-browser-cli-adapter-r4-20260606` adds `tools/run_browser_cli_adapter_smoke.py`, `tools/check_browser_cli_adapter_smoke_receipts.py`, and `browser_cli_adapter_smoke_receipts.test.py`; blocked receipts are not smoke-tested.
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 将 chrome-devtools-mcp、cdp-bridge-mcp 与 OpenCLI 的 install/start/probe、R4 smoke 与 R5 handoff 标记为 Stage D pending；未安装、未启动、未 live-run。
 - 2026-06-04 Stage B evidence：`tools/check_user_level_browser_cli_adapter_boundary.py` 与 focused tests 已验证 adapter boundary。

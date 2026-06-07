@@ -28,14 +28,15 @@ Python adapter guards, `codex-port`, browser owner registry, chrome-devtools-mcp
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local; Stage B checker/test/spec migration is complete; Stage C runtime-promotion ladder is documented and checker-backed; Stage D R4 smoke receipt runner/checker is implemented locally for bounded help/status/read-only evidence; remote publication remains closed.
-Current gate: validate the split adapter checker, R4 smoke receipt checker, focused adapter tests, precommit/archive review, OpenSpec guard, local gate, and local MR review before local `main` integration.
-Canonical adapter set: exactly `chrome-devtools-mcp`, `cdp-bridge-mcp` / `CDP Bridge`, and `OpenCLI`.
-Runtime boundary: this repo-local package does not install tools, start browsers, call sensitive MCP methods, read cookies, execute JavaScript, mutate browser/GUI state, mutate user-level runtime state, or mark any adapter active-candidate. R4 positive `smoke-tested` evidence is allowed only when a prior R3 install/update receipt resolves an existing wrapper and the bounded command is help/status/read-only; blocked receipts are accepted as honest evidence but are not smoke-tested.
-R4 implementation evidence: `tools/run_browser_cli_adapter_smoke.py` writes sanitized R4 `smoke-tested` receipts only for resolved canonical adapters with prior R3 receipts; missing or unresolved adapters produce blocked receipts that are not smoke-tested. `tools/check_browser_cli_adapter_smoke_receipts.py` validates one canonical receipt per adapter, delegates positive receipts to the generic R4 smoke contract, rejects sibling adapters and sensitive/write/browser-data markers, and never starts browsers or mutates user-level state. `browser_cli_adapter_smoke_receipts.test.py` covers blocked, positive, negative, forbidden-adapter, and redaction behavior.
-Runtime gap: real R3 user-level install/update receipts for chrome-devtools-mcp, cdp-bridge-mcp, and OpenCLI are still pending unless supplied by a separately authorized runtime package; R5 live handoff receipts remain pending for any click/type/navigate/JavaScript/cookie/raw-browser-data action.
-Implementation evidence: `tools/check_user_level_browser_cli_adapter_boundary.py` rejects CLI-Anything, WXWork_CLI, WXWork.exe, wecom-cli, and harness wording in adapter lane tables; `test/check_user_level_browser_cli_adapter_boundary.test.py`, `test/browser_cli_adapter_smoke_receipts.test.py`, and existing chrome/CDP/OpenCLI tests cover the lane plus R0-R5 runtime promotion markers.
-Companion refresh note: the zh-CN companion preserves the same R4 smoke runner/checker markers and blocked-receipt boundary while keeping runtime tokens stable.
+Status: implemented-local
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for Browser/CLI adapter boundary.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `browser-cli-adapter active-candidate lane profile` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -104,7 +105,7 @@ The adapter boundary is not yet a live adapter runtime. The next runtime package
 - [ ] Stage D real runtime: install or resolve OpenCLI with `--port auto` enforcement, R3 receipt, updater command, wrapper hash, rollback pointer, and redaction evidence.
 - [x] Stage D R4 local tooling: add `tools/run_browser_cli_adapter_smoke.py`, `tools/check_browser_cli_adapter_smoke_receipts.py`, and `browser_cli_adapter_smoke_receipts.test.py` for bounded help/status/read-only smoke receipts; blocked receipts remain honest evidence and are not smoke-tested.
 - [ ] Stage D real runtime: supply authorized R3 install/update receipts for each adapter, run bounded R4 help/status/read-only smoke only for resolved installed adapters, and record `smoke-tested` receipts.
-- [ ] Stage D real runtime: define R5 live handoff wrapper for sensitive adapter actions with owner lease, authorization receipt, target/action allowlist, expiry, timeout release, transcript redaction, and cleanup evidence.
+- [x] Stage D/R5 checker gate: define R5 live handoff wrapper for sensitive adapter actions with owner lease, authorization receipt, target/action allowlist, expiry, timeout release, transcript redaction, and cleanup evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
@@ -151,6 +152,7 @@ The adapter boundary is not yet a live adapter runtime. The next runtime package
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for Browser/CLI adapter boundary. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-06 R4 local smoke tooling evidence: branch `implement-browser-cli-adapter-r4-20260606` adds `tools/run_browser_cli_adapter_smoke.py`, `tools/check_browser_cli_adapter_smoke_receipts.py`, and `browser_cli_adapter_smoke_receipts.test.py`; the runner/checker permit only help/status/read-only R4 smoke, reject sensitive/write/browser-data markers, and treat blocked receipts as honest non-smoke-tested evidence.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` classifies actual install/start/probe of chrome-devtools-mcp, cdp-bridge-mcp, and OpenCLI plus R3/R4/R5 receipts as pending Stage D runtime work; no adapter is installed, started, smoked, or live-run.
 - 2026-06-05 Stage C runtime promotion evidence: branch `runtime-promotion-plan-20260605` records R0-R5 promotion gates for chrome-devtools-mcp, CDP Bridge, and OpenCLI while keeping this package not installed/started/enabled.
