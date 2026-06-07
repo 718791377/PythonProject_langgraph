@@ -29,12 +29,15 @@ Pi/oh-my-pi reference、JSON job state、read guard、write guard、isolated wor
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: implemented-local；Stage B source-ledger/checker/spec migration 已完成；Stage C runtime-promotion ladder 已记录并由 checker 支撑；Stage D real-runtime implementation 尚未安装、启动、smoke 或 live-run；2026-06-07 R4 本地 checker/runtime tooling 已按五个 reference candidates 改为 candidate-registry-driven。
-Runtime boundary：Codex harnesses 是未来 harness jobs 的治理包装；它们不会替代 Codex、native subagents、native_omx、LangGraph、codex-ohmy、apply_patch 或 local-main-first gates；no Codex takeover。
-Runtime gap：真实 runtime 仍需要 selected candidate install/update path、executable write-capable harness job runner、R3 install/update receipt、positive R4 read-only smoke receipt 与 R5 bounded live handoff evidence；当前 R4 helper/checker 是诚实的本地 candidate-registry tooling，不安装、不启动、不 live-run Pi/oh-my-pi、revfactory/harness、ohmyopenagent、snow-cli 或其他新增 runtime。
-Implementation evidence：`tools/check_codex_harnesses_governance.py` 现在要求七个 source ledger rows、candidate registry markers、candidate ids、adapter kinds、source pin、retrieved_at、license note、rollback pointer、no Codex takeover、unpinned Pi packages check、read guard、write guard、job state、isolated worktree、changed-path report、R0-R5 runtime markers 与 `authority_decision`；`tools/run_codex_harnesses_smoke.py`、`tools/check_codex_harnesses_smoke_receipts.py` 与 `codex_harnesses_smoke_receipts.test.py` 用于生成/校验五类 candidate-registry R4 receipts。
-Source refresh：2026-06-06 新增 revfactory/harness、ohmyopenagent 和 snow-cli 三个 reference-only 参考源；2026-06-07 本地 R4 checker/runtime 已实现 registry-backed 证据面，但真实 install/start/live runtime 仍未实现。
-Priority update：2026-06-07 记录 Codex harnesses 是低于 Comet、OpenSpec/Superpowers 与 gstack advisory ordering 的 subordinate runtime-safety governance；harness guards 只在 runtime safety 上高于 Spec Kit。
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: Codex harness runtime safety governance 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `codex-harnesses active-candidate lane profile` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 冲突优先级
@@ -173,6 +176,7 @@ R4 receipt 字段解释：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 Codex harness runtime safety governance 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-07 conflict-priority refresh：本 docs-only package 记录 Codex harnesses 是低于 Comet/OpenSpec/Superpowers/gstack 的 subordinate runtime-safety governance，且只在 runtime safety 上高于 Spec Kit；Checker + Runtime implementation 仍延后。
 - 2026-06-06 source refresh evidence：本 docs-only package 新增 `https://github.com/revfactory/harness`、`https://github.com/ymymssss/ohmyopenagent` 和 `https://github.com/MayDay-wpf/snow-cli`，记录 source pin/license posture，并将后续 Checker + Runtime 要求改为 candidate-registry-driven；本包不实现 runtime、不安装、不启动 sidecar、不 live-run harness job、不发生 Codex takeover。
 - 2026-06-06 R4 local tooling evidence：`tools/run_codex_harnesses_smoke.py`、`tools/check_codex_harnesses_smoke_receipts.py` 与 `codex_harnesses_smoke_receipts.test.py` 实现受限只读 smoke receipt 生成/校验；缺少 R3 install receipt 时写入 blocked receipts，作为证据可被接受但保持 not smoke-tested；不安装 Pi/oh-my-pi、不启动 sidecar、不运行 live harness job、不进入 active-candidate，也不发生 Codex takeover。
