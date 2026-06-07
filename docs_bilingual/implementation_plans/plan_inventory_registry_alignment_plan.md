@@ -36,11 +36,11 @@ Inventory active implementation plans, registry entries, stable anchors, and evi
 
 <!-- CURRENT_STATUS_START -->
 Status: active
-Stage: Phase 0 closure implemented in local feature branch
+Stage: Phase 0 closure integrated into local `main`; this file remains active as the inventory-alignment child plan
 Owner session: `phase0-plan-index-closure-20260530`
-Current gate: validate inventory evidence, local gates, local MR review, then merge to local `main` and stop at the remote publication gate.
+Current gate: no pending Phase 0 local-main merge; future edits must use a fresh claim/worktree, pass local gates, integrate locally, and stop at the remote publication gate.
 Stage C entry condition: user confirmed Phase 0 must complete before Phase 2; this closure records the inventory result.
-Last updated: 2026-05-30
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -94,6 +94,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 local-main status refresh: branch `phase0-plan-index-closure-20260530` is already merged into local `main`; parent status is synchronized so Phase 0 is no longer described as waiting for local integration.
 - 2026-05-30 complete-flow alignment: the Phase 0 inventory result remains valid; this update only aligns later session reading and integration semantics to optional parent plans, child-session ownership, and `local-main-retire.lock` serial local-main writes.
 - 2026-05-30 Phase 0 inventory closure: machine-readable evidence is recorded in `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`; readable evidence is recorded in `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.md`. The inventory found 59 implementation-plan registry entries, 52 active entries, no missing registered paths, and no missing bilingual companion paths.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.

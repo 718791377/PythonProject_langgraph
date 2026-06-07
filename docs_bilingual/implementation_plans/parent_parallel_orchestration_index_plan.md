@@ -37,7 +37,7 @@ Keep the parent phase map, child-plan registry, dependency order, and session-li
 <!-- CURRENT_STATUS_START -->
 Stage: Phase 0 is closed; this file remains active as the parent-plan-family index-maintenance child plan
 Owner session: `codex-align-complete-flow-parent-plans-20260530` for this complete-flow alignment of the parent-plan family.
-Current gate: update parent current status, Phase 2+ admission notes, child-plan status index, and every child plan's local-main integration semantics; after checkers pass, commit and merge to local `main`, then stop at the remote publication gate.
+Current gate: no pending Phase 0 local-main merge; continue as the active index-maintenance child plan for future parent-plan-family updates, each through a fresh claim/worktree, local gates, local integration, and the remote-publication gate.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -95,6 +95,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 local-main status refresh: branches `phase0-plan-index-closure-20260530` and `align-complete-flow-parent-plans-20260530` are already merged into local `main`; parent-plan-family status no longer treats Phase 0 as pending local integration.
 - 2026-05-30 complete-flow alignment: `codex-align-complete-flow-parent-plans-20260530` claimed this index child plan to update parent and child-plan status; ROB entry `rob-align-complete-flow-parent-plans-20260530` records the local candidate package.
 - 2026-05-30 Phase 0 index closure: updated the parent plan current status, Phase 0/Phase 1 completion evidence, compact child-plan status index, dependency/admission statement, and Phase 2 gate condition.
 - 2026-05-29 index supplement: registered the Phase 1A complete-flow scheduler/ROB child plan as a sibling child implementation_plan under the parent map.

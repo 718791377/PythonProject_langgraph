@@ -61,7 +61,7 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 <!-- CURRENT_STATUS_START -->
 Stage: implemented-local 治理已完成；真实 runtime lane 继续处于待刷新规划状态。
 Owner session: main Codex leader 串行拥有 parent/child plans、specs、registries、CI、安全规则与 OpenSpec guard wiring 等 shared hotspots。
-Current gate: 完成本地验证、合入本地 main，并停在 remote-publication gate。
+Current gate: 验证本次 Phase 0 本地合入状态刷新包、合入本地 `main`，并停在 remote-publication gate。
 Runtime boundary: CLI-Anything/WXWork_CLI、Browser/CLI adapters、Codex harnesses、skills2cli/mcp2cli（`knowsuchagency/mcp2cli`、rollback pointer、update receipt）、gstack、canary 与 Spec Kit 条目仅记录未来 checker/runtime 要求。Priority: Comet > OpenSpec/Superpowers > gstack > harness guards > Spec Kit；blocked：本包不 install、start、enable、smoke-run、live-run，也不运行 `specify init`。
 <!-- CURRENT_STATUS_END -->
 
@@ -402,8 +402,8 @@ Lane-specific R5 约束：
 <!-- CHILD_PLAN_STATUS_INDEX_START -->
 | Phase | 子方案 | 状态 | 当前证据 |
 | --- | --- | --- | --- |
-| Phase 0 | `plan_inventory_registry_alignment_plan` | 功能分支内已收口，等待本地合入 | `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；未发现缺失登记路径或缺失双语 companion 路径。 |
-| Phase 0 | `parent_parallel_orchestration_index_plan` | 功能分支内已收口，等待本地合入 | 父方案当前状态、Phase 0/Phase 1 证据、依赖说明和 Phase 2 准入文本已通过稳定锚点更新。 |
+| Phase 0 | `plan_inventory_registry_alignment_plan` | 已合入本地 `main` | 分支 `phase0-plan-index-closure-20260530` 已合入本地 `main`；盘点证据仍为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`，且未发现缺失登记路径或缺失双语 companion 路径。 |
+| Phase 0 | `parent_parallel_orchestration_index_plan` | 已合入本地 `main` | 分支 `phase0-plan-index-closure-20260530` 与 `align-complete-flow-parent-plans-20260530` 均已合入本地 `main`；Phase 2+ 不再被 Phase 0 本地合入阻塞。 |
 | Phase 1 | `formal_plan_confirmation_gate_runtime_plan` | 已实现并合入 | Phase 1 收口证据保留在本地 git 历史和现有证据索引中。 |
 | Phase 1 | `portable_implementation_plan_claim_lock_plan` | 已实现并合入 | Portable claim lock 已作为单方案单会话归属的基础能力。 |
 | Phase 1 | `implementation_plan_registry_active_state_plan` | 已实现并合入 | Registry active-state 与双语配对门禁由 implementation-plan rules 覆盖。 |
@@ -529,6 +529,7 @@ Stage B 后续确认后的验收条件：
 
 - 2026-06-06 canary response-position Stage B package: branch `implement-hardcode-canary-response-position-20260606` implements startup-summary wording, spec, diagnostics, and RED/GREEN tests for first-visible start and last-visible end; Stage A is already in local `main`.
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 Phase 0 本地合入状态刷新：本地 `main` 已包含 `phase0-plan-index-closure-20260530` 与 `align-complete-flow-parent-plans-20260530`；本包移除父方案中仍显示 Phase 0 等待本地合入的过期状态。
 - 2026-06-07 conflict-priority documentation package: Comet-first priority; Checker + Runtime deferred.
 - 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 基于官方 `github/spec-kit` 来源更新 Phase 6 子方案，并延后 checker/runtime implementation。
 - 2026-06-06 gstack delivery-loop 文档包：branch `plan-gstack-codex-delivery-loop-20260606` 记录 `garrytan/gstack` 作为 Phase 4 checker/runtime 目标，并延后 install/live runtime work。
@@ -540,8 +541,8 @@ Stage B 后续确认后的验收条件：
 - 2026-05-31 Phase 4 最终收口：分支 `close-phase4-final-20260531` 同步父方案与全部 Phase 4 子方案状态，确认所有 Phase 4 checklist 已关闭，过期的本地集成门已替换为远端发布门，并且 Phase 5 已可准入但不代表授权远端发布。
 - 2026-05-30 Phase 4 固定标签修正：分支 `implement-routing-updated-plan-fixed-labels-20260530c` 更新本父方案与 `chinese_routing_trace_conversation_surface_plan` 子方案；`Routing trace` 与 `Updated Plan` 保持英文用户可见标签，`Updated Plan` 保持复选框/状态清单语义，中文解释内容仍允许；远端发布仍未授权。
 - 2026-05-30 Phase 4 会话表面治理更新：分支 `chinese-routing-updated-plan-20260530` 曾把会话表面覆盖从 routing trace 扩展到 updated plan；其中“固定标签应替换为中文标题”的旧表述已由上一条固定标签修正取代；远端发布仍未授权。
-- 2026-05-30 完整提交流程对齐包：分支 `align-complete-flow-parent-plans-20260530` 由 `codex-align-complete-flow-parent-plans-20260530` 认领 `parent_parallel_orchestration_index_plan`，ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录父方案族文档候选包；本包把父方案和声明 `parent_plan` 指向本文件的子方案统一对齐到《完整提交流程.md》的 session-owned self-retire、`local-main-retire.lock` 和远端发布门模型。
-- 2026-05-30 Phase 0 收口包：在分支 `phase0-plan-index-closure-20260530` 收口 `plan_inventory_registry_alignment_plan` 和 `parent_parallel_orchestration_index_plan`；机器可读盘点证据为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；在本包完成本地门禁、local MR review 并合入本地 `main` 前，Phase 2 仍保持阻塞。
+- 2026-05-30 完整提交流程对齐包：分支 `align-complete-flow-parent-plans-20260530` 已合入本地 `main`；该包由 `codex-align-complete-flow-parent-plans-20260530` 认领 `parent_parallel_orchestration_index_plan`，ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录父方案族文档候选包，并把父方案和声明 `parent_plan` 指向本文件的子方案统一对齐到 session-owned self-retire、`local-main-retire.lock` 和远端发布门模型。
+- 2026-05-30 Phase 0 收口包：分支 `phase0-plan-index-closure-20260530` 已合入本地 `main`，并收口 `plan_inventory_registry_alignment_plan` 与 `parent_parallel_orchestration_index_plan`；机器可读盘点证据为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；Phase 2 不再被 Phase 0 本地合入阻塞。
 - 2026-05-30 self-retire runtime 恢复：本地 `main` 已在 `898f9d0` 包含恢复后的 self-retire runtime helper/checker 包，替代早先 `b4af80f` 的待恢复说明。
 - 2026-05-29 Stage A 恢复文档包：记录当时本地 `main`=`b4af80f` 尚未包含 self-retire runtime helper/checker，虽然来源提交 `867f882` 存在于 `decentralize-session-self-retire-20260529`；该问题随后已由 `898f9d0` 解决。
 - 2026-05-29 父方案范围修订：结构化吸收同机多 session 自主合入治理对话，明确本文件仍是本方案族父方案，但不控制无关 implementation_plan；新增 `parent_plan` 可选局部生效、新 session 非默认读取、session-owned self-retire 与 `local-main-retire` lock 后续目标。

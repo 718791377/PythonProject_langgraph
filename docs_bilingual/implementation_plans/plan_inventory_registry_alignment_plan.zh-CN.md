@@ -36,11 +36,11 @@ Inventory active implementation plans, registry entries, stable anchors, and evi
 
 <!-- CURRENT_STATUS_START -->
 状态：active
-阶段：Phase 0 收口已在本地功能分支实现
+阶段：Phase 0 收口已合入本地 `main`；本文件继续作为盘点对齐子方案保持 active
 责任会话：`phase0-plan-index-closure-20260530`
-当前门禁：验证盘点证据、本地门禁和 local MR review，然后合入本地 `main` 并停在远端发布门。
+当前门禁：Phase 0 已无待执行的本地 `main` 合入；后续编辑必须使用新的 claim/worktree，通过本地门禁，合入本地后停在远端发布门。
 Stage C 进入条件：用户已确认 Phase 0 必须先于 Phase 2 完成；本次收口记录盘点结果。
-最后更新：2026-05-30
+最后更新：2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -94,6 +94,7 @@ Stage C 进入条件：用户已确认 Phase 0 必须先于 Phase 2 完成；本
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 本地合入状态刷新：分支 `phase0-plan-index-closure-20260530` 已合入本地 `main`；父方案状态已同步，因此 Phase 0 不再描述为等待本地合入。
 - 2026-05-30 完整提交流程对齐：Phase 0 盘点结果保持有效；本次仅把后续 session 读取和合入语义对齐为父方案可选、子方案自负责、`local-main-retire.lock` 串行本地 `main` 写入。
 - 2026-05-30 Phase 0 盘点收口：机器可读证据记录在 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；可读证据记录在 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.md` 与 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.zh-CN.md`。盘点结果为 59 个 implementation-plan registry 条目、52 个 active 条目、无缺失登记路径、无缺失双语 companion 路径。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
