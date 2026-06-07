@@ -41,12 +41,14 @@ confirmation_required: true
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: R4 implemented as a dry-run checker/runtime package
-Stage: R4 Checker + Runtime implementation package
-Owner session: implement-spec-kit-authority-guard-r4-closeout-20260607
-Current gate: 先 archive 本有界 R4 closeout package，重新运行本地验证，然后合入本地 `main`，并停在 remote-publication gate
-Runtime boundary: dry-run only; this package does not run `specify init`, does not create `.specify/` or root `specs/`, does not install or upgrade Spec Kit, and does not expose generated `/speckit.*` or `$speckit-*` command surfaces
-Priority update：2026-06-07 将 Spec Kit 固定为位于 Comet、OpenSpec/Superpowers、gstack 与 harness runtime safety 之后的最低优先级 subordinate template/probe surface。
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: Spec Kit authority guard 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `spec-kit-authority active-candidate lane profile` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
 Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
@@ -112,6 +114,7 @@ Spec Kit 严格服从 `Comet > OpenSpec/Superpowers > gstack > harness runtime s
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 Spec Kit authority guard 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-07 R4 implementation package: added dry-run-only `tools/spec_kit_subordinate_runtime.py`, extended `tools/check_spec_kit_authority_guard.py` receipt and generated-surface validation, added `test/spec_kit_subordinate_runtime.test.py`, extended authority guard tests, and registered runtime/test/script backing before local gates.
 - 2026-06-07 R4 closeout package：将严格 authority order 收紧为 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`，提升 stable safety-rule requirement，并在合入本地 main 前 archive 有界 closeout change。
 - 2026-06-07 conflict-priority refresh：本包记录严格优先级 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`；不运行 `specify init`，不创建 `.specify/`，所有 runtime 仍为 dry-run only。
