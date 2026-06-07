@@ -13,6 +13,8 @@ from typing import Any, Iterable
 SCHEMA_VERSION = 1
 DEFAULT_RUNTIME_PYTHON = Path(r"D:\PythonProject_langgraph\.shared_runtimes\pyside6\.venv\Scripts\python.exe")
 DEFAULT_SECTIONS = ["overview", "sessions", "workbench", "diagnostics", "settings"]
+DEFAULT_VISUAL_SIZES = ((1180, 720), (1366, 768), (1440, 900))
+FIXTURE_PROFILES = ("default", "long-content", "dense-sessions")
 SECTION_REQUIRED_TEXT = {
     "overview": ["Project MOE", "Project default", "Enable project default", "Disable project default"],
     "sessions": [
@@ -26,7 +28,7 @@ SECTION_REQUIRED_TEXT = {
     ],
     "workbench": ["Expert Workbench", "Expert lenses", "Handoff target", "Copy handoff package"],
     "diagnostics": ["Diagnostics"],
-    "settings": ["Settings", "Close behavior"],
+    "settings": ["Settings", "Close behavior", "Loading state", "Empty state", "Error state", "Help"],
 }
 WINDOWS_FONT_CANDIDATES = [
     Path(r"C:\Windows\Fonts\msyh.ttc"),
@@ -93,6 +95,159 @@ def parse_size(value: str) -> tuple[int, int]:
     if width < 320 or height < 240:
         raise argparse.ArgumentTypeError("size is too small for Project MOE GUI validation")
     return width, height
+
+
+def normalized_sizes(args: argparse.Namespace) -> tuple[tuple[int, int], ...]:
+    values = getattr(args, "sizes", None)
+    if not values:
+        return DEFAULT_VISUAL_SIZES
+    return tuple((int(width), int(height)) for width, height in values)
+
+
+def _copy_jsonable(value: Any) -> Any:
+    return json.loads(json.dumps(value, ensure_ascii=False))
+
+
+def _fixture_session(index: int, *, long_content: bool = False) -> dict[str, Any]:
+    suffix = f"{index:02d}"
+    session_id = f"session-fixture-{suffix}-abcdef1234567890"
+    label = "enabled" if index % 2 == 0 else "disabled"
+    if long_content:
+        display_id = "session-fixture-with-extra-long-display-name-for-visual-overflow-regression-" + suffix
+        lens_summary = "lenses=" + ", ".join([f"very_long_lens_identifier_{item}_{suffix}" for item in range(4)])
+    else:
+        display_id = f"session-fixture-{suffix}"
+        lens_summary = "All lenses" if index % 3 else "lenses=blind_review,aigc_risk"
+    return {
+        "row_index": index,
+        "valid": index % 7 != 0,
+        "token": "ok" if index % 7 != 0 else "invalid_json",
+        "message": "ok" if index % 7 != 0 else "Invalid fixture session record for visual gate.",
+        "session_id": session_id,
+        "display_id": display_id,
+        "enabled": index % 2 == 0,
+        "label": label,
+        "source": "manual-session" if index % 2 == 0 else "project-propagated",
+        "selected_lenses": [] if index % 3 else ["blind_review", "aigc_risk"],
+        "selected_categories": [] if index % 4 else ["review"],
+        "effective_lens_mode": "all" if index % 3 else "selected",
+        "lens_selection_scope": "session",
+        "lens_selection_summary": lens_summary,
+        "last_seen_at": f"2026-06-07T{index % 24:02d}:00:00+00:00",
+        "actions": {},
+        "status_badge": {
+            "text": label,
+            "token_text": "ok" if index % 7 != 0 else "invalid_json",
+            "lens_text": lens_summary,
+            "high_contrast_text": f"Session {display_id}: {label}; lenses: {lens_summary}",
+        },
+    }
+
+
+def _fixture_lens(index: int, *, long_content: bool = False) -> dict[str, Any]:
+    lens_id = f"fixture_lens_{index:02d}"
+    if long_content:
+        label = "Extremely long Project MOE expert lens label for visual regression and wrapping behavior " + str(index).zfill(2)
+        description = "Long fixture lens description used to stress card, checkbox, and handoff preview rendering without reading private prompts."
+    else:
+        label = f"Fixture lens {index:02d}"
+        description = "Fixture lens for visual render gate."
+    return {"id": lens_id, "label": label, "description": description, "category": f"category_{index % 8:02d}"}
+
+
+def _fixture_category(index: int, lens_count: int, *, long_content: bool = False) -> dict[str, Any]:
+    category_id = f"category_{index:02d}"
+    if long_content:
+        label = "Very long Project MOE expert category label for dense visual regression " + str(index).zfill(2)
+        description = "Long category description used by the visual fixture profile."
+    else:
+        label = f"Category {index:02d}"
+        description = "Fixture category for visual render gate."
+    lens_ids = [f"fixture_lens_{item:02d}" for item in range(index, lens_count, max(1, min(8, lens_count)))]
+    return {"id": category_id, "label": label, "description": description, "lens_ids": lens_ids}
+
+
+def build_fixture_view_model(profile: str, view_model: dict[str, Any]) -> dict[str, Any]:
+    if profile not in FIXTURE_PROFILES:
+        raise ValueError(f"unsupported fixture profile: {profile}")
+    model = _copy_jsonable(view_model if isinstance(view_model, dict) else {})
+    model["fixture_profile"] = profile
+    if profile == "default":
+        return model
+
+    long_content = profile == "long-content"
+    session_count = 8 if long_content else 24
+    lens_count = 10 if long_content else 18
+    category_count = 5 if long_content else 8
+    sessions = [_fixture_session(index, long_content=long_content) for index in range(session_count)]
+    lenses = [_fixture_lens(index, long_content=long_content) for index in range(lens_count)]
+    categories = [_fixture_category(index, lens_count, long_content=long_content) for index in range(category_count)]
+
+    banner = dict(model.get("top_banner") or {})
+    if long_content:
+        banner["project_root"] = "D:/target/projects/project-moe-gui-visual-regression-with-a-very-long-project-root-name/" + (banner.get("project_root") or "fixture")
+        banner["agent_name"] = "project-moe-agent-with-a-very-long-human-readable-agent-name-for-layout-checks"
+        banner["state_namespace"] = "project_moe_visual_regression_namespace_with_long_name"
+    else:
+        banner.setdefault("project_root", "D:/target/project-moe-gui-dense-fixture")
+        banner.setdefault("agent_name", "project-moe-agent")
+        banner.setdefault("state_namespace", "project_moe")
+    model["top_banner"] = banner
+
+    session_table = dict(model.get("session_table") or {})
+    session_table.update({
+        "token": "ok",
+        "rows": sessions,
+        "empty_state": {"is_empty": False, "message": ""},
+        "invalid_count": sum(1 for row in sessions if row.get("token") != "ok"),
+        "fixture_profile": profile,
+    })
+    model["session_table"] = session_table
+
+    lens_catalog = dict(model.get("lens_catalog") or {})
+    lens_catalog.update({
+        "schema_version": SCHEMA_VERSION,
+        "token": "ok",
+        "source": f"visual-fixture:{profile}",
+        "lenses": lenses,
+        "categories": categories,
+        "selection_semantics": {"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"},
+        "private_prompt_source_read": False,
+    })
+    model["lens_catalog"] = lens_catalog
+
+    panel = dict(model.get("session_lens_panel") or {})
+    panel.update({"lenses": lenses, "categories": categories, "selected_row_index": 0, "empty_selection_means": "all"})
+    model["session_lens_panel"] = panel
+
+    workbench = dict(model.get("expert_workbench") or {})
+    workbench.setdefault("title", "Expert Workbench v2")
+    workbench.setdefault("subtitle", "Fixture profile for visual render validation.")
+    workbench["lenses"] = lenses
+    workbench["categories"] = categories
+    workbench.setdefault("handoff_targets", [
+        {"id": "main-session", "label": "Main session", "description": "Fixture target."},
+        {"id": "subagent", "label": "Subagent", "description": "Fixture target."},
+        {"id": "durable-team", "label": "Durable team", "description": "Fixture target."},
+        {"id": "langgraph-workflow", "label": "LangGraph workflow", "description": "Fixture target."},
+    ])
+    workbench.setdefault("task_templates", [
+        {"id": "fixture_review", "label": "Fixture review brief", "objective": "Exercise long visual content.", "prompt": "Return fixture findings."}
+    ])
+    model["expert_workbench"] = workbench
+
+    cards = list(model.get("status_cards") or [])
+    if not cards:
+        cards = [
+            {"id": "project-default", "title": "Project default", "value": "disabled", "token": "ok"},
+            {"id": "effective-status", "title": "Effective status", "value": "disabled", "token": "ok"},
+            {"id": "session-count", "title": "Sessions", "value": str(session_count), "token": "ok"},
+            {"id": "runtime", "title": "GUI runtime", "value": "import_ok", "token": "ok"},
+        ]
+    model["status_cards"] = cards
+    model.setdefault("project_default_card", {"label": "disabled", "effective_label": "disabled"})
+    model.setdefault("banners", [])
+    return model
 
 
 def parse_json_from_output(text: str) -> dict[str, Any]:
@@ -437,6 +592,7 @@ def run_visual_check(args: argparse.Namespace) -> dict[str, Any]:
     from PySide6.QtQuickControls2 import QQuickStyle
 
     view_model, preflight = load_view_model(args)
+    view_model = build_fixture_view_model(args.fixture_profile, view_model)
     qml_path, qml_source = resolve_qml_path(args, view_model)
     if not qml_path.exists():
         return {
@@ -465,6 +621,65 @@ def run_visual_check(args: argparse.Namespace) -> dict[str, Any]:
                     "session_id": session_id,
                     "selected_lenses": lenses_json,
                     "selected_categories": categories_json,
+                },
+                ensure_ascii=False,
+            )
+
+        @Slot(str, str, str, str, str, str, str, result=str)
+        def saveHandoffDraft(
+            self,
+            session_id: str,
+            session_display_id: str,
+            selected_lenses_json: str,
+            selected_categories_json: str,
+            handoff_target: str,
+            task_template_id: str,
+            brief_text: str,
+        ) -> str:
+            return json.dumps(
+                {
+                    "schema_version": SCHEMA_VERSION,
+                    "ok": True,
+                    "token": "ok",
+                    "message": "visual render check skipped Workbench draft save",
+                    "session_id": session_id,
+                    "session_display_id": session_display_id,
+                    "selected_lenses": selected_lenses_json,
+                    "selected_categories": selected_categories_json,
+                    "handoff_target": handoff_target,
+                    "task_template_id": task_template_id,
+                    "brief_text": brief_text,
+                    "executes_carrier": False,
+                },
+                ensure_ascii=False,
+            )
+
+        @Slot(str, str, str, str, str, str, str, result=str)
+        def exportHandoffPackage(
+            self,
+            session_id: str,
+            session_display_id: str,
+            selected_lenses_json: str,
+            selected_categories_json: str,
+            handoff_target: str,
+            task_template_id: str,
+            brief_text: str,
+        ) -> str:
+            return json.dumps(
+                {
+                    "schema_version": SCHEMA_VERSION,
+                    "ok": True,
+                    "token": "ok",
+                    "message": "visual render check skipped Workbench handoff export",
+                    "export_text": "Project MOE visual render handoff export placeholder",
+                    "session_id": session_id,
+                    "session_display_id": session_display_id,
+                    "selected_lenses": selected_lenses_json,
+                    "selected_categories": selected_categories_json,
+                    "handoff_target": handoff_target,
+                    "task_template_id": task_template_id,
+                    "brief_text": brief_text,
+                    "executes_carrier": False,
                 },
                 ensure_ascii=False,
             )
@@ -566,7 +781,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--qml-source", choices=["auto", "target-project", "current-worktree", "source", "central-toolchain"], default="auto")
     parser.add_argument("--qml-path", type=Path, help="Explicit QML path to render.")
     parser.add_argument("--sections", nargs="+", choices=DEFAULT_SECTIONS, default=list(DEFAULT_SECTIONS))
-    parser.add_argument("--size", dest="sizes", action="append", type=parse_size, help="Render size WIDTHxHEIGHT. Can be repeated. Default: 1180x720.")
+    parser.add_argument("--size", dest="sizes", action="append", type=parse_size, help="Render size WIDTHxHEIGHT. Can be repeated. Default: 1180x720, 1366x768, 1440x900.")
+    parser.add_argument("--fixture-profile", choices=FIXTURE_PROFILES, default="default", help="View-model fixture profile for visual regression: default, long-content, or dense-sessions.")
     parser.add_argument("--output-dir", type=Path, default=Path(".tmp") / "project_moe_gui_visual_render")
     parser.add_argument("--runtime-python", type=Path, default=DEFAULT_RUNTIME_PYTHON)
     parser.add_argument("--no-runtime-reexec", action="store_true", help="Do not re-execute through the shared PySide6 runtime.")
@@ -580,8 +796,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.sizes is None:
-        args.sizes = [(1180, 720)]
+    args.sizes = normalized_sizes(args)
     maybe_reexec_under_runtime(args)
     try:
         payload = run_visual_check(args)

@@ -2559,6 +2559,46 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("--size", result.stdout)
         self.assertIn("overflow", result.stdout.lower())
 
+    def test_visual_render_check_defaults_to_multi_size_and_fixture_profiles(self) -> None:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("project_moe_gui_visual_render_check", VISUAL_RENDER_CHECK)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+
+        self.assertEqual(module.DEFAULT_VISUAL_SIZES, ((1180, 720), (1366, 768), (1440, 900)))
+        parser = module.build_parser()
+        args = parser.parse_args(["--view-model-json", "fixture.json", "--no-runtime-reexec", "--json"])
+        self.assertEqual(module.normalized_sizes(args), module.DEFAULT_VISUAL_SIZES)
+        args = parser.parse_args(["--view-model-json", "fixture.json", "--size", "1000x700", "--no-runtime-reexec", "--json"])
+        self.assertEqual(module.normalized_sizes(args), ((1000, 700),))
+
+        base = {
+            "schema_version": 1,
+            "top_banner": {"project_root": "D:/target", "agent_name": "agent", "state_namespace": "state"},
+            "status_cards": [],
+            "project_default_card": {"label": "disabled", "effective_label": "disabled"},
+            "session_table": {"rows": []},
+            "lens_catalog": {"lenses": [], "categories": []},
+            "session_lens_panel": {"lenses": [], "categories": []},
+            "expert_workbench": {"lenses": [], "categories": [], "handoff_targets": [], "task_templates": []},
+            "banners": [],
+        }
+        long_vm = module.build_fixture_view_model("long-content", base)
+        self.assertGreater(len(long_vm["top_banner"]["project_root"]), 80)
+        self.assertTrue(any(len(row["display_id"]) > 40 for row in long_vm["session_table"]["rows"]))
+        self.assertTrue(any(len(lens["label"]) > 80 for lens in long_vm["lens_catalog"]["lenses"]))
+        self.assertTrue(any(len(category["label"]) > 60 for category in long_vm["lens_catalog"]["categories"]))
+
+        dense_vm = module.build_fixture_view_model("dense-sessions", base)
+        self.assertGreaterEqual(len(dense_vm["session_table"]["rows"]), 24)
+        self.assertGreaterEqual(len(dense_vm["lens_catalog"]["lenses"]), 18)
+        self.assertGreaterEqual(len(dense_vm["lens_catalog"]["categories"]), 8)
+        self.assertEqual(dense_vm["fixture_profile"], "dense-sessions")
+
     def test_visual_render_check_detects_visible_text_overflow(self) -> None:
         import importlib.util
 
@@ -2630,6 +2670,185 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("text_width_overflow", violation_kinds)
         self.assertIn("visible_item_outside_clip", violation_kinds)
         self.assertTrue(any("Sessions page overflowing label" in item.get("text", "") for item in violations))
+
+    def test_expert_workbench_artifact_contract_saves_filters_and_exports_without_execution(self) -> None:
+        from project_moe_gui.workbench_artifacts import create_handoff_package, export_handoff_package, list_handoff_artifacts, save_handoff_artifact
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            raw_session_id = "raw-private-session-1234567890"
+            package = create_handoff_package(
+                target_project=project,
+                session_id=raw_session_id,
+                session_display_id="raw-pr...7890",
+                selected_lenses=["blind_review"],
+                selected_categories=["review"],
+                handoff_target="subagent",
+                task_template_id="thesis_review",
+                brief_text="Review the introduction and list blocking revision risks.",
+                status="draft",
+            )
+
+            serialized = json.dumps(package, ensure_ascii=False)
+            self.assertEqual(package["artifact_kind"], "project_moe_gui_handoff")
+            self.assertEqual(package["status"], "draft")
+            self.assertEqual(package["handoff_target"], "subagent")
+            self.assertIn("session_key_hash", package)
+            self.assertNotIn(raw_session_id, serialized)
+            self.assertFalse(package["execution_policy"]["starts_subagents"])
+            self.assertFalse(package["execution_policy"]["starts_langgraph_workflow"])
+
+            saved = save_handoff_artifact(project, package)
+            self.assertTrue(Path(saved["path"]).exists(), saved)
+            self.assertIn("workbench_drafts", Path(saved["path"]).parts)
+
+            history = list_handoff_artifacts(project, handoff_target="subagent", status="draft")
+            self.assertEqual(len(history["items"]), 1, history)
+            self.assertEqual(history["items"][0]["artifact_id"], package["artifact_id"])
+
+            exported = export_handoff_package(package, "langgraph-workflow")
+            self.assertEqual(exported["handoff_target"], "langgraph-workflow")
+            self.assertFalse(exported["execution_policy"]["executes_target"])
+            self.assertIn("LangGraph", exported["carrier_instructions"])
+            self.assertIn("Review the introduction", exported["export_text"])
+
+    def test_gui_shell_workbench_actions_save_and_export_runtime_artifacts(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+
+            draft = gui_shell.save_workbench_handoff_draft(
+                config,
+                session_id="raw-private-session-42",
+                session_display_id="raw-pr...42",
+                selected_lenses=["blind_review"],
+                selected_categories=["review"],
+                handoff_target="subagent",
+                task_template_id="thesis_review",
+                brief_text="Draft a reviewer risk list.",
+                project_root=project,
+            )
+            self.assertTrue(draft["ok"], draft)
+            self.assertFalse(draft["writes_git"])
+            self.assertFalse(draft["writes_target_project_state"])
+            self.assertTrue(Path(draft["saved"]["path"]).exists())
+            self.assertIn("workbench_drafts", Path(draft["saved"]["path"]).parts)
+            self.assertNotIn("raw-private-session-42", json.dumps(draft["package"], ensure_ascii=False))
+
+            exported = gui_shell.export_workbench_handoff_package(
+                config,
+                session_id="raw-private-session-42",
+                session_display_id="raw-pr...42",
+                selected_lenses=["blind_review"],
+                selected_categories=["review"],
+                handoff_target="langgraph-workflow",
+                task_template_id="thesis_review",
+                brief_text="Export a LangGraph brief.",
+                project_root=project,
+            )
+            self.assertTrue(exported["ok"], exported)
+            self.assertFalse(exported["executes_carrier"])
+            self.assertIn("LangGraph", exported["export_text"])
+            self.assertIn("expert_history", Path(exported["saved"]["path"]).parts)
+            history = gui_shell.build_workbench_artifact_history(project)
+            self.assertGreaterEqual(history["count"], 2, history)
+
+    def test_gui_shell_session_table_filters_sorts_and_explains_effective_state(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"},
+                sessions_payload={
+                    "ok": True,
+                    "token": "ok",
+                    "sessions": [
+                        {"session_id": "session-alpha-0001", "enabled": True, "effective_enabled": True, "valid": True, "token": "ok", "source": "manual-session", "selected_lenses": ["blind_review"], "selected_categories": [], "effective_lens_mode": "selected", "last_seen_at": "2026-06-07T10:00:00+00:00"},
+                        {"session_id": "session-beta-0002", "enabled": False, "effective_enabled": False, "valid": True, "token": "ok", "source": "project-propagated", "selected_lenses": [], "selected_categories": [], "effective_lens_mode": "all", "last_seen_at": "2026-06-07T11:00:00+00:00"},
+                        {"session_id": "session-gamma-0003", "enabled": False, "effective_enabled": False, "valid": False, "token": "invalid_json", "source": "invalid-record", "last_seen_at": "2026-06-07T12:00:00+00:00"},
+                    ],
+                },
+                status_payload={"ok": True, "token": "ok", "effective_enabled": True},
+                pyside6_available=False,
+            )
+
+            table = view_model["session_table"]
+            self.assertEqual([item["id"] for item in table["controls"]["filter_modes"]], ["all", "enabled", "disabled", "blocked-invalid"])
+            self.assertEqual([item["id"] for item in table["controls"]["sort_keys"]], ["last_seen", "display_id", "label", "effective_lens_mode"])
+            filtered = gui_shell.filter_sort_session_rows(table["rows"], search_text="beta", filter_mode="disabled", sort_key="display_id")
+            self.assertEqual([row["session_id"] for row in filtered], ["session-beta-0002"])
+            invalid = gui_shell.filter_sort_session_rows(table["rows"], filter_mode="blocked-invalid", sort_key="last_seen")
+            self.assertEqual([row["token"] for row in invalid], ["invalid_json"])
+            first = table["rows"][0]
+            self.assertIn("Session override", first["effective_state_explanation"])
+            self.assertIn("wins over project default", first["override_conflict_hint"])
+            self.assertIn("no-search-result", table["empty_state_variants"])
+
+    def test_gui_view_model_declares_ui_states_and_multi_project_status_panel(self) -> None:
+        from project_moe_gui import TOOLCHAIN_VERSION, gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            listed = Path(tmp) / "listed-project"
+            project.mkdir()
+            (listed / "tools" / "project_moe_gui").mkdir(parents=True)
+            (listed / "tools" / "project_moe_gui" / "project_moe_gui.config.json").write_text(
+                json.dumps({"toolchain_version": "0.1.0"}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            config = self.gui_config(project)
+            config["managed_projects"] = [str(listed)]
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": False, "git_branch": "main"},
+                sessions_payload={"ok": True, "token": "ok", "sessions": []},
+                status_payload={"ok": True, "token": "ok", "effective_enabled": False},
+                pyside6_available=False,
+            )
+
+            self.assertIn("loading", view_model["ui_states"])
+            self.assertIn("empty", view_model["ui_states"])
+            self.assertIn("error", view_model["ui_states"])
+            self.assertIn("help", view_model["ui_states"])
+            panel = view_model["multi_project_panel"]
+            self.assertTrue(panel["read_only"])
+            self.assertFalse(panel["writes_target_projects"])
+            self.assertEqual(panel["source_toolchain_version"], TOOLCHAIN_VERSION)
+            self.assertEqual(panel["projects"][0]["installed_version"], "0.1.0")
+            self.assertTrue(panel["projects"][0]["version_lag"])
+            self.assertFalse(panel["projects"][0]["dry_run_update_plan"]["writes_target_project"])
+            self.assertIn("rollback", panel["projects"][0]["rollback_hint"].lower())
+
+    def test_qml_source_contains_search_help_history_and_multi_project_panel(self) -> None:
+        from project_moe_gui import gui_shell
+
+        qml = gui_shell.qml_shell_path().read_text(encoding="utf-8")
+        for expected in [
+            "Search sessions",
+            "Filter",
+            "Sort",
+            "Effective state",
+            "Override hint",
+            "Save draft",
+            "Expert result history",
+            "Export handoff package",
+            "projectMoeBridge.saveHandoffDraft",
+            "projectMoeBridge.exportHandoffPackage",
+            "Projects",
+            "Install status",
+            "Dry-run update",
+            "Empty state",
+            "Help",
+        ]:
+            self.assertIn(expected, qml)
 
     def test_installed_launcher_preflight_reports_gui_shell_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -3390,6 +3609,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("viewModelJson", source)
         self.assertIn("ProjectMoeBridge", source)
         self.assertIn("executeWriteAction", source)
+        self.assertIn("saveHandoffDraft", source)
+        self.assertIn("exportHandoffPackage", source)
         self.assertIn("projectMoeBridge", source)
         self.assertIn("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS", source)
         self.assertIn("QTimer(window)", source)

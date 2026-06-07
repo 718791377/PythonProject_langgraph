@@ -9,6 +9,7 @@ node_modules/
 openspec-guard-report.json
 .local/
 .runtime/
+.project-runtime/
 .shared_runtimes/
 *.gguf
 *.GGUF

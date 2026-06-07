@@ -16,8 +16,12 @@ ApplicationWindow {
     readonly property var banner: vm.top_banner || ({})
     readonly property var statusCards: vm.status_cards || []
     readonly property var sessionRows: ((vm.session_table || {}).rows || [])
+    property string sessionSearchText: ""
+    property string sessionFilterModeId: "all"
+    property string sessionSortKeyId: "last_seen"
+    readonly property var displayedSessionRows: filterAndSortSessionRows()
     property int selectedSessionIndex: 0
-    readonly property var selectedSession: sessionRows.length ? sessionRows[Math.min(Math.max(selectedSessionIndex, 0), sessionRows.length - 1)] : ({})
+    readonly property var selectedSession: displayedSessionRows.length ? displayedSessionRows[Math.min(Math.max(selectedSessionIndex, 0), displayedSessionRows.length - 1)] : ({})
     readonly property var sessionLensPanel: vm.session_lens_panel || ({})
     readonly property var lensCatalog: vm.lens_catalog || ({})
     readonly property var sessionLenses: sessionLensPanel.lenses || lensCatalog.lenses || []
@@ -28,6 +32,12 @@ ApplicationWindow {
     readonly property var taskTemplates: expertWorkbench.task_templates || []
     readonly property var blockers: vm.banners || []
     readonly property var projectDefaultCard: vm.project_default_card || ({})
+    readonly property var sessionControls: (vm.session_table || {}).controls || ({})
+    readonly property var sessionFilterModes: sessionControls.filter_modes || []
+    readonly property var sessionSortKeys: sessionControls.sort_keys || []
+    readonly property var uiStates: vm.ui_states || ({})
+    readonly property var projectsPanel: vm.multi_project_panel || ({})
+    readonly property var projectsRows: projectsPanel.projects || []
     property string selectedSection: "overview"
     property bool darkMode: true
     property string lastActionToken: "ok"
@@ -134,6 +144,77 @@ ApplicationWindow {
         return handoffTargets[Math.max(0, handoffTargetCombo.currentIndex)] || handoffTargets[0]
     }
 
+    function comboRowId(model, index, fallback) {
+        var row = (model || [])[Math.max(0, index)] || ({})
+        return String(row.id || fallback)
+    }
+
+    function rowMatchesSessionSearch(row) {
+        var query = String(root.sessionSearchText || "").toLowerCase()
+        if (!query.length)
+            return true
+        var haystack = [
+            row.session_id || "",
+            row.display_id || "",
+            row.label || "",
+            row.source || "",
+            row.token || "",
+            row.effective_lens_mode || "",
+            row.lens_selection_summary || "",
+            row.effective_state_explanation || "",
+            row.override_conflict_hint || ""
+        ].join(" ").toLowerCase()
+        return haystack.indexOf(query) >= 0
+    }
+
+    function rowMatchesSessionFilter(row) {
+        var mode = root.sessionFilterModeId || "all"
+        var token = String(row.token || "ok")
+        var valid = row.valid !== false && token === "ok"
+        if (mode === "enabled")
+            return valid && row.enabled === true
+        if (mode === "disabled")
+            return valid && row.enabled === false
+        if (mode === "blocked-invalid")
+            return !valid
+        return true
+    }
+
+    function compareSessionRows(left, right) {
+        var key = root.sessionSortKeyId || "last_seen"
+        var a = ""
+        var b = ""
+        if (key === "display_id") {
+            a = String(left.display_id || left.session_id || "").toLowerCase()
+            b = String(right.display_id || right.session_id || "").toLowerCase()
+        } else if (key === "label") {
+            a = String(left.label || "").toLowerCase()
+            b = String(right.label || "").toLowerCase()
+        } else if (key === "effective_lens_mode") {
+            a = String(left.effective_lens_mode || "").toLowerCase()
+            b = String(right.effective_lens_mode || "").toLowerCase()
+        } else {
+            a = String(right.last_seen_at || "")
+            b = String(left.last_seen_at || "")
+        }
+        if (a < b)
+            return -1
+        if (a > b)
+            return 1
+        return 0
+    }
+
+    function filterAndSortSessionRows() {
+        var rows = []
+        for (var i = 0; i < sessionRows.length; i++) {
+            var row = sessionRows[i] || ({})
+            if (rowMatchesSessionSearch(row) && rowMatchesSessionFilter(row))
+                rows.push(row)
+        }
+        rows.sort(compareSessionRows)
+        return rows
+    }
+
     function generatedHandoffPackageText() {
         var lenses = selectedWorkbenchLenses()
         var task = selectedTemplate()
@@ -170,10 +251,32 @@ ApplicationWindow {
         lastActionMessage = payload.message || ""
         if (payload.view_model) {
             vm = payload.view_model
-            selectedSessionIndex = Math.min(Math.max(selectedSessionIndex, 0), Math.max(0, sessionRows.length - 1))
+            selectedSessionIndex = Math.min(Math.max(selectedSessionIndex, 0), Math.max(0, displayedSessionRows.length - 1))
             resetSessionSelectionModels()
             resetWorkbenchLensModel()
         }
+    }
+
+    function updateFromWorkbenchArtifactResult(raw, copyExport) {
+        var payload = ({})
+        try {
+            payload = JSON.parse(raw || "{}")
+        } catch (error) {
+            copyStatus.text = "Workbench artifact action failed: invalid JSON"
+            lastActionToken = "blocked:invalid_workbench_artifact_json"
+            lastActionMessage = String(error)
+            return
+        }
+        lastActionToken = payload.token || "unknown"
+        lastActionMessage = payload.message || ""
+        if (payload.export_text) {
+            handoffPreview.text = payload.export_text
+        }
+        if (copyExport && payload.export_text) {
+            handoffPreview.selectAll()
+            handoffPreview.copy()
+        }
+        copyStatus.text = (payload.message || "Workbench artifact action completed.") + " token=" + lastActionToken
     }
 
     function executeProjectAction(action) {
@@ -195,6 +298,9 @@ ApplicationWindow {
     }
 
     onSelectedSessionIndexChanged: resetSessionSelectionModels()
+    onSessionSearchTextChanged: selectedSessionIndex = 0
+    onSessionFilterModeIdChanged: selectedSessionIndex = 0
+    onSessionSortKeyIdChanged: selectedSessionIndex = 0
 
     component StatCard: Rectangle {
         id: statCard
@@ -294,6 +400,7 @@ ApplicationWindow {
                 SideButton { text: "Project"; sectionId: "overview" }
                 SideButton { text: "Sessions"; sectionId: "sessions" }
                 SideButton { text: "Expert Workbench"; sectionId: "workbench" }
+                SideButton { text: "Projects"; sectionId: "projects" }
                 SideButton { text: "Diagnostics"; sectionId: "diagnostics" }
                 SideButton { text: "Settings"; sectionId: "settings" }
                 Item { Layout.fillHeight: true }
@@ -417,6 +524,34 @@ ApplicationWindow {
 
                     RowLayout {
                         Layout.fillWidth: true
+                        spacing: 10
+                        TextField {
+                            id: sessionSearch
+                            Layout.fillWidth: true
+                            placeholderText: "Search sessions"
+                            text: root.sessionSearchText
+                            onTextChanged: root.sessionSearchText = text
+                        }
+                        Label { text: "Filter"; color: darkMode ? "#94a3b8" : "#64748b" }
+                        ComboBox {
+                            id: sessionFilterCombo
+                            Layout.preferredWidth: 150
+                            model: sessionFilterModes.length ? sessionFilterModes : [{"id": "all", "label": "All"}]
+                            textRole: "label"
+                            onCurrentIndexChanged: root.sessionFilterModeId = comboRowId(model, currentIndex, "all")
+                        }
+                        Label { text: "Sort"; color: darkMode ? "#94a3b8" : "#64748b" }
+                        ComboBox {
+                            id: sessionSortCombo
+                            Layout.preferredWidth: 170
+                            model: sessionSortKeys.length ? sessionSortKeys : [{"id": "last_seen", "label": "Last seen"}]
+                            textRole: "label"
+                            onCurrentIndexChanged: root.sessionSortKeyId = comboRowId(model, currentIndex, "last_seen")
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
                         Layout.fillHeight: true
                         spacing: 12
 
@@ -445,7 +580,7 @@ ApplicationWindow {
                                     Layout.fillHeight: true
                                     clip: true
                                     boundsBehavior: Flickable.StopAtBounds
-                                    model: sessionRows
+                                    model: displayedSessionRows
                                     delegate: Rectangle {
                                         width: ListView.view.width
                                         height: 58
@@ -529,6 +664,22 @@ ApplicationWindow {
                                     color: "#14b8a6"
                                     font.bold: true
                                     Layout.fillWidth: true
+                                    elide: Text.ElideRight
+                                }
+                                Label {
+                                    text: "Effective state: " + (selectedSession.effective_state_explanation || "No session selected")
+                                    color: darkMode ? "#cbd5e1" : "#475569"
+                                    wrapMode: Text.Wrap
+                                    Layout.fillWidth: true
+                                    Layout.maximumHeight: 42
+                                    elide: Text.ElideRight
+                                }
+                                Label {
+                                    text: "Override hint: " + (selectedSession.override_conflict_hint || "No session override")
+                                    color: darkMode ? "#cbd5e1" : "#475569"
+                                    wrapMode: Text.Wrap
+                                    Layout.fillWidth: true
+                                    Layout.maximumHeight: 42
                                     elide: Text.ElideRight
                                 }
                                 RowLayout {
@@ -797,19 +948,96 @@ ApplicationWindow {
                         Layout.preferredHeight: 52
                         Button {
                             text: "Copy handoff package"
-                            Layout.preferredWidth: 210
+                            Layout.preferredWidth: 190
                             onClicked: {
                                 handoffPreview.selectAll()
                                 handoffPreview.copy()
                                 copyStatus.text = "Copied to clipboard; no disk or Git write."
                             }
                         }
+                        Button {
+                            text: "Save draft"
+                            Layout.preferredWidth: 128
+                            onClicked: updateFromWorkbenchArtifactResult(
+                                projectMoeBridge.saveHandoffDraft(
+                                    selectedSession.session_id || "",
+                                    selectedSession.display_id || "",
+                                    selectedWorkbenchLensIdsJson,
+                                    "[]",
+                                    selectedHandoffTarget().id || "main-session",
+                                    selectedTemplate().id || "default",
+                                    reviewTarget.text
+                                ),
+                                false
+                            )
+                        }
+                        Button {
+                            text: "Export handoff package"
+                            Layout.preferredWidth: 190
+                            onClicked: updateFromWorkbenchArtifactResult(
+                                projectMoeBridge.exportHandoffPackage(
+                                    selectedSession.session_id || "",
+                                    selectedSession.display_id || "",
+                                    selectedWorkbenchLensIdsJson,
+                                    "[]",
+                                    selectedHandoffTarget().id || "main-session",
+                                    selectedTemplate().id || "default",
+                                    reviewTarget.text
+                                ),
+                                true
+                            )
+                        }
                         Label {
                             id: copyStatus
                             Layout.fillWidth: true
-                            text: "Handoff package persistence: runtime + clipboard only."
+                            text: "Expert result history: drafts, copied exports, and queued packages stay in target runtime artifacts."
                             color: darkMode ? "#94a3b8" : "#64748b"
                             elide: Text.ElideRight
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                visible: selectedSection === "projects"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                radius: 20
+                color: darkMode ? "#172033" : "#ffffff"
+                border.color: darkMode ? "#334155" : "#e2e8f0"
+                border.width: 1
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 12
+                    Label { text: "Projects"; font.pixelSize: 22; font.bold: true; color: darkMode ? "#f8fafc" : "#0f172a" }
+                    Label { text: "Install status"; color: darkMode ? "#94a3b8" : "#64748b"; Layout.fillWidth: true }
+                    Label { text: "Dry-run update"; color: darkMode ? "#14b8a6" : "#0f766e"; Layout.fillWidth: true }
+                    ScrollView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        clip: true
+                        ColumnLayout {
+                            width: parent.availableWidth
+                            Repeater {
+                                model: projectsRows.length ? projectsRows : [{"project_root": "No explicit managed project registry", "install_status": "empty", "installed_version": "none", "readiness_status": "unknown"}]
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 78
+                                    radius: 14
+                                    color: darkMode ? "#0f172a" : "#f8fafc"
+                                    border.color: darkMode ? "#334155" : "#e2e8f0"
+                                    border.width: 1
+                                    ColumnLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        Label { text: modelData.project_root || "project"; Layout.fillWidth: true; elide: Text.ElideMiddle; color: darkMode ? "#e5e7eb" : "#0f172a" }
+                                        Label { text: "Install status: " + (modelData.install_status || "unknown") + " / version: " + (modelData.installed_version || "none"); Layout.fillWidth: true; elide: Text.ElideRight; color: darkMode ? "#cbd5e1" : "#475569" }
+                                        Label { text: "Dry-run update only; rollback hint is required before apply."; Layout.fillWidth: true; elide: Text.ElideRight; color: darkMode ? "#94a3b8" : "#64748b" }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -855,6 +1083,10 @@ ApplicationWindow {
                     Label { text: "Settings"; font.pixelSize: 22; font.bold: true; color: darkMode ? "#f8fafc" : "#0f172a" }
                     Label { text: "Close behavior: ask before exit or hide to tray"; color: darkMode ? "#cbd5e1" : "#475569" }
                     Label { text: "Theme: Material / " + (darkMode ? "Dark" : "Light"); color: darkMode ? "#cbd5e1" : "#475569" }
+                    Label { text: "Loading state: " + (((uiStates.loading || {}).message) || "No loading-state message"); color: darkMode ? "#cbd5e1" : "#475569"; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                    Label { text: "Empty state: " + (((uiStates.empty || {}).message) || "No empty-state message"); color: darkMode ? "#cbd5e1" : "#475569"; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                    Label { text: "Error state: " + (((uiStates.error || {}).message) || "No error-state message"); color: darkMode ? "#cbd5e1" : "#475569"; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                    Label { text: "Help: " + (((uiStates.help || {}).message) || "Use governed Project MOE controls only"); color: darkMode ? "#cbd5e1" : "#475569"; wrapMode: Text.Wrap; Layout.fillWidth: true }
                 }
             }
 
