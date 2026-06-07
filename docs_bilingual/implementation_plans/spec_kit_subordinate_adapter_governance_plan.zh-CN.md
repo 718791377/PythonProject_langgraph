@@ -43,16 +43,16 @@ confirmation_required: true
 <!-- CURRENT_STATUS_START -->
 Status: R4 implemented as a dry-run checker/runtime package
 Stage: R4 Checker + Runtime implementation package
-Owner session: implement-spec-kit-authority-guard-r4-20260607
-Current gate: local-main-first validation and integration for this package; after local integration, stop at the remote-publication gate
+Owner session: implement-spec-kit-authority-guard-r4-closeout-20260607
+Current gate: 作为 companion 文本与主 authority-guard package 保持对齐；由主包完成 archive、重跑验证并合入本地 `main`
 Runtime boundary: dry-run only; this package records and implements dry-run/probe runtime support without installing Spec Kit, running `specify init`, writing `.specify/`, creating root `specs/`, or exposing `/speckit.*`/`$speckit-*` commands
-Priority update: 2026-06-07 keeps Spec Kit as the lowest-priority subordinate adapter behind Comet, OpenSpec/Superpowers, gstack, and Codex harnesses.
+Priority update：2026-06-07 将 Spec Kit 固定为位于 Comet、OpenSpec/Superpowers、gstack 与 harness runtime safety 之后的最低优先级 subordinate adapter。
 Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 冲突优先级
 
-本 adapter 不得高于 Comet、OpenSpec、Superpowers、gstack delivery-loop advisory checks、Codex harness candidate runtime guards、implementation-plan claims、local-main-first gates 或 remote-publication gates。它只能在 authority checks 通过后，把 Spec Kit artifacts 翻译为可审查的 subordinate inputs。受保护 runtime 模式必须记录 `authority_decision`、`source_url`、`source_pin`、`dry_run_only`、receipt/rollback paths，以及 `specify init`、`.specify/`、`specs/`、`/speckit.*`、`$speckit-*` 是否仍保持 blocked/subordinate/do-not-run。这里的 `authority_decision` 是机器可读 allow/block/subordinate 字段，用于记录胜出的 authority layer 与已应用的 priority outcome。
+本 adapter 严格服从 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`，也不得高于 implementation-plan claims、local-main-first gates 或 remote-publication gates。它只能在 authority checks 通过后，把 Spec Kit artifacts 翻译为可审查的 subordinate inputs。受保护 runtime 模式必须记录 `authority_decision`、`source_url`、`source_pin`、`dry_run_only`、receipt/rollback paths，以及 `specify init`、`.specify/`、`specs/`、`/speckit.*`、`$speckit-*` 是否仍保持 blocked/subordinate/do-not-run。这里的 `authority_decision` 是机器可读 allow/block/subordinate 字段，用于记录胜出的 authority layer 与已应用的严格 priority outcome。
 
 ## 文件归属
 
@@ -86,7 +86,7 @@ Last updated: 2026-06-07
 - [x] Register the new governance pair if created.
 - [x] Run docs registry and implementation-plan checks.
 - [x] Record official `github/spec-kit` reference sources and future Checker + Runtime implementation requirements.
-- [x] Record lowest-priority subordinate-adapter conflict handling behind Comet, OpenSpec/Superpowers, gstack, and Codex harnesses.
+- [x] 记录最低优先级 subordinate-adapter 冲突处理：位于 Comet、OpenSpec/Superpowers、gstack 与 harness runtime safety 之后。
 - [x] R4 Checker implementation: verify subordinate adapter usage for Spec Kit artifacts, command files, skills-mode `$speckit-*` surfaces, generated templates, extensions, presets, and workflow outputs without allowing governance-authority migration; require `authority_decision` evidence.
 - [x] R4 Runtime implementation: add `tools/spec_kit_subordinate_runtime.py` with `source-refresh`, `probe`, `plan-dry-run`, `init-dry-run`, and `self-check-dry-run` modes; live/apply mode names are rejected and all supported modes remain dry-run only with receipts, rollback pointers, redacted output, timeout controls, and local-main-first validation evidence.
 <!-- TASK_BACKLOG_END -->
@@ -113,6 +113,7 @@ Last updated: 2026-06-07
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-07 R4 implementation package: implemented dry-run-only Spec Kit subordinate runtime receipts plus checker validation for generated Spec Kit surfaces and receipt authority decisions; no live Spec Kit command, install, `.specify/`, root `specs/`, `/speckit.*`, or `$speckit-*` surface was created.
+- 2026-06-07 R4 closeout package：将 companion 治理文本对齐到严格顺序 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`；主归口继续属于 `spec_kit_authority_guard_plan`。
 - 2026-06-07 conflict-priority refresh：本 docs-only package 记录 Spec Kit 只作为 subordinate adapter/template/probe；live 或 apply modes 仍延后到未来 Checker + Runtime implementation 与显式授权之后。
 - 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 记录官方 `github/spec-kit` references 与未来 Checker + Runtime helper 要求；未安装或运行 Spec Kit。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。

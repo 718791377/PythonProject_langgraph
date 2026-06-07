@@ -16,6 +16,8 @@ zh_cn_path: docs_bilingual/governance/spec_kit_subordinate_adapter_policy.zh-CN.
 4. Superpowers remains the implementation-method guidance layer.
 5. Spec Kit may be referenced only as an optional subordinate adapter, template source, or documentation reference.
 
+For conflict handling, the strict decision order is `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+
 Spec Kit is not a project governance authority for this repository unless a separate active implementation plan explicitly changes that boundary and passes local gates.
 
 ## Allowed Uses

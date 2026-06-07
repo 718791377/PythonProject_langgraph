@@ -43,16 +43,16 @@ confirmation_required: true
 <!-- CURRENT_STATUS_START -->
 Status: R4 implemented as a dry-run checker/runtime package
 Stage: R4 Checker + Runtime implementation package
-Owner session: implement-spec-kit-authority-guard-r4-20260607
-Current gate: local-main-first validation and integration for this package; after local integration, stop at the remote-publication gate
+Owner session: implement-spec-kit-authority-guard-r4-closeout-20260607
+Current gate: 先 archive 本有界 R4 closeout package，重新运行本地验证，然后合入本地 `main`，并停在 remote-publication gate
 Runtime boundary: dry-run only; this package does not run `specify init`, does not create `.specify/` or root `specs/`, does not install or upgrade Spec Kit, and does not expose generated `/speckit.*` or `$speckit-*` command surfaces
-Priority update: 2026-06-07 keeps Spec Kit as the lowest-priority subordinate template/probe surface in conflicts with Comet, OpenSpec/Superpowers, gstack, or Codex harnesses.
+Priority update：2026-06-07 将 Spec Kit 固定为位于 Comet、OpenSpec/Superpowers、gstack 与 harness runtime safety 之后的最低优先级 subordinate template/probe surface。
 Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## 冲突优先级
 
-Spec Kit 不得高于 Comet、OpenSpec、Superpowers、gstack delivery-loop advisory checks、Codex harness candidate runtime guards、implementation-plan claims、本地 main 门禁或远端发布门。`specify init`、`.specify/`、`specs/`、`/speckit.*`、`$speckit-*` 继续保持 blocked/subordinate/do-not-run，除非未来 active implementation plan 与显式授权批准。未来 checker/runtime 必须输出 `authority_decision`。这里的 `authority_decision` 是机器可读 allow/block/subordinate 字段，用于记录胜出的 authority layer、原因与已应用的 priority outcome。
+Spec Kit 严格服从 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 这一优先级顺序。`specify init`、`.specify/`、`specs/`、`/speckit.*`、`$speckit-*` 继续保持 blocked/subordinate/do-not-run，除非未来 active implementation plan 与显式授权批准。未来 checker/runtime 必须输出 `authority_decision`。这里的 `authority_decision` 是机器可读 allow/block/subordinate 字段，用于记录胜出的 authority layer、原因与已应用的严格 priority outcome。
 
 ## 文件归属
 
@@ -86,7 +86,7 @@ Spec Kit 不得高于 Comet、OpenSpec、Superpowers、gstack delivery-loop advi
 - [x] Register the checker in the local gate only after implementation confirmation.
 - [x] Run Spec Kit guard tests and local gate.
 - [x] Record official `github/spec-kit` reference sources and future Checker + Runtime implementation boundary.
-- [x] Record Spec Kit lowest-priority subordinate boundary.
+- [x] 记录严格优先级：Spec Kit 位于 Comet、OpenSpec/Superpowers、gstack 与 harness runtime safety 之后。
 - [x] R4 Checker implementation: extend `tools/check_spec_kit_authority_guard.py` to validate `.specify/`, root `specs/`, generated `/speckit.*`, `$speckit-*`, `.codex/commands/*speckit*`, `.codex/skills/*speckit*`, `.github/prompts/*speckit*`, root `speckit.*`, root `speckit-*`, extension, preset, and workflow-output surfaces, plus machine-readable `authority_decision` receipt evidence.
 - [x] R4 Runtime implementation: add `tools/spec_kit_subordinate_runtime.py` with `source-refresh`, `probe`, `plan-dry-run`, `init-dry-run`, and `self-check-dry-run`; all modes are dry-run only and live/apply modes are rejected.
 <!-- TASK_BACKLOG_END -->
@@ -113,7 +113,8 @@ Spec Kit 不得高于 Comet、OpenSpec、Superpowers、gstack delivery-loop advi
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-07 R4 implementation package: added dry-run-only `tools/spec_kit_subordinate_runtime.py`, extended `tools/check_spec_kit_authority_guard.py` receipt and generated-surface validation, added `test/spec_kit_subordinate_runtime.test.py`, extended authority guard tests, and registered runtime/test/script backing before local gates.
-- 2026-06-07 conflict-priority refresh：本 docs-only 包记录 Spec Kit 的最低优先级从属边界；不运行 `specify init`，不创建 `.specify/`，不实现 Checker + Runtime 脚本。
+- 2026-06-07 R4 closeout package：将严格 authority order 收紧为 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`，提升 stable safety-rule requirement，并在合入本地 main 前 archive 有界 closeout change。
+- 2026-06-07 conflict-priority refresh：本包记录严格优先级 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`；不运行 `specify init`，不创建 `.specify/`，所有 runtime 仍为 dry-run only。
 - 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 记录 `github/spec-kit` 官方来源与未来 Checker + Runtime 要求；未运行 `specify init`，也未实现脚本。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 implementation package：新增 `tools/check_spec_kit_authority_guard.py`、`test/spec_kit_authority_guard.test.py`、从属适配器治理文档、CI manifest 注册、安全规则脚本支撑登记，以及 OpenSpec guard 集成；本地门禁前聚焦测试已通过。

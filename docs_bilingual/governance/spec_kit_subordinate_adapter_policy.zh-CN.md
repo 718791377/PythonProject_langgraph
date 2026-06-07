@@ -16,6 +16,8 @@ translation_of: docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md
 4. Superpowers 仍是实现方法指导层。
 5. Spec Kit 只能作为可选从属 adapter、模板来源或文档参考被引用。
 
+发生冲突时，严格决策顺序为 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+
 除非另一个单独的 active implementation plan 明确改变该边界并通过本地门禁，否则 Spec Kit 不是本仓库的项目治理权威。
 
 ## 允许用途

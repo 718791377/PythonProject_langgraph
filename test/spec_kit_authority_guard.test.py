@@ -194,6 +194,7 @@ class SpecKitAuthorityGuardTest(unittest.TestCase):
                     "authority_decision": {
                         "decision": "subordinate",
                         "winning_authority": "Comet/OpenSpec/Superpowers",
+                        "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
                     },
                     "surface_status": {
                         "specify_init": "blocked",
@@ -222,6 +223,54 @@ class SpecKitAuthorityGuardTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertTrue(payload["receipt_validation"]["ok"])
         self.assertEqual(payload["receipt_validation"]["counts"]["receipts"], 1)
+
+    def test_rejects_receipt_missing_priority_order(self) -> None:
+        root = self.make_root("spec-kit-receipt-priority-missing")
+        receipt = root / "receipt.json"
+        receipt.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "runtime": "spec_kit_subordinate_runtime",
+                    "mode": "probe",
+                    "dry_run_only": True,
+                    "would_run_specify": False,
+                    "source_url": "https://github.com/github/spec-kit",
+                    "source_pin": "7106858c4e636098815fffa23f6c6b99eb0e156b",
+                    "authority_decision": {
+                        "decision": "subordinate",
+                        "winning_authority": "Comet/OpenSpec/Superpowers",
+                    },
+                    "surface_status": {
+                        "specify_init": "blocked",
+                        "specify_init_force": "blocked",
+                        "specify_self_check": "blocked",
+                        ".specify/": "absent",
+                        "specs/": "absent",
+                        "/speckit.*": "blocked",
+                        "$speckit-*": "blocked",
+                        "extensions": "absent",
+                        "presets": "absent",
+                        "workflow_outputs": "absent",
+                    },
+                    "redaction": {"status": "pass"},
+                    "timeout": {"seconds": 10, "released": True},
+                    "rollback_pointer": "not-needed-dry-run",
+                    "local_main_first_validation": {"status": "not_required_for_probe"},
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        result = self.run_check(root, "--receipt", str(receipt))
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["receipt_validation"]["ok"])
+        self.assertIn(
+            "receipt.json:receipt_authority_priority_order_mismatch:<missing>",
+            payload["receipt_validation"]["errors"],
+        )
 
     def test_rejects_receipt_missing_surface_status_key(self) -> None:
         root = self.make_root("spec-kit-receipt-invalid")

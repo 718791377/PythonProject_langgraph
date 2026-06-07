@@ -57,6 +57,10 @@ class SpecKitSubordinateRuntimeTest(unittest.TestCase):
         self.assertEqual(payload["source_url"], "https://github.com/github/spec-kit")
         self.assertEqual(payload["source_pin"], "7106858c4e636098815fffa23f6c6b99eb0e156b")
         self.assertEqual(payload["authority_decision"]["decision"], "subordinate")
+        self.assertEqual(
+            payload["authority_decision"]["priority_order"],
+            "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+        )
         self.assertFalse((root / ".specify").exists())
         self.assertFalse((root / "specs").exists())
 

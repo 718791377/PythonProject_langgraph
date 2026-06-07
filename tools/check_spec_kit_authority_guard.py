@@ -15,6 +15,7 @@ CHECK_NAME = "spec_kit_authority_guard"
 DEFAULT_SCAN_ROOTS = (".",)
 SPEC_KIT_SOURCE_URL = "https://github.com/github/spec-kit"
 SPEC_KIT_SOURCE_PIN = "7106858c4e636098815fffa23f6c6b99eb0e156b"
+REQUIRED_PRIORITY_ORDER = "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit"
 ALLOWED_RUNTIME_MODES = {
     "source-refresh",
     "probe",
@@ -482,6 +483,9 @@ def validate_receipt_object(receipt: Any, label: str) -> list[str]:
             errors.append(f"{label}:receipt_authority_decision_invalid:{value or '<missing>'}")
         if not isinstance(decision.get("winning_authority"), str) or not decision.get("winning_authority", "").strip():
             errors.append(f"{label}:receipt_winning_authority_required")
+        priority_order = str(decision.get("priority_order", "")).strip()
+        if priority_order != REQUIRED_PRIORITY_ORDER:
+            errors.append(f"{label}:receipt_authority_priority_order_mismatch:{priority_order or '<missing>'}")
 
     surface = receipt.get("surface_status")
     if not isinstance(surface, dict):

@@ -20,6 +20,7 @@ from typing import Any
 CHECK_NAME = "spec_kit_subordinate_runtime"
 SOURCE_URL = "https://github.com/github/spec-kit"
 SOURCE_PIN = "7106858c4e636098815fffa23f6c6b99eb0e156b"
+REQUIRED_PRIORITY_ORDER = "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit"
 MODES = ("source-refresh", "probe", "plan-dry-run", "init-dry-run", "self-check-dry-run")
 SURFACE_KEYS = (
     "specify_init",
@@ -133,7 +134,7 @@ def build_receipt(root: Path, mode: str, timeout_seconds: int) -> dict[str, Any]
         "authority_decision": {
             "decision": decision,
             "winning_authority": "Comet/OpenSpec/Superpowers/local-main-first gates",
-            "priority_order": "Comet > OpenSpec/Superpowers > gstack > Codex harnesses > Spec Kit subordinate adapter",
+            "priority_order": REQUIRED_PRIORITY_ORDER,
             "reason": "Spec Kit remains a subordinate dry-run/probe source; live initialization and generated surfaces are blocked.",
             "blockers": blockers,
         },
