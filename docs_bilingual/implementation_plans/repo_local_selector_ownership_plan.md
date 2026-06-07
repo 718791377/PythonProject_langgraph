@@ -36,11 +36,14 @@ Ensure active durable selectors are repository-local and cannot leak across repo
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local
-Stage: Stage D R4 selector runtime package
-Owner session: main-codex-repo-local-selector-r4-20260605
-Current gate: focused selector runtime tests passed; local validation, local MR review, and local main integration pending; remote publication remains out of scope
-Stage D entry condition: satisfied by user instruction to continue repo_local_selector_ownership_plan to R4 on 2026-06-05
-Last updated: 2026-06-05
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for repo-local selector ownership.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `selector active-candidate receipt linkage and same-repo adoption split` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -107,6 +110,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for repo-local selector ownership. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-05 Stage D R4 implementation: branch `implement-repo-local-selector-r4-20260605` adds `tools/repo_local_selector_runtime.py`, `test/repo_local_selector_runtime.test.py`, CI manifest registration, and safety registry wiring for selector write/refresh, explicit nonce release, stale reclaim, dry-run/apply fail-closed behavior, and R4 `smoke-tested` receipts.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for active selector write, refresh, renewal, and release helpers; this package updates plan governance only and does not run live runtime.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
