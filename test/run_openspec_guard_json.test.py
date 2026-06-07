@@ -43,6 +43,8 @@ GUARD_STEPS = [
     ("check_user_level_cli_anything_wxwork_cli_governance", "check_user_level_cli_anything_wxwork_cli_governance.py", "user_level_cli_anything_wxwork_cli_governance"),
     ("check_codex_harnesses_governance", "check_codex_harnesses_governance.py", "codex_harnesses_governance"),
     ("check_codex_harnesses_smoke_receipts", "check_codex_harnesses_smoke_receipts.py", "codex_harnesses_smoke_receipts"),
+    ("stop_slop_caveman_response_density", "check_stop_slop_caveman_response_density.py", "stop_slop_caveman_response_density"),
+    ("stop_slop_caveman_smoke_receipts", "check_stop_slop_caveman_smoke_receipts.py", "stop_slop_caveman_smoke_receipts"),
     ("check_gstack_codex_delivery_loop", "check_gstack_codex_delivery_loop.py", "gstack_codex_delivery_loop"),
     ("check_user_level_mcp_skills_cli_install", "check_user_level_mcp_skills_cli_install.py", "user_level_mcp_skills_cli_install"),
     ("check_local_mirrored_ci_gate", "check_local_mirrored_ci_gate.py", "local_mirrored_ci_gate"),
@@ -187,6 +189,8 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertIn("check_local_main_retire_lock", [step["step"] for step in payload["steps"]])
         self.assertIn("check_browser_cli_adapter_smoke_receipts", [step["step"] for step in payload["steps"]])
         self.assertIn("check_codex_harnesses_smoke_receipts", [step["step"] for step in payload["steps"]])
+        self.assertIn("stop_slop_caveman_response_density", [step["step"] for step in payload["steps"]])
+        self.assertIn("stop_slop_caveman_smoke_receipts", [step["step"] for step in payload["steps"]])
         self.assertIn("check_gstack_codex_delivery_loop", [step["step"] for step in payload["steps"]])
         self.assertIn("check_launcher_payload_context_boundary", [step["step"] for step in payload["steps"]])
 

@@ -732,6 +732,26 @@
         "check_gstack_codex_delivery_loop"
       ],
       "description": "Keeps gstack as subordinate Codex delivery-loop advice below Comet/OpenSpec/Superpowers, validates dry-run and fixture-backed R4 smoke receipt evidence, and blocks install/live/browser/hook/telemetry/remote-publication bypass without explicit authorization."
+    },
+    {
+      "id": "stop-slop-caveman-response-density-runtime",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/stop_slop_caveman_response_density_runtime_plan.md",
+        "docs_bilingual/implementation_plans/stop_slop_caveman_response_density_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_stop_slop_caveman_response_density.py",
+        "tools/stop_slop_caveman_runtime.py",
+        "tools/check_stop_slop_caveman_smoke_receipts.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "stop_slop_caveman_response_density",
+        "stop_slop_caveman_smoke_receipts"
+      ],
+      "description": "Keeps Stop-Slop/Caveman response-density checks repo-local and guarded, preserves protected technical spans, requires explicit operator confirmation for apply rewrites, and accepts only bounded redacted R4 smoke receipts as positive evidence."
     }
   ]
 }

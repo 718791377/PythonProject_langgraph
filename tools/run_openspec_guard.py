@@ -131,6 +131,8 @@ def main() -> int:
     user_level_cli_anything_wxwork_cli_governance_script = root / "tools" / "check_user_level_cli_anything_wxwork_cli_governance.py"
     codex_harnesses_governance_script = root / "tools" / "check_codex_harnesses_governance.py"
     codex_harnesses_smoke_receipts_script = root / "tools" / "check_codex_harnesses_smoke_receipts.py"
+    stop_slop_caveman_response_density_script = root / "tools" / "check_stop_slop_caveman_response_density.py"
+    stop_slop_caveman_smoke_receipts_script = root / "tools" / "check_stop_slop_caveman_smoke_receipts.py"
     gstack_codex_delivery_loop_script = root / "tools" / "check_gstack_codex_delivery_loop.py"
     user_level_mcp_skills_cli_install_script = root / "tools" / "check_user_level_mcp_skills_cli_install.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
@@ -215,6 +217,10 @@ def main() -> int:
         raise SystemExit(f"Missing Codex harnesses governance check script: {codex_harnesses_governance_script}")
     if not codex_harnesses_smoke_receipts_script.exists():
         raise SystemExit(f"Missing Codex harnesses R4 smoke receipt check script: {codex_harnesses_smoke_receipts_script}")
+    if not stop_slop_caveman_response_density_script.exists():
+        raise SystemExit(f"Missing Stop-Slop/Caveman response-density check script: {stop_slop_caveman_response_density_script}")
+    if not stop_slop_caveman_smoke_receipts_script.exists():
+        raise SystemExit(f"Missing Stop-Slop/Caveman R4 smoke receipt check script: {stop_slop_caveman_smoke_receipts_script}")
     if not gstack_codex_delivery_loop_script.exists():
         raise SystemExit(f"Missing gstack Codex delivery-loop check script: {gstack_codex_delivery_loop_script}")
     if not user_level_mcp_skills_cli_install_script.exists():
@@ -449,6 +455,16 @@ def main() -> int:
                 "check_codex_harnesses_smoke_receipts",
                 [str(python_exe), str(codex_harnesses_smoke_receipts_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Codex harnesses R4 smoke receipt verification.",
+            ),
+            (
+                "stop_slop_caveman_response_density",
+                [str(python_exe), str(stop_slop_caveman_response_density_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Stop-Slop/Caveman response-density verification.",
+            ),
+            (
+                "stop_slop_caveman_smoke_receipts",
+                [str(python_exe), str(stop_slop_caveman_smoke_receipts_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Stop-Slop/Caveman R4 smoke receipt verification.",
             ),
             (
                 "check_gstack_codex_delivery_loop",
@@ -836,6 +852,17 @@ def main() -> int:
         [str(python_exe), str(codex_harnesses_smoke_receipts_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Codex harnesses R4 smoke receipt verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(stop_slop_caveman_response_density_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Stop-Slop/Caveman response-density verification.",
+    )
+    run_checked(
+        [str(python_exe), str(stop_slop_caveman_smoke_receipts_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Stop-Slop/Caveman R4 smoke receipt verification.",
     )
 
     run_checked(

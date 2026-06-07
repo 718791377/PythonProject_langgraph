@@ -31,18 +31,19 @@ confirmation_required: true
 - 层级：先作为 `D:/PythonProject_langgraph` 的项目级治理与项目级 runtime 方案。
 - 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`。
 - 阶段：Phase 4，因为它影响对话表面质量和输出密度。
-- 本包：只更新方案、registry 和父方案索引；不创建 checker、runtime helper、hook、skill 安装、MCP wrapper 或用户级配置变更。
-- 后续实现：必须达到 checker 加 runtime 的层级，才能声称 ready。
+- 本 R4 实现包新增 repo-local checker/runtime/smoke-receipt 代码；不安装用户级工具，不启用 hook，不创建 MCP wrapper，也不修改用户级配置。
+- 后续推广：R3-R5 必须继续受显式授权、receipt、rollback 与 redaction evidence 约束。
 - 远端发布：除非用户明确要求远端发布，否则不在范围内。
 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: active child-plan definition; code work is not started.
-Stage: documentation package records the checker plus runtime requirement and source links.
-Owner session: `plan-stop-slop-caveman-runtime-20260606` only owns this plan-document package.
-Current gate: validate implementation-plan rules, OpenSpec guard, precommit update/archive review, local gate, and local MR review before local main integration. Remote publication is not authorized.
-Runtime boundary: no Stop-Slop or Caveman runtime is installed, enabled, invoked as a hook, or promoted to user level by this package.
+状态：R4 实现已归档，当前分支为 `implement-stop-slop-caveman-r4-20260607`，准备进入 feature-branch commit。
+阶段：repo-local checker/runtime/smoke receipt 表面已实现；OpenSpec change 已归档到 stable spec `openspec/specs/codex-user-level-response-density-runtime/spec.md`；下一步是本地提交、local CI、local MR review 与本地 `main` 集成。
+Owner session：`stop-slop-caveman-r4-20260607` 在隔离 feature worktree 中拥有本 R4 implementation package；远端发布未授权。
+当前 gate：focused tests、response-density surface checks、smoke receipt checks、safety-rule backing、`openspec validate --all --strict`、aggregate OpenSpec guard、precommit update/archive review、startup mojibake、canary surface 与 `git diff --check` 均有 fresh passing evidence。local gate 与 local MR review 仍需在 feature commit 后、clean worktree 上运行。
+Runtime 边界：本包没有安装 Stop-Slop 或 Caveman runtime，没有启用 hook，也没有推广到用户级。R3-R5 继续受 explicit receipt gate 约束。
+R4 表面：`tools/check_stop_slop_caveman_response_density.py`、`tools/stop_slop_caveman_runtime.py`、`tools/check_stop_slop_caveman_smoke_receipts.py` 和 `check_stop_slop_caveman_response_density.test.py` 覆盖 blocked receipts、smoke-tested receipt evidence 与真实 Unicode 标点处理。
 <!-- CURRENT_STATUS_END -->
 
 ## Checker 与 Runtime 目标
@@ -82,10 +83,10 @@ Runtime boundary: no Stop-Slop or Caveman runtime is installed, enabled, invoked
 - [x] 创建本子方案和中文 companion。
 - [x] 记录 Stop-Slop 与 Caveman 参考链接。
 - [x] 要求后续实现达到 checker 加 runtime，而不是只做文本治理。
-- [ ] 后续实现：新增 `check_stop_slop_caveman_response_density.py`，带 focused fixtures 和 JSON output。
-- [ ] 后续实现：新增 `stop_slop_caveman_runtime.py`，包含 `analyze`、`rewrite --dry-run` 与受保护 `rewrite --apply`。
-- [ ] 后续实现：登记 focused tests、OpenSpec guard wiring 和 CI manifest 覆盖。
-- [ ] 后续 runtime 推广：R3-R5 用户级安装、hook、MCP shrink 和 always-on compression 必须受明确授权以及 receipt/rollback/redaction evidence 约束。
+- [x] 后续实现：新增 `check_stop_slop_caveman_response_density.py`，带 focused fixtures 和 JSON output。
+- [x] 后续实现：新增 `stop_slop_caveman_runtime.py`，包含 `analyze`、`rewrite --dry-run` 与受保护 `rewrite --apply`。
+- [x] 后续实现：登记 focused tests、OpenSpec guard wiring 和 CI manifest 覆盖。
+- [x] 后续 runtime 推广：R3-R5 用户级安装、hook、MCP shrink 和 always-on compression 必须受明确授权以及 receipt/rollback/redaction evidence 约束；R4 接受 blocked receipts，但只有 smoke-tested safe receipts 才算正向证据。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -109,5 +110,9 @@ Runtime boundary: no Stop-Slop or Caveman runtime is installed, enabled, invoked
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- 2026-06-06 文档包：branch `plan-stop-slop-caveman-runtime-20260606` 创建本 active Phase 4 子方案，记录 `hardikpandya/stop-slop` 与 `JuliusBrussee/caveman` 参考源，并把 checker/runtime 代码留给后续实现包。
+- 2026-06-06 文档包：branch `plan-stop-slop-caveman-runtime-20260606` 创建本 active Phase 4 子方案，记录 `hardikpandya/stop-slop` 与 `JuliusBrussee/caveman` 作为参考源，并把 checker/runtime 代码留给后续实现包。
+- 2026-06-07 R4 implementation package：branch `implement-stop-slop-caveman-r4-20260607` 新增 `tools/check_stop_slop_caveman_response_density.py`、`tools/stop_slop_caveman_runtime.py`、`tools/check_stop_slop_caveman_smoke_receipts.py`、focused test `check_stop_slop_caveman_response_density.test.py`、OpenSpec guard wiring、CI manifest registration 与 safety-rule script backing。Focused RED/GREEN evidence：`python test\check_stop_slop_caveman_response_density.test.py` 在脚本不存在时先失败，随后实现后通过 8 个测试，并覆盖真实 Unicode 标点。
+- 2026-06-07 focused validation evidence：`python tools\check_stop_slop_caveman_response_density.py --root . --json`、`python tools\check_stop_slop_caveman_smoke_receipts.py --root . --json`、`python tools\check_safety_rule_script_backing.py --root . --json`、`openspec validate implement-stop-slop-caveman-response-density-r4 --strict` 与 `git diff --check` 在 LF 规范化后通过。
+- 2026-06-07 resumed integration evidence：当前恢复轮次按 `main` 基线重新合并 CI manifest、OpenSpec guard 与 safety-rule registry，保留 Spec Kit、Codex harnesses 和 gstack 条目，同时新增 Stop-Slop/Caveman R4 guard steps；下一步重新跑完整本地验证和归档。
+- 2026-06-07 archive validation evidence：`openspec archive implement-stop-slop-caveman-response-density-r4 --yes` 创建 archive path `openspec/changes/archive/2026-06-07-implement-stop-slop-caveman-response-density-r4/` 与 stable spec `openspec/specs/codex-user-level-response-density-runtime/spec.md`；archive 后 `openspec validate --all --strict`、`python tools\check_precommit_update_archive.py --root . --json`、`python tools\check_stop_slop_caveman_response_density.py --root . --json` 与 `python tools\check_safety_rule_script_backing.py --root . --json` 通过。
 <!-- EVIDENCE_INDEX_END -->
