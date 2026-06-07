@@ -6,8 +6,8 @@ status: active
 plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 created_at: 2026-05-20
-updated_at: 2026-06-06
-last_reviewed_at: 2026-06-06
+updated_at: 2026-06-07
+last_reviewed_at: 2026-06-07
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -54,7 +54,7 @@ Status interpretation:
 
 - `status: active`: this is the current executable implementation plan; it is not a claim that the Project MOE GUI runtime is fully complete.
 - `plan_readiness: full-comet-structure-ready-for-implementation-slicing`: the structure, boundaries, and task granularity are ready for code implementation slicing.
-- `D:\PythonProject_paper_suggest`: A remains the Phase 1 owner; B must not reimplement A business Phase 1. Current GUI availability must always be based on fresh install/readiness/preflight evidence.
+- `D:\PythonProject_paper_suggest`: A remains the Phase 1 owner; B must not reimplement A business Phase 1; current GUI availability requires fresh install/readiness/preflight evidence.
 - 2026-06-01 decision: A owns real Phase 1 and B owns Phase 2 toolchain; validation must update/install into A rather than recreate A business logic inside B.
 - 2026-06-01 evidence: old worktree `paper_suggest-thesis-moe-phase1` is stale and must not be used as current A truth; the new A repair worktree is `D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601`, committed as `560da0e` (A Phase 1 readiness-contract repair commit; the Chinese commit subject is kept only in the zh-CN companion).
 - 2026-06-01 privacy boundary: A's `MOE.md` is ignored/private and was copied only into the A repair worktree for readiness validation; do not commit it and do not copy its full content into B documentation or tooling.
@@ -70,16 +70,10 @@ Status interpretation:
 - 2026-06-05 silent launch and expert workbench slice: B toolchain `0.2.27` adds `project-moe-gui-silent.vbs` as a no-console double-click entry while keeping `project-moe-gui.cmd` as the diagnostic entry; the daemon human-GUI child prefers `pythonw.exe` when available and otherwise keeps the `python.exe + CREATE_NO_WINDOW / DETACHED_PROCESS` fallback; the GUI adds `Expert Workbench`, which only generates runtime/clipboard task briefs and never starts Codex, subagents, model APIs, or reads/copies target private `MOE.md`.
 - 2026-06-05 next slice freeze: Expert Workbench v2 and session-scoped MOE lens selection remain incomplete. v2 must support multi-lens selection, per-session MOE/lens/category controls, and handoff packages for `main-session`, `subagent`, `durable-team`, and `langgraph-workflow`; the GUI still must not execute those carriers or model APIs.
 - 2026-06-06 visual overflow correction: B toolchain `0.2.30` fixes the Sessions page overflow missed by earlier visual smoke checks, also fixes the Expert Workbench bottom-action overflow, and adds `visual_render_check.py` as a multi-page offscreen gate for `Project`, `Sessions`, `Expert Workbench`, `Diagnostics`, and `Settings` with visible-text and non-scroll-container overflow checks.
+- 2026-06-07 enhancement batch: B toolchain `0.2.31` implements the child roadmap's local runtime slice; target-project update/install validation for `D:\PythonProject_paper_suggest` is still pending.
 - Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, only OpenSpec artifacts, repo-local guards, and local validation can be used as fallback evidence.
 
-Inline field definitions:
-
-- `readiness_status` is the target project's final Phase 1 contract readiness classification; `static-ready-candidate` means the read-only static checks satisfy candidate conditions but the target CLI read contract has not run yet, and `ready` means the read contract passed.
-- `adaptation_lane` is the target project's next handling lane; `ready-candidate` may only proceed to further validation, while `ready` may enter the next install or GUI-control step.
-- `control_mode_allowed` says whether GUI write/control is allowed; `false` permits display or dry-run only, while `true` still requires an install receipt, rollback pointer, and target-project acceptance before real operation.
-- `token=ok` is the stable machine-readable success token returned by the target CLI or installer, so success is not inferred from prose output.
-- `blockers=[]` means the dry-run found no blockers; it is not evidence that a real installation has completed.
-- `launcher_runtime_python` records the interpreter that actually runs the installed launcher; `launcher_runtime_reexec=true` proves that an ambient Python invocation re-entered through the configured shared PySide6 runtime.
+Inline field definitions: `readiness_status`, `adaptation_lane`, `control_mode_allowed`, `token=ok`, `blockers=[]`, and `launcher_runtime_*` keep their existing meanings: target readiness, routing lane, gated write permission, stable success token, dry-run blocker absence, and installed-launcher interpreter/reexec evidence.
 
 ## 1. Relationship Model and Naming Boundary
 
@@ -661,19 +655,22 @@ The current implemented visual path is Qt Quick/QML Material with optional legac
 #### Slice 4B-v2: session-scoped MOE lens selection and Expert Workbench v2
 
 - [x] Extend Phase 1 CLI, scaffold template, and fixtures with list-lenses, set-lenses, clear-lenses, plus optional session --lens / --category.
-- [x] Add compatible session fields: selected_lenses, selected_categories, effective_lens_mode, and lens_selection_scope=session; legacy records default to ll.
+- [x] Add compatible session fields: selected_lenses, selected_categories, effective_lens_mode, and lens_selection_scope=session; legacy records default to `all`.
 - [x] Extend the GUI view model and QML Sessions page with selected row, session MOE on/off, lens/category multi-select, apply, clear, readback token, and blockers.
 - [x] Extend Expert Workbench v2 for multi-lens, target-labelled handoff packages for main session / subagent / durable team / LangGraph workflow.
-- [x] Keep Workbench brief-only: no Codex, subagent, durable worker, LangGraph workflow, model API, disk write, or target-state write.
+- [x] Keep Workbench brief-only: no Codex, subagent, durable worker, LangGraph workflow, model API, or target-state write. Workbench may write structured runtime artifacts only under target `.project-runtime/project_moe_gui/`; those artifacts remain Git-ignored and are not execution evidence.
 - [x] Extend privacy and regression coverage for lens commands, empty-selection=all, invalid selection fail-closed, legacy state, QML wiring, handoff targets, and private-surface exclusion.
 - [x] B toolchain version is 0.2.29 so install/update artifacts carry the new QML/launcher contract.
 - [x] B toolchain version is 0.2.30 so install/update artifacts carry the Sessions/Workbench overflow fix and multi-page visual render checker.
+- [x] B toolchain version is 0.2.31 so install/update artifacts carry the roadmap enhancement runtime: multi-size visual fixture profiles, Workbench runtime artifact save/export, Sessions search/filter/sort, UI states, and read-only multi-project panel data.
 
 Follow-up after B local-main closure: update D:\PythonProject_paper_suggest and rerun install, readiness, launcher preflight, and target-project tests there.
 
 Slice 4B-v2 evidence (2026-06-06): QML bridges project/session writes, refresh, and mandatory readback; Sessions has row selection plus MOE/lens controls; Workbench uses multi-lens clipboard-only handoff; tests cover argv, readback, QML, handoff, and privacy.
 
 Visual overflow closure evidence (2026-06-06): `visual_render_check.py` must render `overview`, `sessions`, `workbench`, `diagnostics`, and `settings` at 1180x720; it requires key page text to be visible, rejects visible non-scroll-container overflow, allows scrollable TextArea/ScrollView content only inside its viewport, records screenshots, and fails on QML warnings.
+
+Roadmap enhancement evidence (2026-06-07): see `project_moe_gui_enhancement_roadmap_plan.md` for the full `0.2.31` local runtime evidence index; target-project acceptance remains unchecked.
 
 #### Slice 5: Governance, Docs, and Checker Integration
 

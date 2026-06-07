@@ -6,8 +6,8 @@ plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
 created_at: 2026-05-20
-updated_at: 2026-06-06
-last_reviewed_at: 2026-06-06
+updated_at: 2026-06-07
+last_reviewed_at: 2026-06-07
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -68,6 +68,7 @@ related_docs:
 - 2026-06-02 人类友好 launcher 切片：B toolchain `0.2.25` 将已安装的无参 / 双击 `project-moe-gui.cmd` 改为默认打开可见 PySide6 GUI，供人工 operator 使用；同时保留 `--preflight --json` 作为不弹窗自动化接口，并阻断未带 `--preflight` 的 `--json` 调用成为误触发的机器可见启动路径。
 - 2026-06-05 静默启动与专家工作台切片：B toolchain `0.2.27` 新增 `project-moe-gui-silent.vbs` 作为无控制台双击入口，保留 `project-moe-gui.cmd` 作为诊断入口；daemon 人工 GUI 子进程在可用时优先使用 `pythonw.exe`，否则继续使用 `python.exe + CREATE_NO_WINDOW / DETACHED_PROCESS`；GUI 新增 `Expert Workbench`，只生成运行时/剪贴板任务 brief，不启动 Codex、subagent 或模型 API，不读取/复制目标项目私有 `MOE.md`。
 - 2026-06-05 下一切片冻结：Expert Workbench v2 与 session 级 MOE 镜头选择是未完成 runtime 工作。v2 必须支持主会话自选一个或多个 MOE 镜头、生成面向 main session / subagent / durable team / LangGraph workflow 的 handoff package，并在 session 侧栏按单个 session 开启/关闭 MOE、设置某几个 MOE 或某几类 MOE；GUI 仍不得直接启动 Codex、subagent、durable worker、LangGraph workflow 或模型 API。
+- 2026-06-07 增强路线图 runtime 批次：B toolchain `0.2.31` 已实现多尺寸视觉 fixture、Workbench 草稿/历史/handoff 产物、真实 Workbench 保存/导出 QML bridge、Sessions 搜索/筛选/排序与生效状态解释、UI loading/empty/error/help 状态、只读多项目面板，以及 `.project-runtime/` Git 忽略保护。`D:\PythonProject_paper_suggest` 的目标项目更新/安装验证仍待执行，不能从本次 B 本地批次推断完成。
 - 当前 Comet change 是 `refine-project-moe-gui-plan-comet-structure`。如果 bash 不可用，只能用 OpenSpec artifacts、repo-local guard 与本地验证作为 fallback evidence。
 
 就地字段解释：
@@ -629,10 +630,12 @@ A 已完成的收敛顺序：
 - [x] 扩展 GUI view model，使 session 表格存在明确 selected row，并为当前选中 session 暴露 lens/category 多选、apply、clear、readback token 与 blocker。
 - [x] 扩展 QML Sessions 页面，支持对单个 session 开启/关闭 MOE、应用选定镜头、清空镜头选择，并清楚标注“空选择=全部镜头”。
 - [x] 扩展 Expert Workbench v2，支持主会话选择一个或多个 MOE 镜头、选择 handoff 目标，并生成面向 main session / subagent / durable team / LangGraph workflow 的 handoff package。
-- [x] 保持 Expert Workbench brief-only：不启动 Codex、subagent、durable worker、LangGraph workflow 或模型 API，不写磁盘，不写目标项目状态。
+- [x] 保持 Expert Workbench brief-only：不启动 Codex、subagent、durable worker、LangGraph workflow 或模型 API，不写目标项目状态。Workbench 只能在目标项目 `.project-runtime/project_moe_gui/` 下写结构化运行时产物；这些产物保持 Git 忽略，且不能作为 carrier 执行证据。
 - [x] 扩展隐私检查，确保 lens catalogue、session 行、handoff package 不包含 `MOE.md` 正文、developer instructions、raw session id 或完整 stdout/stderr。
 - [x] 扩展回归测试，覆盖镜头命令、空选择=all、非法 lens/category fail-closed、旧 state 兼容、GUI view-model、QML 静态控件与 Workbench handoff targets。
 - [x] B toolchain version was bumped to patch version 0.2.29 so install/update artifacts carry the new QML/launcher contract.
+- [x] B toolchain version bumped to 0.2.30 so install/update artifacts carry the Sessions/Workbench overflow fix and multi-page visual render checker.
+- [x] B toolchain version bumped to 0.2.31 so install/update artifacts carry the roadmap enhancement runtime: multi-size visual fixture profiles、Workbench runtime artifact save/export、Sessions search/filter/sort、UI states、read-only multi-project panel data。
 Post-local-main target-project follow-up (not part of B Slice 4B-v2 local-main closure): install/update into `D:\PythonProject_paper_suggest` and rerun install check, readiness, launcher preflight, and target-project tests under the target project workflow.
 
 Visual overflow closure evidence (2026-06-06): `visual_render_check.py` must render `overview`, `sessions`, `workbench`, `diagnostics`, and `settings` at 1180x720; it requires key page text to be visible, rejects visible non-scroll-container overflow, allows scrollable TextArea/ScrollView content only inside its viewport, records screenshots, and fails closed on QML warnings.
@@ -644,6 +647,11 @@ Slice 4B-v2 closure evidence (2026-06-06):
 - Expert Workbench v2 changes from a single-lens ComboBox to multi-lens checkboxes; its handoff package remains runtime/clipboard-only and does not execute any carrier.
 - Regression coverage now includes session lens action argv, lens write readback, QML button/bridge/checkbox wiring, multi-carrier handoff targets, and privacy boundaries.
 - Target-project reinstall/verification remains a separate follow-up after B local-main integration; this repository must not mark target-project writes complete before they are actually performed.
+
+Roadmap enhancement evidence（2026-06-07）：
+- `project_moe_gui_enhancement_roadmap_plan.zh-CN.md` 记录 toolchain `0.2.31` 已在 B 本地实现。
+- 本地 runtime 证据包括默认视觉尺寸 `1180x720`、`1366x768`、`1440x900`，fixture profiles `default`、`long-content`、`dense-sessions`，Workbench `saveHandoffDraft` / `exportHandoffPackage` bridge，`.project-runtime/project_moe_gui/` 下的 Workbench 草稿/历史/handoff-queue 产物，Sessions 搜索/筛选/排序与 override hints，UI loading/empty/error/help 状态，以及只读 managed-project 安装状态面板数据。
+- `D:\PythonProject_paper_suggest` 目标项目验收仍未勾选，必须在后续实际执行 update/install、preflight 和视觉验证后才能声明完成。
 
 #### Slice 5：治理、文档与 checker 集成
 

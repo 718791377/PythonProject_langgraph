@@ -3,7 +3,7 @@ doc_id: project_moe_gui_enhancement_roadmap_plan
 lang: zh-CN
 status: active
 plan_readiness: ready-for-implementation
-implementation_status: planned
+implementation_status: runtime-slice-0.2.31-local-complete-target-install-pending
 implementation_lane: project_moe_gui_enhancement
 parent_plan: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md
 doc_class: implementation_plan
@@ -46,7 +46,7 @@ Project MOE GUI `0.2.30` 已经可以作为真实 PySide6 operator console 使�
 状态解释：
 
 - `status: active` 表示这是 post-`0.2.30` GUI 增强的当前 active 子路线图。
-- `implementation_status: planned` 表示本文记录有序实施范围；不代表 runtime 已经交付。
+- `implementation_status: runtime-slice-0.2.31-local-complete-target-install-pending` 表示本文记录有序实施范围；不代表 runtime 已经交付。
 - 父方案继续负责 Project MOE GUI 的整体架构和 readiness lane 治理。
 - 本方案不授权远端发布；GitLab/GitHub 仍需用户后续明确授权。
 
@@ -54,26 +54,33 @@ Project MOE GUI `0.2.30` 已经可以作为真实 PySide6 operator console 使�
 <!-- CURRENT_STATUS_START -->
 
 - [x] 状态：post-0.2.30 Project MOE GUI 增强 active 子实施方案。
-- [x] 实施状态：planned；本文不声明任何 runtime 增强切片已经完成。
-- [ ] 下一实施批次：Slice A 视觉门禁常态化。
+- [x] 本地 runtime 批次完成：toolchain `0.2.31` 已在本仓库实现首个增强批次。
+- [x] runtime artifact 边界已记录：Workbench 草稿/历史/队列写入目标项目 `.project-runtime/project_moe_gui/`，且 `.project-runtime/` 已加入 Git 忽略。
+- [ ] 目标项目后续待执行：把新工具链更新/安装到 `D:/PythonProject_paper_suggest`，再在目标项目运行安装检查、readiness、launcher preflight 和视觉验证。
 
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
 <!-- TASK_BACKLOG_START -->
 
-- [ ] Slice A：视觉渲染门禁支持多尺寸与 fixture profile。
-- [ ] Slice B：Expert Workbench 增加草稿、历史、session 绑定、筛选和结构化导出。
-- [ ] Slice C：Sessions 页增强搜索、筛选、排序和生效状态解释。
-- [ ] Slice D：增加产品级 loading、empty、error、help 状态。
-- [ ] Slice E：增加只读多项目安装/升级状态面板。
+- [x] Slice A：视觉渲染门禁支持多尺寸与 fixture profile。
+- [x] Slice B：Expert Workbench 增加草稿、历史、session 绑定、筛选和结构化导出。
+- [x] Slice C：Sessions 页增强搜索、筛选、排序和生效状态解释。
+- [x] Slice D：增加产品级 loading、empty、error、help 状态。
+- [x] Slice E：增加只读多项目安装/升级状态面板。
+- [ ] 目标项目验收：把 `0.2.31` 安装/更新到 `D:/PythonProject_paper_suggest`，并运行目标 preflight 与多尺寸视觉验证。
 
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
 <!-- EVIDENCE_INDEX_START -->
 
-- Pending implementation evidence is pending future runtime slices.
+- 工具链版本证据：`tools/project_moe_gui_toolchain/src/project_moe_gui/__init__.py` 设置 `TOOLCHAIN_VERSION = "0.2.31"`。
+- 视觉门禁证据：`tools/project_moe_gui_toolchain/visual_render_check.py` 默认覆盖 `1180x720`、`1366x768`、`1440x900`，并支持 `default`、`long-content`、`dense-sessions` fixture profile。
+- Workbench 产物证据：`workbench_artifacts.py` 生成 draft/history/handoff-queue 产物，但不执行 Codex、subagent、durable team、LangGraph workflow、模型 API 或目标状态写入。
+- GUI 证据：`gui_shell.py` 与 `ProjectMoeGui.qml` 暴露真实 Workbench 保存/导出 bridge、Sessions 搜索/筛选/排序/生效解释、UI 状态和只读多项目面板。
+- 测试证据：QML source coverage、visible launch smoke wiring、visual render checker 行为的目标测试已通过；提交前仍需重新运行完整回归。
+- 待补证据：本地 runtime 批次尚未对 `D:/PythonProject_paper_suggest` 执行目标项目安装/更新与验收验证。
 
 <!-- EVIDENCE_INDEX_END -->
 

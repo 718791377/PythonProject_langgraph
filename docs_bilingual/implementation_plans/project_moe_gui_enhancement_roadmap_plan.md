@@ -4,7 +4,7 @@ lang: en
 canonical: docs_bilingual/implementation_plans/project_moe_gui_enhancement_roadmap_plan.md
 status: active
 plan_readiness: ready-for-implementation
-implementation_status: planned
+implementation_status: runtime-slice-0.2.31-local-complete-target-install-pending
 implementation_lane: project_moe_gui_enhancement
 parent_plan: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
 doc_class: implementation_plan
@@ -31,7 +31,7 @@ related_docs:
 
 ## 0. Current Review Verdict
 
-Project MOE GUI `0.2.30` is usable as a real PySide6 operator console, but the remaining gaps are now distinct enough to require a child implementation plan instead of continuing to grow the parent plan.
+Project MOE GUI `0.2.30` was usable as a real PySide6 operator console. The first roadmap runtime batch is now implemented locally as toolchain `0.2.31`, closing the local visual-gate, Workbench artifact, Sessions usability, UI-state, and read-only multi-project panel work. Target-project reinstall and acceptance validation for `D:/PythonProject_paper_suggest` remain a separate follow-up before claiming that target project is on the latest GUI.
 
 Completeness baseline:
 
@@ -46,7 +46,7 @@ Completeness baseline:
 Status interpretation:
 
 - `status: active` means this is the active child roadmap for post-`0.2.30` GUI enhancement.
-- `implementation_status: planned` means this file records the ordered implementation scope; it is not evidence that runtime work has already shipped.
+- `implementation_status: runtime-slice-0.2.31-local-complete-target-install-pending` means this file records the ordered implementation scope; it is not evidence that runtime work has already shipped.
 - The parent plan remains the source of broad Project MOE GUI architecture and readiness-lane governance.
 - This plan does not authorize remote publication; remote GitLab/GitHub actions still require explicit user approval.
 
@@ -54,26 +54,33 @@ Status interpretation:
 <!-- CURRENT_STATUS_START -->
 
 - [x] Status: active child implementation plan for post-0.2.30 Project MOE GUI enhancements.
-- [x] Implementation status: planned; no runtime enhancement slice is claimed complete by this document.
-- [ ] Next implementation batch: Slice A visual gate normalization.
+- [x] Local runtime batch complete: toolchain `0.2.31` implements the first enhancement batch in this repository.
+- [x] Runtime artifact boundary recorded: Workbench drafts/history/queue are written under target `.project-runtime/project_moe_gui/`, and `.project-runtime/` is ignored by Git.
+- [ ] Target-project follow-up pending: update/install the new toolchain into `D:/PythonProject_paper_suggest`, then rerun install check, readiness, launcher preflight, and visual validation there.
 
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
 <!-- TASK_BACKLOG_START -->
 
-- [ ] Slice A: make visual render gates multi-size and fixture-profile aware.
-- [ ] Slice B: add Expert Workbench drafts, history, session binding, filtering, and structured exports.
-- [ ] Slice C: improve Sessions search, filter, sort, and effective-state explanations.
-- [ ] Slice D: add product-grade loading, empty, error, and help states.
-- [ ] Slice E: add read-only multi-project install and upgrade status panel.
+- [x] Slice A: make visual render gates multi-size and fixture-profile aware.
+- [x] Slice B: add Expert Workbench drafts, history, session binding, filtering, and structured exports.
+- [x] Slice C: improve Sessions search, filter, sort, and effective-state explanations.
+- [x] Slice D: add product-grade loading, empty, error, and help states.
+- [x] Slice E: add read-only multi-project install and upgrade status panel.
+- [ ] Target-project acceptance: install/update `0.2.31` into `D:/PythonProject_paper_suggest` and run target preflight plus multi-size visual validation.
 
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
 <!-- EVIDENCE_INDEX_START -->
 
-- Pending implementation evidence is pending future runtime slices.
+- Toolchain version evidence: `tools/project_moe_gui_toolchain/src/project_moe_gui/__init__.py` sets `TOOLCHAIN_VERSION = "0.2.31"`.
+- Visual gate evidence: `tools/project_moe_gui_toolchain/visual_render_check.py` defaults to `1180x720`, `1366x768`, and `1440x900`, and supports `default`, `long-content`, and `dense-sessions` fixture profiles.
+- Workbench artifact evidence: `workbench_artifacts.py` creates draft/history/handoff-queue artifacts without executing Codex, subagents, durable teams, LangGraph workflows, model APIs, or target-state writes.
+- GUI evidence: `gui_shell.py` and `ProjectMoeGui.qml` expose real Workbench save/export bridge methods, Sessions search/filter/sort/effective-state explanations, UI states, and a read-only multi-project panel.
+- Test evidence: targeted checks passed for QML source coverage, visible launch smoke wiring, and visual render checker behavior; full regression must be rerun before commit.
+- Pending evidence: target-project install/update and acceptance validation for `D:/PythonProject_paper_suggest` have not been performed in this local runtime batch.
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -130,50 +137,50 @@ Rules:
 
 ### Slice A: Visual Gate P0
 
-- [ ] Add default visual sizes: `1180x720`, `1366x768`, and `1440x900`.
-- [ ] Add `--fixture-profile default|long-content|dense-sessions` to the visual render checker.
-- [ ] Add long session names, long lens names, many sessions, many categories, and many lenses to generated fixtures.
-- [ ] Keep real PySide6 offscreen rendering as an explicit command, not a mandatory every-test default.
-- [ ] Add unit tests for size parsing, default sizes, fixture generation, and overflow detection.
-- [ ] Register the light visual checker tests in the local CI manifest if not already covered.
+- [x] Add default visual sizes: `1180x720`, `1366x768`, and `1440x900`.
+- [x] Add `--fixture-profile default|long-content|dense-sessions` to the visual render checker.
+- [x] Add long session names, long lens names, many sessions, many categories, and many lenses to generated fixtures.
+- [x] Keep real PySide6 offscreen rendering as an explicit command, not a mandatory every-test default.
+- [x] Add unit tests for size parsing, default sizes, fixture generation, and overflow detection.
+- [x] Keep the light visual checker covered by the existing Project MOE GUI regression test suite; no separate heavy offscreen render was added to every-test defaults.
 - [ ] Run target-project visual validation against `D:/PythonProject_paper_suggest` after installing the new toolchain.
 
 ### Slice B: Expert Workbench P1
 
-- [ ] Add draft-save support for handoff packages.
-- [ ] Add expert result history records with status transitions.
-- [ ] Add session binding for generated briefs.
-- [ ] Add filtering by session, handoff target, lens, category, and status.
-- [ ] Add a structured export action for each handoff target.
-- [ ] Preserve the rule that export means artifact generation or clipboard copy, not carrier execution.
-- [ ] Add tests for artifact schema, redaction boundary, draft/history lifecycle, and carrier export shape.
+- [x] Add draft-save support for handoff packages.
+- [x] Add expert result history records with status transitions.
+- [x] Add session binding for generated briefs.
+- [x] Add filtering by session, handoff target, lens, category, and status.
+- [x] Add a structured export action for each handoff target.
+- [x] Preserve the rule that export means artifact generation or clipboard copy, not carrier execution.
+- [x] Add tests for artifact schema, redaction boundary, draft/history lifecycle, and carrier export shape.
 
 ### Slice C: Sessions Usability P1
 
-- [ ] Add Sessions search text.
-- [ ] Add Sessions filter mode: all, enabled, disabled, blocked or invalid.
-- [ ] Add Sessions sort keys: last seen, display id, label, and effective lens mode.
-- [ ] Show effective lens/category mode for the selected session.
-- [ ] Show project-default versus session-override conflict hints.
-- [ ] Add no-session, no-search-result, and readiness-blocked empty states.
-- [ ] Add tests for view-model filtering, sorting, and explanation text.
+- [x] Add Sessions search text.
+- [x] Add Sessions filter mode: all, enabled, disabled, blocked or invalid.
+- [x] Add Sessions sort keys: last seen, display id, label, and effective lens mode.
+- [x] Show effective lens/category mode for the selected session.
+- [x] Show project-default versus session-override conflict hints.
+- [x] Add no-session, no-search-result, and readiness-blocked empty states.
+- [x] Add tests for view-model filtering, sorting, and explanation text.
 
 ### Slice D: UI Product Polish P2
 
-- [ ] Add loading, empty, error, and help states to the main QML pages.
-- [ ] Tighten card spacing and action hierarchy without introducing a new GUI framework.
-- [ ] Keep QFluentWidgets as an evaluated optional path only until license review is complete.
-- [ ] Add a license-review note if QFluentWidgets remains listed as a future option.
-- [ ] Extend visual fixtures to cover empty/error/loading/help states.
+- [x] Add loading, empty, error, and help states to the main QML pages.
+- [x] Tighten card spacing and action hierarchy without introducing a new GUI framework.
+- [x] Keep QFluentWidgets as an evaluated optional path only until license review is complete.
+- [x] Add a license-review note if QFluentWidgets remains listed as a future option.
+- [x] Extend visual fixtures to cover empty/error/loading/help states.
 
 ### Slice E: Multi-Project Install/Upgrade Panel P2
 
-- [ ] Add a read-only project registry input contract.
-- [ ] Add install-status scanning for explicitly listed projects only.
-- [ ] Show installed GUI version, source toolchain version, dirty status, readiness status, and version lag.
-- [ ] Generate dry-run update plan and rollback hint without writing target projects.
-- [ ] Keep real update/apply actions behind existing installer/updater gates.
-- [ ] Add tests for registry parsing, stale version detection, dirty fail-closed behavior, and dry-run output.
+- [x] Add a read-only project registry input contract.
+- [x] Add install-status scanning for explicitly listed projects only.
+- [x] Show installed GUI version, source toolchain version, dirty status, readiness status, and version lag.
+- [x] Generate dry-run update plan and rollback hint without writing target projects.
+- [x] Keep real update/apply actions behind existing installer/updater gates.
+- [x] Add tests for registry parsing, stale version detection, dirty fail-closed behavior, and dry-run output.
 
 ## 4. Verification Plan
 
