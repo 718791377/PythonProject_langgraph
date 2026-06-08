@@ -78,6 +78,7 @@ GUARD_STEPS = [
     ("check_durable_routing_smoke_gate_template", "check_durable_routing_smoke_gate_template.py", "durable_routing_smoke_gate_template"),
     ("check_durable_routing_smoke_receipts", "check_durable_routing_smoke_receipts.py", "durable_routing_smoke_receipts"),
     ("check_r5_active_candidate_receipts", "check_r5_active_candidate_receipts.py", "r5_active_candidate_receipts"),
+    ("check_r6_live_runtime_receipts", "check_r6_live_runtime_receipts.py", "r6_live_runtime_receipts"),
     ("check_codex_native_rollback_release_gate_template", "check_codex_native_rollback_release_gate_template.py", "codex_native_rollback_release_gate_template"),
     ("check_worktree_session_hygiene", "check_worktree_session_hygiene.py", "worktree_session_hygiene"),
     ("check_worktree_task_receipt", "check_worktree_task_receipt.py", "worktree_task_receipt"),
