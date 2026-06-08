@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -724,7 +725,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             encoding="utf-8",
         )
         (root / "AGENTS.md").write_text(
-            "On startup, resume, continue, reload, or phase change, run `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
+            "Before every user message and on the next user message after a GUI change, run `python .\\tools\\thesis_moe_turn_gate.py --json`; on startup, resume, continue, reload, or phase change, fall back to `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
             encoding="utf-8",
         )
         docs_dir = root / "docs_bilingual" / "operations"
@@ -862,7 +863,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(payload["wrappers"]["on"]["direct_state_path_references"], [])
             self.assertTrue(payload["startup_activation_hooks"]["hook_found"])
             self.assertTrue(payload["startup_activation_hooks"]["basic_status_hook_found"])
-            self.assertEqual(payload["startup_activation_hooks"]["required_tokens"], ["thesis_moe_mode.py", "status --json", "startup", "resume", "continue", "reload", "phase change"])
+            self.assertEqual(payload["startup_activation_hooks"]["required_tokens"], ["thesis_moe_mode.py", "status --json", "thesis_moe_turn_gate.py", "user message", "next user message", "startup", "resume", "continue", "reload", "phase change"])
             self.assertTrue(payload["operator_docs"]["ready"])
             remediation = payload["remediation_plan"]
             self.assertTrue(remediation["ready_for_control"])
@@ -1895,11 +1896,14 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertTrue((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").exists())
             self.assertTrue((project / "project-moe-gui.cmd").exists())
             self.assertTrue((project / "project-moe-gui-silent.vbs").exists())
+            self.assertTrue((project / "tools" / "thesis_moe_turn_gate.py").exists())
             config_payload = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").read_text(encoding="utf-8-sig"))
             self.assertEqual(config_payload["silent_launch"]["entry"], "project-moe-gui-silent.vbs")
             self.assertEqual(config_payload["silent_launch"]["diagnostic_entry"], "project-moe-gui.cmd")
+            self.assertEqual(config_payload["running_session_turn_gate"]["helper"], "tools/thesis_moe_turn_gate.py")
             manifest = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json").read_text(encoding="utf-8-sig"))
             self.assertIn("project-moe-gui-silent.vbs", [item["path"] for item in manifest["managed_files"]])
+            self.assertIn("tools/thesis_moe_turn_gate.py", [item["path"] for item in manifest["managed_files"]])
 
             _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
             self.assertEqual(check_payload["status"], "up_to_date")
@@ -2225,6 +2229,82 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(view_model["session_table"]["token"], "ok")
             self.assertIsNone(view_model["session_lens_panel"]["selected_row_index"])
 
+    def test_gui_shell_discovers_codex_session_logs_for_target_project(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            project = Path(tmp) / "target"
+            other = Path(tmp) / "other"
+            sessions_root = home / ".codex" / "sessions" / "2026" / "06" / "08"
+            sessions_root.mkdir(parents=True)
+            project.mkdir()
+            other.mkdir()
+            (sessions_root / "rollout-target.jsonl").write_text(
+                json.dumps(
+                    {
+                        "timestamp": "2026-06-08T00:00:00Z",
+                        "type": "session_meta",
+                        "payload": {
+                            "id": "codex-target-session",
+                            "timestamp": "2026-06-08T00:00:00Z",
+                            "cwd": str(project),
+                            "git": {"branch": "main"},
+                        },
+                    }
+                )
+                + "\n"
+                + json.dumps({"type": "message", "payload": {"text": "private body must not be read"}})
+                + "\n",
+                encoding="utf-8",
+            )
+            (sessions_root / "rollout-other.jsonl").write_text(
+                json.dumps(
+                    {
+                        "type": "session_meta",
+                        "payload": {"id": "codex-other-session", "timestamp": "2026-06-08T00:01:00Z", "cwd": str(other)},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            config = self.gui_config(project)
+            config["codex_sessions_root"] = str(home / ".codex" / "sessions")
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": False, "git_branch": "main"},
+                sessions_payload={"ok": True, "token": "ok", "sessions": []},
+                status_payload={"ok": True, "token": "ok", "effective_enabled": False},
+                pyside6_available=False,
+            )
+
+            rows = view_model["session_table"]["rows"]
+            self.assertEqual([row["session_id"] for row in rows], ["codex-target-session"])
+            self.assertEqual(rows[0]["row_origin"], "discovered-only")
+            self.assertEqual(rows[0]["session_id_source"], "codex-session-log")
+            self.assertTrue(rows[0]["actions"]["enable_session"]["ok"])
+            self.assertIn("codex-target-session", rows[0]["actions"]["enable_session"]["argv"])
+            discovery = view_model["session_table"]["codex_session_discovery"]
+            self.assertEqual(discovery["count"], 1)
+            self.assertFalse(discovery["privacy_policy"]["reads_message_bodies"])
+            self.assertEqual(view_model["session_table"]["row_origin_counts"]["discovered_only"], 1)
+
+    def test_runtime_view_model_uses_installed_target_project_root(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "installed-target-root"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="installed-target-root", session_id="session-installed-root")
+            config = self.gui_config(project)
+            config.pop("target_project_root")
+            config["installed_target_project_root"] = str(project)
+            view_model, errors = gui_shell.build_runtime_view_model(config)
+            self.assertEqual(errors, [])
+            self.assertEqual(view_model["top_banner"]["project_root"], str(project.resolve()))
+            self.assertEqual(view_model["session_table"]["token"], "ok")
+            self.assertEqual(view_model["session_table"]["rows"][0]["session_id"], "session-installed-root")
+
     def test_gui_shell_action_plans_use_argv_lists_not_shell_strings(self) -> None:
         from project_moe_gui import gui_shell
 
@@ -2357,6 +2437,104 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(result["readback_commands"], ["project-status", "list-sessions", "status"])
             self.assertIn("project-status", result["readback"])
             self.assertEqual(result["button_state_during_command"]["pending_scope"], "project-default")
+
+    def test_gui_shell_rejects_session_write_readback_for_wrong_session(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            config = self.gui_config(project)
+            result = gui_shell.execute_write_action_with_readback(config, "session-on", session_id="another-session")
+            self.assertFalse(result["ok"], result)
+            self.assertIn(result["token"], {"blocked:write_cli_session_id_mismatch", "blocked:write_cli_readback_session_id_mismatch"})
+            observed_codes = {item["code"] for item in result["errors"]}
+            self.assertTrue({"blocked:write_cli_session_id_mismatch", "blocked:write_cli_readback_session_id_mismatch"} & observed_codes)
+
+    def test_installed_turn_gate_uses_explicit_session_id_and_next_message_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "turn-gate-target"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="turn-gate-target", session_id="session-turn-gate")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+
+            mode_cli = project / "tools" / "thesis_moe_mode.py"
+            subprocess.run(
+                [sys.executable, str(mode_cli), "on", "--session-id", "session-turn-gate", "--json"],
+                cwd=project,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=True,
+            )
+            result = subprocess.run(
+                [sys.executable, str(project / "tools" / "thesis_moe_turn_gate.py"), "--json", "--session-id", "session-turn-gate"],
+                cwd=project,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["token"], "ok", payload)
+            self.assertTrue(payload["effective_enabled"])
+            self.assertTrue(payload["apply_project_moe_rules"])
+            self.assertEqual(payload["effect_timing"], "next_user_message")
+            self.assertEqual(payload["current_session_id_source"], "argument")
+            self.assertFalse(payload["privacy_policy"]["reads_message_bodies"])
+            self.assertEqual(payload["mode_cli_command"], "status --json --session-id <current-session>")
+
+    def test_installed_turn_gate_fails_closed_on_ambiguous_project_sessions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "turn-gate-ambiguous"
+            sessions_root = Path(tmp) / "home" / ".codex" / "sessions"
+            project.mkdir()
+            sessions_root.mkdir(parents=True)
+            self.make_stateful_project(project, project_label="turn-gate-ambiguous", session_id="session-turn-gate")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            text = (project / "tools" / "thesis_moe_turn_gate.py").read_text(encoding="utf-8")
+            text = re.sub(
+                r'"CODEX_THREAD_ID",\n    "CODEX_SESSION_ID",\n    "OPENAI_CODEX_SESSION_ID",\n    "OH_MY_CODEX_SESSION_ID",\n    "OMX_SESSION_ID",\n    "CODEX_SESSION",\n',
+                "",
+                text,
+            )
+            (project / "tools" / "thesis_moe_turn_gate.py").write_text(text, encoding="utf-8")
+            for name, session_id in [("one", "codex-one"), ("two", "codex-two")]:
+                (sessions_root / f"{name}.jsonl").write_text(
+                    json.dumps({"type": "session_meta", "payload": {"id": session_id, "timestamp": f"2026-06-08T00:00:0{len(name)}Z", "cwd": str(project)}})
+                    + "\n"
+                    + json.dumps({"type": "message", "payload": {"text": "body must not be read"}})
+                    + "\n",
+                    encoding="utf-8",
+                )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(project / "tools" / "thesis_moe_turn_gate.py"),
+                    "--json",
+                    "--codex-sessions-root",
+                    str(sessions_root),
+                ],
+                cwd=project,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["token"], "blocked:ambiguous_current_session_id", payload)
+            self.assertEqual(payload["candidate_count"], 2)
+            self.assertFalse(payload["privacy_policy"]["reads_message_bodies"])
 
     def test_gui_shell_rejects_write_payload_without_changed_paths(self) -> None:
         from project_moe_gui import gui_shell
@@ -3229,12 +3407,16 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             installed_manifest = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json").read_text(encoding="utf-8-sig"))
             managed_paths = {item["path"] for item in installed_manifest["managed_files"]}
             self.assertIn("tools/project_moe_gui/qml/ProjectMoeGui.qml", managed_paths)
+            self.assertIn("tools/thesis_moe_turn_gate.py", managed_paths)
 
             launcher_text = (project / "tools" / "project_moe_gui" / "launcher.py").read_text(encoding="utf-8")
             command_text = (project / "project-moe-gui.cmd").read_text(encoding="utf-8")
+            turn_gate_text = (project / "tools" / "thesis_moe_turn_gate.py").read_text(encoding="utf-8")
             self.assertIn("maybe_reexec_with_runtime", launcher_text)
             self.assertIn("PROJECT_MOE_GUI_RUNTIME_REEXEC", launcher_text)
             self.assertIn("set PYTHONUTF8=1", command_text)
+            self.assertIn("blocked:ambiguous_current_session_id", turn_gate_text)
+            self.assertIn("reads_message_bodies", turn_gate_text)
 
             _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
             self.assertEqual(check_payload["status"], "up_to_date")
@@ -3669,6 +3851,11 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertEqual(cfg["silent_launch"]["entry"], "project-moe-gui-silent.vbs")
         self.assertTrue(cfg["silent_launch"]["uses_wscript_hidden_window"])
         self.assertTrue(cfg["silent_launch"]["keeps_preflight_on_cmd"])
+        self.assertTrue(cfg["codex_session_discovery"]["enabled"])
+        self.assertFalse(cfg["codex_session_discovery"]["reads_message_bodies"])
+        self.assertEqual(cfg["codex_session_discovery"]["session_index_role"], "supplemental-labels-only")
+        self.assertTrue(cfg["running_session_turn_gate"]["enabled"])
+        self.assertEqual(cfg["running_session_turn_gate"]["effect_timing"], "next_user_message")
 
         launcher = launcher_text()
         self.assertIn("build_daemon_launch_plan", launcher)

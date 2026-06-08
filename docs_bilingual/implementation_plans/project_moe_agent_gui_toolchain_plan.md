@@ -6,8 +6,8 @@ status: active
 plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 created_at: 2026-05-20
-updated_at: 2026-06-07
-last_reviewed_at: 2026-06-07
+updated_at: 2026-06-08
+last_reviewed_at: 2026-06-08
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -52,26 +52,13 @@ This document has been refactored from a loose status note plus scattered task l
 
 Status interpretation:
 
-- `status: active`: this is the current executable implementation plan; it is not a claim that the Project MOE GUI runtime is fully complete.
-- `plan_readiness: full-comet-structure-ready-for-implementation-slicing`: the structure, boundaries, and task granularity are ready for code implementation slicing.
-- `D:\PythonProject_paper_suggest`: A remains the Phase 1 owner; B must not reimplement A business Phase 1; current GUI availability requires fresh install/readiness/preflight evidence.
-- 2026-06-01 decision: A owns real Phase 1 and B owns Phase 2 toolchain; validation must update/install into A rather than recreate A business logic inside B.
-- 2026-06-01 evidence: old worktree `paper_suggest-thesis-moe-phase1` is stale and must not be used as current A truth; the new A repair worktree is `D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601`, committed as `560da0e` (A Phase 1 readiness-contract repair commit; the Chinese commit subject is kept only in the zh-CN companion).
-- 2026-06-01 privacy boundary: A's `MOE.md` is ignored/private and was copied only into the A repair worktree for readiness validation; do not commit it and do not copy its full content into B documentation or tooling.
-- 2026-06-01 readiness evidence: A repair worktree reached static `ready-candidate/control_mode_allowed=false` and read-contract `ready/control_mode_allowed=true` with stable `token=ok`; here `control_mode_allowed` means whether the Phase 1 readiness contract permits GUI write/control actions (`false` = read/static candidate only, `true` = control path may be exposed behind gates). Checked commands were `project-status`, `list-sessions`, `status`, and `assert-on`.
-- 2026-06-01 A local-main evidence: A integrated `560da0e` (Phase 1 readiness-contract repair), `c6b92ae` (real Project MOE GUI install), and `ce23931` (shared-runtime launcher update). Rollback refs are `refs/backup/local-main/20260601-125126-before-thesis-moe-phase1-repair-20260601` and `refs/backup/local-main/20260601-215213-before-project-moe-gui-runtime-entry-update`.
-- 2026-06-01 Phase 2 evidence: B toolchain `0.2.22` repairs target-launcher runtime entry by re-executing through configured `runtime_python`, guarding recursion with `PROJECT_MOE_GUI_RUNTIME_REEXEC`, and setting `PYTHONUTF8=1`. The installed preflight payload records `launcher_runtime_python` and `launcher_runtime_reexec`.
-- 2026-06-01 correction evidence: A later showed an installed `toolchain_source_root` still pointing at a deleted B feature worktree, so A launcher preflight returned `blocked:phase1_readiness_gate_unavailable / No module named 'project_moe_gui'`; the previous "launcher preflight ok" is historical evidence, not current availability.
-- 2026-06-01 Phase 2 fix slice: B toolchain `0.2.23` writes stable source root `D:\PythonProject_langgraph\tools\project_moe_gui_toolchain`, adds a source-root existence/import checker, and lets updater repair recoverable installs whose manifest still matches but source root is unavailable.
-- 2026-06-01 acceptance boundary: A remains a Ready Lane target, but current GUI preflight availability must be re-established by updating A managed artifacts to 0.2.23 and rerunning install check, readiness, and launcher preflight; no-argument / double-click launch is now the human-visible path after `0.2.25`; `--preflight --json` remains the automation path.
-- 2026-06-01 scaffold apply slice: B toolchain `0.2.24` adds protected `scaffold_project_moe_phase1.py --apply`. It creates only missing Bootstrap Lane files after project-evidence and clean Git dirty-state checks pass, refuses to overwrite existing private or operator surfaces, and keeps GUI control disabled until later readiness evidence returns Ready Lane.
-- 2026-06-02 human-friendly launcher slice: B toolchain `0.2.25` makes installed no-argument / double-click `project-moe-gui.cmd` open the visible PySide6 GUI by default for human operators, while preserving `--preflight --json` as the non-visible automation interface and blocking `--json` without `--preflight` from becoming an accidental machine-visible launch path.
-- 2026-06-02 visual/daemon decision: later packages must keep the styled card/sidebar/status UI, license metadata, no-console daemon launch, duplicate lock, and close confirmation with explicit Exit / Hide-to-tray / Cancel behavior.
-- 2026-06-05 silent launch and expert workbench slice: B toolchain `0.2.27` adds `project-moe-gui-silent.vbs` as a no-console double-click entry while keeping `project-moe-gui.cmd` as the diagnostic entry; the daemon human-GUI child prefers `pythonw.exe` when available and otherwise keeps the `python.exe + CREATE_NO_WINDOW / DETACHED_PROCESS` fallback; the GUI adds `Expert Workbench`, which only generates runtime/clipboard task briefs and never starts Codex, subagents, model APIs, or reads/copies target private `MOE.md`.
-- 2026-06-05 next slice freeze: Expert Workbench v2 and session-scoped MOE lens selection remain incomplete. v2 must support multi-lens selection, per-session MOE/lens/category controls, and handoff packages for `main-session`, `subagent`, `durable-team`, and `langgraph-workflow`; the GUI still must not execute those carriers or model APIs.
-- 2026-06-06 visual overflow correction: B toolchain `0.2.30` fixes the Sessions page overflow missed by earlier visual smoke checks, also fixes the Expert Workbench bottom-action overflow, and adds `visual_render_check.py` as a multi-page offscreen gate for `Project`, `Sessions`, `Expert Workbench`, `Diagnostics`, and `Settings` with visible-text and non-scroll-container overflow checks.
-- 2026-06-07 enhancement batch: B toolchain `0.2.31` implements the child roadmap's local runtime slice; target-project update/install validation for `D:\PythonProject_paper_suggest` is still pending.
-- Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, only OpenSpec artifacts, repo-local guards, and local validation can be used as fallback evidence.
+- `status: active`: executable plan status only; it is not a claim that the runtime is fully complete.
+- `plan_readiness: full-comet-structure-ready-for-implementation-slicing`: structure, boundaries, and task granularity are ready for implementation slicing.
+- A/B boundary: `D:\PythonProject_paper_suggest` owns the real Phase 1 business contract; B owns the reusable Phase 2 toolchain. B fixtures support tests only and must not replace A evidence.
+- Privacy boundary: A private `MOE.md` remains ignored/private. B docs and tooling may reference the path/contract but must not copy its body.
+- Historical evidence through 2026-06-07 is summarized as follows: A repaired Phase 1 readiness, B implemented stable source-root installs, protected scaffold apply, double-click/no-console GUI launch, QML/daemon/close behavior, Expert Workbench v1/v2, multi-size visual checks, Workbench history/drafts, Sessions search/filter/sort, and read-only multi-project status panels. Use git history and the referenced child plans for older detailed command logs.
+- 2026-06-08 current evidence: B toolchain `0.2.33` adds read-only Codex `session_meta` discovery for target-project sessions, visible discovered-only rows, explicit metadata-only smoke-session classification, session write/readback `session_id` matching, and managed `tools/thesis_moe_turn_gate.py` so running sessions re-read GUI/CLI changes on the next user message. A interim validation committed `5d44839` after feature-worktree install: readiness `token=ok / ready / control_mode_allowed=true`, launcher preflight `token=ok`, target tests `Ran 10 tests ... OK`, and discovery `total=15 / registered_matched=1 / discovered_only=11 / state_only=3`. Because that interim install records the feature worktree as `toolchain_source_root`, A must be refreshed once more from B primary local `main` after this branch is locally integrated.
+- Current Comet change: `refine-project-moe-gui-plan-comet-structure`. If bash is unavailable, use OpenSpec artifacts, repo-local guards, and local validation as fallback evidence; do not fake Comet bash evidence.
 
 Inline field definitions: `readiness_status`, `adaptation_lane`, `control_mode_allowed`, `token=ok`, `blockers=[]`, and `launcher_runtime_*` keep their existing meanings: target readiness, routing lane, gated write permission, stable success token, dry-run blocker absence, and installed-launcher interpreter/reexec evidence.
 
@@ -663,14 +650,19 @@ The current implemented visual path is Qt Quick/QML Material with optional legac
 - [x] B toolchain version is 0.2.29 so install/update artifacts carry the new QML/launcher contract.
 - [x] B toolchain version is 0.2.30 so install/update artifacts carry the Sessions/Workbench overflow fix and multi-page visual render checker.
 - [x] B toolchain version is 0.2.31 so install/update artifacts carry the roadmap enhancement runtime: multi-size visual fixture profiles, Workbench runtime artifact save/export, Sessions search/filter/sort, UI states, and read-only multi-project panel data.
+- [x] B toolchain version is 0.2.33 so install/update artifacts carry running-session support: Codex `session_meta` discovery, discovered-only visible rows, next-user-message turn gate, and stricter session write/readback contracts.
+- [x] Discover target-project Codex sessions from `%USERPROFILE%\.codex\sessions\**\*.jsonl` by reading only `type=session_meta` and matching `payload.cwd`; do not read message bodies, credentials, or private prompt text.
+- [x] Treat `smoke-session` / `smoke-session-final` names as ordinary sessions unless explicit metadata says `hidden_from_default_view=true` or test-only classification.
+- [x] Install a managed target-project turn gate (`tools/thesis_moe_turn_gate.py`) that reads effective state for the current running session and applies GUI/CLI changes on the next user message.
+- [x] Harden GUI write actions so session writes must echo the requested `session_id` and the mandatory status readback must target that same session.
 
-Follow-up after B local-main closure: update D:\PythonProject_paper_suggest and rerun install, readiness, launcher preflight, and target-project tests there.
+Target-project acceptance evidence (2026-06-08): A `D:\PythonProject_paper_suggest` committed `5d44839` with the Phase 1 write-contract and turn-gate updates; readiness returned `token=ok / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true`; `project-moe-gui.cmd --preflight --json` returned `token=ok`; `python -m unittest discover -s test -p "test_thesis_moe_mode.py"` returned `Ran 10 tests ... OK`; the runtime view model reported `row_origin_counts={total:15, registered_matched:1, discovered_only:11, state_only:3, invalid:0}` and `reads_message_bodies=false`. After B local-main closure, rerun the updater from `D:\PythonProject_langgraph\tools\project_moe_gui_toolchain` so A no longer points at the feature-worktree source root; commit the target-only config/manifest delta if it changes.
 
 Slice 4B-v2 evidence (2026-06-06): QML bridges project/session writes, refresh, and mandatory readback; Sessions has row selection plus MOE/lens controls; Workbench uses multi-lens clipboard-only handoff; tests cover argv, readback, QML, handoff, and privacy.
 
 Visual overflow closure evidence (2026-06-06): `visual_render_check.py` must render `overview`, `sessions`, `workbench`, `diagnostics`, and `settings` at 1180x720; it requires key page text to be visible, rejects visible non-scroll-container overflow, allows scrollable TextArea/ScrollView content only inside its viewport, records screenshots, and fails on QML warnings.
 
-Roadmap enhancement evidence (2026-06-07): see `project_moe_gui_enhancement_roadmap_plan.md` for the full `0.2.31` local runtime evidence index; target-project acceptance remains unchecked.
+Roadmap enhancement evidence (2026-06-07): see `project_moe_gui_enhancement_roadmap_plan.md` for the full `0.2.31` local runtime evidence index. The 2026-06-08 `0.2.33` evidence above is the current target-project acceptance baseline for running-session controls.
 
 #### Slice 5: Governance, Docs, and Checker Integration
 
@@ -816,8 +808,9 @@ When implementation moves from docs to code, also update/check:
 - [x] Verification commands and local-main / remote-publication boundaries are explicit.
 - [x] Comet management record, phase gates, Monitoring return semantics, and evidence retention are explicit.
 - [x] Implementation slices, file ownership map, and local integration order are explicit.
-- [x] Expert Workbench v2 and session-scoped lens selection are identified as the next incomplete runtime slice, with handoff-only, session-only, and empty-selection=all rules documented.
-- [ ] Archive the corresponding OpenSpec change after follow-up code implementation and A/B acceptance are complete.
+- [x] Expert Workbench v2 and session-scoped lens selection are documented with runtime evidence, handoff-only, session-only, and empty-selection=all rules.
+- [x] Running-session discovery, next-user-message turn-gate activation, and session write/readback hardening are documented with A/B validation evidence.
+- [ ] Archive the corresponding OpenSpec change after the completed local integration package and final A stable-source-root refresh are accepted.
   - Deferral (2026-06-01): this scaffold `--apply` slice is a local toolchain completion slice. Archive remains deferred until the current local integration package is validated and the operator explicitly chooses the OpenSpec archival scope for the completed Project MOE GUI change set.
 - [x] Once real Ready Lane evidence exists for a target project, allow guarded GUI control.
 

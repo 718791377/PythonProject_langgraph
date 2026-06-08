@@ -717,7 +717,7 @@ def private_cli_field_hits(value: Any, path: str = "$") -> list[str]:
     return hits
 
 
-def validate_write_cli_payload(action: str, payload: dict[str, Any] | None) -> list[dict[str, Any]]:
+def validate_write_cli_payload(action: str, payload: dict[str, Any] | None, *, expected_session_id: str | None = None) -> list[dict[str, Any]]:
     if not isinstance(payload, dict):
         return [
             stable_blocker(
@@ -845,6 +845,16 @@ def validate_write_cli_payload(action: str, payload: dict[str, Any] | None) -> l
                 action=action,
             )
         )
+    elif action.startswith("session-") and expected_session_id is not None and str(payload.get("session_id")) != str(expected_session_id):
+        errors.append(
+            stable_blocker(
+                "blocked:write_cli_session_id_mismatch",
+                "Session write commands must echo the same session_id that the GUI invoked.",
+                action=action,
+                expected=expected_session_id,
+                observed=payload.get("session_id"),
+            )
+        )
     private_hits = private_cli_field_hits(payload)
     if private_hits:
         errors.append(
@@ -886,7 +896,7 @@ def load_config(config_path: str | Path) -> tuple[dict[str, Any] | None, dict[st
 
 
 def configured_project_root(config: dict[str, Any], fallback: str | Path | None = None) -> Path:
-    value = config.get("runtime_project_root") or fallback or config.get("target_project_root") or "."
+    value = config.get("runtime_project_root") or fallback or config.get("installed_target_project_root") or config.get("target_project_root") or "."
     return Path(str(value)).expanduser().resolve(strict=False)
 
 
@@ -1426,6 +1436,7 @@ def normalize_session_row(
         "enabled": enabled,
         "label": state_label(enabled),
         "source": row.get("source") or row.get("effective_source") or "unknown",
+        "session_id_source": row.get("session_id_source"),
         "selected_lenses": selected_lenses,
         "selected_categories": selected_categories,
         "effective_lens_mode": effective_lens_mode,
@@ -1982,11 +1993,117 @@ def _product_lens_selection_model(
     }
 
 
+def _path_is_inside_project(candidate: str | Path | None, root: Path) -> bool:
+    if candidate is None or str(candidate).strip() == "":
+        return False
+    try:
+        value = Path(str(candidate)).expanduser().resolve(strict=False)
+        return value == root or root in value.parents
+    except Exception:
+        return False
+
+
+def _session_sort_key(item: dict[str, Any]) -> str:
+    return str(item.get("updated_at") or item.get("timestamp") or "")
+
+
+def _read_codex_session_meta(path: Path) -> dict[str, Any] | None:
+    try:
+        with path.open("r", encoding="utf-8-sig", errors="replace") as handle:
+            for line_index, line in enumerate(handle):
+                if line_index >= 120:
+                    break
+                try:
+                    item = json.loads(line)
+                except Exception:
+                    continue
+                if not isinstance(item, dict) or item.get("type") != "session_meta":
+                    continue
+                payload = item.get("payload") if isinstance(item.get("payload"), dict) else item
+                return payload if isinstance(payload, dict) else None
+    except Exception:
+        return None
+    return None
+
+
+def _discover_codex_session_logs(config: dict[str, Any], root: Path, home: Path) -> dict[str, Any]:
+    sessions_root = Path(str(config.get("codex_sessions_root") or home / ".codex" / "sessions")).expanduser().resolve(strict=False)
+    max_files = int(config.get("codex_session_discovery_max_files") or 20000)
+    max_sessions = int(config.get("codex_session_discovery_max_sessions") or 5000)
+    discovered: list[dict[str, Any]] = []
+    scanned_files = 0
+    skipped_other_project = 0
+    skipped_without_meta = 0
+    truncated = False
+    if sessions_root.exists() and sessions_root.is_dir():
+        try:
+            files = sorted(sessions_root.rglob("*.jsonl"), key=lambda item: item.stat().st_mtime, reverse=True)
+        except Exception:
+            files = []
+        for path in files:
+            if scanned_files >= max_files:
+                truncated = True
+                break
+            scanned_files += 1
+            meta = _read_codex_session_meta(path)
+            if not meta:
+                skipped_without_meta += 1
+                continue
+            cwd = meta.get("cwd") or meta.get("project_root") or meta.get("working_directory") or meta.get("repo_root")
+            if not _path_is_inside_project(cwd, root):
+                skipped_other_project += 1
+                continue
+            session_id = meta.get("id") or meta.get("session_id") or meta.get("thread_id") or meta.get("resume_id")
+            if not session_id:
+                skipped_without_meta += 1
+                continue
+            git = meta.get("git") if isinstance(meta.get("git"), dict) else {}
+            discovered.append(
+                {
+                    "session_id": str(session_id),
+                    "thread_id": str(meta.get("thread_id") or meta.get("resume_id") or session_id),
+                    "project_root": str(cwd),
+                    "cwd": str(cwd),
+                    "source": str(path),
+                    "source_kind": "codex-session-jsonl",
+                    "updated_at": meta.get("timestamp") or meta.get("updated_at") or meta.get("created_at"),
+                    "git_branch": git.get("branch"),
+                    "metadata_only": True,
+                }
+            )
+            if len(discovered) >= max_sessions:
+                truncated = True
+                break
+    deduped: dict[str, dict[str, Any]] = {}
+    for item in sorted(discovered, key=_session_sort_key, reverse=True):
+        deduped.setdefault(str(item["session_id"]), item)
+    sessions = list(deduped.values())
+    return {
+        "path": str(sessions_root),
+        "exists": sessions_root.exists(),
+        "kind": "codex-session-jsonl-tree",
+        "sessions": sessions,
+        "count": len(sessions),
+        "scanned_files": scanned_files,
+        "skipped_other_project": skipped_other_project,
+        "skipped_without_meta": skipped_without_meta,
+        "truncated": truncated,
+        "max_files": max_files,
+        "max_sessions": max_sessions,
+    }
+
+
 def _safe_codex_session_index(config: dict[str, Any], root: Path) -> dict[str, Any]:
     home = Path(os.environ.get("USERPROFILE") or str(Path.home()))
     index_path = Path(str(config.get("codex_session_index_path") or home / ".codex" / "session_index.jsonl")).expanduser().resolve(strict=False)
-    sessions: list[dict[str, Any]] = []
-    skipped_other_project = 0
+    log_discovery = _discover_codex_session_logs(config, root, home)
+    sessions_by_id: dict[str, dict[str, Any]] = {
+        str(item.get("session_id")): item
+        for item in log_discovery.get("sessions", [])
+        if isinstance(item, dict) and item.get("session_id")
+    }
+    index_sessions: list[dict[str, Any]] = []
+    skipped_other_project_index = 0
     if index_path.exists() and index_path.is_file():
         try:
             with index_path.open("r", encoding="utf-8-sig", errors="replace") as handle:
@@ -2003,51 +2120,109 @@ def _safe_codex_session_index(config: dict[str, Any], root: Path) -> dict[str, A
                     if not session_id:
                         continue
                     item_project = item.get("project_root") or item.get("cwd") or item.get("working_directory") or item.get("repo_root")
-                    in_scope = not item_project
-                    if item_project:
-                        item_root = Path(str(item_project)).expanduser().resolve(strict=False)
-                        in_scope = item_root == root or root in item_root.parents or item_root in root.parents
+                    in_scope = _path_is_inside_project(item_project, root)
                     if not in_scope:
-                        skipped_other_project += 1
+                        skipped_other_project_index += 1
                         continue
-                    sessions.append(
+                    index_sessions.append(
                         {
                             "session_id": str(session_id),
                             "thread_id": str(item.get("thread_id") or item.get("resume_id") or session_id),
                             "project_root": str(item_project or root),
                             "source": str(index_path),
+                            "source_kind": "codex-session-index-jsonl",
                             "updated_at": item.get("updated_at") or item.get("last_seen_at") or item.get("created_at"),
                             "metadata_only": True,
                         }
                     )
         except Exception:
-            sessions = []
+            index_sessions = []
+    for item in index_sessions:
+        session_id = str(item.get("session_id"))
+        if session_id in sessions_by_id:
+            sessions_by_id[session_id]["index_source"] = item.get("source")
+            sessions_by_id[session_id]["index_updated_at"] = item.get("updated_at")
+        else:
+            item["source_kind"] = "codex-session-index-jsonl-supplemental"
+            sessions_by_id[session_id] = item
+    sessions = sorted(sessions_by_id.values(), key=_session_sort_key, reverse=True)
+    truncated = bool(log_discovery.get("truncated"))
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
         "token": "ok",
         "read_only": True,
         "project_scope": str(root),
-        "sources": [{"path": str(index_path), "exists": index_path.exists(), "kind": "jsonl-index"}],
-        "sessions": sessions[:200],
-        "count": len(sessions[:200]),
-        "skipped_other_project": skipped_other_project,
-        "privacy_policy": {"reads_session_file_bodies": False, "reads_credentials": False, "metadata_only": True},
+        "sources": [
+            {"path": str(index_path), "exists": index_path.exists(), "kind": "jsonl-index"},
+            {key: value for key, value in log_discovery.items() if key != "sessions"},
+        ],
+        "sessions": sessions,
+        "count": len(sessions),
+        "skipped_other_project": int(log_discovery.get("skipped_other_project") or 0) + skipped_other_project_index,
+        "truncated": truncated,
+        "privacy_policy": {
+            "reads_session_file_bodies": False,
+            "reads_message_bodies": False,
+            "reads_credentials": False,
+            "metadata_only": True,
+            "authority": "session_meta.cwd in Codex session jsonl is authoritative for project scope; session_index is supplemental only",
+        },
     }
 
 
-def _reconcile_product_rows(rows: list[dict[str, Any]], discovery: dict[str, Any]) -> list[dict[str, Any]]:
+def _product_enrich_session_row(row: dict[str, Any], lenses: list[dict[str, Any]], categories: list[dict[str, Any]], *, why_shown: str | None = None) -> dict[str, Any]:
+    selected_lenses = string_list(row.get("selected_lenses"))
+    selected_categories = string_list(row.get("selected_categories"))
+    selection_model = _product_lens_selection_model(lenses, categories, selected_lenses, selected_categories)
+    full_id = str(row.get("session_id") or "")
+    return {
+        **row,
+        "full_session_id": full_id,
+        "visible_session_id": full_id or str(row.get("display_id") or ""),
+        "session_id_source": row.get("session_id_source") or "phase1-cli-list-sessions",
+        "why_shown": why_shown
+        or "Displayed because target Project MOE state returned this session and no explicit hidden_from_default_view=true gate was applied.",
+        "testing_metadata": {
+            "session_kind": str(row.get("session_kind") or row.get("kind") or "ordinary"),
+            "is_test_session": row.get("is_test_session") is True,
+            "hidden_from_default_view": row.get("hidden_from_default_view") is True,
+            "name_heuristic_used": False,
+            "classification_source": "explicit_metadata_only" if any(key in row for key in ["session_kind", "kind", "is_test_session", "hidden_from_default_view", "created_by"]) else "ordinary_by_default",
+        },
+        "name_heuristic_hidden": False,
+        "selection_model": selection_model,
+        "effective_lenses": selection_model.get("effective_lenses", []),
+        "effective_lens_count": selection_model.get("effective_lens_count", 0),
+    }
+
+
+def _reconcile_product_rows(
+    rows: list[dict[str, Any]],
+    discovery: dict[str, Any],
+    config: dict[str, Any],
+    *,
+    project_root: Path,
+    project_default_enabled: bool | None,
+    lenses: list[dict[str, Any]],
+    categories: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     discovered = [item for item in discovery.get("sessions", []) if isinstance(item, dict)] if isinstance(discovery, dict) else []
     by_id = {str(item.get("session_id")): item for item in discovered if item.get("session_id")}
     by_thread = {str(item.get("thread_id")): item for item in discovered if item.get("thread_id")}
     result: list[dict[str, Any]] = []
+    matched_ids: set[str] = set()
     for row in rows:
         full_id = str(row.get("session_id") or row.get("full_session_id") or "")
         match = by_id.get(full_id) or by_thread.get(full_id)
         confidence = "exact" if match else "unmatched"
+        if match and match.get("session_id"):
+            matched_ids.add(str(match.get("session_id")))
+        row_origin = "registered-matched" if match else "state-only"
         result.append(
             {
                 **row,
+                "row_origin": row_origin,
                 "codex_mapping": {
                     "confidence": confidence,
                     "codex_thread_id": match.get("thread_id") if match else None,
@@ -2056,6 +2231,52 @@ def _reconcile_product_rows(rows: list[dict[str, Any]], discovery: dict[str, Any
                     "read_only": True,
                 },
                 "mapping_confidence": confidence,
+            }
+        )
+    for item in discovered:
+        session_id = str(item.get("session_id") or "")
+        if not session_id or session_id in matched_ids or any(str(row.get("session_id")) == session_id for row in result):
+            continue
+        normalized = normalize_session_row(
+            config,
+            {
+                "session_id": session_id,
+                "enabled": project_default_enabled,
+                "effective_enabled": project_default_enabled,
+                "valid": True,
+                "token": "ok",
+                "source": "discovered-only",
+                "effective_source": "project-default",
+                "session_id_source": "codex-session-log",
+                "last_seen_at": item.get("updated_at"),
+                "selected_lenses": [],
+                "selected_categories": [],
+                "effective_lens_mode": "all",
+                "lens_selection_scope": "session",
+                "message": "Discovered from Codex session metadata; no Project MOE session override has been written yet.",
+            },
+            len(result),
+            project_default_enabled=project_default_enabled,
+            project_root=project_root,
+        )
+        enriched = _product_enrich_session_row(
+            normalized,
+            lenses,
+            categories,
+            why_shown="Displayed because Codex session metadata says this session belongs to the target project; no MOE state file exists yet.",
+        )
+        result.append(
+            {
+                **enriched,
+                "row_origin": "discovered-only",
+                "codex_mapping": {
+                    "confidence": "exact",
+                    "codex_thread_id": item.get("thread_id"),
+                    "source": item.get("source"),
+                    "message": "Codex session discovered from session_meta.cwd; no Project MOE state exists yet.",
+                    "read_only": True,
+                },
+                "mapping_confidence": "exact",
             }
         )
     return result
@@ -2101,35 +2322,32 @@ def build_view_model(
     for row in table.get("rows", []) if isinstance(table.get("rows"), list) else []:
         if not isinstance(row, dict):
             continue
-        selected_lenses = string_list(row.get("selected_lenses"))
-        selected_categories = string_list(row.get("selected_categories"))
-        selection_model = _product_lens_selection_model(lenses, categories, selected_lenses, selected_categories)
-        full_id = str(row.get("session_id") or "")
-        enriched_rows.append(
-            {
-                **row,
-                "full_session_id": full_id,
-                "visible_session_id": full_id or str(row.get("display_id") or ""),
-                "session_id_source": row.get("session_id_source") or "phase1-cli-list-sessions",
-                "why_shown": "Displayed because target Project MOE state returned this session and no explicit hidden_from_default_view=true gate was applied.",
-                "testing_metadata": {
-                    "session_kind": str(row.get("session_kind") or row.get("kind") or "ordinary"),
-                    "is_test_session": row.get("is_test_session") is True,
-                    "hidden_from_default_view": row.get("hidden_from_default_view") is True,
-                    "name_heuristic_used": False,
-                    "classification_source": "explicit_metadata_only" if any(key in row for key in ["session_kind", "kind", "is_test_session", "hidden_from_default_view", "created_by"]) else "ordinary_by_default",
-                },
-                "name_heuristic_hidden": False,
-                "selection_model": selection_model,
-                "effective_lenses": selection_model.get("effective_lenses", []),
-                "effective_lens_count": selection_model.get("effective_lens_count", 0),
-            }
-        )
-    table["rows"] = _reconcile_product_rows(enriched_rows, discovery)
+        enriched_rows.append(_product_enrich_session_row(row, lenses, categories))
+    table["rows"] = _reconcile_product_rows(
+        enriched_rows,
+        discovery,
+        config,
+        project_root=root,
+        project_default_enabled=extract_project_default(project_status, status_payload),
+        lenses=lenses,
+        categories=categories,
+    )
+    origin_counts: dict[str, int] = {}
+    for row in table["rows"]:
+        origin = str(row.get("row_origin") or "unknown")
+        origin_counts[origin] = origin_counts.get(origin, 0) + 1
+    table["row_origin_counts"] = {
+        "total": len(table["rows"]),
+        "registered_matched": origin_counts.get("registered-matched", 0),
+        "discovered_only": origin_counts.get("discovered-only", 0),
+        "state_only": origin_counts.get("state-only", 0),
+        "invalid": sum(1 for row in table["rows"] if not row.get("valid") or row.get("token") != "ok"),
+    }
     table["default_visibility_policy"] = {
         "show_all_unless_explicitly_hidden": True,
         "name_heuristic_filtering": False,
         "smoke_named_sessions_are_ordinary_without_explicit_metadata": True,
+        "discovered_only_sessions_visible": True,
     }
     table["codex_session_discovery"] = discovery
     table["invalid_count"] = sum(1 for row in table.get("rows", []) if not row.get("valid") or row.get("token") != "ok")
@@ -2180,6 +2398,10 @@ def build_view_model(
             card["title"] = _product_text(title_keys[str(card["id"])], language)
         if card.get("id") == "visual-shell":
             card["value"] = "QFluentWidgets / Qt Widgets"
+        if card.get("id") == "session-count":
+            counts = table.get("row_origin_counts") or {}
+            card["value"] = str(counts.get("total", len(table.get("rows", []))))
+            card["breakdown"] = counts
         card["style"] = "fluent-card"
     model["visual"] = {
         **dict(model.get("visual") or {}),
@@ -2351,7 +2573,7 @@ def execute_write_action_with_readback(
     )
     write_contract_errors: list[dict[str, Any]] = []
     if write_error is None:
-        write_contract_errors = validate_write_cli_payload(action, write_payload)
+        write_contract_errors = validate_write_cli_payload(action, write_payload, expected_session_id=session_id)
     readback: dict[str, Any] = {}
     readback_errors: list[dict[str, Any]] = []
     for read_plan in plan.get("readback_after_write", []):
@@ -2361,6 +2583,27 @@ def execute_write_action_with_readback(
         readback[read_action] = payload
         if err:
             readback_errors.append(err)
+    if action.startswith("session-"):
+        status_payload = readback.get("status")
+        if not isinstance(status_payload, dict):
+            readback_errors.append(
+                stable_blocker(
+                    "blocked:write_cli_readback_missing_status",
+                    "Session write readback must include a status payload for the same session.",
+                    action=action,
+                    expected=session_id,
+                )
+            )
+        elif str(status_payload.get("session_id")) != str(session_id):
+            readback_errors.append(
+                stable_blocker(
+                    "blocked:write_cli_readback_session_id_mismatch",
+                    "Session write readback status must target the same session id as the GUI write.",
+                    action=action,
+                    expected=session_id,
+                    observed=status_payload.get("session_id"),
+                )
+            )
     errors = [err for err in [write_error, *write_contract_errors, *readback_errors] if err]
     token = "ok" if not errors else str(errors[0]["code"])
     return {

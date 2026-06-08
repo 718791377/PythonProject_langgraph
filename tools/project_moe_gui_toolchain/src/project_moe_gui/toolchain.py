@@ -75,13 +75,15 @@ README_RELATIVE = Path("tools/project_moe_gui/README.md")
 CMD_RELATIVE = Path("project-moe-gui.cmd")
 SILENT_VBS_RELATIVE = Path("project-moe-gui-silent.vbs")
 QML_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
-MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE, SILENT_VBS_RELATIVE, QML_RELATIVE]
+TURN_GATE_RELATIVE = Path("tools/thesis_moe_turn_gate.py")
+MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE, SILENT_VBS_RELATIVE, QML_RELATIVE, TURN_GATE_RELATIVE]
 UNINSTALL_MANAGED_ALLOWLIST = {
     "tools/project_moe_gui/launcher.py",
     "tools/project_moe_gui/project_moe_gui.config.json",
     "tools/project_moe_gui/project_moe_gui.install-manifest.json",
     "tools/project_moe_gui/README.md",
     "tools/project_moe_gui/qml/ProjectMoeGui.qml",
+    "tools/thesis_moe_turn_gate.py",
     "project-moe-gui.cmd",
     "project-moe-gui-silent.vbs",
 }
@@ -507,6 +509,9 @@ PHASE1_OPERATOR_DOC_REQUIRED_TOKENS = (
 PHASE1_STARTUP_HOOK_REQUIRED_TOKENS = (
     "thesis_moe_mode.py",
     "status --json",
+    "thesis_moe_turn_gate.py",
+    "user message",
+    "next user message",
     "startup",
     "resume",
     "continue",
@@ -2112,6 +2117,21 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "installed_target_project_root": str(root),
             "toolchain_source_root": str(stable_toolchain_source_root()),
             "gui_shell_contract": GUI_SHELL_CONTRACT,
+            "codex_session_discovery": {
+                "enabled": True,
+                "strategy": "read-only-codex-session-jsonl-session_meta",
+                "sessions_root": "%USERPROFILE%/.codex/sessions",
+                "session_index_role": "supplemental-labels-only",
+                "target_project_scope": "session_meta.cwd must be the installed target project or a child path",
+                "reads_message_bodies": False,
+                "discovered_only_rows_visible": True,
+            },
+            "running_session_turn_gate": {
+                "enabled": True,
+                "helper": norm(TURN_GATE_RELATIVE),
+                "effect_timing": "next_user_message",
+                "fail_closed_on_ambiguous_current_session": True,
+            },
         }
     )
     return data
@@ -2125,6 +2145,7 @@ def artifacts(root: Path, agent_name: str, namespace: str, mode_cli: Path, runti
         CMD_RELATIVE: cmd_text(),
         SILENT_VBS_RELATIVE: silent_vbs_text(),
         QML_RELATIVE: qml_shell_text(),
+        TURN_GATE_RELATIVE: phase1_turn_gate_template(mode_cli),
     }
 
 
@@ -2416,7 +2437,13 @@ def phase1_wrapper_template(mode_cli: Path, command: str) -> str:
 def phase1_startup_hook_template(mode_cli: Path) -> str:
     return f"""# Project startup MOE activation hook
 
-On startup, resume, continue, reload, or phase change, run:
+Before every user message that leads to a substantive answer, and also on startup, resume, continue, reload, or phase change, run the turn gate when present:
+
+```powershell
+python .\\tools\\thesis_moe_turn_gate.py --json
+```
+
+Fallback when the turn gate is not available:
 
 ```powershell
 python .\\{win_rel(mode_cli)} status --json
@@ -2424,7 +2451,305 @@ python .\\{win_rel(mode_cli)} status --json
 
 Only apply project MOE rules when the effective status says it is enabled.
 If the command is missing, invalid, or returns a blocker, fail closed and report the stable token.
+GUI changes to a running session do not interrupt the current response; they are applied on the next user message after this turn gate/status read.
 """
+
+
+def phase1_turn_gate_template(mode_cli: Path) -> str:
+    mode_cli_text = norm(mode_cli)
+    return f'''#!/usr/bin/env python3
+"""Per-turn Project MOE status gate for running Codex sessions.
+
+This helper is installed as a managed Project MOE GUI artifact. It reads only
+Codex ``session_meta`` records to identify the current session and then delegates
+all MOE state reads to the target project's Phase 1 CLI. It never reads message
+bodies, credentials, private prompt files, or GUI-managed state JSON directly.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+SCHEMA_VERSION = 1
+CLI_CONTRACT = "{CLI_CONTRACT}"
+DEFAULT_MODE_CLI = Path(r"{mode_cli_text}")
+SESSION_ENV_CANDIDATES = (
+    "THESIS_MOE_SESSION_ID",
+    "CODEX_THREAD_ID",
+    "CODEX_SESSION_ID",
+    "OPENAI_CODEX_SESSION_ID",
+    "OH_MY_CODEX_SESSION_ID",
+    "OMX_SESSION_ID",
+    "CODEX_SESSION",
+)
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def emit(payload: dict[str, Any], json_mode: bool) -> int:
+    if json_mode:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        print(f"{{payload.get('token')}}: {{payload.get('message') or payload.get('effective_enabled')}}")
+    return int(payload.get("exit_code", 0 if payload.get("ok") else 1))
+
+
+def blocker(code: str, message: str, **extra: Any) -> dict[str, Any]:
+    payload: dict[str, Any] = {{
+        "schema_version": SCHEMA_VERSION,
+        "command": "turn-gate",
+        "ok": False,
+        "token": code,
+        "exit_code": 1,
+        "message": message,
+        "generated_at": utc_now(),
+        "effect_timing": "next_user_message",
+        "effective_enabled": False,
+        "effective_source": "fail-closed",
+        "apply_project_moe_rules": False,
+        "cli_contract": CLI_CONTRACT,
+        "privacy_policy": {{
+            "reads_codex_session_meta": True,
+            "reads_message_bodies": False,
+            "reads_credentials": False,
+            "reads_private_prompt": False,
+            "delegates_moe_state_to_mode_cli": True,
+        }},
+    }}
+    payload.update(extra)
+    return payload
+
+
+def project_root_from_here() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def is_inside_project(candidate: str | Path | None, root: Path) -> bool:
+    if candidate is None or str(candidate).strip() == "":
+        return False
+    try:
+        path = Path(str(candidate)).expanduser().resolve(strict=False)
+        root_resolved = root.resolve(strict=False)
+        return path == root_resolved or root_resolved in path.parents
+    except Exception:
+        return False
+
+
+def read_session_meta(path: Path) -> dict[str, Any] | None:
+    try:
+        with path.open("r", encoding="utf-8-sig", errors="replace") as handle:
+            for index, line in enumerate(handle):
+                if index >= 120:
+                    break
+                try:
+                    item = json.loads(line)
+                except Exception:
+                    continue
+                if not isinstance(item, dict) or item.get("type") != "session_meta":
+                    continue
+                payload = item.get("payload") if isinstance(item.get("payload"), dict) else item
+                return payload if isinstance(payload, dict) else None
+    except Exception:
+        return None
+    return None
+
+
+def discover_project_sessions(root: Path, sessions_root: Path, *, max_files: int = 20000) -> dict[str, Any]:
+    records: list[dict[str, Any]] = []
+    scanned = 0
+    skipped_other_project = 0
+    skipped_without_meta = 0
+    truncated = False
+    if sessions_root.exists() and sessions_root.is_dir():
+        try:
+            files = sorted(sessions_root.rglob("*.jsonl"), key=lambda item: item.stat().st_mtime, reverse=True)
+        except Exception:
+            files = []
+        for path in files:
+            if scanned >= max_files:
+                truncated = True
+                break
+            scanned += 1
+            meta = read_session_meta(path)
+            if not meta:
+                skipped_without_meta += 1
+                continue
+            cwd = meta.get("cwd") or meta.get("project_root") or meta.get("working_directory") or meta.get("repo_root")
+            if not is_inside_project(cwd, root):
+                skipped_other_project += 1
+                continue
+            session_id = meta.get("id") or meta.get("session_id") or meta.get("thread_id") or meta.get("resume_id")
+            if not session_id:
+                skipped_without_meta += 1
+                continue
+            records.append(
+                {{
+                    "session_id": str(session_id),
+                    "thread_id": str(meta.get("thread_id") or meta.get("resume_id") or session_id),
+                    "updated_at": meta.get("timestamp") or meta.get("updated_at") or meta.get("created_at"),
+                    "source": str(path),
+                    "metadata_only": True,
+                }}
+            )
+    deduped: dict[str, dict[str, Any]] = {{}}
+    for item in records:
+        deduped.setdefault(str(item["session_id"]), item)
+    sessions = list(deduped.values())
+    return {{
+        "sessions_root": str(sessions_root),
+        "sessions_root_exists": sessions_root.exists(),
+        "sessions": sessions,
+        "count": len(sessions),
+        "scanned_files": scanned,
+        "skipped_other_project": skipped_other_project,
+        "skipped_without_meta": skipped_without_meta,
+        "truncated": truncated,
+        "reads_message_bodies": False,
+    }}
+
+
+def choose_current_session_id(root: Path, explicit_session_id: str | None, sessions_root: Path) -> tuple[str | None, str, dict[str, Any]]:
+    if explicit_session_id:
+        return explicit_session_id, "argument", {{"count": 0, "sessions": []}}
+    for name in SESSION_ENV_CANDIDATES:
+        value = os.environ.get(name)
+        if value:
+            return value, f"env:{{name}}", {{"count": 0, "sessions": []}}
+    discovery = discover_project_sessions(root, sessions_root)
+    sessions = discovery.get("sessions") if isinstance(discovery.get("sessions"), list) else []
+    if len(sessions) == 1 and isinstance(sessions[0], dict):
+        return str(sessions[0].get("session_id")), "codex-session-meta-unique", discovery
+    if len(sessions) > 1:
+        return None, "ambiguous-codex-session-meta", discovery
+    return None, "missing", discovery
+
+
+def public_status(payload: dict[str, Any], *, current_session_id_source: str, discovery: dict[str, Any]) -> dict[str, Any]:
+    selected_lenses = payload.get("selected_lenses") if isinstance(payload.get("selected_lenses"), list) else []
+    selected_categories = payload.get("selected_categories") if isinstance(payload.get("selected_categories"), list) else []
+    effective_enabled = payload.get("effective_enabled") is True
+    return {{
+        "schema_version": SCHEMA_VERSION,
+        "command": "turn-gate",
+        "ok": payload.get("ok") is True,
+        "token": str(payload.get("token") or "blocked:mode_cli_status_not_ok"),
+        "exit_code": 0 if payload.get("ok") is True and payload.get("token") == "ok" else 1,
+        "message": "Project MOE turn gate read effective session state.",
+        "generated_at": utc_now(),
+        "effect_timing": "next_user_message",
+        "effective_enabled": effective_enabled,
+        "effective_source": payload.get("effective_source") or "fail-closed",
+        "apply_project_moe_rules": effective_enabled,
+        "session_id": payload.get("session_id"),
+        "session_id_source": payload.get("session_id_source"),
+        "current_session_id_source": current_session_id_source,
+        "selected_lenses": [str(item) for item in selected_lenses],
+        "selected_categories": [str(item) for item in selected_categories],
+        "effective_lens_mode": payload.get("effective_lens_mode") or ("selected" if selected_lenses or selected_categories else "all"),
+        "lens_selection_scope": payload.get("lens_selection_scope") or "session",
+        "project_default_enabled": payload.get("project_default_enabled"),
+        "session_override_enabled": payload.get("session_override_enabled"),
+        "status_reason": payload.get("status_reason"),
+        "mode_cli_command": "status --json --session-id <current-session>",
+        "cli_contract": payload.get("cli_contract") or CLI_CONTRACT,
+        "codex_session_discovery": {{
+            key: value for key, value in discovery.items() if key != "sessions"
+        }},
+        "privacy_policy": {{
+            "reads_codex_session_meta": True,
+            "reads_message_bodies": False,
+            "reads_credentials": False,
+            "reads_private_prompt": False,
+            "delegates_moe_state_to_mode_cli": True,
+        }},
+    }}
+
+
+def run_mode_cli(root: Path, mode_cli: Path, session_id: str) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    full_mode_cli = mode_cli if mode_cli.is_absolute() else root / mode_cli
+    try:
+        result = subprocess.run(
+            [sys.executable, str(full_mode_cli), "status", "--json", "--session-id", str(session_id)],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            timeout=20,
+        )
+    except subprocess.TimeoutExpired:
+        return None, blocker("blocked:mode_cli_timeout", "Project MOE turn gate status read timed out.")
+    except Exception as exc:
+        return None, blocker("blocked:mode_cli_invocation_failed", "Project MOE turn gate could not invoke the target mode CLI.", error=str(exc))
+    if result.returncode != 0:
+        return None, blocker(
+            "blocked:mode_cli_failed",
+            "Project MOE turn gate status read returned non-zero.",
+            exit_code=result.returncode,
+            stderr=result.stderr[-800:],
+        )
+    try:
+        payload = json.loads(result.stdout)
+    except Exception as exc:
+        return None, blocker("blocked:mode_cli_invalid_json", "Project MOE turn gate status read did not emit JSON.", error=str(exc), stdout=result.stdout[-800:])
+    if not isinstance(payload, dict):
+        return None, blocker("blocked:mode_cli_invalid_json", "Project MOE turn gate status JSON must be an object.")
+    return payload, None
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Read Project MOE status for the current running Codex session.")
+    parser.add_argument("--json", action="store_true", help="Print JSON output.")
+    parser.add_argument("--session-id", help="Explicit current session id override.")
+    parser.add_argument("--mode-cli", default=str(DEFAULT_MODE_CLI), help="Target-project Phase 1 mode CLI path.")
+    parser.add_argument("--codex-sessions-root", help="Override Codex session log root for tests.")
+    args = parser.parse_args(argv)
+
+    root = project_root_from_here()
+    sessions_root = Path(args.codex_sessions_root or Path(os.environ.get("USERPROFILE") or str(Path.home())) / ".codex" / "sessions").expanduser().resolve(strict=False)
+    session_id, source, discovery = choose_current_session_id(root, args.session_id, sessions_root)
+    if not session_id and source == "ambiguous-codex-session-meta":
+        return emit(
+            blocker(
+                "blocked:ambiguous_current_session_id",
+                "Multiple Codex sessions match this project; provide a runtime session environment variable or --session-id.",
+                codex_session_discovery={{key: value for key, value in discovery.items() if key != "sessions"}},
+                candidate_count=discovery.get("count"),
+            ),
+            args.json,
+        )
+    if not session_id:
+        return emit(
+            blocker(
+                "blocked:current_session_id_unavailable",
+                "No current Codex session id was available from environment or unique project session metadata.",
+                codex_session_discovery={{key: value for key, value in discovery.items() if key != "sessions"}},
+            ),
+            args.json,
+        )
+    payload, error = run_mode_cli(root, Path(args.mode_cli), session_id)
+    if error:
+        error["current_session_id_source"] = source
+        error["session_id"] = session_id
+        return emit(error, args.json)
+    assert payload is not None
+    return emit(public_status(payload, current_session_id_source=source, discovery=discovery), args.json)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+'''
 
 
 def phase1_operator_doc_template(mode_cli: Path, on_wrapper: Path, off_wrapper: Path) -> str:
