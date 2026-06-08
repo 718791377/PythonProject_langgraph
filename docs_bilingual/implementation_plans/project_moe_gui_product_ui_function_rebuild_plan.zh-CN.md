@@ -48,8 +48,8 @@ related_plans:
 
 - [x] 需求已冻结：产品级 Fluent Widgets 主界面、默认中英对照、项目内 session 范围、session 对账、MOE 分类三态联动、Workbench 安全交接台。
 - [x] 0.2.31 基线已确认：当前 A 项目 GUI 已安装但仍以 QML 为主体验。
-- [ ] B runtime 产品级重构尚未完成。
-- [ ] A 目标项目安装与可见启动验收尚未完成。
+- [x] B runtime 产品级重构已在源码完成并在 runtime feature worktree 验证；下一 gate 是合入本地 main。
+- [ ] A 目标项目安装与可见启动验收尚未完成；A 仍是下一验收切片。
 
 <!-- CURRENT_STATUS_END -->
 
@@ -57,13 +57,13 @@ related_plans:
 <!-- TASK_BACKLOG_START -->
 
 - [x] Slice 0：新建本产品级重构方案。
-- [ ] Slice 1：Fluent Widgets 主界面骨架。
-- [ ] Slice 2：i18n 与语言切换。
-- [ ] Slice 3：项目边界与默认页面收敛。
-- [ ] Slice 4：Session 列表、Codex 发现与对账。
-- [ ] Slice 5：MOE lens/category 三态联动。
-- [ ] Slice 6：Workbench 安全交接台增强。
-- [ ] Slice 7：视觉与自动化验证。
+- [x] Slice 1：Fluent Widgets 主界面骨架。
+- [x] Slice 2：i18n 与语言切换。
+- [x] Slice 3：项目边界与默认页面收敛。
+- [x] Slice 4：Session 列表、Codex 发现与对账。
+- [x] Slice 5：MOE lens/category 三态联动。
+- [x] Slice 6：Workbench 安全交接台增强。
+- [x] Slice 7：视觉与自动化验证。
 - [ ] Slice 8：A 目标项目安装验收。
 
 <!-- TASK_BACKLOG_END -->
@@ -73,7 +73,11 @@ related_plans:
 
 - B source of truth：`tools/project_moe_gui_toolchain/`。
 - A 目标项目：`D:/PythonProject_paper_suggest`。
-- 当前已安装工具链基线：`0.2.31`。
+- A 目标项目 Slice 8 前安装基线：`0.2.31`。
+- B 源码 runtime Slice 1-7 后版本：`0.2.32`。
+- Slice 1-7 后默认源码 shell：QFluentWidgets / Qt Widgets (`qfluentwidgets-qtwidgets`)；QML Material 保留为显式 fallback。
+- B 定向测试证据：`python .\test\project_moe_gui_toolchain.test.py` -> `Ran 91 tests ... OK`。
+- B 视觉证据：`visual_render_check.py` product Widgets shell，profiles `long-content` 与 `dense-sessions`，尺寸 `1180x720`、`1366x768`、`1440x900`，页面 `overview sessions workbench diagnostics settings` -> `ok=true`。
 - 当前主体验基线：QML Material shell；QFluentWidgets 仅为 runtime/license 检查。
 - 关键验收会话：`smoke-session-final` 必须默认显示，除非存在显式测试元数据。
 
@@ -254,63 +258,63 @@ A 论文项目默认分类升级为：
 
 ### Slice 0：方案落地
 
-- [ ] 新建本方案文件。
-- [ ] 更新既有 Project MOE GUI 方案索引，指向本方案为 0.2.31 后续产品级重构方案。
-- [ ] 本地提交。
-- [ ] 合入 B 本地 main。
+- [x] 新建本方案文件。
+- [x] 更新既有 Project MOE GUI 方案索引，指向本方案为 0.2.31 后续产品级重构方案。
+- [x] 本地提交。
+- [x] 合入 B 本地 main。
 
 ### Slice 1：Fluent Widgets 主界面骨架
 
-- [ ] 新增 Widgets GUI shell。
-- [ ] launcher 默认启动 Widgets shell。
-- [ ] QML shell 保留为 fallback。
-- [ ] 增加 QFluentWidgets fail-closed preflight。
-- [ ] 增加基础页面导航和主题。
+- [x] 新增 Widgets GUI shell。
+- [x] launcher 默认启动 Widgets shell。
+- [x] QML shell 保留为 fallback。
+- [x] 增加 QFluentWidgets fail-closed preflight。
+- [x] 增加基础页面导航和主题。
 
 ### Slice 2：i18n
 
-- [ ] 新增 i18n 字典。
-- [ ] 默认中英对照。
-- [ ] Settings 页面可切换 English / 中英对照 / 中文。
-- [ ] 核心页面文案接入 i18n。
+- [x] 新增 i18n 字典。
+- [x] 默认中英对照。
+- [x] Settings 页面可切换 English / 中英对照 / 中文。
+- [x] 核心页面文案接入 i18n。
 
 ### Slice 3：项目边界与页面收敛
 
-- [ ] 目标项目 GUI 隐藏 Projects 多项目页。
-- [ ] 保留多项目扫描能力为 B 维护台或诊断-only 非默认入口。
-- [ ] 所有写操作显示当前 target project root。
+- [x] 目标项目 GUI 隐藏 Projects 多项目页。
+- [x] 保留多项目扫描能力为 B 维护台或诊断-only 非默认入口。
+- [x] 所有写操作显示当前 target project root。
 
 ### Slice 4：Session 列表与对账
 
-- [ ] 新增 Codex session discovery 只读模块。
-- [ ] 读取 MOE session state 与 Codex session index/files 做映射。
-- [ ] 显示完整 session id 和映射置信度。
-- [ ] 禁止名称启发式隐藏 session。
-- [ ] `smoke-session-final` 默认显示。
-- [ ] 增加 session 详情页和 why-shown 解释。
+- [x] 新增 Codex session discovery 只读模块。
+- [x] 读取 MOE session state 与 Codex session index/files 做映射。
+- [x] 显示完整 session id 和映射置信度。
+- [x] 禁止名称启发式隐藏 session。
+- [x] `smoke-session-final` 默认显示。
+- [x] 增加 session 详情页和 why-shown 解释。
 
 ### Slice 5：MOE lens/category 三态联动
 
-- [ ] 新增 lens/category selection model。
-- [ ] 分类勾选联动具体 lens。
-- [ ] 具体 lens 变化反向更新分类三态。
-- [ ] 展示最终生效 lens 列表。
-- [ ] 保存/读回兼容现有 `selected_lenses`、`selected_categories`。
+- [x] 新增 lens/category selection model。
+- [x] 分类勾选联动具体 lens。
+- [x] 具体 lens 变化反向更新分类三态。
+- [x] 展示最终生效 lens 列表。
+- [x] 保存/读回兼容现有 `selected_lenses`、`selected_categories`。
 
 ### Slice 6：Workbench 安全交接台
 
-- [ ] Workbench 绑定当前 session。
-- [ ] package 包含最终生效 lens。
-- [ ] 增加历史筛选和复用。
-- [ ] 增加执行前检查建议。
-- [ ] 保持不执行 carrier。
+- [x] Workbench 绑定当前 session。
+- [x] package 包含最终生效 lens。
+- [x] 增加历史筛选和复用。
+- [x] 增加执行前检查建议。
+- [x] 保持不执行 carrier。
 
 ### Slice 7：视觉与自动化验证
 
-- [ ] 更新 visual render checker 支持 Widgets shell。
-- [ ] 覆盖 1180x720、1366x768、1440x900。
-- [ ] 覆盖中英对照、中文、英文。
-- [ ] 覆盖长 session id、长 lens 名、多 session、多分类。
+- [x] 更新 visual render checker 支持 Widgets shell。
+- [x] 覆盖 1180x720、1366x768、1440x900。
+- [x] 覆盖中英对照、中文、英文。
+- [x] 覆盖长 session id、长 lens 名、多 session、多分类。
 
 ### Slice 8：A 目标项目安装验收
 

@@ -550,6 +550,87 @@ def visible_required_texts(items: list[dict[str, Any]], required: Iterable[str])
     return missing, found
 
 
+def collect_widget_visible_items(root: Any, window_rect: Rect) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    items: list[dict[str, Any]] = []
+    violations: list[dict[str, Any]] = []
+
+    def walk(widget: Any, clip_rect: Rect, path: str, scroll_depth: int = 0) -> None:
+        try:
+            visible = bool(widget.isVisible())
+        except Exception:
+            visible = True
+        try:
+            geom = widget.geometry()
+            top_left = widget.mapTo(root, widget.rect().topLeft())
+            rect = Rect(float(top_left.x()), float(top_left.y()), float(geom.width()), float(geom.height()))
+        except Exception:
+            rect = Rect(0.0, 0.0, 0.0, 0.0)
+        class_name = type(widget).__name__
+        next_scroll_depth = scroll_depth + (1 if "ScrollArea" in class_name or "ScrollBar" in class_name else 0)
+        object_name = ""
+        try:
+            object_name = str(widget.objectName() or "")
+        except Exception:
+            object_name = ""
+        widget_path = f"{path}/{class_name}{('#' + object_name) if object_name else ''}"
+        text = ""
+        try:
+            if hasattr(widget, "text"):
+                text = str(widget.text() or "")
+            elif hasattr(widget, "placeholderText"):
+                text = str(widget.placeholderText() or "")
+        except Exception:
+            text = ""
+        if visible and rect.w > 0 and rect.h > 0:
+            user_visible = bool(text) or class_name in {"QPushButton", "QCheckBox", "QComboBox", "QLineEdit", "QTextEdit", "QListWidget", "QLabel"}
+            if text:
+                item = {
+                    "class": class_name,
+                    "path": widget_path,
+                    "text": text,
+                    "rect": rect.as_dict(),
+                    "clip_rect": clip_rect.as_dict(),
+                    "content_width": None,
+                    "content_height": None,
+                    "wrap_mode": None,
+                    "elide": None,
+                    "scroll_depth": next_scroll_depth,
+                    "clipped_by_clip": not rect.inside(clip_rect, tolerance=2.0),
+                    "clipped_by_window": not rect.intersects(window_rect, tolerance=0.0),
+                }
+                items.append(item)
+            if user_visible and next_scroll_depth == 0 and not rect.inside(clip_rect, tolerance=2.0):
+                violations.append(
+                    {
+                        "kind": "widget_outside_clip",
+                        "class": class_name,
+                        "path": widget_path,
+                        "text": text[:160],
+                        "rect": rect.as_dict(),
+                        "clip_rect": clip_rect.as_dict(),
+                    }
+                )
+        try:
+            children = widget.children()
+        except Exception:
+            children = []
+        direct_children = []
+        for child in children:
+            try:
+                if hasattr(child, "geometry"):
+                    direct_children.append(child)
+            except Exception:
+                continue
+        for index, child in enumerate(direct_children):
+            child_clip = clip_rect
+            if "ScrollArea" in class_name and rect.w > 0 and rect.h > 0:
+                child_clip = rect
+            walk(child, child_clip, f"{widget_path}[{index}]", next_scroll_depth)
+
+    walk(root, window_rect, "root")
+    return items, violations
+
+
 def install_fonts(app: Any) -> dict[str, Any]:
     from PySide6.QtGui import QFont, QFontDatabase
 
@@ -774,10 +855,88 @@ def run_visual_check(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def run_widget_visual_check(args: argparse.Namespace) -> dict[str, Any]:
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    os.environ.setdefault("PYTHONUTF8", "1")
+    sys.path.insert(0, str(toolchain_root() / "src"))
+
+    from PySide6.QtCore import qInstallMessageHandler
+    from project_moe_gui.gui_shell import create_product_widget_window
+
+    view_model, preflight = load_view_model(args)
+    view_model = build_fixture_view_model(args.fixture_profile, view_model)
+    qt_messages: list[dict[str, Any]] = []
+
+    def message_handler(mode: Any, context: Any, message: str) -> None:  # pragma: no cover - Qt callback
+        qt_messages.append({"mode": str(mode), "file": str(getattr(context, "file", "") or ""), "line": int(getattr(context, "line", 0) or 0), "message": str(message)})
+
+    qInstallMessageHandler(message_handler)
+    app, window = create_product_widget_window(view_model, config={}, project_root=args.target_project)
+    font_report = install_fonts(app)
+    output_dir = Path(args.output_dir).resolve(strict=False)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    page_reports: list[dict[str, Any]] = []
+    for width, height in args.sizes:
+        window.resize(width, height)
+        window.show()
+        for section in args.sections:
+            if hasattr(window, "set_selected_section"):
+                window.set_selected_section(section)
+            for _ in range(args.settle_iterations):
+                app.processEvents()
+                time.sleep(args.settle_sleep_seconds)
+            image = window.grab().toImage()
+            screenshot = output_dir / f"{section}_{width}x{height}.png"
+            image.save(str(screenshot))
+            window_rect = Rect(0.0, 0.0, float(width), float(height))
+            items, violations = collect_widget_visible_items(window, window_rect)
+            required = SECTION_REQUIRED_TEXT.get(section, [])
+            missing, found = visible_required_texts(items, required)
+            stats = image_stats(image)
+            page_ok = bool(stats["non_blank"]) and not missing and not violations
+            page_reports.append(
+                {
+                    "section": section,
+                    "width": width,
+                    "height": height,
+                    "ok": page_ok,
+                    "screenshot": str(screenshot),
+                    "image_stats": stats,
+                    "required_text": {"required": required, "missing": missing, "found": {key: value["rect"] for key, value in found.items()}},
+                    "visible_text_count": len(items),
+                    "violations": violations[:120],
+                }
+            )
+    suspicious_messages = [
+        item for item in qt_messages if any(token in item.get("message", "") for token in ["ReferenceError", "TypeError", "Cannot assign", "Unable to", "failed", "Failed"])
+    ]
+    window.hide()
+    ok = all(page["ok"] for page in page_reports) and not suspicious_messages and font_report["ok"]
+    token = "ok" if ok else "blocked:visual_render_check_failed"
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "ok": ok,
+        "token": token,
+        "message": "Project MOE GUI widget visual render check passed." if ok else "Project MOE GUI widget visual render check found render, visibility, or overflow issues.",
+        "toolchain": "project_moe_gui_visual_render_check",
+        "shell": "widgets",
+        "target_project": str(args.target_project) if args.target_project else None,
+        "sections": args.sections,
+        "sizes": [f"{width}x{height}" for width, height in args.sizes],
+        "output_dir": str(output_dir),
+        "font_report": font_report,
+        "qt_suspicious_messages": suspicious_messages,
+        "preflight_token": preflight.get("token"),
+        "preflight_ok": preflight.get("ok"),
+        "pages": page_reports,
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Render Project MOE GUI QML pages offscreen and fail on missing text or visual overflow.")
+    parser = argparse.ArgumentParser(description="Render Project MOE GUI QML pages offscreen or product Widgets pages offscreen and fail on missing text or visual overflow.")
     parser.add_argument("--target-project", type=Path, help="Target project that has project-moe-gui.cmd installed.")
     parser.add_argument("--view-model-json", type=Path, help="JSON file containing either a view_model object or a raw view model.")
+    parser.add_argument("--shell", choices=["auto", "widgets", "qml"], default="auto", help="Visual shell to render. auto uses the product Widgets shell when the view model declares it, otherwise QML fallback.")
     parser.add_argument("--qml-source", choices=["auto", "target-project", "current-worktree", "source", "central-toolchain"], default="auto")
     parser.add_argument("--qml-path", type=Path, help="Explicit QML path to render.")
     parser.add_argument("--sections", nargs="+", choices=DEFAULT_SECTIONS, default=list(DEFAULT_SECTIONS))
@@ -799,7 +958,16 @@ def main(argv: list[str] | None = None) -> int:
     args.sizes = normalized_sizes(args)
     maybe_reexec_under_runtime(args)
     try:
-        payload = run_visual_check(args)
+        shell = args.shell
+        if shell == "auto":
+            view_model, _preflight = load_view_model(args)
+            visual = view_model.get("visual") if isinstance(view_model, dict) else {}
+            product_ui = view_model.get("product_ui") if isinstance(view_model, dict) else {}
+            shell = "widgets" if (
+                (isinstance(visual, dict) and visual.get("primary_shell") == "qfluentwidgets-qtwidgets")
+                or (isinstance(product_ui, dict) and product_ui.get("primary_shell") == "qfluentwidgets-qtwidgets")
+            ) else "qml"
+        payload = run_widget_visual_check(args) if shell == "widgets" else run_visual_check(args)
     except Exception as exc:
         payload = {
             "schema_version": SCHEMA_VERSION,

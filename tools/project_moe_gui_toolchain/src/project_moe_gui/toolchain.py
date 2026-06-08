@@ -22,6 +22,7 @@ from project_moe_gui.qfluent_runtime import expected_qfluent_dependency, qfluent
 
 
 SCHEMA_VERSION = 1
+PRODUCT_SHELL_CONTRACT = "project-moe-gui-product-widgets-v1"
 DEFAULT_MODE_CLI = Path("tools/thesis_moe_mode.py")
 DEFAULT_SHARED_RUNTIME_ROOT = Path(r"D:\PythonProject_langgraph\.shared_runtimes\pyside6")
 DEFAULT_TOOLCHAIN_SOURCE_ROOT = Path(r"D:\PythonProject_langgraph\tools\project_moe_gui_toolchain")
@@ -2065,16 +2066,31 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "pyside6_runtime": "shared-runtime",
             "python_runtime_strategy": "shared-gui-runtime",
             "python_utf8": True,
-            "visual_dependency": qml_visual_contract(),
+            "visual_dependency": {
+                **expected_qfluent_dependency(),
+                "library": "QFluentWidgets / Qt Widgets",
+                "style": "Fluent Widgets",
+                "primary_shell": "qfluentwidgets-qtwidgets",
+                "fallback_shell": "qml-material",
+            },
             "qml_shell": {
-                "primary": True,
+                "primary": False,
                 "relative_path": norm(QML_RELATIVE),
                 "style": "Material",
                 "managed_artifact": True,
                 "central_fallback_allowed": True,
+                "fallback_role": "explicit-qml-fallback",
             },
-            "legacy_visual_dependency": expected_qfluent_dependency(),
+            "legacy_visual_dependency": qml_visual_contract(),
             "gui_dependency_license_manifest": qfluent_license_manifest(),
+            "product_shell_contract": PRODUCT_SHELL_CONTRACT,
+            "product_shell": {
+                "primary": True,
+                "library": "QFluentWidgets / Qt Widgets",
+                "style": "Fluent Widgets",
+                "contract": PRODUCT_SHELL_CONTRACT,
+                "qml_fallback_env": "PROJECT_MOE_GUI_USE_QML_FALLBACK=1",
+            },
             "daemon_launch": daemon_plan,
             "silent_launch": {
                 "entry": norm(SILENT_VBS_RELATIVE),

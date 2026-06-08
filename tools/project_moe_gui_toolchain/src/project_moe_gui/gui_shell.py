@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -1889,6 +1891,360 @@ def build_gui_preflight(
     }
 
 
+_qml_build_view_model = build_view_model
+_qml_build_gui_preflight = build_gui_preflight
+
+
+def _product_language_mode(config: dict[str, Any] | None = None) -> str:
+    configured = ""
+    if isinstance(config, dict):
+        configured = str(config.get("language_mode") or config.get("ui_language") or "").strip().lower()
+    value = os.environ.get("PROJECT_MOE_GUI_LANGUAGE", "").strip().lower() or configured or "bilingual"
+    return value if value in {"en", "zh", "bilingual"} else "bilingual"
+
+
+_PRODUCT_I18N: dict[str, dict[str, str]] = {
+    "app_title": {"zh": "Project MOE 控制台", "en": "Project MOE Agent Console"},
+    "overview": {"zh": "概览", "en": "Overview"},
+    "sessions": {"zh": "会话", "en": "Sessions"},
+    "workbench": {"zh": "交接台", "en": "Workbench"},
+    "diagnostics": {"zh": "诊断", "en": "Diagnostics"},
+    "settings": {"zh": "设置", "en": "Settings"},
+    "project_default": {"zh": "项目默认", "en": "Project default"},
+    "effective_status": {"zh": "生效状态", "en": "Effective status"},
+    "session_count": {"zh": "会话数量", "en": "Sessions"},
+    "gui_runtime": {"zh": "GUI 运行时", "en": "GUI runtime"},
+    "visual_shell": {"zh": "视觉外壳", "en": "Visual shell"},
+    "target_project_only": {"zh": "只显示并控制当前项目会话", "en": "Shows and controls only this target project"},
+}
+
+
+def _product_text(key: str, mode: str = "bilingual") -> str:
+    payload = _PRODUCT_I18N.get(key, {"zh": key, "en": key})
+    zh = payload.get("zh") or key
+    en = payload.get("en") or key
+    if mode == "zh":
+        return zh
+    if mode == "en":
+        return en
+    return f"{zh} / {en}"
+
+
+def _product_lens_selection_model(
+    lenses: list[dict[str, Any]],
+    categories: list[dict[str, Any]],
+    selected_lenses: list[str] | None = None,
+    selected_categories: list[str] | None = None,
+) -> dict[str, Any]:
+    lens_ids = {str(item.get("id")) for item in lenses if item.get("id")}
+    category_map = {
+        str(item.get("id")): {str(lens_id) for lens_id in item.get("lens_ids", []) if str(lens_id) in lens_ids}
+        for item in categories
+        if item.get("id")
+    }
+    explicit_lenses = string_list(selected_lenses or [])
+    explicit_categories = string_list(selected_categories or [])
+    effective = {item for item in explicit_lenses if item in lens_ids}
+    for category_id in explicit_categories:
+        effective.update(category_map.get(category_id, set()))
+    mode = "selected" if explicit_lenses or explicit_categories else "all"
+    effective_lenses = sorted(effective) if mode == "selected" else sorted(lens_ids)
+    selected_set = set(effective_lenses)
+    enriched_categories = []
+    for category in categories:
+        category_id = str(category.get("id"))
+        ids = category_map.get(category_id, set())
+        selected_count = len(ids & selected_set)
+        enriched_categories.append(
+            {
+                **category,
+                "lens_ids": sorted(ids),
+                "selected": category_id in explicit_categories,
+                "check_state": "checked" if ids and selected_count == len(ids) else ("partial" if selected_count else "unchecked"),
+                "selected_lens_count": selected_count,
+                "total_lens_count": len(ids),
+            }
+        )
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "mode": mode,
+        "selected_lenses": explicit_lenses,
+        "selected_categories": explicit_categories,
+        "invalid_lenses": [item for item in explicit_lenses if item not in lens_ids],
+        "invalid_categories": [item for item in explicit_categories if item not in category_map],
+        "effective_lenses": effective_lenses,
+        "effective_lens_count": len(effective_lenses),
+        "categories": enriched_categories,
+        "tri_state_contract": {
+            "category_change_updates_member_lenses": True,
+            "manual_lens_change_updates_category_state": True,
+        },
+    }
+
+
+def _safe_codex_session_index(config: dict[str, Any], root: Path) -> dict[str, Any]:
+    home = Path(os.environ.get("USERPROFILE") or str(Path.home()))
+    index_path = Path(str(config.get("codex_session_index_path") or home / ".codex" / "session_index.jsonl")).expanduser().resolve(strict=False)
+    sessions: list[dict[str, Any]] = []
+    skipped_other_project = 0
+    if index_path.exists() and index_path.is_file():
+        try:
+            with index_path.open("r", encoding="utf-8-sig", errors="replace") as handle:
+                for line_index, line in enumerate(handle):
+                    if line_index >= 400:
+                        break
+                    try:
+                        item = json.loads(line.strip())
+                    except Exception:
+                        continue
+                    if not isinstance(item, dict):
+                        continue
+                    session_id = item.get("session_id") or item.get("id") or item.get("thread_id") or item.get("resume_id")
+                    if not session_id:
+                        continue
+                    item_project = item.get("project_root") or item.get("cwd") or item.get("working_directory") or item.get("repo_root")
+                    in_scope = not item_project
+                    if item_project:
+                        item_root = Path(str(item_project)).expanduser().resolve(strict=False)
+                        in_scope = item_root == root or root in item_root.parents or item_root in root.parents
+                    if not in_scope:
+                        skipped_other_project += 1
+                        continue
+                    sessions.append(
+                        {
+                            "session_id": str(session_id),
+                            "thread_id": str(item.get("thread_id") or item.get("resume_id") or session_id),
+                            "project_root": str(item_project or root),
+                            "source": str(index_path),
+                            "updated_at": item.get("updated_at") or item.get("last_seen_at") or item.get("created_at"),
+                            "metadata_only": True,
+                        }
+                    )
+        except Exception:
+            sessions = []
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "ok": True,
+        "token": "ok",
+        "read_only": True,
+        "project_scope": str(root),
+        "sources": [{"path": str(index_path), "exists": index_path.exists(), "kind": "jsonl-index"}],
+        "sessions": sessions[:200],
+        "count": len(sessions[:200]),
+        "skipped_other_project": skipped_other_project,
+        "privacy_policy": {"reads_session_file_bodies": False, "reads_credentials": False, "metadata_only": True},
+    }
+
+
+def _reconcile_product_rows(rows: list[dict[str, Any]], discovery: dict[str, Any]) -> list[dict[str, Any]]:
+    discovered = [item for item in discovery.get("sessions", []) if isinstance(item, dict)] if isinstance(discovery, dict) else []
+    by_id = {str(item.get("session_id")): item for item in discovered if item.get("session_id")}
+    by_thread = {str(item.get("thread_id")): item for item in discovered if item.get("thread_id")}
+    result: list[dict[str, Any]] = []
+    for row in rows:
+        full_id = str(row.get("session_id") or row.get("full_session_id") or "")
+        match = by_id.get(full_id) or by_thread.get(full_id)
+        confidence = "exact" if match else "unmatched"
+        result.append(
+            {
+                **row,
+                "codex_mapping": {
+                    "confidence": confidence,
+                    "codex_thread_id": match.get("thread_id") if match else None,
+                    "source": match.get("source") if match else None,
+                    "message": "Codex session mapping matched exactly." if match else "Codex session mapping unavailable or not found for this project.",
+                    "read_only": True,
+                },
+                "mapping_confidence": confidence,
+            }
+        )
+    return result
+
+
+def build_view_model(
+    config: dict[str, Any],
+    *,
+    project_status: dict[str, Any] | None = None,
+    sessions_payload: dict[str, Any] | None = None,
+    lenses_payload: dict[str, Any] | None = None,
+    status_payload: dict[str, Any] | None = None,
+    pyside6_available: bool | None = None,
+    qfluent_status: dict[str, Any] | None = None,
+    pending_scope: str | None = None,
+    project_root: str | Path | None = None,
+) -> dict[str, Any]:
+    model = _qml_build_view_model(
+        config,
+        project_root=project_root,
+        project_status=project_status,
+        sessions_payload=sessions_payload,
+        lenses_payload=lenses_payload,
+        status_payload=status_payload,
+        pyside6_available=pyside6_available,
+        qfluent_status=qfluent_status,
+        pending_scope=pending_scope,
+    )
+    root = configured_project_root(config, project_root)
+    language = _product_language_mode(config)
+    qfluent_payload = qfluent_status or (((model.get("visual") or {}).get("legacy_qfluent") or {}).get("qfluentwidgets_status") if isinstance(model.get("visual"), dict) else None) or {
+        "schema_version": SCHEMA_VERSION,
+        "ok": False,
+        "token": "blocked:qfluentwidgets_not_checked",
+        "blockers": [],
+    }
+    lens_catalog = model.get("lens_catalog") if isinstance(model.get("lens_catalog"), dict) else normalize_lens_catalog(lenses_payload)
+    lenses = list(lens_catalog.get("lenses") or [])
+    categories = list(lens_catalog.get("categories") or [])
+    discovery = _safe_codex_session_index(config, root)
+    table = dict(model.get("session_table") or {})
+    enriched_rows: list[dict[str, Any]] = []
+    for row in table.get("rows", []) if isinstance(table.get("rows"), list) else []:
+        if not isinstance(row, dict):
+            continue
+        selected_lenses = string_list(row.get("selected_lenses"))
+        selected_categories = string_list(row.get("selected_categories"))
+        selection_model = _product_lens_selection_model(lenses, categories, selected_lenses, selected_categories)
+        full_id = str(row.get("session_id") or "")
+        enriched_rows.append(
+            {
+                **row,
+                "full_session_id": full_id,
+                "visible_session_id": full_id or str(row.get("display_id") or ""),
+                "session_id_source": row.get("session_id_source") or "phase1-cli-list-sessions",
+                "why_shown": "Displayed because target Project MOE state returned this session and no explicit hidden_from_default_view=true gate was applied.",
+                "testing_metadata": {
+                    "session_kind": str(row.get("session_kind") or row.get("kind") or "ordinary"),
+                    "is_test_session": row.get("is_test_session") is True,
+                    "hidden_from_default_view": row.get("hidden_from_default_view") is True,
+                    "name_heuristic_used": False,
+                    "classification_source": "explicit_metadata_only" if any(key in row for key in ["session_kind", "kind", "is_test_session", "hidden_from_default_view", "created_by"]) else "ordinary_by_default",
+                },
+                "name_heuristic_hidden": False,
+                "selection_model": selection_model,
+                "effective_lenses": selection_model.get("effective_lenses", []),
+                "effective_lens_count": selection_model.get("effective_lens_count", 0),
+            }
+        )
+    table["rows"] = _reconcile_product_rows(enriched_rows, discovery)
+    table["default_visibility_policy"] = {
+        "show_all_unless_explicitly_hidden": True,
+        "name_heuristic_filtering": False,
+        "smoke_named_sessions_are_ordinary_without_explicit_metadata": True,
+    }
+    table["codex_session_discovery"] = discovery
+    table["invalid_count"] = sum(1 for row in table.get("rows", []) if not row.get("valid") or row.get("token") != "ok")
+    model["session_table"] = table
+
+    show_projects = bool(config.get("show_projects_page") or config.get("maintenance_console"))
+    target_regions = {"overview": "status_overview_cards", "sessions": "session_table", "workbench": "expert_workbench", "diagnostics": "diagnostics_card", "settings": "settings_panel"}
+    nav_items = [{"id": sid, "label": _product_text(sid, language), "target_region": target_regions[sid]} for sid in ["overview", "sessions", "workbench", "diagnostics", "settings"]]
+    if show_projects:
+        nav_items.insert(3, {"id": "projects", "label": "项目 / Projects", "target_region": "multi_project_panel", "diagnostic_only": True})
+    model["navigation_sidebar"] = {"items": nav_items, "projects_page_hidden_by_default": not show_projects}
+    model["product_ui"] = {
+        "schema_version": SCHEMA_VERSION,
+        "shell_contract": "project-moe-gui-product-widgets-v1",
+        "primary_shell": "qfluentwidgets-qtwidgets",
+        "fallback_shell": "qml-material",
+        "target_project_console": True,
+        "shows_only_target_project_sessions": True,
+        "projects_page_hidden_by_default": not show_projects,
+        "language": language,
+        "i18n": {
+            "schema_version": SCHEMA_VERSION,
+            "default_language": "bilingual",
+            "active_language": language,
+            "language_modes": [
+                {"id": "bilingual", "label": "中英对照 / Bilingual"},
+                {"id": "zh", "label": "中文"},
+                {"id": "en", "label": "English"},
+            ],
+            "labels": {key: _product_text(key, language) for key in _PRODUCT_I18N},
+            "bilingual_format": "中文 / English",
+        },
+        "session_identity_policy": table["default_visibility_policy"],
+        "workbench_executes_carriers": False,
+    }
+    model["settings_panel"] = {
+        "title": _product_text("settings", language),
+        "language": language,
+        "language_modes": model["product_ui"]["i18n"]["language_modes"],
+        "target_project_only": _product_text("target_project_only", language),
+        "writes_business_state": False,
+    }
+    title_keys = {"project-default": "project_default", "effective-status": "effective_status", "session-count": "session_count", "runtime": "gui_runtime", "visual-shell": "visual_shell"}
+    for card in model.get("status_cards", []) if isinstance(model.get("status_cards"), list) else []:
+        if not isinstance(card, dict):
+            continue
+        if card.get("id") in title_keys:
+            card["title"] = _product_text(title_keys[str(card["id"])], language)
+        if card.get("id") == "visual-shell":
+            card["value"] = "QFluentWidgets / Qt Widgets"
+        card["style"] = "fluent-card"
+    model["visual"] = {
+        **dict(model.get("visual") or {}),
+        "library": "QFluentWidgets / Qt Widgets",
+        "style": "Fluent Widgets",
+        "primary_shell": "qfluentwidgets-qtwidgets",
+        "fallback_shell": "qml-material",
+        "product_shell_contract": "project-moe-gui-product-widgets-v1",
+        "qfluentwidgets_required": True,
+        "qfluentwidgets_status": qfluent_payload,
+        "license_manifest": qfluent_payload.get("license_manifest") or qfluent_license_manifest(),
+    }
+    diagnostics = dict(model.get("diagnostics_card") or {})
+    diagnostics["qfluentwidgets"] = qfluent_payload
+    diagnostics["product_ui"] = model["product_ui"]
+    diagnostics["suggested_next_actions"] = [
+        "Use the QFluentWidgets / Qt Widgets shell as the default visible GUI.",
+        "Use --preflight --json for automation before visible launch.",
+        "Keep Projects hidden for ordinary target projects.",
+        "Use Workbench exports as safe handoff packages; GUI does not execute carriers.",
+    ]
+    model["diagnostics_card"] = diagnostics
+    model["window_structure"] = {**dict(model.get("window_structure") or {}), "window_title": _product_text("app_title", language), "product_shell_contract": "project-moe-gui-product-widgets-v1"}
+    return model
+
+
+def build_gui_preflight(
+    config: dict[str, Any],
+    *,
+    project_status: dict[str, Any] | None = None,
+    sessions_payload: dict[str, Any] | None = None,
+    lenses_payload: dict[str, Any] | None = None,
+    status_payload: dict[str, Any] | None = None,
+    pyside6_available: bool | None = None,
+    qfluent_status: dict[str, Any] | None = None,
+    project_root: str | Path | None = None,
+) -> dict[str, Any]:
+    view_model = build_view_model(
+        config,
+        project_root=project_root,
+        project_status=project_status,
+        sessions_payload=sessions_payload,
+        lenses_payload=lenses_payload,
+        status_payload=status_payload,
+        pyside6_available=pyside6_available,
+        qfluent_status=qfluent_status,
+    )
+    pyside6_ok = view_model.get("runtime", {}).get("pyside6_status") == "import_ok"
+    qfluent_payload = view_model.get("visual", {}).get("qfluentwidgets_status") if isinstance(view_model.get("visual"), dict) else {}
+    qfluent_ok = isinstance(qfluent_payload, dict) and qfluent_payload.get("ok") is True
+    blockers = [banner for banner in view_model.get("banners", []) if isinstance(banner, dict) and banner.get("token") != "ok"]
+    token = "ok" if pyside6_ok and qfluent_ok and not blockers else ("blocked:pyside6_unavailable" if not pyside6_ok else (str((qfluent_payload or {}).get("token") or "blocked:qfluentwidgets_unavailable") if not qfluent_ok else str(blockers[0].get("token"))))
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "ok": token == "ok",
+        "token": token,
+        "exit_code": 0 if token == "ok" else 5,
+        "message": "Project MOE GUI product shell preflight passed." if token == "ok" else "Project MOE GUI product shell preflight found blockers.",
+        "gui_shell_contract": GUI_SHELL_CONTRACT,
+        "product_shell_contract": "project-moe-gui-product-widgets-v1",
+        "view_model": view_model,
+        "blockers": blockers + ([] if qfluent_ok else list((qfluent_payload or {}).get("blockers") or [])),
+    }
+
+
 def run_cli_json(
     config: dict[str, Any],
     action: str,
@@ -2067,7 +2423,441 @@ def build_runtime_view_model(config: dict[str, Any], *, project_root: str | Path
     return refreshed, read_errors
 
 
+def _qt_check_state(state_name: str) -> Any:
+    from PySide6.QtCore import Qt
+    if state_name == "checked":
+        return Qt.CheckState.Checked
+    if state_name == "partial":
+        return Qt.CheckState.PartiallyChecked
+    return Qt.CheckState.Unchecked
+
+
+def _compact_visual_label(value: Any, *, max_chars: int = 76) -> str:
+    text = str(value or "")
+    if len(text) <= max_chars:
+        return text
+    keep = max(12, (max_chars - 3) // 2)
+    return f"{text[:keep]}...{text[-keep:]}"
+
+
+def create_product_widget_window(
+    view_model: dict[str, Any],
+    config: dict[str, Any] | None = None,
+    project_root: str | Path | None = None,
+) -> tuple[Any, Any]:
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        import qfluentwidgets  # noqa: F401
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QSplitter, QStackedWidget, QTextEdit, QVBoxLayout, QWidget
+
+    language = (view_model.get("product_ui") or {}).get("language", "bilingual")
+    labels = (view_model.get("product_ui") or {}).get("i18n", {}).get("labels", {})
+
+    def L(key: str) -> str:
+        return str(labels.get(key) or _product_text(key, language))
+
+    class ProductMoeWindow(QMainWindow):  # pragma: no cover - visible path is smoke-tested
+        def __init__(self, vm: dict[str, Any]) -> None:
+            super().__init__()
+            self.view_model = vm
+            self.setObjectName("projectMoeProductWindow")
+            self.setWindowTitle(L("app_title"))
+            self.resize(1180, 720)
+            self._session_rows = list((vm.get("session_table") or {}).get("rows") or [])
+            self._lens_rows = list((vm.get("lens_catalog") or {}).get("lenses") or [])
+            self._category_rows = list((vm.get("lens_catalog") or {}).get("categories") or [])
+            self._lens_checks: dict[str, QCheckBox] = {}
+            self._category_checks: dict[str, QCheckBox] = {}
+            self._category_lens_map: dict[str, set[str]] = {}
+            self._updating_lens_selection = False
+            self._build_ui()
+            self._select_session(0)
+
+        def _page(self, title: str) -> tuple[QWidget, QVBoxLayout]:
+            page = QWidget()
+            layout = QVBoxLayout(page)
+            header = QLabel(title)
+            header.setObjectName("pageHeader")
+            header.setWordWrap(True)
+            layout.addWidget(header)
+            return page, layout
+
+        def _card(self, title: str, value: str, token: str = "ok") -> QFrame:
+            frame = QFrame()
+            frame.setObjectName("fluentCard")
+            frame.setFrameShape(QFrame.Shape.StyledPanel)
+            layout = QVBoxLayout(frame)
+            for text, name in [(title, "cardTitle"), (value, "cardValue"), (token, "cardToken")]:
+                label = QLabel(str(text))
+                label.setObjectName(name)
+                label.setWordWrap(True)
+                layout.addWidget(label)
+            return frame
+
+        def _build_ui(self) -> None:
+            self.setStyleSheet('QMainWindow, QWidget { background: #0f172a; color: #e5e7eb; font-family: "Microsoft YaHei UI", "Segoe UI", sans-serif; font-size: 10pt; } QListWidget { background: #111827; border: 1px solid #334155; border-radius: 8px; padding: 4px; color: #e5e7eb; } QListWidget::item { border-radius: 6px; padding: 6px; margin: 2px; } QListWidget::item:selected { background: #2563eb; color: #ffffff; } QFrame#fluentCard, QFrame { background: #111827; border: 1px solid #334155; border-radius: 12px; } QLabel#pageHeader, QLabel#productAppTitle { font-size: 16pt; font-weight: 700; color: #f8fafc; } QLabel#cardTitle { color: #93c5fd; font-weight: 600; } QLabel#cardValue { font-size: 15pt; font-weight: 700; color: #f8fafc; } QLabel#cardToken { color: #cbd5e1; } QLineEdit, QTextEdit, QComboBox { background: #020617; border: 1px solid #334155; border-radius: 8px; padding: 6px; color: #e5e7eb; selection-background-color: #2563eb; } QPushButton { background: #2563eb; border: 1px solid #3b82f6; border-radius: 8px; padding: 7px 10px; color: #ffffff; font-weight: 600; } QPushButton:hover { background: #1d4ed8; } QCheckBox { padding: 3px; color: #e5e7eb; } QScrollArea { border: 0; background: transparent; } QSplitter::handle { background: #1e293b; }')
+            central = QWidget()
+            root_layout = QHBoxLayout(central)
+            root_layout.setContentsMargins(12, 12, 12, 12)
+            self.nav = QListWidget()
+            self.nav.setFixedWidth(190)
+            self.pages = QStackedWidget()
+            self.section_ids: list[str] = []
+            for item in (self.view_model.get("navigation_sidebar") or {}).get("items", []):
+                section_id = str(item.get("id"))
+                if section_id == "projects":
+                    continue
+                self.section_ids.append(section_id)
+                self.nav.addItem(QListWidgetItem(str(item.get("label") or section_id)))
+            self.nav.currentRowChanged.connect(self.pages.setCurrentIndex)
+            root_layout.addWidget(self.nav)
+            root_layout.addWidget(self.pages, 1)
+            self.setCentralWidget(central)
+            self.pages.addWidget(self._overview_page())
+            self.pages.addWidget(self._sessions_page())
+            self.pages.addWidget(self._workbench_page())
+            self.pages.addWidget(self._diagnostics_page())
+            self.pages.addWidget(self._settings_page())
+            self.nav.setCurrentRow(0)
+
+        def _overview_page(self) -> QWidget:
+            page, layout = self._page(L("overview"))
+            app_title = QLabel(L("app_title"))
+            app_title.setObjectName("productAppTitle")
+            app_title.setWordWrap(True)
+            layout.addWidget(app_title)
+            banner = self.view_model.get("top_banner") or {}
+            project = QLabel(f"{L('target_project_only')}: {banner.get('project_root')}")
+            project.setWordWrap(True)
+            layout.addWidget(project)
+            grid = QGridLayout()
+            for index, card in enumerate(self.view_model.get("status_cards", [])):
+                grid.addWidget(self._card(str(card.get("title")), str(card.get("value")), str(card.get("token"))), index // 2, index % 2)
+            layout.addLayout(grid)
+            actions = QHBoxLayout()
+            self.enable_project_btn = QPushButton("开启项目默认 / Enable project default")
+            self.disable_project_btn = QPushButton("关闭项目默认 / Disable project default")
+            self.enable_project_btn.clicked.connect(lambda: self._execute_project_action("project-on"))
+            self.disable_project_btn.clicked.connect(lambda: self._execute_project_action("project-off"))
+            actions.addWidget(self.enable_project_btn)
+            actions.addWidget(self.disable_project_btn)
+            actions.addStretch(1)
+            layout.addLayout(actions)
+            layout.addStretch(1)
+            return page
+
+        def _sessions_page(self) -> QWidget:
+            page, layout = self._page(L("sessions"))
+            splitter = QSplitter(Qt.Orientation.Horizontal)
+            left = QWidget()
+            left_layout = QVBoxLayout(left)
+            left_layout.addWidget(QLabel("会话列表 / Session list"))
+            self.session_search = QLineEdit()
+            self.session_search.setPlaceholderText("Search full session id / 搜索完整会话 ID")
+            self.session_search.textChanged.connect(self._refill_session_list)
+            self.session_list = QListWidget()
+            self.session_list.setWordWrap(True)
+            self.session_list.setTextElideMode(Qt.TextElideMode.ElideMiddle)
+            self.session_list.currentRowChanged.connect(self._select_session)
+            left_layout.addWidget(self.session_search)
+            left_layout.addWidget(self.session_list, 1)
+            right = QScrollArea()
+            right.setWidgetResizable(True)
+            right.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            detail = QWidget()
+            detail.setMinimumWidth(0)
+            detail.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
+            self.detail_layout = QVBoxLayout(detail)
+            self.session_title = QLabel()
+            self.session_mapping = QLabel()
+            self.session_why = QLabel()
+            self.session_effective = QLabel()
+            for widget in [self.session_title, self.session_mapping, self.session_why, self.session_effective]:
+                widget.setWordWrap(True)
+                self.detail_layout.addWidget(widget)
+            actions = QGridLayout()
+            buttons = [
+                (QPushButton("开启本会话 MOE / Enable session MOE"), "session-on"),
+                (QPushButton("关闭本会话 MOE / Disable session MOE"), "session-off"),
+                (QPushButton("应用会话镜头 / Apply session lenses"), "session-set-lenses"),
+                (QPushButton("清空会话镜头 / Clear session lenses"), "session-clear-lenses"),
+            ]
+            for index, (button, action) in enumerate(buttons):
+                button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                button.clicked.connect(lambda _checked=False, a=action: self._execute_session_action(a))
+                actions.addWidget(button, index // 2, index % 2)
+            actions.setColumnStretch(0, 1)
+            actions.setColumnStretch(1, 1)
+            self.detail_layout.addLayout(actions)
+            self.detail_layout.addWidget(QLabel("会话 MOE 镜头 / Session MOE lenses"))
+            self.category_box = QFrame()
+            self.category_box.setFrameShape(QFrame.Shape.StyledPanel)
+            self.category_layout = QVBoxLayout(self.category_box)
+            self.category_layout.addWidget(QLabel("MOE categories / MOE 分类"))
+            self.detail_layout.addWidget(self.category_box)
+            self.lens_box = QFrame()
+            self.lens_box.setFrameShape(QFrame.Shape.StyledPanel)
+            self.lens_layout = QVBoxLayout(self.lens_box)
+            self.lens_layout.addWidget(QLabel("MOE lenses / MOE 镜头"))
+            self.detail_layout.addWidget(self.lens_box)
+            self.effective_lenses_label = QLabel()
+            self.effective_lenses_label.setWordWrap(True)
+            self.detail_layout.addWidget(self.effective_lenses_label)
+            self.detail_layout.addStretch(1)
+            right.setWidget(detail)
+            splitter.addWidget(left)
+            splitter.addWidget(right)
+            splitter.setSizes([360, 820])
+            layout.addWidget(splitter, 1)
+            self._refill_session_list()
+            return page
+
+        def _workbench_page(self) -> QWidget:
+            page, layout = self._page(L("workbench"))
+            layout.addWidget(QLabel("专家交接台 / Expert Workbench (generated-only, no execution)"))
+            layout.addWidget(QLabel("专家镜头 / Expert lenses"))
+            self.handoff_target = QComboBox()
+            for target in (self.view_model.get("expert_workbench") or {}).get("handoff_targets", []):
+                self.handoff_target.addItem(str(target.get("label") or target.get("id")), str(target.get("id")))
+            self.brief_text = QTextEdit()
+            self.brief_text.setPlaceholderText("Task brief / 任务 brief")
+            layout.addWidget(QLabel("交接目标 / Handoff target"))
+            layout.addWidget(self.handoff_target)
+            layout.addWidget(QLabel("任务 brief / Task brief"))
+            layout.addWidget(self.brief_text, 1)
+            buttons = QHBoxLayout()
+            for text, method in [("复制交接包 / Copy handoff package", self._copy_handoff_package), ("保存草稿 / Save draft", self._save_handoff_draft), ("导出交接包 / Export package", self._export_handoff_package)]:
+                button = QPushButton(text)
+                button.clicked.connect(method)
+                buttons.addWidget(button)
+            layout.addLayout(buttons)
+            history = QListWidget()
+            for item in ((self.view_model.get("expert_workbench") or {}).get("artifact_history") or {}).get("items", []):
+                history.addItem(f"{item.get('created_at')} | {item.get('handoff_target')} | {item.get('session_display_id')}")
+            layout.addWidget(QLabel("Expert result history / 专家结果历史"))
+            layout.addWidget(history)
+            return page
+
+        def _diagnostics_page(self) -> QWidget:
+            page, layout = self._page(L("diagnostics"))
+            text = QTextEdit()
+            text.setReadOnly(True)
+            text.setPlainText(json.dumps(self.view_model.get("diagnostics_card") or {}, ensure_ascii=False, indent=2))
+            layout.addWidget(text, 1)
+            return page
+
+        def _settings_page(self) -> QWidget:
+            page, layout = self._page(L("settings"))
+            layout.addWidget(QLabel("语言 / Language"))
+            combo = QComboBox()
+            for mode in [{"id": "bilingual", "label": "中英对照 / Bilingual"}, {"id": "zh", "label": "中文"}, {"id": "en", "label": "English"}]:
+                combo.addItem(mode["label"], mode["id"])
+            layout.addWidget(combo)
+            layout.addWidget(QLabel("只显示并控制当前项目会话 / Shows and controls only this target project"))
+            for text in ["关闭行为 / Close behavior", "加载态 / Loading state", "空状态 / Empty state", "错误态 / Error state", "帮助 / Help"]:
+                layout.addWidget(QLabel(text))
+            layout.addStretch(1)
+            return page
+
+        def _refill_session_list(self) -> None:
+            needle = self.session_search.text().strip().lower() if hasattr(self, "session_search") else ""
+            self.session_list.clear()
+            self._filtered_rows = []
+            for row in self._session_rows:
+                full_id = str(row.get("visible_session_id") or row.get("full_session_id") or row.get("session_id") or "")
+                if needle and needle not in full_id.lower():
+                    continue
+                self._filtered_rows.append(row)
+                item = QListWidgetItem(f"{full_id}\n{row.get('label')} | {row.get('mapping_confidence', 'unmatched')}")
+                item.setToolTip(full_id)
+                self.session_list.addItem(item)
+            if self._filtered_rows:
+                self.session_list.setCurrentRow(0)
+
+        def _current_session(self) -> dict[str, Any] | None:
+            rows = getattr(self, "_filtered_rows", self._session_rows)
+            index = self.session_list.currentRow() if hasattr(self, "session_list") else 0
+            return rows[index] if 0 <= index < len(rows) else None
+
+        def _select_session(self, _index: int) -> None:
+            row = self._current_session()
+            if row is None:
+                return
+            self.session_title.setText(f"完整会话 ID / Full session ID: {row.get('visible_session_id') or row.get('session_id')}")
+            mapping = row.get("codex_mapping") or {}
+            self.session_mapping.setText(f"Codex 映射置信度 / Codex mapping confidence: {mapping.get('confidence', row.get('mapping_confidence', 'unmatched'))} - {mapping.get('message', '')}")
+            self.session_why.setText(f"显示原因 / Why shown: {row.get('why_shown')}")
+            self.session_effective.setText(f"生效状态 / Effective status: {row.get('label')} | {row.get('effective_state_explanation')} | {row.get('override_conflict_hint')}")
+            self._rebuild_lens_checks(row)
+
+        def _clear_layout(self, layout: QVBoxLayout, keep_first: bool = True) -> None:
+            while layout.count() > (1 if keep_first else 0):
+                item = layout.takeAt(1 if keep_first else 0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+
+        def _rebuild_lens_checks(self, row: dict[str, Any]) -> None:
+            self._clear_layout(self.category_layout)
+            self._clear_layout(self.lens_layout)
+            model = _product_lens_selection_model(self._lens_rows, self._category_rows, row.get("selected_lenses"), row.get("selected_categories"))
+            self._lens_checks = {}
+            self._category_checks = {}
+            self._category_lens_map = {}
+            self._updating_lens_selection = True
+            for category in model.get("categories", []):
+                category_id = str(category.get("id"))
+                full_label = f"{category.get('label')} ({category.get('id')})"
+                checkbox = QCheckBox(_compact_visual_label(full_label))
+                checkbox.setToolTip(full_label)
+                checkbox.setTristate(True)
+                checkbox.setCheckState(_qt_check_state(str(category.get("check_state") or "unchecked")))
+                self._category_checks[category_id] = checkbox
+                self._category_lens_map[category_id] = set(category.get("lens_ids") or [])
+                self.category_layout.addWidget(checkbox)
+            for lens in self._lens_rows:
+                full_label = f"{lens.get('label')} ({lens.get('id')})"
+                checkbox = QCheckBox(_compact_visual_label(full_label))
+                checkbox.setToolTip(full_label)
+                checkbox.setChecked(str(lens.get("id")) in set(model.get("effective_lenses") or []))
+                self._lens_checks[str(lens.get("id"))] = checkbox
+                self.lens_layout.addWidget(checkbox)
+            self._updating_lens_selection = False
+            for category_id, checkbox in self._category_checks.items():
+                checkbox.stateChanged.connect(lambda _state, cid=category_id: self._on_category_state_changed(cid))
+            for lens_id, checkbox in self._lens_checks.items():
+                checkbox.stateChanged.connect(lambda _state, lid=lens_id: self._on_lens_state_changed(lid))
+            self.effective_lenses_label.setText(f"最终生效 MOE / Effective MOE lenses: {', '.join(model.get('effective_lenses') or []) or 'all'}")
+
+        def _selected_lenses(self) -> list[str]:
+            return [lens_id for lens_id, checkbox in self._lens_checks.items() if checkbox.isChecked()]
+
+        def _selected_categories(self) -> list[str]:
+            return [category_id for category_id, checkbox in self._category_checks.items() if checkbox.checkState() == Qt.CheckState.Checked]
+
+        def _refresh_effective_lenses_label(self) -> None:
+            selected = self._selected_lenses()
+            self.effective_lenses_label.setText(f"最终生效 MOE / Effective MOE lenses: {', '.join(selected) if selected else 'all'}")
+
+        def _on_category_state_changed(self, category_id: str) -> None:
+            if self._updating_lens_selection:
+                return
+            checkbox = self._category_checks.get(category_id)
+            if checkbox is None or checkbox.checkState() == Qt.CheckState.PartiallyChecked:
+                return
+            self._updating_lens_selection = True
+            try:
+                checked = checkbox.checkState() == Qt.CheckState.Checked
+                for lens_id in self._category_lens_map.get(category_id, set()):
+                    if str(lens_id) in self._lens_checks:
+                        self._lens_checks[str(lens_id)].setChecked(checked)
+            finally:
+                self._updating_lens_selection = False
+            self._sync_category_states_from_lenses()
+            self._refresh_effective_lenses_label()
+
+        def _on_lens_state_changed(self, _lens_id: str) -> None:
+            if self._updating_lens_selection:
+                return
+            self._sync_category_states_from_lenses()
+            self._refresh_effective_lenses_label()
+
+        def _sync_category_states_from_lenses(self) -> None:
+            self._updating_lens_selection = True
+            try:
+                for category_id, lens_ids in self._category_lens_map.items():
+                    checkbox = self._category_checks.get(category_id)
+                    if checkbox is None:
+                        continue
+                    checked_count = sum(1 for lens_id in lens_ids if str(lens_id) in self._lens_checks and self._lens_checks[str(lens_id)].isChecked())
+                    if lens_ids and checked_count == len(lens_ids):
+                        checkbox.setCheckState(Qt.CheckState.Checked)
+                    elif checked_count:
+                        checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+                    else:
+                        checkbox.setCheckState(Qt.CheckState.Unchecked)
+            finally:
+                self._updating_lens_selection = False
+
+        def _execute_session_action(self, action: str) -> None:
+            row = self._current_session()
+            if row is None:
+                return
+            payload = execute_write_action_with_readback(config or {}, action, session_id=str(row.get("session_id") or ""), selected_lenses=self._selected_lenses(), selected_categories=self._selected_categories(), project_root=project_root or (self.view_model.get("top_banner") or {}).get("project_root"))
+            QMessageBox.information(self, "Project MOE", f"{payload.get('token')}: {payload.get('message')}")
+
+        def _execute_project_action(self, action: str) -> None:
+            payload = execute_write_action_with_readback(config or {}, action, project_root=project_root or (self.view_model.get("top_banner") or {}).get("project_root"))
+            QMessageBox.information(self, "Project MOE", f"{payload.get('token')}: {payload.get('message')}")
+
+        def _workbench_payload_common(self) -> dict[str, Any]:
+            row = self._current_session() or {}
+            return {"session_id": str(row.get("session_id") or ""), "session_display_id": str(row.get("visible_session_id") or row.get("session_id") or ""), "selected_lenses": self._selected_lenses(), "selected_categories": self._selected_categories(), "handoff_target": str(self.handoff_target.currentData() or "main-session"), "task_template_id": "custom", "brief_text": self.brief_text.toPlainText() if hasattr(self, "brief_text") else ""}
+
+        def _copy_handoff_package(self) -> None:
+            payload = export_workbench_handoff_package(config or {}, project_root=project_root, **self._workbench_payload_common())
+            QApplication.clipboard().setText(str(payload.get("export_text") or json.dumps(payload.get("package") or {}, ensure_ascii=False, indent=2)))
+            QMessageBox.information(self, "Project MOE", f"{payload.get('token')}: copied to clipboard")
+
+        def _save_handoff_draft(self) -> None:
+            payload = save_workbench_handoff_draft(config or {}, project_root=project_root, **self._workbench_payload_common())
+            QMessageBox.information(self, "Project MOE", f"{payload.get('token')}: {payload.get('message')}")
+
+        def _export_handoff_package(self) -> None:
+            payload = export_workbench_handoff_package(config or {}, project_root=project_root, **self._workbench_payload_common())
+            QMessageBox.information(self, "Project MOE", f"{payload.get('token')}: {payload.get('message')}")
+
+        def set_selected_section(self, section_id: str) -> None:
+            if section_id in self.section_ids:
+                self.nav.setCurrentRow(self.section_ids.index(section_id))
+
+        def closeEvent(self, event: Any) -> None:
+            box = QMessageBox(self)
+            box.setWindowTitle("Close Project MOE GUI?")
+            box.setText("Choose whether to exit or hide to tray.")
+            exit_button = box.addButton("Exit", QMessageBox.ButtonRole.AcceptRole)
+            hide_button = box.addButton("Hide to tray", QMessageBox.ButtonRole.ActionRole)
+            box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+            box.exec()
+            if box.clickedButton() is exit_button:
+                event.accept()
+            elif box.clickedButton() is hide_button:
+                self.hide()
+                event.ignore()
+            else:
+                event.ignore()
+
+    app = QApplication.instance() or QApplication([])
+    window = ProductMoeWindow(view_model)
+    return app, window
+
+
+def _launch_product_widgets(view_model: dict[str, Any], config: dict[str, Any] | None = None, project_root: str | Path | None = None) -> int:
+    from PySide6.QtCore import QTimer
+
+    app, window = create_product_widget_window(view_model, config, project_root)
+    smoke_exit_ms = int(os.environ.get("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS") or "0")
+    if smoke_exit_ms > 0:
+        timer = QTimer(window)
+        timer.setSingleShot(True)
+        timer.timeout.connect(lambda: app.exit(0))
+        window._project_moe_gui_smoke_timer = timer  # type: ignore[attr-defined]
+        timer.start(smoke_exit_ms)
+    window.show()
+    return int(app.exec())
+
+
 def launch_visible(view_model: dict[str, Any], config: dict[str, Any] | None = None, project_root: str | Path | None = None) -> int:
+    if os.environ.get("PROJECT_MOE_GUI_USE_QML_FALLBACK") != "1":
+        return _launch_product_widgets(view_model, config, project_root)
+    return _legacy_launch_visible_qml(view_model, config, project_root)
+
+
+def launch_visible_qml_fallback(view_model: dict[str, Any], config: dict[str, Any] | None = None, project_root: str | Path | None = None) -> int:
+    return _legacy_launch_visible_qml(view_model, config, project_root)
+
+
+def _legacy_launch_visible_qml(view_model: dict[str, Any], config: dict[str, Any] | None = None, project_root: str | Path | None = None) -> int:
     try:
         from PySide6.QtCore import QEvent, QObject, QTimer, QUrl, Slot
         from PySide6.QtQml import QQmlApplicationEngine
