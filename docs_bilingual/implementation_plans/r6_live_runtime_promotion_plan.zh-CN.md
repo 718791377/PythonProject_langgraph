@@ -4,7 +4,7 @@ doc_id: r6_live_runtime_promotion_plan
 lang: zh-CN
 status: active
 doc_class: implementation_plan
-stage: plan-confirmed
+stage: implementation-evidence
 priority_order: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit
 translation_of: docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.md
 ---
@@ -42,27 +42,33 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 ## 当前状态
 <!-- CURRENT_STATUS_START -->
 
-- [x] Stage A plan package is merged to local `main` in commit `5dd8592`.
-- [ ] Stage B R6 checker/runtime/template implementation is in progress on branch `implement-r6-live-runtime-promotion-20260608`.
-- [ ] Local gate, local MR review, and local `main` integration remain required before remote-publication approval.
+- [x] Stage A 方案包已在提交 `5dd8592` 合入本地 `main`。
+- [x] Stage B 核心 R6 checker/runtime/template 实现已通过提交 `b0d3e07`、`fc1c500`、`5866f3e` 合入本地 `main`。
+- [x] Stage B live smoke 证据已覆盖模板同步、用户级安装 smoke、Spec Kit sandbox apply、Spec Kit template apply 与 Spec Kit repository apply；所有 receipt 均保持 `remote_publication_mutated=false`。
+- [ ] 本次 repository-apply 证据包正在分支 `record-r6-spec-kit-repository-apply-20260609` 上验证；仍需通过 local gate、local MR review 并合入本地 `main` 后才可停在远端发布审批门禁。
 
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
 <!-- TASK_BACKLOG_START -->
 
-- [x] Package 1: add bilingual R6 plan and merge it to local `main`.
-- [ ] Package 2: implement R6 checker/runtime/template support and validate all affected gates.
-- [ ] Package 2: sync full reusable templates to `D:/PythonProject_General` and safe stubs to `D:/PythonProject_General_2`.
-- [ ] Package 2: integrate into local `main` and stop at the remote-publication approval gate.
+- [x] Package 1：新增双语 R6 方案并合入本地 `main`。
+- [x] Package 2：实现 R6 checker/runtime/template 支持并验证受影响门禁。
+- [x] Package 2：同步完整可复用模板到 `D:/PythonProject_General`，同步安全 stub 到 `D:/PythonProject_General_2`。
+- [x] Package 2：执行用户级安装 smoke，以及 Spec Kit sandbox、repository、template apply 证据。
+- [ ] Package 2：将 repository-apply 证据包合入本地 `main`，并停在远端发布审批门禁。
 
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
 <!-- EVIDENCE_INDEX_START -->
 
-- Plan package evidence: local `main` commit `5dd8592` adds this bilingual R6 implementation plan pair.
-- Stage B evidence target: implementation evidence will be carried by local commits, local gate output, local MR review output, and the final local-main integration receipt for branch `implement-r6-live-runtime-promotion-20260608`.
+- 方案包证据：本地 `main` 提交 `5dd8592` 新增本双语 R6 implementation plan。
+- Stage B 实现证据：本地 `main` 提交 `b0d3e07`、`fc1c500`、`5866f3e` 已加入 R6 runtime/checker/template 支持、OpenSpec 门禁夹具与模板源漂移修复。
+- 模板与用户级 smoke 证据：忽略的本地 receipt 位于 `.omx/r6-live-runtime/receipts/`，包括 `user-level-install-smoke.json`、`spec-kit-sandbox-smoke.json`、`spec-kit-template-smoke.json`；模板同步复制 `0` 个文件，因为两个目标模板已与源表面对齐。
+- Spec Kit repository apply 证据：分支 `record-r6-spec-kit-repository-apply-20260609` 保留 `.specify/r6-live-runtime/README.md` 与 `specs/r6-live-runtime/spec.md` 作为从属/no-takeover 的 repository-apply 表面，redacted live receipt 为 `.omx/r6-live-runtime/receipts/spec-kit-repository-smoke.json`。
+- 本次 repository-apply 包的 checker 证据：允许且仅允许有界 R6 从属前缀后，`python test\spec_kit_authority_guard.test.py -v` 与 `python tools\check_spec_kit_authority_guard.py --root . --json` 均通过。
+- 最终本地 `main` 集成证据将由分支 `record-r6-spec-kit-repository-apply-20260609` 的 local flow helper 输出承载；除非当前用户消息明确点名远端动作，否则远端发布仍未授权。
 
 <!-- EVIDENCE_INDEX_END -->
 ## R6 契约

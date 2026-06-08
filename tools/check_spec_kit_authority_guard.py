@@ -41,6 +41,17 @@ ALLOWED_MIGRATION_PLAN_DOC_IDS = {
     "spec_kit_authority_migration_plan",
     "spec_kit_governance_migration_plan",
 }
+R6_LIVE_RUNTIME_PLAN_DOC_ID = "r6_live_runtime_promotion_plan"
+R6_ALLOWED_REPOSITORY_APPLY_PREFIXES = (
+    ".specify/r6-live-runtime",
+    "specs/r6-live-runtime",
+)
+R6_SUBORDINATE_CONTENT_RE = re.compile(
+    r"\b(subordinate|no[- ]takeover|does not replace|do not replace|not replace|"
+    r"Comet/OpenSpec/Superpowers|OpenSpec authority|R6 receipt|receipt authorized)\b|"
+    r"(\u4ece\u5c5e|\u4e0d\u53d6\u4ee3|\u4e0d\u63a5\u7ba1|\u4e0d\u662f\u6743\u5a01)",
+    re.IGNORECASE,
+)
 SAFE_REFERENCE_HINT_RE = re.compile(
     r"\b(optional|subordinate|adapter|template|reference|docs?|safe references?|forbid|forbids|forbidden|"
     r"block|blocks|blocked|guard|guardrail|do not run|do not add|do not install|"
@@ -236,6 +247,15 @@ def parse_status_paths(output: str) -> list[str]:
 
 def current_changed_paths(root: Path) -> set[str]:
     changed: set[str] = set()
+    top_level = run_git(root, ["rev-parse", "--show-toplevel"])
+    if top_level.returncode != 0:
+        return changed
+    try:
+        git_root = Path(top_level.stdout.strip()).resolve()
+    except OSError:
+        return changed
+    if git_root != root.resolve():
+        return changed
     for args in (["diff", "--name-only"], ["diff", "--cached", "--name-only"]):
         result = run_git(root, args)
         if result.returncode == 0:
@@ -275,8 +295,38 @@ def active_migration_plan_doc_ids(root: Path) -> set[str]:
     return docs
 
 
+def active_plan_doc_ids(root: Path) -> set[str]:
+    docs: set[str] = set()
+    plans_root = root / "docs_bilingual" / "implementation_plans"
+    if not plans_root.exists():
+        return docs
+    for path in plans_root.glob("*.md"):
+        if path.name.endswith(".zh-CN.md"):
+            continue
+        try:
+            text = read_text(path)
+        except OSError:
+            continue
+        header = text.split("---", 2)
+        front_matter = header[1] if len(header) >= 3 and text.startswith("---") else text[:2000]
+        doc_id = ""
+        status = ""
+        for raw_line in front_matter.splitlines():
+            if raw_line.startswith("doc_id:"):
+                doc_id = raw_line.split(":", 1)[1].strip()
+            elif raw_line.startswith("status:"):
+                status = raw_line.split(":", 1)[1].strip()
+        if status == "active" and doc_id:
+            docs.add(doc_id)
+    return docs
+
+
 def has_authorized_migration_plan(root: Path) -> bool:
     return bool(active_migration_plan_doc_ids(root))
+
+
+def has_r6_live_runtime_plan(root: Path) -> bool:
+    return R6_LIVE_RUNTIME_PLAN_DOC_ID in active_plan_doc_ids(root)
 
 
 def path_is_specify_governance(relative: str) -> bool:
@@ -284,6 +334,62 @@ def path_is_specify_governance(relative: str) -> bool:
     if relative == ".specify" or relative.startswith(".specify/"):
         return True
     return False
+
+
+def path_is_r6_allowed_repository_apply_surface(relative: str) -> bool:
+    relative = normalize(relative)
+    return any(relative == prefix or relative.startswith(f"{prefix}/") for prefix in R6_ALLOWED_REPOSITORY_APPLY_PREFIXES)
+
+
+def path_is_r6_surface_parent(relative: str) -> bool:
+    relative = normalize(relative)
+    return relative in {".specify", "specs"}
+
+
+def r6_surface_parent_has_only_allowed_children(root: Path, parent: str, scan_roots: Iterable[str]) -> bool:
+    parent_prefix = f"{parent}/"
+    has_child = False
+    for rel in iter_existing_paths(root, scan_roots):
+        rel = normalize(rel)
+        if rel == parent:
+            continue
+        if not rel.startswith(parent_prefix):
+            continue
+        has_child = True
+        if not path_is_r6_allowed_repository_apply_surface(rel):
+            return False
+        if not r6_repository_apply_surface_has_subordinate_content(root, rel):
+            return False
+    return has_child
+
+
+def r6_repository_apply_surface_has_subordinate_content(root: Path, relative: str) -> bool:
+    path = root / normalize(relative)
+    if path.is_dir():
+        files = [
+            child
+            for child in path.rglob("*")
+            if child.is_file() and child.suffix.lower() in SCANNED_SUFFIXES and not path_is_excluded(relative_to_root(root, child))
+        ]
+        if not files:
+            return True
+        return all(r6_repository_apply_surface_has_subordinate_content(root, relative_to_root(root, child)) for child in files)
+    try:
+        text = read_text(path)
+    except OSError:
+        return False
+    return bool(R6_SUBORDINATE_CONTENT_RE.search(text))
+
+
+def r6_repository_apply_surface_is_allowed(root: Path, relative: str, scan_roots: Iterable[str], r6_plan_present: bool) -> bool:
+    relative = normalize(relative)
+    if not r6_plan_present:
+        return False
+    if path_is_r6_surface_parent(relative):
+        return r6_surface_parent_has_only_allowed_children(root, relative, scan_roots)
+    if not path_is_r6_allowed_repository_apply_surface(relative):
+        return False
+    return r6_repository_apply_surface_has_subordinate_content(root, relative)
 
 
 def generated_surface_kind(relative: str) -> str | None:
@@ -406,25 +512,28 @@ def find_file_findings(root: Path, scan_roots: Iterable[str], authorized_migrati
     return findings, checked_files
 
 
-def find_path_findings(root: Path, scan_roots: Iterable[str], authorized_migration_plan_present: bool) -> list[Finding]:
+def find_path_findings(root: Path, scan_roots: Iterable[str], authorized_migration_plan_present: bool, r6_plan_present: bool) -> list[Finding]:
     findings: list[Finding] = []
     changed = current_changed_paths(root)
     specify_dir = root / ".specify"
     if specify_dir.exists() and not authorized_migration_plan_present:
-        findings.append(
-            Finding(
-                kind="specify_directory_present_without_plan",
-                relative_path=".specify",
-                line=0,
-                text=".specify/",
-                reason="`.specify/` is a Spec Kit governance/runtime directory and requires an active authority-guard plan before creation.",
+        if not r6_repository_apply_surface_is_allowed(root, ".specify", scan_roots, r6_plan_present):
+            findings.append(
+                Finding(
+                    kind="specify_directory_present_without_plan",
+                    relative_path=".specify",
+                    line=0,
+                    text=".specify/",
+                    reason="`.specify/` is a Spec Kit governance/runtime directory and requires an active authority-guard plan before creation, except bounded R6 subordinate repository-apply evidence under `.specify/r6-live-runtime/`.",
+                )
             )
-        )
     if not authorized_migration_plan_present:
         seen_surface: set[tuple[str, str]] = set()
         for rel in iter_existing_paths(root, scan_roots):
             kind = generated_surface_kind(rel)
             if kind is None:
+                continue
+            if r6_repository_apply_surface_is_allowed(root, rel, scan_roots, r6_plan_present):
                 continue
             key = (kind, rel)
             if key in seen_surface:
@@ -441,6 +550,8 @@ def find_path_findings(root: Path, scan_roots: Iterable[str], authorized_migrati
             )
     for rel in sorted(changed):
         if path_is_specify_governance(rel) and not authorized_migration_plan_present:
+            if r6_repository_apply_surface_is_allowed(root, rel, scan_roots, r6_plan_present):
+                continue
             findings.append(
                 Finding(
                     kind="specify_path_changed_without_plan",
@@ -453,6 +564,8 @@ def find_path_findings(root: Path, scan_roots: Iterable[str], authorized_migrati
             continue
         kind = generated_surface_kind(rel)
         if kind and not authorized_migration_plan_present:
+            if r6_repository_apply_surface_is_allowed(root, rel, scan_roots, r6_plan_present):
+                continue
             findings.append(
                 Finding(
                     kind=f"changed_{kind}",
@@ -575,14 +688,17 @@ def evaluate(root: Path, scan_roots: Iterable[str], receipt_paths: Iterable[str]
     warnings: list[str] = []
     info: list[str] = []
     authorized_migration_plan_present = has_authorized_migration_plan(root)
+    r6_plan_present = has_r6_live_runtime_plan(root)
     file_findings, checked_files = find_file_findings(root, scan_roots, authorized_migration_plan_present)
-    path_findings = find_path_findings(root, scan_roots, authorized_migration_plan_present)
+    path_findings = find_path_findings(root, scan_roots, authorized_migration_plan_present, r6_plan_present)
     findings = [*file_findings, *path_findings]
     errors.extend(f"[{finding.kind}] {finding.relative_path}:{finding.line}: {finding.reason} :: {finding.text}" for finding in findings)
     receipt_validation = validate_receipts(receipt_paths)
     errors.extend(receipt_validation["errors"])
     if authorized_migration_plan_present:
         info.append("Authorized Spec Kit authority-migration plan is present; Spec Kit paths are still inspected for unsafe command or takeover language.")
+    elif r6_plan_present:
+        info.append("Active R6 live-runtime plan detected; only subordinate repository-apply evidence under `.specify/r6-live-runtime/` and `specs/r6-live-runtime/` may bypass generated-surface path failures.")
     else:
         info.append("No authorized Spec Kit authority-migration plan detected; .specify, root specs, generated Spec Kit command/skill/prompt, extension, preset, workflow-output, and authority-changing Spec Kit surfaces fail closed.")
     return {
@@ -593,6 +709,8 @@ def evaluate(root: Path, scan_roots: Iterable[str], receipt_paths: Iterable[str]
         "root": str(root),
         "scan_roots": list(scan_roots),
         "authorized_migration_plan_present": authorized_migration_plan_present,
+        "r6_live_runtime_plan_present": r6_plan_present,
+        "r6_allowed_repository_apply_prefixes": list(R6_ALLOWED_REPOSITORY_APPLY_PREFIXES),
         "allowed_migration_plan_doc_ids": sorted(ALLOWED_MIGRATION_PLAN_DOC_IDS),
         "required_surface_status_keys": list(REQUIRED_SURFACE_STATUS_KEYS),
         "receipt_validation": receipt_validation,

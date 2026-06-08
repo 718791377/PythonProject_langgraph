@@ -3,7 +3,7 @@ doc_id: r6_live_runtime_promotion_plan
 lang: en
 status: active
 doc_class: implementation_plan
-stage: plan-confirmed
+stage: implementation-evidence
 priority_order: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit
 zh_cn_path: docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.zh-CN.md
 ---
@@ -41,8 +41,9 @@ This plan covers these existing R5 plans as one governed rollout:
 <!-- CURRENT_STATUS_START -->
 
 - [x] Stage A plan package merged to local `main` in commit `5dd8592`.
-- [ ] Stage B R6 checker/runtime/template implementation is in progress on branch `implement-r6-live-runtime-promotion-20260608`.
-- [ ] Local gate, local MR review, and local `main` integration remain required before remote-publication approval.
+- [x] Stage B core R6 checker/runtime/template implementation merged to local `main` through commits `b0d3e07`, `fc1c500`, and `5866f3e`.
+- [x] Stage B live smoke evidence exists for template sync, user-level install smoke, Spec Kit sandbox apply, Spec Kit template apply, and Spec Kit repository apply; all recorded receipts keep `remote_publication_mutated=false`.
+- [ ] This repository-apply evidence package is validating on branch `record-r6-spec-kit-repository-apply-20260609`; local gate, local MR review, and local `main` integration remain required before remote-publication approval.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -50,9 +51,10 @@ This plan covers these existing R5 plans as one governed rollout:
 <!-- TASK_BACKLOG_START -->
 
 - [x] Package 1: add bilingual R6 plan and merge it to local `main`.
-- [ ] Package 2: implement R6 checker/runtime/template support and validate all affected gates.
-- [ ] Package 2: sync full reusable templates to `D:/PythonProject_General` and safe stubs to `D:/PythonProject_General_2`.
-- [ ] Package 2: integrate into local `main` and stop at the remote-publication approval gate.
+- [x] Package 2: implement R6 checker/runtime/template support and validate affected gates.
+- [x] Package 2: sync full reusable templates to `D:/PythonProject_General` and safe stubs to `D:/PythonProject_General_2`.
+- [x] Package 2: execute user-level install smoke plus Spec Kit sandbox, repository, and template apply evidence.
+- [ ] Package 2: integrate the repository-apply evidence package into local `main` and stop at the remote-publication approval gate.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -60,7 +62,11 @@ This plan covers these existing R5 plans as one governed rollout:
 <!-- EVIDENCE_INDEX_START -->
 
 - Plan package evidence: local `main` commit `5dd8592` adds this bilingual R6 implementation plan pair.
-- Stage B evidence target: implementation evidence will be carried by local commits, local gate output, local MR review output, and the final local-main integration receipt for branch `implement-r6-live-runtime-promotion-20260608`.
+- Stage B implementation evidence: local `main` commits `b0d3e07`, `fc1c500`, and `5866f3e` added R6 runtime/checker/template support, OpenSpec gate fixtures, and template-source drift repair.
+- Template and user-level smoke evidence: ignored local receipts under `.omx/r6-live-runtime/receipts/` record `user-level-install-smoke.json`, `spec-kit-sandbox-smoke.json`, and `spec-kit-template-smoke.json`; the template sync copied `0` files because both target templates already matched the source surfaces.
+- Spec Kit repository apply evidence: branch `record-r6-spec-kit-repository-apply-20260609` preserves `.specify/r6-live-runtime/README.md` and `specs/r6-live-runtime/spec.md` as subordinate/no-takeover repository-apply surfaces, with `.omx/r6-live-runtime/receipts/spec-kit-repository-smoke.json` as the redacted live receipt.
+- Checker evidence for the repository-apply package: `python test\spec_kit_authority_guard.test.py -v` and `python tools\check_spec_kit_authority_guard.py --root . --json` pass after allowing only the bounded R6 subordinate prefixes.
+- Final local-main integration evidence will be carried by the local flow helper output for branch `record-r6-spec-kit-repository-apply-20260609`; remote publication remains unauthorized until a current user message names the remote action.
 
 <!-- EVIDENCE_INDEX_END -->
 
