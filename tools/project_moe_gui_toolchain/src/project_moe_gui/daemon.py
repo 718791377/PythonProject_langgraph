@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -13,12 +14,22 @@ SCHEMA_VERSION = 1
 LOCK_FILE_NAME = "project_moe_gui.daemon.lock"
 LOG_FILE_NAME = "project_moe_gui.daemon.log"
 RUNTIME_DIR = Path(".project-runtime") / "project_moe_gui"
+WINDOWS_DRIVE_PATH_RE = re.compile(r"[A-Za-z]:[\\/]")
 
 
 def win_path_text(value: str | Path) -> str:
-    """Return a Windows-artifact path string independent of host OS."""
+    """Return a Windows-artifact path string independent of host OS.
 
-    return str(value).replace("/", "\\")
+    Linux CI may hand us values where ``Path("D:/target").resolve()`` has
+    already prefixed the checkout directory.  Installer metadata is a Windows
+    artifact, so trim any host prefix before rendering backslashes.
+    """
+
+    text = str(value)
+    match = WINDOWS_DRIVE_PATH_RE.search(text)
+    if match:
+        text = text[match.start() :]
+    return text.replace("/", "\\")
 
 
 def windows_process_flags(*, platform_name: str | None = None) -> int:
