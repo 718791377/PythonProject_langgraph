@@ -840,6 +840,11 @@ def build_parser() -> argparse.ArgumentParser:
     active.add_argument("--owner-lane", default=None)
     active.add_argument("--json", action="store_true")
 
+    r6_live = sub.add_parser("r6-live-check", help="Validate R6 live-runtime receipt evidence without performing actions.")
+    r6_live.add_argument("--receipt", required=True)
+    r6_live.add_argument("--lane", default=None)
+    r6_live.add_argument("--json", action="store_true")
+
     rollback = sub.add_parser("rollback-check", help="Validate rollback executor receipt evidence without executing rollback.")
     rollback.add_argument("--receipt", required=True)
     rollback.add_argument("--owner-lane", default=None)

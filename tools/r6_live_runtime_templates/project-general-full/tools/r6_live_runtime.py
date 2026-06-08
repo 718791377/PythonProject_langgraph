@@ -67,6 +67,10 @@ def stable_hash(value: Any) -> str:
     return hashlib.sha256(text.encode("utf-8", errors="replace")).hexdigest()[:16]
 
 
+def write_text_lf(path: Path, text: str) -> None:
+    path.write_text(text, encoding="utf-8", newline="\n")
+
+
 def receipt_path(root: Path, receipt_dir: str, lane: str, live_mode: str) -> Path:
     safe = lane.replace("/", "-").replace("\\", "-")
     return root / receipt_dir / f"{safe}-{live_mode}.json"
@@ -269,14 +273,14 @@ def ensure_template_sources(root: Path) -> list[Path]:
     written: list[Path] = []
     for target_path, body in files.items():
         target_path.parent.mkdir(parents=True, exist_ok=True)
-        target_path.write_text(body, encoding="utf-8")
+        write_text_lf(target_path, body)
         written.append(target_path)
     for relative in ("tools/check_r6_live_runtime_receipts.py", "tools/r6_live_runtime.py", "tools/user_level_receipt_governance.py"):
         source = root / relative
         if source.exists():
             destination = full / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+            write_text_lf(destination, source.read_text(encoding="utf-8"))
             written.append(destination)
     return written
 
@@ -348,7 +352,7 @@ def copy_tree_new_files_only(src: Path, dst: Path) -> list[str]:
         if target.exists():
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+        write_text_lf(target, source.read_text(encoding="utf-8"))
         copied.append(target.as_posix())
     return copied
 
