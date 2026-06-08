@@ -14,6 +14,7 @@ CHECK_NAME = "git_commit_language"
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 ZERO_SHA_RE = re.compile(r"^0{40}$")
 GITLAB_GENERATED_MERGE_SUBJECT_RE = re.compile(r"^Merge branch ['\"].+['\"] into ['\"].+['\"]$")
+QUESTION_MARK_CORRUPTED_MERGE_SUBJECT_RE = re.compile(r"^(?=.{4,120}$)(?=.*\?)(?=.*[A-Za-z0-9])[A-Za-z0-9 _./:#\-?]+$")
 
 
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -110,9 +111,31 @@ def records_from_range(root: Path, base_ref: str, head_ref: str) -> tuple[list[d
     return [], errors
 
 
-def is_allowed_generated_merge_commit(record: dict[str, Any]) -> bool:
+def is_question_mark_corrupted_merge_subject(subject: str) -> bool:
+    if subject_has_chinese(subject):
+        return False
+    if not QUESTION_MARK_CORRUPTED_MERGE_SUBJECT_RE.fullmatch(subject):
+        return False
+    question_count = subject.count("?")
+    non_space_count = sum(1 for char in subject if not char.isspace())
+    if non_space_count == 0:
+        return False
+    return question_count >= 4 and (question_count / non_space_count) >= 0.5
+
+
+def generated_merge_commit_reason(record: dict[str, Any]) -> str | None:
+    if not bool(record.get("is_merge_commit")):
+        return None
     subject = str(record.get("subject", ""))
-    return bool(record.get("is_merge_commit")) and bool(GITLAB_GENERATED_MERGE_SUBJECT_RE.fullmatch(subject))
+    if GITLAB_GENERATED_MERGE_SUBJECT_RE.fullmatch(subject):
+        return "gitlab_generated_merge_commit"
+    if is_question_mark_corrupted_merge_subject(subject):
+        return "gitlab_generated_merge_commit_subject_encoding_loss"
+    return None
+
+
+def is_allowed_generated_merge_commit(record: dict[str, Any]) -> bool:
+    return generated_merge_commit_reason(record) is not None
 
 
 def evaluate_records(root: Path, records: list[dict[str, Any]], source: str) -> dict[str, Any]:
@@ -120,14 +143,15 @@ def evaluate_records(root: Path, records: list[dict[str, Any]], source: str) -> 
     checked: list[dict[str, Any]] = []
     for record in records:
         subject = str(record.get("subject", ""))
-        generated_merge_commit = is_allowed_generated_merge_commit(record)
+        generated_merge_reason = generated_merge_commit_reason(record)
+        generated_merge_commit = generated_merge_reason is not None
         ok = subject_has_chinese(subject) or generated_merge_commit
         checked_record: dict[str, Any] = {"subject": subject, "ok": ok}
         if source == "range" and record.get("commit"):
             checked_record["commit"] = record.get("commit")
             checked_record["is_merge_commit"] = bool(record.get("is_merge_commit"))
-        if generated_merge_commit:
-            checked_record["allowed_reason"] = "gitlab_generated_merge_commit"
+        if generated_merge_reason:
+            checked_record["allowed_reason"] = generated_merge_reason
         checked.append(checked_record)
         if not ok:
             errors.append(f"Commit subject must contain Chinese text: {subject}")
