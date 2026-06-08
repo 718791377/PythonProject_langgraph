@@ -257,6 +257,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/gstack_codex_delivery_loop_runtime_governance_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/gstack_codex_delivery_loop_runtime_governance_plan.zh-CN.md
 
+  - doc_id: r6_live_runtime_promotion_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.zh-CN.md
+
   - doc_id: comet_management_record_bootstrap_plan
     doc_class: implementation_plan
     status: active

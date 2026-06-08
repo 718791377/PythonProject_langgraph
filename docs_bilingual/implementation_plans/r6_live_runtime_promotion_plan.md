@@ -2,6 +2,7 @@
 doc_id: r6_live_runtime_promotion_plan
 lang: en
 status: active
+doc_class: implementation_plan
 stage: plan-confirmed
 priority_order: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit
 zh_cn_path: docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.zh-CN.md
@@ -35,6 +36,33 @@ This plan covers these existing R5 plans as one governed rollout:
 - `codex_harnesses_governance_plan` - governs Codex harness candidates, jobs, and no-takeover evidence
 - `spec_kit_authority_guard_plan` - governs Spec Kit authority prevention checks
 - `spec_kit_subordinate_adapter_governance_plan` - governs Spec Kit subordinate adapter runtime boundaries
+
+## Current Status
+<!-- CURRENT_STATUS_START -->
+
+- [x] Stage A plan package merged to local `main` in commit `5dd8592`.
+- [ ] Stage B R6 checker/runtime/template implementation is in progress on branch `implement-r6-live-runtime-promotion-20260608`.
+- [ ] Local gate, local MR review, and local `main` integration remain required before remote-publication approval.
+
+<!-- CURRENT_STATUS_END -->
+
+## Task Backlog
+<!-- TASK_BACKLOG_START -->
+
+- [x] Package 1: add bilingual R6 plan and merge it to local `main`.
+- [ ] Package 2: implement R6 checker/runtime/template support and validate all affected gates.
+- [ ] Package 2: sync full reusable templates to `D:/PythonProject_General` and safe stubs to `D:/PythonProject_General_2`.
+- [ ] Package 2: integrate into local `main` and stop at the remote-publication approval gate.
+
+<!-- TASK_BACKLOG_END -->
+
+## Evidence Index
+<!-- EVIDENCE_INDEX_START -->
+
+- Plan package evidence: local `main` commit `5dd8592` adds this bilingual R6 implementation plan pair.
+- Stage B evidence target: implementation evidence will be carried by local commits, local gate output, local MR review output, and the final local-main integration receipt for branch `implement-r6-live-runtime-promotion-20260608`.
+
+<!-- EVIDENCE_INDEX_END -->
 
 ## R6 Contract
 
