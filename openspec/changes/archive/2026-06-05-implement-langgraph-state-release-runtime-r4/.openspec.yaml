@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-06-05
+x_change_class: code
+x_archive_deferred_reason: "R4 runtime implementation is being completed in a feature worktree; archive will happen after runtime helper, tests, and local validation pass in the same integration package."
+x_archive_follow_up: "Archive this change before local main integration so the release-runtime requirement is promoted into the stable LangGraph backend spec."

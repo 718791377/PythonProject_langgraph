@@ -35,13 +35,13 @@ Validate OpenSpec and Comet guard health and archive completed changes as one se
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
-Status update: MCP/skills/browser/CLI decomposition 要求在相关 OpenSpec surface 做任何 archive 决策前先保留 source-plan extraction evidence。receipt/redaction、port/browser-owner、discovery facade 与 browser/CLI adapter boundary 子 lane 均已 implemented-local，且既有 stable-spec coverage 已存在；archive 决策等待未来 source-plan archive package。
+Status: archive package implemented locally; complete local flow will integrate this package into local `main`.
+Stage: Stage C Phase 7 OpenSpec/Comet archive package.
+Owner session: `codex-20260603-parallel-plan-openspec-comet-archive`.
+Current gate: run `tools/complete_local_flow_to_remote_gate.py` for local `main` integration, then stop at the remote-publication approval gate.
+Stage C entry condition: satisfied by the 2026-06-03 user confirmation for this child implementation plan, local git commit, and local `main` integration.
+Last updated: 2026-06-03.
+Status update: `refactor-user-level-mcp-governance-modern-structure` is archived to `openspec/changes/archive/2026-06-03-refactor-user-level-mcp-governance-modern-structure/`. Stable-spec sync is skipped because the current stable MCP/skills/browser/CLI spec already has broader current coverage. Remaining complete active changes are deferred because their verify, branch-handling, source-plan, or archive-readiness evidence is outside this single serial archive package.
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -68,12 +68,12 @@ Status update: MCP/skills/browser/CLI decomposition 要求在相关 OpenSpec sur
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Identify completed active OpenSpec changes that must archive before final integration.
-- [ ] Run official OpenSpec verification and Comet guard checks.
-- [ ] Promote stable spec deltas only after implementation validation is complete.
-- [ ] Run archive validation and local gate.
-- [ ] Before archiving MCP/skills/browser/CLI OpenSpec work, record whether each extracted child lane is implemented, deferred, or still active. Current receipt/redaction、port/browser-owner、discovery facade 与 browser/CLI adapter boundary lane states: implemented-local；local integration evidence 由 repository completion flow 记录。
+- [x] Confirm this child plan after local main integration; the current user request records the implementation confirmation.
+- [x] Identify completed active OpenSpec changes that must archive before final integration; this package selects `refactor-user-level-mcp-governance-modern-structure`.
+- [x] Run official OpenSpec verification and Comet guard checks for the selected archive package.
+- [x] Promote stable spec deltas only after implementation validation is complete; stable-spec sync is skipped because existing stable coverage is broader than the historical delta.
+- [x] Run archive validation and local gate before local `main` integration.
+- [x] Before archiving MCP/skills/browser/CLI OpenSpec work, record each extracted child lane state. Receipt/redaction, port/browser-owner, discovery facade, and browser/CLI adapter boundary are implemented-local; the broader source surface is partially archived by `refactor-user-level-mcp-governance-modern-structure`; remaining complete active changes are deferred to later evidence-owned archive packages.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -97,6 +97,7 @@ Status update: MCP/skills/browser/CLI decomposition 要求在相关 OpenSpec sur
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-03 Phase 7 archive implementation: archived `refactor-user-level-mcp-governance-modern-structure` to `openspec/changes/archive/2026-06-03-refactor-user-level-mcp-governance-modern-structure/`; stable-spec sync was skipped to avoid replacing broader current stable MCP/skills/browser/CLI coverage with the older narrow delta; remaining complete active changes are deferred because their verify/branch/archive evidence is outside this package write ownership.
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 receipt/redaction archive note: `user_level_capability_receipt_rollback_redaction_plan` is implemented-local; no live user-level install or sensitive runtime action was performed, and the related stable spec already contains the generic receipt governance requirement. Archive timing remains a Phase 7 decision for the broader MCP/skills/browser/CLI source surface.
 - 2026-06-01 port/browser-owner archive note: `user_level_port_browser_owner_isolation_plan` 已 implemented-local；本包仅补强仓库本地 guard 与测试，不执行 live browser start 或 sensitive runtime action；archive timing 仍由更广 MCP/skills/browser/CLI source surface 的 Phase 7 决策处理。

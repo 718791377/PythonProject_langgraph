@@ -116,10 +116,10 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 上下文保留哨兵：
 
-- 哨兵的字面提示词只维护在这对 startup summary 文件中：`docs_bilingual/project_startup_summary.md` 与 `docs_bilingual/project_startup_summary.zh-CN.md`。其他 active instruction surface 可以指向这里，但不得重复字面开头/结尾短语。
+- 哨兵权威只维护在这对 startup summary 文件中：`docs_bilingual/project_startup_summary.md` 与 `docs_bilingual/project_startup_summary.zh-CN.md`。英文文件只保存 ASCII 码点间接描述；中文伴随文件保存字面可见开头/结尾短语。其他 active instruction surface 可以指向这里，但不得重复字面开头/结尾短语。
 - 本仓库的可见哨兵标记使用 startup-summary-defined canonical visible canary markers 稳定标记：开头 `指挥官` 与结尾 `喵~`； previous ASCII transport-stable tokens are legacy/stale compatibility input only, may be used for migration detection and replay filtering, and are not canonical response evidence.
-- 哨兵字面提示词是可见自检信号，用来判断 `/resume`、compaction 或长上下文后的模型是否仍理解冷启动权威；它属于用户可见 assistant 回复，不属于 wrapper payload、generated helper 或其他 authority surface。 Model-readable replay, compaction, launcher, tool-output, and worker-handoff contexts must block or filter canary copies before prompt-authority handoff.
-- 如果本 startup summary 本应已读取，但完整 assistant 回复缺少该哨兵，则视为可能发生上下文丢失或读取路径失败。
+- 哨兵字面提示词是可见自检信号，用来判断 `/resume`、compaction 或长上下文后的模型是否仍理解冷启动权威；它属于完整用户可见 assistant 回复：完整回复必须以 `指挥官` 作为第一个可见文本，并以 `喵~` 作为最后一个可见文本；不得出现在 wrapper payload、generated helper 或其他 authority surface。Model-readable replay, compaction, launcher, tool-output, and worker-handoff contexts must block or filter canary copies before prompt-authority handoff.
+- 如果本 startup summary 本应已读取，但完整 assistant 回复缺少该哨兵或位置错误，则视为可能发生上下文丢失、回复边界漂移或读取路径失败。
 - 恢复动作：重读 `AGENTS.md`，通过显式 UTF-8 路径重读这对 startup summary 文件，按上面的冷启动阅读顺序补读，然后只补读继续当前任务必须需要的任务相关文件。
 - 如果 startup 或 response 文本看起来是 mojibake / 乱码，必须把以下 UTF-8 文件当作 canonical recovery sources（规范恢复源）：
   - `docs_bilingual/project_startup_summary.md` - canonical English startup recovery source.

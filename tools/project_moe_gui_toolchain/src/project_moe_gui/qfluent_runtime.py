@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import contextlib
 import importlib
 import importlib.metadata
+import io
 from typing import Any, Callable
 
 
@@ -53,7 +55,11 @@ def qfluent_license_manifest() -> dict[str, Any]:
 
 
 def _default_import_probe(import_name: str) -> object:
-    return importlib.import_module(import_name)
+    # QFluentWidgets currently emits a promotional tip on stdout during import.
+    # Machine-readable launcher modes must emit exactly one JSON document, so
+    # treat third-party import chatter as internal probe noise.
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        return importlib.import_module(import_name)
 
 
 def _default_metadata_probe(package_name: str) -> dict[str, Any]:

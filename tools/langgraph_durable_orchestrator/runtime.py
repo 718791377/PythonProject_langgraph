@@ -143,6 +143,10 @@ def survivor_queue_path(repo_root: Path, thread_id: str) -> Path:
     return langgraph_state_root(repo_root) / "store" / "survivors" / f"{_thread_file_key(thread_id)}.json"
 
 
+def release_receipt_path(repo_root: Path, thread_id: str) -> Path:
+    return langgraph_state_root(repo_root) / "store" / "releases" / f"{_thread_file_key(thread_id)}.json"
+
+
 def write_thread_record(repo_root: Path, payload: dict[str, Any]) -> Path:
     path = thread_record_path(repo_root, payload["thread_id"])
     _write_json(path, payload)
@@ -207,3 +211,13 @@ def write_survivor_queue(repo_root: Path, thread_id: str, payload: dict[str, Any
 
 def read_survivor_queue(repo_root: Path, thread_id: str) -> dict[str, Any]:
     return _read_json(survivor_queue_path(repo_root, thread_id), {})
+
+
+def write_release_receipt(repo_root: Path, thread_id: str, payload: dict[str, Any]) -> Path:
+    path = release_receipt_path(repo_root, thread_id)
+    _write_json(path, payload)
+    return path
+
+
+def read_release_receipt(repo_root: Path, thread_id: str) -> dict[str, Any]:
+    return _read_json(release_receipt_path(repo_root, thread_id), {})

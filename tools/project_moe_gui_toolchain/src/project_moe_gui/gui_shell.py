@@ -2,29 +2,46 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
-from project_moe_gui import CLI_CONTRACT
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover
+    tomllib = None  # type: ignore[assignment]
+
+from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_VERSION
 from project_moe_gui.qfluent_runtime import check_qfluent_runtime, qfluent_license_manifest
+from project_moe_gui.workbench_artifacts import (
+    create_handoff_package,
+    export_handoff_package,
+    list_handoff_artifacts,
+    save_handoff_artifact,
+)
 
 
 SCHEMA_VERSION = 1
 GUI_SHELL_CONTRACT = "project-moe-gui-shell-v1"
 WINDOW_TITLE = "Project MOE Agent Console"
+QML_SHELL_RELATIVE = Path("qml/ProjectMoeGui.qml")
+TARGET_QML_SHELL_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
 DEFAULT_MODE_CLI = "tools/thesis_moe_mode.py"
-READ_ACTIONS = {"refresh", "project-status", "list-sessions", "status"}
-WRITE_ACTIONS = {"project-on", "project-off", "session-on", "session-off"}
+READ_ACTIONS = {"refresh", "project-status", "list-sessions", "list-lenses", "status"}
+WRITE_ACTIONS = {"project-on", "project-off", "session-on", "session-off", "session-set-lenses", "session-clear-lenses"}
 ACTION_COMMANDS = {
     "project-status": ["project-status", "--json"],
     "list-sessions": ["list-sessions", "--json"],
+    "list-lenses": ["list-lenses", "--json"],
     "status": ["status", "--json"],
     "project-on": ["project-on", "--json"],
     "project-off": ["project-off", "--json"],
     "session-on": ["on", "--json"],
     "session-off": ["off", "--json"],
+    "session-set-lenses": ["set-lenses", "--json"],
+    "session-clear-lenses": ["clear-lenses", "--json"],
 }
 WRITE_CLI_REQUIRED_FIELDS = (
     "schema_version",
@@ -77,7 +94,117 @@ KEYBOARD_SHORTCUTS = {
     "project-off": "Alt+Shift+P",
     "session-on": "Alt+S",
     "session-off": "Alt+Shift+S",
+    "session-set-lenses": "Alt+L",
+    "session-clear-lenses": "Alt+Shift+L",
 }
+
+DEFAULT_EXPERT_LENSES = [
+    {
+        "id": "blind_review",
+        "label": "Blind-review expert",
+        "description": "Checks contribution, rigor, evidence, and likely reviewer objections.",
+    },
+    {
+        "id": "advisor_interrogation",
+        "label": "Advisor interrogation expert",
+        "description": "Turns vague claims into hard advisor-style questions and required answers.",
+    },
+    {
+        "id": "aigc_risk",
+        "label": "AIGC / AI-like wording risk expert",
+        "description": "Flags generic wording, unsupported certainty, and suspiciously synthetic phrasing.",
+    },
+    {
+        "id": "novelty",
+        "label": "Novelty / innovation expert",
+        "description": "Tests whether the claimed innovation is explicit, defensible, and differentiated.",
+    },
+    {
+        "id": "literature_evidence",
+        "label": "Literature and evidence expert",
+        "description": "Checks source coverage, citation fit, evidence gaps, and over-claim risk.",
+    },
+    {
+        "id": "structure_expression",
+        "label": "Structure and expression expert",
+        "description": "Reviews organization, transitions, terminology, readability, and argument flow.",
+    },
+    {
+        "id": "socratic_cbt",
+        "label": "Socratic CBT-style questioning expert",
+        "description": "Uses calm Socratic questions to expose assumptions and improve revision decisions.",
+    },
+    {
+        "id": "thinking_dispatcher",
+        "label": "Thinking-model dispatcher",
+        "description": "Chooses the most suitable lens combination and decomposes the review brief.",
+    },
+]
+
+DEFAULT_EXPERT_CATEGORIES = [
+    {
+        "id": "review",
+        "label": "Review",
+        "description": "Reviewer, advisor, novelty, literature, and expression lenses.",
+        "lens_ids": ["blind_review", "advisor_interrogation", "novelty", "literature_evidence", "structure_expression"],
+    },
+    {
+        "id": "risk",
+        "label": "Risk",
+        "description": "AIGC, evidence, blocker, and risk triage lenses.",
+        "lens_ids": ["aigc_risk", "literature_evidence"],
+    },
+    {
+        "id": "thinking",
+        "label": "Thinking",
+        "description": "Socratic and dispatch-oriented lenses for deciding next review steps.",
+        "lens_ids": ["socratic_cbt", "thinking_dispatcher"],
+    },
+]
+
+HANDOFF_TARGETS = [
+    {
+        "id": "main-session",
+        "label": "Main session",
+        "description": "The current leader session uses the selected MOE lenses directly.",
+    },
+    {
+        "id": "subagent",
+        "label": "Subagent",
+        "description": "The leader may paste this package into a native subagent task; GUI does not spawn it.",
+    },
+    {
+        "id": "durable-team",
+        "label": "Durable team",
+        "description": "The leader may hand this package to a durable team lane; GUI does not start workers.",
+    },
+    {
+        "id": "langgraph-workflow",
+        "label": "LangGraph workflow",
+        "description": "The leader may use this package as a LangGraph workflow brief; GUI does not invoke LangGraph.",
+    },
+]
+
+EXPERT_TASK_TEMPLATES = [
+    {
+        "id": "thesis_review",
+        "label": "Thesis review brief",
+        "objective": "Review the provided thesis section or objective and return actionable revision advice.",
+        "prompt": "Assess the target with the selected expert lens. Return strengths, risks, required fixes, and next revision steps.",
+    },
+    {
+        "id": "defense_questions",
+        "label": "Defense Q&A brief",
+        "objective": "Generate likely defense or advisor questions and concise answer requirements.",
+        "prompt": "Generate tough questions, explain why each matters, and list evidence needed for defensible answers.",
+    },
+    {
+        "id": "risk_triage",
+        "label": "Risk triage brief",
+        "objective": "Prioritize blocking issues before spending time on style or polish.",
+        "prompt": "Classify risks as blocker/high/medium/low and propose the smallest safe next step for each.",
+    },
+]
 
 
 def close_behavior_contract() -> dict[str, Any]:
@@ -100,11 +227,476 @@ def close_behavior_contract() -> dict[str, Any]:
     }
 
 
+def _safe_short(value: Any, limit: int = 220) -> str:
+    text = "" if value is None else str(value)
+    text = text.replace("\r\n", "\n").replace("\r", "\n").strip()
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "..."
+
+
+def _agent_toml_candidates(root: Path, agent_name: str | None) -> list[Path]:
+    agent_dir = root / ".codex" / "agents"
+    if not agent_dir.exists():
+        return []
+    candidates = sorted(agent_dir.glob("*.toml"))
+    if not agent_name:
+        return candidates
+    preferred = [path for path in candidates if path.stem == agent_name]
+    return preferred + [path for path in candidates if path not in preferred]
+
+
+def _structured_lenses_from_public_toml(payload: dict[str, Any]) -> list[dict[str, str]]:
+    lens_values: Any = None
+    for container_key in ("extensions", "moe"):
+        container = payload.get(container_key)
+        if isinstance(container, dict):
+            lens_values = container.get("expert_lenses") or container.get("lenses")
+            if lens_values:
+                break
+    lenses: list[dict[str, str]] = []
+    if isinstance(lens_values, list):
+        for item in lens_values:
+            if isinstance(item, dict):
+                lens_id = _safe_short(item.get("id") or item.get("name") or item.get("label"), 80)
+                label = _safe_short(item.get("label") or item.get("name") or lens_id, 120)
+                description = _safe_short(item.get("description") or item.get("purpose") or "", 220)
+            else:
+                lens_id = _safe_short(item, 80)
+                label = lens_id
+                description = ""
+            if not lens_id or not label:
+                continue
+            lenses.append({"id": lens_id, "label": label, "description": description})
+    return lenses
+
+
+def default_lens_categories(lenses: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    known_lens_ids = {str(item.get("id")) for item in (lenses or DEFAULT_EXPERT_LENSES) if item.get("id")}
+    categories: list[dict[str, Any]] = []
+    for category in DEFAULT_EXPERT_CATEGORIES:
+        lens_ids = [lens_id for lens_id in category.get("lens_ids", []) if lens_id in known_lens_ids]
+        categories.append({**category, "lens_ids": lens_ids})
+    return categories
+
+
+def _structured_categories_from_public_toml(payload: dict[str, Any], lenses: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    category_values: Any = None
+    for container_key in ("extensions", "moe"):
+        container = payload.get(container_key)
+        if isinstance(container, dict):
+            category_values = container.get("expert_categories") or container.get("categories")
+            if category_values:
+                break
+    categories: list[dict[str, Any]] = []
+    if isinstance(category_values, list):
+        for item in category_values:
+            if isinstance(item, dict):
+                category_id = _safe_short(item.get("id") or item.get("name") or item.get("label"), 80)
+                label = _safe_short(item.get("label") or item.get("name") or category_id, 120)
+                description = _safe_short(item.get("description") or item.get("purpose") or "", 220)
+                lens_ids = [str(value) for value in item.get("lens_ids", []) if isinstance(value, str)]
+            else:
+                category_id = _safe_short(item, 80)
+                label = category_id
+                description = ""
+                lens_ids = []
+            if not category_id or not label:
+                continue
+            categories.append({"id": category_id, "label": label, "description": description, "lens_ids": lens_ids})
+    return categories or default_lens_categories(lenses)
+
+
+def load_public_expert_lenses(root: Path, agent_name: str | None) -> dict[str, Any]:
+    source = {
+        "type": "safe_default",
+        "agent_toml_checked": False,
+        "agent_toml_path": None,
+        "private_prompt_source_read": False,
+        "developer_instructions_copied": False,
+    }
+    if tomllib is None:
+        lenses = list(DEFAULT_EXPERT_LENSES)
+        return {"lenses": lenses, "categories": default_lens_categories(lenses), "source": {**source, "token": "blocked:tomllib_unavailable"}}
+    for path in _agent_toml_candidates(root, agent_name):
+        try:
+            payload = tomllib.loads(path.read_text(encoding="utf-8-sig"))
+        except Exception:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        observed_name = str(payload.get("name") or path.stem)
+        if agent_name and observed_name != agent_name and path.stem != agent_name:
+            continue
+        structured_lenses = _structured_lenses_from_public_toml(payload)
+        lenses = structured_lenses or list(DEFAULT_EXPERT_LENSES)
+        categories = _structured_categories_from_public_toml(payload, lenses)
+        source.update(
+            {
+                "type": "public_agent_toml" if structured_lenses else "public_agent_toml_with_safe_default_lenses",
+                "token": "ok",
+                "agent_toml_checked": True,
+                "agent_toml_path": norm(path.relative_to(root)) if root in path.parents else str(path),
+                "agent_name": observed_name,
+                "agent_description": _safe_short(payload.get("description"), 220),
+                "private_prompt_source_read": False,
+                "developer_instructions_copied": False,
+            }
+        )
+        return {"lenses": lenses, "categories": categories, "source": source}
+    lenses = list(DEFAULT_EXPERT_LENSES)
+    return {"lenses": lenses, "categories": default_lens_categories(lenses), "source": {**source, "token": "ok"}}
+
+
+def normalize_lens_catalog(lenses_payload: dict[str, Any] | None, fallback_lenses: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    if isinstance(lenses_payload, dict) and lenses_payload.get("ok", True):
+        raw_lenses = lenses_payload.get("lenses")
+        raw_categories = lenses_payload.get("categories")
+        lenses = [item for item in raw_lenses if isinstance(item, dict) and item.get("id")] if isinstance(raw_lenses, list) else []
+        categories = [item for item in raw_categories if isinstance(item, dict) and item.get("id")] if isinstance(raw_categories, list) else []
+        if lenses:
+            return {
+                "schema_version": SCHEMA_VERSION,
+                "token": payload_token(lenses_payload, "ok"),
+                "source": "phase1-cli-list-lenses",
+                "lenses": lenses,
+                "categories": categories or default_lens_categories(lenses),
+                "selection_semantics": lenses_payload.get("selection_semantics")
+                if isinstance(lenses_payload.get("selection_semantics"), dict)
+                else {"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"},
+                "private_prompt_source_read": bool(lenses_payload.get("private_prompt_source_read", False)),
+            }
+    lenses = list(fallback_lenses or DEFAULT_EXPERT_LENSES)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "token": "ok",
+        "source": "safe-default",
+        "lenses": lenses,
+        "categories": default_lens_categories(lenses),
+        "selection_semantics": {"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"},
+        "private_prompt_source_read": False,
+    }
+
+
+def generate_expert_handoff_package_preview(
+    config: dict[str, Any],
+    lenses: list[dict[str, Any]],
+    templates: list[dict[str, Any]],
+    handoff_targets: list[dict[str, Any]],
+) -> str:
+    selected_lenses = lenses[:2] if len(lenses) > 1 else (lenses or [DEFAULT_EXPERT_LENSES[0]])
+    template = templates[0] if templates else EXPERT_TASK_TEMPLATES[0]
+    target = handoff_targets[0] if handoff_targets else HANDOFF_TARGETS[0]
+    lens_lines = [f"- {item.get('id')}: {item.get('label')}" for item in selected_lenses]
+    return "\n".join(
+        [
+            "Project MOE Expert Workbench v2 Handoff Package (draft only; no GUI execution)",
+            f"Project: {config.get('runtime_project_root') or config.get('target_project_root') or '<target-project>'}",
+            f"Agent: {config.get('agent_name') or '<agent>'}",
+            f"State namespace: {config.get('state_namespace') or '<namespace>'}",
+            f"Handoff target: {target.get('id')} ({target.get('label')})",
+            "Selected MOE lenses:",
+            *lens_lines,
+            f"Task template: {template.get('label')}",
+            "",
+            "Review target / objective:",
+            "<paste target text, file path, or revision objective here>",
+            "",
+            "Instructions:",
+            str(template.get("prompt") or ""),
+            "",
+            "Carrier instructions:",
+            "- The GUI generated this package only; it did not start Codex, subagents, durable team, LangGraph, or model APIs.",
+            "- Main session may use one or more selected MOE lenses directly, paste this package to a native subagent, or hand it to a durable team / LangGraph workflow.",
+            "",
+            "Output format:",
+            "1. Key finding",
+            "2. Evidence or missing evidence",
+            "3. Recommended revision",
+            "4. Follow-up question",
+        ]
+    )
+
+
+def build_workbench_artifact_history(root: Path) -> dict[str, Any]:
+    try:
+        payload = list_handoff_artifacts(root)
+    except Exception as exc:
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "ok": False,
+            "token": "blocked:workbench_history_unavailable",
+            "message": "Cannot read Project MOE GUI workbench artifact history.",
+            "error": short_text(str(exc), 400),
+            "items": [],
+            "count": 0,
+            "read_only": True,
+        }
+    items: list[dict[str, Any]] = []
+    for item in payload.get("items") or []:
+        if not isinstance(item, dict):
+            continue
+        items.append(
+            {
+                "artifact_id": item.get("artifact_id"),
+                "created_at": item.get("created_at"),
+                "updated_at": item.get("updated_at"),
+                "status": item.get("status"),
+                "handoff_target": item.get("handoff_target"),
+                "session_display_id": item.get("session_display_id"),
+                "selected_lenses": string_list(item.get("selected_lenses")),
+                "selected_categories": string_list(item.get("selected_categories")),
+                "task_template_id": item.get("task_template_id"),
+                "path": item.get("path"),
+            }
+        )
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "ok": True,
+        "token": payload.get("token") or "ok",
+        "runtime_root": payload.get("runtime_root"),
+        "items": items,
+        "count": len(items),
+        "read_only": True,
+    }
+
+
+def build_expert_workbench(config: dict[str, Any], root: Path, lens_catalog: dict[str, Any] | None = None) -> dict[str, Any]:
+    lens_payload = load_public_expert_lenses(root, str(config.get("agent_name") or ""))
+    if isinstance(lens_catalog, dict) and lens_catalog.get("source") == "phase1-cli-list-lenses":
+        catalog = lens_catalog
+        lenses = list(catalog.get("lenses") or lens_payload.get("lenses") or DEFAULT_EXPERT_LENSES)
+        categories = list(catalog.get("categories") or lens_payload.get("categories") or default_lens_categories(lenses))
+    else:
+        lenses = list(lens_payload.get("lenses") or DEFAULT_EXPERT_LENSES)
+        categories = list(lens_payload.get("categories") or default_lens_categories(lenses))
+        catalog = {
+            "schema_version": SCHEMA_VERSION,
+            "token": "ok",
+            "source": (lens_payload.get("source") or {}).get("type") or "safe-default",
+            "lenses": lenses,
+            "categories": categories,
+            "selection_semantics": {"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"},
+            "private_prompt_source_read": False,
+        }
+    templates = list(EXPERT_TASK_TEMPLATES)
+    handoff_targets = list(HANDOFF_TARGETS)
+    package_preview = generate_expert_handoff_package_preview(config, lenses, templates, handoff_targets)
+    artifact_history = build_workbench_artifact_history(root)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "mode": "handoff_package_generation_only",
+        "title": "Expert Workbench v2",
+        "subtitle": "Generate a safe Project MOE handoff package without starting Codex, subagents, durable teams, LangGraph, or model APIs.",
+        "lenses": lenses,
+        "categories": categories,
+        "task_templates": templates,
+        "handoff_targets": handoff_targets,
+        "default_lens_id": lenses[0]["id"] if lenses else None,
+        "default_template_id": templates[0]["id"] if templates else None,
+        "default_handoff_target_id": handoff_targets[0]["id"] if handoff_targets else None,
+        "brief_preview": package_preview,
+        "handoff_package_preview": package_preview,
+        "artifact_history": artifact_history,
+        "copy_action": {
+            "id": "copy_handoff_package_to_clipboard",
+            "label": "Copy handoff package",
+            "persistence": "clipboard_only",
+            "writes_git": False,
+            "writes_disk": False,
+        },
+        "save_draft_action": {
+            "id": "save_handoff_draft",
+            "label": "Save draft",
+            "persistence": "target_runtime_artifact",
+            "writes_git": False,
+            "writes_target_project_state": False,
+            "requires_carrier_execution": False,
+        },
+        "export_action": {
+            "id": "export_handoff_package",
+            "label": "Export handoff package",
+            "persistence": "target_runtime_artifact_and_clipboard_text",
+            "writes_git": False,
+            "writes_target_project_state": False,
+            "requires_carrier_execution": False,
+        },
+        "execution_policy": {
+            "starts_codex": False,
+            "starts_subagents": False,
+            "starts_durable_team": False,
+            "starts_langgraph_workflow": False,
+            "calls_model_api": False,
+            "writes_target_project_state": False,
+            "gui_direct_state_write": False,
+        },
+        "handoff_policy": {
+            "targets_are_metadata_only": True,
+            "main_session_can_use_lenses_directly": True,
+            "main_session_can_send_to_subagent": True,
+            "main_session_can_send_to_durable_team": True,
+            "main_session_can_send_to_langgraph_workflow": True,
+            "gui_executes_handoff_target": False,
+        },
+        "persistence_policy": {
+            "runtime_memory": True,
+            "clipboard": True,
+            "disk_default": False,
+            "git_default": False,
+        },
+        "privacy_boundary": {
+            "private_prompt_source_read": False,
+            "private_prompt_body_copied": False,
+            "developer_instructions_copied": False,
+            "raw_session_id_exposed": False,
+            "full_stdout_stderr_copied": False,
+            "source": lens_payload.get("source"),
+            "lens_catalog_source": catalog.get("source"),
+        },
+    }
+
+
+def save_workbench_handoff_draft(
+    config: dict[str, Any],
+    *,
+    session_id: str | None = None,
+    session_display_id: str | None = None,
+    selected_lenses: list[str] | None = None,
+    selected_categories: list[str] | None = None,
+    handoff_target: str = "main-session",
+    task_template_id: str = "default",
+    brief_text: str = "",
+    project_root: str | Path | None = None,
+) -> dict[str, Any]:
+    root = configured_project_root(config, project_root)
+    package = create_handoff_package(
+        target_project=root,
+        session_id=session_id,
+        session_display_id=session_display_id or redact_identifier(session_id) or "(no session)",
+        selected_lenses=selected_lenses or [],
+        selected_categories=selected_categories or [],
+        handoff_target=handoff_target,
+        task_template_id=task_template_id,
+        brief_text=brief_text,
+        status="draft",
+    )
+    saved = save_handoff_artifact(root, package)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "ok": bool(saved.get("ok")),
+        "token": saved.get("token") or "blocked:workbench_draft_save_failed",
+        "action": "save_handoff_draft",
+        "message": "Workbench handoff draft saved as a target runtime artifact." if saved.get("ok") else saved.get("message"),
+        "package": package,
+        "saved": saved,
+        "artifact_history": build_workbench_artifact_history(root),
+        "writes_git": False,
+        "writes_target_project_state": False,
+        "writes_runtime_artifact": bool(saved.get("ok")),
+        "executes_carrier": False,
+    }
+
+
+def export_workbench_handoff_package(
+    config: dict[str, Any],
+    *,
+    session_id: str | None = None,
+    session_display_id: str | None = None,
+    selected_lenses: list[str] | None = None,
+    selected_categories: list[str] | None = None,
+    handoff_target: str = "main-session",
+    task_template_id: str = "default",
+    brief_text: str = "",
+    project_root: str | Path | None = None,
+) -> dict[str, Any]:
+    root = configured_project_root(config, project_root)
+    package = create_handoff_package(
+        target_project=root,
+        session_id=session_id,
+        session_display_id=session_display_id or redact_identifier(session_id) or "(no session)",
+        selected_lenses=selected_lenses or [],
+        selected_categories=selected_categories or [],
+        handoff_target=handoff_target,
+        task_template_id=task_template_id,
+        brief_text=brief_text,
+        status="draft",
+    )
+    exported = export_handoff_package(package, handoff_target)
+    saved = save_handoff_artifact(root, exported)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "ok": bool(saved.get("ok")),
+        "token": saved.get("token") or "blocked:workbench_export_failed",
+        "action": "export_handoff_package",
+        "message": "Workbench handoff package exported as carrier-shaped text only." if saved.get("ok") else saved.get("message"),
+        "package": exported,
+        "export_text": exported.get("export_text") or "",
+        "saved": saved,
+        "artifact_history": build_workbench_artifact_history(root),
+        "writes_git": False,
+        "writes_target_project_state": False,
+        "writes_runtime_artifact": bool(saved.get("ok")),
+        "executes_carrier": False,
+    }
+
+
+def _configured_qml_shell_relative(config: dict[str, Any] | None) -> Path | None:
+    if not isinstance(config, dict):
+        return None
+    qml_shell = config.get("qml_shell")
+    value: Any = None
+    if isinstance(qml_shell, dict):
+        value = qml_shell.get("relative_path")
+    value = value or config.get("qml_shell_relative_path")
+    if not value:
+        return None
+    rel = Path(str(value).strip())
+    if rel.is_absolute():
+        return None
+    return rel
+
+
+def qml_shell_path(
+    config: dict[str, Any] | None = None,
+    project_root: str | Path | None = None,
+    *,
+    prefer_installed: bool = True,
+) -> Path:
+    if prefer_installed and isinstance(config, dict):
+        root = configured_project_root(config, project_root)
+        configured_rel = _configured_qml_shell_relative(config)
+        if configured_rel is not None:
+            return (root / configured_rel).resolve(strict=False)
+        target_path = (root / TARGET_QML_SHELL_RELATIVE).resolve(strict=False)
+        if project_root is not None and target_path.exists():
+            return target_path
+    return Path(__file__).resolve().parent / QML_SHELL_RELATIVE
+
+
+def qml_visual_contract() -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "library": "Qt Quick/QML",
+        "runtime_modules": ["PySide6.QtQml", "PySide6.QtQuick", "PySide6.QtQuickControls2"],
+        "style": "Material",
+        "theme_modes": ["system", "light", "dark"],
+        "source": str(QML_SHELL_RELATIVE).replace("\\", "/"),
+        "default_target_relative_path": str(TARGET_QML_SHELL_RELATIVE).replace("\\", "/"),
+        "license_family": "Qt/PySide6 runtime license",
+        "external_template_copied": False,
+        "reference_policy": "Official Qt Quick Controls patterns may be referenced; third-party templates require separate license review before copying.",
+    }
+
+
 def expected_cli_command_for_action(action: str) -> str:
     if action == "session-on":
         return "on"
     if action == "session-off":
         return "off"
+    if action == "session-set-lenses":
+        return "set-lenses"
+    if action == "session-clear-lenses":
+        return "clear-lenses"
     return action
 
 
@@ -350,6 +942,136 @@ def state_label(value: bool | None) -> str:
     return "unknown"
 
 
+def string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if isinstance(item, (str, int, float)) and str(item).strip()]
+
+
+def lens_mode_for_selection(selected_lenses: list[str], selected_categories: list[str], observed: Any = None) -> str:
+    if observed in {"all", "selected"}:
+        return str(observed)
+    return "selected" if selected_lenses or selected_categories else "all"
+
+
+def lens_selection_summary(selected_lenses: list[str], selected_categories: list[str], mode: str) -> str:
+    if mode == "all" and not selected_lenses and not selected_categories:
+        return "All lenses"
+    parts: list[str] = []
+    if selected_lenses:
+        parts.append("lenses=" + ", ".join(selected_lenses))
+    if selected_categories:
+        parts.append("categories=" + ", ".join(selected_categories))
+    return "; ".join(parts) if parts else mode
+
+
+def session_table_controls() -> dict[str, list[dict[str, str]]]:
+    return {
+        "filter_modes": [
+            {"id": "all", "label": "All"},
+            {"id": "enabled", "label": "Enabled"},
+            {"id": "disabled", "label": "Disabled"},
+            {"id": "blocked-invalid", "label": "Blocked or invalid"},
+        ],
+        "sort_keys": [
+            {"id": "last_seen", "label": "Last seen"},
+            {"id": "display_id", "label": "Display id"},
+            {"id": "label", "label": "State label"},
+            {"id": "effective_lens_mode", "label": "Effective lens mode"},
+        ],
+    }
+
+
+def session_empty_state_variants() -> dict[str, dict[str, str]]:
+    return {
+        "no-session": {
+            "title": "No sessions",
+            "message": "No registered sessions were returned by the target Phase 1 CLI.",
+        },
+        "no-search-result": {
+            "title": "No matching sessions",
+            "message": "Adjust search text, filter, or sort controls to find a session.",
+        },
+        "readiness-blocked": {
+            "title": "Readiness blocked",
+            "message": "Session controls stay read-only until the target project readiness contract is healthy.",
+        },
+    }
+
+
+def session_effective_state_explanation(row: dict[str, Any], project_default_enabled: bool | None = None) -> str:
+    source = str(row.get("source") or row.get("effective_source") or "unknown")
+    enabled = state_label(bool_state(row.get("enabled")))
+    project_default = state_label(project_default_enabled)
+    if row.get("valid") is False or str(row.get("token") or "ok") != "ok":
+        return f"Blocked or invalid session record; effective state is {enabled}."
+    if "manual" in source or "session" in source or "override" in source:
+        return f"Session override sets this session to {enabled}; project default is {project_default}."
+    if "project" in source:
+        return f"Project default currently provides this session state: {enabled}."
+    return f"Effective state is {enabled}; source is {source}."
+
+
+def override_conflict_hint(row: dict[str, Any], project_default_enabled: bool | None = None) -> str:
+    source = str(row.get("source") or row.get("effective_source") or "unknown")
+    if row.get("valid") is False or str(row.get("token") or "ok") != "ok":
+        return "Blocked or invalid sessions cannot safely apply project defaults or session overrides."
+    if "manual" in source or "session" in source or "override" in source:
+        return f"Session override wins over project default ({state_label(project_default_enabled)})."
+    if "project" in source:
+        return "No session override; project default applies."
+    return "No explicit conflict detected; verify target CLI readback before writing."
+
+
+def filter_sort_session_rows(
+    rows: list[dict[str, Any]],
+    *,
+    search_text: str = "",
+    filter_mode: str = "all",
+    sort_key: str = "last_seen",
+) -> list[dict[str, Any]]:
+    needle = str(search_text or "").strip().lower()
+
+    def matches_search(row: dict[str, Any]) -> bool:
+        if not needle:
+            return True
+        haystack = " ".join(
+            str(row.get(key) or "")
+            for key in [
+                "session_id",
+                "display_id",
+                "label",
+                "source",
+                "token",
+                "effective_lens_mode",
+                "lens_selection_summary",
+            ]
+        ).lower()
+        return needle in haystack
+
+    def matches_filter(row: dict[str, Any]) -> bool:
+        enabled = bool_state(row.get("enabled"))
+        blocked = row.get("valid") is False or str(row.get("token") or "ok") != "ok"
+        if filter_mode == "enabled":
+            return enabled is True and not blocked
+        if filter_mode == "disabled":
+            return enabled is False and not blocked
+        if filter_mode == "blocked-invalid":
+            return blocked
+        return True
+
+    result = [row for row in rows if isinstance(row, dict) and matches_search(row) and matches_filter(row)]
+    if sort_key == "display_id":
+        result.sort(key=lambda row: str(row.get("display_id") or row.get("session_id") or "").lower())
+    elif sort_key == "label":
+        result.sort(key=lambda row: str(row.get("label") or "").lower())
+    elif sort_key == "effective_lens_mode":
+        result.sort(key=lambda row: str(row.get("effective_lens_mode") or "").lower())
+    else:
+        result.sort(key=lambda row: str(row.get("last_seen_at") or ""), reverse=True)
+    return result
+
+
 def action_scope_key(action: str, session_id: str | None = None) -> str:
     if action.startswith("session-"):
         return f"session:{redact_identifier(session_id)}"
@@ -363,11 +1085,14 @@ def action_label(action: str) -> str:
         "refresh": "Refresh status",
         "project-status": "Read project status",
         "list-sessions": "Read sessions",
+        "list-lenses": "Read MOE lenses",
         "status": "Read effective status",
         "project-on": "Enable project default",
         "project-off": "Disable project default",
         "session-on": "Enable selected session",
         "session-off": "Disable selected session",
+        "session-set-lenses": "Apply session lenses",
+        "session-clear-lenses": "Clear session lenses",
     }.get(action, action)
 
 
@@ -427,6 +1152,8 @@ def readback_specs_for_write_action(action: str, session_id: str | None = None) 
     if action not in WRITE_ACTIONS:
         return []
     specs: list[tuple[str, str | None]] = [("project-status", None), ("list-sessions", None)]
+    if action in {"session-set-lenses", "session-clear-lenses"}:
+        specs.append(("list-lenses", None))
     specs.append(("status", session_id if action.startswith("session-") else None))
     return specs
 
@@ -485,6 +1212,8 @@ def build_action_plan(
     action: str,
     *,
     session_id: str | None = None,
+    selected_lenses: list[str] | None = None,
+    selected_categories: list[str] | None = None,
     project_root: str | Path | None = None,
     python_executable: str | None = None,
 ) -> dict[str, Any]:
@@ -500,7 +1229,7 @@ def build_action_plan(
             "writes_state": False,
         }
 
-    if action in {"session-on", "session-off"} and not session_id:
+    if action.startswith("session-") and not session_id:
         return {
             "schema_version": SCHEMA_VERSION,
             "ok": False,
@@ -517,8 +1246,13 @@ def build_action_plan(
     argv = [python_executable or sys.executable, str(mode_cli), *ACTION_COMMANDS[action]]
     scope = "session" if action.startswith("session-") else ("read" if action in READ_ACTIONS else "project-default")
     scope_key = action_scope_key(action, session_id)
-    if action in {"session-on", "session-off"}:
+    if action.startswith("session-") or (action == "status" and session_id):
         argv.extend(["--session-id", str(session_id)])
+    if action in {"session-on", "session-set-lenses"}:
+        for lens_id in selected_lenses or []:
+            argv.extend(["--lens", str(lens_id)])
+        for category_id in selected_categories or []:
+            argv.extend(["--category", str(category_id)])
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
@@ -534,6 +1268,8 @@ def build_action_plan(
         "writes_state": action in WRITE_ACTIONS,
         "direct_state_write": False,
         "keyboard_shortcut": KEYBOARD_SHORTCUTS.get(action),
+        "selected_lenses": list(selected_lenses or []),
+        "selected_categories": list(selected_categories or []),
         "requires_readback_after_write": action in WRITE_ACTIONS,
         "readback_after_write": [
             build_action_plan(config, read_action, session_id=read_session_id, project_root=root, python_executable=python_executable)
@@ -555,6 +1291,7 @@ def build_refresh_plan(config: dict[str, Any], *, project_root: str | Path | Non
         "commands": [
             build_action_plan(config, "project-status", project_root=project_root, python_executable=python_executable),
             build_action_plan(config, "list-sessions", project_root=project_root, python_executable=python_executable),
+            build_action_plan(config, "list-lenses", project_root=project_root, python_executable=python_executable),
             build_action_plan(config, "status", project_root=project_root, python_executable=python_executable),
         ],
         "keyboard_shortcut": KEYBOARD_SHORTCUTS["refresh"],
@@ -609,6 +1346,7 @@ def normalize_session_row(
     row: Any,
     index: int,
     *,
+    project_default_enabled: bool | None = None,
     project_root: str | Path | None = None,
     pending_scope: str | None = None,
     pending_scope_key: str | None = None,
@@ -621,6 +1359,17 @@ def normalize_session_row(
             "message": "Session row must be a JSON object.",
             "session_id": None,
             "display_id": "(invalid session)",
+            "enabled": None,
+            "label": "unknown",
+            "source": "invalid-record",
+            "selected_lenses": [],
+            "selected_categories": [],
+            "effective_lens_mode": "all",
+            "lens_selection_scope": "session",
+            "lens_selection_summary": "All lenses",
+            "last_seen_at": None,
+            "effective_state_explanation": "Blocked or invalid session record; effective state is unknown.",
+            "override_conflict_hint": "Blocked or invalid sessions cannot safely apply project defaults or session overrides.",
             "actions": {},
         }
     session_id = row.get("session_id") or row.get("id")
@@ -629,6 +1378,10 @@ def normalize_session_row(
     enabled = bool_state(row.get("effective_enabled"))
     if enabled is None:
         enabled = bool_state(row.get("enabled") if "enabled" in row else row.get("status"))
+    selected_lenses = string_list(row.get("selected_lenses"))
+    selected_categories = string_list(row.get("selected_categories"))
+    effective_lens_mode = lens_mode_for_selection(selected_lenses, selected_categories, row.get("effective_lens_mode"))
+    lens_selection_scope = str(row.get("lens_selection_scope") or "session")
     actions = {}
     if valid:
         raw_id = str(session_id)
@@ -643,8 +1396,25 @@ def normalize_session_row(
                 pending_scope=pending_scope,
                 pending_scope_key=pending_scope_key,
             ),
+            "apply_session_lenses": decorate_action_for_button(
+                build_action_plan(
+                    config,
+                    "session-set-lenses",
+                    session_id=raw_id,
+                    selected_lenses=selected_lenses,
+                    selected_categories=selected_categories,
+                    project_root=project_root,
+                ),
+                pending_scope=pending_scope,
+                pending_scope_key=pending_scope_key,
+            ),
+            "clear_session_lenses": decorate_action_for_button(
+                build_action_plan(config, "session-clear-lenses", session_id=raw_id, project_root=project_root),
+                pending_scope=pending_scope,
+                pending_scope_key=pending_scope_key,
+            ),
         }
-    return {
+    result = {
         "row_index": index,
         "valid": valid,
         "token": token,
@@ -654,30 +1424,44 @@ def normalize_session_row(
         "enabled": enabled,
         "label": state_label(enabled),
         "source": row.get("source") or row.get("effective_source") or "unknown",
+        "selected_lenses": selected_lenses,
+        "selected_categories": selected_categories,
+        "effective_lens_mode": effective_lens_mode,
+        "lens_selection_scope": lens_selection_scope,
+        "lens_selection_summary": lens_selection_summary(selected_lenses, selected_categories, effective_lens_mode),
         "last_seen_at": row.get("last_seen_at"),
         "actions": actions,
         "status_badge": {
             "text": state_label(enabled),
             "token_text": token,
-            "high_contrast_text": f"Session {redact_identifier(session_id)}: {state_label(enabled)}; token: {token}",
+            "lens_text": lens_selection_summary(selected_lenses, selected_categories, effective_lens_mode),
+            "high_contrast_text": f"Session {redact_identifier(session_id)}: {state_label(enabled)}; lenses: {lens_selection_summary(selected_lenses, selected_categories, effective_lens_mode)}; token: {token}",
         },
     }
+    result["effective_state_explanation"] = session_effective_state_explanation(result, project_default_enabled)
+    result["override_conflict_hint"] = override_conflict_hint(result, project_default_enabled)
+    return result
 
 
 def build_session_table(
     config: dict[str, Any],
     sessions_payload: dict[str, Any] | None,
     *,
+    project_default_enabled: bool | None = None,
     project_root: str | Path | None = None,
     pending_scope: str | None = None,
     pending_scope_key: str | None = None,
 ) -> dict[str, Any]:
+    controls = session_table_controls()
+    empty_state_variants = session_empty_state_variants()
     if sessions_payload is None:
         return {
             "token": "blocked:list_sessions_not_loaded",
             "rows": [],
             "empty_state": {"is_empty": True, "message": "Session list has not been loaded."},
             "invalid_count": 0,
+            "controls": controls,
+            "empty_state_variants": empty_state_variants,
         }
     if not sessions_payload.get("ok", True):
         return {
@@ -685,6 +1469,8 @@ def build_session_table(
             "rows": [],
             "empty_state": {"is_empty": True, "message": short_text(sessions_payload.get("message") or "Session list load failed.", 240)},
             "invalid_count": 0,
+            "controls": controls,
+            "empty_state_variants": empty_state_variants,
         }
     sessions = sessions_payload.get("sessions", [])
     if not isinstance(sessions, list):
@@ -693,12 +1479,15 @@ def build_session_table(
             "rows": [],
             "empty_state": {"is_empty": True, "message": "list-sessions --json must return a sessions array."},
             "invalid_count": 0,
+            "controls": controls,
+            "empty_state_variants": empty_state_variants,
         }
     rows = [
         normalize_session_row(
             config,
             row,
             index,
+            project_default_enabled=project_default_enabled,
             project_root=project_root,
             pending_scope=pending_scope,
             pending_scope_key=pending_scope_key,
@@ -711,8 +1500,101 @@ def build_session_table(
         "rows": rows,
         "empty_state": {"is_empty": len(rows) == 0, "message": "No registered sessions." if not rows else ""},
         "invalid_count": invalid_count,
+        "controls": controls,
+        "empty_state_variants": empty_state_variants,
     }
 
+
+
+
+def build_ui_states(*, has_sessions: bool, blockers: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    blocker_tokens = [str(item.get("token") or "unknown") for item in blockers if isinstance(item, dict)]
+    return {
+        "loading": {
+            "title": "Loading state",
+            "message": "Refreshing Project MOE status, sessions, lenses, and runtime diagnostics.",
+            "visible_when": "bridge_refresh_in_progress",
+        },
+        "empty": {
+            "title": "Empty state",
+            "message": "No sessions or handoff history are available yet." if not has_sessions else "No filtered rows match the current controls.",
+            "visible_when": "no_sessions_or_no_search_results",
+        },
+        "error": {
+            "title": "Error state",
+            "message": "Stable blockers are shown in Diagnostics before any write action is enabled.",
+            "visible_when": "blockers_present",
+            "tokens": blocker_tokens,
+        },
+        "help": {
+            "title": "Help",
+            "message": "MOE lenses shape the brief; carriers such as main session, subagent, durable team, and LangGraph remain leader-controlled.",
+            "visible_when": "operator_requests_help",
+        },
+    }
+
+
+def build_multi_project_panel(config: dict[str, Any], *, source_toolchain_version: str = TOOLCHAIN_VERSION) -> dict[str, Any]:
+    projects: list[dict[str, Any]] = []
+    raw_projects = config.get("managed_projects")
+    listed_projects = raw_projects if isinstance(raw_projects, list) else []
+    for index, raw_project in enumerate(listed_projects):
+        project_root = Path(str(raw_project)).expanduser().resolve(strict=False)
+        config_path = project_root / "tools" / "project_moe_gui" / "project_moe_gui.config.json"
+        manifest_path = project_root / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json"
+        installed_version = None
+        readiness_status = "unknown"
+        install_status = "not_installed"
+        blockers: list[dict[str, str]] = []
+        for path in [config_path, manifest_path]:
+            if not path.exists():
+                continue
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8-sig"))
+            except Exception as exc:
+                blockers.append({"token": "blocked:project_moe_gui_status_read_failed", "message": str(exc)})
+                continue
+            if isinstance(payload, dict):
+                installed_version = installed_version or payload.get("toolchain_version") or payload.get("installed_toolchain_version")
+                readiness_status = str(payload.get("readiness_status") or payload.get("status") or readiness_status)
+                install_status = "installed"
+        version_lag = bool(installed_version and str(installed_version) != str(source_toolchain_version))
+        if version_lag:
+            install_status = "upgrade_available"
+        projects.append(
+            {
+                "index": index,
+                "project_root": str(project_root),
+                "config_path": str(config_path),
+                "manifest_path": str(manifest_path),
+                "listed_explicitly": True,
+                "installed_version": str(installed_version) if installed_version is not None else None,
+                "source_toolchain_version": source_toolchain_version,
+                "install_status": install_status,
+                "readiness_status": readiness_status,
+                "version_lag": version_lag,
+                "dirty_status": "not_checked_read_only_panel",
+                "blockers": blockers,
+                "dry_run_update_plan": {
+                    "mode": "dry-run",
+                    "writes_target_project": False,
+                    "requires_installer_gate": True,
+                    "would_update": version_lag,
+                    "target_project": str(project_root),
+                },
+                "rollback_hint": "Use the target project's Project MOE GUI rollback note or install manifest rollback pointer before applying updates.",
+            }
+        )
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "title": "Projects",
+        "read_only": True,
+        "writes_target_projects": False,
+        "source_toolchain_version": source_toolchain_version,
+        "project_registry_contract": "explicit-config-managed_projects-only",
+        "projects": projects,
+        "empty_state": {"is_empty": not projects, "message": "No managed projects are explicitly listed."},
+    }
 
 def describe_window_structure() -> dict[str, Any]:
     return {
@@ -723,10 +1605,11 @@ def describe_window_structure() -> dict[str, Any]:
             {"id": "navigation_sidebar", "purpose": "primary navigation between overview, sessions, diagnostics, and settings"},
             {"id": "top_banner", "purpose": "project root, branch, agent name, and state namespace"},
             {"id": "error_banner", "purpose": "stable token, short message, and redacted diagnostics"},
-            {"id": "status_overview_cards", "purpose": "Fluent cards for project status, effective state, runtime, and license gate"},
+            {"id": "status_overview_cards", "purpose": "Qt Quick Material cards for project status, effective state, runtime, and visual shell status"},
             {"id": "project_default_card", "purpose": "project-default effective state and explicit on/off controls"},
             {"id": "session_table", "purpose": "session effective state, invalid/empty/load-failed states, and selected-session controls"},
-            {"id": "diagnostics_card", "purpose": "readiness blockers, QFluentWidgets dependency/license status, and suggested next actions"},
+            {"id": "expert_workbench", "purpose": "brief-only MOE expert lens selection, task-template drafting, runtime preview, and clipboard copy"},
+            {"id": "diagnostics_card", "purpose": "readiness blockers, Qt Quick/QML shell status, optional QFluent legacy dependency status, and suggested next actions"},
             {"id": "footer", "purpose": "read-only refresh status and GUI/runtime readiness"},
         ],
         "accessibility_contract": {
@@ -743,10 +1626,9 @@ def describe_window_structure() -> dict[str, Any]:
             "visible_launch_requires_explicit_interactive_command": True,
         },
         "visual_contract": {
-            "library": "QFluentWidgets",
-            "package_name": "PySide6-Fluent-Widgets",
-            "import_name": "qfluentwidgets",
-            "qfluentwidgets_required": True,
+            **qml_visual_contract(),
+            "qfluentwidgets_required": False,
+            "qfluentwidgets_legacy_optional": True,
         },
     }
 
@@ -756,6 +1638,7 @@ def build_view_model(
     *,
     project_status: dict[str, Any] | None = None,
     sessions_payload: dict[str, Any] | None = None,
+    lenses_payload: dict[str, Any] | None = None,
     status_payload: dict[str, Any] | None = None,
     pyside6_available: bool | None = None,
     qfluent_status: dict[str, Any] | None = None,
@@ -775,32 +1658,46 @@ def build_view_model(
         }
     pending_scope_key = str(pending_scope) if pending_scope and ":" in pending_scope else None
     pending_scope_name = pending_scope.split(":", 1)[0] if pending_scope and ":" in pending_scope else pending_scope
+    project_default = extract_project_default(project_status, status_payload)
+    effective = extract_effective(status_payload, project_status)
     session_table = build_session_table(
         config,
         sessions_payload,
+        project_default_enabled=project_default,
         project_root=root,
         pending_scope=pending_scope_name,
         pending_scope_key=pending_scope_key,
     )
+    lens_catalog = normalize_lens_catalog(lenses_payload)
     project_token = payload_token(project_status, "blocked:project_status_not_loaded")
     status_token = payload_token(status_payload, "blocked:status_not_loaded")
     table_token = session_table["token"]
+    lenses_token = str(lens_catalog.get("token") or "ok")
     banners = []
     for token, message in [
         (project_token, "Project status is not fully available."),
         (status_token, "Effective status is not fully available."),
         (table_token, "Session list is not fully available."),
+        (lenses_token, "MOE lens catalogue is not fully available."),
     ]:
         if token != "ok":
             banners.append({"token": token, "message": message})
     if pyside6_status != "import_ok":
         banners.append({"token": "blocked:pyside6_unavailable", "message": "PySide6 is not importable from the configured GUI runtime."})
-    if pyside6_status == "import_ok" and qfluent_status.get("token") != "ok":
-        banners.append({"token": str(qfluent_status.get("token") or "blocked:qfluentwidgets_unavailable"), "message": "QFluentWidgets is not importable from the configured GUI runtime."})
+    qml_path = qml_shell_path(config, root)
+    central_qml_path = qml_shell_path(prefer_installed=False)
+    qml_source_status = {
+        "schema_version": SCHEMA_VERSION,
+        "ok": qml_path.exists(),
+        "token": "ok" if qml_path.exists() else "blocked:qml_shell_source_missing",
+        "path": str(qml_path),
+        "central_fallback_path": str(central_qml_path),
+        "source": "target_project" if root in qml_path.parents else "central_toolchain",
+    }
+    if not qml_source_status["ok"]:
+        banners.append({"token": "blocked:qml_shell_source_missing", "message": "Qt Quick/QML GUI shell source is missing from the installed target project and central fallback path."})
     if session_table["invalid_count"]:
         banners.append({"token": "blocked:invalid_session_record", "message": f"{session_table['invalid_count']} session row(s) need review."})
-    project_default = extract_project_default(project_status, status_payload)
-    effective = extract_effective(status_payload, project_status)
     session_rows = session_table.get("rows", [])
     return {
         "schema_version": SCHEMA_VERSION,
@@ -817,6 +1714,8 @@ def build_view_model(
             "items": [
                 {"id": "overview", "label": "Project", "icon": "Home", "target_region": "status_overview_cards"},
                 {"id": "sessions", "label": "Sessions", "icon": "People", "target_region": "session_table"},
+                {"id": "workbench", "label": "Expert Workbench", "icon": "Edit", "target_region": "expert_workbench"},
+                {"id": "projects", "label": "Projects", "icon": "Folder", "target_region": "multi_project_panel"},
                 {"id": "diagnostics", "label": "Diagnostics", "icon": "Info", "target_region": "diagnostics_card"},
                 {"id": "settings", "label": "Settings", "icon": "Setting", "target_region": "footer"},
             ]
@@ -848,7 +1747,14 @@ def build_view_model(
                 "title": "GUI runtime",
                 "value": pyside6_status,
                 "token": "ok" if pyside6_status == "import_ok" else "blocked:pyside6_unavailable",
-                "style": "fluent-card",
+                "style": "qml-material-card",
+            },
+            {
+                "id": "visual-shell",
+                "title": "Visual shell",
+                "value": "Qt Quick/QML",
+                "token": str(qml_source_status["token"]),
+                "style": "qml-material-card",
             },
         ],
         "project_default_card": build_project_default_card(
@@ -860,6 +1766,37 @@ def build_view_model(
             pending_scope_key=pending_scope_key,
         ),
         "session_table": session_table,
+        "lens_catalog": lens_catalog,
+        "session_lens_panel": {
+            "schema_version": SCHEMA_VERSION,
+            "scope": "session",
+            "title": "Session MOE lenses",
+            "selected_row_index": 0 if session_rows else None,
+            "selected_row_source": "qml-selected-row",
+            "empty_selection_means": "all",
+            "lenses": lens_catalog.get("lenses", []),
+            "categories": lens_catalog.get("categories", []),
+            "selection_semantics": lens_catalog.get("selection_semantics"),
+            "actions": {
+                "apply": {
+                    "action": "session-set-lenses",
+                    "requires_selected_session": True,
+                    "writes_state": True,
+                    "direct_state_write": False,
+                    "requires_readback_after_write": True,
+                },
+                "clear": {
+                    "action": "session-clear-lenses",
+                    "requires_selected_session": True,
+                    "writes_state": True,
+                    "direct_state_write": False,
+                    "requires_readback_after_write": True,
+                },
+            },
+        },
+        "expert_workbench": build_expert_workbench(config, root, lens_catalog),
+        "multi_project_panel": build_multi_project_panel(config),
+        "ui_states": build_ui_states(has_sessions=bool(session_rows), blockers=banners),
         "refresh_action": build_refresh_plan(config, project_root=root),
         "runtime": {
             "pyside6_status": pyside6_status,
@@ -867,21 +1804,29 @@ def build_view_model(
             "runtime_python": config.get("runtime_python"),
         },
         "visual": {
-            "library": "QFluentWidgets",
-            "package_name": "PySide6-Fluent-Widgets",
-            "import_name": "qfluentwidgets",
-            "qfluentwidgets_status": qfluent_status,
-            "license_manifest": qfluent_status.get("license_manifest") or qfluent_license_manifest(),
-            "fail_closed_if_missing": True,
+            **qml_visual_contract(),
+            "qml_source_status": qml_source_status,
+            "primary_shell": "qml",
+            "legacy_qfluent": {
+                "library": "QFluentWidgets",
+                "package_name": "PySide6-Fluent-Widgets",
+                "import_name": "qfluentwidgets",
+                "qfluentwidgets_status": qfluent_status,
+                "license_manifest": qfluent_status.get("license_manifest") or qfluent_license_manifest(),
+                "fail_closed_if_missing": False,
+                "status": "optional_legacy_visual_surface",
+            },
         },
         "diagnostics_card": {
             "title": "Diagnostics",
             "blockers": banners,
+            "qml": qml_source_status,
             "qfluentwidgets": qfluent_status,
             "suggested_next_actions": [
                 "Use --preflight --json for automation.",
-                "Provision shared runtime dependencies before visible GUI launch.",
-                "Review QFluentWidgets license before commercial redistribution or packaging.",
+                "Provision shared PySide6 Qt Quick runtime dependencies before visible GUI launch.",
+                "Use the Qt Quick/QML shell as the primary visual surface.",
+                "Review optional QFluentWidgets license only before re-enabling or redistributing the legacy QWidget visual surface.",
             ],
         },
         "banners": banners,
@@ -892,7 +1837,7 @@ def build_view_model(
             "readback_required_after_write": True,
         },
         "keyboard_navigation": {
-            "tab_order": ["refresh", "project-on", "project-off", "session-table", "session-on", "session-off"],
+            "tab_order": ["refresh", "project-on", "project-off", "session-table", "session-on", "session-off", "session-lenses", "expert-workbench", "copy-handoff-package"],
             "shortcuts": KEYBOARD_SHORTCUTS,
             "focus_policy": "buttons_and_session_table_are_keyboard_reachable",
         },
@@ -912,6 +1857,7 @@ def build_gui_preflight(
     *,
     project_status: dict[str, Any] | None = None,
     sessions_payload: dict[str, Any] | None = None,
+    lenses_payload: dict[str, Any] | None = None,
     status_payload: dict[str, Any] | None = None,
     pyside6_available: bool | None = None,
     qfluent_status: dict[str, Any] | None = None,
@@ -922,14 +1868,15 @@ def build_gui_preflight(
         project_root=project_root,
         project_status=project_status,
         sessions_payload=sessions_payload,
+        lenses_payload=lenses_payload,
         status_payload=status_payload,
         pyside6_available=pyside6_available,
         qfluent_status=qfluent_status,
     )
     pyside6_ok = view_model["runtime"]["pyside6_status"] == "import_ok"
-    qfluent_ok = pyside6_ok and view_model["visual"]["qfluentwidgets_status"].get("token") == "ok"
+    qml_ok = view_model["visual"]["qml_source_status"].get("token") == "ok"
     blockers = [banner for banner in view_model["banners"] if banner["token"] != "ok"]
-    token = "ok" if pyside6_ok and qfluent_ok and not blockers else ("blocked:pyside6_unavailable" if not pyside6_ok else blockers[0]["token"])
+    token = "ok" if pyside6_ok and qml_ok and not blockers else ("blocked:pyside6_unavailable" if not pyside6_ok else blockers[0]["token"])
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": token == "ok",
@@ -947,10 +1894,19 @@ def run_cli_json(
     action: str,
     *,
     session_id: str | None = None,
+    selected_lenses: list[str] | None = None,
+    selected_categories: list[str] | None = None,
     timeout: int = 20,
     project_root: str | Path | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-    plan = build_action_plan(config, action, session_id=session_id, project_root=project_root)
+    plan = build_action_plan(
+        config,
+        action,
+        session_id=session_id,
+        selected_lenses=selected_lenses,
+        selected_categories=selected_categories,
+        project_root=project_root,
+    )
     if not plan.get("ok"):
         return None, stable_blocker(str(plan["token"]), str(plan.get("message") or "Cannot build action plan."))
     try:
@@ -990,11 +1946,20 @@ def execute_write_action_with_readback(
     action: str,
     *,
     session_id: str | None = None,
+    selected_lenses: list[str] | None = None,
+    selected_categories: list[str] | None = None,
     timeout: int = 20,
     project_root: str | Path | None = None,
 ) -> dict[str, Any]:
     root = configured_project_root(config, project_root)
-    plan = build_action_plan(config, action, session_id=session_id, project_root=root)
+    plan = build_action_plan(
+        config,
+        action,
+        session_id=session_id,
+        selected_lenses=selected_lenses,
+        selected_categories=selected_categories,
+        project_root=root,
+    )
     if not plan.get("ok"):
         return {
             "schema_version": SCHEMA_VERSION,
@@ -1019,7 +1984,15 @@ def execute_write_action_with_readback(
         }
     pending_key = str(plan.get("scope_key") or plan.get("scope") or "")
     pending_view_model = build_view_model(config, pending_scope=pending_key, project_root=root)
-    write_payload, write_error = run_cli_json(config, action, session_id=session_id, timeout=timeout, project_root=root)
+    write_payload, write_error = run_cli_json(
+        config,
+        action,
+        session_id=session_id,
+        selected_lenses=selected_lenses,
+        selected_categories=selected_categories,
+        timeout=timeout,
+        project_root=root,
+    )
     write_contract_errors: list[dict[str, Any]] = []
     if write_error is None:
         write_contract_errors = validate_write_cli_payload(action, write_payload)
@@ -1051,22 +2024,208 @@ def execute_write_action_with_readback(
     }
 
 
-def launch_visible(view_model: dict[str, Any]) -> int:
+def parse_json_string_list(text: str | None) -> list[str]:
+    if not text:
+        return []
     try:
-        from PySide6.QtCore import Qt
-        from PySide6.QtGui import QCloseEvent
-        from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QMessageBox, QSystemTrayIcon, QVBoxLayout, QWidget
-        from qfluentwidgets import CardWidget, NavigationInterface, setTheme
-    except Exception as exc:  # pragma: no cover - depends on optional runtime
-        raise RuntimeError("blocked:qfluentwidgets_unavailable") from exc
+        payload = json.loads(text)
+    except Exception:
+        return []
+    return string_list(payload)
 
-    class MoeMainWindow(QMainWindow):  # pragma: no cover - visible GUI path
-        def __init__(self) -> None:
+
+def build_runtime_view_model(config: dict[str, Any], *, project_root: str | Path | None = None) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    root = configured_project_root(config, project_root)
+    read_payloads: dict[str, dict[str, Any] | None] = {}
+    read_errors: list[dict[str, Any]] = []
+    for action in ["project-status", "list-sessions", "list-lenses", "status"]:
+        payload, error = run_cli_json(config, action, project_root=root)
+        read_payloads[action] = payload
+        if error:
+            read_errors.append(error)
+    qfluent_status = check_qfluent_runtime() if is_pyside6_available() else {
+        "schema_version": SCHEMA_VERSION,
+        "ok": False,
+        "token": "blocked:qfluentwidgets_not_checked",
+        "import_status": "not_checked",
+        "license_manifest": qfluent_license_manifest(),
+        "blockers": [],
+    }
+    refreshed = build_view_model(
+        config,
+        project_root=root,
+        project_status=read_payloads.get("project-status"),
+        sessions_payload=read_payloads.get("list-sessions"),
+        lenses_payload=read_payloads.get("list-lenses"),
+        status_payload=read_payloads.get("status"),
+        qfluent_status=qfluent_status,
+    )
+    if read_errors:
+        refreshed.setdefault("banners", []).extend(read_errors)
+        diagnostics = refreshed.setdefault("diagnostics_card", {})
+        diagnostics["blockers"] = refreshed.get("banners", [])
+    return refreshed, read_errors
+
+
+def launch_visible(view_model: dict[str, Any], config: dict[str, Any] | None = None, project_root: str | Path | None = None) -> int:
+    try:
+        from PySide6.QtCore import QEvent, QObject, QTimer, QUrl, Slot
+        from PySide6.QtQml import QQmlApplicationEngine
+        from PySide6.QtQuickControls2 import QQuickStyle
+        from PySide6.QtWidgets import QApplication, QMessageBox, QStyle, QSystemTrayIcon
+    except Exception as exc:  # pragma: no cover - depends on optional runtime
+        raise RuntimeError("blocked:qt_quick_qml_unavailable") from exc
+
+    visual = view_model.get("visual") if isinstance(view_model, dict) else None
+    qml_status = visual.get("qml_source_status") if isinstance(visual, dict) else None
+    qml_path = Path(str(qml_status.get("path"))) if isinstance(qml_status, dict) and qml_status.get("path") else qml_shell_path()
+    if not qml_path.exists():  # pragma: no cover - defensive visible path
+        raise RuntimeError("blocked:qml_shell_source_missing")
+
+    runtime_config = dict(config or {})
+    if not runtime_config:
+        banner = view_model.get("top_banner") if isinstance(view_model, dict) else {}
+        if isinstance(banner, dict):
+            runtime_config = {
+                "runtime_project_root": banner.get("project_root"),
+                "agent_name": banner.get("agent_name"),
+                "state_namespace": banner.get("state_namespace"),
+                "mode_cli": DEFAULT_MODE_CLI,
+            }
+    runtime_root = configured_project_root(runtime_config, project_root)
+
+    class ProjectMoeBridge(QObject):  # pragma: no cover - visible GUI path
+        def __init__(self, runtime_config: dict[str, Any], runtime_root: Path) -> None:
             super().__init__()
+            self._config = dict(runtime_config)
+            self._root = runtime_root
+
+        def _with_refreshed_model(self, payload: dict[str, Any]) -> str:
+            refreshed, read_errors = build_runtime_view_model(self._config, project_root=self._root)
+            result = dict(payload)
+            result["view_model"] = refreshed
+            result["view_model_json"] = json.dumps(refreshed, ensure_ascii=False)
+            if read_errors and result.get("ok"):
+                result["ok"] = False
+                result["token"] = read_errors[0].get("code") or read_errors[0].get("token") or "blocked:readback_failed"
+                result["errors"] = [*list(result.get("errors") or []), *read_errors]
+            return json.dumps(result, ensure_ascii=False)
+
+        @Slot(result=str)
+        def refreshViewModel(self) -> str:
+            return self._with_refreshed_model(
+                {
+                    "schema_version": SCHEMA_VERSION,
+                    "ok": True,
+                    "token": "ok",
+                    "action": "refresh",
+                    "message": "View model refreshed from the target Phase 1 CLI.",
+                }
+            )
+
+        @Slot(str, str, str, str, result=str)
+        def executeWriteAction(self, action: str, session_id: str, selected_lenses_json: str, selected_categories_json: str) -> str:
+            selected_lenses = parse_json_string_list(selected_lenses_json)
+            selected_categories = parse_json_string_list(selected_categories_json)
+            try:
+                payload = execute_write_action_with_readback(
+                    self._config,
+                    str(action),
+                    session_id=str(session_id or "") or None,
+                    selected_lenses=selected_lenses,
+                    selected_categories=selected_categories,
+                    project_root=self._root,
+                )
+            except Exception as exc:
+                payload = {
+                    "schema_version": SCHEMA_VERSION,
+                    "ok": False,
+                    "token": "blocked:gui_write_action_failed",
+                    "action": str(action),
+                    "message": "GUI write action failed before readback.",
+                    "errors": [{"code": "blocked:gui_write_action_failed", "message": str(exc)}],
+                }
+            return self._with_refreshed_model(payload)
+
+        @Slot(str, str, str, str, str, str, str, result=str)
+        def saveHandoffDraft(
+            self,
+            session_id: str,
+            session_display_id: str,
+            selected_lenses_json: str,
+            selected_categories_json: str,
+            handoff_target: str,
+            task_template_id: str,
+            brief_text: str,
+        ) -> str:
+            try:
+                payload = save_workbench_handoff_draft(
+                    self._config,
+                    session_id=str(session_id or "") or None,
+                    session_display_id=str(session_display_id or "") or None,
+                    selected_lenses=parse_json_string_list(selected_lenses_json),
+                    selected_categories=parse_json_string_list(selected_categories_json),
+                    handoff_target=str(handoff_target or "main-session"),
+                    task_template_id=str(task_template_id or "default"),
+                    brief_text=str(brief_text or ""),
+                    project_root=self._root,
+                )
+            except Exception as exc:
+                payload = {
+                    "schema_version": SCHEMA_VERSION,
+                    "ok": False,
+                    "token": "blocked:workbench_draft_save_failed",
+                    "action": "save_handoff_draft",
+                    "message": "Workbench draft save failed.",
+                    "errors": [{"code": "blocked:workbench_draft_save_failed", "message": str(exc)}],
+                }
+            return json.dumps(payload, ensure_ascii=False)
+
+        @Slot(str, str, str, str, str, str, str, result=str)
+        def exportHandoffPackage(
+            self,
+            session_id: str,
+            session_display_id: str,
+            selected_lenses_json: str,
+            selected_categories_json: str,
+            handoff_target: str,
+            task_template_id: str,
+            brief_text: str,
+        ) -> str:
+            try:
+                payload = export_workbench_handoff_package(
+                    self._config,
+                    session_id=str(session_id or "") or None,
+                    session_display_id=str(session_display_id or "") or None,
+                    selected_lenses=parse_json_string_list(selected_lenses_json),
+                    selected_categories=parse_json_string_list(selected_categories_json),
+                    handoff_target=str(handoff_target or "main-session"),
+                    task_template_id=str(task_template_id or "default"),
+                    brief_text=str(brief_text or ""),
+                    project_root=self._root,
+                )
+            except Exception as exc:
+                payload = {
+                    "schema_version": SCHEMA_VERSION,
+                    "ok": False,
+                    "token": "blocked:workbench_export_failed",
+                    "action": "export_handoff_package",
+                    "message": "Workbench handoff export failed.",
+                    "errors": [{"code": "blocked:workbench_export_failed", "message": str(exc)}],
+                }
+            return json.dumps(payload, ensure_ascii=False)
+
+    class CloseEventFilter(QObject):  # pragma: no cover - visible GUI path
+        def __init__(self, window: object, app: QApplication) -> None:
+            super().__init__()
+            self._window = window
+            self._app = app
             self._tray: QSystemTrayIcon | None = None
 
-        def closeEvent(self, event: QCloseEvent) -> None:
-            box = QMessageBox(self)
+        def eventFilter(self, watched: object, event: object) -> bool:
+            if getattr(event, "type", lambda: None)() != QEvent.Type.Close:
+                return False
+            box = QMessageBox()
             box.setWindowTitle("Close Project MOE GUI?")
             box.setText("Choose whether to exit the Project MOE GUI or keep it available in the system tray.")
             exit_button = box.addButton("Exit", QMessageBox.ButtonRole.AcceptRole)
@@ -1075,44 +2234,44 @@ def launch_visible(view_model: dict[str, Any]) -> int:
             box.exec()
             clicked = box.clickedButton()
             if clicked is exit_button:
-                event.accept()
+                return False
             elif clicked is hide_button:
-                self.hide()
+                if hasattr(self._window, "hide"):
+                    self._window.hide()
                 if QSystemTrayIcon.isSystemTrayAvailable() and self._tray is None:
-                    self._tray = QSystemTrayIcon(self)
+                    icon = self._app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
+                    self._tray = QSystemTrayIcon(icon, self)
                     self._tray.setToolTip(WINDOW_TITLE)
-                    self._tray.activated.connect(lambda *_: self.showNormal())
+                    self._tray.activated.connect(lambda *_: self._window.showNormal() if hasattr(self._window, "showNormal") else None)
                     self._tray.show()
-                event.ignore()
+                if hasattr(event, "ignore"):
+                    event.ignore()
+                return True
             else:
-                event.ignore()
+                if hasattr(event, "ignore"):
+                    event.ignore()
+                return True
 
+    QQuickStyle.setStyle("Material")
     app = QApplication.instance() or QApplication(sys.argv)
-    setTheme("AUTO")
-    window = MoeMainWindow()
-    window.setWindowTitle(WINDOW_TITLE)
-    central = QWidget()
-    layout = QVBoxLayout(central)
-    navigation = NavigationInterface(window, showMenuButton=True)
-    navigation.setFixedWidth(220)
-    banner = view_model.get("top_banner", {})
-    project_card = view_model.get("project_default_card", {})
-    layout.addWidget(navigation)
-    for card in view_model.get("status_cards", []):
-        widget = CardWidget()
-        card_layout = QVBoxLayout(widget)
-        card_layout.addWidget(QLabel(f"{card.get('title')}: {card.get('value')}"))
-        card_layout.addWidget(QLabel(f"Token: {card.get('token')}"))
-        layout.addWidget(widget)
-    diagnostics = CardWidget()
-    diagnostics_layout = QVBoxLayout(diagnostics)
-    diagnostics_layout.addWidget(QLabel(f"Project: {banner.get('project_root')}"))
-    diagnostics_layout.addWidget(QLabel(f"Branch: {banner.get('current_branch')}"))
-    diagnostics_layout.addWidget(QLabel(f"Agent: {banner.get('agent_name')} / namespace: {banner.get('state_namespace')}"))
-    diagnostics_layout.addWidget(QLabel(f"Project default: {project_card.get('label')} (effective: {project_card.get('effective_label')})"))
-    diagnostics_layout.addWidget(QLabel(f"Sessions: {len(view_model.get('session_table', {}).get('rows', []))}"))
-    layout.addWidget(diagnostics)
-    window.setCentralWidget(central)
-    window.resize(960, 540)
-    window.show()
+    engine = QQmlApplicationEngine()
+    bridge = ProjectMoeBridge(runtime_config, runtime_root)
+    engine.rootContext().setContextProperty("viewModelJson", json.dumps(view_model, ensure_ascii=False))
+    engine.rootContext().setContextProperty("projectMoeBridge", bridge)
+    engine.load(QUrl.fromLocalFile(str(qml_path)))
+    if not engine.rootObjects():
+        raise RuntimeError("blocked:qml_shell_load_failed")
+    window = engine.rootObjects()[0]
+    close_filter = CloseEventFilter(window, app)
+    window.installEventFilter(close_filter)
+    window._project_moe_gui_close_filter = close_filter  # type: ignore[attr-defined]
+    engine._project_moe_gui_window = window  # type: ignore[attr-defined]
+    engine._project_moe_gui_bridge = bridge  # type: ignore[attr-defined]
+    smoke_exit_ms = int(os.environ.get("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS") or "0")
+    if smoke_exit_ms > 0:
+        smoke_timer = QTimer(window)
+        smoke_timer.setSingleShot(True)
+        smoke_timer.timeout.connect(lambda: app.exit(0))
+        window._project_moe_gui_smoke_timer = smoke_timer  # type: ignore[attr-defined]
+        smoke_timer.start(smoke_exit_ms)
     return int(app.exec())

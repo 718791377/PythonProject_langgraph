@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -11,6 +12,24 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 LOCK_FILE_NAME = "project_moe_gui.daemon.lock"
+LOG_FILE_NAME = "project_moe_gui.daemon.log"
+RUNTIME_DIR = Path(".project-runtime") / "project_moe_gui"
+WINDOWS_DRIVE_PATH_RE = re.compile(r"[A-Za-z]:[\\/]")
+
+
+def win_path_text(value: str | Path) -> str:
+    """Return a Windows-artifact path string independent of host OS.
+
+    Linux CI may hand us values where ``Path("D:/target").resolve()`` has
+    already prefixed the checkout directory.  Installer metadata is a Windows
+    artifact, so trim any host prefix before rendering backslashes.
+    """
+
+    text = str(value)
+    match = WINDOWS_DRIVE_PATH_RE.search(text)
+    if match:
+        text = text[match.start() :]
+    return text.replace("/", "\\")
 
 
 def windows_process_flags(*, platform_name: str | None = None) -> int:
@@ -34,8 +53,30 @@ def windows_process_flags_label(*, platform_name: str | None = None) -> str:
     return "|".join(labels) if labels else str(flags)
 
 
-def daemon_lock_path(launcher: str | Path) -> Path:
-    return Path(launcher).resolve(strict=False).with_name(LOCK_FILE_NAME)
+def select_gui_python_executable(runtime_python: str | Path | None, *, prefer_pythonw: bool) -> tuple[str, bool]:
+    configured_raw = str(runtime_python or sys.executable)
+    configured = Path(configured_raw)
+    if not prefer_pythonw:
+        return configured_raw, False
+    if configured.name.lower() != "python.exe":
+        return configured_raw, False
+    pythonw = configured.with_name("pythonw.exe")
+    if pythonw.exists():
+        return str(pythonw), True
+    return configured_raw, False
+
+
+def daemon_runtime_dir(launcher: str | Path, project_root: str | Path | None = None) -> Path:
+    root = Path(project_root).resolve(strict=False) if project_root else Path(launcher).resolve(strict=False).parents[2]
+    return root / RUNTIME_DIR
+
+
+def daemon_lock_path(launcher: str | Path, project_root: str | Path | None = None) -> Path:
+    return daemon_runtime_dir(launcher, project_root) / LOCK_FILE_NAME
+
+
+def daemon_log_path(launcher: str | Path, project_root: str | Path | None = None) -> Path:
+    return daemon_runtime_dir(launcher, project_root) / LOG_FILE_NAME
 
 
 def build_daemon_launch_plan(
@@ -60,15 +101,21 @@ def build_daemon_launch_plan(
             "cmd_window_policy": "foreground_machine_output",
         }
     should_daemon = bool(no_args and not preflight and not json_mode and not allow_visible)
-    python_executable = str(runtime_python or sys.executable)
+    configured_python = str(runtime_python or sys.executable)
+    python_executable, pythonw_available = select_gui_python_executable(configured_python, prefer_pythonw=should_daemon)
     argv = [python_executable, str(launcher_path), "--allow-visible"]
-    lock_path = daemon_lock_path(launcher_path)
+    lock_path = daemon_lock_path(launcher_path, project_root)
+    log_path = daemon_log_path(launcher_path, project_root)
     return {
         "schema_version": SCHEMA_VERSION,
         "uses_daemon": should_daemon,
         "reason": "no_argument_human_launch_uses_project_daemon" if should_daemon else "foreground_launch_requested",
         "launcher": str(launcher_path),
         "project_root": str(Path(project_root).resolve(strict=False)) if project_root else None,
+        "configured_python_executable": configured_python,
+        "selected_python_executable": python_executable,
+        "pythonw_available": pythonw_available,
+        "pythonw_policy": "prefer_pythonw_for_no_console_human_gui_daemon" if should_daemon else "foreground_keeps_configured_python",
         "argv": argv,
         "shell": False,
         "cmd_window_policy": "no_persistent_cmd" if should_daemon else "foreground",
@@ -80,11 +127,43 @@ def build_daemon_launch_plan(
             "pid_field": "pid",
             "stale_lock_cleanup": True,
         },
+        "diagnostics_log": str(log_path),
+        "stdout_stderr_policy": "append_to_diagnostics_log",
         "environment_overrides": {
             "PROJECT_MOE_GUI_DAEMON_CHILD": "1",
             "PYTHONUTF8": "1",
         },
     }
+
+
+def windows_daemon_artifact_plan(plan: dict[str, Any]) -> dict[str, Any]:
+    """Render persisted Windows launcher metadata with backslash paths.
+
+    Runtime plans use native `Path` text for execution.  Installer config files
+    are Windows launch artifacts, so their public launcher metadata must remain
+    Windows-shaped even when generated on Linux CI.
+    """
+
+    converted = dict(plan)
+    for key in (
+        "launcher",
+        "project_root",
+        "configured_python_executable",
+        "selected_python_executable",
+        "diagnostics_log",
+    ):
+        if converted.get(key) is not None:
+            converted[key] = win_path_text(converted[key])
+    argv = converted.get("argv")
+    if isinstance(argv, list):
+        converted["argv"] = [win_path_text(item) for item in argv]
+    guard = converted.get("duplicate_instance_guard")
+    if isinstance(guard, dict):
+        guard_copy = dict(guard)
+        if guard_copy.get("lock_path") is not None:
+            guard_copy["lock_path"] = win_path_text(guard_copy["lock_path"])
+        converted["duplicate_instance_guard"] = guard_copy
+    return converted
 
 
 def _pid_running(pid: int) -> bool:
@@ -186,18 +265,24 @@ def spawn_daemon_child(plan: dict[str, Any]) -> dict[str, Any]:
             pass
     env = os.environ.copy()
     env.update({str(k): str(v) for k, v in (plan.get("environment_overrides") or {}).items()})
-    kwargs: dict[str, Any] = {
-        "cwd": plan.get("project_root") or None,
-        "env": env,
-        "stdin": subprocess.DEVNULL,
-        "stdout": subprocess.DEVNULL,
-        "stderr": subprocess.DEVNULL,
-        "shell": False,
-    }
-    creationflags = int(plan.get("windows_creation_flags") or 0)
-    if creationflags:
-        kwargs["creationflags"] = creationflags
-    process = subprocess.Popen([str(item) for item in plan.get("argv", [])], **kwargs)
+    log_path = Path(str(plan.get("diagnostics_log") or daemon_log_path(str(plan.get("launcher") or "launcher.py"), plan.get("project_root"))))
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8", errors="replace") as log_handle:
+        log_handle.write("\n=== Project MOE GUI daemon launch ===\n")
+        log_handle.write(f"argv={plan.get('argv')}\n")
+        log_handle.flush()
+        kwargs: dict[str, Any] = {
+            "cwd": plan.get("project_root") or None,
+            "env": env,
+            "stdin": subprocess.DEVNULL,
+            "stdout": log_handle,
+            "stderr": subprocess.STDOUT,
+            "shell": False,
+        }
+        creationflags = int(plan.get("windows_creation_flags") or 0)
+        if creationflags:
+            kwargs["creationflags"] = creationflags
+        process = subprocess.Popen([str(item) for item in plan.get("argv", [])], **kwargs)
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
@@ -206,4 +291,5 @@ def spawn_daemon_child(plan: dict[str, Any]) -> dict[str, Any]:
         "message": "Project MOE GUI daemon launch requested; launcher parent can exit without a persistent CMD window.",
         "daemon_launch": plan,
         "spawned_pid": process.pid,
+        "diagnostics_log": str(log_path),
     }

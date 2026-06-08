@@ -17,11 +17,17 @@ confirmation_required: true
 
 ## Goal
 
-Document GitHub Spec Kit as an optional subordinate adapter or template source, not a competing governance layer.
+Document GitHub Spec Kit as an optional subordinate adapter/template/runtime-probe source and require future checker plus guarded runtime implementation before any Spec Kit command or generated template can affect this repository.
 
 ## Source Plans
 
 - codex_governance_session_visibility_and_plan_lock_plan
+
+## Reference Sources
+
+- `https://github.com/github/spec-kit` - official repository and README; records `specify init`, the `/speckit.constitution` -> `/speckit.specify` -> `/speckit.plan` -> `/speckit.tasks` -> `/speckit.implement` workflow, optional `/speckit.clarify`, `/speckit.analyze`, `/speckit.checklist`, and Codex skills-mode `$speckit-*` surfaces.
+- `https://github.github.io/spec-kit/` - official documentation home; records Spec Kit as a Spec-Driven Development toolkit and the Spec -> Plan -> Tasks -> Implement artifact chain.
+- `https://github.github.io/spec-kit/reference/core.html` - official core command reference; records initialization, integration, PowerShell script selection, force/overwrite, no-git, and self-check command boundaries.
 
 ## Scope Decision
 
@@ -36,24 +42,35 @@ Document GitHub Spec Kit as an optional subordinate adapter or template source, 
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local
-Stage: Stage C implementation package
-Owner session: codex-implement-spec-kit-subordinate-adapter-governance-20260601
-Current gate: local validation, commit, local main integration, then stop at the remote-publication approval gate
-Stage C entry condition: satisfied by current user instruction to continue this child plan
-Last updated: 2026-06-01
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for Spec Kit subordinate adapter governance.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `spec-kit-subordinate active-candidate lane profile` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
+
+## Conflict Priority
+
+This adapter never outranks the strict order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, nor any implementation-plan claim, local-main-first gate, or remote-publication gate. It may translate Spec Kit artifacts into reviewable subordinate inputs only after authority checks pass. Guarded runtime modes must record `authority_decision`, `source_url`, `source_pin`, `dry_run_only`, receipt/rollback paths, and whether `specify init`/`.specify/`/`specs/`/`/speckit.*`/`$speckit-*` remains blocked/subordinate/do-not-run. Here `authority_decision` is the machine-readable allow/block/subordinate field for the winning authority layer and applied strict priority outcome.
 
 ## File Ownership
 
-- docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md
-- docs_bilingual/governance/spec_kit_subordinate_adapter_policy.zh-CN.md
-- docs_bilingual/docs_registry.yaml
+- Governance docs: `docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md` and `.zh-CN.md`
+- Existing authority checker consumer: `tools/check_spec_kit_authority_guard.py`
+- Future runtime helper target: `tools/spec_kit_subordinate_runtime.py`
+- Runtime tests: `test/spec_kit_subordinate_runtime.test.py` plus the existing `test/spec_kit_authority_guard.test.py` authority-guard coverage
+- Registry hotspot only if new docs are added: `docs_bilingual/docs_registry.yaml`
 
 ## Hotspot Serialization
 
 Only one session may own each hotspot at a time:
 
 - new governance doc registry entries
+- future `tools/spec_kit_subordinate_runtime.py` helper and tests
+- `.specify/`, `specs/`, slash-command, and skills-mode generated surfaces
 
 ## Parallel Session Contract
 
@@ -70,6 +87,10 @@ Only one session may own each hotspot at a time:
 - [x] Add usage boundaries for any future specify command.
 - [x] Register the new governance pair if created.
 - [x] Run docs registry and implementation-plan checks.
+- [x] Record official `github/spec-kit` reference sources and future Checker + Runtime implementation requirements.
+- [x] Record lowest-priority subordinate-adapter conflict handling behind Comet, OpenSpec/Superpowers, gstack, and harness runtime safety.
+- [x] R4 Checker implementation: verify subordinate adapter usage for Spec Kit artifacts, command files, skills-mode `$speckit-*` surfaces, generated templates, extensions, presets, and workflow outputs without allowing governance-authority migration; require `authority_decision` evidence.
+- [x] R4 Runtime implementation: add `tools/spec_kit_subordinate_runtime.py` with `source-refresh`, `probe`, `plan-dry-run`, `init-dry-run`, and `self-check-dry-run` modes; live/apply mode names are rejected and all supported modes remain dry-run only with receipts, rollback pointers, redacted output, timeout controls, and local-main-first validation evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -89,10 +110,16 @@ Run these gates before local `main` integration unless this child plan later nar
 - Tests or checker fixtures fail before the implementation when the change is behavior-changing.
 - Governance docs, runtime helpers, checkers, tests, and CI registration stay aligned.
 - Evidence is recorded as a lightweight index instead of appending large evidence packages to this plan.
+- R4 runtime acceptance now requires dry-run/probe receipts before any future live Spec Kit initialization, template write, or command-surface write.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for Spec Kit subordinate adapter governance. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
+- 2026-06-07 R4 implementation package: implemented dry-run-only Spec Kit subordinate runtime receipts plus checker validation for generated Spec Kit surfaces and receipt authority decisions; no live Spec Kit command, install, `.specify/`, root `specs/`, `/speckit.*`, or `$speckit-*` surface was created.
+- 2026-06-07 R4 closeout package: aligned companion governance wording to the strict order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`; ownership remains with `spec_kit_authority_guard_plan`.
+- 2026-06-07 conflict-priority refresh: this docs-only package records Spec Kit as subordinate adapter/template/probe only; live or apply modes remain deferred behind future Checker + Runtime implementation and explicit authorization.
+- 2026-06-06 Spec Kit reference refresh: branch `update-spec-kit-runtime-plan-20260606` records official `github/spec-kit` references and future Checker + Runtime helper requirements without installing or running Spec Kit.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-06-01 Stage C implementation: reused the registered `docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md` and `.zh-CN.md` governance pair, added future `specify` command boundary wording, and marked this child plan implemented-local; validation evidence is recorded in local command output and final assistant response.
 <!-- EVIDENCE_INDEX_END -->

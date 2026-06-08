@@ -17,11 +17,17 @@ confirmation_required: true
 
 ## 目标
 
-Document GitHub Spec Kit as an optional subordinate adapter or template source, not a competing governance layer.
+将 GitHub Spec Kit 记录为可选的 subordinate adapter / template / runtime-probe 来源；任何 Spec Kit 命令或生成模板影响本仓库前，都必须先有未来 checker 与受保护 runtime implementation。
 
 ## 来源方案
 
 - codex_governance_session_visibility_and_plan_lock_plan
+
+## 参考源
+
+- `https://github.com/github/spec-kit` - 官方仓库与 README；记录 `specify init`、`/speckit.constitution` -> `/speckit.specify` -> `/speckit.plan` -> `/speckit.tasks` -> `/speckit.implement` 工作流、可选 `/speckit.clarify`、`/speckit.analyze`、`/speckit.checklist`，以及 Codex skills-mode `$speckit-*` 表面。
+- `https://github.github.io/spec-kit/` - 官方文档首页；记录 Spec Kit 作为 Spec-Driven Development toolkit，以及 Spec -> Plan -> Tasks -> Implement artifact chain。
+- `https://github.github.io/spec-kit/reference/core.html` - 官方 core command reference；记录 initialization、integration、PowerShell script selection、force/overwrite、no-git 与 self-check 命令边界。
 
 ## 范围决策
 
@@ -35,25 +41,36 @@ Document GitHub Spec Kit as an optional subordinate adapter or template source, 
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：implemented-local
-阶段：Stage C 实施包
-责任会话：codex-implement-spec-kit-subordinate-adapter-governance-20260601
-当前门禁：完成本地验证、提交、本地 main 合入，然后停在远端发布授权门
-Stage C 进入条件：已由当前用户继续实施本子方案的指令满足
-最后更新：2026-06-01
+Status: implemented-local
+Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
+Stage: Spec Kit subordinate adapter governance 的 R5 runtime-governance receipt package。
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
+R5 evidence: `spec-kit-subordinate active-candidate lane profile` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
+Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
+
+## 冲突优先级
+
+本 adapter 严格服从 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`，也不得高于 implementation-plan claims、local-main-first gates 或 remote-publication gates。它只能在 authority checks 通过后，把 Spec Kit artifacts 翻译为可审查的 subordinate inputs。受保护 runtime 模式必须记录 `authority_decision`、`source_url`、`source_pin`、`dry_run_only`、receipt/rollback paths，以及 `specify init`、`.specify/`、`specs/`、`/speckit.*`、`$speckit-*` 是否仍保持 blocked/subordinate/do-not-run。这里的 `authority_decision` 是机器可读 allow/block/subordinate 字段，用于记录胜出的 authority layer 与已应用的严格 priority outcome。
 
 ## 文件归属
 
-- docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md
-- docs_bilingual/governance/spec_kit_subordinate_adapter_policy.zh-CN.md
-- docs_bilingual/docs_registry.yaml
+- 治理文档：`docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md` 与 `.zh-CN.md`
+- 既有 authority checker consumer：`tools/check_spec_kit_authority_guard.py`
+- 未来 runtime helper 目标：`tools/spec_kit_subordinate_runtime.py`
+- 未来测试：`test/spec_kit_subordinate_runtime.test.py` 与既有 Spec Kit authority tests
+- 只有新增文档时才触碰 registry hotspot：`docs_bilingual/docs_registry.yaml`
 
 ## 热点串行规则
 
 以下热点同一时间只能由一个 session 拥有：
 
 - new governance doc registry entries
+- 未来 `tools/spec_kit_subordinate_runtime.py` helper 与 tests
+- `.specify/`、`specs/`、slash-command 与 skills-mode generated surfaces
 
 ## 并行会话契约
 
@@ -70,6 +87,10 @@ Stage C 进入条件：已由当前用户继续实施本子方案的指令满足
 - [x] Add usage boundaries for any future specify command.
 - [x] Register the new governance pair if created.
 - [x] Run docs registry and implementation-plan checks.
+- [x] Record official `github/spec-kit` reference sources and future Checker + Runtime implementation requirements.
+- [x] 记录最低优先级 subordinate-adapter 冲突处理：位于 Comet、OpenSpec/Superpowers、gstack 与 harness runtime safety 之后。
+- [x] R4 Checker implementation: verify subordinate adapter usage for Spec Kit artifacts, command files, skills-mode `$speckit-*` surfaces, generated templates, extensions, presets, and workflow outputs without allowing governance-authority migration; require `authority_decision` evidence.
+- [x] R4 Runtime implementation: add `tools/spec_kit_subordinate_runtime.py` with `source-refresh`, `probe`, `plan-dry-run`, `init-dry-run`, and `self-check-dry-run` modes; live/apply mode names are rejected and all supported modes remain dry-run only with receipts, rollback pointers, redacted output, timeout controls, and local-main-first validation evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -93,6 +114,11 @@ Stage C 进入条件：已由当前用户继续实施本子方案的指令满足
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 Spec Kit subordinate adapter governance 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
+- 2026-06-07 R4 implementation package: implemented dry-run-only Spec Kit subordinate runtime receipts plus checker validation for generated Spec Kit surfaces and receipt authority decisions; no live Spec Kit command, install, `.specify/`, root `specs/`, `/speckit.*`, or `$speckit-*` surface was created.
+- 2026-06-07 R4 closeout package：将 companion 治理文本对齐到严格顺序 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`；主归口继续属于 `spec_kit_authority_guard_plan`。
+- 2026-06-07 conflict-priority refresh：本 docs-only package 记录 Spec Kit 只作为 subordinate adapter/template/probe；live 或 apply modes 仍延后到未来 Checker + Runtime implementation 与显式授权之后。
+- 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 记录官方 `github/spec-kit` references 与未来 Checker + Runtime helper 要求；未安装或运行 Spec Kit。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 Stage C 实施：复用已注册的 `docs_bilingual/governance/spec_kit_subordinate_adapter_policy.md` 与 `.zh-CN.md` 治理文档对，补充未来 `specify` 命令边界措辞，并将本子方案标记为 implemented-local；验证证据记录在本地命令输出和最终 assistant 回复中。
 <!-- EVIDENCE_INDEX_END -->

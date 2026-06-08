@@ -14,6 +14,7 @@ $ConflictHome = Join-Path $TempRoot 'conflict-home'
 $FakeRepoRoot = Join-Path $TempRoot 'fake-repo'
 $ComposeRepoRoot = Join-Path $TempRoot 'compose-repo'
 $NoStateRepoRoot = Join-Path $TempRoot 'no-state-repo'
+$ReadinessRefreshRepoRoot = Join-Path $TempRoot 'readiness-refresh-repo'
 $AutoRepoRoot = Join-Path $TempRoot 'auto-repo'
 $UnmanagedAutoRepoRoot = Join-Path $TempRoot 'auto-repo-unmanaged'
 $CleanupRepoRoot = Join-Path $TempRoot 'cleanup-repo'
@@ -101,6 +102,48 @@ function Ensure-Directory {
   }
 }
 
+function Remove-TestTree {
+  param(
+    [Parameter(Mandatory)]
+    [string]$Path
+  )
+
+  if (-not (Test-Path -LiteralPath $Path)) {
+    return
+  }
+
+  $fullRoot = [System.IO.Path]::GetFullPath($Root)
+  $fullPath = [System.IO.Path]::GetFullPath($Path)
+  if (-not $fullPath.StartsWith($fullRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Refusing to remove test tree outside repository root: $fullPath"
+  }
+
+  $lastError = $null
+  for ($attempt = 1; $attempt -le 5; $attempt++) {
+    try {
+      Get-ChildItem -LiteralPath $Path -Recurse -Force -ErrorAction SilentlyContinue |
+        ForEach-Object {
+          try {
+            $_.Attributes = [System.IO.FileAttributes]::Normal
+          } catch {
+            # Best-effort attribute reset for Windows cleanup retries.
+          }
+        }
+
+      Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+      if (-not (Test-Path -LiteralPath $Path)) {
+        return
+      }
+    } catch {
+      $lastError = $_
+    }
+
+    Start-Sleep -Milliseconds (200 * $attempt)
+  }
+
+  throw "Failed to remove test tree after retries: $Path; last error: $lastError"
+}
+
 function Quote-PowerShellLiteral {
   param(
     [Parameter(Mandatory)]
@@ -172,9 +215,7 @@ function Invoke-PowerShellCommandJson {
   return ($output | ConvertFrom-Json)
 }
 
-if (Test-Path -LiteralPath $TempRoot) {
-  Remove-Item -LiteralPath $TempRoot -Recurse -Force
-}
+Remove-TestTree -Path $TempRoot
 
 New-Item -ItemType Directory -Force -Path (Join-Path $CodexHome 'bin') | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $CodexHome 'agents') | Out-Null
@@ -187,6 +228,7 @@ Ensure-Directory -Path (Split-Path -Parent $ConflictProfilePath)
 Ensure-Directory -Path (Join-Path $FakeRepoRoot '.omx\state\team')
 Ensure-Directory -Path (Join-Path $ComposeRepoRoot '.omx\state\team')
 Ensure-Directory -Path $NoStateRepoRoot
+Ensure-Directory -Path $ReadinessRefreshRepoRoot
 Ensure-Directory -Path (Join-Path $AutoRepoRoot '.omx\state\team')
 Ensure-Directory -Path (Join-Path $UnmanagedAutoRepoRoot '.omx\state\team')
 Ensure-Directory -Path (Join-Path $CleanupRepoRoot '.omx\state\team')
@@ -1642,7 +1684,53 @@ Assert-True ($durableStateNone.capability_readiness.langgraph.selected -eq $fals
 Assert-True ($durableStateNone.capability_readiness.langgraph.ready -eq $false) 'Durable-state status should not report LangGraph ready by default.'
 Assert-ArrayContains -Actual @($durableStateNone.capability_readiness.readiness_fields | ForEach-Object { [string]$_ }) -Expected 'ready' -Message 'Durable-state status did not publish readiness field names.'
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $NoStateRepoRoot '.omx'))) 'Read-only durable-state status should not create repo-local .omx state in a no-state repo.'
+Assert-Equal $durableStateNone.readiness_projection_status 'missing' 'Default durable-state status should report a missing readiness projection receipt.'
+Assert-True ($durableStateNone.readiness_projection_refresh.explicit_refresh_required -eq $true) 'Durable-state status should require an explicit readiness refresh before writing a receipt.'
+Assert-True ($durableStateNone.readiness_projection_refresh.read_only_default -eq $true) 'Durable-state status should keep readiness projection refresh read-only by default.'
+Assert-Equal $durableStateNone.readiness_projection_refresh.receipt_relative_path '.omx\state\readiness\durable-capability-readiness-projection.json' 'Durable-state status exposed the wrong readiness projection receipt path.'
+Assert-ArrayContains -Actual @($durableStateNone.readiness_projection_refresh.command.arguments | ForEach-Object { [string]$_ }) -Expected '-RefreshReadiness' -Message 'Durable-state status did not expose the explicit readiness refresh switch.'
+Assert-True ($durableStateNone.readiness_projection_receipt.exists -eq $false) 'Default durable-state status should not claim a readiness projection receipt exists.'
 Assert-True ($durableStateNone.read_only_by_default -eq $true) 'Durable-state status did not preserve read-only posture.'
+
+$readinessRefreshOutput = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-status.ps1') -Arguments @(
+  '-RepoRoot', $ReadinessRefreshRepoRoot,
+  '-RefreshReadiness',
+  '-Json'
+)
+$readinessReceiptPath = Join-Path $ReadinessRefreshRepoRoot '.omx\state\readiness\durable-capability-readiness-projection.json'
+Assert-Equal $readinessRefreshOutput.readiness_projection_status 'refreshed' 'Explicit readiness refresh should report refreshed status.'
+Assert-True (Test-Path -LiteralPath $readinessReceiptPath) 'Explicit readiness refresh did not write the repo-local readiness projection receipt.'
+Assert-Equal $readinessRefreshOutput.readiness_projection_receipt.receipt_kind 'durable_capability_readiness_projection' 'Readiness refresh returned the wrong receipt kind.'
+Assert-Equal $readinessRefreshOutput.readiness_projection_receipt.promotion_marker 'smoke-tested' 'Readiness refresh did not include the R4 smoke-tested marker.'
+Assert-True (-not [string]::IsNullOrWhiteSpace([string]$readinessRefreshOutput.readiness_projection_receipt.generated_at)) 'Readiness refresh did not include generated_at.'
+Assert-Equal $readinessRefreshOutput.readiness_projection_receipt.receipt_relative_path '.omx\state\readiness\durable-capability-readiness-projection.json' 'Readiness refresh returned the wrong receipt relative path.'
+Assert-ArrayContains -Actual @($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.readiness_fields | ForEach-Object { [string]$_ }) -Expected 'installed' -Message 'Readiness receipt did not preserve installed as a distinct field.'
+Assert-ArrayContains -Actual @($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.readiness_fields | ForEach-Object { [string]$_ }) -Expected 'enabled' -Message 'Readiness receipt did not preserve enabled as a distinct field.'
+Assert-ArrayContains -Actual @($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.readiness_fields | ForEach-Object { [string]$_ }) -Expected 'selected' -Message 'Readiness receipt did not preserve selected as a distinct field.'
+Assert-ArrayContains -Actual @($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.readiness_fields | ForEach-Object { [string]$_ }) -Expected 'ready' -Message 'Readiness receipt did not preserve ready as a distinct field.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.native_omx.PSObject.Properties.Name -contains 'installed') 'Readiness receipt native_omx projection omitted installed.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.native_omx.PSObject.Properties.Name -contains 'enabled') 'Readiness receipt native_omx projection omitted enabled.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.native_omx.PSObject.Properties.Name -contains 'selected') 'Readiness receipt native_omx projection omitted selected.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.native_omx.PSObject.Properties.Name -contains 'ready') 'Readiness receipt native_omx projection omitted ready.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.langgraph.PSObject.Properties.Name -contains 'installed') 'Readiness receipt LangGraph projection omitted installed.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.langgraph.PSObject.Properties.Name -contains 'enabled') 'Readiness receipt LangGraph projection omitted enabled.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.langgraph.PSObject.Properties.Name -contains 'selected') 'Readiness receipt LangGraph projection omitted selected.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.capability_readiness.langgraph.PSObject.Properties.Name -contains 'ready') 'Readiness receipt LangGraph projection omitted ready.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.source_receipts.PSObject.Properties.Name -contains 'status_helper') 'Readiness receipt did not include source receipt evidence.'
+Assert-Equal $readinessRefreshOutput.readiness_projection_receipt.selector_evidence.selector_authority '.omx/state/selectors/active.json' 'Readiness receipt did not include selector authority evidence.'
+Assert-True (-not [string]::IsNullOrWhiteSpace([string]$readinessRefreshOutput.readiness_projection_receipt.selector_evidence.active_selector_status)) 'Readiness receipt did not include active selector status evidence.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.version_evidence.PSObject.Properties.Name -contains 'native_omx') 'Readiness receipt did not include native_omx version evidence.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.version_evidence.PSObject.Properties.Name -contains 'langgraph') 'Readiness receipt did not include LangGraph version evidence.'
+Assert-True ($null -ne $readinessRefreshOutput.readiness_projection_receipt.blockers) 'Readiness receipt did not include blockers evidence.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.durable_workflow_adopted -eq $false) 'Readiness refresh must not claim durable workflow adoption.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.persistent_team_launched -eq $false) 'Readiness refresh must not claim persistent team launch.'
+Assert-Equal $readinessRefreshOutput.readiness_projection_receipt.smoke.marker 'smoke-tested' 'Readiness receipt smoke metadata did not preserve the marker.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.smoke.launched_backend -eq $false) 'Readiness refresh smoke metadata must report no backend launch.'
+Assert-True ($readinessRefreshOutput.readiness_projection_receipt.smoke.launched_persistent_team -eq $false) 'Readiness refresh smoke metadata must report no persistent team launch.'
+$readinessReceiptFile = Get-Content -LiteralPath $readinessReceiptPath -Raw | ConvertFrom-Json
+Assert-Equal $readinessReceiptFile.promotion_marker 'smoke-tested' 'Persisted readiness receipt did not preserve the smoke-tested marker.'
+Assert-True ($readinessReceiptFile.durable_workflow_adopted -eq $false) 'Persisted readiness receipt must not claim durable workflow adoption.'
+Assert-True ($readinessReceiptFile.persistent_team_launched -eq $false) 'Persisted readiness receipt must not claim persistent team launch.'
 Assert-Equal $durableStateNone.helper_mirror_source_of_truth.helper_copy_kind 'generated_user_level_install_artifact' 'Durable-state status did not expose generated helper install-artifact provenance.'
 Assert-Equal $durableStateNone.helper_mirror_source_of_truth.repository_source_script 'tools/install-codex-user-level-team-mode.ps1' 'Durable-state status did not identify the repository source script.'
 Assert-Equal $durableStateNone.helper_mirror_source_of_truth.durable_truth_scope 'target repository repo-local .omx/state tree' 'Durable-state status did not keep durable truth scoped to the target repository.'

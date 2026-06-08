@@ -42,6 +42,56 @@ function Write-TextIfChanged {
     [System.IO.File]::WriteAllText($Path, $Content, $Utf8NoBom)
 }
 
+function Get-TemplateRequirementsContent {
+    param([string]$TemplatePath)
+    if (Test-Path -LiteralPath $TemplatePath -PathType Leaf) {
+        return [System.IO.File]::ReadAllText($TemplatePath, [System.Text.Encoding]::UTF8)
+    }
+    return "PySide6`r`nPySide6-Fluent-Widgets`r`n"
+}
+
+function Split-RequirementLines {
+    param([string]$Content)
+    $lines = @()
+    if (-not [string]::IsNullOrWhiteSpace($Content)) {
+        $lines = $Content -split "`r?`n"
+    }
+    return @($lines | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+}
+
+function Merge-RequirementsContent {
+    param([string]$ExistingContent, [string]$TemplateContent)
+    $existingLines = @(Split-RequirementLines $ExistingContent)
+    $templateLines = @(Split-RequirementLines $TemplateContent)
+    $merged = [System.Collections.Generic.List[string]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $added = [System.Collections.Generic.List[string]]::new()
+
+    foreach ($line in $existingLines) {
+        $trimmed = ([string]$line).Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
+        [void]$merged.Add($trimmed)
+        [void]$seen.Add($trimmed)
+    }
+
+    foreach ($line in $templateLines) {
+        $trimmed = ([string]$line).Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
+        if (-not $seen.Contains($trimmed)) {
+            [void]$merged.Add($trimmed)
+            [void]$seen.Add($trimmed)
+            [void]$added.Add($trimmed)
+        }
+    }
+
+    $content = (($merged | ForEach-Object { [string]$_ }) -join "`r`n") + "`r`n"
+    return [ordered]@{
+        content = $content
+        added = @($added)
+        backfilled = ($added.Count -gt 0)
+    }
+}
+
 function Invoke-JsonPython {
     param([string]$RuntimePython)
     $probe = @'
@@ -132,13 +182,20 @@ if ($Mode -in @("verify", "provision") -and -not (Test-Path -LiteralPath $runtim
 
 if ($Mode -eq "provision" -and $blockers.Count -eq 0) {
     [System.IO.Directory]::CreateDirectory($resolvedRuntimeRoot) | Out-Null
-    if (-not (Test-Path -LiteralPath $requirementsFile -PathType Leaf)) {
-        $requirementsContent = if (Test-Path -LiteralPath $templateRequirements -PathType Leaf) {
-            [System.IO.File]::ReadAllText($templateRequirements, [System.Text.Encoding]::UTF8)
+    $templateRequirementsContent = Get-TemplateRequirementsContent $templateRequirements
+    $existingRequirementsContent = if (Test-Path -LiteralPath $requirementsFile -PathType Leaf) {
+        [System.IO.File]::ReadAllText($requirementsFile, [System.Text.Encoding]::UTF8)
+    } else {
+        ""
+    }
+    $mergedRequirements = Merge-RequirementsContent $existingRequirementsContent $templateRequirementsContent
+    if ((-not (Test-Path -LiteralPath $requirementsFile -PathType Leaf)) -or ($existingRequirementsContent -ne $mergedRequirements.content)) {
+        Write-TextIfChanged $requirementsFile $mergedRequirements.content
+        if ([bool]$mergedRequirements.backfilled) {
+            $info += "requirements_backfilled_from_template: added $($mergedRequirements.added -join ', ') to requirements-pyside6.txt."
         } else {
-            "PySide6`r`nPySide6-Fluent-Widgets`r`n"
+            $info += "requirements_created_from_template: wrote requirements-pyside6.txt from the shared runtime template."
         }
-        Write-TextIfChanged $requirementsFile $requirementsContent
     }
     if (-not (Test-Path -LiteralPath $runtimePython -PathType Leaf)) {
         $basePython = if (-not [string]::IsNullOrWhiteSpace($PythonPath)) { $PythonPath } else { (Get-Command python -ErrorAction Stop).Source }
@@ -164,6 +221,11 @@ if ($blockers.Count -eq 0 -and (Test-Path -LiteralPath $runtimePython -PathType 
     } catch {
         $blockers += New-Blocker "import_only_probe_failed" $_.Exception.Message
     }
+}
+
+if ($blockers.Count -eq 0 -and $probePayload -and (-not [bool]$probePayload.import_only_verified)) {
+    $probeError = if ($probePayload.error) { $probePayload.error } else { "unknown import-only probe failure" }
+    $blockers += New-Blocker "qfluentwidgets_import_missing" "PySide6 and qfluentwidgets import-only verification failed: $probeError. Ensure PySide6-Fluent-Widgets is present in requirements-pyside6.txt and installed in the shared runtime."
 }
 
 if ($blockers.Count -eq 0 -and $Mode -eq "provision" -and $probePayload) {

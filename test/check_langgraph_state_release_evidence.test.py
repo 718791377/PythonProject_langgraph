@@ -1,14 +1,17 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 import unittest
+import uuid
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "tools" / "check_durable_artifact_state_surfaces.py"
+CLI_PATH = REPO_ROOT / "tools" / "langgraph_durable_orchestrator" / "cli.py"
 FIXTURE_DIR = REPO_ROOT / "test" / "fixtures" / "langgraph_state_release_evidence"
 
 spec = importlib.util.spec_from_file_location("check_durable_artifact_state_surfaces", SCRIPT_PATH)
@@ -19,6 +22,34 @@ spec.loader.exec_module(module)
 
 class LangGraphStateReleaseEvidenceTest(unittest.TestCase):
     maxDiff = None
+
+
+    def make_repo_root(self, name: str) -> Path:
+        repo_root = REPO_ROOT / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}"
+        repo_root.mkdir(parents=True, exist_ok=True)
+        self.addCleanup(lambda: shutil.rmtree(repo_root, ignore_errors=True))
+        return repo_root
+
+    def invoke_runtime(self, repo_root: Path, *args: str, check: bool = True) -> dict:
+        result = subprocess.run(
+            [sys.executable, str(CLI_PATH), *args, "--repo-root", str(repo_root)],
+            check=check,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=REPO_ROOT,
+        )
+        return json.loads(result.stdout)
+
+    def run_runtime_process(self, repo_root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(CLI_PATH), *args, "--repo-root", str(repo_root)],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=REPO_ROOT,
+        )
 
     def fixture(self, name: str) -> Path:
         path = FIXTURE_DIR / name
@@ -83,6 +114,204 @@ class LangGraphStateReleaseEvidenceTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertFalse(payload["ok"])
         self.assertTrue(any("status=running" in error for error in payload["errors"]), payload["errors"])
+
+
+    def test_runtime_close_thread_writes_release_receipt_and_projects_terminal_state(self) -> None:
+        repo_root = self.make_repo_root("release-close")
+        run_payload = self.invoke_runtime(repo_root, "run", "--task", "release task", "--phase", "verify-accept")
+        thread_id = run_payload["thread_id"]
+
+        release_payload = self.invoke_runtime(
+            repo_root,
+            "release-thread",
+            "--thread-id",
+            thread_id,
+            "--release-action",
+            "close",
+            "--released-by",
+            "codex-main-session",
+            "--final-phase",
+            "verify-accept",
+            "--result-summary",
+            "local validation accepted",
+            "--rollback-restore-note",
+            "replay checkpoint before release if this close was premature",
+            "--redaction-status",
+            "not_required",
+        )
+
+        self.assertEqual(release_payload["operation"], "release-thread")
+        self.assertEqual(release_payload["thread"]["status"], "closed")
+        self.assertNotEqual(release_payload["thread"]["status"], "running")
+        self.assertEqual(release_payload["thread"]["final_phase"], "verify-accept")
+        self.assertEqual(release_payload["thread"]["released_by"], "codex-main-session")
+        self.assertTrue(release_payload["thread"]["completed_at"])
+        self.assertTrue(release_payload["thread"]["released_at"])
+
+        receipt_path = Path(release_payload["release_receipt_path"])
+        self.assertIn("releases", receipt_path.parts)
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        self.assertEqual(receipt["thread_id"], thread_id)
+        self.assertEqual(receipt["backend_family"], "langgraph")
+        self.assertEqual(receipt["previous_status"], "running")
+        self.assertEqual(receipt["release_action"], "close")
+        self.assertEqual(receipt["released_by"], "codex-main-session")
+        self.assertEqual(receipt["survivor_queue_status"], "missing")
+        self.assertEqual(receipt["handoff_target"], "")
+        self.assertTrue(receipt["checkpoint_path"])
+        self.assertTrue(receipt["artifact_path"])
+        self.assertFalse(receipt["timeout_release"])
+        self.assertEqual(
+            receipt["rollback_restore_note"],
+            "replay checkpoint before release if this close was premature",
+        )
+        self.assertEqual(receipt["redaction_status"], "not_required")
+
+        status_payload = self.invoke_runtime(repo_root, "status", "--thread-id", thread_id)
+        self.assertEqual(status_payload["thread"]["status"], "closed")
+        self.assertEqual(status_payload["release_receipt"]["release_action"], "close")
+        self.assertTrue(status_payload["release_projection"]["release_receipt_present"])
+        self.assertFalse(status_payload["release_projection"]["active_running_state"])
+        self.assertEqual(status_payload["backend_record"]["release_receipt_path"], str(receipt_path))
+        self.assertEqual(status_payload["backend_record"]["release_projection"]["release_action"], "close")
+
+        inspect_payload = self.invoke_runtime(repo_root, "inspect", "--thread-id", thread_id)
+        self.assertEqual(inspect_payload["release_receipt"]["thread_id"], thread_id)
+        self.assertTrue(inspect_payload["release_projection"]["release_receipt_present"])
+        self.assertEqual(inspect_payload["durable_artifacts"]["release_receipt_path"], str(receipt_path))
+
+    def test_runtime_release_thread_records_timeout_release_without_backend_switch(self) -> None:
+        repo_root = self.make_repo_root("release-timeout")
+        run_payload = self.invoke_runtime(repo_root, "run", "--task", "timeout release task", "--phase", "stabilize")
+        thread_id = run_payload["thread_id"]
+
+        release_payload = self.invoke_runtime(
+            repo_root,
+            "release-thread",
+            "--thread-id",
+            thread_id,
+            "--release-action",
+            "release",
+            "--released-by",
+            "codex-main-session",
+            "--timeout-release",
+            "--rollback-restore-note",
+            "restore from checkpoint if the timeout was transient",
+            "--redaction-status",
+            "needs_review",
+        )
+
+        self.assertEqual(release_payload["thread"]["status"], "released")
+        self.assertEqual(release_payload["release_receipt"]["backend_family"], "langgraph")
+        self.assertEqual(release_payload["release_receipt"]["release_action"], "release")
+        self.assertTrue(release_payload["release_receipt"]["timeout_release"])
+        self.assertEqual(release_payload["release_receipt"]["redaction_status"], "needs_review")
+        self.assertEqual(release_payload["backend_record"]["backend"], "langgraph")
+        self.assertEqual(release_payload["backend_record"]["status"], "released")
+        self.assertEqual(release_payload["backend_record"]["release_projection"]["release_action"], "release")
+        self.assertFalse(release_payload["backend_record"]["release_projection"]["active_running_state"])
+
+    def test_runtime_handoff_release_requires_target_and_reason(self) -> None:
+        repo_root = self.make_repo_root("release-handoff-required")
+        run_payload = self.invoke_runtime(repo_root, "run", "--task", "handoff task", "--phase", "stabilize")
+        thread_id = run_payload["thread_id"]
+
+        result = self.run_runtime_process(
+            repo_root,
+            "release-thread",
+            "--thread-id",
+            thread_id,
+            "--release-action",
+            "handoff",
+            "--released-by",
+            "codex-main-session",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("handoff_target", result.stderr + result.stdout)
+        self.assertIn("reason", result.stderr + result.stdout)
+
+    def test_runtime_handoff_release_records_target_reason_and_keeps_langgraph_backend(self) -> None:
+        repo_root = self.make_repo_root("release-handoff-success")
+        run_payload = self.invoke_runtime(repo_root, "run", "--task", "handoff task", "--phase", "integrate-converge")
+        thread_id = run_payload["thread_id"]
+
+        release_payload = self.invoke_runtime(
+            repo_root,
+            "release-thread",
+            "--thread-id",
+            thread_id,
+            "--release-action",
+            "handoff",
+            "--released-by",
+            "codex-main-session",
+            "--handoff-target",
+            "native_omx:debugger-lane",
+            "--reason",
+            "blocking stabilization needs worker-centric mailbox flow",
+            "--result-summary",
+            "handoff recorded without starting target backend",
+        )
+
+        self.assertEqual(release_payload["thread"]["status"], "handoff")
+        self.assertEqual(release_payload["thread"]["handoff_target"], "native_omx:debugger-lane")
+        self.assertEqual(release_payload["thread"]["reason"], "blocking stabilization needs worker-centric mailbox flow")
+        self.assertTrue(release_payload["thread"]["handoff_at"])
+        self.assertEqual(release_payload["release_receipt"]["release_action"], "handoff")
+        self.assertEqual(release_payload["release_receipt"]["handoff_target"], "native_omx:debugger-lane")
+        self.assertEqual(release_payload["release_receipt"]["backend_family"], "langgraph")
+        self.assertEqual(release_payload["backend_record"]["backend"], "langgraph")
+        self.assertEqual(release_payload["backend_record"]["release_projection"]["handoff_target"], "native_omx:debugger-lane")
+        self.assertFalse(release_payload["backend_record"]["release_projection"]["active_running_state"])
+
+    def test_runtime_release_thread_can_link_r5_active_candidate_receipt_without_adoption_claim(self) -> None:
+        repo_root = self.make_repo_root("release-active-candidate")
+        run_payload = self.invoke_runtime(repo_root, "run", "--task", "active candidate release", "--phase", "verify-accept")
+        thread_id = run_payload["thread_id"]
+        active_receipt = repo_root / "active-candidate.json"
+        active_receipt.write_text(
+            json.dumps(
+                {
+                    "runtime_stage": "active-candidate",
+                    "receipt_path_hash": "receipt-hash",
+                    "authorization_receipt_hash": "auth-hash",
+                    "owner_lease_hash": "lease-hash",
+                    "rollback_pointer_hash": "rollback-hash",
+                    "remote_publication_mutated": False,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        release_payload = self.invoke_runtime(
+            repo_root,
+            "release-thread",
+            "--thread-id",
+            thread_id,
+            "--release-action",
+            "close",
+            "--released-by",
+            "codex-main-session",
+            "--active-candidate-receipt",
+            str(active_receipt),
+            "--rollback-restore-note",
+            "restore from checkpoint before active-candidate release",
+            "--redaction-status",
+            "pass",
+        )
+
+        receipt = release_payload["release_receipt"]
+        self.assertEqual(receipt["active_candidate_receipt"]["runtime_stage"], "active-candidate")
+        self.assertEqual(receipt["active_candidate_receipt"]["authorization_receipt_hash"], "auth-hash")
+        self.assertFalse(receipt["active_candidate_receipt"]["remote_publication_mutated"])
+        self.assertFalse(receipt["remote_publication_mutated"])
+        self.assertEqual(release_payload["release_projection"]["active_candidate_receipt_linked"], True)
+        self.assertEqual(
+            release_payload["backend_record"]["release_projection"]["active_candidate_receipt_hash"],
+            "receipt-hash",
+        )
 
 
 if __name__ == "__main__":

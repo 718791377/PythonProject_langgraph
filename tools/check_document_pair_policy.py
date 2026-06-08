@@ -11,11 +11,6 @@ from typing import Any
 CHECK_NAME = "document_pair_policy"
 TARGET_ROOTS = ("docs_bilingual", "openspec", "docs")
 CHINESE_SUFFIX = ".zh-CN.md"
-STARTUP_SUMMARY_PRIMARY_CANARY_EXCEPTION = "docs_bilingual/project_startup_summary.md"
-STARTUP_SUMMARY_CANARY_MARKERS = (
-    "".join(chr(codepoint) for codepoint in (25351, 25381, 23448)),
-    chr(21941) + "~",
-)
 
 
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -45,19 +40,6 @@ def companion_for(path: Path) -> Path:
     return path.with_name(path.stem + CHINESE_SUFFIX)
 
 
-def contains_only_allowed_startup_canary_non_ascii(rel: str, text: str) -> bool:
-    if rel != STARTUP_SUMMARY_PRIMARY_CANARY_EXCEPTION:
-        return False
-    sanitized = text
-    for marker in STARTUP_SUMMARY_CANARY_MARKERS:
-        sanitized = sanitized.replace(marker, "")
-    try:
-        sanitized.encode("ascii")
-    except UnicodeEncodeError:
-        return False
-    return True
-
-
 def changed_markdown(root: Path, base_ref: str) -> dict[str, str]:
     changed: dict[str, str] = {}
     merge_base = run_git(root, ["merge-base", base_ref, "HEAD"])
@@ -81,7 +63,14 @@ def changed_markdown(root: Path, base_ref: str) -> dict[str, str]:
             code = raw[:2]
             path_text = raw[3:] if len(raw) > 3 else ""
             if " -> " in path_text:
-                path_text = path_text.split(" -> ", 1)[1]
+                source_text, target_text = path_text.split(" -> ", 1)
+                source_path = normalize(source_text)
+                target_path = normalize(target_text)
+                if is_target_markdown(source_path):
+                    changed[source_path] = "D"
+                if is_target_markdown(target_path):
+                    changed[target_path] = "A"
+                continue
             path = normalize(path_text)
             if is_target_markdown(path):
                 if "D" in code:
@@ -125,8 +114,7 @@ def evaluate(root: Path, base_ref: str, require_companion_changed: bool) -> dict
             try:
                 text.encode("ascii")
             except UnicodeEncodeError as exc:
-                if not contains_only_allowed_startup_canary_non_ascii(rel, text):
-                    errors.append(f"{rel} English primary contains non-ASCII text at character index {exc.start}.")
+                errors.append(f"{rel} English primary contains non-ASCII text at character index {exc.start}.")
         else:
             try:
                 path.read_text(encoding="utf-8", errors="strict")

@@ -49,7 +49,38 @@ class RepoLocalSelectorOwnershipTest(unittest.TestCase):
         self.assertTrue(payload["ok"], payload["errors"])
         self.assertTrue(payload["selector_found"])
         self.assertTrue(payload["adoption_allowed"])
+        self.assertTrue(payload["selector_valid_for_routing"])
+        self.assertFalse(payload["runtime_adoption_allowed"])
+        self.assertIn("active_candidate_receipt_missing", payload["runtime_adoption_blockers"])
         self.assertEqual(payload["adoption_blockers"], [])
+
+
+    def test_same_repo_selector_with_r5_receipt_allows_runtime_adoption(self) -> None:
+        root = self.copy_fixture("same_repo")
+        receipt_path = root / "r5-active.json"
+        receipt_path.write_text(
+            json.dumps(
+                {
+                    "runtime_stage": "active-candidate",
+                    "authorization_receipt": {"status": "pass", "operator_confirmation": True},
+                    "owner_lease": {"status": "pass", "owner": "main-session"},
+                    "target_action_allowlist": {"targets": ["selector"], "actions": ["runtime-adoption"]},
+                    "timeout_release": {"status": "pass", "released": True},
+                    "rollback_pointer": "rollback-ref",
+                    "rollback_ready": True,
+                    "cleanup_evidence": {"status": "pass"},
+                    "remote_publication_mutated": False,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        payload = module.run_check(root, now=module.parse_now(NOW), active_candidate_receipt_path=receipt_path)
+
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertTrue(payload["selector_valid_for_routing"])
+        self.assertTrue(payload["runtime_adoption_allowed"])
+        self.assertEqual(payload["runtime_adoption_blockers"], [])
 
     def test_cross_repo_active_selector_fails_closed(self) -> None:
         root = self.copy_fixture("cross_repo")

@@ -22,10 +22,11 @@ last_reviewed: 2026-05-27
 
 <!-- CURRENT_STATUS_START -->
 
-- [x] 状态：active implementation plan。历史证据包已外部化，避免常规读取时消耗过多上下文。
-- [x] 常规更新应先检查文件大小、标题、锚点和证据索引，再决定是否全量读取。
-- [x] 非文档实施仍必须先有治理包，并在实施前通过确认门。
+- [x] 状态：implemented-local runtime baseline；front matter 和 registry 仍保持 `active`，因为 active Comet changes 在 build 或 verification 阶段仍可能引用本实施方案。
+- [x] 历史证据包已外部化，避免常规读取时消耗过多上下文。
+- [x] runtime 脚本、guard/archive 校验、skill 指令、policy/spec 对齐和定向测试已经存在于本地 `main`。
 
+- [x] 2026-06-07 收口验证已记录定向 Comet runtime 与 policy 证据；完整 OpenSpec guard 当前仍报告与本方案写集无关的 multi-session worktree hygiene 阻塞。
 <!-- CURRENT_STATUS_END -->
 
 ## 目标
@@ -84,6 +85,15 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [ ] `monitoring_status=blocked` 时不能向前推进。
 - [ ] 一次回退 transition 只能让 `iteration_count` 增加一次。
 - [ ] 回退 transition 不得删除既有 OpenSpec 或 Superpowers artifacts。
+
+### Runtime 术语说明
+
+- [ ] `control_decision`： 字段含义是 Monitoring 控制决策；return 取值表示回退路径，而不是继续前进。
+- [ ] `target_phase`： 字段含义是 Monitoring 回退 transition 最终进入的 Comet 阶段。
+- [ ] `rework_reason`： 字段含义是记录为什么必须执行回退 transition。
+- [ ] `iteration_count`： 字段含义是累计成功执行的 Monitoring 回退 event 次数。
+- [ ] `return-open`、`return-design`、`return-build` 和 `return-verify`： `control_decision` 取值含义是把 skill workflow 路由回 Open、Design、Build 或 Verify。
+- [ ] `monitor-return-open`、`monitor-return-design`、`monitor-return-build` 和 `monitor-return-verify`： runtime transition event 含义是把 `.comet.yaml phase` 移到选定的回退目标。
 
 ## 管理记录模板
 
@@ -147,121 +157,121 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 ### Slice 1：状态与管理记录初始化
 
 范围：
-- [ ] 更新 `.codex/skills/comet/scripts/comet-state.sh init`，自动创建 `management.md`。
-- [ ] 初始化 `.comet.yaml` 中的管理字段。
-- [ ] 更新 `.codex/skills/comet/scripts/comet-yaml-validate.sh`，校验枚举值。
-- [ ] 新增或更新 change 初始化 fixture。
+- [x] 更新 `.codex/skills/comet/scripts/comet-state.sh init`，自动创建 `management.md`。
+- [x] 初始化 `.comet.yaml` 中的管理字段。
+- [x] 更新 `.codex/skills/comet/scripts/comet-yaml-validate.sh`，校验枚举值。
+- [x] 新增或更新 change 初始化 fixture。
 
 完成标准：
-- [ ] 新 Comet change 包含 `.comet.yaml` 字段和 `management.md`。
-- [ ] 既有 change 可以校验且不丢失当前元数据。
-- [ ] 非法枚举值 fail closed。
+- [x] 新 Comet change 包含 `.comet.yaml` 字段和 `management.md`。
+- [x] 既有 change 可以校验且不丢失当前元数据。
+- [x] 非法枚举值 fail closed。
 
 测试：
-- [ ] 初始化测试覆盖 management record 创建。
-- [ ] YAML 校验测试覆盖所有允许枚举。
-- [ ] 负向测试覆盖非法枚举和缺失 management record。
+- [x] 初始化测试覆盖 management record 创建。
+- [x] YAML 校验测试覆盖所有允许枚举。
+- [x] 负向测试覆盖非法枚举和缺失 management record。
 
 ### Slice 2：阶段勾选门禁
 
 范围：
-- [ ] 在 `comet-guard.sh` 或 helper 中增加可复用 checklist 解析。
-- [ ] `open -> design` 前要求 Open 勾选项。
-- [ ] `design -> build` 前要求 Design 勾选项。
-- [ ] `build -> verify` 前要求 Build 勾选项。
-- [ ] `verify -> archive` 前要求 Verify 勾选项。
-- [ ] archive 完成前要求 Archive 勾选项。
+- [x] 在 `comet-guard.sh` 或 helper 中增加可复用 checklist 解析。
+- [x] `open -> design` 前要求 Open 勾选项。
+- [x] `design -> build` 前要求 Design 勾选项。
+- [x] `build -> verify` 前要求 Build 勾选项。
+- [x] `verify -> archive` 前要求 Verify 勾选项。
+- [x] archive 完成前要求 Archive 勾选项。
 
 完成标准：
-- [ ] 缺失勾选项会阻断对应 transition。
-- [ ] 错误输出指出缺失的 section 和 item。
-- [ ] 既有非管理类 guard 约束仍然执行。
+- [x] 缺失勾选项会阻断对应 transition。
+- [x] 错误输出指出缺失的 section 和 item。
+- [x] 既有非管理类 guard 约束仍然执行。
 
 测试：
-- [ ] 每个 phase 一个通过 fixture。
-- [ ] 每个 phase 一个失败 fixture。
-- [ ] 回归测试确认旧有 guard 约束仍生效。
+- [x] 每个 phase 一个通过 fixture。
+- [x] 每个 phase 一个失败 fixture。
+- [x] 回归测试确认旧有 guard 约束仍生效。
 
 ### Slice 3：Monitoring 回退 transition
 
 范围：
-- [ ] 在 `comet-state.sh transition` 中增加 `monitor-return-open`、`monitor-return-design`、`monitor-return-build`、`monitor-return-verify`。
-- [ ] 强制校验匹配的 `control_decision` 和 `target_phase`。
-- [ ] 回退决策必须有非空 `rework_reason`。
-- [ ] 成功回退时递增 `iteration_count`。
-- [ ] 回退时保留既有 artifacts 和路径。
+- [x] 在 `comet-state.sh transition` 中增加 `monitor-return-open`、`monitor-return-design`、`monitor-return-build`、`monitor-return-verify`。
+- [x] 强制校验匹配的 `control_decision` 和 `target_phase`。
+- [x] 回退决策必须有非空 `rework_reason`。
+- [x] 成功回退时递增 `iteration_count`。
+- [x] 回退时保留既有 artifacts 和路径。
 
 完成标准：
-- [ ] 回退 transition 会把 `.comet.yaml phase` 移到目标 phase。
-- [ ] 缺少 target 或 reason 时 fail closed。
-- [ ] 修复勾选证据后，回退循环可以再次向前推进。
+- [x] 回退 transition 会把 `.comet.yaml phase` 移到目标 phase。
+- [x] 缺少 target 或 reason 时 fail closed。
+- [x] 修复勾选证据后，回退循环可以再次向前推进。
 
 测试：
-- [ ] 从 Build 回退到 Open。
-- [ ] 从 Verify 回退到 Design。
-- [ ] 从 Verify 回退到 Build。
-- [ ] 从 Archive 回退到 Verify。
-- [ ] `iteration_count` 每次回退只增加一次。
+- [x] 从 Build 回退到 Open。
+- [x] 从 Verify 回退到 Design。
+- [x] 从 Verify 回退到 Build。
+- [x] 从 Archive 回退到 Verify。
+- [x] `iteration_count` 每次回退只增加一次。
 
 ### Slice 4：Skill 指令接入
 
 范围：
-- [ ] 更新 `comet-open`，离开 Open 前要求 Open 勾选证据。
-- [ ] 更新 `comet-design`，离开 Design 前要求 Design 勾选证据。
-- [ ] 更新 `comet-build`，离开 Build 前要求 Build 勾选证据。
-- [ ] 更新 `comet-verify`，记录偏差、风险/变更影响和回退/不回退决策。
-- [ ] 更新 `comet-archive`，要求 Closing 勾选证据。
-- [ ] 更新根 `comet` skill，说明自适应 Monitoring 回退。
+- [x] 更新 `comet-open`，离开 Open 前要求 Open 勾选证据。
+- [x] 更新 `comet-design`，离开 Design 前要求 Design 勾选证据。
+- [x] 更新 `comet-build`，离开 Build 前要求 Build 勾选证据。
+- [x] 更新 `comet-verify`，记录偏差、风险/变更影响和回退/不回退决策。
+- [x] 更新 `comet-archive`，要求 Closing 勾选证据。
+- [x] 更新根 `comet` skill，说明自适应 Monitoring 回退。
 
 完成标准：
-- [ ] skill 指令与脚本行为一致。
-- [ ] skill 明确 Monitoring 是跨阶段控制，不是第六阶段。
-- [ ] skill 能把回退决策路由到正确 phase，而不是强迫继续瀑布式前进。
+- [x] skill 指令与脚本行为一致。
+- [x] skill 明确 Monitoring 是跨阶段控制，不是第六阶段。
+- [x] skill 能把回退决策路由到正确 phase，而不是强迫继续瀑布式前进。
 
 测试：
-- [ ] 静态文本检查覆盖必需 runtime 字段。
-- [ ] 静态文本检查覆盖必需回退命令。
-- [ ] 使用示例 change 做一次手工 dry-run。
+- [x] 静态文本检查覆盖必需 runtime 字段。
+- [x] 静态文本检查覆盖必需回退命令。
+- [x] 使用示例 change 做一次手工 dry-run。
 
 ### Slice 5：Policy、OpenSpec 与 Checker 对齐
 
 范围：
-- [ ] 更新治理 policy，说明 Comet 是迭代式控制层。
-- [ ] 更新 OpenSpec specs，加入阶段勾选和回退 transition 场景。
-- [ ] 更新 `tools/run_openspec_guard.py` 或相关 checker，覆盖 runtime 管理规则。
-- [ ] 如需新增测试，注册到 `tools/ci/ci_test_manifest.json`。
-- [ ] 保持 `docs_bilingual` 使用英文主版和中文对照版。
+- [x] 更新治理 policy，说明 Comet 是迭代式控制层。
+- [x] 更新 OpenSpec specs，加入阶段勾选和回退 transition 场景。
+- [x] 更新 `tools/run_openspec_guard.py` 或相关 checker，覆盖 runtime 管理规则。
+- [x] 如需新增测试，注册到 `tools/ci/ci_test_manifest.json`。
+- [x] 保持 `docs_bilingual` 使用英文主版和中文对照版。
 
 完成标准：
-- [ ] policy、spec、skills、scripts 和 tests 描述同一套 runtime 行为。
-- [ ] implementation plan checker 通过。
-- [ ] OpenSpec guard 通过。
+- [x] policy、spec、skills、scripts 和 tests 描述同一套 runtime 行为。
+- [x] implementation plan checker 通过。
+- [x] 完整 OpenSpec guard 状态已记录；当前 full-guard failure 是与本方案写集无关的 multi-session worktree hygiene 阻塞。
 
 测试：
-- [ ] `python tools/check_implementation_plan_rules.py --root . --json` - 校验 implementation plan registry、双语配对、文本健康和 active 方案状态。
-- [ ] `python tools/run_openspec_guard.py --root .` - 校验 OpenSpec、文档治理、implementation-plan rules 和命名清晰度门禁。
-- [ ] 定向 Comet runtime 单元测试。
+- [x] `python tools/check_implementation_plan_rules.py --root . --json` - 校验 implementation plan registry、双语配对、文本健康和 active 方案状态。
+- [x] `python tools/run_openspec_guard.py --root .` - 校验 OpenSpec、文档治理、implementation-plan rules 和命名清晰度门禁。
+- [x] 定向 Comet runtime 单元测试。
 
 ## 文件职责图
 
-- [ ] `.codex/skills/comet/scripts/comet-state.sh`：负责 `.comet.yaml` 默认字段、transition 事件、Monitoring 回退 transition 和 `iteration_count` 修改。
-- [ ] `.codex/skills/comet/scripts/comet-guard.sh`：负责前进 transition 门禁、管理勾选解析和 fail-closed 诊断输出。
-- [ ] `.codex/skills/comet/scripts/comet-yaml-validate.sh`：负责 `monitoring_status`、`control_decision`、`target_phase`、`rework_reason`、`iteration_count` 的枚举值和跨字段不变式校验。
-- [ ] `.codex/skills/comet/scripts/comet-archive.sh`：负责归档时 Closing 证据检查，以及归档完成前的最终 Monitoring 决策。
-- [ ] `.codex/skills/comet/SKILL.md` 和 `.codex/skills/comet-{open,design,build,verify,archive,hotfix,tweak}/SKILL.md`：负责面向操作者的 workflow 指令和路由文字。
-- [ ] `docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md` 和 `.zh-CN.md`：负责用户可见的治理语言。
-- [ ] `openspec/specs/codex-user-level-comet-controlled-openspec-superpowers/spec.md` 和 `.zh-CN.md`：负责稳定 WHAT 需求。
-- [ ] `test/run_openspec_guard_json.test.py`：新增 checker 或 guard 依赖时，负责 guard 聚合 fixture 覆盖。
-- [ ] 如需新增定向 runtime 测试，应放在 `test/` 下，并使用能描述 runtime contract 的文件名，再注册到 `tools/ci/ci_test_manifest.json`。
+- [x] `.codex/skills/comet/scripts/comet-state.sh`：负责 `.comet.yaml` 默认字段、transition 事件、Monitoring 回退 transition 和 `iteration_count` 修改。
+- [x] `.codex/skills/comet/scripts/comet-guard.sh`：负责前进 transition 门禁、管理勾选解析和 fail-closed 诊断输出。
+- [x] `.codex/skills/comet/scripts/comet-yaml-validate.sh`：负责 `monitoring_status`、`control_decision`、`target_phase`、`rework_reason`、`iteration_count` 的枚举值和跨字段不变式校验。
+- [x] `.codex/skills/comet/scripts/comet-archive.sh`：负责归档时 Closing 证据检查，以及归档完成前的最终 Monitoring 决策。
+- [x] `.codex/skills/comet/SKILL.md` 和 `.codex/skills/comet-{open,design,build,verify,archive,hotfix,tweak}/SKILL.md`：负责面向操作者的 workflow 指令和路由文字。
+- [x] `docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md` 和 `.zh-CN.md`：负责用户可见的治理语言。
+- [x] `openspec/specs/codex-user-level-comet-controlled-openspec-superpowers/spec.md` 和 `.zh-CN.md`：负责稳定 WHAT 需求。
+- [x] `test/run_openspec_guard_json.test.py`：新增 checker 或 guard 依赖时，负责 guard 聚合 fixture 覆盖。
+- [x] 如需新增定向 runtime 测试，应放在 `test/` 下，并使用能描述 runtime contract 的文件名，再注册到 `tools/ci/ci_test_manifest.json`。
 
 ## 实施前就绪定义
 
-- [ ] 实施分支或工作树从当前本地 `main` 开始。
-- [ ] `docs_bilingual/docs_registry.yaml` 中 active plan 状态保持 `active`。
-- [ ] 先更新英文主版和中文对照版，再修改 runtime 脚本。
-- [ ] worker 记录本次实施属于 script-only、skill-only 还是 script-plus-skill。
-- [ ] 每次修改脚本前，先确认正在修改的确切 transition。
-- [ ] 每个 runtime 行为变更必须在同一提交中有匹配的 test 或 checker 更新。
+- [x] 实施分支或工作树从当前本地 `main` 开始。
+- [x] `docs_bilingual/docs_registry.yaml` 中 active plan 状态保持 `active`。
+- [x] 先更新英文主版和中文对照版，再修改 runtime 脚本。
+- [x] worker 记录本次实施属于 script-only、skill-only 还是 script-plus-skill。
+- [x] 每次修改脚本前，先确认正在修改的确切 transition。
+- [x] 每个 runtime 行为变更必须在同一提交中有匹配的 test 或 checker 更新。
 
 ## 任务级执行 Backlog
 
@@ -275,12 +285,12 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - 测试：新增或扩展 `test/comet_runtime_management_flow.test.py`
 - 如新增测试则注册：`tools/ci/ci_test_manifest.json`
 
-- [ ] Step A1：先写失败测试，初始化一个 sample change，并断言 `.comet.yaml` 包含 `management_record`、`monitoring_status: clear`、`control_decision: continue`、`target_phase: null`、`rework_reason: null`、`iteration_count: 0`。
-- [ ] Step A2：运行 `python test/comet_runtime_management_flow.test.py -k bootstrap`，确认失败原因是缺少管理默认值，而不是测试搭建错误。
-- [ ] Step A3：更新 `comet-state.sh` 初始化逻辑，让新 change 写入必需字段，并在缺失时创建 `openspec/changes/<name>/management.md`。
-- [ ] Step A4：更新 `comet-yaml-validate.sh`，让缺失管理字段和非法枚举值按字段 fail closed。
-- [ ] Step A5：重新运行 bootstrap 测试和 `python tools/check_openspec_comet_superpowers_policy.py --root . --json`。
-- [ ] Step A6：使用中文提交，例如 `运行时：初始化 Comet 管理字段`。
+- [x] Step A1：先写失败测试，初始化一个 sample change，并断言 `.comet.yaml` 包含 `management_record`、`monitoring_status: clear`、`control_decision: continue`、`target_phase: null`、`rework_reason: null`、`iteration_count: 0`。
+- [x] Step A2：运行 `python test/comet_runtime_management_flow.test.py -k bootstrap`，确认失败原因是缺少管理默认值，而不是测试搭建错误。
+- [x] Step A3：更新 `comet-state.sh` 初始化逻辑，让新 change 写入必需字段，并在缺失时创建 `openspec/changes/<name>/management.md`。
+- [x] Step A4：更新 `comet-yaml-validate.sh`，让缺失管理字段和非法枚举值按字段 fail closed。
+- [x] Step A5：重新运行 bootstrap 测试和 `python tools/check_openspec_comet_superpowers_policy.py --root . --json`。
+- [x] Step A6：使用中文提交，例如 `运行时：初始化 Comet 管理字段`。
 
 ### Task B：强制阶段勾选门禁
 
@@ -289,13 +299,13 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - 测试：新增或扩展 `test/comet_runtime_management_flow.test.py`
 - 如新增测试则注册：`tools/ci/ci_test_manifest.json`
 
-- [ ] Step B1：为 Open、Design、Build、Verify、Archive 管理区段未勾选的情况编写失败 fixture。
-- [ ] Step B2：运行定向 guard 测试，确认每个 transition 当前会错误放行，或以错误原因失败。
-- [ ] Step B3：在 `comet-guard.sh` 中新增一个可复用 checklist parser，不要为每个 phase 重复解析逻辑。
-- [ ] Step B4：将 `open -> design`、`design -> build`、`build -> verify`、`verify -> archive` 和 archive completion 接入 parser。
-- [ ] Step B5：确保诊断输出同时指出缺失的 section 和 item。
-- [ ] Step B6：重新运行定向测试；如果 full guard 被无关本地状态阻塞，则运行 `python tools/run_openspec_guard.py --root . --skip-validate --json` 并记录阻塞项。
-- [ ] Step B7：使用中文提交，例如 `运行时：强制阶段管理勾选门禁`。
+- [x] Step B1：为 Open、Design、Build、Verify、Archive 管理区段未勾选的情况编写失败 fixture。
+- [x] Step B2：运行定向 guard 测试，确认每个 transition 当前会错误放行，或以错误原因失败。
+- [x] Step B3：在 `comet-guard.sh` 中新增一个可复用 checklist parser，不要为每个 phase 重复解析逻辑。
+- [x] Step B4：将 `open -> design`、`design -> build`、`build -> verify`、`verify -> archive` 和 archive completion 接入 parser。
+- [x] Step B5：确保诊断输出同时指出缺失的 section 和 item。
+- [x] Step B6：重新运行定向测试；如果 full guard 被无关本地状态阻塞，则运行 `python tools/run_openspec_guard.py --root . --skip-validate --json` 并记录阻塞项。
+- [x] Step B7：使用中文提交，例如 `运行时：强制阶段管理勾选门禁`。
 
 ### Task C：实现 Monitoring 回退 transition
 
@@ -304,12 +314,12 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - 修改：`.codex/skills/comet/scripts/comet-yaml-validate.sh`
 - 测试：新增或扩展 `test/comet_runtime_management_flow.test.py`
 
-- [ ] Step C1：为 `monitor-return-open`、`monitor-return-design`、`monitor-return-build`、`monitor-return-verify` 编写失败测试。
-- [ ] Step C2：新增负向测试：`target_phase` 缺失、`control_decision` 与事件不匹配、`rework_reason` 为 `null`、`iteration_count` 非数字。
-- [ ] Step C3：在 `comet-state.sh` 中实现一个统一 return helper，将 return event 映射到目标 phase，并保留既有 artifact 路径。
-- [ ] Step C4：每次成功 return event 只递增一次 `iteration_count`。
-- [ ] Step C5：连续运行两次定向测试，确认重复回退能从 `0` 到 `1` 再到 `2`，且不会重置其他字段。
-- [ ] Step C6：使用中文提交，例如 `运行时：支持 Monitoring 回退转换`。
+- [x] Step C1：为 `monitor-return-open`、`monitor-return-design`、`monitor-return-build`、`monitor-return-verify` 编写失败测试。
+- [x] Step C2：新增负向测试：`target_phase` 缺失、`control_decision` 与事件不匹配、`rework_reason` 为 `null`、`iteration_count` 非数字。
+- [x] Step C3：在 `comet-state.sh` 中实现一个统一 return helper，将 return event 映射到目标 phase，并保留既有 artifact 路径。
+- [x] Step C4：每次成功 return event 只递增一次 `iteration_count`。
+- [x] Step C5：连续运行两次定向测试，确认重复回退能从 `0` 到 `1` 再到 `2`，且不会重置其他字段。
+- [x] Step C6：使用中文提交，例如 `运行时：支持 Monitoring 回退转换`。
 
 ### Task D：对齐 Comet skill 指令
 
@@ -322,11 +332,11 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - 修改：`.codex/skills/comet-archive/SKILL.md`
 - 如 preset 行为变更则修改：`.codex/skills/comet-hotfix/SKILL.md`、`.codex/skills/comet-tweak/SKILL.md`
 
-- [ ] Step D1：补充 Monitoring 是跨阶段控制回路、不是第六 phase 的指令文字。
-- [ ] Step D2：补充每个 phase 离开前必须对应管理勾选区段的要求。
-- [ ] Step D3：补充 return routing 指令，使 `return-open`、`return-design`、`return-build`、`return-verify` 回到对应 Comet phase，而不是强迫继续瀑布式前进。
-- [ ] Step D4：运行 `python tools/check_openspec_comet_superpowers_policy.py --root . --json`，确认所有 skill 必需术语仍存在。
-- [ ] Step D5：使用中文提交，例如 `技能：对齐 Comet 管理回退指令`。
+- [x] Step D1：补充 Monitoring 是跨阶段控制回路、不是第六 phase 的指令文字。
+- [x] Step D2：补充每个 phase 离开前必须对应管理勾选区段的要求。
+- [x] Step D3：补充 return routing 指令，使 `return-open`、`return-design`、`return-build`、`return-verify` 回到对应 Comet phase，而不是强迫继续瀑布式前进。
+- [x] Step D4：运行 `python tools/check_openspec_comet_superpowers_policy.py --root . --json`，确认所有 skill 必需术语仍存在。
+- [x] Step D5：使用中文提交，例如 `技能：对齐 Comet 管理回退指令`。
 
 ### Task E：对齐 policy、spec、checker 覆盖与集成门禁
 
@@ -339,13 +349,13 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - guard 步骤变化时修改：`tools/run_openspec_guard.py` 和 `test/run_openspec_guard_json.test.py`
 - 注册测试：`tools/ci/ci_test_manifest.json`
 
-- [ ] Step E1：先更新英文 policy，再用相同治理含义更新中文对照版。
-- [ ] Step E2：更新 stable OpenSpec requirements，覆盖 checklist evidence、Monitoring return transitions 和非瀑布式自适应执行。
-- [ ] Step E3：如果引入新 checker，把它加入 `tools/run_openspec_guard.py`，并同步 `test/run_openspec_guard_json.test.py` fixture steps。
-- [ ] Step E4：运行 `python tools/check_implementation_plan_rules.py --root . --json`。
-- [ ] Step E5：运行 `python tools/check_openspec_comet_superpowers_policy.py --root . --json`。
-- [ ] Step E6：运行 `python tools/run_openspec_guard.py --root . --json`；如果被无关 worktree hygiene 阻塞，记录准确的本地状态阻塞项。
-- [ ] Step E7：使用中文提交，例如 `治理：同步 Comet 敏捷管理关注领域`。
+- [x] Step E1：先更新英文 policy，再用相同治理含义更新中文对照版。
+- [x] Step E2：更新 stable OpenSpec requirements，覆盖 checklist evidence、Monitoring return transitions 和非瀑布式自适应执行。
+- [x] Step E3：如果引入新 checker，把它加入 `tools/run_openspec_guard.py`，并同步 `test/run_openspec_guard_json.test.py` fixture steps。
+- [x] Step E4：运行 `python tools/check_implementation_plan_rules.py --root . --json`。
+- [x] Step E5：运行 `python tools/check_openspec_comet_superpowers_policy.py --root . --json`。
+- [x] Step E6：运行 `python tools/run_openspec_guard.py --root . --json`；如果被无关 worktree hygiene 阻塞，记录准确的本地状态阻塞项。
+- [x] Step E7：使用中文提交，例如 `治理：同步 Comet 敏捷管理关注领域`。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -359,35 +369,35 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 
 ## 完成复核清单
 
-- [ ] 每个 scope item 都有匹配的任务级 step。
-- [ ] 每个 runtime 字段都有 bootstrap、validation 和至少一个负向测试。
-- [ ] 每个前进 transition 都有通过和失败 checklist fixture。
-- [ ] 每个 Monitoring return event 都有成功、缺 target、缺 reason、iteration-count 证据。
-- [ ] 英文和中文文档语义一致。
-- [ ] 所有提交信息使用中文。
+- [x] 每个 scope item 都有匹配的任务级 step。
+- [x] 每个 runtime 字段都有 bootstrap、validation 和至少一个负向测试。
+- [x] 每个前进 transition 都有通过和失败 checklist fixture。
+- [x] 每个 Monitoring return event 都有成功、缺 target、缺 reason、iteration-count 证据。
+- [x] 英文和中文文档语义一致。
+- [x] 所有提交信息使用中文。
 
 ## 验收标准
 
-- [ ] 缺少 Open 勾选项时不能进入 Design。
-- [ ] 缺少 Design 勾选项时不能进入 Build。
-- [ ] 缺少 Build 勾选项时不能进入 Verify。
-- [ ] 缺少 Verify 勾选项时不能进入 Archive。
-- [ ] 缺少 Archive 勾选项时不能完成归档。
-- [ ] Monitoring 可以在目标不清时从 Build 回退到 Open。
-- [ ] Monitoring 可以在计划或验收缺口时从 Verify 回退到 Design。
-- [ ] Monitoring 可以在验证证据不足时从 Archive 回退到 Verify。
-- [ ] 回退决策保留 `target_phase`、`rework_reason` 和 `iteration_count`。
-- [ ] runtime 对外仍然只暴露 Comet 五阶段。
-- [ ] runtime 输出不要求出现 `PMBOK8` 字样。
+- [x] 缺少 Open 勾选项时不能进入 Design。
+- [x] 缺少 Design 勾选项时不能进入 Build。
+- [x] 缺少 Build 勾选项时不能进入 Verify。
+- [x] 缺少 Verify 勾选项时不能进入 Archive。
+- [x] 缺少 Archive 勾选项时不能完成归档。
+- [x] Monitoring 可以在目标不清时从 Build 回退到 Open。
+- [x] Monitoring 可以在计划或验收缺口时从 Verify 回退到 Design。
+- [x] Monitoring 可以在验证证据不足时从 Archive 回退到 Verify。
+- [x] 回退决策保留 `target_phase`、`rework_reason` 和 `iteration_count`。
+- [x] runtime 对外仍然只暴露 Comet 五阶段。
+- [x] runtime 输出不要求出现 `PMBOK8` 字样。
 
 ## 需要保留的证据
 
-- [ ] 更新后的方案对：英文主版与中文对照版。
-- [ ] registry 中 `status: active` 的条目。
-- [ ] state、guard、archive 和 validation helper 的脚本 diff。
-- [ ] 所有 Comet phase skills 的指令 diff。
-- [ ] 测试输出和 checker 输出。
-- [ ] 实施完成后的归档或收尾说明。
+- [x] 更新后的方案对：英文主版与中文对照版。
+- [x] registry 中 `status: active` 的条目。
+- [x] state、guard、archive 和 validation helper 的脚本 diff。
+- [x] 所有 Comet phase skills 的指令 diff。
+- [x] 测试输出和 checker 输出。
+- [x] 实施完成后的归档或收尾说明。
 
 ## 风险与缓解
 
@@ -415,5 +425,8 @@ runtime 要吸收 PMBOK 第 8 版所强调的非强制性、可裁剪的管理�
 - [x] 2026-05-28 YAML 路径校验证据包：已完成；证据：`docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.zh-CN.md`。
 - [x] 2026-05-28 Verification Report 路径校验证据包：已完成；证据：`docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.zh-CN.md`。
 - [x] 2026-05-28 Artifact Path 安全校验证据包：已完成；证据：`docs/superpowers/reports/2026-05-28-comet-runtime-agile-focus-area-evidence-index.zh-CN.md`。
+
+
+- [x] 2026-06-07 实施收口验证：已完成；证据：`python test/comet_runtime_management_flow.test.py`、`python tools/check_openspec_comet_superpowers_policy.py --root . --json` 和 `python tools/check_implementation_plan_rules.py --root . --json`；完整 `python tools/run_openspec_guard.py --root . --skip-validate --json` 当前被无关 multi-session worktree hygiene 残留阻塞，而不是 Comet runtime 内容阻塞。
 
 <!-- EVIDENCE_INDEX_END -->

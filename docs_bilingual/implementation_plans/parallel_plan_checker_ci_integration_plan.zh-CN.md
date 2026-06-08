@@ -35,13 +35,13 @@ Ensure every new checker, test, and helper introduced by child plans is register
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
-Status update: MCP/skills/browser/CLI decomposition 继续将 baseline checker 作为必跑 guard。receipt/redaction、port/browser-owner、discovery facade 与 browser/CLI adapter boundary 的 helper/test coverage 已在 CI manifest 与 OpenSpec aggregate guard 中登记；未来 sibling lane 若改变 runtime behavior 仍需单独 registration review。
+Status: implemented-local
+Stage: Stage C implementation package
+Owner session: codex-20260603-parallel-plan-checker-ci
+Current gate: implementation package is ready for feature validation, local MR review, local main integration, and then the remote-publication approval gate
+Stage C entry condition: satisfied by the user's 2026-06-03 implementation request after the governance package was already merged into local main
+Last updated: 2026-06-03
+Status update: mirrored-CI checker now validates CI manifest required tests, guard/precommit/safety-rule registration surfaces, canonical local-gate step order, required remote shared-gate flags, and absence of inline remote CI duplication for guard and manifest test runners.
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -68,11 +68,11 @@ Status update: MCP/skills/browser/CLI decomposition 继续将 baseline checker �
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Inventory new checkers and tests from completed child plans.
-- [ ] Add missing local gate registrations and mirrored CI checks.
-- [ ] Detect divergence between local and remote CI command sequences.
-- [ ] Run local gate and local MR review.
+- [x] Confirm this child plan after local main integration.
+- [x] Inventory new checkers and tests from completed child plans.
+- [x] Add missing local gate registrations and mirrored CI checks.
+- [x] Detect divergence between local and remote CI command sequences.
+- [x] Run local gate and local MR review.
 - [x] Verify MCP baseline, receipt/redaction, browser-owner, MCP/skills discovery, and adapter guard checks are registered when their extracted lanes change runtime behavior.
 <!-- TASK_BACKLOG_END -->
 
@@ -102,4 +102,5 @@ Status update: MCP/skills/browser/CLI decomposition 继续将 baseline checker �
 - 2026-06-01 port/browser-owner lane handoff: `user_level_port_browser_owner_isolation_plan` 确认 `test/codex_port.test.py`、`test/browser_owner_registry.test.py`、`test/cdp_bridge_governance.test.py` 与 `test/chrome_devtools_mcp_managed.test.py` 已登记进 CI manifest；CDP/OpenCLI owner 歧义回归覆盖扩展了既有已登记测试文件，因此无需编辑 CI manifest。
 - 2026-06-01 discovery facade lane handoff: `skills2cli.test.py` 与 `mcp2cli.test.py` 已登记进 CI manifest；本包扩展这些已登记聚焦测试以覆盖 risk-profile 与 routing-evidence 行为，并确认 baseline/MCP-scope/agent-surface checker 仍适用。
 - 2026-06-01 browser/CLI adapter boundary lane handoff: `user_level_browser_cli_adapter_boundary_plan` 扩展已登记的 MCP baseline checker，用于校验子方案 implemented-local 状态与 lane-state evidence；聚焦覆盖仍位于已登记测试 `chrome_devtools_mcp_managed.test.py`、`cdp_bridge_governance.test.py`、`wecom_cli_governance.test.py`、`user_level_receipt_governance.test.py` 和 `check_user_level_mcp_skills_browser_cli_baseline.test.py`，无需修改 CI manifest。
+- 2026-06-03 Stage C implementation: `tools/check_local_mirrored_ci_gate.py` now checks CI manifest structure and required tests, local-gate step ordering, OpenSpec guard/precommit/safety-rule registration surfaces, remote shared-gate flags, and forbidden inline CI duplication for guard or manifest test runners; `test/check_local_mirrored_ci_gate.test.py`, `test/parallel_plan_checker_ci_integration.test.py`, and `tools/ci/ci_test_manifest.json` provide focused CI-registered regression coverage.
 <!-- EVIDENCE_INDEX_END -->

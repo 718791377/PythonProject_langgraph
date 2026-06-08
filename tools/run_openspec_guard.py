@@ -126,7 +126,15 @@ def main() -> int:
     openspec_comet_superpowers_policy_script = root / "tools" / "check_openspec_comet_superpowers_policy.py"
     comet_superpowers_visibility_script = root / "tools" / "check_comet_superpowers_visibility.py"
     mcp_router_scope_policy_script = root / "tools" / "check_mcp_router_scope_policy.py"
-    user_level_mcp_skills_browser_cli_baseline_script = root / "tools" / "check_user_level_mcp_skills_browser_cli_baseline.py"
+    user_level_browser_cli_adapter_boundary_script = root / "tools" / "check_user_level_browser_cli_adapter_boundary.py"
+    browser_cli_adapter_smoke_receipts_script = root / "tools" / "check_browser_cli_adapter_smoke_receipts.py"
+    user_level_cli_anything_wxwork_cli_governance_script = root / "tools" / "check_user_level_cli_anything_wxwork_cli_governance.py"
+    codex_harnesses_governance_script = root / "tools" / "check_codex_harnesses_governance.py"
+    codex_harnesses_smoke_receipts_script = root / "tools" / "check_codex_harnesses_smoke_receipts.py"
+    stop_slop_caveman_response_density_script = root / "tools" / "check_stop_slop_caveman_response_density.py"
+    stop_slop_caveman_smoke_receipts_script = root / "tools" / "check_stop_slop_caveman_smoke_receipts.py"
+    gstack_codex_delivery_loop_script = root / "tools" / "check_gstack_codex_delivery_loop.py"
+    user_level_mcp_skills_cli_install_script = root / "tools" / "check_user_level_mcp_skills_cli_install.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
@@ -146,7 +154,10 @@ def main() -> int:
     pyside6_project_opt_in_contract_script = root / "tools" / "check_pyside6_project_opt_in_contract.py"
     pyside6_packaging_opt_in_contract_script = root / "tools" / "check_pyside6_packaging_opt_in_contract.py"
     pyside6_operator_usage_guide_script = root / "tools" / "check_pyside6_operator_usage_guide.py"
+    user_level_receipt_governance_script = root / "tools" / "user_level_receipt_governance.py"
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
+    durable_routing_smoke_receipts_script = root / "tools" / "check_durable_routing_smoke_receipts.py"
+    r5_active_candidate_receipts_script = root / "tools" / "check_r5_active_candidate_receipts.py"
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     worktree_task_receipt_script = root / "tools" / "check_worktree_task_receipt.py"
@@ -198,11 +209,24 @@ def main() -> int:
         raise SystemExit(f"Missing Comet/Superpowers visibility check script: {comet_superpowers_visibility_script}")
     if not mcp_router_scope_policy_script.exists():
         raise SystemExit(f"Missing MCP Router scope policy check script: {mcp_router_scope_policy_script}")
-    if not user_level_mcp_skills_browser_cli_baseline_script.exists():
-        raise SystemExit(
-            "Missing user-level MCP/skills/browser/CLI baseline check script: "
-            f"{user_level_mcp_skills_browser_cli_baseline_script}"
-        )
+    if not user_level_browser_cli_adapter_boundary_script.exists():
+        raise SystemExit(f"Missing Browser/CLI adapter boundary check script: {user_level_browser_cli_adapter_boundary_script}")
+    if not browser_cli_adapter_smoke_receipts_script.exists():
+        raise SystemExit(f"Missing Browser/CLI adapter R4 smoke receipt check script: {browser_cli_adapter_smoke_receipts_script}")
+    if not user_level_cli_anything_wxwork_cli_governance_script.exists():
+        raise SystemExit(f"Missing CLI-Anything/WXWork_CLI governance check script: {user_level_cli_anything_wxwork_cli_governance_script}")
+    if not codex_harnesses_governance_script.exists():
+        raise SystemExit(f"Missing Codex harnesses governance check script: {codex_harnesses_governance_script}")
+    if not codex_harnesses_smoke_receipts_script.exists():
+        raise SystemExit(f"Missing Codex harnesses R4 smoke receipt check script: {codex_harnesses_smoke_receipts_script}")
+    if not stop_slop_caveman_response_density_script.exists():
+        raise SystemExit(f"Missing Stop-Slop/Caveman response-density check script: {stop_slop_caveman_response_density_script}")
+    if not stop_slop_caveman_smoke_receipts_script.exists():
+        raise SystemExit(f"Missing Stop-Slop/Caveman R4 smoke receipt check script: {stop_slop_caveman_smoke_receipts_script}")
+    if not gstack_codex_delivery_loop_script.exists():
+        raise SystemExit(f"Missing gstack Codex delivery-loop check script: {gstack_codex_delivery_loop_script}")
+    if not user_level_mcp_skills_cli_install_script.exists():
+        raise SystemExit(f"Missing user-level MCP/skills CLI install check script: {user_level_mcp_skills_cli_install_script}")
     if not local_mirrored_ci_gate_script.exists():
         raise SystemExit(f"Missing local mirrored CI/MR gate check script: {local_mirrored_ci_gate_script}")
     if not remote_publication_approval_policy_script.exists():
@@ -235,8 +259,14 @@ def main() -> int:
         raise SystemExit(f"Missing PySide6 packaging opt-in contract check script: {pyside6_packaging_opt_in_contract_script}")
     if not pyside6_operator_usage_guide_script.exists():
         raise SystemExit(f"Missing PySide6 operator usage guide check script: {pyside6_operator_usage_guide_script}")
+    if not user_level_receipt_governance_script.exists():
+        raise SystemExit(f"Missing user-level receipt governance helper: {user_level_receipt_governance_script}")
     if not durable_routing_smoke_gate_template_script.exists():
         raise SystemExit(f"Missing durable routing smoke gate template check script: {durable_routing_smoke_gate_template_script}")
+    if not durable_routing_smoke_receipts_script.exists():
+        raise SystemExit(f"Missing durable routing smoke receipts check script: {durable_routing_smoke_receipts_script}")
+    if not r5_active_candidate_receipts_script.exists():
+        raise SystemExit(f"Missing R5 active-candidate receipt check script: {r5_active_candidate_receipts_script}")
     if not codex_native_rollback_release_gate_template_script.exists():
         raise SystemExit(f"Missing Codex native rollback release gate template check script: {codex_native_rollback_release_gate_template_script}")
     if not worktree_hygiene_script.exists():
@@ -408,9 +438,49 @@ def main() -> int:
                 "OpenSpec guard failed during MCP Router scope policy verification.",
             ),
             (
-                "check_user_level_mcp_skills_browser_cli_baseline",
-                [str(python_exe), str(user_level_mcp_skills_browser_cli_baseline_script), "--root", str(root), "--json"],
-                "OpenSpec guard failed during user-level MCP/skills/browser/CLI baseline verification.",
+                "check_user_level_browser_cli_adapter_boundary",
+                [str(python_exe), str(user_level_browser_cli_adapter_boundary_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Browser/CLI adapter boundary verification.",
+            ),
+            (
+                "check_browser_cli_adapter_smoke_receipts",
+                [str(python_exe), str(browser_cli_adapter_smoke_receipts_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Browser/CLI adapter R4 smoke receipt verification.",
+            ),
+            (
+                "check_user_level_cli_anything_wxwork_cli_governance",
+                [str(python_exe), str(user_level_cli_anything_wxwork_cli_governance_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during CLI-Anything/WXWork_CLI governance verification.",
+            ),
+            (
+                "check_codex_harnesses_governance",
+                [str(python_exe), str(codex_harnesses_governance_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Codex harnesses governance verification.",
+            ),
+            (
+                "check_codex_harnesses_smoke_receipts",
+                [str(python_exe), str(codex_harnesses_smoke_receipts_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Codex harnesses R4 smoke receipt verification.",
+            ),
+            (
+                "stop_slop_caveman_response_density",
+                [str(python_exe), str(stop_slop_caveman_response_density_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Stop-Slop/Caveman response-density verification.",
+            ),
+            (
+                "stop_slop_caveman_smoke_receipts",
+                [str(python_exe), str(stop_slop_caveman_smoke_receipts_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Stop-Slop/Caveman R4 smoke receipt verification.",
+            ),
+            (
+                "check_gstack_codex_delivery_loop",
+                [str(python_exe), str(gstack_codex_delivery_loop_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during gstack Codex delivery-loop verification.",
+            ),
+            (
+                "check_user_level_mcp_skills_cli_install",
+                [str(python_exe), str(user_level_mcp_skills_cli_install_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during user-level MCP/skills CLI install verification.",
             ),
             (
                 "check_local_mirrored_ci_gate",
@@ -508,9 +578,24 @@ def main() -> int:
                 "OpenSpec guard failed during PySide6 operator usage guide verification.",
             ),
             (
+                "user_level_receipt_governance",
+                [str(python_exe), str(user_level_receipt_governance_script), "template", "--kind", "active", "--json"],
+                "OpenSpec guard failed during user-level receipt governance template verification.",
+            ),
+            (
                 "check_durable_routing_smoke_gate_template",
                 [str(python_exe), str(durable_routing_smoke_gate_template_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during durable routing smoke gate template verification.",
+            ),
+            (
+                "check_durable_routing_smoke_receipts",
+                [str(python_exe), str(durable_routing_smoke_receipts_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during durable routing smoke receipt verification.",
+            ),
+            (
+                "check_r5_active_candidate_receipts",
+                [str(python_exe), str(r5_active_candidate_receipts_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during R5 active-candidate receipt verification.",
             ),
             (
                 "check_codex_native_rollback_release_gate_template",
@@ -760,9 +845,52 @@ def main() -> int:
     )
 
     run_checked(
-        [str(python_exe), str(user_level_mcp_skills_browser_cli_baseline_script), "--root", str(root)],
+        [str(python_exe), str(user_level_browser_cli_adapter_boundary_script), "--root", str(root)],
         cwd=root,
-        failure_message="OpenSpec guard failed during user-level MCP/skills/browser/CLI baseline verification.",
+        failure_message="OpenSpec guard failed during Browser/CLI adapter boundary verification.",
+    )
+    run_checked(
+        [str(python_exe), str(browser_cli_adapter_smoke_receipts_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Browser/CLI adapter R4 smoke receipt verification.",
+    )
+    run_checked(
+        [str(python_exe), str(user_level_cli_anything_wxwork_cli_governance_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during CLI-Anything/WXWork_CLI governance verification.",
+    )
+    run_checked(
+        [str(python_exe), str(codex_harnesses_governance_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Codex harnesses governance verification.",
+    )
+    run_checked(
+        [str(python_exe), str(codex_harnesses_smoke_receipts_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Codex harnesses R4 smoke receipt verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(stop_slop_caveman_response_density_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Stop-Slop/Caveman response-density verification.",
+    )
+    run_checked(
+        [str(python_exe), str(stop_slop_caveman_smoke_receipts_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Stop-Slop/Caveman R4 smoke receipt verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(gstack_codex_delivery_loop_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during gstack Codex delivery-loop verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(user_level_mcp_skills_cli_install_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during user-level MCP/skills CLI install verification.",
     )
 
     run_checked(
@@ -868,9 +996,27 @@ def main() -> int:
     )
 
     run_checked(
+        [str(python_exe), str(user_level_receipt_governance_script), "template", "--kind", "active"],
+        cwd=root,
+        failure_message="OpenSpec guard failed during user-level receipt governance template verification.",
+    )
+
+    run_checked(
         [str(python_exe), str(durable_routing_smoke_gate_template_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during durable routing smoke gate template verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(durable_routing_smoke_receipts_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during durable routing smoke receipt verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(r5_active_candidate_receipts_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during R5 active-candidate receipt verification.",
     )
 
     run_checked(

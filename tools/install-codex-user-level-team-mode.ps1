@@ -2566,6 +2566,55 @@ function Get-CodexUserLevelDurableCapabilityReadiness {
   }
 }
 
+function Get-CodexUserLevelDurableCapabilityReadinessProjectionRelativePath { return '.omx\state\readiness\durable-capability-readiness-projection.json' }
+
+function Get-CodexUserLevelDurableCapabilityReadinessProjectionPath {
+  param([string]$RepoRoot)
+  $resolvedRoot = Resolve-CodexUserLevelRepoRoot -OverridePath $RepoRoot
+  return (Join-Path $resolvedRoot (Get-CodexUserLevelDurableCapabilityReadinessProjectionRelativePath))
+}
+
+function Get-CodexUserLevelDurableCapabilityReadinessProjectionRefreshMetadata {
+  param([string]$RepoRoot)
+  $resolvedRoot = Resolve-CodexUserLevelRepoRoot -OverridePath $RepoRoot
+  return [ordered]@{ explicit_refresh_required = $true; read_only_default = $true; receipt_relative_path = (Get-CodexUserLevelDurableCapabilityReadinessProjectionRelativePath); receipt_path = (Get-CodexUserLevelDurableCapabilityReadinessProjectionPath -RepoRoot $resolvedRoot); command = [ordered]@{ script = 'codex-durable-state-status.ps1'; arguments = @('-RepoRoot', $resolvedRoot, '-RefreshReadiness', '-Json') } }
+}
+
+function Read-CodexUserLevelDurableCapabilityReadinessProjectionReceipt {
+  param([string]$RepoRoot)
+  $path = Get-CodexUserLevelDurableCapabilityReadinessProjectionPath -RepoRoot $RepoRoot
+  if (-not (Test-Path -LiteralPath $path)) { return [ordered]@{ exists = $false; path = $path; relative_path = (Get-CodexUserLevelDurableCapabilityReadinessProjectionRelativePath) } }
+  try {
+    $record = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+    return [ordered]@{ exists = $true; path = $path; relative_path = (Get-CodexUserLevelDurableCapabilityReadinessProjectionRelativePath); generated_at = if ($null -ne $record.PSObject.Properties['generated_at']) { [string]$record.generated_at } else { '' }; promotion_marker = if ($null -ne $record.PSObject.Properties['promotion_marker']) { [string]$record.promotion_marker } else { '' }; selected_backend = if ($null -ne $record.PSObject.Properties['selected_backend']) { [string]$record.selected_backend } else { '' }; backend_ready = if ($null -ne $record.PSObject.Properties['backend_ready'] -and $null -ne $record.backend_ready) { [bool]$record.backend_ready } else { $false } }
+  } catch { return [ordered]@{ exists = $true; path = $path; relative_path = (Get-CodexUserLevelDurableCapabilityReadinessProjectionRelativePath); parse_error = [string]$_.Exception.Message } }
+}
+
+function New-CodexUserLevelDurableCapabilityReadinessProjectionReceipt {
+  param([Parameter(Mandatory)]$Summary)
+  $readiness = $Summary.capability_readiness
+  $blockers = @()
+  foreach ($backendName in @('native_omx','langgraph')) { foreach ($blocker in @($readiness[$backendName].blockers)) { if (-not [string]::IsNullOrWhiteSpace([string]$blocker) -and [string]$blocker -notin $blockers) { $blockers += [string]$blocker } } }
+  $langGraphRuntime = $readiness.langgraph_runtime
+  return [ordered]@{
+    schema_version = 1; receipt_kind = 'durable_capability_readiness_projection'; promotion_marker = 'smoke-tested'; generated_at = (Get-Date).ToUniversalTime().ToString('o'); generated_by = 'codex-durable-state-status.ps1'; repo_root = [string]$Summary.repo_root; receipt_path = (Get-CodexUserLevelDurableCapabilityReadinessProjectionPath -RepoRoot ([string]$Summary.repo_root)); receipt_relative_path = (Get-CodexUserLevelDurableCapabilityReadinessProjectionRelativePath); selected_backend = [string]$Summary.selected_backend; backend_default = [string]$Summary.backend_default; backend_ready = [bool]$Summary.backend_ready; capability_readiness = $readiness; blockers = @($blockers)
+    source_receipts = [ordered]@{ status_helper = 'codex-durable-state-status.ps1'; refresh_switch = '-RefreshReadiness'; capability_source = [string]$readiness.selected_backend_source; repo_state_backend_family = [string]$readiness.repo_state_backend_family; state_sources = @($Summary.state_sources); helper_mirror_source_of_truth = $Summary.helper_mirror_source_of_truth }
+    selector_evidence = [ordered]@{ selector_authority = [string]$Summary.selector_authority; selector_authority_path = [string]$Summary.selector_authority_path; active_selector_status = [string]$Summary.active_selector_status; selector_refresh_gap = [bool]$Summary.selector_refresh_gap; selector_refresh_gap_reason = [string]$Summary.selector_refresh_gap_reason; active_selector_exists = if ($null -ne $Summary.active_selector) { [bool]$Summary.active_selector.exists } else { $false }; active_selector_backend_family = if ($null -ne $Summary.active_selector) { [string]$Summary.active_selector.backend_family } else { '' } }
+    version_evidence = [ordered]@{ native_omx = [ordered]@{ install_state = [string]$readiness.native_omx.install_state; required_helpers = @($readiness.native_omx.required_helpers) }; langgraph = [ordered]@{ install_state = [string]$readiness.langgraph.install_state; shared_venv_name = if ($null -ne $langGraphRuntime) { [string]$langGraphRuntime.shared_venv_name } else { '' }; shared_venv_path = if ($null -ne $langGraphRuntime) { [string]$langGraphRuntime.shared_venv_path } else { '' }; shared_python_path = if ($null -ne $langGraphRuntime) { [string]$langGraphRuntime.shared_python_path } else { '' }; packages = if ($null -ne $langGraphRuntime) { @($langGraphRuntime.packages) } else { @() }; required_helpers = @($readiness.langgraph.required_helpers) } }
+    durable_workflow_adopted = $false; persistent_team_launched = $false; smoke = [ordered]@{ marker = 'smoke-tested'; operation = 'readiness_projection_refresh'; mutation_scope = 'repo_local_readiness_receipt_only'; launched_backend = $false; launched_persistent_team = $false }
+  }
+}
+
+function Write-CodexUserLevelDurableCapabilityReadinessProjectionReceipt {
+  param([Parameter(Mandatory)]$Summary)
+  $path = Get-CodexUserLevelDurableCapabilityReadinessProjectionPath -RepoRoot ([string]$Summary.repo_root)
+  $directory = Split-Path -Parent $path
+  if (-not (Test-Path -LiteralPath $directory)) { New-Item -ItemType Directory -Force -Path $directory | Out-Null }
+  $receipt = New-CodexUserLevelDurableCapabilityReadinessProjectionReceipt -Summary $Summary
+  Set-Content -LiteralPath $path -Value ($receipt | ConvertTo-Json -Depth 12) -Encoding UTF8 -NoNewline
+  return $receipt
+}
+
 function Get-CodexUserLevelLangGraphSharedVenvName {
   return 'langgraph-py312'
 }
@@ -9484,6 +9533,8 @@ function Get-CodexUserLevelInspectableDurableState {
   $composeLifecycle = Get-CodexUserLevelComposeRuntimeLifecyclePlan -RepoRoot $resolvedRepoRoot
   $contract = Get-CodexUserLevelInspectableDurableStateSurfaceContract
   $cleanupPlan = Get-CodexUserLevelDurableStateCleanupReconciliationPlan -RepoRoot $resolvedRepoRoot
+  $readinessRefreshMetadata = Get-CodexUserLevelDurableCapabilityReadinessProjectionRefreshMetadata -RepoRoot $resolvedRepoRoot
+  $readinessProjectionReceipt = Read-CodexUserLevelDurableCapabilityReadinessProjectionReceipt -RepoRoot $resolvedRepoRoot
 
   $hasTrackedLangGraph = ($activeLangGraphSelector -and [bool]$langGraphRecord.exists -and -not [string]::IsNullOrWhiteSpace([string]$langGraphRecord.thread_id))
   $hasPreservedLegacyLangGraph = ([bool]$langGraphRecord.exists -and -not [string]::IsNullOrWhiteSpace([string]$langGraphRecord.thread_id) -and -not $hasTrackedLangGraph)
@@ -10037,6 +10088,8 @@ function Get-CodexUserLevelInspectableDurableState {
     $backendReady = [bool]$capabilityReadiness.langgraph.ready
   }
   $activeSelectorProjection = Get-CodexUserLevelActiveDurableSelectorStatusProjection -Selector $activeSelector -RepoRoot $resolvedRepoRoot -BackendDefault $backendDefault -BackendReady $backendReady
+  $readinessProjectionStatus = if ([bool]$readinessProjectionReceipt.exists) { 'present' } else { 'missing' }
+  if ([bool]$readinessProjectionReceipt.exists -and $null -ne $readinessProjectionReceipt['parse_error']) { $readinessProjectionStatus = 'unparseable' }
 
   return [ordered]@{
     backend_family = $backendFamily
@@ -10061,6 +10114,9 @@ function Get-CodexUserLevelInspectableDurableState {
     selector_refresh_gap = [bool]$activeSelectorProjection.selector_refresh_gap
     selector_refresh_gap_reason = [string]$activeSelectorProjection.selector_refresh_gap_reason
     capability_readiness = $capabilityReadiness
+    readiness_projection_refresh = $readinessRefreshMetadata
+    readiness_projection_status = $readinessProjectionStatus
+    readiness_projection_receipt = $readinessProjectionReceipt
     helper_mirror_source_of_truth = (Get-CodexUserLevelHelperMirrorSourceOfTruthContract)
     read_only_by_default = $true
     cleanup_reconciliation = $cleanupPlan
@@ -10599,18 +10655,24 @@ function Get-CodexDurableStateStatusScriptContent {
 [CmdletBinding()]
 param(
   [string]`$RepoRoot,
+  [switch]`$RefreshReadiness,
   [switch]`$Json
 )
 
 $runtimeContent
 
 `$summary = Get-CodexUserLevelInspectableDurableState -RepoRoot `$RepoRoot
+if (`$RefreshReadiness) {
+  `$receipt = Write-CodexUserLevelDurableCapabilityReadinessProjectionReceipt -Summary `$summary
+  `$summary['readiness_projection_status'] = 'refreshed'
+  `$summary['readiness_projection_receipt'] = `$receipt
+}
 if (`$Json) {
-  `$summary | ConvertTo-Json -Depth 8
+  `$summary | ConvertTo-Json -Depth 12
   return
 }
 
-foreach (`$key in @('backend_family', 'state_class', 'repo_root', 'tracked_identity', 'current_phase', 'next_step', 'updated_at', 'selected_backend', 'backend_default', 'backend_ready', 'selector_authority', 'active_selector_status', 'selector_refresh_gap', 'selector_refresh_gap_reason', 'capability_readiness', 'helper_mirror_source_of_truth')) {
+foreach (`$key in @('backend_family', 'state_class', 'repo_root', 'tracked_identity', 'current_phase', 'next_step', 'updated_at', 'selected_backend', 'backend_default', 'backend_ready', 'selector_authority', 'active_selector_status', 'selector_refresh_gap', 'selector_refresh_gap_reason', 'capability_readiness', 'readiness_projection_refresh', 'readiness_projection_status', 'readiness_projection_receipt', 'helper_mirror_source_of_truth')) {
   `$value = `$summary[`$key]
   if (`$null -eq `$value) {
     `$display = ''

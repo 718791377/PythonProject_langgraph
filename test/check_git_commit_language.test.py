@@ -91,6 +91,40 @@ class GitCommitLanguageCheckTest(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["counts"]["commits"], 1)
 
+    def test_accepts_gitlab_generated_merge_commit_in_ci_range(self) -> None:
+        root = self.make_root("commit-lang-gitlab-merge")
+        base_sha = self.run_git(root, "rev-parse", "HEAD").stdout.strip()
+        self.run_git(root, "checkout", "-b", "feature")
+        (root / "feature.txt").write_text("feature\n", encoding="utf-8")
+        self.run_git(root, "add", ".")
+        self.run_git(root, "commit", "-m", "淇 GitLab main pipeline")
+        self.run_git(root, "checkout", "main")
+        self.run_git(
+            root,
+            "merge",
+            "--no-ff",
+            "feature",
+            "-m",
+            "Merge branch 'publish/local-main-20260602-638fc84' into 'main'",
+        )
+        merge_sha = self.run_git(root, "rev-parse", "HEAD").stdout.strip()
+        self.run_git(root, "checkout", "--detach", merge_sha)
+        self.run_git(root, "branch", "-D", "main")
+
+        result = self.run_check_json(
+            root,
+            "--base-ref",
+            "main",
+            "--head-ref",
+            "HEAD",
+            env={"CI_COMMIT_BEFORE_SHA": base_sha},
+        )
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["commits"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

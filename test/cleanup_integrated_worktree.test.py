@@ -15,6 +15,15 @@ cleanup = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 spec.loader.exec_module(cleanup)
 
+ADVANCE_LIFECYCLE_SCRIPT_PATH = REPO_ROOT / "tools" / "advance_worktree_task_lifecycle.py"
+advance_spec = importlib.util.spec_from_file_location(
+    "advance_worktree_task_lifecycle", ADVANCE_LIFECYCLE_SCRIPT_PATH
+)
+assert advance_spec is not None
+advance_lifecycle_module = importlib.util.module_from_spec(advance_spec)
+assert advance_spec.loader is not None
+advance_spec.loader.exec_module(advance_lifecycle_module)
+
 
 class IntegratedWorktreeCleanupTest(unittest.TestCase):
     def run_git(self, root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -188,7 +197,177 @@ class IntegratedWorktreeCleanupTest(unittest.TestCase):
             self.assertTrue(preserved_claim.exists())
             preserved = json.loads(preserved_claim.read_text(encoding="utf-8"))
             self.assertEqual(preserved["branch"], branch)
+            self.assertEqual(preserved["status"], "cleaned")
+            self.assertEqual(preserved["lifecycle_status"], "cleaned")
             self.assertEqual(preserved["cleanup"]["cleanup_check"]["backup_refs"], [backup_ref])
+            self.assertTrue(preserved["cleanup"]["cleaned_lifecycle_recorded"])
+            self.assertEqual(preserved["completion"]["cleaned_worktree"], str(worktree))
+            self.assertEqual(preserved["completion"]["deleted_branch"], branch)
+            transition = preserved["lifecycle_transitions"][-1]
+            self.assertEqual(transition["previous_state"], "completed")
+            self.assertEqual(transition["next_state"], "cleaned")
+            self.assertEqual(transition["owner"], "tools/cleanup_integrated_worktree.py")
+
+
+class AdvanceWorktreeTaskLifecycleTest(unittest.TestCase):
+    def make_worktree_metadata(self, root: Path, *, lifecycle_status: str = "active") -> tuple[Path, Path]:
+        branch = "feature/demo"
+        receipt_path = root / ".omx" / "worktree-task-receipt.json"
+        claim_path = root / ".omx" / "session-claims" / "demo.json"
+        common = {
+            "schema_version": 1,
+            "session_id": "session-demo",
+            "status": lifecycle_status,
+            "lifecycle_status": lifecycle_status,
+            "branch": branch,
+            "worktree": str(root),
+            "task_name": "demo lifecycle",
+            "task_summary": "exercise lifecycle helper",
+            "document_plan_only": False,
+            "requires_code_implementation": True,
+            "created_at": "2026-06-05T00:00:00+00:00",
+            "expected_merge_or_pause": "merge locally",
+            "next_action": "advance lifecycle",
+            "requires_local_main_merge": True,
+            "requires_remote_sync": False,
+            "remote_publication_authorized": False,
+            "paths": ["tools/example.py"],
+        }
+        receipt_path.parent.mkdir(parents=True)
+        claim_path.parent.mkdir(parents=True)
+        receipt_path.write_text(json.dumps(common, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        claim_path.write_text(json.dumps(common, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        return receipt_path, claim_path
+
+    def test_active_to_ready_updates_receipt_and_claim_with_transition_ledger(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt_path, claim_path = self.make_worktree_metadata(root)
+
+            result = advance_lifecycle_module.advance_lifecycle(
+                worktree=root,
+                branch="feature/demo",
+                next_state="ready-to-merge",
+                owner="codex-test",
+                evidence_paths=["test/cleanup_integrated_worktree.test.py"],
+                cleanup_decision="not-ready-for-cleanup",
+                reason="focused test",
+            )
+
+            self.assertTrue(result["ok"], result)
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            claim = json.loads(claim_path.read_text(encoding="utf-8"))
+            for payload in (receipt, claim):
+                self.assertEqual(payload["lifecycle_status"], "ready-to-merge")
+                self.assertEqual(payload["status"], "ready-to-merge")
+                self.assertFalse(payload["remote_publication_authorized"])
+                transition = payload["lifecycle_transitions"][-1]
+                self.assertEqual(transition["owner"], "codex-test")
+                self.assertEqual(transition["previous_state"], "active")
+                self.assertEqual(transition["next_state"], "ready-to-merge")
+                self.assertEqual(transition["cleanup_decision"], "not-ready-for-cleanup")
+                self.assertEqual(transition["evidence_paths"], ["test/cleanup_integrated_worktree.test.py"])
+
+    def test_merged_local_main_requires_rollback_and_local_main_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.make_worktree_metadata(root, lifecycle_status="ready-to-merge")
+
+            with self.assertRaises(ValueError):
+                advance_lifecycle_module.advance_lifecycle(
+                    worktree=root,
+                    branch="feature/demo",
+                    next_state="merged-local-main",
+                    owner="codex-test",
+                    evidence_paths=["local_gate"],
+                    cleanup_decision="pending-automatic-safe-cleanup",
+                )
+
+            result = advance_lifecycle_module.advance_lifecycle(
+                worktree=root,
+                branch="feature/demo",
+                next_state="merged-local-main",
+                owner="codex-test",
+                evidence_paths=["local_gate", "local_mr_review"],
+                cleanup_decision="pending-automatic-safe-cleanup",
+                rollback_ref="refs/backup/local-main/test-before-feature-demo",
+                local_main_commit="abc123",
+                cleaned_worktree="pending-automatic-safe-cleanup",
+                deleted_branch="pending-automatic-safe-cleanup",
+                remote_sync_status="not_authorized:remote_publication_gate_closed",
+            )
+
+            self.assertTrue(result["ok"], result)
+            receipt = json.loads((root / ".omx" / "worktree-task-receipt.json").read_text(encoding="utf-8"))
+            self.assertEqual(receipt["lifecycle_status"], "merged-local-main")
+            self.assertEqual(receipt["completion"]["rollback_ref"], "refs/backup/local-main/test-before-feature-demo")
+            self.assertEqual(receipt["completion"]["local_main_commit"], "abc123")
+            self.assertEqual(receipt["completion"]["remote_sync_status"], "not_authorized:remote_publication_gate_closed")
+
+    def test_exceptional_stale_transition_requires_reason_or_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.make_worktree_metadata(root)
+
+            with self.assertRaises(ValueError):
+                advance_lifecycle_module.advance_lifecycle(
+                    worktree=root,
+                    branch="feature/demo",
+                    next_state="stale",
+                    owner="codex-test",
+                    evidence_paths=[],
+                    cleanup_decision="preserve-for-classification",
+                )
+
+            result = advance_lifecycle_module.advance_lifecycle(
+                worktree=root,
+                branch="feature/demo",
+                next_state="stale",
+                owner="codex-test",
+                evidence_paths=[],
+                cleanup_decision="preserve-for-classification",
+                reason="superseded by newer local-main package",
+            )
+
+            self.assertTrue(result["ok"], result)
+            receipt = json.loads((root / ".omx" / "worktree-task-receipt.json").read_text(encoding="utf-8"))
+            self.assertEqual(receipt["lifecycle_status"], "stale")
+            self.assertNotIn("completion", receipt)
+
+    def test_lifecycle_cli_outputs_json_and_updates_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.make_worktree_metadata(root)
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(ADVANCE_LIFECYCLE_SCRIPT_PATH),
+                    "--worktree",
+                    str(root),
+                    "--branch",
+                    "feature/demo",
+                    "--next-state",
+                    "paused",
+                    "--owner",
+                    "codex-test",
+                    "--reason",
+                    "waiting for operator",
+                    "--cleanup-decision",
+                    "preserve-for-resume",
+                    "--json",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+            payload = json.loads(completed.stdout)
+            self.assertTrue(payload["ok"], payload)
+            receipt = json.loads((root / ".omx" / "worktree-task-receipt.json").read_text(encoding="utf-8"))
+            self.assertEqual(receipt["lifecycle_status"], "paused")
 
 
 if __name__ == "__main__":

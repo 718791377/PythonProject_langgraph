@@ -35,12 +35,15 @@ Project durable lane state as installed, enabled, selected, and ready without co
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage C implementation package ready for local validation, commit, and local-main integration
-Owner session: main Codex leader session
-Current gate: local CI and local MR review before local main integration; remote publication remains out of scope until explicit user approval
-Stage C entry condition: satisfied by explicit user request to continue this child implementation plan
-Last updated: 2026-05-30
+Status: implemented-local
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for durable capability readiness projection.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `active-candidate readiness projection marker and receipt linkage` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -66,12 +69,19 @@ Only one session may own each hotspot at a time:
 
 ## Task Backlog
 
+## Runtime Refresh Scope
+
+Stage D/R4 implements explicit readiness projection refresh through `codex-durable-state-status.ps1 -RefreshReadiness`. The default status path remains read-only. Refresh receipts preserve installed/enabled/selected/ready as distinct fields and may be extended later with deeper source evidence without collapsing readiness states.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
 - [x] Add fixtures for installed-only, enabled-not-selected, selected-not-ready, and ready states.
 - [x] Update evidence checks to require distinct state fields.
 - [x] Document user-facing wording for backend_default and backend_ready.
 - [x] Run capability switch and effective-lane checks plus local gate.
+- [x] Stage D real runtime: implement readiness probe helper that refreshes installed, enabled, selected, and ready for native_omx and LangGraph without collapsing states.
+- [x] Stage D real runtime: record probe source, timestamp, backend family, selector evidence, version evidence, and blockers in sanitized projection receipts.
+- [x] Stage D real runtime: wire projection refresh into activation evidence without claiming durable workflow adoption or persistent-team launch.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -95,6 +105,9 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for durable capability readiness projection. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
+- 2026-06-06 Stage D/R4 runtime refresh: branch `implement-durable-capability-readiness-r4-20260605` adds explicit `codex-durable-state-status.ps1 -RefreshReadiness -Json` receipt generation at `.omx/state/readiness/durable-capability-readiness-projection.json`, preserves distinct readiness fields and source/selector/version/blocker evidence, and records `durable_workflow_adopted=false` plus `persistent_team_launched=false`; targeted evidence: `python .\test\check_capability_switch_chain.test.py` and `powershell -NoProfile -ExecutionPolicy Bypass -File .\test\install-codex-user-level-team-mode.test.ps1` passed on 2026-06-06.
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for installed/enabled/selected/ready probe refresh; this package updates plan governance only and does not run live runtime.
 - 2026-05-30 Stage C implementation: `tools/check_capability_switch_chain.py` now validates durable capability readiness projections with distinct `installed`, `enabled`, `selected`, and `ready` fields, including the invariant `ready == installed && enabled && selected`.
 - 2026-05-30 Stage C fixtures: `test/check_capability_switch_chain.test.py` covers installed-only, enabled-not-selected, selected-not-ready, ready, collapsed-ready, and missing-field readiness states.
 - 2026-05-30 Stage C documentation: `docs_bilingual/governance/langgraph_user_level_runtime_policy.md` and `.zh-CN.md` document `backend_default` / `backend_ready` wording and clarify that readiness does not imply an adopted durable workflow, tracked thread, or persistent team.

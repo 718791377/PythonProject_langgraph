@@ -1,0 +1,9 @@
+schema: spec-driven
+created: 2026-06-07
+x_change_class: code
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/check_spec_kit_authority_guard.py
+  - tools/spec_kit_subordinate_runtime.py
+  - test/spec_kit_authority_guard.test.py
+  - test/spec_kit_subordinate_runtime.test.py

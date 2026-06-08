@@ -35,27 +35,27 @@ Make Superpowers HOW-layer skill usage explicit in Comet Design, Build, Verify, 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: completed and locally integrated; included in the current remote-publication carrier
+Status: completed and locally integrated
 Stage: Phase 5 final closeout package
-Owner session: main-codex-leader-comet-superpowers-visibility-20260531
-Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
+Owner sessions: main-codex-leader-comet-superpowers-visibility-20260531; main-codex-refine-comet-superpowers-visibility-plan-closure-20260607
+Current gate: remote-publication approval gate; remote publication is not authorized by the current request, and no further local Phase 5 implementation work remains
 Stage C entry condition: satisfied by the user's 2026-05-31 cold-start continuation request
-Last updated: 2026-05-31
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
 
-- .codex/skills/comet/SKILL.md
-- .codex/skills/comet-design/SKILL.md
-- .codex/skills/comet-build/SKILL.md
-- .codex/skills/comet-verify/SKILL.md
-- docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md
-- docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.zh-CN.md
-- tools/check_comet_superpowers_visibility.py
-- tools/run_openspec_guard.py
-- tools/safety_rule_script_backing_registry.json
-- tools/ci/ci_test_manifest.json
-- test/*superpowers*visibility*
+- `.codex/skills/comet/SKILL.md` - declares the Comet entry workflow and required Superpowers HOW-layer evidence.
+- `.codex/skills/comet-design/SKILL.md` - records Design-phase HOW-layer invocation expectations.
+- `.codex/skills/comet-build/SKILL.md` - records Build-phase HOW-layer planning, execution, and verification expectations.
+- `.codex/skills/comet-verify/SKILL.md` - records Verify and branch-finishing HOW-layer evidence expectations.
+- `docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md` - English governance policy for the OpenSpec WHAT and Superpowers HOW split.
+- `docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.zh-CN.md` - Chinese companion for the Comet/Superpowers workflow policy.
+- `tools/check_comet_superpowers_visibility.py` - checker that enforces required Superpowers visibility terms.
+- `tools/run_openspec_guard.py` - shared OpenSpec guard entry that includes the visibility checker.
+- `tools/safety_rule_script_backing_registry.json` - registry entry proving script-backed enforcement coverage.
+- `tools/ci/ci_test_manifest.json` - CI manifest entry that keeps the checker covered by local and remote gates.
+- `test/*superpowers*visibility*` - test fixtures or tests for Superpowers visibility enforcement.
 
 ## Hotspot Serialization
 
@@ -104,5 +104,6 @@ Run these gates before local `main` integration unless this child plan later nar
 <!-- EVIDENCE_INDEX_START -->
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-31 Stage C start: user confirmed implementation; claim `main-codex-leader-comet-superpowers-visibility-20260531` owns the serialized Comet/Superpowers visibility hotspot.
-- 2026-05-31 local-main closeout: branch `implement-comet-superpowers-visibility-20260531` entered local `main` at `407e5eb`; `python tools/check_openspec_comet_superpowers_policy.py --root . --json`, `python tools/check_comet_superpowers_visibility.py --root . --json`, `python tools/check_implementation_plan_rules.py --root . --json`, and the shared local gate evidence are captured in local history and the publication carrier.
+- 2026-05-31 local-main closeout: branch `implement-comet-superpowers-visibility-20260531` entered local `main` at `407e5eb`; `python tools/check_openspec_comet_superpowers_policy.py --root . --json`, `python tools/check_comet_superpowers_visibility.py --root . --json`, `python tools/check_implementation_plan_rules.py --root . --json`, and the shared local gate evidence are captured in local history.
+- 2026-06-07 closure-status sync: refreshed this bilingual plan pair so the current gate is the remote-publication approval gate rather than implying any remote step is already approved; the Chinese task backlog is aligned with the English completed checklist.
 <!-- EVIDENCE_INDEX_END -->

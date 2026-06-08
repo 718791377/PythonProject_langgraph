@@ -6,9 +6,16 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+TOOLS_DIR = Path(__file__).resolve().parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+import advance_worktree_task_lifecycle as lifecycle
 
 
 CHECK_NAME = "integrated_worktree_cleanup"
@@ -182,6 +189,65 @@ def copy_claim_to_primary(root: Path, claim: dict[str, Any], branch: str, cleanu
     return target
 
 
+def completion_value(claim: dict[str, Any], key: str, default: str = "") -> str:
+    completion = claim.get("completion")
+    if isinstance(completion, dict):
+        value = completion.get(key)
+        if isinstance(value, str) and value.strip():
+            return value
+    value = claim.get(key)
+    if isinstance(value, str) and value.strip():
+        return value
+    return default
+
+
+def mark_preserved_claim_cleaned(
+    path: Path,
+    *,
+    branch: str,
+    worktree_path: Path,
+    cleanup_payload: dict[str, Any],
+) -> None:
+    claim = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(claim, dict):
+        raise RuntimeError(f"Preserved claim must be a JSON object: {path}")
+    main_head = str(cleanup_payload.get("main_head") or "")
+    backup_refs = cleanup_payload.get("backup_refs") if isinstance(cleanup_payload.get("backup_refs"), list) else []
+    rollback_ref = completion_value(claim, "rollback_ref", str(backup_refs[-1]) if backup_refs else "")
+    remote_sync_status = completion_value(
+        claim,
+        "remote_sync_status",
+        "not_authorized:remote_publication_gate_closed",
+    )
+    cleaned = lifecycle.apply_transition_to_payload(
+        claim,
+        branch=branch,
+        worktree=worktree_path,
+        next_state="cleaned",
+        owner="tools/cleanup_integrated_worktree.py",
+        evidence_paths=[str(path), "git worktree remove", "git branch -d"],
+        cleanup_decision="removed-local-worktree-and-deleted-local-branch",
+        reason="guarded cleanup completed after local main integration",
+        rollback_ref=rollback_ref,
+        local_main_commit=completion_value(claim, "local_main_commit", main_head),
+        cleaned_worktree=str(worktree_path),
+        deleted_branch=branch,
+        remote_sync_status=remote_sync_status,
+        remote_publication_authorized=False,
+        transitioned_at=datetime.now(timezone.utc).isoformat(),
+    )
+    cleaned["requires_local_main_merge"] = False
+    cleaned["requires_remote_sync"] = False
+    cleaned["remote_publication_performed"] = False
+    cleaned["remote_publication_status"] = "not_authorized"
+    cleanup = cleaned.get("cleanup")
+    if isinstance(cleanup, dict):
+        cleanup["cleaned_lifecycle_recorded"] = True
+        cleanup["removed_worktree"] = str(worktree_path)
+        cleanup["deleted_branch"] = branch
+    path.write_text(json.dumps(cleaned, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def evaluate(root: Path, branch: str, worktree_path: Path | None, main_branch: str) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -303,6 +369,12 @@ def execute_cleanup(result: dict[str, Any]) -> dict[str, Any]:
         result["ok"] = False
         result["cleanup_ready"] = False
         return result
+    mark_preserved_claim_cleaned(
+        preserved_claim,
+        branch=branch,
+        worktree_path=worktree_path,
+        cleanup_payload=result,
+    )
     result["executed"] = True
     result["preserved_claim"] = str(preserved_claim)
     result["removed_worktree"] = str(worktree_path)

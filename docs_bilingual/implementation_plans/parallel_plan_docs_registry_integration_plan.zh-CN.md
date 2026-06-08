@@ -35,13 +35,13 @@ Validate docs registry, bilingual pairs, active statuses, anchors, and evidence-
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-状态：active
-阶段：Stage B 子方案创建包
-责任会话：实施开始前未认领
-当前门禁：等待用户明确确认本子 implementation plan 后再开始非文档实现
-Stage C 进入条件：本地 main 合入后，用户明确确认本子 implementation plan
-最后更新：2026-05-28
-Status update: MCP/skills/browser/CLI decomposition 新增 4 个 active 子方案登记，并保留旧来源方案作为 baseline source，而不是直接子方案。port/browser-owner、discovery facade 与 browser/CLI adapter boundary lane 已 implemented-local；其既有双语子方案登记继续有效，无需修改 registry schema。
+状态：implemented-local；已准备进入验证、本地提交与本地 main 集成
+阶段：docs-registry integration 的 Stage C 实施包
+责任会话：codex-parallel-plan-docs-registry-integration-20260603
+当前门禁：本地 main 集成前运行 focused implementation-plan 测试、implementation-plan rules checker、precommit/archive review、receipt checker、shared local gate 与 local MR review
+Stage C 进入条件：已由 2026-06-03 用户要求继续实施此已确认子 implementation plan 满足
+最后更新：2026-06-03
+状态更新：提取后的 MCP/skills/browser/CLI 子方案已存在于 `docs_bilingual/docs_registry.yaml`；本包新增 checker-backed parent/source child-plan group reporting、双语 `parent_plan`/`source_plan` companion 一致性校验、implemented child 的轻量 evidence-index 校验，并修复 Windows subprocess 捕获场景下 checker 输出 UTF-8 边界。无需修改 docs-registry schema。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -67,12 +67,12 @@ Status update: MCP/skills/browser/CLI decomposition 新增 4 个 active 子方�
 ## 任务清单
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Confirm this child plan after local main integration.
-- [ ] Add integration fixtures for all child plan registry entries.
-- [ ] Run and, if needed, harden implementation-plan rules for bilingual pair consistency.
-- [ ] Ensure completed child plans record lightweight evidence indexes instead of large evidence packages.
-- [ ] Run implementation-plan checker and local gate.
-- [ ] 将提取后的 MCP/skills/browser/CLI 子方案纳入 docs registry 与双语 implementation-plan rule 验证。
+- [x] Confirm this child plan after local main integration.
+- [x] Add integration fixtures for all child plan registry entries.
+- [x] Run and, if needed, harden implementation-plan rules for bilingual pair consistency.
+- [x] Ensure completed child plans record lightweight evidence indexes instead of large evidence packages.
+- [x] Run implementation-plan checker and local gate.
+- [x] 将提取后的 MCP/skills/browser/CLI 子方案纳入 docs registry 与双语 implementation-plan rule 验证。
 <!-- TASK_BACKLOG_END -->
 
 ## 验证门禁
@@ -96,6 +96,7 @@ Status update: MCP/skills/browser/CLI decomposition 新增 4 个 active 子方�
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-03 registry/checker implementation：分支 `implement-parallel-plan-docs-registry-integration-20260603` 新增 parent/source child-plan registry group、双语 source/parent companion 一致性、implemented-child 轻量 evidence-index 要求的 focused RED/GREEN fixture；`tools/check_implementation_plan_rules.py --root . --json` 现可报告 43 条 registered child-plan links、`multi_plan_parallel_session_orchestration_plan` 的 39-child parent group、以及 `user_level_mcp_skills_browser_cli_governance_plan` 的 4-child source group，最终本地门禁前错误数为 0。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 - 2026-06-01 port/browser-owner registry handoff: `user_level_port_browser_owner_isolation_plan` 已 implemented-local；其双语 docs-registry entry 已存在，plan/status/evidence 锚点已原位更新，本地集成包无需修改 docs-registry schema。
 - 2026-06-01 discovery facade lane handoff: `user_level_mcp_skills_discovery_facade_plan` 已 implemented-local；其双语 docs-registry entry 已存在，本包只更新 status/evidence 锚点，不修改 registry schema。

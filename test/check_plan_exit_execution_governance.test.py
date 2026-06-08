@@ -133,6 +133,24 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
             payload["implementation_plan"] = plan
         claim.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    def write_remote_ci_forward_fix_receipt(self, root: Path, *, branch: str, paths: list[str]) -> None:
+        receipt = root / ".omx/worktree-task-receipt.json"
+        receipt.parent.mkdir(parents=True, exist_ok=True)
+        receipt.write_text(
+            json.dumps(
+                {
+                    "task_type": "remote-ci-forward-fix",
+                    "branch": branch,
+                    "requires_code_implementation": True,
+                    "requires_local_main_merge": True,
+                    "paths": paths,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
     def test_fails_when_non_doc_range_only_has_same_range_docs_bilingual_governance_commit(self) -> None:
         root = self.make_repo("plan-exit-same-range")
         base = self.rev_parse(root)
@@ -169,6 +187,37 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         payload = json.loads(result.stdout)
         self.assertFalse(payload["requires_governance_package"])
+
+    def test_passes_remote_ci_forward_fix_receipt_for_matching_branch_and_paths(self) -> None:
+        root = self.make_repo("plan-exit-remote-ci-forward-fix")
+        subprocess.run(["git", "checkout", "-b", "fix/remote-ci-forward"], cwd=root, check=True, capture_output=True, text=True)
+        self.commit_file(root, "tools/checker.py", "print('forward fix')\n", "修复远端 CI 门禁")
+        self.write_remote_ci_forward_fix_receipt(root, branch="fix/remote-ci-forward", paths=["tools/checker.py"])
+
+        result = self.run_check(root, "main", "fix/remote-ci-forward")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["requires_governance_package"])
+        self.assertEqual(payload["counts"]["valid_remote_ci_forward_fix_records"], 1)
+        self.assertTrue(any("remote CI forward-fix" in message for message in payload["info"]))
+
+    def test_fails_remote_ci_forward_fix_receipt_when_paths_do_not_cover_range(self) -> None:
+        root = self.make_repo("plan-exit-remote-ci-forward-fix-mismatch")
+        subprocess.run(["git", "checkout", "-b", "fix/remote-ci-forward"], cwd=root, check=True, capture_output=True, text=True)
+        self.commit_file(root, "tools/checker.py", "print('forward fix')\n", "修复远端 CI 门禁")
+        self.write_remote_ci_forward_fix_receipt(root, branch="fix/remote-ci-forward", paths=["tools/other.py"])
+
+        result = self.run_check(root, "main", "fix/remote-ci-forward")
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["counts"]["valid_remote_ci_forward_fix_records"], 0)
+        self.assertTrue(
+            any(
+                "remote CI forward-fix paths must cover every non-document changed path" in detail
+                for record in payload["remote_ci_forward_fix_records"]
+                for detail in record["errors"]
+            )
+        )
 
     def test_passes_with_confirmed_stage_a_receipt_when_code_range_has_no_docs_commit(self) -> None:
         root = self.make_repo("plan-exit-staged-pass")

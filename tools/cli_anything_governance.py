@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Repo-local CLI-Anything receipt and harness-boundary governance guard.
+"""Repo-local CLI-Anything receipt and adapter-boundary governance guard.
 
 This helper models the user-level ``CLI-Anything`` / CLI Hub install and
 update evidence contract without cloning repositories, installing wrappers,
 running network fetches, mutating user-level Codex configuration, or
 hard-loading bulk skills.
 
-It is intentionally a receipt and harness-generation boundary gate, not a live
-installer and not a live CLI-Anything runner.
+It is intentionally a receipt and adapter-generation boundary gate for future
+WXWork_CLI control through CLI-Anything, not a live installer and not a live
+CLI-Anything runner.
 """
 from __future__ import annotations
 
@@ -53,7 +54,7 @@ REQUIRED_RECEIPT_FIELDS = {
     "updater_command",
     "rollback_pointer",
     "last_updated_at",
-    "harness_generation_only",
+    "adapter_generation_only",
     "hard_loads_skills",
 }
 
@@ -119,7 +120,7 @@ def receipt_summary(receipt: dict[str, Any]) -> dict[str, Any]:
         "smoke_status": smoke_status(receipt),
         "updater_command": sanitize_text(receipt.get("updater_command", ""), limit=160),
         "rollback_pointer_hash": stable_hash(receipt.get("rollback_pointer")),
-        "harness_generation_only": receipt.get("harness_generation_only"),
+        "adapter_generation_only": receipt.get("adapter_generation_only"),
         "hard_loads_skills": receipt.get("hard_loads_skills"),
         "last_updated_at": receipt.get("last_updated_at"),
         "receipt_id": receipt.get("receipt_id", ""),
@@ -172,8 +173,8 @@ def validate_receipt(receipt: dict[str, Any]) -> list[str]:
         blockers.append("rollback_pointer_required")
     if not isinstance(receipt.get("last_updated_at"), str) or not receipt.get("last_updated_at", "").strip():
         blockers.append("last_updated_at_required")
-    if receipt.get("harness_generation_only") is not True:
-        blockers.append("harness_generation_only_must_be_true")
+    if receipt.get("adapter_generation_only") is not True:
+        blockers.append("adapter_generation_only_must_be_true")
     if receipt.get("hard_loads_skills") is not False:
         blockers.append("hard_load_skills_must_be_false")
     return blockers
@@ -214,7 +215,7 @@ def build_receipt(
         "updater_command": updater_command or f"cli-anything updater --pin {pin}",
         "rollback_pointer": rollback_pointer,
         "last_updated_at": timestamp,
-        "harness_generation_only": True,
+        "adapter_generation_only": True,
         "hard_loads_skills": bool(hard_load_skills),
         "install_performed": False,
         "network_fetch_performed": False,
@@ -246,7 +247,7 @@ def write_receipt(receipt_dir: Path, receipt: dict[str, Any], filename: str) -> 
 def safety_payload() -> dict[str, Any]:
     return {
         "governance_receipt_only": True,
-        "harness_generation_boundary_only": True,
+        "adapter_generation_boundary_only": True,
         "installs_cli_anything": False,
         "updates_cli_anything": False,
         "runs_cli_anything": False,
@@ -419,7 +420,7 @@ def command_rollback_plan(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def command_harness_plan(args: argparse.Namespace) -> dict[str, Any]:
+def command_adapter_plan(args: argparse.Namespace) -> dict[str, Any]:
     blockers: list[str] = []
     if args.hard_load_skills:
         blockers.append("hard_load_skills_must_be_false")
@@ -429,12 +430,13 @@ def command_harness_plan(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": 1,
         "ok": not blockers,
         "tool": "cli-anything-governance",
-        "action": "harness-plan",
-        "harness_generation_allowed": not blockers,
+        "action": "adapter-plan",
+        "adapter_generation_allowed": not blockers,
         "capability": sanitize_text(args.capability, limit=160),
         "output_dir_hash": stable_hash(args.output_dir),
         "target_process": sanitize_text(args.target_process, limit=120) if args.target_process else "",
         "repo_local_source_required": True,
+        "wxwork_cli_control_surface": "WXWork_CLI",
         "authorization_gate_required_for_live_control": True,
         "blockers": blockers,
         "safety": safety_payload(),
@@ -446,7 +448,7 @@ def emit(payload: dict[str, Any]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="CLI-Anything receipt/update/rollback and harness-boundary governance guard.")
+    parser = argparse.ArgumentParser(description="CLI-Anything receipt/update/rollback and adapter-boundary governance guard.")
     parser.add_argument("--json", action="store_true", help="Emit JSON.")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -490,12 +492,12 @@ def main(argv: list[str] | None = None) -> int:
     rollback.add_argument("--receipt", required=True)
     rollback.add_argument("--json", action="store_true")
 
-    harness = sub.add_parser("harness-plan", help="Plan harness generation without hard-loading skills or controlling live apps.")
-    harness.add_argument("--capability", required=True)
-    harness.add_argument("--output-dir", required=True)
-    harness.add_argument("--target-process", default="")
-    harness.add_argument("--hard-load-skills", action="store_true")
-    harness.add_argument("--json", action="store_true")
+    adapter = sub.add_parser("adapter-plan", help="Plan CLI-Anything adapter generation without hard-loading skills or controlling live apps.")
+    adapter.add_argument("--capability", required=True)
+    adapter.add_argument("--output-dir", required=True)
+    adapter.add_argument("--target-process", default="")
+    adapter.add_argument("--hard-load-skills", action="store_true")
+    adapter.add_argument("--json", action="store_true")
 
     args = parser.parse_args(argv)
     try:
@@ -505,7 +507,7 @@ def main(argv: list[str] | None = None) -> int:
             "update-plan": command_update_plan,
             "update-record": command_update_record,
             "rollback-plan": command_rollback_plan,
-            "harness-plan": command_harness_plan,
+            "adapter-plan": command_adapter_plan,
         }
         payload = handlers[args.command](args)
     except Exception as exc:  # pragma: no cover - fail-closed safety net

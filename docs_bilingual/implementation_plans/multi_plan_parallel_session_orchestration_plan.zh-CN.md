@@ -59,13 +59,10 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: Phase 2 prompt-canary canonical visible marker restoration is implemented in the current local candidate; the follow-up now verifies repository gates before local `main` integration.
-Owner session: main Codex leader owns implementation package id `implement-restore-nonascii-canary-20260602`; this is a serialized canary-hotspot implementation worktree, not a durable-team worker or remote publication branch.
-Current gate: commit the implementation package, merge through the local-main-first helper, then stop at the remote-publication approval gate; remote publication remains unauthorized unless the user explicitly requests it.
-Phase 2 note: all four earlier context/UTF-8 safety child plans are integrated into local `main`: `cbc73c7`, `b779d51`, `6f1ef48`, and `43d3ae9`; this follow-up closes the reopened marker canonicalization and session-context blocking contract.
-MCP decomposition note: `user_level_mcp_skills_browser_cli_governance_plan` remains a source and baseline index, not a direct child of this parent.
-Parallel model: canary hotspots stayed serialized; other extracted lanes may run in multiple phases and multiple sessions only when each session owns a disjoint write set or declares serialized hotspots.
-Remote state: this implementation package does not authorize remote publication.
+Stage: implemented-local 治理已完成；真实 runtime lane 继续处于待刷新规划状态。
+Owner session: main Codex leader 串行拥有 parent/child plans、specs、registries、CI、安全规则与 OpenSpec guard wiring 等 shared hotspots。
+Current gate: 验证本次 Phase 0 本地合入状态刷新包、合入本地 `main`，并停在 remote-publication gate。
+Runtime boundary: CLI-Anything/WXWork_CLI、Browser/CLI adapters、Codex harnesses、skills2cli/mcp2cli（`knowsuchagency/mcp2cli`、rollback pointer、update receipt）、gstack、canary 与 Spec Kit 条目仅记录未来 checker/runtime 要求。Priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit；blocked：本包不 install、start、enable、smoke-run、live-run，也不运行 `specify init`。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -231,7 +228,7 @@ python tools/local_main_retire_lock.py status --root . --json
 
 ## Phase 2 Follow-up: Canonical Visible Canary Restore
 
-| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implementation-complete local candidate | Restored startup-summary-defined canonical visible canary semantics, legacy ASCII classification, and replay/model-context blocking; final repository gates precede local `main` integration. |
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | response-position runtime local candidate | Restored startup-summary-defined visible canary semantics; Stage B hardens first-visible start and last-visible end response evidence. |
 
 This follow-up is a serialized hotspot package. It touches startup summaries, `AGENTS.md`, canary checkers, session replay filtering, tests, and the stable canary OpenSpec spec, so it must not run in parallel with other canary-surface writer sessions.
 
@@ -248,6 +245,42 @@ This follow-up is a serialized hotspot package. It touches startup summaries, `A
 | Slice 8 | 既有 Phase 7 集成方案 | Phase 7 | evidence collection 可并行；registry、OpenSpec 与 local-main retire 保持串行。 | docs registry、stable specs、CI manifest、local-main lock |
 
 旧来源方案继续保留 baseline marker 和 implementation-state 历史，供 `check_user_level_mcp_skills_browser_cli_baseline.py` 使用。未来 runtime 实现必须认领拥有对应 lane 的提取后子方案。
+
+## Real Runtime Gap Ledger
+
+| Lane | Active runtime owner plan | Current implemented level | Missing real runtime layer |
+| --- | --- | --- | --- |
+| Codex harnesses | `codex_harnesses_governance_plan` | governance/checker/test, R0-R2 | Pi/oh-my-pi sidecar, harness job runtime, executable read/write guards, R3/R4/R5 receipts |
+| Browser/CLI adapters | `user_level_browser_cli_adapter_boundary_plan` | adapter guard/checker/test, R0-R2 | install/start/probe chrome-devtools-mcp, cdp-bridge-mcp, OpenCLI; R4 smoke and R5 live handoff |
+| CLI-Anything/WXWork_CLI | `user_level_cli_anything_wxwork_cli_governance_plan` | CLI-Anything/WXWork_CLI guard/checker/test, R0-R2 | install/run CLI-Anything, fork/adapt/run WXWork_CLI, control WXWork.exe, R4 smoke, R5 send/action handoff |
+| Durable smoke/adoption | `durable_smoke_adoption_gate_template_plan` | template/checker/fixture, R0-R2 | real durable smoke runner, apply-mode adoption, live adoption execution receipts |
+| Receipt/rollback/redaction | `user_level_capability_receipt_rollback_redaction_plan` | governance helper/checker/test, R0-R2 | install/update/smoke/live receipt writer extensions and rollback executor receipts |
+| Selector ownership | `repo_local_selector_ownership_plan` | selector ownership checker/guard plus R4 `smoke-tested` helper/receipt | R5 active adoption handoff remains gated behind current operator authorization and backend-family ownership evidence |
+| Worktree receipt/claim lifecycle | `worktree_receipt_claim_lifecycle_plan` | lifecycle validation/checker, R0-R2 | active -> ready -> merged-local-main -> completed -> cleaned state advancement helper |
+| Capability readiness projection | `durable_capability_readiness_projection_plan` | readiness checker/fixture, R0-R2 | runtime probe/refresh of installed/enabled/selected/ready projections |
+| LangGraph state release | `langgraph_state_release_evidence_plan` | state-release checker/fixture, R0-R2 | LangGraph thread close/release/handoff runtime helper and receipts |
+| MCP/skills CLI | `user_level_mcp_skills_cli_runtime_plan` | existing mcp2cli/skills2cli helper/checker/test carry-forward, R0-R2 | real user-level mcp2cli install, skills2cli install/update, R4 wrapper smoke, R5 direct MCP/skill handoff receipts |
+
+## Runtime Promotion Ladder Matrix
+
+本次包只更新 runtime promotion ladder 的治理、checker、测试与稳定 OpenSpec 要求；本包不安装、不启动、不启用、不执行 smoke，也不 live-run CLI-Anything、WXWork_CLI、browser adapter、Pi、oh-my-pi 或任何 harness runtime。
+
+| Runtime stage | 治理层级 | 含义 | 并行/session 规则 | 进入下一阶段前证据 |
+| --- | --- | --- | --- | --- |
+| R0 project-level preflight | 项目级 | 非变异 source、环境、路径、风险与 lane-readiness 盘点。 | 每个 implementation_plan 同一时间一个 session；父方案、docs registry、CI manifest、safety registry、稳定 OpenSpec 是串行 hotspot。 | source URLs、source pin plan、retrieved_at、no install/run evidence、已脱敏 preflight transcript。 |
+| R1 project-level fake/dry-run runtime | 项目级 | 用 deterministic fixture 或 dry-run 证明 guard 行为，不产生真实 GUI/browser/Pi 副作用。 | lane session 只有在测试/checker 写入集不重叠时并行；共享 fixture schema 需要 lease。 | dry-run/fake receipt、no live process/browser/Pi mutation、focused tests。 |
+| R2 reusable project-level helper/guard | 可复用项目级 | repo-local helper/guard pattern 可被其他项目复用，但仍不是用户级全局安装。 | helper/checker ownership 归所属 child implementation_plan；共享 receipt/redaction primitives 串行。 | reusable schema、redaction contract、rollback model、local gate、changed-path report。 |
+| R3 user-level install/update receipt | 用户级 | 只有具备显式授权、immutable pin、install/update receipt、smoke command、updater command、rollback pointer、owner lane evidence 后，才可记录 installed-user-level。 | 用户级 install/update path 是全局 hotspot，需要显式 operator authorization 且同时只有一个 installer session。 | installed-user-level receipt、source pin、path hashes、smoke plan、update plan、rollback pointer、无 raw secret/private path output。 |
+| R4 user-level smoke runtime | 用户级 | smoke-tested runtime 只证明已安装 wrapper 可以响应安全 help/status/read-only probe。 | smoke run 需要所属 child plan claim；适用时还要 owner/global lease。 | smoke-tested receipt、bounded command transcript、timeout release、redaction evidence、rollback readiness。 |
+| R5 active-candidate / bounded live handoff | 用户级 active-candidate | 只有 R4 之后，且有当前 operator authorization、owner/global lease、target/action allowlist、expiry、timeout release、rollback 与 redaction evidence，才可 one-task live handoff。 | 同一 target 的 live handoff 不得并行；target owner/global lease 串行化。 | active-candidate receipt、lease id、authorization receipt、action scope、rollback pointer、changed-path 或 action report、post-run cleanup evidence。 |
+
+Lane-specific R5 约束：
+
+- CLI-Anything/WXWork_CLI：WXWork_CLI 的 send action allowed only at R5；必须有 global WXWork lease、explicit operator authorization、target/action allowlist、message redaction、ephemeral message handling、timeout release 与 rollback/stop evidence。更早阶段保持 no-send 与 no-message-content。
+- Browser/CLI adapters：chrome-devtools-mcp、CDP Bridge 与 OpenCLI 的 sensitive actions 必须有 owner lease + authorization receipt；R4 只允许 help/status/read-only smoke，R5 才是 one-task bounded live handoff。
+- Codex harnesses：Pi/oh-my-pi 只能作为 sidecar active-candidate；不得替代 Codex、native subagents、native_omx、LangGraph、codex-ohmy、apply_patch 或 local-main-first gates。
+
+状态标记是累积且精确的：R3 记录 `installed-user-level`，R4 记录 `smoke-tested`，R5 记录 `active-candidate`。缺少对应 marker evidence 的 lane 必须停留在该 runtime stage 以下。
 
 ## 阶段与子方案拆分
 
@@ -369,8 +402,8 @@ This follow-up is a serialized hotspot package. It touches startup summaries, `A
 <!-- CHILD_PLAN_STATUS_INDEX_START -->
 | Phase | 子方案 | 状态 | 当前证据 |
 | --- | --- | --- | --- |
-| Phase 0 | `plan_inventory_registry_alignment_plan` | 功能分支内已收口，等待本地合入 | `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；未发现缺失登记路径或缺失双语 companion 路径。 |
-| Phase 0 | `parent_parallel_orchestration_index_plan` | 功能分支内已收口，等待本地合入 | 父方案当前状态、Phase 0/Phase 1 证据、依赖说明和 Phase 2 准入文本已通过稳定锚点更新。 |
+| Phase 0 | `plan_inventory_registry_alignment_plan` | 已合入本地 `main` | 分支 `phase0-plan-index-closure-20260530` 已合入本地 `main`；盘点证据仍为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`，且未发现缺失登记路径或缺失双语 companion 路径。 |
+| Phase 0 | `parent_parallel_orchestration_index_plan` | 已合入本地 `main` | 分支 `phase0-plan-index-closure-20260530` 与 `align-complete-flow-parent-plans-20260530` 均已合入本地 `main`；Phase 2+ 不再被 Phase 0 本地合入阻塞。 |
 | Phase 1 | `formal_plan_confirmation_gate_runtime_plan` | 已实现并合入 | Phase 1 收口证据保留在本地 git 历史和现有证据索引中。 |
 | Phase 1 | `portable_implementation_plan_claim_lock_plan` | 已实现并合入 | Portable claim lock 已作为单方案单会话归属的基础能力。 |
 | Phase 1 | `implementation_plan_registry_active_state_plan` | 已实现并合入 | Registry active-state 与双语配对门禁由 implementation-plan rules 覆盖。 |
@@ -380,7 +413,9 @@ This follow-up is a serialized hotspot package. It touches startup summaries, `A
 | Phase 2 | `context_retention_canary_literal_boundary_plan` | implemented and locally integrated | Context-retention canary literal-boundary checking entered local `main` at `b779d51`. |
 | Phase 2 | `launcher_payload_context_boundary_plan` | implemented and locally integrated | Launcher payload file-backed boundary hardening entered local `main` at `6f1ef48`. |
 | Phase 2 | `startup_mojibake_utf8_recovery_plan` | implemented and locally integrated | Startup mojibake recovery source-report repair entered local `main` at `43d3ae9`. |
-| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implementation-complete local candidate | Restored startup-summary-defined canonical visible canary semantics, legacy ASCII classification, and replay/model-context blocking; final repository gates precede local `main` integration. |
+| Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implemented-local | 恢复 canonical visible canary，并约束 replay/model-context blocking。 |
+| Phase 4 | `stop_slop_caveman_response_density_runtime_plan` | active；checker/runtime 待实现 | Stop-Slop/Caveman 响应密度检查器和受保护 rewrite runtime 方案。 |
+| Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | active；checker/runtime 待实现 | gstack 风格 Codex delivery-loop 检查器和受保护 dry-run runtime 方案。 |
 | Phase 5 | `comet_management_record_bootstrap_plan` | implemented and locally integrated | Local `main` includes closeout commit `8b8bfd6`; management records, checklist gates, monitoring return state, safe paths, and archive evidence are covered by focused Comet runtime tests. |
 | Phase 5 | `comet_runtime_policy_checker_alignment_plan` | implemented and locally integrated | Local `main` includes closeout commit `3335b67`; stable specs, policy checker, runtime tests, and CI registration are aligned. |
 | Phase 5 | `comet_monitoring_return_transition_plan` | implemented and locally integrated | Local `main` includes closeout commit `05d22bd`; return transitions and monitoring blocked/needs-decision gates are verified. |
@@ -454,6 +489,13 @@ This follow-up is a serialized hotspot package. It touches startup summaries, `A
 - [x] Stage B decomposition：把 MCP/skills/browser/CLI 来源 lane 提取为分阶段子 implementation_plan，而不是把旧来源方案直接挂成父方案子方案。
 - [x] Stage B decomposition：更新 Phase 7 集成子方案，使其覆盖提取后 MCP lane 的 docs registry、checker/CI 与 OpenSpec/Comet archive 职责。
 - [x] Stage B follow-up: create and register the Phase 2 prompt-canary canonical visible marker restore child plan before runtime/checker implementation.
+- [x] Stage C runtime promotion：为 CLI-Anything/WXWork_CLI、Browser/CLI adapters 与 Codex harnesses 加入共享 R0-R5 runtime ladder，且不 install、start、enable、smoke-run 或 live-run 任何 runtime。
+- [x] Stage D real-runtime classification: update ten runtime lanes, add `user_level_mcp_skills_cli_runtime_plan`, and mark all real install/start/smoke/live execution as pending future runtime work.
+- [x] Stage A follow-up: record canary response-position contract in parent/child plans before runtime/checker work.
+- [x] Stage B follow-up: enforce first-visible start and last-visible end.
+- [x] Stage B follow-up: create and register the gstack Codex delivery-loop child plan before checker/runtime work.
+- [x] Stage D follow-up: 从官方 `github/spec-kit` 来源刷新 Spec Kit 子方案，并记录未来 Checker + Runtime 要求；本包不实现脚本。
+- [x] 2026-06-07 conflict-priority refresh: Comet-first priority; no Checker + Runtime implementation.
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -481,18 +523,26 @@ Stage B 后续确认后的验收条件：
 - 后续同机多 session 目标是 session 自主负责自己的提交和本地 `main` 合入，并用 `local-main-retire` lock 保持本地 `main` 写入串行。
 - `--self-retire` 缺少有效 ready ROB entry 时必须 fail before merge，不能把 ROB retire metadata 当作 post-merge best-effort。
 - Phase 4 子方案必须保持已确认的会话表面分工：`Routing trace` 是固定标签加 `key=value` 字段的普通文本诊断行；`Updated Plan` 是用户可见的树状 `✔`/`□` 进度面板；Markdown `- [x]` / `- [ ]` checkbox 只保留在 implementation plan 文件内部做任务追踪。解释内容可以使用中文；内部工具名、schema key、阈值 token、blocker token、文件名和 CLI 参数可保持 ASCII。
+- Stage C runtime promotion 验收：父方案与三个子方案必须要求 R0 project-level preflight、R1 project-level fake/dry-run runtime、R2 reusable project-level helper/guard、R3 `installed-user-level`、R4 `smoke-tested`、R5 `active-candidate`，同时声明本包不 install/start/enable/smoke/live-run runtime。
 
 ## 证据索引
 
+- 2026-06-06 canary response-position Stage B package: branch `implement-hardcode-canary-response-position-20260606` implements startup-summary wording, spec, diagnostics, and RED/GREEN tests for first-visible start and last-visible end; Stage A is already in local `main`.
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 Phase 0 本地合入状态刷新：本地 `main` 已包含 `phase0-plan-index-closure-20260530` 与 `align-complete-flow-parent-plans-20260530`；本包移除父方案中仍显示 Phase 0 等待本地合入的过期状态。
+- 2026-06-07 conflict-priority documentation package: Comet-first priority; Checker + Runtime deferred.
+- 2026-06-06 Spec Kit reference refresh：branch `update-spec-kit-runtime-plan-20260606` 基于官方 `github/spec-kit` 来源更新 Phase 6 子方案，并延后 checker/runtime implementation。
+- 2026-06-06 gstack delivery-loop 文档包：branch `plan-gstack-codex-delivery-loop-20260606` 记录 `garrytan/gstack` 作为 Phase 4 checker/runtime 目标，并延后 install/live runtime work。
+- 2026-06-05 Stage D real-runtime classification package: branch `runtime-plan-standard-20260605` updates ten runtime lanes, creates `user_level_mcp_skills_cli_runtime_plan` as the active mcp2cli/skills2cli runtime successor, records deleted source-plan boundaries, and keeps all real install/start/smoke/live work pending future runtime implementation.
+- 2026-06-05 Stage C runtime promotion package：branch `runtime-promotion-plan-20260605` 加入共享 R0-R5 runtime promotion ladder，更新三个 child plans、stable spec、checker markers 与 tests，并把实际 install/start/enable/smoke/live runtime work 留在本包之外。
 - 2026-06-01 progress-surface boundary confirmation：分支 `document-progress-surface-boundary-20260601` 记录操作者确认的分工：`Routing trace` 保持普通文本 `key=value` 诊断行；`Updated Plan` 是唯一用户可见进度面板，使用树状 `✔`/`□`；Markdown checkbox 继续作为 implementation plan 内部任务追踪模式。
 - 2026-05-31 ROB retire preflight implementation: 分支 `harden-rob-retire-preflight-20260531` 已新增 self-retire ROB 前置硬门、focused RED/GREEN 覆盖和 CI manifest 登记；更广本地门禁仍需在 local-main 集成前运行。
 - 2026-05-31 ROB retire 前置硬门治理：发现 `--self-retire` 缺少对应 ROB entry 时，旧 helper 会在 fast-forward merge 后才因 retire metadata 报错；本次重开 Phase 1A hardening，要求 ROB entry ready 与 gate 状态在 acquire lock / rollback ref / merge 前 fail closed。
 - 2026-05-31 Phase 4 最终收口：分支 `close-phase4-final-20260531` 同步父方案与全部 Phase 4 子方案状态，确认所有 Phase 4 checklist 已关闭，过期的本地集成门已替换为远端发布门，并且 Phase 5 已可准入但不代表授权远端发布。
 - 2026-05-30 Phase 4 固定标签修正：分支 `implement-routing-updated-plan-fixed-labels-20260530c` 更新本父方案与 `chinese_routing_trace_conversation_surface_plan` 子方案；`Routing trace` 与 `Updated Plan` 保持英文用户可见标签，`Updated Plan` 保持复选框/状态清单语义，中文解释内容仍允许；远端发布仍未授权。
 - 2026-05-30 Phase 4 会话表面治理更新：分支 `chinese-routing-updated-plan-20260530` 曾把会话表面覆盖从 routing trace 扩展到 updated plan；其中“固定标签应替换为中文标题”的旧表述已由上一条固定标签修正取代；远端发布仍未授权。
-- 2026-05-30 完整提交流程对齐包：分支 `align-complete-flow-parent-plans-20260530` 由 `codex-align-complete-flow-parent-plans-20260530` 认领 `parent_parallel_orchestration_index_plan`，ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录父方案族文档候选包；本包把父方案和声明 `parent_plan` 指向本文件的子方案统一对齐到《完整提交流程.md》的 session-owned self-retire、`local-main-retire.lock` 和远端发布门模型。
-- 2026-05-30 Phase 0 收口包：在分支 `phase0-plan-index-closure-20260530` 收口 `plan_inventory_registry_alignment_plan` 和 `parent_parallel_orchestration_index_plan`；机器可读盘点证据为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；在本包完成本地门禁、local MR review 并合入本地 `main` 前，Phase 2 仍保持阻塞。
+- 2026-05-30 完整提交流程对齐包：分支 `align-complete-flow-parent-plans-20260530` 已合入本地 `main`；该包由 `codex-align-complete-flow-parent-plans-20260530` 认领 `parent_parallel_orchestration_index_plan`，ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录父方案族文档候选包，并把父方案和声明 `parent_plan` 指向本文件的子方案统一对齐到 session-owned self-retire、`local-main-retire.lock` 和远端发布门模型。
+- 2026-05-30 Phase 0 收口包：分支 `phase0-plan-index-closure-20260530` 已合入本地 `main`，并收口 `plan_inventory_registry_alignment_plan` 与 `parent_parallel_orchestration_index_plan`；机器可读盘点证据为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；Phase 2 不再被 Phase 0 本地合入阻塞。
 - 2026-05-30 self-retire runtime 恢复：本地 `main` 已在 `898f9d0` 包含恢复后的 self-retire runtime helper/checker 包，替代早先 `b4af80f` 的待恢复说明。
 - 2026-05-29 Stage A 恢复文档包：记录当时本地 `main`=`b4af80f` 尚未包含 self-retire runtime helper/checker，虽然来源提交 `867f882` 存在于 `decentralize-session-self-retire-20260529`；该问题随后已由 `898f9d0` 解决。
 - 2026-05-29 父方案范围修订：结构化吸收同机多 session 自主合入治理对话，明确本文件仍是本方案族父方案，但不控制无关 implementation_plan；新增 `parent_plan` 可选局部生效、新 session 非默认读取、session-owned self-retire 与 `local-main-retire` lock 后续目标。
@@ -513,4 +563,19 @@ Stage B 后续确认后的验收条件：
 - 2026-06-01 browser/CLI adapter boundary implementation: 分支 `implement-user-level-browser-cli-adapter-boundary-20260601` 关闭提取后的 Phase 6 adapter boundary lane；本包脚本化 implemented-local 子方案状态，确认 chrome-devtools-mcp/CDP Bridge/OpenCLI/CLI-Anything/`wecom-cli` 的 on-demand 或 reference-only 门禁，并保持 live browser/GUI/install/cookie/runtime mutation 不在本地包范围内。
 - 2026-06-02 prompt-canary 状态对账：同步父方案中文索引与四个 Phase 2 子方案状态；本地 `main` ancestry 确认 `cbc73c7`、`b779d51`、`6f1ef48`、`43d3ae9` 均已包含；远端发布未授权。
 - 2026-06-02 prompt-canary canonical restore plan package: branch `plan-restore-nonascii-canary-20260602` records a confirmed Phase 2 follow-up child plan, keeps marker literals out of non-startup plans, and requires model-readable session context to block restored canonical marker copies before implementation.
+
+
+## Stage A：CLI-Anything / Browser Adapter / Codex Harnesses 拆分
+
+2026-06-04，本父方案将原 `user_level_mcp_skills_browser_cli_governance_plan.zh-CN.md` 与 `user_level_mcp_skills_discovery_facade_plan.zh-CN.md` 的混合内容拆成三个子方案。Stage A 只做 docs-only 方案重建与参考源登记，不安装工具、不启动 GUI/browser runtime，也不删除旧方案；旧 checker 仍在 Stage B 迁移 checker/tests/OpenSpec wiring 前读取旧方案。
+
+| 治理 lane | 子 implementation_plan | 项目级治理 | 参考源 | 并行规则 |
+| --- | --- | --- | --- | --- |
+| CLI-Anything / WXWork_CLI | `user_level_cli_anything_wxwork_cli_governance_plan` | 先跑通 receipt-backed GUI control guard，再考虑用户级提升 | `https://github.com/HKUDS/CLI-Anything`；WXWork_CLI 通过 CLI-Anything 控制 `WXWork.exe` | 同一时间只能有一个 session 认领该 implementation_plan。 |
+| Browser / CLI adapters | `user_level_browser_cli_adapter_boundary_plan` | 先跑通 adapter guard 与 owner/port lease，再提升 wrapper | `https://github.com/ChromeDevTools/chrome-devtools-mcp`；`https://github.com/Unagi-cq/cdp-bridge-mcp`；`https://github.com/jackwener/OpenCLI` | 范围仅限 chrome-devtools-mcp、cdp-bridge-mcp/CDP Bridge、OpenCLI；不包含 CLI-Anything/WXWork_CLI 或 harnesses。 |
+| Codex harnesses | `codex_harnesses_governance_plan` | 先 fork Codex harness model，Pi/oh-my-pi 只作为参考与 sidecar runtime candidate | The Harness Problem `https://blog.can.ac/2026/02/12/the-harness-problem`；`https://github.com/can1357/oh-my-pi`；`https://pi.dev/`；`https://pi.dev/packages` | 只有该 lane 使用 harnesses 名称，不替代 Codex、native_omx、LangGraph 或 `codex-ohmy`。 |
+
+Stage B 迁移 checker/test/spec 后，删除 `user_level_mcp_skills_discovery_facade_plan.*` 与 `user_level_mcp_skills_browser_cli_governance_plan.*`。
+
+- 2026-06-04 Stage B implementation: split checkers/tests/spec wiring now back three child lanes; old mixed source plans are deleted from active docs registry and filesystem; remote publication remains closed.
 <!-- EVIDENCE_INDEX_END -->

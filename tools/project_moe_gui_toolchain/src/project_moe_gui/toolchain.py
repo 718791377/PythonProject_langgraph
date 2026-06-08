@@ -16,8 +16,8 @@ except ModuleNotFoundError:  # pragma: no cover
     tomllib = None  # type: ignore[assignment]
 
 from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
-from project_moe_gui.daemon import build_daemon_launch_plan
-from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT
+from project_moe_gui.daemon import build_daemon_launch_plan, windows_daemon_artifact_plan
+from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT, qml_shell_path, qml_visual_contract
 from project_moe_gui.qfluent_runtime import expected_qfluent_dependency, qfluent_license_manifest
 
 
@@ -35,9 +35,13 @@ def stable_toolchain_source_root() -> Path:
     configured = os.environ.get("PROJECT_MOE_GUI_TOOLCHAIN_SOURCE_ROOT")
     if configured:
         return Path(configured).expanduser().resolve(strict=False)
+    current_root = current_toolchain_source_root().resolve(strict=False)
+    default_root = DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False)
+    if current_root != default_root and ".worktrees" in current_root.parts:
+        return current_root
     if DEFAULT_TOOLCHAIN_SOURCE_ROOT.exists():
-        return DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False)
-    return current_toolchain_source_root().resolve(strict=False)
+        return default_root
+    return current_root
 
 
 def validate_toolchain_source_root(source_root: Path) -> tuple[str, list[dict[str, Any]]]:
@@ -68,13 +72,17 @@ MANIFEST_RELATIVE = Path("tools/project_moe_gui/project_moe_gui.install-manifest
 LAUNCHER_RELATIVE = Path("tools/project_moe_gui/launcher.py")
 README_RELATIVE = Path("tools/project_moe_gui/README.md")
 CMD_RELATIVE = Path("project-moe-gui.cmd")
-MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE]
+SILENT_VBS_RELATIVE = Path("project-moe-gui-silent.vbs")
+QML_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
+MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE, SILENT_VBS_RELATIVE, QML_RELATIVE]
 UNINSTALL_MANAGED_ALLOWLIST = {
     "tools/project_moe_gui/launcher.py",
     "tools/project_moe_gui/project_moe_gui.config.json",
     "tools/project_moe_gui/project_moe_gui.install-manifest.json",
     "tools/project_moe_gui/README.md",
+    "tools/project_moe_gui/qml/ProjectMoeGui.qml",
     "project-moe-gui.cmd",
+    "project-moe-gui-silent.vbs",
 }
 RECOVERABLE_UPDATE_BLOCKER_CODES = {
     "blocked:toolchain_source_root_unavailable",
@@ -87,9 +95,9 @@ PRIVATE_PROMPT_GUI_MANAGED_DIR = Path("tools/project_moe_gui")
 PROJECT_EVIDENCE = [".git", "AGENTS.md", "pyproject.toml", "requirements.txt", "README.md", "setup.cfg", "setup.py", "poetry.lock", "uv.lock"]
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 NAMESPACE_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
-READ_CLI_CONTRACT_COMMANDS = ("project-status", "list-sessions", "status")
+READ_CLI_CONTRACT_COMMANDS = ("project-status", "list-sessions", "list-lenses", "status")
 READ_ASSERTION_COMMANDS = ("assert-on",)
-PHASE1_EXPECTED_WRITE_COMMANDS = ("project-on", "project-off", "on", "off", "assert-on")
+PHASE1_EXPECTED_WRITE_COMMANDS = ("project-on", "project-off", "on", "off", "set-lenses", "clear-lenses", "assert-on")
 BOOTSTRAP_BLOCKER_CAPABILITIES = {
     "blocked:missing_agent_toml": "agent_toml",
     "blocked:missing_private_prompt_source": "private_prompt_source",
@@ -479,15 +487,19 @@ DEFAULT_BOOTSTRAP_OPERATOR_DOC = Path("docs_bilingual/operations/thesis_moe_mode
 COMMON_CLI_ENVELOPE_KEYS = ("schema_version", "command", "ok", "token", "cli_contract")
 STATUS_EFFECTIVE_SOURCES = {"session", "project-default", "fail-closed"}
 ASSERT_ON_TOKENS = {"ok", "disabled", "blocked:moe_disabled"}
+LENS_EFFECTIVE_MODES = {"all", "selected"}
 PHASE1_OPERATOR_DOC_REQUIRED_TOKENS = (
     "thesis_moe_mode.py",
     "project-on",
     "project-off",
     "project-status --json",
     "list-sessions --json",
+    "list-lenses --json",
     "status --json",
     "assert-on",
     "--session-id",
+    "set-lenses",
+    "clear-lenses",
     "thesis-moe-on.cmd",
     "thesis-moe-off.cmd",
 )
@@ -1211,6 +1223,50 @@ def validate_list_sessions_payload(payload: dict[str, Any]) -> list[dict[str, An
             errors.append(blocker("blocked:list_sessions_contract_invalid", "Each session row must include enabled or effective_enabled.", row_index=index))
         if "token" not in row:
             errors.append(blocker("blocked:list_sessions_contract_invalid", "Each session row must include a stable token.", row_index=index))
+        for field in ("selected_lenses", "selected_categories"):
+            if field in row and not isinstance(row.get(field), list):
+                errors.append(blocker("blocked:list_sessions_contract_invalid", f"Each session row {field} field must be an array when present.", row_index=index, field=field))
+        effective_lens_mode = row.get("effective_lens_mode", "all")
+        if effective_lens_mode not in LENS_EFFECTIVE_MODES:
+            errors.append(blocker("blocked:list_sessions_contract_invalid", "Each session row effective_lens_mode must be all or selected.", row_index=index, observed=effective_lens_mode))
+    return errors
+
+
+def _validate_public_string_id_list(command: str, owner: str, values: Any, *, required: bool = False) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
+    if required and not isinstance(values, list):
+        return [blocker(f"blocked:{command.replace('-', '_')}_contract_invalid", f"{command} --json must expose a {owner} array.")]
+    if values is None:
+        return errors
+    if not isinstance(values, list):
+        return [blocker(f"blocked:{command.replace('-', '_')}_contract_invalid", f"{owner} must be a JSON array.", owner=owner)]
+    seen: set[str] = set()
+    for index, item in enumerate(values):
+        item_id: Any = item.get("id") if isinstance(item, dict) else item
+        if not isinstance(item_id, str) or not item_id.strip():
+            errors.append(blocker(f"blocked:{command.replace('-', '_')}_contract_invalid", f"{owner} entries must expose a non-empty public id.", owner=owner, row_index=index))
+            continue
+        if item_id in seen:
+            errors.append(blocker(f"blocked:{command.replace('-', '_')}_contract_invalid", f"{owner} ids must be unique.", owner=owner, row_index=index, id=item_id))
+        seen.add(item_id)
+    return errors
+
+
+def validate_list_lenses_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
+    errors.extend(_validate_public_string_id_list("list-lenses", "lenses", payload.get("lenses"), required=True))
+    errors.extend(_validate_public_string_id_list("list-lenses", "categories", payload.get("categories"), required=True))
+    semantics = payload.get("selection_semantics")
+    if not isinstance(semantics, dict):
+        errors.append(blocker("blocked:list_lenses_contract_invalid", "list-lenses --json must describe selection_semantics."))
+    elif semantics.get("empty_selection") not in {"all", "all-lenses"}:
+        errors.append(
+            blocker(
+                "blocked:list_lenses_contract_invalid",
+                "list-lenses selection_semantics.empty_selection must say that empty selected_lenses and selected_categories mean all lenses.",
+                observed=semantics.get("empty_selection"),
+            )
+        )
     return errors
 
 
@@ -1223,6 +1279,17 @@ def validate_status_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
         errors.append(blocker("blocked:status_contract_invalid", "status --json must include a supported effective_source.", observed=source, supported=sorted(STATUS_EFFECTIVE_SOURCES)))
     if "session_id" in payload and payload.get("raw_session_id"):
         errors.append(blocker("blocked:cli_contract_private_field_exposed", "status --json must not expose raw_session_id."))
+    selected_lenses = payload.get("selected_lenses", [])
+    selected_categories = payload.get("selected_categories", [])
+    if not isinstance(selected_lenses, list):
+        errors.append(blocker("blocked:status_contract_invalid", "status --json selected_lenses must be an array.", observed_type=type(selected_lenses).__name__))
+    if not isinstance(selected_categories, list):
+        errors.append(blocker("blocked:status_contract_invalid", "status --json selected_categories must be an array.", observed_type=type(selected_categories).__name__))
+    effective_lens_mode = payload.get("effective_lens_mode")
+    if effective_lens_mode not in LENS_EFFECTIVE_MODES:
+        errors.append(blocker("blocked:status_contract_invalid", "status --json must include effective_lens_mode=all|selected.", observed=effective_lens_mode))
+    if payload.get("lens_selection_scope") not in {None, "session"}:
+        errors.append(blocker("blocked:status_contract_invalid", "status --json lens_selection_scope must be session when present.", observed=payload.get("lens_selection_scope")))
     return errors
 
 
@@ -1252,6 +1319,8 @@ def validate_cli_payload(command: str, payload: dict[str, Any] | None) -> list[d
         errors.extend(validate_project_status_payload(payload))
     elif command == "list-sessions":
         errors.extend(validate_list_sessions_payload(payload))
+    elif command == "list-lenses":
+        errors.extend(validate_list_lenses_payload(payload))
     elif command == "status":
         errors.extend(validate_status_payload(payload))
     elif command == "assert-on":
@@ -1635,23 +1704,41 @@ def _fallback_daemon_launch_plan(launcher: Path, args: argparse.Namespace, confi
         }
     should_daemon = bool(no_args)
     flags = _windows_process_flags()
+    runtime_dir = project_root / ".project-runtime" / "project_moe_gui"
+    log_path = runtime_dir / "project_moe_gui.daemon.log"
+    lock_path = runtime_dir / "project_moe_gui.daemon.lock"
+    configured_python = str(config.get("runtime_python") or sys.executable)
+    selected_python = configured_python
+    pythonw_available = False
+    configured_path = Path(configured_python)
+    if should_daemon and configured_path.name.lower() == "python.exe":
+        pythonw = configured_path.with_name("pythonw.exe")
+        if pythonw.exists():
+            selected_python = str(pythonw)
+            pythonw_available = True
     return {
         "schema_version": 1,
         "uses_daemon": should_daemon,
         "reason": "no_argument_human_launch_uses_project_daemon" if should_daemon else "foreground_launch_requested",
         "launcher": str(launcher),
         "project_root": str(project_root),
-        "argv": [str(config.get("runtime_python") or sys.executable), str(launcher), "--allow-visible"],
+        "configured_python_executable": configured_python,
+        "selected_python_executable": selected_python,
+        "pythonw_available": pythonw_available,
+        "pythonw_policy": "prefer_pythonw_for_no_console_human_gui_daemon" if should_daemon else "foreground_keeps_configured_python",
+        "argv": [selected_python, str(launcher), "--allow-visible"],
         "shell": False,
         "cmd_window_policy": "no_persistent_cmd" if should_daemon else "foreground",
         "windows_creation_flags": flags,
         "windows_creation_flags_label": _windows_process_flags_label(flags),
         "duplicate_instance_guard": {
             "enabled": True,
-            "lock_path": str(launcher.with_name("project_moe_gui.daemon.lock")),
+            "lock_path": str(lock_path),
             "pid_field": "pid",
             "stale_lock_cleanup": True,
         },
+        "diagnostics_log": str(log_path),
+        "stdout_stderr_policy": "append_to_diagnostics_log",
         "environment_overrides": {"PROJECT_MOE_GUI_DAEMON_CHILD": "1", "PYTHONUTF8": "1"},
         "fallback_embedded_daemon": True,
     }
@@ -1703,12 +1790,18 @@ def _fallback_spawn_daemon_child(plan: dict) -> dict:
             pass
     env = os.environ.copy()
     env.update({str(k): str(v) for k, v in (plan.get("environment_overrides") or {}).items()})
-    kwargs = {"cwd": plan.get("project_root") or None, "env": env, "stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, "shell": False}
-    flags = int(plan.get("windows_creation_flags") or 0)
-    if flags:
-        kwargs["creationflags"] = flags
-    process = subprocess.Popen([str(item) for item in plan.get("argv", [])], **kwargs)
-    return {"schema_version": 1, "ok": True, "token": "ok", "exit_code": 0, "message": "Project MOE GUI daemon launch requested; launcher parent can exit without a persistent CMD window.", "daemon_launch": plan, "spawned_pid": process.pid}
+    log_path = Path(str(plan.get("diagnostics_log") or lock_path.with_name("project_moe_gui.daemon.log")))
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8", errors="replace") as log_handle:
+        log_handle.write("\\n=== Project MOE GUI daemon launch ===\\n")
+        log_handle.write(f"argv={plan.get('argv')}\\n")
+        log_handle.flush()
+        kwargs = {"cwd": plan.get("project_root") or None, "env": env, "stdin": subprocess.DEVNULL, "stdout": log_handle, "stderr": subprocess.STDOUT, "shell": False}
+        flags = int(plan.get("windows_creation_flags") or 0)
+        if flags:
+            kwargs["creationflags"] = flags
+        process = subprocess.Popen([str(item) for item in plan.get("argv", [])], **kwargs)
+    return {"schema_version": 1, "ok": True, "token": "ok", "exit_code": 0, "message": "Project MOE GUI daemon launch requested; launcher parent can exit without a persistent CMD window.", "daemon_launch": plan, "spawned_pid": process.pid, "diagnostics_log": str(log_path)}
 
 
 def spawn_daemon_if_needed(plan: dict) -> dict:
@@ -1841,8 +1934,9 @@ def main() -> int:
 
     project_status, project_error = run_mode("project-status")
     sessions_payload, sessions_error = run_mode("list-sessions")
+    lenses_payload, lenses_error = run_mode("list-lenses")
     status_payload, status_error = run_mode("status")
-    cli_errors = [err for err in [project_error, sessions_error, status_error] if err]
+    cli_errors = [err for err in [project_error, sessions_error, lenses_error, status_error] if err]
     if cli_errors:
         return emit({"schema_version": 1, "ok": False, "token": cli_errors[0]["token"], "exit_code": cli_errors[0].get("exit_code", 5), "message": cli_errors[0]["message"], "project_root": str(project_root), "blockers": cli_errors}, args.json)
 
@@ -1855,7 +1949,7 @@ def main() -> int:
     runtime_config["runtime_project_root"] = str(project_root)
     qfluent_status = qfluent_status_summary()
     try:
-        preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root, qfluent_status=qfluent_status)
+        preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, lenses_payload=lenses_payload, status_payload=status_payload, project_root=project_root, qfluent_status=qfluent_status)
     except TypeError:
         preflight = gui_shell.build_gui_preflight(runtime_config, project_status=project_status, sessions_payload=sessions_payload, status_payload=status_payload, project_root=project_root)
         view_model = preflight.get("view_model") if isinstance(preflight, dict) else None
@@ -1879,12 +1973,18 @@ def main() -> int:
         return emit({**preflight, "ok": False, "token": "blocked:json_requires_preflight_for_non_visible_automation", "exit_code": 2, "message": "Use --preflight --json for machine-readable automation, or run without --json to open the visible GUI."}, args.json)
     if os.environ.get("PROJECT_MOE_GUI_DRY_RUN_VISIBLE") == "1":
         return emit({**preflight, "ok": True, "token": "ok", "exit_code": 0, "message": "Visible GUI launch dry-run passed.", "visible_launch": {"dry_run": True, "default_visible_on_no_args": True, "allow_visible_argument": bool(args.allow_visible)}}, args.json)
-    if not preflight.get("ok"):
+    view_model = preflight.get("view_model") if isinstance(preflight, dict) else None
+    if not preflight.get("ok") and not isinstance(view_model, dict):
         return emit(preflight, args.json)
     try:
-        return gui_shell.launch_visible(preflight["view_model"])
+        try:
+            return gui_shell.launch_visible(view_model, runtime_config, project_root)
+        except TypeError:
+            return gui_shell.launch_visible(view_model)
     except RuntimeError as exc:
-        return emit({"schema_version": 1, "ok": False, "token": str(exc), "exit_code": 5, "message": "Visible GUI launch failed."}, args.json)
+        return emit({"schema_version": 1, "ok": False, "token": str(exc), "exit_code": 5, "message": "Visible GUI launch failed.", "error": str(exc)}, args.json)
+    except Exception as exc:
+        return emit({"schema_version": 1, "ok": False, "token": "blocked:visible_gui_launch_failed", "exit_code": 5, "message": "Visible GUI launch failed.", "error": str(exc)}, args.json)
 
 
 if __name__ == "__main__":
@@ -1894,6 +1994,29 @@ if __name__ == "__main__":
 
 def cmd_text() -> str:
     return '@echo off\nsetlocal\nset PYTHONUTF8=1\nif not defined PROJECT_MOE_GUI_DAEMON_CHILD set PROJECT_MOE_GUI_DAEMON_CHILD=\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
+
+
+def silent_vbs_text() -> str:
+    return '''Option Explicit
+Dim shell, fso, scriptDir, command, i
+Set shell = CreateObject("WScript.Shell")
+Set fso = CreateObject("Scripting.FileSystemObject")
+scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
+command = QuoteArg(scriptDir & "\\project-moe-gui.cmd")
+For i = 0 To WScript.Arguments.Count - 1
+  command = command & " " & QuoteArg(WScript.Arguments(i))
+Next
+shell.CurrentDirectory = scriptDir
+shell.Run command, 0, False
+
+Function QuoteArg(value)
+  QuoteArg = Chr(34) & Replace(CStr(value), Chr(34), Chr(34) & Chr(34)) & Chr(34)
+End Function
+'''
+
+
+def qml_shell_text() -> str:
+    return qml_shell_path(prefer_installed=False).read_text(encoding="utf-8")
 
 
 def readme_text(agent_name: str, namespace: str) -> str:
@@ -1908,6 +2031,11 @@ This directory is managed by `D:\\PythonProject_langgraph` Project MOE GUI toolc
 
 Do not place private `MOE.md` content or project state files in this directory.
 Phase 2B provides an import-safe GUI shell and guarded visible-launch path through the central toolchain source. Human double-click or no-argument launches open the visible PySide6 GUI by default; automated checks must use `--preflight --json` and never rely on the no-argument human launcher as a machine interface.
+
+Launch entries:
+
+- `project-moe-gui.cmd`: diagnostic entry. It may show CMD/PowerShell output and supports `--preflight --json`.
+- `project-moe-gui-silent.vbs`: no-console double-click entry for human GUI launch. It delegates to the diagnostic entry with a hidden parent window and leaves machine diagnostics on the `.cmd` path.
 """
 
 
@@ -1916,6 +2044,14 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
     data.pop("target_project_root", None)
     data.pop("runtime_project_root", None)
     runtime_python = runtime_root / ".venv" / "Scripts" / "python.exe"
+    daemon_plan = windows_daemon_artifact_plan(
+        build_daemon_launch_plan(
+            root / "tools" / "project_moe_gui" / "launcher.py",
+            no_args=True,
+            runtime_python=runtime_python,
+            project_root=root,
+        )
+    )
     data.update(
         {
             "schema_version": SCHEMA_VERSION,
@@ -1929,9 +2065,26 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "pyside6_runtime": "shared-runtime",
             "python_runtime_strategy": "shared-gui-runtime",
             "python_utf8": True,
-            "visual_dependency": expected_qfluent_dependency(),
+            "visual_dependency": qml_visual_contract(),
+            "qml_shell": {
+                "primary": True,
+                "relative_path": norm(QML_RELATIVE),
+                "style": "Material",
+                "managed_artifact": True,
+                "central_fallback_allowed": True,
+            },
+            "legacy_visual_dependency": expected_qfluent_dependency(),
             "gui_dependency_license_manifest": qfluent_license_manifest(),
-            "daemon_launch": build_daemon_launch_plan(Path("tools/project_moe_gui/launcher.py"), no_args=True),
+            "daemon_launch": daemon_plan,
+            "silent_launch": {
+                "entry": norm(SILENT_VBS_RELATIVE),
+                "diagnostic_entry": norm(CMD_RELATIVE),
+                "uses_wscript_hidden_window": True,
+                "keeps_preflight_on_cmd": True,
+                "configured_python_executable": daemon_plan.get("configured_python_executable"),
+                "selected_python_executable": daemon_plan.get("selected_python_executable"),
+                "pythonw_available": daemon_plan.get("pythonw_available"),
+            },
             "close_behavior": {
                 "default_close_action": "ask",
                 "auto_hide_to_tray": False,
@@ -1954,6 +2107,8 @@ def artifacts(root: Path, agent_name: str, namespace: str, mode_cli: Path, runti
         CONFIG_RELATIVE: json.dumps(config_payload(root, agent_name, namespace, mode_cli, runtime_root, existing_config), ensure_ascii=False, indent=2) + "\n",
         README_RELATIVE: readme_text(agent_name, namespace),
         CMD_RELATIVE: cmd_text(),
+        SILENT_VBS_RELATIVE: silent_vbs_text(),
+        QML_RELATIVE: qml_shell_text(),
     }
 
 
@@ -2171,6 +2326,14 @@ from datetime import datetime, timezone
 AGENT_NAME = "{agent_name}"
 STATE_NAMESPACE = "{namespace}"
 CLI_CONTRACT = "{CLI_CONTRACT}"
+PUBLIC_LENSES = [
+    {{"id": "blind_review", "label": "Blind-review expert", "description": "Public placeholder lens metadata only.", "category": "review"}},
+    {{"id": "aigc_risk", "label": "AIGC risk expert", "description": "Public placeholder lens metadata only.", "category": "risk"}},
+]
+PUBLIC_CATEGORIES = [
+    {{"id": "review", "label": "Review", "description": "Review-oriented public lenses."}},
+    {{"id": "risk", "label": "Risk", "description": "Risk-oriented public lenses."}},
+]
 
 
 def now() -> str:
@@ -2199,14 +2362,28 @@ def envelope(command: str, **extra: object) -> dict:
 def main() -> int:
     command = sys.argv[1] if len(sys.argv) > 1 else "status"
     # Command-surface tokens required by the readiness checker:
-    # project-on project-off project-status list-sessions status on off assert-on --json --session-id
+    # project-on project-off project-status list-sessions list-lenses status on off set-lenses clear-lenses assert-on --json --session-id --lens --category
     payload = envelope(command)
     if command == "project-status":
         payload.update(project_default_enabled=False, registered_session_count=0, valid_session_count=0, invalid_session_count=0)
     elif command == "list-sessions":
         payload.update(sessions=[], counts={{"total": 0, "valid": 0, "invalid": 0}})
+    elif command == "list-lenses":
+        payload.update(
+            lenses=PUBLIC_LENSES,
+            categories=PUBLIC_CATEGORIES,
+            selection_semantics={{"empty_selection": "all", "scope": "session", "mode_field": "effective_lens_mode"}},
+            private_prompt_source_read=False,
+        )
     elif command in {{"status", "assert-on"}}:
-        payload.update(effective_enabled=False, effective_source="fail-closed")
+        payload.update(
+            effective_enabled=False,
+            effective_source="fail-closed",
+            selected_lenses=[],
+            selected_categories=[],
+            effective_lens_mode="all",
+            lens_selection_scope="session",
+        )
     print(json.dumps(payload, ensure_ascii=False))
     return int(payload.get("exit_code", 5))
 
@@ -2246,10 +2423,13 @@ Required commands:
 - `python .\\{mode_cli_win} project-off`
 - `python .\\{mode_cli_win} project-status --json`
 - `python .\\{mode_cli_win} list-sessions --json`
+- `python .\\{mode_cli_win} list-lenses --json`
 - `python .\\{mode_cli_win} status --json`
 - `python .\\{mode_cli_win} assert-on`
 - `python .\\{mode_cli_win} on --session-id <id>`
 - `python .\\{mode_cli_win} off --session-id <id>`
+- `python .\\{mode_cli_win} set-lenses --session-id <id> --lens <lens-id> --category <category-id>`
+- `python .\\{mode_cli_win} clear-lenses --session-id <id>`
 - `{norm(on_wrapper)}`
 - `{norm(off_wrapper)}`
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -202,13 +203,16 @@ from runtime import (
     read_history,
     read_implementation_brief,
     read_interrupt,
+    read_release_receipt,
     read_survivor_queue,
     read_thread_record,
     save_active_selector,
     resolve_repo_root,
     save_backend_record,
     stable_thread_id,
+    release_receipt_path,
     survivor_queue_path,
+    write_release_receipt,
     write_selector_lease,
     thread_record_path,
     write_checkpoint,
@@ -233,6 +237,11 @@ def _emit(payload: dict[str, Any]) -> None:
 
 def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _short_hash(value: Any) -> str:
+    text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(text.encode("utf-8", errors="replace")).hexdigest()[:16]
 
 
 def _loop_projection(thread: dict[str, Any]) -> dict[str, Any]:
@@ -7203,10 +7212,15 @@ def _backend_routing_projection(thread: dict[str, Any], thread_id: str = "") -> 
     released_at = str(thread.get("released_at", ""))
     has_scoped_selector = bool(selector_id and session_scope_id and not released_at)
 
-    if route_posture == "terminal" or status in {"accepted", "halted", "escalated"} or stop_reason in {
+    terminal_statuses = {"accepted", "halted", "escalated", "closed", "released", "handoff", "handed_off"}
+    if route_posture == "terminal" or status in terminal_statuses or stop_reason in {
         "accepted",
         "escalated",
         "non_repairable_failure",
+        "closed",
+        "released",
+        "handoff",
+        "handed_off",
     }:
         routing_posture = "terminal_thread"
     elif route_posture in {"interrupt_wait", "recovery_wait"}:
@@ -7983,6 +7997,11 @@ def _helper_pointers(thread_id: str) -> dict[str, Any]:
             "thread_id": thread_id,
             "read_only": True,
         },
+        "release_thread": {
+            "command": "release-thread",
+            "thread_id": thread_id,
+            "read_only": False,
+        },
         "history": {
             "command": "history",
             "thread_id": thread_id,
@@ -8287,6 +8306,86 @@ def _coerce_interrupt_field(field_name: str, value: Any) -> Any:
     return value
 
 
+
+def _survivor_queue_status(queue: dict[str, Any]) -> str:
+    if not queue:
+        return "missing"
+    items = queue.get("items", []) if isinstance(queue, dict) else []
+    if items:
+        return "present"
+    return "empty"
+
+
+def _release_projection(repo_root: Any, thread_id: str, thread: dict[str, Any] | None = None) -> dict[str, Any]:
+    thread = thread or {}
+    receipt = read_release_receipt(repo_root, thread_id)
+    release_action = str(receipt.get("release_action", thread.get("release_action", ""))) if isinstance(receipt, dict) else ""
+    active_candidate = receipt.get("active_candidate_receipt") if isinstance(receipt.get("active_candidate_receipt"), dict) else {}
+    receipt_path = release_receipt_path(repo_root, thread_id)
+    status = str(thread.get("status", ""))
+    return {
+        "release_receipt_present": bool(receipt),
+        "release_receipt_path": str(receipt_path),
+        "release_action": release_action,
+        "released_at": str(receipt.get("released_at", thread.get("released_at", ""))) if isinstance(receipt, dict) else str(thread.get("released_at", "")),
+        "released_by": str(receipt.get("released_by", thread.get("released_by", ""))) if isinstance(receipt, dict) else str(thread.get("released_by", "")),
+        "completed_at": str(thread.get("completed_at", "")),
+        "final_phase": str(thread.get("final_phase", "")),
+        "result_summary": str(thread.get("result_summary", "")),
+        "handoff_target": str(receipt.get("handoff_target", thread.get("handoff_target", ""))) if isinstance(receipt, dict) else str(thread.get("handoff_target", "")),
+        "reason": str(receipt.get("reason", thread.get("reason", ""))) if isinstance(receipt, dict) else str(thread.get("reason", "")),
+        "timeout_release": bool(receipt.get("timeout_release", False)) if isinstance(receipt, dict) else False,
+        "active_candidate_receipt_linked": bool(active_candidate),
+        "active_candidate_receipt_hash": str(active_candidate.get("receipt_path_hash", "")) if active_candidate else "",
+        "active_candidate_remote_publication_mutated": (
+            active_candidate.get("remote_publication_mutated") is True if active_candidate else False
+        ),
+        "active_running_state": status == "running" and not receipt,
+    }
+
+
+def _release_action_status(release_action: str) -> str:
+    if release_action == "close":
+        return "closed"
+    if release_action == "release":
+        return "released"
+    if release_action == "handoff":
+        return "handoff"
+    raise SystemExit(f"Unsupported release_action: {release_action}")
+
+
+def _read_active_candidate_receipt(path: str) -> dict[str, Any]:
+    if not path:
+        return {}
+    candidate_path = Path(path)
+    try:
+        payload = json.loads(candidate_path.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        raise SystemExit("active_candidate_receipt missing")
+    except json.JSONDecodeError:
+        raise SystemExit("active_candidate_receipt invalid json")
+    except OSError:
+        raise SystemExit("active_candidate_receipt unreadable")
+    if not isinstance(payload, dict):
+        raise SystemExit("active_candidate_receipt must be an object")
+    stage = str(payload.get("runtime_stage", "")).strip().lower().replace("_", "-")
+    if stage not in {"r5", "active-candidate"}:
+        raise SystemExit("active_candidate_receipt runtime_stage must be R5 or active-candidate")
+    for field in ("receipt_path_hash", "authorization_receipt_hash", "owner_lease_hash", "rollback_pointer_hash"):
+        if not str(payload.get(field, "")).strip():
+            raise SystemExit(f"active_candidate_receipt missing {field}")
+    if payload.get("remote_publication_mutated") is not False:
+        raise SystemExit("active_candidate_receipt remote_publication_mutated must be false")
+    return {
+        "runtime_stage": payload.get("runtime_stage"),
+        "receipt_path_hash": payload.get("receipt_path_hash") or _short_hash(str(candidate_path)),
+        "authorization_receipt_hash": payload.get("authorization_receipt_hash"),
+        "owner_lease_hash": payload.get("owner_lease_hash"),
+        "rollback_pointer_hash": payload.get("rollback_pointer_hash"),
+        "remote_publication_mutated": False,
+    }
+
+
 def _save_backend_projection(repo_root: Any, layout: dict[str, str], thread: dict[str, Any]) -> None:
     checkpoint = read_checkpoint(repo_root, thread["thread_id"])
     interrupt = read_interrupt(repo_root, thread["thread_id"])
@@ -8303,6 +8402,8 @@ def _save_backend_projection(repo_root: Any, layout: dict[str, str], thread: dic
             "updated_at": thread.get("updated_at", _now()),
             "layout": layout,
             **backend_routing_projection,
+            **_release_projection(repo_root, thread["thread_id"], thread),
+            "release_projection": _release_projection(repo_root, thread["thread_id"], thread),
             **_loop_projection(thread),
             "history_projection": _history_projection(repo_root, thread["thread_id"], thread, checkpoint, interrupt),
             "recovery_projection": _recovery_projection(thread),
@@ -8377,6 +8478,7 @@ def _artifact_presence_summary(
 ) -> dict[str, Any]:
     brief = read_implementation_brief(repo_root, thread_id)
     queue = read_survivor_queue(repo_root, thread_id)
+    receipt = read_release_receipt(repo_root, thread_id)
     items = queue.get("items", []) if isinstance(queue, dict) else []
     return {
         "implementation_brief_present": bool(brief),
@@ -8389,6 +8491,9 @@ def _artifact_presence_summary(
         "survivor_count": len(items),
         "implementation_brief_path": str(implementation_brief_path(repo_root, thread_id)),
         "survivor_queue_path": str(survivor_queue_path(repo_root, thread_id)),
+        "release_receipt_present": bool(receipt),
+        "release_receipt_path": str(release_receipt_path(repo_root, thread_id)),
+        "release_action": str(receipt.get("release_action", "")) if isinstance(receipt, dict) else "",
     }
 
 
@@ -8400,6 +8505,8 @@ def _refresh_backend_artifact_projection(repo_root: Any, thread_id: str) -> None
     thread = read_thread_record(repo_root, thread_id)
     if thread:
         backend_record.update(_backend_routing_projection(thread, thread_id))
+        backend_record.update(_release_projection(repo_root, thread_id, thread))
+        backend_record["release_projection"] = _release_projection(repo_root, thread_id, thread)
         backend_record["durable_artifact_aware_live_primary_engine_projection"] = (
             _durable_artifact_aware_live_primary_engine_projection(thread, thread_id)
         )
@@ -8867,6 +8974,8 @@ def cmd_status(args: argparse.Namespace) -> None:
             "checkpoint": checkpoint,
             "interrupt": interrupt,
             "backend_record": load_backend_record(repo_root),
+            "release_receipt": read_release_receipt(repo_root, args.thread_id),
+            "release_projection": _release_projection(repo_root, args.thread_id, thread),
             "loop_projection": _loop_projection(thread),
             "history_projection": history_projection,
             "recovery_projection": _recovery_projection(thread),
@@ -11095,6 +11204,8 @@ def cmd_inspect(args: argparse.Namespace) -> None:
         payload["interrupt"] = read_interrupt(repo_root, thread_id)
         payload["implementation_brief"] = read_implementation_brief(repo_root, thread_id)
         payload["survivor_queue"] = read_survivor_queue(repo_root, thread_id)
+        payload["release_receipt"] = read_release_receipt(repo_root, thread_id)
+        payload["release_projection"] = _release_projection(repo_root, thread_id, payload["thread"])
         payload["loop_projection"] = _loop_projection(payload["thread"])
         payload["reducer_projection"] = _reducer_projection(payload["thread"])
         payload["history_projection"] = _history_projection(
@@ -11169,10 +11280,98 @@ def cmd_inspect(args: argparse.Namespace) -> None:
         payload["memory_projection"] = _memory_projection(payload["thread"], thread_id)
         payload["implementation_brief_path"] = str(implementation_brief_path(repo_root, thread_id))
         payload["survivor_queue_path"] = str(survivor_queue_path(repo_root, thread_id))
+        payload["release_receipt_path"] = str(release_receipt_path(repo_root, thread_id))
         payload["history_path"] = str(history_record_path(repo_root, thread_id))
         payload["durable_artifacts"] = _artifact_presence_summary(repo_root, thread_id)
         payload["helper_pointers"] = _helper_pointers(thread_id)
     _emit(payload)
+
+
+
+def cmd_release_thread(args: argparse.Namespace) -> None:
+    repo_root = resolve_repo_root(args.repo_root)
+    layout = ensure_layout(repo_root)
+    thread = read_thread_record(repo_root, args.thread_id)
+    if not thread:
+        raise SystemExit(f"Thread not found: {args.thread_id}")
+    if args.release_action == "handoff" and (not args.handoff_target or not args.reason):
+        raise SystemExit("handoff release requires handoff_target and reason")
+
+    previous_state = _clone_payload(thread)
+    previous_status = str(previous_state.get("status", ""))
+    checkpoint = read_checkpoint(repo_root, args.thread_id)
+    queue = read_survivor_queue(repo_root, args.thread_id)
+    now = _now()
+    final_phase = args.final_phase or str(thread.get("phase", ""))
+    release_status = _release_action_status(args.release_action)
+    artifact_path = args.artifact_path or str(implementation_brief_path(repo_root, args.thread_id))
+    if not Path(artifact_path).exists():
+        artifact_path = str(thread_record_path(repo_root, args.thread_id))
+    active_candidate_receipt = _read_active_candidate_receipt(args.active_candidate_receipt)
+
+    receipt = {
+        "thread_id": args.thread_id,
+        "backend_family": "langgraph",
+        "previous_state": previous_state,
+        "previous_status": previous_status,
+        "release_action": args.release_action,
+        "released_at": now,
+        "released_by": args.released_by,
+        "survivor_queue_path": str(survivor_queue_path(repo_root, args.thread_id)),
+        "survivor_queue_status": _survivor_queue_status(queue),
+        "handoff_target": args.handoff_target or "",
+        "reason": args.reason or "",
+        "checkpoint_path": str(checkpoint_record_path(repo_root, args.thread_id)),
+        "artifact_path": artifact_path,
+        "timeout_release": bool(args.timeout_release),
+        "rollback_restore_note": args.rollback_restore_note,
+        "redaction_status": args.redaction_status,
+        "active_candidate_receipt": active_candidate_receipt,
+        "remote_publication_mutated": False,
+        "final_phase": final_phase,
+        "result_summary": args.result_summary,
+    }
+    receipt_path = write_release_receipt(repo_root, args.thread_id, receipt)
+
+    thread["status"] = release_status
+    thread["phase"] = final_phase or thread.get("phase", "")
+    thread["completed_at"] = thread.get("completed_at") or now
+    thread["final_phase"] = final_phase
+    thread["result_summary"] = args.result_summary
+    thread["released_by"] = args.released_by
+    thread["released_at"] = now
+    thread["release_action"] = args.release_action
+    thread["release_receipt_path"] = str(receipt_path)
+    thread["timeout_release"] = bool(args.timeout_release)
+    thread["rollback_restore_note"] = args.rollback_restore_note
+    thread["redaction_status"] = args.redaction_status
+    thread["active_candidate_receipt_hash"] = active_candidate_receipt.get("receipt_path_hash", "")
+    thread["updated_at"] = now
+    if args.release_action == "handoff":
+        thread["handoff_at"] = now
+        thread["handoff_target"] = args.handoff_target
+        thread["reason"] = args.reason
+    else:
+        thread["handoff_target"] = args.handoff_target or ""
+        thread["reason"] = args.reason or ""
+    _persist_runtime_state_layers(thread)
+    write_thread_record(repo_root, thread)
+    _append_history_record(repo_root, thread, checkpoint, read_interrupt(repo_root, args.thread_id), "release-thread")
+    _save_backend_projection(repo_root, layout, thread)
+
+    _emit(
+        {
+            "operation": "release-thread",
+            "thread_id": args.thread_id,
+            "thread": thread,
+            "release_receipt": receipt,
+            "release_receipt_path": str(receipt_path),
+            "release_projection": _release_projection(repo_root, args.thread_id, thread),
+            "backend_record": load_backend_record(repo_root),
+            "checkpoint": checkpoint,
+            "durable_artifacts": _artifact_presence_summary(repo_root, args.thread_id),
+        }
+    )
 
 
 def cmd_write_brief(args: argparse.Namespace) -> None:
@@ -11562,6 +11761,22 @@ def build_parser() -> argparse.ArgumentParser:
     memory.add_argument("--semantic-store-kind")
     memory.add_argument("--semantic-namespace", action="append", default=[])
     memory.set_defaults(func=cmd_memory)
+
+    release = subparsers.add_parser("release-thread")
+    release.add_argument("--repo-root")
+    release.add_argument("--thread-id", required=True)
+    release.add_argument("--release-action", required=True, choices=["close", "release", "handoff"])
+    release.add_argument("--released-by", required=True)
+    release.add_argument("--final-phase", default="")
+    release.add_argument("--result-summary", default="")
+    release.add_argument("--handoff-target", default="")
+    release.add_argument("--reason", default="")
+    release.add_argument("--timeout-release", action="store_true")
+    release.add_argument("--rollback-restore-note", default="")
+    release.add_argument("--redaction-status", default="unreviewed")
+    release.add_argument("--artifact-path", default="")
+    release.add_argument("--active-candidate-receipt", default="")
+    release.set_defaults(func=cmd_release_thread)
 
     brief = subparsers.add_parser("write-brief")
     brief.add_argument("--repo-root")

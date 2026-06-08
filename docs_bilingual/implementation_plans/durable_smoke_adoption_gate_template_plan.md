@@ -35,12 +35,15 @@ Create the durable smoke and adoption gate template before any live durable runt
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: implementation package validated in feature worktree
-Owner session: main Codex leader session
-Current gate: implementation confirmed by user; runtime exercise, live smoke, and apply mode remain delayed until this gate passes and a later reviewed change explicitly authorizes them
-Stage C entry condition: local validation is green; local MR review and local main integration of the read-only gate-template package remain next
-Last updated: 2026-05-30
+Status: implemented-local
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for durable smoke adoption gate template.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `durable-routing adoption active-candidate apply-gate receipt` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -66,18 +69,27 @@ Only one session may own each hotspot at a time:
 
 ## Task Backlog
 
+## Real Runtime Implementation Gap
+
+Durable smoke/adoption is still template-only. Real runtime work must provide an executable durable smoke runner, apply-mode adoption helper, R3/R4/R5 receipts, and fail-closed evidence before any live adoption is claimed.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan for implementation.
 - [x] Define R0.6.0 gate template fields and R0.6.1 gate field checker behavior.
 - [x] Add negative checker fixtures that block R0.6.2 live smoke or apply-mode adoption without the gate template.
 - [x] Document that runtime exercise, live smoke, and apply mode are delayed until after this gate passes.
 - [x] Run durable gate tests and local gate.
+- [x] Stage D real runtime: implement executable durable smoke runner that writes sanitized R4 smoke receipts and never collapses smoke success into adoption.
+- [x] Stage D/R5 checker gate: implement apply-mode adoption helper that writes selected/running/adopted/released receipts and fail-closed rollback evidence.
+- [x] Stage D/R5 checker gate: add live adoption handoff receipts with operator authorization, backend-family ownership, timeout release, and cleanup evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
 
 Run these gates before local `main` integration unless this child plan later narrows the command list with a justified update:
 
+- `python test/check_durable_routing_smoke_receipts.test.py -v` - validates the R4 smoke runner/checker.
+- `python tools/check_durable_routing_smoke_receipts.py --root . --json` - validates the R4 smoke receipt checker self-test.
 - `python tools/check_implementation_plan_rules.py --root . --json` - validates implementation-plan anchors, size limits, registry entries, and bilingual pairs.
 - `python tools/check_precommit_update_archive.py --root . --json` - reviews required existing-file updates, checker registration, and archive readiness before commit.
 - `python tools/check_worktree_task_receipt.py --root . --json` - validates worktree claim and receipt lifecycle metadata.
@@ -95,6 +107,9 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for durable smoke adoption gate template. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
+- 2026-06-06 R4 smoke runtime implementation: branch `implement-durable-smoke-adoption-r4-20260605` adds `tools/run_durable_routing_smoke.py` and `tools/check_durable_routing_smoke_receipts.py`; the helper writes read-only `smoke-tested` receipts and the checker fails closed against adoption, mutation, durable-team launch, LangGraph thread start, and remote publication claims.
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for real durable smoke, apply-mode adoption, and live adoption; this package updates plan governance only and does not run live runtime.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-30 implementation: extended `tools/check_durable_routing_smoke_gate_template.py` with candidate-template validation and default read-only self-test fixtures under `tools/fixtures/durable_routing_smoke_gate_template/`; the existing OpenSpec guard invocation covers these fixtures because the checker runs self-test by default.
 - 2026-05-30 validation: `python tools\check_durable_routing_smoke_gate_template.py --root . --json`, `python tools\check_document_pair_policy.py --root . --json`, `python tools\check_name_clarity_rules.py --root . --json`, `python tools\check_precommit_update_archive.py --root . --json`, and `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600` passed in the feature worktree before commit. Local MR review remains the pre-integration gate after the feature commit is clean.

@@ -5,7 +5,7 @@ status: active
 doc_class: implementation_plan
 zh_cn_path: docs_bilingual/implementation_plans/user_level_port_browser_owner_isolation_plan.zh-CN.md
 parent_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md
-source_plan: docs_bilingual/implementation_plans/user_level_mcp_skills_browser_cli_governance_plan.md
+source_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md
 ---
 
 # User-Level Port and Browser Owner Isolation Plan
@@ -65,7 +65,7 @@ Shared hotspots remain serialized through the parent plan, implementation-plan c
 
 ## Validation Gates
 
-- MCP baseline checker: `python tools/check_user_level_mcp_skills_browser_cli_baseline.py --root . --json` verifies source-plan baseline markers and guard registration.
+- MCP baseline checker: `python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json` verifies source-plan baseline markers and guard registration.
 - MCP scope checker: `python tools/check_mcp_router_scope_policy.py --root . --json` verifies Codex direct MCP boundaries and Router isolation.
 - OpenSpec aggregate guard: `python tools/run_openspec_guard.py --root . --json` verifies official workflow, document policy, and name clarity rules.
 - Whitespace check: `git diff --check` verifies the patch has no whitespace errors.

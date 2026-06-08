@@ -37,7 +37,7 @@ Keep the parent phase map, child-plan registry, dependency order, and session-li
 <!-- CURRENT_STATUS_START -->
 阶段：Phase 0 已收口；当前作为父方案族索引维护子方案继续 active
 责任会话：`codex-align-complete-flow-parent-plans-20260530`，用于本次父方案族完整提交流程对齐。
-当前门禁：更新父方案当前状态、Phase 2+ 准入说明、子方案状态索引和所有子方案的 local-main 合入语义；通过 checker 后提交并合入本地 `main`，然后停在远端发布门。
+当前门禁：Phase 0 已无待执行的本地 `main` 合入；本文件继续作为父方案族索引维护子方案，后续每次更新都必须使用新的 claim/worktree，通过本地门禁、合入本地，并停在远端发布门。
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -95,6 +95,7 @@ Keep the parent phase map, child-plan registry, dependency order, and session-li
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 本地合入状态刷新：分支 `phase0-plan-index-closure-20260530` 与 `align-complete-flow-parent-plans-20260530` 均已合入本地 `main`；父方案族状态不再把 Phase 0 视为等待本地合入。
 - 2026-05-30 完整提交流程对齐：`codex-align-complete-flow-parent-plans-20260530` 认领本索引子方案，更新父方案和子方案状态；ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录本地候选包。
 - 2026-05-30 Phase 0 索引收口：已更新父方案当前状态、Phase 0/Phase 1 完成证据、紧凑 child-plan 状态索引、依赖/准入说明和 Phase 2 门禁条件。
 - 2026-05-29 索引补充：登记 Phase 1A complete-flow scheduler/ROB 子方案，保持其为父方案的同级 child implementation_plan。

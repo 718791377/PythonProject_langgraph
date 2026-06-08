@@ -8,10 +8,14 @@
 
 ### Requirement: Canary prompt text SHALL live only in the startup summary pair
 
-仓库 SHALL 只在活动的双语启动摘要中维护上下文保留 canary prompt 的字面文本：
+仓库 SHALL 只在活动的双语启动摘要中维护上下文保留 canary 权威：
 
-- `docs_bilingual/project_startup_summary.md` - 英文启动摘要和 canary prompt 来源。
-- `docs_bilingual/project_startup_summary.zh-CN.md` - 中文启动摘要和 canary prompt 来源。
+- `docs_bilingual/project_startup_summary.md` - 英文启动摘要和 ASCII-only 恢复/来源描述。
+- `docs_bilingual/project_startup_summary.zh-CN.md` - 中文启动摘要和字面可见标记来源。
+
+英文启动摘要 SHALL NOT 包含非 ASCII 字符、字面可见 canary 标记文本、legacy ASCII marker token，或可见标记的 mojibake 变体。它 SHALL 通过 ASCII-only Unicode 码点写法或等效 ASCII-only 间接描述来说明当前可见标记。
+
+中文启动摘要 SHALL 包含字面可见标记文本，并 SHALL 保持 UTF-8-clean。
 
 其他活动指令面 MAY 指向启动摘要 canary，MAY 描述冷启动恢复动作，但 SHALL NOT 复制完整 canary prompt 字面文本。
 
@@ -25,13 +29,25 @@
 
 仓库 SHALL 提供可执行检查器，用于验证活动 canary 放置位置、canary 编码完整性、恢复措辞，以及可选的用户提供响应/session 证据，而不是只依赖模型记忆。
 
-启动摘要双文件中定义的当前可见 canary 标记 SHALL 为 startup-summary-defined non-ASCII/cat-sound marker pair。之前的 ASCII transport-stable markers SHALL NOT 被接受为当前规范响应证据；它们 MAY 仅作为检查器内部的 legacy/stale compatibility inputs 与 replay-filtering signals 保留。
+启动摘要定义的当前可见 canary 标记 SHALL 继续为 startup-summary-defined non-ASCII/cat-sound marker pair。字面标记文本 SHALL 存放在中文启动摘要中，而英文启动摘要 SHALL 使用 ASCII-only 码点间接描述。之前的 ASCII transport-stable markers SHALL NOT 被接受为当前规范响应证据；它们 MAY 仅作为检查器内部的 legacy/stale compatibility inputs 与 replay-filtering signals 保留。
 
 检查器 SHALL 继续强制执行仓库文件的静态放置规则。
 
-当显式提供响应或 session 证据时，检查器 SHALL 只检查用户可见 assistant 响应，SHALL NOT 把工具输出、压缩摘要、推理、developer/system payload、启动摘要文件读取或其他上下文副本算作 canary。
+当显式提供响应或 session 证据时，检查器 SHALL 只检查用户可见 assistant 响应，SHALL NOT 把工具输出、压缩摘要、推理、developer/system payload、启动摘要文件读取或其他上下文副本算作 canary。完整用户可见 assistant 响应只有在 startup-summary-defined 开始标记是第一个可见响应文本且结束标记是最后一个可见响应文本时，才 SHALL 算作规范证据；若两个标记都存在但位置不正确，检查器 SHALL 以 `mispositioned_canary` fail closed 且不回显标记字面量。
 
 当 session JSONL 证据被缩小到指定 turn 或 latest assistant response 时，检查器 SHALL 只把该选择应用于合格 assistant 消息，并继续忽略非用户可见上下文来源。
+
+#### Scenario: English startup summary uses ASCII-only marker indirection
+
+- **WHEN** canary placement checker 扫描 `docs_bilingual/project_startup_summary.md`
+- **THEN** 它 SHALL 要求该文件保持 ASCII-only
+- **AND** 如果该文件包含字面可见 canary 标记或其 mojibake 变体，则 SHALL 失败
+
+#### Scenario: Chinese startup summary remains the literal marker source
+
+- **WHEN** canary placement checker 扫描 `docs_bilingual/project_startup_summary.zh-CN.md`
+- **THEN** 它 SHALL 要求两个字面可见标记值都存在
+- **AND** 如果该文件包含 mojibake marker text，则 SHALL 失败
 
 #### Scenario: Startup summary defines canonical visible canary markers
 
@@ -88,10 +104,18 @@
 - **AND** SHALL 报告 `missing_canary`
 - **AND** SHALL NOT 把工具输出视为满足响应诊断
 
+#### Scenario: User-visible assistant response mispositions the canary
+
+- **WHEN** 检查器收到包含合格 assistant 响应的 response text 或 session JSONL
+- **AND** 该响应同时包含 startup-summary-defined 两个标记
+- **AND** 开始标记不是第一个可见文本，或结束标记不是最后一个可见文本
+- **THEN** 检查器 SHALL 返回非零退出码
+- **AND** SHALL 报告 `mispositioned_canary` 且不回显标记字面量
+
 #### Scenario: Selected turn assistant response is the canonical evidence source
 
 - **WHEN** 检查器收到 session JSONL 证据以及指定 turn id 或 latest-assistant selector
-- **AND** 被选择的 assistant 响应包含启动摘要定义的当前 canary 标记
+- **AND** 被选择的 assistant 响应在所需响应位置包含启动摘要定义的当前 canary 标记
 - **THEN** 检查器 SHALL 报告 `canonical_present`
 - **AND** SHALL 忽略其他 turn 的上下文副本和选择范围外的 assistant 消息
 

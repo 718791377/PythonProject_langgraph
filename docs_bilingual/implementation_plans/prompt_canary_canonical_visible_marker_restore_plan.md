@@ -35,12 +35,13 @@ Restore the startup-summary-defined canonical visible canary to the requested no
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: implementation-complete-local-candidate
-Stage: implementation package restored the startup-summary-defined canonical visible canary, updated AGENTS/spec/governance wording, and hardened checkers/tests/session replay filtering before local `main` integration.
-Owner session: implement-restore-nonascii-canary-20260602 (implementation package)
-Current gate: run full repository validation, commit the implementation package, merge to local `main`, and stop at the remote-publication approval gate.
-Evidence: focused RED tests failed before checker changes; focused tests and focused checkers now pass for canonical response evidence, legacy ASCII classification, and model-readable replay blocking without echoing marker literals.
-Last updated: 2026-06-02
+Status: response-position-runtime-local-candidate
+Stage: Stage B runtime package hardens startup summaries, AGENTS/spec wording, canary response diagnostics, and focused tests for complete-response start/end positioning before local `main` integration.
+Owner session: implement-hardcode-canary-response-position-20260606 (runtime package)
+Current gate: run focused and repository validation, commit the runtime package, merge to local `main`, and stop at the remote-publication approval gate.
+Evidence: response-position RED tests failed before checker changes; focused canary tests now pass with `mispositioned_canary` diagnostics, visible-message metadata filtering, and no marker literal echo.
+Last updated: 2026-06-06
+Follow-up Stage A: local `main` already contains the parent/child plan contract; Stage B is the current runtime/checker implementation package.
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -83,6 +84,10 @@ Only one session may own each hotspot at a time:
 - [x] Update canary surface, mojibake, and session replay helpers so canonical marker literals are derived by codepoint or variable surfaces instead of direct source literals.
 - [x] Update the stable OpenSpec canary spec and related plan status/evidence text.
 - [x] Run focused tests and focused checkers before repository-level gates; full local gate and local MR review remain the final pre-integration evidence.
+- [x] Record the response-position hardening contract in the parent and child plans before runtime implementation.
+- [x] Update the startup summary pair with the response-position rule while keeping English ASCII-only codepoint indirection and Chinese as the only literal visible marker source.
+- [x] Extend canary response diagnostics so canonical response evidence requires the start marker at the beginning and the end marker at the end; mispositioned markers fail closed without echoing marker literals.
+- [x] Add focused RED/GREEN tests and update the stable canary OpenSpec spec for the new response-position scenarios.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -108,8 +113,10 @@ Run these gates before local `main` integration unless this child plan later nar
 - The previous ASCII token pair is classified as legacy/stale compatibility input, not canonical.
 - Diagnostics report marker status and counts without echoing marker literals.
 
+- Complete user-visible assistant responses count as canonical evidence only when the startup-summary-defined start marker is first visible text and the end marker is last visible text.
 ## Evidence Index
 
+- 2026-06-06 response-position Stage B package: branch `implement-hardcode-canary-response-position-20260606` implements startup-summary position wording, `mispositioned_canary` response diagnostics, focused RED/GREEN tests, and stable spec scenarios; Stage A plan contract is already in local `main`.
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-02 plan package: created as a Phase 2 follow-up child plan to restore the startup-summary-defined canonical visible canary and add explicit model-readable session context blocking.
 - 2026-06-02 implementation package: restored canonical marker authority to the startup summary pair, made legacy ASCII markers stale compatibility input, updated AGENTS/spec/governance text, and added checker/replay tests for canonical response acceptance plus replay/model-context blocking.

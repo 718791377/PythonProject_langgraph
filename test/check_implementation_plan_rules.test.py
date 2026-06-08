@@ -59,6 +59,66 @@ class ImplementationPlanRulesCheckTest(unittest.TestCase):
             "    zh_cn_path: docs_bilingual/implementation_plans/sample_plan.zh-CN.md\n"
         )
 
+    def registry_entry(self, doc_id: str, status: str = "active") -> str:
+        return (
+            f"  - doc_id: {doc_id}\n"
+            "    doc_class: implementation_plan\n"
+            f"    status: {status}\n"
+            f"    canonical_path: docs_bilingual/implementation_plans/{doc_id}.md\n"
+            f"    zh_cn_path: docs_bilingual/implementation_plans/{doc_id}.zh-CN.md\n"
+        )
+
+    def plan_file(
+        self,
+        doc_id: str,
+        *,
+        lang: str = "en",
+        status: str = "active",
+        parent_plan: str | None = None,
+        source_plan: str | None = None,
+        current_status: str = "active",
+        evidence_lines: str = "- 2026-06-03 implementation evidence: lightweight index entry.\n",
+    ) -> str:
+        if lang == "zh-CN":
+            front_matter = (
+                "---\n"
+                f"doc_id: {doc_id}\n"
+                "lang: zh-CN\n"
+                f"status: {status}\n"
+                "doc_class: implementation_plan\n"
+                f"translation_of: docs_bilingual/implementation_plans/{doc_id}.md\n"
+            )
+        else:
+            front_matter = (
+                "---\n"
+                f"doc_id: {doc_id}\n"
+                "lang: en\n"
+                f"status: {status}\n"
+                "doc_class: implementation_plan\n"
+                f"zh_cn_path: docs_bilingual/implementation_plans/{doc_id}.zh-CN.md\n"
+            )
+        if parent_plan:
+            front_matter += f"parent_plan: {parent_plan}\n"
+        if source_plan:
+            front_matter += f"source_plan: {source_plan}\n"
+        front_matter += "---\n"
+        return (
+            front_matter
+            + f"# {doc_id}\n\n"
+            + "## Current Status\n\n"
+            + "<!-- CURRENT_STATUS_START -->\n"
+            + f"Status: {current_status}\n"
+            + "<!-- CURRENT_STATUS_END -->\n\n"
+            + "## Task Backlog\n\n"
+            + "<!-- TASK_BACKLOG_START -->\n"
+            + "- [ ] Keep the next task small.\n"
+            + "<!-- TASK_BACKLOG_END -->\n\n"
+            + "## Evidence Index\n\n"
+            + "<!-- EVIDENCE_INDEX_START -->\n"
+            + evidence_lines
+            + "<!-- EVIDENCE_INDEX_END -->\n"
+        )
+
     def run_check(self, root: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(SCRIPT_PATH), "--root", str(root)],
@@ -355,6 +415,113 @@ class ImplementationPlanRulesCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("declares missing parent_plan" in error for error in payload["errors"]))
 
+    def test_reports_parent_and_source_child_plan_registry_groups(self) -> None:
+        root = self.make_root("impl-plan-child-registry-groups")
+        parent = "docs_bilingual/implementation_plans/parent_plan.md"
+        parent_zh = "docs_bilingual/implementation_plans/parent_plan.zh-CN.md"
+        source = "docs_bilingual/implementation_plans/source_plan.md"
+        source_zh = "docs_bilingual/implementation_plans/source_plan.zh-CN.md"
+        self.write_file(root, "docs_bilingual/implementation_plans/parent_plan.md", self.plan_file("parent_plan"))
+        self.write_file(root, "docs_bilingual/implementation_plans/parent_plan.zh-CN.md", self.plan_file("parent_plan", lang="zh-CN"))
+        self.write_file(root, "docs_bilingual/implementation_plans/source_plan.md", self.plan_file("source_plan"))
+        self.write_file(root, "docs_bilingual/implementation_plans/source_plan.zh-CN.md", self.plan_file("source_plan", lang="zh-CN"))
+        self.write_file(
+            root,
+            "docs_bilingual/implementation_plans/child_plan.md",
+            self.plan_file("child_plan", parent_plan=parent, source_plan=source),
+        )
+        self.write_file(
+            root,
+            "docs_bilingual/implementation_plans/child_plan.zh-CN.md",
+            self.plan_file("child_plan", lang="zh-CN", parent_plan=parent_zh, source_plan=source_zh),
+        )
+        self.write_file(
+            root,
+            "docs_bilingual/docs_registry.yaml",
+            "version: 1\n"
+            "documents:\n"
+            + self.registry_entry("parent_plan")
+            + self.registry_entry("source_plan")
+            + self.registry_entry("child_plan"),
+        )
+
+        json_result = self.run_check_json(root)
+
+        self.assertEqual(json_result.returncode, 0, json_result.stdout + "\n" + json_result.stderr)
+        payload = json.loads(json_result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["registered_child_plan_links"], 2)
+        self.assertEqual(payload["parent_child_plan_groups"][parent]["children"], ["child_plan"])
+        self.assertEqual(payload["source_child_plan_groups"][source]["children"], ["child_plan"])
+
+    def test_fails_when_child_plan_companion_declares_wrong_source_plan(self) -> None:
+        root = self.make_root("impl-plan-child-source-mismatch")
+        source = "docs_bilingual/implementation_plans/source_plan.md"
+        self.write_file(root, "docs_bilingual/implementation_plans/source_plan.md", self.plan_file("source_plan"))
+        self.write_file(root, "docs_bilingual/implementation_plans/source_plan.zh-CN.md", self.plan_file("source_plan", lang="zh-CN"))
+        self.write_file(
+            root,
+            "docs_bilingual/implementation_plans/child_plan.md",
+            self.plan_file("child_plan", source_plan=source),
+        )
+        self.write_file(
+            root,
+            "docs_bilingual/implementation_plans/child_plan.zh-CN.md",
+            self.plan_file("child_plan", lang="zh-CN", source_plan=source),
+        )
+        self.write_file(
+            root,
+            "docs_bilingual/docs_registry.yaml",
+            "version: 1\n"
+            "documents:\n"
+            + self.registry_entry("source_plan")
+            + self.registry_entry("child_plan"),
+        )
+
+        json_result = self.run_check_json(root)
+
+        self.assertNotEqual(json_result.returncode, 0)
+        payload = json.loads(json_result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("source_plan companion mismatch" in error for error in payload["errors"]))
+
+    def test_fails_when_implemented_child_plan_lacks_lightweight_evidence(self) -> None:
+        root = self.make_root("impl-plan-child-evidence-required")
+        parent = "docs_bilingual/implementation_plans/parent_plan.md"
+        self.write_file(root, "docs_bilingual/implementation_plans/parent_plan.md", self.plan_file("parent_plan"))
+        self.write_file(root, "docs_bilingual/implementation_plans/parent_plan.zh-CN.md", self.plan_file("parent_plan", lang="zh-CN"))
+        pending_evidence = "- 2026-06-03: child plan created; implementation evidence is pending future claims.\n"
+        self.write_file(
+            root,
+            "docs_bilingual/implementation_plans/child_plan.md",
+            self.plan_file("child_plan", parent_plan=parent, current_status="implemented-local", evidence_lines=pending_evidence),
+        )
+        self.write_file(
+            root,
+            "docs_bilingual/implementation_plans/child_plan.zh-CN.md",
+            self.plan_file(
+                "child_plan",
+                lang="zh-CN",
+                parent_plan="docs_bilingual/implementation_plans/parent_plan.zh-CN.md",
+                current_status="implemented-local",
+                evidence_lines=pending_evidence,
+            ),
+        )
+        self.write_file(
+            root,
+            "docs_bilingual/docs_registry.yaml",
+            "version: 1\n"
+            "documents:\n"
+            + self.registry_entry("parent_plan")
+            + self.registry_entry("child_plan"),
+        )
+
+        json_result = self.run_check_json(root)
+
+        self.assertNotEqual(json_result.returncode, 0)
+        payload = json.loads(json_result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("implemented child plan lacks lightweight evidence index entries" in error for error in payload["errors"]))
 
 
 if __name__ == "__main__":

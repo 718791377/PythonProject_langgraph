@@ -40,8 +40,15 @@ Stage: Phase 5 final closeout package
 Owner session: `main-codex-leader-comet-runtime-policy-checker-alignment-20260531`
 Current gate: remote publication authorized by the current user message; no further local Phase 5 work remains
 Stage C entry condition: satisfied by user confirmation on 2026-05-31 after the Stage B child-plan package was merged to local `main`
-Last updated: 2026-05-31
+Priority update: 2026-06-07 docs-only refresh records Comet as the highest-priority control surface for overlaps with Spec Kit, gstack, or Codex harnesses; no runtime code changes occur in this package.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
+
+## Conflict Priority
+
+Comet remains the control layer coordinating OpenSpec WHAT and Superpowers HOW. If gstack delivery-loop advice, Codex harness candidate runtime behavior, or Spec Kit subordinate templates conflict with Comet phase/workflow routing, Comet wins unless a separate active implementation plan explicitly changes this authority order. Future checker/runtime work should emit `authority_decision: comet_control_wins` when suppressing a subordinate surface.
+
+Reference carry-forward: `docs_bilingual/governance/openspec_comet_superpowers_workflow_policy.md`, `https://github.com/garrytan/gstack`, `https://github.com/github/spec-kit`, and the Codex harness source ledger in `codex_harnesses_governance_plan.md`.
 
 ## File Ownership
 
@@ -73,6 +80,7 @@ Only one session may own each hotspot at a time:
 - [x] Add checker coverage for policy/runtime drift.
 - [x] Update CI/local gate registration if new checker or tests are added.
 - [x] Run verify_official_openspec, run_openspec_guard, and local gate.
+- [x] Record Comet-first conflict priority over gstack advisory checks, Codex harness candidate runtime guards, and Spec Kit subordinate templates without implementing new scripts.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -96,6 +104,7 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 conflict-priority refresh: this docs-only package records Comet as the highest-priority control surface for conflicts with gstack, Codex harnesses, and Spec Kit; Checker + Runtime implementation remains deferred.
 - 2026-05-31 Stage C minimal closeout: user confirmed implementation; existing alignment evidence passed `python tools/check_openspec_comet_superpowers_policy.py --root . --json`, `python test/comet_runtime_management_flow.test.py`, `python tools/check_implementation_plan_rules.py --root . --json`, and `python tools/check_worktree_task_receipt.py --root . --json`; source edits were not needed beyond this plan pair because the checker reported `Spec source: stable` and no missing policy/spec/runtime terms.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 - 2026-05-31 remote-publication carrier: this Phase 5 child plan is included in local `main` and the current user-authorized GitLab/GitHub publication package; no further local Phase 5 implementation work remains before Phase 6 admission.

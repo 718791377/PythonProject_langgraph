@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This specification preserves the script-backed baseline governance requirements for user-level MCP, skills, browser automation, and CLI harness surfaces. It keeps Token/risk priority, authorization receipt, update receipt, evidence redaction, port registry/lease, OpenSpec slice, and fail closed rules visible before the later `skills2cli`, `mcp2cli`, browser, and `wecom-cli` implementation slices land.
+This specification preserves the script-backed baseline governance requirements for user-level MCP, skills, browser automation, and CLI adapter and Codex harness surfaces. It keeps Token/risk priority, authorization receipt, update receipt, evidence redaction, port registry/lease, OpenSpec slice, and fail closed rules visible before the later `skills2cli`, `mcp2cli`, browser, and `WXWork_CLI` implementation slices land.
 ## Requirements
 ### Requirement: User-level MCP skills browser CLI baseline SHALL be script-backed
 
@@ -13,7 +13,7 @@ The checker SHALL validate that repository-owned plan and OpenSpec surfaces pres
 #### Scenario: Baseline checker runs in the repository guard
 
 - **WHEN** `python tools/run_openspec_guard.py --root . --json` runs
-- **THEN** the aggregate guard SHALL include `check_user_level_mcp_skills_browser_cli_baseline`
+- **THEN** the aggregate guard SHALL include the split checks `check_user_level_browser_cli_adapter_boundary`, `check_user_level_cli_anything_wxwork_cli_governance`, and `check_codex_harnesses_governance`
 - **AND** the checker SHALL pass only when the baseline governance surfaces are present
 
 #### Scenario: Authorization receipt evidence is incomplete
@@ -504,7 +504,7 @@ The guard SHALL be non-mutating. It SHALL NOT install OpenCLI, start OpenCLI, la
 - **WHEN** `python tools/opencli_governance.py --state-dir <tmp> --owner-state-dir <owner-state> check --action session.inspect --target tab:opencli-1 --session session-a --owner-lease-id <lease> --json` runs with matching active owner lease evidence
 - **THEN** the command SHALL return `ok=true`
 - **AND** it SHALL report `dispatch_allowed=true`
-- **AND** it SHALL report `adapter_mode=on-demand`
+- **AND** it SHALL report `adapter_mode=on-demand` (meaning OpenCLI is available only when explicitly invoked for the current task, not as a persistent always-on browser adapter)
 - **AND** it SHALL report `owner_verified=true`
 - **AND** it SHALL report `connects_to_browser=false`
 
@@ -541,9 +541,22 @@ The guard SHALL be non-mutating. It SHALL NOT install OpenCLI, start OpenCLI, la
 - **AND** each check SHALL require owner lease evidence
 - **AND** each check SHALL require authorization receipt evidence
 
-### Requirement: CLI-Anything governance guard SHALL require receipt evidence and harness-generation boundaries
 
-The repository SHALL provide a repo-local CLI-Anything governance guard that validates install/update receipt evidence and harness-generation boundaries before any future user-level CLI-Anything or CLI Hub adaptation is treated as eligible.
+
+### Requirement: Browser/CLI adapter boundary SHALL stay separate from sibling lanes
+
+The Browser/CLI adapter lane SHALL contain exactly `chrome-devtools-mcp`, `cdp-bridge-mcp` / `CDP Bridge`, and `OpenCLI`. CLI-Anything/WXWork_CLI and Codex harnesses are sibling plans, not Browser/CLI adapters.
+
+#### Scenario: Adapter lane table is checked
+
+- **WHEN** `python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json` runs
+- **THEN** it SHALL accept only the three canonical adapter lane rows
+- **AND** it SHALL reject CLI-Anything, WXWork_CLI, WXWork.exe, legacy wecom-cli, or harness terms in adapter lane tables
+
+
+### Requirement: CLI-Anything governance guard SHALL require receipt evidence and adapter-generation boundaries
+
+The repository SHALL provide a repo-local CLI-Anything governance guard that validates install/update receipt evidence and adapter-generation boundaries before any future user-level CLI-Anything or CLI Hub adaptation is treated as eligible.
 
 The guard SHALL support at least:
 
@@ -552,9 +565,9 @@ The guard SHALL support at least:
 - `update-plan --current-receipt <path> --new-pin <pin> --staging-dir <path> --smoke-status <status> --json`;
 - `update-record --current-receipt <path> --receipt-dir <dir> --new-pin <pin> --staging-dir <path> --smoke-command <cmd> --smoke-status <status> --json`;
 - `rollback-plan --receipt <path> --json` - reports rollback evidence without executing rollback;
-- `harness-plan --capability <text> --output-dir <path> --target-process <process> --json` - reports harness-generation eligibility without generating or running a live harness.
+- `adapter-plan --capability <text> --output-dir <path> --target-process <process> --json` - reports adapter-generation eligibility without generating or running a live harness.
 
-The guard SHALL keep CLI-Anything as harness-generation support only until install/update receipts, smoke evidence, and rollback evidence exist. It SHALL NOT clone CLI-Anything, perform network fetches, install wrappers, run CLI-Anything, mutate user-level Codex configuration, hard-load bulk skills, control live applications, or emit raw private install/wrapper/state/output paths in default output.
+The guard SHALL keep CLI-Anything as adapter-generation support only until install/update receipts, smoke evidence, and rollback evidence exist. It SHALL NOT clone CLI-Anything, perform network fetches, install wrappers, run CLI-Anything, mutate user-level Codex configuration, hard-load bulk skills, control live applications, or emit raw private install/wrapper/state/output paths in default output.
 
 #### Scenario: Pinned CLI-Anything install receipt is written without installing the tool
 
@@ -562,7 +575,7 @@ The guard SHALL keep CLI-Anything as harness-generation support only until insta
 - **THEN** the command SHALL return `ok=true`
 - **AND** it SHALL write a `cli-anything.lock.json` receipt
 - **AND** it SHALL report path hashes instead of raw private paths
-- **AND** it SHALL report `installs_cli_anything=false`, `runs_cli_anything=false`, `hard_loads_skills=false`, and `harness_generation_boundary_only=true`
+- **AND** it SHALL report `installs_cli_anything=false`, `runs_cli_anything=false`, `hard_loads_skills=false`, and `adapter_generation_boundary_only=true`
 
 #### Scenario: CLI-Anything hard-load skill attempts are blocked
 
@@ -581,19 +594,19 @@ The guard SHALL keep CLI-Anything as harness-generation support only until insta
 - **THEN** it SHALL write an update receipt
 - **AND** the update receipt SHALL include previous receipt id and previous pin rollback evidence
 
-#### Scenario: CLI-Anything harness planning remains generation-only
+#### Scenario: CLI-Anything adapter planning remains generation-only
 
-- **WHEN** `harness-plan --capability <text> --output-dir <path> --target-process WXWork.exe --json` runs without hard-loaded skills
-- **THEN** it SHALL return `harness_generation_allowed=true`
+- **WHEN** `adapter-plan --capability <text> --output-dir <path> --target-process WXWork.exe --json` runs without hard-loaded skills
+- **THEN** it SHALL return `adapter_generation_allowed=true`
 - **AND** it SHALL report repo-local source and live-control authorization gates
 - **AND** it SHALL NOT run CLI-Anything, control WXWork, hard-load skills, or emit raw private output paths
 
-- **WHEN** `harness-plan` is asked to hard-load skills
+- **WHEN** `adapter-plan` is asked to hard-load skills
 - **THEN** it SHALL fail closed with `hard_load_skills_must_be_false`
 
-### Requirement: WeCom CLI governance guard SHALL prefer API/Webhook and fail closed for WXWork GUI automation
+### Requirement: WXWork_CLI governance guard SHALL prefer API/Webhook and fail closed for WXWork GUI automation
 
-The repository SHALL provide a repo-local `wecom-cli` governance guard that models Enterprise WeChat / WeCom / WXWork control boundaries without attaching to `WXWork.exe`, probing local processes, calling live APIs or webhooks, reading message content, sending messages, mutating user-level Codex configuration, or controlling GUI state.
+The repository SHALL provide a repo-local `WXWork_CLI` governance guard that models Enterprise WeChat / WXWork_CLI / WXWork control boundaries without attaching to `WXWork.exe`, probing local processes, calling live APIs or webhooks, reading message content, sending messages, mutating user-level Codex configuration, or controlling GUI state.
 
 The guard SHALL support at least:
 
@@ -606,28 +619,28 @@ WXWork GUI actions SHALL require a global WXWork lease receipt, operator authori
 
 #### Scenario: API/Webhook status is requested
 
-- **WHEN** `python tools/wecom_cli_governance.py api-status --json` runs
+- **WHEN** `python tools/wxwork_cli_governance.py api-status --json` runs
 - **THEN** the command SHALL return `ok=true`
 - **AND** it SHALL report `api_or_webhook_first`
 - **AND** it SHALL report no process probe, no GUI control, no message-content read, and no WeCom API call
 
 #### Scenario: Webhook planning receives an inline secret
 
-- **WHEN** `python tools/wecom_cli_governance.py webhook-plan --name ops --secret-ref "secret=<value>" --json` runs
+- **WHEN** `python tools/wxwork_cli_governance.py webhook-plan --name ops --secret-ref "secret=<value>" --json` runs
 - **THEN** the command SHALL fail closed
 - **AND** it SHALL not call a webhook
 - **AND** it SHALL not retain the raw secret value in default output
 
 #### Scenario: GUI planning is requested
 
-- **WHEN** `python tools/wecom_cli_governance.py gui-plan --target-process WXWork.exe --json` runs
+- **WHEN** `python tools/wxwork_cli_governance.py gui-plan --target-process WXWork.exe --json` runs
 - **THEN** the command SHALL return `ok=true`
 - **AND** it SHALL report global lease, operator confirmation, and timeout release requirements
 - **AND** it SHALL report live GUI control is not allowed by the repo-local MVP
 
 #### Scenario: GUI attach lacks receipts
 
-- **WHEN** `python tools/wecom_cli_governance.py gui-check --action gui.attach --session session-a --json` runs without receipts
+- **WHEN** `python tools/wxwork_cli_governance.py gui-check --action gui.attach --session session-a --json` runs without receipts
 - **THEN** the command SHALL fail closed
 - **AND** it SHALL require both operator authorization receipt and global WXWork lease receipt
 - **AND** it SHALL report `gui_control_performed=false`
@@ -649,8 +662,12 @@ The guard SHALL support at least:
 - `auth-check --receipt <path> --action <action> --target <target> --session <id> --json` - validates one-task authorization evidence.
 - `update-check --receipt <path> --tool-name <name> --owner-lane <lane> --json` - validates install/update evidence.
 - `redact-check --receipt <path> --json` - validates sensitive-data redaction boundaries.
+- `smoke-check --receipt <path> --tool-name <name> --owner-lane <lane> --json` - validates R4 `smoke-tested` receipt evidence without running the smoke command.
+- `rollback-check --receipt <path> --owner-lane <lane> --json` - validates rollback dry-run/apply receipt evidence without executing rollback.
 - `template --kind authorization --json` - prints the authorization receipt field template.
 - `template --kind update --json` - prints the update receipt field template.
+- `template --kind smoke --json` - prints the R4 smoke receipt field template.
+- `template --kind rollback --json` - prints the rollback receipt field template.
 
 Receipt field glossary:
 
@@ -671,6 +688,15 @@ Receipt field glossary:
 | `rollback_pointer` | Previous version, backup directory, or rollback reference. |
 | `owner_lane` | Owning lane such as `skills2cli`, `mcp2cli`, or `browser`. |
 | `redaction_status` | Evidence that secrets, cookies, tokens, raw browser data, message contents, API keys, passwords, and plugin description dumps are absent or redacted. |
+| `runtime_stage` | R4 smoke stage marker, normally `R4` or `smoke-tested`. |
+| `install_receipt` | Prior install/update receipt evidence for the smoke-tested artifact. |
+| `smoke_command`, `smoke_type`, `smoke_result` | Bounded read-only smoke evidence and pass/fail result; the helper validates this evidence without running the command. |
+| `timeout_release` | Evidence that the smoke command released timeout or watchdog ownership cleanly. |
+| `rollback_ready` | Boolean proof that rollback evidence is present before R4 promotion. |
+| `command_transcript`, `transcript_redaction` | Smoke transcript evidence and proof that it was redacted before storage. |
+| `rollback_target`, `rollback_mode`, `restore_command` | Rollback executor receipt identity, dry-run/apply mode, and restore-command evidence. |
+| `dry_run_result`, `apply_result`, `post_rollback_verification` | Rollback dry-run, optional apply, and post-rollback verification evidence. |
+| `operator_authorization` | Boolean evidence required before an apply-mode rollback receipt can pass validation. |
 
 #### Scenario: Authorization receipt is missing required fields
 
@@ -705,6 +731,65 @@ Receipt field glossary:
 - **THEN** the command SHALL fail closed
 - **AND** it SHALL report redaction findings
 - **AND** it SHALL not read browser data or emit raw secrets in default output
+
+### Requirement: Receipt governance helper SHALL validate R4 smoke-tested receipts
+
+The repository-local receipt governance helper SHALL provide a read-only R4 smoke receipt validation surface for user-level runtime promotion lanes.
+
+A valid R4 smoke receipt SHALL include tool identity, owner lane, runtime stage `R4` or `smoke-tested`, prior install receipt evidence, bounded read-only smoke command evidence, passing smoke result, timeout release evidence, rollback pointer, rollback readiness, transcript redaction evidence, and redaction status. The helper SHALL emit hash-first summaries for receipt references, transcripts, and rollback pointers by default.
+
+The helper SHALL fail closed when a smoke receipt attempts to represent write-capable behavior, R5 live handoff, sensitive action execution, raw browser data reads, external message sends, or user-level state mutation.
+
+#### Scenario: Valid R4 smoke receipt is accepted without raw private paths
+
+- **GIVEN** a smoke receipt records R4 or `smoke-tested` stage evidence for a bounded help/status/version/safe-discovery/read-only command
+- **WHEN** `python tools/user_level_receipt_governance.py smoke-check --receipt <path> --json` runs
+- **THEN** the command SHALL report `ok=true`, `smoke_receipt_valid=true`, `runtime_stage=R4`, and `rollback_ready=true`
+- **AND** default output SHALL include hashes instead of raw install receipt paths, transcript contents, or rollback pointers
+- **AND** the command SHALL report that it does not mutate user-level state, run external tools, or read browser data.
+
+#### Scenario: R4 smoke receipt attempts live or write behavior
+
+- **GIVEN** a smoke receipt marks write behavior, live action, sensitive action execution, or user-level mutation
+- **WHEN** the smoke receipt checker runs
+- **THEN** the command SHALL fail closed with sanitized blocker codes
+- **AND** it SHALL NOT treat the lane as `smoke-tested`.
+
+
+### Requirement: Mcp2cli and Skills2cli runtime helper SHALL record fixture-backed R4 smoke receipts
+
+The repository-local `install_user_level_mcp_skills_cli.py` helper SHALL provide an explicit `smoke` command for `mcp2cli` and `skills2cli` runtime promotion evidence. The command SHALL run only bounded read-only help/version smoke commands against wrappers under an explicitly supplied Codex home and SHALL write R4 `smoke-tested` receipts only when `--record` and `--operator-confirmation` are both present.
+
+The repository-local `check_user_level_mcp_skills_cli_install.py` checker SHALL provide `--require-smoke-tested`, which requires valid R4 smoke receipts for both tools and fails closed when either tool lacks smoke evidence. These fixture-backed R4 receipts SHALL validate through `tools/user_level_receipt_governance.py smoke-check` and SHALL NOT imply that the real default user-level Codex home was installed, smoked, or promoted without separate live authorization.
+
+#### Scenario: Fixture-backed R4 smoke receipts are recorded
+
+- **GIVEN** a temporary Codex home contains R3-style update receipts and wrappers for `mcp2cli` and `skills2cli`
+- **WHEN** `python tools/install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation --codex-home <temp-home> --json` runs
+- **THEN** the command SHALL run bounded read-only wrapper smoke commands
+- **AND** it SHALL write one `smoke-tested` R4 receipt per tool
+- **AND** each receipt SHALL pass `python tools/user_level_receipt_governance.py smoke-check --receipt <receipt> --tool-name <tool> --owner-lane <tool> --json`
+- **AND** it SHALL NOT perform R5 live handoff, sensitive calls, browser reads, external message sends, or default user-level Codex-home mutation.
+
+#### Scenario: Checker requires smoke-tested receipts
+
+- **GIVEN** a Codex home is supplied for install-surface validation
+- **WHEN** `python tools/check_user_level_mcp_skills_cli_install.py --root . --require-user-level-installed --require-smoke-tested --codex-home <home> --json` runs
+- **THEN** the checker SHALL fail closed if either `mcp2cli` or `skills2cli` lacks a valid R4 `smoke-tested` receipt
+- **AND** it SHALL report the smoke receipt count and sanitized latest smoke receipt summaries when the evidence is present.
+
+### Requirement: Receipt governance helper SHALL validate rollback executor receipts without executing rollback
+
+The repository-local receipt governance helper SHALL validate rollback executor receipts for dry-run and apply evidence without executing rollback commands.
+
+A rollback receipt SHALL include rollback target, rollback pointer, rollback mode, restore command evidence, dry-run result, post-rollback verification evidence, owner lane, operator authorization status, and redaction status. Apply-mode receipts SHALL fail closed unless operator authorization is explicit.
+
+#### Scenario: Rollback apply receipt lacks operator authorization
+
+- **GIVEN** a rollback receipt requests apply mode without explicit operator authorization
+- **WHEN** `python tools/user_level_receipt_governance.py rollback-check --receipt <path> --json` runs
+- **THEN** the command SHALL fail closed
+- **AND** it SHALL report `rollback_performed=false` because the helper validates receipts only and never executes rollback commands.
 
 ### Requirement: Governance plan SHALL use the executable modern Comet structure
 
@@ -793,3 +878,76 @@ Even when all evidence is present, the repo-local MVP SHALL NOT start OpenCLI. I
 - **THEN** the command SHALL fail closed with `live_start_not_implemented_repo_local_mvp`
 - **AND** it SHALL report `start_performed=false`
 - **AND** it SHALL NOT install OpenCLI, start OpenCLI, launch browsers, connect to browser targets, or mutate user-level Codex configuration
+
+
+### Requirement: Codex harnesses governance SHALL require pinned source ledger and no-takeover guards
+
+Codex harnesses governance SHALL be the only lane that owns harness wording. It SHALL derive future rules from these seven reference sources while keeping Codex as primary controller: The Harness Problem `https://blog.can.ac/2026/02/12/the-harness-problem`, oh-my-pi `https://github.com/can1357/oh-my-pi`, Pi `https://pi.dev/`, Pi packages `https://pi.dev/packages`, revfactory/harness `https://github.com/revfactory/harness`, ohmyopenagent `https://github.com/ymymssss/ohmyopenagent`, and snow-cli `https://github.com/MayDay-wpf/snow-cli`.
+
+The harness lane SHALL require source ledger rows with source pin, retrieved_at, license note, and rollback pointer before adopting any derived rule or helper. It SHALL reject no Codex takeover violations, unpinned Pi packages, missing read guard, missing write guard, missing job state, missing isolated worktree, or missing changed-path report evidence.
+
+For R4 user-level smoke runtime, `tools/run_codex_harnesses_smoke.py` SHALL expose a candidate registry and generate bounded read-only receipts only from existing R3 install/update receipts. The registry SHALL include `pi-runtime` as `package-runtime`, `oh-my-pi-sidecar` as `sidecar-ux`, `revfactory-harness-team-factory` as `team-factory`, `ohmyopenagent-discipline-layer` as `discipline-layer`, and `snow-cli-terminal-agent-runtime` as `terminal-agent-runtime`. `tools/check_codex_harnesses_smoke_receipts.py` SHALL validate those receipts without installing packages, starting sidecars, running write-capable harness jobs, mutating user config, or replacing Codex surfaces. Missing or invalid R3 receipts may produce honest blocked receipts, but blocked receipts SHALL remain not smoke-tested and SHALL NOT satisfy `--require-smoke-tested`.
+
+Every R4 candidate registry receipt SHALL include `candidate_id`, `adapter_kind`, `guard_profile`, source URL, `source_pin`, `license_note`, `sensitive_command_policy`, `hook_policy`, `async/headless` lifecycle evidence through `async_headless_lifecycle_state`, and `authority_decision`. The `authority_decision` SHALL identify the harness runtime safety decision and SHALL preserve the priority order Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit.
+
+#### Scenario: Harness governance checker runs
+
+- **WHEN** `python tools/check_codex_harnesses_governance.py --root . --json` runs
+- **THEN** it SHALL verify all seven source URLs and the source-ledger fields
+- **AND** it SHALL verify the five candidate ids, five adapter kinds, no Codex takeover, read guard, write guard, job state, isolated worktree, changed-path report, authority decision, and unpinned Pi packages boundaries
+
+#### Scenario: Harness R4 smoke receipts are blocked without install evidence
+
+- **WHEN** `python tools/run_codex_harnesses_smoke.py run --receipt-dir <dir> --json` runs without R3 install/update receipts
+- **THEN** the helper SHALL write blocked receipts for all five candidate registry entries
+- **AND** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --json` SHALL accept those blocked receipts as honest evidence
+- **AND** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --require-smoke-tested --json` SHALL fail closed because blocked receipts are not smoke-tested
+
+#### Scenario: Harness R4 candidate registry receipts omit policy fields
+
+- **WHEN** `python tools/check_codex_harnesses_smoke_receipts.py --root . --receipt-dir <dir> --json` validates a receipt that lacks `candidate_id`, `adapter_kind`, `guard_profile`, `sensitive_command_policy`, `hook_policy`, `async/headless` lifecycle evidence, or `authority_decision`
+- **THEN** the checker SHALL fail closed
+- **AND** it SHALL NOT treat that candidate as `smoke-tested`
+
+### Requirement: Runtime promotion ladder SHALL separate project-level governance from user-level runtime
+
+The governance family SHALL use the shared R0-R5 runtime promotion ladder for CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses. The ladder SHALL keep this package not installed/started/enabled in this package and SHALL prevent a lane from claiming runtime readiness without the exact marker evidence.
+
+Runtime stages SHALL mean:
+
+- R0 project-level preflight: non-mutating source/environment/risk inventory only.
+- R1 project-level fake/dry-run runtime: deterministic fixture or dry-run behavior only.
+- R2 reusable project-level helper/guard: repo-local reusable guard/helper pattern, not a user-level global install.
+- R3 user-level install/update receipt: requires `installed-user-level`, explicit authorization, immutable pin, install/update receipt, smoke command, updater command, rollback pointer, owner lane, and redacted path evidence.
+- R4 user-level smoke runtime: requires `smoke-tested`, bounded help/status/read-only smoke evidence, timeout release, redaction, and rollback readiness; blocked receipts from `tools/run_codex_harnesses_smoke.py` are evidence of why R4 did not run, not smoke-tested promotion evidence.
+- R5 active-candidate / bounded live handoff: requires `active-candidate`, current authorization receipt, owner/global lease, target/action allowlist, expiry, timeout release, rollback pointer, action or changed-path report, and cleanup evidence.
+
+#### Scenario: Runtime promotion markers are missing
+
+- **WHEN** `python tools/check_user_level_cli_anything_wxwork_cli_governance.py --root . --json`, `python tools/check_user_level_browser_cli_adapter_boundary.py --root . --json`, or `python tools/check_codex_harnesses_governance.py --root . --json` runs
+- **THEN** the checker SHALL fail closed if the parent plan, child plan, or stable spec no longer preserves R0/R1/R2/R3/R4/R5 stage markers
+- **AND** the checker SHALL fail closed if `installed-user-level`, `smoke-tested`, or `active-candidate` marker evidence is removed from the promotion contract
+
+#### Scenario: Runtime work is attempted in the planning package
+
+- **WHEN** a runtime promotion package only updates plans, checkers, tests, and stable spec text
+- **THEN** it SHALL state that CLI-Anything, WXWork_CLI, browser adapters, Pi, oh-my-pi, and harness runtime are not installed/started/enabled in this package
+- **AND** it SHALL NOT claim R3/R4/R5 runtime evidence without receipts
+
+#### Scenario: WXWork_CLI send action is requested before R5
+
+- **WHEN** WXWork_CLI send behavior is considered before `active-candidate` R5 evidence exists
+- **THEN** the lane SHALL fail closed
+- **AND** a send action allowed only at R5 SHALL require global WXWork lease, explicit operator authorization, target/action allowlist, message redaction, ephemeral message handling, session match, future expiry, timeout release, rollback/stop evidence, and sanitized post-run action report
+
+#### Scenario: Browser adapter sensitive action is requested before R5
+
+- **WHEN** chrome-devtools-mcp, CDP Bridge, or OpenCLI click/type/navigate/JavaScript/cookie/raw-browser-data behavior is considered before R5 evidence exists
+- **THEN** the lane SHALL fail closed
+- **AND** R5 SHALL require owner lease + authorization receipt plus target/action allowlist and sanitized action reporting
+
+#### Scenario: Codex harness sidecar attempts takeover
+
+- **WHEN** Pi or oh-my-pi sidecar behavior attempts to replace Codex, native subagents, native_omx, LangGraph, codex-ohmy, apply_patch, local-main-first gates, or the main Codex CLI leader session
+- **THEN** the harness lane SHALL fail closed
+- **AND** R5 SHALL still require isolated worktree, read guard, write guard, job state, no Codex takeover, changed-path report, rollback, and cleanup evidence

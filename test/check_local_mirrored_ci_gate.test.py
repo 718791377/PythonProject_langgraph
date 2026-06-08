@@ -20,25 +20,59 @@ class LocalMirroredCiGateCheckTest(unittest.TestCase):
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
         return root
 
-    def write_required_files(self, root: Path, *, gitlab_ci: str, github_ci: str) -> None:
+    def write_required_files(
+        self,
+        root: Path,
+        *,
+        gitlab_ci: str,
+        github_ci: str,
+        manifest: dict | None = None,
+        local_gate_impl: str | None = None,
+        run_guard_text: str | None = None,
+        precommit_text: str | None = None,
+        safety_registry: dict | None = None,
+    ) -> None:
         (root / "tools" / "ci").mkdir(parents=True, exist_ok=True)
+        (root / "tools").mkdir(parents=True, exist_ok=True)
+        (root / "test").mkdir(parents=True, exist_ok=True)
         (root / ".github" / "workflows").mkdir(parents=True, exist_ok=True)
+        if manifest is None:
+            manifest = {
+                "schema_version": 1,
+                "python_unittest": [
+                    "check_local_mirrored_ci_gate.test.py",
+                    "parallel_plan_checker_ci_integration.test.py",
+                ],
+                "node_mjs": [],
+                "powershell_ps1": [],
+            }
         (root / "tools" / "ci" / "ci_test_manifest.json").write_text(
-            json.dumps({"schema_version": 1, "python_unittest": [], "node_mjs": [], "powershell_ps1": []}),
+            json.dumps(manifest),
             encoding="utf-8",
         )
-        (root / "tools" / "ci" / "local_gate.py").write_text(
-            """
+        for test_name in manifest.get("python_unittest", []):
+            (root / "test" / test_name).write_text("import unittest\n\n", encoding="utf-8")
+        if local_gate_impl is None:
+            local_gate_impl = """
 CHECK_NAME = 'local_ci_gate'
+DEFAULT_STEP_TIMEOUT_SECONDS = 600
 shared_with_remote_ci = True
 guard_command = ['python', 'tools/run_openspec_guard.py']
 flags = ['--refresh-managed-files', '--require-clean-git']
-steps = ['git_diff_check', 'python_unittest', 'node_mjs_tests', 'powershell_ps1_tests']
-reports = ['openspec-guard-report.json', 'local-gate-report.json']
 StepTimeoutSeconds = 'StepTimeoutSeconds'
+parser.add_argument('--step-timeout-seconds', type=int, default=DEFAULT_STEP_TIMEOUT_SECONDS)
 timed_out = False
 manifest = 'ci_test_manifest.json'
-""",
+steps = []
+steps.append(run_step('openspec_guard', guard_command, root, timeout))
+steps.append(run_step('python_unittest', ['python', 'runner'], root, timeout))
+steps.append(run_step('node_mjs_tests', ['node', 'runner'], root, timeout))
+steps.append(run_step('powershell_ps1_tests', ['pwsh', 'runner'], root, timeout))
+steps.append(run_step('git_diff_check', ['git', 'diff', '--check'], root, timeout))
+reports = ['openspec-guard-report.json', 'local-gate-report.json']
+"""
+        (root / "tools" / "ci" / "local_gate.py").write_text(
+            local_gate_impl,
             encoding="utf-8",
         )
         (root / "tools" / "ci" / "run_python_tests.py").write_text("print('ok')\n", encoding="utf-8")
@@ -46,7 +80,10 @@ manifest = 'ci_test_manifest.json'
         (root / "tools" / "ci" / "run_powershell_ps1_tests.ps1").write_text("Write-Host 'ok'\n", encoding="utf-8")
         (root / "tools" / "ci" / "local_gate.ps1").write_text(
             """
-& python tools/ci/local_gate.py
+param(
+  [int]$StepTimeoutSeconds = 600
+)
+& python tools/ci/local_gate.py --step-timeout-seconds $StepTimeoutSeconds
 """,
             encoding="utf-8",
         )
@@ -68,6 +105,52 @@ $mergeTree = Invoke-GitText -Arguments @('merge-tree', $mergeBase, $BaseRef, $He
         )
         (root / ".gitlab-ci.yml").write_text(gitlab_ci, encoding="utf-8")
         (root / ".github" / "workflows" / "openspec-guard.yml").write_text(github_ci, encoding="utf-8")
+        if run_guard_text is None:
+            run_guard_text = """
+steps = [
+  'check_precommit_update_archive',
+  'check_safety_rule_script_backing',
+  'check_local_mirrored_ci_gate',
+]
+"""
+        (root / "tools" / "run_openspec_guard.py").write_text(run_guard_text, encoding="utf-8")
+        if precommit_text is None:
+            precommit_text = """
+def check_new_tests_registered():
+    return 'new_tests_must_be_registered_in_ci_manifest'
+
+def check_new_checkers_registered():
+    return 'new_checkers_must_be_registered_before_commit'
+"""
+        (root / "tools" / "check_precommit_update_archive.py").write_text(precommit_text, encoding="utf-8")
+        if safety_registry is None:
+            safety_registry = {
+                "schema_version": 1,
+                "rules": [
+                    {
+                        "id": "precommit-update-archive-gate",
+                        "status": "implemented",
+                        "script_controls": ["tools/check_precommit_update_archive.py"],
+                        "guard_steps": ["check_precommit_update_archive"],
+                    },
+                    {
+                        "id": "local-mirrored-ci-mr-gate",
+                        "status": "implemented",
+                        "script_controls": ["tools/ci/local_gate.ps1", "tools/ci/local_mr_review.ps1", "tools/check_local_mirrored_ci_gate.py"],
+                        "guard_steps": ["check_local_mirrored_ci_gate"],
+                    },
+                    {
+                        "id": "complete-local-flow-to-remote-gate",
+                        "status": "implemented",
+                        "script_controls": ["tools/complete_local_flow_to_remote_gate.py"],
+                        "guard_steps": ["check_local_flow_scripted_enforcement"],
+                    },
+                ],
+            }
+        (root / "tools" / "safety_rule_script_backing_registry.json").write_text(
+            json.dumps(safety_registry),
+            encoding="utf-8",
+        )
 
     def run_check(self, root: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -83,8 +166,8 @@ $mergeTree = Invoke-GitText -Arguments @('merge-tree', $mergeBase, $BaseRef, $He
         root = self.make_root("mirrored-ci-pass")
         self.write_required_files(
             root,
-            gitlab_ci="script:\n  - pwsh -File tools/ci/local_gate.ps1 -Json\n",
-            github_ci="run: ./tools/ci/local_gate.ps1 -Json\n",
+            gitlab_ci="script:\n  - pwsh -File tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json\n",
+            github_ci="run: ./tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json\n",
         )
 
         result = self.run_check(root)
@@ -105,7 +188,7 @@ $mergeTree = Invoke-GitText -Arguments @('merge-tree', $mergeBase, $BaseRef, $He
         self.write_required_files(
             root,
             gitlab_ci="script:\n  - python tools/run_openspec_guard.py --root .\n",
-            github_ci="run: ./tools/ci/local_gate.ps1 -Json\n",
+            github_ci="run: ./tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json\n",
         )
 
         result = self.run_check(root)
@@ -114,6 +197,87 @@ $mergeTree = Invoke-GitText -Arguments @('merge-tree', $mergeBase, $BaseRef, $He
         self.assertFalse(payload["ok"])
         self.assertTrue(any("must call tools/ci/local_gate.ps1" in error for error in payload["errors"]))
         self.assertTrue(any("instead of run_openspec_guard.py directly" in error for error in payload["errors"]))
+
+    def test_fails_when_required_manifest_test_is_missing(self) -> None:
+        root = self.make_root("mirrored-ci-manifest-fail")
+        self.write_required_files(
+            root,
+            gitlab_ci="script:\n  - pwsh -File tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json\n",
+            github_ci="run: ./tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json\n",
+            manifest={
+                "schema_version": 1,
+                "python_unittest": ["check_local_mirrored_ci_gate.test.py"],
+                "node_mjs": [],
+                "powershell_ps1": [],
+            },
+        )
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 1)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("parallel_plan_checker_ci_integration.test.py" in error for error in payload["errors"]))
+
+    def test_fails_when_remote_ci_runs_manifest_tests_directly(self) -> None:
+        root = self.make_root("mirrored-ci-direct-tests-fail")
+        self.write_required_files(
+            root,
+            gitlab_ci=(
+                "script:\n"
+                "  - pwsh -File tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json\n"
+                "  - python tools/ci/run_python_tests.py --manifest tools/ci/ci_test_manifest.json\n"
+            ),
+            github_ci="run: ./tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json\n",
+        )
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 1)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("instead of running Python tests directly" in error for error in payload["errors"]))
+
+    def test_fails_when_shared_gate_default_timeout_is_too_low(self) -> None:
+        root = self.make_root("mirrored-ci-timeout-fail")
+        low_timeout_impl = """
+CHECK_NAME = 'local_ci_gate'
+DEFAULT_STEP_TIMEOUT_SECONDS = 180
+shared_with_remote_ci = True
+guard_command = ['python', 'tools/run_openspec_guard.py']
+flags = ['--refresh-managed-files', '--require-clean-git']
+StepTimeoutSeconds = 'StepTimeoutSeconds'
+parser.add_argument('--step-timeout-seconds', type=int, default=DEFAULT_STEP_TIMEOUT_SECONDS)
+timed_out = False
+manifest = 'ci_test_manifest.json'
+steps = []
+steps.append(run_step('openspec_guard', guard_command, root, timeout))
+steps.append(run_step('python_unittest', ['python', 'runner'], root, timeout))
+steps.append(run_step('node_mjs_tests', ['node', 'runner'], root, timeout))
+steps.append(run_step('powershell_ps1_tests', ['pwsh', 'runner'], root, timeout))
+steps.append(run_step('git_diff_check', ['git', 'diff', '--check'], root, timeout))
+reports = ['openspec-guard-report.json', 'local-gate-report.json']
+"""
+        self.write_required_files(
+            root,
+            gitlab_ci="script:\n  - pwsh -File tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json\n",
+            github_ci="run: ./tools/ci/local_gate.ps1 -RefreshManagedFiles -RequireCleanGit -Json\n",
+            local_gate_impl=low_timeout_impl,
+        )
+        (root / "tools" / "ci" / "local_gate.ps1").write_text(
+            """
+param(
+  [int]$StepTimeoutSeconds = 180
+)
+& python tools/ci/local_gate.py --step-timeout-seconds $StepTimeoutSeconds
+""",
+            encoding="utf-8",
+        )
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 1)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("StepTimeoutSeconds default must be at least 600s" in error for error in payload["errors"]))
+        self.assertTrue(any("DEFAULT_STEP_TIMEOUT_SECONDS must be at least 600s" in error for error in payload["errors"]))
 
 
 if __name__ == "__main__":

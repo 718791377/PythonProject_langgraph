@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-06-05
+x_archive_deferred_reason: "R4 readiness refresh is being implemented and validated in a feature worktree; archive waits for code, tests, local gate, local MR review, and local-main integration evidence."
+x_archive_follow_up: "Promote the stable spec delta and archive this R4 change in the same local integration package when validation is complete."

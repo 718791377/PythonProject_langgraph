@@ -204,7 +204,50 @@ def validate_lease(root: Path, lease_path: Path, lease: dict[str, Any], selector
     }
 
 
-def run_check(root: Path, *, selector_path: Path | None = None, now: datetime | None = None, max_age_seconds: int = DEFAULT_MAX_HEARTBEAT_AGE_SECONDS) -> dict[str, Any]:
+def status_pass(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"pass", "passed", "ok"}
+    if isinstance(value, dict):
+        return str(value.get("status", "")).strip().lower() in {"pass", "passed", "ok"}
+    return False
+
+
+def validate_active_candidate_receipt(path: Path, errors: list[str]) -> list[str]:
+    blockers: list[str] = []
+    receipt = read_json(path, errors, "active-candidate receipt")
+    if receipt is None:
+        return ["active_candidate_receipt_unreadable"]
+    if str(receipt.get("runtime_stage", "")).strip().lower().replace("_", "-") not in {"r5", "active-candidate"}:
+        blockers.append("active_candidate_receipt_runtime_stage_must_be_r5")
+    for field in ("authorization_receipt", "owner_lease", "target_action_allowlist", "timeout_release", "cleanup_evidence"):
+        if field not in receipt:
+            blockers.append(f"active_candidate_receipt_missing_{field}")
+    for field in ("authorization_receipt", "owner_lease", "timeout_release", "cleanup_evidence"):
+        if field in receipt and not status_pass(receipt.get(field)):
+            blockers.append(f"active_candidate_receipt_{field}_must_pass")
+    allowlist = receipt.get("target_action_allowlist")
+    if isinstance(allowlist, dict):
+        if not isinstance(allowlist.get("targets"), list) or not allowlist.get("targets"):
+            blockers.append("active_candidate_receipt_allowlist_targets_required")
+        if not isinstance(allowlist.get("actions"), list) or not allowlist.get("actions"):
+            blockers.append("active_candidate_receipt_allowlist_actions_required")
+    if not receipt.get("rollback_pointer"):
+        blockers.append("active_candidate_receipt_rollback_pointer_required")
+    if receipt.get("rollback_ready") is not True:
+        blockers.append("active_candidate_receipt_rollback_ready_must_be_true")
+    if receipt.get("remote_publication_mutated") is not False:
+        blockers.append("active_candidate_receipt_remote_publication_must_not_mutate")
+    return sorted(set(blockers))
+
+
+def run_check(
+    root: Path,
+    *,
+    selector_path: Path | None = None,
+    now: datetime | None = None,
+    max_age_seconds: int = DEFAULT_MAX_HEARTBEAT_AGE_SECONDS,
+    active_candidate_receipt_path: Path | None = None,
+) -> dict[str, Any]:
     root = root.resolve()
     now = now or datetime.now(timezone.utc)
     errors: list[str] = []
@@ -251,9 +294,19 @@ def run_check(root: Path, *, selector_path: Path | None = None, now: datetime | 
     elif selector_summary.get("routing_eligible") is not True:
         adoption_blockers.append("selector_not_routing_eligible")
 
-    adoption_allowed = bool(selector_summary) and not adoption_blockers
+    selector_valid_for_routing = bool(selector_summary) and not adoption_blockers
+    adoption_allowed = selector_valid_for_routing
     if adoption_allowed:
-        info.append("Repo-local active selector ownership is valid for automatic adoption.")
+        info.append("Repo-local active selector ownership is valid for routing selection.")
+
+    runtime_adoption_blockers: list[str] = []
+    if adoption_blockers:
+        runtime_adoption_blockers.extend(adoption_blockers)
+    if active_candidate_receipt_path is None:
+        runtime_adoption_blockers.append("active_candidate_receipt_missing")
+    else:
+        runtime_adoption_blockers.extend(validate_active_candidate_receipt(active_candidate_receipt_path, errors))
+    runtime_adoption_allowed = selector_valid_for_routing and not runtime_adoption_blockers
 
     return {
         "schema_version": 1,
@@ -268,6 +321,9 @@ def run_check(root: Path, *, selector_path: Path | None = None, now: datetime | 
         "leases": lease_summaries,
         "adoption_allowed": adoption_allowed,
         "adoption_blockers": adoption_blockers,
+        "selector_valid_for_routing": selector_valid_for_routing,
+        "runtime_adoption_allowed": runtime_adoption_allowed,
+        "runtime_adoption_blockers": sorted(set(runtime_adoption_blockers)),
         "errors": errors,
         "warnings": warnings,
         "info": info,
@@ -279,6 +335,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Validate repo-local active durable selector ownership.")
     parser.add_argument("--root", default=".", help="Repository or worktree root to validate.")
     parser.add_argument("--selector", help="Optional active selector path, primarily for fixtures.")
+    parser.add_argument("--active-candidate-receipt", help="Optional R5 active-candidate receipt required for runtime adoption.")
     parser.add_argument("--max-heartbeat-age-seconds", type=int, default=DEFAULT_MAX_HEARTBEAT_AGE_SECONDS)
     parser.add_argument("--now", help="Optional ISO timestamp for deterministic stale-selector checks.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")
@@ -287,6 +344,7 @@ def main() -> int:
     payload = run_check(
         Path(args.root),
         selector_path=Path(args.selector) if args.selector else None,
+        active_candidate_receipt_path=Path(args.active_candidate_receipt) if args.active_candidate_receipt else None,
         now=parse_now(args.now),
         max_age_seconds=max(0, int(args.max_heartbeat_age_seconds)),
     )

@@ -12,6 +12,7 @@ from typing import Any
 
 import check_plan_exit_execution_governance as plan_exit
 import commit_reorder_buffer as commit_rob
+import advance_worktree_task_lifecycle as lifecycle
 
 DOC_PREFIXES = ("docs_bilingual/", "openspec/", "docs/")
 DOC_EXACT_PATHS = {"完整提交流程.md"}
@@ -232,56 +233,102 @@ def record_local_main_completion(
     preserve_carrier: bool,
 ) -> dict[str, str]:
     now = datetime.now(timezone.utc).isoformat()
-    completion = {
-        "completed_at": now,
-        "rollback_ref": rollback_ref,
-        "local_main_commit": local_main_commit,
-        "cleaned_worktree": "preserved-for-audit" if preserve_carrier else "pending-automatic-safe-cleanup",
-        "deleted_branch": "preserved-as-local-publication-carrier" if preserve_carrier else "pending-automatic-safe-cleanup",
-        "remote_sync_status": "not_authorized:remote_publication_gate_closed",
-    }
-    common_updates: dict[str, Any] = {
+    cleaned_worktree = "preserved-for-audit" if preserve_carrier else "pending-automatic-safe-cleanup"
+    deleted_branch = "preserved-as-local-publication-carrier" if preserve_carrier else "pending-automatic-safe-cleanup"
+    remote_sync_status = "not_authorized:remote_publication_gate_closed"
+    claim_path = claim_path_for_branch(worktree, branch)
+    receipt = load_receipt(receipt_path)
+    claim = load_json_object(claim_path)
+    base_state = str(receipt.get("lifecycle_status") or receipt.get("status") or claim.get("lifecycle_status") or claim.get("status") or "active")
+    base_payload = {
+        "schema_version": 1,
+        "session_id": receipt.get("session_id") or claim.get("session_id") or safe_claim_name(branch),
+        "status": base_state,
+        "lifecycle_status": base_state,
         "branch": branch,
         "worktree": str(worktree),
+        "task_name": receipt.get("task_name") or claim.get("task_name") or branch,
+        "task_summary": receipt.get("task_summary") or claim.get("task_summary") or "local main integration",
+        "document_plan_only": bool(receipt.get("document_plan_only", claim.get("document_plan_only", False))),
+        "requires_code_implementation": bool(receipt.get("requires_code_implementation", claim.get("requires_code_implementation", True))),
+        "created_at": receipt.get("created_at") or claim.get("created_at") or now,
+        "expected_merge_or_pause": receipt.get("expected_merge_or_pause") or claim.get("expected_merge_or_pause") or "merge to local main",
+        "next_action": receipt.get("next_action") or claim.get("next_action") or "complete local main integration",
+        "requires_local_main_merge": True,
+        "requires_remote_sync": False,
+        "remote_publication_authorized": False,
+        "paths": receipt.get("paths") or claim.get("paths") or [],
+    }
+    receipt.update({**base_payload, **receipt, "branch": branch, "worktree": str(worktree), "status": base_state, "lifecycle_status": base_state})
+    claim.update({**base_payload, **claim, "branch": branch, "worktree": str(worktree), "status": base_state, "lifecycle_status": base_state})
+    write_receipt(receipt_path, receipt)
+    write_json_object(claim_path, claim)
+
+    def _state() -> str:
+        current = load_receipt(receipt_path)
+        return str(current.get("lifecycle_status") or current.get("status") or "active")
+
+    if _state() in {"active", "paused"}:
+        lifecycle.advance_lifecycle(
+            worktree=worktree,
+            branch=branch,
+            next_state="ready-to-merge",
+            owner="tools/complete_local_flow_to_remote_gate.py",
+            evidence_paths=["tools/ci/local_gate.ps1", "tools/ci/local_mr_review.ps1"],
+            cleanup_decision="pending-local-main-merge",
+            reason="local gates passed before local main integration",
+        )
+    if _state() == "ready-to-merge":
+        lifecycle.advance_lifecycle(
+            worktree=worktree,
+            branch=branch,
+            next_state="merged-local-main",
+            owner="tools/complete_local_flow_to_remote_gate.py",
+            evidence_paths=["git merge --ff-only", "post-merge local gate"],
+            cleanup_decision=cleaned_worktree,
+            reason="local main integration completed; remote publication gate remains closed",
+            rollback_ref=rollback_ref,
+            local_main_commit=local_main_commit,
+            cleaned_worktree=cleaned_worktree,
+            deleted_branch=deleted_branch,
+            remote_sync_status=remote_sync_status,
+        )
+    if _state() == "merged-local-main":
+        lifecycle.advance_lifecycle(
+            worktree=worktree,
+            branch=branch,
+            next_state="completed",
+            owner="tools/complete_local_flow_to_remote_gate.py",
+            evidence_paths=["post-merge local gate", "remote publication gate stop"],
+            cleanup_decision=cleaned_worktree,
+            reason="local package completed; remote publication not authorized",
+            rollback_ref=rollback_ref,
+            local_main_commit=local_main_commit,
+            cleaned_worktree=cleaned_worktree,
+            deleted_branch=deleted_branch,
+            remote_sync_status=remote_sync_status,
+        )
+
+    common_updates: dict[str, Any] = {
         "updated_at": now,
         "completed_at": now,
         "local_feature_commit": local_feature_commit,
         "local_main_commit": local_main_commit,
         "merged_local_main_commit": local_main_commit,
         "rollback_ref": rollback_ref,
+        "requires_local_main_merge": False,
+        "requires_remote_sync": False,
         "remote_publication_authorized": False,
         "remote_publication_performed": False,
         "remote_publication_status": "not_authorized",
-        "remote_sync_status": "not_authorized:remote_publication_gate_closed",
+        "remote_sync_status": remote_sync_status,
         "next_action": "Local main integration and post-merge local gate complete; stopped at the remote publication gate until explicit GitLab/GitHub publication approval.",
-        "completion": completion,
     }
-
-    claim_path = claim_path_for_branch(worktree, branch)
     claim = load_json_object(claim_path)
-    claim.update(
-        {
-            "schema_version": claim.get("schema_version", 1),
-            "session_id": claim.get("session_id") or safe_claim_name(branch),
-            "status": "completed",
-            "lifecycle_status": "completed",
-            **common_updates,
-        }
-    )
+    claim.update({"status": "completed", "lifecycle_status": "completed", **common_updates})
     write_json_object(claim_path, claim)
-
     receipt = load_receipt(receipt_path)
-    receipt.update(
-        {
-            "schema_version": receipt.get("schema_version", 1),
-            "session_id": receipt.get("session_id") or claim.get("session_id") or safe_claim_name(branch),
-            "status": "merged-local-main",
-            "lifecycle_status": "merged-local-main",
-            "requires_local_main_merge": False,
-            "requires_remote_sync": False,
-            **common_updates,
-        }
-    )
+    receipt.update({"status": "completed", "lifecycle_status": "completed", **common_updates})
     write_receipt(receipt_path, receipt)
     return {"claim_path": str(claim_path), "receipt_path": str(receipt_path)}
 

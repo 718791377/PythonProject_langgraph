@@ -4,7 +4,7 @@ param(
   [switch]$Json,
   [switch]$RefreshManagedFiles,
   [switch]$RequireCleanGit,
-  [int]$StepTimeoutSeconds = 180
+  [int]$StepTimeoutSeconds = 600
 )
 
 Set-StrictMode -Version Latest

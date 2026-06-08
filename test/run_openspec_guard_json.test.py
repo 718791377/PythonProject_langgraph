@@ -38,7 +38,15 @@ GUARD_STEPS = [
     ("check_openspec_comet_superpowers_policy", "check_openspec_comet_superpowers_policy.py", "openspec_comet_superpowers_policy"),
     ("check_comet_superpowers_visibility", "check_comet_superpowers_visibility.py", "comet_superpowers_visibility"),
     ("check_mcp_router_scope_policy", "check_mcp_router_scope_policy.py", "mcp_router_scope_policy"),
-    ("check_user_level_mcp_skills_browser_cli_baseline", "check_user_level_mcp_skills_browser_cli_baseline.py", "user_level_mcp_skills_browser_cli_baseline"),
+    ("check_user_level_browser_cli_adapter_boundary", "check_user_level_browser_cli_adapter_boundary.py", "user_level_browser_cli_adapter_boundary"),
+    ("check_browser_cli_adapter_smoke_receipts", "check_browser_cli_adapter_smoke_receipts.py", "browser_cli_adapter_smoke_receipts"),
+    ("check_user_level_cli_anything_wxwork_cli_governance", "check_user_level_cli_anything_wxwork_cli_governance.py", "user_level_cli_anything_wxwork_cli_governance"),
+    ("check_codex_harnesses_governance", "check_codex_harnesses_governance.py", "codex_harnesses_governance"),
+    ("check_codex_harnesses_smoke_receipts", "check_codex_harnesses_smoke_receipts.py", "codex_harnesses_smoke_receipts"),
+    ("stop_slop_caveman_response_density", "check_stop_slop_caveman_response_density.py", "stop_slop_caveman_response_density"),
+    ("stop_slop_caveman_smoke_receipts", "check_stop_slop_caveman_smoke_receipts.py", "stop_slop_caveman_smoke_receipts"),
+    ("check_gstack_codex_delivery_loop", "check_gstack_codex_delivery_loop.py", "gstack_codex_delivery_loop"),
+    ("check_user_level_mcp_skills_cli_install", "check_user_level_mcp_skills_cli_install.py", "user_level_mcp_skills_cli_install"),
     ("check_local_mirrored_ci_gate", "check_local_mirrored_ci_gate.py", "local_mirrored_ci_gate"),
     ("check_remote_publication_approval_policy", "check_remote_publication_approval_policy.py", "remote_publication_approval_policy"),
     ("check_role_routing_directive_evidence", "check_role_routing_directive_evidence.py", "role_routing_directive_evidence"),
@@ -66,7 +74,10 @@ GUARD_STEPS = [
     ("check_pyside6_project_opt_in_contract", "check_pyside6_project_opt_in_contract.py", "pyside6_project_opt_in_contract"),
     ("check_pyside6_packaging_opt_in_contract", "check_pyside6_packaging_opt_in_contract.py", "pyside6_packaging_opt_in_contract"),
     ("check_pyside6_operator_usage_guide", "check_pyside6_operator_usage_guide.py", "pyside6_operator_usage_guide"),
+    ("user_level_receipt_governance", "user_level_receipt_governance.py", "user_level_receipt_governance"),
     ("check_durable_routing_smoke_gate_template", "check_durable_routing_smoke_gate_template.py", "durable_routing_smoke_gate_template"),
+    ("check_durable_routing_smoke_receipts", "check_durable_routing_smoke_receipts.py", "durable_routing_smoke_receipts"),
+    ("check_r5_active_candidate_receipts", "check_r5_active_candidate_receipts.py", "r5_active_candidate_receipts"),
     ("check_codex_native_rollback_release_gate_template", "check_codex_native_rollback_release_gate_template.py", "codex_native_rollback_release_gate_template"),
     ("check_worktree_session_hygiene", "check_worktree_session_hygiene.py", "worktree_session_hygiene"),
     ("check_worktree_task_receipt", "check_worktree_task_receipt.py", "worktree_task_receipt"),
@@ -178,6 +189,11 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertIn("check_repo_local_selector_ownership", [step["step"] for step in payload["steps"]])
         self.assertIn("check_orchestration_collaboration_evidenceguard", [step["step"] for step in payload["steps"]])
         self.assertIn("check_local_main_retire_lock", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_browser_cli_adapter_smoke_receipts", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_codex_harnesses_smoke_receipts", [step["step"] for step in payload["steps"]])
+        self.assertIn("stop_slop_caveman_response_density", [step["step"] for step in payload["steps"]])
+        self.assertIn("stop_slop_caveman_smoke_receipts", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_gstack_codex_delivery_loop", [step["step"] for step in payload["steps"]])
         self.assertIn("check_launcher_payload_context_boundary", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:

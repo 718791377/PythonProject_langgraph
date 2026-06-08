@@ -5,10 +5,14 @@ Define where the context-retention canary prompt is allowed to live and require 
 ## Requirements
 ### Requirement: Canary prompt text SHALL live only in the startup summary pair
 
-The repository SHALL maintain the literal context-retention canary prompt only in the active bilingual startup summary pair:
+The repository SHALL maintain context-retention canary authority only in the active bilingual startup summary pair:
 
-- `docs_bilingual/project_startup_summary.md` - English startup summary and canary prompt source.
-- `docs_bilingual/project_startup_summary.zh-CN.md` - Chinese startup summary and canary prompt source.
+- `docs_bilingual/project_startup_summary.md` - English startup summary and ASCII-only recovery/source description.
+- `docs_bilingual/project_startup_summary.zh-CN.md` - Chinese startup summary and literal visible marker source.
+
+The English startup summary SHALL NOT contain non-ASCII characters, literal visible canary marker text, legacy ASCII marker tokens, or mojibake variants of the visible markers. It SHALL describe the current visible markers through ASCII-only Unicode codepoint notation or equivalent ASCII-only indirection.
+
+The Chinese startup summary SHALL contain the literal visible marker text and SHALL remain UTF-8-clean.
 
 Other active instruction surfaces MAY refer to the startup-summary canary and MAY describe the cold-start recovery action, but SHALL NOT duplicate the literal canary prompt text.
 
@@ -22,13 +26,25 @@ Other active instruction surfaces MAY refer to the startup-summary canary and MA
 
 The repository SHALL provide an executable checker that validates active canary placement, canary encoding integrity, recovery wording, and optional user-provided response/session evidence without relying on model memory alone.
 
-The visible startup canary markers SHALL be the non-ASCII/cat-sound marker pair defined only by the startup summary pair. The previous ASCII transport-stable markers SHALL NOT be accepted as current canonical response evidence; they MAY remain only as checker-internal legacy/stale compatibility inputs and replay-filtering signals.
+The visible startup canary markers SHALL remain the startup-summary-defined non-ASCII/cat-sound marker pair. The literal marker text SHALL be stored in the Chinese startup summary, while the English startup summary SHALL use ASCII-only codepoint indirection. Previous ASCII transport-stable markers SHALL NOT be accepted as current canonical response evidence; they MAY remain only as checker-internal legacy/stale compatibility inputs and replay-filtering signals.
 
 The checker SHALL continue to enforce static placement rules for repository files.
 
-When response or session evidence is explicitly provided, the checker SHALL inspect only user-visible assistant responses and SHALL NOT count tool output, compaction summaries, reasoning, developer/system payloads, startup-summary file reads, or other context copies as satisfying the canary.
+When response or session evidence is explicitly provided, the checker SHALL inspect only user-visible assistant responses and SHALL NOT count tool output, compaction summaries, reasoning, developer/system payloads, startup-summary file reads, or other context copies as satisfying the canary. Complete user-visible assistant responses SHALL count as canonical evidence only when the startup-summary-defined start marker is the first visible response text and the startup-summary-defined end marker is the last visible response text; if both markers are present but not in those positions, the checker SHALL fail closed with `mispositioned_canary` without echoing marker literals.
 
 When session JSONL evidence is narrowed to a specific turn or latest assistant response, the checker SHALL apply that selection only to eligible assistant messages and SHALL continue to ignore non-user-visible context sources.
+
+#### Scenario: English startup summary uses ASCII-only marker indirection
+
+- **WHEN** the canary placement checker scans `docs_bilingual/project_startup_summary.md`
+- **THEN** it SHALL require the file to be ASCII-only
+- **AND** it SHALL fail if that file contains the literal visible canary markers or their mojibake variants
+
+#### Scenario: Chinese startup summary remains the literal marker source
+
+- **WHEN** the canary placement checker scans `docs_bilingual/project_startup_summary.zh-CN.md`
+- **THEN** it SHALL require both literal visible marker values to be present
+- **AND** it SHALL fail if the file contains mojibake marker text
 
 #### Scenario: Startup summary defines canonical visible canary markers
 
@@ -85,10 +101,18 @@ When session JSONL evidence is narrowed to a specific turn or latest assistant r
 - **AND** it SHALL report `missing_canary`
 - **AND** it SHALL NOT treat the tool output as satisfying the response diagnostic
 
+#### Scenario: User-visible assistant response mispositions the canary
+
+- **WHEN** the checker receives response text or session JSONL containing an eligible assistant response
+- **AND** that response contains both startup-summary-defined markers
+- **AND** the start marker is not first visible text or the end marker is not last visible text
+- **THEN** the checker SHALL return a non-zero exit code
+- **AND** it SHALL report `mispositioned_canary` without echoing marker literals
+
 #### Scenario: Selected turn assistant response is the canonical evidence source
 
 - **WHEN** the checker receives session JSONL evidence together with a selected turn id or latest-assistant selector
-- **AND** the selected assistant response contains the startup-summary-defined canary markers
+- **AND** the selected assistant response contains the startup-summary-defined canary markers at the required response positions
 - **THEN** the checker SHALL report `canonical_present`
 - **AND** it SHALL ignore other turns' context copies and assistant messages outside the selected turn scope
 

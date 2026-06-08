@@ -45,6 +45,8 @@ This zh-CN companion section mirrors the promoted English stable spec for the wo
 
 Allowed lifecycle statuses now include `active`, `paused`, `ready-to-merge`, `merged-local-main`, `cleaned`, `remote-sync-needed`, `completed`, `superseded`, and `stale`. `stale` and `superseded` classify residual or obsolete work without asserting local-main integration, cleanup, branch deletion, or remote publication. `merged-local-main`, `cleaned`, `remote-sync-needed`, and `completed` require completion receipt fields for rollback ref, local-main commit, cleaned worktree path, deleted branch, and remote sync status.
 
+Every runtime lifecycle transition now appends a transition-ledger entry. A transition-ledger entry is the local evidence record that stores owner, previous state, next state, transition timestamp, evidence paths, rollback ref when applicable, local-main commit when applicable, cleanup decision, reason when applicable, and remote-publication authorization status.
+
 ### Scenario: Strict audit is requested
 - **WHEN** the checker runs with `--require-all-feature-worktrees`
 - **THEN** every registered non-main feature worktree SHALL have both a task receipt and a branch-matching claim
@@ -59,6 +61,30 @@ Allowed lifecycle statuses now include `active`, `paused`, `ready-to-merge`, `me
 - **WHEN** a worktree task receipt records `merged-local-main`, `cleaned`, `remote-sync-needed`, or `completed`
 - **THEN** the worktree task receipt checker SHALL require completion fields for rollback ref, local-main commit, cleaned worktree path, deleted branch, and remote sync status
 - **AND** it SHALL fail closed when those fields are absent or empty
+
+### Scenario: Runtime helper advances active work to ready-to-merge
+- **WHEN** the lifecycle helper advances a branch-matching receipt and claim from `active` to `ready-to-merge`
+- **THEN** it SHALL update both local-only metadata surfaces
+- **AND** it SHALL append a transition-ledger entry with owner, previous state, next state, timestamp, evidence paths, cleanup decision, and remote-publication authorization status
+- **AND** it SHALL NOT mutate local `main` or any remote ref
+
+### Scenario: Runtime helper records local-main merge evidence
+- **WHEN** the local-main flow records `ready-to-merge` to `merged-local-main`
+- **THEN** the helper SHALL require rollback ref and local-main commit evidence
+- **AND** it SHALL keep `remote_publication_authorized=false`
+- **AND** completion fields SHALL satisfy the worktree task receipt checker
+
+### Scenario: Runtime helper records cleaned evidence
+- **WHEN** guarded cleanup removes an integrated worktree and deletes its merged local branch
+- **THEN** the preserved completed claim SHALL record `lifecycle_status=cleaned`
+- **AND** it SHALL record removed worktree, deleted branch, rollback ref, local-main commit, and remote sync status
+- **AND** it SHALL preserve cleanup evidence without deleting backup refs or remote refs
+
+### Scenario: Runtime helper records exceptional lifecycle states
+- **WHEN** a worktree is paused, superseded, or marked stale before local-main integration
+- **THEN** the helper SHALL require a reason or evidence path
+- **AND** it SHALL append a transition-ledger entry
+- **AND** it SHALL NOT require completion fields reserved for integration or cleanup states
 ## 2026-06-01 update: automatic local integration and default cleanup
 
 This companion mirrors the English stable spec update for the local-main-first flow. After implementation authorization and passing local gates, the session may continue through automatic local `main` integration without asking for another local-merge prompt. This local authorization remains separate from remote publication approval.

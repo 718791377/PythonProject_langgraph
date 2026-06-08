@@ -35,12 +35,15 @@ Define and enforce active, paused, ready-to-merge, merged-local-main, completed,
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active
-Stage: Stage C local implementation package
-Owner session: implement-worktree-receipt-claim-lifecycle-20260530
-Current gate: implement, validate, archive, commit, and merge to local main; stop at remote publication gate
-Stage C entry condition: satisfied by explicit user request on 2026-05-30 to continue this plan
-Last updated: 2026-05-30
+Status: implemented-local
+Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
+Stage: R5 runtime-governance receipt package for worktree receipt and claim lifecycle.
+Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
+R5 evidence: `worktree-task lifecycle receipt fields plus generic active-candidate checker` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
+Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-07
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -71,6 +74,10 @@ Only one session may own each hotspot at a time:
 
 ## Task Backlog
 
+## Real Runtime Implementation Gap
+
+Receipt/claim lifecycle validation is implemented, but lifecycle advancement is not automated. Real runtime work must safely advance active -> ready -> merged-local-main -> completed -> cleaned with receipts and rollback references.
+
 <!-- TASK_BACKLOG_START -->
 - [x] Confirm this child plan after local main integration.
 - [x] Add schema fixtures for every allowed lifecycle state.
@@ -78,6 +85,9 @@ Only one session may own each hotspot at a time:
 - [x] Document cleanup and branch deletion evidence without forcing immediate cleanup.
 - [x] Run receipt checker, local gate, local MR review, archive, and post-archive validation.
 - [x] Align receipt lifecycle states with Phase 1A ROB entry states before runtime integration.
+- [x] Stage D real runtime: implement lifecycle advancement helper for active, paused, ready-to-merge, merged-local-main, completed, stale, superseded, and cleaned states.
+- [x] Stage D real runtime: require every state transition to record owner, previous state, next state, evidence paths, rollback ref, and cleanup decision.
+- [x] Stage D real runtime: integrate lifecycle advancement with local-main retire evidence without authorizing remote publication.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -101,6 +111,9 @@ Run these gates before local `main` integration unless this child plan later nar
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for worktree receipt and claim lifecycle. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
+- 2026-06-06 R4 runtime implementation package: branch `implement-worktree-receipt-claim-lifecycle-r4-20260605` adds `tools/advance_worktree_task_lifecycle.py`, integrates local-main completion and guarded cleanup transition ledgers, covers lifecycle helper tests inside the already CI-managed `test/cleanup_integrated_worktree.test.py`, avoiding the shared CI manifest hotspot, and preserves remote publication as unauthorized until an explicit GitLab/GitHub action is requested.
+- 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` records pending Stage D runtime work for active-to-ready-to-merged-to-cleaned lifecycle advancement; this package updates plan governance only and does not run live runtime.
 - 2026-05-30 validation package: focused receipt tests, receipt checker, implementation-plan checker, OpenSpec spec validation, pre-commit update/archive review, local gate, and local MR review all passed before local main integration.
 - 2026-05-30 implementation package: added `stale` receipt/claim lifecycle validation, all-state fixtures, and completion-evidence grouping; OpenSpec change `implement-worktree-receipt-claim-lifecycle-20260530` records stale as a classification state rather than cleanup or branch-deletion evidence.
 - 2026-05-30 complete-flow alignment: receipt lifecycle remains the ROB state source; `ready-to-merge` maps to a ready candidate package, and `merged-local-main` maps to retired evidence after lock-backed self-retire.
