@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+
+ROOT = Path(__file__).resolve().parents[1]
+RUNTIME = ROOT / "tools" / "r6_live_runtime.py"
+CHECKER = ROOT / "tools" / "check_r6_live_runtime_receipts.py"
+
+
+class R6LiveRuntimeTests(unittest.TestCase):
+    maxDiff = None
+
+    def make_root(self) -> Path:
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
+        (root / "tools").mkdir()
+        return root
+
+    def run_runtime(self, root: Path, *args: str, env: dict[str, str] | None = None, expect: int = 0) -> dict:
+        merged_env = os.environ.copy()
+        if env:
+            merged_env.update(env)
+        proc = subprocess.run(
+            [sys.executable, str(RUNTIME), *args, "--root", str(root), "--json"],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=merged_env,
+        )
+        self.assertEqual(proc.returncode, expect, proc.stdout + proc.stderr)
+        return json.loads(proc.stdout)
+
+    def run_checker(self, root: Path, receipt: Path, lane: str) -> dict:
+        proc = subprocess.run(
+            [sys.executable, str(CHECKER), "--root", str(root), "--lane", lane, "--receipt", str(receipt), "--json"],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        return json.loads(proc.stdout)
+
+    def test_default_missing_evidence_writes_blocked_receipt_not_external_action(self) -> None:
+        root = self.make_root()
+        payload = self.run_runtime(root, "run", "--lane", "wxwork-cli")
+        receipt = Path(payload["receipt_out"])
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        self.assertEqual(data["live_mode"], "blocked")
+        self.assertFalse(data["live_executed"])
+        self.assertIn("target_env_missing:R6_WXWORK_TARGET", data["execution_receipt"]["blockers"])
+        self.assertFalse(payload["runs_external_tool"])
+        checked = self.run_checker(root, receipt, "wxwork-cli")
+        self.assertTrue(checked["receipt_summary"]["r6_live_valid"], checked["errors"])
+
+    def test_authorized_default_path_becomes_live_ready_without_side_effect(self) -> None:
+        root = self.make_root()
+        env = {
+            "R6_OPERATOR_AUTHORIZED": "true",
+            "R6_OWNER_LEASE": "true",
+            "R6_ROLLBACK_READY": "true",
+            "R6_CLEANUP_READY": "true",
+            "R6_BROWSER_TARGET_URL": "https://example.invalid/redacted-target",
+            "R6_BROWSER_ACTION": "snapshot",
+        }
+        payload = self.run_runtime(root, "run", "--lane", "browser-cli-adapter", env=env)
+        receipt = Path(payload["receipt_out"])
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        self.assertEqual(data["live_mode"], "live-ready")
+        self.assertFalse(data["live_executed"])
+        self.assertEqual(data["external_side_effects"], "none")
+        output = json.dumps(data, ensure_ascii=False)
+        self.assertNotIn("https://example.invalid/redacted-target", output)
+        checked = self.run_checker(root, receipt, "browser-cli-adapter")
+        self.assertTrue(checked["receipt_summary"]["r6_live_valid"], checked["errors"])
+
+    def test_spec_kit_sandbox_apply_creates_only_generated_sandbox_and_receipt(self) -> None:
+        root = self.make_root()
+        env = {
+            "R6_OPERATOR_AUTHORIZED": "true",
+            "R6_OWNER_LEASE": "true",
+            "R6_ROLLBACK_READY": "true",
+            "R6_CLEANUP_READY": "true",
+            "R6_SPEC_KIT_MODE": "sandbox",
+            "R6_SPEC_KIT_TARGET_ROOT": str(root / "sandbox-target"),
+        }
+        payload = self.run_runtime(root, "run", "--lane", "spec-kit-subordinate", "--mode", "spec-kit-apply", env=env)
+        receipt = Path(payload["receipt_out"])
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        self.assertEqual(data["live_mode"], "live-executed")
+        self.assertEqual(data["execution_receipt"]["spec_kit_apply_mode"], "sandbox")
+        self.assertFalse((root / ".specify").exists())
+        self.assertFalse((root / "specs").exists())
+        self.assertTrue((receipt.parent / "generated-sandbox").exists())
+        self.run_checker(root, receipt, "spec-kit-subordinate")
+
+    def test_spec_kit_repository_apply_creates_subordinate_repo_surfaces(self) -> None:
+        root = self.make_root()
+        env = {
+            "R6_OPERATOR_AUTHORIZED": "true",
+            "R6_OWNER_LEASE": "true",
+            "R6_ROLLBACK_READY": "true",
+            "R6_CLEANUP_READY": "true",
+            "R6_SPEC_KIT_MODE": "repository",
+            "R6_SPEC_KIT_TARGET_ROOT": str(root),
+        }
+        payload = self.run_runtime(root, "run", "--lane", "spec-kit-subordinate", "--mode", "spec-kit-apply", env=env)
+        receipt = Path(payload["receipt_out"])
+        self.assertTrue((root / ".specify" / "r6-live-runtime" / "README.md").exists())
+        self.assertTrue((root / "specs" / "r6-live-runtime" / "spec.md").exists())
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        self.assertEqual(data["execution_receipt"]["allowed_repo_surfaces"], [".specify/", "specs/"])
+        self.run_checker(root, receipt, "spec-kit-subordinate")
+
+    def test_template_apply_writes_repo_local_full_and_stub_sources(self) -> None:
+        root = self.make_root()
+        (root / "tools" / "user_level_receipt_governance.py").write_text("# fixture dependency\n", encoding="utf-8")
+        env = {
+            "R6_OPERATOR_AUTHORIZED": "true",
+            "R6_OWNER_LEASE": "true",
+            "R6_ROLLBACK_READY": "true",
+            "R6_CLEANUP_READY": "true",
+            "R6_SPEC_KIT_MODE": "template",
+            "R6_SPEC_KIT_TARGET_ROOT": str(root / "template-target"),
+        }
+        payload = self.run_runtime(root, "run", "--lane", "spec-kit-subordinate", "--mode", "spec-kit-apply", env=env)
+        receipt = Path(payload["receipt_out"])
+        self.assertTrue((root / "tools" / "r6_live_runtime_templates" / "project-general-full" / "README.md").exists())
+        self.assertTrue((root / "tools" / "r6_live_runtime_templates" / "project-general-full" / "tools" / "user_level_receipt_governance.py").exists())
+        self.assertTrue((root / "tools" / "r6_live_runtime_templates" / "project-general-2-stub" / "README.md").exists())
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        self.assertEqual(data["template_distribution"], "project-general-full")
+        self.run_checker(root, receipt, "spec-kit-subordinate")
+
+    def test_user_level_install_mode_writes_redacted_smoke_artifact(self) -> None:
+        root = self.make_root()
+        install_root = root / "user-level"
+        env = {
+            "R6_OPERATOR_AUTHORIZED": "true",
+            "R6_OWNER_LEASE": "true",
+            "R6_ROLLBACK_READY": "true",
+            "R6_CLEANUP_READY": "true",
+            "R6_USER_LEVEL_INSTALL_ROOT": str(install_root),
+        }
+        payload = self.run_runtime(root, "run", "--lane", "mcp-skills-cli", "--mode", "user-level-install", env=env)
+        receipt = Path(payload["receipt_out"])
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        self.assertEqual(data["live_mode"], "live-executed")
+        self.assertTrue(data["execution_receipt"]["user_level_state_mutated"])
+        self.assertIn("installed_path_hash", data["execution_receipt"])
+        self.assertNotIn(str(install_root), json.dumps(data, ensure_ascii=False))
+        self.run_checker(root, receipt, "mcp-skills-cli")
+
+    def test_sync_templates_copies_only_missing_files_to_full_and_stub_targets(self) -> None:
+        root = self.make_root()
+        general = root / "General"
+        general2 = root / "General2"
+        general.mkdir()
+        general2.mkdir()
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(RUNTIME),
+                "sync-templates",
+                "--root",
+                str(root),
+                "--general-root",
+                str(general),
+                "--general2-root",
+                str(general2),
+                "--json",
+            ],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertFalse(payload["overwrites_existing_files"])
+        self.assertTrue((general / "README.md").exists())
+        self.assertTrue((general2 / "README.md").exists())
+
+    def test_template_sources_command_is_repo_local_and_declares_sync_targets(self) -> None:
+        root = self.make_root()
+        payload = self.run_runtime(root, "template-sources")
+        self.assertTrue(payload["ok"])
+        self.assertTrue((root / "tools" / "r6_live_runtime_templates" / "project-general-full" / "README.md").exists())
+        self.assertIn("project-general-2-stub", payload["sync_targets"])
+
+
+if __name__ == "__main__":
+    unittest.main()
