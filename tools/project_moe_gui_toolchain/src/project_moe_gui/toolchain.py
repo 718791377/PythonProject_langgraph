@@ -16,7 +16,7 @@ except ModuleNotFoundError:  # pragma: no cover
     tomllib = None  # type: ignore[assignment]
 
 from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
-from project_moe_gui.daemon import build_daemon_launch_plan
+from project_moe_gui.daemon import build_daemon_launch_plan, windows_daemon_artifact_plan
 from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT, qml_shell_path, qml_visual_contract
 from project_moe_gui.qfluent_runtime import expected_qfluent_dependency, qfluent_license_manifest
 
@@ -2044,7 +2044,14 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
     data.pop("target_project_root", None)
     data.pop("runtime_project_root", None)
     runtime_python = runtime_root / ".venv" / "Scripts" / "python.exe"
-    daemon_plan = build_daemon_launch_plan(root / "tools" / "project_moe_gui" / "launcher.py", no_args=True, runtime_python=runtime_python, project_root=root)
+    daemon_plan = windows_daemon_artifact_plan(
+        build_daemon_launch_plan(
+            root / "tools" / "project_moe_gui" / "launcher.py",
+            no_args=True,
+            runtime_python=runtime_python,
+            project_root=root,
+        )
+    )
     data.update(
         {
             "schema_version": SCHEMA_VERSION,

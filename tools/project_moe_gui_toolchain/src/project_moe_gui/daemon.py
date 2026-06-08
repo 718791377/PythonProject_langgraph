@@ -15,6 +15,12 @@ LOG_FILE_NAME = "project_moe_gui.daemon.log"
 RUNTIME_DIR = Path(".project-runtime") / "project_moe_gui"
 
 
+def win_path_text(value: str | Path) -> str:
+    """Return a Windows-artifact path string independent of host OS."""
+
+    return str(value).replace("/", "\\")
+
+
 def windows_process_flags(*, platform_name: str | None = None) -> int:
     platform_name = platform_name or sys.platform
     if not platform_name.startswith("win"):
@@ -117,6 +123,36 @@ def build_daemon_launch_plan(
             "PYTHONUTF8": "1",
         },
     }
+
+
+def windows_daemon_artifact_plan(plan: dict[str, Any]) -> dict[str, Any]:
+    """Render persisted Windows launcher metadata with backslash paths.
+
+    Runtime plans use native `Path` text for execution.  Installer config files
+    are Windows launch artifacts, so their public launcher metadata must remain
+    Windows-shaped even when generated on Linux CI.
+    """
+
+    converted = dict(plan)
+    for key in (
+        "launcher",
+        "project_root",
+        "configured_python_executable",
+        "selected_python_executable",
+        "diagnostics_log",
+    ):
+        if converted.get(key) is not None:
+            converted[key] = win_path_text(converted[key])
+    argv = converted.get("argv")
+    if isinstance(argv, list):
+        converted["argv"] = [win_path_text(item) for item in argv]
+    guard = converted.get("duplicate_instance_guard")
+    if isinstance(guard, dict):
+        guard_copy = dict(guard)
+        if guard_copy.get("lock_path") is not None:
+            guard_copy["lock_path"] = win_path_text(guard_copy["lock_path"])
+        converted["duplicate_instance_guard"] = guard_copy
+    return converted
 
 
 def _pid_running(pid: int) -> bool:

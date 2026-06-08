@@ -10,8 +10,10 @@ import unittest
 import uuid
 from pathlib import Path
 
+sys.path.insert(0, str(ROOT := Path(__file__).resolve().parents[1]))
+from tools import install_user_level_mcp_skills_cli as installer  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[1]
+
 INSTALL = ROOT / "tools" / "install_user_level_mcp_skills_cli.py"
 CHECK = ROOT / "tools" / "check_user_level_mcp_skills_cli_install.py"
 RECEIPT_GOVERNANCE = ROOT / "tools" / "user_level_receipt_governance.py"
@@ -104,6 +106,7 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
         wrapper_text = (home / "bin" / "mcp2cli.cmd").read_text(encoding="utf-8")
         self.assertIn("UV_CACHE_DIR", wrapper_text)
         self.assertIn("mcp-skills-cli\\uv-cache", wrapper_text)
+        self.assertNotIn("mcp-skills-cli/uv-cache", wrapper_text)
         self.assertIn("repo-copy:", json.dumps(payload["receipt_summaries"], ensure_ascii=False))
         self.assertNotIn("sk-test-secret", json.dumps(payload, ensure_ascii=False))
 
@@ -121,6 +124,39 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
         self.assertTrue(check_payload["wrapper_presence"]["mcp2cli_cmd"])
         self.assertTrue(check_payload["wrapper_presence"]["skills2cli_cmd"])
         self.assertEqual(check_payload["receipt_count"], 2)
+
+    def test_posix_smoke_uses_safe_execution_for_generated_windows_cmd_wrappers(self) -> None:
+        home = self.make_home("posix-smoke-helper")
+        self.run_json(
+            INSTALL,
+            "apply",
+            "--apply",
+            "--operator-confirmation",
+            "--simulate-external",
+            "--codex-home",
+            str(home),
+        )
+        paths = installer.layout(home)
+
+        mcp_result = installer.run_wrapper_smoke(
+            [str(paths["mcp2cli_cmd"]), "--version"],
+            paths=paths,
+            wrapper_key="mcp2cli_cmd",
+            timeout=10,
+            platform_name="posix",
+        )
+        skills_result = installer.run_wrapper_smoke(
+            [str(paths["skills2cli_cmd"]), "--help"],
+            paths=paths,
+            wrapper_key="skills2cli_cmd",
+            timeout=10,
+            platform_name="posix",
+        )
+
+        self.assertEqual(mcp_result.returncode, 0, mcp_result)
+        self.assertTrue(mcp_result.skipped)
+        self.assertEqual(skills_result.returncode, 0, skills_result.stderr)
+        self.assertFalse(skills_result.skipped)
 
     def test_check_is_warn_only_without_require_installed(self) -> None:
         home = self.make_home("warn-only")
