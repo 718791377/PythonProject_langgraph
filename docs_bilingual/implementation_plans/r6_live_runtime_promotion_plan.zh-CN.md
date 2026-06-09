@@ -46,7 +46,7 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 - [x] Stage B 核心 R6 checker/runtime/template 实现已通过提交 `b0d3e07`、`fc1c500`、`5866f3e`、`6393796` 和 `d3d57d0` 合入本地 `main`。
 - [x] Stage B live smoke 证据已覆盖模板同步、用户级安装 smoke、Spec Kit sandbox apply、Spec Kit template apply 与 Spec Kit repository apply；所有 receipt 均保持 `remote_publication_mutated=false`。
 - [x] Spec Kit repository-apply 证据包已在提交 `d3d57d0` 合入本地 `main`，对应 feature worktree/branch 已清理；远端发布仍未授权。
-- [ ] Stage C coverage audit 已打开：当前仓库 receipt 只证明 14 个 R6 lane 中 3 个 lane 有 live-executed 证据（`user-level-mcp-skills-cli-runtime`、`spec-kit-authority-guard`、`spec-kit-subordinate-adapter-governance`）。下一包必须为每个 lane 增加 checker/runtime 覆盖证据，包括缺少外部目标时的默认 blocked receipt，以及 repo-local/default-safe lane 的 live-executed receipt。
+- [x] Stage C coverage audit 实现现在为全部 14 个 R6 lane 增加 checker/runtime 覆盖证据：repo-local/default-safe lane 在无外部副作用下 live-execute，browser/WXWork/harness/user-level-install/Spec Kit lane 在缺少环境目标时默认生成 blocked receipt。
 
 <!-- CURRENT_STATUS_END -->
 
@@ -58,9 +58,9 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 - [x] Package 2：同步完整可复用模板到 `D:/PythonProject_General`，同步安全 stub 到 `D:/PythonProject_General_2`。
 - [x] Package 2：执行用户级安装 smoke，以及 Spec Kit sandbox、repository、template apply 证据。
 - [x] Package 2：将 repository-apply 证据包合入本地 `main`，并停在远端发布审批门禁。
-- [ ] Package 3：新增 R6 lane coverage audit 工具，把当前 receipt 文件与全部 14 个 lane 对齐，缺少默认可执行证据时失败。
-- [ ] Package 3：扩展 R6 runtime，加入默认 `run-all` 或等价批处理模式，为每个 lane 生成一个有效 R6 receipt，且不静默执行外部副作用。
-- [ ] Package 3：记录全部 14 个 lane 的 Stage C receipt 证据；browser/WXWork/harness 等外部动作在缺少环境目标时可以保持 blocked，但 blocked receipt 必须是当前的、已脱敏的、并通过 checker。
+- [x] Package 3：新增 R6 lane coverage audit 工具，把当前 receipt 文件与全部 14 个 lane 对齐，缺少默认可执行证据时失败。
+- [x] Package 3：扩展 R6 runtime，加入默认 `run-all` 批处理模式，为每个 lane 生成一个有效 R6 receipt，且不静默执行外部副作用。
+- [x] Package 3：记录全部 14 个 lane 的 Stage C receipt 证据；browser/WXWork/harness/user-level-install/Spec Kit 等外部动作在缺少环境目标时保持 blocked，blocked receipt 是当前的、已脱敏的、并通过 checker。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -74,6 +74,9 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 - Spec Kit repository apply 稳定化证据：本地 `main` 提交 `d3d57d0` 修复 durable-routing smoke command guard，使以 `-apply` 结尾的 worktree 路径不会被误判为 apply 授权，同时真实 `--apply`/`-Apply`/`/apply` flag 仍 fail closed。
 - repository-apply 包 checker 证据：本地 `main` 集成前，`python test\spec_kit_authority_guard.test.py -v`、`python tools\check_spec_kit_authority_guard.py --root . --json`、`python test\check_durable_routing_smoke_receipts.test.py -v`、完整 `tools\ci\local_gate.ps1` 与 `tools\ci\local_mr_review.ps1` 均通过。
 - Stage C coverage audit 种子：当前 receipt inventory 只发现 `spec-kit-authority-guard`、`spec-kit-subordinate-adapter-governance` 与 `user-level-mcp-skills-cli-runtime` 的 live-executed receipt。其余 11 个 lane 仍缺少当前 receipt 覆盖，需等待 Package 3 落地。
+- Stage C 实现证据：`tools/check_r6_live_runtime_receipts.py` 现在支持 `--receipt-dir` 与 `--require-coverage`；`tools/r6_live_runtime.py run-all` 会为每个 lane 写入一个 Stage C receipt，默认不执行 browser/GUI、外部消息、harness job、用户级安装、Spec Kit apply 或远端发布变更。
+- Stage C receipt 证据：`python tools\r6_live_runtime.py run-all --root . --json` 与 `python tools\check_r6_live_runtime_receipts.py --root . --receipt-dir .omx\r6-live-runtime\receipts --require-coverage --json` 已接受全部 14 个 lane。机器可读证据：`docs_bilingual/implementation_evidence/r6_live_runtime_stage_c_coverage_evidence_20260609.json`；人工可读摘要：`docs_bilingual/implementation_evidence/r6_live_runtime_stage_c_coverage_evidence_20260609.md` 与 `docs_bilingual/implementation_evidence/r6_live_runtime_stage_c_coverage_evidence_20260609.zh-CN.md`。
+- Stage C 模板同步证据：`python tools\r6_live_runtime.py sync-templates --root . --general-root D:\PythonProject_General --general2-root D:\PythonProject_General_2 --update-managed --json` 仅刷新受管模板文件，报告 `remote_publication_mutated=false`，并保持 General_2 为 stub-only 表面。
 - 远端发布仍未授权；除非当前用户消息明确点名远端动作，否则不推送 GitLab/GitHub、不创建或更新远端 MR。
 
 <!-- EVIDENCE_INDEX_END -->

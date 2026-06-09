@@ -130,6 +130,48 @@ class R6LiveRuntimeReceiptTests(unittest.TestCase):
         bad["execution_receipt"].update({"spec_kit_apply_mode": "repository", "comet_openspec_owner": False})
         self.assertIn("spec_kit_repository_apply_requires_comet_openspec_owner", module.validate_lane_receipt(bad, "spec-kit-subordinate"))
 
+    def test_directory_coverage_requires_all_lanes_and_accepts_blocked_sensitive_lanes(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda p=tmp: __import__("shutil").rmtree(p, ignore_errors=True))
+        receipts = tmp / "receipts"
+        receipts.mkdir()
+        for lane, profile in module.LANE_PROFILES.items():
+            mode = "live-executed" if profile.side_effect == "none" else "blocked"
+            path = receipts / f"{lane}.json"
+            path.write_text(json.dumps(module.fixture_for_lane(lane, live_mode=mode), ensure_ascii=False, indent=2), encoding="utf-8")
+        payload = self.run_cli("--root", str(tmp), "--receipt-dir", str(receipts), "--require-coverage")
+        self.assertTrue(payload["coverage_summary"]["coverage_ok"], payload["errors"])
+        self.assertEqual(payload["coverage_summary"]["counts"]["accepted_lanes"], 14)
+        self.assertEqual(payload["coverage_summary"]["missing_lanes"], [])
+
+    def test_directory_coverage_fails_when_default_safe_lane_is_only_blocked(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda p=tmp: __import__("shutil").rmtree(p, ignore_errors=True))
+        receipts = tmp / "receipts"
+        receipts.mkdir()
+        for lane, profile in module.LANE_PROFILES.items():
+            mode = "live-executed" if profile.side_effect == "none" else "blocked"
+            if lane == "worktree-receipt-claim-lifecycle":
+                mode = "blocked"
+            path = receipts / f"{lane}.json"
+            path.write_text(json.dumps(module.fixture_for_lane(lane, live_mode=mode), ensure_ascii=False, indent=2), encoding="utf-8")
+        payload = self.run_cli("--root", str(tmp), "--receipt-dir", str(receipts), "--require-coverage", expect=1)
+        self.assertIn("worktree-receipt-claim-lifecycle", payload["coverage_summary"]["missing_lanes"])
+        self.assertIn("coverage_missing_lane:worktree-receipt-claim-lifecycle", payload["errors"])
+
+    def test_directory_coverage_freshness_rejects_old_receipts(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda p=tmp: __import__("shutil").rmtree(p, ignore_errors=True))
+        receipts = tmp / "receipts"
+        receipts.mkdir()
+        lane = "worktree-receipt-claim-lifecycle"
+        payload = module.fixture_for_lane(lane, live_mode="live-executed")
+        payload["generated_at"] = "2000-01-01T00:00:00+00:00"
+        (receipts / f"{lane}.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        result = self.run_cli("--root", str(tmp), "--receipt-dir", str(receipts), "--require-coverage", "--max-age-hours", "1", expect=1)
+        self.assertTrue(result["coverage_summary"]["stale_receipts"])
+        self.assertIn(lane, result["coverage_summary"]["missing_lanes"])
+
 
 if __name__ == "__main__":
     unittest.main()

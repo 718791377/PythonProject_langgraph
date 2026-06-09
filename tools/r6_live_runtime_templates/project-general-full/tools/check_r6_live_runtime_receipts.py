@@ -33,6 +33,7 @@ from user_level_receipt_governance import (
 
 
 CHECK_NAME = "r6_live_runtime_receipts"
+DEFAULT_RECEIPT_DIR = Path(".omx/r6-live-runtime/receipts")
 
 LIVE_MODES = {"blocked", "dry-run", "live-ready", "live-executed"}
 SIDE_EFFECTS = {
@@ -701,6 +702,143 @@ def receipt_summary(receipt: dict[str, Any] | None, path: Path | None, lane: str
     }
 
 
+def parse_receipt_generated_at(receipt: dict[str, Any]) -> datetime | None:
+    raw = value_text(receipt.get("generated_at")).strip()
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def lane_accepts_receipt(profile: LaneProfile, receipt: dict[str, Any]) -> bool:
+    """Return whether a valid receipt provides default executable evidence.
+
+    Repository-local/default-safe lanes must have a live-executed no-side-effect
+    receipt. Sensitive lanes may be represented by a current blocked/live-ready
+    receipt when their browser, WXWork, harness, Spec Kit, or user-level install
+    target is absent, because the runtime must be default executable without
+    silently performing those external or user-level side effects.
+    """
+
+    live_mode = value_text(receipt.get("live_mode"))
+    live_executed = receipt.get("live_executed") is True
+    if profile.side_effect == "none":
+        return live_mode == "live-executed" and live_executed and receipt.get("external_side_effects") == "none"
+    return live_mode in LIVE_MODES and receipt.get("live_attempted") is True
+
+
+def audit_receipt_dir(root: Path, receipt_dir: Path, *, max_age_hours: float | None = None) -> dict[str, Any]:
+    resolved = receipt_dir if receipt_dir.is_absolute() else root / receipt_dir
+    resolved = resolved.resolve()
+    try:
+        receipt_dir_display = resolved.relative_to(root.resolve()).as_posix()
+    except ValueError:
+        receipt_dir_display = f"external-hash:{short_hash(str(resolved))}"
+    now = datetime.now(timezone.utc)
+    lane_evidence: dict[str, dict[str, Any]] = {
+        lane: {
+            "accepted": False,
+            "accepted_mode": "",
+            "receipt_path_hash": "",
+            "receipt_count": 0,
+            "valid_receipt_count": 0,
+            "policy": "live-executed-required" if profile.side_effect == "none" else "blocked-or-ready-or-executed",
+            "side_effect": profile.side_effect,
+            "blockers": [],
+        }
+        for lane, profile in LANE_PROFILES.items()
+    }
+    errors: list[str] = []
+    warnings: list[str] = []
+    receipt_files = sorted(resolved.glob("*.json")) if resolved.exists() else []
+    invalid_receipts: list[dict[str, Any]] = []
+    stale_receipts: list[dict[str, Any]] = []
+
+    for path in receipt_files:
+        receipt, load_errors = read_json(path)
+        if receipt is None:
+            invalid_receipts.append({"path_hash": short_hash(str(path)), "errors": load_errors})
+            continue
+        lane = normalize_lane(receipt.get("lane"))
+        profile = LANE_PROFILES.get(lane)
+        if profile is None:
+            invalid_receipts.append({"path_hash": short_hash(str(path)), "lane": lane, "errors": ["lane_required_or_invalid"]})
+            continue
+        lane_record = lane_evidence[lane]
+        lane_record["receipt_count"] += 1
+        blockers = validate_lane_receipt(receipt, lane)
+        generated_at = parse_receipt_generated_at(receipt)
+        if max_age_hours is not None:
+            if generated_at is None:
+                blockers.append("generated_at_missing_or_invalid_for_current_coverage")
+            else:
+                age_hours = (now - generated_at).total_seconds() / 3600
+                if age_hours > max_age_hours:
+                    blockers.append(f"receipt_stale>{max_age_hours:g}h")
+                    stale_receipts.append(
+                        {
+                            "path_hash": short_hash(str(path)),
+                            "lane": lane,
+                            "age_hours": round(age_hours, 3),
+                        }
+                    )
+        if blockers:
+            invalid_receipts.append({"path_hash": short_hash(str(path)), "lane": lane, "errors": sorted(set(blockers))})
+            lane_record["blockers"].extend(sorted(set(blockers)))
+            continue
+        lane_record["valid_receipt_count"] += 1
+        if lane_accepts_receipt(profile, receipt):
+            current_best = lane_record.get("accepted") is True
+            prefer_live = receipt.get("live_mode") == "live-executed"
+            current_live = lane_record.get("accepted_mode") == "live-executed"
+            if not current_best or (prefer_live and not current_live):
+                lane_record.update(
+                    {
+                        "accepted": True,
+                        "accepted_mode": value_text(receipt.get("live_mode")),
+                        "receipt_path_hash": short_hash(str(path)),
+                        "live_executed": receipt.get("live_executed") is True,
+                        "external_side_effects": value_text(receipt.get("external_side_effects")),
+                        "template_distribution": value_text(receipt.get("template_distribution")),
+                    }
+                )
+
+    missing_lanes = sorted(lane for lane, record in lane_evidence.items() if not record["accepted"])
+    if not resolved.exists():
+        warnings.append("receipt_dir_missing")
+    return {
+        "receipt_dir": receipt_dir_display,
+        "receipt_files": len(receipt_files),
+        "known_lanes": sorted(LANE_PROFILES),
+        "accepted_lanes": sorted(lane for lane, record in lane_evidence.items() if record["accepted"]),
+        "missing_lanes": missing_lanes,
+        "lane_evidence": lane_evidence,
+        "invalid_receipts": invalid_receipts,
+        "stale_receipts": stale_receipts,
+        "coverage_ok": not missing_lanes,
+        "errors": errors,
+        "warnings": warnings,
+        "policy": {
+            "default_safe_lanes_require_live_executed": True,
+            "sensitive_lanes_allow_blocked_receipts_without_targets": True,
+            "remote_publication_mutated_allowed": False,
+            "max_age_hours": max_age_hours,
+        },
+        "counts": {
+            "known_lanes": len(LANE_PROFILES),
+            "accepted_lanes": len(LANE_PROFILES) - len(missing_lanes),
+            "missing_lanes": len(missing_lanes),
+            "invalid_receipts": len(invalid_receipts),
+            "stale_receipts": len(stale_receipts),
+        },
+    }
+
+
 def run_self_test() -> dict[str, Any]:
     errors: list[str] = []
     cases: list[dict[str, Any]] = []
@@ -735,7 +873,16 @@ def run_self_test() -> dict[str, Any]:
     }
 
 
-def evaluate(root: Path, lane: str | None, receipt_path: Path | None, *, self_test: bool = True) -> dict[str, Any]:
+def evaluate(
+    root: Path,
+    lane: str | None,
+    receipt_path: Path | None,
+    *,
+    self_test: bool = True,
+    receipt_dir: Path | None = None,
+    require_coverage: bool = False,
+    max_age_hours: float | None = None,
+) -> dict[str, Any]:
     root = root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
@@ -743,6 +890,7 @@ def evaluate(root: Path, lane: str | None, receipt_path: Path | None, *, self_te
     if self_test_result is not None:
         errors.extend(f"self_test:{error}" for error in self_test_result["errors"])
     summary: dict[str, Any] = {}
+    coverage: dict[str, Any] = {}
     if receipt_path is not None:
         selected_lane = normalize_lane(lane or "") if lane else None
         resolved = receipt_path if receipt_path.is_absolute() else root / receipt_path
@@ -753,6 +901,12 @@ def evaluate(root: Path, lane: str | None, receipt_path: Path | None, *, self_te
             blockers.extend(validate_lane_receipt(receipt, selected_lane))
         errors.extend(blockers)
         summary = receipt_summary(receipt, resolved, selected_lane, sorted(set(blockers)))
+    if receipt_dir is not None or require_coverage:
+        coverage = audit_receipt_dir(root, receipt_dir or DEFAULT_RECEIPT_DIR, max_age_hours=max_age_hours)
+        if require_coverage and not coverage.get("coverage_ok"):
+            errors.extend(f"coverage_missing_lane:{lane}" for lane in coverage.get("missing_lanes", []))
+        if require_coverage:
+            errors.extend(f"coverage_invalid_receipt:{item.get('path_hash')}" for item in coverage.get("invalid_receipts", []))
     return {
         "schema_version": 1,
         "generated_at": now_iso(),
@@ -764,6 +918,7 @@ def evaluate(root: Path, lane: str | None, receipt_path: Path | None, *, self_te
         "aliases": dict(sorted(ALIASES.items())),
         "canonical_env_keys": sorted(CANONICAL_ENV_KEYS),
         "receipt_summary": summary,
+        "coverage_summary": coverage,
         "self_test": self_test_result,
         "errors": sorted(set(errors)),
         "warnings": warnings,
@@ -785,6 +940,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--root", default=".")
     parser.add_argument("--lane", default=None, help="Canonical R6 lane or legacy R5/plan alias.")
     parser.add_argument("--receipt", default=None)
+    parser.add_argument("--receipt-dir", default=None, help="Audit a directory of R6 receipt JSON files.")
+    parser.add_argument("--require-coverage", action="store_true", help="Fail unless every known R6 lane has accepted receipt evidence.")
+    parser.add_argument("--max-age-hours", type=float, default=None, help="Optional freshness window for receipt coverage.")
     parser.add_argument("--skip-self-test", action="store_true")
     parser.add_argument("--json", action="store_true")
     return parser
@@ -797,6 +955,9 @@ def main(argv: list[str] | None = None) -> int:
         args.lane,
         Path(args.receipt) if args.receipt else None,
         self_test=not args.skip_self_test,
+        receipt_dir=Path(args.receipt_dir) if args.receipt_dir else None,
+        require_coverage=args.require_coverage,
+        max_age_hours=args.max_age_hours,
     )
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))

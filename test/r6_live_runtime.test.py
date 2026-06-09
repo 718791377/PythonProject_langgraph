@@ -68,6 +68,20 @@ class R6LiveRuntimeTests(unittest.TestCase):
         checked = self.run_checker(root, receipt, "wxwork-cli")
         self.assertTrue(checked["receipt_summary"]["r6_live_valid"], checked["errors"])
 
+    def test_repo_local_default_safe_lane_live_executes_without_external_side_effect(self) -> None:
+        root = self.make_root()
+        payload = self.run_runtime(root, "run", "--lane", "worktree-receipt-claim-lifecycle")
+        receipt = Path(payload["receipt_out"])
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        self.assertEqual(data["live_mode"], "live-executed")
+        self.assertTrue(data["live_executed"])
+        self.assertEqual(data["external_side_effects"], "none")
+        self.assertTrue(data["execution_receipt"]["repo_local_default_safe"])
+        self.assertFalse(data["execution_receipt"]["external_action_invoked"])
+        self.assertFalse(payload["runs_external_tool"])
+        checked = self.run_checker(root, receipt, "worktree-receipt-claim-lifecycle")
+        self.assertTrue(checked["receipt_summary"]["r6_live_valid"], checked["errors"])
+
     def test_authorized_default_path_becomes_live_ready_without_side_effect(self) -> None:
         root = self.make_root()
         env = {
@@ -166,6 +180,23 @@ class R6LiveRuntimeTests(unittest.TestCase):
         self.assertNotIn(str(install_root), json.dumps(data, ensure_ascii=False))
         self.run_checker(root, receipt, "mcp-skills-cli")
 
+    def test_run_all_generates_one_coverage_receipt_per_lane_without_external_side_effects(self) -> None:
+        root = self.make_root()
+        payload = self.run_runtime(root, "run-all")
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertEqual(payload["counts"]["lanes"], 14)
+        self.assertEqual(payload["coverage_summary"]["counts"]["accepted_lanes"], 14)
+        self.assertFalse(payload["runs_external_tool"])
+        self.assertFalse(payload["starts_browser_or_gui"])
+        self.assertFalse(payload["sends_external_message"])
+        self.assertFalse(payload["starts_harness_job"])
+        receipts = sorted((root / ".omx" / "r6-live-runtime" / "receipts").glob("*.json"))
+        self.assertEqual(len(receipts), 14)
+        modes = {json.loads(path.read_text(encoding="utf-8"))["lane"]: json.loads(path.read_text(encoding="utf-8"))["live_mode"] for path in receipts}
+        self.assertEqual(modes["worktree-receipt-claim-lifecycle"], "live-executed")
+        self.assertEqual(modes["user-level-browser-cli-adapter-boundary"], "blocked")
+        self.assertEqual(modes["codex-harnesses-governance"], "blocked")
+
     def test_sync_templates_copies_only_missing_files_to_full_and_stub_targets(self) -> None:
         root = self.make_root()
         general = root / "General"
@@ -198,6 +229,40 @@ class R6LiveRuntimeTests(unittest.TestCase):
         self.assertFalse(payload["overwrites_existing_files"])
         self.assertTrue((general / "README.md").exists())
         self.assertTrue((general2 / "README.md").exists())
+
+    def test_sync_templates_update_managed_refreshes_existing_template_files(self) -> None:
+        root = self.make_root()
+        general = root / "General"
+        general2 = root / "General2"
+        general.mkdir()
+        general2.mkdir()
+        (general / "README.md").write_text("stale managed template\n", encoding="utf-8")
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(RUNTIME),
+                "sync-templates",
+                "--root",
+                str(root),
+                "--general-root",
+                str(general),
+                "--general2-root",
+                str(general2),
+                "--update-managed",
+                "--json",
+            ],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["overwrites_existing_files"])
+        self.assertIn("R6 live runtime template", (general / "README.md").read_text(encoding="utf-8"))
 
     def test_template_sources_command_is_repo_local_and_declares_sync_targets(self) -> None:
         root = self.make_root()
