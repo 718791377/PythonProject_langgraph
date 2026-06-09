@@ -46,6 +46,8 @@ This plan covers these existing R5 plans as one governed rollout:
 - [x] The Spec Kit repository-apply evidence package was integrated to local `main` in commit `d3d57d0` and the feature worktree/branch was cleaned; remote publication remains unauthorized.
 - [x] Stage C coverage audit implementation now adds checker/runtime coverage evidence for all 14 R6 lanes: repo-local/default-safe lanes live-execute without external side effects, while browser/WXWork/harness/user-level-install/Spec Kit lanes default to blocked receipts when environment targets are absent.
 
+- [x] Stage D sensitive live-action follow-up records Browser and Stop-Slop/Caveman as R6 `live-executed` with redacted receipts, while WXWork and Codex harnesses remain fail-closed `blocked` because no real send target or live harness job proof is present.
+
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
@@ -59,6 +61,8 @@ This plan covers these existing R5 plans as one governed rollout:
 - [x] Package 3: add R6 lane coverage audit tooling that compares current receipt files against all 14 lanes and fails when a lane lacks default executable evidence.
 - [x] Package 3: extend the R6 runtime with a default `run-all` batch mode that emits one valid R6 receipt per lane without silent external side effects.
 - [x] Package 3: record Stage C receipt evidence for all 14 lanes; external browser/WXWork/harness/user-level-install/Spec Kit actions remain blocked when environment targets are absent, while the blocked receipts are current, redacted, and checker-accepted.
+
+- [x] Package 4: run and record sensitive live-action follow-up evidence; accept Browser and Stop-Slop/Caveman live-executed proof, and retain WXWork/Harness blocked receipts until real proof gates exist.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -76,6 +80,7 @@ This plan covers these existing R5 plans as one governed rollout:
 - Stage C receipt evidence: `python tools\r6_live_runtime.py run-all --root . --json` and `python tools\check_r6_live_runtime_receipts.py --root . --receipt-dir .omx\r6-live-runtime\receipts --require-coverage --json` accepted all 14 lanes. Machine-readable evidence: `docs_bilingual/implementation_evidence/r6_live_runtime_stage_c_coverage_evidence_20260609.json`; human-readable summaries: `docs_bilingual/implementation_evidence/r6_live_runtime_stage_c_coverage_evidence_20260609.md` and `docs_bilingual/implementation_evidence/r6_live_runtime_stage_c_coverage_evidence_20260609.zh-CN.md`.
 - Stage C template sync evidence: `python tools\r6_live_runtime.py sync-templates --root . --general-root D:\PythonProject_General --general2-root D:\PythonProject_General_2 --update-managed --json` refreshed managed template files only, reported `remote_publication_mutated=false`, and preserved General_2 as a stub-only surface.
 - Remote publication remains unauthorized until a current user message names the remote action.
+- Stage D sensitive live-action follow-up evidence - `live-executed` means a bounded live action ran with proof, and `blocked` means the runtime recorded an unmet proof gate: `.omx/r6-live-runtime/receipts/browser-live-action-followup.json` and `.omx/r6-live-runtime/receipts/stop-slop-caveman-live-executed-followup.json` are current valid `live-executed` receipts selected by `tools/check_r6_live_runtime_receipts.py --require-coverage`; `.omx/r6-live-runtime/receipts/wxwork-live-action-blocked-followup.json` and `.omx/r6-live-runtime/receipts/harness-live-action-blocked-followup.json` remain valid `blocked` receipts because real WXWork message-send proof and real guarded harness-job proof are absent. Human-readable evidence: `docs_bilingual/implementation_evidence/r6_sensitive_live_action_evidence_20260609.md` and `.zh-CN.md`.
 
 <!-- EVIDENCE_INDEX_END -->
 

@@ -48,6 +48,8 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 - [x] Spec Kit repository-apply 证据包已在提交 `d3d57d0` 合入本地 `main`，对应 feature worktree/branch 已清理；远端发布仍未授权。
 - [x] Stage C coverage audit 实现现在为全部 14 个 R6 lane 增加 checker/runtime 覆盖证据：repo-local/default-safe lane 在无外部副作用下 live-execute，browser/WXWork/harness/user-level-install/Spec Kit lane 在缺少环境目标时默认生成 blocked receipt。
 
+- [x] Stage D 敏感 live-action follow-up - `live-executed` means bounded live action ran with proof，`blocked` means runtime recorded an unmet proof gate：已记录 Browser 与 Stop-Slop/Caveman 为带脱敏 receipt 的 R6 `live-executed`；WXWork 与 Codex harnesses 因缺少真实发送目标或 live harness job proof，继续 fail-closed 为 `blocked`。
+
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
@@ -61,6 +63,8 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 - [x] Package 3：新增 R6 lane coverage audit 工具，把当前 receipt 文件与全部 14 个 lane 对齐，缺少默认可执行证据时失败。
 - [x] Package 3：扩展 R6 runtime，加入默认 `run-all` 批处理模式，为每个 lane 生成一个有效 R6 receipt，且不静默执行外部副作用。
 - [x] Package 3：记录全部 14 个 lane 的 Stage C receipt 证据；browser/WXWork/harness/user-level-install/Spec Kit 等外部动作在缺少环境目标时保持 blocked，blocked receipt 是当前的、已脱敏的、并通过 checker。
+
+- [x] Package 4：运行并记录敏感 live-action follow-up 证据；接受 Browser 与 Stop-Slop/Caveman 的 live-executed proof，并在真实 proof gate 出现前保留 WXWork/Harness blocked receipts。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -78,6 +82,8 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 - Stage C receipt 证据：`python tools\r6_live_runtime.py run-all --root . --json` 与 `python tools\check_r6_live_runtime_receipts.py --root . --receipt-dir .omx\r6-live-runtime\receipts --require-coverage --json` 已接受全部 14 个 lane。机器可读证据：`docs_bilingual/implementation_evidence/r6_live_runtime_stage_c_coverage_evidence_20260609.json`；人工可读摘要：`docs_bilingual/implementation_evidence/r6_live_runtime_stage_c_coverage_evidence_20260609.md` 与 `docs_bilingual/implementation_evidence/r6_live_runtime_stage_c_coverage_evidence_20260609.zh-CN.md`。
 - Stage C 模板同步证据：`python tools\r6_live_runtime.py sync-templates --root . --general-root D:\PythonProject_General --general2-root D:\PythonProject_General_2 --update-managed --json` 仅刷新受管模板文件，报告 `remote_publication_mutated=false`，并保持 General_2 为 stub-only 表面。
 - 远端发布仍未授权；除非当前用户消息明确点名远端动作，否则不推送 GitLab/GitHub、不创建或更新远端 MR。
+
+- Stage D 敏感 live-action follow-up 证据 - `live-executed` means bounded live action ran with proof，`blocked` means runtime recorded an unmet proof gate：`.omx/r6-live-runtime/receipts/browser-live-action-followup.json` 与 `.omx/r6-live-runtime/receipts/stop-slop-caveman-live-executed-followup.json` 是当前有效且被 `tools/check_r6_live_runtime_receipts.py --require-coverage` 选中的 `live-executed` receipt；`.omx/r6-live-runtime/receipts/wxwork-live-action-blocked-followup.json` 与 `.omx/r6-live-runtime/receipts/harness-live-action-blocked-followup.json` 因缺少真实 WXWork message-send proof 与真实 guarded harness-job proof，仍为有效 `blocked` receipt。人工可读证据：`docs_bilingual/implementation_evidence/r6_sensitive_live_action_evidence_20260609.md` 与 `.zh-CN.md`。
 
 <!-- EVIDENCE_INDEX_END -->
 ## R6 契约
