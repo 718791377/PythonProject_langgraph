@@ -41,9 +41,10 @@ This plan covers these existing R5 plans as one governed rollout:
 <!-- CURRENT_STATUS_START -->
 
 - [x] Stage A plan package merged to local `main` in commit `5dd8592`.
-- [x] Stage B core R6 checker/runtime/template implementation merged to local `main` through commits `b0d3e07`, `fc1c500`, and `5866f3e`.
+- [x] Stage B core R6 checker/runtime/template implementation merged to local `main` through commits `b0d3e07`, `fc1c500`, `5866f3e`, `6393796`, and `d3d57d0`.
 - [x] Stage B live smoke evidence exists for template sync, user-level install smoke, Spec Kit sandbox apply, Spec Kit template apply, and Spec Kit repository apply; all recorded receipts keep `remote_publication_mutated=false`.
-- [ ] This repository-apply evidence package is validating on branch `record-r6-spec-kit-repository-apply-20260609`; local gate, local MR review, and local `main` integration remain required before remote-publication approval.
+- [x] The Spec Kit repository-apply evidence package was integrated to local `main` in commit `d3d57d0` and the feature worktree/branch was cleaned; remote publication remains unauthorized.
+- [ ] Stage C coverage audit is open: current repository receipts prove live-executed evidence for only 3 of 14 R6 lanes (`user-level-mcp-skills-cli-runtime`, `spec-kit-authority-guard`, and `spec-kit-subordinate-adapter-governance`). The next package must add checker/runtime coverage evidence for every lane, including default blocked receipts for missing external targets and live-executed receipts for repo-local/default-safe lanes.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -54,7 +55,10 @@ This plan covers these existing R5 plans as one governed rollout:
 - [x] Package 2: implement R6 checker/runtime/template support and validate affected gates.
 - [x] Package 2: sync full reusable templates to `D:/PythonProject_General` and safe stubs to `D:/PythonProject_General_2`.
 - [x] Package 2: execute user-level install smoke plus Spec Kit sandbox, repository, and template apply evidence.
-- [ ] Package 2: integrate the repository-apply evidence package into local `main` and stop at the remote-publication approval gate.
+- [x] Package 2: integrate the repository-apply evidence package into local `main` and stop at the remote-publication approval gate.
+- [ ] Package 3: add R6 lane coverage audit tooling that compares current receipt files against all 14 lanes and fails when a lane lacks default executable evidence.
+- [ ] Package 3: extend the R6 runtime with a default `run-all` or equivalent batch mode that emits one valid R6 receipt per lane without silent external side effects.
+- [ ] Package 3: record Stage C receipt evidence for all 14 lanes; external browser/WXWork/harness actions may remain blocked when environment targets are absent, but the blocked receipts must be current, redacted, and checker-accepted.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -64,9 +68,11 @@ This plan covers these existing R5 plans as one governed rollout:
 - Plan package evidence: local `main` commit `5dd8592` adds this bilingual R6 implementation plan pair.
 - Stage B implementation evidence: local `main` commits `b0d3e07`, `fc1c500`, and `5866f3e` added R6 runtime/checker/template support, OpenSpec gate fixtures, and template-source drift repair.
 - Template and user-level smoke evidence: ignored local receipts under `.omx/r6-live-runtime/receipts/` record `user-level-install-smoke.json`, `spec-kit-sandbox-smoke.json`, and `spec-kit-template-smoke.json`; the template sync copied `0` files because both target templates already matched the source surfaces.
-- Spec Kit repository apply evidence: branch `record-r6-spec-kit-repository-apply-20260609` preserves `.specify/r6-live-runtime/README.md` and `specs/r6-live-runtime/spec.md` as subordinate/no-takeover repository-apply surfaces, with `.omx/r6-live-runtime/receipts/spec-kit-repository-smoke.json` as the redacted live receipt.
-- Checker evidence for the repository-apply package: `python test\spec_kit_authority_guard.test.py -v` and `python tools\check_spec_kit_authority_guard.py --root . --json` pass after allowing only the bounded R6 subordinate prefixes.
-- Final local-main integration evidence will be carried by the local flow helper output for branch `record-r6-spec-kit-repository-apply-20260609`; remote publication remains unauthorized until a current user message names the remote action.
+- Spec Kit repository apply evidence: local `main` commit `6393796` preserves `.specify/r6-live-runtime/README.md` and `specs/r6-live-runtime/spec.md` as subordinate/no-takeover repository-apply surfaces, with `.omx/r6-live-runtime/receipts/spec-kit-repository-smoke.json` as the redacted live receipt.
+- Spec Kit repository apply stabilization evidence: local `main` commit `d3d57d0` fixes the durable-routing smoke command guard so worktree paths ending in `-apply` do not count as apply authorization while true `--apply`/`-Apply`/`/apply` flags still fail closed.
+- Checker evidence for the repository-apply package: `python test\spec_kit_authority_guard.test.py -v`, `python tools\check_spec_kit_authority_guard.py --root . --json`, `python test\check_durable_routing_smoke_receipts.test.py -v`, full `tools\ci\local_gate.ps1`, and `tools\ci\local_mr_review.ps1` passed before local `main` integration.
+- Stage C coverage audit seed: current receipt inventory finds live-executed receipts for `spec-kit-authority-guard`, `spec-kit-subordinate-adapter-governance`, and `user-level-mcp-skills-cli-runtime` only. Missing current receipt coverage remains for the other 11 lanes until Package 3 lands.
+- Remote publication remains unauthorized until a current user message names the remote action.
 
 <!-- EVIDENCE_INDEX_END -->
 
