@@ -177,7 +177,10 @@ def live_action_proof_blockers(lane: str, proof: dict[str, Any] | None) -> list[
         if proof.get("recipient_included") not in (None, False):
             blockers.append("external_execution_proof_recipient_included_must_be_false")
     elif lane == "codex-harnesses-governance":
-        for field in ("read_guard", "write_guard", "isolated_worktree", "changed_paths_report", "job_state"):
+        for scalar in ("candidate_id", "job_profile"):
+            if not str(proof.get(scalar, "")).strip():
+                blockers.append(f"external_execution_proof_{scalar}_required")
+        for field in ("read_guard", "write_guard", "isolated_worktree", "changed_paths_report", "job_state", "timeout_release", "rollback", "cleanup"):
             value = proof.get(field)
             if not (isinstance(value, dict) and str(value.get("status", "")).strip().lower() in {"pass", "ok"}):
                 blockers.append(f"external_execution_proof_{field}_must_pass")
@@ -267,11 +270,16 @@ def proof_template_for_lane(lane: str) -> dict[str, Any]:
         required_fields = [
             "external_side_effects",
             "action_performed",
+            "candidate_id",
+            "job_profile",
             "read_guard",
             "write_guard",
             "isolated_worktree",
             "job_state",
             "changed_paths_report",
+            "timeout_release",
+            "rollback",
+            "cleanup",
             "no_codex_takeover",
             "active_sidecar_took_over_codex",
             "remote_publication_mutated",
@@ -282,11 +290,16 @@ def proof_template_for_lane(lane: str) -> dict[str, Any]:
             "lane": lane,
             "external_side_effects": profile.side_effect,
             "action_performed": False,
+            "candidate_id": "",
+            "job_profile": "",
             "read_guard": {"status": "pending"},
             "write_guard": {"status": "pending"},
             "isolated_worktree": {"status": "pending"},
             "job_state": {"status": "pending"},
             "changed_paths_report": {"status": "pending", "paths": []},
+            "timeout_release": {"status": "pending"},
+            "rollback": {"status": "pending"},
+            "cleanup": {"status": "pending"},
             "no_codex_takeover": False,
             "active_sidecar_took_over_codex": False,
             "remote_publication_mutated": False,
@@ -430,7 +443,9 @@ def apply_live_action_proof(receipt: dict[str, Any], proof: dict[str, Any], proo
         execution["message_body_included"] = False
         execution["recipient_included"] = False
     elif lane == "codex-harnesses-governance":
-        for field in ("read_guard", "write_guard", "isolated_worktree", "changed_paths_report", "job_state"):
+        execution["candidate_id_hash"] = stable_hash(str(proof.get("candidate_id", "")))
+        execution["job_profile"] = str(proof.get("job_profile", ""))
+        for field in ("read_guard", "write_guard", "isolated_worktree", "changed_paths_report", "job_state", "timeout_release", "rollback", "cleanup"):
             execution[field] = proof.get(field, {"status": "pass"})
         execution["no_codex_takeover"] = True
         execution["active_sidecar_took_over_codex"] = False

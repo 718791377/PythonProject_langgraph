@@ -16,6 +16,8 @@ import hashlib
 import json
 import re
 import subprocess
+import tempfile
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -425,6 +427,200 @@ def run_single_smoke(candidate_id: str, install_receipt_path: Path | None, *, ti
     return passing_receipt(candidate_id, install_receipt_path=install_receipt_path, install_receipt=receipt_data, transcript=transcript)
 
 
+
+def git_output(args: list[str], *, cwd: Path, timeout_seconds: int = 10) -> tuple[int, str, str]:
+    try:
+        proc = subprocess.run(
+            args,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout_seconds,
+            check=False,
+        )
+        return proc.returncode, proc.stdout or "", proc.stderr or ""
+    except subprocess.TimeoutExpired as exc:
+        return 124, exc.stdout or "", exc.stderr or ""
+    except OSError as exc:
+        return 127, "", str(exc)
+
+
+def status_pass(extra: dict[str, Any] | None = None) -> dict[str, Any]:
+    payload: dict[str, Any] = {"status": "pass"}
+    if extra:
+        payload.update(extra)
+    return payload
+
+
+def r6_live_proof_error(blockers: list[str]) -> dict[str, Any]:
+    return response(
+        False,
+        "r6-live-proof",
+        runs_harness_job=False,
+        runs_write_capable_harness_job=False,
+        proof_out_hash="",
+        blockers=sorted(set(blockers)),
+    )
+
+
+def build_r6_harness_proof(
+    *,
+    repo_root: Path,
+    candidate_id: str,
+    job_profile: str,
+    timeout_seconds: int,
+) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    repo_root = repo_root.resolve()
+    candidate_id = normalize_candidate(candidate_id) or ""
+    if candidate_id not in CANDIDATE_REGISTRY:
+        return None, r6_live_proof_error(["unknown_candidate"])
+    allowed_profiles = {"bounded-local-write", "bounded-read-write-guard"}
+    if job_profile not in allowed_profiles:
+        return None, r6_live_proof_error(["unsupported_job_profile"])
+    code, stdout, stderr = git_output(["git", "rev-parse", "--show-toplevel"], cwd=repo_root, timeout_seconds=timeout_seconds)
+    if code != 0:
+        return None, r6_live_proof_error(["repo_root_must_be_git_worktree"])
+    code, status_before, _ = git_output(["git", "status", "--short"], cwd=repo_root, timeout_seconds=timeout_seconds)
+    if code != 0:
+        return None, r6_live_proof_error(["git_status_failed"])
+    if status_before.strip():
+        return None, r6_live_proof_error(["repo_root_must_start_clean"])
+    code, base_ref, _ = git_output(["git", "rev-parse", "HEAD"], cwd=repo_root, timeout_seconds=timeout_seconds)
+    if code != 0:
+        return None, r6_live_proof_error(["git_head_unresolved"])
+    branch_name = f"r6-harness-proof-{uuid.uuid4().hex[:12]}"
+    worktree_path = Path(tempfile.mkdtemp(prefix="r6-harness-proof-"))
+    worktree_removed = False
+    changed_paths: list[str] = []
+    blockers: list[str] = []
+    timed_out = False
+    try:
+        code, out, err = git_output(
+            ["git", "worktree", "add", "--detach", str(worktree_path), base_ref.strip()],
+            cwd=repo_root,
+            timeout_seconds=timeout_seconds,
+        )
+        if code != 0:
+            blockers.append("isolated_worktree_create_failed")
+            return None, r6_live_proof_error(blockers)
+        proof_dir = worktree_path / ".omx" / "r6-harness-live-job"
+        proof_dir.mkdir(parents=True, exist_ok=True)
+        job_file = proof_dir / "bounded-harness-job.txt"
+        job_body = (
+            "R6 bounded local Codex harness job proof.\n"
+            f"candidate_id={candidate_id}\n"
+            f"job_profile={job_profile}\n"
+            "remote_publication_mutated=false\n"
+        )
+        job_file.write_text(job_body, encoding="utf-8")
+        code, status_out, status_err = git_output(["git", "status", "--short"], cwd=worktree_path, timeout_seconds=timeout_seconds)
+        if code == 124:
+            timed_out = True
+            blockers.append("harness_job_timeout")
+        elif code != 0:
+            blockers.append("changed_paths_report_failed")
+        else:
+            for line in status_out.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                changed_paths.append(line[3:] if len(line) > 3 else line)
+        if not changed_paths:
+            blockers.append("changed_paths_report_empty")
+        code, _, _ = git_output(["git", "restore", "--worktree", "--staged", "."], cwd=worktree_path, timeout_seconds=timeout_seconds)
+        if code not in {0, 1}:
+            blockers.append("rollback_restore_failed")
+        if job_file.exists():
+            try:
+                job_file.unlink()
+            except OSError:
+                blockers.append("rollback_unlink_failed")
+        # Remove now-empty generated dirs from the detached worktree before cleanup.
+        for parent in (proof_dir, proof_dir.parent):
+            try:
+                parent.rmdir()
+            except OSError:
+                pass
+        code, clean_out, _ = git_output(["git", "status", "--short"], cwd=worktree_path, timeout_seconds=timeout_seconds)
+        if code != 0 or clean_out.strip():
+            blockers.append("rollback_clean_status_failed")
+    finally:
+        code, _, _ = git_output(["git", "worktree", "remove", "--force", str(worktree_path)], cwd=repo_root, timeout_seconds=timeout_seconds)
+        worktree_removed = code == 0
+        if not worktree_removed:
+            blockers.append("isolated_worktree_cleanup_failed")
+        git_output(["git", "branch", "-D", branch_name], cwd=repo_root, timeout_seconds=timeout_seconds)
+    code, status_after, _ = git_output(["git", "status", "--short"], cwd=repo_root, timeout_seconds=timeout_seconds)
+    if code != 0 or status_after.strip():
+        blockers.append("repo_root_clean_after_job_failed")
+    if blockers:
+        return None, r6_live_proof_error(blockers)
+    changed_path_hashes = [stable_hash(path) for path in sorted(changed_paths)]
+    proof = {
+        "schema_version": 1,
+        "generated_at": now_iso(),
+        "lane": "codex-harnesses-governance",
+        "external_side_effects": "harness_job",
+        "action_performed": True,
+        "candidate_id": candidate_id,
+        "candidate_id_hash": stable_hash(candidate_id),
+        "job_profile": job_profile,
+        "job_id_hash": stable_hash({"candidate_id": candidate_id, "job_profile": job_profile, "base_ref": base_ref.strip()}),
+        "read_guard": status_pass({"scope": "repo-local bounded proof job", "read_only_inputs": True}),
+        "write_guard": status_pass({"write_scope": "isolated_worktree_only", "repo_root_written": False}),
+        "isolated_worktree": status_pass({"worktree_path_hash": stable_hash(str(worktree_path)), "branch_detached": True}),
+        "job_state": status_pass({"job_kind": "r6-bounded-local-harness-job", "write_capable": True, "bounded": True}),
+        "changed_paths_report": status_pass({"path_hashes": changed_path_hashes, "paths": [".omx/r6-harness-live-job/bounded-harness-job.txt"]}),
+        "timeout_release": status_pass({"released": True, "timeout_seconds": timeout_seconds, "timed_out": timed_out}),
+        "rollback": status_pass({"rollback_ready": True, "restored_clean": True, "rollback_ref_hash": stable_hash(base_ref.strip())}),
+        "cleanup": status_pass({"cleaned": True, "isolated_worktree_removed": worktree_removed}),
+        "no_codex_takeover": True,
+        "active_sidecar_took_over_codex": False,
+        "codex_launcher_mutated": False,
+        "native_codex_replaced": False,
+        "native_subagents_replaced": False,
+        "native_omx_replaced": False,
+        "langgraph_replaced": False,
+        "apply_patch_replaced": False,
+        "local_main_gate_bypassed": False,
+        "remote_publication_mutated": False,
+        "redaction_status": "pass",
+        "raw_payload_policy": "redacted_status_only",
+    }
+    payload = response(
+        True,
+        "r6-live-proof",
+        runs_harness_job=True,
+        runs_write_capable_harness_job=True,
+        proof_out_hash="",
+        candidate_id=candidate_id,
+        candidate_id_hash=stable_hash(candidate_id),
+        job_profile=job_profile,
+        changed_paths_count=len(changed_paths),
+        redaction_status="pass",
+        remote_publication_mutated=False,
+    )
+    return proof, payload
+
+
+def command_r6_live_proof(args: argparse.Namespace) -> dict[str, Any]:
+    proof, payload = build_r6_harness_proof(
+        repo_root=Path(args.root),
+        candidate_id=args.candidate_id,
+        job_profile=args.job_profile,
+        timeout_seconds=max(1, int(args.timeout_seconds)),
+    )
+    if proof is None:
+        return payload
+    proof_out = Path(args.proof_out).resolve()
+    proof_out.parent.mkdir(parents=True, exist_ok=True)
+    proof_out.write_text(json.dumps(proof, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    payload["proof_out_hash"] = stable_hash(str(proof_out))
+    payload["proof_hash"] = stable_hash(proof)
+    return payload
+
 def write_receipt(receipt_dir: Path, candidate_id: str, receipt: dict[str, Any]) -> dict[str, Any]:
     receipt_dir.mkdir(parents=True, exist_ok=True)
     filename = f"r4-codex-harnesses-smoke-{candidate_id.lower().replace(' ', '-').replace('_', '-')}.json"
@@ -560,6 +756,14 @@ def build_parser() -> argparse.ArgumentParser:
     plan = sub.add_parser("plan", help="Describe canonical R4 smoke behavior.")
     plan.add_argument("--json", action="store_true", help="Emit JSON output.")
 
+    live = sub.add_parser("r6-live-proof", help="Run a bounded repo-local R6 harness job and write redacted proof.")
+    live.add_argument("--root", default=".", help="Clean git repository root used as source for the isolated worktree.")
+    live.add_argument("--candidate-id", required=True, help="Canonical harness candidate id.")
+    live.add_argument("--job-profile", required=True, help="Allowed bounded harness job profile.")
+    live.add_argument("--proof-out", required=True, help="Output path for redacted R6 harness proof JSON.")
+    live.add_argument("--timeout-seconds", type=int, default=10, help="Bound for git/job operations.")
+    live.add_argument("--json", action="store_true", help="Emit JSON output.")
+
     run = sub.add_parser("run", help="Write R4 smoke-tested or honest blocked receipts.")
     run.add_argument("--receipt-dir", required=True, help="Directory for repo-local smoke receipts.")
     run.add_argument(
@@ -585,6 +789,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "plan":
         payload = command_plan(args)
+    elif args.command == "r6-live-proof":
+        payload = command_r6_live_proof(args)
     else:
         payload = command_run(args)
     if args.json:

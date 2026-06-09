@@ -30,14 +30,14 @@ Pi/oh-my-pi reference、JSON job state、read guard、write guard、isolated wor
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local
-Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
-Stage: Codex harness runtime safety governance 的 R5 runtime-governance receipt package。
-Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
+Status: R6 有界 repo-local harness live-job proof 已在本地实现；真实用户级 harness 安装/启动仍然需要后续 receipt 授权。
+Stage: Codex harness runtime safety governance 的 R6 bounded live-proof package。
+Owner session: `r6-harness-live-job-evidence-20260609`；feature branch 是 `r6-harness-live-job-evidence-20260609`。
 Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
-R5 evidence: `codex-harnesses active-candidate lane profile` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
-Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
+R6 evidence: `tools/run_codex_harnesses_smoke.py r6-live-proof` 在临时隔离 Git worktree 中运行一个有界本地 harness job 并写入脱敏 proof；`tools/r6_live_runtime.py proof-check` 与 `run --mode live-action` 只有在 candidate id、job profile、read/write guards、isolated worktree、changed-path report、timeout release、rollback、cleanup 与 no-takeover evidence 均通过时才提升 Codex harness lane。
+Runtime boundary: 本 R6 package 不安装用户级 harness tools，不启动 sidecar，不发送 WXWork 消息，不启动 browser/GUI，不启动 durable workers，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication；它只在临时隔离 Git worktree 中运行有界 repo-local harness proof job，并记录脱敏/hash proof 材料。
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
-Last updated: 2026-06-07
+Last updated: 2026-06-09
 <!-- CURRENT_STATUS_END -->
 
 ## 冲突优先级
@@ -157,6 +157,7 @@ R4 receipt 字段解释：
 - [x] R4 local smoke receipt tooling：新增 `tools/run_codex_harnesses_smoke.py`、`tools/check_codex_harnesses_smoke_receipts.py` 与 `codex_harnesses_smoke_receipts.test.py`；blocked receipts 可作为诚实证据，但仍为 not smoke-tested。
 - [x] 2026-06-06 source refresh：记录 revfactory/harness、ohmyopenagent 和 snow-cli 为 reference-only sources；将后续 runtime 方向改为 candidate-registry-driven；只记录 Checker + Runtime 要求，不直接实现。
 - [x] 2026-06-07 conflict-priority refresh：记录 harnesses 低于 Comet/OpenSpec/Superpowers/gstack，且仅在 runtime safety 上高于 Spec Kit；要求未来 `authority_decision` evidence，但不实现 scripts。
+- [x] 2026-06-09 R6 bounded harness live-proof runtime：新增 `tools/run_codex_harnesses_smoke.py r6-live-proof`、更严格的 R6 harness proof intake、聚焦测试，以及 `codex-harnesses-governance` 的脱敏 live-executed 证据；不安装或启动用户级 harness runtimes。
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B 待迁移工作
@@ -176,6 +177,7 @@ R4 receipt 字段解释：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-09 R6 bounded harness live-proof 证据：`tools/run_codex_harnesses_smoke.py r6-live-proof` 在临时隔离 Git worktree 中运行一个有界 repo-local harness job，报告 read/write guards、isolated worktree、job state、changed paths、timeout release、rollback、cleanup 与 no-Codex-takeover proof，并只写入脱敏/hash 材料。`tools/r6_live_runtime.py proof-check` 和 `run --mode live-action` 将 `.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json` 验证为 `codex-harnesses-governance` 的 R6 `live-executed` receipt；不安装或启动用户级 harness，不执行远端发布。
 - 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 Codex harness runtime safety governance 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-07 conflict-priority refresh：本 docs-only package 记录 Codex harnesses 是低于 Comet/OpenSpec/Superpowers/gstack 的 subordinate runtime-safety governance，且只在 runtime safety 上高于 Spec Kit；Checker + Runtime implementation 仍延后。
 - 2026-06-06 source refresh evidence：本 docs-only package 新增 `https://github.com/revfactory/harness`、`https://github.com/ymymssss/ohmyopenagent` 和 `https://github.com/MayDay-wpf/snow-cli`，记录 source pin/license posture，并将后续 Checker + Runtime 要求改为 candidate-registry-driven；本包不实现 runtime、不安装、不启动 sidecar、不 live-run harness job、不发生 Codex takeover。
@@ -184,3 +186,10 @@ R4 receipt 字段解释：
 - 2026-06-05 Stage C runtime promotion evidence：branch `runtime-promotion-plan-20260605` records R0-R5 promotion gates for Codex harnesses, keeps Pi/oh-my-pi sidecar runtime not installed/started/enabled, and checker-backs no-takeover active sidecar constraints。
 - 2026-06-04 Stage B implementation evidence：`tools/check_codex_harnesses_governance.py` 和 `test/check_codex_harnesses_governance.test.py` verify source ledger、no Codex takeover、read guard、write guard、job state、isolated worktree、changed-path report 与 no unpinned Pi packages。
 <!-- EVIDENCE_INDEX_END -->
+
+## 2026-06-09 R6 bounded live-proof
+
+- 本次 R6 bounded repo-local harness live-job proof 不安装用户级 harness runtime，不启动长期 sidecar/factory，只生成脱敏 receipt。
+- Runtime：`tools/run_codex_harnesses_smoke.py r6-live-proof` 在临时隔离 Git worktree 中运行一个 bounded local harness job，生成 redacted proof，并在 job 后 rollback/cleanup。
+- R6 proof intake：`tools/r6_live_runtime.py proof-check` 要求 candidate id、job profile、read/write guard、isolated worktree、job state、changed-path report、timeout release、rollback、cleanup 与 no-Codex-takeover 均通过。
+- Receipt：`.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json` 将 `codex-harnesses-governance` 记录为 R6 `live-executed`；没有安装 Pi、oh-my-pi、revfactory/harness、ohmyopenagent 或 snow-cli，也没有替换 Codex、native subagents、native_omx、LangGraph、`codex-ohmy` 或 `apply_patch`。

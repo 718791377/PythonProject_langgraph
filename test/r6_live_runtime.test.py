@@ -177,11 +177,16 @@ class R6LiveRuntimeTests(unittest.TestCase):
             "codex-harnesses": {
                 "external_side_effects": "harness_job",
                 "action_performed": True,
+                "candidate_id": "pi-runtime",
+                "job_profile": "bounded-local-write",
                 "read_guard": {"status": "pass"},
                 "write_guard": {"status": "pass"},
                 "isolated_worktree": {"status": "pass"},
                 "changed_paths_report": {"status": "pass", "paths": []},
                 "job_state": {"status": "pass"},
+                "timeout_release": {"status": "pass"},
+                "rollback": {"status": "pass"},
+                "cleanup": {"status": "pass"},
                 "no_codex_takeover": True,
                 "active_sidecar_took_over_codex": False,
             },
@@ -459,11 +464,16 @@ class R6LiveRuntimeTests(unittest.TestCase):
             "codex-harnesses": {
                 "external_side_effects": "harness_job",
                 "action_performed": True,
+                "candidate_id": "pi-runtime",
+                "job_profile": "bounded-local-write",
                 "read_guard": {"status": "pass"},
                 "write_guard": {"status": "pass"},
                 "isolated_worktree": {"status": "pass"},
                 "changed_paths_report": {"status": "pass", "paths": ["docs/example.md"]},
                 "job_state": {"status": "pass"},
+                "timeout_release": {"status": "pass"},
+                "rollback": {"status": "pass"},
+                "cleanup": {"status": "pass"},
                 "no_codex_takeover": True,
                 "active_sidecar_took_over_codex": False,
                 "remote_publication_mutated": False,
@@ -499,6 +509,55 @@ class R6LiveRuntimeTests(unittest.TestCase):
                 self.assertTrue(payload["proof_accepted"])
                 self.assertIn("proof_hash", payload)
                 self.assertNotIn(str(proof_path), json.dumps(payload, ensure_ascii=False))
+
+    def test_proof_check_rejects_harness_proof_missing_release_rollback_cleanup(self) -> None:
+        root = self.make_root()
+        proof_path = root / "harness-missing-release-proof.json"
+        proof_path.write_text(
+            json.dumps(
+                {
+                    "external_side_effects": "harness_job",
+                    "action_performed": True,
+                    "read_guard": {"status": "pass"},
+                    "write_guard": {"status": "pass"},
+                    "isolated_worktree": {"status": "pass"},
+                    "changed_paths_report": {"status": "pass", "paths": ["docs/example.md"]},
+                    "job_state": {"status": "pass"},
+                    "no_codex_takeover": True,
+                    "active_sidecar_took_over_codex": False,
+                    "remote_publication_mutated": False,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(RUNTIME),
+                "proof-check",
+                "--root",
+                str(root),
+                "--lane",
+                "codex-harnesses",
+                "--proof-receipt",
+                str(proof_path),
+                "--json",
+            ],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        payload = json.loads(proc.stdout)
+        joined = "\n".join(payload["blockers"])
+        self.assertIn("external_execution_proof_timeout_release_must_pass", joined)
+        self.assertIn("external_execution_proof_rollback_must_pass", joined)
+        self.assertIn("external_execution_proof_cleanup_must_pass", joined)
 
     def test_proof_check_rejects_raw_wxwork_payload_material(self) -> None:
         root = self.make_root()

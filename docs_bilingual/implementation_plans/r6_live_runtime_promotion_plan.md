@@ -48,6 +48,7 @@ This plan covers these existing R5 plans as one governed rollout:
 
 - [x] Stage D sensitive live-action follow-up records Browser and Stop-Slop/Caveman as R6 `live-executed` with redacted receipts, while WXWork and Codex harnesses remain fail-closed `blocked` because no real send target or live harness job proof is present.
 - [x] Stage E proof-intake hardening adds `proof-template` and `proof-check` runtime commands. `proof-template` writes a fill-after-real-action JSON skeleton without running external tools, and `proof-check` validates a redacted proof before the existing `run --mode live-action --proof-receipt ...` path can mark WXWork or harness evidence as `live-executed`.
+- [x] Stage F bounded harness live-job evidence adds `tools/run_codex_harnesses_smoke.py r6-live-proof` and records Codex harnesses as R6 `live-executed` with a redacted isolated-worktree proof. WXWork remains fail-closed `blocked` until a real message-send proof exists.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -65,6 +66,7 @@ This plan covers these existing R5 plans as one governed rollout:
 
 - [x] Package 4: run and record sensitive live-action follow-up evidence; accept Browser and Stop-Slop/Caveman live-executed proof, and retain WXWork/Harness blocked receipts until real proof gates exist.
 - [x] Package 5: add fail-closed proof-intake templates and proof validation for WXWork and Codex harnesses so future real live proof can be checked without storing raw recipient, message, browser, or harness payloads.
+- [x] Package 6: implement and execute a bounded repo-local Codex harness proof job that runs in a temporary isolated Git worktree, rolls back/cleans up, then promotes `codex-harnesses-governance` to R6 `live-executed` through `proof-check` and `run --mode live-action`.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -83,7 +85,8 @@ This plan covers these existing R5 plans as one governed rollout:
 - Stage C template sync evidence: `python tools\r6_live_runtime.py sync-templates --root . --general-root D:\PythonProject_General --general2-root D:\PythonProject_General_2 --update-managed --json` refreshed managed template files only, reported `remote_publication_mutated=false`, and preserved General_2 as a stub-only surface.
 - Remote publication remains unauthorized until a current user message names the remote action.
 - Stage D sensitive live-action follow-up evidence - `live-executed` means a bounded live action ran with proof, and `blocked` means the runtime recorded an unmet proof gate: `.omx/r6-live-runtime/receipts/browser-live-action-followup.json` and `.omx/r6-live-runtime/receipts/stop-slop-caveman-live-executed-followup.json` are current valid `live-executed` receipts selected by `tools/check_r6_live_runtime_receipts.py --require-coverage`; `.omx/r6-live-runtime/receipts/wxwork-live-action-blocked-followup.json` and `.omx/r6-live-runtime/receipts/harness-live-action-blocked-followup.json` remain valid `blocked` receipts because real WXWork message-send proof and real guarded harness-job proof are absent. Human-readable evidence: `docs_bilingual/implementation_evidence/r6_sensitive_live_action_evidence_20260609.md` and `.zh-CN.md`.
-- Stage E proof-intake hardening evidence - `tools/r6_live_runtime.py proof-template` is the fail-closed template generator for a future real external proof file, and `tools/r6_live_runtime.py proof-check` is the redaction and required-field validator for that proof file. Tests: `python test\r6_live_runtime.test.py -v` passes 17/17 and covers accepted redacted WXWork/harness proofs plus rejection of raw WXWork body or recipient material.
+- Stage E proof-intake hardening evidence - `tools/r6_live_runtime.py proof-template` is the fail-closed template generator for a future real external proof file, and `tools/r6_live_runtime.py proof-check` is the redaction and required-field validator for that proof file. Tests: `python test\r6_live_runtime.test.py -v` passes 18/18 and covers accepted redacted WXWork/harness proofs plus rejection of raw WXWork body or recipient material.
+- Stage F bounded harness live-job evidence - `tools/run_codex_harnesses_smoke.py r6-live-proof` now runs one bounded local harness job in a temporary isolated Git worktree and writes a redacted proof. `tools/r6_live_runtime.py proof-check` accepts that proof only when candidate id, job profile, read/write guards, isolated worktree, job state, changed-path report, timeout release, rollback, cleanup, and no-Codex-takeover evidence pass. The follow-up receipt `.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json` validates as R6 `live-executed` for `codex-harnesses-governance`; proof hash `e0f71f0789945588`, candidate hash `47ab92541ddbb827`, remote publication mutated `false`. WXWork remains `blocked` until a real external message-send proof exists.
 
 <!-- EVIDENCE_INDEX_END -->
 

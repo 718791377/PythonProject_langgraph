@@ -30,14 +30,14 @@ Codex CLI, Git worktrees, JSON job state, Python guard/checker scripts, OpenSpec
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local
-Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
-Stage: R5 runtime-governance receipt package for Codex harness runtime safety governance.
-Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Status: R6 bounded repo-local harness live-job proof is implemented locally; real user-level harness installation/start remains blocked unless future receipts authorize it.
+Stage: R6 bounded live-proof package for Codex harness runtime safety governance.
+Owner session: `r6-harness-live-job-evidence-20260609` in feature branch `r6-harness-live-job-evidence-20260609`.
 Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
-R5 evidence: `codex-harnesses active-candidate lane profile` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
-Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+R6 evidence: `tools/run_codex_harnesses_smoke.py r6-live-proof` runs one bounded local harness job in an isolated temporary Git worktree and writes redacted proof; `tools/r6_live_runtime.py proof-check` plus `run --mode live-action` promote the Codex harness lane only when candidate id, job profile, read/write guards, isolated worktree, changed-path report, timeout release, rollback, cleanup, and no-takeover evidence pass.
+Runtime boundary: this R6 package does not install user-level harness tools, start sidecars, send WXWork messages, start browsers or GUI apps, launch durable workers, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication. It only runs a bounded repo-local harness proof job in a temporary isolated Git worktree and records redacted/hash proof material.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
-Last updated: 2026-06-07
+Last updated: 2026-06-09
 <!-- CURRENT_STATUS_END -->
 
 ## Conflict Priority
@@ -169,6 +169,7 @@ This plan is not complete at the real-runtime level. The implemented-local packa
 - [x] 2026-06-06 source refresh: record revfactory/harness, ohmyopenagent, and snow-cli as reference-only sources; redesign the next runtime direction as candidate-registry-driven; record Checker + Runtime follow-up requirements without implementing them.
 - [x] 2026-06-07 conflict-priority refresh: record harnesses below Comet/OpenSpec/Superpowers/gstack and above Spec Kit only for runtime safety; require future `authority_decision` evidence without implementing scripts.
 - [x] 2026-06-07 R4 candidate-registry checker/runtime: update governance checker, smoke runner, smoke receipt checker, tests, stable spec, and safety registry to require all seven sources, five candidates, five adapter kinds, R4 receipt policy fields, and `authority_decision` while keeping real install/start/live handoff unimplemented.
+- [x] 2026-06-09 R6 bounded harness live-proof runtime: add `tools/run_codex_harnesses_smoke.py r6-live-proof`, stricter R6 harness proof intake, focused tests, and redacted live-executed evidence for `codex-harnesses-governance` without installing or starting user-level harness runtimes.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
@@ -202,6 +203,7 @@ This plan is not complete at the real-runtime level. The implemented-local packa
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-09 R6 bounded harness live-proof evidence: `tools/run_codex_harnesses_smoke.py r6-live-proof` runs one bounded repo-local harness job in a temporary isolated Git worktree, reports read/write guards, isolated worktree, job state, changed paths, timeout release, rollback, cleanup, and no-Codex-takeover proof, and writes only redacted/hash material. `tools/r6_live_runtime.py proof-check` and `run --mode live-action` validate `.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json` as R6 `live-executed` for `codex-harnesses-governance`; no user-level harness install/start or remote publication occurs.
 - 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for Codex harness runtime safety governance. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-07 R4 candidate-registry checker/runtime evidence: `tools/check_codex_harnesses_governance.py`, `tools/run_codex_harnesses_smoke.py`, `tools/check_codex_harnesses_smoke_receipts.py`, `test/check_codex_harnesses_governance.test.py`, and `test/codex_harnesses_smoke_receipts.test.py` now require all seven source rows, the five candidate ids, the five adapter kinds, R4 receipt fields, `async/headless` lifecycle evidence, and `authority_decision`; blocked receipts remain not smoke-tested, and no install/start/live harness job occurs.
 - 2026-06-07 conflict-priority refresh: this docs-only package records Codex harnesses as subordinate runtime-safety governance below Comet/OpenSpec/Superpowers/gstack and above Spec Kit only for runtime safety; Checker + Runtime implementation remains deferred.

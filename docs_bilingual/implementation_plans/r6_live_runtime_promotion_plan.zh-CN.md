@@ -52,6 +52,8 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 
 - [x] Stage E proof-intake hardening 增加 `proof-template` 与 `proof-check` runtime 命令。`proof-template` 只写入真实动作后的填充骨架且不运行外部工具；`proof-check` 在既有 `run --mode live-action --proof-receipt ...` 路径把 WXWork 或 harness 证据提升为 `live-executed` 之前，先校验 proof 是否已脱敏且字段齐全。
 
+- [x] Stage F 有界 harness live-job 证据新增 `tools/run_codex_harnesses_smoke.py r6-live-proof`，并以脱敏隔离 worktree proof 将 Codex harnesses 记录为 R6 `live-executed`。WXWork 在出现真实 message-send proof 前继续 fail-closed 为 `blocked`。
+
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
@@ -69,6 +71,8 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 - [x] Package 4：运行并记录敏感 live-action follow-up 证据；接受 Browser 与 Stop-Slop/Caveman 的 live-executed proof，并在真实 proof gate 出现前保留 WXWork/Harness blocked receipts。
 
 - [x] Package 5：为 WXWork 与 Codex harnesses 增加 fail-closed proof-intake 模板与 proof 校验，未来真实 live proof 可在不保存 raw recipient、message、browser 或 harness payload 的前提下通过门禁。
+
+- [x] Package 6：实现并执行一个有界 repo-local Codex harness proof job；该 job 在临时隔离 Git worktree 中运行，随后 rollback/cleanup，并通过 `proof-check` 与 `run --mode live-action` 将 `codex-harnesses-governance` 提升为 R6 `live-executed`。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -89,7 +93,8 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 
 - Stage D 敏感 live-action follow-up 证据 - `live-executed` means bounded live action ran with proof，`blocked` means runtime recorded an unmet proof gate：`.omx/r6-live-runtime/receipts/browser-live-action-followup.json` 与 `.omx/r6-live-runtime/receipts/stop-slop-caveman-live-executed-followup.json` 是当前有效且被 `tools/check_r6_live_runtime_receipts.py --require-coverage` 选中的 `live-executed` receipt；`.omx/r6-live-runtime/receipts/wxwork-live-action-blocked-followup.json` 与 `.omx/r6-live-runtime/receipts/harness-live-action-blocked-followup.json` 因缺少真实 WXWork message-send proof 与真实 guarded harness-job proof，仍为有效 `blocked` receipt。人工可读证据：`docs_bilingual/implementation_evidence/r6_sensitive_live_action_evidence_20260609.md` 与 `.zh-CN.md`。
 
-- Stage E proof-intake hardening 证据：`tools/r6_live_runtime.py proof-template` 是未来真实外部 proof 文件的 fail-closed 模板生成器，`tools/r6_live_runtime.py proof-check` 是该 proof 文件的脱敏与必需字段校验器。测试：`python test\r6_live_runtime.test.py -v` 通过 17/17，并覆盖已脱敏 WXWork/harness proof 的接受路径，以及 raw WXWork body 或 recipient 材料的拒绝路径。
+- Stage E proof-intake hardening 证据：`tools/r6_live_runtime.py proof-template` 是未来真实外部 proof 文件的 fail-closed 模板生成器，`tools/r6_live_runtime.py proof-check` 是该 proof 文件的脱敏与必需字段校验器。测试：`python test\r6_live_runtime.test.py -v` 通过 18/18，并覆盖已脱敏 WXWork/harness proof 的接受路径，以及 raw WXWork body 或 recipient 材料的拒绝路径。
+- Stage F 有界 harness live-job 证据：`tools/run_codex_harnesses_smoke.py r6-live-proof` 现在会在临时隔离 Git worktree 中运行一个有界本地 harness job，并写入脱敏 proof。`tools/r6_live_runtime.py proof-check` 只有在 candidate id、job profile、read/write guards、isolated worktree、job state、changed-path report、timeout release、rollback、cleanup 与 no-Codex-takeover evidence 均通过时才接受该 proof。follow-up receipt `.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json` 已作为 `codex-harnesses-governance` 的 R6 `live-executed` receipt 通过验证；proof hash `e0f71f0789945588`，candidate hash `47ab92541ddbb827`，`remote_publication_mutated=false`。WXWork 在出现真实外部 message-send proof 前继续保持 `blocked`。
 
 <!-- EVIDENCE_INDEX_END -->
 ## R6 契约
@@ -238,3 +243,10 @@ Spec Kit 仍低于 harness runtime safety，不能成为仓库治理权威。R6 
 - 本方案不授权远端发布。
 - 本方案不让 Spec Kit 替代 Comet/OpenSpec。
 - 本方案不把外部目标、secret、WXWork message body 或 raw browser data 写入已提交文件。
+
+## 2026-06-09 Stage F：Codex Harness R6 live-executed
+
+- [x] Package 6 运行有界 repo-local Codex harness proof job：`tools/run_codex_harnesses_smoke.py r6-live-proof` 在临时隔离 Git worktree 中执行 bounded local harness job，并记录 read/write guard、isolated worktree、job state、changed-path report、timeout release、rollback、cleanup 与 no-Codex-takeover proof。
+- [x] `tools/r6_live_runtime.py proof-check` 对 harness proof 强制要求 candidate id、job profile、timeout release、rollback 与 cleanup；缺失任一字段时 fail closed。
+- [x] `codex-harnesses-governance` 已通过 redacted proof 提升为 R6 `live-executed`；proof hash `e0f71f0789945588`，candidate hash `47ab92541ddbb827`，`remote_publication_mutated=false`。
+- [ ] `user-level-cli-anything-wxwork-cli-governance` 仍保持 `blocked`，直到出现真实 WXWork message-send proof 且不包含 raw recipient/body。

@@ -162,6 +162,15 @@ class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
             paths.append(path)
         return paths
 
+
+    def init_git_repo(self, directory: Path) -> None:
+        subprocess.run(["git", "init"], cwd=directory, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "config", "user.email", "r6-harness-test@example.invalid"], cwd=directory, check=True)
+        subprocess.run(["git", "config", "user.name", "R6 Harness Test"], cwd=directory, check=True)
+        (directory / "README.md").write_text("# R6 harness fixture\n", encoding="utf-8")
+        subprocess.run(["git", "add", "README.md"], cwd=directory, check=True)
+        subprocess.run(["git", "commit", "-m", "fixture baseline"], cwd=directory, check=True, capture_output=True, text=True)
+
     def test_runner_plan_exposes_candidate_registry_for_all_adapter_kinds(self) -> None:
         code, payload, _ = self.run_json(RUNNER, "plan")
 
@@ -238,6 +247,54 @@ class CodexHarnessesSmokeReceiptTests(unittest.TestCase):
             self.assertEqual(check_payload["counts"]["positive_smoke_tested"], len(CANDIDATES))
             self.assertNotIn(str(base), check_output)
             self.assertNotIn(sys.executable, check_output)
+
+    def test_r6_live_proof_runs_bounded_harness_job_in_isolated_worktree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            repo = base / "repo"
+            repo.mkdir()
+            self.init_git_repo(repo)
+            proof_path = base / "harness-proof.json"
+
+            code, payload, output = self.run_json(
+                RUNNER,
+                "r6-live-proof",
+                "--root",
+                str(repo),
+                "--candidate-id",
+                "pi-runtime",
+                "--job-profile",
+                "bounded-local-write",
+                "--proof-out",
+                str(proof_path),
+            )
+
+            self.assertEqual(code, 0)
+            self.assertTrue(payload["ok"], payload)
+            self.assertTrue(payload["runs_harness_job"])
+            self.assertTrue(payload["runs_write_capable_harness_job"])
+            self.assertFalse(payload["codex_launcher_mutated"])
+            self.assertFalse(payload["native_codex_replaced"])
+            self.assertFalse(payload["local_main_gate_bypassed"])
+            self.assertNotIn(str(base), output)
+            self.assertTrue(proof_path.exists())
+
+            proof = json.loads(proof_path.read_text(encoding="utf-8"))
+            self.assertEqual(proof["external_side_effects"], "harness_job")
+            self.assertTrue(proof["action_performed"])
+            self.assertEqual(proof["candidate_id"], "pi-runtime")
+            self.assertEqual(proof["job_profile"], "bounded-local-write")
+            for field in ("read_guard", "write_guard", "isolated_worktree", "changed_paths_report", "job_state", "timeout_release", "rollback", "cleanup"):
+                self.assertEqual(proof[field]["status"], "pass", field)
+            self.assertTrue(proof["no_codex_takeover"])
+            self.assertFalse(proof["active_sidecar_took_over_codex"])
+            self.assertFalse(proof["remote_publication_mutated"])
+            self.assertTrue(proof["changed_paths_report"]["paths"])
+            rendered = json.dumps(proof, ensure_ascii=False)
+            self.assertNotIn(str(base), rendered)
+
+            status = subprocess.run(["git", "status", "--short"], cwd=repo, check=True, capture_output=True, text=True)
+            self.assertEqual(status.stdout.strip(), "")
 
     def test_checker_blocks_write_or_takeover_markers(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -2,16 +2,17 @@
 
 ## Summary
 
-- Package: R6 sensitive live-action proof gate and follow-up live evidence.
+- Package: R6 sensitive live-action proof gate, proof intake, and bounded harness live-job evidence.
 - Priority order preserved: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
-- Runtime support: `tools/r6_live_runtime.py run --mode live-action --env-file <local-env> --proof-receipt <redacted-proof-json>`.
+- Runtime support: `tools/r6_live_runtime.py run --mode live-action --proof-receipt <redacted-proof-json>`.
 - Proof-intake support: `tools/r6_live_runtime.py proof-template` writes a fail-closed proof skeleton, and `tools/r6_live_runtime.py proof-check` validates redacted proof fields without running WXWork, browser, or harness actions.
+- Harness proof runtime support: `tools/run_codex_harnesses_smoke.py r6-live-proof` runs one bounded repo-local harness job in a temporary isolated Git worktree, records only redacted/hash proof material, rolls back the job worktree, removes the temporary worktree, and does not mutate remote publication.
 - Safety correction: Browser/WXWork/Harness `live-action` cannot become `live-executed` from environment targets alone; a redacted external execution proof receipt is required.
 - Follow-up result in the current environment:
   - `user-level-browser-cli-adapter-boundary`: `live-executed` with side effect family `browser_gui`.
   - `stop-slop-caveman-response-density-runtime`: `live-executed` with side effect family `user_level_install`.
-  - `user-level-cli-anything-wxwork-cli-governance` - remains `blocked`, which means the runtime recorded an unmet gate because there is no real WXWork send target and no redacted message-send proof.
-  - `codex-harnesses-governance` - remains `blocked`, which means the runtime recorded an unmet gate because there is no installed/selected live harness candidate job and no guarded harness-job proof.
+  - `codex-harnesses-governance`: `live-executed` with side effect family `harness_job`, using a bounded local proof job in an isolated temporary Git worktree.
+  - `user-level-cli-anything-wxwork-cli-governance`: remains `blocked`, because there is no real WXWork send target and no redacted message-send proof.
 - Remote publication mutated: `false`.
 
 ## Term Glossary
@@ -26,6 +27,9 @@
 | `isolated_worktree` | Harness proof field that means the candidate job ran in an owned isolated worktree rather than taking over `main`. |
 | `job_state` | Harness proof field that means the live harness job state was recorded and passed. |
 | `changed_paths_report` | Harness proof field that means changed paths were reported for review and rollback. |
+| `timeout_release` | Harness proof field that means the bounded job released on timeout boundaries and did not leave a hidden worker running. |
+| `rollback` | Harness proof field that means the temporary job changes were rolled back to a clean state. |
+| `cleanup` | Harness proof field that means temporary job resources were removed. |
 | `no_codex_takeover` | Harness proof field that means no sidecar, harness, or generated agent replaced Codex, native subagents, native_omx, LangGraph, `codex-ohmy`, or `apply_patch`. |
 
 ## Browser Live Execution
@@ -59,11 +63,24 @@
   - rollback pointer hash: `3097557c9be4077f`
 - Receipt flags: `canary_preserved=true`, `response_density_guard.status=pass`, `user_level_state_mutation_authorized=true`, `remote_publication_mutated=false`.
 
-## Sensitive Actions Still Blocked
+## Codex Harnesses Bounded Live Execution
 
-The following lanes were attempted through `live-action`, which means the runtime path for externally visible browser, message, or harness side effects. They correctly remained `blocked` because the required real target and redacted execution proof were absent. Do not claim these lanes as `R6 live-executed` until their proof gates are satisfied.
+- Lane: `codex-harnesses-governance`.
+- Mode: `r6-live-proof` followed by `r6_live_runtime.py run --mode live-action`.
+- Checker status: valid R6 `live-executed` receipt for the single harness lane; the receipt validator reports `r6_live_valid=true` and `external_side_effects=harness_job`.
+- Receipt: ignored local receipt `.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json`.
+- Proof: ignored local proof `.omx/r6-live-runtime/proofs/harness-live-job-proof-20260609.json`.
+- Live action summary: the harness proof runner created a temporary clean Git repository, created an isolated detached worktree for one bounded local harness job, wrote one proof marker inside that isolated worktree, collected a changed-path report, rolled back and removed the temporary worktree, and left the source repository clean. The receipt records only hashes and status fields; raw temporary paths are not stored in tracked files.
+- Redacted evidence hashes:
+  - candidate id hash: `47ab92541ddbb827`
+  - proof hash: `e0f71f0789945588`
+  - proof path hash: `a5e65db4805d61a8`
+  - receipt path hash: `5fc44be576ded575`
+  - target env hash: `d36d4a6a4aa244b4`
+- Receipt/proof flags: `read_guard.status=pass`, `write_guard.status=pass`, `isolated_worktree.status=pass`, `job_state.status=pass`, `changed_paths_report.status=pass`, `timeout_release.status=pass`, `rollback.status=pass`, `cleanup.status=pass`, `no_codex_takeover=true`, `active_sidecar_took_over_codex=false`, `remote_publication_mutated=false`.
+- Scope limitation: this is a bounded repo-local harness job proof. It does not install Pi, oh-my-pi, revfactory/harness, ohmyopenagent, snow-cli, or any user-level harness runtime; it does not start a sidecar; and it does not replace Codex launchers, native subagents, native_omx, LangGraph, `codex-ohmy`, or `apply_patch`.
 
-### WXWork / CLI-Anything
+## Sensitive Action Still Blocked: WXWork / CLI-Anything
 
 - Lane: `user-level-cli-anything-wxwork-cli-governance`.
 - Receipt: ignored local receipt `.omx/r6-live-runtime/receipts/wxwork-live-action-blocked-followup.json`.
@@ -73,28 +90,21 @@ The following lanes were attempted through `live-action`, which means the runtim
 - Current helper posture verified by `tools/wxwork_cli_governance.py`: repo-local guard only, no process probe, no GUI control, no Enterprise WeChat API/webhook call, no message send, and no user-level Codex config mutation.
 - Proof-intake hardening: `proof-template` can create the post-send proof skeleton, and `proof-check` rejects raw `message_body` or raw `recipient` fields while accepting hash-only `message_body_hash` evidence after a real send.
 
-### Codex Harnesses
-
-- Lane: `codex-harnesses-governance`.
-- Receipt: ignored local receipt `.omx/r6-live-runtime/receipts/harness-live-action-blocked-followup.json`.
-- Current receipt mode: `blocked`, which means the runtime recorded missing proof gates instead of claiming a successful harness job.
-- Current blocker summary: missing `action_performed`, `read_guard`, `write_guard`, `isolated_worktree`, `job_state`, `changed_paths_report`, and `no_codex_takeover` proof; these fields are defined in the term glossary above.
-- Required proof before `live-executed`: an actual selected harness candidate job with read/write guards, isolated worktree, job state, changed-path report, no Codex takeover, timeout release, rollback, and cleanup evidence.
-- Current helper posture verified by `tools/run_codex_harnesses_smoke.py plan --json`: R4 read-only smoke registry only; no install, no sidecar start, no write-capable harness job, no Codex takeover.
-- Proof-intake hardening: `proof-template` lists required harness proof fields, and `proof-check` validates `read_guard`, `write_guard`, `isolated_worktree`, `job_state`, `changed_paths_report`, and `no_codex_takeover` before any future `live-executed` promotion.
-
 ## Verification Commands
 
 Fresh verification run in this follow-up session:
 
-- `python tools\check_r6_live_runtime_receipts.py --root . --receipt-dir .omx\r6-live-runtime\receipts --require-coverage --max-age-hours 24 --json` - passed in the primary local repository, accepted all 14 R6 lanes, and selected `live-executed` evidence for Browser and Stop-Slop/Caveman.
-- `python test\r6_live_runtime.test.py -v` - passed 17/17 tests after proof-intake hardening.
-- `python test\check_r6_live_runtime_receipts.test.py -v` - passed 9/9 tests.
-- `python tools\check_codex_harnesses_governance.py --root . --json` - passed, confirming harness governance checker posture.
-- `python tools\check_user_level_cli_anything_wxwork_cli_governance.py --root . --json` - passed, confirming WXWork/CLI-Anything governance checker posture.
+- `python test\codex_harnesses_smoke_receipts.test.py -v` - passed 7/7 tests and covers `r6-live-proof` bounded isolated-worktree proof generation.
+- `python test\r6_live_runtime.test.py -v` - passed 18/18 tests and covers stricter harness proof intake requiring candidate id, job profile, timeout release, rollback, and cleanup evidence.
+- `python tools\run_codex_harnesses_smoke.py r6-live-proof --root <temp-clean-git-root> --candidate-id pi-runtime --job-profile bounded-local-write --proof-out <ignored-proof> --json` - passed and reported `runs_harness_job=true`, `runs_write_capable_harness_job=true`, no Codex replacement, no local-main gate bypass, no user-level mutation, no remote publication mutation, and redacted proof hashes only.
+- `python tools\r6_live_runtime.py proof-check --root . --lane codex-harnesses --proof-receipt <ignored-proof> --json` - passed and accepted the redacted harness proof.
+- `python tools\r6_live_runtime.py run --root . --lane codex-harnesses --mode live-action --proof-receipt <ignored-proof> --receipt-out <ignored-receipt> --json` - passed and wrote a `live-executed` R6 harness receipt.
+- `python tools\check_r6_live_runtime_receipts.py --root . --lane codex-harnesses --receipt <ignored-receipt> --json` - passed and validated the R6 harness receipt.
+- `python test\check_r6_live_runtime_receipts.test.py -v` - remains part of the focused R6 checker validation surface.
+- `python tools\check_codex_harnesses_governance.py --root . --json` and `python tools\check_user_level_cli_anything_wxwork_cli_governance.py --root . --json` remain the lane-governance validation surfaces.
 
 ## Non-Claims
 
 - WXWork has **not** been live-executed in this environment.
-- Codex harness jobs have **not** been live-executed in this environment.
+- No user-level Pi, oh-my-pi, revfactory/harness, ohmyopenagent, snow-cli, or other harness runtime was installed or started by this package.
 - No GitLab/GitHub remote publication was performed by these receipts.

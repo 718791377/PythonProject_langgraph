@@ -60,9 +60,9 @@
   - rollback pointer hash：`3097557c9be4077f`
 - Receipt 标志：`canary_preserved=true`、`response_density_guard.status=pass`、`user_level_state_mutation_authorized=true`、`remote_publication_mutated=false`。
 
-## 仍被阻塞的敏感动作
+## 仍被阻塞的敏感动作：WXWork / CLI-Anything
 
-以下 lane 已进入 `live-action` 路径，即浏览器、外部消息或 harness 这类外部可见副作用路径。由于缺少必需的真实目标与脱敏执行 proof，它们按设计保持 `blocked`；这里的 `blocked` 含义见上方术语表，when proof gate 满足前，不得声称这些 lane 已达到 `R6 live-executed`。
+WXWork / CLI-Anything 已进入 `live-action` 路径，但由于缺少真实发送目标与脱敏 message-send proof，按设计保持 `blocked`；在 proof gate 满足前，不得声称该 lane 已达到 `R6 live-executed`。
 
 ### WXWork / CLI-Anything
 
@@ -75,29 +75,38 @@
 
 - Proof-intake hardening：`proof-template` 可创建发送后 proof 骨架，`proof-check` 会拒绝 raw `message_body` 或 raw `recipient` 字段，并在真实发送后只接受 hash-only `message_body_hash` 证据。
 
-### Codex Harnesses
+## Codex Harnesses 有界真实执行
 
 - Lane：`codex-harnesses-governance`。
-- Receipt：忽略的本地 receipt `.omx/r6-live-runtime/receipts/harness-live-action-blocked-followup.json`。
-- 当前 receipt mode：`blocked`，which means runtime 记录的是缺失 proof gate，而不是声明 harness job 成功。
-- 当前 blocker 摘要：缺少 `action_performed`、`read_guard`、`write_guard`、`isolated_worktree`、`job_state`、`changed_paths_report` 与 `no_codex_takeover` proof；这些字段已在上方术语表中定义。
-- 接受为 `live-executed` 前所需 proof：必须有一个实际选定的 harness candidate job，并带有 read/write guards、isolated worktree、job state、changed-path report、no Codex takeover、timeout release、rollback 与 cleanup evidence。
-- 当前 helper 姿态已由 `tools/run_codex_harnesses_smoke.py plan --json` 验证：只有 R4 read-only smoke registry；没有 install、没有 sidecar start、没有 write-capable harness job、没有 Codex takeover。
-
-- Proof-intake hardening：`proof-template` 列出 harness proof 必需字段，`proof-check` 会校验 `read_guard`、`write_guard`、`isolated_worktree`、`job_state`、`changed_paths_report` 与 `no_codex_takeover` 后，未来才能允许 `live-executed` promotion。
+- Mode：先执行 `tools/run_codex_harnesses_smoke.py r6-live-proof`，再执行 `tools/r6_live_runtime.py run --mode live-action`。
+- Checker 状态：单 lane receipt validator 报告 `r6_live_valid=true`，`external_side_effects=harness_job`，接受为 R6 `live-executed`。
+- Receipt：忽略的本地 receipt `.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json`。
+- Proof：忽略的本地 proof `.omx/r6-live-runtime/proofs/harness-live-job-proof-20260609.json`。
+- 真实动作摘要：harness proof runner 在临时干净 Git 仓库中创建隔离 detached worktree，运行一个有界本地 harness proof job，写入一个 proof marker，收集 changed-path report，随后 rollback 并移除临时 worktree；源仓库保持干净。tracked 文件与 receipt 只保留 hash 和状态字段，不保存原始临时路径。
+- 脱敏证据 hash：
+  - candidate id hash：`47ab92541ddbb827`
+  - proof hash：`e0f71f0789945588`
+  - proof path hash：`a5e65db4805d61a8`
+  - receipt path hash：`5fc44be576ded575`
+  - target env hash：`d36d4a6a4aa244b4`
+- Receipt/proof 标志：`read_guard.status=pass`、`write_guard.status=pass`、`isolated_worktree.status=pass`、`job_state.status=pass`、`changed_paths_report.status=pass`、`timeout_release.status=pass`、`rollback.status=pass`、`cleanup.status=pass`、`no_codex_takeover=true`、`active_sidecar_took_over_codex=false`、`remote_publication_mutated=false`。
+- 范围限制：本包只运行有界 repo-local harness proof job；没有安装或启动 Pi、oh-my-pi、revfactory/harness、ohmyopenagent、snow-cli 或其他用户级 harness runtime；没有替换 Codex launcher、native subagents、native_omx、LangGraph、`codex-ohmy` 或 `apply_patch`。
 
 ## 验证命令
 
 本 follow-up 会话中的 fresh verification：
 
-- `python tools\check_r6_live_runtime_receipts.py --root . --receipt-dir .omx\r6-live-runtime\receipts --require-coverage --max-age-hours 24 --json` - 在 primary local repository 中通过，接受全部 14 个 R6 lane，并为 Browser 与 Stop-Slop/Caveman 选择 `live-executed` 证据。
-- `python test\r6_live_runtime.test.py -v` - proof-intake hardening 后 17/17 测试通过。
-- `python test\check_r6_live_runtime_receipts.test.py -v` - 9/9 测试通过。
-- `python tools\check_codex_harnesses_governance.py --root . --json` - 通过，确认 harness governance checker 姿态。
-- `python tools\check_user_level_cli_anything_wxwork_cli_governance.py --root . --json` - 通过，确认 WXWork/CLI-Anything governance checker 姿态。
+- `python test\codex_harnesses_smoke_receipts.test.py -v` - 7/7 测试通过，并覆盖 `r6-live-proof` 有界隔离 worktree proof 生成。
+- `python test\r6_live_runtime.test.py -v` - 18/18 测试通过，并覆盖更严格的 harness proof intake：candidate id、job profile、timeout release、rollback 与 cleanup evidence 均为必需。
+- `python tools\run_codex_harnesses_smoke.py r6-live-proof --root <temp-clean-git-root> --candidate-id pi-runtime --job-profile bounded-local-write --proof-out <ignored-proof> --json` - 通过，报告 `runs_harness_job=true`、`runs_write_capable_harness_job=true`，且没有 Codex replacement、local-main gate bypass、user-level mutation 或 remote publication mutation。
+- `python tools\r6_live_runtime.py proof-check --root . --lane codex-harnesses --proof-receipt <ignored-proof> --json` - 通过，接受脱敏 harness proof。
+- `python tools\r6_live_runtime.py run --root . --lane codex-harnesses --mode live-action --proof-receipt <ignored-proof> --receipt-out <ignored-receipt> --json` - 通过，写入 R6 `live-executed` harness receipt。
+- `python tools\check_r6_live_runtime_receipts.py --root . --lane codex-harnesses --receipt <ignored-receipt> --json` - 通过，验证 R6 harness receipt。
+- `python test\check_r6_live_runtime_receipts.test.py -v` - 仍是聚焦 R6 checker 验证表面。
+- `python tools\check_codex_harnesses_governance.py --root . --json` 与 `python tools\check_user_level_cli_anything_wxwork_cli_governance.py --root . --json` 仍是 lane governance 验证表面。
 
 ## 非声明项
 
 - WXWork 在当前环境中**尚未** live-executed。
-- Codex harness job 在当前环境中**尚未** live-executed。
+- 本包没有安装或启动用户级 Pi、oh-my-pi、revfactory/harness、ohmyopenagent、snow-cli 或其他 harness runtime。
 - 这些 receipt 未执行 GitLab/GitHub 远端发布。
