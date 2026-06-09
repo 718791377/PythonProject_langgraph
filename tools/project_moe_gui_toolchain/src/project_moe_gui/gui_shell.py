@@ -7,6 +7,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -1437,6 +1438,18 @@ def normalize_session_row(
         "label": state_label(enabled),
         "source": row.get("source") or row.get("effective_source") or "unknown",
         "session_id_source": row.get("session_id_source"),
+        "created_at": row.get("created_at") or row.get("created"),
+        "updated_at": row.get("updated_at") or row.get("last_seen_at") or row.get("updated"),
+        "created_display": _display_timestamp(row.get("created_at") or row.get("created")),
+        "updated_display": _display_timestamp(row.get("updated_at") or row.get("last_seen_at") or row.get("updated")),
+        "created_relative": _relative_timestamp(row.get("created_at") or row.get("created")),
+        "updated_relative": _relative_timestamp(row.get("updated_at") or row.get("last_seen_at") or row.get("updated")),
+        "directory": row.get("directory") or row.get("cwd") or row.get("project_root"),
+        "branch": row.get("branch") or row.get("git_branch"),
+        "thread_source": row.get("thread_source") or "unknown",
+        "conversation": row.get("conversation") if isinstance(row.get("conversation"), dict) else {},
+        "conversation_title": (row.get("conversation") or {}).get("title") if isinstance(row.get("conversation"), dict) else "",
+        "conversation_preview": (row.get("conversation") or {}).get("preview") if isinstance(row.get("conversation"), dict) else "",
         "selected_lenses": selected_lenses,
         "selected_categories": selected_categories,
         "effective_lens_mode": effective_lens_mode,
@@ -2007,6 +2020,200 @@ def _session_sort_key(item: dict[str, Any]) -> str:
     return str(item.get("updated_at") or item.get("timestamp") or "")
 
 
+def _timestamp_from_path_mtime(path: Path) -> str | None:
+    try:
+        return datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).replace(microsecond=0).isoformat()
+    except Exception:
+        return None
+
+
+def _parse_timestamp(value: Any) -> datetime | None:
+    if not value:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _relative_timestamp(value: Any) -> str:
+    parsed = _parse_timestamp(value)
+    if parsed is None:
+        return ""
+    now = datetime.now(timezone.utc)
+    delta = now - parsed.astimezone(timezone.utc)
+    seconds = int(delta.total_seconds())
+    future = seconds < 0
+    seconds = abs(seconds)
+    if seconds < 60:
+        amount, unit = seconds, "s"
+    elif seconds < 3600:
+        amount, unit = seconds // 60, "m"
+    elif seconds < 86400:
+        amount, unit = seconds // 3600, "h"
+    else:
+        amount, unit = seconds // 86400, "d"
+    suffix = "from now" if future else "ago"
+    return f"{amount}{unit} {suffix}"
+
+
+def _display_timestamp(value: Any) -> str:
+    parsed = _parse_timestamp(value)
+    if parsed is None:
+        return str(value or "")
+    return parsed.astimezone().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _codex_session_thread_source(meta: dict[str, Any]) -> str:
+    explicit = str(meta.get("thread_source") or "").strip().lower()
+    if explicit:
+        return explicit
+    source = meta.get("source")
+    if isinstance(source, dict) and source.get("subagent"):
+        return "subagent"
+    if meta.get("forked_from_id"):
+        return "subagent"
+    return "user"
+
+
+def _is_codex_child_agent_session(meta: dict[str, Any]) -> bool:
+    if _codex_session_thread_source(meta) == "subagent":
+        return True
+    source = meta.get("source")
+    if isinstance(source, dict) and source.get("subagent"):
+        return True
+    if meta.get("forked_from_id"):
+        return True
+    if meta.get("agent_role") and str(meta.get("source") or "").lower() != "cli":
+        return True
+    return False
+
+
+def _codex_parent_thread_id(meta: dict[str, Any]) -> str | None:
+    if meta.get("forked_from_id"):
+        return str(meta.get("forked_from_id"))
+    source = meta.get("source")
+    if isinstance(source, dict):
+        spawn = ((source.get("subagent") or {}) if isinstance(source.get("subagent"), dict) else {}).get("thread_spawn")
+        if isinstance(spawn, dict) and spawn.get("parent_thread_id"):
+            return str(spawn.get("parent_thread_id"))
+    return None
+
+
+def _text_parts_from_codex_content(value: Any) -> list[str]:
+    parts: list[str] = []
+    if isinstance(value, str):
+        text = value.strip()
+        return [text] if text else []
+    if isinstance(value, list):
+        for item in value:
+            parts.extend(_text_parts_from_codex_content(item))
+        return parts
+    if isinstance(value, dict):
+        for key in ("text", "content"):
+            if key in value:
+                parts.extend(_text_parts_from_codex_content(value.get(key)))
+        return parts
+    return []
+
+
+def _codex_item_role_and_text(item: dict[str, Any]) -> tuple[str | None, str]:
+    payload = item.get("payload") if isinstance(item.get("payload"), dict) else {}
+    message = payload.get("message") if isinstance(payload.get("message"), dict) else {}
+    role = payload.get("role") or message.get("role") or item.get("role")
+    if not isinstance(role, str) or role not in {"user", "assistant"}:
+        return None, ""
+    content = payload.get("content")
+    if content is None and message:
+        content = message.get("content")
+    text = "\n".join(part for part in _text_parts_from_codex_content(content) if part.strip()).strip()
+    return role, text
+
+
+def _is_codex_injected_user_context(text: str) -> bool:
+    stripped = text.lstrip()
+    if not stripped:
+        return True
+    injected_prefixes = (
+        "# AGENTS.md instructions",
+        "<environment_context>",
+        "<codex_internal_context",
+        "Another language model started to solve this problem",
+    )
+    return any(stripped.startswith(prefix) for prefix in injected_prefixes)
+
+
+def _read_codex_session_preview(path: Path, meta: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+    max_lines = int(config.get("codex_session_preview_max_lines") or 50000)
+    title_chars = int(config.get("codex_session_title_max_chars") or 240)
+    preview_chars = int(config.get("codex_session_preview_max_chars") or 900)
+    first_user_text = ""
+    last_assistant_text = ""
+    last_user_text = ""
+    first_visible_ts: str | None = None
+    last_visible_ts: str | None = None
+    user_count = 0
+    assistant_count = 0
+    scanned_lines = 0
+    truncated = False
+    try:
+        with path.open("r", encoding="utf-8-sig", errors="replace") as handle:
+            for scanned_lines, line in enumerate(handle, start=1):
+                if scanned_lines > max_lines:
+                    truncated = True
+                    break
+                try:
+                    item = json.loads(line)
+                except Exception:
+                    continue
+                if not isinstance(item, dict):
+                    continue
+                role, text = _codex_item_role_and_text(item)
+                if not role or not text:
+                    continue
+                timestamp = str(item.get("timestamp") or "")
+                first_visible_ts = first_visible_ts or timestamp or None
+                last_visible_ts = timestamp or last_visible_ts
+                if role == "user":
+                    if _is_codex_injected_user_context(text):
+                        continue
+                    user_count += 1
+                    last_user_text = text
+                    if not first_user_text:
+                        first_user_text = text
+                elif role == "assistant":
+                    assistant_count += 1
+                    last_assistant_text = text
+    except Exception as exc:
+        return {
+            "title": "",
+            "preview": "",
+            "message_counts": {"user": user_count, "assistant": assistant_count},
+            "preview_error": short_text(exc, 160),
+            "preview_truncated": truncated,
+        }
+    created_at = str(meta.get("timestamp") or meta.get("created_at") or first_visible_ts or _timestamp_from_path_mtime(path) or "")
+    updated_at = str(last_visible_ts or meta.get("updated_at") or meta.get("timestamp") or _timestamp_from_path_mtime(path) or "")
+    return {
+        "title": short_text(first_user_text, title_chars),
+        "preview": short_text(last_assistant_text or last_user_text, preview_chars),
+        "message_counts": {"user": user_count, "assistant": assistant_count},
+        "created_at": created_at,
+        "updated_at": updated_at,
+        "preview_truncated": truncated,
+        "scanned_lines": scanned_lines,
+        "scope": "target_project_top_level_user_assistant_preview_only",
+    }
+
+
 def _read_codex_session_meta(path: Path) -> dict[str, Any] | None:
     try:
         with path.open("r", encoding="utf-8-sig", errors="replace") as handle:
@@ -2034,6 +2241,7 @@ def _discover_codex_session_logs(config: dict[str, Any], root: Path, home: Path)
     scanned_files = 0
     skipped_other_project = 0
     skipped_without_meta = 0
+    hidden_child_agent_sessions = 0
     truncated = False
     if sessions_root.exists() and sessions_root.is_dir():
         try:
@@ -2053,22 +2261,42 @@ def _discover_codex_session_logs(config: dict[str, Any], root: Path, home: Path)
             if not _path_is_inside_project(cwd, root):
                 skipped_other_project += 1
                 continue
+            if _is_codex_child_agent_session(meta):
+                hidden_child_agent_sessions += 1
+                continue
             session_id = meta.get("id") or meta.get("session_id") or meta.get("thread_id") or meta.get("resume_id")
             if not session_id:
                 skipped_without_meta += 1
                 continue
             git = meta.get("git") if isinstance(meta.get("git"), dict) else {}
+            preview = _read_codex_session_preview(path, meta, config)
+            created_at = preview.get("created_at") or meta.get("timestamp") or meta.get("created_at")
+            updated_at = preview.get("updated_at") or meta.get("timestamp") or meta.get("updated_at") or meta.get("created_at")
             discovered.append(
                 {
                     "session_id": str(session_id),
                     "thread_id": str(meta.get("thread_id") or meta.get("resume_id") or session_id),
                     "project_root": str(cwd),
                     "cwd": str(cwd),
+                    "directory": str(Path(str(cwd)).expanduser().resolve(strict=False)),
                     "source": str(path),
                     "source_kind": "codex-session-jsonl",
-                    "updated_at": meta.get("timestamp") or meta.get("updated_at") or meta.get("created_at"),
+                    "created_at": created_at,
+                    "updated_at": updated_at,
                     "git_branch": git.get("branch"),
-                    "metadata_only": True,
+                    "branch": git.get("branch"),
+                    "thread_source": _codex_session_thread_source(meta),
+                    "parent_thread_id": _codex_parent_thread_id(meta),
+                    "agent_role": meta.get("agent_role"),
+                    "agent_nickname": meta.get("agent_nickname"),
+                    "conversation": {
+                        "title": preview.get("title") or "",
+                        "preview": preview.get("preview") or "",
+                        "message_counts": preview.get("message_counts") or {"user": 0, "assistant": 0},
+                        "preview_truncated": preview.get("preview_truncated") is True,
+                        "scope": preview.get("scope"),
+                    },
+                    "metadata_only": False,
                 }
             )
             if len(discovered) >= max_sessions:
@@ -2087,6 +2315,7 @@ def _discover_codex_session_logs(config: dict[str, Any], root: Path, home: Path)
         "scanned_files": scanned_files,
         "skipped_other_project": skipped_other_project,
         "skipped_without_meta": skipped_without_meta,
+        "hidden_child_agent_sessions": hidden_child_agent_sessions,
         "truncated": truncated,
         "max_files": max_files,
         "max_sessions": max_sessions,
@@ -2142,9 +2371,6 @@ def _safe_codex_session_index(config: dict[str, Any], root: Path) -> dict[str, A
         if session_id in sessions_by_id:
             sessions_by_id[session_id]["index_source"] = item.get("source")
             sessions_by_id[session_id]["index_updated_at"] = item.get("updated_at")
-        else:
-            item["source_kind"] = "codex-session-index-jsonl-supplemental"
-            sessions_by_id[session_id] = item
     sessions = sorted(sessions_by_id.values(), key=_session_sort_key, reverse=True)
     truncated = bool(log_discovery.get("truncated"))
     return {
@@ -2160,13 +2386,15 @@ def _safe_codex_session_index(config: dict[str, Any], root: Path) -> dict[str, A
         "sessions": sessions,
         "count": len(sessions),
         "skipped_other_project": int(log_discovery.get("skipped_other_project") or 0) + skipped_other_project_index,
+        "hidden_child_agent_sessions": int(log_discovery.get("hidden_child_agent_sessions") or 0),
         "truncated": truncated,
         "privacy_policy": {
-            "reads_session_file_bodies": False,
-            "reads_message_bodies": False,
+            "reads_session_file_bodies": True,
+            "reads_message_bodies": True,
+            "message_body_scope": "target_project_top_level_user_assistant_preview_only",
             "reads_credentials": False,
-            "metadata_only": True,
-            "authority": "session_meta.cwd in Codex session jsonl is authoritative for project scope; session_index is supplemental only",
+            "metadata_only": False,
+            "authority": "session_meta.cwd plus top-level thread_source=user in Codex session jsonl is authoritative for project scope; session_index is supplemental only",
         },
     }
 
@@ -2248,7 +2476,13 @@ def _reconcile_product_rows(
                 "source": "discovered-only",
                 "effective_source": "project-default",
                 "session_id_source": "codex-session-log",
+                "created_at": item.get("created_at"),
+                "updated_at": item.get("updated_at"),
                 "last_seen_at": item.get("updated_at"),
+                "directory": item.get("directory") or item.get("cwd") or item.get("project_root"),
+                "branch": item.get("branch") or item.get("git_branch"),
+                "thread_source": item.get("thread_source") or "user",
+                "conversation": item.get("conversation") if isinstance(item.get("conversation"), dict) else {},
                 "selected_lenses": [],
                 "selected_categories": [],
                 "effective_lens_mode": "all",
@@ -2269,6 +2503,12 @@ def _reconcile_product_rows(
             {
                 **enriched,
                 "row_origin": "discovered-only",
+                "created_at": item.get("created_at"),
+                "updated_at": item.get("updated_at"),
+                "directory": item.get("directory") or item.get("cwd") or item.get("project_root"),
+                "branch": item.get("branch") or item.get("git_branch"),
+                "thread_source": item.get("thread_source") or "user",
+                "conversation": item.get("conversation") if isinstance(item.get("conversation"), dict) else {},
                 "codex_mapping": {
                     "confidence": "exact",
                     "codex_thread_id": item.get("thread_id"),
@@ -2348,6 +2588,8 @@ def build_view_model(
         "name_heuristic_filtering": False,
         "smoke_named_sessions_are_ordinary_without_explicit_metadata": True,
         "discovered_only_sessions_visible": True,
+        "default_thread_source_filter": "top_level_user_sessions_only",
+        "subagent_child_sessions_hidden_from_default_view": True,
     }
     table["codex_session_discovery"] = discovery
     table["invalid_count"] = sum(1 for row in table.get("rows", []) if not row.get("valid") or row.get("token") != "ok")
@@ -2908,11 +3150,40 @@ def create_product_widget_window(
             self._filtered_rows = []
             for row in self._session_rows:
                 full_id = str(row.get("visible_session_id") or row.get("full_session_id") or row.get("session_id") or "")
-                if needle and needle not in full_id.lower():
+                conversation = row.get("conversation") if isinstance(row.get("conversation"), dict) else {}
+                haystack = " ".join(
+                    [
+                        full_id,
+                        str(row.get("display_id") or ""),
+                        str(row.get("directory") or ""),
+                        str(row.get("branch") or ""),
+                        str(row.get("thread_source") or ""),
+                        str(conversation.get("title") or row.get("conversation_title") or ""),
+                        str(conversation.get("preview") or row.get("conversation_preview") or ""),
+                    ]
+                ).lower()
+                if needle and needle not in haystack:
                     continue
                 self._filtered_rows.append(row)
-                item = QListWidgetItem(f"{full_id}\n{row.get('label')} | {row.get('mapping_confidence', 'unmatched')}")
-                item.setToolTip(full_id)
+                title = str(conversation.get("title") or row.get("conversation_title") or full_id)
+                preview = str(conversation.get("preview") or row.get("conversation_preview") or "")
+                item = QListWidgetItem(
+                    f"{row.get('updated_relative') or row.get('updated_at') or row.get('last_seen_at') or ''}     {short_text(title, 120)}\n"
+                    f"Session: {full_id}\n"
+                    f"Created: {row.get('created_relative') or ''} - {row.get('created_display') or row.get('created_at') or ''}\n"
+                    f"Updated: {row.get('updated_relative') or ''} - {row.get('updated_display') or row.get('updated_at') or row.get('last_seen_at') or ''}\n"
+                    f"Directory: {row.get('directory') or ''}\n"
+                    f"Branch: {row.get('branch') or 'unknown'} | State: {row.get('label')} | {row.get('mapping_confidence', 'unmatched')}\n"
+                    f"Conversation: {short_text(preview, 180)}"
+                )
+                item.setToolTip(
+                    f"Session: {full_id}\n"
+                    f"Created: {row.get('created_relative') or ''} - {row.get('created_display') or row.get('created_at') or ''}\n"
+                    f"Updated: {row.get('updated_relative') or ''} - {row.get('updated_display') or row.get('updated_at') or row.get('last_seen_at') or ''}\n"
+                    f"Directory: {row.get('directory') or ''}\n"
+                    f"Branch: {row.get('branch') or 'unknown'}\n"
+                    f"Conversation:\n{preview}"
+                )
                 self.session_list.addItem(item)
             if self._filtered_rows:
                 self.session_list.setCurrentRow(0)
@@ -2926,7 +3197,17 @@ def create_product_widget_window(
             row = self._current_session()
             if row is None:
                 return
-            self.session_title.setText(f"完整会话 ID / Full session ID: {row.get('visible_session_id') or row.get('session_id')}")
+            conversation = row.get("conversation") if isinstance(row.get("conversation"), dict) else {}
+            self.session_title.setText(
+                "Session:\n"
+                f"  {row.get('visible_session_id') or row.get('session_id')}\n"
+                f"Created: {row.get('created_relative') or ''} - {row.get('created_display') or row.get('created_at') or ''}\n"
+                f"Updated: {row.get('updated_relative') or ''} - {row.get('updated_display') or row.get('updated_at') or row.get('last_seen_at') or ''}\n"
+                f"Directory: {row.get('directory') or ''}\n"
+                f"Branch: {row.get('branch') or 'unknown'}\n\n"
+                f"Conversation:\n{conversation.get('title') or row.get('conversation_title') or ''}\n\n"
+                f"{conversation.get('preview') or row.get('conversation_preview') or ''}"
+            )
             mapping = row.get("codex_mapping") or {}
             self.session_mapping.setText(f"Codex 映射置信度 / Codex mapping confidence: {mapping.get('confidence', row.get('mapping_confidence', 'unmatched'))} - {mapping.get('message', '')}")
             self.session_why.setText(f"显示原因 / Why shown: {row.get('why_shown')}")

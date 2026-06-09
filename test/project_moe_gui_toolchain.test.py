@@ -2286,8 +2286,99 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertIn("codex-target-session", rows[0]["actions"]["enable_session"]["argv"])
             discovery = view_model["session_table"]["codex_session_discovery"]
             self.assertEqual(discovery["count"], 1)
-            self.assertFalse(discovery["privacy_policy"]["reads_message_bodies"])
+            self.assertTrue(discovery["privacy_policy"]["reads_message_bodies"])
+            self.assertEqual(discovery["privacy_policy"]["message_body_scope"], "target_project_top_level_user_assistant_preview_only")
             self.assertEqual(view_model["session_table"]["row_origin_counts"]["discovered_only"], 1)
+
+
+
+    def test_gui_shell_discovers_only_top_level_codex_user_sessions_and_conversation_preview(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            project = Path(tmp) / "target"
+            sessions_root = home / ".codex" / "sessions" / "2026" / "06" / "09"
+            sessions_root.mkdir(parents=True)
+            project.mkdir()
+
+            def write_session(
+                filename: str,
+                session_id: str,
+                *,
+                thread_source: str = "user",
+                parent_id: str | None = None,
+                agent_role: str | None = None,
+                user_text: str = "Please inspect paper quality and give revision advice.",
+                assistant_text: str = "Final advisor opinion: structure is complete, but the evidence chain needs work.",
+            ) -> None:
+                meta_payload = {
+                    "id": session_id,
+                    "timestamp": "2026-06-09T00:00:00Z",
+                    "cwd": str(project),
+                    "thread_source": thread_source,
+                    "source": "cli" if thread_source == "user" else {"subagent": {"thread_spawn": {"parent_thread_id": parent_id or "parent-session", "agent_role": agent_role or "analyst"}}},
+                    "git": {"branch": "main"},
+                }
+                if parent_id:
+                    meta_payload["forked_from_id"] = parent_id
+                if agent_role:
+                    meta_payload["agent_role"] = agent_role
+                lines = [
+                    {"timestamp": "2026-06-09T00:00:00Z", "type": "session_meta", "payload": meta_payload},
+                    {"timestamp": "2026-06-09T00:00:03Z", "type": "response_item", "payload": {"type": "message", "role": "developer", "content": [{"type": "input_text", "text": "developer instructions must not appear"}]}},
+                    {"timestamp": "2026-06-09T00:00:04Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "# AGENTS.md instructions for D:\\Project\n\n<INSTRUCTIONS>startup context</INSTRUCTIONS>"}, {"type": "input_text", "text": "<environment_context><cwd>D:\\Project</cwd></environment_context>"}]}},
+                    {"timestamp": "2026-06-09T00:00:05Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": user_text}]}},
+                    {"timestamp": "2026-06-09T00:01:00Z", "type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": assistant_text}]}},
+                ]
+                (sessions_root / filename).write_text("\n".join(json.dumps(item, ensure_ascii=False) for item in lines) + "\n", encoding="utf-8")
+
+            top_level_ids = [
+                "019ea705-2e6f-7910-a975-7b55515bfef7",
+                "019e7c0d-5127-7e71-8ed2-a5eea010bd5c",
+                "019e4080-1496-7e62-a7f6-d5343039a389",
+                "019e46e4-77b6-73d2-95a2-670eb79a6494",
+                "019e42c0-0c50-7d11-aaad-b8dcaa1014c8",
+            ]
+            for index, session_id in enumerate(top_level_ids):
+                write_session(f"rollout-2026-06-09T00-0{index}-00-{session_id}.jsonl", session_id)
+            for index in range(7):
+                write_session(
+                    f"rollout-subagent-{index}-019e-subagent-{index}.jsonl",
+                    f"019e-subagent-{index}",
+                    thread_source="subagent",
+                    parent_id=top_level_ids[index % len(top_level_ids)],
+                    agent_role="analyst",
+                )
+
+            config = self.gui_config(project)
+            config["codex_sessions_root"] = str(home / ".codex" / "sessions")
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": False, "git_branch": "main"},
+                sessions_payload={"ok": True, "token": "ok", "sessions": []},
+                status_payload={"ok": True, "token": "ok", "effective_enabled": False},
+                pyside6_available=False,
+            )
+
+            rows = view_model["session_table"]["rows"]
+            self.assertEqual(sorted(row["session_id"] for row in rows), sorted(top_level_ids))
+            self.assertTrue(all(row["thread_source"] == "user" for row in rows))
+            self.assertTrue(all(row["directory"] == str(project.resolve()) for row in rows))
+            self.assertTrue(all(row["branch"] == "main" for row in rows))
+            self.assertTrue(all(row["created_at"] for row in rows))
+            self.assertTrue(all(row["updated_at"] for row in rows))
+            self.assertTrue(all(row["created_relative"] for row in rows))
+            self.assertTrue(all(row["updated_relative"] for row in rows))
+            self.assertTrue(all("paper quality" in row["conversation"]["title"] for row in rows))
+            self.assertTrue(all("AGENTS.md instructions" not in row["conversation"]["title"] for row in rows))
+            self.assertTrue(all("Final advisor opinion" in row["conversation"]["preview"] for row in rows))
+            self.assertTrue(all("developer instructions" not in row["conversation"]["preview"] for row in rows))
+            discovery = view_model["session_table"]["codex_session_discovery"]
+            self.assertEqual(discovery["count"], 5)
+            self.assertEqual(discovery["hidden_child_agent_sessions"], 7)
+            self.assertTrue(discovery["privacy_policy"]["reads_message_bodies"])
+            self.assertEqual(discovery["privacy_policy"]["message_body_scope"], "target_project_top_level_user_assistant_preview_only")
 
     def test_runtime_view_model_uses_installed_target_project_root(self) -> None:
         from project_moe_gui import gui_shell
@@ -3819,6 +3910,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("saveHandoffDraft", fallback_source)
         self.assertIn("exportHandoffPackage", fallback_source)
         self.assertIn("projectMoeBridge", fallback_source)
+        qml_text = gui_shell.qml_shell_path().read_text(encoding="utf-8")
+        for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
+            self.assertIn(label, qml_text)
         self.assertTrue(gui_shell.qml_shell_path().exists())
 
     def test_installer_config_and_launcher_include_daemon_and_qfluent_metadata(self) -> None:
@@ -3852,7 +3946,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertTrue(cfg["silent_launch"]["uses_wscript_hidden_window"])
         self.assertTrue(cfg["silent_launch"]["keeps_preflight_on_cmd"])
         self.assertTrue(cfg["codex_session_discovery"]["enabled"])
-        self.assertFalse(cfg["codex_session_discovery"]["reads_message_bodies"])
+        self.assertTrue(cfg["codex_session_discovery"]["reads_message_bodies"])
+        self.assertEqual(cfg["codex_session_discovery"]["message_body_scope"], "target_project_top_level_user_assistant_preview_only")
+        self.assertTrue(cfg["codex_session_discovery"]["hides_child_agent_sessions_from_default_view"])
         self.assertEqual(cfg["codex_session_discovery"]["session_index_role"], "supplemental-labels-only")
         self.assertTrue(cfg["running_session_turn_gate"]["enabled"])
         self.assertEqual(cfg["running_session_turn_gate"]["effect_timing"], "next_user_message")

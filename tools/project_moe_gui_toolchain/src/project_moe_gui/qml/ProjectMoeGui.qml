@@ -159,6 +159,11 @@ ApplicationWindow {
             row.label || "",
             row.source || "",
             row.token || "",
+            row.directory || "",
+            row.branch || "",
+            row.thread_source || "",
+            row.conversation_title || "",
+            row.conversation_preview || "",
             row.effective_lens_mode || "",
             row.lens_selection_summary || "",
             row.effective_state_explanation || "",
@@ -583,7 +588,7 @@ ApplicationWindow {
                                     model: displayedSessionRows
                                     delegate: Rectangle {
                                         width: ListView.view.width
-                                        height: 58
+                                        height: 210
                                         radius: 12
                                         color: index === root.selectedSessionIndex ? (darkMode ? "#0f766e" : "#ccfbf1") : (index % 2 === 0 ? (darkMode ? "#1f2937" : "#f8fafc") : "transparent")
                                         clip: true
@@ -596,33 +601,54 @@ ApplicationWindow {
                                             anchors.margins: 8
                                             spacing: 2
                                             Label {
-                                                text: modelData.display_id || modelData.session_id || "session"
+                                                text: (modelData.updated_relative || modelData.updated_at || modelData.last_seen_at || "") + "     " + (modelData.conversation_title || modelData.display_id || modelData.session_id || "session")
                                                 Layout.fillWidth: true
                                                 color: darkMode ? "#e5e7eb" : "#0f172a"
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                text: "| Session:    " + (modelData.visible_session_id || modelData.session_id || "")
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#cbd5e1" : "#475569"
                                                 elide: Text.ElideMiddle
                                             }
-                                            RowLayout {
+                                            Label {
+                                                text: "| Created:    " + (modelData.created_relative || "") + " - " + (modelData.created_display || modelData.created_at || "")
                                                 Layout.fillWidth: true
-                                                spacing: 6
-                                                Label {
-                                                    text: modelData.label || "unknown"
-                                                    Layout.fillWidth: true
-                                                    color: darkMode ? "#cbd5e1" : "#475569"
-                                                    elide: Text.ElideRight
-                                                }
-                                                Label {
-                                                    text: modelData.lens_selection_summary || "All lenses"
-                                                    Layout.preferredWidth: 96
-                                                    color: darkMode ? "#cbd5e1" : "#475569"
-                                                    elide: Text.ElideRight
-                                                }
-                                                Label {
-                                                    text: modelData.token || ""
-                                                    Layout.preferredWidth: 32
-                                                    color: (modelData.token || "") === "ok" ? "#14b8a6" : "#f59e0b"
-                                                    elide: Text.ElideRight
-                                                    horizontalAlignment: Text.AlignRight
-                                                }
+                                                color: darkMode ? "#cbd5e1" : "#475569"
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                text: "| Updated:    " + (modelData.updated_relative || "") + " - " + (modelData.updated_display || modelData.updated_at || modelData.last_seen_at || "")
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#cbd5e1" : "#475569"
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                text: "| Directory:  " + (modelData.directory || "")
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#cbd5e1" : "#475569"
+                                                elide: Text.ElideMiddle
+                                            }
+                                            Label {
+                                                text: "| Branch:     " + (modelData.branch || "unknown") + "    | State: " + (modelData.label || "unknown") + "    | Lenses: " + (modelData.lens_selection_summary || "All lenses")
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#cbd5e1" : "#475569"
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                text: "| Conversation:"
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#cbd5e1" : "#475569"
+                                            }
+                                            Label {
+                                                text: "| " + (modelData.conversation_preview || "(no preview)")
+                                                Layout.fillWidth: true
+                                                Layout.fillHeight: true
+                                                color: darkMode ? "#e2e8f0" : "#334155"
+                                                wrapMode: Text.WordWrap
+                                                maximumLineCount: 4
+                                                elide: Text.ElideRight
                                             }
                                         }
                                     }
