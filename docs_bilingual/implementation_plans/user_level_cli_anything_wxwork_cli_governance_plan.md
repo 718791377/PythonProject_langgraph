@@ -30,14 +30,15 @@ Python guard scripts, JSON receipts, local tests, CI manifest entries, docs regi
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local
-Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
-Stage: R5 runtime-governance receipt package for CLI-Anything / WXWork_CLI governance.
-Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
+Status: CLI-Anything installed user-level and smoke-tested; WXWork_CLI integration delegated to the operator-designated external consumer project and remains out of scope for this repository package.
+Stage: R6 CLI-Anything user-level install evidence plus existing R5 WXWork_CLI governance handoff.
+Owner session: `resume-019e8aa7-cli-anything-install` in feature branch `install-cli-anything-user-level-20260609`.
 Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
-R5 evidence: `wxwork-cli active-candidate lane profile` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
-Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Install evidence: `CLI-Anything` skills were installed at user level from `https://github.com/HKUDS/CLI-Anything`; `cli-anything-hub==0.3.0` exposes `cli-hub`; ignored receipt `.omx/cli-anything/cli-anything.lock.json` validates as `installed-user-level`, `install_performed=true`, `network_fetch_performed=true`, `wxwork_cli_installed=false`, and `wxwork_cli_controlled=false`.
+R5 evidence: `wxwork-cli active-candidate lane profile` remains validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract, but WXWork_CLI live/send implementation is handed off to the operator-designated external consumer project.
+Runtime boundary: this package installs/smoke-tests CLI-Anything only; it does not install/start/control WXWork_CLI in this repository, start WXWork.exe, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level Codex config, or mutate remote publication. Historical R5 governance packages remained not installed/started/enabled in this package.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
-Last updated: 2026-06-07
+Last updated: 2026-06-09
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -60,7 +61,7 @@ Last updated: 2026-06-07
 
 ## Runtime Promotion Ladder
 
-This lane uses the shared R0-R5 ladder and remains not installed/started/enabled in this package.
+This lane uses the shared R0-R5 ladder. Historical governance-only packages remained not installed/started/enabled in this package; the current R6 install package promotes CLI-Anything only to installed-user-level / smoke-tested while WXWork_CLI stays delegated to the operator-designated external consumer project.
 
 | Runtime stage | Level | CLI-Anything/WXWork_CLI scope | Evidence gate |
 | --- | --- | --- | --- |
@@ -75,8 +76,8 @@ R5 send boundary: any WXWork_CLI send action remains forbidden before R5; even a
 
 Stage D pending runtime work list:
 
-- Stage D real runtime: install CLI-Anything with source/package pin, R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence.
-- Stage D real runtime: fork/adapt WXWork_CLI from CLI-Anything with explicit source pin, delta notes, R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence.
+- Stage D real runtime: install CLI-Anything with source/package pin, R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence. Completed for CLI-Anything on 2026-06-09 with `cli-hub 0.3.0`, installed-user-level receipt, and `cli-hub --help` smoke.
+- Stage D real runtime: fork/adapt WXWork_CLI from CLI-Anything with explicit source pin, delta notes, R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence. Delegated to the operator-designated external consumer project; this repository package does not install/start/control WXWork_CLI.
 - Stage D real runtime: implement WXWork.exe discovery/start/status smoke that records R4 `smoke-tested` receipt without sending messages or mutating GUI state.
 - Stage D real runtime: define R5 WXWork_CLI send/action handoff guarded by operator authorization, GUI owner lease, target/action allowlist, expiry, timeout release, transcript redaction, and rollback/cleanup evidence.
 
@@ -92,10 +93,10 @@ One session may claim this implementation plan at a time. Other sessions may wor
 
 ## Real Runtime Implementation Gap
 
-This lane is still governance-only for real GUI automation. The next runtime package must install CLI-Anything, create or pin the WXWork_CLI fork/adaptation that drives `WXWork.exe`, and record safe receipts before any enterprise WeChat interaction. Required later evidence:
+This lane has now installed CLI-Anything user-level and remains governance-only for real WXWork GUI automation. the operator-designated external consumer project owns future WXWork_CLI integration that drives `WXWork.exe`; this repository records safe CLI-Anything receipts before any Enterprise WeChat interaction. Required later evidence:
 
-- CLI-Anything source/package pin, install/update command, wrapper path hash, updater command, rollback pointer, and sanitized R3 receipt.
-- WXWork_CLI fork/adaptation commit or package pin, clear delta from upstream CLI-Anything usage, wrapper path hash, rollback pointer, and sanitized R3 receipt.
+- CLI-Anything source/package pin, install/update command, wrapper path hash, updater command, rollback pointer, and sanitized R3 receipt. Completed locally for CLI-Anything on 2026-06-09; ignored receipt `.omx/cli-anything/cli-anything.lock.json` validates without raw path output.
+- WXWork_CLI fork/adaptation commit or package pin, clear delta from upstream CLI-Anything usage, wrapper path hash, rollback pointer, and sanitized R3 receipt. Delegated to the operator-designated external consumer project.
 - WXWork.exe discovery/start/status receipts for R4 smoke that do not send messages or mutate enterprise WeChat state.
 - R5 send/action handoff receipts with current operator authorization, GUI owner lease, target/action allowlist, expiry, timeout release, transcript redaction, and rollback/cleanup evidence.
 
@@ -110,6 +111,7 @@ This lane is still governance-only for real GUI automation. The next runtime pac
 - [x] Stage B: update CI manifest, safety registry, and OpenSpec guard registration.
 - [x] Stage C runtime promotion: add R0-R5 project-first/user-level ladder, installed-user-level/smoke-tested/active-candidate markers, and R5-only WXWork_CLI send-action gates.
 - [x] Stage D R4 local smoke tooling: add `smoke-record` / `smoke-check` receipt support for bounded help/status/safe-discovery smoke with no GUI control, no send action, no message body, timeout release, redaction, rollback readiness, and global lease when `WXWork.exe` is named.
+- [x] Stage E CLI-Anything user-level install: install `CLI-Anything` skills from `HKUDS/CLI-Anything`, install `cli-anything-hub==0.3.0`, create `cli-hub` wrappers, pass `cli-hub --help`, validate `installed-user-level` receipt, and keep WXWork_CLI delegated to the operator-designated external consumer project.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
@@ -140,6 +142,7 @@ This lane is still governance-only for real GUI automation. The next runtime pac
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-09 CLI-Anything user-level install evidence: branch `install-cli-anything-user-level-20260609` installed user-level skills from `https://github.com/HKUDS/CLI-Anything`, installed `cli-anything-hub==0.3.0`, exposed `cli-hub 0.3.0`, passed `cli-hub --help`, and wrote ignored receipt `.omx/cli-anything/cli-anything.lock.json`. Receipt validation reports `installed-user-level`, `install_performed=true`, `network_fetch_performed=true`, `user_level_config_mutated=false`, `wxwork_cli_installed=false`, `wxwork_cli_controlled=false`, source URL preserved, raw private paths redacted, and rollback pointer hashed. WXWork_CLI integration is handed off to the operator-designated external consumer project; no WXWork.exe start/control/send occurred.
 - 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for CLI-Anything / WXWork_CLI governance. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-06 Stage D R4 local smoke tooling evidence: branch `implement-cli-anything-wxwork-r4-20260606` adds `tools/wxwork_cli_governance.py smoke-record` / `smoke-check` and focused tests; generated R4 receipts validate through both the WXWork helper and generic `tools/user_level_receipt_governance.py smoke-check`, remain sanitized, and record no GUI control, no send action, no message body, timeout release, rollback readiness, and global lease when `WXWork.exe` is named.
 - 2026-06-05 real-runtime gap update: branch `runtime-plan-standard-20260605` classifies CLI-Anything install, WXWork_CLI fork/adaptation, WXWork.exe control, R4 smoke, and R5 send/action handoff as pending Stage D runtime work; no GUI runtime is installed, started, controlled, smoked, or live-run.

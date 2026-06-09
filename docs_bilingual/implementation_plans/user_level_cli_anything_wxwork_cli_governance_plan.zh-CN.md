@@ -30,14 +30,15 @@ Python helper、CLI-Anything reference、`WXWork_CLI` adapter-plan、`WXWork.exe
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local
-Status: R5 检查器支撑的 active-candidate 门禁已在本地实现；真实敏感 live action 仍然需要当前 lane receipt 通过后才能继续。
-Stage: CLI-Anything / WXWork_CLI governance 的 R5 runtime-governance receipt package。
-Owner session: `resume-019e8aa7-r5-runtime-governance-batch`；feature branch 是 `implement-r5-runtime-governance-batch-20260607`。
-Current gate: 先运行 focused tests、repository guard、precommit update/archive review、local CI 和 local MR review，再通过 guarded local-main-first integration；remote publication 仍未授权。
-R5 evidence: `wxwork-cli active-candidate lane profile` 由 `tools/check_r5_active_candidate_receipts.py` 和 `tools/user_level_receipt_governance.py active-check` 通用合约验证。
-Runtime boundary: 本 R5 package 只验证 fixture-backed receipts 和 checker wiring；不安装 user-level tools，不启动 browser/GUI，不发送 WXWork 消息，不启动 durable workers，不运行 live harness jobs，不运行 Spec Kit live/apply modes，不修改 user-level config，不修改 remote publication。
-Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
-Last updated: 2026-06-07
+Status: CLI-Anything user-level install evidence recorded; WXWork_CLI integration is delegated to the operator-designated external consumer project and remains out of this repository package.
+Stage: R6 CLI-Anything user-level install evidence plus existing R5 WXWork_CLI governance handoff.
+Owner session: `resume-019e8aa7-cli-anything-install`; feature branch `install-cli-anything-user-level-20260609`.
+Current gate: focused tests, repository guard, precommit update/archive review, local CI, local MR review, guarded local-main-first integration; remote publication remains unauthorized.
+Install evidence: source `https://github.com/HKUDS/CLI-Anything`; `cli-anything-hub==0.3.0`; ignored receipt `.omx/cli-anything/cli-anything.lock.json`; `installed-user-level`; `install_performed=true`; `network_fetch_performed=true`; `wxwork_cli_installed=false`; `wxwork_cli_controlled=false`.
+R5 evidence: `wxwork-cli active-candidate lane profile` remains governed by `tools/check_r5_active_candidate_receipts.py` and `tools/user_level_receipt_governance.py active-check`; WXWork_CLI live/send implementation is handed off to the operator-designated external consumer project.
+Runtime boundary: this package installs/smoke-tests CLI-Anything only; it does not install/start/control WXWork_CLI, start WXWork.exe, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level Codex config, or mutate remote publication. Historical R5 governance packages remained not installed/started/enabled in this package.
+Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Last updated: 2026-06-09
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -91,6 +92,7 @@ Last updated: 2026-06-07
 - [x] Stage C：增加 R0-R5 runtime promotion ladder，并保持 not installed/started/enabled in this package。
 - [x] Stage C：把 R3/R4/R5 真实 runtime 工作移出已完成 backlog，列为 Stage D pending runtime work。
 - [x] Stage D R4 local smoke tooling：新增 smoke-record / smoke-check receipt 支持，只允许 bounded help/status/safe-discovery smoke；不 GUI control、不 send action、不保存 message body，并记录 timeout release、redaction、rollback readiness，命名 WXWork.exe 时要求 global lease。
+- [x] Stage E CLI-Anything user-level install: install `CLI-Anything` skills from `HKUDS/CLI-Anything`, install `cli-anything-hub==0.3.0`, create `cli-hub` wrappers, pass `cli-hub --help`, validate `installed-user-level` receipt, keep `wxwork_cli_installed=false` and `wxwork_cli_controlled=false`, and delegate WXWork_CLI to the operator-designated external consumer project.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
@@ -109,6 +111,7 @@ Last updated: 2026-06-07
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-09 CLI-Anything user-level install evidence: branch `install-cli-anything-user-level-20260609` installed user-level skills from `https://github.com/HKUDS/CLI-Anything`, installed `cli-anything-hub==0.3.0`, exposed `cli-hub 0.3.0`, passed `cli-hub --help`, and wrote ignored receipt `.omx/cli-anything/cli-anything.lock.json`. Receipt validation reports `installed-user-level`, `install_performed=true`, `network_fetch_performed=true`, `user_level_config_mutated=false`, `wxwork_cli_installed=false`, `wxwork_cli_controlled=false`, source URL preserved, raw private paths redacted, and rollback pointer hashed. WXWork_CLI integration is handed off to the operator-designated external consumer project; no WXWork.exe start/control/send occurred.
 - 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 CLI-Anything / WXWork_CLI governance 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-06 Stage D R4 local smoke tooling evidence：branch implement-cli-anything-wxwork-r4-20260606 新增 tools/wxwork_cli_governance.py smoke-record / smoke-check 与 focused tests；生成的 R4 receipts 同时通过 WXWork helper 与通用 tools/user_level_receipt_governance.py smoke-check，并保持 sanitized、no GUI control、no send action、no message body、timeout release、rollback readiness，命名 WXWork.exe 时要求 global lease。
 - 2026-06-05 real-runtime gap update：branch runtime-plan-standard-20260605 将 CLI-Anything install/update、WXWork_CLI fork/adaptation、WXWork.exe control、R4 smoke 与 R5 send/action handoff 标记为 Stage D pending；未安装、未启动、未 live-run。

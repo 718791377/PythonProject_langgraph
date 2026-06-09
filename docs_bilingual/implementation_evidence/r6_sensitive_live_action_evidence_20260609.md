@@ -83,6 +83,9 @@
 ## Sensitive Action Still Blocked: WXWork / CLI-Anything
 
 - Lane: `user-level-cli-anything-wxwork-cli-governance`.
+- CLI-Anything install update: the user-level CLI-Anything side is now installed and smoke-tested separately; see `docs_bilingual/implementation_evidence/cli_anything_user_level_install_evidence_20260609.md`.
+- Installed CLI-Anything evidence: `cli-anything-hub==0.3.0`, `cli-hub --help`, ignored install receipt `.omx/cli-anything/cli-anything.lock.json`, `install_performed=true`, `network_fetch_performed=true`, `user_level_config_mutated=false`.
+- WXWork_CLI handoff: WXWork_CLI integration is delegated to `D:\PythonProject_OpenClaw` / PythonProject_OpenClaw; this repository package still does not install/start/control WXWork_CLI or send WXWork messages.
 - Receipt: ignored local receipt `.omx/r6-live-runtime/receipts/wxwork-live-action-blocked-followup.json`.
 - Current receipt mode: `blocked`, which means the runtime recorded missing proof gates instead of claiming a successful WXWork send.
 - Current blocker summary: `external_execution_proof_action_performed_required`, `external_execution_proof_external_message_sent_required`, and `external_execution_proof_message_body_hash_required`.

@@ -67,6 +67,9 @@ WXWork / CLI-Anything 已进入 `live-action` 路径，但由于缺少真实发�
 ### WXWork / CLI-Anything
 
 - Lane：`user-level-cli-anything-wxwork-cli-governance`。
+- CLI-Anything install update：用户级 CLI-Anything 侧已单独完成安装和 smoke；见 `docs_bilingual/implementation_evidence/cli_anything_user_level_install_evidence_20260609.zh-CN.md`。
+- 已安装 CLI-Anything 证据：`cli-anything-hub==0.3.0`、`cli-hub --help`、ignored install receipt `.omx/cli-anything/cli-anything.lock.json`、`install_performed=true`、`network_fetch_performed=true`、`user_level_config_mutated=false`。
+- WXWork_CLI handoff：WXWork_CLI integration 交给 `D:\PythonProject_OpenClaw` / PythonProject_OpenClaw；本仓库 package 仍不安装/启动/控制 WXWork_CLI，也不发送 WXWork 消息。
 - Receipt：忽略的本地 receipt `.omx/r6-live-runtime/receipts/wxwork-live-action-blocked-followup.json`。
 - 当前 receipt mode：`blocked`，which means runtime 记录的是缺失 proof gate，而不是声明 WXWork 发送成功。
 - 当前 blocker 摘要：`external_execution_proof_action_performed_required`、`external_execution_proof_external_message_sent_required`、`external_execution_proof_message_body_hash_required`。
