@@ -5,6 +5,8 @@
 - 包：R6 敏感 live-action proof gate 与 follow-up live 证据。
 - 防冲突优先级保持：`Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
 - Runtime 支撑：`tools/r6_live_runtime.py run --mode live-action --env-file <local-env> --proof-receipt <redacted-proof-json>`。
+
+- Proof-intake 支撑：`tools/r6_live_runtime.py proof-template` 写入 fail-closed proof 骨架，`tools/r6_live_runtime.py proof-check` 在不运行 WXWork、browser 或 harness 动作的前提下校验已脱敏 proof 字段。
 - 安全修正：Browser/WXWork/Harness 的 `live-action` 不能只凭环境目标变成 `live-executed`；必须额外提供已脱敏的外部执行 proof receipt。
 - 当前环境中的 follow-up 结果：
   - `user-level-browser-cli-adapter-boundary`：`live-executed`，副作用族为 `browser_gui`。
@@ -71,6 +73,8 @@
 - 接受为 `live-executed` 前所需 proof：必须在当前 operator authorization 与 owner lease 下实际执行一次 WXWork/企业微信外部发送，同时只保留 message-body hash，不保留 raw recipient/body。
 - 当前 helper 姿态已由 `tools/wxwork_cli_governance.py` 验证：仅 repo-local guard，无 process probe、无 GUI control、无企业微信 API/webhook 调用、无消息发送、无用户级 Codex config 修改。
 
+- Proof-intake hardening：`proof-template` 可创建发送后 proof 骨架，`proof-check` 会拒绝 raw `message_body` 或 raw `recipient` 字段，并在真实发送后只接受 hash-only `message_body_hash` 证据。
+
 ### Codex Harnesses
 
 - Lane：`codex-harnesses-governance`。
@@ -80,12 +84,14 @@
 - 接受为 `live-executed` 前所需 proof：必须有一个实际选定的 harness candidate job，并带有 read/write guards、isolated worktree、job state、changed-path report、no Codex takeover、timeout release、rollback 与 cleanup evidence。
 - 当前 helper 姿态已由 `tools/run_codex_harnesses_smoke.py plan --json` 验证：只有 R4 read-only smoke registry；没有 install、没有 sidecar start、没有 write-capable harness job、没有 Codex takeover。
 
+- Proof-intake hardening：`proof-template` 列出 harness proof 必需字段，`proof-check` 会校验 `read_guard`、`write_guard`、`isolated_worktree`、`job_state`、`changed_paths_report` 与 `no_codex_takeover` 后，未来才能允许 `live-executed` promotion。
+
 ## 验证命令
 
 本 follow-up 会话中的 fresh verification：
 
 - `python tools\check_r6_live_runtime_receipts.py --root . --receipt-dir .omx\r6-live-runtime\receipts --require-coverage --max-age-hours 24 --json` - 在 primary local repository 中通过，接受全部 14 个 R6 lane，并为 Browser 与 Stop-Slop/Caveman 选择 `live-executed` 证据。
-- `python test\r6_live_runtime.test.py -v` - 14/14 测试通过。
+- `python test\r6_live_runtime.test.py -v` - proof-intake hardening 后 17/17 测试通过。
 - `python test\check_r6_live_runtime_receipts.test.py -v` - 9/9 测试通过。
 - `python tools\check_codex_harnesses_governance.py --root . --json` - 通过，确认 harness governance checker 姿态。
 - `python tools\check_user_level_cli_anything_wxwork_cli_governance.py --root . --json` - 通过，确认 WXWork/CLI-Anything governance checker 姿态。

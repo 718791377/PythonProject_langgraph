@@ -5,6 +5,7 @@
 - Package: R6 sensitive live-action proof gate and follow-up live evidence.
 - Priority order preserved: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
 - Runtime support: `tools/r6_live_runtime.py run --mode live-action --env-file <local-env> --proof-receipt <redacted-proof-json>`.
+- Proof-intake support: `tools/r6_live_runtime.py proof-template` writes a fail-closed proof skeleton, and `tools/r6_live_runtime.py proof-check` validates redacted proof fields without running WXWork, browser, or harness actions.
 - Safety correction: Browser/WXWork/Harness `live-action` cannot become `live-executed` from environment targets alone; a redacted external execution proof receipt is required.
 - Follow-up result in the current environment:
   - `user-level-browser-cli-adapter-boundary`: `live-executed` with side effect family `browser_gui`.
@@ -70,6 +71,7 @@ The following lanes were attempted through `live-action`, which means the runtim
 - Current blocker summary: `external_execution_proof_action_performed_required`, `external_execution_proof_external_message_sent_required`, and `external_execution_proof_message_body_hash_required`.
 - Required proof before `live-executed`: a real external WXWork/Enterprise WeChat send must be performed under a current operator authorization and owner lease, while retaining only message-body hash evidence and no raw recipient/body.
 - Current helper posture verified by `tools/wxwork_cli_governance.py`: repo-local guard only, no process probe, no GUI control, no Enterprise WeChat API/webhook call, no message send, and no user-level Codex config mutation.
+- Proof-intake hardening: `proof-template` can create the post-send proof skeleton, and `proof-check` rejects raw `message_body` or raw `recipient` fields while accepting hash-only `message_body_hash` evidence after a real send.
 
 ### Codex Harnesses
 
@@ -79,13 +81,14 @@ The following lanes were attempted through `live-action`, which means the runtim
 - Current blocker summary: missing `action_performed`, `read_guard`, `write_guard`, `isolated_worktree`, `job_state`, `changed_paths_report`, and `no_codex_takeover` proof; these fields are defined in the term glossary above.
 - Required proof before `live-executed`: an actual selected harness candidate job with read/write guards, isolated worktree, job state, changed-path report, no Codex takeover, timeout release, rollback, and cleanup evidence.
 - Current helper posture verified by `tools/run_codex_harnesses_smoke.py plan --json`: R4 read-only smoke registry only; no install, no sidecar start, no write-capable harness job, no Codex takeover.
+- Proof-intake hardening: `proof-template` lists required harness proof fields, and `proof-check` validates `read_guard`, `write_guard`, `isolated_worktree`, `job_state`, `changed_paths_report`, and `no_codex_takeover` before any future `live-executed` promotion.
 
 ## Verification Commands
 
 Fresh verification run in this follow-up session:
 
 - `python tools\check_r6_live_runtime_receipts.py --root . --receipt-dir .omx\r6-live-runtime\receipts --require-coverage --max-age-hours 24 --json` - passed in the primary local repository, accepted all 14 R6 lanes, and selected `live-executed` evidence for Browser and Stop-Slop/Caveman.
-- `python test\r6_live_runtime.test.py -v` - passed 14/14 tests.
+- `python test\r6_live_runtime.test.py -v` - passed 17/17 tests after proof-intake hardening.
 - `python test\check_r6_live_runtime_receipts.test.py -v` - passed 9/9 tests.
 - `python tools\check_codex_harnesses_governance.py --root . --json` - passed, confirming harness governance checker posture.
 - `python tools\check_user_level_cli_anything_wxwork_cli_governance.py --root . --json` - passed, confirming WXWork/CLI-Anything governance checker posture.

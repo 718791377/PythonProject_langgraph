@@ -50,6 +50,8 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 
 - [x] Stage D 敏感 live-action follow-up - `live-executed` means bounded live action ran with proof，`blocked` means runtime recorded an unmet proof gate：已记录 Browser 与 Stop-Slop/Caveman 为带脱敏 receipt 的 R6 `live-executed`；WXWork 与 Codex harnesses 因缺少真实发送目标或 live harness job proof，继续 fail-closed 为 `blocked`。
 
+- [x] Stage E proof-intake hardening 增加 `proof-template` 与 `proof-check` runtime 命令。`proof-template` 只写入真实动作后的填充骨架且不运行外部工具；`proof-check` 在既有 `run --mode live-action --proof-receipt ...` 路径把 WXWork 或 harness 证据提升为 `live-executed` 之前，先校验 proof 是否已脱敏且字段齐全。
+
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
@@ -65,6 +67,8 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 - [x] Package 3：记录全部 14 个 lane 的 Stage C receipt 证据；browser/WXWork/harness/user-level-install/Spec Kit 等外部动作在缺少环境目标时保持 blocked，blocked receipt 是当前的、已脱敏的、并通过 checker。
 
 - [x] Package 4：运行并记录敏感 live-action follow-up 证据；接受 Browser 与 Stop-Slop/Caveman 的 live-executed proof，并在真实 proof gate 出现前保留 WXWork/Harness blocked receipts。
+
+- [x] Package 5：为 WXWork 与 Codex harnesses 增加 fail-closed proof-intake 模板与 proof 校验，未来真实 live proof 可在不保存 raw recipient、message、browser 或 harness payload 的前提下通过门禁。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -84,6 +88,8 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 - 远端发布仍未授权；除非当前用户消息明确点名远端动作，否则不推送 GitLab/GitHub、不创建或更新远端 MR。
 
 - Stage D 敏感 live-action follow-up 证据 - `live-executed` means bounded live action ran with proof，`blocked` means runtime recorded an unmet proof gate：`.omx/r6-live-runtime/receipts/browser-live-action-followup.json` 与 `.omx/r6-live-runtime/receipts/stop-slop-caveman-live-executed-followup.json` 是当前有效且被 `tools/check_r6_live_runtime_receipts.py --require-coverage` 选中的 `live-executed` receipt；`.omx/r6-live-runtime/receipts/wxwork-live-action-blocked-followup.json` 与 `.omx/r6-live-runtime/receipts/harness-live-action-blocked-followup.json` 因缺少真实 WXWork message-send proof 与真实 guarded harness-job proof，仍为有效 `blocked` receipt。人工可读证据：`docs_bilingual/implementation_evidence/r6_sensitive_live_action_evidence_20260609.md` 与 `.zh-CN.md`。
+
+- Stage E proof-intake hardening 证据：`tools/r6_live_runtime.py proof-template` 是未来真实外部 proof 文件的 fail-closed 模板生成器，`tools/r6_live_runtime.py proof-check` 是该 proof 文件的脱敏与必需字段校验器。测试：`python test\r6_live_runtime.test.py -v` 通过 17/17，并覆盖已脱敏 WXWork/harness proof 的接受路径，以及 raw WXWork body 或 recipient 材料的拒绝路径。
 
 <!-- EVIDENCE_INDEX_END -->
 ## R6 契约
@@ -177,7 +183,7 @@ Browser 或 GUI live action 只能在 target URL/action allowlist 下运行。�
 
 ### CLI-Anything / WXWork CLI
 
-WXWork live send 只允许在 R6 且 `R6_WXWORK_TARGET` 与 `R6_WXWORK_MESSAGE_TEMPLATE` 存在时执行。Receipt 不得包含消息正文或原始收件人。缺少目标或确认时必须写 blocked receipt。
+WXWork live send 只允许在 R6 且 `R6_WXWORK_TARGET` 与 `R6_WXWORK_MESSAGE_TEMPLATE` 存在时执行。Receipt 不得包含消息正文或原始收件人。缺少目标或确认时必须写 blocked receipt。`proof-template` 与 `proof-check` 提供两步 proof-intake 路径：先为发送后的 proof 创建骨架，再只验证 hash 与状态字段，最后才允许提升为 `live-executed`。
 
 ### Stop-slop / response-density runtime
 
@@ -189,7 +195,7 @@ gstack 仍是 Comet/OpenSpec/Superpowers 之下的 advisory 层。可以运行 l
 
 ### Codex harnesses
 
-Harness live job 需要 candidate id、isolated worktree、read/write guard、no-Codex-takeover evidence、job state、changed-path report、timeout release、rollback 与 cleanup evidence。
+Harness live job 需要 candidate id、isolated worktree、read/write guard、no-Codex-takeover evidence、job state、changed-path report、timeout release、rollback 与 cleanup evidence。`proof-template` 与 `proof-check` 会把这些 proof 字段显式化，harness receipt 只有通过该 proof 校验后才能从 `blocked` 提升为 `live-executed`。
 
 ### Spec Kit authority 与 subordinate adapter
 

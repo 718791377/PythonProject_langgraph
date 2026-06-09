@@ -188,6 +188,130 @@ def live_action_proof_blockers(lane: str, proof: dict[str, Any] | None) -> list[
     return sorted(set(blockers))
 
 
+def forbidden_raw_proof_key_blockers(proof: dict[str, Any] | None) -> list[str]:
+    """Reject proof receipts that carry raw external target or message fields.
+
+    R6 live-action proof intake is intentionally hash-and-status only.  The
+    proof file may describe that an action happened, but it must not carry raw
+    WXWork recipients, message payloads, browser payloads, secrets, or private
+    paths that would later be copied into tracked evidence.
+    """
+
+    if proof is None:
+        return []
+    forbidden = {
+        "message_body",
+        "message_content",
+        "message_contents",
+        "wxwork_message",
+        "recipient",
+        "raw_recipient",
+        "recipient_raw",
+        "raw_target",
+        "target_value",
+        "raw_browser_payload",
+        "browser_payload",
+        "cookies",
+        "cookie",
+        "token",
+        "secret",
+        "api_key",
+        "apikey",
+    }
+    blockers: list[str] = []
+
+    def visit(value: Any, path: str = "$") -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                lowered = str(key).lower()
+                child = f"{path}.{key}"
+                if lowered in forbidden and item not in (None, "", [], {}, False):
+                    blockers.append(f"external_execution_proof_forbidden_raw_key:{key}")
+                visit(item, child)
+        elif isinstance(value, list):
+            for idx, item in enumerate(value):
+                visit(item, f"{path}[{idx}]")
+
+    visit(proof)
+    return sorted(set(blockers))
+
+
+def proof_template_for_lane(lane: str) -> dict[str, Any]:
+    profile = LANE_PROFILES[lane]
+    required_fields: list[str]
+    if lane == "user-level-cli-anything-wxwork-cli-governance":
+        required_fields = [
+            "external_side_effects",
+            "action_performed",
+            "external_message_sent",
+            "message_body_hash",
+            "message_body_included",
+            "recipient_included",
+            "remote_publication_mutated",
+        ]
+        proof: dict[str, Any] = {
+            "schema_version": 1,
+            "template_status": "fill_after_real_live_action",
+            "lane": lane,
+            "external_side_effects": profile.side_effect,
+            "action_performed": False,
+            "external_message_sent": False,
+            "message_body_hash": "",
+            "message_body_included": False,
+            "recipient_included": False,
+            "remote_publication_mutated": False,
+            "required_evidence_fields": required_fields,
+            "raw_payload_policy": "hash_only_no_raw_external_payload",
+        }
+    elif lane == "codex-harnesses-governance":
+        required_fields = [
+            "external_side_effects",
+            "action_performed",
+            "read_guard",
+            "write_guard",
+            "isolated_worktree",
+            "job_state",
+            "changed_paths_report",
+            "no_codex_takeover",
+            "active_sidecar_took_over_codex",
+            "remote_publication_mutated",
+        ]
+        proof = {
+            "schema_version": 1,
+            "template_status": "fill_after_real_live_action",
+            "lane": lane,
+            "external_side_effects": profile.side_effect,
+            "action_performed": False,
+            "read_guard": {"status": "pending"},
+            "write_guard": {"status": "pending"},
+            "isolated_worktree": {"status": "pending"},
+            "job_state": {"status": "pending"},
+            "changed_paths_report": {"status": "pending", "paths": []},
+            "no_codex_takeover": False,
+            "active_sidecar_took_over_codex": False,
+            "remote_publication_mutated": False,
+            "required_evidence_fields": required_fields,
+            "raw_payload_policy": "redacted_status_only",
+        }
+    else:
+        required_fields = [
+            "external_side_effects",
+            "action_performed",
+            "remote_publication_mutated",
+        ]
+        proof = {
+            "schema_version": 1,
+            "template_status": "fill_after_real_live_action",
+            "lane": lane,
+            "external_side_effects": profile.side_effect,
+            "action_performed": False,
+            "remote_publication_mutated": False,
+            "required_evidence_fields": required_fields,
+            "raw_payload_policy": "redacted_status_only",
+        }
+    return proof
+
+
 def live_blockers(lane: str, mode: str, proof: dict[str, Any] | None = None) -> list[str]:
     profile = LANE_PROFILES[lane]
     blockers: list[str] = []
@@ -213,6 +337,7 @@ def live_blockers(lane: str, mode: str, proof: dict[str, Any] | None = None) -> 
         blockers.extend(user_level_install_root_blockers(os.environ.get("R6_USER_LEVEL_INSTALL_ROOT", "")))
     if mode == "live-action":
         blockers.extend(live_action_proof_blockers(lane, proof))
+        blockers.extend(forbidden_raw_proof_key_blockers(proof))
     return sorted(set(blockers))
 
 
@@ -625,6 +750,62 @@ def command_template_sources(args: argparse.Namespace) -> tuple[int, dict[str, A
     return 0, payload
 
 
+def command_proof_template(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
+    root = Path(args.root).resolve()
+    lane = normalize_lane(args.lane)
+    if lane not in LANE_PROFILES:
+        return 2, {"ok": False, "blockers": ["lane_required_or_invalid"], "known_lanes": sorted(LANE_PROFILES)}
+    proof = proof_template_for_lane(lane)
+    out = Path(args.proof_out).resolve()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(proof, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return 0, {
+        "schema_version": 1,
+        "generated_at": now_iso(),
+        "check_name": CHECK_NAME,
+        "ok": True,
+        "root": str(root),
+        "lane": lane,
+        "proof_out_hash": stable_hash(str(out)),
+        "proof_hash": stable_hash(proof),
+        "action_performed": False,
+        "external_side_effects": proof.get("external_side_effects"),
+        "required_evidence_fields": proof.get("required_evidence_fields", []),
+        "remote_publication_mutated": False,
+        "runs_external_tool": False,
+        "starts_browser_or_gui": False,
+        "sends_external_message": False,
+        "starts_harness_job": False,
+    }
+
+
+def command_proof_check(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
+    root = Path(args.root).resolve()
+    lane = normalize_lane(args.lane)
+    if lane not in LANE_PROFILES:
+        return 2, {"ok": False, "blockers": ["lane_required_or_invalid"], "known_lanes": sorted(LANE_PROFILES)}
+    proof, load_blockers = read_json_file(args.proof_receipt)
+    blockers = sorted(set([*load_blockers, *live_action_proof_blockers(lane, proof), *forbidden_raw_proof_key_blockers(proof)]))
+    proof_hash = stable_hash(proof or {})
+    return (0 if not blockers else 2), {
+        "schema_version": 1,
+        "generated_at": now_iso(),
+        "check_name": CHECK_NAME,
+        "ok": not blockers,
+        "root": str(root),
+        "lane": lane,
+        "proof_accepted": not blockers,
+        "proof_hash": proof_hash,
+        "proof_path_hash": stable_hash(str(Path(args.proof_receipt).resolve())) if args.proof_receipt else "",
+        "blockers": blockers,
+        "remote_publication_mutated": False,
+        "runs_external_tool": False,
+        "starts_browser_or_gui": False,
+        "sends_external_message": False,
+        "starts_harness_job": False,
+    }
+
+
 def copy_tree_managed(src: Path, dst: Path, *, update_managed: bool = False) -> tuple[list[str], list[str], list[str]]:
     copied: list[str] = []
     updated: list[str] = []
@@ -722,6 +903,18 @@ def build_parser() -> argparse.ArgumentParser:
     tmpl.add_argument("--root", default=".")
     tmpl.add_argument("--json", action="store_true")
 
+    proof_template = sub.add_parser("proof-template")
+    proof_template.add_argument("--root", default=".")
+    proof_template.add_argument("--lane", required=True)
+    proof_template.add_argument("--proof-out", required=True)
+    proof_template.add_argument("--json", action="store_true")
+
+    proof_check = sub.add_parser("proof-check")
+    proof_check.add_argument("--root", default=".")
+    proof_check.add_argument("--lane", required=True)
+    proof_check.add_argument("--proof-receipt", required=True)
+    proof_check.add_argument("--json", action="store_true")
+
     sync = sub.add_parser("sync-templates")
     sync.add_argument("--root", default=".")
     sync.add_argument("--general-root", default="D:/PythonProject_General")
@@ -739,6 +932,10 @@ def main(argv: list[str] | None = None) -> int:
         code, payload = command_run_all(args)
     elif args.command == "sync-templates":
         code, payload = command_sync_templates(args)
+    elif args.command == "proof-template":
+        code, payload = command_proof_template(args)
+    elif args.command == "proof-check":
+        code, payload = command_proof_check(args)
     else:
         code, payload = command_template_sources(args)
     if getattr(args, "json", False):

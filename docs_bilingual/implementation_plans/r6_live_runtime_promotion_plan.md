@@ -47,6 +47,7 @@ This plan covers these existing R5 plans as one governed rollout:
 - [x] Stage C coverage audit implementation now adds checker/runtime coverage evidence for all 14 R6 lanes: repo-local/default-safe lanes live-execute without external side effects, while browser/WXWork/harness/user-level-install/Spec Kit lanes default to blocked receipts when environment targets are absent.
 
 - [x] Stage D sensitive live-action follow-up records Browser and Stop-Slop/Caveman as R6 `live-executed` with redacted receipts, while WXWork and Codex harnesses remain fail-closed `blocked` because no real send target or live harness job proof is present.
+- [x] Stage E proof-intake hardening adds `proof-template` and `proof-check` runtime commands. `proof-template` writes a fill-after-real-action JSON skeleton without running external tools, and `proof-check` validates a redacted proof before the existing `run --mode live-action --proof-receipt ...` path can mark WXWork or harness evidence as `live-executed`.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -63,6 +64,7 @@ This plan covers these existing R5 plans as one governed rollout:
 - [x] Package 3: record Stage C receipt evidence for all 14 lanes; external browser/WXWork/harness/user-level-install/Spec Kit actions remain blocked when environment targets are absent, while the blocked receipts are current, redacted, and checker-accepted.
 
 - [x] Package 4: run and record sensitive live-action follow-up evidence; accept Browser and Stop-Slop/Caveman live-executed proof, and retain WXWork/Harness blocked receipts until real proof gates exist.
+- [x] Package 5: add fail-closed proof-intake templates and proof validation for WXWork and Codex harnesses so future real live proof can be checked without storing raw recipient, message, browser, or harness payloads.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -81,6 +83,7 @@ This plan covers these existing R5 plans as one governed rollout:
 - Stage C template sync evidence: `python tools\r6_live_runtime.py sync-templates --root . --general-root D:\PythonProject_General --general2-root D:\PythonProject_General_2 --update-managed --json` refreshed managed template files only, reported `remote_publication_mutated=false`, and preserved General_2 as a stub-only surface.
 - Remote publication remains unauthorized until a current user message names the remote action.
 - Stage D sensitive live-action follow-up evidence - `live-executed` means a bounded live action ran with proof, and `blocked` means the runtime recorded an unmet proof gate: `.omx/r6-live-runtime/receipts/browser-live-action-followup.json` and `.omx/r6-live-runtime/receipts/stop-slop-caveman-live-executed-followup.json` are current valid `live-executed` receipts selected by `tools/check_r6_live_runtime_receipts.py --require-coverage`; `.omx/r6-live-runtime/receipts/wxwork-live-action-blocked-followup.json` and `.omx/r6-live-runtime/receipts/harness-live-action-blocked-followup.json` remain valid `blocked` receipts because real WXWork message-send proof and real guarded harness-job proof are absent. Human-readable evidence: `docs_bilingual/implementation_evidence/r6_sensitive_live_action_evidence_20260609.md` and `.zh-CN.md`.
+- Stage E proof-intake hardening evidence - `tools/r6_live_runtime.py proof-template` is the fail-closed template generator for a future real external proof file, and `tools/r6_live_runtime.py proof-check` is the redaction and required-field validator for that proof file. Tests: `python test\r6_live_runtime.test.py -v` passes 17/17 and covers accepted redacted WXWork/harness proofs plus rejection of raw WXWork body or recipient material.
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -175,7 +178,7 @@ Browser or GUI live action may run only with a target URL/action allowlist. Raw 
 
 ### CLI-Anything / WXWork CLI
 
-WXWork live send is allowed only at R6 with `R6_WXWORK_TARGET` and `R6_WXWORK_MESSAGE_TEMPLATE`. Receipts must not include message body or raw recipient. A blocked receipt is required when target or confirmation is missing.
+WXWork live send is allowed only at R6 with `R6_WXWORK_TARGET` and `R6_WXWORK_MESSAGE_TEMPLATE`. Receipts must not include message body or raw recipient. A blocked receipt is required when target or confirmation is missing. `proof-template` and `proof-check` provide a two-step proof-intake path: first create a skeleton for the post-send proof, then validate only hashes and status fields before promotion to `live-executed`.
 
 ### Stop-slop / response-density runtime
 
@@ -187,7 +190,7 @@ gstack remains advisory below Comet/OpenSpec/Superpowers. Live delivery-loop smo
 
 ### Codex harnesses
 
-Harness live jobs require candidate id, isolated worktree, read/write guards, no-Codex-takeover evidence, job state, changed-path report, timeout release, rollback, and cleanup evidence.
+Harness live jobs require candidate id, isolated worktree, read/write guards, no-Codex-takeover evidence, job state, changed-path report, timeout release, rollback, and cleanup evidence. `proof-template` and `proof-check` make those proof fields explicit before a harness receipt can be promoted from `blocked` to `live-executed`.
 
 ### Spec Kit authority and subordinate adapter
 

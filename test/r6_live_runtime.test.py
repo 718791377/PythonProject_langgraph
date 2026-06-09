@@ -398,5 +398,157 @@ class R6LiveRuntimeTests(unittest.TestCase):
         self.assertIn("project-general-2-stub", payload["sync_targets"])
 
 
+    def test_proof_template_command_writes_fail_closed_wxwork_and_harness_templates(self) -> None:
+        root = self.make_root()
+        for lane, side_effect, required_fields in (
+            ("wxwork-cli", "external_message", ["external_message_sent", "message_body_hash"]),
+            ("codex-harnesses", "harness_job", ["read_guard", "write_guard", "isolated_worktree", "job_state", "changed_paths_report", "no_codex_takeover"]),
+        ):
+            with self.subTest(lane=lane):
+                proof_path = root / f"{lane}-proof-template.json"
+                proc = subprocess.run(
+                    [
+                        sys.executable,
+                        str(RUNTIME),
+                        "proof-template",
+                        "--root",
+                        str(root),
+                        "--lane",
+                        lane,
+                        "--proof-out",
+                        str(proof_path),
+                        "--json",
+                    ],
+                    cwd=ROOT,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                )
+                self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+                payload = json.loads(proc.stdout)
+                self.assertTrue(payload["ok"], payload)
+                self.assertFalse(payload["action_performed"])
+                self.assertFalse(payload["runs_external_tool"])
+                self.assertTrue(proof_path.exists())
+                proof = json.loads(proof_path.read_text(encoding="utf-8"))
+                self.assertEqual(proof["external_side_effects"], side_effect)
+                self.assertFalse(proof["action_performed"])
+                self.assertEqual(proof["template_status"], "fill_after_real_live_action")
+                for field in required_fields:
+                    self.assertIn(field, proof["required_evidence_fields"])
+                rendered = json.dumps(proof, ensure_ascii=False)
+                self.assertNotIn("recipient", rendered.lower().replace("recipient_included", ""))
+                self.assertNotIn("message body", rendered.lower())
+
+    def test_proof_check_accepts_redacted_wxwork_and_harness_proofs(self) -> None:
+        root = self.make_root()
+        proof_dir = root / "proofs"
+        proof_dir.mkdir()
+        proofs = {
+            "wxwork-cli": {
+                "external_side_effects": "external_message",
+                "action_performed": True,
+                "external_message_sent": True,
+                "message_body_hash": "hash-only-fixture",
+                "message_body_included": False,
+                "recipient_included": False,
+                "remote_publication_mutated": False,
+            },
+            "codex-harnesses": {
+                "external_side_effects": "harness_job",
+                "action_performed": True,
+                "read_guard": {"status": "pass"},
+                "write_guard": {"status": "pass"},
+                "isolated_worktree": {"status": "pass"},
+                "changed_paths_report": {"status": "pass", "paths": ["docs/example.md"]},
+                "job_state": {"status": "pass"},
+                "no_codex_takeover": True,
+                "active_sidecar_took_over_codex": False,
+                "remote_publication_mutated": False,
+            },
+        }
+        for lane, proof in proofs.items():
+            with self.subTest(lane=lane):
+                proof_path = proof_dir / f"{lane}.json"
+                proof_path.write_text(json.dumps(proof, ensure_ascii=False, indent=2), encoding="utf-8")
+                proc = subprocess.run(
+                    [
+                        sys.executable,
+                        str(RUNTIME),
+                        "proof-check",
+                        "--root",
+                        str(root),
+                        "--lane",
+                        lane,
+                        "--proof-receipt",
+                        str(proof_path),
+                        "--json",
+                    ],
+                    cwd=ROOT,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                )
+                self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+                payload = json.loads(proc.stdout)
+                self.assertTrue(payload["ok"], payload)
+                self.assertTrue(payload["proof_accepted"])
+                self.assertIn("proof_hash", payload)
+                self.assertNotIn(str(proof_path), json.dumps(payload, ensure_ascii=False))
+
+    def test_proof_check_rejects_raw_wxwork_payload_material(self) -> None:
+        root = self.make_root()
+        proof_path = root / "raw-wxwork-proof.json"
+        proof_path.write_text(
+            json.dumps(
+                {
+                    "external_side_effects": "external_message",
+                    "action_performed": True,
+                    "external_message_sent": True,
+                    "message_body_hash": "hash-only-fixture",
+                    "message_body": "raw message body must not be accepted",
+                    "recipient": "raw-recipient-id",
+                    "message_body_included": True,
+                    "recipient_included": True,
+                    "remote_publication_mutated": False,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(RUNTIME),
+                "proof-check",
+                "--root",
+                str(root),
+                "--lane",
+                "wxwork-cli",
+                "--proof-receipt",
+                str(proof_path),
+                "--json",
+            ],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        payload = json.loads(proc.stdout)
+        joined = "\n".join(payload["blockers"])
+        self.assertIn("external_execution_proof_message_body_included_must_be_false", joined)
+        self.assertIn("external_execution_proof_recipient_included_must_be_false", joined)
+        self.assertIn("external_execution_proof_forbidden_raw_key:message_body", joined)
+        self.assertIn("external_execution_proof_forbidden_raw_key:recipient", joined)
+
+
 if __name__ == "__main__":
     unittest.main()
