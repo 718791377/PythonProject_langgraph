@@ -26,13 +26,15 @@ related_plans:
 <!-- CURRENT_STATUS_START -->
 
 - [x] 状态：Stage A 治理包已合入本地 `main`，提交为 `f1bbbefd31922eef729a6d414681df0bbf7212a8`。
-- [x] Stage B/C runtime 实现已在 feature 分支 `implement-project-moe-sessions-tab-design-refresh-20260609` 完成。
-- [x] Pencil MCP 当前被 `transport not connected to app: trae_cn` 阻塞；HTML fallback 草图与导出 PNG 已记录到 `docs_bilingual/designs/project_moe_sessions_tab/`。
+- [x] Stage B/C runtime 实现已完成，并已合入 B 本地 `main`，提交为 `8dfe010f13118d3cd4b5aa78cc5869ca4e78bf57`。
+- [x] feature worktree `implement-project-moe-sessions-tab-design-refresh-20260609` 已在本地 main 集成后安全清理；回滚 ref 为 `refs/backup/local-main/20260610-014207-before-implement-project-moe-sessions-tab-design-refresh-20260609`。
+- [x] Pencil MCP 被 `transport not connected to app: trae_cn` 阻塞；HTML fallback 草图与导出 PNG 已记录到 `docs_bilingual/designs/project_moe_sessions_tab/`。
 - [x] Focused toolchain tests 已通过：`python test\project_moe_gui_toolchain.test.py` 返回 101/101 OK。
-- [x] Sessions 视觉渲染检查已覆盖 default、long-content、dense-sessions 三组夹具，以及 `1180x720`、`1366x768`、`1440x900` 三个尺寸。
-- [ ] Stage B/C runtime 包仍需合入本地 `main` 并安全清理 feature worktree。
-- [ ] A 目标项目安装与 A preflight 验证需在 B 本地 `main` 合入后执行。
-- [ ] 远端发布不在本计划范围内，除非用户明确要求 GitLab/GitHub 发布。
+- [x] B 仓库 Sessions 视觉渲染检查已覆盖 default、long-content、dense-sessions 三组夹具，以及 `1180x720`、`1366x768`、`1440x900` 三个尺寸。
+- [x] A 目标项目 `D:/PythonProject_paper_suggest` 安装已完成；受管理安装产物已提交到 A 本地 `main`，提交为 `8d1449f`，toolchain 版本为 `0.2.38`。
+- [x] A 目标项目 `project-moe-gui.cmd --preflight --json` 已通过，返回 `token=ok`，Phase 1 readiness 为 `ready`，QFluentWidgets import 为 `ok`，会话数量为 `5`。
+- [x] A 目标项目 Sessions 视觉渲染检查已覆盖 `1180x720`、`1366x768`、`1440x900`，返回 `token=ok`。
+- [x] 远端发布不在本计划范围内，且未执行。
 
 <!-- CURRENT_STATUS_END -->
 
@@ -44,8 +46,9 @@ related_plans:
 - [x] 使用 Pencil 或 HTML fallback 生成设计辅助产物。
 - [x] 实现紧凑 Sessions 列表、右侧分区控制、三个 MOE 专家模块、category/lens i18n。
 - [x] 在 B 仓库完成 focused tests 与 Sessions 视觉渲染检查。
-- [ ] 将 runtime 包合入 B 本地 `main` 并清理 feature worktree。
-- [ ] 将刷新后的受管理 GUI 产物安装到 `D:/PythonProject_paper_suggest` 并运行 A preflight。
+- [x] 将 runtime 包合入 B 本地 `main` 并清理 feature worktree。
+- [x] 将刷新后的受管理 GUI 产物安装到 `D:/PythonProject_paper_suggest` 并运行 A preflight。
+- [x] 对已安装到 A 的 Sessions 页运行视觉渲染验收。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -53,16 +56,25 @@ related_plans:
 <!-- EVIDENCE_INDEX_START -->
 
 - 治理包本地 main 合入：`f1bbbefd31922eef729a6d414681df0bbf7212a8`。
+- Runtime 本地 main 合入：`8dfe010f13118d3cd4b5aa78cc5869ca4e78bf57`（runtime implementation commit）。
+- Runtime 回滚 ref：`refs/backup/local-main/20260610-014207-before-implement-project-moe-sessions-tab-design-refresh-20260609`。
+- Runtime 清理证据：completed claim `D:/PythonProject_langgraph/.omx/session-claims/completed/implement-project-moe-sessions-tab-design-refresh-20260609.json` 记录了 cleaned worktree 和 deleted branch。
 - 设计 fallback 原因：`docs_bilingual/designs/project_moe_sessions_tab/fallback_reason.md`。
 - HTML 草图：`docs_bilingual/designs/project_moe_sessions_tab/sessions_tab_layout.html`。
 - HTML 草图截图：`docs_bilingual/designs/project_moe_sessions_tab/sessions_tab_layout.png`。
 - Pencil MCP 阻塞证据：`get_editor_state(include_schema=true)` 返回 `transport not connected to app: trae_cn`。
 - Pencil CLI/npm 证据：`npm view '@pencil.dev/cli' name version --json` 返回 `@pencil.dev/cli` `0.2.7`；`htmltool2` 包查询返回 npm `E404`。
 - Focused tests：`python test\project_moe_gui_toolchain.test.py` -> `Ran 101 tests ... OK`。
-- Sessions 视觉渲染检查：
+- B 仓库 local gate：runtime feature worktree 中运行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600 -Json` 通过；`tools/complete_local_flow_to_remote_gate.py --execute` 本地合入后在主目录再次运行 post-merge local gate 通过。
+- B 仓库 Sessions 视觉渲染检查：
   - default 夹具：`python tools\project_moe_gui_toolchain\visual_render_check.py --view-model-json .tmp\project_moe_sessions_view_model.json --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` -> `token=ok`。
   - long-content 夹具：同命令改为 `--fixture-profile long-content` -> `token=ok`。
   - dense-sessions 夹具：同命令改为 `--fixture-profile dense-sessions` -> `token=ok`。
+- A 目标项目安装：`python .\tools\project_moe_gui_toolchain\update_project_moe_gui.py --target-project D:\PythonProject_paper_suggest --json` -> `token=ok`，目标版本 `0.2.38`。
+- A 目标项目受管理安装提交：`8d1449f 更新：升级论文 Project MOE GUI 到 0.2.38`。
+- A 目标项目 preflight：`D:\PythonProject_paper_suggest\project-moe-gui.cmd --preflight --json` -> `token=ok`，`phase1_readiness_gate.readiness_status=ready`，`session_count.value=5`。
+- A 目标项目 Sessions 视觉渲染：`python tools\project_moe_gui_toolchain\visual_render_check.py --target-project D:\PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` -> `token=ok`。
+- 远端发布：未执行；B 本地 `main` 在明确远端发布授权前有意领先 `gitlab/main`。
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -117,10 +129,10 @@ related_plans:
 - [x] 增加或更新测试，覆盖 compact list 文本、详情块完整性、三个专家模块、i18n 标签、tri-state 联动。
 - [x] 运行 Project MOE GUI focused tests 和必要的完整 toolchain tests。证据：`python test\project_moe_gui_toolchain.test.py` 返回 101/101 OK。
 - [x] 对 Sessions 页运行 `1180x720`、`1366x768`、`1440x900` 视觉渲染检查，并覆盖 default、long-content、dense-sessions 三组夹具。
-- [ ] 在 B 本地 `main` 合入后，将更新后的 toolchain 安装到 `D:/PythonProject_paper_suggest`。
-- [ ] 安装后运行 A 项目 `project-moe-gui.cmd --preflight --json` 并确认 `token=ok`。
-- [ ] 安装后确认 A 项目仍只显示 5 个真实 target-project session。
-- [ ] 如 A 项目存在受管理安装产物变更，使用中文 commit message 提交。
+- [x] 在 B 本地 `main` 合入后，将更新后的 toolchain 安装到 `D:/PythonProject_paper_suggest`。证据：installer 返回 `token=ok`，目标版本为 `0.2.38`。
+- [x] 安装后运行 A 项目 `project-moe-gui.cmd --preflight --json` 并确认 `token=ok`。证据：preflight 返回 `token=ok`，Phase 1 readiness 为 `ready`。
+- [x] 安装后确认 A 项目仍只显示 5 个真实 target-project session。证据：preflight `session_count.value=5`。
+- [x] 如 A 项目存在受管理安装产物变更，使用中文 commit message 提交。证据：A 本地提交 `8d1449f 更新：升级论文 Project MOE GUI 到 0.2.38`。
 
 ## 4. 验收标准
 

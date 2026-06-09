@@ -26,13 +26,15 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 <!-- CURRENT_STATUS_START -->
 
 - [x] Status: Stage A governance package is already merged into local `main` at `f1bbbefd31922eef729a6d414681df0bbf7212a8`.
-- [x] Stage B/C runtime implementation is present on feature branch `implement-project-moe-sessions-tab-design-refresh-20260609`.
-- [x] Pencil MCP is blocked by `transport not connected to app: trae_cn`; HTML fallback mockup and exported PNG are recorded under `docs_bilingual/designs/project_moe_sessions_tab/`.
+- [x] Stage B/C runtime implementation was completed and integrated into B local `main` at `8dfe010f13118d3cd4b5aa78cc5869ca4e78bf57`.
+- [x] The feature worktree `implement-project-moe-sessions-tab-design-refresh-20260609` was safely cleaned after local main integration; rollback ref: `refs/backup/local-main/20260610-014207-before-implement-project-moe-sessions-tab-design-refresh-20260609`.
+- [x] Pencil MCP was blocked by `transport not connected to app: trae_cn`; HTML fallback mockup and exported PNG are recorded under `docs_bilingual/designs/project_moe_sessions_tab/`.
 - [x] Focused toolchain tests passed: `python test\project_moe_gui_toolchain.test.py` reported 101/101 OK.
-- [x] Sessions visual render checks passed for default, long-content, and dense-sessions fixtures at `1180x720`, `1366x768`, and `1440x900`.
-- [ ] Stage B/C runtime package still needs local `main` integration and safe worktree cleanup.
-- [ ] Target A install and A preflight remain pending after B local `main` integration.
-- [ ] Remote publication is out of scope unless the user explicitly requests GitLab/GitHub publication.
+- [x] B-repository Sessions visual render checks passed for default, long-content, and dense-sessions fixtures at `1180x720`, `1366x768`, and `1440x900`.
+- [x] Target A install completed for `D:/PythonProject_paper_suggest`; managed install artifacts were committed in A local `main` at `8d1449f` with toolchain version `0.2.38`.
+- [x] Target A `project-moe-gui.cmd --preflight --json` passed with `token=ok`, Phase 1 readiness `ready`, QFluentWidgets import `ok`, and session count `5`.
+- [x] Target A Sessions visual render check passed at `1180x720`, `1366x768`, and `1440x900` with `token=ok`.
+- [x] Remote publication remains out of scope and was not performed.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -44,8 +46,9 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - [x] Create design-aid artifacts with Pencil or HTML fallback.
 - [x] Implement compact Sessions list, separated right-side controls, three MOE expert modules, and category/lens i18n.
 - [x] Validate focused tests and Sessions visual render checks in B.
-- [ ] Integrate the runtime package into B local `main` and clean the feature worktree.
-- [ ] Install the refreshed managed GUI artifacts into `D:/PythonProject_paper_suggest` and run target A preflight.
+- [x] Integrate the runtime package into B local `main` and clean the feature worktree.
+- [x] Install the refreshed managed GUI artifacts into `D:/PythonProject_paper_suggest` and run target A preflight.
+- [x] Run target A Sessions visual render validation for the installed GUI.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -53,16 +56,25 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 <!-- EVIDENCE_INDEX_START -->
 
 - Governance package local-main merge: `f1bbbefd31922eef729a6d414681df0bbf7212a8`.
+- Runtime local-main merge: `8dfe010f13118d3cd4b5aa78cc5869ca4e78bf57` (runtime implementation commit).
+- Runtime rollback ref: `refs/backup/local-main/20260610-014207-before-implement-project-moe-sessions-tab-design-refresh-20260609`.
+- Runtime cleanup evidence: completed claim `D:/PythonProject_langgraph/.omx/session-claims/completed/implement-project-moe-sessions-tab-design-refresh-20260609.json` records cleaned worktree and deleted branch.
 - Design fallback reason: `docs_bilingual/designs/project_moe_sessions_tab/fallback_reason.md`.
 - HTML mockup: `docs_bilingual/designs/project_moe_sessions_tab/sessions_tab_layout.html`.
 - HTML mockup screenshot: `docs_bilingual/designs/project_moe_sessions_tab/sessions_tab_layout.png`.
 - Pencil MCP blocker evidence: `get_editor_state(include_schema=true)` returned `transport not connected to app: trae_cn`.
 - Pencil CLI/npm evidence: `npm view '@pencil.dev/cli' name version --json` returned `@pencil.dev/cli` `0.2.7`; `htmltool2` package lookup returned npm `E404`.
 - Focused tests: `python test\project_moe_gui_toolchain.test.py` -> `Ran 101 tests ... OK`.
-- Sessions visual render checks:
+- B repository local gate: `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 600 -Json` passed in the runtime feature worktree before local integration and passed again in primary root after merge through `tools/complete_local_flow_to_remote_gate.py --execute`.
+- Sessions visual render checks in B:
   - default fixture: `python tools\project_moe_gui_toolchain\visual_render_check.py --view-model-json .tmp\project_moe_sessions_view_model.json --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` -> `token=ok`.
   - long-content fixture: same command with `--fixture-profile long-content` -> `token=ok`.
   - dense-sessions fixture: same command with `--fixture-profile dense-sessions` -> `token=ok`.
+- Target A install: `python .\tools\project_moe_gui_toolchain\update_project_moe_gui.py --target-project D:\PythonProject_paper_suggest --json` -> `token=ok`, target version `0.2.38`.
+- Target A managed install commit: `8d1449f` (Chinese commit message: upgrade paper Project MOE GUI to 0.2.38).
+- Target A preflight: `D:\PythonProject_paper_suggest\project-moe-gui.cmd --preflight --json` -> `token=ok`, `phase1_readiness_gate.readiness_status=ready`, `session_count.value=5`.
+- Target A Sessions visual render: `python tools\project_moe_gui_toolchain\visual_render_check.py --target-project D:\PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` -> `token=ok`.
+- Remote publication: not performed; B local `main` is intentionally ahead of `gitlab/main` until explicit remote publication approval.
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -117,10 +129,10 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - [x] Add or update tests for compact list text, detail block completeness, three expert modules, i18n labels, and tri-state linkage.
 - [x] Run focused Project MOE GUI tests and the full toolchain test suite as needed. Evidence: `python test\project_moe_gui_toolchain.test.py` returned 101/101 OK.
 - [x] Run Sessions visual render checks at `1180x720`, `1366x768`, and `1440x900` for default, long-content, and dense-sessions fixtures.
-- [ ] Install the updated toolchain into `D:/PythonProject_paper_suggest` after B local `main` integration.
-- [ ] Run A `project-moe-gui.cmd --preflight --json` and verify `token=ok` after install.
-- [ ] Confirm A still shows exactly the five real target-project sessions after install.
-- [ ] Commit A managed install artifacts with a Chinese commit message if A has managed artifact changes.
+- [x] Install the updated toolchain into `D:/PythonProject_paper_suggest` after B local `main` integration. Evidence: installer reported `token=ok` and target version `0.2.38`.
+- [x] Run A `project-moe-gui.cmd --preflight --json` and verify `token=ok` after install. Evidence: preflight returned `token=ok` and Phase 1 readiness `ready`.
+- [x] Confirm A still shows exactly the five real target-project sessions after install. Evidence: preflight `session_count.value=5`.
+- [x] Commit A managed install artifacts with a Chinese commit message after managed artifact changes. Evidence: A local commit `8d1449f` (Chinese commit message: upgrade paper Project MOE GUI to 0.2.38).
 
 ## 4. Acceptance Criteria
 
