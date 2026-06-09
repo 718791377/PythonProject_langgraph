@@ -2469,6 +2469,41 @@ def _product_enrich_session_row(row: dict[str, Any], lenses: list[dict[str, Any]
     return result
 
 
+def _merge_codex_discovery_into_registered_row(row: dict[str, Any], match: dict[str, Any] | None) -> dict[str, Any]:
+    """Merge authoritative Codex session identity fields into a registered MOE state row.
+
+    Project MOE state rows own control state such as enabled/disabled and lens selection.
+    Codex session discovery owns user-visible session identity such as directory,
+    created/updated timestamps, branch, and conversation preview.
+    """
+    if not isinstance(match, dict):
+        return dict(row)
+    conversation = match.get("conversation") if isinstance(match.get("conversation"), dict) else row.get("conversation")
+    if not isinstance(conversation, dict):
+        conversation = {}
+    created_at = match.get("created_at") or row.get("created_at")
+    updated_at = match.get("updated_at") or match.get("last_seen_at") or row.get("updated_at") or row.get("last_seen_at")
+    merged = {
+        **row,
+        "moe_state_created_at": row.get("created_at"),
+        "moe_state_updated_at": row.get("updated_at") or row.get("last_seen_at"),
+        "created_at": created_at,
+        "updated_at": updated_at,
+        "last_seen_at": updated_at,
+        "created_display": _display_timestamp(created_at),
+        "updated_display": _display_timestamp(updated_at),
+        "created_relative": _relative_timestamp(created_at),
+        "updated_relative": _relative_timestamp(updated_at),
+        "directory": match.get("directory") or match.get("cwd") or match.get("project_root") or row.get("directory"),
+        "branch": match.get("branch") or match.get("git_branch") or row.get("branch"),
+        "thread_source": match.get("thread_source") or row.get("thread_source") or "user",
+        "conversation": conversation,
+        "conversation_title": conversation.get("title") or row.get("conversation_title") or "",
+        "conversation_preview": conversation.get("preview") or row.get("conversation_preview") or "",
+    }
+    return merged
+
+
 def _reconcile_product_rows(
     rows: list[dict[str, Any]],
     discovery: dict[str, Any],
@@ -2493,8 +2528,9 @@ def _reconcile_product_rows(
         if match and match.get("session_id"):
             matched_ids.add(str(match.get("session_id")))
         row_origin = "registered-matched" if match else "state-only"
+        merged_row = _merge_codex_discovery_into_registered_row(row, match)
         reconciled = {
-            **row,
+            **merged_row,
             "row_origin": row_origin,
             "codex_mapping": {
                 "confidence": confidence,
@@ -2506,7 +2542,18 @@ def _reconcile_product_rows(
             "mapping_confidence": confidence,
         }
         if match or not discovery_authoritative:
-            result.append(reconciled)
+            result.append(
+                _product_enrich_session_row(
+                    reconciled,
+                    lenses,
+                    categories,
+                    why_shown=(
+                        "Displayed because target Project MOE state matched authoritative Codex session metadata for this project."
+                        if match
+                        else None
+                    ),
+                )
+            )
         else:
             supplemental_state_only_rows.append(
                 {

@@ -3222,6 +3222,16 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(table["row_origin_counts"]["visible_total"], 5)
             self.assertEqual(len(table["supplemental_state_only_rows"]), 3)
             self.assertNotIn("stale-state-1", {row["session_id"] for row in table["rows"]})
+            matched_by_id = {row["session_id"]: row for row in table["rows"]}
+            real_one_block = matched_by_id["real-session-1"]["session_display_block"]
+            self.assertEqual(matched_by_id["real-session-1"]["directory"], str(project))
+            self.assertEqual(matched_by_id["real-session-1"]["branch"], "main")
+            self.assertIn("2026-06-08", real_one_block["fields"]["Created"])
+            self.assertIn("2026-06-08", real_one_block["fields"]["Updated"])
+            self.assertEqual(real_one_block["fields"]["Directory"], str(project))
+            self.assertEqual(real_one_block["fields"]["Branch"], "main")
+            self.assertIn("Real conversation 1", real_one_block["fields"]["Conversation"])
+            self.assertIn("Visible project session.", real_one_block["fields"]["Conversation"])
 
     def test_gui_view_model_declares_ui_states_and_multi_project_status_panel(self) -> None:
         from project_moe_gui import TOOLCHAIN_VERSION, gui_shell
