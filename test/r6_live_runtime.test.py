@@ -103,6 +103,132 @@ class R6LiveRuntimeTests(unittest.TestCase):
         checked = self.run_checker(root, receipt, "browser-cli-adapter")
         self.assertTrue(checked["receipt_summary"]["r6_live_valid"], checked["errors"])
 
+    def test_env_file_live_action_mode_requires_external_proof_receipt(self) -> None:
+        root = self.make_root()
+        env_file = root / "r6-live.env"
+        env_file.write_text(
+            "\n".join(
+                [
+                    "R6_OPERATOR_AUTHORIZED=true",
+                    "R6_OWNER_LEASE=true",
+                    "R6_ROLLBACK_READY=true",
+                    "R6_CLEANUP_READY=true",
+                    "R6_BROWSER_TARGET_URL=https://example.invalid/r6-live",
+                    "R6_BROWSER_ACTION=snapshot",
+                    "R6_WXWORK_TARGET=official-wxwork-target",
+                    "R6_WXWORK_MESSAGE_TEMPLATE=official R6 live marker",
+                    "R6_HARNESS_CANDIDATE_ID=pi-runtime",
+                    "R6_HARNESS_JOB_PROFILE=bounded-read-only",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        for lane in ("browser-cli-adapter", "wxwork-cli", "codex-harnesses"):
+            with self.subTest(lane=lane):
+                payload = self.run_runtime(root, "run", "--lane", lane, "--mode", "live-action", "--env-file", str(env_file))
+                receipt = Path(payload["receipt_out"])
+                data = json.loads(receipt.read_text(encoding="utf-8"))
+                self.assertEqual(data["live_mode"], "blocked")
+                self.assertFalse(data["live_executed"])
+                self.assertTrue(any(str(item).startswith("external_execution_proof_missing") for item in data["execution_receipt"]["blockers"]))
+                self.assertFalse(payload["starts_browser_or_gui"])
+                self.assertFalse(payload["sends_external_message"])
+                self.assertFalse(payload["starts_harness_job"])
+
+    def test_live_action_mode_promotes_sensitive_lanes_with_redacted_external_proof(self) -> None:
+        root = self.make_root()
+        env_file = root / "r6-live.env"
+        env_file.write_text(
+            "\n".join(
+                [
+                    "R6_OPERATOR_AUTHORIZED=true",
+                    "R6_OWNER_LEASE=true",
+                    "R6_ROLLBACK_READY=true",
+                    "R6_CLEANUP_READY=true",
+                    "R6_BROWSER_TARGET_URL=https://example.invalid/r6-live",
+                    "R6_BROWSER_ACTION=snapshot",
+                    "R6_WXWORK_TARGET=official-wxwork-target",
+                    "R6_WXWORK_MESSAGE_TEMPLATE=official R6 live marker",
+                    "R6_HARNESS_CANDIDATE_ID=pi-runtime",
+                    "R6_HARNESS_JOB_PROFILE=bounded-read-only",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        proof_dir = root / "proofs"
+        proof_dir.mkdir()
+        proofs = {
+            "browser-cli-adapter": {
+                "external_side_effects": "browser_gui",
+                "action_performed": True,
+                "raw_browser_data_stored": False,
+                "browser_action_allowlisted": True,
+            },
+            "wxwork-cli": {
+                "external_side_effects": "external_message",
+                "action_performed": True,
+                "external_message_sent": True,
+                "message_body_hash": "message-hash-fixture",
+                "message_body_included": False,
+                "recipient_included": False,
+            },
+            "codex-harnesses": {
+                "external_side_effects": "harness_job",
+                "action_performed": True,
+                "read_guard": {"status": "pass"},
+                "write_guard": {"status": "pass"},
+                "isolated_worktree": {"status": "pass"},
+                "changed_paths_report": {"status": "pass", "paths": []},
+                "job_state": {"status": "pass"},
+                "no_codex_takeover": True,
+                "active_sidecar_took_over_codex": False,
+            },
+        }
+        flags = {
+            "browser-cli-adapter": "starts_browser_or_gui",
+            "wxwork-cli": "sends_external_message",
+            "codex-harnesses": "starts_harness_job",
+        }
+        for lane, proof in proofs.items():
+            with self.subTest(lane=lane):
+                proof_path = proof_dir / f"{lane}.json"
+                proof_path.write_text(json.dumps(proof, ensure_ascii=False), encoding="utf-8")
+                payload = self.run_runtime(root, "run", "--lane", lane, "--mode", "live-action", "--env-file", str(env_file), "--proof-receipt", str(proof_path))
+                receipt = Path(payload["receipt_out"])
+                data = json.loads(receipt.read_text(encoding="utf-8"))
+                self.assertEqual(data["live_mode"], "live-executed")
+                self.assertTrue(data["live_executed"])
+                self.assertIn("external_execution_proof_hash", data["execution_receipt"])
+                self.assertTrue(payload[flags[lane]])
+                output = json.dumps(data, ensure_ascii=False)
+                self.assertNotIn("official-wxwork-target", output)
+                self.assertNotIn("official R6 live marker", output)
+                self.assertNotIn("https://example.invalid/r6-live", output)
+                self.assertNotIn(str(proof_path), output)
+                self.run_checker(root, receipt, lane)
+
+    def test_stop_slop_user_level_install_rejects_native_codex_roots(self) -> None:
+        root = self.make_root()
+        native_root = root / "AppData" / "Roaming" / "npm"
+        native_root.mkdir(parents=True)
+        (native_root / "codex.ps1").write_text("# native codex launcher fixture\n", encoding="utf-8")
+        env = {
+            "R6_OPERATOR_AUTHORIZED": "true",
+            "R6_OWNER_LEASE": "true",
+            "R6_ROLLBACK_READY": "true",
+            "R6_CLEANUP_READY": "true",
+            "R6_USER_LEVEL_INSTALL_ROOT": str(native_root),
+        }
+        payload = self.run_runtime(root, "run", "--lane", "stop-slop-caveman", "--mode", "user-level-install", env=env)
+        receipt = Path(payload["receipt_out"])
+        data = json.loads(receipt.read_text(encoding="utf-8"))
+        self.assertEqual(data["live_mode"], "blocked")
+        self.assertFalse(data["live_executed"])
+        self.assertIn("install_root_must_not_target_native_codex_surface", data["execution_receipt"]["blockers"])
+        self.assertFalse((native_root / "r6-live-runtime").exists())
+
     def test_spec_kit_sandbox_apply_creates_only_generated_sandbox_and_receipt(self) -> None:
         root = self.make_root()
         env = {

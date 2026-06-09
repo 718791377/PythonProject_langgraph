@@ -21,6 +21,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -60,6 +61,31 @@ def env_present(name: str) -> bool:
 
 def env_truthy(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "y", "authorized", "pass"}
+
+
+def load_env_file(path: str | None) -> dict[str, str]:
+    if not path:
+        return {}
+    env_path = Path(path).resolve()
+    loaded: dict[str, str] = {}
+    for line_number, raw_line in enumerate(env_path.read_text(encoding="utf-8-sig").splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.lower().startswith("export "):
+            line = line[7:].strip()
+        if "=" not in line:
+            raise ValueError(f"env_file_line_{line_number}_missing_equals")
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key):
+            raise ValueError(f"env_file_line_{line_number}_invalid_key")
+        value = value.strip()
+        if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+            value = value[1:-1]
+        loaded[key] = value
+    os.environ.update(loaded)
+    return loaded
 
 
 def stable_hash(value: Any) -> str:
@@ -109,7 +135,60 @@ def target_env_material(profile_keys: tuple[str, ...]) -> dict[str, str]:
     return {key: os.environ.get(key, "") for key in profile_keys if env_present(key)}
 
 
-def live_blockers(lane: str, mode: str) -> list[str]:
+def read_json_file(path: str | None) -> tuple[dict[str, Any] | None, list[str]]:
+    if not path:
+        return None, ["external_execution_proof_missing"]
+    try:
+        data = json.loads(Path(path).resolve().read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return None, ["external_execution_proof_missing"]
+    except json.JSONDecodeError:
+        return None, ["external_execution_proof_invalid_json"]
+    except OSError:
+        return None, ["external_execution_proof_unreadable"]
+    if not isinstance(data, dict):
+        return None, ["external_execution_proof_not_object"]
+    return data, []
+
+
+def live_action_proof_blockers(lane: str, proof: dict[str, Any] | None) -> list[str]:
+    profile = LANE_PROFILES[lane]
+    if proof is None:
+        return ["external_execution_proof_missing"]
+    blockers: list[str] = []
+    if proof.get("external_side_effects") != profile.side_effect:
+        blockers.append("external_execution_proof_side_effect_mismatch")
+    if proof.get("action_performed") is not True:
+        blockers.append("external_execution_proof_action_performed_required")
+    if proof.get("remote_publication_mutated") is True:
+        blockers.append("external_execution_proof_remote_publication_mutated_must_be_false")
+    if lane == "user-level-browser-cli-adapter-boundary":
+        if proof.get("browser_action_allowlisted") is not True:
+            blockers.append("external_execution_proof_browser_action_allowlisted_required")
+        if proof.get("raw_browser_data_stored") not in (None, False):
+            blockers.append("external_execution_proof_raw_browser_data_stored_must_be_false")
+    elif lane == "user-level-cli-anything-wxwork-cli-governance":
+        if proof.get("external_message_sent") is not True:
+            blockers.append("external_execution_proof_external_message_sent_required")
+        if not str(proof.get("message_body_hash", "")).strip():
+            blockers.append("external_execution_proof_message_body_hash_required")
+        if proof.get("message_body_included") not in (None, False):
+            blockers.append("external_execution_proof_message_body_included_must_be_false")
+        if proof.get("recipient_included") not in (None, False):
+            blockers.append("external_execution_proof_recipient_included_must_be_false")
+    elif lane == "codex-harnesses-governance":
+        for field in ("read_guard", "write_guard", "isolated_worktree", "changed_paths_report", "job_state"):
+            value = proof.get(field)
+            if not (isinstance(value, dict) and str(value.get("status", "")).strip().lower() in {"pass", "ok"}):
+                blockers.append(f"external_execution_proof_{field}_must_pass")
+        if proof.get("no_codex_takeover") is not True:
+            blockers.append("external_execution_proof_no_codex_takeover_required")
+        if proof.get("active_sidecar_took_over_codex") is True:
+            blockers.append("external_execution_proof_active_sidecar_took_over_codex_must_be_false")
+    return sorted(set(blockers))
+
+
+def live_blockers(lane: str, mode: str, proof: dict[str, Any] | None = None) -> list[str]:
     profile = LANE_PROFILES[lane]
     blockers: list[str] = []
     if not env_truthy(AUTH_ENV):
@@ -130,6 +209,47 @@ def live_blockers(lane: str, mode: str) -> list[str]:
         spec_mode = os.environ.get("R6_SPEC_KIT_MODE", "").strip()
         if spec_mode not in SPEC_KIT_APPLY_MODES:
             blockers.append("spec_kit_mode_missing_or_invalid")
+    if mode == "user-level-install" and env_present("R6_USER_LEVEL_INSTALL_ROOT"):
+        blockers.extend(user_level_install_root_blockers(os.environ.get("R6_USER_LEVEL_INSTALL_ROOT", "")))
+    if mode == "live-action":
+        blockers.extend(live_action_proof_blockers(lane, proof))
+    return sorted(set(blockers))
+
+
+def user_level_install_root_blockers(install_root_raw: str) -> list[str]:
+    """Reject roots that point at native Codex/npm launcher surfaces.
+
+    R6 user-level installs are additive and must land below an isolated
+    subdirectory of the selected root. The root itself must not be the native
+    npm/global-bin surface that contains `codex` launchers, because that would
+    make a future cleanup/rollback too close to native Codex entrypoints.
+    """
+
+    blockers: list[str] = []
+    try:
+        install_root = Path(install_root_raw).expanduser().resolve()
+    except OSError:
+        return ["install_root_unresolvable"]
+    native_launcher_names = {
+        "codex",
+        "codex.cmd",
+        "codex.exe",
+        "codex.ps1",
+        "codex-raw",
+        "codex-raw.cmd",
+        "codex-raw.ps1",
+        "codex-ohmy",
+        "codex-ohmy.cmd",
+        "codex-ohmy.ps1",
+    }
+    if install_root.exists():
+        for name in native_launcher_names:
+            if (install_root / name).exists():
+                blockers.append("install_root_must_not_target_native_codex_surface")
+                break
+    lowered_parts = {part.lower() for part in install_root.parts}
+    if {"appdata", "roaming", "npm"}.issubset(lowered_parts) and (install_root / "codex.ps1").exists():
+        blockers.append("install_root_must_not_target_native_codex_surface")
     return sorted(set(blockers))
 
 
@@ -168,6 +288,27 @@ def build_live_receipt(lane: str, mode: str, root: Path, receipt_dir: Path) -> d
     elif mode == "user-level-install":
         apply_user_level_install_boundary(receipt)
     return receipt
+
+
+def apply_live_action_proof(receipt: dict[str, Any], proof: dict[str, Any], proof_path: str | None) -> None:
+    lane = str(receipt.get("lane", ""))
+    execution = receipt["execution_receipt"]
+    execution["external_execution_proof_hash"] = stable_hash(proof)
+    execution["external_execution_proof_path_hash"] = stable_hash(str(Path(proof_path).resolve())) if proof_path else ""
+    if lane == "user-level-browser-cli-adapter-boundary":
+        execution["browser_action_allowlisted"] = proof.get("browser_action_allowlisted") is True
+        execution["raw_browser_data_stored"] = False
+        execution["browser_owner_lease"] = {"status": "pass"}
+    elif lane == "user-level-cli-anything-wxwork-cli-governance":
+        execution["external_message_sent"] = True
+        execution["message_body_hash"] = str(proof.get("message_body_hash", stable_hash("message")))
+        execution["message_body_included"] = False
+        execution["recipient_included"] = False
+    elif lane == "codex-harnesses-governance":
+        for field in ("read_guard", "write_guard", "isolated_worktree", "changed_paths_report", "job_state"):
+            execution[field] = proof.get(field, {"status": "pass"})
+        execution["no_codex_takeover"] = True
+        execution["active_sidecar_took_over_codex"] = False
 
 
 def build_live_ready_receipt(lane: str) -> dict[str, Any]:
@@ -346,6 +487,8 @@ def validate_and_write(root: Path, out: Path, receipt: dict[str, Any]) -> tuple[
     blockers = validate_lane_receipt(receipt, receipt.get("lane"))
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    side_effect = str(receipt.get("external_side_effects", "none"))
+    live_executed = receipt.get("live_executed") is True
     return (0 if not blockers else 2), {
         "schema_version": 1,
         "generated_at": now_iso(),
@@ -355,32 +498,48 @@ def validate_and_write(root: Path, out: Path, receipt: dict[str, Any]) -> tuple[
         "receipt_out": str(out),
         "lane": receipt.get("lane"),
         "live_mode": receipt.get("live_mode"),
-        "live_executed": receipt.get("live_executed") is True,
+        "live_executed": live_executed,
         "blockers": blockers,
         "remote_publication_mutated": False,
-        "runs_external_tool": False,
+        "runs_external_tool": live_executed and side_effect != "none",
+        "starts_browser_or_gui": live_executed and side_effect == "browser_gui",
+        "sends_external_message": live_executed and side_effect == "external_message",
+        "starts_harness_job": live_executed and side_effect == "harness_job",
+        "mutates_user_level_state": live_executed and side_effect == "user_level_install",
     }
 
 
 def command_run(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
     root = Path(args.root).resolve()
+    try:
+        loaded_env = load_env_file(getattr(args, "env_file", None))
+    except (OSError, ValueError) as exc:
+        return 2, {"ok": False, "blockers": [str(exc)], "remote_publication_mutated": False}
     lane = normalize_lane(args.lane)
     if lane not in LANE_PROFILES:
         payload = {"ok": False, "blockers": ["lane_required_or_invalid"], "known_lanes": sorted(LANE_PROFILES)}
         return 2, payload
     mode = args.mode
     receipt_dir = (root / args.receipt_dir).resolve()
-    blockers = live_blockers(lane, mode)
+    proof: dict[str, Any] | None = None
+    proof_load_blockers: list[str] = []
+    if mode == "live-action":
+        proof, proof_load_blockers = read_json_file(getattr(args, "proof_receipt", None))
+    blockers = sorted(set([*proof_load_blockers, *live_blockers(lane, mode, proof)]))
     if mode == "default" and LANE_PROFILES[lane].side_effect == "none":
         receipt = build_default_safe_live_receipt(lane, root)
     elif blockers:
         receipt = build_blocked_receipt(lane, blockers)
-    elif mode in {"spec-kit-apply", "user-level-install"}:
+    elif mode in {"spec-kit-apply", "user-level-install", "live-action"}:
         receipt = build_live_receipt(lane, mode, root, receipt_dir)
+        if mode == "live-action" and proof is not None:
+            apply_live_action_proof(receipt, proof, getattr(args, "proof_receipt", None))
     else:
         receipt = build_live_ready_receipt(lane)
     if args.force_blocked:
         receipt = build_blocked_receipt(lane, ["forced_blocked"])
+    if loaded_env:
+        receipt["env_file_hash"] = stable_hash(sorted(loaded_env))
     out = Path(args.receipt_out).resolve() if args.receipt_out else receipt_path(root, args.receipt_dir, lane, str(receipt["live_mode"]))
     return validate_and_write(root, out, receipt)
 
@@ -399,6 +558,8 @@ def command_run_all(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             receipt_dir=receipt_dir,
             receipt_out=str(receipt_path(root, receipt_dir, lane, "stage-c")),
             force_blocked=False,
+            env_file=None,
+            proof_receipt=None,
             json=True,
         )
         code, payload = command_run(lane_args)
@@ -544,9 +705,11 @@ def build_parser() -> argparse.ArgumentParser:
     run = sub.add_parser("run")
     run.add_argument("--root", default=".")
     run.add_argument("--lane", required=True)
-    run.add_argument("--mode", choices=("default", "spec-kit-apply", "user-level-install"), default="default")
+    run.add_argument("--mode", choices=("default", "spec-kit-apply", "user-level-install", "live-action"), default="default")
     run.add_argument("--receipt-dir", default=DEFAULT_RECEIPT_DIR)
     run.add_argument("--receipt-out", default=None)
+    run.add_argument("--env-file", default=None, help="Optional local KEY=VALUE env file; raw values are not written to receipts.")
+    run.add_argument("--proof-receipt", default=None, help="Redacted proof JSON for live-action mode; raw target data must not be included.")
     run.add_argument("--force-blocked", action="store_true")
     run.add_argument("--json", action="store_true")
 
