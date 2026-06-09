@@ -607,31 +607,31 @@ ApplicationWindow {
                                                 elide: Text.ElideRight
                                             }
                                             Label {
-                                                text: "| Session:    " + (modelData.visible_session_id || modelData.session_id || "")
+                                                text: "| " + (((modelData.session_display_block || {}).lines || [])[0] || ("Session:    " + (modelData.visible_session_id || modelData.session_id || "")))
                                                 Layout.fillWidth: true
                                                 color: darkMode ? "#cbd5e1" : "#475569"
                                                 elide: Text.ElideMiddle
                                             }
                                             Label {
-                                                text: "| Created:    " + (modelData.created_relative || "") + " - " + (modelData.created_display || modelData.created_at || "")
+                                                text: "| " + (((modelData.session_display_block || {}).lines || [])[1] || ("Created:    " + (modelData.created_relative || "") + " - " + (modelData.created_display || modelData.created_at || "")))
                                                 Layout.fillWidth: true
                                                 color: darkMode ? "#cbd5e1" : "#475569"
                                                 elide: Text.ElideRight
                                             }
                                             Label {
-                                                text: "| Updated:    " + (modelData.updated_relative || "") + " - " + (modelData.updated_display || modelData.updated_at || modelData.last_seen_at || "")
+                                                text: "| " + (((modelData.session_display_block || {}).lines || [])[2] || ("Updated:    " + (modelData.updated_relative || "") + " - " + (modelData.updated_display || modelData.updated_at || modelData.last_seen_at || "")))
                                                 Layout.fillWidth: true
                                                 color: darkMode ? "#cbd5e1" : "#475569"
                                                 elide: Text.ElideRight
                                             }
                                             Label {
-                                                text: "| Directory:  " + (modelData.directory || "")
+                                                text: "| " + (((modelData.session_display_block || {}).lines || [])[3] || ("Directory:  " + (modelData.directory || "")))
                                                 Layout.fillWidth: true
                                                 color: darkMode ? "#cbd5e1" : "#475569"
                                                 elide: Text.ElideMiddle
                                             }
                                             Label {
-                                                text: "| Branch:     " + (modelData.branch || "unknown") + "    | State: " + (modelData.label || "unknown") + "    | Lenses: " + (modelData.lens_selection_summary || "All lenses")
+                                                text: "| " + (((modelData.session_display_block || {}).lines || [])[4] || ("Branch:     " + (modelData.branch || "unknown"))) + "    | State: " + (modelData.label || "unknown")
                                                 Layout.fillWidth: true
                                                 color: darkMode ? "#cbd5e1" : "#475569"
                                                 elide: Text.ElideRight
@@ -642,7 +642,7 @@ ApplicationWindow {
                                                 color: darkMode ? "#cbd5e1" : "#475569"
                                             }
                                             Label {
-                                                text: "| " + (modelData.conversation_preview || "(no preview)")
+                                                text: "| " + ((((modelData.session_display_block || {}).fields || {}).Conversation) || modelData.conversation_preview || "(no preview)")
                                                 Layout.fillWidth: true
                                                 Layout.fillHeight: true
                                                 color: darkMode ? "#e2e8f0" : "#334155"

@@ -20,6 +20,12 @@ SECTION_REQUIRED_TEXT = {
     "sessions": [
         "Sessions",
         "Session list",
+        "Session:",
+        "Created:",
+        "Updated:",
+        "Directory:",
+        "Branch:",
+        "Conversation:",
         "Session MOE lenses",
         "Enable session MOE",
         "Disable session MOE",
@@ -108,6 +114,26 @@ def _copy_jsonable(value: Any) -> Any:
     return json.loads(json.dumps(value, ensure_ascii=False))
 
 
+def _fixture_session_display_block(row: dict[str, Any]) -> dict[str, Any]:
+    conversation = row.get("conversation") if isinstance(row.get("conversation"), dict) else {}
+    title = str(conversation.get("title") or row.get("conversation_title") or "")
+    preview = str(conversation.get("preview") or row.get("conversation_preview") or "")
+    conversation_text = preview or title
+    if title and preview and title != preview:
+        conversation_text = f"{title}\n{preview}"
+    fields = {
+        "Session": str(row.get("visible_session_id") or row.get("full_session_id") or row.get("session_id") or row.get("display_id") or ""),
+        "Created": str(row.get("created_display") or row.get("created_at") or ""),
+        "Updated": str(row.get("updated_display") or row.get("updated_at") or row.get("last_seen_at") or ""),
+        "Directory": str(row.get("directory") or ""),
+        "Branch": str(row.get("branch") or "unknown"),
+        "Conversation": conversation_text,
+    }
+    labels = ["Session", "Created", "Updated", "Directory", "Branch", "Conversation"]
+    lines = [f"{label}: {fields[label]}" for label in labels]
+    return {"schema_version": SCHEMA_VERSION, "labels": labels, "fields": fields, "lines": lines, "text": "\n".join(lines)}
+
+
 def _fixture_session(index: int, *, long_content: bool = False) -> dict[str, Any]:
     suffix = f"{index:02d}"
     session_id = f"session-fixture-{suffix}-abcdef1234567890"
@@ -115,16 +141,35 @@ def _fixture_session(index: int, *, long_content: bool = False) -> dict[str, Any
     if long_content:
         display_id = "session-fixture-with-extra-long-display-name-for-visual-overflow-regression-" + suffix
         lens_summary = "lenses=" + ", ".join([f"very_long_lens_identifier_{item}_{suffix}" for item in range(4)])
+        directory = "D:/target/projects/project-moe-gui-visual-regression-with-a-very-long-session-directory-name/" + suffix
+        conversation_title = "Long session title used to verify wrapping and eliding in the Sessions card " + suffix
+        conversation_preview = "Conversation preview stays inside the card while preserving the required Conversation label for visual checks. " + ("detail " * 18) + suffix
     else:
         display_id = f"session-fixture-{suffix}"
         lens_summary = "All lenses" if index % 3 else "lenses=blind_review,aigc_risk"
-    return {
+        directory = "D:/target/project-moe-gui-dense-fixture"
+        conversation_title = f"Fixture task brief {suffix}"
+        conversation_preview = f"Fixture conversation preview {suffix}"
+    row = {
         "row_index": index,
         "valid": index % 7 != 0,
         "token": "ok" if index % 7 != 0 else "invalid_json",
         "message": "ok" if index % 7 != 0 else "Invalid fixture session record for visual gate.",
         "session_id": session_id,
         "display_id": display_id,
+        "visible_session_id": session_id,
+        "full_session_id": session_id,
+        "created_at": f"2026-06-06T{index % 24:02d}:00:00+00:00",
+        "created_display": f"2026-06-06 {index % 24:02d}:00:00",
+        "created_relative": f"{index + 1}d ago",
+        "updated_at": f"2026-06-07T{index % 24:02d}:00:00+00:00",
+        "updated_display": f"2026-06-07 {index % 24:02d}:00:00",
+        "updated_relative": f"{index + 2}h ago",
+        "directory": directory,
+        "branch": "main",
+        "conversation": {"title": conversation_title, "preview": conversation_preview, "message_counts": {"user": 1, "assistant": 1}},
+        "conversation_title": conversation_title,
+        "conversation_preview": conversation_preview,
         "enabled": index % 2 == 0,
         "label": label,
         "source": "manual-session" if index % 2 == 0 else "project-propagated",
@@ -142,6 +187,9 @@ def _fixture_session(index: int, *, long_content: bool = False) -> dict[str, Any
             "high_contrast_text": f"Session {display_id}: {label}; lenses: {lens_summary}",
         },
     }
+    row["session_display_block"] = _fixture_session_display_block(row)
+    row["session_display_lines"] = row["session_display_block"]["lines"]
+    return row
 
 
 def _fixture_lens(index: int, *, long_content: bool = False) -> dict[str, Any]:

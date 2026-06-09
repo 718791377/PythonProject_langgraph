@@ -1354,6 +1354,45 @@ def build_project_default_card(
     }
 
 
+def build_session_display_block(row: dict[str, Any]) -> dict[str, Any]:
+    """Build the stable Sessions-tab identity block shared by model, Widgets, and QML."""
+    conversation = row.get("conversation") if isinstance(row.get("conversation"), dict) else {}
+    session_value = str(row.get("visible_session_id") or row.get("full_session_id") or row.get("session_id") or row.get("display_id") or "")
+    created_value = str(row.get("created_display") or row.get("created_at") or "")
+    if row.get("created_relative") and created_value:
+        created_value = f"{row.get('created_relative')} - {created_value}"
+    elif row.get("created_relative"):
+        created_value = str(row.get("created_relative"))
+    updated_value = str(row.get("updated_display") or row.get("updated_at") or row.get("last_seen_at") or "")
+    if row.get("updated_relative") and updated_value:
+        updated_value = f"{row.get('updated_relative')} - {updated_value}"
+    elif row.get("updated_relative"):
+        updated_value = str(row.get("updated_relative"))
+    branch_value = str(row.get("branch") or "unknown")
+    title = str(conversation.get("title") or row.get("conversation_title") or "")
+    preview = str(conversation.get("preview") or row.get("conversation_preview") or "")
+    conversation_value = preview or title
+    if title and preview and title != preview:
+        conversation_value = f"{title}\n{preview}"
+    fields = {
+        "Session": session_value,
+        "Created": created_value,
+        "Updated": updated_value,
+        "Directory": str(row.get("directory") or ""),
+        "Branch": branch_value,
+        "Conversation": short_text(conversation_value, 800),
+    }
+    labels = ["Session", "Created", "Updated", "Directory", "Branch", "Conversation"]
+    lines = [f"{label}: {fields[label]}" for label in labels]
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "labels": labels,
+        "fields": fields,
+        "lines": lines,
+        "text": "\n".join(lines),
+    }
+
+
 def normalize_session_row(
     config: dict[str, Any],
     row: Any,
@@ -1466,6 +1505,8 @@ def normalize_session_row(
     }
     result["effective_state_explanation"] = session_effective_state_explanation(result, project_default_enabled)
     result["override_conflict_hint"] = override_conflict_hint(result, project_default_enabled)
+    result["session_display_block"] = build_session_display_block(result)
+    result["session_display_lines"] = result["session_display_block"]["lines"]
     return result
 
 
@@ -2404,7 +2445,7 @@ def _product_enrich_session_row(row: dict[str, Any], lenses: list[dict[str, Any]
     selected_categories = string_list(row.get("selected_categories"))
     selection_model = _product_lens_selection_model(lenses, categories, selected_lenses, selected_categories)
     full_id = str(row.get("session_id") or "")
-    return {
+    result = {
         **row,
         "full_session_id": full_id,
         "visible_session_id": full_id or str(row.get("display_id") or ""),
@@ -2423,6 +2464,9 @@ def _product_enrich_session_row(row: dict[str, Any], lenses: list[dict[str, Any]
         "effective_lenses": selection_model.get("effective_lenses", []),
         "effective_lens_count": selection_model.get("effective_lens_count", 0),
     }
+    result["session_display_block"] = build_session_display_block(result)
+    result["session_display_lines"] = result["session_display_block"]["lines"]
+    return result
 
 
 def _reconcile_product_rows(
@@ -3184,24 +3228,13 @@ def create_product_widget_window(
                     continue
                 self._filtered_rows.append(row)
                 title = str(conversation.get("title") or row.get("conversation_title") or full_id)
-                preview = str(conversation.get("preview") or row.get("conversation_preview") or "")
+                block = row.get("session_display_block") if isinstance(row.get("session_display_block"), dict) else build_session_display_block(row)
+                lines = list(block.get("lines") or [])
                 item = QListWidgetItem(
                     f"{row.get('updated_relative') or row.get('updated_at') or row.get('last_seen_at') or ''}     {short_text(title, 120)}\n"
-                    f"Session: {full_id}\n"
-                    f"Created: {row.get('created_relative') or ''} - {row.get('created_display') or row.get('created_at') or ''}\n"
-                    f"Updated: {row.get('updated_relative') or ''} - {row.get('updated_display') or row.get('updated_at') or row.get('last_seen_at') or ''}\n"
-                    f"Directory: {row.get('directory') or ''}\n"
-                    f"Branch: {row.get('branch') or 'unknown'} | State: {row.get('label')} | {row.get('mapping_confidence', 'unmatched')}\n"
-                    f"Conversation: {short_text(preview, 180)}"
+                    + "\n".join(short_text(line, 220) for line in lines)
                 )
-                item.setToolTip(
-                    f"Session: {full_id}\n"
-                    f"Created: {row.get('created_relative') or ''} - {row.get('created_display') or row.get('created_at') or ''}\n"
-                    f"Updated: {row.get('updated_relative') or ''} - {row.get('updated_display') or row.get('updated_at') or row.get('last_seen_at') or ''}\n"
-                    f"Directory: {row.get('directory') or ''}\n"
-                    f"Branch: {row.get('branch') or 'unknown'}\n"
-                    f"Conversation:\n{preview}"
-                )
+                item.setToolTip(str(block.get("text") or ""))
                 self.session_list.addItem(item)
             if self._filtered_rows:
                 self.session_list.setCurrentRow(0)
@@ -3215,17 +3248,8 @@ def create_product_widget_window(
             row = self._current_session()
             if row is None:
                 return
-            conversation = row.get("conversation") if isinstance(row.get("conversation"), dict) else {}
-            self.session_title.setText(
-                "Session:\n"
-                f"  {row.get('visible_session_id') or row.get('session_id')}\n"
-                f"Created: {row.get('created_relative') or ''} - {row.get('created_display') or row.get('created_at') or ''}\n"
-                f"Updated: {row.get('updated_relative') or ''} - {row.get('updated_display') or row.get('updated_at') or row.get('last_seen_at') or ''}\n"
-                f"Directory: {row.get('directory') or ''}\n"
-                f"Branch: {row.get('branch') or 'unknown'}\n\n"
-                f"Conversation:\n{conversation.get('title') or row.get('conversation_title') or ''}\n\n"
-                f"{conversation.get('preview') or row.get('conversation_preview') or ''}"
-            )
+            block = row.get("session_display_block") if isinstance(row.get("session_display_block"), dict) else build_session_display_block(row)
+            self.session_title.setText(str(block.get("text") or ""))
             mapping = row.get("codex_mapping") or {}
             self.session_mapping.setText(f"Codex 映射置信度 / Codex mapping confidence: {mapping.get('confidence', row.get('mapping_confidence', 'unmatched'))} - {mapping.get('message', '')}")
             self.session_why.setText(f"显示原因 / Why shown: {row.get('why_shown')}")

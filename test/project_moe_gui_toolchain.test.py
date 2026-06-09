@@ -2380,6 +2380,56 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertTrue(discovery["privacy_policy"]["reads_message_bodies"])
             self.assertEqual(discovery["privacy_policy"]["message_body_scope"], "target_project_top_level_user_assistant_preview_only")
 
+
+    def test_gui_shell_session_rows_expose_structured_display_block(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            project = Path(tmp) / "target"
+            sessions_root = home / ".codex" / "sessions" / "2026" / "06" / "09"
+            sessions_root.mkdir(parents=True)
+            project.mkdir()
+            session_id = "019ea705-2e6f-7910-a975-7b55515bfef7"
+            user_text = "Strict advisor: inspect the paper directory for EI conference submission readiness."
+            assistant_text = "Final advisor opinion: the manuscript is structurally complete, but the evidence chain is incomplete."
+            lines = [
+                {
+                    "timestamp": "2026-06-09T00:00:00Z",
+                    "type": "session_meta",
+                    "payload": {"id": session_id, "timestamp": "2026-06-09T00:00:00Z", "cwd": str(project), "thread_source": "user", "git": {"branch": "main"}},
+                },
+                {"timestamp": "2026-06-09T00:00:05Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": user_text}]}},
+                {"timestamp": "2026-06-09T00:01:00Z", "type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": assistant_text}]}},
+            ]
+            (sessions_root / f"rollout-2026-06-09T00-00-00-{session_id}.jsonl").write_text("\n".join(json.dumps(item, ensure_ascii=False) for item in lines) + "\n", encoding="utf-8")
+
+            config = self.gui_config(project)
+            config["codex_sessions_root"] = str(home / ".codex" / "sessions")
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": False, "git_branch": "main"},
+                sessions_payload={"ok": True, "token": "ok", "sessions": []},
+                status_payload={"ok": True, "token": "ok", "effective_enabled": False},
+                pyside6_available=False,
+            )
+
+            row = view_model["session_table"]["rows"][0]
+            block = row["session_display_block"]
+            self.assertEqual(block["labels"], ["Session", "Created", "Updated", "Directory", "Branch", "Conversation"])
+            self.assertEqual(block["fields"]["Session"], session_id)
+            self.assertIn("2026-06-09", block["fields"]["Created"])
+            self.assertIn("2026-06-09", block["fields"]["Updated"])
+            self.assertEqual(block["fields"]["Directory"], str(project.resolve()))
+            self.assertEqual(block["fields"]["Branch"], "main")
+            self.assertIn("Final advisor opinion", block["fields"]["Conversation"])
+            text_block = block["text"]
+            for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
+                self.assertIn(label, text_block)
+            self.assertEqual(row["session_display_lines"], block["lines"])
+            self.assertIn(user_text[:24], row["conversation_title"])
+            self.assertIn("Final advisor opinion", row["conversation_preview"])
+
     def test_runtime_view_model_uses_installed_target_project_root(self) -> None:
         from project_moe_gui import gui_shell
 
@@ -2804,6 +2854,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("no model execution", qml)
         self.assertIn("SectionCard", qml)
         self.assertIn("Session list", qml)
+        for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
+            self.assertIn(label, qml)
         self.assertGreaterEqual(qml.count("ScrollView"), 3)
         self.assertIn("columns: 2", qml)
         self.assertIn("Layout.preferredHeight: 198", qml)
@@ -2871,6 +2923,10 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertGreaterEqual(len(dense_vm["lens_catalog"]["lenses"]), 18)
         self.assertGreaterEqual(len(dense_vm["lens_catalog"]["categories"]), 8)
         self.assertEqual(dense_vm["fixture_profile"], "dense-sessions")
+        for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
+            self.assertIn(label, module.SECTION_REQUIRED_TEXT["sessions"])
+        self.assertTrue(all("session_display_block" in row for row in long_vm["session_table"]["rows"]))
+        self.assertTrue(any("Conversation:" in row["session_display_block"]["text"] for row in long_vm["session_table"]["rows"]))
 
     def test_visual_render_check_detects_visible_text_overflow(self) -> None:
         import importlib.util
