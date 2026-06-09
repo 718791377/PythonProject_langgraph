@@ -2423,12 +2423,109 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(block["fields"]["Directory"], str(project.resolve()))
             self.assertEqual(block["fields"]["Branch"], "main")
             self.assertIn("Final advisor opinion", block["fields"]["Conversation"])
+            compact = row["compact_list_text"]
+            self.assertIn("Strict advisor", compact)
+            for detail_label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
+                self.assertNotIn(detail_label, compact)
+
+    def test_gui_shell_default_moe_modules_and_i18n_labels_are_governed(self) -> None:
+        from project_moe_gui import gui_shell
+
+        lenses = gui_shell.normalize_lens_display_fields(list(gui_shell.DEFAULT_EXPERT_LENSES))
+        categories = gui_shell.normalize_expert_categories(None, lenses)
+        self.assertEqual(
+            [item["id"] for item in categories],
+            ["strict_graduate_advisor", "socratic_questioning", "five_classic_thinking_models"],
+        )
+        lens_ids = {item["id"] for item in lenses}
+        for category in categories:
+            self.assertTrue(set(category["lens_ids"]).issubset(lens_ids), category)
+
+        model = gui_shell._product_lens_selection_model(
+            lenses,
+            categories,
+            selected_lenses=["blind_review"],
+            selected_categories=[],
+            language="bilingual",
+        )
+        by_id = {item["id"]: item for item in model["categories"]}
+        self.assertEqual(by_id["strict_graduate_advisor"]["check_state"], "partial")
+        self.assertEqual(by_id["socratic_questioning"]["check_state"], "unchecked")
+        self.assertIn("严苛的研究生导师专家模块", by_id["strict_graduate_advisor"]["display_label"])
+        self.assertIn("Strict Graduate Advisor Module", by_id["strict_graduate_advisor"]["display_label"])
+
+        checked_model = gui_shell._product_lens_selection_model(
+            lenses,
+            categories,
+            selected_lenses=[],
+            selected_categories=["socratic_questioning"],
+            language="zh",
+        )
+        checked_by_id = {item["id"]: item for item in checked_model["categories"]}
+        self.assertEqual(checked_by_id["socratic_questioning"]["check_state"], "checked")
+        self.assertEqual(checked_by_id["socratic_questioning"]["display_label"], "认知行为式提问专家模块")
+        self.assertEqual(checked_model["mode"], "selected")
+
+        english_model = gui_shell._product_lens_selection_model(
+            lenses,
+            categories,
+            selected_lenses=[],
+            selected_categories=[],
+            language="en",
+        )
+        self.assertEqual(english_model["mode"], "all")
+        self.assertEqual(english_model["categories"][0]["display_label"], "Strict Graduate Advisor Module")
+        self.assertTrue(any(item["display_label"] == "Blind-review expert" for item in english_model["lenses"]))
+
+    def test_gui_view_model_declares_sessions_refresh_layout_contract(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"},
+                sessions_payload={
+                    "ok": True,
+                    "token": "ok",
+                    "sessions": [
+                        {
+                            "session_id": "session-1234567890abcdef",
+                            "enabled": True,
+                            "effective_enabled": True,
+                            "token": "ok",
+                            "valid": True,
+                            "conversation": {"title": "A concise visible session title", "preview": "Detailed preview stays on the right."},
+                        }
+                    ],
+                },
+                status_payload={"ok": True, "token": "ok", "effective_enabled": True},
+                pyside6_available=False,
+            )
+
+            contract = view_model["product_ui"]["sessions_layout_contract"]
+            self.assertEqual(contract["left_list"], "compact_one_line_rows_with_count")
+            self.assertEqual(contract["right_regions"], ["session_details_card", "moe_status_actions_card", "moe_category_lens_selection_card"])
+            self.assertTrue(contract["lens_selection_independent_scroll_area"])
+            self.assertTrue(contract["category_lens_i18n"])
+            self.assertTrue(contract["category_lens_tri_state_linkage"])
+            row = view_model["session_table"]["rows"][0]
+            self.assertIn("A concise visible session title", row["compact_list_text"])
+            self.assertIn("Session:", row["session_display_block"]["text"])
+            self.assertNotIn("Session:", row["compact_list_text"])
+            self.assertEqual(
+                [item["id"] for item in view_model["lens_catalog"]["categories"]],
+                ["strict_graduate_advisor", "socratic_questioning", "five_classic_thinking_models"],
+            )
+            block = row["session_display_block"]
             text_block = block["text"]
             for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
                 self.assertIn(label, text_block)
             self.assertEqual(row["session_display_lines"], block["lines"])
-            self.assertIn(user_text[:24], row["conversation_title"])
-            self.assertIn("Final advisor opinion", row["conversation_preview"])
+            self.assertIn("A concise visible session title", row["conversation_title"])
+            self.assertIn("Detailed preview stays on the right.", row["conversation_preview"])
 
     def test_runtime_view_model_uses_installed_target_project_root(self) -> None:
         from project_moe_gui import gui_shell
@@ -2894,6 +2991,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         spec.loader.exec_module(module)
 
         self.assertEqual(module.DEFAULT_VISUAL_SIZES, ((1180, 720), (1366, 768), (1440, 900)))
+        for required_text in ["Session details", "MOE status and actions", "MOE categories and lenses", "Strict Graduate Advisor Module", "Socratic Questioning Module", "Five Classic Thinking Models Module"]:
+            self.assertIn(required_text, module.SECTION_REQUIRED_TEXT["sessions"])
         parser = module.build_parser()
         args = parser.parse_args(["--view-model-json", "fixture.json", "--no-runtime-reexec", "--json"])
         self.assertEqual(module.normalized_sizes(args), module.DEFAULT_VISUAL_SIZES)
@@ -2916,12 +3015,13 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertGreater(len(long_vm["top_banner"]["project_root"]), 80)
         self.assertTrue(any(len(row["display_id"]) > 40 for row in long_vm["session_table"]["rows"]))
         self.assertTrue(any(len(lens["label"]) > 80 for lens in long_vm["lens_catalog"]["lenses"]))
-        self.assertTrue(any(len(category["label"]) > 60 for category in long_vm["lens_catalog"]["categories"]))
+        self.assertTrue(any(category["id"] == "strict_graduate_advisor" for category in long_vm["lens_catalog"]["categories"]))
 
         dense_vm = module.build_fixture_view_model("dense-sessions", base)
         self.assertGreaterEqual(len(dense_vm["session_table"]["rows"]), 24)
         self.assertGreaterEqual(len(dense_vm["lens_catalog"]["lenses"]), 18)
         self.assertGreaterEqual(len(dense_vm["lens_catalog"]["categories"]), 8)
+        self.assertEqual([category["id"] for category in dense_vm["lens_catalog"]["categories"][:3]], ["strict_graduate_advisor", "socratic_questioning", "five_classic_thinking_models"])
         self.assertEqual(dense_vm["fixture_profile"], "dense-sessions")
         for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
             self.assertIn(label, module.SECTION_REQUIRED_TEXT["sessions"])

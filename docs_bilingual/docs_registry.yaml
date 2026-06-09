@@ -482,6 +482,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/project_moe_gui_sessions_tab_design_refresh_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/project_moe_gui_sessions_tab_design_refresh_plan.zh-CN.md
 
+  - doc_id: project_moe_sessions_tab_design_fallback_reason
+    doc_class: design_evidence
+    status: active
+    canonical_path: docs_bilingual/designs/project_moe_sessions_tab/fallback_reason.md
+    zh_cn_path: docs_bilingual/designs/project_moe_sessions_tab/fallback_reason.zh-CN.md
+
 
   - doc_id: project_moe_gui_double_click_launch_repair_plan
     doc_class: implementation_plan

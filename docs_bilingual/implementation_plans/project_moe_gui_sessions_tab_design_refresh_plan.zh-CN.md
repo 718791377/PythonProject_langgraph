@@ -25,8 +25,13 @@ related_plans:
 ## 当前状态
 <!-- CURRENT_STATUS_START -->
 
-- [ ] 状态：active 治理包已起草；Stage A 仍需先合入本地 `main`，之后才能开始 runtime 实施。
-- [ ] Runtime 实施证据等待 Stage B/C/D 执行后补充。
+- [x] 状态：Stage A 治理包已合入本地 `main`，提交为 `f1bbbefd31922eef729a6d414681df0bbf7212a8`。
+- [x] Stage B/C runtime 实现已在 feature 分支 `implement-project-moe-sessions-tab-design-refresh-20260609` 完成。
+- [x] Pencil MCP 当前被 `transport not connected to app: trae_cn` 阻塞；HTML fallback 草图与导出 PNG 已记录到 `docs_bilingual/designs/project_moe_sessions_tab/`。
+- [x] Focused toolchain tests 已通过：`python test\project_moe_gui_toolchain.test.py` 返回 101/101 OK。
+- [x] Sessions 视觉渲染检查已覆盖 default、long-content、dense-sessions 三组夹具，以及 `1180x720`、`1366x768`、`1440x900` 三个尺寸。
+- [ ] Stage B/C runtime 包仍需合入本地 `main` 并安全清理 feature worktree。
+- [ ] A 目标项目安装与 A preflight 验证需在 B 本地 `main` 合入后执行。
 - [ ] 远端发布不在本计划范围内，除非用户明确要求 GitLab/GitHub 发布。
 
 <!-- CURRENT_STATUS_END -->
@@ -35,17 +40,29 @@ related_plans:
 <!-- TASK_BACKLOG_START -->
 
 - [x] 起草双语 implementation plan 并登记 registry。
-- [ ] 将治理包合入本地 `main`。
-- [ ] 使用 Pencil 或 HTML fallback 生成设计辅助产物。
-- [ ] 实现紧凑 Sessions 列表、右侧分区控制、三个 MOE 专家模块、category/lens i18n。
-- [ ] 完成测试、视觉渲染检查、A 项目安装与 A 项目 preflight 验证。
+- [x] 将治理包合入本地 `main`。
+- [x] 使用 Pencil 或 HTML fallback 生成设计辅助产物。
+- [x] 实现紧凑 Sessions 列表、右侧分区控制、三个 MOE 专家模块、category/lens i18n。
+- [x] 在 B 仓库完成 focused tests 与 Sessions 视觉渲染检查。
+- [ ] 将 runtime 包合入 B 本地 `main` 并清理 feature worktree。
+- [ ] 将刷新后的受管理 GUI 产物安装到 `D:/PythonProject_paper_suggest` 并运行 A preflight。
 
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
 <!-- EVIDENCE_INDEX_START -->
 
-- Pending implementation evidence is expected after Stage A local integration and Stage B/C/D execution.
+- 治理包本地 main 合入：`f1bbbefd31922eef729a6d414681df0bbf7212a8`。
+- 设计 fallback 原因：`docs_bilingual/designs/project_moe_sessions_tab/fallback_reason.md`。
+- HTML 草图：`docs_bilingual/designs/project_moe_sessions_tab/sessions_tab_layout.html`。
+- HTML 草图截图：`docs_bilingual/designs/project_moe_sessions_tab/sessions_tab_layout.png`。
+- Pencil MCP 阻塞证据：`get_editor_state(include_schema=true)` 返回 `transport not connected to app: trae_cn`。
+- Pencil CLI/npm 证据：`npm view '@pencil.dev/cli' name version --json` 返回 `@pencil.dev/cli` `0.2.7`；`htmltool2` 包查询返回 npm `E404`。
+- Focused tests：`python test\project_moe_gui_toolchain.test.py` -> `Ran 101 tests ... OK`。
+- Sessions 视觉渲染检查：
+  - default 夹具：`python tools\project_moe_gui_toolchain\visual_render_check.py --view-model-json .tmp\project_moe_sessions_view_model.json --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` -> `token=ok`。
+  - long-content 夹具：同命令改为 `--fixture-profile long-content` -> `token=ok`。
+  - dense-sessions 夹具：同命令改为 `--fixture-profile dense-sessions` -> `token=ok`。
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -74,36 +91,36 @@ related_plans:
 
 - [x] 新增本 active implementation_plan 的英文版和中文版。
 - [x] 在 `docs_bilingual/docs_registry.yaml` 注册本计划。
-- [ ] 在 runtime 实施前把 Stage A 治理包合入本地 `main`。
+- [x] 在 runtime 实施前把 Stage A 治理包合入本地 `main`。证据：`f1bbbefd31922eef729a6d414681df0bbf7212a8`。
 
 ### Stage B：设计辅助工具与设计稿产物
 
-- [ ] 验证 Pencil Desktop 进程或安装路径并记录证据。
-- [ ] 如本机未安装 Pencil CLI，则通过 npm 安装或记录无法安装的原因。
-- [ ] 尝试通过 Pencil MCP/CLI 生成设计稿并导出 PNG。
-- [ ] 如果 Pencil 不可用或未认证，生成 HTML/htmltool2 草图并记录 `fallback_reason`；该字段含义是解释 Pencil 未被使用原因的诊断文本，不会被 GUI runtime 消费。
-- [ ] 把设计稿和截图产物保存到 `docs_bilingual/designs/project_moe_sessions_tab/`。
+- [x] 验证 Pencil Desktop 进程或安装路径并记录证据。证据：Stage B 执行期间本机存在 `Pencil` 进程。
+- [x] 如本机未安装 Pencil CLI，则通过 npm 安装或记录无法安装的原因。证据：npm metadata 查询返回 `@pencil.dev/cli` 版本 `0.2.7`；HTML fallback 路径不要求全局 CLI 安装。
+- [x] 尝试通过 Pencil MCP/CLI 生成设计稿并导出 PNG。证据：Pencil MCP 返回 `transport not connected to app: trae_cn`，随后使用 HTML screenshot export 兜底。
+- [x] 如果 Pencil 不可用或未认证，生成 HTML/htmltool2 草图并记录 `fallback_reason`；该字段含义是解释 Pencil 未被使用原因的诊断文本，不会被 GUI runtime 消费。
+- [x] 把设计稿和截图产物保存到 `docs_bilingual/designs/project_moe_sessions_tab/`。
 
 ### Stage C：Runtime Sessions 页刷新
 
-- [ ] 将 Project MOE GUI toolchain version 从 `0.2.37` 升到下一个 patch 版本。
-- [ ] 左侧 session list 改为每个 session 一行的简洁摘要，并显示清晰的 session 总数。
-- [ ] `Session / Created / Updated / Directory / Branch / Conversation` 全量身份字段只保留在右侧详情卡。
-- [ ] 右侧拆分为会话详情、MOE 状态/操作、MOE 分类/镜头选择三个独立区域。
-- [ ] 镜头选择区独立滚动，并且不需要滚动整个详情区才能看到和操作。
-- [ ] 将 MOE 分类重组为三个用户指定的专家模块，同时保留现有 lens id。
-- [ ] 为 category/lens 增加中文、英文、中英对照显示标签。
-- [ ] 保留 category 到 lens、lens 到 category 的双向 tri-state 联动。
+- [x] 将 Project MOE GUI toolchain version 从 `0.2.37` 升到下一个 patch 版本：`0.2.38`。
+- [x] 左侧 session list 改为每个 session 一行的简洁摘要，并显示清晰的 session 总数。
+- [x] `Session / Created / Updated / Directory / Branch / Conversation` 全量身份字段只保留在右侧详情卡。
+- [x] 右侧拆分为会话详情、MOE 状态/操作、MOE 分类/镜头选择三个独立区域。
+- [x] 镜头选择区独立滚动，并且不需要滚动整个详情区才能看到和操作。
+- [x] 将 MOE 分类重组为三个用户指定的专家模块，同时保留现有 lens id。
+- [x] 为 category/lens 增加中文、英文、中英对照显示标签。
+- [x] 保留 category 到 lens、lens 到 category 的双向 tri-state 联动。
 
 ### Stage D：验证与 A 项目验收
 
-- [ ] 增加或更新测试，覆盖 compact list 文本、详情块完整性、三个专家模块、i18n 标签、tri-state 联动。
-- [ ] 运行 Project MOE GUI focused tests 和必要的完整 toolchain tests。
-- [ ] 对 Sessions 页运行 `1180x720`、`1366x768`、`1440x900` 视觉渲染检查。
-- [ ] 将更新后的 toolchain 安装到 `D:/PythonProject_paper_suggest`。
-- [ ] 运行 A 项目 `project-moe-gui.cmd --preflight --json` 并确认 `token=ok`。
-- [ ] 确认 A 项目仍只显示 5 个真实 target-project session。
-- [ ] 使用中文 commit message 提交 A 项目受管理安装产物。
+- [x] 增加或更新测试，覆盖 compact list 文本、详情块完整性、三个专家模块、i18n 标签、tri-state 联动。
+- [x] 运行 Project MOE GUI focused tests 和必要的完整 toolchain tests。证据：`python test\project_moe_gui_toolchain.test.py` 返回 101/101 OK。
+- [x] 对 Sessions 页运行 `1180x720`、`1366x768`、`1440x900` 视觉渲染检查，并覆盖 default、long-content、dense-sessions 三组夹具。
+- [ ] 在 B 本地 `main` 合入后，将更新后的 toolchain 安装到 `D:/PythonProject_paper_suggest`。
+- [ ] 安装后运行 A 项目 `project-moe-gui.cmd --preflight --json` 并确认 `token=ok`。
+- [ ] 安装后确认 A 项目仍只显示 5 个真实 target-project session。
+- [ ] 如 A 项目存在受管理安装产物变更，使用中文 commit message 提交。
 
 ## 4. 验收标准
 

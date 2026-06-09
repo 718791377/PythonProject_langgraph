@@ -20,13 +20,19 @@ SECTION_REQUIRED_TEXT = {
     "sessions": [
         "Sessions",
         "Session list",
+        "Session details",
         "Session:",
         "Created:",
         "Updated:",
         "Directory:",
         "Branch:",
         "Conversation:",
+        "MOE status and actions",
         "Session MOE lenses",
+        "MOE categories and lenses",
+        "Strict Graduate Advisor Module",
+        "Socratic Questioning Module",
+        "Five Classic Thinking Models Module",
         "Enable session MOE",
         "Disable session MOE",
         "Apply session lenses",
@@ -174,7 +180,7 @@ def _fixture_session(index: int, *, long_content: bool = False) -> dict[str, Any
         "label": label,
         "source": "manual-session" if index % 2 == 0 else "project-propagated",
         "selected_lenses": [] if index % 3 else ["blind_review", "aigc_risk"],
-        "selected_categories": [] if index % 4 else ["review"],
+        "selected_categories": [] if index % 4 else ["strict_graduate_advisor"],
         "effective_lens_mode": "all" if index % 3 else "selected",
         "lens_selection_scope": "session",
         "lens_selection_summary": lens_summary,
@@ -193,26 +199,65 @@ def _fixture_session(index: int, *, long_content: bool = False) -> dict[str, Any
 
 
 def _fixture_lens(index: int, *, long_content: bool = False) -> dict[str, Any]:
-    lens_id = f"fixture_lens_{index:02d}"
+    default_ids = [
+        "blind_review",
+        "advisor_interrogation",
+        "aigc_risk",
+        "novelty",
+        "literature_evidence",
+        "structure_expression",
+        "socratic_cbt",
+        "thinking_dispatcher",
+    ]
+    lens_id = default_ids[index] if index < len(default_ids) else f"fixture_lens_{index:02d}"
     if long_content:
         label = "Extremely long Project MOE expert lens label for visual regression and wrapping behavior " + str(index).zfill(2)
         description = "Long fixture lens description used to stress card, checkbox, and handoff preview rendering without reading private prompts."
     else:
         label = f"Fixture lens {index:02d}"
         description = "Fixture lens for visual render gate."
-    return {"id": lens_id, "label": label, "description": description, "category": f"category_{index % 8:02d}"}
+    zh_label = {
+        "blind_review": "盲审专家镜头",
+        "advisor_interrogation": "严苛导师追问镜头",
+        "aigc_risk": "AIGC / AI 味风险镜头",
+        "novelty": "创新性与差异化镜头",
+        "literature_evidence": "文献与证据链镜头",
+        "structure_expression": "结构与表达镜头",
+        "socratic_cbt": "认知行为式苏格拉底提问镜头",
+        "thinking_dispatcher": "五大经典思维模型调度镜头",
+    }.get(lens_id, label)
+    return {"id": lens_id, "label": label, "zh_label": zh_label, "en_label": label, "description": description, "category": f"category_{index % 8:02d}"}
 
 
 def _fixture_category(index: int, lens_count: int, *, long_content: bool = False) -> dict[str, Any]:
+    governed = [
+        (
+            "strict_graduate_advisor",
+            "Strict Graduate Advisor Module",
+            "严苛的研究生导师专家模块",
+            ["blind_review", "advisor_interrogation", "aigc_risk", "novelty", "literature_evidence", "structure_expression"],
+        ),
+        (
+            "socratic_questioning",
+            "Socratic Questioning Module",
+            "认知行为式提问专家模块",
+            ["socratic_cbt"],
+        ),
+        (
+            "five_classic_thinking_models",
+            "Five Classic Thinking Models Module",
+            "五大经典思维模型专家模块",
+            ["thinking_dispatcher"],
+        ),
+    ]
+    if index < len(governed):
+        category_id, label, zh_label, lens_ids = governed[index]
+        return {"id": category_id, "label": label, "zh_label": zh_label, "en_label": label, "description": "Fixture governed category for visual render gate.", "lens_ids": [item for item in lens_ids if item]}
     category_id = f"category_{index:02d}"
-    if long_content:
-        label = "Very long Project MOE expert category label for dense visual regression " + str(index).zfill(2)
-        description = "Long category description used by the visual fixture profile."
-    else:
-        label = f"Category {index:02d}"
-        description = "Fixture category for visual render gate."
+    label = ("Very long Project MOE expert category label for dense visual regression " + str(index).zfill(2)) if long_content else f"Category {index:02d}"
+    description = "Long category description used by the visual fixture profile." if long_content else "Fixture category for visual render gate."
     lens_ids = [f"fixture_lens_{item:02d}" for item in range(index, lens_count, max(1, min(8, lens_count)))]
-    return {"id": category_id, "label": label, "description": description, "lens_ids": lens_ids}
+    return {"id": category_id, "label": label, "zh_label": label, "en_label": label, "description": description, "lens_ids": lens_ids}
 
 
 def build_fixture_view_model(profile: str, view_model: dict[str, Any]) -> dict[str, Any]:
