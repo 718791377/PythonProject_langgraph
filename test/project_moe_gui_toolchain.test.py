@@ -3065,6 +3065,108 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertIn("wins over project default", first["override_conflict_hint"])
             self.assertIn("no-search-result", table["empty_state_variants"])
 
+    def test_gui_shell_session_table_hides_unmatched_state_only_rows_from_main_project_view(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            state_rows = [
+                {"session_id": "real-session-1", "enabled": True, "effective_enabled": True, "valid": True, "token": "ok", "source": "manual-session"},
+                {"session_id": "real-session-2", "enabled": False, "effective_enabled": False, "valid": True, "token": "ok", "source": "manual-session"},
+                {"session_id": "stale-state-1", "enabled": True, "effective_enabled": True, "valid": True, "token": "ok", "source": "manual-session"},
+                {"session_id": "stale-state-2", "enabled": True, "effective_enabled": True, "valid": True, "token": "ok", "source": "manual-session"},
+                {"session_id": "stale-state-3", "enabled": True, "effective_enabled": True, "valid": True, "token": "ok", "source": "manual-session"},
+            ]
+            discovered_rows = [
+                {
+                    "session_id": "real-session-1",
+                    "thread_id": "real-session-1",
+                    "created_at": "2026-06-08T01:00:00+00:00",
+                    "updated_at": "2026-06-08T02:00:00+00:00",
+                    "directory": str(project),
+                    "branch": "main",
+                    "thread_source": "user",
+                    "conversation": {"title": "Real conversation 1", "preview": "Visible project session."},
+                },
+                {
+                    "session_id": "real-session-2",
+                    "thread_id": "real-session-2",
+                    "created_at": "2026-06-08T03:00:00+00:00",
+                    "updated_at": "2026-06-08T04:00:00+00:00",
+                    "directory": str(project),
+                    "branch": "main",
+                    "thread_source": "user",
+                    "conversation": {"title": "Real conversation 2", "preview": "Visible project session."},
+                },
+                {
+                    "session_id": "discovered-session-3",
+                    "thread_id": "discovered-session-3",
+                    "created_at": "2026-06-08T05:00:00+00:00",
+                    "updated_at": "2026-06-08T06:00:00+00:00",
+                    "directory": str(project),
+                    "branch": "main",
+                    "thread_source": "user",
+                    "conversation": {"title": "Discovered conversation 3", "preview": "Visible project session."},
+                },
+                {
+                    "session_id": "discovered-session-4",
+                    "thread_id": "discovered-session-4",
+                    "created_at": "2026-06-08T07:00:00+00:00",
+                    "updated_at": "2026-06-08T08:00:00+00:00",
+                    "directory": str(project),
+                    "branch": "main",
+                    "thread_source": "user",
+                    "conversation": {"title": "Discovered conversation 4", "preview": "Visible project session."},
+                },
+                {
+                    "session_id": "discovered-session-5",
+                    "thread_id": "discovered-session-5",
+                    "created_at": "2026-06-08T09:00:00+00:00",
+                    "updated_at": "2026-06-08T10:00:00+00:00",
+                    "directory": str(project),
+                    "branch": "main",
+                    "thread_source": "user",
+                    "conversation": {"title": "Discovered conversation 5", "preview": "Visible project session."},
+                },
+            ]
+            original = gui_shell._safe_codex_session_index
+            gui_shell._safe_codex_session_index = lambda _config, _root: {
+                "schema_version": 1,
+                "ok": True,
+                "token": "ok",
+                "sessions": discovered_rows,
+                "count": len(discovered_rows),
+                "hidden_child_agent_sessions": 0,
+                "privacy_policy": {"authority": "fixture"},
+            }
+            try:
+                view_model = gui_shell.build_view_model(
+                    config,
+                    project_status={"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"},
+                    sessions_payload={"ok": True, "token": "ok", "sessions": state_rows},
+                    status_payload={"ok": True, "token": "ok", "effective_enabled": True},
+                    pyside6_available=False,
+                    project_root=project,
+                )
+            finally:
+                gui_shell._safe_codex_session_index = original
+
+            table = view_model["session_table"]
+            self.assertEqual(len(table["rows"]), 5)
+            self.assertEqual(
+                {row["session_id"] for row in table["rows"]},
+                {"real-session-1", "real-session-2", "discovered-session-3", "discovered-session-4", "discovered-session-5"},
+            )
+            self.assertEqual(table["row_origin_counts"]["registered_matched"], 2)
+            self.assertEqual(table["row_origin_counts"]["discovered_only"], 3)
+            self.assertEqual(table["row_origin_counts"]["state_only"], 3)
+            self.assertEqual(table["row_origin_counts"]["total"], 5)
+            self.assertEqual(table["row_origin_counts"]["visible_total"], 5)
+            self.assertEqual(len(table["supplemental_state_only_rows"]), 3)
+            self.assertNotIn("stale-state-1", {row["session_id"] for row in table["rows"]})
+
     def test_gui_view_model_declares_ui_states_and_multi_project_status_panel(self) -> None:
         from project_moe_gui import TOOLCHAIN_VERSION, gui_shell
 

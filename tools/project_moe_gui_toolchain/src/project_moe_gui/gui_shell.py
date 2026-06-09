@@ -2438,7 +2438,9 @@ def _reconcile_product_rows(
     discovered = [item for item in discovery.get("sessions", []) if isinstance(item, dict)] if isinstance(discovery, dict) else []
     by_id = {str(item.get("session_id")): item for item in discovered if item.get("session_id")}
     by_thread = {str(item.get("thread_id")): item for item in discovered if item.get("thread_id")}
+    discovery_authoritative = bool(discovered)
     result: list[dict[str, Any]] = []
+    supplemental_state_only_rows: list[dict[str, Any]] = []
     matched_ids: set[str] = set()
     for row in rows:
         full_id = str(row.get("session_id") or row.get("full_session_id") or "")
@@ -2447,20 +2449,28 @@ def _reconcile_product_rows(
         if match and match.get("session_id"):
             matched_ids.add(str(match.get("session_id")))
         row_origin = "registered-matched" if match else "state-only"
-        result.append(
-            {
-                **row,
-                "row_origin": row_origin,
-                "codex_mapping": {
-                    "confidence": confidence,
-                    "codex_thread_id": match.get("thread_id") if match else None,
-                    "source": match.get("source") if match else None,
-                    "message": "Codex session mapping matched exactly." if match else "Codex session mapping unavailable or not found for this project.",
-                    "read_only": True,
-                },
-                "mapping_confidence": confidence,
-            }
-        )
+        reconciled = {
+            **row,
+            "row_origin": row_origin,
+            "codex_mapping": {
+                "confidence": confidence,
+                "codex_thread_id": match.get("thread_id") if match else None,
+                "source": match.get("source") if match else None,
+                "message": "Codex session mapping matched exactly." if match else "Codex session mapping unavailable or not found for this project.",
+                "read_only": True,
+            },
+            "mapping_confidence": confidence,
+        }
+        if match or not discovery_authoritative:
+            result.append(reconciled)
+        else:
+            supplemental_state_only_rows.append(
+                {
+                    **reconciled,
+                    "visible_in_main_table": False,
+                    "why_hidden": "Hidden from the main project session table because no target-project top-level Codex session metadata matched this Project MOE state record.",
+                }
+            )
     for item in discovered:
         session_id = str(item.get("session_id") or "")
         if not session_id or session_id in matched_ids or any(str(row.get("session_id")) == session_id for row in result):
@@ -2519,6 +2529,7 @@ def _reconcile_product_rows(
                 "mapping_confidence": "exact",
             }
         )
+    setattr(_reconcile_product_rows, "_last_supplemental_state_only_rows", supplemental_state_only_rows)
     return result
 
 
@@ -2572,22 +2583,29 @@ def build_view_model(
         lenses=lenses,
         categories=categories,
     )
+    supplemental_state_only_rows = list(getattr(_reconcile_product_rows, "_last_supplemental_state_only_rows", []))
     origin_counts: dict[str, int] = {}
     for row in table["rows"]:
         origin = str(row.get("row_origin") or "unknown")
         origin_counts[origin] = origin_counts.get(origin, 0) + 1
+    supplemental_state_only_count = len(supplemental_state_only_rows)
     table["row_origin_counts"] = {
         "total": len(table["rows"]),
+        "visible_total": len(table["rows"]),
         "registered_matched": origin_counts.get("registered-matched", 0),
         "discovered_only": origin_counts.get("discovered-only", 0),
-        "state_only": origin_counts.get("state-only", 0),
+        "state_only": origin_counts.get("state-only", 0) + supplemental_state_only_count,
+        "visible_state_only": origin_counts.get("state-only", 0),
+        "supplemental_state_only": supplemental_state_only_count,
         "invalid": sum(1 for row in table["rows"] if not row.get("valid") or row.get("token") != "ok"),
     }
+    table["supplemental_state_only_rows"] = supplemental_state_only_rows
     table["default_visibility_policy"] = {
         "show_all_unless_explicitly_hidden": True,
         "name_heuristic_filtering": False,
         "smoke_named_sessions_are_ordinary_without_explicit_metadata": True,
         "discovered_only_sessions_visible": True,
+        "state_only_rows_are_supplemental_when_codex_discovery_is_authoritative": True,
         "default_thread_source_filter": "top_level_user_sessions_only",
         "subagent_child_sessions_hidden_from_default_view": True,
     }
