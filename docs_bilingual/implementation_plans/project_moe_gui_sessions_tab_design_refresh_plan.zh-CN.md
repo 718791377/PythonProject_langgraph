@@ -43,6 +43,8 @@ related_plans:
 - [x] A `list-lenses` 已确认类别边界：`socratic_questioning` 只包含 `socratic_cbt`；`five_classic_thinking_models` 只包含 `feynman_learning`、`first_principles`、`pyramid_principle`、`swot_analysis`、`decision_tree`；可见 lens 列表不再包含 `thinking_dispatcher`。
 - [x] A 可回滚 live 写入/读回验证已通过：写入五个新 lens id 返回 `token=ok`；兼容输入 `thinking_dispatcher` 读回时展开为五个新 lens，且不包含 `thinking_dispatcher` 或 `socratic_cbt`。
 - [x] A Sessions 视觉渲染检查已覆盖 `1180x720`、`1366x768`、`1440x900`，均返回 `token=ok`；输出目录为 `D:/PythonProject_langgraph/.tmp/visual-0.2.41-a-default`。
+
+- [ ] Follow-up 0.2.42 Sessions 左侧列表可用性正在本 feature worktree 中实施：把既有 view-model 搜索 / 筛选 / 排序 / total-filtered-invalid-origin 统计能力接入 Qt Widgets 左侧会话列表。最终完成取决于 focused tests、完整 toolchain tests、B/A 视觉渲染检查和 A preflight 证据。
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
@@ -59,6 +61,8 @@ related_plans:
 
 - [x] 完成 Follow-up 0.2.40：修复 category 串联控制、拆分五个思维模型镜头，并优化右侧滚动。
 - [x] 完成 Follow-up 0.2.41：迁移既有 A Phase 1 CLI 的 lens/category 公共目录，安装到 A，并运行 preflight、live 读回和视觉门禁。
+
+- [ ] 完成 Follow-up 0.2.42：把左侧 Sessions 搜索、启用状态筛选、排序和数量摘要接入 runtime，并在 A 目标项目中验证。
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
@@ -102,6 +106,8 @@ related_plans:
 - A 目标项目 0.2.41 public catalog：`python D:/PythonProject_paper_suggest/tools/thesis_moe_mode.py list-lenses --json` -> `token=ok`；类别边界为 `strict_graduate_advisor` 包含六个导师/审稿镜头，`socratic_questioning` 仅包含 `socratic_cbt`，`five_classic_thinking_models` 仅包含五个新思维模型镜头；可见 lenses 不包含 `thinking_dispatcher`。
 - A 目标项目 0.2.41 live 写入/读回：对 session `019e7c0d-5127-7e71-8ed2-a5eea010bd5c` 写入五个新 lens 返回 `token=ok` 并只读回这五个 lens；兼容写入 `thinking_dispatcher` 返回 `token=ok` 并读回五个新 lens，不包含 `thinking_dispatcher` 或 `socratic_cbt`；验证后已从 `D:/PythonProject_langgraph/.tmp/moe-session-019e7c0d-before-0.2.41-live-verify.json` 恢复状态。
 - A 目标项目 0.2.41 Sessions 视觉渲染：`python tools/project_moe_gui_toolchain/visual_render_check.py --target-project D:/PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --output-dir .tmp/visual-0.2.41-a-default --json` -> `token=ok`；截图位于 `D:/PythonProject_langgraph/.tmp/visual-0.2.41-a-default/`。
+
+- Follow-up 0.2.42 待收集证据：focused tests、完整 `python test/project_moe_gui_toolchain.test.py`、B Sessions 视觉渲染、A installer、A preflight、A Sessions 视觉渲染、A 本地提交、B 本地 main 合入提交和 rollback ref。
 <!-- EVIDENCE_INDEX_END -->
 
 ## 后续 Hotfix：0.2.40/0.2.41 五大思维模型拆分、既有 CLI 迁移与滚动可用性
@@ -223,3 +229,34 @@ related_plans:
 - 产品 GUI 运行时仅保留 QFluentWidgets/PySide6。
 - A 项目写入范围限于 Project MOE GUI 受管理安装产物与验收提交。
 - 没有用户明确远端发布授权时，停在本地 main 集成后的 remote-publication gate。
+
+## 后续 Follow-up：0.2.42 Sessions 搜索 / 筛选 / 排序 / 数量可用性
+<!-- FOLLOW_UP_0_2_42_START -->
+
+这个 follow-up 用于在 0.2.40/0.2.41 已完成 category 边界、五大思维模型拆分和既有 Phase 1 CLI 迁移之后，收口 Sessions 页左侧列表可用性切片。它不改变已治理的 MOE lens/category 边界，只把已经在 view-model 中声明的搜索、启用状态筛选、排序和数量摘要能力接入 Qt Widgets 左侧会话列表。
+
+### 必须实现的行为
+
+- 左侧 session list 保留搜索框，能够搜索 session id、display id、标题、预览、目录、分支、来源、token 和 lens selection summary。
+- 左侧增加筛选控件，至少支持全部、已启用、已关闭、blocked/invalid 会话。
+- 左侧增加排序控件，至少支持最近更新时间、display id、状态标签和 effective lens mode。
+- 左侧数量区域必须显示当前显示数量 / 总数量，同时通过 tooltip 或等价说明保留 total / enabled / disabled / blocked-invalid / origin breakdown。
+- view-model 必须显式声明 `sessions_layout_contract.left_list_controls = search_filter_sort` 和 count breakdown 可见契约。
+- 本切片不得改变 0.2.40/0.2.41 已验收的 MOE category 边界：`socratic_questioning` 仍只控制 `socratic_cbt`，`five_classic_thinking_models` 仍只控制五个思维模型镜头。
+
+### 实施顺序
+
+- [x] Stage E8.1：在隔离 feature worktree 中新增 RED 测试，覆盖 Sessions 搜索 / 筛选 / 排序 / 数量契约。
+- [x] Stage E8.2：实现 view-model 统计、默认 filtered rows、扩展搜索字段，以及 Qt Widgets 筛选/排序控件。
+- [ ] Stage E8.3：把 toolchain 版本提升到 `0.2.42` 并更新双语方案证据。
+- [ ] Stage E8.4：运行 focused tests、完整 toolchain tests 和 B Sessions 视觉渲染检查。
+- [ ] Stage E8.5：安装到 `D:/PythonProject_paper_suggest`，运行 A preflight 与 A Sessions 视觉渲染检查，并提交 A 本地仓库变更。
+- [ ] Stage E8.6：提交 B feature，运行 local flow 合入 B 本地 `main` 并清理 feature worktree。
+
+### 验收标准
+
+- focused tests 覆盖 `left_list_controls`、filter modes、sort keys、count summary、enabled/disabled/blocked-invalid 筛选，以及 search 命中 conversation preview。
+- 修改 Qt Widgets filter/sort combo 后，左侧列表必须立即刷新，并更新当前显示数量 / 总数量文本。
+- 安装到 A 后，GUI 仍只显示当前项目真实 sessions，且 `project-moe-gui.cmd --preflight --json` 返回 `token=ok`。
+- 视觉渲染至少覆盖 `1180x720`、`1366x768`、`1440x900` 的 Sessions 页，确认左侧列表、搜索/筛选/排序控件、右侧详情和镜头选择区域没有明显溢出。
+<!-- FOLLOW_UP_0_2_42_END -->
