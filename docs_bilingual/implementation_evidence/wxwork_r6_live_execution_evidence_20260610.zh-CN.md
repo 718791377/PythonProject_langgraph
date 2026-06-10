@@ -51,11 +51,11 @@ Tracked evidence is hash-only/status-only. This companion intentionally avoids r
 
 Fresh local verification for this evidence package:
 
-- `cli-hub previews inspect --json .omx\wxwork-r6-live\preview\final-send` - passed and wrote an ignored local inspect artifact.
-- `cli-hub previews html .omx\wxwork-r6-live\preview\final-send -o .omx\wxwork-r6-live\preview\final-send\cli-hub-preview.html` - passed and wrote an ignored local HTML preview artifact.
-- `python tools\r6_live_runtime.py proof-check --root . --lane wxwork-cli --proof-receipt .omx\wxwork-r6-live\proofs\wxwork-live-proof-20260610.json --json` - passed with no blockers.
-- `python tools\r6_live_runtime.py run --root . --lane wxwork-cli --mode live-action --env-file .omx\wxwork-r6-live\wxwork-r6-live.env --proof-receipt .omx\wxwork-r6-live\proofs\wxwork-live-proof-20260610.json --receipt-out .omx\r6-live-runtime\receipts\wxwork-live-executed-20260610.json --json` - passed and wrote an ignored `live-executed` receipt.
-- `python tools\check_r6_live_runtime_receipts.py --root . --lane wxwork-cli --receipt .omx\r6-live-runtime\receipts\wxwork-live-executed-20260610.json --json` - passed with `r6_live_valid=true` and no errors.
+- `cli-hub previews inspect --json .omx/wxwork-r6-live/preview/final-send` - passed and wrote an ignored local inspect artifact.
+- `cli-hub previews html .omx/wxwork-r6-live/preview/final-send -o .omx/wxwork-r6-live/preview/final-send/cli-hub-preview.html` - passed and wrote an ignored local HTML preview artifact.
+- `python tools/r6_live_runtime.py proof-check --root . --lane wxwork-cli --proof-receipt .omx/wxwork-r6-live/proofs/wxwork-live-proof-20260610.json --json` - passed with no blockers.
+- `python tools/r6_live_runtime.py run --root . --lane wxwork-cli --mode live-action --env-file .omx/wxwork-r6-live/wxwork-r6-live.env --proof-receipt .omx/wxwork-r6-live/proofs/wxwork-live-proof-20260610.json --receipt-out .omx/r6-live-runtime/receipts/wxwork-live-executed-20260610.json --json` - passed and wrote an ignored `live-executed` receipt.
+- `python tools/check_r6_live_runtime_receipts.py --root . --lane wxwork-cli --receipt .omx/r6-live-runtime/receipts/wxwork-live-executed-20260610.json --json` - passed with `r6_live_valid=true` and no errors.
 
 ## Non-Claims
 
