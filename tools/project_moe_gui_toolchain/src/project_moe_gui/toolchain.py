@@ -17,7 +17,15 @@ except ModuleNotFoundError:  # pragma: no cover
 
 from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
 from project_moe_gui.daemon import build_daemon_launch_plan, windows_daemon_artifact_plan
-from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT, qml_shell_path, qml_visual_contract
+from project_moe_gui.gui_shell import (
+    DEFAULT_EXPERT_CATEGORIES,
+    DEFAULT_EXPERT_LENSES,
+    DEPRECATED_LENS_ALIASES,
+    LEGACY_CATEGORY_ID_ALIASES,
+    GUI_SHELL_CONTRACT,
+    qml_shell_path,
+    qml_visual_contract,
+)
 from project_moe_gui.qfluent_runtime import expected_qfluent_dependency, qfluent_license_manifest
 
 
@@ -2151,6 +2159,227 @@ def artifacts(root: Path, agent_name: str, namespace: str, mode_cli: Path, runti
     }
 
 
+def phase1_public_lens_catalog() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    category_by_lens: dict[str, str] = {}
+    categories: list[dict[str, Any]] = []
+    for category in DEFAULT_EXPERT_CATEGORIES:
+        category_id = str(category["id"])
+        lens_ids = [str(item) for item in category.get("lens_ids", [])]
+        for lens_id in lens_ids:
+            category_by_lens[lens_id] = category_id
+        categories.append(
+            {
+                key: category[key]
+                for key in (
+                    "id",
+                    "label",
+                    "zh_label",
+                    "en_label",
+                    "description",
+                    "zh_description",
+                    "en_description",
+                    "lens_ids",
+                )
+                if key in category
+            }
+        )
+    lenses: list[dict[str, Any]] = []
+    for lens in DEFAULT_EXPERT_LENSES:
+        lens_id = str(lens["id"])
+        payload = {
+            key: lens[key]
+            for key in ("id", "label", "zh_label", "en_label", "description", "zh_description", "en_description")
+            if key in lens
+        }
+        payload["category"] = category_by_lens.get(lens_id, "strict_graduate_advisor")
+        lenses.append(payload)
+    return lenses, categories
+
+
+def phase1_public_catalog_constants_text() -> str:
+    lenses, categories = phase1_public_lens_catalog()
+    thinking_model_lens_ids = list(DEPRECATED_LENS_ALIASES.get("thinking_dispatcher", []))
+    lens_aliases = {str(key): [str(item) for item in value] for key, value in DEPRECATED_LENS_ALIASES.items()}
+    category_aliases = {str(key): str(value) for key, value in LEGACY_CATEGORY_ID_ALIASES.items()}
+    return "\n".join(
+        [
+            "THINKING_MODEL_LENS_IDS = " + json.dumps(thinking_model_lens_ids, ensure_ascii=False, indent=4),
+            "DEPRECATED_LENS_ALIASES = " + json.dumps(lens_aliases, ensure_ascii=False, indent=4),
+            "DEPRECATED_CATEGORY_ALIASES = " + json.dumps(category_aliases, ensure_ascii=False, indent=4),
+            "PUBLIC_LENSES = " + json.dumps(lenses, ensure_ascii=False, indent=4),
+            "PUBLIC_CATEGORIES = " + json.dumps(categories, ensure_ascii=False, indent=4),
+            'LENS_IDS = {str(item["id"]) for item in PUBLIC_LENSES}',
+            'CATEGORY_IDS = {str(item["id"]) for item in PUBLIC_CATEGORIES}',
+            "",
+        ]
+    )
+
+
+def _phase1_replace_catalog_constants(text: str) -> tuple[str, str | None]:
+    public_start = text.find("PUBLIC_LENSES = [")
+    if public_start < 0:
+        return text, None
+    constants_start = public_start
+    for marker in ("THINKING_MODEL_LENS_IDS = [", "DEPRECATED_LENS_ALIASES = {", "DEPRECATED_CATEGORY_ALIASES = {"):
+        marker_index = text.rfind("\n" + marker, 0, public_start)
+        if marker_index >= 0:
+            constants_start = min(constants_start, marker_index + 1)
+    class_marker = "\n\nclass ThesisMoeError"
+    end = text.find(class_marker, public_start)
+    if end < 0:
+        return text, "blocked:phase1_mode_cli_catalog_anchor_missing"
+    return text[:constants_start] + phase1_public_catalog_constants_text() + text[end:], None
+
+
+def _phase1_replace_selected_helpers(text: str) -> tuple[str, str | None]:
+    replacement = '''def expand_lens_aliases(values: list[str]) -> list[str]:
+    result: list[str] = []
+    for value in values:
+        expanded = DEPRECATED_LENS_ALIASES.get(value, [value])
+        for item in expanded:
+            if item not in result:
+                result.append(item)
+    return result
+
+
+def normalize_category_aliases(values: list[str]) -> list[str]:
+    result: list[str] = []
+    for value in values:
+        item = DEPRECATED_CATEGORY_ALIASES.get(value, value)
+        if item not in result:
+            result.append(item)
+    return result
+
+
+def selected_lenses_from(data: Optional[dict[str, Any]]) -> list[str]:
+    return expand_lens_aliases(selected_list(data, "selected_lenses"))
+
+
+def selected_categories_from(data: Optional[dict[str, Any]]) -> list[str]:
+    return normalize_category_aliases(selected_list(data, "selected_categories"))
+
+
+'''
+    pattern = r"def selected_lenses_from\(data: Optional\[dict\[str, Any\]\]\) -> list\[str\]:.*?(?=def effective_lens_mode)"
+    new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+    if count != 1:
+        return text, "blocked:phase1_mode_cli_selected_helper_anchor_missing"
+    return new_text, None
+
+
+def _phase1_replace_validate_lens_selection(text: str) -> tuple[str, str | None]:
+    replacement = '''def validate_lens_selection(selected_lenses: list[str], selected_categories: list[str]) -> None:
+    supported_lenses = set(LENS_IDS) | set(DEPRECATED_LENS_ALIASES)
+    supported_categories = set(CATEGORY_IDS) | set(DEPRECATED_CATEGORY_ALIASES)
+    invalid_lenses = [item for item in selected_lenses if item not in supported_lenses]
+    invalid_categories = [item for item in selected_categories if item not in supported_categories]
+    if invalid_lenses or invalid_categories:
+        raise ThesisMoeError(
+            "blocked:invalid_lens_selection",
+            "selected MOE lens or category is not in the public list-lenses catalog",
+            2,
+            {
+                "invalid_lenses": invalid_lenses,
+                "invalid_categories": invalid_categories,
+                "supported_lenses": sorted(supported_lenses),
+                "supported_categories": sorted(supported_categories),
+            },
+        )
+'''
+    pattern = r"def validate_lens_selection\(selected_lenses: list\[str\], selected_categories: list\[str\]\) -> None:.*?(?=\n\ndef parsed_selection)"
+    new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+    if count != 1:
+        return text, "blocked:phase1_mode_cli_validate_anchor_missing"
+    return new_text, None
+
+
+def _phase1_replace_parsed_selection(text: str) -> tuple[str, str | None]:
+    replacement = '''def parsed_selection(args: argparse.Namespace) -> tuple[Optional[list[str]], Optional[list[str]]]:
+    lenses = getattr(args, "lens", None)
+    categories = getattr(args, "category", None)
+    selected_lenses = unique_preserve_order(lenses) if lenses is not None else None
+    selected_categories = unique_preserve_order(categories) if categories is not None else None
+    if selected_lenses is not None or selected_categories is not None:
+        validate_lens_selection(selected_lenses or [], selected_categories or [])
+    if selected_lenses is not None:
+        selected_lenses = expand_lens_aliases(selected_lenses)
+    if selected_categories is not None:
+        selected_categories = normalize_category_aliases(selected_categories)
+    return selected_lenses, selected_categories
+'''
+    pattern = r"def parsed_selection\(args: argparse.Namespace\) -> tuple\[Optional\[list\[str\]\], Optional\[list\[str\]\]\]:.*?(?=\n\ndef attach_lens_fields)"
+    new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+    if count != 1:
+        return text, "blocked:phase1_mode_cli_parsed_selection_anchor_missing"
+    return new_text, None
+
+
+def migrate_phase1_mode_cli_catalog_text(text: str) -> tuple[str, list[str]]:
+    blockers: list[str] = []
+    for migrate in (
+        _phase1_replace_catalog_constants,
+        _phase1_replace_selected_helpers,
+        _phase1_replace_validate_lens_selection,
+        _phase1_replace_parsed_selection,
+    ):
+        text, blocker_code = migrate(text)
+        if blocker_code:
+            blockers.append(blocker_code)
+    return text, blockers
+
+
+def phase1_mode_cli_catalog_migration_plan(root: Path, mode_cli: Path) -> dict[str, Any]:
+    full, err = safe_relative(root, mode_cli, "blocked:mode_cli_path_invalid")
+    if err:
+        return {"path": norm(mode_cli), "action": "blocked", "managed": False, "phase1_contract": True, "blocker": err}
+    assert full is not None
+    if not full.exists():
+        return {"path": norm(mode_cli), "action": "unchanged", "managed": False, "phase1_contract": True, "reason": "mode_cli_missing"}
+    original = read_text(full)
+    if "PUBLIC_LENSES" not in original or "PUBLIC_CATEGORIES" not in original:
+        return {"path": norm(mode_cli), "action": "unchanged", "managed": False, "phase1_contract": True, "reason": "public_catalog_not_detected"}
+    migrated, blocker_codes = migrate_phase1_mode_cli_catalog_text(original)
+    if blocker_codes:
+        return {
+            "path": norm(mode_cli),
+            "action": "blocked",
+            "managed": False,
+            "phase1_contract": True,
+            "blocker": blocker(blocker_codes[0], "Existing Phase 1 mode CLI catalog could not be safely migrated.", path=norm(mode_cli), blockers=blocker_codes),
+        }
+    if migrated == original:
+        return {"path": norm(mode_cli), "action": "unchanged", "managed": False, "phase1_contract": True}
+    return {
+        "path": norm(mode_cli),
+        "action": "update",
+        "managed": False,
+        "phase1_contract": True,
+        "migration": "phase1_public_lens_catalog_0_2_41",
+        "old_sha256": sha256_bytes(original.encode("utf-8")),
+        "new_sha256": sha256_bytes(migrated.encode("utf-8")),
+        "new_text": migrated,
+    }
+
+
+def apply_phase1_mode_cli_catalog_migration(root: Path, plan: dict[str, Any]) -> list[dict[str, Any]]:
+    if plan.get("action") != "update":
+        return []
+    rel = Path(str(plan.get("path") or ""))
+    full, err = safe_relative(root, rel, "blocked:mode_cli_path_invalid")
+    if err:
+        raise RuntimeError(err["message"])
+    assert full is not None
+    status = write_text_if_changed(full, str(plan["new_text"]))
+    return [{"path": norm(rel), "status": status, "managed": False, "phase1_contract": True}]
+
+
+def public_phase1_cli_migration_action(plan: dict[str, Any]) -> dict[str, Any]:
+    public = {key: value for key, value in plan.items() if key != "new_text"}
+    if "new_text" in plan:
+        public["new_text_redacted"] = True
+    return public
+
+
 def manifest_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, planned: dict[Path, str], previous: dict[str, Any] | None = None) -> dict[str, Any]:
     managed = [{"path": norm(rel), "role": "managed", "sha256": sha256_bytes(text.encode("utf-8"))} for rel, text in planned.items()]
     managed.append({"path": norm(MANIFEST_RELATIVE), "role": "manifest", "sha256": None})
@@ -3428,7 +3657,13 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
     mode_cli = Path(str(config.get("mode_cli") or manifest.get("mode_cli") or DEFAULT_MODE_CLI))
     runtime_root = Path(str(config.get("shared_runtime_root") or DEFAULT_SHARED_RUNTIME_ROOT))
     planned = artifacts(root, agent, namespace, mode_cli, runtime_root, config)
-    changes, changed = planned_changes(root, planned)
+    changes, managed_changed = planned_changes(root, planned)
+    phase1_cli_migration = phase1_mode_cli_catalog_migration_plan(root, mode_cli)
+    phase1_cli_actions = [public_phase1_cli_migration_action(phase1_cli_migration)]
+    phase1_cli_changed = phase1_cli_migration.get("action") == "update"
+    if phase1_cli_migration.get("action") == "blocked" and phase1_cli_migration.get("blocker"):
+        errors.append(phase1_cli_migration["blocker"])
+    changed = managed_changed or phase1_cli_changed
     new_manifest = manifest_payload(root, agent, namespace, mode_cli, planned, manifest)
     payload: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -3442,7 +3677,8 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
         "target_toolchain_version": TOOLCHAIN_VERSION,
         "config_schema_version": config.get("schema_version"),
         "cli_contract": config.get("cli_contract"),
-        "migration_actions": changes,
+        "migration_actions": changes + phase1_cli_actions,
+        "phase1_cli_migration_actions": phase1_cli_actions,
         "no_op": not changed,
         "recoverable_blockers": current_blockers,
         "blockers": errors,
@@ -3451,6 +3687,7 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
     if errors or dry_run:
         return payload
     payload["applied_file_changes"] = apply_artifacts(root, planned, new_manifest)
+    payload["applied_file_changes"].extend(apply_phase1_mode_cli_catalog_migration(root, phase1_cli_migration))
     payload["update_receipt"] = {
         "target_project_root": str(root),
         "old_toolchain_version": manifest.get("toolchain_version"),

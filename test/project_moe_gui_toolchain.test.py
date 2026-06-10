@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import hashlib
 import contextlib
 import io
@@ -2088,6 +2089,104 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             _, payload = self.run_tool(str(UPDATER), "--target-project", str(project), "--dry-run")
             self.assertTrue(payload["no_op"], payload)
             self.assertEqual(payload["status"], "up_to_date")
+
+    def test_phase1_mode_cli_catalog_migration_updates_existing_public_lenses(self) -> None:
+        from project_moe_gui import toolchain
+
+        legacy_mode_cli = """
+from __future__ import annotations
+import argparse
+from typing import Any, Optional
+PUBLIC_LENSES = [
+    {"id": "blind_review", "label": "Blind-review expert", "description": "Review.", "category": "review"},
+    {"id": "socratic_cbt", "label": "Socratic CBT-style questioning expert", "description": "Question.", "category": "thinking"},
+    {"id": "thinking_dispatcher", "label": "Thinking-model dispatcher", "description": "Dispatch.", "category": "thinking"},
+]
+PUBLIC_CATEGORIES = [
+    {"id": "review", "label": "Review", "description": "Review lenses.", "lens_ids": ["blind_review"]},
+    {"id": "thinking", "label": "Thinking", "description": "Socratic and dispatcher.", "lens_ids": ["socratic_cbt", "thinking_dispatcher"]},
+]
+LENS_IDS = {str(item["id"]) for item in PUBLIC_LENSES}
+CATEGORY_IDS = {str(item["id"]) for item in PUBLIC_CATEGORIES}
+
+
+class ThesisMoeError(RuntimeError):
+    pass
+
+
+def unique_preserve_order(values: Optional[list[str]]) -> list[str]:
+    result = []
+    for item in values or []:
+        if item not in result:
+            result.append(item)
+    return result
+
+
+def selected_list(data: Optional[dict[str, Any]], field: str) -> list[str]:
+    return [str(item) for item in (data or {}).get(field, [])]
+
+
+def selected_lenses_from(data: Optional[dict[str, Any]]) -> list[str]:
+    return selected_list(data, "selected_lenses")
+
+
+def selected_categories_from(data: Optional[dict[str, Any]]) -> list[str]:
+    return selected_list(data, "selected_categories")
+
+
+def effective_lens_mode(selected_lenses: list[str], selected_categories: list[str]) -> str:
+    return "selected" if selected_lenses or selected_categories else "all"
+
+
+def validate_lens_selection(selected_lenses: list[str], selected_categories: list[str]) -> None:
+    invalid_lenses = [item for item in selected_lenses if item not in LENS_IDS]
+    invalid_categories = [item for item in selected_categories if item not in CATEGORY_IDS]
+    if invalid_lenses or invalid_categories:
+        raise ThesisMoeError("blocked:invalid_lens_selection")
+
+
+def parsed_selection(args: argparse.Namespace) -> tuple[Optional[list[str]], Optional[list[str]]]:
+    lenses = getattr(args, "lens", None)
+    categories = getattr(args, "category", None)
+    selected_lenses = unique_preserve_order(lenses) if lenses is not None else None
+    selected_categories = unique_preserve_order(categories) if categories is not None else None
+    if selected_lenses is not None or selected_categories is not None:
+        validate_lens_selection(selected_lenses or [], selected_categories or [])
+    return selected_lenses, selected_categories
+
+
+def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], selected_categories: list[str]) -> dict[str, Any]:
+    return payload
+""".lstrip()
+
+        migrated, blockers = toolchain.migrate_phase1_mode_cli_catalog_text(legacy_mode_cli)
+        self.assertEqual(blockers, [])
+        self.assertIn('"feynman_learning"', migrated)
+        self.assertIn('"first_principles"', migrated)
+        self.assertIn('"pyramid_principle"', migrated)
+        self.assertIn('"swot_analysis"', migrated)
+        self.assertIn('"decision_tree"', migrated)
+        self.assertIn('DEPRECATED_LENS_ALIASES', migrated)
+        self.assertIn('"thinking": "five_classic_thinking_models"', migrated)
+        self.assertNotIn('"id": "thinking_dispatcher"', migrated)
+
+        namespace: dict[str, object] = {}
+        exec(compile(migrated, "<migrated-mode-cli>", "exec"), namespace)
+        self.assertEqual(
+            namespace["selected_lenses_from"]({"selected_lenses": ["thinking_dispatcher"]}),
+            ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+        )
+        self.assertEqual(
+            namespace["selected_categories_from"]({"selected_categories": ["thinking"]}),
+            ["five_classic_thinking_models"],
+        )
+        args = argparse.Namespace(lens=["thinking_dispatcher"], category=["thinking"])
+        selected_lenses, selected_categories = namespace["parsed_selection"](args)
+        self.assertEqual(
+            selected_lenses,
+            ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+        )
+        self.assertEqual(selected_categories, ["five_classic_thinking_models"])
 
     def test_uninstall_plan_is_dry_run_and_preserves_private_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
