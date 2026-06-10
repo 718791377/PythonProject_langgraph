@@ -2368,11 +2368,17 @@ CLI_CONTRACT = "{CLI_CONTRACT}"
 PUBLIC_LENSES = [
     {{"id": "blind_review", "label": "Blind-review expert", "zh_label": "盲审专家镜头", "en_label": "Blind-review expert", "description": "Public placeholder lens metadata only.", "category": "strict_graduate_advisor"}},
     {{"id": "aigc_risk", "label": "AIGC risk expert", "zh_label": "AIGC / AI 味风险镜头", "en_label": "AIGC risk expert", "description": "Public placeholder lens metadata only.", "category": "strict_graduate_advisor"}},
+    {{"id": "socratic_cbt", "label": "Socratic CBT-style questioning expert", "zh_label": "认知行为式苏格拉底提问镜头", "en_label": "Socratic CBT-style questioning expert", "description": "Public placeholder lens metadata only.", "category": "socratic_questioning"}},
+    {{"id": "feynman_learning", "label": "Feynman learning expert", "zh_label": "费曼学习法专家", "en_label": "Feynman learning expert", "description": "Public placeholder lens metadata only.", "category": "five_classic_thinking_models"}},
+    {{"id": "first_principles", "label": "First principles expert", "zh_label": "第一性原理专家", "en_label": "First principles expert", "description": "Public placeholder lens metadata only.", "category": "five_classic_thinking_models"}},
+    {{"id": "pyramid_principle", "label": "Pyramid principle expert", "zh_label": "金字塔原理专家", "en_label": "Pyramid principle expert", "description": "Public placeholder lens metadata only.", "category": "five_classic_thinking_models"}},
+    {{"id": "swot_analysis", "label": "SWOT analysis expert", "zh_label": "SWOT 分析专家", "en_label": "SWOT analysis expert", "description": "Public placeholder lens metadata only.", "category": "five_classic_thinking_models"}},
+    {{"id": "decision_tree", "label": "Decision tree model expert", "zh_label": "决策树模型专家", "en_label": "Decision tree model expert", "description": "Public placeholder lens metadata only.", "category": "five_classic_thinking_models"}},
 ]
 PUBLIC_CATEGORIES = [
     {{"id": "strict_graduate_advisor", "label": "Strict Graduate Advisor Module", "zh_label": "严苛的研究生导师专家模块", "en_label": "Strict Graduate Advisor Module", "description": "Strict advisor public lenses.", "lens_ids": ["blind_review", "aigc_risk"]}},
-    {{"id": "socratic_questioning", "label": "Socratic Questioning Module", "zh_label": "认知行为式提问专家模块", "en_label": "Socratic Questioning Module", "description": "Socratic public lenses.", "lens_ids": []}},
-    {{"id": "five_classic_thinking_models", "label": "Five Classic Thinking Models Module", "zh_label": "五大经典思维模型专家模块", "en_label": "Five Classic Thinking Models Module", "description": "Thinking-model public lenses.", "lens_ids": []}},
+    {{"id": "socratic_questioning", "label": "Socratic Questioning Module", "zh_label": "认知行为式提问专家模块", "en_label": "Socratic Questioning Module", "description": "Socratic public lenses.", "lens_ids": ["socratic_cbt"]}},
+    {{"id": "five_classic_thinking_models", "label": "Five Classic Thinking Models Module", "zh_label": "五大经典思维模型专家模块", "en_label": "Five Classic Thinking Models Module", "description": "Five independent thinking-model public lenses.", "lens_ids": ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"]}},
 ]
 
 

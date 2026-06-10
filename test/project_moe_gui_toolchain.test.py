@@ -71,10 +71,24 @@ LENSES = [
     {"id": "blind_review", "label": "Blind review", "description": "Review rigor and objections.", "category": "review"},
     {"id": "aigc_risk", "label": "AIGC risk", "description": "Check AI-like wording and unsupported certainty.", "category": "risk"},
     {"id": "novelty", "label": "Novelty", "description": "Check innovation and differentiation.", "category": "review"},
+    {"id": "socratic_cbt", "label": "Socratic CBT", "description": "Ask Socratic CBT-style questions.", "category": "socratic_questioning"},
+    {"id": "feynman_learning", "label": "Feynman learning", "description": "Explain and simplify with Feynman learning.", "category": "five_classic_thinking_models"},
+    {"id": "first_principles", "label": "First principles", "description": "Reduce claims to first principles.", "category": "five_classic_thinking_models"},
+    {"id": "pyramid_principle", "label": "Pyramid principle", "description": "Structure arguments with the pyramid principle.", "category": "five_classic_thinking_models"},
+    {"id": "swot_analysis", "label": "SWOT analysis", "description": "Analyze strengths, weaknesses, opportunities, and threats.", "category": "five_classic_thinking_models"},
+    {"id": "decision_tree", "label": "Decision tree", "description": "Model choices with decision trees.", "category": "five_classic_thinking_models"},
 ]
 CATEGORIES = [
     {"id": "review", "label": "Review", "description": "Review-oriented lenses.", "lens_ids": ["blind_review", "novelty"]},
     {"id": "risk", "label": "Risk", "description": "Risk-oriented lenses.", "lens_ids": ["aigc_risk"]},
+    {"id": "socratic_questioning", "label": "Socratic Questioning Module", "description": "Socratic questioning lens.", "lens_ids": ["socratic_cbt"]},
+    {"id": "thinking", "label": "Legacy Thinking", "description": "Legacy thinking-model category.", "lens_ids": ["socratic_cbt", "thinking_dispatcher"]},
+    {
+        "id": "five_classic_thinking_models",
+        "label": "Five Classic Thinking Models Module",
+        "description": "Five independent thinking-model lenses.",
+        "lens_ids": ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+    },
 ]
 LENS_IDS = {item["id"] for item in LENSES}
 CATEGORY_IDS = {item["id"] for item in CATEGORIES}
@@ -118,7 +132,8 @@ def effective_lens_mode(payload: dict) -> str:
     return "selected" if selected_lenses or selected_categories else "all"
 
 def invalid_selection(selected_lenses: list[str], selected_categories: list[str]) -> dict | None:
-    bad_lenses = [item for item in selected_lenses if item not in LENS_IDS]
+    alias_lenses = {"thinking_dispatcher"}
+    bad_lenses = [item for item in selected_lenses if item not in LENS_IDS and item not in alias_lenses]
     bad_categories = [item for item in selected_categories if item not in CATEGORY_IDS]
     if bad_lenses or bad_categories:
         return {
@@ -132,6 +147,15 @@ def invalid_selection(selected_lenses: list[str], selected_categories: list[str]
             "cli_contract": "project-moe-cli-v1",
         }
     return None
+
+def normalize_fixture_lenses(values: list[str]) -> list[str]:
+    result: list[str] = []
+    for value in values:
+        expanded = ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"] if value == "thinking_dispatcher" else [value]
+        for item in expanded:
+            if item not in result:
+                result.append(item)
+    return result
 
 def project_default_enabled() -> bool:
     payload = read_json(PROJECT_DEFAULT)
@@ -184,6 +208,7 @@ def write_session(session_id: str, enabled: bool, selected_lenses: list[str] | N
         selected_lenses, _ = selected_lists(payload)
     if selected_categories is None:
         _, selected_categories = selected_lists(payload)
+    selected_lenses = normalize_fixture_lenses(list(selected_lenses or []))
     payload.update({
         "schema_version": 1,
         "project_label": PROJECT_LABEL,
@@ -217,6 +242,7 @@ def write_lens_selection(session_id: str, selected_lenses: list[str], selected_c
     before_payload = read_json(path, {"enabled": False})
     payload = read_json(path, {"enabled": False})
     before_lenses, before_categories = selected_lists(payload)
+    selected_lenses = normalize_fixture_lenses(list(selected_lenses or []))
     payload.update({
         "schema_version": 1,
         "project_label": PROJECT_LABEL,
@@ -1201,7 +1227,12 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertTrue((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
             self.assertTrue((project / "MOE.md").exists())
             self.assertTrue((project / "tools" / "thesis_moe_mode.py").exists())
-            self.assertIn("blocked:bootstrap_placeholder", (project / "tools" / "thesis_moe_mode.py").read_text(encoding="utf-8"))
+            mode_cli_text = (project / "tools" / "thesis_moe_mode.py").read_text(encoding="utf-8")
+            self.assertIn("blocked:bootstrap_placeholder", mode_cli_text)
+            self.assertIn('"socratic_cbt"', mode_cli_text)
+            for lens_id in ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"]:
+                self.assertIn(f'"{lens_id}"', mode_cli_text)
+            self.assertNotIn('"thinking_dispatcher"', mode_cli_text)
             self.assertIn("Project MOE private prompt placeholder", (project / "MOE.md").read_text(encoding="utf-8"))
             self.assertTrue(all(item["scaffold_owned"] is True and item["managed"] is False for item in payload["applied_writes"]))
 
@@ -2437,9 +2468,34 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             [item["id"] for item in categories],
             ["strict_graduate_advisor", "socratic_questioning", "five_classic_thinking_models"],
         )
+        default_lens_ids = [item["id"] for item in lenses]
+        self.assertNotIn("thinking_dispatcher", default_lens_ids)
+        self.assertEqual(
+            [
+                "feynman_learning",
+                "first_principles",
+                "pyramid_principle",
+                "swot_analysis",
+                "decision_tree",
+            ],
+            [item for item in default_lens_ids if item in {
+                "feynman_learning",
+                "first_principles",
+                "pyramid_principle",
+                "swot_analysis",
+                "decision_tree",
+            }],
+        )
         lens_ids = {item["id"] for item in lenses}
         for category in categories:
             self.assertTrue(set(category["lens_ids"]).issubset(lens_ids), category)
+        category_by_id = {item["id"]: item for item in categories}
+        self.assertEqual(category_by_id["socratic_questioning"]["lens_ids"], ["socratic_cbt"])
+        self.assertEqual(
+            category_by_id["five_classic_thinking_models"]["lens_ids"],
+            ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+        )
+        self.assertNotIn("socratic_cbt", category_by_id["five_classic_thinking_models"]["lens_ids"])
 
         model = gui_shell._product_lens_selection_model(
             lenses,
@@ -2464,7 +2520,36 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         checked_by_id = {item["id"]: item for item in checked_model["categories"]}
         self.assertEqual(checked_by_id["socratic_questioning"]["check_state"], "checked")
         self.assertEqual(checked_by_id["socratic_questioning"]["display_label"], "认知行为式提问专家模块")
+        self.assertEqual(checked_model["effective_lenses"], ["socratic_cbt"])
         self.assertEqual(checked_model["mode"], "selected")
+
+        thinking_model = gui_shell._product_lens_selection_model(
+            lenses,
+            categories,
+            selected_lenses=[],
+            selected_categories=["five_classic_thinking_models"],
+            language="en",
+        )
+        self.assertEqual(
+            thinking_model["effective_lenses"],
+            ["decision_tree", "feynman_learning", "first_principles", "pyramid_principle", "swot_analysis"],
+        )
+        self.assertNotIn("socratic_cbt", thinking_model["effective_lenses"])
+
+        legacy_model = gui_shell._product_lens_selection_model(
+            lenses,
+            categories,
+            selected_lenses=["thinking_dispatcher"],
+            selected_categories=["thinking"],
+            language="en",
+        )
+        self.assertEqual(
+            legacy_model["effective_lenses"],
+            ["decision_tree", "feynman_learning", "first_principles", "pyramid_principle", "swot_analysis"],
+        )
+        self.assertEqual(legacy_model["invalid_lenses"], [])
+        self.assertNotIn("thinking_dispatcher", legacy_model["selected_lenses"])
+        self.assertNotIn("socratic_cbt", legacy_model["effective_lenses"])
 
         english_model = gui_shell._product_lens_selection_model(
             lenses,
@@ -2510,7 +2595,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(contract["right_regions"], ["session_details_card", "moe_status_actions_card", "moe_category_lens_selection_card"])
             self.assertTrue(contract["lens_selection_independent_scroll_area"])
             self.assertTrue(contract["category_selection_independent_scroll_area"])
-            self.assertEqual(contract["category_lens_selection_layout"], "stacked_vertical_scroll_regions")
+            self.assertEqual(contract["category_lens_selection_layout"], "fixed_category_rows_plus_tall_independent_lens_scroll")
+            self.assertFalse(contract["category_rows_use_tiny_scrollbar"])
+            self.assertGreaterEqual(contract["lens_selection_minimum_height_px"], 220)
             self.assertEqual(contract["narrow_width_strategy"], "avoid_horizontal_category_lens_splitter")
             self.assertTrue(contract["category_lens_i18n"])
             self.assertTrue(contract["category_lens_tri_state_linkage"])
@@ -3024,7 +3111,17 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertGreaterEqual(len(dense_vm["session_table"]["rows"]), 24)
         self.assertGreaterEqual(len(dense_vm["lens_catalog"]["lenses"]), 18)
         self.assertGreaterEqual(len(dense_vm["lens_catalog"]["categories"]), 8)
+        dense_lens_ids = [item["id"] for item in dense_vm["lens_catalog"]["lenses"]]
+        self.assertNotIn("thinking_dispatcher", dense_lens_ids)
+        for lens_id in ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"]:
+            self.assertIn(lens_id, dense_lens_ids)
         self.assertEqual([category["id"] for category in dense_vm["lens_catalog"]["categories"][:3]], ["strict_graduate_advisor", "socratic_questioning", "five_classic_thinking_models"])
+        dense_categories = {category["id"]: category for category in dense_vm["lens_catalog"]["categories"]}
+        self.assertEqual(dense_categories["socratic_questioning"]["lens_ids"], ["socratic_cbt"])
+        self.assertEqual(
+            dense_categories["five_classic_thinking_models"]["lens_ids"],
+            ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+        )
         self.assertEqual(dense_vm["fixture_profile"], "dense-sessions")
         for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
             self.assertIn(label, module.SECTION_REQUIRED_TEXT["sessions"])

@@ -207,7 +207,11 @@ def _fixture_lens(index: int, *, long_content: bool = False) -> dict[str, Any]:
         "literature_evidence",
         "structure_expression",
         "socratic_cbt",
-        "thinking_dispatcher",
+        "feynman_learning",
+        "first_principles",
+        "pyramid_principle",
+        "swot_analysis",
+        "decision_tree",
     ]
     lens_id = default_ids[index] if index < len(default_ids) else f"fixture_lens_{index:02d}"
     if long_content:
@@ -224,7 +228,11 @@ def _fixture_lens(index: int, *, long_content: bool = False) -> dict[str, Any]:
         "literature_evidence": "文献与证据链镜头",
         "structure_expression": "结构与表达镜头",
         "socratic_cbt": "认知行为式苏格拉底提问镜头",
-        "thinking_dispatcher": "五大经典思维模型调度镜头",
+        "feynman_learning": "费曼学习法专家",
+        "first_principles": "第一性原理专家",
+        "pyramid_principle": "金字塔原理专家",
+        "swot_analysis": "SWOT 分析专家",
+        "decision_tree": "决策树模型专家",
     }.get(lens_id, label)
     return {"id": lens_id, "label": label, "zh_label": zh_label, "en_label": label, "description": description, "category": f"category_{index % 8:02d}"}
 
@@ -247,7 +255,7 @@ def _fixture_category(index: int, lens_count: int, *, long_content: bool = False
             "five_classic_thinking_models",
             "Five Classic Thinking Models Module",
             "五大经典思维模型专家模块",
-            ["thinking_dispatcher"],
+            ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
         ),
     ]
     if index < len(governed):

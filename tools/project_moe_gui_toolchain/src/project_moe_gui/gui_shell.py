@@ -101,6 +101,17 @@ KEYBOARD_SHORTCUTS = {
     "session-clear-lenses": "Alt+Shift+L",
 }
 
+THINKING_MODEL_LENS_IDS = [
+    "feynman_learning",
+    "first_principles",
+    "pyramid_principle",
+    "swot_analysis",
+    "decision_tree",
+]
+DEPRECATED_LENS_ALIASES = {
+    "thinking_dispatcher": THINKING_MODEL_LENS_IDS,
+}
+
 DEFAULT_EXPERT_LENSES = [
     {
         "id": "blind_review",
@@ -166,13 +177,49 @@ DEFAULT_EXPERT_LENSES = [
         "en_description": "Uses calm Socratic questions to expose assumptions and improve revision decisions.",
     },
     {
-        "id": "thinking_dispatcher",
-        "label": "Thinking-model dispatcher",
-        "zh_label": "五大经典思维模型调度镜头",
-        "en_label": "Thinking-model dispatcher",
-        "description": "Chooses the most suitable lens combination and decomposes the review brief.",
-        "zh_description": "选择合适的思维模型组合并拆解审阅 brief。",
-        "en_description": "Chooses the most suitable lens combination and decomposes the review brief.",
+        "id": "feynman_learning",
+        "label": "Feynman learning expert",
+        "zh_label": "费曼学习法专家",
+        "en_label": "Feynman learning expert",
+        "description": "Explains, simplifies, and checks whether the brief can be taught clearly.",
+        "zh_description": "用费曼学习法解释、简化并检查 brief 是否能被清楚讲授。",
+        "en_description": "Explains, simplifies, and checks whether the brief can be taught clearly.",
+    },
+    {
+        "id": "first_principles",
+        "label": "First principles expert",
+        "zh_label": "第一性原理专家",
+        "en_label": "First principles expert",
+        "description": "Reduces claims to base assumptions, constraints, and irreducible facts.",
+        "zh_description": "把论断拆到基础假设、约束与不可再分事实。",
+        "en_description": "Reduces claims to base assumptions, constraints, and irreducible facts.",
+    },
+    {
+        "id": "pyramid_principle",
+        "label": "Pyramid principle expert",
+        "zh_label": "金字塔原理专家",
+        "en_label": "Pyramid principle expert",
+        "description": "Structures conclusions, reasons, and evidence into a clear top-down argument.",
+        "zh_description": "用金字塔原理组织结论、理由与证据，形成清晰自上而下论证。",
+        "en_description": "Structures conclusions, reasons, and evidence into a clear top-down argument.",
+    },
+    {
+        "id": "swot_analysis",
+        "label": "SWOT analysis expert",
+        "zh_label": "SWOT 分析专家",
+        "en_label": "SWOT analysis expert",
+        "description": "Separates strengths, weaknesses, opportunities, and threats for revision choices.",
+        "zh_description": "区分优势、劣势、机会与威胁，用于修改决策。",
+        "en_description": "Separates strengths, weaknesses, opportunities, and threats for revision choices.",
+    },
+    {
+        "id": "decision_tree",
+        "label": "Decision tree model expert",
+        "zh_label": "决策树模型专家",
+        "en_label": "Decision tree model expert",
+        "description": "Models competing revision paths, decision points, risks, and expected outcomes.",
+        "zh_description": "建模不同修改路径、决策点、风险与预期结果。",
+        "en_description": "Models competing revision paths, decision points, risks, and expected outcomes.",
     },
 ]
 
@@ -202,10 +249,10 @@ DEFAULT_EXPERT_CATEGORIES = [
         "label": "Five Classic Thinking Models Module",
         "zh_label": "五大经典思维模型专家模块",
         "en_label": "Five Classic Thinking Models Module",
-        "description": "Thinking-model dispatcher lens for decomposing and choosing review routes.",
-        "zh_description": "用经典思维模型调度镜头拆解问题并选择审阅路径。",
-        "en_description": "Thinking-model dispatcher lens for decomposing and choosing review routes.",
-        "lens_ids": ["thinking_dispatcher"],
+        "description": "Five independent thinking-model lenses for decomposing and choosing review routes.",
+        "zh_description": "用五个可独立开启的经典思维模型镜头拆解问题并选择审阅路径。",
+        "en_description": "Five independent thinking-model lenses for decomposing and choosing review routes.",
+        "lens_ids": THINKING_MODEL_LENS_IDS,
     },
 ]
 
@@ -217,7 +264,7 @@ LEGACY_CATEGORY_ID_ALIASES = {
 LEGACY_CATEGORY_LENS_IDS = {
     "review": ["blind_review", "advisor_interrogation", "novelty", "literature_evidence", "structure_expression"],
     "risk": ["aigc_risk", "literature_evidence"],
-    "thinking": ["socratic_cbt", "thinking_dispatcher"],
+    "thinking": THINKING_MODEL_LENS_IDS,
 }
 
 HANDOFF_TARGETS = [
@@ -329,12 +376,44 @@ def _structured_lenses_from_public_toml(payload: dict[str, Any]) -> list[dict[st
     return lenses
 
 
+def expand_deprecated_lens_aliases(values: Any, valid_lens_ids: set[str] | None = None) -> list[str]:
+    if not isinstance(values, list):
+        values = [] if values is None else [values]
+    result: list[str] = []
+    for value in values:
+        lens_id = str(value or "").strip()
+        if not lens_id:
+            continue
+        expanded = DEPRECATED_LENS_ALIASES.get(lens_id, [lens_id])
+        for item in expanded:
+            canonical = str(item or "").strip()
+            if not canonical:
+                continue
+            if valid_lens_ids is not None and canonical not in valid_lens_ids:
+                continue
+            if canonical not in result:
+                result.append(canonical)
+    return result
+
+
+def _is_valid_lens_or_deprecated_alias(lens_id: str, valid_lens_ids: set[str]) -> bool:
+    if lens_id in valid_lens_ids:
+        return True
+    if lens_id not in DEPRECATED_LENS_ALIASES:
+        return False
+    return all(item in valid_lens_ids for item in DEPRECATED_LENS_ALIASES[lens_id])
+
+
 def default_lens_categories(lenses: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
-    known_lens_ids = {str(item.get("id")) for item in (lenses or DEFAULT_EXPERT_LENSES) if item.get("id")}
+    known_lens_ids: set[str] = set()
+    for item in lenses or DEFAULT_EXPERT_LENSES:
+        if not isinstance(item, dict) or not item.get("id"):
+            continue
+        known_lens_ids.update(expand_deprecated_lens_aliases([item.get("id")]))
     assigned: set[str] = set()
     categories: list[dict[str, Any]] = []
     for category in DEFAULT_EXPERT_CATEGORIES:
-        lens_ids = [lens_id for lens_id in category.get("lens_ids", []) if lens_id in known_lens_ids]
+        lens_ids = expand_deprecated_lens_aliases(category.get("lens_ids", []), known_lens_ids)
         assigned.update(lens_ids)
         categories.append({**category, "lens_ids": lens_ids})
     unassigned = sorted(known_lens_ids - assigned)
@@ -350,18 +429,25 @@ def normalize_expert_categories(categories: list[dict[str, Any]] | None, lenses:
     ids or custom public lens ids. The GUI keeps the lens ids but normalizes the
     visible category layer to the three requested expert modules.
     """
-    lens_ids = {str(item.get("id")) for item in (lenses or DEFAULT_EXPERT_LENSES) if isinstance(item, dict) and item.get("id")}
+    lens_ids: set[str] = set()
+    for item in lenses or DEFAULT_EXPERT_LENSES:
+        if isinstance(item, dict) and item.get("id"):
+            lens_ids.update(expand_deprecated_lens_aliases([item.get("id")]))
     normalized = default_lens_categories(list(lenses or DEFAULT_EXPERT_LENSES))
     by_id = {str(item.get("id")): dict(item) for item in normalized}
     assigned = {lens_id for item in by_id.values() for lens_id in item.get("lens_ids", [])}
     for category in categories or []:
         if not isinstance(category, dict) or not category.get("id"):
             continue
-        target_id = _canonical_category_id(category.get("id"))
+        raw_category_id = str(category.get("id") or "")
+        target_id = _canonical_category_id(raw_category_id)
         if target_id not in by_id:
             target_id = "strict_graduate_advisor"
         merged_ids = set(by_id[target_id].get("lens_ids", []))
-        merged_ids.update(str(lens_id) for lens_id in category.get("lens_ids", []) if str(lens_id) in lens_ids)
+        if raw_category_id in LEGACY_CATEGORY_LENS_IDS:
+            merged_ids.update(_legacy_category_member_lenses(raw_category_id, lens_ids))
+        else:
+            merged_ids.update(expand_deprecated_lens_aliases(category.get("lens_ids", []), lens_ids))
         by_id[target_id]["lens_ids"] = sorted(merged_ids)
         assigned.update(merged_ids)
     unassigned = lens_ids - assigned
@@ -380,7 +466,7 @@ def _canonical_category_id(category_id: Any, valid_category_ids: set[str] | None
 
 
 def _legacy_category_member_lenses(category_id: Any, lens_ids: set[str]) -> list[str]:
-    return [lens_id for lens_id in LEGACY_CATEGORY_LENS_IDS.get(str(category_id or ""), []) if lens_id in lens_ids]
+    return expand_deprecated_lens_aliases(LEGACY_CATEGORY_LENS_IDS.get(str(category_id or ""), []), lens_ids)
 
 
 def _default_lens_metadata_by_id() -> dict[str, dict[str, Any]]:
@@ -414,12 +500,17 @@ def normalize_lens_display_fields(lenses: list[dict[str, Any]]) -> list[dict[str
     for lens in lenses:
         if not isinstance(lens, dict) or not lens.get("id"):
             continue
-        enriched = _enrich_lens_display_fields(lens)
-        lens_id = str(enriched.get("id"))
-        if lens_id in seen:
-            continue
-        seen.add(lens_id)
-        result.append(enriched)
+        raw_lens_id = str(lens.get("id") or "")
+        for lens_id in expand_deprecated_lens_aliases([raw_lens_id]):
+            source = dict(lens)
+            if lens_id != raw_lens_id:
+                source = {**_default_lens_metadata_by_id().get(lens_id, {"id": lens_id}), "id": lens_id}
+            enriched = _enrich_lens_display_fields(source)
+            canonical_id = str(enriched.get("id"))
+            if canonical_id in DEPRECATED_LENS_ALIASES or canonical_id in seen:
+                continue
+            seen.add(canonical_id)
+            result.append(enriched)
     return result
 
 
@@ -460,7 +551,7 @@ def _structured_categories_from_public_toml(payload: dict[str, Any], lenses: lis
     if isinstance(category_values, list):
         for item in category_values:
             if isinstance(item, dict):
-                category_id = _canonical_category_id(_safe_short(item.get("id") or item.get("name") or item.get("label"), 80))
+                category_id = _safe_short(item.get("id") or item.get("name") or item.get("label"), 80)
                 label = _safe_short(item.get("label") or item.get("name") or category_id, 120)
                 description = _safe_short(item.get("description") or item.get("purpose") or "", 220)
                 lens_ids = [str(value) for value in item.get("lens_ids", []) if isinstance(value, str)]
@@ -1395,6 +1486,8 @@ def build_action_plan(
     project_root: str | Path | None = None,
     python_executable: str | None = None,
 ) -> dict[str, Any]:
+    normalized_selected_lenses = expand_deprecated_lens_aliases(selected_lenses or [])
+    normalized_selected_categories = string_list(selected_categories or [])
     if action not in ACTION_COMMANDS:
         return {
             "schema_version": SCHEMA_VERSION,
@@ -1427,9 +1520,9 @@ def build_action_plan(
     if action.startswith("session-") or (action == "status" and session_id):
         argv.extend(["--session-id", str(session_id)])
     if action in {"session-on", "session-set-lenses"}:
-        for lens_id in selected_lenses or []:
+        for lens_id in normalized_selected_lenses:
             argv.extend(["--lens", str(lens_id)])
-        for category_id in selected_categories or []:
+        for category_id in normalized_selected_categories:
             argv.extend(["--category", str(category_id)])
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1446,8 +1539,8 @@ def build_action_plan(
         "writes_state": action in WRITE_ACTIONS,
         "direct_state_write": False,
         "keyboard_shortcut": KEYBOARD_SHORTCUTS.get(action),
-        "selected_lenses": list(selected_lenses or []),
-        "selected_categories": list(selected_categories or []),
+        "selected_lenses": normalized_selected_lenses,
+        "selected_categories": normalized_selected_categories,
         "requires_readback_after_write": action in WRITE_ACTIONS,
         "readback_after_write": [
             build_action_plan(config, read_action, session_id=read_session_id, project_root=root, python_executable=python_executable)
@@ -1595,7 +1688,7 @@ def normalize_session_row(
     enabled = bool_state(row.get("effective_enabled"))
     if enabled is None:
         enabled = bool_state(row.get("enabled") if "enabled" in row else row.get("status"))
-    selected_lenses = string_list(row.get("selected_lenses"))
+    selected_lenses = expand_deprecated_lens_aliases(row.get("selected_lenses") or [])
     selected_categories = string_list(row.get("selected_categories"))
     effective_lens_mode = lens_mode_for_selection(selected_lenses, selected_categories, row.get("effective_lens_mode"))
     lens_selection_scope = str(row.get("lens_selection_scope") or "session")
@@ -2187,11 +2280,13 @@ def _product_lens_selection_model(
         for item in categories
         if item.get("id")
     }
-    explicit_lenses = string_list(selected_lenses or [])
+    raw_explicit_lenses = string_list(selected_lenses or [])
+    explicit_lenses = expand_deprecated_lens_aliases(raw_explicit_lenses, lens_ids)
     valid_category_ids = set(category_map)
-    explicit_categories = [_canonical_category_id(item, valid_category_ids) for item in string_list(selected_categories or [])]
+    raw_categories = string_list(selected_categories or [])
+    explicit_categories = [_canonical_category_id(item, valid_category_ids) for item in raw_categories]
     effective = {item for item in explicit_lenses if item in lens_ids}
-    for raw_category_id, category_id in zip(string_list(selected_categories or []), explicit_categories):
+    for raw_category_id, category_id in zip(raw_categories, explicit_categories):
         effective.update(category_map.get(category_id, set()))
         if raw_category_id != category_id:
             effective.update(_legacy_category_member_lenses(raw_category_id, lens_ids))
@@ -2230,7 +2325,7 @@ def _product_lens_selection_model(
         "mode": mode,
         "selected_lenses": explicit_lenses,
         "selected_categories": explicit_categories,
-        "invalid_lenses": [item for item in explicit_lenses if item not in lens_ids],
+        "invalid_lenses": [item for item in raw_explicit_lenses if not _is_valid_lens_or_deprecated_alias(item, lens_ids)],
         "invalid_categories": [item for item in explicit_categories if item not in category_map],
         "effective_lenses": effective_lenses,
         "effective_lens_count": len(effective_lenses),
@@ -2664,7 +2759,7 @@ def _product_enrich_session_row(
     why_shown: str | None = None,
     language: str = "bilingual",
 ) -> dict[str, Any]:
-    selected_lenses = string_list(row.get("selected_lenses"))
+    selected_lenses = expand_deprecated_lens_aliases(row.get("selected_lenses") or [])
     selected_categories = string_list(row.get("selected_categories"))
     selection_model = _product_lens_selection_model(lenses, categories, selected_lenses, selected_categories, language=language)
     full_id = str(row.get("session_id") or "")
@@ -2989,7 +3084,9 @@ def build_view_model(
             "full_identity_fields_only_in_detail_card": True,
             "lens_selection_independent_scroll_area": True,
             "category_selection_independent_scroll_area": True,
-            "category_lens_selection_layout": "stacked_vertical_scroll_regions",
+            "category_lens_selection_layout": "fixed_category_rows_plus_tall_independent_lens_scroll",
+            "category_rows_use_tiny_scrollbar": False,
+            "lens_selection_minimum_height_px": 220,
             "narrow_width_strategy": "avoid_horizontal_category_lens_splitter",
             "category_lens_i18n": True,
             "category_lens_tri_state_linkage": True,
@@ -3536,16 +3633,12 @@ def create_product_widget_window(
             lens_scroll.setObjectName("sessionLensIndependentScrollArea")
             lens_scroll.setWidgetResizable(True)
             lens_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            lens_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
             lens_scroll.setWidget(self.lens_box)
-            category_scroll = QScrollArea()
-            category_scroll.setObjectName("sessionCategoryIndependentScrollArea")
-            category_scroll.setWidgetResizable(True)
-            category_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-            category_scroll.setMinimumHeight(124)
-            category_scroll.setMaximumHeight(142)
-            category_scroll.setWidget(self.category_box)
-            lens_scroll.setMinimumHeight(96)
-            selection_layout.addWidget(category_scroll, 0)
+            self.category_box.setMinimumHeight(124)
+            self.category_box.setMaximumHeight(156)
+            lens_scroll.setMinimumHeight(220)
+            selection_layout.addWidget(self.category_box, 0)
             selection_layout.addWidget(lens_scroll, 1)
 
             self.detail_layout.addWidget(detail_card, 0)
@@ -3674,6 +3767,8 @@ def create_product_widget_window(
                 item = layout.takeAt(1 if keep_first else 0)
                 widget = item.widget()
                 if widget is not None:
+                    widget.hide()
+                    widget.setParent(None)
                     widget.deleteLater()
 
         def _rebuild_lens_checks(self, row: dict[str, Any]) -> None:

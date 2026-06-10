@@ -76,6 +76,12 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - Target A Sessions visual render: `python tools\project_moe_gui_toolchain\visual_render_check.py --target-project D:\PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` -> `token=ok`.
 - Remote publication: not performed; B local `main` is intentionally ahead of `gitlab/main` until explicit remote publication approval.
 
+
+- Follow-up 0.2.40 plan-only package local-main merge: `333621e892f9885b60dbd9bb7da2b2430093e5fe`; rollback ref `refs/backup/local-main/20260610-144818-before-plan-moe-five-thinking-scroll-20260610`.
+- Follow-up 0.2.40 focused tests: `python test\project_moe_gui_toolchain.test.py ProjectMoeGuiToolchainTests.test_phase1_bootstrap_scaffold_apply_creates_only_missing_files_in_clean_target ProjectMoeGuiToolchainTests.test_gui_shell_default_moe_modules_and_i18n_labels_are_governed ProjectMoeGuiToolchainTests.test_gui_view_model_declares_sessions_refresh_layout_contract ProjectMoeGuiToolchainTests.test_visual_render_check_defaults_to_multi_size_and_fixture_profiles` -> `Ran 4 tests ... OK`.
+- Follow-up 0.2.40 full toolchain tests: `python test\project_moe_gui_toolchain.test.py` -> `Ran 101 tests ... OK`.
+- Follow-up 0.2.40 B Sessions visual render checks: default, long-content, and dense-sessions fixtures at `1180x720`, `1366x768`, and `1440x900` each returned `token=ok`.
+- Follow-up 0.2.40 root-cause fix evidence: the first default visual run failed on stale category checkbox geometry (`640x480`) after layout rebuild; `_clear_layout()` now hides and detaches old widgets before `deleteLater()`, and the repeated default visual check returned `token=ok`.
 <!-- EVIDENCE_INDEX_END -->
 
 ## Follow-up Hotfix: 0.2.40 Five Thinking Models and Scroll Usability
@@ -98,11 +104,11 @@ This follow-up is required before the Sessions page can be considered product-re
 
 ### Implementation sequence
 
-- [ ] Stage E1: update this implementation plan in both languages and merge the plan-only package into B local `main`.
-- [ ] Stage E2: implement B runtime version `0.2.40` in an isolated feature worktree.
-- [ ] Stage E3: update the managed Phase 1 CLI/template contract so A accepts the five new lens ids and compatibility alias expansion.
-- [ ] Stage E4: update focused unit tests and visual render fixtures for the five new lenses and scroll ergonomics.
-- [ ] Stage E5: run B tests and Sessions visual checks for default, long-content, and dense-sessions at `1180x720`, `1366x768`, and `1440x900`.
+- [x] Stage E1: update this implementation plan in both languages and merge the plan-only package into B local `main`. Evidence: `333621e892f9885b60dbd9bb7da2b2430093e5fe`.
+- [x] Stage E2: implement B runtime version `0.2.40` in an isolated feature worktree.
+- [x] Stage E3: update the managed Phase 1 CLI/template contract so A accepts the five new lens ids and compatibility alias expansion.
+- [x] Stage E4: update focused unit tests and visual render fixtures for the five new lenses and scroll ergonomics.
+- [x] Stage E5: run B tests and Sessions visual checks for default, long-content, and dense-sessions at `1180x720`, `1366x768`, and `1440x900`.
 - [ ] Stage E6: integrate B runtime into local `main`, install `0.2.40` into `D:/PythonProject_paper_suggest`, run A preflight, run reversible live write/readback checks, restore A state, and commit A managed artifacts if changed.
 
 ### Additional acceptance criteria

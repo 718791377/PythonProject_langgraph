@@ -76,6 +76,13 @@ related_plans:
 - A 目标项目 Sessions 视觉渲染：`python tools\project_moe_gui_toolchain\visual_render_check.py --target-project D:\PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` -> `token=ok`。
 - 远端发布：未执行；B 本地 `main` 在明确远端发布授权前有意领先 `gitlab/main`。
 
+
+
+- Follow-up 0.2.40 仅方案包本地 main 合入：`333621e892f9885b60dbd9bb7da2b2430093e5fe`；rollback ref：`refs/backup/local-main/20260610-144818-before-plan-moe-five-thinking-scroll-20260610`。
+- Follow-up 0.2.40 focused tests：`python test\\project_moe_gui_toolchain.test.py ProjectMoeGuiToolchainTests.test_phase1_bootstrap_scaffold_apply_creates_only_missing_files_in_clean_target ProjectMoeGuiToolchainTests.test_gui_shell_default_moe_modules_and_i18n_labels_are_governed ProjectMoeGuiToolchainTests.test_gui_view_model_declares_sessions_refresh_layout_contract ProjectMoeGuiToolchainTests.test_visual_render_check_defaults_to_multi_size_and_fixture_profiles` -> `Ran 4 tests ... OK`。
+- Follow-up 0.2.40 完整 toolchain 测试：`python test\\project_moe_gui_toolchain.test.py` -> `Ran 101 tests ... OK`。
+- Follow-up 0.2.40 B Sessions 视觉渲染检查：default、long-content、dense-sessions 三组夹具在 `1180x720`、`1366x768`、`1440x900` 均返回 `token=ok`。
+- Follow-up 0.2.40 根因修复证据：首次 default 视觉运行在布局重建后的旧 category checkbox 几何上失败（`640x480`）；`_clear_layout()` 现在会先隐藏并脱离旧 widget，再 `deleteLater()`，重复 default 视觉检查返回 `token=ok`。
 <!-- EVIDENCE_INDEX_END -->
 
 ## 后续 Hotfix：0.2.40 五大思维模型拆分与滚动可用性
@@ -98,11 +105,11 @@ related_plans:
 
 ### 实施顺序
 
-- [ ] Stage E1：更新本 implementation_plan 的中英文版本，并把仅方案包合入 B 本地 `main`。
-- [ ] Stage E2：在隔离 feature worktree 中实现 B runtime 版本 `0.2.40`。
-- [ ] Stage E3：更新受管理 Phase 1 CLI/template 契约，使 A 项目接受五个新 lens id，并支持兼容 alias 展开。
-- [ ] Stage E4：更新 focused unit tests 和视觉渲染夹具，覆盖五个新镜头与滚动可用性。
-- [ ] Stage E5：运行 B 测试与 Sessions 视觉检查，覆盖 default、long-content、dense-sessions，以及 `1180x720`、`1366x768`、`1440x900`。
+- [x] Stage E1：更新本 implementation_plan 的中英文版本，并把仅方案包合入 B 本地 `main`。证据：`333621e892f9885b60dbd9bb7da2b2430093e5fe`。
+- [x] Stage E2：在隔离 feature worktree 中实现 B runtime 版本 `0.2.40`。
+- [x] Stage E3：更新受管理 Phase 1 CLI/template 契约，使 A 项目接受五个新 lens id，并支持兼容 alias 展开。
+- [x] Stage E4：更新 focused unit tests 和视觉渲染夹具，覆盖五个新镜头与滚动可用性。
+- [x] Stage E5：运行 B 测试与 Sessions 视觉检查，覆盖 default、long-content、dense-sessions，以及 `1180x720`、`1366x768`、`1440x900`。
 - [ ] Stage E6：将 B runtime 合入本地 `main`，安装 `0.2.40` 到 `D:/PythonProject_paper_suggest`，运行 A preflight，执行可回滚 live 写入/读回验证，恢复 A 状态，并在 A 安装产物变化时提交 A 本地仓库。
 
 ### 追加验收标准
