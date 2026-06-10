@@ -5,7 +5,7 @@ status: active
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/project_moe_gui_sessions_tab_design_refresh_plan.md
 created_at: 2026-06-09
-updated_at: 2026-06-09
+updated_at: 2026-06-10
 scope: project_moe_gui_sessions_tab_design_refresh
 parent_plan: docs_bilingual/implementation_plans/project_moe_gui_product_ui_function_rebuild_plan.zh-CN.md
 related_plans:
@@ -77,6 +77,45 @@ related_plans:
 - 远端发布：未执行；B 本地 `main` 在明确远端发布授权前有意领先 `gitlab/main`。
 
 <!-- EVIDENCE_INDEX_END -->
+
+## 后续 Hotfix：0.2.40 五大思维模型拆分与滚动可用性
+<!-- FOLLOW_UP_0_2_40_START -->
+
+这个 follow-up 是 Sessions 页 lens/category 控制达到产品可用前的必修切片。它修复类别串联控制缺陷，把旧的五大经典思维模型调度镜头拆成五个可独立开启/关闭的镜头，并优化右侧长内容滚动体验。
+
+### 必须实现的行为
+
+- `认知行为式提问专家模块` 只控制 `socratic_cbt`。
+- `五大经典思维模型专家模块` 只控制以下五个镜头：
+  - `feynman_learning` / 费曼学习法专家；
+  - `first_principles` / 第一性原理专家；
+  - `pyramid_principle` / 金字塔原理专家；
+  - `swot_analysis` / SWOT 分析专家；
+  - `decision_tree` / 决策树模型专家。
+- 废弃的 `thinking_dispatcher` id 只保留为兼容 alias：读取旧状态或旧写入时展开为五个新思维模型镜头；新 GUI 写入不得再持久化 `thinking_dispatcher`。
+- legacy `thinking` 类别不得包含 `socratic_cbt`，只映射到五个思维模型镜头。
+- 右侧 lens/category 选择区域必须有足够大的可视高度，方便拖动和滚轮控制。三个类别行不应再需要自己的小滚动条；镜头列表仍独立滚动，但轨道要更长。
+
+### 实施顺序
+
+- [ ] Stage E1：更新本 implementation_plan 的中英文版本，并把仅方案包合入 B 本地 `main`。
+- [ ] Stage E2：在隔离 feature worktree 中实现 B runtime 版本 `0.2.40`。
+- [ ] Stage E3：更新受管理 Phase 1 CLI/template 契约，使 A 项目接受五个新 lens id，并支持兼容 alias 展开。
+- [ ] Stage E4：更新 focused unit tests 和视觉渲染夹具，覆盖五个新镜头与滚动可用性。
+- [ ] Stage E5：运行 B 测试与 Sessions 视觉检查，覆盖 default、long-content、dense-sessions，以及 `1180x720`、`1366x768`、`1440x900`。
+- [ ] Stage E6：将 B runtime 合入本地 `main`，安装 `0.2.40` 到 `D:/PythonProject_paper_suggest`，运行 A preflight，执行可回滚 live 写入/读回验证，恢复 A 状态，并在 A 安装产物变化时提交 A 本地仓库。
+
+### 追加验收标准
+
+- 开启/关闭 `五大经典思维模型专家模块` 绝不能联动开启/关闭 `socratic_cbt`。
+- 开启/关闭 `认知行为式提问专家模块` 绝不能联动开启/关闭五个思维模型镜头。
+- 通过兼容输入选择旧 `thinking_dispatcher` 时，生效结果为五个新思维模型镜头全选。
+- A 目标项目使用五个新 lens id 执行 `set-lenses` 返回 `token=ok`；新 id 不得触发 invalid-lens 错误。
+- 视觉检查必须证明 category/lens 面板在长标签和密集 lens 列表下仍可控，不再出现右侧滚动轨道过短、拖动过敏的问题。
+
+<!-- FOLLOW_UP_0_2_40_END -->
+
+
 
 ## 1. 当前状态
 

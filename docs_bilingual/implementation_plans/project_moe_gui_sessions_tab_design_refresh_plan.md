@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/project_moe_gui_sessions_tab_desi
 status: active
 doc_class: implementation_plan
 created_at: 2026-06-09
-updated_at: 2026-06-09
+updated_at: 2026-06-10
 scope: project_moe_gui_sessions_tab_design_refresh
 parent_plan: docs_bilingual/implementation_plans/project_moe_gui_product_ui_function_rebuild_plan.md
 related_plans:
@@ -31,7 +31,7 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - [x] Pencil MCP was blocked by `transport not connected to app: trae_cn`; HTML fallback mockup and exported PNG are recorded under `docs_bilingual/designs/project_moe_sessions_tab/`.
 - [x] Focused toolchain tests passed: `python test\project_moe_gui_toolchain.test.py` reported 101/101 OK.
 - [x] B-repository Sessions visual render checks passed for default, long-content, and dense-sessions fixtures at `1180x720`, `1366x768`, and `1440x900`.
-- [x] Target A install completed for `D:/PythonProject_paper_suggest`; managed install artifacts were committed in A local `main` at `8d1449f` with toolchain version `0.2.38`.
+- [x] Target A install completed for `D:/PythonProject_paper_suggest`; managed install artifacts were committed in A local `main` at `8d1449f` with toolchain version `0.2.39`.
 - [x] Target A `project-moe-gui.cmd --preflight --json` passed with `token=ok`, Phase 1 readiness `ready`, QFluentWidgets import `ok`, and session count `5`.
 - [x] Target A Sessions visual render check passed at `1180x720`, `1366x768`, and `1440x900` with `token=ok`.
 - [x] Remote publication remains out of scope and was not performed.
@@ -70,7 +70,7 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
   - default fixture: `python tools\project_moe_gui_toolchain\visual_render_check.py --view-model-json .tmp\project_moe_sessions_view_model.json --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` -> `token=ok`.
   - long-content fixture: same command with `--fixture-profile long-content` -> `token=ok`.
   - dense-sessions fixture: same command with `--fixture-profile dense-sessions` -> `token=ok`.
-- Target A install: `python .\tools\project_moe_gui_toolchain\update_project_moe_gui.py --target-project D:\PythonProject_paper_suggest --json` -> `token=ok`, target version `0.2.38`.
+- Target A install: `python .\tools\project_moe_gui_toolchain\update_project_moe_gui.py --target-project D:\PythonProject_paper_suggest --json` -> `token=ok`, target version `0.2.39`.
 - Target A managed install commit: `8d1449f` (Chinese commit message: upgrade paper Project MOE GUI to 0.2.38).
 - Target A preflight: `D:\PythonProject_paper_suggest\project-moe-gui.cmd --preflight --json` -> `token=ok`, `phase1_readiness_gate.readiness_status=ready`, `session_count.value=5`.
 - Target A Sessions visual render: `python tools\project_moe_gui_toolchain\visual_render_check.py --target-project D:\PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --json` -> `token=ok`.
@@ -78,6 +78,42 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 
 <!-- EVIDENCE_INDEX_END -->
 
+## Follow-up Hotfix: 0.2.40 Five Thinking Models and Scroll Usability
+<!-- FOLLOW_UP_0_2_40_START -->
+
+This follow-up is required before the Sessions page can be considered product-ready for lens/category control. It fixes a category cross-control defect, splits the old five-thinking-model dispatcher into five independently selectable lenses, and improves the right-side scroll ergonomics for long category/lens content.
+
+### Required behavior
+
+- `Socratic Questioning Module` controls only `socratic_cbt`.
+- `Five Classic Thinking Models Module` controls only these five lenses:
+  - `feynman_learning` / Feynman learning expert;
+  - `first_principles` / First principles expert;
+  - `pyramid_principle` / Pyramid principle expert;
+  - `swot_analysis` / SWOT analysis expert;
+  - `decision_tree` / Decision tree expert.
+- The deprecated `thinking_dispatcher` id remains a compatibility alias only: reads and legacy writes expand it to all five new thinking-model lenses; new GUI writes must not persist `thinking_dispatcher`.
+- The legacy `thinking` category must not include `socratic_cbt`; it maps only to the five thinking-model lenses.
+- The right-side lens/category selection viewport must be large enough for controlled dragging and wheel use. The three category rows should not require their own tiny scrollbar; the lens list remains independently scrollable with a taller track.
+
+### Implementation sequence
+
+- [ ] Stage E1: update this implementation plan in both languages and merge the plan-only package into B local `main`.
+- [ ] Stage E2: implement B runtime version `0.2.40` in an isolated feature worktree.
+- [ ] Stage E3: update the managed Phase 1 CLI/template contract so A accepts the five new lens ids and compatibility alias expansion.
+- [ ] Stage E4: update focused unit tests and visual render fixtures for the five new lenses and scroll ergonomics.
+- [ ] Stage E5: run B tests and Sessions visual checks for default, long-content, and dense-sessions at `1180x720`, `1366x768`, and `1440x900`.
+- [ ] Stage E6: integrate B runtime into local `main`, install `0.2.40` into `D:/PythonProject_paper_suggest`, run A preflight, run reversible live write/readback checks, restore A state, and commit A managed artifacts if changed.
+
+### Additional acceptance criteria
+
+- Toggling `Five Classic Thinking Models Module` never toggles `socratic_cbt`.
+- Toggling `Socratic Questioning Module` never toggles any of the five thinking-model lenses.
+- Selecting old `thinking_dispatcher` through compatibility input results in all five new thinking-model lenses being effective.
+- A target-project `set-lenses` call using the five new lens ids returns `token=ok`; invalid-lens errors must not occur for the new ids.
+- Visual checks prove the category/lens panel remains usable with long labels and dense lens lists, without tiny right-side scroll tracks that make drag control impractical.
+
+<!-- FOLLOW_UP_0_2_40_END -->
 ## 1. Current State
 
 - B repository source of truth: `tools/project_moe_gui_toolchain/`.
@@ -129,7 +165,7 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - [x] Add or update tests for compact list text, detail block completeness, three expert modules, i18n labels, and tri-state linkage.
 - [x] Run focused Project MOE GUI tests and the full toolchain test suite as needed. Evidence: `python test\project_moe_gui_toolchain.test.py` returned 101/101 OK.
 - [x] Run Sessions visual render checks at `1180x720`, `1366x768`, and `1440x900` for default, long-content, and dense-sessions fixtures.
-- [x] Install the updated toolchain into `D:/PythonProject_paper_suggest` after B local `main` integration. Evidence: installer reported `token=ok` and target version `0.2.38`.
+- [x] Install the updated toolchain into `D:/PythonProject_paper_suggest` after B local `main` integration. Evidence: installer reported `token=ok` and target version `0.2.39`.
 - [x] Run A `project-moe-gui.cmd --preflight --json` and verify `token=ok` after install. Evidence: preflight returned `token=ok` and Phase 1 readiness `ready`.
 - [x] Confirm A still shows exactly the five real target-project sessions after install. Evidence: preflight `session_count.value=5`.
 - [x] Commit A managed install artifacts with a Chinese commit message after managed artifact changes. Evidence: A local commit `8d1449f` (Chinese commit message: upgrade paper Project MOE GUI to 0.2.38).
