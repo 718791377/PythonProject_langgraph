@@ -2716,6 +2716,107 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
             self.assertIn("A concise visible session title", row["conversation_title"])
             self.assertIn("Detailed preview stays on the right.", row["conversation_preview"])
 
+
+    def test_gui_view_model_declares_sessions_search_filter_sort_counts_contract(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"},
+                sessions_payload={
+                    "ok": True,
+                    "token": "ok",
+                    "sessions": [
+                        {
+                            "session_id": "session-enabled-aaaabbbbccccdddd",
+                            "enabled": True,
+                            "effective_enabled": True,
+                            "token": "ok",
+                            "valid": True,
+                            "conversation": {"title": "Enabled session title", "preview": "Visible enabled preview."},
+                            "source": "manual-session",
+                            "selected_lenses": ["blind_review"],
+                        },
+                        {
+                            "session_id": "session-disabled-eeeeffffgggghhhh",
+                            "enabled": False,
+                            "effective_enabled": False,
+                            "token": "ok",
+                            "valid": True,
+                            "conversation": {"title": "Disabled session title", "preview": "Visible disabled preview."},
+                            "source": "project-propagated",
+                        },
+                        {
+                            "session_id": "session-invalid-iiiijjjjkkkkllll",
+                            "enabled": False,
+                            "effective_enabled": False,
+                            "token": "blocked:invalid_session_record",
+                            "valid": False,
+                            "conversation": {"title": "Invalid session title", "preview": "Invalid preview."},
+                        },
+                    ],
+                },
+                status_payload={"ok": True, "token": "ok", "effective_enabled": True},
+                pyside6_available=False,
+            )
+
+            contract = view_model["product_ui"]["sessions_layout_contract"]
+            self.assertEqual(contract["left_list_controls"], "search_filter_sort")
+            self.assertTrue(contract["left_list_count_breakdown_visible"])
+            self.assertEqual(contract["left_list_filter_modes"], ["all", "enabled", "disabled", "blocked-invalid"])
+            self.assertEqual(contract["left_list_sort_keys"], ["last_seen", "display_id", "label", "effective_lens_mode"])
+
+            table = view_model["session_table"]
+            self.assertEqual(table["controls"]["default_filter_mode"], "all")
+            self.assertEqual(table["controls"]["default_sort_key"], "last_seen")
+            self.assertEqual(table["counts"]["total"], 3)
+            self.assertEqual(table["counts"]["enabled"], 1)
+            self.assertEqual(table["counts"]["disabled"], 1)
+            self.assertEqual(table["counts"]["blocked_invalid"], 1)
+            self.assertIn("3", table["count_summary"])
+            self.assertIn("1", table["count_summary"])
+            self.assertIn("blocked", table["count_summary"].lower())
+            self.assertEqual(table["filtered_rows_default"], table["rows"])
+
+            enabled_rows = gui_shell.filter_sort_session_rows(table["rows"], filter_mode="enabled")
+            self.assertEqual([row["session_id"] for row in enabled_rows], ["session-enabled-aaaabbbbccccdddd"])
+            invalid_rows = gui_shell.filter_sort_session_rows(table["rows"], filter_mode="blocked-invalid")
+            self.assertEqual([row["session_id"] for row in invalid_rows], ["session-invalid-iiiijjjjkkkkllll"])
+            search_rows = gui_shell.filter_sort_session_rows(table["rows"], search_text="disabled preview")
+            self.assertEqual([row["session_id"] for row in search_rows], ["session-disabled-eeeeffffgggghhhh"])
+
+    def test_gui_session_count_visible_text_stays_short_and_keeps_filter_sort_in_tooltip(self) -> None:
+        from project_moe_gui import gui_shell
+
+        visible = gui_shell.session_count_visible_text(
+            shown=3,
+            total=3,
+            count_word="会话 / sessions",
+        )
+        self.assertEqual(visible, "3/3 会话 / sessions")
+        self.assertNotIn("Filter", visible)
+        self.assertNotIn("Sort", visible)
+        self.assertLessEqual(len(visible), 24)
+
+        tooltip = gui_shell.session_count_tooltip(
+            shown=3,
+            total=3,
+            count_word="会话 / sessions",
+            filter_label="筛选 / Filter",
+            filter_mode="all",
+            sort_label="排序 / Sort",
+            sort_key="last_seen",
+            summary="3 sessions; enabled=1, disabled=1, blocked/invalid=1; origins: registered=2, discovered=1",
+        )
+        self.assertIn("筛选 / Filter: all", tooltip)
+        self.assertIn("排序 / Sort: last_seen", tooltip)
+        self.assertIn("blocked/invalid=1", tooltip)
+        self.assertIn("registered=2", tooltip)
+
     def test_runtime_view_model_uses_installed_target_project_root(self) -> None:
         from project_moe_gui import gui_shell
 

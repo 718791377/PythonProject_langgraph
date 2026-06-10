@@ -1234,8 +1234,10 @@ def lens_selection_summary(selected_lenses: list[str], selected_categories: list
     return "; ".join(parts) if parts else mode
 
 
-def session_table_controls() -> dict[str, list[dict[str, str]]]:
+def session_table_controls() -> dict[str, Any]:
     return {
+        "default_filter_mode": "all",
+        "default_sort_key": "last_seen",
         "filter_modes": [
             {"id": "all", "label": "All"},
             {"id": "enabled", "label": "Enabled"},
@@ -1249,6 +1251,67 @@ def session_table_controls() -> dict[str, list[dict[str, str]]]:
             {"id": "effective_lens_mode", "label": "Effective lens mode"},
         ],
     }
+
+
+def session_table_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
+    total = len(rows)
+    blocked_invalid = sum(1 for row in rows if row.get("valid") is False or str(row.get("token") or "ok") != "ok")
+    enabled = sum(1 for row in rows if bool_state(row.get("enabled")) is True and not (row.get("valid") is False or str(row.get("token") or "ok") != "ok"))
+    disabled = sum(1 for row in rows if bool_state(row.get("enabled")) is False and not (row.get("valid") is False or str(row.get("token") or "ok") != "ok"))
+    return {
+        "total": total,
+        "visible_total": total,
+        "enabled": enabled,
+        "disabled": disabled,
+        "blocked_invalid": blocked_invalid,
+    }
+
+
+def session_count_summary(counts: dict[str, int], row_origin_counts: dict[str, int] | None = None) -> str:
+    origins = row_origin_counts or {}
+    origin_parts = []
+    for key, label in [
+        ("registered_matched", "registered"),
+        ("discovered_only", "discovered"),
+        ("state_only", "state-only"),
+        ("supplemental_state_only", "supplemental"),
+    ]:
+        value = int(origins.get(key, 0) or 0)
+        if value:
+            origin_parts.append(f"{label}={value}")
+    origin_text = "; origins: " + ", ".join(origin_parts) if origin_parts else ""
+    return (
+        f"{int(counts.get('total', 0) or 0)} sessions; "
+        f"enabled={int(counts.get('enabled', 0) or 0)}, "
+        f"disabled={int(counts.get('disabled', 0) or 0)}, "
+        f"blocked/invalid={int(counts.get('blocked_invalid', 0) or 0)}"
+        f"{origin_text}"
+    )
+
+
+def session_count_visible_text(*, shown: int, total: int, count_word: str) -> str:
+    return f"{int(shown)}/{int(total)} {str(count_word).strip()}".strip()
+
+
+def session_count_tooltip(
+    *,
+    shown: int,
+    total: int,
+    count_word: str,
+    filter_label: str,
+    filter_mode: str,
+    sort_label: str,
+    sort_key: str,
+    summary: str = "",
+) -> str:
+    parts = [
+        session_count_visible_text(shown=shown, total=total, count_word=count_word),
+        f"{filter_label}: {filter_mode}",
+        f"{sort_label}: {sort_key}",
+    ]
+    if summary:
+        parts.append(summary)
+    return "\n".join(parts)
 
 
 def session_empty_state_variants() -> dict[str, dict[str, str]]:
@@ -1314,8 +1377,16 @@ def filter_sort_session_rows(
                 "token",
                 "effective_lens_mode",
                 "lens_selection_summary",
+                "directory",
+                "branch",
+                "thread_source",
+                "conversation_title",
+                "conversation_preview",
             ]
         ).lower()
+        conversation = row.get("conversation")
+        if isinstance(conversation, dict):
+            haystack = f"{haystack} {conversation.get('title') or ''} {conversation.get('preview') or ''}".lower()
         return needle in haystack
 
     def matches_filter(row: dict[str, Any]) -> bool:
@@ -1780,6 +1851,7 @@ def build_session_table(
     controls = session_table_controls()
     empty_state_variants = session_empty_state_variants()
     if sessions_payload is None:
+        counts = session_table_counts([])
         return {
             "token": "blocked:list_sessions_not_loaded",
             "rows": [],
@@ -1787,8 +1859,12 @@ def build_session_table(
             "invalid_count": 0,
             "controls": controls,
             "empty_state_variants": empty_state_variants,
+            "counts": counts,
+            "count_summary": session_count_summary(counts),
+            "filtered_rows_default": [],
         }
     if not sessions_payload.get("ok", True):
+        counts = session_table_counts([])
         return {
             "token": payload_token(sessions_payload, "blocked:list_sessions_failed"),
             "rows": [],
@@ -1796,9 +1872,13 @@ def build_session_table(
             "invalid_count": 0,
             "controls": controls,
             "empty_state_variants": empty_state_variants,
+            "counts": counts,
+            "count_summary": session_count_summary(counts),
+            "filtered_rows_default": [],
         }
     sessions = sessions_payload.get("sessions", [])
     if not isinstance(sessions, list):
+        counts = session_table_counts([])
         return {
             "token": "blocked:list_sessions_contract_invalid",
             "rows": [],
@@ -1806,6 +1886,9 @@ def build_session_table(
             "invalid_count": 0,
             "controls": controls,
             "empty_state_variants": empty_state_variants,
+            "counts": counts,
+            "count_summary": session_count_summary(counts),
+            "filtered_rows_default": [],
         }
     rows = [
         normalize_session_row(
@@ -1819,7 +1902,8 @@ def build_session_table(
         )
         for index, row in enumerate(sessions)
     ]
-    invalid_count = sum(1 for row in rows if not row["valid"] or row["token"] != "ok")
+    counts = session_table_counts(rows)
+    invalid_count = counts["blocked_invalid"]
     return {
         "token": "ok",
         "rows": rows,
@@ -1827,6 +1911,13 @@ def build_session_table(
         "invalid_count": invalid_count,
         "controls": controls,
         "empty_state_variants": empty_state_variants,
+        "counts": counts,
+        "count_summary": session_count_summary(counts),
+        "filtered_rows_default": filter_sort_session_rows(
+            rows,
+            filter_mode=str(controls.get("default_filter_mode") or "all"),
+            sort_key=str(controls.get("default_sort_key") or "last_seen"),
+        ),
     }
 
 
@@ -2252,6 +2343,9 @@ _PRODUCT_I18N: dict[str, dict[str, str]] = {
     "moe_lenses": {"zh": "MOE 镜头", "en": "MOE lenses"},
     "sessions_total": {"zh": "个会话", "en": "sessions"},
     "search_session_placeholder": {"zh": "搜索会话 ID、标题、目录、分支", "en": "Search session id, title, directory, branch"},
+    "session_filter": {"zh": "筛选", "en": "Filter"},
+    "session_sort": {"zh": "排序", "en": "Sort"},
+    "session_count_breakdown": {"zh": "会话统计", "en": "Session counts"},
     "empty_selection_all": {"zh": "空选择 = 全部镜头", "en": "Empty selection = all lenses"},
 }
 
@@ -3047,6 +3141,23 @@ def build_view_model(
     }
     table["codex_session_discovery"] = discovery
     table["invalid_count"] = sum(1 for row in table.get("rows", []) if not row.get("valid") or row.get("token") != "ok")
+    table["counts"] = session_table_counts(table.get("rows", []) if isinstance(table.get("rows"), list) else [])
+    table["counts"]["state_only"] = table["row_origin_counts"].get("state_only", 0)
+    table["counts"]["discovered_only"] = table["row_origin_counts"].get("discovered_only", 0)
+    table["counts"]["registered_matched"] = table["row_origin_counts"].get("registered_matched", 0)
+    table["counts"]["supplemental_state_only"] = table["row_origin_counts"].get("supplemental_state_only", 0)
+    table["count_summary"] = session_count_summary(table["counts"], table["row_origin_counts"])
+    controls = table.get("controls") if isinstance(table.get("controls"), dict) else session_table_controls()
+    table["controls"] = {
+        **controls,
+        "default_filter_mode": str(controls.get("default_filter_mode") or "all"),
+        "default_sort_key": str(controls.get("default_sort_key") or "last_seen"),
+    }
+    table["filtered_rows_default"] = filter_sort_session_rows(
+        table.get("rows", []) if isinstance(table.get("rows"), list) else [],
+        filter_mode=str(table["controls"].get("default_filter_mode") or "all"),
+        sort_key=str(table["controls"].get("default_sort_key") or "last_seen"),
+    )
     model["session_table"] = table
 
     show_projects = bool(config.get("show_projects_page") or config.get("maintenance_console"))
@@ -3080,6 +3191,10 @@ def build_view_model(
         "workbench_executes_carriers": False,
         "sessions_layout_contract": {
             "left_list": "compact_one_line_rows_with_count",
+            "left_list_controls": "search_filter_sort",
+            "left_list_count_breakdown_visible": True,
+            "left_list_filter_modes": [str(item.get("id")) for item in table["controls"].get("filter_modes", []) if isinstance(item, dict)],
+            "left_list_sort_keys": [str(item.get("id")) for item in table["controls"].get("sort_keys", []) if isinstance(item, dict)],
             "right_regions": ["session_details_card", "moe_status_actions_card", "moe_category_lens_selection_card"],
             "full_identity_fields_only_in_detail_card": True,
             "lens_selection_independent_scroll_area": True,
@@ -3529,12 +3644,39 @@ def create_product_widget_window(
             self.session_search = QLineEdit()
             self.session_search.setPlaceholderText(L("search_session_placeholder"))
             self.session_search.textChanged.connect(self._refill_session_list)
+            controls = (self.view_model.get("session_table") or {}).get("controls") or session_table_controls()
+            control_row = QHBoxLayout()
+            self.session_filter_combo = QComboBox()
+            self.session_filter_combo.setObjectName("sessionFilterCombo")
+            self.session_filter_combo.setToolTip(L("session_filter"))
+            for mode in controls.get("filter_modes", []):
+                if isinstance(mode, dict):
+                    self.session_filter_combo.addItem(str(mode.get("label") or mode.get("id")), str(mode.get("id") or "all"))
+            filter_index = self.session_filter_combo.findData(str(controls.get("default_filter_mode") or "all"))
+            if filter_index >= 0:
+                self.session_filter_combo.setCurrentIndex(filter_index)
+            self.session_filter_combo.currentIndexChanged.connect(self._refill_session_list)
+            self.session_sort_combo = QComboBox()
+            self.session_sort_combo.setObjectName("sessionSortCombo")
+            self.session_sort_combo.setToolTip(L("session_sort"))
+            for sort_key in controls.get("sort_keys", []):
+                if isinstance(sort_key, dict):
+                    self.session_sort_combo.addItem(str(sort_key.get("label") or sort_key.get("id")), str(sort_key.get("id") or "last_seen"))
+            sort_index = self.session_sort_combo.findData(str(controls.get("default_sort_key") or "last_seen"))
+            if sort_index >= 0:
+                self.session_sort_combo.setCurrentIndex(sort_index)
+            self.session_sort_combo.currentIndexChanged.connect(self._refill_session_list)
+            control_row.addWidget(QLabel(L("session_filter")))
+            control_row.addWidget(self.session_filter_combo, 1)
+            control_row.addWidget(QLabel(L("session_sort")))
+            control_row.addWidget(self.session_sort_combo, 1)
             self.session_list = QListWidget()
             self.session_list.setWordWrap(False)
             self.session_list.setTextElideMode(Qt.TextElideMode.ElideMiddle)
             self.session_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             self.session_list.currentRowChanged.connect(self._select_session)
             left_layout.addWidget(self.session_search)
+            left_layout.addLayout(control_row)
             left_layout.addWidget(self.session_list, 1)
             right = QWidget()
             right.setObjectName("sessionsRightPane")
@@ -3701,26 +3843,17 @@ def create_product_widget_window(
             return page
 
         def _refill_session_list(self) -> None:
-            needle = self.session_search.text().strip().lower() if hasattr(self, "session_search") else ""
+            needle = self.session_search.text().strip() if hasattr(self, "session_search") else ""
+            filter_mode = str(self.session_filter_combo.currentData() or "all") if hasattr(self, "session_filter_combo") else "all"
+            sort_key = str(self.session_sort_combo.currentData() or "last_seen") if hasattr(self, "session_sort_combo") else "last_seen"
             self.session_list.clear()
-            self._filtered_rows = []
-            for row in self._session_rows:
-                full_id = str(row.get("visible_session_id") or row.get("full_session_id") or row.get("session_id") or "")
-                conversation = row.get("conversation") if isinstance(row.get("conversation"), dict) else {}
-                haystack = " ".join(
-                    [
-                        full_id,
-                        str(row.get("display_id") or ""),
-                        str(row.get("directory") or ""),
-                        str(row.get("branch") or ""),
-                        str(row.get("thread_source") or ""),
-                        str(conversation.get("title") or row.get("conversation_title") or ""),
-                        str(conversation.get("preview") or row.get("conversation_preview") or ""),
-                    ]
-                ).lower()
-                if needle and needle not in haystack:
-                    continue
-                self._filtered_rows.append(row)
+            self._filtered_rows = filter_sort_session_rows(
+                self._session_rows,
+                search_text=needle,
+                filter_mode=filter_mode,
+                sort_key=sort_key,
+            )
+            for row in self._filtered_rows:
                 block = row.get("session_display_block") if isinstance(row.get("session_display_block"), dict) else build_session_display_block(row)
                 item = QListWidgetItem(str(row.get("compact_list_text") or build_compact_session_list_text(row)))
                 item.setToolTip(str(block.get("text") or ""))
@@ -3728,8 +3861,20 @@ def create_product_widget_window(
             if hasattr(self, "session_count_label"):
                 total = len(self._session_rows)
                 shown = len(self._filtered_rows)
+                table = self.view_model.get("session_table") if isinstance(self.view_model.get("session_table"), dict) else {}
+                summary = str(table.get("count_summary") or "")
                 count_word = L("sessions_total")
-                self.session_count_label.setText(f"{shown}/{total} {count_word}")
+                self.session_count_label.setText(session_count_visible_text(shown=shown, total=total, count_word=count_word))
+                self.session_count_label.setToolTip(session_count_tooltip(
+                    shown=shown,
+                    total=total,
+                    count_word=count_word,
+                    filter_label=L("session_filter"),
+                    filter_mode=filter_mode,
+                    sort_label=L("session_sort"),
+                    sort_key=sort_key,
+                    summary=summary,
+                ))
             if self._filtered_rows:
                 self.session_list.setCurrentRow(0)
 
