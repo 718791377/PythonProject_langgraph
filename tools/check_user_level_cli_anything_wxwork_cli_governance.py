@@ -49,6 +49,11 @@ REQUIRED_PLAN_MARKERS = (
     "target/action allowlist",
     "message redaction",
     "ephemeral message handling",
+    "CLI-Anything user-level install evidence",
+    "cli-anything-hub==0.3.0",
+    "wxwork_cli_installed=false",
+    "wxwork_cli_controlled=false",
+    "operator-designated external consumer project",
 )
 REQUIRED_HELPER_MARKERS = (
     "adapter-plan",
@@ -56,6 +61,11 @@ REQUIRED_HELPER_MARKERS = (
     "adapter_generation_boundary_only",
     "WXWork_CLI",
     "https://github.com/HKUDS/CLI-Anything",
+    "installed-user-level",
+    "install_performed",
+    "network_fetch_performed",
+    "wxwork_cli_installed",
+    "wxwork_cli_controlled",
 )
 REQUIRED_WXWORK_MARKERS = (
     "TOOL_NAME = \"WXWork_CLI\"",
@@ -86,6 +96,9 @@ REQUIRED_SPEC_MARKERS = (
     "active-candidate",
     "not installed/started/enabled in this package",
     "send action allowed only at R5",
+    "--install-performed",
+    "wxwork_cli_installed=false",
+    "operator-designated external consumer project",
 )
 REQUIRED_TESTS = {
     "cli_anything_governance.test.py",
@@ -162,12 +175,15 @@ def check_plan_pair(root: Path, errors: list[str], info: list[str]) -> dict[str,
             errors.append(f"{rel.as_posix()}:missing_stage_b_evidence_index")
         if "2026-06-06 Stage D R4 local smoke tooling evidence" not in evidence:
             errors.append(f"{rel.as_posix()}:missing_stage_d_r4_smoke_evidence_index")
+        if "2026-06-09 CLI-Anything user-level install evidence" not in evidence:
+            errors.append(f"{rel.as_posix()}:missing_cli_anything_user_level_install_evidence_index")
         if "wecom-cli" in status.lower() or "wecom-cli" in backlog.lower():
             errors.append(f"{rel.as_posix()}:active_status_or_backlog_uses_legacy_wecom_cli")
         details[rel.as_posix()] = {
             "implemented_local": "implemented-local" in status,
             "has_stage_b_evidence": "2026-06-04 Stage B" in evidence,
             "has_stage_d_r4_smoke_evidence": "2026-06-06 Stage D R4 local smoke tooling evidence" in evidence,
+            "has_cli_anything_user_level_install_evidence": "2026-06-09 CLI-Anything user-level install evidence" in evidence,
             "runtime_stage_markers": {
                 marker: marker.lower() in text.lower()
                 for marker in RUNTIME_STAGE_MARKERS
