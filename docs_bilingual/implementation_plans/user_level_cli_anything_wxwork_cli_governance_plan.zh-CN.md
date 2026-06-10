@@ -30,15 +30,18 @@ Python helper、CLI-Anything reference、`WXWork_CLI` adapter-plan、`WXWork.exe
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local
-Status: CLI-Anything user-level install evidence recorded; WXWork_CLI integration is delegated to the operator-designated external consumer project and remains out of this repository package.
-Stage: R6 CLI-Anything user-level install evidence plus existing R5 WXWork_CLI governance handoff.
-Owner session: `resume-019e8aa7-cli-anything-install`; feature branch `install-cli-anything-user-level-20260609`.
-Current gate: focused tests, repository guard, precommit update/archive review, local CI, local MR review, guarded local-main-first integration; remote publication remains unauthorized.
-Install evidence: source `https://github.com/HKUDS/CLI-Anything`; `cli-anything-hub==0.3.0`; ignored receipt `.omx/cli-anything/cli-anything.lock.json`; `installed-user-level`; `install_performed=true`; `network_fetch_performed=true`; `wxwork_cli_installed=false`; `wxwork_cli_controlled=false`.
-R5 evidence: `wxwork-cli active-candidate lane profile` remains governed by `tools/check_r5_active_candidate_receipts.py` and `tools/user_level_receipt_governance.py active-check`; WXWork_CLI live/send implementation is handed off to the operator-designated external consumer project.
-Runtime boundary: this package installs/smoke-tests CLI-Anything only; it does not install/start/control WXWork_CLI, start WXWork.exe, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level Codex config, or mutate remote publication. Historical R5 governance packages remained not installed/started/enabled in this package.
+Status: CLI-Anything user-level install evidence recorded; one bounded R6 live-executed WXWork_CLI proof is now planned in this repository before handoff to the operator-designated external consumer project.
+Stage: R6 CLI-Anything user-level install evidence plus R6 live-execution plan update for a single WXWork.exe visual-control proof; prior R5 WXWork_CLI governance handoff remains the fallback boundary.
+Owner session: `resume-019e8aa7-cli-anything-wxwork-r6-live`; plan-update feature branch `plan-wxwork-r6-live-20260610`; later live-runtime implementation branch remains separate.
+Current gate: plan update commit, focused tests, repository guard, precommit update/archive review, local CI, local MR review, guarded local-main-first integration; then a separate live-runtime implementation package; remote publication remains unauthorized.
+Install evidence: source `https://github.com/HKUDS/CLI-Anything`; `cli-anything-hub==0.3.0`; ignored receipt `.omx/cli-anything/cli-anything.lock.json`; `installed-user-level`; `install_performed=true`; `network_fetch_performed=true`; `wxwork_cli_installed=false`; `wxwork_cli_controlled=false` before the new live proof.
+R5/R6 evidence rule: `wxwork-cli active-candidate lane profile` remains governed by `tools/check_r5_active_candidate_receipts.py` and `tools/user_level_receipt_governance.py active-check`; R6 live execution must also pass `tools/r6_live_runtime.py` proof intake and `tools/check_r6_live_runtime_receipts.py` with hash-only/status-only evidence.
+Runtime boundary: this plan-update package still does not install/start/control WXWork_CLI, start WXWork.exe, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level Codex config, or mutate remote publication. Historical R5 governance packages remained not installed/started/enabled in this package. The later implementation package may perform exactly the authorized bounded WXWork.exe live action and no remote publication.
+R6 live proof policy: CLI-Anything visual/rendering validation must prove correct connection/control of `WXWork.exe`; target group is the operator-specified group; the implementation must send one timestamped ordinary test message, then right-click the operator-specified member and choose the menu mention before sending the second timestamped test message. Direct paste of the mention string is invalid and must fail proof acceptance.
+Evidence redaction: tracked proof and receipts are hash-only/status-only; raw group names, member names, message bodies, private paths, screenshots, or transcripts must not be committed. Ignored local evidence may contain masked human-confirmable confirmation cards or screenshots referenced only by hashes.
+Future usage boundary: after this one R6 live-executed proof, follow-up WXWork_CLI usage and product integration move to the operator-designated external consumer project; this repository remains the governance and receipt source-of-truth.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
-Last updated: 2026-06-09
+Last updated: 2026-06-10
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -93,6 +96,7 @@ Last updated: 2026-06-09
 - [x] Stage C：把 R3/R4/R5 真实 runtime 工作移出已完成 backlog，列为 Stage D pending runtime work。
 - [x] Stage D R4 local smoke tooling：新增 smoke-record / smoke-check receipt 支持，只允许 bounded help/status/safe-discovery smoke；不 GUI control、不 send action、不保存 message body，并记录 timeout release、redaction、rollback readiness，命名 WXWork.exe 时要求 global lease。
 - [x] Stage E CLI-Anything user-level install: install `CLI-Anything` skills from `HKUDS/CLI-Anything`, install `cli-anything-hub==0.3.0`, create `cli-hub` wrappers, pass `cli-hub --help`, validate `installed-user-level` receipt, keep `wxwork_cli_installed=false` and `wxwork_cli_controlled=false`, and delegate WXWork_CLI to the operator-designated external consumer project.
+- [x] Stage F R6 live-execution plan update: record bounded CLI-Anything visual-control proof, hash-only evidence policy, direct-paste mention rejection, and post-proof external-consumer handoff boundary.
 <!-- TASK_BACKLOG_END -->
 
 ## Stage B Closure Notes
@@ -111,6 +115,7 @@ Last updated: 2026-06-09
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-10 R6 live-execution plan update: branch `plan-wxwork-r6-live-20260610` records that this repository will perform exactly one bounded CLI-Anything / WXWork.exe visual-control proof before handoff. The proof must be hash-only in tracked receipts, allow masked local confirmation cards only in ignored evidence, reject direct-paste mention behavior, preserve `wxwork_cli_installed=false` and `wxwork_cli_controlled=false` for the prior install receipt, keep the priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and stop at the remote-publication gate.
 - 2026-06-09 CLI-Anything user-level install evidence: branch `install-cli-anything-user-level-20260609` installed user-level skills from `https://github.com/HKUDS/CLI-Anything`, installed `cli-anything-hub==0.3.0`, exposed `cli-hub 0.3.0`, passed `cli-hub --help`, and wrote ignored receipt `.omx/cli-anything/cli-anything.lock.json`. Receipt validation reports `installed-user-level`, `install_performed=true`, `network_fetch_performed=true`, `user_level_config_mutated=false`, `wxwork_cli_installed=false`, `wxwork_cli_controlled=false`, source URL preserved, raw private paths redacted, and rollback pointer hashed. WXWork_CLI integration is handed off to the operator-designated external consumer project; no WXWork.exe start/control/send occurred.
 - 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 CLI-Anything / WXWork_CLI governance 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-06 Stage D R4 local smoke tooling evidence：branch implement-cli-anything-wxwork-r4-20260606 新增 tools/wxwork_cli_governance.py smoke-record / smoke-check 与 focused tests；生成的 R4 receipts 同时通过 WXWork helper 与通用 tools/user_level_receipt_governance.py smoke-check，并保持 sanitized、no GUI control、no send action、no message body、timeout release、rollback readiness，命名 WXWork.exe 时要求 global lease。
