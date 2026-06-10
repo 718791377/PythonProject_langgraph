@@ -135,6 +135,7 @@ def main() -> int:
     stop_slop_caveman_smoke_receipts_script = root / "tools" / "check_stop_slop_caveman_smoke_receipts.py"
     gstack_codex_delivery_loop_script = root / "tools" / "check_gstack_codex_delivery_loop.py"
     user_level_mcp_skills_cli_install_script = root / "tools" / "check_user_level_mcp_skills_cli_install.py"
+    user_level_cloakbrowser_academic_runtime_script = root / "tools" / "check_user_level_cloakbrowser_academic_runtime.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
@@ -484,6 +485,11 @@ def main() -> int:
                 "check_user_level_mcp_skills_cli_install",
                 [str(python_exe), str(user_level_mcp_skills_cli_install_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during user-level MCP/skills CLI install verification.",
+            ),
+            (
+                "check_user_level_cloakbrowser_academic_runtime",
+                [str(python_exe), str(user_level_cloakbrowser_academic_runtime_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during user-level CloakBrowser/Academic Research runtime verification.",
             ),
             (
                 "check_local_mirrored_ci_gate",

@@ -791,6 +791,23 @@
         "check_durable_routing_smoke_receipts"
       ],
       "description": "Requires every R5 active-candidate or bounded live handoff lane to present authorization, owner lease, target/action allowlist, timeout release, rollback, cleanup, redaction, authority decision, and no remote-publication mutation evidence before adoption is treated as positive."
+    },
+    {
+      "id": "user-level-cloakbrowser-academic-runtime",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/user_level_cloakbrowser_academic_research_runtime_plan.md",
+        "docs_bilingual/implementation_plans/user_level_cloakbrowser_academic_research_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_user_level_cloakbrowser_academic_runtime.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_user_level_cloakbrowser_academic_runtime"
+      ],
+      "description": "Keeps CloakBrowser, CloakBrowser-Manager, and academic-research-suite user-level installs receipt-backed, hash-only, Docker-non-installing, native-Codex-non-mutating, and behind the remote-publication gate."
     }
   ]
 }

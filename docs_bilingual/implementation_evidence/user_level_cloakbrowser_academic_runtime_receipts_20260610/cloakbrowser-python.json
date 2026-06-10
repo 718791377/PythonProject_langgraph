@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-06-10T16:09:45.445914+00:00",
+  "install_root_hash": "0f3a48c6c677cff28a0c8df4de95ba42",
+  "install_root_label": "codex-tools/cloakbrowser/python-venv",
+  "installed_version": "0.3.31",
+  "native_codex_files_mutated": false,
+  "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+  "raw_paths_included": false,
+  "redaction_status": "pass",
+  "remote_publication_mutated": false,
+  "rollback_label": "remove codex-tools/cloakbrowser/python-venv",
+  "rollback_pointer_hash": "0f3a48c6c677cff28a0c8df4de95ba42",
+  "runtime_stage": "R6 live-executed",
+  "schema_version": 1,
+  "smoke_result": {
+    "command_hash": "0d12b8a59c3c28f8e59ef73616106e5a",
+    "observed_version_hash": "a924e1d9bb59ca0d4265632d750068d7",
+    "status": "pass"
+  },
+  "source_ref": "b06499b0c15e1f988db0bbbd001831e88e9b483b",
+  "source_url": "https://github.com/CloakHQ/CloakBrowser",
+  "state_label": "codex-tools/cloakbrowser/python-state",
+  "state_path_hash": "5a78babda54da84c1d26c6bf23ea6c6f",
+  "tool_name": "cloakbrowser-python",
+  "wrapper_label": "codex-tools/cloakbrowser/python-venv/Scripts/python.exe",
+  "wrapper_path_hash": "820200ebb47f27c0971b433354d69044"
+}

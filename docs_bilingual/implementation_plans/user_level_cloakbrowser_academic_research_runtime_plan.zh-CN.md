@@ -28,10 +28,10 @@ parent_plan: docs_bilingual/implementation_plans/user_level_mcp_skills_cli_runti
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: planned-local
-Stage: user-level CloakBrowser / CloakBrowser-Manager / academic-research-suite runtime 的 implementation plan 与 checker package。
-Current gate: 先提交本方案/checker/test package，运行 focused validation 和 local gates，合入本地 `main`，再在 fresh branch 执行真实用户级 live runtime install/smoke package。
-Docker boundary: Docker is not installed by this plan。CloakBrowser-Manager live GUI/container start 在 Docker 缺失时记录为 blocked dependency receipt。
+Status: R6 live-executed
+Stage: checker-backed user-level CloakBrowser / CloakBrowser-Manager / academic-research-suite live runtime execution。
+Current gate: live receipts 已记录在 `docs_bilingual/implementation_evidence/user_level_cloakbrowser_academic_runtime_receipts_20260610/`；本 Stage B package 合入本地 `main` 前必须运行 focused validation、OpenSpec guard、local CI 与 local MR review。
+Docker boundary: Docker is not installed by this plan。CloakBrowser-Manager source checkout 已记录；Manager GUI/container start 因 Docker 缺失/未授权安装保持 R6 blocked。
 Runtime boundary: native Codex files are not modified，receipts 不保存 raw paths，remote publication remains unauthorized。
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
 Last updated: 2026-06-10
@@ -60,10 +60,10 @@ Last updated: 2026-06-10
 - [x] 新建 dedicated checker `tools/check_user_level_cloakbrowser_academic_runtime.py`，验证方案表面、guard/CI/registry wiring 与可选 R6 receipts。
 - [x] 新增 `test/check_user_level_cloakbrowser_academic_runtime.test.py`，覆盖 plan registration 与 hash-only receipt validation 的 red/green 行为。
 - [x] 在 `tools/run_openspec_guard.py`、`tools/safety_rule_script_backing_registry.json`、`tools/ci/ci_test_manifest.json` 和 `docs_bilingual/docs_registry.yaml` 注册 checker。
-- [ ] 执行真实用户级 CloakBrowser Python install 与 smoke；记录 `cloakbrowser-python` R6 live-executed receipt。
-- [ ] 执行真实用户级 CloakBrowser npm install 或明确 npm blocked receipt；记录 `cloakbrowser-npm` R6 receipt。
-- [ ] 解析 CloakBrowser-Manager source，并在未显式提供 Docker 时记录 Docker-missing blocked receipt。
-- [ ] 使用 Codex skill installer 安装 `academic-research-suite`，记录 R6 live-executed receipt。
+- [x] 执行真实用户级 CloakBrowser Python install 与 smoke；记录 `cloakbrowser-python` R6 live-executed receipt。
+- [x] 执行真实用户级 CloakBrowser npm install 与 package-version smoke；记录 `cloakbrowser-npm` R6 live-executed receipt。
+- [x] 解析 CloakBrowser-Manager source，并记录 Docker-missing blocked receipt；Docker install/start 不属于本方案。
+- [x] 使用 Codex skill installer 安装 `academic-research-suite`，记录 R6 live-executed receipt。
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -80,7 +80,7 @@ Last updated: 2026-06-10
 
 - 新方案在任何 live install 前已经 registry/checker-backed。
 - Receipts 使用 hash-only，不包含 raw paths、raw command transcripts、secrets、cookies 或 browser data。
-- 依赖与授权存在时，CloakBrowser Python 与 academic-research-suite 达到 live-executed。
+- 依赖与授权存在时，CloakBrowser Python、CloakBrowser npm package-version smoke 与 academic-research-suite 达到 live-executed。
 - CloakBrowser-Manager 不安装 Docker；Docker 缺失记录为 blocked runtime dependency，不能静默声称成功。
 - native Codex files are not modified，用户级 install artifacts 可回滚，remote publication remains unauthorized。
 
@@ -88,4 +88,5 @@ Last updated: 2026-06-10
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-10 plan/checker package：创建 user-level CloakBrowser / CloakBrowser-Manager / academic-research-suite runtime plan、checker、tests、guard registration 与 receipt contract。本 plan package 不执行 user-level install/start/smoke。
+- 2026-06-10 Stage B live runtime receipts：`docs_bilingual/implementation_evidence/user_level_cloakbrowser_academic_runtime_receipts_20260610/` 记录 hash-only receipts：`cloakbrowser-python` R6 live-executed、`cloakbrowser-npm` R6 live-executed package-version smoke、`cloakbrowser-manager-source` R6 blocked Docker boundary、`academic-research-suite` R6 live-executed。未修改 native Codex files/config，未执行 remote publication。
 <!-- EVIDENCE_INDEX_END -->

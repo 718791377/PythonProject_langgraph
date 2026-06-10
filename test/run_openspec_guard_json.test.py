@@ -47,6 +47,11 @@ GUARD_STEPS = [
     ("stop_slop_caveman_smoke_receipts", "check_stop_slop_caveman_smoke_receipts.py", "stop_slop_caveman_smoke_receipts"),
     ("check_gstack_codex_delivery_loop", "check_gstack_codex_delivery_loop.py", "gstack_codex_delivery_loop"),
     ("check_user_level_mcp_skills_cli_install", "check_user_level_mcp_skills_cli_install.py", "user_level_mcp_skills_cli_install"),
+    (
+        "check_user_level_cloakbrowser_academic_runtime",
+        "check_user_level_cloakbrowser_academic_runtime.py",
+        "user_level_cloakbrowser_academic_runtime",
+    ),
     ("check_local_mirrored_ci_gate", "check_local_mirrored_ci_gate.py", "local_mirrored_ci_gate"),
     ("check_remote_publication_approval_policy", "check_remote_publication_approval_policy.py", "remote_publication_approval_policy"),
     ("check_role_routing_directive_evidence", "check_role_routing_directive_evidence.py", "role_routing_directive_evidence"),
@@ -195,6 +200,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertIn("stop_slop_caveman_response_density", [step["step"] for step in payload["steps"]])
         self.assertIn("stop_slop_caveman_smoke_receipts", [step["step"] for step in payload["steps"]])
         self.assertIn("check_gstack_codex_delivery_loop", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_user_level_cloakbrowser_academic_runtime", [step["step"] for step in payload["steps"]])
         self.assertIn("check_launcher_payload_context_boundary", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:

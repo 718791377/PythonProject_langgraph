@@ -28,11 +28,11 @@ The governance priority order is `Comet > OpenSpec/Superpowers > gstack > harnes
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: planned-local
-Stage: implementation plan and checker package for user-level CloakBrowser / CloakBrowser-Manager / academic-research-suite runtime.
-Current gate: commit this plan/checker/test package first, run focused validation and local gates, integrate into local `main`, then perform the real user-level live runtime install/smoke package on a fresh branch.
-Docker boundary: Docker is not installed by this plan. CloakBrowser-Manager live GUI/container start may be recorded as a blocked dependency receipt when Docker is absent.
-Runtime boundary: native Codex files are not modified, raw paths are not stored in receipts, and remote publication remains unauthorized.
+Status: R6 live-executed
+Stage: checker-backed user-level CloakBrowser / CloakBrowser-Manager / academic-research-suite live runtime execution.
+Current gate: live receipts are recorded under `docs_bilingual/implementation_evidence/user_level_cloakbrowser_academic_runtime_receipts_20260610/`; run focused validation, OpenSpec guard, local CI, and local MR review before integrating this Stage B package into local `main`.
+Docker boundary: Docker is not installed by this plan. CloakBrowser-Manager source checkout is recorded; Manager GUI/container start remains R6 blocked because Docker is absent/not authorized.
+Runtime boundary: native Codex files are not modified, receipts do not store raw paths, and remote publication remains unauthorized.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
 Last updated: 2026-06-10
 <!-- CURRENT_STATUS_END -->
@@ -60,10 +60,10 @@ Last updated: 2026-06-10
 - [x] Create a dedicated checker `tools/check_user_level_cloakbrowser_academic_runtime.py` that validates plan surfaces, guard/CI/registry wiring, and optional R6 receipts.
 - [x] Add `test/check_user_level_cloakbrowser_academic_runtime.test.py` with red/green coverage for plan registration and hash-only receipt validation.
 - [x] Register the checker in `tools/run_openspec_guard.py`, `tools/safety_rule_script_backing_registry.json`, `tools/ci/ci_test_manifest.json`, and `docs_bilingual/docs_registry.yaml`.
-- [ ] Execute real user-level CloakBrowser Python install and smoke; record `cloakbrowser-python` R6 live-executed receipt.
-- [ ] Execute real user-level CloakBrowser npm install or explicit npm blocked receipt; record `cloakbrowser-npm` R6 receipt.
-- [ ] Resolve CloakBrowser-Manager source and record Docker-missing blocked receipt unless Docker is later supplied explicitly.
-- [ ] Install `academic-research-suite` with Codex skill installer and record R6 live-executed receipt.
+- [x] Execute real user-level CloakBrowser Python install and smoke; record `cloakbrowser-python` R6 live-executed receipt.
+- [x] Execute real user-level CloakBrowser npm install and package-version smoke; record `cloakbrowser-npm` R6 live-executed receipt.
+- [x] Resolve CloakBrowser-Manager source and record Docker-missing blocked receipt; Docker install/start remains outside this plan.
+- [x] Install `academic-research-suite` with Codex skill installer and record R6 live-executed receipt.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -80,7 +80,7 @@ Last updated: 2026-06-10
 
 - The new plan is registered and checker-backed before any live install happens.
 - Receipts are hash-only and do not include raw paths, raw command transcripts, secrets, cookies, or browser data.
-- CloakBrowser Python and academic-research-suite are live-executed when dependencies and authorization are present.
+- CloakBrowser Python, CloakBrowser npm package-version smoke, and academic-research-suite are live-executed when dependencies and authorization are present.
 - CloakBrowser-Manager does not install Docker; absent Docker is recorded as a blocked runtime dependency, not silently treated as success.
 - Native Codex files are not modified, user-level install artifacts remain rollbackable, and remote publication remains unauthorized.
 
@@ -88,4 +88,5 @@ Last updated: 2026-06-10
 
 <!-- EVIDENCE_INDEX_START -->
 - 2026-06-10 plan/checker package: creates the user-level CloakBrowser / CloakBrowser-Manager / academic-research-suite runtime plan, checker, tests, guard registration, and receipt contract. No user-level install/start/smoke is performed by the plan package.
+- 2026-06-10 Stage B live runtime receipts: `docs_bilingual/implementation_evidence/user_level_cloakbrowser_academic_runtime_receipts_20260610/` records hash-only receipts for `cloakbrowser-python` R6 live-executed, `cloakbrowser-npm` R6 live-executed package-version smoke, `cloakbrowser-manager-source` R6 blocked Docker boundary, and `academic-research-suite` R6 live-executed. Native Codex files/config were not modified and remote publication was not performed.
 <!-- EVIDENCE_INDEX_END -->

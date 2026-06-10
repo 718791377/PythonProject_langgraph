@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-06-10T16:10:10.568284+00:00",
+  "install_root_hash": "0afa22c22dd2039983214648be7b0a4a",
+  "install_root_label": "codex-skills/academic-research-suite",
+  "installed_version": "0.1.11",
+  "native_codex_files_mutated": false,
+  "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+  "raw_paths_included": false,
+  "redaction_status": "pass",
+  "remote_publication_mutated": false,
+  "rollback_label": "remove codex-skills/academic-research-suite",
+  "rollback_pointer_hash": "0afa22c22dd2039983214648be7b0a4a",
+  "runtime_stage": "R6 live-executed",
+  "schema_version": 1,
+  "smoke_result": {
+    "command_hash": "58251389c424ee495e5c59eea88444bf",
+    "skill_file_hash": "73bb0977ab7ded2353f7149e70603483",
+    "status": "pass"
+  },
+  "source_ref": "841cd73d8fcfafe424acc066906304fa789e5c02",
+  "source_url": "https://github.com/Imbad0202/academic-research-skills-codex",
+  "state_label": "codex-skills/academic-research-suite",
+  "state_path_hash": "0afa22c22dd2039983214648be7b0a4a",
+  "tool_name": "academic-research-suite",
+  "wrapper_label": "codex-skills/academic-research-suite/SKILL.md",
+  "wrapper_path_hash": "d855f360c517cc194830db1fc98b0913"
+}
