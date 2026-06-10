@@ -122,8 +122,16 @@ SENSITIVE_KEY_PARTS = (
     "message_content",
     "message_contents",
     "wxwork_message",
+    "group_name",
+    "member_name",
+    "target_group",
+    "target_member",
     "raw_recipient",
     "recipient_raw",
+    "target_group_value",
+    "target_member_value",
+    "screenshot",
+    "confirmation_image",
 )
 SENSITIVE_KEY_EXCEPTIONS = (
     "hash",
@@ -280,11 +288,33 @@ def validate_wxwork(receipt: dict[str, Any], live_executed: bool) -> list[str]:
         blockers.append("message_body_included_must_be_false")
     if not absent_or_false(execution.get("recipient_included")):
         blockers.append("recipient_included_must_be_false")
+    if not absent_or_false(execution.get("direct_paste_mention_used")):
+        blockers.append("direct_paste_mention_used_must_be_false")
+    if not absent_or_false(execution.get("evidence_artifact_included")):
+        blockers.append("evidence_artifact_included_must_be_false")
     if live_executed:
-        if not value_text(execution.get("message_body_hash")).strip():
-            blockers.append("execution_receipt_message_body_hash_required")
-        if execution.get("external_message_sent") is not True:
-            blockers.append("execution_receipt_external_message_sent_required")
+        for field in (
+            "message_body_hash",
+            "target_group_hash",
+            "target_member_hash",
+            "ordinary_message_hash",
+            "mention_message_hash",
+            "visual_confirmation_hash",
+            "human_confirmable_evidence_hash",
+        ):
+            if not value_text(execution.get(field)).strip():
+                blockers.append(f"execution_receipt_{field}_required")
+        for field in (
+            "cli_anything_visual_rendering_verified",
+            "visual_control_verified",
+            "external_message_sent",
+            "ordinary_message_sent",
+            "right_click_member_performed",
+            "mention_menu_selected",
+            "mention_message_sent",
+        ):
+            if execution.get(field) is not True:
+                blockers.append(f"execution_receipt_{field}_required")
     return blockers
 
 
@@ -637,7 +667,26 @@ def base_execution(profile: LaneProfile, *, live_executed: bool) -> dict[str, An
     elif lane == "user-level-browser-cli-adapter-boundary":
         execution.update({"browser_action_allowlisted": True, "raw_browser_data_stored": False, "browser_owner_lease": {"status": "pass"}})
     elif lane == "user-level-cli-anything-wxwork-cli-governance":
-        execution.update({"message_body_hash": short_hash("message"), "message_body_included": False, "recipient_included": False, "external_message_sent": live_executed})
+        execution.update({
+            "message_body_hash": short_hash("message"),
+            "target_group_hash": short_hash("target-group"),
+            "target_member_hash": short_hash("target-member"),
+            "ordinary_message_hash": short_hash("ordinary-message"),
+            "mention_message_hash": short_hash("mention-message"),
+            "visual_confirmation_hash": short_hash("visual-confirmation"),
+            "human_confirmable_evidence_hash": short_hash("human-confirmable-evidence"),
+            "message_body_included": False,
+            "recipient_included": False,
+            "direct_paste_mention_used": False,
+            "evidence_artifact_included": False,
+            "cli_anything_visual_rendering_verified": live_executed,
+            "visual_control_verified": live_executed,
+            "external_message_sent": live_executed,
+            "ordinary_message_sent": live_executed,
+            "right_click_member_performed": live_executed,
+            "mention_menu_selected": live_executed,
+            "mention_message_sent": live_executed,
+        })
     elif lane == "stop-slop-caveman-response-density-runtime":
         execution.update({"canary_preserved": True, "response_density_guard": {"status": "pass"}, "user_level_state_mutated": True, "user_level_state_mutation_authorized": True})
     elif lane == "gstack-codex-delivery-loop-runtime-governance":

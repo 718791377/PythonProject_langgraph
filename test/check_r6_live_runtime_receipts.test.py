@@ -109,6 +109,48 @@ class R6LiveRuntimeReceiptTests(unittest.TestCase):
                 result = self.run_cli("--root", str(ROOT), "--receipt", str(receipt), expect=1)
                 self.assertIn("sensitive", "\n".join(result["errors"]))
 
+    def test_wxwork_live_executed_requires_visual_menu_sequence_and_rejects_direct_paste(self) -> None:
+        payload = module.fixture_for_lane("wxwork-cli", live_mode="live-executed")
+        payload["execution_receipt"].update(
+            {
+                "cli_anything_visual_rendering_verified": False,
+                "visual_control_verified": False,
+                "right_click_member_performed": False,
+                "mention_menu_selected": False,
+                "direct_paste_mention_used": True,
+            }
+        )
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda p=tmp: __import__("shutil").rmtree(p, ignore_errors=True))
+        receipt = tmp / "bad-wxwork-sequence.json"
+        receipt.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        result = self.run_cli("--root", str(ROOT), "--receipt", str(receipt), expect=1)
+        joined = "\n".join(result["errors"])
+        self.assertIn("execution_receipt_cli_anything_visual_rendering_verified_required", joined)
+        self.assertIn("execution_receipt_visual_control_verified_required", joined)
+        self.assertIn("execution_receipt_right_click_member_performed_required", joined)
+        self.assertIn("execution_receipt_mention_menu_selected_required", joined)
+        self.assertIn("direct_paste_mention_used_must_be_false", joined)
+
+    def test_wxwork_live_executed_rejects_raw_group_member_and_screenshot_fields(self) -> None:
+        payload = module.fixture_for_lane("wxwork-cli", live_mode="live-executed")
+        payload["execution_receipt"].update(
+            {
+                "target_group": "raw group value",
+                "target_member": "raw member value",
+                "screenshot_path": "C:\\Users\\private\\Desktop\\wxwork.png",
+            }
+        )
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda p=tmp: __import__("shutil").rmtree(p, ignore_errors=True))
+        receipt = tmp / "raw-wxwork-targets.json"
+        receipt.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        result = self.run_cli("--root", str(ROOT), "--receipt", str(receipt), expect=1)
+        joined = "\n".join(result["errors"])
+        self.assertIn("sensitive_field_present:$.execution_receipt.target_group", joined)
+        self.assertIn("sensitive_field_present:$.execution_receipt.target_member", joined)
+        self.assertIn("sensitive_field_present:$.execution_receipt.screenshot_path", joined)
+
     def test_spec_kit_apply_boundaries_are_distinct_and_checked(self) -> None:
         sandbox = module.fixture_for_lane("spec-kit-subordinate", live_mode="live-executed")
         sandbox["execution_receipt"].update({"spec_kit_apply_mode": "sandbox", "repository_surfaces_written": False})

@@ -169,8 +169,22 @@ class R6LiveRuntimeTests(unittest.TestCase):
             "wxwork-cli": {
                 "external_side_effects": "external_message",
                 "action_performed": True,
+                "cli_anything_visual_rendering_verified": True,
+                "visual_control_verified": True,
+                "target_group_hash": "target-group-hash-fixture",
+                "target_member_hash": "target-member-hash-fixture",
                 "external_message_sent": True,
+                "ordinary_message_hash": "ordinary-message-hash-fixture",
+                "ordinary_message_sent": True,
+                "right_click_member_performed": True,
+                "mention_menu_selected": True,
+                "mention_message_hash": "mention-message-hash-fixture",
+                "mention_message_sent": True,
                 "message_body_hash": "message-hash-fixture",
+                "direct_paste_mention_used": False,
+                "visual_confirmation_hash": "visual-confirmation-hash-fixture",
+                "human_confirmable_evidence_hash": "human-confirmable-evidence-hash-fixture",
+                "evidence_artifact_included": False,
                 "message_body_included": False,
                 "recipient_included": False,
             },
@@ -406,7 +420,7 @@ class R6LiveRuntimeTests(unittest.TestCase):
     def test_proof_template_command_writes_fail_closed_wxwork_and_harness_templates(self) -> None:
         root = self.make_root()
         for lane, side_effect, required_fields in (
-            ("wxwork-cli", "external_message", ["external_message_sent", "message_body_hash"]),
+            ("wxwork-cli", "external_message", ["cli_anything_visual_rendering_verified", "visual_control_verified", "ordinary_message_sent", "right_click_member_performed", "mention_menu_selected", "mention_message_sent", "direct_paste_mention_used", "message_body_hash"]),
             ("codex-harnesses", "harness_job", ["read_guard", "write_guard", "isolated_worktree", "job_state", "changed_paths_report", "no_codex_takeover"]),
         ):
             with self.subTest(lane=lane):
@@ -455,8 +469,22 @@ class R6LiveRuntimeTests(unittest.TestCase):
             "wxwork-cli": {
                 "external_side_effects": "external_message",
                 "action_performed": True,
+                "cli_anything_visual_rendering_verified": True,
+                "visual_control_verified": True,
+                "target_group_hash": "target-group-hash-fixture",
+                "target_member_hash": "target-member-hash-fixture",
                 "external_message_sent": True,
+                "ordinary_message_hash": "ordinary-message-hash-fixture",
+                "ordinary_message_sent": True,
+                "right_click_member_performed": True,
+                "mention_menu_selected": True,
+                "mention_message_hash": "mention-message-hash-fixture",
+                "mention_message_sent": True,
                 "message_body_hash": "hash-only-fixture",
+                "direct_paste_mention_used": False,
+                "visual_confirmation_hash": "visual-confirmation-hash-fixture",
+                "human_confirmable_evidence_hash": "human-confirmable-evidence-hash-fixture",
+                "evidence_artifact_included": False,
                 "message_body_included": False,
                 "recipient_included": False,
                 "remote_publication_mutated": False,
@@ -567,8 +595,22 @@ class R6LiveRuntimeTests(unittest.TestCase):
                 {
                     "external_side_effects": "external_message",
                     "action_performed": True,
+                    "cli_anything_visual_rendering_verified": True,
+                    "visual_control_verified": True,
+                    "target_group_hash": "target-group-hash-fixture",
+                    "target_member_hash": "target-member-hash-fixture",
                     "external_message_sent": True,
+                    "ordinary_message_hash": "ordinary-message-hash-fixture",
+                    "ordinary_message_sent": True,
+                    "right_click_member_performed": True,
+                    "mention_menu_selected": True,
+                    "mention_message_hash": "mention-message-hash-fixture",
+                    "mention_message_sent": True,
                     "message_body_hash": "hash-only-fixture",
+                    "direct_paste_mention_used": False,
+                    "visual_confirmation_hash": "visual-confirmation-hash-fixture",
+                    "human_confirmable_evidence_hash": "human-confirmable-evidence-hash-fixture",
+                    "evidence_artifact_included": False,
                     "message_body": "raw message body must not be accepted",
                     "recipient": "raw-recipient-id",
                     "message_body_included": True,
@@ -607,6 +649,68 @@ class R6LiveRuntimeTests(unittest.TestCase):
         self.assertIn("external_execution_proof_recipient_included_must_be_false", joined)
         self.assertIn("external_execution_proof_forbidden_raw_key:message_body", joined)
         self.assertIn("external_execution_proof_forbidden_raw_key:recipient", joined)
+
+    def test_proof_check_rejects_wxwork_missing_visual_or_menu_sequence_and_direct_paste(self) -> None:
+        root = self.make_root()
+        proof_path = root / "bad-wxwork-sequence-proof.json"
+        proof_path.write_text(
+            json.dumps(
+                {
+                    "external_side_effects": "external_message",
+                    "action_performed": True,
+                    "cli_anything_visual_rendering_verified": False,
+                    "visual_control_verified": False,
+                    "target_group_hash": "target-group-hash-fixture",
+                    "target_member_hash": "target-member-hash-fixture",
+                    "external_message_sent": True,
+                    "ordinary_message_hash": "ordinary-message-hash-fixture",
+                    "ordinary_message_sent": True,
+                    "right_click_member_performed": False,
+                    "mention_menu_selected": False,
+                    "mention_message_hash": "mention-message-hash-fixture",
+                    "mention_message_sent": True,
+                    "message_body_hash": "hash-only-fixture",
+                    "direct_paste_mention_used": True,
+                    "visual_confirmation_hash": "visual-confirmation-hash-fixture",
+                    "human_confirmable_evidence_hash": "human-confirmable-evidence-hash-fixture",
+                    "evidence_artifact_included": False,
+                    "message_body_included": False,
+                    "recipient_included": False,
+                    "remote_publication_mutated": False,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(RUNTIME),
+                "proof-check",
+                "--root",
+                str(root),
+                "--lane",
+                "wxwork-cli",
+                "--proof-receipt",
+                str(proof_path),
+                "--json",
+            ],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        payload = json.loads(proc.stdout)
+        joined = "\n".join(payload["blockers"])
+        self.assertIn("external_execution_proof_cli_anything_visual_rendering_verified_required", joined)
+        self.assertIn("external_execution_proof_visual_control_verified_required", joined)
+        self.assertIn("external_execution_proof_right_click_member_performed_required", joined)
+        self.assertIn("external_execution_proof_mention_menu_selected_required", joined)
+        self.assertIn("external_execution_proof_direct_paste_mention_used_must_be_false", joined)
 
 
 if __name__ == "__main__":

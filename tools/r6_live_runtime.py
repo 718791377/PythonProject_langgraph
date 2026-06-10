@@ -168,10 +168,36 @@ def live_action_proof_blockers(lane: str, proof: dict[str, Any] | None) -> list[
         if proof.get("raw_browser_data_stored") not in (None, False):
             blockers.append("external_execution_proof_raw_browser_data_stored_must_be_false")
     elif lane == "user-level-cli-anything-wxwork-cli-governance":
+        required_hashes = (
+            "target_group_hash",
+            "target_member_hash",
+            "ordinary_message_hash",
+            "mention_message_hash",
+            "visual_confirmation_hash",
+            "human_confirmable_evidence_hash",
+        )
+        for field in required_hashes:
+            if not str(proof.get(field, "")).strip():
+                blockers.append(f"external_execution_proof_{field}_required")
+        required_true = (
+            "cli_anything_visual_rendering_verified",
+            "visual_control_verified",
+            "ordinary_message_sent",
+            "right_click_member_performed",
+            "mention_menu_selected",
+            "mention_message_sent",
+        )
+        for field in required_true:
+            if proof.get(field) is not True:
+                blockers.append(f"external_execution_proof_{field}_required")
         if proof.get("external_message_sent") is not True:
             blockers.append("external_execution_proof_external_message_sent_required")
         if not str(proof.get("message_body_hash", "")).strip():
             blockers.append("external_execution_proof_message_body_hash_required")
+        if proof.get("direct_paste_mention_used") is not False:
+            blockers.append("external_execution_proof_direct_paste_mention_used_must_be_false")
+        if proof.get("evidence_artifact_included") not in (None, False):
+            blockers.append("external_execution_proof_evidence_artifact_included_must_be_false")
         if proof.get("message_body_included") not in (None, False):
             blockers.append("external_execution_proof_message_body_included_must_be_false")
         if proof.get("recipient_included") not in (None, False):
@@ -206,12 +232,24 @@ def forbidden_raw_proof_key_blockers(proof: dict[str, Any] | None) -> list[str]:
         "message_body",
         "message_content",
         "message_contents",
+        "ordinary_message",
+        "mention_message",
         "wxwork_message",
+        "group",
+        "group_name",
+        "member",
+        "member_name",
         "recipient",
         "raw_recipient",
         "recipient_raw",
         "raw_target",
         "target_value",
+        "target_group",
+        "target_member",
+        "screenshot",
+        "screenshot_path",
+        "evidence_artifact",
+        "confirmation_image",
         "raw_browser_payload",
         "browser_payload",
         "cookies",
@@ -246,8 +284,22 @@ def proof_template_for_lane(lane: str) -> dict[str, Any]:
         required_fields = [
             "external_side_effects",
             "action_performed",
+            "cli_anything_visual_rendering_verified",
+            "visual_control_verified",
+            "target_group_hash",
+            "target_member_hash",
             "external_message_sent",
+            "ordinary_message_hash",
+            "ordinary_message_sent",
+            "right_click_member_performed",
+            "mention_menu_selected",
+            "mention_message_hash",
+            "mention_message_sent",
             "message_body_hash",
+            "direct_paste_mention_used",
+            "visual_confirmation_hash",
+            "human_confirmable_evidence_hash",
+            "evidence_artifact_included",
             "message_body_included",
             "recipient_included",
             "remote_publication_mutated",
@@ -258,13 +310,27 @@ def proof_template_for_lane(lane: str) -> dict[str, Any]:
             "lane": lane,
             "external_side_effects": profile.side_effect,
             "action_performed": False,
+            "cli_anything_visual_rendering_verified": False,
+            "visual_control_verified": False,
+            "target_group_hash": "",
+            "target_member_hash": "",
             "external_message_sent": False,
+            "ordinary_message_hash": "",
+            "ordinary_message_sent": False,
+            "right_click_member_performed": False,
+            "mention_menu_selected": False,
+            "mention_message_hash": "",
+            "mention_message_sent": False,
             "message_body_hash": "",
+            "direct_paste_mention_used": False,
+            "visual_confirmation_hash": "",
+            "human_confirmable_evidence_hash": "",
+            "evidence_artifact_included": False,
             "message_body_included": False,
             "recipient_included": False,
             "remote_publication_mutated": False,
             "required_evidence_fields": required_fields,
-            "raw_payload_policy": "hash_only_no_raw_external_payload",
+            "raw_payload_policy": "hash_only_no_raw_external_payload_no_direct_paste_mention",
         }
     elif lane == "codex-harnesses-governance":
         required_fields = [
@@ -440,6 +506,20 @@ def apply_live_action_proof(receipt: dict[str, Any], proof: dict[str, Any], proo
     elif lane == "user-level-cli-anything-wxwork-cli-governance":
         execution["external_message_sent"] = True
         execution["message_body_hash"] = str(proof.get("message_body_hash", stable_hash("message")))
+        execution["cli_anything_visual_rendering_verified"] = True
+        execution["visual_control_verified"] = True
+        execution["target_group_hash"] = str(proof.get("target_group_hash", ""))
+        execution["target_member_hash"] = str(proof.get("target_member_hash", ""))
+        execution["ordinary_message_hash"] = str(proof.get("ordinary_message_hash", ""))
+        execution["ordinary_message_sent"] = True
+        execution["right_click_member_performed"] = True
+        execution["mention_menu_selected"] = True
+        execution["mention_message_hash"] = str(proof.get("mention_message_hash", ""))
+        execution["mention_message_sent"] = True
+        execution["direct_paste_mention_used"] = False
+        execution["visual_confirmation_hash"] = str(proof.get("visual_confirmation_hash", ""))
+        execution["human_confirmable_evidence_hash"] = str(proof.get("human_confirmable_evidence_hash", ""))
+        execution["evidence_artifact_included"] = False
         execution["message_body_included"] = False
         execution["recipient_included"] = False
     elif lane == "codex-harnesses-governance":
