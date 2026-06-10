@@ -677,13 +677,23 @@ def collect_widget_visible_items(root: Any, window_rect: Rect) -> tuple[list[dic
         if visible and rect.w > 0 and rect.h > 0:
             user_visible = bool(text) or class_name in {"QPushButton", "QCheckBox", "QComboBox", "QLineEdit", "QTextEdit", "QListWidget", "QLabel"}
             if text:
+                text_width: float | None = None
+                try:
+                    text_width = float(widget.fontMetrics().horizontalAdvance(text))
+                except Exception:
+                    text_width = None
+                available_text_width = rect.w
+                if class_name == "QCheckBox":
+                    available_text_width = max(0.0, rect.w - 30.0)
+                elif class_name == "QPushButton":
+                    available_text_width = max(0.0, rect.w - 24.0)
                 item = {
                     "class": class_name,
                     "path": widget_path,
                     "text": text,
                     "rect": rect.as_dict(),
                     "clip_rect": clip_rect.as_dict(),
-                    "content_width": None,
+                    "content_width": round(text_width, 2) if text_width is not None else None,
                     "content_height": None,
                     "wrap_mode": None,
                     "elide": None,
@@ -692,6 +702,18 @@ def collect_widget_visible_items(root: Any, window_rect: Rect) -> tuple[list[dic
                     "clipped_by_window": not rect.intersects(window_rect, tolerance=0.0),
                 }
                 items.append(item)
+                if (
+                    text_width is not None
+                    and class_name in {"QLabel", "QCheckBox", "QPushButton"}
+                    and text_width > available_text_width + 4.0
+                ):
+                    violations.append(
+                        {
+                            "kind": "widget_text_width_overflow",
+                            **item,
+                            "available_text_width": round(available_text_width, 2),
+                        }
+                    )
             if user_visible and next_scroll_depth == 0 and not rect.inside(clip_rect, tolerance=2.0):
                 violations.append(
                     {

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import importlib.util
 import contextlib
@@ -2988,6 +2988,9 @@ def build_view_model(
             "right_regions": ["session_details_card", "moe_status_actions_card", "moe_category_lens_selection_card"],
             "full_identity_fields_only_in_detail_card": True,
             "lens_selection_independent_scroll_area": True,
+            "category_selection_independent_scroll_area": True,
+            "category_lens_selection_layout": "stacked_vertical_scroll_regions",
+            "narrow_width_strategy": "avoid_horizontal_category_lens_splitter",
             "category_lens_i18n": True,
             "category_lens_tri_state_linkage": True,
             "category_clicks_write_lens_ids_for_phase1_compatibility": True,
@@ -3287,7 +3290,7 @@ def _qt_check_state(state_name: str) -> Any:
     return Qt.CheckState.Unchecked
 
 
-def _compact_visual_label(value: Any, *, max_chars: int = 76) -> str:
+def _compact_visual_label(value: Any, *, max_chars: int = 64) -> str:
     text = str(value or "")
     if len(text) <= max_chars:
         return text
@@ -3446,11 +3449,12 @@ def create_product_widget_window(
             detail_scroll.setObjectName("sessionDetailsScroll")
             detail_scroll.setWidgetResizable(True)
             detail_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-            detail_scroll.setMinimumHeight(118)
-            detail_scroll.setMaximumHeight(150)
+            detail_scroll.setMinimumHeight(96)
+            detail_scroll.setMaximumHeight(118)
             detail_scroll_content = QWidget()
             detail_scroll_layout = QVBoxLayout(detail_scroll_content)
             detail_scroll_layout.setContentsMargins(2, 2, 2, 2)
+            detail_scroll_layout.setSpacing(1)
             self.session_field_labels: dict[str, QLabel] = {}
             for field in ["Session", "Created", "Updated", "Directory", "Branch"]:
                 label = QLabel()
@@ -3470,15 +3474,16 @@ def create_product_widget_window(
             self.session_conversation = QTextEdit()
             self.session_conversation.setObjectName("sessionConversationPreview")
             self.session_conversation.setReadOnly(True)
-            self.session_conversation.setMaximumHeight(78)
+            self.session_conversation.setMaximumHeight(46)
             detail_scroll_layout.addWidget(self.session_conversation)
             detail_scroll_layout.addStretch(1)
             detail_scroll.setWidget(detail_scroll_content)
             detail_layout.addWidget(detail_scroll)
-            detail_card.setMaximumHeight(190)
+            detail_card.setMaximumHeight(158)
 
             status_card, status_layout = self._section_frame(L("moe_status_actions"), "sessionMoeStatusActionsCard")
-            status_card.setMinimumHeight(220)
+            status_card.setMinimumHeight(184)
+            status_card.setMaximumHeight(214)
             self.session_mapping = QLabel()
             self.session_why = QLabel()
             self.session_effective = QLabel()
@@ -3510,20 +3515,22 @@ def create_product_widget_window(
             status_layout.addLayout(actions)
 
             selection_card, selection_layout = self._section_frame(L("moe_lens_selection"), "sessionLensSelectionCard")
-            selection_card.setMinimumHeight(210)
+            selection_card.setMinimumHeight(240)
+            selection_layout.setSpacing(3)
             selection_layout.addWidget(QLabel(L("empty_selection_all")))
-            selector_splitter = QSplitter(Qt.Orientation.Horizontal)
             self.category_box = QFrame()
             self.category_box.setObjectName("sessionMoeCategoryBox")
             self.category_box.setFrameShape(QFrame.Shape.StyledPanel)
             self.category_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
             self.category_layout = QVBoxLayout(self.category_box)
+            self.category_layout.setSpacing(2)
             self.category_layout.addWidget(QLabel(L("moe_categories")))
             self.lens_box = QFrame()
             self.lens_box.setObjectName("sessionMoeLensBox")
             self.lens_box.setFrameShape(QFrame.Shape.StyledPanel)
             self.lens_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
             self.lens_layout = QVBoxLayout(self.lens_box)
+            self.lens_layout.setSpacing(2)
             self.lens_layout.addWidget(QLabel(L("moe_lenses")))
             lens_scroll = QScrollArea()
             lens_scroll.setObjectName("sessionLensIndependentScrollArea")
@@ -3534,16 +3541,15 @@ def create_product_widget_window(
             category_scroll.setObjectName("sessionCategoryIndependentScrollArea")
             category_scroll.setWidgetResizable(True)
             category_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-            category_scroll.setMinimumWidth(420)
+            category_scroll.setMinimumHeight(124)
+            category_scroll.setMaximumHeight(142)
             category_scroll.setWidget(self.category_box)
-            lens_scroll.setMinimumWidth(300)
-            selector_splitter.addWidget(category_scroll)
-            selector_splitter.addWidget(lens_scroll)
-            selector_splitter.setSizes([430, 390])
-            selection_layout.addWidget(selector_splitter, 1)
+            lens_scroll.setMinimumHeight(96)
+            selection_layout.addWidget(category_scroll, 0)
+            selection_layout.addWidget(lens_scroll, 1)
 
-            self.detail_layout.addWidget(detail_card, 1)
-            self.detail_layout.addWidget(status_card, 1)
+            self.detail_layout.addWidget(detail_card, 0)
+            self.detail_layout.addWidget(status_card, 0)
             self.detail_layout.addWidget(selection_card, 1)
             splitter.addWidget(left)
             splitter.addWidget(right)
@@ -3647,7 +3653,7 @@ def create_product_widget_window(
             fields = block.get("fields") if isinstance(block.get("fields"), dict) else {}
             for field, label in self.session_field_labels.items():
                 value = str(fields.get(field) or "")
-                text = f"{field}: {_compact_visual_label(value, max_chars=132)}"
+                text = f"{field}: {_compact_visual_label(value, max_chars=68)}"
                 label.setText(text)
                 label.setToolTip(f"{field}: {value}")
             conversation_text = str(fields.get("Conversation") or "")
@@ -3659,7 +3665,7 @@ def create_product_widget_window(
             why_text = f"显示原因 / Why shown: {row.get('why_shown')}"
             effective_text = f"生效状态 / Effective status: {row.get('label')} | {row.get('effective_state_explanation')} | {row.get('override_conflict_hint')}"
             for widget, text in [(self.session_mapping, mapping_text), (self.session_why, why_text), (self.session_effective, effective_text)]:
-                widget.setText(_compact_visual_label(text, max_chars=118))
+                widget.setText(_compact_visual_label(text, max_chars=74))
                 widget.setToolTip(text)
             self._rebuild_lens_checks(row)
 
@@ -3712,7 +3718,7 @@ def create_product_widget_window(
             for lens_id, checkbox in self._lens_checks.items():
                 checkbox.stateChanged.connect(lambda _state, lid=lens_id: self._on_lens_state_changed(lid))
             lens_text = f"{L('session_moe_lenses')}: {', '.join(model.get('effective_lenses') or []) or 'all'}"
-            self.effective_lenses_label.setText(_compact_visual_label(lens_text, max_chars=118))
+            self.effective_lenses_label.setText(_compact_visual_label(lens_text, max_chars=74))
             self.effective_lenses_label.setToolTip(lens_text)
 
         def _selected_lenses(self, *, preserve_all_when_pristine: bool = True) -> list[str]:
@@ -3731,7 +3737,7 @@ def create_product_widget_window(
         def _refresh_effective_lenses_label(self) -> None:
             selected = self._selected_lenses(preserve_all_when_pristine=False)
             lens_text = f"{L('session_moe_lenses')}: {', '.join(selected) if selected else 'all'}"
-            self.effective_lenses_label.setText(_compact_visual_label(lens_text, max_chars=118))
+            self.effective_lenses_label.setText(_compact_visual_label(lens_text, max_chars=74))
             self.effective_lenses_label.setToolTip(lens_text)
 
         def _on_category_state_changed(self, category_id: str) -> None:

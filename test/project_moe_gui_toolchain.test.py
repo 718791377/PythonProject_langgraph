@@ -2509,6 +2509,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(contract["left_list"], "compact_one_line_rows_with_count")
             self.assertEqual(contract["right_regions"], ["session_details_card", "moe_status_actions_card", "moe_category_lens_selection_card"])
             self.assertTrue(contract["lens_selection_independent_scroll_area"])
+            self.assertTrue(contract["category_selection_independent_scroll_area"])
+            self.assertEqual(contract["category_lens_selection_layout"], "stacked_vertical_scroll_regions")
+            self.assertEqual(contract["narrow_width_strategy"], "avoid_horizontal_category_lens_splitter")
             self.assertTrue(contract["category_lens_i18n"])
             self.assertTrue(contract["category_lens_tri_state_linkage"])
             row = view_model["session_table"]["rows"][0]
@@ -3099,6 +3102,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("text_width_overflow", violation_kinds)
         self.assertIn("visible_item_outside_clip", violation_kinds)
         self.assertTrue(any("Sessions page overflowing label" in item.get("text", "") for item in violations))
+        source = VISUAL_RENDER_CHECK.read_text(encoding="utf-8")
+        self.assertIn("widget_text_width_overflow", source)
+        self.assertIn("horizontalAdvance", source)
 
     def test_expert_workbench_artifact_contract_saves_filters_and_exports_without_execution(self) -> None:
         from project_moe_gui.workbench_artifacts import create_handoff_package, export_handoff_package, list_handoff_artifacts, save_handoff_artifact
