@@ -36,6 +36,13 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - [x] Target A Sessions visual render check passed at `1180x720`, `1366x768`, and `1440x900` with `token=ok`.
 - [x] Remote publication remains out of scope and was not performed.
 
+- [x] Follow-up 0.2.40 five-thinking-model split is integrated into B local `main` at `e6fdaa138261b0b59dcd77b9c65f5e049195e87a`; it removed `thinking_dispatcher` from the visible GUI lens surface, added five independently selectable thinking-model lenses, and improved the right-side scrolling area.
+- [x] Follow-up 0.2.41 existing Phase 1 CLI migration fix is integrated into B local `main` at `155c69fe634f5cf8012749363a74867c76c2f885`; rollback ref: `refs/backup/local-main/20260610-175345-before-fix-project-moe-phase1-lens-migration-20260610`.
+- [x] Target A `D:/PythonProject_paper_suggest` is installed and committed with Project MOE GUI `0.2.41`: A local commit `e940cef`.
+- [x] Target A `project-moe-gui.cmd --preflight --json` passed with `token=ok`, `phase1_readiness_gate.readiness_status=ready`, `session_count.value=5`, and a clean target repository after commit.
+- [x] Target A `list-lenses` confirmed the category boundaries: `socratic_questioning` contains only `socratic_cbt`; `five_classic_thinking_models` contains only `feynman_learning`, `first_principles`, `pyramid_principle`, `swot_analysis`, and `decision_tree`; the visible lens list no longer contains `thinking_dispatcher`.
+- [x] Target A reversible live write/readback passed and restored original state: writing the five new lens ids returned `token=ok`; compatibility input `thinking_dispatcher` read back as the five new lenses and did not include `thinking_dispatcher` or `socratic_cbt`.
+- [x] Target A Sessions visual render checks passed at `1180x720`, `1366x768`, and `1440x900` with `token=ok`; output directory: `D:/PythonProject_langgraph/.tmp/visual-0.2.41-a-default`.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
@@ -50,6 +57,8 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - [x] Install the refreshed managed GUI artifacts into `D:/PythonProject_paper_suggest` and run target A preflight.
 - [x] Run target A Sessions visual render validation for the installed GUI.
 
+- [x] Complete follow-up 0.2.40: fix category cross-control, split the five thinking-model lenses, and improve right-side scrolling.
+- [x] Complete follow-up 0.2.41: migrate the existing A Phase 1 CLI public lens/category catalog, install into A, and run preflight, live readback, and visual gates.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
@@ -82,9 +91,19 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - Follow-up 0.2.40 full toolchain tests: `python test\project_moe_gui_toolchain.test.py` -> `Ran 101 tests ... OK`.
 - Follow-up 0.2.40 B Sessions visual render checks: default, long-content, and dense-sessions fixtures at `1180x720`, `1366x768`, and `1440x900` each returned `token=ok`.
 - Follow-up 0.2.40 root-cause fix evidence: the first default visual run failed on stale category checkbox geometry (`640x480`) after layout rebuild; `_clear_layout()` now hides and detaches old widgets before `deleteLater()`, and the repeated default visual check returned `token=ok`.
+
+- Follow-up 0.2.41 B runtime local-main merge: `155c69fe634f5cf8012749363a74867c76c2f885`; rollback ref: `refs/backup/local-main/20260610-175345-before-fix-project-moe-phase1-lens-migration-20260610`; completed claim: `D:/PythonProject_langgraph/.omx/session-claims/completed/fix-project-moe-phase1-lens-migration-20260610.json`.
+- Follow-up 0.2.41 tests: `python -m py_compile tools/project_moe_gui_toolchain/src/project_moe_gui/toolchain.py tools/project_moe_gui_toolchain/src/project_moe_gui/__init__.py` -> exit 0; `python test/project_moe_gui_toolchain.test.py` -> `Ran 102 tests ... OK`; `python ./tools/check_precommit_update_archive.py --root . --json` -> `ok=true`.
+- Follow-up 0.2.41 local flow: `python tools/complete_local_flow_to_remote_gate.py --worktree D:/PythonProject_langgraph/.worktrees/fix-project-moe-phase1-lens-migration-20260610 --execute --json --local-gate-step-timeout-seconds 600` -> `ok=true`, including feature local gate, local MR review, ff-only merge, local cleanup, and post-merge local gate.
+- Target A 0.2.41 install: `python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-project D:/PythonProject_paper_suggest --json` -> `token=ok`, `target_toolchain_version=0.2.41`, changed `tools/project_moe_gui/project_moe_gui.config.json`, `tools/project_moe_gui/project_moe_gui.install-manifest.json`, and `tools/thesis_moe_mode.py`.
+- Target A 0.2.41 local commit: `e940cef`.
+- Target A 0.2.41 preflight: `D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` -> `token=ok`, `phase1_readiness_gate.readiness_status=ready`, `session_count.value=5`, `git_status.dirty=false`.
+- Target A 0.2.41 public catalog: `python D:/PythonProject_paper_suggest/tools/thesis_moe_mode.py list-lenses --json` -> `token=ok`; category boundaries are `strict_graduate_advisor` with six advisor/review lenses, `socratic_questioning` with only `socratic_cbt`, and `five_classic_thinking_models` with only the five new thinking-model lenses; visible lenses do not include `thinking_dispatcher`.
+- Target A 0.2.41 live write/readback: for session `019e7c0d-5127-7e71-8ed2-a5eea010bd5c`, writing the five new lenses returned `token=ok` and read back only those five lenses; compatibility write `thinking_dispatcher` returned `token=ok` and read back the five new lenses, without `thinking_dispatcher` or `socratic_cbt`; state was restored from `D:/PythonProject_langgraph/.tmp/moe-session-019e7c0d-before-0.2.41-live-verify.json` after validation.
+- Target A 0.2.41 Sessions visual render: `python tools/project_moe_gui_toolchain/visual_render_check.py --target-project D:/PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --output-dir .tmp/visual-0.2.41-a-default --json` -> `token=ok`; screenshots are under `D:/PythonProject_langgraph/.tmp/visual-0.2.41-a-default/`.
 <!-- EVIDENCE_INDEX_END -->
 
-## Follow-up Hotfix: 0.2.40 Five Thinking Models and Scroll Usability
+## Follow-up Hotfix: 0.2.40/0.2.41 Five Thinking Models, Existing CLI Migration, and Scroll Usability
 <!-- FOLLOW_UP_0_2_40_START -->
 
 This follow-up is required before the Sessions page can be considered product-ready for lens/category control. It fixes a category cross-control defect, splits the old five-thinking-model dispatcher into five independently selectable lenses, and improves the right-side scroll ergonomics for long category/lens content.
@@ -100,6 +119,7 @@ This follow-up is required before the Sessions page can be considered product-re
   - `decision_tree` / Decision tree expert.
 - The deprecated `thinking_dispatcher` id remains a compatibility alias only: reads and legacy writes expand it to all five new thinking-model lenses; new GUI writes must not persist `thinking_dispatcher`.
 - The legacy `thinking` category must not include `socratic_cbt`; it maps only to the five thinking-model lenses.
+- If an existing target project still has the old Phase 1 CLI public catalog, the installer must safely migrate `PUBLIC_LENSES`, `PUBLIC_CATEGORIES`, selection helpers, selection validation, and parsed selection without reading or overwriting private prompt, agent TOML, or `.omx/state` content.
 - The right-side lens/category selection viewport must be large enough for controlled dragging and wheel use. The three category rows should not require their own tiny scrollbar; the lens list remains independently scrollable with a taller track.
 
 ### Implementation sequence
@@ -109,7 +129,8 @@ This follow-up is required before the Sessions page can be considered product-re
 - [x] Stage E3: update the managed Phase 1 CLI/template contract so A accepts the five new lens ids and compatibility alias expansion.
 - [x] Stage E4: update focused unit tests and visual render fixtures for the five new lenses and scroll ergonomics.
 - [x] Stage E5: run B tests and Sessions visual checks for default, long-content, and dense-sessions at `1180x720`, `1366x768`, and `1440x900`.
-- [ ] Stage E6: integrate B runtime into local `main`, install `0.2.40` into `D:/PythonProject_paper_suggest`, run A preflight, run reversible live write/readback checks, restore A state, and commit A managed artifacts if changed.
+- [x] Stage E6: integrate B runtime `0.2.40` into local `main` and discover that target A's existing Phase 1 CLI was not migrated by the 0.2.40 installer; do not treat the A 0.2.40 dirty state or preflight blocker as successful acceptance.
+- [x] Stage E7: implement the `0.2.41` existing Phase 1 CLI public-catalog migrator, run 102 toolchain tests, merge into B local `main` through local flow, install into `D:/PythonProject_paper_suggest`, commit A local `main`, and run A preflight, reversible live write/readback, and Sessions visual render checks.
 
 ### Additional acceptance criteria
 
@@ -117,6 +138,8 @@ This follow-up is required before the Sessions page can be considered product-re
 - Toggling `Socratic Questioning Module` never toggles any of the five thinking-model lenses.
 - Selecting old `thinking_dispatcher` through compatibility input results in all five new thinking-model lenses being effective.
 - A target-project `set-lenses` call using the five new lens ids returns `token=ok`; invalid-lens errors must not occur for the new ids.
+- A target-project write using old `thinking_dispatcher` input returns `token=ok` and reads back the expanded five new lenses; it must not persist `thinking_dispatcher`.
+- The target A public catalog must show `socratic_questioning` containing only `socratic_cbt`, and `five_classic_thinking_models` containing only the five new thinking-model lenses.
 - Visual checks prove the category/lens panel remains usable with long labels and dense lens lists, without tiny right-side scroll tracks that make drag control impractical.
 
 <!-- FOLLOW_UP_0_2_40_END -->

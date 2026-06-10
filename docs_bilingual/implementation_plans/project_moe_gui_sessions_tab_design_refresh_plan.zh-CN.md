@@ -36,6 +36,13 @@ related_plans:
 - [x] A 目标项目 Sessions 视觉渲染检查已覆盖 `1180x720`、`1366x768`、`1440x900`，返回 `token=ok`。
 - [x] 远端发布不在本计划范围内，且未执行。
 
+- [x] Follow-up 0.2.40 五大思维模型拆分已合入 B 本地 `main`，提交为 `e6fdaa138261b0b59dcd77b9c65f5e049195e87a`；它已从可见 GUI lens surface 移除 `thinking_dispatcher`，新增五个可独立选择的思维模型镜头，并优化右侧滚动区域。
+- [x] Follow-up 0.2.41 既有 Phase 1 CLI 迁移修复已合入 B 本地 `main`，提交为 `155c69fe634f5cf8012749363a74867c76c2f885`；rollback ref 为 `refs/backup/local-main/20260610-175345-before-fix-project-moe-phase1-lens-migration-20260610`。
+- [x] A 目标项目 `D:/PythonProject_paper_suggest` 已安装并提交 Project MOE GUI `0.2.41`：A 本地提交为 `e940cef`。
+- [x] A 目标项目 `project-moe-gui.cmd --preflight --json` 已通过，返回 `token=ok`、`phase1_readiness_gate.readiness_status=ready`、`session_count.value=5`，且目标仓库提交后保持 clean。
+- [x] A `list-lenses` 已确认类别边界：`socratic_questioning` 只包含 `socratic_cbt`；`five_classic_thinking_models` 只包含 `feynman_learning`、`first_principles`、`pyramid_principle`、`swot_analysis`、`decision_tree`；可见 lens 列表不再包含 `thinking_dispatcher`。
+- [x] A 可回滚 live 写入/读回验证已通过：写入五个新 lens id 返回 `token=ok`；兼容输入 `thinking_dispatcher` 读回时展开为五个新 lens，且不包含 `thinking_dispatcher` 或 `socratic_cbt`。
+- [x] A Sessions 视觉渲染检查已覆盖 `1180x720`、`1366x768`、`1440x900`，均返回 `token=ok`；输出目录为 `D:/PythonProject_langgraph/.tmp/visual-0.2.41-a-default`。
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
@@ -50,6 +57,8 @@ related_plans:
 - [x] 将刷新后的受管理 GUI 产物安装到 `D:/PythonProject_paper_suggest` 并运行 A preflight。
 - [x] 对已安装到 A 的 Sessions 页运行视觉渲染验收。
 
+- [x] 完成 Follow-up 0.2.40：修复 category 串联控制、拆分五个思维模型镜头，并优化右侧滚动。
+- [x] 完成 Follow-up 0.2.41：迁移既有 A Phase 1 CLI 的 lens/category 公共目录，安装到 A，并运行 preflight、live 读回和视觉门禁。
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
@@ -83,9 +92,19 @@ related_plans:
 - Follow-up 0.2.40 完整 toolchain 测试：`python test\\project_moe_gui_toolchain.test.py` -> `Ran 101 tests ... OK`。
 - Follow-up 0.2.40 B Sessions 视觉渲染检查：default、long-content、dense-sessions 三组夹具在 `1180x720`、`1366x768`、`1440x900` 均返回 `token=ok`。
 - Follow-up 0.2.40 根因修复证据：首次 default 视觉运行在布局重建后的旧 category checkbox 几何上失败（`640x480`）；`_clear_layout()` 现在会先隐藏并脱离旧 widget，再 `deleteLater()`，重复 default 视觉检查返回 `token=ok`。
+
+- Follow-up 0.2.41 B runtime 本地 main 合入：`155c69fe634f5cf8012749363a74867c76c2f885`；rollback ref：`refs/backup/local-main/20260610-175345-before-fix-project-moe-phase1-lens-migration-20260610`；completed claim：`D:/PythonProject_langgraph/.omx/session-claims/completed/fix-project-moe-phase1-lens-migration-20260610.json`。
+- Follow-up 0.2.41 测试：`python -m py_compile tools/project_moe_gui_toolchain/src/project_moe_gui/toolchain.py tools/project_moe_gui_toolchain/src/project_moe_gui/__init__.py` -> exit 0；`python test/project_moe_gui_toolchain.test.py` -> `Ran 102 tests ... OK`；`python ./tools/check_precommit_update_archive.py --root . --json` -> `ok=true`。
+- Follow-up 0.2.41 local flow：`python tools/complete_local_flow_to_remote_gate.py --worktree D:/PythonProject_langgraph/.worktrees/fix-project-moe-phase1-lens-migration-20260610 --execute --json --local-gate-step-timeout-seconds 600` -> `ok=true`，覆盖 feature local gate、local MR review、ff-only 合入、local cleanup 与 post-merge local gate。
+- A 目标项目 0.2.41 安装：`python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-project D:/PythonProject_paper_suggest --json` -> `token=ok`，`target_toolchain_version=0.2.41`，变更 `tools/project_moe_gui/project_moe_gui.config.json`、`tools/project_moe_gui/project_moe_gui.install-manifest.json`、`tools/thesis_moe_mode.py`。
+- A 目标项目 0.2.41 本地提交：`e940cef`。
+- A 目标项目 0.2.41 preflight：`D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` -> `token=ok`，`phase1_readiness_gate.readiness_status=ready`，`session_count.value=5`，`git_status.dirty=false`。
+- A 目标项目 0.2.41 public catalog：`python D:/PythonProject_paper_suggest/tools/thesis_moe_mode.py list-lenses --json` -> `token=ok`；类别边界为 `strict_graduate_advisor` 包含六个导师/审稿镜头，`socratic_questioning` 仅包含 `socratic_cbt`，`five_classic_thinking_models` 仅包含五个新思维模型镜头；可见 lenses 不包含 `thinking_dispatcher`。
+- A 目标项目 0.2.41 live 写入/读回：对 session `019e7c0d-5127-7e71-8ed2-a5eea010bd5c` 写入五个新 lens 返回 `token=ok` 并只读回这五个 lens；兼容写入 `thinking_dispatcher` 返回 `token=ok` 并读回五个新 lens，不包含 `thinking_dispatcher` 或 `socratic_cbt`；验证后已从 `D:/PythonProject_langgraph/.tmp/moe-session-019e7c0d-before-0.2.41-live-verify.json` 恢复状态。
+- A 目标项目 0.2.41 Sessions 视觉渲染：`python tools/project_moe_gui_toolchain/visual_render_check.py --target-project D:/PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --output-dir .tmp/visual-0.2.41-a-default --json` -> `token=ok`；截图位于 `D:/PythonProject_langgraph/.tmp/visual-0.2.41-a-default/`。
 <!-- EVIDENCE_INDEX_END -->
 
-## 后续 Hotfix：0.2.40 五大思维模型拆分与滚动可用性
+## 后续 Hotfix：0.2.40/0.2.41 五大思维模型拆分、既有 CLI 迁移与滚动可用性
 <!-- FOLLOW_UP_0_2_40_START -->
 
 这个 follow-up 是 Sessions 页 lens/category 控制达到产品可用前的必修切片。它修复类别串联控制缺陷，把旧的五大经典思维模型调度镜头拆成五个可独立开启/关闭的镜头，并优化右侧长内容滚动体验。
@@ -101,6 +120,7 @@ related_plans:
   - `decision_tree` / 决策树模型专家。
 - 废弃的 `thinking_dispatcher` id 只保留为兼容 alias：读取旧状态或旧写入时展开为五个新思维模型镜头；新 GUI 写入不得再持久化 `thinking_dispatcher`。
 - legacy `thinking` 类别不得包含 `socratic_cbt`，只映射到五个思维模型镜头。
+- 如果既有目标项目仍保留旧 Phase 1 CLI 公共目录，installer 必须安全迁移 `PUBLIC_LENSES`、`PUBLIC_CATEGORIES`、selection helper、selection validation 与 parsed selection，不读取或覆盖私有 prompt、agent TOML 或 `.omx/state` 内容。
 - 右侧 lens/category 选择区域必须有足够大的可视高度，方便拖动和滚轮控制。三个类别行不应再需要自己的小滚动条；镜头列表仍独立滚动，但轨道要更长。
 
 ### 实施顺序
@@ -110,7 +130,8 @@ related_plans:
 - [x] Stage E3：更新受管理 Phase 1 CLI/template 契约，使 A 项目接受五个新 lens id，并支持兼容 alias 展开。
 - [x] Stage E4：更新 focused unit tests 和视觉渲染夹具，覆盖五个新镜头与滚动可用性。
 - [x] Stage E5：运行 B 测试与 Sessions 视觉检查，覆盖 default、long-content、dense-sessions，以及 `1180x720`、`1366x768`、`1440x900`。
-- [ ] Stage E6：将 B runtime 合入本地 `main`，安装 `0.2.40` 到 `D:/PythonProject_paper_suggest`，运行 A preflight，执行可回滚 live 写入/读回验证，恢复 A 状态，并在 A 安装产物变化时提交 A 本地仓库。
+- [x] Stage E6：将 B runtime `0.2.40` 合入本地 `main`，并发现 A 目标项目既有 Phase 1 CLI 未被 0.2.40 installer 迁移；不得把 A 的 0.2.40 dirty 状态或 preflight blocker 视为成功验收。
+- [x] Stage E7：实现 `0.2.41` 既有 Phase 1 CLI 公共目录迁移器，运行 102 项 toolchain tests，通过 local flow 合入 B 本地 `main`，安装到 `D:/PythonProject_paper_suggest`，提交 A 本地 `main`，并运行 A preflight、可回滚 live 写入/读回和 Sessions 视觉渲染检查。
 
 ### 追加验收标准
 
@@ -118,6 +139,8 @@ related_plans:
 - 开启/关闭 `认知行为式提问专家模块` 绝不能联动开启/关闭五个思维模型镜头。
 - 通过兼容输入选择旧 `thinking_dispatcher` 时，生效结果为五个新思维模型镜头全选。
 - A 目标项目使用五个新 lens id 执行 `set-lenses` 返回 `token=ok`；新 id 不得触发 invalid-lens 错误。
+- A 目标项目使用旧 `thinking_dispatcher` 输入执行写入返回 `token=ok`，读回时必须展开为五个新 lens，且不得持久化 `thinking_dispatcher`。
+- A 目标项目 public catalog 必须显示 `socratic_questioning` 只包含 `socratic_cbt`，且 `five_classic_thinking_models` 只包含五个新思维模型 lens。
 - 视觉检查必须证明 category/lens 面板在长标签和密集 lens 列表下仍可控，不再出现右侧滚动轨道过短、拖动过敏的问题。
 
 <!-- FOLLOW_UP_0_2_40_END -->
