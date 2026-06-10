@@ -2161,6 +2161,11 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
 
         migrated, blockers = toolchain.migrate_phase1_mode_cli_catalog_text(legacy_mode_cli)
         self.assertEqual(blockers, [])
+        migrated_twice, second_blockers = toolchain.migrate_phase1_mode_cli_catalog_text(migrated)
+        self.assertEqual(second_blockers, [])
+        self.assertEqual(migrated_twice, migrated)
+        self.assertEqual(migrated.count("def expand_lens_aliases("), 1)
+        self.assertEqual(migrated.count("def normalize_category_aliases("), 1)
         self.assertIn('"feynman_learning"', migrated)
         self.assertIn('"first_principles"', migrated)
         self.assertIn('"pyramid_principle"', migrated)

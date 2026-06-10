@@ -2260,11 +2260,15 @@ def selected_categories_from(data: Optional[dict[str, Any]]) -> list[str]:
 
 
 '''
-    pattern = r"def selected_lenses_from\(data: Optional\[dict\[str, Any\]\]\) -> list\[str\]:.*?(?=def effective_lens_mode)"
-    new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
-    if count != 1:
+    start_match = re.search(r"\ndef (?:expand_lens_aliases|normalize_category_aliases|selected_lenses_from)\(", text)
+    if not start_match:
         return text, "blocked:phase1_mode_cli_selected_helper_anchor_missing"
-    return new_text, None
+    start = start_match.start() + 1
+    end_match = re.search(r"\ndef effective_lens_mode\(", text[start:])
+    if not end_match:
+        return text, "blocked:phase1_mode_cli_selected_helper_anchor_missing"
+    end = start + end_match.start() + 1
+    return text[:start] + replacement + text[end:], None
 
 
 def _phase1_replace_validate_lens_selection(text: str) -> tuple[str, str | None]:
