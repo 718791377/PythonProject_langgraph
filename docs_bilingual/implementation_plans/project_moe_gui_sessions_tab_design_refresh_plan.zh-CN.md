@@ -5,7 +5,7 @@ status: active
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/project_moe_gui_sessions_tab_design_refresh_plan.md
 created_at: 2026-06-09
-updated_at: 2026-06-10
+updated_at: 2026-06-11
 scope: project_moe_gui_sessions_tab_design_refresh
 parent_plan: docs_bilingual/implementation_plans/project_moe_gui_product_ui_function_rebuild_plan.zh-CN.md
 related_plans:
@@ -44,7 +44,8 @@ related_plans:
 - [x] A 可回滚 live 写入/读回验证已通过：写入五个新 lens id 返回 `token=ok`；兼容输入 `thinking_dispatcher` 读回时展开为五个新 lens，且不包含 `thinking_dispatcher` 或 `socratic_cbt`。
 - [x] A Sessions 视觉渲染检查已覆盖 `1180x720`、`1366x768`、`1440x900`，均返回 `token=ok`；输出目录为 `D:/PythonProject_langgraph/.tmp/visual-0.2.41-a-default`。
 
-- [ ] Follow-up 0.2.42 Sessions 左侧列表可用性正在本 feature worktree 中实施：把既有 view-model 搜索 / 筛选 / 排序 / total-filtered-invalid-origin 统计能力接入 Qt Widgets 左侧会话列表。最终完成取决于 focused tests、完整 toolchain tests、B/A 视觉渲染检查和 A preflight 证据。
+- [x] Follow-up 0.2.42 Sessions 左侧列表可用性已合入 B 本地 `main`：`3ac470689775d18f8db070acd713e884d9e447cb`；Stage A 治理包为 `1174201323ca75e4d013791ffa1755b12780bd02`；A 项目已安装并提交 `1b34cf7`，toolchain 版本为 `0.2.42`。
+- [x] Follow-up 0.2.43 Phase 1 CLI 迁移幂等性 hotfix 已合入 B 本地 `main`：`f25c6b222eecfecfc2f9eeb031d2767aa59f4adb`；rollback ref 为 `refs/backup/local-main/20260611-074904-before-fix-project-moe-phase1-migration-idempotency-20260611`；A 项目已安装并提交 `ebd94d1`，重复 helper 计数为 `expand_lens_aliases=1`、`normalize_category_aliases=1`。
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
@@ -62,7 +63,8 @@ related_plans:
 - [x] 完成 Follow-up 0.2.40：修复 category 串联控制、拆分五个思维模型镜头，并优化右侧滚动。
 - [x] 完成 Follow-up 0.2.41：迁移既有 A Phase 1 CLI 的 lens/category 公共目录，安装到 A，并运行 preflight、live 读回和视觉门禁。
 
-- [ ] 完成 Follow-up 0.2.42：把左侧 Sessions 搜索、启用状态筛选、排序和数量摘要接入 runtime，并在 A 目标项目中验证。
+- [x] 完成 Follow-up 0.2.42：把左侧 Sessions 搜索、启用状态筛选、排序和数量摘要接入 runtime，并在 A 目标项目中验证。
+- [x] 完成 Follow-up 0.2.43：使既有 Phase 1 CLI 公共目录迁移具备幂等性，重新安装到 A 目标项目，并验证不再残留重复 alias helper。
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
@@ -107,7 +109,16 @@ related_plans:
 - A 目标项目 0.2.41 live 写入/读回：对 session `019e7c0d-5127-7e71-8ed2-a5eea010bd5c` 写入五个新 lens 返回 `token=ok` 并只读回这五个 lens；兼容写入 `thinking_dispatcher` 返回 `token=ok` 并读回五个新 lens，不包含 `thinking_dispatcher` 或 `socratic_cbt`；验证后已从 `D:/PythonProject_langgraph/.tmp/moe-session-019e7c0d-before-0.2.41-live-verify.json` 恢复状态。
 - A 目标项目 0.2.41 Sessions 视觉渲染：`python tools/project_moe_gui_toolchain/visual_render_check.py --target-project D:/PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --output-dir .tmp/visual-0.2.41-a-default --json` -> `token=ok`；截图位于 `D:/PythonProject_langgraph/.tmp/visual-0.2.41-a-default/`。
 
-- Follow-up 0.2.42 待收集证据：focused tests、完整 `python test/project_moe_gui_toolchain.test.py`、B Sessions 视觉渲染、A installer、A preflight、A Sessions 视觉渲染、A 本地提交、B 本地 main 合入提交和 rollback ref。
+- Follow-up 0.2.42 Stage A 治理包：`1174201323ca75e4d013791ffa1755b12780bd02`；runtime 本地 main 合入：`3ac470689775d18f8db070acd713e884d9e447cb`；A 目标项目 0.2.42 安装提交：`1b34cf7`。
+- Follow-up 0.2.42 B 验证：focused contract tests 与完整 `python test/project_moe_gui_toolchain.test.py` 在本地集成前通过；local flow 已把 feature 合入 B 本地 `main` 并清理 feature worktree。
+- Follow-up 0.2.42 A 验证：installer 完成 `0.2.41` -> `0.2.42`；`project-moe-gui.cmd --preflight --json` 返回 `token=ok`；Sessions 视觉渲染覆盖 `1180x720`、`1366x768`、`1440x900`。
+- Follow-up 0.2.43 B hotfix 提交：`f25c6b222eecfecfc2f9eeb031d2767aa59f4adb`；rollback ref：`refs/backup/local-main/20260611-074904-before-fix-project-moe-phase1-migration-idempotency-20260611`；completed claim 保存于 `.omx/session-claims/completed/fix-project-moe-phase1-migration-idempotency-20260611.json`；feature worktree/branch 已清理。
+- Follow-up 0.2.43 B 测试：RED regression 先复现二次迁移重复 helper；修复后 focused test 通过；`python test/project_moe_gui_toolchain.test.py` -> `Ran 104 tests ... OK`；`python .\tools\check_precommit_update_archive.py --root . --json` -> `ok=true`；local flow 的 feature gate、local MR review、merge、cleanup 与 post-merge local gate 通过。
+- A 目标项目 0.2.43 安装：`python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-project D:/PythonProject_paper_suggest --json` -> `token=ok`，完成 `0.2.42` -> `0.2.43`，变更 `tools/project_moe_gui/project_moe_gui.config.json`、`tools/project_moe_gui/project_moe_gui.install-manifest.json`、`tools/thesis_moe_mode.py`。
+- A 目标项目 0.2.43 本地提交：`ebd94d1 更新：升级 Project MOE GUI 到 0.2.43`。
+- A 目标项目 0.2.43 重复 helper 证据：`expand_lens_aliases` 计数为 `1`；`normalize_category_aliases` 计数为 `1`；`python D:/PythonProject_paper_suggest/tools/thesis_moe_mode.py list-lenses --json` 返回 `token=ok`，并保留已验收的三个 category 边界。
+- A 目标项目 0.2.43 preflight：`D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` -> `token=ok`，`phase1_readiness_gate.readiness_status=ready`，`git_status.dirty=false`，`session_count.value=5`。
+- A 目标项目 0.2.43 Sessions 视觉渲染：`python tools/project_moe_gui_toolchain/visual_render_check.py --target-project D:/PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --output-dir .tmp/visual-0.2.43-a-default --json` -> `token=ok`；截图目录为 `D:/PythonProject_langgraph/.tmp/visual-0.2.43-a-default/`。
 <!-- EVIDENCE_INDEX_END -->
 
 ## 后续 Hotfix：0.2.40/0.2.41 五大思维模型拆分、既有 CLI 迁移与滚动可用性
@@ -248,10 +259,10 @@ related_plans:
 
 - [x] Stage E8.1：在隔离 feature worktree 中新增 RED 测试，覆盖 Sessions 搜索 / 筛选 / 排序 / 数量契约。
 - [x] Stage E8.2：实现 view-model 统计、默认 filtered rows、扩展搜索字段，以及 Qt Widgets 筛选/排序控件。
-- [ ] Stage E8.3：把 toolchain 版本提升到 `0.2.42` 并更新双语方案证据。
-- [ ] Stage E8.4：运行 focused tests、完整 toolchain tests 和 B Sessions 视觉渲染检查。
-- [ ] Stage E8.5：安装到 `D:/PythonProject_paper_suggest`，运行 A preflight 与 A Sessions 视觉渲染检查，并提交 A 本地仓库变更。
-- [ ] Stage E8.6：提交 B feature，运行 local flow 合入 B 本地 `main` 并清理 feature worktree。
+- [x] Stage E8.3：把 toolchain 版本提升到 `0.2.42` 并更新双语方案证据。
+- [x] Stage E8.4：运行 focused tests、完整 toolchain tests 和 B Sessions 视觉渲染检查。
+- [x] Stage E8.5：安装到 `D:/PythonProject_paper_suggest`，运行 A preflight 与 A Sessions 视觉渲染检查，并提交 A 本地仓库变更。
+- [x] Stage E8.6：提交 B feature，运行 local flow 合入 B 本地 `main` 并清理 feature worktree。
 
 ### 验收标准
 
@@ -259,4 +270,31 @@ related_plans:
 - 修改 Qt Widgets filter/sort combo 后，左侧列表必须立即刷新，并更新当前显示数量 / 总数量文本。
 - 安装到 A 后，GUI 仍只显示当前项目真实 sessions，且 `project-moe-gui.cmd --preflight --json` 返回 `token=ok`。
 - 视觉渲染至少覆盖 `1180x720`、`1366x768`、`1440x900` 的 Sessions 页，确认左侧列表、搜索/筛选/排序控件、右侧详情和镜头选择区域没有明显溢出。
+
+## Follow-up：0.2.43 Phase 1 CLI 迁移幂等性 Hotfix
+<!-- FOLLOW_UP_0_2_43_START -->
+
+该 runtime hotfix 收口 A 目标项目升级到 `0.2.42` 后暴露的安装幂等性缺口：重复执行公共目录迁移时，既有 Phase 1 CLI 可能被再次插入 `expand_lens_aliases` 与 `normalize_category_aliases` helper；这 means selected-helper 替换锚点必须从第一个既有 alias helper、category helper 或 `selected_lenses_from` 开始，到 `effective_lens_mode` 前整体替换。
+
+本节中的 `selected-helper block` 指 Phase 1 CLI 中连续的一段辅助函数区域，负责计算已选择镜头、已选择分类和最终生效镜头模式；`replacement anchor` 指迁移器开始替换这整段区域的第一行，不是用户可见的 GUI 控件。
+
+### 必须实现的行为
+
+- 对已迁移文本再次运行 `migrate_phase1_mode_cli_catalog_text()` 时，必须返回相同文本且没有 blocker。
+- 迁移后 `expand_lens_aliases` 只能出现一次。
+- 迁移后 `normalize_category_aliases` 只能出现一次。
+- A 目标项目继续指向 B 主目录 source path，而不是 feature worktree source path。
+- A 目标项目在 `0.2.43` 安装后 preflight 与 Sessions 视觉渲染继续通过。
+
+### 实施顺序
+
+- [x] Stage E9.1：在既有公共目录迁移测试中新增 RED 幂等性回归断言。
+- [x] Stage E9.2：修复 `_phase1_replace_selected_helpers()`，当 alias helper 已存在时整体替换 selected-helper block。
+- [x] Stage E9.3：把 Project MOE GUI toolchain 版本提升到 `0.2.43`。
+- [x] Stage E9.4：运行 focused test、完整 toolchain tests、precommit update/archive gate、local gate 与 local MR review。
+- [x] Stage E9.5：合入 B 本地 `main`，清理 feature worktree/branch，从 B 主目录重新安装到 A，并提交 A 本地 `main`。
+- [x] Stage E9.6：验证 A 目标项目重复 helper 计数、preflight 与 Sessions 视觉渲染。
+
+<!-- FOLLOW_UP_0_2_43_END -->
+
 <!-- FOLLOW_UP_0_2_42_END -->

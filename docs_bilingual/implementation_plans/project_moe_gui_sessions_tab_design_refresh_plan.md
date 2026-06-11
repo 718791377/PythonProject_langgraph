@@ -5,7 +5,7 @@ canonical: docs_bilingual/implementation_plans/project_moe_gui_sessions_tab_desi
 status: active
 doc_class: implementation_plan
 created_at: 2026-06-09
-updated_at: 2026-06-10
+updated_at: 2026-06-11
 scope: project_moe_gui_sessions_tab_design_refresh
 parent_plan: docs_bilingual/implementation_plans/project_moe_gui_product_ui_function_rebuild_plan.md
 related_plans:
@@ -44,7 +44,8 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - [x] Target A reversible live write/readback passed and restored original state: writing the five new lens ids returned `token=ok`; compatibility input `thinking_dispatcher` read back as the five new lenses and did not include `thinking_dispatcher` or `socratic_cbt`.
 - [x] Target A Sessions visual render checks passed at `1180x720`, `1366x768`, and `1440x900` with `token=ok`; output directory: `D:/PythonProject_langgraph/.tmp/visual-0.2.41-a-default`.
 
-- [ ] Follow-up 0.2.42 Sessions left-list usability is in progress in this feature worktree: it wires the existing view-model search / filter / sort / total-filtered-invalid-origin count capability into the Qt Widgets left session list. Final completion depends on focused tests, full toolchain tests, B/A visual render checks, and A preflight evidence.
+- [x] Follow-up 0.2.42 Sessions left-list usability is integrated into B local `main` at `3ac470689775d18f8db070acd713e884d9e447cb`; its Stage A governance package is `1174201323ca75e4d013791ffa1755b12780bd02`; target A `D:/PythonProject_paper_suggest` was installed and committed at `1b34cf7` with toolchain version `0.2.42`.
+- [x] Follow-up 0.2.43 Phase 1 CLI migration idempotency hotfix is integrated into B local `main` at `f25c6b222eecfecfc2f9eeb031d2767aa59f4adb`; rollback ref: `refs/backup/local-main/20260611-074904-before-fix-project-moe-phase1-migration-idempotency-20260611`; target A was installed and committed at `ebd94d1`, and duplicate helper counts are now `expand_lens_aliases=1`, `normalize_category_aliases=1`.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
@@ -62,7 +63,8 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - [x] Complete follow-up 0.2.40: fix category cross-control, split the five thinking-model lenses, and improve right-side scrolling.
 - [x] Complete follow-up 0.2.41: migrate the existing A Phase 1 CLI public lens/category catalog, install into A, and run preflight, live readback, and visual gates.
 
-- [ ] Complete follow-up 0.2.42: wire left-side Sessions search, enabled-state filtering, sorting, and count summary into the runtime and validate it in target A.
+- [x] Complete follow-up 0.2.42: wire left-side Sessions search, enabled-state filtering, sorting, and count summary into the runtime and validate it in target A.
+- [x] Complete follow-up 0.2.43: make existing Phase 1 CLI public-catalog migration idempotent, reinstall into target A, and verify no duplicate alias helper functions remain.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
@@ -106,7 +108,16 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - Target A 0.2.41 live write/readback: for session `019e7c0d-5127-7e71-8ed2-a5eea010bd5c`, writing the five new lenses returned `token=ok` and read back only those five lenses; compatibility write `thinking_dispatcher` returned `token=ok` and read back the five new lenses, without `thinking_dispatcher` or `socratic_cbt`; state was restored from `D:/PythonProject_langgraph/.tmp/moe-session-019e7c0d-before-0.2.41-live-verify.json` after validation.
 - Target A 0.2.41 Sessions visual render: `python tools/project_moe_gui_toolchain/visual_render_check.py --target-project D:/PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --output-dir .tmp/visual-0.2.41-a-default --json` -> `token=ok`; screenshots are under `D:/PythonProject_langgraph/.tmp/visual-0.2.41-a-default/`.
 
-- Follow-up 0.2.42 evidence to collect: focused tests, full `python test/project_moe_gui_toolchain.test.py`, B Sessions visual render, A installer, A preflight, A Sessions visual render, A local commit, B local-main merge, and rollback ref.
+- Follow-up 0.2.42 Stage A governance package: `1174201323ca75e4d013791ffa1755b12780bd02`; runtime local-main merge: `3ac470689775d18f8db070acd713e884d9e447cb`; target A 0.2.42 install commit: `1b34cf7`.
+- Follow-up 0.2.42 B validation: focused contract tests and full `python test/project_moe_gui_toolchain.test.py` passed before local integration; local flow merged the feature into B local `main` and cleaned the feature worktree.
+- Follow-up 0.2.42 target A validation: installer upgraded `0.2.41` -> `0.2.42`; `project-moe-gui.cmd --preflight --json` returned `token=ok`; Sessions visual render checks covered `1180x720`, `1366x768`, and `1440x900`.
+- Follow-up 0.2.43 B hotfix commit: `f25c6b222eecfecfc2f9eeb031d2767aa59f4adb`; rollback ref: `refs/backup/local-main/20260611-074904-before-fix-project-moe-phase1-migration-idempotency-20260611`; completed claim preserved under `.omx/session-claims/completed/fix-project-moe-phase1-migration-idempotency-20260611.json`; feature worktree and branch were cleaned.
+- Follow-up 0.2.43 B tests: RED regression reproduced duplicate helper insertion on second migration; focused test then passed; `python test/project_moe_gui_toolchain.test.py` -> `Ran 104 tests ... OK`; `python .\tools\check_precommit_update_archive.py --root . --json` -> `ok=true`; local flow feature gate, local MR review, merge, cleanup, and post-merge local gate passed.
+- Target A 0.2.43 install: `python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-project D:/PythonProject_paper_suggest --json` -> `token=ok`, upgraded `0.2.42` -> `0.2.43`, changed `tools/project_moe_gui/project_moe_gui.config.json`, `tools/project_moe_gui/project_moe_gui.install-manifest.json`, and `tools/thesis_moe_mode.py`.
+- Target A 0.2.43 local commit: `ebd94d1` (Chinese subject: upgrade Project MOE GUI to 0.2.43).
+- Target A 0.2.43 duplicate-helper evidence: `expand_lens_aliases` count is `1`; `normalize_category_aliases` count is `1`; `python D:/PythonProject_paper_suggest/tools/thesis_moe_mode.py list-lenses --json` returned `token=ok` with the accepted three category boundaries.
+- Target A 0.2.43 preflight: `D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` -> `token=ok`, `phase1_readiness_gate.readiness_status=ready`, `git_status.dirty=false`, `session_count.value=5`.
+- Target A 0.2.43 Sessions visual render: `python tools/project_moe_gui_toolchain/visual_render_check.py --target-project D:/PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --output-dir .tmp/visual-0.2.43-a-default --json` -> `token=ok`; screenshots are under `D:/PythonProject_langgraph/.tmp/visual-0.2.43-a-default/`.
 <!-- EVIDENCE_INDEX_END -->
 
 ## Follow-up Hotfix: 0.2.40/0.2.41 Five Thinking Models, Existing CLI Migration, and Scroll Usability
@@ -244,10 +255,10 @@ This follow-up closes a Sessions-page usability slice after 0.2.40/0.2.41 comple
 
 - [x] Stage E8.1: add a RED test in an isolated feature worktree for the Sessions search / filter / sort / count contract.
 - [x] Stage E8.2: implement view-model counts, default filtered rows, expanded search fields, and Qt Widgets filter/sort controls.
-- [ ] Stage E8.3: bump the toolchain version to `0.2.42` and update bilingual plan evidence.
-- [ ] Stage E8.4: run focused tests, full toolchain tests, and B Sessions visual render checks.
-- [ ] Stage E8.5: install into `D:/PythonProject_paper_suggest`, run A preflight and A Sessions visual render checks, and commit A local repository changes.
-- [ ] Stage E8.6: commit the B feature, run local flow into B local `main`, and clean the feature worktree.
+- [x] Stage E8.3: bump the toolchain version to `0.2.42` and update bilingual plan evidence.
+- [x] Stage E8.4: run focused tests, full toolchain tests, and B Sessions visual render checks.
+- [x] Stage E8.5: install into `D:/PythonProject_paper_suggest`, run A preflight and A Sessions visual render checks, and commit A local repository changes.
+- [x] Stage E8.6: commit the B feature, run local flow into B local `main`, and clean the feature worktree.
 
 ### Acceptance criteria
 
@@ -255,4 +266,31 @@ This follow-up closes a Sessions-page usability slice after 0.2.40/0.2.41 comple
 - Changing the Qt Widgets filter/sort combo refreshes the left list immediately and updates shown/total count text.
 - After A install, the GUI still shows only current-project real sessions and `project-moe-gui.cmd --preflight --json` returns `token=ok`.
 - Sessions visual render covers at least `1180x720`, `1366x768`, and `1440x900`, confirming the left list, search/filter/sort controls, right details, and lens selection region do not visibly overflow.
+
+## Follow-up: 0.2.43 Phase 1 CLI Migration Idempotency Hotfix
+<!-- FOLLOW_UP_0_2_43_START -->
+
+This runtime hotfix closes the installation idempotency gap discovered after target A upgraded to `0.2.42`: repeated public-catalog migration could insert duplicate `expand_lens_aliases` and `normalize_category_aliases` helper functions into an existing Phase 1 CLI, which means the selected-helper replacement anchor must replace the whole helper block from the first existing alias helper, category helper, or `selected_lenses_from` through `effective_lens_mode`.
+
+In this section, `selected-helper block` means the contiguous Phase 1 CLI helper region that computes selected lenses, selected categories, and the effective lens mode; `replacement anchor` means the first line where the migrator starts replacing that whole region, not a user-facing GUI control.
+
+### Required behavior
+
+- Re-running `migrate_phase1_mode_cli_catalog_text()` on already migrated text must return the same text and no blockers.
+- `expand_lens_aliases` appears exactly once after migration.
+- `normalize_category_aliases` appears exactly once after migration.
+- Target A remains on the B main source path, not a feature-worktree source path.
+- Target A preflight and Sessions visual render checks continue to pass after the `0.2.43` install.
+
+### Implementation sequence
+
+- [x] Stage E9.1: add a RED idempotency regression assertion to the existing public-catalog migration test.
+- [x] Stage E9.2: fix `_phase1_replace_selected_helpers()` to replace the entire selected-helper block when prior alias helpers already exist.
+- [x] Stage E9.3: bump Project MOE GUI toolchain version to `0.2.43`.
+- [x] Stage E9.4: run focused test, full toolchain tests, precommit update/archive gate, local gate, and local MR review.
+- [x] Stage E9.5: integrate into B local `main`, clean the feature worktree/branch, reinstall from B main into target A, and commit A local `main`.
+- [x] Stage E9.6: verify target A duplicate helper counts, preflight, and Sessions visual render.
+
+<!-- FOLLOW_UP_0_2_43_END -->
+
 <!-- FOLLOW_UP_0_2_42_END -->
