@@ -2703,6 +2703,14 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
             self.assertFalse(contract["category_rows_use_tiny_scrollbar"])
             self.assertGreaterEqual(contract["lens_selection_minimum_height_px"], 220)
             self.assertEqual(contract["narrow_width_strategy"], "avoid_horizontal_category_lens_splitter")
+            self.assertEqual(contract["right_density"], "compact_lens_first")
+            self.assertEqual(contract["lens_selection_layout"], "two_column_lens_grid")
+            self.assertGreaterEqual(contract["lens_grid_columns"], 2)
+            self.assertLessEqual(contract["session_details_max_height_px"], 148)
+            self.assertLessEqual(contract["status_actions_max_height_px"], 184)
+            self.assertLessEqual(contract["category_rows_max_height_px"], 124)
+            self.assertGreaterEqual(contract["lens_first_visible_height_px"], 300)
+            self.assertTrue(contract["all_default_lenses_fit_without_outer_scroll_at_1180x720"])
             self.assertTrue(contract["category_lens_i18n"])
             self.assertTrue(contract["category_lens_tri_state_linkage"])
             row = view_model["session_table"]["rows"][0]
@@ -3311,6 +3319,9 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
         self.assertTrue(any(len(row["display_id"]) > 40 for row in long_vm["session_table"]["rows"]))
         self.assertTrue(any(len(lens["label"]) > 80 for lens in long_vm["lens_catalog"]["lenses"]))
         self.assertTrue(any(category["id"] == "strict_graduate_advisor" for category in long_vm["lens_catalog"]["categories"]))
+        long_lens_ids = [item["id"] for item in long_vm["lens_catalog"]["lenses"]]
+        for lens_id in ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"]:
+            self.assertIn(lens_id, long_lens_ids)
 
         dense_vm = module.build_fixture_view_model("dense-sessions", base)
         self.assertGreaterEqual(len(dense_vm["session_table"]["rows"]), 24)

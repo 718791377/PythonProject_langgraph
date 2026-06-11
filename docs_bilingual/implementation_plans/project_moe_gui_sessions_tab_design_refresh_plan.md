@@ -46,6 +46,9 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 
 - [x] Follow-up 0.2.42 Sessions left-list usability is integrated into B local `main` at `3ac470689775d18f8db070acd713e884d9e447cb`; its Stage A governance package is `1174201323ca75e4d013791ffa1755b12780bd02`; target A `D:/PythonProject_paper_suggest` was installed and committed at `1b34cf7` with toolchain version `0.2.42`.
 - [x] Follow-up 0.2.43 Phase 1 CLI migration idempotency hotfix is integrated into B local `main` at `f25c6b222eecfecfc2f9eeb031d2767aa59f4adb`; rollback ref: `refs/backup/local-main/20260611-074904-before-fix-project-moe-phase1-migration-idempotency-20260611`; target A was installed and committed at `ebd94d1`, and duplicate helper counts are now `expand_lens_aliases=1`, `normalize_category_aliases=1`.
+- [x] Follow-up 0.2.44 B runtime implementation is complete in feature worktree `improve-project-moe-sessions-lens-first-0-2-44-20260611`: toolchain version `0.2.44`, compact lens-first right-side layout, two-column lens grid, compact session details/status cards, and visual-gate enforcement for the final core thinking-model lens.
+- [x] Follow-up 0.2.44 B validation passed in the feature worktree: focused contract tests, full `python test/project_moe_gui_toolchain.test.py` (104/104 OK), py_compile, and Sessions visual render checks for default, long-content, and dense-sessions at `1180x720`, `1366x768`, and `1440x900`.
+- [ ] Follow-up 0.2.44 local `main` integration, target A reinstall, target A preflight, target A visual render validation, and target A local commit remain pending until this feature package is merged into B local `main`.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
@@ -65,6 +68,8 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 
 - [x] Complete follow-up 0.2.42: wire left-side Sessions search, enabled-state filtering, sorting, and count summary into the runtime and validate it in target A.
 - [x] Complete follow-up 0.2.43: make existing Phase 1 CLI public-catalog migration idempotent, reinstall into target A, and verify no duplicate alias helper functions remain.
+- [x] Complete follow-up 0.2.44 B runtime: lens-first compact Sessions right side, compact details/actions, two-column lens grid, and stricter visual visibility for `decision_tree` / `the Chinese decision-tree lens label`.
+- [ ] Complete follow-up 0.2.44 post-merge target A acceptance: install from B primary root into `D:/PythonProject_paper_suggest`, run preflight and visual checks, commit A managed artifacts, and record final evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
@@ -118,6 +123,11 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - Target A 0.2.43 duplicate-helper evidence: `expand_lens_aliases` count is `1`; `normalize_category_aliases` count is `1`; `python D:/PythonProject_paper_suggest/tools/thesis_moe_mode.py list-lenses --json` returned `token=ok` with the accepted three category boundaries.
 - Target A 0.2.43 preflight: `D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` -> `token=ok`, `phase1_readiness_gate.readiness_status=ready`, `git_status.dirty=false`, `session_count.value=5`.
 - Target A 0.2.43 Sessions visual render: `python tools/project_moe_gui_toolchain/visual_render_check.py --target-project D:/PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --output-dir .tmp/visual-0.2.43-a-default --json` -> `token=ok`; screenshots are under `D:/PythonProject_langgraph/.tmp/visual-0.2.43-a-default/`.
+- Follow-up 0.2.44 feature worktree: `D:/PythonProject_langgraph/.worktrees/improve-project-moe-sessions-lens-first-0-2-44-20260611`; branch `improve-project-moe-sessions-lens-first-0-2-44-20260611`; receipt `.omx/worktree-task-receipt.json`.
+- Follow-up 0.2.44 focused tests: `python test\project_moe_gui_toolchain.test.py ProjectMoeGuiToolchainTests.test_gui_view_model_declares_sessions_refresh_layout_contract ProjectMoeGuiToolchainTests.test_gui_view_model_declares_sessions_search_filter_sort_counts_contract ProjectMoeGuiToolchainTests.test_gui_shell_default_moe_modules_and_i18n_labels_are_governed ProjectMoeGuiToolchainTests.test_visual_render_check_defaults_to_multi_size_and_fixture_profiles` -> `Ran 4 tests ... OK`.
+- Follow-up 0.2.44 full toolchain tests: `python test\project_moe_gui_toolchain.test.py` -> `Ran 104 tests ... OK`.
+- Follow-up 0.2.44 py_compile: `python -m py_compile tools\project_moe_gui_toolchain\src\project_moe_gui\gui_shell.py tools\project_moe_gui_toolchain\visual_render_check.py` -> exit `0`.
+- Follow-up 0.2.44 B Sessions visual render: default, long-content, and dense-sessions fixtures at `1180x720`, `1366x768`, and `1440x900` each returned `token=ok`; output directories `.tmp/visual-0.2.44-a-current-default`, `.tmp/visual-0.2.44-a-current-long`, and `.tmp/visual-0.2.44-a-current-dense`.
 <!-- EVIDENCE_INDEX_END -->
 
 ## Follow-up Hotfix: 0.2.40/0.2.41 Five Thinking Models, Existing CLI Migration, and Scroll Usability
@@ -292,5 +302,40 @@ In this section, `selected-helper block` means the contiguous Phase 1 CLI helper
 - [x] Stage E9.6: verify target A duplicate helper counts, preflight, and Sessions visual render.
 
 <!-- FOLLOW_UP_0_2_43_END -->
+
+## Follow-up: 0.2.44 Sessions Lens-First Compact Layout
+<!-- FOLLOW_UP_0_2_44_START -->
+
+This follow-up closes the remaining Sessions-page ergonomics gap found after 0.2.43: at `1180x720`, the right-side details/status region still consumed too much vertical space, so users could need to drag a short right-side scroll track before seeing and operating all core MOE lenses. The 0.2.44 slice makes the right side lens-first and compact while keeping full session identity available through compact labels and tooltips.
+
+### Required behavior
+
+- The toolchain version must be bumped to `0.2.44`.
+- The view-model layout contract must declare `right_density = compact_lens_first`, `lens_selection_layout = two_column_lens_grid`, at least two lens-grid columns, compact maximum heights for details/status/category rows, and `all_default_lenses_fit_without_outer_scroll_at_1180x720 = true`.
+- The right details card must keep `Session / Created / Updated / Directory / Branch / Conversation`, but Conversation is a compact single-line summary with full text preserved in the tooltip instead of a tall text editor.
+- The status/action card must be vertically compact while preserving `Enable session MOE`, `Disable session MOE`, `Apply session lenses`, and `Clear session lenses`.
+- The lens area must use a two-column grid with short checkbox labels and full bilingual labels/descriptions in tooltips.
+- The category and lens layouts must be top-aligned so stale layout stretch does not push the last visible lens below the first screen.
+- The visual gate must prove that the final core thinking-model lens `decision_tree` / `the Chinese decision-tree lens label` is visible in default, long-content, and dense-sessions fixtures at `1180x720`, `1366x768`, and `1440x900`.
+- The long-content fixture must keep the full governed lens set, including `decision_tree`; long labels may stress wrapping, but must not remove the core lens from the visual surface.
+
+### Implementation sequence
+
+- [x] Stage E10.1: add RED layout-contract assertions for compact lens-first right-side behavior.
+- [x] Stage E10.2: implement compact session details/status cards, two-column lens rows, short checkbox labels, and top-aligned category/lens layouts.
+- [x] Stage E10.3: extend the visual render required text to include `the Chinese decision-tree lens label` and keep all five core thinking-model lenses in the long-content fixture.
+- [x] Stage E10.4: run focused tests, full toolchain tests, py_compile, and B visual render checks for default, long-content, and dense-sessions.
+- [ ] Stage E10.5: commit the B feature, run local gates/local MR review, integrate into B local `main`, and clean the feature worktree/branch.
+- [ ] Stage E10.6: from B primary root, reinstall into `D:/PythonProject_paper_suggest`, run A preflight and visual render checks, and commit A managed install artifacts.
+
+### Acceptance criteria
+
+- At `1180x720`, the right side shows session details, MOE status/actions, the three MOE categories, and `the Chinese decision-tree lens label` without whole-detail-page scrolling.
+- Visual render output has no missing required text and no overflow violations for default, long-content, or dense-sessions fixtures.
+- Full toolchain tests remain green.
+- Target A install must use `D:/PythonProject_langgraph/tools/project_moe_gui_toolchain` as the stable source root after B local-main integration, not the feature worktree path.
+
+<!-- FOLLOW_UP_0_2_44_END -->
+
 
 <!-- FOLLOW_UP_0_2_42_END -->

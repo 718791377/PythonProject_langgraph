@@ -33,6 +33,7 @@ SECTION_REQUIRED_TEXT = {
         "Strict Graduate Advisor Module",
         "Socratic Questioning Module",
         "Five Classic Thinking Models Module",
+        "决策树模型专家",
         "Enable session MOE",
         "Disable session MOE",
         "Apply session lenses",
@@ -278,7 +279,10 @@ def build_fixture_view_model(profile: str, view_model: dict[str, Any]) -> dict[s
 
     long_content = profile == "long-content"
     session_count = 8 if long_content else 24
-    lens_count = 10 if long_content else 18
+    # Keep the full governed lens set in the long-content profile as well.
+    # The profile's purpose is to stress long labels and dense text, not to
+    # remove the final five-thinking-model lens from the visual surface.
+    lens_count = 12 if long_content else 18
     category_count = 5 if long_content else 8
     sessions = [_fixture_session(index, long_content=long_content) for index in range(session_count)]
     lenses = [_fixture_lens(index, long_content=long_content) for index in range(lens_count)]

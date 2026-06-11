@@ -46,6 +46,9 @@ related_plans:
 
 - [x] Follow-up 0.2.42 Sessions 左侧列表可用性已合入 B 本地 `main`：`3ac470689775d18f8db070acd713e884d9e447cb`；Stage A 治理包为 `1174201323ca75e4d013791ffa1755b12780bd02`；A 项目已安装并提交 `1b34cf7`，toolchain 版本为 `0.2.42`。
 - [x] Follow-up 0.2.43 Phase 1 CLI 迁移幂等性 hotfix 已合入 B 本地 `main`：`f25c6b222eecfecfc2f9eeb031d2767aa59f4adb`；rollback ref 为 `refs/backup/local-main/20260611-074904-before-fix-project-moe-phase1-migration-idempotency-20260611`；A 项目已安装并提交 `ebd94d1`，重复 helper 计数为 `expand_lens_aliases=1`、`normalize_category_aliases=1`。
+- [x] Follow-up 0.2.44 的 B runtime 实现已在 feature worktree `improve-project-moe-sessions-lens-first-0-2-44-20260611` 完成：toolchain 版本为 `0.2.44`，右侧改为紧凑 lens-first 布局、两列镜头网格、紧凑会话详情/状态卡，并把最后一个核心思维模型镜头纳入视觉可见性门禁。
+- [x] Follow-up 0.2.44 的 B 验证已在 feature worktree 通过：focused contract tests、完整 `python test/project_moe_gui_toolchain.test.py`（104/104 OK）、py_compile，以及 default、long-content、dense-sessions 三组夹具在 `1180x720`、`1366x768`、`1440x900` 下的 Sessions 视觉渲染检查。
+- [ ] Follow-up 0.2.44 的本地 `main` 合入、A 项目重装、A preflight、A 视觉渲染验证和 A 本地提交，需要等本 feature 包合入 B 本地 `main` 后继续完成。
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
@@ -65,6 +68,8 @@ related_plans:
 
 - [x] 完成 Follow-up 0.2.42：把左侧 Sessions 搜索、启用状态筛选、排序和数量摘要接入 runtime，并在 A 目标项目中验证。
 - [x] 完成 Follow-up 0.2.43：使既有 Phase 1 CLI 公共目录迁移具备幂等性，重新安装到 A 目标项目，并验证不再残留重复 alias helper。
+- [x] 完成 Follow-up 0.2.44 B runtime：Sessions 右侧 lens-first 紧凑布局、紧凑详情/操作区、两列镜头网格，以及 `decision_tree` / `决策树模型专家` 的更严格视觉可见性门禁。
+- [ ] 完成 Follow-up 0.2.44 合入后的 A 项目验收：从 B 主目录安装到 `D:/PythonProject_paper_suggest`，运行 preflight 和视觉检查，提交 A 受管安装产物，并记录最终证据。
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
@@ -119,6 +124,11 @@ related_plans:
 - A 目标项目 0.2.43 重复 helper 证据：`expand_lens_aliases` 计数为 `1`；`normalize_category_aliases` 计数为 `1`；`python D:/PythonProject_paper_suggest/tools/thesis_moe_mode.py list-lenses --json` 返回 `token=ok`，并保留已验收的三个 category 边界。
 - A 目标项目 0.2.43 preflight：`D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` -> `token=ok`，`phase1_readiness_gate.readiness_status=ready`，`git_status.dirty=false`，`session_count.value=5`。
 - A 目标项目 0.2.43 Sessions 视觉渲染：`python tools/project_moe_gui_toolchain/visual_render_check.py --target-project D:/PythonProject_paper_suggest --shell widgets --sections sessions --size 1180x720 --size 1366x768 --size 1440x900 --fixture-profile default --output-dir .tmp/visual-0.2.43-a-default --json` -> `token=ok`；截图目录为 `D:/PythonProject_langgraph/.tmp/visual-0.2.43-a-default/`。
+- Follow-up 0.2.44 feature worktree：`D:/PythonProject_langgraph/.worktrees/improve-project-moe-sessions-lens-first-0-2-44-20260611`；branch：`improve-project-moe-sessions-lens-first-0-2-44-20260611`；receipt：`.omx/worktree-task-receipt.json`。
+- Follow-up 0.2.44 focused tests：`python test\project_moe_gui_toolchain.test.py ProjectMoeGuiToolchainTests.test_gui_view_model_declares_sessions_refresh_layout_contract ProjectMoeGuiToolchainTests.test_gui_view_model_declares_sessions_search_filter_sort_counts_contract ProjectMoeGuiToolchainTests.test_gui_shell_default_moe_modules_and_i18n_labels_are_governed ProjectMoeGuiToolchainTests.test_visual_render_check_defaults_to_multi_size_and_fixture_profiles` -> `Ran 4 tests ... OK`。
+- Follow-up 0.2.44 完整 toolchain tests：`python test\project_moe_gui_toolchain.test.py` -> `Ran 104 tests ... OK`。
+- Follow-up 0.2.44 py_compile：`python -m py_compile tools\project_moe_gui_toolchain\src\project_moe_gui\gui_shell.py tools\project_moe_gui_toolchain\visual_render_check.py` -> exit `0`。
+- Follow-up 0.2.44 B Sessions 视觉渲染：default、long-content、dense-sessions 三组夹具在 `1180x720`、`1366x768`、`1440x900` 下均返回 `token=ok`；输出目录为 `.tmp/visual-0.2.44-a-current-default`、`.tmp/visual-0.2.44-a-current-long`、`.tmp/visual-0.2.44-a-current-dense`。
 <!-- EVIDENCE_INDEX_END -->
 
 ## 后续 Hotfix：0.2.40/0.2.41 五大思维模型拆分、既有 CLI 迁移与滚动可用性
@@ -296,5 +306,39 @@ related_plans:
 - [x] Stage E9.6：验证 A 目标项目重复 helper 计数、preflight 与 Sessions 视觉渲染。
 
 <!-- FOLLOW_UP_0_2_43_END -->
+
+## Follow-up：0.2.44 Sessions 镜头优先紧凑布局
+<!-- FOLLOW_UP_0_2_44_START -->
+
+本 follow-up 收口 0.2.43 之后仍然存在的 Sessions 页可用性问题：在 `1180x720` 下，右侧详情和状态区域仍占用过多纵向空间，用户可能还需要拖动较短的右侧滚动轨道才能看到并操作全部核心 MOE 镜头。0.2.44 切片把右侧改成 lens-first 紧凑布局，同时通过紧凑标签和 tooltip 保留完整会话身份信息。
+
+### 必须实现的行为
+
+- toolchain 版本必须提升到 `0.2.44`。
+- view-model 布局契约必须声明 `right_density = compact_lens_first`、`lens_selection_layout = two_column_lens_grid`、至少两列镜头网格、详情/状态/category 行的紧凑最大高度，以及 `all_default_lenses_fit_without_outer_scroll_at_1180x720 = true`。
+- 右侧详情卡必须保留 `Session / Created / Updated / Directory / Branch / Conversation`，但 Conversation 改为紧凑单行摘要，全文保留在 tooltip 中，不再使用高占位文本编辑器。
+- 状态/操作卡必须压缩纵向高度，同时保留 `Enable session MOE`、`Disable session MOE`、`Apply session lenses`、`Clear session lenses`。
+- 镜头区必须使用两列网格，checkbox 显示短标签，完整双语标签和描述保存在 tooltip。
+- category 和 lens 布局必须 top-aligned，避免旧布局 stretch 把最后一个可见镜头挤到首屏以下。
+- 视觉门禁必须证明最后一个核心思维模型镜头 `decision_tree` / `决策树模型专家` 在 default、long-content、dense-sessions 三组夹具，以及 `1180x720`、`1366x768`、`1440x900` 三个尺寸下可见。
+- long-content 夹具必须保留完整受治理镜头集合，包括 `decision_tree`；长标签可以用于压力测试换行，但不得把核心镜头移出可视验证面。
+
+### 实施顺序
+
+- [x] Stage E10.1：新增 RED 布局契约断言，覆盖右侧 compact lens-first 行为。
+- [x] Stage E10.2：实现紧凑会话详情/状态卡、两列镜头行、短 checkbox 标签，以及 top-aligned category/lens 布局。
+- [x] Stage E10.3：把 `决策树模型专家` 加入视觉渲染必需文本，并让 long-content 夹具保留五个核心思维模型镜头。
+- [x] Stage E10.4：运行 focused tests、完整 toolchain tests、py_compile，以及 default、long-content、dense-sessions 的 B 视觉渲染检查。
+- [ ] Stage E10.5：提交 B feature，运行本地 gate / 本地 MR review，合入 B 本地 `main`，并清理 feature worktree/branch。
+- [ ] Stage E10.6：从 B 主目录重装到 `D:/PythonProject_paper_suggest`，运行 A preflight 和视觉渲染检查，并提交 A 受管安装产物。
+
+### 验收标准
+
+- 在 `1180x720` 下，右侧能够显示会话详情、MOE 状态/操作、三个 MOE 分类，以及 `决策树模型专家`，不需要滚动整个详情页。
+- default、long-content、dense-sessions 三组视觉渲染输出均没有 missing required text，也没有 overflow violations。
+- 完整 toolchain tests 保持绿色。
+- A 项目安装必须在 B 本地 main 合入后使用 `D:/PythonProject_langgraph/tools/project_moe_gui_toolchain` 作为稳定 source root，不能指向 feature worktree 路径。
+
+<!-- FOLLOW_UP_0_2_44_END -->
 
 <!-- FOLLOW_UP_0_2_42_END -->
