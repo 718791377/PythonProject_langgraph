@@ -6,6 +6,7 @@ doc_class: implementation_plan
 stage: implementation-evidence
 priority_order: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit
 zh_cn_path: docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.zh-CN.md
+parent_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md
 ---
 
 # R6 Live Runtime Promotion Plan
@@ -20,7 +21,7 @@ R6 means live runtime is default-discoverable and default-routable, but every se
 
 ## Scope
 
-This plan covers these existing R5 plans as one governed rollout:
+This plan originally covered these existing R5 plans as one governed rollout, and Stage G now extends completion checks to the full strict parent-plan family:
 
 - `user_level_capability_receipt_rollback_redaction_plan` - governs shared authorization, rollback, and redaction receipt foundations
 - `worktree_receipt_claim_lifecycle_plan` - governs worktree task receipt and claim lifecycle promotion
@@ -50,6 +51,10 @@ This plan covers these existing R5 plans as one governed rollout:
 - [x] Stage E proof-intake hardening adds `proof-template` and `proof-check` runtime commands. `proof-template` writes a fill-after-real-action JSON skeleton without running external tools, and `proof-check` validates a redacted proof before the existing `run --mode live-action --proof-receipt ...` path can mark WXWork or harness evidence as `live-executed`.
 - [x] Stage F bounded harness live-job evidence adds `tools/run_codex_harnesses_smoke.py r6-live-proof` and records Codex harnesses as R6 `live-executed` with a redacted isolated-worktree proof. WXWork remains fail-closed `blocked` until a real message-send proof exists.
 
+
+- [ ] Stage G full-family R6 completion plan package is being prepared for the strict `multi_plan_parallel_session_orchestration_plan` family. It expands this plan from the original 14 R6 runtime lanes to every active child, explicitly mentioned source, and successor-owned migration source under the parent plan.
+- [ ] Stage H implementation package will add checker/runtime coverage that classifies each family plan as direct R6 evidence, successor-owned migration source, governance/checker-runtime-only, or no-live-runtime-scope. Existing valid `live-executed` receipts are reused; external actions rerun only if the checker reports missing, stale, or blocked evidence.
+
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
@@ -67,6 +72,10 @@ This plan covers these existing R5 plans as one governed rollout:
 - [x] Package 4: run and record sensitive live-action follow-up evidence; accept Browser and Stop-Slop/Caveman live-executed proof, and retain WXWork/Harness blocked receipts until real proof gates exist.
 - [x] Package 5: add fail-closed proof-intake templates and proof validation for WXWork and Codex harnesses so future real live proof can be checked without storing raw recipient, message, browser, or harness payloads.
 - [x] Package 6: implement and execute a bounded repo-local Codex harness proof job that runs in a temporary isolated Git worktree, rolls back/cleans up, then promotes `codex-harnesses-governance` to R6 `live-executed` through `proof-check` and `run --mode live-action`.
+
+
+- [x] Package 7: update this R6 plan for strict parent-family scope, successor-owned migration sources, and full-family live-runtime classification before implementation.
+- [ ] Package 8: implement the full-family R6 checker/runtime reconciliation, update stale plan statuses, validate all direct R6 lane receipts, and integrate into local `main`.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -230,6 +239,47 @@ Spec Kit remains subordinate to harness runtime safety and cannot take over repo
 - `D:\PythonProject_General` carries full reusable project-level templates; `D:\PythonProject_General_2` carries only safe stubs.
 - Spec Kit sandbox, repository, and template apply boundaries are separately represented and checker-backed.
 - Local gate and local MR review pass before local `main` integration.
+
+
+## Stage G: Full Parent-Family R6 Completion Scope
+
+This stage broadens the rollout from the original 14 direct R6 lane profiles to the full strict family governed by `docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`. Strict family membership means:
+
+- an English primary implementation plan declares `parent_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`; or
+- the parent plan explicitly names the plan as a source, split, migration, integration, or child target.
+
+The implementation package must not restore deleted migration-source plans. Deleted source plans such as `user_level_mcp_skills_discovery_facade_plan` and `user_level_mcp_skills_browser_cli_governance_plan` are covered only through their successor owners, especially `user_level_mcp_skills_cli_runtime_plan`, `user_level_browser_cli_adapter_boundary_plan`, `user_level_cli_anything_wxwork_cli_governance_plan`, and `codex_harnesses_governance_plan`.
+
+Each family plan must receive exactly one completion classification:
+
+| Classification | Meaning | Required evidence |
+| --- | --- | --- |
+| `direct-r6-lane` | The plan maps to a known R6 lane in `tools/check_r6_live_runtime_receipts.py`. | Accepted `live-executed` receipt, or accepted sensitive-lane blocked/ready policy only when the family completion plan explicitly allows it. |
+| `successor-owned-migration-source` | The plan was a temporary migration source or deleted source plan and is no longer an execution owner. | Successor plan path, successor R6 lane, and no restoration of the deleted source plan. |
+| `governance-checker-runtime` | The plan implements repository-local governance, checker, guard, helper, CI, or evidence runtime rather than an external side-effect lane. | Checker/helper/local-gate evidence and no missing external action requirement. |
+| `no-live-runtime-scope` | The plan is an index, archive, parent, or documentation-only scope that should not run live runtime. | Explicit rationale and no false R6 execution claim. |
+
+Authority priority remains mandatory for every classification and receipt:
+
+```text
+Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit
+```
+
+Spec Kit evidence remains subordinate and cannot satisfy Comet, OpenSpec, Superpowers, gstack, or harness runtime safety evidence by itself. Harness evidence cannot bypass harness runtime safety. gstack evidence remains advisory and cannot override Comet/OpenSpec/Superpowers or local-main-first gates.
+
+External-action lane policy for this stage is reuse-first: existing valid `live-executed` receipts under `.omx/r6-live-runtime/receipts/` are accepted. A real browser, WXWork, harness, Spec Kit apply, or user-level install action is rerun only when the checker reports the lane as missing, stale, invalid, or blocked and the needed target/authorization evidence is available. Receipts remain hash-only/redacted and must keep `remote_publication_mutated=false`.
+
+## Package 8: Full-Family Checker And Runtime Reconciliation
+
+The implementation package will add a checker such as `tools/check_multi_plan_family_r6_live_runtime.py` plus focused tests. The checker must:
+
+- discover strict family members from front matter and parent-plan references;
+- report missing plan files as `successor-owned-migration-source` only when an active successor is known;
+- require all direct R6 lanes accepted by `tools/check_r6_live_runtime_receipts.py --require-coverage`;
+- reject stale child-plan wording that says R5-only, blocked, or pending when accepted R6 evidence exists;
+- preserve deleted migration-source boundaries instead of recreating deleted files;
+- emit JSON with counts, classifications, missing evidence, authority-priority status, and remote-publication mutation status;
+- be wired into local validation if the implementation package adds a new durable repository guard surface.
 
 ## Non-goals
 

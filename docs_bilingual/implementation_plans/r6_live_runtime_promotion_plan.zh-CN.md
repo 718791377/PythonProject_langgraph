@@ -7,6 +7,7 @@ doc_class: implementation_plan
 stage: implementation-evidence
 priority_order: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit
 translation_of: docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.md
+parent_plan: docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md
 ---
 
 # R6 真实 Live Runtime 提升方案
@@ -250,3 +251,14 @@ Spec Kit 仍低于 harness runtime safety，不能成为仓库治理权威。R6 
 - [x] `tools/r6_live_runtime.py proof-check` 对 harness proof 强制要求 candidate id、job profile、timeout release、rollback 与 cleanup；缺失任一字段时 fail closed。
 - [x] `codex-harnesses-governance` 已通过 redacted proof 提升为 R6 `live-executed`；proof hash `e0f71f0789945588`，candidate hash `47ab92541ddbb827`，`remote_publication_mutated=false`。
 - [ ] `user-level-cli-anything-wxwork-cli-governance` 仍保持 `blocked`，直到出现真实 WXWork message-send proof 且不包含 raw recipient/body。
+
+
+## 2026-06-11 Stage G full-family R6 scope
+
+This zh-CN companion records the same Stage G decision as the English primary without duplicating sensitive target values. The R6 rollout now covers the strict `multi_plan_parallel_session_orchestration_plan` family, including active child plans, explicitly named migration/source plans, and successor-owned deleted migration sources.
+
+Completion classifications are `direct-r6-lane`, `successor-owned-migration-source`, `governance-checker-runtime`, and `no-live-runtime-scope`. The implementation checker must assign exactly one classification to every family member and must preserve the priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+
+External-action policy is reuse-first: existing valid `live-executed` receipts are reused, and real browser/WXWork/harness/Spec Kit/user-level install actions rerun only when checker evidence is missing, stale, invalid, or blocked and current authorization/target proof exists. Receipts remain hash-only/redacted and must keep `remote_publication_mutated=false`.
+
+Package 8 will add `tools/check_multi_plan_family_r6_live_runtime.py`, focused tests, stale-status detection, successor-owned migration-source handling, and full-family JSON evidence before local-main integration.
