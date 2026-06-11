@@ -593,6 +593,13 @@ documents:
     canonical_path: docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md
     zh_cn_path: docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md
 
+
+  - doc_id: general_templates_cross_project_reuse_upgrade_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/general_templates_cross_project_reuse_upgrade_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/general_templates_cross_project_reuse_upgrade_plan.zh-CN.md
+
   - doc_id: general_template_phase0_update_patch_plan
     doc_class: implementation_plan
     status: active
