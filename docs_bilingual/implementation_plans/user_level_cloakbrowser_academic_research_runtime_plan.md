@@ -29,8 +29,8 @@ The governance priority order is `Comet > OpenSpec/Superpowers > gstack > harnes
 
 <!-- CURRENT_STATUS_START -->
 Status: R6 live-executed
-Stage: plan-ready CloakBrowser-Manager non-Docker source runtime schema update before live execution.
-Current gate: existing 2026-06-10 receipts remain valid for CloakBrowser Python/npm, CloakBrowser-Manager source checkout, and academic-research-suite; the next implementation package will add `cloakbrowser-manager-source-runtime.json` validation for source-backend-frontend-loopback execution.
+Stage: R6 live-executed CloakBrowser-Manager non-Docker source-backend-frontend-loopback runtime.
+Current gate: `cloakbrowser-manager-source-runtime.json` is recorded and checker-accepted with `/api/status` HTTP 200 JSON, `/` GUI shell HTML, `container_runtime_used=false`, and `docker_install_allowed=false`; run focused validation, local CI, and local MR review before integrating this Stage B package into local `main`.
 Docker boundary: Docker is not installed by this plan. Podman, WSL container engines, and Docker Compose are also out of scope; CloakBrowser-Manager must be exercised from source without a container runtime.
 Runtime boundary: native Codex files are not modified, receipts do not store raw paths, and remote publication remains unauthorized.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
@@ -64,8 +64,8 @@ Last updated: 2026-06-11
 - [x] Execute real user-level CloakBrowser Python install and smoke; record `cloakbrowser-python` R6 live-executed receipt.
 - [x] Execute real user-level CloakBrowser npm install and package-version smoke; record `cloakbrowser-npm` R6 live-executed receipt.
 - [x] Resolve CloakBrowser-Manager source and record Docker-missing blocked receipt; Docker install/start remains outside this plan.
-- [ ] Update the checker/test schema for CloakBrowser-Manager non-Docker source-backend-frontend-loopback receipt validation.
-- [ ] Execute CloakBrowser-Manager non-Docker source-backend-frontend-loopback smoke from the source checkout and record `cloakbrowser-manager-source-runtime.json`.
+- [x] Update the checker/test schema for CloakBrowser-Manager non-Docker source-backend-frontend-loopback receipt validation.
+- [x] Execute CloakBrowser-Manager non-Docker source-backend-frontend-loopback smoke from the source checkout and record `cloakbrowser-manager-source-runtime.json`.
 - [x] Install `academic-research-suite` with Codex skill installer and record R6 live-executed receipt.
 <!-- TASK_BACKLOG_END -->
 
@@ -94,4 +94,5 @@ Last updated: 2026-06-11
 - 2026-06-10 plan/checker package: creates the user-level CloakBrowser / CloakBrowser-Manager / academic-research-suite runtime plan, checker, tests, guard registration, and receipt contract. No user-level install/start/smoke is performed by the plan package.
 - 2026-06-10 Stage B live runtime receipts: `docs_bilingual/implementation_evidence/user_level_cloakbrowser_academic_runtime_receipts_20260610/` records hash-only receipts for `cloakbrowser-python` R6 live-executed, `cloakbrowser-npm` R6 live-executed package-version smoke, `cloakbrowser-manager-source` R6 blocked Docker boundary, and `academic-research-suite` R6 live-executed. Native Codex files/config were not modified and remote publication was not performed.
 - 2026-06-11 Stage A non-Docker Manager runtime plan: this docs-only package records the next implementation target, `cloakbrowser-manager-source-runtime`, before checker/test and live runtime execution.
+- 2026-06-11 Stage B non-Docker Manager runtime execution: adds checker/test validation plus `tools/run_cloakbrowser_manager_source_runtime.py`; records `cloakbrowser-manager-source-runtime.json` with source-backend-frontend-loopback smoke, `/api/status` HTTP 200 JSON, `/` GUI shell HTML, `container_runtime_used=false`, `docker_install_allowed=false`, and `profile_launch_smoke=not_run:no_xvnc_on_windows`.
 <!-- EVIDENCE_INDEX_END -->

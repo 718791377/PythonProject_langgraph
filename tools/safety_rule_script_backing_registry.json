@@ -802,12 +802,13 @@
       ],
       "script_controls": [
         "tools/check_user_level_cloakbrowser_academic_runtime.py",
-        "tools/run_openspec_guard.py"
+        "tools/run_openspec_guard.py",
+        "tools/run_cloakbrowser_manager_source_runtime.py"
       ],
       "guard_steps": [
         "check_user_level_cloakbrowser_academic_runtime"
       ],
-      "description": "Keeps CloakBrowser, CloakBrowser-Manager, and academic-research-suite user-level installs receipt-backed, hash-only, Docker-non-installing, native-Codex-non-mutating, and behind the remote-publication gate."
+      "description": "Keeps CloakBrowser, CloakBrowser-Manager, and academic-research-suite user-level installs/runtime smoke receipt-backed, hash-only, Docker-non-installing, native-Codex-non-mutating, and behind the remote-publication gate."
     }
   ]
 }

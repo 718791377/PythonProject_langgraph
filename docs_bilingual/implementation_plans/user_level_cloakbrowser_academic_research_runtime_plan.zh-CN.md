@@ -29,8 +29,8 @@ parent_plan: docs_bilingual/implementation_plans/user_level_mcp_skills_cli_runti
 
 <!-- CURRENT_STATUS_START -->
 Status: R6 live-executed
-Stage: plan-ready CloakBrowser-Manager non-Docker source runtime schema update，先于真实 live execution。
-Current gate: 既有 2026-06-10 receipts 继续证明 CloakBrowser Python/npm、CloakBrowser-Manager source checkout 与 academic-research-suite；下一份 live receipt 是 `cloakbrowser-manager-source-runtime.json`，用于 source-backend-frontend-loopback 执行。
+Stage: R6 live-executed CloakBrowser-Manager non-Docker source-backend-frontend-loopback runtime。
+Current gate: `cloakbrowser-manager-source-runtime.json` 已记录并通过 checker：`/api/status` 为 HTTP 200 JSON，`/` 为 GUI shell HTML，`container_runtime_used=false`，`docker_install_allowed=false`；合入本地 `main` 前运行 focused validation、local CI 与 local MR review。
 Docker boundary: Docker is not installed by this plan。Podman、WSL container engines 与 Docker Compose 也不属于本方案；CloakBrowser-Manager 必须从 source 以无 container runtime 方式验证。
 Runtime boundary: native Codex files are not modified，receipts 不保存 raw paths，remote publication remains unauthorized。
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`。
@@ -64,8 +64,8 @@ Last updated: 2026-06-11
 - [x] 执行真实用户级 CloakBrowser Python install 与 smoke；记录 `cloakbrowser-python` R6 live-executed receipt。
 - [x] 执行真实用户级 CloakBrowser npm install 与 package-version smoke；记录 `cloakbrowser-npm` R6 live-executed receipt。
 - [x] 解析 CloakBrowser-Manager source，并记录 Docker-missing blocked receipt；Docker install/start 不属于本方案。
-- [ ] 下一份 implementation package 更新 checker/test schema，用于校验 CloakBrowser-Manager non-Docker source-backend-frontend-loopback receipt。
-- [ ] 从 source checkout 执行 CloakBrowser-Manager non-Docker source-backend-frontend-loopback smoke，并记录 `cloakbrowser-manager-source-runtime.json`。
+- [x] 本 implementation package 已更新 checker/test schema，用于校验 CloakBrowser-Manager non-Docker source-backend-frontend-loopback receipt。
+- [x] 已从 source checkout 执行 CloakBrowser-Manager non-Docker source-backend-frontend-loopback smoke，并记录 `cloakbrowser-manager-source-runtime.json`。
 - [x] 使用 Codex skill installer 安装 `academic-research-suite`，记录 R6 live-executed receipt。
 <!-- TASK_BACKLOG_END -->
 
@@ -94,4 +94,5 @@ Last updated: 2026-06-11
 - 2026-06-10 plan/checker package：创建 user-level CloakBrowser / CloakBrowser-Manager / academic-research-suite runtime plan、checker、tests、guard registration 与 receipt contract。本 plan package 不执行 user-level install/start/smoke。
 - 2026-06-10 Stage B live runtime receipts：`docs_bilingual/implementation_evidence/user_level_cloakbrowser_academic_runtime_receipts_20260610/` 记录 hash-only receipts：`cloakbrowser-python` R6 live-executed、`cloakbrowser-npm` R6 live-executed package-version smoke、`cloakbrowser-manager-source` R6 blocked Docker boundary、`academic-research-suite` R6 live-executed。未修改 native Codex files/config，未执行 remote publication。
 - 2026-06-11 Stage A non-Docker Manager runtime plan：本 docs-only package 记录下一份 implementation target：在 checker/test 更新后，为 `cloakbrowser-manager-source-runtime` 记录 R6 live-executed source-backend-frontend-loopback receipt。
+- 2026-06-11 Stage B non-Docker Manager runtime execution：新增 checker/test validation 与 `tools/run_cloakbrowser_manager_source_runtime.py`；记录 `cloakbrowser-manager-source-runtime.json`，其 source-backend-frontend-loopback smoke 证明 `/api/status` HTTP 200 JSON、`/` GUI shell HTML、`container_runtime_used=false`、`docker_install_allowed=false`，且 `profile_launch_smoke=not_run:no_xvnc_on_windows`。
 <!-- EVIDENCE_INDEX_END -->

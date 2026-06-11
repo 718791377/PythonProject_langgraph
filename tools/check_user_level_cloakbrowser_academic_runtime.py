@@ -28,6 +28,7 @@ GUARD_SCRIPT = Path("tools/run_openspec_guard.py")
 SAFETY_REGISTRY = Path("tools/safety_rule_script_backing_registry.json")
 DOCS_REGISTRY = Path("docs_bilingual/docs_registry.yaml")
 TEST_NAME = "check_user_level_cloakbrowser_academic_runtime.test.py"
+RUNTIME_SCRIPT = "tools/run_cloakbrowser_manager_source_runtime.py"
 
 PRIORITY_ORDER = "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit"
 EXPECTED_TOOLS: dict[str, dict[str, str]] = {
@@ -40,6 +41,10 @@ EXPECTED_TOOLS: dict[str, dict[str, str]] = {
         "version": "0.3.31",
     },
     "cloakbrowser-manager-source": {
+        "source_url": "https://github.com/CloakHQ/CloakBrowser-Manager",
+        "version": "source-main",
+    },
+    "cloakbrowser-manager-source-runtime": {
         "source_url": "https://github.com/CloakHQ/CloakBrowser-Manager",
         "version": "source-main",
     },
@@ -63,6 +68,7 @@ PLAN_MARKERS = (
     "hash-only",
     "R6 live-ready",
     "R6 live-executed",
+    "source-backend-frontend-loopback",
     "native Codex files are not modified",
     "remote publication remains unauthorized",
 )
@@ -168,12 +174,19 @@ def check_registry_guard_ci(root: Path, errors: list[str]) -> dict[str, Any]:
                     errors.append("safety_registry_rule_missing_plan_reminders")
                 if "tools/check_user_level_cloakbrowser_academic_runtime.py" not in scripts:
                     errors.append("safety_registry_rule_missing_checker")
+                if RUNTIME_SCRIPT not in scripts:
+                    errors.append("safety_registry_rule_missing_runtime_script")
                 if "check_user_level_cloakbrowser_academic_runtime" not in steps:
                     errors.append("safety_registry_rule_missing_guard_step")
     if not rule_found:
         errors.append("safety_registry_missing:user-level-cloakbrowser-academic-runtime")
 
-    return {"test_registered": TEST_NAME in tests, "guard_registered": "check_user_level_cloakbrowser_academic_runtime" in guard_text, "safety_rule_found": rule_found}
+    return {
+        "test_registered": TEST_NAME in tests,
+        "guard_registered": "check_user_level_cloakbrowser_academic_runtime" in guard_text,
+        "safety_rule_found": rule_found,
+        "runtime_script_registered": RUNTIME_SCRIPT in json.dumps(registry, ensure_ascii=False) if isinstance(registry, dict) else False,
+    }
 
 
 def forbidden_raw_key_errors(value: Any, prefix: str = "") -> list[str]:
@@ -214,8 +227,29 @@ def validate_receipt(path: Path, data: Any) -> list[str]:
         errors.append(f"{label}:installed_version_must_be_0.3.31")
     if tool == "academic-research-suite" and data.get("installed_version") != "0.1.11":
         errors.append(f"{label}:installed_version_must_be_0.1.11")
-    if tool == "cloakbrowser-manager-source" and data.get("docker_install_allowed") is not False:
+    if tool in {"cloakbrowser-manager-source", "cloakbrowser-manager-source-runtime"} and data.get("installed_version") != "source-main":
+        errors.append(f"{label}:installed_version_must_be_source-main")
+    if tool in {"cloakbrowser-manager-source", "cloakbrowser-manager-source-runtime"} and data.get("docker_install_allowed") is not False:
         errors.append(f"{label}:docker_install_allowed_must_be_false")
+    if tool == "cloakbrowser-manager-source-runtime":
+        if data.get("runtime_stage") != "R6 live-executed":
+            errors.append(f"{label}:runtime_stage_must_be_R6_live-executed")
+        if data.get("runtime_stage_detail") != "source-backend-frontend-loopback":
+            errors.append(f"{label}:runtime_stage_detail_must_be_source-backend-frontend-loopback")
+        if data.get("container_runtime_used") is not False:
+            errors.append(f"{label}:container_runtime_used_must_be_false")
+        if data.get("smoke_kind") != "source-backend-frontend-loopback":
+            errors.append(f"{label}:smoke_kind_must_be_source-backend-frontend-loopback")
+        if data.get("api_status_http_status") != 200:
+            errors.append(f"{label}:api_status_http_status_must_be_200")
+        if data.get("api_status_json") is not True:
+            errors.append(f"{label}:api_status_json_must_be_true")
+        if data.get("gui_shell_http_status") != 200:
+            errors.append(f"{label}:gui_shell_http_status_must_be_200")
+        if data.get("gui_shell_html") is not True:
+            errors.append(f"{label}:gui_shell_html_must_be_true")
+        if data.get("profile_launch_smoke") != "not_run:no_xvnc_on_windows":
+            errors.append(f"{label}:profile_launch_smoke_must_be_not_run_no_xvnc_on_windows")
     for field in ("install_root_hash", "wrapper_path_hash", "state_path_hash", "rollback_pointer_hash"):
         if not hash_field_ok(data.get(field)):
             errors.append(f"{label}:{field}_missing_or_invalid")

@@ -17,12 +17,19 @@
     {
       "ok": true,
       "tool": "academic-research-suite"
+    },
+    {
+      "ok": true,
+      "runtime_start": "source-backend-frontend-loopback",
+      "smoke_kind": "source-backend-frontend-loopback",
+      "tool": "cloakbrowser-manager-source-runtime"
     }
   ],
+  "container_runtime_used": false,
   "docker_install_allowed": false,
-  "generated_at": "2026-06-10T16:51:01.094244+00:00",
+  "generated_at": "2026-06-11T09:39:23.174849+00:00",
   "native_codex_files_mutated": false,
-  "note": "CloakBrowser-Manager container start remains R6 blocked because Docker is absent/not authorized; source checkout receipt is accepted as the manager boundary evidence.",
+  "note": "CloakBrowser-Manager source runtime smoke used loopback backend+frontend without Docker/Podman/WSL containers; profile launch not run because upstream Windows host lacks Xvnc/KasmVNC.",
   "ok": true,
   "receipt_dir_label": "docs_bilingual/implementation_evidence/user_level_cloakbrowser_academic_runtime_receipts_20260610",
   "remote_publication_mutated": false
