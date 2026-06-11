@@ -84,6 +84,7 @@ GUARD_STEPS = [
     ("check_durable_routing_smoke_receipts", "check_durable_routing_smoke_receipts.py", "durable_routing_smoke_receipts"),
     ("check_r5_active_candidate_receipts", "check_r5_active_candidate_receipts.py", "r5_active_candidate_receipts"),
     ("check_r6_live_runtime_receipts", "check_r6_live_runtime_receipts.py", "r6_live_runtime_receipts"),
+    ("check_multi_plan_family_r6_live_runtime", "check_multi_plan_family_r6_live_runtime.py", "multi_plan_family_r6_live_runtime"),
     ("check_codex_native_rollback_release_gate_template", "check_codex_native_rollback_release_gate_template.py", "codex_native_rollback_release_gate_template"),
     ("check_worktree_session_hygiene", "check_worktree_session_hygiene.py", "worktree_session_hygiene"),
     ("check_worktree_task_receipt", "check_worktree_task_receipt.py", "worktree_task_receipt"),
@@ -202,6 +203,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertIn("check_gstack_codex_delivery_loop", [step["step"] for step in payload["steps"]])
         self.assertIn("check_user_level_cloakbrowser_academic_runtime", [step["step"] for step in payload["steps"]])
         self.assertIn("check_launcher_payload_context_boundary", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_multi_plan_family_r6_live_runtime", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:
         root = self.make_root("guard-json-fail")

@@ -888,6 +888,24 @@ def audit_receipt_dir(root: Path, receipt_dir: Path, *, max_age_hours: float | N
     }
 
 
+def effective_receipt_dir(root: Path, requested: Path | None) -> Path:
+    if requested is not None:
+        return requested
+    local = root / DEFAULT_RECEIPT_DIR
+    if local.exists() and any(local.glob("*.json")):
+        return DEFAULT_RECEIPT_DIR
+    # Linked feature worktrees in this repository live under
+    # <primary>/.worktrees/<branch>; R6 live receipts are local evidence kept in
+    # the primary coordination worktree rather than duplicated into every
+    # feature worktree.
+    if root.parent.name == ".worktrees":
+        primary = root.parent.parent
+        primary_receipts = primary / DEFAULT_RECEIPT_DIR
+        if primary_receipts.exists() and any(primary_receipts.glob("*.json")):
+            return primary_receipts
+    return DEFAULT_RECEIPT_DIR
+
+
 def run_self_test() -> dict[str, Any]:
     errors: list[str] = []
     cases: list[dict[str, Any]] = []
@@ -951,7 +969,7 @@ def evaluate(
         errors.extend(blockers)
         summary = receipt_summary(receipt, resolved, selected_lane, sorted(set(blockers)))
     if receipt_dir is not None or require_coverage:
-        coverage = audit_receipt_dir(root, receipt_dir or DEFAULT_RECEIPT_DIR, max_age_hours=max_age_hours)
+        coverage = audit_receipt_dir(root, effective_receipt_dir(root, receipt_dir), max_age_hours=max_age_hours)
         if require_coverage and not coverage.get("coverage_ok"):
             errors.extend(f"coverage_missing_lane:{lane}" for lane in coverage.get("missing_lanes", []))
         if require_coverage:

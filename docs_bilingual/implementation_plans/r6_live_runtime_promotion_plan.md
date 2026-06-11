@@ -49,11 +49,11 @@ This plan originally covered these existing R5 plans as one governed rollout, an
 
 - [x] Stage D sensitive live-action follow-up records Browser and Stop-Slop/Caveman as R6 `live-executed` with redacted receipts, while WXWork and Codex harnesses remain fail-closed `blocked` because no real send target or live harness job proof is present.
 - [x] Stage E proof-intake hardening adds `proof-template` and `proof-check` runtime commands. `proof-template` writes a fill-after-real-action JSON skeleton without running external tools, and `proof-check` validates a redacted proof before the existing `run --mode live-action --proof-receipt ...` path can mark WXWork or harness evidence as `live-executed`.
-- [x] Stage F bounded harness live-job evidence adds `tools/run_codex_harnesses_smoke.py r6-live-proof` and records Codex harnesses as R6 `live-executed` with a redacted isolated-worktree proof. WXWork remains fail-closed `blocked` until a real message-send proof exists.
+- [x] Stage F bounded harness live-job evidence adds `tools/run_codex_harnesses_smoke.py r6-live-proof` and records Codex harnesses as R6 `live-executed` with a redacted isolated-worktree proof; the later Stage H family audit accepts WXWork as R6 `live-executed` through its redacted 2026-06-10 proof receipt.
 
 
-- [ ] Stage G full-family R6 completion plan package is being prepared for the strict `multi_plan_parallel_session_orchestration_plan` family. It expands this plan from the original 14 R6 runtime lanes to every active child, explicitly mentioned source, and successor-owned migration source under the parent plan.
-- [ ] Stage H implementation package will add checker/runtime coverage that classifies each family plan as direct R6 evidence, successor-owned migration source, governance/checker-runtime-only, or no-live-runtime-scope. Existing valid `live-executed` receipts are reused; external actions rerun only if the checker reports missing, stale, or blocked evidence.
+- [x] Stage G full-family R6 completion plan package is complete for the strict `multi_plan_parallel_session_orchestration_plan` family. It expands this plan from the original 14 R6 runtime lanes to every active child, explicitly mentioned source, and successor-owned migration source under the parent plan.
+- [x] Stage H implementation package adds checker/runtime coverage that classifies each family plan as direct R6 evidence, successor-owned migration source, governance/checker-runtime-only, or no-live-runtime-scope. Existing valid `live-executed` receipts are reused; the full-family checker currently accepts 53 family members with 14 direct R6 lanes and no stale status findings.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -75,7 +75,7 @@ This plan originally covered these existing R5 plans as one governed rollout, an
 
 
 - [x] Package 7: update this R6 plan for strict parent-family scope, successor-owned migration sources, and full-family live-runtime classification before implementation.
-- [ ] Package 8: implement the full-family R6 checker/runtime reconciliation, update stale plan statuses, validate all direct R6 lane receipts, and integrate into local `main`.
+- [x] Package 8: implement the full-family R6 checker/runtime reconciliation, update stale plan statuses, validate all direct R6 lane receipts, and integrate into local `main`.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -95,7 +95,8 @@ This plan originally covered these existing R5 plans as one governed rollout, an
 - Remote publication remains unauthorized until a current user message names the remote action.
 - Stage D sensitive live-action follow-up evidence - `live-executed` means a bounded live action ran with proof, and `blocked` means the runtime recorded an unmet proof gate: `.omx/r6-live-runtime/receipts/browser-live-action-followup.json` and `.omx/r6-live-runtime/receipts/stop-slop-caveman-live-executed-followup.json` are current valid `live-executed` receipts selected by `tools/check_r6_live_runtime_receipts.py --require-coverage`; `.omx/r6-live-runtime/receipts/wxwork-live-action-blocked-followup.json` and `.omx/r6-live-runtime/receipts/harness-live-action-blocked-followup.json` remain valid `blocked` receipts because real WXWork message-send proof and real guarded harness-job proof are absent. Human-readable evidence: `docs_bilingual/implementation_evidence/r6_sensitive_live_action_evidence_20260609.md` and `.zh-CN.md`.
 - Stage E proof-intake hardening evidence - `tools/r6_live_runtime.py proof-template` is the fail-closed template generator for a future real external proof file, and `tools/r6_live_runtime.py proof-check` is the redaction and required-field validator for that proof file. Tests: `python test\r6_live_runtime.test.py -v` passes 18/18 and covers accepted redacted WXWork/harness proofs plus rejection of raw WXWork body or recipient material.
-- Stage F bounded harness live-job evidence - `tools/run_codex_harnesses_smoke.py r6-live-proof` now runs one bounded local harness job in a temporary isolated Git worktree and writes a redacted proof. `tools/r6_live_runtime.py proof-check` accepts that proof only when candidate id, job profile, read/write guards, isolated worktree, job state, changed-path report, timeout release, rollback, cleanup, and no-Codex-takeover evidence pass. The follow-up receipt `.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json` validates as R6 `live-executed` for `codex-harnesses-governance`; proof hash `e0f71f0789945588`, candidate hash `47ab92541ddbb827`, remote publication mutated `false`. WXWork remains `blocked` until a real external message-send proof exists.
+- Stage F bounded harness live-job evidence - `tools/run_codex_harnesses_smoke.py r6-live-proof` now runs one bounded local harness job in a temporary isolated Git worktree and writes a redacted proof. `tools/r6_live_runtime.py proof-check` accepts that proof only when candidate id, job profile, read/write guards, isolated worktree, job state, changed-path report, timeout release, rollback, cleanup, and no-Codex-takeover evidence pass. The follow-up receipt `.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json` validates as R6 `live-executed` for `codex-harnesses-governance`; proof hash `e0f71f0789945588`, candidate hash `47ab92541ddbb827`, remote publication mutated `false`. WXWork was still `blocked` at Stage F and is later accepted by Stage H through `.omx/r6-live-runtime/receipts/wxwork-live-executed-20260610.json`.
+- Stage H full-family checker evidence - `tools/check_multi_plan_family_r6_live_runtime.py` classifies the strict parent family and delegates direct-lane evidence to `tools/check_r6_live_runtime_receipts.py --require-coverage`. Current validation with receipt directory `D:\PythonProject_langgraph\.omx\r6-live-runtime\receipts` reports `ok=true`, `family_members=53`, `direct_r6_lane=14`, `successor_owned_migration_source=2`, `governance_checker_runtime=29`, `no_live_runtime_scope=8`, `stale_status_findings=0`, `restored_deleted_migration_sources=0`, and `remote_publication_mutated=false`. The WXWork successor lane is accepted through `.omx/r6-live-runtime/receipts/wxwork-live-executed-20260610.json` with only hashes/redacted proof metadata committed.
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -271,15 +272,15 @@ External-action lane policy for this stage is reuse-first: existing valid `live-
 
 ## Package 8: Full-Family Checker And Runtime Reconciliation
 
-The implementation package will add a checker such as `tools/check_multi_plan_family_r6_live_runtime.py` plus focused tests. The checker must:
+The implementation package adds `tools/check_multi_plan_family_r6_live_runtime.py` plus focused tests. The checker:
 
-- discover strict family members from front matter and parent-plan references;
-- report missing plan files as `successor-owned-migration-source` only when an active successor is known;
-- require all direct R6 lanes accepted by `tools/check_r6_live_runtime_receipts.py --require-coverage`;
-- reject stale child-plan wording that says R5-only, blocked, or pending when accepted R6 evidence exists;
-- preserve deleted migration-source boundaries instead of recreating deleted files;
-- emit JSON with counts, classifications, missing evidence, authority-priority status, and remote-publication mutation status;
-- be wired into local validation if the implementation package adds a new durable repository guard surface.
+- discovers strict family members from front matter and parent-plan references;
+- reports missing plan files as `successor-owned-migration-source` only when an active successor is known;
+- requires all direct R6 lanes accepted by `tools/check_r6_live_runtime_receipts.py --require-coverage`;
+- rejects stale child-plan wording that says R5-only, blocked, or pending when accepted R6 evidence exists;
+- preserves deleted migration-source boundaries instead of recreating deleted files;
+- emits JSON with counts, classifications, missing evidence, authority-priority status, and remote-publication mutation status;
+- is wired into `tools/run_openspec_guard.py` and CI manifest coverage as a repository guard surface.
 
 ## Non-goals
 

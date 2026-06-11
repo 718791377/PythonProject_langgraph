@@ -36,14 +36,13 @@ Create the durable smoke and adoption gate template before any live durable runt
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local
-Status: R5 checker-backed active-candidate gate implemented locally; real sensitive live actions remain blocked unless a current lane receipt passes.
-Stage: R5 runtime-governance receipt package for durable smoke adoption gate template.
-Owner session: `resume-019e8aa7-r5-runtime-governance-batch` in feature branch `implement-r5-runtime-governance-batch-20260607`.
-Current gate: run focused tests, repository guard, precommit update/archive review, local CI, local MR review, then guarded local-main-first integration; remote publication remains unauthorized.
-R5 evidence: `durable-routing adoption active-candidate apply-gate receipt` is validated by `tools/check_r5_active_candidate_receipts.py` and the generic `tools/user_level_receipt_governance.py active-check` contract.
-Runtime boundary: this R5 package validates fixture-backed receipts and checker wiring only; it does not install user-level tools, start browsers or GUI apps, send WXWork messages, launch durable workers, run live harness jobs, run Spec Kit live/apply modes, mutate user-level config, or mutate remote publication.
+Status: R6 live-executed
+Stage: R6 live-runtime receipt coverage package for durable smoke adoption gate template.
+Owner session: `implement-multi-plan-family-r6-live-runtime-20260611` updates the strict parent-family checker; existing accepted receipts remain the live runtime evidence source.
+R6 evidence: gate means the blocking checkpoint for adoption; `.omx/r6-live-runtime/receipts/` contains accepted `live-executed` evidence for lane `durable-smoke-adoption-gate-template`, validated by `tools/check_r6_live_runtime_receipts.py --require-coverage` and `tools/check_multi_plan_family_r6_live_runtime.py --require-coverage`.
+Runtime boundary: this status update performs no browser/GUI action, no WXWork message send, no harness job, no Spec Kit apply, no user-level config mutation, and no remote publication; it reconciles the plan with already accepted hash-only/redacted R6 receipts.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
-Last updated: 2026-06-07
+Last updated: 2026-06-11
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership

@@ -59,6 +59,7 @@
     "user_level_receipt_governance.test.py",
     "check_r5_active_candidate_receipts.test.py",
     "check_r6_live_runtime_receipts.test.py",
+    "test_check_multi_plan_family_r6_live_runtime.py",
     "r6_live_runtime.test.py",
     "check_document_pair_policy.test.py",
     "check_git_commit_language.test.py",

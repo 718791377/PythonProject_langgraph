@@ -414,8 +414,8 @@ Lane-specific R5 约束：
 | Phase 2 | `launcher_payload_context_boundary_plan` | implemented and locally integrated | Launcher payload file-backed boundary hardening entered local `main` at `6f1ef48`. |
 | Phase 2 | `startup_mojibake_utf8_recovery_plan` | implemented and locally integrated | Startup mojibake recovery source-report repair entered local `main` at `43d3ae9`. |
 | Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implemented-local | 恢复 canonical visible canary，并约束 replay/model-context blocking。 |
-| Phase 4 | `stop_slop_caveman_response_density_runtime_plan` | active；checker/runtime 待实现 | Stop-Slop/Caveman 响应密度检查器和受保护 rewrite runtime 方案。 |
-| Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | active；checker/runtime 待实现 | gstack 风格 Codex delivery-loop 检查器和受保护 dry-run runtime 方案。 |
+| Phase 4 | `stop_slop_caveman_response_density_runtime_plan` | R6 live-executed; checker-backed | Covered by full-family R6 checker. |
+| Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | R6 live-executed; checker-backed | Covered by full-family R6 checker. |
 | Phase 5 | `comet_management_record_bootstrap_plan` | implemented and locally integrated | Local `main` includes closeout commit `8b8bfd6`; management records, checklist gates, monitoring return state, safe paths, and archive evidence are covered by focused Comet runtime tests. |
 | Phase 5 | `comet_runtime_policy_checker_alignment_plan` | implemented and locally integrated | Local `main` includes closeout commit `3335b67`; stable specs, policy checker, runtime tests, and CI registration are aligned. |
 | Phase 5 | `comet_monitoring_return_transition_plan` | implemented and locally integrated | Local `main` includes closeout commit `05d22bd`; return transitions and monitoring blocked/needs-decision gates are verified. |

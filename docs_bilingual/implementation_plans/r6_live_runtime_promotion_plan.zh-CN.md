@@ -55,6 +55,10 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 
 - [x] Stage F 有界 harness live-job 证据新增 `tools/run_codex_harnesses_smoke.py r6-live-proof`，并以脱敏隔离 worktree proof 将 Codex harnesses 记录为 R6 `live-executed`。WXWork 在出现真实 message-send proof 前继续 fail-closed 为 `blocked`。
 
+
+- [x] Stage G full-family R6 completion scope covers the strict `multi_plan_parallel_session_orchestration_plan` family: active children, parent-named sources, and successor-owned migration sources.
+- [x] Stage H full-family checker/runtime reconciliation is implemented: current checker accepts 53 family members, 14 direct R6 lanes, 2 successor-owned migration sources, and 0 stale status findings.
+
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
@@ -74,6 +78,10 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 - [x] Package 5：为 WXWork 与 Codex harnesses 增加 fail-closed proof-intake 模板与 proof 校验，未来真实 live proof 可在不保存 raw recipient、message、browser 或 harness payload 的前提下通过门禁。
 
 - [x] Package 6：实现并执行一个有界 repo-local Codex harness proof job；该 job 在临时隔离 Git worktree 中运行，随后 rollback/cleanup，并通过 `proof-check` 与 `run --mode live-action` 将 `codex-harnesses-governance` 提升为 R6 `live-executed`。
+
+
+- [x] Package 7: update this R6 plan for strict parent-family scope, successor-owned migration sources, and full-family live-runtime classification.
+- [x] Package 8: implement full-family R6 checker/runtime reconciliation, update stale plan status, validate every direct R6 lane receipt, and prepare local `main` integration.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -96,6 +104,9 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 
 - Stage E proof-intake hardening 证据：`tools/r6_live_runtime.py proof-template` 是未来真实外部 proof 文件的 fail-closed 模板生成器，`tools/r6_live_runtime.py proof-check` 是该 proof 文件的脱敏与必需字段校验器。测试：`python test\r6_live_runtime.test.py -v` 通过 18/18，并覆盖已脱敏 WXWork/harness proof 的接受路径，以及 raw WXWork body 或 recipient 材料的拒绝路径。
 - Stage F 有界 harness live-job 证据：`tools/run_codex_harnesses_smoke.py r6-live-proof` 现在会在临时隔离 Git worktree 中运行一个有界本地 harness job，并写入脱敏 proof。`tools/r6_live_runtime.py proof-check` 只有在 candidate id、job profile、read/write guards、isolated worktree、job state、changed-path report、timeout release、rollback、cleanup 与 no-Codex-takeover evidence 均通过时才接受该 proof。follow-up receipt `.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json` 已作为 `codex-harnesses-governance` 的 R6 `live-executed` receipt 通过验证；proof hash `e0f71f0789945588`，candidate hash `47ab92541ddbb827`，`remote_publication_mutated=false`。WXWork 在出现真实外部 message-send proof 前继续保持 `blocked`。
+
+
+- Stage H full-family checker evidence: `tools/check_multi_plan_family_r6_live_runtime.py` classifies the strict parent family and delegates direct-lane evidence to `tools/check_r6_live_runtime_receipts.py --require-coverage`. Current validation with receipt directory `D:\PythonProject_langgraph\.omx\r6-live-runtime\receipts` reports `ok=true`, `family_members=53`, `direct_r6_lane=14`, `successor_owned_migration_source=2`, `governance_checker_runtime=29`, `no_live_runtime_scope=8`, `stale_status_findings=0`, `restored_deleted_migration_sources=0`, and `remote_publication_mutated=false`. WXWork is accepted through `.omx/r6-live-runtime/receipts/wxwork-live-executed-20260610.json` with hash-only/redacted proof metadata.
 
 <!-- EVIDENCE_INDEX_END -->
 ## R6 契约
@@ -261,4 +272,4 @@ Completion classifications are `direct-r6-lane`, `successor-owned-migration-sour
 
 External-action policy is reuse-first: existing valid `live-executed` receipts are reused, and real browser/WXWork/harness/Spec Kit/user-level install actions rerun only when checker evidence is missing, stale, invalid, or blocked and current authorization/target proof exists. Receipts remain hash-only/redacted and must keep `remote_publication_mutated=false`.
 
-Package 8 will add `tools/check_multi_plan_family_r6_live_runtime.py`, focused tests, stale-status detection, successor-owned migration-source handling, and full-family JSON evidence before local-main integration.
+Package 8 now adds `tools/check_multi_plan_family_r6_live_runtime.py`, focused tests, stale-status detection, successor-owned migration-source handling, OpenSpec guard wiring, and full-family JSON evidence before local-main integration.

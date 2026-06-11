@@ -160,6 +160,7 @@ def main() -> int:
     durable_routing_smoke_receipts_script = root / "tools" / "check_durable_routing_smoke_receipts.py"
     r5_active_candidate_receipts_script = root / "tools" / "check_r5_active_candidate_receipts.py"
     r6_live_runtime_receipts_script = root / "tools" / "check_r6_live_runtime_receipts.py"
+    multi_plan_family_r6_live_runtime_script = root / "tools" / "check_multi_plan_family_r6_live_runtime.py"
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     worktree_task_receipt_script = root / "tools" / "check_worktree_task_receipt.py"
@@ -271,6 +272,8 @@ def main() -> int:
         raise SystemExit(f"Missing R5 active-candidate receipt check script: {r5_active_candidate_receipts_script}")
     if not r6_live_runtime_receipts_script.exists():
         raise SystemExit(f"Missing R6 live-runtime receipt check script: {r6_live_runtime_receipts_script}")
+    if not multi_plan_family_r6_live_runtime_script.exists():
+        raise SystemExit(f"Missing multi-plan family R6 live-runtime check script: {multi_plan_family_r6_live_runtime_script}")
     if not codex_native_rollback_release_gate_template_script.exists():
         raise SystemExit(f"Missing Codex native rollback release gate template check script: {codex_native_rollback_release_gate_template_script}")
     if not worktree_hygiene_script.exists():
@@ -608,8 +611,13 @@ def main() -> int:
             ),
             (
                 "check_r6_live_runtime_receipts",
-                [str(python_exe), str(r6_live_runtime_receipts_script), "--root", str(root), "--json"],
+                [str(python_exe), str(r6_live_runtime_receipts_script), "--root", str(root), "--require-coverage", "--json"],
                 "OpenSpec guard failed during R6 live-runtime receipt verification.",
+            ),
+            (
+                "check_multi_plan_family_r6_live_runtime",
+                [str(python_exe), str(multi_plan_family_r6_live_runtime_script), "--root", str(root), "--require-coverage", "--json"],
+                "OpenSpec guard failed during multi-plan family R6 live-runtime verification.",
             ),
             (
                 "check_codex_native_rollback_release_gate_template",
@@ -1034,9 +1042,15 @@ def main() -> int:
     )
 
     run_checked(
-        [str(python_exe), str(r6_live_runtime_receipts_script), "--root", str(root)],
+        [str(python_exe), str(r6_live_runtime_receipts_script), "--root", str(root), "--require-coverage"],
         cwd=root,
         failure_message="OpenSpec guard failed during R6 live-runtime receipt verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(multi_plan_family_r6_live_runtime_script), "--root", str(root), "--require-coverage"],
+        cwd=root,
+        failure_message="OpenSpec guard failed during multi-plan family R6 live-runtime verification.",
     )
 
     run_checked(

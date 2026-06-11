@@ -403,8 +403,8 @@ Admission: all eligible validation sessions may prepare evidence in parallel, bu
 | Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Shared receipt/redaction/rollback contract remains the common promotion gate for user-level surfaces. |
 | Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local | Port and browser-owner primitives remain shared prerequisites for Browser/CLI adapters and OpenCLI. |
 | Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | migration-source; Stage B delete target | Existing mcp2cli/skills2cli implementation remains valid, but this plan file is no longer a child execution owner after the rebuild. |
-| Phase 4 | `stop_slop_caveman_response_density_runtime_plan` | active; checker/runtime pending | Stop-Slop/Caveman response-density checker and guarded rewrite runtime plan. |
-| Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | active; checker/runtime pending | Subordinate delivery-loop advisor/checker/runtime-dry-run; never overrides Comet, OpenSpec, Superpowers, plan claims, or local-main gates. |
+| Phase 4 | `stop_slop_caveman_response_density_runtime_plan` | R6 live-executed; checker-backed | Covered by full-family R6 checker. |
+| Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | R6 live-executed; checker-backed | Covered by full-family R6 checker. |
 | Phase 6 | `user_level_cli_anything_wxwork_cli_governance_plan` | implemented-local; Stage C runtime promotion documented | Owns CLI-Anything and WXWork_CLI through CLI-Anything controlling `WXWork.exe`; not harnesses. |
 | Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | implemented-local; Stage C runtime promotion documented | Owns only chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; temporary compatibility rows are removed in Stage B. |
 | Phase 6 | `codex_harnesses_governance_plan` | implemented-local; Stage C runtime promotion documented | Owns subordinate candidate-registry-backed harness governance; below Comet/OpenSpec/Superpowers/gstack, above Spec Kit only for runtime safety. |
