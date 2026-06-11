@@ -48,7 +48,7 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - [x] Follow-up 0.2.43 Phase 1 CLI migration idempotency hotfix is integrated into B local `main` at `f25c6b222eecfecfc2f9eeb031d2767aa59f4adb`; rollback ref: `refs/backup/local-main/20260611-074904-before-fix-project-moe-phase1-migration-idempotency-20260611`; target A was installed and committed at `ebd94d1`, and duplicate helper counts are now `expand_lens_aliases=1`, `normalize_category_aliases=1`.
 - [x] Follow-up 0.2.44 B runtime implementation is complete in feature worktree `improve-project-moe-sessions-lens-first-0-2-44-20260611`: toolchain version `0.2.44`, compact lens-first right-side layout, two-column lens grid, compact session details/status cards, and visual-gate enforcement for the final core thinking-model lens.
 - [x] Follow-up 0.2.44 B validation passed in the feature worktree: focused contract tests, full `python test/project_moe_gui_toolchain.test.py` (104/104 OK), py_compile, and Sessions visual render checks for default, long-content, and dense-sessions at `1180x720`, `1366x768`, and `1440x900`.
-- [ ] Follow-up 0.2.44 local `main` integration, target A reinstall, target A preflight, target A visual render validation, and target A local commit remain pending until this feature package is merged into B local `main`.
+- [x] Follow-up 0.2.44 is integrated into B local `main` at `66c9b1a04553393fd2adfc6fbf8b41776fa97716`; the feature worktree/branch was cleaned, target A was reinstalled from the B primary root, A local `main` committed the managed install artifacts at `5d7316e`, A preflight returned `token=ok`, and A Sessions visual render checks for default, long-content, and dense-sessions returned `token=ok` at `1180x720`, `1366x768`, and `1440x900`.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
@@ -69,7 +69,7 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - [x] Complete follow-up 0.2.42: wire left-side Sessions search, enabled-state filtering, sorting, and count summary into the runtime and validate it in target A.
 - [x] Complete follow-up 0.2.43: make existing Phase 1 CLI public-catalog migration idempotent, reinstall into target A, and verify no duplicate alias helper functions remain.
 - [x] Complete follow-up 0.2.44 B runtime: lens-first compact Sessions right side, compact details/actions, two-column lens grid, and stricter visual visibility for `decision_tree` / `the Chinese decision-tree lens label`.
-- [ ] Complete follow-up 0.2.44 post-merge target A acceptance: install from B primary root into `D:/PythonProject_paper_suggest`, run preflight and visual checks, commit A managed artifacts, and record final evidence.
+- [x] Complete follow-up 0.2.44 post-merge target A acceptance: installed from B primary root into `D:/PythonProject_paper_suggest`, ran preflight and default/long-content/dense-sessions visual checks, committed A managed artifacts at `5d7316e`, and recorded final evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
@@ -128,6 +128,12 @@ The implementation must use Pencil as the preferred design-aid surface. Pencil D
 - Follow-up 0.2.44 full toolchain tests: `python test\project_moe_gui_toolchain.test.py` -> `Ran 104 tests ... OK`.
 - Follow-up 0.2.44 py_compile: `python -m py_compile tools\project_moe_gui_toolchain\src\project_moe_gui\gui_shell.py tools\project_moe_gui_toolchain\visual_render_check.py` -> exit `0`.
 - Follow-up 0.2.44 B Sessions visual render: default, long-content, and dense-sessions fixtures at `1180x720`, `1366x768`, and `1440x900` each returned `token=ok`; output directories `.tmp/visual-0.2.44-a-current-default`, `.tmp/visual-0.2.44-a-current-long`, and `.tmp/visual-0.2.44-a-current-dense`.
+- Follow-up 0.2.44 B local-main integration: `python D:/PythonProject_langgraph/tools/complete_local_flow_to_remote_gate.py --worktree D:/PythonProject_langgraph/.worktrees/improve-project-moe-sessions-lens-first-0-2-44-20260611 --execute --json --local-gate-step-timeout-seconds 900` -> `ok=true`; B local `main` is `66c9b1a04553393fd2adfc6fbf8b41776fa97716`; rollback ref `refs/backup/local-main/20260611-121709-before-improve-project-moe-sessions-lens-first-0-2-44-20260611`; feature worktree and branch were cleaned.
+- Target A 0.2.44 install: `python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-project D:/PythonProject_paper_suggest --json` -> `token=ok`, upgraded `0.2.43` -> `0.2.44`, changed only `tools/project_moe_gui/project_moe_gui.config.json` and `tools/project_moe_gui/project_moe_gui.install-manifest.json`.
+- Target A 0.2.44 local commit: `5d7316e` (Chinese subject: upgrade Project MOE GUI to 0.2.44).
+- Target A 0.2.44 preflight: `D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` -> `token=ok`, `phase1_readiness_gate.readiness_status=ready`, `session_count.value=5`, `git_status.dirty=false`.
+- Target A 0.2.44 Sessions visual render: default, long-content, and dense-sessions fixtures at `1180x720`, `1366x768`, and `1440x900` returned `token=ok`; output directories `.tmp/visual-0.2.44-a-default`, `.tmp/visual-0.2.44-a-long`, and `.tmp/visual-0.2.44-a-dense`.
+- Target A 0.2.44 manual screenshot audit: `sessions_1180x720.png` for default, long-content, and dense-sessions shows compact one-line session rows, separated session details/status/category/lens areas, and the decision-tree expert lens visible on the first screen.
 <!-- EVIDENCE_INDEX_END -->
 
 ## Follow-up Hotfix: 0.2.40/0.2.41 Five Thinking Models, Existing CLI Migration, and Scroll Usability
@@ -325,8 +331,8 @@ This follow-up closes the remaining Sessions-page ergonomics gap found after 0.2
 - [x] Stage E10.2: implement compact session details/status cards, two-column lens rows, short checkbox labels, and top-aligned category/lens layouts.
 - [x] Stage E10.3: extend the visual render required text to include `the Chinese decision-tree lens label` and keep all five core thinking-model lenses in the long-content fixture.
 - [x] Stage E10.4: run focused tests, full toolchain tests, py_compile, and B visual render checks for default, long-content, and dense-sessions.
-- [ ] Stage E10.5: commit the B feature, run local gates/local MR review, integrate into B local `main`, and clean the feature worktree/branch.
-- [ ] Stage E10.6: from B primary root, reinstall into `D:/PythonProject_paper_suggest`, run A preflight and visual render checks, and commit A managed install artifacts.
+- [x] Stage E10.5: commit the B feature, run local gates/local MR review, integrate into B local `main`, and clean the feature worktree/branch.
+- [x] Stage E10.6: from B primary root, reinstall into `D:/PythonProject_paper_suggest`, run A preflight and visual render checks, and commit A managed install artifacts.
 
 ### Acceptance criteria
 

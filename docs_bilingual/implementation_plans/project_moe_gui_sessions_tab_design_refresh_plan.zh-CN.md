@@ -48,7 +48,7 @@ related_plans:
 - [x] Follow-up 0.2.43 Phase 1 CLI 迁移幂等性 hotfix 已合入 B 本地 `main`：`f25c6b222eecfecfc2f9eeb031d2767aa59f4adb`；rollback ref 为 `refs/backup/local-main/20260611-074904-before-fix-project-moe-phase1-migration-idempotency-20260611`；A 项目已安装并提交 `ebd94d1`，重复 helper 计数为 `expand_lens_aliases=1`、`normalize_category_aliases=1`。
 - [x] Follow-up 0.2.44 的 B runtime 实现已在 feature worktree `improve-project-moe-sessions-lens-first-0-2-44-20260611` 完成：toolchain 版本为 `0.2.44`，右侧改为紧凑 lens-first 布局、两列镜头网格、紧凑会话详情/状态卡，并把最后一个核心思维模型镜头纳入视觉可见性门禁。
 - [x] Follow-up 0.2.44 的 B 验证已在 feature worktree 通过：focused contract tests、完整 `python test/project_moe_gui_toolchain.test.py`（104/104 OK）、py_compile，以及 default、long-content、dense-sessions 三组夹具在 `1180x720`、`1366x768`、`1440x900` 下的 Sessions 视觉渲染检查。
-- [ ] Follow-up 0.2.44 的本地 `main` 合入、A 项目重装、A preflight、A 视觉渲染验证和 A 本地提交，需要等本 feature 包合入 B 本地 `main` 后继续完成。
+- [x] Follow-up 0.2.44 final acceptance complete: B local `main` is `66c9b1a04553393fd2adfc6fbf8b41776fa97716`; feature worktree/branch was cleaned; target A was reinstalled from the B primary root; A local `main` committed managed install artifacts at `5d7316e`; A preflight returned `token=ok`; A Sessions visual render checks for default, long-content, and dense-sessions returned `token=ok` at `1180x720`, `1366x768`, and `1440x900`.
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
@@ -69,7 +69,7 @@ related_plans:
 - [x] 完成 Follow-up 0.2.42：把左侧 Sessions 搜索、启用状态筛选、排序和数量摘要接入 runtime，并在 A 目标项目中验证。
 - [x] 完成 Follow-up 0.2.43：使既有 Phase 1 CLI 公共目录迁移具备幂等性，重新安装到 A 目标项目，并验证不再残留重复 alias helper。
 - [x] 完成 Follow-up 0.2.44 B runtime：Sessions 右侧 lens-first 紧凑布局、紧凑详情/操作区、两列镜头网格，以及 `decision_tree` / `决策树模型专家` 的更严格视觉可见性门禁。
-- [ ] 完成 Follow-up 0.2.44 合入后的 A 项目验收：从 B 主目录安装到 `D:/PythonProject_paper_suggest`，运行 preflight 和视觉检查，提交 A 受管安装产物，并记录最终证据。
+- [x] Follow-up 0.2.44 target A acceptance complete: installed from B primary root into `D:/PythonProject_paper_suggest`, ran preflight and default/long-content/dense-sessions visual checks, committed A managed artifacts at `5d7316e`, and recorded final evidence.
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
@@ -129,6 +129,12 @@ related_plans:
 - Follow-up 0.2.44 完整 toolchain tests：`python test\project_moe_gui_toolchain.test.py` -> `Ran 104 tests ... OK`。
 - Follow-up 0.2.44 py_compile：`python -m py_compile tools\project_moe_gui_toolchain\src\project_moe_gui\gui_shell.py tools\project_moe_gui_toolchain\visual_render_check.py` -> exit `0`。
 - Follow-up 0.2.44 B Sessions 视觉渲染：default、long-content、dense-sessions 三组夹具在 `1180x720`、`1366x768`、`1440x900` 下均返回 `token=ok`；输出目录为 `.tmp/visual-0.2.44-a-current-default`、`.tmp/visual-0.2.44-a-current-long`、`.tmp/visual-0.2.44-a-current-dense`。
+- Follow-up 0.2.44 B local-main integration: `python D:/PythonProject_langgraph/tools/complete_local_flow_to_remote_gate.py --worktree D:/PythonProject_langgraph/.worktrees/improve-project-moe-sessions-lens-first-0-2-44-20260611 --execute --json --local-gate-step-timeout-seconds 900` -> `ok=true`; B local `main` is `66c9b1a04553393fd2adfc6fbf8b41776fa97716`; rollback ref `refs/backup/local-main/20260611-121709-before-improve-project-moe-sessions-lens-first-0-2-44-20260611`; feature worktree and branch were cleaned.
+- Target A 0.2.44 install: `python tools/project_moe_gui_toolchain/update_project_moe_gui.py --target-project D:/PythonProject_paper_suggest --json` -> `token=ok`, upgraded `0.2.43` -> `0.2.44`, changed only `tools/project_moe_gui/project_moe_gui.config.json` and `tools/project_moe_gui/project_moe_gui.install-manifest.json`.
+- Target A 0.2.44 local commit: `5d7316e` (Chinese subject: upgrade Project MOE GUI to 0.2.44).
+- Target A 0.2.44 preflight: `D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` -> `token=ok`, `phase1_readiness_gate.readiness_status=ready`, `session_count.value=5`, `git_status.dirty=false`.
+- Target A 0.2.44 Sessions visual render: default, long-content, and dense-sessions fixtures at `1180x720`, `1366x768`, and `1440x900` returned `token=ok`; output directories `.tmp/visual-0.2.44-a-default`, `.tmp/visual-0.2.44-a-long`, and `.tmp/visual-0.2.44-a-dense`.
+- Target A 0.2.44 manual screenshot audit: `sessions_1180x720.png` for default, long-content, and dense-sessions shows compact one-line session rows, separated session details/status/category/lens areas, and the decision-tree expert lens visible on the first screen.
 <!-- EVIDENCE_INDEX_END -->
 
 ## 后续 Hotfix：0.2.40/0.2.41 五大思维模型拆分、既有 CLI 迁移与滚动可用性
@@ -329,8 +335,8 @@ related_plans:
 - [x] Stage E10.2：实现紧凑会话详情/状态卡、两列镜头行、短 checkbox 标签，以及 top-aligned category/lens 布局。
 - [x] Stage E10.3：把 `决策树模型专家` 加入视觉渲染必需文本，并让 long-content 夹具保留五个核心思维模型镜头。
 - [x] Stage E10.4：运行 focused tests、完整 toolchain tests、py_compile，以及 default、long-content、dense-sessions 的 B 视觉渲染检查。
-- [ ] Stage E10.5：提交 B feature，运行本地 gate / 本地 MR review，合入 B 本地 `main`，并清理 feature worktree/branch。
-- [ ] Stage E10.6：从 B 主目录重装到 `D:/PythonProject_paper_suggest`，运行 A preflight 和视觉渲染检查，并提交 A 受管安装产物。
+- [x] Stage E10.5：提交 B feature，运行本地 gate / 本地 MR review，合入 B 本地 `main`，并清理 feature worktree/branch。
+- [x] Stage E10.6：从 B 主目录重装到 `D:/PythonProject_paper_suggest`，运行 A preflight 和视觉渲染检查，并提交 A 受管安装产物。
 
 ### 验收标准
 
