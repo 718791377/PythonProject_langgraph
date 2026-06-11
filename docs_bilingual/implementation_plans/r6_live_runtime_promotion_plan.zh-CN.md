@@ -58,7 +58,7 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 
 - [x] Stage G full-family R6 completion scope covers the strict `multi_plan_parallel_session_orchestration_plan` family: active children, parent-named sources, and successor-owned migration sources.
 - [x] Stage H full-family checker/runtime reconciliation is implemented: current checker accepts 53 family members, 14 direct R6 lanes, 2 successor-owned migration sources, and 0 stale status findings.
-
+- [x] Stage I closeout：在本地 `main` 提交 `72c657a` 之上记录 strict parent-family R6 completion；所有 direct lane 保持 `live-executed`，successor-owned migration source 保持删除但已覆盖；远端发布仍需当前消息明确点名远端动作。
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
@@ -82,7 +82,7 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 
 - [x] Package 7: update this R6 plan for strict parent-family scope, successor-owned migration sources, and full-family live-runtime classification.
 - [x] Package 8: implement full-family R6 checker/runtime reconciliation, update stale plan status, validate every direct R6 lane receipt, and prepare local `main` integration.
-
+- [x] Package 9：在父方案和本 R6 promotion plan 中记录 R6 full-family closeout status/evidence，验证后合入本地 `main`。
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
@@ -107,7 +107,7 @@ R6 的含义是：live runtime 默认可被发现和路由，但任何敏感外�
 
 
 - Stage H full-family checker evidence: `tools/check_multi_plan_family_r6_live_runtime.py` classifies the strict parent family and delegates direct-lane evidence to `tools/check_r6_live_runtime_receipts.py --require-coverage`. Current validation with receipt directory `D:\PythonProject_langgraph\.omx\r6-live-runtime\receipts` reports `ok=true`, `family_members=53`, `direct_r6_lane=14`, `successor_owned_migration_source=2`, `governance_checker_runtime=29`, `no_live_runtime_scope=8`, `stale_status_findings=0`, `restored_deleted_migration_sources=0`, and `remote_publication_mutated=false`. WXWork is accepted through `.omx/r6-live-runtime/receipts/wxwork-live-executed-20260610.json` with hash-only/redacted proof metadata.
-
+- Stage I closeout evidence：`python -B tools\check_multi_plan_family_r6_live_runtime.py --root . --receipt-dir D:\PythonProject_langgraph\.omx\r6-live-runtime\receipts --require-coverage --json` 报告 `ok=true`、`family_members=53`、`direct_r6_lane=14`、`successor_owned_migration_source=2`、`governance_checker_runtime=29`、`no_live_runtime_scope=8`、`stale_status_findings=0`、`coverage_ok=true`；focused tests `test\test_check_multi_plan_family_r6_live_runtime.py` 与 `test\run_openspec_guard_json.test.py` 通过。
 <!-- EVIDENCE_INDEX_END -->
 ## R6 契约
 

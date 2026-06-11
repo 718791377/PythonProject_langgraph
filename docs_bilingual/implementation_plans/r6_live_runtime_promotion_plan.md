@@ -54,7 +54,7 @@ This plan originally covered these existing R5 plans as one governed rollout, an
 
 - [x] Stage G full-family R6 completion plan package is complete for the strict `multi_plan_parallel_session_orchestration_plan` family. It expands this plan from the original 14 R6 runtime lanes to every active child, explicitly mentioned source, and successor-owned migration source under the parent plan.
 - [x] Stage H implementation package adds checker/runtime coverage that classifies each family plan as direct R6 evidence, successor-owned migration source, governance/checker-runtime-only, or no-live-runtime-scope. Existing valid `live-executed` receipts are reused; the full-family checker currently accepts 53 family members with 14 direct R6 lanes and no stale status findings.
-
+- [x] Stage I closeout records the strict parent-family R6 completion on top of local `main` commit `72c657a`; all direct lanes remain `live-executed`, successor-owned migration sources remain deleted but covered, and remote publication remains gated until a current message explicitly names the remote action.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
@@ -76,7 +76,7 @@ This plan originally covered these existing R5 plans as one governed rollout, an
 
 - [x] Package 7: update this R6 plan for strict parent-family scope, successor-owned migration sources, and full-family live-runtime classification before implementation.
 - [x] Package 8: implement the full-family R6 checker/runtime reconciliation, update stale plan statuses, validate all direct R6 lane receipts, and integrate into local `main`.
-
+- [x] Package 9: record R6 full-family closeout status and evidence in the parent plan and this R6 promotion plan, then validate and merge the closeout package to local `main`.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
@@ -97,7 +97,7 @@ This plan originally covered these existing R5 plans as one governed rollout, an
 - Stage E proof-intake hardening evidence - `tools/r6_live_runtime.py proof-template` is the fail-closed template generator for a future real external proof file, and `tools/r6_live_runtime.py proof-check` is the redaction and required-field validator for that proof file. Tests: `python test\r6_live_runtime.test.py -v` passes 18/18 and covers accepted redacted WXWork/harness proofs plus rejection of raw WXWork body or recipient material.
 - Stage F bounded harness live-job evidence - `tools/run_codex_harnesses_smoke.py r6-live-proof` now runs one bounded local harness job in a temporary isolated Git worktree and writes a redacted proof. `tools/r6_live_runtime.py proof-check` accepts that proof only when candidate id, job profile, read/write guards, isolated worktree, job state, changed-path report, timeout release, rollback, cleanup, and no-Codex-takeover evidence pass. The follow-up receipt `.omx/r6-live-runtime/receipts/harness-live-job-live-executed-20260609.json` validates as R6 `live-executed` for `codex-harnesses-governance`; proof hash `e0f71f0789945588`, candidate hash `47ab92541ddbb827`, remote publication mutated `false`. WXWork was still `blocked` at Stage F and is later accepted by Stage H through `.omx/r6-live-runtime/receipts/wxwork-live-executed-20260610.json`.
 - Stage H full-family checker evidence - `tools/check_multi_plan_family_r6_live_runtime.py` classifies the strict parent family and delegates direct-lane evidence to `tools/check_r6_live_runtime_receipts.py --require-coverage`. Current validation with receipt directory `D:\PythonProject_langgraph\.omx\r6-live-runtime\receipts` reports `ok=true`, `family_members=53`, `direct_r6_lane=14`, `successor_owned_migration_source=2`, `governance_checker_runtime=29`, `no_live_runtime_scope=8`, `stale_status_findings=0`, `restored_deleted_migration_sources=0`, and `remote_publication_mutated=false`. The WXWork successor lane is accepted through `.omx/r6-live-runtime/receipts/wxwork-live-executed-20260610.json` with only hashes/redacted proof metadata committed.
-
+- Stage I closeout evidence - `python -B tools\check_multi_plan_family_r6_live_runtime.py --root . --receipt-dir D:\PythonProject_langgraph\.omx\r6-live-runtime\receipts --require-coverage --json` reports `ok=true`, `family_members=53`, `direct_r6_lane=14`, `successor_owned_migration_source=2`, `governance_checker_runtime=29`, `no_live_runtime_scope=8`, `stale_status_findings=0`, and `coverage_ok=true`; focused tests `test\test_check_multi_plan_family_r6_live_runtime.py` and `test\run_openspec_guard_json.test.py` pass.
 <!-- EVIDENCE_INDEX_END -->
 
 ## R6 Contract

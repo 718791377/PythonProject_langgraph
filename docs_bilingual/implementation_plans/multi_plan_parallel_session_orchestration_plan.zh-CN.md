@@ -59,10 +59,10 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: implemented-local 治理已完成；真实 runtime lane 继续处于待刷新规划状态。
-Owner session: main Codex leader 串行拥有 parent/child plans、specs、registries、CI、安全规则与 OpenSpec guard wiring 等 shared hotspots。
-Current gate: 验证本次 Phase 0 本地合入状态刷新包、合入本地 `main`，并停在 remote-publication gate。
-Runtime boundary: CLI-Anything/WXWork_CLI、Browser/CLI adapters、Codex harnesses、skills2cli/mcp2cli（`knowsuchagency/mcp2cli`、rollback pointer、update receipt）、gstack、canary 与 Spec Kit 条目仅记录未来 checker/runtime 要求。Priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit；blocked：本包不 install、start、enable、smoke-run、live-run，也不运行 `specify init`。
+Stage: strict plan family 本地收尾，待远端发布授权。
+Owner session: main Codex leader 串行化收尾热点。
+Current gate: `72c657a` 已证明 R6 family completion；合入后停在 remote-publication gate，除非当前消息点名远端发布动作。
+Runtime boundary: 不重跑外部 live action；保留 `knowsuchagency/mcp2cli` marker。Family checker：53 members、14 direct R6、2 successor、29 gov/checker、8 no-live、0 stale/missing/error。Priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -496,6 +496,7 @@ Lane-specific R5 约束：
 - [x] Stage B follow-up: create and register the gstack Codex delivery-loop child plan before checker/runtime work.
 - [x] Stage D follow-up: 从官方 `github/spec-kit` 来源刷新 Spec Kit 子方案，并记录未来 Checker + Runtime 要求；本包不实现脚本。
 - [x] 2026-06-07 conflict-priority refresh: Comet-first priority; no Checker + Runtime implementation.
+- [x] 2026-06-11 R6 family closeout：记录 53 members、14/14 direct R6 lane `live-executed`、2 successor-covered source、0 stale/missing/error。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -578,4 +579,5 @@ Stage B 后续确认后的验收条件：
 Stage B 迁移 checker/test/spec 后，删除 `user_level_mcp_skills_discovery_facade_plan.*` 与 `user_level_mcp_skills_browser_cli_governance_plan.*`。
 
 - 2026-06-04 Stage B implementation: split checkers/tests/spec wiring now back three child lanes; old mixed source plans are deleted from active docs registry and filesystem; remote publication remains closed.
+- 2026-06-11 R6 family closeout evidence：本地 `main` 提交 `72c657a` 增加 full-family checker/guard/CI wiring，保留 claim/rollback；验证为 `family_members=53`、`direct_r6_lane=14`、`successor_owned_migration_source=2`、`governance_checker_runtime=29`、`no_live_runtime_scope=8`、`stale_status_findings=0`，R6 receipt coverage 14/14 accepted。
 <!-- EVIDENCE_INDEX_END -->

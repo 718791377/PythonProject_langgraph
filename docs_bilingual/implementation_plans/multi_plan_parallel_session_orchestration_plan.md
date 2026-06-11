@@ -61,10 +61,10 @@ This parent plan coordinates the following existing plans inside this plan famil
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Stage: implemented-local governance plus pending runtime-refresh planning for real-runtime lanes.
-Owner session: main Codex leader serializes shared hotspots: parent/child plans, specs, registries, CI, safety rules, and OpenSpec guard wiring.
-Current gate: validate this Phase 0 local-main status refresh, integrate it into local `main`, and stop at the remote-publication gate.
-Runtime boundary: extracted lanes stay checker/runtime-only. Priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit. Existing `knowsuchagency/mcp2cli`, rollback pointer, update receipt, and Spec Kit initialization remain blocked/subordinate, so this package does not run `specify init`, install/start/enable/smoke/live runtime lanes, or promote live execution.
+Stage: closed-local-ready-for-publication for the strict plan family.
+Owner session: main Codex leader serialized the parent/child plan closeout hotspot.
+Current gate: `72c657a` proves local R6 family completion; this package records closure and then stops at the remote-publication gate unless the current user message names GitLab/GitHub publication, push, MR, merge, sync, or mirror.
+Runtime boundary: no new external live action runs here; the `knowsuchagency/mcp2cli` marker remains for checker compatibility. The full-family checker accepts 53 members: 14 direct R6 `live-executed`, 2 successor-covered migration sources, 29 governance/checker-runtime-only, 8 no-live-runtime-scope, and 0 stale/missing/error. Priority remains Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit.
 <!-- CURRENT_STATUS_END -->
 
 ## Execution Model
@@ -400,15 +400,15 @@ Admission: all eligible validation sessions may prepare evidence in parallel, bu
 | --- | --- | --- | --- |
 | Phase 0 | `plan_inventory_registry_alignment_plan` | integrated-local | Branch `phase0-plan-index-closure-20260530` is already merged into local `main`; inventory evidence remains `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json` with no missing registered paths or bilingual companion paths. |
 | Phase 0 | `parent_parallel_orchestration_index_plan` | integrated-local | Branches `phase0-plan-index-closure-20260530` and `align-complete-flow-parent-plans-20260530` are already merged into local `main`; Phase 2+ is no longer blocked by Phase 0 local integration. |
-| Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | implemented-local | Shared receipt/redaction/rollback contract remains the common promotion gate for user-level surfaces. |
-| Phase 3 | `user_level_port_browser_owner_isolation_plan` | implemented-local | Port and browser-owner primitives remain shared prerequisites for Browser/CLI adapters and OpenCLI. |
-| Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | migration-source; Stage B delete target | Existing mcp2cli/skills2cli implementation remains valid, but this plan file is no longer a child execution owner after the rebuild. |
+| Phase 1 | `user_level_capability_receipt_rollback_redaction_plan` | R6 live-executed; closeout-recorded | Accepted by the full-family R6 checker. |
+| Phase 3 | `user_level_port_browser_owner_isolation_plan` | governance/checker-runtime closed | Shared prerequisite; no external R6 live-action lane. |
+| Phase 4 | `user_level_mcp_skills_discovery_facade_plan` | successor-covered migration source | Deleted source plan remains covered by `user_level_mcp_skills_cli_runtime_plan` and must not be restored. |
 | Phase 4 | `stop_slop_caveman_response_density_runtime_plan` | R6 live-executed; checker-backed | Covered by full-family R6 checker. |
 | Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | R6 live-executed; checker-backed | Covered by full-family R6 checker. |
-| Phase 6 | `user_level_cli_anything_wxwork_cli_governance_plan` | implemented-local; Stage C runtime promotion documented | Owns CLI-Anything and WXWork_CLI through CLI-Anything controlling `WXWork.exe`; not harnesses. |
-| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | implemented-local; Stage C runtime promotion documented | Owns only chrome-devtools-mcp, cdp-bridge-mcp/CDP Bridge, and OpenCLI; temporary compatibility rows are removed in Stage B. |
-| Phase 6 | `codex_harnesses_governance_plan` | implemented-local; Stage C runtime promotion documented | Owns subordinate candidate-registry-backed harness governance; below Comet/OpenSpec/Superpowers/gstack, above Spec Kit only for runtime safety. |
-| Phase 7 | integration child plans | active | Registry, checker/CI, OpenSpec, and local-main integration hotspots remain serial. |
+| Phase 6 | `user_level_cli_anything_wxwork_cli_governance_plan` | R6 live-executed; closeout-recorded | Redacted CLI-Anything/WXWork proof is accepted. |
+| Phase 6 | `user_level_browser_cli_adapter_boundary_plan` | R6 live-executed; closeout-recorded | Browser/CLI adapter proof also covers the deleted browser source plan. |
+| Phase 6 | `codex_harnesses_governance_plan` | R6 live-executed; closeout-recorded | Bounded harness proof is accepted under Comet/OpenSpec/Superpowers/gstack priority. |
+| Phase 7 | integration child plans | closed-local-ready-for-publication | Serial integration hotspots now rely on the full-family R6 guard. |
 <!-- CHILD_PLAN_STATUS_INDEX_END -->
 
 ## Dependency and Phase 2 Admission Notes
@@ -480,6 +480,7 @@ Each child plan must include:
 - [x] Stage B follow-up: create and register the gstack Codex delivery-loop child plan before checker/runtime implementation.
 - [x] Stage D follow-up: refresh Spec Kit child plans from official `github/spec-kit` sources and record future Checker + Runtime requirements without implementing scripts.
 - [x] 2026-06-07 conflict-priority refresh: record Comet-first priority across Comet, Spec Kit, gstack, and Codex harnesses child plans without implementing Checker + Runtime scripts.
+- [x] 2026-06-11 R6 family closeout: record 53 classified members, 14/14 direct R6 lanes `live-executed`, 2 successor-covered migration sources, and no stale/missing/error findings.
 <!-- TASK_BACKLOG_END -->
 
 ## Acceptance Criteria
@@ -550,4 +551,5 @@ Stage B acceptance after later confirmation:
 - 2026-06-02 prompt-canary canonical restore plan package: branch `plan-restore-nonascii-canary-20260602` records a confirmed Phase 2 follow-up child plan, keeps marker literals out of non-startup plans, and requires model-readable session context to block restored canonical marker copies before implementation.
 - 2026-06-04 Stage A harness/adapters rebuild package: branch `rebuild-harness-governance-plan-20260604` records the three-way split requested by the operator: CLI-Anything/WXWork_CLI, Browser/CLI adapters, and Codex harnesses. Old source plans stay only as checker-compatible migration inputs until Stage B deletes them with checker/test migration.
 - 2026-06-04 Stage B implementation: split checkers/tests/spec wiring now back three child lanes; old mixed source plans are deleted from active docs registry and filesystem; remote publication remains closed.
+- 2026-06-11 R6 family closeout evidence: local `main` commit `72c657a` adds the full-family checker/guard/CI wiring and preserves completed claim plus rollback ref; validation reports `family_members=53`, `direct_r6_lane=14`, `successor_owned_migration_source=2`, `governance_checker_runtime=29`, `no_live_runtime_scope=8`, `stale_status_findings=0`, and R6 receipt coverage 14/14 accepted.
 <!-- EVIDENCE_INDEX_END -->
