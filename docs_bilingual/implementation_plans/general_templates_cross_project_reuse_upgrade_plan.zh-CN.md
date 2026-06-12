@@ -35,7 +35,8 @@ conflict_priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safet
 - 2026-06-12: `D:\PythonProject_General` completed and merged into local `main` at `a814883`; rollback ref `refs/backup/local-main/20260612-before-upgrade-general-full-template` points to `0010af6`.
 - 2026-06-12: `D:\PythonProject_General_2` completed and merged into local `main` at `8dea3e6`; rollback ref `refs/backup/local-main/20260612-before-upgrade-general2-local-template` points to `95dc72d`.
 - 2026-06-12: General_2 keeps Comet/OpenSpec/Superpowers/native-subagent surfaces active but keeps remote CI and R6 examples inert under `template_assets/inert-samples/`.
-- 2026-06-12: Evidence closeout is running in source branch `close-general-templates-evidence-20260612`; source local `main` is ahead of `gitlab/main` by 50 and behind by 0 after fetch.
+- 2026-06-12: Source evidence closeout merged into local `main` at `b67b94f`; rollback ref `refs/backup/local-main/20260612-113345-before-close-general-templates-evidence-20260612` points to `f3c2900`; feature worktree and branch were cleaned by the guarded helper.
+- 2026-06-12: Completion audit revalidated `D:\PythonProject_General` and `D:\PythonProject_General_2` current local `main` gates at `2026-06-12T04:02Z`; both gates passed and both template worktrees are clean.
 - Native subagent spawning was blocked by the active platform tool contract, so the main Codex CLI session remained leader.
 - Durable-team adoption stayed not selected because closeout work is a single evidence/documentation slice after plan freeze.
 <!-- CURRENT_STATUS_END -->
@@ -121,10 +122,10 @@ Steps:
 | Source plan registration commit | `git log -1 --oneline` after Task 1 local integration | `f3c2900` |
 | Source remote-base check before closeout | `git fetch gitlab`; `git rev-list --left-right --count main...gitlab/main` | `50 0` |
 | Source ownership precheck | `python tools/check_session_ownership_claims.py --root . --precheck-task "general templates evidence closeout" --target-path "docs_bilingual/implementation_plans/general_templates_cross_project_reuse_upgrade_plan.md" --json` | `ok=true`, target path unclaimed |
-| General validation | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General\tools\ci\local_gate.ps1 -Root D:\PythonProject_General -Json` | passed at `2026-06-12T02:45:08Z` |
+| General validation | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General\tools\ci\local_gate.ps1 -Root D:\PythonProject_General -Json` | passed at `2026-06-12T04:02:36Z`; current `main` is `a814883`; key template files present; `.omx/state` absent |
 | General final commit | `git -C D:\PythonProject_General log -1 --oneline` | `a814883` |
 | General rollback ref | `git -C D:\PythonProject_General rev-parse refs/backup/local-main/20260612-before-upgrade-general-full-template` | `0010af632587fc6fd0cb792905f66447dedefbc6` |
-| General_2 validation | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General_2\tools\ci\local_gate.ps1 -Root D:\PythonProject_General_2 -Json -RequireCleanGit` | passed at `2026-06-12T02:45:06Z` |
+| General_2 validation | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General_2\tools\ci\local_gate.ps1 -Root D:\PythonProject_General_2 -Json -RequireCleanGit` | passed at `2026-06-12T04:02:34Z`; current `main` is `8dea3e6`; clean git; root remote CI absent; inert samples present; `.omx/state` absent |
 | General_2 local MR review | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General_2\tools\ci\local_mr_review.ps1 -Root D:\PythonProject_General_2 -BaseRef main -HeadRef HEAD -Json` | passed before local `main` merge; changed-files output repaired |
 | General_2 final commit | `git -C D:\PythonProject_General_2 log -1 --oneline` | `8dea3e6` |
 | General_2 rollback ref | `git -C D:\PythonProject_General_2 rev-parse refs/backup/local-main/20260612-before-upgrade-general2-local-template` | `95dc72d0cc039659935865d2c6377e288773dbb5` |
@@ -132,9 +133,10 @@ Steps:
 | Source plan validation | `python .\tools\check_implementation_plan_rules.py --root . --json` | passed at `2026-06-12T03:00:28Z` with legacy warnings only |
 | Source precommit update/archive check | `python .\tools\check_precommit_update_archive.py --root . --json` | passed at `2026-06-12T03:00:28Z`; changed paths limited to the plan pair |
 | Source OpenSpec guard | `python .\tools\run_openspec_guard.py --root .` | passed at `2026-06-12T03:01:39Z` with existing legacy warnings only |
-| Source local gate | `.\tools\ci\local_gate.ps1` | to run before source integration |
-| Source local MR review | `.\tools\ci\local_mr_review.ps1` | to run after closeout commit |
-| Remote publication | explicit later user approval required | not_requested |
+| Source local gate | `.\tools\ci\local_gate.ps1` via `tools/complete_local_flow_to_remote_gate.py --execute --local-gate-step-timeout-seconds 1800` | passed for feature and post-merge local `main` during `b67b94f` integration |
+| Source local MR review | `.\tools\ci\local_mr_review.ps1 -Root . -BaseRef main -HeadRef close-general-templates-evidence-20260612 -Json` | passed before `b67b94f` local integration |
+| Source local main integration and cleanup | `python .\tools\complete_local_flow_to_remote_gate.py --execute --local-gate-step-timeout-seconds 1800`; `tools/cleanup_integrated_worktree.py` | `main` integrated at `b67b94ff5abfadb13a93d31d0bb7c2b5512a7d97`; rollback ref `refs/backup/local-main/20260612-113345-before-close-general-templates-evidence-20260612`; feature worktree removed; branch deleted; completed claim preserved |
+| Remote publication | explicit later user approval required | not_requested; source `main` intentionally leads `gitlab/main` and `github/main` until explicit remote publication |
 <!-- EVIDENCE_INDEX_END -->
 
 ## Validation Commands
