@@ -57,19 +57,19 @@ Activation traces must include:
 
 ```text
 phase=<phase>
-capability_chain=subagent:<auto|manual|off> > omx:<on|off> > langgraph:<on|off>
+capability_chain=subagent_routing:<auto|manual|off> > oh_my_codex:<on|off> > langgraph:<on|off>
 backend_default=<langgraph|native_omx|none>
 backend_ready=<true|false>
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
-durable_workflow=<not_needed|candidate|selected|blocked|running>
-persistent_team=<not_needed|candidate|selected|blocked|running>
+durable_workflow=<not_needed|candidate|selected|running|complete|blocked>
+persistent_team=<not_needed|candidate|selected|running|complete|blocked>
 main_session_escalation=<not_needed|preflight|pending_approval|granted|timed_out|blocked>
 approval_timeout_risk=<none|low|medium|high|expired>
 approval_receipt=<none|receipt id or repo-local artifact path>
 why=<concrete reason>
 ```
 
-User-facing conversation surfaces SHALL keep the literal labels `Routing trace` and `Updated Plan` stable. Explanatory content under those labels MAY be Chinese. `Routing trace` is a plain text diagnostic line or short block with fixed key=value fields; it is not a progress panel. `Updated Plan` is the progress panel and SHALL remain a user-visible CLI/tree status-list surface using checkmark/open-square semantics rather than prose-only text. Markdown checkbox syntax remains implementation-plan-internal and MUST NOT be used as the user-visible `Updated Plan` conversation surface. Saved structured evidence keeps canonical field names and threshold or blocker tokens for checker compatibility.
+User-facing conversation surfaces SHALL keep the literal labels `Routing trace` and `Updated Plan` stable. Explanatory content under those labels MAY be Chinese. `Routing trace` is a plain text diagnostic line or short block with exactly one `Routing trace` label, the full fixed key=value field set, and no legacy short fields such as `experts_now` or `durable_team`; it is not a progress panel. `Updated Plan` is the progress panel and SHALL remain exactly one user-visible CLI/tree status-list surface using checkmark/open-square semantics rather than prose-only text; it SHALL NOT be duplicated, nested, or rendered as Markdown checkboxes. Markdown checkbox syntax remains implementation-plan-internal and MUST NOT be used as the user-visible `Updated Plan` conversation surface. Saved structured evidence keeps canonical field names and threshold or blocker tokens for checker compatibility.
 
 Do not use missing-reminder reasons such as "the user did not request parallelism" or "the user did not request subagents". Use task phase, scope, thresholds, blockers, or main-session takeover as the reason.
 

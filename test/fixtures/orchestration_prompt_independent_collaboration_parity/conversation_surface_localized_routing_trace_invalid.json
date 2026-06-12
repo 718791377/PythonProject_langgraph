@@ -3,6 +3,6 @@
   "case_type": "conversation_surface",
   "case_id": "conversation-surface-localized-routing-trace-invalid",
   "surface": "routing_trace",
-  "text": "\u8def\u7531\u8ddf\u8e2a\uff1aphase=\u6267\u884c, experts_now=\u4e3b\u4f1a\u8bdd\u63a5\u7ba1, why=threshold_not_met:single_execution_slice",
+  "text": "路由跟踪：phase=执行, capability_chain=subagent:auto > omx:on > langgraph:on, backend_default=langgraph, backend_ready=true, experts=main_session_takeover, durable_workflow=not_needed, persistent_team=not_needed, main_session_escalation=not_needed, approval_timeout_risk=none, approval_receipt=none, why=threshold_not_met:single_execution_slice",
   "expected_valid": false
 }

@@ -1220,12 +1220,17 @@ You are Team Leader. The current main Codex CLI session is the leader lane. Do n
   - stabilize with 1+ blocking issues => 2:debugger
 - Enabling oh-my-codex exposes durable team features, but startup itself must not auto-launch a durable team.
 - Startup should classify first and launch later. Do not auto-launch `omx team` only because a new session started.
-- The startup routing trace should stay concise and operator-facing; the user-facing label remains `Routing trace`:
+- The startup routing trace should stay concise and operator-facing; the user-facing label remains `Routing trace`, and every live trace should expose the current full field set:
   - `phase=<...>`
-  - `experts_now=<...>` or `experts_now=none`
-  - `durable_team=<selected|not_selected>`
-  - `why=<threshold hit or threshold missing>`
-- User-facing plan progress keeps the literal `Updated Plan` label and checkbox/status-list semantics; explanatory content may be Chinese.
+  - `capability_chain=<subagent_routing/oh_my_codex/langgraph state chain>`
+  - `backend_default=<langgraph|native_omx|none>` and `backend_ready=<true|false>`
+  - `experts=<none|role|blocked:reason>`
+  - `durable_workflow=<not_needed|candidate|selected|running|complete|blocked>`
+  - `persistent_team=<not_needed|candidate|selected|running|complete|blocked>`
+  - `main_session_escalation=<not_needed|preflight|pending_approval|granted|timed_out|blocked>`
+  - `approval_timeout_risk=<none|low|medium|high|expired>` and `approval_receipt=<none|receipt>`
+  - `why=<threshold hit, unmet threshold, blocker, or main-session takeover>`
+- User-facing plan progress keeps exactly one literal `Updated Plan` label and one CLI/tree progress panel using checkmark/open-square status markers; explanatory content may be Chinese. Do not duplicate it as a Markdown checkbox list.
 - Respect the global state:
   - oh_my_codex=on enables durable team features.
   - oh_my_codex=off disables oh-my-codex durable team features.
@@ -2720,6 +2725,21 @@ function Get-CodexUserLevelModelInstructionsFilePath {
   return (Join-Path $stateDirectory 'user-level-team-mode-model-instructions.md')
 }
 
+function ConvertTo-CodexUserLevelManagedModelInstructionsContent {
+  param(
+    [Parameter(Mandatory)]
+    [AllowEmptyString()]
+    [string]$Content
+  )
+
+  $markerLine = '# OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED'
+  if ($Content.StartsWith($markerLine)) {
+    return $Content
+  }
+
+  return ($markerLine + "`n" + $Content)
+}
+
 function Write-CodexUserLevelModelInstructionsFile {
   param(
     [Parameter(Mandatory)]
@@ -2732,7 +2752,8 @@ function Write-CodexUserLevelModelInstructionsFile {
   if (-not (Test-Path -LiteralPath $directory)) {
     New-Item -ItemType Directory -Force -Path $directory | Out-Null
   }
-  Set-Content -LiteralPath $path -Value $Content -Encoding UTF8 -NoNewline
+  $managedContent = ConvertTo-CodexUserLevelManagedModelInstructionsContent -Content $Content
+  Set-Content -LiteralPath $path -Value $managedContent -Encoding UTF8 -NoNewline
   return $path
 }
 
@@ -3567,11 +3588,16 @@ function Get-CodexUserLevelRoutingPolicy {
 
 function Get-CodexUserLevelDeveloperInstructions {
   param(
-    $Status
+    $Status,
+    $NativeSubagentLimits
   )
 
   if ($null -eq $Status) {
     $Status = Get-CodexUserLevelTeamModeStatus
+  }
+
+  if ($null -eq $NativeSubagentLimits) {
+    $NativeSubagentLimits = Get-CodexUserLevelNativeSubagentLimits
   }
 
   $lines = @()
@@ -3627,7 +3653,7 @@ function Get-CodexUserLevelDeveloperInstructions {
   }
 
   $analystFanoutFirstTaskClass = Get-CodexUserLevelAnalystFanoutFirstTaskClass
-  $limits = Get-CodexUserLevelNativeSubagentLimits
+  $limits = $NativeSubagentLimits
   $completedSubagentLifecycle = Get-CodexUserLevelCompletedSubagentLifecyclePolicy -Status $Status
   $lines += '- Native Codex subagents are an official native capability. Treat specialist role use as explicit leader-side spawning with leader-owned fan-in.'
   $lines += ('- Analyst-fanout-first task class: {0}; when a task is bounded multi-face research, first fan out into homogeneous `analyst` calls.' -f [string]$analystFanoutFirstTaskClass.name)
@@ -3716,8 +3742,8 @@ function Get-CodexUserLevelDeveloperInstructions {
   $lines += '- security-reviewer: auth, secrets, permissions, untrusted input, code execution, external trust boundaries, or payments.'
   $lines += '- writer: user-facing behavior, setup, migration, or operator workflow changes; for bounded multi-face research, use only after analyst fan-in shows a document-finalization layer.'
   $lines += '- bug-finder / bug-rebutter / bug-judge: contested, noisy, or high-volume bug triage after one normal verification still leaves disagreement or a broad candidate bug set.'
-  $lines += '- Startup routing trace format should stay concise, e.g. `Routing trace: phase=..., experts_now=..., durable_team=..., why=...`.'
-  $lines += '- User-facing plan progress format should keep the literal `Updated Plan` label and checkbox/status-list semantics; explanatory content may be Chinese.'
+  $lines += '- Startup routing trace format should stay concise and use the full field set: `Routing trace: phase=..., capability_chain=..., backend_default=..., backend_ready=..., experts=..., durable_workflow=..., persistent_team=..., main_session_escalation=..., approval_timeout_risk=..., approval_receipt=..., why=...`.'
+  $lines += '- User-facing plan progress format should keep exactly one literal `Updated Plan` label and one CLI/tree progress panel using checkmark/open-square status markers; explanatory content may be Chinese. Do not duplicate it as a Markdown checkbox list.'
 
   return ($lines -join "`n")
 }
@@ -14885,6 +14911,7 @@ $venvsDirectory = Join-Path $targetCodexHome 'venvs'
 $stateDirectory = Join-Path $targetCodexHome 'state'
 $statePath = Join-Path $stateDirectory 'user-level-team-mode.json'
 $nativeSubagentLimitsPath = Join-Path $stateDirectory 'native-subagent-limits.json'
+$modelInstructionsFilePath = Join-Path $stateDirectory 'user-level-team-mode-model-instructions.md'
 $launcherPath = Join-Path $binDirectory '_codex-user-level-team-mode-launcher.ps1'
 $nativeCommandDirectory = Split-Path -Parent $resolvedNativeCodexCommandPath
 $explicitWrappedCodexPs1Path = Join-Path $nativeCommandDirectory 'codex.openclaw.ps1'
@@ -15035,7 +15062,7 @@ foreach ($asset in $assets) {
 Assert-ManagedAssetWriteAllowed -Assets $assets -ForceWrite:$Force
 
 $backupSnapshot = $null
-$backupPaths = @($assets | ForEach-Object { $_.Path }) + @($statePath, $nativeSubagentLimitsPath) + @($resolvedPowerShellProfilePath)
+$backupPaths = @($assets | ForEach-Object { $_.Path }) + @($statePath, $nativeSubagentLimitsPath, $modelInstructionsFilePath) + @($resolvedPowerShellProfilePath)
 $backupSnapshot = New-InstallBackupSnapshot -TargetCodexHome $targetCodexHome -Paths $backupPaths
 
 $generatedFiles = @()
@@ -15101,6 +15128,18 @@ try {
     $nativeSubagentLimitsStatus = 'created'
   } else {
     $nativeSubagentLimitsStatus = 'preserved'
+  }
+
+
+  $supportScriptPath = Join-Path $binDirectory '_codex-user-level-team-mode.ps1'
+  $script:CodexUserLevelTeamModeScriptRoot = $binDirectory
+  . $supportScriptPath
+  $modelInstructionsContent = Get-CodexUserLevelDeveloperInstructions -Status (Get-CodexUserLevelTeamModeStatus)
+  $modelInstructionsManagedContent = ConvertTo-CodexUserLevelManagedModelInstructionsContent -Content $modelInstructionsContent
+  $modelInstructionsWriteResult = Write-ManagedTextFile -Path $modelInstructionsFilePath -Content $modelInstructionsManagedContent -ForceWrite:$Force
+  $generatedFiles += [ordered]@{
+    path = $modelInstructionsFilePath
+    status = $modelInstructionsWriteResult
   }
 
   Invoke-TestFailPoint -Name 'after_state'

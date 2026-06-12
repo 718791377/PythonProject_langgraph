@@ -31,7 +31,7 @@ Require user-facing conversation surfaces to keep the fixed literal labels `Rout
 - Parent: `docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.md`.
 - Batch: Stage B Batch 3.
 - Phase: Phase 4.
-- Status: this child implementation plan has completed the fixed English labels and `Updated Plan` checklist semantics runtime/checker slice; this file now records the closeout package for the final validation checklist item.
+- Status: this child implementation plan has completed the fixed English labels and `Updated Plan` single-panel runtime/checker slice; this file now records the closeout package for the final validation checklist item.
 - Remote publication: out of scope unless the user explicitly asks for remote publication.
 
 ## Current Status
@@ -58,14 +58,14 @@ This runtime/checker implementation slice also owns:
 - `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md` - English governance target for fixed-label examples.
 - `docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md` - Chinese governance target for fixed-label examples.
 - `tools/check_orchestration_collaboration_evidenceguard.py` - checker target for conversation-surface fixtures.
-- `test/fixtures/orchestration_prompt_independent_collaboration_parity/conversation_surface_*` - fixtures for stable labels and checklist semantics.
+- `test/fixtures/orchestration_prompt_independent_collaboration_parity/conversation_surface_*` - fixtures for stable labels and single-panel progress semantics.
 
 ## Hotspot Serialization
 
 Only one session may own each hotspot at a time:
 
 - user-facing `Routing trace` label and explanatory wording
-- user-facing `Updated Plan` label and checklist semantics
+- user-facing `Updated Plan` label and single-panel progress semantics
 - routing evidence schema
 - plan-progress evidence schema
 
@@ -114,8 +114,8 @@ Run these gates before local `main` integration unless this child plan later nar
 - 2026-06-01 progress-surface boundary confirmation: branch `document-progress-surface-boundary-20260601` narrows the earlier checklist/status wording so user-facing `Updated Plan` means the tree-style checkmark/open-square progress panel only; Markdown checkbox syntax remains the implementation-plan-internal task tracking mode, and `Routing trace` stays a plain-text `key=value` diagnostic line.
 - 2026-05-31 Phase 4 final closeout: `close-phase4-final-20260531` confirms this child plan has no open checklist items, its fixed-label implementation and closeout evidence are preserved in current local `main`, and its remaining gate is explicit remote-publication approval.
 - 2026-05-31 Stage C closeout: branch `close-chinese-routing-trace-conversation-surface-plan-20260531` records the final validation checklist item as complete for the already-implemented fixed `Routing trace` and `Updated Plan` conversation surface contract; final local-main commit and validation evidence are recorded in the assistant response and local git history.
-- 2026-05-30 implementation baseline: local `main` contains the fixed-label runtime/checker package in `implement-routing-updated-plan-fixed-labels-20260530c`, including checker/fixture coverage for stable `Routing trace` and `Updated Plan` labels and checklist semantics.
-- 2026-05-30 stable-label correction: user confirmed that `Routing trace` and `Updated Plan` remain English user-facing labels; `Updated Plan` keeps checklist semantics. This slice updates the parent/child plan constraints and adds checker/fixture coverage for that corrected contract.
+- 2026-05-30 implementation baseline: local `main` contains the fixed-label runtime/checker package in `implement-routing-updated-plan-fixed-labels-20260530c`, including checker/fixture coverage for stable `Routing trace` and `Updated Plan` labels and single-panel progress semantics.
+- 2026-05-30 stable-label correction: user confirmed that `Routing trace` and `Updated Plan` remain English user-facing labels; `Updated Plan` keeps single-panel progress semantics. This slice updates the parent/child plan constraints and adds checker/fixture coverage for that corrected contract.
 - 2026-05-30 Phase 4 conversation-surface governance update: branch `chinese-routing-updated-plan-20260530` previously extended the surface scope from routing traces to both routing traces and updated plans; this correction supersedes the mistaken label-localization requirement.
 - 2026-05-28 Stage B child-plan creation: created as part of the parent multi-plan orchestration child-plan package; final commit is recorded in the assistant response and local git history.
 <!-- EVIDENCE_INDEX_END -->

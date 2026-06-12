@@ -131,7 +131,6 @@ FANOUT_MARKERS = (
     "expert fan-out",
     "native subagent",
     "native codex subagents",
-    "experts_now=",
 )
 READ_HEAVY_MARKERS = (
     "read-heavy",

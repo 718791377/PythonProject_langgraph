@@ -13,7 +13,7 @@ translation_of: docs_bilingual/implementation_plans/codex_governance_session_vis
 把对话中已经确认的治理方向固化为正式 implementation_plan 门禁产物，再允许后续非文档实现。
 本方案覆盖五项相关治理升级：
 
-1. 对话中面向用户的会话表面必须保留固定字面标签 `Routing trace` 和 `Updated Plan`；解释内容可以使用中文，`Updated Plan` 必须继续是复选框/状态清单表面。
+1. 对话中面向用户的会话表面必须保留固定字面标签 `Routing trace` 和 `Updated Plan`；解释内容可以使用中文，`Updated Plan` 必须继续是单个 CLI/tree 进度面板，使用勾选/空方框状态标记。
 2. OMX 与 LangGraph 的提权需求必须在主会话中更直观地展示，不能在用户未注意时静默超时。
 3. 多个 Codex session 可以并行处理不同实施方案，但同一个 `implementation_plan` 同一时间只能由一个 session 处理。
 4. Comet 必须让 Superpowers 作为 HOW 方法层的使用证据可见，而不是隐式发生。
@@ -53,7 +53,7 @@ Stage B 进入条件：本地 `main` 合入后，用户明确确认本文件或�
 ### 1. 稳定的会话表面标签
 
 - 对话中展示给用户的路由决策必须保留字面标签 `Routing trace`；解释内容可以使用中文。
-- 对话中展示给用户的计划进度必须保留字面标签 `Updated Plan`，并保留复选框/状态清单语义，不得改成纯段落。
+- 对话中展示给用户的计划进度必须只保留一个字面标签 `Updated Plan`，并保留单个 CLI/tree 勾选/空方框进度面板，不得改成纯段落或 Markdown checkbox 输出。
 - 保存给 checker 的机器可解析证据可以保留必要的 ASCII token，例如 `threshold_not_met:no_frozen_plan`。
 - checker 应区分两个表面：
   - 用户可见会话文本：要求固定标签 `Routing trace` 和 `Updated Plan`；
@@ -150,7 +150,7 @@ Stage A 验收条件：
 
 Stage B 后续确认后的验收条件：
 
-- 对话中用户可见的 routing 输出保留字面标签 `Routing trace`；计划进度输出保留字面标签 `Updated Plan` 和复选框/状态清单语义；解释语言可以使用中文。
+- 对话中用户可见的 routing 输出保留字面标签 `Routing trace`；计划进度输出只保留一个字面标签 `Updated Plan` 和一个 CLI/tree 勾选/空方框进度面板；解释语言可以使用中文。
 - 保存版 trace 证据仍能验证必要的路由决策与阈值/blocker 标签。
 - 主会话中可以在隐藏 worker 等待超时前看到提权需求摘要。
 - 同一个 implementation_plan 的 active session claim 在普通本地机器上、没有 OMX/LangGraph 时也会 fail closed。

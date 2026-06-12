@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "case_type": "conversation_surface",
+  "case_id": "conversation-surface-routing-trace-old-fields-invalid",
+  "surface": "routing_trace",
+  "text": "Routing trace: phase=execute, experts_now=main_session_takeover, durable_team=not_selected, why=threshold_not_met:single_execution_slice",
+  "expected_valid": false
+}

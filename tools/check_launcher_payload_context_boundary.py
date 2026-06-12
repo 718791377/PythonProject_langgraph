@@ -15,10 +15,11 @@ INSTALLER_PATH = Path("tools/install-codex-user-level-team-mode.ps1")
 REQUIRED_SOURCE_MARKERS = {
     "model_instructions_path_function": "function Get-CodexUserLevelModelInstructionsFilePath",
     "model_instructions_state_filename": "user-level-team-mode-model-instructions.md",
+    "model_instructions_managed_content_function": "function ConvertTo-CodexUserLevelManagedModelInstructionsContent",
     "model_instructions_writer_function": "function Write-CodexUserLevelModelInstructionsFile",
     "model_instructions_state_directory": "$directory = Split-Path -Parent $path",
     "model_instructions_directory_create": "New-Item -ItemType Directory -Force -Path $directory | Out-Null",
-    "model_instructions_utf8_write": "Set-Content -LiteralPath $path -Value $Content -Encoding UTF8 -NoNewline",
+    "model_instructions_utf8_write": "Set-Content -LiteralPath $path -Value $managedContent -Encoding UTF8 -NoNewline",
     "startup_args_function": "function Get-CodexUserLevelTeamModeStartupArgs",
     "startup_args_writes_model_instructions_file": "$modelInstructionsFilePath = Write-CodexUserLevelModelInstructionsFile -Content $DeveloperInstructions",
     "startup_args_model_instructions_file_override": "model_instructions_file=",

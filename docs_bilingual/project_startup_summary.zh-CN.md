@@ -95,7 +95,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 - 自动协同是所有项目、所有通过用户级 workflow 启动的 Codex 会话的默认行为；用户不需要重复提醒 “use experts / durable_team / persistent team”。
 - 在首次实质性任务、reload/restart/resume/continue、阶段变化、发现 `.omx` durable state、expert timeout/stall、capability state 变化或扩展到 2+ execution slices 时重新 activation。
-- Trace 必须包含 `phase`、`capability_chain`、`backend_default`、`backend_ready`、`experts`、`durable_workflow`、`persistent_team` 和 `why`。
+- Trace 必须包含 `phase`、`capability_chain`、`backend_default`、`backend_ready`、`experts`、`durable_workflow`、`persistent_team`、`main_session_escalation`、`approval_timeout_risk`、`approval_receipt` 和 `why`。
 - 不得用“用户没有要求并行/子代理”作为跳过理由；必须引用阈值、blocker、范围或主会话接管。
 - 如果 native `spawn_agent` 调用被当前 platform/tool contract 阻止，必须报告 `experts=blocked:platform_subagent_invocation_constraint`，并继续使用合格 durable lane 或主会话接管。
 - LangGraph ready 时报告默认 ready durable backend，但 team launch 仍受阈值约束。

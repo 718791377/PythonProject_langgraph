@@ -65,9 +65,9 @@
 
 ### Requirement: Activation traces SHALL expose full orchestration state / Activation trace 必须暴露完整 orchestration 状态
 
-用户级 orchestration activation policy 必须要求 activation trace 报告 task phase、capability-chain state、default durable backend、backend readiness、expert selection、durable workflow state、persistent-team state 与具体 reason。Trace vocabulary 必须区分 state meaning：`not_needed`（threshold 未满足或无需 lane）、`candidate`（具备候选资格但未采用）、`selected`（已选择但尚未运行）、`blocked`（因具名 blocker 或未满足 threshold 而无法继续）与 `running`（durable 或 persistent execution 正在运行）。
+用户级 orchestration activation policy 必须要求 activation trace 报告完整当前字段集：`phase`、`capability_chain`、`backend_default`、`backend_ready`、`experts`、`durable_workflow`、`persistent_team`、`main_session_escalation`、`approval_timeout_risk`、`approval_receipt` 与 `why`。Trace vocabulary 必须区分 state meaning：`not_needed`（threshold 未满足或无需 lane）、`candidate`（具备候选资格但未采用）、`selected`（已选择但尚未运行）、`running`（durable 或 persistent execution 正在运行）、`complete`（已完成且不再活跃）与 `blocked`（因具名 blocker 或未满足 threshold 而无法继续）。
 
-用户可见会话表面必须保留字面标签 `Routing trace` 和 `Updated Plan`。这些标签下的解释内容可以使用中文。`Routing trace` 必须是普通文本诊断行或短块，使用固定 key=value 字段；它不得是进度面板。`Updated Plan` 必须是用户可见进度面板，使用 CLI/tree 勾选/空方框状态清单语义。Markdown checkbox syntax 必须仅保留为 implementation-plan-internal，不得作为用户可见的 `Updated Plan` 会话表面。
+用户可见会话表面必须保留字面标签 `Routing trace` 和 `Updated Plan`。这些标签下的解释内容可以使用中文。`Routing trace` 必须是普通文本诊断行或短块，必须只有一个可见 trace 标签，必须使用完整固定 key=value 字段集，并且不得使用 `experts_now` 或 `durable_team` 等旧短字段；它不得是进度面板。`Updated Plan` 必须是用户可见进度面板，必须只有一个 CLI/tree 勾选/空方框状态清单表面，并且不得重复、嵌套或渲染为 Markdown checkbox。Markdown checkbox syntax 必须仅保留为 implementation-plan-internal，不得作为用户可见的 `Updated Plan` 会话表面。
 
 仓库必须提供可执行 trace-evidence validator，检查保存的 activation trace text 是否具备 required fields、capability-chain consistency、backend readiness semantics、durable workflow 与 persistent-team vocabulary、forbidden missing-reminder reasons、expert-timeout evidence labels，以及 `why` 字段中的 durable-team threshold evidence。仓库也必须提供 `tools/check_expert_lifecycle_wait_pacing_evidence.py`，用于检查 completed-expert closure、preserved-thread exceptions、bounded wait windows、liveness/stall actions 与 provider pacing as backpressure。
 

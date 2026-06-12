@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "case_type": "conversation_surface",
+  "case_id": "conversation-surface-routing-trace-duplicate-invalid",
+  "surface": "routing_trace",
+  "text": "Routing trace: phase=execute-parallel, capability_chain=subagent:auto > omx:on > langgraph:on, backend_default=langgraph, backend_ready=true, experts=main_session_takeover, durable_workflow=not_needed, persistent_team=not_needed, main_session_escalation=not_needed, approval_timeout_risk=none, approval_receipt=none, why=threshold_not_met:single_execution_slice\nRouting trace: phase=verify-accept, why=duplicate",
+  "expected_valid": false
+}

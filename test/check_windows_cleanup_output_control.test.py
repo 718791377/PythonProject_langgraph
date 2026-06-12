@@ -207,7 +207,7 @@ class WindowsCleanupOutputControlCheckTest(unittest.TestCase):
     def test_launcher_payload_boundary_requires_utf8_state_file_write(self) -> None:
         root = self.make_root("launcher-payload-missing-utf8-write")
         source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
-            "Set-Content -LiteralPath $path -Value $Content -Encoding UTF8 -NoNewline",
+            "Set-Content -LiteralPath $path -Value $managedContent -Encoding UTF8 -NoNewline",
             "Set-Content -LiteralPath $path -Value $Content -Encoding ASCII -NoNewline",
         )
         self.write_installer_copy(root, source)

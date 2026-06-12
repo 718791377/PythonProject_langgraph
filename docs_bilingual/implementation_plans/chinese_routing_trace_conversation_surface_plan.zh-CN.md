@@ -31,7 +31,7 @@ confirmation_required: true
 - 父方案：`docs_bilingual/implementation_plans/multi_plan_parallel_session_orchestration_plan.zh-CN.md`。
 - 批次：Stage B Batch 3。
 - 阶段：Phase 4。
-- 状态：本子 implementation_plan 已完成固定英文标签和 `Updated Plan` 清单语义的 runtime/checker 切片；本文现在记录最后一个验证清单项的收口包。
+- 状态：本子 implementation_plan 已完成固定英文标签和 `Updated Plan` 单面板语义的 runtime/checker 切片；本文现在记录最后一个验证清单项的收口包。
 - 远端发布：不在本子方案范围内，除非用户明确要求远端发布。
 
 ## 当前状态
@@ -65,7 +65,7 @@ Stage C 进入条件：固定标签 runtime/checker 切片已合入本地 `main`
 以下热点同一时间只能由一个 session 拥有：
 
 - 用户可见 `Routing trace` 标签和解释文案
-- 用户可见 `Updated Plan` 标签与复选框/状态清单语义
+- 用户可见 `Updated Plan` 标签与单面板进度语义
 - routing evidence schema
 - plan-progress evidence schema
 
@@ -114,8 +114,8 @@ Stage C 进入条件：固定标签 runtime/checker 切片已合入本地 `main`
 - 2026-06-01 progress-surface boundary confirmation：分支 `document-progress-surface-boundary-20260601` 收窄此前“复选框/状态清单”措辞：用户可见 `Updated Plan` 只表示树状 `✔`/`□` 进度面板；Markdown checkbox 继续作为 implementation plan 内部任务追踪模式；`Routing trace` 保持普通文本 `key=value` 诊断行。
 - 2026-05-31 Phase 4 最终收口：`close-phase4-final-20260531` 确认本子方案无未完成 checklist，fixed-label 实现与收口证据已保留在当前本地 `main`，剩余门禁为显式远端发布批准。
 - 2026-05-31 Stage C 收口：分支 `close-chinese-routing-trace-conversation-surface-plan-20260531` 将已实现的固定 `Routing trace` 与 `Updated Plan` 会话表面契约的最后验证清单项记录为完成；最终 local-main commit 与验证证据记录在 assistant 回复和本地 git 历史中。
-- 2026-05-30 实施基线：本地 `main` 已包含 `implement-routing-updated-plan-fixed-labels-20260530c` 中的 fixed-label runtime/checker 包，包括稳定 `Routing trace` 和 `Updated Plan` 标签以及清单语义的 checker/fixture 覆盖。
-- 2026-05-30 固定标签修正：用户确认 `Routing trace` 和 `Updated Plan` 保持英文用户可见标签，`Updated Plan` 保持清单语义；本切片更新父子方案约束，并增加 checker/fixture 覆盖。
+- 2026-05-30 实施基线：本地 `main` 已包含 `implement-routing-updated-plan-fixed-labels-20260530c` 中的 fixed-label runtime/checker 包，包括稳定 `Routing trace` 和 `Updated Plan` 标签以及单面板进度语义的 checker/fixture 覆盖。
+- 2026-05-30 固定标签修正：用户确认 `Routing trace` 和 `Updated Plan` 保持英文用户可见标签，`Updated Plan` 保持单面板进度语义；本切片更新父子方案约束，并增加 checker/fixture 覆盖。
 - 2026-05-30 Phase 4 会话表面治理更新：分支 `chinese-routing-updated-plan-20260530` 曾把会话表面范围从 routing trace 扩展到 updated plan；本修正取代其中“固定标签应替换为中文标题”的错误要求。
 - 2026-05-28 Stage B 子方案创建：随父级多方案并行编排的子方案包创建；最终 commit 记录在 assistant 回复和本地 git 历史中。
 <!-- EVIDENCE_INDEX_END -->

@@ -34,9 +34,9 @@ Align the user-facing `Routing trace` and `Updated Plan` conversation surfaces a
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: active plan confirmed by the operator and awaiting local-main plan integration
-Owner session: `codex-conversation-surface-plan-20260612`
-Current gate: plan commit, local validation, local main integration, then runtime implementation branch
+Status: runtime implementation completed in `conversation-surface-runtime-20260612`; user-level runtime refreshed and smoke-verified; awaiting runtime local gate, local MR review, and local `main` integration before template sync
+Owner session: `conversation-surface-runtime-20260612`
+Current gate: commit runtime implementation, run local gate and local MR review, merge local `main`, then update `D:/PythonProject_General` and `D:/PythonProject_General_2`
 Remote publication: not authorized; stop at the remote-publication approval gate
 Last updated: 2026-06-12
 <!-- CURRENT_STATUS_END -->
@@ -60,12 +60,13 @@ Only one session may own each hotspot at a time:
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Commit and merge this implementation plan into local `main` before runtime edits.
-- [ ] Update governance text so `Routing trace` uses the full checker-compatible field set and `Updated Plan` is one CLI/tree panel using checkmark (U+2714) and empty-square (U+25A1) status glyphs.
-- [ ] Replace old installer wording and generated examples that mention `experts_now`, `durable_team=<...>`, `checkbox/status-list semantics`, or ambiguous checklist semantics.
-- [ ] Harden conversation-surface checker logic and fixtures against duplicate `Updated Plan`, nested `Updated Plan`, Markdown checkbox `Updated Plan`, duplicate `Routing trace`, and old routing short fields.
-- [ ] Run targeted checker tests, OpenSpec guard, local gate, and local MR review.
-- [ ] Reinstall or refresh user-level team-mode runtime from repository source and smoke-search installed artifacts for old wording.
+- [x] Commit and merge this implementation plan into local `main` before runtime edits.
+- [x] Update governance text so `Routing trace` uses the full checker-compatible field set and `Updated Plan` is one CLI/tree panel using checkmark (U+2714) and empty-square (U+25A1) status glyphs.
+- [x] Replace old installer wording and generated examples that mention `experts_now`, `durable_team=<...>`, `checkbox/status-list semantics`, or ambiguous checklist semantics.
+- [x] Harden conversation-surface checker logic and fixtures against duplicate `Updated Plan`, nested `Updated Plan`, Markdown checkbox `Updated Plan`, duplicate `Routing trace`, and old routing short fields.
+- [x] Run targeted checker tests, OpenSpec guard, and pre-commit update/archive checks for the runtime slice.
+- [x] Reinstall or refresh user-level team-mode runtime from repository source and smoke-search installed artifacts for old wording, including the generated `user-level-team-mode-model-instructions.md` cache.
+- [ ] Run full local gate and local MR review for the committed runtime implementation.
 - [ ] Merge the runtime implementation into local `main` and stop at the remote-publication gate.
 - [ ] Update `D:/PythonProject_General` with a plan commit followed by a template implementation commit and local main integration.
 - [ ] Update `D:/PythonProject_General_2` with a plan commit followed by a template implementation commit and local main integration.
@@ -94,5 +95,11 @@ Only one session may own each hotspot at a time:
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- Evidence is pending until the plan commit, runtime implementation commit, user-level smoke, template updates, local gates, and local main integrations complete.
+- Plan integration: local `main` contains plan commit `ea9a442`.
+- Runtime checks passed: `python test/check_orchestration_collaboration_evidenceguard.test.py`, `python test/check_orchestration_trace_evidence.test.py`, `python test/check_stop_slop_caveman_response_density.test.py`, `python test/check_fanout_write_ownership_evidence.test.py`, `python test/check_windows_cleanup_output_control.test.py`.
+- Installer test passed: `powershell -NoProfile -ExecutionPolicy Bypass -File test/install-codex-user-level-team-mode.test.ps1`.
+- User-level install executed with `tools/install-codex-user-level-team-mode.ps1 -Force`; manifest listed `C:/Users/lenovo/.codex/state/user-level-team-mode-model-instructions.md` as a generated managed artifact.
+- User-level smoke passed: `team-leader.toml`, `codex-routing-policy.ps1`, `_codex-user-level-team-mode.ps1`, `_codex-user-level-team-mode-launcher.ps1`, and `user-level-team-mode-model-instructions.md` had no `experts_now`, no old `durable_team=<selected|not_selected>` example, no `checkbox/status-list semantics`, and no Markdown checkbox `Updated Plan` surface.
+- Repository guards passed: `python tools/check_precommit_update_archive.py --root . --json`, `python tools/check_launcher_payload_context_boundary.py --root . --json`, and `python tools/run_openspec_guard.py --root .`.
+- Pending evidence: runtime local gate, local MR review, local `main` integration, and both template repository updates.
 <!-- EVIDENCE_INDEX_END -->

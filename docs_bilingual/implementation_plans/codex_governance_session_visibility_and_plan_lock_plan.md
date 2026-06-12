@@ -13,7 +13,7 @@ zh_cn_path: docs_bilingual/implementation_plans/codex_governance_session_visibil
 Convert the chat-approved governance direction into the formal implementation-plan gate required before any non-document implementation starts.
 This plan covers five related governance upgrades:
 
-1. User-facing conversation surfaces must keep the literal `Routing trace` and `Updated Plan` labels stable; explanatory content may be Chinese, and `Updated Plan` must remain a checklist/status-list surface.
+1. User-facing conversation surfaces must keep the literal `Routing trace` and `Updated Plan` labels stable; explanatory content may be Chinese, and `Updated Plan` must remain a single CLI/tree progress panel using checkmark/open-square status markers.
 2. OMX and LangGraph escalation needs must be visible in the main session before they can quietly time out.
 3. Multiple Codex sessions must be able to work in parallel only when each active `implementation_plan` is owned by at most one session.
 4. Comet must make its Superpowers HOW-layer usage visible instead of leaving it implicit.
@@ -53,12 +53,12 @@ Last updated: 2026-05-28
 ### 1. Stable Conversation Surface Labels
 
 - Conversation-facing routing decisions must keep the literal `Routing trace` label; explanatory text may be Chinese.
-- User-facing plan-progress output must keep the literal `Updated Plan` label and preserve checkbox/status-list semantics instead of prose-only text.
+- User-facing plan-progress output must keep exactly one literal `Updated Plan` label and preserve a single CLI/tree checkmark/open-square progress panel instead of prose-only text or Markdown checkbox output.
 - Saved machine-checkable evidence may retain canonical ASCII tokens when they are needed by existing checkers, for example `threshold_not_met:no_frozen_plan`.
 - The checker should distinguish two surfaces:
   - user-facing conversation text: fixed labels `Routing trace` and `Updated Plan` are required;
   - saved evidence trace: structured tokens allowed for validation.
-- The routing trace must still report the same decisions: phase, capability chain, backend default/readiness, experts, durable workflow, persistent team, and reason.
+- The routing trace must still report the same decisions using the full current field set: phase, capability_chain, backend_default, backend_ready, experts, durable_workflow, persistent_team, main_session_escalation, approval_timeout_risk, approval_receipt, and why.
 
 ### 2. Main-Session Escalation Visibility
 
@@ -150,7 +150,7 @@ Stage A acceptance:
 
 Stage B acceptance after later confirmation:
 
-- Conversation-facing routing output keeps the literal `Routing trace` label; plan-progress output keeps the literal `Updated Plan` label and checklist/status-list semantics; explanatory language may be Chinese.
+- Conversation-facing routing output keeps the literal `Routing trace` label; plan-progress output keeps exactly one literal `Updated Plan` label and one CLI/tree checkmark/open-square progress panel; explanatory language may be Chinese.
 - Saved trace evidence still validates required routing decisions and threshold/blocker labels.
 - Main-session escalation needs are summarized visibly before hidden worker waits can time out.
 - Same-plan active session claims fail closed on a normal local machine without OMX/LangGraph.

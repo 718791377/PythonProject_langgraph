@@ -475,11 +475,13 @@ $expectedManagedFiles = @(
   (Join-Path $CodexHome 'python\langgraph_durable_orchestrator\cli.py')
   (Join-Path $CodexHome 'state\native-subagent-limits.json')
   (Join-Path $CodexHome 'state\user-level-team-mode.json')
+  (Join-Path $CodexHome 'state\user-level-team-mode-model-instructions.md')
 )
 
 $backupManifest = Get-Content -LiteralPath $manifest.backup.manifest_path -Raw | ConvertFrom-Json
 $backupManifestPaths = @($backupManifest.files | ForEach-Object { [string]$_.path })
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'state\user-level-team-mode.json')) 'Backup snapshot manifest did not include the shared state file.'
+Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'state\user-level-team-mode-model-instructions.md')) 'Backup snapshot manifest did not include the generated model instructions file.'
 Assert-True ($backupManifestPaths -contains $ProfilePath) 'Backup snapshot manifest did not include the PowerShell profile path.'
 Assert-True ($backupManifestPaths -contains $ExplicitWrappedCodexPs1Path) 'Backup snapshot manifest did not include the explicit wrapped codex PowerShell launcher path.'
 Assert-True ($backupManifestPaths -contains $ExplicitWrappedCodexCmdPath) 'Backup snapshot manifest did not include the explicit wrapped codex cmd launcher path.'
@@ -588,6 +590,21 @@ Assert-True ($leaderProfile.Contains('Mixed persistent pane compose remains an a
 Assert-True ($leaderProfile.Contains('omx-team-compose.ps1')) 'team-leader.toml does not mention the compose entrypoint.'
 Assert-True ($leaderProfile.Contains('first fan out into homogeneous `analyst` calls')) 'team-leader.toml does not describe analyst-fanout-first bounded research routing.'
 Assert-True ($leaderProfile.Contains('Do not mix `architect`, `planner`, or `writer` into that first bounded research round by default')) 'team-leader.toml does not keep architect/planner/writer out of the default first bounded research round.'
+Assert-True ($leaderProfile.Contains('capability_chain=') -and $leaderProfile.Contains('backend_default=') -and $leaderProfile.Contains('approval_receipt=')) 'team-leader.toml does not document the full Routing trace field set.'
+Assert-True (-not $leaderProfile.Contains('experts_now')) 'team-leader.toml still exposes the legacy experts_now routing field.'
+Assert-True (-not $leaderProfile.Contains('durable_team=<selected|not_selected>')) 'team-leader.toml still exposes the legacy durable_team routing example.'
+Assert-True (-not $leaderProfile.Contains('checkbox/status-list semantics')) 'team-leader.toml still uses ambiguous Updated Plan checkbox/status-list wording.'
+Assert-True ($leaderProfile.Contains('exactly one literal `Updated Plan` label') -and $leaderProfile.Contains('CLI/tree progress panel')) 'team-leader.toml does not document the single Updated Plan panel contract.'
+$modelInstructionsPath = Join-Path $CodexHome 'state\user-level-team-mode-model-instructions.md'
+$modelInstructions = Get-Content -LiteralPath $modelInstructionsPath -Raw
+Assert-True ($modelInstructions.StartsWith('# OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED')) 'model instructions file is not marked as a managed user-level artifact.'
+Assert-True ($modelInstructions.Contains('capability_chain=') -and $modelInstructions.Contains('backend_default=') -and $modelInstructions.Contains('approval_receipt=')) 'model instructions file does not document the full Routing trace field set.'
+Assert-True (-not $modelInstructions.Contains('experts_now')) 'model instructions file still exposes the legacy experts_now routing field.'
+Assert-True (-not $modelInstructions.Contains('durable_team=<selected|not_selected>')) 'model instructions file still exposes the legacy durable_team routing example.'
+Assert-True (-not $modelInstructions.Contains('checkbox/status-list semantics')) 'model instructions file still uses ambiguous Updated Plan checkbox/status-list wording.'
+Assert-True ($modelInstructions.Contains('exactly one literal `Updated Plan` label') -and $modelInstructions.Contains('CLI/tree progress panel')) 'model instructions file does not document the single Updated Plan panel contract.'
+$generatedFilePaths = @($manifest.generated_files | ForEach-Object { [string]$_.path })
+Assert-True ($generatedFilePaths -contains $modelInstructionsPath) 'Installer manifest did not list the generated model instructions file.'
 $verifierProfile = Get-Content -LiteralPath (Join-Path $CodexHome 'agents\verifier.toml') -Raw
 Assert-True ($verifierProfile.Contains('name = "verifier"')) 'verifier.toml was not generated with the expected role name.'
 Assert-True ($verifierProfile.Contains('model = "gpt-5.4"')) 'verifier.toml did not promote the model to gpt-5.4.'
@@ -1405,6 +1422,11 @@ $routingPolicy = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bi
   '-Json'
 )
 Assert-True ($routingPolicy.automatic_routing_enabled -eq $true) 'Initial routing policy should report automatic routing enabled.'
+$routingPolicyScriptContent = Get-Content -LiteralPath (Join-Path $CodexHome 'bin\codex-routing-policy.ps1') -Raw
+Assert-True ($routingPolicyScriptContent.Contains('capability_chain=') -and $routingPolicyScriptContent.Contains('approval_receipt=')) 'Routing policy script does not emit the full Routing trace example field set.'
+Assert-True (-not $routingPolicyScriptContent.Contains('experts_now')) 'Routing policy script still emits the legacy experts_now routing field.'
+Assert-True (-not $routingPolicyScriptContent.Contains('durable_team=<selected|not_selected>')) 'Routing policy script still emits the legacy durable_team routing example.'
+Assert-True (-not $routingPolicyScriptContent.Contains('checkbox/status-list semantics')) 'Routing policy script still uses ambiguous Updated Plan checkbox/status-list wording.'
 Assert-Equal $routingPolicy.capability_switches.completed_subagent_retention 'close' 'Initial routing policy did not expose completed_subagent_retention.'
 Assert-Equal $routingPolicy.native_subagent_contract.completed_subagent_lifecycle.retention_policy 'close' 'Initial routing policy did not expose the completed-subagent lifecycle policy.'
 Assert-True ($routingPolicy.durable_team_features_available -eq $false) 'Initial routing policy should report oh-my-codex durable features disabled.'
@@ -3221,6 +3243,7 @@ $rollbackManagedFiles = @(
   (Join-Path $RollbackHome 'python\langgraph_durable_orchestrator\cli.py')
   (Join-Path $RollbackHome 'state\native-subagent-limits.json')
   (Join-Path $RollbackHome 'state\user-level-team-mode.json')
+  (Join-Path $RollbackHome 'state\user-level-team-mode-model-instructions.md')
 )
 
 foreach ($path in $rollbackManagedFiles) {

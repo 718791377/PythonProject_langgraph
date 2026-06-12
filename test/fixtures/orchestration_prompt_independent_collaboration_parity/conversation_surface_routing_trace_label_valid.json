@@ -3,6 +3,6 @@
   "case_type": "conversation_surface",
   "case_id": "conversation-surface-routing-trace-label-valid",
   "surface": "routing_trace",
-  "text": "Routing trace: phase=\u6267\u884c, experts_now=\u4e3b\u4f1a\u8bdd\u63a5\u7ba1, durable_team=\u672a\u9009\u62e9, why=threshold_not_met:single_execution_slice",
+  "text": "Routing trace: phase=execute-parallel, capability_chain=subagent:auto > omx:on > langgraph:on, backend_default=langgraph, backend_ready=true, experts=main_session_takeover, durable_workflow=not_needed, persistent_team=not_needed, main_session_escalation=not_needed, approval_timeout_risk=none, approval_receipt=none, why=threshold_not_met:single_execution_slice",
   "expected_valid": true
 }
