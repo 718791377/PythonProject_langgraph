@@ -208,6 +208,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/portable_no_backend_parallel_session_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/portable_no_backend_parallel_session_plan.zh-CN.md
 
+
+  - doc_id: conversation_surface_single_panel_runtime_alignment_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/conversation_surface_single_panel_runtime_alignment_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/conversation_surface_single_panel_runtime_alignment_plan.zh-CN.md
   - doc_id: chinese_routing_trace_conversation_surface_plan
     doc_class: implementation_plan
     status: active
