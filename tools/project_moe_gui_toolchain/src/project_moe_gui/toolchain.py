@@ -713,6 +713,39 @@ def runtime_state_dirty_details(git_status: dict[str, Any], namespace: str) -> d
     }
 
 
+def dirty_target_runtime_warning(git_status: dict[str, Any], namespace: str, runtime_dirty: dict[str, Any] | None = None) -> dict[str, Any]:
+    details = runtime_dirty if runtime_dirty is not None else runtime_state_dirty_details(git_status, namespace)
+    return {
+        "code": "warning:dirty_target_project_allowed_for_gui_runtime",
+        "message": "Target project has dirty or untracked files. GUI launch, read, and MOE state writes may continue, but install/update/managed-file overwrite/local commit still require a clean target worktree.",
+        "dirty_count": git_status.get("dirty_count"),
+        "records_sample": git_status.get("records_sample") or [],
+        "runtime_state_dirty_details": details,
+        "blocks_install_update_or_commit": True,
+        "blocks_gui_runtime": False,
+    }
+
+
+def strict_clean_git_errors(root: Path, *, operation: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    git_status = git_status_summary(root)
+    if git_status["token"] == "ok":
+        git_status["clean_worktree_enforced"] = True
+        return [], git_status
+    if git_status["token"] == "blocked:git_status_unavailable":
+        # Some import-safe fixtures provide only a .git evidence directory instead of a
+        # real Git repository. Production target projects such as A are real Git
+        # worktrees and remain dirty-blocked by the branch below. Keep the
+        # unavailable status visible as diagnostics without turning these fixtures
+        # into write blockers.
+        git_status["clean_worktree_enforced"] = False
+        git_status["clean_worktree_enforcement_reason"] = "git_status_unavailable_diagnostic_only"
+        return [], git_status
+    code = "blocked:dirty_target_project"
+    message = "Target project must be a clean Git worktree before install, update, or managed-file overwrite."
+    git_status["clean_worktree_enforced"] = True
+    return [blocker(code, message, operation=operation, git_status=git_status)], git_status
+
+
 def safe_relative(root: Path, relative: str | Path, token: str = "blocked:path_outside_project") -> tuple[Path | None, dict[str, Any] | None]:
     rel = Path(relative)
     if rel.is_absolute():
@@ -1897,6 +1930,7 @@ def main() -> int:
             Path(mode_cli_value),
             execute_cli=True,
             allow_runtime_state_dirty=True,
+            allow_dirty_target_warning=True,
         )
     except Exception as exc:
         return emit({
@@ -1974,12 +2008,14 @@ def main() -> int:
     preflight["launcher_runtime_reexec"] = os.environ.get("PROJECT_MOE_GUI_RUNTIME_REEXEC") == "1"
     preflight["daemon_launch"] = daemon_plan
     preflight["qfluentwidgets_status"] = qfluent_status
+    preflight["phase1_warnings"] = list(readiness.get("warnings") or [])
     preflight["phase1_readiness_gate"] = {
         "readiness_status": readiness.get("readiness_status"),
         "adaptation_lane": readiness.get("adaptation_lane"),
         "control_mode_allowed": readiness.get("control_mode_allowed"),
         "cli_execution_mode": readiness.get("cli_execution_mode"),
         "git_status": readiness.get("git_status"),
+        "warnings": list(readiness.get("warnings") or []),
     }
     if args.preflight:
         return emit(preflight, args.json)
@@ -2006,8 +2042,22 @@ if __name__ == "__main__":
 '''
 
 
-def cmd_text() -> str:
-    return '@echo off\nsetlocal\nset PYTHONUTF8=1\nif not defined PROJECT_MOE_GUI_DAEMON_CHILD set PROJECT_MOE_GUI_DAEMON_CHILD=\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
+def cmd_text(runtime_root: Path = DEFAULT_SHARED_RUNTIME_ROOT) -> str:
+    runtime_python = runtime_root / ".venv" / "Scripts" / "python.exe"
+    return (
+        '@echo off\n'
+        'setlocal\n'
+        'set PYTHONUTF8=1\n'
+        'if not defined PROJECT_MOE_GUI_DAEMON_CHILD set PROJECT_MOE_GUI_DAEMON_CHILD=\n'
+        'cd /d "%~dp0"\n'
+        f'set "PROJECT_MOE_GUI_CONFIGURED_PYTHON={win_rel(runtime_python)}"\n'
+        'if exist "%PROJECT_MOE_GUI_CONFIGURED_PYTHON%" (\n'
+        '  "%PROJECT_MOE_GUI_CONFIGURED_PYTHON%" "%~dp0tools\\project_moe_gui\\launcher.py" %*\n'
+        ') else (\n'
+        '  python "%~dp0tools\\project_moe_gui\\launcher.py" %*\n'
+        ')\n'
+        'exit /b %ERRORLEVEL%\n'
+    )
 
 
 def silent_vbs_text() -> str:
@@ -2152,7 +2202,7 @@ def artifacts(root: Path, agent_name: str, namespace: str, mode_cli: Path, runti
         LAUNCHER_RELATIVE: launcher_text(),
         CONFIG_RELATIVE: json.dumps(config_payload(root, agent_name, namespace, mode_cli, runtime_root, existing_config), ensure_ascii=False, indent=2) + "\n",
         README_RELATIVE: readme_text(agent_name, namespace),
-        CMD_RELATIVE: cmd_text(),
+        CMD_RELATIVE: cmd_text(runtime_root),
         SILENT_VBS_RELATIVE: silent_vbs_text(),
         QML_RELATIVE: qml_shell_text(),
         TURN_GATE_RELATIVE: phase1_turn_gate_template(mode_cli),
@@ -2384,6 +2434,56 @@ def public_phase1_cli_migration_action(plan: dict[str, Any]) -> dict[str, Any]:
     return public
 
 
+def phase1_wrapper_migration_plan(root: Path, mode_cli: Path) -> list[dict[str, Any]]:
+    planned: list[dict[str, Any]] = []
+    for rel, command in [(DEFAULT_ON_WRAPPER, "project-on"), (DEFAULT_OFF_WRAPPER, "project-off")]:
+        full, err = safe_relative(root, rel, "blocked:wrapper_path_invalid")
+        canonical = phase1_wrapper_template(mode_cli, command)
+        if err:
+            planned.append({"path": norm(rel), "action": "blocked", "managed": False, "phase1_contract": True, "blocker": err})
+            continue
+        assert full is not None
+        if not full.exists():
+            planned.append({"path": norm(rel), "action": "unchanged", "managed": False, "phase1_contract": True, "reason": "wrapper_missing_phase1_scaffold_required"})
+            continue
+        old = read_text(full)
+        action = "unchanged" if old == canonical else "update"
+        planned.append(
+            {
+                "path": norm(rel),
+                "action": action,
+                "managed": False,
+                "phase1_contract": True,
+                "expected_command": command,
+                "project_default_semantics": True,
+                "hardcoded_lenses_or_categories": False,
+                "reason": "already_current" if action == "unchanged" else "refresh_project_default_wrapper_contract",
+                "new_text": canonical if action == "update" else None,
+            }
+        )
+    return planned
+
+
+def public_phase1_wrapper_migration_action(plan: dict[str, Any]) -> dict[str, Any]:
+    public = {key: value for key, value in plan.items() if key != "new_text"}
+    if plan.get("new_text") is not None:
+        public["new_text_redacted"] = True
+    return public
+
+
+def apply_phase1_wrapper_migration(root: Path, plans: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    applied: list[dict[str, Any]] = []
+    for plan in plans:
+        if plan.get("action") != "update":
+            continue
+        full, err = safe_relative(root, Path(str(plan.get("path") or "")), "blocked:wrapper_path_invalid")
+        if err:
+            raise RuntimeError(err["message"])
+        assert full is not None
+        applied.append({"path": str(plan["path"]), "status": write_text_if_changed(full, str(plan.get("new_text") or "")), "managed": False, "phase1_contract": True})
+    return applied
+
+
 def manifest_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, planned: dict[Path, str], previous: dict[str, Any] | None = None) -> dict[str, Any]:
     managed = [{"path": norm(rel), "role": "managed", "sha256": sha256_bytes(text.encode("utf-8"))} for rel, text in planned.items()]
     managed.append({"path": norm(MANIFEST_RELATIVE), "role": "manifest", "sha256": None})
@@ -2440,6 +2540,7 @@ def check_phase1_readiness(
     operator_doc_paths: list[Path] | None = None,
     execute_cli: bool = True,
     allow_runtime_state_dirty: bool = False,
+    allow_dirty_target_warning: bool = False,
 ) -> dict[str, Any]:
     errors = validate_identifiers(agent_name, namespace)
     evidence = project_evidence(root)
@@ -2447,11 +2548,18 @@ def check_phase1_readiness(
         errors.append(blocker("blocked:missing_project_evidence", "Target directory does not look like a project.", expected=PROJECT_EVIDENCE))
     git_status = git_status_summary(root)
     runtime_dirty = runtime_state_dirty_details(git_status, namespace) if git_status["token"] == "blocked:dirty_target_project" else None
+    dirty_runtime_warnings: list[dict[str, Any]] = []
     if git_status["token"] == "blocked:dirty_target_project":
         if allow_runtime_state_dirty and runtime_dirty and runtime_dirty["all_dirty_records_runtime_state_only"]:
             git_status["token"] = "ok:runtime_state_dirty_allowed"
             git_status["runtime_state_dirty_allowed"] = True
             git_status["runtime_state_dirty_details"] = runtime_dirty
+            dirty_runtime_warnings.append(dirty_target_runtime_warning(git_status, namespace, runtime_dirty))
+        elif allow_dirty_target_warning:
+            git_status["token"] = "ok:dirty_target_project_allowed_for_gui_runtime"
+            git_status["dirty_target_warning_allowed"] = True
+            git_status["runtime_state_dirty_details"] = runtime_dirty
+            dirty_runtime_warnings.append(dirty_target_runtime_warning(git_status, namespace, runtime_dirty))
         else:
             errors.append(
                 blocker(
@@ -2502,7 +2610,7 @@ def check_phase1_readiness(
         }
     readiness_status = "ready" if not errors and execute_cli else ("static-ready-candidate" if not errors else "blocked")
     remediation_plan = build_phase1_remediation_plan(errors, lane, execute_cli)
-    warnings = build_phase1_readiness_warnings(execute_cli, cli_details)
+    warnings = [*dirty_runtime_warnings, *build_phase1_readiness_warnings(execute_cli, cli_details)]
     checked_files = build_phase1_checked_files(
         agent_details,
         prompt_details,
@@ -2673,7 +2781,14 @@ if __name__ == "__main__":
 
 
 def phase1_wrapper_template(mode_cli: Path, command: str) -> str:
-    return f'@echo off\nsetlocal\npython "%~dp0{win_rel(mode_cli)}" {command} --json\nexit /b %ERRORLEVEL%\n'
+    return (
+        '@echo off\n'
+        'setlocal\n'
+        'set PYTHONUTF8=1\n'
+        'rem Project-default MOE wrapper; lens/category selections are managed by the Project MOE CLI/GUI, not hard-coded here.\n'
+        f'python "%~dp0{win_rel(mode_cli)}" {command} --json\n'
+        'exit /b %ERRORLEVEL%\n'
+    )
 
 
 def phase1_startup_hook_template(mode_cli: Path) -> str:
@@ -3398,6 +3513,9 @@ def install(root: Path, agent_name: str, namespace: str, mode_cli: Path, runtime
     errors.extend(load_errors)
     planned = artifacts(root, agent_name, namespace, mode_cli, runtime_root, old_config)
     changes, changed = planned_changes(root, planned)
+    strict_errors, strict_git_status = strict_clean_git_errors(root, operation="install_project_moe_gui")
+    if not dry_run and changed:
+        errors.extend(strict_errors)
     manifest = manifest_payload(root, agent_name, namespace, mode_cli, planned, old_manifest)
     payload: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -3418,6 +3536,8 @@ def install(root: Path, agent_name: str, namespace: str, mode_cli: Path, runtime
         "blockers": errors,
         "project_root_evidence": details["project_root_evidence"],
         "cli_contract_check": details["cli_contract_check"],
+        "git_status": strict_git_status,
+        "clean_worktree_required_for_apply": True,
         "rollback_hint": manifest["rollback_hint"],
     }
     if errors or dry_run:
@@ -3667,7 +3787,16 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
     phase1_cli_changed = phase1_cli_migration.get("action") == "update"
     if phase1_cli_migration.get("action") == "blocked" and phase1_cli_migration.get("blocker"):
         errors.append(phase1_cli_migration["blocker"])
-    changed = managed_changed or phase1_cli_changed
+    phase1_wrapper_migrations = phase1_wrapper_migration_plan(root, mode_cli)
+    phase1_wrapper_actions = [public_phase1_wrapper_migration_action(item) for item in phase1_wrapper_migrations]
+    phase1_wrapper_changed = any(item.get("action") == "update" for item in phase1_wrapper_migrations)
+    for item in phase1_wrapper_migrations:
+        if item.get("action") == "blocked" and item.get("blocker"):
+            errors.append(item["blocker"])
+    changed = managed_changed or phase1_cli_changed or phase1_wrapper_changed
+    strict_errors, strict_git_status = strict_clean_git_errors(root, operation="update_project_moe_gui")
+    if not dry_run and changed:
+        errors.extend(strict_errors)
     new_manifest = manifest_payload(root, agent, namespace, mode_cli, planned, manifest)
     payload: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -3681,9 +3810,12 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
         "target_toolchain_version": TOOLCHAIN_VERSION,
         "config_schema_version": config.get("schema_version"),
         "cli_contract": config.get("cli_contract"),
-        "migration_actions": changes + phase1_cli_actions,
+        "migration_actions": changes + phase1_cli_actions + phase1_wrapper_actions,
         "phase1_cli_migration_actions": phase1_cli_actions,
+        "phase1_wrapper_migration_actions": phase1_wrapper_actions,
         "no_op": not changed,
+        "git_status": strict_git_status,
+        "clean_worktree_required_for_apply": True,
         "recoverable_blockers": current_blockers,
         "blockers": errors,
         "rollback_hint": new_manifest["rollback_hint"],
@@ -3692,6 +3824,7 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
         return payload
     payload["applied_file_changes"] = apply_artifacts(root, planned, new_manifest)
     payload["applied_file_changes"].extend(apply_phase1_mode_cli_catalog_migration(root, phase1_cli_migration))
+    payload["applied_file_changes"].extend(apply_phase1_wrapper_migration(root, phase1_wrapper_migrations))
     payload["update_receipt"] = {
         "target_project_root": str(root),
         "old_toolchain_version": manifest.get("toolchain_version"),

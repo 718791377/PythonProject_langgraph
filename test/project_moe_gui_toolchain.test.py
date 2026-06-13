@@ -743,12 +743,14 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         )
 
     def add_phase1_wrappers_and_startup_hook(self, root: Path) -> None:
+        from project_moe_gui.toolchain import phase1_wrapper_template
+
         (root / "thesis-moe-on.cmd").write_text(
-            '@echo off\npython "%~dp0tools\\thesis_moe_mode.py" project-on --json\nexit /b %ERRORLEVEL%\n',
+            phase1_wrapper_template(Path("tools/thesis_moe_mode.py"), "project-on"),
             encoding="utf-8",
         )
         (root / "thesis-moe-off.cmd").write_text(
-            '@echo off\npython "%~dp0tools\\thesis_moe_mode.py" project-off --json\nexit /b %ERRORLEVEL%\n',
+            phase1_wrapper_template(Path("tools/thesis_moe_mode.py"), "project-off"),
             encoding="utf-8",
         )
         (root / "AGENTS.md").write_text(
@@ -1265,6 +1267,67 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertFalse((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
             self.assertFalse((project / "MOE.md").exists())
             self.assertFalse((project / "tools" / "thesis_moe_mode.py").exists())
+
+    def test_install_apply_blocks_dirty_real_git_target_without_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "install-dirty-real-git"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="install-dirty-real-git", session_id="session-install-dirty")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            (project / "uncommitted.txt").write_text("dirty\n", encoding="utf-8")
+
+            _, payload = self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            self.assertEqual(payload["token"], "blocked:dirty_target_project", payload)
+            self.assertTrue(payload["clean_worktree_required_for_apply"])
+            self.assertTrue(payload["git_status"]["dirty"])
+            self.assertFalse((project / "tools" / "project_moe_gui" / "launcher.py").exists())
+
+    def test_installed_launcher_allows_unrelated_dirty_target_as_warning_with_view_model(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "launcher-unrelated-dirty"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="launcher-unrelated-dirty", session_id="session-unrelated-dirty")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
+            (project / "operator-note.txt").write_text("unrelated dirty note\n", encoding="utf-8")
+
+            preflight = self.run_installed_launcher(project, "--preflight")
+
+            self.assertIn(preflight["token"], GUI_PREFLIGHT_ALLOWED_TOKENS, preflight)
+            self.assertIn("view_model", preflight)
+            gate = preflight["phase1_readiness_gate"]
+            self.assertEqual(gate["readiness_status"], "ready")
+            self.assertEqual(gate["git_status"]["token"], "ok:dirty_target_project_allowed_for_gui_runtime")
+            warning_codes = [item["code"] for item in preflight.get("phase1_warnings", [])]
+            self.assertIn("warning:dirty_target_project_allowed_for_gui_runtime", warning_codes)
+
+    def test_thesis_wrappers_remain_project_default_without_hardcoded_lenses(self) -> None:
+        from project_moe_gui.toolchain import phase1_wrapper_template
+
+        on_text = phase1_wrapper_template(Path("tools/thesis_moe_mode.py"), "project-on")
+        off_text = phase1_wrapper_template(Path("tools/thesis_moe_mode.py"), "project-off")
+
+        self.assertIn("project-on --json", on_text)
+        self.assertIn("project-off --json", off_text)
+        for wrapper_text in [on_text, off_text]:
+            self.assertIn("Project-default MOE wrapper", wrapper_text)
+            self.assertNotIn("--lens", wrapper_text)
+            self.assertNotIn("--category", wrapper_text)
+            self.assertNotIn("feynman_learning", wrapper_text)
+            self.assertNotIn("socratic_cbt", wrapper_text)
 
     def test_phase1_bootstrap_scaffold_plan_preserves_existing_private_surfaces(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -4200,6 +4263,8 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
             self.make_stateful_project(project, project_label="fixture-invalid", session_id="session-current")
             self.add_phase1_wrappers_and_startup_hook(project)
             self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
             sessions_root = project / ".omx" / "state" / "thesis_moe" / "sessions"
             invalid_path = sessions_root / "session-invalid.json"
             invalid_path.write_text("{invalid-json", encoding="utf-8")
@@ -4208,8 +4273,6 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
                 json.dumps({"session_id": "session-legacy", "enabled": False, "token": "ok"}, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
-            self.install_fixture_gui(project)
-            self.git_commit_all(project)
 
             project_on = self.run_toolchain_write(project, "project-on")
             self.assertTrue(project_on["ok"], project_on)
