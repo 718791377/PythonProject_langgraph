@@ -600,6 +600,13 @@ documents:
     zh_cn_path: docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md
 
 
+
+  - doc_id: recent_manual_workflow_packaging_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/recent_manual_workflow_packaging_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/recent_manual_workflow_packaging_plan.zh-CN.md
+
   - doc_id: general_templates_cross_project_reuse_upgrade_plan
     doc_class: implementation_plan
     status: active
