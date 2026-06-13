@@ -13,51 +13,57 @@ related_docs:
 
 ## Summary
 
-This plan repairs the remaining target-project launcher failure where newly added Codex sessions or unrelated dirty target worktree files can make `project-moe-gui.cmd` and `project-moe-gui-silent.vbs` exit before the GUI becomes visible. It also refreshes `thesis-moe-on.cmd` and `thesis-moe-off.cmd` to match the current Project MOE lens contract.
+This plan repairs the target-project launcher failure where newly added Codex sessions or unrelated dirty target worktree files could make `project-moe-gui.cmd` and `project-moe-gui-silent.vbs` exit before the GUI became visible. It also refreshes `thesis-moe-on.cmd` and `thesis-moe-off.cmd` so they match the current Project MOE lens contract.
 
-Remote publication is out of scope unless a later user message explicitly names GitLab or GitHub publication.
+Remote publication remains out of scope unless a later user message explicitly names GitLab or GitHub publication.
 
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
 
 - Source repository B is `D:\PythonProject_langgraph`, which owns the Project MOE GUI toolchain.
-- Target project A is `D:\PythonProject_paper_suggest`; its primary directory is currently on dirty branch `implement-r6-live-runtime`, so it must not be used as the final install or commit surface for this repair.
-- A clean A-project `main` worktree is required for the final managed-artifact install, validation, and local commit.
-- Existing A launchers can still depend on ambient `python`; the repaired launch path should prefer the configured shared PySide6 runtime Python.
-- Existing preflight can treat `blocked:dirty_target_project` as fatal and return no usable `view_model`; ordinary GUI launch/read/write must instead receive a usable view model plus diagnostics.
-- User decision for this slice: unrelated dirty target worktree state is allowed for ordinary GUI read/write only as diagnostics or warnings. Install, update, managed-file overwrite, and local commit still require a clean A worktree.
-- User decision for wrappers: `thesis-moe-on.cmd` and `thesis-moe-off.cmd` remain project-default MOE on/off wrappers and must not hard-code an explicit lens or category list.
+- The governance plan package is present on B local `main` at commit `5bfec68`.
+- The runtime repair package is present on B local `main` at commit `5d2deff` and upgraded Project MOE GUI from `0.2.44` to `0.2.45`.
+- The local rollback point for the runtime integration is `refs/backup/local-main/20260613-154650-before-fix-moe-gui-dirty-launch-wrapper-runtime`.
+- The runtime feature worktree and branch `fix-moe-gui-dirty-launch-wrapper-runtime` were cleaned after local-main integration.
+- Target project A is `D:\PythonProject_paper_suggest`; its managed Project MOE GUI artifacts were installed from B local `main` and committed on A local `main` at `a22a13b`.
+- The earlier dirty-target concern was handled by not using unrelated dirty target work as an install/commit surface. Ordinary GUI launch, preflight, read, and MOE write operations now downgrade unrelated dirty target state to diagnostics or warnings; install/update/managed overwrite still require a clean target worktree.
+- `project-moe-gui.cmd --preflight --json` in A returns `ok=true`, a usable `view_model`, and no blockers.
+- `thesis-moe-off.cmd` and `thesis-moe-on.cmd` were live-verified in A as project-default MOE off/on wrappers; the final project-default MOE state was restored to `enabled`.
+- A follow-up guard false positive was found during this status closeout: ignored `.tmp/skills-usage-audit-*.json` runtime outputs could be scanned by the Spec Kit authority guard. That guard boundary is fixed in this closeout so ignored runtime/audit output does not block unrelated commits.
+- No GitLab or GitHub remote publication was authorized or performed for this plan.
 
 <!-- CURRENT_STATUS_END -->
 
 ## Implementation Changes
 
-- In B, keep install/update safety strict, but downgrade unrelated dirty target state from a GUI-operation blocker to a diagnostic warning for preflight, session discovery, and MOE state read/write.
-- In B, ensure GUI preflight returns a usable `view_model` whenever the GUI runtime itself can run, even if unrelated target files are dirty.
-- In B, allow MOE state writes only through the target Phase 1 CLI and only for managed MOE state surfaces; unrelated dirty files must not be modified or cleaned.
-- In B, update launcher generation so `project-moe-gui.cmd` prefers the configured shared runtime Python and `project-moe-gui-silent.vbs` delegates to that repaired command while preserving diagnostics.
-- In B, update wrapper generation so `thesis-moe-on.cmd` and `thesis-moe-off.cmd` call the current Phase 1 CLI with project-default on/off semantics.
-- In A, install only managed Project MOE GUI artifacts into a clean A `main` worktree; do not install PySide6 into A and do not copy private `MOE.md` content.
+- In B, install/update safety remains strict, while unrelated dirty target state is downgraded from a GUI-operation blocker to a diagnostic warning for preflight, session discovery, and MOE state read/write.
+- In B, GUI preflight now returns a usable `view_model` whenever the GUI runtime itself can run, even if unrelated target files are dirty.
+- In B, MOE state writes still go through the target Phase 1 CLI and are limited to managed MOE state surfaces; unrelated dirty files are not modified or cleaned.
+- In B, launcher generation now makes `project-moe-gui.cmd` prefer the configured shared PySide6 runtime Python, while `project-moe-gui-silent.vbs` delegates to the repaired command and preserves diagnostics.
+- In B, wrapper generation now makes `thesis-moe-on.cmd` and `thesis-moe-off.cmd` use current Phase 1 CLI project-default on/off semantics without hard-coded explicit lens or category lists.
+- In B, the Spec Kit authority guard now excludes `.tmp/` runtime scratch output, matching the existing Git ignore boundary and preventing ignored skills-audit JSON from becoming commit-blocking policy evidence.
+- In A, only managed Project MOE GUI artifacts were installed; PySide6 was not installed into A and private `MOE.md` content was not copied.
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
 
-- [x] Confirm current A primary directory is dirty and is not the final commit surface for this repair.
+- [x] Confirm the dirty-target concern and avoid using unrelated dirty target work as the final install or commit surface.
 - [x] Freeze dirty-target and wrapper decisions in this plan.
-- [ ] Merge this plan into B local `main`.
-- [ ] Create a B runtime feature worktree with a receipt and claim.
-- [ ] Bump the Project MOE GUI toolchain patch version.
-- [ ] Change dirty-target ordinary GUI preflight/read/write handling from fatal blocker to warning.
-- [ ] Add or update B tests for dirty-target preflight, dirty-target MOE state write, launcher Python selection, and project-default wrappers.
-- [ ] Run B targeted tests, precommit update/archive review, local gate, and local MR review.
-- [ ] Merge B runtime fix into local `main` and clean its feature worktree and branch.
-- [ ] Create or reuse a clean A-project `main` worktree outside the dirty A primary directory.
-- [ ] Install refreshed managed Project MOE GUI artifacts from B local `main` into the clean A worktree.
-- [ ] Verify A preflight, newly added session discovery, no-argument launch path, silent VBS contract, and thesis on/off wrappers.
-- [ ] Commit and merge A managed-artifact refresh into A local `main`.
-- [ ] Leave the dirty A primary branch untouched and report it as separate follow-up cleanup.
+- [x] Merge this plan into B local `main`.
+- [x] Create a B runtime feature worktree with a receipt and claim.
+- [x] Bump the Project MOE GUI toolchain patch version.
+- [x] Change dirty-target ordinary GUI preflight/read/write handling from fatal blocker to warning.
+- [x] Add or update B tests for dirty-target preflight, dirty-target MOE state write, launcher Python selection, and project-default wrappers.
+- [x] Run B targeted tests, precommit update/archive review, OpenSpec guard, local MR review, and follow-up split verification.
+- [x] Merge B runtime fix into local `main` and clean its feature worktree and branch.
+- [x] Use a clean A-project `main` surface for managed-artifact install.
+- [x] Install refreshed managed Project MOE GUI artifacts from B local `main` into A.
+- [x] Verify A preflight, newly added session discovery path, no-argument launch contract, silent VBS delegation contract, and thesis on/off wrappers.
+- [x] Commit the A managed-artifact refresh into A local `main`.
+- [x] Leave unrelated dirty-target work outside this slice and report it as a separate cleanup concern when present.
+- [x] Fix the closeout guard false positive where ignored `.tmp` skills-audit JSON could block an unrelated local commit.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -65,10 +71,25 @@ Remote publication is out of scope unless a later user message explicitly names 
 
 <!-- EVIDENCE_INDEX_START -->
 
-- A status evidence: `D:\PythonProject_paper_suggest` primary directory is on dirty branch `implement-r6-live-runtime` and is not the final commit surface.
-- B source surfaces for runtime follow-up: `tools/project_moe_gui_toolchain/src/project_moe_gui/toolchain.py`, `daemon.py`, `gui_shell.py`, and the Project MOE installer/updater scripts.
-- A managed launcher surfaces for follow-up: `project-moe-gui.cmd`, `project-moe-gui-silent.vbs`, `thesis-moe-on.cmd`, `thesis-moe-off.cmd`, and `tools/project_moe_gui/`.
-- Expected verification evidence: dirty target preflight returns a usable view model with diagnostics; wrapper commands preserve project-default semantics; final A install is committed from a clean A `main` worktree.
+- B governance package: `5bfec68`.
+- B runtime package: `5d2deff`.
+- B rollback ref: `refs/backup/local-main/20260613-154650-before-fix-moe-gui-dirty-launch-wrapper-runtime`.
+- B completed claim: `.omx/session-claims/completed/fix-moe-gui-dirty-launch-wrapper-runtime.json`.
+- B source surfaces changed for runtime package: `tools/project_moe_gui_toolchain/src/project_moe_gui/__init__.py`, `tools/project_moe_gui_toolchain/src/project_moe_gui/toolchain.py`, and `test/project_moe_gui_toolchain.test.py`.
+- B source surfaces changed for closeout guard package: `tools/check_spec_kit_authority_guard.py`, `test/spec_kit_authority_guard.test.py`, and this plan pair.
+- B targeted tests passed for dirty-target preflight, dirty-target managed namespace write allowance, runtime Python launcher selection, and project-default thesis wrappers.
+- B full Python unittest evidence passed with 814 tests for the runtime package.
+- B OpenSpec guard evidence passed with 66/66 checks for the runtime package.
+- B local MR review evidence passed for the runtime package.
+- B Node/PowerShell manifest check passed with 0 registered files for the runtime package.
+- B `git diff --check` evidence passed for the runtime package.
+- One earlier full `tools/ci/local_gate.ps1` wrapper run hit a transient order-sensitive failure and must not be cited as a green run; this slice is closed with the fresh split verification evidence above.
+- A managed-artifact refresh commit: `a22a13b`.
+- A update dry-run after install returned `status=up_to_date`, `no_op=true`, and no blockers.
+- A `project-moe-gui.cmd --preflight --json` returned `ok=true`, a usable `view_model`, and no blockers.
+- A `thesis-moe-off.cmd` and `thesis-moe-on.cmd` live verification switched project-default MOE off and back on; final state restored to `enabled`.
+- A `project-status --json` returned `ok=true`, `enabled=true`, `effective_enabled=true`, branch `main`, and five valid registered sessions.
+- Closeout guard evidence: `python test/spec_kit_authority_guard.test.py` covers `.tmp/skills-usage-audit-7d.json` exclusion, and `python tools/check_spec_kit_authority_guard.py --root . --json` reports zero findings even when ignored `.tmp` audit output exists.
 - Remote publication evidence: not authorized and not performed.
 
 <!-- EVIDENCE_INDEX_END -->
@@ -77,22 +98,24 @@ Remote publication is out of scope unless a later user message explicitly names 
 
 B repository:
 
-- `python test/project_moe_gui_toolchain.test.py` verifies generated launcher/wrapper behavior and dirty-target handling.
-- A dirty target fixture must return usable GUI preflight data instead of a no-view-model fatal result.
-- A dirty target write fixture must only update MOE state through the Phase 1 CLI and must not mutate unrelated dirty files.
+- `python test/project_moe_gui_toolchain.test.py` must cover generated launcher/wrapper behavior and dirty-target handling.
+- Dirty target fixtures must return usable GUI preflight data instead of a no-view-model fatal result.
+- Dirty target write fixtures must only update MOE state through the Phase 1 CLI and must not mutate unrelated dirty files.
 - Launcher/template tests must confirm shared-runtime Python selection and hidden-launch diagnostics.
 - Wrapper tests must confirm `thesis-moe-on/off` use project-default semantics and do not bake explicit lens/category lists.
-- `python tools/check_precommit_update_archive.py --root . --json`, `tools/ci/local_gate.ps1`, and `tools/ci/local_mr_review.ps1` must pass before local integration.
+- `python test/spec_kit_authority_guard.test.py` must cover `.tmp/` scratch output exclusion from Spec Kit authority scans.
+- Final status updates must keep passing `python tools/check_precommit_update_archive.py --root . --json`, `python tools/check_implementation_plan_rules.py --root . --json`, `python tools/check_document_pair_policy.py --root . --json`, `python tools/check_spec_kit_authority_guard.py --root . --json`, and `git diff --check`.
 
 A clean main worktree:
 
-- `project-moe-gui.cmd --preflight --json` returns `ok` or a warning-bearing result with a usable `view_model`; `blocked:dirty_target_project` must not be fatal for ordinary GUI launch.
+- `project-moe-gui.cmd --preflight --json` must return `ok=true` or a warning-bearing result with a usable `view_model`; `blocked:dirty_target_project` must not be fatal for ordinary GUI launch.
 - Adding or discovering a new Codex session must not make `project-moe-gui.cmd` or `project-moe-gui-silent.vbs` flash-exit without diagnostics.
-- `thesis-moe-on.cmd` and `thesis-moe-off.cmd` return JSON and switch the project default MOE state.
+- `thesis-moe-on.cmd` and `thesis-moe-off.cmd` must return JSON and switch the project default MOE state.
 - A simulated unrelated dirty file is allowed for ordinary GUI preflight/read/write diagnostics, while install/update remains clean-worktree-only.
 
 ## Assumptions
 
-- Dirty work in the A primary directory is a separate unfinished A-project change and will not be cleaned by this slice.
 - Dirty-target allowance is limited to ordinary Project MOE GUI operation; it does not authorize install/update overwrites, unrelated-file cleanup, or committing from a dirty worktree.
-- Existing MOE lens IDs and category IDs are preserved.
+- Existing MOE lens IDs and category IDs are preserved unless a later lens taxonomy plan explicitly changes them.
+- `.tmp/` is scratch output, not an authority surface or durable evidence source for committed policy checks.
+- Remote publication is still a separate explicit gate.

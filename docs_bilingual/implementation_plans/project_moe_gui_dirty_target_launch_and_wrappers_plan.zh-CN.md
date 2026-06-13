@@ -22,13 +22,16 @@ related_docs:
 
 <!-- CURRENT_STATUS_START -->
 
-- B 源仓库是 `D:\PythonProject_langgraph`，负责维护 Project MOE GUI toolchain。
-- A 目标项目是 `D:\PythonProject_paper_suggest`；当前主目录位于 dirty 分支 `implement-r6-live-runtime`，因此不能作为本次最终安装或提交面。
-- 本次 A 受管产物刷新必须使用干净的 A 项目 `main` worktree 完成最终安装、验证与本地提交。
-- 现有 A launcher 仍可能依赖 ambient `python`；修复后的启动路径应优先使用配置的共享 PySide6 runtime Python。
-- 现有 preflight 可能把 `blocked:dirty_target_project` 当成 fatal，并返回没有可用 `view_model` 的结果；普通 GUI 启动、读取与写入应返回可用 view model 和诊断信息。
-- 本切片用户决策：无关 dirty target 状态只允许作为普通 GUI 读写的 diagnostics 或 warnings；安装、更新、受管文件覆盖和本地提交仍必须使用干净 A worktree。
-- 本切片用户决策：`thesis-moe-on.cmd` 与 `thesis-moe-off.cmd` 保持项目默认 MOE 开关语义，不写死显式 lens 或 category 列表。
+- Closeout update: B governance plan package is on local `main` at `5bfec68`.
+- Closeout update: B runtime repair package is on local `main` at `5d2deff`; Project MOE GUI is upgraded from `0.2.44` to `0.2.45`.
+- Closeout update: B rollback ref is `refs/backup/local-main/20260613-154650-before-fix-moe-gui-dirty-launch-wrapper-runtime`.
+- Closeout update: runtime feature worktree/branch `fix-moe-gui-dirty-launch-wrapper-runtime` has been cleaned after local-main integration.
+- Closeout update: A managed Project MOE GUI artifacts are installed and committed on A local `main` at `a22a13b`.
+- Closeout update: A `project-moe-gui.cmd --preflight --json` returns `ok=true`, a usable `view_model`, and no blockers.
+- Closeout update: A `project-status --json` returns `ok=true`, `enabled=true`, `effective_enabled=true`, branch `main`, and 5 valid registered sessions.
+- Closeout update: `thesis-moe-off.cmd` and `thesis-moe-on.cmd` were live-verified as project-default off/on wrappers; final project-default MOE state was restored to `enabled`.
+- Closeout update: Spec Kit authority guard now excludes ignored `.tmp/` scratch output, so `.tmp/skills-usage-audit-*.json` does not block unrelated local commits.
+- Remote publication remains unauthorized and not performed.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -47,18 +50,19 @@ related_docs:
 
 - [x] 确认当前 A 主目录 dirty，不能作为本次最终提交面。
 - [x] 在本方案中冻结 dirty-target 与 wrapper 决策。
-- [ ] 合入本方案到 B 本地 `main`。
-- [ ] 创建 B runtime feature worktree，并补 receipt 与 claim。
-- [ ] 提升 Project MOE GUI toolchain patch 版本。
-- [ ] 将 dirty-target 下普通 GUI preflight、read、write 从 fatal blocker 改成 warning。
-- [ ] 补充或更新 B 测试：dirty-target preflight、dirty-target MOE 状态写入、launcher Python 选择、project-default wrappers。
-- [ ] 运行 B 定向测试、precommit update/archive、local gate、local MR review。
-- [ ] 合入 B runtime 修复到本地 `main`，并清理 feature worktree 与 branch。
-- [ ] 创建或复用 A 项目的干净 `main` worktree，绕开 dirty A 主目录。
-- [ ] 从 B 本地 `main` 安装刷新后的 Project MOE GUI 受管产物到干净 A worktree。
-- [ ] 验证 A preflight、新增 session 发现、无参启动路径、silent VBS 契约、thesis on/off wrappers。
-- [ ] 提交并合入 A 受管产物刷新到 A 本地 `main`。
-- [ ] 保持 dirty A 主目录不被本切片修改，并把它作为单独后续清理项汇报。
+- [x] 合入本方案到 B 本地 `main`。
+- [x] 创建 B runtime feature worktree，并补 receipt 与 claim。
+- [x] 提升 Project MOE GUI toolchain patch 版本。
+- [x] 将 dirty-target 下普通 GUI preflight、read、write 从 fatal blocker 改成 warning。
+- [x] 补充或更新 B 测试：dirty-target preflight、dirty-target MOE 状态写入、launcher Python 选择、project-default wrappers。
+- [x] 运行 B 定向测试、precommit update/archive、local gate、local MR review。
+- [x] 合入 B runtime 修复到本地 `main`，并清理 feature worktree 与 branch。
+- [x] 创建或复用 A 项目的干净 `main` worktree，绕开 dirty A 主目录。
+- [x] 从 B 本地 `main` 安装刷新后的 Project MOE GUI 受管产物到干净 A worktree。
+- [x] 验证 A preflight、新增 session 发现、无参启动路径、silent VBS 契约、thesis on/off wrappers。
+- [x] 提交并合入 A 受管产物刷新到 A 本地 `main`。
+- [x] 保持 dirty A 主目录不被本切片修改，并把它作为单独后续清理项汇报。
+- [x] Close the Spec Kit guard false positive: ignored `.tmp` skills-audit JSON must not block unrelated local commits.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -66,11 +70,24 @@ related_docs:
 
 <!-- EVIDENCE_INDEX_START -->
 
-- A 状态证据：`D:\PythonProject_paper_suggest` 主目录位于 dirty 分支 `implement-r6-live-runtime`，不是本次最终提交面。
-- B runtime 后续源码面：`tools/project_moe_gui_toolchain/src/project_moe_gui/toolchain.py`、`daemon.py`、`gui_shell.py` 以及 Project MOE installer 与 updater 脚本。
-- A 受管 launcher 后续面：`project-moe-gui.cmd`、`project-moe-gui-silent.vbs`、`thesis-moe-on.cmd`、`thesis-moe-off.cmd` 与 `tools/project_moe_gui/`。
-- 预期验证证据：dirty target preflight 返回带诊断的可用 view model；wrapper 命令保留项目默认语义；最终 A 安装从干净 A `main` worktree 提交。
-- 远端发布证据：未授权，未执行。
+- B governance package: `5bfec68`.
+- B runtime package: `5d2deff`.
+- B rollback ref: `refs/backup/local-main/20260613-154650-before-fix-moe-gui-dirty-launch-wrapper-runtime`.
+- B completed claim: `.omx/session-claims/completed/fix-moe-gui-dirty-launch-wrapper-runtime.json`.
+- B runtime source surfaces: `tools/project_moe_gui_toolchain/src/project_moe_gui/__init__.py`, `tools/project_moe_gui_toolchain/src/project_moe_gui/toolchain.py`, `test/project_moe_gui_toolchain.test.py`.
+- B closeout guard surfaces: `tools/check_spec_kit_authority_guard.py`, `test/spec_kit_authority_guard.test.py`, and this bilingual plan pair.
+- B runtime targeted tests passed for dirty-target preflight, dirty-target managed namespace write allowance, runtime Python launcher selection, and project-default thesis wrappers.
+- B runtime full Python unittest evidence passed with 814 tests.
+- B runtime OpenSpec guard evidence passed with 66/66 checks.
+- B runtime local MR review evidence passed.
+- Earlier full `tools/ci/local_gate.ps1` wrapper run hit a transient order-sensitive failure and must not be cited as green; closeout uses fresh split verification evidence.
+- A managed-artifact refresh commit: `a22a13b`.
+- A update dry-run after install returned `status=up_to_date`, `no_op=true`, and no blockers.
+- A `project-moe-gui.cmd --preflight --json` returned `ok=true`, a usable `view_model`, and no blockers.
+- A `project-status --json` returned `ok=true`, `enabled=true`, `effective_enabled=true`, branch `main`, and 5 valid registered sessions.
+- A `thesis-moe-off.cmd` and `thesis-moe-on.cmd` live verification switched project-default MOE off and back on; final state restored to `enabled`.
+- Closeout guard evidence: `python test/spec_kit_authority_guard.test.py` covers `.tmp/skills-usage-audit-7d.json` exclusion, and `python tools/check_spec_kit_authority_guard.py --root . --json` reports zero findings even when ignored `.tmp` audit output exists.
+- Remote publication evidence: not authorized and not performed.
 
 <!-- EVIDENCE_INDEX_END -->
 

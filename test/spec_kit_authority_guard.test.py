@@ -88,6 +88,21 @@ class SpecKitAuthorityGuardTest(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["counts"]["findings"], 0)
 
+    def test_ignores_tmp_runtime_audit_outputs(self) -> None:
+        root = self.make_root("spec-kit-tmp-excluded")
+        self.write(
+            root,
+            ".tmp/skills-usage-audit-7d.json",
+            '{"dangerous_counter": {"specify init": 2}}\n',
+        )
+        self.write(root, "docs/usage.md", "Spec Kit is a safe subordinate adapter reference.\n")
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["findings"], 0)
+
     def test_prunes_excluded_directories_before_recursive_scan(self) -> None:
         root = self.make_root("spec-kit-prunes-excluded-before-scan")
         self.write(root, "docs/usage.md", "Spec Kit is a safe subordinate adapter reference.\n")

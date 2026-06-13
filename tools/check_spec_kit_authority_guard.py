@@ -74,6 +74,7 @@ SPECKIT_SKILL_COMMAND_RE = re.compile(r"(?<![\w.-])\$speckit-[A-Za-z0-9_.-]+", r
 
 EXCLUDED_DIR_NAMES = {
     ".git",
+    ".tmp",
     ".worktrees",
     ".hg",
     ".svn",
