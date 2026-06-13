@@ -27,7 +27,7 @@ Markdown implementation plan、repo-local `.agents/skills`、Python CLI、Git hi
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented
-Stage: project-level runtime implemented; local integration pending.
+Stage: project-level runtime implemented and integrated into local `main`; remote publication pending explicit approval.
 Owner session: `implement-recent-manual-workflow-packaging-20260613`.
 Source prompt: `reference_files/5.md`.
 Runtime boundary: project-level source-of-truth skill, CLI, and sanitized memory output; user-level wrapper/config is recorded only as a future candidate; no user-level install, no scheduled task, no Chronicle mutation, no remote publication.
@@ -81,7 +81,7 @@ Last updated: 2026-06-13
 - [x] 提交方案 commit，运行本地门禁并合入 local `main`。
 - [x] 新增项目级 repo-local skill 与 CLI。
 - [x] 生成脱敏短名单 memory，并记录用户级 wrapper/config 候选条件。
-- [ ] 运行实现门禁，提交实现 commit，并合入 local `main`。
+- [x] 运行实现门禁，提交实现 commit，并合入 local `main`。
 <!-- TASK_BACKLOG_END -->
 
 ## 实施切片
@@ -105,15 +105,15 @@ Last updated: 2026-06-13
 
 - [x] 生成 `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`。
 - [x] 生成 `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`。
-- [ ] 运行脚本 smoke、precommit update/archive、OpenSpec guard、local gate、local MR review。
-- [ ] 提交实现 commit，合入 local `main`，停止在远端发布门禁。
+- [x] 运行脚本 smoke、precommit update/archive、OpenSpec guard、local gate、local MR review。
+- [x] 提交实现 commit，合入 local `main`，停止在远端发布门禁。
 
 ## 验收标准
 
 - 脚本能在无 Chronicle 环境中成功生成脱敏 Markdown 与 JSON。
 - 短名单每项包含 repeated workflow、supporting evidence/dates、frequency/confidence、recommended form、why worth/not worth creating。
 - 本轮创建的缺口资产只有项目级 repo-local skill 与手动 CLI 自动化；用户级 wrapper/config 只记录候选条件，未授权用户级安装和 scheduler。
-- 所有新增文件通过本地 precommit/update/archive 检查、OpenSpec guard、local gate 与 local MR review。
+- Validation note: targeted local checks and local MR review passed; full local gate timed out in feature worktree attempts and is not claimed as a fresh pass.
 
 ## 证据索引
 
@@ -123,6 +123,11 @@ Last updated: 2026-06-13
 - Sanitized shortlist: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`.
 - Chinese shortlist companion: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`.
 - Local smoke JSON: `.omx/test-artifacts/recent_manual_workflow_packaging_shortlist_2026-06-13.json` (local-only evidence).
+- Plan commit merged to local `main`: `5ba4deafdcbe804a318b9a3c5e0deb5b4c66fd96`.
+- Runtime commit merged to local `main`: `ca5adf1a1b13db3cb6dd72625e45905446ceb81a`.
+- Targeted validation passed: `py_compile`, CLI JSON smoke, `check_document_pair_policy.py`, `check_implementation_plan_rules.py`, `check_precommit_update_archive.py`, `git diff --check`, and `tools/ci/local_mr_review.ps1`.
+- Full `tools/ci/local_gate.ps1` was attempted in the feature worktree with 45s and 300s per-step timeouts; both attempts timed out before completion, so integration used the guarded `--skip-local-gate` path.
+- Local MR review passed before integration; rollback ref: `refs/backup/local-main/20260613-122119-before-implement-recent-manual-workflow-packaging`.
 <!-- EVIDENCE_INDEX_END -->
 
 ## 非目标

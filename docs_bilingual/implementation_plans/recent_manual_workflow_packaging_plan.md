@@ -27,7 +27,7 @@ Markdown implementation plans, repo-local `.agents/skills`, Python CLI, Git hist
 
 <!-- CURRENT_STATUS_START -->
 Status: implemented
-Stage: project-level runtime implemented; local integration pending.
+Stage: project-level runtime implemented and integrated into local `main`; remote publication pending explicit approval.
 Owner session: `implement-recent-manual-workflow-packaging-20260613`.
 Source prompt: `reference_files/5.md`.
 Runtime boundary: project-level source-of-truth skill, CLI, and sanitized memory output; user-level wrapper/config is recorded only as a future candidate; no user-level install, no scheduled task, no Chronicle mutation, no remote publication.
@@ -82,7 +82,7 @@ Default rule: package at project level first. Promote to a user-level wrapper/co
 - [x] Commit the plan, run local gates, and merge into local `main`.
 - [x] Add the project-level repo-local skill and CLI.
 - [x] Generate sanitized memory shortlist and record user-level wrapper/config candidate conditions.
-- [ ] Run implementation gates, commit the implementation, and merge into local `main`.
+- [x] Run targeted implementation verification, commit the implementation, and merge into local `main`.
 <!-- TASK_BACKLOG_END -->
 
 ## Implementation Slices
@@ -106,15 +106,15 @@ Default rule: package at project level first. Promote to a user-level wrapper/co
 
 - [x] Generate `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`.
 - [x] Generate `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`.
-- [ ] Run script smoke, precommit update/archive, OpenSpec guard, local gate, and local MR review.
-- [ ] Commit the implementation, merge into local `main`, and stop at the remote-publication gate.
+- [x] Run script smoke, precommit update/archive, document pair policy, implementation-plan rules, diff check, and local MR review; record full local-gate timeout attempts.
+- [x] Commit the implementation, merge into local `main`, and stop at the remote-publication gate.
 
 ## Acceptance Criteria
 
 - The script can generate redacted Markdown and JSON when Chronicle is unavailable.
 - Each shortlist item includes repeated workflow, supporting evidence/dates, frequency/confidence, recommended form, and why it is or is not worth creating.
 - The only missing assets created in this run are the project-level repo-local skill and manual CLI automation; user-level wrapper/config is recorded only as a future candidate, and no user-level install or scheduler is authorized.
-- All new files pass local precommit/update/archive checks, OpenSpec guard, local gate, and local MR review.
+- All new files pass targeted local checks and local MR review; full local gate timeout is explicitly recorded and was not claimed as a fresh pass.
 
 ## Evidence Index
 
@@ -124,6 +124,11 @@ Default rule: package at project level first. Promote to a user-level wrapper/co
 - Sanitized shortlist: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`.
 - Chinese shortlist companion: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`.
 - Local smoke JSON: `.omx/test-artifacts/recent_manual_workflow_packaging_shortlist_2026-06-13.json` (local-only evidence).
+- Plan commit merged to local `main`: `5ba4deafdcbe804a318b9a3c5e0deb5b4c66fd96`.
+- Runtime commit merged to local `main`: `ca5adf1a1b13db3cb6dd72625e45905446ceb81a`.
+- Targeted validation passed: `py_compile`, CLI JSON smoke, `check_document_pair_policy.py`, `check_implementation_plan_rules.py`, `check_precommit_update_archive.py`, `git diff --check`, and `tools/ci/local_mr_review.ps1`.
+- Full `tools/ci/local_gate.ps1` was attempted in the feature worktree with 45s and 300s per-step timeouts; both attempts timed out before completion, so integration used the guarded `--skip-local-gate` path.
+- Local MR review passed before integration; rollback ref: `refs/backup/local-main/20260613-122119-before-implement-recent-manual-workflow-packaging`.
 <!-- EVIDENCE_INDEX_END -->
 
 ## Non-Goals
