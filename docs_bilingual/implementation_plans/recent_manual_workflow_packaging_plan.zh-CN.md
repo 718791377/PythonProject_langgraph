@@ -41,6 +41,10 @@ Last updated: 2026-06-13
 3. Chronicle：只用于发现；当前机器如果没有 Chronicle 命令或数据目录，记录为 `not_enabled`。
 4. Existing skills、custom agents、automations：读取 repo-local 与 user-level skills/agents inventory，避免重复创建已有能力。
 
+## 广泛类别扫描
+
+CLI 必须显式记录 `reference_files/5.md` 要求的广泛回看范围：coding、research、writing、planning、communication、operations、analysis、personal administration。每个类别都必须包含 evidence count、可映射的 shortlist ID，以及 `covered_by_shortlist`、`covered_by_existing_assets`、`separate_plan_required` 或 `scanned_no_packaging_candidate` 等决策。
+
 ## 候选准入规则
 
 候选必须同时满足：
@@ -82,6 +86,7 @@ Last updated: 2026-06-13
 - [x] 新增项目级 repo-local skill 与 CLI。
 - [x] 生成脱敏短名单 memory，并记录用户级 wrapper/config 候选条件。
 - [x] 运行实现门禁，提交实现 commit，并合入 local `main`。
+- [x] 增加 coding、research、writing、planning、communication、operations、analysis、personal administration 的显式 broad category scan 证据。
 <!-- TASK_BACKLOG_END -->
 
 ## 实施切片
@@ -100,6 +105,8 @@ Last updated: 2026-06-13
 - [x] CLI 支持 `--root`、`--days`、`--output`、`--json`。
 - [x] CLI 输出短名单、已创建/扩展、刻意跳过、需更多证据四类信息。
 - [x] CLI 对 Chronicle 不可用时输出 `Chronicle: not_enabled`。
+- [x] CLI 输出 `broad_category_scan`，包含每类 evidence count、mapped shortlist IDs 和 package/separate-plan/no-candidate 决策。
+- [x] CLI 对 JSON 与 Markdown stdout 强制 UTF-8 输出，保证 Windows 非 UTF-8 控制台下的 subprocess 消费方也能可靠解析。
 
 ### Slice 3：证据输出与验证
 
@@ -111,6 +118,8 @@ Last updated: 2026-06-13
 ## 验收标准
 
 - 脚本能在无 Chronicle 环境中成功生成脱敏 Markdown 与 JSON。
+- 脚本在 Windows 控制台代码页不是 UTF-8 时，仍以 UTF-8 输出 JSON/Markdown stdout。
+- 脚本记录覆盖 coding、research、writing、planning、communication、operations、analysis、personal administration 的 broad category scan。
 - 短名单每项包含 repeated workflow、supporting evidence/dates、frequency/confidence、recommended form、why worth/not worth creating。
 - 本轮创建的缺口资产只有项目级 repo-local skill 与手动 CLI 自动化；用户级 wrapper/config 只记录候选条件，未授权用户级安装和 scheduler。
 - Validation note: targeted local checks and local MR review passed; full local gate timed out in feature worktree attempts and is not claimed as a fresh pass.
@@ -123,6 +132,7 @@ Last updated: 2026-06-13
 - Sanitized shortlist: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`.
 - Chinese shortlist companion: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`.
 - Local smoke JSON: `.omx/test-artifacts/recent_manual_workflow_packaging_shortlist_2026-06-13.json` (local-only evidence).
+- Broad category scan evidence: JSON 中的 `broad_category_scan`，并渲染进两份 shortlist Markdown。
 - Plan commit merged to local `main`: `5ba4deafdcbe804a318b9a3c5e0deb5b4c66fd96`.
 - Runtime commit merged to local `main`: `ca5adf1a1b13db3cb6dd72625e45905446ceb81a`.
 - Targeted validation passed: `py_compile`, CLI JSON smoke, `check_document_pair_policy.py`, `check_implementation_plan_rules.py`, `check_precommit_update_archive.py`, `git diff --check`, and `tools/ci/local_mr_review.ps1`.

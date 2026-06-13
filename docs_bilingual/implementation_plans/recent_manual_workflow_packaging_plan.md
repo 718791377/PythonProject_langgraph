@@ -41,6 +41,10 @@ Last updated: 2026-06-13
 3. Chronicle: discovery only; if no command or data directory exists on this machine, record `not_enabled`.
 4. Existing skills, custom agents, and automations: inspect repo-local and user-level skills/agents inventory to avoid duplicates.
 
+## Broad Category Scan
+
+The CLI must explicitly record the broad review scope requested by `reference_files/5.md`: coding, research, writing, planning, communication, operations, analysis, and personal administration. Each category must include an evidence count, mapped shortlist IDs when available, and a decision such as `covered_by_shortlist`, `covered_by_existing_assets`, `separate_plan_required`, or `scanned_no_packaging_candidate`.
+
 ## Candidate Gate
 
 A candidate is actionable only when it:
@@ -83,6 +87,7 @@ Default rule: package at project level first. Promote to a user-level wrapper/co
 - [x] Add the project-level repo-local skill and CLI.
 - [x] Generate sanitized memory shortlist and record user-level wrapper/config candidate conditions.
 - [x] Run targeted implementation verification, commit the implementation, and merge into local `main`.
+- [x] Add explicit broad category scan evidence for coding, research, writing, planning, communication, operations, analysis, and personal administration.
 <!-- TASK_BACKLOG_END -->
 
 ## Implementation Slices
@@ -101,6 +106,8 @@ Default rule: package at project level first. Promote to a user-level wrapper/co
 - [x] Support `--root`, `--days`, `--output`, and `--json`.
 - [x] Emit shortlist, created/extended, deliberately skipped, and needs-more-evidence sections.
 - [x] Emit `Chronicle: not_enabled` when Chronicle is unavailable.
+- [x] Emit `broad_category_scan` with per-category evidence counts, mapped shortlist IDs, and package/separate-plan/no-candidate decisions.
+- [x] Force UTF-8 stdout for JSON and Markdown output so Windows subprocess consumers can parse the CLI reliably.
 
 ### Slice 3: Evidence output and verification
 
@@ -112,6 +119,8 @@ Default rule: package at project level first. Promote to a user-level wrapper/co
 ## Acceptance Criteria
 
 - The script can generate redacted Markdown and JSON when Chronicle is unavailable.
+- The script emits JSON/Markdown stdout as UTF-8 even when the Windows console code page is not UTF-8.
+- The script records a broad category scan covering coding, research, writing, planning, communication, operations, analysis, and personal administration.
 - Each shortlist item includes repeated workflow, supporting evidence/dates, frequency/confidence, recommended form, and why it is or is not worth creating.
 - The only missing assets created in this run are the project-level repo-local skill and manual CLI automation; user-level wrapper/config is recorded only as a future candidate, and no user-level install or scheduler is authorized.
 - All new files pass targeted local checks and local MR review; full local gate timeout is explicitly recorded and was not claimed as a fresh pass.
@@ -124,6 +133,7 @@ Default rule: package at project level first. Promote to a user-level wrapper/co
 - Sanitized shortlist: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`.
 - Chinese shortlist companion: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`.
 - Local smoke JSON: `.omx/test-artifacts/recent_manual_workflow_packaging_shortlist_2026-06-13.json` (local-only evidence).
+- Broad category scan evidence: emitted in JSON as `broad_category_scan` and rendered in both shortlist Markdown files.
 - Plan commit merged to local `main`: `5ba4deafdcbe804a318b9a3c5e0deb5b4c66fd96`.
 - Runtime commit merged to local `main`: `ca5adf1a1b13db3cb6dd72625e45905446ceb81a`.
 - Targeted validation passed: `py_compile`, CLI JSON smoke, `check_document_pair_policy.py`, `check_implementation_plan_rules.py`, `check_precommit_update_archive.py`, `git diff --check`, and `tools/ci/local_mr_review.ps1`.
