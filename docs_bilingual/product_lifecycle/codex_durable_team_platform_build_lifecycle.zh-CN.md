@@ -6,6 +6,10 @@
 
 本平台生命周期使用 `business_management_source_synthesis.zh-CN.md` 作为源库叠加层。它强化 Codex 平台是一套一人 operating system：先诊断再构建、让机制保持小、执行前先塑形、衡量结果、保护架构和信任边界、显式定义人和 Agent 的 ownership、保持运营可支持，并把重复经验转化为 checker 或模板。
 
+## 来源证据边界
+
+本平台建设生命周期已按 `fresh_source_reading_evidence.zh-CN.md` 刷新，证据运行 ID 为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`，生成时间为 `2026-06-13T02:54:55Z`。该运行对被 Git 忽略的 `Business Management/` 与 `PMP/` 来源根目录按 PDF 每页、EPUB spine item、Markdown 全文读取。本文只使用 tracked synthesis 与 inventory maps 中的派生规则；原始抽取文本不得作为提交态权威引用。
+
 ## Scope
 
 平台建设生命周期覆盖可复用的用户级和仓库级编排能力：

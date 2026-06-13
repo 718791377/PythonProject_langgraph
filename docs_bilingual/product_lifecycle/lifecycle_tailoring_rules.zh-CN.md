@@ -9,6 +9,10 @@
 
 本规则由本地 `Business Management/` 与 `PMP/` 综合支撑。本地参考资料已经按 PDF 每页、EPUB spine item 和 Markdown 全文读取；本文只记录仓库特定 operating rules，不复制源书正文。
 
+## 来源证据边界
+
+本裁剪规则基于 2026-06-13 证据运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`（`2026-06-13T02:54:55Z`）刷新，覆盖 54 个本地来源和 9,656 个页/spine/全文读取单元。它取代本轮刷新中较旧的抽取措辞，raw extraction text 只保留在忽略态本地缓存中。当前证据索引以 `fresh_source_reading_evidence.zh-CN.md` 为准。
+
 ## 裁剪原则
 
 裁剪是按工作的风险和不确定性选择最小充分治理系统，不是从心智模型里删除层级。

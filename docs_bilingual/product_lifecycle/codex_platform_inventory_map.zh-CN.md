@@ -2,6 +2,10 @@
 
 本文是本仓库目标 Codex 平台架构的简明规范清单。
 
+## Fresh Source Evidence
+
+本地图以 2026-06-13 fresh extraction 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`（`2026-06-13T02:54:55Z`）为证据边界。精确清单数量来自对 `Business Management/架构 1：Codex CLI 个人开发者生产级持久化团队.md` 的全文读取（source `S0030`，10,424 字符）。Business Management 来源解释运行原则；PMP 来源提供过程组与裁剪纪律。
+
 ## 规范清单
 
 | 清单元素 | 数量 | 规范形态 |
@@ -130,6 +134,18 @@
 10. Designing Data-Intensive Applications
 11. Secure by Design
 12. The Staff Engineer's Path
+
+
+## 分层级输入、工具与技术、输出
+
+12 个主干层级都可以轻量或完整运行，但涉及执行的工作必须能写成“输入、工具与技术、输出”。
+
+| 层级组 | 输入 | 工具与技术 | 输出 |
+| --- | --- | --- | --- |
+| 0-2 叙事、商业、市场 | 用户问题、来源证据、stakeholder 信号、市场/采用假设 | 战略诊断、PR/FAQ、访谈综合、定位、启动门 | 白皮书更新、商业边界、市场/采用假设、初始风险 |
+| 3-5 战略、指标、产品 | 北极星、OKR、生命周期裁剪决定、机会证据 | 指导方针设计、OMTM/护栏设计、产品发现、规划门 | 战略计划、指标契约、PRD 或发布切片 brief、验收标准 |
+| 6-8 技术、组织、执行 | 架构约束、角色/Agent map、实施计划、worktree ownership | 架构审查、威胁/风险审查、OpenSpec、subagent/durable-team 阈值检查、执行门 | 技术设计、责任矩阵、已提交变更、验证证据 |
+| 9-11 增长、运营、复盘 | 发布证据、使用/采用信号、事故、经验教训 | 监控与控制、项目组合 review、PMO 式治理服务、收尾门 | 发布说明、运行手册、复盘、归档与下一周期决定 |
 
 ## 过程组运行门
 

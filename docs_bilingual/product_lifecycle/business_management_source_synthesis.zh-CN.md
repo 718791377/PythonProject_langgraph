@@ -1,10 +1,10 @@
 # Business Management 来源库综合
 
-本文基于 2026-05-24T09:22:30+00:00 对忽略目录 `D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP` 重新生成的 fresh extraction 结果，总结与本仓库相关的经营、产品、架构与交付启发。该抽取产物是本次刷新的证据，不是可替代源文件的缓存结论。本文是 `docs_bilingual/product_lifecycle/` 的综合层，不替代原始书籍，也不复制长段版权正文。
+本文基于对忽略目录 `D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP` 的 2026-06-13 fresh extraction 结果，综合与本仓库相关的经营、产品、架构与交付启发。该抽取产物是本次刷新的证据，不是可替代源文件的缓存结论。本文是 `docs_bilingual/product_lifecycle/` 的综合层，不复制源书长段正文。
 
 ## Fresh Extraction 范围
 
-本次刷新只以 `.omx/state/langgraph/extraction/` 下的忽略态产物为依据。
+本次刷新以 `2026-06-13T02:54:55Z` 重新生成的忽略态证据目录 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` 为依据，运行 ID 为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`。这些产物是本次刷新的 fresh reading 证据，不替代源文件，也不是可反复套用的结论缓存。
 
 - 清单：`fresh_source_manifest.json`
 - 逐单元提取日志：`fresh_source_items.jsonl`
@@ -19,9 +19,9 @@
 
 | 来源家族 | 来源数 | PDF / 页数 | EPUB / spine item | Markdown / 全文文件 | 总读取单元 | 提取文本字符数 | 空白单元 | 低文本单元 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Business Management | 31 | 22 / 6,253 | 7 / 305 | 2 / 2 | 6,560 | 14,702,314 | 352 | 511 |
-| PMP | 23 | 9 / 3,035 | 2 / 58 | 12 / 12 | 3,105 | 4,341,068 | 392 | 752 |
-| **合计** | **54** | **31 / 9,288** | **9 / 363** | **14 / 14** | **9,665** | **19,043,382** | **744** | **1,263** |
+| Business Management | 31 | 22 / 6,245 | 7 / 304 | 2 / 2 | 6,551 | 14,161,228 | 642 | 832 |
+| PMP | 23 | 9 / 3,035 | 2 / 58 | 12 / 12 | 3,105 | 4,330,816 | 392 | 758 |
+| **合计** | **54** | **31 / 9,280** | **9 / 362** | **14 / 14** | **9,656** | **18,492,044** | **1,034** | **1,590** |
 
 ### 按格式的读取方法
 
@@ -34,7 +34,8 @@
 ### 需要保留的覆盖说明
 
 - 低文本复核是覆盖统计的一部分，不代表未阅读。许多低文本单元来自封面、空白页、图表页、扫描页或图片密集页。
-- 低文本最集中的主要是少数扫描感较强或图片较重的 PMP PDF，尤其是 `PMBOK® Guide 8th Edition .pdf`（401 页，372 个低文本页）、`项目管里知识体系指南  PMBOK指南  第6版.pdf`（812 页，293 个低文本页）、`敏捷实践指南 = Agile practice guide.pdf`（184 页，183 个低文本页）和 `项目组合管理标准  第4版.pdf`（142 页，141 个低文本页）。
+- `Business Management/Escaping the build trap.pdf` 在 `pypdf` 文件级抽取失败后，通过 PyMuPDF 回退成功；manifest 将该证据记录为 source `S0010`。
+- 低文本最集中的主要是少数扫描感较强或图片较重的 PDF，尤其是 `Business Management/Lean Analytics.pdf`（439 页，388 个低文本页）、`PMP/敏捷实践指南 = Agile practice guide.pdf`（184 页，183 个低文本页）、`PMP/项目管里知识体系指南  PMBOK指南  第6版.pdf`（812 页，301 个低文本页）和 `PMP/项目组合管理标准  第4版.pdf`（142 页，141 个低文本页）。
 - 因为本文是综合产物，所以只记录计数、方法和解释，不保留原始提取文本。
 
 ## 目标架构清单证据

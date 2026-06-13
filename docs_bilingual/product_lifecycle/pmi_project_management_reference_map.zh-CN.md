@@ -4,7 +4,7 @@
 
 ## Reference Boundary
 
-- `PMP/` 是 PMI PDF 文件的本地私有参考目录；它被 Git 忽略，不能提交进仓库。
+- `PMP/` 是 PMI PDF、EPUB 与 Markdown 笔记的本地私有参考目录；它被 Git 忽略，不能提交进仓库。
 - `PMBOK Guide` 用作项目管理中的 value、principles、tailoring、quality 和 governance 参考。
 - `Process Groups: A Practice Guide` 用作 delivery-gate 参考，覆盖 initiating、planning、executing、monitoring and controlling 和 closing。
 - `Agile Practice Guide` 用作 adaptive delivery 参考，覆盖 uncertainty、MVP slices、feedback loops 和 hybrid work。
@@ -13,11 +13,11 @@
 
 ## 本地 PMP 来源覆盖
 
-本次刷新只读取本地 `PMP/` 文件。fresh extraction evidence 于 2026-05-24T09:22:30+00:00 重新生成，并记录 23 个 PMP 家族来源，覆盖 PDF 每页、EPUB spine item 与 Markdown 全文。仓库只记录以下覆盖摘要与治理映射综合。
+本次刷新只读取本地 `PMP/` 文件。fresh extraction evidence 于 `2026-06-13T02:54:55Z` 在 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` 重新生成，并记录 23 个 PMP 家族来源：9 个 PDF / 3,035 页、2 个 EPUB / 58 个 spine item、12 个 Markdown 全文笔记，共 3,105 个 PMP 读取单元和 4,330,816 个抽取字符。仓库只记录以下覆盖摘要与治理映射综合。
 
 | 本地参考资料 | 格式 | 覆盖量 | 主要治理用途 |
 | --- | --- | ---: | --- |
-| `PMBOK Guide 8th Edition .pdf` | PDF | 401 页 | 主要价值、绩效域、AI 时代、裁剪与治理叠加层 |
+| `PMBOK® Guide 8th Edition .pdf` | PDF | 401 页 | 主要价值、绩效域、AI 时代、裁剪与治理叠加层 |
 | PMBOK 第 7 版中文 PDF | PDF | 369 页 | 原则、价值交付、系统思维、裁剪与绩效域 |
 | PMBOK 第 6 版中文 PDF | PDF | 812 页并复核低文本页 | 输入 / 工具与技术 / 输出词汇与知识领域补充 |
 | `Process groups _ a practice guide.pdf` | PDF | 390 页 | 启动、规划、执行、监控与控制、收尾交付门模型 |
@@ -29,6 +29,21 @@
 | 中文项目组合管理标准 PDF | PDF | 142 页并复核低文本页 | 项目组合治理中文伴随来源 |
 | `Project Management Offices a Practice Guide.epub` | EPUB | 42 个 spine item | PMO 职能、治理服务、赋能与监督模式 |
 | `PMP_MD/*.md` | Markdown | 12 篇本地文章 | PMBOK 8 与 AI 时代项目管理解读笔记 |
+
+## PMI 官方 Web 新鲜度复核
+
+本次刷新也在 2026-06-13 复核了 PMI 公开 standards 页面，避免把私有本地目录当成唯一新鲜度信号。本地抽取仍是内容证据边界；公开复核只记录当前 catalog metadata。
+
+| PMI 公开来源 | 2026-06-13 复核到的官方目录状态 | 仓库决策 |
+| --- | --- | --- |
+| <https://www.pmi.org/standards/pmbok> | `PMBOK Guide` 已列为第 8 版，408 页，发布日期为 2025 年 11 月，并有 2025 年 12 月 22 日发布的第二次印刷勘误。 | 把 PMBOK 第 8 版作为当前项目管理主叠加层；PMBOK 第 7 版和第 6 版只作为连续性与 I/T/O 补充。 |
+| <https://www.pmi.org/standards/process-groups> | `Process Groups: A Practice Guide` 列为 370 页，发布日期为 2022 年 11 月，并描述五个过程组以及带输入、工具与技术、输出的 49 个过程。 | 用作生命周期层级和交付门的面向执行过程组语法。 |
+| <https://www.pmi.org/standards/agile> | `Agile Practice Guide` 列为 210 页，发布日期为 2017 年 10 月，并有第三次、第四次印刷勘误。 | 在更新的官方敏捷指南被加入本地并重新抽取前，保持为 agile/adaptive 补充。 |
+| <https://www.pmi.org/standards/program-management-fifth-edition> | `The Standard for Program Management - Fifth Edition` 列为 PMI Standard，247 页，发布日期为 2024 年 3 月。 | 将本地第 5 版 EPUB 作为当前项目集级协调来源。 |
+| <https://www.pmi.org/standards/for-portfolio-management> | `The Standard for Portfolio Management - Fourth Edition` 列为 PMI Standard，189 页，发布日期为 2017 年 11 月。 | 保持项目组合治理作为优先级、容量与价值平衡叠加层。 |
+| <https://www.pmi.org/standards/pmo> | `Project Management Offices: A Practice Guide` 列为 PMI Practice Guide，331 页，发布日期为 2025 年 2 月。 | 用作 PMO 治理服务与赋能叠加层，尤其适用于多个倡议需要共享标准或监督时。 |
+
+官方目录页数可能不同于本地抽取页数，因为本地 source package、front matter、印刷/导出格式或 EPUB spine 边界不同。出现差异时，用本地抽取证明本地来源已读取，用 PMI 公开页面记录当前 catalog metadata。
 
 ## 最新优先权威规则
 

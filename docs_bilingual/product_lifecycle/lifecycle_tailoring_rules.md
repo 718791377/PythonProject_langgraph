@@ -9,6 +9,10 @@ It is a governance overlay for `product_business_document_lifecycle.md`, `codex_
 
 The rule is source-backed by the local `Business Management/` and `PMP/` synthesis. The local references were read as PDF pages, EPUB spine items, and Markdown full text; this document records only repository-specific operating rules and does not reproduce source-book text.
 
+## Source Evidence Boundary
+
+This tailoring rule is refreshed from the June 13 evidence run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T02:54:55Z`), covering 54 local sources and 9,656 page/spine/full-document units. It supersedes outdated extraction wording for this refresh and keeps raw extracted text in ignored local cache only. Use `fresh_source_reading_evidence.md` for the current evidence index.
+
 ## Tailoring Principle
 
 Tailoring means choosing the minimum sufficient governance system for the risk and uncertainty of the work. It does not mean deleting layers from the mental model.

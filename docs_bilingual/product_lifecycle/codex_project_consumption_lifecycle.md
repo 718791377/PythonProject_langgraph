@@ -8,6 +8,10 @@ This document describes how later projects consume the Codex CLI durable-team pl
 
 A downstream project owns its own product scope, business artifacts, OpenSpec tree, Git history, durable state, release state, and local lessons learned. A downstream project must not treat the platform repository as its repo-local durable truth.
 
+## Source Evidence Boundary
+
+This downstream consumption lifecycle is refreshed against the same `fresh_source_reading_evidence.md` run as the platform lifecycle. The source evidence informs reusable tailoring rules only. A downstream project must still create or refresh its own customer evidence, metrics, release evidence, durable state, and lessons in its own repository before applying these rules.
+
 ## Downstream Lifecycle Tailoring Overlay
 
 Downstream projects should use the general 0-11 / 12-layer lifecycle as a map, not as mandatory paperwork for every change.

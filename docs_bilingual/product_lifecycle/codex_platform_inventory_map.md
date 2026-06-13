@@ -2,6 +2,10 @@
 
 This map is the concise canonical inventory for the target Codex platform architecture used by this repository.
 
+## Fresh Source Evidence
+
+This map uses the June 13 fresh extraction run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T02:54:55Z`) as its evidence boundary. Exact inventory counts come from the full-text read of `Business Management/Architecture note 1 - Codex CLI personal production durable team.md` (source `S0030`, 10,424 characters). Business Management sources explain operating principles; PMP sources provide process-group and tailoring discipline.
+
 ## Canonical Inventory
 
 | Inventory element | Count | Canonical shape |
@@ -132,6 +136,18 @@ The fresh architecture note fixes the target at 48 core documents. This canonica
 10. Designing Data-Intensive Applications
 11. Secure by Design
 12. The Staff Engineer's Path
+
+
+## Layer-Level Inputs, Tools And Techniques, Outputs
+
+Every one of the 12 trunk layers can run lightweight or full, but execution-facing work must still be expressible as Inputs, Tools and Techniques, and Outputs.
+
+| Layer group | Inputs | Tools And Techniques | Outputs |
+| --- | --- | --- | --- |
+| 0-2 Narrative, business, market | User problem, source evidence, stakeholder signal, market/adoption assumptions | Strategy diagnosis, PR/FAQ, interview synthesis, positioning, initiating gate | White paper update, business boundary, market/adoption hypothesis, initial risks |
+| 3-5 Strategy, metrics, product | North Star, OKRs, lifecycle tailoring decision, opportunity evidence | Guiding-policy design, OMTM/guardrail design, product discovery, planning gate | Strategy plan, metrics contract, PRD or release-slice brief, acceptance criteria |
+| 6-8 Technical, organization, execution | Architecture constraints, role/agent map, implementation plan, worktree ownership | Architecture review, threat/risk review, OpenSpec, subagent/durable-team threshold check, executing gate | Technical design, ownership matrix, committed changes, validation evidence |
+| 9-11 Growth, operations, retrospective | Release evidence, usage/adoption signals, incidents, lessons learned | Monitoring and controlling, portfolio review, PMO-style governance service, closing gate | Release notes, operating runbook, retrospective, archive and next-cycle decision |
 
 ## Process-Group Operating Gate
 

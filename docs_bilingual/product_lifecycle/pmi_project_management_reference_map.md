@@ -4,7 +4,7 @@ This document maps PMI project-management references to this repository's lifecy
 
 ## Reference Boundary
 
-- `PMP/` is the local private reference directory for PMI PDF files; it is ignored by Git and must not be committed.
+- `PMP/` is the local private reference directory for PMI PDFs, EPUBs, and Markdown notes; it is ignored by Git and must not be committed.
 - `PMBOK Guide` is used as a value, principles, tailoring, quality, and governance reference for project management.
 - `Process Groups: A Practice Guide` is used as a delivery-gate reference for initiating, planning, executing, monitoring and controlling, and closing.
 - `Agile Practice Guide` is used as an adaptive delivery reference for uncertainty, MVP slices, feedback loops, and hybrid work.
@@ -13,7 +13,7 @@ These references are an overlay. They do not replace white papers, BRD, MRD, Nor
 
 ## Local PMP Source Coverage
 
-The local `PMP/` directory was read from local files only for this refresh. The fresh extraction evidence was regenerated on 2026-05-24T09:22:30+00:00 and recorded 23 PMP-family sources, including PDF pages, EPUB spine items, and Markdown full text. The tracked repository records the following coverage summary and synthesized governance mapping only.
+The local `PMP/` directory was read from local files only for this refresh. The fresh extraction evidence was regenerated at `2026-06-13T02:54:55Z` under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` and recorded 23 PMP-family sources: 9 PDFs / 3,035 pages, 2 EPUBs / 58 spine items, and 12 Markdown full-text notes, for 3,105 total PMP read units and 4,330,816 extracted characters. The tracked repository records the following coverage summary and synthesized governance mapping only.
 
 | Local reference | Format | Coverage | Primary governance use |
 | --- | --- | ---: | --- |
@@ -30,13 +30,28 @@ The local `PMP/` directory was read from local files only for this refresh. The 
 | `Project Management Offices a Practice Guide.epub` | EPUB | 42 spine items | PMO function, governance service, enablement, and oversight pattern |
 | `PMP_MD/*.md` | Markdown | 12 local articles | PMBOK 8 and AI-era interpretation notes for local synthesis |
 
+## Official PMI Web Freshness Check
+
+This refresh also checked PMI public standards pages on 2026-06-13 to avoid treating the private local folder as the only freshness signal. The local extraction remains the content evidence boundary; the public check records current catalog metadata only.
+
+| PMI public source | Official catalog status checked on 2026-06-13 | Repository decision |
+| --- | --- | --- |
+| <https://www.pmi.org/standards/pmbok> | `PMBOK Guide` is listed as the Eighth Edition, 408 pages, publication date November 2025, with second-printing errata dated 22 December 2025. | Treat PMBOK 8 as the current primary project-management overlay; keep PMBOK 7 and PMBOK 6 as continuity and I/T/O supplements. |
+| <https://www.pmi.org/standards/process-groups> | `Process Groups: A Practice Guide` is listed as 370 pages, publication date November 2022, and describes five process groups plus 49 processes with inputs, tools and techniques, and outputs. | Use it as the execution-facing process-group grammar for lifecycle layers and delivery gates. |
+| <https://www.pmi.org/standards/agile> | `Agile Practice Guide` is listed as 210 pages, publication date October 2017, with third- and fourth-printing errata. | Keep it as the agile/adaptive supplement until a newer official agile guide is added locally and freshly extracted. |
+| <https://www.pmi.org/standards/program-management-fifth-edition> | `The Standard for Program Management - Fifth Edition` is listed as a PMI Standard, 247 pages, publication date March 2024. | Treat the local Fifth Edition EPUB as current for program-level coordination. |
+| <https://www.pmi.org/standards/for-portfolio-management> | `The Standard for Portfolio Management - Fourth Edition` is listed as a PMI Standard, 189 pages, publication date November 2017. | Keep portfolio governance as prioritization, capacity, and value-balance overlay. |
+| <https://www.pmi.org/standards/pmo> | `Project Management Offices: A Practice Guide` is listed as a PMI Practice Guide, 331 pages, publication date February 2025. | Use it as the PMO governance-services and enablement overlay, especially when several initiatives need shared standards or oversight. |
+
+Official catalog page counts may differ from extracted local page counts because local source package, front matter, print/export format, or EPUB spine boundaries differ. When they differ, use local extraction for proof that the local source was read and PMI public pages for current catalog metadata.
+
 ## Latest-Primary Authority Rule
 
 Use the latest official or most readable reference present in the local `PMP/` source set as the primary authority for its knowledge family. Older versions and companion translations are used only to clarify vocabulary, historical continuity, translation, and process detail.
 
 | Knowledge family | Primary for this refresh | Supplemental or historical use |
 | --- | --- | --- |
-| Project management body of knowledge | `PMBOK® Guide 8th Edition .pdf` | PMBOK 7 supports principles and value-delivery continuity; PMBOK 6 supports process vocabulary and I/T/O structure |
+| Project management body of knowledge | `PMBOK Guide 8th Edition .pdf` | PMBOK 7 supports principles and value-delivery continuity; PMBOK 6 supports process vocabulary and I/T/O structure |
 | Process-group execution grammar | `Process groups _ a practice guide.pdf` | Chinese ProcessGroups PDF is a companion reference when extracted text is readable enough for terminology checks |
 | Agile and hybrid delivery | English `The Agile practice guide.pdf` in this local source set | Chinese Agile PDF is companion-only because the extraction audit records very low text; update this rule only after a newer official guide is added locally and freshly extracted |
 | Program governance | `The Standard for Program Management - Fifth Edition.epub` | Earlier program-management concepts should be treated as historical continuity only if added later |

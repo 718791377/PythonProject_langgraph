@@ -13,6 +13,10 @@ status: draft
 
 本文回答一个认知叙事问题：为什么跨多个仓库工作的个人维护者需要面向 `Codex CLI` 的个人开发者生产级持久化团队。`Codex CLI` 是原生命令行开发助手；本文是认知叙事文档，不是实施任务清单。
 
+## 本轮 Fresh Source Evidence
+
+本白皮书依据 `2026-06-13T02:54:55Z` 生成的本地 fresh reading 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` 更新。该运行读取 `Business Management/` 与 `PMP/` 下 54 个来源，包括 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件。白皮书只引用聚合与综合证据；raw extracted text 保留在忽略态本地缓存中。
+
 ## 为什么白皮书与研究稿分开
 
 同一主题保留两份文档是有意设计，因为它们承担不同职责。
@@ -23,6 +27,8 @@ status: draft
 因此，白皮书保持更短、更面向方向决策；研究稿保持证据更重、更面向治理。
 
 ## 合并规则
+
+更新触发矩阵：平台边界变化 -> 必须更新白皮书；能力模型、证据基础或运行时分解变化 -> 必须更新研究稿；生命周期桥接、数量权威或 PMI 权威变化 -> 两者都要更新。白皮书引用结论；研究稿拥有判据、证据和官方/推导区分。
 
 - 只要两份文档服务不同读者、评审路径或生命周期角色，就保持分开。
 - 当变更同时影响平台叙事和生产级能力判据时，两份文档都要更新。
@@ -56,6 +62,8 @@ status: draft
 
 支撑研究稿使用 10 层 runtime/governance 分解，因为它研究生产级持久化团队在执行时必须具备哪些能力。本文使用仓库的 12 层产品/商业生命周期主干，因为本仓库还要治理产品、市场、发布、运营和复盘行为。
 
+简言之：10 层模型是执行时 runtime/governance capability model；12 层模型是仓库 operating/lifecycle model，额外覆盖叙事、商业、市场、增长、运营和复盘学习。
+
 - 研究稿第 1-3 层主要落到生命周期的技术、组织和执行层。
 - 研究稿第 4-6 层根据关注点不同，落到技术、指标和运营层：存储、检索质量和运行策略分别需要不同 owner。
 - 研究稿第 7-10 层跨越技术、组织、执行、运营和复盘层，因为质量、评测、安全和控制中心设计都需要生命周期 owner。
@@ -63,7 +71,7 @@ status: draft
 
 这正是两份文件应保持分开的原因：研究稿拆解 runtime 生产能力，白皮书把这些能力放入更大的平台生命周期。参见 `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md` 和 `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md`。
 
-## 12-layer target architecture
+## 12 层目标架构
 
 - 12 层主干让平台从叙事一直连接到复盘学习。
 - 4 个虚拟部门把平台战略/产品、工程/平台、Agent 治理、增长/知识职责分开。
@@ -99,7 +107,7 @@ status: draft
 - 不为只读盘点、边界冻结或单切片任务启动 durable team。
 - 不混用 downstream business runtime dependencies 与 Codex CLI durable-team dependencies，除非下游项目显式拥有这些依赖。downstream business runtime dependencies 是下游业务运行依赖。
 
-## Cross-links
+## 交叉引用
 
 - `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md` 是本文的详细能力与证据伴随文档。
 - `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md` 定义本仓库使用的 12 层文档栈。
@@ -107,7 +115,7 @@ status: draft
 - `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 定义 PMI 叠加层与裁剪权威。
 - `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md` 把本文方向转换为分阶段平台方案。
 
-## Downstream documents
+## 下游文档
 
 - `docs_bilingual/market_requirements/codex_cli_personal_production_durable_team_mrd.zh-CN.md` 是 MRD；它定义目标项目类型、能力画像、运行归属边界和风险控制。
 - `docs_bilingual/north_star_plan.zh-CN.md` 是指标层北极星 Plan；它把本文叙事转换成可度量的运行系统。

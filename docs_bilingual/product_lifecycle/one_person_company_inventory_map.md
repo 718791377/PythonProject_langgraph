@@ -2,6 +2,10 @@
 
 This map is the concise canonical inventory for the downstream one-person-company operating-system target.
 
+## Fresh Source Evidence
+
+This map uses the June 13 fresh extraction run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T02:54:55Z`) as its evidence boundary. Exact inventory counts come from the full-text read of `Business Management/Architecture note 2 - personal production one-person company.md` (source `S0031`, 18,544 characters). Business Management sources explain one-person-company operating principles; PMP sources provide process-group, PMO, program, portfolio, and tailoring discipline.
+
 ## Canonical Inventory
 
 | Inventory element | Count | Canonical shape |
@@ -165,6 +169,18 @@ The fresh architecture note fixes the target at 60 core documents. This canonica
 10. `risk-register.md` - records risks, triggers, responses, and owners.
 11. `agent-governance.md` - defines AI-agent roles, permissions, and human review.
 12. `monthly-review.md` - captures learning, decisions, and next-cycle updates.
+
+
+## Layer-Level Inputs, Tools And Techniques, Outputs
+
+A one-person company may stay lightweight, but each active layer still needs an explicit I/T/O loop so business work remains inspectable.
+
+| Layer group | Inputs | Tools And Techniques | Outputs |
+| --- | --- | --- | --- |
+| 0-2 Narrative, business, market | User problem, source evidence, stakeholder signal, market/adoption assumptions | Strategy diagnosis, PR/FAQ, interview synthesis, positioning, initiating gate | White paper update, business boundary, market/adoption hypothesis, initial risks |
+| 3-5 Strategy, metrics, product | North Star, OKRs, lifecycle tailoring decision, opportunity evidence | Guiding-policy design, OMTM/guardrail design, product discovery, planning gate | Strategy plan, metrics contract, PRD or release-slice brief, acceptance criteria |
+| 6-8 Technical, organization, execution | Architecture constraints, role/agent map, implementation plan, worktree ownership | Architecture review, threat/risk review, OpenSpec, subagent/durable-team threshold check, executing gate | Technical design, ownership matrix, committed changes, validation evidence |
+| 9-11 Growth, operations, retrospective | Release evidence, usage/adoption signals, incidents, lessons learned | Monitoring and controlling, portfolio review, PMO-style governance service, closing gate | Release notes, operating runbook, retrospective, archive and next-cycle decision |
 
 ## Process-Group Operating Gate
 

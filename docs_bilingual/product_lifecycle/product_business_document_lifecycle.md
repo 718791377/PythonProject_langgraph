@@ -12,6 +12,10 @@ These rules are a general governance overlay. They do not replace white papers, 
 
 The local source-library synthesis lives in `business_management_source_synthesis.md`. It summarizes page-level and spine-item-level reading of the ignored `Business Management/` library and translates the sources into repository-specific lifecycle rules rather than source-book excerpts.
 
+## Source Evidence Boundary
+
+This lifecycle stack now points to `fresh_source_reading_evidence.md` for the current `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T02:54:55Z`) evidence boundary and to `ten_to_twelve_layer_bridge.md` for the research/white-paper layer bridge. Raw extraction text remains outside Git.
+
 ## Two Target Architecture Modes
 
 This lifecycle now has two explicit operating modes.
@@ -455,6 +459,6 @@ Small internal tooling work usually needs a short strategy or North Star note, m
 
 For the Codex CLI durable-team platform, `docs_bilingual/north_star_plan.md` is the repository-level North Star plan. It defines the primary success metric, input metrics, guardrails, staged decision thresholds, and the 12-layer platform/downstream inventory comparison.
 
-For a downstream one-person-company operating system, the lightweight floor is the 12 minimal startup documents defined in `one_person_company_inventory_map.md`: `vision.md`, `business-model.md`, `customer-segments.md`, `positioning.md`, `offer-map.md`, `delivery-plan.md`, `finance-model.md`, `ops-playbook.md`, `metrics.yaml`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`. A downstream project should expand toward the 60-document system only when customer evidence, revenue exposure, delivery complexity, governance risk, or long-term operating cost justifies the deeper architecture.
+For a downstream one-person-company operating system, the lightweight floor is the 12 minimal startup documents defined in `one_person_company_inventory_map.md`: `company-thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.yaml`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`. A downstream project should expand toward the 60-document system only when customer evidence, revenue exposure, delivery complexity, governance risk, or long-term operating cost justifies the deeper architecture.
 
 The more a project affects money, users, trust, compliance, or long-term platform behavior, the more of this stack should be explicit. Lightweight mode may be whole-project only for low-risk early work; otherwise keep high-risk phases or modules on the full architecture path and lighten only bounded low-risk slices.

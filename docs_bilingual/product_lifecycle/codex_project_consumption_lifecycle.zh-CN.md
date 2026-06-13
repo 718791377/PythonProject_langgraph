@@ -8,6 +8,10 @@
 
 下游项目拥有自己的产品范围、商业文档、OpenSpec tree、Git 历史、durable state、release state 和本地 lessons learned。下游项目不得把平台仓库当成自己的 repo-local durable truth。
 
+## 来源证据边界
+
+本下游消费生命周期与平台生命周期共用 `fresh_source_reading_evidence.zh-CN.md` 所记录的 fresh-read 证据运行。该来源证据只用于形成可复用裁剪规则。下游项目在采用这些规则前，仍必须在自己的仓库里创建或刷新 customer evidence、metrics、release evidence、durable state 与 lessons。
+
 ## 下游生命周期裁剪叠加规则
 
 下游项目应把通用 0-11 / 12 层生命周期当作地图，而不是每个变更都必须填写的强制表格。

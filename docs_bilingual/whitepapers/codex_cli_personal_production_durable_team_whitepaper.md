@@ -13,6 +13,10 @@ status: draft
 
 This white paper answers why a solo maintainer who works across multiple repositories needs a personal production durable team for Codex CLI. It is the cognitive-narrative document for the platform, not an implementation task list.
 
+## Fresh Source Evidence For This Refresh
+
+This white paper is updated against the fresh local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` generated at `2026-06-13T02:54:55Z`. The run read 54 sources across `Business Management/` and `PMP/`, including 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. The white paper cites only aggregate and synthesized evidence; raw extracted text remains in ignored local cache.
+
 ## Why This White Paper Exists Beside The Research Document
 
 Two documents now cover the same topic family on purpose, but they do different jobs:
@@ -31,6 +35,8 @@ Cross-document rule:
 - The implementation plan, MRD, and lifecycle documents should cite both when they need both `why` and `how-strict` evidence.
 
 Default merge policy:
+
+Update-trigger matrix: platform boundary change -> white paper required; capability model, evidence-base, or runtime decomposition change -> research note required; lifecycle bridge, count authority, or PMI authority change -> both required. The white paper cites conclusions; the research note owns criteria, evidence, and official-versus-derived distinctions.
 
 1. Keep the documents separate while they serve different readers, different update cadences, or different governance roles.
 2. Update both when a change affects both the platform narrative and the detailed production-grade capability model.
@@ -59,6 +65,8 @@ This is an AI-era value-delivery system, not only a toolchain. The platform exis
 ## 10-To-12 Layer Bridge
 
 The supporting research document uses a ten-layer runtime and governance decomposition because it studies what a production-grade persistent team must be able to do at execution time. This white paper uses the repository's newer 12-layer product/business lifecycle trunk because this repository also governs product, market, release, operations, and retrospective behavior.
+
+In short: the 10-layer model is the execution-time runtime/governance capability model; the 12-layer model is the repository operating/lifecycle model that includes narrative, business, market, growth, operations, and retrospective learning.
 
 Bridge rule:
 

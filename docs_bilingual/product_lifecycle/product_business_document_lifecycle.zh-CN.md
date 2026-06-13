@@ -12,6 +12,10 @@
 
 本地源库综合位于 `business_management_source_synthesis.zh-CN.md`。它总结被 Git 忽略的 `Business Management/` 源库逐页和 EPUB spine item 级读取结果，并把来源转译为仓库特定生命周期规则，而不是复制原书正文。
 
+## 来源证据边界
+
+当前生命周期栈指向 `fresh_source_reading_evidence.zh-CN.md`，作为本次 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`（`2026-06-13T02:54:55Z`）证据边界；同时指向 `ten_to_twelve_layer_bridge.zh-CN.md`，用于打通研究稿与白皮书的分层关系。原始抽取文本保持在 Git 之外。
+
 ## 两种目标架构模式
 
 本生命周期现在明确区分两种运行模式。
@@ -449,6 +453,6 @@
 
 对 Codex CLI durable-team 平台，`docs_bilingual/north_star_plan.zh-CN.md` 是仓库级北极星 Plan。它定义主成功指标、输入指标、护栏指标、分阶段决策阈值，以及 12 层平台/下游清单对照。
 
-对下游一人公司操作系统，轻量起步底线是 `one_person_company_inventory_map.zh-CN.md` 定义的 12 个最小启动文档：`vision.md`、`business-model.md`、`customer-segments.md`、`positioning.md`、`offer-map.md`、`delivery-plan.md`、`finance-model.md`、`ops-playbook.md`、`metrics.yaml`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。只有当客户证据、收入暴露、交付复杂度、治理风险或长期运营成本证明需要更深覆盖时，下游项目才应扩展到 60 文档系统。
+对下游一人公司操作系统，轻量起步底线是 `one_person_company_inventory_map.zh-CN.md` 定义的 12 个最小启动文档：`company-thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.yaml`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。只有当客户证据、收入暴露、交付复杂度、治理风险或长期运营成本证明需要更深覆盖时，下游项目才应扩展到 60 文档系统。
 
 项目越影响金钱、用户、信任、合规或长期平台行为，这套文档栈就越应该显式化。轻量模式只有在低风险早期工作中才能覆盖整个项目；其他情况应让高风险阶段或模块保持完整架构路径，只对边界清晰的低风险切片轻量化。

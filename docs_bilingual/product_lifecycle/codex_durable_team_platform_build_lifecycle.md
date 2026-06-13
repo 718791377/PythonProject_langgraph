@@ -6,6 +6,10 @@ The full 0-11 / 12-layer lifecycle is kept as the authoritative platform map: co
 
 Use `business_management_source_synthesis.md` as the source-library overlay for this platform lifecycle. It reinforces that the Codex platform is a one-person operating system: diagnose before building, keep mechanisms small, shape work before execution, measure outcomes, protect architecture and trust boundaries, define human and agent ownership explicitly, keep operations supportable, and turn repeated lessons into checkers or templates.
 
+## Source Evidence Boundary
+
+This platform-build lifecycle is refreshed against `fresh_source_reading_evidence.md` for the `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` run generated at `2026-06-13T02:54:55Z`. The evidence run read the ignored `Business Management/` and `PMP/` source roots by PDF page, EPUB spine item, and Markdown full file. Use the tracked synthesis and inventory maps for derived rules; do not cite the raw extraction text as a committed authority.
+
 ## Scope
 
 The platform-build lifecycle covers reusable user-level and repository-level orchestration capabilities:

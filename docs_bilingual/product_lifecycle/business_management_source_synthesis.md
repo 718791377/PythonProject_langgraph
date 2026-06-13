@@ -4,7 +4,7 @@ This document summarizes repository-relevant lessons from the fresh extraction r
 
 ## Fresh Extraction Scope
 
-This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/` freshly regenerated on 2026-05-24T09:22:30+00:00. These artifacts are evidence for this refresh, not a substitute for the source files and not a reusable conclusion cache.
+This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` freshly regenerated at `2026-06-13T02:54:55Z` with run ID `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`. These artifacts are evidence for this refresh, not a substitute for the source files and not a reusable conclusion cache.
 
 - Manifest: `fresh_source_manifest.json`
 - Per-unit extraction log: `fresh_source_items.jsonl`
@@ -19,22 +19,23 @@ All 54 recorded sources completed with status `ok`.
 
 | Family | Sources | PDFs / pages | EPUBs / spine items | Markdown / full-text files | Total read units | Extracted text chars | Blank units | Low-text units |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Business Management | 31 | 22 / 6,253 | 7 / 305 | 2 / 2 | 6,560 | 14,702,314 | 352 | 511 |
-| PMP | 23 | 9 / 3,035 | 2 / 58 | 12 / 12 | 3,105 | 4,341,068 | 392 | 752 |
-| **Total** | **54** | **31 / 9,288** | **9 / 363** | **14 / 14** | **9,665** | **19,043,382** | **744** | **1,263** |
+| Business Management | 31 | 22 / 6,245 | 7 / 304 | 2 / 2 | 6,551 | 14,161,228 | 642 | 832 |
+| PMP | 23 | 9 / 3,035 | 2 / 58 | 12 / 12 | 3,105 | 4,330,816 | 392 | 758 |
+| **Total** | **54** | **31 / 9,280** | **9 / 362** | **14 / 14** | **9,656** | **18,492,044** | **1,034** | **1,590** |
 
 ### Intake method by format
 
 | Format | Recorded count | Unit of coverage | Extraction method | Practical interpretation |
 | --- | ---: | --- | --- | --- |
-| PDF | 31 files | Page | PyMuPDF `get_text("text")` for every page | Suitable for page-count evidence, low-text-page tracking, and scanned/image-heavy caveats |
+| PDF | 31 files | Page | `pypdf` page extraction with PyMuPDF fallback when needed | Suitable for page-count evidence, low-text-page tracking, and scanned/image-heavy caveats |
 | EPUB | 9 files | OPF spine item | `ebooklib` spine iteration plus HTML/XHTML text extraction | Suitable for chapter/spine coverage without flattening the original reading order |
 | Markdown | 14 files | Full file | Full UTF-8 text read | Suitable for exact architecture inventories, headings, and repository-local terminology |
 
 ### Coverage caveats worth preserving
 
 - Low-text review is part of coverage accounting, not proof of missing reading. Many low-text units are covers, blanks, diagrams, scans, or image-dominant pages.
-- The highest low-text concentration sits in a few scanned or image-heavy PMP PDFs, especially `PMBOK 8th Edition.pdf` (401 pages, 372 low-text), `PMBOK 6 Chinese edition.pdf` (812 pages, 293 low-text), `Agile Practice Guide Chinese edition.pdf` (184 pages, 183 low-text), and `Portfolio Management Chinese edition.pdf` (142 pages, 141 low-text).
+- `Business Management/Escaping the build trap.pdf` failed `pypdf` at file level and succeeded through the PyMuPDF fallback; the manifest records this as source `S0010`.
+- The highest low-text concentration sits in a few scanned or image-heavy PDFs, especially `Business Management/Lean Analytics.pdf` (439 pages, 388 low-text), `PMP/Agile Practice Guide Chinese companion PDF` (184 pages, 183 low-text), `PMP/PMBOK 6 Chinese companion PDF` (812 pages, 301 low-text), and `PMP/Portfolio Management Standard Chinese companion PDF` (142 pages, 141 low-text).
 - Because this document is a synthesis artifact, it records counts, methods, and interpretations rather than reproducing raw extraction text.
 
 ## Target Architecture Inventory Evidence

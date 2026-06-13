@@ -24,6 +24,8 @@ Why both exist:
 
 Default merge policy:
 
+Update-trigger matrix: platform boundary change -> white paper required; capability model, evidence-base, or runtime decomposition change -> this research note required; lifecycle bridge, count authority, or PMI authority change -> both required. The white paper cites conclusions; this research note owns criteria, evidence, and official-versus-derived distinctions.
+
 1. Keep the files separate while they serve different readers or different lifecycle layers.
 2. Update the white paper when the platform story, boundaries, or paradigm shift changes.
 3. Update this research note when the production-grade criteria, evidence base, or runtime-capability decomposition changes.
@@ -32,6 +34,8 @@ Default merge policy:
 ## 0.1 Bridge From The 10-Layer Research Model To The Repository 12-Layer Lifecycle
 
 This research note uses a ten-layer model because it studies the minimum production capabilities of a persistent-team runtime. The repository lifecycle uses twelve layers because product and governance work must also cover narrative, market, growth, operations, and retrospective learning.
+
+In short: the 10-layer model is the execution-time runtime/governance capability model; the 12-layer model is the product/business lifecycle superset. This research note does not own PMI process authority; it depends on `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md` for process-group and tailoring rules.
 
 | 10-layer research model | Primary 12-layer lifecycle landing zones | Why |
 | --- | --- | --- |
@@ -140,6 +144,8 @@ It answers a narrower and harder question:
 - and under what conditions should it be called `solo-maintainable over the long term`
 
 ## 3. Method And Evidence Base
+
+This 2026-06-13 refresh also uses the local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T02:54:55Z`) as product/business context evidence: 54 local sources, 9,656 page/spine/full-document units, and 18,492,044 extracted characters. That evidence updates the relationship between this research note, the white paper, and the 12-layer lifecycle, but it does not replace the runtime/governance research basis of this document.
 
 This paper uses a cross-source synthesis method.
 
@@ -1041,6 +1047,8 @@ If a system cannot answer "yes" to most of the following questions, it should no
 11. Does the system have a clear downgrade path back to a simpler execution mode when needed?
 
 ## 14. Reference Architecture
+
+This section is a deployment/reference-plane rendering of the same 10-layer runtime model. It is not a third layer system competing with the 10-layer research model or the repository 12-layer lifecycle.
 
 The recommended reference architecture is:
 
