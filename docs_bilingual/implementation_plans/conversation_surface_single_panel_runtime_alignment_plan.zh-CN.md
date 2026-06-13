@@ -31,14 +31,21 @@ confirmation_required: true
 - 模板范围：仓库 runtime 完成后，更新 `D:/PythonProject_General` 与 `D:/PythonProject_General_2`，让其他项目和新电脑继承明确后的会话表面契约。
 - 除非操作者显式要求远端 push、GitLab MR、GitLab merge 或 GitHub sync，否则远端发布不在范围内。
 
+## 原生表面修正
+
+- Codex 原生 `update_plan` 工具渲染结果就是 canonical 用户可见 `Updated Plan` 面板。该原生面板已经出现时，assistant 正文不得再手写第二个 `Updated Plan` 标题、嵌套 `Updated Plan` 树节点或 Markdown checkbox 镜像。
+- 如果没有输出原生计划面板但仍需要简短文字进度，可以使用 `执行进度` 等非冲突标签；不得冒充原生 `Updated Plan` 面板。
+- `Routing trace` 仍然是单个普通文本 activation 诊断。如果外层 wrapper/runtime 已经为当前 activation 注入 trace，assistant 正文不得再输出第二个 `Routing trace` 块。
+- Checker 必须把 `• Updated Plan` 这类原生 transcript 前缀识别为同一个 `Updated Plan` 表面并纳入去重计数，同时拒绝同一响应 evidence 后续又出现手写 `Updated Plan:` 块。
+
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: runtime implementation completed in `conversation-surface-runtime-20260612`; user-level runtime refreshed and smoke-verified; awaiting runtime local gate, local MR review, and local `main` integration before template sync
-Owner session: `conversation-surface-runtime-20260612`
-Current gate: commit runtime implementation, run local gate and local MR review, merge local `main`, then update `D:/PythonProject_General` and `D:/PythonProject_General_2`
+Status: native surface deduplication correction planned in `conversation-surface-native-dedup-20260613`; previous runtime slice remains the baseline
+Owner session: `conversation-surface-native-dedup-20260613`
+Current gate: commit this plan correction and merge it into local `main`; then implement native panel/trace recognition, refresh user-level/runtime surfaces, run local gate and local MR review, merge local `main`, and update `D:/PythonProject_General` plus `D:/PythonProject_General_2`
 Remote publication: not authorized; stop at the remote-publication approval gate
-Last updated: 2026-06-12
+Last updated: 2026-06-13
 <!-- CURRENT_STATUS_END -->
 
 ## 文件归属
@@ -66,6 +73,9 @@ Last updated: 2026-06-12
 - [x] Harden conversation-surface checker logic and fixtures against duplicate `Updated Plan`, nested `Updated Plan`, Markdown checkbox `Updated Plan`, duplicate `Routing trace`, and old routing short fields.
 - [x] Run targeted checker tests, OpenSpec guard, and pre-commit update/archive checks for the runtime slice.
 - [x] Reinstall or refresh user-level team-mode runtime from repository source and smoke-search installed artifacts for old wording, including the generated `user-level-team-mode-model-instructions.md` cache.
+- [ ] Record the native `update_plan` panel as the canonical `Updated Plan` surface and ban assistant-written duplicate `Updated Plan` headings after a native panel.
+- [ ] Extend checker logic and fixtures so `• Updated Plan` counts as the native panel label, native-plus-handwritten duplicate evidence fails, and non-conflicting prose progress labels remain allowed outside the `Updated Plan` surface.
+- [ ] Extend routing trace guidance so an already injected trace suppresses assistant-written duplicate `Routing trace` output for the same activation.
 - [ ] Run full local gate and local MR review for the committed runtime implementation.
 - [ ] Merge the runtime implementation into local `main` and stop at the remote-publication gate.
 - [ ] Update `D:/PythonProject_General` with a plan commit followed by a template implementation commit and local main integration.
@@ -88,7 +98,8 @@ Last updated: 2026-06-12
 - 治理/runtime 表面中的 `Routing trace` 示例使用完整字段名：`phase`、`capability_chain`、`backend_default`、`backend_ready`、`experts`、`durable_workflow`、`persistent_team`、`main_session_escalation`、`approval_timeout_risk`、`approval_receipt` 与 `why`。
 - 当前用户可见 guidance 不再把 `experts_now` 或 `durable_team=<selected|not_selected>` 当作 live routing trace contract。
 - `Updated Plan` guidance 明确为单个用户可见 CLI/tree 进度面板，使用 `✔` 与 `□`；Markdown checkbox 只保留给 implementation plan 文件。
-- Checker fixtures 拒绝重复/嵌套 `Updated Plan` 输出和重复/旧字段 `Routing trace` 输出。
+- Checker fixtures 拒绝重复/嵌套 `Updated Plan` 输出、原生面板后再手写 `Updated Plan:` 镜像，以及重复/旧字段 `Routing trace` 输出。
+- Runtime guidance 明确要求 assistant 依赖原生 `update_plan` 面板，不再额外写一个 prose `Updated Plan` 块。
 - 用户级已安装产物和两个模板通过旧措辞残留 smoke search。
 - 仓库与模板变更只提交并合入各自 local `main`；远端发布继续受门禁保护。
 

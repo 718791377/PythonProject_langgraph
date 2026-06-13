@@ -31,14 +31,21 @@ Align the user-facing `Routing trace` and `Updated Plan` conversation surfaces a
 - Template scope: after repository runtime completion, update `D:/PythonProject_General` and `D:/PythonProject_General_2` so other projects and new computers inherit the clarified conversation-surface contract.
 - Remote publication is out of scope unless the operator explicitly requests remote push, GitLab MR, GitLab merge, or GitHub sync.
 
+## Native Surface Correction
+
+- A Codex-native `update_plan` tool render is the canonical user-visible `Updated Plan` panel. When that native panel is emitted, assistant prose must not handwrite a second `Updated Plan` heading, nested `Updated Plan` tree node, or Markdown checkbox mirror.
+- If no native plan panel is emitted and a short prose progress note is still useful, the assistant may use a non-conflicting label such as `Execution progress`; it must not impersonate the native `Updated Plan` panel.
+- `Routing trace` remains a single plain-text activation diagnostic. If an outer wrapper/runtime already injected the trace for the current activation, assistant prose must not emit a second `Routing trace` block.
+- Checkers must recognize native-looking transcript prefixes such as `U+2022 Updated Plan` as the same `Updated Plan` surface, count them for deduplication, and reject a later handwritten `Updated Plan:` block in the same response evidence.
+
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: runtime implementation completed in `conversation-surface-runtime-20260612`; user-level runtime refreshed and smoke-verified; awaiting runtime local gate, local MR review, and local `main` integration before template sync
-Owner session: `conversation-surface-runtime-20260612`
-Current gate: commit runtime implementation, run local gate and local MR review, merge local `main`, then update `D:/PythonProject_General` and `D:/PythonProject_General_2`
+Status: native surface deduplication correction planned in `conversation-surface-native-dedup-20260613`; previous runtime slice remains the baseline
+Owner session: `conversation-surface-native-dedup-20260613`
+Current gate: commit this plan correction and merge it into local `main`; then implement native panel/trace recognition, refresh user-level/runtime surfaces, run local gate and local MR review, merge local `main`, and update `D:/PythonProject_General` plus `D:/PythonProject_General_2`
 Remote publication: not authorized; stop at the remote-publication approval gate
-Last updated: 2026-06-12
+Last updated: 2026-06-13
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -66,6 +73,9 @@ Only one session may own each hotspot at a time:
 - [x] Harden conversation-surface checker logic and fixtures against duplicate `Updated Plan`, nested `Updated Plan`, Markdown checkbox `Updated Plan`, duplicate `Routing trace`, and old routing short fields.
 - [x] Run targeted checker tests, OpenSpec guard, and pre-commit update/archive checks for the runtime slice.
 - [x] Reinstall or refresh user-level team-mode runtime from repository source and smoke-search installed artifacts for old wording, including the generated `user-level-team-mode-model-instructions.md` cache.
+- [ ] Record the native `update_plan` panel as the canonical `Updated Plan` surface and ban assistant-written duplicate `Updated Plan` headings after a native panel.
+- [ ] Extend checker logic and fixtures so `U+2022 Updated Plan` counts as the native panel label, native-plus-handwritten duplicate evidence fails, and non-conflicting prose progress labels remain allowed outside the `Updated Plan` surface.
+- [ ] Extend routing trace guidance so an already injected trace suppresses assistant-written duplicate `Routing trace` output for the same activation.
 - [ ] Run full local gate and local MR review for the committed runtime implementation.
 - [ ] Merge the runtime implementation into local `main` and stop at the remote-publication gate.
 - [ ] Update `D:/PythonProject_General` with a plan commit followed by a template implementation commit and local main integration.
@@ -88,7 +98,8 @@ Only one session may own each hotspot at a time:
 - `Routing trace` examples in governance/runtime surfaces use the full field names: `phase`, `capability_chain`, `backend_default`, `backend_ready`, `experts`, `durable_workflow`, `persistent_team`, `main_session_escalation`, `approval_timeout_risk`, `approval_receipt`, and `why`.
 - Current user-facing guidance does not present `experts_now` or `durable_team=<selected|not_selected>` as the live routing trace contract.
 - `Updated Plan` guidance says one user-visible CLI/tree progress panel using checkmark (U+2714) and empty-square (U+25A1) status glyphs; Markdown checkbox syntax remains limited to implementation-plan files.
-- Checker fixtures reject duplicate/nested `Updated Plan` output and duplicate/old-field `Routing trace` output.
+- Checker fixtures reject duplicate/nested `Updated Plan` output, native-panel-plus-handwritten `Updated Plan:` mirrors, and duplicate/old-field `Routing trace` output.
+- Runtime guidance tells assistants to rely on the native `update_plan` panel instead of writing an additional prose `Updated Plan` block.
 - User-level installed artifacts and both templates pass residual old-wording smoke searches.
 - Repository and template changes are committed and merged into their local `main` branches only; remote publication remains gated.
 
