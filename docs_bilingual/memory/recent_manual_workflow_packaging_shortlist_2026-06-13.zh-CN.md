@@ -8,7 +8,7 @@ translation_of: docs_bilingual/memory/recent_manual_workflow_packaging_shortlist
 
 # 近期重复手工工作流打包短名单
 
-生成时间：`2026-06-13T03:32:14.987198+00:00`
+生成时间：`2026-06-13T12:12:20.570586+00:00`
 回看窗口：`30` 天
 Chronicle：`not_enabled`（仅发现，不写入）
 
@@ -18,63 +18,76 @@ Chronicle：`not_enabled`（仅发现，不写入）
 - 用户级：只记录候选，不安装。条件：跨两个以上项目复用、输出脱敏、具备 rollback/smoke 证据并有单独授权。
 - 不封装：custom subagent、scheduler、Chronicle 写入、外部真实动作；原因是已有角色覆盖或权限/隐私面过大。
 
+## 广泛类别扫描
+
+以下类别对应 `reference_files/5.md` 要求的 coding/research/writing/planning/communication/operations/analysis/personal administration 广泛回看范围。
+
+- **编码与实现** (`coding`): decision=`covered_by_shortlist`, evidence_count=`289`, mapped=`r5-r6-live-runtime-evidence-gates`, `gui-browser-wxwork-live-actions`, `recent-manual-workflow-packaging`. 近期实现工作已由 runtime/receipt 门禁、GUI/浏览器治理以及打包器本身覆盖。
+- **研究与来源发现** (`research`): decision=`separate_plan_required`, evidence_count=`21`, mapped=`gui-browser-wxwork-live-actions`. 近期工作出现研究工具，但浏览器/真实动作仍属敏感边界，不由本通用工作流打包。
+- **写作与文档** (`writing`): decision=`covered_by_shortlist`, evidence_count=`349`, mapped=`local-main-first-governance-packaging`, `recent-manual-workflow-packaging`. 文档与方案写作高频出现，由项目级 skill/CLI 和 local-main-first 打包候选覆盖。
+- **计划与路线控制** (`planning`): decision=`covered_by_shortlist`, evidence_count=`164`, mapped=`local-main-first-governance-packaging`, `recent-manual-workflow-packaging`. 证据窗口中最强的重复流程之一就是先方案后本地合入。
+- **沟通与消息** (`communication`): decision=`separate_plan_required`, evidence_count=`7`, mapped=`gui-browser-wxwork-live-actions`. 已检测到消息沟通工作，但它涉及外部真实动作，因此不纳入本通用打包器。
+- **运维、门禁、安装与发布** (`operations`): decision=`covered_by_shortlist`, evidence_count=`153`, mapped=`local-main-first-governance-packaging`, `r5-r6-live-runtime-evidence-gates`, `general-template-cross-project-sync`. 运维门禁与发布纪律高频重复，已映射到既有 helper 和短名单扩展。
+- **分析、审计与 triage** (`analysis`): decision=`covered_by_existing_assets`, evidence_count=`275`, mapped=`skills-usage-audit-cadence`, `r5-r6-live-runtime-evidence-gates`. 审计/triage 重复性强，但既有 checker-backed 资产已足够，因此封装决策是扩展/跳过重复项。
+- **个人行政事务** (`personal-administration`): decision=`scanned_no_packaging_candidate`, evidence_count=`0`, mapped=无. 本仓库近期已提交证据中没有足以封装个人行政流程的强证据。
+
 ## 短名单
 
 ### local-main-first-governance-packaging: 方案 -> 本地门禁/MR review -> 本地 main 合入打包
 
 - 推荐形式: `extend-existing/project-level-skill`
-- 频率/置信度: 213 evidence hits in the lookback window / `high`
+- 频率/置信度: 214 evidence hits in the lookback window / `high`
 - 本轮可行动: `true`
 - 理由: 本仓库反复执行方案冻结、本地验证、提交、合入 local main、停在远端发布门禁的流程。现有 helper 已覆盖合入机械动作，但仍需要窄范围 skill/CLI 固化发现与决策步骤。
 - 支持证据:
+  - 2026-06-13 [git] 方案：补齐近期工作流打包广泛类别证据 (6b58c1c)
+  - 2026-06-13 [git] 收尾近期手工工作流打包方案状态 (85b648c)
+  - 2026-06-13 [git] 方案：记录 MOE GUI dirty target 启动修复 (5bfec68)
   - 2026-06-13 [git] 方案：新增近期手工工作流打包计划 (5ba4dea)
   - 2026-06-12 [git] 添加会话表面单面板运行时对齐方案 (ea9a442)
   - 2026-06-12 [git] 添加通用模板复用升级方案 (f3c2900)
-  - 2026-06-11 [git] 收尾多方案家族R6完成状态 (d401cf9)
-  - 2026-06-11 [git] 实现多方案家族R6运行时校验 (72c657a)
-  - 2026-06-11 [git] 更新多方案家族R6执行计划 (f911dd7)
 
 ### r5-r6-live-runtime-evidence-gates: R5/R6 真实运行时证据收据门禁
 
 - 推荐形式: `extend-existing/skip-duplicate`
-- 频率/置信度: 193 evidence hits in the lookback window / `high`
+- 频率/置信度: 190 evidence hits in the lookback window / `high`
 - 本轮可行动: `false`
 - 理由: R5/R6 工作已由 checker-backed runtime 与 receipt 门禁覆盖；本轮只应复用/扩展既有门禁，避免再建宽泛重复资产。
 - 支持证据:
+  - 2026-06-13 [git] 记录 Skills 审计19点32分监控证据 (5473570)
+  - 2026-06-13 [git] 方案：补齐近期工作流打包广泛类别证据 (6b58c1c)
+  - 2026-06-13 [git] 记录 Skills 审计14点11分监控证据 (cbedd71)
+  - 2026-06-13 [git] 记录 Skills 审计12点34分监控证据 (ea092d9)
+  - 2026-06-13 [git] 记录 Skills 审计6月13日延续证据 (a9b17c1)
   - 2026-06-12 [git] 补齐通用模板最终验证证据 (9493cde)
-  - 2026-06-12 [git] 记录通用模板升级收尾证据 (b67b94f)
-  - 2026-06-11 [git] 收尾多方案家族R6完成状态 (d401cf9)
-  - 2026-06-11 [git] 实现多方案家族R6运行时校验 (72c657a)
-  - 2026-06-11 [git] 更新多方案家族R6执行计划 (f911dd7)
-  - 2026-06-11 [git] 文档：记录 Project MOE GUI 0.2.44 最终验收证据 (94dd221)
 
 ### skills-usage-audit-cadence: Codex skills 使用审计与 warning triage 节奏
 
 - 推荐形式: `extend-existing`
-- 频率/置信度: 177 evidence hits in the lookback window / `high`
+- 频率/置信度: 205 evidence hits in the lookback window / `high`
 - 本轮可行动: `false`
 - 理由: 周报和 triage 文件说明该流程重复出现，但仓库已有专用审计脚本和 memory 输出。本轮应继续复用，并把脱敏信号接入本报告。
 - 支持证据:
+  - 2026-06-13 [git] 记录 Skills 审计19点32分监控证据 (5473570)
+  - 2026-06-13 [git] 记录 Skills 审计14点11分监控证据 (cbedd71)
+  - 2026-06-13 [git] 记录 Skills 审计12点34分监控证据 (ea092d9)
+  - 2026-06-13 [git] 记录 Skills 审计6月13日延续证据 (a9b17c1)
   - 2026-06-09 [git] 实现R6覆盖审计批处理 (5d37ffd)
   - 2026-06-09 [git] 记录R6覆盖审计缺口 (1455e87)
-  - 2026-06-07 [git] 记录 Skills 审计6月7日延续证据 (43dda79)
-  - 2026-06-06 [git] 实现 MCP skills CLI R4 smoke 收据 (bee9791)
-  - 2026-06-04 [git] 实现：安装上游mcp2cli并派生skills2cli (98cc08b)
-  - 2026-06-03 [git] 更新上游 mcp2cli 与 skills2cli 用户级安装方案 (dc9e620)
 
 ### gui-browser-wxwork-live-actions: GUI/浏览器/企业微信真实动作治理
 
 - 推荐形式: `needs-more-evidence/separate-plan`
-- 频率/置信度: 126 evidence hits in the lookback window / `high`
+- 频率/置信度: 128 evidence hits in the lookback window / `high`
 - 本轮可行动: `false`
 - 理由: 该类工作重复且成本高，但涉及敏感外部真实动作。不能纳入通用打包器；需要单独方案、授权、rollback、smoke 与隐私证据。
 - 支持证据:
+  - 2026-06-13 [git] 修复 MOE GUI dirty target 启动与 thesis 包装器 (5d2deff)
+  - 2026-06-13 [git] 方案：记录 MOE GUI dirty target 启动修复 (5bfec68)
   - 2026-06-11 [git] 实现：执行 CloakBrowser-Manager 非 Docker 运行时 (838f256)
   - 2026-06-11 [git] 方案：规划 CloakBrowser-Manager 非 Docker 运行时 (41ca534)
   - 2026-06-11 [git] 文档：记录 Project MOE GUI 0.2.44 最终验收证据 (94dd221)
   - 2026-06-11 [git] 实现：优化 Project MOE GUI Sessions 镜头优先布局 (66c9b1a)
-  - 2026-06-11 [git] 文档：记录 Project MOE GUI 0.2.43 验证证据 (99bd7fc)
-  - 2026-06-11 [git] 实现：执行 CloakBrowser 学术技能用户级运行时 (f969454)
 
 ### general-template-cross-project-sync: General/General_2 模板扩展以支持跨项目复用
 
@@ -93,16 +106,16 @@ Chronicle：`not_enabled`（仅发现，不写入）
 ### recent-manual-workflow-packaging: 近期手工工作流打包流程本身
 
 - 推荐形式: `project-level-skill-and-manual-cli`
-- 频率/置信度: 18 evidence hits in the lookback window / `high`
+- 频率/置信度: 22 evidence hits in the lookback window / `high`
 - 本轮可行动: `true`
 - 理由: 该提示是可复用元工作流，证据顺序与停止条件稳定；高置信缺口资产就是项目级 skill 加手动 CLI。
 - 支持证据:
+  - 2026-06-13 [git] 实现近期工作流打包广泛类别扫描 (1fb2710)
+  - 2026-06-13 [git] 方案：补齐近期工作流打包广泛类别证据 (6b58c1c)
+  - 2026-06-13 [git] 收尾近期手工工作流打包方案状态 (85b648c)
+  - 2026-06-13 [git] 实现近期手工工作流打包运行时 (ca5adf1)
   - 2026-06-13 [git] 方案：新增近期手工工作流打包计划 (5ba4dea)
   - 2026-05-21 [git] 补强 PySide6 打包输出证据 (57946d8)
-  - 2026-05-21 [git] 补充 PySide6 打包 opt-in 检查器 (8c2ad00)
-  - 2026-05-19 [git] 脱敏 GitLab 手工备注路径 (58e984b)
-  - 2026-06-13 [memory] recent_manual_workflow_packaging_shortlist_2026-06-13 (docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md)
-  - 2026-06-13 [memory] recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN (docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md)
 
 ## 已创建或扩展
 

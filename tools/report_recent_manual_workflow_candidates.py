@@ -16,6 +16,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -145,6 +146,89 @@ DELIBERATE_SKIPS = [
         "title_zh": "\u5916\u90e8\u771f\u5b9e\u52a8\u4f5c\u81ea\u52a8\u5316",
         "reason": "Browser, GUI, WXWork, and similar live actions are sensitive and require their own explicit authorization and receipts.",
         "reason_zh": "\u6d4f\u89c8\u5668\u3001GUI\u3001\u4f01\u4e1a\u5fae\u4fe1\u7b49\u771f\u5b9e\u52a8\u4f5c\u654f\u611f\uff0c\u5fc5\u987b\u6709\u72ec\u7acb\u6388\u6743\u4e0e\u6536\u636e\u3002",
+    },
+]
+
+BROAD_CATEGORY_RULES: list[dict[str, Any]] = [
+    {
+        "id": "coding",
+        "title": "Coding and implementation",
+        "title_zh": "\u7f16\u7801\u4e0e\u5b9e\u73b0",
+        "keywords": ["code", "coding", "implementation", "runtime", "fix", "feature", "test", "CLI", "GUI", "\u5b9e\u73b0", "\u4fee\u590d", "\u529f\u80fd", "\u6d4b\u8bd5", "\u8fd0\u884c\u65f6"],
+        "candidate_ids": ["r5-r6-live-runtime-evidence-gates", "gui-browser-wxwork-live-actions", "recent-manual-workflow-packaging"],
+        "decision": "covered_by_shortlist",
+        "why": "Recent implementation work is represented by runtime/receipt gates, GUI/browser governance, and the packager implementation itself.",
+        "why_zh": "\u8fd1\u671f\u5b9e\u73b0\u5de5\u4f5c\u5df2\u7531 runtime/receipt \u95e8\u7981\u3001GUI/\u6d4f\u89c8\u5668\u6cbb\u7406\u4ee5\u53ca\u6253\u5305\u5668\u672c\u8eab\u8986\u76d6\u3002",
+    },
+    {
+        "id": "research",
+        "title": "Research and source discovery",
+        "title_zh": "\u7814\u7a76\u4e0e\u6765\u6e90\u53d1\u73b0",
+        "keywords": ["research", "academic", "source", "whitepaper", "PMI", "CloakBrowser", "\u7814\u7a76", "\u5b66\u672f", "\u6765\u6e90", "\u767d\u76ae\u4e66"],
+        "candidate_ids": ["gui-browser-wxwork-live-actions"],
+        "decision": "separate_plan_required",
+        "why": "Research tooling appears in recent work, but browser/live-action pieces remain sensitive and are not packaged by this generic workflow.",
+        "why_zh": "\u8fd1\u671f\u5de5\u4f5c\u51fa\u73b0\u7814\u7a76\u5de5\u5177\uff0c\u4f46\u6d4f\u89c8\u5668/\u771f\u5b9e\u52a8\u4f5c\u4ecd\u5c5e\u654f\u611f\u8fb9\u754c\uff0c\u4e0d\u7531\u672c\u901a\u7528\u5de5\u4f5c\u6d41\u6253\u5305\u3002",
+    },
+    {
+        "id": "writing",
+        "title": "Writing and documentation",
+        "title_zh": "\u5199\u4f5c\u4e0e\u6587\u6863",
+        "keywords": ["doc", "docs", "document", "summary", "write", "writing", "plan", "\u6587\u6863", "\u65b9\u6848", "\u6458\u8981", "\u5199\u4f5c", "\u8bb0\u5f55"],
+        "candidate_ids": ["local-main-first-governance-packaging", "recent-manual-workflow-packaging"],
+        "decision": "covered_by_shortlist",
+        "why": "Documentation and planning write-ups recur heavily and are covered by the project-level skill/CLI plus local-main-first packaging candidate.",
+        "why_zh": "\u6587\u6863\u4e0e\u65b9\u6848\u5199\u4f5c\u9ad8\u9891\u51fa\u73b0\uff0c\u7531\u9879\u76ee\u7ea7 skill/CLI \u548c local-main-first \u6253\u5305\u5019\u9009\u8986\u76d6\u3002",
+    },
+    {
+        "id": "planning",
+        "title": "Planning and roadmap control",
+        "title_zh": "\u8ba1\u5212\u4e0e\u8def\u7ebf\u63a7\u5236",
+        "keywords": ["plan", "roadmap", "backlog", "proposal", "freeze", "\u65b9\u6848", "\u8ba1\u5212", "\u8def\u7ebf", "\u89c4\u5212", "\u6536\u53e3"],
+        "candidate_ids": ["local-main-first-governance-packaging", "recent-manual-workflow-packaging"],
+        "decision": "covered_by_shortlist",
+        "why": "Plan-first local integration is one of the strongest repeated workflows in the evidence window.",
+        "why_zh": "\u8bc1\u636e\u7a97\u53e3\u4e2d\u6700\u5f3a\u7684\u91cd\u590d\u6d41\u7a0b\u4e4b\u4e00\u5c31\u662f\u5148\u65b9\u6848\u540e\u672c\u5730\u5408\u5165\u3002",
+    },
+    {
+        "id": "communication",
+        "title": "Communication and messaging",
+        "title_zh": "\u6c9f\u901a\u4e0e\u6d88\u606f",
+        "keywords": ["WXWork", "WeCom", "message", "communication", "wechat", "\u4f01\u4e1a\u5fae\u4fe1", "\u5fae\u4fe1", "\u7fa4\u804a", "\u6d88\u606f", "\u6c9f\u901a"],
+        "candidate_ids": ["gui-browser-wxwork-live-actions"],
+        "decision": "separate_plan_required",
+        "why": "Messaging work is detected, but it involves external live actions and therefore remains out of scope for this generic packager.",
+        "why_zh": "\u5df2\u68c0\u6d4b\u5230\u6d88\u606f\u6c9f\u901a\u5de5\u4f5c\uff0c\u4f46\u5b83\u6d89\u53ca\u5916\u90e8\u771f\u5b9e\u52a8\u4f5c\uff0c\u56e0\u6b64\u4e0d\u7eb3\u5165\u672c\u901a\u7528\u6253\u5305\u5668\u3002",
+    },
+    {
+        "id": "operations",
+        "title": "Operations, gates, installs, and releases",
+        "title_zh": "\u8fd0\u7ef4\u3001\u95e8\u7981\u3001\u5b89\u88c5\u4e0e\u53d1\u5e03",
+        "keywords": ["gate", "CI", "merge", "main", "smoke", "receipt", "install", "release", "runtime", "\u95e8\u7981", "\u5408\u5165", "\u5b89\u88c5", "\u53d1\u5e03", "\u8fd0\u884c\u65f6"],
+        "candidate_ids": ["local-main-first-governance-packaging", "r5-r6-live-runtime-evidence-gates", "general-template-cross-project-sync"],
+        "decision": "covered_by_shortlist",
+        "why": "Operational gates and release discipline recur frequently and map to existing helpers plus shortlist extensions.",
+        "why_zh": "\u8fd0\u7ef4\u95e8\u7981\u4e0e\u53d1\u5e03\u7eaa\u5f8b\u9ad8\u9891\u91cd\u590d\uff0c\u5df2\u6620\u5c04\u5230\u65e2\u6709 helper \u548c\u77ed\u540d\u5355\u6269\u5c55\u3002",
+    },
+    {
+        "id": "analysis",
+        "title": "Analysis, audit, and triage",
+        "title_zh": "\u5206\u6790\u3001\u5ba1\u8ba1\u4e0e triage",
+        "keywords": ["analysis", "audit", "triage", "review", "evidence", "verify", "\u5206\u6790", "\u5ba1\u8ba1", "\u8bc1\u636e", "\u9a8c\u8bc1", "\u590d\u6838"],
+        "candidate_ids": ["skills-usage-audit-cadence", "r5-r6-live-runtime-evidence-gates"],
+        "decision": "covered_by_existing_assets",
+        "why": "Audit/triage recurrence is strong, but existing checker-backed assets are adequate, so the packaging decision is extend/skip duplicate.",
+        "why_zh": "\u5ba1\u8ba1/triage \u91cd\u590d\u6027\u5f3a\uff0c\u4f46\u65e2\u6709 checker-backed \u8d44\u4ea7\u5df2\u8db3\u591f\uff0c\u56e0\u6b64\u5c01\u88c5\u51b3\u7b56\u662f\u6269\u5c55/\u8df3\u8fc7\u91cd\u590d\u9879\u3002",
+    },
+    {
+        "id": "personal-administration",
+        "title": "Personal administration",
+        "title_zh": "\u4e2a\u4eba\u884c\u653f\u4e8b\u52a1",
+        "keywords": ["personal", "admin", "gmail", "calendar", "notion", "reminder", "schedule", "\u4e2a\u4eba", "\u884c\u653f", "\u65e5\u7a0b", "\u63d0\u9192"],
+        "candidate_ids": [],
+        "decision": "scanned_no_packaging_candidate",
+        "why": "No strong committed recent-work evidence in this repository supports packaging a personal-administration workflow.",
+        "why_zh": "\u672c\u4ed3\u5e93\u8fd1\u671f\u5df2\u63d0\u4ea4\u8bc1\u636e\u4e2d\u6ca1\u6709\u8db3\u4ee5\u5c01\u88c5\u4e2a\u4eba\u884c\u653f\u6d41\u7a0b\u7684\u5f3a\u8bc1\u636e\u3002",
     },
 ]
 
@@ -302,6 +386,28 @@ def summarize_frequency(matches: list[Evidence], hint: str) -> tuple[str, str]:
     return f"{count} evidence hits in the lookback window", "low"
 
 
+def build_broad_category_scan(evidence: list[Evidence], shortlist: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    shortlist_ids = {str(row["id"]) for row in shortlist}
+    rows: list[dict[str, Any]] = []
+    for rule in BROAD_CATEGORY_RULES:
+        matches = match_evidence(rule, evidence)
+        candidate_ids = [cid for cid in rule["candidate_ids"] if cid in shortlist_ids]
+        rows.append(
+            {
+                "id": rule["id"],
+                "category": rule["title"],
+                "category_zh": rule["title_zh"],
+                "evidence_count": len(matches),
+                "supporting_evidence": [item.__dict__ for item in matches[:MAX_EVIDENCE]],
+                "mapped_shortlist_ids": candidate_ids,
+                "decision": rule["decision"],
+                "why": rule["why"],
+                "why_zh": rule["why_zh"],
+            }
+        )
+    return rows
+
+
 def build_report(root: Path, days: int) -> dict[str, Any]:
     all_evidence = parse_git_log(root, days) + memory_evidence(root, days)
     inventory = skill_inventory(root)
@@ -325,6 +431,7 @@ def build_report(root: Path, days: int) -> dict[str, Any]:
             }
         )
 
+    broad_category_scan = build_broad_category_scan(all_evidence, shortlist)
     created_or_extended = []
     if (root / ".agents" / "skills" / "recent-workflow-packaging" / "SKILL.md").exists():
         created_or_extended.append({"id": "repo-local-recent-workflow-packaging-skill", "form": "project-level skill", "path": ".agents/skills/recent-workflow-packaging/SKILL.md", "status": "present"})
@@ -353,6 +460,7 @@ def build_report(root: Path, days: int) -> dict[str, Any]:
         ],
         "chronicle": chronicle_status(root),
         "existing_coverage": existing_coverage,
+        "broad_category_scan": broad_category_scan,
         "shortlist": shortlist,
         "created_or_extended": created_or_extended,
         "user_level_candidates": [USER_LEVEL_CANDIDATE],
@@ -424,6 +532,16 @@ def render_markdown(report: dict[str, Any], lang: str) -> str:
             "- \u7528\u6237\u7ea7\uff1a\u53ea\u8bb0\u5f55\u5019\u9009\uff0c\u4e0d\u5b89\u88c5\u3002\u6761\u4ef6\uff1a\u8de8\u4e24\u4e2a\u4ee5\u4e0a\u9879\u76ee\u590d\u7528\u3001\u8f93\u51fa\u8131\u654f\u3001\u5177\u5907 rollback/smoke \u8bc1\u636e\u5e76\u6709\u5355\u72ec\u6388\u6743\u3002",
             "- \u4e0d\u5c01\u88c5\uff1acustom subagent\u3001scheduler\u3001Chronicle \u5199\u5165\u3001\u5916\u90e8\u771f\u5b9e\u52a8\u4f5c\uff1b\u539f\u56e0\u662f\u5df2\u6709\u89d2\u8272\u8986\u76d6\u6216\u6743\u9650/\u9690\u79c1\u9762\u8fc7\u5927\u3002",
             "",
+            "## \u5e7f\u6cdb\u7c7b\u522b\u626b\u63cf",
+            "",
+            "\u4ee5\u4e0b\u7c7b\u522b\u5bf9\u5e94 `reference_files/5.md` \u8981\u6c42\u7684 coding/research/writing/planning/communication/operations/analysis/personal administration \u5e7f\u6cdb\u56de\u770b\u8303\u56f4\u3002",
+            "",
+        ])
+        for row in report["broad_category_scan"]:
+            mapped = ", ".join(f"`{item}`" for item in row["mapped_shortlist_ids"]) or "\u65e0"
+            lines.append(f"- **{row['category_zh']}** (`{row['id']}`): decision=`{row['decision']}`, evidence_count=`{row['evidence_count']}`, mapped={mapped}. {row['why_zh']}")
+        lines.extend([
+            "",
             "## \u77ed\u540d\u5355",
         ])
     else:
@@ -437,6 +555,16 @@ def render_markdown(report: dict[str, Any], lang: str) -> str:
             "- Project-level: implemented in this run because inputs depend on this repository's Git history, memory, implementation plans, and local gates.",
             "- User-level: candidate only; install requires cross-project proof, redaction, rollback, smoke evidence, and separate authorization.",
             "- Do not package: custom subagent, scheduler, Chronicle writes, and external live actions are skipped because existing roles cover them or the privilege/privacy surface is too large.",
+            "",
+            "## Broad Category Scan",
+            "",
+            "These categories correspond to the broad review scope requested by `reference_files/5.md`: coding, research, writing, planning, communication, operations, analysis, and personal administration.",
+            "",
+        ])
+        for row in report["broad_category_scan"]:
+            mapped = ", ".join(f"`{item}`" for item in row["mapped_shortlist_ids"]) or "none"
+            lines.append(f"- **{row['category']}** (`{row['id']}`): decision=`{row['decision']}`, evidence_count=`{row['evidence_count']}`, mapped={mapped}. {row['why']}")
+        lines.extend([
             "",
             "## Shortlist",
         ])
@@ -475,6 +603,17 @@ def render_markdown(report: dict[str, Any], lang: str) -> str:
     return "\n".join(lines)
 
 
+def emit_stdout(text: str) -> None:
+    data = text.encode("utf-8", errors="strict")
+    stream = getattr(sys.stdout, "buffer", None)
+    if stream is not None:
+        stream.write(data)
+        stream.flush()
+    else:
+        sys.stdout.write(text)
+        sys.stdout.flush()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Report repeated manual workflow packaging candidates.")
     parser.add_argument("--root", default=".", help="Repository root.")
@@ -499,9 +638,9 @@ def main() -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(render_markdown(report, args.language), encoding="utf-8", newline="\n")
     if args.json:
-        print(json.dumps(report, ensure_ascii=False, indent=2))
+        emit_stdout(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     elif not args.output:
-        print(render_markdown(report, args.language))
+        emit_stdout(render_markdown(report, args.language) + "\n")
     else:
         print(f"Wrote Markdown report to {out}")
     return 0

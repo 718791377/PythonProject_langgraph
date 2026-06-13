@@ -20,6 +20,15 @@ This is a project-level workflow first. It may record user-level wrapper/config 
 
 Do not read or commit raw transcripts, raw runtime logs, raw Chronicle payloads, or full private user paths.
 
+## Broad Review Categories
+
+The CLI must record a `broad_category_scan` so the broad search requested by
+`reference_files/5.md` is explicit and auditable. It covers coding, research,
+writing, planning, communication, operations, analysis, and personal
+administration. A category with weak or absent evidence should be recorded as
+`scanned_no_packaging_candidate` or `separate_plan_required`, not silently
+omitted.
+
 ## Procedure
 
 1. Run the repo CLI from the repository root:
@@ -40,7 +49,11 @@ Do not read or commit raw transcripts, raw runtime logs, raw Chronicle payloads,
    - materially improves speed, quality, consistency, or reliability;
    - not already adequately covered.
 
-4. Choose the smallest form:
+4. Review the `broad_category_scan` and ensure every broad category has a
+   decision, evidence count, and either mapped shortlist items or an explicit
+   no-package/separate-plan reason.
+
+5. Choose the smallest form:
    - Skill: reusable workflow/playbook.
    - Custom subagent: bounded specialist role suitable for delegation.
    - Automation: scheduled/recurring check, report, reminder, or monitor.
@@ -61,5 +74,9 @@ Before claiming completion, verify:
 python .\tools\report_recent_manual_workflow_candidates.py --root . --days 30 --json
 python .\tools\report_recent_manual_workflow_candidates.py --root . --days 30 --output .omx/test-artifacts/recent-workflow-packaging-smoke.md
 ```
+
+The CLI stdout path is UTF-8 forced for JSON and Markdown so subprocess
+consumers can parse output reliably on Windows shells whose console code page is
+not UTF-8.
 
 Then run the repository precommit/update/archive, OpenSpec guard, local gate if not blocked by unrelated active worktrees, and local MR review according to the local-main-first workflow.
