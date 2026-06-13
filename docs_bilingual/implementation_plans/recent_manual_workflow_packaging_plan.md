@@ -26,8 +26,8 @@ Markdown implementation plans, repo-local `.agents/skills`, Python CLI, Git hist
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: planned
-Stage: plan committed before implementation.
+Status: implemented
+Stage: project-level runtime implemented; local integration pending.
 Owner session: `implement-recent-manual-workflow-packaging-20260613`.
 Source prompt: `reference_files/5.md`.
 Runtime boundary: project-level source-of-truth skill, CLI, and sanitized memory output; user-level wrapper/config is recorded only as a future candidate; no user-level install, no scheduled task, no Chronicle mutation, no remote publication.
@@ -79,9 +79,9 @@ Default rule: package at project level first. Promote to a user-level wrapper/co
 - [x] Read `reference_files/5.md`.
 - [x] Inspect existing audit, skills, agents, and memory surfaces non-destructively.
 - [x] Add the bilingual implementation plan and record the user-level/project-level packaging decision.
-- [ ] Commit the plan, run local gates, and merge into local `main`.
-- [ ] Add the project-level repo-local skill and CLI.
-- [ ] Generate sanitized memory shortlist and record user-level wrapper/config candidate conditions.
+- [x] Commit the plan, run local gates, and merge into local `main`.
+- [x] Add the project-level repo-local skill and CLI.
+- [x] Generate sanitized memory shortlist and record user-level wrapper/config candidate conditions.
 - [ ] Run implementation gates, commit the implementation, and merge into local `main`.
 <!-- TASK_BACKLOG_END -->
 
@@ -92,20 +92,20 @@ Default rule: package at project level first. Promote to a user-level wrapper/co
 - [x] Read `reference_files/5.md`.
 - [x] Inspect existing audit, skills, agents, and memory surfaces non-destructively.
 - [x] Add this bilingual implementation plan.
-- [ ] Commit the plan, run local gates, and merge into local `main`.
+- [x] Commit the plan, run local gates, and merge into local `main`.
 
 ### Slice 2: Skill and CLI
 
-- [ ] Add `.agents/skills/recent-workflow-packaging/SKILL.md`.
-- [ ] Add `tools/report_recent_manual_workflow_candidates.py`.
-- [ ] Support `--root`, `--days`, `--output`, and `--json`.
-- [ ] Emit shortlist, created/extended, deliberately skipped, and needs-more-evidence sections.
-- [ ] Emit `Chronicle: not_enabled` when Chronicle is unavailable.
+- [x] Add `.agents/skills/recent-workflow-packaging/SKILL.md`.
+- [x] Add `tools/report_recent_manual_workflow_candidates.py`.
+- [x] Support `--root`, `--days`, `--output`, and `--json`.
+- [x] Emit shortlist, created/extended, deliberately skipped, and needs-more-evidence sections.
+- [x] Emit `Chronicle: not_enabled` when Chronicle is unavailable.
 
 ### Slice 3: Evidence output and verification
 
-- [ ] Generate `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`.
-- [ ] Generate `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`.
+- [x] Generate `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`.
+- [x] Generate `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`.
 - [ ] Run script smoke, precommit update/archive, OpenSpec guard, local gate, and local MR review.
 - [ ] Commit the implementation, merge into local `main`, and stop at the remote-publication gate.
 
@@ -119,7 +119,11 @@ Default rule: package at project level first. Promote to a user-level wrapper/co
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- Pending implementation evidence: shortlist memory will be generated in Slice 3 after the CLI exists.
+- Project-level skill: `.agents/skills/recent-workflow-packaging/SKILL.md`.
+- Manual CLI: `tools/report_recent_manual_workflow_candidates.py`.
+- Sanitized shortlist: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`.
+- Chinese shortlist companion: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`.
+- Local smoke JSON: `.omx/test-artifacts/recent_manual_workflow_packaging_shortlist_2026-06-13.json` (local-only evidence).
 <!-- EVIDENCE_INDEX_END -->
 
 ## Non-Goals

@@ -26,8 +26,8 @@ Markdown implementation plan、repo-local `.agents/skills`、Python CLI、Git hi
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Status: planned
-Stage: plan committed before implementation.
+Status: implemented
+Stage: project-level runtime implemented; local integration pending.
 Owner session: `implement-recent-manual-workflow-packaging-20260613`.
 Source prompt: `reference_files/5.md`.
 Runtime boundary: project-level source-of-truth skill, CLI, and sanitized memory output; user-level wrapper/config is recorded only as a future candidate; no user-level install, no scheduled task, no Chronicle mutation, no remote publication.
@@ -78,9 +78,9 @@ Last updated: 2026-06-13
 - [x] 读取 `reference_files/5.md`。
 - [x] 非破坏性盘点已有 audit、skills、agents 与 memory 表面。
 - [x] 新增双语 implementation plan，并记录用户级/项目级封装判断。
-- [ ] 提交方案 commit，运行本地门禁并合入 local `main`。
-- [ ] 新增项目级 repo-local skill 与 CLI。
-- [ ] 生成脱敏短名单 memory，并记录用户级 wrapper/config 候选条件。
+- [x] 提交方案 commit，运行本地门禁并合入 local `main`。
+- [x] 新增项目级 repo-local skill 与 CLI。
+- [x] 生成脱敏短名单 memory，并记录用户级 wrapper/config 候选条件。
 - [ ] 运行实现门禁，提交实现 commit，并合入 local `main`。
 <!-- TASK_BACKLOG_END -->
 
@@ -91,20 +91,20 @@ Last updated: 2026-06-13
 - [x] 读取 `reference_files/5.md`。
 - [x] 非破坏性盘点已有 audit、skills、agents 与 memory 表面。
 - [x] 新增本双语 implementation plan。
-- [ ] 提交方案 commit，运行本地门禁并合入 local `main`。
+- [x] 提交方案 commit，运行本地门禁并合入 local `main`。
 
 ### Slice 2：Skill 与 CLI
 
-- [ ] 新增 `.agents/skills/recent-workflow-packaging/SKILL.md`。
-- [ ] 新增 `tools/report_recent_manual_workflow_candidates.py`。
-- [ ] CLI 支持 `--root`、`--days`、`--output`、`--json`。
-- [ ] CLI 输出短名单、已创建/扩展、刻意跳过、需更多证据四类信息。
-- [ ] CLI 对 Chronicle 不可用时输出 `Chronicle: not_enabled`。
+- [x] 新增 `.agents/skills/recent-workflow-packaging/SKILL.md`。
+- [x] 新增 `tools/report_recent_manual_workflow_candidates.py`。
+- [x] CLI 支持 `--root`、`--days`、`--output`、`--json`。
+- [x] CLI 输出短名单、已创建/扩展、刻意跳过、需更多证据四类信息。
+- [x] CLI 对 Chronicle 不可用时输出 `Chronicle: not_enabled`。
 
 ### Slice 3：证据输出与验证
 
-- [ ] 生成 `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`。
-- [ ] 生成 `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`。
+- [x] 生成 `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`。
+- [x] 生成 `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`。
 - [ ] 运行脚本 smoke、precommit update/archive、OpenSpec guard、local gate、local MR review。
 - [ ] 提交实现 commit，合入 local `main`，停止在远端发布门禁。
 
@@ -118,7 +118,11 @@ Last updated: 2026-06-13
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- Pending implementation evidence: shortlist memory will be generated in Slice 3 after the CLI exists.
+- Project-level skill: `.agents/skills/recent-workflow-packaging/SKILL.md`.
+- Manual CLI: `tools/report_recent_manual_workflow_candidates.py`.
+- Sanitized shortlist: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.md`.
+- Chinese shortlist companion: `docs_bilingual/memory/recent_manual_workflow_packaging_shortlist_2026-06-13.zh-CN.md`.
+- Local smoke JSON: `.omx/test-artifacts/recent_manual_workflow_packaging_shortlist_2026-06-13.json` (local-only evidence).
 <!-- EVIDENCE_INDEX_END -->
 
 ## 非目标
