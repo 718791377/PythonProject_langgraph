@@ -15,7 +15,7 @@ status: draft
 
 ## 本轮 Fresh Source Evidence
 
-本白皮书依据 `2026-06-13T02:54:55Z` 生成的本地 fresh reading 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` 更新。该运行读取 `Business Management/` 与 `PMP/` 下 54 个来源，包括 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件。白皮书只引用聚合与综合证据；raw extracted text 保留在忽略态本地缓存中。
+本白皮书依据 `2026-06-13T22:50:48Z` 生成的本地 fresh reading 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` 更新。该运行读取 `Business Management/` 与 `PMP/` 下 54 个来源，包括 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件。白皮书只引用聚合与综合证据；raw extracted text 保留在忽略态本地缓存中。
 
 ## 为什么白皮书与研究稿分开
 

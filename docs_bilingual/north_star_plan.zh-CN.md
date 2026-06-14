@@ -13,7 +13,7 @@ status: draft
 
 本文是 Codex CLI 个人生产级持久化团队平台的指标层北极星计划。它把白皮书叙事、MRD 需求和产品生命周期清单地图转化为可度量的方向。它不是运行时证据，不能证明当前已经有 durable team 或 persistent team 正在运行。
 
-本次刷新使用的新鲜来源证据来自 `2026-06-13T02:54:55Z` 生成、但因体积和原文版权边界而未提交的 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` 抽取产物：`fresh_source_manifest.json`、`fresh_source_synthesis.json`、本地 raw `fresh_source_items.jsonl`。抽取覆盖 54 个来源，其中 31 个来自 `Business Management/`、23 个来自 `PMP/`；格式包括 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件，合计 18,492,044 个抽取文本字符。Git 跟踪文档只记录综合结论；源文本、逐项抽取流和抽取日志保留在本地忽略目录中。
+本次刷新使用的新鲜来源证据来自 `2026-06-13T22:50:48Z` 生成、但因体积和原文版权边界而未提交的 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` 抽取产物：`fresh_source_manifest.json`、`fresh_source_synthesis.json`、本地 raw `fresh_source_items.jsonl`。抽取覆盖 54 个来源，其中 31 个来自 `Business Management/`、23 个来自 `PMP/`；格式包括 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件，合计 18,492,044 个抽取文本字符。Git 跟踪文档只记录综合结论；源文本、逐项抽取流和抽取日志保留在本地忽略目录中。
 
 ## 主要北极星指标
 

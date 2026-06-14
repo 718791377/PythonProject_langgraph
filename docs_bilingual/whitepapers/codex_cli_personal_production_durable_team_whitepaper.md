@@ -15,7 +15,7 @@ This white paper answers why a solo maintainer who works across multiple reposit
 
 ## Fresh Source Evidence For This Refresh
 
-This white paper is updated against the fresh local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` generated at `2026-06-13T02:54:55Z`. The run read 54 sources across `Business Management/` and `PMP/`, including 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. The white paper cites only aggregate and synthesized evidence; raw extracted text remains in ignored local cache.
+This white paper is updated against the fresh local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` generated at `2026-06-13T22:50:48Z`. The run read 54 sources across `Business Management/` and `PMP/`, including 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. The white paper cites only aggregate and synthesized evidence; raw extracted text remains in ignored local cache.
 
 ## Why This White Paper Exists Beside The Research Document
 

@@ -11,7 +11,7 @@ The rule is source-backed by the local `Business Management/` and `PMP/` synthes
 
 ## Source Evidence Boundary
 
-This tailoring rule is refreshed from the June 13 evidence run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T02:54:55Z`), covering 54 local sources and 9,656 page/spine/full-document units. It supersedes outdated extraction wording for this refresh and keeps raw extracted text in ignored local cache only. Use `fresh_source_reading_evidence.md` for the current evidence index.
+This tailoring rule is refreshed from the June 13 evidence run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T22:50:48Z`), covering 54 local sources and 9,656 page/spine/full-document units. It supersedes outdated extraction wording for this refresh and keeps raw extracted text in ignored local cache only. Use `fresh_source_reading_evidence.md` for the current evidence index.
 
 ## Tailoring Principle
 

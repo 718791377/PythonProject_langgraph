@@ -145,7 +145,7 @@ It answers a narrower and harder question:
 
 ## 3. Method And Evidence Base
 
-This 2026-06-13 refresh also uses the local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T02:54:55Z`) as product/business context evidence: 54 local sources, 9,656 page/spine/full-document units, and 18,492,044 extracted characters. That evidence updates the relationship between this research note, the white paper, and the 12-layer lifecycle, but it does not replace the runtime/governance research basis of this document.
+This 2026-06-13 refresh also uses the local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T22:50:48Z`) as product/business context evidence: 54 local sources, 9,656 page/spine/full-document units, and 18,492,044 extracted characters. That evidence updates the relationship between this research note, the white paper, and the 12-layer lifecycle, but it does not replace the runtime/governance research basis of this document.
 
 This paper uses a cross-source synthesis method.
 

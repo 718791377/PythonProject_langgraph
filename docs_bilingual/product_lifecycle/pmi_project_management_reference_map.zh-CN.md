@@ -13,7 +13,7 @@
 
 ## 本地 PMP 来源覆盖
 
-本次刷新只读取本地 `PMP/` 文件。fresh extraction evidence 于 `2026-06-13T02:54:55Z` 在 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` 重新生成，并记录 23 个 PMP 家族来源：9 个 PDF / 3,035 页、2 个 EPUB / 58 个 spine item、12 个 Markdown 全文笔记，共 3,105 个 PMP 读取单元和 4,330,816 个抽取字符。仓库只记录以下覆盖摘要与治理映射综合。
+本次刷新只读取本地 `PMP/` 文件。fresh extraction evidence 于 `2026-06-13T22:50:48Z` 在 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` 重新生成，并记录 23 个 PMP 家族来源：9 个 PDF / 3,035 页、2 个 EPUB / 58 个 spine item、12 个 Markdown 全文笔记，共 3,105 个 PMP 读取单元和 4,330,816 个抽取字符。仓库只记录以下覆盖摘要与治理映射综合。
 
 | 本地参考资料 | 格式 | 覆盖量 | 主要治理用途 |
 | --- | --- | ---: | --- |

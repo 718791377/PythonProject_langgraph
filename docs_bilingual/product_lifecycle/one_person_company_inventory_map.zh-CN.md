@@ -4,7 +4,7 @@
 
 ## Fresh Source Evidence
 
-本地图以 2026-06-13 fresh extraction 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`（`2026-06-13T02:54:55Z`）为证据边界。精确清单数量来自对 `Business Management/架构 2：个人级生产级一人公司运营.md` 的全文读取（source `S0031`，18,544 字符）。Business Management 来源解释一人公司运行原则；PMP 来源提供过程组、PMO、项目集、项目组合与裁剪纪律。
+本地图以 2026-06-13 fresh extraction 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`（`2026-06-13T22:50:48Z`）为证据边界。精确清单数量来自对 `Business Management/架构 2：个人级生产级一人公司运营.md` 的全文读取（source `S0031`，18,544 字符）。Business Management 来源解释一人公司运行原则；PMP 来源提供过程组、PMO、项目集、项目组合与裁剪纪律。
 
 ## 规范清单
 

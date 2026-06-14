@@ -4,7 +4,7 @@
 
 ## Fresh Extraction 范围
 
-本次刷新以 `2026-06-13T02:54:55Z` 重新生成的忽略态证据目录 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` 为依据，运行 ID 为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`。这些产物是本次刷新的 fresh reading 证据，不替代源文件，也不是可反复套用的结论缓存。
+本次刷新以 `2026-06-13T22:50:48Z` 重新生成的忽略态证据目录 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` 为依据，运行 ID 为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`。这些产物是本次刷新的 fresh reading 证据，不替代源文件，也不是可反复套用的结论缓存。
 
 - 清单：`fresh_source_manifest.json`
 - 逐单元提取日志：`fresh_source_items.jsonl`

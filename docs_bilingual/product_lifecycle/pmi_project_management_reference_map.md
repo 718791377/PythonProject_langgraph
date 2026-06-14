@@ -13,7 +13,7 @@ These references are an overlay. They do not replace white papers, BRD, MRD, Nor
 
 ## Local PMP Source Coverage
 
-The local `PMP/` directory was read from local files only for this refresh. The fresh extraction evidence was regenerated at `2026-06-13T02:54:55Z` under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` and recorded 23 PMP-family sources: 9 PDFs / 3,035 pages, 2 EPUBs / 58 spine items, and 12 Markdown full-text notes, for 3,105 total PMP read units and 4,330,816 extracted characters. The tracked repository records the following coverage summary and synthesized governance mapping only.
+The local `PMP/` directory was read from local files only for this refresh. The fresh extraction evidence was regenerated at `2026-06-13T22:50:48Z` under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` and recorded 23 PMP-family sources: 9 PDFs / 3,035 pages, 2 EPUBs / 58 spine items, and 12 Markdown full-text notes, for 3,105 total PMP read units and 4,330,816 extracted characters. The tracked repository records the following coverage summary and synthesized governance mapping only.
 
 | Local reference | Format | Coverage | Primary governance use |
 | --- | --- | ---: | --- |
