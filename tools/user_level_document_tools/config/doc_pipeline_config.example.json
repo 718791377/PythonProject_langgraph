@@ -1,0 +1,15 @@
+{
+  "poppler_bin_dir": "",
+  "acrobat_exe": "C:\\Program Files\\Adobe\\Acrobat DC\\Acrobat\\Acrobat.exe",
+  "python_exe": "",
+  "default_dpi": 200,
+  "final_review_dpi": 300,
+  "word_com_requires_interactive_desktop": true,
+  "safe_output_roots": [
+    "<consumer-project>/.local/user_level_document_tools"
+  ],
+  "python_packages_dir": "",
+  "notes": [
+    "Example only. Fill this in a consumer project or local-only config path."
+  ]
+}

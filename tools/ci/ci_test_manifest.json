@@ -77,7 +77,8 @@
     "wxwork_cli_governance.test.py",
     "gstack_codex_delivery_loop_runtime.test.py",
     "check_gstack_codex_delivery_loop.test.py",
-    "check_user_level_cloakbrowser_academic_runtime.test.py"
+    "check_user_level_cloakbrowser_academic_runtime.test.py",
+    "user_level_document_tools.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []
