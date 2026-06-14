@@ -41,10 +41,10 @@ Align the user-facing `Routing trace` and `Updated Plan` conversation surfaces a
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: native surface deduplication runtime implementation completed in `conversation-surface-native-dedup-20260613`; local validation and integration remain pending
-Owner session: `conversation-surface-native-dedup-20260613`
-Current gate: run local gate and local MR review, merge local `main`, then update `D:/PythonProject_General` plus `D:/PythonProject_General_2`
-Remote publication: not authorized; stop at the remote-publication approval gate
+Status: repository runtime, user-level install refresh, native `update_plan` / `Routing trace` single-surface deduplication, and both general template propagations are complete for this implementation pass.
+Owner session: `conversation-surface-native-dedup-20260613` plus closeout session `closeout/conversation-surface-native-dedup-20260614`
+Current gate: clean integrated local feature worktrees/claims, keep local `main` as the carrier, and stop at the remote-publication approval gate
+Remote publication: not authorized; `gitlab/main` and `github/main` remain publication-gated until the operator explicitly requests remote publication
 Last updated: 2026-06-14
 <!-- CURRENT_STATUS_END -->
 
@@ -76,10 +76,10 @@ Only one session may own each hotspot at a time:
 - [x] Record the native `update_plan` panel as the canonical `Updated Plan` surface and ban assistant-written duplicate `Updated Plan` headings after a native panel.
 - [x] Extend checker logic and fixtures so `U+2022 Updated Plan` counts as the native panel label, native-plus-handwritten duplicate evidence fails, and non-conflicting prose progress labels remain allowed outside the `Updated Plan` surface.
 - [x] Extend routing trace guidance so an already injected trace suppresses assistant-written duplicate `Routing trace` output for the same activation.
-- [ ] Run full local gate and local MR review for the committed runtime implementation.
-- [ ] Merge the runtime implementation into local `main` and stop at the remote-publication gate.
-- [ ] Update `D:/PythonProject_General` with a plan commit followed by a template implementation commit and local main integration.
-- [ ] Update `D:/PythonProject_General_2` with a plan commit followed by a template implementation commit and local main integration.
+- [x] Run full local gate and local MR review for the committed runtime implementation.
+- [x] Merge the runtime implementation into local `main` and stop at the remote-publication gate.
+- [x] Update `D:/PythonProject_General` with a plan commit followed by a template implementation commit and local main integration.
+- [x] Update `D:/PythonProject_General_2` with a plan commit followed by a template implementation commit and local main integration.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -114,5 +114,11 @@ Only one session may own each hotspot at a time:
 - Repository guards passed: `python tools/check_precommit_update_archive.py --root . --json`, `python tools/check_launcher_payload_context_boundary.py --root . --json`, and `python tools/run_openspec_guard.py --root .`.
 - Native surface dedup checks passed on 2026-06-14: `python test/check_orchestration_collaboration_evidenceguard.test.py`, `python test/check_orchestration_trace_evidence.test.py`, and `python tools/check_orchestration_collaboration_evidenceguard.py --root . --json`.
 - Native surface runtime refresh passed on 2026-06-14: `powershell -NoProfile -ExecutionPolicy Bypass -File test/install-codex-user-level-team-mode.test.ps1`, `python tools/run_openspec_guard.py --root .`, `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\install-codex-user-level-team-mode.ps1 -Force`, and installed-artifact smoke for old wording/new boundary phrases.
-- Pending evidence: runtime local gate, local MR review, local `main` integration, and both template repository updates.
+- Runtime local gate evidence passed on local `main`: `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -StepTimeoutSeconds 1800`; generated `local-gate-report.json` / `openspec-guard-report.json` at 2026-06-14T08:41:17Z.
+- Local MR review evidence passed on local `main`: `.\tools\ci\local_mr_review.ps1` reported `commits=0 changed_files=0 dirty_files=0` and `local_mr_review: ok` on 2026-06-14.
+- Runtime local-main integration evidence: local `main` contains merge commit `73950f8` and feature commit `85745a4`.
+- `D:/PythonProject_General` template propagation evidence: local `main` contains plan commit `3fc47e6`, implementation commit `9dcd451`, and registry-format fix `4a7d858`; `python D:/PythonProject_General/tools/check_conversation_surface_contract.py --root D:/PythonProject_General --json` passed with zero legacy hits.
+- `D:/PythonProject_General_2` template propagation evidence: local `main` contains plan commit `3d2ee23`, implementation commit `c99ae4c`, and registry-format fix `1952f6d`; `python D:/PythonProject_General_2/tools/check_conversation_surface_contract.py --root D:/PythonProject_General_2 --json` passed with zero legacy hits.
+- Template smoke evidence on 2026-06-14: both templates contain no live `experts_now`, no old `durable_team=<selected|not_selected>` routing example, no `checkbox/status-list semantics`, and their remaining `Updated Plan` guidance points to a single CLI/tree panel using U+2714/U+25A1 status markers.
+- Remote publication evidence: no remote push, GitLab MR, GitLab merge, or GitHub sync was executed in this closeout; remote publication remains gated by explicit operator approval.
 <!-- EVIDENCE_INDEX_END -->
