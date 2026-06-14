@@ -4,9 +4,9 @@ lang: en
 canonical: docs_bilingual/implementation_plans/general_templates_cross_project_reuse_upgrade_plan.md
 zh_cn_path: docs_bilingual/implementation_plans/general_templates_cross_project_reuse_upgrade_plan.zh-CN.md
 status: active
-plan_readiness: implemented-local-main
+plan_readiness: active-implementation
 doc_class: implementation_plan
-last_reviewed: 2026-06-12
+last_reviewed: 2026-06-15
 target_templates:
   - D:\PythonProject_General
   - D:\PythonProject_General_2
@@ -39,6 +39,10 @@ conflict_priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safet
 - 2026-06-12: Completion audit revalidated `D:\PythonProject_General` and `D:\PythonProject_General_2` current local `main` gates at `2026-06-12T04:02Z`; both gates passed and both template worktrees are clean.
 - Native subagent spawning was not used because the active tool contract does not expose native `spawn_agent`; previous read-only expert findings were absorbed and main-session execution remained authoritative.
 - Durable team adoption remained not selected because the closeout collapsed to single-slice template/evidence work after the plan was frozen.
+- 2026-06-15: Incremental template refresh opened from source local `main` at `802e458` after `git fetch gitlab` confirmed local `main` is ahead 87 and behind 0 against `gitlab/main`; `D:\PythonProject_General` was clean at `4a7d858`, and `D:\PythonProject_General_2` was clean at `1952f6d`.
+- 2026-06-15: Safe incremental sync scope is limited to reusable template surfaces from `b67b94f..802e458`: single-panel conversation surface, full-field `Routing trace` contract, reusable document/PDF/vector-tool promotion, recent manual workflow packaging, fresh-source extraction guidance, and governance wording that remains template-safe.
+- 2026-06-15: Excluded from templates: Skills-audit memory rollups, Project MOE GUI implementation specifics, WXWork/browser/GUI live-state evidence, `.omx/state/`, session claims, credentials, sensitive runtime receipts, remote publication state, and repository-specific LangGraph durable state.
+- 2026-06-15: Source `docs_bilingual/docs_registry.yaml` indentation repair is included in this plan refresh because the newly registered `reusable_document_pdf_vector_tools_promotion_plan` entry was outside the `documents` list and broke YAML parsing.
 <!-- CURRENT_STATUS_END -->
 
 ## Scope And Template Tier Decisions
@@ -132,6 +136,54 @@ Steps:
 2. Re-run source repository validation.
 3. Commit evidence closeout and integrate through local-main-first flow.
 4. Stop at the remote-publication gate unless a later user message explicitly requests remote push/publication.
+
+### Task 5: 2026-06-15 source plan refresh and registry repair
+
+**Files:**
+- Modify: `docs_bilingual/implementation_plans/general_templates_cross_project_reuse_upgrade_plan.md`
+- Modify: `docs_bilingual/implementation_plans/general_templates_cross_project_reuse_upgrade_plan.zh-CN.md`
+- Modify: `docs_bilingual/docs_registry.yaml`
+
+Steps:
+1. Record the 2026-06-15 safe incremental sync scope and template tier decisions in this plan pair.
+2. Repair `docs_bilingual/docs_registry.yaml` so `reusable_document_pdf_vector_tools_promotion_plan` remains under the top-level `documents` list.
+3. Validate implementation-plan, pre-commit update/archive, OpenSpec guard, and diff whitespace checks.
+4. Commit the source plan refresh on an isolated branch and integrate it into local `main` before template mutation.
+
+### Task 6: 2026-06-15 update `D:\PythonProject_General`
+
+**Owned repository:** `D:\PythonProject_General`
+
+Steps:
+1. Create a local template feature branch from clean `main` at `4a7d858` and preserve a rollback ref.
+2. Add template-safe governance for single-panel `Updated Plan` rendering and full-field `Routing trace` output without duplicating native CLI plan panels.
+3. Add reusable docs/tooling guidance for recent workflow packaging, fresh-source extraction, and document/PDF/vector tool promotion without copying source-repo live evidence.
+4. Refresh `AGENTS.md`, `README.md`, `TEMPLATE_MANIFEST.md`, docs registry, and local gate surfaces as needed.
+5. Validate the full template with local gate, conversation surface, OpenSpec/Comet/Superpowers, R6 receipt, and diff checks.
+6. Commit and fast-forward merge the template branch into `D:\PythonProject_General` local `main`.
+
+### Task 7: 2026-06-15 update `D:\PythonProject_General_2`
+
+**Owned repository:** `D:\PythonProject_General_2`
+
+Steps:
+1. Create a local template feature branch from clean `main` at `1952f6d` and preserve a rollback ref.
+2. Sync only the local-only subset of conversation surface and reusable workflow guidance.
+3. Keep oh-my-codex, OMX/native_omx, LangGraph, durable teams, `.omx/state`, user-level wrapper installation, live browser/GUI/WXWork actions, active R6 runtime, GitLab/GitHub publication, and active remote CI/MR surfaces disabled by default.
+4. Keep optional remote/R6 examples inert under `template_assets/inert-samples/` only.
+5. Validate with local-only, subagent-only, OpenSpec/Comet/Superpowers, conversation surface, bilingual pair, and clean-git checks.
+6. Commit and fast-forward merge the template branch into `D:\PythonProject_General_2` local `main`.
+
+### Task 8: 2026-06-15 source evidence closeout
+
+**Files:**
+- Modify: this plan pair
+
+Steps:
+1. Record final 2026-06-15 source, General, and General_2 commits plus rollback refs and validation commands.
+2. Confirm template exclusions remain intact and no live state was copied.
+3. Re-run source validation, commit evidence closeout, and integrate through the local-main-first helper.
+4. Stop at the remote-publication gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
@@ -156,6 +208,14 @@ Steps:
 | Source local gate | `.\tools\ci\local_gate.ps1` via `tools/complete_local_flow_to_remote_gate.py --execute --local-gate-step-timeout-seconds 1800` | passed for feature and post-merge local `main` during `b67b94f` integration |
 | Source local MR review | `.\tools\ci\local_mr_review.ps1 -Root . -BaseRef main -HeadRef close-general-templates-evidence-20260612 -Json` | passed before `b67b94f` local integration |
 | Source local main integration and cleanup | `python .\tools\complete_local_flow_to_remote_gate.py --execute --local-gate-step-timeout-seconds 1800`; `tools/cleanup_integrated_worktree.py` | `main` integrated at `b67b94ff5abfadb13a93d31d0bb7c2b5512a7d97`; rollback ref `refs/backup/local-main/20260612-113345-before-close-general-templates-evidence-20260612`; feature worktree removed; branch deleted; completed claim preserved |
+| Source 2026-06-15 plan refresh commit | `git log -1 --oneline` after Task 5 local integration | pending |
+| Source 2026-06-15 remote-base check | `git fetch gitlab`; `git rev-list --left-right --count main...gitlab/main` | `87 0` before source plan refresh |
+| Source docs registry YAML parse | UTF-8 YAML parse of `docs_bilingual/docs_registry.yaml` | pending after indentation repair |
+| General 2026-06-15 validation | `D:\PythonProject_General	ools\ci\local_gate.ps1 -Json` plus targeted checks | pending |
+| General 2026-06-15 final commit | `git -C D:\PythonProject_General log -1 --oneline` | pending |
+| General_2 2026-06-15 validation | `D:\PythonProject_General_2	ools\ci\local_gate.ps1 -Json -RequireCleanGit` plus targeted checks | pending |
+| General_2 2026-06-15 final commit | `git -C D:\PythonProject_General_2 log -1 --oneline` | pending |
+| Source 2026-06-15 evidence closeout | final source validation and local-main integration | pending |
 | Remote publication | explicit later user approval required | not_requested; source `main` intentionally leads `gitlab/main` and `github/main` until explicit remote publication |
 <!-- EVIDENCE_INDEX_END -->
 

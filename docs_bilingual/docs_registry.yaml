@@ -5,11 +5,11 @@ documents:
     status: active
     canonical_path: docs_bilingual/implementation_plans/project_moe_gui_dirty_target_launch_and_wrappers_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/project_moe_gui_dirty_target_launch_and_wrappers_plan.zh-CN.md
-- doc_id: reusable_document_pdf_vector_tools_promotion_plan
-  doc_class: implementation_plan
-  status: active
-  canonical_path: docs_bilingual/implementation_plans/reusable_document_pdf_vector_tools_promotion_plan.md
-  zh_cn_path: docs_bilingual/implementation_plans/reusable_document_pdf_vector_tools_promotion_plan.zh-CN.md
+  - doc_id: reusable_document_pdf_vector_tools_promotion_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/reusable_document_pdf_vector_tools_promotion_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/reusable_document_pdf_vector_tools_promotion_plan.zh-CN.md
 
   - doc_id: project_startup_summary
     doc_class: startup_summary
