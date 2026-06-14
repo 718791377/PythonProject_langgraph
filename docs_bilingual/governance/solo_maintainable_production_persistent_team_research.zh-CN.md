@@ -140,7 +140,7 @@ status: draft
 
 ## 3. 研究方法与证据基础
 
-本次 2026-06-13 刷新同时使用本地 reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`（`2026-06-13T22:50:48Z`）作为产品/经营语境证据：54 个本地来源、9,656 个页/spine/全文读取单元、18,492,044 个抽取字符。该证据更新本研究稿、白皮书与 12 层生命周期之间的关系，但不替代本文的运行时/治理研究基础。
+本次 2026-06-14 刷新同时使用本地 reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`（`2026-06-14T10:48:53Z`）作为产品/经营语境证据：54 个本地来源、9,656 个页/spine/全文读取单元、18,492,044 个抽取字符。该证据更新本研究稿、白皮书与 12 层生命周期之间的关系，但不替代本文的运行时/治理研究基础。
 
 本文采用跨来源综合方法。
 
@@ -1174,3 +1174,20 @@ LangChain 官方把 RAG 方案至少分成：
 - `生产试运行` - maturity label for a bounded production trial under governance.
 - `生产级` - maturity label for a system suitable for sustained governed production use.
 - 进一步地，`个人开发者可长期维护`
+
+## 附录：10 层执行落地 I/T/O
+
+本附录不把研究稿变成 PMI 权威。它只说明每个 runtime capability layer 在落到平台执行时应如何翻译。详细过程语法仍由 `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md`、`docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 拥有。
+
+| 10 层 runtime 能力 | 输入 | 工具与技术 | 输出 |
+| --- | --- | --- | --- |
+| 持久化内核 | runtime 状态需求、恢复风险、checkpoint 需求、durable-state 边界 | 状态 schema 设计、checkpoint 复核、replay/recovery 演练、完整性检查 | durable-state contract、恢复证据、rollback 边界 |
+| 交互与执行 | 用户任务、工具权限、执行上下文、审批约束 | tool-call 校验、命令门禁、worktree 隔离、execution trace 复核 | 受控执行工件、changed-path list、批准或拒绝证据 |
+| 团队编排 | 冻结计划、切片 ownership、worker 角色、热点清单 | leader-owned fan-out、有界等待、mailbox 或 graph routing、fan-in review | worker patch set、执行证据、集成决策 |
+| 长期记忆 | 保留需求、隐私边界、复用目标、删除规则 | 记忆分类、namespace 设计、保留/删除策略、检索质量检查 | memory contract、保留证据、安全召回边界 |
+| 上下文增强 | source corpus、startup summary、prompt budget、相关性目标 | 上下文选择、摘要、citation map、新鲜度检查 | context bundle、source map、stale-context 拒绝规则 |
+| 向量数据库与检索存储 | 语料单元、metadata、tenant/project 边界、query use case | chunk/index 设计、metadata filter、backup/restore 复核、删除测试 | retrieval store contract、质量基线、生命周期策略 |
+| 质量保障 | 验收标准、schema 约束、工具副作用、gate 要求 | runtime guard、输出校验、approval gate、policy check | 已接受输出、已拒绝缺陷、质量门证据 |
+| 评测与回归 | baseline、回归风险、比较目标、发布阈值 | offline/online eval、test suite、diff review、实验对比 | evaluation report、regression gate、发布决策 |
+| 安全与持久化加固 | secrets、权限、审计需求、信任边界、恢复风险 | 最小权限复核、威胁建模、audit logging、加密/完整性检查 | security control record、audit trail、恢复安全运行规则 |
+| 本地 GUI 控制中心 | operator workflow、审批表面、状态可见性、恢复动作 | UI/control-surface review、authority-boundary check、replay/approval inspection | operator control record、approval/recovery panel requirement、usability feedback |

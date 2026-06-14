@@ -26,10 +26,14 @@ PDF extraction 先使用 `pypdf`，当 file/page extraction 失败时 fallback �
 - Lifecycle docs 将这些 profiles 应用于 Codex platform build 与 downstream consumption。
 - PMI reference 与 tailoring docs 定义何时使用 full、whole-project lightweight、phase-local lightweight、module-level lightweight 或 hybrid architecture。
 - Whitepaper/research/North Star 总结 bridge，并指向详细 lifecycle docs。
+- 本次实施重跑使用 evidence run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`，生成时间 `2026-06-14T10:48:53Z`。OpenSpec change id 仍保留原始 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` 包名。
+- 10-to-12 layer bridge 是桥接时聚合视图，不替代研究稿 canonical 10-layer runtime list。
+- 面向执行的新增内容把详细 I/T/O 权威委托给 lifecycle 与 PMI mapping 文档，不在 whitepaper 或 North Star 中重复完整过程语法。
 
 ## 风险控制
 
 - Stale cache references 必须改写为 historical/non-current evidence。
 - 不提交 tracked raw source text。
 - Bilingual documents 必须以 English 与 zh-CN 成对更新。
+- 中文文本必须以 UTF-8 写入并验证；mojibake/`???` 新增内容是 release blocker。
 - Count constraints 在文本中显式验证，必要时用脚本检查。

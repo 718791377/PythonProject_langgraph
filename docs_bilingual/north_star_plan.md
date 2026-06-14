@@ -13,7 +13,7 @@ status: draft
 
 This is the metrics-layer North Star plan for the Codex CLI personal production durable-team platform. It translates the white-paper narrative, MRD requirements, and product-lifecycle inventory maps into measurable direction. It is not runtime evidence that a durable or persistent team is currently running.
 
-Fresh source evidence for this refresh comes from ignored extraction artifacts generated at `2026-06-13T22:50:48Z` under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/`: `fresh_source_manifest.json`, `fresh_source_synthesis.json`, and the local raw `fresh_source_items.jsonl`. The extraction covers 54 sources: 31 Business Management sources, 23 PMP sources, 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, 14 Markdown full-text files, and 18,492,044 extracted text characters. The tracked document records synthesis only; source text, per-unit extraction streams, and extraction logs remain uncommitted.
+Fresh source evidence for this refresh comes from ignored extraction artifacts generated at `2026-06-14T10:48:53Z` under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614/`: `fresh_source_manifest.json`, `fresh_source_synthesis.json`, and the local raw `fresh_source_items.jsonl`. The extraction covers 54 sources: 31 Business Management sources, 23 PMP sources, 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, 14 Markdown full-text files, and 18,492,044 extracted text characters. The tracked document records synthesis only; source text, per-unit extraction streams, and extraction logs remain uncommitted.
 
 ## Primary North Star Metric
 
@@ -44,6 +44,8 @@ Fresh source evidence for this refresh comes from ignored extraction artifacts g
 | Personal production one-person company | 12 trunk layers + 5 virtual departments + 30 responsibility domains + 20 cross-cutting modules + 60 core documents + 15 governed AI agents + 15 recommended books + 12 minimal startup documents | Downstream repositories own customer evidence, revenue, finance, legal, support, release, durable state, and lessons learned |
 
 ## Process-Group Operating Model
+
+Layer-level I/T/O authority remains in `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`; PMI overlay and tailoring authority remain in `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md`. This North Star plan owns metric direction, decision thresholds, and evidence cadence.
 
 | Process group | Inputs | Tools and Techniques | Outputs |
 | --- | --- | --- | --- |

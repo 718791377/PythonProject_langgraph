@@ -4,7 +4,7 @@
 
 ## 来源与过程边界
 
-当前画布派生自 `fresh_source_reading_evidence.zh-CN.md` 记录的 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` 证据边界。当画布进入执行授权时，应在相关 OpenSpec change、implementation plan 或生命周期文档中，把受影响层级展开为“输入 / 工具与技术 / 输出”，而不是把画布本身当成完整交付记录。
+当前画布派生自 `fresh_source_reading_evidence.zh-CN.md` 记录的 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` 证据边界。当画布进入执行授权时，应在相关 OpenSpec change、implementation plan 或生命周期文档中，把受影响层级展开为“输入 / 工具与技术 / 输出”，而不是把画布本身当成完整交付记录。
 
 ## 目的
 

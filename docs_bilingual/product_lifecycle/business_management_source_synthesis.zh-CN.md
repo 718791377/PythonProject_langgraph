@@ -1,10 +1,10 @@
 # Business Management 来源库综合
 
-本文基于对忽略目录 `D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP` 的 2026-06-13 fresh extraction 结果，综合与本仓库相关的经营、产品、架构与交付启发。该抽取产物是本次刷新的证据，不是可替代源文件的缓存结论。本文是 `docs_bilingual/product_lifecycle/` 的综合层，不复制源书长段正文。
+本文基于对忽略目录 `D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP` 的 2026-06-14 fresh extraction 结果，综合与本仓库相关的经营、产品、架构与交付启发。该抽取产物是本次刷新的证据，不是可替代源文件的缓存结论。本文是 `docs_bilingual/product_lifecycle/` 的综合层，不复制源书长段正文。
 
 ## Fresh Extraction 范围
 
-本次刷新以 `2026-06-13T22:50:48Z` 重新生成的忽略态证据目录 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` 为依据，运行 ID 为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`。这些产物是本次刷新的 fresh reading 证据，不替代源文件，也不是可反复套用的结论缓存。
+本次刷新以 `2026-06-14T10:48:53Z` 重新生成的忽略态证据目录 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614/` 为依据，运行 ID 为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`。这些产物是本次刷新的 fresh reading 证据，不替代源文件，也不是可反复套用的结论缓存。
 
 - 清单：`fresh_source_manifest.json`
 - 逐单元提取日志：`fresh_source_items.jsonl`

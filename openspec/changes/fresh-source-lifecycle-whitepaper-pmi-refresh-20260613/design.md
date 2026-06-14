@@ -26,10 +26,14 @@ PDF extraction uses `pypdf` first and falls back to PyMuPDF/fitz for files or pa
 - Lifecycle docs apply those profiles to Codex platform build and downstream consumption.
 - PMI reference and tailoring docs define when to use full, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid architecture.
 - Whitepaper/research/North Star summarize the bridge and point to detailed lifecycle docs.
+- The implementation rerun uses evidence run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` generated at `2026-06-14T10:48:53Z`. The OpenSpec change id remains the original `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` package id.
+- The 10-to-12 layer bridge is a bridge-time aggregation, not a replacement for the research note's canonical 10-layer runtime list.
+- Execution-facing additions delegate detailed I/T/O authority to lifecycle and PMI mapping documents instead of duplicating process grammar inside the whitepaper or North Star plan.
 
 ## Risk Controls
 
 - Stale cache references must be rewritten as historical/non-current evidence.
 - No tracked raw source text is committed.
 - Bilingual documents are updated in paired English and zh-CN form.
+- Chinese text must be written and validated as UTF-8; mojibake/`???` additions are release blockers.
 - Count constraints are explicitly validated in text and, where practical, by script checks.

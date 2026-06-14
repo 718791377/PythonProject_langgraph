@@ -684,7 +684,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-root", required=True, type=Path)
     parser.add_argument("--output-root", required=True, type=Path)
-    parser.add_argument("--run-id", default="fresh-source-lifecycle-whitepaper-pmi-refresh-20260613")
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help=(
+            "Evidence run identifier. Defaults to "
+            "fresh-source-lifecycle-whitepaper-pmi-refresh-<UTC YYYYMMDD>."
+        ),
+    )
     parser.add_argument("--summary-only", action="store_true")
     parser.add_argument("--low-text-threshold", type=int, default=120)
     parser.add_argument("--fail-on-source-error", action="store_true")
@@ -702,6 +709,11 @@ def main(argv: list[str]) -> int:
     output_root = args.output_root.resolve()
     output_root.mkdir(parents=True, exist_ok=True)
     generated_at = utc_now()
+    if not args.run_id:
+        args.run_id = (
+            "fresh-source-lifecycle-whitepaper-pmi-refresh-"
+            + _dt.datetime.now(_dt.UTC).strftime("%Y%m%d")
+        )
 
     records = discover_sources(source_root)
     items_path = output_root / "fresh_source_items.jsonl"

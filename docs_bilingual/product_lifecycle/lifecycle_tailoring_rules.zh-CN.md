@@ -11,7 +11,7 @@
 
 ## 来源证据边界
 
-本裁剪规则基于 2026-06-13 证据运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`（`2026-06-13T22:50:48Z`）刷新，覆盖 54 个本地来源和 9,656 个页/spine/全文读取单元。它取代本轮刷新中较旧的抽取措辞，raw extraction text 只保留在忽略态本地缓存中。当前证据索引以 `fresh_source_reading_evidence.zh-CN.md` 为准。
+本裁剪规则基于 2026-06-14 证据运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`（`2026-06-14T10:48:53Z`）刷新，覆盖 54 个本地来源和 9,656 个页/spine/全文读取单元。它取代本轮刷新中较旧的抽取措辞，raw extraction text 只保留在忽略态本地缓存中。当前证据索引以 `fresh_source_reading_evidence.zh-CN.md` 为准。
 
 ## 裁剪原则
 
@@ -56,6 +56,20 @@
 - 必要审批、评审、验证、发布、回滚和复盘证据。
 - 升级触发条件和负责重新裁剪的 owner。
 - 继续、停止、做 spike、拆分范围或扩展治理的决策。
+
+## 按裁剪结果选择 PMI 叠加层
+
+裁剪也决定需要多少 PMI 叠加层。PMI 叠加可以应用到整个项目、某个阶段、某个模块或某个发布切片；它不是“整个项目全量”或“整个项目全轻量”的二选一。
+
+| 裁剪结果 | PMI 叠加层 | 执行规则 |
+| --- | --- | --- |
+| 完整架构 | PMBOK 第 8 版价值/裁剪 + Process Groups；当产生执行工件时使用 PMBOK 第 6 版 I/T/O 细节；触发条件存在时再加入 Agile、项目集、项目组合或 PMO 叠加 | 显式考虑全部 12 层，并为受影响层级写足证据；不要求立即创建全部文档，除非受影响风险范围需要 |
+| 整个项目轻量 | 最小项目画布 + 简短过程组说明；PMI 只在 validation、risk、closing evidence 中显式出现 | 仅适用于私有、可逆、低风险且没有外部用户、金钱、敏感数据、durable state、共享 runtime 或发布承诺的工作 |
+| 阶段局部轻量 | 只为该阶段写 I/T/O，并定义上下游 gate；相邻高风险阶段保持更完整治理 | 整个项目不是轻量；只有命名阶段被降低治理深度 |
+| 模块级轻量 | 使用模块范围说明、owner、验证、回滚/删除路径和学习说明 | 外围项目保持完整架构边界；模块若改变 trust、durable state、public API、shared runtime 或 release safety，必须重新裁剪 |
+| 混合 | 先用 Agile 式发现和轻量 I/T/O；在 production、release、customer、trust、durable-state 或 shared-runtime 变更前冻结预测式 Process Groups | 先轻量化 discovery；风险变成真实时扩展受影响层级/模块；只有当耦合变成系统性时才扩展到整个项目 |
+
+默认问题不是“全部完整还是全部轻量”，而是：哪个精确范围可以轻量，哪个精确范围仍保持完整，哪个信号会强制扩展治理。
 
 ## 什么时候采用完整架构
 

@@ -4,7 +4,7 @@ This document summarizes repository-relevant lessons from the fresh extraction r
 
 ## Fresh Extraction Scope
 
-This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` freshly regenerated at `2026-06-13T22:50:48Z` with run ID `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`. These artifacts are evidence for this refresh, not a substitute for the source files and not a reusable conclusion cache.
+This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614/` freshly regenerated at `2026-06-14T10:48:53Z` with run ID `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`. These artifacts are evidence for this refresh, not a substitute for the source files and not a reusable conclusion cache.
 
 - Manifest: `fresh_source_manifest.json`
 - Per-unit extraction log: `fresh_source_items.jsonl`

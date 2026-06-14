@@ -4,7 +4,7 @@ This map is the concise canonical inventory for the downstream one-person-compan
 
 ## Fresh Source Evidence
 
-This map uses the June 13 fresh extraction run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T22:50:48Z`) as its evidence boundary. Exact inventory counts come from the full-text read of `Business Management/Architecture note 2 - personal production one-person company.md` (source `S0031`, 18,544 characters). Business Management sources explain one-person-company operating principles; PMP sources provide process-group, PMO, program, portfolio, and tailoring discipline.
+This map uses the June 14 fresh extraction run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` (`2026-06-14T10:48:53Z`) as its evidence boundary. Exact inventory counts come from the full-text read of `Business Management/Architecture note 2 - personal production one-person company.md` (source `S0031`, 18,544 characters). Business Management sources explain one-person-company operating principles; PMP sources provide process-group, PMO, program, portfolio, and tailoring discipline.
 
 ## Canonical Inventory
 

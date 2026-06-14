@@ -7,7 +7,7 @@
 ## 变更内容
 
 - 新增 fresh-source extraction 工具，按 PDF page、EPUB spine item、Markdown full document 读取来源。
-- 生成新的 ignored local extraction cache 与 summary manifest。
+- 生成新的 ignored local extraction cache 与 summary manifest。当前实施重跑为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`，生成时间 `2026-06-14T10:48:53Z`；OpenSpec change id 仍保留 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`，作为受治理变更包名称。
 - 刷新双语 product lifecycle 文档、Codex durable-team whitepaper、solo-maintainable research note 和 North Star plan，使它们引用本次 fresh evidence run，而不是把旧 cache 当作当前事实。
 - 新增必要的 bridge/index 文档，使 source evidence、10-to-12-layer mapping 与 PMI tailoring decisions 可审计。
 
@@ -38,13 +38,13 @@
 ## 回滚
 
 - Revert feature branch 或 local main merge commit。
-- 如有需要，删除 ignored local `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` cache。
+- 如有需要，删除 ignored local `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614/` cache。
 - 本变更不修改 remote、external 或 downstream project state。
 
 ## 验证
 
-- `python tools/fresh_extract_sources.py --source-root D:/PythonProject_langgraph --output-root ./.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613 --summary-only` - 验证 source inventory counts，不重写 tracked conclusions。
-- `python tools/fresh_extract_sources.py --source-root D:/PythonProject_langgraph --output-root ./.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` - 重新生成 ignored full extraction evidence cache。
+- `python tools/fresh_extract_sources.py --source-root D:/PythonProject_langgraph --output-root ./.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614 --run-id fresh-source-lifecycle-whitepaper-pmi-refresh-20260614 --summary-only` - 验证 source inventory counts，不重写 tracked conclusions。
+- `python tools/fresh_extract_sources.py --source-root D:/PythonProject_langgraph --output-root ./.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614 --run-id fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` - 重新生成 ignored full extraction evidence cache。
 - `openspec validate fresh-source-lifecycle-whitepaper-pmi-refresh-20260613 --strict` - 验证本 OpenSpec change package。
 - `python tools/run_openspec_guard.py --root . --json` - 验证 repository OpenSpec 与 documentation-governance guard rules。
 - `python tools/check_precommit_update_archive.py --root . --json` - 验证 pre-commit update/archive readiness。

@@ -2,9 +2,9 @@
 
 This index records the current fresh-reading evidence boundary for the lifecycle, white paper, research note, and North Star refresh.
 
-- Run ID: `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`
-- Generated at: `2026-06-13T22:50:48Z`
-- Output root: `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/`
+- Run ID: `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`
+- Generated at: `2026-06-14T10:48:53Z`
+- Output root: `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614/`
 - Source roots: `D:/PythonProject_langgraph/Business Management` and `D:/PythonProject_langgraph/PMP`
 - Sources: 54 total; 31 Business Management; 23 PMP
 - Units: 9,656 total; 9,280 PDF pages; 362 EPUB spine items; 14 Markdown full documents

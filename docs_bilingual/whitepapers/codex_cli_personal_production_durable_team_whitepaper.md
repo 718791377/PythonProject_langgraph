@@ -15,7 +15,7 @@ This white paper answers why a solo maintainer who works across multiple reposit
 
 ## Fresh Source Evidence For This Refresh
 
-This white paper is updated against the fresh local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` generated at `2026-06-13T22:50:48Z`. The run read 54 sources across `Business Management/` and `PMP/`, including 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. The white paper cites only aggregate and synthesized evidence; raw extracted text remains in ignored local cache.
+This white paper is updated against the fresh local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` generated at `2026-06-14T10:48:53Z`. The run read 54 sources across `Business Management/` and `PMP/`, including 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. The white paper cites only aggregate and synthesized evidence; raw extracted text remains in ignored local cache.
 
 ## Why This White Paper Exists Beside The Research Document
 
@@ -92,6 +92,8 @@ This inventory is intentionally smaller than the downstream one-person-company o
 The downstream operating-system comparison is explicit: 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan that translates this white-paper narrative into the primary success metric, input metrics, guardrails, and staged decision thresholds.
 
 ## PMI Delivery Discipline
+
+Execution-level I/T/O authority is delegated to `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`, `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md`, and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md`. This white paper states the platform direction and cites the rule; it does not own detailed process grammar.
 
 The platform narrative becomes actionable only when delivery follows a process-group discipline. Every release slice should identify Inputs, Tools and Techniques, and Outputs, then move through initiating, planning, executing, monitoring and controlling, and closing. This keeps AI-assisted delivery inspectable and prevents hidden automation from becoming approval authority. The explicit reference map is `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md`: PMBOK 8 is the primary value-delivery and tailoring overlay, PMBOK 7 and PMBOK 6 are supplements, Process Groups supplies delivery gates, Agile Practice Guide supplies adaptive/hybrid delivery, Program Management supplies multi-initiative alignment, Portfolio Management supplies value/capacity balancing, and the PMO Practice Guide supplies governance-service patterns.
 

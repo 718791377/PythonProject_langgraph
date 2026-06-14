@@ -145,7 +145,7 @@ It answers a narrower and harder question:
 
 ## 3. Method And Evidence Base
 
-This 2026-06-13 refresh also uses the local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T22:50:48Z`) as product/business context evidence: 54 local sources, 9,656 page/spine/full-document units, and 18,492,044 extracted characters. That evidence updates the relationship between this research note, the white paper, and the 12-layer lifecycle, but it does not replace the runtime/governance research basis of this document.
+This 2026-06-14 refresh also uses the local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` (`2026-06-14T10:48:53Z`) as product/business context evidence: 54 local sources, 9,656 page/spine/full-document units, and 18,492,044 extracted characters. That evidence updates the relationship between this research note, the white paper, and the 12-layer lifecycle, but it does not replace the runtime/governance research basis of this document.
 
 This paper uses a cross-source synthesis method.
 
@@ -1186,3 +1186,20 @@ Only when these conditions are satisfied together should a system be considered 
 - `production pilot` - maturity label for a bounded production trial under governance.
 - `production-grade` - maturity label for a system suitable for sustained governed production use.
 - and further, `solo-maintainable over the long term`
+
+## Appendix: 10-Layer Execution Landing I/T/O
+
+This appendix does not turn the research note into the PMI authority. It shows how each runtime capability layer should be translated when it lands in platform execution. Detailed process grammar remains owned by `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`, `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md`, and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md`.
+
+| 10-layer runtime capability | Inputs | Tools And Techniques | Outputs |
+| --- | --- | --- | --- |
+| Persistence Core | Runtime state requirements, recovery risks, checkpoint needs, durable-state boundaries | State schema design, checkpoint review, replay/recovery drills, integrity checks | Durable-state contract, recovery evidence, rollback boundary |
+| Interaction and Execution | User task, tool permissions, execution context, approval constraints | Tool-call validation, command gating, worktree isolation, execution trace review | Controlled execution artifact, changed-path list, approval or rejection evidence |
+| Team Orchestration | Frozen plan, slice ownership, worker roles, hotspot list | Leader-owned fan-out, bounded waits, mailbox or graph routing, fan-in review | Worker patch set, execution evidence, integrated decision |
+| Long-Term Memory | Retention requirement, privacy boundary, reuse target, deletion rule | Memory classification, namespace design, retention/deletion policy, retrieval quality check | Memory contract, retention evidence, safe recall boundary |
+| Context Enhancement | Source corpus, startup summary, prompt budget, relevance target | Context selection, summarization, citation map, freshness check | Context bundle, source map, stale-context rejection rule |
+| Vector Database and Retrieval Storage | Corpus units, metadata, tenant/project boundary, query use case | Chunking/indexing design, metadata filters, backup/restore review, deletion test | Retrieval store contract, quality baseline, lifecycle policy |
+| Quality Assurance | Acceptance criteria, schema constraints, tool side effects, gate requirements | Runtime guards, output validation, approval gates, policy checks | Accepted output, rejected defect, quality-gate evidence |
+| Evaluation and Regression | Baselines, regression risks, comparison target, release threshold | Offline/online eval, test suites, diff review, experiment comparison | Evaluation report, regression gate, release decision |
+| Security and Persistence Hardening | Secrets, permissions, audit needs, trust boundaries, recovery risks | Least-privilege review, threat modeling, audit logging, encryption/integrity checks | Security control record, audit trail, recovery-safe operating rule |
+| Local GUI Control Center | Operator workflow, approval surface, state visibility, recovery action | UI/control-surface review, authority-boundary check, replay/approval inspection | Operator control record, approval/recovery panel requirement, usability feedback |

@@ -13,7 +13,7 @@ These references are an overlay. They do not replace white papers, BRD, MRD, Nor
 
 ## Local PMP Source Coverage
 
-The local `PMP/` directory was read from local files only for this refresh. The fresh extraction evidence was regenerated at `2026-06-13T22:50:48Z` under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` and recorded 23 PMP-family sources: 9 PDFs / 3,035 pages, 2 EPUBs / 58 spine items, and 12 Markdown full-text notes, for 3,105 total PMP read units and 4,330,816 extracted characters. The tracked repository records the following coverage summary and synthesized governance mapping only.
+The local `PMP/` directory was read from local files only for this refresh. The fresh extraction evidence was regenerated at `2026-06-14T10:48:53Z` under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614/` and recorded 23 PMP-family sources: 9 PDFs / 3,035 pages, 2 EPUBs / 58 spine items, and 12 Markdown full-text notes, for 3,105 total PMP read units and 4,330,816 extracted characters. The tracked repository records the following coverage summary and synthesized governance mapping only.
 
 | Local reference | Format | Coverage | Primary governance use |
 | --- | --- | ---: | --- |
@@ -32,9 +32,9 @@ The local `PMP/` directory was read from local files only for this refresh. The 
 
 ## Official PMI Web Freshness Check
 
-This refresh also checked PMI public standards pages on 2026-06-13 to avoid treating the private local folder as the only freshness signal. The local extraction remains the content evidence boundary; the public check records current catalog metadata only.
+This refresh also checked PMI public standards pages on 2026-06-14 to avoid treating the private local folder as the only freshness signal. The local extraction remains the content evidence boundary; the public check records current catalog metadata only.
 
-| PMI public source | Official catalog status checked on 2026-06-13 | Repository decision |
+| PMI public source | Official catalog status checked on 2026-06-14 | Repository decision |
 | --- | --- | --- |
 | <https://www.pmi.org/standards/pmbok> | `PMBOK Guide` is listed as the Eighth Edition, 408 pages, publication date November 2025, with second-printing errata dated 22 December 2025. | Treat PMBOK 8 as the current primary project-management overlay; keep PMBOK 7 and PMBOK 6 as continuity and I/T/O supplements. |
 | <https://www.pmi.org/standards/process-groups> | `Process Groups: A Practice Guide` is listed as 370 pages, publication date November 2022, and describes five process groups plus 49 processes with inputs, tools and techniques, and outputs. | Use it as the execution-facing process-group grammar for lifecycle layers and delivery gates. |
@@ -44,6 +44,33 @@ This refresh also checked PMI public standards pages on 2026-06-13 to avoid trea
 | <https://www.pmi.org/standards/pmo> | `Project Management Offices: A Practice Guide` is listed as a PMI Practice Guide, 331 pages, publication date February 2025. | Use it as the PMO governance-services and enablement overlay, especially when several initiatives need shared standards or oversight. |
 
 Official catalog page counts may differ from extracted local page counts because local source package, front matter, print/export format, or EPUB spine boundaries differ. When they differ, use local extraction for proof that the local source was read and PMI public pages for current catalog metadata.
+
+## Document-Type PMI Tailoring Matrix
+
+Use PMI overlays differently by document type. Do not repeat every PMI edition in every document; choose the minimum authority needed for the decision being made.
+
+| Repository document or layer | Primary PMI overlay | Older-version or companion use | Stop condition |
+| --- | --- | --- | --- |
+| White paper | PMBOK 8 value, governance, tailoring, and AI-era framing; Process Groups only as high-level delivery discipline | Do not expand PMBOK 6 I/T/O details in the narrative unless a platform boundary depends on them | Stop at strategic framing and link to lifecycle/PMI maps for execution detail |
+| Research note | Runtime/governance evidence first; PMI only when translating capability findings into governed execution | PMBOK 6 can clarify I/T/O vocabulary; PMBOK 7 can clarify principles; mark official source vs repository-derived inference | Stop when the point becomes product narrative or lifecycle count authority |
+| Lifecycle layer documents | Process Groups as execution grammar; PMBOK 8 as value/tailoring overlay | PMBOK 6 supports detailed Inputs / Tools and Techniques / Outputs; translations support terminology only | Stop expanding older editions once the layer has clear I/T/O and control gates |
+| North Star plan | PMBOK 8 and PMBOK 7 value/performance thinking; portfolio thinking only for capacity and value trade-offs | Process Groups appear only as operating cadence and evidence gates | Stop before turning metrics strategy into a full project-management manual |
+| Tailoring rules | PMBOK 8 tailoring, Agile adaptive/hybrid guidance, and Process Groups gates | PMBOK 6 I/T/O grammar and older editions clarify execution wording | Stop when the selected tailoring outcome and escalation triggers are explicit |
+| OpenSpec / implementation plans | Process Groups plus repository local-main-first gates | PMBOK 6 I/T/O wording may be used for plan sections; PMO/program/portfolio only when coordination scope requires it | Stop when proposal, design, tasks, verification, rollback, and archive evidence are sufficient |
+| Downstream one-person-company documents | PMBOK 8 value/tailoring and Agile feedback loops | PMO/program/portfolio overlays apply only when several initiatives, governance services, or capacity trade-offs exist | Stop before importing enterprise governance into a single low-risk owner workflow |
+
+## Older-Version Expansion Rule
+
+Older PMI versions and companion translations should be expanded only when they add a concrete execution benefit: I/T/O vocabulary, knowledge-area continuity, translation clarity, or historical comparison. When PMBOK 8 already covers the governance point and the document is not defining execution grammar, cite PMBOK 8 plus the current lifecycle authority instead of listing PMBOK 6, PMBOK 7, and PMBOK 8 side by side.
+
+## Agile, Program, Portfolio, And PMO Entry/Exit Rules
+
+- Agile guidance enters when uncertainty, feedback loops, MVP slices, or hybrid planning are needed; it does not override PMBOK 8 as the primary governance overlay.
+- Program governance enters when multiple related initiatives need coordinated benefits, dependencies, or roadmap alignment.
+- Portfolio governance enters when competing initiatives require value, capacity, risk, or investment trade-offs.
+- PMO practice enters when a shared governance service, standard, enablement function, or oversight pattern is needed.
+- A single repository, single maintainer, single release slice, and low-risk local workflow should not import program, portfolio, or PMO ceremony by default.
+- Exit the heavier overlay when the coordination concern is closed and the remaining work is a bounded project, phase, or module with clear owner and rollback evidence.
 
 ## Latest-Primary Authority Rule
 

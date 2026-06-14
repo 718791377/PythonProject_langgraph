@@ -14,7 +14,7 @@
 
 ## 来源证据边界
 
-当前生命周期栈指向 `fresh_source_reading_evidence.zh-CN.md`，作为本次 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613`（`2026-06-13T22:50:48Z`）证据边界；同时指向 `ten_to_twelve_layer_bridge.zh-CN.md`，用于打通研究稿与白皮书的分层关系。原始抽取文本保持在 Git 之外。
+当前生命周期栈指向 `fresh_source_reading_evidence.zh-CN.md`，作为本次 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`（`2026-06-14T10:48:53Z`）证据边界；同时指向 `ten_to_twelve_layer_bridge.zh-CN.md`，用于打通研究稿与白皮书的分层关系。原始抽取文本保持在 Git 之外。
 
 ## 两种目标架构模式
 
@@ -37,6 +37,10 @@
 
 该规则适用于每一个生命周期层、每一个交付门和每一个发布切片，避免层级变成没有启动条件、控制技术和交付输出的散文。
 
+
+## 按文档类型选择 PMI 叠加层规则
+
+使用 `pmi_project_management_reference_map.zh-CN.md` 按文档类型选择 PMI 深度。白皮书与北极星计划主要使用 PMI 的价值、裁剪和度量 framing。生命周期层级与实施计划使用 Process Groups 作为执行语法；只有在产生执行工件时才展开 PMBOK 第 6 版 I/T/O 词汇。项目集、项目组合和 PMO 叠加层不是默认 ceremony；只有当多个倡议、共享容量、治理服务或监督需求出现时才进入。
 
 ## 价值交付叠加层
 

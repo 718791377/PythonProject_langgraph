@@ -15,7 +15,7 @@ status: draft
 
 ## 本轮 Fresh Source Evidence
 
-本白皮书依据 `2026-06-13T22:50:48Z` 生成的本地 fresh reading 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` 更新。该运行读取 `Business Management/` 与 `PMP/` 下 54 个来源，包括 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件。白皮书只引用聚合与综合证据；raw extracted text 保留在忽略态本地缓存中。
+本白皮书依据 `2026-06-14T10:48:53Z` 生成的本地 fresh reading 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` 更新。该运行读取 `Business Management/` 与 `PMP/` 下 54 个来源，包括 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件。白皮书只引用聚合与综合证据；raw extracted text 保留在忽略态本地缓存中。
 
 ## 为什么白皮书与研究稿分开
 
@@ -84,6 +84,8 @@ status: draft
 下游经营系统对照是明确的：5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍、12 个最小启动文档。`docs_bilingual/north_star_plan.zh-CN.md` 是指标层北极星 Plan，用于把本文叙事转成主成功指标、输入指标、护栏指标与分阶段决策阈值。
 
 ## PMI 交付纪律
+
+执行层 I/T/O 权威委托给 `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md`、`docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md`。本文只陈述平台方向并引用规则，不拥有详细过程语法。
 
 平台叙事只有落到过程组式交付纪律中才可执行。每个发布切片都应识别输入、工具与技术、输出，然后经过启动、规划、执行、监控与控制、收尾。这让 AI 辅助交付保持可检查，并防止隐藏自动化变成审批权威。显式参考映射见 `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md`：PMBOK 第8版是价值交付和裁剪的主要叠加层，PMBOK 第7版和第6版是补充，Process Groups 提供交付门，Agile Practice Guide 提供适应式/混合交付，项目集管理提供多倡议对齐，项目组合管理提供价值/容量平衡，PMO 实践指南提供治理服务模式。
 

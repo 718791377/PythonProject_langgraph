@@ -10,6 +10,8 @@ This bridge explains why the research note and the white paper remain separate a
 
 ## Bridge Table
 
+The table is a bridge-time aggregation. It does not replace the research note's canonical 10-layer runtime list; it groups adjacent runtime concerns so each concern can land in the appropriate 12-layer lifecycle document, owner, and gate.
+
 | 10-layer research model | 12-layer lifecycle landing zones | Bridge rule |
 | --- | --- | --- |
 | Interaction and execution | Product, Execution, Operations | Convert runtime interaction capability into product promises, execution workflow, and operating runbooks |
@@ -27,6 +29,34 @@ This bridge explains why the research note and the white paper remain separate a
 
 The 12-layer lifecycle adds four business-facing trunks that the 10-layer runtime research does not own directly: cognitive narrative, business, market, and growth. Those trunks explain purpose, value, adoption, and learning.
 
+## Bridge Execution Grammar
+
+Use this process-group style whenever a 10-layer runtime finding is converted into 12-layer lifecycle work.
+
+### Inputs
+
+- The research-note layer, capability gap, source evidence, maturity finding, or runtime risk being bridged.
+- The target lifecycle mode: Codex CLI durable-team platform or downstream one-person-company operating system.
+- Fresh-source evidence boundary, inventory-count authority, affected layer owners, and current OpenSpec or delivery state.
+- Constraints from security, durable state, operator authority, release safety, budget, and downstream project ownership.
+
+### Tools And Techniques
+
+- Bridge-time aggregation: group adjacent runtime concerns without renaming the canonical research model.
+- Landing-zone allocation: choose which 12-layer lifecycle layers receive the runtime finding.
+- Authority split review: keep runtime capability authority in the research note, narrative authority in the white paper, count authority in the inventory maps, PMI authority in the PMI reference map, and execution grammar in the lifecycle documents.
+- Tailoring review: decide whether the result needs full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid governance.
+- I/T/O expansion: if the bridged result drives execution, expand it into Inputs, Tools and Techniques, and Outputs in the receiving lifecycle document or OpenSpec change.
+
+### Outputs
+
+- A named 12-layer landing zone for the runtime finding.
+- Updated lifecycle, white-paper, research-note, North Star, or OpenSpec references without merging their responsibilities.
+- A tailoring decision and execution grammar for the affected scope.
+- Traceable evidence showing which model is being used and which document owns the result.
+
 ## Governance Rule
 
 Use the 10-layer model when evaluating runtime capability completeness, state, orchestration, memory, auditability, and operator control. Use the 12-layer model when deciding whether the platform or a downstream one-person company has enough business, market, product, delivery, operations, and learning evidence. If a document cites both, state which model is being used and which lifecycle layer receives the result.
+
+Count authority remains in `codex_platform_inventory_map.md` and `one_person_company_inventory_map.md`. Runtime capability authority remains in `solo_maintainable_production_persistent_team_research.md`. Narrative authority remains in `codex_cli_personal_production_durable_team_whitepaper.md`. This bridge owns only the mapping between those authorities.

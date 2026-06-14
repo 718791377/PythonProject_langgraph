@@ -11,7 +11,7 @@ The rule is source-backed by the local `Business Management/` and `PMP/` synthes
 
 ## Source Evidence Boundary
 
-This tailoring rule is refreshed from the June 13 evidence run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` (`2026-06-13T22:50:48Z`), covering 54 local sources and 9,656 page/spine/full-document units. It supersedes outdated extraction wording for this refresh and keeps raw extracted text in ignored local cache only. Use `fresh_source_reading_evidence.md` for the current evidence index.
+This tailoring rule is refreshed from the June 14 evidence run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` (`2026-06-14T10:48:53Z`), covering 54 local sources and 9,656 page/spine/full-document units. It supersedes outdated extraction wording for this refresh and keeps raw extracted text in ignored local cache only. Use `fresh_source_reading_evidence.md` for the current evidence index.
 
 ## Tailoring Principle
 
@@ -56,6 +56,20 @@ Use this gate before opening a large documentation stack, launching durable work
 - Required approvals, reviews, validation, release, rollback, and retrospective evidence.
 - Escalation triggers and owner for re-tailoring.
 - Decision to continue, stop, run a spike, split scope, or expand governance.
+
+## PMI Overlay By Tailoring Outcome
+
+Tailoring also decides how much PMI overlay is needed. The overlay can be applied to the whole project, a phase, a module, or a release slice; it does not have to be all-or-nothing.
+
+| Tailoring outcome | PMI overlay | Execution rule |
+| --- | --- | --- |
+| Full architecture | PMBOK 8 value/tailoring plus Process Groups, with PMBOK 6 I/T/O detail where execution artifacts are produced; add Agile, program, portfolio, or PMO overlays when their entry triggers are present | Consider all 12 layers and write full evidence for affected layers; do not create every document immediately unless the affected risk scope requires it |
+| Whole-project lightweight | Minimal project canvas plus a small process-group note; PMI remains implicit except for validation, risk, and closing evidence | Allowed only for private, reversible, low-risk work with no external users, money, sensitive data, durable state, shared runtime, or release commitment |
+| Phase-local lightweight | Use I/T/O only for that phase and define upstream/downstream gates; keep high-risk adjacent phases on fuller governance | The whole project is not lightweight; only the named phase is reduced |
+| Module-level lightweight | Use a module scope note, owner, validation, rollback/deletion path, and learning note | The surrounding project keeps full architecture boundaries; the module may not change trust, durable state, public API, shared runtime, or release safety without re-tailoring |
+| Hybrid | Start with adaptive Agile-style discovery and lightweight I/T/O, then freeze predictive Process Groups before production, release, customer, trust, durable-state, or shared-runtime change | Lighten discovery first; expand the affected layer/module when risk becomes real; expand whole project only when coupling becomes systemic |
+
+The default question is not "full or light for everything?" The default question is: which exact scope is light, which exact scope remains full, and which signal forces expansion.
 
 ## When To Use The Full Architecture
 

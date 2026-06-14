@@ -7,7 +7,7 @@ The product lifecycle, whitepaper, research, and North Star documents currently 
 ## What Changes
 
 - Add a reusable fresh-source extraction tool that reads PDFs by page, EPUBs by spine item, and Markdown files as full documents.
-- Generate a new ignored local extraction cache and summary manifest for this refresh.
+- Generate a new ignored local extraction cache and summary manifest for this refresh. The current implementation rerun is `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`, generated at `2026-06-14T10:48:53Z`; the OpenSpec change id remains `fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` as the governed change package name.
 - Refresh bilingual product lifecycle documents, the Codex durable-team whitepaper, the solo-maintainable research note, and the North Star plan so they reference the new evidence run and avoid treating old cache as current truth.
 - Add the minimum bridge/index documents needed to make source evidence, 10-to-12-layer mapping, and PMI tailoring decisions auditable.
 
@@ -38,13 +38,13 @@ The product lifecycle, whitepaper, research, and North Star documents currently 
 ## Rollback
 
 - Revert the feature branch or local main merge commit.
-- Delete the ignored local `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/` cache if needed.
+- Delete the ignored local `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614/` cache if needed.
 - No remote, external, or downstream project state is modified by this change.
 
 ## Verification
 
-- `python tools/fresh_extract_sources.py --source-root D:/PythonProject_langgraph --output-root ./.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613 --summary-only` - confirms source inventory counts without rewriting tracked conclusions.
-- `python tools/fresh_extract_sources.py --source-root D:/PythonProject_langgraph --output-root ./.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260613` - regenerates the ignored full extraction evidence cache.
+- `python tools/fresh_extract_sources.py --source-root D:/PythonProject_langgraph --output-root ./.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614 --run-id fresh-source-lifecycle-whitepaper-pmi-refresh-20260614 --summary-only` - confirms source inventory counts without rewriting tracked conclusions.
+- `python tools/fresh_extract_sources.py --source-root D:/PythonProject_langgraph --output-root ./.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614 --run-id fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` - regenerates the ignored full extraction evidence cache.
 - `openspec validate fresh-source-lifecycle-whitepaper-pmi-refresh-20260613 --strict` - validates this OpenSpec change package.
 - `python tools/run_openspec_guard.py --root .` - verifies repository OpenSpec and documentation-governance guard rules.
 - `python tools/check_precommit_update_archive.py --root . --json` - verifies pre-commit update/archive readiness.
