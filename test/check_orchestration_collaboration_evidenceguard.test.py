@@ -82,6 +82,14 @@ class CollaborationEvidenceguardBilingualSurfaceTest(unittest.TestCase):
 
         self.assertEqual([], issues)
 
+    def test_updated_plan_conversation_accepts_native_bullet_panel(self) -> None:
+        issues = module.conversation_surface_issues(
+            "updated_plan",
+            "\u2022 Updated Plan\n  \u2514 \u2714 \u5df2\u8bfb\u53d6\u4e0a\u4e0b\u6587\n    \u25a1 \u8fd0\u884c\u95e8\u7981",
+        )
+
+        self.assertEqual([], issues)
+
     def test_updated_plan_conversation_rejects_duplicate_or_nested_panels(self) -> None:
         duplicate = module.conversation_surface_issues(
             "updated_plan",
@@ -91,9 +99,14 @@ class CollaborationEvidenceguardBilingualSurfaceTest(unittest.TestCase):
             "updated_plan",
             "Updated Plan\n\u2514 Updated Plan\n  \u2714 nested",
         )
+        native_plus_handwritten = module.conversation_surface_issues(
+            "updated_plan",
+            "\u2022 Updated Plan\n  \u2514 \u2714 native panel\n\nUpdated Plan:\n\u2611 duplicate handwritten summary",
+        )
 
         self.assertTrue(any("exactly one" in issue for issue in duplicate), duplicate)
         self.assertTrue(any("exactly one" in issue for issue in nested), nested)
+        self.assertTrue(any("native-plus-handwritten" in issue for issue in native_plus_handwritten), native_plus_handwritten)
 
     def test_routing_trace_conversation_requires_full_key_value_fields(self) -> None:
         valid = module.conversation_surface_issues(

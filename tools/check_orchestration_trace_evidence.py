@@ -38,7 +38,8 @@ CAPABILITY_CHAIN_PATTERN = re.compile(
     r"langgraph:(?P<langgraph>on|off)",
     re.IGNORECASE,
 )
-ROUTING_TRACE_LABEL_PATTERN = re.compile(r"(?im)^\s*Routing trace\b")
+LABEL_PREFIX_CHARS = r"\s*(?:[\u2022\u2514\u251c\u2502>+\-*]+\s*)*"
+ROUTING_TRACE_LABEL_PATTERN = re.compile(rf"(?im)^{LABEL_PREFIX_CHARS}Routing trace\b")
 LEGACY_SHORT_FIELD_PATTERN = re.compile(r"(?<![A-Za-z0-9_])(experts_now|durable_team)\s*=", re.IGNORECASE)
 
 BACKEND_DEFAULT_VALUES = {"langgraph", "native_omx", "none"}

@@ -1230,7 +1230,8 @@ You are Team Leader. The current main Codex CLI session is the leader lane. Do n
   - `main_session_escalation=<not_needed|preflight|pending_approval|granted|timed_out|blocked>`
   - `approval_timeout_risk=<none|low|medium|high|expired>` and `approval_receipt=<none|receipt>`
   - `why=<threshold hit, unmet threshold, blocker, or main-session takeover>`
-- User-facing plan progress keeps exactly one literal `Updated Plan` label and one CLI/tree progress panel using checkmark/open-square status markers; explanatory content may be Chinese. Do not duplicate it as a Markdown checkbox list.
+- If an outer wrapper, launcher, or runtime already injected `Routing trace` for the current activation, assistant prose must not emit a second `Routing trace` block for that same activation.
+- User-facing plan progress keeps exactly one literal `Updated Plan` label and one CLI/tree progress panel using checkmark/open-square status markers; explanatory content may be Chinese. The native `update_plan` render is the canonical `Updated Plan` panel; after that native panel appears, do not handwrite another `Updated Plan` heading, nested `Updated Plan` tree node, Markdown checkbox mirror, or prose duplicate. If no native plan panel is emitted and a short progress note is useful, use a non-conflicting label such as `Execution progress`.
 - Respect the global state:
   - oh_my_codex=on enables durable team features.
   - oh_my_codex=off disables oh-my-codex durable team features.
@@ -3743,7 +3744,8 @@ function Get-CodexUserLevelDeveloperInstructions {
   $lines += '- writer: user-facing behavior, setup, migration, or operator workflow changes; for bounded multi-face research, use only after analyst fan-in shows a document-finalization layer.'
   $lines += '- bug-finder / bug-rebutter / bug-judge: contested, noisy, or high-volume bug triage after one normal verification still leaves disagreement or a broad candidate bug set.'
   $lines += '- Startup routing trace format should stay concise and use the full field set: `Routing trace: phase=..., capability_chain=..., backend_default=..., backend_ready=..., experts=..., durable_workflow=..., persistent_team=..., main_session_escalation=..., approval_timeout_risk=..., approval_receipt=..., why=...`.'
-  $lines += '- User-facing plan progress format should keep exactly one literal `Updated Plan` label and one CLI/tree progress panel using checkmark/open-square status markers; explanatory content may be Chinese. Do not duplicate it as a Markdown checkbox list.'
+  $lines += '- If an outer wrapper, launcher, or runtime already injected `Routing trace` for the current activation, assistant prose must not emit a second `Routing trace` block for that same activation.'
+  $lines += '- User-facing plan progress format should keep exactly one literal `Updated Plan` label and one CLI/tree progress panel using checkmark/open-square status markers; explanatory content may be Chinese. The native `update_plan` render is the canonical `Updated Plan` panel; after that native panel appears, do not handwrite another `Updated Plan` heading, nested `Updated Plan` tree node, Markdown checkbox mirror, or prose duplicate. If no native plan panel is emitted and a short progress note is useful, use a non-conflicting label such as `Execution progress`.'
 
   return ($lines -join "`n")
 }
@@ -12783,6 +12785,7 @@ For the minimal high-frequency command card, see `team-mode-quick-reference.md`.
 - If `subagent_routing!=off`, `oh_my_codex=on`, `langgraph=on`, and LangGraph readiness is true, report `backend_default=langgraph` for graph-shaped durable work. This readiness does not imply that a persistent team is already running.
 - Durable/persistent team selection is threshold-gated: normally `frozen_plan=true` plus 2+ mostly independent execution slices for `execute-parallel` or `integrate-converge`; 1+ blocking issues for debugger lanes during `stabilize`.
 - Expert timeout, stall, or upstream pacing is non-evidence. Continue bounded waits, request progress, respawn a narrower expert, hand off to an eligible durable lane, or record main-session takeover. Never treat timeout as successful fan-in.
+- Conversation surfaces are singular: if the wrapper, launcher, or runtime already injected `Routing trace`, do not write another trace for the same activation. The native `update_plan` render is the canonical `Updated Plan` panel; do not handwrite a duplicate `Updated Plan` heading, nested `Updated Plan` tree node, or Markdown checkbox mirror after it appears. If you need prose progress without the native panel, use `Execution progress`.
 
 ## Mode states
 
@@ -13275,6 +13278,7 @@ Use the full playbook when you need policy detail, lifecycle semantics, or backe
 - Never use "the user did not request subagents/parallelism" as the reason to skip orchestration.
 - If native `spawn_agent` is blocked by a platform/tool constraint, report `experts=blocked:platform_subagent_invocation_constraint` and continue through an eligible durable lane or main-session takeover.
 - Persistent/durable team selection still requires thresholds such as `frozen_plan=true` plus 2+ independent execution slices, or stabilization with blocking issues.
+- If `Routing trace` was already injected for the current activation, do not write another trace. Treat the native `update_plan` render as the canonical `Updated Plan` panel; do not mirror it with a handwritten `Updated Plan` block.
 
 ## Analyst Fan-out First
 

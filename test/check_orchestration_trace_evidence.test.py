@@ -140,6 +140,15 @@ class OrchestrationTraceEvidenceCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("exactly one" in error for error in payload["errors"]), payload["errors"])
 
+    def test_native_prefixed_duplicate_routing_trace_label_fails(self) -> None:
+        root = self.make_root("trace-native-prefixed-duplicate-label")
+        path = self.write_trace(root, "\u2022 " + VALID_TRACE + "\n\u2514 Routing trace: phase=duplicate, why=duplicate\n")
+
+        payload = module.run_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("exactly one" in error for error in payload["errors"]), payload["errors"])
+
     def test_legacy_short_routing_fields_fail(self) -> None:
         root = self.make_root("trace-legacy-fields")
         path = self.write_trace(root, VALID_TRACE + "\nexperts_now=main durable_team=not_selected\n")
