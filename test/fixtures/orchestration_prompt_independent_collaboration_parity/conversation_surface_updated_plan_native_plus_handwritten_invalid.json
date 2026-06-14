@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "case_type": "conversation_surface",
+  "case_id": "conversation-surface-updated-plan-native-plus-handwritten-invalid",
+  "surface": "updated_plan",
+  "text": "\u2022 Updated Plan\n  \u2514 \u2714 native panel rendered\n\nUpdated Plan:\n\u2611 handwritten duplicate summary",
+  "expected_valid": false
+}

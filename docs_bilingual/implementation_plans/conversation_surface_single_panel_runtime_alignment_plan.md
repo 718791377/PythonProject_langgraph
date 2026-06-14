@@ -41,11 +41,11 @@ Align the user-facing `Routing trace` and `Updated Plan` conversation surfaces a
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: native surface deduplication correction planned in `conversation-surface-native-dedup-20260613`; previous runtime slice remains the baseline
+Status: native surface deduplication runtime implementation completed in `conversation-surface-native-dedup-20260613`; local validation and integration remain pending
 Owner session: `conversation-surface-native-dedup-20260613`
-Current gate: commit this plan correction and merge it into local `main`; then implement native panel/trace recognition, refresh user-level/runtime surfaces, run local gate and local MR review, merge local `main`, and update `D:/PythonProject_General` plus `D:/PythonProject_General_2`
+Current gate: run local gate and local MR review, merge local `main`, then update `D:/PythonProject_General` plus `D:/PythonProject_General_2`
 Remote publication: not authorized; stop at the remote-publication approval gate
-Last updated: 2026-06-13
+Last updated: 2026-06-14
 <!-- CURRENT_STATUS_END -->
 
 ## File Ownership
@@ -73,9 +73,9 @@ Only one session may own each hotspot at a time:
 - [x] Harden conversation-surface checker logic and fixtures against duplicate `Updated Plan`, nested `Updated Plan`, Markdown checkbox `Updated Plan`, duplicate `Routing trace`, and old routing short fields.
 - [x] Run targeted checker tests, OpenSpec guard, and pre-commit update/archive checks for the runtime slice.
 - [x] Reinstall or refresh user-level team-mode runtime from repository source and smoke-search installed artifacts for old wording, including the generated `user-level-team-mode-model-instructions.md` cache.
-- [ ] Record the native `update_plan` panel as the canonical `Updated Plan` surface and ban assistant-written duplicate `Updated Plan` headings after a native panel.
-- [ ] Extend checker logic and fixtures so `U+2022 Updated Plan` counts as the native panel label, native-plus-handwritten duplicate evidence fails, and non-conflicting prose progress labels remain allowed outside the `Updated Plan` surface.
-- [ ] Extend routing trace guidance so an already injected trace suppresses assistant-written duplicate `Routing trace` output for the same activation.
+- [x] Record the native `update_plan` panel as the canonical `Updated Plan` surface and ban assistant-written duplicate `Updated Plan` headings after a native panel.
+- [x] Extend checker logic and fixtures so `U+2022 Updated Plan` counts as the native panel label, native-plus-handwritten duplicate evidence fails, and non-conflicting prose progress labels remain allowed outside the `Updated Plan` surface.
+- [x] Extend routing trace guidance so an already injected trace suppresses assistant-written duplicate `Routing trace` output for the same activation.
 - [ ] Run full local gate and local MR review for the committed runtime implementation.
 - [ ] Merge the runtime implementation into local `main` and stop at the remote-publication gate.
 - [ ] Update `D:/PythonProject_General` with a plan commit followed by a template implementation commit and local main integration.
@@ -112,5 +112,7 @@ Only one session may own each hotspot at a time:
 - User-level install executed with `tools/install-codex-user-level-team-mode.ps1 -Force`; manifest listed `C:/Users/lenovo/.codex/state/user-level-team-mode-model-instructions.md` as a generated managed artifact.
 - User-level smoke passed: `team-leader.toml`, `codex-routing-policy.ps1`, `_codex-user-level-team-mode.ps1`, `_codex-user-level-team-mode-launcher.ps1`, and `user-level-team-mode-model-instructions.md` had no `experts_now`, no old `durable_team=<selected|not_selected>` example, no `checkbox/status-list semantics`, and no Markdown checkbox `Updated Plan` surface.
 - Repository guards passed: `python tools/check_precommit_update_archive.py --root . --json`, `python tools/check_launcher_payload_context_boundary.py --root . --json`, and `python tools/run_openspec_guard.py --root .`.
+- Native surface dedup checks passed on 2026-06-14: `python test/check_orchestration_collaboration_evidenceguard.test.py`, `python test/check_orchestration_trace_evidence.test.py`, and `python tools/check_orchestration_collaboration_evidenceguard.py --root . --json`.
+- Native surface runtime refresh passed on 2026-06-14: `powershell -NoProfile -ExecutionPolicy Bypass -File test/install-codex-user-level-team-mode.test.ps1`, `python tools/run_openspec_guard.py --root .`, `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\install-codex-user-level-team-mode.ps1 -Force`, and installed-artifact smoke for old wording/new boundary phrases.
 - Pending evidence: runtime local gate, local MR review, local `main` integration, and both template repository updates.
 <!-- EVIDENCE_INDEX_END -->
