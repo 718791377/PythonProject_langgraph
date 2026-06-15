@@ -16,6 +16,12 @@ This MRD identifies target users, project types, usage scenarios, capability pro
 It replaces the former standalone `docs_bilingual/implementation_plans/codex_business_capability_profiles.md` reference; that file was a capability-profile lookup table and is now merged into Appendix A of this MRD.
 
 
+## 0. 2026-06-15 Durable-Team Corpus Sync Checkpoint
+
+This file participates in the core `codex_cli_personal_production_durable_team` corpus sync. The current synchronized corpus is: white paper, governance research note, MRD, North Star plan, implementation plan, playbook, lifecycle maps, and OpenSpec specs. The shared rule is that the 10-layer model is the runtime/governance capability core, while the 12-layer model is the product/business lifecycle planning frame.
+
+Evidence boundary: tracked evidence for the June 2026 source refresh is the archived OpenSpec change, verification report, and updated synthesis documents. Raw extraction streams under `.omx/state/langgraph/extraction/` are ignored local artifacts and may be absent from a clean worktree. This file therefore must not claim that raw extraction cache presence is required for cold-start understanding, and it must not treat any draft document as runtime evidence that a durable or persistent team is currently running.
+
 ## White Paper, Research Canon, And 10-To-12-Layer Bridge
 
 This MRD uses the same document split as the refreshed lifecycle canon:

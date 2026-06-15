@@ -15,6 +15,12 @@ status: draft
 
 本次刷新使用的新鲜来源证据来自 `2026-06-14T10:48:53Z` 生成、但因体积和原文版权边界而未提交的 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614/` 抽取产物：`fresh_source_manifest.json`、`fresh_source_synthesis.json`、本地 raw `fresh_source_items.jsonl`。抽取覆盖 54 个来源，其中 31 个来自 `Business Management/`、23 个来自 `PMP/`；格式包括 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件，合计 18,492,044 个抽取文本字符。Git 跟踪文档只记录综合结论；源文本、逐项抽取流和抽取日志保留在本地忽略目录中。
 
+## 0. 2026-06-15 持久化团队文档族同步检查点
+
+本文参与核心 `codex_cli_personal_production_durable_team` 文档族同步。当前同步文档族包括：白皮书、治理研究稿、MRD、北极星计划、实施方案、playbook、生命周期地图和 OpenSpec 规格。共享规则是：10 层模型是运行时/治理能力核心，12 层模型是产品/商业生命周期规划框架。
+
+证据边界：2026 年 6 月 source refresh 的已提交证据是归档 OpenSpec change、验证报告和已更新的综合文档。`.omx/state/langgraph/extraction/` 下的 raw extraction streams 是被忽略的本地 artifacts，clean worktree 中可能不存在。因此，本文不得声称 raw extraction cache 是冷启动理解的必备条件，也不得把任何 draft 文档当成 durable 或 persistent team 当前正在运行的 runtime evidence。
+
 ## 主要北极星指标
 
 **安全冷启动延续成功率**：新建或恢复的 Codex 会话能够继续项目任务，且不需要用户反复解释、不发生跨项目状态泄漏、不虚假宣称 durable/persistent team 已运行、不执行不安全 Git/worktree 操作、不作出未经验证完成声明的比例。

@@ -17,6 +17,12 @@ status: draft
 > - The project-level part explains how each repository keeps its repo-local source, repo-local durable state, OpenSpec, project documents, tests, and exceptions.
 > - Stable user-level rules belong in `docs_bilingual/governance/`. Structural multi-file repository work still belongs in OpenSpec.
 
+## 0. 2026-06-15 Durable-Team Corpus Sync Checkpoint
+
+This file participates in the core `codex_cli_personal_production_durable_team` corpus sync. The current synchronized corpus is: white paper, governance research note, MRD, North Star plan, implementation plan, playbook, lifecycle maps, and OpenSpec specs. The shared rule is that the 10-layer model is the runtime/governance capability core, while the 12-layer model is the product/business lifecycle planning frame.
+
+Evidence boundary: tracked evidence for the June 2026 source refresh is the archived OpenSpec change, verification report, and updated synthesis documents. Raw extraction streams under `.omx/state/langgraph/extraction/` are ignored local artifacts and may be absent from a clean worktree. This file therefore must not claim that raw extraction cache presence is required for cold-start understanding, and it must not treat any draft document as runtime evidence that a durable or persistent team is currently running.
+
 ## 1. Document Positioning And Goal
 
 This plan defines, under the following baseline assumptions, how to build a production-grade durable team model for `Codex CLI` that is maintainable by one developer and reusable across all `PyCharm / Codex CLI` projects:

@@ -14,6 +14,12 @@ status: draft
 This playbook turns the draft personal production durable-team target into release slices that a cold-start maintainer can follow. The draft target explains the architecture. This playbook explains what to do next.
 
 
+## 0. 2026-06-15 Durable-Team Corpus Sync Checkpoint
+
+This file participates in the core `codex_cli_personal_production_durable_team` corpus sync. The current synchronized corpus is: white paper, governance research note, MRD, North Star plan, implementation plan, playbook, lifecycle maps, and OpenSpec specs. The shared rule is that the 10-layer model is the runtime/governance capability core, while the 12-layer model is the product/business lifecycle planning frame.
+
+Evidence boundary: tracked evidence for the June 2026 source refresh is the archived OpenSpec change, verification report, and updated synthesis documents. Raw extraction streams under `.omx/state/langgraph/extraction/` are ignored local artifacts and may be absent from a clean worktree. This file therefore must not claim that raw extraction cache presence is required for cold-start understanding, and it must not treat any draft document as runtime evidence that a durable or persistent team is currently running.
+
 ## Authority Stack And Parity Links
 
 This playbook is procedural. It does not replace the authoritative count maps, whitepaper, research note, or PMI tailoring documents; each release slice must link back to the relevant authority before changing architecture, governance depth, or runtime behavior.

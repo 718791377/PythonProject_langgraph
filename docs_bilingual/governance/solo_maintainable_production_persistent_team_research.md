@@ -31,6 +31,12 @@ Update-trigger matrix: platform boundary change -> white paper required; capabil
 3. Update this research note when the production-grade criteria, evidence base, or runtime-capability decomposition changes.
 4. Merge only if one file becomes a non-functional duplicate of the other. That is not the current state.
 
+## 0. 2026-06-15 Durable-Team Corpus Sync Checkpoint
+
+This file participates in the core `codex_cli_personal_production_durable_team` corpus sync. The current synchronized corpus is: white paper, governance research note, MRD, North Star plan, implementation plan, playbook, lifecycle maps, and OpenSpec specs. The shared rule is that the 10-layer model is the runtime/governance capability core, while the 12-layer model is the product/business lifecycle planning frame.
+
+Evidence boundary: tracked evidence for the June 2026 source refresh is the archived OpenSpec change, verification report, and updated synthesis documents. Raw extraction streams under `.omx/state/langgraph/extraction/` are ignored local artifacts and may be absent from a clean worktree. This file therefore must not claim that raw extraction cache presence is required for cold-start understanding, and it must not treat any draft document as runtime evidence that a durable or persistent team is currently running.
+
 ## 0.1 Bridge From The 10-Layer Research Model To The Repository 12-Layer Lifecycle
 
 This research note uses a ten-layer model because it studies the minimum production capabilities of a persistent-team runtime. The repository lifecycle uses twelve layers because product and governance work must also cover narrative, market, growth, operations, and retrospective learning.
