@@ -13,6 +13,17 @@ status: draft
 
 This playbook turns the draft personal production durable-team target into release slices that a cold-start maintainer can follow. The draft target explains the architecture. This playbook explains what to do next.
 
+
+## Authority Stack And Parity Links
+
+This playbook is procedural. It does not replace the authoritative count maps, whitepaper, research note, or PMI tailoring documents; each release slice must link back to the relevant authority before changing architecture, governance depth, or runtime behavior.
+
+- Codex durable-team platform target: 12 trunk layers, 4 virtual departments, 24 responsibility domains, 18 cross-cutting modules, 48 core documents, 12 governed AI agents, and 12 recommended books. The canonical inventory is `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md`.
+- One-person-company operating-system target: 12 trunk layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. The canonical inventory is `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`.
+- Whitepaper versus research: `docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md` remains the strategic narrative, while `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md` remains the evidence-heavy runtime/governance research canon. Do not physically merge them unless a later governed change proves one lifecycle role is obsolete.
+- 10-to-12 bridge: use `docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.md` to map the 10-layer runtime research model to the 12-layer product/business lifecycle model.
+- PMI tailoring: use `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md` when a release slice needs process-group style Inputs, Tools and Techniques, Outputs, or a decision between full, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid governance.
+
 ## Fixed Rules
 
 - Use OpenSpec for structural repository changes.

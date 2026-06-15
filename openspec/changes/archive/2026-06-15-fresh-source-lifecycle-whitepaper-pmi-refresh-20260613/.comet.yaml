@@ -1,0 +1,22 @@
+workflow: full
+phase: archive
+design_doc: openspec/changes/archive/2026-06-15-fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/design.md
+plan: null
+build_mode: direct
+isolation: worktree
+verify_mode: full
+verify_result: pass
+verification_report: docs/superpowers/reports/2026-06-14-fresh-source-lifecycle-whitepaper-pmi-refresh-verification.md
+branch_status: handled
+verified_at: 2026-06-14
+archived: true
+management_record: openspec/changes/archive/2026-06-15-fresh-source-lifecycle-whitepaper-pmi-refresh-20260613/management.md
+monitoring_status: clear
+control_decision: continue
+target_phase: null
+rework_reason: null
+iteration_count: 0
+direct_override: true
+comet_script_state: manual_windows_direct
+build_command: python tools/run_openspec_guard.py --root . --json
+verify_command: python tools/run_openspec_guard.py --root . --json

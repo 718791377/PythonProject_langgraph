@@ -48,5 +48,5 @@ Paired English and zh-CN documents updated by this change SHALL preserve the sam
 #### Scenario: zh-CN document is touched
 - **WHEN** a zh-CN tracked document is updated
 - **THEN** the changed text is valid UTF-8 Chinese or intentional technical terminology
-- **AND** no newly added `???` or replacement-character text remains
+- **AND** no newly added three-ASCII-question-mark or replacement-character text remains
 - **AND** English-only governance additions have a zh-CN counterpart when the paired document exists.

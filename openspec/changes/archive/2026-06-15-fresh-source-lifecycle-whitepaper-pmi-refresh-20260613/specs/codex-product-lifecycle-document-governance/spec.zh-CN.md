@@ -52,5 +52,5 @@ Codex durable-team whitepaper 与 solo-maintainable production persistent team r
 #### Scenario: zh-CN document is touched
 - **WHEN** zh-CN tracked document 被更新
 - **THEN** changed text 是有效 UTF-8 中文或有意保留的技术术语
-- **AND** 不保留新增的 `???` 或 replacement-character 文本
+- **AND** 不保留新增的 three ASCII question marks 或 replacement-character 文本
 - **AND** 如果存在成对文档，英文新增治理规则必须有 zh-CN 对应内容。

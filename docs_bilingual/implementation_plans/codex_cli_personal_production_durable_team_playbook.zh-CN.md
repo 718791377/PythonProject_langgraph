@@ -22,6 +22,18 @@ status: draft
 - `.omx/state/` - 每个仓库自己的 repo-local durable state 目录，不能跨项目共享。
 - local GGUF model files - 本地大模型二进制文件，必须排除在普通 Git 之外。
 
+
+## 权威栈与同构链接
+
+本 playbook 是执行程序文件。它不替代权威计数地图、白皮书、研究正本或 PMI 裁剪文件；每个 release slice 在改变架构、治理深度或运行时行为之前，都必须回链到相关权威文件。
+
+
+- Codex 持久化团队平台目标：12 层主干层级、4 个虚拟部门、24 个责任域、18 个横切模块、48 个核心文档、12 个受治理 AI Agent、12 本推荐书籍。权威清单是 `docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md`。
+- 一人公司经营系统目标：12 层主干层级、5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍、12 个最小启动文档。权威清单是 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`。
+- 白皮书与研究正本：`docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.zh-CN.md` 保持战略叙事角色，`docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md` 保持证据密集的运行时/治理研究正本角色。除非后续受治理变更证明其中一个生命周期角色已经失效，否则不要物理合并。
+- 10 层到 12 层桥接：使用 `docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.zh-CN.md` 把 10 层运行时研究模型映射到 12 层产品/商业生命周期模型。
+- PMI 裁剪：当 release slice 需要过程组式的输入、工具与技术、输出，或需要在完整架构、整个项目轻量、阶段局部轻量、模块级轻量与混合治理之间作决定时，使用 `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md`。
+
 ## Release Slice 模板
 
 每个 release slice 必须定义：

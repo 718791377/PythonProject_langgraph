@@ -35,5 +35,5 @@ PDF extraction uses `pypdf` first and falls back to PyMuPDF/fitz for files or pa
 - Stale cache references must be rewritten as historical/non-current evidence.
 - No tracked raw source text is committed.
 - Bilingual documents are updated in paired English and zh-CN form.
-- Chinese text must be written and validated as UTF-8; mojibake/`???` additions are release blockers.
+- Chinese text must be written and validated as UTF-8; mojibake/three ASCII question mark additions are release blockers.
 - Count constraints are explicitly validated in text and, where practical, by script checks.

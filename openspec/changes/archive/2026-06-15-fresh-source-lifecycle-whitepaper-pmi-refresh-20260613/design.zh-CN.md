@@ -35,5 +35,5 @@ PDF extraction 先使用 `pypdf`，当 file/page extraction 失败时 fallback �
 - Stale cache references 必须改写为 historical/non-current evidence。
 - 不提交 tracked raw source text。
 - Bilingual documents 必须以 English 与 zh-CN 成对更新。
-- 中文文本必须以 UTF-8 写入并验证；mojibake/`???` 新增内容是 release blocker。
+- 中文文本必须以 UTF-8 写入并验证；mojibake/three ASCII question marks 新增内容是 release blocker。
 - Count constraints 在文本中显式验证，必要时用脚本检查。
