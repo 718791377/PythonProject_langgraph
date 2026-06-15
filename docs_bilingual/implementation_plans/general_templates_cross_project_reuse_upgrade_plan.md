@@ -43,6 +43,9 @@ conflict_priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safet
 - 2026-06-15: Safe incremental sync scope is limited to reusable template surfaces from `b67b94f..802e458`: single-panel conversation surface, full-field `Routing trace` contract, reusable document/PDF/vector-tool promotion, recent manual workflow packaging, fresh-source extraction guidance, and governance wording that remains template-safe.
 - 2026-06-15: Excluded from templates: Skills-audit memory rollups, Project MOE GUI implementation specifics, WXWork/browser/GUI live-state evidence, `.omx/state/`, session claims, credentials, sensitive runtime receipts, remote publication state, and repository-specific LangGraph durable state.
 - 2026-06-15: Source `docs_bilingual/docs_registry.yaml` indentation repair is included in this plan refresh because the newly registered `reusable_document_pdf_vector_tools_promotion_plan` entry was outside the `documents` list and broke YAML parsing.
+- 2026-06-15: `D:\PythonProject_General` revalidated on local `main` at `d2d5a27`; rollback ref `refs/backup/local-main/20260615-before-general-safe-increment` -> `4a7d85890cf10f7d22d88836fc3ee8f5edbd2eb1`; local gate and local MR review passed.
+- 2026-06-15: `D:\PythonProject_General_2` revalidated on local `main` at `101025b`; rollback ref `refs/backup/local-main/20260615-before-general2-safe-increment` -> `1952f6dda40c9e52c8ced4325aee1ffc407eea67`; local gate and local MR review passed.
+- 2026-06-15: Source `main` was re-fetched against `gitlab/main` and remains ahead 97 / behind 0 before final source closeout.
 <!-- CURRENT_STATUS_END -->
 
 ## Scope And Template Tier Decisions
@@ -194,13 +197,13 @@ Steps:
 | Source plan registration commit | `git log -1 --oneline` after Task 1 local integration | `f3c2900 source plan registration commit` |
 | Source remote-base check before closeout | `git fetch gitlab`; `git rev-list --left-right --count main...gitlab/main` | `50 0` before closeout branch creation |
 | Source ownership precheck | `python tools/check_session_ownership_claims.py --root . --precheck-task "general templates evidence closeout" --target-path "docs_bilingual/implementation_plans/general_templates_cross_project_reuse_upgrade_plan.md" --json` | `ok=true`, target path unclaimed |
-| General validation | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General\tools\ci\local_gate.ps1 -Root D:\PythonProject_General -Json` | passed at `2026-06-12T04:02:36Z`; current `main` is `a814883`; key template files present; `.omx/state` absent; includes hydration, OpenSpec policy, Comet policy, and R6 receipt checker |
-| General final commit | `git -C D:\PythonProject_General log -1 --oneline` | `a814883 General full-template upgrade commit` |
-| General rollback ref | `git -C D:\PythonProject_General rev-parse refs/backup/local-main/20260612-before-upgrade-general-full-template` | `0010af632587fc6fd0cb792905f66447dedefbc6` |
-| General_2 validation | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General_2\tools\ci\local_gate.ps1 -Root D:\PythonProject_General_2 -Json -RequireCleanGit` | passed at `2026-06-12T04:02:34Z`; current `main` is `8dea3e6`; clean git; root remote CI absent; inert samples present; `.omx/state` absent; includes template health, ownership, subagent-only, OpenSpec, bilingual, name-clarity, local-only, and Comet policy |
+| General 2026-06-12 validation | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General\tools\ci\local_gate.ps1 -Root D:\PythonProject_General -Json` | passed at `2026-06-12T04:02:36Z`; current `main` is `a814883`; key template files present; `.omx/state` absent; includes hydration, OpenSpec policy, Comet policy, and R6 receipt checker |
+| General 2026-06-12 final commit | `git -C D:\PythonProject_General log -1 --oneline` | `a814883 General full-template upgrade commit` |
+| General 2026-06-12 rollback ref | `git -C D:\PythonProject_General rev-parse refs/backup/local-main/20260612-before-upgrade-general-full-template` | `0010af632587fc6fd0cb792905f66447dedefbc6` |
+| General_2 2026-06-12 validation | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General_2\tools\ci\local_gate.ps1 -Root D:\PythonProject_General_2 -Json -RequireCleanGit` | passed at `2026-06-12T04:02:34Z`; current `main` is `8dea3e6`; clean git; root remote CI absent; inert samples present; `.omx/state` absent; includes template health, ownership, subagent-only, OpenSpec, bilingual, name-clarity, local-only, and Comet policy |
 | General_2 local MR review | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General_2\tools\ci\local_mr_review.ps1 -Root D:\PythonProject_General_2 -BaseRef main -HeadRef HEAD -Json` | passed before local `main` merge; helper fixed to report `changed_files` correctly |
-| General_2 final commit | `git -C D:\PythonProject_General_2 log -1 --oneline` | `8dea3e6 General_2 local-only template upgrade commit` |
-| General_2 rollback ref | `git -C D:\PythonProject_General_2 rev-parse refs/backup/local-main/20260612-before-upgrade-general2-local-template` | `95dc72d0cc039659935865d2c6377e288773dbb5` |
+| General_2 2026-06-12 final commit | `git -C D:\PythonProject_General_2 log -1 --oneline` | `8dea3e6 General_2 local-only template upgrade commit` |
+| General_2 2026-06-12 rollback ref | `git -C D:\PythonProject_General_2 rev-parse refs/backup/local-main/20260612-before-upgrade-general2-local-template` | `95dc72d0cc039659935865d2c6377e288773dbb5` |
 | Excluded or inert artifacts | template policy and checker evidence | `.idea/`, live `.omx/state/`, credentials, browser/GUI/WXWork state, remote publication state, active General_2 root CI, and active General_2 R6 runtime helper files excluded; General_2 remote CI/R6 kept only as inert samples |
 | Source plan validation | `python .\tools\check_implementation_plan_rules.py --root . --json` | passed at `2026-06-12T03:00:28Z` with legacy warnings only |
 | Source precommit update/archive check | `python .\tools\check_precommit_update_archive.py --root . --json` | passed at `2026-06-12T03:00:28Z`; changed paths limited to the plan pair |
@@ -208,14 +211,18 @@ Steps:
 | Source local gate | `.\tools\ci\local_gate.ps1` via `tools/complete_local_flow_to_remote_gate.py --execute --local-gate-step-timeout-seconds 1800` | passed for feature and post-merge local `main` during `b67b94f` integration |
 | Source local MR review | `.\tools\ci\local_mr_review.ps1 -Root . -BaseRef main -HeadRef close-general-templates-evidence-20260612 -Json` | passed before `b67b94f` local integration |
 | Source local main integration and cleanup | `python .\tools\complete_local_flow_to_remote_gate.py --execute --local-gate-step-timeout-seconds 1800`; `tools/cleanup_integrated_worktree.py` | `main` integrated at `b67b94ff5abfadb13a93d31d0bb7c2b5512a7d97`; rollback ref `refs/backup/local-main/20260612-113345-before-close-general-templates-evidence-20260612`; feature worktree removed; branch deleted; completed claim preserved |
-| Source 2026-06-15 plan refresh commit | `git log -1 --oneline` after Task 5 local integration | pending |
-| Source 2026-06-15 remote-base check | `git fetch gitlab`; `git rev-list --left-right --count main...gitlab/main` | `87 0` before source plan refresh |
-| Source docs registry YAML parse | UTF-8 YAML parse of `docs_bilingual/docs_registry.yaml` | pending after indentation repair |
-| General 2026-06-15 validation | `D:\PythonProject_General	ools\ci\local_gate.ps1 -Json` plus targeted checks | pending |
-| General 2026-06-15 final commit | `git -C D:\PythonProject_General log -1 --oneline` | pending |
-| General_2 2026-06-15 validation | `D:\PythonProject_General_2	ools\ci\local_gate.ps1 -Json -RequireCleanGit` plus targeted checks | pending |
-| General_2 2026-06-15 final commit | `git -C D:\PythonProject_General_2 log -1 --oneline` | pending |
-| Source 2026-06-15 evidence closeout | final source validation and local-main integration | pending |
+| Source 2026-06-15 plan refresh commit | `git log -1 --oneline` after Task 5 local integration | `ffdfe79 方案：登记通用模板增量同步` |
+| Source 2026-06-15 remote-base check | `git fetch gitlab`; `git rev-list --left-right --count main...gitlab/main` | `97 0` before final source closeout |
+| Source docs registry YAML parse | UTF-8 YAML parse of `docs_bilingual/docs_registry.yaml` | `yaml_ok True`, `documents=109` |
+| General 2026-06-15 validation | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General\tools\ci\local_gate.ps1 -Root D:\PythonProject_General -Json` | passed at `2026-06-15T13:53:42Z`; current `main` is `d2d5a27`; key template files present; `.omx/state` absent; includes hydration, OpenSpec policy, Comet policy, R6 receipt checker, and reusable workflow policy |
+| General 2026-06-15 local MR review | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General\tools\ci\local_mr_review.ps1 -Root D:\PythonProject_General -BaseRef refs/backup/local-main/20260615-before-general-safe-increment -HeadRef main -Json` | passed at `2026-06-15T13:59:29Z`; base ref `refs/backup/local-main/20260615-before-general-safe-increment`; head ref `main`; merge_base `4a7d85890cf10f7d22d88836fc3ee8f5edbd2eb1` |
+| General 2026-06-15 final commit | `git -C D:\PythonProject_General log -1 --oneline` | `d2d5a27 更新通用模板可复用文档工具` |
+| General 2026-06-15 rollback ref | `git -C D:\PythonProject_General rev-parse refs/backup/local-main/20260615-before-general-safe-increment` | `4a7d85890cf10f7d22d88836fc3ee8f5edbd2eb1` |
+| General_2 2026-06-15 validation | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General_2\tools\ci\local_gate.ps1 -Root D:\PythonProject_General_2 -Json` | passed at `2026-06-15T13:53:37Z`; current `main` is `101025b`; clean git; root remote CI absent; inert samples present; `.omx/state` absent; includes template health, ownership, subagent-only, OpenSpec, bilingual, name-clarity, local-only, Comet policy, and reusable workflow policy |
+| General_2 2026-06-15 local MR review | `powershell -NoProfile -ExecutionPolicy Bypass -File D:\PythonProject_General_2\tools\ci\local_mr_review.ps1 -Root D:\PythonProject_General_2 -BaseRef refs/backup/local-main/20260615-before-general2-safe-increment -HeadRef main -Json` | passed at `2026-06-15T13:59:30Z`; base ref `refs/backup/local-main/20260615-before-general2-safe-increment`; head ref `main`; merge_base `1952f6dda40c9e52c8ced4325aee1ffc407eea67` |
+| General_2 2026-06-15 final commit | `git -C D:\PythonProject_General_2 log -1 --oneline` | `101025b 更新本地模板可复用工作流` |
+| General_2 2026-06-15 rollback ref | `git -C D:\PythonProject_General_2 rev-parse refs/backup/local-main/20260615-before-general2-safe-increment` | `1952f6dda40c9e52c8ced4325aee1ffc407eea67` |
+| Source 2026-06-15 evidence closeout | final source validation and local-main integration | ready; `check_implementation_plan_rules`, `check_precommit_update_archive`, `run_openspec_guard`, `check_worktree_task_receipt` passed on this worktree; local MR review still pending |
 | Remote publication | explicit later user approval required | not_requested; source `main` intentionally leads `gitlab/main` and `github/main` until explicit remote publication |
 <!-- EVIDENCE_INDEX_END -->
 
