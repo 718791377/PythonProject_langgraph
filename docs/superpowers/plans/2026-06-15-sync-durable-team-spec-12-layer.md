@@ -2,6 +2,7 @@
 change: sync-durable-team-spec-12-layer-20260615
 design-doc: docs/superpowers/specs/2026-06-15-durable-team-corpus-sync-design.md
 base-ref: 516b4786aa3bffa5e42a96aafe9cdb20ba7aa32f
+archived-with: 2026-06-15-sync-durable-team-spec-12-layer-20260615
 ---
 
 # Plan: Sync Durable-Team Spec And Core Corpus Checkpoint

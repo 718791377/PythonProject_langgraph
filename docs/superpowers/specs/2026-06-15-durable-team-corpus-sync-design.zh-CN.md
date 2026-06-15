@@ -1,7 +1,8 @@
 ---
 change: sync-durable-team-spec-12-layer-20260615
-status: draft
+status: final
 translation_of: docs/superpowers/specs/2026-06-15-durable-team-corpus-sync-design.md
+archived-with: 2026-06-15-sync-durable-team-spec-12-layer-20260615
 ---
 
 # 设计：持久化团队文档族与 10-to-12 规格同步

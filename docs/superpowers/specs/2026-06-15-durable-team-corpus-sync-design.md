@@ -1,6 +1,7 @@
 ---
 change: sync-durable-team-spec-12-layer-20260615
-status: draft
+status: final
+archived-with: 2026-06-15-sync-durable-team-spec-12-layer-20260615
 ---
 
 # Design: Durable-Team Corpus And 10-To-12 Spec Synchronization

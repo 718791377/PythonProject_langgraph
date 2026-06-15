@@ -14,4 +14,4 @@
 ## 3. Validation
 
 - [x] 3.1 Run OpenSpec strict validation and relevant document checks.
-- [ ] 3.2 Commit the bounded docs-only synchronization slice.
+- [x] 3.2 Commit the bounded docs-only synchronization slice.

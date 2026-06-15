@@ -14,4 +14,4 @@
 ## 3. 验证
 
 - [x] 3.1 运行 OpenSpec strict validation 和相关文档检查。
-- [ ] 3.2 提交本轮 bounded docs-only synchronization slice。
+- [x] 3.2 提交本轮 bounded docs-only synchronization slice。

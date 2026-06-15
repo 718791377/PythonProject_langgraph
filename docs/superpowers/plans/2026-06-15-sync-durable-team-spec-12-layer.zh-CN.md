@@ -3,6 +3,7 @@ change: sync-durable-team-spec-12-layer-20260615
 design-doc: docs/superpowers/specs/2026-06-15-durable-team-corpus-sync-design.md
 base-ref: 516b4786aa3bffa5e42a96aafe9cdb20ba7aa32f
 translation_of: docs/superpowers/plans/2026-06-15-sync-durable-team-spec-12-layer.md
+archived-with: 2026-06-15-sync-durable-team-spec-12-layer-20260615
 ---
 
 # 计划：同步持久化团队规格与核心文档族检查点
