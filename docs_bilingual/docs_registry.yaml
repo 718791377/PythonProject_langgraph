@@ -653,6 +653,12 @@ documents:
     zh_cn_path: docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md
 
 
+  - doc_id: reference6_user_project_capability_install_plan
+    lang: en
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/reference6_user_project_capability_install_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/reference6_user_project_capability_install_plan.zh-CN.md
 
   - doc_id: recent_manual_workflow_packaging_plan
     doc_class: implementation_plan
