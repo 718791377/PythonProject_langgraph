@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "manifest_id": "reference6-user-project-capability-install",
+  "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+  "codex_config_policy": {
+    "config_path": "C:/Users/<user>/.codex/config.toml",
+    "reuse_mode": "env_key_name_only",
+    "copy_secret_values": false,
+    "encoding": "utf-8-sig"
+  },
+  "layers": {
+    "user_level": {
+      "state_subdir": "state/reference6-capability-install",
+      "tool_subdir": "tools/reference6-capability-install",
+      "receipt_subdir": "state/reference6-capability-install/receipts",
+      "mutates_native_codex_files": false,
+      "mutates_codex_config_toml": false
+    },
+    "project_template_general": {
+      "target": "D:/PythonProject_General",
+      "mode": "active_reusable_template"
+    },
+    "project_template_general_2": {
+      "target": "D:/PythonProject_General_2",
+      "mode": "inert_upgrade_template"
+    }
+  },
+  "capabilities": [
+    {
+      "id": "open-design",
+      "kind": "github-source",
+      "source_url": "https://github.com/nexu-io/open-design",
+      "layer": "user_level",
+      "install_mode": "source-reference",
+      "smoke_kind": "source-readme-or-package-discovery",
+      "notes": "Design-to-code reference; registered as pinned source evidence unless a downstream project opts into its runtime."
+    },
+    {
+      "id": "html-anything",
+      "kind": "github-source",
+      "source_url": "https://github.com/nexu-io/html-anything",
+      "layer": "user_level",
+      "install_mode": "source-reference",
+      "smoke_kind": "source-readme-or-package-discovery",
+      "notes": "HTML-to-structured-output reference; registered as pinned source evidence unless a downstream project opts into its runtime."
+    },
+    {
+      "id": "browserbase-skills",
+      "kind": "skill-source",
+      "source_url": "https://github.com/browserbase/skills",
+      "layer": "user_level",
+      "install_mode": "source-reference",
+      "smoke_kind": "source-directory-discovery",
+      "required_env_keys": ["BROWSERBASE_API_KEY", "BROWSERBASE_PROJECT_ID"],
+      "notes": "Browser automation skill packaging reference; live Browserbase calls are blocked unless service env keys exist."
+    },
+    {
+      "id": "pymupdf",
+      "kind": "python-package",
+      "source_url": "https://github.com/pymupdf/pymupdf",
+      "package_name": "PyMuPDF",
+      "import_name": "fitz",
+      "layer": "user_level",
+      "install_mode": "pip-user",
+      "smoke_kind": "python-import-version"
+    },
+    {
+      "id": "mineru",
+      "kind": "python-or-service",
+      "source_url": "https://github.com/opendatalab/MinerU",
+      "service_urls": ["https://mineru.net/", "https://mineru.net/apiManage/limit"],
+      "package_name": "mineru",
+      "import_name": "mineru",
+      "layer": "user_level",
+      "install_mode": "pip-user-or-source-reference",
+      "smoke_kind": "python-import-cli-or-service-key-preflight",
+      "required_env_keys": ["MINERU_API_KEY"]
+    },
+    {
+      "id": "book-to-skill",
+      "kind": "github-source",
+      "source_url": "https://github.com/virgiliojr94/book-to-skill",
+      "layer": "user_level",
+      "install_mode": "source-reference",
+      "smoke_kind": "source-readme-or-package-discovery",
+      "notes": "Skill generation from long-form documents; downstream projects decide whether to run conversion."
+    },
+    {
+      "id": "mattpocock-skills",
+      "kind": "skill-source",
+      "source_url": "https://github.com/mattpocock/skills",
+      "layer": "user_level",
+      "install_mode": "source-reference",
+      "smoke_kind": "source-directory-discovery",
+      "notes": "Skill examples reference for Codex/Superpowers-compatible skill packaging."
+    }
+  ],
+  "blocked_completion_protocol": {
+    "record_missing": true,
+    "record_fill_command": true,
+    "record_redacted_verification_command": true,
+    "record_resume_step": true
+  }
+}

@@ -27,7 +27,8 @@ Reference set:
 
 <!-- CURRENT_STATUS_START -->
 
-- 2026-06-16: Plan opened from `reference_files/6.md`; implementation has not yet run.
+- 2026-06-16: Plan opened from `reference_files/6.md`; implementation plan was committed and merged into local `main`.
+- 2026-06-17: Runtime/checker/test implementation completed; real user-level install receipts were regenerated under the user Codex home; General and General_2 template sync commits were merged into their local main branches.
 - Default decision: layered install, Codex-provider env-key reuse, redacted receipts, and no remote publication.
 
 <!-- CURRENT_STATUS_END -->
@@ -36,11 +37,11 @@ Reference set:
 
 <!-- TASK_BACKLOG_START -->
 
-- [ ] Create user-level reference6 manifest, installer, smoke script, and receipt writer.
-- [ ] Install or register the seven reference capabilities with pinned version or commit evidence where possible.
-- [ ] Run user-level smoke tests and record explicit remediation for missing external prerequisites.
-- [ ] Update `D:\PythonProject_General` with active reusable policy/checker/example config.
-- [ ] Update `D:\PythonProject_General_2` with inert upgrade policy/checker/example manifest.
+- [x] Create user-level reference6 manifest, installer, smoke script, and receipt writer.
+- [x] Install or register the seven reference capabilities with pinned version or commit evidence where possible.
+- [x] Run user-level smoke tests and record explicit remediation for missing external prerequisites.
+- [x] Update `D:\PythonProject_General` with active reusable policy/checker/example config.
+- [x] Update `D:\PythonProject_General_2` with inert upgrade policy/checker/example manifest.
 - [ ] Validate source, user-level, General, and General_2 gates; integrate local main and stop before remote publication.
 
 <!-- TASK_BACKLOG_END -->
@@ -53,10 +54,10 @@ Reference set:
 | --- | --- | --- |
 | Plan registration | `docs_bilingual/docs_registry.yaml` | planned in this change |
 | Reference source list | `reference_files/6.md` | captured in this plan |
-| User-level install receipt | user-level reference6 receipt JSON | pending implementation |
-| Source validation | `python tools\run_openspec_guard.py --root . --json` | pending implementation |
-| General validation | `tools\ci\local_gate.ps1 -Root D:\PythonProject_General -Json` | pending implementation |
-| General_2 validation | `tools\ci\local_gate.ps1 -Root D:\PythonProject_General_2 -Json` | pending implementation |
+| User-level install receipt | `C:\Users\<user>\.codex\state\reference6-capability-install\receipts\*.json` | live receipts regenerated; PyMuPDF and mineru packages installed; MinerU service key remains recorded as redacted blocker |
+| Source validation | `python tools\run_openspec_guard.py --root . --json` | pending final gate |
+| General validation | `tools\ci\local_gate.ps1 -Root D:\PythonProject_General -Json` | passed before local main merge; commit `f0a5e94` |
+| General_2 validation | `tools\ci\local_gate.ps1 -Root D:\PythonProject_General_2 -Json` | passed before local main merge; commit `01aaff4` |
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -114,3 +115,20 @@ Known preflight risks:
 - User-level reference6 installation has redacted receipts and either successful smoke evidence or explicit blocker instructions for missing external prerequisites.
 - General and General_2 are updated on local `main`, clean, and locally validated.
 - No remote publication is performed without explicit remote-publish wording.
+
+## Runtime implementation notes
+
+- Repo-local runtime entrypoint: `tools/reference6_capability_install.py`.
+- Repo-local checker: `tools/check_reference6_capability_install.py`.
+- CI test: `test/reference6_capability_install.test.py`.
+- The runtime reads Codex config with `utf-8-sig`, records only `env_key` names and presence booleans, and never copies secret values.
+- Receipts use human-checkable labels plus hashes for install/wrapper/state/rollback locations.
+
+
+## Live execution evidence
+
+- User-level artifacts were written under the user Codex home by `python tools\reference6_capability_install.py apply --apply --operator-confirmation --resolve-git-refs --codex-home C:\Users\<user>\.codex --json`.
+- PyMuPDF user-level package smoke passes with `fitz` import and version `1.27.2.3`.
+- MinerU user-level package smoke imports `mineru` version `3.3.1`; live service smoke remains blocked only by missing `MINERU_API_KEY`, recorded with `setx MINERU_API_KEY <secret-value>` and a redacted resume command.
+- `D:\PythonProject_General` local `main` contains active reusable Reference 6 template surfaces in commit `f0a5e94`.
+- `D:\PythonProject_General_2` local `main` contains inert Reference 6 upgrade samples in commit `01aaff4`.
