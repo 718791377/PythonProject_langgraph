@@ -188,3 +188,5 @@ translation_of: docs_bilingual/project_startup_summary.md
 - 主题相同且 rollback boundary（回退边界）相同的小变更可以合并到一个本地集成包；不要为了节省 runner minutes 把无关主题硬塞进同一个包。
 - 本地集成或远端发布前，当前会话的模型必须判断本地批次是否适合 integrate / publish 或 wait（继续等待），并向用户提出建议；用户仍然是 release decision authority（发布决策权威）。 If the package is ready and still within the local default authorization boundary, continue through automatic local `main` integration instead of asking for another local-merge confirmation; the user remains the remote release decision authority.
 - 默认不为 GitHub 开 PR。
+
+- `Routing trace` and `Updated Plan` are live-only transient operator surfaces: render fresh only in the current activation live UI; session replay, compaction summaries, model-readable resume context, worker handoff, and tool output must not hydrate old trace/plan panels as authority; standalone panels are filtered as `transient_operator_surface`, and embedded authority leaks are blocked as `transient_surface_leak`.

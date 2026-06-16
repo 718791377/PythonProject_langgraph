@@ -17,9 +17,9 @@ Correct the boundary for `Routing trace` and `Updated Plan`: they are current-se
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: confirmed by user and ready for runtime implementation
+Status: runtime implementation in progress after plan package was integrated into local `main`
 Owner session: `transient-operator-surfaces-20260616`
-Current gate: commit and integrate this plan into source local `main` before runtime edits
+Current gate: implement replay filtering runtime, governance wording, tests, and template propagation
 Remote publication: not authorized; stop at remote-publication gate
 Last updated: 2026-06-16
 <!-- CURRENT_STATUS_END -->
@@ -35,10 +35,10 @@ Last updated: 2026-06-16
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- [ ] Commit this plan and registry entry, then integrate it into source local `main`.
-- [ ] Update governance/OpenSpec/installer wording from conversation-history surface to transient operator runtime surface.
-- [ ] Extend `session_replay_context_filtering.py` to filter standalone live panels and block embedded leaks.
-- [ ] Add regression tests and fixtures for resume/session-history filtering of both labels.
+- [x] Commit this plan and registry entry, then integrate it into source local `main`.
+- [x] Update governance/OpenSpec/installer wording from conversation-history surface to transient operator runtime surface.
+- [x] Extend `session_replay_context_filtering.py` to filter standalone live panels and block embedded leaks.
+- [x] Add regression tests and fixtures for resume/session-history filtering of both labels.
 - [ ] Run source checks, commit runtime implementation, and integrate into source local `main`.
 - [ ] Propagate the corrected boundary to `D:/PythonProject_General` and validate/merge local `main`.
 - [ ] Propagate the local-only corrected boundary to `D:/PythonProject_General_2` and validate/merge local `main`.
@@ -54,5 +54,6 @@ Last updated: 2026-06-16
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- Plan pending integration before runtime edits.
+- Plan package integrated into local `main` at `8d4910c` before runtime edits.
+- Runtime implementation now filters standalone `Routing trace` / `Updated Plan` panels as `transient_operator_surface` and blocks embedded leaks as `transient_surface_leak`.
 <!-- EVIDENCE_INDEX_END -->

@@ -99,6 +99,8 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
         "`Updated Plan` is the progress panel",
         "exactly one user-visible CLI/tree",
         "Markdown checkbox syntax remains implementation-plan-internal",
+        "transient_operator_surface",
+        "transient_surface_leak",
     ],
     "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md": [
         "tools/check_orchestration_collaboration_evidenceguard.py",
@@ -115,6 +117,8 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
         "`Updated Plan` \u662f\u8fdb\u5ea6\u9762\u677f",
         "\u552f\u4e00\u4e00\u4e2a\u7528\u6237\u53ef\u89c1\u7684 CLI/tree",
         "Markdown checkbox syntax",
+        "transient_operator_surface",
+        "transient_surface_leak",
     ],
     "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md": [
         "tools/check_orchestration_collaboration_evidenceguard.py",
@@ -142,6 +146,8 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
         "`Updated Plan` SHALL be a user-visible progress panel",
         "exactly one CLI/tree",
         "Markdown checkbox syntax SHALL remain implementation-plan-internal",
+        "transient_operator_surface",
+        "transient_surface_leak",
         "tools/check_orchestration_collaboration_evidenceguard.py",
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md": [
@@ -159,6 +165,8 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
         "`Updated Plan` \u5fc5\u987b\u662f\u7528\u6237\u53ef\u89c1\u8fdb\u5ea6\u9762\u677f",
         "\u5fc5\u987b\u53ea\u6709\u4e00\u4e2a CLI/tree",
         "Markdown checkbox syntax",
+        "transient_operator_surface",
+        "transient_surface_leak",
         "tools/check_orchestration_collaboration_evidenceguard.py",
     ],
 }

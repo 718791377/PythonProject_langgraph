@@ -56,10 +56,12 @@ OUTPUT_CONTRACT = {
         "raw_startup_summary_copy",
         "stale_mcp_global_disable",
         "stale_runtime_authority",
+        "transient_surface_leak",
     ],
     "filter_reasons": [
         "tool_or_function_output",
         "non_assistant_payload",
+        "transient_operator_surface",
     ],
 }
 
@@ -73,6 +75,11 @@ REQUIRED_POLICY_TERMS = {
         "stale canary text",
         "mojibake",
         "stale MCP assumptions",
+        "Routing trace",
+        "Updated Plan",
+        "transient operator surface",
+        "transient_operator_surface",
+        "transient_surface_leak",
         "AGENTS.md",
         "UTF-8 startup summary pair",
         "per-invocation override",
@@ -83,6 +90,11 @@ REQUIRED_POLICY_TERMS = {
         "Session replay context filtering",
         "Replay inputs",
         "Filtered outputs",
+        "Routing trace",
+        "Updated Plan",
+        "transient operator surface",
+        "transient_operator_surface",
+        "transient_surface_leak",
         "AGENTS.md",
         "UTF-8 startup summary pair",
         "mcp_servers.omx_code_intel.enabled=false",
@@ -109,6 +121,25 @@ STALE_MCP_GLOBAL_DISABLE_PATTERNS = (
 STALE_RUNTIME_AUTHORITY_PATTERNS = (
     re.compile(r"(?is)(?:old|legacy|stale).{0,80}(?:thread|session|resume).{0,120}(?:current authority|authoritative)"),
     re.compile(r"(?is)(?:use|treat).{0,80}(?:pasted|raw|old).{0,80}(?:startup summary|transcript).{0,80}(?:authority|authoritative)"),
+)
+
+TRANSIENT_OPERATOR_SURFACE_LABELS = ("Routing trace", "Updated Plan")
+REPLAY_STRUCTURAL_TEXT_LINES = {"output_text", "input_text"}
+TRANSIENT_LABEL_PATTERN = re.compile(
+    r"(?im)^\s*(?:[>\u2022+\-*]+\s*)?(?:Routing trace|Updated Plan)\b"
+)
+TRANSIENT_LABEL_ANYWHERE_PATTERN = re.compile(r"(?i)\b(?:Routing trace|Updated Plan)\b")
+TRANSIENT_DECORATIVE_LINE_PATTERN = re.compile(r"^[\s\-_=*\u2500-\u257f\u2022]+$")
+TRANSIENT_PLAN_CONTINUATION_PATTERN = re.compile(
+    r"^\s*(?:"
+    r"[\u2514\u251c\u2502\u2500\u2713\u2714\u2611\u2610\u25a1\u25a0\u2022>*+\-]+"
+    r"|(?:[-*+]\s*)?\[[ xX\u2713\u2714\u2611\u2610-]\]"
+    r"|(?:phase|capability_chain|backend_default|backend_ready|experts|durable_workflow|persistent_team|"
+    r"main_session_escalation|approval_timeout_risk|approval_receipt|why)\s*="
+    r")"
+)
+TRANSIENT_KEY_VALUE_LINE_PATTERN = re.compile(
+    r"^\s*(?:[A-Za-z_][A-Za-z0-9_]*\s*=\s*[^,]+)(?:\s*,\s*[A-Za-z_][A-Za-z0-9_]*\s*=.*)?$"
 )
 
 
@@ -248,6 +279,50 @@ def contains_mojibake_canary(text: str) -> bool:
     return any(marker and marker in text for marker in MOJIBAKE_CANARY_MARKERS)
 
 
+def non_empty_lines(text: str) -> list[str]:
+    return [line.rstrip() for line in text.splitlines() if line.strip()]
+
+
+def is_transient_operator_surface(text: str) -> bool:
+    lines = non_empty_lines(text)
+    if not lines:
+        return False
+    label_indices = [
+        index for index, line in enumerate(lines) if TRANSIENT_LABEL_PATTERN.search(line)
+    ]
+    if not label_indices:
+        return False
+    for index, line in enumerate(lines):
+        if index in label_indices:
+            continue
+        stripped = line.strip()
+        if stripped in REPLAY_STRUCTURAL_TEXT_LINES:
+            continue
+        if TRANSIENT_DECORATIVE_LINE_PATTERN.match(stripped):
+            continue
+        if TRANSIENT_PLAN_CONTINUATION_PATTERN.search(stripped):
+            continue
+        if TRANSIENT_KEY_VALUE_LINE_PATTERN.match(stripped):
+            continue
+        if (
+            index > 0
+            and TRANSIENT_LABEL_PATTERN.search(lines[index - 1])
+            and len(stripped) <= 160
+            and not stripped.endswith((".", "。", "!", "！", "?", "？"))
+        ):
+            continue
+        return False
+    return True
+
+
+def contains_transient_surface_leak(text: str) -> bool:
+    if not TRANSIENT_LABEL_ANYWHERE_PATTERN.search(text):
+        return False
+    if is_transient_operator_surface(text):
+        return False
+    return True
+
+
 def detect_block_reasons(text: str) -> list[str]:
     reasons: list[str] = []
     if START_CANARY in text or END_CANARY in text:
@@ -262,6 +337,8 @@ def detect_block_reasons(text: str) -> list[str]:
         reasons.append("stale_mcp_global_disable")
     if any(pattern.search(text) for pattern in STALE_RUNTIME_AUTHORITY_PATTERNS):
         reasons.append("stale_runtime_authority")
+    if contains_transient_surface_leak(text):
+        reasons.append("transient_surface_leak")
     return reasons
 
 
@@ -426,6 +503,17 @@ def run_check(
     for item in items:
         text = str(item.get("text", ""))
         kind = item.get("kind")
+        if is_transient_operator_surface(text):
+            filtered_context_items.append(sanitize_item(item, reasons=["transient_operator_surface"]))
+            replay_diagnostics.append(
+                {
+                    "source": item.get("source"),
+                    "kind": kind,
+                    "status": "filtered_transient_operator_surface",
+                    "text_summary": summarize_text(text),
+                }
+            )
+            continue
         if kind != "assistant_visible":
             filtered_context_items.append(sanitize_item(item, reasons=[str(kind or "non_assistant_payload")]))
             replay_diagnostics.append(
