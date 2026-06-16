@@ -38,10 +38,10 @@ translation_of: docs_bilingual/memory/skills_usage_audit_evidence_index_2026-06-
 
 | Evidence | Path | Purpose |
 | --- | --- | --- |
-| Review-pending continuation | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-0000.md` | Post-final monitoring evidence after a new high-pressure warning-triage run |
-| Review-pending continuation zh-CN | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-0000.zh-CN.md` | Chinese companion for post-final monitoring |
-| One-day warning triage | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-0000.md` | Sanitized one-day live warning triage evidence |
-| One-day warning triage zh-CN | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-0000.zh-CN.md` | Chinese companion for the warning triage |
+| Review-pending continuation | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-0929.md` | Post-final monitoring evidence after a new high-pressure warning-triage run |
+| Review-pending continuation zh-CN | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-0929.zh-CN.md` | Chinese companion for post-final monitoring |
+| One-day warning triage | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-0929.md` | Sanitized one-day live warning triage evidence |
+| One-day warning triage zh-CN | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-0929.zh-CN.md` | Chinese companion for the warning triage |
 
 ## 安全下一步
 

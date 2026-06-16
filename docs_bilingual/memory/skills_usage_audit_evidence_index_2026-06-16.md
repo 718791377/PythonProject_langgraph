@@ -11,7 +11,7 @@ translation_of: docs_bilingual/memory/skills_usage_audit_evidence_index_2026-06-
 
 # Skills Usage Audit Evidence Index 2026-06-16
 
-This index makes the 2026-06-16 review-pending monitoring package discoverable without changing the audit decision state. It does not mark the final summary as reviewed, does not generate a candidate, and does not authorize profile apply.
+This rolling index makes the latest 2026-06-16 review-pending monitoring package discoverable without changing the audit decision state. It does not mark the final summary as reviewed, does not generate a candidate, and does not authorize profile apply.
 
 ## Current decision state
 
@@ -25,29 +25,24 @@ This index makes the 2026-06-16 review-pending monitoring package discoverable w
 | Evidence | Path | Purpose |
 | --- | --- | --- |
 | Final 30-day summary | `docs_bilingual/memory/skills_usage_audit_30d_summary_2026-06-15-1059.md` | Sanitized 30-day report and gate evidence |
-| Final 30-day summary zh-CN | `docs_bilingual/memory/skills_usage_audit_30d_summary_2026-06-15-1059.zh-CN.md` | Chinese companion for the final report |
 | Human review prep | `docs_bilingual/memory/skills_usage_audit_summary_review_prep_2026-06-15-1209.md` | Machine pre-review and safe decision paths |
-| Human review prep zh-CN | `docs_bilingual/memory/skills_usage_audit_summary_review_prep_2026-06-15-1209.zh-CN.md` | Chinese companion for the pre-review |
 | Human review decision template | `docs_bilingual/memory/skills_usage_audit_human_review_decision_template_2026-06-15.md` | Template for recording the explicit human decision |
-| Human review decision template zh-CN | `docs_bilingual/memory/skills_usage_audit_human_review_decision_template_2026-06-15.zh-CN.md` | Chinese companion for the decision template |
 
 ## Latest continuation evidence
 
 | Evidence | Path | Purpose |
 | --- | --- | --- |
-| Review-pending continuation | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-0000.md` | Post-final monitoring evidence after a new high-pressure warning-triage run |
-| Review-pending continuation zh-CN | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-0000.zh-CN.md` | Chinese companion for post-final monitoring |
-| One-day warning triage | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-0000.md` | Sanitized one-day live warning triage evidence |
-| One-day warning triage zh-CN | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-0000.zh-CN.md` | Chinese companion for the warning triage |
+| Review-pending continuation | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-0929.md` | Post-final monitoring evidence after a newer high-pressure warning-triage run |
+| Review-pending continuation zh-CN | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-0929.zh-CN.md` | Chinese companion for post-final monitoring |
+| One-day warning triage | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-0929.md` | Sanitized one-day live warning triage evidence |
+| One-day warning triage zh-CN | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-0929.zh-CN.md` | Chinese companion for the warning triage |
 
 ## Safe next steps
 
-1. Read the final 30-day summary and review-prep record.
-2. Review the latest 2026-06-16 continuation evidence as monitoring input, not as closure authorization.
+1. Review the final 30-day summary and review-prep record.
+2. Review the latest 09:29 continuation evidence as monitoring input, not as closure authorization.
 3. Use the human review decision template to choose one explicit outcome.
-4. If the outcome is `summary-reviewed + closed-no-change`, run the audit script with `--summary-reviewed --close-audit no-change` and save a sanitized closure record.
-5. If the outcome is `summary-reviewed + preview-only candidate`, run the audit script with `--summary-reviewed --target-profile <profile> --candidate-output ... --candidate-summary-output ...` and keep the candidate `preview-only`.
-6. Do not run any profile apply before a later explicit `approved-to-apply` authorization.
+4. Do not run any profile apply before a later explicit `approved-to-apply` authorization.
 
 ## Non-actions
 
