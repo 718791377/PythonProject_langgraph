@@ -219,7 +219,11 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/portable_no_backend_parallel_session_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/portable_no_backend_parallel_session_plan.zh-CN.md
 
-
+  - doc_id: transient_operator_surface_replay_filtering_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/transient_operator_surface_replay_filtering_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/transient_operator_surface_replay_filtering_plan.zh-CN.md
   - doc_id: conversation_surface_single_panel_runtime_alignment_plan
     doc_class: implementation_plan
     status: active
