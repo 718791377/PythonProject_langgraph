@@ -1,3 +1,12 @@
+---
+doc_id: fresh_source_reading_evidence
+lang: zh-CN
+canonical: docs_bilingual/product_lifecycle/fresh_source_reading_evidence.md
+translation_of: docs_bilingual/product_lifecycle/fresh_source_reading_evidence.md
+doc_class: product_lifecycle
+status: draft
+---
+
 # Fresh Source Reading Evidence 索引
 
 本索引记录生命周期、白皮书、研究稿与北极星刷新的当前 fresh-reading 证据边界。

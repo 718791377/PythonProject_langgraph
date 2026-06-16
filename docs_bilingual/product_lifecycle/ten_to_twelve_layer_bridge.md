@@ -1,3 +1,12 @@
+---
+doc_id: ten_to_twelve_layer_bridge
+lang: en
+canonical: docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.md
+translation_of: null
+doc_class: product_lifecycle
+status: draft
+---
+
 # 10-To-12 Layer Bridge
 
 This bridge explains why the research note and the white paper remain separate and how their layer models connect.

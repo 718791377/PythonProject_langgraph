@@ -29,6 +29,21 @@ status: draft
 
 Docs-only slices 如果改变未来 delivery rules 或 acceptance criteria，也使用本契约。完成本契约不是 runtime implementation evidence。
 
+## I/T/O 术语与适用清单
+
+`Inputs / Tools and Techniques / Outputs`、`Inputs / Tools & Techniques / Outputs` 与中文 `输入 / 工具与技术 / 输出` 在本文档族中是等价标签。新的英文表格 SHOULD 优先使用 `Inputs / Tools and Techniques / Outputs`；审计时 MAY 把 `Tools & Techniques` 作为缩写匹配。
+
+| 文档或证明面 | I/T/O 要求 | 原因 |
+| --- | --- | --- |
+| `product_business_document_lifecycle.*` | 每个 lifecycle layer 必须使用。 | 它是 0-11 / 12 层执行语法权威。 |
+| `codex_durable_team_platform_build_lifecycle.*` | 每个平台建设层必须使用。 | 它把通用生命周期转成 Codex 平台建设流程。 |
+| `codex_platform_inventory_map.*` 与 `one_person_company_inventory_map.*` | 必须提供清单级摘要和过程门。 | 它们拥有架构数量权威，必须说明这些数量如何进入执行。 |
+| `pmi_project_management_reference_map.*` 与 `lifecycle_tailoring_rules.*` | PMI 叠加和裁剪决策必须使用。 | 它们判断 full、whole-project lightweight、phase-local、module-level 或 hybrid governance。 |
+| `durable_team_process_group_contract.*` | 必须使用，且本文是 canonical。 | 本文拥有 durable-team 过程组契约。 |
+| `durable_team_source_traceability.*` 与 `ten_to_twelve_layer_bridge.*` | 驱动执行的交接部分必须使用。 | 它们把来源证据和 10 层 runtime findings 连接到 12 层工作。 |
+| `fresh_source_reading_evidence.*` 与 `business_management_source_synthesis.*` | 不要求每节都使用；只有交接到执行时必须使用。 | 它们是证据边界和综合面，不是交付流程。 |
+| 白皮书、研究稿、MRD、北极星、实施方案、playbook 与 OpenSpec specs | 当 section 描述 execution、release、validation、rollout 或 closeout 时必须使用。 | 叙事 section 可以委派给本契约；执行 section 必须可检查。 |
+
 ## 契约输入
 
 | 输入 | 何时必需 |

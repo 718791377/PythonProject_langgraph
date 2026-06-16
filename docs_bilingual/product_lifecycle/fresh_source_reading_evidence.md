@@ -1,3 +1,12 @@
+---
+doc_id: fresh_source_reading_evidence
+lang: en
+canonical: docs_bilingual/product_lifecycle/fresh_source_reading_evidence.md
+translation_of: null
+doc_class: product_lifecycle
+status: draft
+---
+
 # Fresh Source Reading Evidence Index
 
 This index records the current fresh-reading evidence boundary for the lifecycle, white paper, research note, and North Star refresh.

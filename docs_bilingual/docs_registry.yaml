@@ -395,11 +395,23 @@ documents:
     canonical_path: docs_bilingual/north_star_plan.md
     zh_cn_path: docs_bilingual/north_star_plan.zh-CN.md
 
+  - doc_id: codex_cli_personal_production_durable_team_north_star
+    doc_class: north_star_plan
+    status: draft
+    canonical_path: docs_bilingual/north_star/codex_cli_personal_production_durable_team_north_star.md
+    zh_cn_path: docs_bilingual/north_star/codex_cli_personal_production_durable_team_north_star.zh-CN.md
+
   - doc_id: business_management_source_synthesis
     doc_class: product_lifecycle
     status: draft
     canonical_path: docs_bilingual/product_lifecycle/business_management_source_synthesis.md
     zh_cn_path: docs_bilingual/product_lifecycle/business_management_source_synthesis.zh-CN.md
+
+  - doc_id: fresh_source_reading_evidence
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/fresh_source_reading_evidence.md
+    zh_cn_path: docs_bilingual/product_lifecycle/fresh_source_reading_evidence.zh-CN.md
 
 
   - doc_id: durable_team_source_traceability
@@ -461,6 +473,12 @@ documents:
     status: draft
     canonical_path: docs_bilingual/product_lifecycle/product_business_document_lifecycle.md
     zh_cn_path: docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md
+
+  - doc_id: ten_to_twelve_layer_bridge
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.md
+    zh_cn_path: docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.zh-CN.md
 
   - doc_id: codex_cli_personal_production_durable_team_playbook
     doc_class: implementation_plan

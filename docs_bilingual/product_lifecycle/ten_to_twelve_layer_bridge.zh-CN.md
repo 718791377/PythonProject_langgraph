@@ -1,3 +1,12 @@
+---
+doc_id: ten_to_twelve_layer_bridge
+lang: zh-CN
+canonical: docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.md
+translation_of: docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.md
+doc_class: product_lifecycle
+status: draft
+---
+
 # 10 层到 12 层桥接
 
 本文解释为什么研究稿与白皮书仍保持分离，以及两种分层模型如何打通。

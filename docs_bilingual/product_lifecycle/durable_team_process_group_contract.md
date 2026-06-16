@@ -29,6 +29,21 @@ Every durable-team refresh or implementation slice SHALL identify Inputs, Tools 
 
 Documentation-only slices still use this contract when they change future delivery rules or acceptance criteria. Completing this contract is not runtime implementation evidence.
 
+## I/T/O Terminology And Applicability Checklist
+
+`Inputs / Tools and Techniques / Outputs`, `Inputs / Tools & Techniques / Outputs`, and the equivalent Chinese labels in the zh-CN companion are equivalent labels for this corpus. New English tables SHOULD prefer `Inputs / Tools and Techniques / Outputs`; audits MAY match `Tools & Techniques` as an abbreviation.
+
+| Document or surface | I/T/O requirement | Reason |
+| --- | --- | --- |
+| `product_business_document_lifecycle.*` | Required at each lifecycle layer. | It is the 0-11 / 12-layer execution grammar authority. |
+| `codex_durable_team_platform_build_lifecycle.*` | Required at each platform-build layer. | It turns the general lifecycle into the Codex platform build flow. |
+| `codex_platform_inventory_map.*` and `one_person_company_inventory_map.*` | Required as inventory-level summaries and process gates. | They own architecture count authority and must show how counts enter execution. |
+| `pmi_project_management_reference_map.*` and `lifecycle_tailoring_rules.*` | Required for PMI overlay and tailoring decisions. | They decide full, lightweight, phase-local, module-level, or hybrid governance. |
+| `durable_team_process_group_contract.*` | Required and canonical. | This file owns the durable-team process-group contract. |
+| `durable_team_source_traceability.*` and `ten_to_twelve_layer_bridge.*` | Required for handoff sections that drive execution. | They connect source evidence and 10-layer runtime findings to 12-layer work. |
+| `fresh_source_reading_evidence.*` and `business_management_source_synthesis.*` | Not required for every section; required only when they hand off to execution. | They are evidence boundary and synthesis surfaces, not delivery procedures. |
+| White paper, research note, MRD, North Star, implementation plan, playbook, and OpenSpec specs | Required when a section describes execution, release, validation, rollout, or closeout. | Narrative sections may delegate to this contract; execution sections must be inspectable. |
+
 ## Contract Inputs
 
 | Input | Required when |
