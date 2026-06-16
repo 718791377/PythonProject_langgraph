@@ -8,7 +8,7 @@ Use `business_management_source_synthesis.md` as the source-library overlay for 
 
 ## Source Evidence Boundary
 
-This platform-build lifecycle is refreshed against `fresh_source_reading_evidence.md` for the `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` run generated at `2026-06-14T10:48:53Z`. The evidence run read the ignored `Business Management/` and `PMP/` source roots by PDF page, EPUB spine item, and Markdown full file. Use the tracked synthesis and inventory maps for derived rules; do not cite the raw extraction text as a committed authority.
+This platform-build lifecycle is refreshed against `fresh_source_reading_evidence.md` for the `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` run generated at `2026-06-15T17:33:52Z`. The evidence run read the ignored `Business Management/` and `PMP/` source roots by PDF page, EPUB spine item, and Markdown full file. Use the tracked synthesis and inventory maps for derived rules; do not cite the raw extraction text as a committed authority.
 
 ## Scope
 

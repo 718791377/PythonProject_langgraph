@@ -202,3 +202,18 @@ Codex durable-team whitepaper 与 solo-maintainable production persistent team r
 - **THEN** changed text 是有效 UTF-8 中文或有意保留的技术术语
 - **AND** 不保留新增的 three ASCII question marks 或 replacement-character 文本
 - **AND** 如果存在成对文档，英文新增治理规则必须有 zh-CN 对应内容。
+
+### Requirement: 生命周期治理必须维护持久化团队证明面
+
+生命周期治理 SHALL 将持久化团队交付矩阵、来源追踪索引和过程组契约注册并保留为一等生命周期证明面。当有来源支撑的持久化团队刷新影响白皮书、研究稿、北极星计划、生命周期地图、实施方案、playbook 或 OpenSpec 规格时，生命周期栈 SHALL 使用这些证明面。
+
+过程组契约 SHALL 作为判断生命周期层级、交付门或发布切片何时需要“输入 / 工具与技术 / 输出”的交接权威。来源追踪索引 SHALL 作为当前来源运行身份以及已跟踪 / 被忽略证据边界的交接权威。
+
+#### Scenario: 生命周期刷新改变面向执行的指导
+
+- **GIVEN** 某次生命周期刷新使用 Business Management 或 PMP 证据，并改变面向执行的持久化团队指导
+- **WHEN** 维护者检查该刷新是否受治理
+- **THEN** 注册表暴露三组证明面双语文档
+- **AND** 生命周期规格要求来源追踪索引标识当前 fresh-reading 运行
+- **AND** 生命周期规格要求面向执行的规则在完成前经过过程组契约
+- **AND** 生命周期规格保持原始抽取文本和本地缓存日志不进入已跟踪权威

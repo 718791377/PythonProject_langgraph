@@ -15,7 +15,7 @@ This white paper answers why a solo maintainer who works across multiple reposit
 
 ## Fresh Source Evidence For This Refresh
 
-This white paper is updated against the fresh local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` generated at `2026-06-14T10:48:53Z`. The run read 54 sources across `Business Management/` and `PMP/`, including 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. The white paper cites only aggregate and synthesized evidence; raw extracted text remains in ignored local cache.
+This white paper is updated against the fresh local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` generated at `2026-06-15T17:33:52Z`. The run read 54 sources across `Business Management/` and `PMP/`, including 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. The white paper cites only aggregate and synthesized evidence; raw extracted text remains in ignored local cache.
 
 ## 0. 2026-06-15 Durable-Team Corpus Sync Checkpoint
 

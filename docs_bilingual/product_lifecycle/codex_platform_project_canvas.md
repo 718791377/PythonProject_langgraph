@@ -4,7 +4,7 @@ This canvas is a lightweight alignment artifact for the Codex CLI personal produ
 
 ## Source And Process Boundary
 
-The current canvas is derived from the `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` evidence boundary in `fresh_source_reading_evidence.md`. When this canvas authorizes execution, expand the affected lifecycle layer into Inputs, Tools and Techniques, and Outputs in the relevant OpenSpec change, implementation plan, or lifecycle document rather than treating the canvas itself as the whole delivery record.
+The current canvas is derived from the `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` evidence boundary in `fresh_source_reading_evidence.md`. When this canvas authorizes execution, expand the affected lifecycle layer into Inputs, Tools and Techniques, and Outputs in the relevant OpenSpec change, implementation plan, or lifecycle document rather than treating the canvas itself as the whole delivery record.
 
 ## Purpose
 

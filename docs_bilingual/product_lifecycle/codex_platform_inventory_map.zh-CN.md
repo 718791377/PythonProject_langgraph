@@ -4,7 +4,7 @@
 
 ## Fresh Source Evidence
 
-本地图以 2026-06-14 fresh extraction 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`（`2026-06-14T10:48:53Z`）为证据边界。精确清单数量来自对 `Business Management/架构 1：Codex CLI 个人开发者生产级持久化团队.md` 的全文读取（source `S0030`，10,424 字符）。Business Management 来源解释运行原则；PMP 来源提供过程组与裁剪纪律。
+本地图以 2026-06-16 fresh extraction 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`（`2026-06-15T17:33:52Z`）为证据边界。精确清单数量来自对 `Business Management/架构 1：Codex CLI 个人开发者生产级持久化团队.md` 的全文读取（source `S0030`，10,424 字符）。Business Management 来源解释运行原则；PMP 来源提供过程组与裁剪纪律。
 
 ## 规范清单
 

@@ -4,7 +4,7 @@ This map is the concise canonical inventory for the target Codex platform archit
 
 ## Fresh Source Evidence
 
-This map uses the June 14 fresh extraction run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` (`2026-06-14T10:48:53Z`) as its evidence boundary. Exact inventory counts come from the full-text read of `Business Management/Architecture note 1 - Codex CLI personal production durable team.md` (source `S0030`, 10,424 characters). Business Management sources explain operating principles; PMP sources provide process-group and tailoring discipline.
+This map uses the June 16 fresh extraction run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` (`2026-06-15T17:33:52Z`) as its evidence boundary. Exact inventory counts come from the full-text read of `Business Management/Architecture note 1 - Codex CLI personal production durable team.md` (source `S0030`, 10,424 characters). Business Management sources explain operating principles; PMP sources provide process-group and tailoring discipline.
 
 ## Canonical Inventory
 

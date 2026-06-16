@@ -14,7 +14,7 @@ The local source-library synthesis lives in `business_management_source_synthesi
 
 ## Source Evidence Boundary
 
-This lifecycle stack now points to `fresh_source_reading_evidence.md` for the current `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614` (`2026-06-14T10:48:53Z`) evidence boundary and to `ten_to_twelve_layer_bridge.md` for the research/white-paper layer bridge. Raw extraction text remains outside Git.
+This lifecycle stack now points to `fresh_source_reading_evidence.md` for the current `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` (`2026-06-15T17:33:52Z`) evidence boundary and to `ten_to_twelve_layer_bridge.md` for the research/white-paper layer bridge. Raw extraction text remains outside Git.
 
 ## Two Target Architecture Modes
 

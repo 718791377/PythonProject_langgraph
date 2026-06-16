@@ -14,7 +14,7 @@
 
 ## 来源证据边界
 
-当前生命周期栈指向 `fresh_source_reading_evidence.zh-CN.md`，作为本次 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`（`2026-06-14T10:48:53Z`）证据边界；同时指向 `ten_to_twelve_layer_bridge.zh-CN.md`，用于打通研究稿与白皮书的分层关系。原始抽取文本保持在 Git 之外。
+当前生命周期栈指向 `fresh_source_reading_evidence.zh-CN.md`，作为本次 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`（`2026-06-15T17:33:52Z`）证据边界；同时指向 `ten_to_twelve_layer_bridge.zh-CN.md`，用于打通研究稿与白皮书的分层关系。原始抽取文本保持在 Git 之外。
 
 ## 两种目标架构模式
 

@@ -13,7 +13,7 @@
 
 ## 本地 PMP 来源覆盖
 
-本次刷新只读取本地 `PMP/` 文件。fresh extraction evidence 于 `2026-06-14T10:48:53Z` 在 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614/` 重新生成，并记录 23 个 PMP 家族来源：9 个 PDF / 3,035 页、2 个 EPUB / 58 个 spine item、12 个 Markdown 全文笔记，共 3,105 个 PMP 读取单元和 4,330,816 个抽取字符。仓库只记录以下覆盖摘要与治理映射综合。
+本次刷新只读取本地 `PMP/` 文件。fresh extraction evidence 于 `2026-06-15T17:33:52Z` 在 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260616/` 重新生成，并记录 23 个 PMP 家族来源：9 个 PDF / 3,035 页、2 个 EPUB / 58 个 spine item、12 个 Markdown 全文笔记，共 3,105 个 PMP 读取单元和 4,330,816 个抽取字符。仓库只记录以下覆盖摘要与治理映射综合。
 
 | 本地参考资料 | 格式 | 覆盖量 | 主要治理用途 |
 | --- | --- | ---: | --- |
@@ -32,9 +32,9 @@
 
 ## PMI 官方 Web 新鲜度复核
 
-本次刷新也在 2026-06-14 复核了 PMI 公开 standards 页面，避免把私有本地目录当成唯一新鲜度信号。本地抽取仍是内容证据边界；公开复核只记录当前 catalog metadata。
+本次刷新也在 2026-06-16 复核了 PMI 公开 standards 页面，避免把私有本地目录当成唯一新鲜度信号。本地抽取仍是内容证据边界；公开复核只记录当前 catalog metadata。
 
-| PMI 公开来源 | 2026-06-14 复核到的官方目录状态 | 仓库决策 |
+| PMI 公开来源 | 2026-06-16 复核到的官方目录状态 | 仓库决策 |
 | --- | --- | --- |
 | <https://www.pmi.org/standards/pmbok> | `PMBOK Guide` 已列为第 8 版，408 页，发布日期为 2025 年 11 月，并有 2025 年 12 月 22 日发布的第二次印刷勘误。 | 把 PMBOK 第 8 版作为当前项目管理主叠加层；PMBOK 第 7 版和第 6 版只作为连续性与 I/T/O 补充。 |
 | <https://www.pmi.org/standards/process-groups> | `Process Groups: A Practice Guide` 列为 370 页，发布日期为 2022 年 11 月，并描述五个过程组以及带输入、工具与技术、输出的 49 个过程。 | 用作生命周期层级和交付门的面向执行过程组语法。 |

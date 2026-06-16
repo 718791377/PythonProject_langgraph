@@ -366,6 +366,13 @@ documents:
     zh_cn_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md
 
 
+  - doc_id: codex_cli_personal_production_durable_team_delivery_matrix
+    doc_class: delivery_matrix
+    status: draft
+    canonical_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_delivery_matrix.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_delivery_matrix.zh-CN.md
+
+
   - doc_id: codex_cli_personal_production_durable_team_whitepaper
     doc_class: whitepaper
     status: draft
@@ -389,6 +396,19 @@ documents:
     status: draft
     canonical_path: docs_bilingual/product_lifecycle/business_management_source_synthesis.md
     zh_cn_path: docs_bilingual/product_lifecycle/business_management_source_synthesis.zh-CN.md
+
+
+  - doc_id: durable_team_source_traceability
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/durable_team_source_traceability.md
+    zh_cn_path: docs_bilingual/product_lifecycle/durable_team_source_traceability.zh-CN.md
+
+  - doc_id: durable_team_process_group_contract
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/durable_team_process_group_contract.md
+    zh_cn_path: docs_bilingual/product_lifecycle/durable_team_process_group_contract.zh-CN.md
 
   - doc_id: codex_durable_team_platform_build_lifecycle
     doc_class: product_lifecycle

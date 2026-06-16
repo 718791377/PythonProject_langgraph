@@ -11,7 +11,7 @@
 
 ## 来源证据边界
 
-本裁剪规则基于 2026-06-14 证据运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`（`2026-06-14T10:48:53Z`）刷新，覆盖 54 个本地来源和 9,656 个页/spine/全文读取单元。它取代本轮刷新中较旧的抽取措辞，raw extraction text 只保留在忽略态本地缓存中。当前证据索引以 `fresh_source_reading_evidence.zh-CN.md` 为准。
+本裁剪规则基于 2026-06-16 证据运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`（`2026-06-15T17:33:52Z`）刷新，覆盖 54 个本地来源和 9,656 个页/spine/全文读取单元。它取代本轮刷新中较旧的抽取措辞，raw extraction text 只保留在忽略态本地缓存中。当前证据索引以 `fresh_source_reading_evidence.zh-CN.md` 为准。
 
 ## 裁剪原则
 

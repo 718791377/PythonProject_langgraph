@@ -2,9 +2,9 @@
 
 本索引记录生命周期、白皮书、研究稿与北极星刷新的当前 fresh-reading 证据边界。
 
-- 运行 ID：`fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`
-- 生成时间：`2026-06-14T10:48:53Z`
-- 输出目录：`.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260614/`
+- 运行 ID：`fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`
+- 生成时间：`2026-06-15T17:33:52Z`
+- 输出目录：`.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260616/`
 - 来源根目录：`D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP`
 - 来源：共 54 个；Business Management 31 个；PMP 23 个
 - 读取单元：共 9,656 个；PDF 页 9,280 个；EPUB spine item 362 个；Markdown 全文 14 个

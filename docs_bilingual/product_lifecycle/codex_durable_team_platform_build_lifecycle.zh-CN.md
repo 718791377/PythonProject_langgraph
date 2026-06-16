@@ -8,7 +8,7 @@
 
 ## 来源证据边界
 
-本平台建设生命周期已按 `fresh_source_reading_evidence.zh-CN.md` 刷新，证据运行 ID 为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260614`，生成时间为 `2026-06-14T10:48:53Z`。该运行对被 Git 忽略的 `Business Management/` 与 `PMP/` 来源根目录按 PDF 每页、EPUB spine item、Markdown 全文读取。本文只使用 tracked synthesis 与 inventory maps 中的派生规则；原始抽取文本不得作为提交态权威引用。
+本平台建设生命周期已按 `fresh_source_reading_evidence.zh-CN.md` 刷新，证据运行 ID 为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`，生成时间为 `2026-06-15T17:33:52Z`。该运行对被 Git 忽略的 `Business Management/` 与 `PMP/` 来源根目录按 PDF 每页、EPUB spine item、Markdown 全文读取。本文只使用 tracked synthesis 与 inventory maps 中的派生规则；原始抽取文本不得作为提交态权威引用。
 
 ## Scope
 
