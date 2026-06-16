@@ -32,24 +32,30 @@ This rolling index makes the latest 2026-06-16 review-pending monitoring package
 
 | Evidence | Path | Purpose |
 | --- | --- | --- |
-| Review-pending continuation | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-1035.md` | Post-final monitoring evidence after a newer high-pressure warning-triage run |
-| Review-pending continuation zh-CN | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-1035.zh-CN.md` | Chinese companion for post-final monitoring |
-| One-day warning triage | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-1035.md` | Sanitized one-day live warning triage evidence |
-| One-day warning triage zh-CN | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-1035.zh-CN.md` | Chinese companion for the warning triage |
+| Review-pending continuation | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-1432.md` | Post-final monitoring evidence after a newer high-pressure warning-triage run |
+| Review-pending continuation zh-CN | `docs_bilingual/memory/skills_usage_audit_review_pending_continuation_2026-06-16-1432.zh-CN.md` | Chinese companion for post-final monitoring |
+| One-day warning triage | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-1432.md` | Sanitized one-day live warning triage evidence |
+| One-day warning triage zh-CN | `docs_bilingual/memory/skills_usage_audit_warning_triage_2026-06-16-1432.zh-CN.md` | Chinese companion for the warning triage |
 
 ## Latest run summary
 
-- Budget warnings: `33`
-- Skipped-loading warnings: `23`
-- All descriptions removed: `33`
+- Budget warnings: `32`
+- Skipped-loading warnings: `38`
+- All descriptions removed: `32`
 - Maximum omitted additional skills: `16`
 - Severity: `high`
 - Recommended action: `avoid_full_profile_and_prefer_smaller_default_or_task_profile_during_audit`
 
+## Delta from 10:35 monitoring record
+
+- 10:35 committed record: `33` budget warnings, `23` skipped-loading warnings.
+- 14:32 probe: `32` budget warnings, `38` skipped-loading warnings.
+- Main new signal: skipped-loading evidence increased and sample extraction is now available in the local `.tmp` probe output.
+
 ## Safe next steps
 
 1. Review the final 30-day summary and review-prep record.
-2. Review the latest 10:35 continuation evidence as monitoring input, not as closure authorization.
+2. Review the latest 14:32 continuation evidence as monitoring input, not as closure authorization.
 3. Use the human review decision template to choose one explicit outcome.
 4. Do not run any profile apply before a later explicit `approved-to-apply` authorization.
 
