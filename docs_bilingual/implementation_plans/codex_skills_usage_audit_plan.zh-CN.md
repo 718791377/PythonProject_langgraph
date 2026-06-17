@@ -16,6 +16,7 @@ related_docs:
 runtime_sources:
   - tools/audit_codex_skills_usage.py
   - tools/check_skills_audit_output_retention.py
+  - tools/check_skills_audit_final_review_state.py
   - tools/check_precommit_update_archive.py
 ---
 # Codex Skills Usage Audit 计划
@@ -170,6 +171,7 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 
 - `tools/audit_codex_skills_usage.py` 负责收集证据并输出 JSON/Markdown 报告。
 - `tools/check_skills_audit_output_retention.py` 证明原始 audit artifacts 保持 local-only。
+- `tools/check_skills_audit_final_review_state.py` 以只读方式验证最终人工复核、关闭、候选与 apply 门禁状态，不修改 config 或 profiles。
 - `tools/check_precommit_update_archive.py` 证明本地提交前已检查 existing-file update review 与 OpenSpec archive gates。
 - `tools/run_openspec_guard.py` 聚合仓库级 guard 证据。
 - `test/` 下测试与 `tools/ci/ci_test_manifest.json` 条目保证 audit 行为可复现。
@@ -916,6 +918,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 脚本能力边界：可靠覆盖项、人工复核需求与增强触发条件；
 - apply 建议，但不自动 apply。
 - `tools/check_skills_audit_output_retention.py` 的输出留存状态，证明 `.tmp/` artifact 与原始 Skills usage JSON 没有被保留进 Git。
+- `tools/check_skills_audit_final_review_state.py` 的最终复核状态，证明当前审计仍处于 `review-pending + continue monitoring`、`summary-reviewed + closed-no-change` 或 `summary-reviewed + preview-only candidate` 中的哪一种，同时在后续明确 `approved-to-apply` receipt 前保持 profile apply 被阻断。
 - `tools/check_precommit_update_archive.py` 的提交前更新/归档状态，证明本轮提交前既有文件更新复核与 OpenSpec 归档门禁已经通过。
 - 默认人类可读 stdout 也必须渲染 audit state、audit state blockers、enabled plugins 已匹配/未匹配摘要、current profile 推断、inventory summary、log evidence 可用性、budget warning 最近样本数量、有界脱敏 budget-warning 样本摘录与 7 天计数、warning severity 等级、原因与处理动作、all-descriptions-removed / omitted-additional-skills 压力指标、audit-only safety 的 `audit_only` / `mutates_config` / `edits_plugin_cache` / `hard_load_apply_performed` 标志、runtime path privacy 的 `raw_paths_retained=false`、占位符路径与 `privacy_policy`、cadence review 的 late-run / missed-weekly-runs / weekly-report-review 状态、warning triage 状态、warning triage 窗口策略、warning/skipped-loading 计数、脱敏 skipped-loading 样本摘录、skipped-loading 复核动作、warning triage 后续动作建议与 blockers、explicit skill 使用总数与唯一 skill 数、SKILL.md 读取次数、profile helper 调用次数、`noise_review` 状态、剔除噪声 token 数、`raw_noise_tokens_retained=false`、`max_noise_token_length` 与 `token_privacy_policy`、`manual_evidence` 文件请求/读取数、有效/无效记录数、`raw_notes_retained=false`、`source_paths_retained=false`、`max_path_length`、人工记录隐私策略与来源路径隐私策略、`manual_evidence.conflict_review` 状态、冲突/例外数量、是否需要处置与处置说明、脚本能力边界计数、stable tool-call alias registry 的 policy/evidence level/strong-evidence 禁止标志、alias target 数量和有界 target 摘要、decision recommendation 的 advisory-only / profile-apply 禁止标志、四个决策分桶计数与有界分桶样本、recommendations 条数与前几条建议、字段契约状态/passed/blocker/含 `warning_severity` 的违规分组计数、输出留存门禁状态/checker/violation/local-only 细节和提交前更新/归档门禁状态/checker/提交前标志/既有文件更新复核/OpenSpec 归档复核/变更计数细节，确保非 JSON 运行也能安全复核。
 - `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、cadence-review 字段契约与 Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁与 Markdown blocker 输出、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段、不安全或不完整候选记录的 `candidate_record_contract` 阻断，以及候选 Markdown 不执行清单。
@@ -924,6 +927,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 回归测试还必须覆盖 `module_evidence` 行契约阻断字段缺失/类型错误、plugin 元素非字符串、strong 计数为负或过期、mapped-tool 证据被计为强证据、跨项目效用未要求人工复核以及 recommendation 不在允许列表中的报告。
 - 回归测试还必须覆盖 `module_evidence` recommendation 与阈值不一致的报告，防止旧行把与强/弱证据计数矛盾的按需、dormant 或候选建议带入决策。
 - 回归测试还必须覆盖输出留存门禁：强制加入 Git 的 `.tmp/` 原始报告、位于 `.tmp/` 之外的原始 `skills-usage-*.json` 报告必须被阻断，脱敏 Markdown 摘要必须允许。
+- 回归测试还必须覆盖最终复核状态 checker：允许 pending continuation 在无 candidate/apply 时继续，阻断 `summary-reviewed` 前出现 candidate artifacts，要求 reviewed summary 带显式 outcome，并保持 profile apply 未授权。
 - 回归测试还必须覆盖提交前更新/归档门禁：报告必须嵌入 `precommit_update_archive` 状态，字段契约必须阻断缺失、未通过或未启用既有文件更新复核 / OpenSpec 归档门禁的报告，脱敏 Markdown 摘要必须渲染该门禁状态。
 - 回归测试还必须覆盖 `output_retention` 字段契约阻断缺失或未通过的留存状态，并要求脱敏 Markdown 摘要渲染输出留存状态与长期证据格式。
 - 回归测试还必须覆盖 `manual_evidence.conflict_review` 字段契约阻断，以及人工例外 / 已批准 hard-load 例外记录在脱敏 Markdown 摘要中的渲染。
@@ -972,6 +976,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 将原始审计结束日期锁定为 2026-06-15。
 - [x] 将标准计划内运行次数锁定为 6 次：Day 0 baseline 1 次、weekly run 4 次、Day 30 final run 1 次。
 - [x] 记录 warning triage 是事件触发流程，不设固定重复次数。
+- [x] 脚本化最终复核状态 checker 已验证当前 pending/closed/candidate/apply-gate 状态。
 - [ ] 人工复核最终 30 天摘要。
 - [ ] 将最终摘要标记为 `summary-reviewed`，或明确记录 `review-pending + continue monitoring`。
 - [ ] 处理最终摘要中的噪声误报。
@@ -990,3 +995,50 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [ ] 如未来获授权执行 profile apply，保存 apply 前后脱敏 diff。
 - [ ] 如 apply 后 warning 仍出现，按 rollback path 回滚。
 - [ ] 如 apply 后关键能力缺失，按 rollback path 回滚。
+
+## 18. 颗粒度完成清单
+
+只有同时满足以下条件，本方案才算达到足够颗粒度：
+
+- 说明 warning 为什么可能出现在 live turn，而不只出现在启动阶段；
+- 区分 soft-load、hard-load/profile apply 与 plugin cache edit；
+- 定义强/中/弱证据边界；
+- 定义 7 天、30 天和 warning-triage 节奏；
+- 要求 `--warning-triage` 使用 `--days 1` 或 `--since`，记录顶层 `warning_triage` 字段，并阻断过宽窗口 triage 报告；
+- 定义 JSON 报告字段契约，要求脚本暴露 `field_contract`，并在 candidate generation 时阻断不完整、缺少契约或过期契约的报告；
+- 校验决策关键 `audit_state` 嵌套字段，包括允许状态值、原因、下一步动作、profile apply 禁止标志和 blocker list 形状；
+- 在脱敏 Markdown 摘要中渲染 audit-state next action、profile-apply allowance 与 blocker 列表；
+- 校验决策关键 `log_evidence` 嵌套字段，包括非负 budget-warning 计数、最近 budget-warning 样本计数，以及不保留原始路径、secret、cookie、access token 或独立 token 的有界脱敏样本摘录；
+- 校验决策关键 `warning_severity` 嵌套字段，包括必需 `level` / `reason` / `recommended_action`、允许的 `unknown` / `high` / `medium` / `none` 等级，以及不保留原始路径、secret、cookie、access token 或独立 token 的脱敏 reason/action 文本；
+- 默认人类可读 stdout 与脱敏 Markdown 摘要渲染 `field_contract` passed 状态、blocker 数量、required/missing/invalid-type 字段计数、embedded-contract 要求，以及包含 `warning_severity` 的嵌套 violation-group 计数，使复核者不依赖原始 JSON 也能定位契约缺口；
+- 校验决策关键 `warning_triage` 嵌套字段，包括允许状态、仅字符串且已知的 blocker 值、blocked/blocker 一致性、固定窄窗口策略、非负 warning/skipped-loading 计数、脱敏 skipped-loading 样本摘录、skipped-loading 来源复核值与 recommended action；
+- 校验决策关键 `cadence_review` 嵌套字段，并在脱敏 Markdown 摘要中渲染 late-run 与 missed-weekly-run 状态；
+- 校验决策关键 `module_evidence` 行字段，包括字符串 plugin 列表、非负 strong/weak 计数、strong-total 一致性、mapped-tool 中证据策略、人工 cross-project 复核、允许的 advisory recommendations 与 recommendation-threshold 一致性；
+- 校验决策关键 `decision_recommendation` 嵌套字段，包括 advisory-only 状态、profile-apply 禁止标志、必需 bucket 名称、bucket entry 必须为字符串，以及 bucket-count 一致性；
+- 校验决策关键 `output_retention` 嵌套字段，包括 checker identity、`.tmp/` local-only 策略、raw audit JSON local-only 策略、sanitized Markdown 长期证据格式和 violation count；
+- 校验决策关键 `precommit_update_archive` 嵌套字段，包括 checker identity、pre-commit gate flag、existing-file update review、completed OpenSpec archive gate、error count、warning count、changed path count 与 active change review count；
+- 定义 missed run、delayed warning triage、unreadable logs、privacy sanitization 与 urgent exceptions 的恢复规则；
+- 定义最终 30 天决策摘要模板；
+- 定义 medium evidence、urgent exceptions 与 removed false positives 的人工记录格式；
+- 在任何 post-audit hard-load/profile apply 之前定义 candidate change gate 与 rollback path；
+- 要求 candidate generation 始终绑定 JSON report path 与脱敏 Markdown summary path；
+- 要求 candidate generation 只接受 `summary-reviewed`、`apply-candidate` 或 `closed-with-candidate` audit state，并阻断 not-ready 或 `closed-no-change` 状态；
+- 要求 candidate `source_reports` 在写入 candidate JSON 或 Markdown 前通过 privacy contract；
+- 要求生成的 candidate JSON 与 Markdown 暴露 passing `candidate_record_contract`，覆盖 preview-only 安全标志、gate shape、rollback path、validation-plan 完整性、sanitization 与 source-report privacy；candidate Markdown 必须显示非 JSON 复核所需的同一组有界 contract counts 与 blocker 细节；
+- 定义 audit data source 的数据最小化、脱敏、留存与不外发边界；
+- 定义审计脚本能力边界、已知限制与触发脚本增强的条件；
+- 在 JSON 字段契约与脱敏 Markdown 摘要中暴露这些脚本能力边界；
+- 定义审计运行状态机、停止条件，以及 audit closure 与 profile apply candidate changes 之间的边界；
+- 通过 audit-only 脚本标志暴露 planned-state 记录，并在 Day 0 baseline 存在前阻断 profile-apply candidate；
+- 通过 audit-only 脚本标志暴露 paused-state 记录，并在 paused 状态阻断 profile-apply candidate；
+- 仅当 reviewed 30-day summary 仍绑定 JSON 与 Markdown source-report paths 时，才暴露 `summary-reviewed` 脚本状态；
+- 通过显式 audit-only 脚本标志暴露 closure-state 记录，并报告 blocked closure reasons，而不是静默关闭；
+- 定义 frequent、low-frequency 与 no-strong-evidence 情况的阈值；
+- 声明 explicit-skill false-positive noise 不得进入 strong evidence；
+- 定义 warning severity 与处理动作；
+- 声明 `.tmp/` output 默认不提交，长期证据必须脱敏；
+- 要求 `tools/check_skills_audit_output_retention.py` 阻断 `.tmp/` artifacts 和 raw `skills-usage-*.json` reports 进入 Git，同时允许脱敏 Markdown 摘要；
+- 要求 `tools/check_skills_audit_final_review_state.py` 在未来 continuation、closure 或 candidate decision 前验证最终复核、关闭、candidate 与 apply-gate 状态；
+- 要求 `tools/check_precommit_update_archive.py` 状态进入 audit JSON 字段契约与 Markdown 摘要，阻断未检查 existing-file update review 或已完成 OpenSpec changes 未归档的报告；
+- 声明 regression-test、OpenSpec guard 与 CI manifest 要求；
+- 声明远端发布仍需 GitLab/GitHub 授权门禁。

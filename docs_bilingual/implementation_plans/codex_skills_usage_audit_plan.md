@@ -16,6 +16,7 @@ related_docs:
 runtime_sources:
   - tools/audit_codex_skills_usage.py
   - tools/check_skills_audit_output_retention.py
+  - tools/check_skills_audit_final_review_state.py
   - tools/check_precommit_update_archive.py
 ---
 # Codex Skills Usage Audit Plan
@@ -170,6 +171,7 @@ Runtime responsibilities:
 
 - `tools/audit_codex_skills_usage.py` collects evidence and emits JSON/Markdown reports.
 - `tools/check_skills_audit_output_retention.py` proves raw audit artifacts stay local-only.
+- `tools/check_skills_audit_final_review_state.py` verifies the final human-review, closure, candidate, and apply-gate state without mutating config or profiles.
 - `tools/check_precommit_update_archive.py` proves existing-file update review and OpenSpec archive gates were checked before local commits.
 - `tools/run_openspec_guard.py` aggregates repository-level guard evidence.
 - Tests under `test/` and entries in `tools/ci/ci_test_manifest.json` keep the audit behavior reproducible.
@@ -584,6 +586,7 @@ Each audit run must report:
 - script capability boundaries, including reliable coverage, human-review needs, and enhancement triggers;
 - recommendations, without applying them automatically.
 - output retention status from `tools/check_skills_audit_output_retention.py`, proving `.tmp/` artifacts and raw Skills usage JSON are not retained in Git.
+- final review state from `tools/check_skills_audit_final_review_state.py`, proving whether the audit is still `review-pending + continue monitoring`, `summary-reviewed + closed-no-change`, or `summary-reviewed + preview-only candidate`, while keeping profile apply blocked until a later explicit `approved-to-apply` receipt.
 - pre-commit update/archive status from `tools/check_precommit_update_archive.py`, proving existing-file update review and OpenSpec archive gates have passed before local commit.
 - default human stdout must also render the audit state, enabled-plugin matched/unmatched summary, current-profile inference, inventory summary, log-evidence availability, recent budget-warning sample count, bounded sanitized budget-warning sample excerpts, and 7-day counts, warning-severity level, reason, and action, all-descriptions-removed / omitted-additional-skills pressure metrics, cadence review late-run / missed-weekly-runs / weekly-report-review state, warning triage status, warning triage window policy, warning/skipped-loading counts, sanitized skipped-loading sample excerpts, skipped-loading review action, warning triage recommended action and blockers, explicit-skill total and unique-skill counts, SKILL.md read count, profile helper call count, script capability boundary counts, decision recommendation, recommendation count plus the first few recommendations, field-contract status and violation groups including `warning_severity`, output-retention gate, and pre-commit update/archive gate, so a non-JSON run is still safe to review.
 - `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, cadence-review field-contract and Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized log-excerpt redaction marker integrity, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates and Markdown blocker output, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, candidate-record contract failures for unsafe or incomplete candidate records, and candidate Markdown non-action text.
@@ -592,6 +595,7 @@ Each audit run must report:
 - Regression tests must cover `module_evidence` row-contract blocking for missing/wrong-typed fields, non-string plugin entries, negative or stale strong counts, mapped-tool evidence being counted as strong, non-manual cross-project utility, and unsupported recommendations.
 - Regression tests must cover `module_evidence` recommendation-threshold mismatches so stale rows cannot claim an on-demand, dormant, or candidate recommendation that contradicts their strong/weak evidence counts.
 - Regression tests must cover output-retention blocking for forced `.tmp/` raw reports, raw `skills-usage-*.json` reports outside `.tmp/`, and allowed sanitized Markdown summaries.
+- Regression tests must cover the final review state checker: pending continuation is allowed without candidate/apply, candidate artifacts before `summary-reviewed` are blocked, reviewed summaries require an explicit outcome, and profile apply remains unauthorized.
 - Regression tests must cover the pre-commit update/archive gate: reports must embed `precommit_update_archive`, field contracts must block missing, non-passing, or disabled existing-file update / OpenSpec archive gate status, and sanitized Markdown summaries must render the gate status.
 - Regression tests must cover `output_retention` field-contract blocking for missing or non-passing retention status, and the sanitized Markdown summary must render the output-retention status and long-term evidence format.
 - Regression tests must cover `manual_evidence.conflict_review` field-contract blocking plus sanitized Markdown rendering for manual exception / approved hard-load exception notes.
@@ -640,6 +644,7 @@ The original 30-day audit window is closed. These items now distinguish complete
 - [x] Lock the original audit end date to 2026-06-15.
 - [x] Lock the fixed standard run count to 6 scheduled audit runs: 1 Day 0 baseline, 4 weekly runs, and 1 Day 30 final run.
 - [x] Record that warning triage is event-triggered and has no fixed repeat count.
+- [x] Script-backed final review state checker verifies the current pending/closed/candidate/apply-gate state.
 - [ ] Manually review the final 30-day summary.
 - [ ] Mark the final summary as `summary-reviewed`, or explicitly record `review-pending + continue monitoring`.
 - [ ] Resolve final-summary noise false positives.
@@ -701,6 +706,7 @@ This plan is granular enough only when all of the following are true:
 - it defines warning severity and handling actions;
 - it states that `.tmp/` output is not committed by default and long-term evidence must be sanitized;
 - it requires `tools/check_skills_audit_output_retention.py` to block `.tmp/` artifacts and raw `skills-usage-*.json` reports from Git while allowing sanitized Markdown summaries;
+- it requires `tools/check_skills_audit_final_review_state.py` to verify final review, closure, candidate, and apply-gate state before future continuation, closure, or candidate decisions;
 - it requires `tools/check_precommit_update_archive.py` status to enter the audit JSON field contract and Markdown summary, blocking reports where existing-file update review was not checked or completed OpenSpec changes were not archived before commit;
 - it states regression-test, OpenSpec guard, and CI manifest requirements;
 - it states that remote publication still requires GitLab/GitHub authorization gates.

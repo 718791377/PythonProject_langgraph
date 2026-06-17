@@ -34,6 +34,7 @@ GUARD_STEPS = [
     ("check_spec_kit_authority_guard", "check_spec_kit_authority_guard.py", "spec_kit_authority_guard"),
     ("check_precommit_update_archive", "check_precommit_update_archive.py", "precommit_update_archive"),
     ("check_skills_audit_output_retention", "check_skills_audit_output_retention.py", "skills_audit_output_retention"),
+    ("check_skills_audit_final_review_state", "check_skills_audit_final_review_state.py", "skills_audit_final_review_state"),
     ("check_openspec_code_archive_evidence", "check_openspec_code_archive_evidence.py", "openspec_code_archive_evidence"),
     ("check_openspec_comet_superpowers_policy", "check_openspec_comet_superpowers_policy.py", "openspec_comet_superpowers_policy"),
     ("check_comet_superpowers_visibility", "check_comet_superpowers_visibility.py", "comet_superpowers_visibility"),
@@ -192,6 +193,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["steps"][11]["step"], "check_spec_kit_authority_guard")
         self.assertEqual(payload["steps"][12]["step"], "check_precommit_update_archive")
         self.assertEqual(payload["steps"][13]["step"], "check_skills_audit_output_retention")
+        self.assertEqual(payload["steps"][14]["step"], "check_skills_audit_final_review_state")
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
         self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
         self.assertIn("check_comet_superpowers_visibility", [step["step"] for step in payload["steps"]])

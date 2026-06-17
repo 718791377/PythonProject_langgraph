@@ -165,6 +165,22 @@
       "description": "Prevents local-only Skills usage audit JSON and .tmp artifacts from being retained in Git; long-term evidence must be sanitized Markdown."
     },
     {
+      "id": "skills-audit-final-review-state",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_final_review_state.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_final_review_state"
+      ],
+      "description": "Verifies the Skills usage audit final-review, closure, candidate, and apply-gate state without marking summary-reviewed, generating candidates, or applying profiles."
+    },
+    {
       "id": "name-clarity-rule",
       "owner_level": "project",
       "status": "implemented",
