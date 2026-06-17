@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -52,6 +53,35 @@ class UserLevelDocumentToolsTests(unittest.TestCase):
             query = subprocess.run([sys.executable, str(toolkit), "query-jsonl", "--manifest", str(manifest), "--query", "alpha"], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             self.assertEqual(0, query.returncode, query.stdout)
             self.assertEqual(1, json.loads(query.stdout)["resultCount"])
+
+    def test_powershell_tool_scripts_parse(self) -> None:
+        powershell = shutil.which("powershell") or shutil.which("pwsh")
+        if powershell is None:
+            self.skipTest("PowerShell is not available")
+        script = f"""
+$ErrorActionPreference = 'Stop'
+$root = '{str(TOOLS_ROOT).replace("'", "''")}'
+$failed = @()
+Get-ChildItem -LiteralPath $root -Recurse -Filter '*.ps1' | ForEach-Object {{
+    $tokens = $null
+    $errors = $null
+    [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors)
+    if ($errors.Count -gt 0) {{
+        $failed += "$($_.FullName): $($errors[0].Message)"
+    }}
+}}
+if ($failed.Count -gt 0) {{
+    $failed | ForEach-Object {{ Write-Output $_ }}
+    exit 1
+}}
+"""
+        result = subprocess.run(
+            [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        self.assertEqual(0, result.returncode, result.stdout)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

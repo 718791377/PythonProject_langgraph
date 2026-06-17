@@ -44,6 +44,12 @@ if ([string]::IsNullOrWhiteSpace($PythonExe)) {
     if ($py) { $PythonExe = $py.Source }
 }
 
+$currentRoot = (Get-Location).Path
+$scriptAssetRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+$consumerConfigRoot = Join-Path $currentRoot 'config\doc_pipeline'
+$consumerVenvRoot = Join-Path $currentRoot '.venv'
+$pythonPackagesDir = Join-Path $PSScriptRoot '..\python_packages'
+
 $config = [ordered]@{
     poppler_bin_dir = Resolve-ExistingDirOrEmpty -Path $PopplerBinDir
     acrobat_exe = Resolve-ExistingFileOrEmpty -Path $AcrobatExe
@@ -51,9 +57,16 @@ $config = [ordered]@{
     default_dpi = $DefaultDpi
     final_review_dpi = $FinalReviewDpi
     word_com_requires_interactive_desktop = $true
-    safe_output_roots = @('$(Get-Location)\result','$(Get-Location)\intermediate')
-    development_asset_roots = @('$(Resolve-Path (Join-Path $PSScriptRoot '..'))','$(Join-Path (Get-Location) 'config\doc_pipeline')','$(Join-Path (Get-Location) '.venv')')
-    python_packages_dir = '$(Join-Path $PSScriptRoot '..\python_packages')'
+    safe_output_roots = @(
+        (Join-Path $currentRoot 'result'),
+        (Join-Path $currentRoot 'intermediate')
+    )
+    development_asset_roots = @(
+        $scriptAssetRoot,
+        $consumerConfigRoot,
+        $consumerVenvRoot
+    )
+    python_packages_dir = $pythonPackagesDir
     updated_at = (Get-Date).ToString('o')
 }
 $config | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $ConfigPath -Encoding UTF8

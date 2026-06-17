@@ -127,7 +127,8 @@ try {
         $lines += ''
         $lines += '## Manual fallback'
         $lines += ''
-        $lines += 'Open the sample PDF in Adobe Acrobat Pro, use Export PDF -> Microsoft Word -> Word Document, save the DOCX under `$(Join-Path (Get-Location) '.local\user_level_document_tools\converted\docx_from_pdf')`, then run the Word COM + Poppler post-check.'
+        $fallbackDocxDir = Join-Path (Get-Location) '.local\user_level_document_tools\converted\docx_from_pdf'
+        $lines += "Open the sample PDF in Adobe Acrobat Pro, use Export PDF -> Microsoft Word -> Word Document, save the DOCX under ``$fallbackDocxDir``, then run the Word COM + Poppler post-check."
     }
     $lines | Set-Content -LiteralPath $mdPath -Encoding UTF8
 }

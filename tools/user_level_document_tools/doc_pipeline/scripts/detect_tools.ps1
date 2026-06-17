@@ -53,11 +53,28 @@ function Test-PathList {
 }
 
 function Invoke-VersionProbe {
-    param([string]$Exe, [string[]]$Args)
+    param([string]$Exe, [string[]]$VersionArgs)
     if ([string]::IsNullOrWhiteSpace($Exe)) { return $null }
     try {
-        $out = & $Exe @Args 2>&1 | Select-Object -First 5
-        return (($out | ForEach-Object { [string]$_ }) -join "`n")
+        # Poppler and some native CLIs write version information to stderr.
+        # Capture stdout/stderr directly so script-level Stop preference and
+        # PowerShell native-command error wrapping do not turn version text into
+        # misleading "version probe failed" evidence.
+        $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+        $startInfo.FileName = $Exe
+        $startInfo.Arguments = (($VersionArgs | ForEach-Object {
+            if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ }
+        }) -join ' ')
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        $startInfo.UseShellExecute = $false
+        $startInfo.CreateNoWindow = $true
+        $process = [System.Diagnostics.Process]::Start($startInfo)
+        $stdout = $process.StandardOutput.ReadToEnd()
+        $stderr = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+        $combined = @($stdout, $stderr) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        return ((($combined -join "`n") -split "`r?`n") | Select-Object -First 5) -join "`n"
     } catch {
         return "version probe failed: $($_.Exception.Message)"
     }
@@ -131,7 +148,7 @@ $tools += [ordered]@{
 
 foreach ($name in @('pdfinfo','pdffonts','pdftoppm','pdftocairo')) {
     $cmd = Get-CommandInfo -Name $name -BinDir $PopplerBinDir
-    $version = if ($cmd) { Invoke-VersionProbe -Exe $cmd.source -Args @('-v') } else { $null }
+    $version = if ($cmd) { Invoke-VersionProbe -Exe $cmd.source -VersionArgs @('-v') } else { $null }
     $tools += [ordered]@{
         name = $name
         capability = 'Poppler PDF metadata/font/render utility'
@@ -147,7 +164,7 @@ $pyCmd = Get-CommandInfo -Name 'python'
 if ($config -and $config.python_exe -and (Test-Path -LiteralPath ([string]$config.python_exe))) {
     $pyCmd = [ordered]@{ name = 'python'; source = (Get-Item -LiteralPath ([string]$config.python_exe)).FullName; command_type = 'Application' }
 }
-$pyVersion = if ($pyCmd) { Invoke-VersionProbe -Exe $pyCmd.source -Args @('--version') } else { $null }
+$pyVersion = if ($pyCmd) { Invoke-VersionProbe -Exe $pyCmd.source -VersionArgs @('--version') } else { $null }
 $tools += [ordered]@{
     name = 'Python'
     capability = 'Contact sheet and helper report scripts'
@@ -160,7 +177,7 @@ $tools += [ordered]@{
 
 $pillowAvailable = $false
 $pillowVersion = $null
-$pythonPackagesDir = if ($config -and $config.python_packages_dir) { [string]$config.python_packages_dir } else { '$(Join-Path $PSScriptRoot '..\python_packages')' }
+$pythonPackagesDir = if ($config -and $config.python_packages_dir) { [string]$config.python_packages_dir } else { Join-Path $PSScriptRoot '..\python_packages' }
 if ($pyCmd) {
     $oldPythonPath = $env:PYTHONPATH
     if (Test-Path -LiteralPath $pythonPackagesDir) {

@@ -13,10 +13,16 @@ Tracked source contains portable scripts, examples, and tests. Consumer projects
 
 ## Local Poppler cache
 
-For the first observation pass, portable Poppler copied from `<source-project-root>` is stored under the ignored local path:
+For live runtime confirmation in this shared repository, portable Poppler is
+stored under the ignored local path:
 
 ```text
 .local/user_level_document_tools/poppler-25.07.0-0/
 ```
 
 It is intentionally not tracked because existing evidence-intake requirements keep third-party binaries as local install dependencies rather than repository source.
+
+Consumer projects may reuse these scripts, but they keep their own filled
+configs, source-authority rules, outputs, vector indexes, embedding caches, and
+runtime reports. The shared repository only owns the reusable executors and
+example configuration.

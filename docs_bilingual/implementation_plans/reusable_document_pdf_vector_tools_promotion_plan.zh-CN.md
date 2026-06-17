@@ -5,7 +5,7 @@ status: active
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/reusable_document_pdf_vector_tools_promotion_plan.md
 created_at: 2026-06-14
-updated_at: 2026-06-17
+updated_at: 2026-06-18
 ---
 
 # 可复用文档 PDF 向量工具提升方案
@@ -22,10 +22,12 @@ updated_at: 2026-06-17
 
 - Stage A 治理包已在本地集成，提交为 `802e458eaf5b3cdbed17e2bd419c73ecba3981c3`。
 - 原始实现包已通过提交 `3fe2e42409f9f103bf9c727c2047f07e3493a23d` 本地集成，并把可复用工具表面加入 `tools/user_level_document_tools/`。
-- 本 follow-up 通过 OpenSpec change `confirm-user-level-document-tools-runtime-20260617` 冻结后续 live-runtime backlog。
-- 待 Stage 2 处理的缺口包括：`.local/user_level_document_tools/poppler-25.07.0-0/` 尚未就绪、`doc_pipeline` PowerShell 脚本存在 parser/runtime 检查缺口、`D:\project` 仍有旧工具副本和无关 dirty files。
-- Stage 1 不声明 live runtime 已完成；该声明只能在 Stage 2 验证后更新。
-- 消费者项目数据、真实配置、权限、来源权威、输出路径、guard 规则、embedding 缓存、向量库和索引仍留在共享框架之外。
+- 本 follow-up 确认包已在本地集成到 `cebc679f867af4a8fbba7fa4245c41f77c900ddf`，并记录 OpenSpec change `confirm-user-level-document-tools-runtime-20260617`。
+- Stage 2 live runtime 确认从冻结后的本地 main 包创建 `implement-user-level-document-tools-runtime-20260618` 分支实施。
+- local-only Poppler cache 已填充到 `.local/user_level_document_tools/poppler-25.07.0-0/` 作为运行时证据，且继续被 Git 忽略。
+- `configure_doc_pipeline.ps1`、`detect_tools.ps1`、`export_pdf_to_docx_acrobat_com.ps1` 的文档流水线 PowerShell parser failures 已修复，并加入 parser 回归测试覆盖。
+- 向量/检索 smoke 仍归本仓库共享工具所有，使用临时 JSONL manifest；消费者 live vector data、索引、embedding 缓存、来源权威和生成输出仍由消费者拥有。
+- `D:\project` 继续作为受 guard 保护的消费者/来源对照项目；其无关 dirty files 被保留，Stage 2 未执行消费者清理。
 - 未执行远端发布，当前仍停在远端发布审批门前。
 
 <!-- CURRENT_STATUS_END -->
@@ -53,10 +55,10 @@ updated_at: 2026-06-17
 - [x] 复核可复用 PDF/Poppler 辅助工具提升、可复用文档流水线核心脚本提升，以及通用向量/检索框架提升。
 - [x] 原始本地集成后停在远端发布审批门前。
 - [x] Stage 1 follow-up：打开 `confirm-user-level-document-tools-runtime-20260617` 并冻结确认/运行时完成方案。
-- [ ] Stage 1 follow-up：验证、提交并把冻结确认方案集成到本地 `main`。
-- [ ] Stage 2 follow-up：执行 Poppler runtime 确认。
-- [ ] Stage 2 follow-up：执行文档流水线 parser/runtime 确认。
-- [ ] Stage 2 follow-up：执行向量/检索 smoke 确认。
+- [x] Stage 1 follow-up：验证、提交并把冻结确认方案集成到本地 `main`。
+- [x] Stage 2 follow-up：执行 Poppler runtime 确认。
+- [x] Stage 2 follow-up：执行文档流水线 parser/runtime 确认。
+- [x] Stage 2 follow-up：执行向量/检索 smoke 确认。
 - [ ] Stage 2 follow-up：验证、提交、集成到本地 `main`，并再次停在远端发布审批门前。
 
 <!-- TASK_BACKLOG_END -->
@@ -88,11 +90,11 @@ updated_at: 2026-06-17
 - `.local/user_level_document_tools/` 是 runtime-local 且故意不跟踪；Poppler 二进制属于 live runtime 确认所需本地缓存，但不进入 Git。
 - 向量数据、本地向量数据库、embedding 缓存和消费者填充配置仍由消费者项目拥有，未被提升。
 - 边界回归测试：`test/user_level_document_tools.test.py`，已登记到 `tools/ci/ci_test_manifest.json`；覆盖必需表面、占位示例配置、无消费者绝对路径以及向量工具冒烟行为。
-- Stage 1 前收集的 runtime-gap 证据：`.local/user_level_document_tools/poppler-25.07.0-0/` 缺失；`configure_doc_pipeline.ps1`、`detect_tools.ps1`、`export_pdf_to_docx_acrobat_com.ps1` 存在 PowerShell parser failures；`D:\project` dirty files `.codex/skills/comet-tweak/SKILL.md` 与 `.gitignore` 不得被覆盖。
+- Stage 2 runtime 证据：`.local/user_level_document_tools/poppler-25.07.0-0/` 已从 `D:\project\tools\poppler-25.07.0-0` 填充到被忽略的 worktree cache，数量为 455 个文件 / 55,664,757 字节；`test_poppler_access.ps1` 从 `.local` 报告 4/4 个 Poppler 工具可执行；所有被跟踪的 PowerShell 工具脚本 AST parser 均为 0 errors；`python test/user_level_document_tools.test.py` 覆盖必需表面、路径边界、PowerShell parser 回归和 vector JSONL validate/query smoke。
 - 原始实现的本地 gate 证据：`powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_gate.ps1 -Root . -StepTimeoutSeconds 900 -Json` 于 2026-06-15 返回 `ok: true`。
 - 原始实现的本地 MR review 证据：`tools/ci/local_mr_review.ps1` 在清理前返回 `ok: true`。
 - 原始实现的完成/清理证据：`.omx/session-claims/completed/promote-reusable-doc-pdf-vector-tools-20260614.json` 记录本地 main 集成、rollback ref `refs/backup/local-main/20260615-082051-before-promote-reusable-doc-pdf-vector-tools-20260614`、已删除本地分支、已移除 feature worktree，以及 `remote_publication_performed=false`。
-- 原始迁移中的 `D:\project` guard 证据：`guard.cmd model end` 和 `guard.cmd verify` 返回 OK，证明受保护 source 目录未在该 model operation 中漂移。
+- Stage 2 的 `D:\project` no-drift 证据：`git -C D:\project status --short --branch --untracked-files=all` 仍只报告既有的无关 `.codex/skills/comet-tweak/SKILL.md` 与 `.gitignore` 修改；Stage 2 未改动消费者项目文件。原始迁移 guard 证据仍为 `guard.cmd model end` 和 `guard.cmd verify` 返回 OK。
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -117,7 +119,7 @@ Stage 2 live runtime 包：
 - `D:\project` guard/no-drift 证据 - 证明消费者侧确认没有覆盖无关 dirty files 或受保护 source 目录。
 
 - 目标可复用工具回归测试：`python test/user_level_document_tools.test.py` - 验证路径边界和 vector toolkit smoke 行为。
-- OpenSpec change 验证：`openspec validate promote-reusable-doc-pdf-vector-tools-20260614 --strict --json` - 验证原 active change 包。
+- OpenSpec change 验证：`openspec validate confirm-user-level-document-tools-runtime-20260617 --strict --json` - 验证当前 Stage 2 确认 change 包。
 - 仓库 guard：`python tools/run_openspec_guard.py --root . --tool codex --json` - 验证 OpenSpec 和仓库 policy surfaces。
 - 本地 CI gate：`powershell -NoProfile -ExecutionPolicy Bypass -File tools/ci/local_gate.ps1 -StepTimeoutSeconds 1500 -Json` - 验证共享 local/remote CI gate。
 - 本地 MR review：`powershell -NoProfile -ExecutionPolicy Bypass -File tools/ci/local_mr_review.ps1 -Root . -BaseRef main -HeadRef HEAD -Json` - 集成前验证 clean local merge review。

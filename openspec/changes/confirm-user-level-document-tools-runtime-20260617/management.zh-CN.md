@@ -20,9 +20,9 @@
 
 ## Verify
 
-- [ ] Stage 2 runtime 完成后复核偏差。
-- [ ] Stage 2 runtime 完成后复核风险/变更影响。
-- [ ] Stage 2 runtime 完成后记录控制决策。
+- [x] Stage 2 runtime 完成后复核偏差。
+- [x] Stage 2 runtime 完成后复核风险/变更影响。
+- [x] Stage 2 runtime 完成后记录控制决策。
 
 ## Archive
 
@@ -32,5 +32,5 @@
 
 ## Monitoring
 
-- [x] 当前事实：迁移源码已存在，但当前 checkout 仍缺 `.local` Poppler cache，且有 3 个文档流水线 PowerShell parser failures。
-- [x] 返回/继续决策：继续 Stage 1 冻结，然后进入 Stage 2 runtime 实施。
+- [x] 当前事实：Stage 2 已填充 ignored `.local` Poppler cache，修复 3 个文档流水线 PowerShell parser failures，并只把 `D:\project` 作为受保护 no-drift 证据来源。
+- [x] 返回/继续决策：无需返回前序阶段；继续 Stage 2 验证和本地 main 优先集成。

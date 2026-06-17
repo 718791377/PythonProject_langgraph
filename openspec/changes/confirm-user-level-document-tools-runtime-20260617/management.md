@@ -20,9 +20,9 @@
 
 ## Verify
 
-- [ ] Variance review completed after Stage 2 runtime work.
-- [ ] Risk/change impact reviewed after Stage 2 runtime work.
-- [ ] Control decision recorded after Stage 2 runtime work.
+- [x] Variance review completed after Stage 2 runtime work: implementation stayed within shared tooling and ignored local-runtime boundaries.
+- [x] Risk/change impact reviewed after Stage 2 runtime work: local Poppler cache and generated reports/config remain ignored; consumer live vector data and `D:\project` files were not moved.
+- [x] Control decision recorded after Stage 2 runtime work: continue to local validation, local commit, and local-main integration; remote publication remains blocked pending explicit approval.
 
 ## Archive
 
@@ -32,5 +32,5 @@
 
 ## Monitoring
 
-- [x] Current facts: migration source exists, but current checkout lacks `.local` Poppler cache and has three document-pipeline PowerShell parser failures.
-- [x] Return/no-return decision: continue with Stage 1 freeze, then Stage 2 runtime implementation.
+- [x] Current facts: Stage 2 populated the ignored `.local` Poppler cache, repaired the three document-pipeline PowerShell parser failures, and preserved `D:\project` as guarded no-drift evidence only.
+- [x] Return/no-return decision: no return needed; continue with Stage 2 validation and local-main-first integration.
