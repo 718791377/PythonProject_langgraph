@@ -529,6 +529,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md
 
+  - doc_id: project_expert_lens_agent_gui_toolchain_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/project_expert_lens_agent_gui_toolchain_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/project_expert_lens_agent_gui_toolchain_plan.zh-CN.md
+
   - doc_id: project_moe_gui_enhancement_roadmap_plan
     doc_class: implementation_plan
     status: active
