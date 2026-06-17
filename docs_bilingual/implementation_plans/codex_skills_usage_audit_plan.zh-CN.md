@@ -6,8 +6,8 @@ translation_of: docs_bilingual/implementation_plans/codex_skills_usage_audit_pla
 status: active
 doc_class: implementation_plan
 created_at: 2026-05-16
-last_reviewed: 2026-05-27
-plan_readiness: active-monitoring
+last_reviewed: 2026-06-17
+plan_readiness: final-review-pending
 implementation_lane: audit_only_profile_decision_support
 related_docs:
   - docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.zh-CN.md
@@ -35,6 +35,8 @@ runtime_sources:
 本方案状态为 active，并继续保持 audit-only。本次 Comet 结构重构不授权 hard-load/profile apply，也不改变实施边界：现有脚本、checker、report contract、retention 与 candidate-preview 规则仍是执行层 source of truth。本次重构将治理原则、运行时/数据源架构、CLI 契约、字段契约、实施切片、任务级 backlog、本地集成、验收证据和长期监控事项拆开，便于后续按 /comet 方式执行与复核。
 
 `soft-load` 后 Codex 启动阶段 warning 消失，是启动压力改善的有用证据，但不能证明 live-turn skills-budget warning 不会再次出现。会话中 warning 必须通过审计脚本 triage，而不是删除 plugin cache 或过早收缩默认 profile。
+
+节奏定稿：原始 30 天观察窗口锁定为 2026-05-16 至 2026-06-15。标准计划内审计运行次数为 Day 0 baseline 1 次、每 7 天 weekly evidence 4 次、Day 30 final evidence 1 次。Warning triage 是事件触发流程，不设固定重复次数。2026-06-15 之后的任何新增运行都只属于 post-final monitoring evidence，不得延长原始审计窗口，也不得授权 profile apply。
 
 完整性复核：
 
@@ -221,15 +223,20 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 - `full` profile 中 `plugins: "all_known_plugins"` 不能被拆成单个字符；
 - 脚本在缺少用户级 plugin-modules profile 时，必须回退读取仓库内 `tools/skill_sources/plugin-modules/references/profiles.json`。
 
-为避免一个月 audit 过程中偏离，使用固定节奏。
+为避免一个月 audit 过程中偏离，使用固定节奏。该节奏现在已经锁定为已关闭的原始审计窗口，而不是可无限延长的循环。
 
-| 时间点 | 命令 | 输出文件 | 用途 |
-| --- | --- | --- | --- |
-| 第 0 天 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | 冻结初始 enabled plugins、inventory 和 warning 状态 |
-| 每周 | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | 发现会话中新增 warning 与模块使用趋势 |
-| 漏跑周报补跑 | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | 保留明确的节奏偏离标记，而不是伪造漏跑报告 |
-| 第 30 天 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | 形成是否调整默认 profile 的证据包 |
-| 出现 warning 后 | `--warning-triage --days 1` 或 `--warning-triage --since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | 定位 warning 是否来自当前会话重打包 |
+| 节奏项 | 日期或触发条件 | 重复次数 | 命令 | 输出文件 | 用途 |
+| --- | --- | ---: | --- | --- | --- |
+| Day 0 baseline | 2026-05-16 | 1 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | 冻结初始 enabled plugins、inventory 和 warning 状态 |
+| Weekly audit | 2026-05-23、2026-05-30、2026-06-06、2026-06-13 | 4 | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | 发现会话中新增 warning 与模块使用趋势 |
+| 漏跑周报补跑 | 仅在漏跑 weekly run 时触发 | 事件触发，不设固定次数 | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | 保留明确的节奏偏离标记，而不是伪造漏跑报告 |
+| Day 30 final audit | 2026-06-15 | 1 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | 形成是否调整默认 profile 的证据包 |
+| Warning triage | 每次新的 `2% skills context budget` warning 之后 | 事件触发，每个新 warning 对应一次窄窗口运行 | `--warning-triage --days 1` 或 `--warning-triage --since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | 定位 warning 是否来自当前会话重打包 |
+| Final human review | Day 30 summary 已存在之后 | 1 次决策复核 | 复核脱敏 final summary 与 decision template | 如产生决策，只提交脱敏 review record | 选择 `summary-reviewed + closed-no-change`、`summary-reviewed + preview-only candidate` 或 `review-pending + continue monitoring` |
+
+因此，标准计划内审计重复次数固定为 6 次：1 次 baseline、4 次 weekly、1 次 final 30-day run。最终人工复核是单独决策步骤，不是另一轮审计运行。Warning triage 与漏跑补跑属于异常/事件触发路径，不分配固定重复次数。
+
+原始审计结束日期固定为 2026-06-15。该日期之后的运行仅属于 post-final monitoring：可以更新 review-pending evidence 或 warning-triage evidence，但不得移动原始结束日期、重启 30 天计时、标记 summary-reviewed、生成 profile candidate，或在没有后续明确决策时执行 profile apply。
 
 `.tmp/` 报告默认不入 Git；如果需要长期留证，只提交经过脱敏和摘要化的 Markdown 结论，不提交完整 session transcript、token、私有路径或 vendor cache 内容。
 
@@ -505,11 +512,15 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 
 ### Slice 5：长期监控周期
 范围：
-- [ ] 跑真实 30 天观察期、weekly reports、warning triage、final summary review 与可选 preview-only candidate generation。
+- [x] 跑完 2026-05-16 至 2026-06-15 的真实 30 天观察期。
+- [x] 锁定标准重复次数与频率：Day 0 1 次、weekly 4 次、Day 30 1 次，warning triage 仅作为事件触发的一次性窄窗口运行。
+- [ ] 完成最终人工复核，并且仅在明确选择时生成可选 preview-only candidate。
 完成标准：
-- [ ] 进入任何 profile apply 讨论前，final JSON 与 Markdown evidence 已通过 embedded contracts。
+- [x] 已为关闭的 30 天窗口生成 final JSON 与脱敏 Markdown evidence，且通过 embedded contracts。
+- [ ] final summary 已被标记为 `summary-reviewed` 并记录决策，或明确保持 `human_review_pending` 并追加 post-final monitoring evidence。
 测试：
-- [ ] 日历窗口关闭时验证最终观察期证据。
+- [x] 日历窗口关闭时验证最终观察期证据。
+- [ ] candidate generation 或 closure 前验证人工复核决策证据。
 
 ## 12. 任务级执行 Backlog
 
@@ -854,6 +865,20 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 覆盖 warning severity。
 - [x] `tools/ci/ci_test_manifest.json` 已包含相关测试。
 
+
+### Task 17：真实观察期与最终复核节奏
+
+- [x] 完成真实 30 天 usage audit 观察期：2026-05-16 至 2026-06-15。
+- [x] 固定标准计划内重复次数：Day 0 baseline 1 次、weekly audit 4 次、Day 30 final audit 1 次。
+- [x] 固定标准频率：审计期内每 7 天运行一次 weekly `--days 7`，第 30 天运行一次 final `--days 30`。
+- [x] 固定原始审计结束日期：2026-06-15。
+- [x] 明确 warning triage 是事件触发流程，不设固定次数；每次新的 warning 只运行一次窄窗口 triage。
+- [x] 明确 2026-06-15 之后的运行属于 post-final monitoring，不得延长原始 30 天审计窗口。
+- [x] 生成最终 30 天 evidence package，并以脱敏 Markdown 长期留证。
+- [ ] 人工复核最终 30 天 evidence package。
+- [ ] 明确 closure 决策：`closed-no-change`、`review-pending + continue monitoring` 或 `summary-reviewed + preview-only candidate`。
+- [ ] 如选择 candidate 路径，必须先明确 `target_profile`，并且只生成 preview-only candidate。
+
 ## 13. 本地集成顺序
 
 - [ ] 主目录存在无关脏改时，必须使用隔离 feature worktree。
@@ -928,17 +953,17 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 
 ## 17. 当前未闭环监控事项
 
-当前未闭环事项
+原始 30 天审计窗口已经关闭。下面将已完成的日历观察事项与仍需处理的 post-final review / monitoring 事项分开记录。
 
-- [ ] 按真实日历完成完整 30 天 usage audit 观察期。
-- [ ] 在审计期内持续生成本地 7 天周报证据。
-- [ ] 会话中再次出现 `2% skills context budget` warning 后运行窄窗口 warning triage。
-- [ ] 对新的 warning triage 结果做人工复核。
-- [ ] 对新的 skipped-loading 样本做来源复核。
-- [ ] 在 30 天期满后生成最终 JSON 报告。
-- [ ] 在 30 天期满后生成最终脱敏 Markdown 摘要。
+- [x] 完成真实 30 天 usage audit 观察期：2026-05-16 至 2026-06-15。
+- [x] 在审计期内生成本地 7 天周报证据。
+- [x] 在 30 天期满后生成最终 JSON 报告，并将原始 JSON 仅保留在本地 `.tmp/`。
+- [x] 在 30 天期满后生成最终脱敏 Markdown 摘要。
+- [x] 将原始审计结束日期锁定为 2026-06-15。
+- [x] 将标准计划内运行次数锁定为 6 次：Day 0 baseline 1 次、weekly run 4 次、Day 30 final run 1 次。
+- [x] 记录 warning triage 是事件触发流程，不设固定重复次数。
 - [ ] 人工复核最终 30 天摘要。
-- [ ] 将最终摘要标记为 `summary-reviewed`。
+- [ ] 将最终摘要标记为 `summary-reviewed`，或明确记录 `review-pending + continue monitoring`。
 - [ ] 处理最终摘要中的噪声误报。
 - [ ] 处理最终摘要中的人工冲突或例外。
 - [ ] 判断本轮审计是否进入 `closed-no-change`。
@@ -948,6 +973,9 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [ ] 生成 candidate Markdown preview。
 - [ ] 复核 candidate rollback path。
 - [ ] 复核 candidate validation plan。
+- [ ] post-final 阶段每次新的 `2% skills context budget` warning 后运行窄窗口 warning triage。
+- [ ] 对新的 post-final warning triage 结果做人工复核。
+- [ ] 对新的 post-final skipped-loading 样本做来源复核。
 - [ ] 获得明确 `approved-to-apply` 授权前不执行 profile apply。
 - [ ] 如未来获授权执行 profile apply，保存 apply 前后脱敏 diff。
 - [ ] 如 apply 后 warning 仍出现，按 rollback path 回滚。

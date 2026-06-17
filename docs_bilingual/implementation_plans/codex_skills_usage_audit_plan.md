@@ -6,8 +6,8 @@ translation: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.z
 status: active
 doc_class: implementation_plan
 created_at: 2026-05-16
-last_reviewed: 2026-05-27
-plan_readiness: active-monitoring
+last_reviewed: 2026-06-17
+plan_readiness: final-review-pending
 implementation_lane: audit_only_profile_decision_support
 related_docs:
   - docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.md
@@ -35,6 +35,8 @@ runtime_sources:
 The plan is active and remains audit-only. This Comet-style refactor does not authorize a hard-load/profile apply and does not change the implementation boundary: existing script, checker, report-contract, retention, and candidate-preview rules remain the source of truth for execution. The refactor makes the plan easier to execute by separating governance principles, runtime/data-source architecture, CLI contracts, field contracts, implementation slices, task-level backlog, local integration, acceptance evidence, and long-running monitoring items.
 
 A clean Codex startup after `soft-load` is useful evidence that startup pressure improved, but it is not proof that live-turn skills-budget warnings cannot reappear. Live warnings must be triaged through the audit script, not by deleting plugin cache or prematurely shrinking the default profile.
+
+Cadence finalization: the original 30-day observation window is locked to 2026-05-16 through 2026-06-15. The standard scheduled audit run count is Day 0 baseline once, weekly 7-day evidence four times, and Day 30 final evidence once. Warning triage is event-driven and has no fixed repeat count. After 2026-06-15, any additional runs are post-final monitoring evidence and must not extend the original audit window or authorize profile apply.
 
 Completeness review:
 
@@ -221,15 +223,20 @@ Regression tests must cover:
 - `plugins: "all_known_plugins"` in the `full` profile must not be split into individual characters;
 - the script must fall back to `tools/skill_sources/plugin-modules/references/profiles.json` when the user-level plugin-modules profile is absent.
 
-Use a fixed cadence so the one-month audit does not drift.
+Use a fixed cadence so the one-month audit does not drift. This cadence is now locked as a completed original audit window, not an open-ended loop.
 
-| Time | Command | Output file | Purpose |
-| --- | --- | --- | --- |
-| Day 0 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | Freeze initial enabled plugins, inventory, and warning state |
-| Weekly | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | Detect new live-session warnings and module trends |
-| Late weekly recovery | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | Preserve an explicit cadence-drift marker instead of fabricating the missed run |
-| Day 30 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | Build the evidence package for default-profile decisions |
-| After a warning | `--warning-triage --days 1` or `--warning-triage --since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | Locate whether the warning came from current-session repacking |
+| Cadence item | Date or trigger | Repeat count | Command | Output file | Purpose |
+| --- | --- | ---: | --- | --- | --- |
+| Day 0 baseline | 2026-05-16 | 1 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | Freeze initial enabled plugins, inventory, and warning state |
+| Weekly audit | 2026-05-23, 2026-05-30, 2026-06-06, 2026-06-13 | 4 | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | Detect new live-session warnings and module trends |
+| Late weekly recovery | Only when a weekly run is missed | Event-driven, no fixed count | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | Preserve an explicit cadence-drift marker instead of fabricating the missed run |
+| Day 30 final audit | 2026-06-15 | 1 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | Build the evidence package for default-profile decisions |
+| Warning triage | After each new `2% skills context budget` warning | Event-driven, one narrow run per new warning | `--warning-triage --days 1` or `--warning-triage --since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | Locate whether the warning came from current-session repacking |
+| Final human review | After the Day 30 summary exists | 1 decision review | Review sanitized final summary and decision template | Tracked sanitized review record if a decision is made | Choose `summary-reviewed + closed-no-change`, `summary-reviewed + preview-only candidate`, or `review-pending + continue monitoring` |
+
+Standard scheduled audit repeats are therefore fixed at 6 runs total: 1 baseline, 4 weekly runs, and 1 final 30-day run. The final human review is a separate decision step, not another audit run. Warning triage and late recovery are exception/event-triggered paths and are not assigned a fixed repeat count.
+
+The original audit end date is 2026-06-15. Runs after that date are post-final monitoring only: they may update review-pending evidence or warning-triage evidence, but they must not move the original end date, restart the 30-day clock, mark the summary reviewed, generate a profile candidate, or apply a profile without an explicit later decision.
 
 Reports under `.tmp/` are not committed by default. If long-term evidence is needed, commit only a sanitized Markdown summary, not full session transcripts, tokens, private paths, or vendor cache content.
 
@@ -499,15 +506,19 @@ Tests:
 
 ### Slice 5: Long-running monitoring cycle
 Scope:
-- [ ] Run the real 30-day observation window, weekly reports, warning triage, final summary review, and optional preview-only candidate generation.
+- [x] Run the real 30-day observation window from 2026-05-16 through 2026-06-15.
+- [x] Lock the standard repeat count and frequency: Day 0 once, weekly four times, Day 30 once, and warning triage as event-driven one-off runs.
+- [ ] Complete final human review and, only if explicitly chosen, optional preview-only candidate generation.
 Completion criteria:
-- [ ] Final JSON and Markdown evidence pass the embedded contracts before any profile apply discussion.
+- [x] Final JSON and sanitized Markdown evidence exist for the closed 30-day window and pass embedded contracts.
+- [ ] Final summary is either marked `summary-reviewed` with a decision, or explicitly kept in `human_review_pending` with post-final monitoring evidence.
 Tests:
-- [ ] Final observation-window evidence is verified when the calendar window closes.
+- [x] Final observation-window evidence is verified when the calendar window closes.
+- [ ] Human-review decision evidence is verified before candidate generation or closure.
 
 ## 12. Task-level execution backlog
 
-The detailed implementation work is complete except for the real calendar monitoring cycle. Concrete work items:
+The detailed implementation work is complete except for final human review and any optional preview-only candidate. Concrete work items:
 
 - [x] Audit CLI foundation.
 - [x] Skills usage evidence collection.
@@ -525,8 +536,13 @@ The detailed implementation work is complete except for the real calendar monito
 - [x] Output-retention gate.
 - [x] Pre-commit update/archive gate.
 - [x] Tests and CI coverage.
-- [ ] Real 30-day usage audit observation window.
-- [ ] Final reviewed 30-day evidence package.
+- [x] Real 30-day usage audit observation window: 2026-05-16 through 2026-06-15.
+- [x] Standard scheduled repeat count fixed: 1 Day 0 baseline, 4 weekly runs, and 1 Day 30 final run.
+- [x] Standard scheduled frequency fixed: weekly `--days 7` during the audit, Day 30 final once, and warning triage only after new warnings.
+- [x] Original audit end date fixed: 2026-06-15.
+- [x] Final 30-day evidence package generated and retained as sanitized Markdown evidence.
+- [ ] Final human review of the 30-day evidence package.
+- [ ] Explicit closure decision: `closed-no-change`, `review-pending + continue monitoring`, or `summary-reviewed + preview-only candidate`.
 - [ ] Optional preview-only profile candidate after explicit target-profile review.
 
 ## 13. Local integration order
@@ -603,15 +619,17 @@ Each human report review must also check false-positive noise:
 
 ## 17. Current open monitoring items
 
-- [ ] Complete the real 30-day usage audit observation window.
-- [ ] Generate local 7-day weekly evidence during the audit window.
-- [ ] Run narrow-window warning triage after any new `2% skills context budget` warning.
-- [ ] Manually review each new warning triage result.
-- [ ] Manually review each new skipped-loading source sample.
-- [ ] Generate the final 30-day JSON report after the window ends.
-- [ ] Generate the final sanitized Markdown summary after the window ends.
+The original 30-day audit window is closed. These items now distinguish completed calendar-observation work from post-final review and monitoring work.
+
+- [x] Complete the real 30-day usage audit observation window: 2026-05-16 through 2026-06-15.
+- [x] Generate local 7-day weekly evidence during the audit window.
+- [x] Generate the final 30-day JSON report after the window ends, retained local-only under `.tmp/`.
+- [x] Generate the final sanitized Markdown summary after the window ends.
+- [x] Lock the original audit end date to 2026-06-15.
+- [x] Lock the fixed standard run count to 6 scheduled audit runs: 1 Day 0 baseline, 4 weekly runs, and 1 Day 30 final run.
+- [x] Record that warning triage is event-triggered and has no fixed repeat count.
 - [ ] Manually review the final 30-day summary.
-- [ ] Mark the final summary as `summary-reviewed`.
+- [ ] Mark the final summary as `summary-reviewed`, or explicitly record `review-pending + continue monitoring`.
 - [ ] Resolve final-summary noise false positives.
 - [ ] Resolve final-summary manual conflicts or exceptions.
 - [ ] Decide whether this audit closes as `closed-no-change`.
@@ -621,6 +639,9 @@ Each human report review must also check false-positive noise:
 - [ ] Generate candidate Markdown preview.
 - [ ] Review candidate rollback path.
 - [ ] Review candidate validation plan.
+- [ ] Run narrow-window warning triage after each new post-final `2% skills context budget` warning.
+- [ ] Manually review each new post-final warning triage result.
+- [ ] Manually review each new post-final skipped-loading source sample.
 - [ ] Do not run profile apply before explicit `approved-to-apply` authorization.
 - [ ] If profile apply is authorized later, save sanitized before/after diffs.
 - [ ] If warnings persist after apply, roll back through the rollback path.
