@@ -21,6 +21,9 @@ The raw `reference_files/7.md` file remains ignored. The committed structured au
 - 2026-06-17: Reference 7 was reread as a non-empty ignored input and converted into a committed structured manifest.
 - 2026-06-17: User requirement update: every non-Codex upstream, not only Claude Code-only upstreams, must be forked or adapted into a Codex project surface before Codex live-executed status can be claimed.
 
+- 2026-06-17: Reference 7 runtime/checker/test surfaces are implemented; 25/25 capabilities are `R6 live-executed` only through Codex adapter/fork surfaces, with raw upstream live-executed evidence rejected.
+- 2026-06-17: User-level Codex adapters were applied with hash-redacted receipts; General commit `0000634` and General_2 commit `2d07680` carry the template sync evidence.
+
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
@@ -30,9 +33,9 @@ The raw `reference_files/7.md` file remains ignored. The committed structured au
 - [x] Capture Reference 6 status and keep the existing Reference 6 checker in scope.
 - [x] Convert ignored `reference_files/7.md` into committed structured manifest `docs_bilingual/reference_manifests/reference7_capability_sources.json`.
 - [x] Freeze the hard rule that every non-Codex upstream requires a Codex fork/adapter before live-executed status.
-- [ ] Merge this plan package into local `main`.
-- [ ] Implement Reference 7 runtime, checker, tests, user-level adapters, and receipts.
-- [ ] Sync `D:/PythonProject_General` active templates and `D:/PythonProject_General_2` inert templates.
+- [x] Merge this plan package into local `main`.
+- [x] Implement Reference 7 runtime, checker, tests, user-level adapters, and receipts.
+- [x] Sync `D:/PythonProject_General` active templates and `D:/PythonProject_General_2` inert templates.
 - [ ] Run source, user-level, and template gates; merge implementation to local `main` and stop before remote publication.
 
 <!-- TASK_BACKLOG_END -->
@@ -47,9 +50,10 @@ The raw `reference_files/7.md` file remains ignored. The committed structured au
 | Reference 7 structured manifest | `docs_bilingual/reference_manifests/reference7_capability_sources.json` | included in this plan package |
 | Reference 6 checker | `python tools/check_reference6_capability_install.py --root . --json` | must remain passing |
 | Plan guard | `python tools/run_openspec_guard.py --root . --json` | required before local merge |
-| Reference 7 runtime/checker | `tools/reference7_capability_install.py`, `tools/check_reference7_capability_install.py` | implementation phase |
-| General sync | `D:/PythonProject_General` local gate | implementation phase |
-| General_2 sync | `D:/PythonProject_General_2` local gate | implementation phase |
+| Reference 7 runtime/checker | `tools/reference7_capability_install.py`, `tools/check_reference7_capability_install.py` | implemented and registered |
+| General sync | `D:/PythonProject_General` local gate | passed on synced main at `0000634` |
+| General_2 sync | `D:/PythonProject_General_2` local gate | passed on synced main at `2d07680` |
+| Reference 7 live evidence | `python tools/check_reference7_capability_install.py --root . --codex-home C:/Users/lenovo/.codex --require-user-level-installed --require-smoke-tested --require-live-executed --general-root D:/PythonProject_General --general2-root D:/PythonProject_General_2 --require-template-sync --json` | passed; 25/25 live-executed through Codex adapter/fork surfaces |
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -155,3 +159,5 @@ After the plan is frozen and at least two independent slices exist, durable-team
 - User-level Reference 7 Codex adapters and receipts are generated or explicit user-action blockers are recorded.
 - General and General_2 are updated, clean, and locally validated.
 - No remote publication is performed unless the current user message explicitly names that remote action.
+
+Implementation marker: `env_key_name_only` config reuse is required.

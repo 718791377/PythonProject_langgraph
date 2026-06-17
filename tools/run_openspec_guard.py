@@ -137,6 +137,7 @@ def main() -> int:
     user_level_mcp_skills_cli_install_script = root / "tools" / "check_user_level_mcp_skills_cli_install.py"
     user_level_cloakbrowser_academic_runtime_script = root / "tools" / "check_user_level_cloakbrowser_academic_runtime.py"
     reference6_capability_install_script = root / "tools" / "check_reference6_capability_install.py"
+    reference7_capability_install_script = root / "tools" / "check_reference7_capability_install.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
@@ -235,6 +236,8 @@ def main() -> int:
         raise SystemExit(f"Missing user-level CloakBrowser/Academic Research runtime check script: {user_level_cloakbrowser_academic_runtime_script}")
     if not reference6_capability_install_script.exists():
         raise SystemExit(f"Missing Reference 6 capability install check script: {reference6_capability_install_script}")
+    if not reference7_capability_install_script.exists():
+        raise SystemExit(f"Missing Reference 7 capability install check script: {reference7_capability_install_script}")
     if not local_mirrored_ci_gate_script.exists():
         raise SystemExit(f"Missing local mirrored CI/MR gate check script: {local_mirrored_ci_gate_script}")
     if not remote_publication_approval_policy_script.exists():
@@ -503,6 +506,11 @@ def main() -> int:
                 "check_reference6_capability_install",
                 [str(python_exe), str(reference6_capability_install_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Reference 6 capability install verification.",
+            ),
+            (
+                "check_reference7_capability_install",
+                [str(python_exe), str(reference7_capability_install_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Reference 7 Codex adapter install verification.",
             ),
             (
                 "check_local_mirrored_ci_gate",
@@ -935,6 +943,11 @@ def main() -> int:
         [str(python_exe), str(reference6_capability_install_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Reference 6 capability install verification.",
+    )
+    run_checked(
+        [str(python_exe), str(reference7_capability_install_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Reference 7 Codex adapter install verification.",
     )
 
     run_checked(

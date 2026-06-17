@@ -827,6 +827,24 @@
         "check_reference6_capability_install"
       ],
       "description": "Keeps Reference 6 capabilities layered into user-level install artifacts and General/General_2 template surfaces, reusing Codex provider env_key names only, writing hash-redacted receipts, recording blockers with fill/resume commands, and preserving the remote-publication gate."
+    },
+    {
+      "id": "reference7-capability-install",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/reference6_reference7_user_project_live_runtime_plan.md",
+        "docs_bilingual/implementation_plans/reference6_reference7_user_project_live_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/reference7_capability_install.py",
+        "tools/check_reference7_capability_install.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_reference7_capability_install"
+      ],
+      "description": "Keeps Reference 7 non-Codex upstreams adapted into Codex skill, agent, runtime-wrapper, or project-template surfaces before any live-executed claim; rejects raw upstream install-only evidence, writes hash-redacted receipts, reuses env_key names only, and preserves the remote-publication gate."
     }
   ]
 }

@@ -22,6 +22,9 @@ The raw `reference_files/7.md` stays ignored. The committed structured manifest 
 - 2026-06-17: Reference 7 was reread and converted into a committed structured manifest.
 - 2026-06-17: User requirement update: all non-Codex upstream projects require a Codex fork/adapter before Codex live-executed status, not only Claude Code-only projects.
 
+- 2026-06-17: Reference 7 runtime/checker/test surfaces are implemented; 25/25 capabilities are `R6 live-executed` only through Codex adapter/fork surfaces, with raw upstream live-executed evidence rejected.
+- 2026-06-17: User-level Codex adapters were applied with hash-redacted receipts; General commit `0000634` and General_2 commit `2d07680` carry the template sync evidence.
+
 <!-- CURRENT_STATUS_END -->
 
 ## 任务 Backlog
@@ -31,9 +34,9 @@ The raw `reference_files/7.md` stays ignored. The committed structured manifest 
 - [x] Capture Reference 6 status and keep the existing Reference 6 checker in scope.
 - [x] Convert ignored `reference_files/7.md` into committed structured manifest `docs_bilingual/reference_manifests/reference7_capability_sources.json`.
 - [x] Freeze the hard rule that every non-Codex upstream requires a Codex fork/adapter before live-executed status.
-- [ ] Merge this plan package into local `main`.
-- [ ] Implement Reference 7 runtime, checker, tests, user-level adapters, and receipts.
-- [ ] Sync `D:/PythonProject_General` active templates and `D:/PythonProject_General_2` inert templates.
+- [x] Merge this plan package into local `main`.
+- [x] Implement Reference 7 runtime, checker, tests, user-level adapters, and receipts.
+- [x] Sync `D:/PythonProject_General` active templates and `D:/PythonProject_General_2` inert templates.
 - [ ] Run source, user-level, and template gates; merge implementation to local `main` and stop before remote publication.
 
 <!-- TASK_BACKLOG_END -->
@@ -48,9 +51,10 @@ The raw `reference_files/7.md` stays ignored. The committed structured manifest 
 | Reference 7 structured manifest | `docs_bilingual/reference_manifests/reference7_capability_sources.json` | included in this plan package |
 | Reference 6 checker | `python tools/check_reference6_capability_install.py --root . --json` | must remain passing |
 | Plan guard | `python tools/run_openspec_guard.py --root . --json` | required before local merge |
-| Reference 7 runtime/checker | `tools/reference7_capability_install.py`, `tools/check_reference7_capability_install.py` | implementation phase |
-| General sync | `D:/PythonProject_General` local gate | implementation phase |
-| General_2 sync | `D:/PythonProject_General_2` local gate | implementation phase |
+| Reference 7 runtime/checker | `tools/reference7_capability_install.py`, `tools/check_reference7_capability_install.py` | implemented and registered |
+| General sync | `D:/PythonProject_General` local gate | passed on synced main at `0000634` |
+| General_2 sync | `D:/PythonProject_General_2` local gate | passed on synced main at `2d07680` |
+| Reference 7 live evidence | `python tools/check_reference7_capability_install.py --root . --codex-home C:/Users/lenovo/.codex --require-user-level-installed --require-smoke-tested --require-live-executed --general-root D:/PythonProject_General --general2-root D:/PythonProject_General_2 --require-template-sync --json` | passed; 25/25 live-executed through Codex adapter/fork surfaces |
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -60,7 +64,7 @@ All upstream projects that are not already Codex-native must be forked or adapte
 
 Counted Codex surfaces are Codex `SKILL.md`, Codex native agent TOML with `name`/`description`/`developer_instructions`, Codex runtime wrapper/checker with redacted receipts, or Codex template adapters in General/General_2.
 
-Raw upstream install, `.claude/agents`, Claude hooks, non-Codex agent config, desktop install, MCP install, or generic CLI install without a Codex adapter is not completion evidence.
+Raw upstream install only, raw upstream install, `.claude/agents`, Claude hooks, non-Codex agent config, desktop install, MCP install, or generic CLI install without a Codex adapter is not completion evidence.
 
 ## Reference 6 status
 
@@ -105,7 +109,7 @@ External live smoke user actions are explicit: `setx MINERU_API_KEY <secret-valu
 
 ## API key 与 config 策略
 
-Reuse only Codex `env_key` names and environment presence booleans. Never copy secret values. Missing keys must produce blocker receipts with fill command, redacted verification command, and resume step. Receipts must use human-checkable labels plus hashes instead of raw private paths.
+Reuse only Codex `env_key` / `env_key_name_only` names and environment presence booleans. Never copy secret values. Missing keys must produce blocker receipts with fill command, redacted verification command, and resume step. Receipts must use human-checkable labels plus hashes instead of raw private paths.
 
 ## 多阶段协同顺序
 
