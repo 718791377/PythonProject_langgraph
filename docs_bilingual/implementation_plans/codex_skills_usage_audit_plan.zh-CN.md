@@ -195,7 +195,17 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 
 基线记录当前 enabled plugins、profile modules、warning counter 与 inventory summary。基线不修改 `config.toml`。
 
-```powershell
+
+规范化审计节奏契约：
+
+| 事项 | 锁定值 | 执行含义 |
+| --- | --- | --- |
+| 观察窗口 | `2026-05-16` 至 `2026-06-15` | 原始 30 天审计窗口已经关闭，后续 monitoring run 不得延长该窗口。 |
+| 计划内重复次数 | 总计 `6` 次计划内审计运行 | Day 0 baseline 1 次、weekly evidence 4 次、Day 30 final evidence 1 次。 |
+| 计划内重复频率 | Day 0 运行 1 次，之后每 7 天运行 weekly evidence，Day 30 再运行 1 次 | Weekly evidence 日期为 2026-05-23、2026-05-30、2026-06-06、2026-06-13；final evidence 日期为 2026-06-15。 |
+| Warning triage 频率 | 仅事件触发 | 只有出现新的 `2% skills context budget` warning 后，才运行窄窗口 triage；不设固定重复次数。 |
+| Post-final 运行 | 只作为 monitoring evidence | 2026-06-15 之后的运行只能更新 review-pending evidence 或 warning triage，不能重开 30 天窗口，也不能授权 profile apply。 |
+| Apply 边界 | cadence 本身不授权 apply | profile apply 仍必须等待后续明确 `approved-to-apply` 授权。 |```powershell
 .\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 7 --json --output .\.tmp\skills-usage-audit-7d.json
 ```
 

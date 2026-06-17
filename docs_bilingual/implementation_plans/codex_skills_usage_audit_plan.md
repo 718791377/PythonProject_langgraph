@@ -195,6 +195,18 @@ Default sources:
 
 The baseline records enabled plugins, profile modules, warning counters, and inventory summary. It does not mutate `config.toml`.
 
+
+Canonical cadence contract:
+
+| Item | Locked value | Execution meaning |
+| --- | --- | --- |
+| Observation window | `2026-05-16` through `2026-06-15` | The original 30-day audit window is closed and must not be extended by later monitoring runs. |
+| Scheduled repeat count | `6` total scheduled audit runs | 1 Day 0 baseline, 4 weekly evidence runs, and 1 Day 30 final evidence run. |
+| Scheduled frequency | Day 0 once, then every 7 days for weekly evidence, then Day 30 once | Weekly evidence dates are 2026-05-23, 2026-05-30, 2026-06-06, and 2026-06-13; final evidence is 2026-06-15. |
+| Warning triage frequency | Event-triggered only | Run a narrow-window triage only after a new `2% skills context budget` warning; no fixed repeat count. |
+| Post-final runs | Monitoring evidence only | Runs after 2026-06-15 can update review-pending evidence or warning triage, but cannot reopen the 30-day window or authorize profile apply. |
+| Apply boundary | Not authorized by cadence | Profile apply still requires a later explicit `approved-to-apply` authorization. |
+
 ```powershell
 .\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 7 --json --output .\.tmp\skills-usage-audit-7d.json
 ```

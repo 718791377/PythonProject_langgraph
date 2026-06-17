@@ -19,6 +19,17 @@ This index records the latest post-final-summary monitoring package. It is audit
 - Profile apply state: `not_authorized`
 - Current allowed action: human review or continued monitoring only
 
+
+## Cadence lock summary
+
+- Original audit window: `2026-05-16` through `2026-06-15`.
+- Scheduled repeat count: `6` total planned runs.
+- Scheduled run shape: Day 0 baseline `1`, weekly evidence `4`, Day 30 final evidence `1`.
+- Scheduled frequency: baseline once, weekly evidence every 7 days, final evidence once on 2026-06-15.
+- Weekly evidence dates: `2026-05-23`, `2026-05-30`, `2026-06-06`, `2026-06-13`.
+- Warning triage cadence: event-triggered only, one narrow-window run after each new warning event, no fixed repeat count.
+- Post-final runs after 2026-06-15: monitoring evidence only; they do not reopen the 30-day window and do not authorize profile apply.
+
 ## Primary evidence package
 
 | Evidence | Path | Purpose |
