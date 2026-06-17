@@ -255,7 +255,7 @@ def spawn_daemon_child(plan: dict[str, Any]) -> dict[str, Any]:
                 "ok": True,
                 "token": "ok:already_running",
                 "exit_code": 0,
-                "message": "Project MOE GUI daemon already appears to be running.",
+                "message": "Project Expert Lens GUI daemon already appears to be running.",
                 "daemon_launch": plan,
                 "existing_pid": pid,
             }
@@ -268,7 +268,7 @@ def spawn_daemon_child(plan: dict[str, Any]) -> dict[str, Any]:
     log_path = Path(str(plan.get("diagnostics_log") or daemon_log_path(str(plan.get("launcher") or "launcher.py"), plan.get("project_root"))))
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("a", encoding="utf-8", errors="replace") as log_handle:
-        log_handle.write("\n=== Project MOE GUI daemon launch ===\n")
+        log_handle.write("\n=== Project Expert Lens GUI daemon launch ===\n")
         log_handle.write(f"argv={plan.get('argv')}\n")
         log_handle.flush()
         kwargs: dict[str, Any] = {
@@ -288,7 +288,7 @@ def spawn_daemon_child(plan: dict[str, Any]) -> dict[str, Any]:
         "ok": True,
         "token": "ok",
         "exit_code": 0,
-        "message": "Project MOE GUI daemon launch requested; launcher parent can exit without a persistent CMD window.",
+        "message": "Project Expert Lens GUI daemon launch requested; launcher parent can exit without a persistent CMD window.",
         "daemon_launch": plan,
         "spawned_pid": process.pid,
         "diagnostics_log": str(log_path),

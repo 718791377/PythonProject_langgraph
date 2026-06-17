@@ -77,17 +77,18 @@ legacy_alias_policy: preserve-project-moe-compatibility
 
 - [x] 新建 canonical 双语实施方案。
 - [x] 不直接改写超大 legacy 方案文件；把它保留为历史实施记录。
-- [ ] 在 `docs_bilingual/docs_registry.yaml` 登记 canonical 方案对。
-- [ ] 运行方案阶段验证并提交 Stage A。
-- [ ] 把 Stage A 合入本地 `main`，必要时清理方案 feature worktree。
-- [ ] 新增 canonical installer/updater/checker wrapper。
-- [ ] 在 `project_moe_gui` runtime 中增加 canonical 常量与显示标签。
-- [ ] 新增 canonical 目标项目启动器与 manifest 项，同时保留旧启动器。
-- [ ] 增加 canonical action alias 与 JSON mirror 字段。
-- [ ] 更新 PySide6 fallback UI 与 QML 文本为 Expert Lens / 专家镜头语义。
-- [ ] 更新 Workbench handoff 文案、artifact metadata 与 handoff targets。
-- [ ] 更新 canonical 命名与 legacy ABI 兼容测试。
-- [ ] 运行 focused tests、static checks、OpenSpec guard、local gate 与 local MR review。
+- [x] 在 `docs_bilingual/docs_registry.yaml` 登记 canonical 方案对。
+- [x] 运行方案阶段验证并提交 Stage A。
+- [x] 把 Stage A 合入本地 `main`，必要时清理方案 feature worktree。
+- [x] 新增 canonical installer/updater/checker wrapper。
+- [x] 在 `project_moe_gui` runtime 中增加 canonical 常量与显示标签。
+- [x] 新增 canonical 目标项目启动器与 manifest 项，同时保留旧启动器。
+- [x] 增加 canonical action alias 与 JSON mirror 字段。
+- [x] 更新 PySide6 fallback UI 与 QML 文本为 Expert Lens / 专家镜头语义。
+- [x] 更新 Workbench handoff 文案、artifact metadata 与 handoff targets。
+- [x] 更新 canonical 命名与 legacy ABI 兼容测试。
+- [ ] 运行 focused tests、static checks、OpenSpec guard、local gate 与 local MR review。focused runtime tests 已通过；更广泛的 gate 仍在本 worktree 中待完成。
+å®æã
 - [ ] 把 Stage B 合入本地 `main`，并停在远端发布门禁前。
 - [ ] 如果目标项目写入权限和 sandbox 条件允许，刷新 A 项目安装并验证新旧启动器。
 
@@ -96,9 +97,14 @@ legacy_alias_policy: preserve-project-moe-compatibility
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-
-- pending implementation evidence: Stage A 方案登记和验证尚未提交。
-- pending implementation evidence: Stage B runtime 与目标项目刷新尚未实施。
+- 2026-06-17 Stage A 证据：canonical 计划对已登记到 registry，并已合入本地 `main`。
+- 2026-06-17 Stage B focused runtime 证据：canonical wrappers、launchers、action aliases、JSON mirror fields、Workbench targets、QML wording 已在 `feature/implement-expert-lens-gui-runtime` 实现；`python test/project_moe_gui_toolchain.test.py` 已通过 108 个测试；broader gates 仍待完成。
+- pending implementation evidence：Stage B broader gates、本地 main 合入、目标项目刷新仍待完成。
+- 2026-06-17 Stage B focused runtime è¯æ®ï¼canonical wrappersãlaunchersãaction aliasesãJSON mirror fieldsãWorkbench targetsãQML wording å·²å¨ `feature/implement-expert-lens-gui-runtime` å®ç°ï¼`python test/project_moe_gui_toolchain.test.py` å·²éè¿ 108 ä¸ªæµè¯ï¼broader gates ä»å¾
+å®æã
+- pending implementation evidenceï¼Stage B broader gatesãæ¬å° main åå
+¥ãç®æ é¡¹ç®å·æ°ä»å¾
+å®æã
 
 <!-- EVIDENCE_INDEX_END -->
 

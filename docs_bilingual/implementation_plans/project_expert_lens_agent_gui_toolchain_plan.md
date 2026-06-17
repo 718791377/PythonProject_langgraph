@@ -77,15 +77,15 @@ Rules:
 - [x] Avoid editing the oversized legacy plan as the source of naming authority; keep it as the legacy implementation history.
 - [x] Register the canonical plan pair in `docs_bilingual/docs_registry.yaml`.
 - [x] Run plan-stage validation; Stage A commit is being prepared.
-- [ ] Integrate Stage A into local `main` and clean the plan feature worktree if appropriate.
-- [ ] Add canonical wrapper scripts for installer/updater/checker names.
-- [ ] Add canonical constants and visible product labels in `project_moe_gui` runtime code.
-- [ ] Add canonical target-project launchers and manifest entries while preserving legacy launchers.
-- [ ] Add canonical action aliases and JSON mirror fields.
-- [ ] Update PySide6 fallback UI and QML text to Expert Lens terminology.
-- [ ] Update Workbench handoff wording, artifact metadata, and handoff targets.
-- [ ] Update tests for canonical naming and legacy ABI compatibility.
-- [ ] Run focused tests, static checks, OpenSpec guard, local gate, and local MR review.
+- [x] Integrate Stage A into local `main` and clean the plan feature worktree if appropriate.
+- [x] Add canonical wrapper scripts for installer/updater/checker names.
+- [x] Add canonical constants and visible product labels in `project_moe_gui` runtime code.
+- [x] Add canonical target-project launchers and manifest entries while preserving legacy launchers.
+- [x] Add canonical action aliases and JSON mirror fields.
+- [x] Update PySide6 fallback UI and QML text to Expert Lens terminology.
+- [x] Update Workbench handoff wording, artifact metadata, and handoff targets.
+- [x] Update tests for canonical naming and legacy ABI compatibility.
+- [ ] Run focused tests, static checks, OpenSpec guard, local gate, and local MR review. Focused runtime tests passed; broader gates are pending in this worktree.
 - [ ] Integrate Stage B into local `main` and stop before remote publication.
 - [ ] Refresh the A project install and verify old and new launchers if target-project write approval/sandbox access is available.
 
@@ -96,7 +96,8 @@ Rules:
 <!-- EVIDENCE_INDEX_START -->
 
 - 2026-06-17 Stage A plan registration evidence: docs registry entry added; `git diff --check`, `tools/check_implementation_plan_rules.py --root . --json`, and `tools/check_precommit_update_archive.py --root . --json` passed before commit.
-- pending implementation evidence: Stage B runtime and target-project refresh have not yet been implemented.
+- 2026-06-17 Stage B focused runtime evidence: canonical wrappers, launchers, action aliases, JSON mirror fields, Workbench targets, QML wording, and tests were implemented in `feature/implement-expert-lens-gui-runtime`; `python test/project_moe_gui_toolchain.test.py` passed 108 tests before broader gates.
+- pending implementation evidence: Stage B broader gates, local-main integration, and target-project refresh are still pending.
 
 <!-- EVIDENCE_INDEX_END -->
 

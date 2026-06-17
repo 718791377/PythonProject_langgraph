@@ -22,6 +22,9 @@ from project_moe_gui.toolchain import stable_toolchain_source_root
 INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_moe_gui.py"
 CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_gui_install.py"
 UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_moe_gui.py"
+CANONICAL_INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_expert_lens_gui.py"
+CANONICAL_CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_expert_lens_gui_install.py"
+CANONICAL_UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_expert_lens_gui.py"
 UNINSTALL_PLANNER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "plan_project_moe_gui_uninstall.py"
 PHASE1_READINESS = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_phase1_readiness.py"
 PHASE1_SCAFFOLD = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "scaffold_project_moe_phase1.py"
@@ -1991,18 +1994,60 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertTrue((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").exists())
             self.assertTrue((project / "project-moe-gui.cmd").exists())
             self.assertTrue((project / "project-moe-gui-silent.vbs").exists())
+            self.assertTrue((project / "project-expert-lens-gui.cmd").exists())
+            self.assertTrue((project / "project-expert-lens-gui-silent.vbs").exists())
             self.assertTrue((project / "tools" / "thesis_moe_turn_gate.py").exists())
             config_payload = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").read_text(encoding="utf-8-sig"))
             self.assertEqual(config_payload["silent_launch"]["entry"], "project-moe-gui-silent.vbs")
             self.assertEqual(config_payload["silent_launch"]["diagnostic_entry"], "project-moe-gui.cmd")
+            self.assertEqual(config_payload["canonical_toolchain"], "project_expert_lens_gui")
+            self.assertEqual(config_payload["product_display_name"], "Project Expert Lens Agent GUI")
+            self.assertEqual(config_payload["silent_launch"]["canonical_entry"], "project-expert-lens-gui-silent.vbs")
+            self.assertEqual(config_payload["silent_launch"]["canonical_diagnostic_entry"], "project-expert-lens-gui.cmd")
             self.assertEqual(config_payload["running_session_turn_gate"]["helper"], "tools/thesis_moe_turn_gate.py")
             manifest = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json").read_text(encoding="utf-8-sig"))
-            self.assertIn("project-moe-gui-silent.vbs", [item["path"] for item in manifest["managed_files"]])
-            self.assertIn("tools/thesis_moe_turn_gate.py", [item["path"] for item in manifest["managed_files"]])
+            managed_paths = [item["path"] for item in manifest["managed_files"]]
+            self.assertIn("project-moe-gui-silent.vbs", managed_paths)
+            self.assertIn("project-expert-lens-gui.cmd", managed_paths)
+            self.assertIn("project-expert-lens-gui-silent.vbs", managed_paths)
+            self.assertIn("tools/thesis_moe_turn_gate.py", managed_paths)
 
             _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
             self.assertEqual(check_payload["status"], "up_to_date")
             self.assertEqual(check_payload["runtime_status"], "skipped_by_flag")
+
+
+    def test_canonical_expert_lens_wrappers_delegate_to_legacy_runtime_and_preserve_abi(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-canonical", session_id="session-canonical")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+
+            _, install_payload = self.run_tool(
+                str(CANONICAL_INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            self.assertEqual(install_payload["command"], "install_project_expert_lens_gui")
+            self.assertEqual(install_payload["legacy_command"], "install_project_moe_gui")
+            self.assertEqual(install_payload["canonical_toolchain"], "project_expert_lens_gui")
+            self.assertTrue((project / "project-moe-gui.cmd").exists())
+            self.assertTrue((project / "project-expert-lens-gui.cmd").exists())
+
+            _, check_payload = self.run_tool(str(CANONICAL_CHECKER), "--target-project", str(project), "--skip-runtime-import")
+            self.assertEqual(check_payload["command"], "check_project_expert_lens_gui_install")
+            self.assertEqual(check_payload["legacy_command"], "check_project_moe_gui_install")
+            self.assertEqual(check_payload["status"], "up_to_date")
+
+            _, update_payload = self.run_tool(str(CANONICAL_UPDATER), "--target-project", str(project), "--dry-run")
+            self.assertEqual(update_payload["command"], "update_project_expert_lens_gui")
+            self.assertEqual(update_payload["legacy_command"], "update_project_moe_gui")
 
     def test_install_fails_without_agent_toml(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -2759,7 +2804,7 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
 
             contract = view_model["product_ui"]["sessions_layout_contract"]
             self.assertEqual(contract["left_list"], "compact_one_line_rows_with_count")
-            self.assertEqual(contract["right_regions"], ["session_details_card", "moe_status_actions_card", "moe_category_lens_selection_card"])
+            self.assertEqual(contract["right_regions"], ["session_details_card", "expert_lens_status_actions_card", "expert_category_lens_selection_card"])
             self.assertTrue(contract["lens_selection_independent_scroll_area"])
             self.assertTrue(contract["category_selection_independent_scroll_area"])
             self.assertEqual(contract["category_lens_selection_layout"], "fixed_category_rows_plus_tall_independent_lens_scroll")
@@ -3276,7 +3321,7 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
             self.assertFalse(workbench["execution_policy"]["starts_durable_team"])
             self.assertFalse(workbench["execution_policy"]["starts_langgraph_workflow"])
             self.assertIn("handoff_targets", workbench)
-            self.assertEqual([item["id"] for item in workbench["handoff_targets"]], ["main-session", "subagent", "durable-team", "langgraph-workflow"])
+            self.assertEqual([item["id"] for item in workbench["handoff_targets"]], ["main-session", "native-experts", "subagent", "durable-team", "persistent-team", "langgraph-workflow"])
             self.assertIn("Handoff target:", workbench["handoff_package_preview"])
             self.assertFalse(workbench["persistence_policy"]["disk_default"])
             self.assertTrue(workbench["persistence_policy"]["clipboard"])
@@ -3291,9 +3336,9 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
 
         qml = gui_shell.qml_shell_path().read_text(encoding="utf-8")
         self.assertIn("Expert Workbench", qml)
-        self.assertIn("Session MOE lenses", qml)
-        self.assertIn("Enable session MOE", qml)
-        self.assertIn("Disable session MOE", qml)
+        self.assertIn("Session expert lenses", qml)
+        self.assertIn("Enable session expert lenses", qml)
+        self.assertIn("Disable session expert lenses", qml)
         self.assertIn("Apply session lenses", qml)
         self.assertIn("Clear session lenses", qml)
         self.assertIn("Empty selection = all lenses", qml)
@@ -3311,6 +3356,8 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
         self.assertIn("main-session", qml)
         self.assertIn("subagent", qml)
         self.assertIn("durable-team", qml)
+        self.assertIn("native-experts", qml)
+        self.assertIn("persistent-team", qml)
         self.assertIn("langgraph-workflow", qml)
         self.assertIn("Copy handoff package", qml)
         self.assertIn("handoffPreview.copy()", qml)
@@ -3340,7 +3387,7 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
             check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Render Project MOE GUI QML pages offscreen or product Widgets pages offscreen", result.stdout)
+        self.assertIn("Render Project Expert Lens GUI QML pages offscreen or product Widgets pages offscreen", result.stdout)
         self.assertIn("--shell", result.stdout)
         self.assertIn("--sections", result.stdout)
         self.assertIn("--size", result.stdout)
@@ -3357,7 +3404,7 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
         spec.loader.exec_module(module)
 
         self.assertEqual(module.DEFAULT_VISUAL_SIZES, ((1180, 720), (1366, 768), (1440, 900)))
-        for required_text in ["Session details", "MOE status and actions", "MOE categories and lenses", "Strict Graduate Advisor Module", "Socratic Questioning Module", "Five Classic Thinking Models Module"]:
+        for required_text in ["Session details", "Expert lens status and actions", "Expert lens modules and lenses", "Strict Graduate Advisor Module", "Socratic Questioning Module", "Five Classic Thinking Models Module"]:
             self.assertIn(required_text, module.SECTION_REQUIRED_TEXT["sessions"])
         parser = module.build_parser()
         args = parser.parse_args(["--view-model-json", "fixture.json", "--no-runtime-reexec", "--json"])
@@ -4593,6 +4640,10 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
         self.assertEqual(cfg["daemon_launch"]["duplicate_instance_guard"]["lock_path"], "D:\\target\\.project-runtime\\project_moe_gui\\project_moe_gui.daemon.lock")
         self.assertEqual(cfg["close_behavior"]["default_close_action"], "ask")
         self.assertEqual(cfg["silent_launch"]["entry"], "project-moe-gui-silent.vbs")
+        self.assertEqual(cfg["canonical_toolchain"], "project_expert_lens_gui")
+        self.assertEqual(cfg["product_display_name"], "Project Expert Lens Agent GUI")
+        self.assertEqual(cfg["silent_launch"]["canonical_entry"], "project-expert-lens-gui-silent.vbs")
+        self.assertEqual(cfg["silent_launch"]["canonical_diagnostic_entry"], "project-expert-lens-gui.cmd")
         self.assertTrue(cfg["silent_launch"]["uses_wscript_hidden_window"])
         self.assertTrue(cfg["silent_launch"]["keeps_preflight_on_cmd"])
         self.assertTrue(cfg["codex_session_discovery"]["enabled"])
@@ -4619,6 +4670,9 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
         silent_text = silent_vbs_text()
         self.assertIn("WScript.Shell", silent_text)
         self.assertIn("project-moe-gui.cmd", silent_text)
+        canonical_silent_text = silent_vbs_text("project-expert-lens-gui.cmd")
+        self.assertIn("project-expert-lens-gui.cmd", canonical_silent_text)
+        self.assertNotIn("project-moe-gui.cmd", canonical_silent_text)
         self.assertIn("shell.Run command, 0, False", silent_text)
 
 

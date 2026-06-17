@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import importlib.util
 import contextlib
@@ -16,7 +16,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     tomllib = None  # type: ignore[assignment]
 
-from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_VERSION
+from project_moe_gui import CLI_CONTRACT, PRODUCT_DISPLAY_NAME, PRODUCT_DISPLAY_NAME_ZH, TOOLCHAIN_VERSION
 from project_moe_gui.qfluent_runtime import check_qfluent_runtime, qfluent_license_manifest
 from project_moe_gui.workbench_artifacts import (
     create_handoff_package,
@@ -28,12 +28,21 @@ from project_moe_gui.workbench_artifacts import (
 
 SCHEMA_VERSION = 1
 GUI_SHELL_CONTRACT = "project-moe-gui-shell-v1"
-WINDOW_TITLE = "Project MOE Agent Console"
+WINDOW_TITLE = PRODUCT_DISPLAY_NAME
 QML_SHELL_RELATIVE = Path("qml/ProjectMoeGui.qml")
 TARGET_QML_SHELL_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
 DEFAULT_MODE_CLI = "tools/thesis_moe_mode.py"
 READ_ACTIONS = {"refresh", "project-status", "list-sessions", "list-lenses", "status"}
 WRITE_ACTIONS = {"project-on", "project-off", "session-on", "session-off", "session-set-lenses", "session-clear-lenses"}
+ACTION_ALIASES = {
+    "list-expert-lenses": "list-lenses",
+    "set-lenses": "session-set-lenses",
+    "set-expert-lenses": "session-set-lenses",
+    "session-set-expert-lenses": "session-set-lenses",
+    "clear-lenses": "session-clear-lenses",
+    "clear-expert-lenses": "session-clear-lenses",
+    "session-clear-expert-lenses": "session-clear-lenses",
+}
 ACTION_COMMANDS = {
     "project-status": ["project-status", "--json"],
     "list-sessions": ["list-sessions", "--json"],
@@ -271,17 +280,27 @@ HANDOFF_TARGETS = [
     {
         "id": "main-session",
         "label": "Main session",
-        "description": "The current leader session uses the selected MOE lenses directly.",
+        "description": "The current leader session uses the selected expert lenses directly.",
+    },
+    {
+        "id": "native-experts",
+        "label": "Native experts",
+        "description": "The leader may paste this package into one or more native expert/subagent tasks; GUI does not spawn them.",
     },
     {
         "id": "subagent",
         "label": "Subagent",
-        "description": "The leader may paste this package into a native subagent task; GUI does not spawn it.",
+        "description": "Compatibility alias for native-experts; GUI does not spawn it.",
     },
     {
         "id": "durable-team",
         "label": "Durable team",
         "description": "The leader may hand this package to a durable team lane; GUI does not start workers.",
+    },
+    {
+        "id": "persistent-team",
+        "label": "Persistent team",
+        "description": "The leader may hand this package to a persistent team lane after threshold checks; GUI does not start workers.",
     },
     {
         "id": "langgraph-workflow",
@@ -317,8 +336,8 @@ def close_behavior_contract() -> dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
         "default_close_action": "ask",
         "auto_hide_to_tray": False,
-        "dialog_title": "Close Project MOE GUI?",
-        "dialog_message": "Choose whether to exit the Project MOE GUI or keep it available in the system tray.",
+        "dialog_title": f"Close {PRODUCT_DISPLAY_NAME}?",
+        "dialog_message": f"Choose whether to exit the {PRODUCT_DISPLAY_NAME} or keep it available in the system tray.",
         "dialog_options": [
             {"id": "exit", "label": "Exit", "effect": "quit_application"},
             {"id": "hide_to_tray", "label": "Hide to tray", "effect": "hide_window_create_tray"},
@@ -423,7 +442,7 @@ def default_lens_categories(lenses: list[dict[str, Any]] | None = None) -> list[
 
 
 def normalize_expert_categories(categories: list[dict[str, Any]] | None, lenses: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
-    """Return the product display-layer categories as the three governed MOE modules.
+    """Return the product display-layer categories as the three governed expert-lens modules.
 
     Target projects may still emit older `review` / `risk` / `thinking` category
     ids or custom public lens ids. The GUI keeps the lens ids but normalizes the
@@ -649,12 +668,12 @@ def generate_expert_handoff_package_preview(
     lens_lines = [f"- {item.get('id')}: {item.get('label')}" for item in selected_lenses]
     return "\n".join(
         [
-            "Project MOE Expert Workbench v2 Handoff Package (draft only; no GUI execution)",
+            "Project Expert Lens Workbench v2 Handoff Package (draft only; no GUI execution)",
             f"Project: {config.get('runtime_project_root') or config.get('target_project_root') or '<target-project>'}",
             f"Agent: {config.get('agent_name') or '<agent>'}",
             f"State namespace: {config.get('state_namespace') or '<namespace>'}",
             f"Handoff target: {target.get('id')} ({target.get('label')})",
-            "Selected MOE lenses:",
+            "Selected expert lenses:",
             *lens_lines,
             f"Task template: {template.get('label')}",
             "",
@@ -665,8 +684,8 @@ def generate_expert_handoff_package_preview(
             str(template.get("prompt") or ""),
             "",
             "Carrier instructions:",
-            "- The GUI generated this package only; it did not start Codex, subagents, durable team, LangGraph, or model APIs.",
-            "- Main session may use one or more selected MOE lenses directly, paste this package to a native subagent, or hand it to a durable team / LangGraph workflow.",
+            "- The GUI generated this package only; it did not start Codex, native experts, subagents, durable team, persistent team, LangGraph, or model APIs.",
+            "- Main session may use one or more selected expert lenses directly, paste this package to native experts/subagents, or hand it to a durable team / persistent team / LangGraph workflow.",
             "",
             "Output format:",
             "1. Key finding",
@@ -685,7 +704,7 @@ def build_workbench_artifact_history(root: Path) -> dict[str, Any]:
             "schema_version": SCHEMA_VERSION,
             "ok": False,
             "token": "blocked:workbench_history_unavailable",
-            "message": "Cannot read Project MOE GUI workbench artifact history.",
+            "message": "Cannot read Project Expert Lens GUI workbench artifact history.",
             "error": short_text(str(exc), 400),
             "items": [],
             "count": 0,
@@ -705,6 +724,8 @@ def build_workbench_artifact_history(root: Path) -> dict[str, Any]:
                 "session_display_id": item.get("session_display_id"),
                 "selected_lenses": string_list(item.get("selected_lenses")),
                 "selected_categories": string_list(item.get("selected_categories")),
+                "selected_expert_lenses": string_list(item.get("selected_expert_lenses") or item.get("selected_lenses")),
+                "selected_expert_categories": string_list(item.get("selected_expert_categories") or item.get("selected_categories")),
                 "task_template_id": item.get("task_template_id"),
                 "path": item.get("path"),
             }
@@ -746,7 +767,7 @@ def build_expert_workbench(config: dict[str, Any], root: Path, lens_catalog: dic
         "schema_version": SCHEMA_VERSION,
         "mode": "handoff_package_generation_only",
         "title": "Expert Workbench v2",
-        "subtitle": "Generate a safe Project MOE handoff package without starting Codex, subagents, durable teams, LangGraph, or model APIs.",
+        "subtitle": "Generate a safe Project Expert Lens handoff package without starting Codex, native experts, subagents, durable teams, persistent teams, LangGraph, or model APIs.",
         "lenses": lenses,
         "categories": categories,
         "task_templates": templates,
@@ -947,7 +968,12 @@ def qml_visual_contract() -> dict[str, Any]:
     }
 
 
+def normalize_gui_action(action: str) -> str:
+    return ACTION_ALIASES.get(str(action or ""), str(action or ""))
+
+
 def expected_cli_command_for_action(action: str) -> str:
+    action = normalize_gui_action(action)
     if action == "session-on":
         return "on"
     if action == "session-off":
@@ -975,6 +1001,7 @@ def private_cli_field_hits(value: Any, path: str = "$") -> list[str]:
 
 
 def validate_write_cli_payload(action: str, payload: dict[str, Any] | None, *, expected_session_id: str | None = None) -> list[dict[str, Any]]:
+    action = normalize_gui_action(action)
     if not isinstance(payload, dict):
         return [
             stable_blocker(
@@ -1144,11 +1171,11 @@ def load_config(config_path: str | Path) -> tuple[dict[str, Any] | None, dict[st
     try:
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
     except FileNotFoundError:
-        return None, stable_blocker("blocked:launcher_config_missing", "Project MOE GUI config file is missing.", path=str(path))
+        return None, stable_blocker("blocked:launcher_config_missing", "Project Expert Lens GUI config file is missing.", path=str(path))
     except Exception as exc:
-        return None, stable_blocker("blocked:launcher_config_invalid", "Cannot parse Project MOE GUI config.", path=str(path), error=str(exc))
+        return None, stable_blocker("blocked:launcher_config_invalid", "Cannot parse Project Expert Lens GUI config.", path=str(path), error=str(exc))
     if not isinstance(payload, dict):
-        return None, stable_blocker("blocked:launcher_config_invalid", "Project MOE GUI config must be a JSON object.", path=str(path))
+        return None, stable_blocker("blocked:launcher_config_invalid", "Project Expert Lens GUI config must be a JSON object.", path=str(path))
     return payload, None
 
 
@@ -1413,6 +1440,7 @@ def filter_sort_session_rows(
 
 
 def action_scope_key(action: str, session_id: str | None = None) -> str:
+    action = normalize_gui_action(action)
     if action.startswith("session-"):
         return f"session:{redact_identifier(session_id)}"
     if action in READ_ACTIONS:
@@ -1421,11 +1449,12 @@ def action_scope_key(action: str, session_id: str | None = None) -> str:
 
 
 def action_label(action: str) -> str:
+    action = normalize_gui_action(action)
     return {
         "refresh": "Refresh status",
         "project-status": "Read project status",
         "list-sessions": "Read sessions",
-        "list-lenses": "Read MOE lenses",
+        "list-lenses": "Read expert lenses",
         "status": "Read effective status",
         "project-on": "Enable project default",
         "project-off": "Disable project default",
@@ -1489,6 +1518,7 @@ def decorate_action_for_button(
 
 
 def readback_specs_for_write_action(action: str, session_id: str | None = None) -> list[tuple[str, str | None]]:
+    action = normalize_gui_action(action)
     if action not in WRITE_ACTIONS:
         return []
     specs: list[tuple[str, str | None]] = [("project-status", None), ("list-sessions", None)]
@@ -1557,6 +1587,8 @@ def build_action_plan(
     project_root: str | Path | None = None,
     python_executable: str | None = None,
 ) -> dict[str, Any]:
+    requested_action = str(action or "")
+    action = normalize_gui_action(requested_action)
     normalized_selected_lenses = expand_deprecated_lens_aliases(selected_lenses or [])
     normalized_selected_categories = string_list(selected_categories or [])
     if action not in ACTION_COMMANDS:
@@ -1564,8 +1596,9 @@ def build_action_plan(
             "schema_version": SCHEMA_VERSION,
             "ok": False,
             "token": "blocked:unsupported_gui_action",
-            "action": action,
-            "message": "Unsupported Project MOE GUI action.",
+            "action": requested_action,
+            "normalized_action": action,
+            "message": "Unsupported Project Expert Lens GUI action.",
             "argv": [],
             "shell": False,
             "writes_state": False,
@@ -1576,7 +1609,8 @@ def build_action_plan(
             "schema_version": SCHEMA_VERSION,
             "ok": False,
             "token": "blocked:missing_session_id",
-            "action": action,
+            "action": requested_action,
+            "normalized_action": action,
             "message": "Selected-session action requires a session id.",
             "argv": [],
             "shell": False,
@@ -1600,6 +1634,7 @@ def build_action_plan(
         "ok": True,
         "token": "ok",
         "action": action,
+        "requested_action": requested_action,
         "scope": scope,
         "scope_key": scope_key,
         "scope_label": scope_label(scope, scope_key),
@@ -1612,6 +1647,8 @@ def build_action_plan(
         "keyboard_shortcut": KEYBOARD_SHORTCUTS.get(action),
         "selected_lenses": normalized_selected_lenses,
         "selected_categories": normalized_selected_categories,
+        "selected_expert_lenses": normalized_selected_lenses,
+        "selected_expert_categories": normalized_selected_categories,
         "requires_readback_after_write": action in WRITE_ACTIONS,
         "readback_after_write": [
             build_action_plan(config, read_action, session_id=read_session_id, project_root=root, python_executable=python_executable)
@@ -1746,6 +1783,9 @@ def normalize_session_row(
             "selected_lenses": [],
             "selected_categories": [],
             "effective_lens_mode": "all",
+            "selected_expert_lenses": [],
+            "selected_expert_categories": [],
+            "effective_expert_lens_mode": "all",
             "lens_selection_scope": "session",
             "lens_selection_summary": "All lenses",
             "last_seen_at": None,
@@ -1821,6 +1861,9 @@ def normalize_session_row(
         "selected_lenses": selected_lenses,
         "selected_categories": selected_categories,
         "effective_lens_mode": effective_lens_mode,
+        "selected_expert_lenses": selected_lenses,
+        "selected_expert_categories": selected_categories,
+        "effective_expert_lens_mode": effective_lens_mode,
         "lens_selection_scope": lens_selection_scope,
         "lens_selection_summary": lens_selection_summary(selected_lenses, selected_categories, effective_lens_mode),
         "last_seen_at": row.get("last_seen_at"),
@@ -1928,7 +1971,7 @@ def build_ui_states(*, has_sessions: bool, blockers: list[dict[str, Any]]) -> di
     return {
         "loading": {
             "title": "Loading state",
-            "message": "Refreshing Project MOE status, sessions, lenses, and runtime diagnostics.",
+            "message": "Refreshing Project Expert Lens status, sessions, expert lenses, and runtime diagnostics.",
             "visible_when": "bridge_refresh_in_progress",
         },
         "empty": {
@@ -1944,7 +1987,7 @@ def build_ui_states(*, has_sessions: bool, blockers: list[dict[str, Any]]) -> di
         },
         "help": {
             "title": "Help",
-            "message": "MOE lenses shape the brief; carriers such as main session, subagent, durable team, and LangGraph remain leader-controlled.",
+            "message": "Expert lenses shape the brief; carriers such as main session, native experts/subagents, durable team, persistent team, and LangGraph remain leader-controlled.",
             "visible_when": "operator_requests_help",
         },
     }
@@ -1998,7 +2041,7 @@ def build_multi_project_panel(config: dict[str, Any], *, source_toolchain_versio
                     "would_update": version_lag,
                     "target_project": str(project_root),
                 },
-                "rollback_hint": "Use the target project's Project MOE GUI rollback note or install manifest rollback pointer before applying updates.",
+                "rollback_hint": "Use the target project's Project Expert Lens GUI rollback note or install manifest rollback pointer before applying updates.",
             }
         )
     return {
@@ -2024,7 +2067,7 @@ def describe_window_structure() -> dict[str, Any]:
             {"id": "status_overview_cards", "purpose": "Qt Quick Material cards for project status, effective state, runtime, and visual shell status"},
             {"id": "project_default_card", "purpose": "project-default effective state and explicit on/off controls"},
             {"id": "session_table", "purpose": "session effective state, invalid/empty/load-failed states, and selected-session controls"},
-            {"id": "expert_workbench", "purpose": "brief-only MOE expert lens selection, task-template drafting, runtime preview, and clipboard copy"},
+            {"id": "expert_workbench", "purpose": "brief-only expert lens selection, task-template drafting, runtime preview, and clipboard copy"},
             {"id": "diagnostics_card", "purpose": "readiness blockers, Qt Quick/QML shell status, optional QFluent legacy dependency status, and suggested next actions"},
             {"id": "footer", "purpose": "read-only refresh status and GUI/runtime readiness"},
         ],
@@ -2094,7 +2137,7 @@ def build_view_model(
         (project_token, "Project status is not fully available."),
         (status_token, "Effective status is not fully available."),
         (table_token, "Session list is not fully available."),
-        (lenses_token, "MOE lens catalogue is not fully available."),
+        (lenses_token, "Expert lens catalogue is not fully available."),
     ]:
         if token != "ok":
             banners.append({"token": token, "message": message})
@@ -2186,7 +2229,7 @@ def build_view_model(
         "session_lens_panel": {
             "schema_version": SCHEMA_VERSION,
             "scope": "session",
-            "title": "Session MOE lenses",
+            "title": "Session expert lenses",
             "selected_row_index": 0 if session_rows else None,
             "selected_row_source": "qml-selected-row",
             "empty_selection_means": "all",
@@ -2298,7 +2341,7 @@ def build_gui_preflight(
         "ok": token == "ok",
         "token": token,
         "exit_code": 0 if token == "ok" else 5,
-        "message": "Project MOE GUI shell preflight passed." if token == "ok" else "Project MOE GUI shell preflight found blockers.",
+        "message": "Project Expert Lens GUI shell preflight passed." if token == "ok" else "Project Expert Lens GUI shell preflight found blockers.",
         "gui_shell_contract": GUI_SHELL_CONTRACT,
         "view_model": view_model,
         "blockers": blockers,
@@ -2318,7 +2361,7 @@ def _product_language_mode(config: dict[str, Any] | None = None) -> str:
 
 
 _PRODUCT_I18N: dict[str, dict[str, str]] = {
-    "app_title": {"zh": "Project MOE 控制台", "en": "Project MOE Agent Console"},
+    "app_title": {"zh": PRODUCT_DISPLAY_NAME_ZH, "en": PRODUCT_DISPLAY_NAME},
     "overview": {"zh": "概览", "en": "Overview"},
     "sessions": {"zh": "会话", "en": "Sessions"},
     "workbench": {"zh": "交接台", "en": "Workbench"},
@@ -2332,15 +2375,15 @@ _PRODUCT_I18N: dict[str, dict[str, str]] = {
     "target_project_only": {"zh": "只显示并控制当前项目会话", "en": "Shows and controls only this target project"},
     "session_list": {"zh": "会话列表", "en": "Session list"},
     "session_details": {"zh": "会话详情", "en": "Session details"},
-    "moe_status_actions": {"zh": "MOE 状态与操作", "en": "MOE status and actions"},
-    "moe_lens_selection": {"zh": "MOE 分类与镜头选择", "en": "MOE categories and lenses"},
-    "session_moe_lenses": {"zh": "会话 MOE 镜头", "en": "Session MOE lenses"},
-    "enable_session_moe": {"zh": "开启本会话 MOE", "en": "Enable session MOE"},
-    "disable_session_moe": {"zh": "关闭本会话 MOE", "en": "Disable session MOE"},
+    "moe_status_actions": {"zh": "专家镜头状态与操作", "en": "Expert lens status and actions"},
+    "moe_lens_selection": {"zh": "专家模块与镜头选择", "en": "Expert lens modules and lenses"},
+    "session_moe_lenses": {"zh": "会话专家镜头", "en": "Session expert lenses"},
+    "enable_session_moe": {"zh": "启用会话专家镜头", "en": "Enable session expert lenses"},
+    "disable_session_moe": {"zh": "关闭会话专家镜头", "en": "Disable session expert lenses"},
     "apply_session_lenses": {"zh": "应用会话镜头", "en": "Apply session lenses"},
     "clear_session_lenses": {"zh": "清空会话镜头", "en": "Clear session lenses"},
-    "moe_categories": {"zh": "MOE 分类", "en": "MOE categories"},
-    "moe_lenses": {"zh": "MOE 镜头", "en": "MOE lenses"},
+    "moe_categories": {"zh": "专家模块", "en": "Expert modules"},
+    "moe_lenses": {"zh": "专家镜头", "en": "Expert lenses"},
     "sessions_total": {"zh": "个会话", "en": "sessions"},
     "search_session_placeholder": {"zh": "搜索会话 ID、标题、目录、分支", "en": "Search session id, title, directory, branch"},
     "session_filter": {"zh": "筛选", "en": "Filter"},
@@ -2419,9 +2462,12 @@ def _product_lens_selection_model(
         "mode": mode,
         "selected_lenses": explicit_lenses,
         "selected_categories": explicit_categories,
+        "selected_expert_lenses": explicit_lenses,
+        "selected_expert_categories": explicit_categories,
         "invalid_lenses": [item for item in raw_explicit_lenses if not _is_valid_lens_or_deprecated_alias(item, lens_ids)],
         "invalid_categories": [item for item in explicit_categories if item not in category_map],
         "effective_lenses": effective_lenses,
+        "effective_expert_lenses": effective_lenses,
         "effective_lens_count": len(effective_lenses),
         "categories": enriched_categories,
         "lenses": enriched_lenses,
@@ -2863,7 +2909,7 @@ def _product_enrich_session_row(
         "visible_session_id": full_id or str(row.get("display_id") or ""),
         "session_id_source": row.get("session_id_source") or "phase1-cli-list-sessions",
         "why_shown": why_shown
-        or "Displayed because target Project MOE state returned this session and no explicit hidden_from_default_view=true gate was applied.",
+        or "Displayed because target Project Expert Lens state returned this session and no explicit hidden_from_default_view=true gate was applied.",
         "testing_metadata": {
             "session_kind": str(row.get("session_kind") or row.get("kind") or "ordinary"),
             "is_test_session": row.get("is_test_session") is True,
@@ -2883,9 +2929,9 @@ def _product_enrich_session_row(
 
 
 def _merge_codex_discovery_into_registered_row(row: dict[str, Any], match: dict[str, Any] | None) -> dict[str, Any]:
-    """Merge authoritative Codex session identity fields into a registered MOE state row.
+    """Merge authoritative Codex session identity fields into a registered expert-lens state row.
 
-    Project MOE state rows own control state such as enabled/disabled and lens selection.
+    Project Expert Lens state rows own control state such as enabled/disabled and lens selection.
     Codex session discovery owns user-visible session identity such as directory,
     created/updated timestamps, branch, and conversation preview.
     """
@@ -2963,7 +3009,7 @@ def _reconcile_product_rows(
                     categories,
                     language=language,
                     why_shown=(
-                        "Displayed because target Project MOE state matched authoritative Codex session metadata for this project."
+                        "Displayed because target Project Expert Lens state matched authoritative Codex session metadata for this project."
                         if match
                         else None
                     ),
@@ -2974,7 +3020,7 @@ def _reconcile_product_rows(
                 {
                     **reconciled,
                     "visible_in_main_table": False,
-                    "why_hidden": "Hidden from the main project session table because no target-project top-level Codex session metadata matched this Project MOE state record.",
+                    "why_hidden": "Hidden from the main project session table because no target-project top-level Codex session metadata matched this Project Expert Lens state record.",
                 }
             )
     for item in discovered:
@@ -3003,7 +3049,7 @@ def _reconcile_product_rows(
                 "selected_categories": [],
                 "effective_lens_mode": "all",
                 "lens_selection_scope": "session",
-                "message": "Discovered from Codex session metadata; no Project MOE session override has been written yet.",
+                "message": "Discovered from Codex session metadata; no Project Expert Lens session override has been written yet.",
             },
             len(result),
             project_default_enabled=project_default_enabled,
@@ -3014,7 +3060,7 @@ def _reconcile_product_rows(
             lenses,
             categories,
             language=language,
-            why_shown="Displayed because Codex session metadata says this session belongs to the target project; no MOE state file exists yet.",
+            why_shown="Displayed because Codex session metadata says this session belongs to the target project; no expert-lens state file exists yet.",
         )
         result.append(
             {
@@ -3030,7 +3076,7 @@ def _reconcile_product_rows(
                     "confidence": "exact",
                     "codex_thread_id": item.get("thread_id"),
                     "source": item.get("source"),
-                    "message": "Codex session discovered from session_meta.cwd; no Project MOE state exists yet.",
+                    "message": "Codex session discovered from session_meta.cwd; no Project Expert Lens state exists yet.",
                     "read_only": True,
                 },
                 "mapping_confidence": "exact",
@@ -3195,7 +3241,7 @@ def build_view_model(
             "left_list_count_breakdown_visible": True,
             "left_list_filter_modes": [str(item.get("id")) for item in table["controls"].get("filter_modes", []) if isinstance(item, dict)],
             "left_list_sort_keys": [str(item.get("id")) for item in table["controls"].get("sort_keys", []) if isinstance(item, dict)],
-            "right_regions": ["session_details_card", "moe_status_actions_card", "moe_category_lens_selection_card"],
+            "right_regions": ["session_details_card", "expert_lens_status_actions_card", "expert_category_lens_selection_card"],
             "full_identity_fields_only_in_detail_card": True,
             "lens_selection_independent_scroll_area": True,
             "category_selection_independent_scroll_area": True,
@@ -3259,7 +3305,6 @@ def build_view_model(
         "Use Workbench exports as safe handoff packages; GUI does not execute carriers.",
     ]
     model["diagnostics_card"] = diagnostics
-    model["window_structure"] = {**dict(model.get("window_structure") or {}), "window_title": _product_text("app_title", language), "product_shell_contract": "project-moe-gui-product-widgets-v1"}
     return model
 
 
@@ -3294,7 +3339,7 @@ def build_gui_preflight(
         "ok": token == "ok",
         "token": token,
         "exit_code": 0 if token == "ok" else 5,
-        "message": "Project MOE GUI product shell preflight passed." if token == "ok" else "Project MOE GUI product shell preflight found blockers.",
+        "message": "Project Expert Lens GUI product shell preflight passed." if token == "ok" else "Project Expert Lens GUI product shell preflight found blockers.",
         "gui_shell_contract": GUI_SHELL_CONTRACT,
         "product_shell_contract": "project-moe-gui-product-widgets-v1",
         "view_model": view_model,
@@ -3384,6 +3429,7 @@ def execute_write_action_with_readback(
             "readback": {},
             "button_state_during_command": {},
         }
+    action = normalize_gui_action(action)
     if action not in WRITE_ACTIONS:
         return {
             "schema_version": SCHEMA_VERSION,
@@ -4051,11 +4097,11 @@ def create_product_widget_window(
             if row is None:
                 return
             payload = execute_write_action_with_readback(config or {}, action, session_id=str(row.get("session_id") or ""), selected_lenses=self._selected_lenses(), selected_categories=self._selected_categories(), project_root=project_root or (self.view_model.get("top_banner") or {}).get("project_root"))
-            QMessageBox.information(self, "Project MOE", f"{payload.get('token')}: {payload.get('message')}")
+            QMessageBox.information(self, PRODUCT_DISPLAY_NAME, f"{payload.get('token')}: {payload.get('message')}")
 
         def _execute_project_action(self, action: str) -> None:
             payload = execute_write_action_with_readback(config or {}, action, project_root=project_root or (self.view_model.get("top_banner") or {}).get("project_root"))
-            QMessageBox.information(self, "Project MOE", f"{payload.get('token')}: {payload.get('message')}")
+            QMessageBox.information(self, PRODUCT_DISPLAY_NAME, f"{payload.get('token')}: {payload.get('message')}")
 
         def _workbench_payload_common(self) -> dict[str, Any]:
             row = self._current_session() or {}
@@ -4064,15 +4110,15 @@ def create_product_widget_window(
         def _copy_handoff_package(self) -> None:
             payload = export_workbench_handoff_package(config or {}, project_root=project_root, **self._workbench_payload_common())
             QApplication.clipboard().setText(str(payload.get("export_text") or json.dumps(payload.get("package") or {}, ensure_ascii=False, indent=2)))
-            QMessageBox.information(self, "Project MOE", f"{payload.get('token')}: copied to clipboard")
+            QMessageBox.information(self, PRODUCT_DISPLAY_NAME, f"{payload.get('token')}: copied to clipboard")
 
         def _save_handoff_draft(self) -> None:
             payload = save_workbench_handoff_draft(config or {}, project_root=project_root, **self._workbench_payload_common())
-            QMessageBox.information(self, "Project MOE", f"{payload.get('token')}: {payload.get('message')}")
+            QMessageBox.information(self, PRODUCT_DISPLAY_NAME, f"{payload.get('token')}: {payload.get('message')}")
 
         def _export_handoff_package(self) -> None:
             payload = export_workbench_handoff_package(config or {}, project_root=project_root, **self._workbench_payload_common())
-            QMessageBox.information(self, "Project MOE", f"{payload.get('token')}: {payload.get('message')}")
+            QMessageBox.information(self, PRODUCT_DISPLAY_NAME, f"{payload.get('token')}: {payload.get('message')}")
 
         def set_selected_section(self, section_id: str) -> None:
             if section_id in self.section_ids:
@@ -4080,7 +4126,7 @@ def create_product_widget_window(
 
         def closeEvent(self, event: Any) -> None:
             box = QMessageBox(self)
-            box.setWindowTitle("Close Project MOE GUI?")
+            box.setWindowTitle(f"Close {PRODUCT_DISPLAY_NAME}?")
             box.setText("Choose whether to exit or hide to tray.")
             exit_button = box.addButton("Exit", QMessageBox.ButtonRole.AcceptRole)
             hide_button = box.addButton("Hide to tray", QMessageBox.ButtonRole.ActionRole)
@@ -4283,8 +4329,8 @@ def _legacy_launch_visible_qml(view_model: dict[str, Any], config: dict[str, Any
             if getattr(event, "type", lambda: None)() != QEvent.Type.Close:
                 return False
             box = QMessageBox()
-            box.setWindowTitle("Close Project MOE GUI?")
-            box.setText("Choose whether to exit the Project MOE GUI or keep it available in the system tray.")
+            box.setWindowTitle(f"Close {PRODUCT_DISPLAY_NAME}?")
+            box.setText(f"Choose whether to exit the {PRODUCT_DISPLAY_NAME} or keep it available in the system tray.")
             exit_button = box.addButton("Exit", QMessageBox.ButtonRole.AcceptRole)
             hide_button = box.addButton("Hide to tray", QMessageBox.ButtonRole.ActionRole)
             box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)

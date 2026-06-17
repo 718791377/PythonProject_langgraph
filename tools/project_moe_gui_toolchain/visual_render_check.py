@@ -16,7 +16,7 @@ DEFAULT_SECTIONS = ["overview", "sessions", "workbench", "diagnostics", "setting
 DEFAULT_VISUAL_SIZES = ((1180, 720), (1366, 768), (1440, 900))
 FIXTURE_PROFILES = ("default", "long-content", "dense-sessions")
 SECTION_REQUIRED_TEXT = {
-    "overview": ["Project MOE", "Project default", "Enable project default", "Disable project default"],
+    "overview": ["Project Expert Lens", "Project default", "Enable project default", "Disable project default"],
     "sessions": [
         "Sessions",
         "Session list",
@@ -27,15 +27,15 @@ SECTION_REQUIRED_TEXT = {
         "Directory:",
         "Branch:",
         "Conversation:",
-        "MOE status and actions",
-        "Session MOE lenses",
-        "MOE categories and lenses",
+        "Expert lens status and actions",
+        "Session expert lenses",
+        "Expert lens modules and lenses",
         "Strict Graduate Advisor Module",
         "Socratic Questioning Module",
         "Five Classic Thinking Models Module",
         "决策树模型专家",
-        "Enable session MOE",
-        "Disable session MOE",
+        "Enable session expert lenses",
+        "Disable session expert lenses",
         "Apply session lenses",
         "Clear session lenses",
     ],
@@ -106,7 +106,7 @@ def parse_size(value: str) -> tuple[int, int]:
     except ValueError as exc:
         raise argparse.ArgumentTypeError("size must use integer WIDTHxHEIGHT") from exc
     if width < 320 or height < 240:
-        raise argparse.ArgumentTypeError("size is too small for Project MOE GUI validation")
+        raise argparse.ArgumentTypeError("size is too small for Project Expert Lens GUI validation")
     return width, height
 
 
@@ -216,7 +216,7 @@ def _fixture_lens(index: int, *, long_content: bool = False) -> dict[str, Any]:
     ]
     lens_id = default_ids[index] if index < len(default_ids) else f"fixture_lens_{index:02d}"
     if long_content:
-        label = "Extremely long Project MOE expert lens label for visual regression and wrapping behavior " + str(index).zfill(2)
+        label = "Extremely long Project Expert Lens expert lens label for visual regression and wrapping behavior " + str(index).zfill(2)
         description = "Long fixture lens description used to stress card, checkbox, and handoff preview rendering without reading private prompts."
     else:
         label = f"Fixture lens {index:02d}"
@@ -263,7 +263,7 @@ def _fixture_category(index: int, lens_count: int, *, long_content: bool = False
         category_id, label, zh_label, lens_ids = governed[index]
         return {"id": category_id, "label": label, "zh_label": zh_label, "en_label": label, "description": "Fixture governed category for visual render gate.", "lens_ids": [item for item in lens_ids if item]}
     category_id = f"category_{index:02d}"
-    label = ("Very long Project MOE expert category label for dense visual regression " + str(index).zfill(2)) if long_content else f"Category {index:02d}"
+    label = ("Very long Project Expert Lens expert category label for dense visual regression " + str(index).zfill(2)) if long_content else f"Category {index:02d}"
     description = "Long category description used by the visual fixture profile." if long_content else "Fixture category for visual render gate."
     lens_ids = [f"fixture_lens_{item:02d}" for item in range(index, lens_count, max(1, min(8, lens_count)))]
     return {"id": category_id, "label": label, "zh_label": label, "en_label": label, "description": description, "lens_ids": lens_ids}
@@ -879,7 +879,7 @@ def run_visual_check(args: argparse.Namespace) -> dict[str, Any]:
                     "ok": True,
                     "token": "ok",
                     "message": "visual render check skipped Workbench handoff export",
-                    "export_text": "Project MOE visual render handoff export placeholder",
+                    "export_text": "Project Expert Lens visual render handoff export placeholder",
                     "session_id": session_id,
                     "session_display_id": session_display_id,
                     "selected_lenses": selected_lenses_json,
@@ -965,7 +965,7 @@ def run_visual_check(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
         "ok": ok,
         "token": token,
-        "message": "Project MOE GUI visual render check passed." if ok else "Project MOE GUI visual render check found render, visibility, or overflow issues.",
+        "message": "Project Expert Lens GUI visual render check passed." if ok else "Project Expert Lens GUI visual render check found render, visibility, or overflow issues.",
         "toolchain": "project_moe_gui_visual_render_check",
         "qml_path": str(qml_path),
         "qml_source": qml_source,
@@ -1044,7 +1044,7 @@ def run_widget_visual_check(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
         "ok": ok,
         "token": token,
-        "message": "Project MOE GUI widget visual render check passed." if ok else "Project MOE GUI widget visual render check found render, visibility, or overflow issues.",
+        "message": "Project Expert Lens GUI widget visual render check passed." if ok else "Project Expert Lens GUI widget visual render check found render, visibility, or overflow issues.",
         "toolchain": "project_moe_gui_visual_render_check",
         "shell": "widgets",
         "target_project": str(args.target_project) if args.target_project else None,
@@ -1060,7 +1060,10 @@ def run_widget_visual_check(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Render Project MOE GUI QML pages offscreen or product Widgets pages offscreen and fail on missing text or visual overflow.")
+    parser = argparse.ArgumentParser(
+        description="Render Project Expert Lens GUI QML pages offscreen or product Widgets pages offscreen and fail on missing text or visual overflow.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--target-project", type=Path, help="Target project that has project-moe-gui.cmd installed.")
     parser.add_argument("--view-model-json", type=Path, help="JSON file containing either a view_model object or a raw view model.")
     parser.add_argument("--shell", choices=["auto", "widgets", "qml"], default="auto", help="Visual shell to render. auto uses the product Widgets shell when the view model declares it, otherwise QML fallback.")

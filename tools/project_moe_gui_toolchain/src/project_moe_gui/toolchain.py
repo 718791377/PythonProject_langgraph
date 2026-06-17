@@ -15,7 +15,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     tomllib = None  # type: ignore[assignment]
 
-from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
+from project_moe_gui import CANONICAL_TOOLCHAIN_NAME, CLI_CONTRACT, LEGACY_PRODUCT_DISPLAY_NAME, PRODUCT_DISPLAY_NAME, PRODUCT_DISPLAY_NAME_ZH, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
 from project_moe_gui.daemon import build_daemon_launch_plan, windows_daemon_artifact_plan
 from project_moe_gui.gui_shell import (
     DEFAULT_EXPERT_CATEGORIES,
@@ -60,17 +60,17 @@ def validate_toolchain_source_root(source_root: Path) -> tuple[str, list[dict[st
     init_py = package_root / "__init__.py"
     status = "import_skipped"
     if not root.exists():
-        errors.append(blocker("blocked:toolchain_source_root_unavailable", "Configured Project MOE GUI toolchain source root is missing.", toolchain_source_root=str(root)))
+        errors.append(blocker("blocked:toolchain_source_root_unavailable", "Configured Project Expert Lens GUI toolchain source root is missing.", toolchain_source_root=str(root)))
         return "missing", errors
     if not init_py.exists():
-        errors.append(blocker("blocked:toolchain_source_root_invalid", "Configured Project MOE GUI toolchain source root does not contain src/project_moe_gui.", toolchain_source_root=str(root), expected=str(init_py)))
+        errors.append(blocker("blocked:toolchain_source_root_invalid", "Configured Project Expert Lens GUI toolchain source root does not contain src/project_moe_gui.", toolchain_source_root=str(root), expected=str(init_py)))
         return "invalid", errors
     code = "import project_moe_gui, project_moe_gui.toolchain; print(project_moe_gui.TOOLCHAIN_NAME)"
     env = dict(os.environ)
     env["PYTHONPATH"] = str(root / "src") + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, env=env)
     if result.returncode != 0:
-        errors.append(blocker("blocked:toolchain_source_root_import_failed", "Configured Project MOE GUI toolchain source root cannot import project_moe_gui.", toolchain_source_root=str(root), stderr=result.stderr[-800:]))
+        errors.append(blocker("blocked:toolchain_source_root_import_failed", "Configured Project Expert Lens GUI toolchain source root cannot import project_moe_gui.", toolchain_source_root=str(root), stderr=result.stderr[-800:]))
         status = "import_failed"
     else:
         status = "import_ok"
@@ -82,9 +82,11 @@ LAUNCHER_RELATIVE = Path("tools/project_moe_gui/launcher.py")
 README_RELATIVE = Path("tools/project_moe_gui/README.md")
 CMD_RELATIVE = Path("project-moe-gui.cmd")
 SILENT_VBS_RELATIVE = Path("project-moe-gui-silent.vbs")
+CANONICAL_CMD_RELATIVE = Path("project-expert-lens-gui.cmd")
+CANONICAL_SILENT_VBS_RELATIVE = Path("project-expert-lens-gui-silent.vbs")
 QML_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
 TURN_GATE_RELATIVE = Path("tools/thesis_moe_turn_gate.py")
-MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE, SILENT_VBS_RELATIVE, QML_RELATIVE, TURN_GATE_RELATIVE]
+MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE, SILENT_VBS_RELATIVE, CANONICAL_CMD_RELATIVE, CANONICAL_SILENT_VBS_RELATIVE, QML_RELATIVE, TURN_GATE_RELATIVE]
 UNINSTALL_MANAGED_ALLOWLIST = {
     "tools/project_moe_gui/launcher.py",
     "tools/project_moe_gui/project_moe_gui.config.json",
@@ -94,6 +96,8 @@ UNINSTALL_MANAGED_ALLOWLIST = {
     "tools/thesis_moe_turn_gate.py",
     "project-moe-gui.cmd",
     "project-moe-gui-silent.vbs",
+    "project-expert-lens-gui.cmd",
+    "project-expert-lens-gui-silent.vbs",
 }
 RECOVERABLE_UPDATE_BLOCKER_CODES = {
     "blocked:toolchain_source_root_unavailable",
@@ -159,7 +163,7 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
         "category": "agent_toml",
         "phase": "repair",
         "action": "align_agent_toml_name_with_requested_agent",
-        "description": "Align the agent TOML top-level name with the Project MOE GUI configuration and readiness command.",
+        "description": "Align the agent TOML top-level name with the Project Expert Lens GUI configuration and readiness command.",
         "requires_target_project_write": True,
     },
     "blocked:agent_toml_missing_extension_sections": {
@@ -243,7 +247,7 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
         "category": "private_prompt_source",
         "phase": "repair",
         "action": "move_private_prompt_source_outside_gui_managed_artifacts",
-        "description": "Keep private prompt source outside Project MOE GUI managed artifacts.",
+        "description": "Keep private prompt source outside Project Expert Lens GUI managed artifacts.",
         "requires_target_project_write": True,
     },
     "blocked:missing_mode_cli": {
@@ -320,7 +324,7 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
         "category": "mode_cli_contract",
         "phase": "repair",
         "action": "repair_mode_cli_schema_version",
-        "description": "Return the supported Project MOE GUI toolchain schema_version in every read-contract envelope.",
+        "description": "Return the supported Project Expert Lens Agent GUI toolchain schema_version in every read-contract envelope.",
         "requires_target_project_write": True,
     },
     "blocked:cli_command_echo_mismatch": {
@@ -978,7 +982,7 @@ def inspect_private_prompt(root: Path, source: str) -> tuple[dict[str, Any], lis
         errors.append(
             blocker(
                 "blocked:private_prompt_source_managed_by_toolchain",
-                "Project-private prompt source must not point at Project MOE GUI managed artifacts.",
+                "Project-private prompt source must not point at Project Expert Lens GUI managed artifacts.",
                 path=norm(rel),
             )
         )
@@ -1215,7 +1219,7 @@ def require_cli_envelope(
         errors.append(
             blocker(
                 "blocked:cli_envelope_schema_version_mismatch",
-                "Mode CLI JSON envelope schema_version is not supported by this Project MOE GUI toolchain.",
+                "Mode CLI JSON envelope schema_version is not supported by this Project Expert Lens Agent GUI toolchain.",
                 command=command,
                 expected=SCHEMA_VERSION,
                 observed=payload.get("schema_version"),
@@ -1873,7 +1877,7 @@ def main() -> int:
     try:
         config = json.loads(config_path.read_text(encoding="utf-8-sig"))
     except Exception as exc:
-        return emit({"schema_version": 1, "ok": False, "token": "blocked:launcher_config_invalid", "exit_code": 5, "message": "Cannot read Project MOE GUI config.", "error": str(exc)}, args.json)
+        return emit({"schema_version": 1, "ok": False, "token": "blocked:launcher_config_invalid", "exit_code": 5, "message": "Cannot read Project Expert Lens GUI config.", "error": str(exc)}, args.json)
 
     project_root = launcher.parents[2]
     source_root = Path(str(config.get("toolchain_source_root") or ""))
@@ -1938,13 +1942,13 @@ def main() -> int:
             "ok": False,
             "token": "blocked:phase1_readiness_gate_unavailable",
             "exit_code": 5,
-            "message": "Cannot run Project MOE Phase 1 readiness gate before GUI preflight.",
+            "message": "Cannot run Project Expert Lens Phase 1 readiness gate before GUI preflight.",
             "project_root": str(project_root),
             "mode_cli": str(mode_cli),
             "error": str(exc),
             "control_mode_allowed": False,
             "target_project_write_allowed_by_launcher": False,
-            "blockers": [{"code": "blocked:phase1_readiness_gate_unavailable", "message": "Cannot run Project MOE Phase 1 readiness gate before GUI preflight.", "error": str(exc)}],
+            "blockers": [{"code": "blocked:phase1_readiness_gate_unavailable", "message": "Cannot run Project Expert Lens Phase 1 readiness gate before GUI preflight.", "error": str(exc)}],
         }, args.json)
 
     if not (readiness.get("ok") and readiness.get("control_mode_allowed") is True and readiness.get("readiness_status") == "ready"):
@@ -1954,7 +1958,7 @@ def main() -> int:
             "ok": False,
             "token": str(readiness.get("token") or "blocked:phase1_readiness_gate_failed"),
             "exit_code": 5,
-            "message": "Project MOE Phase 1 readiness gate blocks GUI preflight before target CLI reads.",
+            "message": "Project Expert Lens Phase 1 readiness gate blocks GUI preflight before target CLI reads.",
             "project_root": str(project_root),
             "mode_cli": str(mode_cli),
             "readiness_status": readiness.get("readiness_status"),
@@ -1991,7 +1995,7 @@ def main() -> int:
     try:
         from project_moe_gui import gui_shell
     except Exception as exc:
-        return emit({"schema_version": 1, "ok": False, "token": "blocked:gui_shell_unavailable", "exit_code": 5, "message": "Cannot import central Project MOE GUI shell.", "toolchain_source_root": str(source_root), "error": str(exc)}, args.json)
+        return emit({"schema_version": 1, "ok": False, "token": "blocked:gui_shell_unavailable", "exit_code": 5, "message": "Cannot import central Project Expert Lens GUI shell.", "toolchain_source_root": str(source_root), "error": str(exc)}, args.json)
 
     runtime_config = dict(config)
     runtime_config["runtime_project_root"] = str(project_root)
@@ -2060,13 +2064,13 @@ def cmd_text(runtime_root: Path = DEFAULT_SHARED_RUNTIME_ROOT) -> str:
     )
 
 
-def silent_vbs_text() -> str:
-    return '''Option Explicit
+def silent_vbs_text(diagnostic_entry: str = "project-moe-gui.cmd") -> str:
+    return f'''Option Explicit
 Dim shell, fso, scriptDir, command, i
 Set shell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
-command = QuoteArg(scriptDir & "\\project-moe-gui.cmd")
+command = QuoteArg(scriptDir & "\\{diagnostic_entry}")
 For i = 0 To WScript.Arguments.Count - 1
   command = command & " " & QuoteArg(WScript.Arguments(i))
 Next
@@ -2084,9 +2088,9 @@ def qml_shell_text() -> str:
 
 
 def readme_text(agent_name: str, namespace: str) -> str:
-    return f"""# Project MOE GUI managed artifacts
+    return f"""# Project Expert Lens Agent GUI managed artifacts
 
-This directory is managed by `D:\\PythonProject_langgraph` Project MOE GUI toolchain.
+This directory is managed by `D:\\PythonProject_langgraph` Project Expert Lens Agent GUI toolchain.
 
 - Agent: `{agent_name}`
 - State namespace: `{namespace}`
@@ -2098,8 +2102,10 @@ Phase 2B provides an import-safe GUI shell and guarded visible-launch path throu
 
 Launch entries:
 
-- `project-moe-gui.cmd`: diagnostic entry. It may show CMD/PowerShell output and supports `--preflight --json`.
-- `project-moe-gui-silent.vbs`: no-console double-click entry for human GUI launch. It delegates to the diagnostic entry with a hidden parent window and leaves machine diagnostics on the `.cmd` path.
+- `project-expert-lens-gui.cmd`: canonical diagnostic entry. It may show CMD/PowerShell output and supports `--preflight --json`.
+- `project-expert-lens-gui-silent.vbs`: canonical no-console double-click entry for human GUI launch.
+- `project-moe-gui.cmd`: legacy diagnostic alias, kept for compatibility.
+- `project-moe-gui-silent.vbs`: legacy no-console alias, kept for compatibility.
 """
 
 
@@ -2120,6 +2126,10 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
         {
             "schema_version": SCHEMA_VERSION,
             "toolchain": TOOLCHAIN_NAME,
+            "canonical_toolchain": CANONICAL_TOOLCHAIN_NAME,
+            "product_display_name": PRODUCT_DISPLAY_NAME,
+            "product_display_name_zh": PRODUCT_DISPLAY_NAME_ZH,
+            "legacy_product_display_name": LEGACY_PRODUCT_DISPLAY_NAME,
             "toolchain_version": TOOLCHAIN_VERSION,
             "cli_contract": CLI_CONTRACT,
             "agent_name": agent_name,
@@ -2158,6 +2168,8 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "silent_launch": {
                 "entry": norm(SILENT_VBS_RELATIVE),
                 "diagnostic_entry": norm(CMD_RELATIVE),
+                "canonical_entry": norm(CANONICAL_SILENT_VBS_RELATIVE),
+                "canonical_diagnostic_entry": norm(CANONICAL_CMD_RELATIVE),
                 "uses_wscript_hidden_window": True,
                 "keeps_preflight_on_cmd": True,
                 "configured_python_executable": daemon_plan.get("configured_python_executable"),
@@ -2204,6 +2216,8 @@ def artifacts(root: Path, agent_name: str, namespace: str, mode_cli: Path, runti
         README_RELATIVE: readme_text(agent_name, namespace),
         CMD_RELATIVE: cmd_text(runtime_root),
         SILENT_VBS_RELATIVE: silent_vbs_text(),
+        CANONICAL_CMD_RELATIVE: cmd_text(runtime_root),
+        CANONICAL_SILENT_VBS_RELATIVE: silent_vbs_text("project-expert-lens-gui.cmd"),
         QML_RELATIVE: qml_shell_text(),
         TURN_GATE_RELATIVE: phase1_turn_gate_template(mode_cli),
     }
@@ -2490,6 +2504,9 @@ def manifest_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path
     return {
         "schema_version": SCHEMA_VERSION,
         "toolchain": TOOLCHAIN_NAME,
+        "canonical_toolchain": CANONICAL_TOOLCHAIN_NAME,
+        "product_display_name": PRODUCT_DISPLAY_NAME,
+        "product_display_name_zh": PRODUCT_DISPLAY_NAME_ZH,
         "toolchain_version": TOOLCHAIN_VERSION,
         "cli_contract": CLI_CONTRACT,
         "target_project_root": str(root),
@@ -2691,7 +2708,7 @@ State namespace: `{namespace}`
 
 Replace this placeholder inside the target project only.
 Do not copy another project's private `MOE.md` content into this file.
-Do not move this content into `.codex/agents/`, `.omx/state/`, or Project MOE GUI managed artifacts.
+Do not move this content into `.codex/agents/`, `.omx/state/`, or Project Expert Lens GUI managed artifacts.
 """
 
 
@@ -2815,7 +2832,7 @@ GUI changes to a running session do not interrupt the current response; they are
 def phase1_turn_gate_template(mode_cli: Path) -> str:
     mode_cli_text = norm(mode_cli)
     return f'''#!/usr/bin/env python3
-"""Per-turn Project MOE status gate for running Codex sessions.
+"""Per-turn Project Expert Lens status gate for running Codex sessions.
 
 This helper is installed as a managed Project MOE GUI artifact. It reads only
 Codex ``session_meta`` records to identify the current session and then delegates
@@ -3066,7 +3083,7 @@ def run_mode_cli(root: Path, mode_cli: Path, session_id: str) -> tuple[dict[str,
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Read Project MOE status for the current running Codex session.")
+    parser = argparse.ArgumentParser(description="Read Project Expert Lens status for the current running Codex session.")
     parser.add_argument("--json", action="store_true", help="Print JSON output.")
     parser.add_argument("--session-id", help="Explicit current session id override.")
     parser.add_argument("--mode-cli", default=str(DEFAULT_MODE_CLI), help="Target-project Phase 1 mode CLI path.")
@@ -3524,6 +3541,9 @@ def install(root: Path, agent_name: str, namespace: str, mode_cli: Path, runtime
         "ok": not errors,
         "token": "ok" if not errors else errors[0]["code"],
         "toolchain": TOOLCHAIN_NAME,
+        "canonical_toolchain": CANONICAL_TOOLCHAIN_NAME,
+        "product_display_name": PRODUCT_DISPLAY_NAME,
+        "product_display_name_zh": PRODUCT_DISPLAY_NAME_ZH,
         "toolchain_version": TOOLCHAIN_VERSION,
         "cli_contract": CLI_CONTRACT,
         "target_project_root": str(root),
@@ -3582,7 +3602,7 @@ def managed_file_uninstall_plan(root: Path, manifest: dict[str, Any]) -> tuple[l
         if rel not in UNINSTALL_MANAGED_ALLOWLIST:
             blocker_payload = blocker(
                 "blocked:uninstall_path_not_in_managed_allowlist",
-                "Uninstall may delete only the Project MOE GUI managed artifact allowlist, even if a target manifest lists another path.",
+                "Uninstall may delete only the Project Expert Lens GUI managed artifact allowlist, even if a target manifest lists another path.",
                 path=rel,
                 allowed=sorted(UNINSTALL_MANAGED_ALLOWLIST),
             )
@@ -3669,7 +3689,7 @@ def plan_uninstall(root: Path, apply_requested: bool = False) -> dict[str, Any]:
     planned_deletes: list[dict[str, Any]] = []
     protected_files: list[str] = []
     if not manifest or not config:
-        errors.extend(load_errors or [blocker("blocked:not_installed", "Project MOE GUI is not installed in target project.")])
+        errors.extend(load_errors or [blocker("blocked:not_installed", "Project Expert Lens GUI is not installed in target project.")])
     else:
         planned_deletes, delete_errors = managed_file_uninstall_plan(root, manifest)
         errors.extend(delete_errors)
@@ -3679,7 +3699,7 @@ def plan_uninstall(root: Path, apply_requested: bool = False) -> dict[str, Any]:
         try:
             applied_file_changes = apply_managed_file_uninstall(root, planned_deletes)
         except Exception as exc:
-            errors.append(blocker("blocked:uninstall_apply_failed", "Project MOE GUI uninstall apply failed before completing all planned deletes.", error=str(exc)))
+            errors.append(blocker("blocked:uninstall_apply_failed", "Project Expert Lens GUI uninstall apply failed before completing all planned deletes.", error=str(exc)))
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "plan_project_moe_gui_uninstall",
@@ -3721,7 +3741,7 @@ def check_install(root: Path, skip_runtime_import: bool = False) -> dict[str, An
     errors: list[dict[str, Any]] = []
     manifest, config, load_errors = existing_install(root)
     if not manifest or not config:
-        errors.extend(load_errors or [blocker("blocked:not_installed", "Project MOE GUI is not installed in target project.")])
+        errors.extend(load_errors or [blocker("blocked:not_installed", "Project Expert Lens GUI is not installed in target project.")])
     else:
         errors.extend(load_errors)
         errors.extend(hash_errors(root, manifest))
