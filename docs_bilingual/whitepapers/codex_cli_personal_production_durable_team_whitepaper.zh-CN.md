@@ -66,28 +66,86 @@ status: draft
 
 ## 10 层到 12 层桥接
 
-支撑研究稿使用 10 层 runtime/governance 分解，因为它研究生产级持久化团队在执行时必须具备哪些能力。本文使用仓库的 12 层产品/商业生命周期主干，因为本仓库还要治理产品、市场、发布、运营和复盘行为。
+支撑研究稿使用 10 层 runtime/governance 分解，因为它研究生产级持久化团队在执行时必须具备哪些能力。本文使用仓库的 12 层产品/商业生命周期主干，因为本仓库还要治理认知叙事、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营和复盘行为。
 
-简言之：10 层模型是执行时 runtime/governance capability model；12 层模型是仓库 operating/lifecycle model，额外覆盖叙事、商业、市场、增长、运营和复盘学习。
+简言之：10 层模型是执行时 runtime/governance capability model；12 层模型是仓库 operating/lifecycle receiving model。两者应当对齐，但不应把研究稿重新编号成 12 层。
 
-- 研究稿第 1-3 层主要落到生命周期的技术、组织和执行层。
-- 研究稿第 4-6 层根据关注点不同，落到技术、指标和运营层：存储、检索质量和运行策略分别需要不同 owner。
-- 研究稿第 7-10 层跨越技术、组织、执行、运营和复盘层，因为质量、评测、安全和控制中心设计都需要生命周期 owner。
-- 12 层生命周期还增加了研究稿不直接承担的四个主干：认知叙事、商业、市场和增长。
+### Canonical Authority Split
 
-这正是两份文件应保持分开的原因：研究稿拆解 runtime 生产能力，白皮书把这些能力放入更大的平台生命周期。参见 `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md` 和 `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md`。
+- 10 层研究模型是 runtime 与 governance capability completeness 的 canonical decision surface。
+- 12 层生命周期模型是 product、business、delivery、platform-operating narrative 与 retrospective learning 的 canonical decision surface。
+- 本白皮书不得把 10 个研究层重命名成新的 canonical runtime list。
+- bridge 文档拥有双向映射语法，但不替代任何一方权威。
+
+### 阅读规则
+
+| 研究稿用途 | 白皮书用途 | 必须采用的阅读规则 |
+| --- | --- | --- |
+| 判断 durable team 是否能在 runtime 执行、持久化、恢复、治理、审计并保持安全 | 判断平台为什么存在、如何运营，以及哪些 lifecycle layers 接收 runtime capability | 如果问题是“系统能否安全且持久地做到这件事”，先读研究稿；如果问题是“这件事属于平台生命周期哪里”，读白皮书和 bridge |
+| 判断 runtime capability gaps | 判断 platform scope、product boundary、operating ownership 与 lifecycle completeness | runtime verdict 留在研究稿；platform adoption verdict 留在 12 层栈 |
+| 把执行能力拆成 10 层 | 把同一能力重新装配进 12 个 lifecycle receiving layers | 任一侧引用另一侧时使用 bridge |
+
+### 10 层到 12 层落点视图
+
+| 10 层 runtime/governance concern | 主要 12 层接收层 | 为什么这样落点 |
+| --- | --- | --- |
+| 持久化内核 | 技术、执行、运营 | state、checkpoint、恢复语义与 rollback 边界必须被设计、使用和运营 |
+| 交互与执行 | 产品、技术、执行 | 用户可见命令和工具执行会变成 product promises 与受治理交付流 |
+| 团队编排 | 组织、执行、运营 | leader-worker 结构会变成 ownership、operating gates 与 coordination discipline |
+| 长期记忆 | 技术、运营、复盘 | memory 既是 runtime retention system，也是 learning feedback loop |
+| 上下文增强 | 技术、指标、运营 | context quality 依赖设计、度量、新鲜度、预算和运行策略 |
+| 向量数据库与检索存储 | 技术、运营 | storage、indexing、tenant isolation、backup、deletion 与 recovery 属于 infrastructure concern |
+| 质量保障 | 技术、执行、运营 | runtime checks 与 approval gates 位于交付和生产运营中 |
+| 评测与回归 | 指标、执行、复盘 | evaluation 需要可度量 baseline、release gates 与 post-run learning |
+| 安全与持久化加固 | 技术、组织、运营 | trust boundaries 需要 architecture、permissions、audit 与 operating discipline |
+| 本地 GUI 控制中心 | 产品、技术、运营 | control surface 同时是 user surface 和 production operations surface |
+
+### 研究稿不直接拥有的 12 层新增主干
+
+生命周期模型额外引入 4 个故意大于 runtime capability decomposition 的主干：认知叙事、商业、市场和增长。它们解释平台为什么存在、为什么值得持续投入、谁需要它，以及知识和 adoption 如何随时间复利。
+
+这正是两份文档应保持分开的原因：研究稿拆解 runtime 生产能力，白皮书把这些能力放入更大的平台生命周期。参见 `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md` 与 `docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.zh-CN.md`。
 
 ## 12 层目标架构
 
-- 12 层主干让平台从叙事一直连接到复盘学习。
-- 4 个虚拟部门把平台战略/产品、工程/平台、Agent 治理、增长/知识职责分开。
-- 24 个责任域、18 个横切模块、48 个核心文档定义个人开发者生产级平台的最低严肃运行面。
-- 12 个受治理 AI Agent 放大执行和评审能力，但最终权威仍属于人类操作者与当前主 Codex leader 会话。
-- 12 本推荐书籍提供本地管理、产品、工程、组织、安全和学习参考基础。
+白皮书目标不是泛化的 multi-agent 故事，而是受治理的 Codex CLI 平台架构。
 
-该清单有意小于下游一人公司经营系统清单。Codex 平台应建设开发者编排机制，而不是吸收下游客户、收入、财务、法律或运营 truth。数量权威见 `docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md`；下游一人公司对照权威见 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`。
+### 层级清单
 
-下游经营系统对照是明确的：5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍、12 个最小启动文档。`docs_bilingual/north_star_plan.zh-CN.md` 是指标层北极星 Plan，用于把本文叙事转成主成功指标、输入指标、护栏指标与分阶段决策阈值。
+| 层 | 核心问题 | 平台在此层拥有的内容 |
+| --- | --- | --- |
+| 0. 认知叙事 | 为什么这个平台存在？ | durable-team story、operator worldview 与可恢复 mental model |
+| 1. 商业 | 为什么持续建设这个平台？ | personal production value、cost discipline 与 ownership boundary |
+| 2. 市场 | 相对于哪些替代方案？ | Codex CLI 相对 ad hoc chat、raw scripts、unmanaged automation 与外部 agent platforms 的位置 |
+| 3. 战略 | 哪些取舍指导行动？ | local-first posture、solo-maintainer control、backend-family separation 与 non-goals |
+| 4. 指标 | 如何判断健康度？ | recovery、approval、quality、throughput、cost、safety、context 与 adoption metrics |
+| 5. 产品 | 平台对外提供什么？ | Codex user-level orchestration surfaces、approval entrypoints、control-center requirements 与 durable-team capability set |
+| 6. 技术 | 平台如何构建？ | Native Codex、native_omx、LangGraph、OpenSpec、repo-local state、persistence、memory、retrieval 与 helper boundaries |
+| 7. 组织 | 谁拥有哪部分？ | human operator authority、current leader session authority、governed agent roles 与 escalation paths |
+| 8. 执行 | 工作如何流动？ | plan freeze、bounded delegation、gates、rollback、validation 与 local-main-first integration flow |
+| 9. 增长 | 能力如何复利？ | reusable skills、templates、policies、source maps 与 learned operating patterns |
+| 10. 运营 | 平台如何保持可运行？ | runbooks、blocked-run query、recovery drills、audits、state management 与 operator control surfaces |
+| 11. 复盘 | 平台如何学习？ | post-run synthesis、memory updates、incident review、evidence review 与 lifecycle correction |
+
+### 架构规则
+
+- 12 层不是 12 个软件模块，而是同一平台的 12 个治理接收视图。
+- 一个 runtime capability 可以落到多个 lifecycle layers，因为 product ownership、execution safety、operating recovery 与 learning 是不同责任。
+- 即使 governed agents 扩展执行能力，当前主 Codex leader session 仍然是最终 human-in-the-loop control surface。
+- `native_omx` 与 `langgraph` 保持为不同 backend families。生命周期模型可以比较它们，但 runtime selection 仍遵循 task-fit rules。
+- 即使 business 或 market 层讨论平台级复用，repo-local durable state 仍必须留在 repo-local。
+
+### 平台规模说明
+
+- 12 个 trunk layers 让平台从 narrative 一直连到 retrospective learning。
+- 4 个 virtual departments 把 platform strategy/product、engineering/platform、agent governance 与 growth/knowledge 职责分开。
+- 24 个 responsibility domains、18 个 cross-cutting modules、48 个 core documents 定义个人生产级开发者平台的最低严肃 operating surface。
+- 12 个 governed AI agents 扩展执行与评审能力，但最终权威仍属于 human operator 与当前主 Codex leader session。
+- 12 本推荐书提供本地 management、product、engineering、organization、security 与 learning 参考基础。
+
+该清单有意小于下游 one-person-company operating-system 清单。Codex 平台应建设 developer orchestration mechanisms，而不是吸收 downstream customer、revenue、finance、legal 或 operations truth。数量权威见 `docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md`；下游对照权威见 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`。
+
+下游 operating-system 对照是明确的：12 层、5 个 virtual departments、30 个 responsibility domains、20 个 cross-cutting modules、60 个 core documents、15 个 governed AI agents、15 本推荐书，以及 12 个最小 startup documents。`docs_bilingual/north_star_plan.zh-CN.md` 是 metrics-layer North Star plan，用于把本文叙事转成 primary success metric、input metrics、guardrails 与 staged decision thresholds。
 
 ## PMI 交付纪律
 

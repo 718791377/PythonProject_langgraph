@@ -70,22 +70,76 @@ This is an AI-era value-delivery system, not only a toolchain. The platform exis
 
 ## 10-To-12 Layer Bridge
 
-The supporting research document uses a ten-layer runtime and governance decomposition because it studies what a production-grade persistent team must be able to do at execution time. This white paper uses the repository's newer 12-layer product/business lifecycle trunk because this repository also governs product, market, release, operations, and retrospective behavior.
+The supporting research document uses a ten-layer runtime and governance decomposition because it studies what a production-grade persistent team must be able to do at execution time. This white paper uses the repository 12-layer product/business lifecycle trunk because this repository also governs narrative, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, and retrospective behavior.
 
-In short: the 10-layer model is the execution-time runtime/governance capability model; the 12-layer model is the repository operating/lifecycle model that includes narrative, business, market, growth, operations, and retrospective learning.
+In short: the 10-layer model is the execution-time runtime/governance capability model; the 12-layer model is the repository operating/lifecycle receiving model. The two documents should be aligned, but the research note should not be renumbered into twelve layers.
 
-Bridge rule:
+### Canonical Authority Split
 
-- Research layers 1-3 map primarily into the lifecycle technical, organization, and execution layers.
-- Research layers 4-6 map into the lifecycle technical, metrics, and operations layers, depending on whether the concern is storage, retrieval quality, or operating policy.
-- Research layers 7-10 map into the lifecycle technical, organization, execution, operations, and retrospective layers because quality, evaluation, security, and control-center design all need lifecycle ownership.
-- The lifecycle adds four platform-governance trunks that the research document does not try to own directly: cognitive narrative, business, market, and growth.
+- The 10-layer research model is the canonical decision surface for runtime and governance capability completeness.
+- The 12-layer lifecycle model is the canonical decision surface for product, business, delivery, platform-operating narrative, and retrospective learning.
+- This white paper must not rename the ten research layers into a new canonical runtime list.
+- The bridge document owns the bidirectional mapping grammar and does not replace either authority.
 
-This is why the two documents should stay distinct: the research document decomposes runtime production capability, while this white paper places that capability inside the larger platform lifecycle. See also `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md` and `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`.
+### Reading Rules
+
+| Research use | White-paper use | Required reading rule |
+| --- | --- | --- |
+| Ask whether the durable team can execute, persist, recover, govern, audit, and stay safe at runtime | Ask why the platform should exist, how it is operated, and which lifecycle layers receive the runtime capability | If the question is `can the system do this safely and durably`, read the research note first; if the question is `where does this belong in the platform lifecycle`, read this white paper and the bridge |
+| Judge runtime capability gaps | Judge platform scope, product boundary, operating ownership, and lifecycle completeness | Runtime verdicts stay in the research note; platform adoption verdicts stay in the 12-layer stack |
+| Decompose execution capability into ten layers | Recompose the same capability into twelve lifecycle receiving layers | Use the bridge when one side cites the other |
+
+### 10-Layer To 12-Layer Landing View
+
+| 10-layer runtime/governance concern | Primary 12-layer receiving layers | Why the landing is correct |
+| --- | --- | --- |
+| Persistence core | Technical, Execution, Operations | State, checkpoints, recovery semantics, and rollback boundaries must be designed, used, and operated |
+| Interaction and execution | Product, Technical, Execution | User-visible commands and tool execution become product promises and governed delivery flow |
+| Team orchestration | Organization, Execution, Operations | Leader-worker structure becomes ownership, operating gates, and coordination discipline |
+| Long-term memory | Technical, Operations, Retrospective | Memory is both a runtime retention system and a learning feedback loop |
+| Context enhancement | Technical, Metrics, Operations | Context quality depends on design, measurement, freshness, budget, and operating policy |
+| Vector database and retrieval storage | Technical, Operations | Storage, indexing, tenant isolation, backup, deletion, and recovery are infrastructure concerns |
+| Quality assurance | Technical, Execution, Operations | Runtime checks and approval gates live in delivery and production operation |
+| Evaluation and regression | Metrics, Execution, Retrospective | Evaluation needs measurable baselines, release gates, and post-run learning |
+| Security and persistence hardening | Technical, Organization, Operations | Trust boundaries require architecture, permissions, audit, and operating discipline |
+| Local GUI control center | Product, Technical, Operations | The control surface is both a user surface and a production operations surface |
+
+### 12-Layer Additions The Research Note Does Not Try To Own
+
+The lifecycle model adds four trunks that are intentionally larger than runtime capability decomposition: cognitive narrative, business, market, and growth. They explain why the platform exists, why it is worth sustaining, who needs it, and how knowledge and adoption compound over time.
+
+This is why the two documents should stay distinct: the research document decomposes runtime production capability, while this white paper places that capability inside the larger platform lifecycle. See also `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md` and `docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.md`.
 
 ## 12-Layer Target Architecture
 
-The white-paper target is not a generic multi-agent story. It is a governed Codex CLI platform architecture:
+The white-paper target is not a generic multi-agent story. It is a governed Codex CLI platform architecture.
+
+### Layer Inventory
+
+| Layer | Primary question | What this platform owns here |
+| --- | --- | --- |
+| 0. Cognitive Narrative | Why does this platform exist? | Durable-team story, operator worldview, and recoverable mental model |
+| 1. Business | Why sustain this platform? | Personal production value, cost discipline, and ownership boundary |
+| 2. Market | Relative to what alternatives? | Codex CLI position versus ad hoc chat, raw scripts, unmanaged automation, and external agent platforms |
+| 3. Strategy | What tradeoffs guide action? | Local-first posture, solo-maintainer control, backend-family separation, and non-goals |
+| 4. Metrics | How is health judged? | Recovery, approval, quality, throughput, cost, safety, context, and adoption metrics |
+| 5. Product | What is the offer? | Codex user-level orchestration surfaces, approval entrypoints, control-center requirements, and durable-team capability set |
+| 6. Technical | How is it built? | Native Codex, native_omx, LangGraph, OpenSpec, repo-local state, persistence, memory, retrieval, and helper boundaries |
+| 7. Organization | Who owns what? | Human operator authority, current leader session authority, governed agent roles, and escalation paths |
+| 8. Execution | How does work move? | Plan freeze, bounded delegation, gates, rollback, validation, and local-main-first integration flow |
+| 9. Growth | How does capability compound? | Reusable skills, templates, policies, source maps, and learned operating patterns |
+| 10. Operations | How does the platform stay alive? | Runbooks, blocked-run query, recovery drills, audits, state management, and operator control surfaces |
+| 11. Retrospective | How does the platform learn? | Post-run synthesis, memory updates, incident review, evidence review, and lifecycle correction |
+
+### Architecture Rules
+
+- The twelve layers are not twelve software modules; they are twelve governing receiving views on one platform.
+- A runtime capability may land in multiple lifecycle layers because product ownership, execution safety, operating recovery, and learning are different responsibilities.
+- The current main Codex leader session remains the final human-in-the-loop control surface even when governed agents expand execution capacity.
+- `native_omx` and `langgraph` remain distinct backend families. The lifecycle model can compare them, but runtime selection still follows task-fit rules.
+- Repo-local durable state stays repo-local even when business or market layers discuss reuse at the platform level.
+
+### Platform Scale Statement
 
 - 12 trunk layers keep the platform connected from narrative to retrospective learning.
 - 4 virtual departments keep platform strategy/product, engineering/platform, agent governance, and growth/knowledge responsibilities separate.
@@ -95,7 +149,7 @@ The white-paper target is not a generic multi-agent story. It is a governed Code
 
 This inventory is intentionally smaller than the downstream one-person-company operating-system inventory. The Codex platform should build developer orchestration mechanisms; it should not absorb downstream customer, revenue, finance, legal, or operations truth. The count authority is `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md`; the downstream comparison authority is `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`.
 
-The downstream operating-system comparison is explicit: 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan that translates this white-paper narrative into the primary success metric, input metrics, guardrails, and staged decision thresholds.
+The downstream operating-system comparison is explicit: 12 layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan that translates this white-paper narrative into the primary success metric, input metrics, guardrails, and staged decision thresholds.
 
 ## PMI Delivery Discipline
 
