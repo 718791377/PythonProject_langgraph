@@ -6,7 +6,7 @@ translation_of: docs_bilingual/implementation_plans/codex_skills_usage_audit_pla
 status: active
 doc_class: implementation_plan
 created_at: 2026-05-16
-last_reviewed: 2026-06-17
+last_reviewed: 2026-06-18
 plan_readiness: final-review-pending
 implementation_lane: audit_only_profile_decision_support
 related_docs:
@@ -17,6 +17,7 @@ runtime_sources:
   - tools/audit_codex_skills_usage.py
   - tools/check_skills_audit_output_retention.py
   - tools/check_skills_audit_final_review_state.py
+  - tools/check_skills_audit_cadence_contract.py
   - tools/check_precommit_update_archive.py
 ---
 # Codex Skills Usage Audit 计划
@@ -172,6 +173,7 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 - `tools/audit_codex_skills_usage.py` 负责收集证据并输出 JSON/Markdown 报告。
 - `tools/check_skills_audit_output_retention.py` 证明原始 audit artifacts 保持 local-only。
 - `tools/check_skills_audit_final_review_state.py` 以只读方式验证最终人工复核、关闭、候选与 apply 门禁状态，不修改 config 或 profiles。
+- `tools/check_skills_audit_cadence_contract.py` 验证已锁定的重复次数、weekly 频率、原始结束日期、事件触发 warning-triage 规则和 post-final monitoring-only 边界。
 - `tools/check_precommit_update_archive.py` 证明本地提交前已检查 existing-file update review 与 OpenSpec archive gates。
 - `tools/run_openspec_guard.py` 聚合仓库级 guard 证据。
 - `test/` 下测试与 `tools/ci/ci_test_manifest.json` 条目保证 audit 行为可复现。
@@ -776,6 +778,17 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] Markdown 摘要渲染 missed weekly runs。
 - [x] 支持 7 天周报运行节奏。
 - [x] 支持 30 天决策报告运行节奏。
+- [x] 新增 `tools/check_skills_audit_cadence_contract.py`。
+- [x] 验证标准计划内重复次数：Day 0 baseline 1 次、weekly run 4 次、Day 30 final run 1 次。
+- [x] 验证 weekly evidence 日期：2026-05-23、2026-05-30、2026-06-06、2026-06-13。
+- [x] 验证原始审计结束日期：2026-06-15。
+- [x] 验证 warning triage 是事件触发流程且不设固定重复次数。
+- [x] 验证 post-final 运行只属于 monitoring evidence，不能授权 profile apply。
+- [x] 将 cadence checker 接入 `tools/run_openspec_guard.py`。
+- [x] 将 cadence checker 登记到 `tools/safety_rule_script_backing_registry.json`。
+- [x] 增加 `test/check_skills_audit_cadence_contract.test.py`。
+- [x] 将 cadence 测试登记到 `tools/ci/ci_test_manifest.json`。
+- [x] Guard JSON 聚合测试覆盖 cadence checker。
 - [x] 支持 warning 延迟 triage 恢复路径。
 - [x] 日志不可读时避免把 0 warning 当成无 warning。
 - [x] 隐私脱敏失败时支持暂停并重跑。
@@ -919,6 +932,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - apply 建议，但不自动 apply。
 - `tools/check_skills_audit_output_retention.py` 的输出留存状态，证明 `.tmp/` artifact 与原始 Skills usage JSON 没有被保留进 Git。
 - `tools/check_skills_audit_final_review_state.py` 的最终复核状态，证明当前审计仍处于 `review-pending + continue monitoring`、`summary-reviewed + closed-no-change` 或 `summary-reviewed + preview-only candidate` 中的哪一种，同时在后续明确 `approved-to-apply` receipt 前保持 profile apply 被阻断。
+- `tools/check_skills_audit_cadence_contract.py` 的 cadence contract 状态，证明原始观察窗口仍为 2026-05-16 至 2026-06-15，计划内审计运行仍固定为 6 次，weekly evidence 日期保持固定，warning triage 仍为事件触发，post-final 运行仍只属于 monitoring evidence。
 - `tools/check_precommit_update_archive.py` 的提交前更新/归档状态，证明本轮提交前既有文件更新复核与 OpenSpec 归档门禁已经通过。
 - 默认人类可读 stdout 也必须渲染 audit state、audit state blockers、enabled plugins 已匹配/未匹配摘要、current profile 推断、inventory summary、log evidence 可用性、budget warning 最近样本数量、有界脱敏 budget-warning 样本摘录与 7 天计数、warning severity 等级、原因与处理动作、all-descriptions-removed / omitted-additional-skills 压力指标、audit-only safety 的 `audit_only` / `mutates_config` / `edits_plugin_cache` / `hard_load_apply_performed` 标志、runtime path privacy 的 `raw_paths_retained=false`、占位符路径与 `privacy_policy`、cadence review 的 late-run / missed-weekly-runs / weekly-report-review 状态、warning triage 状态、warning triage 窗口策略、warning/skipped-loading 计数、脱敏 skipped-loading 样本摘录、skipped-loading 复核动作、warning triage 后续动作建议与 blockers、explicit skill 使用总数与唯一 skill 数、SKILL.md 读取次数、profile helper 调用次数、`noise_review` 状态、剔除噪声 token 数、`raw_noise_tokens_retained=false`、`max_noise_token_length` 与 `token_privacy_policy`、`manual_evidence` 文件请求/读取数、有效/无效记录数、`raw_notes_retained=false`、`source_paths_retained=false`、`max_path_length`、人工记录隐私策略与来源路径隐私策略、`manual_evidence.conflict_review` 状态、冲突/例外数量、是否需要处置与处置说明、脚本能力边界计数、stable tool-call alias registry 的 policy/evidence level/strong-evidence 禁止标志、alias target 数量和有界 target 摘要、decision recommendation 的 advisory-only / profile-apply 禁止标志、四个决策分桶计数与有界分桶样本、recommendations 条数与前几条建议、字段契约状态/passed/blocker/含 `warning_severity` 的违规分组计数、输出留存门禁状态/checker/violation/local-only 细节和提交前更新/归档门禁状态/checker/提交前标志/既有文件更新复核/OpenSpec 归档复核/变更计数细节，确保非 JSON 运行也能安全复核。
 - `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、cadence-review 字段契约与 Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁与 Markdown blocker 输出、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段、不安全或不完整候选记录的 `candidate_record_contract` 阻断，以及候选 Markdown 不执行清单。
@@ -928,6 +942,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 回归测试还必须覆盖 `module_evidence` recommendation 与阈值不一致的报告，防止旧行把与强/弱证据计数矛盾的按需、dormant 或候选建议带入决策。
 - 回归测试还必须覆盖输出留存门禁：强制加入 Git 的 `.tmp/` 原始报告、位于 `.tmp/` 之外的原始 `skills-usage-*.json` 报告必须被阻断，脱敏 Markdown 摘要必须允许。
 - 回归测试还必须覆盖最终复核状态 checker：允许 pending continuation 在无 candidate/apply 时继续，阻断 `summary-reviewed` 前出现 candidate artifacts，要求 reviewed summary 带显式 outcome，并保持 profile apply 未授权。
+- 回归测试还必须覆盖 cadence contract checker：锁定的 6 次运行节奏应通过，缺少固定重复次数说明应失败，错误 final end date 应失败，缺少 post-final monitoring-only 证据应失败。
 - 回归测试还必须覆盖提交前更新/归档门禁：报告必须嵌入 `precommit_update_archive` 状态，字段契约必须阻断缺失、未通过或未启用既有文件更新复核 / OpenSpec 归档门禁的报告，脱敏 Markdown 摘要必须渲染该门禁状态。
 - 回归测试还必须覆盖 `output_retention` 字段契约阻断缺失或未通过的留存状态，并要求脱敏 Markdown 摘要渲染输出留存状态与长期证据格式。
 - 回归测试还必须覆盖 `manual_evidence.conflict_review` 字段契约阻断，以及人工例外 / 已批准 hard-load 例外记录在脱敏 Markdown 摘要中的渲染。
@@ -977,6 +992,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 将标准计划内运行次数锁定为 6 次：Day 0 baseline 1 次、weekly run 4 次、Day 30 final run 1 次。
 - [x] 记录 warning triage 是事件触发流程，不设固定重复次数。
 - [x] 脚本化最终复核状态 checker 已验证当前 pending/closed/candidate/apply-gate 状态。
+- [x] 脚本化 cadence contract checker 已验证重复次数、weekly 节奏、结束日期、warning-triage 频率与 post-final 边界。
 - [ ] 人工复核最终 30 天摘要。
 - [ ] 将最终摘要标记为 `summary-reviewed`，或明确记录 `review-pending + continue monitoring`。
 - [ ] 处理最终摘要中的噪声误报。
