@@ -1,6 +1,6 @@
 # One-Person Company Inventory Map
 
-This map is the concise canonical inventory for the downstream one-person-company operating-system target.
+This map is the concise canonical inventory for the downstream one-person-company operating-system target. For the narrative white paper, see `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.md`.
 
 ## Fresh Source Evidence
 

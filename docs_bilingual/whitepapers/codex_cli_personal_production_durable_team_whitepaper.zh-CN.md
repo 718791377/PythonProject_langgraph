@@ -145,7 +145,7 @@ status: draft
 
 该清单有意小于下游 one-person-company operating-system 清单。Codex 平台应建设 developer orchestration mechanisms，而不是吸收 downstream customer、revenue、finance、legal 或 operations truth。数量权威见 `docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md`；下游对照权威见 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`。
 
-下游 operating-system 对照是明确的：12 层、5 个 virtual departments、30 个 responsibility domains、20 个 cross-cutting modules、60 个 core documents、15 个 governed AI agents、15 本推荐书，以及 12 个最小 startup documents。`docs_bilingual/north_star_plan.zh-CN.md` 是 metrics-layer North Star plan，用于把本文叙事转成 primary success metric、input metrics、guardrails 与 staged decision thresholds。
+下游 operating-system 对照是明确的：12 层、5 个 virtual departments、30 个 responsibility domains、20 个 cross-cutting modules、60 个 core documents、15 个 governed AI agents、15 本推荐书，以及 12 个最小 startup documents。下游叙事型白皮书是 `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.zh-CN.md`。 `docs_bilingual/north_star_plan.zh-CN.md` 是 metrics-layer North Star plan，用于把本文叙事转成 primary success metric、input metrics、guardrails 与 staged decision thresholds。
 
 ## PMI 交付纪律
 
@@ -178,6 +178,7 @@ status: draft
 - `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md` 是本文的详细能力与证据伴随文档。
 - `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md` 定义本仓库使用的 12 层文档栈。
 - `docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md` 定义两套数量权威。
+- `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.zh-CN.md` 是下游业务 operating-system 白皮书。
 - `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 定义 PMI 叠加层与裁剪权威。
 - `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md` 把本文方向转换为分阶段平台方案。
 

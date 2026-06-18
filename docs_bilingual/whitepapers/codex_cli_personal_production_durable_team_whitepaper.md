@@ -149,7 +149,7 @@ The white-paper target is not a generic multi-agent story. It is a governed Code
 
 This inventory is intentionally smaller than the downstream one-person-company operating-system inventory. The Codex platform should build developer orchestration mechanisms; it should not absorb downstream customer, revenue, finance, legal, or operations truth. The count authority is `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md`; the downstream comparison authority is `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`.
 
-The downstream operating-system comparison is explicit: 12 layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan that translates this white-paper narrative into the primary success metric, input metrics, guardrails, and staged decision thresholds.
+The downstream operating-system comparison is explicit: 12 layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. The downstream narrative white paper is `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.md`. `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan that translates this white-paper narrative into the primary success metric, input metrics, guardrails, and staged decision thresholds.
 
 ## PMI Delivery Discipline
 
@@ -184,6 +184,7 @@ Tailoring has five explicit outcomes. Use full architecture for affected scopes 
 - `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md` is the detailed capability and evidence companion for this white paper.
 - `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md` defines the full 12-layer document stack used by this repository.
 - `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md` and `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md` define the two count authorities.
+- `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.md` is the downstream business operating-system white paper.
 - `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md` define the PMI overlay and tailoring authority.
 - `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md` converts this direction into a staged platform plan.
 

@@ -1,6 +1,6 @@
 # 一人公司清单地图
 
-本文是下游一人公司操作系统目标的简明规范清单。
+本文是下游一人公司操作系统目标的简明规范清单。叙事型白皮书见 `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.zh-CN.md`。
 
 ## Fresh Source Evidence
 
