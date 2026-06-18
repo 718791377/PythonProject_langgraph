@@ -5,162 +5,154 @@ doc_class: implementation_plan
 status: active
 ---
 
-# Reference 6/7 User-Level And Project-Level Live Runtime Plan
+# Reference 6/7 Per-Link True Live Runtime Plan
 
 ## Goal
 
-Implement `reference_files/6.md` and `reference_files/7.md` as governed user-level and project-template capability surfaces, update `D:/PythonProject_General` and `D:/PythonProject_General_2`, and keep all work inside the conflict order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
+Upgrade `reference_files/6.md` and `reference_files/7.md` from coarse source-reference or adapter-smoke evidence to per-link, true live runtime governance. Each source link must have its own install target, Codex adapter or fork target, live smoke definition, credential or GUI gate, and hash-redacted receipt before `R6 live-executed` can be claimed.
 
-The raw `reference_files/7.md` file remains ignored. The committed structured authority for that file is `docs_bilingual/reference_manifests/reference7_capability_sources.json`.
+Conflict priority remains `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
 
-## Current Status
+## Current status and correction
+
+The previous rollout installed Reference 6/7 surfaces and recorded checker-passing receipts, but the evidence was too coarse for the new requirement. The new acceptance standard is stricter:
+
+- Raw upstream source discovery is not `R6 live-executed`.
+- Raw upstream install alone is not `R6 live-executed`.
+- A non-Codex upstream must be forked or adapted into a Codex skill, Codex native agent TOML, Codex runtime wrapper, or Codex project template before completion can count.
+- External service links require real credentials and a real service call before live execution can count.
+- GUI or local-service links require a real launch, login or authorization when needed, and a screenshot/export/process/port receipt before live execution can count.
+- Missing credentials are not blockers to planning, but they are blockers to marking that specific link as live-executed.
+
+## User-confirmed defaults
+
+- External services: wait for credentials. If `BROWSERBASE_API_KEY`, `BROWSERBASE_PROJECT_ID`, or `MINERU_API_KEY` is missing, record a user-action blocker and do not mark the affected link live-executed.
+- Install scope: user-level plus project templates. Reusable skills and CLI wrappers install under the user Codex home; reusable project surfaces sync into `D:/PythonProject_General`; heavy or risky opt-in surfaces sync into `D:/PythonProject_General_2`.
+- GUI and local services: full install/login/launch is allowed when needed. Receipts must redact paths, secrets, account identifiers, screenshots, and tokens by hash or short human-checkable labels.
+- Codex config policy: reuse only environment key names and presence booleans from the Codex config shape; never copy secret values.
+
+## Current status anchors
 
 <!-- CURRENT_STATUS_START -->
 
-- 2026-06-17: Reference 6 has existing runtime/checker/test surfaces and must be revalidated in this rollout.
-- 2026-06-17: Reference 7 was reread as a non-empty ignored input and converted into a committed structured manifest.
-- 2026-06-17: User requirement update: every non-Codex upstream, not only Claude Code-only upstreams, must be forked or adapted into a Codex project surface before Codex live-executed status can be claimed.
-
-- 2026-06-17: Reference 7 runtime/checker/test surfaces are implemented; 25/25 capabilities are `R6 live-executed` only through Codex adapter/fork surfaces, with raw upstream live-executed evidence rejected.
-- 2026-06-17: User-level Codex adapters were applied with hash-redacted receipts; General commit `0000634` and General_2 commit `2d07680` carry the template sync evidence.
-- 2026-06-18: Final current-state audit revalidated Reference 6 user-level install/smoke receipts, Reference 7 user-level live-executed receipts, template sync, and local main integration; remote publication remains not authorized.
+- 2026-06-18: Plan freeze reopened the Reference 6/7 work because previous checker-passing evidence was too coarse for the new per-link true live runtime requirement.
+- 2026-06-18: Runtime implementation remains pending until this plan-freeze package is committed and merged into local `main`.
 
 <!-- CURRENT_STATUS_END -->
 
-## Task Backlog
-
 <!-- TASK_BACKLOG_START -->
 
-- [x] Capture Reference 6 status and keep the existing Reference 6 checker in scope.
-- [x] Convert ignored `reference_files/7.md` into committed structured manifest `docs_bilingual/reference_manifests/reference7_capability_sources.json`.
-- [x] Freeze the hard rule that every non-Codex upstream requires a Codex fork/adapter before live-executed status.
-- [x] Merge this plan package into local `main`.
-- [x] Implement Reference 7 runtime, checker, tests, user-level adapters, and receipts.
-- [x] Sync `D:/PythonProject_General` active templates and `D:/PythonProject_General_2` inert templates.
-- [x] Run source, user-level, and template gates; merge implementation to local `main` and stop before remote publication.
+- [x] Re-read Reference 6 and Reference 7 source links.
+- [x] Confirm user defaults for credentials, user-level/template scope, and GUI/live actions.
+- [x] Replace coarse completion wording with per-link true live runtime criteria.
+- [ ] Commit and merge this plan-freeze package into local `main`.
+- [ ] Implement strict per-link live runtime manifest/runtime/checker behavior.
+- [ ] Run source, user-level, template, local gate, and local MR review gates.
+- [ ] Merge implementation into local `main` and stop at remote publication gate.
 
 <!-- TASK_BACKLOG_END -->
-
-## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
 
 | Evidence item | Expected path or command | Status |
 | --- | --- | --- |
-| Plan registration | `docs_bilingual/docs_registry.yaml` | included in this plan package |
-| Reference 7 structured manifest | `docs_bilingual/reference_manifests/reference7_capability_sources.json` | included in this plan package |
-| Reference 6 checker | `python tools/check_reference6_capability_install.py --root . --json` | must remain passing |
-| Plan guard | `python tools/run_openspec_guard.py --root . --json` | required before local merge |
-| Reference 7 runtime/checker | `tools/reference7_capability_install.py`, `tools/check_reference7_capability_install.py` | implemented and registered |
-| General sync | `D:/PythonProject_General` local gate | passed on synced main at `0000634` |
-| General_2 sync | `D:/PythonProject_General_2` local gate | passed on synced main at `2d07680` |
-| Reference 7 live evidence | `python tools/check_reference7_capability_install.py --root . --codex-home C:/Users/lenovo/.codex --require-user-level-installed --require-smoke-tested --require-live-executed --general-root D:/PythonProject_General --general2-root D:/PythonProject_General_2 --require-template-sync --json` | passed on 2026-06-18; 25/25 live-executed through Codex adapter/fork surfaces |
+| Plan-freeze checker | `python tools/check_reference7_capability_install.py --root . --json` | required before plan commit |
+| Reference 6 checker | `python tools/check_reference6_capability_install.py --root . --json` | required before plan commit |
+| OpenSpec guard | `python tools/run_openspec_guard.py --root . --json` | required before plan commit |
+| Implementation strict live check | `python tools/check_reference6_capability_install.py ... --require-live-executed` and `python tools/check_reference7_capability_install.py ... --require-live-executed` | pending implementation |
 
 <!-- EVIDENCE_INDEX_END -->
 
-## Non-Codex upstream hard rule
+## Reference 6 per-link matrix
 
-All upstream projects that are not already Codex-native must be forked or adapted into a Codex project surface before Codex completion can be claimed. This applies to every non-Codex project: Claude Code projects, generic CLI tools, desktop apps, MCP servers, skill packs, templates, and other agent frameworks.
+| Source link | Capability id | Target layer | Required Codex adaptation | True live runtime smoke | Required user input |
+| --- | --- | --- | --- | --- | --- |
+| `https://github.com/nexu-io/open-design` | `open-design` | `D:/PythonProject_General` plus user-level wrapper | Codex runtime wrapper and template adapter | Clone or cached source is available, start the local GUI/service or documented example, then record a render/export/screenshot/port receipt | GUI login or desktop permission if upstream requires it |
+| `https://github.com/nexu-io/html-anything` | `html-anything` | `D:/PythonProject_General` plus user-level wrapper | Codex runtime wrapper and template adapter | Generate one minimal HTML artifact and verify it renders in a browser or local preview | none unless upstream adds account requirements |
+| `https://github.com/browserbase/skills` | `browserbase-skills` | user-level Codex skill/CLI adapter | Codex skill adapter plus service wrapper | Create or inspect a real Browserbase session/API result through the adapter | `BROWSERBASE_API_KEY` and `BROWSERBASE_PROJECT_ID` |
+| `https://github.com/pymupdf/pymupdf` | `pymupdf` | user-level Python tool capability | Codex Python wrapper/checker | Import `fitz`, create a one-page PDF, reopen it, extract text, and render or validate page metadata | none |
+| `https://github.com/opendatalab/MinerU` | `mineru` | user-level CLI/API wrapper | Codex service wrapper and optional template entry | Run a real MinerU package/API smoke against a tiny fixture document | `MINERU_API_KEY` if using official service path |
+| `https://mineru.net/apiManage/limit` | `mineru-api-limit` | user-level service receipt | MinerU service receipt surface | Query or verify the account quota/limit endpoint or equivalent official API status | `MINERU_API_KEY` and logged-in account if required |
+| `https://mineru.net/` | `mineru-site` | user-level service receipt | MinerU service availability receipt | Verify site/API reachability and bind it to the MinerU adapter receipt | network access and any service login required by upstream |
+| `https://github.com/virgiliojr94/book-to-skill` | `book-to-skill` | user-level converter plus template fixture | Codex skill-converter adapter | Convert a tiny markdown/book fixture into a valid Codex `SKILL.md` and run schema/frontmatter smoke | none |
+| `https://github.com/mattpocock/skills` | `mattpocock-skills` | user-level Codex skills adapter | Install or adapt actual skills, not just source receipt | Install at least one upstream skill into an isolated or user-level Codex skill directory and read/route it successfully | none unless upstream source changes |
 
-Allowed counted Codex surfaces:
+## Reference 7 per-link matrix
 
-- Codex `SKILL.md` under the user-level skill directory or a project template.
-- Codex native agent TOML with top-level `name`, `description`, and `developer_instructions`.
-- Codex runtime wrapper/checker with hash-redacted receipts.
-- Codex project-template adapter that is active in `D:/PythonProject_General` or inert/opt-in in `D:/PythonProject_General_2`.
+| Source link | Capability id | Target layer | Required Codex adaptation | True live runtime smoke | Required user input |
+| --- | --- | --- | --- | --- | --- |
+| `https://opc-skills.ft07.com/#install` | `opc-skills-site` | user-level | Codex OPC skill-family adapter | Refresh/read OPC skill family index and run a minimal OPC orchestration fixture | none |
+| `https://github.com/easychen/opc-methodology/skills/opc-orchestrator` | `opc-orchestrator` | user-level | Codex skill | Produce a minimal orchestration artifact from fixture input | none |
+| `https://github.com/easychen/opc-methodology/skills/opc-resource-audit` | `opc-resource-audit` | user-level | Codex skill | Produce a resource-audit artifact from fixture input | none |
+| `https://github.com/easychen/opc-methodology/skills/opc-niche-positioning` | `opc-niche-positioning` | user-level | Codex skill | Produce a niche-positioning artifact from fixture input | none |
+| `https://github.com/easychen/opc-methodology/skills/opc-value-proposition` | `opc-value-proposition` | user-level | Codex skill | Produce a value-proposition artifact from fixture input | none |
+| `https://github.com/easychen/opc-methodology/skills/opc-business-model-design` | `opc-business-model-design` | user-level | Codex skill | Produce a business-model artifact from fixture input | none |
+| `https://github.com/easychen/opc-methodology/skills/opc-mvp-designer` | `opc-mvp-designer` | user-level | Codex skill | Produce an MVP-design artifact from fixture input | none |
+| `https://github.com/easychen/opc-methodology/skills/opc-conversion-loop` | `opc-conversion-loop` | user-level | Codex skill | Produce a conversion-loop artifact from fixture input | none |
+| `https://github.com/easychen/opc-methodology/skills/opc-asset-ops` | `opc-asset-ops` | user-level | Codex skill | Produce an asset-ops checklist from fixture input | none |
+| `https://github.com/easychen/opc-methodology/skills/opc-dashboard-review` | `opc-dashboard-review` | user-level | Codex skill | Review a tiny dashboard fixture and produce a review artifact | none |
+| `https://github.com/msitarzewski/agency-agents` | `agency-agents` | user-level agents | Codex native-agent TOML pack adapter | Generate/list valid TOML agents with `name`, `description`, and `developer_instructions` | none |
+| `https://github.com/alchaincyf/nuwa-skill` | `nuwa-skill` | user-level | Codex skill | Read the installed skill and produce a minimal generated artifact | none |
+| `https://github.com/golutra/golutra` | `golutra` | `D:/PythonProject_General_2` | Codex opt-in GUI/project template adapter | Full install/login/launch or local service start with process/window/port evidence | GUI permission and account if upstream requires it |
+| `https://github.com/DeepExperience/MMSkills` | `mmskills` | user-level | Codex skill collection adapter | Run at least one multimedia fixture smoke or record dependency blocker if a required GUI/model dependency is absent | possible model/GUI dependency |
+| `https://github.com/Yuan1z0825/nature-skills` | `nature-skills` | user-level | Codex skill collection adapter | Run at least one nature-skill fixture smoke | none |
+| `https://github.com/Imbad0202/academic-research-skills` | `academic-research-skills` | user-level | Codex skill | Run a minimal academic-research workflow fixture | none unless external scholarly API is selected |
+| `https://github.com/Agents365-ai/drawio-skill` | `drawio-skill` | user-level | Codex skill | Generate or modify a `.drawio` fixture and verify XML/file structure | optional draw.io desktop/browser if upstream requires visual validation |
+| `https://github.com/nexu-io/html-video` | `html-video` | `D:/PythonProject_General` | Codex runtime wrapper | Generate minimal HTML/video artifact and validate preview or output file | none unless upstream adds account requirements |
+| `https://github.com/nexu-io/nexu` | `nexu` | `D:/PythonProject_General_2` | Codex opt-in bridge/template adapter | Full install/login/launch or local service smoke with account-safe receipt | account/login if upstream requires it |
+| `https://github.com/nexu-io/html-anything` | `html-anything-ref7` | dedupe to Reference 6 | Reuse Reference 6 Codex adapter | Same as Reference 6 `html-anything`; receipt must point to dedupe evidence | same as Reference 6 |
+| `https://github.com/nexu-io/open-design` | `open-design-ref7` | dedupe to Reference 6 | Reuse Reference 6 Codex adapter | Same as Reference 6 `open-design`; receipt must point to dedupe evidence | same as Reference 6 |
+| `https://github.com/safishamsi/graphify` | `graphify` | `D:/PythonProject_General` | Codex runtime wrapper | Generate a graph artifact from a fixture and validate file/graph structure | none |
+| `https://github.com/pixel-cellar/Claude-Code-Game-Studios` | `claude-code-game-studios-pixel-cellar` | `D:/PythonProject_General_2` | Fork/adapt as Codex project template | Generate a Codex project skeleton or fixture game-studio artifact; Claude-only files cannot count | none unless upstream dependency requires it |
+| `https://github.com/Donchitos/Claude-Code-Game-Studios` | `claude-code-game-studios-donchitos` | `D:/PythonProject_General_2` | Fork/adapt as Codex project template | Same as pixel-cellar variant, with independent receipt | none unless upstream dependency requires it |
+| `https://github.com/colbymchenry/codegraph` | `codegraph` | `D:/PythonProject_General` | Codex CLI/MCP runtime wrapper | Generate a code graph from a fixture repo and verify output structure | none unless MCP server path is explicitly selected |
 
-Disallowed completion evidence:
+## Implementation stages
 
-- Raw upstream install only.
-- `.claude/agents`, Claude hooks, non-Codex agent configs, desktop product install, MCP server install, or generic CLI install without a Codex adapter.
-- Live-executed claims without checker-backed receipt and smoke evidence.
+1. Plan-freeze package: update this bilingual plan, preserve the per-link matrix, run local plan gates, commit, and merge local `main` before implementation.
+2. Manifest/schema package: extend Reference 6 and Reference 7 manifests with `live_runtime` records for install target, adapter target, smoke target, credentials, GUI allowance, and blocker policy.
+3. Runtime package: update apply/smoke/check actions so `R6 live-executed` requires the per-link live smoke and so missing credentials produce `R6 blocked` user-action receipts.
+4. User-level package: install or refresh user-level Codex skills, native-agent TOMLs, CLI wrappers, service wrappers, and redacted receipts.
+5. Template package: update `D:/PythonProject_General` active adapters and `D:/PythonProject_General_2` opt-in adapters with matching checkers and local gate integration.
+6. Verification package: run Reference 6/7 strict checks, OpenSpec guard, local gate, local MR review, template gates, and then merge implementation into local `main`.
 
-## Reference 6 status
+After this plan is frozen, the implementation contains at least four mostly independent slices: Reference 6 schema/runtime, Reference 7 schema/runtime, user-level install receipts, and two template sync surfaces. Native experts or durable-team lanes may be used for bounded independent verification, but the main Codex session owns final fan-in and local integration.
 
-Reference 6 already has repository runtime/checker/test surfaces:
+## Checker acceptance changes
 
-- `tools/reference6_capability_install.py` - Reference 6 command-line runtime entrypoint.
-- `tools/reference6_capability_install/manifest.json` - Reference 6 source and layer manifest.
-- `tools/check_reference6_capability_install.py` - Reference 6 repository/user-level surface checker.
-- `test/reference6_capability_install.test.py` - Reference 6 unit and receipt regression tests.
-- `docs_bilingual/implementation_plans/reference6_user_project_capability_install_plan.md` - existing Reference 6 implementation plan.
+- `--require-live-executed` must fail when any per-link live smoke is only source discovery, readme discovery, placeholder adapter presence, or raw upstream installation.
+- `--require-live-executed` must fail with a specific missing credential or GUI/account blocker when a selected external live action cannot run.
+- Receipt validation must require an explained live-runtime field set: `live_runtime_target` names the executed adapter or template, `live_smoke_kind` names the smoke class, `live_smoke_result` records pass or blocked, `credential_gate` lists only required env key names, `codex_adapter_present` proves the Codex-facing surface exists, `raw_upstream_install_only=false` rejects source-only installs, and `redaction_status=no_secrets` confirms secret-safe receipts.
+- Dedupe entries must point to the exact Reference 6 capability receipt used as their live evidence.
+- Template sync checks must prove active adapters exist in General and opt-in adapters exist in General_2.
 
-Fresh validation in this rollout must re-run the Reference 6 checker. Known external-service blockers are explicit user actions: set `MINERU_API_KEY` for MinerU live service smoke, and optionally set `BROWSERBASE_API_KEY` plus `BROWSERBASE_PROJECT_ID` for Browserbase service smoke.
+## Required credentials before affected links can complete
 
-## Reference 7 structured source set
+```powershell
+$env:BROWSERBASE_API_KEY="<secret>"
+$env:BROWSERBASE_PROJECT_ID="<project-id>"
+$env:MINERU_API_KEY="<secret>"
+```
 
-- `https://opc-skills.ft07.com/#install` - id `opc-skills-site`, family `opc`, target `user_level`, adapter `codex_skill_family_adapter`.
-- `https://github.com/easychen/opc-methodology/skills/opc-orchestrator` - id `opc-orchestrator`, family `opc`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/easychen/opc-methodology/skills/opc-resource-audit` - id `opc-resource-audit`, family `opc`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/easychen/opc-methodology/skills/opc-niche-positioning` - id `opc-niche-positioning`, family `opc`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/easychen/opc-methodology/skills/opc-value-proposition` - id `opc-value-proposition`, family `opc`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/easychen/opc-methodology/skills/opc-business-model-design` - id `opc-business-model-design`, family `opc`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/easychen/opc-methodology/skills/opc-mvp-designer` - id `opc-mvp-designer`, family `opc`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/easychen/opc-methodology/skills/opc-conversion-loop` - id `opc-conversion-loop`, family `opc`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/easychen/opc-methodology/skills/opc-asset-ops` - id `opc-asset-ops`, family `opc`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/easychen/opc-methodology/skills/opc-dashboard-review` - id `opc-dashboard-review`, family `opc`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/msitarzewski/agency-agents` - id `agency-agents`, family `agent-pack`, target `user_level`, adapter `codex_agent_pack_adapter`.
-- `https://github.com/alchaincyf/nuwa-skill` - id `nuwa-skill`, family `skill`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/golutra/golutra` - id `golutra`, family `cli-desktop-orchestrator`, target `project_template_general_2`, adapter `codex_template_inert_adapter`.
-- `https://github.com/DeepExperience/MMSkills` - id `mmskills`, family `visual-agent-skill`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/Yuan1z0825/nature-skills` - id `nature-skills`, family `skill-collection`, target `user_level`, adapter `codex_skill_collection_adapter`.
-- `https://github.com/Imbad0202/academic-research-skills` - id `academic-research-skills`, family `research-skill`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/Agents365-ai/drawio-skill` - id `drawio-skill`, family `diagram-skill`, target `user_level`, adapter `codex_skill_adapter`.
-- `https://github.com/nexu-io/html-video` - id `html-video`, family `node-cli`, target `project_template_general`, adapter `codex_runtime_wrapper_adapter`.
-- `https://github.com/nexu-io/nexu` - id `nexu`, family `cli-agent-bridge`, target `project_template_general_2`, adapter `codex_template_inert_adapter`.
-- `https://github.com/nexu-io/html-anything` - id `html-anything-ref7`, family `duplicate-reference6`, target `project_template_general`, adapter `dedupe_to_reference6_codex_adapter`.
-- `https://github.com/nexu-io/open-design` - id `open-design-ref7`, family `duplicate-reference6`, target `project_template_general`, adapter `dedupe_to_reference6_codex_adapter`.
-- `https://github.com/safishamsi/graphify` - id `graphify`, family `code-graph-tool`, target `project_template_general`, adapter `codex_runtime_wrapper_adapter`.
-- `https://github.com/pixel-cellar/Claude-Code-Game-Studios` - id `claude-code-game-studios-pixel-cellar`, family `game-template`, target `project_template_general_2`, adapter `codex_template_inert_adapter`.
-- `https://github.com/Donchitos/Claude-Code-Game-Studios` - id `claude-code-game-studios-donchitos`, family `game-template`, target `project_template_general_2`, adapter `codex_template_inert_adapter`.
-- `https://github.com/colbymchenry/codegraph` - id `codegraph`, family `code-graph-cli-mcp`, target `project_template_general`, adapter `codex_runtime_wrapper_adapter`.
+If any of these are missing, the implementation must print the missing key name and a redacted fill command, then continue with other links while leaving the affected link as `R6 blocked`.
 
-## Layering decision
-
-- User-level: Codex skill adapters, Codex agent-pack adapters, adapter registry, smoke wrappers, and receipts under the user Codex home. Native Codex binaries and core config files must not be patched.
-- `D:/PythonProject_General`: active reusable template/checker/examples for safe adapters and runtime wrappers.
-- `D:/PythonProject_General_2`: inert upgrade samples for heavy, risky, GUI, external-account, or non-Codex-native surfaces.
-- Source repository: runtime/checker/manifest/test/policy source of truth only.
-
-## API key and config policy
-
-- Prefer the same environment-key shape as Codex `config.toml`.
-- Reuse only `env_key` names and environment presence booleans; never copy secret values.
-- Missing keys must produce a blocker receipt with fill command, redacted verification command, and resume step.
-- Receipts must use human-checkable labels plus hashes, not raw private paths.
-
-## Multi-stage collaboration order
-
-1. Freeze this bilingual plan and the committed Reference 7 structured manifest, then merge the plan package into local `main`.
-2. Implement the Reference 7 runtime/checker/test as a repository-owned source of truth. The runtime may write user-level install artifacts only with explicit `--apply --operator-confirmation` flags.
-3. Generate Codex adapter/fork surfaces for each Reference 7 source. For every upstream whose native project shape is not Codex, the adapter must be the counted artifact.
-4. Re-run Reference 6 checks.
-5. Sync `D:/PythonProject_General` with active reusable Reference 7 template/checker/examples and sync `D:/PythonProject_General_2` with inert opt-in samples for heavy or risky surfaces.
-6. Run source, user-level, General, and General_2 gates; integrate local `main`; stop at the remote-publication gate.
-
-After the plan is frozen and at least two independent slices exist, durable-team adoption is allowed. Initial implementation slices are: user-level Codex adapters, source runtime/checker/test, General active templates, General_2 inert templates, and external credential blocker receipts. If native subagents or durable backend calls fail, their timeout or provider error is non-evidence; continue with leader-owned work and record the blocker.
-
-## Runtime/checker requirements
-
-- Add a Reference 7 runtime with `plan`, `apply`, `check`, and `smoke` actions.
-- Add a Reference 7 checker that validates manifest, plan markers, registry/guard/CI registration, Codex adapter rule, user-level receipts, and template sync markers.
-- Every capability record must include `requires_codex_adapter_before_live_executed=true` and `raw_upstream_live_executed_allowed=false`, unless it is an explicit dedupe to Reference 6 and still reuses Codex-side Reference 6 evidence.
-- `R6 live-executed` is valid only when the Codex adapter/fork surface exists and the safe smoke result passes. Heavy external actions may remain `R6 blocked` only with complete blocker instructions.
+Marker compatibility: Reference 7 runtime, every non-Codex upstream, raw upstream install only, env_key_name_only.
 
 ## Verification gates
 
-- Plan phase: `python tools/check_precommit_update_archive.py --root . --json`, `python tools/run_openspec_guard.py --root . --json`, and relevant document-pair checks.
-- Implementation phase: Reference 6 checker, Reference 7 checker, Reference 7 tests, `python tools/run_openspec_guard.py --root . --json`, `tools/ci/local_gate.ps1`, and `tools/ci/local_mr_review.ps1`.
-- Template phase: local gates in both `D:/PythonProject_General` and `D:/PythonProject_General_2` after syncing template files.
+- Pre-commit update/archive review - `python tools/check_precommit_update_archive.py --root . --json`
+- OpenSpec governance guard - `python tools/run_openspec_guard.py --root . --json`
+- Reference 6 user-level smoke gate - `python tools/check_reference6_capability_install.py --root . --codex-home C:/Users/lenovo/.codex --require-user-level-installed --require-smoke-tested --json`
+- Reference 7 strict live/template gate - `python tools/check_reference7_capability_install.py --root . --codex-home C:/Users/lenovo/.codex --require-user-level-installed --require-smoke-tested --require-live-executed --general-root D:/PythonProject_General --general2-root D:/PythonProject_General_2 --require-template-sync --json`
+- Shared local CI gate - `powershell -ExecutionPolicy Bypass -File tools/ci/local_gate.ps1`
+- Local MR review gate - `powershell -ExecutionPolicy Bypass -File tools/ci/local_mr_review.ps1`
+- Local gates in `D:/PythonProject_General` and `D:/PythonProject_General_2` after template sync.
 
 ## Completion criteria
 
-Current audit status: complete locally as of the 2026-06-18 verification pass; remote publication remains closed until an explicit remote action is requested.
-
-- Plan commit is merged into local `main` before implementation starts.
-- Implementation commit is merged into local `main` after gates pass.
-- User-level Reference 7 Codex adapters and receipts are generated or explicit user-action blockers are recorded.
+- The plan-freeze commit is merged into local `main` before runtime implementation starts.
+- Every Reference 6/7 source link has an explicit per-link install and live-smoke record.
+- All non-Codex upstreams have counted Codex adapters or forks before live completion is claimed.
+- Browserbase and MinerU are not marked live-executed unless the required credentials exist and the real service smoke passes.
 - General and General_2 are updated, clean, and locally validated.
-- No remote publication is performed unless the current user message explicitly names that remote action.
-
-Implementation marker: `env_key_name_only` config reuse is required.
+- The implementation commit is merged into local `main`; remote publication remains stopped until the user explicitly requests it.
