@@ -376,6 +376,13 @@ documents:
     zh_cn_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md
 
 
+
+  - doc_id: one_person_company_pmi_operations_refresh_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/one_person_company_pmi_operations_refresh_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/one_person_company_pmi_operations_refresh_plan.zh-CN.md
+
   - doc_id: codex_cli_personal_production_durable_team_delivery_matrix
     doc_class: delivery_matrix
     status: draft
