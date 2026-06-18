@@ -1,10 +1,10 @@
 # Business Management 来源库综合
 
-本文基于对忽略目录 `D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP` 的 2026-06-16 fresh extraction 结果，综合与本仓库相关的经营、产品、架构与交付启发。该抽取产物是本次刷新的证据，不是可替代源文件的缓存结论。本文是 `docs_bilingual/product_lifecycle/` 的综合层，不复制源书长段正文。
+本文基于对忽略目录 `D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP` 的 Stage B fresh extraction 结果，综合与本仓库相关的经营、产品、架构与交付启发。该抽取产物是本次刷新的证据，不是可替代源文件的缓存结论。本文是 `docs_bilingual/product_lifecycle/` 的综合层，不复制源书长段正文。
 
 ## Fresh Extraction 范围
 
-本次刷新以 `2026-06-15T17:33:52Z` 重新生成的忽略态证据目录 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260616/` 为依据，运行 ID 为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`。这些产物是本次刷新的 fresh reading 证据，不替代源文件，也不是可反复套用的结论缓存。
+本次刷新以 `2026-06-18T18:37:58Z` 重新生成的忽略态证据目录 `.omx/state/langgraph/extraction/business_pmp_20260619/` 为依据，运行 ID 为 `one-person-company-pmi-refresh-stageb-20260619`。这些产物是本次刷新的 fresh reading 证据，不替代源文件，也不是可反复套用的结论缓存。
 
 - 清单：`fresh_source_manifest.json`
 - 逐单元提取日志：`fresh_source_items.jsonl`
@@ -112,3 +112,12 @@ PMP 家族为显式交付与治理覆盖提供了主要证据：
 - **平台架构与 operating-system 真相** 来自两份本地架构笔记，以及 Business Management 中关于架构、发现、治理和有意保持小规模的来源。
 - **执行纪律与交付控制** 来自 PMP 标准与 PMBOK 8 时代解读笔记。
 - **仓库跟踪文档** 应继续只保留综合后的源依据，不保留原始提取文本。
+
+## 一人公司运行解释
+
+Stage B 综合保持两个来源家族分离：
+
+- Business Management 来源定义小型经营者如何选择狭窄战略、验证客户、定位 offer、设计产品与支持循环、保护架构边界，并让运营有意保持小而清晰。
+- PMP 来源定义当工作承载客户、收入、信任、支持、合规、发布或受治理 Agent 风险时，如何启动、规划、执行、监控与控制、收尾以及裁剪。
+
+对于一人公司，综合结论不是“总是完整架构”。它是“始终看见 12 层全貌，并在风险出现处局部扩展”。12 个最小启动文档是默认底座；60 文档系统是目标库，只在客户证据、收入暴露、交付复杂度、支持义务、合规、敏感数据或 Agent 自动化证明需要时激活。

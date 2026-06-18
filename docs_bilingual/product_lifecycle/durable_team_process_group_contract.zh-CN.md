@@ -48,7 +48,7 @@ Docs-only slices 如果改变未来 delivery rules 或 acceptance criteria，也
 
 | 输入 | 何时必需 |
 | --- | --- |
-| 来自 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` 的当前 source synthesis | slice 引用 Business Management、PMP、lifecycle、white paper 或 research refresh evidence。 |
+| 来自 `one-person-company-pmi-refresh-stageb-20260619` 的当前 source synthesis | slice 引用 Business Management、PMP、lifecycle、white paper 或 research refresh evidence。 |
 | 当前白皮书 | slice 改变 narrative、platform purpose、lifecycle framing 或 adoption logic。 |
 | 当前治理研究稿 | slice 改变 runtime capability criteria、layer decomposition 或 governance evidence。 |
 | 10-to-12 bridge 与 lifecycle maps | slice 把 runtime findings 映射到 product/business lifecycle zones。 |
@@ -141,3 +141,7 @@ Docs-only slices 如果改变未来 delivery rules 或 acceptance criteria，也
 - 本契约不证明 runtime implementation。
 - 本契约不替代 OpenSpec validation。
 - 本契约不授权 remote publication。
+
+## 一人公司执行契约补充
+
+一人公司中凡是涉及执行的章节，同样使用过程组语法。轻量业务循环可以压缩制品集，但仍要为受影响层级、阶段或模块命名输入、工具与技术、输出。契约只扩展到真实风险面：先扩展承载客户、收入、信任、支持、合规、发布或受治理 Agent 风险的层级；只有耦合系统化时才扩展整个项目。

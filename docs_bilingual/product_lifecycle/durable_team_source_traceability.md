@@ -24,9 +24,9 @@ This document owns:
 
 | Field | Value |
 | --- | --- |
-| Run ID | `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` |
-| Generated at | `2026-06-15T17:33:52Z` |
-| Output root | `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260616/` |
+| Run ID | `one-person-company-pmi-refresh-stageb-20260619` |
+| Generated at | `2026-06-18T18:37:58Z` |
+| Output root | `.omx/state/langgraph/extraction/business_pmp_20260619/` |
 | Total sources | 54 |
 | Total reading units | 9,656 |
 | Total extracted characters | 18,492,044 |
@@ -50,7 +50,7 @@ Tracked docs may cite aggregate facts and paraphrased synthesis. They must not d
 
 ```text
 local source roots
-  -> fresh extraction run fresh-source-lifecycle-whitepaper-pmi-refresh-20260616
+  -> fresh extraction run one-person-company-pmi-refresh-stageb-20260619
   -> manifest, report, and synthesis summary
   -> fresh_source_reading_evidence.md
   -> source traceability and delivery matrix
@@ -132,3 +132,7 @@ Traceability outputs become process-group inputs when work becomes execution-fac
 - This file does not replace source books or repository authority documents.
 - This file does not prove runtime implementation.
 - This file does not approve remote publication.
+
+## Product Lifecycle Markdown Reread
+
+This refresh also read 26 Markdown documents under `docs_bilingual/product_lifecycle/` as full documents through `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619`, for 297,871 characters and all `ok` status. This proves the current lifecycle documents themselves were reread before updating the white paper, one-person-company North Star, lifecycle maps, and tailoring rules.

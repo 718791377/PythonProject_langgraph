@@ -13,7 +13,7 @@
 
 ## 本地 PMP 来源覆盖
 
-本次刷新只读取本地 `PMP/` 文件。fresh extraction evidence 于 `2026-06-15T17:33:52Z` 在 `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260616/` 重新生成，并记录 23 个 PMP 家族来源：9 个 PDF / 3,035 页、2 个 EPUB / 58 个 spine item、12 个 Markdown 全文笔记，共 3,105 个 PMP 读取单元和 4,330,816 个抽取字符。仓库只记录以下覆盖摘要与治理映射综合。
+本次刷新只读取本地 `PMP/` 文件。fresh extraction evidence 于 `2026-06-18T18:37:58Z` 在 `.omx/state/langgraph/extraction/business_pmp_20260619/` 重新生成，并记录 23 个 PMP 家族来源：9 个 PDF / 3,035 页、2 个 EPUB / 58 个 spine item、12 个 Markdown 全文笔记，共 3,105 个 PMP 读取单元和 4,330,816 个抽取字符。仓库只记录以下覆盖摘要与治理映射综合。
 
 | 本地参考资料 | 格式 | 覆盖量 | 主要治理用途 |
 | --- | --- | ---: | --- |
@@ -32,9 +32,9 @@
 
 ## PMI 官方 Web 新鲜度复核
 
-本次刷新也在 2026-06-16 复核了 PMI 公开 standards 页面，避免把私有本地目录当成唯一新鲜度信号。本地抽取仍是内容证据边界；公开复核只记录当前 catalog metadata。
+本次刷新也在 2026-06-18 复核了 PMI 公开 standards 页面，避免把私有本地目录当成唯一新鲜度信号。本地抽取仍是内容证据边界；公开复核只记录当前 catalog metadata。
 
-| PMI 公开来源 | 2026-06-16 复核到的官方目录状态 | 仓库决策 |
+| PMI 公开来源 | 2026-06-18 复核到的官方目录状态 | 仓库决策 |
 | --- | --- | --- |
 | <https://www.pmi.org/standards/pmbok> | `PMBOK Guide` 已列为第 8 版，408 页，发布日期为 2025 年 11 月，并有 2025 年 12 月 22 日发布的第二次印刷勘误。 | 把 PMBOK 第 8 版作为当前项目管理主叠加层；PMBOK 第 7 版和第 6 版只作为连续性与 I/T/O 补充。 |
 | <https://www.pmi.org/standards/process-groups> | `Process Groups: A Practice Guide` 列为 370 页，发布日期为 2022 年 11 月，并描述五个过程组以及带输入、工具与技术、输出的 49 个过程。 | 用作生命周期层级和交付门的面向执行过程组语法。 |
@@ -203,3 +203,18 @@
 ## Platform Rule
 
 Codex 平台仓库可以定义共享 lifecycle references、templates、checkers 和 role policies。它不得成为下游项目的 repo-local durable truth。下游项目拥有自己的 OpenSpec tree、durable state、release state 和 lessons learned。
+
+## 一人公司 PMI 运行叠加层
+
+对于下游一人公司运营系统，PMI 用于决定执行纪律，而不是引入企业级仪式。
+
+| PMI 来源家族 | 进入触发器 | 一人公司用法 | 退出规则 |
+| --- | --- | --- | --- |
+| PMBOK 第 8 版 | 任何真实项目、offer、release、受治理 Agent 工作流或业务运行循环需要价值与裁剪纪律 | 用价值交付、project canvas、绩效关注点、AI 时代工作、混合交付和裁剪作为主叠加层 | 当循环私有、可逆、低风险且无外部承诺时，退出到轻量 note |
+| Process Groups | 任何执行流产生交付物、承诺、验证、发布、支持或收尾证据 | 按启动 / 规划 / 执行 / 监控与控制 / 收尾写输入 / 工具与技术 / 输出 | 受影响层已有 owner、验证、风险、回滚/停止和学习证据时停止扩展 |
+| Agile Practice Guide | discovery、原型、访谈、MVP、渠道测试或不确定产品/市场工作 | 在冻结预测式交付计划前使用适应式反馈循环 | 触达客户、收入、信任、合规或发布影响前冻结更强控制 |
+| 项目集标准 | 多个相关 initiative 需要协同收益、依赖、顺序或能力增量 | 只有相关 initiative 必须一起管理时，才把 solo operator 路线图视为项目集 | 当工作回到单一有边界项目或模块时退出 |
+| 项目组合标准 | 竞争性投入需要在价值、容量、runway、风险或业务线之间取舍 | 用项目组合思维做优先级和 stop/pivot 决策 | 当只剩一个有清晰 owner 和预算的 active bet 时退出 |
+| PMO 实践指南 | 标准、评审、模板、节奏、赋能或监督成为重复性服务 | 使用 solo PMO / chief-of-staff 服务层，而不是新增部门 | 当一次性循环不再需要共享治理服务时退出 |
+
+运行规则是先局部轻量。扩展真正承载风险的层级、阶段、模块或 release slice；只有耦合变成系统性时，才扩展整个项目。

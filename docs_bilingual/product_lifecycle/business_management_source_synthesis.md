@@ -4,12 +4,13 @@ This document summarizes repository-relevant lessons from the fresh extraction r
 
 ## Fresh Extraction Scope
 
-This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260616/` freshly regenerated at `2026-06-15T17:33:52Z` with run ID `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`. These artifacts are evidence for this refresh, not a substitute for the source files and not a reusable conclusion cache.
+This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/business_pmp_20260619/` freshly regenerated at `2026-06-18T18:37:58Z` with run ID `one-person-company-pmi-refresh-stageb-20260619`. These artifacts are evidence for this refresh, not a substitute for the source files and not a reusable conclusion cache.
 
 - Manifest: `fresh_source_manifest.json`
 - Per-unit extraction log: `fresh_source_items.jsonl`
 - Compact rollup: `fresh_source_synthesis.json`
 - Extractor entrypoint: `fresh_extract_sources.py`
+- Lifecycle Markdown manifest: `product_lifecycle_markdown_manifest.json`
 
 All 54 recorded sources completed with status `ok`.
 
@@ -112,3 +113,12 @@ For `D:/PythonProject_langgraph`, the fresh-read evidence supports a split model
 - **Platform architecture and operating-system truth** come from the two local architecture notes plus Business Management sources on architecture, discovery, governance, and intentional smallness.
 - **Execution discipline and delivery control** come from PMP standards and PMBOK-8-era interpretation notes.
 - **Tracked repository docs** should continue to summarize source-backed implications, not preserve raw extraction text.
+
+## One-Person-Company Operating Interpretation
+
+The Stage B synthesis keeps two source families separate:
+
+- Business Management sources define how a small operator chooses a narrow strategy, validates customers, positions an offer, designs product and support loops, protects architecture boundaries, and keeps operations intentionally small.
+- PMP sources define how execution is started, planned, performed, monitored, controlled, closed, and tailored when the work carries customer, revenue, trust, support, compliance, release, or governed-agent risk.
+
+For a one-person company, the synthesis is not "always full architecture." It is "always full awareness of the 12 layers, with local expansion where risk appears." The 12 minimal startup documents are the default floor. The 60-document system is a target library that becomes active only when customer evidence, revenue exposure, delivery complexity, support obligations, compliance, sensitive data, or agent automation justify it.

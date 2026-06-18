@@ -1,10 +1,10 @@
 # One-Person Company Inventory Map
 
-This map is the concise canonical inventory for the downstream one-person-company operating-system target. For the narrative white paper, see `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.md`.
+This map is the concise canonical inventory for the downstream one-person-company operating-system target. For the narrative white paper, see `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.md`. For the dedicated North Star, see `docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.md`.
 
 ## Fresh Source Evidence
 
-This map uses the June 16 fresh extraction run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` (`2026-06-15T17:33:52Z`) as its evidence boundary. Exact inventory counts come from the full-text read of `Business Management/Architecture note 2 - personal production one-person company.md` (source `S0031`, 18,544 characters). Business Management sources explain one-person-company operating principles; PMP sources provide process-group, PMO, program, portfolio, and tailoring discipline.
+This map uses the Stage B fresh extraction run `one-person-company-pmi-refresh-stageb-20260619` (`2026-06-18T18:37:58Z`) as its current source-evidence boundary for `Business Management/` and `PMP/`. Exact inventory counts come from the full-text read of the local one-person-company architecture note under `Business Management/` (18,544 characters in the manifest). Business Management sources explain one-person-company operating principles; PMP sources provide process-group, PMO, program, portfolio, agile, and tailoring discipline. Current lifecycle Markdown files were also reread as full documents in `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` (26 files, 297,871 characters, all `ok`).
 
 ## Canonical Inventory
 
@@ -28,22 +28,22 @@ This map uses the June 16 fresh extraction run `fresh-source-lifecycle-whitepape
 | PMP sources | Process-group operating gate | They supply the common gate model used to run planning, execution, control, and closeout across business work |
 | Existing lifecycle docs in `docs_bilingual/product_lifecycle/` | Platform-to-project boundary alignment | They keep this target positioned as downstream business architecture, not as platform durable truth |
 
-## 12 Trunk Layers
+## 12 Trunk Layers With I/T/O
 
-| # | Layer | Primary question | Primary owner surface |
-| ---: | --- | --- | --- |
-| 0 | Cognitive narrative | Why should the company exist | Company thesis and vision |
-| 1 | Business | How does it earn and stay viable | Business model and finance model |
-| 2 | Market | Which users and segments matter most | Market map and user segments |
-| 3 | Strategy | What is the narrow win condition | Strategy and annual plan |
-| 4 | Metrics | What evidence changes the next move | North Star, funnel, tracking |
-| 5 | Product | What is being sold and delivered | Offer, PRD, service blueprint |
-| 6 | Technical | Which automation and systems support delivery | Tech stack and automation map |
-| 7 | Organization | How the founder, agents, and partners divide work | Role map and agent governance |
-| 8 | Execution | How work gets done now | Quarterly plan and delivery plan |
-| 9 | Growth | How demand compounds | Growth model and channel map |
-| 10 | Operations | How fulfillment, support, and retention stay stable | Ops playbook and customer success |
-| 11 | Retrospective | How learning updates the company system | Monthly review and learning log |
+| # | Layer | Primary question | Inputs | Tools and Techniques | Outputs |
+| ---: | --- | --- | --- | --- | --- |
+| 0 | Cognitive narrative | Why should the company exist? | Founder thesis, customer pain, personal constraints | Narrative writing, strategy diagnosis, non-goal framing | Company thesis, vision, non-goals |
+| 1 | Business | How does it earn and stay viable? | Offer, cost, pricing, runway | Business-model design, unit economics, cashflow review | Business model, finance model, cashflow |
+| 2 | Market | Which users and segments matter most? | Interviews, alternatives, channels, competitors | Segmentation, positioning, interview synthesis | Market map, user segments, research repository |
+| 3 | Strategy | What is the narrow win condition? | Narrative, business model, market evidence | Strategy kernel, trade-off review, planning cadence | Strategy, annual plan, quarterly plan |
+| 4 | Metrics | What evidence decides the next move? | North Star candidate, funnel, finance/support signals | OMTM, OKR, tracking plan, guardrail design | North Star, metrics contract, experiment log |
+| 5 | Product | What is sold and delivered? | Customer jobs, offer promise, acceptance evidence | Product discovery, PRD, service blueprint, MVP slicing | Offer, PRD, service blueprint, roadmap |
+| 6 | Technical | Which automation and systems support delivery? | Product promise, data/security needs, support load | Architecture review, automation mapping, vendor review | Tech stack, automation map, dependency map |
+| 7 | Organization | How do the founder, agents, and partners divide work? | Role load, agent candidates, permissions | Responsibility mapping, agent governance, approval gates | Role map, agent governance, permissions |
+| 8 | Execution | How does current work get done? | Approved plan, capacity, risks, validation plan | Process Groups, work slicing, Kanban/cycle planning | Delivery plan, validation evidence, release candidate |
+| 9 | Growth | How does demand compound? | Segment evidence, channel signal, content assets | Channel testing, growth-loop design, sales-playbook iteration | Growth model, channel map, sales playbook |
+| 10 | Operations | How do fulfillment, support, and retention stay stable? | Customer commitments, support tickets, SLA needs | Ops playbook, support triage, customer-success review | Ops playbook, support policy, FAQ |
+| 11 | Retrospective | How does learning update the company system? | Metrics, decisions, incidents, feedback | Monthly review, lessons synthesis, next-cycle prioritization | Monthly review, learning log, policy updates |
 
 ## 5 Departments and 30 Domains
 

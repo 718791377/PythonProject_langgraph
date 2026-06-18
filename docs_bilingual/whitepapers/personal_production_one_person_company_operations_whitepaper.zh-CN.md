@@ -17,9 +17,11 @@ status: draft
 
 ## 本轮 Fresh Source Evidence
 
-本文在重新执行本地 fresh reading 之后编写，运行名为 `fresh-source-one-person-company-whitepaper-20260618`。该运行从主仓根目录读取 `Business Management/` 与 `PMP/`，并在实施 worktree 的忽略态 `.omx/state/langgraph/extraction/` 下生成本地证据。
+本轮刷新基于新的本地抽取运行 `one-person-company-pmi-refresh-stageb-20260619`，生成时间为 `2026-06-18T18:37:58Z`。该运行按 PDF 每页、EPUB spine item、Markdown 全文读取忽略态本地源根 `Business Management/` 与 `PMP/`，并把本地证据写入 `.omx/state/langgraph/extraction/business_pmp_20260619/`。
 
-本次 fresh pass 覆盖 54 个来源：31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件。54 个来源全部以 `ok` 状态完成，共 9,656 个读取单元和 18,492,044 个抽取字符。被跟踪的数量权威仍是 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`；被跟踪的综合权威仍是 `docs_bilingual/product_lifecycle/business_management_source_synthesis.zh-CN.md`。raw extraction text 只是本地证据，不得复制进被跟踪文档。
+该运行覆盖 54 个来源：31 个 Business Management 来源和 23 个 PMP 来源。格式覆盖为 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件。全部 54 个来源均以 `ok` 状态完成，共 9,656 个读取单元和 18,492,044 个抽取字符。另有 `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` 对 `docs_bilingual/product_lifecycle/` 下 26 个 Markdown 文档进行全文读取，共 297,871 个字符，全部 `ok`。
+
+被跟踪文档只能引用聚合数量、来源家族名称和仓库特定综合结论。原始抽取文本只作为忽略态本地证据，不得复制进被跟踪文档。
 
 ## 为什么需要这套运营系统
 
@@ -45,6 +47,12 @@ status: draft
 | 受治理 AI Agent | 15 | 角色有边界、带人工评审门的辅助 Agent |
 | 推荐书籍 | 15 | 战略、产品、增长、运营、组织和一人公司参考基础 |
 | 最小启动文档 | 12 | 启动真实经营循环的最小集合 |
+
+## 专属北极星
+
+一人公司专属北极星位于 `docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.zh-CN.md`。它的主指标是“已验证运营循环吞吐量”：在一个评审周期内，从客户或运营证据启动，经过必要人工与治理门，产出已交付或已验证业务输出，并把学习回流到下一周期的业务循环数量。
+
+该北极星不是 Codex 持久化团队平台北极星。平台北极星度量编排能力；一人公司北极星度量下游业务学习与交付。
 
 ## 12 层运营模型
 

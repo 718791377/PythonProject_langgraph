@@ -48,7 +48,7 @@ Documentation-only slices still use this contract when they change future delive
 
 | Input | Required when |
 | --- | --- |
-| Current source synthesis from `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` | The slice cites Business Management, PMP, lifecycle, white paper, or research refresh evidence. |
+| Current source synthesis from `one-person-company-pmi-refresh-stageb-20260619` | The slice cites Business Management, PMP, lifecycle, white paper, or research refresh evidence. |
 | Current white paper | The slice changes narrative, platform purpose, lifecycle framing, or adoption logic. |
 | Current governance research note | The slice changes runtime capability criteria, layer decomposition, or governance evidence. |
 | 10-to-12 bridge and lifecycle maps | The slice maps runtime findings into product/business lifecycle zones. |
@@ -141,3 +141,7 @@ Use this contract before updating implementation plans, playbooks, or OpenSpec c
 - This contract does not prove runtime implementation.
 - This contract does not replace OpenSpec validation.
 - This contract does not authorize remote publication.
+
+## One-Person-Company Execution Contract Addendum
+
+One-person-company execution-facing sections use the same process-group grammar as durable-team refreshes. A lightweight business loop may compress the artifact set, but it still names Inputs, Tools and Techniques, and Outputs for the affected layer, phase, or module. The contract is local to the risk surface: expand the layer carrying customer, revenue, trust, support, compliance, release, or governed-agent risk first; expand the whole project only when coupling becomes systemic.

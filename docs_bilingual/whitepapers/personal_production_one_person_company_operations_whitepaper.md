@@ -15,11 +15,13 @@ This white paper explains why a solo operator needs a personal production one-pe
 
 It is a downstream business operating-system white paper. It does not replace the Codex CLI personal production durable-team white paper, and it does not move downstream customer, revenue, finance, legal, support, or operations truth into this platform repository.
 
-## Fresh Source Evidence For This Draft
+## Fresh Source Evidence For This Refresh
 
-This draft was written after a fresh local reading pass named `fresh-source-one-person-company-whitepaper-20260618`. The pass read `Business Management/` and `PMP/` from the primary repository root and produced local ignored evidence under `.omx/state/langgraph/extraction/` in the implementation worktree.
+This refresh is grounded in a new local extraction run named `one-person-company-pmi-refresh-stageb-20260619` generated at `2026-06-18T18:37:58Z`. The run read the ignored local `Business Management/` and `PMP/` source roots by PDF page, EPUB spine item, and Markdown full document, then wrote local ignored evidence under `.omx/state/langgraph/extraction/business_pmp_20260619/`.
 
-The fresh pass covered 54 sources: 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. All 54 sources completed with `ok` status, for 9,656 read units and 18,492,044 extracted characters. The tracked count authority remains `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`; the tracked synthesis authority remains `docs_bilingual/product_lifecycle/business_management_source_synthesis.md`. Raw extraction text is local evidence only and must not be copied into tracked documentation.
+The run covered 54 sources: 31 Business Management sources and 23 PMP sources. Format coverage was 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. All 54 sources completed with `ok` status, for 9,656 read units and 18,492,044 extracted characters. A separate tracked-lifecycle Markdown fresh read, `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619`, read 26 `docs_bilingual/product_lifecycle/` Markdown documents as full documents for 297,871 characters, all with `ok` status.
+
+Tracked documents may cite aggregate counts, source-family names, and repository-specific synthesis only. Raw extraction text remains ignored local evidence and must not be copied into tracked documentation.
 
 ## Why This Operating System Exists
 
@@ -45,6 +47,12 @@ The target inventory is fixed by `one_person_company_inventory_map.md`:
 | Governed AI agents | 15 | Role-bounded assistants with explicit human-review gates |
 | Recommended books | 15 | Strategy, product, growth, operations, organization, and one-person-company references |
 | Minimal startup documents | 12 | The smallest launch set for a real operating loop |
+
+## Dedicated North Star
+
+The one-person-company North Star is a separate document at `docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.md`. Its primary metric is validated operating-loop throughput: the number of business loops that start from customer or operating evidence, pass the required human and governance gates, produce a shipped or validated business output, and feed learning back into the next cycle within the review period.
+
+This North Star is not the Codex durable-team platform North Star. The platform North Star measures orchestration capability. The one-person-company North Star measures downstream business learning and delivery.
 
 ## The 12-Layer Operating Model
 

@@ -24,9 +24,9 @@ status: draft
 
 | 字段 | 值 |
 | --- | --- |
-| Run ID | `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` |
-| Generated at | `2026-06-15T17:33:52Z` |
-| Output root | `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260616/` |
+| Run ID | `one-person-company-pmi-refresh-stageb-20260619` |
+| Generated at | `2026-06-18T18:37:58Z` |
+| Output root | `.omx/state/langgraph/extraction/business_pmp_20260619/` |
 | Total sources | 54 |
 | Total reading units | 9,656 |
 | Total extracted characters | 18,492,044 |
@@ -50,7 +50,7 @@ Tracked docs 可以引用聚合事实和 paraphrased synthesis，但不得依赖
 
 ```text
 local source roots
-  -> fresh extraction run fresh-source-lifecycle-whitepaper-pmi-refresh-20260616
+  -> fresh extraction run one-person-company-pmi-refresh-stageb-20260619
   -> manifest, report, and synthesis summary
   -> fresh_source_reading_evidence.zh-CN.md
   -> source traceability and delivery matrix
@@ -132,3 +132,7 @@ runtime findings 的 canonical 位置仍是 10 层研究稿。生命周期落地
 - 本文件不替代 source books 或 repository authority documents。
 - 本文件不证明 runtime implementation。
 - 本文件不批准 remote publication。
+
+## Product lifecycle Markdown reread
+
+本轮还通过 `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` 全文读取 `docs_bilingual/product_lifecycle/` 下 26 个 Markdown 文档，共 297,871 个字符，全部 `ok`。该证据用于证明在更新白皮书、一人公司北极星、生命周期地图和裁剪规则前，当前生命周期文档本身已被重新读取。

@@ -9,29 +9,39 @@ status: draft
 
 # Fresh Source Reading Evidence 索引
 
-本索引记录生命周期、白皮书、研究稿与北极星刷新的当前 fresh-reading 证据边界。
+本索引记录生命周期、白皮书、研究稿、北极星和一人公司运营刷新的当前 fresh-reading 证据边界。
 
-- 运行 ID：`fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`
-- 生成时间：`2026-06-15T17:33:52Z`
-- 输出目录：`.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260616/`
-- 来源根目录：`D:/PythonProject_langgraph/Business Management` 与 `D:/PythonProject_langgraph/PMP`
-- 来源：共 54 个；Business Management 31 个；PMP 23 个
-- 读取单元：共 9,656 个；PDF 页 9,280 个；EPUB spine item 362 个；Markdown 全文 14 个
-- 抽取字符数：18,492,044
-- 空白单元 / 低文本单元：1,034 / 1,590
-- 状态：全部来源为 `ok`
+## Business Management 与 PMP 抽取
 
-## 来源族拆分
+- Run ID: `one-person-company-pmi-refresh-stageb-20260619`
+- Generated at: `2026-06-18T18:37:58Z`
+- Output root: `.omx/state/langgraph/extraction/business_pmp_20260619/`
+- Source roots: `D:/PythonProject_langgraph/Business Management` 和 `D:/PythonProject_langgraph/PMP`
+- Sources: 54 total；31 Business Management；23 PMP
+- Units: 9,656 total；9,280 PDF pages；362 EPUB spine items；14 Markdown full documents
+- Extracted characters: 18,492,044
+- Blank units / low-text units: 1,034 / 1,590
+- Status: all sources `ok`
 
-| 来源族 | 来源数 | 读取单元 | 字符数 | 格式覆盖 |
+| Family | Sources | Units | Characters | Format coverage |
 | --- | ---: | ---: | ---: | --- |
-| Business Management | 31 | 6,551 | 14,161,228 | 22 个 PDF / 6,245 页；7 个 EPUB / 304 个 spine item；2 个 Markdown 全文文件 |
-| PMP | 23 | 3,105 | 4,330,816 | 9 个 PDF / 3,035 页；2 个 EPUB / 58 个 spine item；12 个 Markdown 全文文件 |
+| Business Management | 31 | 6,551 | 14,161,228 | 22 PDFs / 6,245 pages；7 EPUBs / 304 spine items；2 Markdown full files |
+| PMP | 23 | 3,105 | 4,330,816 | 9 PDFs / 3,035 pages；2 EPUBs / 58 spine items；12 Markdown full files |
+
+## Product Lifecycle Markdown 全文读取
+
+- Run ID: `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619`
+- Generated at: `2026-06-18T18:48:14Z`
+- Source root: `docs_bilingual/product_lifecycle/`
+- Markdown documents: 26
+- Full-document units: 26
+- Extracted characters: 297,871
+- Status: all documents `ok`
 
 ## 提交边界
 
-Manifest 与 report 可以被 tracked docs 引用。raw `fresh_source_items.jsonl` 是本地忽略态抽取证据，不能提交。
+Manifest 和 report 可被跟踪文档引用。原始 `fresh_source_items.jsonl` 与本地抽取 manifest 是忽略态本地证据，不得提交。
 
 ## 刷新规则
 
-不要从记忆或旧缓存更新上述计数。必须重新对本地来源根目录运行 `tools/fresh_extract_sources.py`，并用新 run ID 更新本索引。
+不要用记忆或旧缓存更新上述数量。必须重新运行 `tools/fresh_extract_sources.py` 读取本地源根；当生命周期文档本身属于输入集时，也要全文重读生命周期 Markdown，并用新 run ID 更新本索引。

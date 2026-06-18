@@ -11,7 +11,7 @@ The rule is source-backed by the local `Business Management/` and `PMP/` synthes
 
 ## Source Evidence Boundary
 
-This tailoring rule is refreshed from the June 16 evidence run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` (`2026-06-15T17:33:52Z`), covering 54 local sources and 9,656 page/spine/full-document units. It supersedes outdated extraction wording for this refresh and keeps raw extracted text in ignored local cache only. Use `fresh_source_reading_evidence.md` for the current evidence index.
+This tailoring rule is refreshed from the Stage B evidence run `one-person-company-pmi-refresh-stageb-20260619` (`2026-06-18T18:37:58Z`), covering 54 local sources and 9,656 page/spine/full-document units. It supersedes outdated extraction wording for this refresh and keeps raw extracted text in ignored local cache only. Use `fresh_source_reading_evidence.md` for the current evidence index.
 
 ## Tailoring Principle
 
@@ -191,3 +191,17 @@ Review tailoring at these gates:
 - during retrospective closing.
 
 The closing output should state whether the next cycle remains lightweight, expands a layer/module, or returns to a smaller governance footprint.
+
+## One-Person Company PMI Tailoring Matrix
+
+For the one-person-company operating system, decide the tailoring scope before expanding documents. The decision is local to the affected risk surface unless coupling becomes systemic.
+
+| Mode | Use when | Scope rule | Minimum I/T/O evidence |
+| --- | --- | --- | --- |
+| Full architecture for affected scope | Customer-visible release, payment, sensitive data, compliance, repeated delivery, support obligation, external commitment, broad agent automation, or material revenue/risk | Expand the affected layer, phase, module, or release slice first; expand the whole project only when coupling is systemic | Initiating value case, planning controls, executing validation, monitoring guardrails, closing learning |
+| Whole-project lightweight | The whole project is private, reversible, low-risk, local-only, one-owner, no users, no money, no sensitive data, no support promise, no shared runtime, no release commitment | The whole project may stay light | Compact canvas, stop condition, owner, validation note, learning note |
+| Phase-local lightweight | Discovery, interview, prototype, content exploration, or metric exploration is low-risk inside a larger governed project | Only the named phase is light | Phase Inputs / Tools and Techniques / Outputs plus trigger to expand |
+| Module-level lightweight | A bounded module is reversible and does not change trust, durable state, customer promise, public API, support, or release safety | Only the module is light | Module scope, owner, validation, rollback or deletion path, learning note |
+| Hybrid | Discovery is uncertain but later delivery may affect production, users, revenue, trust, compliance, runtime behavior, or release safety | Start light; freeze full controls before external impact | Discovery I/T/O first, then predictive process-group I/T/O for affected delivery layers |
+
+The default is not full-for-everything or light-for-everything. The default is local lightness with explicit escalation triggers.

@@ -420,6 +420,12 @@ documents:
     canonical_path: docs_bilingual/north_star/codex_cli_personal_production_durable_team_north_star.md
     zh_cn_path: docs_bilingual/north_star/codex_cli_personal_production_durable_team_north_star.zh-CN.md
 
+  - doc_id: personal_production_one_person_company_operations_north_star
+    doc_class: north_star_plan
+    status: draft
+    canonical_path: docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.md
+    zh_cn_path: docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.zh-CN.md
+
   - doc_id: business_management_source_synthesis
     doc_class: product_lifecycle
     status: draft

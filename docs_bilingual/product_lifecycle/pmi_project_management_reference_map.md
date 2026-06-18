@@ -13,7 +13,7 @@ These references are an overlay. They do not replace white papers, BRD, MRD, Nor
 
 ## Local PMP Source Coverage
 
-The local `PMP/` directory was read from local files only for this refresh. The fresh extraction evidence was regenerated at `2026-06-15T17:33:52Z` under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260616/` and recorded 23 PMP-family sources: 9 PDFs / 3,035 pages, 2 EPUBs / 58 spine items, and 12 Markdown full-text notes, for 3,105 total PMP read units and 4,330,816 extracted characters. The tracked repository records the following coverage summary and synthesized governance mapping only.
+The local `PMP/` directory was read from local files only for this refresh. The fresh extraction evidence was regenerated at `2026-06-18T18:37:58Z` under `.omx/state/langgraph/extraction/business_pmp_20260619/` and recorded 23 PMP-family sources: 9 PDFs / 3,035 pages, 2 EPUBs / 58 spine items, and 12 Markdown full-text notes, for 3,105 total PMP read units and 4,330,816 extracted characters. The tracked repository records the following coverage summary and synthesized governance mapping only.
 
 | Local reference | Format | Coverage | Primary governance use |
 | --- | --- | ---: | --- |
@@ -32,9 +32,9 @@ The local `PMP/` directory was read from local files only for this refresh. The 
 
 ## Official PMI Web Freshness Check
 
-This refresh also checked PMI public standards pages on 2026-06-16 to avoid treating the private local folder as the only freshness signal. The local extraction remains the content evidence boundary; the public check records current catalog metadata only.
+This refresh also checked PMI public standards pages on 2026-06-18 to avoid treating the private local folder as the only freshness signal. The local extraction remains the content evidence boundary; the public check records current catalog metadata only.
 
-| PMI public source | Official catalog status checked on 2026-06-16 | Repository decision |
+| PMI public source | Official catalog status checked on 2026-06-18 | Repository decision |
 | --- | --- | --- |
 | <https://www.pmi.org/standards/pmbok> | `PMBOK Guide` is listed as the Eighth Edition, 408 pages, publication date November 2025, with second-printing errata dated 22 December 2025. | Treat PMBOK 8 as the current primary project-management overlay; keep PMBOK 7 and PMBOK 6 as continuity and I/T/O supplements. |
 | <https://www.pmi.org/standards/process-groups> | `Process Groups: A Practice Guide` is listed as 370 pages, publication date November 2022, and describes five process groups plus 49 processes with inputs, tools and techniques, and outputs. | Use it as the execution-facing process-group grammar for lifecycle layers and delivery gates. |
@@ -203,3 +203,18 @@ Small local projects may combine these files, but high-risk projects should keep
 ## Platform Rule
 
 The Codex platform repository may define shared lifecycle references, templates, checkers, and role policies. It must not become the repo-local durable truth for downstream projects. Downstream projects own their own OpenSpec tree, durable state, release state, and lessons learned.
+
+## One-Person-Company PMI Operating Overlay
+
+For the downstream one-person-company operating system, PMI is used to decide execution discipline, not to import enterprise ceremony.
+
+| PMI source family | Entry trigger | One-person-company use | Exit rule |
+| --- | --- | --- | --- |
+| PMBOK 8 | Any real project, offer, release, governed-agent workflow, or business operating loop needs value and tailoring discipline | Use value delivery, project canvas thinking, performance concerns, AI-era work, hybrid delivery, and tailoring as the primary overlay | Exit to lighter notes when the loop is private, reversible, low-risk, and has no external commitment |
+| Process Groups | Any execution-facing flow produces deliverables, commitments, validation, release, support, or closeout evidence | Write Initiating / Planning / Executing / Monitoring and Controlling / Closing with Inputs / Tools and Techniques / Outputs | Stop once the affected layer has owner, validation, risk, rollback/stop, and learning evidence |
+| Agile Practice Guide | Discovery, prototype, interview, MVP, channel test, or uncertain product/market work | Use adaptive feedback loops before freezing a predictive delivery plan | Freeze stronger controls before customer, revenue, trust, compliance, or release impact |
+| Program standard | Multiple related initiatives must coordinate benefits, dependencies, sequence, or capability increments | Treat the solo operator's roadmap as a program only when related initiatives must be managed together | Exit when the work returns to one bounded project or module |
+| Portfolio standard | Competing bets must be balanced across value, capacity, runway, risk, or business lines | Use portfolio thinking for prioritization and stop/pivot decisions | Exit when there is only one active bet with clear owner and budget |
+| PMO practice guide | Standards, reviews, templates, cadence, enablement, or oversight become recurring services | Use a solo PMO / chief-of-staff service layer, not a new department | Exit when a one-off loop no longer needs shared governance service |
+
+The operating rule is local lightness first. Expand the exact layer, phase, module, or release slice that carries risk; expand the whole project only when coupling becomes systemic.
