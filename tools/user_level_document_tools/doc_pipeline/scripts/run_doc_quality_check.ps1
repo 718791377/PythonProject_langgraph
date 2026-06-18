@@ -12,7 +12,11 @@ param(
     [string]$PopplerBinDir,
     [string]$OutputRoot,
     [string]$GuardCommand,
-    [switch]$SkipContactSheet
+    [switch]$SkipContactSheet,
+    [switch]$RunVisualQa,
+    [string[]]$VisualQaBackends,
+    [string[]]$RequireVisualQaBackends,
+    [string]$VisualQaOutputRoot
 )
 
 $ErrorActionPreference = 'Stop'
@@ -37,6 +41,9 @@ if (Test-Path -LiteralPath $ConfigPath) {
         if ($cfg.python_packages_dir) { $pythonPackagesDir = [string]$cfg.python_packages_dir }
         if ($cfg.python_exe) { $pythonExeFromConfig = [string]$cfg.python_exe }
         if ($cfg.default_dpi -and -not $PSBoundParameters.ContainsKey('Dpi')) { $Dpi = [int]$cfg.default_dpi }
+        if ([string]::IsNullOrWhiteSpace($VisualQaOutputRoot) -and $cfg.visual_qa_output_root) { $VisualQaOutputRoot = [string]$cfg.visual_qa_output_root }
+        if (-not $PSBoundParameters.ContainsKey('VisualQaBackends') -and $cfg.visual_qa_default_backends) { $VisualQaBackends = @($cfg.visual_qa_default_backends | ForEach-Object { [string]$_ }) }
+        if (-not $PSBoundParameters.ContainsKey('RequireVisualQaBackends') -and $cfg.visual_qa_require_backends) { $RequireVisualQaBackends = @($cfg.visual_qa_require_backends | ForEach-Object { [string]$_ }) }
     } catch { Write-Warning "Could not parse config: $ConfigPath" }
 }
 
@@ -73,6 +80,46 @@ try {
     & (Join-Path $scriptDir 'render_pdf_poppler.ps1') -InputPdf $pdfForInspection -OutputDir $jobRenderDir -ReportDir $reportDir -JobName $JobName -Dpi $Dpi -ConfigPath $ConfigPath -PopplerBinDir $PopplerBinDir
     if ($LASTEXITCODE -ne 0) { throw 'PDF rendering failed. Install Poppler or pass -PopplerBinDir.' }
 
+    $visualQaStatus = 'not_run'
+    $visualQaJson = $null
+    $visualQaMd = $null
+    if ($RunVisualQa) {
+        $visualArgs = @{
+            JobName = $JobName
+            Dpi = $Dpi
+            ConfigPath = $ConfigPath
+        }
+        if ($PopplerBinDir) { $visualArgs.PopplerBinDir = $PopplerBinDir }
+        if ($VisualQaOutputRoot) { $visualArgs.OutputRoot = $VisualQaOutputRoot }
+        if ($VisualQaBackends) { $visualArgs.Backends = $VisualQaBackends }
+        if ($RequireVisualQaBackends) { $visualArgs.RequireBackends = $RequireVisualQaBackends }
+        if ($pythonExeFromConfig) { $visualArgs.PythonExe = $pythonExeFromConfig }
+        if ($PSCmdlet.ParameterSetName -eq 'Docx') {
+            $visualArgs.InputDocx = $InputDocx
+        } else {
+            $visualArgs.InputPdf = $InputPdf
+        }
+        & (Join-Path $scriptDir 'visual_render_qa.ps1') @visualArgs
+        $visualExit = $LASTEXITCODE
+        $visualRoot = if ($VisualQaOutputRoot) { $VisualQaOutputRoot } else { Join-Path (Get-Location) '.local\user_level_document_tools\visual_render_qa' }
+        $visualReportDir = Join-Path (Join-Path $visualRoot $JobName) 'reports'
+        $visualQaJson = Join-Path $visualReportDir ($JobName + '_visual_render_qa.json')
+        $visualQaMd = Join-Path $visualReportDir ($JobName + '_visual_render_qa.md')
+        if (Test-Path -LiteralPath $visualQaJson) {
+            try {
+                $visualPayload = Get-Content -LiteralPath $visualQaJson -Raw | ConvertFrom-Json
+                $visualQaStatus = [string]$visualPayload.status
+            } catch {
+                $visualQaStatus = if ($visualExit -eq 0) { 'ok' } else { 'failed' }
+            }
+        } else {
+            $visualQaStatus = if ($visualExit -eq 0) { 'ok' } else { 'failed' }
+        }
+        if ($visualExit -ne 0 -and $RequireVisualQaBackends -and $RequireVisualQaBackends.Count -gt 0) {
+            throw "Required visual QA backend failed. See $visualQaJson"
+        }
+    }
+
     $summaryPath = Join-Path $reportDir ($JobName + '_quality_report.md')
     @(
         '# Document Quality Check Summary','',
@@ -82,6 +129,10 @@ try {
         "- Render directory: $jobRenderDir",
         "- DPI: $Dpi",
         "- Poppler bin dir: $PopplerBinDir",
+        "- Visual QA enabled: $([bool]$RunVisualQa)",
+        "- Visual QA status: $visualQaStatus",
+        "- Visual QA JSON: $visualQaJson",
+        "- Visual QA Markdown: $visualQaMd",
         "- Generated at: $((Get-Date).ToString('o'))"
     ) | Set-Content -LiteralPath $summaryPath -Encoding UTF8
     Write-Host "Wrote: $summaryPath"

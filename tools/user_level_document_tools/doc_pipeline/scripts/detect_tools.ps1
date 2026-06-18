@@ -9,6 +9,8 @@ param(
     [string]$MarkdownPath,
     [string]$ConfigPath = "$(Join-Path (Get-Location) 'config\doc_pipeline\doc_pipeline_config.json')",
     [string]$PopplerBinDir,
+    [string]$PythonExe,
+    [string]$SofficeExe,
     [switch]$ProbeCom
 )
 
@@ -82,6 +84,9 @@ function Invoke-VersionProbe {
 
 $config = Read-Config -Path $ConfigPath
 if ([string]::IsNullOrWhiteSpace($PopplerBinDir) -and $config -and $config.poppler_bin_dir) { $PopplerBinDir = [string]$config.poppler_bin_dir }
+if ([string]::IsNullOrWhiteSpace($PythonExe) -and $config -and $config.python_exe) { $PythonExe = [string]$config.python_exe }
+if ([string]::IsNullOrWhiteSpace($SofficeExe) -and $config -and $config.soffice_exe) { $SofficeExe = [string]$config.soffice_exe }
+if ([string]::IsNullOrWhiteSpace($SofficeExe) -and $config -and $config.libreoffice_exe) { $SofficeExe = [string]$config.libreoffice_exe }
 
 New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
 if ([string]::IsNullOrWhiteSpace($JsonPath)) { $JsonPath = Join-Path $ReportDir 'tool_detection_report.json' }
@@ -151,18 +156,22 @@ foreach ($name in @('pdfinfo','pdffonts','pdftoppm','pdftocairo')) {
     $version = if ($cmd) { Invoke-VersionProbe -Exe $cmd.source -VersionArgs @('-v') } else { $null }
     $tools += [ordered]@{
         name = $name
+        backend = $name
         capability = 'Poppler PDF metadata/font/render utility'
         installed = [bool]$cmd
         usable = [bool]$cmd
         command = $cmd
+        path = if ($cmd) { $cmd.source } else { $null }
         version = $version
         probe_status = if ($cmd) { 'found' } else { 'not_found' }
+        note = ''
+        notes = ''
     }
 }
 
 $pyCmd = Get-CommandInfo -Name 'python'
-if ($config -and $config.python_exe -and (Test-Path -LiteralPath ([string]$config.python_exe))) {
-    $pyCmd = [ordered]@{ name = 'python'; source = (Get-Item -LiteralPath ([string]$config.python_exe)).FullName; command_type = 'Application' }
+if ($PythonExe -and (Test-Path -LiteralPath $PythonExe)) {
+    $pyCmd = [ordered]@{ name = 'python'; source = (Get-Item -LiteralPath $PythonExe).FullName; command_type = 'Application' }
 }
 $pyVersion = if ($pyCmd) { Invoke-VersionProbe -Exe $pyCmd.source -VersionArgs @('--version') } else { $null }
 $tools += [ordered]@{
@@ -203,23 +212,76 @@ $tools += [ordered]@{
     version = $pillowVersion
     probe_status = if ($pillowAvailable) { 'found' } else { 'not_found' }
     note = if ($pillowAvailable) { '' } else { 'Install Pillow or use -SkipContactSheet.' }
+    notes = if ($pillowAvailable) { '' } else { 'Install Pillow or use -SkipContactSheet.' }
+}
+
+$pdf2imageAvailable = $false
+$pdf2imageVersion = $null
+$pdf2imageProbeStatus = 'python_not_found'
+$pdf2imageNote = ''
+$pdftoppmForPdf2Image = Get-CommandInfo -Name 'pdftoppm' -BinDir $PopplerBinDir
+if ($pyCmd) {
+    $oldPythonPath = $env:PYTHONPATH
+    if (Test-Path -LiteralPath $pythonPackagesDir) {
+        if ([string]::IsNullOrWhiteSpace($oldPythonPath)) { $env:PYTHONPATH = $pythonPackagesDir } else { $env:PYTHONPATH = $pythonPackagesDir + ';' + $oldPythonPath }
+    }
+    try {
+        $pdf2imageOut = & $pyCmd.source -c "import importlib.metadata as m; print(m.version('pdf2image'))" 2>&1
+        $pdf2imageAvailable = ($LASTEXITCODE -eq 0)
+        $pdf2imageVersion = (($pdf2imageOut | ForEach-Object { [string]$_ }) -join "`n")
+        if ($pdf2imageAvailable -and $pdftoppmForPdf2Image) {
+            $pdf2imageProbeStatus = 'found'
+        } elseif ($pdf2imageAvailable) {
+            $pdf2imageProbeStatus = 'poppler_missing'
+            $pdf2imageNote = 'pdf2image is installed, but Windows rendering still requires a Poppler backend such as pdftoppm.'
+        } else {
+            $pdf2imageProbeStatus = 'package_not_found'
+        }
+    } catch {
+        $pdf2imageAvailable = $false
+        $pdf2imageVersion = $_.Exception.Message
+        $pdf2imageProbeStatus = 'package_not_found'
+    } finally {
+        $env:PYTHONPATH = $oldPythonPath
+    }
+}
+$tools += [ordered]@{
+    name = 'pdf2image'
+    backend = 'pdf2image'
+    capability = 'Python PDF rendering wrapper backed by Poppler'
+    installed = [bool]$pdf2imageAvailable
+    usable = [bool]($pdf2imageAvailable -and $pdftoppmForPdf2Image)
+    command = if ($pyCmd) { $pyCmd } else { $null }
+    path = if ($pyCmd) { $pyCmd.source } else { $null }
+    version = $pdf2imageVersion
+    probe_status = $pdf2imageProbeStatus
+    note = $pdf2imageNote
+    notes = $pdf2imageNote
+    poppler_backend_path = if ($pdftoppmForPdf2Image) { $pdftoppmForPdf2Image.source } else { $null }
 }
 
 $sofficeCmd = Get-CommandInfo -Name 'soffice.exe'
+if ($null -eq $sofficeCmd) { $sofficeCmd = Get-CommandInfo -Name 'soffice' }
+if ($null -eq $sofficeCmd) { $sofficeCmd = Get-CommandInfo -Name 'libreoffice' }
 $sofficePaths = @(
+    $SofficeExe,
     (Join-Path $programFiles 'LibreOffice\program\soffice.exe'),
     (Join-Path $programFilesX86 'LibreOffice\program\soffice.exe')
 )
 $sofficePath = if ($sofficeCmd) { $sofficeCmd.source } else { Test-PathList -Paths $sofficePaths }
+$sofficeVersion = if ($sofficePath) { Invoke-VersionProbe -Exe $sofficePath -VersionArgs @('--version') } else { $null }
 $tools += [ordered]@{
     name = 'LibreOffice'
+    backend = 'soffice'
     capability = 'Fallback DOCX to PDF conversion only'
     installed = [bool]$sofficePath
     usable = [bool]$sofficePath
     command = if ($sofficeCmd) { $sofficeCmd } else { $null }
     path = $sofficePath
+    version = $sofficeVersion
     probe_status = if ($sofficePath) { 'found' } else { 'not_found' }
     note = 'Fallback only; not the final quality baseline for Word deliverables.'
+    notes = 'Fallback only; not the final quality baseline for Word deliverables.'
 }
 
 $result = [ordered]@{

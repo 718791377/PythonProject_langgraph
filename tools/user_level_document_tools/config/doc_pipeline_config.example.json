@@ -1,15 +1,30 @@
 {
   "poppler_bin_dir": "",
-  "acrobat_exe": "C:\\Program Files\\Adobe\\Acrobat DC\\Acrobat\\Acrobat.exe",
+  "acrobat_exe": "",
   "python_exe": "",
+  "soffice_exe": "",
+  "libreoffice_exe": "",
   "default_dpi": 200,
   "final_review_dpi": 300,
+  "visual_qa_enabled_by_default": false,
+  "visual_qa_output_root": "<consumer-project>/.local/user_level_document_tools/visual_render_qa",
+  "visual_qa_default_backends": [
+    "pdftoppm",
+    "pdf2image",
+    "soffice"
+  ],
+  "visual_qa_require_backends": [],
+  "visual_qa_default_dpi": 200,
+  "visual_qa_strict_mode": false,
   "word_com_requires_interactive_desktop": true,
   "safe_output_roots": [
     "<consumer-project>/.local/user_level_document_tools"
   ],
   "python_packages_dir": "",
   "notes": [
-    "Example only. Fill this in a consumer project or local-only config path."
+    "Example only. Fill this in a consumer project or local-only config path.",
+    "Do not commit binary payloads, installers, or machine-specific absolute paths.",
+    "pdf2image is a Python wrapper and still requires a Poppler backend such as pdftoppm on Windows.",
+    "LibreOffice/soffice is an external system installation or PATH-provided tool; keep the executable out of this repository."
   ]
 }
