@@ -16,4 +16,4 @@
 - [x] Add the visual rendering QA orchestrator and wire it into the document quality-check flow.
 - [x] Add tests for missing dependency degradation, strict backend failures, and gated success smokes.
 - [x] Update setup/dependency notes and sanitized config examples.
-- [ ] Validate, commit, and integrate the Stage B runtime package into local `main`.
+- [x] Validate, commit, and integrate the Stage B runtime package into local `main`.
