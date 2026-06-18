@@ -357,6 +357,12 @@ documents:
     zh_cn_path: docs_bilingual/implementation_plans/parallel_plan_openspec_comet_archive_plan.zh-CN.md
 
 
+  - doc_id: omx_windows_native_team_runtime_fix_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/omx_windows_native_team_runtime_fix_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/omx_windows_native_team_runtime_fix_plan.zh-CN.md
+
   - doc_id: codex_oh_my_codex_user_level_team_mode_plan
     doc_class: implementation_plan
     status: active

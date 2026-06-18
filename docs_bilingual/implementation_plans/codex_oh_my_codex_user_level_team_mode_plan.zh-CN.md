@@ -1,3 +1,16 @@
+## 2026-06-18 Windows native OMX runtime correction
+
+本中文 companion 与英文主版对齐：P6 不再被视为已经证明真实 Windows durable-team 运行能力的完成项，而是重新打开为 `fix-omx-windows-native-team-runtime-20260618` 的 Stage B runtime target。
+
+冻结口径：
+
+- `native_omx` 是 worker-centric durable backend family，不是 `tmux` 同义词。
+- `tmux` 只是 Unix/tmux implementation backend。
+- Windows 默认 runtime backend 是 `windows_prompt_process_controller`，除非显式请求 Unix/tmux backend。
+- capability switches、backend family、task-flow effective lane、operational ability 必须分层。
+- readiness/selected 不能当作 launchability。
+- Stage B 必须输出 `runtime_backend`、`preflight_passed`、`operational_ready`、`blockers`，并证明或 fail closed 到真实 Windows 运行态。
+
 ---
 doc_id: codex_oh_my_codex_user_level_team_mode_plan
 lang: zh-CN
