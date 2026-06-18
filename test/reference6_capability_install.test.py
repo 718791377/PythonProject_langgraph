@@ -56,10 +56,15 @@ class Reference6CapabilityInstallTests(unittest.TestCase):
                 "browserbase-skills",
                 "pymupdf",
                 "mineru",
+                "mineru-api-limit",
+                "mineru-site",
                 "book-to-skill",
                 "mattpocock-skills",
             },
         )
+        for item in payload["capabilities"]:
+            self.assertIn("live_runtime_target", item)
+            self.assertIn("live_smoke_kind", item)
         self.assertEqual(payload["codex_provider_env"]["reuse_mode"], "env_key_name_only")
         self.assertFalse(payload["codex_provider_env"]["copy_secret_values"])
         self.assertFalse(payload["codex_config_toml_mutated"])
@@ -90,7 +95,7 @@ class Reference6CapabilityInstallTests(unittest.TestCase):
         self.assertTrue((home / "tools" / "reference6-capability-install" / "manifest.json").is_file())
         self.assertTrue((home / "tools" / "reference6-capability-install" / "reference6_capability_install.py").is_file())
         self.assertTrue((home / "bin" / "reference6-smoke.cmd").is_file())
-        self.assertEqual(len(payload["receipt_summaries"]), 7)
+        self.assertEqual(len(payload["receipt_summaries"]), 9)
         self.assertNotIn(str(home), json.dumps(payload, ensure_ascii=False))
 
         check_code, check_payload = self.run_json(
@@ -103,14 +108,14 @@ class Reference6CapabilityInstallTests(unittest.TestCase):
         )
         self.assertEqual(check_code, 0)
         self.assertTrue(check_payload["ok"], check_payload["errors"])
-        self.assertEqual(check_payload["update_receipt_count"], 7)
-        self.assertEqual(check_payload["smoke_receipt_count"], 7)
+        self.assertEqual(check_payload["update_receipt_count"], 9)
+        self.assertEqual(check_payload["smoke_receipt_count"], 9)
 
     def test_checker_passes_repo_surfaces(self) -> None:
         code, payload = self.run_json(CHECKER, "--root", str(ROOT))
         self.assertEqual(code, 0)
         self.assertTrue(payload["ok"], payload["errors"])
-        self.assertEqual(payload["manifest"]["capability_count"], 7)
+        self.assertEqual(payload["manifest"]["capability_count"], 9)
         self.assertTrue(payload["registry_guard_ci"]["test_registered"])
 
     def test_checker_can_require_installed_against_temp_home(self) -> None:
@@ -127,7 +132,25 @@ class Reference6CapabilityInstallTests(unittest.TestCase):
         )
         self.assertEqual(code, 0)
         self.assertTrue(payload["ok"], payload["errors"])
-        self.assertEqual(payload["user_level_check"]["smoke_receipt_count"], 7)
+        self.assertEqual(payload["user_level_check"]["smoke_receipt_count"], 9)
+
+    def test_strict_live_gate_blocks_missing_external_service_credentials(self) -> None:
+        home = self.make_home("strict-blocked")
+        self.run_json(RUNTIME, "apply", "--apply", "--operator-confirmation", "--codex-home", str(home))
+        code, payload = self.run_json(
+            RUNTIME,
+            "check",
+            "--require-installed",
+            "--require-smoke-tested",
+            "--require-live-executed",
+            "--codex-home",
+            str(home),
+            check=False,
+        )
+        self.assertEqual(code, 3)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("browserbase-skills" in error for error in payload["errors"]))
+        self.assertTrue(any("mineru" in error for error in payload["errors"]))
 
     def test_generic_receipt_redaction_checker_accepts_update_receipt(self) -> None:
         home = self.make_home("receipt-gov")

@@ -27,6 +27,8 @@ CAPABILITY_IDS = {
     "browserbase-skills",
     "pymupdf",
     "mineru",
+    "mineru-api-limit",
+    "mineru-site",
     "book-to-skill",
     "mattpocock-skills",
 }
@@ -37,6 +39,8 @@ PLAN_MARKERS = [
     "browserbase/skills",
     "pymupdf",
     "MinerU",
+    "mineru.net/apiManage/limit",
+    "mineru.net/",
     "book-to-skill",
     "mattpocock/skills",
     "env_key",
@@ -113,6 +117,18 @@ def check_manifest(root: Path, errors: list[str]) -> dict[str, Any]:
             continue
         if not item.get("source_url") or not item.get("install_mode") or not item.get("smoke_kind"):
             errors.append(f"manifest_capability_incomplete:{item.get('id')}")
+        live = item.get("live_runtime")
+        if not isinstance(live, dict):
+            errors.append(f"manifest_capability_missing_live_runtime:{item.get('id')}")
+            continue
+        if not live.get("live_runtime_target") or not live.get("live_smoke_kind"):
+            errors.append(f"manifest_live_runtime_missing_target_or_kind:{item.get('id')}")
+        if live.get("codex_adapter_required") is not True:
+            errors.append(f"manifest_live_runtime_must_require_codex_adapter:{item.get('id')}")
+        if live.get("raw_upstream_install_only_counts") is not False:
+            errors.append(f"manifest_raw_upstream_install_must_not_count:{item.get('id')}")
+        if live.get("source_reference_only_counts") is not False:
+            errors.append(f"manifest_source_reference_must_not_count:{item.get('id')}")
     return data
 
 
@@ -182,6 +198,7 @@ def evaluate(
     codex_home: Path | None,
     require_user_level_installed: bool,
     require_smoke_tested: bool,
+    require_live_executed: bool,
 ) -> dict[str, Any]:
     root = root.resolve()
     errors: list[str] = []
@@ -193,7 +210,7 @@ def evaluate(
     runtime_plan = check_runtime_plan(root, errors)
 
     user_level_check: dict[str, Any] | None = None
-    if require_user_level_installed or require_smoke_tested:
+    if require_user_level_installed or require_smoke_tested or require_live_executed:
         cmd = [sys.executable, str(root / RUNTIME), "check", "--json"]
         if codex_home:
             cmd.extend(["--codex-home", str(codex_home)])
@@ -201,6 +218,8 @@ def evaluate(
             cmd.append("--require-installed")
         if require_smoke_tested:
             cmd.append("--require-smoke-tested")
+        if require_live_executed:
+            cmd.append("--require-live-executed")
         code, user_level_check, stderr = run_json(cmd, root)
         if code != 0 or not isinstance(user_level_check, dict) or not user_level_check.get("ok"):
             errors.append("user_level_reference6_check_failed:" + stderr.strip())
@@ -219,6 +238,8 @@ def evaluate(
             "priority_order": PRIORITY_ORDER,
             "codex_config_env_key_name_only": True,
             "copies_secret_values": False,
+            "source_reference_counts_as_live_executed": False,
+            "raw_upstream_install_counts_as_live_executed": False,
             "remote_publication_allowed": False,
         },
         "errors": sorted(set(errors)),
@@ -233,6 +254,7 @@ def main() -> int:
     parser.add_argument("--codex-home", default=None)
     parser.add_argument("--require-user-level-installed", action="store_true")
     parser.add_argument("--require-smoke-tested", action="store_true")
+    parser.add_argument("--require-live-executed", action="store_true")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     payload = evaluate(
@@ -240,6 +262,7 @@ def main() -> int:
         codex_home=Path(args.codex_home).resolve() if args.codex_home else None,
         require_user_level_installed=args.require_user_level_installed,
         require_smoke_tested=args.require_smoke_tested,
+        require_live_executed=args.require_live_executed,
     )
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))

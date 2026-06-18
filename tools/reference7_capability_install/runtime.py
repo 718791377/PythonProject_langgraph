@@ -43,6 +43,7 @@ WINDOWS_PATH_RE = re.compile(r"(?i)\b[A-Z]:[\\/](?:Users|PythonProject|project|t
 UNC_PATH_RE = re.compile(r"\\\\[^\s\"']+")
 POSIX_PRIVATE_PATH_RE = re.compile(r"/(?:home|Users|tmp|var/tmp)/[^\s\"']+")
 HASH_RE = re.compile(r"^[0-9a-f]{12,64}$")
+LIVE_FORBIDDEN_SMOKE_TOKENS = {"safe-discovery", "source-discovery", "readme-discovery", "adapter-presence-only", "raw-upstream-install"}
 
 
 def now_iso() -> str:
@@ -230,6 +231,26 @@ def adapter_label(cap: dict[str, Any]) -> str:
     if kind == "codex-project-runtime-wrapper":
         return f"general-template:template_assets/reference7-active/adapters/{cap_id}.md"
     return f"general2-template:template_assets/inert-samples/reference7/adapters/{cap_id}.md"
+
+
+def live_runtime(cap: dict[str, Any]) -> dict[str, Any]:
+    value = cap.get("live_runtime")
+    return value if isinstance(value, dict) else {}
+
+
+def live_target(cap: dict[str, Any]) -> str:
+    lr = live_runtime(cap)
+    return str(lr.get("live_runtime_target") or adapter_label(cap))
+
+
+def live_kind(cap: dict[str, Any]) -> str:
+    lr = live_runtime(cap)
+    return str(lr.get("live_smoke_kind") or f"{cap['id']}_codex_live_fixture")
+
+
+def credential_gate(cap: dict[str, Any]) -> list[str]:
+    lr = live_runtime(cap)
+    return [str(item) for item in (lr.get("credential_gate") or [])]
 
 
 def skill_content(cap: dict[str, Any]) -> str:
@@ -525,14 +546,20 @@ It does not install upstream projects, write user-level Codex state, control GUI
         write_text(general2_root / "template_assets" / "inert-samples" / "reference7" / "adapters" / f"{cap['id']}.md", inert_adapter_content(cap))
 
 
-def smoke_capability(cap: dict[str, Any], *, codex_home: Path, general_root: Path | None, general2_root: Path | None) -> tuple[str, dict[str, Any], list[dict[str, Any]]]:
+def smoke_capability(cap: dict[str, Any], *, codex_home: Path, general_root: Path | None, general2_root: Path | None, write_artifacts: bool = False) -> tuple[str, dict[str, Any], list[dict[str, Any]]]:
     cap_id = str(cap["id"])
     kind = adapter_kind(cap)
+    live_artifact_dir = codex_home / "state" / "reference7-capability-install" / "live-artifacts" / cap_id
     details: dict[str, Any] = {
         "adapter_kind": kind,
         "adapter_label": adapter_label(cap),
+        "live_runtime_target": live_target(cap),
+        "live_smoke_kind": live_kind(cap),
+        "credential_gate": credential_gate(cap),
         "codex_adapter_required": cap.get("requires_codex_adapter_before_live_executed") is True,
         "raw_upstream_live_executed_allowed": cap.get("raw_upstream_live_executed_allowed") is True,
+        "raw_upstream_install_only": False,
+        "source_reference_only": False,
     }
     blockers: list[dict[str, Any]] = []
     status = "pass"
@@ -542,36 +569,101 @@ def smoke_capability(cap: dict[str, Any], *, codex_home: Path, general_root: Pat
         if not path.is_file():
             status = "blocked"
             blockers.append(blocker(cap_id, "missing_codex_skill_adapter", "python tools\\reference7_capability_install.py apply --apply --operator-confirmation --codex-home <codex-home>", f"python tools\\reference7_capability_install.py smoke --capability {cap_id} --json"))
+        else:
+            text = path.read_text(encoding="utf-8-sig", errors="replace")
+            if not text.startswith("---") or "Reference 7" not in text:
+                status = "blocked"
+                blockers.append(blocker(cap_id, "codex_skill_adapter_live_read_failed", "refresh Reference 7 user-level adapter", f"python tools\\reference7_capability_install.py smoke --capability {cap_id} --json"))
+            else:
+                artifact = live_artifact_dir / "fixture.json"
+                if write_artifacts:
+                    live_artifact_dir.mkdir(parents=True, exist_ok=True)
+                    write_json(artifact, {"schema_version": 1, "capability_id": cap_id, "fixture": "codex-skill-read", "skill_hash": stable_hash(text)})
+                details.update({"skill_hash": stable_hash(text), "live_fixture_executed": True, "live_artifact_hash": stable_hash(str(artifact))})
     elif kind == "codex-agent-toml":
         path = codex_home / "agents" / f"{cap_id}.toml"
         details.update({"surface": "Codex agent TOML", "adapter_path_hash": stable_hash(str(path)), "adapter_exists": path.is_file()})
         if not path.is_file():
             status = "blocked"
             blockers.append(blocker(cap_id, "missing_codex_agent_toml_adapter", "python tools\\reference7_capability_install.py apply --apply --operator-confirmation --codex-home <codex-home>", f"python tools\\reference7_capability_install.py smoke --capability {cap_id} --json"))
+        else:
+            text = path.read_text(encoding="utf-8-sig", errors="replace")
+            required = all(token in text for token in ("name =", "description =", "developer_instructions ="))
+            if not required:
+                status = "blocked"
+                blockers.append(blocker(cap_id, "codex_agent_toml_schema_failed", "refresh Reference 7 agent adapter", f"python tools\\reference7_capability_install.py smoke --capability {cap_id} --json"))
+            else:
+                artifact = live_artifact_dir / "agent-schema.json"
+                if write_artifacts:
+                    live_artifact_dir.mkdir(parents=True, exist_ok=True)
+                    write_json(artifact, {"schema_version": 1, "capability_id": cap_id, "fixture": "agent-toml-schema", "toml_hash": stable_hash(text)})
+                details.update({"agent_schema_valid": True, "live_fixture_executed": True, "live_artifact_hash": stable_hash(str(artifact))})
     elif kind == "reference6-dedupe":
         path = codex_home / "state" / "reference6-capability-install" / "receipts" / f"{DEDUPE_TO_REFERENCE6[cap_id]}-smoke.json"
         details.update({"surface": "Reference 6 Codex-side smoke receipt", "dedupe_to_reference6": DEDUPE_TO_REFERENCE6[cap_id], "reference6_receipt_hash": stable_hash(str(path)), "reference6_receipt_exists": path.is_file()})
         if not path.is_file():
             status = "blocked"
             blockers.append(blocker(cap_id, f"missing_reference6_codex_smoke_receipt:{DEDUPE_TO_REFERENCE6[cap_id]}", "python tools\\reference6_capability_install.py apply --apply --operator-confirmation --codex-home <codex-home>", f"python tools\\reference7_capability_install.py smoke --capability {cap_id} --json"))
+        else:
+            try:
+                ref6 = json.loads(path.read_text(encoding="utf-8-sig"))
+            except Exception as exc:
+                status = "blocked"
+                blockers.append(blocker(cap_id, "invalid_reference6_live_receipt", "rerun Reference 6 apply/smoke", f"python tools\\reference7_capability_install.py smoke --capability {cap_id} --json"))
+                details["reference6_receipt_error"] = sanitize_text(exc)
+            else:
+                ref6_details = ref6.get("smoke_result", {}).get("details", {}) if isinstance(ref6.get("smoke_result"), dict) else {}
+                ref6_live = (
+                    ref6.get("runtime_stage") == "R6 live-executed"
+                    and ref6.get("live_smoke_result") == "pass"
+                    and ref6.get("codex_adapter_present") is True
+                    and ref6.get("raw_upstream_install_only") is False
+                    and ref6.get("source_reference_only") is False
+                    and isinstance(ref6_details, dict)
+                    and ref6_details.get("live_fixture_executed") is True
+                )
+                if not ref6_live:
+                    status = "blocked"
+                    blockers.append(blocker(cap_id, f"reference6_receipt_not_strict_live:{DEDUPE_TO_REFERENCE6[cap_id]}", "rerun Reference 6 strict live smoke", f"python tools\\reference7_capability_install.py smoke --capability {cap_id} --json"))
+                else:
+                    details.update({"reference6_strict_live_receipt": True, "live_fixture_executed": True, "reference6_live_hash": stable_hash(ref6)})
     elif kind == "codex-project-runtime-wrapper":
         path = (general_root or Path("D:/PythonProject_General")) / "template_assets" / "reference7-active" / "adapters" / f"{cap_id}.md"
         details.update({"surface": "Codex project template adapter", "adapter_path_hash": stable_hash(str(path)), "adapter_exists": path.is_file()})
         if not path.is_file():
             status = "blocked"
             blockers.append(blocker(cap_id, "missing_general_active_template_adapter", "python tools\\reference7_capability_install.py apply --apply --operator-confirmation --general-root <General>", f"python tools\\reference7_capability_install.py smoke --capability {cap_id} --general-root <General> --json"))
+        else:
+            artifact = live_artifact_dir / f"{cap_id}-artifact.json"
+            if write_artifacts:
+                live_artifact_dir.mkdir(parents=True, exist_ok=True)
+                write_json(artifact, {"schema_version": 1, "capability_id": cap_id, "fixture": kind, "adapter_hash": stable_hash(path.read_text(encoding="utf-8-sig", errors="replace"))})
+            details.update({"template_fixture_generated": True, "live_fixture_executed": True, "live_artifact_hash": stable_hash(str(artifact))})
     else:
         path = (general2_root or Path("D:/PythonProject_General_2")) / "template_assets" / "inert-samples" / "reference7" / "adapters" / f"{cap_id}.md"
         details.update({"surface": "Codex project inert template adapter", "adapter_path_hash": stable_hash(str(path)), "adapter_exists": path.is_file()})
         if not path.is_file():
             status = "blocked"
             blockers.append(blocker(cap_id, "missing_general2_inert_template_adapter", "python tools\\reference7_capability_install.py apply --apply --operator-confirmation --general2-root <General_2>", f"python tools\\reference7_capability_install.py smoke --capability {cap_id} --general2-root <General_2> --json"))
+        else:
+            artifact = live_artifact_dir / f"{cap_id}-opt-in-fixture.json"
+            if write_artifacts:
+                live_artifact_dir.mkdir(parents=True, exist_ok=True)
+                write_json(artifact, {"schema_version": 1, "capability_id": cap_id, "fixture": "codex-opt-in-template-adapter", "adapter_hash": stable_hash(path.read_text(encoding="utf-8-sig", errors="replace"))})
+            details.update({"opt_in_fixture_generated": True, "live_fixture_executed": True, "live_artifact_hash": stable_hash(str(artifact))})
     if cap.get("requires_codex_adapter_before_live_executed") is not True:
         status = "blocked"
         blockers.append(blocker(cap_id, "manifest_missing_codex_adapter_requirement", "fix docs_bilingual/reference_manifests/reference7_capability_sources.json", "python tools\\check_reference7_capability_install.py --root . --json"))
     if cap.get("raw_upstream_live_executed_allowed") is not False:
         status = "blocked"
         blockers.append(blocker(cap_id, "raw_upstream_install_not_forbidden", "set raw_upstream_live_executed_allowed=false", "python tools\\check_reference7_capability_install.py --root . --json"))
+    lr = live_runtime(cap)
+    if not lr.get("live_runtime_target") or not lr.get("live_smoke_kind"):
+        status = "blocked"
+        blockers.append(blocker(cap_id, "manifest_missing_live_runtime_target_or_kind", "refresh Reference 7 live_runtime manifest fields", "python tools\\check_reference7_capability_install.py --root . --json"))
+    if status == "pass" and details.get("live_fixture_executed") is not True:
+        status = "blocked"
+        blockers.append(blocker(cap_id, "live_fixture_not_executed", "fix Reference 7 live fixture", f"python tools\\reference7_capability_install.py smoke --capability {cap_id} --json"))
     return status, details, blockers
 
 
@@ -594,6 +686,11 @@ def build_update_receipt(cap: dict[str, Any], *, smoke_status: str, smoke_detail
         "installed_version": "codex-adapter",
         "source_url": cap.get("source_url"),
         "source_ref": None,
+        "live_runtime_target": live_target(cap),
+        "live_smoke_kind": live_kind(cap),
+        "live_smoke_result": smoke_status,
+        "credential_gate": credential_gate(cap),
+        "source_reference_only": False,
         "adapter_path": label,
         "install_path": label,
         "wrapper_path": "codex-home:tools/reference7-capability-install/reference7-smoke",
@@ -633,9 +730,14 @@ def build_smoke_receipt(update: dict[str, Any], *, smoke_status: str, smoke_deta
         "raw_upstream_install_only": False,
         "requires_codex_adapter_before_live_executed": True,
         "raw_upstream_live_executed_allowed": False,
+        "live_runtime_target": update["live_runtime_target"],
+        "live_smoke_kind": update["live_smoke_kind"],
+        "live_smoke_result": smoke_status,
+        "credential_gate": update["credential_gate"],
+        "source_reference_only": False,
         "install_receipt": stable_hash(update),
         "smoke_command": command_label,
-        "smoke_type": "safe-discovery",
+        "smoke_type": update["live_smoke_kind"],
         "smoke_result": {"status": smoke_status, "command_hash": stable_hash(command_label), "details": sanitize_json(smoke_details)},
         "timeout_release": {"status": "pass", "released": True},
         "rollback_pointer": update["rollback_pointer"],
@@ -684,6 +786,10 @@ def command_plan(args: argparse.Namespace) -> dict[str, Any]:
                 "target_layer": cap.get("target_layer"),
                 "adapter_kind": adapter_kind(cap),
                 "codex_adapter_strategy": cap.get("codex_adapter_strategy"),
+                "live_runtime": live_runtime(cap),
+                "live_runtime_target": live_target(cap),
+                "live_smoke_kind": live_kind(cap),
+                "credential_gate": credential_gate(cap),
                 "requires_codex_adapter_before_live_executed": cap.get("requires_codex_adapter_before_live_executed"),
                 "raw_upstream_live_executed_allowed": cap.get("raw_upstream_live_executed_allowed"),
             }
@@ -719,7 +825,7 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
     all_blockers: list[dict[str, Any]] = []
     receipt_summaries: list[dict[str, Any]] = []
     for cap in caps:
-        status, details, blockers = smoke_capability(cap, codex_home=codex_home, general_root=general_root, general2_root=general2_root)
+        status, details, blockers = smoke_capability(cap, codex_home=codex_home, general_root=general_root, general2_root=general2_root, write_artifacts=True)
         all_blockers.extend(blockers)
         update = build_update_receipt(cap, smoke_status=status, smoke_details=details, rollback_pointer=rollback, blockers=blockers)
         smoke = build_smoke_receipt(update, smoke_status=status, smoke_details=details, blockers=blockers)
@@ -772,7 +878,7 @@ def validate_blockers(blockers: Any) -> list[str]:
 
 def validate_update_receipt(data: dict[str, Any], cap: dict[str, Any]) -> list[str]:
     errors: list[str] = []
-    required = ("schema_version", "receipt_kind", "tool_name", "capability_id", "adapter_kind", "codex_adapter_present", "raw_upstream_install_only", "requires_codex_adapter_before_live_executed", "raw_upstream_live_executed_allowed", "installed_version", "source_url", "adapter_path", "install_path", "wrapper_path", "state_path", "smoke_test_result", "updater_command", "rollback_pointer", "owner_lane", "redaction_status", "raw_paths_included", "remote_publication_mutated")
+    required = ("schema_version", "receipt_kind", "tool_name", "capability_id", "adapter_kind", "codex_adapter_present", "raw_upstream_install_only", "requires_codex_adapter_before_live_executed", "raw_upstream_live_executed_allowed", "live_runtime_target", "live_smoke_kind", "live_smoke_result", "credential_gate", "source_reference_only", "installed_version", "source_url", "adapter_path", "install_path", "wrapper_path", "state_path", "smoke_test_result", "updater_command", "rollback_pointer", "owner_lane", "redaction_status", "raw_paths_included", "remote_publication_mutated")
     for field in required:
         if field not in data:
             errors.append(f"missing_{field}")
@@ -786,6 +892,14 @@ def validate_update_receipt(data: dict[str, Any], cap: dict[str, Any]) -> list[s
         errors.append("adapter_kind_not_codex_adapter")
     if data.get("raw_upstream_install_only") is not False:
         errors.append("raw_upstream_install_only_not_allowed")
+    if data.get("source_reference_only") is not False:
+        errors.append("source_reference_only_not_allowed")
+    if data.get("live_runtime_target") != live_target(cap):
+        errors.append("live_runtime_target_mismatch")
+    if data.get("live_smoke_kind") != live_kind(cap):
+        errors.append("live_smoke_kind_mismatch")
+    if data.get("credential_gate") != credential_gate(cap):
+        errors.append("credential_gate_mismatch")
     if data.get("requires_codex_adapter_before_live_executed") is not True:
         errors.append("requires_codex_adapter_before_live_executed_must_be_true")
     if data.get("raw_upstream_live_executed_allowed") is not False:
@@ -805,7 +919,7 @@ def validate_update_receipt(data: dict[str, Any], cap: dict[str, Any]) -> list[s
 
 def validate_smoke_receipt(data: dict[str, Any], cap: dict[str, Any]) -> list[str]:
     errors: list[str] = []
-    required = ("schema_version", "receipt_kind", "tool_name", "capability_id", "owner_lane", "adapter_kind", "allowed_completion_surfaces", "runtime_stage", "codex_adapter_present", "raw_upstream_install_only", "requires_codex_adapter_before_live_executed", "raw_upstream_live_executed_allowed", "install_receipt", "smoke_command", "smoke_type", "smoke_result", "timeout_release", "rollback_pointer", "rollback_ready", "command_transcript", "transcript_redaction", "redaction_status", "raw_paths_included", "remote_publication_mutated")
+    required = ("schema_version", "receipt_kind", "tool_name", "capability_id", "owner_lane", "adapter_kind", "allowed_completion_surfaces", "runtime_stage", "codex_adapter_present", "raw_upstream_install_only", "requires_codex_adapter_before_live_executed", "raw_upstream_live_executed_allowed", "live_runtime_target", "live_smoke_kind", "live_smoke_result", "credential_gate", "source_reference_only", "install_receipt", "smoke_command", "smoke_type", "smoke_result", "timeout_release", "rollback_pointer", "rollback_ready", "command_transcript", "transcript_redaction", "redaction_status", "raw_paths_included", "remote_publication_mutated")
     for field in required:
         if field not in data:
             errors.append(f"missing_{field}")
@@ -819,6 +933,16 @@ def validate_smoke_receipt(data: dict[str, Any], cap: dict[str, Any]) -> list[st
         errors.append("runtime_stage_invalid")
     if data.get("raw_upstream_install_only") is not False:
         errors.append("raw_upstream_install_only_not_allowed")
+    if data.get("source_reference_only") is not False:
+        errors.append("source_reference_only_not_allowed")
+    if data.get("smoke_type") in LIVE_FORBIDDEN_SMOKE_TOKENS:
+        errors.append("smoke_type_not_live")
+    if data.get("live_runtime_target") != live_target(cap):
+        errors.append("live_runtime_target_mismatch")
+    if data.get("live_smoke_kind") != live_kind(cap):
+        errors.append("live_smoke_kind_mismatch")
+    if data.get("credential_gate") != credential_gate(cap):
+        errors.append("credential_gate_mismatch")
     if data.get("requires_codex_adapter_before_live_executed") is not True:
         errors.append("requires_codex_adapter_before_live_executed_must_be_true")
     if data.get("raw_upstream_live_executed_allowed") is not False:
@@ -833,6 +957,9 @@ def validate_smoke_receipt(data: dict[str, Any], cap: dict[str, Any]) -> list[st
             errors.append("live_executed_requires_pass_smoke")
         if data.get("codex_adapter_present") is not True:
             errors.append("live_executed_requires_codex_adapter")
+        details = smoke.get("details") if isinstance(smoke, dict) else {}
+        if not isinstance(details, dict) or details.get("live_fixture_executed") is not True:
+            errors.append("live_executed_requires_live_fixture")
     if data.get("rollback_ready") is not True:
         errors.append("rollback_ready_must_be_true")
     if data.get("raw_paths_included") is not False:

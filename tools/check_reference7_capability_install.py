@@ -124,6 +124,20 @@ def check_manifest(root: Path, errors: list[str]) -> dict[str, Any]:
         for field in ("id", "source_url", "target_layer", "codex_adapter_strategy"):
             if not item.get(field):
                 errors.append(f"manifest_capability_missing_{field}:{cap_id}")
+        live = item.get("live_runtime")
+        if not isinstance(live, dict):
+            errors.append(f"manifest_capability_missing_live_runtime:{cap_id}")
+        else:
+            if not live.get("live_runtime_target") or not live.get("live_smoke_kind"):
+                errors.append(f"manifest_live_runtime_missing_target_or_kind:{cap_id}")
+            if live.get("codex_adapter_required") is not True:
+                errors.append(f"manifest_live_runtime_must_require_codex_adapter:{cap_id}")
+            if live.get("raw_upstream_install_only_counts") is not False:
+                errors.append(f"manifest_raw_upstream_install_must_not_count:{cap_id}")
+            if live.get("source_reference_only_counts") is not False:
+                errors.append(f"manifest_source_reference_must_not_count:{cap_id}")
+            if item.get("id") in DEDUPE and live.get("dedupe_live_receipt_required") is not True:
+                errors.append(f"manifest_dedupe_must_require_strict_receipt:{cap_id}")
         if item.get("requires_codex_adapter_before_live_executed") is not True:
             errors.append(f"manifest_capability_must_require_codex_adapter:{cap_id}")
         if item.get("raw_upstream_live_executed_allowed") is not False:
@@ -203,6 +217,8 @@ def check_runtime_plan(root: Path, errors: list[str]) -> dict[str, Any]:
             errors.append(f"runtime_plan_capability_must_require_adapter:{item.get('id')}")
         if item.get("raw_upstream_live_executed_allowed") is not False:
             errors.append(f"runtime_plan_raw_upstream_allowed:{item.get('id')}")
+        if not item.get("live_runtime_target") or not item.get("live_smoke_kind"):
+            errors.append(f"runtime_plan_missing_live_runtime:{item.get('id')}")
     return payload
 
 

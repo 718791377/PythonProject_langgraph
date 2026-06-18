@@ -12,6 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "tools" / "reference7_capability_install.py"
+REF6_RUNTIME = ROOT / "tools" / "reference6_capability_install.py"
 CHECKER = ROOT / "tools" / "check_reference7_capability_install.py"
 
 
@@ -52,6 +53,8 @@ class Reference7CapabilityInstallTests(unittest.TestCase):
             self.assertTrue(item["requires_codex_adapter_before_live_executed"])
             self.assertFalse(item["raw_upstream_live_executed_allowed"])
             self.assertIn("adapter_kind", item)
+            self.assertIn("live_runtime_target", item)
+            self.assertIn("live_smoke_kind", item)
         self.assertEqual(payload["codex_provider_env"]["reuse_mode"], "env_key_name_only")
         self.assertFalse(payload["codex_provider_env"]["copy_secret_values"])
         self.assertFalse(payload["codex_config_toml_mutated"])
@@ -94,6 +97,8 @@ class Reference7CapabilityInstallTests(unittest.TestCase):
         self.assertIn(sample_smoke["adapter_kind"], {"codex-skill", "codex-agent-toml", "codex-project-runtime-wrapper", "codex-project-inert-template", "reference6-dedupe"})
         self.assertTrue(sample_smoke["requires_codex_adapter_before_live_executed"])
         self.assertFalse(sample_smoke["raw_upstream_live_executed_allowed"])
+        self.assertIn("live_runtime_target", sample_smoke)
+        self.assertNotEqual(sample_smoke["smoke_type"], "safe-discovery")
         rendered = json.dumps(payload, ensure_ascii=False)
         self.assertNotIn(str(home), rendered)
         self.assertNotIn(str(general), rendered)
@@ -127,6 +132,7 @@ class Reference7CapabilityInstallTests(unittest.TestCase):
         home = base / "codex-home"
         general = base / "General"
         general2 = base / "General_2"
+        self.run_json(REF6_RUNTIME, "apply", "--apply", "--operator-confirmation", "--codex-home", str(home), "--general-root", str(general), "--general2-root", str(general2), "--sync-templates")
         self.run_json(RUNTIME, "apply", "--apply", "--operator-confirmation", "--codex-home", str(home), "--general-root", str(general), "--general2-root", str(general2), "--sync-templates")
         code, payload = self.run_json(
             CHECKER,
@@ -136,6 +142,7 @@ class Reference7CapabilityInstallTests(unittest.TestCase):
             str(home),
             "--require-user-level-installed",
             "--require-smoke-tested",
+            "--require-live-executed",
             "--general-root",
             str(general),
             "--general2-root",
@@ -145,6 +152,7 @@ class Reference7CapabilityInstallTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertTrue(payload["ok"], payload["errors"])
         self.assertEqual(payload["user_level_check"]["smoke_receipt_count"], 25)
+        self.assertEqual(payload["user_level_check"]["live_executed_count"], 25)
 
     def test_raw_upstream_only_receipt_is_rejected(self) -> None:
         home = self.make_root("negative") / "codex-home"
