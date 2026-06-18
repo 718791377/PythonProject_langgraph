@@ -4,7 +4,7 @@
 
 ## Fresh Source Evidence
 
-本地图以 Stage B fresh extraction 运行 `one-person-company-pmi-refresh-stageb-20260619`（`2026-06-18T18:37:58Z`）作为 `Business Management/` 与 `PMP/` 的当前证据边界。精确清单数量来自 `Business Management/` 下本地一人公司架构笔记全文读取（manifest 中 18,544 字符）。Business Management 来源解释一人公司运营原则；PMP 来源提供过程组、PMO、项目集、项目组合、敏捷与裁剪纪律。当前生命周期 Markdown 文件也通过 `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` 作为全文文档重新读取（26 个文件、297,871 个字符，全部 `ok`）。
+本地图以 Stage B fresh extraction 运行 `one-person-company-pmi-refresh-stageb-20260619`（`2026-06-18T18:37:58Z`）作为 `Business Management/` 与 `PMP/` 的当前证据边界。精确清单数量来自 `Business Management/` 下本地一人公司架构笔记全文读取（manifest 中 18,544 字符）。Business Management 来源解释一人公司运营原则；PMP 来源提供过程组、PMO、项目集、项目组合、敏捷与裁剪纪律。当前生命周期 Markdown 文件也通过 `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` 作为全文文档重新读取（26 个文件、310,349 个字符，全部 `ok`）。
 
 ## 规范清单
 

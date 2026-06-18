@@ -135,4 +135,4 @@ runtime findings 的 canonical 位置仍是 10 层研究稿。生命周期落地
 
 ## Product lifecycle Markdown reread
 
-本轮还通过 `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` 全文读取 `docs_bilingual/product_lifecycle/` 下 26 个 Markdown 文档，共 297,871 个字符，全部 `ok`。该证据用于证明在更新白皮书、一人公司北极星、生命周期地图和裁剪规则前，当前生命周期文档本身已被重新读取。
+本轮还通过 `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` 全文读取 `docs_bilingual/product_lifecycle/` 下 26 个 Markdown 文档，共 310,349 个字符，全部 `ok`。该证据用于证明在更新白皮书、一人公司北极星、生命周期地图和裁剪规则前，当前生命周期文档本身已被重新读取。

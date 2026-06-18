@@ -19,7 +19,7 @@ It is a downstream business operating-system white paper. It does not replace th
 
 This refresh is grounded in a new local extraction run named `one-person-company-pmi-refresh-stageb-20260619` generated at `2026-06-18T18:37:58Z`. The run read the ignored local `Business Management/` and `PMP/` source roots by PDF page, EPUB spine item, and Markdown full document, then wrote local ignored evidence under `.omx/state/langgraph/extraction/business_pmp_20260619/`.
 
-The run covered 54 sources: 31 Business Management sources and 23 PMP sources. Format coverage was 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. All 54 sources completed with `ok` status, for 9,656 read units and 18,492,044 extracted characters. A separate tracked-lifecycle Markdown fresh read, `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619`, read 26 `docs_bilingual/product_lifecycle/` Markdown documents as full documents for 297,871 characters, all with `ok` status.
+The run covered 54 sources: 31 Business Management sources and 23 PMP sources. Format coverage was 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. All 54 sources completed with `ok` status, for 9,656 read units and 18,492,044 extracted characters. A separate tracked-lifecycle Markdown fresh read, `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619`, read 26 `docs_bilingual/product_lifecycle/` Markdown documents as full documents for 310,349 characters, all with `ok` status.
 
 Tracked documents may cite aggregate counts, source-family names, and repository-specific synthesis only. Raw extraction text remains ignored local evidence and must not be copied into tracked documentation.
 

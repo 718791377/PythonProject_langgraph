@@ -31,11 +31,11 @@ This index records the current fresh-reading evidence boundary for the lifecycle
 ## Product Lifecycle Markdown Fresh Read
 
 - Run ID: `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619`
-- Generated at: `2026-06-18T18:48:14Z`
+- Generated at: `2026-06-18T20:40:36Z`
 - Source root: `docs_bilingual/product_lifecycle/`
 - Markdown documents: 26
 - Full-document units: 26
-- Extracted characters: 297,871
+- Extracted characters: 310,349
 - Status: all documents `ok`
 
 ## Commit Boundary

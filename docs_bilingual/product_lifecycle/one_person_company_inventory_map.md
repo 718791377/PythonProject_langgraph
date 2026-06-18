@@ -4,7 +4,7 @@ This map is the concise canonical inventory for the downstream one-person-compan
 
 ## Fresh Source Evidence
 
-This map uses the Stage B fresh extraction run `one-person-company-pmi-refresh-stageb-20260619` (`2026-06-18T18:37:58Z`) as its current source-evidence boundary for `Business Management/` and `PMP/`. Exact inventory counts come from the full-text read of the local one-person-company architecture note under `Business Management/` (18,544 characters in the manifest). Business Management sources explain one-person-company operating principles; PMP sources provide process-group, PMO, program, portfolio, agile, and tailoring discipline. Current lifecycle Markdown files were also reread as full documents in `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` (26 files, 297,871 characters, all `ok`).
+This map uses the Stage B fresh extraction run `one-person-company-pmi-refresh-stageb-20260619` (`2026-06-18T18:37:58Z`) as its current source-evidence boundary for `Business Management/` and `PMP/`. Exact inventory counts come from the full-text read of the local one-person-company architecture note under `Business Management/` (18,544 characters in the manifest). Business Management sources explain one-person-company operating principles; PMP sources provide process-group, PMO, program, portfolio, agile, and tailoring discipline. Current lifecycle Markdown files were also reread as full documents in `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` (26 files, 310,349 characters, all `ok`).
 
 ## Canonical Inventory
 

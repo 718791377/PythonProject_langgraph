@@ -19,7 +19,7 @@ status: draft
 
 本轮刷新基于新的本地抽取运行 `one-person-company-pmi-refresh-stageb-20260619`，生成时间为 `2026-06-18T18:37:58Z`。该运行按 PDF 每页、EPUB spine item、Markdown 全文读取忽略态本地源根 `Business Management/` 与 `PMP/`，并把本地证据写入 `.omx/state/langgraph/extraction/business_pmp_20260619/`。
 
-该运行覆盖 54 个来源：31 个 Business Management 来源和 23 个 PMP 来源。格式覆盖为 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件。全部 54 个来源均以 `ok` 状态完成，共 9,656 个读取单元和 18,492,044 个抽取字符。另有 `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` 对 `docs_bilingual/product_lifecycle/` 下 26 个 Markdown 文档进行全文读取，共 297,871 个字符，全部 `ok`。
+该运行覆盖 54 个来源：31 个 Business Management 来源和 23 个 PMP 来源。格式覆盖为 31 个 PDF / 9,280 页、9 个 EPUB / 362 个 spine item、14 个 Markdown 全文文件。全部 54 个来源均以 `ok` 状态完成，共 9,656 个读取单元和 18,492,044 个抽取字符。另有 `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` 对 `docs_bilingual/product_lifecycle/` 下 26 个 Markdown 文档进行全文读取，共 310,349 个字符，全部 `ok`。
 
 被跟踪文档只能引用聚合数量、来源家族名称和仓库特定综合结论。原始抽取文本只作为忽略态本地证据，不得复制进被跟踪文档。
 
