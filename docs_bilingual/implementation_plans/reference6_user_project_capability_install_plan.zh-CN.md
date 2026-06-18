@@ -32,6 +32,7 @@ translation_of: docs_bilingual/implementation_plans/reference6_user_project_capa
 - 2026-06-17：runtime/checker/test 实现已完成；真实用户级安装 receipt 已在用户 Codex home 下重新生成；General 与 General_2 模板同步提交已合入各自本地 `main`。
 - 默认决策：分层安装、复用 Codex provider `env_key` 名称、redacted receipts / 脱敏 receipt、不做远端发布。
 
+- 2026-06-18 update: Browserbase is optional-disabled by user decision; MINERU_API_KEY is available and MinerU/mineru-api-limit must refresh to live-executed receipts.
 <!-- CURRENT_STATUS_END -->
 
 ## 任务 backlog
@@ -114,6 +115,7 @@ translation_of: docs_bilingual/implementation_plans/reference6_user_project_capa
 
 ## Live execution evidence
 
+- 2026-06-18 live update: MINERU_API_KEY is available; Browserbase remains optional-disabled with redacted resume env keys BROWSERBASE_API_KEY and BROWSERBASE_PROJECT_ID.
 - 用户级 artifacts 已通过 `python tools\reference6_capability_install.py apply --apply --operator-confirmation --resolve-git-refs --codex-home C:\Users\<user>\.codex --json` 写入用户 Codex home。
 - PyMuPDF 用户级 package smoke 通过，`fitz` 可 import，版本 `1.27.2.3`。
 - MinerU 用户级 package smoke 可 import `mineru`，版本 `3.3.1`；live service smoke 仅因缺少 `MINERU_API_KEY` 阻塞，已记录 `setx MINERU_API_KEY <secret-value>` 与脱敏恢复命令。

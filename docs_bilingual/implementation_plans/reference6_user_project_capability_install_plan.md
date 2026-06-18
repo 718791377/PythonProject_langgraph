@@ -54,7 +54,7 @@ Reference set:
 | --- | --- | --- |
 | Plan registration | `docs_bilingual/docs_registry.yaml` | planned in this change |
 | Reference source list | `reference_files/6.md` | captured in this plan |
-| User-level install receipt | `C:\Users\<user>\.codex\state\reference6-capability-install\receipts\*.json` | live receipts regenerated; PyMuPDF and mineru packages installed; MinerU service key remains recorded as redacted blocker |
+| User-level install receipt | `C:\Users\<user>\.codex\state\reference6-capability-install\receipts\*.json` | live receipts regenerated; PyMuPDF and mineru packages installed; MinerU service key is available for live service smoke; Browserbase is optional-disabled with a redacted resume receipt |
 | Source validation | `python tools\run_openspec_guard.py --root . --json` | pending final gate |
 | General validation | `tools\ci\local_gate.ps1 -Root D:\PythonProject_General -Json` | passed before local main merge; commit `f0a5e94` |
 | General_2 validation | `tools\ci\local_gate.ps1 -Root D:\PythonProject_General_2 -Json` | passed before local main merge; commit `01aaff4` |
@@ -129,6 +129,6 @@ Known preflight risks:
 
 - User-level artifacts were written under the user Codex home by `python tools\reference6_capability_install.py apply --apply --operator-confirmation --resolve-git-refs --codex-home C:\Users\<user>\.codex --json`.
 - PyMuPDF user-level package smoke passes with `fitz` import and version `1.27.2.3`.
-- MinerU user-level package smoke imports `mineru` version `3.3.1`; live service smoke remains blocked only by missing `MINERU_API_KEY`, recorded with `setx MINERU_API_KEY <secret-value>` and a redacted resume command.
+- MinerU user-level package smoke imports `mineru` version `3.3.1`; with `MINERU_API_KEY` available, `mineru` and `mineru-api-limit` receipts must refresh to live-executed. Browserbase is optional-disabled by user decision.
 - `D:\PythonProject_General` local `main` contains active reusable Reference 6 template surfaces in commit `f0a5e94`.
 - `D:\PythonProject_General_2` local `main` contains inert Reference 6 upgrade samples in commit `01aaff4`.

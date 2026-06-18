@@ -53,19 +53,33 @@
       "layer": "user_level",
       "live_runtime": {
         "codex_adapter_required": true,
+        "completion_policy": "optional_disabled",
         "credential_gate": [
+          "BROWSERBASE_API_KEY",
+          "BROWSERBASE_PROJECT_ID"
+        ],
+        "disabled": true,
+        "disabled_reason": "user_disabled_browserbase_service_lane",
+        "disabled_resume_env_keys": [
           "BROWSERBASE_API_KEY",
           "BROWSERBASE_PROJECT_ID"
         ],
         "gui_or_local_service_allowed": false,
         "live_runtime_target": "codex-home:skills/browserbase-skills/SKILL.md + codex-home:tools/reference6-capability-install/reference6-smoke",
         "live_smoke_kind": "external_service_api_inspection",
-        "per_link_required": true,
+        "per_link_required": false,
         "raw_upstream_install_only_counts": false,
         "receipt_redaction": "hash_plus_human_checkable_label",
         "source_reference_only_counts": false
       },
-      "notes": "Browserbase skill packaging reference; live execution requires Browserbase env keys and a real API inspection through the Codex adapter.",
+      "completion_policy": "optional_disabled",
+      "disabled": true,
+      "disabled_reason": "user_disabled_browserbase_service_lane",
+      "disabled_resume_env_keys": [
+        "BROWSERBASE_API_KEY",
+        "BROWSERBASE_PROJECT_ID"
+      ],
+      "notes": "Browserbase skill packaging reference; currently disabled by user decision. Restore by providing Browserbase env keys and rerunning the live API inspection through the Codex adapter.",
       "required_env_keys": [
         "BROWSERBASE_API_KEY",
         "BROWSERBASE_PROJECT_ID"

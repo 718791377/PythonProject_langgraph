@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -26,7 +27,7 @@ class Reference6CapabilityInstallTests(unittest.TestCase):
         self.addCleanup(lambda: shutil.rmtree(base, ignore_errors=True))
         return home
 
-    def run_json(self, script: Path, *args: str, check: bool = True) -> tuple[int, dict]:
+    def run_json(self, script: Path, *args: str, check: bool = True, env: dict[str, str] | None = None) -> tuple[int, dict]:
         proc = subprocess.run(
             [sys.executable, str(script), *args, "--json"],
             cwd=ROOT,
@@ -35,6 +36,7 @@ class Reference6CapabilityInstallTests(unittest.TestCase):
             encoding="utf-8",
             errors="replace",
             check=False,
+            env=env,
         )
         try:
             payload = json.loads(proc.stdout)
@@ -65,6 +67,9 @@ class Reference6CapabilityInstallTests(unittest.TestCase):
         for item in payload["capabilities"]:
             self.assertIn("live_runtime_target", item)
             self.assertIn("live_smoke_kind", item)
+        by_id = {item["id"]: item for item in payload["capabilities"]}
+        self.assertEqual(by_id["browserbase-skills"]["live_runtime"]["completion_policy"], "optional_disabled")
+        self.assertTrue(by_id["browserbase-skills"]["live_runtime"]["disabled"])
         self.assertEqual(payload["codex_provider_env"]["reuse_mode"], "env_key_name_only")
         self.assertFalse(payload["codex_provider_env"]["copy_secret_values"])
         self.assertFalse(payload["codex_config_toml_mutated"])
@@ -134,9 +139,13 @@ class Reference6CapabilityInstallTests(unittest.TestCase):
         self.assertTrue(payload["ok"], payload["errors"])
         self.assertEqual(payload["user_level_check"]["smoke_receipt_count"], 9)
 
-    def test_strict_live_gate_blocks_missing_external_service_credentials(self) -> None:
+    def test_strict_live_gate_allows_disabled_browserbase_but_blocks_missing_mineru_credentials(self) -> None:
         home = self.make_home("strict-blocked")
-        self.run_json(RUNTIME, "apply", "--apply", "--operator-confirmation", "--codex-home", str(home))
+        env = dict(os.environ)
+        env.pop("MINERU_API_KEY", None)
+        env.pop("BROWSERBASE_API_KEY", None)
+        env.pop("BROWSERBASE_PROJECT_ID", None)
+        self.run_json(RUNTIME, "apply", "--apply", "--operator-confirmation", "--codex-home", str(home), env=env)
         code, payload = self.run_json(
             RUNTIME,
             "check",
@@ -146,11 +155,17 @@ class Reference6CapabilityInstallTests(unittest.TestCase):
             "--codex-home",
             str(home),
             check=False,
+            env=env,
         )
         self.assertEqual(code, 3)
         self.assertFalse(payload["ok"])
-        self.assertTrue(any("browserbase-skills" in error for error in payload["errors"]))
+        self.assertFalse(any("browserbase-skills" in error for error in payload["errors"]))
         self.assertTrue(any("mineru" in error for error in payload["errors"]))
+        self.assertEqual(payload["disabled_count"], 1)
+        self.assertIn("browserbase-skills", payload["optional_disabled_capabilities"])
+        browserbase = payload["latest_receipts"]["smoke"]["browserbase-skills"]
+        self.assertEqual(browserbase["runtime_stage"], "R6 disabled")
+        self.assertTrue(browserbase["optional_disabled"])
 
     def test_generic_receipt_redaction_checker_accepts_update_receipt(self) -> None:
         home = self.make_home("receipt-gov")

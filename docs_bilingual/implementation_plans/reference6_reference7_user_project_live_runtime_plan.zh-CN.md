@@ -27,7 +27,7 @@ The previous rollout installed Reference 6/7 surfaces and recorded checker-passi
 
 ## User-confirmed defaults / Yonghu queren moren
 
-- External services: wait for credentials. If `BROWSERBASE_API_KEY`, `BROWSERBASE_PROJECT_ID`, or `MINERU_API_KEY` is missing, record a user-action blocker and do not mark the affected link live-executed.
+- External services: wait for credentials. If `MINERU_API_KEY` is missing, record a user-action blocker and do not mark the affected MinerU links live-executed. Browserbase is explicitly optional-disabled by user decision until `BROWSERBASE_API_KEY` and `BROWSERBASE_PROJECT_ID` are supplied for a future re-enable pass.
 - Install scope: user-level plus project templates. Reusable skills and CLI wrappers install under the user Codex home; reusable project surfaces sync into `D:/PythonProject_General`; heavy or risky opt-in surfaces sync into `D:/PythonProject_General_2`.
 - GUI and local services: full install/login/launch is allowed when needed. Receipts must redact paths, secrets, account identifiers, screenshots, and tokens by hash or short human-checkable labels.
 - Codex config policy: reuse only environment key names and presence booleans from the Codex config shape; never copy secret values.
@@ -70,7 +70,7 @@ The previous rollout installed Reference 6/7 surfaces and recorded checker-passi
 | --- | --- | --- | --- | --- | --- |
 | `https://github.com/nexu-io/open-design` | `open-design` | `D:/PythonProject_General` plus user-level wrapper | Codex runtime wrapper and template adapter | Clone or cached source is available, start the local GUI/service or documented example, then record a render/export/screenshot/port receipt | GUI login or desktop permission if upstream requires it |
 | `https://github.com/nexu-io/html-anything` | `html-anything` | `D:/PythonProject_General` plus user-level wrapper | Codex runtime wrapper and template adapter | Generate one minimal HTML artifact and verify it renders in a browser or local preview | none unless upstream adds account requirements |
-| `https://github.com/browserbase/skills` | `browserbase-skills` | user-level Codex skill/CLI adapter | Codex skill adapter plus service wrapper | Create or inspect a real Browserbase session/API result through the adapter | `BROWSERBASE_API_KEY` and `BROWSERBASE_PROJECT_ID` |
+| `https://github.com/browserbase/skills` | `browserbase-skills` | user-level Codex skill/CLI adapter | Codex skill adapter plus service wrapper | Disabled optional lane; retain adapter and redacted resume receipt, but do not require live execution while disabled | re-enable with `BROWSERBASE_API_KEY` and `BROWSERBASE_PROJECT_ID` |
 | `https://github.com/pymupdf/pymupdf` | `pymupdf` | user-level Python tool capability | Codex Python wrapper/checker | Import `fitz`, create a one-page PDF, reopen it, extract text, and render or validate page metadata | none |
 | `https://github.com/opendatalab/MinerU` | `mineru` | user-level CLI/API wrapper | Codex service wrapper and optional template entry | Run a real MinerU package/API smoke against a tiny fixture document | `MINERU_API_KEY` if using official service path |
 | `https://mineru.net/apiManage/limit` | `mineru-api-limit` | user-level service receipt | MinerU service receipt surface | Query or verify the account quota/limit endpoint or equivalent official API status | `MINERU_API_KEY` and logged-in account if required |
@@ -154,6 +154,6 @@ Marker compatibility: Reference 7 runtime, every non-Codex upstream, raw upstrea
 - The plan-freeze commit is merged into local `main` before runtime implementation starts.
 - Every Reference 6/7 source link has an explicit per-link install and live-smoke record.
 - All non-Codex upstreams have counted Codex adapters or forks before live completion is claimed.
-- Browserbase and MinerU are not marked live-executed unless the required credentials exist and the real service smoke passes.
+- Browserbase is not marked live-executed while optional-disabled; MinerU is marked live-executed only when `MINERU_API_KEY` exists and the real service smoke passes.
 - General and General_2 are updated, clean, and locally validated.
 - The implementation commit is merged into local `main`; remote publication remains stopped until the user explicitly requests it.

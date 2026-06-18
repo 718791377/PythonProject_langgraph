@@ -54,6 +54,8 @@ KNOWN_SOURCE_REFS = {
     "mattpocock-skills": "2454c95dc305c158b21a0cdafeb728879dd0359a",
 }
 LIVE_FORBIDDEN_SMOKE_TOKENS = {"safe-discovery", "source-discovery", "readme-discovery", "adapter-presence-only", "raw-upstream-install"}
+DISABLED_RUNTIME_STAGE = "R6 disabled"
+DISABLED_SMOKE_RESULT = "disabled"
 
 
 def now_iso() -> str:
@@ -112,8 +114,8 @@ def redaction_findings(value: Any, *, path: str = "$", in_env_key_list: bool = F
             key_text = str(key)
             lowered = key_text.lower()
             child = f"{path}.{key_text}"
-            env_key_list = key_text.endswith("env_keys") or key_text in {"required_env_keys", "target_env_keys"}
-            if any(part in lowered for part in ("secret", "token", "password", "cookie", "api_key", "apikey")) and not env_key_list:
+            env_key_list = key_text.endswith("env_keys") or key_text in {"required_env_keys", "target_env_keys", "env_key_presence"}
+            if any(part in lowered for part in ("secret", "token", "password", "cookie", "api_key", "apikey")) and not (env_key_list or in_env_key_list):
                 if item not in (None, "", [], {}, False):
                     findings.append(f"sensitive_field_present:{child}")
             findings.extend(redaction_findings(item, path=child, in_env_key_list=env_key_list))
@@ -175,7 +177,7 @@ def write_text(path: Path, text: str) -> None:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
 
 
 def command_result(command: list[str], *, timeout: int = TIMEOUT_SECONDS) -> dict[str, Any]:
@@ -274,6 +276,22 @@ def live_runtime(cap: dict[str, Any]) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def optional_disabled(cap: dict[str, Any]) -> bool:
+    lr = live_runtime(cap)
+    return bool(cap.get("disabled") or lr.get("disabled") or cap.get("completion_policy") == "optional_disabled" or lr.get("completion_policy") == "optional_disabled")
+
+
+def disabled_reason(cap: dict[str, Any]) -> str:
+    lr = live_runtime(cap)
+    return sanitize_text(cap.get("disabled_reason") or lr.get("disabled_reason") or "optional_disabled")
+
+
+def disabled_resume_env_keys(cap: dict[str, Any]) -> list[str]:
+    lr = live_runtime(cap)
+    keys = cap.get("disabled_resume_env_keys") or lr.get("disabled_resume_env_keys") or credential_gate(cap)
+    return [str(key) for key in keys]
+
+
 def credential_gate(cap: dict[str, Any]) -> list[str]:
     lr = live_runtime(cap)
     keys = lr.get("credential_gate") or cap.get("required_env_keys") or []
@@ -301,6 +319,15 @@ def skill_content(cap: dict[str, Any]) -> str:
     cap_id = str(cap["id"])
     desc = sanitize_text(cap.get("notes") or f"Codex adapter for Reference 6 {cap_id}", limit=120)
     source = sanitize_text(cap.get("source_url"), limit=220)
+    disabled_note = ""
+    if optional_disabled(cap):
+        disabled_note = (
+            "\n## Optional disabled lane\n\n"
+            f"- Completion policy: `optional_disabled`\n"
+            f"- Disabled reason: `{disabled_reason(cap)}`\n"
+            f"- Resume env keys: `{', '.join(disabled_resume_env_keys(cap)) or 'none'}`\n"
+            "- This lane must not be reported as `R6 live-executed` while disabled.\n"
+        )
     return f"""---
 name: {cap_id}
 description: "Reference 6 Codex adapter. {desc}"
@@ -317,6 +344,7 @@ This is a Codex-facing adapter for the Reference 6 upstream link.
 - Secrets policy: reuse Codex provider environment key names only; never copy secret values.
 
 Raw upstream source discovery or raw upstream install alone is not `R6 live-executed` evidence.
+{disabled_note}
 """
 
 
@@ -329,6 +357,9 @@ def service_adapter_content(cap: dict[str, Any]) -> str:
             "live_runtime_target": live_target(cap),
             "live_smoke_kind": live_kind(cap),
             "credential_gate": credential_gate(cap),
+            "completion_policy": "optional_disabled" if optional_disabled(cap) else "required",
+            "disabled": optional_disabled(cap),
+            "disabled_reason": disabled_reason(cap) if optional_disabled(cap) else None,
             "copy_secret_values": False,
             "redaction": "hash_plus_human_checkable_label",
         },
@@ -438,7 +469,7 @@ if __name__ == "__main__": raise SystemExit(main())
 def sync_general2_template(general2_root: Path, manifest: dict[str, Any]) -> None:
     write_text(
         general2_root / "template_assets" / "inert-samples" / "reference6" / "README.md",
-        "# Reference 6 opt-in samples\n\nInert samples for heavy or credential-gated Reference 6 adapters. Generated projects must run live receipts before claiming completion.\n",
+        "# Reference 6 opt-in samples\n\nThese are inert samples for heavy or credential-gated Reference 6 adapters.\n\n- This sample does not install user-level tools by itself.\n- This sample does not write user-level Codex state.\n- Generated projects must opt in, run live receipts, and satisfy credential gates before claiming completion.\n",
     )
     write_json(general2_root / "template_assets" / "inert-samples" / "reference6" / "manifest.json", manifest)
     for cap in manifest_capabilities(manifest):
@@ -478,6 +509,26 @@ def smoke_capability(
     if not present:
         status = "blocked"
         blockers.append(blocker(cap_id, "missing_codex_adapter", "python tools\\reference6_capability_install.py apply --apply --operator-confirmation --codex-home <codex-home>", f"python tools\\reference6_capability_install.py smoke --capability {cap_id} --json"))
+
+    if optional_disabled(cap):
+        details.update(
+            {
+                "optional_disabled": True,
+                "completion_policy": "optional_disabled",
+                "disabled_reason": disabled_reason(cap),
+                "disabled_resume_env_keys": disabled_resume_env_keys(cap),
+                "live_fixture_executed": False,
+            }
+        )
+        blockers.append(
+            blocker(
+                cap_id,
+                "optional_disabled:" + disabled_reason(cap),
+                "setx " + (disabled_resume_env_keys(cap)[0] if disabled_resume_env_keys(cap) else "SERVICE_API_KEY") + " <secret-value>",
+                f"python tools\\reference6_capability_install.py smoke --capability {cap_id} --json",
+            )
+        )
+        return DISABLED_SMOKE_RESULT, details, blockers
 
     env_presence, missing_env = require_env(cap)
     if env_presence:
@@ -602,6 +653,7 @@ def build_update_receipt(
     cap_id = str(cap["id"])
     labels = install_labels(codex_home, cap_id)
     installed_version = str(smoke_details.get("installed_version") or source_ref or "source-reference")
+    disabled = optional_disabled(cap)
     return {
         "schema_version": SCHEMA_VERSION,
         "receipt_kind": "reference6-update",
@@ -618,6 +670,10 @@ def build_update_receipt(
         "live_runtime_target": live_target(cap),
         "live_smoke_kind": live_kind(cap),
         "live_smoke_result": smoke_status,
+        "completion_policy": "optional_disabled" if disabled else "required",
+        "optional_disabled": disabled,
+        "disabled_reason": disabled_reason(cap) if disabled else None,
+        "disabled_resume_env_keys": disabled_resume_env_keys(cap) if disabled else [],
         "credential_gate": credential_gate(cap),
         "codex_adapter_present": smoke_status == "pass" or bool(smoke_details.get("adapter_exists")),
         "raw_upstream_install_only": False,
@@ -647,6 +703,8 @@ def build_update_receipt(
 def build_smoke_receipt(update_receipt: dict[str, Any], *, smoke_status: str, smoke_details: dict[str, Any], blockers: list[dict[str, Any]]) -> dict[str, Any]:
     cap_id = str(update_receipt["capability_id"])
     command_label = f"reference6 smoke --capability {cap_id}"
+    disabled = bool(update_receipt.get("optional_disabled"))
+    runtime_stage = DISABLED_RUNTIME_STAGE if disabled else ("R6 live-executed" if smoke_status == "pass" else "R6 blocked")
     return {
         "schema_version": SCHEMA_VERSION,
         "receipt_kind": "smoke-tested",
@@ -654,10 +712,14 @@ def build_smoke_receipt(update_receipt: dict[str, Any], *, smoke_status: str, sm
         "tool_name": cap_id,
         "capability_id": cap_id,
         "owner_lane": "reference6-capability-install",
-        "runtime_stage": "R6 live-executed" if smoke_status == "pass" else "R6 blocked",
+        "runtime_stage": runtime_stage,
         "live_runtime_target": update_receipt["live_runtime_target"],
         "live_smoke_kind": update_receipt["live_smoke_kind"],
         "live_smoke_result": smoke_status,
+        "completion_policy": update_receipt.get("completion_policy", "required"),
+        "optional_disabled": disabled,
+        "disabled_reason": update_receipt.get("disabled_reason"),
+        "disabled_resume_env_keys": update_receipt.get("disabled_resume_env_keys", []),
         "credential_gate": update_receipt["credential_gate"],
         "codex_adapter_present": smoke_status == "pass" or bool(smoke_details.get("adapter_exists")),
         "raw_upstream_install_only": False,
@@ -889,6 +951,18 @@ def validate_update_receipt(data: dict[str, Any], cap: dict[str, Any]) -> list[s
         errors.append("source_url_mismatch")
     if data.get("receipt_kind") != "reference6-update":
         errors.append("receipt_kind_mismatch")
+    disabled = optional_disabled(cap)
+    if data.get("completion_policy") != ("optional_disabled" if disabled else "required"):
+        errors.append("completion_policy_mismatch")
+    if bool(data.get("optional_disabled")) is not disabled:
+        errors.append("optional_disabled_mismatch")
+    if disabled:
+        if data.get("live_smoke_result") != DISABLED_SMOKE_RESULT:
+            errors.append("disabled_update_requires_disabled_smoke_result")
+        if not data.get("disabled_reason"):
+            errors.append("disabled_update_missing_reason")
+        if data.get("disabled_resume_env_keys") != disabled_resume_env_keys(cap):
+            errors.append("disabled_resume_env_keys_mismatch")
     if data.get("raw_upstream_install_only") is not False:
         errors.append("raw_upstream_install_only_not_allowed")
     if data.get("source_reference_only") is not False:
@@ -919,7 +993,7 @@ def validate_update_receipt(data: dict[str, Any], cap: dict[str, Any]) -> list[s
         if field in data and not (isinstance(data[field], str) and HASH_RE.match(data[field])):
             errors.append(f"{field}_invalid")
     smoke = data.get("smoke_test_result")
-    if not isinstance(smoke, dict) or smoke.get("status") not in {"pass", "blocked"}:
+    if not isinstance(smoke, dict) or smoke.get("status") not in {"pass", "blocked", DISABLED_SMOKE_RESULT}:
         errors.append("smoke_test_result_status_invalid")
     errors.extend(redaction_findings(data))
     return sorted(set(errors))
@@ -963,8 +1037,22 @@ def validate_smoke_receipt(data: dict[str, Any], cap: dict[str, Any]) -> list[st
         errors.append("tool_name_mismatch")
     if data.get("receipt_kind") != "smoke-tested":
         errors.append("receipt_kind_mismatch")
-    if data.get("runtime_stage") not in {"R6 live-executed", "R6 blocked"}:
+    disabled = optional_disabled(cap)
+    if data.get("runtime_stage") not in {"R6 live-executed", "R6 blocked", DISABLED_RUNTIME_STAGE}:
         errors.append("runtime_stage_invalid")
+    if data.get("completion_policy") != ("optional_disabled" if disabled else "required"):
+        errors.append("completion_policy_mismatch")
+    if bool(data.get("optional_disabled")) is not disabled:
+        errors.append("optional_disabled_mismatch")
+    if disabled:
+        if data.get("runtime_stage") != DISABLED_RUNTIME_STAGE:
+            errors.append("disabled_smoke_requires_disabled_stage")
+        if data.get("live_smoke_result") != DISABLED_SMOKE_RESULT:
+            errors.append("disabled_smoke_requires_disabled_result")
+        if not data.get("disabled_reason"):
+            errors.append("disabled_smoke_missing_reason")
+        if data.get("disabled_resume_env_keys") != disabled_resume_env_keys(cap):
+            errors.append("disabled_resume_env_keys_mismatch")
     if data.get("raw_upstream_install_only") is not False:
         errors.append("raw_upstream_install_only_not_allowed")
     if data.get("source_reference_only") is not False:
@@ -984,7 +1072,7 @@ def validate_smoke_receipt(data: dict[str, Any], cap: dict[str, Any]) -> list[st
     if data.get("credential_gate") != credential_gate(cap):
         errors.append("credential_gate_mismatch")
     smoke = data.get("smoke_result")
-    if not isinstance(smoke, dict) or smoke.get("status") not in {"pass", "blocked"}:
+    if not isinstance(smoke, dict) or smoke.get("status") not in {"pass", "blocked", DISABLED_SMOKE_RESULT}:
         errors.append("smoke_result_status_invalid")
     if data.get("rollback_ready") is not True:
         errors.append("rollback_ready_must_be_true")
@@ -1020,10 +1108,11 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
     receipts = load_receipts(paths["receipt_dir"])
     update_by_cap = {item.get("capability_id"): item for item in receipts if item.get("receipt_kind") == "reference6-update"}
     smoke_by_cap = {item.get("capability_id"): item for item in receipts if item.get("receipt_kind") == "smoke-tested"}
-    live_executed = blocked = 0
+    live_executed = blocked = disabled_count = 0
     for cap in caps:
         cap_id = cap["id"]
-        if args.require_live_executed:
+        disabled = optional_disabled(cap)
+        if args.require_live_executed and not disabled:
             expected_status, _, _ = smoke_capability(cap, codex_home=paths["codex_home"], general_root=general_root, general2_root=general2_root, timeout=args.timeout)
             if expected_status != "pass":
                 errors.append(f"live_executed_missing:{cap_id}:{expected_status}")
@@ -1037,8 +1126,11 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
             errors.extend(f"invalid_smoke_receipt:{cap_id}:{err}" for err in validate_smoke_receipt(smoke, cap))
             live_executed += 1 if smoke.get("runtime_stage") == "R6 live-executed" else 0
             blocked += 1 if smoke.get("runtime_stage") == "R6 blocked" else 0
-            if args.require_live_executed and smoke.get("runtime_stage") != "R6 live-executed":
+            disabled_count += 1 if smoke.get("runtime_stage") == DISABLED_RUNTIME_STAGE else 0
+            if args.require_live_executed and not disabled and smoke.get("runtime_stage") != "R6 live-executed":
                 errors.append(f"smoke_receipt_not_live_executed:{cap_id}:{smoke.get('runtime_stage')}")
+            if args.require_live_executed and disabled and smoke.get("runtime_stage") != DISABLED_RUNTIME_STAGE:
+                errors.append(f"disabled_receipt_not_disabled:{cap_id}:{smoke.get('runtime_stage')}")
         elif args.require_smoke_tested:
             errors.append(f"missing_smoke_receipt:{cap_id}")
 
@@ -1057,6 +1149,8 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
         smoke_receipt_count=len(smoke_by_cap),
         live_executed_count=live_executed,
         blocked_count=blocked,
+        disabled_count=disabled_count,
+        optional_disabled_capabilities=[cap["id"] for cap in caps if optional_disabled(cap)],
         latest_receipts=sanitize_json({"updates": update_by_cap, "smoke": smoke_by_cap}),
         blocker_protocol=manifest.get("blocked_completion_protocol"),
     )

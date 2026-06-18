@@ -125,6 +125,19 @@ def check_manifest(root: Path, errors: list[str]) -> dict[str, Any]:
             errors.append(f"manifest_live_runtime_missing_target_or_kind:{item.get('id')}")
         if live.get("codex_adapter_required") is not True:
             errors.append(f"manifest_live_runtime_must_require_codex_adapter:{item.get('id')}")
+        disabled = item.get("completion_policy") == "optional_disabled" or live.get("completion_policy") == "optional_disabled" or item.get("disabled") is True or live.get("disabled") is True
+        if disabled:
+            if item.get("id") != "browserbase-skills":
+                errors.append(f"manifest_unexpected_disabled_capability:{item.get('id')}")
+            if live.get("per_link_required") is not False:
+                errors.append(f"manifest_disabled_live_runtime_must_not_be_required:{item.get('id')}")
+            if not (item.get("disabled_reason") or live.get("disabled_reason")):
+                errors.append(f"manifest_disabled_missing_reason:{item.get('id')}")
+            resume_keys = item.get("disabled_resume_env_keys") or live.get("disabled_resume_env_keys") or []
+            if not isinstance(resume_keys, list) or not resume_keys:
+                errors.append(f"manifest_disabled_missing_resume_env_keys:{item.get('id')}")
+        elif live.get("per_link_required") is not True:
+            errors.append(f"manifest_required_live_runtime_must_be_required:{item.get('id')}")
         if live.get("raw_upstream_install_only_counts") is not False:
             errors.append(f"manifest_raw_upstream_install_must_not_count:{item.get('id')}")
         if live.get("source_reference_only_counts") is not False:
@@ -240,6 +253,7 @@ def evaluate(
             "copies_secret_values": False,
             "source_reference_counts_as_live_executed": False,
             "raw_upstream_install_counts_as_live_executed": False,
+            "optional_disabled_browserbase_allowed": True,
             "remote_publication_allowed": False,
         },
         "errors": sorted(set(errors)),
