@@ -15,5 +15,5 @@
 - [x] 生成一人公司运营包文档配对。
 - [x] 在仓库索引中登记生成文档配对以及新 checker/test。
 - [x] 添加 `test/operations_package_docs.test.py` 并登记到 `tools/ci/ci_test_manifest.json`。
-- [ ] 验证 focused tests、OpenSpec、本地 gate、本地 MR review 和本地 main 集成。
-- [ ] 仅在 Stage B runtime 行为完成验证并本地集成后归档 OpenSpec 变更。
+- [x] 验证 focused tests、OpenSpec、本地 gate、本地 MR review 和本地 main 集成。
+- [x] 仅在 Stage B runtime 行为完成验证并本地集成后归档 OpenSpec 变更。

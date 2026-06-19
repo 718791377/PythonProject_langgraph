@@ -778,7 +778,7 @@ documents:
 
   - doc_id: operations_package_generation_and_runtime_plan
     doc_class: implementation_plan
-    status: active
+    status: final
     canonical_path: docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.zh-CN.md
 

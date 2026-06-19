@@ -1,9 +1,10 @@
 ---
 doc_id: operations_package_generation_and_runtime_plan
 doc_class: implementation_plan
-status: active
+status: final
 change: generate-operations-package-runtime-20260620
 base_ref: 513788164167bbbb0c22872bcac9dd64de8b2b2b
+archived-with: 2026-06-20-generate-operations-package-runtime-20260620
 ---
 
 # Operations Package Generation And Runtime Implementation Plan
@@ -120,24 +121,27 @@ After Stage B passes and is locally integrated, archive the OpenSpec change only
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-- Stage A is being implemented on branch `ops-package-freeze-plan-20260620` in `.worktrees/ops-package-freeze-plan-20260620`.
-- Stage B must start from local `main` after Stage A lands.
+- Stage A plan-freeze package is integrated into local `main` at `459b28ad14f7d26f0a837d51318f006affc3c01f`.
+- Stage B runtime/package implementation is integrated into local `main` at `7863c4dd8daaa3b113b57e83b5252e68220446b9`.
+- OpenSpec closeout is being archived in `openspec/changes/archive/2026-06-20-generate-operations-package-runtime-20260620/` through a local-only closeout branch.
 - Remote publication remains unauthorized.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- Stage A: finish OpenSpec artifacts, bilingual plan, registry entry, validation, commit, and local-main integration.
-- Stage B: implement generator/checker/tests, generate required package docs, update registry and CI manifest, validate, commit, and local-main integrate.
-- Archive: archive this OpenSpec change only after Stage B runtime output is verified.
+- Stage A: completed and merged into local `main`.
+- Stage B: completed and merged into local `main`.
+- Archive: complete the OpenSpec archive/sync closeout and stop at the remote-publication gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- `openspec/changes/generate-operations-package-runtime-20260620/` - OpenSpec contract and lifecycle evidence.
-- `docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md` - frozen implementation plan.
-- `openspec/changes/generate-operations-package-runtime-20260620/` - OpenSpec contract and lifecycle evidence.
-- `docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.zh-CN.md` - bilingual companion for the frozen implementation plan.
+- `docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md` - frozen implementation plan and closeout evidence index.
+- `tools/generate_operations_package.py` - deterministic operations-package generator.
+- `tools/check_operations_package_docs.py` - generated package/tailoring/I/T/O/registry checker.
+- `test/operations_package_docs.test.py` - focused regression tests registered in local CI.
+- `openspec/changes/archive/2026-06-20-generate-operations-package-runtime-20260620/` - archived OpenSpec lifecycle evidence after closeout.
+- `refs/backup/local-main/20260620-042238-before-ops-package-runtime-20260620` - rollback ref preserved before Stage B local-main integration.
 <!-- EVIDENCE_INDEX_END -->

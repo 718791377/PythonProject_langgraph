@@ -2,10 +2,11 @@
 doc_id: operations_package_generation_and_runtime_plan
 lang: zh-CN
 doc_class: implementation_plan
-status: active
+status: final
 change: generate-operations-package-runtime-20260620
 translation_of: docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md
 base_ref: 513788164167bbbb0c22872bcac9dd64de8b2b2b
+archived-with: 2026-06-20-generate-operations-package-runtime-20260620
 ---
 
 # 运营包生成与 Runtime 实施方案
@@ -122,25 +123,30 @@ After Stage B passes and is locally integrated, archive the OpenSpec change only
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-- Stage A is being implemented on branch `ops-package-freeze-plan-20260620` in `.worktrees/ops-package-freeze-plan-20260620`.
-- Stage B must start from local `main` after Stage A lands.
-- Remote publication remains unauthorized.
+- Stage A 方案冻结包已合入本地 `main`: `459b28ad14f7d26f0a837d51318f006affc3c01f`.
+- Stage B runtime/运营包实现已合入本地 `main`: `7863c4dd8daaa3b113b57e83b5252e68220446b9`.
+- OpenSpec 收尾正通过本地-only closeout 分支归档到 `openspec/changes/archive/2026-06-20-generate-operations-package-runtime-20260620/`.
+- 远程发布仍未授权.
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
 
 <!-- TASK_BACKLOG_START -->
-- Stage A: finish OpenSpec artifacts, bilingual plan, registry entry, validation, commit, and local-main integration.
-- Stage B: implement generator/checker/tests, generate required package docs, update registry and CI manifest, validate, commit, and local-main integrate.
-- Archive: archive this OpenSpec change only after Stage B runtime output is verified.
+- Stage A: 已完成并合入本地 `main`.
+- Stage B: 已完成并合入本地 `main`.
+- Archive: 完成 OpenSpec 归档/sync 收尾, 然后停在远程发布门.
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
 
-- `openspec/changes/generate-operations-package-runtime-20260620/` - OpenSpec contract and lifecycle evidence.
-- `docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md` - English primary for this frozen plan.
+- `docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md` - 冻结实施方案与收尾证据索引.
+- `tools/generate_operations_package.py` - 确定性运营包生成器.
+- `tools/check_operations_package_docs.py` - 生成包/裁剪/I/T/O/registry 检查器.
+- `test/operations_package_docs.test.py` - 已登记到本地 CI 的聚焦回归测试.
+- `openspec/changes/archive/2026-06-20-generate-operations-package-runtime-20260620/` - 收尾后的 OpenSpec 归档证据.
+- `refs/backup/local-main/20260620-042238-before-ops-package-runtime-20260620` - Stage B 本地 main 集成前保留的 rollback ref.
 <!-- EVIDENCE_INDEX_END -->
 
 > zh-CN companion note: this file is the Chinese companion for the frozen implementation plan; Stage B must keep tailoring modes and process-group I/T/O rules aligned with the English primary.
