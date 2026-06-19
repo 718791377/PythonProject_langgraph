@@ -28,7 +28,7 @@ browserbase_policy: disabled_by_user
 - Reference 6 源列表有 9 个链接。当前严格 checker 证据显示检查成功、八个必需能力已有 live runtime receipt、一个可选 lane 被禁用，并且 Browserbase 是按用户明确政策禁用，所以不阻塞本接受门。
 - Reference 6 MinerU 相关 lane 已 live-executed，包含 `MINERU_API_KEY` presence 与 MinerU/site/limit 的脱敏 service probe receipt。
 - Reference 7 源列表有 25 个链接。当前严格 checker 证据显示检查成功且二十五个能力已有 live runtime receipt，并包含 `html-anything`、`open-design` 复用 Reference 6 receipt 的重复源处理。
-- `reference_files/8.md` 当前有 16 个链接，尚无已提交的 Reference 8 runtime/checker/test 表面。
+- `reference_files/8.md` has 16 links. Reference 8 now has committed runtime/checker/test surfaces on local `main` at `32df40f`, with 13 live-executed adapter receipts and 3 provision-recorded external desktop/commercial lanes.
 - 模板根目录为：`D:/PythonProject_General` 放 active reusable adapters，`D:/PythonProject_General_2` 放 inert/opt-in heavy adapters。
 
 ## 不可变政策
@@ -67,16 +67,16 @@ browserbase_policy: disabled_by_user
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: Stage A governance package is active and frozen for Stage B implementation. The plan file is registered so Reference 8 runtime/checker/template work can cite this local-main governance package.
+Status: R6/Reference 6-7-8 closeout is complete on local `main`; Stage A governance is active, Stage B runtime/checker/test implementation is merged at `32df40f`, and both template repositories are synced on local `main`.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- Stage B: add Reference 8 manifest, runtime CLI, checker, and tests.
-- Stage C: run user-level adapter install and hash-redacted smoke receipts.
-- Stage D: sync `D:/PythonProject_General` and `D:/PythonProject_General_2` template surfaces.
-- Stage E: run Reference 6/7/8 strict checks, repository gates, local MR review, and local-main integration.
+- Done: Stage B added Reference 8 manifest, runtime CLI, checker, guard wiring, and tests.
+- Done: Stage C generated user-level adapter installs and hash-redacted smoke/provision receipts while Browserbase stays disabled.
+- Done: Stage D synced `D:/PythonProject_General` active adapters and `D:/PythonProject_General_2` inert samples, each committed to local `main`.
+- Done: Stage E passed Reference 6/7/8 checker runs, repository gates, local MR review, and local-main integration. Remote publication remains untouched.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
@@ -85,6 +85,12 @@ Status: Stage A governance package is active and frozen for Stage B implementati
 - Stage A plan commit: `57c44ecb70fbf2f7aea4aa30dc200dc12d9acdcf`.
 - Stage A registry fix: this docs-only governance package registers the plan as active before non-document implementation.
 - Runtime evidence target: `.omx/worktree-task-receipt.json` and Reference 8 install receipts under user-level Codex state.
+- Stage A front matter fix: `840c61b4399aa36f0a2265cb3779639eb7920480`.
+- Stage B runtime implementation: `32df40f694efca400e9c060231f6e32391ca5872`.
+- Template sync commits: `D:/PythonProject_General` local `main` at `6fb28b3`; `D:/PythonProject_General_2` local `main` at `36107b4`.
+- Final checker runs: Reference 6 `ok=true` with 18 receipts, 8 live-executed capabilities, and one disabled Browserbase lane; Reference 7 `ok=true` with 50 receipts and 25 live-executed capabilities; Reference 8 `ok=true` with 32 receipts, 13 live-executed capabilities, and 3 provision-recorded external lanes (`codex-visio-paper-figure-skill`, `cae-agent-hub`, `ansys-mcp-server`).
+- Final repository guard: `python tools/run_openspec_guard.py --root . --json` passed with 71/71 steps on local `main`.
+- Remote publication evidence: no GitLab/GitHub push, MR, merge, sync, or remote ref mutation was performed.
 <!-- EVIDENCE_INDEX_END -->
 
 ### Stage A：冻结本实施方案

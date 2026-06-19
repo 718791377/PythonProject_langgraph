@@ -28,7 +28,7 @@ Install or adapt the capabilities listed in `reference_files/6.md`, `reference_f
 - Reference 6 source list has 9 links. Current strict checker evidence reports a successful result, eight required live-runtime receipts, one optional disabled lane, and Browserbase disabled by explicit user policy, which means Browserbase does not block this acceptance gate.
 - Reference 6 MinerU lanes are live-executed with `MINERU_API_KEY` presence and redacted MinerU/site/limit service probe receipts.
 - Reference 7 source list has 25 links. Current strict checker evidence reports a successful result and twenty-five live-runtime receipts, including duplicate-source reuse of Reference 6 receipts for `html-anything` and `open-design`.
-- `reference_files/8.md` has 16 links and no committed Reference 8 runtime/checker/test surface yet.
+- `reference_files/8.md` has 16 links. Reference 8 now has committed runtime/checker/test surfaces on local `main` at `32df40f`, with thirteen live-executed adapter receipts and three provision-recorded external desktop/commercial lanes.
 - Existing template roots are `D:/PythonProject_General` for active reusable adapters and `D:/PythonProject_General_2` for inert/opt-in heavy adapters.
 
 ## Non-Negotiable Policies
@@ -65,16 +65,16 @@ Install or adapt the capabilities listed in `reference_files/6.md`, `reference_f
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-Status: Stage A governance package is active and frozen for Stage B implementation. The plan file is registered so Reference 8 runtime/checker/template work can cite this local-main governance package.
+Status: R6/Reference 6-7-8 closeout is complete on local `main`. Stage A governance is registered and active, Stage B runtime/checker/test implementation is merged at `32df40f`, and the template repositories are synced on their local `main` branches.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- Stage B: add Reference 8 manifest, runtime CLI, checker, and tests.
-- Stage C: run user-level adapter install and hash-redacted smoke receipts.
-- Stage D: sync `D:/PythonProject_General` and `D:/PythonProject_General_2` template surfaces.
-- Stage E: run Reference 6/7/8 strict checks, repository gates, local MR review, and local-main integration.
+- Done: Stage B added Reference 8 manifest, runtime CLI, checker, guard wiring, and tests.
+- Done: Stage C generated user-level adapter installs and hash-redacted smoke/provision receipts with Browserbase remaining disabled.
+- Done: Stage D synced `D:/PythonProject_General` active adapters and `D:/PythonProject_General_2` inert samples, each committed to local `main`.
+- Done: Stage E passed Reference 6/7/8 checker runs, repository gates, local MR review, and local-main integration. Remote publication remains intentionally untouched.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
@@ -83,6 +83,12 @@ Status: Stage A governance package is active and frozen for Stage B implementati
 - Stage A plan commit: `57c44ecb70fbf2f7aea4aa30dc200dc12d9acdcf`.
 - Stage A registry fix: this docs-only governance package registers the plan as active before non-document implementation.
 - Runtime evidence target: `.omx/worktree-task-receipt.json` and Reference 8 install receipts under user-level Codex state.
+- Stage A front matter fix: `840c61b4399aa36f0a2265cb3779639eb7920480`.
+- Stage B runtime implementation: `32df40f694efca400e9c060231f6e32391ca5872`.
+- Template sync commits: `D:/PythonProject_General` local `main` at `6fb28b3`; `D:/PythonProject_General_2` local `main` at `36107b4`.
+- Final checker runs: Reference 6 `ok=true` with 18 receipts, 8 live-executed capabilities, and one disabled Browserbase lane; Reference 7 `ok=true` with 50 receipts and 25 live-executed capabilities; Reference 8 `ok=true` with 32 receipts, 13 live-executed capabilities, and 3 provision-recorded external lanes (`codex-visio-paper-figure-skill`, `cae-agent-hub`, `ansys-mcp-server`).
+- Final repository guard: `python tools/run_openspec_guard.py --root . --json` passed with 71/71 steps on local `main`.
+- Remote publication evidence: no GitLab/GitHub push, MR, merge, sync, or remote ref mutation was performed.
 <!-- EVIDENCE_INDEX_END -->
 
 ## Implementation Stages
