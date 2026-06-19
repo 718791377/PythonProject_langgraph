@@ -781,3 +781,129 @@ documents:
     status: active
     canonical_path: docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_brd
+    doc_class: business
+    status: active
+    canonical_path: docs_bilingual/business/codex_cli_durable_team_brd.md
+    zh_cn_path: docs_bilingual/business/codex_cli_durable_team_brd.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_prd
+    doc_class: product
+    status: active
+    canonical_path: docs_bilingual/product/codex_cli_durable_team_prd.md
+    zh_cn_path: docs_bilingual/product/codex_cli_durable_team_prd.zh-CN.md
+
+  - doc_id: template_update_policy
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/template_update_policy.md
+    zh_cn_path: docs_bilingual/templates/template_update_policy.zh-CN.md
+
+  - doc_id: codex_platform_core_documents_register
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_core_documents_register.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_core_documents_register.zh-CN.md
+
+  - doc_id: codex_platform_responsibility_raci
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_responsibility_raci.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_responsibility_raci.zh-CN.md
+
+  - doc_id: codex_platform_governed_agent_catalog
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_governed_agent_catalog.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_governed_agent_catalog.zh-CN.md
+
+  - doc_id: codex_platform_cross_cutting_module_map
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_cross_cutting_module_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_cross_cutting_module_map.zh-CN.md
+
+  - doc_id: codex_platform_reference_books_map
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_reference_books_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_reference_books_map.zh-CN.md
+
+  - doc_id: codex_platform_virtual_departments_operating_map
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_virtual_departments_operating_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_virtual_departments_operating_map.zh-CN.md
+
+  - doc_id: codex_cli_personal_production_durable_team_document_generation_order
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_document_generation_order.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_document_generation_order.zh-CN.md
+
+  - doc_id: codex_cli_personal_production_durable_team_operating_slice_template
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_operating_slice_template.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_operating_slice_template.zh-CN.md
+
+  - doc_id: one_person_company_operations_document_system
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_operations_document_system.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_operations_document_system.zh-CN.md
+
+  - doc_id: one_person_company_tailoring_decision_tree
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_tailoring_decision_tree.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_tailoring_decision_tree.zh-CN.md
+
+  - doc_id: one_person_company_minimum_startup_documents
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_minimum_startup_documents.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_minimum_startup_documents.zh-CN.md
+
+  - doc_id: one_person_company_core_documents_register
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_core_documents_register.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_core_documents_register.zh-CN.md
+
+  - doc_id: one_person_company_responsibility_raci
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_responsibility_raci.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_responsibility_raci.zh-CN.md
+
+  - doc_id: one_person_company_governed_agent_catalog
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_governed_agent_catalog.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_governed_agent_catalog.zh-CN.md
+
+  - doc_id: one_person_company_cross_cutting_module_map
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_cross_cutting_module_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_cross_cutting_module_map.zh-CN.md
+
+  - doc_id: one_person_company_pmi_process_group_playbook
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_pmi_process_group_playbook.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_pmi_process_group_playbook.zh-CN.md
+
+  - doc_id: one_person_company_architecture_mode_selection_guide
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_architecture_mode_selection_guide.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_architecture_mode_selection_guide.zh-CN.md
+
+  - doc_id: one_person_company_operations_metrics_and_monthly_review
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_operations_metrics_and_monthly_review.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_operations_metrics_and_monthly_review.zh-CN.md

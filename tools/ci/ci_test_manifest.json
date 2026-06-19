@@ -83,7 +83,8 @@
     "user_level_document_tools.test.py",
     "reference6_capability_install.test.py",
     "reference7_capability_install.test.py",
-    "reference8_capability_install.test.py"
+    "reference8_capability_install.test.py",
+    "operations_package_docs.test.py"
   ],
   "node_mjs": [
     "openclaw-omx-windows-prompt-startup-evidence-fix.test.mjs",

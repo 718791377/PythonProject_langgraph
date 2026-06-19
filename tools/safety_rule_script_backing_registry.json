@@ -895,6 +895,22 @@
         "check_reference8_capability_install"
       ],
       "description": "Keeps Reference 8 non-Codex upstreams adapted into Codex skill, agent, runtime-wrapper, derived-template, or inert project-template surfaces before any live-executed claim; rejects raw upstream install-only evidence, permits explicit provision-recorded receipts for missing commercial desktop runtimes, reuses env_key names only, and preserves the remote-publication gate."
+    },
+    {
+      "id": "operations-package-runtime",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md",
+        "docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/generate_operations_package.py",
+        "tools/check_operations_package_docs.py",
+        "test/operations_package_docs.test.py"
+      ],
+      "guard_steps": [],
+      "description": "Generates and validates governed bilingual operations packages for the Codex durable-team and one-person-company targets."
     }
   ]
 }
