@@ -82,7 +82,8 @@
     "check_user_level_cloakbrowser_academic_runtime.test.py",
     "user_level_document_tools.test.py",
     "reference6_capability_install.test.py",
-    "reference7_capability_install.test.py"
+    "reference7_capability_install.test.py",
+    "reference8_capability_install.test.py"
   ],
   "node_mjs": [],
   "powershell_ps1": []

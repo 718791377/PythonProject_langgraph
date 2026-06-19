@@ -56,6 +56,7 @@ GUARD_STEPS = [
     ),
     ("check_reference6_capability_install", "check_reference6_capability_install.py", "reference6_capability_install"),
     ("check_reference7_capability_install", "check_reference7_capability_install.py", "reference7_capability_install"),
+    ("check_reference8_capability_install", "check_reference8_capability_install.py", "reference8_capability_install"),
     ("check_local_mirrored_ci_gate", "check_local_mirrored_ci_gate.py", "local_mirrored_ci_gate"),
     ("check_remote_publication_approval_policy", "check_remote_publication_approval_policy.py", "remote_publication_approval_policy"),
     ("check_role_routing_directive_evidence", "check_role_routing_directive_evidence.py", "role_routing_directive_evidence"),
@@ -210,6 +211,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertIn("check_user_level_cloakbrowser_academic_runtime", [step["step"] for step in payload["steps"]])
         self.assertIn("check_reference6_capability_install", [step["step"] for step in payload["steps"]])
         self.assertIn("check_reference7_capability_install", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_reference8_capability_install", [step["step"] for step in payload["steps"]])
         self.assertIn("check_launcher_payload_context_boundary", [step["step"] for step in payload["steps"]])
         self.assertIn("check_multi_plan_family_r6_live_runtime", [step["step"] for step in payload["steps"]])
 

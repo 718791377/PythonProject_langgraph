@@ -877,6 +877,24 @@
         "check_reference7_capability_install"
       ],
       "description": "Keeps Reference 7 non-Codex upstreams adapted into Codex skill, agent, runtime-wrapper, or project-template surfaces before any live-executed claim; rejects raw upstream install-only evidence, writes hash-redacted receipts, reuses env_key names only, and preserves the remote-publication gate."
+    },
+    {
+      "id": "reference8-capability-install",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/reference6_reference7_reference8_user_project_live_runtime_plan.md",
+        "docs_bilingual/implementation_plans/reference6_reference7_reference8_user_project_live_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/reference8_capability_install.py",
+        "tools/check_reference8_capability_install.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_reference8_capability_install"
+      ],
+      "description": "Keeps Reference 8 non-Codex upstreams adapted into Codex skill, agent, runtime-wrapper, derived-template, or inert project-template surfaces before any live-executed claim; rejects raw upstream install-only evidence, permits explicit provision-recorded receipts for missing commercial desktop runtimes, reuses env_key names only, and preserves the remote-publication gate."
     }
   ]
 }
