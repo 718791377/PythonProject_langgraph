@@ -907,3 +907,10 @@ documents:
     status: active
     canonical_path: docs_bilingual/product_lifecycle/one_person_company_operations_metrics_and_monthly_review.md
     zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_operations_metrics_and_monthly_review.zh-CN.md
+  - doc_id: reference6_7_8_recursive_install_live_runtime_plan
+    lang: en
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/reference6_7_8_recursive_install_live_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/reference6_7_8_recursive_install_live_runtime_plan.zh-CN.md
+
