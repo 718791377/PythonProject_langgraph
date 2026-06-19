@@ -1,5 +1,6 @@
 ---
 doc_id: reference6_reference7_reference8_user_project_live_runtime_plan
+doc_class: implementation_plan
 lang: zh-CN
 status: active
 plan_stage: R6-live-runtime
