@@ -691,6 +691,14 @@ documents:
 
 
 
+
+  - doc_id: reference6_reference7_reference8_user_project_live_runtime_plan
+    lang: en
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/reference6_reference7_reference8_user_project_live_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/reference6_reference7_reference8_user_project_live_runtime_plan.zh-CN.md
+
   - doc_id: reference6_reference7_user_project_live_runtime_plan
     lang: en
     doc_class: implementation_plan

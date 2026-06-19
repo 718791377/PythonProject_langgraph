@@ -1,7 +1,7 @@
 ---
 doc_id: reference6_reference7_reference8_user_project_live_runtime_plan
 lang: zh-CN
-status: frozen
+status: active
 plan_stage: R6-live-runtime
 priority_order: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit
 remote_publication_allowed: false
@@ -62,6 +62,29 @@ browserbase_policy: disabled_by_user
 | `headroom` | `https://github.com/chopratejas/headroom` | user-level + General active | context-budget analyzer adapter | 分析小 fixture 并记录 budget/report hash。 |
 
 ## 实施阶段
+
+## Current Status
+
+<!-- CURRENT_STATUS_START -->
+Status: Stage A governance package is active and frozen for Stage B implementation. The plan file is registered so Reference 8 runtime/checker/template work can cite this local-main governance package.
+<!-- CURRENT_STATUS_END -->
+
+## Task Backlog
+
+<!-- TASK_BACKLOG_START -->
+- Stage B: add Reference 8 manifest, runtime CLI, checker, and tests.
+- Stage C: run user-level adapter install and hash-redacted smoke receipts.
+- Stage D: sync `D:/PythonProject_General` and `D:/PythonProject_General_2` template surfaces.
+- Stage E: run Reference 6/7/8 strict checks, repository gates, local MR review, and local-main integration.
+<!-- TASK_BACKLOG_END -->
+
+## Evidence Index
+
+<!-- EVIDENCE_INDEX_START -->
+- Stage A plan commit: `57c44ecb70fbf2f7aea4aa30dc200dc12d9acdcf`.
+- Stage A registry fix: this docs-only governance package registers the plan as active before non-document implementation.
+- Runtime evidence target: `.omx/worktree-task-receipt.json` and Reference 8 install receipts under user-level Codex state.
+<!-- EVIDENCE_INDEX_END -->
 
 ### Stage A：冻结本实施方案
 
