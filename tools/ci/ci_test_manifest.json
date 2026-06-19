@@ -85,6 +85,15 @@
     "reference7_capability_install.test.py",
     "reference8_capability_install.test.py"
   ],
-  "node_mjs": [],
-  "powershell_ps1": []
+  "node_mjs": [
+    "openclaw-omx-windows-prompt-startup-evidence-fix.test.mjs",
+    "openclaw-omx-windows-prompt-controller-startup-status-fix.test.mjs",
+    "openclaw-omx-windows-prompt-controller-shutdown-fix.test.mjs",
+    "openclaw-omx-windows-prompt-controller-exec-status-fix.test.mjs",
+    "openclaw-omx-windows-prompt-runtime-shutdown-fix.test.mjs"
+  ],
+  "powershell_ps1": [
+    "install-codex-user-level-team-mode.test.ps1",
+    "codex-official-update-patch-replay-template.test.ps1"
+  ]
 }

@@ -126,19 +126,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_mr_review.p
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-- Stage A is in the plan-freeze worktree `plan-omx-windows-native-team-runtime-20260618`.
-- Stage B starts only after Stage A is committed and integrated into local `main`.
+- Stage A has been validated, committed, and integrated into local `main`.
+- Stage B implementation is in worktree `implement-omx-windows-native-team-runtime-20260619`; focused PowerShell and Node verification has passed.
+- Stage B local gate, local MR review, and local-main integration are pending.
 - Remote publication is not authorized.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- Stage A: freeze OpenSpec deltas, bilingual implementation plan, docs registry entry, and corrected P6 runtime wording.
-- Stage A validation: run OpenSpec strict validation, document pair policy, precommit update/archive, and the repository OpenSpec guard before commit.
-- Stage A integration: commit the plan-freeze package and merge it into local `main` through the governance-confirmation helper.
-- Stage B TDD: add failing PowerShell tests for false-ready readiness, Windows backend selection, Apply preflight fail-closed behavior, and live runtime evidence fields.
-- Stage B runtime: implement runtime backend/preflight fields, native Windows prompt/process controller behavior or named fail-closed blockers, and cross-project cwd evidence.
+- Stage A: complete - OpenSpec deltas, bilingual implementation plan, docs registry entry, and corrected P6 runtime wording were frozen and integrated.
+- Stage B TDD: complete - PowerShell tests cover false-ready readiness, Windows backend selection, Apply preflight fail-closed behavior, and live runtime evidence fields.
+- Stage B runtime: complete - runtime backend/preflight fields, Windows prompt/process controller behavior, lifecycle status/exit/shutdown replay patches, and cross-project cwd evidence are implemented.
+- Stage B verification/integration: run repository governance checks, commit the runtime package, run local gate/local MR review, merge into local `main`, and stop at the remote-publication gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
@@ -146,6 +146,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_mr_review.p
 <!-- EVIDENCE_INDEX_START -->
 - `openspec/changes/fix-omx-windows-native-team-runtime-20260618/` - Stage A OpenSpec and management evidence.
 - `test/install-codex-user-level-team-mode.test.ps1` - Stage B generated-wrapper and readiness regression evidence.
+- `test/codex-official-update-patch-replay-template.test.ps1` - official-install replay gate, patch filtering, ordering, and fail-closed evidence.
+- `test/openclaw-omx-windows-prompt-*-fix.test.mjs` - Windows prompt controller lifecycle/startup/status/shutdown replay evidence.
+- `tools/ci/ci_test_manifest.json` - CI registration for the new Node and PowerShell regression surfaces.
 - `.omx/state/selectors/active.json` - per-repository selector authority.
 - `.omx/state/team/codex-auto-managed-team.json` - compatibility tracked native team record, not sufficient by itself as launch evidence.
 <!-- EVIDENCE_INDEX_END -->

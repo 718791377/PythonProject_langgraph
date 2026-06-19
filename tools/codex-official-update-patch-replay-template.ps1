@@ -15,6 +15,7 @@ param(
     [switch]$RunInstallerTests,
     [switch]$ApproveDiff,
     [string]$DiffApprovalNote = '',
+    [string[]]$PatchName = @(),
     [switch]$Json
 )
 
@@ -497,6 +498,52 @@ function Get-FirstCommandPath {
     return $null
 }
 
+function ConvertTo-ProcessArgument {
+    param(
+        [AllowNull()]
+        [string]$Argument
+    )
+
+    if ($null -eq $Argument -or $Argument.Length -eq 0) {
+        return '""'
+    }
+
+    if ($Argument -notmatch '[\s"]') {
+        return $Argument
+    }
+
+    $quoted = New-Object System.Text.StringBuilder
+    [void]$quoted.Append('"')
+    $backslashCount = 0
+    foreach ($character in $Argument.ToCharArray()) {
+        if ($character -eq '\') {
+            $backslashCount += 1
+            continue
+        }
+
+        if ($character -eq '"') {
+            if ($backslashCount -gt 0) {
+                [void]$quoted.Append(('\' * ($backslashCount * 2)))
+            }
+            [void]$quoted.Append('\"')
+            $backslashCount = 0
+            continue
+        }
+
+        if ($backslashCount -gt 0) {
+            [void]$quoted.Append(('\' * $backslashCount))
+            $backslashCount = 0
+        }
+        [void]$quoted.Append($character)
+    }
+
+    if ($backslashCount -gt 0) {
+        [void]$quoted.Append(('\' * ($backslashCount * 2)))
+    }
+    [void]$quoted.Append('"')
+    return $quoted.ToString()
+}
+
 function Invoke-ExternalCommand {
     param(
         [Parameter(Mandatory = $true)]
@@ -518,8 +565,36 @@ function Invoke-ExternalCommand {
     }
 
     try {
-        $process = Start-Process -FilePath $FilePath -ArgumentList $Arguments -WorkingDirectory $effectiveWorkingDirectory -Wait -PassThru -NoNewWindow -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
-        $exitCode = [int]$process.ExitCode
+        $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $startInfo.FileName = $FilePath
+        $startInfo.Arguments = (@($Arguments) | ForEach-Object { ConvertTo-ProcessArgument -Argument ([string]$_) }) -join ' '
+        $startInfo.WorkingDirectory = $effectiveWorkingDirectory
+        $startInfo.UseShellExecute = $false
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        $startInfo.CreateNoWindow = $true
+
+        $process = $null
+        try {
+            $process = New-Object System.Diagnostics.Process
+            $process.StartInfo = $startInfo
+            if (-not $process.Start()) {
+                throw "Command failed to start: $FilePath"
+            }
+            $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+            $stderrTask = $process.StandardError.ReadToEndAsync()
+            $process.WaitForExit()
+            $stdoutTask.Wait()
+            $stderrTask.Wait()
+            [System.IO.File]::WriteAllText($stdoutPath, [string]$stdoutTask.Result, (New-Object System.Text.UTF8Encoding($false)))
+            [System.IO.File]::WriteAllText($stderrPath, [string]$stderrTask.Result, (New-Object System.Text.UTF8Encoding($false)))
+            $exitCode = [int]$process.ExitCode
+        } finally {
+            if ($null -ne $process) {
+                $process.Dispose()
+            }
+        }
+
         if (Test-Path -LiteralPath $stdoutPath) {
             $lines += @(Get-Content -LiteralPath $stdoutPath -ErrorAction SilentlyContinue)
         }
@@ -608,11 +683,14 @@ function Get-PatchCatalog {
     return @(
         [pscustomobject]@{ name = 'runtime-observability'; scope = 'official_install'; category = 'runtime.js'; target_path = $runtimePath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-prompt-controller-observability-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'Runtime launch/observability semantics must be fixed inside the installed team engine until upstream absorbs them.' }
         [pscustomobject]@{ name = 'runtime-detach'; scope = 'official_install'; category = 'runtime.js'; target_path = $runtimePath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-prompt-controller-detach-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'Detach and teardown behavior is runtime-owned and cannot be repaired later by a wrapper.' }
+        [pscustomobject]@{ name = 'runtime-prompt-shutdown'; scope = 'official_install'; category = 'runtime.js'; target_path = $runtimePath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-prompt-runtime-shutdown-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'Prompt-controller shutdown must terminate both controller and active exec child PIDs before wrappers can report a real durable-team lifecycle.' }
         [pscustomobject]@{ name = 'runtime-startup-evidence'; scope = 'official_install'; category = 'runtime.js'; target_path = $runtimePath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-prompt-startup-evidence-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'Startup readiness/evidence handling affects worker launch correctness before user-level wrappers can help.' }
         [pscustomobject]@{ name = 'runtime-writable-roots'; scope = 'official_install'; category = 'runtime.js'; target_path = $runtimePath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-worktree-writable-roots-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'Writable-root fixes affect sandbox/worktree access during launch and integration, so they still belong in the runtime until upstream provides the behavior.' }
         [pscustomobject]@{ name = 'controller-debug-root'; scope = 'official_install'; category = 'windows-worker-controller.js'; target_path = $controllerPath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-prompt-controller-debug-root-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'Controller-side debug-root wiring is needed during prompt-worker bootstrap and is not a wrapper-only concern.' }
         [pscustomobject]@{ name = 'controller-startup-status'; scope = 'official_install'; category = 'windows-worker-controller.js'; target_path = $controllerPath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-prompt-controller-startup-status-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'Status seeding is emitted by the controller while the worker starts and therefore still belongs in the installed runtime path.' }
         [pscustomobject]@{ name = 'controller-stdin-close'; scope = 'official_install'; category = 'windows-worker-controller.js'; target_path = $controllerPath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-prompt-controller-stdin-close-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'STDIN close behavior is owned by the controller process and must be fixed before the worker loop begins.' }
+        [pscustomobject]@{ name = 'controller-prompt-shutdown'; scope = 'official_install'; category = 'windows-worker-controller.js'; target_path = $controllerPath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-prompt-controller-shutdown-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'The Windows prompt controller must persist active exec child PID evidence and handle shutdown signals for reliable team teardown; apply before controller-exec-status because it owns child PID helper insertion.' }
+        [pscustomobject]@{ name = 'controller-exec-status'; scope = 'official_install'; category = 'windows-worker-controller.js'; target_path = $controllerPath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-prompt-controller-exec-status-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'The Windows prompt controller must demote worker status when the real codex exec child exits non-zero so failed child auth cannot remain as false working state.' }
         [pscustomobject]@{ name = 'controller-stdin-prompt'; scope = 'official_install'; category = 'windows-worker-controller.js'; target_path = $controllerPath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-prompt-controller-stdin-prompt-fix.mjs'); suggested_home = 'official_install_runtime'; suggested_decision = 'replay_or_rebase'; decision_reason = 'Prompt-read behavior on Windows is controller/runtime logic, not merely documentation.' }
         [pscustomobject]@{ name = 'bootstrap-oneliner'; scope = 'official_install'; category = 'worker-bootstrap.js'; target_path = $bootstrapPath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-worker-bootstrap-oneliner-fix.mjs'); suggested_home = 'worker_bootstrap_move_down_when_possible'; suggested_decision = 'move_down_if_hook_exists_else_replay'; decision_reason = 'Worker-visible examples should move into wrappers/skills when possible, but still need replay while upstream bootstrap emits unsafe Windows examples.' }
         [pscustomobject]@{ name = 'bootstrap-command-style'; scope = 'official_install'; category = 'worker-bootstrap.js'; target_path = $bootstrapPath; script_path = (Join-Path $toolsRoot 'openclaw-omx-windows-command-style-guidance-fix.mjs'); suggested_home = 'worker_bootstrap_move_down_when_possible'; suggested_decision = 'move_down_if_hook_exists_else_replay'; decision_reason = 'This is worker-visible command guidance and should be pushed downward once a stable prompt hook exists.' }
@@ -854,7 +932,9 @@ function Write-ChecklistMarkdown {
         $null = $lines.Add('- (none)')
     } else {
         foreach ($entry in $officialStatuses) {
-            $null = $lines.Add(('- [ ] {0} (`{1}`) status=`{2}` exit=`{3}` target=`{4}`' -f $entry.patch, $entry.category, $entry.status, $entry.command_exit_code, $entry.target_path))
+            $entryStatus = Normalize-DecisionValue -Value (Get-ObjectPropertyValue -InputObject $entry -PropertyName 'status')
+            $entryExitCode = Normalize-DecisionValue -Value (Get-ObjectPropertyValue -InputObject $entry -PropertyName 'command_exit_code')
+            $null = $lines.Add(('- [ ] {0} (`{1}`) status=`{2}` exit=`{3}` target=`{4}`' -f $entry.patch, $entry.category, $entryStatus, $entryExitCode, $entry.target_path))
         }
     }
     $null = $lines.Add('')
@@ -863,7 +943,9 @@ function Write-ChecklistMarkdown {
         $null = $lines.Add('- (none)')
     } else {
         foreach ($entry in $localStatuses) {
-            $null = $lines.Add(('- [ ] {0} (`{1}`) status=`{2}` exit=`{3}` target=`{4}`' -f $entry.patch, $entry.category, $entry.status, $entry.command_exit_code, $entry.target_path))
+            $entryStatus = Normalize-DecisionValue -Value (Get-ObjectPropertyValue -InputObject $entry -PropertyName 'status')
+            $entryExitCode = Normalize-DecisionValue -Value (Get-ObjectPropertyValue -InputObject $entry -PropertyName 'command_exit_code')
+            $null = $lines.Add(('- [ ] {0} (`{1}`) status=`{2}` exit=`{3}` target=`{4}`' -f $entry.patch, $entry.category, $entryStatus, $entryExitCode, $entry.target_path))
         }
     }
     $null = $lines.Add('')
@@ -952,7 +1034,8 @@ function Resolve-AutoSuggestedFinalDecision {
         [pscustomobject]$Status
     )
 
-    if ($null -ne $Status -and [int]$Status.command_exit_code -ne 0) {
+    $commandExitCode = Get-ObjectPropertyValue -InputObject $Status -PropertyName 'command_exit_code'
+    if ($null -ne $Status -and $null -ne $commandExitCode -and [int]$commandExitCode -ne 0) {
         return [pscustomobject]@{
             final_decision = 'rebase'
             reason = 'The patch probe did not cleanly succeed against the current target, so the local patch most likely needs retargeting before replay.'
@@ -1144,6 +1227,9 @@ function Get-PatchDecisionRows {
             }
         }
 
+        $statusValue = Normalize-DecisionValue -Value (Get-ObjectPropertyValue -InputObject $status -PropertyName 'status')
+        $statusExitCode = Normalize-DecisionValue -Value (Get-ObjectPropertyValue -InputObject $status -PropertyName 'command_exit_code')
+
         $rows += [pscustomobject][ordered]@{
             patch = $patch.name
             scope = $patch.scope
@@ -1155,8 +1241,8 @@ function Get-PatchDecisionRows {
             suggested_reason = $patch.decision_reason
             auto_suggested_final_decision = $autoDecision.final_decision
             auto_suggestion_reason = $autoDecision.reason
-            current_status = if ($null -ne $status) { [string]$status.status } else { '' }
-            last_exit_code = if ($null -ne $status) { [string]$status.command_exit_code } else { '' }
+            current_status = $statusValue
+            last_exit_code = $statusExitCode
             decision_status = $decisionStatus
             decision_locked = $decisionLocked
             decision_lock_reason = $decisionLockReason
@@ -1211,6 +1297,18 @@ $omxPath = Get-FirstCommandPath -Candidates @('omx.cmd', 'omx')
 $powerShellPath = Get-PowerShellHostPath
 
 $patchCatalog = Get-PatchCatalog -RepoRootPath $repoRootPath -OfficialRoot $officialOmxRootPath -CodexHomePath $codexHomePath
+if ($PatchName.Count -gt 0) {
+    $requestedPatchNames = @($PatchName | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($requestedPatchNames.Count -eq 0) {
+        throw 'PatchName must contain at least one non-empty patch name.'
+    }
+    $knownPatchNames = @($patchCatalog | ForEach-Object { [string]$_.name })
+    $unknownPatchNames = @($requestedPatchNames | Where-Object { $_ -notin $knownPatchNames })
+    if ($unknownPatchNames.Count -gt 0) {
+        throw ("Unknown patch name(s): {0}" -f ($unknownPatchNames -join ', '))
+    }
+    $patchCatalog = @($patchCatalog | Where-Object { [string]$_.name -in $requestedPatchNames })
+}
 $trackedOfficialFiles = @(
     Join-Path $officialOmxRootPath 'dist\team\runtime.js'
     Join-Path $officialOmxRootPath 'dist\team\windows-worker-controller.js'

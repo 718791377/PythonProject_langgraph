@@ -82,19 +82,19 @@ TDD 顺序：
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-- Stage A 位于 worktree `plan-omx-windows-native-team-runtime-20260618`。
-- Stage B 只在 Stage A 提交并合入本地 `main` 后开始。
+- Stage A 已经验证、提交并合入本地 `main`。
+- Stage B 实现位于 worktree `implement-omx-windows-native-team-runtime-20260619`；聚焦 PowerShell 与 Node 验证已通过。
+- Stage B 的 local gate、local MR review 与本地 `main` 集成仍待执行。
 - 未授权远程发布。
 <!-- CURRENT_STATUS_END -->
 
 ## 任务积压
 
 <!-- TASK_BACKLOG_START -->
-- Stage A：冻结 OpenSpec delta、双语 implementation plan、docs registry 记录和 P6 runtime 口径修正。
-- Stage A 验证：提交前运行 OpenSpec strict validation、document pair policy、precommit update/archive 和仓库 OpenSpec guard。
-- Stage A 集成：提交 plan-freeze 包，并通过 governance-confirmation helper 合入本地 `main`。
-- Stage B TDD：为 false-ready readiness、Windows backend selection、Apply preflight fail-closed、live runtime evidence fields 写失败测试。
-- Stage B runtime：实现 runtime backend/preflight 字段、Windows 原生 prompt/process controller 或命名 fail-closed blocker，并证明跨项目 cwd 可用。
+- Stage A：已完成 - OpenSpec delta、双语 implementation plan、docs registry 记录和 P6 runtime 口径修正已经冻结并集成。
+- Stage B TDD：已完成 - PowerShell 测试覆盖 false-ready readiness、Windows backend selection、Apply preflight fail-closed 与 live runtime evidence fields。
+- Stage B runtime：已完成 - 已实现 runtime backend/preflight 字段、Windows prompt/process controller 行为、生命周期 status/exit/shutdown replay patch 和跨项目 cwd 证据。
+- Stage B 验证/集成：运行仓库治理检查，提交 runtime 包，运行 local gate/local MR review，合入本地 `main`，然后停在远程发布门。
 <!-- TASK_BACKLOG_END -->
 
 ## 证据索引
@@ -102,6 +102,9 @@ TDD 顺序：
 <!-- EVIDENCE_INDEX_START -->
 - `openspec/changes/fix-omx-windows-native-team-runtime-20260618/` - Stage A OpenSpec 与 management 证据。
 - `test/install-codex-user-level-team-mode.test.ps1` - Stage B wrapper/readiness 回归证据。
+- `test/codex-official-update-patch-replay-template.test.ps1` - official-install replay gate、patch filtering、ordering 和 fail-closed 证据。
+- `test/openclaw-omx-windows-prompt-*-fix.test.mjs` - Windows prompt controller lifecycle/startup/status/shutdown replay 证据。
+- `tools/ci/ci_test_manifest.json` - 新增 Node 与 PowerShell 回归面的 CI 登记。
 - `.omx/state/selectors/active.json` - 每个仓库的 selector authority。
 - `.omx/state/team/codex-auto-managed-team.json` - 兼容 tracked native team record，本身不足以证明 launch。
 <!-- EVIDENCE_INDEX_END -->

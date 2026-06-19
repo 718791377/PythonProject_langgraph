@@ -17,20 +17,23 @@
 - [x] Stage A 执行模式：隔离 worktree，专家 advisory，leader 负责本地集成。
 - [x] Stage A 质量证据：management、proposal、design、tasks、spec、plan。
 - [x] blocker 决策：persistent team 等 Stage A 冻结且 Stage B 安全切片后再启动；当前 bug 场景不能把 tmux pane 当证据。
+- [x] Stage B 实现：Windows 原生 preflight 现在区分 runtime backend、preflight、operational readiness 与 blockers；生成 wrapper 默认不再走 tmux-only 路径。
+- [x] Stage B 生命周期 replay patch：prompt runtime/controller shutdown 与 child-exec status patcher 已由 Node 测试和 official-install replay 测试覆盖。
 
 ## Verify
 
-- [ ] Stage A 验证后的偏差复核。
-- [ ] Stage A 验证后的风险/影响复核。
-- [ ] Stage A 验证后的控制决策。
+- [x] Stage A 验证后的偏差复核：Stage A 已落入本地 `main`；Stage B 继续使用同一个 change，未扩大到远程发布。
+- [x] Stage B 聚焦验证后的风险/影响复核：tmux 仍是显式 opt-in backend；不可用时 fail closed；Windows 默认走 prompt/process controller 路径。
+- [x] Stage B 聚焦验证后的控制决策：继续进入仓库 gate、local MR review 与本地 main 集成；未授权远程发布。
 
 ## Archive
 
-- [ ] Stage B runtime 完成后记录价值结果。
-- [ ] Stage B runtime 完成后记录经验。
-- [ ] Stage B runtime 完成后记录 archive/sync 证据。
+- [x] Stage B runtime 完成后记录价值结果：Windows 原生 OMX team launchability 不再由 selected/ready 状态单独推断，而必须有 operational preflight 证据。
+- [x] Stage B runtime 完成后记录经验：prompt/process controller patch replay 必须同时覆盖 startup evidence、child exec status 和 shutdown cleanup。
+- [ ] Stage B 本地 main 集成后记录 archive/sync 证据。
 
 ## Monitoring
 
 - [x] 当前事实：本机没有可用的 `tmux` team pane 环境，因此 Stage A 不能声称已有真实 persistent team launchability。
 - [x] Stage A 决策：继续本地验证与本地 main 集成，不需要返回 earlier phase。
+- [x] Stage B 监控决策：persistent-team 证据必须使用 Windows prompt/process controller 生命周期面或命名 blockers，不能只看旧 compatibility team record。

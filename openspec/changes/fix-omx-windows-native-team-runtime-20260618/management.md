@@ -17,20 +17,23 @@
 - [x] Execution mode for Stage A: isolated worktree with advisory experts and leader-owned local integration.
 - [x] Quality evidence for Stage A: this management checklist plus proposal/design/tasks/spec/plan artifacts.
 - [x] Blocker decision: persistent team launch waits until Stage A is frozen and Stage B has safe slices; the current bug means tmux-backed panes are not accepted as evidence.
+- [x] Stage B implementation: native Windows preflight now separates runtime backend, preflight, operational readiness, and blockers; generated wrappers avoid tmux-only routing by default.
+- [x] Stage B lifecycle replay patches: prompt runtime/controller shutdown and child-exec status patchers are covered by Node tests and official-install replay tests.
 
 ## Verify
 
-- [ ] Variance review after Stage A validation.
-- [ ] Risk/change impact review after Stage A validation.
-- [ ] Control decision after Stage A validation.
+- [x] Variance review after Stage A validation: Stage A landed on local `main`; Stage B used the same change and did not broaden to remote publication.
+- [x] Risk/change impact review after Stage B focused validation: tmux remains an explicit opt-in backend that fail-closes when unavailable; Windows default routes to the prompt/process controller path.
+- [x] Control decision after Stage B focused validation: continue to repository gates, local MR review, and local-main integration; no remote publication is authorized.
 
 ## Archive
 
-- [ ] Value outcome recorded after Stage B runtime work.
-- [ ] Lessons learned recorded after Stage B runtime work.
-- [ ] Archive/sync evidence recorded after Stage B runtime work.
+- [x] Value outcome recorded after Stage B runtime work: native Windows OMX team launchability is no longer inferred from selected/ready state alone and now requires operational preflight evidence.
+- [x] Lessons learned recorded after Stage B runtime work: prompt/process controller patch replay must cover startup evidence, child exec status, and shutdown cleanup together.
+- [ ] Archive/sync evidence recorded after Stage B local-main integration.
 
 ## Monitoring
 
 - [x] Current facts: this machine has no usable `tmux` team pane environment for native Windows, so Stage A must not claim operational persistent-team launchability.
 - [x] Return/no-return decision for Stage A: continue to local validation and local-main integration; no return loop needed.
+- [x] Stage B monitoring decision: persistent-team evidence must use the Windows prompt/process controller lifecycle surfaces or named blockers, not stale compatibility team records alone.
