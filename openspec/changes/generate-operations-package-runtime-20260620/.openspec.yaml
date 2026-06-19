@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-06-20
+x_change_class: operations-package-plan-runtime
+x_archive_deferred_reason: "Stage A freezes the operations-package generation plan; Stage B must implement runtime/checker/docs and verify before archive."
+x_archive_follow_up: "After Stage B local-main integration, archive the change and promote operations-package runtime requirements into the stable spec."

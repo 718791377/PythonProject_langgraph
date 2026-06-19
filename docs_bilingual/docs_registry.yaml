@@ -774,3 +774,10 @@ documents:
     status: active
     canonical_path: docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md
+
+
+  - doc_id: operations_package_generation_and_runtime_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.zh-CN.md
